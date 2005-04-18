@@ -39,6 +39,10 @@
 #define TS_TIME_OUT_MS 250
 #define TS_SECS_ASYNC_TRY_MASTER (60*5) /* every five minutes */
 #define TS_SECS_SYNC_TRY_MASTER (60*1) /* every one minute */
+#define TS_MAX_TICKS_GET_NTP 10
+
+/*mask values for TSstampTrans.mask and TSinfo.mask */
+#define TS_STAMP_FROM_UNIX 0x0001
 
 #define UDP_TIME_PORT 37
 #define UDP_NTP_PORT 123
@@ -78,6 +82,9 @@ struct TSstampTransStruct {
 	struct timespec unix_time;	/* time using 1900 epoch */
 	unsigned long sync_rate; 	/* master sends sync at this rate */
 	unsigned long clock_hz;		/* master clock this frequency (tick rate) */
+	unsigned long mask;             /*extra info*/
+        unsigned long syncReportThreshold;   /*for sync errors*/
+        unsigned long syncUnixReportThreshold;   /*for TS_STAMP_FROM_UNIXerrors*/
 };
 typedef struct TSstampTransStruct TSstampTrans;
 
@@ -106,6 +113,9 @@ struct TSinfoStruct {
 
 	struct sockaddr hunt;	/* broadcast address info */
 	struct sockaddr master;	/* socket info for contacting master */
+	unsigned long mask;     /*extra info*/
+        unsigned long syncReportThreshold;   /*for sync errors*/
+        unsigned long syncUnixReportThreshold;   /*for TS_STAMP_FROM_UNIXerrors*/
 };
 typedef struct TSinfoStruct TSinfo;
 
@@ -127,6 +137,8 @@ TS_EXTERN void TSconfigure(int master, int sync_rate_sec, int clock_rate_hz,
 	int master_port, int slave_port,
 	unsigned long millisecond_request_time_out, int type);
 TS_EXTERN long TSsetClockFromUnix(void);
+TS_EXTERN long TSsetSyncReportThreshold(
+        unsigned long syncMilliseconds,unsigned long syncUnixMilliseconds);
 
 #ifndef TS_DRIVER
 TS_EXTERN TSinfo TSdata;

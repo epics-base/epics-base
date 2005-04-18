@@ -66,17 +66,12 @@
 
 /* functions used by this driver */
 static long TSgetUnixTime(struct timespec*);
+static long TSinitClockFromUnix(void);
 static long TSgetMasterTime(struct timespec*);
-static long TSgetBroadcastAddr(int soc, struct sockaddr*);
-static int  TSgetSocket(int port, struct sockaddr_in* sin);
-static int  TSgetBroadcastSocket(int port, struct sockaddr_in* sin);
 static void TSsyncServer();
 static void TSsyncClient();
 static long TSasyncClient();
 static long TSsyncTheTime(struct timespec* cts, struct timespec* ts);
-static long TSgetData(char* buf, int buf_size, int soc,
-    struct sockaddr* to_sin, struct sockaddr* from_sin,
-    struct timespec* round_trip);
 static void TSaddStamp(	struct timespec* result,
     struct timespec* op1, struct timespec* op2);
 static void TSwdIncTime();
@@ -96,6 +91,14 @@ static long TSstartSyncClient();
 static long TSstartAsyncClient();
 static long TSstartStampServer();
 static long TSuserGetJunk(int event_number,struct timespec* sp);
+/* network utilities*/
+static long TSgetBroadcastAddr(int soc, struct sockaddr*);
+static int TSgetNtpSocketAddr(struct sockaddr_in *sin);
+static int  TSgetSocket(int port, struct sockaddr_in* sin);
+static int  TSgetBroadcastSocket(int port, struct sockaddr_in* sin);
+static long TSgetData(char* buf, int buf_size, int soc,
+    struct sockaddr* to_sin, struct sockaddr* from_sin,
+    struct timespec* round_trip);
 
 /* event system and time clock functions */
 static long (*TSregisterEventHandler)(int Card, void(*func)());
@@ -134,7 +137,8 @@ TSinfo TSdata =
 	0,NULL,
 	TS_SYNC_RATE_SEC,TS_CLOCK_RATE_HZ,0,TS_TIME_OUT_MS,0,
 	TS_MASTER_PORT,TS_SLAVE_PORT,1,0,0,0,0,
-	NULL, {NULL}, {NULL}
+	NULL, {NULL}, {NULL},
+        0,0,10
 };
 
 extern char* sysBootLine;
@@ -175,6 +179,7 @@ unsigned long TSepochNtpToUnix(struct timespec* ts)
     unsigned long nfssecs = (unsigned long)ts->tv_sec;
     unsigned long secs = 0;
 
+    if(!TSinitialized) TSinit();
     /*If high order bit is not set then nfssecs has overflowed */
     if(!(nfssecs & 0x80000000ul)) {
 	/*secs = nfssecs - TS_1900_TO_VXWORKS_EPOCH + 2**32 */
@@ -281,6 +286,10 @@ long TSreport()
 
 	if(TSdata.has_direct_time)
 		printf("Event system has time directly available\n");
+        printf("syncReportThreshold %lu milliseconds\n",
+            TSdata.syncReportThreshold);
+        printf("syncUnixReportThreshold %lu milliseconds\n",
+            TSdata.syncUnixReportThreshold);
 	return 0;
 }
 
@@ -586,7 +595,7 @@ long TSinit(void)
     if(TSdata.master_timing_IOC)
     {
 	/* master */
-	if(TSsetClockFromUnix()<0)
+	if(TSinitClockFromUnix()<0)
 	{
 	    /* bad, cannot get time - accessing starts ticking */
 	    struct timespec tp;
@@ -620,7 +629,7 @@ long TSinit(void)
     else
     {
 	/* slave */
-	if(TSsetClockFromUnix()<0)
+	if(TSinitClockFromUnix()<0)
 	{
 	    struct timespec tp;
 	    clock_gettime(CLOCK_REALTIME,&tp);
@@ -747,14 +756,13 @@ static void TSwdIncTime() /*increment the time stamp at a 60 Hz rate*/
     return;
 }
 
+/* TSwdIncTimeSync called at interrupt level! */
 static void TSwdIncTimeSync()
 {
 	wdStart(wd,1, (FUNCPTR)TSwdIncTimeSync,NULL);
 	TSaccurateTimeStamp(&TSdata.event_table[0]);
 }
 
-/* following are all interrupt service routines */
-
 /*	
     TSeventHandler() - receive events from event system; update the event table 
 
@@ -777,6 +785,7 @@ static void TSeventHandler(int Card,int EventNum,unsigned long Ticks)
 	return;
     }
 #endif
+
 
     /* calculate a time stamp from the Tick count */
     ts.tv_sec = Ticks / TSdata.clock_hz;
@@ -855,38 +864,18 @@ static void TSerrorHandler(int Card, int ErrorNum)
 
 static long TSgetUnixTime(struct timespec* ts)
 {
-    BOOT_PARAMS bootParms;
     unsigned long buf_data,timeValue;
     TS_NTP buf_ntp;
     struct sockaddr_in sin;
     int soc;
-    char host_addr[BOOT_ADDR_LEN];
-	int status;
 
-    Debug0(2,"in TSgetUnixTime()\n");
-    if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL ||
-		strlen(host_addr)==0)
-    {
-	/* use boot host if the environment variable not set */
-	bootStringToStruct(sysBootLine,&bootParms);
-	/* bootParms.had = host IP address */
-	strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+    soc = TSgetNtpSocketAddr(&sin);
+    if(soc<0) {
+	TSdata.async_type=TS_async_none;
+        return -1;
     }
-    if( (soc=TSgetSocket(0,&sin)) <0)
-    { Debug0(1,"TSgetsocket failed\n"); return -1; }
 
     /* set up for ntp transaction to boot server */
-    Debug(5,"host addr = %s\n",host_addr);
-
-    /* well known registered NTP port - or whatever port they specify */
-    status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin);
-    if (status) {
-	Debug0(2,"bad host name or IP address\n");
-	TSdata.async_type=TS_async_none;
-	close(soc);
-	return -1;
-    }
-
     TSdata.async_type=TS_async_ntp;
     memset(&buf_ntp,0,sizeof(buf_ntp));
     buf_ntp.info[0]=0x0b;
@@ -927,6 +916,48 @@ static long TSgetUnixTime(struct timespec* ts)
 	    printf("got the NTP time %9.9lu.%9.9lu\n",ts->tv_sec,timeValue);
     }
     close(soc);
+    return 0;
+}
+/*	
+	TSinitClockFromUnix() - query the time from boot server and set the 
+	vxworks clock.
+*/
+static long TSinitClockFromUnix(void)
+{
+    struct timespec tp;
+    int key;
+    unsigned long ulongtemp;
+
+    if(!TSinitialized) TSinit();
+    Debug0(3,"in TSinitClockFromUnix()\n");
+
+    if(TSgetUnixTime(&tp)!=0) return -1;
+
+    ulongtemp = TSepochNtpToUnix(&tp);
+    tp.tv_sec = (long)ulongtemp;
+
+    if(MAKE_DEBUG>=9)
+	printf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
+
+    /* set the vxWorks clock to the correct time */
+    if(clock_settime(CLOCK_REALTIME,&tp)<0)
+    { Debug0(1,"clock_settime failed\n"); }
+
+    /* adjust time to use the EPICS EPOCH of 1990 */
+    /* this is wrong if leap seconds accounted for */
+    ulongtemp = TSepochUnixToEpics(&tp);
+    tp.tv_sec = ulongtemp;
+
+    key=intLock();
+    TSdata.mask |= TS_STAMP_FROM_UNIX;
+    TSdata.event_table[TSdata.sync_event]=tp;
+    TSdata.event_table[0]=tp;
+    intUnlock(key);
+    if(MAKE_DEBUG>=9)
+	printf("epics time: %9.9lu.%9.9lu\n",
+		TSdata.event_table[TSdata.sync_event].tv_sec,
+		TSdata.event_table[TSdata.sync_event].tv_nsec);
+
     return 0;
 }
 
@@ -1006,46 +1037,19 @@ static long TSgetMasterTime(struct timespec* tsp)
 }
 
 /*	
-	TSsetClockFromUnix() - query the time from boot server and set the 
-	vxworks clock.
+	TSsetClockFromUnix() - make next sync event get time from unix
 */
 long TSsetClockFromUnix(void)
 {
-    struct timespec tp;
-    int key;
-    unsigned long ulongtemp;
+    TSdata.mask |= TS_STAMP_FROM_UNIX;
+    return 0;
+}
 
-    if(!TSinitialized) TSinit();
-    Debug0(3,"in TSsetClockFromUnix()\n");
-
-    if(TSgetUnixTime(&tp)!=0) return -1;
-
-    ulongtemp = TSepochNtpToUnix(&tp);
-    tp.tv_sec = (long)ulongtemp;
-
-    if(MAKE_DEBUG>=9)
-	printf("set time: %9.9lu.%9.9lu\n", tp.tv_sec,tp.tv_nsec);
-
-    /* set the vxWorks clock to the correct time */
-    if(clock_settime(CLOCK_REALTIME,&tp)<0)
-    { Debug0(1,"clock_settime failed\n"); }
-
-    /* adjust time to use the EPICS EPOCH of 1990 */
-    /* this is wrong if leap seconds accounted for */
-    ulongtemp = TSepochUnixToEpics(&tp);
-    tp.tv_sec = ulongtemp;
-
-    /* set the EPICS event time table sync entry (current time) */
-    key=intLock();
-    TSdata.event_table[TSdata.sync_event]=tp;
-    TSdata.event_table[0]=tp;
-    intUnlock(key);
-
-    if(MAKE_DEBUG>=9)
-	printf("epics time: %9.9lu.%9.9lu\n",
-		TSdata.event_table[TSdata.sync_event].tv_sec,
-		TSdata.event_table[TSdata.sync_event].tv_nsec);
-
+long TSsetSyncReportThreshold(
+    unsigned long syncMilliseconds,unsigned long syncUnixMilliseconds)
+{
+    TSdata.syncReportThreshold = syncMilliseconds;
+    TSdata.syncUnixReportThreshold = syncUnixMilliseconds;
     return 0;
 }
 
@@ -1074,83 +1078,6 @@ static long TSsetClockFromMaster()
     tp.tv_sec = secs;
     clock_settime(CLOCK_REALTIME,&tp);
 
-    return 0;
-}
-
-/**************************************************************************/
-/* broadcast socket creation utilites */
-/**************************************************************************/
-
-/*	
-	TSgetBroadcastSocket() - return a broadcast socket for a port, return
-	a sockaddr also.
-*/
-static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
-{
-    int on=1;
-    int soc;
-
-    sin->sin_port=htons(port);
-    sin->sin_family=AF_INET;
-    sin->sin_addr.s_addr=htonl(INADDR_ANY);
-    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
-    { perror("socket create failed"); return -1; }
-
-    setsockopt(soc,SOL_SOCKET,SO_BROADCAST,(char*)&on,sizeof(on));
-
-    if( bind(soc,(struct sockaddr*)sin,sizeof(struct sockaddr_in)) < 0 )
-    { perror("socket bind failed"); close(soc); return -1; }
-
-    if( TSgetBroadcastAddr(soc,(struct sockaddr*)sin) < 0 ) return -1;
-    return soc;
-}
-
-/*	
-    TSgetBroadcastAddr() - Determine the broadcast address, this is 
-    directly from the Sun Network Programmer's guide.
-*/
-static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
-{
-    struct ifconf ifc;
-    struct ifreq* ifr;
-    struct ifreq* save;
-    char buf[BUFSIZ];
-    int tot,i;
-
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    if(ioctl(soc,SIOCGIFCONF,(int)&ifc) < 0)
-    { perror("ioctl SIOCGIFCONF failed"); return -1; }
-
-    ifr = ifc.ifc_req;
-    tot = ifc.ifc_len/sizeof(struct ifreq);
-    save=(struct ifreq*)NULL;
-    i=0;
-    do
-    {
-	if(ifr->ifr_addr.sa_family==AF_INET)
-	{
-	    if(ioctl(soc,SIOCGIFFLAGS,(int)ifr)<0)
-	    { perror("ioctl SIOCGIFFLAGS failed"); return -1; }
-
-	    if( (ifr->ifr_flags&IFF_UP) && 
-		!(ifr->ifr_flags&IFF_LOOPBACK) &&
-		(ifr->ifr_flags&IFF_BROADCAST))
-	    { save=ifr; }
-	}
-        /*ifreq_size is defined in osiSock.h*/
-        ifr = (struct ifreq*)((char *)ifr + ifreq_size(ifr));
-    } while( !save && ++i<tot );
-
-    if(save)
-    {
-	if(ioctl(soc,SIOCGIFBRDADDR,(int)save)<0)
-	{ perror("ioctl SIOCGIFBRDADDR failed"); return -1; }
-	memcpy((char*)sin,(char*)&save->ifr_broadaddr,
-				sizeof(save->ifr_broadaddr));
-    }
-    else
-    { Debug0(1,"no broadcast address found\n"); return -1; }
     return 0;
 }
 
@@ -1220,16 +1147,22 @@ long TSstartSyncServer()
 static void TSsyncServer()
 {
     TSstampTrans stran;
-    struct sockaddr_in sin;
-    int soc;
+    struct sockaddr_in sinBroadcast;
+    int socBroadcast;
+    struct sockaddr_in sinNtp;
+    int socNtp;
+    unsigned long mask;
+    int setStampFromUnix;
 
-    if( (soc=TSgetBroadcastSocket(0,&sin)) <0)
+    if( (socBroadcast=TSgetBroadcastSocket(0,&sinBroadcast)) <0)
     { Debug0(1,"TSgetBroadcastSocket failed\n"); return; }
-    sin.sin_port = htons(TSdata.slave_port);
+    sinBroadcast.sin_port = htons(TSdata.slave_port);
     stran.type=(TStype)htonl(TS_sync_msg);
     stran.magic=htonl(TS_MAGIC);
     stran.sync_rate=htonl(TSdata.sync_rate);
     stran.clock_hz=htonl(TSdata.clock_hz);
+    socNtp = TSgetNtpSocketAddr(&sinNtp);
+    if(socNtp<0) TSprintf("TSsyncServer TSgetNtpSocketAddr failed\n");
     while(1)
     {
 	/* wait for a sync to occur */
@@ -1251,17 +1184,71 @@ static void TSsyncServer()
 	    TSdata.event_table[TSdata.sync_event].tv_sec=ts.tv_sec;
 	    intUnlock(key);
 	}
+        /* Use while so that errors can break out of while*/
+        setStampFromUnix = 0;
+        while(TSdata.mask & TS_STAMP_FROM_UNIX) {
+            TS_NTP buf_ntp;
+            struct timespec tp;
+            unsigned long ulongtemp;
+            int key;
+            unsigned long ticksStart,ticksEnd;
+
+            if(socNtp<0) {
+                TSprintf("TSsyncServer cant contact NTP server\n");
+                break;
+            }
+            TSgetTicks(0,&ticksStart);
+            memset(&buf_ntp,0,sizeof(buf_ntp));
+            buf_ntp.info[0]=0x0b;
+            if(TSgetData((char*)&buf_ntp,sizeof(buf_ntp),socNtp,
+            (struct sockaddr*)&sinNtp,0,0) < 0) {
+                TSprintf("TSsyncServer TSgetData for NTP failed\n");
+                break;
+            }
+            tp.tv_sec = ntohl(buf_ntp.transmit_ts.tv_sec);
+            ulongtemp = ntohl(buf_ntp.transmit_ts.tv_nsec);
+            tp.tv_nsec = TSfractionToNano(ulongtemp);
+            ulongtemp = TSepochNtpToUnix(&tp);
+            tp.tv_sec = (long)ulongtemp;
+            TSgetTicks(0,&ticksEnd);
+            if(ticksEnd<ticksStart) {
+                TSprintf("TSsyncServer clock overflow\n");
+                break;
+            }
+            if((ticksEnd-ticksStart) > TS_MAX_TICKS_GET_NTP) {
+                TSprintf("TSsyncServer NTP TSgetData took %lu clock ticks\n",
+                    (ticksEnd - ticksStart));
+                break;
+            }
+            setStampFromUnix = 1;
+            if(clock_settime(CLOCK_REALTIME,&tp)<0) {
+                TSprintf("TSsyncServer clock_settime failed\n");
+            }
+            ulongtemp = TSepochUnixToEpics(&tp);
+            tp.tv_sec = ulongtemp;
+            key=intLock();
+            TSdata.event_table[TSdata.sync_event]=tp;
+            TSdata.event_table[0]=tp;
+            intUnlock(key);
+            break;
+        }
 	stran.master_time.tv_sec=
 	    htonl(TSdata.event_table[TSdata.sync_event].tv_sec);
 	stran.master_time.tv_nsec=
 	    htonl(TSdata.event_table[TSdata.sync_event].tv_nsec);
-	if(sendto(soc,(char*)&stran,sizeof(stran),0,
-	    (struct sockaddr*)&sin,sizeof(sin))<0)
+        mask = TSdata.mask;
+        if(!setStampFromUnix) mask &= ~TS_STAMP_FROM_UNIX;
+        stran.mask = htonl(mask);
+        if(setStampFromUnix)TSdata.mask &= ~TS_STAMP_FROM_UNIX;
+        stran.syncReportThreshold = htonl(TSdata.syncReportThreshold);
+        stran.syncUnixReportThreshold = htonl(TSdata.syncUnixReportThreshold);
+	if(sendto(socBroadcast,(char*)&stran,sizeof(stran),0,
+	    (struct sockaddr*)&sinBroadcast,sizeof(sinBroadcast))<0)
 	{ perror("sendto failed"); }
 	Debug(8,"time send secs  = %lu\n",stran.master_time.tv_sec);
 	Debug(8,"time send nsecs = %lu\n",stran.master_time.tv_nsec);
     }
-    close(soc);
+    close(socBroadcast);
     return;
 }
 
@@ -1285,39 +1272,18 @@ long TSstartAsyncClient()
 */
 static long TSasyncClient()
 {
-    BOOT_PARAMS bootParms;
     TSstampTrans stran;
     TS_NTP buf_ntp;
     struct sockaddr_in sin_unix,sin_bc,sin_master;
     int count,soc_unix,soc_master,soc_bc,buf_size;
     struct timespec ts,diff_time,cts,curr_time;
     unsigned long nsecs;
-    char host_addr[BOOT_ADDR_LEN];
-	int status;
 
-    Debug0(2,"in TSasyncClient()\n");
-
-    /* could open two sockets here, one to contact unix, one to find master */
-
-    /*------socket for unix server----------*/
-    if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL
-    || strlen(host_addr)==0)
-    {
-	/* use boot host if the environment variable not set */
-	bootStringToStruct(sysBootLine,&bootParms);
-	/* bootParms.had = host IP address */
-	strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+    soc_unix = TSgetNtpSocketAddr(&sin_unix);
+    if(soc_unix<0) {
+        printf("TSasyncClient TSgetNtpSocketAddr failed\n");
+        return -1;
     }
-
-    if( (soc_unix=TSgetSocket(0,&sin_unix)) <0)
-    { Debug0(1,"TSgetSocket failed\n"); return -1; }
-
-	status = aToIPAddr (host_addr, UDP_NTP_PORT, &sin_unix);
-	if (status) {
-		Debug0(2,"bad host name or IP address\n");
-		close (soc_unix);
-		return -1;
-	}
 
     /*------socket for finding master----------*/
     if( (soc_bc=TSgetBroadcastSocket(0,&sin_bc)) <0)
@@ -1463,6 +1429,7 @@ static void TSsyncClient()
     struct sockaddr fs;
     int num,mlen,soc,fl;
     struct timespec mast_time;
+    struct timespec mytime;
     fd_set readfds;
     int key;
 
@@ -1479,6 +1446,12 @@ static void TSsyncClient()
     { Debug0(1,"TSgetSocket failed\n"); return; }
     while(1)
     {
+        unsigned long mask;
+        unsigned long syncReportThreshold;
+        unsigned long syncUnixReportThreshold;
+        double        reportThreshold;
+        double        unixReportThreshold;
+
 	FD_ZERO(&readfds);
 	FD_SET(soc,&readfds);
 
@@ -1489,6 +1462,7 @@ static void TSsyncClient()
 	if(num==ERROR) { perror("select failed"); continue; }
 
         fl = sizeof(fs);
+        memset(&stran,0,sizeof(stran));
 	if((mlen=recvfrom(soc,(char*)&stran,sizeof(stran),0,&fs,&fl))<0)
 	{ perror("recvfrom failed"); continue; }
 
@@ -1497,30 +1471,44 @@ static void TSsyncClient()
 	    TSprintf("TSsyncClient: invalid packet received\n");
 	    continue;
 	}
-
-	/* get the master time out of packet */
+        mask = ntohl(stran.mask);
+        syncReportThreshold = ntohl(stran.syncReportThreshold);
+        syncUnixReportThreshold = ntohl(stran.syncUnixReportThreshold);
+        if(TSdata.syncReportThreshold>syncReportThreshold)
+            syncReportThreshold = TSdata.syncReportThreshold;
+        if(TSdata.syncUnixReportThreshold>syncUnixReportThreshold)
+            syncUnixReportThreshold = TSdata.syncUnixReportThreshold;
 	mast_time.tv_sec=ntohl(stran.master_time.tv_sec);
 	mast_time.tv_nsec=ntohl(stran.master_time.tv_nsec);
-
-	Debug0(6,"Received sync request from master\n");
-	if(MAKE_DEBUG>=8)
-	{
-	    printf("time received=%9.9lu.%9.9lu\n",
-		mast_time.tv_sec,mast_time.tv_nsec);
-	}
-
+        reportThreshold = (double)syncReportThreshold/1000.0;
+        unixReportThreshold = (double)syncUnixReportThreshold/1000.0;
+        mytime = TSdata.event_table[TSdata.sync_event];
 	/* verify the sync event with this one */
-	if( TSdata.event_table[TSdata.sync_event].tv_sec!=mast_time.tv_sec
-	|| TSdata.event_table[TSdata.sync_event].tv_nsec!=mast_time.tv_nsec)
+	if(mytime.tv_sec!=mast_time.tv_sec || mytime.tv_nsec!=mast_time.tv_nsec)
 	{
-	    TSprintf("sync Slave not in sync: %lu,%lu != %lu,%lu\n",
-		TSdata.event_table[TSdata.sync_event].tv_sec,
-		TSdata.event_table[TSdata.sync_event].tv_nsec,
-		mast_time.tv_sec, mast_time.tv_nsec);
+            int dir;
+            struct timespec diffFromMaster;
+            double timeDiff;
+
+            dir = TScalcDiff(&mytime, &mast_time,&diffFromMaster);
+            timeDiff = diffFromMaster.tv_sec;
+            timeDiff += diffFromMaster.tv_nsec/(double)TS_BILLION;
+            if(dir<0) timeDiff = -timeDiff;
 	    key=intLock();
 	    TSdata.event_table[TSdata.sync_event].tv_sec=mast_time.tv_sec;
 	    TSdata.event_table[TSdata.sync_event].tv_nsec=mast_time.tv_nsec;
 	    intUnlock(key);
+            if(mask&TS_STAMP_FROM_UNIX) {
+                if(fabs(timeDiff) >= unixReportThreshold) {
+                   TSprintf("TSasynClient: Time checked with NTP via master, "
+                             "adjusted by %f seconds.\n",timeDiff);
+                }
+            } else {
+                if(fabs(timeDiff) >= reportThreshold) {
+                   TSprintf("TSasynClient: Time checked with master, "
+                            "adjusted by %f seconds\n",timeDiff);
+                }
+            }
 	}
     }
     close(soc);
@@ -1605,12 +1593,16 @@ long TScurrentTimeStamp(struct timespec* sp)
 }
 
 /* get the current time from time stamp support software */
+/* can be called from interrupt level !!*/
 long TSaccurateTimeStamp(struct timespec* sp)
 {
     struct timespec ts;
     unsigned long ticks;
 
-    if(!TSinitialized) TSinit();
+    if(!TSinitialized) {
+        logMsg("TSaccurateTimeStamp called but !TSinitialized\n",0,0,0,0,0,0);
+        return -1;
+    }
     if(TSdata.has_direct_time==1)
     {
 	TSgetTime(sp);
@@ -1619,7 +1611,6 @@ long TSaccurateTimeStamp(struct timespec* sp)
 
     TSgetTicks(0,&ticks); /* add in the board time */
     *sp = TSdata.event_table[TSdata.sync_event];
-
     /* calculate a time stamp from the tick count */
     ts.tv_sec = ticks / TSdata.clock_hz;
     ts.tv_nsec=(ticks-(ts.tv_sec*TSdata.clock_hz))*TSdata.clock_conv;
@@ -1703,9 +1694,83 @@ static long TScalcDiff(struct timespec* a,
     return dir;
 }
 
-/**************************************************************************/
-/* more routines for managing sockets */
-/**************************************************************************/
+/* network utilities*/
+/*	
+    TSgetBroadcastAddr() - Determine the broadcast address, this is 
+    directly from the Sun Network Programmer's guide.
+*/
+static long TSgetBroadcastAddr(int soc, struct sockaddr* sin)
+{
+    struct ifconf ifc;
+    struct ifreq* ifr;
+    struct ifreq* save;
+    char buf[BUFSIZ];
+    int tot,i;
+
+    ifc.ifc_len = sizeof(buf);
+    ifc.ifc_buf = buf;
+    if(ioctl(soc,SIOCGIFCONF,(int)&ifc) < 0)
+    { perror("ioctl SIOCGIFCONF failed"); return -1; }
+
+    ifr = ifc.ifc_req;
+    tot = ifc.ifc_len/sizeof(struct ifreq);
+    save=(struct ifreq*)NULL;
+    i=0;
+    do
+    {
+	if(ifr->ifr_addr.sa_family==AF_INET)
+	{
+	    if(ioctl(soc,SIOCGIFFLAGS,(int)ifr)<0)
+	    { perror("ioctl SIOCGIFFLAGS failed"); return -1; }
+
+	    if( (ifr->ifr_flags&IFF_UP) && 
+		!(ifr->ifr_flags&IFF_LOOPBACK) &&
+		(ifr->ifr_flags&IFF_BROADCAST))
+	    { save=ifr; }
+	}
+        /*ifreq_size is defined in osiSock.h*/
+        ifr = (struct ifreq*)((char *)ifr + ifreq_size(ifr));
+    } while( !save && ++i<tot );
+
+    if(save)
+    {
+	if(ioctl(soc,SIOCGIFBRDADDR,(int)save)<0)
+	{ perror("ioctl SIOCGIFBRDADDR failed"); return -1; }
+	memcpy((char*)sin,(char*)&save->ifr_broadaddr,
+				sizeof(save->ifr_broadaddr));
+    }
+    else
+    { Debug0(1,"no broadcast address found\n"); return -1; }
+    return 0;
+}
+
+static int TSgetNtpSocketAddr(struct sockaddr_in *sin)
+{
+    char host_addr[BOOT_ADDR_LEN];
+    BOOT_PARAMS bootParms;
+    int status;
+    int soc;
+
+    if(envGetConfigParam(&EPICS_TS_NTP_INET,BOOT_ADDR_LEN,host_addr)==NULL 
+    || strlen(host_addr)==0) {
+	/* use boot host if the environment variable not set */
+	bootStringToStruct(sysBootLine,&bootParms);
+	/* bootParms.had = host IP address */
+	strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+    }
+    if( (soc=TSgetSocket(0,sin)) <0) {
+        TSprintf("TSgetNtpSocketAddrn TSgetsocket failed\n");
+        return -1;
+    }
+    /* well known registered NTP port - or whatever port they specify */
+    status = aToIPAddr (host_addr, UDP_NTP_PORT, sin);
+    if (status) {
+        TSprintf("TSgetNtpSocketAddr aToIPAddr failed\n");
+        close(soc);
+        return -1;
+    }
+    return soc;
+}
 
 /* get a UDP socket for a port, return a sockaddr for it.  */
 static int TSgetSocket(int port, struct sockaddr_in* sin)
@@ -1724,6 +1789,30 @@ static int TSgetSocket(int port, struct sockaddr_in* sin)
     return soc;
 }
 
+/*	
+	TSgetBroadcastSocket() - return a broadcast socket for a port, return
+	a sockaddr also.
+*/
+static int TSgetBroadcastSocket(int port, struct sockaddr_in* sin)
+{
+    int on=1;
+    int soc;
+
+    sin->sin_port=htons(port);
+    sin->sin_family=AF_INET;
+    sin->sin_addr.s_addr=htonl(INADDR_ANY);
+    if( (soc=socket(AF_INET,SOCK_DGRAM,0)) < 0 )
+    { perror("socket create failed"); return -1; }
+
+    setsockopt(soc,SOL_SOCKET,SO_BROADCAST,(char*)&on,sizeof(on));
+
+    if( bind(soc,(struct sockaddr*)sin,sizeof(struct sockaddr_in)) < 0 )
+    { perror("socket bind failed"); close(soc); return -1; }
+
+    if( TSgetBroadcastAddr(soc,(struct sockaddr*)sin) < 0 ) return -1;
+    return soc;
+}
+
 /*    attempt to get data from a socket after sending a request to it.
       0ptionally return round trip time and the sockaddr of the responsedent.
 */
@@ -1813,6 +1902,7 @@ void TSprintRealTime()
 {
     struct timespec tp;
 
+    if(!TSinitialized) TSinit();
     TSgetTime(&tp);
     printf("real time clock = %lu,%lu\n",tp.tv_sec,tp.tv_nsec);
     printf("EPICS clock = %lu,%lu\n",
@@ -1826,6 +1916,7 @@ void TSprintTimeStamp(int num)
 {
     struct timespec tp;
 
+    if(!TSinitialized) TSinit();
     TSgetTimeStamp(num,&tp);
     printf("event %d occurred: %lu.%lu\n",num,tp.tv_sec,tp.tv_nsec);
     return;
@@ -1836,6 +1927,7 @@ void TSprintCurrentTime()
 {
     struct timespec tp;
 
+    if(!TSinitialized) TSinit();
     TScurrentTimeStamp(&tp);
     printf("Current Event System time: %lu.%lu\n",tp.tv_sec,tp.tv_nsec);
     TSaccurateTimeStamp(&tp);
@@ -1848,6 +1940,7 @@ void TSprintUnixTime()
 {
     struct timespec ts;
 
+    if(!TSinitialized) TSinit();
     if(TSgetUnixTime(&ts)!=0)
     {
 	printf("Could not get Unix time\n");
@@ -1862,6 +1955,7 @@ void TSprintMasterTime()
 {
     struct timespec ts;
 
+    if(!TSinitialized) TSinit();
     if(TSgetMasterTime(&ts)!=0)
     {
 	printf("Could not get Unix time\n");

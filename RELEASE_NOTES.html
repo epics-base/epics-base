@@ -3,54 +3,98 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base Release 3.13.10</title>
+  <title>EPICS Base Release 3.13.11</title>
 </head>
 
 <body lang="en">
-<h1>EPICS Release 3.13.10</h1>
+<h1>EPICS Release 3.13.11</h1>
+
+<h3>drvTS</h3>
+
+<p>The code for synchronizing a time master with NTP has been greatly
+revised. It should now synchronize to NTP within about .01 seconds.. In
+addition the out of sync error messages from the clients can be suppressed.
+The following new vxWorks shell command is available:</p>
+<pre>    TSsetSyncReportThreshold(syncMilliseconds,syncUnixMilliseconds)</pre>
+where
+<ul>
+  <li>syncMilliseconds
+    <p>error reporting threshold in milliseconds for normal UDP broadcast
+    synchronization messages from master to clients. The default is 0, i.e.
+    report all out of sync events.</p>
+  </li>
+  <li>syncUnixMilliseconds
+    <p>Error reporting threshols in milliseconds for synchronization message
+    after a TSsetClockFromUnix command has been given to the master. The
+    default is 10 millliseconds.</p>
+  </li>
+</ul>
+<p>This command can be issued on the master and on clients. The value the
+client uses is the maximum of the master and client values. For example
+if syncUnixMilliseconds is 0 on the master and 10 on the client than the
+syncUnixMilliseconds is 10 milliseconds.</p>
+<p>If a client is not changed it will also resync closer to NTP but out
+of sync message can not be suppressed.</p>
+
+<h2>Changes since 3.13.10</h2>
+
+<h3>dbAccess DBR_ENUM_STRS for field DTYP</h3>
+
+<p>Data Base Request Option DBR_ENUM_STRS for the DTYP field of soft records
+does not report failure. It may cause a task to crash on some board suppot
+packages.</p>
+
 <h2>Changes since 3.13.9</h2>
 
 <h3>GPL Violation fixed</h3>
-<p>The GNU version of getopt.c that was being included in the Win32 version of
-libCom was replaced with a BSD version.</p>
+
+<p>The GNU version of getopt.c that was being included in the Win32 version
+of libCom was replaced with a BSD version.</p>
 
 <h3>db_access - conversion of double to float</h3>
+
 <p>When a CA user asked for display or control limits as a float a 0 value
 was returned as -1.17549435E-38. This is now fixed.</p>
 
 <h3>seq_ca</h3>
+
 <p>The sequencer did not properly keep track of number of channels connected.
-It now checks if it is actually connected/disconnect before it increments/decrements the counts.</p>
+It now checks if it is actually connected/disconnect before it
+increments/decrements the counts.</p>
 
 <h3>Device Support code</h3>
-<p>Several device support files have been removed that were not being built by
-default, some of which would not compile anyway.  These are:</p>
+
+<p>Several device support files have been removed that were not being built
+by default, some of which would not compile anyway.  These are:</p>
 <ul>
-<li>The DG535 GPIB support is in the APS/ASD share and has also been converted
-to 3.14</li>
-<li>devVmic2534.c and drvVmic2534.c</li>
-<li>devXxBugRac.c</li>
-<li>devXxDig500Msg232.c</li>
-<li>devXxHvpsGpib.c</li>
-<li>devXxSoftMsg.c</li>
-<li>drvBitBus was unbundled many releases ago, but some header files are
-still required to compile drvGpib which have been cleaned up.</li>
-<li>drvXy010.c</li>
+  <li>The DG535 GPIB support is in the APS/ASD share and has also been
+    converted to 3.14</li>
+  <li>devVmic2534.c and drvVmic2534.c</li>
+  <li>devXxBugRac.c</li>
+  <li>devXxDig500Msg232.c</li>
+  <li>devXxHvpsGpib.c</li>
+  <li>devXxSoftMsg.c</li>
+  <li>drvBitBus was unbundled many releases ago, but some header files are
+    still required to compile drvGpib which have been cleaned up.</li>
+  <li>drvXy010.c</li>
 </ul>
 
 <h3>Access Security</h3>
-<p>The access security configuration rules now accept quoted strings
-where just names were allowed previously.</p>
-<p>A new shell command "ascar(int level)" is now available.
-It produces a report of the INP channel access connections.
-Level (0,1,2) produces (a summary report, summary plus unconnected channels,
-summary plus report of all channels)</p>
+
+<p>The access security configuration rules now accept quoted strings where
+just names were allowed previously.</p>
+
+<p>A new shell command "ascar(int level)" is now available. It produces a
+report of the INP channel access connections. Level (0,1,2) produces (a
+summary report, summary plus unconnected channels, summary plus report of all
+channels)</p>
 
 <h3>mbboRecord and mbbiRecord</h3>
-<p>The fields ZRST,...,FFST are now special(SPC_MOD).
-init_record now checks to see if state strings or values are defined
-during pass 0. Previously if another record had a DBR_STRING link to
-an mbboRecord it thought the field was a USHORT instead of an ENUM.</p>
+
+<p>The fields ZRST,...,FFST are now special(SPC_MOD). init_record now checks
+to see if state strings or values are defined during pass 0. Previously if
+another record had a DBR_STRING link to an mbboRecord it thought the field
+was a USHORT instead of an ENUM.</p>
 
 <h3>Channel Access</h3>
 <ul>

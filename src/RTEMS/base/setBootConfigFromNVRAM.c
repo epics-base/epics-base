@@ -224,6 +224,7 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_bootp_server_name = env("SERVER", "192.168.0.1");
     rtems_bsdnet_config.name_server[0] = env("NAMESERVER", rtems_bsdnet_bootp_server_name);
     rtems_bsdnet_config.ntp_server[0] = env("NTPSERVER", rtems_bsdnet_bootp_server_name);
+    epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
     if (rtems_bsdnet_config.domainname == NULL)
         rtems_bsdnet_config.domainname = env("DOMAIN", "local");
     rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");

@@ -375,11 +375,11 @@ static void heapSpaceCallFunc(const iocshArgBuf *args)
 
     if (n >= 1024*1000) {
         double x = (double)n / (1024 * 1024);
-        printf("Heap free space %.1f MB\n", x);
+        printf("Heap space: %.1f MB\n", x);
     }
     else {
         double x = (double)n / 1024;
-        printf("Heap free space %.1f kB\n", x);
+        printf("Heap space: %.1f kB\n", x);
     }
 }
 

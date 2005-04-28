@@ -22,6 +22,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <rtems.h>
+#include <rtems/libcsupport.h>
 #include <rtems/error.h>
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
@@ -367,6 +368,21 @@ static void stackCheckCallFunc(const iocshArgBuf *args)
     Stack_check_Dump_usage ();
 }
 
+static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
+static void heapSpaceCallFunc(const iocshArgBuf *args)
+{
+    unsigned long n = malloc_free_space();
+
+    if (n >= 1024*1000) {
+        double x = (double)n / (1024 * 1024);
+        printf("Heap free space %.1f MB\n", x);
+    }
+    else {
+        double x = (double)n / 1024;
+        printf("Heap free space %.1f kB\n", x);
+    }
+}
+
 #ifndef OMIT_NFS_SUPPORT
 static const iocshArg nfsMountArg0 = { "[uid.gid@]host",iocshArgString};
 static const iocshArg nfsMountArg1 = { "server path",iocshArgString};
@@ -387,6 +403,7 @@ static void iocshRegisterRTEMS (void)
 {
     iocshRegister(&netStatFuncDef, netStatCallFunc);
     iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
+    iocshRegister(&heapSpaceFuncDef, heapSpaceCallFunc);
 #ifndef OMIT_NFS_SUPPORT
     iocshRegister(&nfsMountFuncDef, nfsMountCallFunc);
 #endif

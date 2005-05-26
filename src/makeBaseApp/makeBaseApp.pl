@@ -201,7 +201,7 @@ sub get_commandline_opts { #no args
     # ioc architecture
     if ($opt_i) {
 	opendir BINDIR, "$epics_base/bin" or die "Can't open $epics_base/bin: $!";
-	my @archs = grep !/^\.\.?$/, readdir BINDIR;	# exclude . and ..
+	my @archs = grep !/^\./, readdir BINDIR;	# exclude .files
 	closedir BINDIR;
 	if ($opt_a) {
 	    $arch = $opt_a;

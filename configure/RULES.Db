@@ -138,7 +138,7 @@ clean::
 
 TEMPLATE_LINKS	= $(filter-out $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
 TEMPLATE_FILES	= $(filter     $(notdir $(USES_TEMPLATE)), $(USES_TEMPLATE))
-COMMON_TEMPLATES=$(addsuffix $(COMMON_DIR)/,$(notdir $(TEMPLATE_LINKS)))
+COMMON_TEMPLATES=$(addprefix $(COMMON_DIR)/,$(notdir $(TEMPLATE_LINKS)))
 
 ifneq '$(TEMPLATE_LINKS)' ''
 build: $(notdir $(TEMPLATE_LINKS))

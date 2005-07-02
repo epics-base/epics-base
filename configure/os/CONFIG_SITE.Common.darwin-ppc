@@ -10,4 +10,3 @@
 # Other local options
 #
 OP_SYS_CFLAGS += -g
-#COMMANDLINE_LIBRARY = READLINE

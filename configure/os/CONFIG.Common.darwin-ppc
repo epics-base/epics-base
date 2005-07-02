@@ -42,17 +42,9 @@ OP_SYS_LDFLAGS += -L/sw/lib
 #
 # Libraries for command-line editing.
 #
-LDLIBS_LIBTECLA = -ltecla_r -lncurses
 LDLIBS_READLINE = -lreadline
 
 #
 # Command-line input support
 #
-# Install the DarwinPorts or Fink libtecla1 package and place the following
-# line in CONFIG_SITE.darwin-ppc.Common to use libtecla command-line editing:
-#COMMANDLINE_LIBRARY=LIBTECLA
-# or install the DarwinPorts or Fink readline package and place the following
-# line in CONFIG_SITE.darwin-ppc.Common to use GNU readline
-# command-line editing:
-#COMMANDLINE_LIBRARY=READLINE
-
+COMMANDLINE_LIBRARY=READLINE

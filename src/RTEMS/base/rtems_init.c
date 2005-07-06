@@ -491,9 +491,12 @@ Init (rtems_task_argument ignored)
         char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+15, "iocsh prompt");
         sprintf(cp, "IOCSH_PS1=%s> ", rtems_bsdnet_config.hostname);
         putenv (cp);
+        sprintf(cp, "IOC_NAME=%s", rtems_bsdnet_config.hostname);
+        putenv (cp);
     }
     else {
         putenv ("IOCSH_PS1=epics> ");
+        putenv ("IOC_NAME=:UnnamedIoc:");
     }
 
     /*

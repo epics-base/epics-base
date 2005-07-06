@@ -46,6 +46,7 @@ TEMPLATES += top/exampleApp/src/_APPNAME_Hello.dbd
 
 TEMPLATES += top/exampleBoot/Makefile
 TEMPLATES += top/exampleBoot/nfsCommands@vxWorks
+TEMPLATES += top/exampleBoot/nfsCommands@RTEMS
 TEMPLATES += top/exampleBoot/ioc/Makefile@Common
 TEMPLATES += top/exampleBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/exampleBoot/ioc/st.cmd@Common
@@ -74,6 +75,7 @@ TEMPLATES += top/caServerApp/vxEntry.cc
 
 TEMPLATES += top/iocBoot/Makefile
 TEMPLATES += top/iocBoot/nfsCommands@vxWorks
+TEMPLATES += top/iocBoot/nfsCommands@RTEMS
 TEMPLATES += top/iocBoot/ioc/Makefile@Common
 TEMPLATES += top/iocBoot/ioc/Makefile@vxWorks
 TEMPLATES += top/iocBoot/ioc/st.cmd@Common

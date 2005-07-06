@@ -189,4 +189,4 @@ int MAIN(int /*argc*/, char* /*argv[]*/) {
     
     cout << tests << " tests completed, " << nak << " failed." << endl;
     return 0;
-};
+}

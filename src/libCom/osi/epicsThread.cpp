@@ -29,7 +29,7 @@
 
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
-void epicsThreadRunable::show ( unsigned int ) const {};
+void epicsThreadRunable::show ( unsigned int ) const {}
 
 // vxWorks 5.4 gcc fails during compile when I use std::exception
 using namespace std;

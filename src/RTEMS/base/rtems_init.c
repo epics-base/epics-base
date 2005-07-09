@@ -547,6 +547,7 @@ Init (rtems_task_argument ignored)
     printf ("***** Starting EPICS application *****\n");
     iocshRegisterRTEMS ();
     set_directory (argv[1]);
+    epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     exit (i);

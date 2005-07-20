@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <errno.h>
 #include <sys/termios.h>
 #include <sys/types.h>
@@ -30,6 +31,8 @@
 #include <bsp.h>
 
 #include <epicsThread.h>
+#include <epicsTime.h>
+#include <envDefs.h>
 #include <errlog.h>
 #include <logClient.h>
 #include <osiUnistd.h>
@@ -201,38 +204,39 @@ initialize_local_filesystem(const char **argv)
         printf ("***** Unpack in-memory file system (IMFS) *****\n");
         if (rtems_tarfs_load("/", header, (unsigned long)_FlashSize - flashIndex) != 0) {
             printf("Can't unpack tar filesystem\n");
-            return -1;
+            return 0;
         }
         if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
             close(fd);
             printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
             argv[1] = rtems_bsdnet_bootp_cmdline;
-            return 0;
+            return 1;
         }
         printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
     }
 #endif
-    return -1;
+    return 0;
 }
 
 static void
-initialize_remote_filesystem(const char **argv)
+initialize_remote_filesystem(const char **argv, int hasLocalFilesystem)
 {
 #ifdef OMIT_NFS_SUPPORT
-    char *path;
-    int pathsize = 200;
-    int l;
-
     printf ("***** Initializing TFTP *****\n");
     rtems_bsdnet_initialize_tftp_filesystem ();
+    if (!hasLocalFilesystem) {
+        char *path;
+        int pathsize = 200;
+        int l;
 
-    path = mustMalloc(pathsize, "Command path name ");
-    strcpy (path, "/TFTP/BOOTP_HOST/epics/");
-    l = strlen (path);
-    if (gethostname (&path[l], pathsize - l - 10) || (path[l] == '\0'))
-        LogFatal ("Can't get host name");
-    strcat (path, "/st.cmd");
-    argv[1] = path;
+        path = mustMalloc(pathsize, "Command path name ");
+        strcpy (path, "/TFTP/BOOTP_HOST/epics/");
+        l = strlen (path);
+        if (gethostname (&path[l], pathsize - l - 10) || (path[l] == '\0'))
+            LogFatal ("Can't get host name");
+        strcat (path, "/st.cmd");
+        argv[1] = path;
+    }
 #else
     extern char *env_nfsServer;
     extern char *env_nfsPath;
@@ -260,6 +264,9 @@ initialize_remote_filesystem(const char **argv)
             *cp = '/';
         }
         argv[1] = rtems_bsdnet_bootp_cmdline;
+    }
+    else if (hasLocalFilesystem) {
+        return;
     }
     else {
         /*
@@ -488,15 +495,14 @@ Init (rtems_task_argument ignored)
     putenv ("TERM=xterm");
     putenv ("IOCSH_HISTSIZE=20");
     if (rtems_bsdnet_config.hostname) {
-        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+15, "iocsh prompt");
-        sprintf(cp, "IOCSH_PS1=%s> ", rtems_bsdnet_config.hostname);
-        putenv (cp);
-        sprintf(cp, "IOC_NAME=%s", rtems_bsdnet_config.hostname);
-        putenv (cp);
+        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+3, "iocsh prompt");
+        sprintf(cp, "%s> ", rtems_bsdnet_config.hostname);
+        epicsEnvSet ("IOCSH_PS1", cp);
+        epicsEnvSet("IOC_NAME", rtems_bsdnet_config.hostname);
     }
     else {
-        putenv ("IOCSH_PS1=epics> ");
-        putenv ("IOC_NAME=:UnnamedIoc:");
+        epicsEnvSet ("IOCSH_PS1", "epics> ");
+        epicsEnvSet ("IOC_NAME", ":UnnamedIoc:");
     }
 
     /*
@@ -508,10 +514,9 @@ Init (rtems_task_argument ignored)
                                             == epicsThreadBooleanStatusSuccess)
             rtems_bsdnet_config.network_task_priority = epicsThreadGetOssPriorityValue(p);
     }
-    printf ("\n***** Initializing network *****\n");
-    rtems_bsdnet_initialize_network ();
-    if (initialize_local_filesystem (argv) != 0)
-        initialize_remote_filesystem (argv);
+    printf("\n***** Initializing network *****\n");
+    rtems_bsdnet_initialize_network();
+    initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
 
     /*
      * Use BSP-supplied time of day if available
@@ -540,6 +545,28 @@ Init (rtems_task_argument ignored)
             }
         }
     }
+    if (getenv("TZ") == NULL) {
+        const char *tzp = envGetConfigParamPtr(&EPICS_TIMEZONE);
+        if (tzp == NULL) {
+            printf("Warning -- no timezone information available -- times will be displayed as GMT.\n");
+        }
+        else {
+            char tz[10];
+            int minWest, toDst = 0, fromDst = 0;
+            if(sscanf(tzp, "%9[^:]::%d:%d:%d", tz, &minWest, &toDst, &fromDst) < 2) {
+                printf("Warning: EPICS_TIMEZONE (%s) unrecognizable -- times will be displayed as GMT.\n", tzp);
+            }
+            else {
+                char posixTzBuf[40];
+                char *p = posixTzBuf;
+                p += sprintf(p, "%cST %d:%d", tz[0], minWest/60, minWest%60);
+                if (toDst != fromDst)
+                    p += sprintf(p, " %cDT", tz[0]);
+                epicsEnvSet("TZ", posixTzBuf);
+            }
+        }
+    }
+    tzset();
 
     /*
      * Run the EPICS startup script

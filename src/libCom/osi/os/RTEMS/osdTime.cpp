@@ -21,7 +21,6 @@
  * RTEMS
  */
 #include <rtems.h>
-#include <rtems/rtems_bsdnet.h>
 
 /*
  * EPICS
@@ -88,7 +87,7 @@ int epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
 
 void clockInit(void)
 {
-	timeoffset = EPICS_EPOCH_SEC_PAST_RTEMS_EPOCH - rtems_bsdnet_timeoffset;
+	timeoffset = EPICS_EPOCH_SEC_PAST_RTEMS_EPOCH;
 	rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
 	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
 }

@@ -9,6 +9,7 @@
 #include <epicsStdlib.h>
 #include <epicsStdio.h>
 #include <epicsString.h>
+#include <envDefs.h>
 
 char *env_nfsServer;
 char *env_nfsPath;
@@ -248,6 +249,8 @@ setBootConfigFromNVRAM(void)
             }
         }
     }
+    if ((cp1 = env("TZ", NULL)) != NULL)
+        epicsEnvSet("TZ", cp1);
 }
 
 #else

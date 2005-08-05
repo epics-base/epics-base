@@ -510,7 +510,7 @@ public:
     void destroyRequest ();
     
 private:
-    casPVI * pPVI;
+    class casPVI * pPVI;
     casPV & operator = ( const casPV & );
 
     friend class casStrmClient;

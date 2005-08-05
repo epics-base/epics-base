@@ -37,7 +37,7 @@ public:
 	ioBlocked ();
 	virtual ~ioBlocked ();
 private:
-	ioBlockedList * pList;
+	class ioBlockedList * pList;
 	virtual void ioBlockedSignal ();
 };
 

@@ -553,28 +553,36 @@ int catime ( const char * channelName,
     timeIt (test_pend, NULL, 100, 0);
 
     for ( i = 0; i < channelCount; i++ ) {
-        pItemList[i].val.fltval = 0.0f;
+        double val = i;
+        val /= channelCount;
+        pItemList[i].val.fltval = (dbr_float_t) val;
         pItemList[i].type = DBR_FLOAT; 
     }
     printf ( "float test\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
-        pItemList[i].val.doubleval = 0.0;
+        double val = i;
+        val /= channelCount;
+        pItemList[i].val.doubleval =  (dbr_double_t) val;
         pItemList[i].type = DBR_DOUBLE; 
     }
     printf ( "double test\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
-        strcpy ( pItemList[i].val.strval, "0.0" );
+        double val = i;
+        val /= channelCount;
+        sprintf ( pItemList[i].val.strval, "%f", val );
         pItemList[i].type = DBR_STRING; 
     }
     printf ( "string test\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
-        pItemList[i].val.intval = 0;
+        double val = i;
+        val /= channelCount;
+        pItemList[i].val.intval = (dbr_int_t) val;
         pItemList[i].type = DBR_INT; 
     }
     printf ( "integer test\n" );

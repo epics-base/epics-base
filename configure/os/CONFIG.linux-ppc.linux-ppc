@@ -1,0 +1,20 @@
+#  CONFIG.linux-ppc.linux-ppc
+#
+#
+# Definitions for linux-ppc host - linux-ppc target builds
+# Sites may override these definitions in CONFIG_SITE.linux-ppc.linux-ppc
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+CC = $(GNU_BIN)/gcc
+CCC = $(GNU_BIN)/g++
+
+SHRLIB_LDFLAGS = -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+
+GNU_LDLIBS_YES = -lgcc
+

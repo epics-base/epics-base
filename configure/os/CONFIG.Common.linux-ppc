@@ -1,0 +1,18 @@
+# CONFIG.Common.linux-ppc
+#
+# This file is maintained by the build community.
+#
+# Definitions for linux-ppc target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-ppc
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+#
+# Set OS-specific information
+#
+ARCH_CLASS = ppc
+
+ARCH_DEP_CPPFLAGS += -D_ppc_
+

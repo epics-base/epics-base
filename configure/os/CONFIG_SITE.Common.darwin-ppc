@@ -9,4 +9,6 @@
 #
 # Other local options
 #
-OP_SYS_CFLAGS += -g
+OPT_CFLAGS_YES += -g
+OPT_CXXFLAGS_YES += -g
+COMMANDLINE_LIBRARY = READLINE

@@ -149,11 +149,16 @@ long epicsShareAPI dbl(
 	    for(ifield=0; ifield<nfields; ifield++) {
 		char *pvalue;
 		status = dbFindField(pdbentry,papfields[ifield]);
-		if(status) continue;
-		pvalue = dbGetString(pdbentry);
-		if(pvalue) {
-		    fprintf(stdout,",\"%s\"",pvalue);
-		}
+		if(status) {
+                    if(strcmp(papfields[ifield],"recordType")==0) {
+                        pvalue = dbGetRecordTypeName(pdbentry);
+                    } else {
+                        continue;
+                    }
+                } else {
+		    pvalue = dbGetString(pdbentry);
+                }
+                fprintf(stdout,",\"%s\"",pvalue?pvalue:"");
 	    }
 	    fprintf(stdout,"\n");
             status = dbNextRecord(pdbentry);

@@ -418,7 +418,8 @@ void epicsShareAPI scanIoRequest(IOSCANPVT pioscanpvt)
     if(!interruptAccept) return;
     for(priority=0, piosl=pioscanpvt;
     priority<NUM_CALLBACK_PRIORITIES; priority++, piosl++){
-	if(ellCount(&piosl->scan_list.list)>0) callbackRequest((void *)piosl);
+	if(ellCount(&piosl->scan_list.list)>0)
+            callbackRequest(&piosl->callback);
     }
 }
 
@@ -444,6 +445,7 @@ static void onceTask(void)
 {
     void *precord=NULL;
 
+    taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
     while(TRUE) {
 	if(epicsEventWait(onceSem)!=epicsEventWaitOK)
 	    errlogPrintf("dbScan: epicsEventWait returned error in onceTask");
@@ -471,7 +473,6 @@ static void initOnce(void)
     onceTaskId = epicsThreadCreate("scanOnce",epicsThreadPriorityScanHigh,
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC)onceTask,0);
-    taskwdInsert(onceTaskId,NULL,0L);
 }
 
 static void periodicTask(void *arg)
@@ -482,6 +483,7 @@ static void periodicTask(void *arg)
     double	diff;
     double	delay;
 
+    taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
     epicsTimeGetCurrent(&start_time);
     while(TRUE) {
 	if(interruptAccept)scanList(psl);
@@ -533,7 +535,6 @@ static void spawnPeriodic(int ind)
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC)periodicTask,
         (void *)psl);
-    taskwdInsert(periodicTaskId[ind],NULL,0L);
 }
 
 static void ioeventCallback(CALLBACK *pcallback)
@@ -555,7 +556,7 @@ static void printList(scan_list *psl,char *message)
     if(pse==NULL) return;
     printf("%s\n",message);
     while(pse!=NULL) {
-	printf("    %-28s\n",pse->precord->name);
+        printf("    %-28s\n",pse->precord->name);
 	epicsMutexMustLock(psl->lock);
 	if(pse->pscan_list != psl) {
 	    epicsMutexUnlock(psl->lock);
@@ -635,7 +636,7 @@ static void buildScanLists(void)
 	    pdbRecordNode;
 	    pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
 		precord = pdbRecordNode->precord;
-		if(precord->name[0]==0) continue;
+                if(precord->name[0]==0) continue;
 		scanAdd(precord);
 	    }
 	}

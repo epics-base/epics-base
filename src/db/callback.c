@@ -114,6 +114,8 @@ static void callbackTask(int *ppriority)
     int priority = *ppriority;
     CALLBACK *pcallback;
 
+    taskwdInsert(epicsThreadGetIdSelf(),
+        wdCallback,(void *)&priorityValue[*ppriority]);
     ringOverflow[priority] = FALSE;
     while(TRUE) {
 	/* wait for somebody to wake us up */
@@ -151,7 +153,6 @@ static void start(int ind)
 	errMessage(0,"Failed to spawn a callback task");
 	return;
     }
-    taskwdInsert(callbackTaskId[ind],wdCallback,(void *)&priorityValue[ind]);
 }
 
 

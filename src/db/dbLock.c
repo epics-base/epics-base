@@ -159,7 +159,7 @@ unsigned long epicsShareAPI dbLockGetLockId(dbCommon *precord)
     assert(plockRecord);
     epicsMutexMustLock(lockSetModifyLock);
     plockSet = plockRecord->plockSet;
-    if(!plockSet) id = plockSet->id;
+    if(plockSet) id = plockSet->id;
     epicsMutexUnlock(lockSetModifyLock);
     return(id);
 }

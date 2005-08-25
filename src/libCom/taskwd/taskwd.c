@@ -85,6 +85,10 @@ void epicsShareAPI taskwdInsert(epicsThreadId tid,TASKWDFUNCPRR callback,void *a
     struct task_list *pt;
 
     taskwdInit();
+    if(tid==0) {
+       errlogPrintf("taskwdInsert called with null tid\n");
+       return;
+    }
     epicsMutexMustLock(lock);
     pt = allocList();
     ellAdd(&list,(void *)pt);

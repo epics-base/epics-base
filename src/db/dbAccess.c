@@ -525,7 +525,6 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 	struct rset	*prset = precord->rset;
 	dbRecordType	*pdbRecordType = precord->rdes;
 	unsigned char	tpro=precord->tpro;
-	unsigned long	lset;
 	long		status = 0;
         int             *ptrace;
 	int		set_trace=FALSE;
@@ -533,7 +532,6 @@ long epicsShareAPI dbProcess(dbCommon *precord)
         int             callNotifyCompletion = FALSE;
 
         ptrace = dbLockSetAddrTrace(precord);
-	lset = dbLockGetLockId(precord);
         /*
          *  Note that it is likely that if any changes are made
          *   to dbProcess() corresponding changes will have to

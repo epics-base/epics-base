@@ -240,11 +240,9 @@ SRCS_vxWorks += iocClock.c
 SRCS_vxWorks += atReboot.cpp
 #For old vxWorks applications
 INC_vxWorks += camacLib.h
-INC_vxWorks += drvTS.h
 INC_vxWorks += epicsDynLink.h
 INC_vxWorks += module_types.h
 INC_vxWorks += task_params.h
-SRCS_vxWorks += drvTS.c
 SRCS_vxWorks += epicsDynLink.c
 SRCS_vxWorks += veclist.c
 SRCS_vxWorks += logMsgToErrlog.cpp

@@ -18,7 +18,6 @@
  */
 
 extern void iocClockInit(void);
-#include "drvTS.h"
 #include "epicsDynLink.h"
 extern int logMsgToErrlog(void);
 extern int veclist(int);
@@ -28,7 +27,6 @@ void vxComLibrary(int callit)
     
 
     if(callit) iocClockInit();
-    if(callit) TSinit();
     if(callit) symFindByNameEPICS(0,0,0,0);
     if(callit) logMsgToErrlog();
     if(callit) veclist(0);

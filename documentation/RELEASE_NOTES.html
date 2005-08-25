@@ -12,6 +12,26 @@
 
 <h2 align="center">Changes since 3.14.7</h2>
 
+<h4>drvTS</h4>
+
+This is removed from EPICS base. The version that previously came with base
+was the version that worked with the APS event system. It is available from
+APS. The version that works with the newer event systems that evolved from
+the APS system is available from the Swiss Light Source.</p>
+
+<h4>task watchdog</h4>
+<p>It was possible for taskwd (task watchdog) to not detect when some
+of the standard tasks failed. This is because they were passing
+their threadid rather than using epicsThreadGetIdSelf.
+It was possible to call taskwdInsert before the threadid was actually set.</p>
+
+
+<h4>dbLock and dbBkpt</h4>
+<p>dbLockGetLockId incorrectly always returned 0. dbBkpt (database breakpoint
+facility) is the only code that needed this. This caused unknown errors
+if the dbBkpt facility is used.</p>
+<h4>gpHashLib.c</h4>
+<p>The maximum size was initialized to 65636 instead of 65536.</p>
 
 <h4>epicsExport.h</h4>
 <p>Add additional cast to prevent 'strict aliaising' warnings.</p>

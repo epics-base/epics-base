@@ -365,12 +365,9 @@ long epicsShareAPI dbtr(const char *pname)
         printf("record active\n");
         return(1);
     }
-    if(epicsMutexTryLock(precord->mlok)!=epicsMutexLockOK) {
-        printf("record locked\n");
-        return(1);
-    }
+    dbScanLock(precord);
     status=dbProcess(precord);
-    epicsMutexUnlock(precord->mlok);
+    dbScanUnlock(precord);
     if(status)
         recGblRecordError(status,precord,"dbtr(dbProcess)");
     dbpr(pname,3);

@@ -66,6 +66,13 @@ instead generate an error message instead.  It is expected that this will only
 be used in special circumstances, to detect the presence of unintentional
 duplicates where it is known that they should not exist.</p>
 
+<h4>select record</h4>
+
+<p>This record now sets and posts monitors on its SELN field indicating which of
+the inputs was selected, independent of which selection mechanism was selected
+via the SELM field. This makes it much more useful, especially when the High,
+Low or Median mechanisms are chosen.</p>
+
 
 <h1 align="center">EPICS Base Release 3.14.7<br>
 7 December 2004</h1>

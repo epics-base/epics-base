@@ -13,8 +13,7 @@
 <h2 align="center">Changes since 3.14.7</h2>
 
 <h4>drvTS</h4>
-
-This is removed from EPICS base. The version that previously came with base
+<p>This is removed from EPICS base. The version that previously came with base
 was the version that worked with the APS event system. It is available from
 APS. The version that works with the newer event systems that evolved from
 the APS system is available from the Swiss Light Source.</p>
@@ -30,6 +29,7 @@ It was possible to call taskwdInsert before the threadid was actually set.</p>
 <p>dbLockGetLockId incorrectly always returned 0. dbBkpt (database breakpoint
 facility) is the only code that needed this. This caused unknown errors
 if the dbBkpt facility is used.</p>
+
 <h4>gpHashLib.c</h4>
 <p>The maximum size was initialized to 65636 instead of 65536.</p>
 
@@ -39,7 +39,6 @@ if the dbBkpt facility is used.</p>
 
 <h4>iocsh</h4>
 <p>I/O redirection from vxWorks startup scripts now works.</p>
-
 
 <h4>RTEMS</h4>
 <p>Set POSIX TZ environment variable from NVRAM, or failing that, from EPICS_TIMEZONE.</p>
@@ -55,6 +54,17 @@ server required.</p>
 <h4>OS X</h4>
 <p>Builds on Tiger.</p>
 <p>Readline now used by default.</p>
+
+<h4>dbRecordsOnceOnly</h4>
+<p>This new variable which can be controlled using the iocsh <tt>var</tt>
+command (or by simple assignment in the vxWorks shell) allows users to change
+the behaviour of <tt>dbLoadRecords()</tt> when it finds a duplicate record
+definition. The default behaviour has always been to permit multiple record()
+statements for the same record name when loading record instances, but by
+setting <tt>dbRecordsOnceOnly</tt> to any non-zero value, duplicates will
+instead generate an error message instead.  It is expected that this will only
+be used in special circumstances, to detect the presence of unintentional
+duplicates where it is known that they should not exist.</p>
 
 
 <h1 align="center">EPICS Base Release 3.14.7<br>

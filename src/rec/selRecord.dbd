@@ -304,4 +304,9 @@ recordtype(sel) {
 		special(SPC_NOMOD)
 		interest(3)
 	}
+	field(NLST,DBF_USHORT) {
+		prompt("Last Index Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 }

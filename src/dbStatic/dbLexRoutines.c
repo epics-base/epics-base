@@ -30,6 +30,7 @@
 #include "special.h"
 #include "macLib.h"
 #include "epicsString.h"
+#include "epicsExport.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"
@@ -40,7 +41,9 @@
 
 /*global declarations*/
 epicsShareDef char *makeDbdDepends=0;
+
 epicsShareDef int dbRecordsOnceOnly=0;
+epicsExportAddress(int,dbRecordsOnceOnly);
 
 /*private routines */
 static void yyerrorAbort(char *str);

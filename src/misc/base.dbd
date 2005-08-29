@@ -40,3 +40,6 @@ include "devSoft.dbd"
 # Access security subroutines
 registrar(asSub)
 variable(asCaDebug,int)
+
+variable(dbRecordsOnceOnly,int)
+

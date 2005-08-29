@@ -226,8 +226,9 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.name_server[0] = env("NAMESERVER", rtems_bsdnet_bootp_server_name);
     rtems_bsdnet_config.ntp_server[0] = env("NTPSERVER", rtems_bsdnet_bootp_server_name);
     epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
-    if (rtems_bsdnet_config.domainname == NULL)
-        rtems_bsdnet_config.domainname = env("DOMAIN", "local");
+    cp1 = env("DOMAIN", NULL);
+    if (cp1 == NULL)
+        rtems_bsdnet_config.domainname = cp1;
     rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");
     rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
     rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "epics/iocNobody/bin/RTEMS-uC5282/myApp.boot");

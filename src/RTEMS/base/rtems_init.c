@@ -399,6 +399,16 @@ static const iocshArg * const nfsMountArgs[3] = {&nfsMountArg0,&nfsMountArg1,
 static const iocshFuncDef nfsMountFuncDef = {"nfsMount",3,nfsMountArgs};
 static void nfsMountCallFunc(const iocshArgBuf *args)
 {
+    char *cp = args[2].sval;
+    while ((cp = strchr(cp+1, '/')) != NULL) {
+        *cp = '\0';
+        if ((mkdir (args[2].sval, 0755) != 0) && (errno != EEXIST)) {
+            printf("Can't create directory \"%s\": %s.\n",
+                                            args[2].sval, strerror(errno));
+            return;
+        }
+        *cp = '/';
+    }
     nfsMount(args[0].sval, args[1].sval, args[2].sval);
 }
 #endif

@@ -31,7 +31,7 @@ class inBufCtx {
     friend class inBuf;
 public:
     enum pushCtxResult { pushCtxNoSpace, pushCtxSuccess };
-    inBufCtx ( const inBuf & ); // success
+    inBufCtx ( const class inBuf & ); // success
     inBufCtx (); // failure
     
     pushCtxResult pushResult () const;

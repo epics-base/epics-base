@@ -37,7 +37,7 @@ public:
     caNetAddr serverAddress () const;
 private:
 	caServerI & cas;
-	casServerReg * pRdReg;
+	class casServerReg * pRdReg;
 
 	casIntfOS ( const casIntfOS & );
 	casIntfOS & operator = ( const casIntfOS & );

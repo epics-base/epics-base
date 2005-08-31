@@ -33,7 +33,7 @@ class outBufCtx {
     friend class outBuf;
 public:
     enum pushCtxResult { pushCtxNoSpace, pushCtxSuccess };
-    outBufCtx ( const outBuf & ); // success
+    outBufCtx ( const class outBuf & ); // success
     outBufCtx (); // failure
 
     pushCtxResult pushResult () const;

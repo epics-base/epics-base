@@ -29,7 +29,7 @@ G++_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
 
 OP_SYS_CFLAGS += -D_BSD_SOURCE
 
-ARCH_DEP_CFLAGS = -D_X86_ -Dlinux -mcpu=pentium
+ARCH_DEP_CFLAGS = -D_X86_ -Dlinux
 ARCH_DEP_LDLIBS += -lpthread -lreadline -lcurses -lrt
 
 #Allows R3.13 built extensions to load R3.14 shared libs

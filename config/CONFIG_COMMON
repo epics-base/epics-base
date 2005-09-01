@@ -87,10 +87,10 @@ EPICS_BASE_BIN          = $(EPICS_BASE)/bin/$(T_A)
 
 GCC_ANSI = $(GCC) -ansi
 GCC_STRICT = $(GCC) -ansi -pedantic
-GCC_TRAD = $(GCC) -traditional
+GCC_TRAD = $(GCC)
 GCC_DEP_CFLAGS = -fPIC -D_REENTRANT
 
-GCC_WARN_YES = -Wall
+GCC_WARN_YES = -Wall -Wtraditional -Wmissing-prototypes -Wstrict-prototypes
 GCC_WARN_NO = -w
 GCC_OPT_YES = -O3
 GCC_OPT_NO = -g
@@ -102,13 +102,13 @@ GCC_SHRLIB_CFLAGS_YES =
 GCC_SHRLIB_LDFLAGS_YES =  -shared
 
 G++_NORMAL = $(G++) -ansi -pedantic
-G++_STRICT = $(G++) -ansi -pedantic -Wtraditional
-G++_TRAD = $(G++) -traditional
+G++_STRICT = $(G++) -ansi -pedantic
+G++_TRAD = $(G++)
 G++_TEMPL_INST_FLAG = -DEXPL_TEMPL
 G++_DEP_CFLAGS = -fPIC -D_REENTRANT
 G++_WARN_YES = -Wall \
-      -Wmissing-prototypes -Woverloaded-virtual \
-      -Wwrite-strings -Wconversion -Wstrict-prototypes\
+      -Woverloaded-virtual \
+      -Wwrite-strings -Wconversion\
       -Wpointer-arith -Winline
 G++_WARN_NO = -w
 G++_OPT_YES = -O3
@@ -241,8 +241,8 @@ CXXFLAGS = $(OPT_CXXFLAGS) $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS)
 LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS)\
  $(ARCH_DEP_LDFLAGS) $(STATIC_LDFLAGS) $(OP_SYS_LDFLAGS) $(RUNTIME_LDFLAGS)
 
-LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(ARCH_DEP_LDLIBS)\
- $(STATIC_LDLIBS) $(OP_SYS_LDLIBS) $(POSIX_LDLIBS)
+LDLIBS = $(TARGET_LDLIBS) $(USR_LDLIBS) $(STATIC_LDLIBS) $(ARCH_DEP_LDLIBS)\
+  $(OP_SYS_LDLIBS) $(POSIX_LDLIBS)
 
 CPPFLAGS += $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS) $(POSIX_CPPFLAGS)
 

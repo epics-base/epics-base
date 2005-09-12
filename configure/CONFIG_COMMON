@@ -290,6 +290,12 @@ ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 MUNCH_CMD = $(LD) -o $@ $^
 
 #--------------------------------------------------
+# LEX default option (valid for EPICS base 3.13.0.beta12 and later)
+#
+# to allow characters that are not plain 7bit standard ASCII 
+LEXOPT +=  -8
+
+#--------------------------------------------------
 # Build compile line here
 
 PATH_FILTER = $(1)

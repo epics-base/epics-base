@@ -10,10 +10,6 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-INC += egDefs.h
-INC += erDefs.h
-INC += ereventDefs.h
-
 DBDINC += aaiRecord
 DBDINC += aaoRecord
 DBDINC += aiRecord
@@ -24,10 +20,6 @@ DBDINC += calcRecord
 DBDINC += calcoutRecord
 DBDINC += compressRecord
 DBDINC += dfanoutRecord
-DBDINC += egRecord
-DBDINC += egeventRecord
-DBDINC += erRecord
-DBDINC += ereventRecord
 DBDINC += eventRecord
 DBDINC += fanoutRecord
 DBDINC += histogramRecord
@@ -57,10 +49,6 @@ LIBSRCS += calcRecord.c
 LIBSRCS += calcoutRecord.c
 LIBSRCS += compressRecord.c
 LIBSRCS += dfanoutRecord.c
-LIBSRCS += egRecord.c
-LIBSRCS += egeventRecord.c
-LIBSRCS += erRecord.c
-LIBSRCS += ereventRecord.c
 LIBSRCS += eventRecord.c
 LIBSRCS += fanoutRecord.c
 LIBSRCS += histogramRecord.c

@@ -35,7 +35,7 @@ union osiSockAddr;
 class cac;
 class nciu;
 
-class netiiu {
+class netiiu { // X aCC 655
 public:
     virtual ~netiiu () = 0;
     virtual unsigned getHostName ( 

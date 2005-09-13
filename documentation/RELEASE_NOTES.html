@@ -12,8 +12,15 @@
 
 <h2 align="center">Changes since 3.14.7</h2>
 
-<h4>drvTS</h4>
-<p>This is removed from EPICS base. The version that previously came with base
+<h4>event generator and event receiver record support </h3>
+All apsEvent specific record support has been removed from base
+
+<h4>drvTS and apsEvent support</h4>
+<p>The following files have been removed from base:
+drvTS.h drvTS.c, egDefs.h egRecord.c egRecord.dbd egeventRecord.c
+egeventRecord.c egeventRecord.dbd erDefs.h erDefs.h erRecord.c
+erRecord.dbd ereventDefs.h ereventRecord.c ereventRecord.dbd</p>
+<p>These are removed from EPICS base. The version that previously came with base
 was the version that worked with the APS event system. It is available from
 APS. The version that works with the newer event systems that evolved from
 the APS system is available from the Swiss Light Source.</p>

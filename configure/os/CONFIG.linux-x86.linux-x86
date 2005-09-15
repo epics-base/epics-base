@@ -11,11 +11,5 @@ include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 
-STATIC_LDFLAGS_YES= -Wl,-Bstatic
-STATIC_LDFLAGS_NO=
-STATIC_LDLIBS_YES= -Wl,-Bdynamic
-STATIC_LDLIBS_NO=
-
-SHRLIB_LDFLAGS +=  -shared -fPIC 
-LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+#STATIC_CFLAGS_YES= -static
 

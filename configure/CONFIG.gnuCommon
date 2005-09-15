@@ -49,6 +49,8 @@ STATIC_LDFLAGS_YES = -static
 STATIC_LDFLAGS_NO =
 
 SHRLIB_CFLAGS = -fPIC
+SHRLIB_LDFLAGS = -shared -fPIC -h $@  -z defs
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC -h $@
 
 GNU_LDLIBS_YES = -lgcc
 

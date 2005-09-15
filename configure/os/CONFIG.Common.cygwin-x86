@@ -30,5 +30,8 @@ OP_SYS_CPPFLAGS += -DCYGWIN32 -U_WIN32
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+INCLUDES_READLINE = -I$(GNU_DIR)/include
+LDFLAGS_READLINE += -L$(GNU_DIR)/lib
 LDLIBS_READLINE = -lcygreadline5 -lcygcurses7
 

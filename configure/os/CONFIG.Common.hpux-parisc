@@ -28,8 +28,4 @@ empty:=                                      # trick from the make docs...
 space:= $(empty) $(empty)
 RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_FULLPATHDIRS))),+s
 
-ifeq ($(BUILD_CLASS),CROSS)
-   GNU_TARGET=parisc-hp-unix
-   CMPLR_SUFFIX=
-   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
-endif
+GNU_TARGET=parisc-hp-unix

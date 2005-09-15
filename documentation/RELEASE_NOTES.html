@@ -10,7 +10,19 @@
 <h1 align="center">EPICS Base Release 3.14.8<br>
 ?? ??Month?? 2005</h1>
 
+
 <h2 align="center">Changes since 3.14.7</h2>
+
+<h4>VX_DIR</h4>
+<p>The definition VX_DIR was removed from configure/RELEASE and moved to
+configure/os/CONFIG_SITE.Common.vxWorksCommon. The configure/RELEASE* files
+should contain location definitions for EPICS modules only.</p>
+
+<h4>RTEMS_BASE</h4>
+<p>The definition RTEMS_BASE (and RTEMS_VERSION) were removed from 
+configure/RELEASE and moved to configure/os/CONFIG_SITE.Common.RTEMS. The 
+configure/RELEASE* files should contain location definitions for EPICS modules
+only.</p>
 
 <h4>event generator and event receiver record support </h3>
 All apsEvent specific record support has been removed from base

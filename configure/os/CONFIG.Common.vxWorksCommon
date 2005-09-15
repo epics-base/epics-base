@@ -25,6 +25,7 @@ MUNCH_SUFFIX = .munch
 
 #-------------------------------------------------------
 # Compiler definitions
+CMPLR_PREFIX=
 CC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 CCC = $(GNU_BIN)/$(CMPLR_PREFIX)cc$(CMPLR_SUFFIX)
 

@@ -19,5 +19,8 @@ STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
 STATIC_LDLIBS_NO=
 
+SHRLIB_LDFLAGS +=  -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 

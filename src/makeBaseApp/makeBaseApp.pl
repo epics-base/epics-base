@@ -1,8 +1,8 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell; # makeBaseApp 
+    if 0;                         # makeBaseApp 
 
 # Authors: Ralph Lange and Marty Kraimer
-# $Revision$  $Date$
+# 1.15.2.2  2000/01/11 13:34:54
 
 use Cwd;
 use Getopt::Std;
@@ -10,10 +10,28 @@ use File::Copy;
 use File::Find;
 use File::Path;
 
-$user = GetUser();
-$cwd  = cwd();
-$eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
-$eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
+use strict;
+
+my $user = GetUser();
+my $cwd  = cwd();
+my $eAPPTYPE = $ENV{EPICS_MBA_DEF_APP_TYPE};
+my $eTOP     = $ENV{EPICS_MBA_TEMPLATE_TOP};
+
+my $Debug=0;
+
+our $apptypename;
+our $ioc;
+our $app;
+our $appdir;
+our $appname;
+our $apptype;
+our $arch;
+our $top;
+our $epics_base;
+
+my %findopts=(follow=>1, wanted=>\&FCopyTree);
+
+use vars qw($opt_i $opt_d $opt_b $opt_T $opt_a $opt_l $opt_t);
 
 &get_commandline_opts;		# Read and check options
 
@@ -81,11 +99,12 @@ if (-r "$top/$apptypename/Replace.pl") {
 # Copy files and trees from <top> (non-App & non-Boot) if not present
 #
 opendir TOPDIR, "$top" or die "Can't open $top: $!";
-foreach $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
+foreach my $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
+
     if (-f "$f") {
 	&CopyFile("$top/$f") unless (-e "$f");
     } else {
-	find(\&FCopyTree, "$top/$f") unless (-e "$f");
+	find(\%findopts, "$top/$f") unless (-e "$f");
     }
 }
 closedir TOPDIR;
@@ -94,7 +113,7 @@ closedir TOPDIR;
 # Create ioc directories
 #
 if ($opt_i) {
-    find(\&FCopyTree, "$top/$apptypename") unless (-d "iocBoot");
+    find(\%findopts, "$top/$apptypename") unless (-d "iocBoot");
 
     foreach $ioc ( @ARGV ) {
 	($ioc =~ /^ioc/) or $ioc = "ioc" . $ioc;
@@ -102,7 +121,7 @@ if ($opt_i) {
 	    print "ioc iocBoot/$ioc is already there!\n";
 	    next;
         }
-	find(\&FCopyTree, "$top/$apptypename/ioc");
+	find(\%findopts, "$top/$apptypename/ioc");
     }
     exit 0;			# finished here for -i (no xxxApps)
 }
@@ -119,7 +138,7 @@ foreach $app ( @ARGV ) {
     }
     print "Creating template structure "
 	. "for $appname (of type $apptypename)\n" if $Debug; 
-    find(\&FCopyTree, "$top/$apptypename/");
+    find(\%findopts, "$top/$apptypename/");
 }
 
 exit 0;				# END OF SCRIPT
@@ -128,7 +147,7 @@ exit 0;				# END OF SCRIPT
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    ($len = @ARGV) and getopts("ldit:T:b:a:") or Cleanup(1);
+    (@ARGV) and getopts("ldit:T:b:a:") or Cleanup(1);
 
 # Debug option
     $Debug = 1 if $opt_d;
@@ -141,7 +160,8 @@ sub get_commandline_opts { #no args
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
 	    chomp;
-	    s/EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_), break;
+            s/#.*$//; # remove all comments
+	    s/^\s*EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_);
 	}
 	close IN;
     } elsif ($command =~ m|/bin/|) { # assume script was called with full path to base
@@ -157,7 +177,8 @@ sub get_commandline_opts { #no args
 	open(IN, "config/RELEASE") or die "Cannot open config/RELEASE";
 	while (<IN>) {
 	    chomp;
-	    s/TEMPLATE_TOP\s*=\s*// and $top = UnixPath($_), break;
+            s/#.*$//; # remove all comments
+	    s/^\s*TEMPLATE_TOP\s*=\s*// and $top = UnixPath($_);
 	}
 	close IN;
     }
@@ -228,13 +249,13 @@ sub get_commandline_opts { #no args
 #
 sub ListAppTypes { # no args
     print "Valid application types are:\n";
-    foreach $name (<$top/*App>) {
+    foreach my $name (<$top/*App>) {
 	$name =~ s|$top/||;
 	$name =~ s|App||;
 	printf "\t$name\n" if ($name && -r "$top/$name" . "App");
     }
     print "Valid iocBoot types are:\n";
-    foreach $name (<$top/*Boot>) {
+    foreach my $name (<$top/*Boot>) {
 	$name =~ s|$top/||;
 	$name =~ s|Boot||;
 	printf "\t$name\n" if ($name && -r "$top/$name" . "Boot");;
@@ -245,8 +266,8 @@ sub ListAppTypes { # no args
 # Copy a file with replacements
 #
 sub CopyFile { # (source)
-    $source = $_[0];
-    $target = &ReplaceFilename($source);
+    my $source = $_[0];
+    my $target = &ReplaceFilename($source);
 
     if ($target) {
 	$target =~ s|$top/||;
@@ -265,6 +286,7 @@ sub CopyFile { # (source)
 # Find() callback for file or structure copy
 #
 sub FCopyTree {
+    my $dir;
     chdir $cwd;			# Sigh
     if (-d $File::Find::name
 	and ($dir = &ReplaceFilename($File::Find::name))) {
@@ -283,7 +305,7 @@ sub FCopyTree {
 sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
     my ($rtncode, @message) = @_;
 
-    foreach $line ( @message ) {
+    foreach my $line ( @message ) {
 	print "$line\n";
     }
 

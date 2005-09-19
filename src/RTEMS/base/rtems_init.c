@@ -587,5 +587,6 @@ Init (rtems_task_argument ignored)
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
-    exit (i);
+    epicsThreadSleep(1.0);
+    rtems_shutdown_executive(0);
 }

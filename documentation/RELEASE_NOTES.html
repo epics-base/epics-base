@@ -23,7 +23,6 @@ should contain location definitions for EPICS modules only.</p>
 configure/RELEASE and moved to configure/os/CONFIG_SITE.Common.RTEMS. The 
 configure/RELEASE* files should contain location definitions for EPICS modules
 only.</p>
-
 <h4>event generator and event receiver record support </h3>
 All apsEvent specific record support has been removed from base
 
@@ -60,6 +59,7 @@ if the dbBkpt facility is used.</p>
 <p>I/O redirection from vxWorks startup scripts now works.</p>
 
 <h4>RTEMS</h4>
+<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this will return control to the bootstrap PROM.</p>
 <p>Set POSIX TZ environment variable from NVRAM, or failing that, from EPICS_TIMEZONE.</p>
 <p>Cleaned up support for obtaining network configuration from NVRAM.</p>
 <p>Added support for some additional boards.</p>

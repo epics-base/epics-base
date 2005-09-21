@@ -113,7 +113,7 @@ if (-r "$top/$apptypename/Replace.pl") {
 #
 opendir TOPDIR, "$top" or die "Can't open $top: $!";
 foreach $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
-    find(\&FCopyTree, "$top/$f") unless (-e "$f");
+    find({wanted => \&FCopyTree, follow => 1}, "$top/$f") unless (-e "$f");
 }
 closedir TOPDIR;
 
@@ -121,7 +121,7 @@ closedir TOPDIR;
 # Create ioc directories
 #
 if ($opt_i) {
-    find(\&FCopyTree, "$top/$apptypename");
+    find({wanted => \&FCopyTree, follow => 1}, "$top/$apptypename");
 
     foreach $ioc ( @ARGV ) {
 	($appname = $ioc) =~ s/App$//;
@@ -130,7 +130,7 @@ if ($opt_i) {
 	    print "iocBoot/$ioc exists, not modified.\n";
 	    next;
         }
-	find(\&FCopyTree, "$top/$apptypename/ioc");
+	find({wanted => \&FCopyTree, follow => 1}, "$top/$apptypename/ioc");
     }
     exit 0;			# finished here for -i (no xxxApps)
 }
@@ -146,7 +146,7 @@ foreach $app ( @ARGV ) {
 	next;
     }
     print "Creating $appname from template type $apptypename\n" if $opt_d; 
-    find(\&FCopyTree, "$top/$apptypename/");
+    find({wanted => \&FCopyTree, follow => 1}, "$top/$apptypename/");
 }
 
 exit 0;				# END OF SCRIPT

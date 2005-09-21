@@ -457,6 +457,15 @@ const void *rtemsConfigArray[] = {
 };
 
 /*
+ * Hook to ensure that BSP cleanup code gets run on exit
+ */
+static void
+exitHandler(void)
+{
+    rtems_shutdown_executive(0);
+}
+
+/*
  * RTEMS Startup task
  */
 rtems_task
@@ -585,8 +594,9 @@ Init (rtems_task_argument ignored)
     iocshRegisterRTEMS ();
     set_directory (argv[1]);
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
+    atexit(exitHandler);
     i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
-    rtems_shutdown_executive(0);
+    epicsExit(0);
 }

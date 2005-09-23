@@ -167,6 +167,7 @@ GLBLTYPE void               *rsrvSmallBufFreeListTCP;
 GLBLTYPE void               *rsrvLargeBufFreeListTCP; 
 GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 GLBLTYPE void               *rsrvPutNotifyFreeList; 
+GLBLTYPE unsigned           rsrvChannelCount;
 
 #define CAS_HASH_TABLE_SIZE 4096
 

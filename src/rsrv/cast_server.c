@@ -79,14 +79,15 @@ LOCAL void clean_addrq()
         if (delay > timeout) {
 
             ellDelete(&prsrv_cast_client->addrq, &pciu->node);
-                LOCK_CLIENTQ;
+            LOCK_CLIENTQ;
             s = bucketRemoveItemUnsignedId (
                 pCaBucket,
                 &pciu->sid);
             if(s){
                 errMessage (s, "Bad id at close");
             }
-                UNLOCK_CLIENTQ;
+            rsrvChannelCount--;
+            UNLOCK_CLIENTQ;
             freeListFree(rsrvChanFreeList, pciu);
             ndelete++;
             if(delay>maxdelay) maxdelay = delay;

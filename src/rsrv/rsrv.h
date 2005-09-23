@@ -24,8 +24,12 @@
 
 epicsShareFunc int epicsShareAPI rsrv_init (void);
 epicsShareFunc void epicsShareAPI casr (unsigned level);
-epicsShareFunc void epicsShareAPI casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize );
-epicsShareFunc void epicsShareAPI casUserNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize );
+epicsShareFunc void epicsShareAPI casHostNameInitiatingCurrentThread ( 
+                        char * pBuf, unsigned bufSize );
+epicsShareFunc void epicsShareAPI casUserNameInitiatingCurrentThread ( 
+                        char * pBuf, unsigned bufSize );
+void casStatsFetch ( unsigned *pChanCount, unsigned *pConnCount );
+
 #define RSRV_OK 0
 #define RSRV_ERROR (-1)
 

@@ -618,6 +618,7 @@ void destroy_tcp_client ( struct client *client )
             rsrvFreePutNotify ( client, pciu->pPutNotify );
             LOCK_CLIENTQ;
             status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
+            rsrvChannelCount--;
             UNLOCK_CLIENTQ;
             if ( status != S_bucket_success ) {
                 errPrintf ( status, __FILE__, __LINE__, 
@@ -886,3 +887,18 @@ struct client *create_tcp_client ( SOCKET sock )
     return client;
 }
 
+void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
+{
+	LOCK_CLIENTQ;
+    {
+        int circuitCount = ellCount ( &clientQ );
+        if ( circuitCount < 0 ) {
+	        *pCircuitCount = 0;
+        }
+        else {
+	        *pCircuitCount = (unsigned) circuitCount;
+        }
+        *pChanCount = rsrvChannelCount;
+    }
+	UNLOCK_CLIENTQ;
+}

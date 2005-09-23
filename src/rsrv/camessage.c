@@ -1058,6 +1058,10 @@ unsigned    cid
                 pchannel);
     } while (status == S_bucket_idInUse);
 
+    if ( status == S_bucket_success ) {
+        rsrvChannelCount++;
+    }
+
     UNLOCK_CLIENTQ;
 
     if(status!=S_bucket_success){
@@ -1954,6 +1958,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp,
          errMessage (status, "Bad resource id during channel clear");
          logBadId ( client, mp, pPayload );
      }
+     rsrvChannelCount--;
      UNLOCK_CLIENTQ;
      freeListFree(rsrvChanFreeList, pciu);
      

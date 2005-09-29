@@ -151,6 +151,7 @@ static char *addr(char *cbuf, rtems_unsigned32 addr)
 void
 setBootConfigFromNVRAM(void)
 {
+    char *cp1, *cp2, *cp3;
     static struct ppcbug_nvram nvram;
     static char ip_address[INET_ADDRSTRLEN];
     static char ip_netmask[INET_ADDRSTRLEN];
@@ -192,9 +193,39 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.gateway = addr(gateway, nvram.GatewayIPAddress);
     rtems_bsdnet_config.ifconfig->ip_netmask = addr(ip_netmask, nvram.SubnetIPAddressMask);
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
-    rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
-}
 
+    /*
+     * Check for argument string of form nfs_server:nfs_export:<path>
+     * The nfs_export component will be used as:
+     *      - the path to the directory exported from the NFS server
+     *      - the local mount point
+     *      - a prefix of <path>
+     * For example, the argument string:
+     *       romeo:/export/users:smith/ioc/iocexample/st.cmd
+     * would:
+     *       - mount /export/users from NFS server romeo on /export/users
+     *       - chdir to /export/users/smith/ioc/iocexample
+     *       - read commands from st.cmd
+     *
+     */
+    rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
+    cp1 = nvram.ArgumentFilenameString;
+    if (((cp2 = strchr(cp1, ':')) != NULL)
+     && (((cp3 = strchr(cp2+1, ' ')) != NULL)
+      || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
+        int l1 = cp2 - cp1;
+        int l2 = cp3 - cp2 - 1;
+        int l3 = strlen(cp3) - 1;
+        if (l1 && l2 && l3) {
+            *cp2++ = '\0';
+            *cp3 = '\0';
+            env_nfsServer = cp1;
+            env_nfsMountPoint = env_nfsPath = epicsStrDup(cp2);
+            *cp3 = '/';
+            rtems_bsdnet_bootp_cmdline = cp2;
+        }
+    }
+}
 
 #elif defined(__mcf528x__)
 

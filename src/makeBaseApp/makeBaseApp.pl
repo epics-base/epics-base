@@ -123,8 +123,9 @@ closedir TOPDIR;
 if ($opt_i) {
     find({wanted => \&FCopyTree, follow => 1}, "$top/$apptypename");
 
-    foreach $ioc ( @ARGV ) {
-	($appname = $ioc) =~ s/App$//;
+    $appname=$appnameIn if $appnameIn;
+    foreach $ioc ( @names ) {
+	($appname = $ioc) =~ s/App$// if !$appnameIn;
 	$ioc = "ioc" . $ioc unless ($ioc =~ /^ioc/);
         if (-d "iocBoot/$ioc") {
 	    print "iocBoot/$ioc exists, not modified.\n";
@@ -138,7 +139,7 @@ if ($opt_i) {
 #
 # Create app directories (if any names given)
 #
-foreach $app ( @ARGV ) {
+foreach $app ( @names ) {
     ($appname = $app) =~ s/App$//;
     $appdir  = $appname . "App";
     if (-d "$appdir") {
@@ -155,7 +156,7 @@ exit 0;				# END OF SCRIPT
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    getopts("a:b:dhilT:t:") or Cleanup(1);
+    getopts("a:b:dhilp:T:t:") or Cleanup(1);
     
     # Options help
     Cleanup(0) if $opt_h;
@@ -196,10 +197,27 @@ sub get_commandline_opts { #no args
 	exit 0;			# finished for -l command
     }
     
-    Cleanup(1) if !@ARGV;
+    if (!@ARGV){
+	if ($opt_t) {
+	    if ($opt_i) {
+		print "IOC names? (the created directories will have \"ioc\" prepended): ";
+	    } else {
+		print "Application names? (the created directories will have \"App\" appended): ";
+	    } 
+	    $namelist = <STDIN>;
+	    chomp($namelist);
+	    @names = split " ", $namelist;
+	} else {
+	    Cleanup(1);
+	} 
+    } else {
+	@names = @ARGV;
+    } 
 
-    # ioc architecture
-    if ($opt_i) {
+    # ioc architecture and application name
+    if ($opt_i && @names) {
+
+	# ioc architecture
 	opendir BINDIR, "$epics_base/bin" or die "Can't open $epics_base/bin: $!";
 	my @archs = grep !/^\./, readdir BINDIR;	# exclude .files
 	closedir BINDIR;
@@ -218,6 +236,15 @@ sub get_commandline_opts { #no args
 	    chomp($arch);
 	}
 	grep /^$arch$/, @archs or Cleanup(1, "Target architecture $arch not available");
+
+        # Application name
+	if ($opt_p){
+	    $appnameIn = $opt_p if ($opt_p);
+	} else {
+	    print "Application name? (default is IOC name): ";
+	    $appnameIn = <STDIN>;
+	    chomp($appnameIn);
+	}
     }
 
     # Application type
@@ -374,9 +401,9 @@ Usage:
              display help on command options
 <base>/bin/<arch>/makeBaseApp.pl -l [options]
              list application types
-<base>/bin/<arch>/makeBaseApp.pl -t type [options] app ...
+<base>/bin/<arch>/makeBaseApp.pl -t type [options] [app ...]
              create application directories
-<base>/bin/<arch>/makeBaseApp.pl -i -t type [options] ioc ...
+<base>/bin/<arch>/makeBaseApp.pl -i -t type [options] [ioc ...]
              create ioc boot directories
 where
  app  Application name (the created directory will have \"App\" appended)
@@ -393,6 +420,8 @@ EOF
  -i       Specifies that ioc boot directories will be generated
  -l       List valid application types for this installation
 	  If this is specified the other options are not used
+ -p app   Set the application name for use with -i
+          If not specified, you will be prompted
  -T top   Set the template top directory (where the application templates are)
           If not specified, top path is taken from configure/RELEASE
           If configure does not exist, top path is taken from environment

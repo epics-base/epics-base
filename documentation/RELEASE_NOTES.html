@@ -59,16 +59,20 @@ if the dbBkpt facility is used.</p>
 <p>I/O redirection from vxWorks startup scripts now works.</p>
 
 <h4>RTEMS</h4>
-<p>Added support for setting NFS server/mount information from PPCBUG argument strings.</p>
-<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this will return control to the bootstrap PROM.</p>
-<p>Set POSIX TZ environment variable from NVRAM, or failing that, from EPICS_TIMEZONE.</p>
+<p>Added support for setting NFS server/mount information from PPCBUG argument
+strings.</p>
+<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this will
+return control to the bootstrap PROM.</p>
+<p>Set POSIX TZ environment variable from NVRAM, or failing that, from
+EPICS_TIMEZONE.</p>
 <p>Cleaned up support for obtaining network configuration from NVRAM.</p>
 <p>Added support for some additional boards.</p>
 <p>Set iocsh prompt from host name.</p>
 <p>Initialize in-memory filesystem from tar image following executable in
 bootstrap flash memory.  This allows for fully standalone IOCs -- no TFTP/NFS
 server required.</p>
-<p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap parameters.</p>
+<p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap
+parameters.</p>
 
 
 <h4>OS X</h4>
@@ -87,12 +91,18 @@ be used in special circumstances, to detect the presence of unintentional
 duplicates where it is known that they should not exist.</p>
 
 <h4>select record</h4>
-
 <p>This record now sets and posts monitors on its SELN field indicating which of
 the inputs was selected, independent of which selection mechanism was selected
 via the SELM field. This makes it much more useful, especially when the High,
 Low or Median mechanisms are chosen.</p>
 
+<h4>macLib</h4>
+<p>Macro expansions in any program using the macLib facility from libCom can now
+include a default value which will be used if the macro named is not defined at
+the moment of substitution. The syntax for this is <tt>$(name=default)</tt> or
+<tt>${name=default}</tt>. The default string can itself contain other macros
+like this: <tt>$(name=$(default))</tt>. This feature has actually been present
+since R3.14.6.</p>
 
 <h1 align="center">EPICS Base Release 3.14.7<br>
 7 December 2004</h1>
@@ -117,7 +127,8 @@ undefined value alarm will be triggered.</p>
 strtod which handles NAN/INF on all architectures.  All uses of strtod() in
 base have been converted to use epicsStrtod().</p>
 <p>epicsStdlib.h also declares epicsScanFloat() and epicsScanDouble() which
-replace calls to sscanf with routines which handle NAN/INF on all architectures.</p>
+replace calls to sscanf with routines which handle NAN/INF on all
+architectures.</p>
 
 <h4>epicsThreadCreate Stacksize Posix</h4>
 <p>The posix implementation of epicsThreadCreate now makes pthread
@@ -142,40 +153,24 @@ record) being honoured.</p>
 which require signal delivery to a subthread will need to be modified.</p>
 
 <h4>epicsExit</h4>
-Three new functions are implemented: <span
-style="font-family: courier">epicsExit</span>, <span
-style="font-family: courier">epicsExitCallAtExits</span>, and <span
-style="font-family: courier">epicsAtExit</span>. These are similar to <span
-style="font-family: courier">exit</span> and <span
-style="font-family: courier">atexit</span>, i.e. they provide the ability to
-register a function to be called when the process exits. They are provided
-becase neither vxWorks or win32 properly implement <span
-style="font-family: courier">exit</span> and <span
-style="font-family: courier">atexit</span>. Note that they apply to an IOC
-stopping NOT to a thread exiting.
+<p>Three new functions are implemented: <tt>epicsExit</tt>,
+<tt>epicsExitCallAtExits</tt>, and <tt>epicsAtExit</tt>. These are similar to
+<tt>exit</tt> and <tt>atexit</tt>, i.e. they provide the ability to register a
+function to be called when the process exits. They are provided becase neither
+vxWorks or win32 properly implement <tt>exit</tt> and <tt>atexit</tt>. Note that
+they apply to an IOC stopping NOT to a thread exiting.</p>
 
 <h4>epicsStdio and epicsStdioRedirect</h4>
 
-<p>In order to support iocsh redirection of <span
-style="font-family: courier">stdin</span>, <span
-style="font-family: courier">stdout</span>, and <span
-style="font-family: courier">stderr</span>, <span
-style="font-family: courier">epicsStdio.h</span> defines the following new
-functions: <span style="font-family: courier">epicsGetStdin</span>, <span
-style="font-family: courier">epicsGetStdout</span>, <span
-style="font-family: courier">epicsGetStderr</span>, <span
-style="font-family: courier">epicsSetStdin</span>, <span
-style="font-family: courier">epicsSetStdout</span>, <span
-style="font-family: courier">epicsSetStderr</span>, and <span
-style="font-family: courier">epicsStdoutPrintf</span>. <span
-style="font-family: courier">epicsStdioRedirect.h</span> defines macros that
-redefine <span style="font-family: courier">stdin</span>, <span
-style="font-family: courier">stdout</span>, <span
-style="font-family: courier">stderr</span>, and <span
-style="font-family: courier">printf</span>.</p>
+<p>In order to support iocsh redirection of <tt>stdin</tt>, <tt>stdout</tt>, and
+<tt>stderr</tt>, <tt>epicsStdio.h</tt> defines the following new functions:
+<tt>epicsGetStdin</tt>, <tt>epicsGetStdout</tt>, <tt>epicsGetStderr</tt>,
+<tt>epicsSetStdin</tt>, <tt>epicsSetStdout</tt>, <tt>epicsSetStderr</tt>, and
+<tt>epicsStdoutPrintf</tt>. <tt>epicsStdioRedirect.h</tt> defines macros that
+redefine <tt>stdin</tt>, <tt>stdout</tt>, <tt>stderr</tt>, and
+<tt>printf</tt>.</p>
 
-<p>Any code that includes <span
-style="font-family: courier">epicsStdioRedirect.h</span> will automatically
+<p>Any code that includes <tt>epicsStdioRedirect.h</tt> will automatically
 have it's stdio redirected. It has been added to many files in base. If code
 called by dbior wants it's output redirected, it must also include this
 file.</p>
@@ -193,32 +188,26 @@ vxWorks shell the following command can be given:
 <pre>    iocshCmd("dbl &gt; reportName")</pre>
 
 <h4>errlog</h4>
-
-<p>errlog now calls <span style="font-family: courier">epicsAtExit</span> and
-releases all resources when <span
-style="font-family: courier">epicsExitCallAtExits</span> is callled..</p>
+<p>errlog now calls <tt>epicsAtExit</tt> and releases all resources when
+<tt>epicsExitCallAtExits</tt> is called.</p>
 
 <h4>libCom</h4>
 <p>epicsStrGlobMatch() routine added.</p>
 
 <h4>iocsh</h4>
-
 <p>Input/output redirection added.</p>
 <p>iocshCmd routine added (callable from vxWorks shell).</p>
 <p>help command uses globbing.</p>
 
 <h4>calcoutRecord</h4>
-
 <p>The ODLY (Output Delay) was not handled properly. This is fixed.</p>
 
 <h4>compressRecord</h4>
-
 <p>make sure reset gets called when size of INP array changes.</p>
 
 <h4>dbAccess DBR_ENUM_STRS for field DTYP</h4>
-
 <p>Data Base Request Option DBR_ENUM_STRS for the DTYP field of soft records
-can cause an IOC to crash.</p?<h2align="center"></p>
+can cause an IOC to crash.</p>
 
 <h4>RTEMS</h4>
 <p>RTEMS implementation of epicsMessageQueuePending() now works.</p>
@@ -1089,7 +1078,7 @@ e.g.</p>
 <p>A macro has been defined so that client code can be written that is
 compatible between 3.13 and 3.14.</p>
 
-<p><span style="font-weight: bold">epicsMutex for posix</span></p>
+<p><b>epicsMutex for posix</b></p>
 <ul>
   <li>No longer supports epicsMutexLockWithTimeout. This was done to allow a
     more efficient posix implementation.</li>
@@ -1531,8 +1520,8 @@ following gives links to the new Application Developer's Guide and to RTEMS
 information.</p>
 
 <blockquote>
-  <a
-  href="http://www.aps.anl.gov/epics/modules/base/R3-14.php">http://www.aps.anl.gov/epics/modules/base/R3-14.php</a></blockquote>
+  <a href="http://www.aps.anl.gov/epics/base/R3-14/index.php">
+  http://www.aps.anl.gov/epics/base/R3-14/index.php</a></blockquote>
 
 <p>Most of the Application Developer's Guide has only minor changes. The
 following are new.</p>

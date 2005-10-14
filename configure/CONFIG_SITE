@@ -29,14 +29,19 @@
 #	darwin-ppc
 #	hpux-parisc            (HP compiler used for host builds)
 #	hpux-parisc-gnu        (GNU compiler used for host builds)
+#	linux-ppc              (GNU compiler used for host builds)
+#	linux-ppc-bgl
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86-borland      (Borland C++ compiler used for host builds)
 #	solaris-sparc          (sun compiler used for host builds)
 #	solaris-sparc-gnu      (GNU compiler used for host builds)
+#	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
 #	solaris-x86            (sun compiler used for host builds)
 #	solaris-x86-gnu        (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
+#	win32-x86_MinGW        (MinGW compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
+#	win32-x86-cygwin       (cygwin GNU compiler used for host builds)
 
 #  Debugging builds 
 #	linux-x86-debug			(GNU compiler with -g option for host builds)
@@ -57,6 +62,7 @@
 #       linux-586     (linux-x86 host)
 #       linux-686     (linux-x86 host)
 #       linux-athlon  (linux-x86 host)
+#       linuxRT-mvme2100  (linux-x86 host)
 #       vxWorks-486
 #       vxWorks-68040
 #       vxWorks-68040lc
@@ -67,10 +73,13 @@
 #       vxWorks-ppc604
 #       vxWorks-ppc604_long
 #       RTEMS-gen68360
-#       RTEMS-mvme167
-#       RTEMS-pc386
 #       RTEMS-mcp750
+#       RTEMS-mvme167
+#       RTEMS-mvme2100
+#       RTEMS-mvme5500
+#       RTEMS-pc386
 #       RTEMS-psim
+#       RTEMS-uC5282
 #
 #  Debugging builds 
 #       vxWorks-68040-debug

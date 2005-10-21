@@ -81,10 +81,18 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
     }
 
     /*
-     * since all epics sockets are created with the FD_CLOEXEC
-     * option then we no-longer need to blindly close all open
-     * files here.
+     * close all open files except for STDIO so they will not
+     * be inherited by the spawned process.
      */
+    {
+        int fd, maxfd = sysconf ( _SC_OPEN_MAX );
+        for ( fd = 0; fd <= maxfd; fd++ ) {
+            if (fd==STDIN_FILENO) continue;
+            if (fd==STDOUT_FILENO) continue;
+            if (fd==STDERR_FILENO) continue;
+            close (fd);
+        }
+    }
 
     /*
      * overlay the specified executable

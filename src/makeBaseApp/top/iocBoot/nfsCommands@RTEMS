@@ -9,6 +9,9 @@
 # The hostAdd command has the form:
 # hostAdd("<host>","xxx.xxx.xxx.xxx")
 # 
+# The vxWorks nfsMount command has the form:
+# nfsMount("<host>")
+#
 # You can also mount subdirectories as follows:
 # nfsMount("<host>", "/xxx/xxx/xxx", "/xxx")
 # 

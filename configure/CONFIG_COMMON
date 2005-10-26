@@ -257,10 +257,7 @@ OP_SYS_LDFLAGS += $(LDFLAGS_$(COMMANDLINE_LIBRARY))
 
 #--------------------------------------------------
 # POSIX thread priority scheduling flag
-
-ifeq (USE_POSIX_THREAD_PRIORITY_SCHEDULING,NO)
-THREAD_CPPFLAGS_YES += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
-endif
+THREAD_CPPFLAGS_YES_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
 
 #--------------------------------------------------
 # Flags

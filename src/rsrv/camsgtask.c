@@ -83,8 +83,10 @@ void camsgtask ( void *pParm )
                 (int) ( client->recv.maxstk - client->recv.cnt ), 0 );
         if ( nchars == 0 ){
             if ( CASDEBUG > 0 ) {
-                errlogPrintf ( "CAS: nill message disconnect ( %u bytes request )\n",
-                    sizeof ( client->recv.buf ) - client->recv.cnt );
+                /* convert to u long so that %lu works on both 32 and 64 bit archs */
+                unsigned long cnt = sizeof ( client->recv.buf ) - client->recv.cnt;
+                errlogPrintf ( "CAS: nill message disconnect ( %lu bytes request )\n",
+                    cnt );
             }
             break;
         }

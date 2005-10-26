@@ -17,7 +17,7 @@ epicsReadline_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(
 epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
 #POSIX thread priority scheduling flag
-osdThread_CPPFLAGS +=  $(THREAD_CPPFLAGS_$(POSIX))
+osdThread_CPPFLAGS +=  $(THREAD_CPPFLAGS_$(POSIX)_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 
 #epicsVersion is created by this Makefile
 INC += epicsVersion.h

@@ -46,8 +46,9 @@ static int mutexLock(pthread_mutex_t *id)
     }
 }
 
-/* Until this can be demonstrated to work leave it undefined*/
+#if defined DONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
 #undef _POSIX_THREAD_PRIORITY_SCHEDULING
+#endif
 
 typedef struct commonAttr{
     pthread_attr_t     attr;

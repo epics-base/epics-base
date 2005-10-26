@@ -108,6 +108,7 @@ enum pvExistReturnEnum { pverExistsHere, pverDoesNotExistHere,
     pverAsyncCompletion };
 
 class casPV;
+class casPVI;
 class casCtx;
 class casChannel;
 

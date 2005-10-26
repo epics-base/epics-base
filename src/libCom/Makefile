@@ -16,6 +16,9 @@ LIBCOM = $(TOP)/src/libCom
 epicsReadline_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
 epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
+#POSIX thread priority scheduling flag
+osdThread_CPPFLAGS +=  $(THREAD_CPPFLAGS_$(POSIX))
+
 #epicsVersion is created by this Makefile
 INC += epicsVersion.h
 

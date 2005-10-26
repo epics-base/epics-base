@@ -1623,16 +1623,23 @@ void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
 #ifdef CA_LITTLE_ENDIAN
     ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
     ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-    ca_uint32_t tmp;
 
     /*
      * byte swap to net order
      * (assume that src and dest ptrs
      * may be identical)
-     */
-    tmp = pHost[0];
+     */    
+#ifndef _armv4l_
+    /* pure little endian */
+    ca_uint32_t tmp = pHost[0];
     pNet[0] = dbr_htonl (pHost[1]);
     pNet[1] = dbr_htonl (tmp);  
+ #else
+    /* impure little endian, compatible with archaic ARM FP hardware */
+    pNet[0] = dbr_htonl (pHost[0]);
+    pNet[1] = dbr_htonl (pHost[1]);
+#endif
+
 #else
     *IEEEnet = *IEEEhost;
 #endif
@@ -1647,16 +1654,23 @@ void dbr_ntohd (dbr_double_t *IEEEnet, dbr_double_t *IEEEhost)
 #ifdef CA_LITTLE_ENDIAN
     ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
     ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-    ca_uint32_t tmp;
 
     /*
      * byte swap to net order
      * (assume that src and dest ptrs
      * may be identical)
      */
-    tmp = pNet[0];
-    pHost[0] = dbr_ntohl (pNet[1]);
-    pHost[1] = dbr_ntohl (tmp); 
+#ifndef _armv4l_
+     /* pure little endian */
+     ca_uint32_t tmp = pNet[0];
+     pHost[0] = dbr_ntohl (pNet[1]);
+     pHost[1] = dbr_ntohl (tmp); 
+#else
+    /* impure little endian, compatible with archaic ARM FP hardware */
+    pHost[0] = dbr_ntohl (pNet[0]);
+    pHost[1] = dbr_ntohl (pNet[1]);
+#endif
+
 #else
     *IEEEhost = *IEEEnet;
 #endif

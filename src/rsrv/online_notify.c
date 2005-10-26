@@ -107,6 +107,16 @@ void rsrv_online_notify_task(void *pParm)
         errlogPrintf ("CAS: online socket creation error\n");
         epicsThreadSuspendSelf ();
     }
+
+    status = shutdown ( sock, SHUT_RD );
+    if ( status ) {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        errlogPrintf (
+            "online notify: beacon sock UDP read shutdown error was %s\n", 
+            sockErrBuf );
+    }
     
     status = setsockopt (sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *)&true, sizeof(true));

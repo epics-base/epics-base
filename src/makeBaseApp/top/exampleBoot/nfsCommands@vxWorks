@@ -1,17 +1,19 @@
 #Instructions for creating and using a real nfsCommands file
 # 
 # in order to use nfs do the following:
-# 1) Create hostAdd and nfsMountAll commands for each nfs server
+# 1) Create hostAdd and nfsMount commands for each nfs server
 # 2) In each st.cmd file add the following two commands BEFORE any load commands
 #    ../nfs.cmd
 #    cd "<iocname>
 # 
-# The hostAdd and nfsMountAll commands have the form:
+# The hostAdd command has the form:
 # hostAdd("<host>","xxx.xxx.xxx.xxx")
-# nfsMountAll("<host>")
+#
+# The nfsMount command has the form:
+# nfsMount("<host>", "/xxx/xxx/xxx", "/xxx")
 # 
 # You can also mount subdirectories as follows:
-# nfsMount("<host>", "/xxx/xxx/xxx", "/xxx")
+# nfsMountAll("<host>")
 # 
 # For example assume
 # 
@@ -24,5 +26,4 @@
 # The commands would be
 # 
 # hostAdd("mercury","155.77.2.56")
-# nfsMountAll("mercury")
 # nfsMount("mercury","/home/mercury5/iocinfo","/iocinfo")

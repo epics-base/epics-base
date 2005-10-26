@@ -40,7 +40,7 @@
 #	solaris-x86-gnu        (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-debug        (MS Visual C++ compiler debugging options)
-#	win32-x86_MinGW        (MinGW compiler used for host builds)
+#	win32-x86_mingw        (MinGW compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
 #	win32-x86-cygwin       (cygwin GNU compiler used for host builds)
 
@@ -166,4 +166,7 @@ COMPAT_313=NO
 
 #  Installation directory
 #Note: INSTALL_LOCATION definition moved to configure/RELEASE file
+
+# Use POSIX thread priority scheduling (YES or NO)
+USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
 

@@ -27,7 +27,7 @@ extern "C" {
  * Here are the definitions for architecture dependent byte ordering 
  * and floating point format
  */
-#if defined (_M_IX86) || defined (_X86_) || defined (__i386__)
+#if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined(_armv4l_) || defined (_X86_64_)
 #	define CA_FLOAT_IEEE
 #	define CA_LITTLE_ENDIAN
 #elif defined (VAX) 

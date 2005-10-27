@@ -107,7 +107,7 @@ caStatus exScalarPV::updateValue ( const gdd & valueIn )
 
     if ( ! pValue.valid () ) {
         this->pValue = new gddScalar ( 
-            gddAppType_value, aitEnumFloat64 );
+            gddAppType_value, this->info.getType () );
         if ( ! pValue.valid () ) {
             return S_casApp_noMemory;
         }

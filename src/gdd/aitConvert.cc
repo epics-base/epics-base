@@ -174,20 +174,30 @@ static int aitConvertStringEnum16(void* d,const void* s,
 {
 	aitIndex i;
 	int status=0;
-	char temp[AIT_FIXED_STRING_SIZE];
 	aitString* out=(aitString*)d;
 	aitEnum16* in=(aitEnum16*)s;
 	for (i=0;i<c;i++) {
-		unsigned nChar;
 		if ( pEnumStringTable && in[i] < pEnumStringTable->numberOfStrings() ) {
-			out[i].copy( pEnumStringTable->getString (in[i]) );
-			nChar = pEnumStringTable->getStringLength ( in[i] );
+			unsigned nChar = pEnumStringTable->getStringLength ( in[i] );
+    		if ( nChar < static_cast <unsigned> ( INT_MAX - status ) ) {
+    		    out[i].copy( pEnumStringTable->getString ( in[i] ), nChar );
+    		    status += static_cast <int> ( nChar );;
+    		}
+    		else {
+    		    return -1;
+    		}
 		}
 		else {
-			nChar = sprintf(temp, "%hu",in[i]);
-			assert (nChar>0);
+		   	char temp[AIT_FIXED_STRING_SIZE];
+			int tmpStatus = sprintf ( temp, "%hu", in[i] );
+			if ( tmpStatus >= 0 && tmpStatus < INT_MAX - status ) {
+			    out[i].copy ( temp, static_cast < unsigned > ( tmpStatus ) );
+			    status += tmpStatus;
+			}
+			else {
+			    return -1;
+			}
 		}
-		status += (int) nChar;
 	}
 	return status;
 }
@@ -212,16 +222,28 @@ static int aitConvertFixedStringEnum16(void* d,const void* s,
 	aitFixedString* out=(aitFixedString*)d;
 	aitEnum16* in=(aitEnum16*)s;
 	for (i=0;i<c;i++) {
-		unsigned nChar;
 		if ( pEnumStringTable && in[i] < pEnumStringTable->numberOfStrings() ) {
-            pEnumStringTable->getString ( in[i], out[i].fixed_string, sizeof( out[i].fixed_string ) );
-			nChar = pEnumStringTable->getStringLength ( in[i] );
+			unsigned nChar = pEnumStringTable->getStringLength ( in[i] );
+			if ( nChar < static_cast < unsigned > ( INT_MAX - status ) ) {
+                pEnumStringTable->getString ( 
+                    in[i], 
+                    out[i].fixed_string, 
+                    sizeof( out[i].fixed_string ) );
+                status += static_cast < int > ( nChar );
+			}
+			else {
+			    return -1;
+			}
 		}
 		else {
-			nChar = sprintf(out[i].fixed_string,"%hu",in[i]);
-			assert (nChar>0);
+			int tmpStatus = sprintf ( out[i].fixed_string, "%hu", in[i] );
+			if ( tmpStatus > 0 && tmpStatus < INT_MAX - status ) {
+			    status += tmpStatus;
+			}
+			else {
+			    return -1;
+			}
 		}
-		status += (int) nChar;
 	}
 	return status;
 }

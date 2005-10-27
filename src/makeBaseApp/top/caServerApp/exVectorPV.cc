@@ -141,6 +141,9 @@ void exVectorPV::scan()
         *(pF++) = newValue;
     }
 
+    aitTimeStamp gddts = this->currentTime;
+    pDD->setTimeStamp ( & gddts );
+
     status = this->update ( *pDD );
     if ( status != S_casApp_success ) {
         errMessage (status, "vector scan update failed\n");

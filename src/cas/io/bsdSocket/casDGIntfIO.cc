@@ -64,6 +64,16 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         epicsSocketDestroy (this->sock);
         throw S_cas_internal;
     }
+    
+    status = shutdown ( this->beaconSock, SHUT_RD );
+    if ( status ) {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        errlogPrintf (
+            "casDGIntfIO::casDGIntfIO() beacon sock UDP read shutdown error was %s\n", 
+            sockErrBuf );
+    }
 
     //
     // Fetch port configuration from EPICS environment variables

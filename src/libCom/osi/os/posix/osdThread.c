@@ -167,6 +167,34 @@ static epicsThreadOSD * create_threadInfo(const char *name)
     return pthreadInfo;
 }
 
+static epicsThreadOSD * init_threadInfo1(const char *name,
+    unsigned int priority, unsigned int stackSize,
+    EPICSTHREADFUNC funptr,void *parm)
+{
+    epicsThreadOSD *pthreadInfo;
+    int status;
+                                                                                                          
+    pthreadInfo = create_threadInfo(name);
+    pthreadInfo->createFunc = funptr;
+    pthreadInfo->createArg = parm;
+    status = pthread_attr_init(&pthreadInfo->attr);
+    checkStatusOnce(status,"pthread_attr_init");
+    if(status) return 0;
+    status = pthread_attr_setdetachstate(
+        &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
+    checkStatusOnce(status,"pthread_attr_setdetachstate");
+#if defined (_POSIX_THREAD_ATTR_STACKSIZE)
+#if ! defined (OSITHREAD_USE_DEFAULT_STACK)
+    status = pthread_attr_setstacksize( &pthreadInfo->attr,(size_t)stackSize);
+    checkStatusOnce(status,"pthread_attr_setstacksize");
+#endif /*OSITHREAD_USE_DEFAULT_STACK*/
+#endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
+    status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
+    if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
+    pthreadInfo->osiPriority = priority;
+    return(pthreadInfo);
+}
+
 static epicsThreadOSD * init_threadInfo(const char *name,
     unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void *parm)
@@ -197,6 +225,11 @@ static epicsThreadOSD * init_threadInfo(const char *name,
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+    status = pthread_attr_setschedpolicy(
+        &pthreadInfo->attr,SCHED_FIFO);
+     if(status) {
+         checkStatusOnce(status,"pthread_attr_setschedpolicy");
+     }
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(status) {
@@ -246,6 +279,9 @@ static void once(void)
     status = pthread_attr_setscope(&pcommonAttr->attr,PTHREAD_SCOPE_PROCESS);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
+    status = pthread_attr_setschedpolicy(
+        &pcommonAttr->attr,SCHED_FIFO);
+    checkStatusOnce(status,"pthread_attr_setschedpolicy");
     status = pthread_attr_getschedpolicy(
         &pcommonAttr->attr,&pcommonAttr->schedPolicy);
     checkStatusOnce(status,"pthread_attr_getschedpolicy");
@@ -379,6 +415,12 @@ epicsThreadId epicsThreadCreate(const char *name,
     if(pthreadInfo==0) return 0;
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
+    if(status==1){ /* no permission to create such a thread, non-root user */
+      pthreadInfo = init_threadInfo1(name,priority,stackSize,funptr,parm);
+      if(pthreadInfo==0) return 0;
+      status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
+                start_routine,pthreadInfo);
+    }
     checkStatus(status,"pthread_create");
     if(status) return 0;
     pthread_sigmask(SIG_SETMASK,&oldSig,NULL);

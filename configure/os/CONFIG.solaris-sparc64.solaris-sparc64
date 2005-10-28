@@ -1,0 +1,11 @@
+# CONFIG.solaris-sparc64.solaris-sparc64
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-sparc Sun compiler host - solaris-sparc Sun compiler target builds
+# Sites may override these definitions in CONFIG_SITE.solaris-sparc64.solaris-sparc64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/os/CONFIG.solaris-sparc.solaris-sparc

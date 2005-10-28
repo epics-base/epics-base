@@ -21,7 +21,7 @@ STATIC_LDLIBS_YES = -Wl,-a,default
 STATIC_LDLIBS_NO =
 
 # Switch explicitly from default DCE threads to posix threads
-POSIX_CPPFLAGS_YES += -D_REENTRANT -D_PTHREADS -D_POSIX_C_SOURCE=199506L
+POSIX_CPPFLAGS += -D_REENTRANT -D_PTHREADS -D_POSIX_C_SOURCE=199506L
 USR_SYS_LIBS += pthread
 
 # C++ templates need PIC definition also in link phase

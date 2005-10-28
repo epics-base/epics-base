@@ -13,8 +13,7 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = Linux
 ARCH_CLASS = x86
 
-POSIX_CPPFLAGS_NO =
-POSIX_LDLIBS_YES = libpthread.so
+POSIX_LDLIBS = libpthread.so
 
 OP_SYS_CPPFLAGS += -D_BSD_SOURCE -D_SVID_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux

@@ -122,8 +122,7 @@ CODE_CXXFLAGS = -fno-implicit-templates
 
 #--------------------------------------------------
 # posix c preprocessor flags
-POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
-POSIX_CPPFLAGS_NO =
+POSIX_CPPFLAGS = -D_POSIX_SOURCE
 
 #--------------------------------------------------
 # no shared libs for vxWorks

@@ -216,7 +216,6 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
     pthreadInfo->osiPriority = priority;
-    setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
     return(pthreadInfo);
 }
 
@@ -391,11 +390,12 @@ epicsThreadId epicsThreadCreate(const char *name,
     pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     if(pthreadInfo==0) return 0;
+    setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     if(status==EPERM){
-        /* change scheduling policy and try again */
-        setSchedulingPolicy(pthreadInfo,SCHED_OTHER);
+        pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
+        if(pthreadInfo==0) return 0;
         status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     }

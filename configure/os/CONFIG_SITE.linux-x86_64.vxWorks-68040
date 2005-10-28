@@ -1,0 +1,21 @@
+# CONFIG_SITE.linux-x86_64.vxWorks-68040
+#
+# $Id$
+#
+# Site specific definitions for linux-x86_64 host -  vxWorks-68040 target builds
+# Only the local epics system manager should modify this file
+#-------------------------------------------------------
+
+# JBA test override values
+#CMPLR_SUFFIX=
+#GNU_TARGET=m68k-wrs-vxworks
+#CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+
+# ORNL SNS overrides for cross compilers
+#VX_DIR = /opt/tornado20/
+#VX_CONFIG_DIR_YES = $(VX_DIR)/target/config
+#VX_INCLUDE_YES = /usr/local/crossgcc/m68k/m68k-wrs-vxworks/sys-include
+#VX_GNU_YES = /usr/local/crossgcc/m68k/
+#VX_GNU_BIN_YES = $(VX_GNU)/bin
+#VX_GNU_LIB_YES = /usr/local/crossgcc/m68k/lib/gcc-lib/m68k-wrs-vxworks/2.95.2
+

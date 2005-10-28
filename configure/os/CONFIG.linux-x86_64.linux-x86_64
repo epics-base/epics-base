@@ -1,0 +1,21 @@
+#  CONFIG.linux-x86_64.linux-x86_64
+#
+# $Id$
+#
+# Definitions for linux-x86_64 host - linux-x86_64 target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86_64.linux-x86_64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO=
+
+SHRLIB_LDFLAGS +=  -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+

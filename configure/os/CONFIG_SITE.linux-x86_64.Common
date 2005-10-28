@@ -1,0 +1,12 @@
+# CONFIG_SITE.linux-x86_64.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Site override definitions for linux-x86_64 host builds
+#-------------------------------------------------------
+
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040 solaris-sparc
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
+#CROSS_COMPILER_TARGET_ARCHS = RTEMS-mvme2100
+

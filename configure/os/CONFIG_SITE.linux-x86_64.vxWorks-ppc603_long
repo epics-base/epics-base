@@ -1,0 +1,17 @@
+# CONFIG_SITE.linux-x86_64.vxWorks-ppc603_long
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Site override definitions for linux-x86_64 host - vxWorks-ppc603 target builds
+#-------------------------------------------------------
+# This file contains overrides for Vx builds
+# ORNL SNS overrides for cross compilers
+
+# The custom cross compiler for VxWorks on Linux
+# has place in a directory structure like that of
+# the Solaris distribution.  So now the cross should
+# only need the following line.
+# cross-compiler from "Linux x86pc" host to a "ppc603" target
+VX_DIR_YES = /ade/vxWorks/t202/ppc
+

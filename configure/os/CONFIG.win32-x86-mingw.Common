@@ -1,0 +1,32 @@
+# CONFIG.win32-x86-mingw.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for win32-x86-cygwin host archs
+# Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+CP = $(PERL) $(CONFIG)/tools/cp.pl
+MV = $(PERL) $(CONFIG)/tools/mv.pl
+RM = $(PERL) $(CONFIG)/tools/rm.pl -f
+MKDIR = $(PERL) $(CONFIG)/tools/mkdir.pl
+RMDIR = $(PERL) $(CONFIG)/tools/rm.pl -rf
+ECHO = echo
+
+HOSTEXE=.exe
+
+WIND_HOST_TYPE = x86-win32
+
+# osithead use default stack, YES or NO override
+OSITHREAD_USE_DEFAULT_STACK = NO
+
+# DLL build not supported yet
+# Needed to find dlls for base installed build tools (antelope,eflex,...)
+#PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
+
+
+

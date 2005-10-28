@@ -1,0 +1,27 @@
+# CONFIG.Common.win32-x86-mingw
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for win32-x86-mingw target builds
+# Sites may override these definitions in CONFIG_SITE.Common.win32-x86-mingw
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = WIN32
+ARCH_CLASS = x86
+
+EXE=.exe
+
+POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
+
+ARCH_DEP_CPPFLAGS += -D_X86_
+
+# Library used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline
+
+# Compiler defines _WIN32 and WIN32
+OP_SYS_CPPFLAGS =
+

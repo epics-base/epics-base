@@ -1,0 +1,33 @@
+#  CONFIG.win32-x86-mingw.win32-x86-mingw
+#
+# $Id$
+#
+# Definitions for win32-x86-mingw host - win32-x86-mingw target builds
+# Sites may override these definitions in CONFIG_SITE.win32-x86-mingw.win32-x86-mingw
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+# Shared libraries not implemented
+SHARED_LIBRARIES=NO
+
+# gcc, g++, ar, ld, and ranlib must be in user's path
+CC = gcc
+CCC = g++
+AR = ar -rc
+LD = ld -r
+RANLIB = ranlib
+
+# Avoid "position-independent code is always generated" message
+SHRLIB_CFLAGS =
+
+# Dont use -ansi option:  eliminates strdup and _tempnam
+CONFORM_CFLAGS_ANSI =
+CONFORM_CFLAGS_STRICT = -pedantic
+CONFORM_CXXFLAGS_ANSI =
+CONFORM_CXXFLAGS_STRICT = -pedantic
+
+# Override linking with gcc library
+GNU_LDLIBS_YES =
+

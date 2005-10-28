@@ -1,0 +1,17 @@
+# CONFIG_SITE.Common.win32-x86-mingw
+#
+# $Id$
+#
+# Site Specific definitions for cygwin-x86 target
+# Only the local epics system manager should modify this file
+
+# If readline is not installed comment the following line
+# to omit command-line editing and history support
+#COMMANDLINE_LIBRARY = READLINE
+
+# Needed to find dlls for gcc, g++, as, cpp, ...
+# if MINGW_BIN not in user's path
+MINGW_BIN=C:/MinGW/bin
+export PATH := $(MINGW_BIN):$(PATH)
+
+PERL=c:/cygwin/bin/perl.exe

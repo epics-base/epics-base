@@ -256,10 +256,6 @@ OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))
 OP_SYS_LDFLAGS += $(LDFLAGS_$(COMMANDLINE_LIBRARY))
 
 #--------------------------------------------------
-# POSIX thread priority scheduling flag
-THREAD_CPPFLAGS_YES_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
-
-#--------------------------------------------------
 # Flags
 
 INCLUDES = -I. $(GENERIC_SRC_INCLUDES) $(INSTALL_INCLUDES) $(RELEASE_INCLUDES)\

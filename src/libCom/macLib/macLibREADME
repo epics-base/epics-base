@@ -1,54 +1,3 @@
-------------------------------------------------------------------------
-
-EPICS R3.14.3 release
-
-------------------------------------------------------------------------
-
-- Included as part of operating-system-independent IOC core.
-- Provides all features described below, plus environment-variable parameter
-  expansion:
-     char *macEnvExpand( char *src );
-
-     This operates on a string which may contain macros defined by
-     environment variables. It parses the string looking for such
-     references and passes them to macGetValue() for translation.
-     It uses malloc to allocate space for the expanded string and
-     returns a pointer to this null-terminated string.  It returns
-     NULL if the source string contains any undefined references.
-
-------------------------------------------------------------------------
-
-first release
-
-------------------------------------------------------------------------
-
-This is the original final specification for the EPICS macro library:
-
-From wlupton Mon Feb 19 14:10:08 1996
-To: tech-talk@aps.anl.gov
-Subject: Re: macro substitution
-Content-Length: 9716
-X-Lines: 251
-Status: RO
-
-Dear all,
-
-  Here's yet another proposal for the macro library. There has been some
-private discussion between myself, Jim and Marty, and I hope that this
-is nearly final (or final enough to be implemented). After all the
-discussion, the actual implementation is going to be a breeze!
-
-  The biggest changes are a move a way from the "filesystem-like"
-routine names and a reduction in the emphasis placed on the standalone
-tool.
-
-  I'm afraid there are still a few minor issues to be resolved but
-probably nothing that can't wait for an alpha release.
-
-  William
-
-------------------------------------------------------------------------
-
 1. Macro substitution library
 -----------------------------
 
@@ -83,29 +32,8 @@ a) long macCreateHandle( MAC_HANDLE **handle, char *pairs[] );
    suppress the messages.
 
 
-b) long macGetXxxx( MAC_HANDLE *handle, <Xxxx-specific> );
-   long macPutXxxx( MAC_HANDLE *handle, <Xxxx-specific> );
-
-   These routines replace the earlier-proposed macIoctl(). "Xxxx" is the
-   name of the attribute in question. An initial list (which can grow)
-   might be:
-
-   Attribute			default value
-   ---------			-------------
-   ErrRoutine			errPrintf
-   Verbose			TRUE
-
-   StartChars			"$"
-   LeftChars			"{("
-   RightChars			"})"
-   SeparChars			","
-   AssignChars			"="
-
-   A NULL handle can be used to set or get global values (used by
-   macParseDefns()).
-
 c) long macGetValue ( MAC_HANDLE *handle, char *name,
-					  char *value, long maxlen );
+                      char *value, long maxlen );
 
    Returns up to maxlen characters of the value of macro "name". "value"
    will be zero-terminated if the length of the value is less than
@@ -122,31 +50,24 @@ c) long macGetValue ( MAC_HANDLE *handle, char *name,
    maxlen is intended to be consistent with what people are used to with
    strncpy().
 
-   "name" can either be just the macro name or can have the syntax of a
-   macro reference (e.g. it can be "fred" or "$(fred)"). In the latter
-   case, any characters after the logical end of the macro reference
-   will be ignored (this is to ease expansion of a string which may
-   contain many macro references), but no means of returning the number
-   of characters scanned in "name" is provided. [It may prove expedient
-   to make macGetValue() simpler and provide a separate routine with
-   more parameters which returns this information.]
-
-   If the name or value contains a macro reference then the reference
-   will be expanded recursively. This expansion will detect a direct or
-   indirect self reference.
+   If the value contains macro references then the references will be
+   expanded recursively. This expansion will detect a direct or indirect
+   self reference.
 
    Macro references begin with a "$" immediately followed by either a
-   "(" or a "{" character. The reference is terminated by the matching
-   ")" or "}" character. These characters can be changed via
-   macPut{Start,Left,Right}Chars() above.
+   "(" or a "{" character. The macro name comes next, and may optionally
+   be succeeded by an "=" and a default value, which will be returned if
+   the named macro is undefined at the moment of expansion. The reference
+   is terminated by the matching ")" or "}" character.
 
 d) long macPutValue( MAC_HANDLE *handle, char *name, char *value );
 
-   Sets the value of the macro "name". If "value" is NULL, undefines
-   "name" (it's not an error if "name" was already undefined). Macros
-   referenced by "value" need not be defined at this point.
+   Sets the value of the macro "name". If "value" is NULL, it undefines
+   all instances of "name" at all scoping levels (it's not an error if
+   "name" is not defined in this case). Macros referenced by "value"
+   need not be defined at this point.
 
-   The function value is the length of the value.
+   The function returns the length of the value string.
 
 e) long macDeleteHandle( MAC_HANDLE *handle );
 
@@ -162,11 +83,9 @@ f) long macPushScope( MAC_HANDLE *handle );
    up until the next macPopScope() call will be lost on macPopScope()
    and those current at macPushScope() will be re-instated.
 
-   May not be implemented first time round.
-
 g) long macPopScope( MAC_HANDLE *handle );
 
-   See above.
+   See macPushScope.
 
 h) Error handling
 
@@ -176,9 +95,8 @@ h) Error handling
    worth returning information both on success / failure and on value
    length.
 
-   Errors are reported using an errPrintf()-compatible routine.
+   Errors and warnings are reported using errlogPrintf().
 
-   A "verbose" variable will control error reporting.
 
 
 1.2 Utility library
@@ -226,7 +144,7 @@ b) long macInstallMacros( MAC_HANDLE *handle, char *pairs[] );
    The function value is the number of macros defined.
 
 c) long macExpandString( MAC_HANDLE *handle, char *src,
-					     char *dest, long maxlen );
+                         char *dest, long maxlen );
 
    This operates on a string which may contain macro references. It
    parses the string looking for such references and passes them to
@@ -237,54 +155,16 @@ c) long macExpandString( MAC_HANDLE *handle, char *src,
    value is the number of characters copied. If negative, at least one
    undefined macro has been left unexpanded.
 
-d) long macReportMacros( MAC_HANDLE *handle );
+d) char *macEnvExpand( char *src );
 
-   This reports details of current definitions to standard output (or
-   standard error?). It's purely for debugging purposes.
+   This operates on a string which may contain macros defined by
+   environment variables. It parses the string looking for such
+   references and passes them to macGetValue() for translation. It uses
+   malloc() to allocate space for the expanded string and returns a
+   pointer to this null-terminated string. It returns NULL if the source
+   string contains any undefined references.
 
+e) long macReportMacros( MAC_HANDLE *handle );
 
-2. Macro substitution tool
---------------------------
-
-This section is hardly changed from the previous version. The library will
-be implemented first.
-
-A "macsub" (or "mactool"?) application will be written which would use the
-above library and use a command like:
-
-macsub a=b,c=d e=f -Iaaa -Ibbb
-
-to parse a file like:
-
-# comment
-%include filename
-%xxx = ppp
-%yyy = $(xxx)
-<arbitrary text containing macro references>
-
-There will also be options to read and write specified files, control the
-comment character, control the command prefix, change the macro substitution
-characters etc.
-
-Syntax will be a loose subset of corresponding shell syntax.
-
-The use of a command prefix should be optional and perhaps it should default
-to an empty string. However there will be cases where the file in question
-has a syntax over which we have no control, which may include assignments,
-"set" commands, "define" commands etc. This is why I proposed a command
-prefix, which might be an arbitrary string such as "macro " or might just
-be "%" as in the above example.
-
-The tool can also support the following syntax (or perhaps some equivalent
-syntax which will sit more easily inside a file that may have a completely
-different syntax from it?):
-
-file gizmo_database.db
-{
-    instance1{ pre=part1,parm=big,   alarm_limit=20 }
-    instance2{ pre=part2,parm=medium,alarm_limit=30 }
-}
-
-as an implied multiple include of "gizmo_database.db" with the specified
-macro definitions for each include (here's a good application for
-macPushScope() and macPopScope() actually).
+   This reports details of current definitions to standard output, and is
+   intended purely for debugging purposes.

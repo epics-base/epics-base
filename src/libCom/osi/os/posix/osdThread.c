@@ -143,7 +143,7 @@ static void myAtExit(void)
     pthread_mutex_destroy(&onceLock);
     pthread_key_delete(getpthreadInfo);
 }
-
+
 static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
 {
     double maxPriority,minPriority,slope,oss;
@@ -156,6 +156,30 @@ static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
     oss = (double)pthreadInfo->osiPriority * slope + minPriority;
     return((int)oss);
 }
+static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
+{
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
+    int status;
+
+    status = pthread_attr_getschedparam(
+        &pthreadInfo->attr,&pthreadInfo->schedParam);
+    checkStatusOnce(status,"pthread_attr_getschedparam");
+    pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+    status = pthread_attr_setschedpolicy(
+        &pthreadInfo->attr,policy);
+     if(status) {
+         checkStatusOnce(status,"pthread_attr_setschedpolicy");
+     }
+    status = pthread_attr_setschedparam(
+        &pthreadInfo->attr,&pthreadInfo->schedParam);
+    if(status) {
+         checkStatusOnce(status,"pthread_attr_setschedparam");
+    }
+    status = pthread_attr_setinheritsched(
+        &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
+    checkStatusOnce(status,"pthread_attr_setinheritsched");
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+}
 
 static epicsThreadOSD * create_threadInfo(const char *name)
 {
@@ -165,34 +189,6 @@ static epicsThreadOSD * create_threadInfo(const char *name)
     pthreadInfo->suspendEvent = epicsEventMustCreate(epicsEventEmpty);
     pthreadInfo->name = epicsStrDup(name);
     return pthreadInfo;
-}
-
-static epicsThreadOSD * init_threadInfo1(const char *name,
-    unsigned int priority, unsigned int stackSize,
-    EPICSTHREADFUNC funptr,void *parm)
-{
-    epicsThreadOSD *pthreadInfo;
-    int status;
-                                                                                                          
-    pthreadInfo = create_threadInfo(name);
-    pthreadInfo->createFunc = funptr;
-    pthreadInfo->createArg = parm;
-    status = pthread_attr_init(&pthreadInfo->attr);
-    checkStatusOnce(status,"pthread_attr_init");
-    if(status) return 0;
-    status = pthread_attr_setdetachstate(
-        &pthreadInfo->attr, PTHREAD_CREATE_DETACHED);
-    checkStatusOnce(status,"pthread_attr_setdetachstate");
-#if defined (_POSIX_THREAD_ATTR_STACKSIZE)
-#if ! defined (OSITHREAD_USE_DEFAULT_STACK)
-    status = pthread_attr_setstacksize( &pthreadInfo->attr,(size_t)stackSize);
-    checkStatusOnce(status,"pthread_attr_setstacksize");
-#endif /*OSITHREAD_USE_DEFAULT_STACK*/
-#endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
-    status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
-    if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
-    pthreadInfo->osiPriority = priority;
-    return(pthreadInfo);
 }
 
 static epicsThreadOSD * init_threadInfo(const char *name,
@@ -220,25 +216,7 @@ static epicsThreadOSD * init_threadInfo(const char *name,
     status = pthread_attr_setscope(&pthreadInfo->attr,PTHREAD_SCOPE_PROCESS);
     if(errVerbose) checkStatusOnce(status,"pthread_attr_setscope");
     pthreadInfo->osiPriority = priority;
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
-    status = pthread_attr_getschedparam(
-        &pthreadInfo->attr,&pthreadInfo->schedParam);
-    checkStatusOnce(status,"pthread_attr_getschedparam");
-    pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
-    status = pthread_attr_setschedpolicy(
-        &pthreadInfo->attr,SCHED_FIFO);
-     if(status) {
-         checkStatusOnce(status,"pthread_attr_setschedpolicy");
-     }
-    status = pthread_attr_setschedparam(
-        &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status) {
-         checkStatusOnce(status,"pthread_attr_setschedparam");
-    }
-    status = pthread_attr_setinheritsched(
-        &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
-    checkStatusOnce(status,"pthread_attr_setinheritsched");
-#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+    setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
     return(pthreadInfo);
 }
 
@@ -415,10 +393,10 @@ epicsThreadId epicsThreadCreate(const char *name,
     if(pthreadInfo==0) return 0;
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
-    if(status==1){ /* no permission to create such a thread, non-root user */
-      pthreadInfo = init_threadInfo1(name,priority,stackSize,funptr,parm);
-      if(pthreadInfo==0) return 0;
-      status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
+    if(status==EPERM){
+        /* change scheduling policy and try again */
+        setSchedulingPolicy(pthreadInfo,SCHED_OTHER);
+        status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     }
     checkStatus(status,"pthread_create");
@@ -457,7 +435,6 @@ static epicsThreadOSD *createImplicit(void)
     {
     struct sched_param param;
     int policy;
-    int priority = 0;
     if(pthread_getschedparam(tid,&policy,&param) == 0)
         pthreadInfo->osiPriority =
                  (param.sched_priority - pcommonAttr->minPriority) * 100.0 /
@@ -655,22 +632,23 @@ void epicsThreadGetName(epicsThreadId pthreadInfo, char *name, size_t size)
 static void showThreadInfo(epicsThreadOSD *pthreadInfo,unsigned int level)
 {
     if(!pthreadInfo) {
-        fprintf(epicsGetStdout(),"            NAME     EPICS ID   PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
-    }
-    else {
+        fprintf(epicsGetStdout(),"            NAME     EPICS ID   "
+            "PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
+    } else {
         struct sched_param param;
         int policy;
         int priority = 0;
 
-        if ((pthreadInfo->tid != 0)
-         && (pthread_getschedparam(pthreadInfo->tid,&policy,&param) == 0))
-            priority = param.sched_priority;
-    fprintf(epicsGetStdout(),"%16.16s %12p %12lu    %3d%8d %8.8s\n", pthreadInfo->name,(void *)
-                                   pthreadInfo,(unsigned long)pthreadInfo->tid,
-                                   pthreadInfo->osiPriority,priority,
-                                   pthreadInfo->isSuspended?"SUSPEND":"OK");
-    if(level>0)
-        ; /* more info */
+        if(pthreadInfo->tid) {
+            int status;
+            status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
+            if(!status) priority = param.sched_priority;
+        }
+        fprintf(epicsGetStdout(),"%16.16s %12p %12lu    %3d%8d %8.8s\n",
+             pthreadInfo->name,(void *)
+             pthreadInfo,(unsigned long)pthreadInfo->tid,
+             pthreadInfo->osiPriority,priority,
+             pthreadInfo->isSuspended?"SUSPEND":"OK");
     }
 }
 

@@ -1997,7 +1997,7 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 
     if(!pflddes) return(S_dbLib_flddesNotFound);
     macroIsOk = dbIsMacroOk(pdbentry);
-    stringHasMacro = (strstr(pstring,"$(") || strstr(pstring,"${"))?TRUE:FALSE;
+    stringHasMacro = strstr(pstring,"$(") || strstr(pstring,"${");
     if(!macroIsOk && stringHasMacro) {
 	epicsPrintf("%s.%s Has unexpanded macro\n",
 		dbGetRecordName(pdbentry),dbGetFieldName(pdbentry));
@@ -2368,7 +2368,7 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
     char	*message;
     int		stringHasMacro=FALSE;
 
-    stringHasMacro = (strstr(pstring,"$(") || strstr(pstring,"${"))?TRUE:FALSE;
+    stringHasMacro = strstr(pstring,"$(") || strstr(pstring,"${");
     message = getpMessage(pdbentry);
     *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
@@ -3798,6 +3798,7 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 	    printf("\t   choice: %s\n",pdevSup->choice);
 	    printf("\tlink_type: %d\n",pdevSup->link_type);
 	    printf("\t    pdset: %p\n",(void *)pdevSup->pdset);
+	    printf("\t    pdsxt: %p\n",(void *)pdevSup->pdsxt);
 	}
 	if(recordTypeName) break;
     }

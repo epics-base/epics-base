@@ -187,6 +187,9 @@ epicsShareFunc char * epicsShareAPI dbGetMenuStringFromIndex(
 epicsShareFunc int epicsShareAPI dbGetMenuIndexFromString(
     DBENTRY *pdbentry, const char *choice);
 
+epicsShareFunc drvSup * epicsShareAPI dbFindDriver(
+    dbBase *pdbbase, const char *name);
+
 epicsShareFunc int  epicsShareAPI dbAllocForm(DBENTRY *pdbentry);
 epicsShareFunc long  epicsShareAPI dbFreeForm(DBENTRY *pdbentry);
 epicsShareFunc char  ** epicsShareAPI dbGetFormPrompt(DBENTRY *pdbentry);

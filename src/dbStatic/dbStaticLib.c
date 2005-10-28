@@ -2814,6 +2814,12 @@ int epicsShareAPI dbGetMenuIndexFromString(DBENTRY *pdbentry, const char *choice
     return (-1);
 }
 
+drvSup * epicsShareAPI dbFindDriver(dbBase *pdbbase, const char *name) {
+    GPHENTRY *pgph = gphFind(pdbbase->pgpHash,name,&pdbbase->drvList);
+    if (!pgph) return NULL;
+    return (drvSup *) pgph->userPvt;
+}
+
 int epicsShareAPI dbAllocForm(DBENTRY *psave)
 {
     DBENTRY	dbEntry;

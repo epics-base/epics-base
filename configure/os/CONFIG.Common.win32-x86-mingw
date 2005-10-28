@@ -22,6 +22,9 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 # Library used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline
 
+STATIC_BUILD=YES
+STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+
 # Compiler defines _WIN32 and WIN32
 OP_SYS_CPPFLAGS =
 

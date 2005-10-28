@@ -19,10 +19,11 @@ AR = ar -rc
 LD = ld -r
 RANLIB = ranlib
 
-# Avoid position-independent code is always generated message
+# Dont use -fPIC: with -fPIC we get 
+# "warning: -fPIC ignored for target (all code is position independent) "
 SHRLIB_CFLAGS =
 
-# -ansi eliminates strdup
+# Dont use -ansi: -ansi eliminates strdup and _tempnam
 CONFORM_CFLAGS_ANSI =
 CONFORM_CFLAGS_STRICT = -pedantic
 CONFORM_CXXFLAGS_ANSI =

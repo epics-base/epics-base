@@ -1,7 +1,7 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # makeBaseApp 
 
-# Authors: Ralph Lange and Marty Kraimer
+# Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 # $Id$
 
 use Cwd;
@@ -200,13 +200,22 @@ sub get_commandline_opts { #no args
     if (!@ARGV){
 	if ($opt_t) {
 	    if ($opt_i) {
-		print "IOC names? (the created directories will have \"ioc\" prepended): ";
+		my @iocs = map {s/iocBoot\///; $_} glob 'iocBoot/ioc*';
+		if (@iocs) {
+		    print "The following IOCs already exist here:\n",
+			  map {"    $_\n"} @iocs;
+		}
+		print "Name the IOC(s) to be created.\n",
+		      "Names given will have \"ioc\" prepended to them.\n",
+		      "IOC names? ";
 	    } else {
-		print "Application names? (the created directories will have \"App\" appended): ";
-	    } 
+		print "Name the application(s) to be created.\n",
+		      "Names given will have \"App\" appended to them.\n",
+		      "Application names? ";
+	    }
 	    $namelist = <STDIN>;
 	    chomp($namelist);
-	    @names = split " ", $namelist;
+	    @names = split /[\s,]/, $namelist;
 	} else {
 	    Cleanup(1);
 	} 
@@ -241,7 +250,14 @@ sub get_commandline_opts { #no args
 	if ($opt_p){
 	    $appnameIn = $opt_p if ($opt_p);
 	} else {
-	    print "Application name? (default is IOC name): ";
+	    my @apps = glob '*App';
+	    if (@apps) {
+		print "The following applications are available:\n",
+		      map {s/App$//; "    $_\n"} @apps;
+	    }
+	    print "What application should the IOC(s) boot?\n",
+		  "The default uses the IOC's name, even if not listed above.\n",
+		  "Application name? ";
 	    $appnameIn = <STDIN>;
 	    chomp($appnameIn);
 	}

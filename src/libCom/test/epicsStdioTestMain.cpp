@@ -18,7 +18,7 @@ int epicsStdioTest (const char *report);
 
 int main ( int argc, char *argv[] )
 {
-    char *report = "";
+    const char *report = "";
     if(argc>1) report = argv[1];
 
     epicsStdioTest (report);

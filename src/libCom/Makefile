@@ -48,10 +48,7 @@ SRCS += cvtFast.c
 SRC_DIRS += $(LIBCOM)/cppStd
 INC += epicsAlgorithm.h
 INC += epicsExcept.h
-INC += epicsList.h
-INC += epicsListBase.h
 INC += epicsMemory.h
-SRCS += epicsListBase.cpp
 
 # From cxxTemplates
 SRC_DIRS += $(LIBCOM)/cxxTemplates

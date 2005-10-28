@@ -226,7 +226,7 @@ static int find_element(pbuffer,pelement,pno_bytes)
 
  	/* compare the string to each element in the element table */
  	*pelement = &elements[0];
- 	while ((*pelement)->element[0] != NULL){
+ 	while ((*pelement)->element[0] != '\0'){
  		if (strncmp(pbuffer,(*pelement)->element,
 		  strlen((*pelement)->element)) == 0){
  			*pno_bytes += strlen((*pelement)->element);
@@ -249,13 +249,13 @@ short		*pno_bytes;
 {
 
 	/* get the next expression element from the infix expression */
-	if (*pinfix == NULL) return(END);
+	if (*pinfix == '\0') return(END);
 	*pno_bytes = 0;
 	while (*pinfix == 0x20){
 		*pno_bytes += 1;
 		pinfix++;
 	}
-	if (*pinfix == NULL) return(END);
+	if (*pinfix == '\0') return(END);
 	if (!find_element(pinfix,pelement,pno_bytes))
 		return(UNKNOWN_ELEMENT);
 	return(FINE);

@@ -256,8 +256,10 @@ private:
     epicsTime programBeginTime;
     double connTMO;
     // **** lock hierarchy ****
-    // callback lock must always be acquired before
+    // 1) callback lock must always be acquired before
     // the primary mutex if both locks are needed
+    // 2) tcpiiu::recvThreadIsRunning lock must always be 
+    // acquired before callback lock if both locks are needed
     mutable epicsMutex & mutex; 
     mutable epicsMutex & cbMutex; 
     epicsEvent iiuUninstall;

@@ -47,6 +47,13 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
+    // allow pending receive traffic to run first
+    this->iiu.deferToRecvBacklog ();
+
+    // callback lock is required because channel disconnect
+    // state change is initiated from this thread, and 
+    // this can cause their disconnect notify callback
+    // to be invoked.
     callbackManager mgr ( this->ctxNotify, this->cbMutex );
     epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->shuttingDown ) {
@@ -88,12 +95,12 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 }
 
 void tcpRecvWatchdog::beaconArrivalNotify ( 
-    epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( ! ( this->shuttingDown || this->beaconAnomaly || this->probeResponsePending ) ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        this->timer.start ( *this, currentTime + this->period );
+        this->timer.start ( *this, this->period );
         debugPrintf ( ("saw a normal beacon - reseting circuit receive watchdog\n") );
     }
 }
@@ -114,8 +121,7 @@ void tcpRecvWatchdog::beaconAnomalyNotify (
 }
 
 void tcpRecvWatchdog::messageArrivalNotify ( 
-    epicsGuard < epicsMutex > & guard,
-    const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -126,14 +132,13 @@ void tcpRecvWatchdog::messageArrivalNotify (
         // of expire() which takes the lock - it take also 
         // the callback lock
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        this->timer.start ( *this, currentTime + this->period );
+        this->timer.start ( *this, this->period );
         debugPrintf ( ("received a message - reseting circuit recv watchdog\n") );
     }
 }
 
 void tcpRecvWatchdog::probeResponseNotify ( 
-    epicsGuard < epicsMutex > & cbGuard, 
-    const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & cbGuard )
 {
     bool restartNeeded = false;
     double restartDelay = DBL_MAX;
@@ -158,8 +163,7 @@ void tcpRecvWatchdog::probeResponseNotify (
     if ( restartNeeded ) {
         // timer callback takes the callback mutex and the cac mutex
         epicsGuardRelease < epicsMutex > cbGuardRelease ( cbGuard );
-        epicsTime expireTime = currentTime + restartDelay;
-        this->timer.start ( *this, expireTime );
+        this->timer.start ( *this, restartDelay );
         debugPrintf ( ("recv wd restarted with delay %f\n", restartDelay) );
     }
 }
@@ -179,8 +183,7 @@ void tcpRecvWatchdog::probeResponseNotify (
 // dead connections in this case.
 //
 void tcpRecvWatchdog::sendBacklogProgressNotify ( 
-    epicsGuard < epicsMutex > & guard,
-    const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -194,7 +197,7 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
         // until a recv wd timer expire callback completes, and 
         // this callback takes the lock
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        this->timer.start ( *this, currentTime + CA_ECHO_TIMEOUT );
+        this->timer.start ( *this, CA_ECHO_TIMEOUT );
         debugPrintf ( ("saw heavy send backlog - reseting circuit recv watchdog\n") );
     }
 }
@@ -215,8 +218,7 @@ void tcpRecvWatchdog::connectNotify (
 
 void tcpRecvWatchdog::sendTimeoutNotify ( 
     epicsGuard < epicsMutex > & cbGuard,
-    epicsGuard < epicsMutex > & guard,
-    const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -229,7 +231,7 @@ void tcpRecvWatchdog::sendTimeoutNotify (
         epicsGuardRelease < epicsMutex > unguard ( guard );
         {
             epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
-            this->timer.start ( *this, currentTime + CA_ECHO_TIMEOUT );
+            this->timer.start ( *this, CA_ECHO_TIMEOUT );
         }
     }
     debugPrintf ( ("TCP send timed out - sending echo request\n") );

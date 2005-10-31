@@ -38,24 +38,19 @@ public:
         double periodIn, epicsTimerQueue & );
     virtual ~tcpRecvWatchdog ();
     void sendBacklogProgressNotify (
-        epicsGuard < epicsMutex > &,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & );
     void messageArrivalNotify (
-        epicsGuard < epicsMutex > & guard,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & guard );
     void probeResponseNotify ( 
-        epicsGuard < epicsMutex > &,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & );
     void beaconArrivalNotify ( 
-        epicsGuard < epicsMutex > &,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & );
     void beaconAnomalyNotify ( epicsGuard < epicsMutex > & );
     void connectNotify (
         epicsGuard < epicsMutex > & );
     void sendTimeoutNotify (
         epicsGuard < epicsMutex > & cbGuard,
-        epicsGuard < epicsMutex > & guard,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & guard );
     void cancel ();
     void shutdown ();
     void show ( unsigned level ) const;

@@ -493,8 +493,7 @@ void tcpRecvThread::run ()
                     continue;
                 }
                 // reschedule connection activity watchdog
-                this->iiu.recvDog.messageArrivalNotify ( 
-                    guard, currentTime ); 
+                this->iiu.recvDog.messageArrivalNotify ( guard ); 
             }
 
             {
@@ -859,7 +858,6 @@ void tcpiiu::responsiveCircuitNotify (
 }
 
 void tcpiiu::sendTimeoutNotify ( 
-    const epicsTime & currentTime,
     callbackManager & mgr,
     epicsGuard < epicsMutex > & guard )
 {
@@ -867,7 +865,7 @@ void tcpiiu::sendTimeoutNotify (
     guard.assertIdenticalMutex ( this->mutex );
     this->unresponsiveCircuitNotify ( mgr.cbGuard, guard );
     // setup circuit probe sequence
-    this->recvDog.sendTimeoutNotify ( mgr.cbGuard, guard, currentTime );
+    this->recvDog.sendTimeoutNotify ( mgr.cbGuard, guard );
 }
 
 void tcpiiu::deferToRecvBacklog ()
@@ -1625,7 +1623,7 @@ bool tcpiiu::flush ( epicsGuard < epicsMutex > & guard )
             this->unacknowledgedSendBytes += bytesToBeSent;
             if ( this->unacknowledgedSendBytes > 
                 this->socketLibrarySendBufferSize ) {
-                this->recvDog.sendBacklogProgressNotify ( guard, current );
+                this->recvDog.sendBacklogProgressNotify ( guard );
             }
         }
     }

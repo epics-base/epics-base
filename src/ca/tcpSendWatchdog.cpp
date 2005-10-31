@@ -41,7 +41,7 @@ tcpSendWatchdog::~tcpSendWatchdog ()
 }
 
 epicsTimerNotify::expireStatus tcpSendWatchdog::expire ( 
-                 const epicsTime & currentTime )
+                 const epicsTime & /* currentTime */ )
 {
     callbackManager mgr ( this->ctxNotify, this->cbMutex );
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -57,7 +57,7 @@ epicsTimerNotify::expireStatus tcpSendWatchdog::expire (
         debugPrintf ( ( "Request not accepted by CA server %s for %g sec. Disconnecting.\n", 
             hostName, this->period ) );
 #   endif
-    this->iiu.sendTimeoutNotify ( currentTime, mgr, guard );
+    this->iiu.sendTimeoutNotify ( mgr, guard );
     return noRestart;
 }
 

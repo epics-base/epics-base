@@ -110,20 +110,19 @@ public:
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
     void sendTimeoutNotify ( 
-        const epicsTime & currentTime,
         callbackManager & cbMgr,
         epicsGuard < epicsMutex > & guard );
+    // dont call deferToRecvBacklog() while holding the callback lock.
+    void deferToRecvBacklog ();
     void receiveTimeoutNotify( 
         callbackManager &,
         epicsGuard < epicsMutex > & );
     void beaconAnomalyNotify ( 
         epicsGuard < epicsMutex > & );
     void beaconArrivalNotify ( 
-        epicsGuard < epicsMutex > &,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & );
     void probeResponseNotify ( 
-        epicsGuard < epicsMutex > &,
-        const epicsTime & currentTime );
+        epicsGuard < epicsMutex > & );
 
     void flushRequest ( 
         epicsGuard < epicsMutex > & );
@@ -208,6 +207,7 @@ private:
     char * pCurData;
     epicsMutex & mutex;
     epicsMutex & cbMutex;
+    epicsMutex recvThreadIsRunning;
     unsigned minorProtocolVersion;
     enum iiu_conn_state { 
         iiucs_connecting, // pending circuit connect
@@ -364,17 +364,16 @@ inline void tcpiiu::beaconAnomalyNotify (
 }
 
 inline void tcpiiu::beaconArrivalNotify (
-    epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & guard )
 {
     //guard.assertIdenticalMutex ( this->cacRef.mutexRef () );
-    this->recvDog.beaconArrivalNotify ( guard, currentTime );
+    this->recvDog.beaconArrivalNotify ( guard );
 }
 
 inline void tcpiiu::probeResponseNotify (
-    epicsGuard < epicsMutex > & cbGuard,
-    const epicsTime & currentTime )
+    epicsGuard < epicsMutex > & cbGuard )
 {
-    this->recvDog.probeResponseNotify ( cbGuard, currentTime );
+    this->recvDog.probeResponseNotify ( cbGuard );
 }
 
 #endif // ifdef virtualCircuith

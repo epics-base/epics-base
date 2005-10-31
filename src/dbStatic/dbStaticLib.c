@@ -3798,6 +3798,7 @@ void  epicsShareAPI dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 	    printf("\t   choice: %s\n",pdevSup->choice);
 	    printf("\tlink_type: %d\n",pdevSup->link_type);
 	    printf("\t    pdset: %p\n",(void *)pdevSup->pdset);
+	    printf("\t    pdsxt: %p\n",(void *)pdevSup->pdsxt);
 	}
 	if(recordTypeName) break;
     }

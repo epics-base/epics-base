@@ -13,6 +13,21 @@
 
 <h2 align="center">Changes since 3.14.7</h2>
 
+<h4>Runtime Hardware Address Changes</h4>
+
+<p>An Extended Device Support mechanism has been introduced which is
+designed as a safe way to widen the API between iocCore and the device
+support software it interfaces with.  An extended device support can
+now be notified of changes to a record's hardware address, and is
+given the chance to approve or reject that change.</p>
+
+<p>As a result of introducing this notification mechanism, any device
+support that was capable of handling runtime address changes in prior
+versions of Base will have to be updated to provide the new interface,
+since the absence of extended device support is now taken to mean that
+runtime address changes are not understood by the device support. 
+This requirement is not expected to affect many EPICS sites.</p>
+
 <h4>POSIX thread priority scheduling</h4>
 <p>POSIX thread priority scheduling is now supported. There is a new
 user option USE_POSIX_THREAD_PRIORITY_SCHEDULING in the CONFIG_SITE
@@ -32,6 +47,7 @@ should contain location definitions for EPICS modules only.</p>
 configure/RELEASE and moved to configure/os/CONFIG_SITE.Common.RTEMS. The 
 configure/RELEASE* files should contain location definitions for EPICS modules
 only.</p>
+
 <h4>event generator and event receiver record support </h3>
 All apsEvent specific record support has been removed from base
 
@@ -51,7 +67,6 @@ of the standard tasks failed. This is because they were passing
 their threadid rather than using epicsThreadGetIdSelf.
 It was possible to call taskwdInsert before the threadid was actually set.</p>
 
-
 <h4>dbLock and dbBkpt</h4>
 <p>dbLockGetLockId incorrectly always returned 0. dbBkpt (database breakpoint
 facility) is the only code that needed this. This caused unknown errors
@@ -62,7 +77,6 @@ if the dbBkpt facility is used.</p>
 
 <h4>epicsExport.h</h4>
 <p>Add additional cast to prevent 'strict aliaising' warnings.</p>
-
 
 <h4>iocsh</h4>
 <p>I/O redirection from vxWorks startup scripts now works.</p>
@@ -82,7 +96,6 @@ bootstrap flash memory.  This allows for fully standalone IOCs -- no TFTP/NFS
 server required.</p>
 <p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap
 parameters.</p>
-
 
 <h4>OS X</h4>
 <p>Builds on Tiger.</p>

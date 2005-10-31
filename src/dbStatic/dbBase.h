@@ -41,6 +41,7 @@ typedef struct devSup {
 	int		link_type;
 	/*Following only available on run time system*/
 	struct dset	*pdset;
+	struct dsxt	*pdsxt;       /* Extended device support */
 }devSup;
 
 typedef struct dbDeviceMenu {

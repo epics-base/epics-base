@@ -27,11 +27,18 @@ typedef long (*DEVSUPFUN)();	/* ptr to device support function*/
 typedef struct dset {	/* device support entry table */
     long	number;		/*number of support routines*/
     DEVSUPFUN	report;		/*print report*/
-    DEVSUPFUN	init;		/*init support*/
-    DEVSUPFUN	init_record;	/*init support for particular record*/
+    DEVSUPFUN	init;		/*init support layer*/
+    DEVSUPFUN	init_record;	/*init device for particular record*/
     DEVSUPFUN	get_ioint_info;	/* get io interrupt information*/
     /*other functions are record dependent*/
 }dset;
+
+struct dbCommon;
+typedef struct dsxt {   /* device support extension table */
+    long (*add_record)(struct dbCommon *precord);
+    long (*del_record)(struct dbCommon *precord);
+    /* Recordtypes are *not* allowed to extend this table */
+} dsxt;
 
 #define S_dev_noDevSup      (M_devSup| 1) /*SDR_DEVSUP: Device support missing*/
 #define S_dev_noDSET        (M_devSup| 3) /*Missing device support entry table*/
@@ -45,6 +52,12 @@ typedef struct dset {	/* device support entry table */
 #define S_dev_NoInit        (M_devSup|19) /*No init*/
 #define S_dev_Conflict      (M_devSup|21) /*Multiple records accessing same signal*/
 #define S_dev_noDeviceFound (M_devSup|23) /*No device found at specified address*/
+
+
+/* This routine is defined in src/misc/iocInit.c */
+
+extern void devExtend(dsxt *pdsxt);
+
 
 #ifdef __cplusplus
 } /* extern "C" */

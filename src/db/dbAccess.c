@@ -35,6 +35,7 @@
 #include "link.h"
 #include "dbFldTypes.h"
 #include "recSup.h"
+#include "devSup.h"
 #include "caeventmask.h"
 #include "db_field_log.h"
 #include "dbCommon.h"
@@ -1029,6 +1030,188 @@ long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,
         return(status);
 }
 
+devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *pdbRecordType, int dtyp) {
+    return (devSup *)ellNth(&pdbRecordType->devList, dtyp+1);
+}
+
+devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
+    devSup *pdevSup = (devSup *)ellFirst(&prdes->devList);
+    while (pdevSup) {
+        if (pdset == pdevSup->pdset) return pdevSup;
+        pdevSup = (devSup *)ellNext(&pdevSup->node);
+    }
+    return NULL;
+}
+
+static long dbPutFieldLink(
+    DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
+{
+    long        status = 0;
+    long        special=paddr->special;
+    dbCommon    *precord = (dbCommon *)(paddr->precord);
+    DBLINK  *plink = (DBLINK *)paddr->pfield;
+    const char  *pstring = (const char *)pbuffer;
+    DBENTRY	dbEntry;
+    dbFldDes    *pfldDes = (dbFldDes *)paddr->pfldDes;
+    DBADDR      dbaddr;
+    devSup *pdevSup = NULL;
+    struct dset *new_dset = NULL;
+    struct dsxt *new_dsxt = NULL;
+    int inpOut;
+    short scan;
+
+    if ((dbrType!=DBR_STRING) && (dbrType!=DBR_CHAR) && (dbrType!=DBR_UCHAR))
+        return S_db_badDbrtype;
+
+    if (((dbrType==DBR_CHAR) || (dbrType==DBR_UCHAR)) &&
+        (pstring[nRequest] != '\0'))
+        return S_db_badField;
+
+    dbInitEntry(pdbbase,&dbEntry);
+    status=dbFindRecord(&dbEntry,precord->name);
+    if (!status) status=dbFindField(&dbEntry,pfldDes->name);
+    if (status) return status;
+
+    inpOut = !(strcmp(pfldDes->name,"INP") && strcmp(pfldDes->name,"OUT"));
+
+    dbLockSetGblLock();
+    dbLockSetRecordLock(precord);
+
+    if (inpOut) {
+        pdevSup = dbDTYPtoDevSup(precord->rdes, precord->dtyp);
+        if (pdevSup == NULL ||
+            (new_dset = pdevSup->pdset) == NULL ||
+            (new_dsxt = pdevSup->pdsxt) == NULL ||
+            new_dsxt->add_record == NULL ||
+            (precord->dset &&
+             ((pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset)) == NULL ||
+              pdevSup->pdsxt == NULL ||
+              pdevSup->pdsxt->del_record == NULL))) {
+            status = S_db_noSupport;
+            goto unlock;
+        }
+    }
+
+    scan = precord->scan;
+    if (inpOut && (scan==SCAN_IO_EVENT)) {
+        scanDelete(precord);
+        precord->scan = SCAN_PASSIVE;
+    }
+
+    switch (plink->type) { /* Old link type */
+    case DB_LINK:
+        free(plink->value.pv_link.pvt);
+        plink->value.pv_link.pvt = 0;
+        plink->type = PV_LINK;
+        plink->value.pv_link.getCvt = 0;
+        plink->value.pv_link.pvlMask = 0;
+        plink->value.pv_link.lastGetdbrType = 0;
+        dbLockSetSplit(precord);
+        break;
+
+    case CA_LINK:
+        dbCaRemoveLink(plink);
+        plink->type = PV_LINK;
+        plink->value.pv_link.getCvt = 0;
+        plink->value.pv_link.pvlMask = 0;
+        plink->value.pv_link.lastGetdbrType = 0;
+        break;
+
+    case CONSTANT:
+        break;  /* do nothing */
+
+    case PV_LINK:
+    case MACRO_LINK:
+        break;  /* should never get here */
+
+    default: /* Hardware address */
+        if (!inpOut)
+            status = S_db_badHWaddr;
+        else
+            status = pdevSup->pdsxt->del_record(precord);
+        if (status) goto restoreScan;
+        break;
+    }
+
+    if (special) status = putSpecial(paddr,0);
+    if (!status) status=dbPutString(&dbEntry,pstring);
+
+    if (inpOut) {
+        precord->dset = new_dset;
+        precord->dpvt = NULL;
+        precord->pact = FALSE;
+    }
+
+    if (!status && special) status = putSpecial(paddr,1);
+    if (status) goto restoreScan;
+
+    switch (plink->type) { /* New link type */
+    case PV_LINK:
+        if (plink==&precord->tsel) recGblTSELwasModified(plink);
+        if (!(plink->value.pv_link.pvlMask & (pvlOptCA|pvlOptCP|pvlOptCPP)) &&
+            (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
+            /* It's a DB link */
+            DBADDR      *pdbAddr;
+
+            plink->type = DB_LINK;
+            pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+            *pdbAddr = dbaddr; /* NB: structure copy */;
+            plink->value.pv_link.precord = precord;
+            plink->value.pv_link.pvt = pdbAddr;
+            dbLockSetRecordLock(pdbAddr->precord);
+            dbLockSetMerge(precord,pdbAddr->precord);
+        } else { /* Make it a CA link */
+            char        *pperiod;
+
+            plink->type = CA_LINK;
+            plink->value.pv_link.precord = precord;
+            if (pfldDes->field_type==DBF_INLINK) {
+                plink->value.pv_link.pvlMask |= pvlOptInpNative;
+            }
+            dbCaAddLink(plink);
+            if (pfldDes->field_type==DBF_FWDLINK) {
+                pperiod = strrchr(plink->value.pv_link.pvname,'.');
+                if (pperiod && strstr(pperiod,"PROC"))
+                    plink->value.pv_link.pvlMask |= pvlOptFWD;
+            }
+        }
+        break;
+
+    case CONSTANT:
+        break;
+
+    case DB_LINK:
+    case CA_LINK:
+    case MACRO_LINK:
+        break;  /* should never get here */
+
+    default: /* Hardware address */
+        if (!inpOut)
+            status = S_db_badHWaddr;
+        else
+            status = new_dsxt->add_record(precord);
+        if (status) {
+            precord->dset = 0;
+            precord->pact = TRUE;
+            goto restoreScan;
+        }
+        break;
+    }
+    db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
+
+restoreScan:
+    if (inpOut && (scan==SCAN_IO_EVENT)) { /* undo scanDelete() */
+        precord->scan = scan;
+        scanAdd(precord);
+    }
+    if (scan != precord->scan)
+        db_post_events(precord, &precord->scan, DBE_VALUE|DBE_LOG);
+unlock:
+    dbLockSetGblUnlock();
+    dbFinishEntry(&dbEntry);
+    return status;
+}
+
 long epicsShareAPI dbPutField(
     DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 {
@@ -1038,107 +1221,17 @@ long epicsShareAPI dbPutField(
     dbCommon 	*precord = (dbCommon *)(paddr->precord);
     short	dbfType = paddr->field_type;
 
-    if(special==SPC_ATTRIBUTE) return(S_db_noMod);
+    if(special==SPC_ATTRIBUTE)
+        return S_db_noMod;
+
     /*check for putField disabled*/
-    if(precord->disp) {
-	if((void *)(&precord->disp) != paddr->pfield) return(S_db_putDisabled);
-    }
-    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
-	DBLINK  *plink = (DBLINK *)paddr->pfield;
-	DBENTRY	dbEntry;
-	dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
-	char	buffer[MAX_STRING_SIZE+2];
-	int	len,j;
-	char	*lastblank;
+    if (precord->disp &&
+        (void *)(&precord->disp) != paddr->pfield)
+        return(S_db_putDisabled);
 
-	if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
-	/*begin kludge for old db_access MAX_STRING_SIZE*/
-	/*Allow M for MS and (N or NM) for NMS */
-        if(strlen((char *)pbuffer)>=MAX_STRING_SIZE) {
-            errlogPrintf("dbPutField input string length >= MAX_STRING_SIZE");
-            return(S_db_badField);
-        }
-        strncpy(buffer,(char *)pbuffer,MAX_STRING_SIZE);
-        buffer[MAX_STRING_SIZE] = 0;
-	/*Strip trailing blanks*/
-	len = strlen(buffer);
-	for(j=len-1; j>0; j--) {
-	    if(buffer[j]==' ')
-		buffer[j] = 0;
-	    else
-		break;
-	}
-	lastblank = strrchr(buffer,' ');
-	if(lastblank) {
-	    if(strcmp(lastblank,"M")==0) {
-		strcpy(lastblank,"MS");
-	    } else {
-		if((strcmp(lastblank,"N")==0) || (strcmp(lastblank,"NM")==0)) {
-		    strcpy(lastblank,"NMS");
-		}
-	    }
-	}
-	/*End kludge for old db_access MAX_STRING_SIZE*/
-	dbLockSetGblLock();
-	dbLockSetRecordLock(precord);
-	if((plink->type == DB_LINK)||(plink->type == CA_LINK)) {
-	    if(plink->type == DB_LINK) {
-		free(plink->value.pv_link.pvt);
-		plink->value.pv_link.pvt = 0;
-		plink->type = PV_LINK;
-		dbLockSetSplit(precord);
-	    } else if(plink->type == CA_LINK) {
-		dbCaRemoveLink(plink);
-	    }
-	    plink->value.pv_link.getCvt = 0;
-	    plink->value.pv_link.pvlMask = 0;
-	    plink->value.pv_link.lastGetdbrType = 0;
-	    plink->type = PV_LINK;
-	}
-	dbInitEntry(pdbbase,&dbEntry);
-	status=dbFindRecord(&dbEntry,precord->name);
-	if(!status) status=dbFindField(&dbEntry,pfldDes->name);
-	if(!status && special) status = putSpecial(paddr,0);
-	if(!status) status=dbPutString(&dbEntry,buffer);
-	dbFinishEntry(&dbEntry);
-	if(!status && special) status = putSpecial(paddr,1);
-	if(status) goto done;
-	if(plink->type == PV_LINK) {
-	    DBADDR		dbaddr;
+    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK)
+        return dbPutFieldLink(paddr,dbrType,pbuffer,nRequest);
 
-            if(plink==&precord->tsel) recGblTSELwasModified(plink);
-	    if(!(plink->value.pv_link.pvlMask &(pvlOptCA|pvlOptCP|pvlOptCPP))
-	    &&(dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)){
-		DBADDR	*pdbAddr;
-
-		plink->type = DB_LINK;
-		pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
-		*pdbAddr = dbaddr; /*structure copy*/;
-		plink->value.pv_link.precord = precord;
-		plink->value.pv_link.pvt = pdbAddr;
-		dbLockSetRecordLock(pdbAddr->precord);
-		dbLockSetMerge(precord,pdbAddr->precord);
-	    } else {/*It is a CA link*/
-	 	char	*pperiod;
-
-		plink->type = CA_LINK;
-		plink->value.pv_link.precord = precord;
-		if(pfldDes->field_type==DBF_INLINK) {
-		    plink->value.pv_link.pvlMask |= pvlOptInpNative;
-		}
-		dbCaAddLink(plink);
-		if(pfldDes->field_type==DBF_FWDLINK) {
-		    pperiod = strrchr(plink->value.pv_link.pvname,'.');
-		    if(pperiod && strstr(pperiod,"PROC"))
-			plink->value.pv_link.pvlMask |= pvlOptFWD;
-		}
-	    }
-	}
-    	db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
-done:
-	dbLockSetGblUnlock();
-	return(status);
-    }
     dbScanLock(precord);
     status=dbPut(paddr,dbrType,pbuffer,nRequest);
     if(status==0){

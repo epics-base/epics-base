@@ -184,6 +184,7 @@ struct dbr_alDouble     {DBRalDouble};
 
 #define S_db_Blocked 	(M_dbAccess|39) /*Request is Blocked*/
 #define S_db_putDisabled (M_dbAccess|41) /*putFields are disabled*/
+#define S_db_badHWaddr  (M_dbAccess|43) /*Hardware link type not on INP/OUT*/
 #define S_db_bkptSet    (M_dbAccess|53) /*Breakpoint already set*/
 #define S_db_bkptNotSet (M_dbAccess|55) /*No breakpoint set in record*/
 #define S_db_notStopped (M_dbAccess|57) /*Record not stopped*/
@@ -227,6 +228,8 @@ epicsShareFunc void epicsShareAPI dbScanFwdLink(struct link *plink);
 epicsShareFunc long epicsShareAPI dbProcess(struct dbCommon *precord);
 epicsShareFunc long epicsShareAPI dbNameToAddr(
     const char *pname,struct dbAddr *);
+epicsShareFunc devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
+epicsShareFunc devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
 epicsShareFunc long epicsShareAPI dbGetLinkValue(
     struct link *,short dbrType,void *pbuffer,long *options,long *nRequest);
 epicsShareFunc long epicsShareAPI dbGetField(

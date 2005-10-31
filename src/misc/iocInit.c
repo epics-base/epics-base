@@ -178,42 +178,62 @@ LOCAL void initRecSup(void)
     return;
 }
 
+static long do_nothing(struct dbCommon *precord) { return 0; }
+
+/* Dummy DSXT used for soft device supports */
+struct dsxt devSoft_DSXT = {
+    do_nothing,
+    do_nothing
+};
+
+LOCAL devSup *pthisDevSup = NULL;
+
 LOCAL void initDevSup(void)
 {
     dbRecordType	*pdbRecordType;
-    devSup	*pdevSup;
     struct dset *pdset;
     
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList); pdevSup;
-	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-            pdset = registryDeviceSupportFind(pdevSup->name);
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+	     pthisDevSup;
+	     pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
+	    pdset = registryDeviceSupportFind(pthisDevSup->name);
 	    if (pdset==0) {
-		errlogPrintf("device support %s not found\n",pdevSup->name);
+		errlogPrintf("device support %s not found\n",pthisDevSup->name);
 		continue;
 	    }
-	    pdevSup->pdset = pdset;
-	    if(pdset->init) (*pdset->init)(0);
+	    if (pthisDevSup->link_type == CONSTANT)
+		pthisDevSup->pdsxt = &devSoft_DSXT;
+	    pthisDevSup->pdset = pdset;
+	    if (pdset->init) (*pdset->init)(0);
 	}
     }
     return;
 }
 
+void devExtend(dsxt *pdsxt)
+{
+    if (!pthisDevSup)
+	errlogPrintf("devExtend() called outside of initDevSup()\n");
+    else
+	pthisDevSup->pdsxt = pdsxt;
+}
+
 LOCAL void finishDevSup(void) 
 {
     dbRecordType	*pdbRecordType;
-    devSup	*pdevSup;
     struct dset *pdset;
 
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	for(pdevSup = (devSup *)ellFirst(&pdbRecordType->devList); pdevSup;
-	pdevSup = (devSup *)ellNext(&pdevSup->node)) {
-	    if(!(pdset = pdevSup->pdset)) continue;
-	    if(pdset->init) (*pdset->init)(1);
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+	for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+	     pthisDevSup;
+	     pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
+	    pdset = pthisDevSup->pdset;
+	    if (pdset && pdset->init) (*pdset->init)(1);
 	}
     
     }
@@ -253,7 +273,7 @@ LOCAL void initDatabase(void)
 	    precord->pact=FALSE;
 
 	    /* Init DSET NOTE that result may be NULL */
-	    pdevSup = (devSup *)ellNth(&pdbRecordType->devList,precord->dtyp+1);
+	    pdevSup = dbDTYPtoDevSup(pdbRecordType,precord->dtyp);
 	    pdset = (pdevSup ? pdevSup->pdset : 0);
 	    precord->dset = pdset;
 	    if(prset->init_record) (*prset->init_record)(precord,0);
@@ -306,6 +326,12 @@ LOCAL void initDatabase(void)
 		    }
 		}
 	    }
+            pdevSup = dbDTYPtoDevSup(pdbRecordType,precord->dtyp);
+            if (pdevSup) {
+                struct dsxt *pdsxt = pdevSup->pdsxt;
+                if (pdsxt && pdsxt->add_record)
+                    (*pdsxt->add_record)(precord);
+            }
 	}
     }
 

@@ -139,7 +139,6 @@ clean::
 
 ##################################################### "Foreign" templates
 
-$(COMMON_TEMPLATES): $(COMMON_DIR)/%.template: 
 ifndef WIN32
 	@$(RM) $(notdir $(TEMPLATE_LINKS))
 	ln -s $(TEMPLATE_LINKS) 

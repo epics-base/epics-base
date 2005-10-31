@@ -15,8 +15,12 @@
 
 <h4>POSIX thread priority scheduling</h4>
 <p>POSIX thread priority scheduling is now supported. There is a new
-user option in the CONFIG_SITE configure file for using POSIX
-thread priority scheduling. Default value is NO.</p>
+user option USE_POSIX_THREAD_PRIORITY_SCHEDULING in the CONFIG_SITE
+configure file for using POSIX thread priority scheduling.
+For now the default value is NO. This has only been tested
+on a few versions of linux. On linux, in order, to use real time
+priorities the option must be set to YES and the ioc must be started with
+root privilages.</p>
 
 <h4>VX_DIR</h4>
 <p>The definition VX_DIR was removed from configure/RELEASE and moved to

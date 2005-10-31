@@ -8,3 +8,4 @@
 # Include definitions common to all solaris-sparc64 target archs
 include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
 
+COMMANDLINE_LIBRARY = EPICS

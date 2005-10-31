@@ -261,7 +261,7 @@ bool bhe::updatePeriod (
         else if ( this->pIIU ) {
             // update state of health for active virtual circuits 
             // if the beacon looks ok
-            this->pIIU->beaconArrivalNotify ( guard, currentTime );
+            this->pIIU->beaconArrivalNotify ( guard );
             logBeacon ( "vb", currentPeriod, currentTime );
         }
 

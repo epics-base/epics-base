@@ -751,7 +751,7 @@ bool cac::echoRespAction (
     callbackManager & mgr, tcpiiu & iiu, 
     const epicsTime & current, const caHdrLargeArray &, void * )
 {
-    iiu.probeResponseNotify ( mgr.cbGuard, current );
+    iiu.probeResponseNotify ( mgr.cbGuard );
     return true;
 }
 

@@ -165,7 +165,7 @@ example_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 </ul>
 
 <p>After these changes are made the following files are no longer needed:
-baseLIBOBS, Makefile.Host, and Makefile.Vx</p>
+baseLIBOBJS, Makefile.Host, and Makefile.Vx</p>
 
 <h3>File base.dbd no longer needed</h3>
 
@@ -188,18 +188,18 @@ file.</blockquote>
   The structure rset is now a typedef so change
 
   <blockquote>
-    <pre>struct rset <recordname>RSET={ ...</pre>
+    <pre>struct rset &lt;recordname&gt;RSET={ ...</pre>
   </blockquote>
   to
 
   <blockquote>
-    <pre>rset <recordname>RSET={ ...</pre>
+    <pre>rset &lt;recordname&gt;RSET={ ...</pre>
   </blockquote>
   and add the following line after the "rset &lt;recordname&gt;RSET="
   definition.
 
   <blockquote>
-    <pre>epicsExportAddress(rset,xxxRSET);</pre>
+    <pre>epicsExportAddress(rset,&lt;recordname&gt;RSET);</pre>
   </blockquote>
 </blockquote>
 
@@ -211,7 +211,8 @@ file.</blockquote>
   <blockquote>
     <pre>#include "epicsExport.h"</pre>
   </blockquote>
-  and add the following line after the dset dev&lt;devname&gt; definition
+  and add the following line after the dset definition:
+  struct  { ...} dev&lt;devname&gt;= { ...}; 
 
   <blockquote>
     <pre>epicsExportAddress(dset,dev&lt;devname&gt;);</pre>
@@ -316,12 +317,12 @@ $(TOP)/configure/CONFIG"</tt></p>
 
 <p>Change</p>
 
-<p><tt>include ARCH = &lt;old arch specification e.g. mv167&gt;</tt></p>
+<p><tt>ARCH = &lt;old arch specification e.g. mv167&gt;</tt></p>
 
 <p>to</p>
 
-<p>"<tt>include ARCH = &lt;new arch specification e.g.
-vxWorks-68040&gt;"</tt></p>
+<p><tt>ARCH = &lt;new arch specification e.g.
+vxWorks-68040&gt;</tt></p>
 
 <p>Change "<tt>include $(TOP)/config/RULES.ioc</tt>" to "<tt>include
 $(TOP)/configure/RULES.ioc"</tt></p>
@@ -347,7 +348,7 @@ ld &lt; iocCore</pre>
 
 <p>Change the statement:</p>
 
-<p><tt>dbLoadDatabase("../../dbd/exampleApp.dbd")</tt> <br>
+<p><tt>dbLoadDatabase("../../dbd/&lt;name&gt;App.dbd")</tt> <br>
 </p>
 to
 <pre>dbLoadDatabase("../../dbd/&lt;name&gt;.dbd")

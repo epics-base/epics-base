@@ -107,16 +107,6 @@ void rsrv_online_notify_task(void *pParm)
         errlogPrintf ("CAS: online socket creation error\n");
         epicsThreadSuspendSelf ();
     }
-
-    status = shutdown ( sock, SHUT_RD );
-    if ( status ) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf (
-            "online notify: beacon sock UDP read shutdown error was %s\n", 
-            sockErrBuf );
-    }
     
     status = setsockopt (sock, SOL_SOCKET, SO_BROADCAST, 
                 (char *)&true, sizeof(true));
@@ -269,6 +259,24 @@ void rsrv_online_notify_task(void *pParm)
                 }
             }
             pNode = (osiSockAddrNode *) pNode->node.next;
+        }
+
+        {
+            /*
+             * disconnect so that bogus messages arriving at the ephemeral port
+             * do not consume resources
+             */
+            osiSockAddr sockAddr;
+            memset ( &sockAddr, 0, sizeof ( sockAddr ) );
+            sockAddr.sa.sa_family = AF_UNSPEC;
+            status = connect ( sock,
+		            & sockAddr.sa, sizeof ( sockAddr.sa ) );
+            if ( status < 0 ) {
+                char sockErrBuf[64];
+                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                errlogPrintf ( "%s: CA beacon socket disconnect error was \"%s\"\n",
+                    __FILE__, sockErrBuf );
+            }
         }
 
         epicsThreadSleep(delay);

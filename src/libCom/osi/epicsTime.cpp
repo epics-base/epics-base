@@ -442,7 +442,7 @@ epicsTime::operator epicsTimeStamp () const
     // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will 
     // match the original network protocol. Of course one can anticipate
     // that eventually, a epicsUInt64 based network time stamp will be 
-    // introduced when 64 bit archectures are more ubiquitous.
+    // introduced when 64 bit architectures are more ubiquitous.
     //
     // Truncation usually works fine here because the routines in this code
     // that compute time stamp differences and compare time stamps produce

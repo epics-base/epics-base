@@ -10,43 +10,27 @@
 # Include definitions common to all Unix targets
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
-#OS_CLASS = cygwin32
+OS_CLASS = WIN32
 ARCH_CLASS = x86
 
 EXE=.exe
 
 COMPILER_CPPFLAGS = -D_REENTRANT
 
-#POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE=199506L -D_POSIX_THREADS -D_POSIX_TIMERS
-# _POSIX_SOURCE eliminates select()
-#POSIX_CPPFLAGS_YES = -D_POSIX_THREADS -D_POSIX_TIMERS
-#POSIX_LDLIBS_YES += -lpthread
-##POSIX_LDLIBS_YES += -lpthread
-
 ARCH_DEP_CPPFLAGS += -D_X86_
 
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
-####LDLIBS_READLINE = -lcygreadline5 -lcygcurses7
-
-
-
-OS_CLASS = WIN32
+# Library used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline
 
 OP_SYS_CPPFLAGS = -D_WIN32=1 -D__WIN32=1 -D__MINGW32__=1 -DWIN32=1 -D__WIN32__=1 -DWINNT=1
 OP_SYS_CPPFLAGS += -U__unix__ -Uunix -U__CYGWIN__ -U__unix -U__CYGWIN32__
-OP_SYS_CPPFLAGS += -D__MSVCRT__ 
+OP_SYS_CPPFLAGS += -D__MSVCRT__
 
 OP_SYS_CXXFLAGS += -D__cplusplus
 
-OP_SYS_LDFLAGS += -mno_cygwin
-
 OP_SYS_LDLIBS = 
-
-
-#OP_SYS_CPPFLAGS = -mno_cygwin
-#-D_WIN32=1 -U__unix__ -Uunix -U__CYGWIN__ -U__unix -D__MSVCRT__ -D__WIN32=1 -D__MINGW32__=1 -DWIN32=1 -U__CYGWIN32__ -D__WIN32__=1 -DWINNT=1
-
 
 

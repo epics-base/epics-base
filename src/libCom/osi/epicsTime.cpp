@@ -10,6 +10,13 @@
 /* epicsTime.cpp */
 /* Author Jeffrey O. Hill */
 
+// Notes:
+// 1) The epicsTime::nSec field is not public and so it could be 
+// changed to work more like the fractional seconds field in the NTP time 
+// stamp. That would significantly improve the precision of epicsTime on 
+// 64 bit architectures.
+//
+
 #include <stdexcept>
 
 #include <ctype.h>
@@ -422,6 +429,31 @@ epicsTime::epicsTime ( const l_fp & ts )
     this->secPastEpoch = ts.l_ui - epicsEpocSecsPastEpochNTP;
     this->nSec = static_cast < unsigned long > 
         ( ( ts.l_uf / NTP_FRACTION_DENOMINATOR ) * nSecPerSec );
+}
+
+epicsTime::operator epicsTimeStamp () const
+{
+    epicsTimeStamp ts;
+    //
+    // trucation by design
+    // -------------------
+    // epicsTime::secPastEpoch is based on ulong and has much greater range 
+    // on 64 bit hosts than the orginal epicsTimeStamp::secPastEpoch. The 
+    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will 
+    // match the original network protocol. Of course one can anticipate
+    // that eventually, a epicsUInt64 based network time stamp will be 
+    // introduced when 64 bit archectures are more ubiquitous.
+    //
+    // Truncation usually works fine here because the routines in this code
+    // that compute time stamp differences and compare time stamps produce
+    // good results when the operands are on either side of a time stamp
+    // rollover as long as the difference between the operands does not exceed
+    // 1/2 of full range.
+    //
+    ts.secPastEpoch = static_cast < epicsUInt32 > ( this->secPastEpoch );
+    assert ( this->nSec < nSecPerSec );
+    ts.nsec = static_cast < epicsUInt32 > ( this->nSec );
+    return ts;
 }
 
 // return pointer to trailing "%0<n>f" (<n> is a number) in a format string,

@@ -322,14 +322,6 @@ inline epicsTime & epicsTime::operator = ( const epicsTimeStamp & rhs )
     return *this;
 }
 
-inline epicsTime::operator epicsTimeStamp () const
-{
-    epicsTimeStamp ts;
-    ts.secPastEpoch = this->secPastEpoch;
-    ts.nsec = this->nSec;
-    return ts;
-}
-
 inline epicsTime & epicsTime::operator = ( const l_fp & rhs )
 {
     *this = epicsTime ( rhs );

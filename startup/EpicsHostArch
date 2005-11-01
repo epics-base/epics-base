@@ -24,12 +24,15 @@ sysname=`uname`
 case $sysname in
     Linux )
         os=linux
-		cpu=`uname -m`
+	cpu=`uname -m`
         case $cpu in i386 | i486 | i586 | i686 )
             cpu=x86
 			;;
 		esac
-		echo ${os}-${cpu}${suffix}
+        if [ ${cpu} = "x86_64" ]; then
+            cpu=x86_64
+	fi
+	echo ${os}-${cpu}${suffix}
         ;;
     Darwin )
         os=darwin
@@ -50,8 +53,8 @@ case $sysname in
         ;;
     OSF1 )
         os=osf
-		cpu=`uname -m`
-		echo ${os}-${cpu}${suffix}
+	cpu=`uname -m`
+	echo ${os}-${cpu}${suffix}
         ;;
     SunOS )
         version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`

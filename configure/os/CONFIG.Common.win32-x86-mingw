@@ -15,7 +15,10 @@ ARCH_CLASS = x86
 
 EXE=.exe
 
-ARCH_DEP_CPPFLAGS += -D_X86_
+# -U__STDC__ -D__STDC__=0 
+# VCINSTALLDIR:
+# before typing make, call "C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin\Vcvars32.bat"
+ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 -nostdinc -I"$(VCINSTALLDIR)\Vc7\include"
 
 # Library used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline

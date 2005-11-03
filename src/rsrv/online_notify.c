@@ -268,8 +268,10 @@ void rsrv_online_notify_task(void *pParm)
              */
             osiSockAddr sockAddr;
             memset ( &sockAddr, 0, sizeof ( sockAddr ) );
-            // connect to INADDR_LOOPBACK and port 0 because 
-            // connect to AF_UNSPEC only works with modern IP kernel
+            /*
+	     * connect to INADDR_LOOPBACK and port 0 because 
+             * connect to AF_UNSPEC only works with modern IP kernel
+	     */
             sockAddr.ia.sin_family = AF_INET;
             sockAddr.ia.sin_addr.s_addr = INADDR_LOOPBACK;
             sockAddr.ia.sin_port = 0;

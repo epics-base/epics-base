@@ -454,9 +454,14 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
     {
         // disconnect so that bogus messages arriving at the ephemeral port
         // do not consume resources
+        //
+        // UDP disconnect to INADDR_LOOPBACK and port 0 because 
+        // a UDP connect to AF_UNSPEC only works with modern IP kernel
         osiSockAddr sockAddr;
         memset ( &sockAddr, 0, sizeof ( sockAddr ) );
-        sockAddr.sa.sa_family = AF_UNSPEC;
+        sockAddr.ia.sin_family = AF_INET;
+        sockAddr.ia.sin_addr.s_addr = INADDR_LOOPBACK;
+        sockAddr.ia.sin_port = 0;
         status = connect ( this->beaconSock,
 		        & sockAddr.sa, sizeof ( sockAddr.sa ) );
         if ( status < 0 ) {

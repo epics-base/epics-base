@@ -137,16 +137,6 @@ clean::
 	@$(RM) *_registerRecordDeviceDriver.cpp
 	@$(RM) $(TARGETS)
 
-##################################################### "Foreign" templates
-
-ifndef WIN32
-	@$(RM) $(notdir $(TEMPLATE_LINKS))
-	ln -s $(TEMPLATE_LINKS) 
-else
-	@$(RM) $(notdir $(TEMPLATE_LINKS))
-	$(CP) $(TEMPLATE_LINKS) 
-endif
-
 ##################################################### CapFast filter
 
 $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS) 
@@ -246,6 +236,14 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
+
+#$(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
+#	@$(RM) $@$(DEP)
+#	@$(MAKEDBDEPENDS) $@ $^  >> $@$(DEP)
+#	@echo "Inflating database from $^"
+#	@$(RM) $@
+#	$(MSI) $(DBFLAGS) -S$< $(firstword $(patsubst %.substitutions,,$^)) > msi.tmp
+#	$(MV) msi.tmp $@
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)

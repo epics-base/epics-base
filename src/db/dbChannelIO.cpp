@@ -69,7 +69,7 @@ void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
 }
 
 void dbChannelIO::destroy ( 
-    epicsGuard < epicsMutex > &, 
+    epicsGuard < epicsMutex > & /* callbackControlGuard */, 
     epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
     mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
@@ -133,7 +133,7 @@ void dbChannelIO::subscribe (
 }
 
 void dbChannelIO::ioCancel ( 
-    epicsGuard < epicsMutex > &, 
+    epicsGuard < epicsMutex > & /* callbackControlGuard */, 
     epicsGuard < epicsMutex > & mutualExclusionGuard,
     const ioid & id )
 {

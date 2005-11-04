@@ -186,7 +186,7 @@ void dbPutNotifyBlocker::show ( unsigned level ) const
 }
 
 void dbPutNotifyBlocker::show ( 
-    epicsGuard < epicsMutex > & guard, unsigned level ) const
+    epicsGuard < epicsMutex > &, unsigned level ) const
 {
     printf ( "put notify blocker at %p\n", 
         static_cast <const void *> ( this ) );

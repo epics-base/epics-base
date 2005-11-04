@@ -338,7 +338,8 @@ openRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
  * Start I/O redirection
  */
 static void
-startRedirect(const char *filename, int lineno, struct iocshRedirect *redirect)
+startRedirect(const char * /*filename*/, int /*lineno*/,
+              struct iocshRedirect *redirect)
 {
     int i;
 

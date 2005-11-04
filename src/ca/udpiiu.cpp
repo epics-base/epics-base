@@ -599,7 +599,7 @@ bool udpiiu::badUDPRespAction (
 }
 
 bool udpiiu::versionAction ( epicsGuard < epicsMutex > &,
-    const caHdr & hdr, const osiSockAddr &, const epicsTime & )
+    const caHdr & hdr, const osiSockAddr &, const epicsTime & /* currentTime */ )
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
 
@@ -724,7 +724,7 @@ bool udpiiu::beaconAction (
 }
 
 bool udpiiu::repeaterAckAction ( 
-    epicsGuard < epicsMutex > &, const caHdr &,  
+    epicsGuard < epicsMutex > & /* cbGuard */, const caHdr &,  
     const osiSockAddr &, const epicsTime &)
 {
     this->repeaterSubscribeTmr.confirmNotify ();
@@ -892,7 +892,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 }
 
 bool udpiiu::datagramFlush ( 
-    epicsGuard < epicsMutex > &, const epicsTime & )
+    epicsGuard < epicsMutex > &, const epicsTime & /* currentTime */ )
 {
     // dont send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {

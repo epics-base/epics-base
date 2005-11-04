@@ -154,15 +154,15 @@ double netiiu::receiveWatchdogDelay (
 
 void netiiu::uninstallChanDueToSuccessfulSearchResponse ( 
     epicsGuard < epicsMutex > &, nciu &, 
-    const epicsTime & )
+    const epicsTime & currentTime )
 {
     throw std::runtime_error ( 
         "search response occured when not attached to udpiiu?" );
 }
 
 bool netiiu::searchMsg (
-    epicsGuard < epicsMutex > &, ca_uint32_t, 
-        const char *, unsigned )
+    epicsGuard < epicsMutex > &, ca_uint32_t /* id */, 
+    const char * /* pName */, unsigned /* nameLength */ )
 {
     return false;
 }

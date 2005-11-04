@@ -79,7 +79,7 @@ void netSubscription::show (
 }
 
 void netSubscription::completion ( 
-    epicsGuard < epicsMutex > & guard, cacRecycle & )
+    epicsGuard < epicsMutex > &, cacRecycle & )
 {
     errlogPrintf ( "subscription update w/o data ?\n" );
 }

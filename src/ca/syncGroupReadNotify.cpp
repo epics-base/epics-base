@@ -115,7 +115,7 @@ void syncGroupReadNotify::exception (
 }
 
 void syncGroupReadNotify::show ( 
-    epicsGuard < epicsMutex > & guard, unsigned level ) const
+    epicsGuard < epicsMutex > &, unsigned level ) const
 {
     ::printf ( "pending sg read op: pVal=%p\n", this->pValue );
     if ( level > 0u ) {

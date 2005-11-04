@@ -142,7 +142,7 @@ double noopiiu::receiveWatchdogDelay (
 }
 
 void noopiiu::uninstallChan ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan )
+    epicsGuard < epicsMutex > &, nciu & )
 {
     // intentionally does not call default in netiiu
 }

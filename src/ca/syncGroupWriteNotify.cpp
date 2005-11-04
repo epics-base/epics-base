@@ -105,7 +105,7 @@ void syncGroupWriteNotify::exception (
 }
 
 void syncGroupWriteNotify::show ( 
-    epicsGuard < epicsMutex > & guard, unsigned level ) const
+    epicsGuard < epicsMutex > &, unsigned level ) const
 {
     ::printf ( "pending write sg op\n" );
     if ( level > 0u ) {

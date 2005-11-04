@@ -749,7 +749,7 @@ bool cac::versionAction ( callbackManager &, tcpiiu &,
  
 bool cac::echoRespAction ( 
     callbackManager & mgr, tcpiiu & iiu, 
-    const epicsTime & current, const caHdrLargeArray &, void * )
+    const epicsTime &, const caHdrLargeArray &, void * )
 {
     iiu.probeResponseNotify ( mgr.cbGuard );
     return true;
@@ -911,7 +911,7 @@ bool cac::readRespAction ( callbackManager &, tcpiiu &,
 }
 
 bool cac::clearChannelRespAction ( callbackManager &, tcpiiu &, 
-    const epicsTime &, const caHdrLargeArray &, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray &, void * )
 {
     return true; // currently a noop
 }
@@ -941,7 +941,7 @@ void cac::exception (
 }
 
 bool cac::eventAddExcep ( 
-    callbackManager &, tcpiiu & /* iiu */, 
+    callbackManager &, tcpiiu &, 
     const caHdrLargeArray &hdr, 
     const char *pCtx, unsigned status )
 {
@@ -1033,7 +1033,7 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
 
 bool cac::accessRightsRespAction (
     callbackManager & mgr, tcpiiu &, // X aCC 431
-    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
@@ -1050,7 +1050,7 @@ bool cac::accessRightsRespAction (
 
 bool cac::createChannelRespAction (
     callbackManager & mgr, tcpiiu & iiu, // X aCC 431
-    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
@@ -1076,8 +1076,8 @@ bool cac::createChannelRespAction (
 }
 
 bool cac::verifyAndDisconnectChan ( 
-    callbackManager & mgr, tcpiiu & /* iiu */, 
-    const epicsTime & currentTime, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    callbackManager & mgr, tcpiiu &, 
+    const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
@@ -1101,7 +1101,7 @@ void cac::disconnectChannel (
 }
 
 bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu, 
-    const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBdy */ )
+    const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     char hostName[64];

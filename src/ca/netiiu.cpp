@@ -92,7 +92,7 @@ void netiiu::subscriptionUpdateRequest (
 static const char * const pHostNameNetIIU = "<disconnected>";
 
 unsigned netiiu::getHostName ( 
-    epicsGuard < epicsMutex > & guard,
+    epicsGuard < epicsMutex > &,
     char * pBuf, unsigned bufLen ) const throw ()
 {
     if ( bufLen ) {
@@ -147,22 +147,22 @@ void netiiu::uninstallChan (
 }
 
 double netiiu::receiveWatchdogDelay (
-    epicsGuard < epicsMutex > & guard ) const
+    epicsGuard < epicsMutex > & ) const
 {
     return - DBL_MAX;
 }
 
 void netiiu::uninstallChanDueToSuccessfulSearchResponse ( 
     epicsGuard < epicsMutex > &, nciu &, 
-    const epicsTime & currentTime )
+    const epicsTime & )
 {
     throw std::runtime_error ( 
         "search response occured when not attached to udpiiu?" );
 }
 
 bool netiiu::searchMsg (
-    epicsGuard < epicsMutex > &, ca_uint32_t id, 
-        const char * pName, unsigned nameLength )
+    epicsGuard < epicsMutex > &, ca_uint32_t, 
+        const char *, unsigned )
 {
     return false;
 }

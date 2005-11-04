@@ -63,7 +63,7 @@ void disconnectGovernorTimer::shutdown (
 }
 
 epicsTimerNotify::expireStatus disconnectGovernorTimer::expire ( 
-    const epicsTime & currentTime ) // X aCC 361
+    const epicsTime & ) // X aCC 361
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     while ( nciu * pChan = chanList.get () ) {

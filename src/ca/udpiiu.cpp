@@ -599,7 +599,7 @@ bool udpiiu::badUDPRespAction (
 }
 
 bool udpiiu::versionAction ( epicsGuard < epicsMutex > &,
-    const caHdr & hdr, const osiSockAddr &, const epicsTime & currentTime )
+    const caHdr & hdr, const osiSockAddr &, const epicsTime & )
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
 
@@ -724,7 +724,7 @@ bool udpiiu::beaconAction (
 }
 
 bool udpiiu::repeaterAckAction ( 
-    epicsGuard < epicsMutex > & cbGuard, const caHdr &,  
+    epicsGuard < epicsMutex > &, const caHdr &,  
     const osiSockAddr &, const epicsTime &)
 {
     this->repeaterSubscribeTmr.confirmNotify ();
@@ -892,7 +892,7 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 }
 
 bool udpiiu::datagramFlush ( 
-    epicsGuard < epicsMutex > &, const epicsTime & currentTime )
+    epicsGuard < epicsMutex > &, const epicsTime & )
 {
     // dont send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
@@ -1058,7 +1058,7 @@ bool udpiiu::searchMsg (
     msg.m_count = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
     msg.m_cid = epicsHTON32 ( id );
     return this->pushDatagramMsg ( 
-        guard, msg, pName, nameLength );
+        guard, msg, pName, (ca_uint16_t) nameLength );
 }
 
 void udpiiu::installNewChannel ( 

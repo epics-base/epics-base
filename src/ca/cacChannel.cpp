@@ -95,7 +95,7 @@ unsigned cacChannel::getHostName (
 
 // the default is to assume that it is a locally hosted channel
 const char * cacChannel::pHostName (
-    epicsGuard < epicsMutex > & guard ) const throw ()
+    epicsGuard < epicsMutex > & ) const throw ()
 {
     epicsSingleton < localHostName >::reference 
             ref ( localHostNameAtLoadTime.getReference () );

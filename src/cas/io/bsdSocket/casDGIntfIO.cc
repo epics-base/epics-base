@@ -293,7 +293,8 @@ void casDGIntfIO::xSetNonBlocking()
 
     if ( this->bcastRecvSock != INVALID_SOCKET ) {
         yes = true;
-        int status = socket_ioctl ( this->bcastRecvSock, FIONBIO, &yes ); // X aCC 392
+        int status = socket_ioctl ( this->bcastRecvSock, // X aCC 392
+                                    FIONBIO, &yes );
         if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

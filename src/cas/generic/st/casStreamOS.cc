@@ -170,7 +170,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::expire ( const epicsTime & /* 
 //
 // casStreamEvWakeup::start()
 //
-void casStreamEvWakeup::start( casStreamOS &os )
+void casStreamEvWakeup::start( casStreamOS & )
 {    
     // care is needed here because this is called
     // asynchronously by postEvent

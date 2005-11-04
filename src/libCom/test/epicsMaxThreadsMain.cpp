@@ -21,7 +21,7 @@
 extern "C" void epicsMaxThreads(void);
 
 
-int main(int argc,char *argv[])
+int main(int /*argc*/, char * /*argv[]*/ )
 {
     epicsMaxThreads();
     printf("main terminating\n");

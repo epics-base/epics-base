@@ -21,7 +21,7 @@
 extern "C" void epicsOkToBlockTest(void);
 
 
-int main(int argc,char *argv[])
+int main(int /*argc*/, char * /*argv[]*/ )
 {
     epicsOkToBlockTest();
     printf("main terminating\n");

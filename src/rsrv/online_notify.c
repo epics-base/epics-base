@@ -272,7 +272,7 @@ void rsrv_online_notify_task(void *pParm)
             memset ( &sockAddr, 0, sizeof ( sockAddr ) );
             sockAddr.ia.sin_family = AF_INET;
             sockAddr.ia.sin_addr.s_addr = INADDR_NONE;
-            sockAddr.ia.sin_port = htons ( port );
+            sockAddr.ia.sin_port = htons ( 0 );
             status = connect ( sock,
 		            & sockAddr.sa, sizeof ( sockAddr.sa ) );
             if ( status < 0 ) {

@@ -452,25 +452,9 @@ void tcpRecvThread::run ()
         epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
         this->iiu.cacRef.attachToClientCtx ();
 
-        comBuf * pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+        comBuf * pComBuf = 0;
         bool breakOut = false;
         while ( ! breakOut ) {
-
-            //
-            // if this thread has connected channels with subscriptions
-            // that need to be sent then wakeup the send thread
-            {
-                bool wakeupNeeded = false;
-                {
-                    epicsGuard < epicsMutex > cacGuard ( this->iiu.mutex );
-                    if ( this->iiu.subscripReqPend.count() ) {
-                        wakeupNeeded = true;
-                    }
-                }
-                if ( wakeupNeeded ) {
-                    this->iiu.sendThreadFlushEvent.signal ();
-                }
-            }
 
             //
             // We leave the bytes pending and fetch them after
@@ -479,6 +463,9 @@ void tcpRecvThread::run ()
             // file manager call backs works correctly. This does not 
             // appear to impact performance.
             //
+            if ( ! pComBuf ) {
+                pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+            }
             statusWireIO stat;
             pComBuf->fillFromWire ( this->iiu, stat );
 
@@ -492,52 +479,48 @@ void tcpRecvThread::run ()
                 if ( stat.bytesCopied == 0u ) {
                     continue;
                 }
-                // reschedule connection activity watchdog
-                this->iiu.recvDog.messageArrivalNotify ( guard ); 
+
+                this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
+                pComBuf = 0;
+
+                this->iiu._receiveThreadIsBusy = true;
             }
 
+            bool sendWakeupNeeded = false;
             {
-                // This is used to enforce that the recv thread runs
-                // first when both the receive watchdog and the receive
-                // thread are both waiting for the callback lock.
-                // This is a workaround for a premature disconnect if 
-                // they dont call ca_poll often enough.
-                epicsGuard < epicsMutex > 
-                    recvThreadBusy ( this->iiu.recvThreadIsRunning );
-
                 // only one recv thread at a time may call callbacks
                 // - pendEvent() blocks until threads waiting for
                 // this lock get a chance to run
                 callbackManager mgr ( this->ctxNotify, this->cbMutex );
 
+                epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+
                 // force the receive watchdog to be reset every 5 frames
                 unsigned contiguousFrameCount = 0;
                 while ( stat.bytesCopied ) {
-                    {
-                        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-                        if ( stat.bytesCopied == pComBuf->capacityBytes () ) {
-                            if ( this->iiu.contigRecvMsgCount >= 
-                                contiguousMsgCountWhichTriggersFlowControl ) {
-                                this->iiu.busyStateDetected = true;
-                            }
-                            else { 
-                                this->iiu.contigRecvMsgCount++;
-                            }
+                    if ( stat.bytesCopied == pComBuf->capacityBytes () ) {
+                        if ( this->iiu.contigRecvMsgCount >= 
+                            contiguousMsgCountWhichTriggersFlowControl ) {
+                            this->iiu.busyStateDetected = true;
                         }
-                        else {
-                            this->iiu.contigRecvMsgCount = 0u;
-                            this->iiu.busyStateDetected = false;
-                        }         
-                        this->iiu.unacknowledgedSendBytes = 0u;
-
-                        this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
+                        else { 
+                            this->iiu.contigRecvMsgCount++;
+                        }
                     }
-                    pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
+                    else {
+                        this->iiu.contigRecvMsgCount = 0u;
+                        this->iiu.busyStateDetected = false;
+                    }         
+                    this->iiu.unacknowledgedSendBytes = 0u;
 
-                    // execute receive labor
-                    bool protocolOK = this->iiu.processIncoming ( currentTime, mgr );
+                    bool protocolOK = false;
+                    {
+                        epicsGuardRelease < epicsMutex > unguard ( guard );
+                        // execute receive labor
+                        protocolOK = this->iiu.processIncoming ( currentTime, mgr );
+                    }
+
                     if ( ! protocolOK ) {
-                        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
                         this->iiu.initiateAbortShutdown ( guard );
                         breakOut = true;
                         break;
@@ -548,15 +531,35 @@ void tcpRecvThread::run ()
                         break;
                     }
 
-                    pComBuf->fillFromWire ( this->iiu, stat );
                     {
-                        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-                        if ( ! this->validFillStatus ( guard, stat ) ) {
-                            breakOut = true;
-                            break;
+                        epicsGuardRelease < epicsMutex > unguard ( guard );
+                        if ( ! pComBuf ) {
+                            pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
                         }
+                        pComBuf->fillFromWire ( this->iiu, stat );
+                    }
+
+                    if ( this->validFillStatus ( guard, stat ) ) {
+                        this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
+                        pComBuf = 0;
+                    }
+                    else {
+                        breakOut = true;
+                        break;
                     }
                 }
+                this->iiu._receiveThreadIsBusy = false;
+                // reschedule connection activity watchdog
+                this->iiu.recvDog.messageArrivalNotify ( guard ); 
+                //
+                // if this thread has connected channels with subscriptions
+                // that need to be sent then wakeup the send thread
+                if ( this->iiu.subscripReqPend.count() ) {
+                    sendWakeupNeeded = true;
+                }
+            }
+            if ( sendWakeupNeeded ) {
+                this->iiu.sendThreadFlushEvent.signal ();
             }
         }
 
@@ -672,6 +675,7 @@ tcpiiu::tcpiiu (
     socketLibrarySendBufferSize ( 0x1000 ),
     unacknowledgedSendBytes ( 0u ),
     channelCountTot ( 0u ),
+    _receiveThreadIsBusy ( false ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
     echoRequestPending ( false ),
@@ -868,11 +872,6 @@ void tcpiiu::sendTimeoutNotify (
     this->recvDog.sendTimeoutNotify ( mgr.cbGuard, guard );
 }
 
-void tcpiiu::deferToRecvBacklog ()
-{
-    epicsGuard < epicsMutex > waitUntilRecvThreadIsntBusy ( this->recvThreadIsRunning );
-}
-
 void tcpiiu::receiveTimeoutNotify ( 
     callbackManager & mgr,
     epicsGuard < epicsMutex > & guard )
@@ -1033,6 +1032,8 @@ void tcpiiu::show ( unsigned level ) const
             static_cast < void * > ( this->pCurData ), this->curDataMax );
         ::printf ( "\tcontiguous receive message count=%u, busy detect bool=%u, flow control bool=%u\n", 
             this->contigRecvMsgCount, this->busyStateDetected, this->flowControlActive );
+        ::printf ( "\receive thread is busy=%u\n", 
+            this->_receiveThreadIsBusy );
     }
     if ( level > 2u ) {
         ::printf ( "\tvirtual circuit socket identifier %d\n", this->sock );

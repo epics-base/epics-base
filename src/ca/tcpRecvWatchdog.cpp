@@ -47,32 +47,15 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 epicsTimerNotify::expireStatus
 tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
 {
-    // allow pending receive traffic to run first
-    this->iiu.deferToRecvBacklog ();
-
-    // callback lock is required because channel disconnect
-    // state change is initiated from this thread, and 
-    // this can cause their disconnect notify callback
-    // to be invoked.
-    callbackManager mgr ( this->ctxNotify, this->cbMutex );
     epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->shuttingDown ) {
         return noRestart;
     }
     if ( this->probeResponsePending ) {
-        if ( this->iiu.bytesArePendingInOS() ) {
-            this->iiu.printf ( mgr.cbGuard,
-    "The CA client library's server inactivity timer initiated server disconnect\n" );
-            this->iiu.printf ( mgr.cbGuard,
-    "despite the fact that messages from this server are pending for processing in\n" );
-            this->iiu.printf ( mgr.cbGuard,
-    "the client library. Here are some possible causes of the unnecessary disconnect:\n" );
-            this->iiu.printf ( mgr.cbGuard,
-    "o ca_pend_event() or ca_poll() have not been called for %f seconds\n", 
-                this->period  );
-            this->iiu.printf ( mgr.cbGuard,
-    "o application is blocked in a callback from the client library\n" );
+        if ( this->iiu.receiveThreadIsBusy ( guard ) ) {
+            return expireStatus ( restart, CA_ECHO_TIMEOUT );
         }
+
         {
 #           ifdef DEBUG
                 char hostName[128];
@@ -81,12 +64,26 @@ tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
                             "- disconnecting.\n", 
                     hostName, this->period ) );
 #           endif
-            this->iiu.receiveTimeoutNotify ( mgr, guard );
-            this->probeTimeoutDetected = true;
+            // to get the callback lock safely we must reorder 
+            // the lock hierarchy
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            {
+                // callback lock is required because channel disconnect
+                // state change is initiated from this thread, and 
+                // this can cause their disconnect notify callback
+                // to be invoked.
+                callbackManager mgr ( this->ctxNotify, this->cbMutex );
+                epicsGuard < epicsMutex > tmpGuard ( this->mutex );
+                this->iiu.receiveTimeoutNotify ( mgr, tmpGuard );
+                this->probeTimeoutDetected = true;
+            }
         }
         return noRestart;
     }
     else {
+        if ( this->iiu.receiveThreadIsBusy ( guard ) ) {
+            return expireStatus ( restart, this->period );
+        }
         this->probeTimeoutDetected = false;
         this->probeResponsePending = this->iiu.setEchoRequestPending ( guard );
         debugPrintf ( ("circuit timed out - sending echo request\n") );

@@ -112,8 +112,6 @@ public:
     void sendTimeoutNotify ( 
         callbackManager & cbMgr,
         epicsGuard < epicsMutex > & guard );
-    // dont call deferToRecvBacklog() while holding the callback lock.
-    void deferToRecvBacklog ();
     void receiveTimeoutNotify( 
         callbackManager &,
         epicsGuard < epicsMutex > & );
@@ -154,6 +152,8 @@ public:
         epicsGuard < epicsMutex > & ) const;
     bool connecting (
         epicsGuard < epicsMutex > & ) const;
+    bool receiveThreadIsBusy ( 
+        epicsGuard < epicsMutex > & );
     osiSockAddr getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
     int printf ( 
@@ -175,8 +175,6 @@ public:
     void connectNotify ( 
         epicsGuard < epicsMutex > &, nciu & chan );
     void nameResolutionMsgEndNotify ();
-
-    bool bytesArePendingInOS () const;
 
     void * operator new ( size_t size, 
         tsFreeList < class tcpiiu, 32, epicsMutexNOOP >  & );
@@ -207,7 +205,6 @@ private:
     char * pCurData;
     epicsMutex & mutex;
     epicsMutex & cbMutex;
-    epicsMutex recvThreadIsRunning;
     unsigned minorProtocolVersion;
     enum iiu_conn_state { 
         iiucs_connecting, // pending circuit connect
@@ -224,6 +221,7 @@ private:
     unsigned socketLibrarySendBufferSize;
     unsigned unacknowledgedSendBytes;
     unsigned channelCountTot;
+    bool _receiveThreadIsBusy;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
@@ -254,6 +252,7 @@ private:
         epicsGuard < epicsMutex > & ); 
     void disconnectNotify (
         epicsGuard < epicsMutex > & );
+    bool bytesArePendingInOS () const;
 
     // send protocol stubs
     void echoRequest ( 
@@ -354,6 +353,13 @@ inline bool tcpiiu::connecting (
     epicsGuard < epicsMutex > & ) const
 {
     return ( this->state == iiucs_connecting );
+}
+
+inline bool tcpiiu::receiveThreadIsBusy ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->_receiveThreadIsBusy;
 }
 
 inline void tcpiiu::beaconAnomalyNotify ( 

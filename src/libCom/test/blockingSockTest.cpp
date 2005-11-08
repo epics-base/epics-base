@@ -207,9 +207,9 @@ void blockingSockTest ()
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK ); 
-    //addr.ia.sin_addr.s_addr = epicsHTON32 ( 0x80A5A07F ); 
     addr.ia.sin_port = epicsHTON16 ( 5064 ); // CA
 
+    server srv ( addr );
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );

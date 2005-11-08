@@ -223,8 +223,8 @@ extern "C" void epicsMessageQueueTest()
                     "4 or 5 messages (sender priority > receiver priority).\n");
             break;
         case 2:
-            printf ("Systems with priority-based scheduler should send 10\n"
-                    "messages (sender priority < receiver priority).\n");
+            printf ("Systems with strict priority-based scheduler should send\n"
+                    "10 messages (sender priority < receiver priority).\n");
             break;
         case 3:
             printf ("All systems should send 10 messages (sender pauses\n"

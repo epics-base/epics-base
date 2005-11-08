@@ -310,7 +310,7 @@ epicsTimerNotify::expireStatus periodicVerify::expire ( const epicsTime & )
 {
     this->nExpire++;
     double root = 3.14159;
-    for ( unsigned i = 0u; i < 10000; i++ ) {
+    for ( unsigned i = 0u; i < 1000; i++ ) {
         root = sqrt ( root );
     }
     assert ( ! this->failOutIfExpireIsCalled );

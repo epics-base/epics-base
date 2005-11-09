@@ -195,6 +195,7 @@ LOCAL void req_server (void *pParm)
             epicsThreadId id;
             struct client *pClient;
 
+            /* socket passed in is closed if unsuccessful here */
             pClient = create_tcp_client ( clientSock );
             if ( ! pClient ) {
                 epicsThreadSleep ( 15.0 );
@@ -209,6 +210,9 @@ LOCAL void req_server (void *pParm)
                     epicsThreadGetStackSize ( epicsThreadStackBig ),
                     camsgtask, pClient );
             if ( id == 0 ) {
+                LOCK_CLIENTQ;
+                ellDelete ( &clientQ, &pClient->node );
+                UNLOCK_CLIENTQ;
                 destroy_tcp_client ( pClient );
                 errlogPrintf ( "CAS: task creation for new client failed\n" );
                 epicsThreadSleep ( 15.0 );
@@ -657,12 +661,14 @@ struct client * create_client ( SOCKET sock, int proto )
                             && freeListItemsAvail ( rsrvSmallBufFreeListTCP ) > 0;
     spaceNeeded = sizeof (struct client) + MAX_TCP;
     if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
+        epicsSocketDestroy ( sock );
         epicsPrintf ("CAS: no space in pool for a new client (below max block thresh)\n");
         return NULL;
     }
 
     client = freeListCalloc ( rsrvClientFreeList );
     if ( ! client ) {
+        epicsSocketDestroy ( sock );
         epicsPrintf ("CAS: no space in pool for a new client (alloc failed)\n");
         return NULL;
     }    
@@ -782,6 +788,7 @@ struct client *create_tcp_client ( SOCKET sock )
     osiSocklen_t            addrSize;
     unsigned                priorityOfEvents;
 
+    /* socket passed in is destroyed here if unsuccessful */
     client = create_client ( sock, IPPROTO_TCP );
     if ( ! client ) {
         return NULL;

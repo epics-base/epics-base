@@ -1667,6 +1667,7 @@ void tcpiiu::eliminateExcessiveSendBacklog (
                 // or unresponsive circuit
                 if ( ! userRequestsCanBeAccepted || 
                         this->unresponsiveCircuit ) {
+                    this->decrementBlockingForFlushCount ( mutualExclusionGuard );
                     throw cacChannel::notConnected ();
                 }
 
@@ -1681,16 +1682,23 @@ void tcpiiu::eliminateExcessiveSendBacklog (
                     this->flushBlockEvent.wait ( 30.0 );
                 }
             }
-            assert ( this->blockingForFlush > 0u );
-            this->blockingForFlush--;
-            if ( this->blockingForFlush == 0 ) {
-                this->flushBlockEvent.signal ();
-            }
+            this->decrementBlockingForFlushCount ( mutualExclusionGuard );
         }
     }
     else if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
         this->earlyFlush = true;
         this->sendThreadFlushEvent.signal ();
+    }
+}
+
+void tcpiiu::decrementBlockingForFlushCount ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    assert ( this->blockingForFlush > 0u );
+    this->blockingForFlush--;
+    if ( this->blockingForFlush == 0 ) {
+        this->flushBlockEvent.signal ();
     }
 }
 

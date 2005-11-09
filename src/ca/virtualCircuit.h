@@ -253,6 +253,8 @@ private:
     void disconnectNotify (
         epicsGuard < epicsMutex > & );
     bool bytesArePendingInOS () const;
+    void decrementBlockingForFlushCount ( 
+        epicsGuard < epicsMutex > & guard );
 
     // send protocol stubs
     void echoRequest ( 

@@ -45,7 +45,12 @@
 #   define debugPrintf(argsInParen)
 #endif
 
-static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000;
+// for mingw
+#if !defined ( MAXLONGLONG ) 
+#define MAXLONGLONG 0x7fffffffffffffffLL
+#endif
+
+static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000LL;
 
 class currentTime : public epicsTimerNotify {
 public:
@@ -135,12 +140,9 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent
 
 inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
 {
-     // Note that LONGLONG is a 64-bit value
-     LARGE_INTEGER ll;
-
-     ll.QuadPart = Int32x32To64 ( *pAnsiTime, 10000000 ) + 116444736000000000;
-     pft->dwLowDateTime = ll.LowPart;
-     pft->dwHighDateTime = ( DWORD ) ll.HighPart;
+     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + 116444736000000000LL;
+     pft->dwLowDateTime = static_cast < DWORD > ( ll );
+     pft->dwHighDateTime = static_cast < DWORD > ( ll >>32 );
 }
 
 static int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31,

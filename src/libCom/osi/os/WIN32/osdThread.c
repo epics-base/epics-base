@@ -39,6 +39,7 @@
 #include "ellLib.h"
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
+static void threadCleanupWIN32 ( void );
 
 typedef struct win32ThreadGlobal {
     CRITICAL_SECTION mutex;
@@ -68,30 +69,30 @@ typedef struct epicsThreadPrivateOSD {
 #define osdOrdinaryPriorityStateCount 5u
 static const int osdOrdinaryPriorityList [osdOrdinaryPriorityStateCount] = 
 {
-    THREAD_PRIORITY_LOWEST,       // -2 on >= W2K ??? on W95
-    THREAD_PRIORITY_BELOW_NORMAL, // -1 on >= W2K ??? on W95
-    THREAD_PRIORITY_NORMAL,       //  0 on >= W2K ??? on W95
-    THREAD_PRIORITY_ABOVE_NORMAL, //  1 on >= W2K ??? on W95
-    THREAD_PRIORITY_HIGHEST       //  2 on >= W2K ??? on W95
+    THREAD_PRIORITY_LOWEST,       /* -2 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_BELOW_NORMAL, /* -1 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_NORMAL,       /*  0 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_ABOVE_NORMAL, /*  1 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_HIGHEST       /*  2 on >= W2K ??? on W95 */
 };
 
 #   define osdRealtimePriorityStateCount 14u
 static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] = 
 {
-    -7, // allowed on >= W2k, but no #define supplied
-    -6, // allowed on >= W2k, but no #define supplied
-    -5, // allowed on >= W2k, but no #define supplied
-    -4, // allowed on >= W2k, but no #define supplied
-    -3, // allowed on >= W2k, but no #define supplied
-    THREAD_PRIORITY_LOWEST,       // -2 on >= W2K ??? on W95
-    THREAD_PRIORITY_BELOW_NORMAL, // -1 on >= W2K ??? on W95
-    THREAD_PRIORITY_NORMAL,       //  0 on >= W2K ??? on W95
-    THREAD_PRIORITY_ABOVE_NORMAL, //  1 on >= W2K ??? on W95
-    THREAD_PRIORITY_HIGHEST,      //  2 on >= W2K ??? on W95
-    3, // allowed on >= W2k, but no #define supplied
-    4, // allowed on >= W2k, but no #define supplied
-    5, // allowed on >= W2k, but no #define supplied
-    6  // allowed on >= W2k, but no #define supplied
+    -7, /* allowed on >= W2k, but no #define supplied */
+    -6, /* allowed on >= W2k, but no #define supplied */
+    -5, /* allowed on >= W2k, but no #define supplied */
+    -4, /* allowed on >= W2k, but no #define supplied */
+    -3, /* allowed on >= W2k, but no #define supplied */
+    THREAD_PRIORITY_LOWEST,       /* -2 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_BELOW_NORMAL, /* -1 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_NORMAL,       /*  0 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_ABOVE_NORMAL, /*  1 on >= W2K ??? on W95 */
+    THREAD_PRIORITY_HIGHEST,      /*  2 on >= W2K ??? on W95 */
+    3, /* allowed on >= W2k, but no #define supplied */
+    4, /* allowed on >= W2k, but no #define supplied */
+    5, /* allowed on >= W2k, but no #define supplied */
+    6  /* allowed on >= W2k, but no #define supplied */
 };
 
 #if !defined(EPICS_DLL_NO)
@@ -171,7 +172,6 @@ BOOL WINAPI DllMain (
  */
 static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
 {
-    void threadCleanupWIN32 ( void );
     static win32ThreadGlobal * pWin32ThreadGlobal = 0;
     static LONG initStarted = 0;
     static LONG initCompleted = 0;
@@ -241,12 +241,12 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
     }
 
     if ( pParm ) {
-        //fprintf ( stderr, "thread %s is exiting\n", pParm->pName );
+        /* fprintf ( stderr, "thread %s is exiting\n", pParm->pName ); */
         EnterCriticalSection ( & pGbl->mutex );
         ellDelete ( & pGbl->threadList, & pParm->node );
         LeaveCriticalSection ( & pGbl->mutex );
 
-        // close the handle if its an implicit thread id
+        /* close the handle if its an implicit thread id */
         if ( ! pParm->funptr ) {
             CloseHandle ( pParm->handle );
         }
@@ -268,7 +268,7 @@ static void threadCleanupWIN32 ( void )
         return;
     }
 
-    while ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ) ) {
+    while ( ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ) ) ) {
         epicsParmCleanupWIN32 ( pParm );
     }
 
@@ -292,8 +292,8 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
 {
     unsigned magnitude;
 
-    // optimizer will remove this one if epicsThreadPriorityMin is zero
-    // and osiPriority is unsigned
+    /* optimizer will remove this one if epicsThreadPriorityMin is zero */
+    /* and osiPriority is unsigned */
     if ( osiPriority < epicsThreadPriorityMin ) {
         osiPriority = epicsThreadPriorityMin;
     }
@@ -551,7 +551,10 @@ static win32ThreadParam * epicsThreadImplicitCreate ( void )
     if ( ! success ) {
         return 0;
     }
-    sprintf ( name, "win%x", id );
+    {
+        unsigned long idForFormat = id;
+        sprintf ( name, "win%lx", idForFormat );
+    }
     pParm = epicsThreadParmCreate ( name );
     if ( pParm ) {
         int win32ThreadPriority;
@@ -599,14 +602,19 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
     pParmWIN32->parm = pParm;
     pParmWIN32->epicsPriority = priority;
 
-    pParmWIN32->handle = (HANDLE) _beginthreadex ( 
-        0, stackSize, epicsWin32ThreadEntry, 
-        pParmWIN32, 
-        CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
-        & pParmWIN32->id );
-    if ( pParmWIN32->handle == 0 ) {
-        free ( pParmWIN32 );
-        return NULL;
+    {
+        unsigned threadId;
+        pParmWIN32->handle = (HANDLE) _beginthreadex ( 
+            0, stackSize, epicsWin32ThreadEntry, 
+            pParmWIN32, 
+            CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION, 
+            & threadId );
+        if ( pParmWIN32->handle == 0 ) {
+            free ( pParmWIN32 );
+            return NULL;
+        }
+        /* weird win32 interface threadId parameter inconsistency */
+        pParmWIN32->id = ( DWORD ) threadId ;
     }
 
     osdPriority = epicsThreadGetOsdPriorityValue (priority);
@@ -783,6 +791,13 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
  */
 double epicsShareAPI epicsThreadSleepQuantum ()
 {
+    /*
+     * Its worth noting here that the sleep quantum on windows can
+     * mysteriously get better. I eventually tracked this down to 
+     * codes that call timeBeginPeriod(1). Calling timeBeginPeriod()
+     * specifying a better timer resolution also increases the interrupt
+     * load. This appears to be related to java applet activity.
+     */
     static const double secPerTick = 100e-9;
     DWORD adjustment;
     DWORD delay;
@@ -840,7 +855,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId ( const char * pName
 
     LeaveCriticalSection ( & pGbl->mutex );
 
-    // !!!! warning - the thread parm could vanish at any time !!!!
+    /* !!!! warning - the thread parm could vanish at any time !!!! */
 
     return ( epicsThreadId ) pParm;
 }
@@ -927,22 +942,15 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
     if ( pParm ) {
-        fprintf (epicsGetStdout(), "%-15s %-8p %-8x %-9u %-9s %-7s", pParm->pName, 
-            (void *) pParm, pParm->id, pParm->epicsPriority,
+        unsigned long idForFormat = pParm->id;
+        fprintf ( epicsGetStdout(), "%-15s %-8p %-8lx %-9u %-9s %-7s", pParm->pName, 
+            (void *) pParm, idForFormat, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
             epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
-        if ( level ) {
-            fprintf (epicsGetStdout(), " %-8p %-8p %-8p ",
-                (void *) pParm->handle, (void *) pParm->funptr, 
-                (void *) pParm->parm );
-        }
     }
     else {
         fprintf (epicsGetStdout(), 
             "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE  " );
-        if ( level ) {
-            fprintf (epicsGetStdout(), " HANDLE   FUNCTION PARAMETER" );
-        }
     }
     fprintf (epicsGetStdout(),"\n" );
 }

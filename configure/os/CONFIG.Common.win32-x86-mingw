@@ -18,7 +18,10 @@ EXE=.exe
 # -U__STDC__ -D__STDC__=0 
 # VCINSTALLDIR:
 # before typing make, call "C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin\Vcvars32.bat"
-ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 -nostdinc -I"$(VCINSTALLDIR)\Vc7\include"
+#ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 -nostdinc -I"$(VCINSTALLDIR)\Vc7\include"
+#
+#the mingw cpp defines _X86_ and _WIN32
+#ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 
 
 # Library used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline

@@ -10,8 +10,10 @@
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
-WIND_HOST_TYPE = x86-win32
-OSITHREAD_USE_DEFAULT_STACK = NO
-
 HOSTEXE=.exe
+
+WIND_HOST_TYPE = x86-win32
+
+# osithead use default stack, YES or NO override
+OSITHREAD_USE_DEFAULT_STACK = NO
 

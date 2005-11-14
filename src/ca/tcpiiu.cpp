@@ -2004,7 +2004,7 @@ void tcpiiu::uninstallChanDueToSuccessfulSearchResponse (
     epicsGuard < epicsMutex > & guard, nciu & chan, 
     const class epicsTime & currentTime )
 {
-    return netiiu::uninstallChanDueToSuccessfulSearchResponse (
+    netiiu::uninstallChanDueToSuccessfulSearchResponse (
         guard, chan, currentTime );
 }
 

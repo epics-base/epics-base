@@ -7,5 +7,5 @@
 #-------------------------------------------------------
  
 # SNS override values
-WIND_HOST_TYPE = x86-linux_64
+#WIND_HOST_TYPE = x86-linux
 

@@ -738,6 +738,13 @@ int epicsShareAPI ca_attach_context ( struct ca_client_context * pCtx )
     return ECA_NORMAL;
 }
 
+void epicsShareAPI ca_detach_context () 
+{
+    if ( caClientContextId ) {
+        epicsThreadPrivateSet ( caClientContextId, 0 );
+    }
+}
+
 int epicsShareAPI ca_preemtive_callback_is_enabled ()
 {
     ca_client_context *pcac = (ca_client_context *) epicsThreadPrivateGet ( caClientContextId );

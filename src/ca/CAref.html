@@ -2,7 +2,7 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS R3.14 Channel Access Reference Manual</title>
 </head>
 
@@ -169,7 +169,8 @@ height="31" width="88"></a></p>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
   <li><a href="#ca_add_event">ca_create_subscription</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
-  <li><a href="#ca_dump_db">ca_dump_dbr()</a></li>
+  <li><a href="#ca_dump_db">ca_dump_dbr</a></li>
+  <li><a href="#ca_detach_">ca_detach_context</a></li>
   <li><a href="#ca_element_count">ca_element_count</a></li>
   <li><a href="#L6925">ca_field_type</a></li>
   <li><a href="#ca_flush_io">ca_flush_io</a></li>
@@ -2290,7 +2291,7 @@ int ca_context_create ( enum ca_preemptive_callback_select SELECT );</code></pre
 <h4>Description</h4>
 
 <p>This function, or <a href="#ca_attach_context">ca_attach_context()</a>,
-should be called once for each thread prior to making any of the other
+should be called once from each thread prior to making any of the other
 Channel Access calls. If one of the above is not called before making other
 CA calls then a non-preemptive context is created by default, and future
 attempts to create a preemptive context for the current threads will fail.</p>
@@ -2333,8 +2334,12 @@ void ca_context_destroy();</pre>
 
 <h4>Description</h4>
 
-<p>Shut down a channel access client context and free any resources
-allocated. </p>
+<p>Shut down the calling thread's channel access client context and free any
+resources allocated. Detach the calling thread from any CA client context.</p>
+
+<p>Be advised that any user created threads that might have attached
+themselves to the CA context must of course stop using it prior to its being
+destroyed.</p>
 
 <p>On many OS that execute programs in a process based environment the
 resources used by the client library such as sockets and allocated memory are
@@ -3881,12 +3886,18 @@ returned.</p>
 
 <p>ca_attach_context()</p>
 
+<p>ca_detach_context()</p>
+
+<p>ca_context_create()</p>
+
+<p>ca_context_destroy()</p>
+
 <h3><a name="ca_attach_context">ca_attach_context()</a></h3>
 <pre>int ca_attach_context (struct ca_client_context *CONTEXT);</pre>
 
 <h4>Description</h4>
 
-<p>Become a member of the specified CA context. If
+<p>The calling thread becomes a member of the specified CA context. If
 <code>ca_disable_preemptive_callback</code> is specified when
 ca_context_create() is called (or if ca_task_initialize() is called) then
 additional threads are <em>not </em>allowed to join the CA context because
@@ -3906,9 +3917,36 @@ preemptively from more than one thread.</p>
 <p>ECA_NOTTHREADED - the specified context is non-preemptive and therefore
 does not allow other threads to join</p>
 
+<p>ECA_ISATTACHED - the current thread is already attached to a CA context</p>
+
 <h4>See Also</h4>
 
 <p>ca_current_context()</p>
+
+<p>ca_detach_context()</p>
+
+<p>ca_context_create()</p>
+
+<p>ca_context_destroy()</p>
+
+<h3><a name="ca_detach_" id="ca_detach_">ca_detach_context()</a></h3>
+<pre>void ca_detach_context();</pre>
+
+<h4>Description</h4>
+
+<p>Detach from any CA context currently attached to the calling thread. This
+does <em>not</em> cleanup or shutdown any currently attached CA context (for
+that use ca_context_destroy).</p>
+
+<h4>See Also</h4>
+
+<p>ca_current_context()</p>
+
+<p>ca_attach_context()</p>
+
+<p>ca_context_create()</p>
+
+<p>ca_context_destroy()</p>
 
 <h3><a name="ca_dump_db">ca_dump_dbr()</a></h3>
 

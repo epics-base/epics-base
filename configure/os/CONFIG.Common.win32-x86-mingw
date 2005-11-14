@@ -15,20 +15,25 @@ ARCH_CLASS = x86
 
 EXE=.exe
 
-# -U__STDC__ -D__STDC__=0 
-# VCINSTALLDIR:
-# before typing make, call "C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin\Vcvars32.bat"
-#ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 -nostdinc -I"$(VCINSTALLDIR)\Vc7\include"
-#
-#the mingw cpp defines _X86_ and _WIN32
-#ARCH_DEP_CPPFLAGS += -D_X86_ -D_WIN32 
-
 # Library used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline
 
 STATIC_BUILD=YES
 STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 
-# Compiler defines _WIN32 and WIN32
+# Compiler defines _X86_ 1
+
+# Compiler defines __MSVCRT__ 1
+# Compiler defines __MINGW32__ 1
+# Compiler defines __WIN32 1
+# Compiler defines __WINNT 1
+# Compiler defines __WINNT__ 1
+# Compiler defines __WIN32__ 1
+# Compiler defines _WIN32 1
+# Compiler defines WIN32 1
+# Compiler defines WINNT 1
+# Compiler does not define  __unix __unix__ unix
+
+# Override for -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS =
 

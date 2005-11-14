@@ -1634,7 +1634,7 @@ void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
     ca_uint32_t tmp = pHost[0];
     pNet[0] = dbr_htonl (pHost[1]);
     pNet[1] = dbr_htonl (tmp);  
- #else
+#else
     /* impure little endian, compatible with archaic ARM FP hardware */
     pNet[0] = dbr_htonl (pHost[0]);
     pNet[1] = dbr_htonl (pHost[1]);

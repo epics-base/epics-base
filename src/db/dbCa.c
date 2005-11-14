@@ -39,6 +39,7 @@
 #include "dbCommon.h"
 #include "cadef.h"
 #include "epicsAssert.h"
+#include "epicsExit.h"
 /*following because we cant include dbStaticLib.h*/
 epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #define epicsExportSharedSymbols
@@ -767,11 +768,17 @@ STATIC void getAttribEventCallback(struct event_handler_args arg)
     if(connect) connect(userPvt);
 }
 
+static void exitHandler(void *pvt)
+{
+    ca_context_destroy();
+}
+
 void dbCaTask()
 {
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
         "dbCaTask calling ca_context_create");
+    epicsAtExit(exitHandler,0);
     dbCaClientContext = ca_current_context ();
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");

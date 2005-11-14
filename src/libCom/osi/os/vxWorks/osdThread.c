@@ -145,8 +145,9 @@ epicsThreadId epicsThreadCreate(const char *name,
         VX_FP_TASK, stackSize,
         (FUNCPTR)createFunction,(int)funptr,(int)parm,
         0,0,0,0,0,0,0,0);
-    if(tid==0) {
-        errlogPrintf("epicsThreadCreate taskSpawn failure for %s\n",name);
+    if(tid==ERROR) {
+        errlogPrintf("epicsThreadCreate %s failure %s\n",
+            name,strerror(errno));
         return(0);
     }
     return((epicsThreadId)tid);

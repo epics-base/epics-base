@@ -110,6 +110,9 @@ typedef int                     SOCKET;
 #define INVALID_SOCKET		(-1)
 #define INADDR_LOOPBACK ((u_long)0x7f000001)
 
+#ifndef INADDR_NONE
+#   define INADDR_NONE (0xffffffff)
+#endif 
 
 /* 
  * (the VAXC runtime lib has its own close 

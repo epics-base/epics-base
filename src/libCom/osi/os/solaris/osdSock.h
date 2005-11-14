@@ -85,6 +85,10 @@ typedef int osiSockIoctl_t;
 #   define SHUT_RDWR 2
 #endif
 
+#ifndef INADDR_NONE
+#   define INADDR_NONE (0xffffffff)
+#endif 
+
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
 
 #endif /*osdSockH*/

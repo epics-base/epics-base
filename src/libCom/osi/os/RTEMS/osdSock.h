@@ -74,6 +74,10 @@ typedef socklen_t osiSocklen_t;
 #define       INADDR_LOOPBACK         (u_long)0x7F000001
 #endif
 
+#ifndef INADDR_NONE
+#   define INADDR_NONE (0xffffffff)
+#endif 
+
 /*
  * For shutdown()
  */

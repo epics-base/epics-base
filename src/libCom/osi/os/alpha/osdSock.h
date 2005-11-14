@@ -69,5 +69,9 @@ typedef int osiSocklen_t;
 
 #define ifreq_size(pifreq) (sizeof(pifreq->ifr_name))
 
+#ifndef INADDR_NONE
+#   define INADDR_NONE (0xffffffff)
+#endif 
+
 #endif /*osdSockH*/
 

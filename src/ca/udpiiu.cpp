@@ -241,8 +241,8 @@ udpiiu::udpiiu (
     this->pushVersionMsg ();
 
     // start timers and receive thread
-    for ( unsigned i =0; i < this->nTimers; i++ ) {
-        this->ppSearchTmr[i]->start (); 
+    for ( unsigned j =0; j < this->nTimers; j++ ) {
+        this->ppSearchTmr[j]->start (); 
     }
     this->govTmr.start ();
     this->repeaterSubscribeTmr.start ();

@@ -77,7 +77,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
             // this should behave as the C++ implementation intends when an 
             // exception isnt handled. If users dont like this behavior, they 
             // can install an application specific unexpected handler.
-            std::unexpected (); 
+            unexpected (); 
         }
     }
     catch ( ... ) {
@@ -93,7 +93,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
             // this should behave as the C++ implementation intends when an 
             // exception isnt handled. If users dont like this behavior, they 
             // can install an application specific unexpected handler.
-            std::unexpected ();
+            unexpected ();
         }
     }
     if ( ! waitRelease ) {

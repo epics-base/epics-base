@@ -222,7 +222,7 @@ recordtype(ai) {
 	field(SIMM,DBF_MENU) {
 		prompt("Simulation Mode")
 		interest(1)
-		menu(menuYesNo)
+		menu(menuSimm)
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")

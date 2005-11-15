@@ -33,6 +33,7 @@
 #include "dbEvent.h"
 #include "dbFldTypes.h"
 #include "devSup.h"
+#include "menuSimm.h"
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
@@ -412,17 +413,27 @@ static long readValue(aiRecord *pai)
 	if (status)
 		return(status);
 
-	if (pai->simm == NO){
+	if (pai->simm == menuSimmNO){
 		status=(*pdset->read_ai)(pai);
 		return(status);
 	}
-	if (pai->simm == YES){
+	if (pai->simm == menuSimmYES){
 		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
 		if (status==0){
 			 pai->val=pai->sval;
 			 pai->udf=isnan(pai->val);
 		}
                 status=2; /* dont convert */
+	}
+	if (pai->simm == menuSimmRAW){
+		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
+		if (status==0) {
+			pai->udf=isnan(pai->sval);
+			if (!pai->udf) {
+				pai->rval=(long)floor(pai->sval);
+			}
+		}
+		status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
 		recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM);

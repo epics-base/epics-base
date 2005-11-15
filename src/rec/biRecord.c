@@ -32,6 +32,7 @@
 #include "dbEvent.h"
 #include "devSup.h"
 #include "errMdef.h"
+#include "menuSimm.h"
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
@@ -272,23 +273,31 @@ static long readValue(pbi)
 	if (status)
 		return(status);
 
-	if (pbi->simm == NO){
+	if (pbi->simm == menuSimmNO){
 		status=(*pdset->read_bi)(pbi);
 		return(status);
 	}
-	if (pbi->simm == YES){
-		status=dbGetLink(&(pbi->siol),DBR_USHORT,&(pbi->sval),0,0);
+	if (pbi->simm == menuSimmYES){
+		status=dbGetLink(&(pbi->siol),DBR_ULONG,&(pbi->sval),0,0);
 		if (status==0){
-			pbi->val=pbi->sval;
+			pbi->val=(unsigned short)pbi->sval;
 			pbi->udf=FALSE;
 		}
                 status=2; /* dont convert */
+	}
+	if (pbi->simm == menuSimmRAW){
+		status=dbGetLink(&(pbi->siol),DBR_ULONG,&(pbi->sval),0,0);
+		if (status==0){
+			pbi->rval=pbi->sval;
+			pbi->udf=FALSE;
+		}
+		status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
 		recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pbi,SIMM_ALARM,pbi->sims);
+	recGblSetSevr(pbi,SIMM_ALARM,pbi->sims);
 
 	return(status);
 }

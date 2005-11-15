@@ -447,7 +447,7 @@ recordtype(mbbi) {
 		promptgroup(GUI_MBB)
 		interest(1)
 	}
-	field(SVAL,DBF_USHORT) {
+	field(SVAL,DBF_ULONG) {
 		prompt("Simulation Value")
 	}
 	field(SIML,DBF_INLINK) {
@@ -458,7 +458,7 @@ recordtype(mbbi) {
 	field(SIMM,DBF_MENU) {
 		prompt("Simulation Mode")
 		interest(1)
-		menu(menuYesNo)
+		menu(menuSimm)
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")

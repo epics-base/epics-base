@@ -29,6 +29,7 @@
 #include "dbFldTypes.h"
 #include "devSup.h"
 #include "errMdef.h"
+#include "menuSimm.h"
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
@@ -113,7 +114,6 @@ static long init_record(pmbbi,pass)
 {
     struct mbbidset *pdset;
     long status;
-    int i;
 
     if (pass==0) return(0);
 
@@ -133,11 +133,8 @@ static long init_record(pmbbi,pass)
 	return(S_dev_missingSup);
     }
     /* initialize mask*/
-    pmbbi->mask = 0;
-    for (i=0; i<pmbbi->nobt; i++) {
-	pmbbi->mask <<= 1; /* shift left 1 bit*/
-	pmbbi->mask |= 1;  /* set low order bit*/
-    }
+    pmbbi->mask = (1 << pmbbi->nobt) - 1;
+
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbi))) return(status);
     }
@@ -351,17 +348,25 @@ static long readValue(pmbbi)
 	if (status)
 		return(status);
 
-	if (pmbbi->simm == NO){
+	if (pmbbi->simm == menuSimmNO){
 		status=(*pdset->read_mbbi)(pmbbi);
 		return(status);
 	}
-	if (pmbbi->simm == YES){
-		status=dbGetLink(&(pmbbi->siol),DBR_USHORT,&(pmbbi->sval),0,0);
+	if (pmbbi->simm == menuSimmYES){
+		status=dbGetLink(&(pmbbi->siol),DBR_ULONG,&(pmbbi->sval),0,0);
 		if (status==0){
-			pmbbi->val=pmbbi->sval;
+			pmbbi->val=(unsigned short)pmbbi->sval;
 			pmbbi->udf=FALSE;
 		}
                 status=2; /* dont convert */
+	}
+	if (pmbbi->simm == menuSimmRAW){
+		status=dbGetLink(&(pmbbi->siol),DBR_ULONG,&(pmbbi->sval),0,0);
+		if (status==0){
+			pmbbi->rval=pmbbi->sval;
+			pmbbi->udf=FALSE;
+		}
+                status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
 		recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM);

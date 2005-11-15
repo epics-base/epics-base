@@ -44,6 +44,7 @@ DBDINC += menuOmsl
 DBDINC += menuPriority
 DBDINC += menuScan
 DBDINC += menuYesNo
+DBDINC += menuSimm
 
 INC += dbCommon.h
 

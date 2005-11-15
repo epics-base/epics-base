@@ -32,6 +32,7 @@
 #include "dbFldTypes.h"
 #include "devSup.h"
 #include "errMdef.h"
+#include "menuSimm.h"
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
@@ -133,7 +134,6 @@ static long init_record(pmbbiDirect,pass)
 {
     struct mbbidset *pdset;
     long status;
-    int i;
 
     if (pass==0) return(0);
 
@@ -157,11 +157,8 @@ static long init_record(pmbbiDirect,pass)
 	return(S_dev_missingSup);
     }
     /* initialize mask*/
-    pmbbiDirect->mask = 0;
-    for (i=0; i<pmbbiDirect->nobt; i++) {
-	pmbbiDirect->mask <<= 1; /* shift left 1 bit*/
-	pmbbiDirect->mask |= 1;  /* set low order bit*/
-    }
+    pmbbiDirect->mask = (1 << pmbbiDirect->nobt) - 1;
+
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(pmbbiDirect))) return(status);
         refresh_bits(pmbbiDirect, 0);
@@ -258,16 +255,29 @@ static long readValue(pmbbiDirect)
 		status=(*pdset->read_mbbi)(pmbbiDirect);
 		return(status);
 	}
-
-	status=dbGetLink(&(pmbbiDirect->siol),
-			 DBR_USHORT,&(pmbbiDirect->sval),0,0);
-	if (status==0){
-	   pmbbiDirect->val=pmbbiDirect->sval;
-	   pmbbiDirect->udf=FALSE;
+	if (pmbbiDirect->simm == menuSimmYES){
+		status=dbGetLink(&(pmbbiDirect->siol),
+				 DBR_ULONG,&(pmbbiDirect->sval),0,0);
+		if (status==0){
+			pmbbiDirect->val=(unsigned short)pmbbiDirect->sval;
+			pmbbiDirect->udf=FALSE;
+		}
+		status=2;	/* don't convert */
 	}
-	status=2;		/* don't convert */
-
-        recGblSetSevr(pmbbiDirect,SIMM_ALARM,pmbbiDirect->sims);
+	if (pmbbiDirect->simm == menuSimmRAW){
+		status=dbGetLink(&(pmbbiDirect->siol),
+				 DBR_ULONG,&(pmbbiDirect->sval),0,0);
+		if (status==0){
+			pmbbiDirect->rval=pmbbiDirect->sval;
+			pmbbiDirect->udf=FALSE;
+		}
+		status=0;	/* convert since we've written RVAL */
+	} else {
+		status=-1;
+		recGblSetSevr(pmbbiDirect,SOFT_ALARM,INVALID_ALARM);
+		return(status);
+	}
+	recGblSetSevr(pmbbiDirect,SIMM_ALARM,pmbbiDirect->sims);
 
 	return(status);
 }

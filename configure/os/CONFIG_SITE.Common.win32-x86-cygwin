@@ -5,10 +5,6 @@
 # Site Specific definitions for cygwin-x86 target
 # Only the local epics system manager should modify this file
 
-# If readline is installed uncomment the following line
-# to provide command-line editing and history support
-#COMMANDLINE_LIBRARY = READLINE
-
 # Needed to find dlls for gcc, g++, as, cpp, ...
 # if cygwin/bin not already in path
 CYGWIN_BIN=C:/cygwin/bin

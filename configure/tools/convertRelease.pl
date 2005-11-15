@@ -41,7 +41,6 @@ if ($opt_T) {
     $top = $cwd;
     $top =~ s/\/iocBoot.*$//;
     $top =~ s/\/configure.*$//;
-    chomp($top = `cygpath -m $top`) if ($^O eq "cygwin");
 }
 
 # The IOC may need a different path to get to $top

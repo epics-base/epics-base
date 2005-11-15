@@ -2957,11 +2957,15 @@ activity is processed for TIMEOUT seconds.</p>
 <p>When ca_poll is invoked the send buffer is flushed and any outstanding CA
 background activity is processed.</p>
 
-<p>This routine will <em>not</em> return before the specified time-out
-expires and all unfinished channel access labor has been processed, and
-unlike <code><a href="#ca_pend_io">ca_pend_io</a></code> it does <em>not
-</em>indicate anything about the status of pending IO requests when it
-returns ECA_NORMAL.</p>
+<p>The ca_pend_event function will <em>not</em> return before the specified
+time-out expires and all unfinished channel access labor has been processed,
+and unlike <code><a href="#ca_pend_io">ca_pend_io</a></code> returning from
+the function does <em>not </em>indicate anything about the status of pending
+IO requests.</p>
+
+<p>Both <code>ca_pend_event</code> and <code>ca_poll</code> return
+ECA_TIMEOUT when successful. This behavior probably isn't intuitive, but it
+is preserved to insure backwards compatibility.</p>
 
 <p>See also <a href="#Thread">Thread Safety and Preemptive Callback to User
 Code</a>.</p>
@@ -2974,8 +2978,6 @@ Code</a>.</p>
 </dl>
 
 <h4>Returns</h4>
-
-<p>ECA_NORMAL - Normal successful completion</p>
 
 <p>ECA_TIMEOUT - The operation timed out</p>
 

@@ -58,6 +58,8 @@ STATIC epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
 STATIC epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 STATIC int removesOutstanding = 0;
 STATIC int removesOutstandingWarning = 10000;
+STATIC volatile int exitRequest = 0;
+STATIC epicsEventId exitEvent;
 
 struct ca_client_context * dbCaClientContext;
 
@@ -170,6 +172,7 @@ void epicsShareAPI dbCaLinkInit(void)
     ellInit(&workList);
     workListLock = epicsMutexMustCreate();
     workListEvent = epicsEventMustCreate(epicsEventEmpty);
+    exitEvent = epicsEventMustCreate(epicsEventEmpty);
     epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,
         epicsThreadGetStackSize(epicsThreadStackBig),
         (EPICSTHREADFUNC) dbCaTask,0);
@@ -770,7 +773,9 @@ STATIC void getAttribEventCallback(struct event_handler_args arg)
 
 static void exitHandler(void *pvt)
 {
-    ca_context_destroy();
+    exitRequest = 1;
+    epicsEventSignal(workListEvent);
+    epicsEventMustWait(exitEvent);
 }
 
 void dbCaTask()
@@ -792,6 +797,7 @@ void dbCaTask()
             short  link_action;
             int    status;
 
+            if(exitRequest) break;
             epicsMutexMustLock(workListLock);
             if(!(pca = (caLink *)ellFirst(&workList))){/*Take off list head*/
                 epicsMutexUnlock(workListLock);
@@ -932,7 +938,11 @@ void dbCaTask()
                     printLinks(pca);
                 }
             }
+            if(exitRequest) break;
         }
+        if(exitRequest) break;
         SEVCHK(ca_flush_io(),"dbCaTask");
     }
+    ca_context_destroy();
+    epicsEventSignal(exitEvent);
 }

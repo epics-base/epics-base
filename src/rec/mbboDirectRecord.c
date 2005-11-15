@@ -251,7 +251,7 @@ static long special(paddr,after)
         if (pmbboDirect->omsl == menuOmslclosed_loop)
            return(0);
 
-        offset = 1 << (((int)paddr->pfield) - ((int) &(pmbboDirect->b0)));
+        offset = 1 << (((unsigned char *)paddr->pfield) - &(pmbboDirect->b0));
  
         if (*((char *)paddr->pfield)) {
           /* set field */

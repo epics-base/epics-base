@@ -20,7 +20,9 @@ COMPILER_CPPFLAGS = -D_REENTRANT
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
-# Library used when COMMANDLINE_LIBRARY is READLINE
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+INCLUDES_READLINE = -I$(GNU_DIR)/include
+LDFLAGS_READLINE += -L$(GNU_DIR)/lib
 LDLIBS_READLINE = -lreadline
 
 OP_SYS_CXXFLAGS += -D__cplusplus
@@ -37,7 +39,9 @@ OP_SYS_CXXFLAGS += -D__cplusplus
 #	compiler does not define  __unix __unix__ unix
 #	compiler does not define  __CYGWIN__ __CYGWIN32__
 
-OP_SYS_CPPFLAGS += -mno-cygwin
+# Overrides -DUNIX from CONFIG.Common.UnixCommon
+OP_SYS_CPPFLAGS = -mno-cygwin
+
 OP_SYS_LDFLAGS += -mno-cygwin
 OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 

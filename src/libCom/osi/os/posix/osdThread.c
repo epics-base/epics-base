@@ -67,6 +67,7 @@ typedef struct epicsThreadOSD {
     void              *createArg;
     epicsEventId       suspendEvent;
     int                isSuspended;
+    int                isEpicsThread;
     unsigned int       osiPriority;
     char              *name;
 } epicsThreadOSD;
@@ -390,6 +391,7 @@ epicsThreadId epicsThreadCreate(const char *name,
     pthread_sigmask(SIG_SETMASK,&blockAllSig,&oldSig);
     pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
     if(pthreadInfo==0) return 0;
+    pthreadInfo->isEpicsThread = 1;
     setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
@@ -504,6 +506,10 @@ void epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
 
     assert(epicsThreadOnceCalled);
     assert(pthreadInfo);
+    if(!pthreadInfo->isEpicsThread) {
+        fprintf(stderr,"epicsThreadSetPriority called by non epics thread\n");
+        return;
+    }
     pthreadInfo->osiPriority = priority;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);

@@ -26,6 +26,33 @@
 #include "epicsTime.h"
 #include "errlog.h"
 
+static void testPriority(const char *who)
+{
+    epicsThreadId id;
+    unsigned int  oldPriority,newPriority;
+
+    id = epicsThreadGetIdSelf();
+    oldPriority = epicsThreadGetPriority(id);
+    epicsThreadSetPriority(id,epicsThreadPriorityMax);
+    newPriority = epicsThreadGetPriority(id);
+    epicsThreadSetPriority(id,oldPriority);
+    printf("testPriority %s\n    id %p old %u new %u\n",
+        who,id,oldPriority,newPriority);
+}
+
+extern "C" void testPriorityThread(void *arg)
+{
+    testPriority("thread");
+}
+
+static void epicsThreadPriorityTest()
+{
+    testPriority("main error expected from epicsThreadSetPriority");
+    epicsThreadCreate("testPriorityThread",epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),testPriorityThread,0);
+    epicsThreadSleep(0.5);
+}
+
 static epicsThreadPrivate<int> privateKey;
 
 class myThread: public epicsThreadRunable {
@@ -182,6 +209,7 @@ extern "C" void threadTest(int ntasks,int verbose)
     int startPriority,minPriority,maxPriority;
     int errVerboseSave = errVerbose;
 
+    epicsThreadPriorityTest();
     epicsThreadGetIdSelfPerfTest ();
 
     threadSleepTest();

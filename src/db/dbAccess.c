@@ -1128,13 +1128,14 @@ static long dbPutFieldLink(
         if (!inpOut)
             status = S_db_badHWaddr;
         else
-            status = pdevSup->pdsxt->del_record(precord);
+            if (precord->dset)
+                status = pdevSup->pdsxt->del_record(precord);
         if (status) goto restoreScan;
         break;
     }
 
     if (special) status = putSpecial(paddr,0);
-    if (!status) status=dbPutString(&dbEntry,pstring);
+    if (!status) status = dbPutString(&dbEntry,pstring);
 
     if (inpOut) {
         precord->dset = new_dset;
@@ -1143,7 +1144,10 @@ static long dbPutFieldLink(
     }
 
     if (!status && special) status = putSpecial(paddr,1);
-    if (status) goto restoreScan;
+    if (status) {
+        if (inpOut) precord->dset = NULL;
+        goto postScanEvent;
+    }
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
@@ -1191,9 +1195,9 @@ static long dbPutFieldLink(
         else
             status = new_dsxt->add_record(precord);
         if (status) {
-            precord->dset = 0;
+            precord->dset = NULL;
             precord->pact = TRUE;
-            goto restoreScan;
+            goto postScanEvent;
         }
         break;
     }
@@ -1204,6 +1208,7 @@ restoreScan:
         precord->scan = scan;
         scanAdd(precord);
     }
+postScanEvent:
     if (scan != precord->scan)
         db_post_events(precord, &precord->scan, DBE_VALUE|DBE_LOG);
 unlock:

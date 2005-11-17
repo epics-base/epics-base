@@ -943,6 +943,14 @@ void dbCaTask()
         if(exitRequest) break;
         SEVCHK(ca_flush_io(),"dbCaTask");
     }
-    ca_context_destroy();
+/* This is not sufficient to clean up dbCa connections.
+*  The following should be done:
+*  1) All device support that uses dbCa should clean up
+*     This means that all channels should be deleted
+*     dbCa should ckeck that this has been done
+*  2) dbCa should do the following:
+*     a) check that all channels have been deleted.	
+*     b) call ca_context_destroy();
+*/
     epicsEventSignal(exitEvent);
 }

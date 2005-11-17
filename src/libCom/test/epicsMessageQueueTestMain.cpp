@@ -15,10 +15,15 @@
  *              630 252 4793
  */
 
-extern "C" void epicsMessageQueueTest ( void );
+#include "epicsThread.h"
+
+extern "C" void epicsMessageQueueTest ( void *);
 
 int main ( int /* argc */, char /* *argv[] */ )
 {
-    epicsMessageQueueTest ();
+    epicsThreadCreate("messageQueueTest",epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        epicsMessageQueueTest,0);
+    epicsThreadExitMain();
     return 0;
 }

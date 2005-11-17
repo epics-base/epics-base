@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <epicsMessageQueue.h>
 #include <epicsThread.h>
+#include <epicsExit.h>
 #include <epicsAssert.h>
 
 const char *msg1 = "1234567890This is a very long message.";
@@ -100,7 +101,7 @@ sender(void *arg)
     }
 }
 
-extern "C" void epicsMessageQueueTest()
+extern "C" void epicsMessageQueueTest(void *parm)
 {
     unsigned int i;
     char cbuf[80];
@@ -261,4 +262,5 @@ extern "C" void epicsMessageQueueTest()
     printf("......and here.\n");
     q1->trySend((void *)msg1, 0);
     epicsThreadSleep(1.0);
+    epicsExit(0);
 }

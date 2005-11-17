@@ -396,8 +396,11 @@ epicsThreadId epicsThreadCreate(const char *name,
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     if(status==EPERM){
+        /* FIXME: memory leak...
+         * free old pthreadInfo, but can't use free_threadInfo() */
         pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
         if(pthreadInfo==0) return 0;
+        pthreadInfo->isEpicsThread = 1;
         status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     }

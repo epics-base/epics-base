@@ -1145,7 +1145,10 @@ static long dbPutFieldLink(
 
     if (!status && special) status = putSpecial(paddr,1);
     if (status) {
-        if (inpOut) precord->dset = NULL;
+        if (inpOut) {
+            precord->dset = NULL;
+            precord->pact = TRUE;
+        }
         goto postScanEvent;
     }
 

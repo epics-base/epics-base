@@ -45,12 +45,21 @@
 #   define debugPrintf(argsInParen)
 #endif
 
-// for mingw
-#if !defined ( MAXLONGLONG ) 
-#define MAXLONGLONG 0x7fffffffffffffffLL
+// GNU seems to require that 64 bit constants have LL on
+// them. The borland compiler fails to compile constants
+// with the LL suffix. MS compiler doesnt care.
+#ifdef __GNUC__ 
+#define LL_CONSTANT(VAL) VAL ## LL
+#else
+#define LL_CONSTANT(VAL) VAL 
 #endif
 
-static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000LL;
+// for mingw
+#if !defined ( MAXLONGLONG ) 
+#define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
+#endif
+
+static const LONGLONG epicsEpochInFileTime = LL_CONSTANT(0x01b41e2a18d64000);
 
 class currentTime : public epicsTimerNotify {
 public:
@@ -140,7 +149,7 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent
 
 inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
 {
-     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + 116444736000000000LL;
+     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + LL_CONSTANT(116444736000000000);
      pft->dwLowDateTime = static_cast < DWORD > ( ll );
      pft->dwHighDateTime = static_cast < DWORD > ( ll >>32 );
 }

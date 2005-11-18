@@ -498,8 +498,7 @@ static void acceptNewClient ( void *pParam )
 		}
 	}
 
-#	define SOCKET_SHUTDOWN_WRITE_SIDE 1
-	status = shutdown(pclient->insock, SOCKET_SHUTDOWN_WRITE_SIDE);
+	status = shutdown(pclient->insock, SHUT_WR);
 	if(status<0){
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

@@ -37,6 +37,10 @@ epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
 PROD_HOST += epicsThreadTestHost
 OBJS_IOC_vxWorks += epicsThreadTest
 
+epicsThreadPriorityTestHost_SRCS += epicsThreadPriorityTestMain.cpp epicsThreadPriorityTest.cpp
+PROD_HOST += epicsThreadPriorityTestHost
+OBJS_IOC_vxWorks += epicsThreadPriorityTest
+
 epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPrivateTest.cpp
 PROD_HOST += epicsThreadPrivateTestHost
 OBJS_IOC_vxWorks += epicsThreadPrivateTest

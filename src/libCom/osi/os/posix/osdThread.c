@@ -409,9 +409,13 @@ epicsThreadId epicsThreadCreate(const char *name,
         status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     }
-    checkStatus(status,"pthread_create");
-    if(status) return 0;
-    pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
+    checkStatusOnce(status,"pthread_create");
+    if(status) {
+        free_threadInfo(pthreadInfo);
+        return 0;
+    }
+    status = pthread_sigmask(SIG_SETMASK,&oldSig,NULL);
+    checkStatusOnce(status,"pthread_sigmask");
     return(pthreadInfo);
 }
 

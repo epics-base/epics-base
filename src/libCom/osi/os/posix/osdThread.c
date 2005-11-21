@@ -68,6 +68,8 @@ typedef struct epicsThreadOSD {
     epicsEventId       suspendEvent;
     int                isSuspended;
     int                isEpicsThread;
+    int                isFifoScheduled;
+    int                isOnThreadList;
     unsigned int       osiPriority;
     char              *name;
 } epicsThreadOSD;
@@ -226,7 +228,7 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
 
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","free_threadInfo");
-    ellDelete(&pthreadList,&pthreadInfo->node);
+    if(pthreadInfo->isOnThreadList) ellDelete(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","free_threadInfo");
     epicsEventDestroy(pthreadInfo->suspendEvent);
@@ -287,6 +289,7 @@ static void once(void)
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","epicsThreadInit");
     ellAdd(&pthreadList,&pthreadInfo->node);
+    pthreadInfo->isOnThreadList = 1;
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
     status = atexit(myAtExit);
@@ -310,6 +313,7 @@ static void * start_routine(void *arg)
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","start_routine");
     ellAdd(&pthreadList,&pthreadInfo->node);
+    pthreadInfo->isOnThreadList = 1;
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","start_routine");
 
@@ -393,11 +397,12 @@ epicsThreadId epicsThreadCreate(const char *name,
     if(pthreadInfo==0) return 0;
     pthreadInfo->isEpicsThread = 1;
     setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
+    pthreadInfo->isFifoScheduled = 1;
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     if(status==EPERM){
-        /* FIXME: memory leak...
-         * free old pthreadInfo, but can't use free_threadInfo() */
+        /* Try again without SCHED_FIFO*/
+        free_threadInfo(pthreadInfo);
         pthreadInfo = init_threadInfo(name,priority,stackSize,funptr,parm);
         if(pthreadInfo==0) return 0;
         pthreadInfo->isEpicsThread = 1;
@@ -514,6 +519,7 @@ void epicsThreadSetPriority(epicsThreadId pthreadInfo,unsigned int priority)
         return;
     }
     pthreadInfo->osiPriority = priority;
+    if(!pthreadInfo->isFifoScheduled) return;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(

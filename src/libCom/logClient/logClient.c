@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id$ */
+/* logClient.c,v 1.25.2.6 2004/10/07 13:37:34 mrk Exp */
 /*
  *      Author:         Jeffrey O. Hill 
  *      Date:           080791 
@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include <limits.h>
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
@@ -29,9 +28,6 @@
 #include "epicsThread.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
-#include "errlog.h"
-#include "envDefs.h"
-#include "ellLib.h"
 #include "epicsExit.h"
 
 #include "logClient.h"
@@ -43,17 +39,14 @@
 static const int logClientSuccess = 0;
 static const int logClientError = -1;
 
-/*
- * for use by the vxWorks shell
- */
-int iocLogDisable = 0;
-
 typedef struct {
-    ELLNODE             node; /* must be the first field in struct */
     char                msgBuf[0x4000];
     struct sockaddr_in  addr;
+    char                name[64];
     epicsMutexId        mutex;
     SOCKET              sock;
+    epicsThreadId       restartThreadId;
+    epicsEventId        restartSignal;
     unsigned            connectTries;
     unsigned            connectCount;
     unsigned            connectReset;
@@ -61,61 +54,15 @@ typedef struct {
     unsigned            connected;
 } logClient;
 
-LOCAL epicsMutexId logClientGlobalMutex;  
-LOCAL epicsEventId logClientGlobalSignal;
-LOCAL ELLLIST logClientList;
-LOCAL epicsThreadId logClientThreadId;
-LOCAL logClient *pLogClientDefaultClient;
-
 LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
 LOCAL const unsigned    LOG_MAX_CONNECT_RETRIES = 12 * 60; 
+LOCAL const double      LOG_INITIAL_CONNECT_DELAY = 50e-3; /* sec */
+LOCAL const unsigned    LOG_INITIAL_MAX_CONNECT_RETRIES = 40u;
 
 /*
- *  getConfig()
- *  Get Server Configuration
+ * logClientClose ()
  */
-LOCAL int getConfig (logClient *pClient)
-{
-    long status;
-    long epics_port;
-    unsigned short port;
-    struct in_addr addr;
-
-    status = envGetLongConfigParam (&EPICS_IOC_LOG_PORT, &epics_port);
-    if (status<0) {
-        fprintf (stderr,
-            "logClient: EPICS environment variable \"%s\" undefined\n",
-            EPICS_IOC_LOG_PORT.name);
-        return logClientError;
-    }
-    
-    status = envGetInetAddrConfigParam (&EPICS_IOC_LOG_INET, &addr);
-    if (status<0) {
-        fprintf (stderr,
-            "logClient: EPICS environment variable \"%s\" undefined\n",
-            EPICS_IOC_LOG_INET.name);
-        return logClientError;
-    }
-
-    if (epics_port<0 || epics_port>USHRT_MAX) {
-        fprintf (stderr,
-            "logClient: EPICS environment variable \"%s\" out of range\n",
-            EPICS_IOC_LOG_PORT.name);
-        return logClientError;
-    }
-    port = (unsigned short) epics_port;
-
-    pClient->addr.sin_family = AF_INET;
-    pClient->addr.sin_addr = addr;
-    pClient->addr.sin_port = htons(port);
-
-    return logClientSuccess;
-}
-
-/*
- * logClientReset ()
- */
-LOCAL void logClientReset (logClient *pClient) 
+LOCAL void logClientClose (logClient *pClient)
 {
 #   ifdef DEBUG
         fprintf (stderr, "log client: lingering for connection close...");
@@ -146,50 +93,47 @@ LOCAL void logClientReset (logClient *pClient)
      */
     epicsMutexUnlock (pClient->mutex);
 
-    /*
-     * wake up the watchdog task
-     */
-    epicsEventSignal (logClientGlobalSignal);
-
 #   ifdef DEBUG
         fprintf (stderr, "done\n");
 #   endif
 }
 
 /*
+ * logClientReset ()
+ */
+LOCAL void logClientReset (logClient *pClient) 
+{
+    logClientClose (pClient);
+    epicsEventSignal (pClient->restartSignal);
+}
+
+/*
  * logClientDestroy
  */
-LOCAL void logClientDestroy (logClient *pClient)
+LOCAL void logClientDestroy (logClientId id)
 {
-    logClientReset (pClient);
+    logClient *pClient = (logClient *)id;
+    /*
+     * mutex on (and left on)
+     */
+    epicsMutexMustLock (pClient->mutex);
+
+    logClientClose (pClient);
 
     epicsMutexDestroy (pClient->mutex);
 
     free (pClient);
 }
 
-/*
- * logClientShutdown()
- */
-LOCAL void logClientShutdown (void * pvt)
-{
-    logClient *pClient;
-    epicsMutexMustLock (logClientGlobalMutex);
-    while ( ( pClient = (logClient *) ellGet (&logClientList) ) ) {
-        logClientDestroy (pClient);
-    }
-    epicsMutexUnlock (logClientGlobalMutex);
-}
-
 /* 
- * logClientSendMessageInternal ()
+ * logClientSend ()
  */
-LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
+void logClientSend ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
     unsigned strSize;
-    
-    if ( iocLogDisable || ! pClient || ! message ) {
+
+    if ( ! pClient || ! message ) {
         return;
     }
 
@@ -232,7 +176,6 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
                 }
             }
             else {
-                char name[64];
                 char sockErrBuf[64];
                 if ( status ) {
                     epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -240,14 +183,10 @@ LOCAL void logClientSendMessageInternal ( logClientId id, const char * message )
                 else {
                     strcpy ( sockErrBuf, "server initiated disconnect" );
                 }
-                ipAddrToDottedIP ( &pClient->addr, name, sizeof ( name ) );
                 fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                    name, sockErrBuf );
+                    pClient->name, sockErrBuf );
 
                 logClientReset ( pClient );
-
-                epicsMutexUnlock ( pClient->mutex );
-                return;
             }
         }
         else {
@@ -287,41 +226,20 @@ void epicsShareAPI logClientFlush ( logClientId id )
             }
         }
         else {
-            char name[64];
             char sockErrBuf[64];
-
             if ( status ) {
                 epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             }
             else {
                 strcpy ( sockErrBuf, "server initiated disconnect" );
             }
-            ipAddrToDottedIP ( &pClient->addr, name, sizeof ( name ) );
             fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                name, sockErrBuf );
+                pClient->name, sockErrBuf );
             logClientReset ( pClient );
             break;
         }
     }
     epicsMutexUnlock ( pClient->mutex );
-}
-
-/*
- *  iocLogFlush ()
- */
-void epicsShareAPI epicsShareAPI iocLogFlush ()
-{
-    if (pLogClientDefaultClient!=NULL) {
-        logClientFlush ((logClientId)pLogClientDefaultClient );
-    }
-}
-
-/*
- * logClientSendMessage ()
- */
-void epicsShareAPI logClientSendMessage (logClientId id, const char *message)
-{
-    logClientSendMessageInternal (id, message);
 }
 
 /*
@@ -417,17 +335,13 @@ LOCAL void logClientConnect (logClient *pClient)
             }
 #endif
             else {
-                char name[64];
-            
-                ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
-
                 if (pClient->connectReset==0) {
                     char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString ( 
+                    epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
-                        "log client: Unable to connect to \"%s\" because %d=\"%s\"\n", 
-                        name, errnoCpy, sockErrBuf);
+                        "log client: unable to connect to \"%s\" because %d=\"%s\"\n", 
+                        pClient->name, errnoCpy, sockErrBuf);
                 }
 
                 logClientReset (pClient);
@@ -465,7 +379,21 @@ LOCAL void logClientConnect (logClient *pClient)
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf (stderr, "log client: unable to enable keepalive option because \"%s\"\n", sockErrBuf);
     }
-    
+
+    /*
+     * we don't need full-duplex (clients only write), so we shutdown
+     * the read end of our socket
+     */
+    status = shutdown (pClient->sock, SHUT_RD);
+    if (status < 0) {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        fprintf (stderr, "%s:%d shutdown(%d,SHUT_RD) error was \"%s\"\n", 
+            __FILE__, __LINE__, pClient->sock, sockErrBuf);
+        /* not fatal (although it shouldn't happen) */
+    }
+
     /*
      * set how long we will wait for the TCP state machine
      * to clean up when we issue a close(). This
@@ -490,196 +418,105 @@ LOCAL void logClientConnect (logClient *pClient)
 
     pClient->connectReset = 0u;
 
-    {
-        char name[64];
-        ipAddrToDottedIP ( &pClient->addr, name, sizeof ( name ) );
-        fprintf ( stderr, 
-            "log client: connected to error message log server at \"%s\"\n", name);
-    }
+    fprintf ( stderr, "log client: connected to log server at \"%s\"\n", pClient->name);
 }
 
 /*
- * logRestart ()
+ * logClientRestart ()
  */
-LOCAL void logRestart ( void *pPrivate )
+LOCAL void logClientRestart ( logClientId id )
 {
     epicsEventWaitStatus semStatus;
-    logClient *pClient;
+    logClient *pClient = (logClient *)id;
 
     while (1) {
 
-        semStatus = epicsEventWaitWithTimeout (logClientGlobalSignal, LOG_RESTART_DELAY);
+        semStatus = epicsEventWaitWithTimeout (pClient->restartSignal, LOG_RESTART_DELAY);
         assert ( semStatus==epicsEventWaitOK || semStatus==epicsEventWaitTimeout );
 
-        epicsMutexMustLock (logClientGlobalMutex);
-        for ( pClient = (logClient *) ellFirst (&logClientList); pClient; 
-                pClient = (logClient *) ellNext(&pClient->node) ) {
-
+        if (pClient->sock==INVALID_SOCKET) {
+            logClientMakeSock (pClient);
             if (pClient->sock==INVALID_SOCKET) {
-                logClientMakeSock (pClient);
-                if (pClient->sock==INVALID_SOCKET) {
-                    continue;
-                }
-            }
-
-            if ( ! pClient->connected ) {
-                logClientConnect (pClient);
-                if ( ! pClient->connected ) {
-                    if ( pClient->connectTries>LOG_MAX_CONNECT_RETRIES ) {
-                        char name[64];
-
-                        ipAddrToDottedIP ( &pClient->addr, name, sizeof(name) );
-                        fprintf ( stderr, "log client: timed out attempting to connect to %s\n", name );
-                        logClientReset ( pClient );
-                    }
-                }
-            }
-            else {
-                logClientFlush ( pClient );
+                continue;
             }
         }
-        epicsMutexUnlock (logClientGlobalMutex);
+
+        if ( ! pClient->connected ) {
+            logClientConnect (pClient);
+            if ( ! pClient->connected ) {
+                if ( pClient->connectTries>LOG_MAX_CONNECT_RETRIES ) {
+                    fprintf ( stderr, "log client: timed out attempting to connect to %s\n", pClient->name );
+                    logClientReset ( pClient );
+                }
+            }
+        }
+        else {
+            logClientFlush ( pClient );
+        }
     }
 }
 
 /*
- *  logClientGlobalInit ()
+ *  logClientCreate()
  */
-LOCAL void logClientGlobalInit ()
+logClientId epicsShareAPI logClientCreate (
+    struct in_addr server_addr, unsigned short server_port)
 {
-
-    logClientGlobalMutex = epicsMutexCreate ();
-    if (!logClientGlobalMutex) {
-        fprintf(stderr, "log client: Unable to create log client global mutex\n");
-        return;
-    }
-
-    epicsMutexMustLock (logClientGlobalMutex);
-    ellInit (&logClientList);
-
-    logClientGlobalSignal = epicsEventCreate (0);
-    if(!logClientGlobalSignal){
-        epicsMutexDestroy (logClientGlobalMutex);
-        logClientGlobalMutex = NULL;
-        return;
-    }
-    
-    logClientThreadId = epicsThreadCreate ("logRestart",
-        epicsThreadPriorityLow, 
-        epicsThreadGetStackSize(epicsThreadStackSmall),
-        logRestart, 0);
-    if (logClientThreadId==NULL) {
-        epicsMutexDestroy (logClientGlobalMutex);
-        logClientGlobalMutex = NULL;
-        epicsEventDestroy (logClientGlobalSignal);
-        logClientGlobalSignal = NULL;
-        fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
-        return;
-    }
-
-    epicsAtExit (logClientShutdown,0);
-
-    epicsMutexUnlock (logClientGlobalMutex);
-}
-
-/*
- *  logClientInit()
- */
-logClientId epicsShareAPI logClientInit ()
-{
-    static const unsigned maxConnectTries = 40u;
     unsigned connectTries = 0;
     logClient *pClient;
-    logClientId id;
-    int status;
-  
-    /*
-     * lazy init
-     */
-    if (logClientGlobalMutex==NULL) {
-        logClientGlobalInit ();
-        if (logClientGlobalMutex==NULL) {
-            return NULL;
-        }
-    }
 
     pClient = calloc (1, sizeof (*pClient));
     if (pClient==NULL) {
         return NULL;
     }
 
-    status = getConfig (pClient);
-    if (status) {
-        free (pClient);
-        return NULL;
-    }
-    
+    pClient->addr.sin_family = AF_INET;
+    pClient->addr.sin_addr = server_addr;
+    pClient->addr.sin_port = htons(server_port);
+    ipAddrToDottedIP (&pClient->addr, pClient->name, sizeof(pClient->name));
+
     pClient->mutex = epicsMutexCreate ();
     if (!pClient->mutex) {
         free (pClient);
         return NULL;
     }
-    
+
     pClient->sock = INVALID_SOCKET;
     pClient->connected = 0u;
 
-    epicsMutexMustLock (logClientGlobalMutex);
-    ellAdd (&logClientList, &pClient->node);
-    epicsMutexUnlock (logClientGlobalMutex);
+    epicsAtExit (logClientDestroy, (void*) pClient);
+
+    pClient->restartSignal = epicsEventCreate (epicsEventEmpty);
+    if (!pClient->restartSignal) {
+        free (pClient);
+        return NULL;
+    }
+    
+    pClient->restartThreadId = epicsThreadCreate ("logRestart",
+        epicsThreadPriorityLow, 
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        logClientRestart, pClient);
+    if (pClient->restartThreadId==NULL) {
+        free (pClient);
+        fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
+        return NULL;
+    }
 
     /*
      * attempt to block for the connect
      */
     while ( ! pClient->connected ) {
-
-        epicsEventSignal ( logClientGlobalSignal );
-
-        epicsThreadSleep ( 50e-3 );
-
+        epicsEventSignal ( pClient->restartSignal );
+        epicsThreadSleep ( LOG_INITIAL_CONNECT_DELAY );
         connectTries++;
-        if ( connectTries >= maxConnectTries ) {
-            char name[64];
-        
-            epicsMutexMustLock ( logClientGlobalMutex );
-            ipAddrToDottedIP ( & pClient->addr, name, sizeof ( name ) );
-            epicsMutexUnlock ( logClientGlobalMutex );
-
+        if ( connectTries >= LOG_INITIAL_MAX_CONNECT_RETRIES ) {
+            fprintf (stderr, "log client: unable to connect to \"%s\" for %.1f seconds\n",
+                pClient->name, LOG_INITIAL_CONNECT_DELAY*LOG_INITIAL_MAX_CONNECT_RETRIES);
             break;
         }
     }
 
-    id = (void *) pClient;
-    errlogAddListener ( logClientSendMessageInternal, id );
-
-    return id;
-}
-
-/*
- *  iocLogInit()
- */
-int epicsShareAPI iocLogInit (void)
-{
-    /*
-     * check for global disable
-     */
-    if (iocLogDisable) {
-        return logClientSuccess;
-    }
-
-    /*
-     * dont init twice
-     */
-    if (pLogClientDefaultClient!=NULL) {
-        return logClientSuccess;
-    }
-    
-    pLogClientDefaultClient = (logClient *) logClientInit ();
-    if (pLogClientDefaultClient) {
-        return logClientSuccess;
-    }
-    else {
-        return logClientError;
-    }
+    return (void *) pClient;
 }
 
 /*
@@ -688,31 +525,18 @@ int epicsShareAPI iocLogInit (void)
 void epicsShareAPI logClientShow (logClientId id, unsigned level)
 {
     logClient *pClient = (logClient *) id;
-    char name[64];
-
-    ipAddrToDottedIP (&pClient->addr, name, sizeof(name));
 
     if ( pClient->connected ) {
-        printf ("iocLogClient: connected to error message log server at \"%s\"\n", name);
+        printf ("log client: connected to log server at \"%s\"\n", pClient->name);
     }
     else {
-        printf ("iocLogClient: disconnected from error message log server at \"%s\"\n", name);
+        printf ("log client: disconnected from log server at \"%s\"\n", pClient->name);
     }
 
     if (level>1) {
-        printf ("iocLogClient: address=%p, sock=%s, connect tries=%u, connect cycles = %u\n",
+        printf ("log client: address=%p, sock=%s, connect tries=%u, connect cycles = %u\n",
             (void *) pClient, pClient->sock==INVALID_SOCKET?"INVALID":"OK",
             pClient->connectTries, pClient->connectCount);
-    }
-}
-
-/*
- *  iocLogShow ()
- */
-void epicsShareAPI iocLogShow (unsigned level)
-{
-    if (pLogClientDefaultClient!=NULL) {
-        logClientShow ((logClientId)pLogClientDefaultClient, level);
     }
 }
 

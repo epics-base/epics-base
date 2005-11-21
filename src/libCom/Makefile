@@ -105,7 +105,9 @@ SRCS += gpHashLib.c
 HTMLS += gpHash/gpHash.html
 
 SRC_DIRS += $(LIBCOM)/logClient
+INC += iocLog.h
 INC += logClient.h
+SRCS += iocLog.c
 SRCS += logClient.c
 
 SRC_DIRS += $(LIBCOM)/macLib

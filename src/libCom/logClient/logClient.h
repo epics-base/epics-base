@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* logClient.h,v 1.5.2.1 2003/07/08 00:08:06 jhill Exp */
 /*
  *
  *      Author:         Jeffrey O. Hill 
@@ -18,24 +18,26 @@
 #ifndef INClogClienth
 #define INClogClienth 1
 #include "shareLib.h"
+#include "osiSock.h" /* for 'struct in_addr' */
+
+/* include default log client interface for backward compatibility */
+#include "iocLog.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef void *logClientId;
-epicsShareFunc logClientId epicsShareAPI logClientInit (void);
-epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const char *message);
+epicsShareFunc logClientId epicsShareAPI logClientCreate (
+    struct in_addr server_addr, unsigned short server_port);
+epicsShareFunc void epicsShareAPI logClientSend (logClientId id, const char *message);
 epicsShareFunc void epicsShareAPI logClientShow (logClientId id, unsigned level);
 epicsShareFunc void epicsShareAPI logClientFlush (logClientId id);
 
-/*
- * default log client interface
- */
-epicsShareExtern int iocLogDisable;
-epicsShareFunc int epicsShareAPI iocLogInit (void);
-epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);
-epicsShareFunc void epicsShareAPI iocLogFlush ();
+/* deprecated interface; retained for backward compatibility */
+/* note: implementations are in iocLog.c, not logClient.c */
+epicsShareFunc logClientId epicsShareAPI logClientInit (void);
+epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const char *message);
 
 #ifdef __cplusplus
 }

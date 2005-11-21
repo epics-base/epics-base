@@ -15,9 +15,9 @@ AR = ar -rc
 LD = ld -r
 
 # Configure OS vendor C compiler
-CONFORM_CFLAGS_ANSI = -Aa
-CONFORM_CFLAGS_STRICT = -Aa
-CONFORM_CFLAGS_TRAD = -Ac
+CONFORM_CFLAGS_ANSI = -Aa -mt
+CONFORM_CFLAGS_STRICT = -Aa -mt
+CONFORM_CFLAGS_TRAD = -Ac -mt
 
 # Portability across different PA-RISC architecture versions
 CODE_CFLAGS = +DAportable +z

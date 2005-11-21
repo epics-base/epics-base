@@ -14,17 +14,14 @@ This port of EPICS to windows allows you to build for two host architectures:
 
 win32-x86 -  This is the native port to windows. Probably faster, more efficent, and with
              more precise time stamps. The OS dependent layers are carefully optimized 
-             for EPICS. There is prioritized schedualing of threads. You can use these
-             developer tool sets.
+             for EPICS. There is prioritized schedualing of threads. 
              
 cygwin-x86 - This is the POSIX port of EPICS layered onto cygwin which is layered again
              onto win32. We have less experience with this version, but it is in use. I
-             suspect that Mark Rivers has the most experience with it. There may not be
-             prioritized schedualing of threads. Mutexes are probably slower, and time 
-             stamps are probably less precise. There were problems with interrupting blocking
-             system calls during cleanup in past version that may be resolved in more recent 
-             versions of cygwin.
-
+             suspect that Mark Rivers has the most experience with it.  Mutexes may be
+             slower, and time stamps are probably less precise. There were problems with 
+             interrupting blocking system calls during cleanup in past version that may 
+             be resolved in more recent versions of cygwin.
 
 Once you have completed a host and or target build you can run all of the base components on
 windows. This includes the client library (ca.dll, Com.dll), soft IOCs, portable server etc.

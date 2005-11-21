@@ -1,62 +1,67 @@
 
-Compiling EPICS and Building IOC Applications on win32-x86 (Windows95/NT) 
----------------------------------------------------------------------
+Compiling EPICS and Building IOC Applications on MS Windows 
+-----------------------------------------------------------
 
-Original port of EPICS base build system to WIN32 (Windows95/NT)
-was done by Kay-Uwe Kasemir 11/96
+Original port of EPICS base build system to Windows was done by Kay-Uwe Kasemir 11/96
 
-please mail questions, comments, corrections, additional examples, etc 
-	to johill@lanl.gov
+Please mail questions, comments, corrections, additional examples, etc to Jeff Hill 
+    at johill###at###lanl.gov (replace ###at### with @ of course)
 
 0) what you will get
 --------------------
 
-Right now this port of EPICS to win32-x86 should allow you to
+This port of EPICS to windows allows you to build for two host architectures:
 
-* compile all of EPICS base using {Tornado, MS Visual C, perl,
-  GNU make} (only {MS Visual C, perl, GNU make} if you prefer
-  to compile only the host portions of EPICS base).
-* load EPICS on an IOC (486, pentium, 68k, ...),
-  load databases
-  (no drivers/devices for real I/O available, yet.
-   Some Greenspring IP support [Relay, Dig, ADC, DAC] is in progress)
-* build and use ca.dll on NT or Win95 to access all IOCs,
-  as well as the Com-library, gdd-library, cas-library,
-  and all other EPICS base libraries as DLLs.
-* build gdd, cas and a demo of the new portable CA server on win32-x86.
+win32-x86 -  This is the native port to windows. Probably faster, more efficent, and with
+             more precise time stamps. The OS dependent layers are carefully optimized 
+             for EPICS. There is prioritized schedualing of threads. You can use these
+             developer tool sets.
+             
+cygwin-x86 - This is the POSIX port of EPICS layered onto cygwin which is layered again
+             onto win32. We have less experience with this version, but it is in use. I
+             suspect that Mark Rivers has the most experience with it. There may not be
+             prioritized schedualing of threads. Mutexes are probably slower, and time 
+             stamps are probably less precise. There were problems with interrupting blocking
+             system calls during cleanup in past version that may be resolved in more recent 
+             versions of cygwin.
 
-To build only for win32-x86 and not cross compile for IOC development type 
-"make win32-x86" or in your configure/CONFIG_SITE file set 
-"CROSS_COMPILER_HOST_ARCHS="
 
-1) see what you have
---------------------
+Once you have completed a host and or target build you can run all of the base components on
+windows. This includes the client library (ca.dll, Com.dll), soft IOCs, portable server etc.
 
-To compile EPICS on win32-x86, we need
+1) what you will need
+---------------------
 
-	WindRiver System's Tornado (used: 1.0)  (not required if host only build)
-	Microsoft's Visual C/C++   (used: 13.10 from MS Visual studio .NET 2003)) 
-     or borland C++  (used bcc55)
-     or Visual C++ toolkit 2003 with MS platform SDK (used Februray 2003)
+Depending on how you set the EPICS_HOST ARCH environment variable, you will need
 
-and some tools:
+o win32-x86 - MS Visual C/C++ (probably version 6 is the earliest version that can be used)
+                (I understand that there are also available free versions of this compiler) 
+o win32-x86-borland - Borland C free compiler and linker (I use Borland C++ 5.5.1 successfuly)
+o win32-x86-mingw - MingW standalone GNU developers tools www.mingw.org
+o win32-x86-cygwin - Cygwin GNU base posix layered on win32 developers tools www.cygwin.com
+o cigwin-x86 - Cygwin GNU base posix layered on win32 developers tools www.cygwin.com
 
+You can also cross compiler for Tornado (and possibly RTEMS) if you have it (them) installed on 
+Windows. To build only for win32-x86 and not cross compile for IOC development type 
+"make win32-x86" or in your configure/CONFIG_SITE file set "CROSS_COMPILER_HOST_ARCHS="
+
+And some tools:
 	gnu make - www.gnu.org (need 3.78.1 or later)
 	perl - www.perl.org (need 5.0 or later)
 
-The gnu make and perl executables are downloadable from www.cygwin.com
+The gnu make and perl executables are also downloadable from www.cygwin.com
 The perl interpreter and gnu make are also available 'on the net'
 as sources which compile with MS Visual C++.
 
 2) set environment variables
 
-(Setting env. vars. is different: for NT, use Settings/System,
+(Setting env. vars. is different: for NT/W2K/WXP, use Settings/System,
 for Win95 use autoexec.bat)
 
 When setting paths in the EPICS CONFIG files for win32-x86 the following
 are hints in case you have trouble. You should not need to worry about 
 this unless you type a path into one of the EPICS config files that 
-includes a "\". In most situations gnu make, windows NT, the MS compiler,
+includes a "\". In most situations gnu make, windows NT/W2K/WXP, the MS compiler,
 and the MS linker will accept "/" and this will result in less trouble.
 
 	** Note that that each "\" in any path variables you set
@@ -76,44 +81,40 @@ and the MS linker will accept "/" and this will result in less trouble.
         be necessary to replace a "/" in a path that configured with "\\", but
         the bulk of our experience indicates that this is not the necessary.
 
-Your path should include:
-- The EPICS-binaries that we are about to build in <EPICS>base/bin/win32-x86
-- The System (for me it's in NT40...)
-- The MS Visual C compiler binaries
+Your path should include (in additon to ms system directories):
+- The ms system directories
+- The EPICS-binaries we are building <EPICS>base/bin/win32-x86 
+        (really where INSTALL_LOCATION specifies)
+- The developer tool set binaries
+- perl
+- GNU make
 
-Check with e.g.:
+Check with e.g.: echo %Path%
 
->echo %Path%
-C:\WINNT35.0\system32;
-C:\WINNT35.0;
-c:\msdev\bin;
-c:\perl5\bin;
-c:\make-3.75\WinRel;
-c:\epics\base\bin\win32 (really where INSTALL_LOCATION specifies)
+On NT/W2K/XP, "Path" is defined by the operating system, on Win95, it's "PATH" instead.
 
-On NT, "Path" is defined by the operating system, on Win95, it's "PATH" instead.
-
-MS Visual C and Tornado should be installed properly with
-these env. variables set:
+Of course, Tornado should be installed properly with these env. variables set:
 
 WIND_BASE=c:\Tornado		(required for cross development only)
 WIND_HOST_TYPE=x86-win32	(required for cross development only)
 
-This way the EPICS makesystem can locate Tornado 
-without any changes to the files in base/config.
-So for pc486 the settings in CONFIG_SITE where
-you specify the location of VxWorks are ignored,
-this information is taken from WIND_BASE and _HOST_TYPE!!
+This way the EPICS makesystem can locate Tornado without any changes to the files 
+in base/config. So for pc486 the settings in CONFIG_SITE where you specify the 
+location of VxWorks are ignored, this information is taken from WIND_BASE and 
+_HOST_TYPE!!
 
-MSDevDir=C:\MSDEV
-include=c:\msdev\include;c:\msdev\mfc\include
-lib=c:\msdev\lib;c:\msdev\mfc\lib
+If building with MSVC one ususally runs one of the following from a .cmd file:
+call "c:\program files\Microsoft Visual Studio\VC98\Bin\Vcvars32.bat"
+call "C:\Program Files\Microsoft Visual Studio .NET\Vc7\bin\Vcvars32.bat"
+call "C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\bin\Vcvars32.bat"
 
 The EPICS build system requires EPICS_HOST_ARCH environment variable
 Select host arch to build:
 	EPICS_HOST_ARCH=win32-x86
-or
-	EPICS_HOST_ARCH=win32-x86-borland  (if using borland C++)
+	EPICS_HOST_ARCH=win32-x86-borland 
+	EPICS_HOST_ARCH=win32-x86-mingw
+	EPICS_HOST_ARCH=win32-x86-cygwin
+	EPICS_HOST_ARCH=cygwin-x86
 
 Set the "TMP" environment variable if you need to specify where 
 temporary files are created.
@@ -144,16 +145,12 @@ Prepare apx. 2 ltr. Tee and type:
 Watch for errors and send them to me.
 
 Known problems:
-* gnumake seems to be faster than win32-x86 sometimes
-  which results in warnings/errors like
+* Sometimes there are clock synchronization problems when mounting UNIX
+file systems onto windows which results in warnings/errors like
   "file has modification date in the future"
   for newly created things.
   Very seldom this is fatal, so you have to
   stop gnumake and restart it.
-* This is strange because Windows95/NT doesn't care
-  about upper/lower case:
-  WIN32 is WIN32, not win32. Gnumake fails
-  if e.g. base/src/include/os/WIN32 is ...win32.
 
 4) Creating EPICS IOC applications under win32-x86
 
@@ -197,7 +194,7 @@ in a visual C++ make file project: "kill caRepeater.exe&make -C ..". Be careful
 not to introduce additional spaces around the &. The kill.exe command is in the
 NT resource kit.
 
-6) Issues that you should be aware of if you are building code that 
+6) Issues that you should be aware of if you are building code with MSVC that 
 calls EPICS, but you are not using the EPICS build system.
 
 6a) You will need to include header files from the following paths.

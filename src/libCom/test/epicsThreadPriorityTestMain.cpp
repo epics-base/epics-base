@@ -19,7 +19,7 @@ extern "C" void epicsThreadPriorityTest(void *arg);
 
 int main ( int argc , char  *argv[] )
 {
-    epicsThreadCreate("threadPriorityTest",epicsThreadPriorityMedium,
+    epicsThreadMustCreate("threadPriorityTest",epicsThreadPriorityMedium,
         epicsThreadGetStackSize(epicsThreadStackMedium),
         epicsThreadPriorityTest,0);
     epicsThreadExitMain();

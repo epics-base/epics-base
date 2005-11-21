@@ -32,22 +32,24 @@
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-ppc-bgl
 #	linux-x86              (GNU compiler used for host builds)
+#	linux-x86_64           (GNU compiler used for host builds)
 #	linux-x86-borland      (Borland C++ compiler used for host builds)
 #	solaris-sparc          (sun compiler used for host builds)
 #	solaris-sparc-gnu      (GNU compiler used for host builds)
-#	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
+#	solaris-sparc64        (sun compiler used for host builds)
+#	solaris-sparc64-gnu    (GNU compiler used for host builds)
 #	solaris-x86            (sun compiler used for host builds)
 #	solaris-x86-gnu        (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86-debug        (MS Visual C++ compiler debugging options)
 #	win32-x86_mingw        (MinGW compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
 #	win32-x86-cygwin       (cygwin GNU compiler used for host builds)
 
 #  Debugging builds 
-#	linux-x86-debug			(GNU compiler with -g option for host builds)
-#	solaris-sparc-debug		(sun compiler with -g option for host builds)
-#	win32-x86-debug			(MS Visual C++ compiler with debug option for host builds)
+#	linux-x86-debug        (GNU compiler with -g option for host builds)
+#	linux-x86_64-debug     (GNU compiler with -g option for host builds)
+#	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
+#	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
 
 
 #  EPICS_HOST_ARCH is a required environment variable
@@ -73,6 +75,8 @@
 #       vxWorks-ppc603_long
 #       vxWorks-ppc604
 #       vxWorks-ppc604_long
+#       vxWorks6-mv2100
+#       vxWorks6-mv5100
 #       RTEMS-gen68360
 #       RTEMS-mcp750
 #       RTEMS-mvme167

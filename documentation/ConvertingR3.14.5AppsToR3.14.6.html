@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="Author" content="jba">
+</head>
+
+<body>
+
+<center>
+<h2>Converting an EPICS R3.14.5 application to R3.14.6</h2>
+</center>
+
+<p>This document describes how to convert a R3.14.5 application so that it
+builds with release R3.14.6.</p>
+
+
+<h3>Modify the Makefiles in &lt;top&gt;/iocBoot directory.</h3>
+
+<p>Change " i<tt>nclude $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
+$(TOP)/configure/CONFIG"</tt></p>
+
+<p>If they do not already exist, add the lines
+<blockquote>
+<p><tt>DIRS += $(wildcard *ioc*)</tt></p>
+<p><tt>DIRS += $(wildcard as*)</tt></p>
+</blockquote>
+
+<p>Change <tt>"include $(TOP)/config/RULES.iocBoot" </tt>to "i<tt>nclude
+$(TOP)/configure/RULES_DIRS"</tt></p>
+
+<h3>Modify the Makefiles in &lt;top&gt;/iocBoot/ioc* directories.</h3>
+
+<p>Change <tt>"include $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
+$(TOP)/configure/CONFIG"</tt></p>
+
+<p>Change</p>
+
+<p><tt>ARCH = &lt;old arch specification e.g. mv167&gt;</tt></p>
+
+<p>to</p>
+
+<p><tt>ARCH = &lt;new arch specification e.g.
+vxWorks-68040&gt;</tt></p>
+
+<p>Change "<tt>include $(TOP)/config/RULES.ioc</tt>" to "<tt>include
+$(TOP)/configure/RULES.ioc"</tt></p>
+
+<p>If it exists remove the line</p>
+
+<p><tt>buildInstall: cdCommands </tt></p>
+
+<p>Add the line</p>
+<p><tt>TARGETS = cdCommands</tt></p>
+<p>before the include for RULES.ioc line.</p>
+
+<h3>Modify st.cmd in &lt;top&gt;/iocBoot/ioc* directories.</h3>
+
+<p>Remove the lines</p>
+<pre>ld &lt; seq
+ld &lt; iocCore</pre>
+
+<p>Change "<tt>ld &lt; &lt;libname&gt;Lib</tt>" to "<tt>ld &lt;
+&lt;libname&gt;.munch"</tt></p>
+
+<p>Change "<tt>cd appbin</tt>" to "<tt>cd topbin</tt>"</p>
+
+<p>Change the statement:</p>
+
+<p><tt>dbLoadDatabase("../../dbd/&lt;name&gt;App.dbd")</tt> <br>
+</p>
+to
+<pre>dbLoadDatabase("../../dbd/&lt;name&gt;.dbd")
+&lt;name&gt;_registerRecordDeviceDriver(pdbbase)</pre>
+
+<p>where &lt;name&gt; is replaced with the name of your dbd file.</p>
+
+<h3>recGbl calls</h3>
+
+<p>If any source file makes calls to recGbl routines make sure it has <span
+style="font-family: courier">"#include "recGbl.h"</span>. If it doesn't the
+compiler will issue warning messages and the ioc may issue the message:
+"undefined symbol: _recGblSetSevr".</p>
+
+<h3>Record support changes</h3>
+
+<p>The steppermotor, scan, and pid records are no longer in base.  If these
+records are not used in your application, comment out references to them in
+base.dbd. If these record types are used at your site, they  should be
+downloaded and built with base R3.14 by your EPICS administrator. To update
+the R3.14 location of these record types in your application you must  add
+appropriate module definitions to your application's config/RELEASE file and
+add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
+
+<p>For example add</p>
+
+<p>         <tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
+
+<p>to config/RELEASE and add <br>
+
+<p></p>
+
+<p><tt>LIBOBJS += $(PID_BIN)/pidRecord.o</tt></p>
+to your application src/Makefile.
+
+<p>You should consider changing any existing old steppermotor records to the
+new EPICS  motor record  module supported by Beamline Controls and Data
+Acquisition at APS.</p>
+
+<h3>RecDynLink.o and devPtSoft changes</h3>
+
+<p>recDynLink.o and devPtSoft.o are no longer in EPICS base and now exist as
+separate EPICS modules.You must now add the appropriate module full path
+definitions to your application config/RELEASE file, and change
+<tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt> to the module
+definition bin directory in your application src directory files.  See
+"Hardware support changes" below for instructions.</p>
+
+<h3>Hardware support changes</h3>
+
+<p>All hardware support (dev, drv and dbd files) except soft support has been
+unbundled from base R3.14. This support includes the files symb.dbd,
+drvHp1404a.o, drvEpvxiMsg.o, and drvEpvxi.o. If these are not used by your
+application, comment out references to them in base.dbd.</p>
+
+<p>Hardware support now exists as separate EPICS modules. The hardware
+support for your site should be downloaded and built with base R3.14 by your
+EPICS administrator. You must now add the appropriate module full path
+definitions to your application config/RELEASE file, and change
+<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module  bin
+directory in your application src directory files.</p>
+
+<p>For example, remove</p>
+
+<p>         <tt>LIBOBJS+=$(EPICS_BASE_BIN)/symb</tt></p>
+
+<p>from baseLIBOBJS and add</p>
+
+<p>         <tt>LIBOBJS+=$(SYMB_BIN)/symb</tt></p>
+
+<p>to your application src/Makefile, <br>
+and add the line</p>
+
+<p><tt>SYMB=&lt;full path definition for the built module SYMB&gt;</tt></p>
+
+<p>into your application config/RELEASE file .</p>
+
+<h3>dbLoadtemplate tool changes</h3>
+
+<p>The host tool dbLoadTemplate has been replace by a new EPICS extension,
+msi, which should be downloaded and built with base R3.14 by your EPICS
+administrator. dbLoadTemplate is still supported on iocs.  If, in your
+application, db files are created from template and substitution files you
+should  add the definition</p>
+
+<p><tt>MSI=&lt;full path name to msi executable&gt;</tt></p>
+
+<p>to your application config/RELEASE file.</p>
+<br>
+ </body>
+</html>

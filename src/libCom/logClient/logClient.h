@@ -37,7 +37,7 @@ epicsShareFunc void epicsShareAPI logClientFlush (logClientId id);
 /* deprecated interface; retained for backward compatibility */
 /* note: implementations are in iocLog.c, not logClient.c */
 epicsShareFunc logClientId epicsShareAPI logClientInit (void);
-epicsShareFunc void epicsShareAPI logClientSendMessage (logClientId id, const char *message);
+epicsShareFunc void logClientSendMessage (logClientId id, const char *message);
 
 #ifdef __cplusplus
 }

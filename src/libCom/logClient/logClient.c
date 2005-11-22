@@ -128,7 +128,7 @@ LOCAL void logClientDestroy (logClientId id)
 /* 
  * logClientSend ()
  */
-void logClientSend ( logClientId id, const char * message )
+void epicsShareAPI logClientSend ( logClientId id, const char * message )
 {
     logClient * pClient = ( logClient * ) id;
     unsigned strSize;

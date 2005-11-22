@@ -476,12 +476,7 @@ double nciu::receiveWatchdogDelay (
 bool nciu::connected ( epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    if ( this->piiu->ca_v42_ok ( guard ) ) {
-        return this->channelNode::isConnectedAtOrAfterV42 ( guard );
-    }
-    else {
-        return this->channelNode::isConnectedBeforeV42 ( guard );
-    }
+    return this->channelNode::isConnected ( guard );
 }
 
 void nciu::show ( unsigned level ) const

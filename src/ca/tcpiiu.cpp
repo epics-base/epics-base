@@ -109,27 +109,30 @@ void tcpSendThread::run ()
             }
 
             if ( echoLaborNeeded ) {
-                if ( CA_V43 ( this->iiu.minorProtocolVersion ) ) {
-                    this->iiu.echoRequest ( guard );
-                }
-                else {
-                    this->iiu.versionMessage ( guard, this->iiu.priority() );
-                }
+                this->iiu.echoRequest ( guard );
             }
 
             while ( nciu * pChan = this->iiu.createReqPend.get () ) {
                 this->iiu.createChannelRequest ( *pChan, guard );
+
                 if ( CA_V42 ( this->iiu.minorProtocolVersion ) ) {
                     this->iiu.createRespPend.add ( *pChan );
                     pChan->channelNode::listMember = 
                         channelNode::cs_createRespPend;
                 }
                 else {
-                    this->iiu.subscripReqPend.add ( *pChan );
+                    // This wakes up the resp thread so that it can call
+                    // the connect callback. This isnt maximally efficent
+                    // but it has the excellent side effect of not requiring
+                    // that the UDP thread take the callback lock. There are
+                    // almost no V42 servers left at this point.
+                    this->iiu.v42ConnCallbackPend.add ( *pChan );
                     pChan->channelNode::listMember = 
-                        channelNode::cs_subscripReqPend;
+                        channelNode::cs_v42ConnCallbackPend;
+                    this->iiu.echoRequestPending = true;
+                    laborPending = true;
                 }
-
+                
                 if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
                     laborPending = true;
                     break;
@@ -494,6 +497,13 @@ void tcpRecvThread::run ()
                 callbackManager mgr ( this->ctxNotify, this->cbMutex );
 
                 epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+                
+                // route legacy V42 channel connect through the recv thread -
+                // the only thread that should be taking the callback lock
+                while ( nciu * pChan = this->iiu.v42ConnCallbackPend.first () ) {
+                    this->iiu.connectNotify ( guard, *pChan );
+                    pChan->connect ( mgr.cbGuard, guard );
+                }
 
                 // force the receive watchdog to be reset every 5 frames
                 unsigned contiguousFrameCount = 0;
@@ -1062,6 +1072,14 @@ void tcpiiu::show ( unsigned level ) const
                 pChan++;
             }
         }
+        if ( this->v42ConnCallbackPend.count () ) {
+            ::printf ( "V42 Conn Callback pending channels\n" );
+            tsDLIterConst < nciu > pChan = this->v42ConnCallbackPend.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
         if ( this->subscripReqPend.count () ) {
             ::printf ( "Subscription request pending channels\n" );
             tsDLIterConst < nciu > pChan = this->subscripReqPend.firstIter ();
@@ -1348,13 +1366,19 @@ void tcpiiu::versionMessage ( epicsGuard < epicsMutex > & guard, // X aCC 431
 void tcpiiu::echoRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
     guard.assertIdenticalMutex ( this->mutex );
+    
+    int command = CA_PROTO_ECHO;
+    if ( ! CA_V43 ( this->minorProtocolVersion ) ) {
+        // we fake an echo to early server using a read sync
+        command = CA_PROTO_READ_SYNC;
+    }
 
     if ( this->sendQue.flushEarlyThreshold ( 16u ) ) {
         this->flushRequest ( guard );
     }
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
-        CA_PROTO_ECHO, 0u, 
+        command, 0u, 
         0u, 0u, 0u, 0u, 
         CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();
@@ -1756,6 +1780,12 @@ void tcpiiu::disconnectAllChannels (
             pChan->getSID(guard), pChan->getCID(guard) );
         discIIU.installDisconnectedChannel ( guard, *pChan );
     }
+    
+    while ( nciu * pChan = this->v42ConnCallbackPend.get () ) {
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
+        discIIU.installDisconnectedChannel ( guard, *pChan );
+    }
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
@@ -1798,6 +1828,13 @@ void tcpiiu::unlinkAllChannels (
             pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
+    
+    while ( nciu * pChan = this->v42ConnCallbackPend.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
@@ -1820,7 +1857,6 @@ void tcpiiu::unlinkAllChannels (
 }
 
 void tcpiiu::installChannel ( 
-    epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard, 
     nciu & chan, unsigned sidIn, 
     ca_uint16_t typeIn, arrayElementCount countIn )
@@ -1861,6 +1897,11 @@ void tcpiiu::connectNotify (
         this->subscripReqPend.add ( chan );
         chan.channelNode::listMember = channelNode::cs_subscripReqPend;
     }
+    else if ( chan.channelNode::listMember == channelNode::cs_v42ConnCallbackPend ) {
+        this->v42ConnCallbackPend.remove ( chan );
+        this->subscripReqPend.add ( chan );
+        chan.channelNode::listMember = channelNode::cs_subscripReqPend;
+    }
     // the TCP send thread is awakened by its receive thread whenever the receive thread
     // is about to block if this->subscripReqPend has items in it
 }
@@ -1876,6 +1917,9 @@ void tcpiiu::uninstallChan (
         break;
     case channelNode::cs_createRespPend:
         this->createRespPend.remove ( chan );
+        break;
+    case channelNode::cs_v42ConnCallbackPend:
+        this->v42ConnCallbackPend.remove ( chan );
         break;
     case channelNode::cs_subscripReqPend:
         this->subscripReqPend.remove ( chan );

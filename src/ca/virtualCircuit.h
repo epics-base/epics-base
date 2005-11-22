@@ -167,7 +167,7 @@ public:
     void unlinkAllChannels (
         epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
-    void installChannel ( epicsGuard < epicsMutex > &,
+    void installChannel ( 
         epicsGuard < epicsMutex > &, nciu & chan, 
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( 
@@ -193,6 +193,7 @@ private:
     // protected by the callback mutex
     tsDLList < nciu > createReqPend;
     tsDLList < nciu > createRespPend;
+    tsDLList < nciu > v42ConnCallbackPend;
     tsDLList < nciu > subscripReqPend;
     tsDLList < nciu > connectedList;
     tsDLList < nciu > unrespCircuit;

@@ -127,7 +127,6 @@ public:
 
     // channel routines
     void transferChanToVirtCircuit ( 
-        epicsGuard < epicsMutex > &,
         unsigned cid, unsigned sid, 
         ca_uint16_t typeCode, arrayElementCount count, 
         unsigned minorVersionNumber, const osiSockAddr &,

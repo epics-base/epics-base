@@ -65,7 +65,8 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
-    &cac::badTCPRespAction,
+    // legacy CA_PROTO_READ_SYNC used as an echo with legacy server
+    &cac::echoRespAction, 
     &cac::exceptionRespAction,
     &cac::clearChannelRespAction,
     &cac::badTCPRespAction,
@@ -467,7 +468,7 @@ cacChannel & cac::createChannel (
 }
 
 void cac::transferChanToVirtCircuit ( 
-    epicsGuard < epicsMutex > & cbGuard, unsigned cid, unsigned sid, // X aCC 431
+    unsigned cid, unsigned sid, // X aCC 431
     ca_uint16_t typeCode, arrayElementCount count, 
     unsigned minorVersionNumber, const osiSockAddr & addr,
     const epicsTime & currentTime )
@@ -549,12 +550,7 @@ void cac::transferChanToVirtCircuit (
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse ( 
         guard, *pChan, currentTime );
     piiu->installChannel ( 
-        cbGuard, guard, *pChan, sid, typeCode, count );
-
-    if ( ! piiu->ca_v42_ok ( guard ) ) {
-        // connect to old server with lock applied
-        pChan->connect ( cbGuard, guard );
-    }
+        guard, *pChan, sid, typeCode, count );
 
     if ( newIIU ) {
         piiu->start ( guard );

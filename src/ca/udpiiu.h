@@ -137,7 +137,7 @@ private:
 
     bool wakeupMsg ();
 
-    void postMsg ( epicsGuard < epicsMutex > & cbGuard, 
+    void postMsg ( 
             const osiSockAddr & net_addr, 
             char *pInBuf, arrayElementCount blockSize,
             const epicsTime &currenTime );
@@ -147,7 +147,7 @@ private:
         ca_uint16_t extsize);
 
     typedef bool ( udpiiu::*pProtoStubUDP ) ( 
-        epicsGuard < epicsMutex > &, const caHdr &, 
+        const caHdr &, 
         const osiSockAddr &, const epicsTime & );
 
     // UDP protocol dispatch table
@@ -155,25 +155,25 @@ private:
 
     // UDP protocol stubs
     bool versionAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &, 
+        const caHdr &, 
         const osiSockAddr &, const epicsTime & );
     bool badUDPRespAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &netAddr, const epicsTime & );
     bool searchRespAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
     bool exceptionRespAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
     bool beaconAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
     bool notHereRespAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
     bool repeaterAckAction ( 
-        epicsGuard < epicsMutex > &, const caHdr &msg, 
+        const caHdr &msg, 
         const osiSockAddr &net_addr, const epicsTime & );
 
     // netiiu stubs

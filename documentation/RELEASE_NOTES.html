@@ -13,6 +13,16 @@
 
 <h2 align="center">Changes since 3.14.7</h2>
 
+<h4>New host targets</h4>
+<p>Configure files are now available to support the win32-x86-mingw (MinGW C++
+compiler) and win32-x86-cygwin (WIN32 API with cygwin C++ compiler) host
+targets.</p>
+
+<p>Configure files were also added for linux-x86_64 and solaris-sparc64
+but these files are for experimental purposes only and to show that we
+are working on these targets. Currently these two 64 bit targets are not
+passing our test suite, so they must not be used in production systems.</p>
+
 <h4>Runtime Hardware Address Changes</h4>
 
 <p>An Extended Device Support mechanism has been introduced which is

@@ -81,7 +81,7 @@ epicsShareFunc FILE * epicsShareAPI epicsTempFile ()
     int fd = open ( pName, openFlag, _S_IWRITE );
     FILE * pNewFile = 0;
     if ( fd >=0 ) {
-        pNewFile = _fdopen ( fd, "w+bTD" );
+        pNewFile = _fdopen ( fd, "w+b" );
     }
     else {
         printf ( 

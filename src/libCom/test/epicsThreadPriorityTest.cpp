@@ -38,13 +38,11 @@ static void client(void *arg)
 
     while(1) {
         epicsEventWaitStatus status;
-printf("client calling epicsEventWait\n");
         status = epicsEventWait(pinfo->waitForMaster);
         if(status!=epicsEventWaitOK) {
             printf("task %p epicsEventWait returned %d\n", idSelf,(int)status);
         }
         epicsEventSignal(pinfo->waitForClient);
-printf("client after epicsEventSignal\n");
     }
 }
 
@@ -63,9 +61,7 @@ extern "C" void epicsThreadPriorityTest(void *)
     pinfo->waitForClient = epicsEventMustCreate(epicsEventEmpty);
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
     clientId = epicsThreadCreate("client",50,stackSize,client,pinfo);
-printf("master calling epicsEventSignal\n");
     epicsEventSignal(pinfo->waitForMaster);
-printf("master calling epicsEventWaitWithTimeout\n");
     status = epicsEventWaitWithTimeout(pinfo->waitForClient,.1);
     if(status!=epicsEventWaitOK) {
         printf("epicsEventWaitWithTimeout failed. Why????\n");
@@ -73,9 +69,7 @@ printf("master calling epicsEventWaitWithTimeout\n");
     }
     epicsThreadSetPriority(clientId,20);
     /* expect that client will not be able to run */
-printf("master calling epicsEventSignal\n");
     epicsEventSignal(pinfo->waitForMaster);
-printf("master calling epicsEventTryWait\n");
     status = epicsEventTryWait(pinfo->waitForClient);
     if(status!=epicsEventWaitTimeout) {
         printf("epicsEventTryWait did not return epicsEventWaitTimeout\n");
@@ -87,13 +81,13 @@ printf("master calling epicsEventTryWait\n");
          }
     }
     epicsThreadSetPriority(clientId,80);
-printf("master calling epicsEventSignal\n");
     /* expect that client will be able to run */
     epicsEventSignal(pinfo->waitForMaster);
-printf("master calling epicsEventTryWait\n");
     status = epicsEventTryWait(pinfo->waitForClient);
-    if(status!=epicsEventWaitOK) {
-        printf("epicsEventTryWait did not return epicsEventWaitOK %d\n",status);
+    if(status==epicsEventWaitOK) {
+        printf("Seems to support strict priority scheduling\n");
+    } else {
+        printf("Does not appear to support strict priority scheduling\n");
         status = epicsEventWaitWithTimeout(pinfo->waitForClient,.1);
         if(status!=epicsEventWaitOK) {
             printf("epicsEventWaitWithTimeout failed. Why????\n");
@@ -103,4 +97,4 @@ printf("master calling epicsEventTryWait\n");
 done:
     epicsExit(0);
 }
-}
+} /* extern "C" */

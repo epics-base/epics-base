@@ -35,8 +35,8 @@ o win32-x86 - MS Visual C/C++ (probably version 6 is the earliest version that c
                 (I understand that there are also available free versions of this compiler) 
 o win32-x86-borland - Borland C free compiler and linker (I use Borland C++ 5.5.1 successfuly)
 o win32-x86-mingw - MingW standalone GNU developers tools www.mingw.org
-o win32-x86-cygwin - Cygwin GNU base posix layered on win32 developers tools www.cygwin.com
-o cigwin-x86 - Cygwin GNU base posix layered on win32 developers tools www.cygwin.com
+o win32-x86-cygwin - Cygwin hosted developers tools www.cygwin.com
+o cigwin-x86 - Cygwin hosted developers tools targeting Cygwin GNU based posix www.cygwin.com
 
 You can also cross compiler for Tornado (and possibly RTEMS) if you have it (them) installed on 
 Windows. To build only for win32-x86 and not cross compile for IOC development type 
@@ -47,6 +47,7 @@ And some tools:
 	perl - www.perl.org (need 5.0 or later)
 
 The gnu make and perl executables are also downloadable from www.cygwin.com
+
 The perl interpreter and gnu make are also available 'on the net'
 as sources which compile with MS Visual C++.
 

@@ -136,6 +136,14 @@ the moment of substitution. The syntax for this is <tt>$(name=default)</tt> or
 like this: <tt>$(name=$(default))</tt>. This feature has actually been present
 since R3.14.6.</p>
 
+<h4>epicsThreadCreate - vxWorks</h4>
+<p>On vxWorks epicsThreadCreate returned -1 instead of 0 if a thread could
+not be created. This is fixed.</p>
+
+<h4>errlog</h4>
+On a powerPC, during iocInit, a crash could occur. In particular the SYNAPPS
+version of save_restore experienced crashes. This is now fixed.</p>
+
 
 <h2 align="center">Changes since 3.14.6</h2>
 

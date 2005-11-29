@@ -319,7 +319,11 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 $(INSTALL_BIN)/%: %
 	@echo "Installing binary $@"
 ifdef WIN32
+ifdef BORLAND
+	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
+else
 	@$(INSTALL_PRODUCT) -d -m 555 $<* $(INSTALL_BIN)
+endif
 else
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 endif

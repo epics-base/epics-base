@@ -143,7 +143,7 @@ clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
-	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) \
+	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS)
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
@@ -318,7 +318,11 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 
 $(INSTALL_BIN)/%: %
 	@echo "Installing binary $@"
+ifdef WIN32
+	@$(INSTALL_PRODUCT) -d -m 555 $<* $(INSTALL_BIN)
+else
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
+endif
 
 $(INSTALL_BIN)/%: ../%
 	@echo "Installing script $@"
@@ -342,6 +346,7 @@ ifneq (,$(strip $(SHRLIB_VERSION)))
 	@$(RM) $(subst .$(SHRLIB_VERSION),,$@)
 	ln -s $< $(subst .$(SHRLIB_VERSION),,$@)
 endif # SHRLIB_VERSION
+
 
 ifneq ($(INSTALL_TCLLIB),$(INSTALL_BIN))
 $(INSTALL_TCLLIB)/%: %

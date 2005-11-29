@@ -12,4 +12,8 @@
 #WARN_CXXFLAGS_YES = /W3 
 
 
+# iF you have Visual C++ 8.0 or 8.0 express, uncomment the following override.
+# This will to eliminate warnings about /GX being deprecated.
+#
+#CCC = cl /nologo /EHsc /GR
 

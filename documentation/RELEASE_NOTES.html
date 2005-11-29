@@ -2,7 +2,7 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS Base R3.14.x Release Notes</title>
 </head>
 
@@ -10,202 +10,295 @@
 <h1 align="center">EPICS Base Release 3.14.8<br>
 28 November 2005</h1>
 
-
 <h2 align="center">Changes since 3.14.7</h2>
 
 <h4>New host targets</h4>
-<p>Configure files are now available to support the win32-x86-mingw (MinGW C++
-compiler) and win32-x86-cygwin (WIN32 API with cygwin C++ compiler) host
+
+<p>Configure files are now available to support the win32-x86-mingw (MinGW
+C++ compiler) and win32-x86-cygwin (WIN32 API with cygwin C++ compiler) host
 targets.</p>
 
-<p>Configure files were also added for linux-x86_64 and solaris-sparc64
-but these files are for experimental purposes only and to show that we
-are working on these targets. Currently these two 64 bit targets are not
-passing our test suite, so they must not be used in production systems.</p>
+<p>Configure files were also added for linux-x86_64 and solaris-sparc64 but
+these files are for experimental purposes only and to show that we are
+working on these targets. Currently these two 64 bit targets are not passing
+our test suite, so they must not be used in production systems.</p>
 
 <h4>Runtime Hardware Address Changes</h4>
 
-<p>An Extended Device Support mechanism has been introduced which is
-designed as a safe way to widen the API between iocCore and the device
-support software it interfaces with.  An extended device support can
-now be notified of changes to a record's hardware address, and is
-given the chance to approve or reject that change.</p>
+<p>An Extended Device Support mechanism has been introduced which is designed
+as a safe way to widen the API between iocCore and the device support
+software it interfaces with.  An extended device support can now be notified
+of changes to a record's hardware address, and is given the chance to approve
+or reject that change.</p>
 
-<p>As a result of introducing this notification mechanism, any device
-support that was capable of handling runtime address changes in prior
-versions of Base will have to be updated to provide the new interface,
-since the absence of extended device support is now taken to mean that
-runtime address changes are not understood by the device support. 
-This requirement is not expected to affect many EPICS sites.</p>
+<p>As a result of introducing this notification mechanism, any device support
+that was capable of handling runtime address changes in prior versions of
+Base will have to be updated to provide the new interface, since the absence
+of extended device support is now taken to mean that runtime address changes
+are not understood by the device support. This requirement is not expected to
+affect many EPICS sites.</p>
 
 <h4>POSIX thread priority scheduling</h4>
-<p>POSIX thread priority scheduling is now supported. There is a new
-user option USE_POSIX_THREAD_PRIORITY_SCHEDULING in the CONFIG_SITE
-configure file for using POSIX thread priority scheduling.
-For now the default value is NO. This has only been tested
-on a few versions of linux. On linux, in order, to use real time
-priorities the option must be set to YES and the ioc must be started with
-root privilages.</p>
+
+<p>POSIX thread priority scheduling is now supported. There is a new user
+option USE_POSIX_THREAD_PRIORITY_SCHEDULING in the CONFIG_SITE configure file
+for using POSIX thread priority scheduling. For now the default value is NO.
+This has only been tested on a few versions of linux. On linux, in order, to
+use real time priorities the option must be set to YES and the ioc must be
+started with root privilages.</p>
 
 <h4>VX_DIR</h4>
+
 <p>The definition VX_DIR was removed from configure/RELEASE and moved to
 configure/os/CONFIG_SITE.Common.vxWorksCommon. The configure/RELEASE* files
 should contain location definitions for EPICS modules only.</p>
 
 <h4>RTEMS_BASE</h4>
-<p>The definition RTEMS_BASE (and RTEMS_VERSION) were removed from 
-configure/RELEASE and moved to configure/os/CONFIG_SITE.Common.RTEMS. The 
-configure/RELEASE* files should contain location definitions for EPICS modules
-only.</p>
 
-<h4>event generator and event receiver record support </h3>
+<p>The definition RTEMS_BASE (and RTEMS_VERSION) were removed from
+configure/RELEASE and moved to configure/os/CONFIG_SITE.Common.RTEMS. The
+configure/RELEASE* files should contain location definitions for EPICS
+modules only.</p>
+
+<h4>event generator and event receiver record support</h4>
 All apsEvent specific record support has been removed from base
 
 <h4>drvTS and apsEvent support</h4>
-<p>The following files have been removed from base:
-drvTS.h drvTS.c, egDefs.h egRecord.c egRecord.dbd egeventRecord.c
-egeventRecord.c egeventRecord.dbd erDefs.h erDefs.h erRecord.c
-erRecord.dbd ereventDefs.h ereventRecord.c ereventRecord.dbd</p>
-<p>These are removed from EPICS base. The version that previously came with base
-was the version that worked with the APS event system. It is available from
-APS. The version that works with the newer event systems that evolved from
-the APS system is available from the Swiss Light Source.</p>
+
+<p>The following files have been removed from base: drvTS.h drvTS.c, egDefs.h
+egRecord.c egRecord.dbd egeventRecord.c egeventRecord.c egeventRecord.dbd
+erDefs.h erDefs.h erRecord.c erRecord.dbd ereventDefs.h ereventRecord.c
+ereventRecord.dbd</p>
+
+<p>These are removed from EPICS base. The version that previously came with
+base was the version that worked with the APS event system. It is available
+from APS. The version that works with the newer event systems that evolved
+from the APS system is available from the Swiss Light Source.</p>
 
 <h4>task watchdog</h4>
-<p>It was possible for taskwd (task watchdog) to not detect when some
-of the standard tasks failed. This is because they were passing
-their threadid rather than using epicsThreadGetIdSelf.
-It was possible to call taskwdInsert before the threadid was actually set.</p>
+
+<p>It was possible for taskwd (task watchdog) to not detect when some of the
+standard tasks failed. This is because they were passing their threadid
+rather than using epicsThreadGetIdSelf. It was possible to call taskwdInsert
+before the threadid was actually set.</p>
 
 <h4>dbLock and dbBkpt</h4>
+
 <p>dbLockGetLockId incorrectly always returned 0. dbBkpt (database breakpoint
-facility) is the only code that needed this. This caused unknown errors
-if the dbBkpt facility is used.</p>
+facility) is the only code that needed this. This caused unknown errors if
+the dbBkpt facility is used.</p>
 
 <h4>gpHashLib.c</h4>
+
 <p>The maximum size was initialized to 65636 instead of 65536.</p>
 
 <h4>epicsExport.h</h4>
+
 <p>Add additional cast to prevent 'strict aliaising' warnings.</p>
 
 <h4>iocsh</h4>
+
 <p>I/O redirection from vxWorks startup scripts now works.</p>
 
-<h4>RTEMS</h4>
-<p>Added support for setting NFS server/mount information from PPCBUG argument
-strings.</p>
-<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this will
-return control to the bootstrap PROM.</p>
-<p>Set POSIX TZ environment variable from NVRAM, or failing that, from
-EPICS_TIMEZONE.</p>
-<p>Cleaned up support for obtaining network configuration from NVRAM.</p>
-<p>Added support for some additional boards.</p>
-<p>Set iocsh prompt from host name.</p>
-<p>Initialize in-memory filesystem from tar image following executable in
-bootstrap flash memory.  This allows for fully standalone IOCs -- no TFTP/NFS
-server required.</p>
-<p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap
-parameters.</p>
-
-<h4>OS X</h4>
-<p>Builds on Tiger.</p>
-<p>Readline now used by default.</p>
-
 <h4>dbRecordsOnceOnly</h4>
+
 <p>This new variable which can be controlled using the iocsh <tt>var</tt>
 command (or by simple assignment in the vxWorks shell) allows users to change
 the behaviour of <tt>dbLoadRecords()</tt> when it finds a duplicate record
 definition. The default behaviour has always been to permit multiple record()
 statements for the same record name when loading record instances, but by
 setting <tt>dbRecordsOnceOnly</tt> to any non-zero value, duplicates will
-instead generate an error message instead.  It is expected that this will only
-be used in special circumstances, to detect the presence of unintentional
-duplicates where it is known that they should not exist.</p>
+instead generate an error message instead.  It is expected that this will
+only be used in special circumstances, to detect the presence of
+unintentional duplicates where it is known that they should not exist.</p>
 
 <h4>select record</h4>
-<p>This record now sets and posts monitors on its SELN field indicating which of
-the inputs was selected, independent of which selection mechanism was selected
-via the SELM field. This makes it much more useful, especially when the High,
-Low or Median mechanisms are chosen.</p>
+
+<p>This record now sets and posts monitors on its SELN field indicating which
+of the inputs was selected, independent of which selection mechanism was
+selected via the SELM field. This makes it much more useful, especially when
+the High, Low or Median mechanisms are chosen.</p>
 
 <h4>macLib</h4>
-<p>Macro expansions in any program using the macLib facility from libCom can now
-include a default value which will be used if the macro named is not defined at
-the moment of substitution. The syntax for this is <tt>$(name=default)</tt> or
-<tt>${name=default}</tt>. The default string can itself contain other macros
-like this: <tt>$(name=$(default))</tt>. This feature has actually been present
-since R3.14.6.</p>
 
-<h4>epicsThreadCreate - vxWorks</h4>
-<p>On vxWorks epicsThreadCreate returned -1 instead of 0 if a thread could
-not be created. This is fixed.</p>
+<p>Macro expansions in any program using the macLib facility from libCom can
+now include a default value which will be used if the macro named is not
+defined at the moment of substitution. The syntax for this is
+<tt>$(name=default)</tt> or <tt>${name=default}</tt>. The default string can
+itself contain other macros like this: <tt>$(name=$(default))</tt>. This
+feature has actually been present since R3.14.6.</p>
 
 <h4>errlog</h4>
-<p>On a powerPC, during iocInit, a crash could occur. In particular the SYNAPPS
-version of save_restore experienced crashes. This is now fixed.</p>
 
+<p>On a powerPC, during iocInit, a crash could occur. In particular the
+SYNAPPS version of save_restore experienced crashes. This is now fixed.</p>
+
+<h4>ca</h4>
+
+<p>Mantis entries fixed.</p>
+
+<p>221 - should shutdown full duplex comm on udp sockets if not used</p>
+
+<p>192 - concurrency bug in channel access to local DB</p>
+
+<p>181 - ca_host_name() now returns the host name of the client, not the
+host:port of the server</p>
+
+<p>161 - issues surrounding manipulation of CA contexts</p>
+
+<p>153 - CA (caput) client does not reconnect after server
+suspend-continue-shutdown cycle</p>
+
+<p>111 - non-preemptive clients disconnect if ca_poll() isnt called
+regularly</p>
+
+<h4>portablae ca server</h4>
+
+<p>Mantis entries fixed.</p>
+
+<p>196 - portable server library intermittent hang on UNIX systems</p>
+
+<p>191 - corrupt value when doing a put through portable server (little
+endian host)</p>
+
+<p>175 - example portable server array PV 'alan' does not have time stamps</p>
+
+<h4>gdd (used by portable server)</h4>
+
+<p>Mantis entries fixed.</p>
+
+<p>211 - GDD: aitConvertStringEnum16 does nothing if
+pEnumStringTable==NULL</p>
+
+<h4>RTEMS port</h4>
+
+<p>Added support for setting NFS server/mount information from PPCBUG
+argument strings.</p>
+
+<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this
+will return control to the bootstrap PROM.</p>
+
+<p>Set POSIX TZ environment variable from NVRAM, or failing that, from
+EPICS_TIMEZONE.</p>
+
+<p>Cleaned up support for obtaining network configuration from NVRAM.</p>
+
+<p>Added support for some additional boards.</p>
+
+<p>Set iocsh prompt from host name.</p>
+
+<p>Initialize in-memory filesystem from tar image following executable in
+bootstrap flash memory.  This allows for fully standalone IOCs -- no TFTP/NFS
+server required.</p>
+
+<p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap
+parameters.</p>
+
+<h4>vxWorks port</h4>
+
+<p>Fixed mantis entry.</p>
+
+<p>179 -base does not build with vxWorks 6.0</p>
+
+<p>225 - On vxWorks epicsThreadCreate returned -1 instead of 0 if a thread
+could not be created. This is fixed.</p>
+
+<h4>OS X port</h4>
+
+<p>Builds on Tiger.</p>
+
+<p>Readline now used by default.</p>
+
+<h4>WIN32 port</h4>
+
+<p>Fixed mantis entries.</p>
+
+<p>195 - explicitly unloading Com.dll causes crash</p>
+
+<p>230 - assert fail of caget, caput, etc under msvc 8</p>
+
+<p>231 - manifest files not installed under visual C++ 8</p>
+
+<h4>POSIX port</h4>
+
+<p>Fixed mantis entries.</p>
+
+<p>186 - failure after exit command if log client is running</p>
+
+<p>222 - osiSpawnDetachedProcess doesnt close open files in dupicate process
+on POSIX</p>
 
 <h2 align="center">Changes since 3.14.6</h2>
 
 <h4>selRecord</h4>
+
 <p>The select record type has for a long time made use of a coule of magic
-numbers (1e+30 and -1e+30) to mean "not a real value", which prevents the record
-from working properly if one or other of these appears as an actual data value. 
-These have been changed to use +Inf and -Inf or NaN instead, so +/-1e+30 may be
-used as a data value.</p>
+numbers (1e+30 and -1e+30) to mean "not a real value", which prevents the
+record from working properly if one or other of these appears as an actual
+data value. These have been changed to use +Inf and -Inf or NaN instead, so
++/-1e+30 may be used as a data value.</p>
 
 <h4>ai, ao, dfanout and subroutine Records</h4>
+
 <p>These record types have been modified to respond better to NaN values as
-follows: if the VAL field contains a NaN value, the UDF field will be set and an
-undefined value alarm will be triggered.</p>
+follows: if the VAL field contains a NaN value, the UDF field will be set and
+an undefined value alarm will be triggered.</p>
 
 <h4>epicsStdlib.h/epicsStrtod()</h4>
-<p>epicsStdlib.h declares epicsStrtod() which provides a version of
-strtod which handles NAN/INF on all architectures.  All uses of strtod() in
-base have been converted to use epicsStrtod().</p>
+
+<p>epicsStdlib.h declares epicsStrtod() which provides a version of strtod
+which handles NAN/INF on all architectures.  All uses of strtod() in base
+have been converted to use epicsStrtod().</p>
+
 <p>epicsStdlib.h also declares epicsScanFloat() and epicsScanDouble() which
 replace calls to sscanf with routines which handle NAN/INF on all
 architectures.</p>
 
 <h4>epicsThreadCreate Stacksize Posix</h4>
-<p>The posix implementation of epicsThreadCreate now makes pthread
-calls to set the stack size. The sizes for (small,medium,large) stack
-sizes are (128K,256K,512K). This is used for at least the following:
-linux, solaris, HPUX, Darwin). Doing this allows creation of many more
-threads os most systems.</p>
+
+<p>The posix implementation of epicsThreadCreate now makes pthread calls to
+set the stack size. The sizes for (small,medium,large) stack sizes are
+(128K,256K,512K). This is used for at least the following: linux, solaris,
+HPUX, Darwin). Doing this allows creation of many more threads os most
+systems.</p>
 
 <h4>dbNotify</h4>
+
 <p>dbNotifyCancel now waits if the userCallback is active when dbNotifyCancel
-is called. Previously it just returned. NOTE CAREFULLY. This means
-that the userCallback must not free the putNotify structure.</p>
+is called. Previously it just returned. NOTE CAREFULLY. This means that the
+userCallback must not free the putNotify structure.</p>
 
 <h4>CA commandline tools</h4>
+
 <p>caget and camonitor now have an additional "-s" option to explicitly
 request server-side string conversion, which - in case of the regular CA
-server - leads to "precision" info (e.g. the PREC field of an EPICS
-record) being honoured.</p>
+server - leads to "precision" info (e.g. the PREC field of an EPICS record)
+being honoured.</p>
 
 <h4>POSIX signals</h4>
+
 <p>Signals are blocked in all but the main thread.  Applications/drivers
 which require signal delivery to a subthread will need to be modified.</p>
 
 <h4>epicsExit</h4>
+
 <p>Three new functions are implemented: <tt>epicsExit</tt>,
 <tt>epicsExitCallAtExits</tt>, and <tt>epicsAtExit</tt>. These are similar to
-<tt>exit</tt> and <tt>atexit</tt>, i.e. they provide the ability to register a
-function to be called when the process exits. They are provided becase neither
-vxWorks or win32 properly implement <tt>exit</tt> and <tt>atexit</tt>. Note that
-they apply to an IOC stopping NOT to a thread exiting.</p>
+<tt>exit</tt> and <tt>atexit</tt>, i.e. they provide the ability to register
+a function to be called when the process exits. They are provided becase
+neither vxWorks or win32 properly implement <tt>exit</tt> and
+<tt>atexit</tt>. Note that they apply to an IOC stopping NOT to a thread
+exiting.</p>
 
 <h4>epicsStdio and epicsStdioRedirect</h4>
 
-<p>In order to support iocsh redirection of <tt>stdin</tt>, <tt>stdout</tt>, and
-<tt>stderr</tt>, <tt>epicsStdio.h</tt> defines the following new functions:
-<tt>epicsGetStdin</tt>, <tt>epicsGetStdout</tt>, <tt>epicsGetStderr</tt>,
-<tt>epicsSetStdin</tt>, <tt>epicsSetStdout</tt>, <tt>epicsSetStderr</tt>, and
-<tt>epicsStdoutPrintf</tt>. <tt>epicsStdioRedirect.h</tt> defines macros that
-redefine <tt>stdin</tt>, <tt>stdout</tt>, <tt>stderr</tt>, and
-<tt>printf</tt>.</p>
+<p>In order to support iocsh redirection of <tt>stdin</tt>, <tt>stdout</tt>,
+and <tt>stderr</tt>, <tt>epicsStdio.h</tt> defines the following new
+functions: <tt>epicsGetStdin</tt>, <tt>epicsGetStdout</tt>,
+<tt>epicsGetStderr</tt>, <tt>epicsSetStdin</tt>, <tt>epicsSetStdout</tt>,
+<tt>epicsSetStderr</tt>, and <tt>epicsStdoutPrintf</tt>.
+<tt>epicsStdioRedirect.h</tt> defines macros that redefine <tt>stdin</tt>,
+<tt>stdout</tt>, <tt>stderr</tt>, and <tt>printf</tt>.</p>
 
 <p>Any code that includes <tt>epicsStdioRedirect.h</tt> will automatically
 have it's stdio redirected. It has been added to many files in base. If code
@@ -225,30 +318,41 @@ vxWorks shell the following command can be given:
 <pre>    iocshCmd("dbl &gt; reportName")</pre>
 
 <h4>errlog</h4>
+
 <p>errlog now calls <tt>epicsAtExit</tt> and releases all resources when
 <tt>epicsExitCallAtExits</tt> is called.</p>
 
 <h4>libCom</h4>
+
 <p>epicsStrGlobMatch() routine added.</p>
 
 <h4>iocsh</h4>
+
 <p>Input/output redirection added.</p>
+
 <p>iocshCmd routine added (callable from vxWorks shell).</p>
+
 <p>help command uses globbing.</p>
 
 <h4>calcoutRecord</h4>
+
 <p>The ODLY (Output Delay) was not handled properly. This is fixed.</p>
 
 <h4>compressRecord</h4>
+
 <p>make sure reset gets called when size of INP array changes.</p>
 
 <h4>dbAccess DBR_ENUM_STRS for field DTYP</h4>
+
 <p>Data Base Request Option DBR_ENUM_STRS for the DTYP field of soft records
 can cause an IOC to crash.</p>
 
 <h4>RTEMS</h4>
+
 <p>RTEMS implementation of epicsMessageQueuePending() now works.</p>
+
 <p>Added support for MVME2100 BSP.</p>
+
 <p>Added support for building RTEMS bootable images.</p>
 
 <h4>iocBoot/ioc* build change</h4>
@@ -256,7 +360,6 @@ can cause an IOC to crash.</p>
 <p>The cdCommands and envPaths files are now created in ioc* directory only
 when the ARCH defined in the ioc*/Makefile is present in BUILD_ARCHS for the
 build.</p>
-
 
 <h2 align="center">Changes since 3.14.5</h2>
 
@@ -510,7 +613,6 @@ channels)</p>
   </li>
 </ul>
 
-
 <h2 align="center">Changes since 3.14.4</h2>
 
 <h4>dbtr</h4>
@@ -690,7 +792,6 @@ standard C escape characters to \xxx characters.</p>
 command, add <code>registrar(iocshSystemCommand)</code> to an application
 database description file.</p>
 
-
 <center>
 <h2>Changes since 3.14.3</h2>
 </center>
@@ -742,7 +843,6 @@ successfully connects.</p>
 
 <p>Thanks to Mark Rivers for initially reporting the bug and energetically
 assisting with identifying the cause.</p>
-
 
 <center>
 <h2>Changes since 3.14.2</h2>
@@ -947,7 +1047,6 @@ symptom was a hang during process exit. A workaround was installed.</p>
 <p>A patch was made to allow multiple CA servers on MAC OSX. OSX is a recent
 branch off of BSD and therefore requires socket option SO_REUSEPORT.</p>
 
-
 <center>
 <h2>Changes since 3.14.1</h2>
 </center>
@@ -1034,7 +1133,6 @@ that it ignores case.</p>
 
 <p>macParseDefns did not check for handle==NULL. The documentation for
 macParseDefns was not correct.</p>
-
 
 <center>
 <h2>Changes since beta2</h2>
@@ -1167,7 +1265,6 @@ channel access gateway.</p>
 <p><strong>GDD</strong></p>
 
 <p>Many bugs and missing features fixed.</p>
-
 
 <center>
 <h2>Changes since beta1</h2>
@@ -1327,7 +1424,6 @@ output in the cdCommands file.</p>
 <p>All routines with Recdes of Fielddes in their name are obsolete and
 removed. A new routine dbDumpField replaces dbDumpFldDes.</p>
 
-
 <center>
 <h2>Changes since alpha2</h2>
 </center>
@@ -1427,70 +1523,70 @@ applications.
 
 
     <blockquote>
-      DBDEXPAND = &lt;name&gt;Include.dbd &nbsp;</blockquote>
+      DBDEXPAND = &lt;name&gt;Include.dbd  </blockquote>
     NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
     should make these same changes in that *Db dirctory.</li>
   <li>In all *App/src/Makefile Makefiles change
 
     <blockquote>
-      RECTYPES=&lt;name&gt;.h &nbsp;</blockquote>
+      RECTYPES=&lt;name&gt;.h  </blockquote>
     to
 
     <blockquote>
-      DBDINC+=&lt;name&gt; &nbsp;</blockquote>
+      DBDINC+=&lt;name&gt;  </blockquote>
     change
 
     <blockquote>
-      MENUS=&lt;name&gt;.h &nbsp;</blockquote>
+      MENUS=&lt;name&gt;.h  </blockquote>
     to
 
     <blockquote>
-      DBDINC+=&lt;name&gt; &nbsp;</blockquote>
+      DBDINC+=&lt;name&gt;  </blockquote>
     change
 
     <blockquote>
-      BPTS &nbsp;</blockquote>
+      BPTS  </blockquote>
     to
 
     <blockquote>
-      DBD &nbsp;</blockquote>
+      DBD  </blockquote>
     change
 
     <blockquote>
-      INSTALLDB &nbsp;</blockquote>
+      INSTALLDB  </blockquote>
     to
 
     <blockquote>
-      DB &nbsp;</blockquote>
+      DB  </blockquote>
     change
 
     <blockquote>
-      DBDINSTALL &nbsp;</blockquote>
+      DBDINSTALL  </blockquote>
     to
 
     <blockquote>
-      DBD &nbsp;</blockquote>
+      DBD  </blockquote>
   </li>
   <li>In all example *App/src/Makefile files change
 
     <blockquote>
-      example_SRCS_DEFAULT += registerRecordDeviceDriver.c &nbsp;</blockquote>
+      example_SRCS_DEFAULT += registerRecordDeviceDriver.c  </blockquote>
     to
 
     <blockquote>
       example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp
-      &nbsp;</blockquote>
+     </blockquote>
     where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
     created from a &lt;name&gt;Include.dbd file and which will be loaded in a
     st.cmd or stcmd.host script (e.g. example).</li>
   <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change
 
     <blockquote>
-      dbLoadDatabase("dbd/exampleApp.dbd") &nbsp;</blockquote>
+      dbLoadDatabase("dbd/exampleApp.dbd")  </blockquote>
     to
 
     <blockquote>
-      dbLoadDatabase("dbd/example.dbd") &nbsp;</blockquote>
+      dbLoadDatabase("dbd/example.dbd")  </blockquote>
   </li>
   <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change
 
@@ -1506,8 +1602,8 @@ applications.
 <h3>EPICS_HOST_ARCH changes</h3>
 
 <p>GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
-are no longer specified in CONFIG_SITE.&nbsp; All references to the ANSI
-(ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed.</p>
+are no longer specified in CONFIG_SITE.  All references to the ANSI (ACC/GCC)
+and CPLUSPLUS (CCC/G++) macros have been removed.</p>
 
 <h3>libCom</h3>
 
@@ -1564,8 +1660,8 @@ following gives links to the new Application Developer's Guide and to RTEMS
 information.</p>
 
 <blockquote>
-  <a href="http://www.aps.anl.gov/epics/base/R3-14/index.php">
-  http://www.aps.anl.gov/epics/base/R3-14/index.php</a></blockquote>
+  <a
+  href="http://www.aps.anl.gov/epics/base/R3-14/index.php">http://www.aps.anl.gov/epics/base/R3-14/index.php</a></blockquote>
 
 <p>Most of the Application Developer's Guide has only minor changes. The
 following are new.</p>

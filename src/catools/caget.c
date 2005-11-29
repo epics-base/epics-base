@@ -326,7 +326,7 @@ int main (int argc, char *argv[])
     int nPvs;                   /* Number of PVs */
     pv* pvs = 0;                /* Array of PV structures */
 
-    setvbuf(stdout,NULL,_IOLBF,0);    /* Set stdout to line buffering */
+    setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
     while ((opt = getopt(argc, argv, ":taicnhse:f:g:#:d:0:w:")) != -1) {
         switch (opt) {

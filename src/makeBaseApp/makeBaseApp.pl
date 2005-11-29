@@ -113,7 +113,7 @@ if (-r "$top/$apptypename/Replace.pl") {
 #
 opendir TOPDIR, "$top" or die "Can't open $top: $!";
 foreach $f ( grep !/^\.\.?$|^[^\/]*(App|Boot)/, readdir TOPDIR ) {
-    find({wanted => \&FCopyTree, follow => 1}, "$top/$f") unless (-e "$f");
+   find({wanted => \&FCopyTree, follow => 1}, "$top/$f") unless (-e "$f");
 }
 closedir TOPDIR;
 
@@ -173,8 +173,8 @@ sub get_commandline_opts { #no args
 	$epics_base =~ s|(/.*)/bin/.*makeBaseApp.*|$1|;
     }
     $epics_base and -d "$epics_base" or Cleanup(1, "Can't find EPICS base");
-    $app_epics_base = $epics_base;
-    $app_epics_base=~s|^\.\.|\$(TOP)/..|;
+    $app_epics_base = LocalPath($epics_base);
+    $app_epics_base =~ s|^\.\.|\$(TOP)/..|;
 
     # Locate template top directory
     if ($opt_T) {		# first choice is -T templ-top
@@ -187,7 +187,7 @@ sub get_commandline_opts { #no args
     $top = $ENV{EPICS_MBA_TEMPLATE_TOP} unless $top; # third choice is env var
     $top = $epics_base . "/templates/makeBaseApp/top" unless $top; # final
     $top and -d "$top" or Cleanup(1, "Can't find template top directory");
-    $app_template_top = $top;
+    $app_template_top = LocalPath($top);
     $app_template_top =~s|^\.\.|\$(TOP)/..|;
     $app_template_top =~s|^$epics_base/|\$\(EPICS_BASE\)/|;
 
@@ -475,6 +475,19 @@ sub GetUser {
 # replace "\" by "/"  (for WINxx)
 sub UnixPath { # path
     my($newpath) = @_;
-    $newpath =~ s|\\|/|go;
+    if ( $^O eq "cygwin" )  {
+      $newpath =~ s|\\|/|go;
+      $newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    }
     return $newpath;
 }
+
+sub LocalPath {
+    my ($newpath) = @_;
+    if ( $^O eq "cygwin" )  {
+      $newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
+      $newpath =~ s|/|\\\\|go;
+    }
+    return $newpath;
+}
+

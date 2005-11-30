@@ -472,22 +472,26 @@ sub GetUser {
     die "No user name" unless $user;
 }
 
-# replace "\" by "/"  (for WINxx)
-sub UnixPath { # path
-    my($newpath) = @_;
-    if ( $^O eq "cygwin" )  {
-      $newpath =~ s|\\|/|go;
-      $newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+# Path rewriting rules for various OSs
+# These functions are duplicated in configure/convertRelease.pl
+sub UnixPath {
+    my ($newpath) = @_;
+    if ($^O eq "cygwin") {
+	$newpath =~ s|\\|/|go;
+	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    } elsif ($^O eq 'sunos') {
+	$newpath =~ s(^\/tmp_mnt/)(/);
     }
     return $newpath;
 }
 
 sub LocalPath {
     my ($newpath) = @_;
-    if ( $^O eq "cygwin" )  {
-      $newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
-      $newpath =~ s|/|\\\\|go;
+    if ($^O eq "cygwin") {
+	$newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
+    } elsif ($^O eq "darwin") {
+	# These rules are likely to be site-specific
+	$newpath =~ s%^/private/var/auto\.home/%/home/%;    # APS
     }
     return $newpath;
 }
-

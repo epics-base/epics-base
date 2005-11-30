@@ -18,9 +18,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 use Cwd qw(cwd abs_path);
 use Getopt::Std;
 
-$cwd = cwd();
-$cwd =~ s/\/tmp_mnt//;	# hack for sun4
-$cwd =~ s/\\/\//g;	# hack for win32
+$cwd = UnixPath(cwd());
 
 getopt "ahtT";
 
@@ -66,7 +64,7 @@ unless (@ARGV == 1) {
 $outfile = $ARGV[0];
 
 # TOP refers to this application
-%macros = (TOP => $top);
+%macros = (TOP => LocalPath($top));
 @apps   = (TOP);	# Records the order of definitions in RELEASE file
 
 # Read the RELEASE file(s)
@@ -314,4 +312,28 @@ sub checkRelease {
     }
     print "\n" if ($status);
     exit $status;
+}
+
+# Path rewriting rules for various OSs
+# These functions are duplicated in src/makeBaseApp/makeBaseApp.pl
+sub UnixPath {
+    my ($newpath) = @_;
+    if ($^O eq "cygwin") {
+	$newpath =~ s|\\|/|go;
+	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    } elsif ($^O eq 'sunos') {
+	$newpath =~ s(^\/tmp_mnt/)(/);
+    }
+    return $newpath;
+}
+
+sub LocalPath {
+    my ($newpath) = @_;
+    if ($^O eq "cygwin") {
+	$newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
+    } elsif ($^O eq "darwin") {
+	# These rules are likely to be site-specific
+	$newpath =~ s%^/private/var/auto\.home/%/home/%;    # APS
+    }
+    return $newpath;
 }

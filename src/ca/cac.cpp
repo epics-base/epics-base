@@ -1133,13 +1133,13 @@ void cac::selfTest (
 void cac::destroyIIU ( tcpiiu & iiu )
 {
     {
-        epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
+        callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->iiuUninstallInProgress = true;
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
             iiu.getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
-            genLocalExcep ( cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
+            genLocalExcep ( mgr.cbGuard, guard, *this, ECA_DISCONN, hostNameTmp );
         }
         osiSockAddr addr = iiu.getNetworkAddress ( guard );
         if ( addr.sa.sa_family == AF_INET ) {
@@ -1151,7 +1151,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
         }
        
         assert ( this->pudpiiu );
-        iiu.disconnectAllChannels ( cbGuard, guard, *this->pudpiiu );
+        iiu.disconnectAllChannels ( mgr.cbGuard, guard, *this->pudpiiu );
 
         this->serverTable.remove ( iiu );
         this->circuitList.remove ( iiu );

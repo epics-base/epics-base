@@ -22,7 +22,6 @@
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
 #include "dbDefs.h"
-#include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errlog.h"
 #include "ellLib.h"
@@ -36,6 +35,7 @@
 
 #define epicsExportSharedSymbols
 #include "link.h"
+#include "dbFldTypes.h"
 #include "devSup.h"
 #include "drvSup.h"
 #include "special.h"

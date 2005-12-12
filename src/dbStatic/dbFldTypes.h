@@ -15,6 +15,8 @@
 #ifndef INCdbFldTypesh
 #define INCdbFldTypesh 1
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,10 +47,9 @@ typedef struct mapdbfType{
 	dbfType	value;
 }mapdbfType;
 
-#ifndef DBFLDTYPES_GBLSOURCE
-extern mapdbfType pamapdbfType[];
-#else
-mapdbfType pamapdbfType[DBF_NTYPES] = {
+epicsShareExtern mapdbfType pamapdbfType[];
+#ifdef DBFLDTYPES_GBLSOURCE
+epicsShareDef mapdbfType pamapdbfType[DBF_NTYPES] = {
 	{"DBF_STRING",DBF_STRING},
 	{"DBF_CHAR",DBF_CHAR},
 	{"DBF_UCHAR",DBF_UCHAR},

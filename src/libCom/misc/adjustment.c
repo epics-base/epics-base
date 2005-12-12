@@ -23,7 +23,7 @@
 #define epicsExportSharedSymbols
 #include "adjustment.h"
 
-epicsShareFunc size_t epicsShareAPI adjustToWorstCaseAlignment(size_t size)
+epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size)
 {
     int align_size, adjust;
     struct test_long_word { char c; long lw; };

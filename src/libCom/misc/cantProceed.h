@@ -18,9 +18,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage);
-epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size, const char *errorMessage);
-epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *errorMessage);
+epicsShareFunc void cantProceed(const char *errorMessage);
+epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *errorMessage);
+epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage);
 
 #ifdef __cplusplus
 }

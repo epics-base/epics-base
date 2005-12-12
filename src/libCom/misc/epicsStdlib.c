@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*epicsStrtod.c*/
+/*epicsStdlib.c*/
 /*Author: Eric Norum */
 
 #include <ctype.h>
@@ -15,14 +15,35 @@
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
-#include "epicsString.h"
 #include "epicsStdlib.h"
+#include "epicsString.h"
 
-#ifdef epicsStrtod
-# undef epicsStrtod
-#endif
 
-epicsShareFunc double epicsShareAPI epicsStrtod( 
+epicsShareFunc int epicsScanDouble(const char *str, double *dest)
+{
+    char *endp;
+    double dtmp;
+
+    dtmp = epicsStrtod(str, &endp);
+    if (endp == str)
+        return 0;
+    *dest = dtmp;
+    return 1;
+}
+
+epicsShareFunc int epicsScanFloat(const char *str, float *dest)
+{
+    char *endp;
+    double dtmp;
+
+    dtmp = epicsStrtod(str, &endp);
+    if (endp == str)
+        return 0;
+    *dest = dtmp;
+    return 1;
+}
+
+epicsShareFunc double epicsStrtod( 
     const char *str, char **endp)
 {
     const char *cp = str;

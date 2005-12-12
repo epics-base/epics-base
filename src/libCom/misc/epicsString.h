@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*epicsString.h*/
-/*Authors: Jun-ichi Odagiri and Marty Kraimer*/
+/*Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum, Mark Rivers*/
 
 /* int dbTranslateEscape(char *s,const char *ct);
  *
@@ -22,16 +22,18 @@
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI dbTranslateEscape(char *s,const char *ct);
-epicsShareFunc int epicsShareAPI epicsStrCaseCmp(const char *s1,const char *s2);
-epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(const char *s1,const char *s2, int n);
-epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s);
-epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
+epicsShareFunc int dbTranslateEscape(char *s,const char *ct);
+epicsShareFunc int epicsStrCaseCmp(const char *s1,const char *s2);
+epicsShareFunc int epicsStrnCaseCmp(const char *s1,const char *s2, int n);
+epicsShareFunc char * epicsStrDup(const char *s);
+epicsShareFunc int epicsStrPrintEscaped(
     FILE *fp, const char *s, int n);
-epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
+epicsShareFunc int epicsStrSnPrintEscaped(
     char *outbuf, int outsize, const char *inbuf, int inlen);
-epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
+epicsShareFunc int epicsStrGlobMatch(
     const char *str, const char *pattern);
+epicsShareFunc char * epicsStrtok_r(
+    char *s, const char *delim, char **lasts);
 
 #ifdef __cplusplus
 }

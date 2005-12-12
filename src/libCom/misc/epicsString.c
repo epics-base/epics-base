@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*epicsString.c*/
-/*Authors: Jun-ichi Odagiri and Marty Kraimer*/
+/*Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum, Mark Rivers*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@
 #include "cantProceed.h"
 #include "epicsString.h"
 
-epicsShareFunc int epicsShareAPI dbTranslateEscape(char *to, const char *from)
+epicsShareFunc int dbTranslateEscape(char *to, const char *from)
 {
     const char *pfrom  = from;
     char       *pto = to;
@@ -88,7 +88,7 @@ epicsShareFunc int epicsShareAPI dbTranslateEscape(char *to, const char *from)
     return(nto);
 }
 
-epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
+epicsShareFunc int epicsStrCaseCmp(
     const char *s1, const char *s2)
 {
     int nexts1,nexts2;
@@ -106,7 +106,7 @@ epicsShareFunc int epicsShareAPI epicsStrCaseCmp(
     }
 }
 
-epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(
+epicsShareFunc int epicsStrnCaseCmp(
     const char *s1, const char *s2, int n)
 {
     size_t ind = 0;
@@ -127,12 +127,12 @@ epicsShareFunc int epicsShareAPI epicsStrnCaseCmp(
     return(0);
 }
 
-epicsShareFunc char * epicsShareAPI epicsStrDup(const char *s)
+epicsShareFunc char * epicsStrDup(const char *s)
 {
     return strcpy(mallocMustSucceed(strlen(s)+1,"epicsStrDup"),s);
 }
 
-epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
+epicsShareFunc int epicsStrPrintEscaped(
     FILE *fp, const char *s, int n)
 {
    int nout=0;
@@ -162,7 +162,7 @@ epicsShareFunc int epicsShareAPI epicsStrPrintEscaped(
    return nout;
 }
 
-epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
+epicsShareFunc int epicsStrSnPrintEscaped(
     char *outbuf, int outsize, const char *inbuf, int inlen)
 {
    int maxout = outsize;
@@ -205,7 +205,7 @@ epicsShareFunc int epicsShareAPI epicsStrSnPrintEscaped(
    return nout;
 }
 
-epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
+epicsShareFunc int epicsStrGlobMatch(
     const char *str, const char *pattern)
 {
     const char *cp=NULL, *mp=NULL;
@@ -235,4 +235,50 @@ epicsShareFunc int epicsShareAPI epicsStrGlobMatch(
     while (*pattern == '*')
         pattern++;
     return !*pattern;
+}
+
+epicsShareFunc char * epicsStrtok_r(char *s, const char *delim, char **lasts)
+{
+   char *spanp;
+   int c, sc;
+   char *tok;
+
+
+   if (s == NULL && (s = *lasts) == NULL)
+      return (NULL);
+
+   /*
+    * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+    */
+cont:
+   c = *s++;
+   for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+      if (c == sc)
+         goto cont;
+   }
+
+   if (c == 0) {      /* no non-delimiter characters */
+      *lasts = NULL;
+      return (NULL);
+   }
+   tok = s - 1;
+
+   /*
+    * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+    * Note that delim must have one NUL; we stop if we see that, too.
+    */
+   for (;;) {
+      c = *s++;
+      spanp = (char *)delim;
+      do {
+         if ((sc = *spanp++) == c) {
+            if (c == 0)
+               s = NULL;
+            else
+               s[-1] = 0;
+            *lasts = s;
+            return (tok);
+         }
+      } while (sc != 0);
+   }
 }

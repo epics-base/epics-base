@@ -22,7 +22,7 @@
 #include "cantProceed.h"
 #include "epicsThread.h"
 
-epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size, const char *errorMessage)
+epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *errorMessage)
 {
     void *mem = calloc(count,size);
     if(mem==0) {
@@ -33,7 +33,7 @@ epicsShareFunc void * epicsShareAPI callocMustSucceed(size_t count, size_t size,
     return(mem);
 }
 
-epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *errorMessage)
+epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage)
 {
     void *mem = malloc(size);
     if(mem==0) {
@@ -44,7 +44,7 @@ epicsShareFunc void * epicsShareAPI mallocMustSucceed(size_t size, const char *e
     return(mem);
 }
 
-epicsShareFunc void epicsShareAPI cantProceed(const char *errorMessage)
+epicsShareFunc void cantProceed(const char *errorMessage)
 {
     if(errorMessage) errlogPrintf("fatal error: %s\n",errorMessage);
     else errlogPrintf("fatal error\n");

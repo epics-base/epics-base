@@ -17,7 +17,7 @@
 #include "epicsConvert.h"
 #include "cantProceed.h"
 
-epicsShareFunc float epicsShareAPI epicsConvertDoubleToFloat(double value)
+epicsShareFunc float epicsConvertDoubleToFloat(double value)
 {
     float rtnvalue;
 

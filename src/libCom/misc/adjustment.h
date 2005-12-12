@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc size_t epicsShareAPI adjustToWorstCaseAlignment(size_t size);
+epicsShareFunc size_t adjustToWorstCaseAlignment(size_t size);
 
 #ifdef __cplusplus
 }

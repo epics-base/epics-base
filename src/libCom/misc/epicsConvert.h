@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc float epicsShareAPI epicsConvertDoubleToFloat(double value);
+epicsShareFunc float epicsConvertDoubleToFloat(double value);
 
 #ifdef __cplusplus
 }

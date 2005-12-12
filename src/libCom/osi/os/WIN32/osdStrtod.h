@@ -12,4 +12,4 @@
 /*
  * epicsStrtod() for systems with broken strtod() routine
  */
-epicsShareFunc double epicsShareAPI epicsStrtod(const char *str, char **endp); 
+epicsShareFunc double epicsStrtod(const char *str, char **endp); 

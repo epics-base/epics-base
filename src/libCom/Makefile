@@ -137,9 +137,8 @@ SRCS += adjustment.c
 SRCS += cantProceed.c
 SRCS += epicsConvert.c
 SRCS += epicsExit.c
-SRCS += epicsScanReal.c
+SRCS += epicsStdlib.c
 SRCS += epicsString.c
-SRCS += epicsStrtod.c
 SRCS += truncateFile.c
 SRCS += ipAddrToAsciiAsynchronous.cpp
 

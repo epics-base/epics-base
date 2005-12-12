@@ -48,7 +48,7 @@ epicsShareFunc int dbTranslateEscape(char *to, const char *from)
             {
 		int  i;
 		char strval[4] = {0,0,0,0};
-		int  ival;
+		unsigned int  ival;
 		unsigned char *pchar;
 
 		for(i=0; i<3; i++) {
@@ -64,7 +64,7 @@ epicsShareFunc int dbTranslateEscape(char *to, const char *from)
             {
 		int  i;
 		char strval[3] = {0,0,0};
-		int  ival;
+		unsigned int  ival;
 		unsigned char *pchar;
 
                 pfrom++; /*skip the x*/

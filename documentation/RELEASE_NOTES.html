@@ -2,7 +2,7 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <title>EPICS Base R3.14.x Release Notes</title>
 </head>
 
@@ -10,6 +10,23 @@
 <h1 align="center">EPICS Base Release 3.14.8</h1>
 
 <h2 align="center">Changes since 3.14.7</h2>
+
+<h4>libCom/misc changes</h4>
+<ul>
+  <li>win32 epicsShareAPI changes to libCom
+    <p>The win32 pascall calling convention (epicsShareAPI) has been removed
+    from the following header files in libCom/misc: adjustment.h,
+    cantProceed.h, epicsConvert.h, epicsStdlib.h, epicsString.h.</p>
+  </li>
+  <li>epicsString
+    <p>A new function epicsStrtok_r has been added because win32 does not
+    implement strtok_r.</p>
+  </li>
+  <li>epicsStdlib
+    <p>All function described in epicsStdlib.h are now implemented in
+    epicsStdlib.c</p>
+  </li>
+</ul>
 
 <h4>New host targets</h4>
 
@@ -1522,70 +1539,70 @@ applications.
 
 
     <blockquote>
-      DBDEXPAND = &lt;name&gt;Include.dbd  </blockquote>
+      DBDEXPAND = &lt;name&gt;Include.dbd &nbsp;</blockquote>
     NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
     should make these same changes in that *Db dirctory.</li>
   <li>In all *App/src/Makefile Makefiles change
 
     <blockquote>
-      RECTYPES=&lt;name&gt;.h  </blockquote>
+      RECTYPES=&lt;name&gt;.h &nbsp;</blockquote>
     to
 
     <blockquote>
-      DBDINC+=&lt;name&gt;  </blockquote>
+      DBDINC+=&lt;name&gt; &nbsp;</blockquote>
     change
 
     <blockquote>
-      MENUS=&lt;name&gt;.h  </blockquote>
+      MENUS=&lt;name&gt;.h &nbsp;</blockquote>
     to
 
     <blockquote>
-      DBDINC+=&lt;name&gt;  </blockquote>
+      DBDINC+=&lt;name&gt; &nbsp;</blockquote>
     change
 
     <blockquote>
-      BPTS  </blockquote>
+      BPTS &nbsp;</blockquote>
     to
 
     <blockquote>
-      DBD  </blockquote>
+      DBD &nbsp;</blockquote>
     change
 
     <blockquote>
-      INSTALLDB  </blockquote>
+      INSTALLDB &nbsp;</blockquote>
     to
 
     <blockquote>
-      DB  </blockquote>
+      DB &nbsp;</blockquote>
     change
 
     <blockquote>
-      DBDINSTALL  </blockquote>
+      DBDINSTALL &nbsp;</blockquote>
     to
 
     <blockquote>
-      DBD  </blockquote>
+      DBD &nbsp;</blockquote>
   </li>
   <li>In all example *App/src/Makefile files change
 
     <blockquote>
-      example_SRCS_DEFAULT += registerRecordDeviceDriver.c  </blockquote>
+      example_SRCS_DEFAULT += registerRecordDeviceDriver.c &nbsp;</blockquote>
     to
 
     <blockquote>
       example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp
-     </blockquote>
+      &nbsp;</blockquote>
     where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
     created from a &lt;name&gt;Include.dbd file and which will be loaded in a
     st.cmd or stcmd.host script (e.g. example).</li>
   <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change
 
     <blockquote>
-      dbLoadDatabase("dbd/exampleApp.dbd")  </blockquote>
+      dbLoadDatabase("dbd/exampleApp.dbd") &nbsp;</blockquote>
     to
 
     <blockquote>
-      dbLoadDatabase("dbd/example.dbd")  </blockquote>
+      dbLoadDatabase("dbd/example.dbd") &nbsp;</blockquote>
   </li>
   <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change
 
@@ -1601,8 +1618,8 @@ applications.
 <h3>EPICS_HOST_ARCH changes</h3>
 
 <p>GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
-are no longer specified in CONFIG_SITE.  All references to the ANSI (ACC/GCC)
-and CPLUSPLUS (CCC/G++) macros have been removed.</p>
+are no longer specified in CONFIG_SITE.&nbsp; All references to the ANSI
+(ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed.</p>
 
 <h3>libCom</h3>
 

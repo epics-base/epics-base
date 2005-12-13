@@ -31,7 +31,7 @@ epicsShareFunc float epicsConvertDoubleToFloat(double value)
         } else if(abs<=FLT_MIN) {
             if(value>0.0) rtnvalue = FLT_MIN; else rtnvalue = -FLT_MIN;
         } else {
-            rtnvalue = value;
+            rtnvalue = (float)value;
         }
     }
     return rtnvalue;

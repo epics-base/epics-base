@@ -113,7 +113,7 @@ epicsShareFunc int epicsStrnCaseCmp(
     int nexts1,nexts2;
     
     while(1) {
-        if(ind++ >= n) break;
+        if(ind++ >= (size_t)n) break;
         /* vxWorks implementation expands argument more than once!!! */
         nexts1 = toupper(*s1);
         nexts2 = toupper(*s2);

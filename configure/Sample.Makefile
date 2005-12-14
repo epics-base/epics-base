@@ -197,7 +197,7 @@ PROD_VERSION =
 
 #	Scripts to install
 #
-#	If there is  both  ../$(SCRIPT) and  ../$(OS_CLASS)/$(SCRIPT),
+#	If there is  both  ../$(SCRIPTS) and  ../$(OS_CLASS)/$(SCRIPTS),
 #	the latter, system specific version will be installed!
 #
 SCRIPTS_DEFAULT = script_for_rest

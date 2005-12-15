@@ -7,11 +7,22 @@
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.9</h1>
+<h1 align="center">EPICS Base Release 3.14.8.1</h1>
 
 <h2 align="center">Changes since 3.14.8</h2>
 
-<h4>libCom/misc changes</h4>
+<h4>CA</h4>
+
+<p>Mantis entries fixed:</p>
+
+<p>232 - non-preemptive mode client relying on ca_poll does not always
+reconnect</p>
+
+<h4>Win32 symbol changes</h4>
+
+<p>These changes are required to allow software outside of Base to be built on
+win32 architectures.</p>
+
 <ul>
   <li>win32 epicsShareAPI changes to libCom
     <p>The win32 Pascal calling convention (epicsShareAPI) has been removed
@@ -25,6 +36,10 @@
   <li>epicsStdlib
     <p>All function described in epicsStdlib.h are now implemented in
     epicsStdlib.c</p>
+  </li>
+  <li>win32 epicsShareExtern changes in dbStaticLib
+    <p>The type name mapping array mapdbfType defined in dbFldTypes.h has had
+    the correct export modifier keywords added to it for use on win32.</p>
   </li>
 </ul>
 

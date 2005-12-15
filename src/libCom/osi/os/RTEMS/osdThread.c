@@ -186,21 +186,6 @@ void epicsThreadExitMain (void)
 {
 }
 
-/*
- * Report initialization failures
- */
-static void
-badInit (const char *msg)
-{
-    const char fmt[] = "%s called before epicsThreadInit finished!";
-
-    syslog (LOG_CRIT, fmt, msg);
-    /* may not be safe to call epicsGetStderr */
-    fprintf (stderr, fmt, msg);
-    fprintf (stderr, "\n");
-    rtems_task_suspend (RTEMS_SELF);
-}
-
 static void
 setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm)
 {
@@ -417,21 +402,40 @@ const char *epicsThreadGetNameSelf(void)
 void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
 {
     rtems_id tid = (rtems_id)id;
-    rtems_status_code sc;
-    rtems_unsigned32 note;
     struct taskVar *v;
+    int haveName = 0;
 
+    if (size <= 0)
+        return;
     taskVarLock ();
-    sc = rtems_task_get_note (tid, RTEMS_NOTEPAD_TASKVAR, &note);
-    if (sc == RTEMS_SUCCESSFUL) {
-        v = (void *)note;
-        strncpy (name, v->name, size - 1);
-        name[size-1] = '\0';
-    }
-    else {
-        *name = '\0';
+    for (v=taskVarHead ; v != NULL ; v=v->forw) {
+        if (v->id == tid) {
+            strncpy(name, v->name, size);
+            haveName = 1;
+            break;
+        }
     }
     taskVarUnlock ();
+    if (!haveName) {
+        /*
+         * Try to get the RTEMS task name
+         */
+        Thread_Control *thr;
+        Objects_Locations l;
+        if ((thr=_Thread_Get(tid, &l)) != NULL) {
+            if (OBJECTS_LOCAL == l) {
+                Objects_Information *oi;
+                oi = _Objects_Get_information(tid);
+                _Objects_Copy_name_raw( &thr->Object.name, name,
+                            size > oi->name_length ? oi->name_length : size);
+                haveName = 1;
+            }
+            _Thread_Enable_dispatch();
+        }
+    }
+    if (!haveName)
+        snprintf(name, size, "0x%lx", (long)tid);
+    name[size-1] = '\0';
 }
 
 epicsThreadId epicsThreadGetId (const char *name)

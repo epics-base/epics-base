@@ -5,14 +5,14 @@
 # Site Specific definitions for hpux-parisc target
 # Only the local epics system manager should modify this file
 
-# NOTE for SHARED_LIBRARIES: If YES (which is the default now) then either
-# a) SHLIB_PATH must include the full absolute pathname to
-#    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) (or wherever you install
+# NOTE: If SHARED_LIBRARIES=YES (now the default) then
+# a) Environment variable SHLIB_PATH must include the full absolute pathname
+#    to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) (or wherever you install
 #    the EPICS shared libraries on your system) when invoking base
-#    executables.
+#    executables, or
 # b) Add the path to SHRLIB_SEARCH_FULLPATHDIRS below, which will burn
 #    the runtime search path into the executables.
 #SHARED_LIBRARIES=YES
 
 # This is the absolute path to the generic INSTALL_LOCATION, for SHARED_LIBRARY searches.
-SHRLIB_SEARCH_FULLPATHDIRS += /opt/epics/R$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)/base/$(EPICS_VERSION)-$(EPICS_REVISION)-$(EPICS_MODIFICATION)-$(EPICS_UPDATE_NAME)$(EPICS_UPDATE_LEVEL)/lib/$(EPICS_HOST_ARCH)
+SHRLIB_SEARCH_FULLPATHDIRS += /opt/epics/R$(EPICS_SHORT_VERSION)/base/$(EPICS_VERSION)-$(EPICS_REVISION)-$(EPICS_MODIFICATION)-$(EPICS_PATCH_LEVEL)$(EPICS_CVS_SNAPSHOT)$(EPICS_SITE_VSTRING)/lib/$(EPICS_HOST_ARCH)

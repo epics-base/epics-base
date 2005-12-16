@@ -12,19 +12,41 @@
 #
 #  EPICS Version information
 #
-# This file is interpreted by the Bourne Shell (MakeRelease), so spaces are
-# not allowed around the '=' signs or in unquoted values.
+# Only the person making an official EPICS release should make changes in
+# this file.
 #
+# EPICS_SITE_VERSION is defined in CONFIG_SITE for sites that want a local
+# version number to be included in the reported version string.
 
-EPICS_VERSION=3
-EPICS_REVISION=14
-EPICS_MODIFICATION=8
-EPICS_UPDATE_NAME=
-EPICS_UPDATE_LEVEL=0
+BASE_3_14=YES
 
-EPICS_VERSION_STRING="EPICS Version ${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION}.${EPICS_UPDATE_NAME}${EPICS_UPDATE_LEVEL}"
+EPICS_VERSION = 3
+EPICS_REVISION = 14
+
+# This part may contain letters, eg 0beta1
+EPICS_MODIFICATION = 8
+
+# Not included if zero
+EPICS_PATCH_LEVEL = 0
+
+# This will be -CVS or empty at an official release point
+EPICS_CVS_SNAPSHOT=-CVS
+#EPICS_CVS_SNAPSHOT=
+
+
+# No changes should be needed below here
+
+ifneq ($(EPICS_PATCH_LEVEL),0)
+  EPICS_PATCH_VSTRING=.$(EPICS_PATCH_LEVEL)
+endif
+
+ifneq ($(strip $(EPICS_SITE_VERSION)),)
+  EPICS_SITE_VSTRING=-$(EPICS_SITE_VERSION)
+endif
+
+EPICS_SHORT_VERSION=$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)$(EPICS_PATCH_VSTRING)
+EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_CVS_SNAPSHOT)$(EPICS_SITE_VSTRING)
+EPICS_VERSION_STRING="EPICS Version $(EPICS_VERSION_NUMBER)"
 
 CVS_DATE="\$$Date$$"
 CVS_TAG="\$$Name$$"
-
-BASE_3_14=YES

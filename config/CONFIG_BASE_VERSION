@@ -10,24 +10,6 @@
 #
 #  $Id$
 #
-#  EPICS Version information
-#
-# This file is interpreted by the Bourne Shell (MakeRelease), so spaces are
-# not allowed around the '=' signs or in unquoted values.
-#
+#  EPICS Version information now comes from configure...
 
-EPICS_VERSION=3
-EPICS_REVISION=14
-EPICS_MODIFICATION=8
-EPICS_UPDATE_NAME=
-EPICS_UPDATE_LEVEL=0
-
-EPICS_LOCAL_NAME=B
-EPICS_LOCAL_VERSION=0
-
-EPICS_VERSION_STRING="EPICS Version ${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION}.${EPICS_UPDATE_NAME}${EPICS_UPDATE_LEVEL}.$(EPICS_LOCAL_NAME)$(EPICS_LOCAL_VERSION)"
-
-CVS_DATE="\$$Date$$"
-CVS_TAG="\$$Name$$"
-
-BASE_3_14=YES
+include $(EPICS_BASE)/configure/CONFIG_BASE_VERSION

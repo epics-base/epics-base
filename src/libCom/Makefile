@@ -305,7 +305,7 @@ errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)
 
 $(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION
-	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(CONFIG)/CONFIG_BASE_VERSION $(@D)
+	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(CONFIG)/CONFIG_BASE_VERSION $(@D) $(EPICS_SITE_VERSION)
 
 clean::
 	@$(RM) errSymTbl.c envData.c

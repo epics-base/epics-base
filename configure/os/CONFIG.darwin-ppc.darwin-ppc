@@ -17,12 +17,12 @@ CCC = $(GNU_BIN)/c++
 #
 # Darwin shared libraries
 #
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
        -install_name $(firstword $(SHRLIB_SEARCH_FULLPATHDIRS))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
-       -current_version $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
-SHRLIB_SUFFIX = .$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION).dylib
-SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+       -current_version $(SHRLIB_VERSION)
+SHRLIB_SUFFIX = .$(SHRLIB_VERSION).dylib
 
 LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
 

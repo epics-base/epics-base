@@ -11,6 +11,18 @@
 
 <h2 align="center">Changes since 3.14.8</h2>
 
+<h4>Version Numbering</h4>
+
+<p>This release adds a fourth level of version number, which we haven't used
+since R3.13.1.1.  The intention is to imply that R3.14.8.1 includes some small
+but important changes since R3.14.8 but no signficant new behaviours or API
+modifications.  This fourth level has required us to modify the version number
+system and the macros in the epicsVersion.h file slightly though.  We have taken
+the opportunity to introduce a new variable <tt>EPICS_SITE_VERSION</tt> to the
+file configure/CONFIG_SITE that adds an optional site-specific version number;
+sites that were achieving this by editing the configure/CONFIG_BASE_VERSION file
+should switch to setting <tt>EPICS_SITE_VERSION</tt> instead.</p>
+
 <h4>CA</h4>
 
 <p>Mantis entries fixed:</p>

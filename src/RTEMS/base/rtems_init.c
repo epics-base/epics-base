@@ -32,90 +32,28 @@
 
 #include <epicsThread.h>
 #include <epicsTime.h>
+#include <epicsExit.h>
 #include <envDefs.h>
 #include <errlog.h>
 #include <logClient.h>
 #include <osiUnistd.h>
 #include <iocsh.h>
 
-/*
- * Architecture-dependent routines
- */
-#if defined(__mcpu32__) || defined(__mcf528x__)
 static void
 logReset (void)
 {
-    int bit, rsr;
-    int i;
-    const char *cp;
-    char cbuf[80];
+    void rtems_bsp_reset_cause(char *buf, size_t capacity) __attribute__((weak));
+    void (*fp)(char *buf, size_t capacity) = rtems_bsp_reset_cause;
 
-#if defined(__mcpu32__)
-    rsr = m360.rsr;
-    m360.rsr = ~0;
-#else
-    rsr = MCF5282_RESET_RSR;
-#endif
-    for (i = 0, bit = 0x80 ; bit != 0 ; bit >>= 1) {
-        if (rsr & bit) {
-            switch (bit) {
-#if defined(__mcpu32__)
-            case 0x80:  cp = "RESETH*";         break;
-            case 0x40:  cp = "POWER-UP";        break;
-            case 0x20:  cp = "WATCHDOG";        break;
-            case 0x10:  cp = "DOUBLE FAULT";    break;
-            case 0x04:  cp = "LOST CLOCK";      break;
-            case 0x02:  cp = "RESET";           break;
-            case 0x01:  cp = "RESETS*";         break;
-#else
-            case MCF5282_RESET_RSR_LVD:  cp = "Low-voltage detect"; break;
-            case MCF5282_RESET_RSR_SOFT: cp = "Software reset";     break;
-            case MCF5282_RESET_RSR_WDR:  cp = "Watchdog reset";     break;
-            case MCF5282_RESET_RSR_POR:  cp = "Power-on reset";     break;
-            case MCF5282_RESET_RSR_EXT:  cp = "External reset";     break;
-            case MCF5282_RESET_RSR_LOC:  cp = "Loss of clock";      break;
-            case MCF5282_RESET_RSR_LOL:  cp = "Loss of lock";       break;
-#endif
-            default:    cp = "??";              break;
-            }
-            i += sprintf (cbuf+i, cp); 
-            rsr &= ~bit;
-            if (rsr)
-                i += sprintf (cbuf+i, ", "); 
-            else
-                break;
-        }
+    if (fp) {
+        char buf[80];
+        fp(buf, sizeof buf);
+        errlogPrintf ("Startup after %s.\n", buf);
     }
-    errlogPrintf ("Startup after %s.\n", cbuf);
-}
-
-#else
-
-static void
-logReset (void)
-{
-    errlogPrintf ("Started.\n");
-}
-#endif
-
-#ifdef __i386__
-/*
- * Remote debugger support
- *
- * i386-rtems-gdb -b 38400 example(binary from EPICS build -- not netbootable image!)
- * (gdb) target remote /dev/ttyS0
- */
-int enableRemoteDebugging = 0;  /* Global so gdb can set before download */
-static void
-initRemoteGdb(int ticksPerSecond)
-{
-    if (enableRemoteDebugging) {
-        init_remote_gdb();
-        rtems_task_wake_after(ticksPerSecond);
-        breakpoint();
+    else {
+        errlogPrintf ("Startup.\n");
     }
 }
-#endif
 
 /*
  ***********************************************************************
@@ -191,30 +129,32 @@ mustMalloc(int size, const char *msg)
 static int
 initialize_local_filesystem(const char **argv)
 {
+    extern char _DownloadLocation[] __attribute__((weak));
+    extern char _FlashBase[] __attribute__((weak));
+    extern char _FlashSize[]  __attribute__((weak));
+
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
+    if (_FlashSize && (_DownloadLocation || _FlashBase)) {
+        extern char _edata[];
+        size_t flashIndex = _edata - _DownloadLocation;
+        char *header = _FlashBase + flashIndex;
 
-#if defined(__mcf528x__)
-    extern char _DownloadLocation[], _edata[], _FlashBase[], _FlashSize[];
-    unsigned long flashIndex = _edata - _DownloadLocation;
-    char *header;
-
-    header = _FlashBase + flashIndex;
-    if (memcmp(header + 257, "ustar  ", 8) == 0) {
-        int fd;
-        printf ("***** Unpack in-memory file system (IMFS) *****\n");
-        if (rtems_tarfs_load("/", header, (unsigned long)_FlashSize - flashIndex) != 0) {
-            printf("Can't unpack tar filesystem\n");
-            return 0;
+        if (memcmp(header + 257, "ustar  ", 8) == 0) {
+            int fd;
+            printf ("***** Unpack in-memory file system (IMFS) *****\n");
+            if (rtems_tarfs_load("/", (unsigned char *)header, (size_t)_FlashSize - flashIndex) != 0) {
+                printf("Can't unpack tar filesystem\n");
+                return 0;
+            }
+            if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
+                close(fd);
+                printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
+                argv[1] = rtems_bsdnet_bootp_cmdline;
+                return 1;
+            }
+            printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
         }
-        if ((fd = open(rtems_bsdnet_bootp_cmdline, 0)) >= 0) {
-            close(fd);
-            printf ("***** Found startup script (%s) in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
-            argv[1] = rtems_bsdnet_bootp_cmdline;
-            return 1;
-        }
-        printf ("***** Startup script (%s) not in IMFS *****\n", rtems_bsdnet_bootp_cmdline);
     }
-#endif
     return 0;
 }
 
@@ -491,9 +431,6 @@ Init (rtems_task_argument ignored)
     /*
      * Architecture-specific hooks
      */
-#if defined(__i386__)
-    initRemoteGdb(ticksPerSecond);
-#endif
     if (rtems_bsdnet_config.bootp == NULL) {
         extern void setBootConfigFromNVRAM(void);
         setBootConfigFromNVRAM();

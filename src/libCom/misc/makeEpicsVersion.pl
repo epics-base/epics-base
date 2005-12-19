@@ -22,13 +22,13 @@ while (<VARS>)
 {
 	chomp;
 	next if m/^#/;	# Skip comments
-	if (m/^EPICS_VERSION\s*=\s*(.*)\s*/)		{ $ver = $1; }
-	if (m/^EPICS_REVISION\s*=\s*(.*)\s*/)		{ $rev = $1; }
-	if (m/^EPICS_MODIFICATION\s*=\s*(.*)\s*/)	{ $mod = $1; }
-	if (m/^EPICS_PATCH_LEVEL\s*=\s*(.*)\s*/)	{ $patch = $1; }
-	if (m/^EPICS_CVS_SNAPSHOT\s*=\s*(.*)\s*/)	{ $snapshot = $1; }
-	if (m/^CVS_DATE\s*=\s*"\\(.*)"\s*/)		{ $cvs_date = $1; }
-	if (m/^CVS_TAG\s*=\s*"\\(.*)"\s*/)		{ $cvs_tag = $1; }
+	if (m/^EPICS_VERSION\s*=\s*(\d+)/)		{ $ver = $1; }
+	if (m/^EPICS_REVISION\s*=\s*(\d+)/)		{ $rev = $1; }
+	if (m/^EPICS_MODIFICATION\s*=\s*([0-9a-z]+)/)	{ $mod = $1; }
+	if (m/^EPICS_PATCH_LEVEL\s*=\s*(\d+)/)		{ $patch = $1; }
+	if (m/^EPICS_CVS_SNAPSHOT\s*=\s*([CVS-]+)/)	{ $snapshot = $1; }
+	if (m/^CVS_DATE\s*=\s*"\\(.*)"/)		{ $cvs_date = $1; }
+	if (m/^CVS_TAG\s*=\s*"\\(.*)"/)			{ $cvs_tag = $1; }
 }
 
 $ver_str = "$ver.$rev.$mod";

@@ -52,6 +52,9 @@ print OUT "#define EPICS_CVS_SNAPSHOT   \"$snapshot\"\n";
 print OUT "#define EPICS_SITE_VERSION   \"$site_ver\"\n";
 print OUT "#define EPICS_VERSION_STRING \"EPICS $ver_str\"\n";
 print OUT "#define epicsReleaseVersion \"EPICS R$ver_str $cvs_tag $cvs_date\"\n";
+print OUT "\n";
+print OUT "/* EPICS_UPDATE_LEVEL is deprecated, use EPICS_PATCH_LEVEL instead */\n";
+print OUT "#define EPICS_UPDATE_LEVEL    $patch\n";
 
 close OUT;
 

@@ -43,6 +43,9 @@ epicsShareFunc int epicsScanFloat(const char *str, float *dest)
     return 1;
 }
 
+#ifdef epicsStrtod
+# undef epicsStrtod
+#endif
 epicsShareFunc double epicsStrtod( 
     const char *str, char **endp)
 {

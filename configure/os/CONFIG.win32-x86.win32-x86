@@ -105,12 +105,13 @@ CPP = cl /C /E
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
 # 
-# /GX - generate code for exceptions
+# /EHsc - generate code for exceptions
 # /GR - generate code for run time type identification
 #
-CCC = cl /nologo /GX /GR
+CCC = cl /nologo /EHsc /GR
 CONFORM_CXXFLAGS_NORMAL =
 CONFORM_CXXFLAGS_STRICT = /D__STDC__=0
+CODE_CPPFLAGS += /D_CRT_SECURE_NO_DEPRECATE
 
 #
 # /W<N> use warning level N

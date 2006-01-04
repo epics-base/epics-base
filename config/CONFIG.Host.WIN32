@@ -96,13 +96,14 @@ ACC_SLIBS_NO=
 # Use of /Za would dissable DLL import/export keywords which
 # EPICS include/excludes using architecture neutral macros
 #
-# /GX support C++ exceptions
+# /EHsc support C++ exceptions
 # /GR generate RTTI information
 #
-CCC = cl /GX /GR
+CCC = cl /EHsc /GR
 CCC_NORMAL = $(CCC) /nologo /D__STDC__=0
 CCC_STRICT = $(CCC) /nologo /D__STDC__=0
 CCC_TEMPL_INST_FLAG =
+ARCH_DEP_CPPFLAGS += /D_CRT_SECURE_NO_DEPRECATE
 
 #
 # /W<N> use warning level N

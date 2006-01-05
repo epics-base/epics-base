@@ -7,7 +7,16 @@
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.8.1</h1>
+<h1 align="center">EPICS Base Release 3.14.8.2</h1>
+
+<h2 align="center">Changes since 3.14.8.1</h2>
+
+<h4>epicsStrtod</h4>
+
+<p>On architectures whose native version of strtod() actually works properly
+(i.e. converts +/-Inf[inity] and NaN strings to their double equivalents) we
+managed to break the use of this in the R3.14.8.1 release.  This is now
+fixed.</p>
 
 <h2 align="center">Changes since 3.14.8</h2>
 

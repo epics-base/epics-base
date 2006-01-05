@@ -43,9 +43,8 @@ epicsShareFunc int epicsScanFloat(const char *str, float *dest)
     return 1;
 }
 
-#ifdef epicsStrtod
-# undef epicsStrtod
-#endif
+/* Systems with a working strtod() just #define epicsStrtod strtod */
+#ifndef epicsStrtod
 epicsShareFunc double epicsStrtod( 
     const char *str, char **endp)
 {
@@ -88,3 +87,4 @@ epicsShareFunc double epicsStrtod(
         *endp = (char *)cp;
     return num / den;
 }
+#endif

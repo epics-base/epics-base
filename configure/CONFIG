@@ -33,11 +33,14 @@ include $(CONFIG)/CONFIG_COMMON
 #  Base-specific build options
 #
 include $(CONFIG)/CONFIG_BASE
-include $(CONFIG)/CONFIG_BASE_VERSION
 
 #  Site-specific build options
 #
 include $(CONFIG)/CONFIG_SITE
+
+#  Version numbering
+#
+include $(CONFIG)/CONFIG_BASE_VERSION
 
 #  Host architecture specific definitions
 #

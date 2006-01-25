@@ -1,0 +1,101 @@
+# CONFIG.Common.darwinCommon
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for darwin target builds
+# Sites may override these definitions in CONFIG_SITE.Common.darwin-<arch>
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+#
+# Set OS-specific information
+#
+OS_CLASS = Darwin
+
+#
+# Special flags for Darwin
+#   No common blocks (as required when using shared libraries)
+#
+OP_SYS_CFLAGS += -fno-common
+
+#
+# Don't try to use precompiled headers when converting sequencer files
+#
+CPPSNCFLAGS += -no-cpp-precomp
+
+#
+# Darwin os definition
+#
+OP_SYS_CPPFLAGS += -Ddarwin
+
+#
+# Always compile in debugging symbol table information
+#
+OPT_CFLAGS_YES += -g
+OPT_CXXFLAGS_YES += -g
+
+#
+# The following two definitions enable the use of DarwinPorts packages.
+#
+OP_SYS_INCLUDES += -I/opt/local/include
+# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
+OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /opt/local/lib/*))))
+
+#
+# The following two definitions enable the use of Fink packages.
+#
+OP_SYS_INCLUDES += -I/sw/include
+# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
+OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /sw/lib/*))))
+
+#
+# Libraries for command-line editing.
+#
+LDLIBS_READLINE = -lreadline
+
+#
+# Command-line input support
+#
+COMMANDLINE_LIBRARY=READLINE
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+CC = $(GNU_BIN)/cc
+CCC = $(GNU_BIN)/c++
+
+#
+# Darwin shared libraries
+#
+SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
+       -install_name $(firstword $(SHRLIB_SEARCH_FULLPATHDIRS))/$@ \
+       -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
+       -current_version $(SHRLIB_VERSION)
+SHRLIB_SUFFIX = .$(SHRLIB_VERSION).dylib
+
+LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
+
+#
+# Position-independent code is the default on Darwin.
+#
+CODE_CFLAGS = 
+CODE_CXXFLAGS = 
+
+#
+# Add support for Objective-C source
+#
+vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
+%.o: %.m
+	$(COMPILE.c) -c $<
+
+#
+# Pedantic produces way too many unnecessary messages
+#
+CONFORM_CFLAGS_STRICT=-ansi
+CONFORM_CXXFLAGS_STRICT=-ansi

@@ -43,7 +43,7 @@
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86_mingw        (MinGW compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
-#	win32-x86-cygwin       (cygwin GNU compiler used for host builds)
+#	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
 
 #  Debugging builds 
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
@@ -65,7 +65,7 @@
 #       linux-586     (linux-x86 host)
 #       linux-686     (linux-x86 host)
 #       linux-athlon  (linux-x86 host)
-#       linuxRT-mvme2100  (linux-x86 host)
+#       linuxRT-mvme2100
 #       vxWorks-486
 #       vxWorks-68040
 #       vxWorks-68040lc

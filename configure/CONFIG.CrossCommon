@@ -27,7 +27,7 @@ CROSS_INCLUDES = $(addprefix -I,$(GNU_TARGET_INCLUDE_DIR))
 CROSS_LDFLAGS = $(addprefix -L,$(GNU_TARGET_LIB_DIR))
 
 CMPLR_PREFIX_CROSS=$(addsuffix -,$(GNU_TARGET))
-CMPLR_PREFIX=$(CMPLR_PREFIX_$(BUILD_CLASSS))
+CMPLR_PREFIX=$(CMPLR_PREFIX_$(BUILD_CLASS))
 
 # All cross builds use the gnu compiler
 include $(CONFIG)/CONFIG.gnuCommon

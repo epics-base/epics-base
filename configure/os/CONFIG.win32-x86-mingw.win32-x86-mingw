@@ -25,7 +25,7 @@ SHRLIB_CFLAGS =
 # Dont use -ansi option:  eliminates strdup and _tempnam
 CONFORM_CFLAGS_ANSI =
 CONFORM_CFLAGS_STRICT = -pedantic
-CONFORM_CXXFLAGS_ANSI =
+CONFORM_CXXFLAGS_NORMAL =
 CONFORM_CXXFLAGS_STRICT = -pedantic
 
 # Override linking with gcc library

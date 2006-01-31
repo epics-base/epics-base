@@ -25,7 +25,7 @@
 epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *errorMessage)
 {
     void *mem = calloc(count,size);
-    if(mem==0) {
+    if(mem==0 && count!=0 && size!=0) {
         errlogPrintf("%s callocMustSucceed failed count %lu size %lu\n",
             errorMessage,(unsigned long)count,(unsigned long)size);
         cantProceed(0);
@@ -36,7 +36,7 @@ epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *e
 epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage)
 {
     void *mem = malloc(size);
-    if(mem==0) {
+    if(mem==0 && size!=0) {
         errlogPrintf("%s mallocMustSucceed failed size %lu\n",
             errorMessage,(unsigned long)size);
         cantProceed(0);

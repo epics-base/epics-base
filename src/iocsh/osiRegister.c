@@ -55,9 +55,52 @@ static void epicsThreadSleepCallFunc(const iocshArgBuf *args)
     epicsThreadSleep(args[0].dval);
 }
 
+/* epicsThreadResume */
+static const iocshArg epicsThreadResumeArg0 = { "[thread ...]", iocshArgArgv};
+static const iocshArg * const epicsThreadResumeArgs[1] = { &epicsThreadResumeArg0 };
+static const iocshFuncDef epicsThreadResumeFuncDef = {"epicsThreadResume",1,epicsThreadResumeArgs};
+static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
+{
+    int i;
+    const char *cp;
+    epicsThreadId tid;
+    unsigned long ltmp;
+    char nameBuf[64];
+    int argc = args[0].aval.ac;
+    char **argv = args[0].aval.av;
+    char *endp;
+
+    for (i = 1 ; i < argc ; i++) {
+        cp = argv[i];
+        ltmp = strtoul(cp, &endp, 0);
+        if (*endp) {
+            tid = epicsThreadGetId(cp);
+            if (!tid) {
+                printf("*** argument %d (%s) is not a valid thread name ***\n", i, cp);
+                continue;
+            }
+        }
+        else {
+            tid =(epicsThreadId)ltmp;
+            epicsThreadGetName(tid, nameBuf, sizeof nameBuf);
+            if (nameBuf[0] == '\0') {
+                printf("*** argument %d (%s) is not a valid thread id ***\n", i, cp);
+                continue;
+            }
+
+        }
+        if (!epicsThreadIsSuspended(tid)) {
+            printf("*** Thread %s is not suspended ***\n", cp);
+            continue;
+        }
+        epicsThreadResume(tid);
+    }
+}
+
 void epicsShareAPI osiRegister(void)
 {
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
     iocshRegister(&epicsMutexShowAllFuncDef,epicsMutexShowAllCallFunc);
     iocshRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
+    iocshRegister(&epicsThreadResumeFuncDef,epicsThreadResumeCallFunc);
 }

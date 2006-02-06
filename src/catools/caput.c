@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2006 Diamond Light Source Ltd.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -14,6 +15,10 @@
  *
  *  Author: Ralph Lange (BESSY)
  *
+ *  Modification History
+ *  2006/01/17 Malcolm Walters (Tessella/Diamond Light Source)
+ *     Added put_callback option Heavily based on caput
+ *
  */
 
 #include <stdio.h>
@@ -26,16 +31,20 @@
 #include "tool_lib.h"
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
+#define PEND_EVENT_SLICES 5     /* No. of pend_event slices for callback requests */
 
 /* Different output formats */
-typedef enum { plain, terse } OutputT;
+typedef enum { plain, terse, all } OutputT;
+
+/* Different request types */
+typedef enum { get, callback } RequestT;
 
 /* Valid EPICS string */
 typedef char EpicsStr[MAX_STRING_SIZE];
 
 static int nConn = 0;           /* Number of connected PVs */
+static int nDone = 0;           /* Number of callbacks done */
 
-
 void usage (void)
 {
     fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value>\n"
@@ -43,8 +52,10 @@ void usage (void)
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
     "  -w <sec>:  Wait time, specifies longer CA timeout, default is %f second\n"
+    "  -c: Use put_callback to wait for completion\n"
     "Format options:\n"
     "  -t: Terse mode - print only sucessfully written value, without name\n"
+    "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n"
     "Enum format:\n"
     "  Default: Auto - try value as ENUM string, then as index number\n"
     "  -n: Force interpretation of values as numbers\n"
@@ -57,6 +68,27 @@ void usage (void)
 	, DEFAULT_TIMEOUT);
 }
 
+
+/*+**************************************************************************
+ *
+ * Function:    put_event_handler
+ *
+ * Description: CA event_handler for request type callback
+ *              Sets status flags and marks as done.
+ *
+ * Arg(s) In:   args  -  event handler args (see CA manual)
+ *
+ **************************************************************************-*/
+
+void put_event_handler ( struct event_handler_args args )
+{
+    /* Retrieve pv from event handler structure */
+    pv* pPv = args.usr;
+
+    /* Set done count and store status*/
+    nDone++; 
+    pPv->status = args.status;
+}
 
 
 /*+**************************************************************************
@@ -92,11 +124,11 @@ int caget (pv *pvs, int nPvs, OutputT format,
         pvs[n].dbfType = ca_field_type(pvs[n].chid);
 
                                 /* Set up value structures */
-        dbrType = dbf_type_to_DBR(pvs[n].dbfType); /* Use native type */
+        dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
         if (dbr_type_is_ENUM(dbrType))             /* Enums honour -n option */
         {
-            if (enumAsNr) dbrType = DBR_INT;
-            else          dbrType = DBR_STRING;
+            if (enumAsNr) dbrType = DBR_TIME_INT;
+            else          dbrType = DBR_TIME_STRING;
         }
 
                                 /* Adjust array count */
@@ -112,6 +144,7 @@ int caget (pv *pvs, int nPvs, OutputT format,
         if (ca_state(pvs[n].chid) == cs_conn)
         {
             nConn++;
+            pvs[n].onceConnected = 1;
                                    /* Allocate value structure */
             pvs[n].value = calloc(1, dbr_size_n(dbrType, reqElems));
             result = ca_array_get(dbrType,
@@ -159,6 +192,9 @@ int caget (pv *pvs, int nPvs, OutputT format,
                 printf("\n");
             }
             break;
+        case all:
+            print_time_val_sts(&pvs[n], reqElems);
+            break;
         default :
             break;
         }
@@ -190,6 +226,7 @@ int main (int argc, char *argv[])
     int i;
     int result;                 /* CA result */
     OutputT format = plain;     /* User specified format */
+    RequestT request = get;     /* User specified request type */
     int isArray = 0;            /* Flag for array operation */
     int enumAsString = 0;       /* Force ENUM values to be strings */
 
@@ -210,7 +247,7 @@ int main (int argc, char *argv[])
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
     putenv("POSIXLY_CORRECT=");      /* Behave correct on GNU getopt systems */
 
-    while ((opt = getopt(argc, argv, ":nhats#:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":cnlhats#:w:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -226,8 +263,14 @@ int main (int argc, char *argv[])
         case 't':               /* Select terse output format */
             format = terse;
             break;
+        case 'l':               /* Select long output format */
+            format = all;
+            break;
         case 'a':               /* Select array mode */
             isArray = 1;
+            break;
+        case 'c':               /* Select put_callback mode */
+            request = callback;
             break;
         case 'w':               /* Set CA timeout value */
             if(epicsScanDouble(optarg, &caTimeout) != 1)
@@ -408,7 +451,7 @@ int main (int argc, char *argv[])
     }
 
                                 /* Read and print old data */
-    if (format == plain) {
+    if (format != terse) {
         printf("Old : ");
         result = caget(pvs, nPvs, format, 0, count);
     }
@@ -418,15 +461,49 @@ int main (int argc, char *argv[])
     if (dbrType == DBR_STRING) pbuf = sbuf;
     else pbuf = dbuf;
 
-    result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);
+    if (request == callback) {
+        /* Use callback version of put */
+        pvs[0].status = ECA_NORMAL;   /* All ok at the moment */
+        result = ca_array_put_callback (dbrType, count, pvs[0].chid, pbuf, put_event_handler, (void *)pvs);
+    } else {
+        /* Use standard put with defined timeout */
+        result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);
+    }
     result = ca_pend_io(caTimeout);
     if (result == ECA_TIMEOUT) {
         fprintf(stderr, "Write operation timed out: Data was not written.\n");
         return 1;
     }
+    if (request == callback)    /* Also wait for callbacks */
+    {
+        nDone = 0; /* Not done yet */
+        if (caTimeout != 0){
+            double slice = caTimeout / PEND_EVENT_SLICES;
+            for (n = 0; n < PEND_EVENT_SLICES; n++)
+            {
+                ca_pend_event(slice);
+                if (nDone == 1) break; /* Have done, therefore break */
+            }
+        } else {
+            while (nDone == 0){
+                ca_pend_event(1);
+            }
+        }
+        if (nDone != 1) 
+            fprintf(stderr, "Write callback operation timed out.\n");
+
+        /* retrieve status from callback */
+        result=pvs[0].status;
+    }
+
+    
+    if ( result != ECA_NORMAL ) {
+        fprintf(stderr, "Error occured writing data.\n");
+        return 1;
+    }
 
                                 /* Read and print new data */
-    if (format == plain)
+    if (format != terse)
         printf("New : ");
 
     result = caget(pvs, nPvs, format, 0, count);

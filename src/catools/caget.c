@@ -14,6 +14,9 @@
  *
  *  Author: Ralph Lange (BESSY)
  *
+ *  Modification History
+ *  2006/01/17 Malcolm Walters (Tessella/Diamond Light Source)
+ *     Fixed problem with "-c -w 0" hanging forever
  */
 
 #include <stdio.h>
@@ -208,14 +211,22 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
     if (request == callback)    /* Also wait for callbacks */
     {
-        double slice = caTimeout / PEND_EVENT_SLICES;
-        for (n = 0; n < PEND_EVENT_SLICES; n++)
+        if (caTimeout != 0)
         {
-            ca_pend_event(slice);
-            if (nRead >= nConn) break;
+            double slice = caTimeout / PEND_EVENT_SLICES;
+            for (n = 0; n < PEND_EVENT_SLICES; n++)
+            {
+                ca_pend_event(slice);
+                if (nRead >= nConn) break;
+            }
+            if (nRead < nConn)
+                fprintf(stderr, "Read operation timed out: some PV data was not read.\n");
+        } else {
+            /* For 0 timeout keep waiting until all are done */
+            while (nRead < nConn) {
+                  ca_pend_event(1.0);
+            }
         }
-        if (nRead < nConn)
-            fprintf(stderr, "Read operation timed out: some PV data was not read.\n");
     }
 
                                 /* Print the data */

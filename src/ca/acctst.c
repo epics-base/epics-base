@@ -2498,23 +2498,44 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
         enum ca_preemptive_callback_select select, 
         unsigned interestLevel )
 {
-    unsigned i;
+    static const unsigned chanCount = 20;
+    static const unsigned loopCount = 100;
 
+    chid * const pChans = (chid * const) calloc ( chanCount, sizeof ( *pChans ) );
+    double * const pValues = (double * const) calloc ( chanCount, sizeof ( *pValues ) );
+    unsigned i, j;
+    
+    assert ( pChans && pValues );
+    
     showProgressBegin ( "verifyTearDownWhenChannelConnected", interestLevel );
 
-    for ( i = 0u; i < 10; i++ ) {
-        chid chan;
+    for ( i = 0u; i < loopCount; i++ ) {
         int status;
         ca_context_create ( select );
-        status = ca_create_channel ( pName, 0, 0, 0, & chan );
-        SEVCHK ( status, "immediate tear down channel create failed" );
+        
+        for ( j = 0; j < chanCount; j++ ) {
+            status = ca_create_channel ( pName, 0, 0, 0, & pChans[j] );
+            SEVCHK ( status, "immediate tear down channel create failed" );
+        }
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "immediate tear down channel connect failed" );
         assert ( status == ECA_NORMAL );
-        ca_context_destroy ();
+
+        for ( j = 0; j < chanCount; j++ ) {
+            status = ca_get ( DBR_DOUBLE, pChans[j], &pValues[j] );
+            SEVCHK ( status, "immediate tear down channel get failed" );
+        }
+        
+        status = ca_pend_io ( timeoutToPendIO );
+        SEVCHK ( status, "immediate tear down get pend io failed" );
+
+        ca_context_destroy ();        
     }
 
     ca_context_create ( select );
+
+    free ( pChans );
+    free ( pValues );
 
     showProgressEnd ( interestLevel );
 }

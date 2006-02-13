@@ -236,22 +236,24 @@ cac::~cac ()
     // lock intentionally not held here so that we dont deadlock 
     // waiting for the UDP thread to exit while it is waiting to 
     // get the lock.
-    if ( this->pudpiiu ) {
+    {
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
-        this->pudpiiu->shutdown ( cbGuard, guard );
-
-        //
-        // shutdown all tcp circuits
-        //
-        tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
-        while ( iter.valid() ) {
-            // this causes a clean shutdown to occur
-            iter->unlinkAllChannels ( cbGuard, guard );
-            iter++;
+        if ( this->pudpiiu ) {
+            this->pudpiiu->shutdown ( cbGuard, guard );
+    
+            //
+            // shutdown all tcp circuits
+            //
+            tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
+            while ( iter.valid() ) {
+                // this causes a clean shutdown to occur
+                iter->unlinkAllChannels ( cbGuard, guard );
+                iter++;
+            }
         }
     }
-
+    
     //
     // wait for all tcp threads to exit
     //
@@ -1169,10 +1171,10 @@ void cac::destroyIIU ( tcpiiu & iiu )
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->freeListVirtualCircuit.release ( & iiu );
         this->iiuUninstallInProgress = false;
+        // signal iiu uninstal event so that cac can properly shut down
+        this->iiuUninstall.signal();
     }
-
-    // signal iiu uninstal event so that cac can properly shut down
-    this->iiuUninstall.signal();
+    // do not touch "this" after lock is released above
 }
 
 double cac::beaconPeriod ( 

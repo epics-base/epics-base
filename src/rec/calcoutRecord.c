@@ -208,7 +208,7 @@ static long process(calcoutRecord *pcalc)
     short    doOutput = 0;
 
   
-    if(!pcalc->pact) { 
+    if(!pcalc->pact) {
         pcalc->pact = TRUE;
         /* if some links are CA, check connections */
         if(prpvt->caLinkStat != NO_CA_LINKS) {
@@ -254,14 +254,15 @@ static long process(calcoutRecord *pcalc)
                 pcalc->pact = FALSE;
                 execOutput(pcalc);
                 if(pcalc->pact) return(0);
+                pcalc->pact = TRUE;
             }
         }
     } else { /*pact==TRUE*/
         if(pcalc->dlya) {
             pcalc->dlya = 0;
             db_post_events(pcalc,&pcalc->dlya,DBE_VALUE);
-            /* Must set pact 0 so that asynchronous device support works*/
-            pcalc->pact = 0;
+            /* Make pact FALSE for asynchronous device support*/
+            pcalc->pact = FALSE;
             execOutput(pcalc);
             if(pcalc->pact) return(0);
             pcalc->pact = TRUE;
@@ -520,24 +521,24 @@ static void execOutput(calcoutRecord *pcalc)
             post_event((int)pcalc->oevt);
         }
     } else switch (pcalc->ivoa) {
-        case (menuIvoaContinue_normally) :
+        case menuIvoaContinue_normally:
             status = writeValue(pcalc);
             /* post event if output event != 0 */
             if(pcalc->oevt > 0) {
                 post_event((int)pcalc->oevt);
             }
-          break;
-        case (menuIvoaDon_t_drive_outputs) :
-          break;
-        case (menuIvoaSet_output_to_IVOV) :
+            break;
+        case menuIvoaDon_t_drive_outputs:
+            break;
+        case menuIvoaSet_output_to_IVOV:
             pcalc->oval=pcalc->ivov;
             status = writeValue(pcalc);
             /* post event if output event != 0 */
             if(pcalc->oevt > 0) {
                 post_event((int)pcalc->oevt);
             }
-          break;
-        default :
+            break;
+        default:
             status=-1;
             recGblRecordError(S_db_badField,(void *)pcalc,
                     "calcout:process Illegal IVOA field");

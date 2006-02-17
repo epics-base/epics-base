@@ -43,10 +43,11 @@ epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
-extern "C" void cacExitHandler (void *)
+extern "C" void cacExitHandler ( void *)
 {
     epicsThreadPrivateDelete ( caClientCallbackThreadId );
     caClientCallbackThreadId = 0;
+    delete ca_client_context::pDefaultServiceInstallMutex;
 }
 
 // runs once only for each process
@@ -54,13 +55,14 @@ extern "C" void cacOnceFunc ( void * )
 {
     caClientCallbackThreadId = epicsThreadPrivateCreate ();
     assert ( caClientCallbackThreadId );
+    ca_client_context::pDefaultServiceInstallMutex = new epicsMutex;
     epicsAtExit ( cacExitHandler,0 );
 }
 
 extern epicsThreadPrivateId caClientContextId;
 
 cacService * ca_client_context::pDefaultService = 0;
-epicsMutex ca_client_context::defaultServiceInstallMutex;
+epicsMutex * ca_client_context::pDefaultServiceInstallMutex;
 
 ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
@@ -76,18 +78,15 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     }
 
     epicsThreadOnce ( & cacOnce, cacOnceFunc, 0 );
-
-    {
-        // this wont consistently work if called from file scope constructor
-        epicsGuard < epicsMutex > guard ( ca_client_context::defaultServiceInstallMutex );
-        if ( ca_client_context::pDefaultService ) {
-            this->pServiceContext.reset (
-                & ca_client_context::pDefaultService->contextCreate ( 
-                    this->mutex, this->cbMutex, *this ) );
-        }
-        else {
-            this->pServiceContext.reset ( new cac ( this->mutex, this->cbMutex, *this ) );
-        }
+    
+    epicsGuard < epicsMutex > guard ( *ca_client_context::pDefaultServiceInstallMutex );
+    if ( ca_client_context::pDefaultService ) {
+        this->pServiceContext.reset (
+            & ca_client_context::pDefaultService->contextCreate ( 
+                this->mutex, this->cbMutex, *this ) );
+    }
+    else {
+        this->pServiceContext.reset ( new cac ( this->mutex, this->cbMutex, *this ) );
     }
 
     this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
@@ -734,8 +733,9 @@ cacContext & ca_client_context::createNetworkContext (
 
 void ca_client_context::installDefaultService ( cacService & service )
 {
-    // this wont consistently work if called from file scope constructor
-    epicsGuard < epicsMutex > guard ( ca_client_context::defaultServiceInstallMutex );
+    epicsThreadOnce ( & cacOnce, cacOnceFunc, 0 );
+
+    epicsGuard < epicsMutex > guard ( *ca_client_context::pDefaultServiceInstallMutex );
     if ( ca_client_context::pDefaultService ) {
         throw std::logic_error
             ( "CA in-memory service already installed and can't be replaced");

@@ -286,6 +286,9 @@ private:
     void operator delete ( void * );
 };
 
+extern "C" void cacOnceFunc ( void * );
+extern "C" void cacExitHandler ( void *);
+
 struct ca_client_context : public cacContextNotify
 {
 public:
@@ -411,9 +414,11 @@ private:
 
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
-
+	
+	friend void cacOnceFunc ( void * );
+	friend void cacExitHandler ( void *);
     static cacService * pDefaultService;
-    static epicsMutex defaultServiceInstallMutex;
+    static epicsMutex * pDefaultServiceInstallMutex;
 };
 
 int fetchClientContext ( ca_client_context * * ppcac );

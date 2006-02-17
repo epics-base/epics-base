@@ -78,15 +78,16 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     }
 
     epicsThreadOnce ( & cacOnce, cacOnceFunc, 0 );
-    
-    epicsGuard < epicsMutex > guard ( *ca_client_context::pDefaultServiceInstallMutex );
-    if ( ca_client_context::pDefaultService ) {
-        this->pServiceContext.reset (
-            & ca_client_context::pDefaultService->contextCreate ( 
-                this->mutex, this->cbMutex, *this ) );
-    }
-    else {
-        this->pServiceContext.reset ( new cac ( this->mutex, this->cbMutex, *this ) );
+    {
+        epicsGuard < epicsMutex > guard ( *ca_client_context::pDefaultServiceInstallMutex );
+        if ( ca_client_context::pDefaultService ) {
+            this->pServiceContext.reset (
+                & ca_client_context::pDefaultService->contextCreate ( 
+                    this->mutex, this->cbMutex, *this ) );
+        }
+        else {
+            this->pServiceContext.reset ( new cac ( this->mutex, this->cbMutex, *this ) );
+        }
     }
 
     this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );

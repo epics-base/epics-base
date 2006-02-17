@@ -212,10 +212,8 @@ SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
 
-SRCS_vxWorks += devLib.c
-SRCS_vxWorks += devLibOSD.c
-SRCS_RTEMS += devLib.c
-SRCS_RTEMS += devLibOSD.c
+SRCS += devLib.c
+SRCS += devLibOSD.c
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h

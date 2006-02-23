@@ -3,6 +3,7 @@
 # Site specific definitions for vxWorks target builds
 # Only the local epics system manager should modify this file
 
+# Sites may override these definitions in CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon
 
 #  Tornado directory
 VX_DIR = /usr/local/vw/tornado202p1

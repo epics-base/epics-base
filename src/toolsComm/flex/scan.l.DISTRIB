@@ -72,14 +72,14 @@ static char rcsid[] =
 
 WS		[ \t\f]+
 OPTWS		[ \t\f]*
-NOT_WS		[^ \t\f\n]
+NOT_WS		[^ \t\f\r\n]
 
 NAME		[a-z_][a-z_0-9-]*
-NOT_NAME	[^a-z_\n]+
+NOT_NAME	[^a-z_\r\n]+
 
 SCNAME		{NAME}
 
-ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
+ESCSEQ		\\([^\r\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 
 %%
     static int bracelevel, didadef;
@@ -88,11 +88,11 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
     Char nmdef[MAXLINE], myesc();
 
 ^{WS}			indented_code = true; BEGIN(CODEBLOCK);
-^#.*\n			++linenum; /* treat as a comment */
+^#.*\r?\n		++linenum; /* treat as a comment */
 ^"/*"			ECHO; BEGIN(C_COMMENT);
 ^"%s"{NAME}?		return ( SCDECL );
 ^"%x"{NAME}?		return ( XSCDECL );
-^"%{".*\n		{
+^"%{".*\r?\n		{
 			++linenum;
 			line_directive_out( stdout );
 			indented_code = false;
@@ -119,7 +119,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			}
 
 
-^"%"[aeknopt]" ".*\n	{
+^"%"[aeknopt]" ".*\r?\n	{
 #ifdef NOTDEF
 			fprintf( stderr,
 			     "old-style lex command at line %d ignored:\n\t%s",
@@ -130,7 +130,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 
 ^"%"[cr]{OPTWS}		/* ignore old lex directive */
 
-%t{OPTWS}\n		{
+%t{OPTWS}\r?\n		{
 			++linenum;
 			xlation =
 			    (int *) malloc( sizeof( int ) * (unsigned) csize );
@@ -156,23 +156,23 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			}
 
 {SCNAME}		RETURNNAME;
-^{OPTWS}\n		++linenum; /* allows blank lines in section 1 */
-{OPTWS}\n		++linenum; return ( '\n' );
+^{OPTWS}\r?\n		++linenum; /* allows blank lines in section 1 */
+{OPTWS}\r?\n		++linenum; return ( '\n' );
 .			synerr( "illegal character" ); BEGIN(RECOVER);
 
 
 <C_COMMENT>"*/"		ECHO; BEGIN(INITIAL);
-<C_COMMENT>"*/".*\n	++linenum; ECHO; BEGIN(INITIAL);
-<C_COMMENT>[^*\n]+	ECHO;
+<C_COMMENT>"*/".*\r?\n	++linenum; ECHO; BEGIN(INITIAL);
+<C_COMMENT>[^*\r\n]+	ECHO;
 <C_COMMENT>"*"		ECHO;
-<C_COMMENT>\n		++linenum; ECHO;
+<C_COMMENT>\r?\n	++linenum; ECHO;
 
 
-<CODEBLOCK>^"%}".*\n	++linenum; BEGIN(INITIAL);
+<CODEBLOCK>^"%}".*\r?\n	++linenum; BEGIN(INITIAL);
 <CODEBLOCK>"reject"	ECHO; CHECK_REJECT(yytext);
 <CODEBLOCK>"yymore"	ECHO; CHECK_YYMORE(yytext);
 <CODEBLOCK>{NAME}|{NOT_NAME}|.	ECHO;
-<CODEBLOCK>\n		{
+<CODEBLOCK>\r?\n	{
 			++linenum;
 			ECHO;
 			if ( indented_code )
@@ -197,17 +197,17 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			didadef = true;
 			}
 
-<PICKUPDEF>\n		{
+<PICKUPDEF>\r?\n	{
 			if ( ! didadef )
 			    synerr( "incomplete name definition" );
 			BEGIN(INITIAL);
 			++linenum;
 			}
 
-<RECOVER>.*\n		++linenum; BEGIN(INITIAL); RETURNNAME;
+<RECOVER>.*\r?\n	++linenum; BEGIN(INITIAL); RETURNNAME;
 
 
-<USED_LIST>\n		++linenum; BEGIN(INITIAL);
+<USED_LIST>\r?\n	++linenum; BEGIN(INITIAL);
 <USED_LIST>{WS}
 <USED_LIST>"reject"	{
 			if ( all_upper( yytext ) )
@@ -224,7 +224,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 <USED_LIST>{NOT_WS}+	synerr( "unrecognized %used/%unused construct" );
 
 
-<XLATION>"%t"{OPTWS}\n	++linenum; BEGIN(INITIAL);
+<XLATION>"%t"{OPTWS}\r?\n	++linenum; BEGIN(INITIAL);
 <XLATION>^{OPTWS}[0-9]+	++num_xlations; new_xlation = true;
 <XLATION>^.		synerr( "bad row in translation table" );
 <XLATION>{WS}		/* ignore whitespace */
@@ -240,21 +240,21 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			new_xlation = false;
 			}
 
-<XLATION>\n		++linenum;
+<XLATION>\r?\n		++linenum;
 
 
-<SECT2PROLOG>.*\n/{NOT_WS}	{
+<SECT2PROLOG>.*\r?\n/{NOT_WS}	{
 			++linenum;
 			ACTION_ECHO;
 			MARK_END_OF_PROLOG;
 			BEGIN(SECT2);
 			}
 
-<SECT2PROLOG>.*\n	++linenum; ACTION_ECHO;
+<SECT2PROLOG>.*\r?\n	++linenum; ACTION_ECHO;
 
 <SECT2PROLOG><<EOF>>	MARK_END_OF_PROLOG; yyterminate();
 
-<SECT2>^{OPTWS}\n	++linenum; /* allow blank lines in section 2 */
+<SECT2>^{OPTWS}\r?\n	++linenum; /* allow blank lines in section 2 */
 
 <SECT2>^({WS}|"%{")	{
 			indented_code = (yytext[0] != '%');
@@ -271,15 +271,15 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 <SECT2>^"^"		return ( '^' );
 <SECT2>\"		BEGIN(QUOTE); return ( '"' );
 <SECT2>"{"/[0-9]		BEGIN(NUM); return ( '{' );
-<SECT2>"{"[^0-9\n][^}\n]*	BEGIN(BRACEERROR);
-<SECT2>"$"/[ \t\n]	return ( '$' );
+<SECT2>"{"[^0-9\r\n][^}\r\n]*	BEGIN(BRACEERROR);
+<SECT2>"$"/[ \t\r\n]	return ( '$' );
 
 <SECT2>{WS}"%{"		{
 			bracelevel = 1;
 			BEGIN(PERCENT_BRACE_ACTION);
 			return ( '\n' );
 			}
-<SECT2>{WS}"|".*\n	continued_action = true; ++linenum; return ( '\n' );
+<SECT2>{WS}"|".*\r?\n	continued_action = true; ++linenum; return ( '\n' );
 
 <SECT2>{WS}		{
 			/* this rule is separate from the one below because
@@ -292,14 +292,14 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			return ( '\n' );
 			}
 
-<SECT2>{OPTWS}/\n	{
+<SECT2>{OPTWS}/\r?\n	{
 			bracelevel = 0;
 			continued_action = false;
 			BEGIN(ACTION);
 			return ( '\n' );
 			}
 
-<SECT2>^{OPTWS}\n	++linenum; return ( '\n' );
+<SECT2>^{OPTWS}\r?\n	++linenum; return ( '\n' );
 
 <SECT2>"<<EOF>>"	return ( EOF_OP );
 
@@ -309,7 +309,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			return ( EOF ); /* to stop the parser */
 			}
 
-<SECT2>"["([^\\\]\n]|{ESCSEQ})+"]"	{
+<SECT2>"["([^\\\]\r\n]|{ESCSEQ})+"]"	{
 			int cclval;
 
 			(void) strcpy( nmstr, (char *) yytext );
@@ -359,7 +359,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 
 <SECT2>[/|*+?.()]	return ( yytext[0] );
 <SECT2>.		RETURNCHAR;
-<SECT2>\n		++linenum; return ( '\n' );
+<SECT2>\r?\n		++linenum; return ( '\n' );
 
 
 <SC>","			return ( ',' );
@@ -371,10 +371,10 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 <CARETISBOL>"^"		BEGIN(SECT2); return ( '^' );
 
 
-<QUOTE>[^"\n]		RETURNCHAR;
+<QUOTE>[^"\r\n]		RETURNCHAR;
 <QUOTE>\"		BEGIN(SECT2); return ( '"' );
 
-<QUOTE>\n		{
+<QUOTE>\r?\n		{
 			synerr( "missing quote" );
 			BEGIN(SECT2);
 			++linenum;
@@ -382,13 +382,13 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			}
 
 
-<FIRSTCCL>"^"/[^-\n]	BEGIN(CCL); return ( '^' );
+<FIRSTCCL>"^"/[^-\r\n]	BEGIN(CCL); return ( '^' );
 <FIRSTCCL>"^"/-		return ( '^' );
 <FIRSTCCL>-		BEGIN(CCL); yylval = '-'; return ( CHAR );
 <FIRSTCCL>.		BEGIN(CCL); RETURNCHAR;
 
-<CCL>-/[^\]\n]		return ( '-' );
-<CCL>[^\]\n]		RETURNCHAR;
+<CCL>-/[^\]\r\n]	return ( '-' );
+<CCL>[^\]\r\n]		RETURNCHAR;
 <CCL>"]"		BEGIN(SECT2); return ( ']' );
 
 
@@ -406,7 +406,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			return ( '}' );
 			}
 
-<NUM>\n			{
+<NUM>\r?\n		{
 			synerr( "missing }" );
 			BEGIN(SECT2);
 			++linenum;
@@ -415,7 +415,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 
 
 <BRACEERROR>"}"		synerr( "bad name in {}'s" ); BEGIN(SECT2);
-<BRACEERROR>\n		synerr( "missing }" ); ++linenum; BEGIN(SECT2);
+<BRACEERROR>\r?\n	synerr( "missing }" ); ++linenum; BEGIN(SECT2);
 
 
 <PERCENT_BRACE_ACTION,CODEBLOCK_2>{OPTWS}"%}".*		bracelevel = 0;
@@ -428,7 +428,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			CHECK_YYMORE(yytext);
 			}
 <PERCENT_BRACE_ACTION,CODEBLOCK_2>{NAME}|{NOT_NAME}|.	ACTION_ECHO;
-<PERCENT_BRACE_ACTION,CODEBLOCK_2>\n			{
+<PERCENT_BRACE_ACTION,CODEBLOCK_2>\r?\n			{
 			++linenum;
 			ACTION_ECHO;
 			if ( bracelevel == 0 ||
@@ -446,12 +446,12 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 	/* Reject and YYmore() are checked for above, in PERCENT_BRACE_ACTION */
 <ACTION>"{"		ACTION_ECHO; ++bracelevel;
 <ACTION>"}"		ACTION_ECHO; --bracelevel;
-<ACTION>[^a-z_{}"'/\n]+	ACTION_ECHO;
+<ACTION>[^a-z_{}"'/\r\n]+	ACTION_ECHO;
 <ACTION>{NAME}		ACTION_ECHO;
 <ACTION>"/*"		ACTION_ECHO; BEGIN(ACTION_COMMENT);
-<ACTION>"'"([^'\\\n]|\\.)*"'"	ACTION_ECHO; /* character constant */
+<ACTION>"'"([^'\\\r\n]|\\.)*"'"	ACTION_ECHO; /* character constant */
 <ACTION>\"		ACTION_ECHO; BEGIN(ACTION_STRING);
-<ACTION>\n		{
+<ACTION>\r?\n		{
 			++linenum;
 			ACTION_ECHO;
 			if ( bracelevel == 0 )
@@ -463,14 +463,14 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 <ACTION>.		ACTION_ECHO;
 
 <ACTION_COMMENT>"*/"	ACTION_ECHO; BEGIN(ACTION);
-<ACTION_COMMENT>[^*\n]+	ACTION_ECHO;
+<ACTION_COMMENT>[^*\r\n]+	ACTION_ECHO;
 <ACTION_COMMENT>"*"	ACTION_ECHO;
-<ACTION_COMMENT>\n	++linenum; ACTION_ECHO;
+<ACTION_COMMENT>\r?\n	++linenum; ACTION_ECHO;
 <ACTION_COMMENT>.	ACTION_ECHO;
 
-<ACTION_STRING>[^"\\\n]+	ACTION_ECHO;
+<ACTION_STRING>[^"\\\r\n]+	ACTION_ECHO;
 <ACTION_STRING>\\.	ACTION_ECHO;
-<ACTION_STRING>\n	++linenum; ACTION_ECHO;
+<ACTION_STRING>\r?\n	++linenum; ACTION_ECHO;
 <ACTION_STRING>\"	ACTION_ECHO; BEGIN(ACTION);
 <ACTION_STRING>.	ACTION_ECHO;
 
@@ -492,7 +492,7 @@ ESCSEQ		\\([^\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 			}
 
 
-<SECT3>.*(\n?)		ECHO;
+<SECT3>.*(\r?\n?)	ECHO;
 %%
 
 

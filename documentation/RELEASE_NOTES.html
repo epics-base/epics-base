@@ -11,6 +11,14 @@
 
 <h2 align="center">Changes since 3.14.8.2</h2>
 
+<h4>e_flex</h4>
+
+<p><tt>e_flex</tt> has been modified to accept DOS line endings as well as Unix
+ones. The <tt>scan.c</tt> file was recreated using <tt>e_flex</tt> itself and
+the <tt>flex.skel</tt> file on the modified <tt>scan.l.DISTRIB</tt> source.
+<tt>initscan.c</tt> is not required or used for the EPICS build, so it has been
+removed.</p>
+
 <h4>devLib</h4>
 
 <p>devLib is now built for all architectures, whereas before it was only built

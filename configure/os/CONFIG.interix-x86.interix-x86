@@ -1,0 +1,34 @@
+#  CONFIG.interix-x86.interix-x86
+#
+# $Id$
+#
+# Definitions for interix-x86 host - interix-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.interix-x86.interix-x86
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+## Shared libraries for interix not implemented yet
+SHARED_LIBRARIES=NO
+
+# interix's gcc, g++, ar, ld, and ranlib must be in user's path
+CC = gcc
+CCC = g++
+AR = ar -rc
+LD = ld -r
+#######RANLIB = ranlib   # ranlib exists but is not found ???
+RANLIB =
+
+# Avoid position-independent code is always generated message
+SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS = -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+
+# -ansi eliminates strdup
+#CONFORM_CFLAGS_ANSI = 
+#CONFORM_CFLAGS_STRICT = -pedantic
+#CONFORM_CXXFLAGS_ANSI = 
+#CONFORM_CXXFLAGS_STRICT = -pedantic
+
+

@@ -1,0 +1,38 @@
+# CONFIG.Common.interix-x86
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for interix-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.interix-x86
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = interix
+ARCH_CLASS = x86
+
+EXE=
+
+POSIX_CPPFLAGS  = -D_POSIX_C_SOURCE=199506L 
+POSIX_CPPFLAGS += -D_POSIX_THREADS
+POSIX_CPPFLAGS += -D_ALL_SOURCE
+POSIX_CPPFLAGS += -D_POSIX_TIMERS
+
+POSIX_CPPFLAGS += -D_REENTRANT
+
+POSIX_LDLIBS += -lpthread
+
+ARCH_DEP_CPPFLAGS += -D_X86_
+
+OP_SYS_CPPFLAGS += -DUNIX
+
+# Set runtime path for shared libraries
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
+
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+INCLUDES_READLINE = -I$(GNU_DIR)/include
+LDFLAGS_READLINE += -L$(GNU_DIR)/lib
+LDLIBS_READLINE = -lreadline
+

@@ -1,0 +1,22 @@
+# CONFIG.interix-x86.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for interix-x86 host archs
+# Sites may override these definitions in CONFIG_SITE.interix-x86.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+WIND_HOST_TYPE = x86-win32
+OSITHREAD_USE_DEFAULT_STACK = NO
+
+#HOSTEXE=.exe
+HOSTEXE=
+
+# Needed to find dlls for base installed build tools (antelope,eflex,...)
+#PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
+
+

@@ -1,0 +1,18 @@
+#!/bin/csh
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+# Operator of Los Alamos National Laboratory.
+# This file is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
+#*************************************************************************
+
+setenv EPICS_HOST_ARCH interix-x86
+echo "EPICS_HOST_ARCH=${EPICS_HOST_ARCH}"
+setenv EPICSBASE /dev/fs/D/remotecvs/epics/base_R3_14_2_branch
+setenv PATH ${PATH}:${EPICSBASE}/bin/${EPICS_HOST_ARCH}
+alias make /dev/fs/C/mingw-make/bin/mingw32-make.exe
+set prompt='${cwd} :'
+alias cd 'cd \!*;uname -n; set prompt = "${cwd} :"'
+cd ${EPICSBASE}

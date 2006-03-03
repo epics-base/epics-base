@@ -105,6 +105,8 @@ OBJ = .
 RES = .
 CMPLR_SUFFIX=
 CMPLR_PREFIX=
+LIB_PREFIX=
+SHRLIB_PREFIX= $(LIB_PREFIX)
 
 #-------------------------------------------------------
 # tools for installing libraries and products
@@ -223,7 +225,7 @@ TARGET_LDFLAGS = $($*_LDFLAGS)
 # Level of ansi conformance flags
 CONFORM_CPPFLAGS = $(CONFORM_CPPFLAGS_$(CMPLR))
 CONFORM_CFLAGS = $(CONFORM_CFLAGS_$(CMPLR))
-CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CMPLR))
+CONFORM_CXXFLAGS = $(CONFORM_CXXFLAGS_$(CXXCMPLR))
 
 # Warnings flags
 WARN_CFLAGS = $(WARN_CFLAGS_$($(BUILD_CLASS)_WARN))

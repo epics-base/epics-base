@@ -277,6 +277,7 @@ POSIX_CPPFLAGS_YES =
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
 ifeq ($(shell $(PERL) $(EPICS_BASE_TOOLS)/useManifestTool.pl),1)
-MT_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#2
+MT_DLL_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#2
+MT_EXE_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#1
 endif
 

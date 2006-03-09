@@ -293,4 +293,12 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:
 	$(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
 
 #--------------------------------------------------
+# UseManifestTool.pl checks MS Visual c++ compiler version number to
+# decide whether or not to use the Manifest Tool command to embed the
+# linker created .manifest file into a library or product target. 
+# useManifestTool.pl returns 0(don't use) or 1(use).
+#
+ifeq ($(shell $(PERL) $(TOOLS)/useManifestTool.pl),1)
+MT_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#2
+endif
 

@@ -270,3 +270,13 @@ LINK.cc = $(WINLINK) -nologo $(LDFLAGS) -out:$@
 # Overrides for CONFIG_COMMON default
 POSIX_CPPFLAGS_YES = 
 
+#--------------------------------------------------
+# UseManifestTool.pl checks MS Visual c++ compiler version number to
+# decide whether or not to use the Manifest Tool command to embed the
+# linker created .manifest file into a library or product target.
+# useManifestTool.pl returns 0(don't use) or 1(use).
+#
+ifeq ($(shell $(PERL) $(EPICS_BASE_TOOLS)/useManifestTool.pl),1)
+MT_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#2
+endif
+

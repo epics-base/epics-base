@@ -1164,7 +1164,7 @@ stringId::~stringId()
 resTableIndex stringId::hash() const
 {
     const unsigned stringIdMinIndexWidth = CHAR_BIT;
-    const unsigned stringIdMaxIndexWidth = sizeof ( unsigned );
+    const unsigned stringIdMaxIndexWidth = CHAR_BIT * sizeof ( unsigned );
     const unsigned char *pUStr = 
         reinterpret_cast < const unsigned char * > ( this->pStr );
 

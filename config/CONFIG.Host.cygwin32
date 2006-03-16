@@ -21,6 +21,17 @@ include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 EXE=.exe
 
 #==========================
+#These overrides remove -ansi because -ansi eliminates strdup
+GCC_ANSI = $(GCC)
+GCC_STRICT = $(GCC) -pedantic
+G++_NORMAL = $(G++) -pedantic
+G++_STRICT = $(G++) -pedantic
+
+#==========================
+#This override will eliminate warnings for old R3.13 extensions
+#GCC_WARN_YES =
+
+#==========================
 # These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
 # since OS vendor compilers ACC and CCC are not defined here for cygwin32
 ANSI=GCC
@@ -32,7 +43,7 @@ SHARED_LIBRARIES=NO
 #OP_SYS_INCLUDES += /usr/local/include/g++
 #==========================
  
-ARCH_DEP_CFLAGS = -DCYGWIN32 -U_WIN32
+ARCH_DEP_CPPFLAGS = -DCYGWIN32 -U_WIN32
 ARCH_DEP_LDLIBS =
 OP_SYS_LDLIBS =
 
@@ -41,7 +52,9 @@ OP_SYS_LDLIBS =
 GCC_DEP_CFLAGS = -D_REENTRANT
 G++_DEP_CFLAGS = -D_REENTRANT
 
-POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
+#POSIX_SOURCE eliminates select()
+#POSIX_CPPFLAGS_YES = -D_POSIX_SOURCE
+POSIX_CPPFLAGS_YES = -D_POSIX_THREADS -D_POSIX_TIMERS
 
 # Runtime ldflags
 RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\

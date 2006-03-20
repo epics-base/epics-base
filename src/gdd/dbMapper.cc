@@ -1131,8 +1131,8 @@ static int mapControlGddToEnum (
         enumStringTable.getString ( i, 
             &(db->strs[i][0]), MAX_ENUM_STRING_SIZE );
 	}
-	for ( int i = db->no_str; i < MAX_ENUM_STATES; i++ ) {
-		db->strs[i][0] = '\0';
+	for ( int j = db->no_str; j < MAX_ENUM_STATES; j++ ) {
+		db->strs[j][0] = '\0';
     }
 	return mapGddToEnum ( &db->value, 
         count, vdd, enumStringTable );

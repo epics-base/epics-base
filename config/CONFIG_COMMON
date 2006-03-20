@@ -90,7 +90,7 @@ GCC_STRICT = $(GCC) -ansi -pedantic
 GCC_TRAD = $(GCC)
 GCC_DEP_CFLAGS = -fPIC -D_REENTRANT
 
-GCC_WARN_YES = -Wall -Wtraditional -Wmissing-prototypes -Wstrict-prototypes
+GCC_WARN_YES = -Wall -Wmissing-prototypes -Wstrict-prototypes
 GCC_WARN_NO = -w
 GCC_OPT_YES = -O3
 GCC_OPT_NO = -g

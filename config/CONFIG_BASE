@@ -52,6 +52,9 @@ EPICS_BASE = $(TOP)
 # EPICS include config file
 include $(EPICS_BASE)/config/CONFIG
 
+-include $(EPICS_BASE)/configure/RELEASE
+-include $(EPICS_BASE)/configure/RELEASE.$(EPICS_HOST_ARCH)
+
 ifdef INSTALL_LOCATION_BASE
 INSTALL_LOCATION = $(INSTALL_LOCATION_BASE)
 endif

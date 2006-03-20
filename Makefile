@@ -15,7 +15,7 @@ TOP = .
 include $(TOP)/configure/CONFIG
 
 ifeq ($(findstring YES,$(COMPAT_313) $(COMPAT_TOOLS_313)),YES)
-DIRS += config config/tools
+DIRS += config
 endif
 DIRS += configure src
 

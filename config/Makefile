@@ -20,6 +20,9 @@ INSTALL_CONFIG = $(INSTALL_LOCATION)/config
 
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
 CONFIGS += $(subst ../,,$(wildcard ../RULES*))
+
+CONFIGS += $(subst ../,,$(wildcard ../tools/*.pl))
+
 endif
 
 include $(TOP)/configure/RULES

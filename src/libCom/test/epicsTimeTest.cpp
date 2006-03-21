@@ -14,6 +14,7 @@
 #include <time.h>
 #include <math.h>
 #include <limits.h>
+#include <cstring>
 
 #include "epicsTime.h"
 #include "epicsThread.h"
@@ -21,6 +22,31 @@
 
 extern "C" {
 int epicsTimeTest (void);
+}
+
+void invalidFormatTest ()
+{
+    epicsTime ts ( epicsTime::getCurrent () );
+    char bigBuf [512];
+    char buf [32];
+    memset ( bigBuf, '\a', sizeof ( bigBuf ) );
+    bigBuf [ sizeof ( bigBuf ) - 1 ] = '\0';
+    ts.strftime ( buf, sizeof ( buf ), bigBuf );
+    printf ("A huge strftime format produces this result \"%s\"\n", buf );
+}
+
+void badNanosecTest ()
+{
+    static const char * pFormat = "%a %b %d %Y %H:%M:%S.%4f";
+    try {
+        const epicsTimeStamp ets = { 1, 1000000000 };
+        epicsTime ts ( ets );
+        char buf [32];
+        ts.strftime ( buf, sizeof ( buf ), pFormat );
+        printf ("A nano-sec overflow produces this result \"%s\"\n", buf );
+    }
+    catch ( ... ) {
+    }
 }
 
 struct l_fp { /* NTP time stamp */
@@ -82,6 +108,9 @@ int epicsTimeTest (void)
         static const double precisionEPICS = 1.0 / nSecPerSec;
         assert ( diff <= precisionEPICS + precisionNTP );
     }
+    
+    invalidFormatTest ();
+    badNanosecTest ();
 
     printf ("epicsTime Test (%3d loops)\n========================\n\n", nTimes);
 
@@ -216,7 +245,7 @@ int epicsTimeTest (void)
             sum_errloops += 1;
         }
     }
-
+    
     printf ("epicsTime test complete. Summary: %d errors found "
             "in %d out of %d loops.\n",
             sum_errors, sum_errloops, nTimes);

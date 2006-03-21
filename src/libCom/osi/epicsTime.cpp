@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <float.h>
 #include <string> // vxWorks 6.0 requires this include 
 
 #define epicsExportSharedSymbols
@@ -34,6 +35,7 @@
 #include "envDefs.h"
 #include "epicsTime.h"
 #include "osiSock.h" /* pull in struct timeval */
+#include "epicsStdio.h"
 
 static const char *pEpicsTimeVersion = 
     "@(#) " EPICS_VERSION_STRING ", Common Utilities Library " __DATE__;
@@ -203,8 +205,14 @@ epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
 
 epicsTime::epicsTime (const epicsTimeStamp &ts) 
 {
-    this->secPastEpoch = ts.secPastEpoch;
-    this->nSec = ts.nsec;
+    if ( ts.nsec < nSecPerSec ) {
+        this->secPastEpoch = ts.secPastEpoch;
+        this->nSec = ts.nsec;
+    }
+    else {
+        throw std::logic_error ( 
+            "epicsTimeStamp has overflow in nano-seconds field" );
+    }
 }
 
 epicsTime::epicsTime () : secPastEpoch(0u), nSec(0u) {}	
@@ -433,6 +441,10 @@ epicsTime::epicsTime ( const l_fp & ts )
 
 epicsTime::operator epicsTimeStamp () const
 {
+    if ( this->nSec >= nSecPerSec ) {
+        throw std::logic_error ( 
+            "epicsTimeStamp has overflow in nano-seconds field?" );
+    }
     epicsTimeStamp ts;
     //
     // trucation by design
@@ -451,7 +463,6 @@ epicsTime::operator epicsTimeStamp () const
     // 1/2 of full range.
     //
     ts.secPastEpoch = static_cast < epicsUInt32 > ( this->secPastEpoch );
-    assert ( this->nSec < nSecPerSec );
     ts.nsec = static_cast < epicsUInt32 > ( this->nSec );
     return ts;
 }
@@ -511,7 +522,12 @@ size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat 
 
     // copy format (needs to be writable)
     char format[256];
-    strcpy (format, pFormat);
+    strncpy ( format, pFormat, sizeof ( format ) );
+    if ( format [sizeof(format)-1] != '\0' ) {
+        strncpy ( pBuff, "<invalid format>", bufLength );
+        pBuff[bufLength-1] = '\0';
+        return strlen ( pBuff );
+    }
 
     // look for "%0<n>f" at the end (used for fractional second formatting)
     unsigned long fracWid;
@@ -528,18 +544,29 @@ size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat 
     // check there are enough chars for the fractional seconds
     if (numChar + fracWid < bufLength)
     {
-        // divisors for fraction (see below)
-        const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
-                      (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
-
-        // round and convert nanosecs to integer of correct range
-        int ndp = fracWid <= 9 ? fracWid : 9;
-        int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
-
-        // restore fractional format and format fraction
-        *fracPtr = '%';
-        *(format + strlen (format) - 1) = 'u';
-        sprintf (pBuff+numChar, fracPtr, frac);
+        char * p = pBuff + numChar;
+        size_t len =  bufLength - numChar;
+        if ( tmns.nSec < nSecPerSec ) {
+            // divisors for fraction (see below)
+            const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
+                          (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
+    
+            // round and convert nanosecs to integer of correct range
+            int ndp = fracWid <= 9 ? fracWid : 9;
+            int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
+    
+            // restore fractional format and format fraction
+            *fracPtr = '%';
+            *(format + strlen (format) - 1) = 'u';
+            epicsSnprintf ( p, len, fracPtr, frac );
+            p[len-1] = '\0';            
+        }
+        else {
+            strncpy ( p, "OVF", len );
+            p[len-1] = '\0';
+            return strlen ( pBuff );         
+        }
+        
     }
     return numChar + fracWid;
 }
@@ -889,43 +916,93 @@ extern "C" {
     }
     epicsShareFunc double epicsShareAPI epicsTimeDiffInSeconds (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) - epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) - epicsTime (*pRight);
+        }
+        catch (...) {
+            return - DBL_MAX;
+        }
     }
     epicsShareFunc void epicsShareAPI epicsTimeAddSeconds (epicsTimeStamp *pDest, double seconds)
     {
-        *pDest = epicsTime (*pDest) + seconds;
+        try {
+            *pDest = epicsTime (*pDest) + seconds;
+        }
+        catch ( ... ) {
+            *pDest = epicsTime ();
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) == epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) == epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeNotEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) != epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) != epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 1;
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeLessThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) < epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) < epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeLessThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) <= epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) <= epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeGreaterThan (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) > epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) > epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc int epicsShareAPI epicsTimeGreaterThanEqual (const epicsTimeStamp *pLeft, const epicsTimeStamp *pRight)
     {
-        return epicsTime (*pLeft) >= epicsTime (*pRight);
+        try {
+            return epicsTime (*pLeft) >= epicsTime (*pRight);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc size_t epicsShareAPI epicsTimeToStrftime (char *pBuff, size_t bufLength, const char *pFormat, const epicsTimeStamp *pTS)
     {
-        return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
+        try {
+            return epicsTime(*pTS).strftime (pBuff, bufLength, pFormat);
+        }
+        catch ( ... ) {
+            return 0;
+        }
     }
     epicsShareFunc void epicsShareAPI epicsTimeShow (const epicsTimeStamp *pTS, unsigned interestLevel)
     {
-        epicsTime(*pTS).show (interestLevel);
+        try {
+            epicsTime(*pTS).show (interestLevel);
+        }
+        catch ( ... ) {
+            printf ( "Invalid epicsTimeStamp\n" );
+        }
     }
 }
 

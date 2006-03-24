@@ -9,7 +9,6 @@ INSTALL_BIN=:INSTALL_BIN:
 # uncomment and modify the relevant lines below. These are the only
 # EPICS environment variables that the CA Repeater makes use of.
 
-# EPICS_CA_BEACON_PORT="5064" export EPICS_CA_BEACON_PORT
 # EPICS_CA_REPEATER_PORT="5065" export EPICS_CA_REPEATER_PORT
 
 if [ $1 = "start" ]; then

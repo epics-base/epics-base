@@ -28,12 +28,11 @@ iocLogServer_SRCS = iocLogServer.c
 OBJS_vxWorks = ca_test
 
 SCRIPTS_solaris := S99logServer S99caRepeater 
+SCRIPTS_Linux := S99logServer S99caRepeater 
 
 include $(TOP)/configure/RULES
  
 S99%: ../rc2.%
-	@/usr/bin/sed -e s%:EPICS:%`chdir $(TOP); /usr/bin/pwd`% \
-		-e s%:INSTALL_BIN:%`chdir $(INSTALL_BIN); /usr/bin/pwd`% \
-		$< >$@
+	sed -e s%:INSTALL_BIN:%`cd $(INSTALL_BIN); pwd`% $< >$@
 
 #	EOF Makefile.Host for base/src/util

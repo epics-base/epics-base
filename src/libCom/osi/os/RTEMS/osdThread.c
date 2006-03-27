@@ -430,9 +430,12 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
                     length = size - 1;
                 else
                     length = oi->name_length;
-                _Objects_Copy_name_raw( &thr->Object.name, name, length);
-                haveName = 1;
+                 if (oi->is_string)
+                     strncpy(name, thr->Object.name, length);
+                else
+                    _Objects_Copy_name_raw( &thr->Object.name, name, length);
                 name[length] = '\0';
+                haveName = 1;
             }
             _Thread_Enable_dispatch();
         }

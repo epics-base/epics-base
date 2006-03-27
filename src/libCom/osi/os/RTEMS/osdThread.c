@@ -424,11 +424,15 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
         Objects_Locations l;
         if ((thr=_Thread_Get(tid, &l)) != NULL) {
             if (OBJECTS_LOCAL == l) {
-                Objects_Information *oi;
-                oi = _Objects_Get_information(tid);
-                _Objects_Copy_name_raw( &thr->Object.name, name,
-                            size > oi->name_length ? oi->name_length : size);
+                int length;
+                Objects_Information *oi = _Objects_Get_information(tid);
+                if (oi->name_length >= size)
+                    length = size - 1;
+                else
+                    length = oi->name_length;
+                _Objects_Copy_name_raw( &thr->Object.name, name, length);
                 haveName = 1;
+                name[length] = '\0';
             }
             _Thread_Enable_dispatch();
         }

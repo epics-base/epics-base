@@ -9,6 +9,8 @@
 #*************************************************************************
 # RELEASE: Define location of external EPICS products
 
+# Define INSTALL_LOCATION in CONFIG_SITE
+
 # VX_DIR definition now in os/CONFIG_SITE.Common.vxWorksCommon
 # RTEMS_BASE (and RTEMS_VERSION) now in os/CONFIG_SITE.Common.RTEMS
 
@@ -17,9 +19,4 @@
 #   RELEASE.Common.$(OS_CLASS)Common
 #   RELEASE.Common.$(T_A)
 #   RELEASE.$(EPICS_HOST_ARCH).$(T_A)
-
-# If you don't want to install into $(TOP) dir then 
-# define INSTALL_LOCATION here
-#INSTALL_LOCATION=<fullpathname>
-#INSTALL_LOCATION=/home/phoebus/JBA/install
 

@@ -158,7 +158,7 @@ CROSS_WARN=YES
 #  NOTE: Set to YES only if you have existing R3.13 extensions to be
 #  built with this base
 #
-COMPAT_TOOLS_313=NO
+#COMPAT_TOOLS_313=YES
 
 #  Create and/or install files for R3.13 ioc application and extension builds?
 #  must be either YES or NO
@@ -169,7 +169,10 @@ COMPAT_TOOLS_313=NO
 COMPAT_313=NO
 
 #  Installation directory
-#Note: INSTALL_LOCATION definition moved to configure/RELEASE file
+# If you don't want to install into $(TOP) dir then
+# define INSTALL_LOCATION here
+#INSTALL_LOCATION=<fullpathname>
+INSTALL_LOCATION=/home/phoebus/JBA/install/base
 
 # Use POSIX thread priority scheduling (YES or NO)
 USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO

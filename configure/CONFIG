@@ -17,7 +17,13 @@
 #  Common build definitions
 #
 
-CONFIG ?= $(TOP)/configure
+ifndef EPICS_BASE
+EPICS_BASE = $(INSTALL_LOCATION)
+CONFIG = $(TOP)/configure
+BASE_TOP=YES
+else
+CONFIG = $(EPICS_BASE)/configure
+endif
 
 -include $(CONFIG)/os/CONFIG_COMPAT
 

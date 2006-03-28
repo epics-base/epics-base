@@ -38,6 +38,10 @@ BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 PERL=perl
 
 #-------------------------------------------------------
+# dbst based database optimization default
+DB_OPT = NO
+
+#-------------------------------------------------------
 # Check configure/RELEASE file for consistency
 CHECK_RELEASE_YES = checkRelease
 CHECK_RELEASE_NO =
@@ -45,7 +49,7 @@ CHECK_RELEASE_NO =
 #-------------------------------------------------------
 # Directories
 
-INSTALL_LOCATION            ?= $(TOP)
+INSTALL_LOCATION            = $(TOP)
 TOOLS                       = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib

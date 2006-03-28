@@ -8,10 +8,6 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-ifndef EPICS_BASE
-EPICS_BASE = $(INSTALL_LOCATION)
-endif
-
 #---------------------------------------------------------------
 # Epics base directories
 
@@ -38,10 +34,10 @@ EPICS_BASE_HOST_LIBS += ca Com
 #---------------------------------------------------------------
 # Version number for base shared libraries (and win32 products)
 
-ifeq ($(EPICS_BASE),$(TOP))
+ifdef BASE_TOP
 SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
 PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-endif # EPICS_BASE
+endif # BASE_TOP
 
 #---------------------------------------------------------------
 # Base c preprocessor flags

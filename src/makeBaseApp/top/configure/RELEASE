@@ -10,10 +10,6 @@
 
 TEMPLATE_TOP=_TEMPLATE_TOP_
 
-# If you don't want to install into $(TOP) then
-# define INSTALL_LOCATION_APP here
-#INSTALL_LOCATION_APP=<fullpathname>
-
 #If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
 
@@ -23,3 +19,4 @@ EPICS_BASE=_EPICS_BASE_
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
 #SCH2EDIF_PATH=
+

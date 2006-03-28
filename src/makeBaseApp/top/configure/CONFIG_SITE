@@ -1,0 +1,21 @@
+# CONFIG
+
+# Make any application-specific changes to the EPICS build
+# configuration variables in this file.
+
+# Set this when you only want to compile this application
+# for a subset of the cross-compiled target architectures
+# that Base is built for.
+#CROSS_COMPILER_TARGET_ARCHS = vxWorks-68040
+
+# Set this when your IOC and the host use different paths
+# to access the application. This will be needed to boot
+# from a Microsoft FTP server or with some NFS mounts.
+# You must rebuild in the iocBoot directory for this to
+# take effect.
+#IOCS_APPL_TOP = <path to application top as seen by IOC>
+
+# If you don't want to install into $(TOP) then
+# define INSTALL_LOCATION here
+#INSTALL_LOCATION=<fullpathname>
+

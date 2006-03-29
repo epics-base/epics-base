@@ -172,7 +172,6 @@ COMPAT_313=NO
 # If you don't want to install into $(TOP) dir then
 # define INSTALL_LOCATION here
 #INSTALL_LOCATION=<fullpathname>
-INSTALL_LOCATION=/home/phoebus/JBA/install/base
 
 # Use POSIX thread priority scheduling (YES or NO)
 USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO

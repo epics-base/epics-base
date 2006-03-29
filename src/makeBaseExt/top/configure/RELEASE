@@ -1,8 +1,6 @@
 # $Id$
 
-# If you don't want to install into $(TOP) dir then
-# define INSTALL_LOCATION_EXTENSIONS here
-#INSTALL_LOCATION_EXTENSIONS=<fullpathname>
+# Define INSTALL_LOCATION in CONFIG_SITE
 
 # Location of external products
 EPICS_BASE=_EPICS_BASE_

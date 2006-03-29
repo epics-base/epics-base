@@ -1,0 +1,12 @@
+# $Id$
+
+# Make any extensions-specific changes to the EPICS build
+# configuration variables in this file.
+
+# Extensions should not normally be built for cross targets
+CROSS_COMPILER_TARGET_ARCHS =
+
+# If you don't want to install into $(TOP) then
+# define INSTALL_LOCATION here
+#INSTALL_LOCATION=<fullpathname>
+

@@ -24,6 +24,7 @@ extern "C" {
 
 epicsShareFunc int epicsShareAPI dbmfInit(size_t size, int chunkItems);
 epicsShareFunc void * epicsShareAPI dbmfMalloc(size_t bytes);
+epicsShareFunc char * epicsShareAPI dbmfStrdup(unsigned char *str);
 epicsShareFunc void epicsShareAPI dbmfFree(void* bytes);
 epicsShareFunc void epicsShareAPI dbmfFreeChunks(void);
 epicsShareFunc int epicsShareAPI dbmfShow(int level);

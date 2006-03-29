@@ -132,7 +132,12 @@ void* epicsShareAPI dbmfMalloc(size_t size)
     return((void *)(pmem + sizeof(itemHeader)));
 }
 
-
+char * epicsShareAPI dbmfStrdup(unsigned char *str)
+{
+	size_t len = strlen((char *) str);
+	return (char *) dbmfMalloc(len + 1);
+}
+
 void epicsShareAPI dbmfFree(void* mem)
 {
     char       *pmem = (char *)mem;

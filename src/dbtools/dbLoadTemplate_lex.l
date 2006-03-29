@@ -17,14 +17,12 @@ value {notquote}|{escapequote}
 "file"    { return(DBFILE); }
 "="	  { return(EQUALS); }
 
-{par}{value}*{par}    { yylval.Str=(char*)dbmfMalloc(strlen(yytext)+1);
-			strcpy(yylval.Str,yytext+1);
+{par}{value}*{par}    { yylval.Str = dbmfStrdup(yytext);
 			yylval.Str[strlen(yylval.Str)-1] = '\0';
 			return(QUOTE);
 		      }
 
-{word}+	{ yylval.Str=(char*)dbmfMalloc(strlen(yytext)+1);
-	  strcpy(yylval.Str,yytext);
+{word}+	{ yylval.Str = dbmfStrdup(yytext);
 	  return(WORD);
 	}
 

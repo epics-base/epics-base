@@ -16,7 +16,7 @@ string {notquote}|{escapequote}
 %{
 static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
-#define YY_INPUT(b,r,ms) (r=(*my_yyinput)(b,ms))
+#define YY_INPUT(b,r,ms) (r=(*my_yyinput)((char *)b,ms))
 
 static int yyreset()
 {
@@ -41,20 +41,18 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 	}
 
 {integer}+ {
-	sscanf(yytext,"%d",&yylval.Int);
+	yylval.Int = atoi((char *)yytext);
 	return(tokenINTEGER);
 	}
 
 {name}+ { /*unquoted string*/
-	yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
-	strcpy(yylval.Str,yytext);
+	yylval.Str=asStrdup(yytext);
 	return(tokenSTRING);
 	}
 
 \"{string}*\" { /*quoted string*/
-        yylval.Str=(char *)asCalloc(1,strlen(yytext)+1);
         /* making sure that neither double quote gets passed back */
-        strcpy(yylval.Str,yytext+1);
+	yylval.Str=asStrdup(yytext+1);
         yylval.Str[strlen(yylval.Str)-1] = '\0';
 
         return(tokenSTRING);
@@ -75,7 +73,7 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 		sprintf(message,"invalid character '%c'",yytext[0]);
 	  	yyerror(message);
 		/*The following suppresses compiler warning messages*/
-		if(FALSE) yyunput('c',message);
+		if(FALSE) yyunput('c',(unsigned char *) message);
 		if(FALSE) yy_switch_to_buffer(*dummy);
 	}
 

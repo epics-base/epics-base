@@ -13,7 +13,7 @@ escapequote \\\"
 string {notquote}|{escapequote}
 %{
 #undef YY_INPUT
-#define YY_INPUT(b,r,ms) (r=(*db_yyinput)(b,ms))
+#define YY_INPUT(b,r,ms) (r=(*db_yyinput)((char *)b,ms))
 
 static int yyreset(void)
 {
@@ -43,35 +43,29 @@ static int yyreset(void)
 "variable"	return(tokenVARIABLE);
 
 [0-9]+ { /*integer number*/
-	yylval.Str = (char *)dbmfMalloc(strlen(yytext)+1);
-	strcpy(yylval.Str,yytext);
+	yylval.Str = dbmfStrdup(yytext);
 	return(tokenSTRING); 
 }
 
 -?(([0-9]+)|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?) { /*real number*/
-	yylval.Str = (char *)dbmfMalloc(strlen(yytext)+1);
-	strcpy(yylval.Str,yytext);
+	yylval.Str = dbmfStrdup(yytext);
 	return(tokenSTRING); 
 }
 
 
 {name}+ { /*unquoted string*/
-	yylval.Str = (char *)dbmfMalloc(strlen(yytext)+1);
-	strcpy(yylval.Str,yytext);
+	yylval.Str = dbmfStrdup(yytext);
 	return(tokenSTRING); 
 }
 
 \"{string}*\" { /*quoted string*/
-	int nchars=strlen(yytext);
-	yylval.Str = (char *)dbmfMalloc(nchars-1);
-	strncpy(yylval.Str, yytext+1, nchars-2);
-	yylval.Str[nchars-2] = '\0';
+	yylval.Str = dbmfStrdup(yytext+1);
+	yylval.Str[strlen(yylval.Str)-1] = '\0';
 	return(tokenSTRING);
 }
 
 %.*	{ /*C definition in recordtype*/
-	yylval.Str = (char *)dbmfMalloc(strlen(yytext));
-	strcpy(yylval.Str,yytext+1);
+	yylval.Str = dbmfStrdup(yytext+1);
 	return(tokenCDEFS);
 }
 
@@ -91,7 +85,7 @@ static int yyreset(void)
 	sprintf(message,"invalid character '%c'",yytext[0]);
 	yyerror(message);
 	/*The following suppresses compiler warning messages*/
-	if(FALSE) yyunput('c',message);
+	if(FALSE) yyunput('c',(unsigned char *) message);
 	if(FALSE) yy_switch_to_buffer(*dummy);
 }
 

@@ -5,7 +5,8 @@ include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.Common.$(T_A)
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 
-include $(EPICS_BASE)/configure/CONFIG
+CONFIG=$(EPICS_BASE)/configure
+include $(CONFIG)/CONFIG
 
 # Override for definition in base
 INSTALL_LOCATION = $(TOP)

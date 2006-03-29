@@ -2,8 +2,10 @@
 
 include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH)
+ifdef T_A
 -include $(TOP)/configure/RELEASE.Common.$(T_A)
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+endif
 
 CONFIG=$(EPICS_BASE)/configure
 include $(CONFIG)/CONFIG
@@ -12,11 +14,11 @@ include $(CONFIG)/CONFIG
 INSTALL_LOCATION = $(TOP)
 include $(TOP)/configure/CONFIG_SITE
 -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH)
--include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
--include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
-
 
 ifdef T_A
+ -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
+ -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
+
  -include $(TOP)/configure/O.$(T_A)/CONFIG_APP_INCLUDE
 endif
 

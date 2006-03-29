@@ -1,4 +1,4 @@
-# CONFIG
+# CONFIG_SITE
 
 # Make any application-specific changes to the EPICS build
 # configuration variables in this file.

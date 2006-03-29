@@ -135,7 +135,9 @@ void* epicsShareAPI dbmfMalloc(size_t size)
 char * epicsShareAPI dbmfStrdup(unsigned char *str)
 {
 	size_t len = strlen((char *) str);
-	return (char *) dbmfMalloc(len + 1);
+	char *buf = dbmfMalloc(len + 1);
+	strcpy(buf, (char *) str);
+	return buf;
 }
 
 void epicsShareAPI dbmfFree(void* mem)

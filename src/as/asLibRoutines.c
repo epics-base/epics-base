@@ -112,7 +112,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
     }
     pasg = (ASG *)ellFirst(&pasbasenew->asgList);
     while(pasg) {
-	pasg->pavalue = asCalloc(ASMAXINP,sizeof(double));
+	pasg->pavalue = asCalloc(CALCPERFORM_NARGS, sizeof(double));
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
     gphInitPvt(&((ASBASE *)pasbasenew)->phash,256);
@@ -175,12 +175,12 @@ long epicsShareAPI asInitFile(const char *filename,const char *substitutions)
 
     fp = fopen(filename,"r");
     if(!fp) {
-	errMessage(0,"asInitFile failure on fopen");
+	errlogPrintf("asInitFile: Can't open file '%s'\n", filename);
 	return(S_asLib_badConfig);
     }
     status = asInitFP(fp,substitutions);
     if(fclose(fp)==EOF) {
-	errMessage(0,"asInitFile fclose failure");
+	errMessage(0,"asInitFile: fclose failed!");
 	if(!status) status = S_asLib_badConfig;
     }
     return(status);
@@ -538,7 +538,7 @@ int epicsShareAPI asDumpFP(
 
 	    fprintf(fp,"\tINP%c(%s)",(pasginp->inpIndex + 'A'),pasginp->inp);
 	    if(verbose) {
-		if((pasg->inpBad & (1<<pasginp->inpIndex)))
+		if((pasg->inpBad & (1ul << pasginp->inpIndex)))
 			fprintf(fp," INVALID");
 		else
 			fprintf(fp,"   VALID");
@@ -717,7 +717,8 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
 	while(pasginp) {
 
 	    fprintf(fp,"\tINP%c(%s)",(pasginp->inpIndex + 'A'),pasginp->inp);
-	    if((pasg->inpBad & (1<<pasginp->inpIndex))) fprintf(fp," INVALID");
+	    if ((pasg->inpBad & (1ul << pasginp->inpIndex)))
+		fprintf(fp," INVALID");
 	    fprintf(fp," value=%f",pasg->pavalue[pasginp->inpIndex]);
 	    fprintf(fp,"\n");
 	    pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
@@ -845,7 +846,9 @@ epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size)
 epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str)
 {
 	size_t len = strlen((char *) str);
-	return (char *) asCalloc(1, len + 1);
+	char *buf = asCalloc(1, len + 1);
+	strcpy(buf, (char *) str);
+	return buf;
 }
 
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName)
@@ -1104,7 +1107,7 @@ static UAG *asUagAdd(const char *uagName)
 	cmpvalue = strcmp(uagName,pnext->name);
 	if(cmpvalue < 0) break;
 	if(cmpvalue==0) {
-	    errMessage(-1,"Duplicate User Access Group");
+	    errlogPrintf("Duplicate User Access Group named '%s'\n", uagName);
 	    return(NULL);
 	}
 	pnext = (UAG *)ellNext((ELLNODE *)pnext);
@@ -1148,7 +1151,7 @@ static HAG *asHagAdd(const char *hagName)
 	cmpvalue = strcmp(hagName,pnext->name);
 	if(cmpvalue < 0) break;
 	if(cmpvalue==0) {
-	    errMessage(-1,"Duplicate Host Access Group");
+	    errlogPrintf("Duplicate Host Access Group named '%s'\n", hagName);
 	    return(NULL);
 	}
 	pnext = (HAG *)ellNext((ELLNODE *)pnext);
@@ -1201,7 +1204,7 @@ static ASG *asAsgAdd(const char *asgName)
 		&& ellCount(&pnext->ruleList)==0)
 			return(pnext);
 	    }
-	    errMessage(S_asLib_dupAsg,"asAsgAdd");
+	    errlogPrintf("Duplicate Access Security Group named '%s'\n", asgName);
 	    return(NULL);
 	}
 	pnext = (ASG *)ellNext((ELLNODE *)pnext);
@@ -1252,10 +1255,7 @@ static ASGRULE *asAsgAddRule(ASG *pasg,asAccessRights access,int level)
 
 static long asAsgAddRuleOptions(ASGRULE *pasgrule,int trapMask)
 {
-    if(!pasgrule) {
-        errMessage(S_asLib_badConfig," Access Security internal failure");
-        return(0);
-    }
+    if(!pasgrule) return(0);
     pasgrule->trapMask = trapMask;
     return(0);
 }
@@ -1275,7 +1275,7 @@ static long asAsgRuleUagAdd(ASGRULE *pasgrule,const char *name)
     }
     if(!puag){
 	status = S_asLib_noUag;
-	errMessage(status,": access security Error while adding UAG to RULE");
+	errlogPrintf("No User Access Group named '%s' defined\n", name);
 	return(S_asLib_noUag);
     }
     pasguag = asCalloc(1,sizeof(ASGUAG));
@@ -1299,7 +1299,7 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name)
     }
     if(!phag){
 	status = S_asLib_noHag;
-	errMessage(status,": access security Error while adding HAG to RULE");
+	errlogPrintf("No Host Access Group named '%s' defined\n", name);
         return(S_asLib_noHag);
     }
     pasghag = asCalloc(1,sizeof(ASGHAG));
@@ -1310,28 +1310,43 @@ static long asAsgRuleHagAdd(ASGRULE *pasgrule,const char *name)
 
 static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc)
 {
-    short	error_number;
-    long	status;
+    short err;
+    long status;
+    size_t insize;
+    unsigned long stores;
 
-    if(!pasgrule) return(0);
-    pasgrule->calc = asCalloc(1,strlen(calc)+1);
-    strcpy(pasgrule->calc,calc);
-    pasgrule->rpcl = asCalloc(1,RPCL_LEN);
-    status=postfix(pasgrule->calc,pasgrule->rpcl,&error_number);
+    if (!pasgrule) return 0;
+    insize = strlen(calc);
+    if (insize > MAX_INFIX_SIZE) {
+	pasgrule->calc = NULL;
+	pasgrule->rpcl = NULL;
+	status = S_asLib_badCalc;
+	errlogPrintf("CALC expression too long: '%s'\n", calc);
+	return status;
+    }
+    pasgrule->calc = asCalloc(1, insize+1);
+    strcpy(pasgrule->calc, calc);
+    pasgrule->rpcl = asCalloc(1, MAX_POSTFIX_SIZE);
+    status = postfix(pasgrule->calc, pasgrule->rpcl, &err);
     if(status) {
 	free((void *)pasgrule->calc);
 	free((void *)pasgrule->rpcl);
 	pasgrule->calc = NULL;
 	pasgrule->rpcl = NULL;
 	status = S_asLib_badCalc;
-	errMessage(status,":Access Security Failure");
-    } else {
-	int i;
-
-	for(i=0; i<ASMAXINP; i++) {
-	    if(strchr(calc,'A'+i)) pasgrule->inpUsed |= (1<<i);
-	    if(strchr(calc,'a'+i)) pasgrule->inpUsed |= (1<<i);
-	}
+	errlogPrintf("%s in CALC expression '%s'\n", calcErrorStr(err), calc);
+	return status;
+    }
+    calcArgUsage(pasgrule->rpcl, &pasgrule->inpUsed, &stores);
+    /* Until someone proves stores are not dangerous, don't allow them */
+    if (stores) {
+	free((void *)pasgrule->calc);
+	free((void *)pasgrule->rpcl);
+	pasgrule->calc = NULL;
+	pasgrule->rpcl = NULL;
+	status = S_asLib_badCalc;
+	errlogPrintf("Assignment operator used in CALC expression '%s'\n",
+		     calc);
     }
     return(status);
 }

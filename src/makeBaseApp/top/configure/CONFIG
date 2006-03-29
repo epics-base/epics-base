@@ -11,6 +11,10 @@ include $(CONFIG)/CONFIG
 # Override for definition in base
 INSTALL_LOCATION = $(TOP)
 include $(TOP)/configure/CONFIG_SITE
+-include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH)
+-include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
+-include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
+
 
 ifdef T_A
  -include $(TOP)/configure/O.$(T_A)/CONFIG_APP_INCLUDE

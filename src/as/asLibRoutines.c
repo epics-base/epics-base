@@ -842,6 +842,11 @@ epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size)
     p=callocMustSucceed(nobj,size,"asCalloc");
     return(p);
 }
+epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str)
+{
+	size_t len = strlen((char *) str);
+	return (char *) asCalloc(1, len + 1);
+}
 
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName)
 {

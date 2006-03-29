@@ -218,7 +218,7 @@ typedef struct asgClient {
 epicsShareFunc long epicsShareAPI asComputeAsg(ASG *pasg);
 /*following is "friend" function*/
 epicsShareFunc void * epicsShareAPI asCalloc(size_t nobj,size_t size);
-
+epicsShareFunc char * epicsShareAPI asStrdup(unsigned char *str);
 #ifdef __cplusplus
 }
 #endif

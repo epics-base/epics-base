@@ -16,7 +16,6 @@
 
 # NB: Settings in RELEASE files can be overridden in files named
 #   RELEASE.$(EPICS_HOST_ARCH)
-#   RELEASE.Common.$(OS_CLASS)Common
 #   RELEASE.Common.$(T_A)
 #   RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 

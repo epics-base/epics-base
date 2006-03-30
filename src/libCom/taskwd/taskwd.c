@@ -116,6 +116,7 @@ void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void 
 void epicsShareAPI taskwdRemove(epicsThreadId tid)
 {
     struct task_list *pt;
+    char thrName[40];
 
     taskwdInit();
     epicsMutexMustLock(lock);
@@ -130,7 +131,9 @@ void epicsShareAPI taskwdRemove(epicsThreadId tid)
         pt = (struct task_list *)ellNext(&pt->node);
     }
     epicsMutexUnlock(lock);
-    errMessage(-1,"taskwdRemove failed");
+    epicsThreadGetName(tid, thrName, 40);
+    errlogPrintf("taskwdRemove: Thread %s (%p) not registered!\n",
+    		thrName, tid);
 }
 
 void epicsShareAPI taskwdAnyRemove(void *userpvt)
@@ -150,7 +153,7 @@ void epicsShareAPI taskwdAnyRemove(void *userpvt)
         pt = (struct task_list *)ellNext(&pt->node);
     }
     epicsMutexUnlock(anylock);
-    errMessage(-1,"taskwdanyRemove failed");
+    errlogPrintf("taskwdAnyRemove: Userpvt %p not registered!\n", userpvt);
 }
 
 static void taskwdTask(void)
@@ -164,14 +167,14 @@ static void taskwdTask(void)
             while(pt) {
                 next = (struct task_list *)ellNext(&pt->node);
                 if(epicsThreadIsSuspended(pt->id.tid)) {
-                    char message[100];
-
                     if(!pt->suspended) {
                         struct task_list *ptany;
+                        char thrName[40];
 
                         pt->suspended = TRUE;
-                        sprintf(message,"task %p suspended",(void *)pt->id.tid);
-                        errMessage(-1,message);
+                        epicsThreadGetName(pt->id.tid, thrName, 40);
+                        errlogPrintf("Thread %s (%p) suspended\n",
+                                    thrName, (void *)pt->id.tid);
                         ptany = (struct task_list *)ellFirst(&anylist);
                         while(ptany) {
                             if(ptany->callback) {
@@ -211,9 +214,10 @@ static struct task_list *allocList(void)
         pt = (struct task_list *)freeHead;
         freeHead = freeHead->next;
     } else pt = calloc(1,sizeof(struct task_list));
-    if(pt==NULL) {
-        errMessage(0,"taskwd failed on call to calloc\n");
-        exit(1);
+    while (pt==NULL) {
+        errlogPrintf("Thread taskwd suspending: out of memory\n");
+        epicsThreadSuspendSelf();
+        pt = calloc(1,sizeof(struct task_list));
     }
     epicsMutexUnlock(alloclock);
     return(pt);

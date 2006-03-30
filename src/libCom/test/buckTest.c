@@ -14,7 +14,7 @@
 #include "epicsAssert.h"
 #include "bucketLib.h"
 
-main()
+int main()
 {
         unsigned	id1;
         unsigned	id2;

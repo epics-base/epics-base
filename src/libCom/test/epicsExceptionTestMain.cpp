@@ -8,10 +8,9 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-extern "C" void epicsExceptionTest ();
+extern "C" int epicsExceptionTest ();
 
 int main ()
 {
-	epicsExceptionTest ();
-	return 0;
+    return epicsExceptionTest ();
 }

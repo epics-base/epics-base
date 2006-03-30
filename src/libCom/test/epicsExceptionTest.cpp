@@ -9,7 +9,7 @@
 \*************************************************************************/
 
 //
-// Verify that the local c++ exception mechanism maches the ANSI/ISO standard.
+// Verify that the local c++ exception mechanism matches the ANSI/ISO standard.
 // Author: Jeff Hill
 //
 
@@ -21,9 +21,9 @@
 #include <limits>
 #endif
 
-#include <assert.h>
 #include <stdio.h>
 
+#include "epicsUnitTest.h"
 #include "epicsThread.h"
 
 using namespace std;
@@ -60,24 +60,23 @@ private:
 
 static void epicsExceptionTestPrivate ()
 {
-    int excep = false;
     try {
         new char [unsuccessfulNewSize];
-        assert ( 0 );
+        testFail("new: didn't throw at all");
     }
     catch ( const bad_alloc & ) {
-        excep = true;
+        testPass("new");
     }
     catch ( ... ) {
-        assert ( 0 );
+        testFail("new: threw wrong type");
     }
     try {
         char * p = new ( nothrow ) 
             char [unsuccessfulNewSize];
-        assert ( p == 0);
+        testOk(p == 0, "new (nothrow)");
     }
     catch( ... ) {
-        assert ( 0 );
+        testFail("new (nothrow): threw");
     }
 }
 
@@ -101,13 +100,12 @@ void exThread::waitForCompletion ()
     }
 }
 
-extern "C" void epicsExceptionTest ()
+extern "C" int epicsExceptionTest ()
 {
-    exThread athread;
-
+    testPlan(4);
     epicsExceptionTestPrivate ();
-
+    
+    exThread athread;
     athread.waitForCompletion ();
-
-    printf ( "Test Complete.\n" );
+    return testDone();
 }

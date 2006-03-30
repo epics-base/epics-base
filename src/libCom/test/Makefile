@@ -13,25 +13,39 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 
+epicsUnitTestTest_SRCS += epicsUnitTestTest.c
+PROD_HOST += epicsUnitTestTest
+TESTS += epicsUnitTestTest
+
+epicsCalcTest_SRCS += epicsCalcTest.cpp
+PROD_HOST += epicsCalcTest
+OBJS_IOC_vxWorks += epicsCalcTest
+TESTS += epicsCalcTest
+
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
 PROD_HOST += epicsAlgorithmTest
 OBJS_IOC_vxWorks += epicsAlgorithmTest
+TESTS += epicsAlgorithmTest
 
 epicsMathTestHost_SRCS += epicsMathTestMain.cpp epicsMathTest.c
 PROD_HOST += epicsMathTestHost
 OBJS_IOC_vxWorks += epicsMathTest
+TESTS += epicsMathTestHost
 
 epicsStdioTestHost_SRCS += epicsStdioTestMain.cpp epicsStdioTest.c
 PROD_HOST += epicsStdioTestHost
 OBJS_IOC_vxWorks += epicsStdioTest
+TESTS += epicsStdioTestHost
 
 epicsStringTestHost_SRCS += epicsStringTestMain.cpp epicsStringTest.c
 PROD_HOST += epicsStringTestHost
 OBJS_IOC_vxWorks += epicsStringTest
+TESTS += epicsStringTestHost
 
 epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
 PROD_HOST += epicsTimeTestHost
 OBJS_IOC_vxWorks += epicsTimeTest
+TESTS += epicsTimeTestHost
 
 epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
 PROD_HOST += epicsThreadTestHost
@@ -81,6 +95,7 @@ OBJS_IOC_vxWorks += epicsMutexTest
 epicsExceptionTestHost_SRCS += epicsExceptionTestMain.cpp epicsExceptionTest.cpp
 PROD_HOST += epicsExceptionTestHost
 OBJS_IOC_vxWorks += epicsExceptionTest
+TESTS += epicsExceptionTestHost
 
 epicsMessageQueueTestHost_SRCS += epicsMessageQueueTestMain.cpp epicsMessageQueueTest.cpp
 PROD_HOST += epicsMessageQueueTestHost
@@ -89,6 +104,7 @@ OBJS_IOC_vxWorks += epicsMessageQueueTest
 macEnvExpandTestHost_SRCS += macEnvExpandTestMain.cpp macEnvExpandTest.c
 PROD_HOST += macEnvExpandTestHost
 OBJS_IOC_vxWorks += macEnvExpandTest
+TESTS += macEnvExpandTestHost
 
 blockingSockTestHost_SRCS += blockingSockTestMain.cpp blockingSockTest.cpp
 PROD_HOST += blockingSockTestHost
@@ -98,10 +114,30 @@ blockingSockTestHost_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 blockingSockTestHost_SYS_LIBS_solaris = socket
 
 
+#buckTest_SRCS += buckTest.c
+#PROD_HOST += buckTest
+
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 
+
 OBJS_IOC_RTEMS += $(OBJS_IOC_vxWorks)
+
+TEST_SCRIPTS += $(TESTS:%=%.t)
+
 
 include $(TOP)/configure/RULES
 
+test: $(TEST_SCRIPTS)
+	@perl -e 'use Test::Harness; runtests @ARGV;' $(TEST_SCRIPTS)
+
+# If there's a perl test script (.plt) available, use it
+%.t: ../%.plt
+	@$(RM) $@
+	@$(CP) $< $@
+
+# Early versions of Test::Harness expect test programs in perl only.
+# Generate a 1-line test program to run the real test binary
+%.t: %$(EXE)
+	@$(RM) $@
+	@echo 'exec "$<";' >$@

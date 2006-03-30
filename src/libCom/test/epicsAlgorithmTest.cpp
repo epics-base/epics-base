@@ -10,50 +10,60 @@
 // epicsAlgorithmTest.cpp
 //	Authors: Jeff Hill & Andrew Johnson
 
-#include <assert.h>
-#include <stdio.h>
-
+#include "epicsUnitTest.h"
 #include "epicsAlgorithm.h"
 
 #if defined(vxWorks) || defined(__rtems__)
-  #define MAIN epicsAlgorithm
-  extern "C" int MAIN(int /*argc*/, char* /*argv[]*/);
+  #define MAIN(prog) extern "C" int prog
 #else
-  #define MAIN main
+  #define MAIN(prog) int main
 #endif
 
-
-int MAIN(int /*argc*/, char* /*argv[]*/)
+MAIN(epicsAlgorithm) (int /*argc*/, char* /*argv[]*/)
 {
+    testPlan(22);
+    
+    float f0 = 0.0;
     float f1 = 3.3f;
     float f2 = 3.4f;
-    float f3;	
+    float Inf = 1.0 / f0;
+    float NaN = 0.0 / f0;
     
-    f3 = epicsMin(f1,f2);
-    assert(f3==f1);
+    testOk(epicsMin(f1, f2) == f1,     "epicsMin(f1, f2)");
+    testOk(epicsMin(f1, -Inf) == -Inf, "epicsMin(f1, -Inf)");
+    testOk(isnan(epicsMin(f1, NaN)),   "epicsMin(f1, NaN)");
+    testOk(epicsMin(f1, Inf) == f1,    "epicsMin(f1, Inf)");
     
-    f3 = epicsMax(f1,f2);
-    assert(f3==f2);
+    testOk(epicsMin(f2, f1) == f1,     "epicsMin(f2, f1)");
+    testOk(epicsMin(-Inf, f1) == -Inf, "epicsMin(-Inf, f1)");
+    testOk(isnan(epicsMin(NaN, f1)),   "epicsMin(NaN, f1)");
+    testOk(epicsMin(Inf, f1) == f1,    "epicsMin(Inf, f1)");
+    
+    testOk(epicsMax(f2, f1) == f2,     "epicsMax(f2, f1)");
+    testOk(epicsMax(-Inf, f1) == f1,   "epicsMax(-Inf, f1)");
+    testOk(isnan(epicsMax(NaN, f1)),   "epicsMax(NaN, f1)");
+    testOk(epicsMax(Inf, f1) == Inf,   "epicsMax(Inf, f1)");
+    
+    testOk(epicsMax(f1, f2) == f2,     "epicsMax(f1, f2)");
+    testOk(epicsMax(f1, -Inf) == f1,   "epicsMax(f1, -Inf)");
+    testOk(isnan(epicsMax(f1, NaN)),   "epicsMax(f1, NaN)");
+    testOk(epicsMax(f1, Inf) == Inf,   "epicsMax(f1, Inf)");
     
     epicsSwap(f1,f2);
-    assert(f1==3.4f);
-    assert(f2==3.3f);
+    testOk(f1==3.4f && f2==3.3f, "epicsSwap(f1, f2)");
     
     int i1 = 3;
     int i2 = 4;
-    int i3;	
     
-    i3 = epicsMin(i1,i2);
-    assert(i3==i1);
+    testOk(epicsMin(i1,i2)==i1, "epicsMin(i1,i2)");
+    testOk(epicsMin(i2,i1)==i1, "epicsMin(i2,i1)");
     
-    i3 = epicsMax(i1,i2);
-    assert(i3==i2);
+    testOk(epicsMax(i1,i2)==i2, "epicsMax(i1,i2)");
+    testOk(epicsMax(i2,i1)==i2, "epicsMax(i2,i1)");
     
     epicsSwap(i1,i2);
-    assert(i1==4);
-    assert(i2==3);
+    testOk(i1==4 && i2==3, "epicsSwap(i1,i2)");
     
-    puts("epicsMin, epicsMax and epicsSwap tested OK.");
-    return 0;
+    return testDone();
 }
 

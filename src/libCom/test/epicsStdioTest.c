@@ -22,83 +22,77 @@
 #include <errno.h>
 
 #include "epicsStdio.h"
+#include "epicsStdioRedirect.h"
+#include "epicsUnitTest.h"
 
-static int xsnprintf(char *str, size_t size, const char *format, ...)
-{
-    int nchar;
-    va_list     pvar;
-
-    va_start(pvar,format);
-    nchar = epicsVsnprintf(str,size,format,pvar);
-    va_end (pvar);
-    return(nchar);
+static void testEpicsSnprintf() {
+    const int ivalue = 1234;
+    const float fvalue = 1.23e4;
+    const char *svalue = "OneTwoThreeFour";
+    const char *format = "int %d float %8.2e string %s";
+    const char *result = "int 1234 float 1.23e+04 string OneTwoThreeFour";
+    char buffer[80];
+    int size, rtn;
+    int rlen = strlen(result)+1;
+    
+    strcpy(buffer, "AAAA");
+    
+    for (size = 0; size < strlen(result) + 5; ++size) {
+	rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
+	testOk1(rtn == rlen-1);
+	if (size) {
+	    testOk(strncmp(buffer, result, size-1) == 0, buffer);
+	    testOk(strlen(buffer) == (size < rlen ? size : rlen) -1, "length");
+	} else {
+	    testOk(strcmp(buffer, "AAAA") == 0, "Buffer unmodified, size=0");
+	}
+    }
 }
 
-    
-int epicsStdioTest (const char *report)
+void testStdoutRedir (const char *report)
 {
-    char buffer[20];
-    int rtn;
-    int value = 10;
-    int size = 10;
+    FILE *realStdout = stdout;
     FILE *stream = 0;
-
-    memset(buffer,'*',sizeof(buffer)-1);
-    buffer[sizeof(buffer)-1] = 0;
-    printf("at start buffer |%s|\n",buffer);
-    rtn = xsnprintf(buffer,size,"value is  %d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    memset(buffer,'*',sizeof(buffer)-1);
-    rtn = xsnprintf(buffer,size,"value:  %d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    memset(buffer,'*',sizeof(buffer)-1);
-    rtn = xsnprintf(buffer,size,"%d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-
-    memset(buffer,'*',sizeof(buffer)-1);
-    buffer[sizeof(buffer)-1] = 0;
-    printf("at start buffer |%s|\n",buffer);
-    rtn = epicsSnprintf(buffer,size,"value is  %d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    memset(buffer,'*',sizeof(buffer)-1);
-    rtn = epicsSnprintf(buffer,size,"value:  %d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    memset(buffer,'*',sizeof(buffer)-1);
-    rtn = epicsSnprintf(buffer,size,"%d",value);
-    printf("size %d rtn %d value %d buffer |%s|\n",size,rtn,value,buffer);
-    printf("\nTest epicsSetThreadStdout/epicsGetStdout stdout %p epicsGetStdout %p\n",
-        stdout,epicsGetStdout());
+    
+    testOk1(epicsGetStdout() == stdout);
     if(report && strlen(report)>0) {
-        int fd;
+	int fd;
 
-        errno = 0;
-        fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
-        if(fd<0) {
-            fprintf(stderr,"%s could not be created %s\n",
-                report,strerror(errno));
-        } else {
-            stream = fdopen(fd,"w");
-            if(!stream) {
-                fprintf(stderr,"%s could not be opened for output %s\n",
-                    report,strerror(errno));
-            } else {
-                epicsSetThreadStdout(stream);
-                printf("After epicsSetThreadStdout stream %p epicsGetStdout %p\n",
-                    stream,epicsGetStdout());
-            }
-        }
+	errno = 0;
+	fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
+	if(fd<0) {
+	    fprintf(stderr,"%s could not be created %s\n",
+		report,strerror(errno));
+	} else {
+	    stream = fdopen(fd,"w");
+	    if(!stream) {
+		fprintf(stderr,"%s could not be opened for output %s\n",
+		    report,strerror(errno));
+	    } else {
+		epicsSetThreadStdout(stream);
+		testOk1(stdout == stream);
+	    }
+	}
     }
-    printf("This is first line of sample report");
-    printf("\nThis is second and last line of sample report\n");
+    printf("# This is first line of sample report\n");
+    printf("# This is second and last line of sample report\n");
     errno = 0;
     if(stream) {
-        epicsSetThreadStdout(0);
-        if(fclose(stream)) {
-            fprintf(stderr,"fclose failed %s\n",strerror(errno));
-        }
+	epicsSetThreadStdout(0);
+	if(fclose(stream)) {
+	    fprintf(stderr,"fclose failed %s\n",strerror(errno));
+	}
     } else {
-        fflush(stdout);
+	fflush(stdout);
     }
-    printf("at end stdout %p epicsGetStdout %p\n",stdout,epicsGetStdout());
-    return(0);
+    testOk1(epicsGetStdout() == realStdout);
+    testOk1(stdout == realStdout);
+}
+
+int epicsStdioTest (const char *report)
+{
+    testPlan(0);
+    testEpicsSnprintf();
+    testStdoutRedir("report");
+    return testDone();
 }

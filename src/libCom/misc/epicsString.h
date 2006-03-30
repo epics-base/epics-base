@@ -16,6 +16,7 @@
  * returns the length of the resultant string (may contain nulls)
 */
 
+#include <stdio.h>
 #include <shareLib.h>
 
 #ifdef __cplusplus

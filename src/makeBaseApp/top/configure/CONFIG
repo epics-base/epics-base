@@ -2,6 +2,7 @@
 
 include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH)
+-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
 ifdef T_A
 -include $(TOP)/configure/RELEASE.Common.$(T_A)
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
@@ -14,6 +15,7 @@ include $(CONFIG)/CONFIG
 INSTALL_LOCATION = $(TOP)
 include $(TOP)/configure/CONFIG_SITE
 -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH)
+-include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 
 ifdef T_A
  -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)

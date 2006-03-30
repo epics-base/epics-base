@@ -14,6 +14,7 @@
 #include <math.h>
 #include <float.h>
 
+#define finite(D) _finite(D)
 #define isnan(D) _isnan(D)
 #define isinf(D) ( !_finite(D) && !_isnan(D) ) 
 

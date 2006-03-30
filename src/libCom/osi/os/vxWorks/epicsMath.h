@@ -16,5 +16,6 @@
 
 #define isnan(D) isNan(D)
 #define isinf(D) isInf(D)
+#define finite(D) (!isNan(D) && !isInf(D))
 
 #endif /* epicsMathh */

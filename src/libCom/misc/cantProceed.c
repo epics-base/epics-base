@@ -13,45 +13,61 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #define epicsExportSharedSymbols
 #include "errlog.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
 
-epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *errorMessage)
+epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *msg)
 {
     void * mem = NULL;
-    if (count != 0 && size != 0)
-        mem = calloc(count, size);
-    if (mem == NULL) {
-        errlogPrintf("%s: callocMustSucceed(count=%lu, size=%lu) failed\n",
-            errorMessage, (unsigned long)count, (unsigned long)size);
-        cantProceed(0);
+    if (count == 0 || size == 0)
+        cantProceed("%s: callocMustSucceed(%lu, %lu) - bad args\n",
+                msg, (unsigned long)count, (unsigned long)size);
+    
+    while ((mem = calloc(count, size)) == NULL) {
+        errlogPrintf("%s: callocMustSucceed(%lu, %lu) - calloc failed\n",
+                msg, (unsigned long)count, (unsigned long)size);
+        errlogPrintf("Thread %s (%p) suspending.\n",
+                epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+        errlogFlush();
+        epicsThreadSuspendSelf();
     }
     return mem;
 }
 
-epicsShareFunc void * mallocMustSucceed(size_t size, const char *errorMessage)
+epicsShareFunc void * mallocMustSucceed(size_t size, const char *msg)
 {
     void * mem = NULL;
-    if (size != 0)
-        mem = malloc(size);
-    if (mem == NULL) {
-        errlogPrintf("%s: mallocMustSucceed(size=%lu) failed\n",
-            errorMessage, (unsigned long)size);
-        cantProceed(0);
+    if (size == 0)
+        cantProceed("%s: mallocMustSucceed(%lu) - bad arg\n",
+                msg, (unsigned long)size);
+    
+    while ((mem = malloc(size)) == NULL) {
+        errlogPrintf("%s: mallocMustSucceed(%lu) - malloc failed\n",
+            msg, (unsigned long)size);
+        errlogPrintf("Thread %s (%p) suspending.\n",
+                epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+        errlogFlush();
+        epicsThreadSuspendSelf();
     }
     return mem;
 }
 
-epicsShareFunc void cantProceed(const char *errorMessage)
+epicsShareFunc void cantProceed(const char *msg, ...)
 {
-    if (errorMessage)
-        errlogPrintf("fatal error: %s\n",errorMessage);
-    else
-        errlogPrintf("fatal error, task suspended\n");
+    va_list pvar;
+    va_start(pvar, msg);
+    if (msg)
+        errlogVprintf(msg, pvar);
+    va_end(pvar);
+    
+    errlogPrintf("Thread %s (%p) can't proceed, suspending.\n",
+            epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
     errlogFlush();
+    
     epicsThreadSleep(1.0);
     while (1)
         epicsThreadSuspendSelf();

@@ -2,6 +2,11 @@
 
 # Make any application-specific changes to the EPICS build
 # configuration variables in this file.
+#
+# Host/target specific settings can be specified in files named
+#  CONFIG_SITE.$(EPICS_HOST_ARCH).Common
+#  CONFIG_SITE.Common.$(T_A)
+#  CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
 # Set this when you only want to compile this application
 # for a subset of the cross-compiled target architectures

@@ -35,7 +35,6 @@ SRCS += epicsRingPointer.cpp
 SRCS += epicsRingBytes.c
 
 SRC_DIRS += $(LIBCOM)/calc
-#following needed for locating postfixPvt.h
 INC += postfix.h
 SRCS += postfix.c
 SRCS += calcPerform.c
@@ -132,6 +131,7 @@ INC += unixFileName.h
 INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
 INC += compilerDependencies.h
+INC += epicsUnitTest.h
 SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c
@@ -141,6 +141,7 @@ SRCS += epicsStdlib.c
 SRCS += epicsString.c
 SRCS += truncateFile.c
 SRCS += ipAddrToAsciiAsynchronous.cpp
+SRCS += epicsUnitTest.c
 
 # From osi
 SRC_DIRS += $(LIBCOM)/osi
@@ -302,7 +303,7 @@ envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl \
 errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)
 
-$(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION
+$(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION $(CONFIG)/CONFIG_SITE
 	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(CONFIG)/CONFIG_BASE_VERSION $(@D) $(EPICS_SITE_VERSION)
 
 clean::

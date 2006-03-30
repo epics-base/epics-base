@@ -1,4 +1,18 @@
-# $Id$
+#RELEASE Location of external products
+#
+# Run "gnumake clean uninstall install" in the extensions
+# top directory each time a RELEASE* file is changed.
+#
+# NOTE: The build does not check dependancies on files
+# external to this application. Thus you should run
+# "gnumake clean uninstall install" in the top directory
+# each time EPICS_BASE, SNCSEQ, or any other external
+# module defined in a RELEASE* file is rebuilt.
+#
+# Host/target specific settings can be specified in files named
+#  RELEASE.$(EPICS_HOST_ARCH).Common
+#  RELEASE.Common.$(T_A)
+#  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 
 # Define INSTALL_LOCATION in CONFIG_SITE
 

@@ -2009,10 +2009,13 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 	strncpy((char *)pfield, pstring,pflddes->size);
 	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
-	    short error_number;
+	    short err;
 
-	    status = postfix(pstring,rpcl,&error_number);
-	    if(status) status = S_dbLib_badField;
+	    if (postfix(pstring,rpcl,&err)) {
+		status = S_dbLib_badField;
+		errlogPrintf("%s in CALC expression '%s'\n",
+			      calcErrorStr(err), pstring);
+	    }
 	}
 	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
 	break;
@@ -2384,12 +2387,13 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
 	    }
 	    if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 		char  rpcl[RPCL_LEN];
-		short error_number;
+		short err;
 		long  status;
 
-		status = postfix(pstring,rpcl,&error_number);
+		status = postfix(pstring,rpcl,&err);
 		if(status)  {
-		    sprintf(message,"Illegal Calculation String");
+		    sprintf(message,"%s in CALC expression '%s'",
+			    calcErrorStr(err), pstring);
 		    return(message);
 		}
 	    }

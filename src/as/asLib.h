@@ -119,7 +119,6 @@ epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
 #define S_asLib_noMemory	(M_asLib|14) /*access security: no Memory */
 
 /*Private declarations */
-#define ASMAXINP 12
 epicsShareExtern int asActive;
 
 /* definition of access rights*/
@@ -169,7 +168,7 @@ typedef struct{
 	ELLNODE		node;
 	asAccessRights	access;
 	int		level;
-	int		inpUsed; /*mask for which inputs are used*/
+	unsigned long	inpUsed; /*bitmap of which inputs are used*/
 	int		result;  /*Result of calc converted to TRUE/FALSE*/
 	char		*calc;
 	void		*rpcl;
@@ -191,9 +190,9 @@ typedef struct asg{
 	ELLLIST	inpList;
 	ELLLIST	ruleList;
 	ELLLIST	memberList;
-	double	*pavalue;	/*pointer to array of input values*/
-	int	inpBad;		/*mask for which inputs are bad*/
-	int	inpChanged;	/*mask showing inputs that have changed*/
+	double	*pavalue;	  /*pointer to array of input values*/
+	unsigned long inpBad;	  /*bitmap of which inputs are bad*/
+	unsigned long inpChanged; /*bitmap of inputs that changed*/
 } ASG;
 typedef struct asgMember {
 	ELLNODE		node;

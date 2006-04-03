@@ -7,11 +7,14 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-integer	[0-9]
+digit	[0-9]
 name	[a-zA-Z0-9_\-:\.\[\]<>;]
 notquote [^\"]
 escapequote \\\"
 string {notquote}|{escapequote}
+whitespace  [ \t\r]
+punctuation [(){},]
+link	[A-L]
 
 %{
 static ASINPUTFUNCPTR *my_yyinput;
@@ -29,18 +32,18 @@ static int yyreset()
 
 %%
 
-UAG	{return(tokenUAG);}
-HAG	{return(tokenHAG);}
-ASG	{return(tokenASG);}
-RULE	{return(tokenRULE);}
-CALC	{return(tokenCALC);}
-INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
+UAG	{ return(tokenUAG);	}
+HAG	{ return(tokenHAG);	}
+ASG	{ return(tokenASG);	}
+RULE	{ return(tokenRULE);	}
+CALC	{ return(tokenCALC);	}
+INP{link} {
 	yylval.Int = (unsigned char)yytext[3];
 	yylval.Int -= 'A';
 	return(tokenINP);
 	}
 
-{integer}+ {
+{digit}+ { /*integer*/
 	yylval.Int = atoi((char *)yytext);
 	return(tokenINTEGER);
 	}
@@ -51,30 +54,29 @@ INP[A-L] {/* If A-L is changed then ASMAXINP must also be changed*/
 	}
 
 \"{string}*\" { /*quoted string*/
-        /* making sure that neither double quote gets passed back */
+	/* making sure that neither double quote gets passed back */
 	yylval.Str=asStrdup(yytext+1);
-        yylval.Str[strlen(yylval.Str)-1] = '\0';
+	yylval.Str[strlen(yylval.Str)-1] = '\0';
+	return(tokenSTRING);
+	}
 
-        return(tokenSTRING);
-    }
+{punctuation}	{ return(yytext[0]); }
 
-"{"     { return(yytext[0]);      }
-"}"     { return(yytext[0]);      }
-"("     { return(yytext[0]);      }
-")"     { return(yytext[0]);      }
-","	{ return(yytext[0]);	}
 ^#.*
-[ \t\r]	;
+{whitespace}	;
+
 \n      { line_num ++;}
-.       { 
-		char message[20];
-		YY_BUFFER_STATE *dummy=0;
-	  
-		sprintf(message,"invalid character '%c'",yytext[0]);
-	  	yyerror(message);
-		/*The following suppresses compiler warning messages*/
-		if(FALSE) yyunput('c',(unsigned char *) message);
-		if(FALSE) yy_switch_to_buffer(*dummy);
+
+.	{
+	char message[20];
+	YY_BUFFER_STATE *dummy=0;
+
+	sprintf(message,"invalid character '%c'",yytext[0]);
+	yyerror(message);
+
+	/*The following suppress compiler warning messages*/
+	if (0) yyunput('c',(unsigned char *) message);
+	if (0) yy_switch_to_buffer(*dummy);
 	}
 
 %%

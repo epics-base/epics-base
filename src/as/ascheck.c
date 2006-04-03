@@ -7,8 +7,8 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/as/ascheck.c */
-/* share/src/as $Id$ */
+
+/* $Id$ */
 /*	Author: Marty Kraimer	Date: 03-24-94	*/
 
 #include <stdlib.h>
@@ -22,8 +22,7 @@
 #include "dbStaticLib.h"
 int main(int argc,char **argv)
 {
-    int         i;
-    int		strip;
+    int         argn = 1;
     char	*sub = NULL;
     int		subLength = 0;
     char	**pstr;
@@ -32,27 +31,28 @@ int main(int argc,char **argv)
     long	status = 0;
     static char *subSep = ",";
 
-    /*Look for options*/
-    while(argc>1 && (strncmp(argv[1],"-S",2)==0)) {
+    /* Look for -Smacro=value options */
+    while (argc>argn && (strncmp(argv[argn], "-S", 2)==0)) {
 	pstr = &sub;
 	psep = subSep;
 	len = &subLength;
-	if(strlen(argv[1])==2) {
-	    dbCatString(pstr,len,argv[2],psep);
-	    strip = 2;
+	if (strlen(argv[argn])==2) {
+	    dbCatString(pstr, len, argv[++argn], psep);
 	} else {
-	    dbCatString(pstr,len,argv[1]+2,psep);
-	    strip = 1;
+	    dbCatString(pstr, len, argv[argn]+2, psep);
 	}
-	argc -= strip;
-	for(i=1; i<argc; i++) argv[i] = argv[i + strip];
+	argn++;
     }
-    if(argc!=1) {
-	printf("usage: ascheck -Smacsub < file\n");
-        status = -1;
+    if (argc == argn) {
+	status = asInitFP(stdin, sub);
+	if(status) errlogPrintf("ascheck: Access Security File failed.\n");
+    } else if (argc == argn+1) {
+	status = asInitFile(argv[argn], sub);
+	if(status) errlogPrintf("ascheck: Access Security File failed.\n");
     } else {
-        status = asInitFP(stdin,sub);
-        if(status) errMessage(status,"from asInitFP");
+	printf("usage: ascheck [-Smac=sub ...] [<] file\n");
+	status = -1;
     }
-    return(status);
+    errlogFlush();
+    return status;
 }

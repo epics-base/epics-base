@@ -69,7 +69,7 @@ uag_user_list:	uag_user_list ',' uag_user_list_name
 uag_user_list_name:	tokenSTRING
 	{
 		if (asUagAddUser(yyUag,$1))
-			yyerror($1);
+			yyerror("");
 		free((void *)$1);
 	}
 	;
@@ -115,15 +115,12 @@ asg_body_list:	asg_body_list asg_body_item
 asg_body_item:	inp_config | rule_config 
 	;
 
-inp_config:	tokenINP '(' inp_body ')'
+inp_config:	tokenINP '(' tokenSTRING ')'
 	{
-		if (asAsgAddInp(yyAsg,$<Str>3,$<Int>1))
+		if (asAsgAddInp(yyAsg,$3,$<Int>1))
 			yyerror("");
-		free((void *)$<Str>3);
+		free((void *)$3);
 	}
-	;
-
-inp_body:	tokenSTRING
 	;
 
 rule_config:	tokenRULE rule_head rule_body
@@ -142,7 +139,7 @@ rule_head_manditory:	'(' tokenINTEGER ',' tokenSTRING
 		} else if((strcmp($4,"WRITE")==0)) {
 			rights=asWRITE;
 		} else {
-			yyerror("Illegal access type");
+			yyerror("Access rights must be NONE, READ or WRITE");
 			rights = asNOACCESS;
 		}
 		yyAsgRule = asAsgAddRule(yyAsg,rights,$2);
@@ -160,7 +157,7 @@ rule_log_options:  ',' tokenSTRING ')'
                         status = asAsgAddRuleOptions(yyAsgRule,AS_TRAP_WRITE);
                         if(status) yyerror("");
                 } else if((strcmp($2,"NOTRAPWRITE")!=0)) {
-                        yyerror("Illegal access type");
+                        yyerror("Log options must be TRAPWRITE or NOTRAPWRITE");
                 }
                 free((void *)$2);
         }
@@ -178,7 +175,7 @@ rule_list_item: tokenUAG '(' rule_uag_list ')'
 	|	tokenCALC '(' tokenSTRING ')'
 	{
 		if (asAsgRuleCalc(yyAsgRule,$3))
-			yyerror("access security CALC failure");
+			yyerror("");
 		free((void *)$3);
 	}
 	;
@@ -213,8 +210,9 @@ rule_hag_list_name:	tokenSTRING
 static int yyerror(str)
 char  *str;
 {
-    epicsPrintf("Access Security Error(%s) line %d token %s\n",
-	str,line_num,yytext);
+    if (strlen(str)) epicsPrintf("%s\n", str);
+    epicsPrintf("Access Security file error at line %d\n",
+	line_num);
     yyFailed = TRUE;
     return(0);
 }

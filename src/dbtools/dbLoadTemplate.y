@@ -27,7 +27,6 @@ static int yyerror();
 #define VAR_MAX_VARS 100
 
 static char *sub_collect = NULL;
-static MAC_HANDLE *macHandle = NULL;
 static char** vars = NULL;
 static char* db_file_name = NULL;
 static int var_count,sub_count;

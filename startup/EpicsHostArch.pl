@@ -7,7 +7,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE Versions 3.13.7
 # and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 
 # $Id$
@@ -32,7 +32,11 @@ sub GetEpicsHostArch { # no args
     } elsif ($arch =~ m/MSWin32-x86/)   { return "win32-x86";
     } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
     } elsif ($arch =~ m/PA-RISC1.1/)    { return "hpux-parisc";
-    } elsif ($arch =~ m/darwin/)        { return "darwin-ppc";
+    } elsif ($arch =~ m/darwin/)        {
+            $cpu=`uname -m`;
+            if ($cpu =~ m/Power Macintosh/) { return "darwin-ppc";  }
+            elsif ($cpu =~ m/i386/)         { return "darwin-x86";  }
+            else                            { return "unsupported"; }
     } else { return "unsupported"; }
 }
 

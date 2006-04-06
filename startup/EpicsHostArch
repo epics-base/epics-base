@@ -39,6 +39,7 @@ case $sysname in
 	cpu=`uname -m`
         case "$cpu" in
             "Power Macintosh") cpu=ppc ;;
+            "i386") cpu=x86 ;;
         esac
 	echo ${os}-${cpu}${suffix}
         ;;

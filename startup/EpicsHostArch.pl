@@ -15,6 +15,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # for assigning to the EPICS_HOST_ARCH variable
 
 use Config;
+use POSIX;
 
 $suffix="";
 $suffix="-".$ARGV[0] if ($ARGV[0] ne "");
@@ -33,7 +34,7 @@ sub GetEpicsHostArch { # no args
     } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
     } elsif ($arch =~ m/PA-RISC1.1/)    { return "hpux-parisc";
     } elsif ($arch =~ m/darwin/)        {
-            $cpu=`uname -m`;
+            my($kernel, $hostname, $release, $version, $cpu) = POSIX::uname();
             if ($cpu =~ m/Power Macintosh/) { return "darwin-ppc";  }
             elsif ($cpu =~ m/i386/)         { return "darwin-x86";  }
             else                            { return "unsupported"; }

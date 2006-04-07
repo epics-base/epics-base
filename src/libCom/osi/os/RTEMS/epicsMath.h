@@ -17,6 +17,8 @@ extern "C" {
 #endif
 
 int isnan(double);
+int finite(double);
+int isinf(double);
 
 #ifdef __cplusplus
 }

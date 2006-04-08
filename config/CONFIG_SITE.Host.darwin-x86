@@ -1,0 +1,5 @@
+# $Id$
+
+-include $(EPICS_BASE)/config/CONFIG_SITE.Host.Darwin
+
+SHARED_LIBRARIES=NO

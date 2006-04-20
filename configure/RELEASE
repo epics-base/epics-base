@@ -15,7 +15,7 @@
 # RTEMS_BASE (and RTEMS_VERSION) now in os/CONFIG_SITE.Common.RTEMS
 
 # NB: Settings in RELEASE files can be overridden in files named
-#   RELEASE.$(EPICS_HOST_ARCH)
+#   RELEASE.$(EPICS_HOST_ARCH).Common
 #   RELEASE.Common.$(T_A)
 #   RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 

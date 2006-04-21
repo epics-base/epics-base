@@ -54,13 +54,18 @@ O.Common:
 targetReleaseFiles = $(wildcard $(foreach arch, $(BUILD_ARCHS), \
 		$(TOP)/configure/RELEASE.Common.$(arch) \
 		$(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(arch)))
+
 checkReleaseTargets = $(addprefix checkRelease, $(suffix $(targetReleaseFiles)))
-
 checkRelease: $(checkReleaseTargets)
-	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
-
+	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) checkRelease
 $(checkReleaseTargets):checkRelease.%:
 	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) -a $* checkRelease
+
+warnReleaseTargets = $(addprefix warnRelease, $(suffix $(targetReleaseFiles)))
+warnRelease: $(warnReleaseTargets)
+	-$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) checkRelease
+$(warnReleaseTargets):warnRelease.%:
+	-$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) -a $* checkRelease
 
 #
 # special clean rule

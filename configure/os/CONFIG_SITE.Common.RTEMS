@@ -16,4 +16,4 @@ OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=aps.anl.gov
 #
 # Specify your desired command-line-input library
 #
-EPICSCOMMANDLINE_LIBRARY = EPICS
+COMMANDLINE_LIBRARY = EPICS

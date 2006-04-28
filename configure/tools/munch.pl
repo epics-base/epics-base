@@ -1,5 +1,5 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if $running_under_some_shell; # makeConfigAppInclude.pl
+    if $running_under_some_shell;
 #*************************************************************************
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
@@ -9,76 +9,62 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-
-# Creates a ctdt.c file of c++ static constructors and destructors.
 #  $Id$
+#
+# Creates a ctdt.c file of C++ static constructors and destructors,
+# as required for all vxWorks binaries containing C++ code.
 
-@ctorlist = ();
-@dtorlist = ();
+@ctors = ();	%ctors = ();
+@dtors = ();	%dtors = ();
 
-while ($line = <STDIN>)
+while (my $line = <STDIN>)
 {
-    chomp;
-    next if ($line =~ /__?GLOBAL_.F.+/);
-    next if ($line =~ /__?GLOBAL_.I._GLOBAL_.D.+/);
-    if ($line =~ /__?GLOBAL_.D.+/) {
-        ($adr,$type,$name) = split ' ',$line,3;
-        $name =~ s/^__/_/;
-        @dtorlist = (@dtorlist,$name);
-    };
-    if ($line =~ /__?GLOBAL_.I.+/) {
-        ($adr,$type,$name) = split ' ',$line,3;
-        $name =~ s/^__/_/;
-        @ctorlist = (@ctorlist,$name);
-    };
+    chomp $line;
+    next if ($line =~ m/__?GLOBAL_.F.+/);
+    next if ($line =~ m/__?GLOBAL_.I._GLOBAL_.D.+/);
+    if ($line =~ m/__?GLOBAL_.D.+/) {
+	($adr,$type,$name) = split ' ', $line, 3;
+	push @dtors, $name unless exists $dtors{$name};
+	$dtors{$name} = 1;
+    }
+    if ($line =~ m/__?GLOBAL_.I.+/) {
+	($adr,$type,$name) = split ' ', $line, 3;
+	push @ctors, $name unless exists $ctors{$name};
+	$ctors{$name} = 1;
+    }
 }
 
-foreach $ctor (@ctorlist)
-{
-	if ( $ctor =~ /\./ ) {
-		printf "void %s() __asm__ (\"_%s\");\n",convertName($ctor),$ctor;
+print join "\n",
+    "/* C++ static constructor and destructor lists */",
+    "/* This is a generated file, do not edit! */",
+    "\n/* Declarations */",
+    (map cDecl($_), @ctors, @dtors),
+    "\n/* Constructors */",
+    "void (*_ctors[])() = {",
+    (join ",\n", (map "    " . cName($_), @ctors), "    NULL"),
+    "};",
+    "\n/* Destructors */",
+    "void (*_dtors[])() = {",
+    (join ",\n", (map "    " . cName($_), reverse @dtors), "    NULL"),
+    "};",
+    "\n";
+
+sub cName {
+    my ($name) = @_;
+    $name =~ s/^__/_/;
+    $name =~ s/\./\$/g;
+    return $name;
+}
+
+sub cDecl {
+    my ($name) = @_;
+    my $decl = 'void ' . cName($name) . '()';
+    # 68k and MIPS targets allow periods in symbol names, which
+    # can only be reached using an assembler string.
+    if (m/\./) {
+	$decl .= "\n    __asm__ (\"" . $name . "\");";
     } else {
-		printf "void %s();\n",$ctor;
-	}
+	$decl .= ';';
+    }
+    return $decl;
 }
-
-print "extern void (*_ctors[])();\n";
-print "void (*_ctors[])() = {\n";
-foreach $ctor (@ctorlist)
-{
-	if ( $ctor =~ /\./ ) {
-		printf "        %s,\n",convertName($ctor);
-    } else {
-    	printf "        %s,\n",$ctor;
-	}
-}
-print "        0};\n";
-
-
-foreach $dtor (@dtorlist)
-{
-	if ( $dtor =~ /\./ ) {
-		printf "void %s() __asm__ (\"_%s\");\n",convertName($dtor),$dtor;
-    } else {
-		printf "void %s();\n",$dtor;
-	}
-}
-
-print "extern void (*_ctors[])();\n";
-print "void (*_dtors[])() = {\n";
-foreach $dtor (@dtorlist)
-{
-	if ( $dtor =~ /\./ ) {
-		printf "        %s,\n",convertName($dtor);
-    } else {
-    	printf "        %s,\n",$dtor;
-	}
-}
-print "        0};\n";
-
-sub convertName {
-	my ($name) = @_;
-	$name =~ s/\./\$/g;
-	return $name;
-}
-

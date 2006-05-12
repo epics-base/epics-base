@@ -1753,7 +1753,7 @@ long epicsShareAPI dbFindField(DBENTRY *pdbentry,const char *pname)
     char  		**papsortFldName;
     short          	*sortFldInd;
     int			compare,ind;
-    char		fieldName[MAX_FIELD_NAME_LENGTH];
+    char		fieldName[MAX_FIELD_NAME_LENGTH+1];
     char		*pfieldName;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);

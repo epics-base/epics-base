@@ -50,9 +50,9 @@ public:
     osiSockAddr address () const;
     void show ( unsigned level ) const; 
     void * operator new ( size_t size, tsFreeList 
-        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & );
+        < ipAddrToAsciiTransactionPrivate, 0x80 > & );
     epicsPlacementDeleteOperator (( void *, tsFreeList 
-        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & ))
+        < ipAddrToAsciiTransactionPrivate, 0x80 > & ))
 private:
     osiSockAddr addr;
     ipAddrToAsciiEnginePrivate & engine;
@@ -71,7 +71,7 @@ private:
 #endif
 
 template class tsFreeList 
-    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP >;
+    < ipAddrToAsciiTransactionPrivate, 0x80 >;
 
 #ifdef _MSC_VER
 #   pragma warning ( pop )
@@ -89,7 +89,7 @@ public:
 private:
     char nameTmp [1024];
     tsFreeList 
-        < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > 
+        < ipAddrToAsciiTransactionPrivate, 0x80 > 
             transactionFreeList;
     tsDLList < ipAddrToAsciiTransactionPrivate > labor;
     mutable epicsMutex mutex;
@@ -198,14 +198,14 @@ void ipAddrToAsciiEnginePrivate::show ( unsigned level ) const
 }
 
 inline void * ipAddrToAsciiTransactionPrivate::operator new ( size_t size, tsFreeList 
-    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > & freeList )
+    < ipAddrToAsciiTransactionPrivate, 0x80 > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
 inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, tsFreeList 
-    < ipAddrToAsciiTransactionPrivate, 0x80, epicsMutexNOOP > &  freeList )
+    < ipAddrToAsciiTransactionPrivate, 0x80 > &  freeList )
 {
     freeList.release ( pTrans );
 }

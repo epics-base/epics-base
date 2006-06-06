@@ -340,8 +340,6 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
             this->searchResponses++;
             if ( this->searchResponses == this->searchAttempts ) {
                 if ( this->chanListReqPending.count () ) {
-                    // avoid timer cancel block deadlock
-                    epicsGuardRelease < epicsMutex > unguard ( guard );
                     //
                     // when we get 100% success immediately 
                     // send another search request

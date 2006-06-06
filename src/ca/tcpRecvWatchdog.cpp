@@ -96,7 +96,6 @@ void tcpRecvWatchdog::beaconArrivalNotify (
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( ! ( this->shuttingDown || this->beaconAnomaly || this->probeResponsePending ) ) {
-        epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, this->period );
         debugPrintf ( ("saw a normal beacon - reseting circuit receive watchdog\n") );
     }
@@ -124,11 +123,6 @@ void tcpRecvWatchdog::messageArrivalNotify (
 
     if ( ! ( this->shuttingDown || this->probeResponsePending ) ) {
         this->beaconAnomaly = false;
-        // dont hold the lock for fear of deadlocking 
-        // because cancel is blocking for the completion
-        // of expire() which takes the lock - it take also 
-        // the callback lock
-        epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, this->period );
         debugPrintf ( ("received a message - reseting circuit recv watchdog\n") );
     }
@@ -158,8 +152,6 @@ void tcpRecvWatchdog::probeResponseNotify (
         }
     }
     if ( restartNeeded ) {
-        // timer callback takes the callback mutex and the cac mutex
-        epicsGuardRelease < epicsMutex > cbGuardRelease ( cbGuard );
         this->timer.start ( *this, restartDelay );
         debugPrintf ( ("recv wd restarted with delay %f\n", restartDelay) );
     }
@@ -189,11 +181,6 @@ void tcpRecvWatchdog::sendBacklogProgressNotify (
     // not trust the beacon as an indicator of a healthy server until we 
     // receive at least one message from the server.
     if ( this->probeResponsePending && ! this->shuttingDown ) {
-        // we avoid calling this with the lock applied because
-        // it restarts the recv wd timer, this might block
-        // until a recv wd timer expire callback completes, and 
-        // this callback takes the lock
-        epicsGuardRelease < epicsMutex > unguard ( guard );
         this->timer.start ( *this, CA_ECHO_TIMEOUT );
         debugPrintf ( ("saw heavy send backlog - reseting circuit recv watchdog\n") );
     }
@@ -206,10 +193,7 @@ void tcpRecvWatchdog::connectNotify (
     if ( this->shuttingDown ) {
         return;
     }
-    {
-        epicsGuardRelease < epicsMutex > guardRelease ( guard );
-        this->timer.start ( *this, this->period );
-    }
+    this->timer.start ( *this, this->period );
     debugPrintf ( ("connected to the server - initiating circuit recv watchdog\n") );
 }
 
@@ -225,11 +209,7 @@ void tcpRecvWatchdog::sendTimeoutNotify (
         restartNeeded = true;
     }
     if ( restartNeeded ) {
-        epicsGuardRelease < epicsMutex > unguard ( guard );
-        {
-            epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
-            this->timer.start ( *this, CA_ECHO_TIMEOUT );
-        }
+        this->timer.start ( *this, CA_ECHO_TIMEOUT );
     }
     debugPrintf ( ("TCP send timed out - sending echo request\n") );
 }

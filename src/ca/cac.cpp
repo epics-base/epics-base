@@ -497,6 +497,12 @@ void cac::transferChanToVirtCircuit (
         if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
             char acc[64];
             pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
+            // It is possible for the ioInitiate call below to
+            // call the callback directly if queue quota is exceeded.
+            // This callback takes the callback lock and therefore we
+            // must release the primary mutex here to avoid a lock 
+            // hierarchy inversion.
+            epicsGuardRelease < epicsMutex > unguard ( guard );
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
                 msgForMultiplyDefinedPV ( this->ipToAEngine, 
                     *this, pChan->pName ( guard ), acc );

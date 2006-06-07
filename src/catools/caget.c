@@ -167,11 +167,14 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             }
         }
                                 /* Adjust array count */
-        if (reqElems == 0 || pvs[n].nElems < reqElems)
-            reqElems = pvs[n].nElems;
-                                /* Remember dbrType and reqElems */
+        if (reqElems == 0 || pvs[n].nElems < reqElems){
+            pvs[n].reqElems = pvs[n].nElems; /* Use full number of points */
+        } else {
+            pvs[n].reqElems = reqElems; /* Limit to specified number */
+        }
+
+                                /* Remember dbrType */
         pvs[n].dbrType  = dbrType;
-        pvs[n].reqElems = reqElems;
 
                                 /* Issue CA request */
                                 /* ---------------- */
@@ -183,15 +186,15 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             if (request == callback)
             {                          /* Event handler will allocate value */
                 result = ca_array_get_callback(dbrType,
-                                               reqElems,
+                                               pvs[n].reqElems,
                                                pvs[n].chid,
                                                event_handler,
                                                (void*)&pvs[n]);
             } else {
                                        /* Allocate value structure */
-                pvs[n].value = calloc(1, dbr_size_n(dbrType, reqElems));
+                pvs[n].value = calloc(1, dbr_size_n(dbrType, pvs[n].reqElems));
                 result = ca_array_get(dbrType,
-                                      reqElems,
+                                      pvs[n].reqElems,
                                       pvs[n].chid,
                                       pvs[n].value);
             }

@@ -131,11 +131,14 @@ void connection_handler ( struct connection_handler_args args )
             dbrType = DBR_TIME_STRING;
         }
                                 /* Adjust array count */
-        if (reqElems == 0 || ppv->nElems < reqElems)
-            reqElems = ppv->nElems;
-                                /* Remember dbrType and reqElems */
+        if (reqElems == 0 || ppv->nElems < reqElems){
+            ppv->reqElems = ppv->nElems; /* Use full number of points */
+        } else {
+            ppv->reqElems = reqElems; /* Limit to specified number */
+        }
+
+                                /* Remember dbrType */
         ppv->dbrType  = dbrType;
-        ppv->reqElems = reqElems;
 
         ppv->onceConnected = 1;
         nConn++;
@@ -144,10 +147,10 @@ void connection_handler ( struct connection_handler_args args )
         /* install monitor once with first connect */
         if ( ! ppv->value ) {
                                     /* Allocate value structure */
-            ppv->value = calloc(1, dbr_size_n(dbrType, reqElems));           
+            ppv->value = calloc(1, dbr_size_n(dbrType, ppv->reqElems));           
             if ( ppv->value ) {
                 ppv->status = ca_create_subscription(dbrType,
-                                                reqElems,
+                                                ppv->reqElems,
                                                 ppv->chid,
                                                 eventMask,
                                                 event_handler,

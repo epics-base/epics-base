@@ -17,7 +17,7 @@
  *
  *  Modification History
  *  2006/01/17 Malcolm Walters (Tessella/Diamond Light Source)
- *     Added put_callback option Heavily based on caput
+ *     Added put_callback option - heavily based on caget
  *
  */
 

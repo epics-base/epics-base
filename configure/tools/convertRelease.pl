@@ -143,8 +143,8 @@ sub readRelease {
 	    $Rmacros->{$macro} = $path;
 	    next;
 	}
-	# Handle "include <path>" syntax
-	($path) = /^\s*include\s+(.*)/;
+	# Handle "include <path>" and "-include <path>" syntax
+	($path) = /^\s*-?include\s+(.*)/;
 	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
     }
     close IN;

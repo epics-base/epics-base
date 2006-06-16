@@ -9,6 +9,22 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.x</h1>
 
+<h2 align="center">Changes since 3.14.8.2</h2>
+
+<!-- Insert new items below here ... -->
+
+<h4>configure/RELEASE*</h4>
+
+<p>The <tt>convertRelease.pl</tt> parser now supports the use of
+<tt>-include</tt> statements in configure/RELEASE files as well as
+<tt>include</tt> statements.</p>
+
+<h4>epicsUnitTest</h4>
+
+<p>A new facility is provided in libCom for use in generating automated test
+programs.  Many (but not all) of the test programs in <tt>libCom/test</tt> have
+been converted to use this facility.</p>
+
 <h4>dbStaticLib</h4>
 
 <p>Off-by-one buffer overflow error fixed in dbFindField() which only seemed to
@@ -20,8 +36,6 @@ affect vxWorks-(intel) targets.</p>
 spy command.</p>
 
 <h4>libCom</h4>
-
-<h2 align="center">Changes since 3.14.8.2</h2>
 
 <h4>e_flex</h4>
 
@@ -49,12 +63,13 @@ to the other implementations of <tt>devLibOSD.c</tt>.</p>
 <h4>libCom</h4>
 
 <p>mallocMustSucceed and callocMustSucceed accept 0-byte requests.  Note that
-these routines my return a NULL pointer in such cases.</p>
+these routines may return a NULL pointer in such cases.</p>
 
 <h4>Mac OS X (Darwin)</h4>
 
 <p>Added EPICS_HOST_ARCH darwin-fat for building Universal Binaries.</p>
 <p>Added EPICS_HOST_ARCH darwin-x86.</p>
+
 
 <h2 align="center">Changes since 3.14.8.1</h2>
 
@@ -64,6 +79,7 @@ these routines my return a NULL pointer in such cases.</p>
 (i.e. converts +/-Inf[inity] and NaN strings to their double equivalents) we
 managed to break the use of this in the R3.14.8.1 release.  This is now
 fixed.</p>
+
 
 <h2 align="center">Changes since 3.14.8</h2>
 
@@ -110,6 +126,7 @@ win32 architectures.</p>
     the correct export modifier keywords added to it for use on win32.</p>
   </li>
 </ul>
+
 
 <h2 align="center">Changes since 3.14.7</h2>
 

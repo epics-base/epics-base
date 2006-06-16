@@ -127,13 +127,15 @@ int testDone(void) {
 	    status = 2;
 	}
 	printf("\n    Results\n    =======\n       Tests: %d\n", tests);
-	testResult("Passed", passed);
-	if (bonus)   testResult("Todo Passes", bonus);
-	if (failed) {
-	    testResult("Failed", failed);
-	    status = 1;
+	if (tests) {
+	    testResult("Passed", passed);
+	    if (bonus) testResult("Todo Passes", bonus);
+	    if (failed) {
+		testResult("Failed", failed);
+		status = 1;
+	    }
+	    if (skipped) testResult("Skipped", skipped);
 	}
-	if (skipped) testResult("Skipped", skipped);
     }
     epicsMutexUnlock(testLock);
     return (status);

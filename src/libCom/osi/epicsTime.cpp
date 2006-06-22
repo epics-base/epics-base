@@ -56,8 +56,8 @@ static const unsigned secPerMin = 60u;
 //
 class aitTimeStamp {
 public:
-    unsigned long tv_sec;
-    unsigned long tv_nsec;
+    epicsUInt32 tv_sec;
+    epicsUInt32 tv_nsec;
 };
 
 static const unsigned tmStructEpochYear = 1900;

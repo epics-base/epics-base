@@ -1,0 +1,22 @@
+# CONFIG.Common.darwin-ppcx86
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for Darwin 'universal' (PowerPC, Intel) target builds
+# Sites may override these definitions in CONFIG_SITE.Common.darwin-ppcx86
+#-------------------------------------------------------
+
+#
+# Set architecture-specific information
+#
+ARCH_CLASS = ppcx86
+
+#
+# Universal binary support
+#
+OP_SYS_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
+OP_SYS_LDFLAGS += -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
+
+# Include definitions common to all Darwin targets
+include $(CONFIG)/os/CONFIG.darwinCommon.darwinCommon

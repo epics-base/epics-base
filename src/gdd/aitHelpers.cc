@@ -200,6 +200,24 @@ aitTimeStamp aitTimeStamp::operator = (const struct epicsTimeStamp &rhs)
 	return *this;
 }
 
+aitTimeStamp :: aitTimeStamp ( const epicsTime & ts )
+{
+    epicsTimeStamp ets = ts;
+    *this = ets;
+}
+
+aitTimeStamp aitTimeStamp :: operator = ( const epicsTime & rhs )
+{
+    epicsTimeStamp ets = rhs;
+    return *this = ets;
+}
+
+aitTimeStamp :: operator epicsTime () const
+{
+    epicsTimeStamp ets = *this;
+    return epicsTime ( ets );
+}
+
 aitTimeStamp::operator struct timespec () const
 {
 	struct timespec ts;

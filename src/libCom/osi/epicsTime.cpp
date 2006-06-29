@@ -49,17 +49,6 @@ static const unsigned nSecPerSec = 1000u * uSecPerSec;
 static const unsigned nSecPerUSec = 1000u;
 static const unsigned secPerMin = 60u;
 
-//
-// force this module to include code that can convert
-// to GDD's aitTimeStamp, but dont require that it must
-// link with gdd. Therefore, gdd.h is not included here.
-//
-class aitTimeStamp {
-public:
-    epicsUInt32 tv_sec;
-    epicsUInt32 tv_nsec;
-};
-
 static const unsigned tmStructEpochYear = 1900;
 
 static const unsigned epicsEpochYear = 1990;
@@ -376,35 +365,6 @@ epicsTime::epicsTime (const struct timeval &ts)
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
     this->addNanoSec (ts.tv_usec * nSecPerUSec);
-}
-
-//
-// operator aitTimeStamp ()
-//
-epicsTime::operator aitTimeStamp () const
-{
-    aitTimeStamp ts;
-    time_t_wrapper ansiTimeTicks;
-
-    ansiTimeTicks = *this;
-    ts.tv_sec = ansiTimeTicks.ts;
-    ts.tv_nsec = this->nSec;
-    return ts;
-}
-
-//
-// epicsTime (const aitTimeStamp &ts)
-//
-epicsTime::epicsTime (const aitTimeStamp &ts) 
-{
-    time_t_wrapper ansiTimeTicks;
-
-    ansiTimeTicks.ts = ts.tv_sec;
-    *this = epicsTime (ansiTimeTicks);
-
-    unsigned long secAdj = ts.tv_nsec / nSecPerSec;
-    unsigned long nSecAdj = ts.tv_nsec % nSecPerSec;
-    *this = epicsTime (this->secPastEpoch+secAdj, this->nSec+nSecAdj);
 }
 
 // 631152000 (at posix epic) + 2272060800 (btw posix and epics epoch) +

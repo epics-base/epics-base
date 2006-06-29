@@ -35,8 +35,6 @@ struct l_fp; /* NTP timestamp */
 
 #ifdef __cplusplus
 
-class aitTimeStamp; /* GDD*/
-
 /*
  * extend ANSI C RTL "struct tm" to include nano seconds within a second
  * and a struct tm that is adjusted for the local timezone
@@ -126,11 +124,6 @@ public:
     operator l_fp () const;
     epicsTime ( const l_fp & );
     epicsTime & operator = ( const l_fp & );
-
-    /* convert to and from GDDs aitTimeStamp format */
-    operator aitTimeStamp () const;
-    epicsTime ( const aitTimeStamp & );
-    epicsTime & operator = ( const aitTimeStamp & );
 
     /* convert to and from WIN32s FILETIME (implemented only on WIN32) */
     operator struct _FILETIME () const;
@@ -305,12 +298,6 @@ inline epicsTime & epicsTime::operator = ( const local_tm_nano_sec & rhs )
 }
 
 inline epicsTime & epicsTime::operator = ( const struct timespec & rhs )
-{
-    *this = epicsTime ( rhs );
-    return *this;
-}
-
-inline epicsTime & epicsTime::operator = ( const aitTimeStamp & rhs )
 {
     *this = epicsTime ( rhs );
     return *this;

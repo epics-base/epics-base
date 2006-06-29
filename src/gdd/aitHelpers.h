@@ -39,6 +39,7 @@ inline char* strDup(const char* x)
 
 struct timespec;
 struct epicsTimeStamp;
+class epicsTime;
 class gdd;
 
 class epicsShareClass aitTimeStamp {
@@ -102,8 +103,13 @@ public:
 	//
 	operator struct epicsTimeStamp () const;
 	void get (struct epicsTimeStamp &) const;
-	aitTimeStamp (const struct epicsTimeStamp &ts);
-	aitTimeStamp operator = (const struct epicsTimeStamp &rhs);
+	aitTimeStamp (const epicsTimeStamp &ts);
+	aitTimeStamp operator = (const epicsTimeStamp &rhs);
+	
+	// conversion to from epicsTime
+	aitTimeStamp (const epicsTime &ts);
+	aitTimeStamp operator = (const epicsTime &rhs);
+	operator epicsTime () const;
 
 	static aitTimeStamp getCurrent();
 

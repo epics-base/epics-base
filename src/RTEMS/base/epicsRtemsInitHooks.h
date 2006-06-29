@@ -17,5 +17,8 @@ extern char *env_nfsServer;
 extern char *env_nfsPath;
 extern char *env_nfsMountPoint;
 
+/*
+ * Return 0 for success, non-zero for failure (will cause panic)
+ */
 int epicsRtemsInitPreSetBootConfigFromNVRAM(struct rtems_bsdnet_config *config);
 int epicsRtemsInitPostSetBootConfigFromNVRAM(struct rtems_bsdnet_config *config);

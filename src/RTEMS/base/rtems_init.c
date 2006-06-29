@@ -430,12 +430,14 @@ Init (rtems_task_argument ignored)
     /*
      * Architecture-specific hooks
      */
-    epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config);
+    if (epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
+        delayedPanic("epicsRtemsInitPreSetBootConfigFromNVRAM");
     if (rtems_bsdnet_config.bootp == NULL) {
         extern void setBootConfigFromNVRAM(void);
         setBootConfigFromNVRAM();
     }
-    epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config);
+    if (epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config) != 0)
+        delayedPanic("epicsRtemsInitPostSetBootConfigFromNVRAM");
 
     /*
      * Override RTEMS configuration

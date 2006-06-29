@@ -262,7 +262,7 @@ setBootConfigFromNVRAM(void)
         rtems_bsdnet_config.domainname = cp1;
     rtems_bsdnet_config.hostname = env("HOSTNAME", "iocNobody");
     rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
-    rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "epics/iocNobody/bin/RTEMS-uC5282/myApp.boot");
+    rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "uC5282App.boot");
     rtems_bsdnet_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
     if ((cp1 = env("NFSMOUNT", NULL)) != NULL) {
         char *cp2, *cp3;
@@ -293,6 +293,6 @@ void
 setBootConfigFromNVRAM(void)
 {
     printf("SYSTEM HAS NO NON-VOLATILE RAM!\n");
-    printf("YOU MUST USE BOOTP/DHCP TO OBTAIN NETWORK CONFIGURATION\n");
+    printf("YOU MUST USE SOME OTHER METHOD TO OBTAIN NETWORK CONFIGURATION\n");
 }
 #endif

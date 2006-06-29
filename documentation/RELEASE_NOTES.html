@@ -40,7 +40,12 @@ affect vxWorks-(intel) targets.</p>
 <p>Added space for user extensions.  This provides the infrastructure for the
 spy command.</p>
 <p>Fixed error in epicsThreadGetName for non-EPICS threads.</p>
-
+<p>Added hooks for application routines to supply special network configuration
+parameters.
+The RTEMS startup code calls epicsRtemsInitPreSetBootConfigFromNVRAM just
+before reading values from NVRAM and
+epicsRtemsInitPostSetBootConfigFromNVRAM just afterwards.  See
+epicsRtemsInitHooks.h for prototypes and global variables.</p>
 
 <h4>libCom</h4>
 

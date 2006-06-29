@@ -39,6 +39,8 @@
 #include <osiUnistd.h>
 #include <iocsh.h>
 
+#include "epicsRtemsInitHooks.h"
+
 static void
 logReset (void)
 {
@@ -178,9 +180,6 @@ initialize_remote_filesystem(const char **argv, int hasLocalFilesystem)
         argv[1] = path;
     }
 #else
-    extern char *env_nfsServer;
-    extern char *env_nfsPath;
-    extern char *env_nfsMountPoint;
     char *server_name;
     char *server_path;
     char *mount_point;
@@ -431,10 +430,12 @@ Init (rtems_task_argument ignored)
     /*
      * Architecture-specific hooks
      */
+    epicsRtemsInitPreSetBootConfigFromNVRAM(&rtems_bsdnet_config);
     if (rtems_bsdnet_config.bootp == NULL) {
         extern void setBootConfigFromNVRAM(void);
         setBootConfigFromNVRAM();
     }
+    epicsRtemsInitPostSetBootConfigFromNVRAM(&rtems_bsdnet_config);
 
     /*
      * Override RTEMS configuration

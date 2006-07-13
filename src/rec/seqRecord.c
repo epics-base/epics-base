@@ -40,8 +40,12 @@
 int	seqRecDebug = 0;
 
 /* Create RSET - Record Support Entry Table*/
-static long 	init_record(), process(), asyncFinish(), get_precision();
-static void	processCallback();
+static long init_record(seqRecord *pseq, int pass);
+static long process(seqRecord *pseq);
+static int processNextLink(seqRecord *pseq);
+static long asyncFinish(seqRecord *pseq);
+static void processCallback(CALLBACK *arg);
+static long get_precision(dbAddr *paddr, long *pprecision);
 
 rset seqRSET={
 	RSETNUMBER,
@@ -87,7 +91,9 @@ typedef struct callbackSeq {
 }callbackSeq;
 
 int processNextLink();
-/*****************************************************************************
+
+
+/*****************************************************************************
  *
  * Initialize a sequence record.
  *
@@ -98,10 +104,7 @@ int processNextLink();
  * For each constant input link, fill in the DOV field
  *
  ******************************************************************************/
-static long 
-init_record(pseq, pass)
-seqRecord *pseq;
-int pass;
+static long init_record(seqRecord *pseq, int pass)
 {
     int		index;
     linkDesc      *plink;
@@ -145,7 +148,8 @@ int pass;
 
   return(0);
 }
-/*****************************************************************************
+
+/*****************************************************************************
  *
  * Process a sequence record.
  *
@@ -168,9 +172,7 @@ int pass;
  *   us from calling dbProcess() recursively.
  *
  ******************************************************************************/
-static long 
-process(pseq)
-seqRecord *pseq;
+static long process(seqRecord *pseq)
 {
   callbackSeq	*pcb = (callbackSeq *) (pseq->dpvt);
   linkDesc	*plink;
@@ -182,7 +184,7 @@ seqRecord *pseq;
 
   if (pseq->pact)
   { /* In async completion phase */
-    asyncFinish((struct dbCommon *)pseq);
+    asyncFinish(pseq);
     return(0);
   }
   pseq->pact = TRUE;
@@ -265,7 +267,8 @@ seqRecord *pseq;
 
   return(0);
 }
-/*****************************************************************************
+
+/*****************************************************************************
  *
  * Find the next link-group that needs processing.
  *
@@ -282,8 +285,7 @@ seqRecord *pseq;
  *   dbScanLock is already held for pseq before this function is called.
  *
  ******************************************************************************/
-int processNextLink(pseq)
-seqRecord *pseq;
+static int processNextLink(seqRecord *pseq)
 {
   callbackSeq   *pcb = (callbackSeq *) (pseq->dpvt);
 
@@ -309,7 +311,8 @@ seqRecord *pseq;
   }
   return(0);
 }
-/*****************************************************************************
+
+/*****************************************************************************
  *
  * Finish record processing by posting any events and processing forward links.
  *
@@ -317,9 +320,7 @@ seqRecord *pseq;
  *   dbScanLock is already held for pseq before this function is called.
  *
  ******************************************************************************/
-static long
-asyncFinish(pseq)
-seqRecord *pseq;
+static long asyncFinish(seqRecord *pseq)
 {
   unsigned short MonitorMask;
 
@@ -341,7 +342,7 @@ seqRecord *pseq;
 
   return(0);
 }
-
+
 /*****************************************************************************
  *
  * Link-group processing function.
@@ -357,8 +358,7 @@ seqRecord *pseq;
  *   dbScanLock is NOT held for pseq when this function is called!!
  *
  ******************************************************************************/
-static void
-processCallback(CALLBACK *arg)
+static void processCallback(CALLBACK *arg)
 {
   callbackSeq *pcb;
   seqRecord *pseq;
@@ -400,23 +400,21 @@ processCallback(CALLBACK *arg)
   dbScanUnlock((struct dbCommon *)pseq);
   return;
 }
-/*****************************************************************************
+
+/*****************************************************************************
  *
  * Return the precision value from PREC
  *
  *****************************************************************************/
-static long
-get_precision(paddr, precision)
-struct dbAddr *paddr;
-long          *precision;
+static long get_precision(dbAddr *paddr, long *pprecision)
 {
-  seqRecord	*pseq = (seqRecord *) paddr->precord;
+    seqRecord	*pseq = (seqRecord *) paddr->precord;
 
-  *precision = pseq->prec;
+    *pprecision = pseq->prec;
 
-  if(paddr->pfield < (void *)&pseq->val)
-    return(0);				/* Field is NOT in dbCommon */
+    if(paddr->pfield < (void *)&pseq->val)
+	return 0;			/* Field is NOT in dbCommon */
 
-  recGblGetPrec(paddr, precision);	/* Field is in dbCommon */
-  return(0);
+    recGblGetPrec(paddr, pprecision);	/* Field is in dbCommon */
+    return 0;
 }

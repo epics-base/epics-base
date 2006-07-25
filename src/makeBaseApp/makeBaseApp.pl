@@ -126,7 +126,7 @@ if ($opt_i) {
     $appname=$appnameIn if $appnameIn;
     foreach $ioc ( @names ) {
 	($appname = $ioc) =~ s/App$// if !$appnameIn;
-	$ioc = "ioc" . $ioc unless ($ioc =~ /^ioc/);
+	$ioc = "ioc" . $ioc unless ($ioc =~ /ioc/);
         if (-d "iocBoot/$ioc") {
 	    print "iocBoot/$ioc exists, not modified.\n";
 	    next;

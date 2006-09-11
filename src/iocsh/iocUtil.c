@@ -145,10 +145,19 @@ static void iocLogDisableCallFunc(const iocshArgBuf *args)
     iocLogDisable = args[0].ival;
 }
 
+/* iocLogShow */
+static const iocshArg iocLogShowArg0 = {"level",iocshArgInt};
+static const iocshArg * const iocLogShowArgs[1] = {&iocLogShowArg0};
+static const iocshFuncDef iocLogShowFuncDef = {"iocLogShow",1,iocLogShowArgs};
+static void iocLogShowCallFunc(const iocshArgBuf *args)
+{
+    iocLogShow (args[0].ival);
+}
+
 /* eltc */
 static const iocshArg eltcArg0 = {"(0,1)=>(false,true)",iocshArgInt};
-static const iocshArg * const eltcArgs[1] = {&iocLogDisableArg0};
-static const iocshFuncDef eltcFuncDef = {"eltc",1,iocLogDisableArgs};
+static const iocshArg * const eltcArgs[1] = {&eltcArg0};
+static const iocshFuncDef eltcFuncDef = {"eltc",1,eltcArgs};
 static void eltcCallFunc(const iocshArgBuf *args)
 {
     eltc(args[0].ival);
@@ -171,6 +180,7 @@ void epicsShareAPI iocUtilRegister(void)
     iocshRegister(&epicsEnvShowFuncDef,epicsEnvShowCallFunc);
     iocshRegister(&iocLogInitFuncDef,iocLogInitCallFunc);
     iocshRegister(&iocLogDisableFuncDef,iocLogDisableCallFunc);
+    iocshRegister(&iocLogShowFuncDef,iocLogShowCallFunc);
     iocshRegister(&eltcFuncDef,eltcCallFunc);
     iocshRegister(&coreReleaseFuncDef,coreReleaseCallFunc);
 }

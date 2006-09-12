@@ -26,9 +26,11 @@
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
+#include "epicsTime.h"
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "epicsExit.h"
+#include "epicsSignal.h"
 
 #include "logClient.h"
 
@@ -46,20 +48,23 @@ typedef struct {
     epicsMutexId        mutex;
     SOCKET              sock;
     epicsThreadId       restartThreadId;
-    epicsEventId        connectSignal;
+    epicsEventId        stateChangeNotify;
     unsigned            connectCount;
     unsigned            nextMsgIndex;
     unsigned            connected;
+    unsigned            shutdown;
+    unsigned            shutdownConfirm;
     int                 connFailStatus;
 } logClient;
 
 LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
 LOCAL const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
+LOCAL const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
  * logClientClose ()
  */
-LOCAL void logClientClose (logClient *pClient)
+LOCAL void logClientClose ( logClient *pClient )
 {
 #   ifdef DEBUG
         fprintf (stderr, "log client: lingering for connection close...");
@@ -98,19 +103,64 @@ LOCAL void logClientClose (logClient *pClient)
  */
 LOCAL void logClientDestroy (logClientId id)
 {
-    logClient *pClient = (logClient *)id;
-    /*
-     * mutex on (and left on)
-     */
-    epicsMutexMustLock (pClient->mutex);
+    enum epicsSocketSystemCallInterruptMechanismQueryInfo interruptInfo;
+    logClient *pClient = (logClient *) id;
+    epicsTimeStamp begin, current;
+    double diff;
 
-    logClientClose (pClient);
+    /* command log client thread to shutdown - taking mutex here */
+    /* forces cache flush on SMP machines */
+    epicsMutexMustLock ( pClient->mutex );
+    pClient->shutdown = 1u;
+    epicsMutexUnlock ( pClient->mutex );
 
-    epicsMutexDestroy (pClient->mutex);
+    /* unblock log client thread blocking in send() or connect() */
+    interruptInfo =
+        epicsSocketSystemCallInterruptMechanismQuery ();
+    switch ( interruptInfo ) {
+    case esscimqi_socketCloseRequired:
+        logClientClose ( pClient );
+        break;
+    case esscimqi_socketBothShutdownRequired:
+        shutdown ( pClient->sock, SHUT_WR );
+        break;
+    case esscimqi_socketSigAlarmRequired:
+        epicsSignalRaiseSigAlarm ( pClient->restartThreadId );
+        break;
+    default:
+        break;
+    };
+
+    /* wait for confirmation that the thread exited - taking */
+    /* mutex here forces cache update on SMP machines */
+    epicsTimeGetCurrent ( & begin );
+    epicsMutexMustLock ( pClient->mutex );
+    do {
+        epicsMutexUnlock ( pClient->mutex );
+        epicsEventWaitWithTimeout ( 
+            pClient->stateChangeNotify, 
+            LOG_SERVER_SHUTDOWN_TIMEOUT / 10.0 ); 
+        epicsTimeGetCurrent ( & current );
+        diff = epicsTimeDiffInSeconds ( & current, & begin );
+        epicsMutexMustLock ( pClient->mutex );
+    }
+    while ( ! pClient->shutdownConfirm && diff < LOG_SERVER_SHUTDOWN_TIMEOUT );
+    epicsMutexUnlock ( pClient->mutex );
+
+    if ( ! pClient->shutdownConfirm ) {
+        fprintf ( stderr, "log client shutdown: timed out stopping"
+            " reconnect thread for \"%s\" after %.1f seconds - cleanup aborted\n",
+            pClient->name, LOG_SERVER_SHUTDOWN_TIMEOUT );
+        return;
+    }
+
+    logClientClose ( pClient );
+
+    epicsMutexDestroy ( pClient->mutex );
    
-    epicsEventDestroy ( pClient->connectSignal );
+    epicsEventDestroy ( pClient->stateChangeNotify );
 
-    free (pClient);
+    free ( pClient );
 }
 
 /* 
@@ -163,16 +213,17 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
                 }
             }
             else {
-                char sockErrBuf[64];
-                if ( status ) {
-                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                if ( ! pClient->shutdown ) {
+                    char sockErrBuf[64];
+                    if ( status ) {
+                        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                    }
+                    else {
+                        strcpy ( sockErrBuf, "server initiated disconnect" );
+                    }
+                    fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
+                        pClient->name, sockErrBuf );
                 }
-                else {
-                    strcpy ( sockErrBuf, "server initiated disconnect" );
-                }
-                fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                    pClient->name, sockErrBuf );
-
                 logClientClose ( pClient );
                 break;
             }
@@ -214,15 +265,17 @@ void epicsShareAPI logClientFlush ( logClientId id )
             }
         }
         else {
-            char sockErrBuf[64];
-            if ( status ) {
-                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            if ( ! pClient->shutdown ) {
+                char sockErrBuf[64];
+                if ( status ) {
+                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+                }
+                else {
+                    strcpy ( sockErrBuf, "server initiated disconnect" );
+                }
+                fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
+                    pClient->name, sockErrBuf );
             }
-            else {
-                strcpy ( sockErrBuf, "server initiated disconnect" );
-            }
-            fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
-                pClient->name, sockErrBuf );
             logClientClose ( pClient );
             break;
         }
@@ -298,7 +351,7 @@ LOCAL void logClientConnect (logClient *pClient)
                 break;
             }
             else {
-                if ( pClient->connFailStatus != errnoCpy ) {
+                if ( pClient->connFailStatus != errnoCpy && ! pClient->shutdown ) {
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
@@ -367,9 +420,9 @@ LOCAL void logClientConnect (logClient *pClient)
     
     pClient->connectCount++;
 
-    epicsMutexUnlock (pClient->mutex);
+    epicsMutexUnlock ( pClient->mutex );
     
-    epicsEventSignal ( pClient->connectSignal );
+    epicsEventSignal ( pClient->stateChangeNotify );
 
     fprintf ( stderr, "log client: connected to log server at \"%s\"\n", pClient->name );
 }
@@ -381,13 +434,15 @@ LOCAL void logClientRestart ( logClientId id )
 {
     logClient *pClient = (logClient *)id;
 
-    while (1) {
+    /* SMP safe state inspection */
+    epicsMutexMustLock ( pClient->mutex );
+    while ( ! pClient->shutdown ) {
         unsigned isConn;
 
-        /* SMP safe state inspection */
-        epicsMutexMustLock ( pClient->mutex );
         isConn = pClient->connected;
+
         epicsMutexUnlock ( pClient->mutex );
+
         if ( isConn ) {
             logClientFlush ( pClient );
         }
@@ -396,7 +451,13 @@ LOCAL void logClientRestart ( logClientId id )
         }
         
         epicsThreadSleep ( LOG_RESTART_DELAY );
+
+        epicsMutexMustLock ( pClient->mutex );
     }
+    epicsMutexUnlock ( pClient->mutex );
+
+    pClient->shutdownConfirm = 1u;
+    epicsEventSignal ( pClient->stateChangeNotify );
 }
 
 /*
@@ -405,8 +466,9 @@ LOCAL void logClientRestart ( logClientId id )
 logClientId epicsShareAPI logClientCreate (
     struct in_addr server_addr, unsigned short server_port)
 {
-    unsigned connectTries = 0;
+    epicsTimeStamp begin, current;
     logClient *pClient;
+    double diff;
 
     pClient = calloc (1, sizeof (*pClient));
     if (pClient==NULL) {
@@ -427,11 +489,13 @@ logClientId epicsShareAPI logClientCreate (
     pClient->sock = INVALID_SOCKET;
     pClient->connected = 0u;
     pClient->connFailStatus = 0;
+    pClient->shutdown = 0;
+    pClient->shutdownConfirm = 0;
 
     epicsAtExit (logClientDestroy, (void*) pClient);
     
-    pClient->connectSignal = epicsEventCreate (epicsEventEmpty);
-    if ( ! pClient->connectSignal ) {
+    pClient->stateChangeNotify = epicsEventCreate (epicsEventEmpty);
+    if ( ! pClient->stateChangeNotify ) {
         epicsMutexDestroy ( pClient->mutex );
         free ( pClient );
         return NULL;
@@ -443,7 +507,7 @@ logClientId epicsShareAPI logClientCreate (
         logClientRestart, pClient );
     if ( pClient->restartThreadId == NULL ) {
         epicsMutexDestroy ( pClient->mutex );
-        epicsEventDestroy ( pClient->connectSignal );
+        epicsEventDestroy ( pClient->stateChangeNotify );
         free (pClient);
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return NULL;
@@ -452,15 +516,24 @@ logClientId epicsShareAPI logClientCreate (
     /*
      * attempt to synchronize with circuit connect
      */
-    epicsEventWaitWithTimeout ( 
-        pClient->connectSignal, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT ); 
-
+    epicsTimeGetCurrent ( & begin );
     epicsMutexMustLock ( pClient->mutex );
+    do {
+        epicsMutexUnlock ( pClient->mutex );
+        epicsEventWaitWithTimeout ( 
+            pClient->stateChangeNotify, 
+            LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT / 10.0 ); 
+        epicsTimeGetCurrent ( & current );
+        diff = epicsTimeDiffInSeconds ( & current, & begin );
+        epicsMutexMustLock ( pClient->mutex );
+    }
+    while ( ! pClient->connected && diff < LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
+    epicsMutexUnlock ( pClient->mutex );
+
     if ( ! pClient->connected ) {
         fprintf (stderr, "log client create: timed out synchronizing with circuit connect to \"%s\" after %.1f seconds\n",
             pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
     }
-    epicsMutexUnlock ( pClient->mutex );
         
     return (void *) pClient;
 }

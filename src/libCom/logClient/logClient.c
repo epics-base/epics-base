@@ -384,7 +384,7 @@ LOCAL void logClientRestart ( logClientId id )
     while (1) {
         unsigned isConn;
 
-        // SMP safe state inspection
+        /* SMP safe state inspection */
         epicsMutexMustLock ( pClient->mutex );
         isConn = pClient->connected;
         epicsMutexUnlock ( pClient->mutex );

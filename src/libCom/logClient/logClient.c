@@ -46,18 +46,15 @@ typedef struct {
     epicsMutexId        mutex;
     SOCKET              sock;
     epicsThreadId       restartThreadId;
-    epicsEventId        restartSignal;
-    unsigned            connectTries;
+    epicsEventId        connectSignal;
     unsigned            connectCount;
-    unsigned            connectReset;
     unsigned            nextMsgIndex;
     unsigned            connected;
+    int                 connFailStatus;
 } logClient;
 
 LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
-LOCAL const unsigned    LOG_MAX_CONNECT_RETRIES = 12 * 60; 
-LOCAL const double      LOG_INITIAL_CONNECT_DELAY = 50e-3; /* sec */
-LOCAL const unsigned    LOG_INITIAL_MAX_CONNECT_RETRIES = 40u;
+LOCAL const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
 
 /*
  * logClientClose ()
@@ -82,8 +79,6 @@ LOCAL void logClientClose (logClient *pClient)
         pClient->sock = INVALID_SOCKET;
     }
 
-    pClient->connectTries = 0;
-    pClient->connectReset++;
     pClient->nextMsgIndex = 0u;
     memset ( pClient->msgBuf, '\0', sizeof ( pClient->msgBuf ) );
     pClient->connected = 0u;
@@ -96,15 +91,6 @@ LOCAL void logClientClose (logClient *pClient)
 #   ifdef DEBUG
         fprintf (stderr, "done\n");
 #   endif
-}
-
-/*
- * logClientReset ()
- */
-LOCAL void logClientReset (logClient *pClient) 
-{
-    logClientClose (pClient);
-    epicsEventSignal (pClient->restartSignal);
 }
 
 /*
@@ -121,6 +107,8 @@ LOCAL void logClientDestroy (logClientId id)
     logClientClose (pClient);
 
     epicsMutexDestroy (pClient->mutex);
+   
+    epicsEventDestroy ( pClient->connectSignal );
 
     free (pClient);
 }
@@ -149,8 +137,7 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
             int status;
 
             if ( ! pClient->connected ) {
-                epicsMutexUnlock (pClient->mutex);
-                return;
+                break;
             }
 
             if ( msgBufBytesLeft > 0u ) {
@@ -186,7 +173,8 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
                 fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
                     pClient->name, sockErrBuf );
 
-                logClientReset ( pClient );
+                logClientClose ( pClient );
+                break;
             }
         }
         else {
@@ -235,7 +223,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
             }
             fprintf ( stderr, "log client: lost contact with log server at \"%s\" because \"%s\"\n", 
                 pClient->name, sockErrBuf );
-            logClientReset ( pClient );
+            logClientClose ( pClient );
             break;
         }
     }
@@ -247,9 +235,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
  */
 LOCAL void logClientMakeSock (logClient *pClient)
 {
-    int             status;
-    osiSockIoctl_t  optval;
-
+    
 #   ifdef DEBUG
         fprintf (stderr, "log client: creating socket...");
 #   endif
@@ -266,22 +252,6 @@ LOCAL void logClientMakeSock (logClient *pClient)
             sockErrBuf, sizeof ( sockErrBuf ) );
         fprintf ( stderr, "log client: no socket error %s\n", 
             sockErrBuf );
-        epicsMutexUnlock (pClient->mutex);
-        return;
-    }
-    
-    optval = TRUE;
-    status = socket_ioctl (pClient->sock, FIONBIO, &optval);
-    if (status<0) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "%s:%d ioctl FBIO client er %s\n", 
-            __FILE__, __LINE__, sockErrBuf);
-        epicsSocketDestroy ( pClient->sock );
-        pClient->sock = INVALID_SOCKET;
-        epicsMutexUnlock ( pClient->mutex );
-        return;
     }
     
     epicsMutexUnlock (pClient->mutex);
@@ -301,71 +271,52 @@ LOCAL void logClientConnect (logClient *pClient)
     int             errnoCpy;
     int             status;
    
-    while (1) {
-        pClient->connectTries++;
-        status = connect (pClient->sock, (struct sockaddr *)&pClient->addr, sizeof(pClient->addr));
-        if (status < 0) {
+    if ( pClient->sock == INVALID_SOCKET ) {
+        logClientMakeSock ( pClient );
+        if ( pClient->sock == INVALID_SOCKET ) {
+            return;
+        }
+    }
+    
+    while ( 1 ) {
+        status = connect (pClient->sock, 
+            (struct sockaddr *)&pClient->addr, sizeof(pClient->addr));
+        if ( status >= 0 ) {
+            break;
+        }
+        else {
             errnoCpy = SOCKERRNO;
-            if (errnoCpy==SOCK_EISCONN) {
-                /*
-                 * called connect after we are already connected 
-                 * (this appears to be how they provide 
-                 * connect completion notification)
-                 */
-                break;
-            }
-            else if (errnoCpy==SOCK_EINTR) {
+            if ( errnoCpy == SOCK_EINTR ) {
                 continue;
             }
             else if (
                 errnoCpy==SOCK_EINPROGRESS ||
-                errnoCpy==SOCK_EWOULDBLOCK ||
-                errnoCpy==SOCK_EALREADY) {
+                errnoCpy==SOCK_EWOULDBLOCK ) {
                 return;
             }
-#ifdef _WIN32
-            /*
-             * a SOCK_EALREADY alias used by early WINSOCK
-             *
-             * including this with vxWorks appears to
-             * cause trouble
-             */
-            else if (errnoCpy==SOCK_EINVAL) { 
-                return; 
+            else if ( errnoCpy==SOCK_EALREADY ) {
+                break;
             }
-#endif
             else {
-                if (pClient->connectReset==0) {
+                if ( pClient->connFailStatus != errnoCpy ) {
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     fprintf (stderr,
-                        "log client: unable to connect to \"%s\" because %d=\"%s\"\n", 
+                        "log client: failed to connect to \"%s\" because %d=\"%s\"\n", 
                         pClient->name, errnoCpy, sockErrBuf);
+                    pClient->connFailStatus = errnoCpy;
                 }
-
-                logClientReset (pClient);
+                logClientClose ( pClient );
                 return;
             }
         }
     }
 
-    pClient->connected = 1u;
+    epicsMutexMustLock (pClient->mutex);
 
-    /*
-     * now we are connected so set the socket out of non-blocking IO
-     */
-    optval = FALSE;
-    status = socket_ioctl ( pClient->sock, FIONBIO, & optval );
-    if (status<0) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        fprintf (stderr, "%s:%d ioctl FIONBIO log client error was \"%s\"\n", 
-            __FILE__, __LINE__, sockErrBuf);
-        logClientReset (pClient);
-        return;
-    }
+    pClient->connected = 1u;
+    pClient->connFailStatus = 0;
 
     /*
      * discover that the connection has expired
@@ -416,9 +367,11 @@ LOCAL void logClientConnect (logClient *pClient)
     
     pClient->connectCount++;
 
-    pClient->connectReset = 0u;
+    epicsMutexUnlock (pClient->mutex);
+    
+    epicsEventSignal ( pClient->connectSignal );
 
-    fprintf ( stderr, "log client: connected to log server at \"%s\"\n", pClient->name);
+    fprintf ( stderr, "log client: connected to log server at \"%s\"\n", pClient->name );
 }
 
 /*
@@ -426,33 +379,23 @@ LOCAL void logClientConnect (logClient *pClient)
  */
 LOCAL void logClientRestart ( logClientId id )
 {
-    epicsEventWaitStatus semStatus;
     logClient *pClient = (logClient *)id;
 
     while (1) {
+        unsigned isConn;
 
-        semStatus = epicsEventWaitWithTimeout (pClient->restartSignal, LOG_RESTART_DELAY);
-        assert ( semStatus==epicsEventWaitOK || semStatus==epicsEventWaitTimeout );
-
-        if (pClient->sock==INVALID_SOCKET) {
-            logClientMakeSock (pClient);
-            if (pClient->sock==INVALID_SOCKET) {
-                continue;
-            }
-        }
-
-        if ( ! pClient->connected ) {
-            logClientConnect (pClient);
-            if ( ! pClient->connected ) {
-                if ( pClient->connectTries>LOG_MAX_CONNECT_RETRIES ) {
-                    fprintf ( stderr, "log client: timed out attempting to connect to %s\n", pClient->name );
-                    logClientReset ( pClient );
-                }
-            }
-        }
-        else {
+        // SMP safe state inspection
+        epicsMutexMustLock ( pClient->mutex );
+        isConn = pClient->connected;
+        epicsMutexUnlock ( pClient->mutex );
+        if ( isConn ) {
             logClientFlush ( pClient );
         }
+        else {
+            logClientConnect ( pClient );
+        }
+        
+        epicsThreadSleep ( LOG_RESTART_DELAY );
     }
 }
 
@@ -476,46 +419,49 @@ logClientId epicsShareAPI logClientCreate (
     ipAddrToDottedIP (&pClient->addr, pClient->name, sizeof(pClient->name));
 
     pClient->mutex = epicsMutexCreate ();
-    if (!pClient->mutex) {
-        free (pClient);
+    if ( ! pClient->mutex ) {
+        free ( pClient );
         return NULL;
     }
 
     pClient->sock = INVALID_SOCKET;
     pClient->connected = 0u;
+    pClient->connFailStatus = 0;
 
     epicsAtExit (logClientDestroy, (void*) pClient);
-
-    pClient->restartSignal = epicsEventCreate (epicsEventEmpty);
-    if (!pClient->restartSignal) {
-        free (pClient);
+    
+    pClient->connectSignal = epicsEventCreate (epicsEventEmpty);
+    if ( ! pClient->connectSignal ) {
+        epicsMutexDestroy ( pClient->mutex );
+        free ( pClient );
         return NULL;
     }
-    
-    pClient->restartThreadId = epicsThreadCreate ("logRestart",
-        epicsThreadPriorityLow, 
+   
+    pClient->restartThreadId = epicsThreadCreate (
+        "logRestart", epicsThreadPriorityLow, 
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        logClientRestart, pClient);
-    if (pClient->restartThreadId==NULL) {
+        logClientRestart, pClient );
+    if ( pClient->restartThreadId == NULL ) {
+        epicsMutexDestroy ( pClient->mutex );
+        epicsEventDestroy ( pClient->connectSignal );
         free (pClient);
         fprintf(stderr, "log client: unable to start log client connection watch dog thread\n");
         return NULL;
     }
 
     /*
-     * attempt to block for the connect
+     * attempt to synchronize with circuit connect
      */
-    while ( ! pClient->connected ) {
-        epicsEventSignal ( pClient->restartSignal );
-        epicsThreadSleep ( LOG_INITIAL_CONNECT_DELAY );
-        connectTries++;
-        if ( connectTries >= LOG_INITIAL_MAX_CONNECT_RETRIES ) {
-            fprintf (stderr, "log client: unable to connect to \"%s\" for %.1f seconds\n",
-                pClient->name, LOG_INITIAL_CONNECT_DELAY*LOG_INITIAL_MAX_CONNECT_RETRIES);
-            break;
-        }
-    }
+    epicsEventWaitWithTimeout ( 
+        pClient->connectSignal, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT ); 
 
+    epicsMutexMustLock ( pClient->mutex );
+    if ( ! pClient->connected ) {
+        fprintf (stderr, "log client create: timed out synchronizing with circuit connect to \"%s\" after %.1f seconds\n",
+            pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
+    }
+    epicsMutexUnlock ( pClient->mutex );
+        
     return (void *) pClient;
 }
 
@@ -534,9 +480,9 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
     }
 
     if (level>1) {
-        printf ("log client: address=%p, sock=%s, connect tries=%u, connect cycles = %u\n",
-            (void *) pClient, pClient->sock==INVALID_SOCKET?"INVALID":"OK",
-            pClient->connectTries, pClient->connectCount);
+        printf ("log client: sock=%s, connect cycles = %u\n",
+            pClient->sock==INVALID_SOCKET?"INVALID":"OK",
+            pClient->connectCount);
     }
 }
 

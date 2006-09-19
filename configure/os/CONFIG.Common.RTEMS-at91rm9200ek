@@ -1,0 +1,13 @@
+#
+# CONFIG.Common.RTEMS-at91rm9200ek
+# Author: Ralf Hartmann
+#         BESSY
+#         Ralf.Hartmann@bessy.de
+#
+# Atmel AT91RM9200-EK evaluation kit
+# using the AT91RM9200 ARM9-based 32-bit RISC microcontroller
+#
+# All RTEMS targets use the same Makefile fragment
+#
+RTEMS_TARGET_CPU=arm
+include $(CONFIG)/os/CONFIG.Common.RTEMS

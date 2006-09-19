@@ -14,6 +14,8 @@
  */
 #ifndef __i386__
 #ifndef __mc68000
+#ifndef __arm__
 #include <bsp/VME.h>
+#endif
 #endif
 #endif

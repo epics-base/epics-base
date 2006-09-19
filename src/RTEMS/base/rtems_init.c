@@ -175,7 +175,9 @@ initialize_remote_filesystem(const char **argv, int hasLocalFilesystem)
         strcpy (path, "/TFTP/BOOTP_HOST/epics/");
         l = strlen (path);
         if (gethostname (&path[l], pathsize - l - 10) || (path[l] == '\0'))
+        {
             LogFatal ("Can't get host name");
+        }
         strcat (path, "/st.cmd");
         argv[1] = path;
     }
@@ -319,13 +321,13 @@ static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
     unsigned long n = malloc_free_space();
 
-    if (n >= 1024*1000) {
+    if (n >= 1024*1024) {
         double x = (double)n / (1024 * 1024);
-        printf("Heap space: %.1f MB\n", x);
+        printf("Heap space: %.1f MiB\n", x);
     }
     else {
         double x = (double)n / 1024;
-        printf("Heap space: %.1f kB\n", x);
+        printf("Heap space: %.1f kiB\n", x);
     }
 }
 
@@ -410,12 +412,12 @@ exitHandler(void)
 rtems_task
 Init (rtems_task_argument ignored)
 {
-    int i;
-    const char *argv[3] = { NULL, NULL, NULL };
-    rtems_interval ticksPerSecond;
+    int                 i;
+    const char         *argv[3]         = { NULL, NULL, NULL };
+    rtems_interval      ticksPerSecond;
     rtems_task_priority newpri;
-    rtems_status_code sc;
-    rtems_time_of_day now;
+    rtems_status_code   sc;
+    rtems_time_of_day   now;
 
     /*
      * Get configuration
@@ -453,6 +455,24 @@ Init (rtems_task_argument ignored)
     initConsole ();
     putenv ("TERM=xterm");
     putenv ("IOCSH_HISTSIZE=20");
+
+    /*
+     * Start network
+     */
+    if (rtems_bsdnet_config.network_task_priority == 0)
+    {
+        unsigned int p;
+        if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
+                                            == epicsThreadBooleanStatusSuccess)
+        {
+            rtems_bsdnet_config.network_task_priority = epicsThreadGetOssPriorityValue(p);
+        }
+    }
+    printf("\n***** Initializing network *****\n");
+    rtems_bsdnet_initialize_network();
+    initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
+
+#if 0
     if (rtems_bsdnet_config.hostname) {
         char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+3, "iocsh prompt");
         sprintf(cp, "%s> ", rtems_bsdnet_config.hostname);
@@ -463,19 +483,15 @@ Init (rtems_task_argument ignored)
         epicsEnvSet ("IOCSH_PS1", "epics> ");
         epicsEnvSet ("IOC_NAME", ":UnnamedIoc:");
     }
-
-    /*
-     * Start network
-     */
-    if (rtems_bsdnet_config.network_task_priority == 0) {
-        unsigned int p;
-        if (epicsThreadHighestPriorityLevelBelow(epicsThreadPriorityScanLow, &p)
-                                            == epicsThreadBooleanStatusSuccess)
-            rtems_bsdnet_config.network_task_priority = epicsThreadGetOssPriorityValue(p);
+#endif
+    {
+        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+3, "iocsh prompt");
+        char hostname[1024];
+        gethostname(hostname, 1023);
+        sprintf(cp, "%s> ", hostname);
+        epicsEnvSet ("IOCSH_PS1", cp);
+        epicsEnvSet("IOC_NAME", hostname);
     }
-    printf("\n***** Initializing network *****\n");
-    rtems_bsdnet_initialize_network();
-    initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
 
     /*
      * Use BSP-supplied time of day if available

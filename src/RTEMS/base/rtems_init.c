@@ -472,22 +472,13 @@ Init (rtems_task_argument ignored)
     rtems_bsdnet_initialize_network();
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
 
-#if 0
-    if (rtems_bsdnet_config.hostname) {
-        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+3, "iocsh prompt");
-        sprintf(cp, "%s> ", rtems_bsdnet_config.hostname);
-        epicsEnvSet ("IOCSH_PS1", cp);
-        epicsEnvSet("IOC_NAME", rtems_bsdnet_config.hostname);
-    }
-    else {
-        epicsEnvSet ("IOCSH_PS1", "epics> ");
-        epicsEnvSet ("IOC_NAME", ":UnnamedIoc:");
-    }
-#endif
+    /*
+     * More environment: iocsh prompt and hostname
+     */
     {
-        char *cp = mustMalloc(strlen(rtems_bsdnet_config.hostname)+3, "iocsh prompt");
         char hostname[1024];
         gethostname(hostname, 1023);
+        char *cp = mustMalloc(strlen(hostname)+3, "iocsh prompt");
         sprintf(cp, "%s> ", hostname);
         epicsEnvSet ("IOCSH_PS1", cp);
         epicsEnvSet("IOC_NAME", hostname);

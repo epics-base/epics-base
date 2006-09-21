@@ -31,22 +31,30 @@
 #endif
     
 /*
- * Move to the next ifreq structure
+ * Determine the size of an ifreq structure
  * Made difficult by the fact that addresses larger than the structure
  * size may be returned from the kernel.
  */
-static struct ifreq * ifreqNext ( struct ifreq *pifreq )
+static size_t ifreqSize ( struct ifreq *pifreq )
 {
     size_t        size;
-    struct ifreq *ifr;
 
     size = ifreq_size ( pifreq );
     if ( size < sizeof ( *pifreq ) ) {
 	    size = sizeof ( *pifreq );
     }
+    return size;
+}
 
-    ifr = ( struct ifreq * )( size + ( char * ) pifreq );
-    ifDepenDebugPrintf( ("ifreqNext() pifreq 0x%08x, size 0x%08x, ifr 0x%08x\n", pifreq, size, ifr) );
+/*
+ * Move to the next ifreq structure
+ */
+static struct ifreq * ifreqNext ( struct ifreq *pifreq )
+{
+    struct ifreq *ifr;
+
+    ifr = ( struct ifreq * )( ifreqSize (pifreq) + ( char * ) pifreq );
+    ifDepenDebugPrintf( ("ifreqNext() pifreq 0x%08x, size 0x%08x, ifr 0x%08x\n", pifreq, ifreqSize (pifreq), ifr) );
     return ifr;
 }
 
@@ -110,18 +118,14 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         uint32_t  current_ifreqsize;
 
         /*
-         * find the next if req
+         * find the next ifreq
          */
         pnextifreq = ifreqNext (pifreq);
-
         
         /* determine ifreq size */
-        current_ifreqsize = ifreq_size ( pifreq );
-        if ( current_ifreqsize < sizeof ( *pifreq ) ) {
-	       current_ifreqsize = sizeof ( *pifreq );
-        }
+        current_ifreqsize = ifreqSize ( pifreq );
         /* copy current ifreq to aligned bufferspace (to start of pIfreqList buffer) */
-        memmove(pIfreqList, pnextifreq, current_ifreqsize);
+        memmove(pIfreqList, pifreq, current_ifreqsize);
 
         ifDepenDebugPrintf (("osiSockDiscoverBroadcastAddresses(): found IFACE: %s len: 0x%x current_ifreqsize: 0x%x \n",
             pIfreqList->ifr_name,

@@ -240,7 +240,7 @@
 	field(TIME,DBF_NOACCESS) {
 		prompt("Time")
 		special(SPC_NOMOD)
-		interest(4)
+		interest(2)
 		extra("epicsTimeStamp	time")
 	}
 	field(FLNK,DBF_FWDLINK) {

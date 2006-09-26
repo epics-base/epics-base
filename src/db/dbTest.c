@@ -1071,7 +1071,7 @@ static int dbpr_report(
 		    if(pamaplinkType[ind].value == plink->type) break;
 		}
 		if(ind>=LINK_NTYPES) {
-		    sprintf(pmsg,"%4s: Illegal Link Type", pfield_name);
+		    sprintf(pmsg,"%s: Illegal Link Type", pfield_name);
 		} else {
 		    sprintf(pmsg,"%s:%s %s", pfield_name,
 		        pamaplinkType[ind].strvalue,dbGetString(pdbentry));
@@ -1080,7 +1080,14 @@ static int dbpr_report(
 	    }
 	    break;
 	case DBF_NOACCESS:
-	    { /* lets just print field in hex */
+	    if (pfield == (void *)&paddr->precord->time) {
+		/* Special for the TIME field, make it human-readable */
+		char time_buf[40];
+		epicsTimeToStrftime(time_buf, 40, "%Y-%m-%d %H:%M:%S.%09f",
+		    &paddr->precord->time);
+		sprintf(pmsg, "%s: %s", pfield_name, time_buf);
+		dbpr_msgOut(pMsgBuff, tab_size);
+	    } else { /* just print field in hex */
 		char * pchar = (char *)(pfield);
 		char   temp_buf[42];
 		char *ptemp_buf = &temp_buf[0];

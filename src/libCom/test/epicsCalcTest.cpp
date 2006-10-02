@@ -64,7 +64,7 @@ void testCalc(const char *expr, double expected) {
     if (finite(expected) && finite(result)) {
 	pass = fabs(expected - result) < 1e-8;
     } else if (isnan(expected)) {
-	pass = isnan(result);
+	pass = (bool) isnan(result);
     } else {
 	pass = (result == expected);
     }
@@ -398,8 +398,8 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testCalc("-2 ^ 2", pow(-2., 2.));		// 7 6
     
     // Check parentheses
-    testCalc("(1 | 2) ** 3", pow(1 | 2, 3.));	// 8 6
-    testCalc("1+(1|2)**3", 1+pow(1 | 2, 3.));	// 8 6
+    testCalc("(1 | 2) ** 3", pow((double) (1 | 2), 3.));// 8 6
+    testCalc("1+(1|2)**3", 1+pow((double) (1 | 2), 3.));// 8 6
     testExpr(1+(1?(1<2):(1>2))*2);
     
     return testDone();

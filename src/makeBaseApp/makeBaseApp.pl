@@ -170,7 +170,7 @@ sub get_commandline_opts { #no args
 	$epics_base =~s|^\$\(TOP\)/||;
     } elsif ($command =~ m|/bin/|) { # assume script was run with full path to base
 	$epics_base = $command;
-	$epics_base =~ s|(/.*)/bin/.*makeBaseApp.*|$1|;
+	$epics_base =~ s|^(.*)/bin/.*makeBaseApp.*|$1|;
     }
     $epics_base and -d "$epics_base" or Cleanup(1, "Can't find EPICS base");
     $app_epics_base = LocalPath($epics_base);
@@ -479,6 +479,8 @@ sub UnixPath {
     if ($^O eq "cygwin") {
 	$newpath =~ s|\\|/|go;
 	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    } elsif ($^O eq 'MSWin32') {
+	$newpath =~ s|\\|/|go;
     } elsif ($^O eq 'sunos') {
 	$newpath =~ s(^\/tmp_mnt/)(/);
     }

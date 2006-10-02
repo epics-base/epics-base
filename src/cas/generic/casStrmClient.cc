@@ -2047,13 +2047,12 @@ caStatus casStrmClient::writeScalarData ()
 	if ( type == aitEnumInvalid ) {
 		return S_cas_badType;
 	}
-
     aitEnum	bestExternalType = this->ctx.getPV()->bestExternalType ();
-
-	gdd * pDD = new gddScalar ( gddAppType_value, bestExternalType );
-	if ( ! pDD ) {
-		return S_cas_noMemory;
-	}
+    aitUint16 app = gddDbrToAit[pHdr->m_dataType].app;
+    gdd * pDD = new gddScalar ( app, bestExternalType );
+ 	if ( ! pDD ) {
+ 		return S_cas_noMemory;
+ 	}
 
     //
     // copy in, and convert to native type, the incoming data

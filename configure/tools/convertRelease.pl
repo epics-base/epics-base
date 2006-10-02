@@ -319,11 +319,13 @@ sub checkRelease {
 sub UnixPath {
     my ($newpath) = @_;
     if ($^O eq "cygwin") {
-	$newpath =~ s|\\|/|go;
 	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    } elsif ($^O eq 'MSWin32') {
+	$newpath =~ s|\\|/|go;
     } elsif ($^O eq 'sunos') {
 	$newpath =~ s(^\/tmp_mnt/)(/);
     }
+    $newpath =~ s|\\|/|go;
     return $newpath;
 }
 

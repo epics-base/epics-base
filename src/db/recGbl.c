@@ -42,6 +42,10 @@
 #include "recGbl.h"
 
 
+/* Hook Routines */
+
+RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook = NULL;
+
 /* local routines */
 static void getMaxRangeValues();
 
@@ -219,33 +223,39 @@ int  epicsShareAPI recGblInitConstantLink(
 unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
     dbCommon *pdbc = precord;
-    unsigned short mask,stat,sevr,nsta,nsev,ackt,acks;
-    unsigned short stat_mask=0;
+    unsigned short prev_stat = pdbc->stat;
+    unsigned short prev_sevr = pdbc->sevr;
+    unsigned short new_stat = pdbc->nsta;
+    unsigned short new_sevr = pdbc->nsev;
+    unsigned short val_mask = 0;
+    unsigned short stat_mask = 0;
 
-    mask = 0;
-    stat=pdbc->stat; sevr=pdbc->sevr;
-    nsta=pdbc->nsta; nsev=pdbc->nsev;
-    pdbc->stat=nsta; pdbc->sevr=nsev;
-    pdbc->nsta=0; pdbc->nsev=0;
-    /* alarm condition changed this scan?*/
-    if (sevr!=nsev) {
-        stat_mask = mask = DBE_ALARM;
-        db_post_events(pdbc,&pdbc->sevr,DBE_VALUE);
+    pdbc->stat = new_stat;
+    pdbc->sevr = new_sevr;
+    pdbc->nsta = 0;
+    pdbc->nsev = 0;
+
+    if (prev_sevr != new_sevr) {
+	stat_mask = DBE_ALARM;
+	db_post_events(pdbc, &pdbc->sevr, DBE_VALUE);
     }
-    if(stat!=nsta) {
-        stat_mask |= DBE_VALUE;
-        mask = DBE_ALARM;
+    if (prev_stat != new_stat) {
+	stat_mask |= DBE_VALUE;
     }
-    if(stat_mask)
-        db_post_events(pdbc,&pdbc->stat,stat_mask);
-    if(sevr!=nsev || stat!=nsta) {
-	ackt = pdbc->ackt; acks = pdbc->acks;
-	if(!ackt || nsev>=acks){
-	    pdbc->acks=nsev;
-	    db_post_events(pdbc,&pdbc->acks,DBE_VALUE);
+    if (stat_mask) {
+	db_post_events(pdbc, &pdbc->stat, stat_mask);
+	val_mask = DBE_ALARM;
+
+	if (!pdbc->ackt || new_sevr >= pdbc->acks) {
+	    pdbc->acks = new_sevr;
+	    db_post_events(pdbc, &pdbc->acks, DBE_VALUE);
+	}
+
+	if (recGblAlarmHook) {
+	    (*recGblAlarmHook)(pdbc, prev_sevr, prev_stat);
 	}
     }
-    return(mask);
+    return val_mask;
 }
 
 void epicsShareAPI recGblFwdLink(void *precord)

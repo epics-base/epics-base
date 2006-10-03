@@ -30,13 +30,23 @@ extern "C" {
      : FALSE\
 )
 
+/* Structures needed for args */
 
-/* Global Record Support Routines*/
 struct link;
 struct dbAddr;
 struct dbr_alDouble;
 struct dbr_ctrlDouble;
 struct dbr_grDouble;
+struct dbCommon;
+
+/* Hook Routine */
+
+typedef void (*RECGBL_ALARM_HOOK_ROUTINE)(struct dbCommon *prec,
+    unsigned short prev_sevr, unsigned short prev_stat);
+extern RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook;
+
+/* Global Record Support Routines */
+
 epicsShareFunc void epicsShareAPI recGblDbaddrError(
     long status, struct dbAddr *paddr, char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecordError(

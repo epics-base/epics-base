@@ -26,6 +26,7 @@
 #include "devSup.h"
 #include "link.h"
 #include "special.h"
+#include "postfix.h"
 #include "calcoutRecord.h"
 #include "epicsExport.h"
 

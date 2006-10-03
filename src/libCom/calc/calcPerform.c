@@ -40,7 +40,7 @@ static int cond_search(const char **ppinst, int match);
 epicsShareFunc long
     calcPerform(double *parg, double *presult, const char *pinst)
 {
-    double stack[CALCPERFORM_STACK];	/* zero'th entry not used */
+    double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
     int itop;				/* integer from top of stack */
@@ -338,7 +338,7 @@ epicsShareFunc long
     if (ptop != stack + 1)
 	return -1;
     *presult = *ptop;
-    return (isnan(*presult) || isinf(*presult)) ? -1 : 0; /* FIXME */
+    return 0;
 }
 
 

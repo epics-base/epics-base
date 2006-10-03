@@ -8,348 +8,279 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 menu(calcoutOOPT) {
-        choice(calcoutOOPT_Every_Time,"Every Time")
-        choice(calcoutOOPT_On_Change,"On Change")
-        choice(calcoutOOPT_When_Zero,"When Zero")
-        choice(calcoutOOPT_When_Non_zero,"When Non-zero")
-        choice(calcoutOOPT_Transition_To_Zero,"Transition To Zero")
-        choice(calcoutOOPT_Transition_To_Non_zero,"Transition To Non-zero")
+	choice(calcoutOOPT_Every_Time,"Every Time")
+	choice(calcoutOOPT_On_Change,"On Change")
+	choice(calcoutOOPT_When_Zero,"When Zero")
+	choice(calcoutOOPT_When_Non_zero,"When Non-zero")
+	choice(calcoutOOPT_Transition_To_Zero,"Transition To Zero")
+	choice(calcoutOOPT_Transition_To_Non_zero,"Transition To Non-zero")
 }
 menu(calcoutDOPT) {
-        choice(calcoutDOPT_Use_VAL,"Use CALC")
-        choice(calcoutDOPT_Use_OVAL,"Use OCAL")
+	choice(calcoutDOPT_Use_VAL,"Use CALC")
+	choice(calcoutDOPT_Use_OVAL,"Use OCAL")
 }
 menu(calcoutINAP) {
-        choice(calcoutINAP_No,"No PROC on Change")
-        choice(calcoutINAP_Yes,"PROC on Change")
+	choice(calcoutINAP_No,"No PROC on Change")
+	choice(calcoutINAP_Yes,"PROC on Change")
 }
 menu(calcoutINAV) {
-        choice(calcoutINAV_EXT_NC,"Ext PV NC")
-        choice(calcoutINAV_EXT,"Ext PV OK")
-        choice(calcoutINAV_LOC,"Local PV")
-        choice(calcoutINAV_CON,"Constant")
+	choice(calcoutINAV_EXT_NC,"Ext PV NC")
+	choice(calcoutINAV_EXT,"Ext PV OK")
+	choice(calcoutINAV_LOC,"Local PV")
+	choice(calcoutINAV_CON,"Constant")
 }
 recordtype(calcout) {
 	include "dbCommon.dbd" 
-        field(VERS,DBF_DOUBLE) {
-                prompt("Code Version")
-                special(SPC_NOMOD)
-                initial("1")
-        }
-        field(RPVT,DBF_NOACCESS) {
-                prompt("Record Private")
-                special(SPC_NOMOD)
-                interest(4)
-                extra("void *         rpvt")
-        }
+	field(VERS,DBF_DOUBLE) {
+		prompt("Code Version")
+		special(SPC_NOMOD)
+		initial("1")
+	}
+	field(RPVT,DBF_NOACCESS) {
+		prompt("Record Private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("struct rpvtStruct *rpvt")
+	}
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
-                promptgroup(GUI_OUTPUT)
+		promptgroup(GUI_OUTPUT)
 		asl(ASL0)
 	}
-        field(PVAL,DBF_DOUBLE) {
-                prompt("Previous Value")
-        }
+	field(PVAL,DBF_DOUBLE) {
+		prompt("Previous Value")
+	}
 	field(CALC,DBF_STRING) {
 		prompt("Calculation")
 		promptgroup(GUI_CALC)
 		special(SPC_CALC)
 		pp(TRUE)
 		size(40)
+		initial("0")
 	}
-        field(CLCV,DBF_LONG) {
-                prompt("CALC Valid")
-                interest(1)
-        }
+	field(CLCV,DBF_LONG) {
+		prompt("CALC Valid")
+		interest(1)
+	}
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input B")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input C")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input D")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input E")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input F")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input G")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input H")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input I")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input J")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input K")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
-                special(SPC_MOD)
+		special(SPC_MOD)
 		promptgroup(GUI_CALC)
 		interest(1)
 	}
-        field(OUT,DBF_OUTLINK) {
-                prompt("Output Specification")
-                special(SPC_MOD)
-                promptgroup(GUI_OUTPUT)
-                interest(1)
-        }
-        field(INAV,DBF_MENU) {
-                prompt("INPA PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INBV,DBF_MENU) {
-                prompt("INPB PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INCV,DBF_MENU) {
-                prompt("INPC PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INDV,DBF_MENU) {
-                prompt("INPD PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INEV,DBF_MENU) {
-                prompt("INPE PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INFV,DBF_MENU) {
-                prompt("INPF PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INGV,DBF_MENU) {
-                prompt("INPG PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INHV,DBF_MENU) {
-                prompt("INPH PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INIV,DBF_MENU) {
-                prompt("INPI PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INJV,DBF_MENU) {
-                prompt("INPJ PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INKV,DBF_MENU) {
-                prompt("INPK PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(INLV,DBF_MENU) {
-                prompt("INPL PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-                initial("1")
-        }
-        field(OUTV,DBF_MENU) {
-                prompt("OUT PV Status")
-                special(SPC_NOMOD)
-                interest(1)
-                menu(calcoutINAV)
-        }
-# Haven't figured out how to do this yet ...
-#        field(INAP,DBF_MENU) {
-#                prompt("INPA causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INBP,DBF_MENU) {
-#                prompt("INPB causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INCP,DBF_MENU) {
-#                prompt("INPC causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INDP,DBF_MENU) {
-#                prompt("INPD causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INEP,DBF_MENU) {
-#                prompt("INPE causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INFP,DBF_MENU) {
-#                prompt("INPF causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INGP,DBF_MENU) {
-#                prompt("INPG causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INHP,DBF_MENU) {
-#                prompt("INPH causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INIP,DBF_MENU) {
-#                prompt("INPI causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-#        field(INJP,DBF_MENU) {
-#                prompt("INPJ causes PROC")
-#                promptgroup(GUI_CALC)
-#                interest(1)
-#                menu(calcoutINAP)
-#                initial("0")
-#        }
-        field(OOPT,DBF_MENU) {
-                prompt("Output Execute Opt")
-                promptgroup(GUI_CALC)
-                interest(1)
-                menu(calcoutOOPT)
-        }
-        field(ODLY,DBF_DOUBLE) {
-                prompt("Output Execute Delay")
-                promptgroup(GUI_ALARMS)
-                asl(ASL0)
-                interest(1)
-        }
-        field(DLYA,DBF_USHORT) {
-                prompt("Output Delay Active")
-                special(SPC_NOMOD)
-                asl(ASL0)
-        }
-        field(DOPT,DBF_MENU) {
-                prompt("Output Data Opt")
-                promptgroup(GUI_CALC)
-                interest(1)
-                menu(calcoutDOPT)
-        }
-        field(OCAL,DBF_STRING) {
-                prompt("Output Calculation")
-                promptgroup(GUI_CALC)
-                special(SPC_CALC)
-                pp(TRUE)
-                size(40)
-        }
-        field(OCLV,DBF_LONG) {
-                prompt("OCAL Valid")
-                interest(1)
-        }
-        field(OEVT,DBF_USHORT) {
-                prompt("Event To Issue")
-                promptgroup(GUI_CLOCK)
-                asl(ASL0)
-        }
-        field(IVOA,DBF_MENU) {
-                prompt("INVALID output action")
-                promptgroup(GUI_OUTPUT)
-                interest(2)
-                menu(menuIvoa)
-        }
-        field(IVOV,DBF_DOUBLE) {
-                prompt("INVALID output value")
-                promptgroup(GUI_OUTPUT)
-                interest(2)
-        }
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		special(SPC_MOD)
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(INAV,DBF_MENU) {
+		prompt("INPA PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INBV,DBF_MENU) {
+		prompt("INPB PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INCV,DBF_MENU) {
+		prompt("INPC PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INDV,DBF_MENU) {
+		prompt("INPD PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INEV,DBF_MENU) {
+		prompt("INPE PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INFV,DBF_MENU) {
+		prompt("INPF PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INGV,DBF_MENU) {
+		prompt("INPG PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INHV,DBF_MENU) {
+		prompt("INPH PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INIV,DBF_MENU) {
+		prompt("INPI PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INJV,DBF_MENU) {
+		prompt("INPJ PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INKV,DBF_MENU) {
+		prompt("INPK PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(INLV,DBF_MENU) {
+		prompt("INPL PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+		initial("1")
+	}
+	field(OUTV,DBF_MENU) {
+		prompt("OUT PV Status")
+		special(SPC_NOMOD)
+		interest(1)
+		menu(calcoutINAV)
+	}
+	field(OOPT,DBF_MENU) {
+		prompt("Output Execute Opt")
+		promptgroup(GUI_CALC)
+		interest(1)
+		menu(calcoutOOPT)
+	}
+	field(ODLY,DBF_DOUBLE) {
+		prompt("Output Execute Delay")
+		promptgroup(GUI_ALARMS)
+		asl(ASL0)
+		interest(1)
+	}
+	field(DLYA,DBF_USHORT) {
+		prompt("Output Delay Active")
+		special(SPC_NOMOD)
+		asl(ASL0)
+	}
+	field(DOPT,DBF_MENU) {
+		prompt("Output Data Opt")
+		promptgroup(GUI_CALC)
+		interest(1)
+		menu(calcoutDOPT)
+	}
+	field(OCAL,DBF_STRING) {
+		prompt("Output Calculation")
+		promptgroup(GUI_CALC)
+		special(SPC_CALC)
+		pp(TRUE)
+		size(40)
+		initial("0")
+	}
+	field(OCLV,DBF_LONG) {
+		prompt("OCAL Valid")
+		interest(1)
+	}
+	field(OEVT,DBF_USHORT) {
+		prompt("Event To Issue")
+		promptgroup(GUI_CLOCK)
+		asl(ASL0)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_DOUBLE) {
+		prompt("INVALID output value")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+	}
 	field(EGU,DBF_STRING) {
 		prompt("Units Name")
 		promptgroup(GUI_DISPLAY)
@@ -486,10 +417,10 @@ recordtype(calcout) {
 		prompt("Value of Input L")
 		pp(TRUE)
 	}
-        field(OVAL,DBF_DOUBLE) {
-                prompt("Output Value")
-                asl(ASL0)
-        }
+	field(OVAL,DBF_DOUBLE) {
+		prompt("Output Value")
+		asl(ASL0)
+	}
 	field(LA,DBF_DOUBLE) {
 		prompt("Prev Value of A")
 		special(SPC_NOMOD)
@@ -550,10 +481,10 @@ recordtype(calcout) {
 		special(SPC_NOMOD)
 		interest(3)
 	}
-        field(POVL,DBF_DOUBLE) {
-                prompt("Prev Value of OVAL")
-                asl(ASL0)
-        }
+	field(POVL,DBF_DOUBLE) {
+		prompt("Prev Value of OVAL")
+		asl(ASL0)
+	}
 	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
 		special(SPC_NOMOD)
@@ -573,12 +504,12 @@ recordtype(calcout) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[184]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(40)]")
 	}
 	field(ORPC,DBF_NOACCESS) {
 		prompt("Reverse Polish OCalc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	orpc[184]")
+		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(40)]")
 	}
 }

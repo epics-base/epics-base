@@ -30,6 +30,7 @@
  * and the infix must be a complete expression
  */
 
+/* These are not hard limits, just default sizes for the database */
 #define MAX_INFIX_SIZE 100
 #define MAX_POSTFIX_SIZE INFIX_TO_POSTFIX_SIZE(MAX_INFIX_SIZE)
 

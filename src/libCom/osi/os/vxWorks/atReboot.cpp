@@ -19,15 +19,7 @@
 /* osdThread references atRebootExtern just to make this module load*/
 int atRebootExtern;
 
-typedef int (*sysAtReboot)(void(func)(void));
-
-extern "C" {
-static void atReboot(void)
-{
-    epicsExitCallAtExits();
-}
-
-} /* extern "C" */
+typedef int (*sysAtReboot_t)(void(func)(void));
 
 class atRebootRegister {
 public:
@@ -36,21 +28,23 @@ public:
 
 atRebootRegister::atRebootRegister()
 {
-    STATUS      status;
-    sysAtReboot func;
-    SYM_TYPE    type;
+    STATUS status;
+    sysAtReboot_t sysAtReboot;
+    SYM_TYPE type;
 
-    status = symFindByNameEPICS(sysSymTbl,"_sysAtReboot",(char **)&func,&type);
+    status = symFindByNameEPICS(sysSymTbl, "_sysAtReboot",
+				(char **)&sysAtReboot, &type);
     if(status==OK) {
-        status = func(atReboot);
+        status = sysAtReboot(epicsExitCallAtExits);
         if(status!=OK) {
-            printf("atReboot: sysAtReboot error why?\n");
+            printf("atReboot: sysAtReboot returned error %d\n", status);
         } else {
             printf("epicsExit will be called by reboot.\n");
         }
     } else {
-            printf("sysAtReboot not found. "
-                   "epicsExit will not be called by reboot.\n");
+	printf("BSP routine sysAtReboot() not found, epicsExit() will not be\n"
+	       "called by reboot.  For reduced functionality, call\n"
+	       "    rebootHookAdd(epicsExitCallAtExits)\n");
     }
 }
 

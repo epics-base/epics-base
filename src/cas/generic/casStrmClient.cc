@@ -2043,13 +2043,24 @@ caStatus casStrmClient::writeScalarData ()
 	if ( pHdr->m_dataType >= NELEMENTS(gddDbrToAit) ) {
 		return S_cas_badType;
 	}
+
+    // a primitive type matching the atomic DBR_XXX type
 	aitEnum	type = gddDbrToAit[pHdr->m_dataType].type;
 	if ( type == aitEnumInvalid ) {
 		return S_cas_badType;
 	}
-    aitEnum	bestExternalType = this->ctx.getPV()->bestExternalType ();
+
+    // the application type best maching this DBR_XXX type
     aitUint16 app = gddDbrToAit[pHdr->m_dataType].app;
-    gdd * pDD = new gddScalar ( app, bestExternalType );
+
+    // When possible, preconvert to best external type in order
+    // to reduce problems in the services
+    aitEnum bestWritePrimType = 
+        app == gddAppType_value ?
+        this->ctx.getPV()->bestExternalType () :
+        type;
+
+    gdd * pDD = new gddScalar ( app, bestWritePrimType );
  	if ( ! pDD ) {
  		return S_cas_noMemory;
  	}

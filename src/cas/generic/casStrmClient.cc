@@ -2124,7 +2124,17 @@ caStatus casStrmClient::writeArrayData()
 
     aitEnum	bestExternalType = this->ctx.getPV()->bestExternalType ();
 
-	gdd * pDD = new gddAtomic(gddAppType_value, bestExternalType, 1, pHdr->m_count);
+    // the application type best maching this DBR_XXX type
+    aitUint16 app = gddDbrToAit[pHdr->m_dataType].app;
+
+    // When possible, preconvert to best external type in order
+    // to reduce problems in the services
+    aitEnum bestWritePrimType = 
+        app == gddAppType_value ?
+        this->ctx.getPV()->bestExternalType () :
+        type;
+
+	gdd * pDD = new gddAtomic( app, bestWritePrimType, 1, pHdr->m_count);
 	if ( ! pDD ) {
 		return S_cas_noMemory;
 	}
@@ -2158,7 +2168,7 @@ caStatus casStrmClient::writeArrayData()
 	// will be allowed to ref the DD
 	//
     caStatus status = S_cas_noConvert;
-    gddStatus gddStat = aitConvert ( bestExternalType, 
+    gddStatus gddStat = aitConvert ( bestWritePrimType, 
         pData, type, this->ctx.getData(), 
         pHdr->m_count, &this->ctx.getPV()->enumStringTable() );
     if ( gddStat >= 0 ) { 

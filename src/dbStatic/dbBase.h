@@ -65,7 +65,7 @@ typedef struct brkTable { /* breakpoint table */
 	ELLNODE		node;
 	char		*name;		/*breakpoint table name	*/
 	long		number;		/*number of brkInt in this table*/
-	struct brkInt	**papBrkInt;	/* ptr to array of ptr to brkInt */
+	struct brkInt	*paBrkInt;	/* ptr to array of brkInts */
 }brkTable;
 
 typedef struct dbFldDes{  /* field description */

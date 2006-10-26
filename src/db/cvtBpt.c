@@ -15,11 +15,7 @@
  *      Date:            04OCT95
  *	This is adaptation of old bldCvtTable 
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
 
-#include "ellLib.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "epicsPrint.h"
@@ -27,125 +23,181 @@
 #define epicsExportSharedSymbols
 #include "dbAccess.h"
 #include "cvtTable.h"
-
+
 static brkTable *findBrkTable(short linr)
 { 
     dbMenu	*pdbMenu;
 
     pdbMenu = dbFindMenu(pdbbase,"menuConvert");
-    if(!pdbMenu) {
-	epicsPrintf("findBrkTable: menuConvert does not exist\n");
-	return(0);
+    if (!pdbMenu) {
+	epicsPrintf("findBrkTable: menuConvert not loaded!\n");
+	return NULL;
     }
-    if(linr<0 || linr>=pdbMenu->nChoice) {
-	epicsPrintf("findBrkTable linr %d  but menuConvert has %d choices\n",
+    if (linr < 0 || linr >= pdbMenu->nChoice) {
+	epicsPrintf("findBrkTable: linr=%d but menuConvert only has %d choices\n",
 	    linr,pdbMenu->nChoice);
-	return(0);
+	return NULL;
     }
-    return(dbFindBrkTable(pdbbase,pdbMenu->papChoiceValue[linr]));
+    return dbFindBrkTable(pdbbase,pdbMenu->papChoiceValue[linr]);
 }
-
-long epicsShareAPI cvtRawToEngBpt(double *pval,short linr,short init, void **ppbrk,
-	short *plbrk)
-{ 
-    double	val=*pval;
-    long	status=0;
+
+/* Used by both ao and ai record types */
+long epicsShareAPI cvtRawToEngBpt(double *pval, short linr, short init,
+	void **ppbrk, short *plbrk)
+{
+    double	val = *pval;
+    long	status = 0;
     brkTable	*pbrkTable;
-    brkInt	*pInt;     
-    brkInt	*pnxtInt;
+    brkInt	*pInt, *nInt;
     short	lbrk;
     int		number;
 
+    if (linr < 2)
+	return -1;
 
-    if(linr < 2) return(-1);
-    if(init==TRUE || *ppbrk == NULL) { /*must find breakpoint table*/
+    if (init || *ppbrk == NULL) {
 	pbrkTable = findBrkTable(linr);
-	if(!pbrkTable) return(S_dbLib_badField);
+	if (!pbrkTable)
+	    return S_dbLib_badField;
+	
 	*ppbrk = (void *)pbrkTable;
-	/* Just start at the beginning */
-	*plbrk=0;
-    }
-    pbrkTable = (struct brkTable *)*ppbrk;
+	*plbrk = 0;
+    } else
+	pbrkTable = (brkTable *)*ppbrk;
+    
     number = pbrkTable->number;
     lbrk = *plbrk;
-    /*make sure we dont go off end of table*/
-    if( (lbrk+1) >= number ) lbrk--;
-    pInt = pbrkTable->papBrkInt[lbrk];
-    pnxtInt = pbrkTable->papBrkInt[lbrk+1];
-    /* find entry for increased value */
-    while( (pnxtInt->raw) <= val ) {
-         lbrk++;
-         pInt = pbrkTable->papBrkInt[lbrk];
-         if( lbrk >= number-1) {
-                status=1;
-                break;
-         }
-         pnxtInt = pbrkTable->papBrkInt[lbrk+1];
+    
+    /* Limit index to the size of the table */
+    if (lbrk < 0)
+	lbrk = 0;
+    else if (lbrk > number-2)
+	lbrk = number-2;
+    
+    pInt = & pbrkTable->paBrkInt[lbrk];
+    nInt = pInt + 1;
+    
+    if (nInt->raw > pInt->raw) {
+	/* raw values increase down the table */
+	while (val > nInt->raw) {
+	    lbrk++;
+	    pInt = nInt++;
+	    if (lbrk > number-2) {
+		status = 1;
+		break;
+	    }
+	}
+	while (val < pInt->raw) {
+	    if (lbrk <= 0) {
+		status = 1;
+		break;
+	    }
+	    lbrk--;
+	    nInt = pInt--;
+	}
+    } else {
+	/* raw values decrease down the table */
+	while (val <= nInt->raw) {
+	    lbrk++;
+	    pInt = nInt++;
+	    if (lbrk > number-2) {
+		status = 1;
+		break;
+	    }
+	}
+	while(val > pInt->raw) {
+	    if (lbrk <= 0) {
+		status = 1;
+		break;
+	    }
+	    lbrk--;
+	    nInt = pInt--;
+	}
     }
-    while( (pInt->raw) > val) {
-         if(lbrk==0) {
-                status=1;
-                break;
-            }
-         lbrk--;
-         pInt = pbrkTable->papBrkInt[lbrk];
-    }
+    
     *plbrk = lbrk;
     *pval = pInt->eng + (val - pInt->raw) * pInt->slope;
-    return(status);
+    
+    return status;
 }
-
-long epicsShareAPI cvtEngToRawBpt(double *pval,short linr,short init,
-	 void **ppbrk,short *plbrk)
-{ 
-     double	val=*pval;
-     long	status=0;
-     brkTable	*pbrkTable;
-     brkInt	*pInt;     
-     brkInt	*pnxtInt;
-     short	lbrk;
-     int	number;
 
+/* Used by the ao record type */
+long epicsShareAPI cvtEngToRawBpt(double *pval, short linr, short init,
+	void **ppbrk, short *plbrk)
+{
+    double	val = *pval;
+    long	status = 0;
+    brkTable	*pbrkTable;
+    brkInt	*pInt, *nInt;
+    short	lbrk;
+    int		number;
 
-     if(linr < 2) return(-1);
-     if(init==TRUE || *ppbrk == NULL) { /*must find breakpoint table*/
+    if (linr < 2)
+	return -1;
+    
+    if (init || *ppbrk == NULL) { /*must find breakpoint table*/
 	pbrkTable = findBrkTable(linr);
-	if(!pbrkTable) return(S_dbLib_badField);
+	if (!pbrkTable)
+	    return S_dbLib_badField;
+	
 	*ppbrk = (void *)pbrkTable;
-         /* Just start at the beginning */
-         *plbrk=0;
-     }
-     pbrkTable = (struct brkTable *)*ppbrk;
-     number = pbrkTable->number;
-     lbrk = *plbrk;
-     /*make sure we dont go off end of table*/
-     if( (lbrk+1) >= number ) lbrk--;
-     pInt = pbrkTable->papBrkInt[lbrk];
-     pnxtInt = pbrkTable->papBrkInt[lbrk+1];
-     /* find entry for increased value */
-     while( (pnxtInt->eng) <= val ) {
-         lbrk++;
-         pInt = pbrkTable->papBrkInt[lbrk];
-         if( lbrk >= number-1) {
-                status=1;
-                break;
-         }
-         pnxtInt = pbrkTable->papBrkInt[lbrk+1];
-     }
-     while( (pInt->eng) > val) {
-         if(lbrk==0) {
-                status=1;
-                break;
-            }
-         lbrk--;
-         pInt = pbrkTable->papBrkInt[lbrk];
-     }
-     if(pInt->slope!=0){
-         *plbrk = lbrk;
-         *pval = pInt->raw + (val - pInt->eng) / pInt->slope;
-     }
-     else {
-         return(status);
-     }
-     return(0);
+	/* start at the beginning */
+	*plbrk = 0;
+    } else
+	pbrkTable = (brkTable *)*ppbrk;
+    
+    number = pbrkTable->number;
+    lbrk = *plbrk;
+    
+    /* Limit index to the size of the table */
+    if (lbrk < 0)
+	lbrk = 0;
+    else if (lbrk > number-2)
+	lbrk = number-2;
+    
+    pInt = & pbrkTable->paBrkInt[lbrk];
+    nInt = pInt + 1;
+    
+    if (nInt->eng > pInt->eng) {
+	/* eng values increase down the table */
+	while (val > nInt->eng) {
+	    lbrk++;
+	    pInt = nInt++;
+	    if (lbrk > number-2) {
+		status = 1;
+		break;
+	    }
+	}
+	while (val < pInt->eng) {
+	    if (lbrk <= 0) {
+		status = 1;
+		break;
+	    }
+	    lbrk--;
+	    nInt = pInt--;
+	}
+    } else {
+	/* eng values decrease down the table */
+	while (val <= nInt->eng) {
+	    lbrk++;
+	    pInt = nInt++;
+	    if (lbrk > number-2) {
+		status = 1;
+		break;
+	    }
+	}
+	while (val > pInt->eng) {
+	    if (lbrk <= 0) {
+		status = 1;
+		break;
+	    }
+	    lbrk--;
+	    nInt = pInt--;
+	}
+    }
+    
+    *plbrk = lbrk;
+    *pval = pInt->raw + (val - pInt->eng) / pInt->slope;
+    
+    return status;
 }

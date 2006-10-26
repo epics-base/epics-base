@@ -823,77 +823,84 @@ static void dbBreakHead(char *name)
 
 static void dbBreakItem(char *value)
 {
-    if(duplicate) return;
+    double dummy;
+    if (duplicate) return;
+    if (epicsScanDouble(value, &dummy) != 1) {
+	yyerrorAbort("Non-numeric value in breaktable");
+    }
     allocTemp(epicsStrDup(value));
 }
 
 static void dbBreakBody(void)
 {
     brkTable		*pnewbrkTable;
+    brkInt		*paBrkInt;
     brkTable		*pbrkTable;
-    int			number;
+    int			number, down=0;
     int			i,choice;
     GPHENTRY		*pgphentry;
 
-    if(duplicate) {
+    if (duplicate) {
 	duplicate = FALSE;
 	return;
     }
     pnewbrkTable = (brkTable *)popFirstTemp();
-    pnewbrkTable->number = number = ellCount(&tempList)/2;
-    if(number*2 != ellCount(&tempList))
-	yyerrorAbort("dbBreakBody: Odd number of values");
-    pnewbrkTable->papBrkInt = dbCalloc(number,sizeof(brkInt));
-    for(i=0; i<number; i++) {
-	double	raw,eng;
-	char	*praw;
-	char	*peng;
+    number = ellCount(&tempList);
+    if (number % 2) {
+	yyerrorAbort("breaktable: Raw value missing");
+	return;
+    }
+    number /= 2;
+    if (number < 2) {
+	yyerrorAbort("breaktable: Must have at least two points!");
+	return;
+    }
+    pnewbrkTable->number = number;
+    pnewbrkTable->paBrkInt = paBrkInt = dbCalloc(number, sizeof(brkInt));
+    for (i=0; i<number; i++) {
+	double	val;
+	char	*str;
 	
-	praw = (char *)popFirstTemp();
-	peng = (char *)popFirstTemp();
-	if((epicsScanDouble(praw, &raw)!=1) || (sscanf(peng,"%lf",&eng)!=1) ) {
-	    yyerrorAbort("dbbrkTable: Illegal table value");
-	}
-	free((void *)praw);
-	free((void *)peng);
-	pnewbrkTable->papBrkInt[i] = dbCalloc(1,sizeof(brkInt));
-	pnewbrkTable->papBrkInt[i]->raw = raw;
-	pnewbrkTable->papBrkInt[i]->eng = eng;
+	str = (char *)popFirstTemp();
+	epicsScanDouble(str, &paBrkInt[i].raw);
+	free(str);
+	
+	str = (char *)popFirstTemp();
+	epicsScanDouble(str, &paBrkInt[i].eng);
+	free(str);
     }
     /* Compute slopes */
-    for(i=0; i<number-1; i++) {
-	pnewbrkTable->papBrkInt[i]->slope =
-	  (pnewbrkTable->papBrkInt[i+1]->eng - pnewbrkTable->papBrkInt[i]->eng)/
-	  (pnewbrkTable->papBrkInt[i+1]->raw - pnewbrkTable->papBrkInt[i]->raw);
+    for (i=0; i<number-1; i++) {
+	double slope =
+	  (paBrkInt[i+1].eng - paBrkInt[i].eng)/
+	  (paBrkInt[i+1].raw - paBrkInt[i].raw);
+	if (i == 0) {
+	    down = (slope < 0);
+	} else if (down != (slope < 0)) {
+	    yyerrorAbort("breaktable: curve slope changes sign");
+	    return;
+	}
+	paBrkInt[i].slope = slope;
     }
-    if(number>1) {
-        pnewbrkTable->papBrkInt[number-1]->slope =
-            pnewbrkTable->papBrkInt[number-2]->slope;
-    }
+    /* Continue with last slope beyond the final point */
+    paBrkInt[number-1].slope = paBrkInt[number-2].slope;
     /* Add brkTable in sorted order */
     pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
-    while(pbrkTable) {
-	choice = strcmp(pbrkTable->name,pnewbrkTable->name);
-	if(choice==0) {
-	    ellInsert(&pdbbase->bptList,ellPrevious((ELLNODE *)pbrkTable),
-		(ELLNODE *)pnewbrkTable);
-	    gphDelete(pdbbase->pgpHash,pbrkTable->name,&pdbbase->bptList);
-	    ellDelete(&pdbbase->bptList,(ELLNODE *)pbrkTable);
-	    break;
-	} else if(choice>0) {
-	    ellInsert(&pdbbase->bptList,ellPrevious((ELLNODE *)pbrkTable),
+    while (pbrkTable) {
+	if (strcmp(pbrkTable->name, pnewbrkTable->name) > 0) {
+	    ellInsert(&pdbbase->bptList, ellPrevious((ELLNODE *)pbrkTable),
 		(ELLNODE *)pnewbrkTable);
 	    break;
 	}
 	pbrkTable = (brkTable *)ellNext(&pbrkTable->node);
     }
+    if (!pbrkTable) ellAdd(&pdbbase->bptList, &pnewbrkTable->node);
     pgphentry = gphAdd(pdbbase->pgpHash,pnewbrkTable->name,&pdbbase->bptList);
-    if(!pgphentry) {
-	yyerrorAbort("gphAdd failed");
-    } else {
-	pgphentry->userPvt = pnewbrkTable;
+    if (!pgphentry) {
+	yyerrorAbort("dbBreakBody: gphAdd failed");
+	return;
     }
-    if(!pbrkTable) ellAdd(&pdbbase->bptList,&pnewbrkTable->node);
+    pgphentry->userPvt = pnewbrkTable;
 }
 
 static void dbRecordHead(char *recordType,char *name, int visible)

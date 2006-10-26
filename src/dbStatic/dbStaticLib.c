@@ -716,8 +716,7 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
 	gphDelete(pdbbase->pgpHash,pbrkTable->name,&pdbbase->bptList);
 	ellDelete(&pdbbase->bptList,&pbrkTable->node);
 	free(pbrkTable->name);
-	for(i=0; i<pbrkTable->number; i++) 
-	    free((void *)(pbrkTable->papBrkInt[i]));
+	free((void *)pbrkTable->paBrkInt);
 	free((void *)pbrkTable);
 	pbrkTable = pbrkTableNext;
     }
@@ -1225,18 +1224,20 @@ long epicsShareAPI dbWriteBreaktableFP(DBBASE *pdbbase,FILE *fp)
 {
     brkTable	*pbrkTable;
     brkInt	*pbrkInt;
-    int		ind;
+    int		i;
 
-    if(!pdbbase) {
+    if (!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
-    for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
-    pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
+    for (pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
+	 pbrkTable;
+	 pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
 	fprintf(fp,"breaktable(%s) {\n",pbrkTable->name);
-	for(ind=0; ind<pbrkTable->number; ind++) {
-	    pbrkInt = pbrkTable->papBrkInt[ind];
-	    fprintf(fp,"\t%e %e\n",pbrkInt->raw,pbrkInt->eng);
+	pbrkInt = pbrkTable->paBrkInt;
+	for(i=0; i < pbrkTable->number; i++) {
+	    fprintf(fp,"\t%e, %e\n",pbrkInt->raw,pbrkInt->eng);
+	    pbrkInt++;
 	}
 	fprintf(fp,"}\n");
     }
@@ -3856,11 +3857,13 @@ void  epicsShareAPI dbDumpBreaktable(DBBASE *pdbbase,const char *name)
     }
     for(pbrkTable = (brkTable *)ellFirst(&pdbbase->bptList);
     pbrkTable; pbrkTable = (brkTable *)ellNext(&pbrkTable->node)) {
-	if(name && strcmp(name,pbrkTable->name)!=0) continue;
+	if (name && strcmp(name,pbrkTable->name)!=0) continue;
 	printf("breaktable(%s) {\n",pbrkTable->name);
-	for(ind=0; ind<pbrkTable->number; ind++) {
-	    pbrkInt = pbrkTable->papBrkInt[ind];
-	    printf("\t%f %e %f\n",pbrkInt->raw,pbrkInt->slope,pbrkInt->eng);
+	pbrkInt = pbrkTable->paBrkInt;
+	for(ind=0; ind < pbrkTable->number; ind++) {
+	    printf("\traw=%f slope=%e eng=%f\n",
+		   pbrkInt->raw, pbrkInt->slope, pbrkInt->eng);
+	    pbrkInt++;
 	}
 	printf("}\n");
     }

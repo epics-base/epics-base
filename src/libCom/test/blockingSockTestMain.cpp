@@ -1,5 +1,4 @@
-
-void blockingSockTest ();
+extern "C" void blockingSockTest (void); 
 
 int main ()
 {

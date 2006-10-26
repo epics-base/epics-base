@@ -201,7 +201,7 @@ const char * serverCircuit::pName ()
     return "server circuit";
 }
 
-void blockingSockTest ()
+extern "C" void blockingSockTest (void)
 {
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );

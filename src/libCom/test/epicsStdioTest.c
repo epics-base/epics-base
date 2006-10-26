@@ -25,6 +25,9 @@
 #include "epicsStdioRedirect.h"
 #include "epicsUnitTest.h"
 
+#define LINE_1 "# This is first line of sample report\n"
+#define LINE_2 "# This is second and last line of sample report\n"
+
 static void testEpicsSnprintf() {
     const int ivalue = 1234;
     const float fvalue = 1.23e4;
@@ -38,14 +41,14 @@ static void testEpicsSnprintf() {
     strcpy(buffer, "AAAA");
     
     for (size = 0; size < strlen(result) + 5; ++size) {
-	rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-	testOk1(rtn == rlen-1);
-	if (size) {
-	    testOk(strncmp(buffer, result, size-1) == 0, buffer);
-	    testOk(strlen(buffer) == (size < rlen ? size : rlen) -1, "length");
-	} else {
-	    testOk(strcmp(buffer, "AAAA") == 0, "Buffer unmodified, size=0");
-	}
+        rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
+        testOk1(rtn == rlen-1);
+        if (size) {
+            testOk(strncmp(buffer, result, size-1) == 0, buffer);
+            testOk(strlen(buffer) == (size < rlen ? size : rlen) -1, "length");
+        } else {
+            testOk(strcmp(buffer, "AAAA") == 0, "Buffer unmodified, size=0");
+        }
     }
 }
 
@@ -56,37 +59,59 @@ void testStdoutRedir (const char *report)
     
     testOk1(epicsGetStdout() == stdout);
     if(report && strlen(report)>0) {
-	int fd;
+        int fd;
 
-	errno = 0;
-	fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
-	if(fd<0) {
-	    fprintf(stderr,"%s could not be created %s\n",
-		report,strerror(errno));
-	} else {
-	    stream = fdopen(fd,"w");
-	    if(!stream) {
-		fprintf(stderr,"%s could not be opened for output %s\n",
-		    report,strerror(errno));
-	    } else {
-		epicsSetThreadStdout(stream);
-		testOk1(stdout == stream);
-	    }
-	}
+        errno = 0;
+        fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
+        if(fd<0) {
+            fprintf(stderr,"%s could not be created %s\n",
+            report,strerror(errno));
+        } else {
+            stream = fdopen(fd,"w");
+            if(!stream) {
+                fprintf(stderr,"%s could not be opened for output %s\n",
+                    report,strerror(errno));
+            } else {
+                epicsSetThreadStdout(stream);
+                testOk1(stdout == stream);
+            }
+        }
     }
-    printf("# This is first line of sample report\n");
-    printf("# This is second and last line of sample report\n");
+    printf(LINE_1);
+    printf(LINE_2);
     errno = 0;
     if(stream) {
-	epicsSetThreadStdout(0);
-	if(fclose(stream)) {
-	    fprintf(stderr,"fclose failed %s\n",strerror(errno));
-	}
+        epicsSetThreadStdout(0);
+        if(fclose(stream)) {
+            fprintf(stderr,"fclose failed %s\n",strerror(errno));
+        }
     } else {
-	fflush(stdout);
+        fflush(stdout);
     }
     testOk1(epicsGetStdout() == realStdout);
     testOk1(stdout == realStdout);
+    if ((stream = fopen(report, "r")) == NULL) {
+        fprintf(stderr, "Can't reopen report file: %s\n", strerror(errno));
+    }
+    else {
+        char linebuf[80];
+        if (fgets(linebuf, sizeof linebuf, stream) == NULL) {
+            fprintf(stderr, "Can't read first line of report file: %s\n", strerror(errno));
+        }
+        else if (!testOk(strcmp(linebuf, LINE_1) == 0, "First line")) { }
+        else if (fgets(linebuf, sizeof linebuf, stream) == NULL) {
+            fprintf(stderr, "Can't read second line of report file: %s\n", strerror(errno));
+        }
+        else if (!testOk(strcmp(linebuf, LINE_2) == 0, "Second line")) { }
+        else if (fgets(linebuf, sizeof linebuf, stream) != NULL) {
+            fprintf(stderr, "Read too much from report file.\n");
+        }
+        else {
+        }
+        if(fclose(stream)) {
+            fprintf(stderr,"fclose failed %s\n",strerror(errno));
+        }
+    }
 }
 
 int epicsStdioTest (const char *report)

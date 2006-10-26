@@ -35,8 +35,9 @@ static void client(void *arg)
 {
     info *pinfo = (info *)arg;
     epicsThreadId idSelf = epicsThreadGetIdSelf();
+    int pass;
 
-    while(1) {
+    for(pass = 0 ; pass < 3 ; pass++) {
         epicsEventWaitStatus status;
         status = epicsEventWait(pinfo->waitForMaster);
         if(status!=epicsEventWaitOK) {
@@ -95,6 +96,6 @@ extern "C" void epicsThreadPriorityTest(void *)
         }
     }
 done:
-    epicsExit(0);
+    epicsThreadSleep(1.0);
 }
 } /* extern "C" */

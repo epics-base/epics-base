@@ -74,9 +74,9 @@ epicsShareFunc double epicsStrtod(
     }
     else if (epicsStrnCaseCmp("INF", cp, 3) == 0) {
         cp += 3;
-    }
-    else if (epicsStrnCaseCmp("INFINITY", cp, 8) == 0) {
-        cp += 8;
+        if (epicsStrnCaseCmp("INITY", cp, 5) == 0) {
+            cp += 5;
+        }
     }
     else {
         cp = str;

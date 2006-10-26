@@ -119,7 +119,7 @@ extern "C" void epicsMessageQueueTest(void *parm)
     while (q1->trySend((void *)msg1, i ) == 0) {
         i++;
         assert(q1->pending() == i);
-        printf("Should have %d used -- ", ++used);
+        printf("Should have %d pending -- ", ++used);
         q1->show();
     }
     assert(q1->pending() == 4);
@@ -161,7 +161,7 @@ extern "C" void epicsMessageQueueTest(void *parm)
     while (q1->send((void *)msg1, i, 1.0 ) == 0) {
         i++;
         assert(q1->pending() == i);
-        printf("Should have %d used -- ", ++used);
+        printf("Should have %d pending -- ", ++used);
         q1->show();
     }
     assert(q1->pending() == 4);
@@ -262,5 +262,4 @@ extern "C" void epicsMessageQueueTest(void *parm)
     printf("......and here.\n");
     q1->trySend((void *)msg1, 0);
     epicsThreadSleep(1.0);
-    epicsExit(0);
 }

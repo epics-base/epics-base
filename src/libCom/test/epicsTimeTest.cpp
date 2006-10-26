@@ -10,17 +10,22 @@
 /*
  * Authors: Jeff HIll and Marty Kraimer
  */
-#include <stdio.h>
-#include <time.h>
-#include <math.h>
-#include <limits.h>
-#include <string.h>
+#include <cstdio>
+#include <ctime>
+#include <cmath>
+#include <climits>
+#include <cstring>
 
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "errlog.h"
 #include "epicsUnitTest.h"
 
+using namespace std;
+
+/* The functionality of the old invalidFormatTest () and badNanosecTest ()
+ * routines is incorporated into epicsTimeTest () below.
+ */
 
 struct l_fp { /* NTP time stamp */
     epicsUInt32 l_ui; /* sec past NTP epoch */
@@ -54,7 +59,7 @@ int epicsTimeTest (void)
         testOk1(diff <= precisionEPICS + precisionNTP);
     }
 
-    {
+    {   // badNanosecTest
         static const char * pFormat = "%a %b %d %Y %H:%M:%S.%4f";
         try {
             const epicsTimeStamp badTS = {1, 1000000000};
@@ -75,36 +80,36 @@ int epicsTimeTest (void)
 
         const char * pFormat = "%Y-%m-%d %H:%M:%S.%f";
         et.strftime(buf, sizeof(buf), pFormat);
-        testOk(strcmp(buf, "<undefined>") == 0, "undefined strftime") ||
-        testDiag("undefined.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        if (!testOk(strcmp(buf, "<undefined>") == 0, "undefined strftime"))
+            testDiag("undefined.strftime(\"%s\") = \"%s\"", pFormat, buf);
 
         // This is Noon GMT, when all timezones have the same date
         const epicsTimeStamp tTS = {12*60*60, 98765432};
         et = tTS;
         pFormat = "%Y-%m-%d %S.%09f";   // %H and %M change with timezone
         et.strftime(buf, sizeof(buf), pFormat);
-        testOk(strcmp(buf, "1990-01-01 00.098765432") == 0, pFormat) ||
-        testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        if (!testOk(strcmp(buf, "1990-01-01 00.098765432") == 0, pFormat))
+            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
 
         pFormat = "%S.%04f";
         et.strftime(buf, sizeof(buf), pFormat);
-        testOk(strcmp(buf, "00.0988") == 0, pFormat) ||
-        testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        if (!testOk(strcmp(buf, "00.0988") == 0, pFormat))
+            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
 
         pFormat = "%S.%05f";
         et.strftime(buf, sizeof(buf), pFormat);
-        testOk(strcmp(buf, "00.09877") == 0, pFormat) ||
-        testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        if (!testOk(strcmp(buf, "00.09877") == 0, pFormat))
+            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
     }
 
-    {
+    {   // invalidFormatTest
         char bigBuf [512];
         char buf [32];
         memset(bigBuf, '\a', sizeof(bigBuf ));
         bigBuf[ sizeof(bigBuf) - 1] = '\0';
         begin.strftime(buf, sizeof(buf), bigBuf);
-        testOk(strcmp(buf, "<invalid format>") == 0, "strftime(huge)") ||
-        testDiag("strftime(huge) = \"%s\"", buf);
+        if (!testOk(strcmp(buf, "<invalid format>") == 0, "strftime(huge)"))
+            testDiag("strftime(huge) = \"%s\"", buf);
     }
 
     testDiag("Running %d loops", nTimes);

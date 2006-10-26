@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "epicsThread.h"
 #include "epicsMutex.h"
 
 #define epicsExportSharedSymbols
@@ -31,13 +32,20 @@ static int skipped;
 static int bonus;
 static const char *todo;
 
-void testPlan(int tests) {
-    if (testLock) abort();
+static epicsThreadOnceId onceFlag = EPICS_THREAD_ONCE_INIT;
+
+static void testInit(void *dummy) {
     testLock = epicsMutexMustCreate();
+}
+
+void testPlan(int tests) {
+    epicsThreadOnce(&onceFlag, testInit, NULL);
+    epicsMutexMustLock(testLock);
     plan = tests;
     tests = passed = failed = skipped = bonus = 0;
     todo = NULL;
     if (plan) printf("1..%d\n", plan);
+    epicsMutexUnlock(testLock);
 }
 
 int testOk(int pass, const char *desc) {

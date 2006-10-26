@@ -40,14 +40,12 @@ static void testEpicsSnprintf() {
     
     strcpy(buffer, "AAAA");
     
-    for (size = 0; size < strlen(result) + 5; ++size) {
+    for (size = 1; size < strlen(result) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
         testOk1(rtn == rlen-1);
         if (size) {
             testOk(strncmp(buffer, result, size-1) == 0, buffer);
             testOk(strlen(buffer) == (size < rlen ? size : rlen) -1, "length");
-        } else {
-            testOk(strcmp(buffer, "AAAA") == 0, "Buffer unmodified, size=0");
         }
     }
 }

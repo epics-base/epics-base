@@ -24,8 +24,8 @@
 #include "epicsUnitTest.h"
 
 static epicsMutexId testLock = 0;
-static int plan;
-static int tests;
+static int planned;
+static int tested;
 static int passed;
 static int failed;
 static int skipped;
@@ -38,11 +38,11 @@ static void testInit(void *dummy) {
     testLock = epicsMutexMustCreate();
 }
 
-void testPlan(int tests) {
+void testPlan(int plan) {
     epicsThreadOnce(&onceFlag, testInit, NULL);
     epicsMutexMustLock(testLock);
-    plan = tests;
-    tests = passed = failed = skipped = bonus = 0;
+    planned = plan;
+    tested = passed = failed = skipped = bonus = 0;
     todo = NULL;
     if (plan) printf("1..%d\n", plan);
     epicsMutexUnlock(testLock);
@@ -51,7 +51,7 @@ void testPlan(int tests) {
 int testOk(int pass, const char *desc) {
     const char *result = "not ok";
     epicsMutexMustLock(testLock);
-    tests++;
+    tested++;
     if (pass) {
 	result += 4;
 	passed++;
@@ -63,7 +63,7 @@ int testOk(int pass, const char *desc) {
 	else
 	    failed++;
     }
-    printf("%s %2d - %s", result, tests, desc);
+    printf("%s %2d - %s", result, tested, desc);
     if (todo)
 	printf(" # TODO %s", todo);
     puts("");
@@ -82,10 +82,10 @@ void testFail(const char *desc) {
 void testSkip(int skip, const char *why) {
     epicsMutexMustLock(testLock);
     while (skip-- > 0) {
-	tests++;
+	tested++;
 	passed++;
 	skipped++;
-	printf("ok %2d # SKIP %s\n", tests, why);
+	printf("ok %2d # SKIP %s\n", tested, why);
     }
     epicsMutexUnlock(testLock);
 }
@@ -116,7 +116,7 @@ void testAbort(const char *desc) {
 }
 
 static void testResult(const char *result, int count) {
-    printf("%12.12s: %2d = %d%%\n", result, count, 100 * count / tests);
+    printf("%12.12s: %2d = %d%%\n", result, count, 100 * count / tested);
 }
 
 int testDone(void) {
@@ -125,17 +125,17 @@ int testDone(void) {
     
     epicsMutexMustLock(testLock);
     if (value) {
-	if (!plan) printf("1..%d\n", tests);
+	if (!planned) printf("1..%d\n", tested);
     } else {
-	if (plan && tests > plan) {
-	    printf("\nRan %d tests but only planned for %d!\n", tests, plan);
+	if (planned && tested > planned) {
+	    printf("\nRan %d tests but only planned for %d!\n", tested, planned);
 	    status = 2;
-	} else if (plan && tests < plan) {
-	    printf("\nPlanned %d tests but only ran %d\n", tests, plan);
+	} else if (planned && tested < planned) {
+	    printf("\nPlanned %d tests but only ran %d\n", tested, planned);
 	    status = 2;
 	}
-	printf("\n    Results\n    =======\n       Tests: %d\n", tests);
-	if (tests) {
+	printf("\n    Results\n    =======\n       Tests: %d\n", tested);
+	if (tested) {
 	    testResult("Passed", passed);
 	    if (bonus) testResult("Todo Passes", bonus);
 	    if (failed) {

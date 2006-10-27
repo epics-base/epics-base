@@ -64,4 +64,5 @@ void epicsExitTest(void)
     epicsThreadCreate("threadA",50,stackSize,thread,pinfoA);
     pinfoB = (info *)calloc(1,sizeof(info));
     epicsThreadCreate("threadB",50,stackSize,thread,pinfoB);
+    epicsThreadSleep(1.0);
 }

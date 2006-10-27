@@ -70,6 +70,7 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
 
 #include <stdio.h>
 #include <rtems/error.h>
+#include <epicsExit.h>
 
 rtems_task
 Init (rtems_task_argument ignored)
@@ -104,5 +105,4 @@ Init (rtems_task_argument ignored)
      */
     epicsRunLibComTests();
     epicsExit(0);
-    exit(0);
 }

@@ -120,8 +120,28 @@ blockingSockTestHost_SYS_LIBS_solaris = socket
 #fdmgrTest_SRCS += fdmgrTest.c
 #PROD_HOST += fdmgrTest
 
+PROD_RTEMS += rtemsTestHarness
+rtemsTestHarness_SRCS += rtemsTestHarness.c
+rtemsTestHarness_SRCS += epicsRunLibComTests.c
+rtemsTestHarness_SRCS += blockingSockTest.cpp
+rtemsTestHarness_SRCS += epicsAlgorithmTest.cpp
+rtemsTestHarness_SRCS += epicsCalcTest.cpp
+rtemsTestHarness_SRCS += epicsEventTest.cpp
+rtemsTestHarness_SRCS += epicsExceptionTest.cpp
+rtemsTestHarness_SRCS += epicsMathTest.c
+rtemsTestHarness_SRCS += epicsMessageQueueTest.cpp
+rtemsTestHarness_SRCS += epicsMutexTest.cpp
+rtemsTestHarness_SRCS += epicsOkToBlockTest.cpp
+rtemsTestHarness_SRCS += epicsStdioTest.c
+rtemsTestHarness_SRCS += epicsStringTest.c
+rtemsTestHarness_SRCS += epicsThreadPriorityTest.cpp
+rtemsTestHarness_SRCS += epicsThreadPrivateTest.cpp
+rtemsTestHarness_SRCS += epicsThreadTest.cpp
+rtemsTestHarness_SRCS += epicsTimeTest.cpp
+rtemsTestHarness_SRCS += epicsTimerTest.cpp
+rtemsTestHarness_SRCS += macEnvExpandTest.c
+rtemsTestHarness_SRCS += ringPointerTest.c
 
-OBJS_IOC_RTEMS += $(OBJS_IOC_vxWorks)
 
 TEST_SCRIPTS += $(TESTS:%=%.t)
 

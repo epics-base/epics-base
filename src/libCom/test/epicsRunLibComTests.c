@@ -13,6 +13,7 @@
  */
 #include <stdio.h>
 #include <epicsThread.h>
+#include <epicsExit.h>
 
 void threadTest(int ntasks,int verbose);
 void epicsTimerTest();
@@ -32,6 +33,7 @@ int epicsTimeTest(void);
 int macEnvExpandTest(void);
 void ringPointerTest();
 void blockingSockTest (void);
+void epicsExitTest(void);
 
 void
 epicsRunLibComTests(void)
@@ -114,6 +116,10 @@ epicsRunLibComTests(void)
     blockingSockTest();
  	epicsThreadSleep (1.0);
 
-	printf("\n****** Tests Completed *****\n");
- 	epicsThreadSleep (1.0);
+    /*
+     * Must come last
+     */
+	printf("\n****** EpicsExit Test *****\n");
+    epicsExitTest();
+ 	epicsExit (0);
 }

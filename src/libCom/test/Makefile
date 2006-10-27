@@ -128,6 +128,7 @@ rtemsTestHarness_SRCS += epicsAlgorithmTest.cpp
 rtemsTestHarness_SRCS += epicsCalcTest.cpp
 rtemsTestHarness_SRCS += epicsEventTest.cpp
 rtemsTestHarness_SRCS += epicsExceptionTest.cpp
+rtemsTestHarness_SRCS += epicsExitTest.cpp
 rtemsTestHarness_SRCS += epicsMathTest.c
 rtemsTestHarness_SRCS += epicsMessageQueueTest.cpp
 rtemsTestHarness_SRCS += epicsMutexTest.cpp

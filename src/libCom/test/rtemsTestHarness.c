@@ -11,7 +11,6 @@
  * This is part of the work being done to provide a unified set of automated
  * tests for EPICS.  Many more changes will be forthcoming.
  */
- */
 #include <bsp.h>
 
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
@@ -71,7 +70,6 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
 
 #include <stdio.h>
 #include <rtems/error.h>
-#include <epicsExit.h>
 
 rtems_task
 Init (rtems_task_argument ignored)
@@ -105,5 +103,6 @@ Init (rtems_task_argument ignored)
      * Run the tests
      */
     epicsRunLibComTests();
-	epicsExit (0);
+    printf("***** Unexpected return from tests!\n");
+    rtems_task_delete(RTEMS_SELF);
 }

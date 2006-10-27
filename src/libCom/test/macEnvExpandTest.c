@@ -99,7 +99,7 @@ int macEnvExpandTest(void)
     epicsEnvSet("BAR","${FOO}");
     check("${FOO}", NULL); warn++;
     
-    testDiag("Expect %d warning messages here:\n", warn);
     errlogFlush();
+    testDiag("%d warning messages from macLib were expected above.\n", warn);
     return testDone();
 }

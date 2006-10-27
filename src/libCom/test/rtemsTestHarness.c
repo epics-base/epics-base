@@ -103,6 +103,6 @@ Init (rtems_task_argument ignored)
      * Run the tests
      */
     epicsRunLibComTests();
-    printf("***** Unexpected return from tests!\n");
-    rtems_task_delete(RTEMS_SELF);
+    epicsExit(0);
+    exit(0);
 }

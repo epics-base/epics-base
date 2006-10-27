@@ -121,5 +121,4 @@ epicsRunLibComTests(void)
      */
 	printf("\n****** EpicsExit Test *****\n");
     epicsExitTest();
- 	epicsExit (0);
 }

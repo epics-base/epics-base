@@ -16,11 +16,6 @@
 #ifndef INCdbDefsh
 #define INCdbDefsh 1
 
-#if     defined(NULL)
-#undef NULL
-#endif
-#define NULL    0
-
 #if     defined(NO)
 #undef NO
 #endif

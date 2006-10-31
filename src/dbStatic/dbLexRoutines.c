@@ -837,7 +837,7 @@ static void dbBreakBody(void)
     brkInt		*paBrkInt;
     brkTable		*pbrkTable;
     int			number, down=0;
-    int			i,choice;
+    int			i;
     GPHENTRY		*pgphentry;
 
     if (duplicate) {
@@ -858,7 +858,6 @@ static void dbBreakBody(void)
     pnewbrkTable->number = number;
     pnewbrkTable->paBrkInt = paBrkInt = dbCalloc(number, sizeof(brkInt));
     for (i=0; i<number; i++) {
-	double	val;
 	char	*str;
 	
 	str = (char *)popFirstTemp();

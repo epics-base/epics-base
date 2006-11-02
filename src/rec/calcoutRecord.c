@@ -29,6 +29,7 @@
 #include "dbEvent.h"
 #include "dbScan.h"
 #include "cantProceed.h"
+#include "epicsMath.h"
 #include "errMdef.h"
 #include "recSup.h"
 #include "devSup.h"

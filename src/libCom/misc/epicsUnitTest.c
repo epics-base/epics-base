@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -48,12 +47,12 @@ void testPlan(int plan) {
     epicsMutexUnlock(testLock);
 }
 
-int testOk(int pass, const char *desc) {
+int testOkV(int pass, const char *fmt, va_list pvar) {
     const char *result = "not ok";
     epicsMutexMustLock(testLock);
     tested++;
     if (pass) {
-	result += 4;
+	result += 4;	/* skip "not " */
 	passed++;
 	if (todo)
 	    bonus++;
@@ -63,20 +62,35 @@ int testOk(int pass, const char *desc) {
 	else
 	    failed++;
     }
-    printf("%s %2d - %s", result, tested, desc);
+    printf("%s %2d - ", result, tested);
+    vprintf(fmt, pvar);
     if (todo)
 	printf(" # TODO %s", todo);
-    puts("");
+    putchar('\n');
     epicsMutexUnlock(testLock);
     return pass;
 }
 
-void testPass(const char *desc) {
-    testOk(1, desc);
+int testOk(int pass, const char *fmt, ...) {
+    va_list pvar;
+    va_start(pvar, fmt);
+    testOkV(pass, fmt, pvar);
+    va_end(pvar);
+    return pass;
 }
 
-void testFail(const char *desc) {
-    testOk(0, desc);
+void testPass(const char *fmt, ...) {
+    va_list pvar;
+    va_start(pvar, fmt);
+    testOkV(1, fmt, pvar);
+    va_end(pvar);
+}
+
+void testFail(const char *fmt, ...) {
+    va_list pvar;
+    va_start(pvar, fmt);
+    testOkV(0, fmt, pvar);
+    va_end(pvar);
 }
 
 void testSkip(int skip, const char *why) {
@@ -105,13 +119,18 @@ int testDiag(const char *fmt, ...) {
     va_start(pvar, fmt);
     printf("# ");
     vprintf(fmt, pvar);
-    printf("\n");
+    putchar('\n');
     va_end(pvar);
     return 0;
 }
 
-void testAbort(const char *desc) {
-    printf("Bail out! %s\n", desc);
+void testAbort(const char *fmt, ...) {
+    va_list pvar;
+    va_start(pvar, fmt);
+    printf("Bail out! ");
+    vprintf(fmt, pvar);
+    putchar('\n');
+    va_end(pvar);
     abort();
 }
 
@@ -121,17 +140,17 @@ static void testResult(const char *result, int count) {
 
 int testDone(void) {
     int status = 0;
-    char *value = getenv("HARNESS_ACTIVE");
+    char *harness = getenv("HARNESS_ACTIVE");
     
     epicsMutexMustLock(testLock);
-    if (value) {
+    if (harness) {
 	if (!planned) printf("1..%d\n", tested);
     } else {
 	if (planned && tested > planned) {
 	    printf("\nRan %d tests but only planned for %d!\n", tested, planned);
 	    status = 2;
 	} else if (planned && tested < planned) {
-	    printf("\nPlanned %d tests but only ran %d\n", tested, planned);
+	    printf("\nPlanned %d tests but only ran %d\n", planned, tested);
 	    status = 2;
 	}
 	printf("\n    Results\n    =======\n       Tests: %d\n", tested);

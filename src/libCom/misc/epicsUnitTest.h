@@ -9,6 +9,9 @@
  * Author: Andrew Johnson
  */
 
+#include <stdarg.h>
+
+#include "compilerDependencies.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -16,17 +19,23 @@ extern "C" {
 #endif
 
 epicsShareFunc void testPlan(int tests);
-epicsShareFunc int  testOk(int pass, const char *desc);
-epicsShareFunc void testPass(const char *desc);
-epicsShareFunc void testFail(const char *desc);
+epicsShareFunc int  testOkV(int pass, const char *fmt, va_list pvar);
+epicsShareFunc int  testOk(int pass, const char *fmt, ...)
+						EPICS_PRINTF_STYLE(2, 3);
+epicsShareFunc void testPass(const char *fmt, ...)
+						EPICS_PRINTF_STYLE(1, 2);
+epicsShareFunc void testFail(const char *fmt, ...)
+						EPICS_PRINTF_STYLE(1, 2);
 epicsShareFunc void testSkip(int skip, const char *why);
 epicsShareFunc void testTodoBegin(const char *why);
 epicsShareFunc void testTodoEnd();
-epicsShareFunc int  testDiag(const char *fmt, ...);
-epicsShareFunc void testAbort(const char *desc);
+epicsShareFunc int  testDiag(const char *fmt, ...)
+						EPICS_PRINTF_STYLE(1, 2);
+epicsShareFunc void testAbort(const char *fmt, ...)
+						EPICS_PRINTF_STYLE(1, 2);
 epicsShareFunc int  testDone(void);
 
-#define testOk1(cond) testOk(cond, #cond)
+#define testOk1(cond) testOk(cond, "%s", #cond)
 
 #ifdef __cplusplus
 }

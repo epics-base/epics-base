@@ -63,6 +63,7 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 
 epicsShareFunc int epicsShareAPI eltc(int yesno);
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
+epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize);
 epicsShareFunc void epicsShareAPI errlogFlush(void);
 
 /*other routines that write to log file*/

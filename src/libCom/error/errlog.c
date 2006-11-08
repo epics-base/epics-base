@@ -86,6 +86,7 @@ LOCAL struct {
     msgNode      *pnextSend;
     int	         errlogInitFailed;
     int	         buffersize;
+    int	         maxMsgSize;
     int	         sevToLog;
     int	         toConsole;
     int	         missedMessages;
@@ -152,7 +153,7 @@ epicsShareFunc int errlogVprintf(
     isOkToBlock = epicsThreadIsOkToBlock();
     pbuffer = msgbufGetFree(isOkToBlock);
     if(!pbuffer) return(0);
-    nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
+    nchar = tvsnPrint(pbuffer,pvtData.maxMsgSize,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
     return nchar;
 }
@@ -195,7 +196,7 @@ epicsShareFunc int errlogVprintfNoConsole(
     if(pvtData.atExit) return 0;
     pbuffer = msgbufGetFree(1);
     if(!pbuffer) return(0);
-    nchar = tvsnPrint(pbuffer,MAX_MESSAGE_SIZE,pFormat?pFormat:"",pvar);
+    nchar = tvsnPrint(pbuffer,pvtData.maxMsgSize,pFormat?pFormat:"",pvar);
     msgbufSetSize(nchar);
     return nchar;
 }
@@ -248,7 +249,7 @@ epicsShareFunc int errlogSevVprintf(
     if(!pnext) return(0);
     nchar = sprintf(pnext,"sevr=%s ",errlogGetSevEnumString(severity));
     pnext += nchar; totalChar += nchar;
-    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE-totalChar-1,pFormat,pvar);
+    nchar = tvsnPrint(pnext,pvtData.maxMsgSize-totalChar-1,pFormat,pvar);
     pnext += nchar; totalChar += nchar;
     if(pnext[-1] != '\n') {
         strcpy(pnext,"\n");
@@ -366,7 +367,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         pnext += nchar; totalChar += nchar;
     }
     va_start (pvar, pformat);
-    nchar = tvsnPrint(pnext,MAX_MESSAGE_SIZE,pformat,pvar);
+    nchar = tvsnPrint(pnext,pvtData.maxMsgSize,pformat,pvar);
     va_end (pvar);
     if(nchar>0) {
         pnext += nchar;
@@ -386,15 +387,19 @@ LOCAL void exitHandler(void *pvt)
     return;
 }
 
+struct initArgs {
+    int bufsize;
+    int maxMsgSize;
+};
+
 LOCAL void errlogInitPvt(void *arg)
 {
-    int bufsize = *(int *)arg;
-    void	*pbuffer;
+    struct initArgs *pconfig = (struct initArgs *) arg;
     epicsThreadId tid;
 
     pvtData.errlogInitFailed = TRUE;
-    if(bufsize<BUFFER_SIZE) bufsize = BUFFER_SIZE;
-    pvtData.buffersize = bufsize;
+    pvtData.buffersize = pconfig->bufsize;
+    pvtData.maxMsgSize = pconfig->maxMsgSize;
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
@@ -405,13 +410,12 @@ LOCAL void errlogInitPvt(void *arg)
     pvtData.flush = epicsEventMustCreate(epicsEventEmpty);
     pvtData.flushLock = epicsMutexMustCreate();
     pvtData.waitForExit = epicsEventMustCreate(epicsEventEmpty);
-    pbuffer = callocMustSucceed(pvtData.buffersize,sizeof(char),
+    pvtData.pbuffer = callocMustSucceed(1, pvtData.buffersize,
         "errlogInitPvt");
-    pvtData.pbuffer = pbuffer;
-    tid = epicsThreadCreate("errlog",epicsThreadPriorityLow,
+    tid = epicsThreadCreate("errlog", epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC)errlogThread,0);
-    if(tid) {
+        (EPICSTHREADFUNC)errlogThread, 0);
+    if (tid) {
         pvtData.errlogInitFailed = FALSE;
     }
 }
@@ -428,16 +432,25 @@ LOCAL void errlogCleanup(void)
     /*Note that exitHandler must destroy waitForExit*/
 }
 
-epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
+epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize)
 {
     static epicsThreadOnceId errlogOnceFlag=EPICS_THREAD_ONCE_INIT;
+    struct initArgs config;
 
-    epicsThreadOnce(&errlogOnceFlag,errlogInitPvt,(void *)&bufsize);
+    if (bufsize < BUFFER_SIZE) bufsize = BUFFER_SIZE;
+    config.bufsize = bufsize;
+    if (maxMsgSize < MAX_MESSAGE_SIZE) maxMsgSize = MAX_MESSAGE_SIZE;
+    config.maxMsgSize = maxMsgSize;
+    epicsThreadOnce(&errlogOnceFlag, errlogInitPvt, (void *)&config);
     if(pvtData.errlogInitFailed) {
         fprintf(stderr,"errlogInit failed\n");
         exit(1);
     }
     return(0);
+}
+epicsShareFunc int epicsShareAPI errlogInit(int bufsize)
+{
+    return errlogInit2(bufsize, MAX_MESSAGE_SIZE);
 }
 epicsShareFunc void epicsShareAPI errlogFlush(void)
 {
@@ -504,7 +517,7 @@ LOCAL msgNode *msgbufGetNode()
         msgNode	*plast;
 
 	plast = (msgNode *)ellLast(&pvtData.msgQueue);
-	needed = MAX_MESSAGE_SIZE + sizeof(msgNode) + MAX_ALIGNMENT;
+	needed = pvtData.maxMsgSize + sizeof(msgNode) + MAX_ALIGNMENT;
 	remaining = pvtData.buffersize
 	    - ((plast->message - pbuffer) + plast->length);
 	if(needed < remaining) {

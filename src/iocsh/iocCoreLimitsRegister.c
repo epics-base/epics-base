@@ -69,10 +69,23 @@ static void errlogInitCallFunc(const iocshArgBuf *args)
     errlogInit(args[0].ival);
 }
 
+/* errlogInit2 */
+static const iocshArg errlogInit2Arg0 = { "bufSize",iocshArgInt};
+static const iocshArg errlogInit2Arg1 = { "maxMsgSize",iocshArgInt};
+static const iocshArg * const errlogInit2Args[] = 
+    {&errlogInit2Arg0, &errlogInit2Arg1};
+static const iocshFuncDef errlogInit2FuncDef =
+    {"errlogInit2", 2, errlogInit2Args};
+static void errlogInit2CallFunc(const iocshArgBuf *args)
+{
+    errlogInit2(args[0].ival, args[1].ival);
+}
+
 void epicsShareAPI iocCoreLimitsRegister(void)
 {
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
     iocshRegister(&dbPvdTableSizeFuncDef,dbPvdTableSizeCallFunc);
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
+    iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
 }

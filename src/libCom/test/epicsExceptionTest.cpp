@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 //
@@ -25,6 +24,7 @@
 
 #include "epicsUnitTest.h"
 #include "epicsThread.h"
+#include "testMain.h"
 
 using namespace std;
 
@@ -42,8 +42,8 @@ const nothrow_t  nothrow ;
         static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max()-100;
 #   endif
 #elif defined(__GNUC__) && (__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=96))
-    // tornado does not supply ansi c++
-    static const size_t unsuccessfulNewSize = UINT_MAX;
+    // tornado does not supply ansi c++, and malloc(-15) succeeds...
+    static const size_t unsuccessfulNewSize = UINT_MAX - 15u;
 #else
     static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
 #endif
@@ -61,11 +61,11 @@ private:
 static void epicsExceptionTestPrivate ()
 {
     try {
-        new char [unsuccessfulNewSize];
-        testFail("new: didn't throw at all");
+        char * p = new char [unsuccessfulNewSize];
+        testFail("new char[%u] returned %p", unsuccessfulNewSize, p);
     }
     catch ( const bad_alloc & ) {
-        testPass("new");
+        testPass("new char[%u] threw", unsuccessfulNewSize);
     }
     catch ( ... ) {
         testFail("new: threw wrong type");
@@ -100,7 +100,7 @@ void exThread::waitForCompletion ()
     }
 }
 
-extern "C" int epicsExceptionTest ()
+MAIN(epicsExceptionTest)
 {
     testPlan(4);
     epicsExceptionTestPrivate ();

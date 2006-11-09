@@ -1,150 +1,151 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
+INC += testMain.h
+
 PROD_LIBS += Com
 
+TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
-PROD_HOST += epicsUnitTestTest
+# Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
 
+TESTPROD_HOST += epicsCalcTest
 epicsCalcTest_SRCS += epicsCalcTest.cpp
-PROD_HOST += epicsCalcTest
-OBJS_IOC_vxWorks += epicsCalcTest
+testHarness_SRCS += epicsCalcTest.cpp
 TESTS += epicsCalcTest
 
+TESTPROD_HOST += epicsAlgorithmTest
 epicsAlgorithmTest_SRCS += epicsAlgorithmTest.cpp
-PROD_HOST += epicsAlgorithmTest
-OBJS_IOC_vxWorks += epicsAlgorithmTest
+testHarness_SRCS += epicsAlgorithmTest.cpp
 TESTS += epicsAlgorithmTest
 
-epicsMathTestHost_SRCS += epicsMathTestMain.cpp epicsMathTest.c
-PROD_HOST += epicsMathTestHost
-OBJS_IOC_vxWorks += epicsMathTest
-TESTS += epicsMathTestHost
+TESTPROD_HOST += epicsMathTest
+epicsMathTest_SRCS += epicsMathTest.c
+testHarness_SRCS += epicsMathTest.c
+TESTS += epicsMathTest
 
-epicsStdioTestHost_SRCS += epicsStdioTestMain.cpp epicsStdioTest.c
-PROD_HOST += epicsStdioTestHost
-OBJS_IOC_vxWorks += epicsStdioTest
-TESTS += epicsStdioTestHost
+TESTPROD_HOST += epicsStdioTest
+epicsStdioTest_SRCS += epicsStdioTest.c
+testHarness_SRCS += epicsStdioTest.c
+TESTS += epicsStdioTest
 
-epicsStringTestHost_SRCS += epicsStringTestMain.cpp epicsStringTest.c
-PROD_HOST += epicsStringTestHost
-OBJS_IOC_vxWorks += epicsStringTest
-TESTS += epicsStringTestHost
+TESTPROD_HOST += epicsStringTest
+epicsStringTest_SRCS += epicsStringTest.c
+testHarness_SRCS += epicsStringTest.c
+TESTS += epicsStringTest
 
-epicsTimeTestHost_SRCS += epicsTimeTestMain.cpp epicsTimeTest.cpp
-PROD_HOST += epicsTimeTestHost
-OBJS_IOC_vxWorks += epicsTimeTest
-TESTS += epicsTimeTestHost
+TESTPROD_HOST += epicsTimeTest
+epicsTimeTest_SRCS += epicsTimeTest.cpp
+testHarness_SRCS += epicsTimeTest.cpp
+TESTS += epicsTimeTest
 
-epicsThreadTestHost_SRCS += epicsThreadTestMain.cpp epicsThreadTest.cpp
-PROD_HOST += epicsThreadTestHost
-OBJS_IOC_vxWorks += epicsThreadTest
+TESTPROD_HOST += epicsThreadTest
+epicsThreadTest_SRCS += epicsThreadTest.cpp
+testHarness_SRCS += epicsThreadTest.cpp
+TESTS += epicsThreadTest
 
-epicsThreadPriorityTestHost_SRCS += epicsThreadPriorityTestMain.cpp epicsThreadPriorityTest.cpp
-PROD_HOST += epicsThreadPriorityTestHost
-OBJS_IOC_vxWorks += epicsThreadPriorityTest
+TESTPROD_HOST += epicsThreadPriorityTest
+epicsThreadPriorityTest_SRCS += epicsThreadPriorityTest.cpp
+testHarness_SRCS += epicsThreadPriorityTest.cpp
+TESTS += epicsThreadPriorityTest
 
-epicsThreadPrivateTestHost_SRCS += epicsThreadPrivateTestMain.cpp epicsThreadPrivateTest.cpp
-PROD_HOST += epicsThreadPrivateTestHost
-OBJS_IOC_vxWorks += epicsThreadPrivateTest
+TESTPROD_HOST += epicsThreadPrivateTest
+epicsThreadPrivateTest_SRCS += epicsThreadPrivateTest.cpp
+testHarness_SRCS += epicsThreadPrivateTest.cpp
+TESTS += epicsThreadPrivateTest
 
-epicsMaxThreadsHost_SRCS += epicsMaxThreadsMain.cpp epicsMaxThreads.c
-PROD_HOST += epicsMaxThreadsHost
-OBJS_IOC_vxWorks += epicsMaxThreads
+TESTPROD_HOST += epicsExitTest
+epicsExitTest_SRCS += epicsExitTest.c
+testHarness_SRCS += epicsExitTest.c
+TESTS += epicsExitTest
 
-epicsOkToBlockTestHost_SRCS += epicsOkToBlockTestMain.cpp epicsOkToBlockTest.cpp
-PROD_HOST += epicsOkToBlockTestHost
-OBJS_IOC_vxWorks += epicsOkToBlockTest
+TESTPROD_HOST += epicsTimerTest
+epicsTimerTest_SRCS += epicsTimerTest.cpp
+testHarness_SRCS += epicsTimerTest.cpp
+# Some of this is doing measurement, tests fail...
+TESTS += epicsTimerTest
 
-epicsExitTestHost_SRCS += epicsExitTestMain.c epicsExitTest.c
-PROD_HOST += epicsExitTestHost
-OBJS_IOC_vxWorks += epicsExitTest
+TESTPROD_HOST += ringPointerTest
+ringPointerTest_SRCS += ringPointerTest.c
+testHarness_SRCS += ringPointerTest.c
+TESTS += ringPointerTest
 
+TESTPROD_HOST += epicsEventTest
+epicsEventTest_SRCS += epicsEventTest.cpp
+testHarness_SRCS += epicsEventTest.cpp
+TESTS += epicsEventTest
 
-epicsTimerTestHost_SRCS += epicsTimerTestMain.cpp epicsTimerTest.cpp
-PROD_HOST += epicsTimerTestHost
-OBJS_IOC_vxWorks += epicsTimerTest
+TESTPROD_HOST += epicsMutexTest
+epicsMutexTest_SRCS += epicsMutexTest.cpp
+testHarness_SRCS += epicsMutexTest.cpp
+TESTS += epicsMutexTest
 
-epicsTimerExampleHost_SRCS += epicsTimerExampleMain.cpp epicsTimerExample.cpp
-PROD_HOST += epicsTimerExampleHost
-OBJS_IOC_vxWorks += epicsTimerExample
+TESTPROD_HOST += epicsExceptionTest
+epicsExceptionTest_SRCS += epicsExceptionTest.cpp
+testHarness_SRCS += epicsExceptionTest.cpp
+TESTS += epicsExceptionTest
 
-ringPointerTestHost_SRCS += ringPointerTestMain.cpp ringPointerTest.c
-PROD_HOST += ringPointerTestHost
-OBJS_IOC_vxWorks += ringPointerTest
+TESTPROD_HOST += epicsMessageQueueTest
+epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
+testHarness_SRCS += epicsMessageQueueTest.cpp
+TESTS += epicsMessageQueueTest
 
-epicsEventTestHost_SRCS += epicsEventTestMain.cpp epicsEventTest.cpp
-PROD_HOST += epicsEventTestHost
-OBJS_IOC_vxWorks += epicsEventTest
-
-epicsMutexTestHost_SRCS += epicsMutexTestMain.cpp epicsMutexTest.cpp
-PROD_HOST += epicsMutexTestHost
-OBJS_IOC_vxWorks += epicsMutexTest
-
-epicsExceptionTestHost_SRCS += epicsExceptionTestMain.cpp epicsExceptionTest.cpp
-PROD_HOST += epicsExceptionTestHost
-OBJS_IOC_vxWorks += epicsExceptionTest
-TESTS += epicsExceptionTestHost
-
-epicsMessageQueueTestHost_SRCS += epicsMessageQueueTestMain.cpp epicsMessageQueueTest.cpp
-PROD_HOST += epicsMessageQueueTestHost
-OBJS_IOC_vxWorks += epicsMessageQueueTest
-
-macEnvExpandTestHost_SRCS += macEnvExpandTestMain.cpp macEnvExpandTest.c
-PROD_HOST += macEnvExpandTestHost
-OBJS_IOC_vxWorks += macEnvExpandTest
-TESTS += macEnvExpandTestHost
-
-blockingSockTestHost_SRCS += blockingSockTestMain.cpp blockingSockTest.cpp
-PROD_HOST += blockingSockTestHost
-OBJS_IOC_vxWorks += blockingSockTest
-# needed when its an object library build
-blockingSockTestHost_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
-blockingSockTestHost_SYS_LIBS_solaris = socket
+TESTPROD_HOST += macEnvExpandTest
+macEnvExpandTest_SRCS += macEnvExpandTest.c
+testHarness_SRCS += macEnvExpandTest.c
+TESTS += macEnvExpandTest
 
 
-#buckTest_SRCS += buckTest.c
-#PROD_HOST += buckTest
+# The testHarness runs all the test programs in a known working order.
+testHarness_SRCS += epicsRunLibComTests.c
 
-#fdmgrTest_SRCS += fdmgrTest.c
-#PROD_HOST += fdmgrTest
+PROD_vxWorks = vxTestHarness
+vxTestHarness_SRCS += $(testHarness_SRCS)
+vxTestHarness_OBJS += $(INSTALL_BIN)/vxComLibrary
 
 PROD_RTEMS += rtemsTestHarness
 rtemsTestHarness_SRCS += rtemsTestHarness.c
-rtemsTestHarness_SRCS += epicsRunLibComTests.c
-rtemsTestHarness_SRCS += blockingSockTest.cpp
-rtemsTestHarness_SRCS += epicsAlgorithmTest.cpp
-rtemsTestHarness_SRCS += epicsCalcTest.cpp
-rtemsTestHarness_SRCS += epicsEventTest.cpp
-rtemsTestHarness_SRCS += epicsExceptionTest.cpp
-rtemsTestHarness_SRCS += epicsExitTest.cpp
-rtemsTestHarness_SRCS += epicsMathTest.c
-rtemsTestHarness_SRCS += epicsMessageQueueTest.cpp
-rtemsTestHarness_SRCS += epicsMutexTest.cpp
-rtemsTestHarness_SRCS += epicsOkToBlockTest.cpp
-rtemsTestHarness_SRCS += epicsStdioTest.c
-rtemsTestHarness_SRCS += epicsStringTest.c
-rtemsTestHarness_SRCS += epicsThreadPriorityTest.cpp
-rtemsTestHarness_SRCS += epicsThreadPrivateTest.cpp
-rtemsTestHarness_SRCS += epicsThreadTest.cpp
-rtemsTestHarness_SRCS += epicsTimeTest.cpp
-rtemsTestHarness_SRCS += epicsTimerTest.cpp
-rtemsTestHarness_SRCS += macEnvExpandTest.c
-rtemsTestHarness_SRCS += ringPointerTest.c
+rtemsTestHarness_SRCS += $(testHarness_SRCS)
 
 
 TEST_SCRIPTS += $(TESTS:%=%.t)
+
+
+# The following are not test programs, they measure performance
+
+TESTPROD_HOST += epicsThreadPerform
+epicsThreadPerform_SRCS += epicsThreadPerform.cpp
+testHarness_SRCS += epicsThreadPerform.cpp
+
+TESTPROD_HOST += epicsMaxThreads
+epicsMaxThreads_SRCS += epicsMaxThreads.c
+testHarness_SRCS += epicsMaxThreads.c
+
+TESTPROD_HOST += blockingSockTest
+blockingSockTest_SRCS += blockingSockTest.cpp
+testHarness_SRCS += blockingSockTest.cpp
+# needed when its an object library build
+blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+blockingSockTest_SYS_LIBS_solaris = socket
+
+TESTPROD_HOST += buckTest
+buckTest_SRCS += buckTest.c
+testHarness_SRCS += buckTest.c
+
+#TESTPROD_HOST += fdmgrTest
+fdmgrTest_SRCS += fdmgrTest.c
+fdmgrTest_LIBS += ca
+# FIXME: program never exits.
 
 
 include $(TOP)/configure/RULES
@@ -157,7 +158,7 @@ test: $(TEST_SCRIPTS)
 	@$(RM) $@
 	@$(CP) $< $@
 
-# Early versions of Test::Harness expect test programs in perl only.
+# Some versions of Test::Harness expect test programs in perl only.
 # Generate a 1-line test program to run the real test binary
 %.t: %$(EXE)
 	@$(RM) $@

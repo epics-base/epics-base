@@ -1,3 +1,11 @@
+/*************************************************************************\
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
 
 #include <string.h>
 #include <assert.h>
@@ -7,6 +15,7 @@
 #include "osiWireFormat.h"
 #include "epicsThread.h"
 #include "epicsSignal.h"
+#include "testMain.h"
 
 union address {
     struct sockaddr_in ia; 
@@ -47,6 +56,7 @@ private:
 class server {
 public:
     server ( const address & );
+    void start ();
     void daemon ();
 protected:
     SOCKET sock;
@@ -164,7 +174,10 @@ server::server ( const address & addrIn ) :
     assert ( status == 0 );
     status = listen ( this->sock, 10 );
     assert ( status == 0 );
+}
 
+void server::start ()
+{
     this->id = epicsThreadCreate ( 
         "server daemon", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
@@ -181,7 +194,8 @@ void server::daemon ()
         SOCKET ns = accept ( this->sock, 
             & addr.sa, & addressSize );
         assert ( ns != INVALID_SOCKET );
-        new serverCircuit ( ns );
+        circuit * pCir = new serverCircuit ( ns );
+        assert ( pCir );
     }
 }
 
@@ -201,7 +215,7 @@ const char * serverCircuit::pName ()
     return "server circuit";
 }
 
-extern "C" void blockingSockTest (void)
+MAIN(blockingSockTest)
 {
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
@@ -210,6 +224,7 @@ extern "C" void blockingSockTest (void)
     addr.ia.sin_port = epicsHTON16 ( 5064 ); // CA
 
     server srv ( addr );
+    srv.start ();
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
@@ -254,5 +269,6 @@ extern "C" void blockingSockTest (void)
     }
     printf ( "The epicsSocketSystemCallInterruptMechanismQuery() function returns\n\"%s\".\n",
         pStr );
+    return 0;
 }
 

@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsEventTest.cpp */
 
@@ -27,6 +26,8 @@
 #include "epicsRingPointer.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 
 typedef struct info {
@@ -34,84 +35,74 @@ typedef struct info {
     epicsMutexId      lockRing;
     int               quit;
     epicsRingPointerId ring;
-}info;
-
+} info;
+
 extern "C" {
 
 static void consumer(void *arg)
 {
     info *pinfo = (info *)arg;
-    time_t tp;
-    epicsThreadId idSelf = epicsThreadGetIdSelf();
+    int errors = 0;
 
-    printf("consumer %p starting time %ld\n",idSelf,time(&tp));
-    while(1) {
-        epicsEventWaitStatus status;
-        if(pinfo->quit) {
-            printf("consumer %p returning time %ld\n",
-                idSelf,time(&tp));
-            return;
+    testDiag("consumer: starting");
+    while (!pinfo->quit) {
+        epicsEventWaitStatus status = epicsEventWait(pinfo->event);
+        if (status != epicsEventWaitOK) {
+            testDiag("consumer: epicsEventWait returned %d", status);
+            errors++;
         }
-        status = epicsEventWait(pinfo->event);
-        if(status!=epicsEventWaitOK) {
-            printf("task %p epicsEventWait returned %d  time %ld\n",
-                idSelf,(int)status,time(&tp));
-        }
-        while(epicsRingPointerGetUsed(pinfo->ring)>=2) {
+        while (epicsRingPointerGetUsed(pinfo->ring) >= 2) {
             epicsRingPointerId message[2];
-            int i;
-
-            for(i=0; i<2; i++) {
-                if(!(message[i]=epicsRingPointerPop(pinfo->ring)))
-                    printf("consumer error\n");
+            for (int i = 0; i < 2; i++) {
+                message[i] = epicsRingPointerPop(pinfo->ring);
+                if (message[i] == 0) {
+                    testDiag("consumer: epicsRingPointerPop returned 0");
+                    errors++;
+                }
             }
-            if(message[0]!=message[1]) {
-                printf("consumer error message %p %p\n",message[0],message[1]);
-            } else {
-                printf("consumer message from %p\n",message[0]);
+            if (message[0] != message[1]) {
+                testDiag("consumer: message %p %p\n", message[0], message[1]);
+                errors++;
             }
         }  
     }
+    testOk(errors == 0, "consumer: errors = %d", errors);
 }
-
+
 static void producer(void *arg)
 {
     info *pinfo = (info *)arg;
-    time_t tp;
-    epicsThreadId idSelf = epicsThreadGetIdSelf();
-    int ntimes=0;
+    const char *name = epicsThreadGetNameSelf();
+    epicsThreadId myId = epicsThreadGetIdSelf();
+    int errors = 0;
+    int ntimes = 0;
 
-    printf("producer %p starting time %ld\n",idSelf,time(&tp));
-    while(1) {
-        epicsMutexLockStatus status;
-
+    testDiag("%s: starting", name);
+    while(!pinfo->quit) {
         ++ntimes;
-        if(pinfo->quit) {
-            printf("producer %p returning time %ld\n",
-                idSelf,time(&tp));
-            return;
+        epicsMutexLockStatus status = epicsMutexLock(pinfo->lockRing);
+        if (status != epicsMutexLockOK) {
+            testDiag("%s: epicsMutexLock returned %d", name, status);
+            errors++;
         }
-        status = epicsMutexLock(pinfo->lockRing);
-        if(status!=epicsMutexLockOK) {
-            printf("producer %p epicsMutexLock returned %d  time %ld\n",
-                idSelf,(int)status,time(&tp));
-        }
-        if(epicsRingPointerGetFree(pinfo->ring)>=2) {
-            int i;
-
-            for(i=0; i<2; i++) {
-                if(!epicsRingPointerPush(pinfo->ring,idSelf))
-                    printf("producer %p error\n",idSelf);
-                if(i==0 && (ntimes%4==0)) epicsThreadSleep(.1);
+        if (epicsRingPointerGetFree(pinfo->ring) >= 2) {
+            for (int i = 0; i < 2; i++) {
+                if (!epicsRingPointerPush(pinfo->ring, myId)) {
+                    testDiag("%s: epicsRingPointerPush fail", name);
+                    errors++;
+                }
+                if (i == 0 && (ntimes % 4 == 0))
+                    epicsThreadSleep(0.1);
             }
-            printf("producer %p sending\n",idSelf);
         } else {
-           printf("producer %p ring buffer is full\n",idSelf); 
+           testFail("%s: ring buffer full", name);
+           errors++;
         }
         epicsMutexUnlock(pinfo->lockRing);
         epicsThreadSleep(1.0);
         epicsEventSignal(pinfo->event);
     }
+    testOk(errors == 0, "%s: errors = %d", name, errors);
 }
 
 } // extern "C"
@@ -123,7 +114,7 @@ static double eventWaitMeasureDelayError( const epicsEventId &id, const double &
     epicsTime end = epicsTime::getCurrent();
     double meas = end - beg;
     double error = fabs ( delay - meas );
-    printf ( "epicsEventWaitWithTimeout ( %10f ) tmo delay err %10f sec\n", 
+    testDiag("epicsEventWaitWithTimeout(%.6f)  delay error %.6f sec",
         delay, error );
     return error;
 }
@@ -139,68 +130,66 @@ static void eventWaitTest()
     }
     errorSum += eventWaitMeasureDelayError ( event, 0.0 );
     epicsEventDestroy ( event );
-    printf ( "Average error %f sec\n", errorSum / ( i + 1 ) );
+    double meanError = errorSum / ( i + 1 );
+    testOk(meanError < 0.05, "Average error %.6f sec", meanError);
 }
 
-
-extern "C" void epicsEventTest(int nthreads,int verbose)
+
+MAIN(epicsEventTest)
 {
-    unsigned int stackSize;
+    const int nthreads = 3;
     epicsThreadId *id;
     char **name;
-    int i;
-    info *pinfo;
     epicsEventId event;
     int status;
-    time_t tp;
-    int errVerboseSave = errVerbose;
 
-    eventWaitTest();
+    testPlan(9);
 
-    errVerbose = verbose;
     event = epicsEventMustCreate(epicsEventEmpty);
-    printf("calling epicsEventWaitWithTimeout(event,2.0) time %ld\n",time(&tp));
-    status = epicsEventWaitWithTimeout(event,2.0);
-    if(status!=epicsEventWaitTimeout) printf("status %d\n",status);
-    printf("calling epicsEventTryWait(event) time %ld\n",time(&tp));
-    status = epicsEventTryWait(event);
-    if(status!=epicsEventWaitTimeout) printf("status %d\n",status);
-    printf("calling epicsEventSignal() time %ld\n",time(&tp));
-    epicsEventSignal(event);
-    printf("calling epicsEventWaitWithTimeout(event,2.0) time %ld\n",time(&tp));
-    status = epicsEventWaitWithTimeout(event,2.0);
-    if(status) printf("status %d\n",status);
-    printf("calling epicsEventSignal() time %ld\n",time(&tp));
-    epicsEventSignal(event);
-    printf("calling epicsEventTryWait(event) time %ld\n",time(&tp));
-    status = epicsEventTryWait(event);
-    if(status) printf("status %d\n",status);
 
-    if(nthreads<=0) {
-        errVerbose = errVerboseSave;
-        return;
-    }
-    pinfo = (info *)calloc(1,sizeof(info));
+    status = epicsEventWaitWithTimeout(event, 2.0);
+    testOk(status == epicsEventWaitTimeout,
+        "epicsEventWaitWithTimeout(event, 2.0) = %d", status);
+
+    status = epicsEventTryWait(event);
+    testOk(status == epicsEventWaitTimeout,
+        "epicsEventTryWait(event) = %d", status);
+
+    epicsEventSignal(event);
+    status = epicsEventWaitWithTimeout(event,2.0);
+    testOk(status == 0,
+        "epicsEventWaitWithTimeout(event, 2.0) = %d", status);
+
+    epicsEventSignal(event);
+    status = epicsEventTryWait(event);
+    testOk(status == 0,
+        "epicsEventTryWait(event) = %d", status);
+
+    info *pinfo = (info *)calloc(1,sizeof(info));
     pinfo->event = event;
     pinfo->lockRing = epicsMutexCreate();
     pinfo->ring = epicsRingPointerCreate(1024*2);
-    stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
-    epicsThreadCreate("consumer",50,stackSize,consumer,pinfo);
-    id = (epicsThreadId *)calloc(nthreads,sizeof(epicsThreadId));
-    name = (char **)calloc(nthreads,sizeof(char *));
-    for(i=0; i<nthreads; i++) {
-        name[i] = (char *)calloc(10,sizeof(char));
-        sprintf(name[i],"producer%d",i);
-        id[i] = epicsThreadCreate(name[i],40,stackSize,producer,pinfo);
-        printf("created producer %d id %p time %ld\n",
-            i, id[i],time(&tp));
+    unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
+
+    epicsThreadCreate("consumer", 50, stackSize, consumer, pinfo);
+    id = (epicsThreadId *)calloc(nthreads, sizeof(epicsThreadId));
+    name = (char **)calloc(nthreads, sizeof(char *));
+    for(int i = 0; i < nthreads; i++) {
+        name[i] = (char *)calloc(10, sizeof(char));
+        sprintf(name[i],"producer %d",i);
+        id[i] = epicsThreadCreate(name[i], 40, stackSize, producer, pinfo);
+        epicsThreadSleep(0.1);
     }
     epicsThreadSleep(5.0);
-    printf("semTest setting quit time %ld\n",time(&tp));
+
+    testDiag("setting quit");
     pinfo->quit = 1;
     epicsThreadSleep(2.0);
+
     epicsEventSignal(pinfo->event);
     epicsThreadSleep(1.0);
-    printf("semTest returning time %ld\n",time(&tp));
-    errVerbose = errVerboseSave;
+
+    eventWaitTest();
+
+    return testDone();
 }

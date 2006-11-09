@@ -1,11 +1,8 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 // $Id$
 //	Author: Andrew Johnson
@@ -14,13 +11,7 @@
 #include "epicsMath.h"
 #include "epicsAlgorithm.h"
 #include "postfix.h"
-
-#if defined(vxWorks) || defined(__rtems__)
-  #define MAIN(prog) extern "C" int prog
-#else
-  #define MAIN(prog) int main
-#endif
-
+#include "testMain.h"
 
 /* Infrastructure for running tests */
 
@@ -100,7 +91,7 @@ void testCalc(const char *expr, double expected) {
 #define XOR ^
 
 
-MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
+MAIN(epicsCalcTest)
 {
     int repeat;
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
@@ -110,7 +101,7 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     Inf /= NaN;
     NaN /= NaN;
     
-    testPlan(240);
+    testPlan(392);
     
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -193,13 +184,13 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testExpr(MAX(1,2));
     testExpr(MAX(1.,Inf));
     testExpr(MAX(1.,-Inf));
-    testCalc("MAX(1,NaN)", NaN);
-    testCalc("MAX(NaN,1)", NaN);
+    testExpr(MAX(1.,NaN));
+    testExpr(MAX(NaN,1.));
     testExpr(MIN(1,2));
     testExpr(MIN(1.,Inf));
     testExpr(MIN(1.,-Inf));
-    testCalc("MIN(1,NaN)", NaN);
-    testCalc("MIN(NaN,1)", NaN);
+    testExpr(MIN(1.,NaN));
+    testExpr(MIN(NaN,1.));
     testExpr(NINT(0.6));
     testExpr(NINT(-0.6));
     testExpr(sin(0.5));
@@ -216,6 +207,21 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testExpr(0 != 0);
     testExpr(1 != 0);
     testExpr(1 != 0 != 2);
+    testExpr(0.0 != Inf);
+    testExpr(0.0 != -Inf);
+    testExpr(0.0 != NaN);
+    testExpr(Inf != 0.0);
+    testExpr(Inf != Inf);
+    testExpr(Inf != -Inf);
+    testExpr(Inf != NaN);
+    testExpr(-Inf != 0.0);
+    testExpr(-Inf != Inf);
+    testExpr(-Inf != -Inf);
+    testExpr(-Inf != NaN);
+    testExpr(NaN != 0.0);
+    testExpr(NaN != Inf);
+    testExpr(NaN != -Inf);
+    testExpr(NaN != NaN);
     
     testCalc("0 # 1", 0 != 1);
     testCalc("0 # 0", 0 != 0);
@@ -234,6 +240,21 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testExpr(1 && 1);
     
     testExpr(2 * 2);
+    testExpr(0.0 * Inf);
+    testExpr(0.0 * -Inf);
+    testExpr(0.0 * NaN);
+    testExpr(Inf * 0.0);
+    testExpr(Inf * Inf);
+    testExpr(Inf * -Inf);
+    testExpr(Inf * NaN);
+    testExpr(-Inf * 0.0);
+    testExpr(-Inf * Inf);
+    testExpr(-Inf * -Inf);
+    testExpr(-Inf * NaN);
+    testExpr(NaN * 0.0);
+    testExpr(NaN * Inf);
+    testExpr(NaN * -Inf);
+    testExpr(NaN * NaN);
     
     testCalc("2 ** 0.2", pow(2., 0.2));
     testCalc("2 ** -0.2", pow(2., -0.2));
@@ -242,17 +263,77 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testCalc("2 ** 2 ** 3", pow(pow(2., 2.), 3.));
     
     testExpr(0 + 1);
+    testExpr(0.0 + Inf);
+    testExpr(0.0 + -Inf);
+    testExpr(0.0 + NaN);
+    testExpr(Inf + 0.0);
+    testExpr(Inf + Inf);
+    testExpr(Inf + -Inf);
+    testExpr(Inf + NaN);
+    testExpr(-Inf + 0.0);
+    testExpr(-Inf + Inf);
+    testExpr(-Inf + -Inf);
+    testExpr(-Inf + NaN);
+    testExpr(NaN + 0.0);
+    testExpr(NaN + Inf);
+    testExpr(NaN + -Inf);
+    testExpr(NaN + NaN);
     
     testExpr(0 - 1);
     testExpr(0 - 1 - 2);
+    testExpr(0.0 - Inf);
+    testExpr(0.0 - -Inf);
+    testExpr(0.0 - NaN);
+    testExpr(Inf - 0.0);
+    testExpr(Inf - Inf);
+    testExpr(Inf - -Inf);
+    testExpr(Inf - NaN);
+    testExpr(-Inf - 0.0);
+    testExpr(-Inf - Inf);
+    testExpr(-Inf - -Inf);
+    testExpr(-Inf - NaN);
+    testExpr(NaN - 0.0);
+    testExpr(NaN - Inf);
+    testExpr(NaN - -Inf);
+    testExpr(NaN - NaN);
     
     testExpr(2.0 / 3.0);
     testExpr(1.0 / 2.0 / 3.0);
+    testExpr(0.0 / Inf);
+    testExpr(0.0 / -Inf);
+    testExpr(0.0 / NaN);
+    testExpr(Inf / 1.0);
+    testExpr(Inf / Inf);
+    testExpr(Inf / -Inf);
+    testExpr(Inf / NaN);
+    testExpr(-Inf / 1.0);
+    testExpr(-Inf / Inf);
+    testExpr(-Inf / -Inf);
+    testExpr(-Inf / NaN);
+    testExpr(NaN / 1.0);
+    testExpr(NaN / Inf);
+    testExpr(NaN / -Inf);
+    testExpr(NaN / NaN);
     
     testExpr(0 < 1);
     testExpr(0 < 0);
     testExpr(1 < 0);
     testExpr(2 < 0 < 2)
+    testExpr(0.0 < Inf);
+    testExpr(0.0 < -Inf);
+    testExpr(0.0 < NaN);
+    testExpr(Inf < 0.0);
+    testExpr(Inf < Inf);
+    testExpr(Inf < -Inf);
+    testExpr(Inf < NaN);
+    testExpr(-Inf < 0.0);
+    testExpr(-Inf < Inf);
+    testExpr(-Inf < -Inf);
+    testExpr(-Inf < NaN);
+    testExpr(NaN < 0.0);
+    testExpr(NaN < Inf);
+    testExpr(NaN < -Inf);
+    testExpr(NaN < NaN);
     
     testExpr(1 << 2);
     testExpr(1 << 3 << 2)
@@ -261,6 +342,21 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testExpr(0 <= 0);
     testExpr(1 <= 0);
     testExpr(3 <= 2 <= 3)
+    testExpr(0.0 <= Inf);
+    testExpr(0.0 <= -Inf);
+    testExpr(0.0 <= NaN);
+    testExpr(Inf <= 0.0);
+    testExpr(Inf <= Inf);
+    testExpr(Inf <= -Inf);
+    testExpr(Inf <= NaN);
+    testExpr(-Inf <= 0.0);
+    testExpr(-Inf <= Inf);
+    testExpr(-Inf <= -Inf);
+    testExpr(-Inf <= NaN);
+    testExpr(NaN <= 0.0);
+    testExpr(NaN <= Inf);
+    testExpr(NaN <= -Inf);
+    testExpr(NaN <= NaN);
     
     testCalc("0 = 1", 0 == 1);
     testCalc("0 = 0", 0 == 0);
@@ -271,16 +367,61 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     testExpr(0 == 0);
     testExpr(1 == 0);
     testExpr(2 == 2 == 1);
+    testExpr(0.0 == Inf);
+    testExpr(0.0 == -Inf);
+    testExpr(0.0 == NaN);
+    testExpr(Inf == 0.0);
+    testExpr(Inf == Inf);
+    testExpr(Inf == -Inf);
+    testExpr(Inf == NaN);
+    testExpr(-Inf == 0.0);
+    testExpr(-Inf == Inf);
+    testExpr(-Inf == -Inf);
+    testExpr(-Inf == NaN);
+    testExpr(NaN == 0.0);
+    testExpr(NaN == Inf);
+    testExpr(NaN == -Inf);
+    testExpr(NaN == NaN);
     
     testExpr(0 > 1);
     testExpr(0 > 0);
     testExpr(1 > 0);
     testExpr(2 > 0 > 2);
+    testExpr(0.0 > Inf);
+    testExpr(0.0 > -Inf);
+    testExpr(0.0 > NaN);
+    testExpr(Inf > 0.0);
+    testExpr(Inf > Inf);
+    testExpr(Inf > -Inf);
+    testExpr(Inf > NaN);
+    testExpr(-Inf > 0.0);
+    testExpr(-Inf > Inf);
+    testExpr(-Inf > -Inf);
+    testExpr(-Inf > NaN);
+    testExpr(NaN > 0.0);
+    testExpr(NaN > Inf);
+    testExpr(NaN > -Inf);
+    testExpr(NaN > NaN);
     
     testExpr(0 >= 1);
     testExpr(0 >= 0);
     testExpr(1 >= 0);
     testExpr(3 >= 2 >= 3);
+    testExpr(0.0 >= Inf);
+    testExpr(0.0 >= -Inf);
+    testExpr(0.0 >= NaN);
+    testExpr(Inf >= 0.0);
+    testExpr(Inf >= Inf);
+    testExpr(Inf >= -Inf);
+    testExpr(Inf >= NaN);
+    testExpr(-Inf >= 0.0);
+    testExpr(-Inf >= Inf);
+    testExpr(-Inf >= -Inf);
+    testExpr(-Inf >= NaN);
+    testExpr(NaN >= 0.0);
+    testExpr(NaN >= Inf);
+    testExpr(NaN >= -Inf);
+    testExpr(NaN >= NaN);
     
     testExpr(8 >> 1);
     testExpr(64 >> 2 >> 1);
@@ -307,6 +448,8 @@ MAIN(epicsCalcTest) (int /*argc*/, char* /*argv[]*/)
     /* CONDITIONAL elements */
     testExpr(0 ? 1 : 2);
     testExpr(1 ? 1 : 2);
+    testExpr(Inf ? 1 : 2);
+    testExpr(NaN ? 1 : 2);
     testExpr(0 ? 0 ? 2 : 3 : 4);
     testExpr(0 ? 1 ? 2 : 3 : 4);
     testExpr(1 ? 0 ? 2 : 3 : 4);

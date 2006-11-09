@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsdThreadPriorityTest.cpp */
 
@@ -22,6 +21,8 @@
 #include "epicsThread.h"
 #include "epicsEvent.h"
 #include "epicsExit.h"
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 
 typedef struct info {
@@ -37,65 +38,84 @@ static void client(void *arg)
     epicsThreadId idSelf = epicsThreadGetIdSelf();
     int pass;
 
-    for(pass = 0 ; pass < 3 ; pass++) {
+    for (pass = 0 ; pass < 3 ; pass++) {
         epicsEventWaitStatus status;
         status = epicsEventWait(pinfo->waitForMaster);
-        if(status!=epicsEventWaitOK) {
-            printf("task %p epicsEventWait returned %d\n", idSelf,(int)status);
-        }
+        testOk(status == epicsEventWaitOK,
+            "task %p epicsEventWait returned %d", idSelf, status);
+        epicsThreadSleep(0.01);
         epicsEventSignal(pinfo->waitForClient);
     }
 }
 
-extern "C" void epicsThreadPriorityTest(void *)
+static void runThreadPriorityTest(void *arg)
 {
-    unsigned int stackSize;
-    info *pinfo;
-    epicsThreadId clientId;
-    epicsThreadId myId;
-    epicsEventWaitStatus status;
+    epicsEventId testComplete = (epicsEventId) arg;
+    unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
 
-    myId = epicsThreadGetIdSelf();
-    epicsThreadSetPriority(myId,50);
-    pinfo = (info *)calloc(1,sizeof(info));
+    epicsThreadId myId = epicsThreadGetIdSelf();
+    epicsThreadSetPriority(myId, 50);
+
+    info *pinfo = (info *)calloc(1, sizeof(info));
     pinfo->waitForMaster = epicsEventMustCreate(epicsEventEmpty);
     pinfo->waitForClient = epicsEventMustCreate(epicsEventEmpty);
-    stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
-    clientId = epicsThreadCreate("client",50,stackSize,client,pinfo);
+
+    epicsThreadId clientId = epicsThreadCreate("client",
+        50, stackSize, client, pinfo);
     epicsEventSignal(pinfo->waitForMaster);
-    status = epicsEventWaitWithTimeout(pinfo->waitForClient,.1);
-    if(status!=epicsEventWaitOK) {
-        printf("epicsEventWaitWithTimeout failed. Why????\n");
+
+    epicsEventWaitStatus status;
+    status = epicsEventWaitWithTimeout(pinfo->waitForClient, 0.1);
+    if (!testOk(status == epicsEventWaitOK,
+        "epicsEventWaitWithTimeout returned %d", status)) {
+        testSkip(2, "epicsEventWaitWithTimeout failed");
         goto done;
     }
-    epicsThreadSetPriority(clientId,20);
+
+    epicsThreadSetPriority(clientId, 20);
     /* expect that client will not be able to run */
     epicsEventSignal(pinfo->waitForMaster);
+
     status = epicsEventTryWait(pinfo->waitForClient);
-    if(status!=epicsEventWaitTimeout) {
-        printf("epicsEventTryWait did not return epicsEventWaitTimeout\n");
+    if (status != epicsEventWaitTimeout) {
+        testFail("epicsEventTryWait returned %d", status);
     } else {
-         status = epicsEventWaitWithTimeout(pinfo->waitForClient,.1);
-         if(status!=epicsEventWaitOK) {
-             printf("epicsEventWaitWithTimeout failed. Why????\n");
+         status = epicsEventWaitWithTimeout(pinfo->waitForClient, 0.1);
+         if (!testOk(status == epicsEventWaitOK,
+             "epicsEventWaitWithTimeout returned %d", status)) {
+             testSkip(1, "epicsEventWaitWithTimeout failed");
              goto done;
          }
     }
-    epicsThreadSetPriority(clientId,80);
+    epicsThreadSetPriority(clientId, 80);
     /* expect that client will be able to run */
     epicsEventSignal(pinfo->waitForMaster);
     status = epicsEventTryWait(pinfo->waitForClient);
-    if(status==epicsEventWaitOK) {
-        printf("Seems to support strict priority scheduling\n");
+    if (status==epicsEventWaitOK) {
+        testPass("Strict priority scheduler");
     } else {
-        printf("Does not appear to support strict priority scheduling\n");
+        testDiag("No strict priority scheduler");
         status = epicsEventWaitWithTimeout(pinfo->waitForClient,.1);
-        if(status!=epicsEventWaitOK) {
-            printf("epicsEventWaitWithTimeout failed. Why????\n");
-            goto done;
-        }
+        testOk(status == epicsEventWaitOK,
+            "epicsEventWaitWithTimeout returned %d", status);
     }
 done:
     epicsThreadSleep(1.0);
+    epicsEventSignal(testComplete);
 }
+
 } /* extern "C" */
+
+
+MAIN(epicsThreadPriorityTest)
+{
+    testPlan(7);
+    epicsEventId testComplete = epicsEventMustCreate(epicsEventEmpty);
+    epicsThreadMustCreate("threadPriorityTest", epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
+        runThreadPriorityTest, testComplete);
+    epicsEventWaitStatus status = epicsEventWait(testComplete);
+    testOk(status == epicsEventWaitOK,
+        "epicsEventWait returned %d", status);
+    return testDone();
+}

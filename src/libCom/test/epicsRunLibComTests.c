@@ -15,110 +15,105 @@
 #include <epicsThread.h>
 #include <epicsExit.h>
 
-void threadTest(int ntasks,int verbose);
-void epicsTimerTest();
-int epicsAlgorithm(int /*argc*/, char* /*argv[]*/);
-int epicsCalcTest(int /*argc*/, char* /*argv[]*/);
-void epicsEventTest(int nthreads,int verbose);
-int epicsExceptionTest();
-int epicsMathTest();
-void epicsMessageQueueTest(void *parm);
-void epicsMutexTest(int nthreads,int verbose);
-void epicsOkToBlockTest(void);
-int epicsStdioTest (const char *report);
-int epicsStringTest();
-void epicsThreadPriorityTest(void *);
-void epicsThreadPrivateTest();
+int epicsThreadTest(void);
+int epicsTimerTest(void);
+int epicsAlgorithm(void);
+int epicsCalcTest(void);
+int epicsEventTest(void);
+int epicsExceptionTest(void);
+int epicsMathTest(void);
+int epicsMessageQueueTest(void);
+int epicsMutexTest(void);
+int epicsStdioTest(void);
+int epicsStringTest(void);
+int epicsThreadPriorityTest(void);
+int epicsThreadPrivateTest(void);
 int epicsTimeTest(void);
 int macEnvExpandTest(void);
-void ringPointerTest();
-void blockingSockTest (void);
-void epicsExitTest(void);
+int ringPointerTest(void);
+int blockingSockTest(void);
+int epicsExitTest(void);
 
 void
 epicsRunLibComTests(void)
 {
-    /*
-     * Thread startup sets some internal variables so do it first
-     */
+	/*
+	 * Thread startup sets some internal variables so do it first
+	 */
 	printf("\n****** Thread Test *****\n");
-	threadTest (2, 0);
- 	epicsThreadSleep (1.0);
+	epicsThreadTest ();
+	epicsThreadSleep (1.0);
 
-    /*
-     * Timer tests get confused if run after some of the other tests
-     */
+	/*
+	 * Timer tests get confused if run after some of the other tests
+	 */
 	printf("\n****** Timer Test *****\n");
 	epicsTimerTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Algorithm Test *****\n");
-	epicsAlgorithm (0, NULL);
- 	epicsThreadSleep (1.0);
+	epicsAlgorithm ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Calculation Test *****\n");
-    epicsCalcTest(0, NULL);
- 	epicsThreadSleep (1.0);
+	epicsCalcTest();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Event Test *****\n");
-	epicsEventTest (2,0);
- 	epicsThreadSleep (1.0);
+	epicsEventTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Exception Test *****\n");
-  	epicsExceptionTest ();
- 	epicsThreadSleep (1.0);
+	epicsExceptionTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Math Test *****\n");
 	epicsMathTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Message Queue Test *****\n");
-	epicsMessageQueueTest (NULL);
- 	epicsThreadSleep (1.0);
+	epicsMessageQueueTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Mutex Test *****\n");
-	epicsMutexTest (2, 0);
- 	epicsThreadSleep (1.0);
-
-	printf("\n****** OK to Block Test *****\n");
-	epicsOkToBlockTest ();
- 	epicsThreadSleep (1.0);
+	epicsMutexTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Stdio Test *****\n");
-	epicsStdioTest ("report");
- 	epicsThreadSleep (1.0);
+	epicsStdioTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** String Test *****\n");
 	epicsStringTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Thread Priority Test *****\n");
-	epicsThreadPriorityTest (NULL);
- 	epicsThreadSleep (1.0);
+	epicsThreadPriorityTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Thread Private Test *****\n");
-	epicsThreadPrivateTest (NULL);
- 	epicsThreadSleep (1.0);
+	epicsThreadPrivateTest ();
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Time Test *****\n");
 	epicsTimeTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Macro Environment Variable Expansion Test *****\n");
 	macEnvExpandTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Ring Pointer Test *****\n");
 	ringPointerTest ();
- 	epicsThreadSleep (1.0);
+	epicsThreadSleep (1.0);
 
 	printf("\n****** Check socket behaviour *****\n");
-    blockingSockTest();
- 	epicsThreadSleep (1.0);
+	blockingSockTest();
+	epicsThreadSleep (1.0);
 
-    /*
-     * Must come last
-     */
+	/*
+	 * Must come last
+	 */
 	printf("\n****** EpicsExit Test *****\n");
-    epicsExitTest();
+	epicsExitTest();    /* Never returns */
 }

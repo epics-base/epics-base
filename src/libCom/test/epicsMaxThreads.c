@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsMaxThreads.cpp */
 
@@ -22,6 +21,7 @@
 #include "epicsEvent.h"
 #include "epicsExit.h"
 #include "errlog.h"
+#include "testMain.h"
 
 static epicsEventId started;
 
@@ -31,15 +31,15 @@ static void thread(void *arg)
     epicsThreadSuspendSelf();
 }
 
-void epicsMaxThreads(void)
+MAIN(epicsMaxThreads)
 {
     unsigned int  stackSize;
     epicsThreadId id;
     int           i = 0;
 
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
-    errlogPrintf("stackSize %d\n",stackSize);
-    errlogFlush();
+    printf("stackSize %d\n",stackSize);
+
     started = epicsEventMustCreate(epicsEventEmpty);
 
     while(1) {
@@ -47,9 +47,10 @@ void epicsMaxThreads(void)
         if(!id) break;
         i++;
         if ((i % 100) == 0)
-            printf ("%d\n", i);
+            printf ("Reached %d...\n", i);
         epicsEventMustWait(started);
     }
-    fprintf(stdout,"number threads %d\n",i);
-    epicsExitCallAtExits();
+
+    printf("Max number of \"Small\" threads on this OS is %d\n", i);
+    return 0;
 }

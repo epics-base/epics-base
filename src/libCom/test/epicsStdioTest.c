@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsStdioTest.c
  *
@@ -24,6 +23,8 @@
 #include "epicsStdio.h"
 #include "epicsStdioRedirect.h"
 #include "epicsUnitTest.h"
+#include "testMain.h"
+
 
 #define LINE_1 "# This is first line of sample report\n"
 #define LINE_2 "# This is second and last line of sample report\n"
@@ -33,20 +34,21 @@ static void testEpicsSnprintf() {
     const float fvalue = 1.23e4;
     const char *svalue = "OneTwoThreeFour";
     const char *format = "int %d float %8.2e string %s";
-    const char *result = "int 1234 float 1.23e+04 string OneTwoThreeFour";
+    const char *expected = "int 1234 float 1.23e+04 string OneTwoThreeFour";
     char buffer[80];
     int size, rtn;
-    int rlen = strlen(result)+1;
+    int rlen = strlen(expected)+1;
     
     strcpy(buffer, "AAAA");
     
-    for (size = 1; size < strlen(result) + 5; ++size) {
+    for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-        testOk1(rtn == rlen-1);
-        if (size) {
-            testOk(strncmp(buffer, result, size-1) == 0, buffer);
-            testOk(strlen(buffer) == (size < rlen ? size : rlen) -1, "length");
-        }
+        testOk(rtn == rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        testOk(strncmp(buffer, expected, size - 1) == 0,
+            "buffer = '%s'", buffer);
+        rtn = strlen(buffer);
+        testOk(rtn == (size < rlen ? size : rlen) - 1,
+            "length = %d", rtn);
     }
 }
 
@@ -54,67 +56,63 @@ void testStdoutRedir (const char *report)
 {
     FILE *realStdout = stdout;
     FILE *stream = 0;
+    char linebuf[80];
+    size_t buflen = sizeof linebuf;
     
     testOk1(epicsGetStdout() == stdout);
-    if(report && strlen(report)>0) {
-        int fd;
 
-        errno = 0;
-        fd = open(report, O_CREAT | O_WRONLY | O_TRUNC, 0644 );
-        if(fd<0) {
-            fprintf(stderr,"%s could not be created %s\n",
-            report,strerror(errno));
-        } else {
-            stream = fdopen(fd,"w");
-            if(!stream) {
-                fprintf(stderr,"%s could not be opened for output %s\n",
-                    report,strerror(errno));
-            } else {
-                epicsSetThreadStdout(stream);
-                testOk1(stdout == stream);
-            }
-        }
+    errno = 0;
+    if (!testOk1((stream = fopen(report, "w")) != NULL)) {
+        testDiag("'%s' could not be opened for writing: %s",
+                 report, strerror(errno));
+        testSkip(11, "Can't create stream file");
+        return;
     }
+
+    epicsSetThreadStdout(stream);
+    testOk1(stdout == stream);
+
     printf(LINE_1);
     printf(LINE_2);
-    errno = 0;
-    if(stream) {
-        epicsSetThreadStdout(0);
-        if(fclose(stream)) {
-            fprintf(stderr,"fclose failed %s\n",strerror(errno));
-        }
-    } else {
-        fflush(stdout);
-    }
+
+    epicsSetThreadStdout(0);
     testOk1(epicsGetStdout() == realStdout);
     testOk1(stdout == realStdout);
-    if ((stream = fopen(report, "r")) == NULL) {
-        fprintf(stderr, "Can't reopen report file: %s\n", strerror(errno));
+
+    errno = 0;
+    if (!testOk1(!fclose(stream)))
+        testDiag("fclose error: %s\n", strerror(errno));
+
+    if (!testOk1((stream = fopen(report, "r")) != NULL)) {
+        testDiag("'%s' could not be opened for reading: %s",
+                 report, strerror(errno));
+        testSkip(6, "Can't reopen stream file.");
+        return;
     }
-    else {
-        char linebuf[80];
-        if (fgets(linebuf, sizeof linebuf, stream) == NULL) {
-            fprintf(stderr, "Can't read first line of report file: %s\n", strerror(errno));
-        }
-        else if (!testOk(strcmp(linebuf, LINE_1) == 0, "First line")) { }
-        else if (fgets(linebuf, sizeof linebuf, stream) == NULL) {
-            fprintf(stderr, "Can't read second line of report file: %s\n", strerror(errno));
-        }
-        else if (!testOk(strcmp(linebuf, LINE_2) == 0, "Second line")) { }
-        else if (fgets(linebuf, sizeof linebuf, stream) != NULL) {
-            fprintf(stderr, "Read too much from report file.\n");
-        }
-        else {
-        }
-        if(fclose(stream)) {
-            fprintf(stderr,"fclose failed %s\n",strerror(errno));
-        }
+
+    if (!testOk1(fgets(linebuf, buflen, stream) != NULL)) {
+        testDiag("File read error: %s", strerror(errno));
+        testSkip(5, "Read failed.");
+        fclose(stream);
+        return;
     }
+    testOk(strcmp(linebuf, LINE_1) == 0, "First line correct");
+
+    if (!testOk1(fgets(linebuf, buflen, stream) != NULL)) {
+        testDiag("File read error: %s", strerror(errno));
+        testSkip(1, "No line to compare.");
+    } else
+        testOk(strcmp(linebuf, LINE_2) == 0, "Second line");
+
+    testOk(!fgets(linebuf, buflen, stream), "File ends");
+
+    if (!testOk1(!fclose(stream)))
+        testDiag("fclose error: %s\n", strerror(errno));
 }
 
-int epicsStdioTest (const char *report)
+MAIN(epicsStdioTest)
 {
-    testPlan(0);
+    testPlan(163);
     testEpicsSnprintf();
     testStdoutRedir("report");
     return testDone();

@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsMutexTest.c */
 
@@ -27,6 +26,8 @@
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "errlog.h"
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 typedef struct info {
     int        threadnum;
@@ -34,29 +35,21 @@ typedef struct info {
     int        quit;
 }info;
 
-extern "C" void mutexThread ( void * arg )
+extern "C" void mutexThread(void * arg)
 {
     info *pinfo = (info *)arg;
-    time_t tp;
-    printf("mutexThread %d starting time %ld\n",pinfo->threadnum,time(&tp));
-    while(1) {
-        epicsMutexLockStatus status;
-        if(pinfo->quit) {
-            printf("mutexThread %d returning time %ld\n",
-                pinfo->threadnum,time(&tp));
-            return;
-        }
-        status = epicsMutexLock(pinfo->mutex);
-        if(status!=epicsMutexLockOK) {
-            printf("task %d epicsMutexLock returned %d  time %ld\n",
-                pinfo->threadnum,(int)status,time(&tp));
-        }
-        printf("mutexThread %d epicsMutexLock time %ld\n",
-            pinfo->threadnum,time(&tp));
+    testDiag("mutexThread %d starting", pinfo->threadnum);
+    while (!pinfo->quit) {
+        epicsMutexLockStatus status = epicsMutexLock(pinfo->mutex);
+        testOk(status == epicsMutexLockOK,
+            "mutexThread %d epicsMutexLock returned %d",
+            pinfo->threadnum, (int)status);
         epicsThreadSleep(.1);
         epicsMutexUnlock(pinfo->mutex);
         epicsThreadSleep(.9);
     }
+    testDiag("mutexThread %d exiting", pinfo->threadnum);
+    return;
 }
 
 inline void lockPair ( epicsMutex & mutex )
@@ -183,7 +176,7 @@ void epicsMutexPerformance ()
     double delay = epicsTime::getCurrent () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
-    printf ( "One lock pair completes in %f micro sec\n", delay );
+    testDiag("lock()*1/unlock()*1 takes %f microseconds", delay);
 
     // test a two times recursive lock pair
     begin = epicsTime::getCurrent ();
@@ -193,7 +186,7 @@ void epicsMutexPerformance ()
     delay = epicsTime::getCurrent () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
-    printf ( "One double recursive lock pair completes in %f micro sec\n", delay );
+    testDiag("lock()*2/unlock()*2 takes %f microseconds", delay);
 
     // test a four times recursive lock pair
     begin = epicsTime::getCurrent ();
@@ -203,7 +196,7 @@ void epicsMutexPerformance ()
     delay = epicsTime::getCurrent () -  begin;
     delay /= N * 100u; // convert to delay per lock pair
     delay *= 1e6; // convert to micro seconds
-    printf ( "One quad recursive lock pair completes in %f micro sec\n", delay );
+    testDiag("lock()*4/unlock()*4 takes %f microseconds", delay);
 }
 
 struct verifyTryLock {
@@ -215,23 +208,19 @@ extern "C" void verifyTryLockThread ( void *pArg )
 {
     struct verifyTryLock *pVerify = 
         ( struct verifyTryLock * ) pArg;
-    epicsMutexLockStatus status;
 
-    status = epicsMutexTryLock ( pVerify->mutex );
-    assert ( status == epicsMutexLockTimeout );
+    testOk1(epicsMutexTryLock(pVerify->mutex) == epicsMutexLockTimeout);
     epicsEventSignal ( pVerify->done );
 }
 
 void verifyTryLock ()
 {
     struct verifyTryLock verify;
-    epicsMutexLockStatus status;
 
     verify.mutex = epicsMutexMustCreate ();
     verify.done = epicsEventMustCreate ( epicsEventEmpty );
 
-    status = epicsMutexTryLock ( verify.mutex );
-    assert ( status == epicsMutexLockOK );
+    testOk1(epicsMutexTryLock(verify.mutex) == epicsMutexLockOK);
 
     epicsThreadCreate ( "verifyTryLockThread", 40, 
         epicsThreadGetStackSize(epicsThreadStackSmall),
@@ -244,8 +233,9 @@ void verifyTryLock ()
     epicsEventDestroy ( verify.done );
 }
 
-extern "C" void epicsMutexTest(int nthreads,int verbose)
+MAIN(epicsMutexTest)
 {
+    const int nthreads = 3;
     unsigned int stackSize;
     epicsThreadId *id;
     int i;
@@ -254,31 +244,19 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
     info **pinfo;
     epicsMutexId mutex;
     int status;
-    time_t tp;
-    int errVerboseSave = errVerbose;
 
-    epicsMutexPerformance ();
+    testPlan(19);
+
     verifyTryLock ();
 
-    errVerbose = verbose;
     mutex = epicsMutexMustCreate();
-    printf("calling epicsMutexLock(mutex) time %ld\n",time(&tp));
     status = epicsMutexLock(mutex);
-    if(status) printf("status %d\n",status);
-    printf("calling epicsMutexTryLock(mutex) time %ld\n",time(&tp));
+    testOk(status == 0, "epicsMutexLock returned %d", status);
     status = epicsMutexTryLock(mutex);
-    if(status) printf("status %d\n",status);
-    epicsMutexShow(mutex,1);
-    printf("calling epicsMutexUnlock() time %ld\n",time(&tp));
+    testOk(status == 0, "epicsMutexTryLock returned %d", status);
     epicsMutexUnlock(mutex);
-    printf("calling epicsMutexUnlock() time %ld\n",time(&tp));
     epicsMutexUnlock(mutex);
-    epicsMutexShow(mutex,1);
 
-    if(nthreads<=0) {
-        errVerbose = errVerboseSave;
-        return;
-    }
     id = (epicsThreadId *)calloc(nthreads,sizeof(epicsThreadId));
     name = (char **)calloc(nthreads,sizeof(char *));
     arg = (void **)calloc(nthreads,sizeof(void *));
@@ -294,14 +272,14 @@ extern "C" void epicsMutexTest(int nthreads,int verbose)
         id[i] = epicsThreadCreate(name[i],40,stackSize,
                                   mutexThread,
                                   arg[i]);
-        printf("semTest created mutexThread %d id %p time %ld\n",
-            i, id[i],time(&tp));
     }
     epicsThreadSleep(5.0);
-    printf("semTest setting quit time %ld\n",time(&tp));
     for(i=0; i<nthreads; i++) {
         pinfo[i]->quit = 1;
     }
     epicsThreadSleep(2.0);
-    errVerbose = errVerboseSave;
+
+    epicsMutexPerformance ();
+
+    return testDone();
 }

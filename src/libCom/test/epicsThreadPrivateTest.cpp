@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* $Id$ */
 
@@ -15,7 +14,8 @@
 
 #include "epicsTime.h"
 #include "epicsThread.h"
-#include "epicsAssert.h"
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 static epicsThreadPrivate < bool > priv;
 
@@ -23,10 +23,10 @@ static bool doneFlag = false;
 
 extern "C" void epicsThreadPrivateTestThread ( void * )
 {
-    assert ( 0 == priv.get () );
+    testOk1 ( 0 == priv.get () );
     static bool var;
     priv.set ( &var );
-    assert ( &var == priv.get () );
+    testOk1 ( &var == priv.get () );
     doneFlag = true;
 }
 
@@ -59,20 +59,24 @@ inline void callItTenTimesSquared ()
     callItTenTimes ();
 }
 
-extern "C" void epicsThreadPrivateTest ()
+MAIN(epicsThreadPrivateTest)
 {
+    testPlan(5);
+
     static bool var;
     priv.set ( &var );
-    assert ( &var == priv.get() );
+    testOk1 ( &var == priv.get() );
+
     epicsThreadCreate ( "epicsThreadPrivateTest", epicsThreadPriorityMax, 
         epicsThreadGetStackSize ( epicsThreadStackSmall ), 
         epicsThreadPrivateTestThread, 0 );
     while ( ! doneFlag ) {
         epicsThreadSleep ( 0.1 );
     }
-    assert ( &var == priv.get() );
+    testOk1 ( &var == priv.get() );
+
     priv.set ( 0 );
-    assert ( 0 == priv.get() );
+    testOk1 ( 0 == priv.get() );
 
     epicsTime begin = epicsTime::getCurrent ();
     static const unsigned N = 1000u;
@@ -82,6 +86,8 @@ extern "C" void epicsThreadPrivateTest ()
     double delay = epicsTime::getCurrent() - begin;
     delay /= N * 100u; // convert to sec per call
     delay *= 1e6; // convert to micro sec
-    printf ( "It takes %f micro sec to call epicsThreadPrivateGet()\n", delay );
+    testDiag("epicsThreadPrivateGet() takes %f microseconds", delay);
+
+    return testDone();
 }
 

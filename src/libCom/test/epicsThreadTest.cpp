@@ -1,17 +1,12 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* epicsThreadTest.cpp */
-
-/* Author:  Marty Kraimer Date:    26JAN2000  */
-/*          sleep accuracy and sleep quantum tests by Jeff Hill */
-/*          epicsThreadGetIdSelf performance by Jeff Hill */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -25,33 +20,8 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "errlog.h"
-
-static void testPriority(const char *who)
-{
-    epicsThreadId id;
-    unsigned int  oldPriority,newPriority;
-
-    id = epicsThreadGetIdSelf();
-    oldPriority = epicsThreadGetPriority(id);
-    epicsThreadSetPriority(id,epicsThreadPriorityMax);
-    newPriority = epicsThreadGetPriority(id);
-    epicsThreadSetPriority(id,oldPriority);
-    printf("testPriority %s\n    id %p old %u new %u\n",
-        who,id,oldPriority,newPriority);
-}
-
-extern "C" void testPriorityThread(void *arg)
-{
-    testPriority("thread");
-}
-
-static void epicsThreadPriorityTest()
-{
-    testPriority("main error expected from epicsThreadSetPriority");
-    epicsThreadCreate("testPriorityThread",epicsThreadPriorityMedium,
-        epicsThreadGetStackSize(epicsThreadStackMedium),testPriorityThread,0);
-    epicsThreadSleep(0.5);
-}
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 static epicsThreadPrivate<int> privateKey;
 
@@ -78,166 +48,64 @@ myThread::~myThread() {delete argvalue;}
 
 void myThread::run()
 {
-    int myPrivate = *argvalue;
+    int *pset = argvalue;
     privateKey.set(argvalue);
-    errlogPrintf("threadFunc %d starting argvalue %p\n",myPrivate,argvalue);
     epicsThreadSleep(2.0);
-    argvalue = privateKey.get();
-    errlogPrintf("threadFunc %d stopping argvalue %p\n",myPrivate,argvalue);
+    int *pget = privateKey.get();
+    testOk1(pget == pset);
+
+    epicsThreadId self = epicsThreadGetIdSelf();
+    testOk1(thread.getPriority() == epicsThreadGetPriority(self));
 }
 
-static double threadSleepMeasureDelayError ( const double & delay )
+
+typedef struct info {
+    int  isOkToBlock;
+} info;
+
+extern "C" {
+static void thread(void *arg)
 {
-    epicsTime beg = epicsTime::getCurrent();
-    epicsThreadSleep ( delay );
-    epicsTime end = epicsTime::getCurrent();
-    double meas = end - beg;
-    double error = fabs ( delay - meas );
-    return error;
+    info *pinfo = (info *)arg;
+
+    epicsThreadSetOkToBlock(pinfo->isOkToBlock);
+    epicsThreadSleep(1.0);
+
+    testOk(epicsThreadIsOkToBlock() == pinfo->isOkToBlock,
+        "%s epicsThreadIsOkToBlock() = %d",
+        epicsThreadGetNameSelf(), pinfo->isOkToBlock);
+    epicsThreadSleep(0.1);
+}
 }
 
-static double measureSleepQuantum ( 
-    const unsigned iterations, const double testInterval )
+
+MAIN(epicsThreadTest)
 {
-    double errorSum = 0.0;
-    printf ( "Estimating sleep quantum" );
-    fflush ( stdout );
-    for ( unsigned i = 0u; i < iterations; i++ ) {
-        // try to guarantee a uniform probability density function
-        // by intentionally burning some CPU until we are less 
-        // likely to be aligned with the schedualing clock
-        double interval = rand ();
-        interval /= RAND_MAX;
-        interval *= testInterval;
-        epicsTime start = epicsTime::getCurrent ();
-        epicsTime current = start;
-        while ( current - start < interval ) {
-            current = epicsTime::getCurrent ();
-        }
-        errorSum += threadSleepMeasureDelayError ( testInterval );
-        if ( i % ( iterations / 10 ) == 0 ) {
-            printf ( "." );
-            fflush ( stdout );
-        }
+    testPlan(8);
+
+    const int ntasks = 3;
+    myThread *myThreads[ntasks];
+
+    int startPriority = 0;
+    for (int i = 0; i < ntasks; i++) {
+        char name[10];
+        sprintf(name, "t%d", i);
+        myThreads[i] = new myThread(i, name);
+        if (i == 0)
+            startPriority = myThreads[i]->thread.getPriority();
+        myThreads[i]->thread.setPriority(startPriority + i);
     }
-    printf ( "done\n" );
+    epicsThreadSleep(3.0);
 
-    // with a uniform probability density function the
-    // sleep delay error mean is one half of the quantum
-    double quantumEstimate = 2 * errorSum / iterations;
-    return quantumEstimate;
-}
+    unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
 
-static void threadSleepQuantumTest ()
-{
-    const double quantum = epicsThreadSleepQuantum ();
+    info infoA = {0};
+    epicsThreadCreate("threadA", 50, stackSize, thread, &infoA);
 
-    double quantumEstimate = measureSleepQuantum ( 10, 10 * quantum );
-    quantumEstimate = measureSleepQuantum ( 100, 2 * quantumEstimate );
+    info infoB = {1};
+    epicsThreadCreate("threadB", 50, stackSize, thread, &infoB);
 
-    double quantumError = fabs ( quantumEstimate - quantum ) / quantum;
-    const char * pTol = 0;
-    if ( quantumError > 0.1 ) {
-        pTol = "10%";
-    }
-    else if ( quantumError > 0.01 ) {
-        pTol = "1%";
-    }
-    else if ( quantumError > 0.001 ) {
-        pTol = "0.1%";
-    }
-    if ( pTol ) {
-        printf ( 
-            "The epicsThreadSleepQuantum() call returns %f sec.\n", 
-                quantum );
-        printf (
-            "This doesnt match the quantum estimate "
-            "of %f sec within %s.\n",
-                quantumEstimate, pTol );
-    }
-}
+    epicsThreadSleep(2.0);
 
-static void threadSleepTest ()
-{
-    static const int iterations = 20;
-    const double quantum = epicsThreadSleepQuantum ();
-    double errorSum = threadSleepMeasureDelayError ( 0.0 );
-    for ( int i = 0u; i < iterations; i++ ) {
-        double delay = ldexp ( 1.0 , -i );
-        double error = 
-            threadSleepMeasureDelayError ( delay );
-        errorSum += error;
-        if ( error > quantum + quantum / 8.0 ) {
-            printf ( "epicsThreadSleep ( %10f ) delay err %10f sec\n", 
-                delay, error );
-        }
-    }
-    double averageError = errorSum / ( iterations + 1 );
-    if ( averageError > quantum ) {
-        printf ( "Average sleep delay error was %f sec\n", averageError );
-    }
-}
-
-static void epicsThreadGetIdSelfPerfTest ()
-{
-    static const unsigned N = 10000;
-    static const double microSecPerSec = 1e6;
-    epicsTime begin = epicsTime::getCurrent ();
-    for ( unsigned i = 0u; i < N; i++ ) {
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-        epicsThreadGetIdSelf ();
-    };
-    epicsTime end = epicsTime::getCurrent ();
-    printf ( "It takes %f micro sec to call epicsThreadGetIdSelf ()\n",
-        microSecPerSec * ( end - begin ) / (10 * N) );
-}
-
-extern "C" void threadTest(int ntasks,int verbose)
-{
-    myThread **papmyThread;
-    int i;
-    char **name;
-    int startPriority,minPriority,maxPriority;
-    int errVerboseSave = errVerbose;
-
-    epicsThreadPriorityTest();
-    epicsThreadGetIdSelfPerfTest ();
-
-    threadSleepTest();
-    threadSleepQuantumTest();
-
-    errVerbose = verbose;
-    errlogInit(4096);
-    papmyThread = (myThread **)calloc(ntasks,sizeof(myThread *));
-    name = (char **)calloc(ntasks,sizeof(char **));
-    errlogPrintf("threadTest starting\n");
-    for(i=0; i<ntasks; i++) {
-        name[i] = (char *)calloc(10,sizeof(char));
-        sprintf(name[i],"task%d",i);
-        papmyThread[i] = new myThread(i,name[i]);
-        errlogPrintf("threadTest created %d myThread %p\n",i,papmyThread[i]);
-        startPriority = papmyThread[i]->thread.getPriority();
-        papmyThread[i]->thread.setPriority(epicsThreadPriorityMin);
-        minPriority = papmyThread[i]->thread.getPriority();
-        papmyThread[i]->thread.setPriority(epicsThreadPriorityMax);
-        maxPriority = papmyThread[i]->thread.getPriority();
-        papmyThread[i]->thread.setPriority(50+i);
-        if(i==0)errlogPrintf("startPriority %d minPriority %d maxPriority %d\n",
-            startPriority,minPriority,maxPriority);
-    }
-    epicsThreadSleep(.1);
-    epicsThreadShowAll(0);
-    epicsThreadSleep(5.0);
-    errlogPrintf("epicsThreadTest returning\n");
-    epicsThreadSleep(.5);
-    errVerbose = errVerboseSave;
+    return testDone();
 }

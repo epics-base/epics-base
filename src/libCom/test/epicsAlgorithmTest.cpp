@@ -1,25 +1,19 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 // epicsAlgorithmTest.cpp
 //	Authors: Jeff Hill & Andrew Johnson
 
 #include "epicsUnitTest.h"
 #include "epicsAlgorithm.h"
+#include "testMain.h"
 
-#if defined(vxWorks) || defined(__rtems__)
-  #define MAIN(prog) extern "C" int prog
-#else
-  #define MAIN(prog) int main
-#endif
-
-MAIN(epicsAlgorithm) (int /*argc*/, char* /*argv[]*/)
+MAIN(epicsAlgorithm)
 {
     testPlan(22);
     

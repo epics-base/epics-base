@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * $Id$
@@ -20,6 +19,7 @@
 #include "envDefs.h"
 #include "errlog.h"
 #include "epicsUnitTest.h"
+#include "testMain.h"
 
 void check(const char *str, const char *expect)
 {
@@ -40,7 +40,7 @@ void check(const char *str, const char *expect)
     testOk(pass, str);
 }
 
-int macEnvExpandTest(void)
+MAIN(macEnvExpandTest)
 {
     int warn = 0;
     testPlan(30);

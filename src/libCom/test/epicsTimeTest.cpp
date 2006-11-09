@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * Authors: Jeff HIll and Marty Kraimer
@@ -20,6 +19,7 @@
 #include "epicsThread.h"
 #include "errlog.h"
 #include "epicsUnitTest.h"
+#include "testMain.h"
 
 using namespace std;
 
@@ -39,8 +39,7 @@ static const unsigned uSecPerSec = 1000u * mSecPerSec;
 static const unsigned nSecPerSec = 1000u * uSecPerSec;
 
 
-extern "C"
-int epicsTimeTest (void)
+MAIN(epicsTimeTest)
 {
     const unsigned wasteTime = 100000u;
     const int nTimes = 10;
@@ -66,8 +65,7 @@ int epicsTimeTest (void)
             epicsTime ts(badTS);
             char buf [32];
             ts.strftime(buf, sizeof(buf), pFormat);
-            testFail("nanosecond overflow throws");
-            testDiag("nanosecond overflow result is \"%s\"", buf);
+            testFail("nanosecond overflow returned \"%s\"", buf);
         }
         catch ( ... ) {
             testPass("nanosecond overflow throws");
@@ -75,31 +73,27 @@ int epicsTimeTest (void)
     }
 
     {
-        char buf[64];
+        char buf[80];
         epicsTime et;
 
         const char * pFormat = "%Y-%m-%d %H:%M:%S.%f";
         et.strftime(buf, sizeof(buf), pFormat);
-        if (!testOk(strcmp(buf, "<undefined>") == 0, "undefined strftime"))
-            testDiag("undefined.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        testOk(strcmp(buf, "<undefined>") == 0, "undefined => '%s'", buf);
 
         // This is Noon GMT, when all timezones have the same date
         const epicsTimeStamp tTS = {12*60*60, 98765432};
         et = tTS;
         pFormat = "%Y-%m-%d %S.%09f";   // %H and %M change with timezone
         et.strftime(buf, sizeof(buf), pFormat);
-        if (!testOk(strcmp(buf, "1990-01-01 00.098765432") == 0, pFormat))
-            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        testOk(strcmp(buf, "1990-01-01 00.098765432") == 0, "'%s' => '%s'", pFormat, buf);
 
         pFormat = "%S.%04f";
         et.strftime(buf, sizeof(buf), pFormat);
-        if (!testOk(strcmp(buf, "00.0988") == 0, pFormat))
-            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        testOk(strcmp(buf, "00.0988") == 0, "'%s' => '%s'", pFormat, buf);
 
         pFormat = "%S.%05f";
         et.strftime(buf, sizeof(buf), pFormat);
-        if (!testOk(strcmp(buf, "00.09877") == 0, pFormat))
-            testDiag("t.strftime(\"%s\") = \"%s\"", pFormat, buf);
+        testOk(strcmp(buf, "00.09877") == 0, "'%s' => '%s'", pFormat, buf);
     }
 
     {   // invalidFormatTest
@@ -108,8 +102,7 @@ int epicsTimeTest (void)
         memset(bigBuf, '\a', sizeof(bigBuf ));
         bigBuf[ sizeof(bigBuf) - 1] = '\0';
         begin.strftime(buf, sizeof(buf), bigBuf);
-        if (!testOk(strcmp(buf, "<invalid format>") == 0, "strftime(huge)"))
-            testDiag("strftime(huge) = \"%s\"", buf);
+        testOk(strcmp(buf, "<invalid format>") == 0, "bad format => '%s'", buf);
     }
 
     testDiag("Running %d loops", nTimes);

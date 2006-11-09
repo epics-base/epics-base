@@ -313,7 +313,7 @@ static void netStatCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
 static void stackCheckCallFunc(const iocshArgBuf *args)
 {
-    Stack_check_Dump_usage ();
+    rtems_stack_checker_dump_usage();
 }
 
 static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};

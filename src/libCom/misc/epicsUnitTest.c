@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
@@ -8,8 +8,8 @@
 /* $Id$
  * Author: Andrew Johnson
  *
- * Unit test module which generates Perl-compatible output.
- * See  perldoc Test::Harness  for details of output format.
+ * Unit test module which generates output in the Test Anything Protocol
+ * format.  See  perldoc Test::Harness  for details of output format.
  *
  */
 
@@ -33,12 +33,12 @@ static const char *todo;
 
 static epicsThreadOnceId onceFlag = EPICS_THREAD_ONCE_INIT;
 
-static void testInit(void *dummy) {
+static void testOnce(void *dummy) {
     testLock = epicsMutexMustCreate();
 }
 
 void testPlan(int plan) {
-    epicsThreadOnce(&onceFlag, testInit, NULL);
+    epicsThreadOnce(&onceFlag, testOnce, NULL);
     epicsMutexMustLock(testLock);
     planned = plan;
     tested = passed = failed = skipped = bonus = 0;
@@ -117,9 +117,11 @@ void testTodoEnd() {
 int testDiag(const char *fmt, ...) {
     va_list pvar;
     va_start(pvar, fmt);
+    epicsMutexMustLock(testLock);
     printf("# ");
     vprintf(fmt, pvar);
     putchar('\n');
+    epicsMutexUnlock(testLock);
     va_end(pvar);
     return 0;
 }

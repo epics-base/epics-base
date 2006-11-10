@@ -10,7 +10,7 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-TESTPROD_LIBS += Com
+PROD_LIBS += Com
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c

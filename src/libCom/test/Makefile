@@ -151,7 +151,7 @@ fdmgrTest_LIBS += ca
 include $(TOP)/configure/RULES
 
 test: $(TEST_SCRIPTS)
-	@perl -e 'use Test::Harness; runtests @ARGV;' $(TEST_SCRIPTS)
+	perl -e 'use Test::Harness; runtests @ARGV;' $(TEST_SCRIPTS)
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
@@ -162,4 +162,4 @@ test: $(TEST_SCRIPTS)
 # Generate a 1-line test program to run the real test binary
 %.t: %$(EXE)
 	@$(RM) $@
-	@echo 'exec "$<";' >$@
+	@echo 'exec "./$<";' >$@

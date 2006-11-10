@@ -2,7 +2,7 @@
 
 use Test::Simple tests => 1;
 
-$prog = $0;
+$prog = "./$0";
 $prog =~ s/\.t$//;
 
 $expected = << 'END';

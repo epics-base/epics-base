@@ -13,8 +13,8 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += dbIoc dbStaticHost ca Com
 
-callbackTestHost_SRCS += callbackTestMain.c callbackTest.c
-PROD_HOST += callbackTestHost
+TESTPROD_HOST += callbackTest
+callbackTest_SRCS += callbackTest.c
 OBJS_IOC_vxWorks += callbackTest
 
 include $(TOP)/configure/RULES

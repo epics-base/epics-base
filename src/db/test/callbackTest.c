@@ -16,12 +16,15 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "epicsThread.h"
 #include "errlog.h"
 #include "callback.h"
 #include "taskwd.h"
 #include "epicsTime.h"
+#include "epicsUnitTest.h"
+#include "testMain.h"
 
 typedef struct myPvt {
     CALLBACK callback;
@@ -33,22 +36,25 @@ static void myCallback(CALLBACK *pCallback)
 {
     myPvt *pmyPvt;
     epicsTimeStamp end;
-    double diff;
+    double diff, error;
 
     callbackGetUser(pmyPvt,pCallback);
     epicsTimeGetCurrent(&end);
     diff = epicsTimeDiffInSeconds(&end,&pmyPvt->start);
-    printf("myCallback requestedDiff %f diff %f\n",pmyPvt->requestedDiff,diff);
+    error = fabs(pmyPvt->requestedDiff - diff);
+    testOk(error < 0.05, "callback time error %f", error);
 }
     
-#define ncallbacks 3
+#define ncallbacks 5
 
-void callbackTest(void)
+MAIN(callbackTest)
 {
     myPvt *nowait[ncallbacks];
     myPvt *wait[ncallbacks];
     epicsTimeStamp start;
     int i;
+
+    testPlan(ncallbacks * 2);
 
     taskwdInit();
     errlogInit(4096);
@@ -73,5 +79,5 @@ void callbackTest(void)
         callbackRequestDelayed(&wait[i]->callback,wait[i]->requestedDiff);
     }
     epicsThreadSleep((double)(ncallbacks + 2));
-    printf("callbackTest returning\n");
+    return testDone();
 }

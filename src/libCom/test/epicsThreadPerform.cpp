@@ -170,11 +170,59 @@ static void epicsThreadGetIdSelfPerfTest ()
 }
 
 
+static epicsThreadPrivate < bool > priv;
+
+static inline void callItTenTimes ()
+{
+    bool *pFlag;
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+    pFlag = priv.get ();
+}
+
+static inline void callItTenTimesSquared ()
+{
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+    callItTenTimes ();
+}
+
+static void timeEpicsThreadPrivateGet ()
+{
+    priv.set ( 0 );
+
+    epicsTime begin = epicsTime::getCurrent ();
+    static const unsigned N = 1000u;
+    for ( unsigned i = 0u; i < N; i++ ) {
+        callItTenTimesSquared ();
+    }
+    double delay = epicsTime::getCurrent() - begin;
+    delay /= N * 100u; // convert to sec per call
+    delay *= 1e6; // convert to micro sec
+    printf("epicsThreadPrivateGet() takes %f microseconds\n", delay);
+}
+
+
 MAIN(epicsThreadPerform)
 {
     epicsThreadPriorityTest ();
     threadSleepQuantumTest ();
     threadSleepTest ();
     epicsThreadGetIdSelfPerfTest ();
+    timeEpicsThreadPrivateGet ();
     return 0;
 }

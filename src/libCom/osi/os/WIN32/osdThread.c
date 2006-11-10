@@ -999,10 +999,12 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
     
     EnterCriticalSection ( & pGbl->mutex );
 
-    if ( ! *id ) {
+    if ( *id == 0 ) {
+        *id = -1;
         ( *func ) ( arg );
         *id = 1;
-    }
+    } else
+        assert(*id > 0 /* func() called epicsThreadOnce() with same id */);
 
     LeaveCriticalSection ( & pGbl->mutex );
 }

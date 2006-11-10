@@ -372,11 +372,22 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
         /* avoid recursive locking */
         status = pthread_mutex_unlock(&onceLock);
         checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
-           func(arg);
+        func(arg);
         status = mutexLock(&onceLock);
         checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
-        *id = +1;   /* +1 => func() done (see epicsThreadOnce() macro defn) */
-    }
+        *id = +1;   /* +1 => func() done */
+    } else
+        while (*id < 0) {
+            /* Someone is in the above func(arg) call.  If that someone is
+             * actually us, we're screwed, but the other OS implementations
+             * will fire an assert() that should detect this condition.
+             */
+            status = pthread_mutex_unlock(&onceLock);
+            checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
+            epicsThreadSleep(0.01);
+            status = mutexLock(&onceLock);
+            checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
+        }
     status = pthread_mutex_unlock(&onceLock);
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
 }

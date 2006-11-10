@@ -286,36 +286,30 @@ void epicsThreadPrivateBase::throwUnableToCreateThreadPrivate ()
 extern "C" {
     static epicsThreadOnceId okToBlockOnce = EPICS_THREAD_ONCE_INIT;
     epicsThreadPrivateId okToBlockPrivate;
-    typedef struct okToBlockStruct okToBlockStruct;
-    struct okToBlockStruct {
-        int okToBlock;
-    };
-    static okToBlockStruct okToBlockNo = {0};
-    static okToBlockStruct okToBlockYes = {1};
+    static const int okToBlockNo = 0;
+    static const int okToBlockYes = 1;
     
     static void epicsThreadOnceIdInit(void *)
     {
         okToBlockPrivate = epicsThreadPrivateCreate();
     }
-        
     
     int epicsShareAPI epicsThreadIsOkToBlock(void)
     {
-        okToBlockStruct *pokToBlock;
-        void *arg = 0;
-        epicsThreadOnce(&okToBlockOnce,epicsThreadOnceIdInit,arg);
-        pokToBlock = (okToBlockStruct*)epicsThreadPrivateGet(okToBlockPrivate);
-        return (pokToBlock ? pokToBlock->okToBlock : 0);
+        const int *pokToBlock;
+        epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
+        pokToBlock = (int *) epicsThreadPrivateGet(okToBlockPrivate);
+        return (pokToBlock ? *pokToBlock : 0);
     }
     
     void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock)
     {
-        okToBlockStruct *pokToBlock;
-        void *arg = 0;
-        epicsThreadOnce(&okToBlockOnce,epicsThreadOnceIdInit,arg);
+        const int *pokToBlock;
+        epicsThreadOnce(&okToBlockOnce, epicsThreadOnceIdInit, NULL);
         pokToBlock = (isOkToBlock) ? &okToBlockYes : &okToBlockNo;
-        epicsThreadPrivateSet(okToBlockPrivate,pokToBlock);
+        epicsThreadPrivateSet(okToBlockPrivate, (void *)pokToBlock);
     }
+    
     epicsThreadId epicsShareAPI epicsThreadMustCreate (
         const char *name, unsigned int priority, unsigned int stackSize,
         EPICSTHREADFUNC funptr,void *parm) 

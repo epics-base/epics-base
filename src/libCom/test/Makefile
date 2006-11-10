@@ -10,9 +10,7 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-INC += testMain.h
-
-PROD_LIBS += Com
+TESTPROD_LIBS += Com
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c

@@ -131,6 +131,7 @@ INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
 INC += compilerDependencies.h
 INC += epicsUnitTest.h
+INC += testMain.h
 SRCS += aToIPAddr.c
 SRCS += adjustment.c
 SRCS += cantProceed.c

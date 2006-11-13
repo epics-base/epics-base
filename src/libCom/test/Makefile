@@ -70,7 +70,6 @@ TESTS += epicsExitTest
 TESTPROD_HOST += epicsTimerTest
 epicsTimerTest_SRCS += epicsTimerTest.cpp
 testHarness_SRCS += epicsTimerTest.cpp
-# Some of this is doing measurement, tests fail...
 TESTS += epicsTimerTest
 
 TESTPROD_HOST += ringPointerTest

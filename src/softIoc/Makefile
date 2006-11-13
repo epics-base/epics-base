@@ -26,4 +26,6 @@ softIoc_SRCS += softMain.cpp
 
 softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 
+DB += softIocExit.db
+
 include $(TOP)/configure/RULES

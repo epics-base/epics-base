@@ -15,10 +15,11 @@
 #include "osiWireFormat.h"
 #include "epicsThread.h"
 #include "epicsSignal.h"
+#include "epicsUnitTest.h"
 #include "testMain.h"
 
 union address {
-    struct sockaddr_in ia; 
+    struct sockaddr_in ia;
     struct sockaddr sa;
 };
 
@@ -107,21 +108,19 @@ void circuit::recvTest ()
         int status = recv ( this->sock, 
             buf, (int) sizeof ( buf ), 0 );
         if ( status == 0 ) {
-            printf ( "%s: %s was disconnected\n",
-                __FILE__, this->pName () );
+            testDiag ( "%s was disconnected", this->pName () );
             this->recvWakeup = true;
             break;
         }
         else if ( status > 0 ) {
-            printf ( "%s: client received %i characters\n", 
-                __FILE__, status );
+            testDiag ( "client received %i characters", status );
         }
         else {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            printf ( "%s: %s socket recv() error was \"%s\"\n",
-                __FILE__, this->pName (), sockErrBuf );
+            testDiag ( "%s socket recv() error was \"%s\"\n",
+                this->pName (), sockErrBuf );
             this->recvWakeup = true;
             break;
         }
@@ -215,8 +214,29 @@ const char * serverCircuit::pName ()
     return "server circuit";
 }
 
+static const char *mechName(int mech)
+{
+    static const struct {
+        int mech;
+        const char *name;
+    } mechs[] = {
+        {-1, "Unknown shutdown mechanism" },
+        {esscimqi_socketCloseRequired, "esscimqi_socketCloseRequired" },
+        {esscimqi_socketBothShutdownRequired, "esscimqi_socketBothShutdownRequired" },
+        {esscimqi_socketSigAlarmRequired, "esscimqi_socketSigAlarmRequired" }
+    };
+    
+    for (unsigned i=0; i < (sizeof(mechs) / sizeof(mechs[0])); ++i) {
+        if (mech == mechs[i].mech)
+            return mechs[i].name;
+    }
+    return "Unknown shutdown mechanism value";
+}
+
 MAIN(blockingSockTest)
 {
+    testPlan(1);
+
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
@@ -232,43 +252,31 @@ MAIN(blockingSockTest)
 
     client.shutdown ();
     epicsThreadSleep ( 1.0 );
-    const char * pStr = "esscimqi_?????";
+    int mech = -1;
     if ( client.recvWakeupDetected () ) {
-        pStr = "esscimqi_socketBothShutdownRequired";
+        mech = esscimqi_socketBothShutdownRequired;
     }
     else {
         client.signal ();
         epicsThreadSleep ( 1.0 );
         if ( client.recvWakeupDetected () ) {
-            pStr = "esscimqi_socketSigAlarmRequired";
+            mech = esscimqi_socketSigAlarmRequired;
         }
         else {
             client.close ();
             epicsThreadSleep ( 1.0 );
             if ( client.recvWakeupDetected () ) {
-                pStr = "esscimqi_socketCloseRequired";
-            }
-            else {
-                pStr = "esscimqi_?????";
+                mech = esscimqi_socketCloseRequired;
             }
         }
     }
+    testDiag("This OS behaves like \"%s\".", mechName(mech));
 
-    printf ( "The local OS behaves like \"%s\".\n", pStr );
-    pStr = "esscimqi_?????";
-    switch ( epicsSocketSystemCallInterruptMechanismQuery() ) {
-    case esscimqi_socketCloseRequired:
-        pStr = "esscimqi_socketCloseRequired";
-        break;
-    case esscimqi_socketBothShutdownRequired:
-        pStr = "esscimqi_socketBothShutdownRequired";
-        break;
-    case esscimqi_socketSigAlarmRequired:
-        pStr = "esscimqi_socketSigAlarmRequired";
-        break;
-    }
-    printf ( "The epicsSocketSystemCallInterruptMechanismQuery() function returns\n\"%s\".\n",
-        pStr );
-    return 0;
+    if (! testOk(mech = epicsSocketSystemCallInterruptMechanismQuery (),
+        "Socket shutdown mechanism") )
+        testDiag("epicsSocketSystemCallInterruptMechanismQuery returned \"%s\"",
+            mechName(epicsSocketSystemCallInterruptMechanismQuery () ) );
+
+    return testDone();
 }
 

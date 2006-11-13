@@ -103,6 +103,14 @@ macEnvExpandTest_SRCS += macEnvExpandTest.c
 testHarness_SRCS += macEnvExpandTest.c
 TESTS += macEnvExpandTest
 
+TESTPROD_HOST += blockingSockTest
+blockingSockTest_SRCS += blockingSockTest.cpp
+testHarness_SRCS += blockingSockTest.cpp
+# needed when its an object library build
+blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+blockingSockTest_SYS_LIBS_solaris = socket
+TESTS += blockingSockTest
+
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
@@ -128,13 +136,6 @@ testHarness_SRCS += epicsThreadPerform.cpp
 TESTPROD_HOST += epicsMaxThreads
 epicsMaxThreads_SRCS += epicsMaxThreads.c
 testHarness_SRCS += epicsMaxThreads.c
-
-TESTPROD_HOST += blockingSockTest
-blockingSockTest_SRCS += blockingSockTest.cpp
-testHarness_SRCS += blockingSockTest.cpp
-# needed when its an object library build
-blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
-blockingSockTest_SYS_LIBS_solaris = socket
 
 TESTPROD_HOST += buckTest
 buckTest_SRCS += buckTest.c

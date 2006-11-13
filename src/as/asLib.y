@@ -82,14 +82,14 @@ hag_head:	'(' tokenSTRING ')'
 	}
 	;
 
-hag_body:	'{' hag_user_list '}'
+hag_body:	'{' hag_host_list '}'
 	;
 
-hag_user_list:	hag_user_list ',' hag_user_list_name
-	|	hag_user_list_name
+hag_host_list:	hag_host_list ',' hag_host_list_name
+	|	hag_host_list_name
 	;
 
-hag_user_list_name:	tokenSTRING
+hag_host_list_name:	tokenSTRING
 	{
 		if (asHagAddHost(yyHag,$1))
 			yyerror("");

@@ -1172,17 +1172,16 @@ static HAG *asHagAdd(const char *hagName)
 static long asHagAddHost(HAG *phag,const char *host)
 {
     HAGNAME *phagname;
-    int     ind;
+    int     i;
 
-    if(!phag) return(0);
-    phagname = asCalloc(1,sizeof(HAGNAME)+strlen(host)+1);
+    if (!phag) return 0;
+    phagname = asCalloc(1, sizeof(HAGNAME)+strlen(host)+1);
     phagname->host = (char *)(phagname+1);
-    strcpy(phagname->host,host);
-    for(ind=0; ind<strlen(phagname->host); ind++) {
-        phagname->host[ind] = (char)tolower((int)phagname->host[ind]);
+    for (i = 0; i < strlen(phagname->host); i++) {
+        phagname->host[i] = (char)tolower((int)host[i]);
     }
-    ellAdd(&phag->list,(ELLNODE *)phagname);
-    return(0);
+    ellAdd(&phag->list, (ELLNODE *)phagname);
+    return 0;
 }
 
 static ASG *asAsgAdd(const char *asgName)

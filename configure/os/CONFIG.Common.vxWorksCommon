@@ -76,10 +76,34 @@ OBJLIB_LINK.cpp = $(LD) -o $@ $(OBJLIB_LD_OBJS)
 SRC_FILES += $(OBJLIB_SRCS)
 
 #--------------------------------------------------
+# vxWorks version numbers
+
+VXWORKS_MAJOR_VERSION = $(basename $(basename $(VXWORKS_VERSION)))
+
+# These are needed for vxWorks 6.x; the GNU toolset version number
+# is in the path to the compiler tools:
+VX_GNU_VERSION_6.0 = 3.3.2
+VX_GNU_VERSION_6.1 = 3.3.2
+VX_GNU_VERSION_6.2 = 3.3.2
+VX_GNU_VERSION_6.3 = 3.4.4
+VX_GNU_VERSION = $(VX_GNU_VERSION_$(VXWORKS_VERSION))
+
+#--------------------------------------------------
 # vxWorks directory definitions
-# Tornado directory definitions
-GNU_TARGET_INCLUDE_DIR = $(VX_DIR)/target/h
-GNU_DIR = $(VX_DIR)/host/$(WIND_HOST_TYPE)
+VX_DIR_5 = $(WIND_BASE)
+VX_DIR_6 = $(WIND_BASE)/vxWorks-$(VXWORKS_VERSION)
+VX_DIR = $(VX_DIR_$(VXWORKS_MAJOR_VERSION))
+
+VX_INCLUDE_DIRS_5 = $(VX_DIR)/target/h
+VX_INCLUDE_DIRS_6 = $(VX_DIR)/target/h $(VX_DIR)/target/h/wrn/coreip
+GNU_TARGET_INCLUDE_DIR = $(VX_INCLUDE_DIRS_$(VXWORKS_MAJOR_VERSION))
+
+#--------------------------------------------------
+# vxWorks GNU directories
+
+GNU_DIR_5 = $(WIND_BASE)/host/$(WIND_HOST_TYPE)
+GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
+GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
 # C++ host processing
@@ -88,7 +112,7 @@ NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 #--------------------------------------------------
 # The follow 2 exports prevent gnu cross-compiler
 # from finding wrong assembler (as).
-export WIND_BASE = $(VX_DIR)
+export WIND_BASE
 export WIND_HOST_TYPE
 
 #--------------------------------------------------
@@ -105,17 +129,19 @@ OP_SYS_LDFLAGS +=
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h 
-OP_SYS_INCLUDE_CPPFLAGS += -include $(GNU_TARGET_INCLUDE_DIR)/vxWorks.h
+OP_SYS_INCLUDE_CPPFLAGS += -include $(VX_DIR)/target/h/vxWorks.h
 
 #--------------------------------------------------
 # code flags
 CODE_CFLAGS =
 #
-# WRS still uses an old gnu compiler with a broken -frepo and 
-# otherwise no automatic template instantiation mechanism as
-# is the defacto standard approach today. If we remove this 
-# flag certain ppc targets will not build. 
-CODE_CXXFLAGS = -fno-implicit-templates
+# For vxWorks versions before 6.3 we need this g++ compiler flag
+CODE_CXXFLAGS_5 = -fno-implicit-templates
+CODE_CXXFLAGS_6.0 = -fno-implicit-templates
+CODE_CXXFLAGS_6.1 = -fno-implicit-templates
+CODE_CXXFLAGS_6.2 = -fno-implicit-templates
+CODE_CXXFLAGS_6 = $(CODE_CXXFLAGS_$(VXWORKS_VERSION))
+CODE_CXXFLAGS = $(CODE_CXXFLAGS_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
 # posix c preprocessor flags

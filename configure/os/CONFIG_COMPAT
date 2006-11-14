@@ -18,6 +18,7 @@ ARCH_hp700 = hpux-parisc
 ARCH_alpha = osf-alpha
 ARCH_cygwin32 = cygwin-x86
 ARCH_Borland = win32-x86-borland
+ARCH_freebsd = freebsd-x86
 
 ifndef EPICS_HOST_ARCH
 ifdef HOST_ARCH

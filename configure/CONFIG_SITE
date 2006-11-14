@@ -1,37 +1,30 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #  $Id$
 #
-#  CONFIG_SITE  - config file
-#	by Matthew Needes and Mike Bordua
+#  CONFIG_SITE  - Global site configuration file
 #
-#  This file is to be modified by the build system manager
-#	only.
-#
-
 
 #  The host architecture performing the build, in the form
-#       <operating system>-<architecture>[-<alternate compiler>]
+#       <operating system>-<architecture>[-<toolset>]
 #
 #  Currently Supporting:
-#	aix-ppc                (HP compiler used for host builds)
+#	aix-ppc                (IBM compiler used for host builds)
 #	aix-ppc-gnu            (GNU compiler used for host builds)
 #	cygwin-x86             (cygwin compiler used for host builds)
-#	darwin-ppc
-#	darwin-x86
+#	darwin-ppc             (PowerPC based Apple running OSX)
+#	darwin-x86             (Intel based Apple running OSX)
 #	darwin-ppcx86          (Universal binaries for both CPUs)
 #	hpux-parisc            (HP compiler used for host builds)
 #	hpux-parisc-gnu        (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
-#	linux-ppc-bgl
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
 #	linux-x86-borland      (Borland C++ compiler used for host builds)
@@ -42,7 +35,7 @@
 #	solaris-x86            (sun compiler used for host builds)
 #	solaris-x86-gnu        (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86_mingw        (MinGW compiler used for host builds)
+#	win32-x86-mingw        (MinGW compiler used for host builds)
 #	win32-x86-borland      (Borland C++ compiler used for host builds)
 #	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
 
@@ -56,7 +49,7 @@
 #  EPICS_HOST_ARCH is a required environment variable
 #  Do not set EPICS_HOST_ARCH in this file. 
 #  Use base/startup files to set EPICS_HOST_ARCH or 
-#  set EPICS_HOST_ARCH on the GNU make command line.
+#  provide EPICS_HOST_ARCH on the GNU make command line.
 
 #  The cross-compiler architectures to build EPICS for
 #

@@ -1,0 +1,42 @@
+#*************************************************************************
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+# $Id$
+#
+#  This file is maintained by the EPICS community.
+#  Sites may override these definitions in CONFIG_SITE.Host.freebsd
+ 
+ARCH_CLASS = freebsd
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+AR = ar -rc
+ARCMD = $(AR) $@
+RANLIB = ranlib -t
+
+ANSI=GCC
+CPLUSPLUS=G++
+
+GCC_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
+G++_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
+
+OP_SYS_CFLAGS += -D_BSD_SOURCE
+
+ARCH_DEP_CFLAGS = -D_X86_ -Dfreebsd
+ARCH_DEP_LDLIBS += -lpthread -lreadline -lcurses -lrt
+
+#Allows R3.13 built extensions to load R3.14 shared libs
+SYS_DLL_LIBS_freebsd += pthread readline curses rt
+
+# Runtime ldflags
+RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
+ $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH)
+RUNTIME_LDFLAGS = $(RUNTIME_LIBS:%=-Wl,-rpath,%)
+
+

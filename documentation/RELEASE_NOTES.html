@@ -520,11 +520,12 @@ architectures.</p>
 
 <h4>epicsThreadCreate Stacksize Posix</h4>
 
-<p>The posix implementation of epicsThreadCreate now makes pthread calls to
-set the stack size. The sizes for (small,medium,large) stack sizes are
-(128K,256K,512K). This is used for at least the following: linux, solaris,
-HPUX, Darwin). Doing this allows creation of many more threads os most
-systems.</p>
+<p>The posix implementation of epicsThreadCreate() now makes pthread calls to
+set the stack size. The sizes returned by epicsThreadGetStackSize() for the
+inputs epicsThreadStackSmall, epicsThreadStackMedium and epicsThreadStackBig are
+128K, 256K and 512K respectively on at least the architectures Linux, Solaris,
+HPUX and Darwin (different values are used on vxWorks and RTEMS). This allows
+creation of many more threads on most systems.</p>
 
 <h4>dbNotify</h4>
 

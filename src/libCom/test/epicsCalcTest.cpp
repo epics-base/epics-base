@@ -59,7 +59,7 @@ void testCalc(const char *expr, double expected) {
     } else {
 	pass = (result == expected);
     }
-    if (!testOk(pass, expr)) {
+    if (!testOk(pass, "%s", expr)) {
 	testDiag("Expected result is %g, actually got %g", expected, result);
 	calcExprDump(rpn);
     }

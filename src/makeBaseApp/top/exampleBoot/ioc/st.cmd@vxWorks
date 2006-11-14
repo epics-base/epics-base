@@ -19,7 +19,7 @@ ld < _APPNAME_.munch
 ## Register all support components
 cd top
 dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
-_APPNAME__registerRecordDeviceDriver(pdbbase)
+_CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase)
 
 ## Load record instances
 dbLoadRecords("db/dbExample1.db","user=_USER_")

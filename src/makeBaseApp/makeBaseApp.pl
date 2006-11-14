@@ -14,6 +14,8 @@ $app_top  = cwd();
 %release = (TOP => $app_top);
 @apps   = (TOP);
 
+$bad_ident_chars = '[^0-9A-Za-z_]';
+
 &GetUser;		# Ensure we know who's in charge
 &readRelease("configure/RELEASE", \%release, \@apps) if (-r "configure/RELEASE");
 &readRelease("configure/RELEASE.$ENV{EPICS_HOST_ARCH}", \%release, \@apps)
@@ -91,14 +93,15 @@ sub ReplaceFilename { # (filename)
 # this and that
 sub ReplaceLine { # (line)
     my($line) = $_[0];
+    $line =~ s/_IOC_/$ioc/g if ($ioc);
     $line =~ s/_USER_/$user/go;
     $line =~ s/_EPICS_BASE_/$app_epics_base/go;
     $line =~ s/_TEMPLATE_TOP_/$app_template_top/go;
     $line =~ s/_TOP_/$app_top/go;
     $line =~ s/_APPNAME_/$appname/g;
+    $line =~ s/_CSAFEAPPNAME_/$csafeappname/g;
     $line =~ s/_APPTYPE_/$apptype/go;
     $line =~ s/_ARCH_/$arch/go if ($opt_i);
-    $line =~ s/_IOC_/$ioc/g if ($ioc);
     $line = &ReplaceLineHook($line); # Call the apptype's hook
     return $line;
 }
@@ -126,11 +129,12 @@ if ($opt_i) {
     $appname=$appnameIn if $appnameIn;
     foreach $ioc ( @names ) {
 	($appname = $ioc) =~ s/App$// if !$appnameIn;
-	$ioc = "ioc" . $ioc unless ($ioc =~ /ioc/);
-        if (-d "iocBoot/$ioc") {
+	($csafeappname = $appname) =~ s/$bad_ident_chars/_/og;
+	$ioc = "ioc" . $ioc unless ($ioc =~ m/ioc/);
+	if (-d "iocBoot/$ioc") {
 	    print "iocBoot/$ioc exists, not modified.\n";
 	    next;
-        }
+	}
 	find({wanted => \&FCopyTree, follow => 1}, "$top/$apptypename/ioc");
     }
     exit 0;			# finished here for -i (no xxxApps)
@@ -141,6 +145,7 @@ if ($opt_i) {
 #
 foreach $app ( @names ) {
     ($appname = $app) =~ s/App$//;
+    ($csafeappname = $appname) =~ s/$bad_ident_chars/_/og;
     $appdir  = $appname . "App";
     if (-d "$appdir") {
 	print "$appname exists, not modified.\n";

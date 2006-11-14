@@ -15,6 +15,10 @@ $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
 
+# Eliminate chars not allowed in C symbol names
+$c_bad_ident_chars = '[^0-9A-Za-z_]';
+$subname =~ s/$c_bad_ident_chars/_/g;
+
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
     next if m/ ^ \s* \# /x;

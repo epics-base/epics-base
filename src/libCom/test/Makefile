@@ -157,7 +157,8 @@ test: $(TEST_SCRIPTS)
 	@$(CP) $< $@
 
 # Some versions of Test::Harness expect test programs in perl only.
-# Generate a 1-line test program to run the real test binary
+# Generate a 1-line perl program to exec the real test binary.
+# Uses the $0 runtime path to itself to find the executable.
 %.t: %$(EXE)
 	@$(RM) $@
-	@echo 'exec "./$<";' >$@
+	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@

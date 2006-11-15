@@ -247,9 +247,11 @@ record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 
 static int yyerror(char *str)
 {
-    fprintf(stderr,"Error ");
-    if(str) fprintf(stderr,"\"%s\"",str);
-    fprintf(stderr,"  Last token \"%s\"\n",yytext);
+    if (str)
+        fprintf(stderr, "Error: %s\n", str);
+    else
+        fprintf(stderr,"Error.\n");
+    fprintf(stderr,"Parsing '%s'\n", yytext);
     dbIncludePrint(stderr);
     yyFailed = TRUE;
     return(0);

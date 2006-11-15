@@ -347,22 +347,18 @@ static void dbIncludePrint(FILE *fp)
 {
     inputFile *pinputFile = pinputFileNow;
 
-    fprintf(fp,"input line: %s",my_buffer);
-    while(pinputFile) {
-	if(pinputFile->filename) {
-	    fprintf(fp,"   in:");
-	    if(pinputFile->path)
-	        fprintf(fp," path \"%s\" ",pinputFile->path);
-	    fprintf(fp," file %s",pinputFile->filename);
+    while (pinputFile) {
+	fprintf(fp, "   in");
+	if (pinputFile->path)
+	    fprintf(fp, " path \"%s\" ",pinputFile->path);
+	if (pinputFile->filename) {
+	    fprintf(fp, " file %s",pinputFile->filename);
 	} else {
-	    fprintf(fp,"stdin:");
-	    if(pinputFile->path)
-	        fprintf(fp," path \"%s\" ",pinputFile->path);
+	    fprintf(fp, " standard input");
 	}
-	fprintf(fp," line %d\n",pinputFile->line_num);
+	fprintf(fp, " line %d\n",pinputFile->line_num);
 	pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
     }
-    fprintf(fp,"\n");
     return;
 }
 
@@ -950,6 +946,7 @@ static void dbRecordField(char *name,char *value)
 	yyerror(NULL);
 	return;
     }
+    dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
     if(status) {
 	errMessage(status,"dbPutString");

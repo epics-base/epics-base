@@ -31,6 +31,7 @@
 #include "postfix.h"
 #include "osiFileName.h"
 #include "epicsStdlib.h"
+#include "epicsString.h"
 #include "epicsStdioRedirect.h"
 
 #define epicsExportSharedSymbols
@@ -925,15 +926,17 @@ long epicsShareAPI dbWriteRecordFP(
 		    dbGetRecordTypeName(pdbentry),dbGetRecordName(pdbentry));
 	    status = dbFirstField(pdbentry,dctonly);
 	    while(!status) {
-		if(!dbIsDefaultValue(pdbentry) || level>0) {
+		if (!dbIsDefaultValue(pdbentry) || level>0) {
 		    char *pvalstring = dbGetString(pdbentry);
 
-                    if(!pvalstring) {
+		    if (!pvalstring) {
 			fprintf(fp,"\tfield(%s,\"\")\n",
 			    dbGetFieldName(pdbentry));
 		    } else {
-		        fprintf(fp,"\tfield(%s,\"%s\")\n",
-			    dbGetFieldName(pdbentry),dbGetString(pdbentry));
+		        fprintf(fp,"\tfield(%s,\"",
+			    dbGetFieldName(pdbentry));
+			epicsStrPrintEscaped(fp,pvalstring,strlen(pvalstring));
+			fprintf(fp,"\")\n");
 		    }
 		} else if(level>0) { /*generate 0 length string*/
 		    fprintf(fp,"\tfield(%s,\"\")\n",dbGetFieldName(pdbentry));

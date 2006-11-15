@@ -17,10 +17,27 @@
 #include "epicsString.h"
 #include "testMain.h"
 
+void testChars() {
+    int i;
+    char input[2] = {0, 0};
+    char escaped[20];
+    char result[20];
+    for (i = 255; i >= 0; --i) {
+        input[0] = i;
+        epicsStrSnPrintEscaped(escaped, sizeof(escaped), input, 1);
+        dbTranslateEscape(result, escaped);
+        testOk(result[0] == input[0] && result[1] == 0,
+            "char 0x%02.2x -> \"%s\" -> 0x%02.2x",
+            input[0] & 0xff, escaped, result[0] & 0xff);
+    }
+}
+
 MAIN(epicsStringTest)
 {
-    testPlan(21);
-    
+    testPlan(0);
+
+    testChars();
+
     testOk1(epicsStrnCaseCmp("","",0)==0);
     testOk1(epicsStrnCaseCmp("","",1)==0);
     testOk1(epicsStrnCaseCmp(" ","",1)<0);

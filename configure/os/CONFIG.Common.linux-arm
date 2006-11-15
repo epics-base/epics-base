@@ -1,0 +1,27 @@
+# CONFIG.Common.linux-arm
+#
+# This file is maintained by the build community.
+#
+# Definitions for linux-arm target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-arm
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = arm
+
+# Set a special definition for network order of Netwinder ARM floating point
+ARCH_DEP_CPPFLAGS += -D_ARM_NWFP_
+
+# Set runtime path for shared libraries
+#RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath-link,%)
+
+ifdef CROSS
+   GNU_TARGET=arm-linux
+   # prefix of compiler tools
+   CMPLR_SUFFIX=
+   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+endif
+

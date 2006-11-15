@@ -1,0 +1,23 @@
+# CONFIG.linux-x86.linux-arm
+#
+# Definitions for linux-x86 host - linux-arm target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-arm
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+GNU_DIR = /usr
+
+# Override the -nostdinc flag, needed here...
+CROSS_CPPFLAGS = 
+
+# Copied from x86.x86
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO= 
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO= 
+
+SHRLIB_LDFLAGS +=  -shared -fPIC
+LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+

@@ -123,7 +123,7 @@ rtemsTestHarness_SRCS += rtemsTestHarness.c
 rtemsTestHarness_SRCS += $(testHarness_SRCS)
 
 
-TEST_SCRIPTS += $(TESTS:%=%.t)
+TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 
 # The following are not test programs, they measure performance
@@ -148,17 +148,6 @@ fdmgrTest_LIBS += ca
 
 include $(TOP)/configure/RULES
 
-test: $(TEST_SCRIPTS)
-	perl -e 'use Test::Harness; runtests @ARGV;' $(TEST_SCRIPTS)
+test: $(TESTSCRIPTS_HOST)
+	perl -e 'use Test::Harness; runtests @ARGV;' $(TESTSCRIPTS_HOST)
 
-# If there's a perl test script (.plt) available, use it
-%.t: ../%.plt
-	@$(RM) $@
-	@$(CP) $< $@
-
-# Some versions of Test::Harness expect test programs in perl only.
-# Generate a 1-line perl program to exec the real test binary.
-# Uses the $0 runtime path to itself to find the executable.
-%.t: %$(EXE)
-	@$(RM) $@
-	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@

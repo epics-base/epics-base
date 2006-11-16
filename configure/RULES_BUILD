@@ -446,6 +446,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all inc build install clean rebuild buildInstall binInstalls libInstalls
+.PHONY: test
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

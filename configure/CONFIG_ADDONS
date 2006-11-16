@@ -51,9 +51,9 @@
 #    PROD          products to build and install
 #    PROD_HOST     products to build and install
 #    PROD_IOC      products to build and install
-#    TESTPROD      products to build and install
-#    TESTPROD_HOST products to build and install
-#    TESTPROD_IOC  products to build and install
+#    TESTPROD      products to build
+#    TESTPROD_HOST products to build
+#    TESTPROD_IOC  products to build
 #    LIBRARY       products to build and install
 #    LIBRARY_HOST  products to build and install
 #    LIBRARY_IOC   products to build and install
@@ -62,6 +62,9 @@
 #    SCRIPTS       scripts and install
 #    SCRIPTS_HOST  host system scripts to install
 #    SCRIPTS_IOC   ioc system scripts to install
+#    TESTSCRIPTS       scripts
+#    TESTSCRIPTS_HOST  host system scripts
+#    TESTSCRIPTS_IOC   ioc system scripts
 #    OBJS          object files to build and install
 #    OBJS_HOST     host system object files to build and install
 #    OBJS_IOC      ioc system object files to build and install
@@ -490,6 +493,33 @@ SCRIPTS_HOST+=$(subst -nil-,,$(SCRIPTS_HOST_$(OS_CLASS)))
 else
 ifneq (,$(strip $(SCRIPTS_HOST_DEFAULT)))
 SCRIPTS_HOST+=$(SCRIPTS_HOST_DEFAULT)
+endif
+endif
+
+#
+#	concat specific scripts
+#
+ifneq ($(strip $(TESTSCRIPTS_$(OS_CLASS))),)
+TESTSCRIPTS += $(subst -nil-,,$(TESTSCRIPTS_$(OS_CLASS)))
+else
+ifdef TESTSCRIPTS_DEFAULT
+TESTSCRIPTS += $(TESTSCRIPTS_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(TESTSCRIPTS_IOC_$(OS_CLASS))),)
+TESTSCRIPTS_IOC+=$(subst -nil-,,$(TESTSCRIPTS_IOC_$(OS_CLASS)))
+else
+ifneq (,$(strip $(TESTSCRIPTS_IOC_DEFAULT)))
+TESTSCRIPTS_IOC+=$(TESTSCRIPTS_IOC_DEFAULT)
+endif
+endif
+
+ifneq ($(strip $(TESTSCRIPTS_HOST_$(OS_CLASS))),)
+TESTSCRIPTS_HOST+=$(subst -nil-,,$(TESTSCRIPTS_HOST_$(OS_CLASS)))
+else
+ifneq (,$(strip $(TESTSCRIPTS_HOST_DEFAULT)))
+TESTSCRIPTS_HOST+=$(TESTSCRIPTS_HOST_DEFAULT)
 endif
 endif
 

@@ -578,7 +578,7 @@ int epicsShareAPI asDumpFP(
 	    if(pasgrule->calc) {
 		fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
 		if(verbose)
-		    fprintf(fp," result=%s",(pasgrule->result ? "TRUE" : "FALSE"));
+		    fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
 		fprintf(fp,"\n");
 	    }
 	    if(print_end_brace) fprintf(fp,"\t}\n");
@@ -753,7 +753,7 @@ int epicsShareAPI asDumpRulesFP(FILE *fp,const char *asgname)
 	    }
 	    if(pasgrule->calc) {
 		fprintf(fp,"\t\tCALC(\"%s\")",pasgrule->calc);
-		fprintf(fp," result=%s",(pasgrule->result ? "TRUE" : "FALSE"));
+		fprintf(fp," result=%s",(pasgrule->result==1 ? "TRUE" : "FALSE"));
 		fprintf(fp,"\n");
 	    }
 	    if(print_end_brace) fprintf(fp,"\t}\n");

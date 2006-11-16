@@ -40,6 +40,7 @@ LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_HOST)
 OBJS += $(OBJS_HOST)
 PROD += $(PROD_HOST)
 SCRIPTS += $(SCRIPTS_HOST)
+TESTSCRIPTS += $(TESTSCRIPTS_HOST)
 TESTPROD += $(TESTPROD_HOST)
 endif
 
@@ -48,6 +49,7 @@ LIBRARY += $(LIBRARY_IOC)
 OBJS += $(OBJS_IOC)
 PROD += $(PROD_IOC)
 SCRIPTS += $(SCRIPTS_IOC)
+TESTSCRIPTS += $(TESTSCRIPTS_IOC)
 TESTPROD += $(TESTPROD_IOC)
 endif
 
@@ -118,7 +120,7 @@ rebuild: clean install
 build : inc 
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
-	$(TARGETS)
+	$(TARGETS) $(TESTSCRIPTS)
 
 inc : $(COMMON_INC) $(INSTALL_INC)
 
@@ -144,7 +146,7 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
 	$(INC) *$(RES) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
-	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS)
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
 ifdef BAF
 	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
 endif
@@ -313,6 +315,18 @@ $(MUNCHNAME):%$(MUNCH_SUFFIX) : $(MUNCH_DEPENDS) %$(EXE)
 $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	@$(RM) $@
 	$(MUNCH_CMD)
+
+# If there's a perl test script (.plt) available, use it
+%.t: ../%.plt
+	@$(RM) $@
+	@$(CP) $< $@
+
+# Some versions of Test::Harness expect test programs in perl only.
+# Generate a 1-line perl program to exec the real test binary.
+# Uses the $0 runtime path to itself to find the executable.
+%.t: %$(EXE)
+	@$(RM) $@
+	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@
 
 # Ext, app and module rules
 RULES_INCLUDE CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)

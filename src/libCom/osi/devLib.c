@@ -19,7 +19,7 @@
  * .01  06-14-93    joh needs devAllocInterruptVector() routine
  */
 
-static char *sccsID = "@(#) $Id$";
+static const char sccsID[] = "@(#) $Id$";
 
 #include <string.h>
 #include <stdio.h>

@@ -37,7 +37,7 @@
 #include "osiSock.h" /* pull in struct timeval */
 #include "epicsStdio.h"
 
-static const char *pEpicsTimeVersion = 
+static const char pEpicsTimeVersion[] = 
     "@(#) " EPICS_VERSION_STRING ", Common Utilities Library " __DATE__;
 
 //

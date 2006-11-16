@@ -31,7 +31,7 @@
 #include "casIntfOS.h"
 
 // include a version string for POSIX systems
-static const char * pVersionCAS = 
+static const char pVersionCAS[] = 
     "@(#) " EPICS_VERSION_STRING 
     ", CA Portable Server Library " 
     "$Date$";

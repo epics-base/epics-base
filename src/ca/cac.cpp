@@ -48,7 +48,7 @@
 #include "autoPtrFreeList.h"
 #include "noopiiu.h"
 
-static const char *pVersionCAC = 
+static const char pVersionCAC[] = 
     "@(#) " EPICS_VERSION_STRING 
     ", CA Client Library " __DATE__;
 

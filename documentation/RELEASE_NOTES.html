@@ -13,6 +13,14 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>Escaped characters in record fields</h4>
+
+<p>Field value strings loaded from a database file by dbLoadRecords() can now
+use C89-compatible escaped character codes such as \", \', \t, \n, \064 and
+\x7e.  The parser also now checks for and reports strings that have a newline
+character in them as an error - if you want a newline in a field, use the \n
+escaped version.</p>
+
 <h4>libCom/test</h4>
 
 <p>These test programs are no longer installed into the bin/<i>arch</i>

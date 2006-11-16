@@ -148,6 +148,3 @@ fdmgrTest_LIBS += ca
 
 include $(TOP)/configure/RULES
 
-test: $(TESTSCRIPTS_HOST)
-	perl -e 'use Test::Harness; runtests @ARGV;' $(TESTSCRIPTS_HOST)
-

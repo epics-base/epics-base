@@ -129,7 +129,8 @@ OP_SYS_LDFLAGS +=
 
 # Fix for vxWorks headers using macros defined in
 # vxWorks.h but not including vxWorks.h 
-OP_SYS_INCLUDE_CPPFLAGS += -include $(VX_DIR)/target/h/vxWorks.h
+OP_SYS_INCLUDE_CPPFLAGS_5.5 += -include $(VX_DIR)/target/h/vxWorks.h
+OP_SYS_INCLUDE_CPPFLAGS = $(OP_SYS_INCLUDE_CPPFLAGS_$(VXWORKS_VERSION))
 
 #--------------------------------------------------
 # code flags

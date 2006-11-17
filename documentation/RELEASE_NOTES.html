@@ -21,7 +21,10 @@ that were accepted and discarded without warning before will now generate
 errors. The quote characters at the two ends of a quoted string value must now
 match, although either single or double quotes can be used. Escaped characters
 inside a quoted string should pass safely through to the underlying
-dbLoadRecord() command.</p>
+dbLoadRecord() command. The characters permitted in a bareword parameter (i.e. a
+filename or value that is not inside quotes) have been reduced from the overly
+wide set allowed before; the permitted characters now comprise: <tt>a-z A-Z 0-9
+_ - + : . / \ [ ] &lt; &gt; ;</tt></p>
 
 <h4>Escaped characters in record fields</h4>
 
@@ -31,7 +34,7 @@ use C89-compatible escaped character codes such as \", \', \t, \n, \064 and
 character in them as an error - if you want a newline in a field, use the \n
 escaped version.</p>
 
-<h4>libCom/test</h4>
+<h4>libCom/test and db/test</h4>
 
 <p>These test programs are no longer installed into the bin/<i>arch</i>
 directory. Running all these programs on any host architecture should be as
@@ -39,10 +42,10 @@ simple as:</p>
 
 <blockquote>
 <pre>cd /path/to/base/src/libCom/test/O.<i>arch</i>
-make test</pre>
+make runtests</pre>
 </blockquote>
 
-<p>The above make target uses Perl's Test::Harness module to execute all of the
+<p>The runtests target uses Perl's Test::Harness module to execute all of the
 test programs and summarize the result.  It is also possible to run individual
 tests as desired; the output is designed to be comprehensible to humans.</p>
 

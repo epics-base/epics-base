@@ -1,0 +1,20 @@
+#*************************************************************************
+# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE Versions 3.13.7
+# and higher are distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+#  $Id$
+#
+# Override values in CONFIG_SITE_HOST_ARCH.win32-x86-cygwin
+
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.UnixCommon
+
+HOSTEXE=.exe
+
+WIND_HOST_TYPE = x86-win32
+

@@ -16,11 +16,12 @@
 <h4>dbLoadTemplate</h4>
 
 <p>The parser for the substitutions file accepted by dbLoadTemplate() has been
-revised, and is much stricter than it used to be &mdash; unmatched characters
-that were accepted and discarded without warning before will now cause an error.
-The quote characters around a string value must now match, although both single
-and double quoted strings are acceptable. Escaped characters inside a quoted
-string should pass safely through to the underlying dbLoadRecord() command.</p>
+revised, and is now stricter than it used to be &mdash; unmatched characters
+that were accepted and discarded without warning before will now generate
+errors. The quote characters at the two ends of a quoted string value must now
+match, although either single or double quotes can be used. Escaped characters
+inside a quoted string should pass safely through to the underlying
+dbLoadRecord() command.</p>
 
 <h4>Escaped characters in record fields</h4>
 

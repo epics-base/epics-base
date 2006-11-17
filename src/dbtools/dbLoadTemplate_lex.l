@@ -1,59 +1,56 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago, as Operator of Argonne
 *     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-word [a-zA-Z0-9_\.\^~/\*#\[\]%:;!|\-&\$\(\)@\?\+<>\']
-par [\"]
-
-notquote [^\"]
-escapequote \\\"
-value {notquote}|{escapequote}
-
-%{
-%}
+newline     "\n"
+backslash   "\\"
+doublequote "\""
+singlequote "'"
+comment     "#"
+whitespace  [ \t\r]
+escape      {backslash}.
+dstringchar [^\"\n\\]
+sstringchar [^\'\n\\]
+bareword    [a-zA-Z0-9_\.\^~/\*#\[\]%:;!|\-&\$\(\)@\?\+<>]
 
 %%
 
-\#.*\n	{ line_num++; }
+"pattern" { return(PATTERN);	}
+"file"    { return(DBFILE);	}
 
-"pattern" { return(PATTERN); }
-"file"    { return(DBFILE); }
-"="	  { return(EQUALS); }
-
-{par}{value}*{par} {
+{doublequote}({dstringchar}|{escape})*{doublequote} |
+{singlequote}({sstringchar}|{escape})*{singlequote} {
 	yylval.Str = dbmfStrdup(yytext+1);
 	yylval.Str[strlen(yylval.Str)-1] = '\0';
 	return(QUOTE);
     }
 
-{word}+ {
+{bareword}+ {
 	yylval.Str = dbmfStrdup(yytext);
 	return(WORD);
     }
 
+"="	{ return(EQUALS);	}
+","	{ return(COMMA);	}
 "{"	{ return(O_BRACE);	}
 "}"	{ return(C_BRACE);	}
 
-\n	{ line_num ++;}
-
-[ \t,]
+{comment}.*	;
+{whitespace}	;
+{newline}	{ line_num++;	}
 
 . {
-	char message[20];
-	YY_BUFFER_STATE *dummy=0;
+	char message[40];
 
-	sprintf(message,"invalid character '%c'",yytext[0]);
+	sprintf(message,"invalid character '%c'", yytext[0]);
 	yyerror(message);
 
-	/*The following suppress compiler warning messages*/
-	if (0) yyunput('c',(unsigned char *) message);
-	if (0) yy_switch_to_buffer(*dummy);
+	/* Suppress compiler warning messages */
+	if (0) yyunput('c',NULL);
+	if (0) yy_switch_to_buffer(NULL);
     }
 
 %%

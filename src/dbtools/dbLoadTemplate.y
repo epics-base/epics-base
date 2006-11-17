@@ -1,10 +1,11 @@
 %{
 
-/**************************************************************************
- *
- *     Author:	Jim Kowalkowski
- *
- ***********************************************************************/
+/*************************************************************************\
+* Copyright (c) 2006 UChicago, as Operator of Argonne
+*     National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
+\*************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +39,7 @@ static int var_count,sub_count;
 %token <Str> WORD QUOTE
 %token DBFILE
 %token PATTERN
-%token EQUALS
+%token EQUALS COMMA
 %left O_PAREN C_PAREN
 %left O_BRACE C_BRACE
 
@@ -78,7 +79,7 @@ templ_head: DBFILE WORD
 		strcpy(db_file_name,$2);
 		dbmfFree($2);
 	}
-        | DBFILE QUOTE
+	| DBFILE QUOTE
 	{
 		var_count=0;
 		if(db_file_name) dbmfFree(db_file_name);
@@ -89,9 +90,9 @@ templ_head: DBFILE WORD
 	;
 
 subst: PATTERN pattern subs
-    | PATTERN pattern
-    | var_subs
-    ;
+	| PATTERN pattern
+	| var_subs
+	;
 
 pattern: O_BRACE vars C_BRACE
 	{ 
@@ -101,9 +102,10 @@ pattern: O_BRACE vars C_BRACE
 		fprintf(stderr,"var_count=%d\n",var_count);
 #endif
 	}
-    ;
+	;
 
 vars: vars var
+	| vars COMMA var
 	| var
 	;
 
@@ -150,6 +152,7 @@ sub: WORD O_BRACE vals C_BRACE
 	;
 
 vals: vals val
+	| vals COMMA val
 	| val
 	;
 
@@ -213,6 +216,7 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
 	;
 
 sub_pats: sub_pats sub_pat
+	| sub_pats COMMA sub_pat
 	| sub_pat
 	;
 
@@ -242,13 +246,16 @@ sub_pat: WORD EQUALS WORD
  
 static int yyerror(char* str)
 {
-	fprintf(stderr,"Substitution file parse error : \"%s\"\n", str);
-	fprintf(stderr,"line %d:\"%s\"\n",line_num,yytext);
-	return(0);
+    if (str)
+	fprintf(stderr, "Substitution file error: %s\n", str);
+    else
+	fprintf(stderr, "Substitution file error.\n");
+    fprintf(stderr, "line %d: '%s'\n", line_num, yytext);
+    return 0;
 }
 
 static int is_not_inited = 1;
- 
+
 int epicsShareAPI dbLoadTemplate(char* sub_file)
 {
 	FILE *fp;

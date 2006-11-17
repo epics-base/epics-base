@@ -13,13 +13,19 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # $Id$
 #
 # Parse configure/RELEASE file(s) and generate a derived output file.
+# With strict patches from Nick Rees at DLS.
 #
 
 use Cwd qw(cwd abs_path);
 use Getopt::Std;
+use strict;
+
+use vars qw($cwd $arch $top $hostarch $iocroot $root $outfile $relfile);
+use vars qw(%macros @apps);
 
 $cwd = UnixPath(cwd());
 
+our ($opt_a, $opt_h, $opt_t, $opt_T);
 getopt "ahtT";
 
 if ($opt_a) {
@@ -65,7 +71,7 @@ $outfile = $ARGV[0];
 
 # TOP refers to this application
 %macros = (TOP => LocalPath($top));
-@apps   = (TOP);	# Records the order of definitions in RELEASE file
+@apps   = ('TOP');	# Records the order of definitions in RELEASE file
 
 # Read the RELEASE file(s)
 $relfile = "$top/configure/RELEASE";
@@ -126,13 +132,13 @@ sub readRelease {
 	next if /^\s*$/;	# Skip blank lines
 	
 	# Expand all already-defined macros in the line:
-	while (($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
+	while (my ($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
 	    last unless (exists $Rmacros->{$var});
 	    $_ = $pre . $Rmacros->{$var} . $post;
 	}
 	
 	# Handle "<macro> = <path>"
-	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
+	my ($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
 	if ($macro ne "") {
 		$macro="TOP" if $macro =~ /^INSTALL_LOCATION/ ;
 		if (exists $Rmacros->{$macro}) {
@@ -153,8 +159,8 @@ sub readRelease {
 sub expandRelease {
     my ($Rmacros, $Rapps) = @_;
     # Expand any (possibly nested) macros that were defined after use
-    while (($macro, $path) = each %$Rmacros) {
-	while (($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
+    while (my ($macro, $path) = each %$Rmacros) {
+	while (my ($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
 	    $path = $pre . $Rmacros->{$var} . $post;
 	    $Rmacros->{$macro} = $path;
 	}
@@ -162,7 +168,7 @@ sub expandRelease {
 }
 
 sub configAppInclude {
-    @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
+    my @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
@@ -171,46 +177,46 @@ sub configAppInclude {
     
     if ($arch) {
 	print OUT "export TOP\n";
-	foreach $app (@includes) {
+	foreach my $app (@includes) {
 	    print OUT "export ${app}\n";
 	}
-	foreach $app (@includes) {
-	    $path = $macros{$app};
+	foreach my $app (@includes) {
+	    my $path = $macros{$app};
 	    next unless (-d "$path/bin/$hostarch");
 	    print OUT "${app}_HOST_BIN = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
-	foreach $app (@includes) {
-	    $path = $macros{$app};
+	foreach my $app (@includes) {
+	    my $path = $macros{$app};
 	    next unless (-d "$path/lib/$hostarch");
 	    print OUT "${app}_HOST_LIB = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
 	}
-	foreach $app (@includes) {
-	    $path = $macros{$app};
+	foreach my $app (@includes) {
+	    my $path = $macros{$app};
 	    next unless (-d "$path/bin/$arch");
 	    print OUT "${app}_BIN = \$(strip \$($app))/bin/$arch\n";
 	}
-	foreach $app (@includes) {
-	    $path = $macros{$app};
+	foreach my $app (@includes) {
+	    my $path = $macros{$app};
 	    next unless (-d "$path/lib/$arch");
 	    print OUT "${app}_LIB = \$(strip \$($app))/lib/$arch\n";
 	}
 	# We can't just include TOP in the foreach list:
 	# 1. The lib directory probably doesn't exist yet, and
 	# 2. We need an abolute path but $(TOP_LIB) is relative
-	foreach $app (@includes) {
-	    $path = $macros{$app};
+	foreach my $app (@includes) {
+	    my $path = $macros{$app};
 	    next unless (-d "$path/lib/$arch");
 	    print OUT "SHRLIB_SEARCH_DIRS += \$(${app}_LIB)\n";
 	}
     }
-    foreach $app (@includes) {
-	$path = $macros{$app};
+    foreach my $app (@includes) {
+	my $path = $macros{$app};
 	next unless (-d "$path/include");
 	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include/os/\$(OS_CLASS)\n";
 	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include\n";
     }
-    foreach $app (@includes) {
-	$path = $macros{$app};
+    foreach my $app (@includes) {
+	my $path = $macros{$app};
 	next unless (-d "$path/dbd");
 	print OUT "RELEASE_DBDFLAGS += -I \$(strip \$($app))/dbd\n";
     }
@@ -218,15 +224,15 @@ sub configAppInclude {
 }
 
 sub rulesInclude {
-    @includes = grep !/^(TOP|TEMPLATE_TOP|EPICS_BASE)$/, @apps;
+    my @includes = grep !/^(TOP|TEMPLATE_TOP|EPICS_BASE)$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     print OUT "# Do not modify this file, changes made here will\n";
     print OUT "# be lost when the application is next rebuilt.\n\n";
     
-    foreach $app (@includes) {
-	$path = $macros{$app};
+    foreach my $app (@includes) {
+	my $path = $macros{$app};
 	next unless (-r "$path/configure/RULES_BUILD");
 	print OUT "RULES_TOP:=\$($app)\n";
 	print OUT "-include \$(strip \$(RULES_TOP))/configure/RULES_BUILD\n";
@@ -236,26 +242,26 @@ sub rulesInclude {
 
 sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
-    @includes = grep !/^TEMPLATE_TOP$/, @apps;
+    my @includes = grep !/^TEMPLATE_TOP$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     
-    $startup = $cwd;
+    my $startup = $cwd;
     $startup =~ s/^$root/$iocroot/o if ($opt_t);
     
     print OUT "startup = \"$startup\"\n";
     
-    $ioc = $cwd;
+    my $ioc = $cwd;
     $ioc =~ s/^.*\///;	# iocname is last component of directory name
     
     print OUT "putenv \"ARCH=$arch\"\n";
     print OUT "putenv \"IOC=$ioc\"\n";
     
-    foreach $app (@includes) {
-	$iocpath = $path = $macros{$app};
+    foreach my $app (@includes) {
+	my $iocpath = my $path = $macros{$app};
 	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
-	$app_lc = lc($app);
+	my $app_lc = lc($app);
 	print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
 	print OUT "putenv \"$app=$iocpath\"\n" if (-d $path);
 	print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
@@ -265,19 +271,19 @@ sub cdCommands {
 
 sub envPaths {
     die "Architecture not set (use -a option)" unless ($arch);
-    @includes = grep !/^TEMPLATE_TOP$/, @apps;
+    my @includes = grep !/^TEMPLATE_TOP$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     
-    $ioc = $cwd;
+    my $ioc = $cwd;
     $ioc =~ s/^.*\///;	# iocname is last component of directory name
     
     print OUT "epicsEnvSet(ARCH,\"$arch\")\n";
     print OUT "epicsEnvSet(IOC,\"$ioc\")\n";
     
-    foreach $app (@includes) {
-	$iocpath = $path = $macros{$app};
+    foreach my $app (@includes) {
+	my $iocpath = my $path = $macros{$app};
 	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
 	print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
     }
@@ -285,19 +291,19 @@ sub envPaths {
 }
 
 sub checkRelease {
-    $status = 0;
+    my $status = 0;
     delete $macros{TOP};
     delete $macros{TEMPLATE_TOP};
     
-    while (($app, $path) = each %macros) {
-	%check = (TOP => $path);
-	@order = ();
-	$relfile = "$path/configure/RELEASE";
+    while (my ($app, $path) = each %macros) {
+	my %check = (TOP => $path);
+	my @order = ();
+	my $relfile = "$path/configure/RELEASE";
 	&readReleaseFiles($relfile, \%check, \@order);
 	&expandRelease(\%check, \@order);
 	delete $check{TOP};
 	
-	while (($parent, $ppath) = each %check) {
+	while (my ($parent, $ppath) = each %check) {
 	    if (exists $macros{$parent} &&
 		abs_path($macros{$parent}) ne abs_path($ppath)) {
 		print "\n" unless ($status);
@@ -318,24 +324,24 @@ sub checkRelease {
 # These functions are duplicated in src/makeBaseApp/makeBaseApp.pl
 sub UnixPath {
     my ($newpath) = @_;
-    if ($^O eq "cygwin") {
-	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    if ($^O eq 'cygwin') {
+	$newpath =~ s{\\}{/}go;
+	$newpath =~ s{^([a-zA-Z]):/}{/cygdrive/$1/};
     } elsif ($^O eq 'MSWin32') {
-	$newpath =~ s|\\|/|go;
+	$newpath =~ s{\\}{/}go;
     } elsif ($^O eq 'sunos') {
-	$newpath =~ s(^\/tmp_mnt/)(/);
+	$newpath =~ s{^/tmp_mnt/}{/};
     }
-    $newpath =~ s|\\|/|go;
     return $newpath;
 }
 
 sub LocalPath {
     my ($newpath) = @_;
     if ($^O eq "cygwin") {
-	$newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
+	$newpath =~ s{^/cygdrive/([a-zA-Z])/}{$1:/};
     } elsif ($^O eq "darwin") {
 	# These rules are likely to be site-specific
-	$newpath =~ s%^/private/var/auto\.home/%/home/%;    # APS
+	$newpath =~ s{^/private/var/auto\.home/}{/home/};    # APS
     }
     return $newpath;
 }

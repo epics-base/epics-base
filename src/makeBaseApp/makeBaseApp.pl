@@ -481,13 +481,13 @@ sub GetUser {
 # These functions are duplicated in configure/convertRelease.pl
 sub UnixPath {
     my ($newpath) = @_;
-    if ($^O eq "cygwin") {
-	$newpath =~ s|\\|/|go;
-	$newpath =~ s%^([a-zA-Z]):/%/cygdrive/$1/%;
+    if ($^O eq 'cygwin') {
+	$newpath =~ s{\\}{/}go;
+	$newpath =~ s{^([a-zA-Z]):/}{/cygdrive/$1/};
     } elsif ($^O eq 'MSWin32') {
-	$newpath =~ s|\\|/|go;
+	$newpath =~ s{\\}{/}go;
     } elsif ($^O eq 'sunos') {
-	$newpath =~ s(^\/tmp_mnt/)(/);
+	$newpath =~ s{^/tmp_mnt/}{/};
     }
     return $newpath;
 }
@@ -495,10 +495,10 @@ sub UnixPath {
 sub LocalPath {
     my ($newpath) = @_;
     if ($^O eq "cygwin") {
-	$newpath =~ s%^/cygdrive/([a-zA-Z])/%$1:/%;
+	$newpath =~ s{^/cygdrive/([a-zA-Z])/}{$1:/};
     } elsif ($^O eq "darwin") {
 	# These rules are likely to be site-specific
-	$newpath =~ s%^/private/var/auto\.home/%/home/%;    # APS
+	$newpath =~ s{^/private/var/auto\.home/}{/home/};    # APS
     }
     return $newpath;
 }

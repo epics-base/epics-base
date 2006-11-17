@@ -13,6 +13,8 @@ include $(TOP)/configure/CONFIG
 DB += dbExample1.db
 DB += dbExample2.db
 DB += dbSubExample.db
+DB += user.substitutions
+DB += userHost.substitutions
 
 #----------------------------------------------------
 # If <anyname>.db template is not named <anyname>*.template add

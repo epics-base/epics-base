@@ -12,10 +12,7 @@ dbLoadDatabase("dbd/_APPNAME_.dbd")
 _CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase)
 
 ## Load record instances
-dbLoadRecords("db/dbExample1.db","user=_USER_Host")
-dbLoadRecords("db/dbExample2.db","user=_USER_Host,no=1,scan=1 second")
-dbLoadRecords("db/dbExample2.db","user=_USER_Host,no=2,scan=2 second")
-dbLoadRecords("db/dbExample2.db","user=_USER_Host,no=3,scan=5 second")
+dbLoadTemplate "db/userHost.substitutions"
 dbLoadRecords("db/dbSubExample.db","user=_USER_Host")
 
 ## Set this to see messages from mySub

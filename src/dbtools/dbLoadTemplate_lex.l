@@ -12,9 +12,9 @@ singlequote "'"
 comment     "#"
 whitespace  [ \t\r]
 escape      {backslash}.
-dstringchar [^\"\n\\]
-sstringchar [^\'\n\\]
-bareword    [a-zA-Z0-9_\.\^~/\*#\[\]%:;!|\-&\$\(\)@\?\+<>]
+dstringchar [^"\n\\]
+sstringchar [^'\n\\]
+bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 
 %%
 

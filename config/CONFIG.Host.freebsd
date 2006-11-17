@@ -11,32 +11,30 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.freebsd
  
-ARCH_CLASS = freebsd
+OS_CLASS = freebsd
+ARCH_CLASS = x86_64
 
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
-AR = ar -rc
-ARCMD = $(AR) $@
-RANLIB = ranlib -t
+ARCH_DEP_CPPFLAGS += -D_X86_64_
 
-ANSI=GCC
-CPLUSPLUS=G++
+CODE_CPPFLAGS = -D_REENTRANT
 
-GCC_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
-G++_SHRLIB_LDFLAGS_YES +=  -Wl,-soname,$@
+#POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
+POSIX_CPPFLAGS = -D_POSIX_THREADS
+POSIX_LDLIBS = -lpthread
 
-OP_SYS_CFLAGS += -D_BSD_SOURCE
+# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
+OP_SYS_CPPFLAGS += -D_BSD_SOURCE
+OP_SYS_CPPFLAGS += -Dfreebsd
+#OP_SYS_LDLIBS += -lrt
 
-ARCH_DEP_CFLAGS = -D_X86_ -Dfreebsd
-ARCH_DEP_LDLIBS += -lpthread -lreadline -lcurses -lrt
+# Set runtime path for shared libraries
+RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
 
-#Allows R3.13 built extensions to load R3.14 shared libs
-SYS_DLL_LIBS_freebsd += pthread readline curses rt
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline -lcurses
 
-# Runtime ldflags
-RUNTIME_LIBS =$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH)
-RUNTIME_LDFLAGS = $(RUNTIME_LIBS:%=-Wl,-rpath,%)
-
+GNU_LDLIBS_YES = -lgcc_pic
 

@@ -12,7 +12,7 @@ doublequote "\""
 comment     "#"
 whitespace  [ \t\r\n]
 escape      {backslash}.
-stringchar  [^\"\n\\]
+stringchar  [^"\n\\]
 bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 
 %{
@@ -67,6 +67,7 @@ static int yyreset(void)
 "("	return(yytext[0]);
 ")"	return(yytext[0]);
 ","	return(yytext[0]);
+
 {comment}.*	;
 {whitespace}	;
 

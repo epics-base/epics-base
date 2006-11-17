@@ -42,7 +42,7 @@ value {notquote}|{escapequote}
 
 \n	{ line_num ++;}
 
-[ \t,] { ; }
+[ \t,]
 
 . {
 	char message[20];

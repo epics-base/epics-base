@@ -82,7 +82,7 @@ $(cleanArchTargets) ::
 realclean :: 
 	$(RMDIR) O.*
 
-test: $(addprefix  O.$(EPICS_HOST_ARCH)/,$(TESTSCRIPTS_HOST)) 
+runtests: $(addprefix  O.$(EPICS_HOST_ARCH)/,$(TESTSCRIPTS_HOST)) 
 	$(PERL) -e 'use Test::Harness; runtests @ARGV;'  $^
 
 .PHONY : $(actionArchTargets)
@@ -90,5 +90,5 @@ test: $(addprefix  O.$(EPICS_HOST_ARCH)/,$(TESTSCRIPTS_HOST))
 .PHONY : $(BUILD_ARCHS)
 .PHONY : $(ACTIONS) clean realclean archclean all
 .PHONY : checkRelease $(checkReleaseTargets)
-.PHONY : test
+.PHONY : runtests
 

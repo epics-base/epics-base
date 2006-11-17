@@ -316,7 +316,7 @@ $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	@$(RM) $@
 	$(MUNCH_CMD)
 
-test: $(TESTSCRIPTS_HOST)
+runtests: $(TESTSCRIPTS_HOST)
 	$(PERL) -e 'use Test::Harness; runtests @ARGV;' $(TESTSCRIPTS_HOST)
 
 # If there's a perl test script (.plt) available, use it
@@ -446,7 +446,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all inc build install clean rebuild buildInstall binInstalls libInstalls
-.PHONY: test
+.PHONY: runtests
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

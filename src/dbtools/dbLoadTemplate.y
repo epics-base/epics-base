@@ -242,8 +242,8 @@ sub_pat: WORD EQUALS WORD
  
 static int yyerror(char* str)
 {
-	fprintf(stderr,"Substitution file parse error\n");
-	fprintf(stderr,"line %d:%s\n",line_num,yytext);
+	fprintf(stderr,"Substitution file parse error : \"%s\"\n", str);
+	fprintf(stderr,"line %d:\"%s\"\n",line_num,yytext);
 	return(0);
 }
 
@@ -254,7 +254,7 @@ int epicsShareAPI dbLoadTemplate(char* sub_file)
 	FILE *fp;
 	int ind;
 
-	line_num=0;
+	line_num=1;
 
 	if( !sub_file || !*sub_file)
 	{

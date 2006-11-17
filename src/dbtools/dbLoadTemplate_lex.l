@@ -8,8 +8,8 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-word [a-zA-Z0-9_\.\^~/\*#\[\]%:;!|\-&\$\(\)@\?\+<>]
-par [\"\']
+word [a-zA-Z0-9_\.\^~/\*#\[\]%:;!|\-&\$\(\)@\?\+<>\']
+par [\"]
 
 notquote [^\"]
 escapequote \\\"
@@ -20,14 +20,14 @@ value {notquote}|{escapequote}
 
 %%
 
-\#.*\n	;
+\#.*\n	{ line_num++; }
 
 "pattern" { return(PATTERN); }
 "file"    { return(DBFILE); }
 "="	  { return(EQUALS); }
 
 {par}{value}*{par} {
-	yylval.Str = dbmfStrdup(yytext);
+	yylval.Str = dbmfStrdup(yytext+1);
 	yylval.Str[strlen(yylval.Str)-1] = '\0';
 	return(QUOTE);
     }
@@ -41,6 +41,8 @@ value {notquote}|{escapequote}
 "}"	{ return(C_BRACE);	}
 
 \n	{ line_num ++;}
+
+[ \t,] { ; }
 
 . {
 	char message[20];

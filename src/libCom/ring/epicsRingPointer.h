@@ -24,7 +24,7 @@
 #ifdef __cplusplus
 template <class T>
 class epicsRingPointer {
-public: // Functions
+public: /* Functions */
     epicsRingPointer(int size);
     ~epicsRingPointer();
     bool push(T *p);
@@ -36,13 +36,13 @@ public: // Functions
     bool isEmpty() const;
     bool isFull() const;
 
-private: // Prevent compiler-generated member functions
-    // default constructor, copy constructor, assignment operator
+private: /* Prevent compiler-generated member functions */
+    /* default constructor, copy constructor, assignment operator */
     epicsRingPointer();
     epicsRingPointer(const epicsRingPointer &);
     epicsRingPointer& operator=(const epicsRingPointer &);
 
-private: // Data
+private: /* Data */
     int nextPush;
     int nextPop;
     int size;

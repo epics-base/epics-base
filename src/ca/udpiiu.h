@@ -80,6 +80,7 @@ private:
 };
 
 static const double minRoundTripEstimate = 32e-3; // seconds
+static const double maxRoundTripEstimate = 30; // seconds
 static const double maxSearchPeriodDefault = 5.0 * 60.0; // seconds
 static const double maxSearchPeriodLowerLimit = 60.0; // seconds
 static const double beaconAnomalySearchPeriod = 5.0; // seconds
@@ -91,6 +92,7 @@ class udpiiu :
     private repeaterTimerNotify {
 public:
     udpiiu ( 
+        epicsGuard < epicsMutex > & cacGuard,
         class epicsTimerQueueActive &, 
         epicsMutex & callbackControl, 
         epicsMutex & mutualExclusion, 
@@ -119,6 +121,7 @@ private:
     ELLLIST dest;
     double maxPeriod;
     double rtteMean;
+    double rtteMeanDev;
     cac & cacRef;
     mutable epicsMutex & cbMutex;
     mutable epicsMutex & cacMutex;
@@ -232,8 +235,8 @@ private:
             const char * pName, unsigned nameLength );
 
     // searchTimerNotify stubs
-    double getRTTE () const;
-    void updateRTTE ( double rtte );
+    double getRTTE ( epicsGuard < epicsMutex > & ) const;
+    void updateRTTE ( epicsGuard < epicsMutex > &, double rtte );
     bool pushVersionMsg ();
     void boostChannel ( 
         epicsGuard < epicsMutex > & guard, nciu & chan );

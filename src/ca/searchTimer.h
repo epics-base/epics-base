@@ -50,8 +50,8 @@ public:
         epicsGuard < epicsMutex > &, nciu & ) = 0;
     virtual void noSearchRespNotify ( 
         epicsGuard < epicsMutex > &, nciu &, unsigned ) = 0;
-    virtual double getRTTE () const = 0;
-    virtual void updateRTTE ( double rtte ) = 0;
+    virtual double getRTTE ( epicsGuard < epicsMutex > & ) const = 0;
+    virtual void updateRTTE ( epicsGuard < epicsMutex > &, double rtte ) = 0;
     virtual bool datagramFlush ( 
         epicsGuard < epicsMutex > &, 
         const epicsTime & currentTime ) = 0;
@@ -66,7 +66,7 @@ public:
         const unsigned index, epicsMutex &,
         bool boostPossible );
     virtual ~searchTimer ();
-    void start ();
+    void start ( epicsGuard < epicsMutex > & );
     void shutdown ( 
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
@@ -100,7 +100,7 @@ private:
     bool stopped;
 
     expireStatus expire ( const epicsTime & currentTime );
-    double period () const;
+    double period ( epicsGuard < epicsMutex > & ) const;
 	searchTimer ( const searchTimer & ); // not implemented
 	searchTimer & operator = ( const searchTimer & ); // not implemented
 };

@@ -28,23 +28,74 @@
 #include "osiSock.h"
 #include "osiWireFormat.h"
 
-#include "iocinf.h"
-#include "caProto.h"
-
-typedef unsigned long arrayElementCount;
-
 #define epicsExportSharedSymbols
 #include "net_convert.h"
-
-#if defined(VMS)
-#include    <cvt$routines.h>
-#include    <cvtdef.h>
-#endif
+#include "iocinf.h"
+#include "caProto.h"
+#include "caerr.h"
 
 /*
  * NOOP if this isnt required
  */
-#ifdef CONVERSION_REQUIRED
+#ifdef EPICS_CONVERSION_REQUIRED
+
+/*
+ * if hton is true then it is a host to network conversion
+ * otherwise vise-versa
+ *
+ * net format: big endian and IEEE float
+ */
+typedef void ( * CACVRTFUNCPTR ) ( 
+    const void *pSrc, void *pDest, int hton, arrayElementCount count );
+
+inline  void dbr_htond ( 
+    const dbr_double_t * pHost, dbr_double_t * pNet )
+{
+    AlignedWireRef < epicsFloat64 > tmp ( *pNet );
+    tmp = *pHost;
+}
+inline void dbr_ntohd ( 
+    const dbr_double_t * pNet, dbr_double_t * pHost )
+{
+    *pHost = AlignedWireRef < const epicsFloat64 > ( *pNet );
+}
+inline void dbr_htonf ( 
+    const dbr_float_t * pHost, dbr_float_t * pNet )
+{
+    AlignedWireRef < epicsFloat32 > tmp ( *pNet );
+    tmp = *pHost;
+}
+inline void dbr_ntohf ( 
+    const dbr_float_t * pNet, dbr_float_t * pHost )
+{
+    *pHost = AlignedWireRef < const epicsFloat32 > ( *pNet );
+}
+
+inline epicsUInt16 dbr_ntohs( const epicsUInt16 & net ) 
+{
+    return AlignedWireRef < const epicsUInt16 > ( net );
+}
+
+inline epicsUInt16 dbr_htons ( const epicsUInt16 & host ) 
+{
+    epicsUInt16 tmp;
+    AlignedWireRef < epicsUInt16 > awr ( tmp );
+    awr = host;
+    return tmp;
+}
+
+inline epicsUInt32 dbr_ntohl( const epicsUInt32 & net )
+{
+    return AlignedWireRef < const epicsUInt32 > ( net );
+}
+
+inline epicsUInt32 dbr_htonl ( const epicsUInt32 & host )
+{
+    epicsUInt32 tmp;
+    AlignedWireRef < epicsUInt32 > awr ( tmp );
+    awr = host;
+    return tmp;
+}
 
 /*
  * if hton is true then it is a host to network conversion
@@ -53,11 +104,6 @@ typedef unsigned long arrayElementCount;
  * net format: big endian and IEEE float
  * 
  */
-
-#define dbr_ntohs(A)    (epicsNTOH16(A))
-#define dbr_ntohl(A)    (epicsNTOH32(A))
-#define dbr_htons(A)    (epicsHTON16(A))
-#define dbr_htonl(A)    (epicsHTON32(A))
 
 /*
  *  CVRT_STRING()
@@ -75,7 +121,7 @@ arrayElementCount   num             /* number of values     */
     /* convert "in place" -> nothing to do */
     if (s == d)
         return;
-    memcpy(pDest, pSrc, num*MAX_STRING_SIZE);
+    memcpy ( pDest, pSrc, num*MAX_STRING_SIZE );  
 }
 
 /*
@@ -84,21 +130,22 @@ arrayElementCount   num             /* number of values     */
 static void cvrt_short(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
-int                 /*encode*/, /* cvrt HOST to NET if T    */
+int                 encode,     /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
     dbr_short_t         *pSrc = (dbr_short_t *) s;
     dbr_short_t         *pDest = (dbr_short_t *) d;
-    arrayElementCount   i;
 
-    for(i=0; i<num; i++){
-        *pDest = dbr_ntohs( *pSrc );
-        /*
-         * dont increment these inside the MACRO 
-         */
-        pDest++;
-        pSrc++;
+    if(encode){
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_htons( pSrc[i] );
+        }
+    }
+    else {
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_ntohs( pSrc[i] );
+        }
     }
 }
 
@@ -116,15 +163,14 @@ int                 /*encode*/, /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
-    arrayElementCount   i;
     dbr_char_t          *pSrc = (dbr_char_t *) s;
     dbr_char_t          *pDest = (dbr_char_t *) d;
 
     /* convert "in place" -> nothing to do */
     if (s == d)
         return;
-    for(i=0; i<num; i++){
-        *pDest++ = *pSrc++;
+    for( arrayElementCount i=0; i<num; i++){
+        pDest[i] = pSrc[i];
     }
 }
 
@@ -134,21 +180,22 @@ arrayElementCount   num         /* number of values     */
 static void cvrt_long(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
-int                 /*encode*/, /* cvrt HOST to NET if T    */
+int                 encode,     /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
-    arrayElementCount   i;
     dbr_long_t          *pSrc = (dbr_long_t *) s;
     dbr_long_t          *pDest = (dbr_long_t *) d;
 
-    for(i=0; i<num; i++){
-        *pDest = dbr_ntohl( *pSrc );
-        /*
-         * dont increment these inside the MACRO 
-         */
-        pDest++;
-        pSrc++;
+    if(encode){
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_htonl( pSrc[i] );
+        }
+    }
+    else {
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_ntohl( pSrc[i] );
+        }
     }
 }
 
@@ -162,23 +209,22 @@ arrayElementCount   num         /* number of values     */
 static void cvrt_enum(
 const void          *s,         /* source           */
 void                *d,         /* destination          */
-int                 /*encode*/, /* cvrt HOST to NET if T    */
+int                 encode,     /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
-    arrayElementCount   i;
-    dbr_enum_t          *pSrc;
-    dbr_enum_t          *pDest;
+    dbr_enum_t          *pSrc = (dbr_enum_t *) s;
+    dbr_enum_t          *pDest = (dbr_enum_t *) d;
 
-    pSrc = (dbr_enum_t *) s;
-    pDest = (dbr_enum_t *) d;
-    for(i=0; i<num; i++){
-        *pDest = dbr_ntohs(*pSrc);
-        /*
-         * dont increment these inside the MACRO 
-         */
-        pDest++;
-        pSrc++;
+    if(encode){
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_htons ( pSrc[i] );
+        }
+    }
+    else {
+        for(arrayElementCount i=0; i<num; i++){
+            pDest[i] = dbr_ntohs ( pSrc[i] );
+        }
     }
 }
 
@@ -198,22 +244,18 @@ int                 encode,     /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
-    arrayElementCount   i;
-    dbr_float_t         *pSrc = (dbr_float_t *) s;
+    const dbr_float_t   *pSrc = (const dbr_float_t *) s;
     dbr_float_t         *pDest = (dbr_float_t *) d;
 
-    for(i=0; i<num; i++){
-        if(encode){
-            dbr_htonf(pSrc, pDest);
+    if(encode){
+        for(arrayElementCount i=0; i<num; i++){
+            dbr_htonf ( &pSrc[i], &pDest[i] );
         }
-        else{
-            dbr_ntohf(pSrc, pDest);
+    }
+    else{
+        for(arrayElementCount i=0; i<num; i++){
+            dbr_ntohf ( &pSrc[i], &pDest[i] );
         }
-        /*
-         * dont increment these inside the MACRO 
-         */
-        pSrc++;
-        pDest++;
     }
 }
 
@@ -227,22 +269,18 @@ int                 encode,     /* cvrt HOST to NET if T    */
 arrayElementCount   num         /* number of values     */
 )
 {
-    arrayElementCount   i;
     dbr_double_t        *pSrc = (dbr_double_t *) s;
     dbr_double_t        *pDest = (dbr_double_t *) d;
 
-    for(i=0; i<num; i++){
-        if(encode){
-            dbr_htond(pSrc,pDest);
+    if(encode){
+        for(arrayElementCount i=0; i<num; i++){
+            dbr_htond ( &pSrc[i], &pDest[i] );
         }
-        else{
-            dbr_ntohd(pSrc,pDest);
+    }
+    else{
+        for(arrayElementCount i=0; i<num; i++){
+            dbr_ntohd( &pSrc[i], &pDest[i] );
         }
-        /*
-         * dont increment these inside the MACRO 
-         */
-        pSrc++;
-        pDest++;
     }
 }
 
@@ -277,7 +315,7 @@ arrayElementCount   num         /* number of values     */
     if (s == d)
         return;
 
-    memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
+    memcpy ( pDest->value, pSrc->value, (MAX_STRING_SIZE * num) );
 
 }
 
@@ -1330,380 +1368,8 @@ arrayElementCount   num         /* number of values     */
     memcpy(pDest->value, pSrc->value, (MAX_STRING_SIZE * num));
 }
 
-#if defined(CA_FLOAT_MIT) 
-/************************************************************************/
-/*      double convert                                      */
-/*      (THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)        */
-/************************************************************************/
-
-/* (this includes mapping of fringe reals to zero or infinity) */
-/* (byte swaps included in conversion */
-
-struct ieeedbl {
-        unsigned int    mant2 : 32;
-        unsigned int    mant1 : 20;
-        unsigned int    exp   : 11;
-        unsigned int    sign  : 1;
-};
-
-#define IEEE_DBL_SB             1023
-
-/*      Conversion Range        */
-/*      -1022<exp<1024  with mantissa of form 1.mant                    */
-#define DBLEXPMINIEEE   -1022   /* min for norm # IEEE exponent */
-
-struct mitdbl {
-        unsigned int    mant1 : 7;
-        unsigned int    exp   : 8;
-        unsigned int    sign  : 1;
-        unsigned int    mant2 : 16;
-        unsigned int    mant3 : 16;
-        unsigned int    mant4 : 16;
-};
-
-  /*    Exponent sign bias      */
-#define        MIT_DBL_SB      129
-
-  /*    Conversion Ranges       */
-  /*    -128<exp<126    with mantissa of form 1.mant                    */
-#define        DBLEXPMAXMIT    126     /* max MIT exponent             */
-#define        DBLEXPMINMIT    -128    /* min MIT exponent             */
-
-/*
- * Converts VMS D or G floating point to IEEE double precision 
- * (D floating is the VAX C default, G floating is the Alpha C default)
- */
-void dbr_htond(dbr_double_t *pHost, dbr_double_t *pNet)
-{
-#if defined(VMS)
-#   if defined(__G_FLOAT) && (__G_FLOAT == 1)
-        cvt$convert_float(pHost, CVT$K_VAX_G ,
-                          pNet , CVT$K_IEEE_T,
-                          CVT$M_BIG_ENDIAN);
-#   else
-        cvt$convert_float(pHost, CVT$K_VAX_D ,
-                          pNet , CVT$K_IEEE_T,
-                          CVT$M_BIG_ENDIAN);
-#   endif
-#else
-    dbr_double_t    copyin;
-    struct mitdbl   *pMIT;
-    struct ieeedbl  *pIEEE;
-    ca_uint32_t *ptmp;
-    ca_uint32_t tmp;
-
-    /*
-     * Use internal buffer so the src and dest ptr
-     * can be identical
-     */
-    copyin = *pHost;
-    pMIT = (struct mitdbl *) &copyin;
-    pIEEE = (struct ieeedbl *) pNet;
-
-    if( ((int)pMIT->exp) < (DBLEXPMINMIT+MIT_DBL_SB) ){
-        pIEEE->mant1 = 0;
-        pIEEE->mant2 = 0;
-        pIEEE->exp  = 0;
-        pIEEE->sign = 0;
-    }
-    else{
-        pIEEE->exp  = ((int)pMIT->exp)+(IEEE_DBL_SB-MIT_DBL_SB);
-        pIEEE->mant1 = (pMIT->mant1<<13) | (pMIT->mant2>>3);
-        pIEEE->mant2 = (pMIT->mant2<<29) | (pMIT->mant3<<13) | 
-                    (pMIT->mant4>>3); 
-        pIEEE->sign = pMIT->sign;
-    }
-
-    /*
-     * byte swap to net order
-     */
-    ptmp = (ca_uint32_t *) pNet;
-    tmp = dbr_htonl(ptmp[0]);
-    ptmp[0] = dbr_htonl(ptmp[1]);
-    ptmp[1] = tmp;
-#endif
-}
-
-/*
- * Converts IEEE double precision to VMS D or G floating point
- * (D floating is the VAX C default, G floating is the Alpha C default)
- *
- * sign must be forced to zero if the exponent is zero to prevent a reserved
- * operand fault- joh 9-13-90
- */
-void dbr_ntohd(dbr_double_t *pNet, dbr_double_t *pHost)
-{
-#if defined(VMS)
-#   if defined(__G_FLOAT) && (__G_FLOAT == 1)
-        cvt$convert_float(pNet , CVT$K_IEEE_T,
-                          pHost, CVT$K_VAX_G ,
-                          CVT$M_BIG_ENDIAN);
-#   else
-        cvt$convert_float(pNet , CVT$K_IEEE_T,
-                          pHost, CVT$K_VAX_D ,
-                          CVT$M_BIG_ENDIAN);
-#   endif
-#else
-    struct ieeedbl  copyin;
-    struct mitdbl   *pMIT;
-    struct ieeedbl  *pIEEE;
-    ca_uint32_t *ptmp;
-    ca_uint32_t tmp;
-
-    pIEEE = (struct ieeedbl *)pNet;
-    pMIT = (struct mitdbl *)pHost;
-
-    /*
-     * Use internal buffer so the src and dest ptr
-     * can be identical
-     */
-    copyin = *pIEEE;
-    pIEEE = &copyin;
-
-    /*
-     * Byte swap from net order to host order
-     */
-    ptmp = (ca_uint32_t *) pIEEE;
-    tmp = dbr_htonl(ptmp[0]);
-    ptmp[0] = dbr_htonl(ptmp[1]);
-    ptmp[1] = tmp;
-
-    if( ((int)pIEEE->exp) > (DBLEXPMAXMIT + IEEE_DBL_SB) ){
-        pMIT->sign = pIEEE->sign; 
-        pMIT->exp = DBLEXPMAXMIT + MIT_DBL_SB; 
-        pMIT->mant1 = ~0; 
-        pMIT->mant2 = ~0; 
-        pMIT->mant3 = ~0; 
-        pMIT->mant4 = ~0; 
-    }
-    else if( ((int)pIEEE->exp) < (DBLEXPMINMIT + IEEE_DBL_SB) ){
-        pMIT->sign = 0; 
-        pMIT->exp = 0; 
-        pMIT->mant1 = 0; 
-        pMIT->mant2 = 0; 
-        pMIT->mant3 = 0; 
-        pMIT->mant4 = 0; 
-    }
-    else{
-        pMIT->sign = pIEEE->sign; 
-        pMIT->exp = ((int)pIEEE->exp)+(MIT_DBL_SB-IEEE_DBL_SB); 
-        pMIT->mant1 = pIEEE->mant1>>13; 
-        pMIT->mant2 = (pIEEE->mant1<<3) | (pIEEE->mant2>>29); 
-        pMIT->mant3 =  pIEEE->mant2>>13; 
-        pMIT->mant4 =  pIEEE->mant2<<3; 
-    }
-#endif
-} 
-
-/************************************************************************/
-/*      (THIS ASSUMES IEEE IS THE NETWORK FLOATING POINT FORMAT)        */
-/************************************************************************/
-
-struct ieeeflt{
-  unsigned      mant    :23;
-  unsigned      exp     :8;
-  unsigned      sign    :1;
-};
-
-/*      Exponent sign bias      */
-#define IEEE_SB         127
-
-/*      Conversion Range        */
-/*      -126<exp<127    with mantissa of form 1.mant                    */
-#define EXPMINIEEE      -126            /* min for norm # IEEE exponent */
-
-
-struct mitflt{
-    unsigned    mant1   :7;
-    unsigned    exp     :8;
-    unsigned    sign    :1;
-    unsigned    mant2   :16;
-};
-
-/*    Exponent sign bias      */
-# define        MIT_SB          129
-
-/*    Conversion Ranges       */
-/*    -128<exp<126    with mantissa of form 1.mant                    */
-# define        EXPMAXMIT       126     /* max MIT exponent             */
-# define        EXPMINMIT       -128    /* min MIT exponent             */
-
-/* 
- * (this includes mapping of fringe reals to zero or infinity) 
- * (byte swaps included in conversion 
- *
- * Uses internal buffer so the src and dest ptr
- * can be identical
- */
-void dbr_htonf(dbr_float_t *pHost, dbr_float_t *pNet)
-{
-#if defined(VMS)
-    cvt$convert_float(pHost, CVT$K_VAX_F ,
-                      pNet , CVT$K_IEEE_S,
-                      CVT$M_BIG_ENDIAN);
-#else
-    struct mitflt   *pMIT = (struct mitflt *) pHost;
-    struct ieeeflt  *pIEEE = (struct ieeeflt *) pNet;
-    long        exp,mant,sign;
-
-    sign = pMIT->sign;
-
-    if( ((int)pMIT->exp) < EXPMINIEEE + MIT_SB){
-        exp       = 0;
-        mant      = 0;
-        sign      = 0;
-    }
-    else{
-        exp = ((int)pMIT->exp)-MIT_SB+IEEE_SB;
-        mant = (pMIT->mant1<<16) | pMIT->mant2;
-    }
-    pIEEE->mant   = mant;
-    pIEEE->exp    = exp;
-    pIEEE->sign   = sign;
-    *(ca_uint32_t *)pIEEE = dbr_htonl(*(ca_uint32_t *)pIEEE);
-#endif
-}
-
-
-/*
- * sign must be forced to zero if the exponent is zero to prevent a reserved
- * operand fault- joh 9-13-90
- *
- * Uses internal buffer so the src and dest ptr
- * can be identical
- */
-void dbr_ntohf(dbr_float_t *pNet, dbr_float_t *pHost)
-{
-#if defined(VMS)
-    cvt$convert_float(pNet , CVT$K_IEEE_S,
-                      pHost, CVT$K_VAX_F ,
-                      CVT$M_BIG_ENDIAN);
-#else
-    struct mitflt *pMIT = (struct mitflt *) pHost;
-    struct ieeeflt *pIEEE = (struct ieeeflt *) pNet;
-    long exp,mant2,mant1,sign;
-
-    *(ca_uint32_t *)pIEEE = dbr_ntohl(*(ca_uint32_t *)pIEEE);
-    if( ((int)pIEEE->exp) > EXPMAXMIT + IEEE_SB){
-        sign      = pIEEE->sign;
-        exp       = EXPMAXMIT + MIT_SB;
-        mant2     = ~0;
-        mant1     = ~0;
-    }
-    else if( pIEEE->exp == 0){
-        sign      = 0;
-        exp       = 0;
-        mant2     = 0;
-        mant1     = 0;
-    }
-    else{
-        sign      = pIEEE->sign;
-        exp       = pIEEE->exp+MIT_SB-IEEE_SB;
-        mant2     = pIEEE->mant;
-        mant1     = pIEEE->mant>>(unsigned)16;
-    }
-    pMIT->exp      = exp;
-    pMIT->mant2    = mant2;
-    pMIT->mant1    = mant1;
-    pMIT->sign     = sign;
-#endif
-}
-
-
-#endif /*CA_FLOAT_MIT*/
-
-#if defined(CA_FLOAT_IEEE)
-
-/*
- * dbr_htond ()
- * performs only byte swapping
- */
-void dbr_htond (dbr_double_t *IEEEhost, dbr_double_t *IEEEnet)
-{
-#ifdef CA_LITTLE_ENDIAN
-    ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
-    ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-
-    /*
-     * byte swap to net order
-     * (assume that src and dest ptrs
-     * may be identical)
-     */    
-#ifndef _armv4l_
-    /* pure little endian */
-    ca_uint32_t tmp = pHost[0];
-    pNet[0] = dbr_htonl (pHost[1]);
-    pNet[1] = dbr_htonl (tmp);  
-#else
-    /* impure little endian, compatible with archaic ARM FP hardware */
-    pNet[0] = dbr_htonl (pHost[0]);
-    pNet[1] = dbr_htonl (pHost[1]);
-#endif
-
-#else
-    *IEEEnet = *IEEEhost;
-#endif
-}
-
-/*
- * dbr_ntohd ()
- * performs only byte swapping
- */
-void dbr_ntohd (dbr_double_t *IEEEnet, dbr_double_t *IEEEhost)
-{
-#ifdef CA_LITTLE_ENDIAN
-    ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
-    ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-
-    /*
-     * byte swap to net order
-     * (assume that src and dest ptrs
-     * may be identical)
-     */
-#ifndef _armv4l_
-     /* pure little endian */
-     ca_uint32_t tmp = pNet[0];
-     pHost[0] = dbr_ntohl (pNet[1]);
-     pHost[1] = dbr_ntohl (tmp); 
-#else
-    /* impure little endian, compatible with archaic ARM FP hardware */
-    pHost[0] = dbr_ntohl (pNet[0]);
-    pHost[1] = dbr_ntohl (pNet[1]);
-#endif
-
-#else
-    *IEEEhost = *IEEEnet;
-#endif
-}
-
-/*
- * dbr_ntohf ()
- * performs only byte swapping
- */
-void dbr_ntohf (dbr_float_t *IEEEnet, dbr_float_t *IEEEhost)
-{
-    ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
-    ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-
-    *pHost = dbr_ntohl (*pNet);
-}
-
-/*
- * dbr_htonf ()
- * performs only byte swapping
- */
-void dbr_htonf (dbr_float_t *IEEEhost, dbr_float_t *IEEEnet)
-{
-    ca_uint32_t *pHost = (ca_uint32_t *) IEEEhost;
-    ca_uint32_t *pNet = (ca_uint32_t *) IEEEnet;
-
-    *pNet = dbr_htonl (*pHost);
-}
-
-#endif /* IEEE float and little endian */
-
 /*  cvrt is (array of) (pointer to) (function returning) int */
-epicsShareDef CACVRTFUNC *cac_dbr_cvrt[] = {
+static CACVRTFUNCPTR cac_dbr_cvrt[] = {
     cvrt_string,
     cvrt_short,
     cvrt_float,
@@ -1750,5 +1416,24 @@ epicsShareDef CACVRTFUNC *cac_dbr_cvrt[] = {
     cvrt_string
 };
 
-#endif /* CONVERSION_REQUIRED */
+#endif /* EPICS_CONVERSION_REQUIRED */
+
+int caNetConvert ( unsigned type, const void *pSrc, void *pDest, 
+                  int hton, arrayElementCount count )
+{
+#   ifdef EPICS_CONVERSION_REQUIRED
+        if ( type >= NELEMENTS ( cac_dbr_cvrt ) ) {
+            return ECA_BADTYPE;
+        }        
+        ( * cac_dbr_cvrt [ type ] ) ( pSrc, pDest, hton, count );
+#   else
+        if ( INVALID_DB_REQ ( type ) ) {
+            return ECA_BADTYPE;
+        }        
+        if ( pSrc != pDest ) {
+            memcpy ( pDest, pSrc, count );
+        }
+#   endif
+    return ECA_NORMAL;
+}
 

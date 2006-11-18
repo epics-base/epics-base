@@ -293,7 +293,7 @@ inline bool comBuf::push ( const epicsFloat32 & value )
         return false;
     }
     // allow native floating point formats to be converted to IEEE
-    osiConvertToWireFormat ( value, & this->buf[index] );
+    WireSetFloat32 ( value, & this->buf[index] );
     this->nextWriteIndex = index + sizeof ( value );
     return true;
 }
@@ -306,7 +306,7 @@ inline bool comBuf::push ( const epicsFloat64 & value )
         return false;
     }
     // allow native floating point formats to be converted to IEEE
-    osiConvertToWireFormat ( value, & this->buf[index] );
+    WireSetFloat64 ( value, & this->buf[index] );
     this->nextWriteIndex = index + sizeof ( value );
     return true;
 }

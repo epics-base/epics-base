@@ -117,8 +117,8 @@ int main ( int argc, char ** argv )
 
     memset ( (char *) &addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_ANY ); 
-    addr.ia.sin_port = epicsHTON16 ( 0 ); // any port
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+    addr.ia.sin_port = htons ( 0 );  // any port
     status = bind ( sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
@@ -151,7 +151,8 @@ int main ( int argc, char ** argv )
                             &addr.sa, &addrSize );
         if ( status >= static_cast <int> ( sizeof ( *pCurMsg ) ) ) {
             pCurMsg = reinterpret_cast < caHdr * > ( buf );
-            if ( epicsHTON16 ( pCurMsg->m_cmmd ) == REPEATER_CONFIRM ) {
+            epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( pCurMsg->m_cmmd );
+            if ( cmmd == REPEATER_CONFIRM ) {
                 break;
             }
         }
@@ -199,13 +200,15 @@ int main ( int argc, char ** argv )
         unsigned byteCount = static_cast <unsigned> ( status );
         pCurMsg = reinterpret_cast < const caHdr * > ( ( pCurBuf = buf ) );
         while ( byteCount ) {
-            size_t msgSize = epicsNTOH32 ( pCurMsg->m_postsize ) + sizeof (*pCurMsg) ;
+            AlignedWireRef < const epicsUInt16 > pstSize ( pCurMsg->m_postsize );
+            size_t msgSize = pstSize + sizeof ( *pCurMsg ) ;
             if ( msgSize > byteCount ) {
                 errlogPrintf ( "CASW: udp input protocol violation\n" );
                 break;
             }
 
-            if ( epicsNTOH16 ( pCurMsg->m_cmmd ) == CA_PROTO_RSRV_IS_UP ) {
+            epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( pCurMsg->m_cmmd );
+            if ( cmmd == CA_PROTO_RSRV_IS_UP ) {
                 bool anomaly = false;
                 epicsTime previousTime;
                 struct sockaddr_in ina;
@@ -216,12 +219,12 @@ int main ( int argc, char ** argv )
                  *
                  * old servers:
                  *   1) set this field to one of the ip addresses of the host _or_
-                 *   2) set this field to epicsHTON32(INADDR_ANY)
+                 *   2) set this field to INADDR_ANY
                  * new servers:
-                 *   always set this field to epicsHTON32(INADDR_ANY)
+                 *   always set this field to INADDR_ANY
                  *
                  * clients always assume that if this
-                 * field is set to something that isnt epicsHTON32(INADDR_ANY)
+                 * field is set to something that isnt INADDR_ANY
                  * then it is the overriding IP address of the server.
                  */
                 ina.sin_family = AF_INET;
@@ -235,7 +238,7 @@ int main ( int argc, char ** argv )
                      * old servers dont supply this and the
                      * default port must be assumed
                      */
-                    ina.sin_port = epicsNTOH16 ( serverPort );
+                    ina.sin_port = htons ( serverPort );
                 }
 
                 ca_uint32_t beaconNumber = ntohl ( pCurMsg->m_cid );

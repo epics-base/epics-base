@@ -459,7 +459,7 @@ cacChannel & cac::createChannel (
 
     if ( ! this->pudpiiu ) {
         this->pudpiiu = new udpiiu ( 
-            this->timerQueue, this->cbMutex, 
+            guard, this->timerQueue, this->cbMutex, 
             this->mutex, this->notify, *this );
     }
 
@@ -613,14 +613,6 @@ int cac::printf ( epicsGuard < epicsMutex > & callbackControl,
     int status = this->vPrintf ( callbackControl, pformat, theArgs );
     va_end ( theArgs );
     return status;
-}
-
-void cac::writeRequest ( 
-    epicsGuard < epicsMutex > & guard, nciu & chan, unsigned type, 
-    arrayElementCount nElem, const void * pValue )
-{
-    guard.assertIdenticalMutex ( this->mutex );
-    chan.getPIIU(guard)->writeRequest ( guard, chan, type, nElem, pValue );
 }
 
 netWriteNotifyIO & cac::writeNotifyRequest ( 
@@ -794,20 +786,6 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
         caStatus = ECA_NORMAL;
     }
 
-    /*
-     * convert the data buffer from net
-     * format to host format
-     */
-#   ifdef CONVERSION_REQUIRED 
-        if ( hdr.m_dataType < NELEMENTS ( cac_dbr_cvrt ) ) {
-            ( *cac_dbr_cvrt[ hdr.m_dataType ] ) (
-                 pMsgBdy, pMsgBdy, false, hdr.m_count);
-        }
-        else {
-            caStatus = ECA_BADTYPE;
-        }
-#   endif
-
     baseNMIU * pmiu = this->ioTable.remove ( hdr.m_available );
     //
     // The IO destroy routines take the call back mutex 
@@ -822,6 +800,14 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
         if ( pSubscr ) {
             // this does *not* assign a new resource id
             this->ioTable.add ( *pmiu );
+        }
+        if ( caStatus == ECA_NORMAL ) {
+            /*
+             * convert the data buffer from net
+             * format to host format
+             */
+            caStatus = caNetConvert ( 
+                hdr.m_dataType, pMsgBdy, pMsgBdy, false, hdr.m_count );
         }
         if ( caStatus == ECA_NORMAL ) {
             pmiu->completion ( guard, *this,
@@ -862,19 +848,6 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
         caStatus = ECA_NORMAL;
     }
 
-    /*
-     * convert the data buffer from net format to host format
-     */
-#   ifdef CONVERSION_REQUIRED 
-        if ( hdr.m_dataType < NELEMENTS ( cac_dbr_cvrt ) ) {
-            ( *cac_dbr_cvrt [ hdr.m_dataType ] )(
-                 pMsgBdy, pMsgBdy, false, hdr.m_count);
-        }
-        else {
-            caStatus = epicsHTON32 ( ECA_BADTYPE );
-        }
-#   endif
-
     //
     // The IO destroy routines take the call back mutex 
     // when uninstalling and deleting the baseNMIU so there is 
@@ -883,6 +856,13 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     //
     baseNMIU * pmiu = this->ioTable.lookup ( hdr.m_available );
     if ( pmiu ) {
+        /*
+         * convert the data buffer from net format to host format
+         */
+        if ( caStatus == ECA_NORMAL ) {
+            caStatus = caNetConvert ( 
+                hdr.m_dataType, pMsgBdy, pMsgBdy, false, hdr.m_count );
+        }
         if ( caStatus == ECA_NORMAL ) {
             pmiu->completion ( guard, *this,
                 hdr.m_dataType, hdr.m_count, pMsgBdy );
@@ -1004,12 +984,12 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
         return false;
     }
     caHdrLargeArray req;
-    req.m_cmmd = epicsNTOH16 ( pReq->m_cmmd );
-    req.m_postsize = epicsNTOH16 ( pReq->m_postsize );
-    req.m_dataType = epicsNTOH16 ( pReq->m_dataType );
-    req.m_count = epicsNTOH16 ( pReq->m_count );
-    req.m_cid = epicsNTOH32 ( pReq->m_cid );
-    req.m_available = epicsNTOH32 ( pReq->m_available );
+    req.m_cmmd = AlignedWireRef < const epicsUInt16 > ( pReq->m_cmmd );
+    req.m_postsize = AlignedWireRef < const epicsUInt16 > ( pReq->m_postsize );
+    req.m_dataType = AlignedWireRef < const epicsUInt16 > ( pReq->m_dataType );
+    req.m_count = AlignedWireRef < const epicsUInt16 > ( pReq->m_count );
+    req.m_cid = AlignedWireRef < const epicsUInt32 > ( pReq->m_cid );
+    req.m_available = AlignedWireRef < const epicsUInt32 > ( pReq->m_available );
     const ca_uint32_t * pLW = reinterpret_cast < const ca_uint32_t * > ( pReq + 1 );
     if ( req.m_postsize == 0xffff ) {
         static const unsigned annexSize = 
@@ -1018,8 +998,8 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
         if ( hdr.m_postsize < bytesSoFar ) {
             return false;
         }
-        req.m_postsize = epicsNTOH32 ( pLW[0] );
-        req.m_count = epicsNTOH32 ( pLW[1] );
+        req.m_postsize = AlignedWireRef < const epicsUInt32 > ( pLW[0] );
+        req.m_count = AlignedWireRef < const epicsUInt32 > ( pLW[1] );
         pLW += 2u;
     }
 

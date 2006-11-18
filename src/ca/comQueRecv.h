@@ -78,30 +78,34 @@ inline epicsInt32 comQueRecv::popInt32 ()
     return static_cast < epicsInt32 > ( this->popUInt32() );
 }
 
-// this needs to be optimized, but since it is currently not used ...
+// this has been optimized to aligned convert, maybe more could be done,
+// but since it is currently not used ...
 inline epicsFloat32 comQueRecv::popFloat32 ()
 {
-    epicsFloat32 tmp;
-    epicsUInt8 wire[ sizeof ( tmp ) ];
+    union {
+        epicsUInt8 _wire[ sizeof ( epicsFloat32 ) ];
+        epicsFloat32 _fp;
+    } tmp;
     // optimizer will unroll this loop
-    for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
-        wire[i] = this->popUInt8 ();
+    for ( unsigned i = 0u; i < sizeof ( tmp._wire ); i++ ) {
+        tmp._wire[i] = this->popUInt8 ();
     }
-    osiConvertFromWireFormat ( tmp, wire );
-    return tmp;
+    return AlignedWireRef < epicsFloat32 > ( tmp._fp );
 }
 
-// this needs to be optimized, but since it is currently not used ...
+// this has been optimized to aligned convert, maybe more could be done,
+// but since it is currently not used ...
 inline epicsFloat64 comQueRecv::popFloat64 ()
 {
-    epicsFloat64 tmp;
-    epicsUInt8 wire[ sizeof ( tmp ) ];
+    union {
+        epicsUInt8 _wire[ sizeof ( epicsFloat64 ) ];
+        epicsFloat64 _fp;
+    } tmp;
     // optimizer will unroll this loop
-    for ( unsigned i = 0u; i < sizeof ( tmp ); i++ ) {
-        wire[i] = this->popUInt8 ();
+    for ( unsigned i = 0u; i < sizeof ( tmp._wire ); i++ ) {
+        tmp._wire[i] = this->popUInt8 ();
     }
-    osiConvertFromWireFormat ( tmp, wire );
-    return tmp;
+    return AlignedWireRef < epicsFloat64 > ( tmp._fp );
 }
 
 #endif // ifndef comQueRecvh

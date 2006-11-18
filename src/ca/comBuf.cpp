@@ -139,7 +139,7 @@ unsigned comBuf::push ( const epicsFloat32 * pValue, unsigned nElem )
     }
     for ( unsigned i = 0u; i < nElem; i++ ) {
         // allow native floating point formats to be converted to IEEE
-        osiConvertToWireFormat ( pValue[i], &this->buf[index] );
+        WireSetFloat32 ( pValue[i], &this->buf[index] );
         index += sizeof ( *pValue );
     }
     this->nextWriteIndex = index;
@@ -156,7 +156,7 @@ unsigned comBuf::push ( const epicsFloat64 * pValue, unsigned nElem )
     }
     for ( unsigned i = 0u; i < nElem; i++ ) {
         // allow native floating point formats to be converted to IEEE
-        osiConvertToWireFormat ( pValue[i], &this->buf[index] );
+        WireSetFloat64 ( pValue[i], &this->buf[index] );
         index += sizeof ( *pValue );
     }
     this->nextWriteIndex = index;

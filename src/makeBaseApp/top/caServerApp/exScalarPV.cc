@@ -75,7 +75,7 @@ void exScalarPV::scan()
     limit = (float) this->info.getLopr ();
     newValue = tsMax ( newValue, limit );
     *pDD = newValue;
-    aitTimeStamp gddts = this->currentTime;
+    aitTimeStamp gddts ( this->currentTime );
     pDD->setTimeStamp ( & gddts );
     status = this->update ( *pDD );
     if (status!=S_casApp_success) {

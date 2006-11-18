@@ -345,8 +345,7 @@ void nciu::write (
     if ( type == DBR_STRING ) {
         nciu::stringVerify ( (char *) pValue, countIn );
     }
-
-    this->cacCtx.writeRequest ( guard, *this, type, countIn, pValue );
+    this->piiu->writeRequest ( guard, *this, type, countIn, pValue );
 }
 
 cacChannel::ioStatus nciu::write ( 

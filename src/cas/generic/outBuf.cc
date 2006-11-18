@@ -104,12 +104,14 @@ caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
             return status;
         }
 
-        pHdr->m_cmmd = epicsHTON16 ( response );
-        pHdr->m_dataType = epicsHTON16 ( dataType );
-        pHdr->m_cid = epicsHTON32 ( cid );
-        pHdr->m_available = epicsHTON32 ( responseSpecific );
-        pHdr->m_postsize = epicsHTON16 ( static_cast < epicsUInt16 > ( alignedPayloadSize ) );
-        pHdr->m_count = epicsHTON16 ( static_cast < epicsUInt16 > ( nElem ) );
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_cmmd ) = response;
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_dataType ) = dataType;
+        AlignedWireRef < epicsUInt32 > ( pHdr->m_cid ) = cid;
+        AlignedWireRef < epicsUInt32 > ( pHdr->m_available ) = responseSpecific;
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_postsize ) = 
+            static_cast < epicsUInt16 > ( alignedPayloadSize );
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_count ) = 
+            static_cast < epicsUInt16 > ( nElem );
         pPayload = reinterpret_cast < char * > ( pHdr + 1 );
     }
     else {
@@ -122,15 +124,17 @@ caStatus outBuf::copyInHeader ( ca_uint16_t response, ca_uint32_t payloadSize,
             return status;
         }
 
-        pHdr->m_cmmd = epicsHTON16 ( response );
-        pHdr->m_dataType = epicsHTON16 ( dataType );
-        pHdr->m_cid = epicsHTON32 ( cid );
-        pHdr->m_available = epicsHTON32 ( responseSpecific );
-        pHdr->m_postsize = epicsHTON16 ( 0xffff );
-        pHdr->m_count = epicsHTON16 ( 0 );
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_cmmd ) = response;
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_dataType ) = dataType;
+        AlignedWireRef < epicsUInt32 > ( pHdr->m_cid ) = cid;
+        AlignedWireRef < epicsUInt32 > ( pHdr->m_available ) = responseSpecific;
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_postsize ) = 0xffff;
+        AlignedWireRef < epicsUInt16 > ( pHdr->m_count ) = 0;
         ca_uint32_t * pLW = reinterpret_cast < ca_uint32_t * > ( pHdr + 1 );
-        pLW[0] = epicsHTON32 ( alignedPayloadSize );
-        pLW[1] = epicsHTON32 ( nElem );
+        AlignedWireRef < epicsUInt32 > sizeWireRef ( pLW[0] );
+        sizeWireRef = alignedPayloadSize;
+        AlignedWireRef < epicsUInt32 > nElemWireRef ( pLW[1] );
+        nElemWireRef= nElem;
         pPayload = reinterpret_cast < char * > ( pLW + 2 );
     }
 
@@ -159,13 +163,13 @@ void outBuf::commitMsg ()
     const caHdr * mp = ( caHdr * ) & this->pBuf[ this->stack ];
     if ( mp->m_postsize == 0xffff || mp->m_count == 0xffff ) {
         const ca_uint32_t *pLW = reinterpret_cast <const ca_uint32_t *> ( mp + 1 );
-        payloadSize = epicsNTOH32 ( pLW[0] );
-        elementCount = epicsNTOH32 ( pLW[1] );
+        payloadSize = AlignedWireRef < const epicsUInt32 > ( pLW[0] );
+        elementCount = AlignedWireRef < const epicsUInt32 > ( pLW[1] );
         hdrSize = sizeof ( caHdr ) + 2 * sizeof ( ca_uint32_t );
     }
     else {
-        payloadSize = epicsNTOH16 ( mp->m_postsize );
-        elementCount = epicsNTOH16 ( mp->m_count );
+        payloadSize = AlignedWireRef < const epicsUInt16 > ( mp->m_postsize );
+        elementCount = AlignedWireRef < const epicsUInt16 > ( mp->m_count );
         hdrSize = sizeof ( caHdr );
     }
 
@@ -173,12 +177,15 @@ void outBuf::commitMsg ()
 
     unsigned debugLevel = this->client.getDebugLevel();
     if ( debugLevel ) {
-        if ( mp->m_cmmd != CA_PROTO_VERSION || debugLevel > 2 ) {
+        epicsUInt16 cmmd = AlignedWireRef < const epicsUInt16 > ( mp->m_cmmd );
+        if ( cmmd != CA_PROTO_VERSION || debugLevel > 2 ) {
+            epicsUInt16 type = AlignedWireRef < const epicsUInt16 > ( mp->m_dataType );
+            epicsUInt32 cid = AlignedWireRef < const epicsUInt32 > ( mp->m_cid );
+            epicsUInt32 avail = AlignedWireRef < const epicsUInt32 > ( mp->m_available );
             fprintf ( stderr,
                 "CAS Response: cmd=%d id=%x typ=%d cnt=%d psz=%d avail=%x outBuf ptr=%p \n",
-                epicsNTOH16 ( mp->m_cmmd ), epicsNTOH32 ( mp->m_cid ), 
-                epicsNTOH16 ( mp->m_dataType ), elementCount, payloadSize,
-                epicsNTOH32 ( mp->m_available ), static_cast <const void *> ( mp ) );
+                cmmd, cid, type, elementCount, payloadSize, avail, 
+                static_cast < const void * > ( mp ) );
         }
     }
 }
@@ -192,12 +199,14 @@ void outBuf::commitMsg ( ca_uint32_t reducedPayloadSize )
     reducedPayloadSize = CA_MESSAGE_ALIGN ( reducedPayloadSize );
     if ( mp->m_postsize == 0xffff || mp->m_count == 0xffff ) {
         ca_uint32_t *pLW = reinterpret_cast <ca_uint32_t *> ( mp + 1 );
-        assert ( reducedPayloadSize <= epicsNTOH32 ( pLW[0] ) );
-        pLW[0] = epicsHTON32 ( reducedPayloadSize );
+        AlignedWireRef < epicsUInt32 > payloadSizeExtended ( pLW[0] );
+        assert ( reducedPayloadSize <= payloadSizeExtended );
+        payloadSizeExtended = reducedPayloadSize;
     }
     else {
-        assert ( reducedPayloadSize <= epicsNTOH16 ( mp->m_postsize ) );
-        mp->m_postsize = epicsHTON16 ( static_cast <ca_uint16_t> ( reducedPayloadSize ) );
+        AlignedWireRef < epicsUInt16 > payloadSize ( mp->m_postsize );
+        assert ( reducedPayloadSize <= payloadSize );
+        payloadSize = static_cast < ca_uint16_t > ( reducedPayloadSize );
     }
     this->commitMsg ();
 }

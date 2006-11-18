@@ -154,8 +154,8 @@ caStatus casStrmClient::processMsg ()
                 rawMP = this->in.msgPtr ();
 	            memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
 
-                ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
-                ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
+                ca_uint32_t payloadSize = AlignedWireRef < epicsUInt16 > ( smallHdr.m_postsize );
+                ca_uint32_t nElem = AlignedWireRef < epicsUInt16 > ( smallHdr.m_count );
                 if ( payloadSize != 0xffff && nElem != 0xffff ) {
                     hdrSize = sizeof ( smallHdr );
                 }
@@ -170,16 +170,16 @@ caStatus casStrmClient::processMsg ()
                     // alignment problems
                     //
                     memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
-                    payloadSize = epicsNTOH32 ( LWA[0] );
-                    nElem = epicsNTOH32 ( LWA[1] );
+                    payloadSize = AlignedWireRef < epicsUInt32 > ( LWA[0] );
+                    nElem = AlignedWireRef < epicsUInt32 > ( LWA[1] );
                 }
 
-                msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
+                msgTmp.m_cmmd = AlignedWireRef < epicsUInt16 > ( smallHdr.m_cmmd );
                 msgTmp.m_postsize = payloadSize;
-                msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
+                msgTmp.m_dataType = AlignedWireRef < epicsUInt16 > ( smallHdr.m_dataType );
                 msgTmp.m_count = nElem;
-                msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
-                msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
+                msgTmp.m_cid = AlignedWireRef < epicsUInt32 > ( smallHdr.m_cid );
+                msgTmp.m_available = AlignedWireRef < epicsUInt32 > ( smallHdr.m_available );
 
                 // disconnect clients that dont send 8 byte aligned payloads
                 if ( payloadSize & 0x7 ) {
@@ -520,10 +520,12 @@ caStatus casStrmClient::readResponse ( epicsGuard < casClientMutex > & guard,
 		return this->sendErrWithEpicsStatus ( 
             guard, & msg, pChan->getCID(), S_cas_badBounds, ECA_GETFAIL );
 	}
-#ifdef CONVERSION_REQUIRED
-	( * cac_dbr_cvrt[msg.m_dataType] )
-		( pPayload, pPayload, true, msg.m_count );
-#endif
+    int cacStatus = caNetConvert ( 
+        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+	if ( cacStatus != ECA_NORMAL ) {
+		return this->sendErrWithEpicsStatus ( 
+            guard, & msg, pChan->getCID(), S_cas_internal, cacStatus );
+	}
     if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
 		unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
 	    this->out.commitMsg ( reducedPayloadSize );
@@ -621,10 +623,12 @@ caStatus casStrmClient::readNotifyResponse ( epicsGuard < casClientMutex > & gua
         return this->readNotifyFailureResponse ( guard, msg, ECA_NOCONVERT );
 	}
 
-#ifdef CONVERSION_REQUIRED
-	( * cac_dbr_cvrt[ msg.m_dataType ] )
-		( pPayload, pPayload, true, msg.m_count );
-#endif
+    int cacStatus = caNetConvert ( 
+        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+	if ( cacStatus != ECA_NORMAL ) {
+		return this->sendErrWithEpicsStatus ( 
+            guard, & msg, pChan->getCID(), S_cas_internal, cacStatus );
+	}
 
 	if ( msg.m_dataType == DBR_STRING && msg.m_count == 1u ) {
 		unsigned reducedPayloadSize = strlen ( static_cast < char * > ( pPayload ) ) + 1u;
@@ -854,11 +858,12 @@ caStatus casStrmClient::monitorResponse (
         return monitorFailureResponse ( guard, msg, ECA_NOCONVERT );
     }
 
-#ifdef CONVERSION_REQUIRED
-	/* use type as index into conversion jumptable */
-	(* cac_dbr_cvrt[msg.m_dataType])
-		( pPayload, pPayload, true,  msg.m_count );
-#endif
+    int cacStatus = caNetConvert ( 
+        msg.m_dataType, pPayload, pPayload, true, msg.m_count );
+	if ( cacStatus != ECA_NORMAL ) {
+		return this->sendErrWithEpicsStatus ( 
+            guard, & msg, chan.getCID(), S_cas_internal, cacStatus );
+	}
 
 	//
 	// force string message size to be the true size 
@@ -1602,7 +1607,7 @@ caStatus casStrmClient::eventAddAction (
 	// place monitor mask in correct byte order
 	//
 	casEventMask mask;
-	ca_uint16_t caProtoMask = epicsNTOH16 (pMonInfo->m_mask);
+	ca_uint16_t caProtoMask = AlignedWireRef < epicsUInt16 > ( pMonInfo->m_mask );
 	if (caProtoMask&DBE_VALUE) {
 		mask |= this->getCAS().valueEventMask();
 	}
@@ -1966,25 +1971,21 @@ caStatus casStrmClient::write()
 	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	caStatus status;
 
-	//
 	// no puts via compound types (for now)
-	//
 	if (dbr_value_offset[pHdr->m_dataType]) {
 		return S_cas_badType;
 	}
 
-#ifdef CONVERSION_REQUIRED
     // dont byte swap twice 
     if ( this->payloadNeedsByteSwap ) {
-	    /* use type as index into conversion jumptable */
-	    (* cac_dbr_cvrt[pHdr->m_dataType])
-		    ( this->ctx.getData(),
-		    this->ctx.getData(),
-		    false,       /* net -> host format */
-		    pHdr->m_count);
+        int cacStatus = caNetConvert ( 
+            pHdr->m_dataType, this->ctx.getData(), this->ctx.getData(), 
+            false, pHdr->m_count );
+	    if ( cacStatus != ECA_NORMAL ) {
+		    return S_cas_badType;
+	    }
         this->payloadNeedsByteSwap = false;
     }
-#endif
 
 	//
 	// clear async IO flag

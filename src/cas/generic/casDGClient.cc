@@ -289,7 +289,7 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
             // server's port when it is a redirect).
             //
             if (ina.sin_port==0u) {
-                ina.sin_port = epicsHTON16 (static_cast <unsigned short> (CA_SERVER_PORT));
+                ina.sin_port = htons ( CA_SERVER_PORT );
             }
         }
         else {
@@ -307,17 +307,17 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
             // o disconnect UDP socket from the destination IP
             //
             if ( ina.sin_addr.s_addr == INADDR_ANY ) {
-                ina.sin_addr.s_addr = epicsNTOH32 (~0U);
+                ina.sin_addr.s_addr = htonl ( ~0U );
             }
         }
-        serverAddr = epicsNTOH32 (ina.sin_addr.s_addr);
-        serverPort = epicsNTOH16 (ina.sin_port);
+        serverAddr = ntohl ( ina.sin_addr.s_addr );
+        serverPort = ntohs ( ina.sin_port );
     }
     else {
         caNetAddr addr = this->serverAddress ();
         struct sockaddr_in inetAddr = addr.getSockIP();
         serverAddr = ~0U;
-        serverPort = epicsNTOH16 ( inetAddr.sin_port );
+        serverPort = ntohs ( inetAddr.sin_port );
     }
     
     ca_uint16_t * pMinorVersion;
@@ -332,7 +332,8 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
     // This value is ignored by earlier clients. 
     //
     if ( status == S_cas_success ) {
-        *pMinorVersion = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
+        AlignedWireRef < epicsUInt16 > tmp ( *pMinorVersion );
+        tmp = CA_MINOR_PROTOCOL_REVISION;
         this->out.commitMsg ();
     }
     
@@ -391,9 +392,9 @@ void casDGClient::sendBeacon ( ca_uint32_t beaconNumber )
 	// create the message
 	//
 	memset ( & buf, 0, sizeof ( msg ) );
-    msg.m_cmmd = epicsHTON16 ( CA_PROTO_RSRV_IS_UP );
-    msg.m_dataType = epicsHTON16 ( CA_MINOR_PROTOCOL_REVISION );
-    msg.m_cid = epicsHTON32 ( beaconNumber );
+    AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = CA_PROTO_RSRV_IS_UP;
+    AlignedWireRef < epicsUInt16 > ( msg.m_dataType ) = CA_MINOR_PROTOCOL_REVISION;
+    AlignedWireRef < epicsUInt32 > ( msg.m_cid ) = beaconNumber;
 
 	//
 	// send it to all addresses on the beacon list,
@@ -754,8 +755,8 @@ caStatus casDGClient::processMsg ()
                 rawMP = this->in.msgPtr ();
 	            memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
 
-                ca_uint32_t payloadSize = epicsNTOH16 ( smallHdr.m_postsize );
-                ca_uint32_t nElem = epicsNTOH16 ( smallHdr.m_count );
+                ca_uint32_t payloadSize = AlignedWireRef < epicsUInt16 > ( smallHdr.m_postsize );
+                ca_uint32_t nElem = AlignedWireRef < epicsUInt16 > ( smallHdr.m_count );
                 if ( payloadSize != 0xffff && nElem != 0xffff ) {
                     hdrSize = sizeof ( smallHdr );
                 }
@@ -770,16 +771,16 @@ caStatus casDGClient::processMsg ()
                     // alignment problems
                     //
                     memcpy ( LWA, rawMP + sizeof ( caHdr ), sizeof( LWA ) );
-                    payloadSize = epicsNTOH32 ( LWA[0] );
-                    nElem = epicsNTOH32 ( LWA[1] );
+                    payloadSize = AlignedWireRef < epicsUInt32 > ( LWA[0] );
+                    nElem = AlignedWireRef < epicsUInt32 > ( LWA[1] );
                 }
 
-                msgTmp.m_cmmd = epicsNTOH16 ( smallHdr.m_cmmd );
+                msgTmp.m_cmmd = AlignedWireRef < epicsUInt16 > ( smallHdr.m_cmmd );
                 msgTmp.m_postsize = payloadSize;
-                msgTmp.m_dataType = epicsNTOH16 ( smallHdr.m_dataType );
+                msgTmp.m_dataType = AlignedWireRef < epicsUInt16 > ( smallHdr.m_dataType );
                 msgTmp.m_count = nElem;
-                msgTmp.m_cid = epicsNTOH32 ( smallHdr.m_cid );
-                msgTmp.m_available = epicsNTOH32 ( smallHdr.m_available );
+                msgTmp.m_cid = AlignedWireRef < epicsUInt32 > ( smallHdr.m_cid );
+                msgTmp.m_available = AlignedWireRef < epicsUInt32 > ( smallHdr.m_available );
 
                 if ( payloadSize & 0x7 ) {
                     status = this->sendErr ( 

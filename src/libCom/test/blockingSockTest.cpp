@@ -240,8 +240,8 @@ MAIN(blockingSockTest)
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
-    addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK ); 
-    addr.ia.sin_port = epicsHTON16 ( 5064 ); // CA
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
+    addr.ia.sin_port = htons ( 5064 ); // CA
 
     server srv ( addr );
     srv.start ();

@@ -18,7 +18,7 @@
 #include "callback.h"
 
 #ifdef __cplusplus
-	// for brain dead C++ compilers
+	/* for brain dead C++ compilers */
 	struct dbCommon;
 	struct putNotify;
     extern "C" {

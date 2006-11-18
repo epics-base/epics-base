@@ -80,9 +80,10 @@ typedef struct client {
   struct message_buffer recv;
   epicsMutexId          lock;
   epicsMutexId          putNotifyLock;
-  epicsMutexId          addrqLock;
+  epicsMutexId          chanListLock;
   epicsMutexId          eventqLock;
-  ELLLIST               addrq;
+  ELLLIST               chanList;
+  ELLLIST               chanPendingUpdateARList;
   ELLLIST               putNotifyQue;
   struct sockaddr_in    addr;
   epicsTimeStamp        time_at_last_send;
@@ -101,9 +102,14 @@ typedef struct client {
   char                  disconnect; /* disconnect detected */
 } client;
 
+enum rsrvChanState { 
+    rsrvCS_invalid,
+    rsrvCS_inService, 
+    rsrvCS_inServiceUpdatePendAR };
+
 /*
  * per channel structure 
- * (stored in addrq off of a client block)
+ * (stored in chanList or chanPendingUpdateARList off of a client block)
  */
 struct channel_in_use {
     ELLNODE node;
@@ -115,6 +121,7 @@ struct channel_in_use {
     epicsTimeStamp time_at_creation;   /* for UDP timeout */
     struct dbAddr addr;
     ASCLIENTPVT asClientPVT;
+    enum rsrvChanState state;
 };
 
 /*
@@ -188,7 +195,7 @@ struct client *create_tcp_client ( SOCKET sock );
 void destroy_tcp_client ( struct client * );
 void casAttachThreadToClient ( struct client * );
 int camessage ( struct client *client );
-void write_notify_reply ( void *pArg );
+void rsrv_extra_labor ( void * pArg );
 int rsrvCheckPut ( const struct channel_in_use *pciu );
 int rsrv_version_reply ( struct client *client );
 void rsrvFreePutNotify ( struct client *pClient, 

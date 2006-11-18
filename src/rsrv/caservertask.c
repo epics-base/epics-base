@@ -299,17 +299,54 @@ int epicsShareAPI rsrv_init (void)
     return RSRV_OK;
 }
 
+LOCAL unsigned countChanListBytes ( 
+    struct client *client, ELLLIST * pList )
+{
+    struct channel_in_use   * pciu;
+    unsigned                bytes_reserved = 0;
+
+    epicsMutexMustLock ( client->chanListLock );
+    pciu = ( struct channel_in_use * ) pList->node.next;
+    while ( pciu ) {
+        bytes_reserved += sizeof(struct channel_in_use);
+        bytes_reserved += sizeof(struct event_ext)*ellCount( &pciu->eventq );
+        bytes_reserved += rsrvSizeOfPutNotify ( pciu->pPutNotify );
+        pciu = ( struct channel_in_use * ) ellNext( &pciu->node );
+    }
+    epicsMutexUnlock ( client->chanListLock );
+
+    return bytes_reserved;
+}
+
+LOCAL void showChanList ( 
+    struct client * client, ELLLIST * pList )
+{
+    unsigned i = 0u;
+    struct channel_in_use * pciu;
+    epicsMutexMustLock ( client->chanListLock );
+    pciu = (struct channel_in_use *) pList->node.next;
+    while ( pciu ){
+        printf( "\t%s(%d%c%c)", 
+            pciu->addr.precord->name,
+            ellCount ( &pciu->eventq ),
+            asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
+            rsrvCheckPut ( pciu ) ? 'w': '-' );
+        pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
+        if(  ++i % 3u == 0u ) {
+            printf ( "\n" );
+        }
+    }
+    epicsMutexUnlock ( client->chanListLock );
+}
+
 /*
  *  log_one_client ()
  */
 LOCAL void log_one_client (struct client *client, unsigned level)
 {
-    int                     i;
-    struct channel_in_use   *pciu;
     char                    *pproto;
     double                  send_delay;
     double                  recv_delay;
-    unsigned                bytes_reserved;
     char                    *state[] = {"up", "down"};
     epicsTimeStamp          current;
     char                    clientHostName[256];
@@ -337,9 +374,10 @@ LOCAL void log_one_client (struct client *client, unsigned level)
         client->pUserName ? client->pUserName : "",
         CA_MAJOR_PROTOCOL_REVISION,
         client->minor_version_number,
-        ellCount(&client->addrq),
+        ellCount(&client->chanList) + 
+            ellCount(&client->chanPendingUpdateARList),
         client->priority );
-    if (level>=1) {
+    if ( level >= 1 ) {
         printf ("\tTask Id=%p, Socket FD=%d\n", 
             (void *) client->tid, client->sock); 
         printf( 
@@ -356,47 +394,26 @@ LOCAL void log_one_client (struct client *client, unsigned level)
             client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
     }
 
-    if (level>=2u) {
-        bytes_reserved = 0;
+    if ( level >= 2u ) {
+        unsigned bytes_reserved = 0;
         bytes_reserved += sizeof(struct client);
-
-        epicsMutexMustLock(client->addrqLock);
-        pciu = (struct channel_in_use *) client->addrq.node.next;
-        while (pciu){
-            bytes_reserved += sizeof(struct channel_in_use);
-            bytes_reserved += sizeof(struct event_ext)*ellCount(&pciu->eventq);
-            bytes_reserved += rsrvSizeOfPutNotify ( pciu->pPutNotify );
-            pciu = (struct channel_in_use *) ellNext(&pciu->node);
-        }
-        epicsMutexUnlock(client->addrqLock);
+        bytes_reserved += countChanListBytes ( 
+                            client, & client->chanList );
+        bytes_reserved += countChanListBytes ( 
+                        client, & client->chanPendingUpdateARList );
         printf( "\t%d bytes allocated\n", bytes_reserved);
-
-
-        epicsMutexMustLock(client->addrqLock);
-        pciu = (struct channel_in_use *) client->addrq.node.next;
-        i=0;
-        while (pciu){
-            printf( "\t%s(%d%c%c)", 
-                pciu->addr.precord->name,
-                ellCount(&pciu->eventq),
-                asCheckGet(pciu->asClientPVT)?'r':'-',
-                rsrvCheckPut(pciu)?'w':'-');
-            pciu = (struct channel_in_use *) ellNext(&pciu->node);
-            if( ++i % 3 == 0){
-                printf("\n");
-            }
-        }
-        epicsMutexUnlock(client->addrqLock);
+        showChanList ( client, & client->chanList );
+        showChanList ( client, & client->chanPendingUpdateARList );
         printf("\n");
     }
 
-    if (level >= 3u) {
+    if ( level >= 3u ) {
         printf( "\tSend Lock\n");
         epicsMutexShow(client->lock,1);
         printf( "\tPut Notify Lock\n");
         epicsMutexShow (client->putNotifyLock,1);
         printf( "\tAddress Queue Lock\n");
-        epicsMutexShow (client->addrqLock,1);
+        epicsMutexShow (client->chanListLock,1);
         printf( "\tEvent Queue Lock\n");
         epicsMutexShow (client->eventqLock,1);
         printf( "\tBlock Semaphore\n");
@@ -428,9 +445,7 @@ void epicsShareAPI casr (unsigned level)
         printf("No clients connected.\n");
     }
     while (client) {
-
         log_one_client(client, level);
-
         client = (struct client *) ellNext(&client->node);
     }
     UNLOCK_CLIENTQ
@@ -535,8 +550,8 @@ void destroy_client ( struct client *client )
         epicsMutexDestroy ( client->eventqLock );
     }
 
-    if ( client->addrqLock ) {
-        epicsMutexDestroy ( client->addrqLock );
+    if ( client->chanListLock ) {
+        epicsMutexDestroy ( client->chanListLock );
     }
 
     if ( client->putNotifyLock ) {
@@ -562,10 +577,64 @@ void destroy_client ( struct client *client )
     freeListFree ( rsrvClientFreeList, client );
 }
 
+LOCAL void destroyAllChannels ( 
+    struct client * client, ELLLIST * pList )
+{
+    if ( !client->chanListLock || !client->eventqLock ) {
+        return;
+    }
+
+    while ( TRUE ) {
+        struct event_ext        *pevext;
+        int                     status;
+        struct channel_in_use   *pciu;
+
+        epicsMutexMustLock ( client->chanListLock );
+        pciu = (struct channel_in_use *) ellGet ( pList );
+        epicsMutexUnlock ( client->chanListLock );
+
+        if ( ! pciu ) {
+            break;
+        }
+
+        while ( TRUE ) {
+            /*
+            * AS state change could be using this list
+            */
+            epicsMutexMustLock ( client->eventqLock );
+            pevext = (struct event_ext *) ellGet ( &pciu->eventq );
+            epicsMutexUnlock ( client->eventqLock );
+
+            if ( ! pevext ) {
+                break;
+            }
+
+            if ( pevext->pdbev ) {
+                db_cancel_event (pevext->pdbev);
+            }
+            freeListFree (rsrvEventFreeList, pevext);
+        }
+        rsrvFreePutNotify ( client, pciu->pPutNotify );
+        LOCK_CLIENTQ;
+        status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
+        rsrvChannelCount--;
+        UNLOCK_CLIENTQ;
+        if ( status != S_bucket_success ) {
+            errPrintf ( status, __FILE__, __LINE__, 
+                "Bad id=%d at close", pciu->sid);
+        }
+        status = asRemoveClient(&pciu->asClientPVT);
+        if ( status && status != S_asLib_asNotActive ) {
+            printf ( "bad asRemoveClient() status was %x \n", status );
+            errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
+        }
+
+        freeListFree ( rsrvChanFreeList, pciu );
+    }
+}
+
 void destroy_tcp_client ( struct client *client )
 {
-    struct event_ext        *pevext;
-    struct channel_in_use   *pciu;
     int                     status;
 
     if ( CASDEBUG > 0 ) {
@@ -592,51 +661,8 @@ void destroy_tcp_client ( struct client *client )
         assert ( ! status );
     }
 
-    if ( client->addrqLock && client->eventqLock ) {
-        while ( TRUE ) {
-            epicsMutexMustLock ( client->addrqLock );
-            pciu = (struct channel_in_use *) ellGet ( & client->addrq );
-            epicsMutexUnlock ( client->addrqLock );
-
-            if ( ! pciu ) {
-                break;
-            }
-
-            while ( TRUE ) {
-                /*
-                * AS state change could be using this list
-                */
-                epicsMutexMustLock ( client->eventqLock );
-
-                pevext = (struct event_ext *) ellGet ( &pciu->eventq );
-                epicsMutexUnlock ( client->eventqLock );
-                if ( ! pevext ) {
-                    break;
-                }
-
-                if ( pevext->pdbev ) {
-                    db_cancel_event (pevext->pdbev);
-                }
-                freeListFree (rsrvEventFreeList, pevext);
-            }
-            rsrvFreePutNotify ( client, pciu->pPutNotify );
-            LOCK_CLIENTQ;
-            status = bucketRemoveItemUnsignedId ( pCaBucket, &pciu->sid);
-            rsrvChannelCount--;
-            UNLOCK_CLIENTQ;
-            if ( status != S_bucket_success ) {
-                errPrintf ( status, __FILE__, __LINE__, 
-                    "Bad id=%d at close", pciu->sid);
-            }
-            status = asRemoveClient(&pciu->asClientPVT);
-            if ( status && status != S_asLib_asNotActive ) {
-                printf ( "bad asRemoveClient() status was %x \n", status );
-                errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
-            }
-
-            freeListFree ( rsrvChanFreeList, pciu );
-        }
-    }
+    destroyAllChannels ( client, & client->chanList );
+    destroyAllChannels ( client, & client->chanPendingUpdateARList );
 
     if ( client->evuser ) {
         db_close_events (client->evuser);
@@ -679,18 +705,19 @@ struct client * create_client ( SOCKET sock, int proto )
     client->blockSem = epicsEventCreate ( epicsEventEmpty );
     client->lock = epicsMutexCreate();
     client->putNotifyLock = epicsMutexCreate();
-    client->addrqLock = epicsMutexCreate();
+    client->chanListLock = epicsMutexCreate();
     client->eventqLock = epicsMutexCreate();
     if ( ! client->blockSem || ! client->lock || ! client->putNotifyLock ||
-        ! client->addrqLock || ! client->eventqLock ) {
+        ! client->chanListLock || ! client->eventqLock ) {
         destroy_client ( client );
         return NULL;
     }
 
     client->pUserName = NULL; 
     client->pHostName = NULL;     
-    ellInit ( &client->addrq );
-    ellInit ( &client->putNotifyQue );
+    ellInit ( & client->chanList );
+    ellInit ( & client->chanPendingUpdateARList );
+    ellInit ( & client->putNotifyQue );
     memset ( (char *)&client->addr, 0, sizeof (client->addr) );
     client->tid = 0;
 
@@ -861,7 +888,7 @@ struct client *create_tcp_client ( SOCKET sock )
         return NULL;
     }
 
-    status = db_add_extra_labor_event (client->evuser, write_notify_reply, client);
+    status = db_add_extra_labor_event ( client->evuser, rsrv_extra_labor, client );
     if (status != DB_EVENT_OK) {
         errlogPrintf("CAS: unable to setup the event facility\n");
         destroy_tcp_client (client);

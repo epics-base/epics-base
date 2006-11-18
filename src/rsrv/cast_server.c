@@ -57,20 +57,20 @@
  */
 LOCAL void clean_addrq()
 {
-    struct channel_in_use   *pciu;
-    struct channel_in_use   *pnextciu;
-    epicsTimeStamp        current;
-    double          delay;
-    double          maxdelay = 0;
-    unsigned        ndelete=0;
-    double          timeout = TIMEOUT;
-    int         s;
+    struct channel_in_use * pciu;
+    struct channel_in_use * pnextciu;
+    epicsTimeStamp current;
+    double delay;
+    double maxdelay = 0;
+    unsigned ndelete=0;
+    double timeout = TIMEOUT;
+    int s;
 
-    epicsTimeGetCurrent(&current);
+    epicsTimeGetCurrent ( &current );
 
-    epicsMutexMustLock(prsrv_cast_client->addrqLock);
+    epicsMutexMustLock ( prsrv_cast_client->chanListLock );
     pnextciu = (struct channel_in_use *) 
-            prsrv_cast_client->addrq.node.next;
+            prsrv_cast_client->chanList.node.next;
 
     while( (pciu = pnextciu) ) {
         pnextciu = (struct channel_in_use *)pciu->node.next;
@@ -78,7 +78,7 @@ LOCAL void clean_addrq()
         delay = epicsTimeDiffInSeconds(&current,&pciu->time_at_creation);
         if (delay > timeout) {
 
-            ellDelete(&prsrv_cast_client->addrq, &pciu->node);
+            ellDelete(&prsrv_cast_client->chanList, &pciu->node);
             LOCK_CLIENTQ;
             s = bucketRemoveItemUnsignedId (
                 pCaBucket,
@@ -86,14 +86,18 @@ LOCAL void clean_addrq()
             if(s){
                 errMessage (s, "Bad id at close");
             }
-            rsrvChannelCount--;
+            else {
+                rsrvChannelCount--;
+            }
             UNLOCK_CLIENTQ;
-            freeListFree(rsrvChanFreeList, pciu);
-            ndelete++;
+            if ( ! s ) {
+                freeListFree(rsrvChanFreeList, pciu);
+                ndelete++;
+            }
             if(delay>maxdelay) maxdelay = delay;
         }
     }
-    epicsMutexUnlock(prsrv_cast_client->addrqLock);
+    epicsMutexUnlock ( prsrv_cast_client->chanListLock );
 
 #   ifdef DEBUG
     if(ndelete){
@@ -262,7 +266,7 @@ void cast_server(void *pParm)
             }
 
             if (CASDEBUG>2)
-                count = ellCount (&prsrv_cast_client->addrq);
+                count = ellCount (&prsrv_cast_client->chanList);
 
             status = camessage ( prsrv_cast_client );
             if(status == RSRV_OK){
@@ -285,10 +289,10 @@ void cast_server(void *pParm)
             }
 
             if (CASDEBUG>2) {
-                if ( ellCount (&prsrv_cast_client->addrq) ) {
+                if ( ellCount (&prsrv_cast_client->chanList) ) {
                     errlogPrintf ("CAS: Fnd %d name matches (%d tot)\n",
-                        ellCount(&prsrv_cast_client->addrq)-count,
-                        ellCount(&prsrv_cast_client->addrq));
+                        ellCount(&prsrv_cast_client->chanList)-count,
+                        ellCount(&prsrv_cast_client->chanList));
                 }
             }
         }

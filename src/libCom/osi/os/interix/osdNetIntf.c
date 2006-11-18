@@ -78,7 +78,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
                 return;
             }
             pNewNode->addr.ia.sin_family = AF_INET;
-            pNewNode->addr.ia.sin_port = 0u;
+            pNewNode->addr.ia.sin_port = htons ( 0 );
             pNewNode->addr.ia.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
             ellAdd ( pList, &pNewNode->node );
             return;

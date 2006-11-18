@@ -144,8 +144,6 @@ public:
         epicsGuard < epicsMutex > &, const cacChannel::ioid & );
 
     // IO requests
-    void writeRequest ( epicsGuard < epicsMutex > &, nciu &, unsigned type, 
-        arrayElementCount nElem, const void * pValue );
     netWriteNotifyIO & writeNotifyRequest ( 
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
         unsigned type, arrayElementCount nElem, const void * pValue, 

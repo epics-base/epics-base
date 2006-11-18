@@ -19,6 +19,10 @@
 
 #include "shareLib.h"
 
+#if __STDC_VERSION__ >= 199901L
+#include <inttypes.h>
+#endif
+
 #ifndef stringOf
 #   if defined (__STDC__ ) || defined (__cplusplus)
 #       define stringOf(TOKEN) #TOKEN
@@ -33,19 +37,32 @@ typedef enum {
 
 /*
  * Architecture Independent Data Types
- * (so far this is sufficient for all archs we have ported to)
+ * (so far, this is sufficient for all archs we have ported to)
  */
-typedef char            epicsInt8;
-typedef unsigned char   epicsUInt8;
-typedef short           epicsInt16;
-typedef unsigned short  epicsUInt16;
-typedef epicsUInt16     epicsEnum16;
-typedef int             epicsInt32;
-typedef unsigned        epicsUInt32;
+#if __STDC_VERSION__ >= 199901L
+    typedef int8_t          epicsInt8;
+    typedef uint8_t         epicsUInt8;
+    typedef int16_t         epicsInt16;
+    typedef uint16_t        epicsUInt16;
+    typedef epicsUInt16     epicsEnum16;
+    typedef int32_t         epicsInt32;
+    typedef uint32_t        epicsUInt32;
+    typedef int64_t         epicsInt64;
+    typedef uint64_t        epicsUInt64;
+#else
+    typedef char            epicsInt8;
+    typedef unsigned char   epicsUInt8;
+    typedef short           epicsInt16;
+    typedef unsigned short  epicsUInt16;
+    typedef epicsUInt16     epicsEnum16;
+    typedef int             epicsInt32;
+    typedef unsigned        epicsUInt32;
+#endif
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
 typedef unsigned long   epicsIndex;
-typedef epicsInt32      epicsStatus;    
+typedef epicsInt32      epicsStatus;   
+
 
 typedef struct {
     unsigned    length;

@@ -122,8 +122,8 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         osiSockAddr addr;
         memset ( (char *)&addr, 0 , sizeof ( addr ) );
         addr.ia.sin_family = AF_INET;
-        addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_ANY ); 
-        addr.ia.sin_port = epicsHTON16 ( PORT_ANY ); // X aCC 818
+        addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+        addr.ia.sin_port = htons ( PORT_ANY ); // X aCC 818
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -153,7 +153,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
             this->printf ( "CAC: UDP socket was not inet addr family\n" );
             throwWithLocation ( noSocket () );
         }
-        this->localPort = epicsNTOH16 ( tmpAddr.ia.sin_port );
+        this->localPort = htons ( tmpAddr.ia.sin_port );
     }
 
     epics_auto_ptr < epicsGuard < epicsMutex > > pCBGuard;
@@ -629,8 +629,8 @@ void ca_client_context::callbackProcessingInitiateNotify ()
             // when a message arrives
             osiSockAddr tmpAddr;
             tmpAddr.ia.sin_family = AF_INET;
-            tmpAddr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
-            tmpAddr.ia.sin_port = epicsHTON16 ( this->localPort );
+            tmpAddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+            tmpAddr.ia.sin_port = htons ( this->localPort );
             char buf = 0;
             sendto ( this->sock, & buf, sizeof ( buf ),
                     0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );

@@ -65,6 +65,20 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         throw S_cas_internal;
     }
 
+    {
+        // this connect is to supress a warning message on Linux
+        // when we shutdown the read side of the socket. If it
+        // fails (and it will on old ip kernels) we just ignore 
+        // the failure.
+        osiSockAddr sockAddr;
+        sockAddr.ia.sin_family = AF_UNSPEC;
+        sockAddr.ia.sin_port = htons ( 0 );
+        sockAddr.ia.sin_addr.s_addr = htonl ( 0 );
+        connect ( this->beaconSock,
+		        & sockAddr.sa, sizeof ( sockAddr.sa ) );
+        shutdown ( this->beaconSock, SHUT_RD );
+    }
+
     //
     // Fetch port configuration from EPICS environment variables
     //
@@ -449,27 +463,6 @@ void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
                     assert ( statusAsLength == length );
                 }
             }
-        }
-    }
-
-    {
-        // Connect to INADDR_NONE because a UDP connect to AF_UNSPEC
-        // only works with modern IP kernel.
-        //
-        // INADDR_NONE can never be a source address and therefore no 
-        // messages can be received.
-        osiSockAddr sockAddr;
-        memset ( &sockAddr, 0, sizeof ( sockAddr ) );
-        sockAddr.ia.sin_family = AF_INET;
-        sockAddr.ia.sin_addr.s_addr = INADDR_NONE;
-        sockAddr.ia.sin_port = htons ( CA_REPEATER_PORT );
-        status = connect ( this->beaconSock,
-		        & sockAddr.sa, sizeof ( sockAddr.sa ) );
-        if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "%s: CA beacon socket disconnect error was \"%s\"\n",
-                __FILE__, sockErrBuf );
         }
     }
 }

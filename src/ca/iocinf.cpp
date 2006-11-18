@@ -166,7 +166,7 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
     pNode  = ( osiSockAddrNode * ) ellFirst ( pList );          // X aCC 749
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
-            pNode->addr.ia.sin_port = epicsHTON16 ( port );
+            pNode->addr.ia.sin_port = htons ( port );
         }
         pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node ); // X aCC 749
     }
@@ -226,8 +226,8 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
                  * with the loop back interface
                  */
                 pNewNode->addr.ia.sin_family = AF_INET;
-                pNewNode->addr.ia.sin_addr.s_addr = epicsHTON32 ( INADDR_LOOPBACK );
-                pNewNode->addr.ia.sin_port = epicsHTON16 ( port );
+                pNewNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+                pNewNode->addr.ia.sin_port = htons ( port );
                 ellAdd ( &tmpList, &pNewNode->node );
             }
             else {

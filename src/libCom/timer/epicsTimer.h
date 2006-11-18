@@ -49,9 +49,13 @@ public:
 
 class epicsTimer {              /* X aCC 655 */
 public:
+    // calls cancel (see warning below) and then destroys the timer
     virtual void destroy () = 0;
     virtual void start ( epicsTimerNotify &, const epicsTime & ) = 0;
     virtual void start ( epicsTimerNotify &, double delaySeconds ) = 0;
+    // WARNING: A deadlock will occur if you hold a lock while
+    // calling this function that you also take within the timer 
+    // expiration callback.
     virtual void cancel () = 0;
     struct expireInfo {
         expireInfo ( bool active, const epicsTime & expireTime );

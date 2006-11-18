@@ -44,6 +44,7 @@ searchTimer::searchTimer (
         const unsigned indexIn, 
         epicsMutex & mutexIn,
         bool boostPossibleIn ) :
+    timeAtLastSend ( epicsTime::getCurrent () ),
     timer ( queueIn.createTimer () ),
     iiu ( iiuIn ),
     mutex ( mutexIn ),
@@ -60,9 +61,10 @@ searchTimer::searchTimer (
 {
 }
 
-void searchTimer::start ()
+void searchTimer::start ( epicsGuard < epicsMutex > & guard )
 {
-    this->timer.start ( *this, this->period () );
+    guard.assertIdenticalMutex ( this->mutex );
+    this->timer.start ( *this, this->period ( guard ) );
 }
 
 searchTimer::~searchTimer ()
@@ -132,6 +134,8 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         this->iiu.noSearchRespNotify ( 
             guard, *pChan, this->index );
     }
+    
+    this->timeAtLastSend = currentTime;
 
     // boost search period for channels not recently
     // searched for if there was some success
@@ -273,8 +277,6 @@ epicsTimerNotify::expireStatus searchTimer::expire (
     this->dgSeqNoAtTimerExpireEnd = 
         this->iiu.datagramSeqNumber ( guard ) - 1u;
 
-    this->timeAtLastSend = currentTime;
-
 #   ifdef DEBUG
         if ( this->searchAttempts ) {
             char buf[64];
@@ -284,13 +286,13 @@ epicsTimerNotify::expireStatus searchTimer::expire (
         }
 #   endif
 
-    return expireStatus ( restart, this->period() );
+    return expireStatus ( restart, this->period ( guard ) );
 }
 
 void searchTimer::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    ::printf ( "search timer delay %f\n", this->period() );
+    ::printf ( "search timer delay %f\n", this->period ( guard ) );
     ::printf ( "%u channels with search request pending\n", 
         this->chanListReqPending.count () );
     tsDLIterConst < nciu > pChan = this->chanListReqPending.firstIter ();
@@ -317,6 +319,7 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
     ca_uint32_t respDatagramSeqNo, bool seqNumberIsValid, 
     const epicsTime & currentTime )
 {
+    guard.assertIdenticalMutex ( this->mutex );
     this->uninstallChan ( guard, chan );
 
     if ( this->stopped ) {
@@ -334,7 +337,7 @@ void searchTimer::uninstallChanDueToSuccessfulSearchResponse (
     // reasonable timer period
     if ( validResponse ) {
         double measured = currentTime - this->timeAtLastSend;
-        this->iiu.updateRTTE ( measured );
+        this->iiu.updateRTTE ( guard, measured );
 
         if ( this->searchResponses < UINT_MAX ) {
             this->searchResponses++;
@@ -379,9 +382,11 @@ void searchTimer::uninstallChan (
     chan.channelNode::listMember = channelNode::cs_none;
 }
 
-double searchTimer::period () const
+double searchTimer::period (
+    epicsGuard < epicsMutex > & guard ) const
 {
-    return (1 << this->index ) * this->iiu.getRTTE ();
+    guard.assertIdenticalMutex ( this->mutex );
+    return (1 << this->index ) * this->iiu.getRTTE ( guard );
 }
 
 searchTimerNotify::~searchTimerNotify () {}

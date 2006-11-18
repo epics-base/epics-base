@@ -1388,6 +1388,9 @@ void tcpiiu::writeRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
     nciu &chan, unsigned type, arrayElementCount nElem, const void *pValue )
 {
     guard.assertIdenticalMutex ( this->mutex );
+    if ( INVALID_DB_REQ ( type ) ) {
+        throw cacChannel::badType ();
+    }
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE,  
         type, nElem, chan.getSID(guard), chan.getCID(guard), pValue,
@@ -1404,6 +1407,9 @@ void tcpiiu::writeNotifyRequest ( epicsGuard < epicsMutex > & guard, // X aCC 43
 
     if ( ! this->ca_v41_ok ( guard ) ) {
         throw cacChannel::unsupportedByService();
+    }
+    if ( INVALID_DB_REQ ( type ) ) {
+        throw cacChannel::badType ();
     }
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestWithPayLoad ( CA_PROTO_WRITE_NOTIFY,  

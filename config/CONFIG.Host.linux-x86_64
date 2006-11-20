@@ -11,7 +11,7 @@
 
 -include $(EPICS_BASE)/config/CONFIG.Host.Linux
 
-ARCH_CLASS = x86_64
+ARCH_CLASS = Linux
 
-ARCH_DEP_CFLAGS += -D_X86_64_ -Dlinux
+ARCH_DEP_CFLAGS = -D_X86_64_ -Dlinux
 

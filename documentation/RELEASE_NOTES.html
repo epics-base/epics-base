@@ -37,17 +37,13 @@ escaped version.</p>
 <h4>libCom/test and db/test</h4>
 
 <p>These test programs are no longer installed into the bin/<i>arch</i>
-directory. Running all these programs on any host architecture should be as
-simple as:</p>
-
-<blockquote>
-<pre>cd /path/to/base/src/libCom/test/O.<i>arch</i>
-make runtests</pre>
-</blockquote>
-
-<p>The runtests target uses Perl's Test::Harness module to execute all of the
-test programs and summarize the result.  It is also possible to run individual
-tests as desired; the output is designed to be comprehensible to humans.</p>
+directory. Running all these programs on any host architecture is as simple as
+typing <tt>make runtests</tt> in the base top level directory or in any
+appropriate subdirectory.  The runtests target uses Perl's Test::Harness module
+to execute all of the test programs and summarize the result.  It is also
+possible to run individual tests as desired, by executing them from the relevent
+O.&lt;arch&gt; directory; the program output is designed to be comprehensible to
+humans.</p>
 
 <p>For vxWorks and RTEMS, a test harness has been created that will run all of
 the test programs in a suitable order. At a vxWorks target shell, type:</p>

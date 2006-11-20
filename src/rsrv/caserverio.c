@@ -28,8 +28,6 @@
 #include "errlog.h"
 #include "caerr.h"
 
-typedef unsigned long arrayElementCount;
-
 #include "net_convert.h"
 
 #define epicsExportSharedSymbols

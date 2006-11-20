@@ -40,8 +40,6 @@
 #include "callback.h"
 #include "asDbLib.h"
 
-typedef unsigned long arrayElementCount;
-
 #include "net_convert.h"
 
 #define epicsExportSharedSymbols

@@ -1,13 +1,12 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell;
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #  $Id$
 #
@@ -37,6 +36,7 @@ while (my $line = <STDIN>)
 print join "\n",
     "/* C++ static constructor and destructor lists */",
     "/* This is a generated file, do not edit! */",
+    "#include <vxWorks.h>",
     "\n/* Declarations */",
     (map cDecl($_), @ctors, @dtors),
     "\n/* Constructors */",

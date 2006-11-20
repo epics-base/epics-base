@@ -1,11 +1,10 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
 #  $Id$
@@ -24,14 +23,14 @@ EPICS_VERSION = 3
 EPICS_REVISION = 14
 
 # This part may contain letters, eg 0beta1
-EPICS_MODIFICATION = 8
+EPICS_MODIFICATION = 9
 
 # Not included if zero
-EPICS_PATCH_LEVEL = 2
+EPICS_PATCH_LEVEL = 0
 
 # This will be -CVS or empty at an official release point
-EPICS_CVS_SNAPSHOT=-CVS
-#EPICS_CVS_SNAPSHOT=
+#EPICS_CVS_SNAPSHOT=-CVS
+EPICS_CVS_SNAPSHOT=-pre1
 
 # No changes should be needed below here
 

@@ -337,9 +337,7 @@ sub UnixPath {
 
 sub LocalPath {
     my ($newpath) = @_;
-    if ($^O eq "cygwin") {
-	$newpath =~ s{^/cygdrive/([a-zA-Z])/}{$1:/};
-    } elsif ($^O eq "darwin") {
+    if ($^O eq "darwin") {
 	# These rules are likely to be site-specific
 	$newpath =~ s{^/private/var/auto\.home/}{/home/};    # APS
     }

@@ -1,11 +1,10 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
 # $Id$
@@ -20,8 +19,9 @@ rebuild: clean install
 ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
-ACTIONS += buildInstall 
-ACTIONS += browse 
+ACTIONS += buildInstall
+ACTIONS += browse
+ACTIONS += runtests
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
@@ -41,7 +41,7 @@ $(BUILD_ARCHS) : % : O.% O.Common
 
 $(ACTIONS):%: $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
-$(buildDirs): 
+$(buildDirs):
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/..
 
 O.Common:
@@ -79,16 +79,11 @@ archclean ::
 $(cleanArchTargets) ::
 	$(RMDIR) O.$(archPart)
 
-realclean :: 
+realclean ::
 	$(RMDIR) O.*
-
-runtests: $(addprefix  O.$(EPICS_HOST_ARCH)/,$(TESTSCRIPTS_HOST)) 
-	$(PERL) -e 'use Test::Harness; runtests @ARGV;'  $^
 
 .PHONY : $(actionArchTargets)
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS)
 .PHONY : $(ACTIONS) clean realclean archclean all
 .PHONY : checkRelease $(checkReleaseTargets)
-.PHONY : runtests
-

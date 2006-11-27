@@ -299,9 +299,9 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
 ifeq ($(shell $(PERL) $(TOOLS)/useManifestTool.pl),1)
-MT_DLL_COMMAND = mt.exe /manifest $@.manifest /outputresource:$@;\#2
+MT_DLL_COMMAND = mt.exe /manifest $@.manifest "/outputresource:$@;\#2"
 MT_EXE_COMMAND_YES =
-MT_EXE_COMMAND_NO = mt.exe /manifest $@.manifest /outputresource:$@;\#1
+MT_EXE_COMMAND_NO = mt.exe /manifest $@.manifest "/outputresource:$@;\#1"
 MT_EXE_COMMAND = $(MT_EXE_COMMAND_$(STATIC_BUILD))
 endif
 

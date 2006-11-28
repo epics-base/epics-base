@@ -9,7 +9,6 @@
 #*************************************************************************
 #  CONFIG_HOST_ARCH.alpha
 #
-# Override values in CONFIG.Vx
 
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.UnixCommon

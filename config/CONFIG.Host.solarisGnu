@@ -12,46 +12,11 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.solarisGnu
 
-ARCH_CLASS = solaris
-
-# Include definitions common to all Unix archs
-include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
-
-#
-# required by sun's C++ compiler
-#
-AR = ar
-_AR = $(AR) $(ARFLAGS)
-G++_AR = $(_AR)
-CCC_AR = $(CCC) -xar -o
-ARCMD = $($(CPLUSPLUS)_AR) $@
-RANLIB =
+include $(EPICS_BASE)/config/CONFIG.Host.solaris
 
 #==========================
 # These are overrides of ANSI and CPLUSPLUS values in CONFIG_SITE
 ANSI=GCC
 CPLUSPLUS=G++
 #==========================
-
-SOLARIS_VERSION = $(subst 5.,,$(shell uname -r))
-ARCH_DEP_CPPFLAGS += -DSOLARIS=$(SOLARIS_VERSION) 
-POSIX_CPPFLAGS_YES += -D__EXTENSIONS__
-
-ARCH_DEP_LDFLAGS += -mt
-
-# socket and nsl needed by libca.a
-ARCH_DEP_LDLIBS += -lsocket -lnsl
-ARCH_DEP_LDLIBS += -lposix4 -lpthread
-ARCH_DEP_LDLIBS_8 = -lCrun
-ARCH_DEP_LDLIBS_9 = -lCrun
-ARCH_DEP_LDLIBS += $(ARCH_DEP_LDLIBS_$(SOLARIS_VERSION))
-
-#Allows R3.13 built extensions to load R3.14 shared libs
-SYS_DLL_LIBS_solaris_8 = Crun
-SYS_DLL_LIBS_solaris_9 = Crun
-SYS_DLL_LIBS_solaris += posix4 pthread $(SYS_DLL_LIBS_solaris_$(SOLARIS_VERSION))
-
-# Runtime ldflags
-RUNTIME_LDFLAGS =$(addprefix -R,$(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)\
- $(EPICS_EXTENSIONS)/lib/$(EPICS_HOST_ARCH))
 

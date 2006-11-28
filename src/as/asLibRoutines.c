@@ -123,8 +123,8 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	while(puagname) {
 	    pgphentry = gphAdd(pasbasenew->phash,puagname->user,puag);
 	    if(!pgphentry) {
-		epicsPrintf("UAG %s duplicate user = %s\n",
-		    puag->name, puagname->user);
+		epicsPrintf("Duplicated user '%s' in UAG '%s'\n",
+		    puagname->user, puag->name);
 	    }
 	    puagname = (UAGNAME *)ellNext((ELLNODE *)puagname);
 	}
@@ -136,8 +136,8 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	while(phagname) {
 	    pgphentry = gphAdd(pasbasenew->phash,phagname->host,phag);
 	    if(!pgphentry) {
-		epicsPrintf("HAG %s duplicate host = %s\n",
-		    phag->name,phagname->host);
+		epicsPrintf("Duplicated host '%s' in HAG '%s'\n",
+		    phagname->host, phag->name);
 	    }
 	    phagname = (HAGNAME *)ellNext((ELLNODE *)phagname);
 	}
@@ -1177,7 +1177,7 @@ static long asHagAddHost(HAG *phag,const char *host)
     if (!phag) return 0;
     phagname = asCalloc(1, sizeof(HAGNAME)+strlen(host)+1);
     phagname->host = (char *)(phagname+1);
-    for (i = 0; i < strlen(phagname->host); i++) {
+    for (i = 0; i < strlen(host); i++) {
         phagname->host[i] = (char)tolower((int)host[i]);
     }
     ellAdd(&phag->list, (ELLNODE *)phagname);

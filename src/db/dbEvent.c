@@ -90,10 +90,7 @@ struct event_user {
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
     epicsEventId        pflush_sem;     /* wait for flush */
-    
-    OVRFFUNC            *overflow_sub;  /* called when overflow detect */
-    void                *overflow_arg;  /* parameter to above   */
-    
+        
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
     
@@ -193,12 +190,6 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
 
         if ( level > 0 ) {
 	        printf ( "%4.4s", pdbFldDes->name );
-
-            /* they should never see this one */
-            if ( pevent->ev_que->evUser->queovr ) {
-                printf ( " !! event discard count=%d !!", 
-                    pevent->ev_que->evUser->queovr );
-            }
 
 	        printf ( " { " );
 	        if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
@@ -566,35 +557,21 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
 }
 
 /*
- * DB_ADD_OVERFLOW_EVENT()
- *
- * Specify a routine to be executed for event que overflow condition
- */
-int epicsShareAPI db_add_overflow_event (
-    dbEventCtx ctx, OVRFFUNC *overflow_sub, void *overflow_arg)
-{
-    struct event_user *evUser = (struct event_user *) ctx;
-
-    evUser->overflow_sub = overflow_sub;
-    evUser->overflow_arg = overflow_arg;
-
-    return DB_EVENT_OK;
-}
-
-/*
  * DB_FLUSH_EXTRA_LABOR_EVENT()
  *
  * waits for extra labor in progress to finish
  */
-int epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
+void epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
 {
     struct event_user *evUser = (struct event_user *) ctx;
 
-    while(evUser->extraLaborBusy){
+	epicsMutexMustLock ( evUser->lock );
+    while ( evUser->extraLaborBusy ) {
+        epicsMutexUnlock ( evUser->lock );
         epicsThreadSleep(1.0);
+        epicsMutexMustLock ( evUser->lock );
     }
-
-    return DB_EVENT_OK;
+    epicsMutexUnlock ( evUser->lock );
 }
 
 /*
@@ -625,19 +602,18 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
     struct event_user *evUser = (struct event_user *) ctx;
     int doit;
 
+    epicsMutexMustLock ( evUser->lock );
     if ( ! evUser->extra_labor ) {
-        epicsMutexMustLock ( evUser->lock );
-        if ( ! evUser->extra_labor ) {
-            evUser->extra_labor = TRUE;
-            doit = TRUE;
-        }
-        else {
-            doit = FALSE;
-        }
-        epicsMutexUnlock ( evUser->lock );
-        if ( doit ) {
-            epicsEventSignal(evUser->ppendsem);
-        }
+        evUser->extra_labor = TRUE;
+        doit = TRUE;
+    }
+    else {
+        doit = FALSE;
+    }
+    epicsMutexUnlock ( evUser->lock );
+
+    if ( doit ) {
+        epicsEventSignal(evUser->ppendsem);
     }
 
     return DB_EVENT_OK;
@@ -700,11 +676,11 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
         firstEventFlag = 0;
     }
     /*
-     * otherwise if the current entry is available then
-     * fill it in and advance the ring buffer 
+ 	 * Otherwise, the current entry must be available.
+     * Fill it in and advance the ring buffer.
      */
-    else if ( ev_que->evque[ev_que->putix] == EVENTQEMPTY ) {
-        
+    else {
+        assert ( ev_que->evque[ev_que->putix] == EVENTQEMPTY );
         pLog = &ev_que->valque[ev_que->putix];
         ev_que->evque[ev_que->putix] = event;
         if (event->npend>0u) {
@@ -722,14 +698,6 @@ LOCAL void db_post_single_event_private (struct evSubscrip *event)
             firstEventFlag = 0;
         }
         ev_que->putix = RNGINC ( ev_que->putix );
-    }
-    else {
-        /*
-         * this should never occur if this is bug free 
-         */
-        ev_que->evUser->queovr++;
-        pLog = NULL;
-        firstEventFlag = 0;
     }
 
     if (pLog && event->valque) {
@@ -948,50 +916,31 @@ LOCAL void event_task (void *pParm)
          * check to see if the caller has offloaded
          * labor to this task
          */
+        epicsMutexMustLock ( evUser->lock );
         evUser->extraLaborBusy = TRUE;
-        if(evUser->extra_labor && evUser->extralabor_sub){
-            epicsMutexMustLock ( evUser->lock );
-            if(evUser->extra_labor && evUser->extralabor_sub){
-                evUser->extra_labor = FALSE;
-                pExtraLaborSub = evUser->extralabor_sub;
-                pExtraLaborArg = evUser->extralabor_arg;
-            }
-            else {
-                pExtraLaborSub = NULL;
-                pExtraLaborArg = NULL;
-            }
+        if ( evUser->extra_labor && evUser->extralabor_sub ) {
+            evUser->extra_labor = FALSE;
+            pExtraLaborSub = evUser->extralabor_sub;
+            pExtraLaborArg = evUser->extralabor_arg;
+        }
+        else {
+            pExtraLaborSub = NULL;
+            pExtraLaborArg = NULL;
+        }
+        if ( pExtraLaborSub ) {
             epicsMutexUnlock ( evUser->lock );
-            if(pExtraLaborSub){
-                (*pExtraLaborSub)(pExtraLaborArg);
-            }
+            (*pExtraLaborSub)(pExtraLaborArg);
+            epicsMutexMustLock ( evUser->lock );
         }
         evUser->extraLaborBusy = FALSE;
-
-        if(evUser->extra_labor && evUser->extralabor_sub){
-            evUser->extra_labor = FALSE;
-            (*evUser->extralabor_sub)(evUser->extralabor_arg);
-        }
+        epicsMutexUnlock ( evUser->lock );
 
         for ( ev_que = &evUser->firstque; ev_que; 
                 ev_que = ev_que->nextque ) {
             event_read (ev_que);
         }
 
-        /*
-         * The following do not introduce event latency since they
-         * are not between notification and posting events.
-         */
-        if(evUser->queovr){
-            if(evUser->overflow_sub)
-                (*evUser->overflow_sub)(
-                    evUser->overflow_arg, 
-                    evUser->queovr);
-            else
-                errlogPrintf("Events lost, discard count was %d\n",
-                    evUser->queovr);
-            evUser->queovr = 0;
-        }
-    }while(!evUser->pendexit);
+    } while( ! evUser->pendexit );
 
     epicsMutexDestroy(evUser->firstque.writelock);
 
@@ -1027,14 +976,14 @@ int epicsShareAPI db_start_events (
 {
      struct event_user *evUser = (struct event_user *) ctx;
      
-     epicsMutexMustLock (evUser->firstque.writelock);
+     epicsMutexMustLock ( evUser->lock );
 
      /* 
       * only one ca_pend_event thread may be 
       * started for each evUser
       */
      if (evUser->taskid) {
-         epicsMutexUnlock (evUser->firstque.writelock);
+         epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_OK;
      }
 
@@ -1048,10 +997,10 @@ int epicsShareAPI db_start_events (
          taskname, osiPriority, epicsThreadGetStackSize(epicsThreadStackMedium),
          event_task, (void *)evUser);
      if (!evUser->taskid) {
-         epicsMutexUnlock (evUser->firstque.writelock);
+         epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;
      }
-     epicsMutexUnlock (evUser->firstque.writelock);
+     epicsMutexUnlock ( evUser->lock );
      return DB_EVENT_OK;
 }
 

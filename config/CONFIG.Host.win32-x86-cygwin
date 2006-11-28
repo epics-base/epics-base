@@ -12,13 +12,14 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.win32-x86-cygwin
 
-SHARED_LIBRARIES = NO
- 
-#ARCH_CLASS = WIN32
-ARCH_CLASS = cygwin
-
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+EXE = .exe
+
+SHARED_LIBRARIES = NO
+ 
+ARCH_CLASS = WIN32
 
 AR = ar -rc
 ARCMD = $(AR) $@
@@ -35,12 +36,15 @@ G++_STRICT = $(G++) -pedantic
 
 # Dont use -fPIC: with -fPIC we get
 # "warning: -fPIC ignored for target (all code is position independent) "
-GCC_DEP_CFLAGS = -D_REENTRANT
-G++_DEP_CFLAGS = -D_REENTRANT
+GCC_DEP_CFLAGS =
+G++_DEP_CFLAGS =
 
+OP_SYS_CFLAGS =
 OP_SYS_CPPFLAGS = -mno-cygwin
 OP_SYS_CXXFLAGS += -D__cplusplus
 OP_SYS_LDFLAGS += -mno-cygwin
+
+POSIX_CPPFLAGS_YES = 
 
 # With no-cygwin option:
 #       compiler defines _X86_ 1

@@ -36,10 +36,15 @@
 // for this file if that assumption is wrong.
 //
 
-/*
- * Here are the definitions for architecture dependent byte ordering 
- * and floating point format.
- */
+//
+// Here are the definitions for architecture dependent byte ordering 
+// and floating point format.
+//
+// Perhaps the definition of EPICS_BIG_ENDIAN, EPICS_LITTLE_ENDIAN,
+// and EPICS_32107654_FP_ENDIAN should be left to the build system
+// so that this file need not be modified when adding support for a
+// new architecture?
+//
 #if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined (_X86_64_)
 #	define EPICS_LITTLE_ENDIAN
 #elif ( defined (__ALPHA) || defined (__alpha) ) 
@@ -50,20 +55,20 @@
 #	define EPICS_BIG_ENDIAN
 #endif
 
-/*
- * EPICS_CONVERSION_REQUIRED is set if either the byte order
- * or the floating point are not exactly big endian and ieee fp.
- * This can be set by hand above for a specific architecture 
- * should there be an architecture that is a weird middle endian 
- * ieee floating point format that is also big endian integer.
- */
+//
+// EPICS_CONVERSION_REQUIRED is set if either the byte order
+// or the floating point are not exactly big endian and ieee fp.
+// This can be set by hand above for a specific architecture 
+// should there be an architecture that is a weird middle endian 
+// ieee floating point format that is also big endian integer.
+//
 #if ! defined ( EPICS_BIG_ENDIAN ) && ! defined ( EPICS_CONVERSION_REQUIRED )
 #    define EPICS_CONVERSION_REQUIRED
 #endif
 
-/*
- * some architecture sanity checks
- */
+//
+// some architecture sanity checks
+//
 #if defined(EPICS_BIG_ENDIAN) && defined(EPICS_LITTLE_ENDIAN)
 #   error defined(EPICS_BIG_ENDIAN) && defined(EPICS_LITTLE_ENDIAN)
 #endif
@@ -113,51 +118,69 @@ inline epicsUInt32 byteSwap ( const epicsUInt32 & src )
 #   endif
 }
 
-inline epicsInt16 byteSwap ( const epicsInt16 & src )
+inline epicsInt16 byteSwap ( const epicsInt16 & in )
 {
-    return static_cast < epicsInt16 > ( 
-        byteSwap ( * reinterpret_cast < const epicsUInt16 * > ( & src ) ) );
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
+    union {
+        epicsUInt16 _u;
+        epicsInt16 _i;
+    } tmp;
+    tmp._i = in;
+    tmp._u = byteSwap ( tmp._u );
+    return tmp._i;
 }
 
-inline epicsInt32 byteSwap ( const epicsInt32 & src )
+inline epicsInt32 byteSwap ( const epicsInt32 & in )
 {
-    return static_cast < epicsInt32 > ( 
-        byteSwap ( * reinterpret_cast < const epicsUInt32 * > ( & src ) ) );
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
+    union {
+        epicsUInt32 _u;
+        epicsInt32 _i;
+    } tmp;
+    tmp._i = in;
+    tmp._u = byteSwap ( tmp._u );
+    return tmp._i;
 }
 
-inline epicsFloat32 byteSwap ( const epicsFloat32 & src )
+inline epicsFloat32 byteSwap ( const epicsFloat32 & in )
 {
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
     union {
         epicsUInt32 _u;
         epicsFloat32 _f;
     } tmp;
-    tmp._u = byteSwap ( * reinterpret_cast < const epicsUInt32 * > ( & src ) );
+    tmp._f = in;
+    tmp._u = byteSwap ( tmp._u );
     return tmp._f;
 }
 
-inline epicsFloat64 byteSwap ( const epicsFloat64 & src )
+inline epicsFloat64 byteSwap ( const epicsFloat64 & in )
 {
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
+    union Swapper {
+        epicsUInt32 _u[2];
+        epicsFloat64 _f;
+    };
 #   if defined ( EPICS_32107654_FP_ENDIAN )
-        union {
-            epicsUInt32 _u[2];
-            epicsFloat64 _f;
-        } tmp;
-        const epicsUInt32 * pSrc = 
-            reinterpret_cast < const epicsUInt32 * > ( & src );
-        tmp._u[0] = byteSwap ( pSrc[0] );
-        tmp._u[1] = byteSwap ( pSrc[1] );
+        Swapper tmp;
+        tmp._f = in;
+        tmp._u[0] = byteSwap ( tmp._u[0] );
+        tmp._u[1] = byteSwap ( tmp._u[1] );
         return tmp._f;
 #   elif defined ( EPICS_LITTLE_ENDIAN )
-        union {
-            epicsUInt32 _u[2];
-            epicsFloat64 _f;
-        } tmp;
-        const epicsUInt32 * pSrc = 
-            reinterpret_cast < const epicsUInt32 * > ( & src );
-        epicsUInt32 tmpUInt32 = byteSwap ( pSrc[0] );
-        tmp._u[0] = byteSwap ( pSrc[1] );
-        tmp._u[1] = tmpUInt32;
-        return tmp._f;
+        Swapper src, dst;
+        src._f = in;
+        dst._u[0] = byteSwap ( src._u[1] );
+        dst._u[1] = byteSwap ( src._u[0] );
+        return dst._f;
 #   elif defined ( EPICS_BIG_ENDIAN ) 
         return src;
 #   else
@@ -267,6 +290,9 @@ inline epicsUInt32 WireGetUInt32 ( const epicsUInt8 * pWireSrc )
 }
 inline epicsFloat32 WireGetFloat32 ( const epicsUInt8 * pWireSrc )
 {
+    // extra copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) also allows for extra copy to be optimized away
     union {
         epicsFloat32 _f;
         epicsUInt32 _u;
@@ -276,6 +302,9 @@ inline epicsFloat32 WireGetFloat32 ( const epicsUInt8 * pWireSrc )
 }
 inline epicsFloat64 WireGetFloat64 ( const epicsUInt8 * pWireSrc )
 {
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
     union {
         epicsFloat64 _f;
         epicsUInt32 _u[2];
@@ -306,6 +335,9 @@ inline void WireSetUInt32 ( const epicsUInt32 src, epicsUInt8 * pWireDst )
 }
 inline void WireSetFloat32 ( const epicsFloat32 src, epicsUInt8 * pWireDst )
 {
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
     union {
         epicsFloat32 _f;
         epicsUInt32 _u;
@@ -315,6 +347,9 @@ inline void WireSetFloat32 ( const epicsFloat32 src, epicsUInt8 * pWireDst )
 }
 inline void WireSetFloat64 ( const epicsFloat64 & src, epicsUInt8 * pWireDst )
 {
+    // copy through union here 
+    // a) prevents over-aggresive optimization under strict aliasing rules
+    // b) doesnt preclude extra copy operation being optimized away
     union {
         epicsFloat64 _f;
         epicsUInt32 _u[2];

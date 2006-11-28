@@ -33,6 +33,7 @@
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "epicsGuard.h"
+#include "epicsExit.h"
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "errlog.h"
@@ -100,7 +101,7 @@ private:
     unsigned cancelPendingCount;
     bool exitFlag;
     bool callbackInProgress;
-    static epicsMutex globalMutex;
+    static epicsMutex * pGlobalMutex;
     static ipAddrToAsciiEnginePrivate * pEngine;
     static unsigned numberOfReferences;
     ipAddrToAsciiTransaction & createTransaction ();
@@ -110,11 +111,14 @@ private:
 	ipAddrToAsciiEnginePrivate & operator = ( const ipAddrToAsciiEngine & );
     friend class ipAddrToAsciiEngine;
     friend class ipAddrToAsciiTransactionPrivate;
+    friend void ipAddrToAsciiEngineGlobalMutexDestruct ( void * );
+    friend void ipAddrToAsciiEngineGlobalMutexConstruct ( void * );
 };
 
-epicsMutex ipAddrToAsciiEnginePrivate::globalMutex;
-ipAddrToAsciiEnginePrivate * ipAddrToAsciiEnginePrivate::pEngine = 0;
-unsigned ipAddrToAsciiEnginePrivate::numberOfReferences = 0u;
+epicsMutex * ipAddrToAsciiEnginePrivate :: pGlobalMutex = 0;
+ipAddrToAsciiEnginePrivate * ipAddrToAsciiEnginePrivate :: pEngine = 0;
+unsigned ipAddrToAsciiEnginePrivate :: numberOfReferences = 0u;
+static epicsThreadOnceId ipAddrToAsciiEngineGlobalMutexOnceFlag = 0;
 
 // the users are not required to supply a show routine
 // for there transaction callback class
@@ -125,13 +129,27 @@ ipAddrToAsciiCallBack::~ipAddrToAsciiCallBack () {}
 ipAddrToAsciiTransaction::~ipAddrToAsciiTransaction () {}
 ipAddrToAsciiEngine::~ipAddrToAsciiEngine () {}
 
+static void ipAddrToAsciiEngineGlobalMutexDestruct ( void * )
+{
+    delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
+}
+
+static void ipAddrToAsciiEngineGlobalMutexConstruct ( void * )
+{
+    ipAddrToAsciiEnginePrivate :: pGlobalMutex = new epicsMutex ();
+    epicsAtExit ( ipAddrToAsciiEngineGlobalMutexDestruct, 0 );
+}
+
 // for now its probably sufficent to allocate one 
 // DNS transaction thread for all codes sharing
 // the same process that need DNS services but we 
 // leave our options open for the future
 ipAddrToAsciiEngine & ipAddrToAsciiEngine::allocate ()
 {
-    epicsGuard < epicsMutex > guard ( ipAddrToAsciiEnginePrivate::globalMutex );
+    epicsThreadOnce (
+        & ipAddrToAsciiEngineGlobalMutexOnceFlag,
+        ipAddrToAsciiEngineGlobalMutexConstruct, 0 );
+    epicsGuard < epicsMutex > guard ( * ipAddrToAsciiEnginePrivate::pGlobalMutex );
     if ( ! ipAddrToAsciiEnginePrivate::pEngine ) {
         ipAddrToAsciiEnginePrivate::pEngine = new ipAddrToAsciiEnginePrivate ();
     }
@@ -165,7 +183,10 @@ ipAddrToAsciiEnginePrivate::~ipAddrToAsciiEnginePrivate ()
 // leave our options open for the future
 void ipAddrToAsciiEnginePrivate::release ()
 {
-    epicsGuard < epicsMutex > guard ( ipAddrToAsciiEnginePrivate::globalMutex );
+    epicsThreadOnce (
+        & ipAddrToAsciiEngineGlobalMutexOnceFlag,
+        ipAddrToAsciiEngineGlobalMutexConstruct, 0 );
+    epicsGuard < epicsMutex > guard ( * ipAddrToAsciiEnginePrivate::pGlobalMutex );
     assert ( ipAddrToAsciiEnginePrivate::numberOfReferences > 0u );
     ipAddrToAsciiEnginePrivate::numberOfReferences--;
     if ( ipAddrToAsciiEnginePrivate::numberOfReferences == 0u ) {

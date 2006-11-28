@@ -75,7 +75,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSuspendSelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadResume(epicsThreadId id);
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPriority(
     epicsThreadId id);
-epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPrioritySelf();
+epicsShareFunc unsigned int epicsShareAPI epicsThreadGetPrioritySelf(void);
 epicsShareFunc void epicsShareAPI epicsThreadSetPriority(
     epicsThreadId id,unsigned int priority);
 epicsShareFunc epicsThreadBooleanStatus epicsShareAPI

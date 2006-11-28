@@ -147,6 +147,7 @@ static void myAtExit(void)
     pthread_key_delete(getpthreadInfo);
 }
 
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
 static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
 {
     double maxPriority,minPriority,slope,oss;
@@ -159,6 +160,7 @@ static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
     oss = (double)pthreadInfo->osiPriority * slope + minPriority;
     return((int)oss);
 }
+#endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
 {
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
@@ -433,13 +435,13 @@ epicsThreadId epicsThreadCreate(const char *name,
 /*
  * Cleanup routine for threads not created by epicsThreadCreate().
  */
-static void nonEPICSthreadCleanup(void *arg)
+/* static void nonEPICSthreadCleanup(void *arg)
 {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
 
     free(pthreadInfo->name);
     free(pthreadInfo);
-}
+} */
 
 /*
  * Create dummy context for threads not created by epicsThreadCreate().

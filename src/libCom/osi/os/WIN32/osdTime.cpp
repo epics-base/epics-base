@@ -100,21 +100,9 @@ static void osdTimeInit ( void * )
         osdTimeInitSuccess = true;
 
         pCurrentTime = new currentTime ();
-
+        // bypass recursion crowbar in epicsThreadOnce
+        osdTimeOnceFlag = 1;
         pCurrentTime->startPLL ();
-
-        // self test FILETIME conversion only if
-        // its a debug build
-#       if defined ( _DEBUG )
-        {
-            epicsTime ts0 = epicsTime::getCurrent ();
-            FILETIME ft = ts0;
-            epicsTime ts1 = ft;
-            double diff = fabs ( ts0 - ts1 );
-            // we expect to loose 100 nS of precision when moving to and from win32 filetime
-            assert ( diff <= 100e-9 );
-        }
-#       endif
     }
 }
 

@@ -16,6 +16,9 @@
  * returns the length of the resultant string (may contain nulls)
 */
 
+#ifndef INC_epicsString_H
+#define INC_epicsString_H
+
 #include <stdio.h>
 #include <shareLib.h>
 
@@ -40,3 +43,4 @@ epicsShareFunc char * epicsStrtok_r(
 }
 #endif
 
+#endif /* INC_epicsString_H */

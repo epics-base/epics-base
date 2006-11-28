@@ -12,7 +12,7 @@
 # solaris-sparc is the new name for solaris
 -include $(EPICS_BASE)/config/CONFIG.Host.solaris
 
-ARCH_DEP_CFLAGS += -xtarget=ultra -xarch=v9
-ARCH_DEP_CXXFLAGS += -xtarget=ultra -xarch=v9
-ARCH_DEP_LDFLAGS += -xtarget=ultra -xarch=v9
+ARCH_DEP_CFLAGS += -xarch=generic64
+ARCH_DEP_CXXFLAGS += -xarch=generic64
+ARCH_DEP_LDFLAGS += -xarch=generic64
 

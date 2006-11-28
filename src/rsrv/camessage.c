@@ -1927,14 +1927,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp,
          freeListFree(rsrvEventFreeList, pevext);
      }
      
-     status = db_flush_extra_labor_event(client->evuser);
-     if (status) {
-        SEND_LOCK(client);
-        send_err(mp, ECA_INTERNAL, client, 
-            "extra labor event didnt flush");
-        SEND_UNLOCK(client);
-        return RSRV_ERROR;
-     }
+     db_flush_extra_labor_event ( client->evuser );
           
      /*
       * send delete confirmed message

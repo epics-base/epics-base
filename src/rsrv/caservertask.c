@@ -643,22 +643,15 @@ void destroy_tcp_client ( struct client *client )
 
     if ( client->evuser ) {
         /*
-        * turn off extra labor callbacks from the event thread
-        */
+         * turn off extra labor callbacks from the event thread
+         */
         status = db_add_extra_labor_event ( client->evuser, NULL, NULL );
         assert ( ! status );
 
         /*
-        * wait for extra labor in progress to comple
-        */
-        status = db_flush_extra_labor_event ( client->evuser );
-        assert ( ! status );
-
-        /*
-        * wait for any put notify in progress to comple
-        */
-        status = db_flush_extra_labor_event(client->evuser);
-        assert ( ! status );
+         * wait for extra labor in progress to comple
+         */
+        db_flush_extra_labor_event ( client->evuser );
     }
 
     destroyAllChannels ( client, & client->chanList );

@@ -27,7 +27,7 @@ void testChars() {
         epicsStrSnPrintEscaped(escaped, sizeof(escaped), input, 1);
         dbTranslateEscape(result, escaped);
         testOk(result[0] == input[0] && result[1] == 0,
-            "char 0x%02.2x -> \"%s\" -> 0x%02.2x",
+            "char 0x%2.2x -> \"%s\" -> 0x%2.2x",
             input[0] & 0xff, escaped, result[0] & 0xff);
     }
 }

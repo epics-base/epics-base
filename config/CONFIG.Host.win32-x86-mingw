@@ -12,12 +12,14 @@
 #  This file is maintained by the EPICS community.
 #  Sites may override these definitions in CONFIG_SITE.Host.win32-x86-mingw
  
-ARCH_CLASS = WIN32
+# Include definitions common to all Unix archs
+include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+
+EXE = .exe
 
 SHARED_LIBRARIES = NO
 
-# Include definitions common to all Unix archs
-include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
+ARCH_CLASS = WIN32
 
 AR = ar -rc
 ARCMD = $(AR) $@
@@ -38,6 +40,14 @@ CPLUSPLUS=G++
 # Compiler defines WIN32 1
 # Compiler defines WINNT 1
 # Compiler does not define  __unix __unix__ unix
+
+OP_SYS_CFLAGS =
+OP_SYS_CXXFLAGS += -D__cplusplus
+
+GCC_DEP_CFLAGS =
+G++_DEP_CFLAGS =
+
+POSIX_CPPFLAGS_YES = 
 
 ARCH_DEP_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 

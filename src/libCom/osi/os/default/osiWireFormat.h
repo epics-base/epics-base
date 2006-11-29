@@ -45,7 +45,7 @@
 // so that this file need not be modified when adding support for a
 // new architecture?
 //
-#if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined (_X86_64_)
+#if defined (_M_IX86) || defined (_X86_) || defined (__i386__) || defined (_X86_64_) || defined (_M_AMD64) 
 #	define EPICS_LITTLE_ENDIAN
 #elif ( defined (__ALPHA) || defined (__alpha) ) 
 #	define EPICS_LITTLE_ENDIAN

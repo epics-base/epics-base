@@ -42,6 +42,8 @@ OP_SYS_CXXFLAGS += -D__cplusplus
 # Overrides -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS = -mno-cygwin
 
+LIBRARY_LD_RESS=
+
 OP_SYS_LDFLAGS += -mno-cygwin
 OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 

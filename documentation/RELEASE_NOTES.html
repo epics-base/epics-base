@@ -13,6 +13,13 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>cas</h4>
+
+<p>There was a bug in the portable channel access server library that prevented
+the PV Gateway from being able to handle and pass on alarm acknowledgements from
+the EPICS Alarm Handler ALH. This has been fixed in this release and should only
+require that the gatewey be recomplied against this version of Base.</p>
+
 <h4>dbLoadTemplate</h4>
 
 <p>The parser for the substitutions file accepted by dbLoadTemplate() has been
@@ -32,7 +39,8 @@ _ - + : . / \ [ ] &lt; &gt; ;</tt></p>
 use C89-compatible escaped character codes such as \", \', \t, \n, \064 and
 \x7e.  The parser also now checks for and reports strings that have a newline
 character in them as an error - if you want a newline in a field, use the \n
-escaped version.</p>
+escaped version.  These escapes only apply to the value part of a field() entry
+in .db file though; no other strings have escape codes translated.</p>
 
 <h4>libCom/test and db/test</h4>
 
@@ -49,12 +57,12 @@ humans.</p>
 the test programs in a suitable order. At a vxWorks target shell, type:</p>
 
 <blockquote>
-<pre>ld </path/to/base/bin/vxWorks-<i>arch</i>/vxTestHarness.munch
+<pre>ld &lt;/path/to/base/bin/vxWorks-<i>arch</i>/vxTestHarness.munch
 cd "/path/to/writable/directory"
 epicsRunLibComTests</pre>
 </blockquote>
 
-<p>On RTEMS, boot the bin/<i>arch</i>/rtemsTestHarness binary.</p>
+<p>On RTEMS, boot the <tt>bin/<i>arch</i>/rtemsTestHarness</tt> binary.</p>
 
 <p>You may wish to capture the output from running these to a file to more
 easily check the results, since there is no wrapper program to collect and
@@ -98,7 +106,7 @@ separated by a semicolon <tt>;</tt>, all but one of which must be assignments.
 The value of the whole string is determined by the single non-assignment
 expression, which may appear anywhere in the string. For example, the following
 string causes a single CALC record to output the successive values of a sine
-curve: <tt>sin(a);&nbsp;a:=a+d2r</tt></p>
+curve in 1 degree intervals: <tt>sin(a);&nbsp;a:=a+d2r</tt></p>
 
 <p>Previously any expression that performed an invalid operation which would
 generate a NaN or Inf result would be stopped immediately and return an error to
@@ -110,7 +118,7 @@ infinity. To permit this to be checked within the expression, the new operators
 expression language. The literal values <tt>Inf</tt> and <tt>NaN</tt> are also
 now supported in expressions.</p>
 
-<p>The incompatible change to the expression language was to change the
+<p>The only incompatible change to the expression language was to change the
 <tt>NOT</tt> operator from performing a unary minus operation to an integer
 bitwise not; the former meaning is illogical and as a result was probably not
 used much, if at all &mdash; nobody complained when I discussed this on

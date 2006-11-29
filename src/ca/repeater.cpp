@@ -146,8 +146,10 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
     from ( fromIn ), sock ( INVALID_SOCKET )
 {
+#ifdef DEBUG
     unsigned port = ntohs ( from.ia.sin_port );
     debugPrintf ( ( "new client %u\n", port ) );
+#endif
 }
 
 bool repeaterClient::connect ()
@@ -209,15 +211,19 @@ bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC
     status = send ( this->sock, (char *) pBuf, bufSize, 0 );
     if ( status >= 0 ) {
         assert ( static_cast <unsigned> ( status ) == bufSize );
+#ifdef DEBUG
         epicsUInt16 port = ntohs ( this->from.ia.sin_port );
         debugPrintf ( ("Sent to %u\n", port ) );
+#endif
         return true;
     }
     else {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy == SOCK_ECONNREFUSED ) {
+#ifdef DEBUG
             epicsUInt16 port = ntohs ( this->from.ia.sin_port );
             debugPrintf ( ("Client refused message %u\n", port ) );
+#endif
         }
         else {
             char sockErrBuf[64];
@@ -233,8 +239,10 @@ repeaterClient::~repeaterClient ()
     if ( this->sock != INVALID_SOCKET ) {
         epicsSocketDestroy ( this->sock );
     }
+#ifdef DEBUG
     epicsUInt16 port = ntohs ( this->from.ia.sin_port );
     debugPrintf ( ( "Deleted client %u\n", port ) );
+#endif
 }
 
 void * repeaterClient::operator new ( size_t ) // X aCC 361

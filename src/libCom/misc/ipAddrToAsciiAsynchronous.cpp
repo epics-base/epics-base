@@ -78,6 +78,9 @@ template class tsFreeList
 #   pragma warning ( pop )
 #endif
 
+static void ipAddrToAsciiEngineGlobalMutexConstruct ( void * );
+static void ipAddrToAsciiEngineGlobalMutexDestruct ( void * );
+
 // - this class executes the synchronous DNS query
 // - it creates one thread
 class ipAddrToAsciiEnginePrivate : 

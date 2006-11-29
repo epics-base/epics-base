@@ -182,7 +182,7 @@ inline epicsFloat64 byteSwap ( const epicsFloat64 & in )
         dst._u[1] = byteSwap ( src._u[0] );
         return dst._f;
 #   elif defined ( EPICS_BIG_ENDIAN ) 
-        return src;
+        return in;
 #   else
 #       error undefined endian type
 #   endif

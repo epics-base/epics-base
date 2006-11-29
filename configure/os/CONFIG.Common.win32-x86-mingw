@@ -19,6 +19,7 @@ EXE=.exe
 LDLIBS_READLINE = -lreadline
 
 STATIC_BUILD=YES
+
 STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 
 # Compiler defines _X86_ 1
@@ -36,4 +37,8 @@ STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 
 # Override for -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS =
+
+OP_SYS_CXXFLAGS += -D__cplusplus
+
+LIBRARY_LD_RESS=
 

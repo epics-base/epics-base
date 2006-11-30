@@ -18,16 +18,29 @@
 new release of EPICS Base. Additions and ammendments to this list are
 welcome.</p>
 
+<h3>The Release Process</h3>
+
+<p>The version released on the Feature Freeze date is designated the first
+pre-release, <tt>-pre1</tt>. The first Release Candidate <tt>-RC1</tt> is the
+first version that has undergone widespread testing and which has no known
+problems in it that are slated to be fixed in this release. New versions should
+be made at about weekly intervals during the testing and debugging process, and
+will be designated as either pre-release versions or Release Candidates by the
+Release Manager.  A Release Candidate that has received widespread testing for a
+week without any additional problems being discovered or CVS commits being made
+can be designated as the final release.</p>
+
+<h3>Roles</h3>
+
 <p>The following roles are used, in addition to the names of individuals who
 have been responsible for specific tasks in the past:</p>
+
 <dl>
   <dt><strong>Release Manager</strong></dt>
     <dd>Responsible for the release</dd>
   <dt><strong>Platform Developers</strong></dt>
     <dd>Responsible for individual operating system platforms</dd>
 </dl>
-
-<p></p>
 
 <table border="1" width="100%">
   <tbody>
@@ -55,13 +68,15 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Release Manager</td>
-      <td>Set a date by which all CVS commits must be done, after which
-        commits should only be to fix problems that show up during Final
-        Testing.</td>
+      <td>Set the Feature Freeze date, by which time all CVS commits for
+        enhancements and new functionality should have been completed. After
+        this date, commits should only be made to fix problems that show up
+        during testing.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Release Manager</td>
+      <td>Release Manager &amp;<br />
+        all developers</td>
       <td>Ensure that documentation will be updated before the release date: 
         <ul>
           <li>Application Developers Guide</li>
@@ -72,25 +87,84 @@ have been responsible for specific tasks in the past:</p>
       </td>
     </tr>
     <tr>
-      <td> </td>
-      <td>?</td>
-      <td>...</td>
+      <th colspan="3">Creating pre-release and Release Candidate versions</th>
     </tr>
     <tr>
-      <th colspan="3">Final testing</th>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Edit and commit changes to the EPICS version number file
+        configure/CONFIG_BASE_VERSION.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Tag the module in CVS. Pre-release version tags take the form
+        <tt>R<i>x</i>-<i>y</i>-<i>z</i>-pre<i>n</i></tt> while Release
+        Candidate tags take the form
+        <tt>R<i>x</i>-<i>y</i>-<i>z</i>-RC<i>m</i></tt>.
+        </td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Export the tagged version and create a tarfile of the result:
+        <blockquote><tt>
+          cvs export -kv -d base-x.y.z-pre1 -r Rx-y-z-pre1 epics/base<br />
+          tar cfz baseRx.y.z-pre1.tar.gz base-x.y.z-pre1
+          </tt></blockquote></td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Test the tar file by extracting its contents and building it on at
+        least one supported platform</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Janet Anderson</td>
+      <td>Copy the tar file to the Base download area of the website</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Create or update a website subdirectory to hold the release
+        documentation, and copy in the files from the base/documentation
+        directory of the tarfile.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Create or modify the webpage for the new release with links to the
+        release documents and tar file. Pre-release versions should use the
+        page and URL for the final release version number.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Andrew Johnson</td>
+      <td>Add the new pre-release tar file to the website Base download index
+      page.</td>
+    </tr>
+    <tr>
+      <th colspan="3">Testing</th>
     </tr>
     <tr>
       <td> </td>
       <td>Platform Developers</td>
-      <td>Run the Soft IOC tests in mrkSoftTest on all available
+      <td>Run the Soft IOC tests from mrkSoftTest on all available
         platforms.</td>
     </tr>
     <tr>
       <td> </td>
       <td>Platform Developers</td>
       <td>Check that all makeBaseApp templates build and run properly, all
-        xxxApp and xxxBoot types and any internal options, e.g. standalone
-        sncExample appliction, STATIC_BUILD=YES.</td>
+        xxxApp and xxxBoot types and any internal options, e.g. setting
+        STATIC_BUILD=YES in the configure/CONFIG_SITE.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Platform Developers</td>
+      <td>Build the SNL Sequencer against this version of Base, and check that
+      the makeBaseApp example builds and runs correctly with it.</td>
     </tr>
     <tr>
       <td> </td>
@@ -107,7 +181,7 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Release Manager</td>
-      <td>Check that the documentation has been updated: 
+      <td>Check that documentation has been updated:
         <ul>
           <li>Application Developers Guide</li>
           <li>Release Notes</li>
@@ -117,20 +191,17 @@ have been responsible for specific tasks in the past:</p>
       </td>
     </tr>
     <tr>
-      <td> </td>
-      <td>?</td>
-      <td>...</td>
-    </tr>
-    <tr>
       <th colspan="3">Release Approval</th>
     </tr>
     <tr>
       <td> </td>
       <td>Release Manager</td>
-      <td>Obtain a positive 'Ok to release' from all platform developers.</td>
+      <td>Obtain a positive 'Ok to release' from all platform developers when a
+      Release Candidate version has gone a whole week without any issues being
+      reported.</td>
     </tr>
     <tr>
-      <th colspan="3">Make the release</th>
+      <th colspan="3">Creating the final release version</th>
     </tr>
     <tr>
       <td> </td>
@@ -141,15 +212,17 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Janet Anderson</td>
-      <td>Tag the module in CVS. Official base release version tags take the form
-        <code>R</code><i><code>x</code></i><code>-</code><i><code>y</code></i><code>-</code><i><code>z</code></i><code>[-</code><i><code>n</code></i><code>]</code></td>
+      <td>Tag the module in CVS. Official base release version tags take the
+        form <tt>R<i>x</i>-<i>y</i>-<i>z</i>[-<i>n</i>]</tt></td>
     </tr>
     <tr>
       <td> </td>
       <td>Janet Anderson</td>
-      <td>Export the tagged version, "cvs export -kv -d base-x.y.z[.n]
-        -r Rx-y-z[-n] epics/base", and create the
-        baseRx.y.z[.n]tar.gz file of the result</td>
+      <td>Export the tagged version and create a tarfile of the result:
+        <blockquote><tt>
+          cvs export -kv -d base-x.y.z -r Rx-y-z epics/base<br />
+          tar cfz baseRx.y.z.tar.gz base-x.y.z
+          </tt></blockquote></td>
     </tr>
     <tr>
       <td> </td>
@@ -165,20 +238,15 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Andrew Johnson</td>
-      <td>Create a new website subdirectory to hold the release
+      <td>Update the website subdirectory that holds the release
         documentation, and copy in the files from the base/documentation
-        directory of the tarfile</td>
+        directory of the tarfile.</td>
     </tr>
     <tr>
       <td> </td>
       <td>Andrew Johnson</td>
-      <td>Create a webpage for the new release with links to the release
-        documents and tar file</td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>?</td>
-      <td>...</td>
+      <td>Update the webpage for the new release with links to the release
+        documents and tar file.</td>
     </tr>
     <tr>
       <th colspan="3">Announce it</th>
@@ -214,13 +282,8 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Andrew Johnson</td>
-      <td>Add an entry to the website News page, linking to the new
+      <td>Add an entry to the website News page, linking to the new version
       webpage</td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>?</td>
-      <td>...</td>
     </tr>
   </tbody>
 </table>

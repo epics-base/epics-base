@@ -859,7 +859,7 @@ long devNoResponseProbe (epicsAddressType addrType,
 long    devConnectInterrupt(
 epicsInterruptType      intType,
 unsigned                vectorNumber,
-void                    (*pFunction)(),
+void                    (*pFunction)(void *),
 void                    *parameter)
 {
     long status;
@@ -890,7 +890,7 @@ void                    *parameter)
 long    devDisconnectInterrupt(
 epicsInterruptType      intType,
 unsigned                vectorNumber,
-void            (*pFunction)() 
+void                    (*pFunction)(void *) 
 )
 {
     long status;

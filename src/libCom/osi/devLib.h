@@ -12,17 +12,8 @@
 
 /*
  *	Original Author: Marty Kraimer 
- *      Author:  	 Jeff Hill	
- *      Date:          	 03-10-93 
- *
- * Notes:
- * ------
- * .01  03-23-93	joh	We will only have problems with mod .03
- *				above if the CPU maintains the different 
- *				address modes in different address spaces
- *				and we have a card or a user that insists 
- *				on not using the default address type
- * .02  06-14-93        joh     needs devAllocInterruptVector() routine
+ *  Author:  	     Jeff Hill	
+ *  Date:            03-10-93 
  */
 
 #ifndef INCdevLibh
@@ -393,7 +384,7 @@ long    devConnectInterrupt(
 long    devDisconnectInterrupt(
 			epicsInterruptType      intType,
 			unsigned                vectorNumber,
-			void			(*pFunction)(void *));
+			void			        (*pFunction)(void *));
 
 /*
  * NOTE: this routine has been deprecated. It exists

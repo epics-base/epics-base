@@ -172,6 +172,7 @@ INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
+INC += osdWireFormat.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h
@@ -310,4 +311,3 @@ clean::
 	@$(RM) errSymTbl.c envData.c
 
 inc depends: $(INSTALL_LIBS)
-

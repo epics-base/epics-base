@@ -18,10 +18,10 @@
 #include	<stdio.h>
 #include	<string.h>
 
+#define epicsExportSharedSymbols
 #include	"osiUnistd.h"
 #include	"dbDefs.h"
 #include	"epicsMath.h"
-#define epicsExportSharedSymbols
 #include	"postfix.h"
 #include	"postfixPvt.h"
 

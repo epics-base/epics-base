@@ -19,11 +19,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
-
-#define epicsExportSharedSymbols
 #include "postfix.h"
 #include "postfixPvt.h"
 #include "shareLib.h"

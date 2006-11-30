@@ -28,7 +28,7 @@ EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com
 #---------------------------------------------------------------
 # Epics base Host libraries 
 
-EPICS_BASE_HOST_LIBS += cas gdd asHost dbStaticHost iocshHost
+EPICS_BASE_HOST_LIBS += cas gdd iocshHost asHost dbStaticHost registryIoc
 EPICS_BASE_HOST_LIBS += ca Com
 
 #---------------------------------------------------------------

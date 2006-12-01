@@ -27,7 +27,7 @@ epicsShareFunc int epicsShareAPI epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
 epicsShareFunc void epicsShareAPI epicsTempName ( 
     char * pNameBuf, size_t nameBufLength );
-epicsShareFunc FILE * epicsShareAPI epicsTempFile ();
+epicsShareFunc FILE * epicsShareAPI epicsTempFile (void);
 
 /*
  * truncate to specified size (we dont use truncate()

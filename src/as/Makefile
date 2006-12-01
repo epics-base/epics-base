@@ -1,10 +1,9 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP=../..
@@ -32,7 +31,7 @@ asIoc_RCS_WIN32 = asIoc.rc
 
 PROD_HOST = ascheck
 ascheck_SRCS = ascheck.c
-PROD_LIBS = asHost dbStaticHost Com
+PROD_LIBS = asHost dbStaticHost ca Com
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)
@@ -42,13 +41,9 @@ endif
 
 include $(TOP)/configure/RULES
 
-# Extra rule since asLib_lex.c is included in asLib.c
-#   In my opinion, these objects should really be built
-#   independently.
-asLib.c: asLib_lex.c ../asLibRoutines.c
-
-$(INSTALL_INC)/asLib.h:../asLib.h
+# Extra rule since asLib_lex.c is included by asLib.c
+asLib.o: asLib_lex.c
 
 clean::
-	@$(RM) asLib.c asLib_lex.c 
+	@$(RM) asLib.c asLib_lex.c
 

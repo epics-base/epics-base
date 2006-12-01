@@ -9,49 +9,13 @@
 #define FLEX_SCANNER
 
 #include <stdio.h>
-
-
-/* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
-#ifdef c_plusplus
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-#endif
-
-
-#ifdef __cplusplus
-
 #include <stdlib.h>
-#include <osfcn.h>
 
 /* use prototypes in function declarations */
 #define YY_USE_PROTOS
 
 /* the "const" storage-class-modifier is valid */
 #define YY_USE_CONST
-
-#else	/* ! __cplusplus */
-
-#ifdef __STDC__
-
-#ifdef __GNUC__
-#include <stddef.h>
-void *malloc( size_t );
-void free( void* );
-#else
-#include <stdlib.h>
-#endif	/* __GNUC__ */
-
-#define YY_USE_PROTOS
-#define YY_USE_CONST
-
-#endif	/* __STDC__ */
-#endif	/* ! __cplusplus */
-
-
-#ifdef __TURBOC__
-#define YY_USE_CONST
-#endif
 
 
 #ifndef YY_USE_CONST
@@ -63,13 +27,6 @@ void free( void* );
 #define YY_PROTO(proto) proto
 #else
 #define YY_PROTO(proto) ()
-/* we can't get here if it's an ANSI C compiler, or a C++ compiler,
- * so it's got to be a K&R compiler, and therefore there's no standard
- * place from which to include these definitions
- */
-char *malloc();
-int free();
-int read();
 #endif
 
 
@@ -103,7 +60,7 @@ int read();
  */
 
 /* #define yyterminate() return ( YY_NULL )  replaced by jbk */
-static int yyterminate_internal();
+static int yyterminate_internal( YY_PROTO(void) );
 #define yyterminate() return yyterminate_internal()
 
 /* report a fatal error */
@@ -476,7 +433,7 @@ do_action:	/* this label is used only to access EOF actions */
  *     EOB_ACT_END_OF_FILE - end of file
  */
 
-static int yy_get_next_buffer()
+static int yy_get_next_buffer( YY_PROTO(void) )
 
     {
     register YY_CHAR *dest = yy_current_buffer->yy_ch_buf;
@@ -557,7 +514,7 @@ static int yy_get_next_buffer()
  *     yy_state_type yy_get_previous_state();
  */
 
-static yy_state_type yy_get_previous_state()
+static yy_state_type yy_get_previous_state( YY_PROTO(void) )
 
     {
     register yy_state_type yy_current_state;
@@ -641,9 +598,9 @@ register YY_CHAR *yy_bp;
 
 
 #ifdef __cplusplus
-static int yyinput()
+static int yyinput( YY_PROTO(void) )
 #else
-static int input()
+static int input( YY_PROTO(void) )
 #endif
 
     {
@@ -854,7 +811,7 @@ FILE *file;
     b->yy_eof_status = EOF_NOT_SEEN;
     }
 
-static int yyterminate_internal()
+static int yyterminate_internal( YY_PROTO(void) )
 {
 	/* jbk fix - buffer created by yy_create_buffer needs to be freed */
 	yy_delete_buffer(yy_current_buffer);

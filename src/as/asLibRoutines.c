@@ -19,7 +19,6 @@
 #include "epicsStdioRedirect.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
-#include "ellLib.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
@@ -27,8 +26,6 @@
 #include "freeList.h"
 #include "macLib.h"
 #include "postfix.h"
-#include "errlog.h"
-#include "ellLib.h"
  
 static epicsMutexId asLock;
 #define LOCK epicsMutexMustLock(asLock)
@@ -45,9 +42,10 @@ epicsShareDef int   asActive = FALSE;
 static void         *freeListPvt = NULL;
 
 
-#define RPCL_LEN 184
 #define DEFAULT "DEFAULT"
 
+/* Defined in asLib.y */
+static int myParse(ASINPUTFUNCPTR inputfunction);
 
 /*private routines */
 static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName);
@@ -239,7 +237,7 @@ long epicsShareAPI asInitFP(FILE *fp,const char *substitutions)
 	    errMessage(status,"asInitFP: macCreateHandle error");
 	    return(status);
 	}
-	macParseDefns(macHandle,(char *)substitutions,&macPairs);
+	macParseDefns(macHandle,substitutions,&macPairs);
 	if(macPairs ==NULL) {
 	    macDeleteHandle(macHandle);
 	    macHandle = NULL;

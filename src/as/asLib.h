@@ -14,6 +14,8 @@
 #define INCasLibh
 
 #include "shareLib.h"
+#include "ellLib.h"
+#include "errlog.h"
 
 #ifdef __cplusplus
 extern "C" {

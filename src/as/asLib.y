@@ -8,9 +8,8 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 %{
-static int yyerror();
+static int yyerror(char *);
 static int yy_start;
-static int myParse();
 #include "asLibRoutines.c"
 static int yyFailed = FALSE;
 static int line_num=1;
@@ -207,8 +206,7 @@ rule_hag_list_name:	tokenSTRING
  
 #include "asLib_lex.c"
  
-static int yyerror(str)
-char  *str;
+static int yyerror(char *str)
 {
     if (strlen(str)) epicsPrintf("%s\n", str);
     epicsPrintf("Access Security file error at line %d\n",

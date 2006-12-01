@@ -21,7 +21,7 @@ static ASINPUTFUNCPTR *my_yyinput;
 #undef YY_INPUT
 #define YY_INPUT(b,r,ms) (r=(*my_yyinput)((char *)b,ms))
 
-static int yyreset()
+static int yyreset(void)
 {
 	line_num=1;
 	BEGIN INITIAL;

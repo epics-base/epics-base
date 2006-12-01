@@ -61,7 +61,7 @@ iocshHost_RCS_WIN32 = iocshHost.rc
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=iocsh
-OBJLIB_SRCS = $(LIBSRCS)
+OBJLIB_SRCS = $(LIB_SRCS) $(iocsh_SRCS)
 endif
 
 include $(TOP)/configure/RULES

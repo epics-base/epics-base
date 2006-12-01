@@ -350,8 +350,16 @@ epicsTime::operator struct timeval () const
     time_t_wrapper ansiTimeTicks;
 
     ansiTimeTicks = *this;
+    // On Posix systems timeval :: tv_sec is a time_t so this can be 
+    // a direct assignement. On other systems I dont know that we can
+    // guarantee that time_t and timeval :: tv_sec will have the
+    // same epoch or have the same scaling factor to discrete seconds.
+    // For example, on windows time_t changed recently to a 64 bit 
+    // quantity but timeval is still a long. That can cause problems
+    // on 32 bit systems. So technically, we should have an os 
+    // dependent conversion between time_t and timeval :: tv_sec?
     ts.tv_sec = ansiTimeTicks.ts;
-    ts.tv_usec = static_cast<long> (this->nSec / nSecPerUSec);
+    ts.tv_usec = static_cast < long > ( this->nSec / nSecPerUSec );
     return ts;
 }
 
@@ -361,7 +369,14 @@ epicsTime::operator struct timeval () const
 epicsTime::epicsTime (const struct timeval &ts)
 {
     time_t_wrapper ansiTimeTicks;
-
+    // On Posix systems timeval :: tv_sec is a time_t so this can be 
+    // a direct assignement. On other systems I dont know that we can
+    // guarantee that time_t and timeval :: tv_sec will have the
+    // same epoch or have the same scaling factor to discrete seconds.
+    // For example, on windows time_t changed recently to a 64 bit 
+    // quantity but timeval is still a long. That can cause problems
+    // on 32 bit systems. So technically, we should have an os 
+    // dependent conversion between time_t and timeval :: tv_sec?
     ansiTimeTicks.ts = ts.tv_sec;
     *this = epicsTime (ansiTimeTicks);
     this->addNanoSec (ts.tv_usec * nSecPerUSec);

@@ -464,9 +464,11 @@ static void register_new_client ( osiSockAddr & from,
         client_list.remove ( *pNewClient );
         pNewClient->~repeaterClient ();
         freeList.release ( pNewClient );
-        epicsUInt16 port = ntohs ( from.ia.sin_port );
-        debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
-                    port ) );
+#       ifdef DEBUG
+            epicsUInt16 port = ntohs ( from.ia.sin_port );
+            debugPrintf ( ( "Deleted repeater client=%u (error while sending ack)\n",
+                        port ) );
+#       endif
     }
 
     /*

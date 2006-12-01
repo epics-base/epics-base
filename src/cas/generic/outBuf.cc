@@ -204,9 +204,10 @@ void outBuf::commitMsg ( ca_uint32_t reducedPayloadSize )
         payloadSizeExtended = reducedPayloadSize;
     }
     else {
-        AlignedWireRef < epicsUInt16 > payloadSize ( mp->m_postsize );
+        AlignedWireRef < epicsUInt16 > payloadSizeOnWire ( mp->m_postsize );
+        ca_uint32_t payloadSize = payloadSizeOnWire;
         assert ( reducedPayloadSize <= payloadSize );
-        payloadSize = static_cast < ca_uint16_t > ( reducedPayloadSize );
+        payloadSizeOnWire = static_cast < ca_uint16_t > ( reducedPayloadSize );
     }
     this->commitMsg ();
 }

@@ -25,7 +25,11 @@
 #ifndef osdWireFormat
 #define osdWireFormat
 
-#include <cstring>
+#ifdef __SUNPRO_CC
+#    include <string.h>
+#else
+#    include <cstring>
+#endif
 
 //
 // The default assumption is that the local floating point format is

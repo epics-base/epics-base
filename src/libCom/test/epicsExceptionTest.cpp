@@ -37,15 +37,15 @@ const nothrow_t  nothrow ;
 #if defined ( _MSC_VER )
     // some interesting bugs found in the MS implementation of new
 #   if _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */
-        static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
+        static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
 #   else
-        static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max()-100;
+        static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max () - 100;
 #   endif
 #elif defined(__GNUC__) && (__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=96))
-    // tornado does not supply ansi c++, and malloc(-15) succeeds...
+    // tornado does not supply ansi c++
     static const size_t unsuccessfulNewSize = UINT_MAX - 15u;
 #else
-    static const size_t unsuccessfulNewSize = numeric_limits<size_t>::max();
+    static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
 #endif
 
 class exThread : public epicsThreadRunable {

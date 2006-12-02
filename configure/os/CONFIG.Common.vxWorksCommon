@@ -127,10 +127,11 @@ OP_SYS_CFLAGS += -fno-builtin
 #OP_SYS_CFLAGS += -fno-builtin -fdollars-in-identifiers
 OP_SYS_LDFLAGS +=
 
-# Fix for vxWorks headers using macros defined in
-# vxWorks.h but not including vxWorks.h 
-OP_SYS_INCLUDE_CPPFLAGS_5.5 += -include $(VX_DIR)/target/h/vxWorks.h
-OP_SYS_INCLUDE_CPPFLAGS = $(OP_SYS_INCLUDE_CPPFLAGS_$(VXWORKS_VERSION))
+# Fix for vxWorks headers that use macros defined in vxWorks.h but
+# which don't actually include vxWorks.h themselves, for example the
+# target/h/sys/stat.h file which uses ULONG
+OP_SYS_INCLUDE_CPPFLAGS_5 += -include $(VX_DIR)/target/h/vxWorks.h
+OP_SYS_INCLUDE_CPPFLAGS = $(OP_SYS_INCLUDE_CPPFLAGS_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
 # code flags

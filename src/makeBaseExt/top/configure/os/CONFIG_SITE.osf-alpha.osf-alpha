@@ -24,4 +24,5 @@ XRTGRAPH = /usr/local/xrtgraph
 QUESTWIN =
 IDL =
 JAVA_DIR=/usr/local/java
+JAVA_INC=$(JAVA_DIR)/include
 

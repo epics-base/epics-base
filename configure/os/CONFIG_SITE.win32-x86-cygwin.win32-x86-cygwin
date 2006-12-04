@@ -1,0 +1,4 @@
+
+# Shared libraries are not yet supported in cygwin builds.
+SHARED_LIBRARIES=NO
+

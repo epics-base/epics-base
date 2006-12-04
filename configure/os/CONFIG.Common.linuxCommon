@@ -23,7 +23,10 @@ OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS += -lrt
 
 # Set runtime path for shared libraries
-RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)
+SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
+# Set runtime path for products
+PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline -lcurses

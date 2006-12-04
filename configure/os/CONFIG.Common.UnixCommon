@@ -17,11 +17,6 @@ VALID_BUILDS = Host Ioc
 GNU_DIR = /usr/local
 
 #-------------------------------------------------------
-# Get fullpathname of relative dirs
-SHRLIB_SEARCH_FULLPATHDIRS = $(foreach dir,$(SHRLIB_SEARCH_DIRS), \
-  $(shell perl $(TOOLS)/fullPathName.pl $(dir)))
-
-#-------------------------------------------------------
 # Unix prefix and suffix definitions
 EXE =
 OBJ = .o
@@ -55,8 +50,10 @@ SHRLIB_DEPLIBS=$(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
 SHRLIB_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(LIB_LIBS) $(USR_LIBS) \
  $($*_SYS_LIBS) $(LIB_SYS_LIBS) $(USR_SYS_LIBS)) $(LDLIBS)
 
-SHRLIB_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(SHRLIB_DEPLIBS))
-SHRLIBDIR_LDFLAGS += $(sort $(SHRLIB_DEPLIB_DIRS:%=-L%))
+SHRLIB_DEPLIB_DIRS = $(foreach word,$(sort $(dir $($*_DEPLIBS) $(SHRLIB_DEPLIBS))), \
+  $(shell perl $(TOOLS)/fullPathName.pl $(word)))
+
+SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-L%)
 
 #-------------------------------------------------------
 # Prod: DEPLIBS, LDFLAGS, and LDLIBS definitions
@@ -75,8 +72,10 @@ LDLIBS_SHARED_NO = LDLIBS
 PROD_LDLIBS += $($(firstword $(LDLIBS_STATIC_$(STATIC_BUILD)) \
                $(LDLIBS_SHARED_$(SHARED_LIBRARIES))))
 
-PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
-PRODDIR_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))
+PROD_DEPLIB_DIRS = $(foreach word,$(sort $(dir $($*_DEPLIBS) $(PROD_DEPLIBS))), \
+  $(shell perl $(TOOLS)/fullPathName.pl $(word)))
+
+PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-L%)
 
 #--------------------------------------------------
 # Link definitions

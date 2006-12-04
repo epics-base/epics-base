@@ -15,8 +15,10 @@ ARCH_CLASS = arm
 ARCH_DEP_CPPFLAGS += -D_ARM_NWFP_
 
 # Set runtime path for shared libraries
-#RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath,%)
-RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_DIRS:%=-Wl,-rpath-link,%)
+SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
+# Set runtime path for products
+PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 
 ifdef CROSS
    GNU_TARGET=arm-linux

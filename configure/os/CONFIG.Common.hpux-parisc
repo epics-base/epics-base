@@ -26,6 +26,9 @@ LOADABLE_SHRLIB_SUFFIX = .sl$(addprefix .,$(LOADABLE_SHRLIB_VERSION))
 # Set runtime path for shared libraries
 empty:=                                      # trick from the make docs...
 space:= $(empty) $(empty)
-RUNTIME_LDFLAGS = -Wl,+b$(subst $(space),:,$(sort $(SHRLIB_SEARCH_FULLPATHDIRS))),+s
+SHRLIBDIR_LDFLAGS += -Wl,+b$(subst $(space),:,$(SHRLIB_DEPLIB_DIRS)),+s
+
+# Set runtime path for products
+PRODDIR_LDFLAGS += -Wl,+b$(subst $(space),:,$(PROD_DEPLIB_DIRS)),+s
 
 GNU_TARGET=parisc-hp-unix

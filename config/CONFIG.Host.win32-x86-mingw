@@ -51,3 +51,8 @@ POSIX_CPPFLAGS_YES =
 
 ARCH_DEP_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 
+# Remove -ansi compile option for gcc (does not allow c++ type comments).
+GCC_ANSI = $(GCC)
+GCC_STRICT = $(GCC) -pedantic
+G++_NORMAL = $(G++) -pedantic
+G++_STRICT = $(G++)  -pedantic

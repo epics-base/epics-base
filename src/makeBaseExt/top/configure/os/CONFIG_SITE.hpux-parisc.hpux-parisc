@@ -24,5 +24,7 @@ WINGZ_LIB = /usr/local/Wingz2/lib
 MATHEMATICA = /usr/local/math
 QUESTWIN = /usr/local/questwin
 IDL = /usr/csite/idl
+#JAVA_DIR=/usr/java/j2sdk1.4.1_01
 JAVA_DIR=/usr/local/java
+JAVA_INC=$(JAVA_DIR)/include
 

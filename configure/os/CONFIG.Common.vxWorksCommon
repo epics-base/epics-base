@@ -89,6 +89,14 @@ VX_GNU_VERSION_6.3 = 3.4.4
 VX_GNU_VERSION = $(VX_GNU_VERSION_$(VXWORKS_VERSION))
 
 #--------------------------------------------------
+# Fix WIND_BASE for vxWorks 6.x on linux
+ifeq ($(VXWORKS_MAJOR_VERSION),6)
+  ifeq ($(WIND_HOST_TYPE),x86-linux)
+    WIND_HOST_TYPE = x86-linux2
+  endif
+endif
+
+#--------------------------------------------------
 # vxWorks directory definitions
 VX_DIR_5 = $(WIND_BASE)
 VX_DIR_6 = $(WIND_BASE)/vxWorks-$(VXWORKS_VERSION)

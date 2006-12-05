@@ -159,27 +159,6 @@ union WireAlias < epicsFloat32 > {
 // over-aggresive optimization under strict aliasing rules.
 //
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsUInt8 & dst )
-{
-    dst = pWireSrc[0];
-}
-
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsUInt16 & dst )
-{
-    dst = 
-        ( static_cast < epicsUInt16 > ( pWireSrc[0] ) << 8u ) |
-          static_cast < epicsUInt16 > ( pWireSrc[1] );
-}
-
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsUInt32 & dst )
-{
-    dst = 
-        ( static_cast < epicsUInt32 > ( pWireSrc[0] ) << 24u ) | 
-        ( static_cast < epicsUInt32 > ( pWireSrc[1] ) << 16u ) |
-        ( static_cast < epicsUInt32 > ( pWireSrc[2] ) <<  8u ) |
-          static_cast < epicsUInt32 > ( pWireSrc[3] );
-}
-
 template < class T >
 inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
 {
@@ -191,23 +170,31 @@ inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
     dst = tmp._o;
 }
 
-inline void WireSet ( const epicsUInt8 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireGet < epicsUInt8 > ( 
+    const epicsUInt8 * pWireSrc, epicsUInt8 & dst )
 {
-    pWireDst[0] = src;
+    dst = pWireSrc[0];
 }
 
-inline void WireSet ( const epicsUInt16 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireGet < epicsUInt16 > ( 
+    const epicsUInt8 * pWireSrc, epicsUInt16 & dst )
 {
-    pWireDst[0] = static_cast < epicsUInt8 > ( src >> 8u );
-    pWireDst[1] = static_cast < epicsUInt8 > ( src );
+    dst = 
+        ( static_cast < epicsUInt16 > ( pWireSrc[0] ) << 8u ) |
+          static_cast < epicsUInt16 > ( pWireSrc[1] );
 }
 
-inline void WireSet ( const epicsUInt32 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireGet < epicsUInt32 > ( 
+    const epicsUInt8 * pWireSrc, epicsUInt32 & dst )
 {
-    pWireDst[0] = static_cast < epicsUInt8 > ( src >> 24u );
-    pWireDst[1] = static_cast < epicsUInt8 > ( src >> 16u );
-    pWireDst[2] = static_cast < epicsUInt8 > ( src >>  8u );
-    pWireDst[3] = static_cast < epicsUInt8 > ( src );
+    dst = 
+        ( static_cast < epicsUInt32 > ( pWireSrc[0] ) << 24u ) | 
+        ( static_cast < epicsUInt32 > ( pWireSrc[1] ) << 16u ) |
+        ( static_cast < epicsUInt32 > ( pWireSrc[2] ) <<  8u ) |
+          static_cast < epicsUInt32 > ( pWireSrc[3] );
 }
 
 template < class T >
@@ -219,6 +206,31 @@ inline void WireSet ( const T & src, epicsUInt8 * pWireDst )
     WireAlias < T > tmp;
     tmp._o = src;
     WireSet ( tmp._u, pWireDst );
+}
+
+template <>
+inline void WireSet < epicsUInt8 > ( 
+    const epicsUInt8 & src, epicsUInt8 * pWireDst )
+{
+    pWireDst[0] = src;
+}
+
+template <>
+inline void WireSet < epicsUInt16 > ( 
+    const epicsUInt16 & src, epicsUInt8 * pWireDst )
+{
+    pWireDst[0] = static_cast < epicsUInt8 > ( src >> 8u );
+    pWireDst[1] = static_cast < epicsUInt8 > ( src );
+}
+
+template <>
+inline void WireSet < epicsUInt32 > ( 
+    const epicsUInt32 & src, epicsUInt8 * pWireDst )
+{
+    pWireDst[0] = static_cast < epicsUInt8 > ( src >> 24u );
+    pWireDst[1] = static_cast < epicsUInt8 > ( src >> 16u );
+    pWireDst[2] = static_cast < epicsUInt8 > ( src >>  8u );
+    pWireDst[3] = static_cast < epicsUInt8 > ( src );
 }
 
 template < class T >

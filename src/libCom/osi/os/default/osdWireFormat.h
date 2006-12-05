@@ -95,7 +95,9 @@
 // but inconsistent with the vast majority of CPUs
 //
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
+template <>
+inline void WireGet < epicsFloat64 > ( 
+    const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
 {
     // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules
@@ -116,12 +118,15 @@ inline void WireGet ( const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
     dst = tmp._f;
 }
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsOldString & dst )
+inline void WireGet ( 
+    const epicsUInt8 * pWireSrc, epicsOldString & dst )
 {
     memcpy ( & dst, pWireSrc, sizeof ( dst ) );
 }
 
-inline void WireSet ( const epicsFloat64 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireSet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsUInt8 * pWireDst )
 {
     // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules
@@ -142,12 +147,15 @@ inline void WireSet ( const epicsFloat64 & src, epicsUInt8 * pWireDst )
 #   endif
 }
 
-inline void WireSet ( const epicsOldString & src, epicsUInt8 * pWireDst )
+inline void WireSet ( 
+    const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, & src, sizeof ( src ) );
 }
 
-inline void AlignedWireGet ( const epicsUInt16 & src, epicsUInt16 & dst )
+template <>
+inline void AlignedWireGet < epicsUInt16 > ( 
+    const epicsUInt16 & src, epicsUInt16 & dst )
 {
 #   if defined ( EPICS_LITTLE_ENDIAN )
         dst = byteSwap ( src );
@@ -158,7 +166,9 @@ inline void AlignedWireGet ( const epicsUInt16 & src, epicsUInt16 & dst )
 #   endif
 }
 
-inline void AlignedWireGet ( const epicsUInt32 & src, epicsUInt32 & dst )
+template <>
+inline void AlignedWireGet < epicsUInt32 > ( 
+    const epicsUInt32 & src, epicsUInt32 & dst )
 {
 #   if defined ( EPICS_LITTLE_ENDIAN )
         dst = byteSwap ( src );
@@ -169,7 +179,9 @@ inline void AlignedWireGet ( const epicsUInt32 & src, epicsUInt32 & dst )
 #   endif
 }
 
-inline void AlignedWireGet ( const epicsFloat64 & src, epicsFloat64 & dst )
+template <>
+inline void AlignedWireGet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsFloat64 & dst )
 {
    // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules
@@ -197,7 +209,9 @@ inline void AlignedWireGet ( const epicsFloat64 & src, epicsFloat64 & dst )
 #   endif
 }
 
-inline void AlignedWireSet ( const epicsUInt16 & src, epicsUInt16 & dst )
+template <>
+inline void AlignedWireSet < epicsUInt16 >
+    ( const epicsUInt16 & src, epicsUInt16 & dst )
 {
 #   if defined ( EPICS_LITTLE_ENDIAN )
         dst = byteSwap ( src );
@@ -208,7 +222,9 @@ inline void AlignedWireSet ( const epicsUInt16 & src, epicsUInt16 & dst )
 #   endif
 }
 
-inline void AlignedWireSet ( const epicsUInt32 & src, epicsUInt32 & dst )
+template <>
+inline void AlignedWireSet < epicsUInt32 > ( 
+    const epicsUInt32 & src, epicsUInt32 & dst )
 {
 #   if defined ( EPICS_LITTLE_ENDIAN )
         dst = byteSwap ( src );
@@ -219,7 +235,9 @@ inline void AlignedWireSet ( const epicsUInt32 & src, epicsUInt32 & dst )
 #   endif
 }
 
-inline void AlignedWireSet ( const epicsFloat64 & src, epicsFloat64 & dst )
+template <>
+inline void AlignedWireSet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsFloat64 & dst )
 {
     // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules

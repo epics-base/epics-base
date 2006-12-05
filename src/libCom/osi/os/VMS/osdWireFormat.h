@@ -23,12 +23,16 @@
 #define EPICS_LITTLE_ENDIAN
 #define EPICS_CONVERSION_REQUIRED
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsFloat32 & dst )
+template <>
+inline void WireGet < epicsFloat32 > ( 
+    const epicsUInt8 * pWireSrc, epicsFloat32 & dst )
 {
     cvt$convert_float ( pWireSrc, CVT$K_IEEE_S, & dst, CVT$K_VAX_F, CVT$M_BIG_ENDIAN );
 }
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
+template <>
+inline void WireGet < epicsFloat64 > ( 
+    const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
 {
 #   if defined ( __G_FLOAT ) && ( __G_FLOAT == 1 )
         cvt$convert_float ( pWireSrc, CVT$K_IEEE_T, & dst, CVT$K_VAX_G, CVT$M_BIG_ENDIAN );
@@ -37,17 +41,22 @@ inline void WireGet ( const epicsUInt8 * pWireSrc, epicsFloat64 & dst )
 #   endif
 }
 
-inline void WireGet ( const epicsUInt8 * pWireSrc, epicsOldString & dst )
+inline void WireGet ( 
+    const epicsUInt8 * pWireSrc, epicsOldString & dst )
 {
     memcpy ( & dst, pWireSrc, sizeof ( dst ) );
 }
 
-inline void WireSet ( const epicsFloat32 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireSet < epicsFloat32 > ( 
+    const epicsFloat32 & src, epicsUInt8 * pWireDst )
 {
     cvt$convert_float ( & src, CVT$K_VAX_F , pWireDst, CVT$K_IEEE_S, CVT$M_BIG_ENDIAN );
 }
 
-inline void WireSet ( const epicsFloat64 & src, epicsUInt8 * pWireDst )
+template <>
+inline void WireSet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsUInt8 * pWireDst )
 {
 #   if defined ( __G_FLOAT ) && ( __G_FLOAT == 1 )
         cvt$convert_float ( & src, CVT$K_VAX_G , pWireDst, CVT$K_IEEE_T, CVT$M_BIG_ENDIAN );
@@ -56,27 +65,36 @@ inline void WireSet ( const epicsFloat64 & src, epicsUInt8 * pWireDst )
 #   endif
 }
 
-inline void WireSet ( const epicsOldString & src, epicsUInt8 * pWireDst )
+inline void WireSet ( 
+    const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, & src, sizeof ( src ) );
 }
 
-inline void AlignedWireGet ( const epicsUInt16 & src, epicsUInt16 & dst )
+template <>
+inline void AlignedWireGet < epicsUInt16 > ( 
+    const epicsUInt16 & src, epicsUInt16 & dst )
 {
     dst = byteSwap ( src );
 }
 
-inline void AlignedWireGet ( const epicsUInt32 & src, epicsUInt32 & dst )
+template <>
+inline void AlignedWireGet < epicsUInt32 > ( 
+    const epicsUInt32 & src, epicsUInt32 & dst )
 {
     dst = byteSwap ( src );
 }
 
-inline void AlignedWireGet ( const epicsFloat32 & src, epicsFloat32 & dst )
+template <>
+inline void AlignedWireGet < epicsFloat32 > ( 
+    const epicsFloat32 & src, epicsFloat32 & dst )
 {
     cvt$convert_float ( & src, CVT$K_IEEE_S, & dst, CVT$K_VAX_F, CVT$M_BIG_ENDIAN );
 }
 
-inline void AlignedWireGet ( const epicsFloat64 & src, epicsFloat64 & dst )
+template <>
+inline void AlignedWireGet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsFloat64 & dst )
 {
 #   if defined ( __G_FLOAT ) && ( __G_FLOAT == 1 )
         cvt$convert_float ( & src, CVT$K_IEEE_T, & dst, CVT$K_VAX_G, CVT$M_BIG_ENDIAN );
@@ -85,22 +103,30 @@ inline void AlignedWireGet ( const epicsFloat64 & src, epicsFloat64 & dst )
 #   endif
 }
 
-inline void AlignedWireSet ( const epicsUInt16 & src, epicsUInt16 & dst )
+template <>
+inline void AlignedWireSet < epicsUInt16 > ( 
+    const epicsUInt16 & src, epicsUInt16 & dst )
 {
     dst = byteSwap ( src );
 }
 
-inline void AlignedWireSet ( const epicsUInt32 & src, epicsUInt32 & dst )
+template <>
+inline void AlignedWireSet < epicsUInt32 > ( 
+    const epicsUInt32 & src, epicsUInt32 & dst )
 {
     dst = byteSwap ( src );
 }
 
-inline void AlignedWireSet ( const epicsFloat32 & src, epicsFloat32 & dst )
+template <>
+inline void AlignedWireSet < epicsFloat32 > ( 
+    const epicsFloat32 & src, epicsFloat32 & dst )
 {
     cvt$convert_float ( & src, CVT$K_VAX_F , & dst, CVT$K_IEEE_S, CVT$M_BIG_ENDIAN );
 }
 
-inline void AlignedWireSet ( const epicsFloat64 & src, epicsFloat64 & dst )
+template <>
+inline void AlignedWireSet < epicsFloat64 > ( 
+    const epicsFloat64 & src, epicsFloat64 & dst )
 {
 #   if defined ( __G_FLOAT ) && ( __G_FLOAT == 1 )
         cvt$convert_float ( & src, CVT$K_VAX_G , & dst, CVT$K_IEEE_T, CVT$M_BIG_ENDIAN );

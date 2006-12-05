@@ -64,6 +64,8 @@ public:
     AlignedWireRef < T > & operator = ( const T & );
 private:
     T & _ref;
+    AlignedWireRef ( const AlignedWireRef & );
+    AlignedWireRef & operator = ( const AlignedWireRef & );
 };
 
 template < class T >
@@ -73,6 +75,8 @@ public:
     operator T () const;
 private:
     const T & _ref;
+    AlignedWireRef ( const AlignedWireRef & );
+    AlignedWireRef & operator = ( const AlignedWireRef & );
 };
 
 template < class T >
@@ -113,17 +117,19 @@ inline AlignedWireRef < const T > :: operator T () const
 // may be useful when creating support for little endian
 inline epicsUInt16 byteSwap ( const epicsUInt16 & src )
 {
-    return ( src << 8u ) | ( src >> 8u );
+    return static_cast < epicsUInt16 > 
+        ( ( src << 8u ) | ( src >> 8u ) );
 }
 
 // may be useful when creating support for little endian
 inline epicsUInt32 byteSwap ( const epicsUInt32 & src )
 {
-    epicsUInt16 tmp0 = src >> 16u;
-    epicsUInt16 tmp1 = src;
-    tmp0 = ( tmp0 << 8u ) | ( tmp0 >> 8u );
-    tmp1 = ( tmp1 << 8u ) | ( tmp1 >> 8u );
-    return ( tmp1 << 16u ) | tmp0;
+    epicsUInt32 tmp0 = byteSwap ( 
+        static_cast < epicsUInt16 > ( src >> 16u ) );
+    epicsUInt32 tmp1 = byteSwap ( 
+        static_cast < epicsUInt16 > ( src ) );
+    return static_cast < epicsUInt32 >
+        ( ( tmp1 << 16u ) | tmp0 );
 }
 
 template < class T > union WireAlias;
@@ -181,20 +187,19 @@ template <>
 inline void WireGet < epicsUInt16 > ( 
     const epicsUInt8 * pWireSrc, epicsUInt16 & dst )
 {
-    dst = 
-        ( static_cast < epicsUInt16 > ( pWireSrc[0] ) << 8u ) |
-          static_cast < epicsUInt16 > ( pWireSrc[1] );
+    dst = static_cast < epicsUInt16 > (
+        ( pWireSrc[0] << 8u ) | pWireSrc[1] );
 }
 
 template <>
 inline void WireGet < epicsUInt32 > ( 
     const epicsUInt8 * pWireSrc, epicsUInt32 & dst )
 {
-    dst = 
-        ( static_cast < epicsUInt32 > ( pWireSrc[0] ) << 24u ) | 
-        ( static_cast < epicsUInt32 > ( pWireSrc[1] ) << 16u ) |
-        ( static_cast < epicsUInt32 > ( pWireSrc[2] ) <<  8u ) |
-          static_cast < epicsUInt32 > ( pWireSrc[3] );
+    dst = static_cast < epicsUInt32 > (
+        ( pWireSrc[0] << 24u ) | 
+        ( pWireSrc[1] << 16u ) |
+        ( pWireSrc[2] <<  8u ) |
+          pWireSrc[3] );
 }
 
 template < class T >

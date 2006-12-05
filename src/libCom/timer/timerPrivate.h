@@ -131,7 +131,7 @@ public:
     bool sharingOK () const;
     unsigned threadPriority () const;
 protected:
-    virtual ~timerQueueActive () = 0;
+    ~timerQueueActive ();
 private:
     timerQueue queue;
     epicsEvent rescheduleEvent;

@@ -54,7 +54,7 @@ typedef struct epicsMutexOSD {
     } os;
 } epicsMutexOSD;
 
-static char thisIsNT = 0;
+static BOOL thisIsNT = FALSE;
 static LONG weHaveInitialized = 0;
 
 /*

@@ -100,7 +100,7 @@ BOOL WINAPI DllMain (
     HANDLE hModule, DWORD dwReason, LPVOID lpReserved )
 {
     static DWORD dllHandleIndex;
-    HMODULE dllHandle;
+    HMODULE dllHandle = 0;
     BOOL success = TRUE;
 
     switch ( dwReason ) 

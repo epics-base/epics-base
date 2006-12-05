@@ -64,6 +64,8 @@ private:
     void * operator new ( size_t ); 
     void operator delete ( void * );
     friend class ipAddrToAsciiEnginePrivate;
+    ipAddrToAsciiTransactionPrivate & operator = ( const ipAddrToAsciiTransactionPrivate & );
+    ipAddrToAsciiTransactionPrivate ( const ipAddrToAsciiTransactionPrivate & );
 };
 
 #ifdef _MSC_VER

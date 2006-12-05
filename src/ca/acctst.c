@@ -2545,7 +2545,7 @@ void verifyImmediateTearDown ( const char * pName,
         enum ca_preemptive_callback_select select, 
         unsigned interestLevel )
 {
-    unsigned i;
+    int i;
 
     showProgressBegin ( "verifyImmediateTearDown", interestLevel );
 

@@ -1367,7 +1367,7 @@ void tcpiiu::echoRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 431
 {
     guard.assertIdenticalMutex ( this->mutex );
     
-    int command = CA_PROTO_ECHO;
+    epicsUInt16 command = CA_PROTO_ECHO;
     if ( ! CA_V43 ( this->minorProtocolVersion ) ) {
         // we fake an echo to early server using a read sync
         command = CA_PROTO_READ_SYNC;

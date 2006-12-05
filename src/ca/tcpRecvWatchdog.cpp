@@ -198,7 +198,7 @@ void tcpRecvWatchdog::connectNotify (
 }
 
 void tcpRecvWatchdog::sendTimeoutNotify ( 
-    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );

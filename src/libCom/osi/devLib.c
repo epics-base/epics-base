@@ -549,7 +549,7 @@ long devAllocAddress(
     epicsAddressType addrType,
     size_t size,
     unsigned alignment, /* n ls bits zero in base addr*/
-    volatile void **pLocalAddress)
+    volatile void ** pLocalAddress )
 {
     int s;
     rangeItem *pRange;
@@ -596,7 +596,7 @@ long devAllocAddress(
     }
 
     s = devInstallAddr (pRange, pOwnerName, addrType, base,
-            size, NULL);
+            size, pLocalAddress);
 
     return s;
 }

@@ -41,8 +41,8 @@ const nothrow_t  nothrow ;
 #   else
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max () - 100;
 #   endif
-#elif defined(__GNUC__) && (__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=96))
-    // tornado does not supply ansi c++
+#elif defined(vxWorks)
+    // Neither vxWorks 5 or 6 supply true ANSI C++
     static const size_t unsuccessfulNewSize = UINT_MAX - 15u;
 #else
     static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();

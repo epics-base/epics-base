@@ -9,9 +9,6 @@ include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 
-# Override the -nostdinc flag, needed here...
-CROSS_CPPFLAGS = 
-
 # Copied from x86.x86
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO= 

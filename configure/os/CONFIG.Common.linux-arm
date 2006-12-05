@@ -6,7 +6,7 @@
 # Sites may override these definitions in CONFIG_SITE.Common.linux-arm
 #-------------------------------------------------------
 
-# Include definitions common to all Unix targets
+# Include definitions common to all Linux targets
 include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
 ARCH_CLASS = arm
@@ -14,16 +14,16 @@ ARCH_CLASS = arm
 # Set a special definition for network order of Netwinder ARM floating point
 ARCH_DEP_CPPFLAGS += -D_ARM_NWFP_
 
-# Set runtime path for shared libraries
-SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+ifeq ($(BUILD_CLASS),CROSS)
+    GNU_TARGET = arm-linux
 
-# Set runtime path for products
-PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+    # prefix of compiler tools
+    CMPLR_SUFFIX =
+    CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
 
-ifdef CROSS
-   GNU_TARGET=arm-linux
-   # prefix of compiler tools
-   CMPLR_SUFFIX=
-   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+    # Override - use compile-time only path for shared libraries
+    SHRLIBDIR_LDFLAGS = $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+
+    # Override - use compile-time only path for products
+    PRODDIR_LDFLAGS = $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
 endif
-

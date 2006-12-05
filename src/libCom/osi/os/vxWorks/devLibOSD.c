@@ -400,9 +400,9 @@ void unsolicitedHandlerEPICS(int vectorNumber)
         (int)__FILE__,
         __LINE__,
         vectorNumber,
-        NULL,
-        NULL,
-        NULL);
+        0,
+        0,
+        0);
 }
 
 /*

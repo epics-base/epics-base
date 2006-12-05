@@ -41,7 +41,7 @@
 #include "ctype.h"
 #include "sysSymTbl.h"
 
-static char *sccsID = 
+static char sccsID[] = 
 	"@(#) $Id$";
 
 /*

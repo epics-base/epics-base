@@ -3,9 +3,8 @@
 # This file is maintained by the build community.
 #
 # Definitions for freebsd host builds
-# Sites may override these definitions in CONFIG_SITE.freebsd-x86_64.Common
+# Sites may override these definitions in CONFIG_SITE.freebsd-x86.Common
 #-------------------------------------------------------
 
-# Include definitions common to unix hosts
+#Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
-

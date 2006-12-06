@@ -60,9 +60,8 @@ genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
 PROD_LIBS = Com
 
-# i386-rtems-gcc version 2.95.2 can't compile this with optimization.
-# Remove the following line once a better version of gcc is available.
-aitConvert_OPT_RTEMS-pc386 = NO
+# aitGen.c doesn't compile for linux-arm at -O3 when using gcc-3.4.5
+aitGen_CFLAGS_linux-arm = -O2
 
 # Switch off potentially bogus warnings on HPUX 11 - detailed warning
 # suppression in the source code would be too much effort with respect

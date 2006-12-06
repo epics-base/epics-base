@@ -89,9 +89,10 @@ epicsShareFunc long epicsShareAPI dbs(const char *recordname);
 epicsShareFunc long epicsShareAPI dbstat(void);
 epicsShareFunc long epicsShareAPI dbp(
     const char *record_name, int interest_level);
-epicsShareFunc long epicsShareAPI  dbap(const char *record_name);
+epicsShareFunc long epicsShareAPI dbap(const char *record_name);
 epicsShareFunc int  epicsShareAPI dbBkpt(dbCommon *precord);
 epicsShareFunc void epicsShareAPI dbPrint(dbCommon *precord);
+epicsShareFunc long epicsShareAPI dbprc(char *record_name);
 
 extern long lset_stack_not_empty;
 

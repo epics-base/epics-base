@@ -47,12 +47,13 @@
 RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook = NULL;
 
 /* local routines */
-static void getMaxRangeValues();
+static void getMaxRangeValues(short field_type, double *pupper_limit,
+    double *plower_limit);
 
 
 
-void epicsShareAPI recGblDbaddrError(
-    long status,struct dbAddr *paddr,char *pmessage)
+void epicsShareAPI recGblDbaddrError(long status, struct dbAddr *paddr,
+    const char *pmessage)
 {
     dbCommon *precord = 0;
     dbFldDes	*pdbFldDes = 0;
@@ -70,7 +71,8 @@ void epicsShareAPI recGblDbaddrError(
     return;
 }
 
-void epicsShareAPI recGblRecordError(long status,void *pdbc,char *pmessage)
+void epicsShareAPI recGblRecordError(long status, void *pdbc,
+    const char *pmessage)
 {
     dbCommon	*precord = pdbc;
 
@@ -81,9 +83,8 @@ void epicsShareAPI recGblRecordError(long status,void *pdbc,char *pmessage)
     return;
 }
 
-void epicsShareAPI recGblRecSupError(
-    long status,struct dbAddr *paddr,char *pmessage,
-    char *psupport_name)
+void epicsShareAPI recGblRecSupError(long status, struct dbAddr *paddr,
+    const char *pmessage, const char *psupport_name)
 {
     dbCommon *precord = 0;
     dbFldDes	*pdbFldDes = 0;
@@ -316,10 +317,8 @@ void epicsShareAPI recGblTSELwasModified(struct link *plink)
     }
 }
 
-static void getMaxRangeValues(field_type,pupper_limit,plower_limit)
-    short           field_type;
-    double          *pupper_limit;
-    double          *plower_limit;
+static void getMaxRangeValues(short field_type, double *pupper_limit,
+    double *plower_limit)
 {
     switch(field_type){
     case(DBF_CHAR):

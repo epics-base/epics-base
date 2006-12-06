@@ -48,11 +48,11 @@ extern RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook;
 /* Global Record Support Routines */
 
 epicsShareFunc void epicsShareAPI recGblDbaddrError(
-    long status, struct dbAddr *paddr, char *pcaller_name);
+    long status, struct dbAddr *paddr, const char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecordError(
-    long status, void *precord, char *pcaller_name);
+    long status, void *precord, const char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecSupError(
-    long status, struct dbAddr *paddr, char *pcaller_name, char *psupport_name);
+    long status, struct dbAddr *paddr, const char *pcaller_name, const char *psupport_name);
 epicsShareFunc void epicsShareAPI recGblGetGraphicDouble(
     struct dbAddr *paddr, struct dbr_grDouble *pgd);
 epicsShareFunc void epicsShareAPI recGblGetControlDouble(

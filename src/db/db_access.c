@@ -1093,121 +1093,121 @@ int		no_elements
 	break;
     case(oldDBR_STS_STRING):
 	status = dbPutField(paddr,DBR_STRING,
-	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	    ((const struct dbr_sts_string *)psrc)->value,(long)no_elements);
 	break;
 /*  case(oldDBR_STS_INT): */
     case(oldDBR_STS_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,
-	    &(((struct dbr_sts_short *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_short *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_STS_FLOAT):
 	status = dbPutField(paddr,DBR_FLOAT,
-	    &(((struct dbr_sts_float *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_float *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_STS_ENUM):
 	status = dbPutField(paddr,DBR_ENUM,
-	    &(((struct dbr_sts_enum *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_enum *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_STS_CHAR):
 	status = dbPutField(paddr,DBR_UCHAR,
-	    &(((struct dbr_sts_char *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_char *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_STS_LONG):
 	status = dbPutField(paddr,DBR_LONG,
-	    &(((struct dbr_sts_long *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_long *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_STS_DOUBLE):
 	status = dbPutField(paddr,DBR_DOUBLE,
-	    &(((struct dbr_sts_double *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_sts_double *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_STRING):
 	status = dbPutField(paddr,DBR_TIME,
-	    ((struct dbr_time_string *)psrc)->value,(long)no_elements);
+	    ((const struct dbr_time_string *)psrc)->value,(long)no_elements);
 	break;
 /*  case(oldDBR_TIME_INT): */
     case(oldDBR_TIME_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,
-	    &(((struct dbr_time_short *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_short *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_FLOAT):
 	status = dbPutField(paddr,DBR_FLOAT,
-	    &(((struct dbr_time_float *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_float *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_ENUM):
 	status = dbPutField(paddr,DBR_ENUM,
-	    &(((struct dbr_time_enum *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_enum *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_CHAR):
 	status = dbPutField(paddr,DBR_UCHAR,
-	    &(((struct dbr_time_char *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_char *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_LONG):
 	status = dbPutField(paddr,DBR_LONG,
-	    &(((struct dbr_time_long *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_long *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_TIME_DOUBLE):
 	status = dbPutField(paddr,DBR_DOUBLE,
-	    &(((struct dbr_time_double *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_time_double *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_STRING):
 	/* no struct dbr_gr_string - use dbr_sts_string instead */
 	status = dbPutField(paddr,DBR_STRING,
-	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	    ((const struct dbr_sts_string *)psrc)->value,(long)no_elements);
 	break;
 /*  case(oldDBR_GR_INT): */
     case(oldDBR_GR_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,
-	    &(((struct dbr_gr_short *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_short *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_FLOAT):
 	status = dbPutField(paddr,DBR_FLOAT,
-	    &(((struct dbr_gr_float *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_float *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_ENUM):
 	status = dbPutField(paddr,DBR_ENUM,
-	    &(((struct dbr_gr_enum *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_enum *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_CHAR):
 	status = dbPutField(paddr,DBR_UCHAR,
-	    &(((struct dbr_gr_char *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_char *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_LONG):
 	status = dbPutField(paddr,DBR_LONG,
-	    &(((struct dbr_gr_long *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_long *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_GR_DOUBLE):
 	status = dbPutField(paddr,DBR_DOUBLE,
-	    &(((struct dbr_gr_double *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_gr_double *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_STRING):
 	/* no struct dbr_ctrl_string - use dbr_sts_string instead */
 	status = dbPutField(paddr,DBR_STRING,
-	    ((struct dbr_sts_string *)psrc)->value,(long)no_elements);
+	    ((const struct dbr_sts_string *)psrc)->value,(long)no_elements);
 	break;
 /*  case(oldDBR_CTRL_INT): */
     case(oldDBR_CTRL_SHORT):
 	status = dbPutField(paddr,DBR_SHORT,
-	    &(((struct dbr_ctrl_short *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_short *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_FLOAT):
 	status = dbPutField(paddr,DBR_FLOAT,
-	    &(((struct dbr_ctrl_float *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_float *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_ENUM):
 	status = dbPutField(paddr,DBR_ENUM,
-	    &(((struct dbr_ctrl_enum *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_enum *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_CHAR):
 	status = dbPutField(paddr,DBR_UCHAR,
-	    &(((struct dbr_ctrl_char *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_char *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_LONG):
 	status = dbPutField(paddr,DBR_LONG,
-	    &(((struct dbr_ctrl_long *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_long *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_CTRL_DOUBLE):
 	status = dbPutField(paddr,DBR_DOUBLE,
-	    &(((struct dbr_ctrl_double *)psrc)->value),(long)no_elements);
+	    &(((const struct dbr_ctrl_double *)psrc)->value),(long)no_elements);
 	break;
     case(oldDBR_PUT_ACKT):
 	status = dbPutField(paddr,DBR_PUT_ACKT,psrc,(long)no_elements);

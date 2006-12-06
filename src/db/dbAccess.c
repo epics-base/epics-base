@@ -57,8 +57,6 @@
 #include "dbAccessDefs.h"
 #include "recGbl.h"
 
-extern long lset_stack_not_empty;
-
 epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
 
@@ -119,7 +117,7 @@ static long putSpecial(DBADDR *paddr,int pass)
     return(0);
 }
 
-static void get_enum_strs(DBADDR *paddr,void **ppbuffer,
+static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
 	short		field_type=paddr->field_type;
@@ -179,7 +177,7 @@ choice_common:
 	return;
 }
 
-static void get_graphics(DBADDR *paddr,void **ppbuffer,
+static void get_graphics(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
 	struct			dbr_grDouble grd;
@@ -219,7 +217,7 @@ static void get_graphics(DBADDR *paddr,void **ppbuffer,
 	return;
 }
 
-static void get_control(DBADDR *paddr,void **ppbuffer,
+static void get_control(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
 	struct dbr_ctrlDouble	ctrld;
@@ -259,7 +257,7 @@ static void get_control(DBADDR *paddr,void **ppbuffer,
 	return;
 }
 
-static void get_alarm(DBADDR *paddr,void	**ppbuffer,
+static void get_alarm(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
 	struct			dbr_alDouble ald;
@@ -304,14 +302,13 @@ static void get_alarm(DBADDR *paddr,void	**ppbuffer,
 	return;
 }
 
-static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
+static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
 	struct rset	*prset;
 	short		field_type=paddr->field_type;
 	dbCommon	*pcommon;
-	void		*pbuffer = *poriginal;
-
+	char		*pbuffer = *poriginal;
 
 	prset=dbGetRset(paddr);
 	/* Process options */
@@ -328,19 +325,17 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 	    }
 	    *pushort++ = pcommon->acks;
 	    *pushort++ = pcommon->ackt;
-	    pbuffer = pushort;
+	    pbuffer = (char *)pushort;
 	}
 	if( (*options) & DBR_UNITS ) {
 	    memset(pbuffer,'\0',dbr_units_size);
 	    if( prset && prset->get_units ){ 
-		char *	pchar = (char *)pbuffer;
-
-		(*prset->get_units)(paddr,pchar);
-		pchar[DB_UNITS_SIZE-1] = '\0';
+		(*prset->get_units)(paddr, pbuffer);
+		pbuffer[DB_UNITS_SIZE-1] = '\0';
 	    } else {
-		*options = (*options) ^ DBR_UNITS; /*Turn off DBR_UNITS*/
+		*options ^= DBR_UNITS; /*Turn off DBR_UNITS*/
 	    }
-	    pbuffer = (char *)pbuffer + dbr_units_size;
+	    pbuffer += dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
 	    struct dbr_precision *pdbr_precision=
@@ -354,9 +349,9 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 			pdbr_precision->field_width =
 				pdbr_precision->precision + 5;
 	    } else {
-		*options = (*options)^DBR_PRECISION; /*Turn off DBR_PRECISION*/
+		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
-	    pbuffer = (char *)pbuffer + dbr_precision_size;
+	    pbuffer += dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
 	    unsigned long *pulong = (unsigned long *)pbuffer;
@@ -367,16 +362,16 @@ static void getOptions(DBADDR *paddr,void **poriginal,long *options,void *pflin)
 		*pulong++ = pcommon->time.secPastEpoch;
 		*pulong++ = pcommon->time.nsec;
 	    }
-	    pbuffer = pulong;
+	    pbuffer = (char *)pulong;
 	}
 	if( (*options) & DBR_ENUM_STRS )
-		get_enum_strs(paddr,&pbuffer,prset,options);
+	    get_enum_strs(paddr, &pbuffer, prset, options);
 	if( (*options) & (DBR_GR_LONG|DBR_GR_DOUBLE ))
-			get_graphics(paddr,&pbuffer,prset,options);
+	    get_graphics(paddr, &pbuffer, prset, options);
 	if((*options) & (DBR_CTRL_LONG | DBR_CTRL_DOUBLE ))
-			get_control(paddr,&pbuffer,prset,options);
+	    get_control(paddr, &pbuffer, prset, options);
 	if((*options) & (DBR_AL_LONG | DBR_AL_DOUBLE ))
-			get_alarm(paddr,&pbuffer,prset,options);
+	    get_alarm(paddr, &pbuffer, prset, options);
 	*poriginal = pbuffer;
 }
 
@@ -921,7 +916,8 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
 	    status = S_db_badDbrtype;
 	    goto done;
 	}
-	if(options && (*options))getOptions(paddr,(void **)&pbuf,options,pflin);
+	if (options && (*options))
+	    getOptions(paddr, &pbuf, options, pflin);
 	if(nRequest && *nRequest==0) goto done;
 	dbInitEntry(pdbbase,&dbEntry);
 	status = dbFindRecord(&dbEntry,precord->name);
@@ -966,7 +962,7 @@ long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,
 	}
 	prset=dbGetRset(paddr);
 	if(options && (*options)) {
-		void *pbuf = pbuffer;
+		char *pbuf = pbuffer;
 
 		getOptions(paddr,&pbuf,options,pflin);
 		pbuffer = pbuf;
@@ -1262,12 +1258,8 @@ long epicsShareAPI dbPutField(
     return(status);
 }
 
-static long putAckt(paddr,pbuffer,nRequest,no_elements,offset)
-DBADDR	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
+static long putAckt(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
+    long no_elements, long offset)
 {
     dbCommon *precord=(dbCommon *)(paddr->precord);
 
@@ -1282,12 +1274,8 @@ long		offset;
     return(0);
 }
 
-static long putAcks(paddr,pbuffer,nRequest,no_elements,offset)
-DBADDR	*paddr;
-unsigned short 	*pbuffer;
-long		nRequest;
-long		no_elements;
-long		offset;
+static long putAcks(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
+    long no_elements, long offset)
 {
     dbCommon *precord=(dbCommon *)(paddr->precord);
 
@@ -1316,11 +1304,9 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
 
         if(special==SPC_ATTRIBUTE) return(S_db_noMod);
 	if(dbrType==DBR_PUT_ACKT && field_type<=DBF_DEVICE) {
-	    status=putAckt(paddr,(unsigned short*)pbuffer,1l,1l,0l);
-	    return(status);
+	    return putAckt(paddr,(const unsigned short*)pbuffer,1l,1l,0l);
 	} else if(dbrType==DBR_PUT_ACKS && field_type<=DBF_DEVICE) {
-	    status=putAcks(paddr,(unsigned short*)pbuffer,1l,1l,0l);
-	    return(status);
+	    return putAcks(paddr,(const unsigned short*)pbuffer,1l,1l,0l);
 	} else if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE)) {
 		sprintf(message,"dbPut - database request type is %d",dbrType);
 		recGblDbaddrError(S_db_badDbrtype,paddr,message);

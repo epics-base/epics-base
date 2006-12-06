@@ -77,7 +77,7 @@ static void callbackInitPvt(void *arg)
     }
 }
 
-void epicsShareAPI callbackInit()
+void epicsShareAPI callbackInit(void)
 {
     static epicsThreadOnceId callbackOnceFlag = EPICS_THREAD_ONCE_INIT;
     void *arg = 0;

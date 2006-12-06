@@ -21,9 +21,9 @@ ifeq ($(BUILD_CLASS),CROSS)
     CMPLR_SUFFIX =
     CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
 
-    # Override - use compile-time only path for shared libraries
-    SHRLIBDIR_LDFLAGS = $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    # Provide a link-time path for shared libraries
+    SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
 
-    # Override - use compile-time only path for products
-    PRODDIR_LDFLAGS = $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    # Provide a link-time path for products
+    PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
 endif

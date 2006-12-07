@@ -42,7 +42,7 @@ endif
 include $(TOP)/configure/RULES
 
 # Extra rule since asLib_lex.c is included by asLib.c
-asLib.o: asLib_lex.c
+asLib$(OBJ): asLib_lex.c
 
 clean::
 	@$(RM) asLib.c asLib_lex.c

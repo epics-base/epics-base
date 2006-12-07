@@ -285,7 +285,7 @@ static long readValue(pbi)
 		}
                 status=2; /* dont convert */
 	}
-	if (pbi->simm == menuSimmRAW){
+	else if (pbi->simm == menuSimmRAW){
 		status=dbGetLink(&(pbi->siol),DBR_ULONG,&(pbi->sval),0,0);
 		if (status==0){
 			pbi->rval=pbi->sval;

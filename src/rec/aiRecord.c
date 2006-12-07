@@ -425,7 +425,7 @@ static long readValue(aiRecord *pai)
 		}
                 status=2; /* dont convert */
 	}
-	if (pai->simm == menuSimmRAW){
+	else if (pai->simm == menuSimmRAW){
 		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
 		if (status==0) {
 			pai->udf=isnan(pai->sval);

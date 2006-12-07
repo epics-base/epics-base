@@ -360,7 +360,7 @@ static long readValue(pmbbi)
 		}
                 status=2; /* dont convert */
 	}
-	if (pmbbi->simm == menuSimmRAW){
+	else if (pmbbi->simm == menuSimmRAW){
 		status=dbGetLink(&(pmbbi->siol),DBR_ULONG,&(pmbbi->sval),0,0);
 		if (status==0){
 			pmbbi->rval=pmbbi->sval;

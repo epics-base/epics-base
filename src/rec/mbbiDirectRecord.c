@@ -264,7 +264,7 @@ static long readValue(pmbbiDirect)
 		}
 		status=2;	/* don't convert */
 	}
-	if (pmbbiDirect->simm == menuSimmRAW){
+	else if (pmbbiDirect->simm == menuSimmRAW){
 		status=dbGetLink(&(pmbbiDirect->siol),
 				 DBR_ULONG,&(pmbbiDirect->sval),0,0);
 		if (status==0){

@@ -12,23 +12,18 @@
 #  Sites may override these definitions in CONFIG_SITE.Host.freebsd
  
 OS_CLASS = freebsd
-ARCH_CLASS = x86_64
 
 # Include definitions common to all Unix archs
 include $(EPICS_BASE)/config/CONFIG.Host.UnixCommon
 
-ARCH_DEP_CPPFLAGS += -D_X86_64_
-
 CODE_CPPFLAGS = -D_REENTRANT
 
-#POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
 POSIX_CPPFLAGS = -D_POSIX_THREADS
 POSIX_LDLIBS = -lpthread
 
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
 OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dfreebsd
-#OP_SYS_LDLIBS += -lrt
 
 # Set runtime path for shared libraries
 RUNTIME_LDFLAGS = $(SHRLIB_SEARCH_FULLPATHDIRS:%=-Wl,-rpath,%)

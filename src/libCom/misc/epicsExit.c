@@ -13,6 +13,14 @@
  * Date: 23AUG2004
  * Thread exit revisions: Jeff Hill
  * Date: 06Dec2006
+ *
+ * Note that epicsExitCallAtThreadExits is currently called directly from the 
+ * thread entry wrapper in OS dependent code. That approach might not work 
+ * correctly if the thread exits indirectly instead of just returning from
+ * the function specified to epicsThreadCreate. For example the thread might 
+ * exit via the exit() call. There might be OS dependent solutions for that
+ * weakness.
+ *
  */
 
 #include <stdlib.h>

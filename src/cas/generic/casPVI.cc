@@ -141,15 +141,6 @@ caStatus casPVI::attachToServer ( caServerI & cas )
 caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-
-    //
-    // keep trying to fill in the table if client disconnects 
-    // prevented previous asynchronous IO from finishing, but if
-    // a previous client has succeeded then dont bother.
-    //
-    if ( this->enumStrTbl.numberOfStrings () > 0 ) {
-        return S_cas_success;
-    }
     
     //
     // create a gdd with the "enum string table" application type
@@ -201,15 +192,6 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-
-    //
-    // keep trying to fill in the table if client disconnects 
-    // prevented previous asynchronous IO from finishing, but if
-    // a previous client has succeeded then dont bother.
-    //
-    if ( this->enumStrTbl.numberOfStrings () > 0 ) {
-        return;
-    }
     
     if ( resp.isContainer() ) {
         errMessage ( S_cas_badType, 

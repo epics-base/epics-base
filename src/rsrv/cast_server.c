@@ -122,7 +122,7 @@ void cast_server(void *pParm)
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
     unsigned short      port;
-    int                 nchars;
+    osiSockIoctl_t      nchars;
 
     taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
 

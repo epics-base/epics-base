@@ -44,6 +44,13 @@ static void atExit(void *pvt)
     free(pinfo);
 }
 
+static void atThreadExit(void *pvt)
+{
+    info *pinfo = (info *)pvt;
+    testPass("%s terminating", pinfo->name);
+    epicsEventSignal(pinfo->terminated);
+}
+
 static void thread(void *arg)
 {
     info *pinfo = (info *)arg;
@@ -53,10 +60,9 @@ static void thread(void *arg)
     pinfo->terminate = epicsEventMustCreate(epicsEventEmpty);
     pinfo->terminated = epicsEventMustCreate(epicsEventEmpty);
     epicsAtExit(atExit, pinfo);
+    epicsAtThreadExit(atThreadExit, pinfo);
     testDiag("%s waiting for atExit", pinfo->name);
     epicsEventMustWait(pinfo->terminate);
-    testPass("%s terminating", pinfo->name);
-    epicsEventSignal(pinfo->terminated);
 }
 
 static void mainExit(void *pvt)

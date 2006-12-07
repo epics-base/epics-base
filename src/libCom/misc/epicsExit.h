@@ -21,6 +21,11 @@ epicsShareFunc void epicsShareAPI epicsExitCallAtExits(void);
 epicsShareFunc int epicsShareAPI epicsAtExit(
                  void (*epicsExitFunc)(void *arg),void *arg);
 
+epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits(void);
+epicsShareFunc int epicsShareAPI epicsAtThreadExit(
+                 void (*epicsExitFunc)(void *arg),void *arg);
+
+
 #ifdef __cplusplus
 }
 #endif

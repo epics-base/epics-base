@@ -8,8 +8,12 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*epicsExit.c*/
-/* Author: Marty Kraimer */
-/*   Date: 23AUG2004     */
+/* 
+ * Author: Marty Kraimer 
+ * Date: 23AUG2004
+ * Thread exit revisions: Jeff Hill
+ * Date: 06Dec2006
+ */
 
 #include <stdlib.h>
 #include <errno.h>
@@ -24,45 +28,123 @@
 typedef void (*epicsExitFunc)(void *arg);
 
 typedef struct exitNode {
-    ELLNODE       node;
-    epicsExitFunc func;
-    void          *arg;
+    ELLNODE         node;
+    epicsExitFunc   func;
+    void            *arg;
 }exitNode;
 
 typedef struct exitPvt {
-    ELLLIST      list;
-    epicsMutexId lock;
-    int          epicsExitNcalls;
-}exitPvt;
-static exitPvt exitPvtInstance;
-static exitPvt *pexitPvt = &exitPvtInstance;
-static epicsThreadOnceId createOnce = EPICS_THREAD_ONCE_INIT;
+    ELLLIST         list;
+} exitPvt;
 
-static void createExitPvt(void)
+static epicsThreadOnceId exitPvtOnce = EPICS_THREAD_ONCE_INIT;
+static exitPvt * pExitPvtPerProcess = 0;
+static epicsMutexId exitPvtLock = 0;
+static epicsThreadPrivateId exitPvtPerThread = 0;
+
+static void destroyExitPvt ( exitPvt * pep )
 {
-    pexitPvt->lock = epicsMutexMustCreate();
-    ellInit(&pexitPvt->list);
+    ellFree ( &pep->list );
 }
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtExits(void)
+static exitPvt * createExitPvt ()
+{
+    exitPvt * pep = calloc ( 1, sizeof ( * pep ) );
+    if ( pep ) {
+        ellInit ( &pep->list );
+    }
+    return pep;
+}
+
+static void exitPvtOnceFunc ( void * pParm )
+{
+    exitPvtPerThread = epicsThreadPrivateCreate ();
+    assert ( exitPvtPerThread );
+    pExitPvtPerProcess = createExitPvt ();
+    assert ( pExitPvtPerProcess );
+    exitPvtLock = epicsMutexMustCreate ();
+}
+
+static void epicsExitCallAtExitsPvt ( exitPvt * pep )
 {
     exitNode *pexitNode;
-    
-    epicsThreadOnce(&createOnce,(EPICSTHREADFUNC)createExitPvt,0);
-    epicsMutexMustLock(pexitPvt->lock);
-    if(pexitPvt->epicsExitNcalls++>0) {
-        epicsMutexUnlock(pexitPvt->lock);
-        return;
+    while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
+        pexitNode->func ( pexitNode->arg );
+        ellDelete ( & pep->list, & pexitNode->node );
+        free ( pexitNode );
     }
-    epicsMutexUnlock(pexitPvt->lock);
-    /* remove exitNodes in reverse order that they were added*/
-    while((pexitNode = (exitNode *)ellLast(&pexitPvt->list))) {
-        ellDelete(&pexitPvt->list,&pexitNode->node);
-        pexitNode->func(pexitNode->arg);
-        free(pexitNode);
+}
+
+epicsShareFunc void epicsShareAPI epicsExitCallAtExits ( void )
+{
+    exitPvt * pep = 0;
+    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+    epicsMutexMustLock ( exitPvtLock );
+    if ( pExitPvtPerProcess ) {
+        pep = pExitPvtPerProcess;
+        pExitPvtPerProcess = 0;
     }
-    /* epicsMutexDestroy is not called because of possible race conditions*/
-    /*epicsMutexDestroy(pexitPvt->lock);*/
+    epicsMutexUnlock ( exitPvtLock );
+    if ( pep ) {
+        epicsExitCallAtExitsPvt ( pep );
+        destroyExitPvt ( pep );
+    }
+}
+
+epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits ( void )
+{
+    exitPvt * pep;
+    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+    pep = epicsThreadPrivateGet ( exitPvtPerThread );
+    if ( pep ) {
+        epicsExitCallAtExitsPvt ( pep );
+        destroyExitPvt ( pep );
+        epicsThreadPrivateSet ( exitPvtPerThread, 0 );
+    }
+}
+
+static int epicsAtExitPvt (
+    exitPvt * pep, epicsExitFunc func, void *arg )
+{
+    int status = -1;
+    exitNode * pExitNode
+        = calloc ( 1, sizeof( *pExitNode ) );
+    if ( pExitNode ) {
+        pExitNode->func = func;
+        pExitNode->arg = arg;
+        ellAdd ( & pep->list, & pExitNode->node );
+        status = 0;
+    }
+    return status;
+}
+
+epicsShareFunc int epicsShareAPI epicsAtThreadExit (
+    epicsExitFunc func, void *arg )
+{
+    exitPvt * pep;
+    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+    pep = epicsThreadPrivateGet ( exitPvtPerThread );
+    if ( ! pep ) {
+        pep = createExitPvt ();
+        if ( ! pep ) {
+            return -1;
+        }
+        epicsThreadPrivateSet ( exitPvtPerThread, pep );
+    }
+    return epicsAtExitPvt ( pep, func, arg );
+}
+
+epicsShareFunc int epicsShareAPI epicsAtExit( 
+    epicsExitFunc func, void *arg )
+{
+    int status = -1;
+    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+    epicsMutexMustLock ( exitPvtLock );
+    if ( pExitPvtPerProcess ) {
+        status = epicsAtExitPvt ( pExitPvtPerProcess, func, arg );
+    }
+    epicsMutexUnlock ( exitPvtLock );
+    return status;
 }
 
 epicsShareFunc void epicsShareAPI epicsExit(int status)
@@ -70,23 +152,4 @@ epicsShareFunc void epicsShareAPI epicsExit(int status)
     epicsExitCallAtExits();
     epicsThreadSleep(1.0);
     exit(status);
-}
-
-epicsShareFunc int epicsShareAPI epicsAtExit(epicsExitFunc func, void *arg)
-{
-    exitNode *pexitNode;
-    
-    epicsThreadOnce(&createOnce,(EPICSTHREADFUNC)createExitPvt,0);
-    pexitNode = callocMustSucceed(1,sizeof(exitNode),"epicsAtExit");
-    pexitNode->func = func;
-    pexitNode->arg = arg;
-    epicsMutexMustLock(pexitPvt->lock);
-    if(pexitPvt->epicsExitNcalls>0) {
-        epicsMutexUnlock(pexitPvt->lock);
-        free(pexitNode);
-        return -1;
-    }
-    ellAdd(&pexitPvt->list,&pexitNode->node);
-    epicsMutexUnlock(pexitPvt->lock);
-    return 0;
 }

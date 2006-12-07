@@ -37,6 +37,7 @@
 #include "errlog.h"
 #include "epicsAssert.h"
 #include "ellLib.h"
+#include "epicsExit.h"
 
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 static void threadCleanupWIN32 ( void );
@@ -505,6 +506,8 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     else {
         fprintf ( stderr, "epicsWin32ThreadEntry: unable to find ctx\n" );
     }
+
+    epicsExitCallAtThreadExits ();
 
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!

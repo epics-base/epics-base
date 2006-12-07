@@ -28,7 +28,7 @@
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "vxLib.h"
-
+#include "epicsExit.h"
 
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
@@ -128,6 +128,7 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
     (*func)(parm);
+    epicsExitCallAtThreadExits ();
     free(papTSD);
     taskVarDelete(tid,(int *)&papTSD);
 }

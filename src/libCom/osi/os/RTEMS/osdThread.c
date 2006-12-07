@@ -36,6 +36,7 @@
 #include "epicsThread.h"
 #include "cantProceed.h"
 #include "osdInterrupt.h"
+#include "epicsExit.h"
 
 /*
  * Per-task variables
@@ -165,6 +166,7 @@ threadWrapper (rtems_task_argument arg)
     struct taskVar *v = (struct taskVar *)arg;
 
     (*v->funptr)(v->parm);
+    epicsExitCallAtThreadExits ();
     taskVarLock ();
     if (v->back)
         v->back->forw = v->forw;

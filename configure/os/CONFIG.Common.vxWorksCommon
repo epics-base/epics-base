@@ -99,7 +99,7 @@ endif
 #--------------------------------------------------
 # vxWorks directory definitions
 VX_DIR_5 = $(WIND_BASE)
-VX_DIR_6 = $(WIND_BASE)/vxWorks-$(VXWORKS_VERSION)
+VX_DIR_6 = $(WIND_BASE)/vxworks-$(VXWORKS_VERSION)
 VX_DIR = $(VX_DIR_$(VXWORKS_MAJOR_VERSION))
 
 VX_INCLUDE_DIRS_5 = $(VX_DIR)/target/h
@@ -112,6 +112,11 @@ GNU_TARGET_INCLUDE_DIR = $(VX_INCLUDE_DIRS_$(VXWORKS_MAJOR_VERSION))
 GNU_DIR_5 = $(WIND_BASE)/host/$(WIND_HOST_TYPE)
 GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
+
+# vxWorks 6 moved the subprocess executable programs.
+ifeq ($(VXWORKS_MAJOR_VERSION),6)
+  export GCC_EXEC_PREFIX = $(GNU_DIR)/libexec/gcc/
+endif
 
 #--------------------------------------------------
 # C++ host processing
@@ -154,13 +159,13 @@ CODE_CXXFLAGS_6 = $(CODE_CXXFLAGS_$(VXWORKS_VERSION))
 CODE_CXXFLAGS = $(CODE_CXXFLAGS_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
-# posix c preprocessor flags
-POSIX_CPPFLAGS = -D_POSIX_SOURCE
+# no posix c preprocessor flags
+#POSIX_CPPFLAGS =
 
 #--------------------------------------------------
 # no shared libs for vxWorks
-SHRLIB_CFLAGS = 
-SHRLIB_LDFLAGS = 
+SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS =
 
 #--------------------------------------------------
 # osithead use default stack, YES or NO override

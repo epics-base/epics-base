@@ -5,4 +5,8 @@
 # Site specific definitions for linux-x86 host - linux-arm target builds
 #-------------------------------------------------------
 
+# Diamond:
 #GNU_DIR = /home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3
+
+# anj@aps:
+#GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/arm-linux

@@ -1,10 +1,9 @@
-# CONFIG.Common.vxWorks-ppc603
-#
 # $Id$
-# This file is maintained by the build community.
 #
-# Definitions for vxWorks-ppc603 target archs
-# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-ppc603
+# Definitions for vxWorks-ppc603 targets: PPC603 and PMC8240 CPUs
+# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc603
+#
+# This file is maintained by the EPICS build community.
 #-------------------------------------------------------
 
 # Include definitions common to all vxWorks target archs

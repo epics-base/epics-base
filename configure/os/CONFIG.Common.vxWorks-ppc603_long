@@ -1,22 +1,13 @@
-# CONFIG.Common.vxWorks-ppc603_long
-#
 # $Id$
-# This file is maintained by the build community.
 #
-# Definitions for vxWorks-ppc603 target archs with at least 32MB
-# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-ppc603_long
+# Definitions for vxWorks-ppc603 targets with >32MB of RAM
+# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc603_long
+#
+# This file is maintained by the EPICS build community.
 #-------------------------------------------------------
 
-# Include definitions common to all vxWorks target archs
-include $(CONFIG)/os/CONFIG.Common.vxWorksCommon
+# Inherit the settings from vxWorks-ppc603
+include $(CONFIG)/os/CONFIG.Common.vxWorks-ppc603
 
-# Vx GNU cross compiler suffix
-CMPLR_SUFFIX = ppc
- 
-ARCH_CLASS = ppc
-
-# Architecture specific build flags
-ARCH_DEP_CPPFLAGS = -DCPU=PPC603  
-ARCH_DEP_CFLAGS = -mcpu=603 -mstrict-align -mlongcall
-
-GNU_TARGET = powerpc-wrs-vxworks
+# Tell compiler to generate long branches
+ARCH_DEP_CFLAGS += -mlongcall

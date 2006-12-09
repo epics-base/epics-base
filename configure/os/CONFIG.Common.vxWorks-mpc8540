@@ -1,7 +1,7 @@
-# $Id$
+# $Id
 #
-# Definitions for vxWorks-ppc604 targets: PPC604, MPC7xx and MPC74xx CPUs
-# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc604
+# Definitions for vxWorks-mpc8540 targets: MPC8540 CPU with >32MB RAM.
+# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-mpc8540
 #
 # This file is maintained by the EPICS build community.
 #-------------------------------------------------------
@@ -11,11 +11,11 @@ include $(CONFIG)/os/CONFIG.Common.vxWorksCommon
 
 # Vx GNU cross compiler suffix
 CMPLR_SUFFIX = ppc
-
+ 
 ARCH_CLASS = ppc
 
 # Architecture specific build flags
-ARCH_DEP_CPPFLAGS = -DCPU=PPC604
-ARCH_DEP_CFLAGS = -mcpu=604 -mstrict-align -mno-implicit-fp
+ARCH_DEP_CPPFLAGS = -DCPU=PPC32
+ARCH_DEP_CFLAGS = -mcpu=8540 -msoft-float -mstrict-align -mlongcall
 
 GNU_TARGET = powerpc-wrs-vxworks

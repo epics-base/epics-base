@@ -1,15 +1,9 @@
-# CONFIG_SITE.linux-x86.vxWorks-ppc603_long
-#
 # $Id$
-# This file is maintained by the build community.
 #
-# Site override definitions for linux-x86 host - vxWorks-ppc603_long target builds
+# Site-specific definitions for linux-x86 builds of vxWorks-ppc603_long
+#
+# Only the local epics system manager should modify this file
 #-------------------------------------------------------
 
-# ORNL SNS overrides for cross compilers
-#GNU_DIR=/ade/vxWorks/crossgcc-2.7.2-WRS/ppc
-#GNU_TARGET_INCLUDE_DIR=/ade/vxWorks/crossgcc-2.7.2-WRS/ppc/powerpc-wrs-vxworks/sys-include
-#CC = /ade/vxWorks/crossgcc-2.7.2-WRS/ppc/bin/cc$(CMPLR_SUFFIX)
-#CCC = /ade/vxWorks/crossgcc-2.7.2-WRS/ppc/bin/g++$(CMPLR_SUFFIX)
-
-
+# Inherit settings from vxWorks-ppc603
+-include $(CONFIG)/os/CONFIG_SITE.linux-x86.vxWorks-ppc603

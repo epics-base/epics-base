@@ -1,0 +1,21 @@
+# $Id$
+#
+# Definitions for vxWorks-ppc604 targets with an Altivec and >32MB of RAM.
+# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc604_altivec
+#
+# This file is maintained by the EPICS build community.
+#-------------------------------------------------------
+
+# Inherit the settings from vxWorks-ppc604_long
+include $(CONFIG)/os/CONFIG.Common.vxWorks-ppc604_long
+
+defval = $(if $(strip $(1),),$(1),$(2))
+
+# Tell compiler to include altivec support
+ALTIVEC_CFLAG_5 = -fvec
+
+# From 6.1 the altivec compiler option changed
+ALTIVEC_CFLAG_6.0 = -fvec
+ALTIVEC_CFLAG_6 = $(call defval,$(ALTIVEC_CFLAG_$(VXWORKS_VERSION)),-maltivec)
+
+ARCH_DEP_CFLAGS += $(ALTIVEC_CFLAG_$(VXWORKS_MAJOR_VERSION))

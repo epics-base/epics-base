@@ -9,9 +9,24 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.x</h1>
 
-<h2 align="center">Changes since 3.14.8.2</h2>
+<h2 align="center">Changes between 3.14.8.2 and 3.14.9</h2>
 
 <!-- Insert new items below here ... -->
+
+<h4>New Architectures</h4>
+
+<p>The following target architectures have been added to this release:</p>
+
+<ul>
+  <li>darwin-ppcx86</li>
+  <li>darwin-x86</li>
+  <li>freebsd-x86</li>
+  <li>freebsd-x86_64</li>
+  <li>interix-x86</li>
+  <li>linux-arm</li>
+  <li>vxWorks-mpc8540</li>
+  <li>vxWorks-ppc604_altivec</li>
+</ul>
 
 <h4>cas</h4>
 
@@ -242,7 +257,7 @@ which will run on both PowerPC and Intel x86 targets.</p>
 <p>Added support for EPICS_HOST_ARCH=darwin-x86.</p>
 
 
-<h2 align="center">Changes since 3.14.8.1</h2>
+<h2 align="center">Changes between 3.14.8.1 and 3.14.8.2</h2>
 
 <h4>epicsStrtod</h4>
 
@@ -252,7 +267,7 @@ managed to break the use of this in the R3.14.8.1 release.  This is now
 fixed.</p>
 
 
-<h2 align="center">Changes since 3.14.8</h2>
+<h2 align="center">Changes between 3.14.8 and 3.14.8.1</h2>
 
 <h4>Version Numbering</h4>
 
@@ -299,7 +314,7 @@ win32 architectures.</p>
 </ul>
 
 
-<h2 align="center">Changes since 3.14.7</h2>
+<h2 align="center">Changes between 3.14.7 and 3.14.8</h2>
 
 <h4>New host targets</h4>
 
@@ -517,7 +532,7 @@ could not be created. This is fixed.</p>
 <p>222 - osiSpawnDetachedProcess doesnt close open files in dupicate process
 on POSIX</p>
 
-<h2 align="center">Changes since 3.14.6</h2>
+<h2 align="center">Changes between 3.14.6 and 3.14.7</h2>
 
 <h4>selRecord</h4>
 
@@ -651,7 +666,7 @@ can cause an IOC to crash.</p>
 when the ARCH defined in the ioc*/Makefile is present in BUILD_ARCHS for the
 build.</p>
 
-<h2 align="center">Changes since 3.14.5</h2>
+<h2 align="center">Changes between 3.14.5 and 3.14.6</h2>
 
 <h4>CA command line tools complete</h4>
 
@@ -903,7 +918,7 @@ channels)</p>
   </li>
 </ul>
 
-<h2 align="center">Changes since 3.14.4</h2>
+<h2 align="center">Changes between 3.14.4 and 3.14.5</h2>
 
 <h4>dbtr</h4>
 
@@ -1083,7 +1098,7 @@ command, add <code>registrar(iocshSystemCommand)</code> to an application
 database description file.</p>
 
 <center>
-<h2>Changes since 3.14.3</h2>
+<h2>Changes between 3.14.3 and 3.14.4</h2>
 </center>
 
 <h4>sCalcPostfix</h4>
@@ -1135,7 +1150,7 @@ successfully connects.</p>
 assisting with identifying the cause.</p>
 
 <center>
-<h2>Changes since 3.14.2</h2>
+<h2>Changes between 3.14.2 and 3.14.3</h2>
 </center>
 
 <h4>TPRO output</h4>
@@ -1338,7 +1353,7 @@ symptom was a hang during process exit. A workaround was installed.</p>
 branch off of BSD and therefore requires socket option SO_REUSEPORT.</p>
 
 <center>
-<h2>Changes since 3.14.1</h2>
+<h2>Changes between 3.14.1 and 3.14.2</h2>
 </center>
 
 <p><strong>Build System</strong></p>
@@ -1425,7 +1440,7 @@ that it ignores case.</p>
 macParseDefns was not correct.</p>
 
 <center>
-<h2>Changes since beta2</h2>
+<h2>Changes between 3.14.0beta2 and 3.14.1</h2>
 </center>
 
 <p><strong>function - New Database Definition Keyword</strong></p>

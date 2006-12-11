@@ -28,6 +28,12 @@
   <li>vxWorks-ppc604_altivec</li>
 </ul>
 
+<h4>vxWorks compiler optimization level</h4>
+
+<p>Wind River Systems do not support optimization levels beyond <tt>-O2</tt> for
+vxWorks applications compiled using gcc, so optimized vxWorks builds are now set
+to <tt>-O2</tt> only (we currently use <tt>-O3</tt> everywhere else).</p>
+
 <h4>cas</h4>
 
 <p>There was a bug in the portable channel access server library that prevented

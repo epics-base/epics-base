@@ -9,6 +9,7 @@
 /*
  * Authors: Jeff HIll and Marty Kraimer
  */
+#include <stddef>
 #include <cstdio>
 #include <ctime>
 #include <cmath>

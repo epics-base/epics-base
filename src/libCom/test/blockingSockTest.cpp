@@ -170,7 +170,10 @@ server::server ( const address & addrIn ) :
     address tmpAddr = addrIn;
     int status = bind ( this->sock, 
         & tmpAddr.sa, sizeof ( tmpAddr ) );
-    assert ( status == 0 );
+    if ( status ) {
+        testDiag ( "bind to server socket failed, status = %d", status );
+        testAbort ( "Stop all CA servers before running this test." );
+    }
     status = listen ( this->sock, 10 );
     assert ( status == 0 );
 }

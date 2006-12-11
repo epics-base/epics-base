@@ -14,6 +14,7 @@ TOP = ..
 include $(TOP)/configure/CONFIG
 
 DIRS += libCom
+DIRS += RTEMS
 DIRS += libCom/test
 DIRS += toolsComm
 DIRS += ca
@@ -32,7 +33,6 @@ DIRS += dev
 DIRS += misc
 DIRS += iocsh
 DIRS += vxWorks
-DIRS += RTEMS
 DIRS += softIoc
 DIRS += gdd
 DIRS += cas

@@ -1,12 +1,12 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-    "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+      "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS R3.14 Channel Access Reference Manual</title>
 </head>
 
-<body lang="en" bgcolor="#FFFFFF">
+<body lang="en">
 <hr>
 
 <h1>EPICS R3.14 Channel Access Reference Manual</h1>
@@ -14,32 +14,34 @@
   Jeffrey O. Hill
 </address>
 
-<p><font size="2">Los Alamos National Laboratory<br>
-SNS Division</font></p>
+<p><span style="font-size: x-small; font-weight:lighter;">Los Alamos National
+Laboratory, SNS Division</span></p>
 <address>
   Ralph Lange
 </address>
 
-<p><font size="2">BESSY</font></p>
+<p><span style="font-size: x-small; font-weight:lighter;">BESSY</span></p>
 
-<p><font size="1">Copyright © 2002 The University of Chicago, as Operator of
-Argonne National Laboratory.<br>
+<p><span style="font-size: xx-small; font-weight:lighter;">Copyright © 2002
+The University of Chicago, as Operator of Argonne National Laboratory.<br>
 Copyright © 2002 The Regents of the University of California, as Operator of
 Los Alamos National Laboratory.<br>
 Copyright © 2002 Berliner Elektronenspeicherringgesellschaft für
-Synchrotronstrahlung.</font></p>
+Synchrotronstrahlung.</span></p>
 
-<p><font size="1">EPICS BASE Versions 3.13.7 and higher are distributed
-subject to a Software License Agreement found in the file LICENSE that is
-included with this distribution.</font></p>
+<p><span style="font-size: xx-small; font-weight:lighter;">EPICS BASE
+Versions 3.13.7 and higher are distributed subject to a Software License
+Agreement found in the file LICENSE that is included with this
+distribution.</span></p>
 
 <p><a href="http://www.w3.org/Amaya/"><img
 src="http://www.w3.org/Amaya/Icons/w3c-amaya.gif" alt="W3C-Amaya" height="31"
-width="88"></a> <a href="http://validator.w3.org/check/referer"> <img
-border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
+width="88"></a> <a href="http://validator.w3.org/check/referer"><img
+src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
 height="31" width="88"></a></p>
 
-<p><small>Modified on $Date$</small></p>
+<p><small><span style="font-size: smaller; font-weight:lighter;">Modified on
+$Date$</span></small></p>
 <hr>
 
 <h2>Table of Contents</h2>
@@ -830,9 +832,9 @@ CA server employed by iocCore does not implemet this feature</em>.</p>
 <h4>Ignoring Process Variable Name Resolution Requests From Certain Hosts</h4>
 
 <p>Name resolution requests originating from any of the IP addresses
-specified in the EPICS_CAS_IGNORE_ADDR_LIST parameter are not replied to.<em>
-In R3.14 and previous releases the CA server employed by iocCore does not
-implemet this feature.</em></p>
+specified in the EPICS_CAS_IGNORE_ADDR_LIST parameter are not replied
+to.<em>In R3.14 and previous releases the CA server employed by iocCore does
+not implemet this feature.</em></p>
 
 <h4>Client Configuration that also Applies to Servers</h4>
 
@@ -2190,7 +2192,7 @@ It is not possible to attach a thread to a non-preemptive CA context created
 explicitly <em>or implicitly</em> with
 ca_create_context(ca_disable_preemptive_callback). Once a thread has joined
 with a CA context it need only make ordinary ca_xxxx() library calls to use
-the context. </p>
+the context.</p>
 
 <p>A CA client library context can be shut down and cleaned up, after
 destroying any channels or application specific threads that are attached to

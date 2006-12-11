@@ -12,8 +12,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_IOC_DEFAULT = softIoc
-PROD_IOC_vxWorks = -nil-
+PROD_IOC = softIoc
 
 DBD += softIoc.dbd
 softIoc_DBD += base.dbd

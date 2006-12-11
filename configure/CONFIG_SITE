@@ -22,6 +22,8 @@
 #	darwin-ppc             (PowerPC based Apple running OSX)
 #	darwin-x86             (Intel based Apple running OSX)
 #	darwin-ppcx86          (Universal binaries for both CPUs)
+#	freebsd-x86            (GNU compiler used for host builds)
+#	freebsd-x86_64         (GNU compiler used for host builds)
 #	hpux-parisc            (HP compiler used for host builds)
 #	hpux-parisc-gnu        (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
@@ -59,6 +61,7 @@
 #       linux-586     (linux-x86 host)
 #       linux-686     (linux-x86 host)
 #       linux-athlon  (linux-x86 host)
+#       linux-arm
 #       vxWorks-486
 #       vxWorks-68040
 #       vxWorks-68040lc
@@ -68,6 +71,8 @@
 #       vxWorks-ppc603_long
 #       vxWorks-ppc604
 #       vxWorks-ppc604_long
+#       vxWorks-ppc604_altivec
+#       vxWorks-mpc8540
 #       RTEMS-gen68360
 #       RTEMS-mcp750
 #       RTEMS-mvme167

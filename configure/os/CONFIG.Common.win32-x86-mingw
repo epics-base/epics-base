@@ -18,9 +18,13 @@ EXE=.exe
 # Library used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline
 
-STATIC_BUILD=YES
 
-STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+# Set runtime path for shared libraries
+SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
+# Set runtime path for products
+PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
 
 # Compiler defines _X86_ 1
 
@@ -41,4 +45,7 @@ OP_SYS_CPPFLAGS =
 OP_SYS_CXXFLAGS += -D__cplusplus
 
 LIBRARY_LD_RESS=
+
+OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+#STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
 

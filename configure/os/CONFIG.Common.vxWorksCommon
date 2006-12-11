@@ -92,7 +92,7 @@ VX_GNU_VERSION = $(VX_GNU_VERSION_$(VXWORKS_VERSION))
 # Fix WIND_BASE for vxWorks 6.x on linux
 # NB: We know the value of WIND_HOST_TYPE here, but not VXWORKS_VERSION
 ifeq ($(WIND_HOST_TYPE),x86-linux)
-  WIND_HOST_TYPE_5 = $(WIND_HOST_TYPE)
+  WIND_HOST_TYPE_5 = x86-linux
   WIND_HOST_TYPE_6 = x86-linux2
   WIND_HOST_TYPE = $(WIND_HOST_TYPE_$(VXWORKS_MAJOR_VERSION))
 endif
@@ -114,10 +114,8 @@ GNU_DIR_5 = $(WIND_BASE)/host/$(WIND_HOST_TYPE)
 GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
-# vxWorks 6 moved the subprocess executable programs.
-GCC_EXEC_PREFIX_5 = $(GNU_LIB)/gcc-lib/
-GCC_EXEC_PREFIX_6 = $(GNU_DIR)/libexec/gcc/
-export GCC_EXEC_PREFIX = $(GCC_EXEC_PREFIX_$(VXWORKS_MAJOR_VERSION))
+# GCC_EXEC_PREFIX considered harmful since vxWorks 6 moved it
+unexport GCC_EXEC_PREFIX
 
 #--------------------------------------------------
 # C++ host processing

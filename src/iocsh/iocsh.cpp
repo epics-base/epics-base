@@ -908,7 +908,7 @@ static void exitCallFunc(const iocshArgBuf *)
 
 static void localRegister (void)
 {
-    iocshRegister(&commentFuncDef,helpCallFunc);
+    iocshRegister(&commentFuncDef,commentCallFunc);
     iocshRegister(&exitFuncDef,exitCallFunc);
     iocshRegister(&helpFuncDef,helpCallFunc);
     iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);

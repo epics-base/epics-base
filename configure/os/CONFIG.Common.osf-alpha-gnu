@@ -1,0 +1,38 @@
+# CONFIG.Common.osf-alpha-gnu
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for osf-alpha target archs
+# Sites may override these definitions in CONFIG_SITE.Common.osf-alpha-gnu
+#-------------------------------------------------------
+
+# Include definitions common to all Unix targets
+include $(CONFIG)/os/CONFIG.Common.UnixCommon
+
+OS_CLASS = osf
+ARCH_CLASS = alpha
+
+CODE_CPPFLAGS =
+
+POSIX_CPPFLAGS =
+POSIX_LDLIBS += -lpthread
+
+OP_SYS_CPPFLAGS += -D_OSF_SOURCE -D_REENTRANT
+OP_SYS_LDLIBS += -lrt
+
+space:=$(empty) $(empty)
+colon := :
+
+# Set runtime path for shared libraries
+SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
+# Set runtime path for products
+PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+
+ifdef CROSS
+   GNU_TARGET=alpha-osf
+   CMPLR_SUFFIX=
+   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
+endif
+

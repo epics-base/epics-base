@@ -1,0 +1,14 @@
+# CONFIG.osf-alpha-gnu.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for osf-alpha host archs
+# Sites may override these definitions in CONFIG_SITE.osf-alpha-gnu.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+WIND_HOST_TYPE = osf-alpha
+

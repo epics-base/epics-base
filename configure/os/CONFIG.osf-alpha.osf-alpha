@@ -1,0 +1,49 @@
+# CONFIG.osf-alpha.osf-alpha
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for osf-alpha host archs
+# Sites may override these definitions in CONFIG_SITE.osf-alpha.osf-alpha
+#-------------------------------------------------------
+
+CC = cc
+CCC = cxx 
+CPP = $(CC) -E
+RANLIB =
+AR = ar -r
+LD = -r
+
+# Configure OS vendor C compiler
+CONFORM_CFLAGS_ANSI = -std
+CONFORM_CFLAGS_STRICT = -std1 -pthread -ieee
+CONFORM_CFLAGS_TRAD = -std0
+CODE_CFLAGS = 
+WARN_CFLAGS_YES =
+WARN_CFLAGS_NO = -w
+OPT_CFLAGS_YES = -O
+OPT_CFLAGS_NO = -g
+
+# Configure OS vendor C++ compiler
+CONFORM_CXXFLAGS_NORMAL = 
+CONFORM_CXXFLAGS_STRICT = -std gnu -pthread -ieee
+PROF_CXXFLAGS_YES = +p
+PROF_CXXFLAGS_NO =
+CODE_CXXFLAGS =
+WARN_CXXFLAGS_YES =
+WARN_CXXFLAGS_NO =
+OPT_CXXFLAGS_YES = -O
+OPT_CXXFLAGS_NO = -g
+
+STATIC_LDFLAGS_YES= -Bstatic
+STATIC_LDFLAGS_NO=
+STATIC_LDLIBS_YES= -Bdynamic
+STATIC_LDLIBS_NO=
+
+SHRLIB_LDFLAGS = -shared
+LOADABLE_SHRLIB_LDFLAGS = $(SHRLIB_LDFLAGS)
+
+#############  ???????????
+#####ACC_SFLAGS_YES= -non_shared
+#####ACC_SFLAGS_NO= -call_shared
+

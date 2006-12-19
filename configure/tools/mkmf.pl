@@ -28,7 +28,6 @@ use Getopt::Std;
 
 my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
 my $endline = $/;
-my %delim_match = ( q/'/ => q/'/, q/"/ => q/"/);
 my %output;
 my @includes;
 
@@ -147,4 +146,3 @@ sub findNextIncName {
    }
    return 0;
 }
-

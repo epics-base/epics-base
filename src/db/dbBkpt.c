@@ -141,7 +141,7 @@ static long FIND_CONT_NODE(
  *    normal record execution, i.e. when there aren't
  *    any breakpoints set.
  */
-long lset_stack_not_empty = 0;
+long lset_stack_count = 0;
 
 /*
  *  Stack--in which each entry represents a different
@@ -154,7 +154,7 @@ long lset_stack_not_empty = 0;
  *    operating with this stack.
  */
 static ELLLIST lset_stack;
-static epicsMutexId bkpt_stack_sem;
+static epicsMutexId bkpt_stack_sem = 0;
 
 /*
  *  Stores the last lockset continued or stepped from.
@@ -251,6 +251,18 @@ static long FIND_CONT_NODE(
 
 
 /*
+ *  Initialise the breakpoint stack
+ */
+void epicsShareAPI dbBkptInit(void)
+{
+    if (! bkpt_stack_sem) {
+        bkpt_stack_sem = epicsMutexMustCreate();
+        ellInit(&lset_stack);
+        lset_stack_count = 0;
+    }
+}
+
+/*
  *  Add breakpoint to a lock set
  *     1. Convert name to address and check breakpoint mask.
  *     2. Lock database.
@@ -290,17 +302,6 @@ long epicsShareAPI dbb(const char *record_name)
   *  Add lock set to the stack of lock sets that
   *    contain breakpoints and/or stopped records.
   */
-  if (! lset_stack_not_empty) {
-    /* initialize list and semaphore */
-     bkpt_stack_sem = epicsMutexCreate();
-     if (bkpt_stack_sem == 0) {
-        printf("   BKPT> epicsMutexCreate failed\n");
-        dbScanUnlock(precord);
-        return(1);
-     }
-     ellInit(&lset_stack);
-     lset_stack_not_empty = 1;
-  }
 
   epicsMutexMustLock(bkpt_stack_sem);
 
@@ -335,7 +336,9 @@ long epicsShareAPI dbb(const char *record_name)
      pnode->taskid   = 0;
      pnode->step     = 0;
      pnode->l_num    = dbLockGetLockId(precord);
+
      ellAdd(&lset_stack, (ELLNODE *)pnode);
+     ++lset_stack_count;
   }
 
  /*
@@ -604,11 +607,11 @@ static void dbBkptCont(dbCommon *precord)
 
    /* Reset precord. (Since no records are at a breakpoint) */
     pnode->precord = NULL;
-  }
-  while (ellCount(&pnode->bp_list) != 0);
+  } while (ellCount(&pnode->bp_list) != 0);
 
  /* remove node from lockset stack */
   ellDelete(&lset_stack, (ELLNODE *)pnode);
+  --lset_stack_count;
 
   {
     /*
@@ -634,15 +637,7 @@ static void dbBkptCont(dbCommon *precord)
  /* free list node */
   free(pnode);
 
- /* if last node on stack ... */
-  if (ellCount(&lset_stack) == 0) {
-      /* Unset flag, delete stack semaphore */
-       lset_stack_not_empty = 0;
-       epicsMutexDestroy(bkpt_stack_sem);
-  }
-
-  if (lset_stack_not_empty)
-     epicsMutexUnlock(bkpt_stack_sem);
+  epicsMutexUnlock(bkpt_stack_sem);
 }
 
 /*

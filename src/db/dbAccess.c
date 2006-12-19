@@ -535,7 +535,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
          */
  
         /* see if there are any stopped records or breakpoints */
-        if (lset_stack_not_empty) {
+        if (lset_stack_count != 0) {
            /*
             *  Check to see if the record should be processed
             *   and activate breakpoint accordingly.  If this
@@ -624,7 +624,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
 	/* process record */
 	status = (*prset->process)(precord);
         /* Print record's fields if PRINT_MASK set in breakpoint field */
-        if (lset_stack_not_empty) {
+        if (lset_stack_count != 0) {
                 dbPrint(precord);
         }
 all_done:

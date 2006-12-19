@@ -78,7 +78,7 @@ COMMON_DBDINC += $(addprefix $(COMMON_DIR),$(HINC))
 DBDDEPENDS_FILES += $(addsuffix $(DEP),$(COMMON_DBDS) \
                     $(COMMON_DBDINC) $(COMMON_DBS))
 
-DBDDEPENDS_FLAGS = $(filter .%,$(subst -I,,$(filter-out -S%,$(DBDFLAGS))))
+DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))
 DBDDEPENDS_CMD = -$(MKMF) -m $@$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
 
 MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl

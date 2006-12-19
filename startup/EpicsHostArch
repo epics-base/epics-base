@@ -46,9 +46,9 @@ case $sysname in
     HP-UX )
         os=hpux
 		cpu=`uname -m`
-        case $cpu in 9000/[34678]??)
-            cpu=m68k
-			;;
+        case $cpu in 
+	    9000/[346]??) cpu=m68k ;;
+	    9000/[78]??) cpu=parisc ;;
 		esac
 		echo ${os}-${cpu}${suffix}
         ;;

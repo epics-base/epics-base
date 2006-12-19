@@ -33,6 +33,8 @@ sub GetEpicsHostArch { # no args
     } elsif ($arch =~ m/MSWin32-x86/)   { return "win32-x86";
     } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
     } elsif ($arch =~ m/PA-RISC1.1/)    { return "hpux-parisc";
+    } elsif ($arch =~ m/PA-RISC2.0/)    { return "hpux-parisc";
+    } elsif ($arch =~ m/alpha-dec_osf/)    { return "osf-alpha";
     } elsif ($arch =~ m/darwin/)        {
             my($kernel, $hostname, $release, $version, $cpu) = POSIX::uname();
             if ($cpu =~ m/Power Macintosh/) { return "darwin-ppc";  }

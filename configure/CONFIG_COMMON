@@ -312,7 +312,6 @@ PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(INCLUDES) $< > $@
 # Depends command
 
 HDEPENDS_FLAGS =
-# Use only dependancies from current top tree
 HDEPENDS_INCLUDES = $(subst -I,,$(INCLUDES))
 HDEPENDSFLAGS = -m $*$(DEP) $(HDEPENDS_INCLUDES) $@ $<
 HDEPENDS_CMD_YES   = -$(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)

@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocInit.c	ioc initialization */ 
-/* base/src/db $Id$ */
+/* $Id$ */
 /*      Author:		Marty Kraimer   Date:	06-01-91 */
 
 
@@ -27,6 +26,7 @@
 #include "dbBase.h"
 #include "caeventmask.h"
 #include "dbAddr.h"
+#include "dbBkpt.h"
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbLock.h"
@@ -125,6 +125,7 @@ int epicsShareAPI iocInit()
     interruptAccept=TRUE; initHooks(initHookAfterInterruptAccept);
     epicsThreadSleep(1.0);
 
+    dbBkptInit();
 
    /*  Start up CA server */
     rsrv_init();

@@ -25,9 +25,6 @@
 #-----------------------------------------------------------------------
 
 use Getopt::Std;
-use Text::Wrap;
-
-$Text::Wrap::columns = 76;
 
 my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
 my $endline = $/;
@@ -75,7 +72,7 @@ print "\n ALL DONE \n\n" if $debug;
 sub printList{
    my $depFile = shift; 
    my $objFile = shift; 
-   my $line;
+   my $file; 
 
    unlink($depFile) or die "Can't delete $depFile: $!\n" if -f $depFile;
 
@@ -85,17 +82,12 @@ sub printList{
 
    print "# DO NOT EDIT: This file created by $version\n\n";
 
-   local $: = " \t\n"; # remove hyphen from word boundary defaults
-
-   $line = "$objFile : @includes";
-   $fmtline = wrap ("", "  ", $line);
-   $fmtline =~ s/\n/ \\\n/mg;
-   print $fmtline;
-
+   foreach $file (@includes) {
+       print "$objFile : $file\n";
+   }
    print "\n\n";
    print "#Depend files must be targets to avoid 'No rule to make target ...' errors\n";
 
-   #$line = "@includes";
    foreach $file (@includes) {
        print "$file :\n";
    }
@@ -139,10 +131,10 @@ sub findNextIncName {
    my $dir;
 
    local $/ = $endline;
-   return 0 if !($line =~ m/^[	  ]*\#?[	 ]*include/);
-   return 0 if !($line =~ /^[\#?\s]*include\s*(['""'<])([\w\.\/]*)$delim_match{\1}/ix);
-   return 0 if !$2;
-   $incname = $2;
+    return 0 if not $line =~ /^\s*#?\s*include\s*(<.*?>|".*?")/;
+    $incname = substr $1, 1, length($1)-2;
+    print "DEBUG: $incname\n" if $debug;
+
 
    return $incname if -f $incname;
    return 0 if ( $incname =~ /^\// || $incname =~ /^\\/ );

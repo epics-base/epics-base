@@ -85,11 +85,6 @@ sub printList{
        print "$objFile : $file\n";
    }
    print "\n\n";
-   print "#Depend files must be targets to avoid 'No rule to make target ...' errors\n";
-
-   foreach $file (@includes) {
-       print "$file :\n";
-   }
 
    select($old_handle) ; # in this case, STDOUT
 }

@@ -14,10 +14,10 @@ TOP = ..
 include $(TOP)/configure/CONFIG
 
 DIRS += libCom
+DIRS += ca
 DIRS += RTEMS
 DIRS += libCom/test
 DIRS += toolsComm
-DIRS += ca
 DIRS += dbStatic
 DIRS += registry
 DIRS += bpt

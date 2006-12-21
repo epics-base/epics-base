@@ -16,6 +16,8 @@
 #include <time.h>
 #include <objLib.h>
 #include <sysLib.h>
+#include <limits.h>
+
 /* The following not defined in an vxWorks header */
 int sysClkRateGet(void);
 
@@ -42,14 +44,17 @@ void epicsEventDestroy(epicsEventId id)
 epicsEventWaitStatus epicsEventWaitWithTimeout(
     epicsEventId id, double timeOut)
 {
+    int rate = sysClkRateGet();
     int status;
     int ticks;
 
-    if(timeOut<=0.0) {
+    if (timeOut <= 0.0) {
         ticks = 0;
+    } else if (timeOut >= (double) INT_MAX / rate) {
+        ticks = WAIT_FOREVER;
     } else {
-        ticks = timeOut*sysClkRateGet();
-        if(ticks<=0) ticks = 1;
+        ticks = timeOut * rate;
+        if (ticks<=0) ticks = 1;
     }
     status = semTake((SEM_ID)id,ticks);
     if(status==OK) return(epicsEventWaitOK);

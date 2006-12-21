@@ -34,6 +34,7 @@
 #include "msgForMultiplyDefinedPV.h"
 #include "repeaterClient.h"
 #include "hostNameCache.h"
+#include "comBuf.h"
 
 #ifdef _MSC_VER
 #   pragma warning ( push )
@@ -68,6 +69,13 @@ template class tsFreeList < putCallback, 1024, epicsMutexNOOP >;
 template class tsFreeList < repeaterClient, 0x20 >;
 template class epicsSingleton < localHostName >;
 template class epics_auto_ptr < epics_auto_ptr < class searchTimer >, eapt_array >;
+template unsigned comBuf :: push ( const double * pValue, unsigned nElem );
+template unsigned comBuf :: push ( const float * pValue, unsigned nElem );
+template unsigned comBuf :: push ( const int * pValue, unsigned nElem );
+template unsigned comBuf :: push ( const short * pValue, unsigned nElem );
+template comBuf :: popStatus comBuf :: pop ( unsigned int & returnVal );
+template comBuf :: popStatus comBuf :: pop ( unsigned short & returnVal );
+template comBuf :: popStatus comBuf :: pop ( unsigned char & returnVal );
 
 
 #ifdef _MSC_VER

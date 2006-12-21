@@ -15,7 +15,8 @@
 
 <h4>New Architectures</h4>
 
-<p>The following target architectures have been added to this release:</p>
+<p>The following target architectures have been added to this release, although
+the core developers lack the ability to test all of them:</p>
 
 <ul>
   <li>darwin-ppcx86</li>
@@ -24,6 +25,8 @@
   <li>freebsd-x86_64</li>
   <li>interix-x86</li>
   <li>linux-arm</li>
+  <li>osf-alpha</li>
+  <li>osf-alpha-gnu</li>
   <li>vxWorks-mpc8540</li>
   <li>vxWorks-ppc604_altivec</li>
 </ul>
@@ -225,8 +228,6 @@ The RTEMS startup code calls epicsRtemsInitPreSetBootConfigFromNVRAM just
 before reading values from NVRAM and
 epicsRtemsInitPostSetBootConfigFromNVRAM just afterwards.  See
 epicsRtemsInitHooks.h for prototypes and global variables.</p>
-
-<h4>libCom</h4>
 
 <h4>e_flex</h4>
 

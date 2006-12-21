@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <time.h>
 #include <math.h>
+#include <float.h>
 
 #include "epicsThread.h"
 #include "epicsEvent.h"
@@ -143,7 +144,7 @@ MAIN(epicsEventTest)
     epicsEventId event;
     int status;
 
-    testPlan(9);
+    testPlan(10);
 
     event = epicsEventMustCreate(epicsEventEmpty);
 
@@ -159,6 +160,11 @@ MAIN(epicsEventTest)
     status = epicsEventWaitWithTimeout(event,2.0);
     testOk(status == 0,
         "epicsEventWaitWithTimeout(event, 2.0) = %d", status);
+
+    epicsEventSignal(event);
+    status = epicsEventWaitWithTimeout(event,DBL_MAX);
+    testOk(status == 0,
+        "epicsEventWaitWithTimeout(event, DBL_MAX) = %d", status);
 
     epicsEventSignal(event);
     status = epicsEventTryWait(event);

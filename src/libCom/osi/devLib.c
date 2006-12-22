@@ -25,6 +25,7 @@ static const char sccsID[] = "@(#) $Id$";
 #include <stdio.h>
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsMutex.h"
 #include "errlog.h"

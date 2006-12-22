@@ -244,10 +244,10 @@ inline void AlignedWireGet ( const T & src, T & dst )
     // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
-    WireAlias < T > tmp;
-    tmp._o = src;
-    AlignedWireGet ( tmp._u, tmp._u );
-    dst = tmp._o;
+    WireAlias < T > srcu, dstu;
+    srcu._o = src;
+    AlignedWireGet ( srcu._u, dstu._u );
+    dst = dstu._o;
 }
 
 template < class T >
@@ -256,10 +256,10 @@ inline void AlignedWireSet ( const T & src, T & dst )
     // copy through union here 
     // a) prevents over-aggresive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
-    WireAlias < T > tmp;
-    tmp._o = src;
-    AlignedWireSet ( tmp._u, tmp._u );
-    dst = tmp._o;
+    WireAlias < T > srcu, dstu;
+    srcu._o = src;
+    AlignedWireSet ( srcu._u, dstu._u );
+    dst = dstu._o;
 }
 
 #include "osdWireFormat.h"

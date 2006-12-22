@@ -148,8 +148,16 @@ inline void WireSet < epicsFloat64 > (
 #   endif
 }
 
+// workaround for problems in visual C++ 8.0
 template <>
 inline void WireSet < const epicsOldString > ( 
+    const epicsOldString & src, epicsUInt8 * pWireDst )
+{
+    memcpy ( pWireDst, src, sizeof ( src ) );
+}
+
+template <>
+inline void WireSet < epicsOldString > ( 
     const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, src, sizeof ( src ) );

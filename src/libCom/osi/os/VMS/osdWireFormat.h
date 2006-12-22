@@ -67,7 +67,7 @@ inline void WireSet < epicsFloat64 > (
 }
 
 template <>
-inline void WireSet < const epicsOldString > ( 
+inline void WireSet < epicsOldString > ( 
     const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, src, sizeof ( src ) );

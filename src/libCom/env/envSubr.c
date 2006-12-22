@@ -37,11 +37,11 @@
 *-***************************************************************************/
 
 #include <stdio.h>
-#include <epicsStdlib.h>
 #include <string.h>
 #include <limits.h>
 
 #define epicsExportSharedSymbols
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 #include "errMdef.h"
 #include "envDefs.h"

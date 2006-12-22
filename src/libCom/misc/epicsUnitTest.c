@@ -16,10 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsMutex.h"
-
-#define epicsExportSharedSymbols
 #include "epicsUnitTest.h"
 
 static epicsMutexId testLock = 0;

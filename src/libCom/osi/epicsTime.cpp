@@ -457,7 +457,7 @@ const char * fracFormatFind (
     char * const pPrefixBuf,
     const size_t prefixBufLen,
     bool & fracFmtFound,
-    unsigned long & fracFmtWidth  ) throw ()
+    unsigned long & fracFmtWidth  ) 
 {
     assert ( prefixBufLen > 1 );
     unsigned long width = ULONG_MAX;
@@ -515,7 +515,7 @@ const char * fracFormatFind (
 // size_t epicsTime::strftime ()
 //
 size_t epicsTime::strftime ( 
-    char * const pBuff, size_t bufLength, const char * const pFormat ) const throw ()
+    char * const pBuff, size_t bufLength, const char * const pFormat ) const 
 {
     if ( bufLength == 0u ) {
         return 0u;

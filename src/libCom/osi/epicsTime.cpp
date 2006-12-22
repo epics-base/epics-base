@@ -48,6 +48,7 @@ static const unsigned uSecPerSec = 1000u * mSecPerSec;
 static const unsigned nSecPerSec = 1000u * uSecPerSec;
 static const unsigned nSecPerUSec = 1000u;
 static const unsigned secPerMin = 60u;
+static const unsigned nSecFracDigits = 9u;
 
 static const unsigned tmStructEpochYear = 1900;
 
@@ -442,108 +443,185 @@ epicsTime::operator epicsTimeStamp () const
     return ts;
 }
 
-// return pointer to trailing "%0<n>f" (<n> is a number) in a format string,
-// NULL if none; also return <n> and a pointer to the "f"
-static char *fracFormat (const char *pFormat, unsigned long *width)
+// Break up a format string into "<strftime prefix>%0<nnn>f<postfix>" 
+// (where <nnn> in an unsigned integer) 
+// Result:
+// A) Copies a prefix which is valid for ANSI strftime into the supplied
+// buffer setting the buffer to an empty string if no prefix is present.
+// B) Indicates whether a valid "%0<n>f]" is present or not and if so 
+// specifying its nnnn
+// C) returning a pointer to the postfix (which might be passed again 
+// to fracFormatFind.
+const char * fracFormatFind ( 
+    const char * const pFormat, 
+    char * const pPrefixBuf,
+    const size_t prefixBufLen,
+    bool & fracFmtFound,
+    unsigned long & fracFmtWidth  ) throw ()
 {
-    // initialize returned field width
-    *width = 0;
-
-    // point at char past format string
-    const char *ptr = pFormat + strlen (pFormat);
-
-    // allow trailing ws
-    while (isspace (*(--ptr))); 
-
-    // if (last) char not 'f', no match
-    if (*ptr != 'f') return NULL;
-
-    // look for %f
-    if ( *(ptr-1) == '%' ) {
-        *width = 9;
-        return (char *) (ptr-1);
+    assert ( prefixBufLen > 1 );
+    unsigned long width = ULONG_MAX;
+    bool fracFound = false;
+    const char * pAfter = pFormat;
+    const char * pFmt = pFormat;
+    while ( *pFmt != '\0' ) {
+        if ( *pFmt == '%' ) {
+            if ( pFmt[1] == '%' ) {
+                pFmt++;
+            }
+            else if ( pFmt[1] == 'f' ) {
+                fracFound = true;
+                pAfter = & pFmt[2];
+                break;
+            }
+            else {
+                errno = 0;
+                char * pAfterTmp;
+                unsigned long result = strtoul ( pFmt + 1, & pAfterTmp, 10 );
+                if ( errno == 0 && *pAfterTmp == 'f' && result > 0 ) {
+                    width = result;
+                    fracFound = true;
+                    pAfter = pAfterTmp + 1;
+                    break;
+                }
+            }
+        }
+        pFmt++;
+        pAfter = pFmt;
+    }
+    size_t len = pFmt - pFormat;
+    if ( len < prefixBufLen ) {
+        strncpy ( pPrefixBuf, pFormat, len );
+        pPrefixBuf [ len ] = '\0';
+        if ( fracFound ) {
+            fracFmtFound = true;
+            fracFmtWidth = width;
+        }
+        else {
+            fracFmtFound = false;
+        }
+    }
+    else {
+        strncpy ( pPrefixBuf, "<invalid format>", prefixBufLen - 1 );
+        pPrefixBuf [ prefixBufLen - 1 ] = '\0';
+        fracFmtFound = false;
+        pAfter = "";
     }
 
-    // skip digits, extracting <n> (must start with 0)
-    while (isdigit (*(--ptr))); // NB, empty loop body
-    if (*ptr != '%') {
-        return NULL;
-    }
-    ++ptr; // points to first digit, if any
-    if (sscanf (ptr, "%lu", width) != 1) return NULL;
-
-    // if (prev) char not '%', no match
-    if (*(--ptr) != '%') return NULL;
-
-    // return pointer to '%'
-    return (char *) ptr;
+    return pAfter;
 }
 
 //
-// size_t epicsTime::strftime (char *pBuff, size_t bufLength, const char *pFormat)
+// size_t epicsTime::strftime ()
 //
-size_t epicsTime::strftime ( char *pBuff, size_t bufLength, const char *pFormat ) const
+size_t epicsTime::strftime ( 
+    char * const pBuff, size_t bufLength, const char * const pFormat ) const throw ()
 {
     if ( bufLength == 0u ) {
         return 0u;
     }
 
-    // dont report EPOCH date if its an uninitialized time stamp
+    // presume that EPOCH date is an uninitialized time stamp
     if ( this->secPastEpoch == 0 && this->nSec == 0u ) {
         strncpy ( pBuff, "<undefined>", bufLength );
         pBuff[bufLength-1] = '\0';
         return strlen ( pBuff );
     }
 
-    // copy format (needs to be writable)
-    char format[256];
-    strncpy ( format, pFormat, sizeof ( format ) );
-    if ( format [sizeof(format)-1] != '\0' ) {
-        strncpy ( pBuff, "<invalid format>", bufLength );
-        pBuff[bufLength-1] = '\0';
-        return strlen ( pBuff );
-    }
-
-    // look for "%0<n>f" at the end (used for fractional second formatting)
-    unsigned long fracWid;
-    char *fracPtr = fracFormat (format, &fracWid);
-
-    // if found, hide from strftime
-    if (fracPtr != NULL) *fracPtr = '\0';
-
-    // format all but fractional seconds
-    local_tm_nano_sec tmns = *this;
-    size_t numChar = ::strftime (pBuff, bufLength, format, &tmns.ansi_tm);
-    if (numChar == 0 || fracPtr == NULL) return numChar;
-
-    // check there are enough chars for the fractional seconds
-    if (numChar + fracWid < bufLength)
-    {
-        char * p = pBuff + numChar;
-        size_t len =  bufLength - numChar;
-        if ( tmns.nSec < nSecPerSec ) {
-            // divisors for fraction (see below)
-            const int div[9+1] = {(int)1e9,(int)1e8,(int)1e7,(int)1e6,(int)1e5,
-                          (int)1e4,(int)1e3,(int)1e2,(int)1e1,(int)1e0};
-    
-            // round and convert nanosecs to integer of correct range
-            int ndp = fracWid <= 9 ? fracWid : 9;
-            int frac = ((tmns.nSec + div[ndp]/2) % ((int)1e9)) / div[ndp];
-    
-            // restore fractional format and format fraction
-            *fracPtr = '%';
-            *(format + strlen (format) - 1) = 'u';
-            epicsSnprintf ( p, len, fracPtr, frac );
-            p[len-1] = '\0';            
+    char * pBufCur = pBuff;
+    const char * pFmt = pFormat;
+    size_t bufLenLeft = bufLength;
+    while ( *pFmt != '\0' && bufLenLeft > 1 ) {
+        // look for "%0<n>f" at the end (used for fractional second formatting)        
+        char strftimePrefixBuf [256];
+        bool fracFmtFound;
+        unsigned long fracWid;
+        pFmt = fracFormatFind ( 
+            pFmt, 
+            strftimePrefixBuf, sizeof ( strftimePrefixBuf ),
+            fracFmtFound, fracWid );
+            
+        // nothing more in the string, then quit
+        if ( ! ( strftimePrefixBuf[0] != '\0' || fracFmtFound ) ) {
+            break;
         }
-        else {
-            strncpy ( p, "OVF", len );
-            p[len-1] = '\0';
-            return strlen ( pBuff );         
+        // all but fractional seconds use strftime formatting
+        if ( strftimePrefixBuf[0] != '\0' ) {
+            local_tm_nano_sec tmns = *this;
+            size_t strftimeNumChar = :: strftime ( 
+                pBufCur, bufLenLeft, strftimePrefixBuf, & tmns.ansi_tm );
+            pBufCur [ strftimeNumChar ] = '\0';
+            pBufCur += strftimeNumChar;
+            bufLenLeft -= strftimeNumChar;
         }
-        
+
+        // fractional seconds formating
+        if ( fracFmtFound && bufLenLeft > 1 ) {
+            if ( fracWid > nSecFracDigits ) {
+                fracWid = nSecFracDigits;
+            }
+            // verify that there are enough chars left for the fractional seconds
+            if ( fracWid < bufLenLeft )
+            {
+                local_tm_nano_sec tmns = *this;
+                if ( tmns.nSec < nSecPerSec ) {
+                    // divisors for fraction (see below)
+                    static const unsigned long div[] = {
+                        static_cast < unsigned long > ( 1e9 ),
+                        static_cast < unsigned long > ( 1e8 ),
+                        static_cast < unsigned long > ( 1e7 ),
+                        static_cast < unsigned long > ( 1e6 ),
+                        static_cast < unsigned long > ( 1e5 ),
+                        static_cast < unsigned long > ( 1e4 ),
+                        static_cast < unsigned long > ( 1e3 ),
+                        static_cast < unsigned long > ( 1e2 ),
+                        static_cast < unsigned long > ( 1e1 ),
+                        static_cast < unsigned long > ( 1e0 )
+                    };
+                    // round and convert nanosecs to integer of correct range
+                    unsigned long frac = tmns.nSec + div[fracWid] / 2;
+                    frac %= static_cast < unsigned long > ( 1e9 );
+                    frac /= div[fracWid];
+                    char fracFormat[32];
+                    sprintf ( fracFormat, "%%0%uu", fracWid );
+                    int status = epicsSnprintf ( pBufCur, bufLenLeft, fracFormat, frac );
+                    if ( status > 0 ) {
+                        unsigned long nChar = static_cast < unsigned long > ( status );
+                        if  ( nChar >= bufLenLeft ) {
+                            nChar = bufLenLeft - 1;
+                        }
+                        pBufCur[nChar] = '\0';
+                        pBufCur += nChar;
+                        bufLenLeft -= nChar;
+                    }
+                }
+                else {
+                    static const char pOVF [] = "OVF";
+                    size_t tmpLen = sizeof ( pOVF ) - 1;
+                    if ( tmpLen >= bufLenLeft ) {
+                        tmpLen = bufLenLeft - 1;
+                    }
+                    strncpy ( pBufCur, pOVF, tmpLen );
+                    pBufCur[tmpLen] = '\0';
+                    pBufCur += tmpLen;
+                    bufLenLeft -= tmpLen;
+                }
+            }
+            else {
+                static const char pDoesntFit [] = "************";
+                size_t tmpLen = sizeof ( pDoesntFit ) - 1;
+                if ( tmpLen >= bufLenLeft ) {
+                    tmpLen = bufLenLeft - 1;
+                }
+                strncpy ( pBufCur, pDoesntFit, tmpLen );
+                pBufCur[tmpLen] = '\0';
+                pBufCur += tmpLen;
+                bufLenLeft -= tmpLen;
+                break;
+            }
+        }
     }
-    return numChar + fracWid;
+    return pBufCur - pBuff;
 }
 
 //

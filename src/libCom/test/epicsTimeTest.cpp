@@ -95,6 +95,15 @@ MAIN(epicsTimeTest)
         pFormat = "%S.%05f";
         et.strftime(buf, sizeof(buf), pFormat);
         testOk(strcmp(buf, "00.09877") == 0, "'%s' => '%s'", pFormat, buf);
+
+        pFormat = "%S.%05f %S.%05f";
+        et.strftime(buf, sizeof(buf), pFormat);
+        testOk(strcmp(buf, "00.09877 00.09877") == 0, "'%s' => '%s'", pFormat, buf);
+
+        char smbuf[5];
+        pFormat = "%S.%05f";
+        et.strftime(smbuf, sizeof(smbuf), pFormat);
+        testOk(strcmp(smbuf, "00.*") == 0, "'%s' => '%s'", pFormat, smbuf);
     }
 
     {   // invalidFormatTest

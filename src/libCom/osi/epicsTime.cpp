@@ -452,7 +452,7 @@ epicsTime::operator epicsTimeStamp () const
 // specifying its nnnn
 // C) returning a pointer to the postfix (which might be passed again 
 // to fracFormatFind.
-const char * fracFormatFind ( 
+static const char * fracFormatFind ( 
     const char * const pFormat, 
     char * const pPrefixBuf,
     const size_t prefixBufLen,
@@ -515,7 +515,7 @@ const char * fracFormatFind (
 // size_t epicsTime::strftime ()
 //
 size_t epicsTime::strftime ( 
-    char * const pBuff, size_t bufLength, const char * const pFormat ) const 
+    char * pBuff, size_t bufLength, const char * pFormat ) const 
 {
     if ( bufLength == 0u ) {
         return 0u;

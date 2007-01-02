@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- * Authors: Jeff HIll and Marty Kraimer
+ * Authors: Jeff Hill, Marty Kraimer and Andrew Johnson
  */
 #include <cstddef>
 #include <cstdio>
@@ -46,7 +46,7 @@ MAIN(epicsTimeTest)
     const int nTimes = 10;
     const double precisionEPICS = 1.0 / nSecPerSec;
 
-    testPlan(7 + nTimes * 18);
+    testPlan(10 + nTimes * 18);
 
     const epicsTime begin = epicsTime::getCurrent();
     {
@@ -104,6 +104,10 @@ MAIN(epicsTimeTest)
         pFormat = "%S.%05f";
         et.strftime(smbuf, sizeof(smbuf), pFormat);
         testOk(strcmp(smbuf, "00.*") == 0, "'%s' => '%s'", pFormat, smbuf);
+
+        pFormat = "%%S.%%05f";
+        et.strftime(buf, sizeof(buf), pFormat);
+        testOk(strcmp(buf, "%S.%05f") == 0, "'%s' => '%s'", pFormat, buf);
     }
 
     {   // invalidFormatTest

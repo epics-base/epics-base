@@ -525,9 +525,9 @@ Init (rtems_task_argument ignored)
             else {
                 char posixTzBuf[40];
                 char *p = posixTzBuf;
-                p += sprintf(p, "%cST %d:%d", tz[0], minWest/60, minWest%60);
+                p += sprintf(p, "%cST%d:%.2d", tz[0], minWest/60, minWest%60);
                 if (toDst != fromDst)
-                    p += sprintf(p, " %cDT", tz[0]);
+                    p += sprintf(p, "%cDT", tz[0]);
                 epicsEnvSet("TZ", posixTzBuf);
             }
         }

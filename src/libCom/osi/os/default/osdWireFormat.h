@@ -118,12 +118,20 @@ inline void WireGet < epicsFloat64 > (
     dst = tmp._f;
 }
 
+#if defined ( __GNUC__ ) && ( __GNUC__ == 4 && __GNUC_MINOR__ <= 0 )
 template <>
 inline void WireGet < epicsOldString > ( 
     const epicsUInt8 * pWireSrc, epicsOldString & dst )
 {
     memcpy ( dst, pWireSrc, sizeof ( dst ) );
 }
+#else
+inline void WireGet ( 
+    const epicsUInt8 * pWireSrc, epicsOldString & dst )
+{
+    memcpy ( dst, pWireSrc, sizeof ( dst ) );
+}
+#endif
 
 template <>
 inline void WireSet < epicsFloat64 > ( 
@@ -148,20 +156,20 @@ inline void WireSet < epicsFloat64 > (
 #   endif
 }
 
-// workaround for problems in visual C++ 8.0
-template <>
-inline void WireSet < const epicsOldString > ( 
-    const epicsOldString & src, epicsUInt8 * pWireDst )
-{
-    memcpy ( pWireDst, src, sizeof ( src ) );
-}
-
+#if defined ( __GNUC__ ) && ( __GNUC__ == 4 && __GNUC_MINOR__ <= 0 )
 template <>
 inline void WireSet < epicsOldString > ( 
     const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, src, sizeof ( src ) );
 }
+#else
+inline void WireSet ( 
+    const epicsOldString & src, epicsUInt8 * pWireDst )
+{
+    memcpy ( pWireDst, src, sizeof ( src ) );
+}
+#endif
 
 template <>
 inline void AlignedWireGet < epicsUInt16 > ( 

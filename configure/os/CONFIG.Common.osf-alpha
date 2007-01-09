@@ -15,11 +15,13 @@ ARCH_CLASS = alpha
 
 CODE_CPPFLAGS =
 
-POSIX_CPPFLAGS =
-POSIX_LDLIBS += -lpthread
+POSIX_CPPFLAGS += -pthread -ieee
+POSIX_LDFLAGS += -pthread -ieee
 
 OP_SYS_CPPFLAGS += -D_OSF_SOURCE
 OP_SYS_LDLIBS += -lrt
+# Unknown reason why USR_SYS_LIBS += m is needed
+USR_SYS_LIBS += m
 
 space:=$(empty) $(empty)
 colon := :

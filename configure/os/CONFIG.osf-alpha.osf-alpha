@@ -16,7 +16,7 @@ LD = -r
 
 # Configure OS vendor C compiler
 CONFORM_CFLAGS_ANSI = -std
-CONFORM_CFLAGS_STRICT = -std1 -pthread -ieee
+CONFORM_CFLAGS_STRICT = -std1
 CONFORM_CFLAGS_TRAD = -std0
 CODE_CFLAGS = 
 WARN_CFLAGS_YES =
@@ -26,7 +26,7 @@ OPT_CFLAGS_NO = -g
 
 # Configure OS vendor C++ compiler
 CONFORM_CXXFLAGS_NORMAL = 
-CONFORM_CXXFLAGS_STRICT = -std gnu -pthread -ieee
+CONFORM_CXXFLAGS_STRICT = -std gnu
 PROF_CXXFLAGS_YES = +p
 PROF_CXXFLAGS_NO =
 CODE_CXXFLAGS =

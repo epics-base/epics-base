@@ -41,8 +41,7 @@ inline void WireGet < epicsFloat64 > (
 #   endif
 }
 
-template <>
-inline void WireGet < epicsOldString > ( 
+inline void WireGet ( 
     const epicsUInt8 * pWireSrc, epicsOldString & dst )
 {
     memcpy ( dst, pWireSrc, sizeof ( dst ) );
@@ -66,8 +65,7 @@ inline void WireSet < epicsFloat64 > (
 #   endif
 }
 
-template <>
-inline void WireSet < epicsOldString > ( 
+inline void WireSet ( 
     const epicsOldString & src, epicsUInt8 * pWireDst )
 {
     memcpy ( pWireDst, src, sizeof ( src ) );

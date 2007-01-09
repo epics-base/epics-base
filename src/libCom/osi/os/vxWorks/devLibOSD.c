@@ -285,9 +285,6 @@ static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *p
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
     status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
     if (status!=OK) {
         return S_dev_noDevice;
@@ -304,10 +301,7 @@ static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *
 {
     long status;
 
-    /*
-     * this global variable exists in the nivxi library
-     */
-    status = vxMemProbe ((char *)ptr, VX_READ, wordSize, (char *) pValue);
+    status = vxMemProbe ((char *)ptr, VX_WRITE, wordSize, (char *) pValue);
     if (status!=OK) {
         return S_dev_noDevice;
     }

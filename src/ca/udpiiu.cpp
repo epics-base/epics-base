@@ -1223,11 +1223,16 @@ void udpiiu::flushRequest (
     netiiu::flushRequest ( guard );
 }
 
-void udpiiu::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > * pCBGuard,
+unsigned udpiiu::requestMessageBytesPending ( 
     epicsGuard < epicsMutex > & guard )
 {
-    netiiu::eliminateExcessiveSendBacklog ( pCBGuard, guard );
+    return netiiu::requestMessageBytesPending ( guard );
+}
+
+void udpiiu::flush ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    netiiu::flush ( guard );
 }
 
 void udpiiu::requestRecvProcessPostponedFlush (

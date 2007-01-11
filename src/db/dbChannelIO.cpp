@@ -69,11 +69,10 @@ void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
 }
 
 void dbChannelIO::destroy ( 
-    epicsGuard < epicsMutex > & /* callbackControlGuard */, 
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
+    epicsGuard < epicsMutex > & guard )
 {
-    mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.destroyChannel ( mutualExclusionGuard, *this );
+    guard.assertIdenticalMutex ( this->mutex );
+    this->serviceIO.destroyChannel ( guard, *this );
     // dont access this pointer after above call because
     // object nolonger exists
 }
@@ -133,7 +132,6 @@ void dbChannelIO::subscribe (
 }
 
 void dbChannelIO::ioCancel ( 
-    epicsGuard < epicsMutex > & /* callbackControlGuard */, 
     epicsGuard < epicsMutex > & mutualExclusionGuard,
     const ioid & id )
 {
@@ -232,9 +230,14 @@ void dbChannelIO::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
-void dbChannelIO::eliminateExcessiveSendBacklog (
-    epicsGuard < epicsMutex > * /* pCallbackGuard */, 
-    epicsGuard < epicsMutex > & /* mutualExclusionGuard */ )
+void dbChannelIO::flush (
+    epicsGuard < epicsMutex > & )
 {
+}
+
+unsigned dbChannelIO::requestMessageBytesPending (
+    epicsGuard < epicsMutex > & )
+{
+    return 0u;
 }
 

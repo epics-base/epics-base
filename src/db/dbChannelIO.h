@@ -50,7 +50,6 @@ public:
     void destructor ( 
         epicsGuard < epicsMutex > & );
     void destroy (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void callReadNotify ( 
         epicsGuard < epicsMutex > &, 
@@ -80,9 +79,10 @@ private:
 
     void initiateConnect (
         epicsGuard < epicsMutex > & );
-    void eliminateExcessiveSendBacklog (
-        epicsGuard < epicsMutex > * pCallbackGuard, 
-        epicsGuard < epicsMutex > & mutualExclusionGuard );
+    unsigned requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & );
+    void flush ( 
+        epicsGuard < epicsMutex > & );
     ioStatus read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, unsigned long count, 
@@ -100,7 +100,6 @@ private:
         unsigned type, unsigned long count, 
         unsigned mask, cacStateNotify &notify, ioid * );
     void ioCancel ( 
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 

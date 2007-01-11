@@ -124,9 +124,11 @@ public:
 
     void flushRequest ( 
         epicsGuard < epicsMutex > & );
-    void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
+    unsigned requestMessageBytesPending ( 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
+    void flush ( 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
+
     void show ( unsigned level ) const;
     bool setEchoRequestPending ( 
         epicsGuard < epicsMutex > & );
@@ -294,8 +296,8 @@ private:
         nciu & chan, netSubscription & subscr );
     void flushIfRecvProcessRequested (
         epicsGuard < epicsMutex > & );
-    bool flush ( 
-        epicsGuard < epicsMutex > & ); // only to be called by the send thread
+    bool sendThreadFlush ( 
+        epicsGuard < epicsMutex > & );
 
     // netiiu stubs
     void uninstallChanDueToSuccessfulSearchResponse ( 

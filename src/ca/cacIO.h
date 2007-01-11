@@ -137,7 +137,6 @@ public:
     virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
     virtual void disconnectNotify ( epicsGuard < epicsMutex > & ) = 0;
     virtual void serviceShutdownNotify (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual void accessRightsNotify ( 
         epicsGuard < epicsMutex > &, const caAccessRights & ) = 0;
@@ -175,7 +174,6 @@ public:
 
     cacChannel ( cacChannelNotify & );
     virtual void destroy (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     cacChannelNotify & notify () const; // required ?????
     virtual unsigned getName (
@@ -189,8 +187,9 @@ public:
         unsigned level ) const = 0;
     virtual void initiateConnect (
         epicsGuard < epicsMutex > & ) = 0;
-    virtual void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
+    virtual unsigned requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
+    virtual void flush ( 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual ioStatus read ( 
         epicsGuard < epicsMutex > &,
@@ -209,7 +208,6 @@ public:
         arrayElementCount count, unsigned mask, cacStateNotify &, 
         ioid * = 0 ) = 0;
     virtual void ioCancel ( 
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & ) = 0;
     virtual void ioShow ( 

@@ -2303,15 +2303,30 @@ callbacks will be called preemptively from more than one thread.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>SELECT</code></dt>
-    <dd>Specifies if preemptive callback is allowed. If it is allowed your
-      callbacks might be called when the thread that calls this routine is
-      not executing in the CA client library. Programmers who are unfamiliar
-      with mutual exclusion locking in a multi-threaded environment should
-      specify <code>ca_disable_preemptive_callback</code>. If
-      ca_enable_preemptive_callback is specified then CA client background
-      activities, such as connection management, will proceed even if the
-      thread that calls this routine is not executing in the CA client
-      library.</dd>
+    <dd>This argument specifies if preemptive invocation of callback
+      functions is allowed. If so your callback functions might be called
+      when the thread that calls this routine is not executing in the CA
+      client library. There are two implications to consider. </dd>
+    <dd><p>First, if preemptive callback mode is enabled the developer must
+      provide mutual exclusion protection for his data structures. In this
+      mode it's possible for two threads to touch the application's data
+      structures at once: this might be the initializing thread (the thread
+      that called ca_context_create) and also a private thread created by the
+      CA client library for the purpose of receiving network messages and
+      calling callbacks. It might be prudent for developers who are
+      unfamiliar with mutual exclusion locking in a multi-threaded
+      environment to specify <code>ca_disable_preemptive_callback</code>. </p>
+      <p>Second, if preemptive callback mode is enabled the application is no
+      longer burdened with the necessity of periodically polling the CA
+      client library in order that it might take care of its background
+      activities. If <code>ca_enable_preemptive_callback</code> is specified
+      then CA client background activities, such as connection management,
+      will proceed even if the thread that calls this routine is not
+      executing in the CA client library. Furthermore, in preemptive callback
+      mode callbacks might be called with less latency because the library is
+      not required to wait until the initializing thread (the thread that
+      called ca_context_create) is executing within the CA client library.</p>
+    </dd>
 </dl>
 
 <h4>Returns</h4>

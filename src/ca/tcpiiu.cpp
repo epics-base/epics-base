@@ -133,7 +133,7 @@ void tcpSendThread::run ()
                     laborPending = true;
                 }
                 
-                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                if ( this->iiu.sendQue.flushBlockThreshold () ) {
                     laborPending = true;
                     break;
                 }
@@ -145,7 +145,7 @@ void tcpSendThread::run ()
                 this->iiu.connectedList.add ( *pChan );
                 pChan->channelNode::listMember = 
                     channelNode::cs_connected;
-                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                if ( this->iiu.sendQue.flushBlockThreshold () ) {
                     laborPending = true;
                     break;
                 }
@@ -157,18 +157,18 @@ void tcpSendThread::run ()
                 this->iiu.connectedList.add ( *pChan );
                 pChan->channelNode::listMember = 
                     channelNode::cs_connected;
-                if ( this->iiu.sendQue.flushBlockThreshold ( 0u ) ) {
+                if ( this->iiu.sendQue.flushBlockThreshold () ) {
                     laborPending = true;
                     break;
                 }
             }
 
-            if ( ! this->iiu.flush ( guard ) ) {
+            if ( ! this->iiu.sendThreadFlush ( guard ) ) {
                 break;
             }
         }
         if ( this->iiu.state == tcpiiu::iiucs_clean_shutdown ) {
-            this->iiu.flush ( guard );
+            this->iiu.sendThreadFlush ( guard );
             // this should cause the server to disconnect from 
             // the client
             int status = ::shutdown ( this->iiu.sock, SHUT_WR );
@@ -1623,7 +1623,7 @@ void tcpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, // X
     minder.commit ();
 }
 
-bool tcpiiu::flush ( epicsGuard < epicsMutex > & guard )
+bool tcpiiu::sendThreadFlush ( epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -1667,58 +1667,53 @@ bool tcpiiu::flush ( epicsGuard < epicsMutex > & guard )
     return true;
 }
 
-void tcpiiu::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > * pCallbackGuard,
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
+void tcpiiu :: flush ( epicsGuard < epicsMutex > & guard )
 {
-    mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
+    this->flushRequest ( guard );
+    // the process thread is not permitted to flush as this
+    // can result in a push / pull deadlock on the TCP pipe.
+    // Instead, the process thread scheduals the flush with the 
+    // send thread which runs at a higher priority than the 
+    // receive thread. The same applies to the UDP thread for
+    // locking hierarchy reasons.
+    if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
+        // enable / disable of call back preemption must occur here
+        // because the tcpiiu might disconnect while waiting and its
+        // pointer to this cac might become invalid            
+        assert ( this->blockingForFlush < UINT_MAX );
+        this->blockingForFlush++;
+        while ( this->sendQue.flushBlockThreshold() ) {
 
-    if ( this->sendQue.flushBlockThreshold ( 0u ) ) {
-        this->flushRequest ( mutualExclusionGuard );
-        // the process thread is not permitted to flush as this
-        // can result in a push / pull deadlock on the TCP pipe.
-        // Instead, the process thread scheduals the flush with the 
-        // send thread which runs at a higher priority than the 
-        // receive thread. The same applies to the UDP thread for
-        // locking hierarchy reasons.
-        if ( ! epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
-            // enable / disable of call back preemption must occur here
-            // because the tcpiiu might disconnect while waiting and its
-            // pointer to this cac might become invalid            
-            assert ( this->blockingForFlush < UINT_MAX );
-            this->blockingForFlush++;
-            while ( this->sendQue.flushBlockThreshold(0u) ) {
-
-                bool userRequestsCanBeAccepted =
-                    this->state == iiucs_connected ||
-                    ( ! this->ca_v42_ok ( mutualExclusionGuard ) && 
-                        this->state == iiucs_connecting );
-                // fail the users request if we have a disconnected
-                // or unresponsive circuit
-                if ( ! userRequestsCanBeAccepted || 
-                        this->unresponsiveCircuit ) {
-                    this->decrementBlockingForFlushCount ( mutualExclusionGuard );
-                    throw cacChannel::notConnected ();
-                }
-
-                epicsGuardRelease < epicsMutex > autoRelease ( 
-                        mutualExclusionGuard );
-                if ( pCallbackGuard ) {
-                    epicsGuardRelease < epicsMutex > 
-                        autoReleaseCB ( *pCallbackGuard );
-                    this->flushBlockEvent.wait ( 30.0 );
-                }
-                else {
-                    this->flushBlockEvent.wait ( 30.0 );
-                }
+            bool userRequestsCanBeAccepted =
+                this->state == iiucs_connected ||
+                ( ! this->ca_v42_ok ( guard ) && 
+                    this->state == iiucs_connecting );
+            // fail the users request if we have a disconnected
+            // or unresponsive circuit
+            if ( ! userRequestsCanBeAccepted || 
+                    this->unresponsiveCircuit ) {
+                this->decrementBlockingForFlushCount ( guard );
+                throw cacChannel::notConnected ();
             }
-            this->decrementBlockingForFlushCount ( mutualExclusionGuard );
+
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            this->flushBlockEvent.wait ( 30.0 );
         }
+        this->decrementBlockingForFlushCount ( guard );
     }
-    else if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
+}
+
+unsigned tcpiiu::requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & guard )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+#if 0
+    if ( ! this->earlyFlush && this->sendQue.flushEarlyThreshold(0u) ) {
         this->earlyFlush = true;
         this->sendThreadFlushEvent.signal ();
     }
+#endif
+    return sendQue.occupiedBytes ();
 }
 
 void tcpiiu::decrementBlockingForFlushCount ( 
@@ -1968,7 +1963,6 @@ int tcpiiu::printf (
     return status;
 }
 
-// this is called virtually
 void tcpiiu::flushRequest ( epicsGuard < epicsMutex > & )
 {
     if ( this->sendQue.occupiedBytes () > 0 ) {

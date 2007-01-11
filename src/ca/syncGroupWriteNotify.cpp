@@ -36,8 +36,7 @@ void syncGroupWriteNotify::begin (
     epicsGuard < epicsMutex > & guard, unsigned type, 
     arrayElementCount count, const void * pValueIn )
 {
-    this->chan->getClientCtx().eliminateExcessiveSendBacklog ( 
-        *this->chan, guard );
+    this->chan->eliminateExcessiveSendBacklog ( guard );
     this->ioComplete = false;
     boolFlagManager mgr ( this->idIsValid );
     this->chan->write ( guard, type, count, 
@@ -46,11 +45,10 @@ void syncGroupWriteNotify::begin (
 }
 
 void syncGroupWriteNotify::cancel ( 
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( cbGuard, guard, this->id );
+        this->chan->ioCancel ( guard, this->id );
         this->idIsValid = false;
     }
 }

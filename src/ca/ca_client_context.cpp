@@ -43,6 +43,8 @@ epicsShareDef epicsThreadPrivateId caClientCallbackThreadId;
 
 static epicsThreadOnceId cacOnce = EPICS_THREAD_ONCE_INIT;
 
+const unsigned ca_client_context :: flushBlockThreshold = 0x58000;
+
 extern "C" void cacExitHandler ( void *)
 {
     epicsThreadPrivateDelete ( caClientCallbackThreadId );
@@ -65,6 +67,7 @@ cacService * ca_client_context::pDefaultService = 0;
 epicsMutex * ca_client_context::pDefaultServiceInstallMutex;
 
 ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
+    createdByThread ( epicsThreadGetIdSelf () ), 
     ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
     pndRecvCnt ( 0u ), ioSeqNo ( 0u ), callbackThreadsPending ( 0u ), 
@@ -187,22 +190,6 @@ ca_client_context::~ca_client_context ()
     else {
         this->pServiceContext.reset ( 0 );
     }
-}
-
-void ca_client_context::destroyChannel ( 
-    epicsGuard < epicsMutex > & cbGuard,
-    epicsGuard < epicsMutex > & guard,
-    oldChannelNotify & chan )
-{
-    try {
-        chan.eliminateExcessiveSendBacklog ( 
-            &cbGuard, guard );
-    }
-    catch ( cacChannel::notConnected & ) {
-        // intentionally ignored
-    }
-    chan.destructor ( cbGuard, guard );
-    this->oldChannelNotifyFreeList.release ( & chan );
 }
 
 void ca_client_context::destroyGetCopy ( 
@@ -663,7 +650,7 @@ void ca_client_context::callbackProcessingCompleteNotify ()
 
 cacChannel & ca_client_context::createChannel ( 
     epicsGuard < epicsMutex > & guard, const char * pChannelName, 
-    oldChannelNotify & chan, cacChannel::priLev pri )
+    cacChannelNotify & chan, cacChannel::priLev pri )
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->pServiceContext->createChannel ( 
@@ -753,32 +740,41 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
-    epicsGuard < epicsMutex > * pCBGuard = cac.pCallbackGuard.get();
-    if ( pCBGuard ) {
-        cac.clearSubscriptionPrivate ( *pCBGuard, *pMon );
-    }
-    else {
-        epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
-        cac.clearSubscriptionPrivate ( cbGuard, *pMon );
-    }
-    return ECA_NORMAL;
-}
-
-void ca_client_context::clearSubscriptionPrivate ( 
-    epicsGuard < epicsMutex > & cbGuard, oldSubscription & subscr )
-{
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    oldChannelNotify & chan = subscr.channel ();
+    epicsGuard < epicsMutex > guard ( cac.mutex );
     try {
         // if this stalls out on a live circuit then an exception 
         // can be forthcoming which we must ignore as the clear
         // request must always be successful
-        chan.eliminateExcessiveSendBacklog ( 
-            & cbGuard, guard );
+        chan.eliminateExcessiveSendBacklog ( guard );
     }
     catch ( cacChannel::notConnected & ) {
         // intentionally ignored
     }
-    subscr.cancel ( cbGuard, guard );
+    pMon->cancel ( guard );
+    return ECA_NORMAL;
 }
 
+void ca_client_context :: eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > & guard, cacChannel & chan )
+{
+    if ( chan.requestMessageBytesPending ( guard ) > 
+            ca_client_context :: flushBlockThreshold ) {
+        if ( this->pCallbackGuard.get() && 
+            this->createdByThread == epicsThreadGetIdSelf () ) {
+            // we need to be very careful about lock hierarchy 
+            // inversion in this situation
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            {
+                epicsGuardRelease < epicsMutex > cbunguard (
+                    * this->pCallbackGuard.get() );
+                { 
+                    epicsGuard < epicsMutex > nestedGuard ( this->mutex );
+                    chan.flush ( nestedGuard );
+                }
+            }
+        }
+        else {
+            chan.flush ( guard );
+        }
+    }
+}

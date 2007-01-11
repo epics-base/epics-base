@@ -38,8 +38,7 @@ void syncGroupReadNotify::begin (
     epicsGuard < epicsMutex > & guard, 
     unsigned type, arrayElementCount count )
 {
-    this->chan->getClientCtx().
-        eliminateExcessiveSendBacklog ( *this->chan, guard );
+    this->chan->eliminateExcessiveSendBacklog ( guard );
     this->ioComplete = false;
     boolFlagManager mgr ( this->idIsValid );
     this->chan->read ( guard, type, count, *this, &this->id );
@@ -47,11 +46,10 @@ void syncGroupReadNotify::begin (
 }
 
 void syncGroupReadNotify::cancel ( 
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( cbGuard, guard, this->id );
+        this->chan->ioCancel ( guard, this->id );
         this->idIsValid = false;
     }
 }

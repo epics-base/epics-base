@@ -40,13 +40,12 @@ CASG::~CASG ()
 }
 
 void CASG::destructor ( 
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
 
     if ( this->verify ( guard ) ) {
-        this->reset ( cbGuard, guard );
+        this->reset ( guard );
         this->client.uninstallCASG ( guard, *this );
         this->magic = 0;
     }
@@ -65,7 +64,7 @@ bool CASG::verify ( epicsGuard < epicsMutex > & ) const
  * CASG::block ()
  */
 int CASG::block ( 
-    epicsGuard < epicsMutex > & cbGuard, 
+    epicsGuard < epicsMutex > * pcbGuard, 
     epicsGuard < epicsMutex > & guard, 
     double timeout )
 {
@@ -110,9 +109,15 @@ int CASG::block (
             break;
         }
 
-        {
+        if ( pcbGuard ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            epicsGuardRelease < epicsMutex > uncbGuard ( cbGuard );
+            {
+                epicsGuardRelease < epicsMutex > uncbGuard ( *pcbGuard );
+                this->sem.wait ( remaining );
+            }
+        }
+        else {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
             this->sem.wait ( remaining );
         }
 
@@ -124,18 +129,17 @@ int CASG::block (
         delay = cur_time - beg_time;
     }
 
-    this->reset ( cbGuard, guard );
+    this->reset ( guard );
 
     return status;
 }
 
 void CASG::reset ( 
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->destroyCompletedIO ( guard );
-    this->destroyPendingIO ( cbGuard, guard );
+    this->destroyPendingIO ( guard );
 }
 
 // lock must be applied
@@ -150,13 +154,11 @@ void CASG::destroyCompletedIO (
 }
 
 void CASG::destroyPendingIO ( 
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
-    syncGroupNotify * pNotify;
-    while ( ( pNotify = this->ioPendingList.first () ) ) {
-        pNotify->cancel ( cbGuard, guard );
+    while ( syncGroupNotify * pNotify = this->ioPendingList.first () ) {
+        pNotify->cancel ( guard );
         // cancel must release the guard while 
         // canceling put callbacks so we
         // must double check list membership
@@ -201,7 +203,6 @@ void CASG::show (
 }
 
 bool CASG::ioComplete (
-    epicsGuard < epicsMutex > & /* cbGuard */,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );

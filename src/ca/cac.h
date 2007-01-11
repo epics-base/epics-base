@@ -135,9 +135,7 @@ public:
         epicsGuard < epicsMutex > & guard, const char * pChannelName, 
         cacChannelNotify &, cacChannel::priLev );
     void destroyChannel ( 
-        epicsGuard < epicsMutex > & callbackControlGuard, 
-        epicsGuard < epicsMutex > & mutualExclusionGuard,
-        nciu & );
+        epicsGuard < epicsMutex > &, nciu & );
     void initiateConnect ( 
         epicsGuard < epicsMutex > &, nciu &, netiiu * & );
     nciu * lookupChannel (
@@ -156,8 +154,7 @@ public:
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
         unsigned type, arrayElementCount nElem, unsigned mask, 
         cacStateNotify &, bool channelIsInstalled );
-    baseNMIU * destroyIO (
-        epicsGuard < epicsMutex > & cbGuard, 
+    bool destroyIO (
         epicsGuard < epicsMutex > & guard, 
         const cacChannel::ioid & idIn, 
         nciu & chan );

@@ -364,16 +364,15 @@ int epicsShareAPI ca_create_channel (
 int epicsShareAPI ca_clear_channel ( chid pChan )
 {
     ca_client_context & cac = pChan->getClientCtx ();
-    epicsGuard < epicsMutex > * pCBGuard = cac.pCallbackGuard.get();
-    if ( pCBGuard ) {
-        epicsGuard < epicsMutex > guard ( cac.mutex );
-        cac.destroyChannel ( *pCBGuard, guard, *pChan );
+    epicsGuard < epicsMutex > guard ( cac.mutex );
+    try {
+        pChan->eliminateExcessiveSendBacklog ( guard );
     }
-    else {
-        epicsGuard < epicsMutex > cbGuard ( cac.cbMutex );
-        epicsGuard < epicsMutex > guard ( cac.mutex );
-        cac.destroyChannel ( cbGuard, guard, *pChan );
+    catch ( cacChannel::notConnected & ) {
+        // intentionally ignored
     }
+    pChan->destructor ( guard );
+    cac.oldChannelNotifyFreeList.release ( pChan );
     return ECA_NORMAL;
 }
 

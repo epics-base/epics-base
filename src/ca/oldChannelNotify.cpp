@@ -65,11 +65,10 @@ oldChannelNotify::~oldChannelNotify ()
 }
 
 void  oldChannelNotify::destructor (
-    epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->cacCtx.mutexRef () );
-    this->io.destroy ( cbGuard, guard );
+    this->io.destroy ( guard );
     // no need to worry about a connect preempting here because
     // the io (the nciu) has been destroyed above
     if ( this->pConnCallBack == 0 && ! this->currentlyConnected ) {
@@ -119,13 +118,9 @@ void oldChannelNotify::disconnectNotify (
 }
 
 void oldChannelNotify::serviceShutdownNotify (
-    epicsGuard < epicsMutex > & callbackControlGuard, 
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
+    epicsGuard < epicsMutex > & guard )
 {
-    this->cacCtx.destroyChannel ( 
-        callbackControlGuard,
-        mutualExclusionGuard,
-        *this );
+    this->disconnectNotify ( guard );
 }
 
 void oldChannelNotify::accessRightsNotify ( 
@@ -287,8 +282,7 @@ int epicsShareAPI ca_array_get ( chtype type,
         }
         unsigned tmpType = static_cast < unsigned > ( type );
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
-        pChan->eliminateExcessiveSendBacklog ( 
-            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        pChan->eliminateExcessiveSendBacklog ( guard );
         autoPtrFreeList < getCopy, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCopyFreeList,
                 new ( pChan->getClientCtx().getCopyFreeList ) 
@@ -355,8 +349,7 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         unsigned tmpType = static_cast < unsigned > ( type );
 
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
-        pChan->eliminateExcessiveSendBacklog ( 
-            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        pChan->eliminateExcessiveSendBacklog ( guard );
         autoPtrFreeList < getCallback, 0x400, epicsMutexNOOP > pNotify 
             ( pChan->getClientCtx().getCallbackFreeList,
             new ( pChan->getClientCtx().getCallbackFreeList )
@@ -427,8 +420,7 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
             return ECA_BADTYPE;
         }
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
-        pChan->eliminateExcessiveSendBacklog ( 
-            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        pChan->eliminateExcessiveSendBacklog ( guard );
         unsigned tmpType = static_cast < unsigned > ( type );
         autoPtrFreeList < putCallback, 0x400, epicsMutexNOOP > pNotify
                 ( pChan->getClientCtx().putCallbackFreeList,
@@ -491,8 +483,7 @@ int epicsShareAPI ca_array_put ( chtype type, arrayElementCount count,
     int caStatus;
     try {
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
-        pChan->eliminateExcessiveSendBacklog ( 
-            pChan->getClientCtx().pCallbackGuard.get(), guard );
+        pChan->eliminateExcessiveSendBacklog ( guard );
         pChan->io.write ( guard, tmpType, count, pValue );
         caStatus = ECA_NORMAL;
     }
@@ -569,8 +560,7 @@ int epicsShareAPI ca_create_subscription (
             // can be forthcoming which we must ignore (this is a
             // special case preserving legacy ca_create_subscription
             // behavior)
-            pChan->eliminateExcessiveSendBacklog ( 
-                pChan->getClientCtx().pCallbackGuard.get(), guard );
+            pChan->eliminateExcessiveSendBacklog ( guard );
         }
         catch ( cacChannel::notConnected & ) {
             // intentionally ignored (its ok to subscribe when not connected)

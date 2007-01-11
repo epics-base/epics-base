@@ -68,7 +68,6 @@ public:
     virtual bool ioPending (  
         epicsGuard < epicsMutex > & guard ) = 0;
     virtual void cancel (
-        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard ) = 0;
     virtual void show ( 
         epicsGuard < epicsMutex > &, 
@@ -92,7 +91,6 @@ public:
     void begin (  epicsGuard < epicsMutex > &, 
         unsigned type, arrayElementCount count );
     void cancel (
-        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
@@ -135,7 +133,6 @@ public:
     void begin (  epicsGuard < epicsMutex > &, unsigned type, 
         arrayElementCount count, const void * pValueIn );
     void cancel (
-        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
     void show (  epicsGuard < epicsMutex > &, unsigned level ) const;
 protected:
@@ -170,16 +167,13 @@ struct CASG : public chronIntIdRes < CASG >, private casgRecycle {
 public:
     CASG ( epicsGuard < epicsMutex > &, ca_client_context & cacIn );
     void destructor ( 
-        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     bool ioComplete ( 
-        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     bool verify ( epicsGuard < epicsMutex > & ) const;
-    int block ( epicsGuard < epicsMutex > & cbGuard, 
+    int block ( epicsGuard < epicsMutex > * pcbGuard, 
         epicsGuard < epicsMutex > & guard, double timeout );
-    void reset ( epicsGuard < epicsMutex > & cbGuard, 
-        epicsGuard < epicsMutex > & guard );
+    void reset ( epicsGuard < epicsMutex > & guard );
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
     void get ( epicsGuard < epicsMutex > &, chid pChan, 
@@ -214,7 +208,6 @@ private:
         epicsGuard < epicsMutex > &, syncGroupReadNotify & io );
 
     void destroyPendingIO ( 
-        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void destroyCompletedIO ( 
         epicsGuard < epicsMutex > & guard );

@@ -76,27 +76,22 @@ nciu::~nciu ()
 // channels are created by the user, and only destroyed by the user
 // using this routine
 void nciu::destroy (
-    epicsGuard < epicsMutex > & callbackControlGuard, 
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
+    epicsGuard < epicsMutex > & guard )
 {    
     while ( baseNMIU * pNetIO = this->eventq.first () ) {
         assert ( this->cacCtx.destroyIO ( 
-            callbackControlGuard, mutualExclusionGuard, 
-            pNetIO->getId (), *this ) );
+            guard, pNetIO->getId (), *this ) );
     }
-
+    
     // if the claim reply has not returned yet then we will issue
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
-    if ( this->channelNode::isInstalledInServer ( mutualExclusionGuard ) ) {
-        this->getPIIU(mutualExclusionGuard)->clearChannelRequest ( 
-            mutualExclusionGuard, this->sid, this->id );
+    if ( this->channelNode::isInstalledInServer ( guard ) ) {
+        this->getPIIU(guard)->clearChannelRequest ( 
+            guard, this->sid, this->id );
     }
-    
-    this->piiu->uninstallChan ( mutualExclusionGuard, *this );
-    
-    this->cacCtx.destroyChannel ( 
-        callbackControlGuard, mutualExclusionGuard, *this );
+    this->piiu->uninstallChan ( guard, *this );
+    this->cacCtx.destroyChannel ( guard, *this );
 }
 
 void * nciu::operator new ( size_t ) // X aCC 361
@@ -268,12 +263,16 @@ unsigned nciu::nameLen (
     return this->nameLength;
 }
 
-void nciu::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > * pCallbackGuard,
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
+unsigned nciu::requestMessageBytesPending ( 
+    epicsGuard < epicsMutex > & guard )
 {
-    this->piiu->eliminateExcessiveSendBacklog ( 
-            pCallbackGuard, mutualExclusionGuard );
+    return piiu->requestMessageBytesPending ( guard );
+}
+
+void nciu::flush ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    piiu->flush ( guard );
 }
 
 cacChannel::ioStatus nciu::read ( 
@@ -391,10 +390,9 @@ void nciu::subscribe (
 }
 
 void nciu::ioCancel ( 
-    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard, const ioid & idIn )
 {
-    this->cacCtx.destroyIO ( cbGuard, guard, idIn, *this );
+    this->cacCtx.destroyIO ( guard, idIn, *this );
 }
 
 void nciu::ioShow ( 
@@ -577,7 +575,7 @@ void nciu::serviceShutdownNotify (
     epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
     this->setServerAddressUnknown ( noopIIU, mutualExclusionGuard );
-    this->notify().serviceShutdownNotify ( callbackControlGuard, mutualExclusionGuard );
+    this->notify().serviceShutdownNotify ( mutualExclusionGuard );
 }
 
 void channelNode::setRespPendingState ( 

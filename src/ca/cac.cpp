@@ -497,15 +497,15 @@ void cac::transferChanToVirtCircuit (
         if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
             char acc[64];
             pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
+            msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
+                msgForMultiplyDefinedPV ( this->ipToAEngine, 
+                    *this, pChan->pName ( guard ), acc );
             // It is possible for the ioInitiate call below to
             // call the callback directly if queue quota is exceeded.
             // This callback takes the callback lock and therefore we
             // must release the primary mutex here to avoid a lock 
             // hierarchy inversion.
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                msgForMultiplyDefinedPV ( this->ipToAEngine, 
-                    *this, pChan->pName ( guard ), acc );
             pMsg->ioInitiate ( addr );
         }
         return;
@@ -566,19 +566,16 @@ void cac::transferChanToVirtCircuit (
 }
 
 void cac::destroyChannel ( 
-    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard,
     nciu & chan ) 
 {
     guard.assertIdenticalMutex ( this->mutex );
-    cbGuard.assertIdenticalMutex ( this->cbMutex );
 
     // uninstall channel so that recv threads
     // will not start a new callback for this channel's IO. 
     if ( this->chanTable.remove ( chan ) != & chan ) {
         throw std::logic_error ( "Invalid channel identifier" );
     }
-  
     chan.~nciu ();
     this->channelFreeList.release ( & chan );
 }
@@ -642,12 +639,10 @@ netReadNotifyIO & cac::readNotifyRequest (
     return *pIO.release();
 }
 
-baseNMIU * cac::destroyIO (
-    epicsGuard < epicsMutex > & cbGuard, 
+bool cac::destroyIO (
     epicsGuard < epicsMutex > & guard, 
     const cacChannel::ioid & idIn, nciu & chan )
 {
-    cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
 
     baseNMIU * pIO = this->ioTable.remove ( idIn );
@@ -660,8 +655,9 @@ baseNMIU * cac::destroyIO (
         // this uninstalls from the list and destroys the IO
         pIO->exception ( guard, *this,
             ECA_CHANDESTROY, chan.pName ( guard ) );
+        return true;
     }       
-    return pIO;
+    return false;
 }
 
 void cac::ioShow ( 

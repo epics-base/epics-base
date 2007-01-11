@@ -64,25 +64,28 @@ void getCopy::completion (
         unsigned size = dbr_size_n ( typeIn, countIn );
         memcpy ( this->pValue, pDataIn, size );
         this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
+        this->cacCtx.destroyGetCopy ( guard, *this );
     }
     else {
         this->exception ( guard, ECA_INTERNAL, 
             "bad data type match in get copy back response",
             typeIn, countIn);
     }
-    this->cacCtx.destroyGetCopy ( guard, *this );
 }
 
 void getCopy::exception (
     epicsGuard < epicsMutex > & guard,
     int status, const char *pContext, unsigned /* typeIn */, arrayElementCount /* countIn */ )
 {
+    oldChannelNotify & chanTmp ( this->chan );
+    unsigned typeTmp ( this->type );
+    arrayElementCount countTmp ( this->count );
+    this->cacCtx.destroyGetCopy ( guard, *this );
     if ( status != ECA_CHANDESTROY ) {
         this->cacCtx.exception ( guard, status, pContext, 
-            __FILE__, __LINE__, this->chan, this->type, 
-            this->count, CA_OP_GET );
+            __FILE__, __LINE__, chanTmp, typeTmp, 
+            countTmp, CA_OP_GET );
     }
-    this->cacCtx.destroyGetCopy ( guard, *this );
 }
 
 void getCopy::show ( unsigned level ) const

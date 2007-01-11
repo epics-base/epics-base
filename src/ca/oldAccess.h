@@ -46,14 +46,13 @@
 #include "cadef.h"
 #include "syncGroup.h"
 
-struct oldChannelNotify : public cacChannelNotify {
+struct oldChannelNotify : private cacChannelNotify {
 public:
     oldChannelNotify ( 
         epicsGuard < epicsMutex > &, struct ca_client_context &, 
         const char * pName, caCh * pConnCallBackIn, 
         void * pPrivateIn, capri priority );
     void destructor ( 
-        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
 
     // legacy C API
@@ -114,9 +113,6 @@ public:
         unsigned level ) const;
     void initiateConnect (
         epicsGuard < epicsMutex > & );
-    void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
-        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void read ( 
         epicsGuard < epicsMutex > &,
         unsigned type, arrayElementCount count, 
@@ -126,13 +122,15 @@ public:
         unsigned type, arrayElementCount count, const void *pValue, 
         cacWriteNotify &, cacChannel::ioid *pId = 0 );
     void ioCancel ( 
-        epicsGuard < epicsMutex > & callbackControl, 
         epicsGuard < epicsMutex > & mutualExclusionGuard, 
         const cacChannel::ioid & );
     void ioShow ( 
         epicsGuard < epicsMutex > & guard,
         const cacChannel::ioid &, unsigned level ) const;
     ca_client_context & getClientCtx ();
+    void eliminateExcessiveSendBacklog ( 
+        epicsGuard < epicsMutex > & );
+
     void * operator new ( size_t size, 
         tsFreeList < struct oldChannelNotify, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void * , 
@@ -151,7 +149,6 @@ private:
     void connectNotify ( epicsGuard < epicsMutex > & );
     void disconnectNotify ( epicsGuard < epicsMutex > & );
     void serviceShutdownNotify (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void accessRightsNotify (  
         epicsGuard < epicsMutex > &, const caAccessRights & );
@@ -263,7 +260,6 @@ public:
     ~oldSubscription ();
     oldChannelNotify & channel () const;
     void cancel ( 
-        epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void * operator new ( size_t size, 
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & );
@@ -301,10 +297,10 @@ public:
     void replaceErrLogHandler ( caPrintfFunc * ca_printf_func );
     cacChannel & createChannel ( 
         epicsGuard < epicsMutex > &, const char * pChannelName, 
-        oldChannelNotify &, cacChannel::priLev pri );
+        cacChannelNotify &, cacChannel::priLev pri );
     void flush ( epicsGuard < epicsMutex > & );
     void eliminateExcessiveSendBacklog ( 
-        oldChannelNotify & chan, epicsGuard < epicsMutex > & guard );
+        epicsGuard < epicsMutex > &, cacChannel & );
     int pendIO ( const double & timeout );
     int pendEvent ( const double & timeout );
     bool ioComplete () const;
@@ -339,14 +335,14 @@ public:
     void vSignal ( int ca_status, const char * pfilenm, 
                      int lineno, const char  *pFormat, va_list args );
     bool preemptiveCallbakIsEnabled () const;
-    void destroyChannel ( epicsGuard < epicsMutex > & cbGuard, 
-        epicsGuard < epicsMutex > & guard, oldChannelNotify & chan );
     void destroyGetCopy ( epicsGuard < epicsMutex > &, getCopy & );
     void destroyGetCallback ( epicsGuard < epicsMutex > &, getCallback & );
     void destroyPutCallback ( epicsGuard < epicsMutex > &, putCallback & );
     void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
     epicsMutex & mutexRef () const;
 
+
+    // legacy C API    
     friend int epicsShareAPI ca_create_channel (
         const char * name_str, caCh * conn_func, void * puser,
         capri priority, chid * chanptr );
@@ -365,8 +361,6 @@ public:
         chtype type, arrayElementCount count, chid pChan, 
         long mask, caEventCallBackFunc * pCallBack, void * pCallBackArg, 
         evid *monixptr );
-
-    // legacy C API
     friend int epicsShareAPI ca_flush_io ();
     friend int epicsShareAPI ca_clear_subscription ( evid pMon );
     friend int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid );
@@ -389,6 +383,7 @@ private:
     mutable epicsMutex cbMutex; 
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
+    epicsThreadId createdByThread;
     epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
     epics_auto_ptr < cacContext > pServiceContext;
     caExceptionHandler * ca_exception_func;
@@ -409,8 +404,6 @@ private:
     void callbackProcessingCompleteNotify ();
     cacContext & createNetworkContext ( 
         epicsMutex & mutualExclusion, epicsMutex & callbackControl );
-    void clearSubscriptionPrivate ( 
-        epicsGuard < epicsMutex > & cbGuard, oldSubscription & subscr );
 
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );
@@ -419,6 +412,7 @@ private:
 	friend void cacExitHandler ( void *);
     static cacService * pDefaultService;
     static epicsMutex * pDefaultServiceInstallMutex;
+    static const unsigned flushBlockThreshold;
 };
 
 int fetchClientContext ( ca_client_context * * ppcac );
@@ -448,20 +442,11 @@ inline void oldChannelNotify::initiateConnect (
     this->io.initiateConnect ( guard );
 }
 
-inline void oldChannelNotify::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > * pCallbackGuard,
-    epicsGuard < epicsMutex > & mutualExclusionGuard )
-{
-    this->io.eliminateExcessiveSendBacklog (
-        pCallbackGuard, mutualExclusionGuard );
-}
-
 inline void oldChannelNotify::ioCancel (    
-    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard, 
     const cacChannel::ioid & id )
 {
-    this->io.ioCancel ( cbGuard, guard, id );
+    this->io.ioCancel ( guard, id );
 }
 
 inline void oldChannelNotify::ioShow ( 
@@ -469,6 +454,12 @@ inline void oldChannelNotify::ioShow (
     const cacChannel::ioid & id, unsigned level ) const
 {
     this->io.ioShow ( guard, id, level );
+}
+
+inline void oldChannelNotify::eliminateExcessiveSendBacklog ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    this->cacCtx.eliminateExcessiveSendBacklog ( guard, this->io );
 }
 
 inline void * oldChannelNotify::operator new ( size_t size, 
@@ -500,10 +491,9 @@ inline void oldSubscription::operator delete ( void *pCadaver,
 #endif
 
 inline void oldSubscription::cancel ( 
-    epicsGuard < epicsMutex > & cbGuard, 
     epicsGuard < epicsMutex > & guard ) 
 {
-    this->chan.ioCancel ( cbGuard, guard, this->id );
+    this->chan.ioCancel ( guard, this->id );
 }
 
 inline oldChannelNotify & oldSubscription::channel () const
@@ -568,13 +558,6 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO (
 {
     // perhaps on SMP systems THERE should be lock/unlock around this
     return this->ioSeqNo;
-}
-
-inline void ca_client_context::eliminateExcessiveSendBacklog ( 
-    oldChannelNotify & chan, epicsGuard < epicsMutex > & guard )
-{
-    chan.eliminateExcessiveSendBacklog ( 
-            this->pCallbackGuard.get(), guard );
 }
         
 #endif // ifndef oldAccessh

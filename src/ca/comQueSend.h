@@ -58,7 +58,7 @@ public:
     void clear ();
     unsigned occupiedBytes () const; 
     bool flushEarlyThreshold ( unsigned nBytesThisMsg ) const;
-    bool flushBlockThreshold ( unsigned nBytesThisMsg ) const; 
+    bool flushBlockThreshold () const; 
     void pushUInt16 ( const ca_uint16_t value );
     void pushUInt32 ( const ca_uint32_t value );
     void pushFloat32 ( const ca_float32_t value );
@@ -215,9 +215,9 @@ inline unsigned comQueSend::occupiedBytes () const
     return this->nBytesPending;
 }
 
-inline bool comQueSend::flushBlockThreshold ( unsigned nBytesThisMsg ) const
+inline bool comQueSend::flushBlockThreshold () const
 {
-    return ( this->nBytesPending + nBytesThisMsg > 16 * comBuf::capacityBytes () );
+    return ( this->nBytesPending > 16 * comBuf::capacityBytes () );
 }
 
 inline bool comQueSend::flushEarlyThreshold ( unsigned nBytesThisMsg ) const

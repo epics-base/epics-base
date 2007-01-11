@@ -217,12 +217,12 @@ private:
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     virtual void destroy (
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void initiateConnect (
         epicsGuard < epicsMutex > & );
-    void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
+    unsigned requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
+    void flush ( 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     ioStatus read ( 
         epicsGuard < epicsMutex > &,
@@ -241,7 +241,6 @@ private:
         unsigned type, arrayElementCount nElem, 
         unsigned mask, cacStateNotify &notify, ioid * );
     virtual void ioCancel ( 
-        epicsGuard < epicsMutex > & callbackControlGuard, 
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 

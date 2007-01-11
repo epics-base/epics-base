@@ -116,11 +116,16 @@ void noopiiu::flushRequest (
     netiiu::flushRequest ( guard );
 }
 
-void noopiiu::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > * pCBGuard,
+unsigned noopiiu::requestMessageBytesPending ( 
     epicsGuard < epicsMutex > & guard )
 {
-    netiiu::eliminateExcessiveSendBacklog ( pCBGuard, guard );
+    return netiiu::requestMessageBytesPending ( guard );
+}
+
+void noopiiu::flush ( 
+    epicsGuard < epicsMutex > & guard )
+{
+    netiiu::flush ( guard );
 }
 
 void noopiiu::requestRecvProcessPostponedFlush (

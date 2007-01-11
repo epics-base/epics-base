@@ -39,8 +39,9 @@ public:
         epicsGuard < epicsMutex > & ) const;
     bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const;
-    void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
+    unsigned requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
+    void flush ( 
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void writeRequest ( 
         epicsGuard < epicsMutex > &, nciu &, 

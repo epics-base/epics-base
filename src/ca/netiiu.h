@@ -47,8 +47,9 @@ public:
         epicsGuard < epicsMutex > & ) const = 0;
     virtual bool ca_v42_ok (
         epicsGuard < epicsMutex > & ) const = 0;
-    virtual void eliminateExcessiveSendBacklog ( 
-        epicsGuard < epicsMutex > * pCallbackGuard,
+    virtual unsigned requestMessageBytesPending ( 
+        epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
+    virtual void flush ( 
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     virtual void writeRequest ( 
         epicsGuard < epicsMutex > &, nciu &, 

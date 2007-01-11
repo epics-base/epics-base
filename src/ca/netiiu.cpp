@@ -129,8 +129,13 @@ void netiiu::flushRequest (
 {
 }
 
-void netiiu::eliminateExcessiveSendBacklog ( 
-    epicsGuard < epicsMutex > *,
+unsigned netiiu::requestMessageBytesPending ( 
+    epicsGuard < epicsMutex > & )
+{
+    return 0u;
+}
+
+void netiiu::flush ( 
     epicsGuard < epicsMutex > & )
 {
 }

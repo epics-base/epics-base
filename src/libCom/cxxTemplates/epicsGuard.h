@@ -12,7 +12,7 @@
 #define epicsGuardh
 
 #ifndef assert // allow use of epicsAssert.h
-#   include <assert.h>
+#   include <cassert>
 #endif
 
 /*
@@ -25,29 +25,32 @@
 template < class T > class epicsGuardRelease;
 
 // Automatically applies and releases the mutex.
-// This is for use in situations where C++ exceptions are possible.
+// This class is also useful in situations where 
+// C++ exceptions are possible.
 template < class T >
 class epicsGuard {
 public:
-    epicsGuard ( const epicsGuard & ); 
     epicsGuard ( T & );
     void assertIdenticalMutex ( const T & ) const;
     ~epicsGuard ();
 private:
-    T & targetMutex;
+    T * _pTargetMutex;
+    epicsGuard ( const epicsGuard & ); 
     epicsGuard & operator = ( const epicsGuard & ); 
     friend class epicsGuardRelease < T >;
 };
 
 // Automatically releases and reapplies the mutex.
-// This is for use in situations where C++ exceptions are possible.
+// This class is also useful in situations where 
+// C++ exceptions are possible.
 template < class T >
 class epicsGuardRelease {
 public:
     epicsGuardRelease ( epicsGuard < T > & );
     ~epicsGuardRelease ();
 private:
-    epicsGuard < T > & guard;
+    epicsGuard < T > & _guard;
+    T * _pTargetMutex;
     epicsGuardRelease ( const epicsGuardRelease & ); 
     epicsGuardRelease & operator = ( const epicsGuardRelease & ); 
 };
@@ -63,43 +66,45 @@ public:
 
 template < class T >
 inline epicsGuard < T > :: epicsGuard ( T & mutexIn ) :
-    targetMutex ( mutexIn )
+    _pTargetMutex ( & mutexIn )
 {
-    this->targetMutex.lock ();
-}
-
-template < class T >
-epicsGuard < T > :: epicsGuard ( const epicsGuard & guardIn ) :
-    targetMutex ( guardIn.targetMutex )
-{
-    this->targetMutex.lock ();
+    _pTargetMutex->lock ();
 }
 
 template < class T >
 inline epicsGuard < T > :: ~epicsGuard ()
 {
-    this->targetMutex.unlock ();
+    _pTargetMutex->unlock ();
 }
 
 template < class T >
 inline void epicsGuard < T > :: assertIdenticalMutex ( 
     const T & mutexToVerify ) const
 {
-    assert ( & this->targetMutex == & mutexToVerify );
+    assert ( _pTargetMutex == & mutexToVerify );
 }
 
 template < class T >
 inline epicsGuardRelease < T > :: 
     epicsGuardRelease ( epicsGuard<T> & guardIn ) :
-        guard ( guardIn )
+    _guard ( guardIn ), 
+    _pTargetMutex ( guardIn._pTargetMutex )
 {
-    this->guard.targetMutex.unlock ();
+    // Setting the guard's _pTargetMutex to nill will 
+    // allow assertIdenticalMutex to catch situations 
+    // where a guard is being used and it has been 
+    // released, and also situations where ~epicsGuard () 
+    // runs and an epicsGuardRelease is still referencing 
+    // the guard will be detected.
+    _guard._pTargetMutex = 0;
+    _pTargetMutex->unlock ();
 }
 
 template < class T >
 inline epicsGuardRelease < T > :: ~epicsGuardRelease ()
 {
-    this->guard.targetMutex.lock ();
+    _pTargetMutex->lock ();
+    _guard._pTargetMutex = _pTargetMutex;
 }
 
 inline void epicsMutexNOOP::lock () {}

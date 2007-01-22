@@ -36,6 +36,7 @@ dependent on your compiler.
 
  for gcc/g++
   setenv EPICS_HOST_ARCH osf-alpha-gnu
+  (setenv EPICS_HOST_ARCH `startup/EpicsHostArch.pl gnu`)
   export EPICS_HOST_ARCH=osf-alpha-gnu
 
 Building
@@ -52,8 +53,8 @@ For example (with csh):
   setenv EPICS_HOST_ARCH `startup/EpicsHostArch.pl gnu`
   make |& tee ../make-base-osfgnu.log
 
-Minor errors are detected in epicsSnprintf and timer.  They should 
-be investigated later. 
+Minor errors are detected in and timer.  They should be investigated 
+later. 
 
 Some internals
 -----------------------
@@ -64,7 +65,7 @@ There are several ways to specify compiler options for pthread.
   Please consult the pthread(3) manual page.  
 src/libCom/osi/os/osf is used for osi definitions, 
   src/libCom/osi/os/alpha is not used. 
-About 230 warning messages with cc/cxx, and 6 with gcc.  Sometimes
+About 230 warning messages with cc/cxx, and 4 with gcc.  Sometimes
   errors from cxx are intuitive. 
 I just started to use IOC application for a gateway purpose. There 
   can be architecture-dependent problems, that I didn't find yet. 

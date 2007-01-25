@@ -91,6 +91,7 @@ void event_handler (evargs args)
         memcpy(pv->value, args.dbr, dbr_size_n(args.type, args.count));
 
         print_time_val_sts(pv, pv->reqElems);
+        fflush(stdout);
     }
 }
 

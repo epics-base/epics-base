@@ -14,16 +14,23 @@
 <ul>
   <li>It is not possible to build this version of base on HP-UX due to C++
     issues which appear to be bugs in the HP-UX compiler.</li>
-  <li>When shutting down any CA client or IOC on a recent version of GNU/Linux
-    (one that includes the NPTL threading library) the following message may
-    appear, possibly preceeded by a message about a thread terminating due to a
-    C++ exception:
-    <blockquote><pre>FATAL: exception not rethrown</pre></blockquote>
-    An <tt>Abort</tt> message and a core-dump may also be generated if the
-    user's settings allow this. The error is caused by the implementation of the
-    pthread_cancel() mechanism in NPTL, which uses the C++ exception mechanism
-    without providing any means to distinguish the cancel exception to regular
-    C++ exception handlers.</li>
+
+  <li>When shutting down an IOC on a recent version of GNU/Linux (one that
+    includes the NPTL threading library) various messages may appear, such as:
+
+    <blockquote>
+      <pre>FATAL: exception not rethrown</pre></blockquote>
+
+    <blockquote>
+      <pre>epicsThread: Unknown C++ exception in thread "CAC-UDP" at ...</pre>
+      <pre>terminate called after throwing an instance of ''</pre>
+      </blockquote>
+
+    These errors are caused by the implementation of the pthread_cancel()
+    mechanism in NPTL, which uses the C++ exception mechanism without providing
+    any means to distinguish the cancel exception to regular C++ exception
+    handlers. It is possible that they might also occur when a CA client
+    application exits (or closes its connection to the CA library).</li>
 </ul>
 
 </body>

@@ -32,6 +32,9 @@
 #include "epicsFindSymbol.h"
 #include "devLib.h"
 
+typedef void    myISR (void *pParam);
+
+#if CPU_FAMILY != PPC
 /*
  * A list of the names of the unexpected interrupt handlers
  * ( some of these are provided by wrs )
@@ -41,8 +44,8 @@ LOCAL char  *defaultHandlerNames[] = {
             "excIntStub",
             "unsolicitedHandlerEPICS"};
 
-typedef void    myISR (void *pParam);
 LOCAL myISR *defaultHandlerAddr[NELEMENTS(defaultHandlerNames)];
+#endif
 
 LOCAL myISR *isrFetch(unsigned vectorNumber);
 
@@ -74,7 +77,9 @@ int EPICStovxWorksAddrType[]
                 EPICSAddrTypeNoConvert
             };
 
+#if CPU_FAMILY != PPC
 LOCAL void initHandlerAddrList(void);
+#endif
 
 /*
  * maps logical address to physical address, but does not detect
@@ -399,6 +404,7 @@ void unsolicitedHandlerEPICS(int vectorNumber)
         0);
 }
 
+#if CPU_FAMILY != PPC
 /*
  *
  *  initHandlerAddrList()
@@ -422,6 +428,7 @@ void initHandlerAddrList(void)
         }
     }
 }
+#endif
 
 /******************************************************************************
  *

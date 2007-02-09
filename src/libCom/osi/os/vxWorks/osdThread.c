@@ -40,9 +40,12 @@
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
-/*The following is just to force atReboot to be loaded*/
+/*The following forces atReboot to be loaded*/
 extern int atRebootExtern;
-static int *patRebootExtern = &atRebootExtern;
+static struct pext {
+    int *pExtern;
+    struct pext *pext;
+} pext = {&atRebootExtern, &pext};
 
 /* definitions for implementation of epicsThreadPrivate */
 static void **papTSD = 0;
@@ -359,19 +362,6 @@ void *epicsThreadPrivateGet(epicsThreadPrivateId id)
         data = 0;
     }
     return(data);
-}
-
-/* Tornado compilers for 68k have an optimizer bug at -O1 and above; the
- * code generated for epicsThreadSleepQuantum() is incorrect.  This routine
- * tests for that bug.  This routine must appear above the code it calls or
- * or the optimizer may inline epicsThreadSleepQuantum() */
-int vxWorksBrokenCompilerTest()
-{
-    double q = epicsThreadSleepQuantum();
-    double one = q * sysClkRateGet();
-    int ok = (one > 0.999) && (one < 1.001);
-    printf("%s: epicsThreadSleepQuantum() = %f\n", ok  ? "Ok" : "BROKEN", q);
-    return ok;
 }
 
 double epicsThreadSleepQuantum ()

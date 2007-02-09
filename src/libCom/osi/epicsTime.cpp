@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* epicsTime.cpp */
@@ -583,7 +582,7 @@ size_t epicsTime::strftime (
                     frac %= static_cast < unsigned long > ( 1e9 );
                     frac /= div[fracWid];
                     char fracFormat[32];
-                    sprintf ( fracFormat, "%%0%uu", fracWid );
+                    sprintf ( fracFormat, "%%0%lulu", fracWid );
                     int status = epicsSnprintf ( pBufCur, bufLenLeft, fracFormat, frac );
                     if ( status > 0 ) {
                         unsigned long nChar = static_cast < unsigned long > ( status );

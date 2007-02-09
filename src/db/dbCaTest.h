@@ -1,17 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbCaTest.h */
 
-/* Author:  Marty Kraimer Date:    25FEB2000 */
-#ifndef INCdbTesth
-#define INCdbTesth 1
+#ifndef INC_dbCaTest_H
+#define INC_dbCaTest_H
 
 #include "shareLib.h"
 
@@ -25,4 +22,4 @@ epicsShareFunc long epicsShareAPI dbcar(char *recordname,int level);
 }
 #endif
 
-#endif /*INCdbTesth */
+#endif /* INC_dbCaTest_H */

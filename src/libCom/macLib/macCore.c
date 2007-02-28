@@ -765,10 +765,12 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
             /* if reference is recursive, flag an error and insert $(name) */
             if ( entry2->visited ) {
-                entry->error = TRUE;
-                errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
-                              entry->type, entry->name,
-                              entry2->type, entry2->name );
+                if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
+                    entry->error = TRUE;
+                    errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
+                                  entry->type, entry->name,
+                                  entry2->type, entry2->name );
+                }
                 if ( v < valend ) *v++ = '$';
                 if ( v < valend ) *v++ = '(';
                 cpy2val( name2, &v, valend );

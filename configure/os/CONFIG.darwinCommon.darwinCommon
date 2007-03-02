@@ -10,6 +10,9 @@
 # Include definitions common to all Unix targets
 include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
 #
 # Set OS-specific information
 #
@@ -60,9 +63,6 @@ LDLIBS_READLINE = -lreadline
 # Command-line input support
 #
 COMMANDLINE_LIBRARY=READLINE
-
-# Include common gnu compiler definitions
-include $(CONFIG)/CONFIG.gnuCommon
 
 GNU_DIR = /usr
 

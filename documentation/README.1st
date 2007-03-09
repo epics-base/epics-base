@@ -98,7 +98,7 @@ Supported platforms
 
        Debugging builds
 
-         vxWorks=68040-debug
+         vxWorks-68040-debug
 
 Supported compilers
 

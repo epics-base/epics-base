@@ -1,0 +1,14 @@
+# CONFIG.Common.vxWorks-68040-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for vxWorks-68040-debug target archs
+# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-68040-debug
+#-------------------------------------------------------
+
+# Include definitions common to all vxWorks archs
+include $(CONFIG)/os/CONFIG.Common.vxWorks-68040
+
+CROSS_OPT = NO
+

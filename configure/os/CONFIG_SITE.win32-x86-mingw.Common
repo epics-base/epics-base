@@ -14,4 +14,3 @@
 MINGW_BIN=C:/MinGW/bin
 export PATH := $(MINGW_BIN):$(PATH)
 
-PERL=c:/cygwin/bin/perl.exe

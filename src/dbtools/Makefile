@@ -11,16 +11,15 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-#YACCOPT := -l
-#LEXOPT  := -L
-
 INC += dbLoadTemplate.h
+INC += dbtoolsIocRegister.h
 
-LIBSRCS += dbLoadTemplate.c
+LIB_SRCS += dbLoadTemplate.c
+LIB_SRCS += dbtoolsIocRegister.c
 
 LIBRARY_IOC = dbtoolsIoc
 
-dbtoolsIoc_LIBS  = dbIoc Com
+dbtoolsIoc_LIBS = dbIoc dbStaticIoc Com
 
 dbtoolsIoc_RCS_WIN32 = dbtoolsIoc.rc
 

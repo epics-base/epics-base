@@ -1,10 +1,9 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP = ../..
@@ -102,6 +101,14 @@ SRC_DIRS += $(LIBCOM)/gpHash
 INC += gpHash.h
 SRCS += gpHashLib.c
 HTMLS += gpHash/gpHash.html
+
+SRC_DIRS += $(LIBCOM)/iocsh
+INC += iocsh.h
+INC += registry.h
+INC += libComRegister.h
+SRCS += iocsh.cpp
+SRCS += registry.c
+SRCS += libComRegister.c
 
 SRC_DIRS += $(LIBCOM)/logClient
 INC += iocLog.h
@@ -235,12 +242,13 @@ SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
 
-# For vxWorks a clock
+# These files are in osi/os/vxWorks
+# IOC Time of Day clock
 INC_vxWorks += iocClock.h
 SRCS_vxWorks += iocClock.c
-#For vxWorks special reboot hook
+# Special reboot hook
 SRCS_vxWorks += atReboot.cpp
-#For old vxWorks applications
+# For old vxWorks applications
 INC_vxWorks += camacLib.h
 INC_vxWorks += epicsDynLink.h
 INC_vxWorks += module_types.h
@@ -252,6 +260,7 @@ SRCS_vxWorks += logMsgToErrlog.cpp
 #This forces the vxWorks compatibility stuff to be loaded
 OBJS_vxWorks = vxComLibrary
 
+# These files are in osi/os/WIN32
 SRCS_WIN32 += epicsGetopt.c 
 SRCS_WIN32 += setThreadName.cpp
 #SRCS_WIN32 += dllmain.cpp
@@ -275,12 +284,6 @@ endif
 #   libs needed for PROD and TESTPRODUCT
 PROD_LIBS = Com
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
-
-#USR_CFLAGS += -DTS_TEST
-#TESTPROD_SRCS=tsSubr.c
-#TESTPROD_HOST=testtsLib
-#TESTPROD_HOST=envtest
-#TESTPROD_HOST=osiTimeTest fdManagerTest
 
 #	for bldErrSymTbl:
 #

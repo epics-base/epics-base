@@ -1,17 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbBkptRegister.h */
-/* Author:  Marty Kraimer Date: 27APR2000 */
 
-#ifndef INCdbBkptRegisterH
-#define INCdbBkptRegisterH
+#ifndef INC_miscIocRegister_H
+#define INC_miscIocRegister_H
 
 #include "shareLib.h"
 
@@ -19,10 +16,10 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI dbBkptRegister(void);
+epicsShareFunc void epicsShareAPI miscIocRegister(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*INCdbBkptRegisterH*/
+#endif /* INC_miscIocRegister_H */

@@ -31,7 +31,6 @@ DIRS += rsrv
 DIRS += rec
 DIRS += dev
 DIRS += misc
-DIRS += iocsh
 DIRS += vxWorks
 DIRS += softIoc
 DIRS += gdd

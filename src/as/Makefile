@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -13,12 +13,14 @@ INC += asLib.h
 INC += asDbLib.h
 INC += asCa.h
 INC += asTrapWrite.h
+INC += asIocRegister.h
 
 LIB_SRCS += asLib.c
 LIB_SRCS += asTrapWrite.c
 
 asIoc_SRCS += asDbLib.c
 asIoc_SRCS += asCa.c
+asIoc_SRCS += asIocRegister.c
 
 LIBRARY_HOST = asHost
 LIBRARY_IOC = asIoc

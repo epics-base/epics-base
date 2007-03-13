@@ -1,26 +1,19 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* osiRegister.c */
-/* Author:  Marty Kraimer Date: 01MAY2000 */
 
-#include <stddef.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 
+#include "iocsh.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
-#include "dbEvent.h"
 #define epicsExportSharedSymbols
-#include "iocsh.h"
 #include "osiRegister.h"
 
 /* epicsThreadShowAll */
@@ -31,6 +24,51 @@ static const iocshFuncDef epicsThreadShowAllFuncDef =
 static void epicsThreadShowAllCallFunc(const iocshArgBuf *args)
 {
     epicsThreadShowAll(args[0].ival);
+}
+
+/* thread (thread information) */
+static const iocshArg threadArg0 = { "[-level] [thread ...]", iocshArgArgv};
+static const iocshArg * const threadArgs[1] = { &threadArg0 };
+static const iocshFuncDef threadFuncDef = {"thread",1,threadArgs};
+static void threadCallFunc(const iocshArgBuf *args)
+{
+    int i = 1;
+    int first = 1;
+    int level = 0;
+    const char *cp;
+    epicsThreadId tid;
+    unsigned long ltmp;
+    int argc = args[0].aval.ac;
+    char **argv = args[0].aval.av;
+    char *endp;
+
+    if ((i < argc) && (*(cp = argv[i]) == '-')) {
+        level = atoi (cp + 1);
+        i++;
+    }
+    if (i >= argc) {
+        epicsThreadShowAll (level);
+        return;
+    }
+    for ( ; i < argc ; i++) {
+        cp = argv[i];
+        ltmp = strtoul (cp, &endp, 0);
+        if (*endp) {
+            tid = epicsThreadGetId (cp);
+            if (!tid) {
+                printf ("*** argument %d (%s) is not a valid thread name ***\n", i, cp);
+                continue;
+            }
+        }
+        else {
+            tid = (epicsThreadId)ltmp;
+        }
+        if (first) {
+            epicsThreadShow (0, level);
+            first = 0;
+        }
+        epicsThreadShow (tid, level);
+    }
 }
 
 /* epicsMutexShowAll */
@@ -100,6 +138,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 void epicsShareAPI osiRegister(void)
 {
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
+    iocshRegister(&threadFuncDef, threadCallFunc);
     iocshRegister(&epicsMutexShowAllFuncDef,epicsMutexShowAllCallFunc);
     iocshRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
     iocshRegister(&epicsThreadResumeFuncDef,epicsThreadResumeCallFunc);

@@ -48,9 +48,13 @@ close(INP) or die "$! closing file";
 
 
 # beginning of generated routine
-print "/* THIS IS A GENERATED FILE. DO NOT EDIT */\n",
-      "/* Generated from $file */\n\n",
-      "#include \"registryCommon.h\"\n\n",
+print "/* THIS IS A GENERATED FILE. DO NOT EDIT! */\n",
+      "/* Generated from $file */\n",
+      "\n",
+      "#include \"registryCommon.h\"\n",
+      "#include \"iocsh.h\"\n",
+      "#include \"iocshRegisterCommon.h\"\n",
+      "\n",
       "extern \"C\" {\n";
 
 #definitions for recordtype
@@ -182,14 +186,13 @@ static const iocshFuncDef registerRecordDeviceDriverFuncDef =
                 {"$subname",1,registerRecordDeviceDriverArgs};
 static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 {
-    $subname(pdbbase);
+    $subname(*iocshPpdbbase);
 }
 
 } // extern "C"
 /*
  * Register commands on application startup
  */
-#include "iocshRegisterCommon.h"
 class IoccrfReg {
   public:
     IoccrfReg() {

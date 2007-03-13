@@ -1,31 +1,20 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* registerRegister.c */
-/* Author:  Andrew Johnson Date: 24SEP2002 */
 
-#include <stddef.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
+#include "iocsh.h"
 
-#include "devSup.h"
-#include "drvSup.h"
+#define epicsExportSharedSymbols
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 #include "registryFunction.h"
-
-#define epicsExportSharedSymbols
-#include "iocsh.h"
-#include "registryRegister.h"
+#include "registryIocRegister.h"
 
 static const iocshArg registryXxxFindArg0 = { "name",iocshArgString};
 static const iocshArg * const registryXxxFindArgs[1] = {&registryXxxFindArg0};
@@ -58,7 +47,7 @@ static void registryFunctionFindCallFunc(const iocshArgBuf *args) {
     printf("%p\n", (void*) registryFunctionFind(args[0].sval));
 }
 
-void epicsShareAPI registryRegister(void)
+void epicsShareAPI registryIocRegister(void)
 {
     iocshRegister(&registryRecordTypeFindFuncDef,registryRecordTypeFindCallFunc);
     iocshRegister(&registryDeviceSupportFindFuncDef,registryDeviceSupportFindCallFunc);

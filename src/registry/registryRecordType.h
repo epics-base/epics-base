@@ -10,6 +10,7 @@
 #ifndef INCregistryRecordTypeh
 #define INCregistryRecordTypeh
 
+#include "recSup.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus

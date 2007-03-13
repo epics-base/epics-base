@@ -19,7 +19,6 @@
 #include <errno.h>
 
 #include "errlog.h"
-#include "dbAccess.h"
 #include "macLib.h"
 #include "epicsStdio.h"
 #include "epicsString.h"

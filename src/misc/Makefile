@@ -13,17 +13,21 @@ include $(TOP)/configure/CONFIG
 
 DBD += base.dbd
 
-INC +=  epicsRelease.h
-INC +=  iocInit.h
+INC += epicsRelease.h
+INC += iocInit.h
+INC += miscIocRegister.h
+INC += iocshRegisterCommon.h
 
-LIBSRCS +=  epicsRelease.c
-LIBSRCS +=  iocInit.c
-LIBSRCS +=  asSubRecordFunctions.c
+LIB_SRCS += epicsRelease.c
+LIB_SRCS += iocInit.c
+LIB_SRCS += asSubRecordFunctions.c
+LIB_SRCS += miscIocRegister.c
+LIB_SRCS += iocshRegisterCommon.c
 
 LIBRARY_IOC = miscIoc
 
 miscIoc_RCS_WIN32 = miscIoc.rc
-miscIoc_LIBS  = rsrvIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
+miscIoc_LIBS  = rsrvIoc asIoc dbtoolsIoc dbIoc registryIoc dbStaticIoc ca Com
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)

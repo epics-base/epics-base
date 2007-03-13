@@ -1,10 +1,9 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP=../..
@@ -30,6 +29,7 @@ INC += db_test.h
 INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
+INC += dbIocRegister.h
 # The following go away what old database access goes away
 INC += db_access_routines.h
 INC += db_convert.h
@@ -51,29 +51,30 @@ INC += dbCommon.h
 DBD+=  dbCommon.dbd
 DBD+=  menuGlobal.dbd
 
-LIBSRCS += dbLock.c
-LIBSRCS += dbAccess.c
-LIBSRCS += dbBkpt.c
-LIBSRCS += dbConvert.c
-LIBSRCS += dbFastLinkConv.c
-LIBSRCS += dbNotify.c
-LIBSRCS += dbScan.c
-LIBSRCS += dbEvent.c
-LIBSRCS += dbTest.c
-LIBSRCS += db_access.c
-LIBSRCS += db_test.c
-LIBSRCS += recGbl.c
-LIBSRCS += callback.c
-LIBSRCS += dbCa.c
-LIBSRCS += dbCaTest.c
-LIBSRCS += initHooks.c
-LIBSRCS += cvtBpt.c
-LIBSRCS += dbContext.cpp
-LIBSRCS += dbChannelIO.cpp
-LIBSRCS += dbSubscriptionIO.cpp
-LIBSRCS += dbPutNotifyBlocker.cpp
-LIBSRCS += dbContextReadNotifyCache.cpp
-LIBSRCS += templateInstances.cpp
+LIB_SRCS += dbLock.c
+LIB_SRCS += dbAccess.c
+LIB_SRCS += dbBkpt.c
+LIB_SRCS += dbConvert.c
+LIB_SRCS += dbFastLinkConv.c
+LIB_SRCS += dbNotify.c
+LIB_SRCS += dbScan.c
+LIB_SRCS += dbEvent.c
+LIB_SRCS += dbTest.c
+LIB_SRCS += db_access.c
+LIB_SRCS += db_test.c
+LIB_SRCS += recGbl.c
+LIB_SRCS += callback.c
+LIB_SRCS += dbCa.c
+LIB_SRCS += dbCaTest.c
+LIB_SRCS += initHooks.c
+LIB_SRCS += cvtBpt.c
+LIB_SRCS += dbContext.cpp
+LIB_SRCS += dbChannelIO.cpp
+LIB_SRCS += dbSubscriptionIO.cpp
+LIB_SRCS += dbPutNotifyBlocker.cpp
+LIB_SRCS += dbContextReadNotifyCache.cpp
+LIB_SRCS += templateInstances.cpp
+LIB_SRCS += dbIocRegister.c
 
 LIBRARY_IOC = dbIoc
 dbIoc_LIBS = dbStaticIoc ca Com
@@ -83,7 +84,7 @@ dbIoc_RCS_WIN32 = dbIoc.rc
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=dbIoc
-OBJLIB_SRCS = $(LIBSRCS)
+OBJLIB_SRCS = $(LIB_SRCS)
 endif
 
 include $(TOP)/configure/RULES

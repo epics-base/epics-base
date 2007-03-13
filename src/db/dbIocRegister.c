@@ -1,31 +1,113 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbTestRegister.c */
-/* Author:  Marty Kraimer Date: 26APR2000 */
 
-#include <stddef.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
+#include "iocsh.h"
 
-#include "epicsStdio.h"
+#define epicsExportSharedSymbols
+#include "dbBkpt.h"
+#include "dbAccess.h"
+#include "dbCaTest.h"
+#include "dbEvent.h"
 #include "dbTest.h"
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
-#include "ellLib.h"
 #include "dbNotify.h"
-#define epicsExportSharedSymbols
-#include "iocsh.h"
-#include "dbTestRegister.h"
+#include "callback.h"
+#include "dbIocRegister.h"
+
+/* dbLoadDatabase */
+static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};
+static const iocshArg dbLoadDatabaseArg1 = { "path",iocshArgString};
+static const iocshArg dbLoadDatabaseArg2 = { "substitutions",iocshArgString};
+static const iocshArg * const dbLoadDatabaseArgs[3] =
+{
+    &dbLoadDatabaseArg0,&dbLoadDatabaseArg1,&dbLoadDatabaseArg2
+};
+static const iocshFuncDef dbLoadDatabaseFuncDef =
+    {"dbLoadDatabase",3,dbLoadDatabaseArgs};
+static void dbLoadDatabaseCallFunc(const iocshArgBuf *args)
+{
+    dbLoadDatabase(args[0].sval,args[1].sval,args[2].sval);
+}
+
+/* dbLoadRecords */
+static const iocshArg dbLoadRecordsArg0 = { "file name",iocshArgString};
+static const iocshArg dbLoadRecordsArg1 = { "substitutions",iocshArgString};
+static const iocshArg * const dbLoadRecordsArgs[2] = {&dbLoadRecordsArg0,&dbLoadRecordsArg1};
+static const iocshFuncDef dbLoadRecordsFuncDef = {"dbLoadRecords",2,dbLoadRecordsArgs};
+static void dbLoadRecordsCallFunc(const iocshArgBuf *args)
+{
+    dbLoadRecords(args[0].sval,args[1].sval);
+}
+
+/* dbb */
+static const iocshArg dbbArg0 = { "record name",iocshArgString};
+static const iocshArg * const dbbArgs[1] = {&dbbArg0};
+static const iocshFuncDef dbbFuncDef = {"dbb",1,dbbArgs};
+static void dbbCallFunc(const iocshArgBuf *args) { dbb(args[0].sval);}
+
+/* dbd */
+static const iocshArg dbdArg0 = { "record name",iocshArgString};
+static const iocshArg * const dbdArgs[1] = {&dbdArg0};
+static const iocshFuncDef dbdFuncDef = {"dbd",1,dbdArgs};
+static void dbdCallFunc(const iocshArgBuf *args) { dbd(args[0].sval);}
+
+/* dbc */
+static const iocshArg dbcArg0 = { "record name",iocshArgString};
+static const iocshArg * const dbcArgs[1] = {&dbcArg0};
+static const iocshFuncDef dbcFuncDef = {"dbc",1,dbcArgs};
+static void dbcCallFunc(const iocshArgBuf *args) { dbc(args[0].sval);}
+
+/* dbs */
+static const iocshArg dbsArg0 = { "record name",iocshArgString};
+static const iocshArg * const dbsArgs[1] = {&dbsArg0};
+static const iocshFuncDef dbsFuncDef = {"dbs",1,dbsArgs};
+static void dbsCallFunc(const iocshArgBuf *args) { dbs(args[0].sval);}
+
+/* dbstat */
+static const iocshFuncDef dbstatFuncDef = {"dbstat",0};
+static void dbstatCallFunc(const iocshArgBuf *args) { dbstat();}
+
+/* dbp */
+static const iocshArg dbpArg0 = { "record name",iocshArgString};
+static const iocshArg dbpArg1 = { "interest level",iocshArgInt};
+static const iocshArg * const dbpArgs[2] = {&dbpArg0,&dbpArg1};
+static const iocshFuncDef dbpFuncDef = {"dbp",2,dbpArgs};
+static void dbpCallFunc(const iocshArgBuf *args)
+{ dbp(args[0].sval,args[1].ival);}
+
+/* dbap */
+static const iocshArg dbapArg0 = { "record name",iocshArgString};
+static const iocshArg * const dbapArgs[1] = {&dbapArg0};
+static const iocshFuncDef dbapFuncDef = {"dbap",1,dbapArgs};
+static void dbapCallFunc(const iocshArgBuf *args) { dbap(args[0].sval);}
+
+/* dbcar */
+static const iocshArg dbcarArg0 = { "record name",iocshArgString};
+static const iocshArg dbcarArg1 = { "level",iocshArgInt};
+static const iocshArg * const dbcarArgs[2] = {&dbcarArg0,&dbcarArg1};
+static const iocshFuncDef dbcarFuncDef = {"dbcar",2,dbcarArgs};
+static void dbcarCallFunc(const iocshArgBuf *args)
+{
+    dbcar(args[0].sval,args[1].ival);
+}
+
+/* dbel */
+static const iocshArg dbelArg0 = { "record name",iocshArgString};
+static const iocshArg dbelArg1 = { "level",iocshArgInt};
+static const iocshArg * const dbelArgs[2] = {&dbelArg0,&dbelArg1};
+static const iocshFuncDef dbelFuncDef = {"dbel",2,dbelArgs};
+static void dbelCallFunc(const iocshArgBuf *args)
+{
+    dbel(args[0].sval, args[1].ival);
+}
 
 /* dba */
 static const iocshArg dbaArg0 = { "record name",iocshArgString};
@@ -155,6 +237,17 @@ static const iocshFuncDef dbLockShowLockedFuncDef =
 static void dbLockShowLockedCallFunc(const iocshArgBuf *args)
 { dbLockShowLocked(args[0].ival);}
 
+/* scanOnceSetQueueSize */
+static const iocshArg scanOnceSetQueueSizeArg0 = { "size",iocshArgInt};
+static const iocshArg * const scanOnceSetQueueSizeArgs[1] =
+    {&scanOnceSetQueueSizeArg0};
+static const iocshFuncDef scanOnceSetQueueSizeFuncDef =
+    {"scanOnceSetQueueSize",1,scanOnceSetQueueSizeArgs};
+static void scanOnceSetQueueSizeCallFunc(const iocshArgBuf *args)
+{
+    scanOnceSetQueueSize(args[0].ival);
+}
+
 /* scanppl */
 static const iocshArg scanpplArg0 = { "rate",iocshArgDouble};
 static const iocshArg * const scanpplArgs[1] = {&scanpplArg0};
@@ -173,8 +266,34 @@ static void scanpelCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0};
 static void scanpiolCallFunc(const iocshArgBuf *args) { scanpiol();}
 
-void epicsShareAPI dbTestRegister(void)
+/* callbackSetQueueSize */
+static const iocshArg callbackSetQueueSizeArg0 = { "bufsize",iocshArgInt};
+static const iocshArg * const callbackSetQueueSizeArgs[1] =
+    {&callbackSetQueueSizeArg0};
+static const iocshFuncDef callbackSetQueueSizeFuncDef =
+    {"callbackSetQueueSize",1,callbackSetQueueSizeArgs};
+static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 {
+    callbackSetQueueSize(args[0].ival);
+}
+
+
+void epicsShareAPI dbIocRegister(void)
+{
+    iocshRegister(&dbbFuncDef,dbbCallFunc);
+    iocshRegister(&dbdFuncDef,dbdCallFunc);
+    iocshRegister(&dbcFuncDef,dbcCallFunc);
+    iocshRegister(&dbsFuncDef,dbsCallFunc);
+    iocshRegister(&dbstatFuncDef,dbstatCallFunc);
+    iocshRegister(&dbpFuncDef,dbpCallFunc);
+    iocshRegister(&dbapFuncDef,dbapCallFunc);
+
+    iocshRegister(&dbcarFuncDef,dbcarCallFunc);
+    iocshRegister(&dbelFuncDef,dbelCallFunc);
+
+    iocshRegister(&dbLoadDatabaseFuncDef,dbLoadDatabaseCallFunc);
+    iocshRegister(&dbLoadRecordsFuncDef,dbLoadRecordsCallFunc);
+
     iocshRegister(&dbaFuncDef,dbaCallFunc);
     iocshRegister(&dblFuncDef,dblCallFunc);
     iocshRegister(&dbnrFuncDef,dbnrCallFunc);
@@ -193,7 +312,11 @@ void epicsShareAPI dbTestRegister(void)
     iocshRegister(&tpnFuncDef,tpnCallFunc);
     iocshRegister(&dblsrFuncDef,dblsrCallFunc);
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);
+
+    iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
+
+    iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
 }

@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbToRecordtypeH.c */
@@ -118,12 +117,6 @@ int main(int argc,char **argv)
 	exit(-1);
     }
 
-    fprintf(outFile,"#include \"ellLib.h\"\n");
-    fprintf(outFile,"#include \"epicsMutex.h\"\n");
-    fprintf(outFile,"#include \"link.h\"\n");
-    fprintf(outFile,"#include \"epicsTime.h\"\n");
-    fprintf(outFile,"#include \"epicsTypes.h\"\n");
-
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	fprintf(outFile,"\n#ifndef INC%sH\n",pdbMenu->name);
@@ -142,6 +135,11 @@ int main(int argc,char **argv)
     while(pdbRecordType) {
         fprintf(outFile,"#ifndef INC%sH\n",pdbRecordType->name);
         fprintf(outFile,"#define INC%sH\n",pdbRecordType->name);
+	pdbCdef = (dbText *)ellFirst(&pdbRecordType->cdefList);
+	while (pdbCdef) {
+	    fprintf(outFile,"%s\n",pdbCdef->text);
+	    pdbCdef = (dbText *)ellNext(&pdbCdef->node);
+	}
 	fprintf(outFile,"typedef struct %s",pdbRecordType->name);
 	if(!isdbCommonRecord) fprintf(outFile,"Record");
 	fprintf(outFile," {\n");
@@ -218,11 +216,6 @@ int main(int argc,char **argv)
 		pdbFldDes = pdbRecordType->papFldDes[i];
 		fprintf(outFile,"#define %sRecord%s\t%d\n",
 		    pdbRecordType->name,pdbFldDes->name,pdbFldDes->indRecordType);
-	    }
-	    pdbCdef = (dbText *)ellFirst(&pdbRecordType->cdefList);
-	    while (pdbCdef) {
-		fprintf(outFile,"%s\n",pdbCdef->text);
-		pdbCdef = (dbText *)ellNext(&pdbCdef->node);
 	    }
 	}
 	fprintf(outFile,"#endif /*INC%sH*/\n",pdbRecordType->name);

@@ -9,9 +9,29 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.x</h1>
 
-<h2 align="center">Changes between 3.14.8.2 and 3.14.9</h2>
+<h2 align="center">Changes between 3.14.9 and 3.14.x</h2>
 
 <!-- Insert new items below here ... -->
+
+<h4>Timezone for RTEMS</h4>
+
+<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE. 
+Previous versions had an incorrect format which was ignored by tzset().</p>
+
+<h4>Command registration for iocsh</h4>
+
+<p>The iocsh command registration data and routines have been moved out of the
+<tt>src/iocsh</tt> directory (which now no longer exists) into a file for each
+library.  At the same time, the iocsh implementation code has been moved into
+libCom.  There is no <tt>libiocsh.a</tt> library created any more, so any
+applications (such as the sequencer) which explicitly list <tt>iocsh</tt> in a
+<tt>xxx_LIBS</tt> definition in their Makefile(s) will need to be modified to
+have the library name removed.  In most cases though the library will have been
+included using the <tt>EPICS_BASE_IOC_LIBS</tt> or <tt>EPICS_BASE_HOST_LIBS</tt>
+variables that are set in Base, and thus no changes will be needed.</p>
+
+
+<h2 align="center">Changes between 3.14.8.2 and 3.14.9</h2>
 
 <h4>Cygwin Builds</h4>
 
@@ -229,7 +249,6 @@ affect vxWorks-(intel) targets.</p>
 
 <h4>RTEMS</h4>
 
-<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE.  Previous versions had an incorrect format which was ignored by tzset().</p>
 <p>Added space for user extensions.  This provides the infrastructure for the
 spy command.</p>
 <p>Fixed error in epicsThreadGetName for non-EPICS threads.</p>

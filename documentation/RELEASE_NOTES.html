@@ -13,11 +13,6 @@
 
 <!-- Insert new items below here ... -->
 
-<h4>Timezone for RTEMS</h4>
-
-<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE. 
-Previous versions had an incorrect format which was ignored by tzset().</p>
-
 <h4>Command registration for iocsh</h4>
 
 <p>The iocsh command registration data and routines have been moved out of the
@@ -249,6 +244,8 @@ affect vxWorks-(intel) targets.</p>
 
 <h4>RTEMS</h4>
 
+<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE. 
+Previous versions had an incorrect format which was ignored by tzset().</p>
 <p>Added space for user extensions.  This provides the infrastructure for the
 spy command.</p>
 <p>Fixed error in epicsThreadGetName for non-EPICS threads.</p>

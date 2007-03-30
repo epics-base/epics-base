@@ -162,14 +162,14 @@ union WireAlias < epicsFloat32 > {
 // Missaligned unsigned wire format get/set can be implemented generically 
 // w/o performance penalty. Attempts to improve this on architectures that
 // dont have alignement requirements will probably get into trouble with
-// over-aggresive optimization under strict aliasing rules.
+// over-aggressive optimization under strict aliasing rules.
 //
 
 template < class T >
 inline void WireGet ( const epicsUInt8 * pWireSrc, T & dst )
 {
     // copy through union here 
-    // a) prevents over-aggresive optimization under strict aliasing rules
+    // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > tmp;
     WireGet ( pWireSrc, tmp._u );
@@ -206,7 +206,7 @@ template < class T >
 inline void WireSet ( const T & src, epicsUInt8 * pWireDst )
 {
     // copy through union here 
-    // a) prevents over-aggresive optimization under strict aliasing rules
+    // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > tmp;
     tmp._o = src;
@@ -242,7 +242,7 @@ template < class T >
 inline void AlignedWireGet ( const T & src, T & dst )
 {
     // copy through union here 
-    // a) prevents over-aggresive optimization under strict aliasing rules
+    // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;
     srcu._o = src;
@@ -254,7 +254,7 @@ template < class T >
 inline void AlignedWireSet ( const T & src, T & dst )
 {
     // copy through union here 
-    // a) prevents over-aggresive optimization under strict aliasing rules
+    // a) prevents over-aggressive optimization under strict aliasing rules
     // b) doesnt preclude extra copy operation being optimized away
     WireAlias < T > srcu, dstu;
     srcu._o = src;

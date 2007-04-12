@@ -16,6 +16,7 @@ PROD_IOC = softIoc
 
 DBD += softIoc.dbd
 softIoc_DBD += base.dbd
+softIoc_DBD += system.dbd
 
 ABS_INSTALL_DIR = $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
 USR_CXXFLAGS += -DEPICS_BASE=$(ABS_INSTALL_DIR)

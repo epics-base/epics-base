@@ -12,6 +12,7 @@ TOP=../..
 include $(TOP)/configure/CONFIG
 
 DBD += base.dbd
+DBD += system.dbd
 
 INC += epicsRelease.h
 INC += iocInit.h

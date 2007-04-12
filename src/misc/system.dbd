@@ -1,0 +1,3 @@
+# Including this DBD file adds a 'system' command to the IOC shell.
+
+registrar(iocshSystemCommand)

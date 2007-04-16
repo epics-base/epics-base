@@ -13,10 +13,10 @@ defval = $(if $(strip $(1),),$(1),$(2))
 
 # Tell compiler to include altivec support; not available in 5.4
 ALTIVEC_CFLAG_5.4 = THIS_VERSION_OF_VXWORKS DOES_NOT_SUPPORT_ALTIVEC
-ALTIVEC_CFLAG_5.5 = -fvec
-ALTIVEC_CFLAG_6.0 = -fvec
+ALTIVEC_CFLAG_5.5 = -fvec -DALTIVEC
+ALTIVEC_CFLAG_6.0 = -fvec -DALTIVEC
 
 # From 6.1 onwards the compiler option changed
-ALTIVEC_CFLAG = -maltivec
+ALTIVEC_CFLAG = -maltivec -DALTIVEC
 
 ARCH_DEP_CFLAGS += $(call defval,$(ALTIVEC_CFLAG_$(VXWORKS_VERSION)),$(ALTIVEC_CFLAG))

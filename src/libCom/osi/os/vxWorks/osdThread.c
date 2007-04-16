@@ -136,6 +136,11 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     taskVarDelete(tid,(int *)&papTSD);
 }
 
+#ifdef ALTIVEC
+  #define TASK_FLAGS (VX_FP_TASK | VX_ALTIVEC_TASK)
+#else
+  #define TASK_FLAGS (VX_FP_TASK)
+#endif
 epicsThreadId epicsThreadCreate(const char *name,
     unsigned int priority, unsigned int stackSize,
     EPICSTHREADFUNC funptr,void *parm)
@@ -147,7 +152,7 @@ epicsThreadId epicsThreadCreate(const char *name,
         return(0);
     }
     tid = taskSpawn((char *)name,getOssPriorityValue(priority),
-        VX_FP_TASK, stackSize,
+        TASK_FLAGS, stackSize,
         (FUNCPTR)createFunction,(int)funptr,(int)parm,
         0,0,0,0,0,0,0,0);
     if(tid==ERROR) {

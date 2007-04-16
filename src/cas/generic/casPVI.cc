@@ -149,7 +149,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
     gdd * pTmp = new gddScalar ( gddAppType_enums );
     if ( pTmp == NULL ) {
         errMessage ( S_cas_noMemory, 
-            "unable to read application type \"enums\" string"
+            "unable to create gdd for read of application type \"enums\" string"
             " conversion table for enumerated PV" );
         return S_cas_noMemory;
     }
@@ -159,7 +159,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
     if ( status != S_cas_success ) {
         pTmp->unreference ();
         errMessage ( status, 
-            "unable to read application type \"enums\" string"
+            "unable to to config gdd for read of application type \"enums\" string"
             " conversion table for enumerated PV");
         return status;
     }
@@ -168,22 +168,16 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
     // read the enum string table
     //
     status = this->read ( ctxIn, *pTmp );
-	if ( status == S_casApp_asyncCompletion ) {
-        return status;
-    }
-    else if ( status == S_casApp_postponeAsyncIO ) {
-        pTmp->unreference ();
-        return status;
+    if ( status == S_cas_success ) {
+        updateEnumStringTableAsyncCompletion ( *pTmp );
 	}
-    else if ( status ) {
-        pTmp->unreference ();
+    else if ( status != S_casApp_asyncCompletion && 
+                status != S_casApp_postponeAsyncIO ) {
         errMessage ( status, 
             "- unable to read application type \"enums\" string"
             " conversion table for enumerated PV");
-        return status;
-	}
+    }
 
-    updateEnumStringTableAsyncCompletion ( *pTmp );
     pTmp->unreference ();
 
     return status;

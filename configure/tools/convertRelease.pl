@@ -168,57 +168,49 @@ sub expandRelease {
 }
 
 sub configAppInclude {
+    # We can't include TOP in these output lists:
+    # 1. Our target directories probably don't exist yet
+    # 2. We need abolute paths, but $(TOP) is relative
     my @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
     
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     print OUT "# Do not modify this file, changes made here will\n";
-    print OUT "# be lost when the application is next rebuilt.\n\n";
+    print OUT "# be lost when the application is next rebuilt.\n";
     
     if ($arch) {
-	print OUT "export TOP\n";
-	foreach my $app (@includes) {
-	    print OUT "export ${app}\n";
-	}
-	foreach my $app (@includes) {
-	    my $path = $macros{$app};
-	    next unless (-d "$path/bin/$hostarch");
-	    print OUT "${app}_HOST_BIN = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
-	}
-	foreach my $app (@includes) {
-	    my $path = $macros{$app};
-	    next unless (-d "$path/lib/$hostarch");
-	    print OUT "${app}_HOST_LIB = \$(strip \$($app))/bin/\$(EPICS_HOST_ARCH)\n";
-	}
-	foreach my $app (@includes) {
-	    my $path = $macros{$app};
-	    next unless (-d "$path/bin/$arch");
-	    print OUT "${app}_BIN = \$(strip \$($app))/bin/$arch\n";
-	}
-	foreach my $app (@includes) {
-	    my $path = $macros{$app};
-	    next unless (-d "$path/lib/$arch");
-	    print OUT "${app}_LIB = \$(strip \$($app))/lib/$arch\n";
-	}
-	# We can't just include TOP in the foreach list:
-	# 1. The lib directory probably doesn't exist yet, and
-	# 2. We need an abolute path but $(TOP_LIB) is relative
-	foreach my $app (@includes) {
-	    my $path = $macros{$app};
-	    next unless (-d "$path/lib/$arch");
-	    print OUT "SHRLIB_SEARCH_DIRS += \$(${app}_LIB)\n";
-	}
+	print OUT "\nexport TOP\n";
     }
     foreach my $app (@includes) {
 	my $path = $macros{$app};
-	next unless (-d "$path/include");
-	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include/os/\$(OS_CLASS)\n";
-	print OUT "RELEASE_INCLUDES += -I\$(strip \$($app))/include\n";
-    }
-    foreach my $app (@includes) {
-	my $path = $macros{$app};
-	next unless (-d "$path/dbd");
-	print OUT "RELEASE_DBDFLAGS += -I \$(strip \$($app))/dbd\n";
+	print OUT "\nexport ${app}\n";
+	if (-d "$path/bin/$hostarch") {
+	    print OUT "${app}_HOST_BIN = $path/bin/\$(EPICS_HOST_ARCH)\n";
+	}
+	if (-d "$path/lib/$hostarch") {
+	    print OUT "${app}_HOST_LIB = $path/bin/\$(EPICS_HOST_ARCH)\n";
+	}
+	if ($arch) {
+	    if (-d "$path/bin/$arch") {
+		print OUT "${app}_BIN = $path/bin/$arch\n";
+	    }
+	    if (-d "$path/lib/$arch") {
+		print OUT "${app}_LIB = $path/lib/$arch\n";
+		print OUT "SHRLIB_SEARCH_DIRS += $path/lib/$arch\n";
+	    }
+	}
+	if (-d "$path/include") {
+	    if (-d "$path/include/os") {
+		print OUT "RELEASE_INCLUDES += -I$path/include/os/\$(OS_CLASS)\n";
+	    }
+	    print OUT "RELEASE_INCLUDES += -I$path/include\n";
+	}
+	if (-d "$path/dbd") {
+	    print OUT "RELEASE_DBDFLAGS += -I$path/dbd\n";
+	}
+	if (-d "$path/db") {
+	    print OUT "RELEASE_DBFLAGS += -I$path/db\n";
+	}
     }
     close OUT;
 }
@@ -229,14 +221,15 @@ sub rulesInclude {
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
     print OUT "# Do not modify this file, changes made here will\n";
-    print OUT "# be lost when the application is next rebuilt.\n\n";
+    print OUT "# be lost when the application is next rebuilt.\n";
     
     foreach my $app (@includes) {
 	my $path = $macros{$app};
 	next unless (-r "$path/configure/RULES_BUILD");
-	print OUT "RULES_TOP:=\$($app)\n";
-	print OUT "-include \$(strip \$(RULES_TOP))/configure/RULES_BUILD\n";
+	print OUT "\nRULES_TOP := $path\n";
+	print OUT "-include $path/configure/RULES_BUILD\n";
     }
+    print OUT "\nRULES_TOP :=\n";
     close OUT;
 }
 

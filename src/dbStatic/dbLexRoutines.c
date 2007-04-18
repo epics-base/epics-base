@@ -51,7 +51,7 @@ static void allocTemp(void *pvoid);
 static void *popFirstTemp(void);
 static void *getLastTemp(void);
 static int db_yyinput(char *buf,int max_size);
-static void dbIncludePrint(FILE *fp);
+static void dbIncludePrint(void);
 static void dbPathCmd(char *path);
 static void dbAddPathCmd(char *path);
 static void dbIncludeNew(char *include_file);
@@ -343,20 +343,20 @@ static int db_yyinput(char *buf, int max_size)
     return(n);
 }
 
-static void dbIncludePrint(FILE *fp)
+static void dbIncludePrint(void)
 {
     inputFile *pinputFile = pinputFileNow;
 
     while (pinputFile) {
-	fprintf(fp, "   in");
+	epicsPrintf(" in");
 	if (pinputFile->path)
-	    fprintf(fp, " path \"%s\" ",pinputFile->path);
+	    epicsPrintf(" path \"%s\" ",pinputFile->path);
 	if (pinputFile->filename) {
-	    fprintf(fp, " file %s",pinputFile->filename);
+	    epicsPrintf(" file \"%s\"",pinputFile->filename);
 	} else {
-	    fprintf(fp, " standard input");
+	    epicsPrintf(" standard input");
 	}
-	fprintf(fp, " line %d\n",pinputFile->line_num);
+	epicsPrintf(" line %d\n",pinputFile->line_num);
 	pinputFile = (inputFile *)ellPrevious(&pinputFile->node);
     }
     return;

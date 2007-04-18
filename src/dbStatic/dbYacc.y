@@ -248,11 +248,11 @@ record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 static int yyerror(char *str)
 {
     if (str)
-        fprintf(stderr, "Error: %s\n", str);
+        epicsPrintf("Error: %s\n", str);
     else
-        fprintf(stderr,"Error.\n");
-    fprintf(stderr,"Parsing '%s'\n", yytext);
-    dbIncludePrint(stderr);
+        epicsPrintf("Error\n");
+    epicsPrintf("    at or before \"%s\"", yytext);
+    dbIncludePrint();
     yyFailed = TRUE;
     return(0);
 }

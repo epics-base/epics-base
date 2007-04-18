@@ -381,7 +381,7 @@ static void dbIncludeNew(char *filename)
     pinputFile->filename = macEnvExpand(filename);
     pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp);
     if(!fp) {
-	errlogPrintf("Can't open file \"%s\" - ",filename);
+	epicsPrintf("Can't open file \"%s\" - ",filename);
 	yyerror(NULL);
 	free((void *)pinputFile->filename);
 	free((void *)pinputFile);
@@ -691,7 +691,7 @@ static void dbDevice(char *recordtype,char *linktype,
     int		i,link_type;
     pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
     if(!pgphentry) {
-        errlogPrintf("Record type \"%s\" not found for device \"%s\" - ",
+        epicsPrintf("Record type \"%s\" not found for device \"%s\" - ",
                     recordtype, choicestring);
 	yyerror(NULL);
 	return;
@@ -704,7 +704,7 @@ static void dbDevice(char *recordtype,char *linktype,
 	}
     }
     if(link_type==-1) {
-        errlogPrintf("Bad link type \"%s\" for device \"%s\" - ",
+        epicsPrintf("Bad link type \"%s\" for device \"%s\" - ",
                     linktype, choicestring);
 	yyerror(NULL);
 	return;
@@ -912,7 +912,8 @@ static void dbRecordHead(char *recordType,char *name, int visible)
     allocTemp(pdbentry);
     status = dbFindRecordType(pdbentry,recordType);
     if(status) {
-	errlogPrintf("Record \"%s\" is of unknown type \"%s\" - ", name, recordType);
+	epicsPrintf("Record \"%s\" is of unknown type \"%s\" - ",
+                    name, recordType);
 	yyerrorAbort(NULL);
 	return;
     }
@@ -920,19 +921,19 @@ static void dbRecordHead(char *recordType,char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if(status==S_dbLib_recExists) {
 	if(strcmp(recordType,dbGetRecordTypeName(pdbentry))!=0) {
-	    errlogPrintf("Record %s already defined with different type %s - ",
-                         name, dbGetRecordTypeName(pdbentry));
+	    epicsPrintf("Record %s already defined with different type %s - ",
+                        name, dbGetRecordTypeName(pdbentry));
             yyerror(NULL);
 	    duplicate = TRUE;
 	    return;
 	} else if (dbRecordsOnceOnly) {
-	    errlogPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is set) - ",
-                         name);
+	    epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is set) - ",
+                        name);
 	    yyerror(NULL);
 	    duplicate = TRUE;
 	}
     } else if(status) {
-	errlogPrintf("Can't create record \"%s\" of type \"%s\" - ",
+	epicsPrintf("Can't create record \"%s\" of type \"%s\" - ",
                      name, recordType);
 	yyerrorAbort(NULL);
     }
@@ -950,16 +951,16 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if(status) {
-	errlogPrintf("Record \"%s\" does not have a field \"%s\" - ", 
-                     dbGetRecordName(pdbentry), name);
+	epicsPrintf("Record \"%s\" does not have a field \"%s\" - ", 
+                    dbGetRecordName(pdbentry), name);
 	yyerror(NULL);
 	return;
     }
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
     if(status) {
-	errlogPrintf("Can't set \"%s.%s\" to \"%s\" - ",
-                     dbGetRecordName(pdbentry), name, value);
+	epicsPrintf("Can't set \"%s.%s\" to \"%s\" - ",
+                    dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
 	return;
     }
@@ -976,8 +977,8 @@ static void dbRecordInfo(char *name, char *value)
     pdbentry = ptempListNode->item;
     status = dbPutInfo(pdbentry,name,value);
     if(status) {
-	errlogPrintf("Can't set \"%s\" info \"%s\" to \"%s\" - ",
-                     dbGetRecordName(pdbentry), name, value);
+	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\" - ",
+                    dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
 	return;
     }

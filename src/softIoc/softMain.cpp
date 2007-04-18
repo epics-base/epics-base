@@ -13,7 +13,7 @@
 /* Author: Andrew Johnson	Date: 2003-04-08 */
 
 /* Usage:
- *  softIoc [-D softIoc.dbd] [-h] [-s] [-a ascf]
+ *  softIoc [-D softIoc.dbd] [-h] [-S] [-s] [-a ascf]
  *	[-m macro=value,macro2=value2] [-d file.db]
  *	[st.cmd]
  *
@@ -24,8 +24,12 @@
  *  Usage information will be printed if -h is given, then
  *  the program will exit normally.
  *
- *  The -s option causes an interactive shell to be started
+ *  The -S option prevents an interactive shell being started
  *  after all arguments have been processed.
+ *
+ *  Previous versions accepted a -s option to cause the shell
+ *  to be started; this option is still accepted but ignored
+ *  since the shell is now started by default.
  *
  *  Access Security can be enabled with the -a option giving
  *  the name of the configuration file; if any macros were
@@ -79,7 +83,7 @@ static void exitSubroutine(subRecord *precord) {
 }
 
 static void usage(int status) {
-    printf("Usage: %s [-D softIoc.dbd] [-h] [-s] [-a ascf]\n", arg0);
+    printf("Usage: %s [-D softIoc.dbd] [-h] [-S] [-a ascf]\n", arg0);
     puts("\t[-m macro=value,macro2=value2] [-d file.db]");
     puts("\t[st.cmd]");
     puts("Compiled-in default path to softIoc.dbd is:");
@@ -92,7 +96,7 @@ int main(int argc, char *argv[])
 {
     char *dbd_file = const_cast<char*>(base_dbd);
     char *macros = NULL;
-    int startIocsh = 0;	/* default = no shell */
+    int startIocsh = 1;	/* default = start shell */
     int loadedDb = 0;
     
     arg0 = strrchr(*argv, '/');
@@ -146,8 +150,11 @@ int main(int argc, char *argv[])
 	    --argc;
 	    break;
 	
+	case 'S':
+	    startIocsh = 0;
+	    break;
+	
 	case 's':
-	    startIocsh = 1;
 	    break;
 	
 	default:
@@ -169,8 +176,11 @@ int main(int argc, char *argv[])
 	case 'h':
 	    usage(EXIT_SUCCESS);
 	
+	case 'S':
+	    startIocsh = 0;
+	    break;
+	
 	case 's':
-	    startIocsh = 1;
 	    break;
 	
 	default:

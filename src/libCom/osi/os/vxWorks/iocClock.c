@@ -217,24 +217,3 @@ int epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
     return(epicsTimeERROR);
 }
 
-/* Unless
-   putenv("TIMEZONE=<name>::<minutesWest>:<start daylight>:<end daylight>")
-   is executed before and epics software is loaded, UTC rather than local
-   time will be displayed
-*/
-void date()
-{
-    epicsTimeStamp now;
-    char nowText[40];
-    size_t rtn;
-
-    rtn = epicsTimeGetCurrent(&now);
-    if(rtn) {
-        printf("epicsTimeGetCurrent failed\n");
-        return;
-    }
-    nowText[0] = 0;
-    rtn = epicsTimeToStrftime(nowText,sizeof(nowText),
-        "%Y/%m/%d %H:%M:%S.%06f",&now);
-    printf("%s\n",nowText);
-}

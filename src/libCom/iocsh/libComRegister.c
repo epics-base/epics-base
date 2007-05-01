@@ -13,6 +13,7 @@
 
 #define epicsExportSharedSymbols
 #include "iocsh.h"
+#include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "envDefs.h"
@@ -20,6 +21,31 @@
 #include "logClient.h"
 #include "errlog.h"
 #include "libComRegister.h"
+
+
+void date(const char *format)
+{
+    epicsTimeStamp now;
+    char nowText[80] = {'\0'};
+
+    if (epicsTimeGetCurrent(&now)) {
+        puts("Current time not available.");
+        return;
+    }
+    if (format == NULL || format[0] == '\0')
+        format = "%Y/%m/%d %H:%M:%S.%06f";
+    epicsTimeToStrftime(nowText, sizeof(nowText), format, &now);
+    puts(nowText);
+}
+
+/* date */
+static const iocshArg dateArg0 = { "format",iocshArgString};
+static const iocshArg * const dateArgs[] = {&dateArg0};
+static const iocshFuncDef dateFuncDef = {"date", 1, dateArgs};
+static void dateCallFunc (const iocshArgBuf *args)
+{
+    date(args[0].sval);
+}
 
 
 /* chdir */
@@ -267,6 +293,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
 
 void epicsShareAPI libComRegister(void)
 {
+    iocshRegister(&dateFuncDef, dateCallFunc);
     iocshRegister(&chdirFuncDef, chdirCallFunc);
     iocshRegister(&pwdFuncDef, pwdCallFunc);
 

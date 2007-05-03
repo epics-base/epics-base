@@ -13,6 +13,15 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>Calc expressions: VAL keyword</h4>
+
+<p>The keyword <tt>VAL</tt> is now supported in CALC expressions. In a calc or
+calcout record it returns the current contents of the VAL field (which can be
+written to by a CA put, so it might <i>not</i> be the result from last time the
+expression was evaluated). In Access Security expressions it returns the result
+of the previous evaluation of the rule expression. In other uses of the
+calcPerform engine, the result may not be well-defined.</p>
+
 <h4>softIoc now starts shell by default</h4>
 
 <p>To prevent an interactive shell from being started, give a <tt>-S</tt> (upper

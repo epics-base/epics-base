@@ -99,8 +99,8 @@ CODE_CXXFLAGS =
 
 #--------------------------------------------------
 # RTEMS uses the inline keyword so -pedantic causes too many problems.
-CONFORM_CFLAGS_STRICT = # -ansi # -ansi removes a lot of useful stuff
-CONFORM_CXXFLAGS_STRICT = # -ansi # -ansi removes a lot of useful stuff
+CONFORM_CFLAGS_STRICT = -ansi
+CONFORM_CXXFLAGS_STRICT = -ansi
 
 #--------------------------------------------------
 # Command-line input support

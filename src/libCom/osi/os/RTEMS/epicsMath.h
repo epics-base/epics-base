@@ -11,5 +11,6 @@
 #define epicsMathh
 
 #include <math.h>
+#include <ieeefp.h>
 
 #endif /* epicsMathh */

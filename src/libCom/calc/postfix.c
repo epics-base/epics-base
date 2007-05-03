@@ -122,6 +122,7 @@ static const ELEMENT operands[] = {
 {"SQRT",	7, 8,	0,	UNARY_OPERATOR,	SQU_RT},
 {"TAN",		7, 8,	0,	UNARY_OPERATOR,	TAN},
 {"TANH",	7, 8,	0,	UNARY_OPERATOR,	TANH},
+{"VAL",		0, 0,	1,	OPERAND,	FETCH_VAL},
 {"~",		7, 8,	0,	UNARY_OPERATOR, BIT_NOT},
 };
 

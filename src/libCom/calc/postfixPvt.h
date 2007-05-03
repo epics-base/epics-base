@@ -28,7 +28,7 @@
 typedef enum {
 	END_EXPRESSION = 0,
     /* Operands */
-	LITERAL,
+	LITERAL, FETCH_VAL,
 	FETCH_A, FETCH_B, FETCH_C, FETCH_D, FETCH_E, FETCH_F,
 	FETCH_G, FETCH_H, FETCH_I, FETCH_J, FETCH_K, FETCH_L,
     /* Assignment */

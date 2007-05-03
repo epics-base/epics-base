@@ -61,6 +61,10 @@ epicsShareFunc long
 	    pinst += sizeof(double) - 1;
 	    break;
 
+	case FETCH_VAL:
+	    *++ptop = *presult;
+	    break;
+
 	case FETCH_A:
 	case FETCH_B:
 	case FETCH_C:

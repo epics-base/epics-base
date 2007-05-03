@@ -909,7 +909,7 @@ static long asComputeAsgPvt(ASG *pasg)
     if(!asActive) return(S_asLib_asNotActive);
     pasgrule = (ASGRULE *)ellFirst(&pasg->ruleList);
     while(pasgrule) {
-	double	result;
+	double	result = pasgrule->result;  /* set for VAL */
 	long	status;
 
 	if(pasgrule->calc && (pasg->inpChanged & pasgrule->inpUsed)) {

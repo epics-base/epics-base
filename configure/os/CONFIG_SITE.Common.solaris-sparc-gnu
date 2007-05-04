@@ -8,3 +8,8 @@
 # Include definitions common to all solaris-sparc-gnu target archs
 include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
 
+# solaris 10 default location
+#GNU_DIR=/usr/sfw
+
+# APS site override
+GNU_DIR = /opt/gnu

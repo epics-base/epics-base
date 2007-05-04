@@ -46,9 +46,10 @@ OP_SYS_LDLIBS_10 += -lCrun -lc -lCstd
 OP_SYS_LDLIBS += $(OP_SYS_LDLIBS_$(SOLARIS_VERSION))
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
-INCLUDES_READLINE = -I$(GNU_DIR)/include
-RUNTIME_LDFLAGS_READLINE += -R$(GNU_DIR)/lib
-LDFLAGS_READLINE += -L$(GNU_DIR)/lib
+READLINE_DIR = $(GNU_DIR)
+INCLUDES_READLINE = -I$(READLINE_DIR)/include
+RUNTIME_LDFLAGS_READLINE += -R$(READLINE_DIR)/lib
+LDFLAGS_READLINE += -L$(READLINE_DIR)/lib
 LDLIBS_READLINE = -lreadline -lcurses
 # Use archive if there is a problem with the readline shared library
 #LDLIBS_READLINE = -Bstatic -lreadline -Bdynamic -lcurses

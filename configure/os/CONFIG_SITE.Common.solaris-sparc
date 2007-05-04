@@ -11,4 +11,4 @@
 #COMMANDLINE_LIBRARY = READLINE
 
 # APS site override
-GNU_DIR = /opt/gnu
+READLINE_DIR=/opt/gnu

@@ -46,9 +46,21 @@ MAIN(epicsTimeTest)
     const int nTimes = 10;
     const double precisionEPICS = 1.0 / nSecPerSec;
 
-    testPlan(10 + nTimes * 18);
+    testPlan(15 + nTimes * 18);
 
     const epicsTime begin = epicsTime::getCurrent();
+
+    {
+        const epicsTimeStamp epochTS = {0, 0};
+        epicsTime epochET = epochTS;
+        struct gm_tm_nano_sec epicsEpoch = epochET;
+        testOk1(epicsEpoch.ansi_tm.tm_sec == 0);
+        testOk1(epicsEpoch.ansi_tm.tm_min == 0);
+        testOk1(epicsEpoch.ansi_tm.tm_hour == 0);
+        testOk1(epicsEpoch.ansi_tm.tm_yday == 0);
+        testOk1(epicsEpoch.ansi_tm.tm_year == 90);
+    }
+
     {
         epicsTime tsi = epicsTime::getCurrent ();
         l_fp ntp = tsi;

@@ -1,0 +1,11 @@
+# CONFIG.solaris-x86_64.solaris-x86_64
+#
+# $Id
+# This file is maintained by the build community.
+#
+# Definitions for solaris-x86_64 Sun compiler host - solaris-x86_64 Sun compiler target builds
+# Sites may override these definitions in CONFIG_SITE.solaris-x86_64.solaris-x86_64
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/os/CONFIG.solaris-x86.solaris-x86

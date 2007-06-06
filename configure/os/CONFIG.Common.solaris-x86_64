@@ -1,0 +1,15 @@
+# CONFIG.Common.solaris-x86_64
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-x86_64 compiler target archs
+# Sites may override these definitions in CONFIG_SITE.Common.solaris-x86_64
+#-------------------------------------------------------
+
+# Include definitions common to all solaris-x86 target archs
+include $(CONFIG)/os/CONFIG.Common.solaris-x86
+
+ARCH_DEP_CFLAGS +=   -xarch=generic64
+ARCH_DEP_CXXFLAGS += -xarch=generic64
+ARCH_DEP_LDFLAGS +=  -xarch=generic64

@@ -104,5 +104,6 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
         fprintf ( stderr, "**** You may need to modify your PATH environment variable.\n" );
         fprintf ( stderr, "**** Unable to start \"%s\" process.\n", pProcessName);
     }
-    exit ( -1 );
+    /* Don't run our parent's atexit() handlers */
+    _exit ( -1 );
 }

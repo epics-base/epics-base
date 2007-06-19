@@ -139,11 +139,8 @@ iocClockGetEvent(epicsTimeStamp *pDest, int eventNumber)
 int
 epicsTimeGetCurrent (epicsTimeStamp *pDest)
 {
-    if(!piocClockPvt) {
+    if(!piocClockPvt)
         iocClockInit();
-        /*wait two seconds for syncNTP to contact network time server*/
-        epicsThreadSleep(2.0); 
-    }
     if(piocClockPvt->getCurrent) return((*piocClockPvt->getCurrent)(pDest));
     return(epicsTimeERROR);
 }
@@ -151,11 +148,8 @@ epicsTimeGetCurrent (epicsTimeStamp *pDest)
 int
 epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
 {
-    if(!piocClockPvt) {
+    if(!piocClockPvt)
         iocClockInit();
-        /*wait two seconds for syncNTP to contact network time server*/
-        epicsThreadSleep(2.0); 
-    }
     if(piocClockPvt->getEvent)
         return((*piocClockPvt->getEvent)(pDest,eventNumber));
     return(epicsTimeERROR);

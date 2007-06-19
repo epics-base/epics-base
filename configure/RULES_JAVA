@@ -53,7 +53,6 @@ COMMON_JAVAINC += $(addprefix $(COMMON_DIR)/,$(JAVAINC))
 
 JAVACFLAGS += $(USR_JAVACFLAGS)
 CLASSES += $(subst .java,.class,$(JAVA))
-DEPJAVA += $(subst .class,.java,$(CLASSES))
 INSTALL_CLASSES = $(addprefix $(INSTALL_JAVA)/,$(CLASSES))
 
 TESTCLASSES += $(subst .java,.class,$(notdir $(TESTJAVA)))
@@ -63,7 +62,7 @@ DEPTESTJAVA += $(subst .class,.java,$(TESTCLASSES))
 #-------------------------------------------------------
 # Java jar file
 
-INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR) $(JAR_INPUT))
+INSTALL_JAR =$(addprefix $(INSTALL_JAVA)/,$(JAR))
 JARMANIFEST += $(firstword $(MANIFEST) $(JAR_MANIFEST))
 JARDEPFILES += $(addprefix $(INSTALL_JAVA)/,$(subst .java,.class,$(JAVA)) $(JAR_INPUT))
 JARINPUT += $(foreach inp,$(JAR_INPUT),-C $(INSTALL_JAVA) $(subst .java,.class,$(inp)))
@@ -124,7 +123,7 @@ $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
 	@$(RM) $@
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
-$(INSTALL_CLASSES): $(addprefix ../,$(DEPJAVA))
+$(INSTALL_CLASSES): $(addprefix ../,$(JAVA))
 	@echo Creating java class files 
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^

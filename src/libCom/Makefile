@@ -245,6 +245,7 @@ SRCS += tsDefs.c
 # These files are in osi/os/vxWorks
 # IOC Time of Day clock
 INC_vxWorks += iocClock.h
+INC_RTEMS += iocClock.h
 SRCS_vxWorks += iocClock.c
 # Special reboot hook
 SRCS_vxWorks += atReboot.cpp

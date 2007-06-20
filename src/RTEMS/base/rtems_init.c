@@ -41,6 +41,9 @@
 
 #include "epicsRtemsInitHooks.h"
 
+rtems_interval rtemsTicksPerSecond;
+double rtemsTicksPerSecond_double;
+
 static void
 logReset (void)
 {
@@ -68,10 +71,7 @@ logReset (void)
 static void
 delayedPanic (const char *msg)
 {
-    rtems_interval ticksPerSecond;
-
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
-    rtems_task_wake_after (ticksPerSecond);
+    rtems_task_wake_after (rtemsTicksPerSecond);
     rtems_panic (msg);
 }
 
@@ -414,7 +414,6 @@ Init (rtems_task_argument ignored)
 {
     int                 i;
     const char         *argv[3]         = { NULL, NULL, NULL };
-    rtems_interval      ticksPerSecond;
     rtems_task_priority newpri;
     rtems_status_code   sc;
     rtems_time_of_day   now;
@@ -422,7 +421,8 @@ Init (rtems_task_argument ignored)
     /*
      * Get configuration
      */
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &ticksPerSecond);
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
+	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
 
     /*
      * Explain why we're here
@@ -492,7 +492,7 @@ Init (rtems_task_argument ignored)
             printf ("***** Initializing NTP *****\n");
             if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
                 break;
-            rtems_task_wake_after (5*ticksPerSecond);
+            rtems_task_wake_after (5*rtemsTicksPerSecond);
             if (i >= 12) {
                 printf ("    *************** WARNING ***************\n");
                 printf ("    ***** NO RESPONSE FROM NTP SERVER *****\n");

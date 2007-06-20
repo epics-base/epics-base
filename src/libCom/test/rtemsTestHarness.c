@@ -72,6 +72,9 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
 #include <rtems/error.h>
 #include <epicsExit.h>
 
+rtems_interval rtemsTicksPerSecond;
+double rtemsTicksPerSecond_double;
+
 rtems_task
 Init (rtems_task_argument ignored)
 {
@@ -94,6 +97,8 @@ Init (rtems_task_argument ignored)
         if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
             printf ("***** Can't set time: %s\n", rtems_status_text (sc));
     }
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
+	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
 
     /*
      * Some tests need a 'network'

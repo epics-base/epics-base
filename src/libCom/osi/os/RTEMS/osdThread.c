@@ -230,9 +230,7 @@ epicsThreadInit (void)
     if (!initialized) {
         rtems_id tid;
         rtems_task_priority old;
-        extern void clockInit (void);
 
-        clockInit ();
         rtems_task_set_priority (RTEMS_SELF, epicsThreadGetOssPriorityValue(99), &old);
         onceMutex = epicsMutexMustCreate();
         taskVarMutex = epicsMutexMustCreate ();

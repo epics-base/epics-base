@@ -1,19 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recSel.c */
-/* base/src/rec  $Id$ */
+/* $Id$ */
 
-/* recSel.c - Record Support Routines for Select records */
+/* selRecord.c - Record Support Routines for Select records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            6-2-89
  */
 
@@ -346,6 +343,10 @@ static int do_sel(struct selRecord *psel)
     pvalue = &psel->a;
     switch (psel->selm){
     case (selSELM_Specified):
+	if (psel->seln >= SEL_MAX) {
+	    recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
+	    return(0);
+	}
 	val = *(pvalue+psel->seln);
 	break;
     case (selSELM_High_Signal):
@@ -416,6 +417,11 @@ static int fetch_values(struct selRecord *psel)
 	/* fetch the select index */
 	status=dbGetLink(&(psel->nvl),DBR_USHORT,&(psel->seln),0,0);
 	if (!RTN_SUCCESS(status)) return(status);
+
+	if (psel->seln >= SEL_MAX) {
+	    recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
+	    return(-1);
+	}
 
 	plink += psel->seln;
 	pvalue += psel->seln;

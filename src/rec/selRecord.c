@@ -79,7 +79,7 @@ epicsExportAddress(rset,selRSET);
 #define	SEL_MAX	12
 
 static void checkAlarms();
-static int do_sel();
+static void do_sel();
 static int fetch_values();
 static void monitor();
 
@@ -116,9 +116,7 @@ static long process(struct selRecord *psel)
 {
     psel->pact = TRUE;
     if ( RTN_SUCCESS(fetch_values(psel)) ) {
-	if( !RTN_SUCCESS(do_sel(psel)) ) {
-	    recGblSetSevr(psel,CALC_ALARM,INVALID_ALARM);
-	}
+	do_sel(psel);
     }
 
     recGblGetTimeStamp(psel);
@@ -330,7 +328,7 @@ static void monitor(struct selRecord *psel)
     return;
 }
 
-static int do_sel(struct selRecord *psel)
+static void do_sel(struct selRecord *psel)
 {
     double		*pvalue;
     struct link		*plink;
@@ -344,8 +342,8 @@ static int do_sel(struct selRecord *psel)
     switch (psel->selm){
     case (selSELM_Specified):
 	if (psel->seln >= SEL_MAX) {
-	    recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
-	    return(0);
+	    recGblSetSevr(psel,SOFT_ALARM,INVALID_ALARM);
+	    return;
 	}
 	val = *(pvalue+psel->seln);
 	break;
@@ -385,8 +383,8 @@ static int do_sel(struct selRecord *psel)
 	val = order[psel->seln];
 	break;
     default:
-	recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
-	return(-1);
+	recGblSetSevr(psel,CALC_ALARM,INVALID_ALARM);
+	return;
     }
     if (!isinf(val)){
 	psel->val=val;
@@ -395,7 +393,7 @@ static int do_sel(struct selRecord *psel)
 	recGblSetSevr(psel,UDF_ALARM,MAJOR_ALARM);
 	/* If UDF is TRUE this alarm will be overwritten by checkAlarms*/
     }
-    return(0);
+    return;
 }
 
 /*
@@ -416,12 +414,8 @@ static int fetch_values(struct selRecord *psel)
     if(psel->selm == selSELM_Specified) {
 	/* fetch the select index */
 	status=dbGetLink(&(psel->nvl),DBR_USHORT,&(psel->seln),0,0);
-	if (!RTN_SUCCESS(status)) return(status);
-
-	if (psel->seln >= SEL_MAX) {
-	    recGblSetSevr(psel,SOFT_ALARM,MAJOR_ALARM);
-	    return(-1);
-	}
+	if (!RTN_SUCCESS(status) || (psel->seln >= SEL_MAX))
+	    return(status);
 
 	plink += psel->seln;
 	pvalue += psel->seln;

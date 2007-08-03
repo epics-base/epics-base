@@ -42,8 +42,6 @@ SOURCE_DBD = $(wildcard $(file) $(SOURCE_DBD_bbb) )
 SOURCE_DBD_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DBD_aaa)  )
 SOURCE_DBD_aaa = $(addsuffix /$(file), $(dir) )
 
-COMMON_INCLUDE_DBDS += $(patsubst %.dbd, %Include.dbd, $(COMMON_DBDS))
-
 INSTALL_DBS += $(addprefix $(INSTALL_DB)/,$(notdir $(DB)))
 
 COMMON_DBS += $(filter $(COMMON_DIR)/%, $(foreach file, $(DB), \
@@ -213,8 +211,6 @@ $(COMMON_DIR)/%.dbd: %Include.dbd
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
-
-$(COMMON_INCLUDE_DBDS): ../Makefile
 
 $(COMMON_DIR)/%Include.dbd:
 	@$(RM) $@

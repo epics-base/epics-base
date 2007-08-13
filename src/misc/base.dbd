@@ -41,5 +41,7 @@ include "devSoft.dbd"
 registrar(asSub)
 variable(asCaDebug,int)
 
+# dbStaticLib settings
 variable(dbRecordsOnceOnly,int)
+variable(dbBptNotMonotonic,int)
 

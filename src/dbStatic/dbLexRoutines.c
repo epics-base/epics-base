@@ -45,6 +45,9 @@ epicsShareDef char *makeDbdDepends=0;
 epicsShareDef int dbRecordsOnceOnly=0;
 epicsExportAddress(int,dbRecordsOnceOnly);
 
+epicsShareDef int dbBptNotMonotonic=0;
+epicsExportAddress(int,dbBptNotMonotonic);
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -874,7 +877,7 @@ static void dbBreakBody(void)
 	  (paBrkInt[i+1].raw - paBrkInt[i].raw);
 	if (i == 0) {
 	    down = (slope < 0);
-	} else if (down != (slope < 0)) {
+	} else if (!dbBptNotMonotonic && down != (slope < 0)) {
 	    yyerrorAbort("breaktable: curve slope changes sign");
 	    return;
 	}

@@ -1,0 +1,36 @@
+#
+# CONFIG.Common.RTEMS-beatnik
+# A migration from Eric Norum's CONFIG.Common.RTEMS-mvme5500
+# Author: Dayle Kotturi
+#         SLAC
+#         dayle@slac.stanford.edu
+#
+# All RTEMS targets use the same Makefile fragment
+#
+override EXE=.elf
+RTEMS_TARGET_CPU = powerpc
+GNU_TARGET=powerpc-rtems
+ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
+ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD
+
+MUNCH_SUFFIX = .boot
+MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
+define MUNCH_CMD
+	$(RTEMS_BASE)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
+endef
+
+CROSS_COMPILER_TARGET_ARCHS=RTEMS-beatnik
+
+include $(CONFIG)/os/CONFIG.Common.RTEMS
+RTEMSSYMS=$(PRODNAME:%$(EXE)=%.sym)
+RTEMSIMGS=$(PRODNAME:%$(EXE)=%.bin)
+INSTALL_RTEMSSYMS=$(RTEMSSYMS:%=$(INSTALL_BIN)/%)
+INSTALL_RTEMSIMGS=$(RTEMSIMGS:%=$(INSTALL_BIN)/%)
+
+%.sym: %$(EXE)
+	$(XSYMS) $^ $@
+
+%.bin: %$(EXE)
+	$(OBJCOPY) -Obinary $^ $@
+
+#PRODTARGETS+=$(INSTALL_RTEMSSYMS) $(INSTALL_RTEMSIMGS)

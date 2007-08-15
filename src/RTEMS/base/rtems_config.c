@@ -54,7 +54,7 @@ rtems_task Init (rtems_task_argument argument);
 #warning "needs review"
 #warning "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 /* This should be made BSP dependent, not CPU dependent !! */
-#if !defined(__mc68040__) && !defined(__mcf5200__) && !defined(__arm__)  /* don't have RTC code */
+#if !defined(__mc68040__) && !defined(__mcf5200__) && !defined(mpc7455) && !defined(__arm__)  /* don't have RTC code */
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif
 

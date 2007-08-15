@@ -15,6 +15,42 @@ char *env_nfsServer;
 char *env_nfsPath;
 char *env_nfsMountPoint;
 
+/*
+ * Split argument string of form nfs_server:nfs_export:<path>
+ * The nfs_export component will be used as:
+ *      - the path to the directory exported from the NFS server
+ *      - the local mount point
+ *      - a prefix of <path>
+ * For example, the argument string:
+ *       romeo:/export/users:smith/ioc/iocexample/st.cmd
+ * would:
+ *       - mount /export/users from NFS server romeo on /export/users
+ *       - chdir to /export/users/smith/ioc/iocexample
+ *       - read commands from st.cmd
+ */
+static void
+splitRtemsBsdnetBootpCmdline(void)
+{
+    char *cp1, *cp2, *cp3;
+
+    cp1 = rtems_bsdnet_bootp_cmdline;
+    if (((cp2 = strchr(cp1, ':')) != NULL)
+     && (((cp3 = strchr(cp2+1, ' ')) != NULL)
+      || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
+        int l1 = cp2 - cp1;
+        int l2 = cp3 - cp2 - 1;
+        int l3 = strlen(cp3) - 1;
+        if (l1 && l2 && l3) {
+            *cp2++ = '\0';
+            *cp3 = '\0';
+            env_nfsServer = cp1;
+            env_nfsMountPoint = env_nfsPath = epicsStrDup(cp2);
+            *cp3 = '/';
+            rtems_bsdnet_bootp_cmdline = cp2;
+        }
+    }
+}
+
 #if defined(HAVE_MOTLOAD)
 /*
  * Motorola MOTLOAD NVRAM Access
@@ -22,7 +58,7 @@ char *env_nfsMountPoint;
 static char *
 gev(const char *parm)
 {
-    volatile char *nvp = (volatile unsigned char *)(GT64260_DEV1_BASE + 0x10000 + 0x70F8);
+    volatile char *nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
     const char *val;
     const char *name;
     char *ret;
@@ -112,6 +148,11 @@ setBootConfigFromNVRAM(void)
     if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file")) == NULL)
         rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');
     rtems_bsdnet_bootp_cmdline = gev("epics-script");
+    splitRtemsBsdnetBootpCmdline();
+    rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver");
+    if (rtems_bsdnet_config.ntp_server[0] == NULL)
+        rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
+    epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
 }
 
 #elif defined(HAVE_PPCBUG)
@@ -151,7 +192,6 @@ static char *addr(char *cbuf, rtems_unsigned32 addr)
 void
 setBootConfigFromNVRAM(void)
 {
-    char *cp1, *cp2, *cp3;
     static struct ppcbug_nvram nvram;
     static char ip_address[INET_ADDRSTRLEN];
     static char ip_netmask[INET_ADDRSTRLEN];
@@ -193,38 +233,8 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.gateway = addr(gateway, nvram.GatewayIPAddress);
     rtems_bsdnet_config.ifconfig->ip_netmask = addr(ip_netmask, nvram.SubnetIPAddressMask);
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
-
-    /*
-     * Check for argument string of form nfs_server:nfs_export:<path>
-     * The nfs_export component will be used as:
-     *      - the path to the directory exported from the NFS server
-     *      - the local mount point
-     *      - a prefix of <path>
-     * For example, the argument string:
-     *       romeo:/export/users:smith/ioc/iocexample/st.cmd
-     * would:
-     *       - mount /export/users from NFS server romeo on /export/users
-     *       - chdir to /export/users/smith/ioc/iocexample
-     *       - read commands from st.cmd
-     *
-     */
     rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
-    cp1 = nvram.ArgumentFilenameString;
-    if (((cp2 = strchr(cp1, ':')) != NULL)
-     && (((cp3 = strchr(cp2+1, ' ')) != NULL)
-      || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
-        int l1 = cp2 - cp1;
-        int l2 = cp3 - cp2 - 1;
-        int l3 = strlen(cp3) - 1;
-        if (l1 && l2 && l3) {
-            *cp2++ = '\0';
-            *cp3 = '\0';
-            env_nfsServer = cp1;
-            env_nfsMountPoint = env_nfsPath = epicsStrDup(cp2);
-            *cp3 = '/';
-            rtems_bsdnet_bootp_cmdline = cp2;
-        }
-    }
+    splitRtemsBsdnetBootpCmdline();
 }
 
 #elif defined(__mcf528x__)

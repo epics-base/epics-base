@@ -104,8 +104,11 @@ typedef struct client {
 
 enum rsrvChanState { 
     rsrvCS_invalid,
-    rsrvCS_inService, 
-    rsrvCS_inServiceUpdatePendAR };
+    rsrvCS_pendConnectResp,
+    rsrvCS_inService,
+    rsrvCS_pendConnectRespUpdatePendAR,
+    rsrvCS_inServiceUpdatePendAR 
+};
 
 /*
  * per channel structure 
@@ -136,7 +139,6 @@ struct event_ext {
     unsigned                size;       /* for speed */
     unsigned                mask;
     char                    modified;   /* mod & ev flw ctrl enbl */
-    char                    send_lock;  /* lock send buffer */
 };
 
 /*  NOTE: external used so they remember the state across loads */

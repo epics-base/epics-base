@@ -33,7 +33,8 @@ splitRtemsBsdnetBootpCmdline(void)
 {
     char *cp1, *cp2, *cp3;
 
-    cp1 = rtems_bsdnet_bootp_cmdline;
+    if ((cp1 = rtems_bsdnet_bootp_cmdline) == NULL)
+        return;
     if (((cp2 = strchr(cp1, ':')) != NULL)
      && (((cp3 = strchr(cp2+1, ' ')) != NULL)
       || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
@@ -47,6 +48,32 @@ splitRtemsBsdnetBootpCmdline(void)
             env_nfsMountPoint = env_nfsPath = epicsStrDup(cp2);
             *cp3 = '/';
             rtems_bsdnet_bootp_cmdline = cp2;
+        }
+    }
+}
+
+/*
+ * Split NFS mount information of the form nfs_server:host_path:local_path
+ */
+static void
+splitNfsMountPath(char *nfsString)
+{
+    char *cp2, *cp3;
+
+    if (nfsString == NULL)
+        return;
+    if (((cp2 = strchr(nfsString, ':')) != NULL)
+     && (((cp3 = strchr(cp2+1, ' ')) != NULL)
+      || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
+        int l1 = cp2 - nfsString;
+        int l2 = cp3 - cp2 - 1;
+        int l3 = strlen(cp3) - 1;
+        if (l1 && l2 && l3) {
+            *cp2++ = '\0';
+            *cp3++ = '\0';
+            env_nfsServer = nfsString;
+            env_nfsPath = cp2;
+            env_nfsMountPoint = cp3;
         }
     }
 }
@@ -149,10 +176,13 @@ setBootConfigFromNVRAM(void)
         rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');
     rtems_bsdnet_bootp_cmdline = gev("epics-script");
     splitRtemsBsdnetBootpCmdline();
+    splitNfsMountPath(gev("epics-nfsmount"));
     rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver");
     if (rtems_bsdnet_config.ntp_server[0] == NULL)
         rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
     epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
+    if ((cp = gev("epics-tz")) != NULL)
+        epicsEnvSet("TZ", cp);
 }
 
 #elif defined(HAVE_PPCBUG)
@@ -274,23 +304,7 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.ifconfig->ip_address = env("IPADDR0", "192.168.0.2");
     rtems_bsdnet_bootp_boot_file_name = env("BOOTFILE", "uC5282App.boot");
     rtems_bsdnet_bootp_cmdline = env("CMDLINE", "epics/iocBoot/iocNobody/st.cmd");
-    if ((cp1 = env("NFSMOUNT", NULL)) != NULL) {
-        char *cp2, *cp3;
-        if (((cp2 = strchr(cp1, ':')) != NULL)
-         && (((cp3 = strchr(cp2+1, ' ')) != NULL)
-          || ((cp3 = strchr(cp2+1, ':')) != NULL))) {
-            int l1 = cp2 - cp1;
-            int l2 = cp3 - cp2 - 1;
-            int l3 = strlen(cp3) - 1;
-            if (l1 && l2 && l3) {
-                *cp2++ = '\0';
-                *cp3++ = '\0';
-                env_nfsServer = cp1;
-                env_nfsPath = cp2;
-                env_nfsMountPoint = cp3;
-            }
-        }
-    }
+    splitNfsMountPath(env("NFSMOUNT", NULL));
     if ((cp1 = env("TZ", NULL)) != NULL)
         epicsEnvSet("TZ", cp1);
 }

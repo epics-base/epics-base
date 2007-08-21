@@ -42,7 +42,7 @@ static int mutexLock(pthread_mutex_t *id)
     while(1) {
         status = pthread_mutex_lock(id);
         if(status!=EINTR) return status;
-        errlogPrintf("pthread_mutex_lock returned EINTR. Violates SUSv3\n");
+        fprintf(stderr,"pthread_mutex_lock returned EINTR. Violates SUSv3\n");
     }
 }
 
@@ -172,14 +172,10 @@ static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedpolicy(
         &pthreadInfo->attr,policy);
-     if(status) {
-         checkStatusOnce(status,"pthread_attr_setschedpolicy");
-     }
+    checkStatusOnce(status,"pthread_attr_setschedpolicy");
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
-    if(status) {
-         checkStatusOnce(status,"pthread_attr_setschedparam");
-    }
+    checkStatusOnce(status,"pthread_attr_setschedparam");
     status = pthread_attr_setinheritsched(
         &pthreadInfo->attr,PTHREAD_EXPLICIT_SCHED);
     checkStatusOnce(status,"pthread_attr_setinheritsched");
@@ -368,7 +364,8 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     epicsThreadInit();
     status = mutexLock(&onceLock);
     if(status) {
-        fprintf(stderr,"epicsThreadOnceOsd epicsMutexLock failed.\n");
+        fprintf(stderr,"epicsThreadOnceOsd: pthread_mutex_lock returned %s.\n",
+            strerror(status));
         exit(-1);
     }
     if (*id == 0) { /*  0 => first call */

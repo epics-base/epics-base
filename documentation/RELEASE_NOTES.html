@@ -13,7 +13,25 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>Breakpoint tables</h4>
+
+<p>Some sites may be using breakpoint tables that are not monotonic in one
+direction.  In R3.14.9 both axes of a breaktable had to be monotonic; a table
+will not be loaded if either the raw or engineering values change direction. 
+There are situations where this check is too strict however, so a new variable
+named <tt>dbBptNotMonotonic</tt> has been added that disables this check if its
+value is non-zero.</p>
+
+<p>Breakpoint tables are often included in an IOC's .dbd file, but they can also
+be loaded from a .db file (although VDCT will probably not understand them). 
+Since there is no way to set the above variable inside the <tt>dbExpand</tt>
+program that expands out an IOC's .dbd file (which also rejects non-monotonic
+breaktables), all applications that use such tables will have to load those
+tables separately, using either <tt>dbLoadDatabase</tt> or
+<tt>dbLoadRecords</tt>.</p>
+
 <h4>RTEMS on processors with MOTLOAD bootstrap</h4>
+
 <p>Added support for more 'Global Environment Variables'.   Documented in
 the EPICS/RTEMS tutorial.</p>
 

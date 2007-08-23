@@ -182,9 +182,11 @@ public:
     // diagnostics
     unsigned circuitCount ( epicsGuard < epicsMutex > & ) const;
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
-    int printf ( epicsGuard < epicsMutex > & callbackControl, 
+    int printFormated ( 
+        epicsGuard < epicsMutex > & callbackControl, 
         const char *pformat, ... ) const;
-    int vPrintf ( epicsGuard < epicsMutex > & callbackControl, 
+    int varArgsPrintFormated ( 
+        epicsGuard < epicsMutex > & callbackControl, 
         const char *pformat, va_list args ) const;
 
     // buffer management
@@ -356,12 +358,12 @@ inline epicsMutex & cac::mutexRef ()
     return this->mutex;
 }
 
-inline int cac::vPrintf ( 
+inline int cac :: varArgsPrintFormated ( 
     epicsGuard < epicsMutex > & callbackControl, 
     const char *pformat, va_list args ) const
 {
     callbackControl.assertIdenticalMutex ( this->cbMutex );
-    return this->notify.vPrintf ( pformat, args );
+    return this->notify.varArgsPrintFormated ( pformat, args );
 }
 
 inline void cac::attachToClientCtx ()

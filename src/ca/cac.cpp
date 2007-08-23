@@ -602,12 +602,13 @@ void cac::disconnectAllIO (
     }
 }
 
-int cac::printf ( epicsGuard < epicsMutex > & callbackControl, 
-                 const char *pformat, ... ) const
+int cac :: printFormated ( 
+    epicsGuard < epicsMutex > & callbackControl, 
+        const char * pformat, ... ) const
 {
     va_list theArgs;
     va_start ( theArgs, pformat );
-    int status = this->vPrintf ( callbackControl, pformat, theArgs );
+    int status = this->varArgsPrintFormated ( callbackControl, pformat, theArgs );
     va_end ( theArgs );
     return status;
 }

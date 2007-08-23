@@ -328,8 +328,8 @@ public:
     void uninstallCASG ( epicsGuard < epicsMutex > &, CASG & );
     void selfTest () const;
 // perhaps these should be eliminated in deference to the exception mechanism
-    int printf ( const char * pformat, ... ) const;
-    int vPrintf ( const char * pformat, va_list args ) const;
+    int printFormated ( const char * pformat, ... ) const;
+    int varArgsPrintFormated ( const char * pformat, va_list args ) const;
     void signal ( int ca_status, const char * pfilenm, 
                      int lineno, const char * pFormat, ... );
     void vSignal ( int ca_status, const char * pfilenm, 

@@ -69,12 +69,12 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {
         callbackManager mgr ( this->ctxNotify, this->cbMutex );
-        this->iiu.printf ( mgr.cbGuard,
+        this->iiu.printFormated ( mgr.cbGuard,
     "CA client library is unable to contact CA repeater after %u tries.\n", 
             nTriesToMsg );
-        this->iiu.printf ( mgr.cbGuard,
+        this->iiu.printFormated ( mgr.cbGuard,
     "Silence this message by starting a CA repeater daemon\n") ;
-        this->iiu.printf ( mgr.cbGuard,
+        this->iiu.printFormated ( mgr.cbGuard,
     "or by calling ca_pend_event() and or ca_poll() more often.\n" );
         this->once = true;
     }

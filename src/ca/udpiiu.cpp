@@ -1102,7 +1102,8 @@ void udpiiu::govExpireNotify (
     this->ppSearchTmr[0]->installChannel ( guard, chan );
 }
 
-int udpiiu::printf ( epicsGuard < epicsMutex > & cbGuard, 
+int udpiiu :: printFormated ( 
+    epicsGuard < epicsMutex > & cbGuard, 
                     const char * pformat, ... )
 {
     va_list theArgs;
@@ -1110,7 +1111,7 @@ int udpiiu::printf ( epicsGuard < epicsMutex > & cbGuard,
 
     va_start ( theArgs, pformat );
     
-    status = this->cacRef.vPrintf ( cbGuard, pformat, theArgs );
+    status = this->cacRef.varArgsPrintFormated ( cbGuard, pformat, theArgs );
     
     va_end ( theArgs );
     

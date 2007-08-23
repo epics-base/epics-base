@@ -79,7 +79,7 @@ void syncGroupReadNotify::completion (
     arrayElementCount count, const void * pData )
 {
     if ( this->magic != CASG_MAGIC ) {
-        this->sg.printf ( 
+        this->sg.printFormated ( 
             "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
@@ -98,7 +98,7 @@ void syncGroupReadNotify::exception (
     unsigned type, arrayElementCount count )
 {
     if ( this->magic != CASG_MAGIC ) {
-        this->sg.printf ( 
+        this->sg.printFormated ( 
             "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }

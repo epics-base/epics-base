@@ -50,7 +50,7 @@ void CASG::destructor (
         this->magic = 0;
     }
     else {
-        this->printf ( "cac: attempt to destroy invalid sync group ignored\n" );
+        this->printFormated ( "cac: attempt to destroy invalid sync group ignored\n" );
     }
     this->~CASG ();
 }
@@ -257,14 +257,14 @@ void CASG::recycleSyncGroupReadNotify (
     this->freeListReadOP.release ( & io );
 }
 
-int CASG::printf ( const char *pformat, ... )
+int CASG :: printFormated ( const char *pformat, ... )
 {
     va_list theArgs;
     int status;
 
     va_start ( theArgs, pformat );
     
-    status = this->client.vPrintf ( pformat, theArgs );
+    status = this->client.varArgsPrintFormated ( pformat, theArgs );
     
     va_end ( theArgs );
     

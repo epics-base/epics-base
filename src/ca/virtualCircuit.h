@@ -158,7 +158,7 @@ public:
         epicsGuard < epicsMutex > & );
     osiSockAddr getNetworkAddress (
         epicsGuard < epicsMutex > & ) const;
-    int printf ( 
+    int printFormated ( 
         epicsGuard < epicsMutex > & cbGuard, 
         const char *pformat, ... );
     unsigned channelCount ( 

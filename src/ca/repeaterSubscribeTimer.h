@@ -36,7 +36,7 @@ public:
     virtual ~repeaterTimerNotify () = 0;
     virtual void repeaterRegistrationMessage ( 
         unsigned attemptNumber ) = 0;
-    virtual int printf ( 
+    virtual int printFormated ( 
         epicsGuard < epicsMutex > & callbackControl, 
         const char * pformat, ... ) = 0;
 };

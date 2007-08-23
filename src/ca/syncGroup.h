@@ -182,7 +182,7 @@ public:
         unsigned type, arrayElementCount count, const void * pValue );
     void completionNotify ( 
         epicsGuard < epicsMutex > &, syncGroupNotify & );
-    int printf ( const char * pFormat, ... );
+    int printFormated ( const char * pFormat, ... );
     void exception ( 
          epicsGuard < epicsMutex > &, int status, const char * pContext, 
         const char * pFileName, unsigned lineNo );

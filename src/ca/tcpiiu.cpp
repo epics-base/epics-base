@@ -1184,7 +1184,7 @@ bool tcpiiu::processIncoming (
 
         // check for 8 byte aligned protocol
         if ( this->curMsg.m_postsize & 0x7 ) {
-            this->printf ( mgr.cbGuard,
+            this->printFormated ( mgr.cbGuard,
                 "CAC: server sent missaligned payload 0x%x\n", 
                 this->curMsg.m_postsize );
             return false;
@@ -1203,7 +1203,7 @@ bool tcpiiu::processIncoming (
                     this->curDataMax = this->cacRef.largeBufferSizeTCP ();
                 }
                 else {
-                    this->printf ( mgr.cbGuard,
+                    this->printFormated ( mgr.cbGuard,
                         "CAC: not enough memory for message body cache (ignoring response message)\n");
                 }
             }
@@ -1229,7 +1229,7 @@ bool tcpiiu::processIncoming (
         else {
             static bool once = false;
             if ( ! once ) {
-                this->printf ( mgr.cbGuard,
+                this->printFormated ( mgr.cbGuard,
     "CAC: response with payload size=%u > EPICS_CA_MAX_ARRAY_BYTES ignored\n",
                     this->curMsg.m_postsize );
                 once = true;
@@ -1945,7 +1945,7 @@ void tcpiiu::uninstallChan (
     }
 }
 
-int tcpiiu::printf ( 
+int tcpiiu :: printFormated ( 
     epicsGuard < epicsMutex > & cbGuard, 
     const char *pformat, ... )
 {
@@ -1956,7 +1956,7 @@ int tcpiiu::printf (
 
     va_start ( theArgs, pformat );
     
-    status = this->cacRef.vPrintf ( cbGuard, pformat, theArgs );
+    status = this->cacRef.varArgsPrintFormated ( cbGuard, pformat, theArgs );
     
     va_end ( theArgs );
     

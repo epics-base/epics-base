@@ -76,7 +76,7 @@ void syncGroupWriteNotify::completion (
     epicsGuard < epicsMutex > & guard )
 {
     if ( this->magic != CASG_MAGIC ) {
-        this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
+        this->sg.printFormated ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
     this->sg.completionNotify ( guard, *this );
@@ -89,7 +89,7 @@ void syncGroupWriteNotify::exception (
     int status, const char *pContext, unsigned type, arrayElementCount count )
 {
     if ( this->magic != CASG_MAGIC ) {
-        this->sg.printf ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
+        this->sg.printFormated ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
     this->sg.exception ( guard, status, pContext, 

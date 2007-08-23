@@ -255,7 +255,8 @@ private:
     // repeaterTimerNotify
     void repeaterRegistrationMessage ( 
         unsigned attemptNumber );
-    int printf ( 
+
+    int printFormated ( 
         epicsGuard < epicsMutex > & callbackControl, 
         const char * pformat, ... );
 

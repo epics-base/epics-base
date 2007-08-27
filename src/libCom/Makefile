@@ -180,6 +180,7 @@ INC += osiProcess.h
 INC += osiUnistd.h
 INC += osiWireFormat.h
 INC += osdWireFormat.h
+INC += osdWireConfig.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h

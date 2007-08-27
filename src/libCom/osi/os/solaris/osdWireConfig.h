@@ -11,15 +11,16 @@
 
 #include <sys/isa_defs.h>
 
-#if _LITTLE_ENDIAN
+#if defined ( _LITTLE_ENDIAN )
 #	define EPICS_BYTE_ORDER EPICS_ENDIAN_LITTLE
-#elif _BIG_ENDIAN
+#elif defined ( _BIG_ENDIAN )
 #	define EPICS_BYTE_ORDER EPICS_ENDIAN_BIG
 #else
-#   error EPICS hasn’t been ported to byte order specified by <sys/isa_defs.h> on Solaris
+#   error EPICS hasnt been ported to byte order specified by <sys/isa_defs.h> on Solaris
 #endif
 
 // for now, assume that Solaris doesnt run on weird arch like ARM NWFP
 #define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 
 #endif // ifdef osdWireConfig_h
+

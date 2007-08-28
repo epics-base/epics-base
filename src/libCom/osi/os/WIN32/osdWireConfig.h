@@ -2,8 +2,8 @@
 // WIN32 version of
 // osdWireConfig.h
 //
-//	Author Jeffrey O. Hill
-//	johill@lanl.gov
+//  Author Jeffrey O. Hill
+//  johill@lanl.gov
 //
 
 #ifndef osdWireConfig_h

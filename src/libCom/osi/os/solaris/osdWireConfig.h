@@ -2,8 +2,8 @@
 // Solaris version of
 // osdWireConfig.h
 //
-//	Author Jeffrey O. Hill
-//	johill@lanl.gov
+//  Author Jeffrey O. Hill
+//  johill@lanl.gov
 //
 
 #ifndef osdWireConfig_h
@@ -12,9 +12,9 @@
 #include <sys/isa_defs.h>
 
 #if defined ( _LITTLE_ENDIAN )
-#	define EPICS_BYTE_ORDER EPICS_ENDIAN_LITTLE
+#   define EPICS_BYTE_ORDER EPICS_ENDIAN_LITTLE
 #elif defined ( _BIG_ENDIAN )
-#	define EPICS_BYTE_ORDER EPICS_ENDIAN_BIG
+#   define EPICS_BYTE_ORDER EPICS_ENDIAN_BIG
 #else
 #   error EPICS hasnt been ported to byte order specified by <sys/isa_defs.h> on Solaris
 #endif

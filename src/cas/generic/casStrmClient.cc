@@ -2161,7 +2161,7 @@ caStatus casStrmClient::writeArrayData()
 	//
 	// install allocated area into the DD
 	//
-	pDD->putRef ( pData, type, pDestructor );
+	pDD->putRef ( pData, bestWritePrimType, pDestructor );
 
 	//
 	// convert the data from the protocol buffer

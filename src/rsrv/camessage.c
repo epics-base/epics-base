@@ -24,6 +24,7 @@
 #include "osiSock.h"
 #include "osiPoolStatus.h"
 #include "epicsEvent.h"
+#include "epicsStdio.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsTime.h"
@@ -134,12 +135,13 @@ const char              *pformat,
 va_list                 args
 )
 {
-    struct channel_in_use   *pciu;
-    caHdr                   *pReqOut;
-    char                    *pMsgString;
-    ca_uint32_t             size;
-    ca_uint32_t             cid;
-    int                     localStatus;
+    static const ca_uint32_t    maxDiagLen = 512;
+    struct channel_in_use       *pciu;
+    caHdr                       *pReqOut;
+    char                        *pMsgString;
+    ca_uint32_t                 size;
+    ca_uint32_t                 cid;
+    int                         localStatus;
 
     switch ( curp->m_cmmd ) {
     case CA_PROTO_EVENT_ADD:
@@ -174,7 +176,7 @@ va_list                 args
      * allocate plenty of space for a sprintf() buffer
      */
     localStatus = cas_copy_in_header ( client, 
-        CA_PROTO_ERROR, 512, 0, 0, cid, status, 
+        CA_PROTO_ERROR, maxDiagLen, 0, 0, cid, status, 
         ( void * ) &pReqOut );
     if ( localStatus != ECA_NORMAL ) {
         errlogPrintf ( "caserver: Unable to deliver err msg \"%s\" to client because \"%s\"\n",
@@ -215,9 +217,20 @@ va_list                 args
     /*
      * add their context string into the protocol
      */
-    status = vsprintf ( pMsgString, pformat, args );
-    if ( status >= 0 ) {
-        size += ( ( ca_uint32_t ) status ) + 1u;
+    localStatus = epicsVsnprintf ( pMsgString, maxDiagLen, pformat, args );
+    if ( localStatus >= 1 ) {
+        unsigned diagLen = ( unsigned ) localStatus;
+        if ( diagLen < maxDiagLen ) {
+            size += (ca_uint32_t) (diagLen + 1u);
+        }
+        else {
+            errlogPrintf ( 
+                "caserver: vsend_err: epicsVsnprintf detected "
+                "error message truncation, pFormat = \"%s\"\n",
+                pformat );
+            size += maxDiagLen;
+            pMsgString [ maxDiagLen - 1 ] = '\0';
+        }
     }
     cas_commit_msg ( client, size );
 }
@@ -495,7 +508,6 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
     struct channel_in_use *pciu = pevext->pciu;
     const int readAccess = asCheckGet ( pciu->asClientPVT );
     int status;
-    int strcnt;
     int v41;
 
     SEND_LOCK ( pClient );
@@ -575,7 +587,7 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
         }
     }
     else {
-        ca_uint32_t msgSize = pevext->size;
+        ca_uint32_t payloadSize = pevext->size;
         int cacStatus = caNetConvert ( 
             pevext->msg.m_dataType, pPayload, pPayload, 
             TRUE /* host -> net format */, pevext->msg.m_count );
@@ -586,16 +598,25 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
             */
             if ( pevext->msg.m_dataType == DBR_STRING 
                 && pevext->msg.m_count == 1 ) {
-                /* add 1 so that the string terminator will be shipped */
-                strcnt = strlen ( (char *) pPayload ) + 1;
-                msgSize = strcnt;
+                char * pStr = (char *) pPayload;
+                size_t strcnt = strlen ( pStr );
+                if ( strcnt < payloadSize ) {
+                    payloadSize = ( ca_uint32_t ) ( strcnt + 1u );
+                }
+                else {
+                    pStr[payloadSize-1] = '\0';
+                    errlogPrintf ( 
+                        "caserver: read_reply: detected DBR_STRING w/o nill termination "
+                        "in response from db_get_field, pPayload = \"%s\"\n",
+                        pStr );
+                }
             }
         }
         else {
-            memset ( pPayload, 0, msgSize );
+            memset ( pPayload, 0, payloadSize );
             cas_set_header_cid ( pClient, cacStatus );
 	    }
-        cas_commit_msg ( pClient, msgSize );
+        cas_commit_msg ( pClient, payloadSize );
     }
 
     /*
@@ -620,7 +641,6 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
     ca_uint32_t payloadSize;
     void *pPayload;
     int status;
-    int strcnt;
     int v41;
 
     if ( ! pciu ) {
@@ -686,13 +706,20 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
      * boundary
      */
     if ( mp->m_dataType == DBR_STRING && mp->m_count == 1 ) {
-        /* add 1 so that the string terminator will be shipped */
-        strcnt = strlen ( (char *) pPayload ) + 1;
-        cas_commit_msg ( pClient, strcnt );
+        char * pStr = (char *) pPayload;
+        size_t strcnt = strlen ( pStr );
+        if ( strcnt < payloadSize ) {
+            payloadSize = ( ca_uint32_t ) ( strcnt + 1u );
+        }
+        else {
+            pStr[payloadSize-1] = '\0';
+            errlogPrintf ( 
+                "caserver: read_action: detected DBR_STRING w/o nill termination "
+                "in response from db_get_field, pPayload = \"%s\"\n",
+                pStr );
+        }
     }
-    else {
-        cas_commit_msg ( pClient, payloadSize );
-    }
+    cas_commit_msg ( pClient, payloadSize );
 
     SEND_UNLOCK ( pClient );
 

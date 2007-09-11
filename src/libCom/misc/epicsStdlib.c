@@ -48,7 +48,7 @@ epicsShareFunc int epicsScanFloat(const char *str, float *dest)
 epicsShareFunc double epicsStrtod( 
     const char *str, char **endp)
 {
-    const char *cp = str;
+    const unsigned char *cp = (const unsigned char *) str;
     double num = 1.0;
     double den = 0.0;
 
@@ -63,7 +63,7 @@ epicsShareFunc double epicsStrtod(
     }
     if (!isalpha((int)*cp))
         return strtod(str, endp);
-    if (epicsStrnCaseCmp("NAN", cp, 3) == 0) {
+    if (epicsStrnCaseCmp("NAN", (const char *) cp, 3) == 0) {
         num = 0.0;
         cp += 3;
         if (*cp == '(') {
@@ -72,14 +72,14 @@ epicsShareFunc double epicsStrtod(
                 continue;
         }
     }
-    else if (epicsStrnCaseCmp("INF", cp, 3) == 0) {
+    else if (epicsStrnCaseCmp("INF", (const char *) cp, 3) == 0) {
         cp += 3;
-        if (epicsStrnCaseCmp("INITY", cp, 5) == 0) {
+        if (epicsStrnCaseCmp("INITY", (const char *) cp, 5) == 0) {
             cp += 5;
         }
     }
     else {
-        cp = str;
+        cp = (const unsigned char *) str;
         num = 0.0;
         den = 1.0;
     }

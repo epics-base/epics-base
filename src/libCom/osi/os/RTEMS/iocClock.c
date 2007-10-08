@@ -69,8 +69,13 @@ static void syncNTP(void)
 
     while(1) {
         double diffTime;
+        extern int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
         if(!firstTime)epicsThreadSleep(iocClockSyncRate);
         firstTime = 0;
+        if(piocClockPvt->getCurrent != iocClockGetCurrent) {
+            errlogPrintf("syncNTP: NTP client terminating.\n");
+            return;
+        }
         status = rtems_bsdnet_get_ntp(-1, NULL, &Currtime);
         if(status) {
             ++nConsecutiveBad;

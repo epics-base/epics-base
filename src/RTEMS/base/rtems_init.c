@@ -485,31 +485,20 @@ Init (rtems_task_argument ignored)
     }
 
     /*
-     * Use BSP-supplied time of day if available
+     * Use BSP-supplied time of day if available otherwise supply default time.
+     * It is very likely that other time synchronization facilities in EPICS
+     * will soon override this value.
      */
     if (rtems_clock_get(RTEMS_CLOCK_GET_TOD,&now) != RTEMS_SUCCESSFUL) {
-        for (i = 0 ; ; i++) {
-            printf ("***** Initializing NTP *****\n");
-            if (rtems_bsdnet_synchronize_ntp (0, 0) >= 0)
-                break;
-            rtems_task_wake_after (5*rtemsTicksPerSecond);
-            if (i >= 12) {
-                printf ("    *************** WARNING ***************\n");
-                printf ("    ***** NO RESPONSE FROM NTP SERVER *****\n");
-                printf ("    *****  TIME SET TO DEFAULT VALUE  *****\n");
-                printf ("    ***************************************\n");
-                now.year = 2001;
-                now.month = 1;
-                now.day = 1;
-                now.hour = 0;
-                now.minute = 0;
-                now.second = 0;
-                now.ticks = 0;
-                if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
-                    printf ("***** Can't set time: %s\n", rtems_status_text (sc));
-                break;
-            }
-        }
+        now.year = 2001;
+        now.month = 1;
+        now.day = 1;
+        now.hour = 0;
+        now.minute = 0;
+        now.second = 0;
+        now.ticks = 0;
+        if ((sc = rtems_clock_set (&now)) != RTEMS_SUCCESSFUL)
+            printf ("***** Can't set time: %s\n", rtems_status_text (sc));
     }
     if (getenv("TZ") == NULL) {
         const char *tzp = envGetConfigParamPtr(&EPICS_TIMEZONE);

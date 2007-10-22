@@ -248,9 +248,10 @@ setBootConfigFromNVRAM(void)
     }
 
     /*
-     * Assume that the boot server is also the name server and log server!
+     * Assume that the boot server is also the name, log and ntp server!
      */
     rtems_bsdnet_config.name_server[0] =
+    rtems_bsdnet_config.ntp_server[0]  =
       rtems_bsdnet_bootp_server_name   = addr(server, nvram.ServerIPAddress);
     rtems_bsdnet_bootp_server_address.s_addr = nvram.ServerIPAddress;
 

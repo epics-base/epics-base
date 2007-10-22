@@ -10,6 +10,8 @@
 # Include definitions common to all linux x86 targets
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
+VALID_BUILDS = Ioc
+
 ARCH_DEP_CFLAGS = -march=i386
 
 ifeq ($(BUILD_CLASS),CROSS)

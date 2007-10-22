@@ -9,6 +9,8 @@
 # Include definitions common to all Linux targets
 include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
+VALID_BUILDS = Ioc
+
 ARCH_CLASS = arm
 
 # Set a special definition for network order of Netwinder ARM floating point

@@ -19,5 +19,7 @@ DIRS += config
 endif
 DIRS += configure src
 
+src_DEPEND_DIRS = configure
+
 include $(TOP)/configure/RULES_TOP
 

@@ -136,7 +136,7 @@ ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 INSTALL_INCLUDES += \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
        -I$(INSTALL_INCLUDE)
-GENERIC_SRC_INCLUDES = $(addprefix -I, $(GENERIC_SRC_DIRS))
+SRC_INCLUDES = -I$(COMMON_DIR) $(addprefix -I, $(wildcard $(ALL_SRC_DIRS)))
 
 #--------------------------------------------------
 # Target filename definitions
@@ -260,7 +260,7 @@ OP_SYS_LDFLAGS += $(LDFLAGS_$(COMMANDLINE_LIBRARY))
 #--------------------------------------------------
 # Flags
 
-INCLUDES = -I. $(GENERIC_SRC_INCLUDES) $(INSTALL_INCLUDES) $(RELEASE_INCLUDES)\
+INCLUDES = -I. $(SRC_INCLUDES) $(INSTALL_INCLUDES) $(RELEASE_INCLUDES)\
  $(TARGET_INCLUDES) $(USR_INCLUDES) $(OP_SYS_INCLUDES) $($(BUILD_CLASS)_INCLUDES)
 
 CFLAGS = $(CONFORM_CFLAGS) $($(BUILD_CLASS)_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS)\

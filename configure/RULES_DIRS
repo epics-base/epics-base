@@ -36,6 +36,14 @@ all : install
 
 rebuild : clean install
 
+# Create directory dependancies lines for GNU make -j option
+# Only works with GNU make 3.80 or later (uses eval function)
+define DEP_template
+$(1): $$($(1)_DEPEND_DIRS)
+$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
+endef
+$(foreach action, $(ACTIONS), $(foreach dir, $(DIRS),$(eval $(call DEP_template,$(dir),$(action)))))
+
 $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 

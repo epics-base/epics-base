@@ -39,5 +39,28 @@ DIRS += makeBaseApp
 DIRS += excas
 DIRS += makeBaseExt
 
+ca_DEPEND_DIRS = libCom
+RTEMS_DEPEND_DIRS = libCom
+libCom/test_DEPEND_DIRS = libCom RTEMS
+toolsComm_DEPEND_DIRS = libCom
+dbStatic_DEPEND_DIRS = toolsComm
+registry_DEPEND_DIRS = dbStatic
+bpt_DEPEND_DIRS = dbStatic
+db_DEPEND_DIRS = bpt ca 
+db/test_DEPEND_DIRS = db
+as_DEPEND_DIRS = db
+util_DEPEND_DIRS = ca
+dbtools_DEPEND_DIRS = db
+catools_DEPEND_DIRS = ca
+rsrv_DEPEND_DIRS = as
+rec_DEPEND_DIRS = as registry
+dev_DEPEND_DIRS = rec
+misc_DEPEND_DIRS = rsrv rec
+vxWorks_DEPEND_DIRS = ca
+softIoc_DEPEND_DIRS = dev misc dbtools
+gdd_DEPEND_DIRS = libCom
+cas_DEPEND_DIRS = ca gdd
+excas_DEPEND_DIRS = cas as registry
+
 include $(TOP)/configure/RULES_DIRS
 

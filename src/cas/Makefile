@@ -14,6 +14,8 @@ include $(TOP)/configure/CONFIG
 
 DIRS = build example 
 
+example_DEPEND_DIRS = build
+
 include $(TOP)/configure/RULES_DIRS
 
 

@@ -34,6 +34,24 @@ cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
+#*************************************************************************
+# Create epics_host_arch dependancies for GNU make -j option
+# Only works with GNU make 3.80 or later (uses eval function)
+# Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
+# cross arch builds
+
+CROSS_ARCHS += $(CROSS1) $(CROSS2)
+
+define DEP_template
+$(2): $$(EPICS_HOST_ARCH)
+$(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH)
+endef
+
+$(foreach action, $(ACTIONS), $(foreach arch, $(CROSS_ARCHS), \
+      $(eval $(call DEP_template,$(action),$(arch)))))
+
+#*************************************************************************
+
 $(actionArchTargets) : $(buildDirs) O.Common
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. T_A=$(archPart) $(actionPart)
 

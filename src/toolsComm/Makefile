@@ -14,5 +14,7 @@ include $(TOP)/configure/CONFIG
 
 DIRS = antelope flex 
 
+flex_DEPEND_DIRS += antelope
+
 include $(TOP)/configure/RULES_DIRS
 

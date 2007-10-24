@@ -13,6 +13,31 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>GNU make multiple jobs now supported</h4>
+
+<p>The "-j jobs" option is now supported for users of GNU make version 3.80 
+or later. The configure changes for this option use the eval function which
+does not exist in earlier versions of GNU make. The -j option should speed 
+up builds by allowing multiple jobs (commands) to run simultanaously. Builds 
+will still work as usual when the -j option is NOT present, but builds with
+earlier versions of GNU make will fail if -j is used. The -j option has been
+tested on this version of EPICS base but may not work for extensions or ioc
+applications unless dependancies are specified correctly.  New DIRS directory  
+dependancy specifications to determine directory build order are required
+for -j.  For example, if we have 2 DIRS directories, src and configure, in
+a Makefile and the configure directory must build before the src directory,
+the Makefile should contain:
+<blockquote>
+<pre>
+ DIRS = configure src
+ src_DEPEND_DIRS = configure
+</pre>
+</blockquote>
+
+The directory dependancy specifications are only needed when -j is used. If
+-j is not used, the order of directories in the DIRS definition will determine
+the build order.
+
 <h4>Breakpoint tables</h4>
 
 <p>Some sites may be using breakpoint tables that are not monotonic in one

@@ -303,6 +303,11 @@ ERR_S_FILES += $(TOP)/src/gdd/gddAppFuncTable.h
 
 include $(TOP)/configure/RULES
 
+osdAssert$(OBJ): $(COMMON_DIR)/epicsVersion.h
+epicsTime$(OBJ): $(COMMON_DIR)/epicsVersion.h
+osdNetIntf$(OBJ): $(COMMON_DIR)/epicsVersion.h
+osdSock$(OBJ): $(COMMON_DIR)/epicsVersion.h
+
 envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl \
 	$(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV
 	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(CONFIG)
@@ -316,4 +321,3 @@ $(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION $(CONFIG)/CONFIG_SIT
 clean::
 	@$(RM) errSymTbl.c envData.c
 
-inc depends: $(INSTALL_LIBS)

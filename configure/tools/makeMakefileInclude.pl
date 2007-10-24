@@ -109,7 +109,7 @@ foreach $name ( @nameList ) {
 	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
-	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))))\n";
 	print OUT "${name}\$(EXE): \$(${name}_OBJSNAME) \$(${name}_RESS) \$(${name}_DEPLIBS)\n";
 	print OUT "endif\n";
 	print OUT "\n";
@@ -124,12 +124,12 @@ foreach $name ( @nameList ) {
 	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
-	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))))\n";
 	print OUT "${name}_DLL_DEPLIBS=\$(foreach lib, \$(${name}_DLL_LIBS),\\\n";
 	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
-	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))))\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(LIB_SUFFIX):\$(${name}_DEPLIBS)\n";
 	print OUT "\$(LIB_PREFIX)${name}\$(SHRLIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
@@ -147,12 +147,12 @@ foreach $name ( @nameList ) {
 	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
-	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))))\n";
 	print OUT "${name}_DLL_DEPLIBS=\$(foreach lib, \$(${name}_DLL_LIBS),\\\n";
 	print OUT " \$(firstword \$(wildcard \$(addsuffix /\$(LIB_PREFIX)\$(lib).\*,\\\n";
 	print OUT " \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))\\\n";
 	print OUT " \$(addsuffix /\$(LIB_PREFIX)\$(lib)\$(LIB_SUFFIX),\\\n";
-	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS))\/)))\n";
+	print OUT " \$(firstword \$(\$(lib)_DIR) \$(SHRLIB_SEARCH_DIRS)))))\n";
 	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_OBJSNAME) \$(${name}_RESS)\n";
 	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_DEPLIBS)\n";
 	print OUT "\$(LOADABLE_SHRLIB_PREFIX)${name}\$(LOADABLE_SHRLIB_SUFFIX):\$(${name}_DLL_DEPLIBS)\n";

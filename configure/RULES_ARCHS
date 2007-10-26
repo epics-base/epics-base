@@ -47,8 +47,8 @@ $(2): $$(EPICS_HOST_ARCH)
 $(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH)
 endef
 
-$(foreach action, $(ACTIONS), $(foreach arch, $(CROSS_ARCHS), \
-      $(eval $(call DEP_template,$(action),$(arch)))))
+$(foreach action, $(ACTIONS), $(foreach arch,\
+      $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
 
 #*************************************************************************
 

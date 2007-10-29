@@ -267,7 +267,7 @@ epicsTime::operator local_tm_nano_sec () const
 
     int status = epicsTime_localtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
     if ( status != epicsTimeOK ) {
-        throw std::logic_error ( "epicsTime_gmtime failed" );
+        throw std::logic_error ( "epicsTime_localtime failed" );
     }
 
     tm.nSec = this->nSec;

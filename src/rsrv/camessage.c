@@ -1103,7 +1103,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
                 ellAdd ( &pclient->chanPendingUpdateARList, &pciu->node );
                 sigReq = 1;
             }
-            if ( pciu->state == rsrvCS_inService ) {
+            else if ( pciu->state == rsrvCS_inService ) {
                 ellDelete ( &pclient->chanList, &pciu->node );
                 pciu->state = rsrvCS_inServiceUpdatePendAR;
                 ellAdd ( &pclient->chanPendingUpdateARList, &pciu->node );
@@ -1365,6 +1365,9 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
             pciu->asClientPVT, 
             casAccessRightsCB);
     if ( status == S_asLib_asNotActive ) {
+        epicsMutexMustLock ( client->chanListLock );
+        pciu->state = rsrvCS_inService;
+        epicsMutexUnlock ( client->chanListLock );
         /*
          * force the initial AR update followed by claim response
          */
@@ -2007,7 +2010,6 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp,
       * remove from access control list
       */
      status = asRemoveClient(&pciu->asClientPVT);
-     assert(status == 0 || status == S_asLib_asNotActive);
      if(status != 0 && status != S_asLib_asNotActive){
          errMessage(status, RECORD_NAME(&pciu->addr));
          return RSRV_ERROR;

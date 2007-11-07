@@ -14,6 +14,7 @@ ARCH_DEP_CFLAGS += -march=athlon-mp -mfpmath=sse
 
 
 ifeq ($(BUILD_CLASS),CROSS)
+   VALID_BUILDS = Ioc
    GNU_TARGET=athlon-pc-linux-gnu
 endif
 

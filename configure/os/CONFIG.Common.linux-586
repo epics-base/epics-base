@@ -10,12 +10,11 @@
 # Include definitions common to all linux x86 targets
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
-VALID_BUILDS = Ioc
-
 # i586 is euivalent to pentiumpro
 ARCH_DEP_CFLAGS = -march=i586
 
 ifeq ($(BUILD_CLASS),CROSS)
+   VALID_BUILDS = Ioc
    GNU_TARGET=i586-pc-linux-gnu
 endif
 

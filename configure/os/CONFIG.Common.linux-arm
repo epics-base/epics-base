@@ -9,14 +9,13 @@
 # Include definitions common to all Linux targets
 include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
-VALID_BUILDS = Ioc
-
 ARCH_CLASS = arm
 
 # Set a special definition for network order of Netwinder ARM floating point
 ARCH_DEP_CPPFLAGS += -D_ARM_NWFP_
 
 ifeq ($(BUILD_CLASS),CROSS)
+    VALID_BUILDS = Ioc
     GNU_TARGET = arm-linux
 
     # prefix of compiler tools

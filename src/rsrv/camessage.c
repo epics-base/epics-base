@@ -1989,11 +1989,11 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp,
      
      epicsMutexMustLock ( client->chanListLock );
      if ( pciu->state == rsrvCS_inService || 
-!             pciu->state == rsrvCS_pendConnectResp  ) {
+            pciu->state == rsrvCS_pendConnectResp  ) {
         ellDelete ( &client->chanList, &pciu->node );
      }
      else if ( pciu->state == rsrvCS_inServiceUpdatePendAR ||
-!             pciu->state == rsrvCS_pendConnectRespUpdatePendAR ) {
+            pciu->state == rsrvCS_pendConnectRespUpdatePendAR ) {
         ellDelete ( &client->chanPendingUpdateARList, &pciu->node );
      }
      else {

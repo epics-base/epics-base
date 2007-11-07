@@ -6,10 +6,9 @@
 # Definitions for linux-x86 host - vxWorks target builds
 #-------------------------------------------------------
  
-# JBA test override values
-
+# Example override lines for user built cross-compiler
 #GNU_DIR=/home/phoebus/JBA/gnu
 #GNU_TARGET_INCLUDE_DIR=$(GNU_DIR)/$(GNU_TARGET)/include
-#CC = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX)
-#CCC = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX)
+#CMPLR_SUFFIX=
+#CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
 

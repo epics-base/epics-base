@@ -9,3 +9,6 @@
 
 include $(CONFIG)/os/CONFIG.solaris-sparc64.solaris-sparc64
 
+BUILD_CLASS = HOST
+
+GNU = NO

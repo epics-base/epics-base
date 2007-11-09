@@ -1,0 +1,23 @@
+# CONFIG_SITE.Common.linux-cris
+#
+# Site Specific definitions for linux-cris target
+# Only the local epics system manager should modify this file
+
+# NOTE for SHARED_LIBRARIES: In most cases if this is set to YES the
+# shared libraries will be found automatically.  However if the .so
+# files are installed at a different path to their compile-time path
+# then in order to be found at runtime do one of these:
+# a) LD_LIBRARY_PATH must include the full absolute pathname to
+#    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking base
+#    executables.
+# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which
+#    will add the named directory to the list contained in the executables.
+# c) Add the runtime path to /etc/ld.so.conf and run ldconfig
+#    to inform the system of the shared library location.
+
+# If readline is not installed comment the following line
+# to omit command-line editing and history support
+
+#COMMANDLINE_LIBRARY = READLINE
+OP_SYS_CFLAGS += -g
+

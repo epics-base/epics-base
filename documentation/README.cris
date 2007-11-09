@@ -1,0 +1,67 @@
+cross compiling EPICS and
+   building IOC Applications for cris architectures
+      (linux-cris_v10, linux-cris_v32)
+======================================================================
+
+Please mail questions, comments, corrections, etc. ...
+to P.Zumbruch@gsi.de
+November 2007
+
+Tools needed
+------------
+
+ o Axis SDK
+    - Overview:
+      http://developer.axis.com/wiki/doku.php?id=axis:sdk
+    - Download:
+      http://www.axis.com/products/dev_sdk/download_dist.php
+    - Install HOWTO:
+      http://developer.axis.com/wiki/doku.php?id=axis:software_distribution_install_howto
+  o Axis GNU gcc release for cross compiling
+    - Download:
+      http://www.axis.com/products/dev_sdk/download_compiler.php
+    - Install HOWTO:
+      http://developer.axis.com/wiki/doku.php?id=axis:compiler_install
+
+Environment
+-----------
+
+ o CRIS_CROSS_COMPILER
+    - path to top directory of cris cross compiler,
+      where binaries are in sub directory bin/
+    - if not set, the make process will stop at place
+      UNDEFINED_ENV__CRIS_CROSS_COMPILER
+ o AXIS_TOP_DIR?=UNDEFINED_ENV__AXIS_TOP_DIR
+    - path to axis SDK top directory
+    - if not set compile and link commands will contain references to
+      UNDEFINED_ENV__AXIS_TOP_DIR
+    - to set the necessary variables, execute
+      . ./init_env
+      in the top directory of the SDK provided here.
+ o CRIS_COMPILER_DEBUG
+    - if defined symbols won't be stripped,
+      resulting in comparably large files
+
+Building
+--------
+
+ o Edit the CONFIG_SITE files
+    - CONFIG_SITE.linux-x86.Common:
+       for CROSS_COMPILER_TARGET_ARCHS += linux-cris_v10
+       for CROSS_COMPILER_TARGET_ARCHS += linux-cris_v32
+    - optionally CONFIG_SITE.linux-x86.linux-cris
+       for setting CRIS_CROSS_COMPILER
+    - optionally create CONFIG_SITE.linux-x86.linux-cris_v10
+    - optionally create CONFIG_SITE.linux-x86.linux-cris_v32
+ o "make".
+
+Shared Libraries
+----------------
+
+Generating shared libraries is not supported.
+
+
+Please feel free to contact me if you
+encounter serious problems.
+
+Peter

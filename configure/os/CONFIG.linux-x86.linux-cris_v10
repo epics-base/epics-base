@@ -1,0 +1,20 @@
+# CONFIG.linux-x86.linux-cris_v10
+#
+# Author: Peter Zumbruch
+#         GSI
+#         P.Zumbruch@gsi.de
+#
+# Definitions for linux-x86 host - linux-cris_v10 target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-cris_v10
+#-------------------------------------------------------
+
+# Include definitions common to all linux-cris targets
+include $(CONFIG)/os/CONFIG.Common.linux-cris
+
+GNU_TARGET = cris-axis-linux-gnu
+
+ARCH_DEP_CFLAGS += -march=v10
+
+# if you are using different places for cris_v10 cris_v32
+# you have to define for each architecture
+# AXIS_SDK_DIR=<AXIS_TOP_DIR_v10>

@@ -1,0 +1,14 @@
+# CONFIG_SITE.linux-x86.linux-cris
+#
+# Author: Peter Zumbruch
+#         GSI
+#         P.Zumbruch@gsi.de
+#
+# Site specific definitions for linux-x86 host - linux-cris target builds
+#-------------------------------------------------------
+
+# define site specific location of cris cross compiler's gnu directory
+# but without bin sub directory, this will be added automatically.
+
+CRIS_CROSS_COMPILER ?= UNDEFINED_ENV__CRIS_CROSS_COMPILER
+

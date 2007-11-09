@@ -1,0 +1,58 @@
+# CONFIG.Common.linux-cris
+#
+# Author: Peter Zumbruch
+#         GSI
+#         P.Zumbruch@gsi.de
+#
+# Definitions for linux-cris target builds
+# Sites may override these definitions in CONFIG_SITE.Common.linux-cris
+#-------------------------------------------------------
+
+# Include definitions common to all linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = cris
+
+ifeq ($(BUILD_CLASS),CROSS)
+    GNU_TARGET = cris-axis-linux-gnu
+    
+    # prefix of compiler tools
+    CMPLR_SUFFIX =
+    CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
+        
+    # CROSS_TOP_DIR
+    #    usually AXIS_TOP_DIR is defined via 
+    #    the init_env script of the SDK provided by Axis
+    #
+    ## AXIS_TOP_DIR defined? Make missing mandatory variable visible
+    AXIS_TOP_DIR?=UNDEFINED_ENV__AXIS_TOP_DIR
+    AXIS_SDK_DIR?=$(AXIS_TOP_DIR)
+    
+    # CROSS_INCLUDES 
+    AXIS_SDK_TARGET_INCLUDE_DIR = $(AXIS_SDK_DIR)/target/$(GNU_TARGET)/include 
+    AXIS_SDK_TARGET_INCLUDE_DIR +=$(AXIS_SDK_DIR)/target/$(GNU_TARGET)/usr/include
+   
+    CROSS_INCLUDES = $(addprefix -isystem ,$(AXIS_SDK_TARGET_INCLUDE_DIR))
+
+    # CROSS_LDFLAGS 
+    AXIS_SDK_TARGET_LIB_DIR =  $(AXIS_SDK_DIR)/target/$(GNU_TARGET)/lib
+    AXIS_SDK_TARGET_LIB_DIR += $(AXIS_SDK_DIR)/target/$(GNU_TARGET)/usr/lib
+   
+    CROSS_LDFLAGS = $(addprefix -L,$(AXIS_SDK_TARGET_LIB_DIR))
+
+-include $(CONFIG)/os/CONFIG_SITE.Common.linux-cris
+ifeq ($(EPICS_HOST_ARCH), linux-x86)
+-include $(CONFIG)/os/CONFIG.linux-x86.linux-cris
+-include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-cris
+endif
+endif
+
+SHARED_LIBRARIES=NO
+STATIC_BUILD=YES
+
+ARCH_DEP_CFLAGS += -mno-mul-bug-workaround
+OP_SYS_CFLAGS += -mlinux
+ARCH_DEP_CPPFLAGS += -D_cris_ -mlinux
+
+#uncomment CRIS_COMPILER_DEBUG for debugging cris-compiled code
+#CRIS_COMPILER_DEBUG

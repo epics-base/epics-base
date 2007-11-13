@@ -28,7 +28,7 @@
 #    include <cstring>
 #endif
 
-#include "osdWireConfig.h"
+#include "epicsEndian.h"
 
 //
 // The default assumption is that the local floating point format is
@@ -37,14 +37,6 @@
 // network byte stream. OS specific code can provide a alternative
 // for this file if that assumption is wrong.
 //
-
-#ifndef EPICS_BYTE_ORDER
-#error osdWireConfig.h didnt define EPICS_BYTE_ORDER
-#endif
-
-#ifndef EPICS_FLOAT_WORD_ORDER
-#error osdWireConfig.h didnt define EPICS_FLOAT_WORD_ORDER
-#endif
 
 //
 // EPICS_CONVERSION_REQUIRED is set if either the byte order

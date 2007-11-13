@@ -259,9 +259,6 @@ inline void AlignedWireSet ( const T & src, T & dst )
     dst = dstu._o;
 }
 
-#define EPICS_ENDIAN_LITTLE   1234
-#define EPICS_ENDIAN_BIG      4321
-
 #include "osdWireFormat.h"
 
 #endif // osiWireFormat

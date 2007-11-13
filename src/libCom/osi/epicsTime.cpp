@@ -43,17 +43,19 @@ static const char pEpicsTimeVersion[] =
 // useful public constants
 //
 static const unsigned mSecPerSec = 1000u;
-static const unsigned uSecPerSec = 1000u * mSecPerSec;
-static const unsigned nSecPerSec = 1000u * uSecPerSec;
+static const unsigned uSecPerMSec = 1000u;
+static const unsigned uSecPerSec = uSecPerMSec * mSecPerSec;
 static const unsigned nSecPerUSec = 1000u;
-static const unsigned secPerMin = 60u;
+static const unsigned nSecPerSec = nSecPerUSec * uSecPerSec;
 static const unsigned nSecFracDigits = 9u;
 
-static const unsigned tmStructEpochYear = 1900;
-
+static const unsigned tmEpochYear = 1900;
+static const unsigned ansiEpochYear = 1970;
 static const unsigned epicsEpochYear = 1990;
-static const unsigned epicsEpocMonth = 0; // January
-static const unsigned epicsEpocDayOfTheMonth = 1; // the 1st day of the month
+
+static const unsigned epochMonth = 0;           // January
+static const unsigned epochDayOfTheMonth = 1;   // the 1st
+
 
 //
 // epicsTime (const unsigned long secIn, const unsigned long nSecIn)
@@ -80,53 +82,47 @@ static const epicsTimeLoadTimeInit lti;
 //
 epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 {
-    static const time_t ansiEpoch = 0;
-    double secWest;
+    // All we know about time_t is that it is an arithmetic type.
+    time_t t_zero = static_cast<time_t> (0);
+    time_t t_one  = static_cast<time_t> (1);
+    this->time_tSecPerTick = difftime (t_one, t_zero);
 
-    {
-        time_t current = time ( NULL );
-        time_t error;
-        struct tm date; // vxWorks 6.0 requires "struct" here 
+    /* We calculate the difference in seconds between the ANSI and EPICS
+     * epochs (1970-1-1, 1990-1-1).  However mktime() takes a local time
+     * and adds a timezone-specified Daylight Savings Time offset to the
+     * result it returns.  Luckily we only need the time difference in
+     * seconds between the two epochs, so the two DST corrections cancel
+     * each other out.  We offset the local time used by 12 hours so the
+     * ANSI result can never go negative whatever timezone we're in.
+     */
 
-        int status = epicsTime_gmtime ( &current, &date );
-        assert ( status == epicsTimeOK );
-        error = mktime ( &date );
-        assert ( error != (time_t) - 1 );
-        secWest =  difftime ( error, current );
-    }
-    
-    {
-        time_t first = static_cast<time_t> (0);
-        time_t last = static_cast<time_t> (1);
-        this->time_tSecPerTick = difftime (last, first);
-    }
+    struct tm tmEpoch;
+    tmEpoch.tm_sec = 0;
+    tmEpoch.tm_min = 0;
+    tmEpoch.tm_hour = 12;
+    tmEpoch.tm_mday = epochDayOfTheMonth;
+    tmEpoch.tm_mon = epochMonth;
+    tmEpoch.tm_isdst = 0;
 
-    {
-        struct tm tmEpicsEpoch;
-        time_t epicsEpoch;
+    tmEpoch.tm_year = ansiEpochYear - tmEpochYear;
+    time_t ansiEpoch = mktime(&tmEpoch);
+    assert(ansiEpoch != (time_t) -1);
 
-        tmEpicsEpoch.tm_sec = 0;
-        tmEpicsEpoch.tm_min = 0;
-        tmEpicsEpoch.tm_hour = 0;
-        tmEpicsEpoch.tm_mday = epicsEpocDayOfTheMonth;
-        tmEpicsEpoch.tm_mon = epicsEpocMonth;
-        tmEpicsEpoch.tm_year = epicsEpochYear - tmStructEpochYear;
-        // must not correct for DST because secWest does 
-        // not include a DST offset
-        tmEpicsEpoch.tm_isdst = 0; 
+    tmEpoch.tm_year = epicsEpochYear - tmEpochYear;
+    time_t epicsEpoch = mktime(&tmEpoch);
+    assert(epicsEpoch != (time_t) -1);
 
-        epicsEpoch = mktime (&tmEpicsEpoch);
-        assert (epicsEpoch!=(time_t)-1);
-        this->epicsEpochOffset = difftime ( epicsEpoch, ansiEpoch ) - secWest;
-    }
+    this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch);
 
-    if ( this->time_tSecPerTick == 1.0 && this->epicsEpochOffset <= ULONG_MAX &&
-           this->epicsEpochOffset >= 0 ) {
+    if (this->time_tSecPerTick == 1.0 &&
+        this->epicsEpochOffset <= ULONG_MAX &&
+        this->epicsEpochOffset >= 0) {
+        // We can use simpler code on Posix-compliant systems
         this->useDiffTimeOptimization = true;
         this->epicsEpochOffsetAsAnUnsignedLong = 
-            static_cast < unsigned long > ( this->epicsEpochOffset );
-    }
-    else {
+            static_cast<unsigned long>(this->epicsEpochOffset);
+    } else {
+        // Forced to use the slower but correct code
         this->useDiffTimeOptimization = false;
         this->epicsEpochOffsetAsAnUnsignedLong = 0;
     }
@@ -204,9 +200,10 @@ epicsTime::epicsTime (const epicsTimeStamp &ts)
     }
 }
 
-epicsTime::epicsTime () : secPastEpoch(0u), nSec(0u) {}	
+epicsTime::epicsTime () :
+    secPastEpoch(0u), nSec(0u) {}
 
-epicsTime::epicsTime (const epicsTime &t) : 
+epicsTime::epicsTime (const epicsTime &t) :
     secPastEpoch (t.secPastEpoch), nSec (t.nSec) {}
 
 epicsTime epicsTime::getCurrent ()
@@ -229,7 +226,7 @@ epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
     return epicsTime ( current );
 }
 
-void epicsTime::synchronize () {} // depricated
+void epicsTime::synchronize () {} // deprecated
 
 //
 // operator time_t_wrapper ()
@@ -451,12 +448,12 @@ epicsTime::operator epicsTimeStamp () const
 // specifying its nnnn
 // C) returning a pointer to the postfix (which might be passed again 
 // to fracFormatFind.
-static const char * fracFormatFind ( 
-    const char * const pFormat, 
+static const char * fracFormatFind (
+    const char * const pFormat,
     char * const pPrefixBuf,
     const size_t prefixBufLen,
     bool & fracFmtFound,
-    unsigned long & fracFmtWidth  ) 
+    unsigned long & fracFmtWidth )
 {
     assert ( prefixBufLen > 1 );
     unsigned long width = ULONG_MAX;
@@ -535,7 +532,7 @@ size_t epicsTime::strftime (
         char strftimePrefixBuf [256];
         bool fracFmtFound;
         unsigned long fracWid;
-        pFmt = fracFormatFind ( 
+        pFmt = fracFormatFind (
             pFmt, 
             strftimePrefixBuf, sizeof ( strftimePrefixBuf ),
             fracFmtFound, fracWid );
@@ -547,7 +544,7 @@ size_t epicsTime::strftime (
         // all but fractional seconds use strftime formatting
         if ( strftimePrefixBuf[0] != '\0' ) {
             local_tm_nano_sec tmns = *this;
-            size_t strftimeNumChar = :: strftime ( 
+            size_t strftimeNumChar = :: strftime (
                 pBufCur, bufLenLeft, strftimePrefixBuf, & tmns.ansi_tm );
             pBufCur [ strftimeNumChar ] = '\0';
             pBufCur += strftimeNumChar;

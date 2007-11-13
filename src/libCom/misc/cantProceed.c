@@ -23,17 +23,15 @@
 epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *msg)
 {
     void * mem = NULL;
-    if (count == 0 || size == 0)
-        cantProceed("%s: callocMustSucceed(%lu, %lu) - bad args\n",
-                msg, (unsigned long)count, (unsigned long)size);
-    
-    while ((mem = calloc(count, size)) == NULL) {
-        errlogPrintf("%s: callocMustSucceed(%lu, %lu) - calloc failed\n",
-                msg, (unsigned long)count, (unsigned long)size);
-        errlogPrintf("Thread %s (%p) suspending.\n",
-                epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
-        errlogFlush();
-        epicsThreadSuspendSelf();
+    if (count > 0 && size > 0) {
+        while ((mem = calloc(count, size)) == NULL) {
+            errlogPrintf("%s: callocMustSucceed(%lu, %lu) - calloc failed\n",
+                    msg, (unsigned long)count, (unsigned long)size);
+            errlogPrintf("Thread %s (%p) suspending.\n",
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+            errlogFlush();
+            epicsThreadSuspendSelf();
+        }
     }
     return mem;
 }
@@ -41,17 +39,15 @@ epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *m
 epicsShareFunc void * mallocMustSucceed(size_t size, const char *msg)
 {
     void * mem = NULL;
-    if (size == 0)
-        cantProceed("%s: mallocMustSucceed(%lu) - bad arg\n",
+    if (size > 0) {
+        while ((mem = malloc(size)) == NULL) {
+            errlogPrintf("%s: mallocMustSucceed(%lu) - malloc failed\n",
                 msg, (unsigned long)size);
-    
-    while ((mem = malloc(size)) == NULL) {
-        errlogPrintf("%s: mallocMustSucceed(%lu) - malloc failed\n",
-            msg, (unsigned long)size);
-        errlogPrintf("Thread %s (%p) suspending.\n",
-                epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
-        errlogFlush();
-        epicsThreadSuspendSelf();
+            errlogPrintf("Thread %s (%p) suspending.\n",
+                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+            errlogFlush();
+            epicsThreadSuspendSelf();
+        }
     }
     return mem;
 }

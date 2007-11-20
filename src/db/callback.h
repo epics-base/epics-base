@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$ */
@@ -58,12 +57,15 @@ typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 
 epicsShareFunc void epicsShareAPI callbackInit(void);
 epicsShareFunc void epicsShareAPI callbackRequest(CALLBACK *pCallback);
+epicsShareFunc void epicsShareAPI callbackSetProcess(
+    CALLBACK *pcallback, int Priority, void *pRec);
 epicsShareFunc void epicsShareAPI callbackRequestProcessCallback(
     CALLBACK *pCallback,int Priority, void *pRec);
 epicsShareFunc void epicsShareAPI callbackRequestDelayed(
     CALLBACK *pCallback,double seconds);
+epicsShareFunc void epicsShareAPI callbackCancelDelayed(CALLBACK *pcallback);
 epicsShareFunc void epicsShareAPI callbackRequestProcessCallbackDelayed(
-    CALLBACK *pCallback, int Priority, void *pRec,double seconds);
+    CALLBACK *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int epicsShareAPI callbackSetQueueSize(int size);
 
 #ifdef __cplusplus

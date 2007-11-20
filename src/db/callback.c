@@ -1,14 +1,12 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* callback.c */
-/* share/src/db  @(#)callback.c	1.7  9/14/93 */
 
 /* general purpose callback tasks		*/
 /*
@@ -175,12 +173,19 @@ static void ProcessCallback(CALLBACK *pcallback)
     (*pRec->rset->process)(pRec);
     dbScanUnlock(pRec);
 }
-void epicsShareAPI callbackRequestProcessCallback(CALLBACK *pcallback,
+
+void epicsShareAPI callbackSetProcess(CALLBACK *pcallback,
 	int Priority, void *pRec)
 {
     callbackSetCallback(ProcessCallback, pcallback);
     callbackSetPriority(Priority, pcallback);
     callbackSetUser(pRec, pcallback);
+}
+
+void epicsShareAPI callbackRequestProcessCallback(CALLBACK *pcallback,
+	int Priority, void *pRec)
+{
+    callbackSetProcess(pcallback, Priority, pRec);
     callbackRequest(pcallback);
 }
 
@@ -201,11 +206,18 @@ void epicsShareAPI callbackRequestDelayed(CALLBACK *pcallback,double seconds)
     epicsTimerStartDelay(timer,seconds);
 }
 
+void epicsShareAPI callbackCancelDelayed(CALLBACK *pcallback)
+{
+    epicsTimerId timer = (epicsTimerId)pcallback->timer;
+
+    if (timer!=0) {
+        epicsTimerCancel(timer);
+    }
+}
+
 void epicsShareAPI callbackRequestProcessCallbackDelayed(CALLBACK *pcallback,
     int Priority, void *pRec,double seconds)
 {
-    callbackSetCallback(ProcessCallback, pcallback);
-    callbackSetPriority(Priority, pcallback);
-    callbackSetUser(pRec, pcallback);
+    callbackSetProcess(pcallback, Priority, pRec);
     callbackRequestDelayed(pcallback,seconds);
 }

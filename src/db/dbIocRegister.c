@@ -213,6 +213,10 @@ static const iocshFuncDef dbtpnFuncDef = {"dbtpn",2,dbtpnArgs};
 static void dbtpnCallFunc(const iocshArgBuf *args)
 { dbtpn(args[0].sval,args[1].sval);}
 
+/* dbNotifyDump */
+static const iocshFuncDef dbNotifyDumpFuncDef = {"dbNotifyDump",0,0};
+static void dbNotifyDumpCallFunc(const iocshArgBuf *args) { dbNotifyDump();}
+
 /* tpn */
 static const iocshArg tpnArg0 = { "record name",iocshArgString};
 static const iocshArg tpnArg1 = { "value",iocshArgString};
@@ -309,6 +313,7 @@ void epicsShareAPI dbIocRegister(void)
     iocshRegister(&gftFuncDef,gftCallFunc);
     iocshRegister(&pftFuncDef,pftCallFunc);
     iocshRegister(&dbtpnFuncDef,dbtpnCallFunc);
+    iocshRegister(&dbNotifyDumpFuncDef,dbNotifyDumpCallFunc);
     iocshRegister(&tpnFuncDef,tpnCallFunc);
     iocshRegister(&dblsrFuncDef,dblsrCallFunc);
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);

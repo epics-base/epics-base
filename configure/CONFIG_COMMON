@@ -84,7 +84,7 @@ SHRLIB_SEARCH_DIRS          = $(INSTALL_LIB)
 #-------------------------------------------------------
 # Ext, app, and module configure dir targets
 CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
-CONFIG_INSTALLS += ../RULES_BUILD
+CONFIG_INSTALLS += ../RULES_BUILD ../RELEASE*
 
 #-------------------------------------------------------
 # Cross compile default, HOST or CROSS, CONFIG.crossCommon will override

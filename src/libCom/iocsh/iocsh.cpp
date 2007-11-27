@@ -139,17 +139,18 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef, iocshCallFu
 }
 
 /*
- * Register variable(s)
+ * Register the "var" command and any variable(s)
  */
+static const iocshArg varCmdArg0 = { "[variable", iocshArgString};
+static const iocshArg varCmdArg1 = { "[value]]", iocshArgString};
+static const iocshArg *varCmdArgs[2] = {&varCmdArg0, &varCmdArg1};
+static const iocshFuncDef varFuncDef = {"var", 2, varCmdArgs};
+
 void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 {
     struct iocshVariable *l, *p, *n;
     int i;
     int found;
-    static const iocshArg varArg0 = { "[variable",iocshArgString};
-    static const iocshArg varArg1 = { "[value]]",iocshArgString};
-    static const iocshArg *varArgs[2] = {&varArg0, &varArg1};
-    static const iocshFuncDef varFuncDef = {"var",2,varArgs};
 
     iocshTableLock ();
     while ((piocshVarDef != NULL)

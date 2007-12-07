@@ -32,7 +32,7 @@ my %output;
 my @includes;
 
 use vars qw( $opt_d $opt_m );
-getopts( 'dm:' ) || die "\aSyntax: $0 [-d] [-f dependsFile] includeDirs objFile srcFile\n";
+getopts( 'dm:' ) || die "\aSyntax: $0 [-d] [-m dependsFile] includeDirs objFile srcFile\n";
 my $debug = $opt_d;
 my $depFile = $opt_m;
 

@@ -13,6 +13,16 @@
 
 <!-- Insert new items below here ... -->
 
+<h4>Access security configuration files</h4>
+
+<p>Rules and macros were added for creating an *.acf file, access security 
+configuration file, from an *.acs file using the C preprocessor. 
+An .acs file has the same format as an .acf file with the addition of
+'#include "&lt;filename&gt;"' and '#define &lt;macroname&gt; &lt;value&gt;'
+lines.  The C preprocessor includes the #include files and performs the 
+macro substitutions.
+</p>
+
 <h4>Changes to subArray record error behaviour</h4>
 
 <p>In previous versions the INDX field of a subArray record was set to zero if

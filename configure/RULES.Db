@@ -17,6 +17,8 @@ vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB))
 vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath %.acf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbdflags
 
@@ -24,7 +26,6 @@ vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 INSTALL_DBDFLAGS += -I $(INSTALL_LOCATION)/dbd
 DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
 DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. $(SRC_INCLUDES)
-DBFLAGS += -I$(COMMON_DIR)
 
 #####################################################  Targets
 
@@ -69,6 +70,19 @@ RAW=.raw
 COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB)))
 COMMON_DBS += $(addsuffix $(RAW),$(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB))))
 endif
+
+#####################################################  acf files
+# An access security configuration file, *.acf, can be created from
+# an *.acs file (has format of acf file plus #include "filename" lines)
+
+# flags for GNU compiler
+ACF_CPPFLAGS_YES = -undef -nostdinc
+ACF_CPPFLAGS = $(ACF_CPPFLAGS_$(GNU))
+
+ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
+                $(SRC_INCLUDES) -I$(INSTALL_DB)
+ACFDEPENDS_CMD = -$(MKMF) -m $@$(DEP) $(subst -I,,$(ACF_INCLUDES)) $@ $<
+ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
 
@@ -217,7 +231,7 @@ $(COMMON_DIR)/%Include.dbd:
 	$(PERL) $(TOOLS)/makeIncludeDbd.pl $($*_DBD) $@
 
 $(INSTALL_DBD)/%: $(COMMON_DIR)/%
-	@echo "Installing dbd file $@"
+	@echo "Installing created dbd file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 $(INSTALL_DBD)/%: %
@@ -262,6 +276,15 @@ $(COMMON_DIR)/%.db$(RAW): %.template
 	$(MSI) $(DBFLAGS)  $< > msi.tmp
 	$(MV) msi.tmp $@
 
+$(COMMON_DIR)/%.acf: %.acs
+	@$(RM) $@$(DEP)
+	@$(ACFDEPENDS_CMD)
+	@echo "Creating acf file $@"
+	@$(RM) $@
+	$(ACF_CMD)
+
+.PRECIOUS: $(COMMON_DIR)/%.acf
+
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 
@@ -284,7 +307,7 @@ $(INSTALL_DB)/%: %
 endif
 
 $(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
-	@echo "Installing db file $@"
+	@echo "Installing created db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
 dbInstalls:  $(DB_INSTALLS)

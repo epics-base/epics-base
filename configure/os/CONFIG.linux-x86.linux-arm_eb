@@ -1,0 +1,9 @@
+# CONFIG.linux-x86.linux-arm_eb
+#
+# Definitions for linux-x86 host - linux-arm_eb (big endian) target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-arm_eb
+#-------------------------------------------------------
+
+# Include definitions for linux-arm targets
+include $(CONFIG)/os/CONFIG.linux-x86.linux-arm
+

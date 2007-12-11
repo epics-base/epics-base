@@ -13,23 +13,10 @@ include $(CONFIG)/os/CONFIG.Common.linuxCommon
 ARCH_CLASS = x86
 
 ARCH_DEP_CPPFLAGS += -D_X86_
+ARCH_DEP_CFLAGS += -m32
+ARCH_DEP_LDFLAGS += -m32
 
-ifeq ($(BUILD_CLASS),CROSS)
-ifeq ($(EPICS_HOST_ARCH),linux-x86)
-   # Added for 386,486,... cross builds
-   CMPLR_PREFIX=
-   CROSS_INCLUDES=
-   CROSS_LDFLAGS=
-   # Use -w not -Wall
-   #WARN_CFLAGS_YES = -w
-   #WARN_CXXFLAGS_YES = -w
--include $(CONFIG)/os/CONFIG_SITE.Common.linux-x86
--include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
--include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-x86
-else
-   GNU_TARGET=i586-pc-linux-gnu
-   CMPLR_SUFFIX=
-   CMPLR_PREFIX=$(addsuffix -,$(GNU_TARGET))
-endif
-endif
+# If your crosscompiler name has a GNU target prefix like <gnutarget>-gcc,
+# e.g. x86-redhat-linux-gcc, put a GNU_TARGET definition in
+# CONFIG_SITE.<host>.linux-x86 file, e.g. GNU_TARGET=x86-redhat-linux
 

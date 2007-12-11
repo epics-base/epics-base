@@ -8,3 +8,8 @@
 # Include definitions for linux-arm targets
 include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-arm
 
+# Path to the GNU toolset for linux-arm_el (little endian) target
+#GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/armel-linux
+
+# GNU crosscompiler target name
+#GNU_TARGET = armel-linux

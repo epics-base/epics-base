@@ -9,7 +9,3 @@
 # Include definitions common to all Linux-arm targets
 include $(CONFIG)/os/CONFIG.Common.linux-arm
 
-ifeq ($(BUILD_CLASS),CROSS)
-    GNU_TARGET = armeb-linux
-endif
-

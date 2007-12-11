@@ -7,3 +7,6 @@
 
 # Path to the GNU toolset for linux-arm_eb (big endian) target
 #GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/armeb-linux
+
+# GNU crosscompiler target name
+#GNU_TARGET = armeb-linux

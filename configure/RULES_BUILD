@@ -100,6 +100,8 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
               $(DLL_LINK_LIBNAME) $(INSTALL_DLL_LINK_LIBS) \
               $(LOADABLE_SHRLIBNAME) $(INSTALL_LOADABLE_SHRLIBS)
 
+$(INSTALL_LIBS): $(INSTALL_SHRLIBS)  $(INSTALL_DLL_LINK_LIBS)  $(INSTALL_LOADABLE_SHRLIBS)
+
 #---------------------------------------------------------------
 ifneq ($(CONFIG),$(TOP)/configure)
 RULES_TOP:=$(INSTALL_LOCATION)

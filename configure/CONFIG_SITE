@@ -174,3 +174,7 @@ USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
 #  EPICS version number string that is reported by many tools
 EPICS_SITE_VERSION =
 
+# For GNU compiler, use pipes rather than temporary files for communication 
+# between the various stages of compilation.
+GCC_PIPE = NO
+

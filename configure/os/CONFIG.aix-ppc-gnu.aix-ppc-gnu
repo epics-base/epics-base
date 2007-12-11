@@ -1,8 +1,8 @@
-#  CONFIG.aix-ppc.aix-ppc
+#  CONFIG.aix-ppc-gnu.aix-ppc-gnu
 #
 #
-# Definitions for aix-ppc host - aix-ppc target builds
-# Sites may override these definitions in CONFIG_SITE.aix-ppc.aix-ppc
+# Definitions for aix-ppc-gnu host - aix-ppc-gnu target builds
+# Sites may override these definitions in CONFIG_SITE.aix-ppc-gnu.aix-ppc-gnu
 #-------------------------------------------------------
 
 # Include common gnu compiler definitions
@@ -13,7 +13,4 @@ GNU_DIR = /usr/common/usg/gcc/3.2.1
 AR = ar
 ARFLAGS = rcv
 RANLIB = ranlib -t
-
-SHRLIB_LDFLAGS = -shared  -fPIC
-LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
 

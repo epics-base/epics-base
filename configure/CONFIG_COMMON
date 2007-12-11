@@ -48,6 +48,12 @@ CHECK_RELEASE_NO =
 CHECK_RELEASE_WARN = warnRelease
 
 #-------------------------------------------------------
+# GNU directory
+# GNU_DIR definition is here because it is used to find
+# READLINE library even if GNU compiler is not used
+GNU_DIR = /usr
+
+#-------------------------------------------------------
 # Directories
 
 INSTALL_LOCATION            = $(TOP)

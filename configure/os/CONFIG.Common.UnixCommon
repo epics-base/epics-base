@@ -13,10 +13,6 @@
 VALID_BUILDS = Host Ioc
 
 #-------------------------------------------------------
-# Gnu directory
-GNU_DIR = /usr/local
-
-#-------------------------------------------------------
 # Unix prefix and suffix definitions
 EXE =
 OBJ = .o

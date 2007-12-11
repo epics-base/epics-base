@@ -21,6 +21,8 @@ RANLIB = ranlib
 
 # Avoid "position-independent code is always generated" message
 SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS = -shared
+LOADABLE_SHRLIB_LDFLAGS = -shared
 
 # Dont use -ansi option:  eliminates strdup and _tempnam
 CONFORM_CFLAGS_ANSI =

@@ -9,6 +9,10 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS =
+LOADABLE_SHRLIB_LDFLAGS =
+GPROF=NO
+PROFILE=NO
 
 GNU_DIR = /usr
 

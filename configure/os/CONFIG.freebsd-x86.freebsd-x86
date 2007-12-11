@@ -1,19 +1,14 @@
 # $Id$
 #
-# Definitions for freebsd-x86_64 host - freebsd-x86_64 target builds
-# Sites may override these definitions in CONFIG_SITE.freebsd-x86_64.freebsd-x86_64
+# Definitions for freebsd-x86 host - freebsd-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.freebsd-x86.freebsd-x86
 #-------------------------------------------------------
 
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-GNU_DIR = /usr
-
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
 STATIC_LDLIBS_NO=
-
-SHRLIB_LDFLAGS +=  -shared -fPIC
-LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
 

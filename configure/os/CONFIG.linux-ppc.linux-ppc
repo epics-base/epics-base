@@ -8,13 +8,3 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-GNU_DIR = /usr
-
-CC = $(GNU_BIN)/gcc
-CCC = $(GNU_BIN)/g++
-
-SHRLIB_LDFLAGS = -shared -fPIC
-LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
-
-GNU_LDLIBS_YES = -lgcc
-

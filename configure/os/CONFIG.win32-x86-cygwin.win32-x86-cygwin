@@ -19,6 +19,8 @@ RANLIB = ranlib
 # Dont use -fPIC: with -fPIC we get 
 # "warning: -fPIC ignored for target (all code is position independent) "
 SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS = -shared
+LOADABLE_SHRLIB_LDFLAGS = -shared
 
 # Dont use -ansi: -ansi eliminates strdup and _tempnam
 CONFORM_CFLAGS_ANSI =

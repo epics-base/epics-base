@@ -5,13 +5,4 @@
 # Site specific definitions for linux-x86_64 host - linux-x86_64 target builds
 #-------------------------------------------------------
 
-# -z defs causes problems for Linux
-#The -z defs option causes the linker to not ignore
-# unresolved references when building a shared library
-# Forces a fatal error if any undefined symbols remain 
-# at the end of the link
-# So we will override the definition of SHRLIB_LDFLAGS
-# in "CONFIG.linux-x86_64.linux-x86_64"
-
-SHRLIB_LDFLAGS= -shared
 

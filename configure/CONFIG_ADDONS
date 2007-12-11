@@ -175,8 +175,6 @@ LIB_LDFLAGS+=$(LIB_LDFLAGS_DEFAULT)
 endif
 endif
 
-#	concat specific library contents (if defined)
-#
 ifneq ($(strip $(LIBSRCS_$(OS_CLASS))),)
 LIBSRCS += $(subst -nil-,,$(LIBSRCS_$(OS_CLASS)))
 else
@@ -375,6 +373,17 @@ USR_LIBS += $(subst -nil-,,$(USR_LIBS_$(OS_CLASS)))
 else
 ifdef USR_LIBS_DEFAULT
 USR_LIBS += $(USR_LIBS_DEFAULT)
+endif
+endif
+
+#
+#	concat specific include files
+#
+ifneq ($(strip $(INC_$(OS_CLASS))),)
+INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
+else
+ifdef INC_DEFAULT
+INC+=$(INC_DEFAULT)
 endif
 endif
 

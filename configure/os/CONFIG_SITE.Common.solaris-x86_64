@@ -6,6 +6,6 @@
 # Only the local epics system manager should modify this file
 
 # Include definitions common to all solaris-x86_64 target archs
-include $(CONFIG)/os/CONFIG_SITE.Common.solaris-x86
+-include $(CONFIG)/os/CONFIG_SITE.Common.solaris-x86
 
 COMMANDLINE_LIBRARY = EPICS

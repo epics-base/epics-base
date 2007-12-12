@@ -5,6 +5,3 @@ $
 # Site Specific configure override definitions
 # Only the local epics system manager should modify this file
  
-CC = $(GNU_BIN)/$(CMPLR_PREFIX)gcc$(CMPLR_SUFFIX)
-CCC = $(GNU_BIN)/$(CMPLR_PREFIX)g++$(CMPLR_SUFFIX)
-

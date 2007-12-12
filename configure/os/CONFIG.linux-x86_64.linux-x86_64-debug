@@ -7,7 +7,9 @@
 # Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86-debug
 #-------------------------------------------------------
 
-include $(CONFIG)/os/CONFIG.linux-x86-debug.linux-x86-debug
+include $(CONFIG)/os/CONFIG.linux-x86_64.linux-x86_64
 
-BUILD_CLASS = HOST
+# This will cause build failure when used with make -j option
+# See base/src/bpt MAKEBPT
+#BUILD_CLASS = HOST
 

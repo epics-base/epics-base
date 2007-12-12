@@ -20,10 +20,10 @@ LD = ld -r
 #######RANLIB = ranlib   # ranlib exists but is not found ???
 RANLIB =
 
-# Avoid position-independent code is always generated message
+# Avoid 'position-independent code is always generated' message
 SHRLIB_CFLAGS =
-SHRLIB_LDFLAGS = -shared -fPIC
-LOADABLE_SHRLIB_LDFLAGS = -shared -fPIC
+SHRLIB_LDFLAGS = -shared
+LOADABLE_SHRLIB_LDFLAGS = -shared
 
 # -ansi eliminates strdup
 #CONFORM_CFLAGS_ANSI = 

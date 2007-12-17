@@ -7,6 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+#include <rtems.h>
 #include <rtems/libcsupport.h>
 
 #define epicsExportSharedSymbols

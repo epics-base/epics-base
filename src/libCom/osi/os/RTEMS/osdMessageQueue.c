@@ -88,9 +88,6 @@ static rtems_status_code rtems_message_queue_send_timeout(
   the_message_queue = _Message_queue_Get( id, &location );
   switch ( location )
   {
-    case OBJECTS_REMOTE:
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-
     case OBJECTS_ERROR:
       return RTEMS_INVALID_ID;
 

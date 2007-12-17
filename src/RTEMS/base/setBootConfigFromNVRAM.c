@@ -190,28 +190,28 @@ setBootConfigFromNVRAM(void)
  * Motorola PPCBUG NVRAM Access
  */
 struct ppcbug_nvram {
-    rtems_unsigned32    PacketVersionIdentifier;
-    rtems_unsigned32    NodeControlMemoryAddress;
-    rtems_unsigned32    BootFileLoadAddress;
-    rtems_unsigned32    BootFileExecutionAddress;
-    rtems_unsigned32    BootFileExecutionDelay;
-    rtems_unsigned32    BootFileLength;
-    rtems_unsigned32    BootFileByteOffset;
-    rtems_unsigned32    TraceBufferAddress;
-    rtems_unsigned32    ClientIPAddress;
-    rtems_unsigned32    ServerIPAddress;
-    rtems_unsigned32    SubnetIPAddressMask;
-    rtems_unsigned32    BroadcastIPAddressMask;
-    rtems_unsigned32    GatewayIPAddress;
-    rtems_unsigned8     BootpRarpRetry;
-    rtems_unsigned8     TftpRarpRetry;
-    rtems_unsigned8     BootpRarpControl;
-    rtems_unsigned8     UpdateControl;
+    uint32_t    PacketVersionIdentifier;
+    uint32_t    NodeControlMemoryAddress;
+    uint32_t    BootFileLoadAddress;
+    uint32_t    BootFileExecutionAddress;
+    uint32_t    BootFileExecutionDelay;
+    uint32_t    BootFileLength;
+    uint32_t    BootFileByteOffset;
+    uint32_t    TraceBufferAddress;
+    uint32_t    ClientIPAddress;
+    uint32_t    ServerIPAddress;
+    uint32_t    SubnetIPAddressMask;
+    uint32_t    BroadcastIPAddressMask;
+    uint32_t    GatewayIPAddress;
+    uint8_t     BootpRarpRetry;
+    uint8_t     TftpRarpRetry;
+    uint8_t     BootpRarpControl;
+    uint8_t     UpdateControl;
     char                BootFilenameString[64];
     char                ArgumentFilenameString[64];
 };
 
-static char *addr(char *cbuf, rtems_unsigned32 addr)
+static char *addr(char *cbuf, uint32_t addr)
 {
     struct in_addr a;
     if ((a.s_addr = addr) == 0)

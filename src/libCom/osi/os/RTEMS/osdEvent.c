@@ -131,7 +131,7 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
 {
     rtems_id sid = (rtems_id)id;
     rtems_status_code sc;
-    rtems_unsigned32 wait;
+    uint32_t wait;
     rtems_interval delay;
     extern double rtemsTicksPerSecond_double;
     

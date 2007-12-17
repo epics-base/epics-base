@@ -78,7 +78,7 @@ epicsMessageQueueCreate(unsigned int capacity, unsigned int maximumMessageSize)
 static rtems_status_code rtems_message_queue_send_timeout(
     rtems_id id,
     void *buffer,
-    rtems_unsigned32 size,
+    uint32_t size,
     rtems_interval timeout)
 {
   Message_queue_Control    *the_message_queue;
@@ -158,11 +158,11 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueSendWithTimeout(
 static int receiveMessage(
     epicsMessageQueueId id,
     void *buffer,
-    rtems_unsigned32 size,
-    rtems_unsigned32 wait,
+    uint32_t size,
+    uint32_t wait,
     rtems_interval delay)
 {
-    rtems_unsigned32 rsize;
+    uint32_t rsize;
     rtems_status_code sc;
     
     if (size < id->maxSize) {
@@ -207,7 +207,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
     double timeout)
 {
     rtems_interval delay;
-    rtems_unsigned32 wait;
+    uint32_t wait;
     extern double rtemsTicksPerSecond_double;
     
     /*
@@ -229,7 +229,7 @@ epicsShareFunc int epicsShareAPI epicsMessageQueueReceiveWithTimeout(
 epicsShareFunc int epicsShareAPI epicsMessageQueuePending(
             epicsMessageQueueId id)
 {
-    rtems_unsigned32 count;
+    uint32_t count;
     rtems_status_code sc;
     
     sc = rtems_message_queue_get_number_pending(id->id, &count);

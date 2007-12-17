@@ -192,7 +192,7 @@ static void
 setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm)
 {
     struct taskVar *v;
-    rtems_unsigned32 note;
+    uint32_t note;
     rtems_status_code sc;
 
     v = mallocMustSucceed (sizeof *v, "epicsThreadCreate_vars");
@@ -202,7 +202,7 @@ setThreadInfo (rtems_id tid, const char *name, EPICSTHREADFUNC funptr,void *parm
     v->parm = parm;
     v->threadVariableCapacity = 0;
     v->threadVariables = NULL;
-    note = (rtems_unsigned32)v;
+    note = (uint32_t)v;
     rtems_task_set_note (tid, RTEMS_NOTEPAD_TASKVAR, note);
     taskVarLock ();
     v->forw = taskVarHead;
@@ -391,7 +391,7 @@ epicsThreadGetIdSelf (void)
 
 const char *epicsThreadGetNameSelf(void)
 {
-    rtems_unsigned32 note;
+    uint32_t note;
     struct taskVar *v;
 
     rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);
@@ -505,7 +505,7 @@ void epicsThreadPrivateDelete (epicsThreadPrivateId id)
 void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
 {
     unsigned int varIndex = (unsigned int)id;
-    rtems_unsigned32 note;
+    uint32_t note;
     struct taskVar *v;
     int i;
 
@@ -525,7 +525,7 @@ void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
 void * epicsThreadPrivateGet (epicsThreadPrivateId id)
 {
     unsigned int varIndex = (unsigned int)id;
-    rtems_unsigned32 note;
+    uint32_t note;
     struct taskVar *v;
 
     rtems_task_get_note (RTEMS_SELF, RTEMS_NOTEPAD_TASKVAR, &note);

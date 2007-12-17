@@ -65,7 +65,7 @@ void
 InterruptContextMessageDaemon (void *unused)
 {
     const char *message;
-    rtems_unsigned32 size;
+    uint32_t size;
     rtems_status_code sc;
 
     sc = rtems_message_queue_create (rtems_build_name ('I', 'C', 'M', 'Q'),
@@ -90,6 +90,6 @@ InterruptContextMessageDaemon (void *unused)
         if (size == sizeof message)
             syslog (LOG_ERR, "%s", message);
 	else
-            errlogPrintf ("Received %d-byte message from interrupt context", size);
+            errlogPrintf ("Received %u-byte message from interrupt context", (unsigned int)size);
     }
 }

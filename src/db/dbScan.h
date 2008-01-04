@@ -13,8 +13,8 @@
  *      Date:           07-17-91
  */
 
-#ifndef INCdbScanh
-#define INCdbScanh 1
+#ifndef INCdbScanH
+#define INCdbScanH
 
 #include "shareLib.h"
 
@@ -29,7 +29,9 @@ extern "C" {
 #define SCAN_1ST_PERIODIC	3
 
 /*definitions for SCAN_IO_EVENT */
-typedef void * IOSCANPVT;
+struct io_scan_list;
+
+typedef struct io_scan_list *IOSCANPVT;
 
 struct dbCommon;
 
@@ -38,7 +40,7 @@ epicsShareFunc void epicsShareAPI post_event(int event);
 epicsShareFunc void epicsShareAPI scanAdd(struct dbCommon *);
 epicsShareFunc void epicsShareAPI scanDelete(struct dbCommon *);
 epicsShareFunc double epicsShareAPI scanPeriod(int scan);
-epicsShareFunc void epicsShareAPI scanOnce(void *precord);
+epicsShareFunc void epicsShareAPI scanOnce(struct dbCommon *);
 epicsShareFunc int epicsShareAPI scanOnceSetQueueSize(int size);
 /*print periodic lists*/
 epicsShareFunc int epicsShareAPI scanppl(double rate);

@@ -172,7 +172,7 @@ static int
 
     *ppel = NULL;
 
-    while (isspace(**ppsrc)) ++*ppsrc;
+    while (isspace((int) (unsigned char) **ppsrc)) ++*ppsrc;
     if (**ppsrc == '\0') return FALSE;
 
     if (opnd) {

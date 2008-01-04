@@ -15,6 +15,7 @@ VXWORKS_VERSION = 5.4
 #VXWORKS_VERSION = 6.1
 #VXWORKS_VERSION = 6.2
 #VXWORKS_VERSION = 6.3
+#VXWORKS_VERSION = 6.4
 
 
 # Sites may override the following path for a particular host

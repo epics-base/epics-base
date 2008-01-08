@@ -156,7 +156,7 @@ setBootConfigFromNVRAM(void)
 # else
     char gev_buf[3592];
     int fd;
-    if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME)) < 0) {
+    if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME, 0)) < 0) {
         printf("Can't open %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
         return;
     }

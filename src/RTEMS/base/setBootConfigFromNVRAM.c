@@ -160,7 +160,7 @@ setBootConfigFromNVRAM(void)
         printf("Can't open %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
         return;
     }
-    /*lseek(fd, <start_of_gev_area>, SEEK_SET);*/
+    lseek(fd, 0x10f8, SEEK_SET);
     if (read(fd, gev_buf, sizeof gev_buf) != sizeof gev_buf) {
         printf("Can't read %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
         return;

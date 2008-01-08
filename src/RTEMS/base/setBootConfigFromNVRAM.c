@@ -79,17 +79,13 @@ splitNfsMountPath(char *nfsString)
 }
 
 #if defined(HAVE_MOTLOAD)
-# if !defined(BSP_NVRAM_BASE_ADDR)
-# define BSP_NVRAM_BASE_ADDR            (0xf1110000)
-# endif
 
 /*
  * Motorola MOTLOAD NVRAM Access
  */
 static char *
-gev(const char *parm)
+gev(const char *parm, volatile char *nvp)
 {
-    volatile char *nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
     const char *val;
     const char *name;
     char *ret;
@@ -152,6 +148,25 @@ setBootConfigFromNVRAM(void)
 {
     char *cp;
     const char *mot_script_boot;
+    char *nvp;
+
+# if defined(BSP_NVRAM_BASE_ADDR)
+    nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
+# else
+    char gev_buf[3592];
+    int fd;
+    if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME)) < 0) {
+        printf("Can't open %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
+        return;
+    }
+    /*lseek(fd, <start_of_gev_area>, SEEK_SET);*/
+    if (read(fd, gev_buf, sizeof gev_buf) != sizeof gev_buf) {
+        printf("Can't read %s: %s\n", BSP_I2C_VPD_EEPROM_DEV_NAME, strerror(errno));
+        return;
+    }
+    close(fd);
+    nvp = gev_buf;
+# endif
 
     if (rtems_bsdnet_config.bootp != NULL)
         return;

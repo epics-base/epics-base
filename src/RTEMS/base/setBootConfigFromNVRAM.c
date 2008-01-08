@@ -6,6 +6,7 @@
 #include <bsp.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <epicsStdlib.h>
 #include <epicsStdio.h>
 #include <epicsString.h>

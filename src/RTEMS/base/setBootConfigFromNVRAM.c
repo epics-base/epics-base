@@ -79,6 +79,10 @@ splitNfsMountPath(char *nfsString)
 }
 
 #if defined(HAVE_MOTLOAD)
+# if !defined(BSP_NVRAM_BASE_ADDR)
+# define BSP_NVRAM_BASE_ADDR            (0xf1110000)
+# endif
+
 /*
  * Motorola MOTLOAD NVRAM Access
  */

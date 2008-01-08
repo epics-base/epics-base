@@ -153,7 +153,7 @@ setBootConfigFromNVRAM(void)
 
 # if defined(BSP_NVRAM_BASE_ADDR)
     nvp = (volatile unsigned char *)(BSP_NVRAM_BASE_ADDR+0x70f8);
-# else
+# elif defined(BSP_I2C_VPD_EEPROM_DEV_NAME)
     char gev_buf[3592];
     int fd;
     if ((fd = open(BSP_I2C_VPD_EEPROM_DEV_NAME, 0)) < 0) {
@@ -167,6 +167,8 @@ setBootConfigFromNVRAM(void)
     }
     close(fd);
     nvp = gev_buf;
+# else
+#  error "No way to read GEV!"
 # endif
 
     if (rtems_bsdnet_config.bootp != NULL)

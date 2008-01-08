@@ -170,37 +170,37 @@ setBootConfigFromNVRAM(void)
 
     if (rtems_bsdnet_config.bootp != NULL)
         return;
-    mot_script_boot = gev("mot-script-boot");
-    if ((rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa")) == NULL)
+    mot_script_boot = gev("mot-script-boot", nvp);
+    if ((rtems_bsdnet_bootp_server_name = gev("mot-/dev/enet0-sipa", nvp)) == NULL)
         rtems_bsdnet_bootp_server_name = motScriptParm(mot_script_boot, 's');
-    if ((rtems_bsdnet_config.gateway = gev("mot-/dev/enet0-gipa")) == NULL)
+    if ((rtems_bsdnet_config.gateway = gev("mot-/dev/enet0-gipa", nvp)) == NULL)
         rtems_bsdnet_config.gateway = motScriptParm(mot_script_boot, 'g');
-    if  ((rtems_bsdnet_config.ifconfig->ip_netmask = gev("mot-/dev/enet0-snma")) == NULL)
+    if  ((rtems_bsdnet_config.ifconfig->ip_netmask = gev("mot-/dev/enet0-snma", nvp)) == NULL)
         rtems_bsdnet_config.ifconfig->ip_netmask = motScriptParm(mot_script_boot, 'm');
 
-    rtems_bsdnet_config.name_server[0] = gev("rtems-dns-server");
+    rtems_bsdnet_config.name_server[0] = gev("rtems-dns-server", nvp);
     if (rtems_bsdnet_config.name_server[0] == NULL)
         rtems_bsdnet_config.name_server[0] = rtems_bsdnet_bootp_server_name;
-    cp = gev("rtems-dns-domainname");
+    cp = gev("rtems-dns-domainname", nvp);
     if (cp)
         rtems_bsdnet_config.domainname = cp;
 
-    if ((rtems_bsdnet_config.ifconfig->ip_address = gev("mot-/dev/enet0-cipa")) == NULL)
+    if ((rtems_bsdnet_config.ifconfig->ip_address = gev("mot-/dev/enet0-cipa", nvp)) == NULL)
         rtems_bsdnet_config.ifconfig->ip_address = motScriptParm(mot_script_boot, 'c');
-    rtems_bsdnet_config.hostname = gev("rtems-client-name");
+    rtems_bsdnet_config.hostname = gev("rtems-client-name", nvp);
     if (rtems_bsdnet_config.hostname == NULL)
         rtems_bsdnet_config.hostname = rtems_bsdnet_config.ifconfig->ip_address;
 
-    if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file")) == NULL)
+    if ((rtems_bsdnet_bootp_boot_file_name = gev("mot-/dev/enet0-file", nvp)) == NULL)
         rtems_bsdnet_bootp_boot_file_name = motScriptParm(mot_script_boot, 'f');
-    rtems_bsdnet_bootp_cmdline = gev("epics-script");
+    rtems_bsdnet_bootp_cmdline = gev("epics-script", nvp);
     splitRtemsBsdnetBootpCmdline();
-    splitNfsMountPath(gev("epics-nfsmount"));
-    rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver");
+    splitNfsMountPath(gev("epics-nfsmount", nvp));
+    rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver", nvp);
     if (rtems_bsdnet_config.ntp_server[0] == NULL)
         rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
     epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
-    if ((cp = gev("epics-tz")) != NULL)
+    if ((cp = gev("epics-tz", nvp)) != NULL)
         epicsEnvSet("TZ", cp);
 }
 

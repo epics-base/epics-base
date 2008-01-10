@@ -310,12 +310,6 @@ static void netStatCallFunc(const iocshArgBuf *args)
     rtems_netstat(args[0].ival);
 }
 
-static const iocshFuncDef stackCheckFuncDef = {"stackCheck",0,NULL};
-static void stackCheckCallFunc(const iocshArgBuf *args)
-{
-    Stack_check_Dump_usage();
-}
-
 static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
 static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
@@ -360,7 +354,6 @@ static void nfsMountCallFunc(const iocshArgBuf *args)
 static void iocshRegisterRTEMS (void)
 {
     iocshRegister(&netStatFuncDef, netStatCallFunc);
-    iocshRegister(&stackCheckFuncDef, stackCheckCallFunc);
     iocshRegister(&heapSpaceFuncDef, heapSpaceCallFunc);
 #ifndef OMIT_NFS_SUPPORT
     iocshRegister(&nfsMountFuncDef, nfsMountCallFunc);

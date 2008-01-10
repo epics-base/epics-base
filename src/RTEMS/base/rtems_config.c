@@ -19,7 +19,6 @@
  *                         RTEMS CONFIGURATION                         *
  ***********************************************************************
  */
-/* #define STACK_CHECKER_ON                1 */
 
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 

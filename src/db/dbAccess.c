@@ -354,15 +354,15 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	    pbuffer += dbr_precision_size;
 	}
 	if( (*options) & DBR_TIME ) {
-	    unsigned long *pulong = (unsigned long *)pbuffer;
+	    epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
 	    if(pfl!=NULL) {
-		*pulong++ = pfl->time.secPastEpoch;
-		*pulong++ = pfl->time.nsec;
+		*ptime++ = pfl->time.secPastEpoch;
+		*ptime++ = pfl->time.nsec;
 	    } else {
-		*pulong++ = pcommon->time.secPastEpoch;
-		*pulong++ = pcommon->time.nsec;
+		*ptime++ = pcommon->time.secPastEpoch;
+		*ptime++ = pcommon->time.nsec;
 	    }
-	    pbuffer = (char *)pulong;
+	    pbuffer = (char *)ptime;
 	}
 	if( (*options) & DBR_ENUM_STRS )
 	    get_enum_strs(paddr, &pbuffer, prset, options);

@@ -49,13 +49,13 @@ static const unsigned nSecPerUSec = 1000u;
 static const unsigned nSecPerSec = nSecPerUSec * uSecPerSec;
 static const unsigned nSecFracDigits = 9u;
 
-static const unsigned tmEpochYear = 1900;
-static const unsigned ansiEpochYear = 1970;
-static const unsigned epicsEpochYear = 1990;
 
-static const unsigned epochMonth = 0;           // January
-static const unsigned epochDayOfTheMonth = 1;   // the 1st
+// Timescale conversion data
 
+static const unsigned int  POSIX_TIME_AT_EPICS_EPOCH = 631152000u;
+static const unsigned long NTP_TIME_AT_POSIX_EPOCH = 2208988800ul;
+static const unsigned long NTP_TIME_AT_EPICS_EPOCH =
+    NTP_TIME_AT_POSIX_EPOCH + POSIX_TIME_AT_EPICS_EPOCH;
 
 //
 // epicsTime (const unsigned long secIn, const unsigned long nSecIn)
@@ -87,32 +87,9 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
     time_t t_one  = static_cast<time_t> (1);
     this->time_tSecPerTick = difftime (t_one, t_zero);
 
-    /* We calculate the difference in seconds between the ANSI and EPICS
-     * epochs (1970-1-1, 1990-1-1).  However mktime() takes a local time
-     * and adds a timezone-specified Daylight Savings Time offset to the
-     * result it returns.  Luckily we only need the time difference in
-     * seconds between the two epochs, so the two DST corrections cancel
-     * each other out.  We offset the local time used by 12 hours so the
-     * ANSI result can never go negative whatever timezone we're in.
-     */
-
-    struct tm tmEpoch;
-    tmEpoch.tm_sec = 0;
-    tmEpoch.tm_min = 0;
-    tmEpoch.tm_hour = 12;
-    tmEpoch.tm_mday = epochDayOfTheMonth;
-    tmEpoch.tm_mon = epochMonth;
-    tmEpoch.tm_isdst = 0;
-
-    tmEpoch.tm_year = ansiEpochYear - tmEpochYear;
-    time_t ansiEpoch = mktime(&tmEpoch);
-    assert(ansiEpoch != (time_t) -1);
-
-    tmEpoch.tm_year = epicsEpochYear - tmEpochYear;
-    time_t epicsEpoch = mktime(&tmEpoch);
-    assert(epicsEpoch != (time_t) -1);
-
-    this->epicsEpochOffset = difftime (epicsEpoch, ansiEpoch);
+    /* Convert our epoch offset into time_t units */
+    this->epicsEpochOffset =
+        (double) POSIX_TIME_AT_EPICS_EPOCH / this->time_tSecPerTick;
 
     if (this->time_tSecPerTick == 1.0 &&
         this->epicsEpochOffset <= ULONG_MAX &&
@@ -379,10 +356,8 @@ epicsTime::epicsTime (const struct timeval &ts)
     this->addNanoSec (ts.tv_usec * nSecPerUSec);
 }
 
-// 631152000 (at posix epic) + 2272060800 (btw posix and epics epoch) +
-// 15 ( leap seconds )
-static const unsigned long epicsEpocSecsPastEpochNTP = 2903212815u;
-static const double NTP_FRACTION_DENOMINATOR = (static_cast<double>(0xffffffff) + 1.0);
+
+static const double NTP_FRACTION_DENOMINATOR = 1.0 + 0xffffffff;
 
 struct l_fp { /* NTP time stamp */
     epicsUInt32 l_ui; /* sec past NTP epoch */
@@ -395,7 +370,7 @@ struct l_fp { /* NTP time stamp */
 epicsTime::operator l_fp () const
 {
     l_fp ts;
-    ts.l_ui = this->secPastEpoch + epicsEpocSecsPastEpochNTP;
+    ts.l_ui = this->secPastEpoch + NTP_TIME_AT_EPICS_EPOCH;
     ts.l_uf = static_cast < unsigned long > 
         ( ( this->nSec * NTP_FRACTION_DENOMINATOR ) / nSecPerSec );
     return ts;
@@ -406,7 +381,7 @@ epicsTime::operator l_fp () const
 //
 epicsTime::epicsTime ( const l_fp & ts )
 {
-    this->secPastEpoch = ts.l_ui - epicsEpocSecsPastEpochNTP;
+    this->secPastEpoch = ts.l_ui - NTP_TIME_AT_EPICS_EPOCH;
     this->nSec = static_cast < unsigned long > 
         ( ( ts.l_uf / NTP_FRACTION_DENOMINATOR ) * nSecPerSec );
 }
@@ -531,7 +506,7 @@ size_t epicsTime::strftime (
         // look for "%0<n>f" at the end (used for fractional second formatting)        
         char strftimePrefixBuf [256];
         bool fracFmtFound;
-        unsigned long fracWid;
+        unsigned long fracWid = 0;
         pFmt = fracFormatFind (
             pFmt, 
             strftimePrefixBuf, sizeof ( strftimePrefixBuf ),

@@ -47,15 +47,6 @@ static int mutexLock(pthread_mutex_t *id)
     }
 }
 
-static int condWait(pthread_cond_t *condId, pthread_mutex_t *mutexId)
-{
-    int status;
-    while(1) {
-        status = pthread_cond_wait(condId,mutexId);
-        if(status!=EINTR) return status;
-        errlogPrintf("pthread_cond_wait returned EINTR. Violates SUSv3\n");
-    }
-}
 /* Until these can be demonstrated to work leave them undefined*/
 /* On solaris 8 _POSIX_THREAD_PRIO_INHERIT fails*/
 #undef _POSIX_THREAD_PROCESS_SHARED
@@ -218,6 +209,16 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
     }
     status = pthread_mutex_unlock(&pmutex->lock);
     checkStatusQuit(status,"pthread_mutex_unlock","epicsMutexOsdUnlock");
+}
+
+static int condWait(pthread_cond_t *condId, pthread_mutex_t *mutexId)
+{
+    int status;
+    while(1) {
+        status = pthread_cond_wait(condId,mutexId);
+        if(status!=EINTR) return status;
+        errlogPrintf("pthread_cond_wait returned EINTR. Violates SUSv3\n");
+    }
 }
 
 epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)

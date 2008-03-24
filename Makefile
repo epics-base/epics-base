@@ -14,12 +14,16 @@
 TOP = .
 include $(TOP)/configure/CONFIG
 
+# Bootstrap resolution: tools not installed yet
+TOOLS = $(TOP)/src/tools
+
+DIRS += configure src
 ifeq ($(findstring YES,$(COMPAT_313) $(COMPAT_TOOLS_313)),YES)
 DIRS += config
 endif
-DIRS += configure src
 
 src_DEPEND_DIRS = configure
+config_DEPEND_DIRS = src
 
 include $(TOP)/configure/RULES_TOP
 

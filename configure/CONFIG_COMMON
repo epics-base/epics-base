@@ -57,7 +57,6 @@ GNU_DIR = /usr
 # Directories
 
 INSTALL_LOCATION            = $(TOP)
-TOOLS                       = $(CONFIG)/tools
 
 INSTALL_LOCATION_LIB        = $(INSTALL_LOCATION)/lib
 INSTALL_LOCATION_BIN        = $(INSTALL_LOCATION)/bin
@@ -77,6 +76,7 @@ INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 #Directory for OS independant build created files
 COMMON_DIR = ../O.Common
 
+#-------------------------------------------------------
 ifdef T_A
 
 INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
@@ -89,7 +89,6 @@ SHRLIB_SEARCH_DIRS          = $(INSTALL_LIB)
 
 #-------------------------------------------------------
 # Ext, app, and module configure dir targets
-CONFIG_TARGETS += CONFIG_APP_INCLUDE RULES_INCLUDE
 CONFIG_INSTALLS += ../RULES_BUILD ../RELEASE*
 
 #-------------------------------------------------------
@@ -118,17 +117,6 @@ CMPLR_SUFFIX=
 CMPLR_PREFIX=
 LIB_PREFIX=
 SHRLIB_PREFIX= $(LIB_PREFIX)
-
-#-------------------------------------------------------
-# tools for installing libraries and products
-INSTALL = $(PERL) $(TOOLS)/installEpics.pl
-INSTALL_PRODUCT = $(INSTALL)
-INSTALL_LIBRARY = $(INSTALL)
-
-#---------------------------------------------------------------
-# tools for making header dependancies and variable replacement
-MKMF                       = $(PERL) $(TOOLS)/mkmf.pl
-REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 
 #--------------------------------------------------
 # vpath directories

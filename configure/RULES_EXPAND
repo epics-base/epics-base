@@ -1,0 +1,23 @@
+# <top>/configure/RULES_EXPAND
+
+ifdef T_A
+ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+
+# Default settings
+EXPAND_VARS ?= $(PERL) $(TOOLS)/expandVars.pl
+EXPANDFLAGS += -t $(INSTALL_LOCATION) -D ARCH=$(T_A)
+
+EXPANDED = $(EXPAND:%@=%)
+
+buildInstall: $(EXPANDED)
+
+$(EXPANDED): %: ../%@
+	@echo "Expanding $< to $@"
+	@$(RM) $@
+	@$(EXPAND_VARS) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
+
+clean::
+	$(RM) $(EXPANDED)
+
+endif
+endif

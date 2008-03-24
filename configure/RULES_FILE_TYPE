@@ -1,0 +1,98 @@
+#*************************************************************************
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution. 
+#*************************************************************************
+# $Id$
+#
+# Macros and rules to create a new installation file type 
+#
+
+# --------------------------------------------------------------
+# Module developer can now define a new type of file, e.g. ABC, 
+# so that files of type ABC will be installed into an abc sub-
+# directory within $(INSTALL_LOCATION) by creating a new file or 
+# adding three definitions to <top>/configure/RULES_FILE_TYPE
+#
+#       FILE_TYPE += ABC
+#       INSTALL_ABC =  $(INSTALL_LOCATION)/abc
+#       DIRECTORY_TARGETS += $(INSTALL_ABC)
+#
+# plus any rules necessary to create files of type ABC.
+#
+# The modlule developer installs this new RULES_<name> file
+# into the module's $(INSTALL_LOCATION)/cfg by including the 
+# following line in the src Makefile:
+#       CFGS +=  RULES_ABC
+# 
+# Support or ioc modules using the developer's module will
+# be able to create and install type ABC files of their own.
+# using the following Makefile definition:
+#
+#       ABCS += <filename1> <filename2> <filename3>
+#
+
+
+ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+
+FILE_TYPE += ADL
+INSTALL_ADL                 = $(INSTALL_LOCATION)/adl
+DIRECTORY_TARGETS += $(INSTALL_ADL)
+
+FILE_TYPE += ALH
+INSTALL_ALH                 = $(INSTALL_LOCATION)/alh
+DIRECTORY_TARGETS += $(INSTALL_ALH)
+
+FILE_TYPE += CFG
+INSTALL_CFG =  $(INSTALL_LOCATION)/cfg
+DIRECTORY_TARGETS += $(INSTALL_CFG)
+
+FILE_TYPE += IDL
+INSTALL_IDL                 = $(INSTALL_LOCATION_LIB)/idl
+DIRECTORY_TARGETS += $(INSTALL_IDL)
+
+FILE_TYPE += PERL_MODULE
+INSTALL_PERL_MODULE             = $(INSTALL_LOCATION_LIB)/perl
+DIRECTORY_TARGETS += $(INSTALL_PERL_MODULE)
+
+SCRIPTS += $(PERL_SCRIPTS)
+# PERL_SCRIPTS are installed into existing $(INSTALL_LOCATION_BIN)
+
+#---------------------------------------------------------------
+ifdef T_A
+
+define FILE_TYPE_template
+
+ifneq ($$(strip $$($(1)S_$$(ARCH_CLASS))),)
+  $(1)S += $$(subst -nil-,,$$($(1)S_$$(ARCH_CLASS)))
+  else
+  ifdef $(1)S_DEFAULT
+    $(1)S += $$($(1)S_DEFAULT)
+  endif
+endif
+
+INSTALLS_$(1) = $$($(1)S:%=$$(INSTALL_$(1))/%)
+buildInstall : $$(INSTALLS_$(1))
+
+$$(INSTALL_$(1))/%: %
+	@echo "Installing $(1) file $$@"
+	@$$(INSTALL) -d -m 644 $$< $$(dir $$@)
+
+$$(INSTALL_$(1))/%: ../%
+	@echo "Installing $(1) file $$@"
+	@$$(INSTALL) -d -m 644 $$< $$(dir $$@)
+
+clean::
+	$$(RM) $$($(1))
+
+endef
+
+$(foreach type, $(FILE_TYPE),$(eval $(call FILE_TYPE_template,$(strip $(type)))))
+
+endif
+#---------------------------------------------------------------
+
+endif

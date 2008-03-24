@@ -13,6 +13,7 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
 
+DIRS += tools
 DIRS += libCom
 DIRS += ca
 DIRS += RTEMS
@@ -39,6 +40,7 @@ DIRS += makeBaseApp
 DIRS += excas
 DIRS += makeBaseExt
 
+libCom_DEPEND_DIRS = tools
 ca_DEPEND_DIRS = libCom
 RTEMS_DEPEND_DIRS = libCom
 libCom/test_DEPEND_DIRS = libCom RTEMS
@@ -61,6 +63,9 @@ softIoc_DEPEND_DIRS = dev misc dbtools
 gdd_DEPEND_DIRS = libCom
 cas_DEPEND_DIRS = ca gdd
 excas_DEPEND_DIRS = cas as registry
+makeBaseApp_DEPEND_DIRS = tools
+makeBaseExt_DEPEND_DIRS = tools
+
 
 include $(TOP)/configure/RULES_DIRS
 

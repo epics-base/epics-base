@@ -1,0 +1,23 @@
+export TOP
+export IOCAPPS
+
+RELEASE_TOPS = $(shell $(PERL) $(TOOLS)/convertRelease.pl -T $(TOP) -h $(EPICS_HOST_ARCH) STDOUT )
+
+ifneq ($(RELEASE_TOPS),)
+
+define  RELEASE_FLAGS_template
+  export $(1)
+  $(1)_HOST_BIN = $$(strip $$($(1)))/bin/$(EPICS_HOST_ARCH)
+  $(1)_HOST_LIB = $$(strip $$($(1)))/lib/$(EPICS_HOST_ARCH)
+  $(1)_BIN = $$(strip $$($(1)))/bin/$(T_A)
+  $(1)_LIB = $$(strip $$($(1)))/lib/$(T_A)
+  SHRLIB_SEARCH_DIRS += $$($(1)_LIB)
+  RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include/os/$$(OS_CLASS)))
+  RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include))
+  RELEASE_DBDFLAGS += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/dbd))
+  RELEASE_PERL_MODULE_DIRS += $$(wildcard $$($(1)_LIB)/perl)
+endef
+$(foreach top, $(RELEASE_TOPS), $(eval $(call RELEASE_FLAGS_template,$(top)) ))
+
+endif
+

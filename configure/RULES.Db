@@ -108,7 +108,7 @@ COMMON_DBDS = $(DBD)
 COMMON_DBS = $(DB)
 COMMONS = $(DBD) $(DB)
 
--include $(TOP)/configure/O.$(EPICS_HOST_ARCH)/CONFIG_APP_INCLUDE
+-include $(TOP)/configure/CONFIG_APP_INCLUDE
 
 all:    install
 

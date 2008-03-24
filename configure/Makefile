@@ -15,6 +15,9 @@ TOP=..
 
 include $(TOP)/configure/CONFIG
 
+# Bootstrap resolution: tools not installed yet
+TOOLS = $(TOP)/src/tools
+
 CONFIGS += $(subst ../,,$(wildcard ../CONFIG*))
 CONFIGS += $(subst ../,,$(wildcard ../os/CONFIG*))
 
@@ -23,6 +26,5 @@ CONFIGS += $(subst ../,,$(wildcard ../RULES*))
 
 CONFIGS += $(subst ../,,$(wildcard ../tools/*.pl))
 
-TARGETS = CONFIG_APP_INCLUDE
-
 include $(TOP)/configure/RULES
+

@@ -11,11 +11,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-##############   START TEST
-CFGS = RULES1 RULES2 RULES3
-JBAJBAJBAS += aa bb cc
-##############   END TEST
-
 EXPANDFLAGS = -t $(TOP) -D ARCH=$(T_A)
 
 # Bootstrap resolution: tools not installed yet
@@ -51,17 +46,3 @@ PERL_SCRIPTS += useManifestTool.pl*
 
 include $(TOP)/configure/RULES
  
-xxx:
-	@echo "CFGS=$(CFGS)"
-	@echo "DIRECTORY_TARGETS=$(DIRECTORY_TARGETS)"
-	@echo "INSTALLS_CFG=$(INSTALLS_CFG)"
-	@echo "JBA_RULES=$(JBA_RULES)"
-	@echo "JBA=$(JBA)"
-	@echo "DIRECTORY_TARGETS=$(DIRECTORY_TARGETS)"
-	@echo "INSTALL_PERL_MODULES=$(INSTALL_PERL_MODULES)"
-	@echo "INSTALL_PERL_SCRIPTS=$(INSTALL_PERL_SCRIPTS)"
-	@echo "RELEASE_TOPS=$(RELEASE_TOPS)"
-	@echo "FILE_TYPE=$(FILE_TYPE)"
-	@echo "INSTALL_JBAJBAJBA=$(INSTALL_JBAJBAJBA)"
-	@echo "DIRECTORY_TARGETS=$(DIRECTORY_TARGETS)"
-

@@ -63,8 +63,7 @@ unless (@ARGV == 1) {
     print "\tcheckRelease - checks consistency with support apps\n";
     print "\tcdCommands - generate cd path strings for vxWorks IOCs\n";
     print "\tenvPaths - generate epicsEnvSet commands for other IOCs\n";
-    print "\tCONFIG_APP_INCLUDE - additional build variables\n";
-    print "\tRULES_INCLUDE - supports installable build rules\n";
+    print "\tSTDOUT - prints modules names defined in RELEASE*s\n";
     exit 2;
 }
 $outfile = $ARGV[0];
@@ -82,12 +81,22 @@ die "Can't find $relfile" unless (-f $relfile);
 
 # This is a perl switch statement:
 for ($outfile) {
-    /CONFIG_APP_INCLUDE/ and do { &configAppInclude;	last; };
-    /RULES_INCLUDE/	 and do { &rulesInclude;	last; };
+    /STDOUT/		 and do { &releaseTops;		last; };
     /cdCommands/	 and do { &cdCommands;		last; };
     /envPaths/  	 and do { &envPaths;		last; };
     /checkRelease/	 and do { &checkRelease;	last; };
     die "Output file type \'$outfile\' not supported";
+}
+
+#
+# Print names of the modules defined in RELEASE* files
+#
+sub releaseTops {
+    my @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
+    foreach my $app (@includes) {
+	print "$app ";
+    }
+    print "\n";
 }
 
 #
@@ -165,72 +174,6 @@ sub expandRelease {
 	    $Rmacros->{$macro} = $path;
 	}
     }
-}
-
-sub configAppInclude {
-    # We can't include TOP in these output lists:
-    # 1. Our target directories probably don't exist yet
-    # 2. We need abolute paths, but $(TOP) is relative
-    my @includes = grep !/^(TOP|TEMPLATE_TOP)$/, @apps;
-    
-    unlink($outfile);
-    open(OUT,">$outfile") or die "$! creating $outfile";
-    print OUT "# Do not modify this file, changes made here will\n";
-    print OUT "# be lost when the application is next rebuilt.\n";
-    
-    if ($arch) {
-	print OUT "\nexport TOP\n";
-    }
-    foreach my $app (@includes) {
-	my $path = $macros{$app};
-	print OUT "\nexport ${app}\n";
-	if (-d "$path/bin/$hostarch") {
-	    print OUT "${app}_HOST_BIN = $path/bin/\$(EPICS_HOST_ARCH)\n";
-	}
-	if (-d "$path/lib/$hostarch") {
-	    print OUT "${app}_HOST_LIB = $path/bin/\$(EPICS_HOST_ARCH)\n";
-	}
-	if ($arch) {
-	    if (-d "$path/bin/$arch") {
-		print OUT "${app}_BIN = $path/bin/$arch\n";
-	    }
-	    if (-d "$path/lib/$arch") {
-		print OUT "${app}_LIB = $path/lib/$arch\n";
-		print OUT "SHRLIB_SEARCH_DIRS += $path/lib/$arch\n";
-	    }
-	}
-	if (-d "$path/include") {
-	    if (-d "$path/include/os") {
-		print OUT "RELEASE_INCLUDES += -I$path/include/os/\$(OS_CLASS)\n";
-	    }
-	    print OUT "RELEASE_INCLUDES += -I$path/include\n";
-	}
-	if (-d "$path/dbd") {
-	    print OUT "RELEASE_DBDFLAGS += -I$path/dbd\n";
-	}
-	if (-d "$path/db") {
-	    print OUT "RELEASE_DBFLAGS += -I$path/db\n";
-	}
-    }
-    close OUT;
-}
-
-sub rulesInclude {
-    my @includes = grep !/^(TOP|TEMPLATE_TOP|EPICS_BASE)$/, @apps;
-    
-    unlink($outfile);
-    open(OUT,">$outfile") or die "$! creating $outfile";
-    print OUT "# Do not modify this file, changes made here will\n";
-    print OUT "# be lost when the application is next rebuilt.\n";
-    
-    foreach my $app (@includes) {
-	my $path = $macros{$app};
-	next unless (-r "$path/configure/RULES_BUILD");
-	print OUT "\nRULES_TOP := $path\n";
-	print OUT "-include $path/configure/RULES_BUILD\n";
-    }
-    print OUT "\nRULES_TOP :=\n";
-    close OUT;
 }
 
 sub cdCommands {

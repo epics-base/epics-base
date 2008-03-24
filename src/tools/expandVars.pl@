@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+#
+# Tool to expand @VAR@ variables while copying a file.
+# The file will *not* be copied if it already exists.
+#
+# Author: Andrew Johnson <anj@aps.anl.gov>
+# Date: 10 February 2005
+#
+# $Id$
+#
+
+# This BEGIN allows Perl to find the ctlsysUtils.pl module when
+# the program gets run in one of its O.<arch> directories. If
+# the TOP variable has not been expanded, we look in our own
+# parent directory for ctlsysUtils.pl instead of <top>/lib/perl
+
+# Do not use the code below for other perl tools that use modules,
+# makeCtlsysDir.pl@ has the regular Perl code for setting @INC.
+BEGIN {
+    our $libperl = '@TOP@/lib/perl';
+    $libperl = '..' if ($libperl =~ m/^[@]TOP[@]/);
+}
+use lib $libperl;
+
+use strict;
+use Cwd qw(cwd abs_path);
+use Ctlsys::Getopts;
+use Ctlsys::Utils;
+
+# Command line options processing
+our ($opt_d, @opt_D, $opt_h, $opt_t);
+Usage() unless getopts('dD@ht:');
+
+# Handle the -h command
+Usage() if $opt_h;
+
+# Check filename arguments
+our $infile = shift or die "No input filename argument\n";
+our $outfile = shift or die "No output filename argument\n";
+
+# Where are we?
+our $top = $opt_t;
+print "TOP = $top\n" if $opt_d;
+
+# Read RELEASE file into vars
+our ($base, $extensions, $ctlsys);
+our %vars = (TOP => abs_path($top));
+our @apps = ('TOP');
+readRelease("$top/configure/RELEASE", \%vars, \@apps);
+expandRelease(\%vars);
+
+# EPICS_BASE and EPICS_EXTENSIONS must exist
+$base = abs_path($vars{EPICS_BASE});
+print "EPICS_BASE = $base\n" if $opt_d;
+die "EPICS_BASE directory '$base' does not exist\n"
+    unless -d $base;
+
+$extensions = abs_path($vars{EPICS_EXTENSIONS});
+print "EPICS_EXTENSIONS = $extensions\n" if $opt_d;
+die "EPICS_EXTENSIONS directory '$extensions' does not exist\n"
+    unless -d $extensions;
+
+# If no CTLSYS entry exists, define it as TOP
+if (exists $vars{CTLSYS}) {
+    $ctlsys = abs_path($vars{CTLSYS});
+} else {
+    $ctlsys = abs_path($top);
+    $vars{CTLSYS} = $ctlsys;
+}
+print "CTLSYS = $ctlsys\n" if $opt_d;
+die "CTLSYS directory '$ctlsys' does not exist\n"
+    unless -d $ctlsys;
+
+while ($_ = shift @opt_D) {
+    my ($var, $val) = split /=/;
+    $vars{$var} = $val;
+    print "$var = $val\n" if $opt_d;
+}
+
+# Do it!
+copyFile($infile, $outfile, \%vars);
+
+##### File contains subroutines only below here
+
+sub Usage {
+    print <<EOF;
+Usage:
+    expandVars.pl -h
+	Display this Usage message
+    expandVars.pl -t /path/to/top -D var=value infile outfile
+	Expand vars in infile to generate outfile
+EOF
+    exit $opt_h ? 0 : 1;
+}

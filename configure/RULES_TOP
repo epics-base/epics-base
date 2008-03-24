@@ -13,9 +13,32 @@
 
 include $(CONFIG)/RULES_DIRS
 
+VALID_BUILDS += Host
+#---------------------------------------------------------------
+# Include installed cfg/RULES* files to get DIRECTORY_TARGETS names
+
+# Include RULES* files from current top
+RULES_TOP:=$(INSTALL_LOCATION)
+-include $(wildcard $(strip $(RULES_TOP))/cfg/RULES*)
+-include $(wildcard $(CONFIG)/RULES_OCTAVE)
+
+RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) -h $(EPICS_HOST_ARCH) STDOUT )
+
+# Include RULES* files from tops defined in RELEASE* files
+ifneq ($(RELEASE_TOPS),)
+define TOP_RULES_template
+  RULES_TOP:=$$($(1))
+  -include $$(wildcard $$(strip $($(1)))/cfg/RULES*)
+endef
+$(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))
+endif
+include $(CONFIG)/RULES_FILE_TYPE
+#---------------------------------------------------------------
+
 UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
         $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
         $(INSTALL_DB)
+UNINSTALL_DIRS += $(DIRECTORY_TARGETS)
 
 uninstallArchTargets = $(foreach arch,$(BUILD_ARCHS), uninstall$(DIVIDER)$(arch))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
@@ -35,8 +58,9 @@ endif
 
 distclean: realclean realuninstall
 
+CVSCLEAN=$(firstword $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
 cvsclean:
-	@$(PERL) $(TOOLS)/cvsclean.pl 
+	@$(PERL) $(CVSCLEAN) 
 
 realuninstall:
 	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)

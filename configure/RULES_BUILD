@@ -103,12 +103,32 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
 $(INSTALL_LIBS): $(INSTALL_SHRLIBS)  $(INSTALL_DLL_LINK_LIBS)  $(INSTALL_LOADABLE_SHRLIBS)
 
 #---------------------------------------------------------------
-ifneq ($(CONFIG),$(TOP)/configure)
+# Include created RULES* files from current top
+#
+# NOTE: A Makefile which installs cfg RULES* files
+# cannot use defs or rules from those installed cfg files
+#
 RULES_TOP:=$(INSTALL_LOCATION)
+ifneq ($(CONFIG),$(TOP)/configure)
 -include $(TOP)/configure/RULES_BUILD
 endif
--include $(TOP)/configure/O.$(T_A)/RULES_INCLUDE
+-include $(wildcard $(strip $(RULES_TOP))/cfg/RULES*)
+
+# Include RULES* files from tops defined in RELEASE* files
+ifneq ($(RELEASE_TOPS),)
+define  TOP_RULES_template
+  RULES_TOP:=$$($(1))
+  ifneq ($$(CONFIG),$$($(1))/configure)
+    -include $$(strip $$($(1)))/configure/RULES_BUILD
+  endif
+  -include $$(wildcard $$(strip $($(1)))/cfg/RULES*)
+endef
+$(foreach top, $(RELEASE_TOPS), \
+       $(eval $(call TOP_RULES_template,$(top)) ))
+endif
 #---------------------------------------------------------------
+
+-include $(CONFIG)/RULES_FILE_TYPE
 
 #	Main targets
 
@@ -123,7 +143,7 @@ build : inc
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
 	$(TARGETS) $(TESTSCRIPTS)
 
-inc : $(COMMON_INC) $(INSTALL_INC)
+inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
 
 buildInstall : \
 	$(INSTALL_SCRIPTS) $(INSTALL_PROD) $(INSTALL_MUNCHS) \
@@ -131,8 +151,7 @@ buildInstall : \
 	$(INSTALL_OBJS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
-	$(INSTALL_TEMPLATE) \
-	$(INSTALL_CONFIGS)
+	$(INSTALL_TEMPLATE)
 
 ifdef BIN_INSTALLS
 buildInstall : binInstalls
@@ -332,11 +351,6 @@ runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
 	@$(RM) $@
 	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@
 
-# Ext, app and module rules
-RULES_INCLUDE CONFIG_APP_INCLUDE: $(wildcard $(TOP)/configure/RELEASE*)
-	@$(RM) $@
-	$(PERL) $(TOOLS)/convertRelease.pl -h $(EPICS_HOST_ARCH) $@
-
 binInstalls:  $(BIN_INSTALLS)
 	@echo "Installing $(^F)"
 	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
@@ -350,7 +364,7 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: %
-	@echo "Installing binary $@"
+	@echo "Installing created file $@"
 	@$(INSTALL_PRODUCT) -d -m 555 $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../%
@@ -442,6 +456,8 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: ../%
 $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
+
+-include $(CONFIG)/RULES_EXPAND
 
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)

@@ -11,7 +11,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-EXPANDFLAGS = -t $(TOP) -D ARCH=$(T_A)
+#EXPANDFLAGS = -t $(TOP) -D ARCH=$(T_A)
 
 # Bootstrap resolution: tools not installed yet
 TOOLS = $(TOP)/src/tools

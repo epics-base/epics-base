@@ -49,24 +49,8 @@ our @apps = ('TOP');
 readRelease("$top/configure/RELEASE", \%vars, \@apps);
 expandRelease(\%vars);
 
-# EPICS_BASE and EPICS_EXTENSIONS must exist
-$base = abs_path($vars{EPICS_BASE});
-print "EPICS_BASE = $base\n" if $opt_d;
-die "EPICS_BASE directory '$base' does not exist\n"
-    unless -d $base;
-
-$extensions = abs_path($vars{EPICS_EXTENSIONS});
-print "EPICS_EXTENSIONS = $extensions\n" if $opt_d;
-die "EPICS_EXTENSIONS directory '$extensions' does not exist\n"
-    unless -d $extensions;
-
-# If no CTLSYS entry exists, define it as TOP
-if (exists $vars{CTLSYS}) {
-    $ctlsys = abs_path($vars{CTLSYS});
-} else {
-    $ctlsys = abs_path($top);
-    $vars{CTLSYS} = $ctlsys;
-}
+$ctlsys = abs_path($top);
+$vars{CTLSYS} = $ctlsys;
 print "CTLSYS = $ctlsys\n" if $opt_d;
 die "CTLSYS directory '$ctlsys' does not exist\n"
     unless -d $ctlsys;

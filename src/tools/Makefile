@@ -11,8 +11,6 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-#EXPANDFLAGS = -t $(TOP) -D ARCH=$(T_A)
-
 # Bootstrap resolution: tools not installed yet
 TOOLS = $(TOP)/src/tools
 
@@ -25,7 +23,6 @@ PERL_MODULES += Ctlsys/Utils.pm
 PERL_MODULES += Ctlsys/Getopts.pm
 
 PERL_SCRIPTS += convertRelease.pl*
-PERL_SCRIPTS += cp.pl*
 PERL_SCRIPTS += cvsclean.pl*
 PERL_SCRIPTS += dos2unix.pl
 PERL_SCRIPTS += expandVars.pl
@@ -36,12 +33,9 @@ PERL_SCRIPTS += makeDbDepends.pl
 PERL_SCRIPTS += makeIncludeDbd.pl
 PERL_SCRIPTS += makeMakefile.pl*
 PERL_SCRIPTS += makeMakefileInclude.pl*
-PERL_SCRIPTS += mkdir.pl*
 PERL_SCRIPTS += mkmf.pl*
 PERL_SCRIPTS += munch.pl*
-PERL_SCRIPTS += mv.pl*
 PERL_SCRIPTS += replaceVAR.pl*
-PERL_SCRIPTS += rm.pl*
 PERL_SCRIPTS += useManifestTool.pl*
 
 include $(TOP)/configure/RULES

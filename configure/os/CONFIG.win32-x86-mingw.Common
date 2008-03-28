@@ -10,11 +10,11 @@
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
-CP = $(PERL) $(CONFIG)/tools/cp.pl
-MV = $(PERL) $(CONFIG)/tools/mv.pl
-RM = $(PERL) $(CONFIG)/tools/rm.pl -f
-MKDIR = $(PERL) $(CONFIG)/tools/mkdir.pl
-RMDIR = $(PERL) $(CONFIG)/tools/rm.pl -rf
+CP = $(PERL) -MExtUtils::Command -e cp
+MV = $(PERL) -MExtUtils::Command -e mv 
+RM = $(PERL) -MExtUtils::Command -e rm_f
+MKDIR = $(PERL) -MExtUtils::Command -e mkpath
+RMDIR = $(PERL) -MExtUtils::Command -e rm_rf
 ECHO = echo
 
 HOSTEXE=.exe

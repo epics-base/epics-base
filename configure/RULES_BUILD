@@ -112,7 +112,9 @@ RULES_TOP:=$(INSTALL_LOCATION)
 ifneq ($(CONFIG),$(TOP)/configure)
 -include $(TOP)/configure/RULES_BUILD
 endif
--include $(wildcard $(strip $(RULES_TOP))/cfg/RULES*)
+ifneq ($(wildcard $(RULES_TOP)/cfg/RULES*),)
+-include $(wildcard $(RULES_TOP)/cfg/RULES*)
+endif
 
 # Include RULES* files from tops defined in RELEASE* files
 ifneq ($(RELEASE_TOPS),)
@@ -121,7 +123,9 @@ define  TOP_RULES_template
   ifneq ($$(CONFIG),$$($(1))/configure)
     -include $$(strip $$($(1)))/configure/RULES_BUILD
   endif
-  -include $$(wildcard $$(strip $($(1)))/cfg/RULES*)
+  ifneq ($$(wildcard $$($(1))/cfg/RULES*),)
+  -include $$(wildcard $$($(1))/cfg/RULES*)
+  endif
 endef
 $(foreach top, $(RELEASE_TOPS), \
        $(eval $(call TOP_RULES_template,$(top)) ))

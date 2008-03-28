@@ -328,45 +328,43 @@ void epicsThreadPrivateDelete(epicsThreadPrivateId id)
 }
 
 /*
- * Note that it is not necessary to have mutex for following
- * because they must be called by the same thread
+ * No mutex is necessary here because by definition
+ * thread variables are local to a single thread.
  */
 void epicsThreadPrivateSet (epicsThreadPrivateId id, void *pvt)
 {
-    int indpepicsThreadPrivate = (int)id;
+    int int_id = (int)id;
     int nepicsThreadPrivateOld = 0;
 
-    if(papTSD) nepicsThreadPrivateOld = (int)papTSD[0];
-    if(!papTSD || (nepicsThreadPrivateOld<indpepicsThreadPrivate)) {
+    if (papTSD) nepicsThreadPrivateOld = (int)papTSD[0];
+
+    if (!papTSD || nepicsThreadPrivateOld < int_id) {
         void **papTSDold = papTSD;
         int i;
 
-        papTSD = callocMustSucceed(indpepicsThreadPrivate + 1,sizeof(void *),
+        papTSD = callocMustSucceed(int_id + 1,sizeof(void *),
             "epicsThreadPrivateSet");
-        papTSD[0] = (void *)(indpepicsThreadPrivate);
-        for(i=1; i<= nepicsThreadPrivateOld; i++) papTSD[i] = papTSDold[i];
+        papTSD[0] = (void *)(int_id);
+        for (i = 1; i <= nepicsThreadPrivateOld; i++) {
+            papTSD[i] = papTSDold[i];
+        }
         free (papTSDold);
     }
-    papTSD[indpepicsThreadPrivate] = pvt;
+    papTSD[int_id] = pvt;
 }
 
 void *epicsThreadPrivateGet(epicsThreadPrivateId id)
 {
-    int indpepicsThreadPrivate = (int)id;
-    void *data;
-    if(!papTSD) {
-        papTSD = callocMustSucceed(indpepicsThreadPrivate + 1,sizeof(void *),
-            "epicsThreadPrivateSet");
-        papTSD[0] = (void *)(indpepicsThreadPrivate);
+    int int_id = (int)id;
+
+    /*
+     * If epicsThreadPrivateGet() is called before epicsThreadPrivateSet()
+     * for any particular thread, the value returned is always NULL.
+     */
+    if ( papTSD && int_id <= (int) papTSD[0] ) {
+        return papTSD[int_id];
     }
-    /* Note that epicsThreadPrivateGet may be called BEFORE epicsThreadPrivateSet*/
-    if ( (int) id <= (int) papTSD[0] ) {
-        data = papTSD[(int)id];
-    }
-    else {
-        data = 0;
-    }
-    return(data);
+    return NULL;
 }
 
 double epicsThreadSleepQuantum ()

@@ -50,18 +50,17 @@ typedef enum {
     typedef int64_t         epicsInt64;
     typedef uint64_t        epicsUInt64;
 #else
-    typedef char            epicsInt8;
+    typedef signed char     epicsInt8;
     typedef unsigned char   epicsUInt8;
     typedef short           epicsInt16;
     typedef unsigned short  epicsUInt16;
     typedef epicsUInt16     epicsEnum16;
     typedef int             epicsInt32;
-    typedef unsigned        epicsUInt32;
+    typedef unsigned int    epicsUInt32;
 #endif
 typedef float           epicsFloat32;
 typedef double          epicsFloat64;
-typedef unsigned long   epicsIndex;
-typedef epicsInt32      epicsStatus;   
+typedef epicsInt32      epicsStatus;
 
 
 typedef struct {

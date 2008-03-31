@@ -20,6 +20,7 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
+#include "dbDefs.h"
 #include "errlog.h"
 #include "macLib.h"
 
@@ -29,8 +30,6 @@
  * name and value strings, terminated with two NULL pointers. Quotes
  * and escapes are honored but only removed from macro names (not
  * values)
- *
- * Doesn't yet use special characters (so uses default special characters)
  */
 long				/* #defns encountered; <0 = ERROR */
 epicsShareAPI macParseDefns(
@@ -47,16 +46,16 @@ epicsShareAPI macParseDefns(
 {
     static const size_t altNumMax = 4;
     size_t numMax;
-    long i;
-    long num;
-    long quote;
-    long escape;
-    long nbytes;
-    const char **ptr;
-    const char **end;
-    long *del;
+    int i;
+    int num;
+    int quote;
+    int escape;
+    size_t nbytes;
+    const unsigned char **ptr;
+    const unsigned char **end;
+    int *del;
     char *memCp, **memCpp;
-    const char *c;
+    const unsigned char *c;
     char *s, *d, **p;
     enum { preName, inName, preValue, inValue } state;
 
@@ -69,9 +68,9 @@ epicsShareAPI macParseDefns(
     numMax = strlen( defns );
     if ( numMax < altNumMax )
         numMax = altNumMax;
-    ptr = (const  char ** ) malloc( numMax * sizeof( char * ) );
-    end = (const  char ** ) malloc( numMax * sizeof( char * ) );
-    del = ( long *  ) malloc( numMax * sizeof( long   ) );
+    ptr = (const unsigned char **) calloc( numMax, sizeof( char * ) );
+    end = (const unsigned char **) calloc( numMax, sizeof( char * ) );
+    del = (int *) calloc( numMax, sizeof( int ) );
     if ( ptr == NULL || end == NULL  || del == NULL ) goto error;
 
     /* go through definitions, noting pointers to starts and ends of macro
@@ -81,7 +80,7 @@ epicsShareAPI macParseDefns(
     del[0] = FALSE;
     quote  = 0;
     state  = preName;
-    for ( c = defns; *c != '\0'; c++ ) {
+    for ( c = (const unsigned char *) defns; *c != '\0'; c++ ) {
 
 	/* handle quotes */
 	if ( quote )
@@ -187,7 +186,7 @@ epicsShareAPI macParseDefns(
 	    *memCpp++ = memCp;
 
 	/* copy value regardless of the above */
-	strncpy( memCp, ptr[i], end[i] - ptr[i] );
+	strncpy( memCp, (const char *) ptr[i], end[i] - ptr[i] );
 	memCp += end[i] - ptr[i];
 	*memCp++ = '\0';
     }
@@ -233,7 +232,7 @@ epicsShareAPI macParseDefns(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macParseDefns() -> %ld\n", num / 2 );
+	printf( "macParseDefns() -> %d\n", num / 2 );
 
     /* success exit; return number of definitions */
     return num / 2;
@@ -262,7 +261,7 @@ epicsShareAPI macInstallMacros(
 				/* value implies undefined; a NULL */
 				/* argument implies no macros */
 {
-    long n;
+    int n;
     char **p;
 
     /* debug output */
@@ -279,7 +278,7 @@ epicsShareAPI macInstallMacros(
 
     /* debug output */
     if ( handle->debug & 1 )
-	printf( "macInstallMacros() -> %ld\n", n );
+	printf( "macInstallMacros() -> %d\n", n );
 
     /* return number of macros defined */
     return n;

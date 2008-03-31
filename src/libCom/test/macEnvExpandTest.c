@@ -21,10 +21,15 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-void check(const char *str, const char *expect)
+int warn;
+
+static void check(const char *str, const char *expect)
 {
     char *got = macEnvExpand(str);
     int pass = -1;
+
+    if (expect == NULL) ++warn;
+
     if (expect && !got) {
         testDiag("Got NULL, expected \"%s\".\n", expect);
         pass = 0;
@@ -42,33 +47,83 @@ void check(const char *str, const char *expect)
 
 MAIN(macEnvExpandTest)
 {
-    int warn = 0;
-    testPlan(30);
+    warn = 0;
+    testPlan(71);
 
     check("FOO", "FOO");
 
-    check("${FOO}", NULL); warn++;
+    check("${FOO}", NULL);
+    check("${FOO,BAR}", NULL);
+    check("${FOO,BAR=baz}", NULL);
+    check("${FOO,BAR=$(FOO)}", NULL);
+    check("${FOO,FOO}", NULL);
+    check("${FOO,FOO=$(FOO)}", NULL);
+    check("${FOO,BAR=baz,FUM}", NULL);
+
+    check("${=}", "");
+    check("x${=}y", "xy");
+
+    check("${,=}", "");
+    check("x${,=}y", "xy");
+
     check("${FOO=}", "");
     check("x${FOO=}y", "xy");
+
+    check("${FOO=,}", "");
+    check("x${FOO=,}y", "xy");
+
+    check("${FOO,FOO=}", "");
+    check("x${FOO,FOO=}y", "xy");
+
+    check("${FOO=,BAR}", "");
+    check("x${FOO=,BAR}y", "xy");
+
+    check("${FOO=$(BAR=)}", "");
+    check("x${FOO=$(BAR=)}y", "xy");
+
+    check("${FOO=,BAR=baz}", "");
+    check("x${FOO=,BAR=baz}y", "xy");
+
+    check("${FOO=$(BAR),BAR=}", "");
+    check("x${FOO=$(BAR),BAR=}y", "xy");
+
+    check("${=BAR}", "BAR");
+    check("x${=BAR}y", "xBARy");
+
     check("${FOO=BAR}", "BAR");
     check("x${FOO=BAR}y", "xBARy");
 
     epicsEnvSet("FOO","BLETCH");
     check("${FOO}", "BLETCH");
+    check("${FOO,FOO}", "BLETCH");
     check("x${FOO}y", "xBLETCHy");
     check("x${FOO}y${FOO}z", "xBLETCHyBLETCHz");
     check("${FOO=BAR}", "BLETCH");
     check("x${FOO=BAR}y", "xBLETCHy");
     check("${FOO=${BAZ}}", "BLETCH");
+    check("${FOO=${BAZ},BAR=$(BAZ)}", "BLETCH");
     check("x${FOO=${BAZ}}y", "xBLETCHy");
+    check("x${FOO=${BAZ},BAR=$(BAZ)}y", "xBLETCHy");
     check("${BAR=${FOO}}", "BLETCH");
     check("x${BAR=${FOO}}y", "xBLETCHy");
     check("w${BAR=x${FOO}y}z", "wxBLETCHyz");
 
+    check("${FOO,FOO=BAR}", "BAR");
+    check("x${FOO,FOO=BAR}y", "xBARy");
+    check("${BAR,BAR=$(FOO)}", "BLETCH");
+    check("x${BAR,BAR=$(FOO)}y", "xBLETCHy");
+    check("${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}", "GRIBBLE");
+    check("x${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}y", "xGRIBBLEy");
+    check("${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}", "GRIBBLE");
+    check("x${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}y", "xGRIBBLEy");
+
     epicsEnvSet("BAR","GLEEP");
     check("${FOO}/${BAR}", "BLETCH/GLEEP");
     check("x${FOO}/${BAR}y", "xBLETCH/GLEEPy");
-    check("${BAR=${FOO}}", "GLEEP");
+    check("${FOO,BAR}/${BAR}", "BLETCH/GLEEP");
+    check("${FOO,BAR=x}/${BAR}", "BLETCH/GLEEP");
+    check("${BAZ=BLETCH,BAR}/${BAR}", "BLETCH/GLEEP");
+    check("${BAZ=BLETCH,BAR=x}/${BAR}", "BLETCH/GLEEP");
 
     epicsEnvSet("BLETCH","BAR");
     check("${${FOO}}", "BAR");
@@ -83,7 +138,7 @@ MAIN(macEnvExpandTest)
     check("${FOO}","GLEEP");
 
     epicsEnvSet("BAR","${BAZ}");
-    check("${FOO}", NULL); warn++;
+    check("${FOO}", NULL);
 
     epicsEnvSet("BAR","${BAZ=GRIBBLE}");
     check("${FOO}", "GRIBBLE");
@@ -97,7 +152,10 @@ MAIN(macEnvExpandTest)
     check("${FOO}", "VAL2");
 
     epicsEnvSet("BAR","${FOO}");
-    check("${FOO}", NULL); warn++;
+    check("${FOO}", NULL);
+    check("${FOO,FOO=$(FOO)}", NULL);
+    check("${FOO=$(FOO)}", NULL);
+    check("${FOO=$(BAR),BAR=$(FOO)}", NULL);
     
     errlogFlush();
     testDiag("%d warning messages from macLib were expected above.\n", warn);

@@ -1,27 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$
  *
  * Implementation of core macro substitution library (macLib)
- *
- * Just about all functionality proposed in tech-talk on 19-Feb-96 has
- * been implemented with only minor departures. Missing features are:
- *
- * 1. All the attribute-setting routines (for setting and getting
- *    special characters etc)
- *
- * 2. Error message verbosity control (although a debug level is
- *    supported)
- *
- * 3. The macro substitution tool (although the supplied macTest
- *    program is in fact a simple version of this)
  *
  * The implementation is fairly unsophisticated and linked lists are
  * used to store macro values. Typically there will will be only a
@@ -31,14 +18,7 @@
  * modified or deleted, a "dirty" flag is set; this causes a full
  * expansion of all macros the next time a macro value is read
  *
- * See the files README (original specification from tech-talk) and
- * NOTES (valid input file for the macTest program) for further
- * information
- *
- * Testing has been primarily under SunOS, but the code has been built
- * and macTest <NOTES run under vxWorks
- *
- * William Lupton, W. M. Keck Observatory
+ * Original Author: William Lupton, W. M. Keck Observatory
  */
 
 #include <ctype.h>
@@ -47,27 +27,62 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
+#include "dbDefs.h"
 #include "errlog.h"
 #include "dbmf.h"
 #include "macLib.h"
 
+
+/*** Local structure definitions ***/
+
 /*
- * Static function prototypes (these static functions provide an low-level
- * library operating on macro entries)
+ * Entry in linked list of macro definitions
+ */
+typedef struct mac_entry {
+    ELLNODE     node;           /* prev and next pointers */
+    char        *name;          /* entry name */
+    char        *type;          /* entry type */
+    char        *rawval;        /* raw (unexpanded) value */
+    char        *value;         /* expanded macro value */
+    size_t      length;         /* length of value */
+    int         error;          /* error expanding value? */
+    int         visited;        /* ever been visited? */
+    int         special;        /* special (internal) entry? */
+    int         level;          /* scoping level */
+} MAC_ENTRY;
+
+
+/*** Local function prototypes ***/
+
+/*
+ * These static functions peform low-level operations on macro entries
  */
 static MAC_ENTRY *first   ( MAC_HANDLE *handle );
 static MAC_ENTRY *last    ( MAC_HANDLE *handle );
 static MAC_ENTRY *next    ( MAC_ENTRY  *entry );
 static MAC_ENTRY *previous( MAC_ENTRY  *entry );
 
-static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special );
-static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special );
+static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, int special );
+static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special );
 static char      *rawval( MAC_HANDLE *handle, MAC_ENTRY *entry, const char *value );
 static void       delete( MAC_HANDLE *handle, MAC_ENTRY *entry );
 static long       expand( MAC_HANDLE *handle );
-static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
-                        char *term, const char **rawval, char **value, char *valend );
-static void cpy2val(const char *src, char **value, char *valend);
+static void       trans ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
+                          const char *term, const char **rawval, char **value,
+                          char *valend );
+static void       refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
+                          const char **rawval, char **value, char *valend );
+
+static void cpy2val( const char *src, char **value, char *valend );
+static char *Strdup( const char *string );
+
+
+/*** Constants ***/
+
+/*
+ * Magic number for validating context.
+ */
+#define MAC_MAGIC 0xbadcafe     /* ...sells sub-standard coffee? */
 
 /*
  * Flag bits
@@ -75,19 +90,8 @@ static void cpy2val(const char *src, char **value, char *valend);
 #define FLAG_SUPPRESS_WARNINGS  0x1
 #define FLAG_USE_ENVIRONMENT    0x80
 
-static char *Strdup( const char *string );
 
-/*
- * Static variables
- */
-static MAC_CHARS macDefaultChars = {
-    MAC_STARTCHARS,
-    MAC_LEFTCHARS,
-    MAC_RIGHTCHARS,
-    MAC_SEPARCHARS,
-    MAC_ASSIGNCHARS,
-    MAC_ESCAPECHARS
-};
+/*** Library routines ***/
 
 /*
  * Create a new macro substitution context and return an opaque handle
@@ -118,7 +122,6 @@ epicsShareAPI macCreateHandle(
 
     /* initialize context */
     handle->magic = MAC_MAGIC;
-    handle->chars = macDefaultChars;
     handle->dirty = FALSE;
     handle->level = 0;
     handle->debug = 0;
@@ -144,13 +147,21 @@ epicsShareAPI macCreateHandle(
 
     return 0;
 }
-void epicsShareAPI macSuppressWarning(
+
+/*
+ * Turn on/off suppression of printed warnings from macLib calls
+ * for the given handle
+ */
+void
+epicsShareAPI macSuppressWarning(
     MAC_HANDLE  *handle,        /* opaque handle */
-    int         falseTrue       /*0 means issue, 1 means suppress*/
+    int         suppress        /* 0 means issue, 1 means suppress */
 )
 {
-    if(handle) handle->flags = (handle->flags & ~FLAG_SUPPRESS_WARNINGS) |
-                                    (falseTrue ? FLAG_SUPPRESS_WARNINGS : 0);
+    if ( handle && handle->magic == MAC_MAGIC ) {
+        handle->flags = (handle->flags & ~FLAG_SUPPRESS_WARNINGS) |
+                        (suppress ? FLAG_SUPPRESS_WARNINGS : 0);
+    }
 }
 
 /*
@@ -239,7 +250,7 @@ epicsShareAPI macPutValue(
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
     if ( value == NULL ) {
-/* FIXME: don't loop or delete entries from any lower scopes */
+        /* FIXME: shouldn't be able to delete entries from lower scopes */
         while ( ( entry = lookup( handle, name, FALSE ) ) != NULL )
             delete( handle, entry );
         return 0;
@@ -519,7 +530,7 @@ static MAC_ENTRY *previous( MAC_ENTRY *entry )
 /*
  * Create new macro entry (can assume it doesn't exist)
  */
-static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special )
+static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, int special )
 {
     ELLLIST   *list  = &handle->list;
     MAC_ENTRY *entry = ( MAC_ENTRY * ) dbmfMalloc( sizeof( MAC_ENTRY ) );
@@ -550,9 +561,13 @@ static MAC_ENTRY *create( MAC_HANDLE *handle, const char *name, long special )
 /*
  * Look up macro entry with matching "special" attribute by name
  */
-static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special )
+static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, int special )
 {
     MAC_ENTRY *entry;
+
+    if ( handle->debug & 2 )
+        printf( "lookup-> level = %d, name = %s, special = %d\n",
+                handle->level, name, special );
 
     /* search backwards so scoping works */
     for ( entry = last( handle ); entry != NULL; entry = previous( entry ) ) {
@@ -573,6 +588,10 @@ static MAC_ENTRY *lookup( MAC_HANDLE *handle, const char *name, long special )
             }
         }
     }
+
+    if ( handle->debug & 2 )
+        printf( "<-lookup level = %d, name = %s, result = %p\n",
+                handle->level, name, entry );
 
     return entry;
 }
@@ -655,20 +674,16 @@ static long expand( MAC_HANDLE *handle )
  * Translate raw macro value (recursive). This is by far the most complicated
  * of the macro routines and calls itself recursively both to translate any
  * macros referenced in the name and to translate the resulting name
- *
- * For now, use default special characters
  */
-static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
-                   char *term, const char **rawval, char **value, char *valend )
+static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
+                   const char *term, const char **rawval, char **value,
+                   char *valend )
 {
     char quote;
-    const char *r, *r2;
-    char *v, *n2;
-    char name2[MAC_SIZE + 1];
-    long discard;
-    long macRef;
-    char *macEnd;
-    MAC_ENTRY *entry2;
+    const char *r;
+    char *v;
+    int discard;
+    int macRef;
 
     /* return immediately if raw value is NULL */
     if ( *rawval == NULL ) return;
@@ -679,8 +694,8 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "trans-> level = %ld, maxlen = %4u, discard = %s, "
-        "rawval = %s\n", level, (unsigned int)(valend - *value), discard ? "T" : "F", *rawval );
+        printf( "trans-> entry = %p, level = %d, maxlen = %u, discard = %s, "
+        "rawval = %s\n", entry, level, (unsigned int)(valend - *value), discard ? "T" : "F", *rawval );
 
     /* initially not in quotes */
     quote = 0;
@@ -705,9 +720,13 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
                    *( r + 1 ) != '\0' &&
                    strchr( "({", *( r + 1 ) ) != NULL );
 
-        /* if not macro reference (macros are not expanded in single quotes) */
-        if ( quote == '\'' || !macRef ) {
+        /* macros are not expanded in single quotes */
+        if ( macRef && quote != '\'' ) {
+            /* Handle macro reference */
+            refer ( handle, entry, level, &r, &v, valend );
+        }
 
+        else {
             /* handle escaped characters (escape is discarded if in name) */
             if ( *r == '\\' && *( r + 1 ) != '\0' ) {
                 if ( v < valend && !discard ) *v++ = '\\';
@@ -722,98 +741,11 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
             /* ensure string remains properly terminated */
             if ( v <= valend ) *v   = '\0';
         }
-
-        /* macro reference */
-        else {
-
-            /* step over '$(' or '${' */
-            r++;
-            macEnd = ( *r == '(' ) ? "=)" : "=}";
-            r++;
-
-            /* translate name (may contain macro references); truncated
-               quietly if too long but always guaranteed zero-terminated */
-            n2 = name2;
-            *n2 = '\0';
-            trans( handle, entry, level + 1, macEnd, &r, &n2, n2 + MAC_SIZE );
-            name2[MAC_SIZE] = '\0';
-
-            /* look up the translated name */
-            if ( ( entry2 = lookup( handle, name2, FALSE ) ) == NULL ) {
-                /* not found */
-                if ( *r == '=' ) {
-                    /* there is a default value, translate that instead */
-                    ++r;
-                    trans( handle, entry, level + 1, ++macEnd, &r, &v, valend );
-                } else {
-                    /* flag the warning and insert $(name) */
-                    if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-                        entry->error = TRUE;
-                        errlogPrintf( "macLib: macro %s is undefined (expanding %s %s)\n",
-                                    name2, entry->type, entry->name );
-                    }
-                    if ( v < valend ) *v++ = '$';
-                    if ( v < valend ) *v++ = '(';
-                    cpy2val( name2, &v, valend );
-                    if ( v < valend ) *v++ = ')';
-
-                    /* ensure string remains properly terminated */
-                    if ( v <= valend ) *v   = '\0';
-                }
-                continue;
-            }
-
-            /* if reference is recursive, flag an error and insert $(name) */
-            if ( entry2->visited ) {
-                if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
-                    entry->error = TRUE;
-                    errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
-                                  entry->type, entry->name,
-                                  entry2->type, entry2->name );
-                }
-                if ( v < valend ) *v++ = '$';
-                if ( v < valend ) *v++ = '(';
-                cpy2val( name2, &v, valend );
-                if ( v < valend ) *v++ = ')';
-
-                /* ensure string remains properly terminated */
-                if ( v <= valend ) *v   = '\0';
-                continue;
-            }
-
-            /* translate but discard any default value, supressing warnings */
-            if ( *r == '=' ) {
-                MAC_ENTRY dflt;
-                int flags = handle->flags;
-                
-                ++r;
-                handle->flags |= FLAG_SUPPRESS_WARNINGS;
-                dflt.name = name2;
-                dflt.type = "default value";
-                dflt.error = FALSE;
-                trans( handle, &dflt, level + 1, ++macEnd, &r, &v, v);
-                handle->flags = flags;
-            }
-
-            /* if all expanded values are valid (not "dirty") copy the
-               value directly */
-            if ( !handle->dirty ) {
-                cpy2val( entry2->value, &v, valend );
-            }
-
-            /* otherwise, translate raw value */
-            else {
-                r2 = entry2->rawval;
-                entry2->visited = TRUE;
-                trans( handle, entry, level + 1, "", &r2, &v, valend );
-                entry2->visited = FALSE;
-            }
-        }
     }
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "<-trans level = %ld, length = %4u, value  = %s\n",
+        printf( "<-trans level = %d, length = %4u, value  = %s\n",
                      level, (unsigned int)(v - *value), *value );
 
     /* update pointers to next characters to scan in raw value and to fill
@@ -822,6 +754,162 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, long level,
     *rawval = ( *r == '\0' ) ? r - 1 : r;
     *value  = v;
 
+    return;
+}
+
+/*
+ * Expand a macro reference, handling default values and defining scoped
+ * macros as encountered. This code used to part of trans(), but was
+ * pulled out for ease of understanding.
+ */
+static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
+                    const char **rawval, char **value, char *valend )
+{
+    const char *r = *rawval;
+    char *v = *value;
+    char refname[MAC_SIZE + 1] = {'\0'};
+    char *rn = refname;
+    MAC_ENTRY *refentry;
+    const char *defval = NULL;
+    const char *macEnd;
+    const char *errval = NULL;
+    int pop = FALSE;
+
+    /* debug output */
+    if ( handle->debug & 2 )
+        printf( "refer-> entry = %p, level = %d, maxlen = %u, rawval = %s\n",
+                entry, level, (unsigned int)(valend - *value), *rawval );
+
+    /* step over '$(' or '${' */
+    r++;
+    macEnd = ( *r == '(' ) ? "=,)" : "=,}";
+    r++;
+
+    /* translate name (may contain macro references); truncated
+       quietly if too long but always guaranteed zero-terminated */
+    trans( handle, entry, level + 1, macEnd, &r, &rn, rn + MAC_SIZE );
+    refname[MAC_SIZE] = '\0';
+
+    /* Is there a default value? */
+    if ( *r == '=' ) {
+        MAC_ENTRY dflt;
+        int flags = handle->flags;
+        handle->flags |= FLAG_SUPPRESS_WARNINGS;
+
+        /* store its location in case we need it */
+        defval = ++r;
+
+        /* Find the end, discarding its value */
+        dflt.name = refname;
+        dflt.type = "default value";
+        dflt.error = FALSE;
+        trans( handle, &dflt, level + 1, macEnd+1, &r, &v, v);
+
+        handle->flags = flags;
+    }
+
+    /* extract and set values for any scoped macros */
+    if ( *r == ',' ) {
+        MAC_ENTRY subs;
+        int flags = handle->flags;
+        handle->flags |= FLAG_SUPPRESS_WARNINGS;
+
+        subs.type = "scoped macro";
+        subs.error = FALSE;
+
+        macPushScope( handle );
+        pop = TRUE;
+
+        while ( *r == ',' ) {
+            char subname[MAC_SIZE + 1] = {'\0'};
+            char subval[MAC_SIZE + 1] = {'\0'};
+            char *sn = subname;
+            char *sv = subval;
+
+            /* translate the macro name */
+            ++r;
+            subs.name = refname;
+
+            trans( handle, &subs, level + 1, macEnd, &r, &sn, sn + MAC_SIZE );
+            subname[MAC_SIZE] = '\0';
+
+            /* If it has a value, translate that and assign it */
+            if ( *r == '=' ) {
+                ++r;
+                subs.name = subname;
+
+                trans( handle, &subs, level + 1, macEnd+1, &r, &sv,
+                      sv + MAC_SIZE);
+                subval[MAC_SIZE] = '\0';
+
+                macPutValue( handle, subname, subval );
+                handle->dirty = TRUE;   /* re-expand with new macro values */
+            }
+        }
+
+        handle->flags = flags;
+    }
+
+    /* Now we can look up the translated name */
+    refentry = lookup( handle, refname, FALSE );
+
+    if ( refentry ) {
+        if ( !refentry->visited ) {
+            /* reference is good, use it */
+            if ( !handle->dirty ) {
+                /* copy the already-expanded value, and its error status! */
+                cpy2val( refentry->value, &v, valend );
+                entry->error = refentry->error;
+            } else {
+                /* translate raw value */
+                const char *rv = refentry->rawval;
+                refentry->visited = TRUE;
+                trans( handle, entry, level + 1, "", &rv, &v, valend );
+                refentry->visited = FALSE;
+            }
+            goto cleanup;
+        }
+        /* reference is recursive */
+        entry->error = TRUE;
+        errval = ",recursive)";
+        if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
+            errlogPrintf( "macLib: %s %s is recursive (expanding %s %s)\n",
+                          entry->type, entry->name,
+                          refentry->type, refentry->name );
+        }
+    } else {
+        /* no macro found by this name */
+        if ( defval ) {
+            /* there was a default value, translate that instead */
+            trans( handle, entry, level + 1, macEnd+1, &defval, &v, valend );
+            goto cleanup;
+        }
+        entry->error = TRUE;
+        errval = ",undefined)";
+        if ( (handle->flags & FLAG_SUPPRESS_WARNINGS) == 0 ) {
+            errlogPrintf( "macLib: macro %s is undefined (expanding %s %s)\n",
+                        refname, entry->type, entry->name );
+        }
+    }
+
+    /* Bad reference, insert $(name,errval) */
+    if ( v < valend ) *v++ = '$';
+    if ( v < valend ) *v++ = '(';
+    cpy2val( refname, &v, valend );
+    cpy2val( errval, &v, valend );
+
+cleanup:
+    if (pop) {
+        macPopScope( handle );
+    }
+
+    /* debug output */
+    if ( handle->debug & 2 )
+        printf( "<-refer level = %d, length = %4u, value  = %s\n",
+                     level, (unsigned int)(v - *value), *value );
+
+    *rawval = r;
+    *value = v;
     return;
 }
 

@@ -102,6 +102,11 @@ macEnvExpandTest_SRCS += macEnvExpandTest.c
 testHarness_SRCS += macEnvExpandTest.c
 TESTS += macEnvExpandTest
 
+TESTPROD_HOST += macLibTest
+macLibTest_SRCS += macLibTest.c
+testHarness_SRCS += macLibTest.c
+TESTS += macLibTest
+
 TESTPROD_HOST += blockingSockTest
 blockingSockTest_SRCS += blockingSockTest.cpp
 testHarness_SRCS += blockingSockTest.cpp

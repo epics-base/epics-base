@@ -29,6 +29,7 @@ int epicsStringTest(void);
 int epicsThreadPriorityTest(void);
 int epicsThreadPrivateTest(void);
 int epicsTimeTest(void);
+int macLibTest(void);
 int macEnvExpandTest(void);
 int ringPointerTest(void);
 int blockingSockTest(void);
@@ -97,6 +98,10 @@ epicsRunLibComTests(void)
 
 	printf("\n****** Time Test *****\n");
 	epicsTimeTest ();
+	epicsThreadSleep (1.0);
+
+	printf("\n****** Macro Library Test *****\n");
+	macLibTest ();
 	epicsThreadSleep (1.0);
 
 	printf("\n****** Macro Environment Variable Expansion Test *****\n");

@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$
@@ -28,44 +27,9 @@ extern "C" {
 #endif
 
 /*
- * Standard FALSE and TRUE macros
- */
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-/*
- * Magic number for validating context.
- */
-#define MAC_MAGIC 0xbadcafe     /* ...sells sub-standard coffee? */
-
-/*
  * Maximum size of macro name or value string (simpler to make fixed)
  */
 #define MAC_SIZE 256
-
-/*
- * Special characters
- */
-#define MAC_STARTCHARS  "$"     /* characters that indicate macro ref */
-#define MAC_LEFTCHARS   "{("    /* characters to left of macro name */
-#define MAC_RIGHTCHARS  "})"    /* characters to right of macro name */
-#define MAC_SEPARCHARS  ","     /* characters separating macro defns */
-#define MAC_ASSIGNCHARS "="     /* characters denoting values assignment */
-#define MAC_ESCAPECHARS "\\"    /* characters escaping the next char */
-
-typedef struct {
-    char *start;
-    char *left;
-    char *right;
-    char *separ;
-    char *assign;
-    char *escape;
-} MAC_CHARS;
 
 /*
  * Macro substitution context. One of these contexts is allocated each time
@@ -73,29 +37,12 @@ typedef struct {
  */
 typedef struct {
     long        magic;          /* magic number (used for authentication) */
-    MAC_CHARS   chars;          /* special characters */
-    long        dirty;          /* values need expanding from raw values? */
-    long        level;          /* scoping level */
-    long        debug;          /* debugging level */
+    int         dirty;          /* values need expanding from raw values? */
+    int         level;          /* scoping level */
+    int         debug;          /* debugging level */
     ELLLIST     list;           /* macro name / value list */
     int         flags;          /* operating mode flags */
 } MAC_HANDLE;
-
-/*
- * Entry in linked list of macro definitions
- */
-typedef struct mac_entry {
-    ELLNODE     node;           /* prev and next pointers */
-    char        *name;          /* entry name */
-    char        *type;          /* entry type */
-    char        *rawval;        /* raw (unexpanded) value */
-    char        *value;         /* expanded macro value */
-    long        length;         /* length of value */
-    long        error;          /* error expanding value? */
-    long        visited;        /* ever been visited? */
-    long        special;        /* special (internal) entry? */
-    long        level;          /* scoping level */
-} MAC_ENTRY;
 
 /*
  * Function prototypes (core library)

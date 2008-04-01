@@ -9,51 +9,45 @@
 # $Id$
 #
 
-# This BEGIN allows Perl to find the ctlsysUtils.pl module when
-# the program gets run in one of its O.<arch> directories. If
-# the TOP variable has not been expanded, we look in our own
-# parent directory for ctlsysUtils.pl instead of <top>/lib/perl
-
-# Do not use the code below for other perl tools that use modules,
-# makeCtlsysDir.pl@ has the regular Perl code for setting @INC.
 BEGIN {
+    # Do not copy this BEGIN code for other tools,
+    # it's only needed here for bootstrapping itself.
     our $libperl = '@TOP@/lib/perl';
     $libperl = '..' if ($libperl =~ m/^[@]TOP[@]/);
 }
 use lib $libperl;
 
 use strict;
-use Cwd qw(cwd abs_path);
-use Ctlsys::Getopts;
-use Ctlsys::Utils;
+use Cwd qw(abs_path);
+use EPICS::Getopts;     # Needed for multiple options (-D m=v)
+use EPICS::Utils;       # LocalPath, readRelease, expandRelease
 
-# Command line options processing
+# Process command line options
 our ($opt_d, @opt_D, $opt_h, $opt_t);
-Usage() unless getopts('dD@ht:');
+getopts('dD@ht:')
+    or &HELP_MESSAGE;
 
 # Handle the -h command
-Usage() if $opt_h;
+&HELP_MESSAGE if $opt_h;
+
+die "Path to TOP not set, use -t option\n"
+    unless $opt_t;
 
 # Check filename arguments
-our $infile = shift or die "No input filename argument\n";
-our $outfile = shift or die "No output filename argument\n";
+my $infile = shift
+    or die "No input filename argument\n";
+my $outfile = shift
+    or die "No output filename argument\n";
 
 # Where are we?
-our $top = $opt_t;
+my $top = LocalPath(abs_path($opt_t));
 print "TOP = $top\n" if $opt_d;
 
 # Read RELEASE file into vars
-our ($base, $extensions, $ctlsys);
-our %vars = (TOP => abs_path($top));
-our @apps = ('TOP');
+my %vars = (TOP => $top);
+my @apps = ('TOP');
 readRelease("$top/configure/RELEASE", \%vars, \@apps);
 expandRelease(\%vars);
-
-$ctlsys = abs_path($top);
-$vars{CTLSYS} = $ctlsys;
-print "CTLSYS = $ctlsys\n" if $opt_d;
-die "CTLSYS directory '$ctlsys' does not exist\n"
-    unless -d $ctlsys;
 
 while ($_ = shift @opt_D) {
     my ($var, $val) = split /=/;
@@ -66,13 +60,13 @@ copyFile($infile, $outfile, \%vars);
 
 ##### File contains subroutines only below here
 
-sub Usage {
-    print <<EOF;
+sub HELP_MESSAGE {
+    print STDERR <<EOF;
 Usage:
     expandVars.pl -h
-	Display this Usage message
-    expandVars.pl -t /path/to/top -D var=value infile outfile
-	Expand vars in infile to generate outfile
+        Display this Usage message
+    expandVars.pl -t /path/to/top -D var=val -D var2=val2 ... infile outfile
+        Expand vars in infile to generate outfile
 EOF
     exit $opt_h ? 0 : 1;
 }

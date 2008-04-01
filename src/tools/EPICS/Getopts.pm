@@ -1,11 +1,11 @@
-package Ctlsys::Getopts;
+package EPICS::Getopts;
 require 5.000;
 require Exporter;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(getopts);
 
-# Ctlsys::Getopts.pm - A ctlsys version of getopts
+# EPICS::Getopts.pm - An EPICS-specific version of getopts
 #
 # This version of getopts is modified from the Perl original in the
 # following ways:
@@ -69,7 +69,7 @@ sub getopts ( $;$ ) {
 	}
     }
     local $Exporter::ExportLevel = 1;
-    import Ctlsys::Getopts;
+    import EPICS::Getopts;
     $errs == 0;
 }
 

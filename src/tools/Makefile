@@ -19,24 +19,24 @@ EXPAND_VARS = $(PERL) ../expandVars.pl@
 
 EXPAND += expandVars.pl@
 
-PERL_MODULES += Ctlsys/Utils.pm
-PERL_MODULES += Ctlsys/Getopts.pm
+PERL_MODULES += EPICS/Utils.pm
+PERL_MODULES += EPICS/Getopts.pm
 
-PERL_SCRIPTS += convertRelease.pl*
-PERL_SCRIPTS += cvsclean.pl*
+PERL_SCRIPTS += convertRelease.pl
+PERL_SCRIPTS += cvsclean.pl
 PERL_SCRIPTS += dos2unix.pl
 PERL_SCRIPTS += expandVars.pl
-PERL_SCRIPTS += filterWarnings.pl*
-PERL_SCRIPTS += fullPathName.pl*
-PERL_SCRIPTS += installEpics.pl*
+PERL_SCRIPTS += filterWarnings.pl
+PERL_SCRIPTS += fullPathName.pl
+PERL_SCRIPTS += installEpics.pl
 PERL_SCRIPTS += makeDbDepends.pl
 PERL_SCRIPTS += makeIncludeDbd.pl
-PERL_SCRIPTS += makeMakefile.pl*
-PERL_SCRIPTS += makeMakefileInclude.pl*
-PERL_SCRIPTS += mkmf.pl*
-PERL_SCRIPTS += munch.pl*
-PERL_SCRIPTS += replaceVAR.pl*
-PERL_SCRIPTS += useManifestTool.pl*
+PERL_SCRIPTS += makeMakefile.pl
+PERL_SCRIPTS += makeMakefileInclude.pl
+PERL_SCRIPTS += mkmf.pl
+PERL_SCRIPTS += munch.pl
+PERL_SCRIPTS += replaceVAR.pl
+PERL_SCRIPTS += useManifestTool.pl
 
 include $(TOP)/configure/RULES
  

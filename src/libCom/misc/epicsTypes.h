@@ -50,7 +50,7 @@ typedef enum {
     typedef int64_t         epicsInt64;
     typedef uint64_t        epicsUInt64;
 #else
-    typedef signed char     epicsInt8;
+    typedef char            epicsInt8;
     typedef unsigned char   epicsUInt8;
     typedef short           epicsInt16;
     typedef unsigned short  epicsUInt16;

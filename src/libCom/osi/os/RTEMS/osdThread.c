@@ -35,6 +35,7 @@
 #include "epicsString.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
+#include "osiUnistd.h"
 #include "osdInterrupt.h"
 #include "epicsExit.h"
 
@@ -417,6 +418,10 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     }
     taskVarUnlock ();
     if (!haveName) {
+#if ((__RTEMS_MAJOR__ >= 4) && (__RTEMS_MINOR__ >= 9))
+        if (_Objects_Get_name_as_string(id, size, name) != NULL)
+            haveName = 1;
+#else
         /*
          * Try to get the RTEMS task name
          */
@@ -439,6 +444,7 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
             }
             _Thread_Enable_dispatch();
         }
+#endif
     }
     if (!haveName)
         snprintf(name, size, "0x%lx", (long)tid);
@@ -606,15 +612,15 @@ showInternalTaskInfo (rtems_id tid)
     else
         fprintf(epicsGetStdout()," %4d", epicsPri);
     if (thread.current_priority == thread.real_priority)
-        fprintf(epicsGetStdout(),"%4d    ", thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d    ", (int)thread.current_priority);
     else
-        fprintf(epicsGetStdout(),"%4d/%-3d", thread.real_priority, thread.current_priority);
+        fprintf(epicsGetStdout(),"%4d/%-3d", (int)thread.real_priority, (int)thread.current_priority);
     showBitmap (bitbuf, thread.current_state, taskState);
     fprintf(epicsGetStdout(),"%8.8s", bitbuf);
     if (thread.current_state & (STATES_WAITING_FOR_SEMAPHORE |
                                 STATES_WAITING_FOR_MUTEX |
                                 STATES_WAITING_FOR_MESSAGE))
-        fprintf(epicsGetStdout()," %8.8x", thread.Wait.id);
+        fprintf(epicsGetStdout()," %8.8x", (int)thread.Wait.id);
     else
         fprintf(epicsGetStdout()," %8.8s", "");
 #endif
@@ -631,7 +637,7 @@ epicsThreadShowHeader (void)
 static void
 epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
-        fprintf(epicsGetStdout(),"%9.8x", v->id);
+        fprintf(epicsGetStdout(),"%9.8x", (int)v->id);
         showInternalTaskInfo (v->id);
         fprintf(epicsGetStdout()," %s\n", v->name);
 }

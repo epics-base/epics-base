@@ -418,7 +418,7 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     }
     taskVarUnlock ();
     if (!haveName) {
-#if ((__RTEMS_MAJOR__ >= 4) && (__RTEMS_MINOR__ >= 8) && (__RTEMS_REVISION__ >= 99))
+#if (__RTEMS_MAJOR__>4 || (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__>8) || (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__==8 && __RTEMS_REVISION__>=99))
         if (_Objects_Get_name_as_string(id, size, name) != NULL)
             haveName = 1;
 #else

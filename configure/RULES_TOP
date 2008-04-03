@@ -24,7 +24,7 @@ ifneq ($(wildcard $(RULES_TOP)/cfg/RULES*),)
 endif
 -include $(wildcard $(CONFIG)/RULES_OCTAVE)
 
-RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) -h $(EPICS_HOST_ARCH) STDOUT )
+RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops )
 
 # Include RULES* files from tops defined in RELEASE* files
 ifneq ($(RELEASE_TOPS),)

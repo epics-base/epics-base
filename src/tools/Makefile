@@ -1,10 +1,7 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
-# Copyright (c) 2002 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP=../..
@@ -15,11 +12,15 @@ include $(TOP)/configure/CONFIG
 TOOLS = $(TOP)/src/tools
 
 # Bootstrap resolution: expandVars.pl needs to be run on itself!
-EXPAND_VARS = $(PERL) ../expandVars.pl@
+EXPAND_TOOL = $(PERL) $(TOOLS)/expandVars.pl@
 
+EXPAND += convertRelease.pl@
 EXPAND += expandVars.pl@
+EXPAND += fullPathName.pl@
 
-PERL_MODULES += EPICS/Utils.pm
+PERL_MODULES += EPICS/Copy.pm
+PERL_MODULES += EPICS/Path.pm
+PERL_MODULES += EPICS/Release.pm
 PERL_MODULES += EPICS/Getopts.pm
 
 PERL_SCRIPTS += convertRelease.pl

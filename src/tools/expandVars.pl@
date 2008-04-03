@@ -11,20 +11,22 @@
 
 BEGIN {
     # Do not copy this BEGIN code for other tools,
-    # it's only needed here for bootstrapping itself.
+    # it's only needed so expandVars can bootstrap itself.
     our $libperl = '@TOP@/lib/perl';
     $libperl = '..' if ($libperl =~ m/^[@]TOP[@]/);
 }
 use lib $libperl;
 
 use strict;
-use Cwd qw(abs_path);
-use EPICS::Getopts;     # Needed for multiple options (-D m=v)
-use EPICS::Utils;       # LocalPath, readRelease, expandRelease
+
+use EPICS::Getopts;
+use EPICS::Path;
+use EPICS::Release;
+use EPICS::Copy;
 
 # Process command line options
-our ($opt_d, @opt_D, $opt_h, $opt_t);
-getopts('dD@ht:')
+our ($opt_a, $opt_d, @opt_D, $opt_h, $opt_t);
+getopts('a:dD@ht:')
     or &HELP_MESSAGE;
 
 # Handle the -h command
@@ -40,14 +42,16 @@ my $outfile = shift
     or die "No output filename argument\n";
 
 # Where are we?
-my $top = LocalPath(abs_path($opt_t));
+my $top = AbsPath($opt_t);
 print "TOP = $top\n" if $opt_d;
 
 # Read RELEASE file into vars
 my %vars = (TOP => $top);
 my @apps = ('TOP');
-readRelease("$top/configure/RELEASE", \%vars, \@apps);
+readReleaseFiles("$top/configure/RELEASE", \%vars, \@apps, $opt_a);
 expandRelease(\%vars);
+
+$vars{'ARCH'} = $opt_a if $opt_a;
 
 while ($_ = shift @opt_D) {
     my ($var, $val) = split /=/;
@@ -65,7 +69,7 @@ sub HELP_MESSAGE {
 Usage:
     expandVars.pl -h
         Display this Usage message
-    expandVars.pl -t /path/to/top -D var=val -D var2=val2 ... infile outfile
+    expandVars.pl -t /path/to/top [-a arch] -D var=val ... infile outfile
         Expand vars in infile to generate outfile
 EOF
     exit $opt_h ? 0 : 1;

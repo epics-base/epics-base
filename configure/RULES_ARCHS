@@ -76,15 +76,15 @@ targetReleaseFiles = $(wildcard $(foreach arch, $(BUILD_ARCHS), \
 
 checkReleaseTargets = $(addprefix checkRelease, $(suffix $(targetReleaseFiles)))
 checkRelease: $(checkReleaseTargets)
-	$(CONVERTRELEASE) -h $(EPICS_HOST_ARCH) checkRelease
+	$(CONVERTRELEASE) checkRelease
 $(checkReleaseTargets):checkRelease.%:
-	$(CONVERTRELEASE) -h $(EPICS_HOST_ARCH) -a $* checkRelease
+	$(CONVERTRELEASE) -a $* checkRelease
 
 warnReleaseTargets = $(addprefix warnRelease, $(suffix $(targetReleaseFiles)))
 warnRelease: $(warnReleaseTargets)
-	-$(CONVERTRELEASE) -h $(EPICS_HOST_ARCH) checkRelease
+	-$(CONVERTRELEASE) checkRelease
 $(warnReleaseTargets):warnRelease.%:
-	-$(CONVERTRELEASE) -h $(EPICS_HOST_ARCH) -a $* checkRelease
+	-$(CONVERTRELEASE) -a $* checkRelease
 
 #
 # special clean rule

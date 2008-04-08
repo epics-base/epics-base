@@ -146,13 +146,13 @@ sub envPaths {
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;	# iocname is last component of directory name
     
-    print OUT "epicsEnvSet(ARCH,\"$arch\")\n";
-    print OUT "epicsEnvSet(IOC,\"$ioc\")\n";
+    print OUT "epicsEnvSet(\"ARCH\",\"$arch\")\n";
+    print OUT "epicsEnvSet(\"IOC\",\"$ioc\")\n";
     
     foreach my $app (@includes) {
 	my $iocpath = my $path = $macros{$app};
 	$iocpath =~ s/^$root/$iocroot/o if ($opt_t);
-	print OUT "epicsEnvSet($app,\"$iocpath\")\n" if (-d $path);
+	print OUT "epicsEnvSet(\"$app\",\"$iocpath\")\n" if (-d $path);
     }
     close OUT;
 }

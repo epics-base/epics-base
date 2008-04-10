@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
@@ -66,6 +66,20 @@ void testCalc(const char *expr, double expected) {
     return;
 }
 
+void testBadExpr(const char *expr, short expected_err) {
+    /* Parse an invalid expression, test against expected error code */
+    char rpn[MAX_POSTFIX_SIZE];
+    short err = 0;
+
+    postfix(expr, rpn, &err);
+    if (!testOk(err == expected_err, "%s (bad expression)", expr)) {
+	testDiag("Expected '%s', actually got '%s'",
+	    calcErrorStr(expected_err), calcErrorStr(err));
+	calcExprDump(rpn);
+    }
+    return;
+}
+
 /* Test an expression that is also valid C code */
 #define testExpr(expr) testCalc(#expr, expr);
 
@@ -83,13 +97,98 @@ void testCalc(const char *expr, double expected) {
 #define LN(x) log(x)
 #define LOG(x) log10(x)
 #define LOGE(x) log(x)
-#define MAX(a,b) epicsMax(a,b)
-#define MIN(a,b) epicsMin(a,b)
 #define NINT(x) (double)(long)((x) >= 0 ? (x)+0.5 : (x)-0.5)
 #define OR |
 #define SQR(x) sqrt(x)
 #define XOR ^
 
+static inline double MAX(double a) {
+    return a;
+}
+static inline double MAX(double a, double b) {
+    return epicsMax(a,b);
+}
+static inline double MAX(double a, double b, double c) {
+    return MAX(MAX(a,b),c);
+}
+static inline double MAX(double a, double b, double c, double d) {
+    return MAX(MAX(a,b,c),d);
+}
+static inline double MAX(double a, double b, double c, double d, double e) {
+    return MAX(MAX(a,b,c,d),e);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f) {
+    return MAX(MAX(a,b,c,d,e),f);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g) {
+    return MAX(MAX(a,b,c,d,e,f),g);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h) {
+    return MAX(MAX(a,b,c,d,e,f,g),h);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i) {
+    return MAX(MAX(a,b,c,d,e,f,g,h),i);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j) {
+    return MAX(MAX(a,b,c,d,e,f,g,h,i),j);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k) {
+    return MAX(MAX(a,b,c,d,e,f,g,h,i,j),k);
+}
+static inline double MAX(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k, double l) {
+    return MAX(MAX(a,b,c,d,e,f,g,h,i,j,k),l);
+}
+
+static inline double MIN(double a) {
+    return a;
+}
+static inline double MIN(double a, double b) {
+    return epicsMin(a,b);
+}
+static inline double MIN(double a, double b, double c) {
+    return MIN(MIN(a,b),c);
+}
+static inline double MIN(double a, double b, double c, double d) {
+    return MIN(MIN(a,b,c),d);
+}
+static inline double MIN(double a, double b, double c, double d, double e) {
+    return MIN(MIN(a,b,c,d),e);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f) {
+    return MIN(MIN(a,b,c,d,e),f);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g) {
+    return MIN(MIN(a,b,c,d,e,f),g);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h) {
+    return MIN(MIN(a,b,c,d,e,f,g),h);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i) {
+    return MIN(MIN(a,b,c,d,e,f,g,h),i);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j) {
+    return MIN(MIN(a,b,c,d,e,f,g,h,i),j);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k) {
+    return MIN(MIN(a,b,c,d,e,f,g,h,i,j),k);
+}
+static inline double MIN(double a, double b, double c, double d, double e,
+    double f, double g, double h, double i, double j, double k, double l) {
+    return MIN(MIN(a,b,c,d,e,f,g,h,i,j,k),l);
+}
 
 MAIN(epicsCalcTest)
 {
@@ -101,7 +200,7 @@ MAIN(epicsCalcTest)
     Inf /= NaN;
     NaN /= NaN;
     
-    testPlan(392);
+    testPlan(532);
     
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -167,10 +266,21 @@ MAIN(epicsCalcTest)
     testExpr(cosh(0.5));
     testExpr(exp(1.));
     testExpr(floor(1.5));
+
     testExpr(finite(0));
     testExpr(finite(Inf));
     testExpr(finite(-Inf));
     testExpr(finite(NaN));
+    testCalc("finite(0,1,2)", 1);
+    testCalc("finite(0,1,NaN)", 0);
+    testCalc("finite(0,NaN,2)", 0);
+    testCalc("finite(NaN,1,2)", 0);
+    testCalc("finite(0,1,Inf)", 0);
+    testCalc("finite(0,Inf,2)", 0);
+    testCalc("finite(Inf,1,2)", 0);
+    testCalc("finite(0,1,-Inf)", 0);
+    testCalc("finite(0,-Inf,2)", 0);
+    testCalc("finite(-Inf,1,2)", 0);
     testExpr(isinf(0));
     testExpr(isinf(Inf));
     testExpr(isinf(-Inf));
@@ -178,20 +288,146 @@ MAIN(epicsCalcTest)
     testExpr(isnan(0));
     testExpr(isnan(Inf));
     testExpr(isnan(NaN));
+    testCalc("isnan(0,1,2)", 0);
+    testCalc("isnan(0,1,NaN)", 1);
+    testCalc("isnan(0,NaN,2)", 1);
+    testCalc("isnan(NaN,1,2)", 1);
+    testCalc("isnan(0,1,-Inf)", 0);
+    testCalc("isnan(0,-Inf,2)", 0);
+    testCalc("isnan(-Inf,1,2)", 0);
+
     testExpr(LN(5.));
     testExpr(LOG(5.));
     testExpr(LOGE(2.));
-    testExpr(MAX(1,2));
-    testExpr(MAX(1.,Inf));
-    testExpr(MAX(1.,-Inf));
-    testExpr(MAX(1.,NaN));
-    testExpr(MAX(NaN,1.));
-    testExpr(MIN(1,2));
+
+    testExpr(MAX(-99));
+    testExpr(MAX( 1., 2.));
+    testExpr(MAX( 1., Inf));
+    testExpr(MAX( 1.,-Inf));
+    testExpr(MAX( 1., NaN));
+    testExpr(MAX( Inf, 1.));
+    testExpr(MAX(-Inf, 1.));
+    testExpr(MAX( NaN, 1.));
+    testExpr(MAX( 1., 2.,3.));
+    testExpr(MAX( 1., 3.,2.));
+    testExpr(MAX( 2., 1.,3.));
+    testExpr(MAX( 2., 3.,1.));
+    testExpr(MAX( 3., 1.,2.));
+    testExpr(MAX( 3., 2.,1.));
+    testExpr(MAX( 1., 2., Inf));
+    testExpr(MAX( 1., 2.,-Inf));
+    testExpr(MAX( 1., 2., NaN));
+    testExpr(MAX( 1., Inf,2.));
+    testExpr(MAX( 1.,-Inf,2.));
+    testExpr(MAX( 1., NaN,2.));
+    testExpr(MAX( Inf, 1.,2.));
+    testExpr(MAX(-Inf, 1.,2.));
+    testExpr(MAX( NaN, 1.,2.));
+    testExpr(MAX( 1., 2., 3., 4.));
+    testExpr(MAX( 1., 2., 4., 3.));
+    testExpr(MAX( 1., 4., 3., 2.));
+    testExpr(MAX( 4., 2., 3., 1.));
+    testExpr(MAX( 1., 2., 3.,NaN));
+    testExpr(MAX( 1., 2.,NaN, 3.));
+    testExpr(MAX( 1.,NaN, 3., 2.));
+    testExpr(MAX(NaN, 2., 3., 1.));
+    testExpr(MAX( 1., 2., 3., 4., 5.));
+    testExpr(MAX( 1., 2., 3., 5., 4.));
+    testExpr(MAX( 1., 2., 5., 4., 3.));
+    testExpr(MAX( 1., 5., 3., 4., 2.));
+    testExpr(MAX( 5., 2., 3., 4., 1.));
+    testExpr(MAX( 1., 2., 3., 4.,NaN));
+    testExpr(MAX( 1., 2., 3.,NaN, 4.));
+    testExpr(MAX( 1., 2.,NaN, 4., 3.));
+    testExpr(MAX( 1.,NaN, 3., 4., 2.));
+    testExpr(MAX(NaN, 2., 3., 4., 1.));
+    testExpr(MAX( 1., 2., 3., 4., 5., 6.));
+    testExpr(MAX( 1., 2., 3., 4., 6., 5.));
+    testExpr(MAX( 1., 2., 3., 6., 5., 4.));
+    testExpr(MAX( 1., 2., 6., 4., 5., 3.));
+    testExpr(MAX( 1., 6., 3., 4., 5., 2.));
+    testExpr(MAX( 6., 2., 3., 4., 5., 1.));
+    testExpr(MAX( 1., 2., 3., 4., 5.,NaN));
+    testExpr(MAX( 1., 2., 3., 4.,NaN, 5.));
+    testExpr(MAX( 1., 2., 3.,NaN, 5., 4.));
+    testExpr(MAX( 1., 2.,NaN, 4., 5., 3.));
+    testExpr(MAX( 1.,NaN, 3., 4., 5., 2.));
+    testExpr(MAX(NaN, 2., 3., 4., 5., 1.));
+    testExpr(MAX( 1., 2., 3., 4., 5.,Inf));
+    testExpr(MAX( 1., 2., 3., 4.,Inf, 5.));
+    testExpr(MAX( 1., 2., 3.,Inf, 5., 4.));
+    testExpr(MAX( 1., 2.,Inf, 4., 5., 3.));
+    testExpr(MAX( 1.,Inf, 3., 4., 5., 2.));
+    testExpr(MAX(Inf, 2., 3., 4., 5., 1.));
+    testExpr(MAX(1,2,3,4,5,6,7,8,9,10));
+    testExpr(MAX(5,4,3,2,1,0,-1,-2,-3,-4));
+    testExpr(MAX(-1,1,0));
+
+    testExpr(MIN(99));
+    testExpr(MIN(1.,2.));
     testExpr(MIN(1.,Inf));
     testExpr(MIN(1.,-Inf));
     testExpr(MIN(1.,NaN));
     testExpr(MIN(NaN,1.));
+    testExpr(MIN( 1., 2.,3.));
+    testExpr(MIN( 1., 3.,2.));
+    testExpr(MIN( 2., 1.,3.));
+    testExpr(MIN( 2., 3.,1.));
+    testExpr(MIN( 3., 1.,2.));
+    testExpr(MIN( 3., 2.,1.));
+    testExpr(MIN( 1., 2., Inf));
+    testExpr(MIN( 1., 2.,-Inf));
+    testExpr(MIN( 1., 2., NaN));
+    testExpr(MIN( 1., Inf,2.));
+    testExpr(MIN( 1.,-Inf,2.));
+    testExpr(MIN( 1., NaN,2.));
+    testExpr(MIN( Inf, 1.,2.));
+    testExpr(MIN(-Inf, 1.,2.));
+    testExpr(MIN( NaN, 1.,2.));
+    testExpr(MIN( 1., 2., 3., 4.));
+    testExpr(MIN( 1., 2., 4., 3.));
+    testExpr(MIN( 1., 4., 3., 2.));
+    testExpr(MIN( 4., 2., 3., 1.));
+    testExpr(MIN( 1., 2., 3.,NaN));
+    testExpr(MIN( 1., 2.,NaN, 3.));
+    testExpr(MIN( 1.,NaN, 3., 2.));
+    testExpr(MIN(NaN, 2., 3., 1.));
+    testExpr(MIN( 1., 2., 3., 4., 5.));
+    testExpr(MIN( 1., 2., 3., 5., 4.));
+    testExpr(MIN( 1., 2., 5., 4., 3.));
+    testExpr(MIN( 1., 5., 3., 4., 2.));
+    testExpr(MIN( 5., 2., 3., 4., 1.));
+    testExpr(MIN( 1., 2., 3., 4.,NaN));
+    testExpr(MIN( 1., 2., 3.,NaN, 4.));
+    testExpr(MIN( 1., 2.,NaN, 4., 3.));
+    testExpr(MIN( 1.,NaN, 3., 4., 2.));
+    testExpr(MIN(NaN, 2., 3., 4., 1.));
+    testExpr(MIN( 1., 2., 3., 4., 5., 6.));
+    testExpr(MIN( 2., 1., 3., 4., 5., 6.));
+    testExpr(MIN( 3., 2., 1., 4., 5., 6.));
+    testExpr(MIN( 4., 2., 3., 1., 5., 6.));
+    testExpr(MIN( 5., 2., 3., 4., 1., 6.));
+    testExpr(MIN( 6., 2., 3., 4., 5., 1.));
+    testExpr(MIN( 1., 2., 3., 4., 5.,NaN));
+    testExpr(MIN( 1., 2., 3., 4.,NaN, 5.));
+    testExpr(MIN( 1., 2., 3.,NaN, 5., 4.));
+    testExpr(MIN( 1., 2.,NaN, 4., 5., 3.));
+    testExpr(MIN( 1.,NaN, 3., 4., 5., 2.));
+    testExpr(MIN(NaN, 2., 3., 4., 5., 1.));
+    testExpr(MIN( 1., 2., 3., 4., 5.,-Inf));
+    testExpr(MIN( 1., 2., 3., 4.,-Inf, 5.));
+    testExpr(MIN( 1., 2., 3.,-Inf, 5., 4.));
+    testExpr(MIN( 1., 2.,-Inf, 4., 5., 3.));
+    testExpr(MIN( 1.,-Inf, 3., 4., 5., 2.));
+    testExpr(MIN(-Inf, 2., 3., 4., 5., 1.));
+    testExpr(MIN(1,2,3,4,5,6,7,8,9,10));
+    testExpr(MIN(5,4,3,2,1,0,-1,-2,-3,-4));
+    testExpr(MIN(1,-1,0));
+    testExpr(MAX(MIN(0,2),MAX(0),MIN(3,2,1)));
+
+    testExpr(NINT(0.4));
     testExpr(NINT(0.6));
+    testExpr(NINT(-0.4));
     testExpr(NINT(-0.6));
     testExpr(sin(0.5));
     testExpr(sinh(0.5));
@@ -544,6 +780,16 @@ MAIN(epicsCalcTest)
     testCalc("(1 | 2) ** 3", pow((double) (1 | 2), 3.));// 8 6
     testCalc("1+(1|2)**3", 1+pow((double) (1 | 2), 3.));// 8 6
     testExpr(1+(1?(1<2):(1>2))*2);
+    
+    // Malformed expressions
+    testBadExpr("MIN", CALC_ERR_INCOMPLETE);
+    testBadExpr("MIN()", CALC_ERR_SYNTAX);
+    testBadExpr("MIN(A,)", CALC_ERR_SYNTAX);
+    testBadExpr("MIN(A,B,)", CALC_ERR_SYNTAX);
+    testBadExpr("MAX", CALC_ERR_INCOMPLETE);
+    testBadExpr("MAX()", CALC_ERR_SYNTAX);
+    testBadExpr("MAX(A,)", CALC_ERR_SYNTAX);
+    testBadExpr("MAX(A,B,)", CALC_ERR_SYNTAX);
     
     return testDone();
 }

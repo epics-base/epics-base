@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$ */
@@ -44,6 +43,7 @@ epicsShareFunc long
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
     int itop;				/* integer from top of stack */
+    char nargs;
 
     /* initialize */
     ptop = stack;
@@ -158,15 +158,21 @@ epicsShareFunc long
 	    break;
 
 	case MAX:
-	    top = *ptop--;
-	    if (*ptop < top || isnan(top))
-		*ptop = top;
+	    nargs = *++pinst;
+	    while (--nargs) {
+		top = *ptop--;
+		if (*ptop < top || isnan(top))
+		    *ptop = top;
+	    }
 	    break;
 
 	case MIN:
-	    top = *ptop--;
-	    if (*ptop > top || isnan(top))
-		*ptop = top;
+	    nargs = *++pinst;
+	    while (--nargs) {
+		top = *ptop--;
+		if (*ptop > top || isnan(top))
+		    *ptop = top;
+	    }
 	    break;
 
 	case SQU_RT:
@@ -223,7 +229,13 @@ epicsShareFunc long
 	    break;
 
 	case FINITE:
-	    *ptop = finite(*ptop);
+	    nargs = *++pinst;
+	    top = finite(*ptop);
+	    while (--nargs) {
+		--ptop;
+		top = top && finite(*ptop);
+	    }
+	    *ptop = top;
 	    break;
 
 	case ISINF:
@@ -231,7 +243,13 @@ epicsShareFunc long
 	    break;
 
 	case ISNAN:
-	    *ptop = isnan(*ptop);
+	    nargs = *++pinst;
+	    top = isnan(*ptop);
+	    while (--nargs) {
+		--ptop;
+		top = top || isnan(*ptop);
+	    }
+	    *ptop = top;
 	    break;
 
 	case NINT:

@@ -174,14 +174,24 @@ synchronized master timingIOC) and as NTP clients.</p>
 <p>The value in the SELN field was not being checked against its limit,
 potentially causing a crash on some architectures.</p>
 
-<h4>Calc expressions: VAL keyword</h4>
+<h4>Calc expressions</h4>
 
-<p>The keyword <tt>VAL</tt> is now supported in CALC expressions. In a calc or
+<dl>
+<dt><tt>VAL</tt> keyword</dt>
+<dd>The keyword <tt>VAL</tt> is now supported in CALC expressions. In a calc or
 calcout record it returns the current contents of the VAL field (which can be
 written to by a CA put, so it might <i>not</i> be the result from last time the
 expression was evaluated). In Access Security expressions it returns the result
 of the previous evaluation of the rule expression. In other uses of the
-calcPerform engine, the result may not be well-defined.</p>
+calcPerform engine, the result may not be well-defined.</dd>
+
+<dt><tt>MIN</tt>, <tt>MAX</tt>, <tt>FINITE</tt>, <tt>ISNAN</tt> functions</dt>
+<dd>Thanks to Benjamin Franksen these functions can now accept any number of
+arguments, thus <tt>MAX(A,B,C,D,E,F,G,H,I,J,K,L)</tt> and <tt>MIN(A)</tt>are now
+legal expressions. The <tt>FINITE</tt> function returns a non-zero value as long
+as none of its arguments are NaN or Inf values, while <tt>ISNAN</tt> returns
+non-zero if any of its arguments are NaN values.</dd>
+</dl>
 
 <h4>softIoc now starts shell by default</h4>
 

@@ -12,9 +12,6 @@
 /* Author:  Marty Kraimer Date:  16JUN2000 */
 
 #include "epicsTime.h"
-
-typedef int (*pepicsTimeGetCurrent)(epicsTimeStamp *pDest);
-typedef int (*pepicsTimeGetEvent)(epicsTimeStamp *pDest,int eventNumber);
+#include "epicsGeneralTime.h"
 
 void iocClockInit(void);
-void iocClockRegister(pepicsTimeGetCurrent getCurrent,pepicsTimeGetEvent getEvent);

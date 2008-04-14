@@ -47,8 +47,6 @@ typedef struct iocClockPvt {
     epicsUInt32 nanosecondsPerTick;
     int         tickRate;
     int         ticksToSkip;
-    pepicsTimeGetCurrent getCurrent;
-    pepicsTimeGetEvent getEvent;
     const char *pserverAddr;
 }iocClockPvt;
 static iocClockPvt *piocClockPvt = 0;
@@ -105,8 +103,6 @@ void iocClockInit()
     piocClockPvt->lock = epicsMutexCreate();
     piocClockPvt->nanosecondsPerTick = BILLION/sysClkRateGet();
     piocClockPvt->tickRate = sysClkRateGet();
-    piocClockPvt->getCurrent = iocClockGetCurrent;
-    piocClockPvt->getEvent = iocClockGetEvent;
     /* look first for environment variable or CONFIG_SITE_ENV default */
     piocClockPvt->pserverAddr = envGetConfigParamPtr(&EPICS_TS_NTP_INET);
     if(!piocClockPvt->pserverAddr) { /* if neither, use the boot host */
@@ -141,18 +137,6 @@ void iocClockInit()
     return;
 }
 
-void iocClockRegister(pepicsTimeGetCurrent getCurrent,
-    pepicsTimeGetEvent getEvent)
-{
-    if(piocClockPvt) {
-        printf("iocClockRegister: iocClock already initialized\n");
-        return;
-    }
-    piocClockPvt = callocMustSucceed(1,sizeof(iocClockPvt),"iocClockRegister");
-    piocClockPvt->getCurrent = getCurrent;
-    piocClockPvt->getEvent = getEvent;
-}
-
 int iocClockGetCurrent(epicsTimeStamp *pDest)
 {
     unsigned long currentTick,nticks,nsecs;
@@ -192,28 +176,5 @@ int iocClockGetEvent(epicsTimeStamp *pDest, int eventNumber)
          return(0);
      }
      return(epicsTimeERROR);
-}
-
-int epicsTimeGetCurrent (epicsTimeStamp *pDest)
-{
-    if(!piocClockPvt) {
-        iocClockInit();
-        /*wait two seconds for syncNTP to contact network time server*/
-        epicsThreadSleep(2.0); 
-    }
-    if(piocClockPvt->getCurrent) return((*piocClockPvt->getCurrent)(pDest));
-    return(epicsTimeERROR);
-}
-
-int epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
-{
-    if(!piocClockPvt) {
-        iocClockInit();
-        /*wait two seconds for syncNTP to contact network time server*/
-        epicsThreadSleep(2.0); 
-    }
-    if(piocClockPvt->getEvent)
-        return((*piocClockPvt->getEvent)(pDest,eventNumber));
-    return(epicsTimeERROR);
 }
 

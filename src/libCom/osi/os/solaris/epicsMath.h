@@ -1,19 +1,19 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne, LLC as Operator of Argonne
 *     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-#ifndef epicsMathh
-#define epicsMathh
+#ifndef INC_epicsMath_H
+#define INC_epicsMath_H
 
 #include <math.h>
 
 #include <ieeefp.h>
-#define isinf(x) (((x)==(x)) && !finite((x)))
-/* same as (!isnan(x) && !finite(x)) */
 
-#endif /* epicsMathh */
+#ifndef isinf
+#  define isinf(x) (((x)==(x)) && !finite((x)))
+/* same as (!isnan(x) && !finite(x)) */
+#endif
+
+#endif /* INC_epicsMath_H */

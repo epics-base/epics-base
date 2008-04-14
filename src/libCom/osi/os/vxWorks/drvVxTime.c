@@ -40,14 +40,13 @@
 #include "epicsGeneralTime.h"
 
 static void VxTimeSyncTime(void *param);
-long	    VxTime_Init(int priority);
 static int  VxTimeGetCurrent(epicsTimeStamp *pDest);
 static void VxTime_StartSync(int junk);
 
 long    VxTime_Report(int level);
 
 typedef struct VxTimePvt {
-    BOOL		synced;	/* if never synced, we can't use it */
+    int		synced;	/* if never synced, we can't use it */
     epicsMutexId	lock;
     epicsTimerId	sync_timer;
     epicsTimeStamp	lastReportedTS;
@@ -80,17 +79,10 @@ static void VxTimeSyncTime(void *param)
     epicsTimerStartDelay(pVxTimePvt->sync_timer, SYNC_PERIOD);
 }
 
-long VxTime_Init(int priority)
+long VxTime_InitOnce(int priority)
 {
-    taskLock();
-    if(pVxTimePvt) {
-    	taskUnlock();
-    	return OK;
-    }
     pVxTimePvt = callocMustSucceed(1,sizeof(VxTimePvt),"VxTime_Init");
-    taskUnlock();
-
-    bzero((char *)pVxTimePvt, sizeof(VxTimePvt));
+    memset(pVxTimePvt, 0, sizeof(VxTimePvt));
     pVxTimePvt->synced = FALSE;
     pVxTimePvt->lock = epicsMutexCreate();
     pVxTimePvt->priority = priority;
@@ -107,7 +99,27 @@ long VxTime_Init(int priority)
     		epicsThreadGetStackSize(epicsThreadStackMedium),
     		(FUNCPTR) VxTime_StartSync, 0,0,0,0,0,0,0,0,0,0);
 
-    return	OK;
+    return	0;
+}
+
+struct InitInfo {
+    int  priority;
+    long retval;
+};
+static void VxTime_InitOnceWrapper(void *arg)
+{
+    struct InitInfo *pargs = (struct InitInfo *)arg;
+    pargs->retval = VxTime_InitOnce(pargs->priority);
+}
+
+long VxTime_Init(int priority)
+{
+    struct InitInfo args;
+    static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
+
+    args.priority = priority;
+    epicsThreadOnce(&onceId, VxTime_InitOnceWrapper, &args);
+    return args.retval;
 }
 
 static int VxTimeGetCurrent(epicsTimeStamp *pDest)
@@ -192,7 +204,7 @@ long    VxTime_Report(int level)
 		       pVxTimePvt->lastSyncedVxTime.tv_nsec);
 		printf("Timer = %p\n", pVxTimePvt->sync_timer);
 	}
-	return  OK;
+	return  0;
 }
 
 static void VxTime_StartSync(int junk)

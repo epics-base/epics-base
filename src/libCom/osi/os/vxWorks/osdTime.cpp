@@ -9,18 +9,8 @@
 \*************************************************************************/
 
 #include "epicsTime.h"
-#include "drvNTPTime.h"
-#include "drvVxTime.h"
-#include "epicsGeneralTime.h"
 
 // epicsTimeGetCurrent and epicsTimeGetEvent are implemented in iocClock.c
-
-extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
-{
-    NTPTime_Init(100); /* init NTP first so it can be used to sync VW */
-    VxTime_Init(LAST_RESORT_PRIORITY);
-    return epicsTimeOK;
-}
 
 // vxWorks localtime_r interface does not match POSIX standards
 int epicsTime_localtime ( const time_t *clock, struct tm *result )

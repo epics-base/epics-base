@@ -29,6 +29,13 @@
  * int epicsShareAPI myExtFunc ( int arg );   
  * int epicsShareAPI myExtFunc ( int arg ) {}
  *
+ * ** NOTE **  epicsShareAPI is deprecated for new routines, don't use it!
+ *             In a future major release (R3.15) we will remove this keyword
+ *             from most EPICS APIs, although CA may continue to use it.
+ *             This is a major release though, since it affects the order
+ *             that arguments are pushed onto the stack on Windows and we
+ *             don't want a replacement DLL to silent cause mayhem...
+ *
  * 2) epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL) 
  * export/import related information in the source code. On windows these keywords 
  * allow faster dispatching of calls to DLLs because more is known at compile time. 

@@ -11,13 +11,13 @@
 
 <h1>EPICS R3.14 Channel Access Reference Manual</h1>
 <address>
-  Jeffrey O. Hill
+  Jeffrey O. Hill 
 </address>
 
 <p><span style="font-size: x-small; font-weight:lighter;">Los Alamos National
 Laboratory, SNS Division</span></p>
 <address>
-  Ralph Lange
+  Ralph Lange 
 </address>
 
 <p><span style="font-size: x-small; font-weight:lighter;">BESSY</span></p>
@@ -94,7 +94,7 @@ $Date$</span></small></p>
 
 <h3><a href="#Troublesho">Troubleshooting</a></h3>
 <ul>
-  <li><a href="#When">When Clients Do Not Connect to Their Server</a>
+  <li><a href="#When">When Clients Do Not Connect to Their Server</a> 
     <ul>
       <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
         Match</a></li>
@@ -785,7 +785,7 @@ two servers sharing the same UDP port on the same host</a>.</p>
 
 <h4>Server Beacons</h4>
 
-<p>The  EPICS_CAS_BEACON_PERIOD parameter determines the server's beacon
+<p>The EPICS_CAS_BEACON_PERIOD parameter determines the server's beacon
 period and is specified in floating point seconds. The default is typically
 15 seconds. See also <a href="#Disconnect">EPICS_CA_CONN_TMO</a> and <a
 href="#Dynamic">Dynamic Changes in the CA Client Library Search
@@ -811,8 +811,8 @@ defined then the contents of EPICS_CA_ADDR_LIST is used to augment the list.
 Otherwise, the list is not augmented.</p>
 
 <p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for
-server beacons. The only exception to this occurs when  ports are specified
-in EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
+server beacons. The only exception to this occurs when ports are specified in
+EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
 EPICS_CAS_BEACON_PORT is not specified then beacons are sent to the port
 specified in EPICS_CA_REPEATER_PORT.</p>
 
@@ -1021,7 +1021,7 @@ received, and anomalous entries are flagged with a star.</p>
 <h4>Description</h4>
 
 <p>Connect to the specified PV, subscribe for monitor updates the specified
-number of times (default once),  and periodically log the current sampled
+number of times (default once), and periodically log the current sampled
 event rate, average event rate, and the standard deviation of the event rate
 in Hertz to standard out.</p>
 
@@ -1071,11 +1071,11 @@ the output.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
     </tr>
     <tr>
       <td>-c</td>
-      <td>Asynchronous get (use ca_get_callback instead of ca_get)</td>
+      <td>Asynchronous get (use ca_get_callback and wait for completion)</td>
     </tr>
     <tr>
       <td></td>
@@ -1100,7 +1100,7 @@ the output.</p>
     </tr>
     <tr>
       <td>-d &lt;type&gt;</td>
-      <td>Request specific dbr type; use string (DBR_ prefix may be omitted)
+      <td>Request specific dbr type; use string (DBR_ prefix may be omitted) 
 
         <p>or number of one of the following types:</p>
 
@@ -1310,7 +1310,7 @@ the output.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
     </tr>
     <tr>
       <td>-m &lt;mask&gt;</td>
@@ -1446,7 +1446,11 @@ on the command line is used.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
+    </tr>
+    <tr>
+      <td>-c</td>
+      <td>Asynchronous put (use ca_put_callback and wait for completion)</td>
     </tr>
     <tr>
       <td></td>
@@ -1522,7 +1526,7 @@ ports etc.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
+      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
     </tr>
     <tr>
       <td>-s &lt;level&gt;</td>
@@ -2041,7 +2045,7 @@ is a void pointer to any data that might be returned. The
 codes in caerr.h and will indicate the status of the operation performed in
 the IOC. If the status field isn't set to ECA_NORMAL or data isn't normally
 returned from the operation (i.e. put call back) then you should expect that
-the <code>dbr </code>field  will be set to a nill pointer (zero). The fields
+the <code>dbr </code>field will be set to a nill pointer (zero). The fields
 <code>usr</code>, <code>chid</code>, and <code>type</code> are set to the
 values specified when the request was made by the application. The "dbr"
 pointer, and any data that it points to, are valid only when executing within
@@ -2445,7 +2449,7 @@ any time.</p>
     <dd>Optional address of the user's call back function to be run when the
       connection state changes. Casual users of channel access may decide to
       set this field to nil or 0 if they do not need to have a call back
-      function run in response to each connection state change event.
+      function run in response to each connection state change event. 
       <p>The following structure is passed <em>by value </em>to the user's
       connection connection callback function. The <code>op</code> field will
       be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
@@ -2622,7 +2626,7 @@ message.</p>
 <p>ECA_DISCONN - Channel is disconnected</p>
 
 <h4>See Also</h4>
-ca_flush_io()
+ca_flush_io() 
 
 <p>ca_pend_event()</p>
 
@@ -2717,7 +2721,7 @@ in one message.</p>
 <p>ECA_DISCONN - Channel is disconnected</p>
 
 <h4>See Also</h4>
-ca_pend_io()
+ca_pend_io() 
 
 <p>ca_pend_event()</p>
 
@@ -2812,7 +2816,7 @@ least one update indicating the current state of the channel.</p>
   <dt><code>MASK</code></dt>
     <dd>A mask with bits set for each of the event trigger types requested.
       The event trigger mask must be a <em>bitwise or</em> of one or more of
-      the following constants.
+      the following constants. 
       <ul>
         <li>DBE_VALUE - Trigger events when the channel value exceeds the
           monitor dead band</li>
@@ -2841,7 +2845,7 @@ least one update indicating the current state of the channel.</p>
 <p>ECA_ADDFAIL - A local database event add failed</p>
 
 <h4>See Also</h4>
-ca_pend_event()
+ca_pend_event() 
 
 <p>ca_flush_io()</p>
 
@@ -2883,7 +2887,7 @@ time.</p>
 <ul>
   <li>If ECA_NORMAL is returned then it can be safely assumed that all
     outstanding <a href="#ca_get">ca_get</a> requests have completed
-    successfully and  channels created specifying nill connection handler
+    successfully and channels created specifying nill connection handler
     function pointers have connected for the first time.</li>
   <li>If ECA_TIMEOUT is returned then it must be assumed for all previous <a
     href="#ca_get">ca_get</a> requests and properly qualified first time
@@ -2929,7 +2933,7 @@ timeout</p>
 <p>ECA_EVDISALLOW - Function inappropriate for use within an event handler</p>
 
 <h4>See Also</h4>
-<a href="#ca_get">ca_get</a>()
+<a href="#ca_get">ca_get</a>() 
 
 <p><a href="#ca_create_channel">ca_create_channel</a>()</p>
 
@@ -3088,7 +3092,7 @@ field should not be used.</p>
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op </code>field can be one of
       <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
-      CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code>
+      CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code> 
       <pre><code>struct exception_handler_args {
     void            *usr;   /* user argument supplied when installed */
     chanId          chid;   /* channel id (may be nill) */
@@ -3198,7 +3202,7 @@ specified channel.</p>
   <dt><code>PFUNC</code></dt>
     <dd>Address of user supplied call back function. A nil pointer uninstalls
       the current handler. The following arguments are passed <em>by
-      value</em> to the supplied callback handler.
+      value</em> to the supplied callback handler. 
       <pre><code>typedef struct ca_access_rights {
     unsigned    read_access:1;
     unsigned    write_access:1;
@@ -3592,7 +3596,7 @@ SEVCHK ( status, Sync group create failed );</code></pre>
 <p>ECA_ALLOCMEM - Failed, unable to allocate memory</p>
 
 <h4>See Also</h4>
-ca_sg_delete()
+ca_sg_delete() 
 
 <p>ca_sg_block()</p>
 

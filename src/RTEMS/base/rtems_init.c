@@ -42,7 +42,7 @@
 #include "epicsRtemsInitHooks.h"
 
 rtems_interval rtemsTicksPerSecond;
-double rtemsTicksPerSecond_double;
+double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
 
 static void
 logReset (void)
@@ -416,6 +416,7 @@ Init (rtems_task_argument ignored)
      */
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
 	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
+	rtemsTicksPerTwoSeconds_double = rtemsTicksPerSecond_double * 2.0;
 
     /*
      * Explain why we're here

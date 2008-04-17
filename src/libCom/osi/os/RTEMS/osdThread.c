@@ -366,13 +366,14 @@ epicsThreadSleep (double seconds)
 {
     rtems_status_code sc;
     rtems_interval delay;
-    extern double rtemsTicksPerSecond_double;
+    extern double rtemsTicksPerTwoSeconds_double;
     
     if (seconds <= 0.0) {
         delay = 0;
     }
     else {
-        delay = seconds * rtemsTicksPerSecond_double;
+        delay = seconds * rtemsTicksPerTwoSeconds_double;
+        delay = (delay + 1) / 2;
         if (delay == 0)
             delay++;
     }

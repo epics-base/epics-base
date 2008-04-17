@@ -1,11 +1,11 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*
@@ -26,6 +26,7 @@ extern "C" {
 typedef void ( *pSigFunc ) ( int );
 }
 
+static pSigFunc pReplacedSigHupFunc = 0;
 static pSigFunc pReplacedSigPipeFunc = 0;
 static pSigFunc pReplacedSigAlarmFunc = 0;
 
@@ -64,6 +65,22 @@ static void localInstallSigHandler ( int signalIn, pSigFunc pNewFunc,
 }
 
 /*
+ * ignoreSigHup ()
+ */
+extern "C" {
+static void ignoreSigHup ( int signal )
+{
+    static volatile int reentered = 1;
+
+    if (--reentered == 0) {
+        if ( pReplacedSigHupFunc ) {
+            ( *pReplacedSigHupFunc ) ( signal );
+        }
+    }
+}
+}
+
+/*
  * ignoreSigPipe ()
  */
 extern "C" {
@@ -94,6 +111,15 @@ static void ignoreSigAlarm ( int signal )
     }
     ++reentered;
 }
+}
+
+/*
+ * epicsSignalInstallSigHupIgnore ()
+ */
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore (void)
+{
+    localInstallSigHandler ( SIGHUP, 
+        ignoreSigHup, & pReplacedSigHupFunc );
 }
 
 /*

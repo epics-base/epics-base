@@ -255,7 +255,7 @@ void epicsThreadSleep(double seconds)
     if(seconds<=0.0) {
         ticks = 0;
     } else {
-        ticks = seconds*sysClkRateGet();
+        ticks = seconds*sysClkRateGet() + 0.5;
         if(ticks<=0) ticks = 1;
     }
     status = taskDelay(ticks);

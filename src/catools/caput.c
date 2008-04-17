@@ -1,23 +1,27 @@
 /*************************************************************************\
-* Copyright (c) 2006 Diamond Light Source Ltd.
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
-*     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2006 Diamond Light Source Ltd.
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
+ *     Synchrotronstrahlung.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* 
- *  $Id$
- *
  *  Author: Ralph Lange (BESSY)
  *
  *  Modification History
  *  2006/01/17 Malcolm Walters (Tessella/Diamond Light Source)
  *     Added put_callback option - heavily based on caget
+ *  2008/03/06 Andy Foster (OSL/Diamond Light Source)
+ *     Remove timeout dependency of ca_put_callback by using an EPICS event
+ *     (semaphore), i.e. remove ca_pend_event time slicing.
+ *  2008/04/16 Ralph Lange (BESSY)
+ *     Updated usage info
  *
  */
 
@@ -27,11 +31,11 @@
 
 #include <cadef.h>
 #include <epicsGetopt.h>
+#include <epicsEvent.h>
 
 #include "tool_lib.h"
 
 #define VALID_DOUBLE_DIGITS 18  /* Max usable precision for a double */
-#define PEND_EVENT_SLICES 5     /* No. of pend_event slices for callback requests */
 
 /* Different output formats */
 typedef enum { plain, terse, all } OutputT;
@@ -43,7 +47,7 @@ typedef enum { get, callback } RequestT;
 typedef char EpicsStr[MAX_STRING_SIZE];
 
 static int nConn = 0;           /* Number of connected PVs */
-static int nDone = 0;           /* Number of callbacks done */
+static epicsEventId epId;
 
 void usage (void)
 {
@@ -51,8 +55,8 @@ void usage (void)
     "       caput -a [options] <PV name> <no of values> <PV value> ...\n\n"
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
-    "  -w <sec>:  Wait time, specifies longer CA timeout, default is %f second\n"
-    "  -c: Use put_callback to wait for completion\n"
+    "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
+    "  -c: Asynchronous put (use ca_put_callback and wait for completion)\n"
     "Format options:\n"
     "  -t: Terse mode - print only sucessfully written value, without name\n"
     "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n"
@@ -85,8 +89,8 @@ void put_event_handler ( struct event_handler_args args )
     /* Retrieve pv from event handler structure */
     pv* pPv = args.usr;
 
-    /* Set done count and store status*/
-    nDone++; 
+    /* Give EPICS event and store status */
+    epicsEventSignal( epId );
     pPv->status = args.status;
 }
 
@@ -238,6 +242,7 @@ int main (int argc, char *argv[])
     double *dbuf;
     void *pbuf;
     int len;
+    int waitStatus;
     EpicsStr bufstr;
     struct dbr_gr_enum bufGrEnum;
 
@@ -319,9 +324,11 @@ int main (int argc, char *argv[])
 
     nPvs = 1;                   /* One PV - the rest is value(s) */
 
+    epId = epicsEventCreate(epicsEventEmpty);  /* Create empty EPICS event (semaphore) */
+
                                 /* Start up Channel Access */
 
-    result = ca_context_create(ca_disable_preemptive_callback);
+    result = ca_context_create(ca_enable_preemptive_callback);
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
                 "to start channel access '%s'.\n", ca_message(result), pvs[n].name);
@@ -464,7 +471,8 @@ int main (int argc, char *argv[])
     if (request == callback) {
         /* Use callback version of put */
         pvs[0].status = ECA_NORMAL;   /* All ok at the moment */
-        result = ca_array_put_callback (dbrType, count, pvs[0].chid, pbuf, put_event_handler, (void *)pvs);
+        result = ca_array_put_callback (
+            dbrType, count, pvs[0].chid, pbuf, put_event_handler, (void *) pvs);
     } else {
         /* Use standard put with defined timeout */
         result = ca_array_put (dbrType, count, pvs[0].chid, pbuf);
@@ -476,21 +484,9 @@ int main (int argc, char *argv[])
     }
     if (request == callback)    /* Also wait for callbacks */
     {
-        nDone = 0; /* Not done yet */
-        if (caTimeout != 0){
-            double slice = caTimeout / PEND_EVENT_SLICES;
-            for (n = 0; n < PEND_EVENT_SLICES; n++)
-            {
-                ca_pend_event(slice);
-                if (nDone == 1) break; /* Have done, therefore break */
-            }
-        } else {
-            while (nDone == 0){
-                ca_pend_event(1);
-            }
-        }
-        if (nDone != 1) 
-            fprintf(stderr, "Write callback operation timed out.\n");
+      waitStatus = epicsEventWaitWithTimeout( epId, caTimeout );
+      if( waitStatus )
+        fprintf(stderr, "Write callback operation timed out\n");
 
         /* retrieve status from callback */
         result=pvs[0].status;

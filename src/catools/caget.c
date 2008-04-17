@@ -1,22 +1,24 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
-*     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
+ *     Synchrotronstrahlung.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* 
- *  $Id$
- *
  *  Author: Ralph Lange (BESSY)
  *
  *  Modification History
  *  2006/01/17 Malcolm Walters (Tessella/Diamond Light Source)
  *     Fixed problem with "-c -w 0" hanging forever
+ *  2008/04/16 Ralph Lange (BESSY)
+ *     Updated usage info
+ *
  */
 
 #include <stdio.h>
@@ -48,8 +50,8 @@ void usage (void)
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
-    "  -w <sec>: Wait time, specifies longer CA timeout, default is %f second\n"
-    "  -c: Asynchronous get (use ca_get_callback instead of ca_get)\n"
+    "  -w <sec>: Wait time, specifies CA timeout, default is %f second(s)\n"
+    "  -c: Asynchronous get (use ca_get_callback and wait for completion)\n"
     "Format options:\n"
     "      Default output format is \"name value\"\n"
     "  -t: Terse mode - print only value, without name\n"

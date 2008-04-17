@@ -1,18 +1,21 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
-*     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
+ *     Synchrotronstrahlung.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* 
- *  $Id$
- *
  *  Author: Ralph Lange (BESSY)
+ *
+ *  Modification History
+ *  2008/04/16 Ralph Lange (BESSY)
+ *     Updated usage info
  *
  */
 
@@ -38,7 +41,7 @@ void usage (void)
     fprintf (stderr, "\nUsage: camonitor [options] <PV name> ...\n\n"
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
-    "  -w <sec>:  Wait time, specifies longer CA timeout, default is %f second\n"
+    "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n"
     "             'v' (value), 'a' (alarm), 'l' (log). Default: va\n"
     "Timestamps:\n"

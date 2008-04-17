@@ -2,7 +2,7 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS Base R3.14.x Release Notes</title>
 </head>
 
@@ -10,159 +10,154 @@
 <h1 align="center">EPICS Base Release 3.14.x</h1>
 
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
-
 <!-- Insert new items below here ... -->
+
+<h4>IOC ignores SIGHUP</h4>
+
+<p>iocInit() installs an signal handler for ignoring SIGHUP. This fixes a
+problem that appeared with soft IOCs run as a procServ child on some Linux
+systems, where a disconnecting CA client would cause the soft IOC to get a
+SIGHUP and exit.</p>
 
 <h4>Build System Reorganization</h4>
 
 <p>Several changes have been made to the build system, although these changes
-should not affect the contents of <tt>Makefile</tt>s or any applications using
-Base. They do however require that the version of GNU Make used be 3.80 (3.81?)
-or later. These changes are briefly:</p>
-
+should not affect the contents of <tt>Makefile</tt>s or any applications
+using Base. They do however require that the version of GNU Make used be 3.80
+(3.81?) or later. These changes are briefly:</p>
 <ul>
-  <li>
-    <p>A new tool is provided that expands out <tt>@VAR@</tt> macros.  By
-    default it knows the value of <tt>@TOP@</tt>, <tt>@ARCH@</tt> and any paths
-    defined in the application's <tt>configure/RELEASE</tt> file, but additional
-    macros can be defined in the <tt>Makefile</tt> that uses it by adding to the
-    <tt>EXPAND_VARS</tt> macro like the example following, which creates an
-    <tt>@EXE@</tt> macro that expands out to <tt>.exe</tt> on windows and to
-    nothing on other platforms:</p>
-
+  <li><p>A new tool is provided that expands out <tt>@VAR@</tt> macros. By
+    default it knows the value of <tt>@TOP@</tt>, <tt>@ARCH@</tt> and any
+    paths defined in the application's <tt>configure/RELEASE</tt> file, but
+    additional macros can be defined in the <tt>Makefile</tt> that uses it by
+    adding to the <tt>EXPAND_VARS</tt> macro like the example following,
+    which creates an <tt>@EXE@</tt> macro that expands out to <tt>.exe</tt>
+    on windows and to nothing on other platforms:</p>
     <pre>  EXPAND_VARS += EXE=$(EXE)</pre>
-
-    <p>Files that contain <tt>@VAR@</tt> macros to be substituted must have an
-    at sign <tt><b>@</b></tt> as the last character of their name and be listed
-    in the <tt>EXPAND</tt> variable of their <tt>Makefile</tt>.  The expanded
-    file will have the same name as the original with the <tt><b>@</b></tt>
-    suffix removed, and is then available for compiling or installing using any
-    other build mechanism.</p>
+    <p>Files that contain <tt>@VAR@</tt> macros to be substituted must have
+    an at sign <tt><b>@</b></tt> as the last character of their name and be
+    listed in the <tt>EXPAND</tt> variable of their <tt>Makefile</tt>. The
+    expanded file will have the same name as the original with the
+    <tt><b>@</b></tt> suffix removed, and is then available for compiling or
+    installing using any other build mechanism.</p>
   </li>
-
-  <li>
-    <p>Support has been added for installing Perl library modules. The
+  <li><p>Support has been added for installing Perl library modules. The
     <tt>Makefile</tt> variable <tt>PERL_MODULES</tt> can be set to a list of
-    names of files to be installed into the <tt>$(TOP)/lib/perl</tt> directory.
-    The above macro expansion facility can then be used in perl programs that
-    use these libraries to set the perl search path to include that directory.
-    The syntax for this is as follows:</p>
-
+    names of files to be installed into the <tt>$(TOP)/lib/perl</tt>
+    directory. The above macro expansion facility can then be used in perl
+    programs that use these libraries to set the perl search path to include
+    that directory. The syntax for this is as follows:</p>
     <pre>  use lib '@TOP@/lib/perl';
   use MyModule;</pre>
-
     <p>The filenames listed in <tt>PERL_MODULES</tt> can include subdirectory
     path components and the build system will preserve these in the installed
     result.</p>
   </li>
-
   <li>The Perl scripts that were in <tt>configure/tools</tt> are now found in
-  the new <tt>src/tools</tt> directory, and get installed into the appropriate
-  <tt>bin/<i>hostarch</i></tt> directory at build time. Some of these scripts
-  are no longer required and have been removed, and others are being modified
-  to make them more modular, extracting common routines into perl library
-  modules.</li>
-
+    the new <tt>src/tools</tt> directory, and get installed into the
+    appropriate <tt>bin/<i>hostarch</i></tt> directory at build time. Some of
+    these scripts are no longer required and have been removed, and others
+    are being modified to make them more modular, extracting common routines
+    into perl library modules.</li>
   <li>The generated files that were created by running make in the
-  <tt>configure</tt> directory are no longer required, having been replaced by
-  additional mechanisms inside the build system files. This removes a common
-  source of build problems.</li>
+    <tt>configure</tt> directory are no longer required, having been replaced
+    by additional mechanisms inside the build system files. This removes a
+    common source of build problems.</li>
 </ul>
 
 <h4>Access security configuration files</h4>
 
-<p>Rules and macros were added for creating an *.acf file, access security 
-configuration file, from an *.acs file using the C preprocessor. 
-An .acs file has the same format as an .acf file with the addition of
-'#include "&lt;filename&gt;"' and '#define &lt;macroname&gt; &lt;value&gt;'
-lines.  The C preprocessor includes the #include files and performs the 
-macro substitutions.
-</p>
+<p>Rules and macros were added for creating an *.acf file, access security
+configuration file, from an *.acs file using the C preprocessor. An .acs file
+has the same format as an .acf file with the addition of '#include
+"&lt;filename&gt;"' and '#define &lt;macroname&gt; &lt;value&gt;' lines. The
+C preprocessor includes the #include files and performs the macro
+substitutions. </p>
 
 <h4>Changes to subArray record error behaviour</h4>
 
-<p>In previous versions the INDX field of a subArray record was set to zero if
-the array that it reads through its INP field became empty.  From this release
-the INDX field will only be modified by the record's process() routine if INDX
-is greater than MALM.  In the event that the no data is read through the INP
-link, the subArray's UDF field will be set and a UDF/INVALID alarm will be
-generated.</p>
+<p>In previous versions the INDX field of a subArray record was set to zero
+if the array that it reads through its INP field became empty. From this
+release the INDX field will only be modified by the record's process()
+routine if INDX is greater than MALM. In the event that the no data is read
+through the INP link, the subArray's UDF field will be set and a UDF/INVALID
+alarm will be generated.</p>
 
 <h4>New Architectures</h4>
 
-<p>The following target architectures have been added to this release, although
-the core developers lack the ability to test all of them:</p>
-
+<p>The following target architectures have been added to this release,
+although the core developers lack the ability to test all of them:</p>
 <ul>
-  <li>linux-cris</li>
-  <ul>
-    <li>linux-cris_v10</li>
-    <li>linux-cris_v32</li>
-  </ul>
+  <li>linux-cris
+    <ul>
+      <li>linux-cris_v10</li>
+      <li>linux-cris_v32</li>
+    </ul>
+  </li>
 </ul>
 
 <h4>Added compile line header search directories</h4>
 
-<p>The compile line list of directories to search for header files now includes
-O.Common and the existing os subdirectories of SRC_DIRS
-&lt;src_dir&gt;/os/&lt;OS_CLASS&gt;, &lt;src_dir&gt;/os/posix, and 
+<p>The compile line list of directories to search for header files now
+includes O.Common and the existing os subdirectories of SRC_DIRS
+&lt;src_dir&gt;/os/&lt;OS_CLASS&gt;, &lt;src_dir&gt;/os/posix, and
 &lt;src_dir&gt;/os/default. </p>
 
 <h4>Parallel make now supported</h4>
 
 <p>The <tt>-j <i>jobs</i></tt> option is now supported for users of GNU Make
-version 3.80 or later.  The <tt>-j</tt> option speeds up building by allowing
+version 3.80 or later. The <tt>-j</tt> option speeds up building by allowing
 multiple jobs (build commands) to be run in parallel; this will have the most
 effect on hosts with multiple symmetric processors, but can also speed up
-uni-processor builds.  Builds still work as before when run without <tt>-j</tt>,
-but using the <tt>-j</tt> option with an earlier version of GNU make will fail
-since this relies on the <tt>$(eval)</tt> function which was introduced in GNU
-Make 3.80.</p>
+uni-processor builds. Builds still work as before when run without
+<tt>-j</tt>, but using the <tt>-j</tt> option with an earlier version of GNU
+make will fail since this relies on the <tt>$(eval)</tt> function which was
+introduced in GNU Make 3.80.</p>
 
-<p>The <tt>-j</tt> option has been tested with this version of EPICS Base, but
-it may not work for Extensions or IOC applications unless their dependancies are
-specified correctly.</p>
+<p>The <tt>-j</tt> option has been tested with this version of EPICS Base,
+but it may not work for Extensions or IOC applications unless their
+dependancies are specified correctly.</p>
 
 <p>New DIRS directory dependancy specifications are required to determine the
-directory build order with <tt>-j</tt>.  For example if we have 2 directories,
+directory build order with <tt>-j</tt>. For example if we have 2 directories,
 src and configure, and the configure directory must be built before the src
 directory, the Makefile should contain:</p>
 
 <blockquote>
-<pre> DIRS = configure src
+  <pre> DIRS = configure src
  src_DEPEND_DIRS = configure</pre>
 </blockquote>
 
-<p>The directory dependancy specifications are only needed when <tt>-j</tt> is
-given to make.  Without the <tt>-j</tt> the order of directories in the DIRS
-definition determines the build order as before.</p>
+<p>The directory dependancy specifications are only needed when <tt>-j</tt>
+is given to make. Without the <tt>-j</tt> the order of directories in the
+DIRS definition determines the build order as before.</p>
 
 <h4>Breakpoint tables</h4>
 
 <p>Some sites may be using breakpoint tables that are not monotonic in one
-direction.  In R3.14.9 both axes of a breaktable had to be monotonic; a table
-will not be loaded if either the raw or engineering values change direction. 
-There are situations where this check is too strict however, so a new variable
-named <tt>dbBptNotMonotonic</tt> has been added that disables this check if its
-value is non-zero.</p>
+direction. In R3.14.9 both axes of a breaktable had to be monotonic; a table
+will not be loaded if either the raw or engineering values change direction.
+There are situations where this check is too strict however, so a new
+variable named <tt>dbBptNotMonotonic</tt> has been added that disables this
+check if its value is non-zero.</p>
 
-<p>Breakpoint tables are often included in an IOC's .dbd file, but they can also
-be loaded from a .db file (although VDCT will probably not understand them). 
-Since there is no way to set the above variable inside the <tt>dbExpand</tt>
-program that expands out an IOC's .dbd file (which also rejects non-monotonic
-breaktables), all applications that use such tables will have to load those
-tables separately, using either <tt>dbLoadDatabase</tt> or
-<tt>dbLoadRecords</tt>.</p>
+<p>Breakpoint tables are often included in an IOC's .dbd file, but they can
+also be loaded from a .db file (although VDCT will probably not understand
+them). Since there is no way to set the above variable inside the
+<tt>dbExpand</tt> program that expands out an IOC's .dbd file (which also
+rejects non-monotonic breaktables), all applications that use such tables
+will have to load those tables separately, using either
+<tt>dbLoadDatabase</tt> or <tt>dbLoadRecords</tt>.</p>
 
 <h4>RTEMS on processors with MOTLOAD bootstrap</h4>
 
-<p>Added support for more 'Global Environment Variables'.   Documented in
-the EPICS/RTEMS tutorial.</p>
+<p>Added support for more 'Global Environment Variables'. Documented in the
+EPICS/RTEMS tutorial.</p>
 
 <h4>RTEMS on processors with PPCBUG bootstrap</h4>
 
-<p>Set NTP server as well as nameserver and log server from server
-bootstrap settting.</p>
+<p>Set NTP server as well as nameserver and log server from server bootstrap
+settting.</p>
 
 <h4>RTEMS Timing</h4>
 
@@ -175,48 +170,49 @@ synchronized master timingIOC) and as NTP clients.</p>
 potentially causing a crash on some architectures.</p>
 
 <h4>Calc expressions</h4>
-
 <dl>
-<dt><tt>VAL</tt> keyword</dt>
-<dd>The keyword <tt>VAL</tt> is now supported in CALC expressions. In a calc or
-calcout record it returns the current contents of the VAL field (which can be
-written to by a CA put, so it might <i>not</i> be the result from last time the
-expression was evaluated). In Access Security expressions it returns the result
-of the previous evaluation of the rule expression. In other uses of the
-calcPerform engine, the result may not be well-defined.</dd>
-
-<dt><tt>MIN</tt>, <tt>MAX</tt>, <tt>FINITE</tt>, <tt>ISNAN</tt> functions</dt>
-<dd>Thanks to Benjamin Franksen these functions can now accept any number of
-arguments, thus <tt>MAX(A,B,C,D,E,F,G,H,I,J,K,L)</tt> and <tt>MIN(A)</tt>are now
-legal expressions. The <tt>FINITE</tt> function returns a non-zero value as long
-as none of its arguments are NaN or Inf values, while <tt>ISNAN</tt> returns
-non-zero if any of its arguments are NaN values.</dd>
+  <dt><tt>VAL</tt> keyword</dt>
+    <dd>The keyword <tt>VAL</tt> is now supported in CALC expressions. In a
+      calc or calcout record it returns the current contents of the VAL field
+      (which can be written to by a CA put, so it might <i>not</i> be the
+      result from last time the expression was evaluated). In Access Security
+      expressions it returns the result of the previous evaluation of the
+      rule expression. In other uses of the calcPerform engine, the result
+      may not be well-defined.</dd>
+  <dt><tt>MIN</tt>, <tt>MAX</tt>, <tt>FINITE</tt>, <tt>ISNAN</tt>
+  functions</dt>
+    <dd>Thanks to Benjamin Franksen these functions can now accept any number
+      of arguments, thus <tt>MAX(A,B,C,D,E,F,G,H,I,J,K,L)</tt> and
+      <tt>MIN(A)</tt>are now legal expressions. The <tt>FINITE</tt> function
+      returns a non-zero value as long as none of its arguments are NaN or
+      Inf values, while <tt>ISNAN</tt> returns non-zero if any of its
+      arguments are NaN values.</dd>
 </dl>
 
 <h4>softIoc now starts shell by default</h4>
 
-<p>To prevent an interactive shell from being started, give a <tt>-S</tt> (upper
-case) option on the softIoc command line.  The old <tt>-s</tt> (lower case)
-option is still accepted, but now does nothing.</p>
+<p>To prevent an interactive shell from being started, give a <tt>-S</tt>
+(upper case) option on the softIoc command line. The old <tt>-s</tt> (lower
+case) option is still accepted, but now does nothing.</p>
 
 <h4>Error messages from dbLoadRecords</h4>
 
 <p>Some error messages output by the dbLoadRecords parser should be easier to
-understand, having been reworded to report what was actually the problem rather
-than just which routine found the error...</p>
+understand, having been reworded to report what was actually the problem
+rather than just which routine found the error...</p>
 
 <h4>Command registration for iocsh</h4>
 
-<p>The iocsh command registration data and routines have been moved out of the
-<tt>src/iocsh</tt> directory (which now no longer exists) into a file for each
-library.  At the same time, the iocsh implementation code has been moved into
-libCom.  There is no <tt>libiocsh.a</tt> library created any more, so any
-applications (such as the sequencer) which explicitly list <tt>iocsh</tt> in a
-<tt>xxx_LIBS</tt> definition in their Makefile(s) will need to be modified to
-have the library name removed.  In most cases though the library will have been
-included using the <tt>EPICS_BASE_IOC_LIBS</tt> or <tt>EPICS_BASE_HOST_LIBS</tt>
-variables that are set in Base, and thus no changes will be needed.</p>
-
+<p>The iocsh command registration data and routines have been moved out of
+the <tt>src/iocsh</tt> directory (which now no longer exists) into a file for
+each library. At the same time, the iocsh implementation code has been moved
+into libCom. There is no <tt>libiocsh.a</tt> library created any more, so any
+applications (such as the sequencer) which explicitly list <tt>iocsh</tt> in
+a <tt>xxx_LIBS</tt> definition in their Makefile(s) will need to be modified
+to have the library name removed. In most cases though the library will have
+been included using the <tt>EPICS_BASE_IOC_LIBS</tt> or
+<tt>EPICS_BASE_HOST_LIBS</tt> variables that are set in Base, and thus no
+changes will be needed.</p>
 
 <h2 align="center">Changes between 3.14.8.2 and 3.14.9</h2>
 
@@ -224,17 +220,16 @@ variables that are set in Base, and thus no changes will be needed.</p>
 
 <p>The cygwin make version 3.81-1 does not handle MS-DOS path names and thus
 does not work for EPICS builds with RELEASE file definitions. From the
-discussion on the cygwin mailing list it looks like this will be fixed in make
-version 3.82. In the meantime make version 3.80 or a fixed make can be
-downloaded from
-<a href="https://projects.coin-or.org/BuildTools/wiki/current-issues">this
-website</a>.
+discussion on the cygwin mailing list it looks like this will be fixed in
+make version 3.82. In the meantime make version 3.80 or a fixed make can be
+downloaded from <a
+href="https://projects.coin-or.org/BuildTools/wiki/current-issues">this
+website</a>. </p>
 
 <h4>New Architectures</h4>
 
-<p>The following target architectures have been added to this release, although
-the core developers lack the ability to test all of them:</p>
-
+<p>The following target architectures have been added to this release,
+although the core developers lack the ability to test all of them:</p>
 <ul>
   <li>darwin-ppcx86</li>
   <li>darwin-x86</li>
@@ -250,55 +245,57 @@ the core developers lack the ability to test all of them:</p>
 
 <h4>vxWorks compiler optimization level</h4>
 
-<p>Wind River Systems do not support optimization levels beyond <tt>-O2</tt> for
-vxWorks applications compiled using gcc, so optimized vxWorks builds are now set
-to <tt>-O2</tt> only (we currently use <tt>-O3</tt> everywhere else).</p>
+<p>Wind River Systems do not support optimization levels beyond <tt>-O2</tt>
+for vxWorks applications compiled using gcc, so optimized vxWorks builds are
+now set to <tt>-O2</tt> only (we currently use <tt>-O3</tt> everywhere
+else).</p>
 
 <h4>cas</h4>
 
-<p>There was a bug in the portable channel access server library that prevented
-the PV Gateway from being able to handle and pass on alarm acknowledgements from
-the EPICS Alarm Handler ALH. This has been fixed in this release and should only
-require that the gatewey be recomplied against this version of Base.</p>
+<p>There was a bug in the portable channel access server library that
+prevented the PV Gateway from being able to handle and pass on alarm
+acknowledgements from the EPICS Alarm Handler ALH. This has been fixed in
+this release and should only require that the gatewey be recomplied against
+this version of Base.</p>
 
 <h4>dbLoadTemplate</h4>
 
-<p>The parser for the substitutions file accepted by dbLoadTemplate() has been
-revised, and is now stricter than it used to be &mdash; unmatched characters
-that were accepted and discarded without warning before will now generate
-errors. The quote characters at the two ends of a quoted string value must now
-match, although either single or double quotes can be used. Escaped characters
-inside a quoted string should pass safely through to the underlying
-dbLoadRecord() command. The characters permitted in a bareword parameter (i.e. a
-filename or value that is not inside quotes) have been reduced from the overly
-wide set allowed before; the permitted characters now comprise: <tt>a-z A-Z 0-9
-_ - + : . / \ [ ] &lt; &gt; ;</tt></p>
+<p>The parser for the substitutions file accepted by dbLoadTemplate() has
+been revised, and is now stricter than it used to be &mdash; unmatched
+characters that were accepted and discarded without warning before will now
+generate errors. The quote characters at the two ends of a quoted string
+value must now match, although either single or double quotes can be used.
+Escaped characters inside a quoted string should pass safely through to the
+underlying dbLoadRecord() command. The characters permitted in a bareword
+parameter (i.e. a filename or value that is not inside quotes) have been
+reduced from the overly wide set allowed before; the permitted characters now
+comprise: <tt>a-z A-Z 0-9 _ - + : . / \ [ ] &lt; &gt; ;</tt></p>
 
 <h4>Escaped characters in record fields</h4>
 
 <p>Field value strings loaded from a database file by dbLoadRecords() can now
 use C89-compatible escaped character codes such as \", \', \t, \n, \064 and
-\x7e.  The parser also now checks for and reports strings that have a newline
+\x7e. The parser also now checks for and reports strings that have a newline
 character in them as an error - if you want a newline in a field, use the \n
-escaped version.  These escapes only apply to the value part of a field() entry
-in .db file though; no other strings have escape codes translated.</p>
+escaped version. These escapes only apply to the value part of a field()
+entry in .db file though; no other strings have escape codes translated.</p>
 
 <h4>libCom/test and db/test</h4>
 
 <p>These test programs are no longer installed into the bin/<i>arch</i>
-directory. Running all these programs on any host architecture is as simple as
-typing <tt>make runtests</tt> in the base top level directory or in any
-appropriate subdirectory.  The runtests target uses Perl's Test::Harness module
-to execute all of the test programs and summarize the result.  It is also
-possible to run individual tests as desired, by executing them from the relevent
-O.&lt;arch&gt; directory; the program output is designed to be comprehensible to
-humans.</p>
+directory. Running all these programs on any host architecture is as simple
+as typing <tt>make runtests</tt> in the base top level directory or in any
+appropriate subdirectory. The runtests target uses Perl's Test::Harness
+module to execute all of the test programs and summarize the result. It is
+also possible to run individual tests as desired, by executing them from the
+relevent O.&lt;arch&gt; directory; the program output is designed to be
+comprehensible to humans.</p>
 
-<p>For vxWorks and RTEMS, a test harness has been created that will run all of
-the test programs in a suitable order. At a vxWorks target shell, type:</p>
+<p>For vxWorks and RTEMS, a test harness has been created that will run all
+of the test programs in a suitable order. At a vxWorks target shell, type:</p>
 
 <blockquote>
-<pre>ld &lt;/path/to/base/bin/vxWorks-<i>arch</i>/vxTestHarness.munch
+  <pre>ld &lt;/path/to/base/bin/vxWorks-<i>arch</i>/vxTestHarness.munch
 cd "/path/to/writable/directory"
 epicsRunLibComTests</pre>
 </blockquote>
@@ -311,53 +308,56 @@ summarize the results of the individual test programs.</p>
 
 <h4>Breakpoint tables</h4>
 
-<p>The handling of breakpoint table data has been reworked. It is now possible
-to give table data in either ascending or descending order, and the breakpoint
-data may have a negative slope such that the engineering values increase while
-the raw values decrease and vice versa. The only restriction on the data is that
-is must be monatonically increasing or decreasing, so you can't use a breakpoint
-table for curves that have local minima or maxima. This restriction is checked
-for when the breakpoint table is loaded.</p>
+<p>The handling of breakpoint table data has been reworked. It is now
+possible to give table data in either ascending or descending order, and the
+breakpoint data may have a negative slope such that the engineering values
+increase while the raw values decrease and vice versa. The only restriction
+on the data is that is must be monatonically increasing or decreasing, so you
+can't use a breakpoint table for curves that have local minima or maxima.
+This restriction is checked for when the breakpoint table is loaded.</p>
 
 <h4>Support for vxWorks 6</h4>
 
 <p>The build configuration support for vxWorks 6.x has changed significantly,
 having been recombined with the older vxWorks 5.x support. The two target
 architectures <tt>vxWorks6-mv2100</tt> and <tt>vxWorks6-mv5100</tt> have been
-removed; IOCs built under vxWorks 6.x using these architectures must revert to
-the original <tt>vxWorks-ppc603_long</tt> and <tt>vxWorks-ppc604_long</tt>
-architectures instead. The configuration file CONFIG_SITE.Common.vxWorksCommon
-now specifies the vxWorks version number, as well as the filesystem path to
-the installation of vxWorks using the WIND_BASE variable.</p>
+removed; IOCs built under vxWorks 6.x using these architectures must revert
+to the original <tt>vxWorks-ppc603_long</tt> and <tt>vxWorks-ppc604_long</tt>
+architectures instead. The configuration file
+CONFIG_SITE.Common.vxWorksCommon now specifies the vxWorks version number, as
+well as the filesystem path to the installation of vxWorks using the
+WIND_BASE variable.</p>
 
 <h4>postfix and calcPerform</h4>
 
-<p>The calc expression parser and exective have undergone a signficant overhaul,
-although the API and expression language supported are backwards compatible with
-one minor exception, described below. Significant improvements have been made to
-both the API and the expression language: Multiple values can be calculated and
-assignments made in a calc expression; Error reporting for humans is now
-supported by the expression parser, and code can discover what inputs and
-outputs are needed and generated by an expression.</p>
+<p>The calc expression parser and exective have undergone a signficant
+overhaul, although the API and expression language supported are backwards
+compatible with one minor exception, described below. Significant
+improvements have been made to both the API and the expression language:
+Multiple values can be calculated and assignments made in a calc expression;
+Error reporting for humans is now supported by the expression parser, and
+code can discover what inputs and outputs are needed and generated by an
+expression.</p>
 
 <p>Assignment operations are now possible, using the new <tt>:=</tt> operator
 which must have an expression variable (<tt>A</tt> through <tt>L</tt>) to its
-immediate left. Multiple expressions can be included in the calculation string,
-separated by a semicolon <tt>;</tt>, all but one of which must be assignments.
-The value of the whole string is determined by the single non-assignment
-expression, which may appear anywhere in the string. For example, the following
-string causes a single CALC record to output the successive values of a sine
-curve in 1 degree intervals: <tt>sin(a);&nbsp;a:=a+d2r</tt></p>
+immediate left. Multiple expressions can be included in the calculation
+string, separated by a semicolon <tt>;</tt>, all but one of which must be
+assignments. The value of the whole string is determined by the single
+non-assignment expression, which may appear anywhere in the string. For
+example, the following string causes a single CALC record to output the
+successive values of a sine curve in 1 degree intervals:
+<tt>sin(a); a:=a+d2r</tt></p>
 
 <p>Previously any expression that performed an invalid operation which would
-generate a NaN or Inf result would be stopped immediately and return an error to
-the caller. Now it is possible to perform operations that generate NaN or
+generate a NaN or Inf result would be stopped immediately and return an error
+to the caller. Now it is possible to perform operations that generate NaN or
 infinite results, and the results are returned as normal. The result of the
 expression or the value assigned to a variable may thus be a NaN or an
-infinity. To permit this to be checked within the expression, the new operators
-<tt>finite()</tt>, <tt>isinf()</tt> and <tt>isnan()</tt> have been added to the
-expression language. The literal values <tt>Inf</tt> and <tt>NaN</tt> are also
-now supported in expressions.</p>
+infinity. To permit this to be checked within the expression, the new
+operators <tt>finite()</tt>, <tt>isinf()</tt> and <tt>isnan()</tt> have been
+added to the expression language. The literal values <tt>Inf</tt> and
+<tt>NaN</tt> are also now supported in expressions.</p>
 
 <p>The only incompatible change to the expression language was to change the
 <tt>NOT</tt> operator from performing a unary minus operation to an integer
@@ -365,52 +365,52 @@ bitwise not; the former meaning is illogical and as a result was probably not
 used much, if at all &mdash; nobody complained when I discussed this on
 tech-talk...</p>
 
-<p>The extended API and the expression language are now discussed in detail in
-chapter 19 (libCom) of the R3.14.9 version of the IOC Application Developer's
-Guide.</p>
+<p>The extended API and the expression language are now discussed in detail
+in chapter 19 (libCom) of the R3.14.9 version of the IOC Application
+Developer's Guide.</p>
 
 <h4>calc and calcout record, asLib</h4>
 
-<p>As a result of the above changes to the calc expression parser and executive,
-both the calc and calcout records and the Access Security library have been
-modified to take advantage of the new error diagnostics. The Access Security
-library has been made to reject any expression that contains an assignment
-operation, to prevent any possible security holes that might be caused by this
-significant change to the expression rules.</p>
+<p>As a result of the above changes to the calc expression parser and
+executive, both the calc and calcout records and the Access Security library
+have been modified to take advantage of the new error diagnostics. The Access
+Security library has been made to reject any expression that contains an
+assignment operation, to prevent any possible security holes that might be
+caused by this significant change to the expression rules.</p>
 
 <p>The calc and calcout records have had some subtle changes applied: To
 mitigate the effects of the Inf/NaN behaviour change, the result of an
-expression is checked for NaN, which will result in the UDF field being set and
-an Undefined/INVALID_ALARM being raised as a result.</p>
+expression is checked for NaN, which will result in the UDF field being set
+and an Undefined/INVALID_ALARM being raised as a result.</p>
 
-<p>An empty string is no longer a legal expression, therefor the CALC and OCAL
-fields have been changed so that their default value is a literal <tt>"0"</tt>
-string. Also any calcout record device support must now add the line
-<tt>#include&nbsp;"postfix.h"</tt> before the
-<tt>#include&nbsp;"calcoutRecord.h"</tt> line in the source code.</p>
+<p>An empty string is no longer a legal expression, therefor the CALC and
+OCAL fields have been changed so that their default value is a literal
+<tt>"0"</tt> string. Also any calcout record device support must now add the
+line <tt>#include "postfix.h"</tt> before the
+<tt>#include "calcoutRecord.h"</tt> line in the source code.</p>
 
 <h4>recGblAlarmHook</h4>
 
-<p>The <tt>recGblResetAlarms()</tt> routine (which is called by all record types
-towards the end of record processing) now optionally calls a single hook routine
-via the function pointer <tt>recGblAlarmHook</tt> after it has updated a
-record's alarm status and severity.  See regGbl.h for the hook routine prototype
-definition, the routine is also given the previous values of the record's status
-and severity.  The hook routine must not block, since this would hold up record
-processing.</p>
+<p>The <tt>recGblResetAlarms()</tt> routine (which is called by all record
+types towards the end of record processing) now optionally calls a single
+hook routine via the function pointer <tt>recGblAlarmHook</tt> after it has
+updated a record's alarm status and severity. See regGbl.h for the hook
+routine prototype definition, the routine is also given the previous values
+of the record's status and severity. The hook routine must not block, since
+this would hold up record processing.</p>
 
 <h4>ai, bi, mbbi and mbbiDirect records</h4>
 
-<p>These record types now support raw simulation mode.  If the value of the SIMM
-field is 2 (enum string "RAW"), the SIOL link value is placed into the RVAL
-field and passed through the raw to engineering units conversion process just
-like the real device support's raw value would be.</p>
+<p>These record types now support raw simulation mode. If the value of the
+SIMM field is 2 (enum string "RAW"), the SIOL link value is placed into the
+RVAL field and passed through the raw to engineering units conversion process
+just like the real device support's raw value would be.</p>
 
 <h4>dbpr</h4>
 
-<p>The TIME field of a record is now displayed in a human readable format. TIME
-used to have an interest level of 4 since it was output in hex and not very easy
-to understand, but it has now been moved to interest level 2.</p>
+<p>The TIME field of a record is now displayed in a human readable format.
+TIME used to have an interest level of 4 since it was output in hex and not
+very easy to understand, but it has now been moved to interest level 2.</p>
 
 <h4>configure/RELEASE*</h4>
 
@@ -426,46 +426,49 @@ support vxWorks-MIPS targets.</p>
 <h4>epicsUnitTest</h4>
 
 <p>A new facility is provided in libCom for use in generating automated test
-programs.  Many (but not all) of the test programs in <tt>libCom/test</tt> have
-been converted to use this facility.</p>
+programs. Many (but not all) of the test programs in <tt>libCom/test</tt>
+have been converted to use this facility.</p>
 
 <h4>dbStaticLib</h4>
 
-<p>Off-by-one buffer overflow error fixed in dbFindField() which only seemed to
-affect vxWorks-(intel) targets.</p>
+<p>Off-by-one buffer overflow error fixed in dbFindField() which only seemed
+to affect vxWorks-(intel) targets.</p>
 
 <h4>RTEMS</h4>
 
-<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE. 
+<p>Create a POSIX-compliant TZ environment variable from EPICS_TIMEZONE.
 Previous versions had an incorrect format which was ignored by tzset().</p>
-<p>Added space for user extensions.  This provides the infrastructure for the
+
+<p>Added space for user extensions. This provides the infrastructure for the
 spy command.</p>
+
 <p>Fixed error in epicsThreadGetName for non-EPICS threads.</p>
-<p>Added hooks for application routines to supply special network configuration
-parameters.
-The RTEMS startup code calls epicsRtemsInitPreSetBootConfigFromNVRAM just
-before reading values from NVRAM and
-epicsRtemsInitPostSetBootConfigFromNVRAM just afterwards.  See
+
+<p>Added hooks for application routines to supply special network
+configuration parameters. The RTEMS startup code calls
+epicsRtemsInitPreSetBootConfigFromNVRAM just before reading values from NVRAM
+and epicsRtemsInitPostSetBootConfigFromNVRAM just afterwards. See
 epicsRtemsInitHooks.h for prototypes and global variables.</p>
 
 <h4>e_flex</h4>
 
-<p><tt>e_flex</tt> has been modified to accept DOS line endings as well as Unix
-ones. The <tt>scan.c</tt> file was recreated using <tt>e_flex</tt> itself and
-the <tt>flex.skel</tt> file on the modified <tt>scan.l.DISTRIB</tt> source.
-<tt>initscan.c</tt> is not required or used for the EPICS build, so it has been
-removed.</p>
+<p><tt>e_flex</tt> has been modified to accept DOS line endings as well as
+Unix ones. The <tt>scan.c</tt> file was recreated using <tt>e_flex</tt>
+itself and the <tt>flex.skel</tt> file on the modified
+<tt>scan.l.DISTRIB</tt> source. <tt>initscan.c</tt> is not required or used
+for the EPICS build, so it has been removed.</p>
 
 <h4>devLib</h4>
 
-<p>devLib is now built for all architectures, whereas before it was only built
-on RTEMS and vxWorks. However for it to be usable there must be an appropriate
-table of OS-specific routines provided. For those OSs that don't implement these
-routines a default table is defined which will result in an error on any attempt
-to use devLib routines, but the default table can be overridden in an external
-library that provides an appropriate table. This subtle change was implemented
-to allow use of the SIS 3100 PCI to VME bridge from Linux, and needs no change
-to the other implementations of <tt>devLibOSD.c</tt>.</p>
+<p>devLib is now built for all architectures, whereas before it was only
+built on RTEMS and vxWorks. However for it to be usable there must be an
+appropriate table of OS-specific routines provided. For those OSs that don't
+implement these routines a default table is defined which will result in an
+error on any attempt to use devLib routines, but the default table can be
+overridden in an external library that provides an appropriate table. This
+subtle change was implemented to allow use of the SIS 3100 PCI to VME bridge
+from Linux, and needs no change to the other implementations of
+<tt>devLibOSD.c</tt>.</p>
 
 <h4>iocsh</h4>
 
@@ -473,15 +476,16 @@ to the other implementations of <tt>devLibOSD.c</tt>.</p>
 
 <h4>libCom</h4>
 
-<p>mallocMustSucceed and callocMustSucceed accept 0-byte requests.  Note that
+<p>mallocMustSucceed and callocMustSucceed accept 0-byte requests. Note that
 these routines may return a NULL pointer in such cases.</p>
 
 <h4>Mac OS X (Darwin)</h4>
 
-<p>Added support for EPICS_HOST_ARCH=darwin-ppcx86 for building libraries/applications
-which will run on both PowerPC and Intel x86 targets.</p>
-<p>Added support for EPICS_HOST_ARCH=darwin-x86.</p>
+<p>Added support for EPICS_HOST_ARCH=darwin-ppcx86 for building
+libraries/applications which will run on both PowerPC and Intel x86
+targets.</p>
 
+<p>Added support for EPICS_HOST_ARCH=darwin-x86.</p>
 
 <h2 align="center">Changes between 3.14.8.1 and 3.14.8.2</h2>
 
@@ -489,23 +493,23 @@ which will run on both PowerPC and Intel x86 targets.</p>
 
 <p>On architectures whose native version of strtod() actually works properly
 (i.e. converts +/-Inf[inity] and NaN strings to their double equivalents) we
-managed to break the use of this in the R3.14.8.1 release.  This is now
+managed to break the use of this in the R3.14.8.1 release. This is now
 fixed.</p>
-
 
 <h2 align="center">Changes between 3.14.8 and 3.14.8.1</h2>
 
 <h4>Version Numbering</h4>
 
 <p>This release adds a fourth level of version number, which we haven't used
-since R3.13.1.1.  The intention is to imply that R3.14.8.1 includes some small
+since R3.13.1.1. The intention is to imply that R3.14.8.1 includes some small
 but important changes since R3.14.8 but no signficant new behaviours or API
-modifications.  This fourth level has required us to modify the version number
-system and the macros in the epicsVersion.h file slightly though.  We have taken
-the opportunity to introduce a new variable <tt>EPICS_SITE_VERSION</tt> to the
-file configure/CONFIG_SITE that adds an optional site-specific version number;
-sites that were achieving this by editing the configure/CONFIG_BASE_VERSION file
-should switch to setting <tt>EPICS_SITE_VERSION</tt> instead.</p>
+modifications. This fourth level has required us to modify the version number
+system and the macros in the epicsVersion.h file slightly though. We have
+taken the opportunity to introduce a new variable <tt>EPICS_SITE_VERSION</tt>
+to the file configure/CONFIG_SITE that adds an optional site-specific version
+number; sites that were achieving this by editing the
+configure/CONFIG_BASE_VERSION file should switch to setting
+<tt>EPICS_SITE_VERSION</tt> instead.</p>
 
 <h4>CA</h4>
 
@@ -516,29 +520,27 @@ reconnect</p>
 
 <h4>Win32 symbol changes</h4>
 
-<p>These changes are required to allow software outside of Base to be built on
-win32 architectures.</p>
-
+<p>These changes are required to allow software outside of Base to be built
+on win32 architectures.</p>
 <ul>
-  <li>win32 epicsShareAPI changes to libCom
+  <li>win32 epicsShareAPI changes to libCom 
     <p>The win32 Pascal calling convention (epicsShareAPI) has been removed
     from the following header files in libCom/misc: adjustment.h,
     cantProceed.h, epicsConvert.h, epicsStdlib.h, epicsString.h.</p>
   </li>
-  <li>epicsString
+  <li>epicsString 
     <p>A new function epicsStrtok_r has been added because win32 does not
     implement strtok_r.</p>
   </li>
-  <li>epicsStdlib
+  <li>epicsStdlib 
     <p>All function described in epicsStdlib.h are now implemented in
     epicsStdlib.c</p>
   </li>
-  <li>win32 epicsShareExtern changes in dbStaticLib
+  <li>win32 epicsShareExtern changes in dbStaticLib 
     <p>The type name mapping array mapdbfType defined in dbFldTypes.h has had
     the correct export modifier keywords added to it for use on win32.</p>
   </li>
 </ul>
-
 
 <h2 align="center">Changes between 3.14.7 and 3.14.8</h2>
 
@@ -557,7 +559,7 @@ our test suite, so they must not be used in production systems.</p>
 
 <p>An Extended Device Support mechanism has been introduced which is designed
 as a safe way to widen the API between iocCore and the device support
-software it interfaces with.  An extended device support can now be notified
+software it interfaces with. An extended device support can now be notified
 of changes to a record's hardware address, and is given the chance to approve
 or reject that change.</p>
 
@@ -591,7 +593,7 @@ configure/RELEASE* files should contain location definitions for EPICS
 modules only.</p>
 
 <h4>event generator and event receiver record support</h4>
-All apsEvent specific record support has been removed from base
+All apsEvent specific record support has been removed from base 
 
 <h4>drvTS and apsEvent support</h4>
 
@@ -638,9 +640,9 @@ the behaviour of <tt>dbLoadRecords()</tt> when it finds a duplicate record
 definition. The default behaviour has always been to permit multiple record()
 statements for the same record name when loading record instances, but by
 setting <tt>dbRecordsOnceOnly</tt> to any non-zero value, duplicates will
-instead generate an error message instead.  It is expected that this will
-only be used in special circumstances, to detect the presence of
-unintentional duplicates where it is known that they should not exist.</p>
+instead generate an error message instead. It is expected that this will only
+be used in special circumstances, to detect the presence of unintentional
+duplicates where it is known that they should not exist.</p>
 
 <h4>select record</h4>
 
@@ -705,8 +707,8 @@ pEnumStringTable==NULL</p>
 <p>Added support for setting NFS server/mount information from PPCBUG
 argument strings.</p>
 
-<p>rtems_shutdown_executive is now called on IOC exit.  On many  BSPs this
-will return control to the bootstrap PROM.</p>
+<p>rtems_shutdown_executive is now called on IOC exit. On many BSPs this will
+return control to the bootstrap PROM.</p>
 
 <p>Set POSIX TZ environment variable from NVRAM, or failing that, from
 EPICS_TIMEZONE.</p>
@@ -718,7 +720,7 @@ EPICS_TIMEZONE.</p>
 <p>Set iocsh prompt from host name.</p>
 
 <p>Initialize in-memory filesystem from tar image following executable in
-bootstrap flash memory.  This allows for fully standalone IOCs -- no TFTP/NFS
+bootstrap flash memory. This allows for fully standalone IOCs -- no TFTP/NFS
 server required.</p>
 
 <p>Set IOC_NAME and IOC_STARTUP_SCRIPT environment variables from bootstrap
@@ -777,8 +779,8 @@ an undefined value alarm will be triggered.</p>
 <h4>epicsStdlib.h/epicsStrtod()</h4>
 
 <p>epicsStdlib.h declares epicsStrtod() which provides a version of strtod
-which handles NAN/INF on all architectures.  All uses of strtod() in base
-have been converted to use epicsStrtod().</p>
+which handles NAN/INF on all architectures. All uses of strtod() in base have
+been converted to use epicsStrtod().</p>
 
 <p>epicsStdlib.h also declares epicsScanFloat() and epicsScanDouble() which
 replace calls to sscanf with routines which handle NAN/INF on all
@@ -788,10 +790,10 @@ architectures.</p>
 
 <p>The posix implementation of epicsThreadCreate() now makes pthread calls to
 set the stack size. The sizes returned by epicsThreadGetStackSize() for the
-inputs epicsThreadStackSmall, epicsThreadStackMedium and epicsThreadStackBig are
-128K, 256K and 512K respectively on at least the architectures Linux, Solaris,
-HPUX and Darwin (different values are used on vxWorks and RTEMS). This allows
-creation of many more threads on most systems.</p>
+inputs epicsThreadStackSmall, epicsThreadStackMedium and epicsThreadStackBig
+are 128K, 256K and 512K respectively on at least the architectures Linux,
+Solaris, HPUX and Darwin (different values are used on vxWorks and RTEMS).
+This allows creation of many more threads on most systems.</p>
 
 <h4>dbNotify</h4>
 
@@ -808,8 +810,8 @@ being honoured.</p>
 
 <h4>POSIX signals</h4>
 
-<p>Signals are blocked in all but the main thread.  Applications/drivers
-which require signal delivery to a subthread will need to be modified.</p>
+<p>Signals are blocked in all but the main thread. Applications/drivers which
+require signal delivery to a subthread will need to be modified.</p>
 
 <h4>epicsExit</h4>
 
@@ -845,7 +847,7 @@ For example the former command:</p>
 <pre>Is now:</pre>
 <pre>    dbl &gt; reportName</pre>
 Note that this does NOT work on the vxWorks shell only on iocsh. On the
-vxWorks shell the following command can be given:
+vxWorks shell the following command can be given: 
 <pre>    iocshCmd("dbl &gt; reportName")</pre>
 
 <h4>errlog</h4>
@@ -918,8 +920,8 @@ template. It will be made available separately.</p>
 confusion about what OS interfaces are used on Windows: native win32 or
 cygwin's emulation of POSIX. Now we have</p>
 <ul>
-  <li>win32-x86  Uses native win32 interfaces with MS compiler.</li>
-  <li>win32-x86-borland  Uses native win32 interfaces with borland
+  <li>win32-x86 Uses native win32 interfaces with MS compiler.</li>
+  <li>win32-x86-borland Uses native win32 interfaces with borland
   compiler.</li>
   <li>win32-x86-gnu Uses native win32 interfaces with cygwin gnu compiler.
     (Not implemented yet.)</li>
@@ -935,7 +937,7 @@ straight to the boot host if no environment variable by that name was set.</p>
 <h4>CONFIG_ENV and CONFIG_SITE_ENV</h4>
 
 <p>These files are now parsed by a program that recognizes and ignores
-comment lines.  Previous versions of this parser would extract settings from
+comment lines. Previous versions of this parser would extract settings from
 these files even if they appear on a line starting with a '#' character, so
 the last line containing a setting for any variable would give the value used
 as the default. This was first noticed in R3.14.5 where a commented-out
@@ -954,7 +956,7 @@ was returned as -1.17549435E-38. This is now fixed.</p>
 
 <h4>New DBD rule</h4>
 
-<p>A new dbd rule will create a  &lt;name&gt;Include.dbd from files specified
+<p>A new dbd rule will create a &lt;name&gt;Include.dbd from files specified
 in a &lt;name&gt;_DBD macro definition. An include line will be placed in the
 &lt;name&gt;Include.dbd for each file specified in the &lt;name&gt;_DBD
 definition. If a Makefile contains</p>
@@ -1010,17 +1012,17 @@ channels)</p>
 <h4>Channel Access Client Library</h4>
 <ul>
   <li>Fixed "subscription updates intermittently do not resume when
-    unresponsive circuit reconnects" bug
+    unresponsive circuit reconnects" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>This bug was introduced in R3.14.5 and does not exist in any other
         release.</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>Subscription updates intermittently do not resume depending on
         circumstances when unresponsive circuit reconnects</p>
       </li>
-      <li>Additional Information:
+      <li>Additional Information: 
         <p>A decision was made to add a change to EPICS R3.14.5 so that when
         a TCP circuit is temporarily unresponsive the channel, but not the
         circuit, is immediately disconnected. This change was determined to
@@ -1033,33 +1035,33 @@ channels)</p>
     </ul>
   </li>
   <li>Fixed "ca_replace_access_rights_event() fails if passed a nill function
-    pointer" bug
+    pointer" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>This bug probably exists in all R3.14 releases.</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>Passing a nill function pointer to
         ca_replace_access_rights_event() should install a noop handler, but
         this currently causes a failure.</p>
       </li>
-      <li>Additional information:
+      <li>Additional information: 
         <p>Regression tests have been installed to detect this mistake.</p>
       </li>
     </ul>
   </li>
   <li>Fixed "CA client library crash when clear channel request occurs in get
-    callback handler" bug
+    callback handler" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>This bug was introduced in R3.14.5 and does not exist in any other
         release.</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>CA client library crash when clear channel request occurs in get
         callback handler</p>
       </li>
-      <li>Additional information:
+      <li>Additional information: 
         <p>When testing the striptool application, Ken Evans, discovered a
         bug in the CA client library occurring when a clear channel request
         occurs in get callback handler. Regression tests have been updated so
@@ -1069,43 +1071,43 @@ channels)</p>
     </ul>
   </li>
   <li>Fixed "Double server subscription install when subscription request
-    occurs in connection callback handler" bug
+    occurs in connection callback handler" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>This bug was introduced in R3.14.5 and does not exist in any other
         release. Subscription request must be made from within connection
         callback handler</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>It has been discovered (by Ken Evans while testing the gateway)
         that certain subscription requests were persisting in the gateway
         after clients had deleted them. This bug causes additional resources
         to be consumed, but does not result in a crash.</p>
       </li>
-      <li>Additional information
+      <li>Additional information 
         <p>Additional debugging has revealed that the CA client library in
         this situation inadvertently made the subscription request twice:
-        once at the users&#x2019; request, and later on again when the
-        library auto installed subscriptions for disconnected channels.</p>
+        once at the users&rsquo; request, and later on again when the library
+        auto installed subscriptions for disconnected channels.</p>
       </li>
     </ul>
   </li>
-  <li>Fixed "failure when deleting channel in get callback handler" bug
+  <li>Fixed "failure when deleting channel in get callback handler" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>Probably introduced in a previous R3.14 release.</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>An intermittent C++ exceptions during regression testing.</p>
       </li>
     </ul>
   </li>
 </ul>
 <ul>
-  <li>Behavior Changes
+  <li>Behavior Changes 
     <ul>
       <li>Process blocks attempting to exit if the application does not call
-        ca_context_destroy()
+        ca_context_destroy() 
         <p>In EPICS release R3.14 the CA client library is implemented using
         axillary threads. If the application does not call
         ca_context_destroy() these threads will still be running, and
@@ -1120,23 +1122,23 @@ channels)</p>
 
 <h4>Channel Access Portable Server (used by the CA gateway and others)</h4>
 <ul>
-  <li>Fixed "assert fail when writing string through Portable CA Server" bug
+  <li>Fixed "assert fail when writing string through Portable CA Server" bug 
     <ul>
-      <li>Scope:
+      <li>Scope: 
         <p>This bug is only present in the portable CA server and so it does
         <em>not</em> impact IOC based applications. The bug is present in the
         CA gateway and any portable CA server based application. This problem
         may have been recently introduced when GDD was patched to properly
         handle fixed sized strings.</p>
       </li>
-      <li>Symptom:
+      <li>Symptom: 
         <p>Failure, when writing large string through the portable CA server.
         There appears to be a possibility of the wrong string being written
         when a smaller string is used. You may see the following message.</p>
         <p>A call to "assert (! this-&gt;pValue-&gt;unreference ())" failed
         in ..\..\..\..\include\smartGDDPointer.h line 88.</p>
       </li>
-      <li>Additional Information:
+      <li>Additional Information: 
         <p>Thanks to Stephanie Alison at SLAC for discovering the bug and to
         Ken Evans at the APS for reminding me to fix it.</p>
       </li>
@@ -1170,11 +1172,11 @@ build. configure/CONFIG_SITE contains two new macros for building
 compatibility files. They are set to NO but can be set to YES. The macros
 are:</p>
 <ul>
-  <li>COMPAT_TOOLS_313
+  <li>COMPAT_TOOLS_313 
     <p>This will install the compatibility files needed to build R3.13
     extensions built with this R3.14 base.</p>
   </li>
-  <li>COMPAT_313
+  <li>COMPAT_313 
     <p>This will install the compatibility files needed to build R3.13
     extensions and IOC applications built with this R3.14 base.</p>
   </li>
@@ -1203,7 +1205,7 @@ to experiment with other CA client tools.</p>
 
 <h4>Stringin record time-stamp soft device support</h4>
 Add simple device support for converting time to nicely-formatted string
-using INP field as epicsTimeToStrftime format string:
+using INP field as epicsTimeToStrftime format string: 
 <pre>record(stringin, "$(user)now")
 {
     field(DESC, "Current time and date")
@@ -1319,7 +1321,7 @@ standard C escape characters to \xxx characters.</p>
 
 <h4>IOC shell system command</h4>
 
-<p>The 'system' command has been added to the IOC shell.  To enable this
+<p>The 'system' command has been added to the IOC shell. To enable this
 command, add <code>registrar(iocshSystemCommand)</code> to an application
 database description file.</p>
 
@@ -1409,7 +1411,7 @@ support allocating A24 addresss and an init method.</p>
 The following have been moved from src/vxWorks/src to
 src/libCom/osi/os/vxWorks: camacLib.h, drvTS.c, drvTS.h, epicsDynLink.c,
 epicsDynLink.h, module_types.h, task_params.h, veclist.c. Brief documentation
-has been added to the Application Developer's Guide.
+has been added to the Application Developer's Guide. 
 
 <h4>Close-On-Exec flag set for all sockets created in EPICS base</h4>
 
@@ -1527,13 +1529,13 @@ handler function.</p>
 
 <p><strong>epicsMessageQueue</strong></p>
 
-<p>The epicsMessageQueue API has been changed.  All functions and methods to
+<p>The epicsMessageQueue API has been changed. All functions and methods to
 receive a message now have an additional argument which specifies the size of
-the receiver buffer.  The receive functions/methods return -1 and the
-received message is discarded if the received message will not fit in the
-buffer. See the Application Developer's Guide (libCom OSI) for details.</p>
+the receiver buffer. The receive functions/methods return -1 and the received
+message is discarded if the received message will not fit in the buffer. See
+the Application Developer's Guide (libCom OSI) for details.</p>
 
-<p>This is an incompatible change.  All R3.14.2 applications which use
+<p>This is an incompatible change. All R3.14.2 applications which use
 epicsMessageQueue must be modified before they can be compiled and used with
 R3.14.3</p>
 
@@ -1958,17 +1960,17 @@ removed. A new routine dbDumpField replaces dbDumpFldDes.</p>
 <center>
 <h2>Changes since alpha2</h2>
 </center>
-All changes for release 3.13.5 that also apply to 3.14 have been made.
+All changes for release 3.13.5 that also apply to 3.14 have been made. 
 
 <p><b>devAiSoftRaw and devAoSoftRaw</b></p>
 
 <p>A new state is defined for the LINR field. The name is "SLOPE", which
 allows any device type to be used with manual settings of the EOFF and ESLO
-fields.  With this setting, the device support's special_linconv() routine is
+fields. With this setting, the device support's special_linconv() routine is
 only called when LINR=LINEAR.</p>
 
 <p>The RTEMS TFTP remote filesystem driver now supports a limited form of the
-chdir() system call.  One restriction is that all pathnames passed to chdir()
+chdir() system call. One restriction is that all pathnames passed to chdir()
 must end in a / character, so IOC shell commands to change directories must
 be given as</p>
 
@@ -1978,7 +1980,7 @@ be given as</p>
 <h1>EPICS Release base 3.14.0alpha2</h1>
 </center>
 Since the alpha1 release some major changes were made to the build system, to
-some of the libCom facilities, and to the iocsh facilities.
+some of the libCom facilities, and to the iocsh facilities. 
 
 <p>The unbundled version of the sequencer has been build and tested with this
 release. You must obtain a version of the sequencer that has been built
@@ -2006,47 +2008,47 @@ release.</p>
 
 <h3>Converting alpha1 applications to alpha2</h3>
 Build modifications in alpha2 require the following changes to existing R3.14
-applications.
+applications. 
 <ul>
-  <li>Remove the now unused RULES files
+  <li>Remove the now unused RULES files 
 
     <blockquote>
       ./configure/RULES.Db<br>
       ./configure/RULES.registerRecordDeviceDriver</blockquote>
   </li>
-  <li>Delete the following line in ./configure/RULES
+  <li>Delete the following line in ./configure/RULES 
 
     <blockquote>
       include $(TOP)/configure/RULES.registerRecordDeviceDriver</blockquote>
   </li>
-  <li>In &lt;top&gt;/configure/Makefile change
+  <li>In &lt;top&gt;/configure/Makefile change 
 
     <blockquote>
       @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(T_A) $@ $(TOP)</blockquote>
-    to
+    to 
 
     <blockquote>
       @$(PERL) $(TOOLS)/makeConfigAppInclude.pl $(EPICS_HOST_ARCH) $(T_A) $@
       $(TOP)</blockquote>
-    and add the line
+    and add the line 
 
     <blockquote>
       depends: install</blockquote>
     to the bottom of the Makefile.</li>
-  <li>In all *App/*Db/Makefiles change
+  <li>In all *App/*Db/Makefiles change 
 
     <blockquote>
       include $(TOP)/configure/RULES.Db</blockquote>
-    to
+    to 
 
     <blockquote>
       include $(TOP)/configure/RULES</blockquote>
   </li>
-  <li>In all *App/src/Makefile files change
+  <li>In all *App/src/Makefile files change 
 
     <blockquote>
       DBDNAME = &lt;name&gt;App</blockquote>
-    to
+    to 
 
     <blockquote>
       DBD += &lt;name&gt;</blockquote>
@@ -2057,73 +2059,73 @@ applications.
       DBDEXPAND = &lt;name&gt;Include.dbd</blockquote>
     NOTE: If any of your *App/*Db/Makefiles contain "DBDNAME =" lines you
     should make these same changes in that *Db dirctory.</li>
-  <li>In all *App/src/Makefile Makefiles change
+  <li>In all *App/src/Makefile Makefiles change 
 
     <blockquote>
       RECTYPES=&lt;name&gt;.h</blockquote>
-    to
+    to 
 
     <blockquote>
       DBDINC+=&lt;name&gt;</blockquote>
-    change
+    change 
 
     <blockquote>
       MENUS=&lt;name&gt;.h</blockquote>
-    to
+    to 
 
     <blockquote>
       DBDINC+=&lt;name&gt;</blockquote>
-    change
+    change 
 
     <blockquote>
       BPTS</blockquote>
-    to
+    to 
 
     <blockquote>
       DBD</blockquote>
-    change
+    change 
 
     <blockquote>
       INSTALLDB</blockquote>
-    to
+    to 
 
     <blockquote>
       DB</blockquote>
-    change
+    change 
 
     <blockquote>
       DBDINSTALL</blockquote>
-    to
+    to 
 
     <blockquote>
       DBD</blockquote>
   </li>
-  <li>In all example *App/src/Makefile files change
+  <li>In all example *App/src/Makefile files change 
 
     <blockquote>
       example_SRCS_DEFAULT += registerRecordDeviceDriver.c</blockquote>
-    to
+    to 
 
     <blockquote>
       example_SRCS_DEFAULT += &lt;name&gt;_registerRecordDeviceDriver.cpp
-      </blockquote>
+    </blockquote>
     where &lt;name&gt; is the base name of a &lt;name&gt;.dbd file which was
     created from a &lt;name&gt;Include.dbd file and which will be loaded in a
     st.cmd or stcmd.host script (e.g. example).</li>
-  <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change
+  <li>In ./iocBoot/ioc&lt;name&gt;/st.cmd files change 
 
     <blockquote>
       dbLoadDatabase("dbd/exampleApp.dbd")</blockquote>
-    to
+    to 
 
     <blockquote>
       dbLoadDatabase("dbd/example.dbd")</blockquote>
   </li>
-  <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change
+  <li>In &lt;top&gt;/iocBoot/ioc&lt;name&gt;/stcmd.host files change 
 
     <blockquote>
       dbLoadDatabase("../../dbd/exampleApp.dbd",0,0)</blockquote>
-    to
+    to 
 
     <blockquote>
       dbLoadDatabase("../../dbd/example.dbd",0,0)</blockquote>
@@ -2133,8 +2135,8 @@ applications.
 <h3>EPICS_HOST_ARCH changes</h3>
 
 <p>GNU compiler builds are now determined by the value of EPICS_HOST_ARCH and
-are no longer specified in CONFIG_SITE. All references to the ANSI
-(ACC/GCC) and CPLUSPLUS (CCC/G++) macros have been removed.</p>
+are no longer specified in CONFIG_SITE. All references to the ANSI (ACC/GCC)
+and CPLUSPLUS (CCC/G++) macros have been removed.</p>
 
 <h3>libCom</h3>
 
@@ -2155,31 +2157,31 @@ iocCore on platforms besides vxWorks.</p>
 
 <p>iocCore is now supported on the following platforms:</p>
 <ul>
-  <li>vxWorks
+  <li>vxWorks 
 
     <blockquote>
       Tornado II is required.</blockquote>
   </li>
-  <li>RTEMS
+  <li>RTEMS 
 
     <blockquote>
       An open source real time operating system. It has been tested on
       MVME167 and MC68360 processors. RTEMS also supports
     powerPC.</blockquote>
   </li>
-  <li>solaris
+  <li>solaris 
 
     <blockquote>
       Has been tested on solaris 2.6 and solaris 8 with Sun workshop 6.0 (C++
       5.2). Sun workshop 5.0 (C++ 5.0) will not compile this version of
     EPICS.</blockquote>
   </li>
-  <li>Linux
+  <li>Linux 
 
     <blockquote>
       Has been tested on Redhat x86 platforms.</blockquote>
   </li>
-  <li>winNT
+  <li>winNT 
 
     <blockquote>
       Testing has been done with visual C++ 6.0.</blockquote>

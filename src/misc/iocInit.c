@@ -53,6 +53,7 @@ epicsShareFunc int epicsShareAPI asInit (void);
 #include "db_access_routines.h"
 #include "initHooks.h"
 #include "epicsTime.h"
+#include "epicsSignal.h"
 
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"
@@ -85,6 +86,7 @@ int epicsShareAPI iocInit()
 	errlogPrintf("iocInit aborting because No database\n");
 	return(-1);
     }
+    epicsSignalInstallSigHupIgnore();
     initHooks(initHookAtBeginning);
     coreRelease();
     /* After this point, further calls to iocInit() are disallowed.  */

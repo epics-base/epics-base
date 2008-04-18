@@ -11,12 +11,13 @@
  */
 //
 
+#include <rtems.h>
 #include "epicsTime.h"
 #include "osiNTPTime.h"
 #include "osdSysTime.h"
 #include "generalTimeSup.h"
 
-extern int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
+extern "C" int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 
 extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
 {

@@ -78,7 +78,7 @@ static void NTPTimeSyncNTP(void)
                 errlogPrintf("NTPTimeSyncWithNTPserver: sntpcTimeGet %s\n",
                     strerror(errno));
             prevStatusBad = 1;
-            pNTPTimePvt->synced = FALSE;
+            pNTPTimePvt->synced = 0;
             continue;
         }
         nConsecutiveBad=0;
@@ -96,7 +96,7 @@ static void NTPTimeSyncNTP(void)
             pNTPTimePvt->ticksToSkip = (int) ((-1)*diffTime*pNTPTimePvt->tickRate);/* fix bug here */
         }
         pNTPTimePvt->lastTick = tickGet();
-        pNTPTimePvt->synced = TRUE;
+        pNTPTimePvt->synced = 1;
         epicsMutexUnlock(pNTPTimePvt->lock);
     }
 }
@@ -109,7 +109,7 @@ static long NTPTime_InitOnce(int priority)
 
     pNTPTimePvt = callocMustSucceed(1,sizeof(NTPTimePvt),"NTPTime_Init");
 
-    pNTPTimePvt->synced = FALSE;
+    pNTPTimePvt->synced = 0;
     pNTPTimePvt->lock = epicsMutexCreate();
     pNTPTimePvt->nanosecondsPerTick = BILLION/sysClkRateGet();
     pNTPTimePvt->tickRate = sysClkRateGet();
@@ -138,7 +138,7 @@ static long NTPTime_InitOnce(int priority)
         epicsMutexMustLock(pNTPTimePvt->lock);
         pNTPTimePvt->clock = epicsTime;
         pNTPTimePvt->lastTick = tickGet();
-        pNTPTimePvt->synced = TRUE;
+        pNTPTimePvt->synced = 1;
         epicsMutexUnlock(pNTPTimePvt->lock);
         printf("First try to sync with NTP server succeed!\n");
     }

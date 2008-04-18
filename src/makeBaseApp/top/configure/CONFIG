@@ -1,5 +1,9 @@
 # CONFIG
 
+# You might want to change this to some shared set of rules, e.g.
+# RULES=/path/to/epics/support/modules/rules/x-y
+RULES=$(EPICS_BASE)
+
 include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH)
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
@@ -8,7 +12,7 @@ ifdef T_A
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 endif
 
-CONFIG=$(EPICS_BASE)/configure
+CONFIG=$(RULES)/configure
 include $(CONFIG)/CONFIG
 
 # Override for definition in base

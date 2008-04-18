@@ -1,5 +1,3 @@
-# Makefile
-
 TOP=..
 
 include $(TOP)/configure/CONFIG

@@ -9,3 +9,21 @@
 \*************************************************************************/
 /* Following needed for struct timeval */
 #include <sys/times.h>
+
+#ifndef osdTimeh
+#define osdTimeh
+
+#include <tickLib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int     osdNTPGet(struct timespec *);
+void    osdNTPInit(void);
+int     sysClkRateGet(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* ifndef osdTimeh */

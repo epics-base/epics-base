@@ -45,6 +45,8 @@
 #   define debugPrintf(argsInParen)
 #endif
 
+static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
+
 // GNU seems to require that 64 bit constants have LL on
 // them. The borland compiler fails to compile constants
 // with the LL suffix. MS compiler doesnt care.
@@ -91,7 +93,7 @@ static const LONGLONG ET_TICKS_PER_FT_TICK =
 //
 // osdTimeInit ()
 //
-static void osdTimeInit ( void * )
+extern "C" epicsShareFunc int epicsShareAPI osdTimeInit ( void )
 {
     static bool osdTimeInitSuccess = false;
 
@@ -103,15 +105,15 @@ static void osdTimeInit ( void * )
         // bypass recursion crowbar in epicsThreadOnce
         osdTimeOnceFlag = 1;
         pCurrentTime->startPLL ();
+        generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
     }
 }
 
 //
-// epicsTimeGetCurrent ()
+// osdTimeGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp *pDest )
+static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 {
-    epicsThreadOnce ( & osdTimeOnceFlag, osdTimeInit, 0 );
     if ( ! pCurrentTime ) {
         return epicsTimeERROR;
     }
@@ -119,20 +121,6 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp
     pCurrentTime->getCurrentTime ( *pDest );
 
 	return epicsTimeOK;
-}
-
-//
-// epicsTimeGetEvent ()
-//
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent 
-            ( epicsTimeStamp *pDest, int eventNumber )
-{
-    if ( eventNumber == epicsTimeEventCurrentTime ) {
-        return epicsTimeGetCurrent ( pDest );
-    }
-    else {
-        return epicsTimeERROR;
-    }
 }
 
 inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )

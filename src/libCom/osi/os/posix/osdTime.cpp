@@ -23,12 +23,12 @@
 
 #define epicsExportSharedSymbols
 #include "epicsTime.h"
-
+#include "generalTimeSup.h"
 
 //
 // epicsTime::osdGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp *pDest)
+extern "C" epicsShareFunc int epicsShareAPI osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
 #   ifdef CLOCK_REALTIME
         struct timespec ts;
@@ -55,15 +55,9 @@ extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetCurrent (epicsTimeStamp 
 #   endif
 }
 
-//
-// epicsTimeGetEvent ()
-//
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
 {
-    if (eventNumber==epicsTimeEventCurrentTime) {
-        return epicsTimeGetCurrent (pDest);
-    }
-    return epicsTimeERROR;
+    return generalTimeCurrentTpRegister("posix Time", 100, osdTimeGetCurrent);
 }
 
 int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361

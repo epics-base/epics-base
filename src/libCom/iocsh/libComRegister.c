@@ -20,6 +20,7 @@
 #include "osiUnistd.h"
 #include "logClient.h"
 #include "errlog.h"
+#include "epicsGeneralTime.h"
 #include "libComRegister.h"
 
 
@@ -291,6 +292,22 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
     }
 }
 
+/* generalTimeReport */
+static const iocshArg generalTimeReportArg0 = { "interest_level", iocshArgArgv};
+static const iocshArg * const generalTimeReportArgs[1] = { &generalTimeReportArg0 };
+static const iocshFuncDef generalTimeReportFuncDef = {"generalTimeReport",1,generalTimeReportArgs};
+static void generalTimeReportCallFunc(const iocshArgBuf *args)
+{
+    generalTimeReport(args[0].ival);
+}
+
+/* lastResortEventProviderInstall */
+static const iocshFuncDef lastResortEventProviderInstallFuncDef = {"lastResortEventProviderInstall", 0, NULL};
+static void lastResortEventProviderInstallCallFunc(const iocshArgBuf *args)
+{
+    lastResortEventProviderInstall();
+}
+
 void epicsShareAPI libComRegister(void)
 {
     iocshRegister(&dateFuncDef, dateCallFunc);
@@ -314,4 +331,7 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&epicsMutexShowAllFuncDef,epicsMutexShowAllCallFunc);
     iocshRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
     iocshRegister(&epicsThreadResumeFuncDef,epicsThreadResumeCallFunc);
+    
+    iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
+    iocshRegister(&lastResortEventProviderInstallFuncDef, lastResortEventProviderInstallCallFunc);
 }

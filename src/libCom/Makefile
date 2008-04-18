@@ -174,6 +174,7 @@ INC += osdThread.h
 
 INC += epicsThread.h
 INC += epicsTime.h
+INC += epicsGeneralTime.h
 INC += osdTime.h
 INC += epicsSignal.h
 INC += osiProcess.h
@@ -196,6 +197,9 @@ SRCS += epicsMutex.cpp
 SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
+
+INC += generalTimeSup.h
+SRCS += epicsGeneralTime.c
 
 SRCS += osdSock.c
 SRCS += osdSockAddrReuse.cpp
@@ -244,12 +248,12 @@ SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
 
+SRCS_vxWorks += osiNTPTime.c
+SRCS_RTEMS += osiNTPTime.c
+# Time provider, in osi/os/default
+SRCS_vxWorks += osdSysTime.c
+SRCS_RTEMS += osdSysTime.c
 # These files are in osi/os/vxWorks
-# IOC Time of Day clock
-INC_vxWorks += iocClock.h
-SRCS_vxWorks += iocClock.c
-INC_RTEMS += iocClock.h
-SRCS_RTEMS += iocClock.c
 # Special reboot hook
 SRCS_vxWorks += atReboot.cpp
 # For old vxWorks applications

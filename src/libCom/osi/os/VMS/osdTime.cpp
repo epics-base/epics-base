@@ -16,11 +16,12 @@
 
 #define epicsExportSharedSymbols
 #include "epicsTime.h"
+#include "generalTimeSup.h"
 
 //
 // epicsTime::osdGetCurrent ()
 //
-extern "C" epicsShareFunc int epicsTimeGetCurrent (epicsTimeStamp *pDest)
+int osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
 #   if defined(CLOCK_REALTIME)
         struct timespec ts;
@@ -45,15 +46,14 @@ extern "C" epicsShareFunc int epicsTimeGetCurrent (epicsTimeStamp *pDest)
 #   endif
 }
 
-//
-// epicsTimeGetEvent ()
-//
-extern "C" epicsShareFunc int epicsShareAPI epicsTimeGetEvent (epicsTimeStamp *pDest, int eventNumber)
+extern "C" epicsShareFunc int epicsShareAPI osdTimeInit (void)
 {
-    if (eventNumber==epicsTimeEventCurrentTime) {
-        return epicsTimeGetCurrent (pDest);
-    }
-    else {
-        return epicsTimeERROR;
-    }
+#if defined (CLOCK_REALTIME)
+	const char name[] = "gettimeofday";
+#else
+	const char name[] = "clock_gettime";
+#endif
+
+	generalTimeCurrentTpRegister(name, 150, osdTimeGetCurrent);
+	return epicsTimeOK;
 }

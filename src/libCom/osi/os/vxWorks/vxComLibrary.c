@@ -17,16 +17,12 @@
  * modules top be loaded
  */
 
-extern void iocClockInit(void);
 #include "epicsDynLink.h"
 extern int logMsgToErrlog(void);
 extern int veclist(int);
 
 void vxComLibrary(int callit)
 {
-    
-
-    if(callit) iocClockInit();
     if(callit) symFindByNameEPICS(0,0,0,0);
     if(callit) logMsgToErrlog();
     if(callit) veclist(0);

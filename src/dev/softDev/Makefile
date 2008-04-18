@@ -37,6 +37,7 @@ LIBSRCS += devSASoft.c
 LIBSRCS += devSiSoft.c
 LIBSRCS += devSoSoft.c
 LIBSRCS += devWfSoft.c
+LIBSRCS += devGeneralTime.c
 
 LIBSRCS += devAoSoftCallback.c
 LIBSRCS += devBoSoftCallback.c

@@ -11,24 +11,43 @@
  */
 //
 
-/*
- * ANSI C
- */
-#include <time.h>
-/*#include <limits.h>*/
+#include "epicsTime.h"
+#include "osiNTPTime.h"
+#include "osdSysTime.h"
+#include "generalTimeSup.h"
 
-/*
- * RTEMS
-#include <rtems.h>
- */
+extern int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 
-/*
- * EPICS
- */
-#define epicsExportSharedSymbols
-#include <epicsTime.h>
+extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
+{
+    NTPTime_Init(100); /* init NTP first so it can be used to sync VW */
+    SysTime_Init(LAST_RESORT_PRIORITY);
+    return epicsTimeOK;
+}
 
-extern "C" {
+int osdNTPGet(struct timespec *ts)
+{
+    return rtems_bsdnet_get_ntp(-1, NULL, ts);
+}
+
+void osdNTPInit(void)
+{
+}
+
+int
+tickGet(void)
+{
+    rtems_interval t;
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_SINCE_BOOT, &t);
+    return t;
+}
+
+int sysClkRateGet(void)
+{
+    rtems_interval t;
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &t);
+    return t;
+}
 
 int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
@@ -51,5 +70,3 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
         return epicsTimeERROR;
     }
 }
-
-} /* extern "C" */

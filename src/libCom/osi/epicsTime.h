@@ -19,6 +19,9 @@
 #include "epicsTypes.h"
 #include "osdTime.h"
 
+/* The EPICS Epoch is 00:00:00 Jan 1, 1990 UTC */
+#define POSIX_TIME_AT_EPICS_EPOCH 631152000u
+
 /* epics time stamp for C interface*/
 typedef struct epicsTimeStamp {
     epicsUInt32    secPastEpoch;   /* seconds since 0000 Jan 1, 1990 */
@@ -182,9 +185,13 @@ extern "C" {
 #define epicsTimeEventBestTime -1
 #define epicsTimeEventDeviceTime -2
 
+/* These are now provided by the "generalTime" framework */
 epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
+
+/* Provide a way of initialising the Time Provider of "last resort" */
+epicsShareFunc int epicsShareAPI osdTimeInit ( void );
 
 /* convert to and from ANSI C's "time_t" */
 epicsShareFunc int epicsShareAPI epicsTimeToTime_t (

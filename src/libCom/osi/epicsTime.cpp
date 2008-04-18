@@ -52,7 +52,6 @@ static const unsigned nSecFracDigits = 9u;
 
 // Timescale conversion data
 
-static const unsigned int  POSIX_TIME_AT_EPICS_EPOCH = 631152000u;
 static const unsigned long NTP_TIME_AT_POSIX_EPOCH = 2208988800ul;
 static const unsigned long NTP_TIME_AT_EPICS_EPOCH =
     NTP_TIME_AT_POSIX_EPOCH + POSIX_TIME_AT_EPICS_EPOCH;
@@ -87,7 +86,12 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
     time_t t_one  = static_cast<time_t> (1);
     this->time_tSecPerTick = difftime (t_one, t_zero);
 
-    /* Convert our epoch offset into time_t units */
+    /* The EPICS epoch (1/1/1990 00:00:00UTC) was 631152000 seconds after
+     * the ANSI epoch (1/1/1970 00:00:00UTC)
+     * Convert this offset into time_t units, however this must not be
+     * calculated using local time (i.e. using mktime() or similar), since
+     * in the UK the ANSI Epoch had daylight saving time in effect, and 
+     * the value calculated would be 3600 seconds wrong.*/
     this->epicsEpochOffset =
         (double) POSIX_TIME_AT_EPICS_EPOCH / this->time_tSecPerTick;
 

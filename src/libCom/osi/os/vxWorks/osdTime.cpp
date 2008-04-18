@@ -8,9 +8,48 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include "epicsTime.h"
+#include <tickLib.h>
+#include <sysLib.h>
+#include <sntpcLib.h>
+#include <string.h>
 
-// epicsTimeGetCurrent and epicsTimeGetEvent are implemented in iocClock.c
+#include "epicsTime.h"
+#include "errlog.h"
+#include "osiNTPTime.h"
+#include "osdSysTime.h"
+#include "generalTimeSup.h"
+#include "envDefs.h"
+
+const char *pserverAddr = NULL;
+extern char* sysBootLine;
+
+extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
+{
+    NTPTime_Init(100); /* init NTP first so it can be used to sync VW */
+    SysTime_Init(LAST_RESORT_PRIORITY);
+    return epicsTimeOK;
+}
+
+int osdNTPGet(struct timespec *ts)
+{
+    return sntpcTimeGet((char *)pserverAddr, sysClkRateGet() ,ts);
+}
+
+void osdNTPInit(void)
+{
+    pserverAddr = envGetConfigParamPtr(&EPICS_TS_NTP_INET);
+    if(!pserverAddr) { /* if neither, use the boot host */
+        BOOT_PARAMS bootParms;
+        static char host_addr[BOOT_ADDR_LEN];
+        bootStringToStruct(sysBootLine,&bootParms);
+        /* bootParms.had = host IP address */
+        strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+        pserverAddr = host_addr;
+    }
+    if(!pserverAddr) {
+        errlogPrintf("No NTP server is defined. Clock does not work\n");
+    }
+}
 
 // vxWorks localtime_r interface does not match POSIX standards
 int epicsTime_localtime ( const time_t *clock, struct tm *result )

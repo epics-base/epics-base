@@ -16,6 +16,16 @@
 #ifndef osdTimeh
 #define osdTimeh
 
-/* NOOP */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+int     osdNTPGet(struct timespec *);
+void    osdNTPInit(void);
+int     sysClkRateGet(void);
+int     tickGet(void);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* ifndef osdTimeh */

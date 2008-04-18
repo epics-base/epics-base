@@ -35,6 +35,9 @@ void osdNTPInit(void)
 {
 }
 
+/*
+ * Simulate vxWorks routines needed by OSI NTP general time provider.
+ */
 int
 tickGet(void)
 {
@@ -45,11 +48,14 @@ tickGet(void)
 
 int sysClkRateGet(void)
 {
-    rtems_interval t;
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &t);
-    return t;
+    extern rtems_interval rtemsTicksPerSecond;
+
+    return rtemsTicksPerSecond;
 }
 
+/*
+ * Use reentrant versions of time access
+ */
 int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
     struct tm * pRet = gmtime_r ( pAnsiTime, pTM );

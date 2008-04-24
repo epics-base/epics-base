@@ -16,8 +16,3 @@ define MUNCH_CMD
 endef
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS
-
-#
-# Must put this one so it shows up after the -m528x
-#
-OP_SYS_LDFLAGS += -m5200

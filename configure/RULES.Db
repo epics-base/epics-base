@@ -215,6 +215,7 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@$(DEP)
 	@echo "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<

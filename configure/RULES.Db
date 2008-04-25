@@ -226,7 +226,7 @@ $(COMMON_DIR)/%.dbd: %Include.dbd
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
-$(COMMON_DIR)/%Include.dbd: ../Makefile
+$(COMMON_DIR)/%Include.dbd:
 	@$(RM) $@
 	$(PERL) $(TOOLS)/makeIncludeDbd.pl $($*_DBD) $@
 

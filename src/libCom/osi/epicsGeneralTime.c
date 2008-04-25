@@ -379,7 +379,7 @@ long    generalTimeReport(int level)
         {
             ptempText = calloc(items, 80 * 3); /* for each provider, we print 3 lines, and each line is less then 80 bytes !!!!!!!! */
             if(!ptempText)
-            {/* malloc failed */
+            {/* calloc failed */
                 epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem );
                 printf("Malloced memory for print out for %d tcps failed!\n", items);
                 return epicsTimeERROR;
@@ -426,16 +426,15 @@ long    generalTimeReport(int level)
         epicsMutexMustLock( pgeneralTimePvt->tep_list_sem );
         if(( items = ellCount( &(pgeneralTimePvt->tep_list) ) ))
         {
-            ptempText = (char *)malloc(items * 80 * 2);     /* for each provider, we print 2 lines, and each line is less then 80 bytes !!!!!!!! */
+            ptempText = calloc(items, 80 * 2);     /* for each provider, we print 2 lines, and each line is less then 80 bytes !!!!!!!! */
             if(!ptempText)
-            {/* malloc failed */
+            {/* calloc failed */
                 epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
                 printf("Malloced memory for print out for %d teps failed!\n", items);
                 return epicsTimeERROR;
             }
             if(GENERALTIME_DEBUG) printf("Malloced memory for print out for %d teps\n", items);
 
-            bzero(ptempText, items*80*2);
             tempTextOffset = 0;
 
             for(ptep=(TIME_EVENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tep_list) );

@@ -57,4 +57,5 @@ rtems_task Init (rtems_task_argument argument);
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif
 
+#include <bsp.h>
 #include <rtems/confdefs.h>

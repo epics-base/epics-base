@@ -122,7 +122,7 @@ static long init_record(subRecord *prec, int pass)
         prec->pact = TRUE;
         return 0;
     }
-    prec->sadr = (void *)registryFunctionFind(prec->snam);
+    prec->sadr = (SUBFUNCPTR)registryFunctionFind(prec->snam);
     if (prec->sadr == NULL) {
         recGblRecordError(S_db_BadSub, (void *)prec, "recSub(init_record)");
         return S_db_BadSub;

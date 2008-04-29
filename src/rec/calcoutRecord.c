@@ -220,6 +220,7 @@ static long process(calcoutRecord *pcalc)
 		pcalc->udf = isnan(pcalc->val);
 	    }
 	}
+	checkAlarms(pcalc);
 	/* check for output link execution */
 	switch (pcalc->oopt) {
 	case calcoutOOPT_Every_Time:
@@ -271,7 +272,6 @@ static long process(calcoutRecord *pcalc)
 	    writeValue(pcalc);
 	}
     }
-    checkAlarms(pcalc);
     recGblGetTimeStamp(pcalc);
     monitor(pcalc);
     recGblFwdLink(pcalc);

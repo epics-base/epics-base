@@ -66,13 +66,7 @@ ifdef T_A
 
 define FILE_TYPE_template
 
-ifneq ($$(strip $$($(1)S_$$(ARCH_CLASS))),)
-  $(1)S += $$(subst -nil-,,$$($(1)S_$$(ARCH_CLASS)))
-  else
-  ifdef $(1)S_DEFAULT
-    $(1)S += $$($(1)S_DEFAULT)
-  endif
-endif
+$(1)S += $(if $$(strip $$($(1)S_$$(ARCH_CLASS))),$$(subst -nil-,,$$($(1)S_$$(ARCH_CLASS))), $$($(1)S_DEFAULT))
 
 INSTALLS_$(1) = $$($(1)S:%=$$(INSTALL_$(1))/%)
 buildInstall : $$(INSTALLS_$(1))
@@ -91,6 +85,7 @@ clean::
 endef
 
 $(foreach type, $(FILE_TYPE),$(eval $(call FILE_TYPE_template,$(strip $(type)))))
+
 
 endif
 #---------------------------------------------------------------

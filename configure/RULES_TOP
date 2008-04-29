@@ -30,9 +30,7 @@ RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops )
 ifneq ($(RELEASE_TOPS),)
 define TOP_RULES_template
   RULES_TOP:=$$($(1))
-  ifneq ($$(wildcard $$($(1))/cfg/RULES*),)
-  -include $$(wildcard $$($(1))/cfg/RULES*)
-  endif
+  -include $$(wildcard $$($(1))/cfg/RULES*) nonexistantFilename
 endef
 $(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))
 endif

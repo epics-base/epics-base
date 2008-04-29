@@ -17,6 +17,10 @@
 # Common Configuration Information
 
 #-------------------------------------------------------
+# POSIX is OS default
+POSIX=YES
+
+#-------------------------------------------------------
 # Divider symbol
 DIVIDER = .
 
@@ -120,9 +124,10 @@ SHRLIB_PREFIX= $(LIB_PREFIX)
 
 #--------------------------------------------------
 # vpath directories
+POSIX_YES = os/posix
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
 OS_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
-            $(dir)/os/$(OS_CLASS) $(dir)/os/posix $(dir)/os/default )
+       $(addprefix $(dir)/, os/$(OS_CLASS) $(POSIX_$(POSIX)) os/default ))
 ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
 #--------------------------------------------------

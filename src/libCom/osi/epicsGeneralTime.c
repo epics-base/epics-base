@@ -403,7 +403,7 @@ long    generalTimeReport(int level)
                         {
                             tempTSText[0]='\0';
                             epicsTimeToStrftime(tempTSText, sizeof(tempTSText), "%Y/%m/%d %H:%M:%S.%06f",&tempTS);
-                            tempTextOffset += sprintf(ptempText+tempTextOffset, "\t Current Time is %s!\n", tempTSText);
+                            tempTextOffset += sprintf(ptempText+tempTextOffset, "\t Current Time is %s.\n", tempTSText);
                         }
                         else
                         {

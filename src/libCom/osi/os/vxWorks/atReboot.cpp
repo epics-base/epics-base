@@ -34,12 +34,10 @@ atRebootRegister::atRebootRegister()
 
     status = symFindByNameEPICS(sysSymTbl, "_sysAtReboot",
 				(char **)&sysAtReboot, &type);
-    if(status==OK) {
+    if (status == OK) {
         status = sysAtReboot(epicsExitCallAtExits);
-        if(status!=OK) {
+        if (status != OK) {
             printf("atReboot: sysAtReboot returned error %d\n", status);
-        } else {
-            printf("epicsExit will be called by reboot.\n");
         }
     } else {
 	printf("BSP routine sysAtReboot() not found, epicsExit() will not be\n"

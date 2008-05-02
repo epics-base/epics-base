@@ -120,8 +120,9 @@ endif
 ifneq ($(RELEASE_TOPS),)
 define  TOP_RULES_template
   RULES_TOP:=$$($(1))
-  -include $$(if $(patsubst $$($(1))/configure,,$$(CONFIG)),nonexistantFilename, \
-         $$(strip $$($(1)))/configure/RULES_BUILD)
+  -include $$(if $(patsubst $$($(1))/configure,,$$(CONFIG)),\
+         $$(strip $$($(1)))/configure/RULES_BUILD, \
+         nonexistantFilename)
   -include $$(wildcard $$($(1))/cfg/RULES*) nonexistantFilename
 endef
 $(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))

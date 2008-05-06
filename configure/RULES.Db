@@ -62,7 +62,7 @@ TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(pats
           $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
           $(TEMPLATE1)))))))))))
 TEMPLATE3=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
-TEMPLATE_FILENAME=$(firstword $(wildcard $(addprefix ../,$($*_TEMPLATE)) ../$*.template $(TEMPLATE3) ../template))
+TEMPLATE_FILENAME=$(firstword $(wildcard $($*_TEMPLATE) $(addprefix ../,$($*_TEMPLATE)) ../$*.template $(TEMPLATE3) ../template))
 
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
@@ -150,6 +150,8 @@ clean::
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
 	@$(RM) $(TARGETS)
+
+realclean: clean
 
 ##################################################### CapFast filter
 

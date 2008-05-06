@@ -129,9 +129,9 @@ static void get_enum_strs(DBADDR *paddr,void **ppbuffer,
 		    goto choice_common;
 		case DBF_DEVICE:
 		    pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-		    if (pdbDeviceMenu == NULL) {
-		    	no_str = 0;
-			goto choice_common;
+		    if (!pdbDeviceMenu) {
+			*options = (*options)^DBR_ENUM_STRS;/*Turn off option*/
+			break;
 		    }
 		    no_str = pdbDeviceMenu->nChoice;
 		    papChoice = pdbDeviceMenu->papChoice;

@@ -76,13 +76,13 @@ static int  generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, i
 
 long        generalTimeReport(int level);
 
-static  generalTimePvt *pgeneralTimePvt=NULL;
+static  generalTimePvt *pgeneralTimePvt;
 static  char logBuffer[160];
 
 int     GENERALTIME_DEBUG=0;
 
 /* implementation */
-void    generalTime_InitOnce(void)
+static void generalTime_InitOnce(void)
 {
     pgeneralTimePvt = (generalTimePvt *)callocMustSucceed(1,sizeof(generalTimePvt),"generalTime_Init");
 
@@ -104,13 +104,13 @@ void generalTime_Init(void)
     epicsThreadOnce(&onceId, (EPICSTHREADFUNC)generalTime_InitOnce, NULL);
 }
 
-int     epicsTimeGetCurrent(epicsTimeStamp *pDest)
+int epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     int priority;
     return(generalTimeGetCurrentPriority(pDest, &priority));
 }
 
-static int     generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int * pPriority)
+static int generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int * pPriority)
 {
     return(generalTimeGetExceptPriority(pDest, pPriority, 0));  /* no tcp is excluded */
 
@@ -120,9 +120,9 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int * pPriority, int exc
 {
     int key;
     TIME_CURRENT_PROVIDER   * ptcp;
-    int         status = epicsTimeERROR;
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    int status = epicsTimeERROR;
+
+    generalTime_Init();
 
     epicsMutexMustLock( pgeneralTimePvt->tcp_list_sem );
     for(ptcp=(TIME_CURRENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tcp_list) );
@@ -179,8 +179,8 @@ static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber
     int key;
     TIME_EVENT_PROVIDER   * ptep;
     int                     status = epicsTimeERROR;
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+
+    generalTime_Init();
 
     epicsMutexMustLock( pgeneralTimePvt->tep_list_sem );
     for(ptep=(TIME_EVENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tep_list) );
@@ -244,8 +244,7 @@ int     generalTimeEventTpRegister(const char *desc, int priority, pepicsTimeGet
 {
     TIME_EVENT_PROVIDER     * ptep, * ptepref;
 
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
 
     ptep=(TIME_EVENT_PROVIDER *)malloc(sizeof(TIME_EVENT_PROVIDER));
 
@@ -282,8 +281,7 @@ int     generalTimeCurrentTpRegister(const char *desc, int priority, pepicsTimeG
 {
     TIME_CURRENT_PROVIDER   * ptcp, * ptcpref;
 
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
 
     ptcp=(TIME_CURRENT_PROVIDER *)malloc(sizeof(TIME_CURRENT_PROVIDER));
 
@@ -480,22 +478,19 @@ int generalTimeGetCurrentDouble(double * pseconds)  /* for ai record, seconds fr
 
 void    generalTimeResetErrorCounts()   /* for bo record */
 {
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
     pgeneralTimePvt->ErrorCounts=0;
 }
 
 int     generalTimeGetErrorCounts() /* for longin record */
 {
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
     return  pgeneralTimePvt->ErrorCounts;
 }
 
 void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
 {/* the assignment to pLastKnownBestTcp is atomic and desc is never changed after registeration */
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTcp)
     {/* We know some good tcp */
         strncpy(desc,pgeneralTimePvt->pLastKnownBestTcp->tp_desc,TP_DESC_LEN-1);
@@ -510,8 +505,7 @@ void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
 
 void    generalTimeGetBestTep(char * desc)  /* for stringin record */
 {/* the assignment to pLastKnownBestTep is atomic and desc is never changed after registeration */
-    if(!pgeneralTimePvt)
-        generalTime_Init();
+    generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTep)
     {/* We know some good tep */
         strncpy(desc,pgeneralTimePvt->pLastKnownBestTep->tp_desc,TP_DESC_LEN-1);

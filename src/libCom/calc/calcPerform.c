@@ -42,13 +42,11 @@ epicsShareFunc long
     double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
-    int itop;				/* integer from top of stack */
-    char nargs;
+    long itop;				/* integer from top of stack */
+    int nargs;
 
     /* initialize */
     ptop = stack;
-
-    if(*pinst == END_EXPRESSION) return -1;
 
     /* RPN evaluation loop */
     while (*pinst != END_EXPRESSION){
@@ -132,8 +130,11 @@ epicsShareFunc long
 	    break;
 
 	case MODULO:
-	    top = *ptop--;
-	    *ptop = fmod(*ptop, top);
+	    itop = (long) *ptop--;
+	    if (itop)
+		*ptop = (long) *ptop % itop;
+	    else
+		*ptop = 0.0 / itop;   /* NaN */
 	    break;
 
 	case POWER:
@@ -276,33 +277,33 @@ epicsShareFunc long
 	    break;
 
 	case BIT_OR:
-	    itop = (int) *ptop--;
-	    *ptop = (int) *ptop | itop;
+	    itop = (long) *ptop--;
+	    *ptop = (long) *ptop | itop;
 	    break;
 
 	case BIT_AND:
-	    itop = (int) *ptop--;
-	    *ptop = (int) *ptop & itop;
+	    itop = (long) *ptop--;
+	    *ptop = (long) *ptop & itop;
 	    break;
 
 	case BIT_EXCL_OR:
-	    itop = (int) *ptop--;
-	    *ptop = (int) *ptop ^ itop;
+	    itop = (long) *ptop--;
+	    *ptop = (long) *ptop ^ itop;
 	    break;
 
 	case BIT_NOT:
-	    itop = (int) *ptop;
+	    itop = (long) *ptop;
 	    *ptop = ~itop;
 	    break;
 
 	case RIGHT_SHIFT:
-	    itop = (int) *ptop--;
-	    *ptop = (int) *ptop >> itop;
+	    itop = (long) *ptop--;
+	    *ptop = (long) *ptop >> itop;
 	    break;
 
 	case LEFT_SHIFT:
-	    itop = (int) *ptop--;
-	    *ptop = (int) *ptop << itop;
+	    itop = (long) *ptop--;
+	    *ptop = (long) *ptop << itop;
 	    break;
 
 	case NOT_EQ:

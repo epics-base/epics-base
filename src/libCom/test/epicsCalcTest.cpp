@@ -200,7 +200,7 @@ MAIN(epicsCalcTest)
     Inf /= NaN;
     NaN /= NaN;
     
-    testPlan(532);
+    testPlan(533);
     
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -467,6 +467,7 @@ MAIN(epicsCalcTest)
     testExpr(7 % 4);
     testExpr(-7 % 4);
     testExpr(63 % 16 % 6)
+    testCalc("1 % 0", NaN);
     
     testExpr(7 & 4);
     

@@ -91,17 +91,30 @@ static void generalTime_InitOnce(void)
 
     ellInit(&(pgeneralTimePvt->tep_list));
     pgeneralTimePvt->tep_list_sem = epicsMutexMustCreate();
-
-    /* Initialise the "last-resort" provider on a per-architecture basis */
-    osdTimeInit();
 }
 
+/*
+ * This initialization is tricky.
+ * It has to allow recursive calls since osdTimeInit() may cause
+ * this routine to be reinvoked.
+ */
 void generalTime_Init(void)
 {
     /* We must only initialise generalTime once */
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
+    static int osdTimeInitDone;
 
-    epicsThreadOnce(&onceId, (EPICSTHREADFUNC)generalTime_InitOnce, NULL);
+    if (osdTimeInitDone <= 0) {
+        epicsThreadOnce(&onceId, (EPICSTHREADFUNC)generalTime_InitOnce, NULL);
+        epicsMutexLock(pgeneralTimePvt->tcp_list_sem);
+        if (osdTimeInitDone == 0) {
+            osdTimeInitDone = -1;
+            /* Initialise the per-architecture time provider(s) */
+            osdTimeInit();
+            osdTimeInitDone = 1;
+        }
+        epicsMutexUnlock(pgeneralTimePvt->tcp_list_sem);
+    }
 }
 
 int epicsTimeGetCurrent(epicsTimeStamp *pDest)
@@ -178,7 +191,7 @@ static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber
 {
     int key;
     TIME_EVENT_PROVIDER   * ptep;
-    int                     status = epicsTimeERROR;
+    int status = epicsTimeERROR;
 
     generalTime_Init();
 

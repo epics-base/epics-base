@@ -1,17 +1,11 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
-//
-// should move the gettimeofday() proto 
-// into a different header
-//
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -25,10 +19,8 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-//
-// epicsTime::osdGetCurrent ()
-//
-extern "C" epicsShareFunc int epicsShareAPI osdTimeGetCurrent (epicsTimeStamp *pDest)
+
+static int osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
 #   ifdef CLOCK_REALTIME
         struct timespec ts;
@@ -55,10 +47,12 @@ extern "C" epicsShareFunc int epicsShareAPI osdTimeGetCurrent (epicsTimeStamp *p
 #   endif
 }
 
-extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
+static int timeRegister(void)
 {
-    return generalTimeCurrentTpRegister("posix Time", 100, osdTimeGetCurrent);
+    generalTimeCurrentTpRegister("Posix Time", 100, osdTimeGetCurrent);
+    return 1;
 }
+static int done = timeRegister();
 
 int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
                        struct tm *pTM )
@@ -84,7 +78,7 @@ int epicsTime_localtime ( const time_t *clock, // X aCC 361
     }
 }
 
-extern "C" epicsShareFunc void epicsShareAPI
+extern "C" epicsShareFunc void
     convertDoubleToWakeTime(double timeout,struct timespec *wakeTime)
 {
     struct timespec wait;

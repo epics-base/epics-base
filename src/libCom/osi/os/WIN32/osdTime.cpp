@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -85,29 +84,22 @@ private:
 };
 
 static currentTime * pCurrentTime = 0;
-static epicsThreadOnceId osdTimeOnceFlag = EPICS_THREAD_ONCE_INIT;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =
             EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC;
+
 //
-// osdTimeInit ()
+// Start and register time provider
 //
-extern "C" epicsShareFunc int epicsShareAPI osdTimeInit ( void )
+static int timeRegister(void)
 {
-    static bool osdTimeInitSuccess = false;
-
-    // avoid recursion problems
-    if ( ! osdTimeInitSuccess ) {
-        osdTimeInitSuccess = true;
-
-        pCurrentTime = new currentTime ();
-        // bypass recursion crowbar in epicsThreadOnce
-        osdTimeOnceFlag = 1;
-        pCurrentTime->startPLL ();
-        generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
-    }
+    pCurrentTime = new currentTime ();
+    pCurrentTime->startPLL ();
+    generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
+    return 1;
 }
+static int done = timeRegister();
 
 //
 // osdTimeGetCurrent ()
@@ -119,8 +111,7 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
     }
 
     pCurrentTime->getCurrentTime ( *pDest );
-
-	return epicsTimeOK;
+    return epicsTimeOK;
 }
 
 inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )

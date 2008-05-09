@@ -190,9 +190,6 @@ epicsShareFunc int epicsShareAPI epicsTimeGetCurrent ( epicsTimeStamp * pDest );
 epicsShareFunc int epicsShareAPI epicsTimeGetEvent (
     epicsTimeStamp *pDest, int eventNumber);
 
-/* Provide a way of initialising the Time Provider of "last resort" */
-epicsShareFunc int epicsShareAPI osdTimeInit ( void );
-
 /* convert to and from ANSI C's "time_t" */
 epicsShareFunc int epicsShareAPI epicsTimeToTime_t (
     time_t * pDest, const epicsTimeStamp * pSrc );

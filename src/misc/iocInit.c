@@ -94,10 +94,7 @@ int epicsShareAPI iocInit()
 
     taskwdInit();
     callbackInit();
-    /* The following forces iocClockInit to be called on vxWorks.
-       This is a kludge so that TSinit can be used before iocInit.
-    */
-    epicsTimeGetCurrent(&timeStamp);
+
     /* let threads start */
     epicsThreadSleep(.1);
     initHooks(initHookAfterCallbackInit);

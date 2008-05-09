@@ -70,9 +70,9 @@ typedef struct  generalTimePvt
 } generalTimePvt;
 
 int         generalTimeGetCurrent(epicsTimeStamp *pDest);
-static int  generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int * pPriority);
+static int  generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int *pPrio);
 int         generalTimeGetEvent(epicsTimeStamp *pDest,int eventNumber);
-static int  generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int * pPriority);
+static int  generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int *pPrio);
 
 long        generalTimeReport(int level);
 
@@ -82,9 +82,10 @@ static  char logBuffer[160];
 int     GENERALTIME_DEBUG=0;
 
 /* implementation */
-static void generalTime_InitOnce(void)
+static void generalTime_InitOnce(void *dummy)
 {
-    pgeneralTimePvt = (generalTimePvt *)callocMustSucceed(1,sizeof(generalTimePvt),"generalTime_Init");
+    pgeneralTimePvt = (generalTimePvt *)callocMustSucceed(1,
+        sizeof(generalTimePvt),"generalTime_Init");
 
     ellInit(&(pgeneralTimePvt->tcp_list));
     pgeneralTimePvt->tcp_list_sem = epicsMutexMustCreate();
@@ -93,43 +94,23 @@ static void generalTime_InitOnce(void)
     pgeneralTimePvt->tep_list_sem = epicsMutexMustCreate();
 }
 
-/*
- * This initialization is tricky.
- * It has to allow recursive calls since osdTimeInit() may cause
- * this routine to be reinvoked.
- */
 void generalTime_Init(void)
 {
-    /* We must only initialise generalTime once */
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
-    static int osdTimeInitDone;
-
-    if (osdTimeInitDone <= 0) {
-        epicsThreadOnce(&onceId, (EPICSTHREADFUNC)generalTime_InitOnce, NULL);
-        epicsMutexLock(pgeneralTimePvt->tcp_list_sem);
-        if (osdTimeInitDone == 0) {
-            osdTimeInitDone = -1;
-            /* Initialise the per-architecture time provider(s) */
-            osdTimeInit();
-            osdTimeInitDone = 1;
-        }
-        epicsMutexUnlock(pgeneralTimePvt->tcp_list_sem);
-    }
+    epicsThreadOnce(&onceId, generalTime_InitOnce, NULL);
 }
 
 int epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
-    int priority;
-    return(generalTimeGetCurrentPriority(pDest, &priority));
+    return generalTimeGetExceptPriority(pDest, NULL, 0);
 }
 
-static int generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int * pPriority)
+static int generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int *pPrio)
 {
-    return(generalTimeGetExceptPriority(pDest, pPriority, 0));  /* no tcp is excluded */
-
+    return generalTimeGetExceptPriority(pDest, pPrio, 0);
 }
 
-int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int * pPriority, int except_tcp)
+int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int except_tcp)
 {
     int key;
     TIME_CURRENT_PROVIDER   * ptcp;
@@ -152,7 +133,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int * pPriority, int exc
             if (epicsTimeGreaterThanEqual(pDest, &(pgeneralTimePvt->lastKnownTimeCurrent))) {
                 pgeneralTimePvt->lastKnownTimeCurrent=*pDest;
                 pgeneralTimePvt->pLastKnownBestTcp=ptcp;
-                *pPriority = ptcp->tcp_priority;
+                if (pPrio) *pPrio = ptcp->tcp_priority;
             } else {
                 epicsTimeStamp orig = *pDest;
                 *pDest=pgeneralTimePvt->lastKnownTimeCurrent;
@@ -165,7 +146,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int * pPriority, int exc
                             pgeneralTimePvt->pLastKnownBestTcp->tp_desc);
                     epicsInterruptContextMessage(logBuffer);
                 }
-                *pPriority = pgeneralTimePvt->pLastKnownBestTcp->tcp_priority;
+                if (pPrio) *pPrio = pgeneralTimePvt->pLastKnownBestTcp->tcp_priority;
             }
             break;
         }
@@ -179,15 +160,14 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int * pPriority, int exc
 
 int     epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
 {
-    int priority;
     if (eventNumber == epicsTimeEventCurrentTime) {
-        return generalTimeGetCurrentPriority(pDest, &priority);
+        return generalTimeGetCurrentPriority(pDest, NULL);
     } else {
-        return(generalTimeGetEventPriority(pDest, eventNumber, &priority));
+        return generalTimeGetEventPriority(pDest, eventNumber, NULL);
     }
 }
 
-static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int * pPriority)
+static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int *pPrio)
 {
     int key;
     TIME_EVENT_PROVIDER   * ptep;
@@ -204,7 +184,7 @@ static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber
         if(status!=epicsTimeERROR)
         {/* we can check if time monotonic here */
             pgeneralTimePvt->pLastKnownBestTep=ptep;
-            *pPriority = ptep->tep_priority;
+            if (pPrio) *pPrio = ptep->tep_priority;
             if(eventNumber>=0 && eventNumber<NUM_OF_EVENTS)
             {
                 if (epicsTimeGreaterThanEqual(pDest,&(pgeneralTimePvt->lastKnownTimeEvent[eventNumber]))) {

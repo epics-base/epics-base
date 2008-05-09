@@ -1,7 +1,8 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -19,11 +20,11 @@
 
 extern "C" int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 
-extern "C" epicsShareFunc int epicsShareAPI osdTimeInit(void)
+
+extern "C" void osdTimeRegister(void)
 {
-    NTPTime_Init(100); /* init NTP first so it can be used to sync VW */
+    NTPTime_Init(100); /* init NTP first so it can be used to sync SysTime */
     SysTime_Init(LAST_RESORT_PRIORITY);
-    return epicsTimeOK;
 }
 
 int osdNTPGet(struct timespec *ts)

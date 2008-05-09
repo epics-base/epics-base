@@ -78,3 +78,16 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
         return epicsTimeERROR;
     }
 }
+
+/*
+ * Register local time providers if EPICS is running (i.e. if this
+ * code has been dynamically loaded into a running system).
+ */
+class osdTimeReg {
+  public:
+    osdTimeReg() {
+        extern rtems_interval rtemsTicksPerSecond;
+        if (rtemsTicksPerSecond != 0) osdTimeRegister();
+    }
+};
+static osdTimeReg osdTimeRegObj;

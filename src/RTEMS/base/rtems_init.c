@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/termios.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,6 +29,7 @@
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/imfs.h>
+#include <libRtemsNfs.h>
 #include <bsp.h>
 
 #include <epicsThread.h>
@@ -40,6 +42,14 @@
 #include <iocsh.h>
 
 #include "epicsRtemsInitHooks.h"
+
+/*
+ * Prototypes for some functions not in header files
+ */
+void osdTimeRegister(void);
+void tzset(void);
+int fileno(FILE *);
+int main(int argc, char **argv);
 
 rtems_interval rtemsTicksPerSecond;
 double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
@@ -129,7 +139,7 @@ mustMalloc(int size, const char *msg)
 #endif
 
 static int
-initialize_local_filesystem(const char **argv)
+initialize_local_filesystem(char **argv)
 {
     extern char _DownloadLocation[] __attribute__((weak));
     extern char _FlashBase[] __attribute__((weak));
@@ -161,7 +171,7 @@ initialize_local_filesystem(const char **argv)
 }
 
 static void
-initialize_remote_filesystem(const char **argv, int hasLocalFilesystem)
+initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 {
 #ifdef OMIT_NFS_SUPPORT
     printf ("***** Initializing TFTP *****\n");
@@ -406,7 +416,7 @@ rtems_task
 Init (rtems_task_argument ignored)
 {
     int                 i;
-    const char         *argv[3]         = { NULL, NULL, NULL };
+    char               *argv[3]         = { NULL, NULL, NULL };
     rtems_task_priority newpri;
     rtems_status_code   sc;
     rtems_time_of_day   now;
@@ -516,6 +526,7 @@ Init (rtems_task_argument ignored)
         }
     }
     tzset();
+    osdTimeRegister();
 
     /*
      * Run the EPICS startup script

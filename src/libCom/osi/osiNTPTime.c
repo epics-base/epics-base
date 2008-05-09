@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -31,6 +30,7 @@
 #include "epicsTime.h"
 #include "envDefs.h"
 #include "errlog.h"
+#include "epicsGeneralTime.h"
 #include "generalTimeSup.h"
 #include "osdTime.h"
 
@@ -39,9 +39,8 @@
 
 #define NTPTIME_DRV_VERSION "NTPTime Driver Version 1.3"
 
-#include "epicsGeneralTime.h"
 
-static void NTPTimeSyncNTP(void);
+static void NTPTimeSyncNTP(void *dummy);
 static int  NTPTimeGetCurrent(epicsTimeStamp *pDest);
 
 long    NTPTime_Report(int level);
@@ -58,7 +57,7 @@ typedef struct NTPTimePvt {
 static NTPTimePvt *pNTPTimePvt = 0;
 static int nConsecutiveBad = 0;
 
-static void NTPTimeSyncNTP(void)
+static void NTPTimeSyncNTP(void *dummy)
 {
     struct timespec Currtime;
     epicsTimeStamp epicsTime;
@@ -143,10 +142,9 @@ static long NTPTime_InitOnce(int priority)
         printf("First try to sync with NTP server succeed!\n");
     }
 
-    epicsThreadCreate("NTPTimeSyncNTP",
-        epicsThreadPriorityHigh,
+    epicsThreadCreate("NTPTimeSync", epicsThreadPriorityHigh,
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC)NTPTimeSyncNTP,0);
+        NTPTimeSyncNTP, NULL);
     
     /* register to link list */
     generalTimeCurrentTpRegister("NTP", priority, NTPTimeGetCurrent);

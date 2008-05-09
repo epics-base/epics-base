@@ -13,19 +13,16 @@
 #include "epicsTypes.h"
 #include "cantProceed.h"
 #include "errlog.h"
-#include "epicsExport.h"
 #include "epicsThread.h"
-#include "osdThread.h"
 #include "epicsMutex.h"
 #include "epicsTime.h"
-#include "envDefs.h"
+#include "generalTimeSup.h"
 
 #define BILLION 1000000000
 
 #define SYS_TIME_DRV_VERSION "system Time Driver Version 1.3"
 #define SYNC_PERIOD 60.0
 
-#include "generalTimeSup.h"
 
 static void SysTimeSyncTime(void *param);
 static int SysTimeGetCurrent(epicsTimeStamp *pDest);
@@ -79,7 +76,7 @@ long SysTime_InitOnce(int priority)
     generalTimeCurrentTpRegister("system Time", priority, SysTimeGetCurrent);
 
     /* Create the synchronization thread */
-    epicsThreadCreate("System Time Sync", epicsThreadPriorityLow,
+    epicsThreadCreate("SysTimeSync", epicsThreadPriorityLow,
             epicsThreadGetStackSize(epicsThreadStackSmall), SysTimeSyncTime, 
             NULL);
     return 0;

@@ -7,8 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-#include <rtems.h>
-#include <rtems/libcsupport.h>
+#include <rtems/malloc.h>
 
 #define epicsExportSharedSymbols
 #include "osiPoolStatus.h"
@@ -18,5 +17,8 @@
  */
 epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
-    return (malloc_free_space() > 50000 + contiguousBlockSize);
+    rtems_malloc_statistics_t stats;
+
+    malloc_get_statistics(&stats);
+    return (stats.space_available > (50000 + contiguousBlockSize));
 }

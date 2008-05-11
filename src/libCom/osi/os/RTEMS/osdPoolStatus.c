@@ -17,8 +17,10 @@
  */
 epicsShareFunc int epicsShareAPI osiSufficentSpaceInPool ( size_t contiguousBlockSize )
 {
-    rtems_malloc_statistics_t stats;
+    rtems_malloc_statistics_t s;
+    unsigned long n;
 
-    malloc_get_statistics(&stats);
-    return (stats.space_available > (50000 + contiguousBlockSize));
+    malloc_get_statistics(&s);
+    n = s.space_available - (unsigned long)(s.lifetime_allocated - s.lifetime_freed);
+    return (n > (50000 + contiguousBlockSize));
 }

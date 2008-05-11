@@ -323,17 +323,15 @@ static void netStatCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
 static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
-    rtems_malloc_statistics_t stats;
+    rtems_malloc_statistics_t s;
+    double x;
 
-    malloc_get_statistics(&stats);
-    if (stats.space_available >= 1024*1024) {
-        double x = (double)stats.space_available / (1024 * 1024);
-        printf("Heap space: %.1f MB\n", x);
-    }
-    else {
-        double x = (double)stats.space_available / 1024;
-        printf("Heap space: %.1f kB\n", x);
-    }
+    malloc_get_statistics(&s);
+    x = s.space_available - (unsigned long)(s.lifetime_allocated - s.lifetime_freed);
+    if (x >= 1024*1024)
+        printf("Heap space: %.1f MB\n", x / (1024 * 1024));
+    else
+        printf("Heap space: %.1f kB\n", x / 1024);
 }
 
 #ifndef OMIT_NFS_SUPPORT

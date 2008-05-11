@@ -24,7 +24,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <rtems.h>
-#include <rtems/libcsupport.h>
+#include <rtems/malloc.h>
 #include <rtems/error.h>
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
@@ -323,14 +323,15 @@ static void netStatCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef heapSpaceFuncDef = {"heapSpace",0,NULL};
 static void heapSpaceCallFunc(const iocshArgBuf *args)
 {
-    unsigned long n = malloc_free_space();
+    rtems_malloc_statistics_t stats;
 
-    if (n >= 1024*1024) {
-        double x = (double)n / (1024 * 1024);
+    malloc_get_statistics(&stats);
+    if (stats.space_available >= 1024*1024) {
+        double x = (double)stats.space_available / (1024 * 1024);
         printf("Heap space: %.1f MB\n", x);
     }
     else {
-        double x = (double)n / 1024;
+        double x = (double)stats.space_available / 1024;
         printf("Heap space: %.1f kB\n", x);
     }
 }

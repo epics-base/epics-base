@@ -772,16 +772,14 @@ long epicsShareAPI dbBufferSize(
     if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
     return(nbytes);
 }
-int epicsShareAPI dbLoadDatabase(char *filename,char *path,char *substitutions)
+int epicsShareAPI dbLoadDatabase(const char *file, const char *path, const char *subs)
 {
-    int status;
-    status = dbReadDatabase(&pdbbase,filename,path,substitutions);
-    return(status);
+    return dbReadDatabase(&pdbbase, file, path, subs);
 }
 
-int epicsShareAPI dbLoadRecords(char* pfilename, char* substitutions)
+int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
 {
-    return(dbReadDatabase(&pdbbase,pfilename,0,substitutions));
+    return dbReadDatabase(&pdbbase, file, 0, subs);
 }
 
 

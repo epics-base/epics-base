@@ -269,10 +269,10 @@ epicsShareFunc long epicsShareAPI dbBufferSize(
 epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
 
 epicsShareFunc int epicsShareAPI  dbLoadDatabase(
-    char *filename,char *path,char *substitutions);
+    const char *filename, const char *path, const char *substitutions);
 
 epicsShareFunc int epicsShareAPI dbLoadRecords(
-    char* pfilename, char* substitutions);
+    const char* filename, const char* substitutions);
 
 #ifdef __cplusplus
 }

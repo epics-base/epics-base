@@ -21,6 +21,7 @@
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "epicsThread.h"
+#include "epicsExit.h"
 #include "epicsInterrupt.h"
 #include "epicsTimer.h"
 #include "epicsRingPointer.h"
@@ -44,10 +45,12 @@ static epicsEventId callbackSem[NUM_CALLBACK_PRIORITIES];
 static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
 static epicsThreadId callbackTaskId[NUM_CALLBACK_PRIORITIES];
 static int ringOverflow[NUM_CALLBACK_PRIORITIES];
-static void callbackInitPvt(void *);
-volatile int callbackRestart=FALSE;
+
+volatile int callbackRestart = FALSE;
+volatile int callbackExit = FALSE;
 
 static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0,1,2};
+
 
 /*for Delayed Requests */
 static void notify(void *pPrivate);
@@ -62,7 +65,23 @@ static void start(int ind); /*start or restart a callbackTask*/
 int epicsShareAPI callbackSetQueueSize(int size)
 {
     callbackQueueSize = size;
-    return(0);
+    return 0;
+}
+
+static void callbackShutdown(void *arg)
+{
+    int i;
+    callbackExit = TRUE;
+    for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
+        epicsEventSignal(callbackSem[i]);
+    }
+}
+
+static int callbackWait(int priority)
+{
+    if (callbackExit) return FALSE;
+    epicsEventMustWait(callbackSem[priority]);
+    return !callbackExit;
 }
 
 static void callbackInitPvt(void *arg)
@@ -70,16 +89,16 @@ static void callbackInitPvt(void *arg)
     int i;
 
     timerQueue = epicsTimerQueueAllocate(0,epicsThreadPriorityScanHigh);
-    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++) {
+    for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
 	start(i);
     }
+    epicsAtExit(callbackShutdown, NULL);
 }
 
 void epicsShareAPI callbackInit(void)
 {
     static epicsThreadOnceId callbackOnceFlag = EPICS_THREAD_ONCE_INIT;
-    void *arg = 0;
-    epicsThreadOnce(&callbackOnceFlag,callbackInitPvt,arg);
+    epicsThreadOnce(&callbackOnceFlag,callbackInitPvt,NULL);
 }
 
 /* Routine which places requests into callback queue*/
@@ -113,18 +132,16 @@ static void callbackTask(int *ppriority)
     CALLBACK *pcallback;
 
     taskwdInsert(epicsThreadGetIdSelf(),
-        wdCallback,(void *)&priorityValue[*ppriority]);
+        wdCallback,(void *)&priorityValue[priority]);
     ringOverflow[priority] = FALSE;
-    while(TRUE) {
-	/* wait for somebody to wake us up */
-        epicsEventMustWait(callbackSem[priority]);
-        while(TRUE) {
-            if(!(pcallback = (CALLBACK *)
-                epicsRingPointerPop(callbackQ[priority]))) break;
+    while(callbackWait(priority)) {
+	while((pcallback = (CALLBACK *)
+	        epicsRingPointerPop(callbackQ[priority]))) {
 	    ringOverflow[priority] = FALSE;
 	    (*pcallback->callback)(pcallback);
 	}
     }
+    taskwdRemove(epicsThreadGetIdSelf());
 }
 
 static char *priorityName[3] = {"Low","Medium","High"};

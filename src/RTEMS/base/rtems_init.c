@@ -29,7 +29,7 @@
 #include <rtems/stackchk.h>
 #include <rtems/rtems_bsdnet.h>
 #include <rtems/imfs.h>
-#include <libRtemsNfs.h>
+#include <librtemsNfs.h>
 #include <bsp.h>
 
 #include <epicsThread.h>

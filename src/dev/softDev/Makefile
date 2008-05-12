@@ -50,7 +50,7 @@ LIBSRCS += devSoSoftCallback.c
 LIBSRCS += devTimestamp.c
 
 LIBRARY_IOC += softDevIoc
-softDevIoc_LIBS += recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
+softDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 softDevIoc_RCS_WIN32 = softDevIoc.rc
 
 # For R3.13 compatability

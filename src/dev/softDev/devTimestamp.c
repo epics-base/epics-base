@@ -2,10 +2,10 @@
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* Id$ */
+/* $Id$ */
 /*
  * Device support for EPICS time stamps
  *
@@ -22,6 +22,25 @@
 #include "aiRecord.h"
 #include "stringinRecord.h"
 
+
+/* Extended device support to allow INP field changes */
+
+static long allow(struct dbCommon *prec) {
+    return 0;
+}
+
+static struct dsxt dsxtAllow = {
+    allow, allow
+};
+
+static long initAllow(int pass) {
+    if (pass == 0) devExtend(&dsxtAllow);
+    return 0;
+}
+
+
+/* ai record */
+
 static long read_ai(aiRecord *prec)
 {
     recGblGetTimeStamp(prec);
@@ -35,10 +54,12 @@ struct {
     DEVSUPFUN read_write;
     DEVSUPFUN special_linconv;
 } devTimestampAI = {
-    {6, NULL, NULL, NULL, NULL}, read_ai,  NULL
+    {6, NULL, initAllow, NULL, NULL}, read_ai,  NULL
 };
 epicsExportAddress(dset, devTimestampAI);
 
+
+/* stringin record */
 
 static long read_stringin (stringinRecord *prec)
 {
@@ -58,8 +79,8 @@ static long read_stringin (stringinRecord *prec)
 
 struct {
     dset common;
-    DEVSUPFUN   read_stringin;
+    DEVSUPFUN read_stringin;
 } devTimestampSI = {
-    {5, NULL, NULL, NULL, NULL}, read_stringin
+    {5, NULL, initAllow, NULL, NULL}, read_stringin
 };
 epicsExportAddress(dset, devTimestampSI);

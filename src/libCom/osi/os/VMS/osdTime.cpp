@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -23,37 +22,30 @@
 //
 int osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
-#   if defined(CLOCK_REALTIME)
-        struct timespec ts;
-        int status;
-    
-        status = clock_gettime (CLOCK_REALTIME, &ts);
-        if (status) {
-            return -1;
-        }
-        *pDest = epicsTime (ts);
-        return 0;
-#   else
-    	int status;
-    	struct timeval tv;
-    
-    	status = gettimeofday (&tv, NULL);
-        if (status!=0) {
-            return -1;
-        }
-    	*pDest = epicsTime (tv); 
-        return 0;
-#   endif
+    int status;
+#if defined(CLOCK_REALTIME)
+    struct timespec t;
+    status = clock_gettime(CLOCK_REALTIME, &t);
+#else
+    struct timeval t;
+    status = gettimeofday(&t, NULL);
+#endif
+    if (status) {
+        return epicsTimeERROR;
+    }
+    *pDest = epicsTime(t);
+    return epicsTimeOK;
 }
 
-extern "C" epicsShareFunc int epicsShareAPI osdTimeInit (void)
+static int timeRegister(void)
 {
 #if defined (CLOCK_REALTIME)
-	const char name[] = "gettimeofday";
+    const char *name = "gettimeofday";
 #else
-	const char name[] = "clock_gettime";
+    const char *name = "clock_gettime";
 #endif
 
-	generalTimeCurrentTpRegister(name, 150, osdTimeGetCurrent);
-	return epicsTimeOK;
+    generalTimeCurrentTpRegister(name, 150, osdTimeGetCurrent);
+    return 1;
 }
+static int done = timeRegister();

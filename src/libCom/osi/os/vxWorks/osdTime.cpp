@@ -30,11 +30,6 @@ static int timeRegister(void)
 }
 static int done = timeRegister();
 
-extern "C" epicsShareFunc void osdTimeInit(void)
-{
-    return;
-}
-
 int osdNTPGet(struct timespec *ts)
 {
     return sntpcTimeGet((char *)pserverAddr, sysClkRateGet() ,ts);

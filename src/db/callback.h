@@ -55,18 +55,18 @@ typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 #define callbackGetUser(USER,PCALLBACK)\
 ( (USER) = (void *)((CALLBACK *)(PCALLBACK))->user )
 
-epicsShareFunc void epicsShareAPI callbackInit(void);
-epicsShareFunc void epicsShareAPI callbackRequest(CALLBACK *pCallback);
-epicsShareFunc void epicsShareAPI callbackSetProcess(
+epicsShareFunc void callbackInit(void);
+epicsShareFunc void callbackRequest(CALLBACK *pCallback);
+epicsShareFunc void callbackSetProcess(
     CALLBACK *pcallback, int Priority, void *pRec);
-epicsShareFunc void epicsShareAPI callbackRequestProcessCallback(
+epicsShareFunc void callbackRequestProcessCallback(
     CALLBACK *pCallback,int Priority, void *pRec);
-epicsShareFunc void epicsShareAPI callbackRequestDelayed(
+epicsShareFunc void callbackRequestDelayed(
     CALLBACK *pCallback,double seconds);
-epicsShareFunc void epicsShareAPI callbackCancelDelayed(CALLBACK *pcallback);
-epicsShareFunc void epicsShareAPI callbackRequestProcessCallbackDelayed(
+epicsShareFunc void callbackCancelDelayed(CALLBACK *pcallback);
+epicsShareFunc void callbackRequestProcessCallbackDelayed(
     CALLBACK *pCallback, int Priority, void *pRec, double seconds);
-epicsShareFunc int epicsShareAPI callbackSetQueueSize(int size);
+epicsShareFunc int callbackSetQueueSize(int size);
 
 #ifdef __cplusplus
 }

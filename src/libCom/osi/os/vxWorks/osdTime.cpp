@@ -7,6 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
+#include <vxWorks.h>
 #include <tickLib.h>
 #include <sysLib.h>
 #include <sntpcLib.h>

@@ -20,21 +20,21 @@ extern "C" {
 
 typedef void (*EPICSTHREADFUNC)(void *parm);
 
-static const unsigned epicsThreadPriorityMax = 99;
-static const unsigned epicsThreadPriorityMin = 0;
+#define epicsThreadPriorityMax          99
+#define epicsThreadPriorityMin           0
 
 /* some generic values */
-static const unsigned epicsThreadPriorityLow = 10;
-static const unsigned epicsThreadPriorityMedium = 50;
-static const unsigned epicsThreadPriorityHigh = 90;
+#define epicsThreadPriorityLow          10
+#define epicsThreadPriorityMedium       50
+#define epicsThreadPriorityHigh         90
 
 /* some iocCore specific values */
-static const unsigned epicsThreadPriorityCAServerLow = 20;
-static const unsigned epicsThreadPriorityCAServerHigh = 40;
-static const unsigned epicsThreadPriorityScanLow = 60;
-static const unsigned epicsThreadPriorityScanHigh = 70;
-static const unsigned epicsThreadPriorityIocsh = 91;
-static const unsigned epicsThreadPriorityBaseMax = 91;
+#define epicsThreadPriorityCAServerLow  20
+#define epicsThreadPriorityCAServerHigh 40
+#define epicsThreadPriorityScanLow      60
+#define epicsThreadPriorityScanHigh     70
+#define epicsThreadPriorityIocsh        91
+#define epicsThreadPriorityBaseMax      91
 
 /* stack sizes for each stackSizeClass are implementation and CPU dependent */
 typedef enum {

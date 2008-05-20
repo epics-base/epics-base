@@ -124,8 +124,6 @@ void cast_server(void *pParm)
     unsigned short      port;
     osiSockIoctl_t      nchars;
 
-    taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
-
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
         port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
             (unsigned short) CA_SERVER_PORT );

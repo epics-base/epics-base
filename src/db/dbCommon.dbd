@@ -167,7 +167,7 @@
 		prompt("Access Security Pvt")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*asp")
+		extra("struct asgMember *asp")
 	}
 	field(PPN,DBF_NOACCESS) {
 		prompt("addr of PUTNOTIFY")

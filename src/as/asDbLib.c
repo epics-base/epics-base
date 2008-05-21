@@ -55,7 +55,7 @@ static long asDbAddRecords(void)
 	while(!status) {
 	    precord = pdbentry->precnode->precord;
 	    if(!precord->asp) {
-		status = asAddMember((ASMEMBERPVT *)&precord->asp,precord->asg);
+		status = asAddMember(&precord->asp, precord->asg);
 		if(status) errMessage(status,"asDbAddRecords:asAddMember");
 		asPutMemberPvt(precord->asp,precord);
 	    }
@@ -101,7 +101,7 @@ int epicsShareAPI asSetSubstitutions(const char *substitutions)
 
 static void asSpcAsCallback(struct dbCommon *precord)
 {
-    asChangeGroup((ASMEMBERPVT *)&precord->asp,precord->asg);
+    asChangeGroup(&precord->asp, precord->asg);
 }
 
 static void asInitCommonOnce(void *arg)
@@ -149,8 +149,9 @@ int epicsShareAPI asInit(void)
     return(asInitCommon());
 }
 
-static void wdCallback(ASDBCALLBACK *pcallback)
+static void wdCallback(void *arg)
 {
+    ASDBCALLBACK *pcallback = (ASDBCALLBACK *)arg;
     pcallback->status = S_asLib_InitFailed;
     callbackRequest(&pcallback->callback);
 }
@@ -159,7 +160,7 @@ static void asInitTask(ASDBCALLBACK *pcallback)
 {
     long status;
 
-    taskwdInsert(epicsThreadGetIdSelf(),(TASKWDFUNCPRR)wdCallback,(void *)pcallback);
+    taskwdInsert(epicsThreadGetIdSelf(), wdCallback, (void *)pcallback);
     status = asInitCommon();
     taskwdRemove(epicsThreadGetIdSelf());
     asInitTheadId = 0;
@@ -247,7 +248,7 @@ int epicsShareAPI astac(const char *pname,const char *user,const char *location)
     plocation = asCalloc(1,strlen(location)+1);
     strcpy(plocation,location);
 
-    status = asAddClient(pasclientpvt,(ASMEMBERPVT)precord->asp,
+    status = asAddClient(pasclientpvt,precord->asp,
 	(int)pflddes->as_level,puser,plocation);
     if(status) {
 	errMessage(status,"asAddClient error");

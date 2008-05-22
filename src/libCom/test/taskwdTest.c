@@ -34,7 +34,7 @@ void monRemove(void *usr, epicsThreadId tid)
     testPass("monRemove(tid=%p)", (void *)tid);
 }
 
-taskwdMonitor monitor = {monInsert, monNotify, monRemove};
+taskwdMonitor monFuncs = {monInsert, monNotify, monRemove};
 
 void anyNotify(void *usr, epicsThreadId tid)
 {
@@ -64,12 +64,12 @@ void testTask2(void *arg)
     taskwdRemove(0);
 }
 
-MAIN(epicsThreadPrivateTest)
+MAIN(taskwdTest)
 {
     testPlan(8);
 
     taskwdInit();
-    taskwdMonitorAdd(&monitor, NULL);
+    taskwdMonitorAdd(&monFuncs, NULL);
     taskwdAnyInsert(NULL, anyNotify, NULL);
 
     epicsThreadCreate("testTask1", epicsThreadPriorityMax,
@@ -84,7 +84,7 @@ MAIN(epicsThreadPrivateTest)
     /* taskwd checks tasks every 6 seconds */
     epicsThreadSleep(18.0);
 
-    taskwdMonitorDel(&monitor, NULL);
+    taskwdMonitorDel(&monFuncs, NULL);
     taskwdAnyRemove(NULL);
 
     return testDone();

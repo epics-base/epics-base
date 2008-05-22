@@ -161,6 +161,7 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
     int  n;
+    static int unexpWarned = 0;
 
     inputBegin(inputPvt,templateName);
     while((input = inputNextLine(inputPvt))) {
@@ -225,12 +226,12 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
 	    expand = 0;
 	}
 endif:
-	if(expand) {
+	if (expand) {
 	    n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
 	    fputs(buffer,stdout);
-	    if(n<0) {
-	        inputErrPrint(inputPvt);
-		exitStatus = 2;
+	    if (!unexpWarned && n<0) {
+		fprintf(stderr,"Warning: unexpanded macros in ouput\n");
+		unexpWarned++;
 	    }
 	}
     }
@@ -510,6 +511,7 @@ static void substituteDestruct(void *pvt)
 {
     subInfo	*psubInfo = (subInfo *)pvt;
 
+    freeSubFile(psubInfo);
     freePattern(psubInfo);
     free((void *)psubInfo);
     return;
@@ -770,7 +772,7 @@ static void catMacroReplacements(subInfo *psubInfo,const char *value)
             newsize = psubInfo->curLength + len + 1;
         newbuf = calloc(1,newsize);
         if(!newbuf) {
-            fprintf(stderr,"calloc failed for size %d\n",newsize);
+            fprintf(stderr,"calloc failed for size %u\n",newsize);
             exit(1);
         }
         if(psubInfo->macroReplacements) {

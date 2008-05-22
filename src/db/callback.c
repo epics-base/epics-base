@@ -83,11 +83,11 @@ static void callbackTask(void *arg)
 
     taskwdInsert(epicsThreadGetIdSelf(), NULL, NULL);
     while(TRUE) {
-        epicsEventMustWait(callbackSem[priority]);
         void *ptr;
+        epicsEventMustWait(callbackSem[priority]);
         while((ptr = epicsRingPointerPop(callbackQ[priority]))) {
-            if (ptr == &exitValue) goto shutdown;
             CALLBACK *pcallback = (CALLBACK *)ptr;
+            if (ptr == &exitValue) goto shutdown;
             ringOverflow[priority] = FALSE;
             (*pcallback->callback)(pcallback);
         }

@@ -107,6 +107,11 @@ macLibTest_SRCS += macLibTest.c
 testHarness_SRCS += macLibTest.c
 TESTS += macLibTest
 
+TESTPROD_HOST += taskwdTest
+taskwdTest_SRCS += taskwdTest.c
+testHarness_SRCS += taskwdTest.c
+TESTS += taskwdTest
+
 TESTPROD_HOST += blockingSockTest
 blockingSockTest_SRCS += blockingSockTest.cpp
 testHarness_SRCS += blockingSockTest.cpp

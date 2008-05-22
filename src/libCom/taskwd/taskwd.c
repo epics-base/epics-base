@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* taskwd.c */
-/* share/src/db  @(#)taskwd.c	1.7  7/11/94 */
+
 /* tasks and subroutines for a general purpose task watchdog */
 /*
  *      Original Author:        Marty Kraimer
@@ -17,10 +16,12 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
-
+
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
+#include "epicsEvent.h"
+#include "epicsExit.h"
+#include "epicsStdio.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
@@ -28,206 +29,385 @@
 #include "errMdef.h"
 #include "taskwd.h"
 
-typedef void (*MYFUNCPTR)();
-
-struct task_list {
-    ELLNODE	node;
-    MYFUNCPTR	callback;
-    void	*arg;
-    union {
-        epicsThreadId tid;
-        void     *userpvt;
-    } id;
+struct tNode {
+    ELLNODE node;
+    epicsThreadId tid;
+    TASKWDFUNC callback;
+    void *usr;
     int suspended;
 };
 
-static ELLLIST list;
-static ELLLIST anylist;
-static epicsMutexId lock;
-static epicsMutexId anylock;
-static epicsMutexId alloclock;
-static epicsThreadId taskwdid=0;
-volatile int taskwdOn=TRUE;
-struct freeList{
-    struct freeList *next;
+struct mNode {
+    ELLNODE node;
+    const taskwdMonitor *funcs;
+    void *usr;
 };
-static struct freeList *freeHead=NULL;
+
+struct aNode {
+    void *key;
+    TASKWDANYFUNC callback;
+    void *usr;
+};
+
+union twdNode {
+    struct tNode t;
+    struct mNode m;
+    struct aNode a;
+};
+
+/* Registered Tasks */
+static epicsMutexId tLock;
+static ELLLIST tList;
+
+/* Active Monitors */
+static epicsMutexId mLock;
+static ELLLIST mList;
+
+/* Free List */
+static epicsMutexId fLock;
+static ELLLIST fList;
+
+/* Watchdog task control */
+static enum {
+    twdctlRun, twdctlDisable, twdctlExit
+} twdCtl;
+static epicsEventId loopEvent;
+static epicsEventId exitEvent;
+
 /* Task delay times (seconds) */
 #define TASKWD_DELAY    6.0
 
-/*forward definitions*/
-static void taskwdTask(void);
-static struct task_list *allocList(void);
-static void freeList(struct task_list *pt);
-static void taskwdInitPvt(void *);
+
+/* forward definitions */
+static union twdNode *allocNode(void);
+static void freeNode(union twdNode *);
 
-static void taskwdInitPvt(void *arg)
+/* Initialization, lazy */
+
+static void twdTask(void)
 {
-    lock = epicsMutexMustCreate();
-    anylock = epicsMutexMustCreate();
-    alloclock = epicsMutexMustCreate();
-    ellInit(&list);
-    ellInit(&anylist);
-    taskwdid = epicsThreadCreate(
-        "taskwd",epicsThreadPriorityLow,
-         epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC)taskwdTask,0);
-}
-void epicsShareAPI taskwdInit()
-{
-    static epicsThreadOnceId taskwdOnceFlag = EPICS_THREAD_ONCE_INIT;
-    void *arg = 0;
-    epicsThreadOnce(&taskwdOnceFlag,taskwdInitPvt,arg);
-}
+    struct tNode *pt;
+    struct mNode *pm;
 
-void epicsShareAPI taskwdInsert(epicsThreadId tid,TASKWDFUNCPRR callback,void *arg)
-{
-    struct task_list *pt;
-
-    taskwdInit();
-    if(tid==0) {
-       errlogPrintf("taskwdInsert called with null tid\n");
-       return;
-    }
-    epicsMutexMustLock(lock);
-    pt = allocList();
-    ellAdd(&list,(void *)pt);
-    pt->suspended = FALSE;
-    pt->id.tid = tid;
-    pt->callback = callback;
-    pt->arg = arg;
-    epicsMutexUnlock(lock);
-}
-
-void epicsShareAPI taskwdAnyInsert(void *userpvt,TASKWDANYFUNCPRR callback,void *arg)
-{
-    struct task_list *pt;
-
-    taskwdInit();
-    epicsMutexMustLock(anylock);
-    pt = allocList();
-    ellAdd(&anylist,(void *)pt);
-    pt->id.userpvt = userpvt;
-    pt->callback = callback;
-    pt->arg = arg;
-    epicsMutexUnlock(anylock);
-}
-
-void epicsShareAPI taskwdRemove(epicsThreadId tid)
-{
-    struct task_list *pt;
-    char thrName[40];
-
-    taskwdInit();
-    epicsMutexMustLock(lock);
-    pt = (struct task_list *)ellFirst(&list);
-    while(pt!=NULL) {
-        if (tid == pt->id.tid) {
-            ellDelete(&list,(void *)pt);
-            freeList(pt);
-            epicsMutexUnlock(lock);
-            return;
-        }
-        pt = (struct task_list *)ellNext(&pt->node);
-    }
-    epicsMutexUnlock(lock);
-    epicsThreadGetName(tid, thrName, 40);
-    errlogPrintf("taskwdRemove: Thread %s (%p) not registered!\n",
-    		thrName, tid);
-}
-
-void epicsShareAPI taskwdAnyRemove(void *userpvt)
-{
-    struct task_list *pt;
-
-    taskwdInit();
-    epicsMutexMustLock(anylock);
-    pt = (struct task_list *)ellFirst(&anylist);
-    while(pt!=NULL) {
-        if (userpvt == pt->id.userpvt) {
-            ellDelete(&anylist,(void *)pt);
-            freeList(pt);
-            epicsMutexUnlock(anylock);
-            return;
-        }
-        pt = (struct task_list *)ellNext(&pt->node);
-    }
-    epicsMutexUnlock(anylock);
-    errlogPrintf("taskwdAnyRemove: Userpvt %p not registered!\n", userpvt);
-}
-
-static void taskwdTask(void)
-{
-    struct task_list *pt,*next;
-
-    while(TRUE) {
-        if(taskwdOn) {
-            epicsMutexMustLock(lock);
-            pt = (struct task_list *)ellFirst(&list);
-            while(pt) {
-                next = (struct task_list *)ellNext(&pt->node);
-                if(epicsThreadIsSuspended(pt->id.tid)) {
-                    if(!pt->suspended) {
-                        struct task_list *ptany;
-                        char thrName[40];
-
-                        pt->suspended = TRUE;
-                        epicsThreadGetName(pt->id.tid, thrName, 40);
-                        errlogPrintf("Thread %s (%p) suspended\n",
-                                    thrName, (void *)pt->id.tid);
-                        ptany = (struct task_list *)ellFirst(&anylist);
-                        while(ptany) {
-                            if(ptany->callback) {
-                                TASKWDANYFUNCPRR pcallback = pt->callback;
-                                (pcallback)(ptany->arg,pt->id.tid);
-                            }
-                            ptany = (struct task_list *)ellNext(&ptany->node);
+    while (twdCtl != twdctlExit) {
+        if (twdCtl == twdctlRun) {
+            epicsMutexMustLock(tLock);
+            pt = (struct tNode *)ellFirst(&tList);
+            while (pt) {
+                int susp = epicsThreadIsSuspended(pt->tid);
+                if (susp != pt->suspended) {
+                    epicsMutexMustLock(mLock);
+                    pm = (struct mNode *)ellFirst(&mList);
+                    while (pm) {
+                        if (pm->funcs->notify) {
+                            pm->funcs->notify(pm->usr, pt->tid, susp);
                         }
-                        if(pt->callback) {
-                            TASKWDFUNCPRR pcallback = pt->callback;
-                            void	*arg = pt->arg;
+                        pm = (struct mNode *)ellNext(&pm->node);
+                    }
+                    epicsMutexUnlock(mLock);
 
-                            /*Must allow callback to call taskwdRemove*/
-                            epicsMutexUnlock(lock);
-                            (pcallback)(arg);
-                            /*skip rest because we have unlocked*/
-                            break;
+                    if (susp) {
+                        char tName[40];
+                        epicsThreadGetName(pt->tid, tName, sizeof(tName));
+                        errlogPrintf("Thread %s (%p) suspended\n",
+                                    tName, (void *)pt->tid);
+                        if (pt->callback) {
+                            pt->callback(pt->usr);
                         }
                     }
-                } else {
-                     pt->suspended = FALSE;
+                    pt->suspended = susp;
                 }
-                pt = next;
+                pt = (struct tNode *)ellNext(&pt->node);
             }
-            epicsMutexUnlock(lock);
+            epicsMutexUnlock(tLock);
         }
-        epicsThreadSleep(TASKWD_DELAY);
+        epicsEventWaitWithTimeout(loopEvent, TASKWD_DELAY);
+    }
+    epicsEventSignal(exitEvent);
+}
+
+
+static void twdShutdown(void *arg)
+{
+    twdCtl = twdctlExit;
+    epicsEventSignal(loopEvent);
+    epicsEventWait(exitEvent);
+}
+
+static void twdInitPvt(void *arg)
+{
+    tLock = epicsMutexMustCreate();
+    ellInit(&tList);
+
+    mLock = epicsMutexMustCreate();
+    ellInit(&mList);
+
+    fLock = epicsMutexMustCreate();
+    ellInit(&fList);
+
+    twdCtl = twdctlRun;
+    loopEvent = epicsEventMustCreate(epicsEventEmpty);
+    exitEvent = epicsEventMustCreate(epicsEventEmpty);
+
+    epicsThreadCreate("taskwd", epicsThreadPriorityLow,
+         epicsThreadGetStackSize(epicsThreadStackSmall),
+        (EPICSTHREADFUNC)twdTask, 0);
+    epicsAtExit(twdShutdown, NULL);
+}
+
+void taskwdInit()
+{
+    static epicsThreadOnceId twdOnceFlag = EPICS_THREAD_ONCE_INIT;
+    epicsThreadOnce(&twdOnceFlag, twdInitPvt, NULL);
+}
+
+
+/* For tasks to be monitored */
+
+void taskwdInsert(epicsThreadId tid, TASKWDFUNC callback, void *usr)
+{
+    struct tNode *pt;
+    struct mNode *pm;
+
+    taskwdInit();
+    if (tid == 0)
+       tid = epicsThreadGetIdSelf();
+
+    pt = &allocNode()->t;
+    pt->tid = tid;
+    pt->callback = callback;
+    pt->usr = usr;
+    pt->suspended = FALSE;
+
+    epicsMutexMustLock(mLock);
+    pm = (struct mNode *)ellFirst(&mList);
+    while (pm) {
+        if (pm->funcs->insert) {
+            pm->funcs->insert(pm->usr, tid);
+        }
+        pm = (struct mNode *)ellNext(&pm->node);
+    }
+    epicsMutexUnlock(mLock);
+
+    epicsMutexMustLock(tLock);
+    ellAdd(&tList, (void *)pt);
+    epicsMutexUnlock(tLock);
+}
+
+void taskwdRemove(epicsThreadId tid)
+{
+    struct tNode *pt;
+    struct mNode *pm;
+    char tName[40];
+
+    taskwdInit();
+
+    if (tid == 0)
+       tid = epicsThreadGetIdSelf();
+
+    epicsMutexMustLock(tLock);
+    pt = (struct tNode *)ellFirst(&tList);
+    while (pt != NULL) {
+        if (tid == pt->tid) {
+            ellDelete(&tList, (void *)pt);
+            epicsMutexUnlock(tLock);
+            freeNode((union twdNode *)pt);
+
+            epicsMutexMustLock(mLock);
+            pm = (struct mNode *)ellFirst(&mList);
+            while (pm) {
+                if (pm->funcs->remove) {
+                    pm->funcs->remove(pm->usr, tid);
+                }
+                pm = (struct mNode *)ellNext(&pm->node);
+            }
+            epicsMutexUnlock(mLock);
+            return;
+        }
+        pt = (struct tNode *)ellNext(&pt->node);
+    }
+    epicsMutexUnlock(tLock);
+
+    epicsThreadGetName(tid, tName, sizeof(tName));
+    errlogPrintf("taskwdRemove: Thread %s (%p) not registered!\n",
+        tName, tid);
+}
+
+
+/* Monitoring API */
+
+void taskwdMonitorAdd(const taskwdMonitor *funcs, void *usr)
+{
+    struct mNode *pm;
+
+    if (funcs == NULL) return;
+
+    taskwdInit();
+
+    pm = &allocNode()->m;
+    pm->funcs = funcs;
+    pm->usr = usr;
+
+    epicsMutexMustLock(mLock);
+    ellAdd(&mList, (void *)pm);
+    epicsMutexUnlock(mLock);
+}
+
+void taskwdMonitorDel(const taskwdMonitor *funcs, void *usr)
+{
+    struct mNode *pm;
+
+    if (funcs == NULL) return;
+
+    taskwdInit();
+
+    epicsMutexMustLock(mLock);
+    pm = (struct mNode *)ellFirst(&mList);
+    while (pm) {
+        if (pm->funcs == funcs && pm->usr == usr) {
+            ellDelete(&mList, (void *)pm);
+            freeNode((union twdNode *)pm);
+            epicsMutexUnlock(mLock);
+            return;
+        }
+        pm = (struct mNode *)ellNext(&pm->node);
+    }
+    epicsMutexUnlock(mLock);
+
+    errlogPrintf("taskwdMonitorDel: Unregistered!\n");
+}
+
+
+/* Support old API for backwards compatibility */
+
+static void anyNotify(void *usr, epicsThreadId tid, int suspended)
+{
+    struct aNode *pa = (struct aNode *)usr;
+
+    if (suspended) {
+        pa->callback(pa->usr, tid);
     }
 }
-
-static struct task_list *allocList(void)
-{
-    struct task_list *pt;
 
-    epicsMutexMustLock(alloclock);
-    if(freeHead) {
-        pt = (struct task_list *)freeHead;
-        freeHead = freeHead->next;
-    } else pt = calloc(1,sizeof(struct task_list));
-    while (pt==NULL) {
+static taskwdMonitor anyFuncs = {
+    NULL, anyNotify, NULL
+};
+
+void taskwdAnyInsert(void *key, TASKWDANYFUNC callback, void *usr)
+{
+    struct mNode *pm;
+    struct aNode *pa;
+
+    if (callback == NULL) return;
+
+    taskwdInit();
+
+    pa = &allocNode()->a;
+    pa->key = key;
+    pa->callback = callback;
+    pa->usr = usr;
+
+    pm = &allocNode()->m;
+    pm->funcs = &anyFuncs;
+    pm->usr = pa;
+
+    epicsMutexMustLock(mLock);
+    ellAdd(&mList, (void *)pm);
+    epicsMutexUnlock(mLock);
+}
+
+void taskwdAnyRemove(void *key)
+{
+    struct mNode *pm;
+    struct aNode *pa;
+
+    taskwdInit();
+
+    epicsMutexMustLock(mLock);
+    pm = (struct mNode *)ellFirst(&mList);
+    while (pm) {
+        if (pm->funcs == &anyFuncs) {
+            pa = (struct aNode *)pm->usr;
+            if (pa->key == key) {
+                ellDelete(&mList, (void *)pm);
+                freeNode((union twdNode *)pa);
+                freeNode((union twdNode *)pm);
+                epicsMutexUnlock(mLock);
+                return;
+            }
+        }
+        pm = (struct mNode *)ellNext(&pm->node);
+    }
+    epicsMutexUnlock(mLock);
+
+    errlogPrintf("taskwdAnyRemove: Unregistered key %p\n", key);
+}
+
+
+/* Report function */
+
+epicsShareFunc void taskwdShow(int level)
+{
+    struct tNode *pt;
+    int mCount, fCount, tCount;
+    char tName[40];
+
+    epicsMutexMustLock(mLock);
+    mCount = ellCount(&mList);
+    epicsMutexUnlock(mLock);
+
+    epicsMutexMustLock(fLock);
+    fCount = ellCount(&fList);
+    epicsMutexUnlock(fLock);
+
+    epicsMutexMustLock(tLock);
+    tCount = ellCount(&tList);
+    printf("%d monitors, %d threads registered, %d free nodes\n",
+        mCount, tCount, fCount);
+    if (level) {
+        printf("%16.16s %9s %12s %12s %12s\n",
+            "THREAD NAME", "STATE", "EPICS TID", "CALLBACK", "USR ARG");
+        pt = (struct tNode *)ellFirst(&tList);
+        while (pt != NULL) {
+            epicsThreadGetName(pt->tid, tName, sizeof(tName));
+            printf("%16.16s %9s %12p %12p %12p\n",
+                tName, pt->suspended ? "Suspended" : "Ok ",
+                pt->tid, pt->callback, pt->usr);
+            pt = (struct tNode *)ellNext(&pt->node);
+        }
+    }
+    epicsMutexUnlock(tLock);
+}
+
+static union twdNode *newNode(void)
+{
+    union twdNode *pn;
+
+    epicsMutexMustLock(fLock);
+    pn = (union twdNode *)ellFirst(&fList);
+    if (pn) {
+        ellDelete(&fList, (void *)pn);
+        epicsMutexUnlock(fLock);
+        return pn;
+    }
+    epicsMutexUnlock(fLock);
+    return calloc(1, sizeof(union twdNode));
+}
+
+static union twdNode *allocNode(void)
+{
+    union twdNode *pn = newNode();
+    while (!pn) {
         errlogPrintf("Thread taskwd suspending: out of memory\n");
         epicsThreadSuspendSelf();
-        pt = calloc(1,sizeof(struct task_list));
+        pn = newNode();
     }
-    epicsMutexUnlock(alloclock);
-    return(pt);
+    return pn;
 }
 
-static void freeList(struct task_list *pt)
+static void freeNode(union twdNode *pn)
 {
-    
-    epicsMutexMustLock(alloclock);
-    ((struct freeList *)pt)->next  = freeHead;
-    freeHead = (struct freeList *)pt;
-    epicsMutexUnlock(alloclock);
+    epicsMutexMustLock(fLock);
+    ellAdd(&fList, (void *)pn);
+    epicsMutexUnlock(fLock);
 }

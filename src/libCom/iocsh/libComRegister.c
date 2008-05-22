@@ -20,6 +20,7 @@
 #include "osiUnistd.h"
 #include "logClient.h"
 #include "errlog.h"
+#include "taskwd.h"
 #include "epicsGeneralTime.h"
 #include "libComRegister.h"
 
@@ -228,6 +229,16 @@ static void threadCallFunc(const iocshArgBuf *args)
     }
 }
 
+/* taskwdShow */
+static const iocshArg taskwdShowArg0 = { "level",iocshArgInt};
+static const iocshArg * const taskwdShowArgs[1] = {&taskwdShowArg0};
+static const iocshFuncDef taskwdShowFuncDef =
+    {"taskwdShow",1,taskwdShowArgs};
+static void taskwdShowCallFunc(const iocshArgBuf *args)
+{
+    taskwdShow(args[0].ival);
+}
+
 /* epicsMutexShowAll */
 static const iocshArg epicsMutexShowAllArg0 = { "onlyLocked",iocshArgInt};
 static const iocshArg epicsMutexShowAllArg1 = { "level",iocshArgInt};
@@ -328,6 +339,7 @@ void epicsShareAPI libComRegister(void)
 
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
     iocshRegister(&threadFuncDef, threadCallFunc);
+    iocshRegister(&taskwdShowFuncDef,taskwdShowCallFunc);
     iocshRegister(&epicsMutexShowAllFuncDef,epicsMutexShowAllCallFunc);
     iocshRegister(&epicsThreadSleepFuncDef,epicsThreadSleepCallFunc);
     iocshRegister(&epicsThreadResumeFuncDef,epicsThreadResumeCallFunc);

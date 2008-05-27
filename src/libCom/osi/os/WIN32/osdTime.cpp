@@ -33,6 +33,7 @@
 //
 #define epicsExportSharedSymbols
 #include "epicsTime.h"
+#include "generalTimeSup.h"
 #include "epicsTimer.h"
 #include "errlog.h"
 #include "epicsAssert.h"

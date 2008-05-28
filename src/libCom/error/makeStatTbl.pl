@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 #*************************************************************************
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.

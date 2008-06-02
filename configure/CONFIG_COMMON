@@ -353,6 +353,12 @@ INSTALL_BIN_INSTALLS = $(addprefix $(INSTALL_BIN)/,$(notdir $(BIN_INSTALLS)))
 INSTALL_LIB_INSTALLS = $(addprefix $(INSTALL_LIB)/,$(notdir $(LIB_INSTALLS)))
 
 #---------------------------------------------------------------
+# Installed file permissions
+BIN_PERMISSIONS = 555
+LIB_PERMISSIONS = 644
+INSTALL_PERMISSIONS = 644
+
+#---------------------------------------------------------------
 #
 # auto determine the directory paths that things are installed to
 # RULES:

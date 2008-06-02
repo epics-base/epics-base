@@ -71,6 +71,9 @@ COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB)))
 COMMON_DBS += $(addsuffix $(RAW),$(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB))))
 endif
 
+INSTALL_DB_INSTALLS = $(addprefix $(INSTALL_DB)/,$(notdir $(DB_INSTALLS)))
+INSTALL_DBD_INSTALLS = $(addprefix $(INSTALL_DBD)/,$(notdir $(DBD_INSTALLS)))
+
 #####################################################  acf files
 # An access security configuration file, *.acf, can be created from
 # an *.acs file (has format of acf file plus #include "filename" lines)
@@ -130,21 +133,12 @@ $(DBDDEPENDS_FILES):
 
 #####################################################  build dependancies, clean rule
 
-ifneq (,$(strip $(DBD_INSTALLS)))
-buildInstall : dbdInstalls
-endif
-
-ifneq (,$(strip $(DB_INSTALLS)))
-buildInstall : dbInstalls
-endif
-
-.PHONY: dbdInstalls dbInstalls
-
 inc : $(COMMON_INC) $(INSTALL_INC)
 
 build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS) \
-	$(DBDDEPENDS_FILES) $(TARGETS)
+	$(DBDDEPENDS_FILES) $(TARGETS) \
+	$(INSTALL_DB_INSTALLS) $(INSTALL_DBD_INSTALLS)
 
 clean:: 
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
@@ -241,9 +235,12 @@ $(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-dbdInstalls:  $(DBD_INSTALLS)
-	@echo "Installing $(^F)"
-	@$(INSTALL) -d -m 555 $^ $(INSTALL_DBD)
+define  DBD_INSTALLS_template
+$$(INSTALL_DBD)/$$(notdir $(1)) : $(1)
+	@echo "Installing $$@
+	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DBD)
+endef
+$(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
 .PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%Include.dbd
 
@@ -313,9 +310,12 @@ $(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
 	@echo "Installing created db file $@"
 	@$(INSTALL) -d -m 644 $< $(@D)
 
-dbInstalls:  $(DB_INSTALLS)
-	@echo "Installing $(^F)"
-	@$(INSTALL) -d -m 555 $^ $(INSTALL_DB)
+define  DB_INSTALLS_template
+$$(INSTALL_DB)/$$(notdir $(1)) : $(1)
+	@echo "Installing $$@
+	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DB)
+endef
+$(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 
 .PRECIOUS: $(COMMON_DIR)/%.edf
 .PRECIOUS: $(COMMON_DBS)

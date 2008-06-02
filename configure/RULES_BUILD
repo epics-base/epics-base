@@ -142,7 +142,7 @@ rebuild: clean install
 build : inc 
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
-	$(TARGETS) $(TESTSCRIPTS)
+	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
 
 inc : $(COMMON_INC) $(INSTALL_INC) $(INSTALL_CONFIGS)
 
@@ -152,15 +152,8 @@ buildInstall : \
 	$(INSTALL_OBJS) \
 	$(INSTALL_DOCS) \
 	$(INSTALL_HTMLS) \
-	$(INSTALL_TEMPLATE)
-
-ifdef BIN_INSTALLS
-buildInstall : binInstalls
-endif
-
-ifdef LIB_INSTALLS
-buildInstall : libInstalls
-endif
+	$(INSTALL_TEMPLATE) \
+	$(INSTALL_BIN_INSTALLS)
 
 clean::
 	@echo "Cleaning"
@@ -352,13 +345,23 @@ runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
 	@$(RM) $@
 	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@
 
-binInstalls:  $(BIN_INSTALLS)
-	@echo "Installing $(^F)"
-	@$(INSTALL) -d -m 555 $^ $(INSTALL_BIN)
+#---------------------------------------------------------------
+## Install rules for BIN_INSTALLS and LIB_INSTALLS
+define  BIN_INSTALLS_template
+$$(INSTALL_BIN)/$$(notdir $(1)) : $(1)
+	@echo "Installing $$(<F)"
+	@$$(INSTALL) -d -m 555 $$^ $$(INSTALL_BIN)
+endef
+$(foreach file, $(BIN_INSTALLS), $(eval $(call BIN_INSTALLS_template, $(file))))
 
-libInstalls:  $(LIB_INSTALLS)
-	@echo "Installing $(^F)"
-	@$(INSTALL) -d -m 555 $^ $(INSTALL_LIB)
+define  LIB_INSTALLS_template
+$$(INSTALL_LIB)/$$(notdir $(1)) : $(1)
+	@echo "Installing $$(<F)"
+	@$$(INSTALL) -d -m 555 $$^ $$(INSTALL_LIB)
+endef
+$(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
+
+#---------------------------------------------------------------
 
 $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	@echo "Installing os-specific script $@"
@@ -463,7 +466,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
-.PHONY: all inc build install clean rebuild buildInstall binInstalls libInstalls
+.PHONY: all inc build install clean rebuild buildInstall
 .PHONY: runtests
 
 endif # BASE_RULES_BUILD

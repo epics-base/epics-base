@@ -349,6 +349,12 @@ INSTALL_TEMPLATE = $(addprefix $(INSTALL_TEMPLATES_SUBDIR)/, \
                    $(subst $(CONFIG),top/configure,$(TEMPLATES)))
 INSTALL_CONFIGS = $(CONFIGS:%= $(INSTALL_CONFIG)/%)
 
+INSTALL_BIN_INSTALLS = $(foreach file, $(BIN_INSTALLS), \
+       $(addprefix $(INSTALL_BIN)/,$(notdir $(file))))
+
+INSTALL_LIB_INSTALLS = $(foreach file, $(LIB_INSTALLS), \
+       $(addprefix $(INSTALL_LIB)/,$(notdir $(file))))
+
 #---------------------------------------------------------------
 #
 # auto determine the directory paths that things are installed to

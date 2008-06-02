@@ -160,13 +160,14 @@ $(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS)
 
 ifdef CREATESUBSTITUTIONS
 $(COMMON_DIR)/%.substitutions:
+	@echo "Create substitutions"
 	@$(RM) $@
-	@$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
+	$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
 endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions
 	@echo "Installing db file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%.substitutions
 
@@ -180,7 +181,7 @@ $(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
 
 $(INSTALL_DB)/%.template: %.template
 	@echo "Installing db file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%.template
 
@@ -229,15 +230,15 @@ $(COMMON_DIR)/%Include.dbd:
 
 $(INSTALL_DBD)/%: $(COMMON_DIR)/%
 	@echo "Installing created dbd file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DBD)/%: %
 	@echo "Installing dbd file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 define  DBD_INSTALLS_template
 $$(INSTALL_DBD)/$$(notdir $(1)) : $(1)
-	@echo "Installing $$@
+	@echo "Installing $$@"
 	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DBD)
 endef
 $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
@@ -261,7 +262,7 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)
-	@$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $@$(DEP)
+	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $@$(DEP)
 	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
 	@echo "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@
@@ -303,16 +304,16 @@ else
 
 $(INSTALL_DB)/%: %
 	@echo "Installing db file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 endif
 
 $(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
 	@echo "Installing created db file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 define  DB_INSTALLS_template
 $$(INSTALL_DB)/$$(notdir $(1)) : $(1)
-	@echo "Installing $$@
+	@echo "Installing $$@"
 	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DB)
 endef
 $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))

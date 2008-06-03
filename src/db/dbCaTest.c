@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbCaTest.c */
@@ -50,13 +49,13 @@
 #include "dbCaTest.h"
 
 
-long epicsShareAPI dbcar(char	*precordname,int level)
+long epicsShareAPI dbcar(char *precordname, int level)
 {
     DBENTRY		dbentry;
     DBENTRY		*pdbentry=&dbentry;
     long		status;
     dbCommon		*precord;
-    dbRecordType		*pdbRecordType;
+    dbRecordType	*pdbRecordType;
     dbFldDes		*pdbFldDes;
     DBLINK		*plink;
     int			ncalinks=0;
@@ -68,64 +67,65 @@ long epicsShareAPI dbcar(char	*precordname,int level)
     caLink		*pca;
     int			j;
 
-    if (precordname && ((*precordname == '\0') || !strcmp(precordname,"*")))
-        precordname = NULL;
+    if (!precordname || precordname[0] == '\0' || !strcmp(precordname, "*")) {
+	precordname = NULL;
+	printf("CA links in all records\n\n");
+    } else {
+	printf("CA links in record named '%s'\n\n", precordname);
+    }
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
-    while(!status) {
+    while (!status) {
 	status = dbFirstRecord(pdbentry);
-	while(!status) {
+	while (!status) {
 	    if(!precordname
 	    || (strcmp(precordname,dbGetRecordName(pdbentry)) ==0)) {
 		pdbRecordType = pdbentry->precordType;
 		precord = (dbCommon *)pdbentry->precnode->precord;
-		for(j=0; j<pdbRecordType->no_links; j++) {
+		for (j=0; j<pdbRecordType->no_links; j++) {
 		    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
 		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-                    dbLockSetGblLock();
+		    dbLockSetGblLock();
 		    if (plink->type == CA_LINK) {
 			ncalinks++;
 			pca = (caLink *)plink->value.pv_link.pvt;
-			if(pca
-                        && pca->chid
-                        && (ca_field_type(pca->chid) != TYPENOTCONN)) {
+			if (pca
+			&& pca->chid
+			&& (ca_field_type(pca->chid) != TYPENOTCONN)) {
 			    nconnected++;
 			    nDisconnect += pca->nDisconnect;
 			    nNoWrite += pca->nNoWrite;
-			    if(!ca_read_access(pca->chid)) noReadAccess++;
-			    if(!ca_write_access(pca->chid)) noWriteAccess++;
-			    if(level>1) {
-				printf("    connected ");
-				printf("%s",ca_host_name(pca->chid));
-				if(!ca_read_access(pca->chid))
-					printf(" no_read_access");
-				if(!ca_write_access(pca->chid))
-					printf(" no_write_access");
-				printf(" %s.%s %s",
+			    if (!ca_read_access(pca->chid)) noReadAccess++;
+			    if (!ca_write_access(pca->chid)) noWriteAccess++;
+			    if (level>1) {
+				int rw = ca_read_access(pca->chid) |
+					 ca_write_access(pca->chid) << 1;
+				static const char *rights[4] = {
+				    "No Access", "Read Only",
+				    "Write Only", "Read/Write"
+				};
+				printf("%28s.%-4s ==> %-28s  (%lu, %lu)\n",
 				    precord->name,
 				    pdbFldDes->name,
-				    plink->value.pv_link.pvname);
-				if(nDisconnect)
-				    printf(" nDisconnect %lu",pca->nDisconnect);
-				if(nNoWrite)
-				    printf(" nNoWrite %lu",pca->nNoWrite);
-				printf("\n");
+				    plink->value.pv_link.pvname,
+				    pca->nDisconnect,
+				    pca->nNoWrite);
+				printf("%32s host %s, %s\n", "",
+				    ca_host_name(pca->chid),
+				    rights[rw]);
 			    }
-			} else { 
+			} else {
 			    if(level>0) {
-				printf("not_connected %s.%s %s",
+				printf("%28s.%-4s --> %-28s  (%lu, %lu)\n",
 				    precord->name,
 				    pdbFldDes->name,
-				    plink->value.pv_link.pvname);
-				if(nDisconnect)
-				    printf(" nDisconnect %lu",pca->nDisconnect);
-				if(nNoWrite)
-				    printf(" nNoWrite %lu",pca->nNoWrite);
-				printf("\n");
+				    plink->value.pv_link.pvname,
+				    pca->nDisconnect,
+				    pca->nNoWrite);
 			    }
 			}
 		    }
-                    dbLockSetGblUnlock();
+		    dbLockSetGblUnlock();
 		}
 		if(precordname) goto done;
 	    }
@@ -134,11 +134,16 @@ long epicsShareAPI dbcar(char	*precordname,int level)
 	status = dbNextRecordType(pdbentry);
     }
 done:
-    printf("ncalinks %d",ncalinks);
-    printf(" not connected %d",(ncalinks - nconnected));
-    printf(" no_read_access %d",noReadAccess);
-    printf(" no_write_access %d\n",noWriteAccess);
-    printf(" nDisconnect %lu nNoWrite %lu\n",nDisconnect,nNoWrite);
+    if ((level > 1 && nconnected > 0) ||
+	(level > 0 && ncalinks != nconnected)) printf("\n");
+    printf("Total %d CA link%s; ",
+	   ncalinks, (ncalinks != 1) ? "s" : "");
+    printf("%d connected, %d not connected.\n",
+	   nconnected, (ncalinks - nconnected));
+    printf("    %d can't read, %d can't write.",
+	   noReadAccess, noWriteAccess);
+    printf("  (%lu disconnects, %lu writes prohibited)\n\n",
+	   nDisconnect, nNoWrite);
     dbFinishEntry(pdbentry);
     
     if ( level > 2  && dbCaClientContext != 0 ) {

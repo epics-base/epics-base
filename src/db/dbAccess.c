@@ -83,7 +83,7 @@ void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
     spcAsCallback = func;
 }
 
-static long putSpecial(DBADDR *paddr,int pass)
+long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
     struct rset	*prset;

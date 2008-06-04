@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbAccess.c */
-/* base/src/db  $Id$ */
+/* $Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer
@@ -1128,7 +1128,7 @@ static long dbPutFieldLink(
         break;
     }
 
-    if (special) status = putSpecial(paddr,0);
+    if (special) status = dbPutSpecial(paddr,0);
     if (!status) status = dbPutString(&dbEntry,pstring);
 
     if (inpOut) {
@@ -1137,7 +1137,7 @@ static long dbPutFieldLink(
         precord->pact = FALSE;
     }
 
-    if (!status && special) status = putSpecial(paddr,1);
+    if (!status && special) status = dbPutSpecial(paddr,1);
     if (status) {
         if (inpOut) {
             precord->dset = NULL;
@@ -1315,7 +1315,7 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
 	
 	/* check for special processing	is required */
 	if(special) {
-	    status = putSpecial(paddr,0);
+	    status = dbPutSpecial(paddr,0);
 	    if(status) return(status);
 	}
 	if(no_elements<=1) {
@@ -1340,7 +1340,7 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
 
 	/* check for special processing	is required */
 	if(special) {
-	    status = putSpecial(paddr,1);
+	    status = dbPutSpecial(paddr,1);
 	    if(status) return(status);
 	}
 	/* propagate events for this field */

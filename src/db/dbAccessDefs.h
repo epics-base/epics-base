@@ -208,10 +208,10 @@ struct dbr_alDouble     {DBRalDouble};
     (\
         ((PLNK)->type != DB_LINK) \
         ? 0\
-        : (((DBADDR*)((PLNK)->value.pv_link.pvt))) \
+        : (((struct dbAddr *)((PLNK)->value.pv_link.pvt))) \
     )
 
-epicsShareFunc long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass);
+epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);
 epicsShareFunc long epicsShareAPI dbPutAttribute(
     const char *recordTypename,const char *name,const char*value);

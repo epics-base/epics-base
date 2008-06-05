@@ -1073,16 +1073,25 @@ static long dbPutFieldLink(
 
     if (inpOut) {
         pdevSup = dbDTYPtoDevSup(precord->rdes, precord->dtyp);
-        if (pdevSup == NULL ||
-            (new_dset = pdevSup->pdset) == NULL ||
-            (new_dsxt = pdevSup->pdsxt) == NULL ||
-            new_dsxt->add_record == NULL ||
-            (precord->dset &&
-             ((pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset)) == NULL ||
-              pdevSup->pdsxt == NULL ||
-              pdevSup->pdsxt->del_record == NULL))) {
-            status = S_db_noSupport;
-            goto unlock;
+        if (pdevSup == NULL) {
+            /* This record type has no registered device support, but does have
+             * an INP or OUT field which we're currently writing to.  We handle
+             * this INP/OUT field just like any other link field.
+             */
+            inpOut = 0;
+        } else {
+            new_dset = pdevSup->pdset;
+            new_dsxt = pdevSup->pdsxt;
+            if (new_dset == NULL ||
+                new_dsxt == NULL ||
+                new_dsxt->add_record == NULL ||
+                (precord->dset &&
+                 ((pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset)) == NULL ||
+                  pdevSup->pdsxt == NULL ||
+                  pdevSup->pdsxt->del_record == NULL))) {
+                status = S_db_noSupport;
+                goto unlock;
+            }
         }
     }
 

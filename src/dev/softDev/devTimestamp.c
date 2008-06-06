@@ -25,16 +25,8 @@
 
 /* Extended device support to allow INP field changes */
 
-static long allow(struct dbCommon *prec) {
-    return 0;
-}
-
-static struct dsxt dsxtAllow = {
-    allow, allow
-};
-
 static long initAllow(int pass) {
-    if (pass == 0) devExtend(&dsxtAllow);
+    if (pass == 0) devExtend(&devSoft_DSXT);
     return 0;
 }
 

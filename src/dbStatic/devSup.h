@@ -54,8 +54,9 @@ typedef struct dsxt {   /* device support extension table */
 #define S_dev_noDeviceFound (M_devSup|23) /*No device found at specified address*/
 
 
-/* This routine is defined in src/misc/iocInit.c */
+/* These are defined in src/misc/iocInit.c */
 
+extern struct dsxt devSoft_DSXT;
 extern void devExtend(dsxt *pdsxt);
 
 

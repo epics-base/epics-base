@@ -123,16 +123,14 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
     return epicsThreadBooleanStatusFail;
 }
 
-#define ARCH_STACK_FACTOR 2
-
 unsigned int
 epicsThreadGetStackSize (epicsThreadStackSizeClass size)
 {
-    unsigned int stackSize = 11000*ARCH_STACK_FACTOR;
+    unsigned int stackSize = 16000;
     switch(size) {
-    case epicsThreadStackSmall:  stackSize = 4000*ARCH_STACK_FACTOR; break;
-    case epicsThreadStackMedium: stackSize = 6000*ARCH_STACK_FACTOR; break;
-    case epicsThreadStackBig:                                        break;
+    case epicsThreadStackSmall:  stackSize = 5000; break;
+    case epicsThreadStackMedium: stackSize = 9000; break;
+    case epicsThreadStackBig:                      break;
     default:
         errlogPrintf("epicsThreadGetStackSize illegal argument");
         break;

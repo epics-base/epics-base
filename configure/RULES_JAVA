@@ -140,15 +140,15 @@ $(COMMON_DIR)/%.jar: $(JARDEPFILES)
 
 $(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
 	@echo "Installing java jar file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_JAVA)/%.jar: %.jar
 	@echo "Installing java jar file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(addprefix $(INSTALL_JAVA)/, $(JARINPUT)): $(INSTALL_JAVA)/%: ../%
 	@echo "Installing jar input file $@"
-	@$(INSTALL) -d -m 644 $< $(@D)
+	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PHONY: all install buildInstall rebuild clean build inc
 

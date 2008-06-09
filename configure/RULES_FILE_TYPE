@@ -66,18 +66,18 @@ ifdef T_A
 
 define FILE_TYPE_template
 
-$(1)S += $(if $$(strip $$($(1)S_$$(ARCH_CLASS))),$$(subst -nil-,,$$($(1)S_$$(ARCH_CLASS))), $$($(1)S_DEFAULT))
+$(1)S += $$(if $$(strip $$($(1)S_$$(ARCH_CLASS))),$$(subst -nil-,,$$($(1)S_$$(ARCH_CLASS))), $$($(1)S_DEFAULT))
 
 INSTALLS_$(1) = $$($(1)S:%=$$(INSTALL_$(1))/%)
 buildInstall : $$(INSTALLS_$(1))
 
 $$(INSTALL_$(1))/%: %
 	@echo "Installing $(1) file $$@"
-	@$$(INSTALL) -d -m 644 $$< $$(dir $$@)
+	@$$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
 $$(INSTALL_$(1))/%: ../%
 	@echo "Installing $(1) file $$@"
-	@$$(INSTALL) -d -m 644 $$< $$(dir $$@)
+	@$$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
 clean::
 	$$(RM) $$($(1))

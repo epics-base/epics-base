@@ -52,8 +52,8 @@ static volatile int ringOverflow[NUM_CALLBACK_PRIORITIES];
 static epicsTimerQueueId timerQueue;
 
 /* Shutdown handling */
-static epicsEventId exitEvent;
-static void *exitValue;
+static epicsEventId startStopEvent;
+static void *exitCallback;
 
 /* Static data */
 static char *threadName[NUM_CALLBACK_PRIORITIES] = {
@@ -81,20 +81,23 @@ static void callbackTask(void *arg)
 {
     int priority = *(int *)arg;
 
-    taskwdInsert(epicsThreadGetIdSelf(), NULL, NULL);
+    taskwdInsert(0, NULL, NULL);
+    epicsEventSignal(startStopEvent);
+
     while(TRUE) {
         void *ptr;
         epicsEventMustWait(callbackSem[priority]);
         while((ptr = epicsRingPointerPop(callbackQ[priority]))) {
             CALLBACK *pcallback = (CALLBACK *)ptr;
-            if (ptr == &exitValue) goto shutdown;
+            if (ptr == &exitCallback) goto shutdown;
             ringOverflow[priority] = FALSE;
             (*pcallback->callback)(pcallback);
         }
     }
+
 shutdown:
-    taskwdRemove(epicsThreadGetIdSelf());
-    epicsEventSignal(exitEvent);
+    taskwdRemove(0);
+    epicsEventSignal(startStopEvent);
 }
 
 static void callbackShutdown(void *arg)
@@ -103,18 +106,18 @@ static void callbackShutdown(void *arg)
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         int lockKey = epicsInterruptLock();
-        int ok = epicsRingPointerPush(callbackQ[i], &exitValue);
+        int ok = epicsRingPointerPush(callbackQ[i], &exitCallback);
         epicsInterruptUnlock(lockKey);
         epicsEventSignal(callbackSem[i]);
-        if (ok) epicsEventWait(exitEvent);
+        if (ok) epicsEventWait(startStopEvent);
     }
 }
 
-static void callbackInitPvt(void *arg)
+static void callbackInitOnce(void *arg)
 {
     int i;
 
-    exitEvent = epicsEventMustCreate(epicsEventEmpty);
+    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     timerQueue = epicsTimerQueueAllocate(0,epicsThreadPriorityScanHigh);
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         epicsThreadId tid;
@@ -130,13 +133,15 @@ static void callbackInitPvt(void *arg)
             (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
         if (tid == 0)
             cantProceed("Failed to spawn callback task %s\n", threadName[i]);
+        else
+            epicsEventWait(startStopEvent);
     }
     epicsAtExit(callbackShutdown, NULL);
 }
 
 void callbackInit(void)
 {
-    epicsThreadOnce(&callbackOnceFlag,callbackInitPvt,NULL);
+    epicsThreadOnce(&callbackOnceFlag, callbackInitOnce, NULL);
 }
 
 /* This routine can be called from interrupt context */

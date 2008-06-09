@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
+#include "cantProceed.h"
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "epicsExit.h"
@@ -84,7 +85,7 @@ static void freeNode(union twdNode *);
 
 /* Initialization, lazy */
 
-static void twdTask(void)
+static void twdTask(void *arg)
 {
     struct tNode *pt;
     struct mNode *pm;
@@ -134,8 +135,10 @@ static void twdShutdown(void *arg)
     epicsEventWait(exitEvent);
 }
 
-static void twdInitPvt(void *arg)
+static void twdInitOnce(void *arg)
 {
+    epicsThreadId tid;
+
     tLock = epicsMutexMustCreate();
     ellInit(&tList);
 
@@ -149,16 +152,19 @@ static void twdInitPvt(void *arg)
     loopEvent = epicsEventMustCreate(epicsEventEmpty);
     exitEvent = epicsEventMustCreate(epicsEventEmpty);
 
-    epicsThreadCreate("taskwd", epicsThreadPriorityLow,
+    tid = epicsThreadCreate("taskwd", epicsThreadPriorityLow,
          epicsThreadGetStackSize(epicsThreadStackSmall),
-        (EPICSTHREADFUNC)twdTask, 0);
+         twdTask, NULL);
+    if (tid == 0)
+        cantProceed("Failed to spawn task watchdog thread\n");
+
     epicsAtExit(twdShutdown, NULL);
 }
 
 void taskwdInit()
 {
     static epicsThreadOnceId twdOnceFlag = EPICS_THREAD_ONCE_INIT;
-    epicsThreadOnce(&twdOnceFlag, twdInitPvt, NULL);
+    epicsThreadOnce(&twdOnceFlag, twdInitOnce, NULL);
 }
 
 
@@ -378,6 +384,9 @@ epicsShareFunc void taskwdShow(int level)
     }
     epicsMutexUnlock(tLock);
 }
+
+
+/* Free list management */
 
 static union twdNode *newNode(void)
 {

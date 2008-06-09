@@ -4,19 +4,40 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <title>EPICS Release Procedures Checklist</title>
+  <title>EPICS Release Procedures &amp; Checklist</title>
+  <style type="text/css" media="print">
+  <!--
+    body {
+      font: 10.5pt/12pt Arial, Helvetica, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      border: thin solid black;
+    }
+    tt {
+      font: 9pt/11pt "Courier New", fixed;
+    }
+    td,th {
+      padding: 2pt 4pt;
+      vertical-align: top
+    }
+    td blockquote {
+      page-break-inside: avoid;
+      margin-right: 0;
+    }
+  -->
+  </style>
 </head>
 
 <body>
-<h1>EPICS Base Release Procedures Checklist</h1>
+<h1>EPICS Base Release Procedures &amp; Checklist</h1>
 
 <blockquote>
   <p>$Id$</p>
 </blockquote>
 
-<p>This document is a checklist of things that must be done when creating a
-new release of EPICS Base. Additions and ammendments to this list are
-welcome.</p>
+<p>This document describes the procedures and provides a checklist of tasks
+that should be performed when creating new releases of EPICS Base.</p>
 
 <h3>The Release Process</h3>
 
@@ -24,22 +45,30 @@ welcome.</p>
 pre-release, <tt>-pre1</tt>. The first Release Candidate <tt>-RC1</tt> is the
 first version that has undergone widespread testing and which has no known
 problems in it that are slated to be fixed in this release. New versions should
-be made at about weekly intervals during the testing and debugging process, and
+be made at about weekly intervals during the testing and debugging period, and
 will be designated as either pre-release versions or Release Candidates by the
 Release Manager.  A Release Candidate that has received widespread testing for a
-week without any additional problems being discovered or CVS commits being made
-can be designated as the final release.</p>
+week without any additional problems being discovered or significant changes
+being committed can be designated as the final release version.</p>
 
 <h3>Roles</h3>
 
-<p>The following roles are used, in addition to the names of individuals who
-have been responsible for specific tasks in the past:</p>
+<p>The following roles are required. The individuals named here have have been
+responsible for these tasks in the past and are expected to continue in the
+relevent roles unless the Release Manager designates otherwise:</p>
 
 <dl>
-  <dt><strong>Release Manager</strong></dt>
+  <dt><strong>Release Manager</strong> (Andrew Johnson)</dt>
     <dd>Responsible for the release</dd>
+  <dt><strong>Configuration Manager</strong> (Janet Anderson)</dt>
+    <dd>Responsible for committing version number updates to CVS and for
+      creating tarfiles</dd>
   <dt><strong>Platform Developers</strong></dt>
     <dd>Responsible for individual operating system platforms</dd>
+  <dt><strong>Application Developers</strong></dt>
+    <dd>Responsible for support modules that depend on EPICS Base.</dd>
+  <dt><strong>Website Manager</strong> (Andrew Johnson)</dt>
+    <dd>Responsible for the EPICS website</dd>
 </dl>
 
 <table border="1" width="100%">
@@ -75,9 +104,9 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Release Manager &amp;<br />
-        all developers</td>
-      <td>Ensure that documentation will be updated before the release date: 
+      <td>Release Manager<br />
+        &amp; all developers</td>
+      <td>Ensure that documentation will be updated before the release date:
         <ul>
           <li>Application Developers Guide</li>
           <li>Release Notes</li>
@@ -91,13 +120,13 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Tag the module in CVS. Pre-release version tags take the form
         <tt>R<i>x</i>-<i>y</i>-<i>z</i>-pre<i>n</i></tt> while Release
         Candidate tags take the form
@@ -106,7 +135,7 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Export the tagged version and create a tarfile of the result:
         <blockquote><tt>
           cvs export -kv -d base-x.y.z-pre1 -r Rx-y-z-pre1 epics/base<br />
@@ -115,34 +144,34 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
-      <td>Test the tar file by extracting its contents and building it on at
+      <td>Configuration Manager</td>
+      <td>Test the tarfile by extracting its contents and building it on at
         least one supported platform</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Copy the tar file to the Base download area of the website</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Create or update a website subdirectory to hold the release
         documentation, and copy in the files from the base/documentation
         directory of the tarfile.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Create or modify the webpage for the new release with links to the
-        release documents and tar file. Pre-release versions should use the
-        page and URL for the final release version number.</td>
+        release documents and tar file. Pre-release and RC versions should use
+        the page and URL for the final release version number.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Add the new pre-release tar file to the website Base download index
-      page.</td>
+        page.</td>
     </tr>
     <tr>
       <th colspan="3">Testing</th>
@@ -150,33 +179,43 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Platform Developers</td>
-      <td>Run the Soft IOC tests from mrkSoftTest on all available
+      <td>Run the built-in test programs on all available host platforms using
+        <blockquote><tt>
+          make -s runtests
+        </tt></blockquote></td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Platform Developers</td>
+      <td>Run the CA client side regression tests on all available host
         platforms.</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>Platform Developers</td>
+      <td>Build and run the
+        <a href="https://svn.aps.anl.gov/trac/epics/soft-test">IOC Soft-Test</a>
+        suite on all available platforms.</td>
     </tr>
     <tr>
       <td> </td>
       <td>Platform Developers</td>
       <td>Check that all makeBaseApp templates build and run properly, all
         xxxApp and xxxBoot types and any internal options, e.g. setting
-        STATIC_BUILD=YES in the configure/CONFIG_SITE.</td>
+        <tt>STATIC_BUILD=YES</tt> in configure/CONFIG_SITE.</td>
     </tr>
     <tr>
       <td> </td>
       <td>Platform Developers</td>
       <td>Build the SNL Sequencer against this version of Base, and check that
-      the makeBaseApp example builds and runs correctly with it.</td>
+        the makeBaseApp example builds and runs correctly with it.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Marty Kraimer</td>
-      <td>Run the VME I/O tests in mrkHwdTest on all available vxWorks VME
-        platforms.</td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>Jeff Hill</td>
-      <td>Run the CA client side regression tests on all available host
-        platforms.</td>
+      <td>Application Developers</td>
+      <td>Build external applications against this version of Base on all
+        available platforms and test as appropriate.  Application code changes
+        may be necessary where the EPICS Base APIs have been modified.</td>
     </tr>
     <tr>
       <td> </td>
@@ -196,28 +235,28 @@ have been responsible for specific tasks in the past:</p>
     <tr>
       <td> </td>
       <td>Release Manager</td>
-      <td>Obtain a positive 'Ok to release' from all platform developers when a
-      Release Candidate version has gone a whole week without any issues being
-      reported.</td>
+      <td>Obtain a positive <q>Ok to release</q> from all platform developers
+        when a Release Candidate version has gone a whole week without any
+        issues being reported.</td>
     </tr>
     <tr>
       <th colspan="3">Creating the final release version</th>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Tag the module in CVS. Official base release version tags take the
         form <tt>R<i>x</i>-<i>y</i>-<i>z</i>[-<i>n</i>]</tt></td>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Export the tagged version and create a tarfile of the result:
         <blockquote><tt>
           cvs export -kv -d base-x.y.z -r Rx-y-z epics/base<br />
@@ -226,25 +265,25 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Test the tar file by extracting its contents and building it on at
         least one supported platform</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Janet Anderson</td>
+      <td>Configuration Manager</td>
       <td>Copy the tar file to the Base download area of the website</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Update the website subdirectory that holds the release
         documentation, and copy in the files from the base/documentation
         directory of the tarfile.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Update the webpage for the new release with links to the release
         documents and tar file.</td>
     </tr>
@@ -253,26 +292,26 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Add the new release tar file to the website Base download index
-      page</td>
+        page.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Link to the release webpage from other relevent areas of the
-        website - update front page and sidebars</td>
+        website - update front page and sidebars.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
-      <td>Add the new Version number to the Mantis bug tracker</td>
+      <td>Website Manager</td>
+      <td>Add the new Version number to the Mantis bug tracker.</td>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Close all Mantis bug reports that were marked as resolved and which
-        have been fixed in this release</td>
+        have been fixed in this release.</td>
     </tr>
     <tr>
       <td> </td>
@@ -281,9 +320,9 @@ have been responsible for specific tasks in the past:</p>
     </tr>
     <tr>
       <td> </td>
-      <td>Andrew Johnson</td>
+      <td>Website Manager</td>
       <td>Add an entry to the website News page, linking to the new version
-      webpage</td>
+      webpage.</td>
     </tr>
   </tbody>
 </table>

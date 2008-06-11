@@ -100,7 +100,7 @@ void generalTime_Init(void)
     epicsThreadOnce(&onceId, generalTime_InitOnce, NULL);
 }
 
-int epicsTimeGetCurrent(epicsTimeStamp *pDest)
+int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     return generalTimeGetExceptPriority(pDest, NULL, 0);
 }
@@ -158,7 +158,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int except_t
     return  status;
 }
 
-int     epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
+int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
 {
     if (eventNumber == epicsTimeEventCurrentTime) {
         return generalTimeGetCurrentPriority(pDest, NULL);

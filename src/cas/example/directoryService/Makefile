@@ -36,6 +36,6 @@ pcaDirServ: $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 clean::
 	@$(RM) caDirServ
 	@$(RM) pcaDirServ
-	@$(RM) -rf Templates.DB
+	@$(RM) Templates.DB
 	@$(RM) core 
 

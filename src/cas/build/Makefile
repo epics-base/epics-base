@@ -81,5 +81,5 @@ cas_RCS_WIN32 = cas.rc
 include $(TOP)/configure/RULES
 
 clean::
-	@$(RM) -rf Templates.DB
+	@$(RM) Templates.DB
 

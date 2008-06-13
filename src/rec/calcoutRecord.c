@@ -88,10 +88,9 @@ typedef struct calcoutDSET {
     long       number;
     DEVSUPFUN  dev_report;
     DEVSUPFUN  init;
-    DEVSUPFUN  init_record; /*returns: (0, 2)=>(success, success no convert)*/
+    DEVSUPFUN  init_record;
     DEVSUPFUN  get_ioint_info;
     DEVSUPFUN  write;
-    DEVSUPFUN  special_linconv;
 }calcoutDSET;
 
 
@@ -151,7 +150,7 @@ static long init_record(calcoutRecord *pcalc, int pass)
 	return S_dev_noDSET;
     }
     /* must have write defined */
-    if ((pcalcoutDSET->number < 6) || (pcalcoutDSET->write ==NULL)) {
+    if ((pcalcoutDSET->number < 5) || (pcalcoutDSET->write ==NULL)) {
 	recGblRecordError(S_dev_missingSup, (void *)pcalc, "calcout:init_record");
 	return S_dev_missingSup;
     }

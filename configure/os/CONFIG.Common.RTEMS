@@ -18,6 +18,7 @@
 -include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 GNU_TARGET_INCLUDE_DIR =
+unexport GCC_EXEC_PREFIX
 
 #--------------------------------------------------
 # Get RTEMS_BASE definition

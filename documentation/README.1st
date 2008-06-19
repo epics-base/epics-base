@@ -113,10 +113,10 @@ Software requirements
 
      GNU make 
      You must use GNU make, gnumake, for any EPICS builds.  Set your
-     path so that a gnumake version 3.78.1 or later is available. 
+     path so that a gnumake version 3.81 or later is available. 
 
      Perl 
-     You must have perl version 5.0 or later installed. The configure files do
+     You must have perl version 5.6 or later installed. The configure files do
      not specify the perl full pathname.  You need the perl executable in
      your search path. 
 

@@ -163,6 +163,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
     precord = (char *)precnode->precord;
     if(pdbRecordType->rec_size == 0) {
+	printf("\t*** Did you run x_RegisterDeviceDriver(pdbbase) yet? ***\n");
 	epicsPrintf("dbAllocRecord(%s) record_size =0\n",
 	    pdbRecordType->name);
 	return(S_dbLib_noRecSup);

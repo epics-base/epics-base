@@ -1004,7 +1004,9 @@ epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
 
     if ( *id == 0 ) {
         *id = -1;
+        LeaveCriticalSection ( & pGbl->mutex );
         ( *func ) ( arg );
+        EnterCriticalSection ( & pGbl->mutex );
         *id = 1;
     } else
         assert(*id > 0 /* func() called epicsThreadOnce() with same id */);

@@ -116,7 +116,9 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     assert(semTake(epicsThreadOnceMutex,WAIT_FOREVER)==OK);
     if (*id == 0) { /*  0 => first call */
         *id = -1;   /* -1 => func() active */
+        semGive(epicsThreadOnceMutex);
         func(arg);
+        assert(semTake(epicsThreadOnceMutex,WAIT_FOREVER)==OK);
         *id = +1;   /* +1 => func() done */
     } else
         assert(*id > 0 /* func() called epicsThreadOnce() with same id */);

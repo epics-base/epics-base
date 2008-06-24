@@ -478,9 +478,11 @@ void epicsThreadOnceOsd(epicsThreadOnceId *id, void(*func)(void *), void *arg)
     if (!initialized) epicsThreadInit();
     epicsMutexMustLock(onceMutex);
     if (*id == 0) {
-            *id = -1;
-            func(arg);
-            *id = 1;
+        *id = -1;
+        epicsMutexUnlock(onceMutex);
+        func(arg);
+        epicsMutexMustLock(onceMutex);
+        *id = 1;
     } else
         assert(*id > 0 /* func() called epicsThreadOnce() with same id */);
     epicsMutexUnlock(onceMutex);

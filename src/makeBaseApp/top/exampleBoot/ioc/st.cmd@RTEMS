@@ -6,17 +6,20 @@
 #< envPaths
 
 ## Register all support components
-dbLoadDatabase("dbd/_APPNAME_.dbd")
-_CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase) 
+dbLoadDatabase "dbd/_APPNAME_.dbd"
+_CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
 ## Load record instances
 dbLoadTemplate "db/user.substitutions"
-dbLoadRecords("db/dbSubExample.db","user=_USER_")
+dbLoadRecords "db/dbSubExample.db", "user=_USER_"
 
 ## Set this to see messages from mySub
 #var mySubDebug 1
 
-iocInit()
+## Run this to trace the stages of iocInit
+#traceIocInit
+
+iocInit
 
 ## Start any sequence programs
-#seq sncExample,"user=_USER_"
+#seq sncExample, "user=_USER_"

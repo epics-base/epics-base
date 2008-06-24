@@ -33,6 +33,7 @@ _APPNAME__DBD += base.dbd
 _APPNAME__DBD += xxxSupport.dbd
 _APPNAME__DBD += dbSubExample.dbd
 _APPNAME__DBD += _APPNAME_Hello.dbd
+_APPNAME__DBD += initTrace.dbd
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
@@ -42,6 +43,7 @@ _APPNAME__SRCS_vxWorks += -nil-
 # Add locally compiled object code
 _APPNAME__SRCS += dbSubExample.c
 _APPNAME__SRCS += _APPNAME_Hello.c
+_APPNAME__SRCS += initTrace.c
 
 # The following adds support from base/src/vxWorks
 _APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary

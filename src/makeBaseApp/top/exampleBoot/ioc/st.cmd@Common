@@ -8,18 +8,21 @@
 cd ${TOP}
 
 ## Register all support components
-dbLoadDatabase("dbd/_APPNAME_.dbd")
-_CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase "dbd/_APPNAME_.dbd"
+_CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
 ## Load record instances
 dbLoadTemplate "db/userHost.substitutions"
-dbLoadRecords("db/dbSubExample.db","user=_USER_Host")
+dbLoadRecords "db/dbSubExample.db", "user=_USER_Host"
 
 ## Set this to see messages from mySub
 #var mySubDebug 1
 
+## Run this to trace the stages of iocInit
+#traceIocInit
+
 cd ${TOP}/iocBoot/${IOC}
-iocInit()
+iocInit
 
 ## Start any sequence programs
-#seq sncExample,"user=_USER_Host"
+#seq sncExample, "user=_USER_Host"

@@ -17,6 +17,11 @@ static void trace(initHookState state) {
 }
 
 int traceIocInit(void) {
+    static int done = 0;
+    if (done)
+        return -1;
+    done = 1;
+
     initHookRegister(trace);
     puts("iocInit will be traced");
     return 0;

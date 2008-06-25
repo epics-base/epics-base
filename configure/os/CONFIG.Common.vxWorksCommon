@@ -121,9 +121,6 @@ GNU_DIR_5 = $(WIND_BASE)/host/$(WIND_HOST_TYPE)
 GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
-# GCC_EXEC_PREFIX considered harmful since vxWorks 6 moved it
-unexport GCC_EXEC_PREFIX
-
 #--------------------------------------------------
 # C++ host processing
 NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)

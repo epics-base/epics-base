@@ -21,8 +21,6 @@ CROSS = YES
 GNU_TARGET_INCLUDE_DIR = $(GNU_TARGET:%= $(GNU_DIR)/%/include)
 GNU_TARGET_LIB_DIR = $(GNU_TARGET:%= $(GNU_DIR)/%/lib)
 
-export GCC_EXEC_PREFIX = $(GNU_LIB)/gcc-lib/
-
 CROSS_INCLUDES = $(addprefix -I,$(GNU_TARGET_INCLUDE_DIR))
 CROSS_LDFLAGS = $(addprefix -L,$(GNU_TARGET_LIB_DIR))
 

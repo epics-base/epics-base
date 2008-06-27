@@ -12,6 +12,14 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Added Perl5 CA library</h4>
+
+<p>Base now provides a CA client library interface for Perl5 scripts in
+<tt>src/cap5</tt> and includes some alternative implementations of the catools
+programs written in Perl (for demonstration purposes mainly). Documentation on
+how to use the library is available in html/CA.html after the build
+completes.</p>
+
 <h4>IOC ignores SIGHUP</h4>
 
 <p>iocInit() installs an signal handler for ignoring SIGHUP. This fixes a

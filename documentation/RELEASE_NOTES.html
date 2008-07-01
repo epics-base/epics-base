@@ -12,6 +12,44 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>IOC Support on 64-bit archs</h4>
+
+<p>A fairly significant number of changes have been that were necessary to allow
+the IOC code to run properly on 64-bit CPU architectures where a <tt>long</tt>
+is 64 bits wide.  This was not as simple as replacing every instance of the
+typename <tt>long</tt> with <tt>epicsInt32</tt> because that would have broken a
+lot of external code unnecessarily.  The generated record.h file now uses the
+typenames from epicsTypes.h to declare record fields, thus field sizes are the
+same on both 32- and 64-bit platforms (on 64-bit, a <tt>DBF_LONG</tt> does
+<em>not</em> map to <tt>long</tt> but to <tt>int</tt>).  This change does not
+affect status return values, which are still implemented using the native
+<tt>long</tt> type for the platform.</p>
+
+<h4>Conversion of empty strings to character types</h4>
+
+<p>While changing the conversion routines in db/dbConvert.c and
+db/dbFastLinkConv.c to support 64-bit architectures as described above, it was
+noticed that an empty string converts to the value 0 for all types other than
+<tt>DBF_CHAR</tt> and <tt>DBF_UCHAR</tt> where it converts to the ASCII
+character <tt>'0'</tt>, value 0x30.  Since these types are usually used for
+storing small integers or boolean values rather than ASCII characters, it was
+decided that this conversion is wrong so it has been changed to match the other
+nmeric conversions.</p>
+
+<h4>epicsShareAPI deprecated inside IOC</h4>
+
+<p>APIs that are intended for use inside the IOC, the <tt>epicsShareAPI</tt>
+attribute is slowly being removed.  This keyword is only used on MS Windows
+where it indicates to the compiler that the function should use Pascal calling
+conventions rather than C ones, and was necessary to be able to call such
+functions from MS Visual Basic.  APIs for use by client code (CA and libCom)
+will generally retain the attribute if they already had it.</p>
+
+<h4>Record types ANSIfied</h4>
+
+<p>Thanks to John Hammonds at the EPICS Codeathon, the record type
+implementations have been converted from K&amp;R to ANSI C prototypes.</p>
+
 <h4>Added Perl5 CA library</h4>
 
 <p>Base now provides a CA client library interface for Perl5 scripts in
@@ -31,8 +69,8 @@ SIGHUP and exit.</p>
 
 <p>Several changes have been made to the build system, although these changes
 should not affect the contents of <tt>Makefile</tt>s or any applications
-using Base. They do however require that the version of GNU Make used be 3.80
-(3.81?) or later. These changes are briefly:</p>
+using Base. They do however require that the version of GNU Make used be 3.81
+or later. These changes are briefly:</p>
 <ul>
   <li><p>A new tool is provided that expands out <tt>@VAR@</tt> macros. By
     default it knows the value of <tt>@TOP@</tt>, <tt>@ARCH@</tt> and any

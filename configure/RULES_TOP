@@ -30,7 +30,10 @@ RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops )
 ifneq ($(RELEASE_TOPS),)
 define TOP_RULES_template
   RULES_TOP:=$$($(1))
-  -include $$(wildcard $$($(1))/cfg/RULES*) nonexistantFilename
+  -include $$(if $$(wildcard $$($(1))/cfg/RULES*), \
+                 $$(wildcard $$($(1))/cfg/RULES*),\
+                 nonexistantFilename)
+
 endef
 $(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))
 endif
@@ -61,6 +64,7 @@ endif
 distclean: realclean realuninstall
 
 CVSCLEAN=$(firstword $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
+
 cvsclean:
 	@$(PERL) $(CVSCLEAN) 
 

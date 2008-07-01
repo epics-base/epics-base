@@ -1,6 +1,5 @@
 # <top>/configure/RULES_EXPAND
 
-ifdef T_A
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 
 # Default settings
@@ -21,5 +20,4 @@ $(EXPANDED): %: ../%@
 clean::
 	$(RM) $(EXPANDED)
 
-endif
 endif

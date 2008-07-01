@@ -6,6 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* $Id$ */
 
 /* Record Support Routines for Calculation records */
@@ -42,19 +43,19 @@
 #define initialize NULL
 static long init_record(calcRecord *pcalc, int pass);
 static long process(calcRecord *pcalc);
-static long special(dbAddr *paddr, int after);
+static long special(DBADDR *paddr, int after);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units(dbAddr *paddr, char *units);
-static long get_precision(dbAddr *paddr, long *precision);
+static long get_units(DBADDR *paddr, char *units);
+static long get_precision(DBADDR *paddr, long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double(dbAddr *paddr, struct dbr_grDouble *pgd);
-static long get_ctrl_double(dbAddr *paddr, struct dbr_ctrlDouble *pcd);
-static long get_alarm_double(dbAddr *paddr, struct dbr_alDouble *pad);
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd);
+static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd);
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad);
 
 rset calcRSET={
 	RSETNUMBER,
@@ -127,7 +128,7 @@ static long process(calcRecord *pcalc)
     return 0;
 }
 
-static long special(dbAddr *paddr, int after)
+static long special(DBADDR *paddr, int after)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
     short error_number;
@@ -147,7 +148,7 @@ static long special(dbAddr *paddr, int after)
     return S_db_badChoice;
 }
 
-static long get_units(dbAddr *paddr, char *units)
+static long get_units(DBADDR *paddr, char *units)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
 
@@ -155,7 +156,7 @@ static long get_units(dbAddr *paddr, char *units)
     return 0;
 }
 
-static long get_precision(dbAddr *paddr, long *pprecision)
+static long get_precision(DBADDR *paddr, long *pprecision)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
 
@@ -167,7 +168,7 @@ static long get_precision(dbAddr *paddr, long *pprecision)
     return 0;
 }
 
-static long get_graphic_double(dbAddr *paddr, struct dbr_grDouble *pgd)
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
 
@@ -197,7 +198,7 @@ static long get_graphic_double(dbAddr *paddr, struct dbr_grDouble *pgd)
     return 0;
 }
 
-static long get_ctrl_double(dbAddr *paddr, struct dbr_ctrlDouble *pcd)
+static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
 
@@ -227,7 +228,7 @@ static long get_ctrl_double(dbAddr *paddr, struct dbr_ctrlDouble *pcd)
     return 0;
 }
 
-static long get_alarm_double(dbAddr *paddr, struct dbr_alDouble *pad)
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     calcRecord *pcalc = (calcRecord *)paddr->precord;
 
@@ -242,51 +243,59 @@ static long get_alarm_double(dbAddr *paddr, struct dbr_alDouble *pad)
     return 0;
 }
 
-static void checkAlarms(calcRecord *pcalc)
+static void checkAlarms(calcRecord *prec)
 {
-    double val = pcalc->val;
-    double hyst = pcalc->hyst;
-    double lalm = pcalc->lalm;
-    double hihi = pcalc->hihi;
-    double high = pcalc->high;
-    double low = pcalc->low;
-    double lolo = pcalc->lolo;
-    unsigned short hhsv = pcalc->hhsv;
-    unsigned short hsv = pcalc->hsv;
-    unsigned short lsv = pcalc->lsv;
-    unsigned short llsv = pcalc->llsv;
+    double val, hyst, lalm;
+    double alev;
+    epicsEnum16 asev;
 
-    if (pcalc->udf) {
-	recGblSetSevr(pcalc, UDF_ALARM, INVALID_ALARM);
-	return;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
     }
 
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
+
     /* alarm condition hihi */
-    if (hhsv && (val >= hihi || ((lalm == hihi) && (val >= hihi - hyst)))) {
-	if (recGblSetSevr(pcalc, HIHI_ALARM, pcalc->hhsv)) pcalc->lalm = hihi;
-	return;
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition lolo */
-    if (llsv && (val <= lolo || ((lalm == lolo) && (val <= lolo + hyst)))) {
-	if (recGblSetSevr(pcalc, LOLO_ALARM, pcalc->llsv)) pcalc->lalm = lolo;
-	return;
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition high */
-    if (hsv && (val >= high || ((lalm == high) && (val >= high - hyst)))) {
-	if (recGblSetSevr(pcalc, HIGH_ALARM, pcalc->hsv)) pcalc->lalm = high;
-	return;
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition low */
-    if (lsv && (val <= low || ((lalm == low) && (val <= low + hyst)))) {
-	if (recGblSetSevr(pcalc, LOW_ALARM, pcalc->lsv)) pcalc->lalm = low;
-	return;
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* we get here only if val is out of alarm by at least hyst */
-    pcalc->lalm = val;
+    prec->lalm = val;
     return;
 }
 

@@ -1,17 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* compressRecord.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-14-89 
  */
 
@@ -41,20 +39,20 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long special();
+static long init_record(compressRecord *, int);
+static long process(compressRecord *);
+static long special(DBADDR *, int);
 #define get_value NULL
-static long cvt_dbaddr();
-static long get_array_info();
-static long put_array_info();
-static long get_units();
-static long get_precision();
+static long cvt_dbaddr(DBADDR *);
+static long get_array_info(DBADDR *, long *, long *);
+static long put_array_info(DBADDR *, long);
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
 
 rset compressRSET={
@@ -98,14 +96,14 @@ static void monitor(compressRecord *pcompress)
 	return;
 }
 
-static void put_value(compressRecord *pcompress,double *psource, long n)
+static void put_value(compressRecord *pcompress,double *psource, epicsInt32 n)
 {
 /* treat bptr as pointer to a circular buffer*/
 	double *pdest;
-	long offset=pcompress->off;
-	long nuse=pcompress->nuse;
-	long nsam=pcompress->nsam;
-	long  i;
+	epicsInt32 offset=pcompress->off;
+	epicsInt32 nuse=pcompress->nuse;
+	epicsInt32 nsam=pcompress->nsam;
+	epicsInt32 i;
 
 	pdest = pcompress->bptr + offset;
 	for(i=0; i<n; i++, psource++) {
@@ -135,13 +133,13 @@ static int compare(const void *arg1, const void *arg2)
 }
 
 static int compress_array(compressRecord *pcompress,
-	double *psource,long no_elements)
+	double *psource,epicsInt32 no_elements)
 {
-	long		i,j;
-	long		nnew;
-	long		nsam=pcompress->nsam;
+	epicsInt32	i,j;
+	epicsInt32	nnew;
+	epicsInt32	nsam=pcompress->nsam;
 	double		value;
-	long		n;
+	epicsInt32	n;
 
 	/* skip out of limit data */
 	if (pcompress->ilil < pcompress->ihil){
@@ -204,16 +202,16 @@ static int compress_array(compressRecord *pcompress,
 	return(0);
 }
 
-static int array_average(compressRecord	*pcompress,
-	double *psource,long	no_elements)
+static int array_average(compressRecord *pcompress,
+	double *psource,epicsInt32 no_elements)
 {
-	long	i;
-	long	nnow;
-	long	nsam=pcompress->nsam;
+	epicsInt32	i;
+	epicsInt32	nnow;
+	epicsInt32	nsam=pcompress->nsam;
 	double	*psum;
 	double	multiplier;
-	long	inx=pcompress->inx;
-	long	nuse,n;
+	epicsInt32	inx=pcompress->inx;
+	epicsInt32	nuse,n;
 
 	nuse = nsam;
 	if(nuse>no_elements) nuse = no_elements;
@@ -254,7 +252,7 @@ static int compress_scalar(struct compressRecord *pcompress,double *psource)
 {
 	double	value = *psource;
 	double	*pdest=&pcompress->cvb;
-	long	inx = pcompress->inx;
+	epicsInt32	inx = pcompress->inx;
 
 	/* compress according to specified algorithm */
 	switch (pcompress->alg){
@@ -289,9 +287,7 @@ static int compress_scalar(struct compressRecord *pcompress,double *psource)
 }
 
 /*Beginning of record support routines*/
-static long init_record(pcompress,pass)
-    compressRecord	*pcompress;
-    int pass;
+static long init_record(compressRecord *pcompress, int pass)
 {
     if (pass==0){
 	if(pcompress->nsam<1) pcompress->nsam = 1;
@@ -305,8 +301,7 @@ static long init_record(pcompress,pass)
     return(0);
 }
 
-static long process(pcompress)
-	compressRecord     *pcompress;
+static long process(compressRecord *pcompress)
 {
     long	status=0;
     long	nelements = 0;
@@ -355,9 +350,7 @@ static long process(pcompress)
     return(0);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
+static long special(DBADDR *paddr, int after)
 {
     compressRecord   *pcompress = (compressRecord *)(paddr->precord);
     int                 special_type = paddr->special;
@@ -373,8 +366,7 @@ static long special(paddr,after)
     }
 }
 
-static long cvt_dbaddr(paddr)
-    struct dbAddr *paddr;
+static long cvt_dbaddr(DBADDR *paddr)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 
@@ -386,10 +378,7 @@ static long cvt_dbaddr(paddr)
     return(0);
 }
 
-static long get_array_info(paddr,no_elements,offset)
-    struct dbAddr *paddr;
-    long	  *no_elements;
-    long	  *offset;
+static long get_array_info(DBADDR *paddr,long *no_elements, long *offset)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 
@@ -399,9 +388,7 @@ static long get_array_info(paddr,no_elements,offset)
     return(0);
 }
 
-static long put_array_info(paddr,nNew)
-    struct dbAddr *paddr;
-    long	  nNew;
+static long put_array_info(DBADDR *paddr, long nNew)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 
@@ -411,9 +398,7 @@ static long put_array_info(paddr,nNew)
     return(0);
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR *paddr,char *units)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 
@@ -421,9 +406,7 @@ static long get_units(paddr,units)
     return(0);
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
+static long get_precision(DBADDR *paddr, long *precision)
 {
     compressRecord	*pcompress=(compressRecord *)paddr->precord;
 
@@ -433,9 +416,7 @@ static long get_precision(paddr,precision)
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble *pgd;
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 
@@ -448,9 +429,7 @@ static long get_graphic_double(paddr,pgd)
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     compressRecord *pcompress=(compressRecord *)paddr->precord;
 

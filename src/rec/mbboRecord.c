@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recMbbo.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recMbbo.c - Record Support Routines for multi bit binary Output records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-17-87
  */
 
@@ -44,18 +42,18 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long special();
+static long init_record(mbboRecord *, int);
+static long process(mbboRecord *);
+static long special(DBADDR *, int);
 #define get_value NULL
-static long cvt_dbaddr();
+static long cvt_dbaddr(DBADDR *);
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str();
-static long get_enum_strs();
-static long put_enum_str();
+static long get_enum_str(DBADDR *, char *);
+static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(DBADDR *, char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -92,16 +90,15 @@ struct mbbodset { /* multi bit binary output dset */
 };
 
 
-static void checkAlarms();
-static void convert();
-static void monitor();
+static void checkAlarms(mbboRecord *);
+static void convert(mbboRecord *);
+static void monitor(mbboRecord *);
 static long writeValue();
 
 
-static void init_common(pmbbo)
-    struct mbboRecord   *pmbbo;
+static void init_common(mbboRecord *pmbbo)
 {
-        unsigned long   *pstate_values;
+        epicsUInt32   *pstate_values;
 	char		*pstate_string;
         short           i;
 
@@ -117,9 +114,7 @@ static void init_common(pmbbo)
         return;
 }
 
-static long init_record(pmbbo,pass)
-    struct mbboRecord	*pmbbo;
-    int pass;
+static long init_record(mbboRecord *pmbbo, int pass)
 {
     struct mbbodset *pdset;
     long status;
@@ -156,7 +151,7 @@ static long init_record(pmbbo,pass)
         pmbbo->mask |= 1;  /* set low order bit*/
     }
     if( pdset->init_record ) {
-	unsigned long rval;
+	epicsUInt32 rval;
 
 	status=(*pdset->init_record)(pmbbo);
         /* init_record might set status */
@@ -165,7 +160,7 @@ static long init_record(pmbbo,pass)
 		rval = pmbbo->rval;
 		if(pmbbo->shft>0) rval >>= pmbbo->shft;
 		if (pmbbo->sdef){
-			unsigned long   *pstate_values;
+			epicsUInt32   *pstate_values;
 			short           i;
 
 			pstate_values = &(pmbbo->zrvl);
@@ -190,8 +185,7 @@ static long init_record(pmbbo,pass)
     return(0);
 }
 
-static long process(pmbbo)
-    struct mbboRecord     *pmbbo;
+static long process(mbboRecord *pmbbo)
 {
     struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
     long		status=0;
@@ -265,11 +259,9 @@ CONTINUE:
     return(status);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
+static long special(DBADDR *paddr, int after)
 {
-    struct mbboRecord     *pmbbo = (struct mbboRecord *)(paddr->precord);
+    mbboRecord     *pmbbo = (mbboRecord *)(paddr->precord);
     int                 special_type = paddr->special;
 
     if(!after) return(0);
@@ -283,10 +275,9 @@ static long special(paddr,after)
     }
 }
 
-static long cvt_dbaddr(paddr)
-    struct dbAddr *paddr;
+static long cvt_dbaddr(DBADDR *paddr)
 {
-    struct mbboRecord *pmbbo=(struct mbboRecord *)paddr->precord;
+    mbboRecord *pmbbo=(mbboRecord *)paddr->precord;
     int index;
 
     index = dbGetFieldIndex(paddr);
@@ -301,11 +292,9 @@ static long cvt_dbaddr(paddr)
     return(0);
 }
 
-static long get_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char	  *pstring;
+static long get_enum_str(DBADDR *paddr, char *pstring)
 {
-    struct mbboRecord	*pmbbo=(struct mbboRecord *)paddr->precord;
+    mbboRecord	*pmbbo=(mbboRecord *)paddr->precord;
     char		*psource;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
@@ -324,11 +313,9 @@ static long get_enum_str(paddr,pstring)
     return(0);
 }
 
-static long get_enum_strs(paddr,pes)
-    struct dbAddr *paddr;
-    struct dbr_enumStrs *pes;
+static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 {
-    struct mbboRecord	*pmbbo=(struct mbboRecord *)paddr->precord;
+    mbboRecord	*pmbbo=(mbboRecord *)paddr->precord;
     char		*psource;
     int			i;
     short		no_str;
@@ -343,11 +330,9 @@ static long get_enum_strs(paddr,pes)
 
     return(0);
 }
-static long put_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char          *pstring;
+static long put_enum_str(DBADDR *paddr,char *pstring)
 {
-    struct mbboRecord     *pmbbo=(struct mbboRecord *)paddr->precord;
+    mbboRecord     *pmbbo=(mbboRecord *)paddr->precord;
         char              *pstate_name;
         short             i;
 
@@ -364,8 +349,7 @@ static long put_enum_str(paddr,pstring)
 	return(S_db_badChoice);
 }
 
-static void checkAlarms(pmbbo)
-    struct mbboRecord	*pmbbo;
+static void checkAlarms(mbboRecord *pmbbo)
 {
 	unsigned short *severities;
 	unsigned short	val=pmbbo->val;
@@ -388,8 +372,7 @@ static void checkAlarms(pmbbo)
 	return;
 }
 
-static void monitor(pmbbo)
-    struct mbboRecord	*pmbbo;
+static void monitor(mbboRecord *pmbbo)
 {
 	unsigned short	monitor_mask;
 
@@ -416,10 +399,9 @@ static void monitor(pmbbo)
         return;
 }
 
-static void convert(pmbbo)
-	struct mbboRecord  *pmbbo;
+static void convert(mbboRecord *pmbbo)
 {
-	unsigned long *pvalues = &(pmbbo->zrvl);
+	epicsUInt32 *pvalues = &(pmbbo->zrvl);
 
 	/* convert val to rval */
 	if(pmbbo->sdef) {
@@ -429,7 +411,7 @@ static void convert(pmbbo)
 		return;
 	    }
 	    pmbbo->rval = pvalues[pmbbo->val];
-	} else pmbbo->rval = (unsigned long)(pmbbo->val);
+	} else pmbbo->rval = (epicsUInt32)(pmbbo->val);
 	if(pmbbo->shft>0) pmbbo->rval <<= pmbbo->shft;
 
 	return;
@@ -437,8 +419,7 @@ static void convert(pmbbo)
 
 
 
-static long writeValue(pmbbo)
-	struct mbboRecord	*pmbbo;
+static long writeValue(mbboRecord *pmbbo)
 {
 	long		status;
         struct mbbodset 	*pdset = (struct mbbodset *) (pmbbo->dset);

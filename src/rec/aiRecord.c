@@ -1,18 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* base/src/rec $Id$ */
-  
+/* $Id$ */
+
 /* aiRecord.c - Record Support Routines for Analog Input records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
  *
  */
@@ -46,21 +44,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long special();
+static long init_record(void *, int);
+static long process(void *);
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
-static long get_precision();
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
  
 rset aiRSET={
 	RSETNUMBER,
@@ -281,47 +279,60 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
     return(0);
 }
 
-static void checkAlarms(aiRecord *pai)
+static void checkAlarms(aiRecord *prec)
 {
-	double		val;
-	double		hyst, lalm, hihi, high, low, lolo;
-	unsigned short	hhsv, llsv, hsv, lsv;
+    double val, hyst, lalm;
+    double alev;
+    epicsEnum16 asev;
 
-	if (pai->udf) {
- 		recGblSetSevr(pai,UDF_ALARM,INVALID_ALARM);
-		return;
-	}
-	hihi = pai->hihi; lolo = pai->lolo; high = pai->high; low = pai->low;
-	hhsv = pai->hhsv; llsv = pai->llsv; hsv = pai->hsv; lsv = pai->lsv;
-	val = pai->val; hyst = pai->hyst; lalm = pai->lalm;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
+    }
 
-	/* alarm condition hihi */
-	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(pai,HIHI_ALARM,pai->hhsv)) pai->lalm = hihi;
-		return;
-	}
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
 
-	/* alarm condition lolo */
-	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(pai,LOLO_ALARM,pai->llsv)) pai->lalm = lolo;
-		return;
-	}
+    /* alarm condition hihi */
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition high */
-	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(pai,HIGH_ALARM,pai->hsv)) pai->lalm = high;
-		return;
-	}
+    /* alarm condition lolo */
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition low */
-	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(pai,LOW_ALARM,pai->lsv)) pai->lalm = low;
-		return;
-	}
+    /* alarm condition high */
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* we get here only if val is out of alarm by at least hyst */
-	pai->lalm = val;
-	return;
+    /* alarm condition low */
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* we get here only if val is out of alarm by at least hyst */
+    prec->lalm = val;
+    return;
 }
 
 static void convert(aiRecord *pai)

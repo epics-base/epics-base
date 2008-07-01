@@ -50,14 +50,14 @@
  *     type y and z are the same, it merely copies.
  *
  *     where st - string
- *           c  - char
- *           uc - unsigned char
- *           s  - short
- *           us - unsigned short
- *           l  - long
- *           ul - unsigned long
- *           f  - float
- *           d  - double
+ *           c  - epicsInt8
+ *           uc - epicsUInt8
+ *           s  - epicsInt16
+ *           us - epicsUInt16
+ *           l  - epicsInt32
+ *           ul - epicsUInt32
+ *           f  - epicsFloat32
+ *           d  - epicsFloat64
  *           e  - enum
  *
  *  These functions are _single_ value functions,
@@ -74,97 +74,102 @@ static long cvt_st_st(
      char *from,
      char *to,
      struct dbAddr *paddr)
- {
-   char size;
+{
+   size_t size;
 
-   if(paddr && paddr->field_size<MAX_STRING_SIZE) {
-	size =  paddr->field_size - 1;
+   if (paddr && paddr->field_size < MAX_STRING_SIZE) {
+      size =  paddr->field_size - 1;
    } else {
-	size = MAX_STRING_SIZE - 1;
+      size = MAX_STRING_SIZE - 1;
    }
    strncpy(to, from, size);
-   *(to+size) = '\000';
-   return(0);
- }
+   to[size] = 0;
+   return 0;
+}
 
 /* Convert String to Char */
 static long cvt_st_c(
      char *from,
-     char *to,
+     epicsInt8 *to,
      struct dbAddr *paddr)
- {
-   short value;
+{
+   char *end;
+   long value;
 
-   if (sscanf(from, "%hd", &value) == 1) {
-      *to = (char) value;
-      return(0);
+   if (*from == 0) {
+      *to = 0;
+      return 0;
    }
-   if(strlen(from) == 0) {
-      *to = '0';
-      return(0);
+   value = strtol(from, &end, 10);
+   if (end > from) {
+      *to = (epicsInt8) value;
+      return 0;
    }
-   return(-1);       /* Change to SYMBOL */
- }
+   return -1;
+}
 
 /* Convert String to Unsigned Char */
 static long cvt_st_uc(
      char *from,
-     unsigned char *to,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
- {
-   unsigned short value;
+{
+   char *end;
+   unsigned long value;
 
-   if (sscanf(from, "%hu", &value) == 1) {
-      *to = value;
-      return(0);
+   if (*from == 0) {
+      *to = 0;
+      return 0;
    }
-   if(strlen(from) == 0) {
-      *to = '0';
-      return(0);
+   value = strtoul(from, &end, 10);
+   if (end > from) {
+      *to = (epicsUInt8) value;
+      return 0;
    }
-
-   return(-1);      /* Change to SYMBOL */
- }
+   return -1;
+}
 
 /* Convert String to Short */
 static long cvt_st_s(
      char *from,
-     short *to,
+     epicsInt16 *to,
      struct dbAddr *paddr)
- {
-   short value;
+{
+   char *end;
+   long value;
 
-   if (sscanf(from, "%hd", &value) == 1) {
-      *to = value;
-      return(0);
-   }
-   if(strlen(from) == 0) {
+   if (*from == 0) {
       *to = 0;
-      return(0);
+      return 0;
    }
-  
-   return(-1);      /* Change to SYMBOL */
- }
+   value = strtol(from, &end, 10);
+   if (end > from) {
+      *to = (epicsInt16) value;
+      return 0;
+   }
+   return -1;
+}
 
 /* Convert String to Unsigned Short */
 static long cvt_st_us(
      char *from,
-     unsigned short *to,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
- {
-   unsigned short value;
+{
+   char *end;
+   unsigned long value;
 
-   if (sscanf(from, "%hu", &value) == 1) {
-     *to = value;
-     return(0);
-   }
-   if(strlen(from) == 0) {
+   if (*from == 0) {
       *to = 0;
-      return(0);
+      return 0;
    }
-
-   return(-1);      /* Change to SYMBOL */
- }
+   value = strtoul(from, &end, 10);
+   if (end > from) {
+      *to = (epicsUInt16) value;
+      return 0;
+   }
+   return -1;
+}
 
 /* Convert String to Long */
 static long cvt_st_l(
@@ -172,18 +177,19 @@ static long cvt_st_l(
      epicsInt32 *to,
      struct dbAddr *paddr)
  {
-   epicsInt32 value;
+   char *end;
+   long value;
 
-   if (sscanf(from, "%d", &value) == 1) {
-      *to = value;
-      return(0);
-   }
-   if(strlen(from) == 0) {
+   if (*from == 0) {
       *to = 0;
-      return(0);
+      return 0;
    }
-
-   return(-1);      /* Change to SYMBOL */
+   value = strtol(from, &end, 10);
+   if (end > from) {
+      *to = (epicsInt32) value;
+      return 0;
+   }
+   return -1;
  }
 
 /* Convert String to Unsigned Long */
@@ -194,58 +200,55 @@ static long cvt_st_ul(
  {
    double value;
 
-   /*Convert to double first so that numbers like 1.0e3 convert properly*/
+   if (*from == 0) {
+      *to = 0;
+      return 0;
+   }
+   /*Convert via double so that numbers like 1.0e3 convert properly*/
    /*Problem was old database access said to get unsigned long as double*/
    if (epicsScanDouble(from, &value) == 1) {
       *to = (epicsUInt32)value;
-      return(0);
+      return 0;
    }
-   if(strlen(from) == 0) {
-      *to = 0;
-      return(0);
-   }
-
-   return(-1);      /* Change to SYMBOL */
+   return -1;
  }
 
 /* Convert String to Float */
 static long cvt_st_f(
      char *from,
-     float *to,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  {
    float value;
 
+   if (*from == 0) {
+      *to = 0.0;
+      return 0;
+   }
    if (epicsScanFloat(from, &value) == 1) {
       *to = value;
-      return(0);
+      return 0;
    }
-   if(strlen(from) == 0) {
-      *to = 0.0;
-      return(0);
-   }
-
-   return(-1);      /* Change to SYMBOL */
+   return -1;
  }
 
 /* Convert String to Double */
 static long cvt_st_d(
      char *from,
-     double *to,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  {
    double value;
 
+   if (*from == 0) {
+      *to = 0.0;
+      return 0;
+   }
    if (epicsScanDouble(from, &value) == 1) {
       *to = value;
-      return(0);
+      return 0;
    }
-   if(strlen(from) == 0) {
-      *to = 0.0;
-      return(0);
-   }
-
-   return(-1);      /* Change to SYMBOL */
+   return -1;
  }
 
 /* Convert String to Enumerated */
@@ -356,281 +359,281 @@ static long cvt_st_device(
 
 /* Convert Char to String */
 static long cvt_c_st(
-     char *from,
+     epicsInt8 *from,
      char *to,
      struct dbAddr *paddr)
 { cvtCharToString(*from, to); return(0); }
 
 /* Convert Char to Char */
 static long cvt_c_c(
-     char *from,
-     char *to,
+     epicsInt8 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Unsigned Char */
 static long cvt_c_uc(
-     char *from,
-     unsigned char *to,
+     epicsInt8 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Short */
 static long cvt_c_s(
-     char *from,
-     short *to,
+     epicsInt8 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Unsigned Short */
 static long cvt_c_us(
-     char *from,
-     unsigned short *to,
+     epicsInt8 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Long */
 static long cvt_c_l(
-     char *from,
+     epicsInt8 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Unsigned Long */
 static long cvt_c_ul(
-     char *from,
+     epicsInt8 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Float */
 static long cvt_c_f(
-     char *from,
-     float *to,
+     epicsInt8 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Double */
 static long cvt_c_d(
-     char *from,
-     double *to,
+     epicsInt8 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Char to Enumerated */
 static long cvt_c_e(
-     char *from,
+     epicsInt8 *from,
      epicsEnum16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to String */
 static long cvt_uc_st(
-     unsigned char *from,
+     epicsUInt8 *from,
      char *to,
      struct dbAddr *paddr)
 { cvtUcharToString(*from, to); return(0); }
 
 /* Convert Unsigned Char to Char */
 static long cvt_uc_c(
-     unsigned char *from,
-     char *to,
+     epicsUInt8 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Unsigned Char */
 static long cvt_uc_uc(
-     unsigned char *from,
-     unsigned char *to,
+     epicsUInt8 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Short */
 static long cvt_uc_s(
-     unsigned char *from,
-     short *to,
+     epicsUInt8 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Unsigned Short */
 static long cvt_uc_us(
-     unsigned char *from,
-     unsigned short *to,
+     epicsUInt8 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Long */
 static long cvt_uc_l(
-     unsigned char *from,
+     epicsUInt8 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Unsigned Long */
 static long cvt_uc_ul(
-     unsigned char *from,
+     epicsUInt8 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Float */
 static long cvt_uc_f(
-     unsigned char *from,
-     float *to,
+     epicsUInt8 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Double */
 static long cvt_uc_d(
-     unsigned char *from,
-     double *to,
+     epicsUInt8 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Char to Enumerated */
 static long cvt_uc_e(
-     unsigned char *from,
+     epicsUInt8 *from,
      epicsEnum16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to String */
 static long cvt_s_st(
-     short *from,
+     epicsInt16 *from,
      char *to,
      struct dbAddr *paddr)
 { cvtShortToString(*from, to); return(0); }
 
 /* Convert Short to Char */
 static long cvt_s_c(
-     short *from,
-     char *to,
+     epicsInt16 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Unsigned Char */
 static long cvt_s_uc(
-     short *from,
-     unsigned char *to,
+     epicsInt16 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Short */
 static long cvt_s_s(
-     short *from,
-     short *to,
+     epicsInt16 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Unsigned Short */
 static long cvt_s_us(
-     short *from,
-     unsigned short *to,
+     epicsInt16 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Long */
 static long cvt_s_l(
-     short *from,
+     epicsInt16 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Unsigned Long */
 static long cvt_s_ul(
-     short *from,
+     epicsInt16 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Float */
 static long cvt_s_f(
-     short *from,
-     float *to,
+     epicsInt16 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Double */
 static long cvt_s_d(
-     short *from,
-     double *to,
+     epicsInt16 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Short to Enumerated */
 static long cvt_s_e(
-     short *from,
+     epicsInt16 *from,
      epicsEnum16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to String */
 static long cvt_us_st(
-     unsigned short *from,
+     epicsUInt16 *from,
      char *to,
      struct dbAddr *paddr)
 { cvtUshortToString(*from, to); return(0); }
 
 /* Convert Unsigned Short to Char */
 static long cvt_us_c(
-     unsigned short *from,
-     char *to,
+     epicsUInt16 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Unsigned Char */
 static long cvt_us_uc(
-     unsigned short *from,
-     unsigned char *to,
+     epicsUInt16 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Short */
 static long cvt_us_s(
-     unsigned short *from,
-     short *to,
+     epicsUInt16 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Unsigned Short */
 static long cvt_us_us(
-     unsigned short *from,
-     unsigned short *to,
+     epicsUInt16 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Long */
 static long cvt_us_l(
-     unsigned short *from,
+     epicsUInt16 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Unsigned Long */
 static long cvt_us_ul(
-     unsigned short *from,
+     epicsUInt16 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Float */
 static long cvt_us_f(
-     unsigned short *from,
-     float *to,
+     epicsUInt16 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Double */
 static long cvt_us_d(
-     unsigned short *from,
-     double *to,
+     epicsUInt16 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Short to Enumerated */
 static long cvt_us_e(
-     unsigned short *from,
-     unsigned short *to,
+     epicsUInt16 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -644,28 +647,28 @@ static long cvt_l_st(
 /* Convert Long to Char */
 static long cvt_l_c(
      epicsInt32 *from,
-     char *to,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Long to Unsigned Char */
 static long cvt_l_uc(
      epicsInt32 *from,
-     unsigned char *to,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Long to Short */
 static long cvt_l_s(
      epicsInt32 *from,
-     short *to,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Long to Unsigned Short */
 static long cvt_l_us(
      epicsInt32 *from,
-     unsigned short *to,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -686,14 +689,14 @@ static long cvt_l_ul(
 /* Convert Long to Float */
 static long cvt_l_f(
      epicsInt32 *from,
-     float *to,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Long to Double */
 static long cvt_l_d(
      epicsInt32 *from,
-     double *to,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -714,28 +717,28 @@ static long cvt_ul_st(
 /* Convert Unsigned Long to Char */
 static long cvt_ul_c(
      epicsUInt32 *from,
-     char *to,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Long to Unsigned Char */
 static long cvt_ul_uc(
      epicsUInt32 *from,
-     unsigned char *to,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Long to Short */
 static long cvt_ul_s(
      epicsUInt32 *from,
-     short *to,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Long to Unsigned Short */
 static long cvt_ul_us(
      epicsUInt32 *from,
-     unsigned short *to,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -756,14 +759,14 @@ static long cvt_ul_ul(
 /* Convert Unsigned Long to Float */
 static long cvt_ul_f(
      epicsUInt32 *from,
-     float *to,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Unsigned Long to Double */
 static long cvt_ul_d(
      epicsUInt32 *from,
-     double *to,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -776,7 +779,7 @@ static long cvt_ul_e(
 
 /* Convert Float to String */
 static long cvt_f_st(
-     float *from,
+     epicsFloat32 *from,
      char *to,
      struct dbAddr *paddr)
  {
@@ -794,70 +797,70 @@ static long cvt_f_st(
 
 /* Convert Float to Char */
 static long cvt_f_c(
-     float *from,
-     char *to,
+     epicsFloat32 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Unsigned Char */
 static long cvt_f_uc(
-     float *from,
-     unsigned char *to,
+     epicsFloat32 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Short */
 static long cvt_f_s(
-     float *from,
-     short *to,
+     epicsFloat32 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Unsigned Short */
 static long cvt_f_us(
-     float *from,
-     unsigned short *to,
+     epicsFloat32 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Long */
 static long cvt_f_l(
-     float *from,
+     epicsFloat32 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Unsigned Long */
 static long cvt_f_ul(
-     float *from,
+     epicsFloat32 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Float */
 static long cvt_f_f(
-     float *from,
-     float *to,
+     epicsFloat32 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Double */
 static long cvt_f_d(
-     float *from,
-     double *to,
+     epicsFloat32 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Float to Enumerated */
 static long cvt_f_e(
-     float *from,
+     epicsFloat32 *from,
      epicsEnum16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to String */
 static long cvt_d_st(
-     double *from,
+     epicsFloat64 *from,
      char *to,
      struct dbAddr *paddr)
  {
@@ -875,63 +878,63 @@ static long cvt_d_st(
 
 /* Convert Double to Char */
 static long cvt_d_c(
-     double *from,
-     char *to,
+     epicsFloat64 *from,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Unsigned Char */
 static long cvt_d_uc(
-     double *from,
-     unsigned char *to,
+     epicsFloat64 *from,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Short */
 static long cvt_d_s(
-     double *from,
-     short *to,
+     epicsFloat64 *from,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Unsigned Short */
 static long cvt_d_us(
-     double *from,
-     unsigned short *to,
+     epicsFloat64 *from,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Long */
 static long cvt_d_l(
-     double *from,
+     epicsFloat64 *from,
      epicsInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Unsigned Long */
 static long cvt_d_ul(
-     double *from,
+     epicsFloat64 *from,
      epicsUInt32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Float */
 static long cvt_d_f(
-     double *from,
-     float *to,
+     epicsFloat64 *from,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
 { *to = epicsConvertDoubleToFloat(*from); return 0;}
 
 /* Convert Double to Double */
 static long cvt_d_d(
-     double *from,
-     double *to,
+     epicsFloat64 *from,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Double to Enumerated */
 static long cvt_d_e(
-     double *from,
+     epicsFloat64 *from,
      epicsEnum16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
@@ -939,28 +942,28 @@ static long cvt_d_e(
 /* Convert Enumerated to Char */
 static long cvt_e_c(
      epicsEnum16 *from,
-     char *to,
+     epicsInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Enumerated to Unsigned Char */
 static long cvt_e_uc(
      epicsEnum16 *from,
-     unsigned char *to,
+     epicsUInt8 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Enumerated to Short */
 static long cvt_e_s(
      epicsEnum16 *from,
-     short *to,
+     epicsInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Enumerated to Unsigned Short */
 static long cvt_e_us(
      epicsEnum16 *from,
-     unsigned short *to,
+     epicsUInt16 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
@@ -981,14 +984,14 @@ static long cvt_e_ul(
 /* Convert Enumerated to Float */
 static long cvt_e_f(
      epicsEnum16 *from,
-     float *to,
+     epicsFloat32 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 
 /* Convert Enumerated to Double */
 static long cvt_e_d(
      epicsEnum16 *from,
-     double *to,
+     epicsFloat64 *to,
      struct dbAddr *paddr)
  { *to=*from; return(0); }
 

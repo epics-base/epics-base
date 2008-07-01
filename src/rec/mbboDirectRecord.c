@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recMbboDirect.c */
-/* share/src/rec @(#)recMbboDirect.c	1.2	1/4/94 */
+
+/* $Id$ */
 
 /* recMbboDirect.c - Record Support for mbboDirect records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Matthew Needes
  *      Date:            10-06-93
  */
 
@@ -44,9 +42,9 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long special();
+static long init_record(mbboDirectRecord *, int);
+static long process(mbboDirectRecord *);
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -92,15 +90,13 @@ struct mbbodset { /* multi bit binary output dset */
 };
 
 
-static void convert();
-static void monitor();
-static long writeValue();
+static void convert(mbboDirectRecord *);
+static void monitor(mbboDirectRecord *);
+static long writeValue(mbboDirectRecord *);
 
 #define NUM_BITS  16
 
-static long init_record(pmbboDirect,pass)
-    struct mbboDirectRecord	*pmbboDirect;
-    int pass;
+static long init_record(mbboDirectRecord *pmbboDirect, int pass)
 {
     struct mbbodset *pdset;
     long status = 0;
@@ -133,7 +129,7 @@ static long init_record(pmbboDirect,pass)
         pmbboDirect->mask |= 1;  /* set low order bit*/
     }
     if(pdset->init_record) {
-	unsigned long rval;
+	epicsUInt32 rval;
 
 	status=(*pdset->init_record)(pmbboDirect);
         /* init_record might set status */
@@ -147,8 +143,7 @@ static long init_record(pmbboDirect,pass)
     return(status);
 }
 
-static long process(pmbboDirect)
-    struct mbboDirectRecord     *pmbboDirect;
+static long process(mbboDirectRecord *pmbboDirect)
 {
     struct mbbodset	*pdset = (struct mbbodset *)(pmbboDirect->dset);
     long		status=0;
@@ -232,11 +227,9 @@ CONTINUE:
     return(status);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
+static long special(DBADDR *paddr, int after)
 {
-    struct mbboDirectRecord     *pmbboDirect = (struct mbboDirectRecord *)(paddr->precord);
+    mbboDirectRecord     *pmbboDirect = (mbboDirectRecord *)(paddr->precord);
     int special_type = paddr->special, offset = 1, i;
     unsigned char *bit;
 
@@ -288,8 +281,7 @@ static long special(paddr,after)
     }
 }
 
-static void monitor(pmbboDirect)
-    struct mbboDirectRecord	*pmbboDirect;
+static void monitor(mbboDirectRecord *pmbboDirect)
 {
 	unsigned short	monitor_mask;
 
@@ -319,19 +311,17 @@ static void monitor(pmbboDirect)
         return;
 }
 
-static void convert(pmbboDirect)
-	struct mbboDirectRecord  *pmbboDirect;
+static void convert(mbboDirectRecord *pmbboDirect)
 {
        /* convert val to rval */
-	pmbboDirect->rval = (unsigned long)(pmbboDirect->val);
+	pmbboDirect->rval = (epicsUInt32)(pmbboDirect->val);
 	if(pmbboDirect->shft>0)
              pmbboDirect->rval <<= pmbboDirect->shft;
 
 	return;
 }
 
-static long writeValue(pmbboDirect)
-	struct mbboDirectRecord	*pmbboDirect;
+static long writeValue(mbboDirectRecord *pmbboDirect)
 {
 	long		status;
         struct mbbodset *pdset = (struct mbbodset *) (pmbboDirect->dset);

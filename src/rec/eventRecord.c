@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recEvent.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recEvent.c - Record Support Routines for Event records */
 /*
@@ -41,10 +40,10 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(eventRecord *, int);
+static long process(eventRecord *);
 #define special NULL
-static long get_value();
+static long get_value(eventRecord *, struct valueDes *);
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -87,13 +86,11 @@ struct eventdset { /* event input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_event;/*(0)=> success */
 };
-static void monitor();
-static long readValue();
+static void monitor(eventRecord *);
+static long readValue(eventRecord *);
 
 
-static long init_record(pevent,pass)
-    struct eventRecord	*pevent;
-    int pass;
+static long init_record(eventRecord *pevent, int pass)
 {
     struct eventdset *pdset;
     long status=0;
@@ -113,8 +110,7 @@ static long init_record(pevent,pass)
     return(status);
 }
 
-static long process(pevent)
-        struct eventRecord     *pevent;
+static long process(eventRecord *pevent)
 {
 	struct eventdset	*pdset = (struct eventdset *)(pevent->dset);
 	long		 status=0;
@@ -141,9 +137,7 @@ static long process(pevent)
 }
 
 
-static long get_value(pevent,pvdes)
-    struct eventRecord             *pevent;
-    struct valueDes     *pvdes;
+static long get_value(eventRecord *pevent, struct valueDes *pvdes)
 {
     pvdes->field_type = DBF_USHORT;
     pvdes->no_elements=1;
@@ -152,8 +146,7 @@ static long get_value(pevent,pvdes)
 }
 
 
-static void monitor(pevent)
-    struct eventRecord             *pevent;
+static void monitor(eventRecord *pevent)
 {
     unsigned short  monitor_mask;
 
@@ -163,8 +156,7 @@ static void monitor(pevent)
     return;
 }
 
-static long readValue(pevent)
-        struct eventRecord *pevent;
+static long readValue(eventRecord *pevent)
 {
         long            status;
         struct eventdset   *pdset = (struct eventdset *) (pevent->dset);

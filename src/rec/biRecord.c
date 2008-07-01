@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recBi.c */
-/* base/src/rec  $Id$ */
- 
+
+/* $Id$ */
+
 /* recBi.c - Record Support Routines for Binary Input records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
  *
  */
@@ -43,8 +41,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(biRecord *, int);
+static long process(biRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -52,9 +50,9 @@ static long process();
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str();
-static long get_enum_strs();
-static long put_enum_str();
+static long get_enum_str(DBADDR *, char *);
+static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(DBADDR *, char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -87,13 +85,11 @@ struct bidset { /* binary input dset */
                         /* if convert then raw value stored in rval */
 };
 epicsExportAddress(rset,biRSET);
-static void checkAlarms();
-static void monitor();
-static long readValue();
+static void checkAlarms(biRecord *);
+static void monitor(biRecord *);
+static long readValue(biRecord *);
 
-static long init_record(pbi,pass)
-    struct biRecord	*pbi;
-    int pass;
+static long init_record(biRecord *pbi, int pass)
 {
     struct bidset *pdset;
     long status;
@@ -117,8 +113,7 @@ static long init_record(pbi,pass)
     return(0);
 }
 
-static long process(pbi)
-	struct biRecord     *pbi;
+static long process(biRecord *pbi)
 {
 	struct bidset	*pdset = (struct bidset *)(pbi->dset);
 	long		 status;
@@ -153,11 +148,9 @@ static long process(pbi)
 	return(status);
 }
 
-static long get_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char	  *pstring;
+static long get_enum_str(DBADDR *paddr, char *pstring)
 {
-    struct biRecord	*pbi=(struct biRecord *)paddr->precord;
+    biRecord	*pbi=(biRecord *)paddr->precord;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
 
@@ -177,11 +170,9 @@ static long get_enum_str(paddr,pstring)
     return(0);
 }
 
-static long get_enum_strs(paddr,pes)
-    struct dbAddr *paddr;
-    struct dbr_enumStrs *pes;
+static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
 {
-    struct biRecord	*pbi=(struct biRecord *)paddr->precord;
+    biRecord	*pbi=(biRecord *)paddr->precord;
 
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
@@ -192,11 +183,9 @@ static long get_enum_strs(paddr,pes)
     return(0);
 }
 
-static long put_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char          *pstring;
+static long put_enum_str(DBADDR *paddr, char *pstring)
 {
-    struct biRecord     *pbi=(struct biRecord *)paddr->precord;
+    biRecord     *pbi=(biRecord *)paddr->precord;
 
     if(strncmp(pstring,pbi->znam,sizeof(pbi->znam))==0) pbi->val = 0;
     else  if(strncmp(pstring,pbi->onam,sizeof(pbi->onam))==0) pbi->val = 1;
@@ -206,8 +195,7 @@ static long put_enum_str(paddr,pstring)
 }
 
 
-static void checkAlarms(pbi)
-    struct biRecord	*pbi;
+static void checkAlarms(biRecord *pbi)
 {
 	unsigned short val = pbi->val;
 
@@ -232,8 +220,7 @@ static void checkAlarms(pbi)
 	return;
 }
 
-static void monitor(pbi)
-    struct biRecord	*pbi;
+static void monitor(biRecord *pbi)
 {
 	unsigned short	monitor_mask;
 
@@ -258,8 +245,7 @@ static void monitor(pbi)
 	return;
 }
 
-static long readValue(pbi)
-	struct biRecord	*pbi;
+static long readValue(biRecord *pbi)
 {
 	long		status;
         struct bidset 	*pdset = (struct bidset *) (pbi->dset);

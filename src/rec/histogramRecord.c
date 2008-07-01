@@ -1,15 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recHistogram.c */
-/* base/src/rec  $Id$ */
- 
+
+/* $Id$ */
+
 /* recHistogram.c - Record Support Routines for Histogram records */
 /*
  *      Author:      Janet Anderson
@@ -45,21 +44,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long special();
+static long init_record(histogramRecord *, int);
+static long process(histogramRecord *);
+static long special(DBADDR *, int);
 #define get_value NULL
-static long cvt_dbaddr();
-static long get_array_info();
+static long cvt_dbaddr(DBADDR *);
+static long get_array_info(DBADDR *, long *, long *);
 #define  put_array_info NULL
 #define get_units NULL
-static long get_precision(struct dbAddr *paddr,long *precision);
+static long get_precision(DBADDR *paddr,long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
 #define get_alarm_double NULL
-static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd);
-static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd);
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd);
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd);
 
 rset histogramRSET={
      RSETNUMBER,
@@ -100,15 +99,15 @@ typedef struct myCallback {
      histogramRecord *phistogram;
 }myCallback;
 
-static long add_count();
-static long clear_histogram();
-static void monitor();
-static long readValue();
+static long add_count(histogramRecord *);
+static long clear_histogram(histogramRecord *);
+static void monitor(histogramRecord *);
+static long readValue(histogramRecord *);
 
 static void wdogCallback(CALLBACK *arg)
 {
      myCallback *pcallback;
-     struct histogramRecord *phistogram;
+     histogramRecord *phistogram;
 
      callbackGetUser(pcallback,arg);
      phistogram = pcallback->phistogram;
@@ -128,8 +127,7 @@ static void wdogCallback(CALLBACK *arg)
 
      return;
 }
-static long wdogInit(phistogram)
-    struct histogramRecord	*phistogram;
+static long wdogInit(histogramRecord *phistogram)
 {
      myCallback *pcallback;
 
@@ -154,9 +152,7 @@ static long wdogInit(phistogram)
      return 0;
 }
 
-static long init_record(phistogram,pass)
-    struct histogramRecord	*phistogram;
-    int pass;
+static long init_record(histogramRecord *phistogram, int pass)
 {
      struct histogramdset *pdset;
      long status;
@@ -166,7 +162,7 @@ static long init_record(phistogram,pass)
           /* allocate space for histogram array */
           if(phistogram->bptr==NULL) {
                if(phistogram->nelm<=0) phistogram->nelm=1;
-               phistogram->bptr = (unsigned long *)calloc(phistogram->nelm,sizeof(long));
+               phistogram->bptr = (epicsUInt32 *)calloc(phistogram->nelm,sizeof(epicsUInt32));
           }
 
           /* calulate width of array element */
@@ -202,8 +198,7 @@ static long init_record(phistogram,pass)
      return(0);
 }
 
-static long process(phistogram)
-     struct histogramRecord     *phistogram;
+static long process(histogramRecord *phistogram)
 {
      struct histogramdset     *pdset = (struct histogramdset *)(phistogram->dset);
      long           status;
@@ -235,11 +230,9 @@ static long process(phistogram)
      return(status);
 }
 
-static long special(paddr,after)
-     struct dbAddr *paddr;
-     int           after;
+static long special(DBADDR *paddr,int after)
 {
-     struct histogramRecord   *phistogram = (struct histogramRecord *)(paddr->precord);
+     histogramRecord   *phistogram = (histogramRecord *)(paddr->precord);
      int                special_type = paddr->special;
      int                fieldIndex = dbGetFieldIndex(paddr);
 
@@ -276,8 +269,7 @@ static long special(paddr,after)
      }
 }
 
-static void monitor(phistogram)
-     struct histogramRecord             *phistogram;
+static void monitor(histogramRecord *phistogram)
 {
      unsigned short  monitor_mask;
  
@@ -295,36 +287,31 @@ static void monitor(phistogram)
      return;
 }
 
-static long cvt_dbaddr(paddr)
-    struct dbAddr *paddr;
+static long cvt_dbaddr(DBADDR *paddr)
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
 
     paddr->pfield = (void *)(phistogram->bptr);
     paddr->no_elements = phistogram->nelm;
     paddr->field_type = DBF_ULONG;
-    paddr->field_size = sizeof(unsigned long);
+    paddr->field_size = sizeof(epicsUInt32);
     paddr->dbr_field_type = DBF_ULONG;
     return(0);
 }
 
-static long get_array_info(paddr,no_elements,offset)
-    struct dbAddr *paddr;
-    long       *no_elements;
-    long       *offset;
+static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
 
     *no_elements =  phistogram->nelm;
     *offset = 0;
     return(0);
 }
 
-static long add_count(phistogram)
-     struct histogramRecord *phistogram;
+static long add_count(histogramRecord *phistogram)
 {
      double            temp;
-     unsigned long     *pdest;
+     epicsUInt32       *pdest;
      int               i;
 
      if(phistogram->csta==FALSE) return(0);
@@ -343,15 +330,14 @@ static long add_count(phistogram)
           if (temp<=(double)i*phistogram->wdth) break;
      }
      pdest=phistogram->bptr+i-1;
-     if ( *pdest==ULONG_MAX) *pdest=0.0;
+     if (*pdest == (epicsUInt32) ULONG_MAX) *pdest=0.0;
      (*pdest)++;
      phistogram->mcnt++;
 
      return(0);
 }
 
-static long clear_histogram(phistogram)
-    struct histogramRecord *phistogram;
+static long clear_histogram(histogramRecord *phistogram)
 {
      int    i;
 
@@ -363,8 +349,7 @@ static long clear_histogram(phistogram)
      return(0);
 }
 
-static long readValue(phistogram)
-        struct histogramRecord *phistogram;
+static long readValue(histogramRecord *phistogram)
 {
         long            status;
         struct histogramdset   *pdset = (struct histogramdset *) (phistogram->dset);
@@ -399,9 +384,10 @@ static long readValue(phistogram)
 
         return(status);
 }
-static long get_precision(struct dbAddr *paddr,long *precision)
+
+static long get_precision(DBADDR *paddr,long *precision)
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     *precision = phistogram->prec;
@@ -416,9 +402,9 @@ static long get_precision(struct dbAddr *paddr,long *precision)
     recGblGetPrec(paddr,precision);
     return(0);
 }
-static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd)
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == histogramRecordBPTR){
@@ -427,9 +413,9 @@ static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble *pgd)
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
-static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    struct histogramRecord *phistogram=(struct histogramRecord *)paddr->precord;
+    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == histogramRecordBPTR){

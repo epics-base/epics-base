@@ -1,18 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* base/src/rec  $Id$ */
-  
+/* $Id$ */
+
 /* aoRecord.c - Record Support Routines for Analog Output records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
  *
  */
@@ -47,21 +45,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(struct aoRecord *pao, int pass);
-static long process();
-static long special();
+static long init_record(aoRecord *pao, int pass);
+static long process(aoRecord *);
+static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
-static long get_precision();
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset aoRSET={
 	RSETNUMBER,
@@ -96,13 +94,13 @@ epicsExportAddress(rset,aoRSET);
 
 
 
-static void checkAlarms();
-static long fetch_value();
-static void convert();
-static void monitor();
-static long writeValue();
+static void checkAlarms(aoRecord *);
+static long fetch_value(aoRecord *, double *);
+static void convert(aoRecord *, double);
+static void monitor(aoRecord *);
+static long writeValue(aoRecord *);
 
-static long init_record(struct aoRecord *pao, int pass)
+static long init_record(aoRecord *pao, int pass)
 {
     struct aodset *pdset;
     double 	eoff = pao->eoff, eslo = pao->eslo;
@@ -170,8 +168,7 @@ static long init_record(struct aoRecord *pao, int pass)
     return(0);
 }
 
-static long process(pao)
-	struct aoRecord     *pao;
+static long process(aoRecord *pao)
 {
 	struct aodset	*pdset = (struct aodset *)(pao->dset);
 	long		 status=0;
@@ -241,11 +238,9 @@ static long process(pao)
 	return(status);
 }
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
+static long special(DBADDR *paddr, int after)
 {
-    struct aoRecord     *pao = (struct aoRecord *)(paddr->precord);
+    aoRecord     *pao = (aoRecord *)(paddr->precord);
     struct aodset       *pdset = (struct aodset *) (pao->dset);
     int                 special_type = paddr->special;
 
@@ -275,21 +270,17 @@ static long special(paddr,after)
     }
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR * paddr,char *units)
 {
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+    aoRecord	*pao=(aoRecord *)paddr->precord;
 
     strncpy(units,pao->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
+static long get_precision(DBADDR *paddr,long *precision)
 {
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+    aoRecord	*pao=(aoRecord *)paddr->precord;
 
     *precision = pao->prec;
     if(paddr->pfield == (void *)&pao->val
@@ -299,11 +290,9 @@ static long get_precision(paddr,precision)
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+    aoRecord	*pao=(aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&pao->val
     || paddr->pfield==(void *)&pao->hihi
@@ -318,11 +307,9 @@ static long get_graphic_double(paddr,pgd)
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+    aoRecord	*pao=(aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&pao->val
     || paddr->pfield==(void *)&pao->hihi
@@ -336,11 +323,9 @@ static long get_control_double(paddr,pcd)
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
-static long get_alarm_double(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble	*pad;
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    struct aoRecord	*pao=(struct aoRecord *)paddr->precord;
+    aoRecord	*pao=(aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&pao->val){
          pad->upper_alarm_limit = pao->hihi;
@@ -351,53 +336,63 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void checkAlarms(pao)
-    struct aoRecord	*pao;
+static void checkAlarms(aoRecord *prec)
 {
-	double		val;
-	double		hyst, lalm, hihi, high, low, lolo;
-	unsigned short	hhsv, llsv, hsv, lsv;
+    double val, hyst, lalm;
+    double alev;
+    epicsEnum16 asev;
 
-	if (pao->udf) {
- 		recGblSetSevr(pao,UDF_ALARM,INVALID_ALARM);
-		return;
-	}
-	hihi = pao->hihi; lolo = pao->lolo; high = pao->high; low = pao->low;
-	hhsv = pao->hhsv; llsv = pao->llsv; hsv = pao->hsv; lsv = pao->lsv;
-	val = pao->val; hyst = pao->hyst; lalm = pao->lalm;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
+    }
 
-	/* alarm condition hihi */
-	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(pao,HIHI_ALARM,pao->hhsv)) pao->lalm = hihi;
-		return;
-	}
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
 
-	/* alarm condition lolo */
-	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(pao,LOLO_ALARM,pao->llsv)) pao->lalm = lolo;
-		return;
-	}
+    /* alarm condition hihi */
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition high */
-	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(pao,HIGH_ALARM,pao->hsv)) pao->lalm = high;
-		return;
-	}
+    /* alarm condition lolo */
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition low */
-	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(pao,LOW_ALARM,pao->lsv)) pao->lalm = low;
-		return;
-	}
+    /* alarm condition high */
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* we get here only if val is out of alarm by at least hyst */
-	pao->lalm = val;
-	return;
+    /* alarm condition low */
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* we get here only if val is out of alarm by at least hyst */
+    prec->lalm = val;
+    return;
 }
 
-static long fetch_value(pao,pvalue)
-    struct aoRecord  *pao;
-    double *pvalue;
+static long fetch_value(aoRecord *pao,double *pvalue)
 {
 	short		save_pact;
 	long		status;
@@ -422,9 +417,7 @@ static long fetch_value(pao,pvalue)
 	return(0);
 }
 
-static void convert(pao,value)
-    struct aoRecord  *pao;
-    double value;
+static void convert(aoRecord *pao, double value)
 {
         /* check drive limits */
 	if(pao->drvh > pao->drvl) {
@@ -469,8 +462,7 @@ static void convert(pao,value)
 }
 
 
-static void monitor(pao)
-    struct aoRecord	*pao;
+static void monitor(aoRecord *pao)
 {
 	unsigned short	monitor_mask;
 	double		delta;
@@ -518,8 +510,7 @@ static void monitor(pao)
 	return;
 }
 
-static long writeValue(pao)
-	struct aoRecord	*pao;
+static long writeValue(aoRecord *pao)
 {
 	long		status;
         struct aodset 	*pdset = (struct aodset *) (pao->dset);

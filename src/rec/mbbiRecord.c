@@ -1,17 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* mbbiRecord.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            5-9-88
  */
 
@@ -40,18 +38,18 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
-static long  special();
+static long init_record(mbbiRecord *, int);
+static long process(mbbiRecord *);
+static long  special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str();
-static long get_enum_strs();
-static long put_enum_str();
+static long get_enum_str(DBADDR *, char *);
+static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(DBADDR *, char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -85,14 +83,13 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_mbbi;/*(0,2)=>(success, success no convert)*/
 };
-static void checkAlarms();
-static void monitor();
-static long readValue();
+static void checkAlarms(mbbiRecord *);
+static void monitor(mbbiRecord *);
+static long readValue(mbbiRecord *);
 
-static void init_common(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static void init_common(mbbiRecord *pmbbi)
 {
-        unsigned long 	*pstate_values;
+        epicsUInt32 	*pstate_values;
 	char		*pstate_string;
         short  		i;
 
@@ -108,9 +105,7 @@ static void init_common(pmbbi)
 	return;
 }
 
-static long init_record(pmbbi,pass)
-    struct mbbiRecord	*pmbbi;
-    int pass;
+static long init_record(mbbiRecord *pmbbi, int pass)
 {
     struct mbbidset *pdset;
     long status;
@@ -142,8 +137,7 @@ static long init_record(pmbbi,pass)
     return(0);
 }
 
-static long process(pmbbi)
-        struct mbbiRecord     *pmbbi;
+static long process(mbbiRecord *pmbbi)
 {
 	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
 	long		status;
@@ -162,9 +156,9 @@ static long process(pmbbi)
 
 	recGblGetTimeStamp(pmbbi);
 	if(status==0) { /* convert the value */
-        	unsigned long 	*pstate_values;
+        	epicsUInt32 	*pstate_values;
         	short  		i;
-		unsigned long rval = pmbbi->rval;
+		epicsUInt32 rval = pmbbi->rval;
 
 		pmbbi->udf = FALSE;
 		if(pmbbi->shft>0) rval >>= pmbbi->shft;
@@ -199,11 +193,9 @@ static long process(pmbbi)
 }
 
 
-static long special(paddr,after)
-    struct dbAddr *paddr;
-    int           after;
+static long special(DBADDR *paddr,int after)
 {
-    struct mbbiRecord     *pmbbi = (struct mbbiRecord *)(paddr->precord);
+    mbbiRecord     *pmbbi = (mbbiRecord *)(paddr->precord);
     int                 special_type = paddr->special;
 
     if(!after) return(0);
@@ -217,11 +209,9 @@ static long special(paddr,after)
     }
 }
 
-static long get_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char	  *pstring;
+static long get_enum_str(DBADDR *paddr,char* pstring)
 {
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
+    mbbiRecord	*pmbbi=(mbbiRecord *)paddr->precord;
     char		*psource;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
@@ -240,11 +230,9 @@ static long get_enum_str(paddr,pstring)
     return(0);
 }
 
-static long get_enum_strs(paddr,pes)
-    struct dbAddr *paddr;
-    struct dbr_enumStrs *pes;
+static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 {
-    struct mbbiRecord	*pmbbi=(struct mbbiRecord *)paddr->precord;
+    mbbiRecord	*pmbbi=(mbbiRecord *)paddr->precord;
     char		*psource;
     int			i;
     short		no_str;
@@ -259,11 +247,9 @@ static long get_enum_strs(paddr,pes)
     return(0);
 }
 
-static long put_enum_str(paddr,pstring)
-    struct dbAddr *paddr;
-    char          *pstring;
+static long put_enum_str(DBADDR *paddr, char *pstring)
 {
-    struct mbbiRecord     *pmbbi=(struct mbbiRecord *)paddr->precord;
+    mbbiRecord     *pmbbi=(mbbiRecord *)paddr->precord;
         char              *pstate_name;
         short             i;
 
@@ -281,8 +267,7 @@ static long put_enum_str(paddr,pstring)
 	return(S_db_badChoice);
 }
 
-static void checkAlarms(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static void checkAlarms(mbbiRecord *pmbbi)
 {
 	unsigned short *severities;
 	unsigned short	val=pmbbi->val;
@@ -309,8 +294,7 @@ static void checkAlarms(pmbbi)
 	return;
 }
 
-static void monitor(pmbbi)
-    struct mbbiRecord	*pmbbi;
+static void monitor(mbbiRecord *pmbbi)
 {
 	unsigned short	monitor_mask;
 
@@ -333,8 +317,7 @@ static void monitor(pmbbi)
         return;
 }
 
-static long readValue(pmbbi)
-	struct mbbiRecord	*pmbbi;
+static long readValue(mbbiRecord *pmbbi)
 {
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbi->dset);

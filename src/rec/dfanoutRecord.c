@@ -1,17 +1,15 @@
 /*************************************************************************\
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recDfanout.c */
-/* share/src/rec @(#)recDfanout.c	1.16     6/4/93 */
+
+/* $Id$ */
 
 /* recDfanout.c - Record Support Routines for Dfanout records */
 /*
  * Original Author: 	Matt Bickley   (Sometime in 1994)
- * Current Author:	Johnny Tang
  *
  * Modification Log:
  * -----------------
@@ -48,21 +46,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(dfanoutRecord *, int);
+static long process(dfanoutRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
-static long get_precision();
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *,struct dbr_grDouble *);
+static long get_control_double(DBADDR *,struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *,struct dbr_alDouble *);
 
 rset dfanoutRSET={
 	RSETNUMBER,
@@ -87,14 +85,14 @@ rset dfanoutRSET={
 epicsExportAddress(rset,dfanoutRSET);
 
 
-static void checkAlarms();
-static void monitor();
-static void push_values();
+static void checkAlarms(dfanoutRecord *);
+static void monitor(dfanoutRecord *);
+static void push_values(dfanoutRecord *);
 
 #define OUT_ARG_MAX 8
 
 
-static long init_record(struct dfanoutRecord *pdfanout, int pass)
+static long init_record(dfanoutRecord *pdfanout, int pass)
 {
     if (pass==0) return(0);
 
@@ -105,7 +103,7 @@ static long init_record(struct dfanoutRecord *pdfanout, int pass)
     return(0);
 }
 
-static long process(struct dfanoutRecord *pdfanout)
+static long process(dfanoutRecord *pdfanout)
 {
     long status=0;
 
@@ -128,17 +126,17 @@ static long process(struct dfanoutRecord *pdfanout)
     return(status);
 }
 
-static long get_units(struct dbAddr *paddr,char *units)
+static long get_units(DBADDR *paddr,char *units)
 {
-    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
 
     strncpy(units,pdfanout->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_precision(struct dbAddr *paddr,long *precision)
+static long get_precision(DBADDR *paddr,long *precision)
 {
-    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -155,9 +153,9 @@ static long get_precision(struct dbAddr *paddr,long *precision)
     return(0);
 }
 
-static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble	*pgd)
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble	*pgd)
 {
-    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -173,9 +171,9 @@ static long get_graphic_double(struct dbAddr *paddr,struct dbr_grDouble	*pgd)
     return(0);
 }
 
-static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -188,9 +186,9 @@ static long get_control_double(struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
-static long get_alarm_double(struct dbAddr *paddr,struct dbr_alDouble *pad)
+static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    struct dfanoutRecord *pdfanout=(struct dfanoutRecord *)paddr->precord;
+    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     
@@ -203,51 +201,63 @@ static long get_alarm_double(struct dbAddr *paddr,struct dbr_alDouble *pad)
     return(0);
 }
 
-static void checkAlarms(struct dfanoutRecord *pdfanout)
+static void checkAlarms(dfanoutRecord *prec)
 {
-	double		val;
-	double		hyst, lalm, hihi, high, low, lolo;
-	unsigned short	hhsv, llsv, hsv, lsv;
+    double val, hyst, lalm;
+    double alev;
+    epicsEnum16 asev;
 
-	if (pdfanout->udf) {
- 		recGblSetSevr(pdfanout,UDF_ALARM,INVALID_ALARM);
-		return;
-	}
-	hihi = pdfanout->hihi; lolo = pdfanout->lolo;
-	high = pdfanout->high; low = pdfanout->low;
-	hhsv = pdfanout->hhsv; llsv = pdfanout->llsv;
-	hsv = pdfanout->hsv; lsv = pdfanout->lsv;
-	val = pdfanout->val; hyst = pdfanout->hyst; lalm = pdfanout->lalm;
-	/* alarm condition hihi */
-	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	    if(recGblSetSevr(pdfanout,HIHI_ALARM,pdfanout->hhsv))
-		pdfanout->lalm = hihi;
-	    return;
-	}
-	/* alarm condition lolo */
-	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	    if(recGblSetSevr(pdfanout,LOLO_ALARM,pdfanout->llsv))
-		pdfanout->lalm = lolo;
-	    return;
-	}
-	/* alarm condition high */
-	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	    if(recGblSetSevr(pdfanout,HIGH_ALARM,pdfanout->hsv))
-		pdfanout->lalm = high;
-	    return;
-	}
-	/* alarm condition low */
-	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	    if(recGblSetSevr(pdfanout,LOW_ALARM,pdfanout->lsv))
-		pdfanout->lalm = low;
-	    return;
-	}
-	/* we get here only if val is out of alarm by at least hyst */
-	pdfanout->lalm = val;
-	return;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
+    }
+
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
+
+    /* alarm condition hihi */
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* alarm condition lolo */
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* alarm condition high */
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* alarm condition low */
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* we get here only if val is out of alarm by at least hyst */
+    prec->lalm = val;
+    return;
 }
 
-static void monitor(struct dfanoutRecord *pdfanout)
+static void monitor(dfanoutRecord *pdfanout)
 {
 	unsigned short	monitor_mask;
 
@@ -280,7 +290,7 @@ static void monitor(struct dfanoutRecord *pdfanout)
 	return;
 }
 
-static void push_values(struct dfanoutRecord *pdfanout)
+static void push_values(dfanoutRecord *pdfanout)
 {
     struct link     *plink; /* structure of the link field  */
     int             i;

@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recStringin.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recStringin.c - Record Support Routines for Stringin records */
 /*
@@ -41,8 +40,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(stringinRecord *, int);
+static long process(stringinRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -87,13 +86,11 @@ struct stringindset { /* stringin input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_stringin; /*returns: (-1,0)=>(failure,success)*/
 };
-static void monitor();
-static long readValue();
+static void monitor(stringinRecord *);
+static long readValue(stringinRecord *);
 
 
-static long init_record(pstringin,pass)
-    struct stringinRecord	*pstringin;
-    int pass;
+static long init_record(stringinRecord *pstringin, int pass)
 {
     struct stringindset *pdset;
     long status;
@@ -124,8 +121,9 @@ static long init_record(pstringin,pass)
     return(0);
 }
 
-static long process(pstringin)
-	struct stringinRecord	*pstringin;
+/*
+ */
+static long process(stringinRecord *pstringin)
 {
 	struct stringindset	*pdset = (struct stringindset *)(pstringin->dset);
 	long		 status;
@@ -153,8 +151,7 @@ static long process(pstringin)
 	return(status);
 }
 
-static void monitor(pstringin)
-    struct stringinRecord             *pstringin;
+static void monitor(stringinRecord *pstringin)
 {
     unsigned short  monitor_mask;
 
@@ -172,8 +169,7 @@ static void monitor(pstringin)
     return;
 }
 
-static long readValue(pstringin)
-	struct stringinRecord	*pstringin;
+static long readValue(stringinRecord *pstringin)
 {
 	long		status;
         struct stringindset 	*pdset = (struct stringindset *) (pstringin->dset);

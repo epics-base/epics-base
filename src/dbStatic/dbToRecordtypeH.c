@@ -153,56 +153,56 @@ int main(int argc,char **argv)
 	    name[strlen(pdbFldDes->name)] = 0;
 	    switch(pdbFldDes->field_type) {
 		case DBF_STRING :
-		    fprintf(outFile,"\tchar\t\t%s[%d]; /*%s*/\n",
-			name,pdbFldDes->size,pdbFldDes->prompt);
+		    fprintf(outFile, "\tchar\t\t%s[%d];\t/* %s */\n",
+			name, pdbFldDes->size, pdbFldDes->prompt);
 		    break;
 		case DBF_CHAR :
-		    fprintf(outFile,"\tchar\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsInt8\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_UCHAR :
-		    fprintf(outFile,"\tunsigned char\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsUInt8\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_SHORT :
-		    fprintf(outFile,"\tshort\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsInt16\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_USHORT :
-		    fprintf(outFile,"\tunsigned short\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsUInt16\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_LONG :
-		    fprintf(outFile,"\tepicsInt32\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsInt32\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_ULONG :
-		    fprintf(outFile,"\tunsigned long\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsUInt32\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_FLOAT :
-		    fprintf(outFile,"\tfloat\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsFloat32\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_DOUBLE :
-		    fprintf(outFile,"\tdouble\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsFloat64\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_ENUM :
 		case DBF_MENU :
 		case DBF_DEVICE :
-		    fprintf(outFile,"\tepicsEnum16\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tepicsEnum16\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_INLINK :
 		case DBF_OUTLINK :
 		case DBF_FWDLINK :
-		    fprintf(outFile,"\tDBLINK\t\t%s;\t/*%s*/\n",
-			name,pdbFldDes->prompt);
+		    fprintf(outFile, "\tDBLINK\t\t%s;\t/* %s */\n",
+			name, pdbFldDes->prompt);
 		    break;
 		case DBF_NOACCESS:
-		    fprintf(outFile,"\t%s;\t/*%s*/\n",
-			pdbFldDes->extra,pdbFldDes->prompt);
+		    fprintf(outFile, "\t%s;\t/* %s */\n",
+			pdbFldDes->extra, pdbFldDes->prompt);
 		    break;
 		default:
 		    fprintf(outFile,"ILLEGAL FIELD TYPE\n");

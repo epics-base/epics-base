@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recStringout.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recStringout.c - Record Support Routines for Stringout records */
 /*
@@ -43,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(stringoutRecord *, int);
+static long process(stringoutRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -89,13 +88,11 @@ struct stringoutdset { /* stringout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_stringout;/*(-1,0)=>(failure,success)*/
 };
-static void monitor();
-static long writeValue();
+static void monitor(stringoutRecord *);
+static long writeValue(stringoutRecord *);
 
 
-static long init_record(pstringout,pass)
-    struct stringoutRecord	*pstringout;
-    int pass;
+static long init_record(stringoutRecord *pstringout, int pass)
 {
     struct stringoutdset *pdset;
     long status=0;
@@ -126,8 +123,7 @@ static long init_record(pstringout,pass)
     return(0);
 }
 
-static long process(pstringout)
-	struct stringoutRecord	*pstringout;
+static long process(stringoutRecord *pstringout)
 {
 	struct stringoutdset	*pdset = (struct stringoutdset *)(pstringout->dset);
 	long		 status=0;
@@ -184,8 +180,7 @@ finish:
 	return(status);
 }
 
-static void monitor(pstringout)
-    struct stringoutRecord             *pstringout;
+static void monitor(stringoutRecord *pstringout)
 {
     unsigned short  monitor_mask;
 
@@ -203,8 +198,7 @@ static void monitor(pstringout)
     return;
 }
 
-static long writeValue(pstringout)
-	struct stringoutRecord	*pstringout;
+static long writeValue(stringoutRecord *pstringout)
 {
 	long		status;
         struct stringoutdset 	*pdset = (struct stringoutdset *) (pstringout->dset);

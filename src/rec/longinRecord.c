@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recLongin.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recLongin.c - Record Support Routines for Longin records */
 /*
@@ -40,21 +39,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(longinRecord *, int);
+static long process(longinRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
+static long get_units(DBADDR *, char *);
 #define get_precision NULL
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble	*);
 
 rset longinRSET={
 	RSETNUMBER,
@@ -87,14 +86,12 @@ struct longindset { /* longin input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_longin; /*returns: (-1,0)=>(failure,success)*/
 };
-static void checkAlarms();
-static void monitor();
-static long readValue();
+static void checkAlarms(longinRecord *plongin);
+static void monitor(longinRecord *plongin);
+static long readValue(longinRecord *plongin);
 
 
-static long init_record(plongin,pass)
-    struct longinRecord	*plongin;
-    int pass;
+static long init_record(longinRecord *plongin, int pass)
 {
     struct longindset *pdset;
     long status;
@@ -126,8 +123,7 @@ static long init_record(plongin,pass)
     return(0);
 }
 
-static long process(plongin)
-	struct longinRecord     *plongin;
+static long process(longinRecord *plongin)
 {
 	struct longindset	*pdset = (struct longindset *)(plongin->dset);
 	long		 status;
@@ -158,22 +154,18 @@ static long process(plongin)
 	return(status);
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR *paddr,char *units)
 {
-    struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
+    longinRecord *plongin=(longinRecord *)paddr->precord;
 
     strncpy(units,plongin->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
+    longinRecord *plongin=(longinRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&plongin->val
     || paddr->pfield==(void *)&plongin->hihi
@@ -186,11 +178,9 @@ static long get_graphic_double(paddr,pgd)
     return(0);
 }
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
+    longinRecord *plongin=(longinRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&plongin->val
     || paddr->pfield==(void *)&plongin->hihi
@@ -203,11 +193,9 @@ static long get_control_double(paddr,pcd)
     return(0);
 }
 
-static long get_alarm_double(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble	*pad;
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble	*pad)
 {
-    struct longinRecord	*plongin=(struct longinRecord *)paddr->precord;
+    longinRecord *plongin=(longinRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&plongin->val){
          pad->upper_alarm_limit = plongin->hihi;
@@ -218,55 +206,66 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void checkAlarms(plongin)
-    struct longinRecord	*plongin;
+static void checkAlarms(longinRecord *prec)
 {
-	long		val;
-	long		hyst, lalm, hihi, high, low, lolo;
-	unsigned short	hhsv, llsv, hsv, lsv;
+    epicsInt32 val, hyst, lalm;
+    epicsInt32 alev;
+    epicsEnum16 asev;
 
-	if(plongin->udf == TRUE ){
- 		recGblSetSevr(plongin,UDF_ALARM,INVALID_ALARM);
-		return;
-	}
-	hihi = plongin->hihi; lolo = plongin->lolo; high = plongin->high; low = plongin->low;
-	hhsv = plongin->hhsv; llsv = plongin->llsv; hsv = plongin->hsv; lsv = plongin->lsv;
-	val = plongin->val; hyst = plongin->hyst; lalm = plongin->lalm;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
+    }
 
-	/* alarm condition hihi */
-	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(plongin,HIHI_ALARM,plongin->hhsv)) plongin->lalm = hihi;
-		return;
-	}
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
 
-	/* alarm condition lolo */
-	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(plongin,LOLO_ALARM,plongin->llsv)) plongin->lalm = lolo;
-		return;
-	}
+    /* alarm condition hihi */
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition high */
-	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(plongin,HIGH_ALARM,plongin->hsv)) plongin->lalm = high;
-		return;
-	}
+    /* alarm condition lolo */
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition low */
-	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(plongin,LOW_ALARM,plongin->lsv)) plongin->lalm = low;
-		return;
-	}
+    /* alarm condition high */
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* we get here only if val is out of alarm by at least hyst */
-	plongin->lalm = val;
-	return;
+    /* alarm condition low */
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* we get here only if val is out of alarm by at least hyst */
+    prec->lalm = val;
+    return;
 }
 
-static void monitor(plongin)
-    struct longinRecord	*plongin;
+static void monitor(longinRecord *plongin)
 {
 	unsigned short	monitor_mask;
-	long		delta;
+	epicsInt32	delta;
 
 	/* get previous stat and sevr  and new stat and sevr*/
         monitor_mask = recGblResetAlarms(plongin);
@@ -297,8 +296,7 @@ static void monitor(plongin)
 	return;
 }
 
-static long readValue(plongin)
-	struct longinRecord	*plongin;
+static long readValue(longinRecord *plongin)
 {
 	long status;
         struct longindset *pdset = (struct longindset *) (plongin->dset);

@@ -83,7 +83,7 @@ static long getStringChar(
 		*pbuffer = (char)value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = '0';
+		*pbuffer = 0;
 		return(0);
 	} else {
 		return(-1);
@@ -94,7 +94,7 @@ static long getStringChar(
 	if(sscanf(psrc,"%hd",&value) == 1) {
 	    *pbuffer = (char)value;
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = '0';
+		*pbuffer = 0;
 	} else {
 		return(-1);
 	}
@@ -120,7 +120,7 @@ static long getStringUchar(
 		*pbuffer = (unsigned char)value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = '0';
+		*pbuffer = 0;
 		return(0);
 	} else {
 		return(-1);
@@ -131,7 +131,7 @@ static long getStringUchar(
 	if(sscanf(psrc,"%hu",&value) == 1) {
 	    *pbuffer = (unsigned char)value;
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = '0';
+		*pbuffer = 0;
 	} else {
 		return(-1);
 	}
@@ -2331,7 +2331,7 @@ static long putStringLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    long  *pdest=(long *)paddr->pfield;
+    epicsInt32  *pdest=(epicsInt32 *)paddr->pfield;
     long  value;
 
     if(nRequest==1 && offset==0) {
@@ -2362,14 +2362,14 @@ static long putStringUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    unsigned long  *pdest=(unsigned long *)paddr->pfield;
+    epicsUInt32 *pdest=(epicsUInt32 *)paddr->pfield;
     double  	value;
 
     /*Convert to double first so that numbers like 1.0e3 convert properly*/
     /*Problem was old database access said to get unsigned long as double*/
     if(nRequest==1 && offset==0) {
 	if(epicsScanDouble(pbuffer, &value) == 1) {
-		*pdest = (unsigned long)value;
+		*pdest = (epicsUInt32)value;
 		return(0);
 	}
 	else return(-1);
@@ -2377,7 +2377,7 @@ static long putStringUlong(
     pdest += offset;
     while (nRequest) {
 	if(epicsScanDouble(pbuffer, &value) == 1) {
-	    *pdest = (unsigned long)value;
+	    *pdest = (epicsUInt32)value;
 	} else {
 	    return(-1);
 	}
@@ -2674,7 +2674,7 @@ static long putCharLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32 *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2683,7 +2683,7 @@ static long putCharLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2693,7 +2693,7 @@ static long putCharUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32 *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2702,7 +2702,7 @@ static long putCharUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2870,7 +2870,7 @@ static long putUcharLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2879,7 +2879,7 @@ static long putUcharLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -2889,7 +2889,7 @@ static long putUcharUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -2898,7 +2898,7 @@ static long putUcharUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3066,7 +3066,7 @@ static long putShortLong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const short *pbuffer = (const short *)pfrom;
-    long  *pdest=(long *)(paddr->pfield);
+    epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3075,7 +3075,7 @@ static long putShortLong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);
@@ -3085,7 +3085,7 @@ static long putShortUlong(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const short *pbuffer = (const short *)pfrom;
-    unsigned long  *pdest=(unsigned long *)(paddr->pfield);
+    epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
 	*pdest = *pbuffer;
@@ -3094,7 +3094,7 @@ static long putShortUlong(
     pdest += offset;
     while (nRequest) {
 	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned long *)paddr->pfield;
+	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
     return(0);

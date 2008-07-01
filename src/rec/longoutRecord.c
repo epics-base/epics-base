@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recLongout.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 /*
  * Author: 	Janet Anderson
  * Date:	9/23/91
@@ -39,21 +38,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(longoutRecord *, int);
+static long process(longoutRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
+static long get_units(DBADDR *, char *);
 #define get_precision NULL
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset longoutRSET={
 	RSETNUMBER,
@@ -86,15 +85,13 @@ struct longoutdset { /* longout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
 };
-static void checkAlarms();
-static void monitor();
-static long writeValue();
-static void convert();
+static void checkAlarms(longoutRecord *plongout);
+static void monitor(longoutRecord *plongout);
+static long writeValue(longoutRecord *plongout);
+static void convert(longoutRecord *plongout, epicsInt32 value);
 
 
-static long init_record(plongout,pass)
-    struct longoutRecord	*plongout;
-    int pass;
+static long init_record(longoutRecord *plongout, int pass)
 {
     struct longoutdset *pdset;
     long status=0;
@@ -122,12 +119,11 @@ static long init_record(plongout,pass)
     return(0);
 }
 
-static long process(plongout)
-        struct longoutRecord     *plongout;
+static long process(longoutRecord *plongout)
 {
 	struct longoutdset	*pdset = (struct longoutdset *)(plongout->dset);
 	long		 status=0;
-	long		value;
+	epicsInt32	 value;
 	unsigned char    pact=plongout->pact;
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
@@ -180,8 +176,6 @@ static long process(plongout)
 
 	recGblGetTimeStamp(plongout);
 
-	/* check for alarms */
-	checkAlarms(plongout);
 	/* check event list */
 	monitor(plongout);
 
@@ -192,21 +186,17 @@ static long process(plongout)
 	return(status);
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR *paddr,char *units)
 {
-    struct longoutRecord	*plongout=(struct longoutRecord *)paddr->precord;
+    longoutRecord *plongout=(longoutRecord *)paddr->precord;
 
     strncpy(units,plongout->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble	*pgd;
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    struct longoutRecord	*plongout=(longoutRecord *)paddr->precord;
+    longoutRecord *plongout=(longoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == longoutRecordVAL
@@ -221,11 +211,9 @@ static long get_graphic_double(paddr,pgd)
 }
 
 
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    struct longoutRecord	*plongout=(longoutRecord *)paddr->precord;
+    longoutRecord *plongout=(longoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == longoutRecordVAL
@@ -244,9 +232,7 @@ static long get_control_double(paddr,pcd)
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
-static long get_alarm_double(paddr,pad)
-    struct dbAddr *paddr;
-    struct dbr_alDouble	*pad;
+static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
     longoutRecord    *plongout=(longoutRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
@@ -260,55 +246,66 @@ static long get_alarm_double(paddr,pad)
     return(0);
 }
 
-static void checkAlarms(plongout)
-    struct longoutRecord	*plongout;
+static void checkAlarms(longoutRecord *prec)
 {
-	long		val;
-	long		hyst, lalm, hihi, high, low, lolo;
-	unsigned short	hhsv, llsv, hsv, lsv;
+    epicsInt32 val, hyst, lalm;
+    epicsInt32 alev;
+    epicsEnum16 asev;
 
-	if(plongout->udf == TRUE ){
- 		recGblSetSevr(plongout,UDF_ALARM,INVALID_ALARM);
-		return;
-	}
-	hihi = plongout->hihi; lolo = plongout->lolo; high = plongout->high; low = plongout->low;
-	hhsv = plongout->hhsv; llsv = plongout->llsv; hsv = plongout->hsv; lsv = plongout->lsv;
-	val = plongout->val; hyst = plongout->hyst; lalm = plongout->lalm;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
+    }
 
-	/* alarm condition hihi */
-	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(plongout,HIHI_ALARM,plongout->hhsv)) plongout->lalm = hihi;
-		return;
-	}
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
 
-	/* alarm condition lolo */
-	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(plongout,LOLO_ALARM,plongout->llsv)) plongout->lalm = lolo;
-		return;
-	}
+    /* alarm condition hihi */
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition high */
-	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(plongout,HIGH_ALARM,plongout->hsv)) plongout->lalm = high;
-		return;
-	}
+    /* alarm condition lolo */
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* alarm condition low */
-	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(plongout,LOW_ALARM,plongout->lsv)) plongout->lalm = low;
-		return;
-	}
+    /* alarm condition high */
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
 
-	/* we get here only if val is out of alarm by at least hyst */
-	plongout->lalm = val;
-	return;
+    /* alarm condition low */
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
+    }
+
+    /* we get here only if val is out of alarm by at least hyst */
+    prec->lalm = val;
+    return;
 }
 
-static void monitor(plongout)
-    struct longoutRecord	*plongout;
+static void monitor(longoutRecord *plongout)
 {
 	unsigned short	monitor_mask;
-	long		delta;
+	epicsInt32	delta;
 
         monitor_mask = recGblResetAlarms(plongout);
         /* check for value change */
@@ -337,11 +334,10 @@ static void monitor(plongout)
 	return;
 }
 
-static long writeValue(plongout)
-	struct longoutRecord	*plongout;
+static long writeValue(longoutRecord *plongout)
 {
-	long		status;
-        struct longoutdset 	*pdset = (struct longoutdset *) (plongout->dset);
+	long status;
+        struct longoutdset *pdset = (struct longoutdset *) (plongout->dset);
 
 	if (plongout->pact == TRUE){
 		status=(*pdset->write_longout)(plongout);
@@ -368,9 +364,7 @@ static long writeValue(plongout)
 	return(status);
 }
 
-static void convert(plongout,value)
-    struct longoutRecord  *plongout;
-    long value;
+static void convert(longoutRecord *plongout, epicsInt32 value)
 {
         /* check drive limits */
 	if(plongout->drvh > plongout->drvl) {

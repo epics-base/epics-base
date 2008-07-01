@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recWaveform.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recWaveform.c - Record Support Routines for Waveform records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            7-14-89
  */
 
@@ -41,20 +39,20 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(waveformRecord *, int);
+static long process(waveformRecord *);
 #define special NULL
 #define get_value NULL
-static long cvt_dbaddr();
-static long get_array_info();
-static long put_array_info();
-static long get_units();
-static long get_precision();
+static long cvt_dbaddr(DBADDR *);
+static long get_array_info(DBADDR *, long *, long *);
+static long put_array_info(DBADDR *, long);
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
 rset waveformRSET={
         RSETNUMBER,
@@ -87,8 +85,8 @@ struct wfdset { /* waveform dset */
 };
 /*sizes of field types*/
 static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
-static void monitor();
-static long readValue();
+static void monitor(waveformRecord *);
+static long readValue(waveformRecord *);
 
 static long init_record(waveformRecord *pwf, int pass)
 {

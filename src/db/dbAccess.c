@@ -338,16 +338,9 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	    pbuffer += dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
-	    struct dbr_precision *pdbr_precision=
-		(struct dbr_precision *)pbuffer;
-
-	    memset(pbuffer,'\0',dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){ 
 		(*prset->get_precision)(paddr,pbuffer);
-		if(pdbr_precision->field_width<=0)
-			pdbr_precision->field_width =
-				pdbr_precision->precision + 5;
 	    } else {
 		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
@@ -735,16 +728,16 @@ long epicsShareAPI dbValueSize(
 {
      /* sizes for value associated with each DBR request type */
      static long size[] = {
-        MAX_STRING_SIZE,                /* STRING       */
-        sizeof(char),                   /* CHAR         */
-        sizeof(unsigned char),          /* UCHAR        */
-        sizeof(short),                  /* SHORT        */
-        sizeof(unsigned short),         /* USHORT       */
-        sizeof(long),                   /* LONG         */
-        sizeof(unsigned long),          /* ULONG        */
-        sizeof(float),                  /* FLOAT        */
-        sizeof(double),                 /* DOUBLE       */
-        sizeof(unsigned short)};        /* ENUM         */
+        MAX_STRING_SIZE,             /* STRING       */
+        sizeof(epicsInt8),           /* CHAR         */
+        sizeof(epicsUInt8),          /* UCHAR        */
+        sizeof(epicsInt16),          /* SHORT        */
+        sizeof(epicsUInt16),         /* USHORT       */
+        sizeof(epicsInt32),          /* LONG         */
+        sizeof(epicsUInt32),         /* ULONG        */
+        sizeof(epicsFloat32),        /* FLOAT        */
+        sizeof(epicsFloat64),        /* DOUBLE       */
+        sizeof(epicsEnum16)};        /* ENUM         */
 
      return(size[dbr_type]);
 }

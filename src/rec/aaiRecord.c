@@ -1,8 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* recAai.c */
@@ -10,7 +9,6 @@
 /* recAai.c - Record Support Routines for Array Analog In records */
 /*
  *      Original Author: Dave Barker
- *      Current Author:  Dave Barker
  *      Date:            10/24/93
  *
  *      C  E  B  A  F
@@ -47,20 +45,20 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(aaiRecord *, int);
+static long process(aaiRecord *);
 #define special NULL
-static long get_value();
-static long cvt_dbaddr();
-static long get_array_info();
-static long put_array_info();
-static long get_units();
-static long get_precision();
+static long get_value(aaiRecord *, struct valueDes *);
+static long cvt_dbaddr(DBADDR *);
+static long get_array_info(DBADDR *, long *, long *);
+static long put_array_info(DBADDR *, long);
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
 
 rset aaiRSET={
@@ -97,14 +95,12 @@ struct aaidset { /* aai dset */
 /*sizes of field types*/
 static int sizeofTypes[] = {0,1,1,2,2,4,4,4,8,2};
 
-static void monitor();
-static long readValue();
+static void monitor(aaiRecord *);
+static long readValue(aaiRecord *);
 
 
 
-static long init_record(paai,pass)
-    struct aaiRecord	*paai;
-    int pass;
+static long init_record(aaiRecord *paai, int pass)
 {
     struct aaidset *pdset;
     long status;
@@ -131,8 +127,7 @@ static long init_record(paai,pass)
     return(0);
 }
 
-static long process(paai)
-	struct aaiRecord	*paai;
+static long process(aaiRecord *paai)
 {
         struct aaidset   *pdset = (struct aaidset *)(paai->dset);
 	long		 status;
@@ -162,9 +157,7 @@ static long process(paai)
         return(0);
 }
 
-static long get_value(paai,pvdes)
-    struct aaiRecord		*paai;
-    struct valueDes	*pvdes;
+static long get_value(aaiRecord *paai,struct valueDes *pvdes)
 {
 
     pvdes->no_elements=paai->nelm;
@@ -173,10 +166,9 @@ static long get_value(paai,pvdes)
     return(0);
 }
 
-static long cvt_dbaddr(paddr)
-    struct dbAddr *paddr;
+static long cvt_dbaddr(DBADDR *paddr)
 {
-    struct aaiRecord *paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord *paai=(aaiRecord *)paddr->precord;
 
     paddr->pfield = (void *)(paai->bptr);
     paddr->no_elements = paai->nelm;
@@ -187,43 +179,34 @@ static long cvt_dbaddr(paddr)
     return(0);
 }
 
-static long get_array_info(paddr,no_elements,offset)
-    struct dbAddr *paddr;
-    long	  *no_elements;
-    long	  *offset;
+static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    struct aaiRecord	*paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord	*paai=(aaiRecord *)paddr->precord;
 
     *no_elements =  paai->nelm;
     *offset = 0;
     return(0);
 }
 
-static long put_array_info(paddr,nNew)
-    struct dbAddr *paddr;
-    long	  nNew;
+static long put_array_info(DBADDR *paddr, long nNew)
 {
-    struct aaiRecord	*paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord	*paai=(aaiRecord *)paddr->precord;
 
     paai->nelm = nNew;
     return(0);
 }
 
-static long get_units(paddr,units)
-    struct dbAddr *paddr;
-    char	  *units;
+static long get_units(DBADDR *paddr,char *units)
 {
-    struct aaiRecord	*paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord	*paai=(aaiRecord *)paddr->precord;
 
     strncpy(units,paai->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_precision(paddr,precision)
-    struct dbAddr *paddr;
-    long	  *precision;
+static long get_precision(DBADDR *paddr, long *precision)
 {
-    struct aaiRecord	*paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord	*paai=(aaiRecord *)paddr->precord;
 
     *precision = paai->prec;
     if(paddr->pfield==(void *)paai->bptr) return(0);
@@ -231,11 +214,9 @@ static long get_precision(paddr,precision)
     return(0);
 }
 
-static long get_graphic_double(paddr,pgd)
-    struct dbAddr *paddr;
-    struct dbr_grDouble *pgd;
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    struct aaiRecord     *paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord     *paai=(aaiRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)paai->bptr){
         pgd->upper_disp_limit = paai->hopr;
@@ -243,11 +224,9 @@ static long get_graphic_double(paddr,pgd)
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
-static long get_control_double(paddr,pcd)
-    struct dbAddr *paddr;
-    struct dbr_ctrlDouble *pcd;
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    struct aaiRecord     *paai=(struct aaiRecord *)paddr->precord;
+    aaiRecord     *paai=(aaiRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)paai->bptr){
         pcd->upper_ctrl_limit = paai->hopr;
@@ -256,8 +235,7 @@ static long get_control_double(paddr,pcd)
     return(0);
 }
 
-static void monitor(paai)
-    struct aaiRecord	*paai;
+static void monitor(aaiRecord *paai)
 {
 	unsigned short	monitor_mask;
 
@@ -268,8 +246,7 @@ static void monitor(paai)
 
 }
 
-static long readValue(paai)
-        struct aaiRecord *paai;
+static long readValue(aaiRecord *paai)
 {
         long            status;
         struct aaidset  *pdset = (struct aaidset *) (paai->dset);

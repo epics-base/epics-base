@@ -1,21 +1,19 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Southeastern Universities Research Association, as
 *     Operator of Thomas Jefferson National Accelerator Facility.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recMbbiDirect.c */
-/* share/src/rec @(#)recMbbiDirect.c	1.2	1/4/94 */
+
+/* $Id$ */
 
 /* recMbbiDirect.c - Record Support routines for mbboDirect records */
 /*
  *      Original Author: Bob Dalesio and Matthew Needes 10-07-93
- *      Current Author:  Johnny Tang
  */
 
 #include <stddef.h>
@@ -44,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(mbbiDirectRecord *, int);
+static long process(mbbiDirectRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -91,18 +89,17 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	read_mbbi;/*(0,2)=>(success, success no convert)*/
 };
 
-static void refresh_bits();
-static void monitor();
-static long readValue();
+static void refresh_bits(mbbiDirectRecord *, unsigned short);
+static void monitor(mbbiDirectRecord *);
+static long readValue(mbbiDirectRecord *);
 
 #define NUM_BITS  16
 
 /* refreshes all the bit fields based on a hardware value
    and sends monitors if the bit's value or the record's
    severity/status have changed */
-static void refresh_bits(pmbbiDirect, monitor_mask)
-    struct mbbiDirectRecord	*pmbbiDirect;
-    unsigned short monitor_mask;
+static void refresh_bits(mbbiDirectRecord *pmbbiDirect, 
+			 unsigned short monitor_mask)
 {
    unsigned short i;
    unsigned short mask = 1;
@@ -128,9 +125,7 @@ static void refresh_bits(pmbbiDirect, monitor_mask)
    }
 }
 
-static long init_record(pmbbiDirect,pass)
-    struct mbbiDirectRecord	*pmbbiDirect;
-    int pass;
+static long init_record(mbbiDirectRecord *pmbbiDirect, int pass)
 {
     struct mbbidset *pdset;
     long status;
@@ -166,8 +161,7 @@ static long init_record(pmbbiDirect,pass)
     return(0);
 }
 
-static long process(pmbbiDirect)
-        struct mbbiDirectRecord     *pmbbiDirect;
+static long process(mbbiDirectRecord *pmbbiDirect)
 {
 	struct mbbidset	*pdset = (struct mbbidset *)(pmbbiDirect->dset);
 	long		status;
@@ -187,7 +181,7 @@ static long process(pmbbiDirect)
 	recGblGetTimeStamp(pmbbiDirect);
 
 	if(status==0) { /* convert the value */
-		unsigned long rval = pmbbiDirect->rval;
+		epicsUInt32 rval = pmbbiDirect->rval;
 
 		if(pmbbiDirect->shft>0) rval >>= pmbbiDirect->shft;
 		pmbbiDirect->val =  (unsigned short)rval;
@@ -206,8 +200,7 @@ static long process(pmbbiDirect)
 	return(status);
 }
 
-static void monitor(pmbbiDirect)
-    struct mbbiDirectRecord	*pmbbiDirect;
+static void monitor(mbbiDirectRecord *pmbbiDirect)
 {
 	unsigned short	monitor_mask;
 
@@ -235,8 +228,7 @@ static void monitor(pmbbiDirect)
         return;
 }
 
-static long readValue(pmbbiDirect)
-	struct mbbiDirectRecord	*pmbbiDirect;
+static long readValue(mbbiDirectRecord *pmbbiDirect)
 {
 	long		status;
         struct mbbidset 	*pdset = (struct mbbidset *) (pmbbiDirect->dset);

@@ -283,8 +283,8 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 static void checkAlarms(subRecord *prec)
 {
     double val, hyst, lalm;
-    double hihi, high, low, lolo;
-    epicsEnum16 hhsv, llsv, hsv, lsv;
+    double alev;
+    epicsEnum16 asev;
 
     if (prec->udf) {
         recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
@@ -296,38 +296,38 @@ static void checkAlarms(subRecord *prec)
     lalm = prec->lalm;
 
     /* alarm condition hihi */
-    hhsv = prec->hhsv;
-    hihi = prec->hihi;
-    if (hhsv && (val >= hihi || ((lalm == hihi) && (val >= hihi - hyst)))) {
-        if (recGblSetSevr(prec, HIHI_ALARM, prec->hhsv))
-            prec->lalm = hihi;
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
         return;
     }
 
     /* alarm condition lolo */
-    llsv = prec->llsv;
-    lolo = prec->lolo;
-    if (llsv && (val <= lolo || ((lalm == lolo) && (val <= lolo + hyst)))) {
-        if (recGblSetSevr(prec, LOLO_ALARM, prec->llsv))
-            prec->lalm = lolo;
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
         return;
     }
 
     /* alarm condition high */
-    hsv = prec->hsv;
-    high = prec->high;
-    if (hsv && (val >= high || ((lalm == high) && (val >= high - hyst)))) {
-        if (recGblSetSevr(prec, HIGH_ALARM, prec->hsv))
-            prec->lalm = high;
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
         return;
     }
 
     /* alarm condition low */
-    lsv = prec->lsv;
-    low = prec->low;
-    if (lsv && (val <= low || ((lalm == low) && (val <= low + hyst)))) {
-        if (recGblSetSevr(prec, LOW_ALARM, prec->lsv))
-            prec->lalm = low;
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
         return;
     }
 

@@ -1,17 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* fanoutRecord.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            12-20-88
  */
 
@@ -39,8 +37,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(fanoutRecord *, int);
+static long process(fanoutRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -77,9 +75,7 @@ rset fanoutRSET={
 };
 epicsExportAddress(rset,fanoutRSET);
 
-static long init_record(pfanout,pass)
-    struct fanoutRecord	*pfanout;
-    int pass;
+static long init_record(fanoutRecord *pfanout, int pass)
 {
 
     if (pass==0) return(0);
@@ -87,8 +83,7 @@ static long init_record(pfanout,pass)
     return(0);
 }
 	
-static long process(pfanout)
-    struct fanoutRecord     *pfanout;
+static long process(fanoutRecord *pfanout)
 {
     struct link    *plink;
     unsigned short state;

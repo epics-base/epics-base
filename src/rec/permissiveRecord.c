@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recPermissive.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recPermissive.c - Record Support Routines for Permissive records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            10-10-90
  */
 
@@ -40,7 +38,7 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-static long process();
+static long process(permissiveRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -77,10 +75,9 @@ rset permissiveRSET={
 };
 epicsExportAddress(rset,permissiveRSET);
 
-static void monitor();
+static void monitor(permissiveRecord *);
 
-static long process(ppermissive)
-    struct permissiveRecord     *ppermissive;
+static long process(permissiveRecord *ppermissive)
 {
 
     ppermissive->pact=TRUE;
@@ -92,8 +89,7 @@ static long process(ppermissive)
     return(0);
 }
 
-static void monitor(ppermissive)
-    struct permissiveRecord             *ppermissive;
+static void monitor(permissiveRecord *ppermissive)
 {
     unsigned short  monitor_mask;
     unsigned short  val,oval,wflg,oflg;

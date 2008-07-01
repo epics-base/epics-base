@@ -108,8 +108,10 @@ epicsShareExtern volatile int interruptAccept;
 #define DBRunits \
 	char		units[DB_UNITS_SIZE];	/* units	*/
 #define DBRprecision \
-        epicsInt32      precision;      /* number of decimal places*/\
-        epicsInt32      field_width;    /* field width             */
+        long            precision;      /* number of decimal places*/
+        /* The above type must match the pointer arguments to
+         * RSET->get_precision() and recGblGetPrec(), which it's
+         * too late to change now... */
 #define DBRtime \
 	epicsTimeStamp	time;		/* time stamp*/
 #define DBRenumStrs \
@@ -177,7 +179,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_badField 	(M_dbAccess|15) /*Illegal field value*/
 #define S_db_lsetLogic 	(M_dbAccess|17) /*Logic error generating lock sets*/
 #define S_db_noRSET 	(M_dbAccess|31) /*missing record support entry table*/
-#define S_db_noSupport 	(M_dbAccess|33) /*RSET routine not defined*/
+#define S_db_noSupport 	(M_dbAccess|33) /*RSET or DSXT routine not defined*/
 #define S_db_BadSub 	(M_dbAccess|35) /*Subroutine not found*/
 /*!!!! Do not change next line without changing src/rsrv/server.h!!!!!!!!*/
 #define S_db_Pending 	(M_dbAccess|37) /*Request is pending*/

@@ -76,7 +76,7 @@ recordtype(histogram) {
 		prompt("Buffer Pointer")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("unsigned long *bptr")
+		extra("epicsUInt32 *bptr")
 	}
 	field(WDOG,DBF_NOACCESS) {
 		prompt("Watchdog callback")

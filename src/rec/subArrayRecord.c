@@ -1,11 +1,12 @@
 /*************************************************************************\
 * Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
 *     Group, Systems Engineering Department
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recSubArray.c */
+
+/* $Id$ */
+
 /* recSubArray.c - Record Support Routines for SubArray records 
  *
  *

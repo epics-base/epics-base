@@ -1,11 +1,12 @@
 /*************************************************************************\
-* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /* $Id$ */
 
 /* selRecord.c - Record Support Routines for Select records */
@@ -38,21 +39,21 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record();
-static long process();
+static long init_record(selRecord *, int);
+static long process(selRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-static long get_units();
-static long get_precision();
+static long get_units(DBADDR *, char *);
+static long get_precision(DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-static long get_graphic_double();
-static long get_control_double();
-static long get_alarm_double();
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset selRSET={
 	RSETNUMBER,
@@ -78,23 +79,27 @@ epicsExportAddress(rset,selRSET);
 
 #define	SEL_MAX	12
 
-static void checkAlarms();
-static void do_sel();
-static int fetch_values();
-static void monitor();
+static void checkAlarms(selRecord *);
+static void do_sel(selRecord *);
+static int fetch_values(selRecord *);
+static void monitor(selRecord *);
 
 /* This needed to prevent the MS optimizer from barfing */
 static double divide(double num, double den) { return num / den; }
 
+static double NaN, Inf;
+
 
-static long init_record(struct selRecord *psel, int pass)
+static long init_record(selRecord *psel, int pass)
 {
     struct link *plink;
     int i;
     double *pvalue;
-    double NaN = divide(0.0, 0.0);
 
     if (pass==0) return(0);
+
+    NaN = divide(0.0, 0.0);
+    Inf = divide(1.0, 0.0);
 
     /* get seln initial value if nvl is a constant*/
     if (psel->nvl.type == CONSTANT ) {
@@ -112,7 +117,7 @@ static long init_record(struct selRecord *psel, int pass)
     return(0);
 }
 
-static long process(struct selRecord *psel)
+static long process(selRecord *psel)
 {
     psel->pact = TRUE;
     if ( RTN_SUCCESS(fetch_values(psel)) ) {
@@ -135,17 +140,17 @@ static long process(struct selRecord *psel)
 }
 
 
-static long get_units(struct dbAddr *paddr, char *units)
+static long get_units(DBADDR *paddr, char *units)
 {
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    selRecord	*psel=(selRecord *)paddr->precord;
 
     strncpy(units,psel->egu,DB_UNITS_SIZE);
     return(0);
 }
 
-static long get_precision(struct dbAddr *paddr, long *precision)
+static long get_precision(DBADDR *paddr, long *precision)
 {
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    selRecord	*psel=(selRecord *)paddr->precord;
     double *pvalue,*plvalue;
     int i;
 
@@ -166,9 +171,9 @@ static long get_precision(struct dbAddr *paddr, long *precision)
 }
 
 
-static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd)
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    selRecord	*psel=(selRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&psel->val
     || paddr->pfield==(void *)&psel->hihi
@@ -196,7 +201,7 @@ static long get_graphic_double(struct dbAddr *paddr, struct dbr_grDouble *pgd)
 
 static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
 {
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    selRecord	*psel=(selRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&psel->val
     || paddr->pfield==(void *)&psel->hihi
@@ -222,9 +227,9 @@ static long get_control_double(struct dbAddr *paddr, struct dbr_ctrlDouble *pcd)
     return(0);
 }
 
-static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad)
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    struct selRecord	*psel=(struct selRecord *)paddr->precord;
+    selRecord	*psel=(selRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&psel->val ){
 	pad->upper_alarm_limit = psel->hihi;
@@ -235,50 +240,63 @@ static long get_alarm_double(struct dbAddr *paddr, struct dbr_alDouble *pad)
     return(0);
 }
 
-static void checkAlarms(struct selRecord *psel)
+static void checkAlarms(selRecord *prec)
 {
-    double		val;
-    double		hyst, lalm, hihi, high, low, lolo;
-    unsigned short	hhsv, llsv, hsv, lsv;
+    double val, hyst, lalm;
+    double alev;
+    epicsEnum16 asev;
 
-    if (psel->udf){
-	recGblSetSevr(psel,UDF_ALARM,INVALID_ALARM);
-	return;
+    if (prec->udf) {
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        return;
     }
-    hihi = psel->hihi; lolo = psel->lolo; high = psel->high; low = psel->low;
-    hhsv = psel->hhsv; llsv = psel->llsv; hsv = psel->hsv; lsv = psel->lsv;
-    val = psel->val; hyst = psel->hyst; lalm = psel->lalm;
+
+    val = prec->val;
+    hyst = prec->hyst;
+    lalm = prec->lalm;
 
     /* alarm condition hihi */
-    if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	if (recGblSetSevr(psel,HIHI_ALARM,psel->hhsv)) psel->lalm = hihi;
-	return;
+    asev = prec->hhsv;
+    alev = prec->hihi;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIHI_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition lolo */
-    if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	if (recGblSetSevr(psel,LOLO_ALARM,psel->llsv)) psel->lalm = lolo;
-	return;
+    asev = prec->llsv;
+    alev = prec->lolo;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOLO_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition high */
-    if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	if (recGblSetSevr(psel,HIGH_ALARM,psel->hsv)) psel->lalm = high;
-	return;
+    asev = prec->hsv;
+    alev = prec->high;
+    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
+        if (recGblSetSevr(prec, HIGH_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* alarm condition low */
-    if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	if (recGblSetSevr(psel,LOW_ALARM,psel->lsv)) psel->lalm = low;
-	return;
+    asev = prec->lsv;
+    alev = prec->low;
+    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
+        if (recGblSetSevr(prec, LOW_ALARM, asev))
+            prec->lalm = alev;
+        return;
     }
 
     /* we get here only if val is out of alarm by at least hyst */
-    psel->lalm = val;
+    prec->lalm = val;
     return;
 }
 
-static void monitor(struct selRecord *psel)
+static void monitor(selRecord *psel)
 {
     unsigned short	monitor_mask;
     double		delta;
@@ -328,12 +346,11 @@ static void monitor(struct selRecord *psel)
     return;
 }
 
-static void do_sel(struct selRecord *psel)
+static void do_sel(selRecord *psel)
 {
     double		*pvalue;
-    struct link		*plink;
     double		order[SEL_MAX];
-    unsigned short	order_inx;
+    unsigned short	count;
     unsigned short	i,j;
     double		val;
 
@@ -348,7 +365,7 @@ static void do_sel(struct selRecord *psel)
 	val = *(pvalue+psel->seln);
 	break;
     case (selSELM_High_Signal):
-	val = divide(-1.0, 0.0); /* Start at -Inf */
+	val = -Inf;
 	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue) && val < *pvalue) {
 		val = *pvalue;
@@ -357,7 +374,7 @@ static void do_sel(struct selRecord *psel)
 	}
 	break;
     case (selSELM_Low_Signal):
-	val = divide(1.0, 0.0); /* Start at +Inf */
+	val = Inf;
 	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue) && val > *pvalue) {
 		val = *pvalue;
@@ -366,21 +383,22 @@ static void do_sel(struct selRecord *psel)
 	}
 	break;
     case (selSELM_Median_Signal):
-	plink = &psel->inpa;
-	order_inx = 0;
-	for (i = 0; i < SEL_MAX; i++,pvalue++,plink++){
+	count = 0;
+	order[0] = NaN;
+	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue)){
-		j = order_inx;
-		while ((order[j-1] > *pvalue) && (j > 0)){
+		/* Insertion sort */
+		j = count;
+		while ((j > 0) && (order[j-1] > *pvalue)){
 		    order[j] = order[j-1];
 		    j--;
 		}
 		order[j] = *pvalue;
-		order_inx++;
+		count++;
 	    }
 	}
-	psel->seln = order_inx/2;
-	val = order[psel->seln];
+	psel->seln = count;
+	val = order[count / 2];
 	break;
     default:
 	recGblSetSevr(psel,CALC_ALARM,INVALID_ALARM);
@@ -401,7 +419,7 @@ static void do_sel(struct selRecord *psel)
  *
  * fetch the values for the variables from which to select
  */
-static int fetch_values(struct selRecord *psel)
+static int fetch_values(selRecord *psel)
 {
     struct link	*plink;
     double	*pvalue;

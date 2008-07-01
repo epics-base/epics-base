@@ -1,19 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recState.c */
-/* base/src/rec  $Id$ */
+
+/* $Id$ */
 
 /* recState.c - Record Support Routines for State records */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            10-10-90 
  */
 
@@ -41,7 +39,7 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-static long process();
+static long process(stateRecord *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -78,10 +76,9 @@ rset stateRSET={
 };
 epicsExportAddress(rset,stateRSET);
 
-static void monitor();
+static void monitor(stateRecord *);
 
-static long process(pstate)
-	struct stateRecord	*pstate;
+static long process(stateRecord *pstate)
 {
 
 	pstate->udf = FALSE;
@@ -94,8 +91,7 @@ static long process(pstate)
 	return(0);
 }
 
-static void monitor(pstate)
-    struct stateRecord             *pstate;
+static void monitor(stateRecord *pstate)
 {
     unsigned short  monitor_mask;
 

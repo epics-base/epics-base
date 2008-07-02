@@ -12,4 +12,4 @@ include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
 #GNU_DIR=/usr/sfw
 
 # APS site override
-GNU_DIR = /opt/gnu
+GNU_DIR = /usr/local

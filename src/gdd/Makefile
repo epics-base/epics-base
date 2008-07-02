@@ -82,7 +82,7 @@ aitConvert$(OBJ): ../aitConvert.cc aitConvertGenerated.cc\
 		../aitConvert.h ../aitTypes.h
 
 
-dbMapper.o:	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
+dbMapper$(OBJ):	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
 		../gddArray.h ../gddScalar.h ../gddAppTable.h ../dbMapper.h \
 		$(INSTALL_INCLUDE)/gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
 

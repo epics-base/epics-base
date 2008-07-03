@@ -298,10 +298,10 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:
 # linker created .manifest file into a library or product target. 
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
-ifeq ($(shell $(PERL) $(TOOLS)/useManifestTool.pl),1)
-MT_DLL_COMMAND = mt.exe /manifest $@.manifest "/outputresource:$@;\#2"
+MT_DLL_COMMAND1 = mt.exe /manifest $@.manifest "/outputresource:$@;\#2"
 MT_EXE_COMMAND_YES =
 MT_EXE_COMMAND_NO = mt.exe /manifest $@.manifest "/outputresource:$@;\#1"
-MT_EXE_COMMAND = $(MT_EXE_COMMAND_$(STATIC_BUILD))
-endif
+MT_EXE_COMMAND1 = $(MT_EXE_COMMAND_$(STATIC_BUILD))
+MT_DLL_COMMAND = $(MT_DLL_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
+MT_EXE_COMMAND = $(MT_EXE_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
 

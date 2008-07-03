@@ -22,7 +22,7 @@ ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += browse
 ACTIONS += runtests
-ACTIONS += rebuild
+#ACTIONS += rebuild
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))

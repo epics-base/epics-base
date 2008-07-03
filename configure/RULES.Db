@@ -203,6 +203,8 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
 
+.PRECIOUS: $(COMMON_DIR)/%.h
+
 ##################################################### DBD files
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data 

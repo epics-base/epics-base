@@ -77,10 +77,8 @@ PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-L%)
 # Link definitions
 LINK.cpp = $(CCC) -o $@ $(STATIC_LDFLAGS) $(PRODDIR_LDFLAGS) $(LDFLAGS)
 LINK.cpp += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
-LINK.shrlib = $(CCC) -o $@ $(SHRLIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
+LINK.shrlib = $(CCC) -o $@ $(TARGET_LIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
 LINK.shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
-LINK.loadable_shrlib = $(CCC) -o $@ $(LOADABLE_SHRLIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
-LINK.loadable_shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 
 #--------------------------------------------------
 # Operating system definitions

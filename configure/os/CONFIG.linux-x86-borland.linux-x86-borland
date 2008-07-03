@@ -223,6 +223,6 @@ LINK.cpp += $(PROD_LDFLAGS) borinit.o /usr/lib/crt1.o $(PROD_LD_OBJS)
 LINK.cpp += , $@ ,,$(LINKLIBS) $(PROD_LDLIBS)
 
 LINK.shrlib = $(WINLINK) $(STATIC_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS) -Tpd -Gi
-LINK.shrlib+= $(LIB_LDFLAGS) borinitso.o $(LIBRARY_LD_OBJS) 
+LINK.shrlib+= $(TARGET_LIB_LDFLAGS) borinitso.o $(LIBRARY_LD_OBJS) 
 LINK.shrlib+= , $@ ,,$(LINKLIBS) $(SHRLIB_LDLIBS)
 

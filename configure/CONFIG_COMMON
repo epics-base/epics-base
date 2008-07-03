@@ -251,6 +251,12 @@ LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OB
 LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLAGS)
 
 #--------------------------------------------------
+# prefix, suffix, and ldflags for loadable shared libraries 
+TARGET_LIB_LDFLAGS=$($(patsubst $*,LOADABLE_,$(findstring $*,$(LOADABLE_LIBRARY)))SHRLIB_LDFLAGS)
+LOADABLE_SHRLIB_PREFIX=$(SHRLIB_PREFIX)
+LOADABLE_SHRLIB_SUFFIX=$(SHRLIB_SUFFIX)
+
+#--------------------------------------------------
 # Command-line input support default
 COMMANDLINE_LIBRARY = EPICS
 OP_SYS_LDLIBS += $(LDLIBS_$(COMMANDLINE_LIBRARY))

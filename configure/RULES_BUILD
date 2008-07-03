@@ -307,7 +307,8 @@ $(LOADABLE_SHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
 $(LOADABLE_SHRLIBNAME):$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	@$(RM) $@
-	$(LINK.loadable_shrlib)
+	$(LINK.shrlib)
+	$(MT_DLL_COMMAND)
 
 # C++ munching for VxWorks
 %.nm : %$(EXE)

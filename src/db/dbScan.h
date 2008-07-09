@@ -35,21 +35,26 @@ typedef struct io_scan_list *IOSCANPVT;
 
 struct dbCommon;
 
-epicsShareFunc long epicsShareAPI scanInit(void);
-epicsShareFunc void epicsShareAPI post_event(int event);
-epicsShareFunc void epicsShareAPI scanAdd(struct dbCommon *);
-epicsShareFunc void epicsShareAPI scanDelete(struct dbCommon *);
-epicsShareFunc double epicsShareAPI scanPeriod(int scan);
-epicsShareFunc void epicsShareAPI scanOnce(struct dbCommon *);
-epicsShareFunc int epicsShareAPI scanOnceSetQueueSize(int size);
+epicsShareFunc long scanInit(void);
+
+epicsShareFunc void post_event(int event);
+epicsShareFunc void scanAdd(struct dbCommon *);
+epicsShareFunc void scanDelete(struct dbCommon *);
+epicsShareFunc double scanPeriod(int scan);
+epicsShareFunc void scanOnce(struct dbCommon *);
+epicsShareFunc int scanOnceSetQueueSize(int size);
+
 /*print periodic lists*/
-epicsShareFunc int epicsShareAPI scanppl(double rate);
+epicsShareFunc int scanppl(double rate);
+
 /*print event lists*/
-epicsShareFunc int epicsShareAPI scanpel(int event_number);
+epicsShareFunc int scanpel(int event_number);
+
 /*print io_event list*/
-epicsShareFunc int epicsShareAPI scanpiol(void);
-epicsShareFunc void epicsShareAPI scanIoInit(IOSCANPVT *);
-epicsShareFunc void epicsShareAPI scanIoRequest(IOSCANPVT);
+epicsShareFunc int scanpiol(void);
+
+epicsShareFunc void scanIoInit(IOSCANPVT *);
+epicsShareFunc void scanIoRequest(IOSCANPVT);
 
 #ifdef __cplusplus
 }

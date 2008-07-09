@@ -47,20 +47,21 @@
 #include "dbLock.h"
 #include "recGbl.h"
 #include "dbScan.h"
-
+
 
 /* SCAN ONCE */
-int onceQueueSize = 1000;
+
+static int onceQueueSize = 1000;
 static epicsEventId onceSem;
 static epicsRingPointerId onceQ;
 static epicsThreadId onceTaskId;
 
-/*all other scan types */
+
+/* All other scan types */
 typedef struct scan_list{
     epicsMutexId        lock;
     ELLLIST             list;
     short               modified;/*has list been modified?*/
-    double              period;
 } scan_list;
 /*scan_elements are allocated and the address stored in dbCommon.spvt*/
 typedef struct scan_element{
@@ -69,11 +70,26 @@ typedef struct scan_element{
     struct dbCommon     *precord;
 } scan_element;
 
+
+/* PERIODIC */
+
+typedef struct periodic_scan_list {
+    scan_list           scan_list;
+    double              period;
+} periodic_scan_list;
+
+static int nPeriodic = 0;
+static periodic_scan_list **papPeriodic; /* pointer to array of pointers */
+static epicsThreadId *periodicTaskId;    /* array of thread ids */
+
+
 static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
     "Low", "Medium", "High"
 };
 
+
 /* EVENT */
+
 #define MAX_EVENTS 256
 typedef struct event_scan_list {
     CALLBACK            callback;
@@ -81,7 +97,9 @@ typedef struct event_scan_list {
 } event_scan_list;
 static event_scan_list *pevent_list[NUM_CALLBACK_PRIORITIES][MAX_EVENTS];
 
+
 /* IO_EVENT*/
+
 typedef struct io_scan_list {
     CALLBACK            callback;
     scan_list           scan_list;
@@ -92,13 +110,9 @@ static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES] = {
     NULL, NULL, NULL
 };
 
-/* PERIODIC SCANNER */
-static int nPeriodic = 0;
-static scan_list **papPeriodic; /* pointer to array of pointers*/
-static epicsThreadId *periodicTaskId; /*array of thread ids*/
 
 /* Private routines */
-static void onceTask(void);
+static void onceTask(void *);
 static void initOnce(void);
 static void periodicTask(void *arg);
 static void initPeriodic(void);
@@ -112,7 +126,7 @@ static void buildScanLists(void);
 static void addToList(struct dbCommon *precord, scan_list *psl);
 static void deleteFromList(struct dbCommon *precord, scan_list *psl);
 
-long epicsShareAPI scanInit()
+long scanInit()
 {
     int i;
 
@@ -125,7 +139,7 @@ long epicsShareAPI scanInit()
     return 0;
 }
 
-void epicsShareAPI scanAdd(struct dbCommon *precord)
+void scanAdd(struct dbCommon *precord)
 {
     int scan;
 
@@ -203,12 +217,12 @@ void epicsShareAPI scanAdd(struct dbCommon *precord)
         piosl += prio; /* get piosl for correct priority*/
         addToList(precord, &piosl->scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
-        addToList(precord, papPeriodic[scan - SCAN_1ST_PERIODIC]);
+        addToList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
     }
     return;
 }
 
-void epicsShareAPI scanDelete(struct dbCommon *precord)
+void scanDelete(struct dbCommon *precord)
 {
     short scan;
 
@@ -276,35 +290,35 @@ void epicsShareAPI scanDelete(struct dbCommon *precord)
         piosl += prio; /*get piosl for correct priority*/
         deleteFromList(precord, &piosl->scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
-        deleteFromList(precord, papPeriodic[scan - SCAN_1ST_PERIODIC]);
+        deleteFromList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
     }
     return;
 }
 
-double epicsShareAPI scanPeriod(int scan) {
+double scanPeriod(int scan) {
     scan -= SCAN_1ST_PERIODIC;
     if (scan < 0 || scan >= nPeriodic)
         return 0.0;
     return papPeriodic[scan]->period;
 }
 
-int epicsShareAPI scanppl(double period)	/*print periodic list*/
+int scanppl(double period)      /* print periodic list */
 {
-    scan_list *psl;
+    periodic_scan_list *ppsl;
     char message[80];
     int i;
 
     for (i = 0; i < nPeriodic; i++) {
-        psl = papPeriodic[i];
-        if (psl == NULL) continue;
-        if (period > 0.0 && (fabs(period - psl->period) >.05)) continue;
-        sprintf(message, "Scan Period = %g seconds ", psl->period);
-        printList(psl, message);
+        ppsl = papPeriodic[i];
+        if (ppsl == NULL) continue;
+        if (period > 0.0 && (fabs(period - ppsl->period) >.05)) continue;
+        sprintf(message, "Scan Period = %g seconds ", ppsl->period);
+        printList(&ppsl->scan_list, message);
     }
     return 0;
 }
 
-int epicsShareAPI scanpel(int event_number)  /*print event list */
+int scanpel(int event_number)   /* print event list */
 {
     char message[80];
     int prio, evnt;
@@ -324,7 +338,7 @@ int epicsShareAPI scanpel(int event_number)  /*print event list */
     return 0;
 }
 
-int epicsShareAPI scanpiol()  /* print io_event list */
+int scanpiol()                  /* print io_event list */
 {
     io_scan_list *piosl;
     int prio;
@@ -333,7 +347,7 @@ int epicsShareAPI scanpiol()  /* print io_event list */
     for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
         piosl = iosl_head[prio];
         if (piosl == NULL) continue;
-        sprintf(message, "IO Event: Priority=%d", prio);
+        sprintf(message, "IO Event: Priority %s", priorityName[prio]);
         while(piosl != NULL) {
             printList(&piosl->scan_list, message);
             piosl = piosl->next;
@@ -361,7 +375,7 @@ static void initEvent(void)
     }
 }
 
-void epicsShareAPI post_event(int event)
+void post_event(int event)
 {
     int prio;
     event_scan_list *pesl;
@@ -379,7 +393,7 @@ void epicsShareAPI post_event(int event)
     }
 }
 
-void epicsShareAPI scanIoInit(IOSCANPVT *ppioscanpvt)
+void scanIoInit(IOSCANPVT *ppioscanpvt)
 {
     int prio;
 
@@ -399,7 +413,7 @@ void epicsShareAPI scanIoInit(IOSCANPVT *ppioscanpvt)
 }
 
 
-void epicsShareAPI scanIoRequest(IOSCANPVT pioscanpvt)
+void scanIoRequest(IOSCANPVT pioscanpvt)
 {
     int prio;
 
@@ -411,17 +425,18 @@ void epicsShareAPI scanIoRequest(IOSCANPVT pioscanpvt)
     }
 }
 
-void epicsShareAPI scanOnce(struct dbCommon *precord)
+void scanOnce(struct dbCommon *precord)
 {
-    static int newOverflow=TRUE;
+    static int newOverflow = TRUE;
     int lockKey;
     int pushOK;
 
     lockKey = epicsInterruptLock();
     pushOK = epicsRingPointerPush(onceQ, precord);
     epicsInterruptUnlock(lockKey);
+
     if (!pushOK) {
-        if (newOverflow) errMessage(0, "rngBufPut overflow in scanOnce");
+        if (newOverflow) errlogPrintf("scanOnce: Ring buffer overflow\n");
         newOverflow = FALSE;
     } else {
         newOverflow = TRUE;
@@ -429,14 +444,14 @@ void epicsShareAPI scanOnce(struct dbCommon *precord)
     epicsEventSignal(onceSem);
 }
 
-static void onceTask(void)
+static void onceTask(void *arg)
 {
-    void *precord=NULL;
+    taskwdInsert(0, NULL, NULL);
 
-    taskwdInsert(epicsThreadGetIdSelf(), NULL, NULL);
     while (TRUE) {
-        if (epicsEventWait(onceSem) != epicsEventWaitOK)
-            errlogPrintf("dbScan: epicsEventWait returned error in onceTask");
+        void *precord;
+
+        epicsEventMustWait(onceSem);
         while ((precord = epicsRingPointerPop(onceQ))) {
             dbScanLock(precord);
             dbProcess(precord);
@@ -445,7 +460,7 @@ static void onceTask(void)
     }
 }
 
-int epicsShareAPI scanOnceSetQueueSize(int size)
+int scanOnceSetQueueSize(int size)
 {
     onceQueueSize = size;
     return 0;
@@ -454,27 +469,27 @@ int epicsShareAPI scanOnceSetQueueSize(int size)
 static void initOnce(void)
 {
     if ((onceQ = epicsRingPointerCreate(onceQueueSize)) == NULL) {
-        cantProceed("dbScan: initOnce failed");
+        cantProceed("initOnce: Ring buffer create failed\n");
     }
     onceSem = epicsEventMustCreate(epicsEventEmpty);
     onceTaskId = epicsThreadCreate("scanOnce", epicsThreadPriorityScanHigh,
-        epicsThreadGetStackSize(epicsThreadStackBig),
-        (EPICSTHREADFUNC)onceTask, 0);
+        epicsThreadGetStackSize(epicsThreadStackBig), onceTask, 0);
 }
 
 static void periodicTask(void *arg)
 {
-    scan_list *psl = (scan_list *)arg;
+    periodic_scan_list *ppsl = (periodic_scan_list *)arg;
 
     epicsTimeStamp start_time, end_time;
     double delay;
 
-    taskwdInsert (epicsThreadGetIdSelf(), NULL, NULL);
+    taskwdInsert(0, NULL, NULL);
+
     while (TRUE) {
         epicsTimeGetCurrent(&start_time);
-        if (interruptAccept) scanList(psl);
+        if (interruptAccept) scanList(&ppsl->scan_list);
         epicsTimeGetCurrent(&end_time);
-        delay = psl->period - epicsTimeDiffInSeconds(&end_time, &start_time);
+        delay = ppsl->period - epicsTimeDiffInSeconds(&end_time, &start_time);
         if (delay <= 0.0) delay = 0.1;
         epicsThreadSleep(delay);
     }
@@ -484,8 +499,7 @@ static void periodicTask(void *arg)
 static void initPeriodic()
 {
     dbMenu *pmenu;
-    scan_list *psl;
-    double temp;
+    periodic_scan_list *ppsl;
     int i;
 
     pmenu = dbFindMenu(pdbbase, "menuScan");
@@ -494,31 +508,31 @@ static void initPeriodic()
         return;
     }
     nPeriodic = pmenu->nChoice - SCAN_1ST_PERIODIC;
-    papPeriodic = dbCalloc(nPeriodic, sizeof(scan_list*));
+    papPeriodic = dbCalloc(nPeriodic, sizeof(periodic_scan_list*));
     periodicTaskId = dbCalloc(nPeriodic, sizeof(void *));
     for (i = 0; i < nPeriodic; i++) {
-        psl = dbCalloc(1, sizeof(scan_list));
-        papPeriodic[i] = psl;
-        psl->lock = epicsMutexMustCreate();
-        ellInit(&psl->list);
-        epicsScanDouble(pmenu->papChoiceValue[i+SCAN_1ST_PERIODIC], &temp);
-        psl->period = temp;
+        ppsl = dbCalloc(1, sizeof(periodic_scan_list));
+
+        ppsl->scan_list.lock = epicsMutexMustCreate();
+        ellInit(&ppsl->scan_list.list);
+        epicsScanDouble(pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC],
+                        &ppsl->period);
+
+        papPeriodic[i] = ppsl;
     }
 }
-
+
 static void spawnPeriodic(int ind)
 {
-    scan_list *psl;
+    periodic_scan_list *ppsl;
     char taskName[20];
 
-    psl = papPeriodic[ind];
-    sprintf(taskName, "scan%g", psl->period);
+    ppsl = papPeriodic[ind];
+    sprintf(taskName, "scan%g", ppsl->period);
     periodicTaskId[ind] = epicsThreadCreate(
-        taskName,
-        epicsThreadPriorityScanLow + ind,
+        taskName, epicsThreadPriorityScanLow + ind,
         epicsThreadGetStackSize(epicsThreadStackBig),
-        (EPICSTHREADFUNC)periodicTask,
-        (void *)psl);
+        periodicTask, (void *)ppsl);
 }
 
 static void ioeventCallback(CALLBACK *pcallback)
@@ -553,18 +567,20 @@ static void printList(scan_list *psl, char *message)
 
 static void scanList(scan_list *psl)
 {
-    /*In reading this code remember that the call to dbProcess can result*/
-    /*in the SCAN field being changed in an arbitrary number of records  */
+    /* When reading this code remember that the call to dbProcess can result
+     * in the SCAN field being changed in an arbitrary number of records.
+     */
 
-    scan_element *pse, *prev;
-    scan_element *next=0;
+    scan_element *pse;
+    scan_element *prev = NULL;
+    scan_element *next = NULL;
 
     epicsMutexMustLock(psl->lock);
     psl->modified = FALSE;
     pse = (scan_element *)ellFirst(&psl->list);
-    prev = NULL;
     if (pse) next = (scan_element *)ellNext(&pse->node);
     epicsMutexUnlock(psl->lock);
+
     while (pse) {
         struct dbCommon *precord = pse->precord;
 
@@ -576,12 +592,12 @@ static void scanList(scan_list *psl)
         if (!psl->modified) {
             prev = pse;
             pse = (scan_element *)ellNext(&pse->node);
-            if(pse)next = (scan_element *)ellNext(&pse->node);
+            if (pse) next = (scan_element *)ellNext(&pse->node);
         } else if (pse->pscan_list == psl) {
             /*This scan element is still in same scan list*/
             prev = pse;
             pse = (scan_element *)ellNext(&pse->node);
-            if(pse)next = (scan_element *)ellNext(&pse->node);
+            if (pse) next = (scan_element *)ellNext(&pse->node);
             psl->modified = FALSE;
         } else if (prev && prev->pscan_list == psl) {
             /*Previous scan element is still in same scan list*/
@@ -609,17 +625,16 @@ static void scanList(scan_list *psl)
 static void buildScanLists(void)
 {
     dbRecordType *pdbRecordType;
-    dbRecordNode *pdbRecordNode;
-    dbCommon *precord;
 
     /*Look for first record*/
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-        for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
+        dbRecordNode *pdbRecordNode;
+        for (pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
              pdbRecordNode;
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-            precord = pdbRecordNode->precord;
+            dbCommon *precord = pdbRecordNode->precord;
             if (precord->name[0] == 0) continue;
             scanAdd(precord);
         }
@@ -649,7 +664,6 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
     if (ptemp == NULL) ellAdd(&psl->list, (void *)pse);
     psl->modified = TRUE;
     epicsMutexUnlock(psl->lock);
-    return;
 }
 
 static void deleteFromList(struct dbCommon *precord, scan_list *psl)
@@ -664,12 +678,11 @@ static void deleteFromList(struct dbCommon *precord, scan_list *psl)
     pse = precord->spvt;
     if (pse == NULL || pse->pscan_list != psl) {
         epicsMutexUnlock(psl->lock);
-        errMessage(-1, "deleteFromList failed");
+        errlogPrintf("deleteFromList failed");
         return;
     }
     pse->pscan_list = NULL;
     ellDelete(&psl->list, (void *)pse);
     psl->modified = TRUE;
     epicsMutexUnlock(psl->lock);
-    return;
 }

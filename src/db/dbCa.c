@@ -51,19 +51,21 @@ epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
 #include "dbCaPvt.h"
 #include "recSup.h"
 
-#define STATIC static
 
-STATIC ELLLIST workList;    /* Work list for dbCaTask */
-STATIC epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
-STATIC epicsEventId workListEvent; /*wakeup event for dbCaTask*/
-STATIC int removesOutstanding = 0;
-STATIC int removesOutstandingWarning = 10000;
-STATIC volatile int exitRequest = 0;
-STATIC epicsEventId exitEvent;
+static ELLLIST workList;    /* Work list for dbCaTask */
+static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
+static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
+static int removesOutstanding = 0;
+static int removesOutstandingWarning = 10000;
+static enum {
+    ctlRun, ctlPause, ctlExit
+} dbCaCtl;
+static epicsEventId startStopEvent;
 
 struct ca_client_context * dbCaClientContext;
 
-void dbCaTask(void); /*The Channel Access Task*/
+
+static void dbCaTask(void *);
 extern void dbServiceIOInit();
 
 #define printLinks(pcaLink) \
@@ -127,7 +129,7 @@ extern void dbServiceIOInit();
  *   Thus the users callback will get called exactly once
 */
 
-STATIC void addAction(caLink *pca, short link_action)
+static void addAction(caLink *pca, short link_action)
 { 
     int callAdd = FALSE;
 
@@ -166,16 +168,41 @@ void epicsShareAPI dbCaCallbackProcess(struct link *plink)
     dbScanUnlock(pdbCommon);
 }
 
+static void dbCaShutdown(void *arg)
+{
+    if (dbCaCtl == ctlRun) {
+        dbCaCtl = ctlExit;
+        epicsEventSignal(workListEvent);
+        epicsEventMustWait(startStopEvent);
+    }
+}
+
 void epicsShareAPI dbCaLinkInit(void)
 {
     dbServiceIOInit();
     ellInit(&workList);
     workListLock = epicsMutexMustCreate();
     workListEvent = epicsEventMustCreate(epicsEventEmpty);
-    exitEvent = epicsEventMustCreate(epicsEventEmpty);
+    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    dbCaCtl = ctlPause;
+
     epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,
         epicsThreadGetStackSize(epicsThreadStackBig),
-        (EPICSTHREADFUNC) dbCaTask,0);
+        dbCaTask, NULL);
+    epicsEventMustWait(startStopEvent);
+    epicsAtExit(dbCaShutdown, NULL);
+}
+
+void epicsShareAPI dbCaRun(void)
+{
+    dbCaCtl = ctlRun;
+    epicsEventSignal(workListEvent);
+}
+
+void epicsShareAPI dbCaPause(void)
+{
+    dbCaCtl = ctlPause;
+    epicsEventSignal(workListEvent);
 }
 
 void epicsShareAPI dbCaAddLinkCallback( struct link *plink,
@@ -516,7 +543,7 @@ long epicsShareAPI dbCaGetUnits(
     return(gotAttributes ? 0 : -1);
 }
 
-STATIC void connectionCallback(struct connection_handler_args arg)
+static void connectionCallback(struct connection_handler_args arg)
 {
     caLink    *pca;
     short    link_action = 0;
@@ -584,7 +611,7 @@ done:
     epicsMutexUnlock(pca->lock);
 }
 
-STATIC void eventCallback(struct event_handler_args arg)
+static void eventCallback(struct event_handler_args arg)
 {
     caLink   *pca = (caLink *)arg.usr;
     DBLINK   *plink;
@@ -649,7 +676,7 @@ done:
     if(monitor) monitor(userPvt);
 }
 
-STATIC void exceptionCallback(struct exception_handler_args args)
+static void exceptionCallback(struct exception_handler_args args)
 {
     const char *context = (args.ctx ? args.ctx : "unknown");
 
@@ -674,7 +701,7 @@ STATIC void exceptionCallback(struct exception_handler_args args)
     }
 }
 
-STATIC void putCallback(struct event_handler_args arg)
+static void putCallback(struct event_handler_args arg)
 {
     caLink *pca = (caLink *)arg.usr;
     struct link *plink;
@@ -694,7 +721,7 @@ done:
     if(callback) callback(userPvt);
 }
 
-STATIC void accessRightsCallback(struct access_rights_handler_args arg)
+static void accessRightsCallback(struct access_rights_handler_args arg)
 {
     caLink        *pca = (caLink *)ca_puser(arg.chid);
     struct link	*plink;
@@ -720,7 +747,7 @@ done:
     epicsMutexUnlock(pca->lock);
 }
 
-STATIC void getAttribEventCallback(struct event_handler_args arg)
+static void getAttribEventCallback(struct event_handler_args arg)
 {
     caLink        *pca = (caLink *)arg.usr;
     struct link	  *plink;
@@ -771,39 +798,34 @@ STATIC void getAttribEventCallback(struct event_handler_args arg)
     if(connect) connect(userPvt);
 }
 
-static void exitHandler(void *pvt)
+static void dbCaTask(void *arg)
 {
-    exitRequest = 1;
-    epicsEventSignal(workListEvent);
-    epicsEventMustWait(exitEvent);
-}
+    int chan_count = 0;
 
-void dbCaTask()
-{
-    taskwdInsert(epicsThreadGetIdSelf(),NULL,NULL);
+    taskwdInsert(0, NULL, NULL);
     SEVCHK(ca_context_create(ca_enable_preemptive_callback),
         "dbCaTask calling ca_context_create");
-    epicsAtExit(exitHandler,0);
     dbCaClientContext = ca_current_context ();
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
         "ca_add_exception_event");
-    /*Dont do anything until iocInit initializes database*/
-    while(!interruptAccept) epicsThreadSleep(.1);
+    epicsEventSignal(startStopEvent);
+
     /* channel access event loop */
     while (TRUE){
-        epicsEventMustWait(workListEvent);
-        while(TRUE) { /* process all requests in workList*/
+        do {
+            epicsEventMustWait(workListEvent);
+        } while (dbCaCtl == ctlPause);
+        while (TRUE) { /* process all requests in workList*/
             caLink *pca;
             short  link_action;
             int    status;
 
-            if(exitRequest) break;
             epicsMutexMustLock(workListLock);
-            if(!(pca = (caLink *)ellFirst(&workList))){/*Take off list head*/
+            if(!(pca = (caLink *)ellGet(&workList))){/*Take off list head*/
                 epicsMutexUnlock(workListLock);
+                if (dbCaCtl == ctlExit) goto shutdown;
                 break; /*workList is empty*/
             }
-            ellDelete(&workList,&pca->node);
             link_action = pca->link_action;
             pca->link_action = 0;
             if(link_action&CA_CLEAR_CHANNEL) --removesOutstanding;
@@ -812,7 +834,10 @@ void dbCaTask()
                 dbCaCallback callback;
                 struct link *plinkPutCallback = 0;
 
-                if(pca->chid) ca_clear_channel(pca->chid);    
+                if(pca->chid) {
+                    ca_clear_channel(pca->chid);
+                    --chan_count;
+                }
                 callback = pca->putCallback;
                 if(callback) {
                     plinkPutCallback = pca->plinkPutCallback;
@@ -841,6 +866,7 @@ void dbCaTask()
                     printLinks(pca);
                     continue;
                 }
+                chan_count++;
                 status = ca_replace_access_rights_event(pca->chid,
                     accessRightsCallback);
                 if(status!=ECA_NORMAL) {
@@ -938,19 +964,14 @@ void dbCaTask()
                     printLinks(pca);
                 }
             }
-            if(exitRequest) break;
         }
-        if(exitRequest) break;
         SEVCHK(ca_flush_io(),"dbCaTask");
     }
-/* This is not sufficient to clean up dbCa connections.
-*  The following should be done:
-*  1) All device support that uses dbCa should clean up
-*     This means that all channels should be deleted
-*     dbCa should ckeck that this has been done
-*  2) dbCa should do the following:
-*     a) check that all channels have been deleted.	
-*     b) call ca_context_destroy();
-*/
-    epicsEventSignal(exitEvent);
+shutdown:
+    taskwdRemove(0);
+    if (chan_count == 0)
+        ca_context_destroy();
+    else
+        fprintf(stderr, "dbCa: chan_count = %d at shutdown\n", chan_count);
+    epicsEventSignal(startStopEvent);
 }

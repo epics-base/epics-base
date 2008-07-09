@@ -223,18 +223,24 @@ void rsrv_online_notify_task(void *pParm)
         priorityOfUDP = priorityOfSelf;
     }
 
+    casudp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    casudp_ctl = ctlPause;
+
     tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
         epicsThreadGetStackSize (epicsThreadStackMedium),
         cast_server, 0 );
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start UDP daemon thread\n" );
     }
-    
-    while (TRUE) {  
+
+    epicsEventMustWait(casudp_startStopEvent);
+    epicsEventSignal(beacon_startStopEvent);
+
+    while (TRUE) {
         pNode = (osiSockAddrNode *) ellFirst (&beaconAddrList);
         while (pNode) {
             char buf[64];
- 
+
             status = connect (sock, &pNode->addr.sa, 
                 sizeof(pNode->addr.sa));
             if (status<0) {
@@ -285,6 +291,11 @@ void rsrv_online_notify_task(void *pParm)
         }
 
         beaconCounter++; /* expected to overflow */
+
+        while (beacon_ctl == ctlPause) {
+            epicsThreadSleep(0.1);
+            delay = 0.02; /* Restart beacon timing if paused */
+        }
     }
 }
 

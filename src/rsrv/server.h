@@ -141,6 +141,9 @@ struct event_ext {
     char                    modified;   /* mod & ev flw ctrl enbl */
 };
 
+
+enum ctl {ctlRun, ctlPause, ctlExit};
+
 /*  NOTE: external used so they remember the state across loads */
 #ifdef  GLBLSOURCE
 #   define GLBLTYPE
@@ -177,6 +180,14 @@ GLBLTYPE void               *rsrvLargeBufFreeListTCP;
 GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 GLBLTYPE void               *rsrvPutNotifyFreeList; 
 GLBLTYPE unsigned           rsrvChannelCount;
+
+GLBLTYPE epicsEventId       casudp_startStopEvent;
+GLBLTYPE epicsEventId       beacon_startStopEvent;
+GLBLTYPE epicsEventId       castcp_startStopEvent;
+GLBLTYPE volatile enum ctl  casudp_ctl;
+GLBLTYPE volatile enum ctl  beacon_ctl;
+GLBLTYPE volatile enum ctl  castcp_ctl;
+
 
 #define CAS_HASH_TABLE_SIZE 4096
 

@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbScan.c */
@@ -28,6 +27,7 @@
 #include "taskwd.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
+#include "epicsExit.h"
 #include "epicsInterrupt.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -49,12 +49,21 @@
 #include "dbScan.h"
 
 
+/* Task Control */
+enum ctl {ctlRun, ctlPause, ctlExit};
+
+/* Task Startup/Shutdown Synchronization */
+static epicsEventId startStopEvent;
+
+volatile enum ctl scanCtl;
+
 /* SCAN ONCE */
 
 static int onceQueueSize = 1000;
 static epicsEventId onceSem;
 static epicsRingPointerId onceQ;
 static epicsThreadId onceTaskId;
+static void *exitOnce;
 
 
 /* All other scan types */
@@ -76,6 +85,8 @@ typedef struct scan_element{
 typedef struct periodic_scan_list {
     scan_list           scan_list;
     double              period;
+    volatile enum ctl   scanCtl;
+    epicsEventId        loopEvent;
 } periodic_scan_list;
 
 static int nPeriodic = 0;
@@ -126,9 +137,26 @@ static void buildScanLists(void);
 static void addToList(struct dbCommon *precord, scan_list *psl);
 static void deleteFromList(struct dbCommon *precord, scan_list *psl);
 
+static void scanShutdown(void *arg)
+{
+    int i;
+
+    scanOnce((dbCommon *)&exitOnce);
+    epicsEventWait(startStopEvent);
+
+    for (i = 0; i < nPeriodic; i++) {
+        papPeriodic[i]->scanCtl = ctlExit;
+        epicsEventSignal(papPeriodic[i]->loopEvent);
+        epicsEventWait(startStopEvent);
+    }
+}
+
 long scanInit()
 {
     int i;
+
+    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    scanCtl = ctlPause;
 
     initOnce();
     initPeriodic();
@@ -136,7 +164,27 @@ long scanInit()
     buildScanLists();
     for (i = 0; i < nPeriodic; i++)
         spawnPeriodic(i);
+
+    epicsAtExit(scanShutdown, NULL);
     return 0;
+}
+
+void scanRun(void)
+{
+    int i;
+
+    scanCtl = ctlRun;
+    for (i = 0; i < nPeriodic; i++)
+        papPeriodic[i]->scanCtl = ctlRun;
+}
+
+void scanPause(void)
+{
+    int i;
+
+    scanCtl = ctlPause;
+    for (i = 0; i < nPeriodic; i++)
+        papPeriodic[i]->scanCtl = ctlPause;
 }
 
 void scanAdd(struct dbCommon *precord)
@@ -380,7 +428,7 @@ void post_event(int event)
     int prio;
     event_scan_list *pesl;
 
-    if (!interruptAccept) return;     /* not awake yet */
+    if (scanCtl != ctlRun) return;
     if (event < 0 || event >= MAX_EVENTS) {
         errMessage(-1, "illegal event passed to post_event");
         return;
@@ -417,7 +465,7 @@ void scanIoRequest(IOSCANPVT pioscanpvt)
 {
     int prio;
 
-    if (!interruptAccept) return;
+    if (scanCtl != ctlRun) return;
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
         io_scan_list *piosl = &pioscanpvt[prio];
         if (ellCount(&piosl->scan_list.list) > 0)
@@ -447,17 +495,23 @@ void scanOnce(struct dbCommon *precord)
 static void onceTask(void *arg)
 {
     taskwdInsert(0, NULL, NULL);
+    epicsEventSignal(startStopEvent);
 
     while (TRUE) {
         void *precord;
 
         epicsEventMustWait(onceSem);
         while ((precord = epicsRingPointerPop(onceQ))) {
+            if (precord == &exitOnce) goto shutdown;
             dbScanLock(precord);
             dbProcess(precord);
             dbScanUnlock(precord);
         }
     }
+
+shutdown:
+    taskwdRemove(0);
+    epicsEventSignal(startStopEvent);
 }
 
 int scanOnceSetQueueSize(int size)
@@ -474,6 +528,8 @@ static void initOnce(void)
     onceSem = epicsEventMustCreate(epicsEventEmpty);
     onceTaskId = epicsThreadCreate("scanOnce", epicsThreadPriorityScanHigh,
         epicsThreadGetStackSize(epicsThreadStackBig), onceTask, 0);
+
+    epicsEventWait(startStopEvent);
 }
 
 static void periodicTask(void *arg)
@@ -484,15 +540,19 @@ static void periodicTask(void *arg)
     double delay;
 
     taskwdInsert(0, NULL, NULL);
+    epicsEventSignal(startStopEvent);
 
-    while (TRUE) {
+    while (ppsl->scanCtl != ctlExit) {
         epicsTimeGetCurrent(&start_time);
-        if (interruptAccept) scanList(&ppsl->scan_list);
+        if (ppsl->scanCtl == ctlRun) scanList(&ppsl->scan_list);
         epicsTimeGetCurrent(&end_time);
         delay = ppsl->period - epicsTimeDiffInSeconds(&end_time, &start_time);
         if (delay <= 0.0) delay = 0.1;
-        epicsThreadSleep(delay);
+        epicsEventWaitWithTimeout(ppsl->loopEvent, delay);
     }
+
+    taskwdRemove(0);
+    epicsEventSignal(startStopEvent);
 }
 
 
@@ -517,6 +577,8 @@ static void initPeriodic()
         ellInit(&ppsl->scan_list.list);
         epicsScanDouble(pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC],
                         &ppsl->period);
+        ppsl->scanCtl = ctlPause;
+        ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);
 
         papPeriodic[i] = ppsl;
     }
@@ -533,6 +595,8 @@ static void spawnPeriodic(int ind)
         taskName, epicsThreadPriorityScanLow + ind,
         epicsThreadGetStackSize(epicsThreadStackBig),
         periodicTask, (void *)ppsl);
+
+    epicsEventWait(startStopEvent);
 }
 
 static void ioeventCallback(CALLBACK *pcallback)

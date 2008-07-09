@@ -19,11 +19,31 @@
 #include "miscIocRegister.h"
 
 /* iocInit */
-static const iocshFuncDef iocInitFuncDef =
-    {"iocInit",0,NULL};
+static const iocshFuncDef iocInitFuncDef = {"iocInit",0,NULL};
 static void iocInitCallFunc(const iocshArgBuf *args)
 {
     iocInit();
+}
+
+/* iocBuild */
+static const iocshFuncDef iocBuildFuncDef = {"iocBuild",0,NULL};
+static void iocBuildCallFunc(const iocshArgBuf *args)
+{
+    iocBuild();
+}
+
+/* iocRun */
+static const iocshFuncDef iocRunFuncDef = {"iocRun",0,NULL};
+static void iocRunCallFunc(const iocshArgBuf *args)
+{
+    iocRun();
+}
+
+/* iocPause */
+static const iocshFuncDef iocPauseFuncDef = {"iocPause",0,NULL};
+static void iocPauseCallFunc(const iocshArgBuf *args)
+{
+    iocPause();
 }
 
 /* coreRelease */
@@ -37,6 +57,9 @@ static void coreReleaseCallFunc(const iocshArgBuf *args)
 void epicsShareAPI miscIocRegister(void)
 {
     iocshRegister(&iocInitFuncDef,iocInitCallFunc);
+    iocshRegister(&iocBuildFuncDef,iocBuildCallFunc);
+    iocshRegister(&iocRunFuncDef,iocRunCallFunc);
+    iocshRegister(&iocPauseFuncDef,iocPauseCallFunc);
     iocshRegister(&coreReleaseFuncDef, coreReleaseCallFunc);
 }
 

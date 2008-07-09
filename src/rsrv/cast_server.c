@@ -211,7 +211,9 @@ void cast_server(void *pParm)
      * add placeholder for the first version message should it be needed
      */
     rsrv_version_reply ( prsrv_cast_client );
-    
+
+    epicsEventSignal(casudp_startStopEvent);
+
     while (TRUE) {
         status = recvfrom (
             IOC_cast_sock,
@@ -228,7 +230,7 @@ void cast_server(void *pParm)
                     sockErrBuf);
             epicsThreadSleep(1.0);
         }
-        else {
+        else if (casudp_ctl == ctlRun) {
             prsrv_cast_client->recv.cnt = (unsigned) status;
             prsrv_cast_client->recv.stk = 0ul;
             epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);

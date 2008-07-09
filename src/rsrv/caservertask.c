@@ -170,6 +170,9 @@ LOCAL void req_server (void *pParm)
         priorityOfBeacons = priorityOfSelf;
     }
 
+    beacon_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    beacon_ctl = ctlPause;
+
     tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacons,
         epicsThreadGetStackSize (epicsThreadStackSmall),
         rsrv_online_notify_task, 0 );
@@ -177,9 +180,16 @@ LOCAL void req_server (void *pParm)
         epicsPrintf ( "CAS: unable to start beacon thread\n" );
     }
 
+    epicsEventMustWait(beacon_startStopEvent);
+    epicsEventSignal(castcp_startStopEvent);
+
     while (TRUE) {
         struct sockaddr     sockAddr;
         osiSocklen_t        addLen = sizeof(sockAddr);
+
+        while (castcp_ctl == ctlPause) {
+            epicsThreadSleep(0.1);
+        }
 
         clientSock = epicsSocketAccept ( IOC_sock, &sockAddr, &addLen );
         if ( clientSock == INVALID_SOCKET ) {
@@ -225,7 +235,7 @@ LOCAL void req_server (void *pParm)
 /*
  * rsrv_init ()
  */
-int epicsShareAPI rsrv_init (void)
+int rsrv_init (void)
 {
     epicsThreadBooleanStatus tbs;
     unsigned priorityOfConnectDaemon;
@@ -270,6 +280,9 @@ int epicsShareAPI rsrv_init (void)
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
+    castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    castcp_ctl = ctlPause;
+
     /*
      * go down two levels so that we are below 
      * the TCP and event threads started on behalf
@@ -295,6 +308,26 @@ int epicsShareAPI rsrv_init (void)
     if ( tid == 0 ) {
         epicsPrintf ( "CAS: unable to start connection request thread\n" );
     }
+
+    epicsEventMustWait(castcp_startStopEvent);
+
+    return RSRV_OK;
+}
+
+int rsrv_run (void)
+{
+    castcp_ctl = ctlRun;
+    casudp_ctl = ctlRun;
+    beacon_ctl = ctlRun;
+
+    return RSRV_OK;
+}
+
+int rsrv_pause (void)
+{
+    beacon_ctl = ctlPause;
+    casudp_ctl = ctlPause;
+    castcp_ctl = ctlPause;
 
     return RSRV_OK;
 }

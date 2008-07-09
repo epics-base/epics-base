@@ -52,130 +52,188 @@ epicsShareFunc int epicsShareAPI asInit (void);
 #include "dbStaticLib.h"
 #include "db_access_routines.h"
 #include "initHooks.h"
-#include "epicsTime.h"
+#include "epicsExit.h"
 #include "epicsSignal.h"
 
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"
 #include "iocInit.h"
 
-LOCAL int initialized=FALSE;
+static enum {
+    iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
+} iocState = iocVirgin;
 
 /* define forward references*/
-LOCAL void initDrvSup(void);
-LOCAL void initRecSup(void);
-LOCAL void initDevSup(void);
-LOCAL void finishDevSup(void);
-LOCAL void initDatabase(void);
-LOCAL void initialProcess(void);
+static void initDrvSup(void);
+static void initRecSup(void);
+static void initDevSup(void);
+static void finishDevSup(void);
+static void initDatabase(void);
+static void initialProcess(void);
+static void exitDatabase(void *dummy);
 
 
 /*
  *  Initialize EPICS on the IOC.
  */
-int epicsShareAPI iocInit()
+int iocInit(void)
 {
-    epicsTimeStamp timeStamp;
-    if (initialized) {
-	errlogPrintf("iocInit can only be called once\n");
-	return(-1);
+    return iocBuild() || iocRun();
+}
+
+int iocBuild(void)
+{
+    if (iocState != iocVirgin) {
+        errlogPrintf("iocBuild: IOC can only be initialized once\n");
+        return -1;
     }
-    if(!epicsThreadIsOkToBlock()) epicsThreadSetOkToBlock(1);
+
+    if (!epicsThreadIsOkToBlock()) {
+        epicsThreadSetOkToBlock(1);
+    }
+
     errlogPrintf("Starting iocInit\n");
     if (!pdbbase) {
-	errlogPrintf("iocInit aborting because No database\n");
-	return(-1);
+        errlogPrintf("iocBuild: Aborting, no database loaded!\n");
+        return -1;
     }
     epicsSignalInstallSigHupIgnore();
     initHooks(initHookAtBeginning);
+
     coreRelease();
     /* After this point, further calls to iocInit() are disallowed.  */
-    initialized = TRUE;
+    iocState = iocBuilding;
 
     taskwdInit();
     callbackInit();
-
-    /* let threads start */
-    epicsThreadSleep(.1);
     initHooks(initHookAfterCallbackInit);
-    dbCaLinkInit(); initHooks(initHookAfterCaLinkInit);
-    initDrvSup(); initHooks(initHookAfterInitDrvSup);
-    initRecSup(); initHooks(initHookAfterInitRecSup);
-    initDevSup(); initHooks(initHookAfterInitDevSup);
+
+    dbCaLinkInit();
+    initHooks(initHookAfterCaLinkInit);
+
+    initDrvSup();
+    initHooks(initHookAfterInitDrvSup);
+
+    initRecSup();
+    initHooks(initHookAfterInitRecSup);
+
+    initDevSup();
+    initHooks(initHookAfterInitDevSup);
 
     initDatabase();
     dbLockInitRecords(pdbbase);
+    dbBkptInit();
     initHooks(initHookAfterInitDatabase);
 
-    finishDevSup(); initHooks(initHookAfterFinishDevSup);
+    finishDevSup();
+    initHooks(initHookAfterFinishDevSup);
 
     scanInit();
-    if(asInit()) {
-	errlogPrintf("iocInit: asInit Failed during initialization\n");
-	return(-1);
+    if (asInit()) {
+        errlogPrintf("iocBuild: asInit Failed.\n");
+        return -1;
     }
     dbPutNotifyInit();
     epicsThreadSleep(.5);
     initHooks(initHookAfterScanInit);
 
-    initialProcess(); initHooks(initHookAfterInitialProcess);
+    initialProcess();
+    initHooks(initHookAfterInitialProcess);
 
-   /* Enable scan tasks and some driver support functions.  */
-    interruptAccept=TRUE; initHooks(initHookAfterInterruptAccept);
-    epicsThreadSleep(1.0);
-
-    dbBkptInit();
-
-   /*  Start up CA server */
+    /* Start CA server threads */
     rsrv_init();
 
-    errlogPrintf("iocInit: All initialization complete\n");
-    initHooks(initHookAtEnd);
-    return(0);
+    iocState = iocBuilt;
+    return 0;
 }
-
-LOCAL void initDrvSup(void) /* Locate all driver support entry tables */
+
+int iocRun(void)
 {
-    drvSup	*pdrvSup;
+    if (iocState != iocPaused && iocState != iocBuilt) {
+        errlogPrintf("iocRun: IOC not paused\n");
+        return -1;
+    }
+
+   /* Enable scan tasks and some driver support functions.  */
+    scanRun();
+    dbCaRun();
+    interruptAccept = TRUE;
+    if (iocState == iocBuilt)
+        initHooks(initHookAfterInterruptAccept);
+
+    rsrv_run();
+    if (iocState == iocBuilt)
+        initHooks(initHookAtEnd);
+
+    errlogPrintf("iocRun: %s\n", iocState == iocBuilt ?
+        "All initialization complete" :
+        "IOC restarted");
+    iocState = iocRunning;
+    return 0;
+}
+
+int iocPause(void)
+{
+    if (iocState != iocRunning) {
+        errlogPrintf("iocPause: IOC not running\n");
+        return -1;
+    }
+
+    rsrv_pause();
+    interruptAccept = FALSE;
+    dbCaPause();
+    scanPause();
+    iocState = iocPaused;
+
+    errlogPrintf("iocPause: IOC suspended\n");
+    return 0;
+}
+
+
+static void initDrvSup(void) /* Locate all driver support entry tables */
+{
+    drvSup *pdrvSup;
     struct drvet *pdrvet;
 
-    for(pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
-    pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
-	pdrvet = registryDriverSupportFind(pdrvSup->name);
-	if(pdrvet==0) {
-            errlogPrintf("iocInit: driver %s not found\n",pdrvSup->name);
-	    continue;
-	}
+    for (pdrvSup = (drvSup *)ellFirst(&pdbbase->drvList); pdrvSup;
+         pdrvSup = (drvSup *)ellNext(&pdrvSup->node)) {
+        pdrvet = registryDriverSupportFind(pdrvSup->name);
+        if (!pdrvet) {
+            errlogPrintf("iocInit: driver %s not found\n", pdrvSup->name);
+            continue;
+        }
         pdrvSup->pdrvet = pdrvet;
        /*
         *   If an initialization routine is defined (not NULL),
         *      for the driver support call it.
         */
-	if(pdrvet->init) (*(pdrvet->init))();
+        if (pdrvet->init) {
+            pdrvet->init();
+        }
     }
-    return;
 }
 
-LOCAL void initRecSup(void)
+static void initRecSup(void)
 {
     dbRecordType *pdbRecordType;
     recordTypeLocation *precordTypeLocation;
     struct rset *prset;
     
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
         precordTypeLocation = registryRecordTypeFind(pdbRecordType->name);
-	if (precordTypeLocation==0) {
+        if (!precordTypeLocation) {
             errlogPrintf("iocInit record support for %s not found\n",
                 pdbRecordType->name);
-	    continue;
-	}
-	prset = precordTypeLocation->prset;
+            continue;
+        }
+        prset = precordTypeLocation->prset;
         pdbRecordType->prset = prset;
-	if(prset->init) (*prset->init)();
+        if (prset->init) {
+            prset->init();
+        }
     }
-    return;
 }
 
 static long do_nothing(struct dbCommon *precord) { return 0; }
@@ -186,171 +244,182 @@ struct dsxt devSoft_DSXT = {
     do_nothing
 };
 
-LOCAL devSup *pthisDevSup = NULL;
+static devSup *pthisDevSup = NULL;
 
-LOCAL void initDevSup(void)
+static void initDevSup(void)
 {
-    dbRecordType	*pdbRecordType;
+    dbRecordType *pdbRecordType;
     struct dset *pdset;
     
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-	     pthisDevSup;
-	     pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
-	    pdset = registryDeviceSupportFind(pthisDevSup->name);
-	    if (pdset==0) {
-		errlogPrintf("device support %s not found\n",pthisDevSup->name);
-		continue;
-	    }
-	    if (pthisDevSup->link_type == CONSTANT)
-		pthisDevSup->pdsxt = &devSoft_DSXT;
-	    pthisDevSup->pdset = pdset;
-	    if (pdset->init) (*pdset->init)(0);
-	}
+        for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+             pthisDevSup;
+             pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
+            pdset = registryDeviceSupportFind(pthisDevSup->name);
+            if (!pdset) {
+                errlogPrintf("device support %s not found\n",pthisDevSup->name);
+                continue;
+            }
+            if (pthisDevSup->link_type == CONSTANT)
+                pthisDevSup->pdsxt = &devSoft_DSXT;
+            pthisDevSup->pdset = pdset;
+            if (pdset->init) {
+                pdset->init(0);
+            }
+        }
     }
-    return;
 }
 
 void devExtend(dsxt *pdsxt)
 {
     if (!pthisDevSup)
-	errlogPrintf("devExtend() called outside of initDevSup()\n");
-    else
-	pthisDevSup->pdsxt = pdsxt;
+        errlogPrintf("devExtend() called outside of initDevSup()\n");
+    else {
+        pthisDevSup->pdsxt = pdsxt;
+    }
 }
 
-LOCAL void finishDevSup(void) 
+static void finishDevSup(void) 
 {
-    dbRecordType	*pdbRecordType;
+    dbRecordType *pdbRecordType;
     struct dset *pdset;
 
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-	     pthisDevSup;
-	     pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
-	    pdset = pthisDevSup->pdset;
-	    if (pdset && pdset->init) (*pdset->init)(1);
-	}
+        for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+             pthisDevSup;
+             pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
+            pdset = pthisDevSup->pdset;
+            if (pdset && pdset->init) {
+                pdset->init(1);
+            }
+        }
     
     }
-    return;
 }
 
-LOCAL void initDatabase(void)
+static void initDatabase(void)
 {
-    dbRecordType	*pdbRecordType;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    devSup		*pdevSup;
-    struct rset		*prset;
-    struct dset		*pdset;
-    dbCommon		*precord;
-    DBADDR		dbaddr;
-    DBLINK		*plink;
-    int			j;
+    dbRecordType *pdbRecordType;
+    dbFldDes *pdbFldDes;
+    dbRecordNode *pdbRecordNode;
+    devSup *pdevSup;
+    struct rset *prset;
+    struct dset *pdset;
+    dbCommon *precord;
+    DBADDR dbaddr;
+    DBLINK *plink;
+    int j;
    
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	prset = pdbRecordType->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    if(!prset) break;
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        prset = pdbRecordType->prset;
+        for (pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            if (!prset) break;
+
            /* Find pointer to record instance */
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    precord->rset = prset;
-	    precord->rdes = pdbRecordType;
+            precord = pdbRecordNode->precord;
+            if (!precord->name[0]) continue;
+
+            precord->rset = prset;
+            precord->rdes = pdbRecordType;
             precord->mlok = epicsMutexMustCreate();
-	    ellInit(&(precord->mlis));
+            ellInit(&precord->mlis);
 
            /* Reset the process active field */
-	    precord->pact=FALSE;
+            precord->pact = FALSE;
 
-	    /* Init DSET NOTE that result may be NULL */
-	    pdevSup = dbDTYPtoDevSup(pdbRecordType,precord->dtyp);
-	    pdset = (pdevSup ? pdevSup->pdset : 0);
-	    precord->dset = pdset;
-	    if(prset->init_record) (*prset->init_record)(precord,0);
-	}
+            /* Init DSET NOTE that result may be NULL */
+            pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
+            pdset = pdevSup ? pdevSup->pdset : NULL;
+            precord->dset = pdset;
+            if (prset->init_record) {
+                prset->init_record(precord, 0);
+            }
+        }
     }
-
-/* initDatabse cont. */
+
    /* Second pass to resolve links */
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	prset = pdbRecordType->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        prset = pdbRecordType->prset;
+        for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            precord = pdbRecordNode->precord;
+            if (!precord->name[0]) continue;
             /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
             /* For all the links in the record type... */
-	    for(j=0; j<pdbRecordType->no_links; j++) {
-		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
-		plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-		if (plink->type == PV_LINK) {
-                    if(plink==&precord->tsel) recGblTSELwasModified(plink);
-		    if(!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
-		    && (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
-			DBADDR	*pdbAddr;
+            for (j = 0; j < pdbRecordType->no_links; j++) {
+                pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+                plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                if (plink->type == PV_LINK) {
+                    if (plink == &precord->tsel) recGblTSELwasModified(plink);
+                    if (!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
+                        && (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
+                        DBADDR  *pdbAddr;
 
-			plink->type = DB_LINK;
-			pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
-			*pdbAddr = dbaddr; /*structure copy*/;
-			plink->value.pv_link.pvt = pdbAddr;
-		    } else {/*It is a CA link*/
-			char	*pperiod;
+                        plink->type = DB_LINK;
+                        pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+                        *pdbAddr = dbaddr; /*structure copy*/;
+                        plink->value.pv_link.pvt = pdbAddr;
+                    } else {/*It is a CA link*/
+                        char    *pperiod;
 
-			if(pdbFldDes->field_type==DBF_INLINK) {
-			    plink->value.pv_link.pvlMask |= pvlOptInpNative;
-			}
-			dbCaAddLink(plink);
-			if(pdbFldDes->field_type==DBF_FWDLINK) {
-			    pperiod = strrchr(plink->value.pv_link.pvname,'.');
-			    if(pperiod && strstr(pperiod,"PROC")) {
-				plink->value.pv_link.pvlMask |= pvlOptFWD;
+                        if (pdbFldDes->field_type==DBF_INLINK) {
+                            plink->value.pv_link.pvlMask |= pvlOptInpNative;
+                        }
+                        dbCaAddLink(plink);
+                        if (pdbFldDes->field_type==DBF_FWDLINK) {
+                            pperiod = strrchr(plink->value.pv_link.pvname,'.');
+                            if (pperiod && strstr(pperiod,"PROC")) {
+                                plink->value.pv_link.pvlMask |= pvlOptFWD;
                             } else {
                                 errlogPrintf("%s.FLNK is a Channel Access Link "
                                     " but does not access field PROC\n",
                                      precord->name);
                             }
-			}
-		    }
-		}
-	    }
-            pdevSup = dbDTYPtoDevSup(pdbRecordType,precord->dtyp);
+                        }
+                    }
+                }
+            }
+            pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
             if (pdevSup) {
                 struct dsxt *pdsxt = pdevSup->pdsxt;
-                if (pdsxt && pdsxt->add_record)
-                    (*pdsxt->add_record)(precord);
+                if (pdsxt && pdsxt->add_record) {
+                    pdsxt->add_record(precord);
+                }
             }
-	}
+        }
     }
 
     /* Call record support init_record routine - Second pass */
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	prset = pdbRecordType->prset;
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    if(!prset) break;
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        prset = pdbRecordType->prset;
+        for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            if (!prset) break;
+
            /* Find pointer to record instance */
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    precord->rset = prset;
-	    if(prset->init_record) (*prset->init_record)(precord,1);
-	}
+            precord = pdbRecordNode->precord;
+            if (!precord->name[0]) continue;
+            precord->rset = prset;
+            if (prset->init_record) {
+                prset->init_record(precord, 1);
+            }
+        }
     }
+    epicsAtExit(exitDatabase, NULL);
     return;
 }
 
@@ -358,23 +427,69 @@ LOCAL void initDatabase(void)
  *  Process database records at initialization if
  *     their pini (process at init) field is set.
  */
-LOCAL void initialProcess(void)
+static void initialProcess(void)
 {
-    dbRecordType		*pdbRecordType;
-    dbRecordNode 	*pdbRecordNode;
-    dbCommon		*precord;
-    
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-	for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-	pdbRecordNode;
-	pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-	    precord = pdbRecordNode->precord;
-	    if(!(precord->name[0])) continue;
-	    if(!precord->pini) continue;
-	    (void)dbProcess(precord);
-	}
+    dbRecordType *pdbRecordType;
+    dbRecordNode *pdbRecordNode;
+    dbCommon *precord;
+
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        for (pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            precord = pdbRecordNode->precord;
+            if (!precord->name[0]) continue;
+            if (precord->pini) {
+                dbProcess(precord);
+            }
+        }
     }
     return;
+}
+
+
+static void exitDatabase(void *dummy)
+{
+    dbRecordType *pdbRecordType;
+    struct rset *prset;
+    dbRecordNode *pdbRecordNode;
+    dbCommon *precord;
+    dbFldDes *pdbFldDes;
+    devSup *pdevSup;
+    struct dsxt *pdsxt;
+    DBLINK *plink;
+    int j;
+
+    scanPause();
+    interruptAccept = FALSE;
+
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        prset = pdbRecordType->prset;
+        for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            precord = pdbRecordNode->precord;
+            if (!precord->name[0]) continue;
+            /* For all the links in the record type... */
+            for (j = 0; j < pdbRecordType->no_links; j++) {
+                pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+                plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                if (plink->type == CA_LINK) {
+                    dbCaRemoveLink(plink);
+                }
+            }
+            if (precord->dset &&
+                (pdevSup = dbDSETtoDevSup(pdbRecordType, precord->dset)) &&
+                (pdsxt = pdevSup->pdsxt) &&
+                pdsxt->del_record) {
+                pdsxt->del_record(precord);
+            }
+        }
+    }
+
+    iocState = iocStopped;
 }

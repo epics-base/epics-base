@@ -59,7 +59,7 @@ void camsgtask ( void *pParm )
         return;
     }
 
-    while ( ! client->disconnect ) {
+    while (castcp_ctl == ctlRun && !client->disconnect) {
 
         /*
          * allow message to batch up if more are comming

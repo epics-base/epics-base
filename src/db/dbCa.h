@@ -13,6 +13,8 @@
 #define INCdbCah
 
 #include "shareLib.h"
+#include "epicsTime.h"
+#include "link.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +24,9 @@ typedef void (*dbCaCallback)(void *userPvt);
 epicsShareFunc void epicsShareAPI dbCaCallbackProcess(struct link *plink);
 
 epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
+epicsShareFunc void epicsShareAPI dbCaRun(void);
+epicsShareFunc void epicsShareAPI dbCaPause(void);
+
 epicsShareFunc void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
     dbCaCallback connect,dbCaCallback monitor,void *userPvt);
 #define dbCaAddLink(plink) dbCaAddLinkCallback((plink),0,0,0)

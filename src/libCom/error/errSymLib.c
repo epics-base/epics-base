@@ -79,12 +79,12 @@ int epicsShareAPI errSymBld()
     for (i = 0; i < errSymTbl->nsymbols; i++, errArray++) {
 	modnum = errArray->errNum >> 16;
 	if (modnum < 501) {
-	    printf("errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%lx Name=%s\n",
+	    fprintf(stderr, "errSymBld: ERROR - Module number in errSymTbl < 501 was Module=%lx Name=%s\n",
 		errArray->errNum, errArray->name);
 	    continue;
 	}
 	if ((errSymbolAdd(errArray->errNum, errArray->name))  <0 ) {
-	    printf("errSymBld: ERROR - errSymbolAdd() failed \n");
+	    fprintf(stderr, "errSymBld: ERROR - errSymbolAdd() failed \n");
 	    continue;
 	}
     }
@@ -296,8 +296,8 @@ void epicsShareAPI errSymTestPrint(long errNum)
     modnum = (unsigned short) (errNum >> 16);
     errnum = (unsigned short) (errNum & 0xffff);
     if (modnum < 501) {
-        printf("Usage:  errSymTestPrint(long errNum) \n");
-        printf("errSymTestPrint: module number < 501 \n");
+        fprintf(stderr, "Usage:  errSymTestPrint(long errNum) \n");
+        fprintf(stderr, "errSymTestPrint: module number < 501 \n");
         return;
     }
     errSymLookup(errNum, message, sizeof(message));

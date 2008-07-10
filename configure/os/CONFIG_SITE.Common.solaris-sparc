@@ -8,7 +8,10 @@
 # If readline is installed uncomment the following macro definition
 # to include command-line editing and history support
 #
+
 #COMMANDLINE_LIBRARY = READLINE
 
-# APS site override
-READLINE_DIR=/opt/gnu
+# Use stLport library instead of default Cstd library
+# Must be either YES or NO
+#USE_STLPORT=YES
+

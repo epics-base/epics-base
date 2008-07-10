@@ -12,6 +12,32 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Messages from errlog</h4>
+
+<p>J. Lewis Muir provided patches to ensure that all messages printed on the
+IOC's console by the errlog subsystem are sent to the stderr output stream
+rather than to stdout.</p>
+
+<h4>iocBuild, iocRun and iocPause</h4>
+
+<p>These three new commands are mainly intended for use with DESY's redundant
+IOC software but they might have some uses for others too.  <tt>iocBuild</tt>
+allow an IOC to be initialized and set up ready for a quick start without
+actually making it live; a subsequent <tt>iocRun</tt> will bring it to the same
+state as an <tt>iocInit</tt> would have.  Once an IOC has been started (using
+either <tt>iocInit</tt> or <tt>iocBuild</tt> + <tt>iocRun</tt>) the
+<tt>iocPause</tt> command can be used to freeze it, disconnecting its PVs and
+stopping all scan activity.  The <tt>iocRun</tt> command restarts the IOC from
+this state.</p>
+
+<p>While this might seem like a useful thing to be able to do, we have not
+tested it on IOCs using real-world I/O, and it is not unlikely that pausing an
+operational IOC could cause irremdial havok to any device support, sequence
+programs and other software which is not expecting it, so use with care and make
+sure you test it first.  An IOC that is kept paused for more than a minute or
+two could fill up its network buffers and become impossible to restart without
+rebooting.</p>
+
 <h4>IOC Support on 64-bit archs</h4>
 
 <p>A fairly significant number of changes have been that were necessary to allow

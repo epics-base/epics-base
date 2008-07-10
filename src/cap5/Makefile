@@ -38,15 +38,18 @@ endif
 include $(TOP)/configure/RULES
 
 ifdef T_A
+  PERL5_DIR = $(dir $(shell $(PERL) ../perlConfig.pl perl5))
+  XSUBPP = $(PERL5_DIR)xsubpp$(EXE)
+  PODCHECKER = $(PERL5_DIR)podchecker$(EXE)
   TYPEMAP = $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils/typemap
 
   %.c: ../%.xs
 	$(RM) $@ $@_new
-	xsubpp -typemap $(TYPEMAP) $< > $@_new && $(MV) $@_new $@
+	$(XSUBPP) -typemap $(TYPEMAP) $< > $@_new && $(MV) $@_new $@
 
   %.html: %.pm
 	$(RM) $@
-	podchecker $< && pod2html --infile=$< --outfile=$@
+	$(PODCHECKER) $< && pod2html --infile=$< --outfile=$@
 
   clean::
 	$(RM) Cap5.c

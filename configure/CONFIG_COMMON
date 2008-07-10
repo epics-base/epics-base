@@ -116,7 +116,6 @@ GNU=NO
 # Prefix and suffix
 DEP=.depends
 OBJ = .
-RES = .
 CMPLR_SUFFIX=
 CMPLR_PREFIX=
 LIB_PREFIX=
@@ -151,7 +150,7 @@ JAR =
 #--------------------------------------------------
 # obj files
 
-TARGET_OBJS =  $($*_OBJLIBS) $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS)))
+TARGET_OBJS =  $($*_OBJLIBS) $($*_LDOBJS) $(addsuffix $(OBJ),$(basename $($*_OBJS) $($*_SRCS)))
 
 PRODUCT_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(USR_OBJS) $(PROD_OBJS)))
 PROD_LD_OBJS = $(USR_OBJLIBS) $(PROD_OBJLIBS) $(TARGET_OBJS) $(PRODUCT_OBJS)
@@ -162,12 +161,12 @@ LIBRARY_LD_OBJS = $(USR_OBJLIBS) $(LIB_OBJLIBS) $(TARGET_OBJS) $(LIBRARY_OBJS)
 #--------------------------------------------------
 # WIN95/NT resource files
 
-TARGET_RESS = $(addsuffix $(RES),$(basename $($*_RCS)))
+TARGET_RESS = $(if $(RES),$(addsuffix $(RES),$(basename $($*_RCS))),)
 
-PROD_RESS = $(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS)))
+PROD_RESS = $(if $(RES),$(addsuffix $(RES),$(basename $(RCS) $(PROD_RCS))),)
 PROD_LD_RESS = $(TARGET_RESS) $(PROD_RESS)
 
-LIBRARY_RESS = $(addsuffix $(RES),$(basename $(RCS) $(LIB_RCS) $(LIBRARY_RCS)))
+LIBRARY_RESS = $(if $(RES),$(addsuffix $(RES),$(basename $(RCS) $(LIB_RCS) $(LIBRARY_RCS))),)
 LIBRARY_LD_RESS = $(TARGET_RESS) $(LIBRARY_RESS)
 
 #--------------------------------------------------
@@ -247,7 +246,7 @@ STATIC_LDLIBS = $(STATIC_LDLIBS_$(STATIC_BUILD))
 
 #--------------------------------------------------
 # cflags for shared library src files (from SHRLIB_CFLAGS)
-LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OBJS) $(LIBRARY_OBJS)))
+LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OBJSNAME) $(LIBRARY_OBJS)))
 LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLAGS)
 
 #--------------------------------------------------

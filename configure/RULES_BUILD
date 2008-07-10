@@ -74,17 +74,11 @@ ifneq (,$(strip $(HDEPENDS_FILES)))
 endif
 
 #---------------------------------------------------------------
-# Create included Makefile for prod,testprod, and library targets
+# Included defines and rules for prod,testprod, and library targets
 
-ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY)))
-
-MakefileInclude: ../Makefile $(wildcard $(TOP)/configure/RELEASE*)
-	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeMakefileInclude.pl $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) $@
-
--include MakefileInclude
-
-endif # PROD, TESTPROD, LIBRARY, or LOADABLE_LIBRARY defined
+#ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY)))
+include $(CONFIG)/RULES_TARGET
+#endif
 
 #---------------------------------------------------------------
 #   Products and Object libraries

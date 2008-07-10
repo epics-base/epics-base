@@ -33,7 +33,6 @@ PERL_SCRIPTS += installEpics.pl
 PERL_SCRIPTS += makeDbDepends.pl
 PERL_SCRIPTS += makeIncludeDbd.pl
 PERL_SCRIPTS += makeMakefile.pl
-PERL_SCRIPTS += makeMakefileInclude.pl
 PERL_SCRIPTS += mkmf.pl
 PERL_SCRIPTS += munch.pl
 PERL_SCRIPTS += replaceVAR.pl

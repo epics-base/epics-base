@@ -34,12 +34,12 @@ DIRS += misc
 DIRS += dev
 DIRS += vxWorks
 DIRS += softIoc
-DIRS += cap5
 DIRS += gdd
 DIRS += cas
 DIRS += makeBaseApp
 DIRS += excas
 DIRS += makeBaseExt
+DIRS += cap5
 
 libCom_DEPEND_DIRS = tools
 ca_DEPEND_DIRS = libCom
@@ -54,19 +54,19 @@ db/test_DEPEND_DIRS = db
 as_DEPEND_DIRS = db
 util_DEPEND_DIRS = ca
 dbtools_DEPEND_DIRS = db
-catools_DEPEND_DIRS = ca
+catools_DEPEND_DIRS = ca dbStatic
 rsrv_DEPEND_DIRS = as
 rec_DEPEND_DIRS = as registry
 misc_DEPEND_DIRS = rsrv rec
 dev_DEPEND_DIRS = rec misc
 vxWorks_DEPEND_DIRS = ca
 softIoc_DEPEND_DIRS = dev dbtools
-cap5_DEPEND_DIRS = ca dbStatic
 gdd_DEPEND_DIRS = libCom
 cas_DEPEND_DIRS = ca gdd
 excas_DEPEND_DIRS = cas as registry
 makeBaseApp_DEPEND_DIRS = tools
 makeBaseExt_DEPEND_DIRS = tools
+cap5_DEPEND_DIRS = ca dbStatic
 
 
 include $(TOP)/configure/RULES_DIRS

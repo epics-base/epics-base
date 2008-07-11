@@ -23,6 +23,10 @@ ifneq (,$(findstring darwin,$(T_A)))
   LOADABLE_SHRLIB_PREFIX =
   LOADABLE_SHRLIB_SUFFIX = .bundle
 endif
+ifneq (,$(findstring win32,$(T_A)))
+  BAT = .bat
+endif
+
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com
@@ -39,8 +43,8 @@ include $(TOP)/configure/RULES
 
 ifdef T_A
   PERL5_DIR = $(dir $(shell $(PERL) ../perlConfig.pl perl5))
-  XSUBPP = $(PERL5_DIR)xsubpp$(EXE)
-  PODCHECKER = $(PERL5_DIR)podchecker$(EXE)
+  XSUBPP = $(PERL) $(PERL5_DIR)xsubpp$(BAT)
+  PODCHECKER = $(PERL) $(PERL5_DIR)podchecker$(BAT)
   TYPEMAP = $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils/typemap
 
   %.c: ../%.xs

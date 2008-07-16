@@ -128,9 +128,9 @@ epicsThreadGetStackSize (epicsThreadStackSizeClass size)
 {
     unsigned int stackSize = 16000;
     switch(size) {
-    case epicsThreadStackSmall:  stackSize = 5000; break;
-    case epicsThreadStackMedium: stackSize = 9000; break;
-    case epicsThreadStackBig:                      break;
+    case epicsThreadStackSmall:  stackSize =  8000; break;
+    case epicsThreadStackMedium: stackSize = 12000; break;
+    case epicsThreadStackBig:                       break;
     default:
         errlogPrintf("epicsThreadGetStackSize illegal argument");
         break;

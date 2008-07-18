@@ -1,0 +1,8 @@
+#
+# Site-specific information for all RTEMS targets
+#
+#-------------------------------------------------------
+
+# Needed by gcc
+export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(RTEMS_BASE)/lib
+

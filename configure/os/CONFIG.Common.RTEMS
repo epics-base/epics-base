@@ -111,3 +111,4 @@ LDLIBS_READLINE = -lreadline -lncurses
 #--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.RTEMS
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).RTEMS

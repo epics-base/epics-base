@@ -58,7 +58,7 @@ typedef struct dsxt {   /* device support extension table */
 
 /* These are defined in src/misc/iocInit.c */
 
-epicsShareDef struct dsxt devSoft_DSXT;
+epicsShareExtern struct dsxt devSoft_DSXT;
 epicsShareFunc void devExtend(dsxt *pdsxt);
 
 #ifdef __cplusplus

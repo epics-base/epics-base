@@ -164,7 +164,7 @@ ipAddrToAsciiEngine & ipAddrToAsciiEngine::allocate ()
 
 ipAddrToAsciiEnginePrivate::ipAddrToAsciiEnginePrivate () :
     thread ( *this, "ipToAsciiProxy",
-        epicsThreadGetStackSize(epicsThreadStackSmall),
+        epicsThreadGetStackSize(epicsThreadStackBig),
         epicsThreadPriorityLow ),
     pCurrent ( 0 ), cancelPendingCount ( 0u ), exitFlag ( false ),  
     callbackInProgress ( false )

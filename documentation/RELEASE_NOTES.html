@@ -30,6 +30,10 @@ either <tt>iocInit</tt> or <tt>iocBuild</tt> + <tt>iocRun</tt>) the
 stopping all scan activity.  The <tt>iocRun</tt> command restarts the IOC from
 this state.</p>
 
+<h4>ipToAsciiProxy</h4>
+
+<p>This thread calls upon vendor libraries which may use significant amounts of stack.  Account for this by providing the ipToAsciiProxy thread with an epicsThreadStackBig stack.</p>
+
 <p>While this might seem like a useful thing to be able to do, we have not
 tested it on IOCs using real-world I/O, and it is not unlikely that pausing an
 operational IOC could cause irremdial havok to any device support, sequence

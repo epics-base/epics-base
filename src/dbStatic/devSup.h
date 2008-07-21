@@ -17,6 +17,8 @@
 #ifndef INCdevSuph
 #define INCdevSuph 1
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 typedef long (*DEVSUPFUN)(void*);	/* ptr to device support function*/
@@ -56,9 +58,8 @@ typedef struct dsxt {   /* device support extension table */
 
 /* These are defined in src/misc/iocInit.c */
 
-extern struct dsxt devSoft_DSXT;
-extern void devExtend(dsxt *pdsxt);
-
+epicsShareDef struct dsxt devSoft_DSXT;
+epicsShareFunc void devExtend(dsxt *pdsxt);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -18,6 +18,10 @@
 IOC's console by the errlog subsystem are sent to the stderr output stream
 rather than to stdout.</p>
 
+<h4>ipToAsciiProxy</h4>
+
+<p>This thread calls upon vendor libraries which may use significant amounts of stack.  Account for this by providing the ipToAsciiProxy thread with an epicsThreadStackBig stack.</p>
+
 <h4>iocBuild, iocRun and iocPause</h4>
 
 <p>These three new commands are mainly intended for use with DESY's redundant
@@ -29,10 +33,6 @@ either <tt>iocInit</tt> or <tt>iocBuild</tt> + <tt>iocRun</tt>) the
 <tt>iocPause</tt> command can be used to freeze it, disconnecting its PVs and
 stopping all scan activity.  The <tt>iocRun</tt> command restarts the IOC from
 this state.</p>
-
-<h4>ipToAsciiProxy</h4>
-
-<p>This thread calls upon vendor libraries which may use significant amounts of stack.  Account for this by providing the ipToAsciiProxy thread with an epicsThreadStackBig stack.</p>
 
 <p>While this might seem like a useful thing to be able to do, we have not
 tested it on IOCs using real-world I/O, and it is not unlikely that pausing an

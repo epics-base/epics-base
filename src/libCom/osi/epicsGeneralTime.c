@@ -101,7 +101,7 @@ epicsShareFunc void generalTime_Init(void)
     epicsThreadOnce(&onceId, generalTime_InitOnce, NULL);
 }
 
-epicsShareFunc int epicsShareAPI epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
+epicsShareFunc int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     return generalTimeGetExceptPriority(pDest, NULL, 0);
 }

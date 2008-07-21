@@ -272,7 +272,7 @@ static void initDevSup(void)
     }
 }
 
-void devExtend(dsxt *pdsxt)
+epicsShareFunc void devExtend(dsxt *pdsxt)
 {
     if (!pthisDevSup)
         errlogPrintf("devExtend() called outside of initDevSup()\n");

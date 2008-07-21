@@ -19,22 +19,24 @@
 #ifndef _INC_epicsGeneralTime
 #define _INC_epicsGeneralTime
 
-#include <epicsTime.h>
-#include <epicsTimer.h>
+#include "shareLib.h"
+
+#include "epicsTime.h"
+#include "epicsTimer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void    generalTime_Init(void);     /* this is the init routine you can call explicitly in st.cmd */
-int     lastResortEventProviderInstall(void);
-int     generalTimeGetCurrentDouble(double * pseconds);  /* for ai record, seconds from 01/01/1990 */
-void    generalTimeResetErrorCounts();  /* for bo record */
-int     generalTimeGetErrorCounts();    /* for longin record */
-void    generalTimeGetBestTcp(char * desc);     /* for stringin record */
-void    generalTimeGetBestTep(char * desc);     /* for stringin record */
+epicsShareFunc void    generalTime_Init(void);     /* this is the init routine you can call explicitly in st.cmd */
+epicsShareFunc int     lastResortEventProviderInstall(void);
+epicsShareFunc int     generalTimeGetCurrentDouble(double * pseconds);  /* for ai record, seconds from 01/01/1990 */
+epicsShareFunc void    generalTimeResetErrorCounts();  /* for bo record */
+epicsShareFunc int     generalTimeGetErrorCounts();    /* for longin record */
+epicsShareFunc void    generalTimeGetBestTcp(char * desc);     /* for stringin record */
+epicsShareFunc void    generalTimeGetBestTep(char * desc);     /* for stringin record */
 
-long    generalTimeReport(int interest);
+epicsShareFunc long    generalTimeReport(int interest);
 
 #ifdef __cplusplus
 }

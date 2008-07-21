@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include <epicsTypes.h>
 #include <epicsEvent.h>
 #include <epicsMutex.h>
@@ -94,13 +95,13 @@ static void generalTime_InitOnce(void *dummy)
     pgeneralTimePvt->tep_list_sem = epicsMutexMustCreate();
 }
 
-void generalTime_Init(void)
+epicsShareFunc void generalTime_Init(void)
 {
     static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
     epicsThreadOnce(&onceId, generalTime_InitOnce, NULL);
 }
 
-int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
+epicsShareFunc int epicsShareAPI epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     return generalTimeGetExceptPriority(pDest, NULL, 0);
 }
@@ -158,7 +159,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int except_t
     return  status;
 }
 
-int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
+epicsShareFunc int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
 {
     if (eventNumber == epicsTimeEventCurrentTime) {
         return generalTimeGetCurrentPriority(pDest, NULL);
@@ -324,7 +325,7 @@ static int lastResortGetEvent(epicsTimeStamp *timeStamp, int eventNumber)
     return epicsTimeGetCurrent(timeStamp);
 }
 
-int lastResortEventProviderInstall(void)
+epicsShareFunc int lastResortEventProviderInstall(void)
 {
     return generalTimeEventTpRegister("Last Resort Event", LAST_RESORT_PRIORITY, lastResortGetEvent);
 }
@@ -457,7 +458,7 @@ long    generalTimeReport(int level)
  * 'generalTime' DTYP for ai, bo, longin and stringin records 
  */
 
-int generalTimeGetCurrentDouble(double * pseconds)  /* for ai record, seconds from 01/01/1990 */
+epicsShareFunc int generalTimeGetCurrentDouble(double * pseconds)  /* for ai record, seconds from 01/01/1990 */
 {
     epicsTimeStamp          ts;
     if(epicsTimeERROR!=epicsTimeGetCurrent(&ts))
@@ -469,7 +470,7 @@ int generalTimeGetCurrentDouble(double * pseconds)  /* for ai record, seconds fr
         return  epicsTimeERROR;
 }
 
-void    generalTimeResetErrorCounts()   /* for bo record */
+epicsShareFunc void    generalTimeResetErrorCounts()   /* for bo record */
 {
     generalTime_Init();
     pgeneralTimePvt->ErrorCounts=0;
@@ -481,7 +482,7 @@ int     generalTimeGetErrorCounts() /* for longin record */
     return  pgeneralTimePvt->ErrorCounts;
 }
 
-void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
+epicsShareFunc void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
 {/* the assignment to pLastKnownBestTcp is atomic and desc is never changed after registeration */
     generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTcp)
@@ -496,7 +497,7 @@ void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
     }
 }
 
-void    generalTimeGetBestTep(char * desc)  /* for stringin record */
+epicsShareFunc void    generalTimeGetBestTep(char * desc)  /* for stringin record */
 {/* the assignment to pLastKnownBestTep is atomic and desc is never changed after registeration */
     generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTep)

@@ -8,3 +8,5 @@
 #-------------------------------------------------------
 
 include $(CONFIG)/os/CONFIG.solarisCommon.solarisCommon
+
+SHRLIB_CFLAGS = -xcode=pic32

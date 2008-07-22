@@ -13,3 +13,5 @@ BUILD_CLASS = HOST
 
 GNU = NO
 
+# Removes -O optimization and adds -g compile option
+HOST_OPT=NO

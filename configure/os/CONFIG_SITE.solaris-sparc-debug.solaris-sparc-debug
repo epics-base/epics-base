@@ -6,5 +6,3 @@ include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
 #Compiles for profiling with the gprof profiler.
 #GPROF=YES
 
-# Removes -O optimization and adds -g compile option
-HOST_OPT=NO

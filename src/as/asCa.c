@@ -1,11 +1,10 @@
 /*asCa.c*/
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    10-15-93 */
@@ -303,3 +302,32 @@ int epicsShareAPI ascarFP(FILE *fp,int level)
     fprintf(fp,"%d channels %d not connected\n",n,nbad);
     return(0);
 }
+
+void epicsShareAPI ascaStats(int *pchans, int *pdiscon)
+{
+    ASG *pasg;
+    int n = 0;
+    int nbad = 0;
+
+    if(!pasbase) {
+        if (pchans)  *pchans  = n;
+        if (pdiscon) *pdiscon = nbad;
+        return;
+    }
+    pasg = (ASG *)ellFirst(&pasbase->asgList);
+    while (pasg) {
+        ASGINP *pasginp;
+        pasginp = (ASGINP *)ellFirst(&pasg->inpList);
+        while (pasginp) {
+            CAPVT *pcapvt = (CAPVT *)pasginp->capvt;
+            chid chid = pcapvt->chid;
+            ++n;
+            if (ca_state(chid) != cs_conn) ++nbad;
+            pasginp = (ASGINP *)ellNext((ELLNODE *)pasginp);
+        }
+        pasg = (ASG *)ellNext((ELLNODE *)pasg);
+    }
+    if (pchans)  *pchans  = n;
+    if (pdiscon) *pdiscon = nbad;
+}
+

@@ -38,11 +38,27 @@ rebuild : clean install
 
 # Create directory dependancies lines for GNU make -j option
 # Only works with GNU make 3.80 or later (uses eval function)
-define DEP_template
+define DEP_template1
 $(1): $$($(1)_DEPEND_DIRS)
+endef
+$(foreach dir, $(DIRS),$(eval $(call DEP_template1,$(dir))))
+
+define DEP_template2
 $(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
 endef
-$(foreach action, $(ACTIONS), $(foreach dir, $(DIRS),$(eval $(call DEP_template,$(dir),$(action)))))
+$(foreach action, $(ACTIONS), $(foreach dir, $(DIRS),$(eval $(call DEP_template2,$(dir),$(action)))))
+
+define DEP_template3
+$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
+endef
+$(foreach arch, $(ARCHS), $(foreach dir, $(DIRS),$(eval $(call DEP_template3,$(dir),$(arch)))))
+
+define DEP_template4
+$(1)$$(DIVIDER)$(2)$$(DIVIDER)$(3) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2)$$(DIVIDER)$(3),$$(ddir)))
+endef
+$(foreach arch, $(ARCHS), $(foreach action, $(ACTIONS), $(foreach dir, $(DIRS), \
+              $(eval $(call DEP_template4,$(dir),$(action),$(arch))))))
+
 
 $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 	$(MAKE) -C $(dirPart) $(actionArchPart)

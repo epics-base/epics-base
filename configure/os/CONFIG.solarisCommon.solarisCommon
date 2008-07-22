@@ -62,3 +62,4 @@ OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 #COMPILE_FILTER.c = 2>&1 | $(EPICS_BASE)/configure/tools/filterWarnings.pl
 #COMPILE_FILTER.cpp = $(COMPILE_FILTER.c)
 
+-include $(CONFIG)/os/CONFIG_SITE.solarisCommon.solarisCommon

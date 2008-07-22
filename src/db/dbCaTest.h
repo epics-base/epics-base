@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -16,7 +16,8 @@
 extern "C" {
 #endif
 
-epicsShareFunc long epicsShareAPI dbcar(char *recordname,int level);
+epicsShareFunc long dbcar(char *recordname,int level);
+epicsShareFunc void dbcaStats(int *pchans, int *pdiscon);
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,8 @@
 
 /****************************************************************
 *
-*	Current Author:		Marty Kraimer
-*	Date:			10APR96
+*       Author:         Marty Kraimer
+*       Date:           10APR96
 *
 ****************************************************************/
 
@@ -49,101 +49,101 @@
 #include "dbCaTest.h"
 
 
-long epicsShareAPI dbcar(char *precordname, int level)
+long dbcar(char *precordname, int level)
 {
-    DBENTRY		dbentry;
-    DBENTRY		*pdbentry=&dbentry;
-    long		status;
-    dbCommon		*precord;
-    dbRecordType	*pdbRecordType;
-    dbFldDes		*pdbFldDes;
-    DBLINK		*plink;
-    int			ncalinks=0;
-    int			nconnected=0;
-    int			noReadAccess=0;
-    int			noWriteAccess=0;
-    unsigned long	nDisconnect=0;
-    unsigned long	nNoWrite=0;
-    caLink		*pca;
-    int			j;
+    DBENTRY             dbentry;
+    DBENTRY             *pdbentry=&dbentry;
+    long                status;
+    dbCommon            *precord;
+    dbRecordType        *pdbRecordType;
+    dbFldDes            *pdbFldDes;
+    DBLINK              *plink;
+    int                 ncalinks=0;
+    int                 nconnected=0;
+    int                 noReadAccess=0;
+    int                 noWriteAccess=0;
+    unsigned long       nDisconnect=0;
+    unsigned long       nNoWrite=0;
+    caLink              *pca;
+    int                 j;
 
     if (!precordname || precordname[0] == '\0' || !strcmp(precordname, "*")) {
-	precordname = NULL;
-	printf("CA links in all records\n\n");
+        precordname = NULL;
+        printf("CA links in all records\n\n");
     } else {
-	printf("CA links in record named '%s'\n\n", precordname);
+        printf("CA links in record named '%s'\n\n", precordname);
     }
     dbInitEntry(pdbbase,pdbentry);
     status = dbFirstRecordType(pdbentry);
     while (!status) {
-	status = dbFirstRecord(pdbentry);
-	while (!status) {
-	    if(!precordname
-	    || (strcmp(precordname,dbGetRecordName(pdbentry)) ==0)) {
-		pdbRecordType = pdbentry->precordType;
-		precord = (dbCommon *)pdbentry->precnode->precord;
-		for (j=0; j<pdbRecordType->no_links; j++) {
-		    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
-		    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-		    dbLockSetGblLock();
-		    if (plink->type == CA_LINK) {
-			ncalinks++;
-			pca = (caLink *)plink->value.pv_link.pvt;
-			if (pca
-			&& pca->chid
-			&& (ca_field_type(pca->chid) != TYPENOTCONN)) {
-			    nconnected++;
-			    nDisconnect += pca->nDisconnect;
-			    nNoWrite += pca->nNoWrite;
-			    if (!ca_read_access(pca->chid)) noReadAccess++;
-			    if (!ca_write_access(pca->chid)) noWriteAccess++;
-			    if (level>1) {
-				int rw = ca_read_access(pca->chid) |
-					 ca_write_access(pca->chid) << 1;
-				static const char *rights[4] = {
-				    "No Access", "Read Only",
-				    "Write Only", "Read/Write"
-				};
-				printf("%28s.%-4s ==> %-28s  (%lu, %lu)\n",
-				    precord->name,
-				    pdbFldDes->name,
-				    plink->value.pv_link.pvname,
-				    pca->nDisconnect,
-				    pca->nNoWrite);
-				printf("%32s host %s, %s\n", "",
-				    ca_host_name(pca->chid),
-				    rights[rw]);
-			    }
-			} else {
-			    if(level>0) {
-				printf("%28s.%-4s --> %-28s  (%lu, %lu)\n",
-				    precord->name,
-				    pdbFldDes->name,
-				    plink->value.pv_link.pvname,
-				    pca->nDisconnect,
-				    pca->nNoWrite);
-			    }
-			}
-		    }
-		    dbLockSetGblUnlock();
-		}
-		if(precordname) goto done;
-	    }
-	    status = dbNextRecord(pdbentry);
-	}
-	status = dbNextRecordType(pdbentry);
+        status = dbFirstRecord(pdbentry);
+        while (!status) {
+            if (!precordname
+            || (strcmp(precordname,dbGetRecordName(pdbentry)) ==0)) {
+                pdbRecordType = pdbentry->precordType;
+                precord = (dbCommon *)pdbentry->precnode->precord;
+                for (j=0; j<pdbRecordType->no_links; j++) {
+                    pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+                    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                    dbLockSetGblLock();
+                    if (plink->type == CA_LINK) {
+                        ncalinks++;
+                        pca = (caLink *)plink->value.pv_link.pvt;
+                        if (pca
+                        && pca->chid
+                        && (ca_field_type(pca->chid) != TYPENOTCONN)) {
+                            nconnected++;
+                            nDisconnect += pca->nDisconnect;
+                            nNoWrite += pca->nNoWrite;
+                            if (!ca_read_access(pca->chid)) noReadAccess++;
+                            if (!ca_write_access(pca->chid)) noWriteAccess++;
+                            if (level>1) {
+                                int rw = ca_read_access(pca->chid) |
+                                         ca_write_access(pca->chid) << 1;
+                                static const char *rights[4] = {
+                                    "No Access", "Read Only",
+                                    "Write Only", "Read/Write"
+                                };
+                                printf("%28s.%-4s ==> %-28s  (%lu, %lu)\n",
+                                    precord->name,
+                                    pdbFldDes->name,
+                                    plink->value.pv_link.pvname,
+                                    pca->nDisconnect,
+                                    pca->nNoWrite);
+                                printf("%32s host %s, %s\n", "",
+                                    ca_host_name(pca->chid),
+                                    rights[rw]);
+                            }
+                        } else {
+                            if (level>0) {
+                                printf("%28s.%-4s --> %-28s  (%lu, %lu)\n",
+                                    precord->name,
+                                    pdbFldDes->name,
+                                    plink->value.pv_link.pvname,
+                                    pca->nDisconnect,
+                                    pca->nNoWrite);
+                            }
+                        }
+                    }
+                    dbLockSetGblUnlock();
+                }
+                if (precordname) goto done;
+            }
+            status = dbNextRecord(pdbentry);
+        }
+        status = dbNextRecordType(pdbentry);
     }
 done:
     if ((level > 1 && nconnected > 0) ||
-	(level > 0 && ncalinks != nconnected)) printf("\n");
+        (level > 0 && ncalinks != nconnected)) printf("\n");
     printf("Total %d CA link%s; ",
-	   ncalinks, (ncalinks != 1) ? "s" : "");
+           ncalinks, (ncalinks != 1) ? "s" : "");
     printf("%d connected, %d not connected.\n",
-	   nconnected, (ncalinks - nconnected));
+           nconnected, (ncalinks - nconnected));
     printf("    %d can't read, %d can't write.",
-	   noReadAccess, noWriteAccess);
+           noReadAccess, noWriteAccess);
     printf("  (%lu disconnects, %lu writes prohibited)\n\n",
-	   nDisconnect, nNoWrite);
+           nDisconnect, nNoWrite);
     dbFinishEntry(pdbentry);
     
     if ( level > 2  && dbCaClientContext != 0 ) {
@@ -151,4 +151,42 @@ done:
     }
 
     return(0);
+}
+
+void dbcaStats(int *pchans, int *pdiscon)
+{
+    DBENTRY     dbentry;
+    DBENTRY     *pdbentry = &dbentry;
+    long        status;
+    DBLINK      *plink;
+    long        ncalinks = 0;
+    long        nconnected = 0;
+
+    dbInitEntry(pdbbase,pdbentry);
+    status = dbFirstRecordType(pdbentry);
+    while (!status) {
+        dbRecordType *pdbRecordType = pdbentry->precordType;
+        status = dbFirstRecord(pdbentry);
+        while (!status) {
+            dbCommon *precord = (dbCommon *)pdbentry->precnode->precord;
+            int j;
+            for (j=0; j<pdbRecordType->no_links; j++) {
+                int i = pdbRecordType->link_ind[j];
+                dbFldDes *pdbFldDes = pdbRecordType->papFldDes[i];
+                plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                if (plink->type == CA_LINK) {
+                    caLink *pca = (caLink *)plink->value.pv_link.pvt;
+                    ncalinks++;
+                    if (pca && ca_state(pca->chid) == cs_conn) {
+                        nconnected++;
+                    }
+                }
+            }
+            status = dbNextRecord(pdbentry);
+        }
+        status = dbNextRecordType(pdbentry);
+    }
+    dbFinishEntry(pdbentry);
+    if (pchans)  *pchans  = ncalinks;
+    if (pdiscon) *pdiscon = ncalinks - nconnected;
 }

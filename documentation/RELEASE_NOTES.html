@@ -12,6 +12,25 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>ascaStats, dbcaStats, seqcaStats</h4>
+
+<p>Query routines have been added that count CA client connections made by
+Access Security rules and Database Channel Access links.  A similar routine will
+be added to version 2.0.12 of the sequencer for counting sequence program CA
+links:</p>
+
+<blockquote><pre>
+void ascaStats(int *pchans, int *pdiscon);
+void dbcaStats(int *pchans, int *pdiscon);
+void seqcaStats(int *pchans, int *pdiscon);</pre>
+</blockquote>
+
+<p>The pchans parameter should point to integer storage which will be set to the
+total number of channels open, while the value at the pdiscon pointer will be
+set to the number of channels currently disconnected. Prototypes for these
+routines can be found in the header files asCa.h and dbCaTest.h (seqCom.h for
+the sequencer).</p>
+
 <h4>Messages from errlog</h4>
 
 <p>J. Lewis Muir provided patches to ensure that all messages printed on the

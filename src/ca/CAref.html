@@ -4,6 +4,13 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS R3.14 Channel Access Reference Manual</title>
+  <style type="text/css">
+  <!--
+  h3 code {
+      background-color: #ddf;
+  }
+  -->
+  </style>
 </head>
 
 <body lang="en">
@@ -2355,9 +2362,15 @@ void ca_context_destroy();</pre>
 <p>Shut down the calling thread's channel access client context and free any
 resources allocated. Detach the calling thread from any CA client context.</p>
 
-<p>Be advised that any user created threads that might have attached
-themselves to the CA context must of course stop using it prior to its being
-destroyed.</p>
+<p>Any user-created threads that have attached themselves to the CA context
+must stop using it prior to its being destroyed. A program running in an IOC
+context must delete all of its channels prior to calling ca_context_destroy()
+to avoid a crash.</p>
+
+<p>A CA client application that calls epicsExit() <em>must</em> install an
+EPICS exit handler that calls ca_context_destroy() only <em>after</em> first
+calling ca_create_context(). This will guarantee that the EPICS exit handlers
+get called in the correct order.</p>
 
 <p>On many OS that execute programs in a process based environment the
 resources used by the client library such as sockets and allocated memory are

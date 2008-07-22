@@ -15,8 +15,8 @@ ARCH_CLASS = ppcx86
 #
 # Universal binary support
 #
-OP_SYS_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
-OP_SYS_LDFLAGS += -Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
+OP_SYS_CFLAGS += -arch i386 -arch ppc
+OP_SYS_LDFLAGS += -arch i386 -arch ppc
 
 # Include definitions common to all Darwin targets
 include $(CONFIG)/os/CONFIG.darwinCommon.darwinCommon

@@ -1,15 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
- * devLibVxWorks.c
- * @(#)$Id$
+ * $Id$
  *
  * Archictecture dependent support for common device driver resources 
  *
@@ -61,6 +59,14 @@ void unsolicitedHandlerEPICS(int vectorNumber);
 int cISRTest(void (*)(), void (**)(), void **);
 
 /*
+ * Make sure that the CR/CSR addressing mode is defined.
+ * (it may not be in older versions of vxWorks)
+ */
+#ifndef VME_AM_CSR
+#  define VME_AM_CSR (0x2f)
+#endif
+
+/*
  * we use a translation between an EPICS encoding
  * and a vxWorks encoding here
  * to reduce dependency of drivers on vxWorks
@@ -68,13 +74,16 @@ int cISRTest(void (*)(), void (**)(), void **);
  * we assume that the BSP are configured to use these
  * address modes by default
  */
+
 #define EPICSAddrTypeNoConvert -1
+
 int EPICStovxWorksAddrType[] 
                 = {
                 VME_AM_SUP_SHORT_IO,
                 VME_AM_STD_SUP_DATA,
                 VME_AM_EXT_SUP_DATA,
-                EPICSAddrTypeNoConvert
+                EPICSAddrTypeNoConvert,
+                VME_AM_CSR
             };
 
 #if CPU_FAMILY != PPC
@@ -107,13 +116,13 @@ static long devInit(void) { return 0;}
 /*
  * used by dynamic bind in devLib.c
  */
-static devLibVirtualOS virtualOS = {
+static devLibVirtualOS vxVirtualOS = {
     vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
     devConnectInterruptVME, devDisconnectInterruptVME,
     devEnableInterruptLevelVME, devDisableInterruptLevelVME,
     devA24Malloc,devA24Free,devInit
 };
-devLibVirtualOS *pdevLibVirtualOS = &virtualOS;
+devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
 
 /*
  * devConnectInterruptVME
@@ -284,7 +293,7 @@ LOCAL long vxDevMapAddr (epicsAddressType addrType, unsigned options,
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
@@ -300,7 +309,7 @@ static long vxDevReadProbe (unsigned wordSize, volatile const void *ptr, void *p
 
 /*
  * a bus error safe "wordSize" write at the specified address which returns 
- * unsuccessful status if the device isnt present
+ * unsuccessful status if the device isn't present
  */
 static long vxDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {

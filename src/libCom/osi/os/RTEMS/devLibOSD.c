@@ -1,13 +1,12 @@
-/*  devLibRTEMS.c */
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+/* $Id$ */
 
 /*      RTEMS port by Till Straumann, <strauman@slac.stanford.edu>
  *            3/2002
@@ -40,8 +39,16 @@ LOCAL myISR *isrFetch(unsigned vectorNumber, void **parg);
 void unsolicitedHandlerEPICS(int vectorNumber);
 
 LOCAL myISR *defaultHandlerAddr[]={
-		(myISR*)unsolicitedHandlerEPICS,
+    (myISR*)unsolicitedHandlerEPICS,
 };
+
+/*
+ * Make sure that the CR/CSR addressing mode is defined.
+ * (it may not be in some BSPs).
+ */
+#ifndef VME_AM_CSR
+#  define VME_AM_CSR (0x2f)
+#endif
 
 /*
  * we use a translation between an EPICS encoding
@@ -57,7 +64,8 @@ int EPICStovxWorksAddrType[]
                 VME_AM_SUP_SHORT_IO,
                 VME_AM_STD_SUP_DATA,
                 VME_AM_EXT_SUP_DATA,
-                EPICSAddrTypeNoConvert
+                EPICSAddrTypeNoConvert,
+                VME_AM_CSR
             };
 
 /*
@@ -89,20 +97,21 @@ LOCAL long rtmsDevInit(void);
 /*
  * used by bind in devLib.c
  */
-const struct devLibVirtualOS devLibRTEMSOS = 
-    {rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
+static devLibVirtualOS rtemsVirtualOS = {
+    rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
     devConnectInterruptVME, devDisconnectInterruptVME,
     devEnableInterruptLevelVME, devDisableInterruptLevelVME,
-    devA24Malloc,devA24Free,rtmsDevInit};
-devLibVirtualOS *pdevLibVirtualOS = &devLibRTEMSOS;
+    devA24Malloc,devA24Free,rtmsDevInit
+};
+devLibVirtualOS *pdevLibVirtualOS = &rtemsVirtualOS;
 
 /* RTEMS specific initialization */
 LOCAL long
 rtmsDevInit(void)
 {
-	/* assume the vme bridge has been initialized by bsp */
-	/* init BSP extensions [memProbe etc.] */
-	return bspExtInit();
+    /* assume the vme bridge has been initialized by bsp */
+    /* init BSP extensions [memProbe etc.] */
+    return bspExtInit();
 }
 
 /*
@@ -149,7 +158,7 @@ long devDisconnectInterruptVME (
 )
 {
     void (*psub)();
-	void  *arg;
+    void  *arg;
     int status;
 
     /*
@@ -162,13 +171,13 @@ long devDisconnectInterruptVME (
     }
 
     status = BSP_removeVME_isr(
-            	vectorNumber,
-				psub,
-				arg) ||
-			 BSP_installVME_isr(
-				vectorNumber,
-            	(BSP_VME_ISR_t)unsolicitedHandlerEPICS,
-            	(void*)vectorNumber);        
+        vectorNumber,
+        psub,
+        arg) ||
+     BSP_installVME_isr(
+        vectorNumber,
+        (BSP_VME_ISR_t)unsolicitedHandlerEPICS,
+        (void*)vectorNumber);        
     if(status){
         return S_dev_vecInstlFail;
     }
@@ -181,7 +190,7 @@ long devDisconnectInterruptVME (
  */
 long devEnableInterruptLevelVME (unsigned level)
 {
-		return BSP_enableVME_int_lvl(level);
+    return BSP_enableVME_int_lvl(level);
 }
 
 /*
@@ -189,7 +198,7 @@ long devEnableInterruptLevelVME (unsigned level)
  */
 long devDisableInterruptLevelVME (unsigned level)
 {
-		return BSP_disableVME_int_lvl(level);
+    return BSP_disableVME_int_lvl(level);
 }
 
 /*
@@ -276,12 +285,12 @@ int devInterruptInUseVME (unsigned vectorNumber)
 {
     int i;
     myISR *psub;
-	void *arg;
+    void *arg;
 
     psub = isrFetch (vectorNumber,&arg);
 
-	if (!psub)
-		return FALSE;
+    if (!psub)
+        return FALSE;
 
     /*
      * its a C routine. Does it match a default handler?
@@ -313,16 +322,16 @@ void unsolicitedHandlerEPICS(int vectorNumber)
 {
     /*
      * call epicInterruptContextMessage()
-	 * and not errMessage()
+     * and not errMessage()
      * so we are certain that printf()
      * does not get called at interrupt level
-	 *
-	 * NOTE: current RTEMS implementation only
-	 *       allows a static string to be passed
+     *
+     * NOTE: current RTEMS implementation only
+     *       allows a static string to be passed
      */
     epicsInterruptContextMessage(
         "Interrupt to EPICS disconnected vector"
-		);
+        );
 }
 
 #endif /* defined(__PPC__) && defined(mpc750) */

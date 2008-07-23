@@ -1,19 +1,18 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.h */
 /* $Id$ */
 
 /*
- *	Original Author: Marty Kraimer 
- *  Author:  	     Jeff Hill	
- *  Date:            03-10-93 
+ * Original Author: Marty Kraimer 
+ *  Author:     Jeff Hill
+ *  Date:       03-10-93
  */
 
 #ifndef INCdevLibh
@@ -35,6 +34,7 @@ typedef enum {
 		atVMEA24,
 		atVMEA32,
 		atISA,	/* memory mapped ISA access (until now only on PC) */
+		atVMECSR, /* VME-64 CR/CSR address space */
 		atLast	/* atLast must be the last enum in this list */
 		} epicsAddressType;
 
@@ -46,6 +46,15 @@ extern const char *epicsAddressTypeName[];
 
 long	devAddressMap(void); /* print an address map */
 
+/*
+ * devBusToLocalAddr()
+ *
+ * OSI routine to translate bus addresses their local CPU address mapping
+ */
+long	devBusToLocalAddr (
+		epicsAddressType addrType,
+		size_t busAddr,
+		volatile void **ppLocalAddr);
 /*
  * devReadProbe()
  *
@@ -357,6 +366,8 @@ extern devLibVirtualOS *pdevLibVirtualOS;
 #define S_dev_badFunction (M_devLib| 31) /*bad function pointer*/
 #define S_dev_badVector (M_devLib| 32) /*bad interrupt vector*/
 #define S_dev_badArgument (M_devLib| 33) /*bad function argument*/
+#define S_dev_badISA (M_devLib| 34) /*Invalid ISA address*/
+#define S_dev_badCRCSR (M_devLib| 35) /*Invalid VME CR/CSR address*/
 #define S_dev_vxWorksIntEnFail S_dev_intEnFail
 
 /*

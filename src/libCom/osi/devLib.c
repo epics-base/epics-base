@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
-/* @(#)$Id$*/
+/* $Id$ */
 
 /*
  *  Original Author: Marty Kraimer
@@ -38,13 +37,15 @@ LOCAL size_t addrLast[atLast] = {
             0xffff,
             0xffffff,
             0xffffffff,
-            0xffffff
+            0xffffff,
+            0xffffff,
             };
 
 LOCAL unsigned addrHexDig[atLast] = {
             4,
             6,
             8,
+            6,
             6
             };
 
@@ -52,7 +53,8 @@ LOCAL long  addrFail[atLast] = {
             S_dev_badA16,
             S_dev_badA24,
             S_dev_badA32,
-            S_dev_badA24
+            S_dev_badISA,
+            S_dev_badCRCSR
             };
 
 LOCAL epicsMutexId addrListLock;
@@ -63,7 +65,8 @@ const char *epicsAddressTypeName[]
         "VME A16",
         "VME A24",
         "VME A32",
-        "ISA"
+        "ISA",
+        "VME CR/CSR"
     };
 
 typedef struct{
@@ -130,6 +133,57 @@ LOCAL long devInstallAddr(
             volatile void **ppPhysicalAddress);
 
 #define SUCCESS 0
+
+/*
+ * devBusToLocalAddr()
+ */
+long devBusToLocalAddr(
+    epicsAddressType addrType,
+    size_t busAddr,
+    volatile void **ppLocalAddress)
+{
+    long status;
+    volatile void *localAddress;
+
+    /*
+     * Make sure that devLib has been intialized
+     */
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if(status){
+            return status;
+        }
+    }
+
+    /*
+     * Make sure we have a valid bus address
+     */
+    status = addrVerify (addrType, busAddr, 4);
+    if (status) {
+        return status;
+    }
+
+    /*
+     * Call the virtual os routine to map the bus address to a CPU address
+     */
+    status = (*pdevLibVirtualOS->pDevMapAddr) (addrType, 0, busAddr, 4, &localAddress);
+    if (status) {
+        errPrintf (status, __FILE__, __LINE__, "%s bus address =0X%X\n",
+            epicsAddressTypeName[addrType], (unsigned int)busAddr);
+        return status;
+    }
+
+    /*
+     * Return the local CPU address if the pointer is supplied
+     */
+    if (ppLocalAddress) {
+        *ppLocalAddress = localAddress;
+    }
+
+    return SUCCESS;
+
+}/*end devBusToLocalAddr()*/
+
 
 /*
  * devRegisterAddress()

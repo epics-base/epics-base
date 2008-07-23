@@ -89,9 +89,9 @@ void put_event_handler ( struct event_handler_args args )
     /* Retrieve pv from event handler structure */
     pv* pPv = args.usr;
 
-    /* Give EPICS event and store status */
-    epicsEventSignal( epId );
+    /* Store status, then give EPICS event */
     pPv->status = args.status;
+    epicsEventSignal( epId );
 }
 
 
@@ -311,13 +311,11 @@ int main (int argc, char *argv[])
 
     nPvs = argc - optind;       /* Remaining arg list are PV names and values */
 
-    if (nPvs < 1)
-    {
+    if (nPvs < 1) {
         fprintf(stderr, "No pv name specified. ('caput -h' for help.)\n");
         return 1;
     }
-    if (nPvs == 1)
-    {
+    if (nPvs == 1) {
         fprintf(stderr, "No value specified. ('caput -h' for help.)\n");
         return 1;
     }
@@ -337,8 +335,7 @@ int main (int argc, char *argv[])
                                 /* Allocate PV structure array */
 
     pvs = calloc (nPvs, sizeof(pv));
-    if (!pvs)
-    {
+    if (!pvs) {
         fprintf(stderr, "Memory allocation for channel structure failed.\n");
         return 1;
     }
@@ -361,7 +358,7 @@ int main (int argc, char *argv[])
         len = strlen(argv[optind]);
 
         if (len < MAX_STRING_SIZE) {
-	    strcpy(bufstr, argv[optind]);
+            strcpy(bufstr, argv[optind]);
 
             if (argc > optind+1) {
                 for (i = optind + 1; i < argc; i++) {
@@ -375,8 +372,8 @@ int main (int argc, char *argv[])
         }
         
         if ((argc - optind) >= 1)
-            	count = 1;	
-		argv[optind] = bufstr;
+            count = 1;
+        argv[optind] = bufstr;
     }
 
     sbuf = calloc (count, sizeof(EpicsStr));
@@ -389,7 +386,7 @@ int main (int argc, char *argv[])
 
                                 /* Get the ENUM strings */
 
-	result = ca_array_get (DBR_GR_ENUM, 1, pvs[0].chid, &bufGrEnum);
+        result = ca_array_get (DBR_GR_ENUM, 1, pvs[0].chid, &bufGrEnum);
         result = ca_pend_io(caTimeout);
         if (result == ECA_TIMEOUT) {
             fprintf(stderr, "Read operation timed out: ENUM data was not read.\n");
@@ -482,18 +479,16 @@ int main (int argc, char *argv[])
         fprintf(stderr, "Write operation timed out: Data was not written.\n");
         return 1;
     }
-    if (request == callback)    /* Also wait for callbacks */
-    {
-      waitStatus = epicsEventWaitWithTimeout( epId, caTimeout );
-      if( waitStatus )
-        fprintf(stderr, "Write callback operation timed out\n");
+    if (request == callback) {   /* Also wait for callbacks */
+        waitStatus = epicsEventWaitWithTimeout( epId, caTimeout );
+        if (waitStatus)
+            fprintf(stderr, "Write callback operation timed out\n");
 
         /* retrieve status from callback */
-        result=pvs[0].status;
+        result = pvs[0].status;
     }
 
-    
-    if ( result != ECA_NORMAL ) {
+    if (result != ECA_NORMAL) {
         fprintf(stderr, "Error occured writing data.\n");
         return 1;
     }

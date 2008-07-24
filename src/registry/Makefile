@@ -27,7 +27,7 @@ LIB_SRCS += registryCommon.c
 LIB_SRCS += registryIocRegister.c
 
 LIBRARY_IOC = registryIoc
-registryIoc_LIBS  = Com dbStaticIoc
+registryIoc_LIBS  = dbStaticIoc Com
 
 registryIoc_RCS_WIN32 = registryIoc.rc
 

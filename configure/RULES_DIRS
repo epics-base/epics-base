@@ -14,9 +14,10 @@
 ARCHS += $(BUILD_ARCHS)
 ACTIONS += inc build install buildInstall clean realclean archclean runtests
 
-dirPart = $(word 1, $(subst $(DIVIDER), ,$@))
-actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$@)), \
-    $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$@))))
+dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
+
+actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$(notdir $@))), \
+ $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@))))) 
 
 dirActionArchTargets = $(foreach dir, $(DIRS), \
                        $(foreach action, $(ACTIONS),\

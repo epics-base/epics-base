@@ -18,7 +18,7 @@ REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
 REM    ----- WINNT -----
 REM set PATH=C:\WINNT;C:\WINNT\SYSTEM32
 REM    ----- WINXP -----
-set PATH=C:\WINDOWS\System32;C:\WINDOWS;C:\WINDOWS\System32\Wbem
+set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\system32\Wbem
 
 REM    --------------- GNU tools -------------------------
 REM    -- cygwin contains GNU make, perl, tk/tcl, vim, ...
@@ -68,8 +68,8 @@ REM set HOME=/home/%USERNAME%
 REM    -- VIM needed by vim to find help files.
 REM set VIM=/usr/share/vim/vim61
 
-REM    --------------- remote cvs  ------------------------
-REM    --HOME needed by cvs for .cvsrc file (set in vim above) 
+REM    --------------- remote cvs (use cygwin cvs) -------
+REM    -- HOME needed by cvs for .cvsrc file (set in vim above) 
 REM set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/usr/local/epicsmgr/cvsroot
 REM set CVS_RSH=/bin/ssh.exe
 
@@ -78,13 +78,19 @@ REM    -- Needed for java extensions
 REM set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
 REM set CLASSPATH=G:\epics\extensions\javalib
 
-REM    --------------- Exceed ----------------------------
-REM    -- Needed for XWindow extensions
-REM    -- Cygwin should preceed Exceed in path
+REM    --------------- X11+Motif--------------------------
+REM    -- Exceed or cygwin Xfree86 needed for Xwindows extensions
+REM
+REM    -- Exceed ( Cygwin should preceed Exceed in path)
 REM set PATH=%PATH%;C:\Exceed
 REM    ------ Exceed 2007 ------
 REM set PATH=%PATH%;C:\Program Files\Hummingbird\Connectivity\12.00\Exceed\
 REM    ------ Exceed 2008 ------
 REM set PATH=%PATH%;C:\Program Files\Hummingbird\Connectivity\13.00\Exceed\
+REM    --
+REM    -- or
+REM    ----- cygwin Xfree86 -----
+REM set PATH=%PATH%;c:\cygwin\usr\X11R6\bin
+REM set DISPLAY=localhost:0
 
 REM    ===================================================

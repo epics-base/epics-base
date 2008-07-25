@@ -16,10 +16,12 @@ REM    --------------- WINDOWS ---------------------------
 REM    ----- WIN95 -----
 REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
 REM    ----- WINNT -----
-set PATH=C:\WINNT;C:\WINNT\SYSTEM32
+REM set PATH=C:\WINNT;C:\WINNT\SYSTEM32
+REM    ----- WINXP -----
+set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\system32\Wbem
 
 REM    --------------- GNU tools -------------------------
-REM    cygwin contains tk/tcl, vim, perl, and many unix tools
+REM    cygwin contains GNU make, perl, tk/tcl, vim, ...
 set PATH=%PATH%;c:\cygwin\bin
 
 REM    --------------- EPICS -----------------------------
@@ -36,7 +38,7 @@ REM HOST_ARCH for Makefile.Host builds
 set HOST_ARCH=cygwin32
 
 REM    --------------- GNU make flags --------------------
-REM set MAKEFLAGS=-w
+set MAKEFLAGS=-w
 
 REM    --------------- EPICS Channel Access --------------
 REM    Uncomment and modify the following lines
@@ -46,19 +48,19 @@ REM set EPICS_CA_AUTO_ADDR_LIST=YES
 
 REM    --------------- cygwin vim ------------------------
 REM HOME needed by vim to find _vimrc file.
-set HOME=/home/%USERNAME%
+REM set HOME=/home/%USERNAME%
 REM VIM needed by vim to find help files.
 set VIM=/usr/share/vim/vim61
 
 REM    --------------- remote cvs (use cygwin cvs) -------
 REM HOME needed by cvs for .cvsrc file (set in vim above) 
-set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/usr/local/epicsmgr/cvsroot
-set CVS_RSH=/bin/ssh.exe
+REM set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/usr/local/epicsmgr/cvsroot
+REM set CVS_RSH=/bin/ssh.exe
 
 REM    --------------- JAVA ------------------------------
 REM    Needed for java extensions
-set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
-set CLASSPATH=G:\epics\extensions\javalib
+REM set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
+REM set CLASSPATH=G:\epics\extensions\javalib
 
 REM    --------------- X11+Motif--------------------------
 REM    Exceed or cygwin Xfree86 needed for Xwindows extensions
@@ -67,7 +69,7 @@ REM    Exceed ( Cygwin should preceed Exceed in path)
 REM set PATH=%PATH%;C:\Exceed
 REM    or
 REM    cygwin Xfree86
-set PATH=%PATH%;c:\cygwin\usr\X11R6\bin
-set DISPLAY=localhost:0
+REM set PATH=%PATH%;c:\cygwin\usr\X11R6\bin
+REM set DISPLAY=localhost:0
 
 REM    ===================================================

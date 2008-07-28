@@ -68,13 +68,15 @@ public:
     virtual dbSubscriptionIO * isSubscription () = 0;
     virtual void show ( epicsGuard < epicsMutex > &, unsigned level ) const = 0;
     virtual void show ( unsigned level ) const = 0;
-	dbBaseIO ();
-	dbBaseIO ( const dbBaseIO & );
-	dbBaseIO & operator = ( const dbBaseIO & );
+    dbBaseIO ();
+    dbBaseIO ( const dbBaseIO & );
+    dbBaseIO & operator = ( const dbBaseIO & );
+protected:
+    virtual ~dbBaseIO() {}
 };
 
 extern "C" void dbSubscriptionEventCallback ( void *pPrivate, struct dbAddr *paddr,
-	int eventsRemaining, struct db_field_log *pfl );
+    int eventsRemaining, struct db_field_log *pfl );
 
 class dbSubscriptionIO : 
     public tsDLNode < dbSubscriptionIO >, 
@@ -104,9 +106,9 @@ private:
     dbSubscriptionIO * isSubscription ();
     friend void dbSubscriptionEventCallback ( 
         void * pPrivate, struct dbAddr * paddr,
-	    int eventsRemaining, struct db_field_log * pfl );
-	dbSubscriptionIO ( const dbSubscriptionIO & );
-	dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
+        int eventsRemaining, struct db_field_log * pfl );
+    dbSubscriptionIO ( const dbSubscriptionIO & );
+    dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
     virtual ~dbSubscriptionIO ();
     void * operator new ( size_t size );
     void operator delete ( void * );
@@ -122,8 +124,8 @@ private:
     tsDLList < dbSubscriptionIO > eventq;
     dbPutNotifyBlocker * pBlocker;
     friend class dbContext;
-	dbContextPrivateListOfIO ( const dbContextPrivateListOfIO & );
-	dbContextPrivateListOfIO & operator = ( const dbContextPrivateListOfIO & );
+    dbContextPrivateListOfIO ( const dbContextPrivateListOfIO & );
+    dbContextPrivateListOfIO & operator = ( const dbContextPrivateListOfIO & );
 };
 
 class dbContextReadNotifyCacheAllocator  {
@@ -140,8 +142,8 @@ private:
     unsigned long _readNotifyCacheSize;
     cacheElem_t * _pReadNotifyCache;
     void reclaimAllCacheEntries ();
-	dbContextReadNotifyCacheAllocator ( const dbContextReadNotifyCacheAllocator & );
-	dbContextReadNotifyCacheAllocator & operator = ( const dbContextReadNotifyCacheAllocator & );
+    dbContextReadNotifyCacheAllocator ( const dbContextReadNotifyCacheAllocator & );
+    dbContextReadNotifyCacheAllocator & operator = ( const dbContextReadNotifyCacheAllocator & );
 };
 
 class dbContextReadNotifyCache  {
@@ -154,8 +156,8 @@ public:
 private:
     dbContextReadNotifyCacheAllocator _allocator;
     epicsMutex & _mutex;
-	dbContextReadNotifyCache ( const dbContextReadNotifyCache & );
-	dbContextReadNotifyCache & operator = ( const dbContextReadNotifyCache & );
+    dbContextReadNotifyCache ( const dbContextReadNotifyCache & );
+    dbContextReadNotifyCache & operator = ( const dbContextReadNotifyCache & );
 };
 
 class dbContext : public cacContext {
@@ -215,8 +217,8 @@ private:
     void show ( 
         epicsGuard < epicsMutex > &, unsigned level ) const;
 
-	dbContext ( const dbContext & );
-	dbContext & operator = ( const dbContext & );
+    dbContext ( const dbContext & );
+    dbContext & operator = ( const dbContext & );
 };
 
 inline dbContextPrivateListOfIO::dbContextPrivateListOfIO () :

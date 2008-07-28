@@ -44,6 +44,8 @@ public:
 	virtual caStatus casMonitorCallBack ( 
         epicsGuard < casClientMutex > &, casMonitor &,
         const gdd & ) = 0;
+protected:
+    virtual ~casMonitorCallbackInterface() {}
 };
 
 class casEvent;

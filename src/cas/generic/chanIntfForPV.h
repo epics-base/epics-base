@@ -44,6 +44,8 @@ class gdd;
 class casChannelDestroyFromPV { // X aCC 655
 public:
     virtual void postDestroyEvent () = 0;
+protected:
+    virtual ~casChannelDestroyFromPV() {}
 };
 
 class chanIntfForPV : public tsDLNode < chanIntfForPV > {

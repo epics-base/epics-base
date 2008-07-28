@@ -128,6 +128,8 @@ public:
     virtual arrayElementCount nativeElementCount ( 
         epicsGuard < epicsMutex > & ) const = 0;
     virtual bool connected ( epicsGuard < epicsMutex > & ) const = 0;
+protected:
+    virtual ~privateInterfaceForIO() {}
 };
 
 class nciu : 

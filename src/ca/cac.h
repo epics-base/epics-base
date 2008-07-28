@@ -65,6 +65,8 @@ public:
         epicsGuard < epicsMutex > &, netWriteNotifyIO &io ) = 0;
     virtual void recycleSubscription ( 
         epicsGuard < epicsMutex > &, netSubscription &io ) = 0;
+protected:
+    virtual ~cacRecycle() {}
 };
 
 struct CASG;

@@ -53,6 +53,8 @@ public:
 	virtual flushCondition xSend ( char *pBuf, bufSizeT nBytesAvailableToSend, 
 		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent ) = 0;
 	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
+protected:
+    virtual ~outBufClient() {}
 };
 
 //

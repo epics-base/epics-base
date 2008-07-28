@@ -35,7 +35,7 @@ enum fdRegType {fdrRead, fdrWrite, fdrException, fdrNEnums};
 //
 // file descriptor interest id
 //
-class epicsShareClass fdRegId  
+class epicsShareClass fdRegId
 {
 public:
 
@@ -60,6 +60,8 @@ public:
     resTableIndex hash () const;
 
     virtual void show (unsigned level) const;
+
+    virtual ~fdRegId() {}
 private:
     SOCKET fd;
     fdRegType type;

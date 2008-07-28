@@ -38,6 +38,8 @@ protected:
     epicsThreadId id;
     bool recvWakeup;
     bool sendWakeup;
+protected:
+    virtual ~circuit() {}
 };
 
 class serverCircuit : public circuit {

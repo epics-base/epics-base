@@ -55,6 +55,8 @@ public:
     virtual fillCondition xRecv ( char *pBuf, bufSizeT nBytesToRecv, 
         enum fillParameter parm, bufSizeT &nByesRecv ) = 0;
     virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
+protected:
+    virtual ~inBufClient() {}
 };
 
 class inBuf {

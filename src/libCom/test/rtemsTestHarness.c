@@ -5,10 +5,13 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#include "epicsExit.h"
+
 int
 main(int argc, char **argv)
 {
     extern void epicsRunLibComTests(void);
     epicsRunLibComTests();
     epicsExit(0);
+    return 0;
 }

@@ -671,7 +671,7 @@ void		*pfl
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		pold->precision = new.precision;
+		pold->precision = new.precision.dp;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
                 pold->upper_disp_limit = epicsConvertDoubleToFloat(new.upper_disp_limit);
@@ -771,7 +771,7 @@ void		*pfl
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		pold->precision = new.precision;
+		pold->precision = new.precision.dp;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;
@@ -844,7 +844,7 @@ void		*pfl
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		pold->precision = new.precision;
+		pold->precision = new.precision.dp;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
                 pold->upper_disp_limit = epicsConvertDoubleToFloat(new.upper_disp_limit);
@@ -985,7 +985,7 @@ void		*pfl
 			pfl);
 		pold->status = new.status;
 		pold->severity = new.severity;
-		pold->precision = new.precision;
+		pold->precision = new.precision.dp;
 		strncpy(pold->units,new.units,MAX_UNITS_SIZE);
 		pold->units[MAX_UNITS_SIZE-1] = '\0';
 		pold->upper_disp_limit = new.upper_disp_limit;

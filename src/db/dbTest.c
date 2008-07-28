@@ -684,7 +684,7 @@ static void printBuffer(
             struct dbr_precision *pdbr_precision = (void *)pbuffer;
 
             printf("precision = %ld\n",
-                pdbr_precision->precision);
+                pdbr_precision->precision.dp);
         }else{
             printf("precision not returned\n");
         }

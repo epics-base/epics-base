@@ -1150,31 +1150,31 @@ static long dbPutFieldLink(
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
-        if (plink==&precord->tsel) recGblTSELwasModified(plink);
+        if (plink == &precord->tsel)
+            recGblTSELwasModified(plink);
+        plink->value.pv_link.precord = precord;
         if (!(plink->value.pv_link.pvlMask & (pvlOptCA|pvlOptCP|pvlOptCPP)) &&
-            (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
+            (dbNameToAddr(plink->value.pv_link.pvname, &dbaddr) == 0)) {
             /* It's a DB link */
             DBADDR      *pdbAddr;
 
             plink->type = DB_LINK;
-            pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
+            pdbAddr = dbMalloc(sizeof(struct dbAddr));
             *pdbAddr = dbaddr; /* NB: structure copy */;
-            plink->value.pv_link.precord = precord;
             plink->value.pv_link.pvt = pdbAddr;
             dbLockSetRecordLock(pdbAddr->precord);
-            dbLockSetMerge(precord,pdbAddr->precord);
+            dbLockSetMerge(precord, pdbAddr->precord);
         } else { /* Make it a CA link */
             char        *pperiod;
 
             plink->type = CA_LINK;
-            plink->value.pv_link.precord = precord;
-            if (pfldDes->field_type==DBF_INLINK) {
+            if (pfldDes->field_type == DBF_INLINK) {
                 plink->value.pv_link.pvlMask |= pvlOptInpNative;
             }
             dbCaAddLink(plink);
-            if (pfldDes->field_type==DBF_FWDLINK) {
-                pperiod = strrchr(plink->value.pv_link.pvname,'.');
-                if (pperiod && strstr(pperiod,"PROC"))
+            if (pfldDes->field_type == DBF_FWDLINK) {
+                pperiod = strrchr(plink->value.pv_link.pvname, '.');
+                if (pperiod && strstr(pperiod, "PROC"))
                     plink->value.pv_link.pvlMask |= pvlOptFWD;
             }
         }
@@ -1443,7 +1443,7 @@ long epicsShareAPI dbGetPrecision(const struct link *plink,short *precision)
     paddr = (DBADDR *)plink->value.pv_link.pvt;
     status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
     if(status) return(status);
-    *precision = buffer.precision;
+    *precision = buffer.precision.dp;
     return(0);
 }
 

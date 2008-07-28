@@ -107,11 +107,14 @@ epicsShareExtern volatile int interruptAccept;
 #define DB_UNITS_SIZE   16
 #define DBRunits \
 	char		units[DB_UNITS_SIZE];	/* units	*/
-#define DBRprecision \
-        long            precision;      /* number of decimal places*/
-        /* The above type must match the pointer arguments to
+#define DBRprecision union { \
+        long            dp;      /* number of decimal places*/\
+        double          unused;  /* for alignment */\
+        } precision;
+        /* precision must be long to match the pointer arguments to
          * RSET->get_precision() and recGblGetPrec(), which it's
-         * too late to change now... */
+         * too late to change now.  DBRprecision must be padded to
+         * maintain 8-byte alignment. */
 #define DBRtime \
 	epicsTimeStamp	time;		/* time stamp*/
 #define DBRenumStrs \

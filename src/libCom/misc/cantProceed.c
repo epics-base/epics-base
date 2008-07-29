@@ -28,7 +28,7 @@ epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *m
             errlogPrintf("%s: callocMustSucceed(%lu, %lu) - calloc failed\n",
                     msg, (unsigned long)count, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -44,7 +44,7 @@ epicsShareFunc void * mallocMustSucceed(size_t size, const char *msg)
             errlogPrintf("%s: mallocMustSucceed(%lu) - malloc failed\n",
                 msg, (unsigned long)size);
             errlogPrintf("Thread %s (%p) suspending.\n",
-                    epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+                    epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
             errlogFlush();
             epicsThreadSuspendSelf();
         }
@@ -61,7 +61,7 @@ epicsShareFunc void cantProceed(const char *msg, ...)
     va_end(pvar);
     
     errlogPrintf("Thread %s (%p) can't proceed, suspending.\n",
-            epicsThreadGetNameSelf(), epicsThreadGetIdSelf());
+            epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
     errlogFlush();
     
     epicsThreadSleep(1.0);

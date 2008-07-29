@@ -236,7 +236,7 @@ void taskwdRemove(epicsThreadId tid)
 
     epicsThreadGetName(tid, tName, sizeof(tName));
     errlogPrintf("taskwdRemove: Thread %s (%p) not registered!\n",
-        tName, tid);
+        tName, (void *)tid);
 }
 
 
@@ -378,7 +378,7 @@ epicsShareFunc void taskwdShow(int level)
             epicsThreadGetName(pt->tid, tName, sizeof(tName));
             printf("%16.16s %9s %12p %12p %12p\n",
                 tName, pt->suspended ? "Suspended" : "Ok ",
-                pt->tid, pt->callback, pt->usr);
+                (void *)pt->tid, (void *)pt->callback, pt->usr);
             pt = (struct tNode *)ellNext(&pt->node);
         }
     }

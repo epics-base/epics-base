@@ -20,7 +20,6 @@
 #include "dbmf.h"
 
 #include "dbDefs.h"
-#include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
 #include "ellLib.h"
@@ -33,6 +32,7 @@
 #include "epicsExport.h"
 
 #define epicsExportSharedSymbols
+#include "dbFldTypes.h"
 #include "link.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"

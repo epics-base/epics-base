@@ -15,10 +15,10 @@
 #include "dbIocRegister.h"
 #include "dbtoolsIocRegister.h"
 #include "rsrvIocRegister.h"
-#include "miscIocRegister.h"
 #include "libComRegister.h"
 
 #define epicsExportSharedSymbols
+#include "miscIocRegister.h"
 #include "iocshRegisterCommon.h"
 
 void epicsShareAPI iocshRegisterCommon(void)

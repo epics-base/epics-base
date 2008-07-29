@@ -16,11 +16,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "cantProceed.h"
 #include "epicsFindSymbol.h"
 #include "gpHash.h"
-#define epicsExportSharedSymbols
 #include "registry.h"
 
 static void *gphPvt = 0;

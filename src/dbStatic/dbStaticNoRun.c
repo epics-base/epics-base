@@ -16,11 +16,11 @@
 #include <math.h>
 
 #include "dbDefs.h"
-#include "dbFldTypes.h"
 #include "epicsPrint.h"
 #include "errMdef.h"
  
 #define epicsExportSharedSymbols
+#include "dbFldTypes.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
  

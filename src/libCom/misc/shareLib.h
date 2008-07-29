@@ -113,7 +113,7 @@
  * Also check for "EPICS_DLL_NO" not defined so that we will not use these
  * keywords if it is an object library build of base under WIN32.
  */
-#if defined(_WIN32) && !defined(__GNUC__) 
+#if (defined(_WIN32) && !defined(__GNUC__))  || defined(_MINGW)
 
 #   if defined(epicsExportSharedSymbols)
 #       if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */

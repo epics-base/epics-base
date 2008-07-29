@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "macLib.h"
 #include "epicsStdio.h"
@@ -29,7 +30,6 @@
 #include "registry.h"
 #include "epicsReadline.h"
 #include "cantProceed.h"
-#define epicsExportSharedSymbols
 #include "iocsh.h"
 
 extern "C" {

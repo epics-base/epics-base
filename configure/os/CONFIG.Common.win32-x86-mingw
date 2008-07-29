@@ -13,21 +13,11 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = WIN32
 ARCH_CLASS = x86
 
-EXE=.exe
-
-# Library used when COMMANDLINE_LIBRARY is READLINE
-LDLIBS_READLINE = -lreadline
-
-
-# Set runtime path for shared libraries
-SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
-
-# Set runtime path for products
-PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
-
+#ARCH_DEP_CPPFLAGS += -D_X86_
+ARCH_DEP_CFLAGS += -m32
+ARCH_DEP_LDFLAGS += -m32
 
 # Compiler defines _X86_ 1
-
 # Compiler defines __MSVCRT__ 1
 # Compiler defines __MINGW32__ 1
 # Compiler defines __WIN32 1
@@ -39,13 +29,48 @@ PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 # Compiler defines WINNT 1
 # Compiler does not define  __unix __unix__ unix
 
+# Override of definitions from CONFIG.Common.UnixCommon
+
+EXE=.exe
+
 # Override for -DUNIX from CONFIG.Common.UnixCommon
-OP_SYS_CPPFLAGS =
+OP_SYS_CPPFLAGS += -D_MINGW
 
-OP_SYS_CXXFLAGS += -D__cplusplus
+VISC_DLL_NO = -DEPICS_DLL_NO
+VISC_DLL_YES =
+VISC_DLL = $(VISC_DLL_$(SHARED_LIBRARIES))
+STATIC_CFLAGS_YES= $(VISC_DLL)
+STATIC_CFLAGS_NO=  $(VISC_DLL) -D_DLL
+STATIC_CXXFLAGS_YES= $(VISC_DLL)
+STATIC_CXXFLAGS_NO=  $(VISC_DLL) -D_DLL
 
-LIBRARY_LD_RESS=
+EXE=.exe
+#	adjust names of libraries to build
+#
+#	But: if there are no objects LIBRARY_LD_OBJS to include
+#	in this library (may be for e.g. base/src/libCompat
+#	on some archs), don't define (and build) any library!
+SHRLIB_PREFIX=
+SHRLIB_SUFFIX=.dll
+SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
+LOADABLE_SHRLIB_PREFIX=
+LOADABLE_SHRLIB_SUFFIX=.dll
+LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(LOADABLE_SHRLIB_SUFFIX))
 
-OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
-#STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+#
+# When SHARED_LIBRARIES is YES we are building a DLL link library 
+# and when SHARED_LIBRARIES is NO we are building an object library
+#
+LIB_PREFIX=
+LIB_SUFFIX=.lib
+DLL_LINK_LIBNAME_YES = $(BUILD_LIBRARY:%=%$(LIB_SUFFIX))
+DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(SHARED_LIBRARIES))
+LIBNAME_NO = $(BUILD_LIBRARY:%=%$(LIB_SUFFIX))
+LIBNAME = $(LIBNAME_$(SHARED_LIBRARIES))
+
+#	dll install location
+INSTALL_SHRLIB = $(INSTALL_BIN)
+
+LINK.shrlib = $(CCC) -o $(SHRLIB_PREFIX)$*$(SHRLIB_SUFFIX) $(TARGET_LIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
+LINK.shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 

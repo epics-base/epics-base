@@ -9,8 +9,7 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-# Shared libraries not implemented
-SHARED_LIBRARIES=NO
+SHRLIB_VERSION=
 
 # gcc, g++, ar, ld, and ranlib must be in user's path
 CC = gcc
@@ -19,17 +18,32 @@ AR = ar -rc
 LD = ld -r
 RANLIB = ranlib
 
-# Avoid "position-independent code is always generated" message
+# Avoid "-fPIC ignored for target (all code is position independent)"
+
 SHRLIB_CFLAGS =
-SHRLIB_LDFLAGS = -shared
-LOADABLE_SHRLIB_LDFLAGS = -shared
+SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
+LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 
-# Dont use -ansi option:  eliminates strdup and _tempnam
+# Dont use -ansi option:  eliminates _fdopen, _tempnam, ...
 CONFORM_CFLAGS_ANSI =
-CONFORM_CFLAGS_STRICT = -pedantic
+CONFORM_CFLAGS_STRICT = 
 CONFORM_CXXFLAGS_NORMAL =
-CONFORM_CXXFLAGS_STRICT = -pedantic
+CONFORM_CXXFLAGS_STRICT = 
 
-# Override linking with gcc library
+# Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
 
+# Library used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline
+
+OP_SYS_CXXFLAGS += -D__cplusplus
+
+LIBRARY_LD_RESS=
+
+OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+#STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
+
+#STATIC_LDFLAGS_YES= -Wl,-Bstatic
+#STATIC_LDFLAGS_NO=
+#STATIC_LDLIBS_YES= -Wl,-Bdynamic
+#STATIC_LDLIBS_NO=

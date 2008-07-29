@@ -44,8 +44,8 @@ public:
     void show ( unsigned int level = 0 );
     unsigned int pending ();
 
-private: // Prevent compiler-generated member functions
-    // default constructor, copy constructor, assignment operator
+private: /* Prevent compiler-generated member functions */
+    /* default constructor, copy constructor, assignment operator */
     epicsMessageQueue();
     epicsMessageQueue(const epicsMessageQueue &);
     epicsMessageQueue& operator=(const epicsMessageQueue &);
@@ -95,7 +95,7 @@ epicsShareFunc void epicsShareAPI epicsMessageQueueShow(
 
 #ifdef __cplusplus
 }
-#endif /*__cplusplus */
+#endif /* __cplusplus */
 
 #include "osdMessageQueue.h"
 

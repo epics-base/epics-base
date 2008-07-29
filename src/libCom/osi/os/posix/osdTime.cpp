@@ -19,7 +19,7 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-
+extern "C" {
 static int osdTimeGetCurrent (epicsTimeStamp *pDest)
 {
 #   ifdef CLOCK_REALTIME
@@ -45,6 +45,7 @@ static int osdTimeGetCurrent (epicsTimeStamp *pDest)
       *pDest = epicsTime (tv); 
         return epicsTimeOK;
 #   endif
+}
 }
 
 static int timeRegister(void)

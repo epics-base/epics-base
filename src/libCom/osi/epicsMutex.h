@@ -25,8 +25,8 @@ typedef enum {
 
 class epicsShareClass epicsMutex {
 public:
-    class mutexCreateFailed {}; /* exception */
-    class invalidMutex {}; /* exception */
+    class mutexCreateFailed; /* exception payload */
+    class invalidMutex; /* exception payload */
     epicsMutex ();
     ~epicsMutex ();
     void show ( unsigned level ) const;

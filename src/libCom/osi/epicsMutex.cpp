@@ -50,7 +50,34 @@ struct epicsMutexParm {
 };
 
 STATIC epicsMutexOSD * epicsMutexGlobalLock;
-
+
+
+// vxWorks 5.4 gcc fails during compile when I use std::exception
+using namespace std;
+
+// exception payload
+class epicsMutex::mutexCreateFailed : public exception
+{
+    const char * what () const throw ();
+};
+
+const char * epicsMutex::mutexCreateFailed::what () const throw ()
+{
+    return "epicsMutex::mutexCreateFailed()";
+}
+
+// exception payload
+class epicsMutex::invalidMutex : public exception
+{
+    const char * what () const throw ();
+};
+
+const char * epicsMutex::invalidMutex::what () const throw ()
+{
+    return "epicsMutex::invalidMutex()";
+}
+
+
 epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     const char *pFileName,int lineno)
 {

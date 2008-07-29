@@ -14,8 +14,16 @@
 #include <math.h>
 #include <float.h>
 
+#ifndef finite
 #define finite(D) _finite(D)
+#endif
+
+#ifndef isnan
 #define isnan(D) _isnan(D)
+#endif
+
+#ifndef isinf
 #define isinf(D) ( !_finite(D) && !_isnan(D) ) 
+#endif
 
 #endif /* epicsMathh */

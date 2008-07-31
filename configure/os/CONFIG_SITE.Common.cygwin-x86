@@ -7,6 +7,4 @@
 
 # If readline is installed uncomment the following line
 # to add command-line editing and history support
-#COMMANDLINE_LIBRARY = READLINE
-
-
+COMMANDLINE_LIBRARY = READLINE

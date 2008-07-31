@@ -17,16 +17,11 @@ MKDIR = $(PERL) -MExtUtils::Command -e mkpath
 RMDIR = $(PERL) -MExtUtils::Command -e rm_rf
 ECHO = echo
 
-HOSTEXE=.exe
-
 WIND_HOST_TYPE = x86-win32
-
-# osithead use default stack, YES or NO override
 OSITHREAD_USE_DEFAULT_STACK = NO
 
-# DLL build not supported yet
+HOSTEXE=.exe
+
 # Needed to find dlls for base installed build tools (antelope,eflex,...)
-#PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
-
-
+PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
 

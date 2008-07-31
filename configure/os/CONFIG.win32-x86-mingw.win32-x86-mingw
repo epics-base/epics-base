@@ -9,17 +9,16 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
-SHRLIB_VERSION=
-
 # gcc, g++, ar, ld, and ranlib must be in user's path
 CC = gcc
 CCC = g++
 AR = ar -rc
 LD = ld -r
 RANLIB = ranlib
+RES=.coff
+RCCMD = windres $(INCLUDES) $< $@
 
-# Avoid "-fPIC ignored for target (all code is position independent)"
-
+# No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
 SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
@@ -33,17 +32,5 @@ CONFORM_CXXFLAGS_STRICT =
 # Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
 
-# Library used when COMMANDLINE_LIBRARY is READLINE
-LDLIBS_READLINE = -lreadline
-
-OP_SYS_CXXFLAGS += -D__cplusplus
-
-LIBRARY_LD_RESS=
-
-OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
-#STATIC_LDLIBS_YES=-lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm
-
-#STATIC_LDFLAGS_YES= -Wl,-Bstatic
-#STATIC_LDFLAGS_NO=
-#STATIC_LDLIBS_YES= -Wl,-Bdynamic
-#STATIC_LDLIBS_NO=
+OP_SYS_LDLIBS = -lws2_32 
+PROD_SYS_LIBS = ws2_32 

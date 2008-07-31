@@ -13,27 +13,59 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = cygwin32
 ARCH_CLASS = x86
 
-EXE=.exe
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline -lcurses
 
-COMPILER_CPPFLAGS = -D_REENTRANT
-
-#POSIX_CPPFLAGS = -D_POSIX_SOURCE=199506L -D_POSIX_THREADS -D_POSIX_TIMERS
-# _POSIX_SOURCE eliminates select()
 POSIX_CPPFLAGS = -D_POSIX_THREADS -D_POSIX_TIMERS
+#POSIX_CPPFLAGS += -D_POSIX_SOURCE
 POSIX_LDLIBS += -lpthread
 
-ARCH_DEP_CPPFLAGS += -D_X86_
+ARCH_DEP_CFLAGS += -m32
+ARCH_DEP_LDFLAGS += -m32
 
-OP_SYS_CPPFLAGS += -DCYGWIN32 -U_WIN32
+# Compiler defines _X86_ 1
+# Compiler defines __MSVCRT__ 1
+# Compiler defines __CYGWIN__ 1
+# Compiler defines __CYGWIN32__ 1
+# Compiler defines __unix__ 1
+# Compiler defines __unix 1
+# Compiler defines unix 1
 
-# Set runtime path for shared libraries
-SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+OP_SYS_CPPFLAGS += -DCYGWIN32
 
-# Set runtime path for products
-PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+EXE=.exe
 
-#  Definitions used when COMMANDLINE_LIBRARY is READLINE
-INCLUDES_READLINE = -I$(GNU_DIR)/include
-LDFLAGS_READLINE += -L$(GNU_DIR)/lib
-LDLIBS_READLINE = -lreadline
+VISC_DLL_NO = -DEPICS_DLL_NO
+VISC_DLL_YES =
+VISC_DLL = $(VISC_DLL_$(SHARED_LIBRARIES))
+STATIC_CFLAGS_YES= $(VISC_DLL)
+STATIC_CFLAGS_NO=  $(VISC_DLL) -D_DLL
+STATIC_CXXFLAGS_YES= $(VISC_DLL)
+STATIC_CXXFLAGS_NO=  $(VISC_DLL) -D_DLL
+
+#	adjust names of libraries to build
+#
+#	But: if there are no objects LIBRARY_LD_OBJS to include
+#	in this library (may be for e.g. base/src/libCompat
+#	on some archs), don't define (and build) any library!
+SHRLIB_PREFIX=
+SHRLIB_SUFFIX=.dll
+SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
+LOADABLE_SHRLIB_PREFIX=
+LOADABLE_SHRLIB_SUFFIX=.dll
+LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(LOADABLE_SHRLIB_SUFFIX))
+
+#
+# When SHARED_LIBRARIES is YES we are building a DLL link library 
+# and when SHARED_LIBRARIES is NO we are building an object library
+#
+LIB_PREFIX=
+LIB_SUFFIX=.lib
+DLL_LINK_LIBNAME_YES = $(BUILD_LIBRARY:%=%$(LIB_SUFFIX))
+DLL_LINK_LIBNAME = $(DLL_LINK_LIBNAME_$(SHARED_LIBRARIES))
+LIBNAME_NO = $(BUILD_LIBRARY:%=%$(LIB_SUFFIX))
+LIBNAME = $(LIBNAME_$(SHARED_LIBRARIES))
+
+#	dll install location
+INSTALL_SHRLIB = $(INSTALL_BIN)
 

@@ -13,7 +13,9 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = WIN32
 ARCH_CLASS = x86
 
-#ARCH_DEP_CPPFLAGS += -D_X86_
+#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+LDLIBS_READLINE = -lreadline -lcurses
+
 ARCH_DEP_CFLAGS += -m32
 ARCH_DEP_LDFLAGS += -m32
 
@@ -29,12 +31,10 @@ ARCH_DEP_LDFLAGS += -m32
 # Compiler defines WINNT 1
 # Compiler does not define  __unix __unix__ unix
 
-# Override of definitions from CONFIG.Common.UnixCommon
-
-EXE=.exe
-
 # Override for -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS = -D_MINGW
+
+EXE=.exe
 
 VISC_DLL_NO = -DEPICS_DLL_NO
 VISC_DLL_YES =
@@ -44,7 +44,6 @@ STATIC_CFLAGS_NO=  $(VISC_DLL) -D_DLL
 STATIC_CXXFLAGS_YES= $(VISC_DLL)
 STATIC_CXXFLAGS_NO=  $(VISC_DLL) -D_DLL
 
-EXE=.exe
 #	adjust names of libraries to build
 #
 #	But: if there are no objects LIBRARY_LD_OBJS to include
@@ -71,6 +70,4 @@ LIBNAME = $(LIBNAME_$(SHARED_LIBRARIES))
 #	dll install location
 INSTALL_SHRLIB = $(INSTALL_BIN)
 
-LINK.shrlib = $(CCC) -o $(SHRLIB_PREFIX)$*$(SHRLIB_SUFFIX) $(TARGET_LIB_LDFLAGS) $(SHRLIBDIR_LDFLAGS) $(LDFLAGS)
-LINK.shrlib += $(LIB_LDFLAGS) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 

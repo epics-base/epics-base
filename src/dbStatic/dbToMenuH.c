@@ -74,34 +74,35 @@ int main(int argc,char **argv)
 	fprintf(stderr,"usage: dbToMenu -Idir -Idir file.dbd [outfile]\n");
 	exit(0);
     }
-	if (argc==2) {
-    /*remove path so that outFile is created where program is executed*/
-    plastSlash = strrchr(argv[1],'/');
-    if(!plastSlash)  plastSlash = strrchr(argv[1],'\\');
-    plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
-    outFilename = dbCalloc(1,strlen(plastSlash)+1);
-    strcpy(outFilename,plastSlash);
-    pext = strstr(outFilename,".dbd");
-    if(!pext) {
-	fprintf(stderr,"Input file MUST have .dbd extension\n");
-	exit(-1);
-    }
-    strcpy(pext,".h");
-	} else {
-    outFilename = dbCalloc(1,strlen(argv[2])+1);
-    strcpy(outFilename,argv[2]);
+    if (argc==2) {
+        /*remove path so that outFile is created where program is executed*/
+        plastSlash = strrchr(argv[1],'/');
+        if(!plastSlash)  plastSlash = strrchr(argv[1],'\\');
+        plastSlash = (plastSlash ? plastSlash+1 : argv[1]);
+        outFilename = dbCalloc(1,strlen(plastSlash)+1);
+        strcpy(outFilename,plastSlash);
+        pext = strstr(outFilename,".dbd");
+        if (!pext) {
+            fprintf(stderr,"Input file MUST have .dbd extension\n");
+            exit(-1);
+        }
+        strcpy(pext,".h");
+    } else {
+        outFilename = dbCalloc(1,strlen(argv[2])+1);
+        strcpy(outFilename,argv[2]);
     }
     pdbbase = dbAllocBase();
     pdbbase->ignoreMissingMenus = TRUE;
     status = dbReadDatabase(&pdbbase,argv[1],path,sub);
-    if(status)  {
-	fprintf(stderr,"Terminal error For input file %s\n",argv[1]);
-	exit(-1);
+    if (status) {
+        errlogFlush();
+        fprintf(stderr, "dbToMenuH: Input errors, no output generated\n");
+        exit(1);
     }
-    outFile = fopen(outFilename,"w");
-    if(!outFile) {
-	errPrintf(0,__FILE__,__LINE__,"Error opening %s\n",outFilename);
-	exit(-1);
+    outFile = fopen(outFilename, "w");
+    if (!outFile) {
+        epicsPrintf("Error creating output file \"%s\"\n", outFilename);
+        exit(1);
     }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {

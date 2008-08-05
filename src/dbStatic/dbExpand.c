@@ -95,6 +95,7 @@ int main(int argc,char **argv)
 	if (status) returnStatus = status;
     }
     if (returnStatus) {
+        errlogFlush();
         fprintf(stderr, "dbExpand: Input errors, no output generated\n");
         exit(1);
     }

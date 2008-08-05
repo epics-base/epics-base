@@ -15,22 +15,23 @@ CCC = g++
 AR = ar -rc
 LD = ld -r
 RANLIB = ranlib
+RES=.coff
+RCCMD = windres $(INCLUDES) $< $@
 
-# Dont use -fPIC: with -fPIC we get 
-# "warning: -fPIC ignored for target (all code is position independent) "
+# No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
 SHRLIB_CFLAGS =
-SHRLIB_LDFLAGS = -shared
-LOADABLE_SHRLIB_LDFLAGS = -shared
+SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
+LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 
-# Dont use -ansi: -ansi eliminates strdup and _tempnam
 CONFORM_CFLAGS_ANSI =
-CONFORM_CFLAGS_STRICT = -pedantic
+CONFORM_CFLAGS_STRICT = -ansi
 CONFORM_CXXFLAGS_NORMAL =
-CONFORM_CXXFLAGS_STRICT = -pedantic
+CONFORM_CXXFLAGS_STRICT = -ansi
 
-# Override linking with gcc library
+# -ansi build errors need fixing: u_long  undeclared, fd_set with no type
+CONFORM_CFLAGS_STRICT = 
+CONFORM_CXXFLAGS_STRICT = 
+
+# Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
-
-#RES=.coff
-#RCCMD = windres -O coff $(INCLUDES) $< $@
 

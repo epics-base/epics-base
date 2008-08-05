@@ -248,10 +248,10 @@ record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 static int yyerror(char *str)
 {
     if (str)
-        epicsPrintf("Error: %s\n", str);
+        epicsPrintf("Error: %s\n   ", str);
     else
-        epicsPrintf("Error\n");
-    epicsPrintf("    at or before \"%s\"", yytext);
+        epicsPrintf("Error");
+    epicsPrintf(" at or before \"%s\"", yytext);
     dbIncludePrint();
     yyFailed = TRUE;
     return(0);

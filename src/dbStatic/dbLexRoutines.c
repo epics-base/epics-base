@@ -151,27 +151,29 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     char	*fullfilename;
 
     *fp = 0;
-    if(!filename) return(0);
-    if(!ppathList || (ellCount(ppathList)==0) 
-    || strchr(filename,'/') || strchr(filename,'\\')){
-	*fp = fopen(filename,"r");
-if (*fp && makeDbdDepends) fprintf(stdout,"%s:%s \n",makeDbdDepends,filename);
-	return(0);
+    if (!filename) return 0;
+    if (!ppathList || ellCount(ppathList) == 0 ||
+        strchr(filename, '/') || strchr(filename, '\\')) {
+        *fp = fopen(filename, "r");
+        if (*fp && makeDbdDepends)
+            fprintf(stdout, "%s:%s \n", makeDbdDepends, filename);
+        return 0;
     }
     pdbPathNode = (dbPathNode *)ellFirst(ppathList);
-    while(pdbPathNode) {
-	fullfilename = dbCalloc(strlen(filename)+strlen(pdbPathNode->directory)
-	    +2,sizeof(char));
-	strcpy(fullfilename,pdbPathNode->directory);
-	strcat(fullfilename,"/");
-	strcat(fullfilename,filename);
-	*fp = fopen(fullfilename,"r");
-if (*fp && makeDbdDepends) fprintf(stdout,"%s:%s \n",makeDbdDepends,fullfilename);
-	free((void *)fullfilename);
-	if(*fp) return(pdbPathNode->directory);
-	pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
+    while (pdbPathNode) {
+        fullfilename = dbMalloc(strlen(pdbPathNode->directory) + 
+            strlen(filename) + 2);
+        strcpy(fullfilename, pdbPathNode->directory);
+        strcat(fullfilename, "/");
+        strcat(fullfilename, filename);
+        *fp = fopen(fullfilename, "r");
+        if (*fp && makeDbdDepends)
+            fprintf(stdout, "%s:%s \n", makeDbdDepends, fullfilename);
+        free((void *)fullfilename);
+        if (*fp) return pdbPathNode->directory;
+        pdbPathNode = (dbPathNode *)ellNext(&pdbPathNode->node);
     }
-    return(0);
+    return 0;
 }
 
 
@@ -255,9 +257,6 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     my_buffer_ptr = my_buffer;
     ellAdd(&inputFileList,&pinputFile->node);
     status = pvt_yy_parse();
-    if(status) {
-	fprintf(stderr,"db_parse returned %ld\n",status);
-    }
     dbFreePath(pdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */
 	DBENTRY	dbEntry;
@@ -382,13 +381,13 @@ static void dbIncludeNew(char *filename)
 
     pinputFile = dbCalloc(1,sizeof(inputFile));
     pinputFile->filename = macEnvExpand(filename);
-    pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp);
-    if(!fp) {
-	epicsPrintf("Can't open file \"%s\" - ",filename);
-	yyerror(NULL);
-	free((void *)pinputFile->filename);
-	free((void *)pinputFile);
-	return;
+    pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp);
+    if (!fp) {
+        epicsPrintf("Can't open include file \"%s\"\n", filename);
+        yyerror(NULL);
+        free((void *)pinputFile->filename);
+        free((void *)pinputFile);
+        return;
     }
     pinputFile->fp = fp;
     ellAdd(&inputFileList,&pinputFile->node);
@@ -694,7 +693,7 @@ static void dbDevice(char *recordtype,char *linktype,
     int		i,link_type;
     pgphentry = gphFind(pdbbase->pgpHash,recordtype,&pdbbase->recordTypeList);
     if(!pgphentry) {
-        epicsPrintf("Record type \"%s\" not found for device \"%s\" - ",
+        epicsPrintf("Record type \"%s\" not found for device \"%s\"\n",
                     recordtype, choicestring);
 	yyerror(NULL);
 	return;
@@ -707,7 +706,7 @@ static void dbDevice(char *recordtype,char *linktype,
 	}
     }
     if(link_type==-1) {
-        epicsPrintf("Bad link type \"%s\" for device \"%s\" - ",
+        epicsPrintf("Bad link type \"%s\" for device \"%s\"\n",
                     linktype, choicestring);
 	yyerror(NULL);
 	return;
@@ -924,19 +923,19 @@ static void dbRecordHead(char *recordType,char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if(status==S_dbLib_recExists) {
 	if(strcmp(recordType,dbGetRecordTypeName(pdbentry))!=0) {
-	    epicsPrintf("Record %s already defined with different type %s - ",
+	    epicsPrintf("Record %s already defined with different type %s\n",
                         name, dbGetRecordTypeName(pdbentry));
             yyerror(NULL);
 	    duplicate = TRUE;
 	    return;
 	} else if (dbRecordsOnceOnly) {
-	    epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is set) - ",
+	    epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is set)\n",
                         name);
 	    yyerror(NULL);
 	    duplicate = TRUE;
 	}
     } else if(status) {
-	epicsPrintf("Can't create record \"%s\" of type \"%s\" - ",
+	epicsPrintf("Can't create record \"%s\" of type \"%s\"\n",
                      name, recordType);
 	yyerrorAbort(NULL);
     }
@@ -954,7 +953,7 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if(status) {
-	epicsPrintf("Record \"%s\" does not have a field \"%s\" - ", 
+	epicsPrintf("Record \"%s\" does not have a field \"%s\"\n", 
                     dbGetRecordName(pdbentry), name);
 	yyerror(NULL);
 	return;
@@ -962,7 +961,7 @@ static void dbRecordField(char *name,char *value)
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
     if(status) {
-	epicsPrintf("Can't set \"%s.%s\" to \"%s\" - ",
+	epicsPrintf("Can't set \"%s.%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
 	return;
@@ -980,7 +979,7 @@ static void dbRecordInfo(char *name, char *value)
     pdbentry = ptempListNode->item;
     status = dbPutInfo(pdbentry,name,value);
     if(status) {
-	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\" - ",
+	epicsPrintf("Can't set \"%s\" info \"%s\" to \"%s\"\n",
                     dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
 	return;

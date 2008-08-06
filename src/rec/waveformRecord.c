@@ -83,8 +83,7 @@ struct wfdset { /* waveform dset */
         DEVSUPFUN       get_ioint_info;
         DEVSUPFUN       read_wf; /*returns: (-1,0)=>(failure,success)*/
 };
-/*sizes of field types*/
-static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
+
 static void monitor(waveformRecord *);
 static long readValue(waveformRecord *);
 
@@ -96,9 +95,9 @@ static long init_record(waveformRecord *pwf, int pass)
         if (pwf->nelm <= 0)
             pwf->nelm = 1;
         if (pwf->ftvl > DBF_ENUM)
-            pwf->ftvl = 2;
-        pwf->bptr = calloc(pwf->nelm, sizeofTypes[pwf->ftvl]);
-        if (pwf->nelm==1) {
+            pwf->ftvl = DBF_UCHAR;
+        pwf->bptr = calloc(pwf->nelm, dbValueSize(pwf->ftvl));
+        if (pwf->nelm == 1) {
             pwf->nord = 1;
         } else {
             pwf->nord = 0;
@@ -163,7 +162,7 @@ static long cvt_dbaddr(DBADDR *paddr)
     paddr->pfield = pwf->bptr;
     paddr->no_elements = pwf->nelm;
     paddr->field_type = pwf->ftvl;
-    paddr->field_size = sizeofTypes[pwf->ftvl];
+    paddr->field_size = dbValueSize(pwf->ftvl);
     paddr->dbr_field_type = pwf->ftvl;
 
     return 0;

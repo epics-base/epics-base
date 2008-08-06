@@ -91,9 +91,6 @@ struct sadset { /* subArray dset */
         DEVSUPFUN       read_sa; /*returns: (-1,0)=>(failure,success)*/
 };
 
-/*sizes of field types*/
-static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
-
 static void monitor(subArrayRecord *psa);
 static long readValue(subArrayRecord *psa);
 
@@ -107,8 +104,8 @@ static long init_record(subArrayRecord *psa, int pass)
         if (psa->malm <= 0)
             psa->malm = 1;
         if (psa->ftvl > DBF_ENUM)
-            psa->ftvl = 2;
-        psa->bptr = calloc(psa->malm, sizeofTypes[psa->ftvl]);
+            psa->ftvl = DBF_UCHAR;
+        psa->bptr = calloc(psa->malm, dbValueSize(psa->ftvl));
         psa->nord = 0;
         return 0;
     }
@@ -171,7 +168,7 @@ static long cvt_dbaddr(DBADDR *paddr)
     paddr->pfield = psa->bptr;
     paddr->no_elements = psa->malm;
     paddr->field_type = psa->ftvl;
-    paddr->field_size = sizeofTypes[psa->ftvl];
+    paddr->field_size = dbValueSize(psa->ftvl);
     paddr->dbr_field_type = psa->ftvl;
 
     return 0;

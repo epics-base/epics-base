@@ -53,12 +53,13 @@ LIBRARY = gdd
 
 gdd_LIBS = Com
 
-gdd_RCS_WIN32 = gdd.rc
+gdd_RCS = gdd.rc
 
 PROD_HOST = aitGen genApps
 genApps_SRCS = genApps.cc $(AITGENSRCS)
 aitGen_SRCS = aitTypes.c aitGen.c
 PROD_LIBS = Com
+genApps_SYS_LIBS_WIN32 = ws2_32
 
 # aitGen.c doesn't compile for linux-arm at -O3 when using gcc-3.4.5
 aitGen_CFLAGS_linux-arm = -O2
@@ -99,5 +100,5 @@ clean::
 
 aitConvert$(OBJ): aitConvertGenerated.cc
 
-#	EOF base/src/gdd/Makefile.Host:n
+#	EOF base/src/gdd/Makefile
 

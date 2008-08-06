@@ -29,7 +29,7 @@ LIB_SRCS += registryIocRegister.c
 LIBRARY_IOC = registryIoc
 registryIoc_LIBS  = dbStaticIoc Com
 
-registryIoc_RCS_WIN32 = registryIoc.rc
+registryIoc_RCS = registryIoc.rc
 
 ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks = registryIoc

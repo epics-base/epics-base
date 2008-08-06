@@ -29,7 +29,7 @@ LIBSRCS += devWfTestAsyn.c
 
 LIBRARY_IOC = testDevIoc
 testDevIoc_LIBS += recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
-testDevIoc_RCS_WIN32 = testDevIoc.rc
+testDevIoc_RCS = testDevIoc.rc
 
 # For R3.13 compatability
 ifeq ($(strip $(COMPAT_313)),YES)

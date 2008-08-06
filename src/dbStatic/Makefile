@@ -44,8 +44,8 @@ endif
 dbStaticHost_LIBS = Com
 dbStaticIoc_LIBS = Com
 
-dbStaticHost_RCS_WIN32 = dbStaticHost.rc
-dbStaticIoc_RCS_WIN32 = dbStaticIoc.rc
+dbStaticHost_RCS = dbStaticHost.rc
+dbStaticIoc_RCS = dbStaticIoc.rc
 
 PROD_LIBS := dbStaticHost Com
 PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH

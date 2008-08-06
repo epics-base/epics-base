@@ -71,7 +71,7 @@ LIBSRCS += waveformRecord.c
 LIBRARY_IOC += recIoc
 
 recIoc_LIBS = asIoc dbIoc registryIoc dbStaticIoc ca Com
-recIoc_RCS_WIN32 = recIoc.rc
+recIoc_RCS = recIoc.rc
 
 # For R3.13 compatability
 ifeq ($(strip $(COMPAT_313)),YES)

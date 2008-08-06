@@ -74,7 +74,7 @@ LIBSRCS_vxWorks += templateInstances.cpp
 
 LIBRARY=ca
 
-ca_RCS_WIN32 = ca.rc
+ca_RCS = ca.rc
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)

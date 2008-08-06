@@ -51,7 +51,7 @@ LIBSRCS += devTimestamp.c
 
 LIBRARY_IOC += softDevIoc
 softDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
-softDevIoc_RCS_WIN32 = softDevIoc.rc
+softDevIoc_RCS = softDevIoc.rc
 
 # For R3.13 compatability
 ifeq ($(strip $(COMPAT_313)),YES)

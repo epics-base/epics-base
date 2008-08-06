@@ -28,8 +28,8 @@ LIBRARY_IOC = asIoc
 asHost_LIBS  = dbStaticHost ca Com
 asIoc_LIBS  = dbIoc dbStaticIoc ca Com
 
-asHost_RCS_WIN32 = asHost.rc
-asIoc_RCS_WIN32 = asIoc.rc
+asHost_RCS = asHost.rc
+asIoc_RCS = asIoc.rc
 
 PROD_HOST = ascheck
 ascheck_SRCS = ascheck.c

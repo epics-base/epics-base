@@ -21,7 +21,7 @@ LIBRARY_IOC = dbtoolsIoc
 
 dbtoolsIoc_LIBS = dbIoc dbStaticIoc Com
 
-dbtoolsIoc_RCS_WIN32 = dbtoolsIoc.rc
+dbtoolsIoc_RCS = dbtoolsIoc.rc
 
 HTMLS += dbLoadTemplate.html
 

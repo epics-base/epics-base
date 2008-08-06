@@ -27,7 +27,7 @@ LIB_SRCS += iocshRegisterCommon.c
 
 LIBRARY_IOC = miscIoc
 
-miscIoc_RCS_WIN32 = miscIoc.rc
+miscIoc_RCS = miscIoc.rc
 miscIoc_LIBS  = rsrvIoc asIoc dbtoolsIoc dbIoc registryIoc dbStaticIoc ca Com
 
 # For R3.13 compatibility only

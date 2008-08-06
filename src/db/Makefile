@@ -84,7 +84,7 @@ endif
 LIBRARY_IOC = dbIoc
 dbIoc_LIBS = dbStaticIoc ca Com
 
-dbIoc_RCS_WIN32 = dbIoc.rc
+dbIoc_RCS = dbIoc.rc
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)

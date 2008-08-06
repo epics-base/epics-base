@@ -275,27 +275,26 @@ void epicsShareAPI recGblFwdLink(void *precord)
     pdbc->putf = FALSE;
 }
 
-void epicsShareAPI recGblGetTimeStamp(void* prec)
+void epicsShareAPI recGblGetTimeStamp(void *pvoid)
 {
-    dbCommon* pr = (dbCommon*)prec;
-    struct link *plink = &pr->tsel;
- 
-    if(plink->type!=CONSTANT) {
+    dbCommon* prec = (dbCommon*)pvoid;
+    struct link *plink = &prec->tsel;
+
+    if (plink->type != CONSTANT) {
         struct pv_link *ppv_link = &plink->value.pv_link;
 
-        if(ppv_link->pvlMask&pvlOptTSELisTime) {
-            long status = dbGetTimeStamp(plink,&pr->time);
-            if(status)
-                errlogPrintf("%s recGblGetTimeStamp dbGetTimeStamp failed\n",
-                    pr->name);
+        if (ppv_link->pvlMask & pvlOptTSELisTime) {
+            if (dbGetTimeStamp(plink, &prec->time))
+                errlogPrintf("recGblGetTimeStamp: dbGetTimeStamp failed, %s.TSEL = %s\n",
+                    prec->name, ppv_link->pvname);
             return;
         }
-        dbGetLink(&(pr->tsel), DBR_SHORT,&(pr->tse),0,0);
+        dbGetLink(&prec->tsel, DBR_SHORT, &prec->tse, 0, 0);
     }
-    if(pr->tse!=epicsTimeEventDeviceTime) {
-        int status;
-        status = epicsTimeGetEvent(&pr->time,pr->tse);
-        if(status) errlogPrintf("%s recGblGetTimeStamp failed\n",pr->name);
+    if (prec->tse != epicsTimeEventDeviceTime) {
+        if (epicsTimeGetEvent(&prec->time, prec->tse))
+            errlogPrintf("recGblGetTimeStamp: epicsTimeGetEvent failed, %s.TSE = %d\n",
+                prec->name, prec->tse);
     }
 }
 
@@ -304,15 +303,15 @@ void epicsShareAPI recGblTSELwasModified(struct link *plink)
     struct pv_link *ppv_link = &plink->value.pv_link;
     char *pfieldname;
 
-    if(plink->type!=PV_LINK) {
+    if (plink->type != PV_LINK) {
         errlogPrintf("recGblTSELwasModified called for non PV_LINK\n");
         return;
     }
     /*If pvname ends in .TIME then just ask for VAL*/
     /*Note that the VAL value will not be used*/
-    pfieldname = strstr(ppv_link->pvname,".TIME");
-    if(pfieldname) {
-        strcpy(pfieldname,".VAL");
+    pfieldname = strstr(ppv_link->pvname, ".TIME");
+    if (pfieldname) {
+        strcpy(pfieldname, ".VAL");
         ppv_link->pvlMask |= pvlOptTSELisTime;
     }
 }

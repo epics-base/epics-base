@@ -13,9 +13,9 @@
 #include <string.h>
 
 #include "osiSock.h"
-#include "cantProceed.h"
 
 #define epicsExportSharedSymbols
+#include "cantProceed.h"
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 

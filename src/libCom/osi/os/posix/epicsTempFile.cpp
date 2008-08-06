@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
 extern "C"

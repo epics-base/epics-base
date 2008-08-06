@@ -12,11 +12,13 @@
 
 #include <pthread.h>
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-pthread_t epicsThreadGetPosixThreadId ( epicsThreadId id );
+epicsShareFunc pthread_t epicsShareAPI epicsThreadGetPosixThreadId ( epicsThreadId id );
 
 #ifdef __cplusplus
 }

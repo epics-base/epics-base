@@ -1,17 +1,17 @@
 /*************************************************************************\
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
 * Copyright (c) 2002 Lawrence Berkeley Laboratory,The Control Systems
 *     Group, Systems Engineering Department
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devSASoft.c */
-/* devSASoft.c - Device Support Routines for soft subArray Records
- *
- *      Author:         Carl Lionberger
- *      Date:           090293
- */
 
+/* $Id$
+ *
+ *      Author: Carl Lionberger
+ *      Date: 9-2-93
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,74 +21,71 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "recGbl.h"
-#include "recSup.h"
 #include "devSup.h"
-#include "link.h"
 #include "subArrayRecord.h"
 #include "epicsExport.h"
 
-static int sizeofTypes[] = {MAX_STRING_SIZE,1,1,2,2,4,4,4,8,2};
-
 /* Create the dset for devSASoft */
-static long init_record();
-static long read_sa();
+static long init_record(subArrayRecord *prec);
+static long read_sa(subArrayRecord *prec);
+
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_sa;
-}devSASoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_sa
+    long      number;
+    DEVSUPFUN report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_sa;
+} devSASoft = {
+    5,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
+    read_sa
 };
-epicsExportAddress(dset,devSASoft);
-
+epicsExportAddress(dset, devSASoft);
 
-static long init_record(subArrayRecord *psa)
+static long init_record(subArrayRecord *prec)
 {
-
-    /* sa.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (psa->inp.type) {
-    case (CONSTANT) :
-	psa->nord = 0;
-	break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-    case (CA_LINK) :
-	break;
-    default :
-	recGblRecordError(S_db_badField,(void *)psa,
-		"devSASoft (init_record) Illegal INP field");
-	return(S_db_badField);
+    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
+    switch (prec->inp.type) {
+    case CONSTANT:
+        prec->nord = 0;
+        break;
+    case PV_LINK:
+    case DB_LINK:
+    case CA_LINK:
+        break;
+    default:
+        recGblRecordError(S_db_badField, (void *)prec,
+            "devSASoft (init_record) Illegal INP field");
+        return S_db_badField;
     }
-    return(0);
+    return 0;
 }
-
-static long read_sa(subArrayRecord *psa)
+
+static long read_sa(subArrayRecord *prec)
 {
-    long status,ecount,nRequest;
+    long nRequest = prec->indx + prec->nelm;
+    long ecount;
 
-    if ((psa->indx + psa->nelm) < psa->malm)
-       nRequest= psa->indx + psa->nelm;
-    else
-       nRequest=psa->malm;
-    status = dbGetLink(&psa->inp,psa->ftvl,psa->bptr, 0,&nRequest);
-    if ((nRequest - psa->indx) > 0)
-    {
-       if (psa->nelm > (nRequest - psa->indx))
-          ecount = nRequest - psa->indx;
-       else
-          ecount = psa->nelm;
-       memcpy(psa->bptr,(char *)psa->bptr + psa->indx * sizeofTypes[psa->ftvl],
-             ecount * sizeofTypes[psa->ftvl]);
+    if (nRequest > prec->malm)
+        nRequest = prec->malm;
+    dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+    prec->nord = ecount = nRequest - prec->indx;
+    if (ecount > 0) {
+        int esize = dbValueSize(prec->ftvl);
+        if (ecount > prec->nelm)
+            ecount = prec->nelm;
+        memmove(prec->bptr, (char *)prec->bptr + prec->indx * esize,
+                ecount * esize);
     }
-    psa->nord = nRequest - psa->indx;
 
-    return(0);
+    if (nRequest > 0 &&
+        prec->tsel.type == CONSTANT &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(&prec->inp, &prec->time);
+
+    return 0;
 }

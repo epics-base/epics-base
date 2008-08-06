@@ -1,85 +1,81 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devAiSoft.c */
-/* base/src/dev $Id$ */
-/*
- *      Original Author: Bob Dalesio
- *      Current Author: Marty Kraimer
- *      Date:  3/6/91
+
+/* $Id$
+ *
+ *      Original Authors: Bob Dalesio and Marty Kraimer
+ *      Date: 3/6/91
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "alarm.h"
-#include "cvtTable.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "recGbl.h"
-#include "recSup.h"
 #include "devSup.h"
-#include "link.h"
 #include "aiRecord.h"
 #include "epicsExport.h"
 
 /* Create the dset for devAiSoft */
-static long init_record();
-static long read_ai();
+static long init_record(aiRecord *prec);
+static long read_ai(aiRecord *prec);
+
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_ai;
-	DEVSUPFUN	special_linconv;
-}devAiSoft={
-	6,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_ai,
-	NULL
+    long      number;
+    DEVSUPFUN report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_ai;
+    DEVSUPFUN special_linconv;
+} devAiSoft = {
+    6,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
+    read_ai,
+    NULL
 };
-epicsExportAddress(dset,devAiSoft);
-
-static long init_record(aiRecord *pai)
+epicsExportAddress(dset, devAiSoft);
+
+static long init_record(aiRecord *prec)
 {
-
-    /* ai.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pai->inp.type) {
-    case (CONSTANT) :
-        if(recGblInitConstantLink(&pai->inp,DBF_DOUBLE,&pai->val))
-            pai->udf = FALSE;
-	break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-    case (CA_LINK) :
-	break;
-    default :
-	recGblRecordError(S_db_badField, (void *)pai,
-		"devAiSoft (init_record) Illegal INP field");
-
-	return(S_db_badField);
+    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
+    switch (prec->inp.type) {
+    case CONSTANT:
+        if (recGblInitConstantLink(&prec->inp, DBF_DOUBLE, &prec->val))
+            prec->udf = FALSE;
+        break;
+    case PV_LINK:
+    case DB_LINK:
+    case CA_LINK:
+        break;
+    default:
+        recGblRecordError(S_db_badField, (void *)prec,
+            "devAiSoft (init_record) Illegal INP field");
+        return S_db_badField;
     }
-    /* Make sure record processing routine does not perform any conversion*/
-    pai->linr = 0;
-    return(0);
+    return 0;
 }
 
-static long read_ai(aiRecord *pai)
+static long read_ai(aiRecord *prec)
 {
-    long status;
-
-    status = dbGetLink(&(pai->inp),DBR_DOUBLE, &(pai->val),0,0);
-    if (pai->inp.type!=CONSTANT && RTN_SUCCESS(status)) pai->udf = FALSE;
-    return(2); /*don't convert*/
+    if (!dbGetLink(&prec->inp, DBR_DOUBLE, &prec->val, 0, 0)) {
+        if (prec->inp.type != CONSTANT)
+            prec->udf = FALSE;
+        if (prec->tsel.type == CONSTANT &&
+            prec->tse == epicsTimeEventDeviceTime)
+            dbGetTimeStamp(&prec->inp, &prec->time);
+    }
+    return 2;
 }

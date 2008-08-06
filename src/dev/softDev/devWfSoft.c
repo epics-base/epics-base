@@ -1,22 +1,17 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devWfSoft.c */
-/* base/src/dev $Id$ */
 
-/* devWfSoft.c - Device Support Routines for soft Waveform Records*/
-/*
- *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
- *      Date:            6-1-90
+/* $Id$
+ *
+ *      Original Authors: Bob Dalesio and Marty Kraimer
+ *      Date: 6-1-90
  */
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,61 +21,61 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "recGbl.h"
-#include "recSup.h"
 #include "devSup.h"
-#include "link.h"
 #include "waveformRecord.h"
 #include "epicsExport.h"
 
 /* Create the dset for devWfSoft */
-static long init_record();
-static long read_wf();
+static long init_record(waveformRecord *prec);
+static long read_wf(waveformRecord *prec);
+
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_wf;
-}devWfSoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_wf
+    long      number;
+    DEVSUPFUN report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record;
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_wf;
+} devWfSoft = {
+    5,
+    NULL,
+    NULL,
+    init_record,
+    NULL,
+    read_wf
 };
-epicsExportAddress(dset,devWfSoft);
-
+epicsExportAddress(dset, devWfSoft);
 
-static long init_record(waveformRecord *pwf)
+static long init_record(waveformRecord *prec)
 {
-
-    /* wf.inp must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (pwf->inp.type) {
-    case (CONSTANT) :
-	pwf->nord = 0;
-	break;
-    case (PV_LINK) :
-    case (DB_LINK) :
-    case (CA_LINK) :
-	break;
-    default :
-	recGblRecordError(S_db_badField,(void *)pwf,
-		"devWfSoft (init_record) Illegal INP field");
-	return(S_db_badField);
+    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
+    switch (prec->inp.type) {
+    case CONSTANT:
+        prec->nord = 0;
+        break;
+    case PV_LINK:
+    case DB_LINK:
+    case CA_LINK:
+        break;
+    default:
+        recGblRecordError(S_db_badField, (void *)prec,
+            "devWfSoft (init_record) Illegal INP field");
+        return(S_db_badField);
     }
-    return(0);
+    return 0;
 }
-
-static long read_wf(waveformRecord *pwf)
+
+static long read_wf(waveformRecord *prec)
 {
-    long status,nRequest;
+    long nRequest = prec->nelm;
 
-    nRequest=pwf->nelm;
-    status = dbGetLink(&pwf->inp,pwf->ftvl,pwf->bptr, 0,&nRequest);
-    /*If dbGetLink got no values leave things as they were*/
-    if(nRequest>0) pwf->nord = nRequest;
+    dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+    if (nRequest > 0) {
+        prec->nord = nRequest;
+        if (prec->tsel.type == CONSTANT &&
+            prec->tse == epicsTimeEventDeviceTime)
+            dbGetTimeStamp(&prec->inp, &prec->time);
+    }
 
-    return(0);
+    return 0;
 }

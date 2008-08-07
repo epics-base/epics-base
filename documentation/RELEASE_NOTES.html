@@ -12,6 +12,23 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>epicsTimeEventDeviceTime support for soft channel input records</h4>
+
+<p>The Soft Channel device support for all input record types now supports the
+fetching of the timestamp along with the data when the record's TSE field is set
+to epicsTimeEventDeviceTime (-2). This works for both DB and CA links. However
+the timestamp will only be fetched if the record's TSEL link is not set, so you
+can't point TSEL to another record to read the -2 value into TSE (that's because
+to make this work properly would require that the TSEL link be read twice every
+time the record processes; once in the soft channel device support, and again
+when the record type calls <tt>recGblGetTimeStamp()</tt>.</p>
+
+<h4>devLib: CR/CSR Support added</h4>
+
+<p>Thanks to Eric Bjorklund for providing a patch to devLib that gives access to
+the CR/CSR address space (for those on a VME64 CPU with appropriate support from
+your BSP).</p>
+
 <h4>ascaStats, dbcaStats, seqcaStats</h4>
 
 <p>Query routines have been added that count CA client connections made by

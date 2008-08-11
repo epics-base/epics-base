@@ -57,14 +57,6 @@ static unsigned char T[256] = {
 #define NSIZES 9
 static int allowSize[NSIZES] = {256,512,1024,2048,4096,8192,16384,32768,65536};
 
-static void *myCalloc(size_t nobj,size_t size)
-{
-    void *p;
-
-    p = callocMustSucceed(nobj,size,"freeListLib");
-    return(p);
-}
-
 static int hash(const char *pname,int nShift)
 {
     unsigned char	h0=0;
@@ -101,10 +93,10 @@ void epicsShareAPI gphInitPvt(void **ppvt,int size)
 	epicsPrintf("gphInitPvt: Illegal size\n");
 	return;
     }
-    pgphPvt = myCalloc(1,sizeof(gphPvt));
+    pgphPvt = callocMustSucceed(1, sizeof(gphPvt), "gphInitPvt");
     pgphPvt->tableSize = tableSize;
     pgphPvt->nShift = nShift;
-    pgphPvt->paplist = myCalloc(tableSize, sizeof(ELLLIST *));
+    pgphPvt->paplist = callocMustSucceed(tableSize, sizeof(ELLLIST *), "gphInitPvt");
     pgphPvt->lock = epicsMutexMustCreate();
     *ppvt = (void *)pgphPvt;
     return;
@@ -150,7 +142,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     hashInd = hash(name,pgphPvt->nShift);
     epicsMutexMustLock(pgphPvt->lock);
     if(paplist[hashInd] == NULL) {
-	paplist[hashInd] = myCalloc(1, sizeof(ELLLIST));
+	paplist[hashInd] = callocMustSucceed(1, sizeof(ELLLIST), "gphAdd");
 	ellInit(paplist[hashInd]);
     }
     plist=paplist[hashInd];
@@ -163,7 +155,7 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
 	}
 	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
     }
-    pgphNode = myCalloc(1, (unsigned) sizeof(GPHENTRY));
+    pgphNode = callocMustSucceed(1, (unsigned) sizeof(GPHENTRY), "gphAdd");
     pgphNode->name = name;
     pgphNode->pvtid = pvtid;
     ellAdd(plist, (ELLNODE*)pgphNode);

@@ -160,14 +160,14 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
     if(!precnode) return(S_dbLib_recNotFound);
-    precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
-    precord = (char *)precnode->precord;
     if(pdbRecordType->rec_size == 0) {
 	printf("\t*** Did you run x_RegisterDeviceDriver(pdbbase) yet? ***\n");
-	epicsPrintf("dbAllocRecord(%s) record_size =0\n",
-	    pdbRecordType->name);
+	epicsPrintf("dbAllocRecord(%s) with %s rec_size = 0\n",
+	    precordName, pdbRecordType->name);
 	return(S_dbLib_noRecSup);
     }
+    precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
+    precord = (char *)precnode->precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
 	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");

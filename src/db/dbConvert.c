@@ -4404,7 +4404,9 @@ epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
  DBF_MENU,        DBF_DEVICE
  ***************************************************************************/
 
-epicsShareDef long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])() = {
+epicsShareDef long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])(
+    struct dbAddr *paddr, const void *pbuffer,long nRequest, long no_elements,
+    long offset) = {
 /* source is a DBR_STRING		*/
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
  putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,

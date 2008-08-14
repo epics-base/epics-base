@@ -1,0 +1,1637 @@
+menu(aSubLFLG) {
+	choice(aSubLFLG_IGNORE,"IGNORE")
+	choice(aSubLFLG_READ,"READ")
+}
+
+menu(aSubEFLG) {
+	choice(aSubEFLG_NEVER,"NEVER")
+	choice(aSubEFLG_ON_CHANGE,"ON CHANGE")
+	choice(aSubEFLG_ALWAYS,"ALWAYS")
+}
+
+recordtype(aSub) {
+	include "dbCommon.dbd"
+	field(VAL,DBF_LONG) {
+		prompt("Subr. return value")
+		asl(ASL0)
+	}
+	field(OVAL,DBF_LONG) {
+		prompt("Old return value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(INAM,DBF_STRING) {
+		prompt("Initialize Subr. Name")
+		promptgroup(GUI_SUB)
+		special(SPC_NOMOD)
+		interest(1)
+		size(41)
+	}
+	field(LFLG,DBF_MENU) {
+		prompt("Subr. Input Enable")
+		promptgroup(GUI_SUB)
+		interest(1)
+		menu(aSubLFLG)
+	}
+	field(SUBL,DBF_INLINK) {
+		prompt("Subroutine Name Link")
+		promptgroup(GUI_SUB)
+		special(SPC_NOMOD)
+		interest(1)
+	}
+	field(SNAM,DBF_STRING) {
+		prompt("Process Subr. Name")
+		promptgroup(GUI_SUB)
+		special(SPC_MOD)
+		interest(1)
+		size(41)
+	}
+	field(ONAM,DBF_STRING) {
+		prompt("Old Subr. Name")
+		promptgroup(GUI_SUB)
+		special(SPC_NOMOD)
+		interest(3)
+		size(41)
+	}
+	%struct aSubRecord;
+	field(SADR,DBF_NOACCESS) {
+		prompt("Subroutine Address")
+		special(SPC_NOMOD)
+		interest(2)
+		extra("long (*sadr)(struct aSubRecord *)")
+	}
+	field(BRSV,DBF_MENU) {
+		prompt("Bad Return Severity")
+		promptgroup(GUI_SUB)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(EFLG,DBF_MENU) {
+		prompt("Output Event Flag")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+		menu(aSubEFLG)
+		initial("1")
+	}
+	field(INPA,DBF_INLINK) {
+		prompt("Input Link A")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPB,DBF_INLINK) {
+		prompt("Input Link B")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPC,DBF_INLINK) {
+		prompt("Input Link C")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPD,DBF_INLINK) {
+		prompt("Input Link D")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPE,DBF_INLINK) {
+		prompt("Input Link E")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPF,DBF_INLINK) {
+		prompt("Input Link F")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPG,DBF_INLINK) {
+		prompt("Input Link G")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPH,DBF_INLINK) {
+		prompt("Input Link H")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPI,DBF_INLINK) {
+		prompt("Input Link I")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPJ,DBF_INLINK) {
+		prompt("Input Link J")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPK,DBF_INLINK) {
+		prompt("Input Link K")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPL,DBF_INLINK) {
+		prompt("Input Link L")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPM,DBF_INLINK) {
+		prompt("Input Link M")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPN,DBF_INLINK) {
+		prompt("Input Link N")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPO,DBF_INLINK) {
+		prompt("Input Link O")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPP,DBF_INLINK) {
+		prompt("Input Link P")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPQ,DBF_INLINK) {
+		prompt("Input Link Q")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPR,DBF_INLINK) {
+		prompt("Input Link R")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPS,DBF_INLINK) {
+		prompt("Input Link S")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPT,DBF_INLINK) {
+		prompt("Input Link T")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(INPU,DBF_INLINK) {
+		prompt("Input Link U")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(A,DBF_NOACCESS) {
+		prompt("Input value A")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *a")
+	}
+	field(B,DBF_NOACCESS) {
+		prompt("Input value B")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *b")
+	}
+	field(C,DBF_NOACCESS) {
+		prompt("Input value C")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *c")
+	}
+	field(D,DBF_NOACCESS) {
+		prompt("Input value D")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *d")
+	}
+	field(E,DBF_NOACCESS) {
+		prompt("Input value E")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *e")
+	}
+	field(F,DBF_NOACCESS) {
+		prompt("Input value F")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *f")
+	}
+	field(G,DBF_NOACCESS) {
+		prompt("Input value G")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *g")
+	}
+	field(H,DBF_NOACCESS) {
+		prompt("Input value H")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *h")
+	}
+	field(I,DBF_NOACCESS) {
+		prompt("Input value I")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *i")
+	}
+	field(J,DBF_NOACCESS) {
+		prompt("Input value J")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		pp(TRUE)
+		interest(2)
+		extra("void *j")
+	}
+	field(K,DBF_NOACCESS) {
+		prompt("Input value K")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *k")
+	}
+	field(L,DBF_NOACCESS) {
+		prompt("Input value L")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *l")
+	}
+	field(M,DBF_NOACCESS) {
+		prompt("Input value M")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *m")
+	}
+	field(N,DBF_NOACCESS) {
+		prompt("Input value N")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *n")
+	}
+	field(O,DBF_NOACCESS) {
+		prompt("Input value O")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *o")
+	}
+	field(P,DBF_NOACCESS) {
+		prompt("Input value P")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *p")
+	}
+	field(Q,DBF_NOACCESS) {
+		prompt("Input value Q")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *q")
+	}
+	field(R,DBF_NOACCESS) {
+		prompt("Input value R")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *r")
+	}
+	field(S,DBF_NOACCESS) {
+		prompt("Input value S")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *s")
+	}
+	field(T,DBF_NOACCESS) {
+		prompt("Input value T")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *t")
+	}
+	field(U,DBF_NOACCESS) {
+		prompt("Input value U")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *u")
+	}
+	field(FTA,DBF_MENU) {
+		prompt("Type of A")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTB,DBF_MENU) {
+		prompt("Type of B")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTC,DBF_MENU) {
+		prompt("Type of C")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTD,DBF_MENU) {
+		prompt("Type of D")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTE,DBF_MENU) {
+		prompt("Type of E")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTF,DBF_MENU) {
+		prompt("Type of F")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTG,DBF_MENU) {
+		prompt("Type of G")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTH,DBF_MENU) {
+		prompt("Type of H")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTI,DBF_MENU) {
+		prompt("Type of I")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTJ,DBF_MENU) {
+		prompt("Type of J")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTK,DBF_MENU) {
+		prompt("Type of K")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTL,DBF_MENU) {
+		prompt("Type of L")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTM,DBF_MENU) {
+		prompt("Type of M")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTN,DBF_MENU) {
+		prompt("Type of N")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTO,DBF_MENU) {
+		prompt("Type of O")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTP,DBF_MENU) {
+		prompt("Type of P")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTQ,DBF_MENU) {
+		prompt("Type of Q")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTR,DBF_MENU) {
+		prompt("Type of R")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTS,DBF_MENU) {
+		prompt("Type of S")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTT,DBF_MENU) {
+		prompt("Type of T")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTU,DBF_MENU) {
+		prompt("Type of U")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(NOA,DBF_ULONG) {
+		prompt("Max. elements in A")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOB,DBF_ULONG) {
+		prompt("Max. elements in B")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOC,DBF_ULONG) {
+		prompt("Max. elements in C")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOD,DBF_ULONG) {
+		prompt("Max. elements in D")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOE,DBF_ULONG) {
+		prompt("Max. elements in E")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOF,DBF_ULONG) {
+		prompt("Max. elements in F")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOG,DBF_ULONG) {
+		prompt("Max. elements in G")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOH,DBF_ULONG) {
+		prompt("Max. elements in H")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOI,DBF_ULONG) {
+		prompt("Max. elements in I")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOJ,DBF_ULONG) {
+		prompt("Max. elements in J")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOK,DBF_ULONG) {
+		prompt("Max. elements in K")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOL,DBF_ULONG) {
+		prompt("Max. elements in L")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOM,DBF_ULONG) {
+		prompt("Max. elements in M")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NON,DBF_ULONG) {
+		prompt("Max. elements in N")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOO,DBF_ULONG) {
+		prompt("Max. elements in O")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOP,DBF_ULONG) {
+		prompt("Max. elements in P")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOQ,DBF_ULONG) {
+		prompt("Max. elements in Q")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOR,DBF_ULONG) {
+		prompt("Max. elements in R")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOS,DBF_ULONG) {
+		prompt("Max. elements in S")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOT,DBF_ULONG) {
+		prompt("Max. elements in T")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOU,DBF_ULONG) {
+		prompt("Max. elements in U")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NEA,DBF_ULONG) {
+		prompt("Num. elements in A")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEB,DBF_ULONG) {
+		prompt("Num. elements in B")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEC,DBF_ULONG) {
+		prompt("Num. elements in C")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NED,DBF_ULONG) {
+		prompt("Num. elements in D")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEE,DBF_ULONG) {
+		prompt("Num. elements in E")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEF,DBF_ULONG) {
+		prompt("Num. elements in F")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEG,DBF_ULONG) {
+		prompt("Num. elements in G")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEH,DBF_ULONG) {
+		prompt("Num. elements in H")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEI,DBF_ULONG) {
+		prompt("Num. elements in I")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEJ,DBF_ULONG) {
+		prompt("Num. elements in J")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEK,DBF_ULONG) {
+		prompt("Num. elements in K")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEL,DBF_ULONG) {
+		prompt("Num. elements in L")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEM,DBF_ULONG) {
+		prompt("Num. elements in M")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEN,DBF_ULONG) {
+		prompt("Num. elements in N")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEO,DBF_ULONG) {
+		prompt("Num. elements in O")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEP,DBF_ULONG) {
+		prompt("Num. elements in P")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEQ,DBF_ULONG) {
+		prompt("Num. elements in Q")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NER,DBF_ULONG) {
+		prompt("Num. elements in R")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NES,DBF_ULONG) {
+		prompt("Num. elements in S")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NET,DBF_ULONG) {
+		prompt("Num. elements in T")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEU,DBF_ULONG) {
+		prompt("Num. elements in U")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(OUTA,DBF_OUTLINK) {
+		prompt("Output Link A")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTB,DBF_OUTLINK) {
+		prompt("Output Link B")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTC,DBF_OUTLINK) {
+		prompt("Output Link C")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTD,DBF_OUTLINK) {
+		prompt("Output Link D")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTE,DBF_OUTLINK) {
+		prompt("Output Link E")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTF,DBF_OUTLINK) {
+		prompt("Output Link F")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTG,DBF_OUTLINK) {
+		prompt("Output Link G")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTH,DBF_OUTLINK) {
+		prompt("Output Link H")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTI,DBF_OUTLINK) {
+		prompt("Output Link I")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTJ,DBF_OUTLINK) {
+		prompt("Output Link J")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTK,DBF_OUTLINK) {
+		prompt("Output Link K")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTL,DBF_OUTLINK) {
+		prompt("Output Link L")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTM,DBF_OUTLINK) {
+		prompt("Output Link M")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTN,DBF_OUTLINK) {
+		prompt("Output Link N")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTO,DBF_OUTLINK) {
+		prompt("Output Link O")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTP,DBF_OUTLINK) {
+		prompt("Output Link P")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTQ,DBF_OUTLINK) {
+		prompt("Output Link Q")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTR,DBF_OUTLINK) {
+		prompt("Output Link R")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTS,DBF_OUTLINK) {
+		prompt("Output Link S")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTT,DBF_OUTLINK) {
+		prompt("Output Link T")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OUTU,DBF_OUTLINK) {
+		prompt("Output Link U")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(VALA,DBF_NOACCESS) {
+		prompt("Output value A")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vala")
+	}
+	field(VALB,DBF_NOACCESS) {
+		prompt("Output value B")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valb")
+	}
+	field(VALC,DBF_NOACCESS) {
+		prompt("Output value C")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valc")
+	}
+	field(VALD,DBF_NOACCESS) {
+		prompt("Output value D")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vald")
+	}
+	field(VALE,DBF_NOACCESS) {
+		prompt("Output value E")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vale")
+	}
+	field(VALF,DBF_NOACCESS) {
+		prompt("Output value F")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valf")
+	}
+	field(VALG,DBF_NOACCESS) {
+		prompt("Output value G")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valg")
+	}
+	field(VALH,DBF_NOACCESS) {
+		prompt("Output value H")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valh")
+	}
+	field(VALI,DBF_NOACCESS) {
+		prompt("Output value I")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vali")
+	}
+	field(VALJ,DBF_NOACCESS) {
+		prompt("Output value J")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valj")
+	}
+	field(VALK,DBF_NOACCESS) {
+		prompt("Output value K")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valk")
+	}
+	field(VALL,DBF_NOACCESS) {
+		prompt("Output value L")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vall")
+	}
+	field(VALM,DBF_NOACCESS) {
+		prompt("Output value M")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valm")
+	}
+	field(VALN,DBF_NOACCESS) {
+		prompt("Output value N")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valn")
+	}
+	field(VALO,DBF_NOACCESS) {
+		prompt("Output value O")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valo")
+	}
+	field(VALP,DBF_NOACCESS) {
+		prompt("Output value P")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valp")
+	}
+	field(VALQ,DBF_NOACCESS) {
+		prompt("Output value Q")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valq")
+	}
+	field(VALR,DBF_NOACCESS) {
+		prompt("Output value R")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valr")
+	}
+	field(VALS,DBF_NOACCESS) {
+		prompt("Output value S")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *vals")
+	}
+	field(VALT,DBF_NOACCESS) {
+		prompt("Output value T")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valt")
+	}
+	field(VALU,DBF_NOACCESS) {
+		prompt("Output value U")
+		asl(ASL0)
+		special(SPC_DBADDR)
+		interest(2)
+		extra("void *valu")
+	}
+	field(OVLA,DBF_NOACCESS) {
+		prompt("Old Output A")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovla")
+	}
+	field(OVLB,DBF_NOACCESS) {
+		prompt("Old Output B")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlb")
+	}
+	field(OVLC,DBF_NOACCESS) {
+		prompt("Old Output C")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlc")
+	}
+	field(OVLD,DBF_NOACCESS) {
+		prompt("Old Output D")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovld")
+	}
+	field(OVLE,DBF_NOACCESS) {
+		prompt("Old Output E")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovle")
+	}
+	field(OVLF,DBF_NOACCESS) {
+		prompt("Old Output F")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlf")
+	}
+	field(OVLG,DBF_NOACCESS) {
+		prompt("Old Output G")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlg")
+	}
+	field(OVLH,DBF_NOACCESS) {
+		prompt("Old Output H")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlh")
+	}
+	field(OVLI,DBF_NOACCESS) {
+		prompt("Old Output I")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovli")
+	}
+	field(OVLJ,DBF_NOACCESS) {
+		prompt("Old Output J")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlj")
+	}
+	field(OVLK,DBF_NOACCESS) {
+		prompt("Old Output K")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlk")
+	}
+	field(OVLL,DBF_NOACCESS) {
+		prompt("Old Output L")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovll")
+	}
+	field(OVLM,DBF_NOACCESS) {
+		prompt("Old Output M")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlm")
+	}
+	field(OVLN,DBF_NOACCESS) {
+		prompt("Old Output N")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovln")
+	}
+	field(OVLO,DBF_NOACCESS) {
+		prompt("Old Output O")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlo")
+	}
+	field(OVLP,DBF_NOACCESS) {
+		prompt("Old Output P")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlp")
+	}
+	field(OVLQ,DBF_NOACCESS) {
+		prompt("Old Output Q")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlq")
+	}
+	field(OVLR,DBF_NOACCESS) {
+		prompt("Old Output R")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlr")
+	}
+	field(OVLS,DBF_NOACCESS) {
+		prompt("Old Output S")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovls")
+	}
+	field(OVLT,DBF_NOACCESS) {
+		prompt("Old Output T")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlt")
+	}
+	field(OVLU,DBF_NOACCESS) {
+		prompt("Old Output U")
+		asl(ASL0)
+		special(SPC_NOMOD)
+		interest(4)		extra("void *ovlu")
+	}
+	field(FTVA,DBF_MENU) {
+		prompt("Type of VALA")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVB,DBF_MENU) {
+		prompt("Type of VALB")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVC,DBF_MENU) {
+		prompt("Type of VALC")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVD,DBF_MENU) {
+		prompt("Type of VALD")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVE,DBF_MENU) {
+		prompt("Type of VALE")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVF,DBF_MENU) {
+		prompt("Type of VALF")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVG,DBF_MENU) {
+		prompt("Type of VALG")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVH,DBF_MENU) {
+		prompt("Type of VALH")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVI,DBF_MENU) {
+		prompt("Type of VALI")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVJ,DBF_MENU) {
+		prompt("Type of VALJ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVK,DBF_MENU) {
+		prompt("Type of VALK")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVL,DBF_MENU) {
+		prompt("Type of VALL")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVM,DBF_MENU) {
+		prompt("Type of VALM")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVN,DBF_MENU) {
+		prompt("Type of VALN")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVO,DBF_MENU) {
+		prompt("Type of VALO")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVP,DBF_MENU) {
+		prompt("Type of VALP")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVQ,DBF_MENU) {
+		prompt("Type of VALQ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVR,DBF_MENU) {
+		prompt("Type of VALR")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVS,DBF_MENU) {
+		prompt("Type of VALS")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVT,DBF_MENU) {
+		prompt("Type of VALT")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(FTVU,DBF_MENU) {
+		prompt("Type of VALU")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("DOUBLE")
+		menu(menuFtype)
+	}
+	field(NOVA,DBF_ULONG) {
+		prompt("Max. elements in VALA")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVB,DBF_ULONG) {
+		prompt("Max. elements in VALB")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVC,DBF_ULONG) {
+		prompt("Max. elements in VALC")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVD,DBF_ULONG) {
+		prompt("Max. elements in VALD")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVE,DBF_ULONG) {
+		prompt("Max. elements in VALE")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVF,DBF_ULONG) {
+		prompt("Max. elements in VALF")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVG,DBF_ULONG) {
+		prompt("Max. elements in VALG")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVH,DBF_ULONG) {
+		prompt("Max. elements in VAlH")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVI,DBF_ULONG) {
+		prompt("Max. elements in VALI")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVJ,DBF_ULONG) {
+		prompt("Max. elements in VALJ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVK,DBF_ULONG) {
+		prompt("Max. elements in VALK")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVL,DBF_ULONG) {
+		prompt("Max. elements in VALL")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVM,DBF_ULONG) {
+		prompt("Max. elements in VALM")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVN,DBF_ULONG) {
+		prompt("Max. elements in VALN")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVO,DBF_ULONG) {
+		prompt("Max. elements in VALO")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVP,DBF_ULONG) {
+		prompt("Max. elements in VALP")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVQ,DBF_ULONG) {
+		prompt("Max. elements in VALQ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVR,DBF_ULONG) {
+		prompt("Max. elements in VALR")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVS,DBF_ULONG) {
+		prompt("Max. elements in VALS")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVT,DBF_ULONG) {
+		prompt("Max. elements in VALT")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NOVU,DBF_ULONG) {
+		prompt("Max. elements in VALU")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(1)
+		initial("1")
+	}
+	field(NEVA,DBF_ULONG) {
+		prompt("Num. elements in VALA")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVB,DBF_ULONG) {
+		prompt("Num. elements in VALB")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVC,DBF_ULONG) {
+		prompt("Num. elements in VALC")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVD,DBF_ULONG) {
+		prompt("Num. elements in VALD")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVE,DBF_ULONG) {
+		prompt("Num. elements in VALE")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVF,DBF_ULONG) {
+		prompt("Num. elements in VALF")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVG,DBF_ULONG) {
+		prompt("Num. elements in VALG")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVH,DBF_ULONG) {
+		prompt("Num. elements in VAlH")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVI,DBF_ULONG) {
+		prompt("Num. elements in VALI")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVJ,DBF_ULONG) {
+		prompt("Num. elements in VALJ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVK,DBF_ULONG) {
+		prompt("Num. elements in VALK")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVL,DBF_ULONG) {
+		prompt("Num. elements in VALL")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVM,DBF_ULONG) {
+		prompt("Num. elements in VALM")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVN,DBF_ULONG) {
+		prompt("Num. elements in VALN")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVO,DBF_ULONG) {
+		prompt("Num. elements in VALO")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVP,DBF_ULONG) {
+		prompt("Num. elements in VALP")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVQ,DBF_ULONG) {
+		prompt("Num. elements in VALQ")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVR,DBF_ULONG) {
+		prompt("Num. elements in VALR")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVS,DBF_ULONG) {
+		prompt("Num. elements in VALS")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVT,DBF_ULONG) {
+		prompt("Num. elements in VALT")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+	field(NEVU,DBF_ULONG) {
+		prompt("Num. elements in VALU")
+		promptgroup(GUI_WAVE)
+		special(SPC_NOMOD)
+		interest(3)
+		initial("1")
+	}
+}

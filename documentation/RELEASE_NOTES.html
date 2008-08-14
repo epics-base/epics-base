@@ -12,6 +12,37 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Array Subroutine Record added (aSub)</h4>
+
+<p>A heavily modified version of Andy Foster's genSub record type has been
+added, called the aSub (Array Subroutine) record type.  The new name is so that
+genSub records can continue to be used in IOCs that need those features that
+have changed or been removed in creating the aSub record type.  The main
+differences between genSub and aSub are:</p>
+
+<ul>
+
+<li>The fields <tt>UFA..UFU</tt>, <tt>UFVA..UFVU</tt>, <tt>TOVA..TOVU</tt> and
+<tt>VERS</tt> have been removed.</li>
+<li>The <tt>INPA..INPU</tt> and <tt>OUTA..OUTU</tt> link fields can now be
+changed at runtime.</li>
+<li>A new set of fields <tt>NEA..NEU</tt> and <tt>NEVA..NEVU</tt> have been
+added which hold the current element count for the associated input and ouput
+fields. These count fields ensure that putting an array to the <tt>A..U</tt> or
+<tt>VALA..VALU</tt> fields cannot permanently shorten the number of elements
+that the array fields can hold.</li>
+<li>The default value for the <tt>FTA..FTU</tt> and <tt>FTVA..FTVU</tt> fields
+has been changed from "STRING" to "DOUBLE", to reduce the memory footprint of
+unneeded fields.</li>
+<li>aSub subroutines can be asynchronous, using the usual method of setting
+prec-&gt;pact to <tt>TRUE</tt> before returning and arranging for the record's
+<tt>process()</tt> routine to be called to signal completion.  The output links
+are not written until the asynchronous completion callback, and input links are
+not read at asnychronous completion.</li>
+<li>
+
+</ul>
+
 <h4>epicsTimeEventDeviceTime support for soft channel input records</h4>
 
 <p>The Soft Channel device support for all input record types now supports the

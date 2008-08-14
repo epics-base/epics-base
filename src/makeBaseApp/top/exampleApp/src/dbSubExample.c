@@ -3,18 +3,17 @@
 #include <dbDefs.h>
 #include <registryFunction.h>
 #include <subRecord.h>
+#include <aSubRecord.h>
 #include <epicsExport.h>
 
 int mySubDebug;
 
-typedef long (*processMethod)(subRecord *precord);
-
-static long mySubInit(subRecord *precord,processMethod process)
+static long mySubInit(subRecord *precord)
 {
     if (mySubDebug)
-        printf("Record %s called mySubInit(%p, %p)\n",
-               precord->name, (void*) precord, (void*) process);
-    return(0);
+        printf("Record %s called mySubInit(%p)\n",
+               precord->name, (void*) precord);
+    return 0;
 }
 
 static long mySubProcess(subRecord *precord)
@@ -22,7 +21,23 @@ static long mySubProcess(subRecord *precord)
     if (mySubDebug)
         printf("Record %s called mySubProcess(%p)\n",
                precord->name, (void*) precord);
-    return(0);
+    return 0;
+}
+
+static long myAsubInit(aSubRecord *precord)
+{
+    if (mySubDebug)
+        printf("Record %s called myAsubInit(%p)\n",
+               precord->name, (void*) precord);
+    return 0;
+}
+
+static long myAsubProcess(aSubRecord *precord)
+{
+    if (mySubDebug)
+        printf("Record %s called myAsubProcess(%p)\n",
+               precord->name, (void*) precord);
+    return 0;
 }
 
 /* Register these symbols for use by IOC code: */
@@ -30,3 +45,5 @@ static long mySubProcess(subRecord *precord)
 epicsExportAddress(int, mySubDebug);
 epicsRegisterFunction(mySubInit);
 epicsRegisterFunction(mySubProcess);
+epicsRegisterFunction(myAsubInit);
+epicsRegisterFunction(myAsubProcess);

@@ -1025,21 +1025,24 @@ static int dbpr_report(
 		    &paddr->precord->time);
 		sprintf(pmsg, "%s: %s", pfield_name, time_buf);
 		dbpr_msgOut(pMsgBuff, tab_size);
-	    } else { /* just print field in hex */
-		char * pchar = (char *)(pfield);
-		char   temp_buf[42];
+            } else if (pdbFldDes->size == sizeof(void *) &&
+                strchr(pdbFldDes->extra, '*')) {
+                /* Special for pointers, needed on little-endian CPUs */
+                sprintf(pmsg, "%s: %p", pfield_name, *(void **)pfield);
+                dbpr_msgOut(pMsgBuff, tab_size);
+            } else { /* just print field as hex bytes */
+		unsigned char *pchar = (unsigned char *)pfield;
+		char   temp_buf[61];
 		char *ptemp_buf = &temp_buf[0];
 		short n = pdbFldDes->size;
 		short i;
                 unsigned int value;
 
-		strcpy(ptemp_buf,"0x"); ptemp_buf+=2;
-		if(n>(sizeof(temp_buf)-2)/2) n = (sizeof(temp_buf)-2)/2;
-		for (i=0; i<n; i++, (ptemp_buf+=2), pchar++) {
-                        value = (unsigned int)(*(unsigned char *)pchar);
-			sprintf(ptemp_buf,"%02x",value);
+		if (n > sizeof(temp_buf)/3) n = sizeof(temp_buf)/3;
+		for (i=0; i<n; i++, ptemp_buf += 3, pchar++) {
+                        value = (unsigned int)*pchar;
+			sprintf(ptemp_buf, "%02x ", value);
 		}
-		*ptemp_buf = 0;
 		sprintf(pmsg, "%s: %s", pfield_name,temp_buf);
 		dbpr_msgOut(pMsgBuff, tab_size);
 	    }

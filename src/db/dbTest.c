@@ -622,7 +622,7 @@ static void printDbAddr(DBADDR *paddr)
 {
     short	field_type;
     short	dbr_field_type;
-    dbFldDes	*pdbFldDes = (dbFldDes *)paddr->pfldDes;;
+    dbFldDes	*pdbFldDes = paddr->pfldDes;
 
     printf("Record Address: %p",(void *)paddr->precord);
     printf(" Field Address: %p",paddr->pfield);

@@ -87,12 +87,12 @@ void epicsShareAPI recGblRecSupError(long status, struct dbAddr *paddr,
     const char *pmessage, const char *psupport_name)
 {
     dbCommon *precord = 0;
-    dbFldDes	*pdbFldDes = 0;
-    dbRecordType	*pdbRecordType = 0;
+    dbFldDes *pdbFldDes = 0;
+    dbRecordType *pdbRecordType = 0;
 
     if(paddr) {
         precord = paddr->precord;
-        pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+        pdbFldDes = paddr->pfldDes;
         if(pdbFldDes) pdbRecordType = pdbFldDes->pdbRecordType;
     }
     errPrintf(status,0,0,
@@ -110,7 +110,7 @@ void epicsShareAPI recGblRecSupError(long status, struct dbAddr *paddr,
 
 void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
 {
-    dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+    dbFldDes *pdbFldDes = paddr->pfldDes;
 
     switch(pdbFldDes->field_type){
     case(DBF_SHORT):
@@ -138,7 +138,7 @@ void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
 void epicsShareAPI recGblGetGraphicDouble(
     struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
-    dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+    dbFldDes *pdbFldDes = paddr->pfldDes;
 
     getMaxRangeValues(pdbFldDes->field_type,&pgd->upper_disp_limit,
 	&pgd->lower_disp_limit);
@@ -160,7 +160,7 @@ void epicsShareAPI recGblGetAlarmDouble(
 void epicsShareAPI recGblGetControlDouble(
     struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
-    dbFldDes               *pdbFldDes=(dbFldDes *)(paddr->pfldDes);
+    dbFldDes *pdbFldDes=paddr->pfldDes;
 
     getMaxRangeValues(pdbFldDes->field_type,&pcd->upper_ctrl_limit,
 	&pcd->lower_ctrl_limit);

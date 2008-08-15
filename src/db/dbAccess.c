@@ -121,7 +121,7 @@ static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
 	short		field_type=paddr->field_type;
-	dbFldDes	*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+	dbFldDes	*pdbFldDes = paddr->pfldDes;
 	dbMenu		*pdbMenu;
 	dbDeviceMenu	*pdbDeviceMenu;
 	char		**papChoice;
@@ -370,7 +370,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 
 struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr)
 {
-	struct dbFldDes *pfldDes = (struct dbFldDes *)paddr->pfldDes;
+	struct dbFldDes *pfldDes = paddr->pfldDes;
 
 	if(!pfldDes) return(0);
 	return(pfldDes->pdbRecordType->prset);
@@ -402,7 +402,7 @@ int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes)
 
 int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr)
 {
-    return(((struct dbFldDes *)paddr->pfldDes)->indRecordType);
+    return paddr->pfldDes->indRecordType;
 }
 
 long epicsShareAPI dbGetNelements(const struct link *plink,long *nelements)
@@ -654,11 +654,11 @@ long epicsShareAPI dbNameToAddr(const char *pname,DBADDR *paddr)
 	paddr->pfield = dbEntry.pfield;
 	pflddes = dbEntry.pflddes;
 	dbFinishEntry(&dbEntry);
-	paddr->pfldDes = (void *)pflddes;
-	paddr->field_type = pflddes->field_type;
+	paddr->pfldDes        = pflddes;
+	paddr->field_type     = pflddes->field_type;
 	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
-	paddr->field_size = pflddes->size;
-	paddr->special = pflddes->special;
+	paddr->field_size     = pflddes->size;
+	paddr->special        = pflddes->special;
 
 	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
 	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
@@ -899,7 +899,7 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
     dbScanLock(precord);
     if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
 	DBENTRY	dbEntry;
-	dbFldDes *pfldDes = (dbFldDes *)paddr->pfldDes;
+	dbFldDes *pfldDes = paddr->pfldDes;
 	char	*rtnString;
 	char	*pbuf = (char *)pbuffer;
 
@@ -1039,7 +1039,7 @@ static long dbPutFieldLink(
     DBLINK  *plink = (DBLINK *)paddr->pfield;
     const char  *pstring = (const char *)pbuffer;
     DBENTRY	dbEntry;
-    dbFldDes    *pfldDes = (dbFldDes *)paddr->pfldDes;
+    dbFldDes    *pfldDes = paddr->pfldDes;
     DBADDR      dbaddr;
     devSup *pdevSup = NULL;
     struct dset *new_dset = NULL;
@@ -1220,10 +1220,10 @@ long epicsShareAPI dbPutField(
     DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
 {
     long	status = 0;
-    long	special=paddr->special;
-    dbFldDes	*pfldDes=(dbFldDes *)(paddr->pfldDes);
-    dbCommon 	*precord = (dbCommon *)(paddr->precord);
-    short	dbfType = paddr->field_type;
+    long	special  = paddr->special;
+    dbFldDes	*pfldDes = paddr->pfldDes;
+    dbCommon 	*precord = paddr->precord;
+    short	dbfType  = paddr->field_type;
 
     if(special==SPC_ATTRIBUTE)
         return S_db_noMod;
@@ -1347,7 +1347,7 @@ long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
 	}
 	/* propagate events for this field */
 	/* if the field is VAL and pvlMask&pvlOptPP is true dont propagate*/
-	pfldDes = (dbFldDes *)(paddr->pfldDes);
+	pfldDes = paddr->pfldDes;
 	isValueField = dbIsValueField(pfldDes);
 	if (isValueField) precord->udf=FALSE;
 	if(precord->mlis.count &&

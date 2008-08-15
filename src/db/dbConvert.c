@@ -2126,8 +2126,8 @@ static long getEnumEnum(
 static long getMenuString(DBADDR *paddr, void *pto,
     long nRequest, long no_elements, long offset)
 {
-    char		*pbuffer = (char *)pto;	
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    char		*pbuffer = (char *)pto;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
@@ -2152,8 +2152,8 @@ static long getMenuString(DBADDR *paddr, void *pto,
 static long getDeviceString(DBADDR *paddr, void *pto,
     long nRequest, long no_elements, long offset)
 {
-    char		*pbuffer = (char *)pto;	
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    char		*pbuffer = (char *)pto;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbDeviceMenu	*pdbDeviceMenu;
     char		**papChoice;
     char		*pchoice;
@@ -2499,7 +2499,7 @@ static long putStringMenu(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbMenu		*pdbMenu;
     char		**papChoiceValue;
     char		*pchoice;
@@ -2536,7 +2536,7 @@ static long putStringDevice(
     DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
 {
     const char *pbuffer = (const char *)pfrom;
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
     char		**papChoice;
     char		*pchoice;

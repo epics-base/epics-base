@@ -72,9 +72,11 @@ struct macro_link {
 	char	*macroStr;
 };
 
+struct dbCommon;
+
 struct pv_link {
 	char	*pvname;	/*pvname to link to*/
-	void	*precord;	/*Address of record containing link*/
+	struct dbCommon *precord;	/*Address of record containing link*/
 	void	*pvt;		/*CA or DB private*/
 	LINKCVT	getCvt;		/*input conversion function*/
 	short	pvlMask;	/*Options mask*/

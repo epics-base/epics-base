@@ -201,7 +201,7 @@ STATIC void callUser(dbCommon *precord,putNotify *ppn)
 STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord)
 {
     long	status=0;
-    dbFldDes	*pfldDes=(dbFldDes *)(ppn->paddr->pfldDes);
+    dbFldDes	*pfldDes = ppn->paddr->pfldDes;
     putNotifyPvt *pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
 
     if(precord->ppn && pputNotifyPvt->state!=putNotifyRestartCallbackRequested)

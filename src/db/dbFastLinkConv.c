@@ -299,7 +299,7 @@ static long cvt_st_menu(
      epicsEnum16 *to,
      struct dbAddr *paddr)
 {
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbMenu		*pdbMenu = (dbMenu *)pdbFldDes->ftPvt;
     char		**papChoiceValue;
     char		*pchoice;
@@ -331,7 +331,7 @@ static long cvt_st_device(
      epicsEnum16 *to,
      struct dbAddr *paddr)
 {
-    dbFldDes		*pdbFldDes = (dbFldDes *)paddr->pfldDes;
+    dbFldDes		*pdbFldDes = paddr->pfldDes;
     dbDeviceMenu	*pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
     char		**papChoice;
     char		*pchoice;
@@ -1043,7 +1043,7 @@ static long cvt_menu_st(
    char			*pchoice;
 
     if(! paddr 
-    || !(pdbFldDes = (dbFldDes *)paddr->pfldDes)
+    || !(pdbFldDes = paddr->pfldDes)
     || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
     || *from>=pdbMenu->nChoice
     || !(papChoiceValue = pdbMenu->papChoiceValue)
@@ -1068,7 +1068,7 @@ static long cvt_device_st(
    char			*pchoice;
 
     if(!paddr 
-    || !(pdbFldDes = (dbFldDes *)paddr->pfldDes)
+    || !(pdbFldDes = paddr->pfldDes)
     || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
     || *from>=pdbDeviceMenu->nChoice
     || !(papChoice= pdbDeviceMenu->papChoice)

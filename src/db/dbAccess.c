@@ -1483,9 +1483,11 @@ long epicsShareAPI dbGetTimeStamp(const struct link *plink,epicsTimeStamp *pstam
 {
     DBADDR *paddr;
 
-    if(plink->type == CA_LINK) return(dbCaGetTimeStamp(plink,pstamp));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
+    if (plink->type == CA_LINK)
+        return dbCaGetTimeStamp(plink,pstamp);
+    if (plink->type != DB_LINK)
+        return S_db_notFound;
     paddr = (DBADDR *)plink->value.pv_link.pvt;
     *pstamp = paddr->precord->time;
-    return(0);
+    return 0;
 }

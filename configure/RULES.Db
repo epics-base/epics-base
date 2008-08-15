@@ -25,7 +25,7 @@ vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 # dbExpand
 INSTALL_DBDFLAGS += -I $(INSTALL_LOCATION)/dbd
 DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. $(RELEASE_DBFLAGS)
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. $(RELEASE_DBFLAGS)
 
 #####################################################  Targets
 

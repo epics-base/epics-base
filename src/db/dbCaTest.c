@@ -104,13 +104,18 @@ long dbcar(char *precordname, int level)
                                     "No Access", "Read Only",
                                     "Write Only", "Read/Write"
                                 };
+                                int mask = plink->value.pv_link.pvlMask;
                                 printf("%28s.%-4s ==> %-28s  (%lu, %lu)\n",
                                     precord->name,
                                     pdbFldDes->name,
                                     plink->value.pv_link.pvname,
                                     pca->nDisconnect,
                                     pca->nNoWrite);
-                                printf("%32s host %s, %s\n", "",
+                                printf("%21s [%s%s%s%s] host %s, %s\n", "",
+                                    mask & pvlOptInpNative ? "IN" : "  ",
+                                    mask & pvlOptInpString ? "IS" : "  ",
+                                    mask & pvlOptOutNative ? "ON" : "  ",
+                                    mask & pvlOptOutString ? "OS" : "  ",
                                     ca_host_name(pca->chid),
                                     rights[rw]);
                             }

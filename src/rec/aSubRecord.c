@@ -329,12 +329,8 @@ static long fetch_values(aSubRecord *prec)
 static long get_precision(DBADDR *paddr, long *precision)
 {
     aSubRecord *prec = (aSubRecord *)paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if (fieldIndex == aSubRecordVAL) {
-        *precision = prec->prec;
-        return 0;
-    }
+    *precision = prec->prec;
     recGblGetPrec(paddr, precision);
     return 0;
 }

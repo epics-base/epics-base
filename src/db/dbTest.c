@@ -11,11 +11,11 @@
 /* base/src/db  $Id$ */
 /*	database access test subroutines */
 
-#include <epicsStdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <stdio.h>
+#include <ctype.h>
 
+#include "epicsStdlib.h"
 #include "epicsStdio.h"
 #include "epicsString.h"
 #include "dbDefs.h"
@@ -286,6 +286,9 @@ long epicsShareAPI dbpf(const char *pname,const char *pvalue)
 
         sscanf(pvalue, "%hu", &value);
         status=dbPutField(&addr, DBR_ENUM, &value, 1L);
+    } else if (addr.dbr_field_type == DBR_CHAR &&
+        addr.no_elements > 1) {
+        status = dbPutField(&addr, DBR_CHAR, pvalue, strlen(pvalue) + 1);
     } else {
         status=dbPutField(&addr, DBR_STRING, pvalue, 1L);
     }
@@ -794,13 +797,16 @@ static void printBuffer(
     if (no_elements == 0) return;
     switch (dbr_type) {
     case (DBR_STRING):
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_STRING: ");
+        else
+            sprintf(pmsg, "DBR_STRING[%ld]: ", no_elements);
+        dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, "DBR_STRING: failed.");
             dbpr_msgOut(pMsgBuff, tab_size);
             break;
         }
-        sprintf(pmsg, "DBR_STRING:");
-        dbpr_msgOut(pMsgBuff, tab_size);
         for(i=0; i<no_elements; i++) {
             len = strlen(pbuffer);
             if (len > 0) {
@@ -811,22 +817,33 @@ static void printBuffer(
         }
         break;
     case (DBR_CHAR):
-        sprintf(pmsg, "DBR_CHAR:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_CHAR: ");
+        else
+            sprintf(pmsg, "DBR_CHAR[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
             dbpr_msgOut(pMsgBuff, tab_size);
             break;
         }
-        for (i = 0; i < no_elements; i++) {
+        if (no_elements == 1) {
             val_i32 = *(epicsInt8 *) pbuffer;
             sprintf(pmsg, "%-9d 0x%-9x", val_i32, val_i32);
             dbpr_msgOut(pMsgBuff, tab_size);
-            pbuffer = (char *)pbuffer + sizeof(epicsInt8);
+        } else {
+            for (i = 0; i < no_elements; i+= MAXLINE - 5) {
+                sprintf(pmsg, " \"%.*s\"", MAXLINE - 5, (char *)pbuffer + i);
+                if (i + MAXLINE - 5 < no_elements) strcat(pmsg, " +");
+                dbpr_msgOut(pMsgBuff, tab_size);
+            }
         }
         break;
     case (DBR_UCHAR):
-        sprintf(pmsg, "DBR_UCHAR:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_UCHAR: ");
+        else
+            sprintf(pmsg, "DBR_UCHAR[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -841,7 +858,10 @@ static void printBuffer(
         }
         break;
     case (DBR_SHORT):
-        sprintf(pmsg, "DBR_SHORT:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_SHORT: ");
+        else
+            sprintf(pmsg, "DBR_SHORT[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -856,7 +876,10 @@ static void printBuffer(
         }
         break;
     case (DBR_USHORT):
-        sprintf(pmsg, "DBR_USHORT:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_USHORT: ");
+        else
+            sprintf(pmsg, "DBR_USHORT[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -871,7 +894,10 @@ static void printBuffer(
         }
         break;
     case (DBR_LONG):
-        sprintf(pmsg, "DBR_LONG:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_LONG: ");
+        else
+            sprintf(pmsg, "DBR_LONG[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -886,7 +912,10 @@ static void printBuffer(
         }
         break;
     case (DBR_ULONG):
-        sprintf(pmsg, "DBR_ULONG:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_ULONG: ");
+        else
+            sprintf(pmsg, "DBR_ULONG[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -901,7 +930,10 @@ static void printBuffer(
         }
         break;
     case (DBR_FLOAT):
-        sprintf(pmsg, "DBR_FLOAT:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_FLOAT: ");
+        else
+            sprintf(pmsg, "DBR_FLOAT[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -915,7 +947,10 @@ static void printBuffer(
         }
         break;
     case (DBR_DOUBLE):
-        sprintf(pmsg, "DBR_DOUBLE:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_DOUBLE: ");
+        else
+            sprintf(pmsg, "DBR_DOUBLE[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -929,7 +964,10 @@ static void printBuffer(
         }
         break;
     case (DBR_ENUM):
-        sprintf(pmsg, "DBR_ENUM:  ");
+        if (no_elements == 1)
+            sprintf(pmsg, "DBR_ENUM: ");
+        else
+            sprintf(pmsg, "DBR_ENUM[%ld]: ", no_elements);
         dbpr_msgOut(pMsgBuff, tab_size);
         if (status != 0) {
             sprintf(pmsg, " failed.");
@@ -1083,9 +1121,11 @@ static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size)
 	return;
     }
     /* truncate if too long */
-    if ((len = strlen(pmsg)) > MAXLINE)
-	err = 1;
-    len = ((len > MAXLINE) ? MAXLINE : len);
+    len = strlen(pmsg);
+    if (len > MAXLINE) {
+        err = 1;
+        len = MAXLINE;
+    }
 
     dbpr_insert_msg(pMsgBuff, len, tab_size);
 

@@ -30,3 +30,7 @@ WIND_BASE = /usr/local/vw/tornado202p1
 #WIND_BASE = /usr/local/vw/vxWorks-$(VXWORKS_VERSION)
 #WIND_BASE = /ade/vxWorks/$(VXWORKS_VERSION)
 
+
+# WorkBench Version number, used with vxWorks 6.6 and later
+
+WORKBENCH_VERSION = 3.0

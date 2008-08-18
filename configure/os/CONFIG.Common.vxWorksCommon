@@ -123,7 +123,18 @@ GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
 # C++ host processing
-NM = $(GNU_BIN)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
+NM_DIR_5 = $(GNU_BIN)
+NM_DIR_6.0 = $(GNU_BIN)
+NM_DIR_6.1 = $(GNU_BIN)
+NM_DIR_6.2 = $(GNU_BIN)
+NM_DIR_6.3 = $(GNU_BIN)
+NM_DIR_6.4 = $(GNU_BIN)
+NM_DIR_6.5 = $(GNU_BIN)
+NM_DIR_6.6 = $(WIND_BASE)/workbench-$(WORKBENCH_VERSION)/$(WIND_HOST_TYPE)/bin
+NM_DIR_6 = $(NM_DIR_$(VXWORKS_VERSION))
+NM_DIR = $(NM_DIR_$(VXWORKS_MAJOR_VERSION))
+
+NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 
 #--------------------------------------------------
 # The follow 2 exports prevent gnu cross-compiler

@@ -33,11 +33,22 @@
 
 
 /********* ai record **********/
+static int getCurrentTime(double * pseconds)
+{
+    epicsTimeStamp ts;
+
+    if (epicsTimeERROR != epicsTimeGetCurrent(&ts)) {
+        *pseconds = ts.secPastEpoch + ((double)(ts.nsec)) * 1e-9;
+        return 0;
+    }
+    return -1;
+}
+
 static struct ai_channel {
     char *name;
     int (*get)(double *);
 } ai_channels[] = {
-    {"TIME", generalTimeGetCurrentDouble},
+    {"TIME", getCurrentTime},
 };
 
 static long init_ai(aiRecord *prec)
@@ -92,11 +103,16 @@ epicsExportAddress(dset, devAiGeneralTime);
 
 
 /********* bo record **********/
+static void resetErrors(void)
+{
+    generalTimeResetErrorCounts();
+}
+
 static struct bo_channel {
     char *name;
-    void (*put)();
+    void (*put)(void);
 } bo_channels[] = {
-    {"RSTERRCNT", generalTimeResetErrorCounts},
+    {"RSTERRCNT", resetErrors},
 };
 
 static long init_bo(boRecord *prec)
@@ -132,7 +148,7 @@ static long write_bo(boRecord *prec)
 
     if (!pchan) return -1;
 
-    pchan->put(prec->val);
+    pchan->put();
     return 0;
 }
 
@@ -146,11 +162,16 @@ epicsExportAddress(dset, devBoGeneralTime);
 
 
 /******* longin record *************/
+static int errorCount(void)
+{
+    return generalTimeGetErrorCounts();
+}
+
 static struct li_channel {
     char *name;
     int (*get)(void);
 } li_channels[] = {
-    {"GETERRCNT", generalTimeGetErrorCounts},
+    {"GETERRCNT", errorCount},
 };
 
 static long init_li(longinRecord *prec)
@@ -199,12 +220,22 @@ epicsExportAddress(dset, devLiGeneralTime);
 
 
 /********** stringin record **********/
+static void timeProvider(char *buf)
+{
+    generalTimeGetBestTcp(buf);
+}
+
+static void eventProvider(char *buf)
+{
+    generalTimeGetBestTep(buf);
+}
+
 static struct si_channel {
     char *name;
     void (*get)(char *buf);
 } si_channels[] = {
-    {"BESTTCP", generalTimeGetBestTcp},
-    {"BESTTEP", generalTimeGetBestTep},
+    {"BESTTCP", timeProvider},
+    {"BESTTEP", eventProvider},
 };
 
 static long init_si(stringinRecord *prec)

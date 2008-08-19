@@ -30,11 +30,10 @@ extern "C" {
 
 epicsShareFunc void    generalTime_Init(void);     /* this is the init routine you can call explicitly in st.cmd */
 epicsShareFunc int     lastResortEventProviderInstall(void);
-epicsShareFunc int     generalTimeGetCurrentDouble(double * pseconds);  /* for ai record, seconds from 01/01/1990 */
-epicsShareFunc void    generalTimeResetErrorCounts();  /* for bo record */
-epicsShareFunc int     generalTimeGetErrorCounts();    /* for longin record */
-epicsShareFunc void    generalTimeGetBestTcp(char * desc);     /* for stringin record */
-epicsShareFunc void    generalTimeGetBestTep(char * desc);     /* for stringin record */
+epicsShareFunc void    generalTimeResetErrorCounts();
+epicsShareFunc int     generalTimeGetErrorCounts();
+epicsShareFunc void    generalTimeGetBestTcp(char *desc);
+epicsShareFunc void    generalTimeGetBestTep(char *desc);
 
 epicsShareFunc long    generalTimeReport(int interest);
 

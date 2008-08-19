@@ -452,37 +452,22 @@ long    generalTimeReport(int level)
 }
 
 /*
- * The following functions are accessors for various internal values, so that
- * they can be made available to device support. They are used by the
- * devGeneralTime.c file in <base>/src/dev/softDev which implements the
- * 'generalTime' DTYP for ai, bo, longin and stringin records 
+ * Accessor routines for internal status values.
  */
 
-epicsShareFunc int generalTimeGetCurrentDouble(double * pseconds)  /* for ai record, seconds from 01/01/1990 */
-{
-    epicsTimeStamp          ts;
-    if(epicsTimeERROR!=epicsTimeGetCurrent(&ts))
-    {
-        *pseconds=ts.secPastEpoch+((double)(ts.nsec))*1e-9;
-        return  epicsTimeOK;
-    }
-    else
-        return  epicsTimeERROR;
-}
-
-epicsShareFunc void    generalTimeResetErrorCounts()   /* for bo record */
+epicsShareFunc void generalTimeResetErrorCounts()
 {
     generalTime_Init();
-    pgeneralTimePvt->ErrorCounts=0;
+    pgeneralTimePvt->ErrorCounts = 0;
 }
 
-int     generalTimeGetErrorCounts() /* for longin record */
+epicsShareFunc int generalTimeGetErrorCounts()
 {
     generalTime_Init();
     return  pgeneralTimePvt->ErrorCounts;
 }
 
-epicsShareFunc void    generalTimeGetBestTcp(char * desc)  /* for stringin record */
+epicsShareFunc void generalTimeGetBestTcp(char * desc)
 {/* the assignment to pLastKnownBestTcp is atomic and desc is never changed after registeration */
     generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTcp)
@@ -497,7 +482,7 @@ epicsShareFunc void    generalTimeGetBestTcp(char * desc)  /* for stringin recor
     }
 }
 
-epicsShareFunc void    generalTimeGetBestTep(char * desc)  /* for stringin record */
+epicsShareFunc void generalTimeGetBestTep(char * desc)
 {/* the assignment to pLastKnownBestTep is atomic and desc is never changed after registeration */
     generalTime_Init();
     if(pgeneralTimePvt->pLastKnownBestTep)

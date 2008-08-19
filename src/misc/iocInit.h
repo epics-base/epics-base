@@ -23,6 +23,8 @@ epicsShareFunc int iocBuild(void);
 epicsShareFunc int iocRun(void);
 epicsShareFunc int iocPause(void);
 
+epicsShareExtern struct dsxt devSoft_DSXT;
+
 #ifdef __cplusplus
 }
 #endif

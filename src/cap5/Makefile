@@ -14,20 +14,18 @@ ifneq ($(findstring darwin,$(T_A)),)
   LOADABLE_SHRLIB_SUFFIX = .bundle
 endif
 
-EXPAND_default += cainfo.pl@ caput.pl@ caget.pl@ camonitor.pl@ CA.pm@
-EXPAND_WIN32 = -nil-
+EXPAND += cainfo.pl@ caput.pl@ caget.pl@ camonitor.pl@ CA.pm@
 
-PERL_SCRIPTS_default += cainfo.pl
-PERL_SCRIPTS_default += caput.pl
-PERL_SCRIPTS_default += caget.pl
-PERL_SCRIPTS_default += camonitor.pl
-PERL_SCRIPTS_WIN32 = -nil-
+PERL_SCRIPTS += cainfo.pl
+PERL_SCRIPTS += caput.pl
+PERL_SCRIPTS += caget.pl
+PERL_SCRIPTS += camonitor.pl
 
-PERL_MODULES_default += CA.pm
-PERL_MODULES_WIN32 = -nil-
+PERL_MODULES += CA.pm
 
 LOADABLE_LIBRARY_HOST_default = Cap5
 LOADABLE_LIBRARY_HOST_WIN32 = -nil-
+# Doesn't build on WIN32 yet...
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com

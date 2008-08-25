@@ -277,10 +277,10 @@ MAIN(blockingSockTest)
     }
     testDiag("This OS behaves like \"%s\".", mechName(mech));
 
-    if (! testOk(mech = epicsSocketSystemCallInterruptMechanismQuery (),
-        "Socket shutdown mechanism") )
+    int query = epicsSocketSystemCallInterruptMechanismQuery ();
+    if (! testOk(mech == query, "Socket shutdown mechanism") )
         testDiag("epicsSocketSystemCallInterruptMechanismQuery returned \"%s\"",
-            mechName(epicsSocketSystemCallInterruptMechanismQuery () ) );
+            mechName(query));
 
     return testDone();
 }

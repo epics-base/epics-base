@@ -20,10 +20,12 @@ int epicsShareAPI epicsVsnprintf(char *str, size_t len,
     int needed = _vscprintf(fmt, ap);
     int retval = _vsnprintf(str, len, fmt, ap);
 
-    if (len && retval == -1)
+    if ((int) len < needed + 1) {
         str[len - 1] = 0;
+        return needed;
+    }
 
-    return ((int) len < needed) ? needed : retval;
+    return retval;
 }
 
 int epicsShareAPI epicsSnprintf (char *str, size_t len, const char *fmt, ...)

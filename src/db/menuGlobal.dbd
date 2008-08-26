@@ -9,7 +9,6 @@
 #*************************************************************************
 include "menuAlarmSevr.dbd"
 include "menuAlarmStat.dbd"
-include "menuArrType.dbd"
 include "menuCompress.dbd"
 include "menuFtype.dbd"
 include "menuIvoa.dbd"

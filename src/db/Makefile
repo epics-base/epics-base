@@ -36,7 +36,6 @@ INC += db_convert.h
 
 DBDINC += menuAlarmSevr
 DBDINC += menuAlarmStat
-DBDINC += menuArrType
 DBDINC += menuCompress
 DBDINC += menuFtype
 DBDINC += menuIvoa

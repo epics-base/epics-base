@@ -20,6 +20,7 @@
 #include <math.h>
 #include <time.h>
 #include <limits.h>
+#include <stdio.h>
 
 //
 // WIN32
@@ -96,8 +97,11 @@ static const LONGLONG ET_TICKS_PER_FT_TICK =
 static int timeRegister(void)
 {
     pCurrentTime = new currentTime ();
-    pCurrentTime->startPLL ();
+    /* Must register with generalTime here since the epicsTimer
+     * in the PLL ends up calling epicsTime::getCurrent()
+     */
     generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
+    pCurrentTime->startPLL ();
     return 1;
 }
 static int done = timeRegister();

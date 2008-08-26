@@ -19,7 +19,7 @@ MAIN(epicsMathTest)
 {
     double a,b,c;
     
-    testPlan(18);
+    testPlan(24);
     
     a = 0.0;
     b = 1.0;
@@ -34,6 +34,9 @@ MAIN(epicsMathTest)
     testOk(!isnan(c), "!isnan(1.0 / 0.0)");
     testOk(isinf(c), "isinf(1.0 / 0.0)");
     testOk(c == c, "1.0 / 0.0 == 1.0 / 0.0");
+    testOk(c - c != b, "inf - inf != 0");
+    testOk(c + -c != b, "inf + -inf != 0");
+    testOk(-c + c != b, "-inf + inf != 0");
     
     a = 0.0;
     b = 0.0;
@@ -41,6 +44,9 @@ MAIN(epicsMathTest)
     testOk(isnan(c), "isnan(0.0 / 0.0)");
     testOk(!isinf(c), "!isinf(0.0 / 0.0)");
     testOk(c != c, "0.0 / 0.0 != 0.0 / 0.0");
+    testOk(isnan(c - c), "isnan(nan - nan)");
+    testOk(isnan(c + -c), "isnan(nan + -nan)");
+    testOk(isnan(-c + c), "isnan(-nan + nan)");
     
     a = 1e300;
     b = 1e-300;

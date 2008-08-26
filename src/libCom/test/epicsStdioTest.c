@@ -30,14 +30,17 @@
 #define LINE_2 "# This is second and last line of sample report\n"
 
 static void testEpicsSnprintf() {
+    char exbuffer[80], buffer[80];
     const int ivalue = 1234;
     const float fvalue = 1.23e4;
     const char *svalue = "OneTwoThreeFour";
     const char *format = "int %d float %8.2e string %s";
-    const char *expected = "int 1234 float 1.23e+04 string OneTwoThreeFour";
-    char buffer[80];
-    int size, rtn;
-    int rlen = strlen(expected)+1;
+    const char *expected = exbuffer;
+    size_t size;
+    int rtn, rlen;
+    
+    sprintf(exbuffer, format, ivalue, fvalue, svalue);
+    rlen = strlen(expected)+1;
     
     strcpy(buffer, "AAAA");
     
@@ -112,7 +115,11 @@ void testStdoutRedir (const char *report)
 
 MAIN(epicsStdioTest)
 {
+#ifdef _WIN32
+    testPlan(166);
+#else
     testPlan(163);
+#endif
     testEpicsSnprintf();
     testStdoutRedir("report");
     return testDone();

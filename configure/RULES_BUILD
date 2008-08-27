@@ -334,11 +334,10 @@ runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
 	@$(CP) $< $@
 
 # Some versions of Test::Harness expect test programs in perl only.
-# Generate a 1-line perl program to exec the real test binary.
-# Uses the $0 runtime path to itself to find the executable.
+# Generate a perl program to exec the real test binary.
 %.t: %$(EXE)
 	@$(RM) $@
-	@echo '($$e=$$0)=~s/.t$$/$(EXE)/;exec "./$$e" or die "exec failed";'>$@
+	@$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
 ## Install rules for BIN_INSTALLS and LIB_INSTALLS

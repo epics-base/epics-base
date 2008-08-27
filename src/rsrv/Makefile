@@ -28,7 +28,7 @@ LIBRARY_IOC = rsrvIoc
 rsrvIoc_LIBS = asIoc dbIoc ca Com
 
 rsrvIoc_SYS_LIBS_WIN32 := ws2_32
-rsrvIoc_RCS_WIN32 = rsrvIoc.rc
+rsrvIoc_RCS = rsrvIoc.rc
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)

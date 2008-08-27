@@ -32,6 +32,7 @@ ARCH_DEP_LDFLAGS += -m32
 #	compiler defines _WIN32 1
 #	compiler defines WIN32 1
 #	compiler defines WINNT 1
+#       compiler defines __GNUC__ 3
 #	compiler does not define  __unix __unix__ unix
 #	compiler does not define  __CYGWIN__ __CYGWIN32__
 

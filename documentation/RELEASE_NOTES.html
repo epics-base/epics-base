@@ -12,6 +12,19 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New epicsEndian.h header</h4>
+
+<p>Any C or C++ code can <tt>#include "epicsEndian.h"</tt> which defines four
+macros.  The main one is EPICS_BYTE_ORDER and is defined to be either
+EPICS_ENDIAN_LITTLE or EPICS_ENDIAN_BIG (these are numeric constants 1234 and
+4321 respectively).  The fourth macro is called EPICS_FLOAT_WORD_ORDER and is
+needed because some ARM systems use mixed-endian format floats.</p>
+
+<p>Note that just knowing the CPU's endianness doesn't tell you the complete
+story about the byte order that your hardware registers will present to the CPU;
+byte swapping is often performed automatically by PCI to VME bridge devices and
+by other kinds of bus converter, so "portable" drivers aren't always.</p>
+
 <h4>Array Subroutine Record added (aSub)</h4>
 
 <p>A heavily modified version of Andy Foster's genSub record type has been

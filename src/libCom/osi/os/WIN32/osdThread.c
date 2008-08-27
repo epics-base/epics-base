@@ -698,7 +698,7 @@ epicsShareFunc unsigned epicsShareAPI epicsThreadGetPriority (epicsThreadId id)
 }
 
 /*
- * epicsThreadGetPriority ()
+ * epicsThreadGetPrioritySelf ()
  */
 epicsShareFunc unsigned epicsShareAPI epicsThreadGetPrioritySelf () 
 { 

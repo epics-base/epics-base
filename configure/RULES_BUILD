@@ -326,7 +326,7 @@ $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	$(MUNCH_CMD)
 
 runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
-	$(PERL) -e 'use Test::Harness; runtests @ARGV if @ARGV;' $^
+	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt

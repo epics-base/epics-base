@@ -321,4 +321,4 @@ extern "C" {
 } // extern "C"
 
 // Ensure the main thread gets a unique ID
-epicsThreadGetIdSelf();
+static epicsThreadId epicsThreadMainId = epicsThreadGetIdSelf();

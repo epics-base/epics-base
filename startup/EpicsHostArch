@@ -79,7 +79,7 @@ case $sysname in
         sysname=`uname -o`
         case $sysname in
            Cygwin )
-                os=win32
+                os=cygwin
                 cpu=`uname -m`
                 case $cpu in i386 | i486 | i586 | i686 )
                         cpu=x86

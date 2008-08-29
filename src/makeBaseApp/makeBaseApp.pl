@@ -189,8 +189,8 @@ sub get_commandline_opts { #no args
 	$top =~s|^\$\(EPICS_BASE\)|$epics_base|;
 	$top =~s|^\$\(TOP\)/||;
     }
-    $top = $ENV{EPICS_MBA_TEMPLATE_TOP} unless $top; # third choice is env var
-    $top = $epics_base . "/templates/makeBaseApp/top" unless $top; # final
+    $top = $ENV{EPICS_MBA_TEMPLATE_TOP} unless $top && -d $top; # third choice is env var
+    $top = $epics_base . "/templates/makeBaseApp/top" unless $top && -d $top; # final
     $top and -d "$top" or Cleanup(1, "Can't find template top directory");
     $app_template_top = LocalPath($top);
     $app_template_top =~s|^\.\.|\$(TOP)/..|;

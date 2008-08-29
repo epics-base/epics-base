@@ -20,6 +20,8 @@ sub readReleaseFiles {
     if ($hostarch) {
         my $hrelfile = "$relfile.$hostarch";
         &readRelease($hrelfile, $Rmacros, $Rapps) if (-r $hrelfile);
+        $hrelfile .= '.Common';
+        &readRelease($hrelfile, $Rmacros, $Rapps) if (-r $hrelfile);
     }
 
     if ($arch) {

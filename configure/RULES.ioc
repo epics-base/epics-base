@@ -17,16 +17,15 @@ ifneq ($(findstring $(ARCH),$(BUILD_ARCHS)),)
 buildInstall: $(TARGETS)
 
 clean:
-	$(RM) cdCommands envPaths
+	$(RM) cdCommands envPaths dllPath.bat
 
 else 
 buildInstall:
 clean:
 endif
 
-envPaths cdCommands: $(wildcard $(TOP)/configure/RELEASE*) \
+cdCommands envPaths dllPath.bat: $(wildcard $(TOP)/configure/RELEASE*) \
 	$(TOP)/configure/CONFIG $(INSTALL_BIN)
-	@$(RM) $@
 ifeq ($(IOCS_APPL_TOP),)
 	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) $@
 else
@@ -34,5 +33,5 @@ else
 endif
 
 realclean:
-	$(RM) cdCommands envPaths
+	$(RM) cdCommands envPaths dllPath.bat
 

@@ -12,6 +12,15 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New ioc/dllPath.bat file for Win32</h4>
+
+<p>When creating an IOC with one of the win32-x86 target architectures, a file
+<tt>dllPath.bat</tt> is now generated in the iocBoot/iocxxx directory which can
+be run to adjust the PATH variable to include all of the support application
+bin directories which might contain DLLs that the IOC uses.  The PATH also
+includes the IOC application's own bin directory, which simplifies starting up
+the IOC as well.</p>
+
 <h4>New epicsEndian.h header</h4>
 
 <p>Any C or C++ code can <tt>#include "epicsEndian.h"</tt> which defines four

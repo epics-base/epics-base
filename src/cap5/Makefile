@@ -26,9 +26,10 @@ PERL_SCRIPTS += camonitor.pl
 
 PERL_MODULES += CA.pm
 
-LOADABLE_LIBRARY_HOST_default = Cap5
-LOADABLE_LIBRARY_HOST_WIN32 = -nil-
+ifeq ($(findstring win32,$(T_A)),)
 # Doesn't build on WIN32 yet...
+LOADABLE_LIBRARY_HOST = Cap5
+endif
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com

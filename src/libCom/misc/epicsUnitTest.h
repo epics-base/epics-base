@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
@@ -36,6 +36,13 @@ epicsShareFunc void testAbort(const char *fmt, ...)
 epicsShareFunc int  testDone(void);
 
 #define testOk1(cond) testOk(cond, "%s", #cond)
+
+
+typedef int (*TESTFUNC)(void);
+epicsShareFunc void testHarness(void);
+epicsShareFunc void runTestFunc(const char *name, TESTFUNC func);
+
+#define runTest(func) runTestFunc(#func, func)
 
 #ifdef __cplusplus
 }

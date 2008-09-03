@@ -837,7 +837,7 @@ struct client *create_tcp_client ( SOCKET sock )
 {
     int                     status;
     struct client           *client;
-    int                     true = TRUE;
+    int                     intTrue = TRUE;
     osiSocklen_t            addrSize;
     unsigned                priorityOfEvents;
 
@@ -852,7 +852,7 @@ struct client *create_tcp_client ( SOCKET sock )
      * faster. I take care of queue up as load increases.
      */
     status = setsockopt ( sock, IPPROTO_TCP, TCP_NODELAY, 
-                (char *) &true, sizeof (true) );
+                (char *) &intTrue, sizeof (intTrue) );
     if (status < 0) {
         errlogPrintf ( "CAS: TCP_NODELAY option set failed\n" );
         destroy_client ( client );
@@ -864,7 +864,7 @@ struct client *create_tcp_client ( SOCKET sock )
      * this task will find out and exit
      */
     status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE, 
-                    (char *) &true, sizeof (true) );
+                    (char *) &intTrue, sizeof (intTrue) );
     if ( status < 0 ) {
         errlogPrintf ( "CAS: SO_KEEPALIVE option set failed\n" );
         destroy_client ( client );

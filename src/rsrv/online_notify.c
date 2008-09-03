@@ -68,7 +68,7 @@ void rsrv_online_notify_task(void *pParm)
     caHdr                       msg;
     int                         status;
     SOCKET                      sock;
-    int                         true = TRUE;
+    int                         intTrue = TRUE;
     unsigned short              port;
     ca_uint32_t                 beaconCounter = 0;
     char                        * pStr;
@@ -109,7 +109,7 @@ void rsrv_online_notify_task(void *pParm)
     }
     
     status = setsockopt (sock, SOL_SOCKET, SO_BROADCAST, 
-                (char *)&true, sizeof(true));
+                (char *)&intTrue, sizeof(intTrue));
     if (status<0) {
         errlogPrintf ("CAS: online socket set up error\n");
         epicsThreadSuspendSelf ();

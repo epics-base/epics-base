@@ -75,11 +75,6 @@ LIB_SRCS += dbContextReadNotifyCache.cpp
 LIB_SRCS += templateInstances.cpp
 LIB_SRCS += dbIocRegister.c
 
-# gcc crosscompiler 4.3.1 bug in RTEMS prerelease 4.9
-ifeq (RTEMS-uC5282,$(T_A))
-dbAccess_CFLAGS_RTEMS = -O1
-endif
-
 LIBRARY_IOC = dbIoc
 dbIoc_LIBS = dbStaticIoc ca Com
 

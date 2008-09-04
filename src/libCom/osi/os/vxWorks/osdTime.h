@@ -14,14 +14,18 @@
 #define osdTimeh
 
 #include <tickLib.h>
+#include <sysLib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int     osdNTPGet(struct timespec *);
-void    osdNTPInit(void);
-int     sysClkRateGet(void);
+void osdNTPInit(void);
+int  osdNTPGet(struct timespec *);
+void osdNTPReport(void);
+
+#define osdTickRateGet sysClkRateGet
+#define osdTickGet tickGet
 
 #ifdef __cplusplus
 }

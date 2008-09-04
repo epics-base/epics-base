@@ -20,10 +20,12 @@
 extern "C" {
 #endif
 
-int     osdNTPGet(struct timespec *);
 void    osdNTPInit(void);
-int     sysClkRateGet(void);
-int     tickGet(void);
+int     osdNTPGet(struct timespec *);
+void    osdNTPReport(void);
+
+int     osdTickRateGet(void);
+int     osdTickGet(void);
 
 #ifdef __cplusplus
 }

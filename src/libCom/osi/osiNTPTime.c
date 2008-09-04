@@ -7,14 +7,9 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* Author:  Marty Kraimer Date:  16JUN2000 */
+/* Original Author:  Marty Kraimer
+ * Date:  16JUN2000 */
 
-/* This file is originally named as iocClock.c and provide the NTP time
- * as default time source if no other time source registered during initialization.
- * Now we made some minor change to add this to the time provider list */
-
-/* Sheng Peng @ SNS ORNL 07/2004 */
-/* Version 1.3 */
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,191 +29,202 @@
 #include "generalTimeSup.h"
 #include "osdTime.h"
 
-#define BILLION 1000000000
+#define NSEC_PER_SEC 1000000000
 #define NTPTimeSyncInterval 10.0
 
-#define NTPTIME_DRV_VERSION "NTPTime Driver Version 1.3"
+
+static struct {
+    int             synchronized;
+    int             syncsFailed;
+    epicsMutexId    lock;
+    epicsTimeStamp  syncTime;
+    epicsUInt32     syncTick;
+    epicsTimeStamp  clockTime;
+    epicsUInt32     clockTick;
+    epicsUInt32     nsecsPerTick;
+    epicsUInt32     ticksPerSecond;
+    epicsUInt32     ticksToSkip;
+    double          tickRate;
+} NTPTimePvt;
+
+static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
-static void NTPTimeSyncNTP(void *dummy);
-static int  NTPTimeGetCurrent(epicsTimeStamp *pDest);
+/* Forward references */
 
-long    NTPTime_Report(int level);
+static int NTPTimeGetCurrent(epicsTimeStamp *pDest);
+static void NTPTimeSync(void *dummy);
 
-typedef struct NTPTimePvt {
-    int		synced;	/* if never synced, we can't use it */
-    epicsMutexId	lock;
-    epicsTimeStamp	clock;
-    unsigned long	lastTick;
-    epicsUInt32		nanosecondsPerTick;
-    int			tickRate;
-    int			ticksToSkip;
-}NTPTimePvt;
-static NTPTimePvt *pNTPTimePvt = 0;
-static int nConsecutiveBad = 0;
 
-static void NTPTimeSyncNTP(void *dummy)
+static void NTPTime_InitOnce(void *pprio)
 {
-    struct timespec Currtime;
-    epicsTimeStamp epicsTime;
-    int status;
-    int prevStatusBad = 0;
+    struct timespec timespecNow;
 
-    while(1) {
-        double diffTime;
-        epicsThreadSleep(NTPTimeSyncInterval);
-        pNTPTimePvt->tickRate = sysClkRateGet();
-        status = osdNTPGet(&Currtime);
-        if(status) {
-            ++nConsecutiveBad;
-            /*wait 1 minute before reporting failure*/
-            if(nConsecutiveBad<(60/NTPTimeSyncInterval)) continue;
-            if(!prevStatusBad)
-                errlogPrintf("NTPTimeSyncWithNTPserver: sntpcTimeGet %s\n",
-                    strerror(errno));
-            prevStatusBad = 1;
-            pNTPTimePvt->synced = 0;
-            continue;
-        }
-        nConsecutiveBad=0;
-        if(prevStatusBad) {
-            errlogPrintf("NTPTimeSyncWithNTPserver: sntpcTimeGet OK\n");
-            prevStatusBad = 0;
-        }
-        epicsTimeFromTimespec(&epicsTime,&Currtime);
-        epicsMutexMustLock(pNTPTimePvt->lock);
-        diffTime = epicsTimeDiffInSeconds(&epicsTime,&pNTPTimePvt->clock);
-        if(diffTime>=0.0) {
-            pNTPTimePvt->clock = epicsTime;
-            pNTPTimePvt->ticksToSkip = 0;/* fix bug here */
-        } else {/*dont go back in time*/
-            pNTPTimePvt->ticksToSkip = (int) ((-1)*diffTime*pNTPTimePvt->tickRate);/* fix bug here */
-        }
-        pNTPTimePvt->lastTick = tickGet();
-        pNTPTimePvt->synced = 1;
-        epicsMutexUnlock(pNTPTimePvt->lock);
-    }
-}
+    NTPTimePvt.synchronized = 0;
+    NTPTimePvt.syncsFailed = 0;
+    NTPTimePvt.lock = epicsMutexCreate();
+    NTPTimePvt.ticksPerSecond = osdTickRateGet();
+    NTPTimePvt.nsecsPerTick = NSEC_PER_SEC / NTPTimePvt.ticksPerSecond;
 
-static long NTPTime_InitOnce(int priority)
-{
-    int	status;
-    struct timespec	Currtime;
-    epicsTimeStamp	epicsTime;
-
-    pNTPTimePvt = callocMustSucceed(1,sizeof(NTPTimePvt),"NTPTime_Init");
-
-    pNTPTimePvt->synced = 0;
-    pNTPTimePvt->lock = epicsMutexCreate();
-    pNTPTimePvt->nanosecondsPerTick = BILLION/sysClkRateGet();
-    pNTPTimePvt->tickRate = sysClkRateGet();
-    /* look first for environment variable or CONFIG_SITE_ENV default */
+    /* Initialize OS-dependent code */
     osdNTPInit();
-    /* if TIMEZONE not defined, set it from EPICS_TIMEZONE */
+
+    /* If TIMEZONE not defined, set it from EPICS_TIMEZONE */
     if (getenv("TIMEZONE") == NULL) {
         const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
-        if(timezone == NULL) {
+        if (timezone == NULL) {
             printf("NTPTime_Init: No Time Zone Information\n");
         } else {
-            epicsEnvSet("TIMEZONE",timezone);
+            epicsEnvSet("TIMEZONE", timezone);
         }
     }
 
-    /* try to sync with NTP server once here */
-    pNTPTimePvt->tickRate = sysClkRateGet();
-    status = osdNTPGet(&Currtime);
-    if(status)
-    {/* sync failed */
-        printf("First try to sync with NTP server failed!\n");
-    }
-    else
-    {/* sync OK */
-        epicsTimeFromTimespec(&epicsTime,&Currtime);
-        epicsMutexMustLock(pNTPTimePvt->lock);
-        pNTPTimePvt->clock = epicsTime;
-        pNTPTimePvt->lastTick = tickGet();
-        pNTPTimePvt->synced = 1;
-        epicsMutexUnlock(pNTPTimePvt->lock);
-        printf("First try to sync with NTP server succeed!\n");
+    /* Try to sync with NTP server */
+    if (!osdNTPGet(&timespecNow)) {
+        NTPTimePvt.syncTick = osdTickGet();
+        epicsTimeFromTimespec(&NTPTimePvt.syncTime, &timespecNow);
+        NTPTimePvt.clockTick = NTPTimePvt.syncTick;
+        NTPTimePvt.clockTime = NTPTimePvt.syncTime;
+        NTPTimePvt.synchronized = 1;
     }
 
     epicsThreadCreate("NTPTimeSync", epicsThreadPriorityHigh,
         epicsThreadGetStackSize(epicsThreadStackSmall),
-        NTPTimeSyncNTP, NULL);
-    
-    /* register to link list */
-    generalTimeCurrentTpRegister("NTP", priority, NTPTimeGetCurrent);
-    
-    return	0;
-}
+        NTPTimeSync, NULL);
 
-struct InitInfo {
-    int  priority;
-    long retval;
-};
-static void NTPTime_InitOnceWrapper(void *arg)
-{
-    struct InitInfo *pargs = (struct InitInfo *)arg;
-    pargs->retval = NTPTime_InitOnce(pargs->priority);
+    /* Finally register as a time provider */
+    generalTimeCurrentTpRegister("NTP", *(int *)pprio, NTPTimeGetCurrent);
 }
 
 long NTPTime_Init(int priority)
 {
-    struct InitInfo args;
-    static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
+    epicsThreadOnce(&onceId, NTPTime_InitOnce, &priority);
+    return 0;
+}
 
-    args.priority = priority;
-    epicsThreadOnce(&onceId, NTPTime_InitOnceWrapper, &args);
-    return args.retval;
+static void NTPTimeSync(void *dummy)
+{
+    int prevStatusBad = 0;
+
+    while (1) {
+        int             status;
+        struct timespec timespecNow;
+        epicsTimeStamp  timeNow;
+        epicsUInt32     tickNow;
+        double          d;
+
+        epicsThreadSleep(NTPTimeSyncInterval);
+
+        status = osdNTPGet(&timespecNow);
+        tickNow = osdTickGet();
+
+        if (status) {
+            NTPTimePvt.syncsFailed++;
+
+            /* wait 1 minute before reporting failure */
+            if (NTPTimePvt.syncsFailed < 60 / NTPTimeSyncInterval)
+                continue;
+
+            if (!prevStatusBad)
+                errlogPrintf("NTPTimeSync: NTP requests failing - %s\n",
+                    strerror(errno));
+
+            prevStatusBad = 1;
+            NTPTimePvt.synchronized = 0;
+            continue;
+        }
+
+        NTPTimePvt.syncsFailed = 0;
+        if (prevStatusBad) {
+            errlogPrintf("NTPTimeSync: Sync recovered.\n");
+            prevStatusBad = 0;
+        }
+
+        epicsTimeFromTimespec(&timeNow, &timespecNow);
+
+        epicsMutexMustLock(NTPTimePvt.lock);
+        d = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
+        if (d >= 0.0) {
+            NTPTimePvt.clockTime = timeNow;
+            NTPTimePvt.ticksToSkip = 0;
+        } else { /* dont go back in time */
+            NTPTimePvt.ticksToSkip = -d * NTPTimePvt.ticksPerSecond;
+        }
+        NTPTimePvt.clockTick = tickNow;
+        NTPTimePvt.synchronized = 1;
+        epicsMutexUnlock(NTPTimePvt.lock);
+
+        NTPTimePvt.tickRate = (tickNow - NTPTimePvt.syncTick) /
+            epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.syncTime);
+        NTPTimePvt.syncTick = tickNow;
+        NTPTimePvt.syncTime = timeNow;
+    }
 }
 
 static int NTPTimeGetCurrent(epicsTimeStamp *pDest)
 {
-    unsigned long currentTick,nticks,nsecs;
+    epicsUInt32 tickNow;
+    epicsUInt32 ticksSince;
 
-    if(!pNTPTimePvt->synced) return	epicsTimeERROR;
+    if (!NTPTimePvt.synchronized)
+        return epicsTimeERROR;
 
-    epicsMutexMustLock(pNTPTimePvt->lock);
-    currentTick = tickGet();
-    while(currentTick!=pNTPTimePvt->lastTick) {
-        nticks = (currentTick>pNTPTimePvt->lastTick)
-            ? (currentTick - pNTPTimePvt->lastTick)
-            : (currentTick + (ULONG_MAX - pNTPTimePvt->lastTick));
-        if(pNTPTimePvt->ticksToSkip>0) {/*dont go back in time*/
-            if(nticks<pNTPTimePvt->ticksToSkip) {
-                /*pNTPTimePvt->ticksToSkip -= nticks;*/ /* fix bug here */
-                break;
+    epicsMutexMustLock(NTPTimePvt.lock);
+
+    tickNow = osdTickGet();
+    ticksSince = tickNow - NTPTimePvt.clockTick;
+
+    if (NTPTimePvt.ticksToSkip <= ticksSince) {
+        if (NTPTimePvt.ticksToSkip) {
+            ticksSince -= NTPTimePvt.ticksToSkip;
+            NTPTimePvt.ticksToSkip = 0;
+        }
+
+        if (ticksSince) {
+            epicsUInt32 secsSince = ticksSince / NTPTimePvt.ticksPerSecond;
+            ticksSince -= secsSince * NTPTimePvt.ticksPerSecond;
+
+            NTPTimePvt.clockTime.nsec += ticksSince * NTPTimePvt.nsecsPerTick;
+            if (NTPTimePvt.clockTime.nsec >= NSEC_PER_SEC) {
+                secsSince++;
+                NTPTimePvt.clockTime.nsec -= NSEC_PER_SEC;
             }
-            nticks -= pNTPTimePvt->ticksToSkip;
-            pNTPTimePvt->ticksToSkip = 0;    /* fix bug here */
+            NTPTimePvt.clockTime.secPastEpoch += secsSince;
+            NTPTimePvt.clockTick = tickNow;
         }
-        pNTPTimePvt->lastTick = currentTick;
-        pNTPTimePvt->tickRate = sysClkRateGet();
-        nsecs = nticks/pNTPTimePvt->tickRate;
-        nticks = nticks - nsecs*pNTPTimePvt->tickRate;
-        pNTPTimePvt->clock.nsec += nticks * pNTPTimePvt->nanosecondsPerTick;
-        if(pNTPTimePvt->clock.nsec>=BILLION) {
-            ++nsecs;
-            pNTPTimePvt->clock.nsec -= BILLION;
-        }
-        pNTPTimePvt->clock.secPastEpoch += nsecs;
     }
-    *pDest = pNTPTimePvt->clock;
-    epicsMutexUnlock(pNTPTimePvt->lock);
-    return(0);
+
+    *pDest = NTPTimePvt.clockTime;
+
+    epicsMutexUnlock(NTPTimePvt.lock);
+    return 0;
 }
 
-long    NTPTime_Report(int level)
+long NTPTime_Report(int level)
 {
-    printf(NTPTIME_DRV_VERSION"\n");
-
-    if(!pNTPTimePvt)
-    {/* drvNTPTime is not used, we just report version then quit */
-        printf("NTP time driver is not initialized yet!\n\n");
+    if (onceId == EPICS_THREAD_ONCE_INIT) {
+        printf("NTP driver not initialized\n");
+    } else {
+        printf("NTP driver %s synchronized with server\n",
+            NTPTimePvt.synchronized ? "is" : "is *not*");
+        if (NTPTimePvt.syncsFailed) {
+            printf("Last successful sync was %.1f minutes ago\n",
+                NTPTimePvt.syncsFailed * NTPTimeSyncInterval / 60.0);
+        }
+        if (level) {
+            char lastSync[32];
+            epicsTimeToStrftime(lastSync, sizeof(lastSync),
+                "%Y-%m-%d %H:%M:%S.%06f", &NTPTimePvt.syncTime);
+            printf("Syncronization interval = %.1f seconds\n",
+                NTPTimeSyncInterval);
+            printf("Last synchronized at %s\n",
+                lastSync);
+            printf("OS tick rate = %u Hz (nominal)\n",
+                NTPTimePvt.ticksPerSecond);
+            printf("Measured tick rate = %.3f Hz\n",
+                NTPTimePvt.tickRate);
+            osdNTPReport();
+        }
     }
-    else
-    {
-        printf("%synced.\n", pNTPTimePvt->synced?"S":"Not s");
-    }
-    return  0;
+    return 0;
 }

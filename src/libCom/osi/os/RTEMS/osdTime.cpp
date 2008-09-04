@@ -18,10 +18,12 @@
 #include "osdSysTime.h"
 #include "generalTimeSup.h"
 
-extern "C" int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
+extern "C" {
+
+int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 
 
-extern "C" void osdTimeRegister(void)
+void osdTimeRegister(void)
 {
     NTPTime_Init(100); /* init NTP first so it can be used to sync SysTime */
     SysTime_Init(LAST_RESORT_PRIORITY);
@@ -36,18 +38,21 @@ void osdNTPInit(void)
 {
 }
 
-/*
- * Simulate vxWorks routines needed by OSI NTP general time provider.
- */
+void osdNTPReport(void)
+{
+}
+
+
 int
-tickGet(void)
+osdTickGet(void)
 {
     rtems_interval t;
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_SINCE_BOOT, &t);
     return t;
 }
 
-int sysClkRateGet(void)
+int
+osdTickRateGet(void)
 {
     extern rtems_interval rtemsTicksPerSecond;
 
@@ -78,6 +83,8 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
         return epicsTimeERROR;
     }
 }
+
+} // extern "C"
 
 /*
  * Register local time providers if EPICS is running (i.e. if this

@@ -12,6 +12,7 @@
 #include <sysLib.h>
 #include <sntpcLib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "epicsTime.h"
 #include "errlog.h"
@@ -33,45 +34,36 @@ static int done = timeRegister();
 
 int osdNTPGet(struct timespec *ts)
 {
-    return sntpcTimeGet((char *)pserverAddr, sysClkRateGet() ,ts);
+    return sntpcTimeGet(const_cast<char *>(pserverAddr), sysClkRateGet(), ts);
 }
 
 void osdNTPInit(void)
 {
     pserverAddr = envGetConfigParamPtr(&EPICS_TS_NTP_INET);
-    if(!pserverAddr) { /* if neither, use the boot host */
+    if (!pserverAddr) { /* use the boot host */
         BOOT_PARAMS bootParms;
         static char host_addr[BOOT_ADDR_LEN];
-        bootStringToStruct(sysBootLine,&bootParms);
+        bootStringToStruct(sysBootLine, &bootParms);
         /* bootParms.had = host IP address */
-        strncpy(host_addr,bootParms.had,BOOT_ADDR_LEN);
+        strncpy(host_addr, bootParms.had, BOOT_ADDR_LEN);
         pserverAddr = host_addr;
-    }
-    if(!pserverAddr) {
-        errlogPrintf("No NTP server is defined. Clock does not work\n");
     }
 }
 
-// vxWorks localtime_r interface does not match POSIX standards
-int epicsTime_localtime ( const time_t *clock, struct tm *result )
+void osdNTPReport(void)
 {
-    int status = localtime_r ( clock, result );
-    if ( status == OK ) {
-        return epicsTimeOK;
-    }
-    else {
-        return epicsTimeERROR;
-    }
+    printf("NTP Server = %s\n", pserverAddr);
+}
+
+
+// vxWorks localtime_r interface does not match POSIX standards
+int epicsTime_localtime(const time_t *clock, struct tm *result)
+{
+    return localtime_r(clock, result) == OK ? epicsTimeOK : epicsTimeERROR;
 }
 
 // vxWorks gmtime_r interface does not match POSIX standards
 int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
-    int status = gmtime_r ( pAnsiTime, pTM );
-    if ( status == OK ) {
-        return epicsTimeOK;
-    }
-    else {
-        return epicsTimeERROR;
-    }
+    return gmtime_r(pAnsiTime, pTM) == OK ? epicsTimeOK : epicsTimeERROR;
 }

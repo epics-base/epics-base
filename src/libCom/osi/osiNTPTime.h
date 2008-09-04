@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 long NTPTime_Init(int);
+long NTPTime_Report(int level);
 
 #ifdef __cplusplus
 }

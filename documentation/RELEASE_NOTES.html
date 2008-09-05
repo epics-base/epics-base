@@ -248,6 +248,16 @@ routine if INDX is greater than MALM. In the event that the no data is read
 through the INP link, the subArray's UDF field will be set and a UDF/INVALID
 alarm will be generated.</p>
 
+<h4>scanOnce(precord) argument</h4>
+
+<p>The argument to <tt>scanOnce()</tt> is a pointer to the record to be
+scanned.  This used to be a <tt>void *</tt> pointer, but is now a <tt>dbCommon
+*</tt> pointer.  Record types written in C that call <tt>scanOnce()</tt> will
+still compile without having to change the source code (although a comiler
+warning may be generated), but any record types implemented in C++ will have to
+be fixed to cast the record instance pointer to a <tt>dbCommon *</tt>
+instead.</p>
+
 <h4>New Architectures</h4>
 
 <p>The following target architectures have been added to this release,

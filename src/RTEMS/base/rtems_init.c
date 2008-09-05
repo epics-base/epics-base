@@ -416,6 +416,7 @@ Init (rtems_task_argument ignored)
 {
     int                 i;
     char               *argv[3]         = { NULL, NULL, NULL };
+    char               *cp;
     rtems_task_priority newpri;
     rtems_status_code   sc;
     rtems_time_of_day   now;
@@ -462,6 +463,8 @@ Init (rtems_task_argument ignored)
     /*
      * Start network
      */
+    if ((cp = getenv("EPICS_TS_NTP_INET")) != NULL)
+        rtems_bsdnet_config.ntp_server[0] = cp;
     if (rtems_bsdnet_config.network_task_priority == 0)
     {
         unsigned int p;

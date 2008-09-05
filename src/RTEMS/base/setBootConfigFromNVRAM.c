@@ -202,7 +202,6 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.ntp_server[0] = gev("epics-ntpserver", nvp);
     if (rtems_bsdnet_config.ntp_server[0] == NULL)
         rtems_bsdnet_config.ntp_server[0] = rtems_bsdnet_bootp_server_name;
-    epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
     if ((cp = gev("epics-tz", nvp)) != NULL)
         epicsEnvSet("TZ", cp);
 }
@@ -319,7 +318,6 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_bootp_server_name = env("SERVER", "192.168.0.1");
     rtems_bsdnet_config.name_server[0] = env("NAMESERVER", rtems_bsdnet_bootp_server_name);
     rtems_bsdnet_config.ntp_server[0] = env("NTPSERVER", rtems_bsdnet_bootp_server_name);
-    epicsEnvSet("EPICS_TS_NTP_INET",rtems_bsdnet_config.ntp_server[0]);
     cp1 = env("DOMAIN", NULL);
     if (cp1 != NULL)
         rtems_bsdnet_config.domainname = cp1;

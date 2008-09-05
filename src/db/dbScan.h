@@ -15,19 +15,19 @@
 #ifndef INCdbScanH
 #define INCdbScanH
 
+#include "menuScan.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Note that these must match the first three definitions in choiceGbl.ascii*/
-#define SCAN_PASSIVE		0
-#define SCAN_EVENT		1
-#define SCAN_IO_EVENT		2
-#define SCAN_1ST_PERIODIC	3
+#define SCAN_PASSIVE        menuScanPassive
+#define SCAN_EVENT          menuScanEvent
+#define SCAN_IO_EVENT       menuScanI_O_Intr
+#define SCAN_1ST_PERIODIC   (menuScanI_O_Intr + 1)
 
-/*definitions for SCAN_IO_EVENT */
+/*definitions for I/O Interrupt Scanning */
 struct io_scan_list;
 
 typedef struct io_scan_list *IOSCANPVT;

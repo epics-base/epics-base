@@ -1089,9 +1089,9 @@ static long dbPutFieldLink(
     }
 
     scan = precord->scan;
-    if (inpOut && (scan==SCAN_IO_EVENT)) {
+    if (inpOut && (scan==menuScanI_O_Intr)) {
         scanDelete(precord);
-        precord->scan = SCAN_PASSIVE;
+        precord->scan = menuScanPassive;
     }
 
     switch (plink->type) { /* Old link type */
@@ -1203,7 +1203,7 @@ static long dbPutFieldLink(
     db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
 
 restoreScan:
-    if (inpOut && (scan==SCAN_IO_EVENT)) { /* undo scanDelete() */
+    if (inpOut && (scan==menuScanI_O_Intr)) { /* undo scanDelete() */
         precord->scan = scan;
         scanAdd(precord);
     }

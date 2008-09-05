@@ -193,11 +193,11 @@ void scanAdd(struct dbCommon *precord)
 
     /* get the list on which this record belongs */
     scan = precord->scan;
-    if (scan == SCAN_PASSIVE) return;
+    if (scan == menuScanPassive) return;
     if (scan < 0 || scan >= nPeriodic + SCAN_1ST_PERIODIC) {
         recGblRecordError(-1, (void *)precord,
             "scanAdd detected illegal SCAN value");
-    } else if (scan == SCAN_EVENT) {
+    } else if (scan == menuScanEvent) {
         int evnt;
         int prio;
         event_scan_list *pesl;
@@ -206,14 +206,14 @@ void scanAdd(struct dbCommon *precord)
         if (evnt < 0 || evnt >= MAX_EVENTS) {
             recGblRecordError(S_db_badField, (void *)precord,
                 "scanAdd detected illegal EVNT value");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: illegal prio field");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         pesl = pevent_list[prio][evnt];
@@ -227,7 +227,7 @@ void scanAdd(struct dbCommon *precord)
             ellInit(&pesl->scan_list.list);
         }
         addToList(precord, &pesl->scan_list);
-    } else if (scan == SCAN_IO_EVENT) {
+    } else if (scan == menuScanI_O_Intr) {
         io_scan_list *piosl = NULL;
         int prio;
         DEVSUPFUN get_ioint_info;
@@ -235,31 +235,31 @@ void scanAdd(struct dbCommon *precord)
         if (precord->dset == NULL){
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: I/O Intr not valid (no DSET) ");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         get_ioint_info = precord->dset->get_ioint_info;
         if (get_ioint_info == NULL) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: I/O Intr not valid (no get_ioint_info)");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         if (get_ioint_info(0, precord, &piosl)) {
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         if (piosl == NULL) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: I/O Intr not valid");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: illegal prio field");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         piosl += prio; /* get piosl for correct priority*/
@@ -276,11 +276,11 @@ void scanDelete(struct dbCommon *precord)
 
     /* get the list on which this record belongs */
     scan = precord->scan;
-    if (scan == SCAN_PASSIVE) return;
+    if (scan == menuScanPassive) return;
     if (scan < 0 || scan >= nPeriodic + SCAN_1ST_PERIODIC) {
         recGblRecordError(-1, (void *)precord,
             "scanDelete detected illegal SCAN value");
-    } else if (scan == SCAN_EVENT) {
+    } else if (scan == menuScanEvent) {
         int evnt;
         int prio;
         event_scan_list *pesl;
@@ -290,14 +290,14 @@ void scanDelete(struct dbCommon *precord)
         if (evnt < 0 || evnt >= MAX_EVENTS) {
             recGblRecordError(S_db_badField, (void *)precord,
                 "scanAdd detected illegal EVNT value");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: illegal prio field");
-            precord->scan = SCAN_PASSIVE;
+            precord->scan = menuScanPassive;
             return;
         }
         pesl = pevent_list[prio][evnt];
@@ -307,7 +307,7 @@ void scanDelete(struct dbCommon *precord)
                 "scanDelete for bad evnt");
         else
             deleteFromList(precord, psl);
-    } else if (scan == SCAN_IO_EVENT) {
+    } else if (scan == menuScanI_O_Intr) {
         io_scan_list *piosl=NULL;
         int prio;
         DEVSUPFUN get_ioint_info;

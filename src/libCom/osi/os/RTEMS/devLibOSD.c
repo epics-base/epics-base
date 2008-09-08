@@ -233,6 +233,7 @@ LOCAL long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
  * a bus error safe "wordSize" read at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
+rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
 long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
     long status;

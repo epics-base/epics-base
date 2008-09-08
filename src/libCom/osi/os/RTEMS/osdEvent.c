@@ -190,18 +190,18 @@ epicsEventShow(epicsEventId id, unsigned int level)
      */
     semaphore = *the_semaphore;
     _Thread_Enable_dispatch();
-    printf ("          %8.8x  ", sid);
+    printf ("          %8.8x  ", (int)sid);
     if (_Attributes_Is_counting_semaphore (semaphore.attribute_set)) {
-            printf ("Count: %d", semaphore.Core_control.semaphore.count);
+            printf ("Count: %d", (int)semaphore.Core_control.semaphore.count);
     }
     else {
         if (_CORE_mutex_Is_locked(&semaphore.Core_control.mutex)) {
             char name[30];
             epicsThreadGetName ((epicsThreadId)semaphore.Core_control.mutex.holder_id, name, sizeof name);
             printf ("Held by:%8.8x (%s)  Nest count:%d",
-                                    semaphore.Core_control.mutex.holder_id,
+                                    (unsigned int)semaphore.Core_control.mutex.holder_id,
                                     name,
-                                    semaphore.Core_control.mutex.nest_count);
+                                    (int)semaphore.Core_control.mutex.nest_count);
         }
         else {
             printf ("Not Held");

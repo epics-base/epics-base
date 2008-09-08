@@ -428,8 +428,8 @@ LOCAL void report_conflict (
             __LINE__,
             "%10s 0X%08X - OX%08X Requested by %s",
             epicsAddressTypeName[addrType],
-            base,
-            base+size-1,
+            (unsigned int)base,
+            (unsigned int)(base+size-1),
             pOwnerName);
 
     pRange = (rangeItem *) ellFirst(&addrAlloc[addrType]);
@@ -454,8 +454,8 @@ LOCAL void report_conflict_device(epicsAddressType addrType, const rangeItem *pR
             __LINE__,
             "%10s 0X%08X - 0X%08X Owned by %s",
             epicsAddressTypeName[addrType],
-            pRange->begin,
-            pRange->end,
+            (unsigned int)pRange->begin,
+            (unsigned int)pRange->end,
             pRange->pOwnerName);
 }
 
@@ -508,7 +508,7 @@ long devUnregisterAddress(
             __LINE__,
     "unregister address for %s at 0X%X failed because %s owns it",
             pOwnerName,
-            baseAddress,
+            (unsigned int)baseAddress,
             pRange->pOwnerName);
         return s;
     }   
@@ -608,7 +608,7 @@ long devAllocAddress(
 {
     int s;
     rangeItem *pRange;
-    size_t base;
+    size_t base = 0;
 
     if (!devLibInitFlag) {
         s = devLibInit();
@@ -1062,7 +1062,7 @@ void *devLibA24Malloc(size_t size)
     void *ret;
     
     if (devLibA24Debug)
-        epicsPrintf ("devLibA24Malloc(%d) entered\n", size);
+        epicsPrintf ("devLibA24Malloc(%u) entered\n", (unsigned int)size);
     
     ret = pdevLibVirtualOS->pDevA24Malloc(size);
     return(ret);

@@ -8,10 +8,12 @@
 RTEMS_BASE=/usr/local/rtems/rtems-4.9
 RTEMS_VERSION=4.9
 
+
 # If you're using neither BOOTP/DHCP nor FLASH to pick up your IOC
-# network configuration you must specify your Internet Domain Name here
+# network configuration you must uncomment and specify your Internet 
+# Domain Name here
 #
-OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=aps.anl.gov
+#OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=<domainname>
 
 #
 # Specify your desired command-line-input library

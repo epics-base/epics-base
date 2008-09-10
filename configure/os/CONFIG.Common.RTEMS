@@ -100,8 +100,9 @@ CODE_CXXFLAGS =
 
 #--------------------------------------------------
 # RTEMS uses the inline keyword so -pedantic causes too many problems.
-CONFORM_CFLAGS_STRICT = -ansi
-CONFORM_CXXFLAGS_STRICT = -ansi
+# Using -ansi turns off lots of useful prototypes (e.g. strtok_r).
+CONFORM_CFLAGS_STRICT =
+CONFORM_CXXFLAGS_STRICT =
 
 #--------------------------------------------------
 # Command-line input support

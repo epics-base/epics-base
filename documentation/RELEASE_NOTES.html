@@ -334,10 +334,11 @@ EPICS/RTEMS tutorial.</p>
 <p>Set NTP server as well as nameserver and log server from server bootstrap
 settting.</p>
 
-<h4>RTEMS Timing</h4>
+<h4>RTEMS compiler flags</h4>
 
-<p>RTEMS IOCs now work properly as soft timing slaves (i.e. remain
-synchronized master timingIOC) and as NTP clients.</p>
+<p>The -ansi flag has been removed from CONFORM_FLAGS_STRICT and
+CONFORM_CXXFLAGS_STRICT -- there are many useful library functions whose
+prototypes are disabled when -ansi is used..</p>
 
 <h4>SEL record (Mantis #295)</h4>
 

@@ -25,7 +25,7 @@ open(my $OUT, '>', $target) or die "Can't create $target: $!\n";
 
 print $OUT <<EOF;
 #!/usr/bin/perl
-exec '$exe' or die 'exec failed';
+exec './$exe' or die 'exec failed';
 EOF
 
 close $OUT or die "Can't close $target: $!\n";

@@ -274,7 +274,10 @@ long epicsShareAPI asRemoveMember(ASMEMBERPVT *asMemberPvt)
     pasgmember = *asMemberPvt;
     if(!pasgmember) return(S_asLib_badMember);
     LOCK;
-    if(ellCount(&pasgmember->clientList)>0) return(S_asLib_clientsExist);
+    if (ellCount(&pasgmember->clientList) > 0) {
+        UNLOCK;
+        return(S_asLib_clientsExist);
+    }
     if(pasgmember->pasg) {
 	ellDelete(&pasgmember->pasg->memberList,(ELLNODE *)pasgmember);
     } else {

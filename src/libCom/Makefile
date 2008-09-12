@@ -17,7 +17,7 @@ epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
 #POSIX thread priority scheduling flag
 THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
-osdThread_CPPFLAGS +=  $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
+osdThread_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 
 #epicsVersion is created by this Makefile
 INC += epicsVersion.h
@@ -176,6 +176,8 @@ INC += epicsThread.h
 INC += epicsTime.h
 INC += epicsGeneralTime.h
 INC += osdTime.h
+INC += generalTimeSup.h
+INC += osiClockTime.h
 INC += epicsSignal.h
 INC += osiProcess.h
 INC += osiUnistd.h
@@ -198,8 +200,8 @@ SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
 
-INC += generalTimeSup.h
 SRCS += epicsGeneralTime.c
+SRCS += osiClockTime.c
 
 SRCS += osdSock.c
 SRCS += osdSockAddrReuse.cpp
@@ -248,11 +250,10 @@ SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
 SRCS += tsDefs.c
 
+# Time providers, in osi
 SRCS_vxWorks += osiNTPTime.c
 SRCS_RTEMS += osiNTPTime.c
-# Time provider, in osi/os/default
-SRCS_vxWorks += osdSysTime.c
-SRCS_RTEMS += osdSysTime.c
+
 # These files are in osi/os/vxWorks
 # Special reboot hook
 SRCS_vxWorks += atReboot.cpp

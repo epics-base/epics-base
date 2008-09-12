@@ -220,19 +220,19 @@ epicsExportAddress(dset, devLiGeneralTime);
 
 
 /********** stringin record **********/
-static void timeProvider(char *buf)
+static const char * timeProvider(void)
 {
-    generalTimeGetBestTcp(buf);
+    return generalTimeCurrentTpName();
 }
 
-static void eventProvider(char *buf)
+static const char * eventProvider(void)
 {
-    generalTimeGetBestTep(buf);
+    return generalTimeEventTpName();
 }
 
 static struct si_channel {
     char *name;
-    void (*get)(char *buf);
+    const char * (*get)(void);
 } si_channels[] = {
     {"BESTTCP", timeProvider},
     {"BESTTEP", eventProvider},
@@ -267,10 +267,18 @@ static long init_si(stringinRecord *prec)
 static long read_si(stringinRecord *prec)
 {
     struct si_channel *pchan = (struct si_channel *)prec->dpvt;
+    const char *name;
 
     if (!pchan) return -1;
 
-    pchan->get(prec->val);
+    name = pchan->get();
+    if (name) {
+        strncpy(prec->val, name, sizeof(prec->val));
+        prec->val[sizeof(prec->val) - 1] = '\0';
+    } else {
+        strcpy(prec->val, "No working providers");
+        recGblSetSevr(prec, READ_ALARM, MAJOR_ALARM);
+    }
     prec->udf = FALSE;
     return 0;
 }

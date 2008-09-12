@@ -7,34 +7,39 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* Original Author:  Marty Kraimer
- * Date:  16JUN2000 */
+/* Original Author: Marty Kraimer
+ * Date:  16JUN2000
+ */
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <time.h>
 #include <errno.h>
 
+#include "epicsEvent.h"
+#include "epicsExit.h"
 #include "epicsTypes.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
-#include "epicsTime.h"
-#include "envDefs.h"
 #include "errlog.h"
 #include "epicsGeneralTime.h"
 #include "generalTimeSup.h"
+#include "iocsh.h"
 #include "osdTime.h"
+#include "osiNTPTime.h"
+#include "taskwd.h"
 
 #define NSEC_PER_SEC 1000000000
 #define NTPTimeSyncInterval 10.0
 
 
 static struct {
+    int             synchronize;
     int             synchronized;
+    epicsEventId    loopEvent;
     int             syncsFailed;
     epicsMutexId    lock;
     epicsTimeStamp  syncTime;
@@ -56,28 +61,39 @@ static int NTPTimeGetCurrent(epicsTimeStamp *pDest);
 static void NTPTimeSync(void *dummy);
 
 
+/* NTPTime_Report iocsh command */
+static const iocshArg ReportArg0 = { "interest_level", iocshArgArgv};
+static const iocshArg * const ReportArgs[1] = { &ReportArg0 };
+static const iocshFuncDef ReportFuncDef = {"NTPTime_Report", 1, ReportArgs};
+static void ReportCallFunc(const iocshArgBuf *args)
+{
+    NTPTime_Report(args[0].ival);
+}
+
+/* NTPTime_Shutdown iocsh command */
+static const iocshFuncDef ShutdownFuncDef = {"NTPTime_Shutdown", 0, NULL};
+static void ShutdownCallFunc(const iocshArgBuf *args)
+{
+    NTPTime_Shutdown(NULL);
+}
+
+
+/* Initialization */
+
 static void NTPTime_InitOnce(void *pprio)
 {
     struct timespec timespecNow;
 
-    NTPTimePvt.synchronized = 0;
-    NTPTimePvt.syncsFailed = 0;
-    NTPTimePvt.lock = epicsMutexCreate();
+    NTPTimePvt.synchronize    = 1;
+    NTPTimePvt.synchronized   = 0;
+    NTPTimePvt.loopEvent      = epicsEventMustCreate(epicsEventEmpty);
+    NTPTimePvt.syncsFailed    = 0;
+    NTPTimePvt.lock           = epicsMutexCreate();
     NTPTimePvt.ticksPerSecond = osdTickRateGet();
-    NTPTimePvt.nsecsPerTick = NSEC_PER_SEC / NTPTimePvt.ticksPerSecond;
+    NTPTimePvt.nsecsPerTick   = NSEC_PER_SEC / NTPTimePvt.ticksPerSecond;
 
     /* Initialize OS-dependent code */
     osdNTPInit();
-
-    /* If TIMEZONE not defined, set it from EPICS_TIMEZONE */
-    if (getenv("TIMEZONE") == NULL) {
-        const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
-        if (timezone == NULL) {
-            printf("NTPTime_Init: No Time Zone Information\n");
-        } else {
-            epicsEnvSet("TIMEZONE", timezone);
-        }
-    }
 
     /* Try to sync with NTP server */
     if (!osdNTPGet(&timespecNow)) {
@@ -88,32 +104,52 @@ static void NTPTime_InitOnce(void *pprio)
         NTPTimePvt.synchronized = 1;
     }
 
+    /* Start the sync thread */
     epicsThreadCreate("NTPTimeSync", epicsThreadPriorityHigh,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         NTPTimeSync, NULL);
+
+    epicsAtExit(NTPTime_Shutdown, NULL);
+
+    /* Register the iocsh commands */
+    iocshRegister(&ReportFuncDef, ReportCallFunc);
+    iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
 
     /* Finally register as a time provider */
     generalTimeCurrentTpRegister("NTP", *(int *)pprio, NTPTimeGetCurrent);
 }
 
-long NTPTime_Init(int priority)
+void NTPTime_Init(int priority)
 {
     epicsThreadOnce(&onceId, NTPTime_InitOnce, &priority);
-    return 0;
 }
+
+
+/* Shutdown */
+
+void NTPTime_Shutdown(void *dummy)
+{
+    NTPTimePvt.synchronize = 0;
+    epicsEventSignal(NTPTimePvt.loopEvent);
+}
+
+
+/* Synchronization thread */
 
 static void NTPTimeSync(void *dummy)
 {
     int prevStatusBad = 0;
 
-    while (1) {
+    taskwdInsert(0, NULL, NULL);
+
+    for (epicsEventWaitWithTimeout(NTPTimePvt.loopEvent, NTPTimeSyncInterval);
+         NTPTimePvt.synchronize;
+         epicsEventWaitWithTimeout(NTPTimePvt.loopEvent, NTPTimeSyncInterval)) {
         int             status;
         struct timespec timespecNow;
         epicsTimeStamp  timeNow;
         epicsUInt32     tickNow;
-        double          d;
-
-        epicsThreadSleep(NTPTimeSyncInterval);
+        double          diff;
 
         status = osdNTPGet(&timespecNow);
         tickNow = osdTickGet();
@@ -121,7 +157,7 @@ static void NTPTimeSync(void *dummy)
         if (status) {
             NTPTimePvt.syncsFailed++;
 
-            /* wait 1 minute before reporting failure */
+            /* Keep trying for 1 minute before reporting failure */
             if (NTPTimePvt.syncsFailed < 60 / NTPTimeSyncInterval)
                 continue;
 
@@ -143,12 +179,12 @@ static void NTPTimeSync(void *dummy)
         epicsTimeFromTimespec(&timeNow, &timespecNow);
 
         epicsMutexMustLock(NTPTimePvt.lock);
-        d = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
-        if (d >= 0.0) {
+        diff = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
+        if (diff >= 0.0) {
             NTPTimePvt.clockTime = timeNow;
             NTPTimePvt.ticksToSkip = 0;
         } else { /* dont go back in time */
-            NTPTimePvt.ticksToSkip = -d * NTPTimePvt.ticksPerSecond;
+            NTPTimePvt.ticksToSkip = -diff * NTPTimePvt.ticksPerSecond;
         }
         NTPTimePvt.clockTick = tickNow;
         NTPTimePvt.synchronized = 1;
@@ -159,7 +195,13 @@ static void NTPTimeSync(void *dummy)
         NTPTimePvt.syncTick = tickNow;
         NTPTimePvt.syncTime = timeNow;
     }
+
+    NTPTimePvt.synchronized = 0;
+    taskwdRemove(0);
 }
+
+
+/* Time Provider Routine */
 
 static int NTPTimeGetCurrent(epicsTimeStamp *pDest)
 {
@@ -200,11 +242,14 @@ static int NTPTimeGetCurrent(epicsTimeStamp *pDest)
     return 0;
 }
 
-long NTPTime_Report(int level)
+
+/* Status Report */
+
+int NTPTime_Report(int level)
 {
     if (onceId == EPICS_THREAD_ONCE_INIT) {
         printf("NTP driver not initialized\n");
-    } else {
+    } else if (NTPTimePvt.synchronize) {
         printf("NTP driver %s synchronized with server\n",
             NTPTimePvt.synchronized ? "is" : "is *not*");
         if (NTPTimePvt.syncsFailed) {
@@ -225,6 +270,8 @@ long NTPTime_Report(int level)
                 NTPTimePvt.tickRate);
             osdNTPReport();
         }
+    } else {
+        printf("NTP synchronization thread not running.\n");
     }
     return 0;
 }

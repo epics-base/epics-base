@@ -5,16 +5,19 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#ifndef INC_osiNTPTime_H
-#define INC_osiNTPTime_H
+#ifndef INC_osiClockTime_H
+#define INC_osiClockTime_H
+
+#define CLOCKTIME_NOSYNC 0
+#define CLOCKTIME_SYNC 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void NTPTime_Init(int priority);
-void NTPTime_Shutdown(void *dummy);
-int  NTPTime_Report(int level);
+void ClockTime_Init(int synchronize);
+void ClockTime_Shutdown(void *dummy);
+int  ClockTime_Report(int level);
 
 #ifdef __cplusplus
 }

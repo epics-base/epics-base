@@ -32,21 +32,21 @@
 #include <librtemsNfs.h>
 #include <bsp.h>
 
-#include <epicsThread.h>
-#include <epicsTime.h>
-#include <epicsExit.h>
-#include <envDefs.h>
-#include <errlog.h>
-#include <logClient.h>
-#include <osiUnistd.h>
-#include <iocsh.h>
+#include "epicsThread.h"
+#include "epicsTime.h"
+#include "epicsExit.h"
+#include "envDefs.h"
+#include "errlog.h"
+#include "logClient.h"
+#include "osiUnistd.h"
+#include "iocsh.h"
+#include "osdTime.h"
 
 #include "epicsRtemsInitHooks.h"
 
 /*
  * Prototypes for some functions not in header files
  */
-void osdTimeRegister(void);
 void tzset(void);
 int fileno(FILE *);
 int main(int argc, char **argv);

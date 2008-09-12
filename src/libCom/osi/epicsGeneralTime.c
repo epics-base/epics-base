@@ -1,311 +1,264 @@
-/***************************************************************************
- *   File:      epicsGeneralTime.c
- *   Author:        Sheng Peng
- *   Institution:   Oak Ridge National Laboratory / SNS Project
- *   Date:      07/2004
- *   Version:       1.3
- *
- *   EPICS general timestamp support
- *   integration into EPICS Base by Peter Denison, Diamond Light Source
- *
- * Copyright (c) 2008 Diamond Light Source Ltd
- * Copyright (c) 2004 Oak Ridge National Laboratory
- * EPICS BASE is distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution.
- ****************************************************************************/
+/*************************************************************************\
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2008 Diamond Light Source Ltd
+* Copyright (c) 2004 Oak Ridge National Laboratory
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+
+/* Original Authors: David H. Thompson & Sheng Peng (ORNL) */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
-#include <epicsTypes.h>
-#include <epicsEvent.h>
-#include <epicsMutex.h>
-#include <epicsMessageQueue.h>
-#include <epicsThread.h>
-#include <epicsTime.h>
-#include <epicsInterrupt.h>
-#include <osiSock.h>
-#include <ellLib.h>
-#include <errlog.h>
-#include <cantProceed.h>
-
-#include <envDefs.h>
-
+#include "epicsTypes.h"
+#include "epicsEvent.h"
+#include "epicsMutex.h"
+#include "epicsMessageQueue.h"
+#include "epicsString.h"
+#include "epicsThread.h"
+#include "epicsTime.h"
+#include "epicsTimer.h"
+#include "epicsInterrupt.h"
+#include "osiSock.h"
+#include "ellLib.h"
+#include "errlog.h"
+#include "cantProceed.h"
+#include "envDefs.h"
 #include "generalTimeSup.h"
 #include "epicsGeneralTime.h"
-#define GENERALTIME_VERSION "GeneralTime Framework Version 1.2"
 
-#define TP_DESC_LEN 40
-#define NUM_OF_EVENTS   256
 
-typedef struct TIME_CURRENT_PROVIDER {
-    ELLNODE                 node;   /* Linked List Node */
-    char                    tp_desc[TP_DESC_LEN];
-    pepicsTimeGetCurrent    tcp_getCurrent;
-    int                     tcp_priority;
-} TIME_CURRENT_PROVIDER;
+/* Declarations */
 
-typedef struct TIME_EVENT_PROVIDER {
-    ELLNODE                 node;   /* Linked List Node */
-    char                    tp_desc[TP_DESC_LEN];
-    pepicsTimeGetEvent      tep_getEvent;
-    int                     tep_priority;
-} TIME_EVENT_PROVIDER;
+typedef struct {
+    ELLNODE node;
+    char    *name;
+    int     priority;
+    union {
+        TIMECURRENTFUN Time;
+        TIMEEVENTFUN   Event;
+    } get;
+} gtProvider;
 
-typedef struct  generalTimePvt
-{
-    epicsMutexId            tcp_list_sem;   /* This is a mutex semaphore to protect time-current-provider-list operation */
-    ELLLIST                 tcp_list;   /* time current provider list */
-    TIME_CURRENT_PROVIDER   *pLastKnownBestTcp;
-    epicsTimeStamp          lastKnownTimeCurrent;
+static struct {
+    epicsMutexId    timeListLock;
+    ELLLIST         timeProviders;
+    gtProvider      *lastTimeProvider;
+    epicsTimeStamp  lastProvidedTime;
 
-    epicsMutexId            tep_list_sem;   /* This is a mutex semaphore to protect time-event-provider-list operation */
-    ELLLIST                 tep_list;   /* time event provider list */
-    TIME_EVENT_PROVIDER     *pLastKnownBestTep;
-    epicsTimeStamp          lastKnownTimeEvent[NUM_OF_EVENTS];
-    epicsTimeStamp          lastKnownTimeEventBestTime;
+    epicsMutexId    eventListLock;
+    ELLLIST         eventProviders;
+    gtProvider      *lastEventProvider;
+    epicsTimeStamp  eventTime[NUM_TIME_EVENTS];
+    epicsTimeStamp  lastProvidedBestTime;
 
-    epicsTimerQueueId       sync_queue;
-    unsigned int            ErrorCounts;
-} generalTimePvt;
+    epicsTimerQueueId sync_queue;
+    int               ErrorCounts;
+} gtPvt;
 
-int         generalTimeGetCurrent(epicsTimeStamp *pDest);
-static int  generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int *pPrio);
-int         generalTimeGetEvent(epicsTimeStamp *pDest,int eventNumber);
-static int  generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int *pPrio);
+static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
-long        generalTimeReport(int level);
 
-static  generalTimePvt *pgeneralTimePvt;
-static  char logBuffer[160];
+/* Implementation */
 
-int     GENERALTIME_DEBUG=0;
-
-/* implementation */
 static void generalTime_InitOnce(void *dummy)
 {
-    pgeneralTimePvt = (generalTimePvt *)callocMustSucceed(1,
-        sizeof(generalTimePvt),"generalTime_Init");
+    ellInit(&gtPvt.timeProviders);
+    gtPvt.timeListLock = epicsMutexMustCreate();
 
-    ellInit(&(pgeneralTimePvt->tcp_list));
-    pgeneralTimePvt->tcp_list_sem = epicsMutexMustCreate();
-
-    ellInit(&(pgeneralTimePvt->tep_list));
-    pgeneralTimePvt->tep_list_sem = epicsMutexMustCreate();
+    ellInit(&gtPvt.eventProviders);
+    gtPvt.eventListLock = epicsMutexMustCreate();
 }
 
-epicsShareFunc void generalTime_Init(void)
+void generalTime_Init(void)
 {
-    static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
     epicsThreadOnce(&onceId, generalTime_InitOnce, NULL);
 }
 
-epicsShareFunc int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
-{
-    return generalTimeGetExceptPriority(pDest, NULL, 0);
-}
 
-static int generalTimeGetCurrentPriority(epicsTimeStamp *pDest, int *pPrio)
+int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
 {
-    return generalTimeGetExceptPriority(pDest, pPrio, 0);
-}
-
-int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int except_tcp)
-{
-    int key;
-    TIME_CURRENT_PROVIDER   * ptcp;
+    gtProvider *ptp;
     int status = epicsTimeERROR;
 
     generalTime_Init();
 
-    epicsMutexMustLock( pgeneralTimePvt->tcp_list_sem );
-    for(ptcp=(TIME_CURRENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tcp_list) );
-        ptcp; ptcp=(TIME_CURRENT_PROVIDER *)ellNext((ELLNODE *)ptcp))
-    {/* when we register providers, we sort them by priority */
-        /* Allow providers to ask for time not including their own */
-        if (ptcp->tcp_priority == except_tcp) {
+    epicsMutexMustLock(gtPvt.timeListLock);
+    for (ptp = (gtProvider *)ellFirst(&gtPvt.timeProviders);
+         ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+        if (ptp->priority == ignore)
             continue;
-        }
-        if(ptcp->tcp_getCurrent)
-            status=(*(ptcp->tcp_getCurrent))(pDest);
-        if(status!=epicsTimeERROR)
-        {/* we can check if time monotonic here */
-            if (epicsTimeGreaterThanEqual(pDest, &(pgeneralTimePvt->lastKnownTimeCurrent))) {
-                pgeneralTimePvt->lastKnownTimeCurrent=*pDest;
-                pgeneralTimePvt->pLastKnownBestTcp=ptcp;
-                if (pPrio) *pPrio = ptcp->tcp_priority;
+
+        status = ptp->get.Time(pDest);
+        if (status == epicsTimeOK) {
+            /* check time is monotonic */
+            if (epicsTimeGreaterThanEqual(pDest, &gtPvt.lastProvidedTime)) {
+                gtPvt.lastProvidedTime = *pDest;
+                gtPvt.lastTimeProvider = ptp;
+                if (pPrio)
+                    *pPrio = ptp->priority;
             } else {
-                epicsTimeStamp orig = *pDest;
-                *pDest=pgeneralTimePvt->lastKnownTimeCurrent;
-                key = epicsInterruptLock(); /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                pgeneralTimePvt->ErrorCounts++;
-                epicsInterruptUnlock(key);  /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                if(GENERALTIME_DEBUG) {
-                    sprintf(logBuffer, "TCP provider \"%s\" provides backwards time!\nnew = %us, %uns, last = %us, %uns (%s)\n",
-                            ptcp->tp_desc,orig.secPastEpoch,orig.nsec,pDest->secPastEpoch,pDest->nsec,
-                            pgeneralTimePvt->pLastKnownBestTcp->tp_desc);
-                    epicsInterruptContextMessage(logBuffer);
-                }
-                if (pPrio) *pPrio = pgeneralTimePvt->pLastKnownBestTcp->tcp_priority;
+                int key;
+                *pDest = gtPvt.lastProvidedTime;
+                if (pPrio)
+                    *pPrio = gtPvt.lastTimeProvider->priority;
+                key = epicsInterruptLock();
+                gtPvt.ErrorCounts++;
+                epicsInterruptUnlock(key);
             }
             break;
         }
     }
-    if(status==epicsTimeERROR)
-        pgeneralTimePvt->pLastKnownBestTcp=NULL;
-    epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem );
+    if (status == epicsTimeERROR)
+        gtPvt.lastTimeProvider = NULL;
+    epicsMutexUnlock(gtPvt.timeListLock);
 
-    return  status;
+    return status;
 }
 
-epicsShareFunc int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest,int eventNumber)
+int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
+{
+    return generalTimeGetExceptPriority(pDest, NULL, 0);
+}
+
+
+static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
+    int *pPrio)
+{
+    gtProvider *ptp;
+    int status = epicsTimeERROR;
+
+    generalTime_Init();
+
+    if ((eventNumber < 0 || eventNumber >= NUM_TIME_EVENTS) &&
+        (eventNumber != epicsTimeEventBestTime))
+        return status;
+
+    epicsMutexMustLock(gtPvt.eventListLock);
+    for (ptp = (gtProvider *)ellFirst(&gtPvt.eventProviders);
+         ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+        status = ptp->get.Event(pDest, eventNumber);
+        if (status != epicsTimeERROR) {
+            gtPvt.lastEventProvider = ptp;
+            if (pPrio)
+                *pPrio = ptp->priority;
+
+            if (eventNumber == epicsTimeEventBestTime) {
+                if (epicsTimeGreaterThanEqual(pDest,
+                        &gtPvt.lastProvidedBestTime)) {
+                    gtPvt.lastProvidedBestTime = *pDest;
+                } else {
+                    int key;
+                    *pDest = gtPvt.lastProvidedBestTime;
+                    key = epicsInterruptLock();
+                    gtPvt.ErrorCounts++;
+                    epicsInterruptUnlock(key);
+                }
+            } else {
+                if (epicsTimeGreaterThanEqual(pDest,
+                        &gtPvt.eventTime[eventNumber])) {
+                    gtPvt.eventTime[eventNumber] = *pDest;
+                } else {
+                    int key;
+                    *pDest = gtPvt.eventTime[eventNumber];
+                    key = epicsInterruptLock();
+                    gtPvt.ErrorCounts++;
+                    epicsInterruptUnlock(key);
+                }
+            }
+            break;
+        }
+    }
+    if (status == epicsTimeERROR)
+        gtPvt.lastEventProvider = NULL;
+    epicsMutexUnlock(gtPvt.eventListLock);
+
+    return status;
+}
+
+int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest, int eventNumber)
 {
     if (eventNumber == epicsTimeEventCurrentTime) {
-        return generalTimeGetCurrentPriority(pDest, NULL);
+        return epicsTimeGetCurrent(pDest);
     } else {
         return generalTimeGetEventPriority(pDest, eventNumber, NULL);
     }
 }
 
-static int     generalTimeGetEventPriority(epicsTimeStamp *pDest,int eventNumber, int *pPrio)
+
+/* Provider Registration */
+
+static void insertProvider(gtProvider *ptp, ELLLIST *plist, epicsMutexId lock)
 {
-    int key;
-    TIME_EVENT_PROVIDER   * ptep;
-    int status = epicsTimeERROR;
+    gtProvider *ptpref;
 
-    generalTime_Init();
+    epicsMutexMustLock(lock);
 
-    epicsMutexMustLock( pgeneralTimePvt->tep_list_sem );
-    for(ptep=(TIME_EVENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tep_list) );
-        ptep; ptep=(TIME_EVENT_PROVIDER *)ellNext((ELLNODE *)ptep))
-    {/* when we register provider, we sort them by priority */
-        if(ptep->tep_getEvent)
-            status=(*(ptep->tep_getEvent))(pDest,eventNumber);
-        if(status!=epicsTimeERROR)
-        {/* we can check if time monotonic here */
-            pgeneralTimePvt->pLastKnownBestTep=ptep;
-            if (pPrio) *pPrio = ptep->tep_priority;
-            if(eventNumber>=0 && eventNumber<NUM_OF_EVENTS)
-            {
-                if (epicsTimeGreaterThanEqual(pDest,&(pgeneralTimePvt->lastKnownTimeEvent[eventNumber]))) {
-                    pgeneralTimePvt->lastKnownTimeEvent[eventNumber]=*pDest;
-                } else {
-                    *pDest=pgeneralTimePvt->lastKnownTimeEvent[eventNumber];
-                    key = epicsInterruptLock(); /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                    pgeneralTimePvt->ErrorCounts++;
-                    epicsInterruptUnlock(key);  /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                    if(GENERALTIME_DEBUG) {
-                        sprintf(logBuffer, "TEP provider \"%s\" provides backwards time on Event %d!\n", ptep->tp_desc, eventNumber);
-                        epicsInterruptContextMessage(logBuffer);
-                    }
-                }
-            }
-            if(eventNumber==epicsTimeEventBestTime)
-            {
-                if (epicsTimeGreaterThanEqual(pDest,&(pgeneralTimePvt->lastKnownTimeEventBestTime))) {
-                    pgeneralTimePvt->lastKnownTimeEventBestTime=*pDest;
-                } else {
-                    *pDest=pgeneralTimePvt->lastKnownTimeEventBestTime;
-                    key = epicsInterruptLock(); /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                    pgeneralTimePvt->ErrorCounts++;
-                    epicsInterruptUnlock(key);  /* OSI has no taskLock, but if we lock interrupt, it is good enough */
-                    if(GENERALTIME_DEBUG) {
-                        sprintf(logBuffer, "TEP provider \"%s\" provides backwards time on Event BestTime!\n", ptep->tp_desc);
-                        epicsInterruptContextMessage(logBuffer);
-                    }
-                }
-            }
+    for (ptpref = (gtProvider *)ellFirst(plist);
+         ptpref; ptpref = (gtProvider *)ellNext(&ptpref->node)) {
+        if (ptpref->priority > ptp->priority)
             break;
-        }
     }
-    if(status==epicsTimeERROR)
-        pgeneralTimePvt->pLastKnownBestTep=NULL;
-    epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
 
-    return  status;
+    if (ptpref) {
+        /* Found a provider below the new one */
+        ptpref = (gtProvider *)ellPrevious(&ptpref->node);
+        ellInsert(plist, &ptpref->node, &ptp->node);
+    } else {
+        ellAdd(plist, &ptp->node);
+    }
+
+    epicsMutexUnlock(lock);
 }
 
-/*
- * For all the similarity of the following two functions, they are
- * walking separate lists, and assigning to structures of different
- * types, all because of the difference in function prototype between
- * the getCurrent and getEvent functions. While they could be templated,
- * I think it's simpler to leave the duplication there.
- */ 
-
-int     generalTimeEventTpRegister(const char *desc, int priority, pepicsTimeGetEvent getEvent)
+int generalTimeEventTpRegister(const char *name, int priority,
+    TIMEEVENTFUN getEvent)
 {
-    TIME_EVENT_PROVIDER     * ptep, * ptepref;
+    gtProvider *ptp;
 
     generalTime_Init();
 
-    ptep=(TIME_EVENT_PROVIDER *)malloc(sizeof(TIME_EVENT_PROVIDER));
+    if (name == NULL || getEvent == NULL)
+        return epicsTimeERROR;
 
-    if(ptep==NULL) {
-        return  epicsTimeERROR;
-    }
+    ptp = (gtProvider *)malloc(sizeof(gtProvider));
+    if (ptp == NULL)
+        return epicsTimeERROR;
 
-    strncpy(ptep->tp_desc,desc,TP_DESC_LEN-1);
-    ptep->tp_desc[TP_DESC_LEN-1]='\0';
-    ptep->tep_priority=priority;
-    ptep->tep_getEvent=getEvent;
+    ptp->name      = epicsStrDup(name);
+    ptp->priority  = priority;
+    ptp->get.Event = getEvent;
 
-    epicsMutexMustLock( pgeneralTimePvt->tep_list_sem );
-    for(ptepref=(TIME_EVENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tep_list) );
-        ptepref; ptepref=(TIME_EVENT_PROVIDER *)ellNext((ELLNODE *)ptepref))
-    {
-        if(ptepref->tep_priority > ptep->tep_priority)  break;
-    }
-    if(ptepref)
-    {/* found a ref whose priority is just bigger than the new one */
-        ptepref=(TIME_EVENT_PROVIDER *)ellPrevious((ELLNODE *)ptepref);
-        ellInsert( &(pgeneralTimePvt->tep_list), (ELLNODE *)ptepref, (ELLNODE *)ptep );
-    }
-    else
-    {/* either list is empty or no one have bigger(lower) priority, put on tail */
-        ellAdd( &(pgeneralTimePvt->tep_list), (ELLNODE *)ptep );
-    }
-    epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
+    insertProvider(ptp, &gtPvt.eventProviders, gtPvt.eventListLock);
 
-    return  epicsTimeOK;
+    return epicsTimeOK;
 }
 
-int     generalTimeCurrentTpRegister(const char *desc, int priority, pepicsTimeGetCurrent getCurrent)
+int generalTimeCurrentTpRegister(const char *name, int priority,
+    TIMECURRENTFUN getCurrent)
 {
-    TIME_CURRENT_PROVIDER   * ptcp, * ptcpref;
+    gtProvider *ptp;
 
     generalTime_Init();
 
-    ptcp=(TIME_CURRENT_PROVIDER *)malloc(sizeof(TIME_CURRENT_PROVIDER));
+    if (name == NULL || getCurrent == NULL)
+        return epicsTimeERROR;
 
-    if(ptcp==NULL) {
-        return  epicsTimeERROR;
-    }
+    ptp = (gtProvider *)malloc(sizeof(gtProvider));
+    if (ptp == NULL)
+        return epicsTimeERROR;
 
-    strncpy(ptcp->tp_desc,desc,TP_DESC_LEN-1);
-    ptcp->tp_desc[TP_DESC_LEN-1]='\0';
-    ptcp->tcp_priority=priority;
-    ptcp->tcp_getCurrent=getCurrent;
+    ptp->name     = epicsStrDup(name);
+    ptp->priority = priority;
+    ptp->get.Time = getCurrent;
 
-    epicsMutexMustLock( pgeneralTimePvt->tcp_list_sem );
-    for(ptcpref=(TIME_CURRENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tcp_list) );
-        ptcpref; ptcpref=(TIME_CURRENT_PROVIDER *)ellNext((ELLNODE *)ptcpref))
-    {
-        if(ptcpref->tcp_priority > ptcp->tcp_priority)  break;
-    }
-    if(ptcpref)
-    {/* found a ref whose priority is just bigger than the new one */
-        ptcpref=(TIME_CURRENT_PROVIDER *)ellPrevious((ELLNODE *)ptcpref);
-        ellInsert( &(pgeneralTimePvt->tcp_list), (ELLNODE *)ptcpref, (ELLNODE *)ptcp );
-    }
-    else
-    {/* either list is empty or no one have bigger(lower) priority, put on tail */
-        ellAdd( &(pgeneralTimePvt->tcp_list), (ELLNODE *)ptcp );
-    }
-    epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem);
+    insertProvider(ptp, &gtPvt.timeProviders, gtPvt.timeListLock);
 
-    return  epicsTimeOK;
+    return epicsTimeOK;
 }
 
 /* 
@@ -320,179 +273,148 @@ int     generalTimeCurrentTpRegister(const char *desc, int priority, pepicsTimeG
  * resynchronisation, where events are being generated by the event system
  * but the time provided by the system is not yet valid.
  */
-static int lastResortGetEvent(epicsTimeStamp *timeStamp, int eventNumber) 
+static int lastResortGetEvent(epicsTimeStamp *timeStamp, int eventNumber)
 {
     return epicsTimeGetCurrent(timeStamp);
 }
 
-epicsShareFunc int lastResortEventProviderInstall(void)
+int installLastResortEventProvider(void)
 {
-    return generalTimeEventTpRegister("Last Resort Event", LAST_RESORT_PRIORITY, lastResortGetEvent);
+    return generalTimeEventTpRegister("Last Resort Event",
+        LAST_RESORT_PRIORITY, lastResortGetEvent);
 }
 
-epicsTimerId generalTimeCreateSyncTimer(epicsTimerCallback cb, void* param)
+
+epicsTimerId generalTimeCreateSyncTimer(epicsTimerCallback cb, void *parm)
 {
-    if (!pgeneralTimePvt->sync_queue) {
-        pgeneralTimePvt->sync_queue = epicsTimerQueueAllocate(0, epicsThreadPriorityHigh);
+    if (!gtPvt.sync_queue) {
+        gtPvt.sync_queue = epicsTimerQueueAllocate(0, epicsThreadPriorityHigh);
     }
-    return epicsTimerQueueCreateTimer(pgeneralTimePvt->sync_queue, cb, param);
+    return epicsTimerQueueCreateTimer(gtPvt.sync_queue, cb, parm);
 }
 
-long    generalTimeReport(int level)
+
+/* Status Report */
+
+long generalTimeReport(int level)
 {
-    TIME_CURRENT_PROVIDER   * ptcp;
-    TIME_EVENT_PROVIDER * ptep;
+    int items;
 
-    int         status;
-    epicsTimeStamp      tempTS;
-    char            tempTSText[40];
-
-    int         items;      /* how many provider we have */
-    char            * ptempText;    /* logMsg passed pointer instead of strcpy, so we have to keep a local screen copy then printf */
-    int         tempTextOffset;
-
-    printf(GENERALTIME_VERSION"\n");
-
-    if(!pgeneralTimePvt)
-    {/* GeneralTime is not used, we just report version then quit */
-        printf("General time framework is not initialized yet!\n\n");
-        return  epicsTimeOK;
+    if (onceId == EPICS_THREAD_ONCE_INIT) {
+        printf("General time framework not yet initialized.\n");
+        return epicsTimeOK;
     }
 
-    /* GeneralTime is in use, we try to report more detail */
+    printf("Backwards time errors prevented %u times.\n\n",
+        generalTimeGetErrorCounts());
 
-    /* we use sprintf instead of printf because we don't want to hold xxx_list_sem too long */
+    /* Use an output buffer to avoid holding mutexes during printing */
 
-    if(level>0)
-    {
-        printf("\nFor Time-Current-Provider:\n");
-        epicsMutexMustLock( pgeneralTimePvt->tcp_list_sem );
-        if(( items = ellCount( &(pgeneralTimePvt->tcp_list)) ))
-        {
-            ptempText = calloc(items, 80 * 3); /* for each provider, we print 3 lines, and each line is less then 80 bytes !!!!!!!! */
-            if(!ptempText)
-            {/* calloc failed */
-                epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem );
-                printf("Malloced memory for print out for %d tcps failed!\n", items);
-                return epicsTimeERROR;
-            }
-            if(GENERALTIME_DEBUG)       printf("Malloced memory for print out for %d tcps\n", items);
+    printf("Current Time Providers:\n");
+    epicsMutexMustLock(gtPvt.timeListLock);
+    if ((items = ellCount(&gtPvt.timeProviders))) {
+        gtProvider *ptp;
+        char *message;     /* Temporary output buffer */
+        char *pout;
 
-            tempTextOffset = 0;
+        message = calloc(items, 80 * 2); /* Each provider needs 2 lines */
+        if (!message) {
+            epicsMutexUnlock(gtPvt.timeListLock);
+            printf("Out of memory\n");
+            return epicsTimeERROR;
+        }
 
-            for(ptcp=(TIME_CURRENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tcp_list) );
-                ptcp; ptcp=(TIME_CURRENT_PROVIDER *)ellNext((ELLNODE *)ptcp))
-            {
-                tempTextOffset += sprintf(ptempText+tempTextOffset, "\t\"%s\",priority %d\n", ptcp->tp_desc, ptcp->tcp_priority);
-                if(level>1)
-                {
-                    tempTextOffset += sprintf( ptempText+tempTextOffset, "\t getCurrent is 0x%lx\n",
-                                    (unsigned long)(ptcp->tcp_getCurrent) );
-                    if(ptcp->tcp_getCurrent)
-                    {
-                        status=(*(ptcp->tcp_getCurrent))(&tempTS);
-                        if(status!=epicsTimeERROR)
-                        {
-                            tempTSText[0]='\0';
-                            epicsTimeToStrftime(tempTSText, sizeof(tempTSText), "%Y/%m/%d %H:%M:%S.%06f",&tempTS);
-                            tempTextOffset += sprintf(ptempText+tempTextOffset, "\t Current Time is %s.\n", tempTSText);
-                        }
-                        else
-                        {
-                            tempTextOffset += sprintf(ptempText+tempTextOffset, "\t Time Current Provider \"%s\" Failed!\n", ptcp->tp_desc);
-                        }
-                    }
+        pout = message;
+
+        for (ptp = (gtProvider *)ellFirst(&gtPvt.timeProviders);
+             ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+            pout += sprintf(pout, "    \"%s\", priority = %d\n",
+                ptp->name, ptp->priority);
+            if (level) {
+                epicsTimeStamp tempTS;
+                if (ptp->get.Time(&tempTS) != epicsTimeERROR) {
+                    char tempTSText[40];
+                    epicsTimeToStrftime(tempTSText, sizeof(tempTSText),
+                        "%Y-%m-%d %H:%M:%S.%06f", &tempTS);
+                    pout += sprintf(pout, "\tCurrent Time is %s.\n",
+                        tempTSText);
+                } else {
+                    pout += sprintf(pout, "\tCurrent Time not available\n");
                 }
             }
-            epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem );
-            printf("%s", ptempText);
-            free(ptempText);
         }
-        else
-        {
-            epicsMutexUnlock( pgeneralTimePvt->tcp_list_sem );
-            printf("\tNo Time-Current-Provider registered!\n");
-        }
-
-        printf("For Time-Event-Provider:\n");
-        epicsMutexMustLock( pgeneralTimePvt->tep_list_sem );
-        if(( items = ellCount( &(pgeneralTimePvt->tep_list) ) ))
-        {
-            ptempText = calloc(items, 80 * 2);     /* for each provider, we print 2 lines, and each line is less then 80 bytes !!!!!!!! */
-            if(!ptempText)
-            {/* calloc failed */
-                epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
-                printf("Malloced memory for print out for %d teps failed!\n", items);
-                return epicsTimeERROR;
-            }
-            if(GENERALTIME_DEBUG) printf("Malloced memory for print out for %d teps\n", items);
-
-            tempTextOffset = 0;
-
-            for(ptep=(TIME_EVENT_PROVIDER *)ellFirst( &(pgeneralTimePvt->tep_list) );
-                ptep; ptep=(TIME_EVENT_PROVIDER *)ellNext((ELLNODE *)ptep))
-            {
-                tempTextOffset += sprintf(ptempText+tempTextOffset,"\t\"%s\",priority %d\n",ptep->tp_desc,ptep->tep_priority);
-                if(level>1)
-                    tempTextOffset += sprintf( ptempText+tempTextOffset, "\t getEvent is 0x%lx\n",(unsigned long)(ptep->tep_getEvent) );
-            }
-            epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
-            printf("%s", ptempText);
-            free(ptempText);
-        }
-        else
-        {
-            epicsMutexUnlock( pgeneralTimePvt->tep_list_sem );
-            printf("\tNo Time-Event-Provider registered!\n");
-        }
-
-        printf("\n");
+        epicsMutexUnlock(gtPvt.timeListLock);
+        puts(message);
+        free(message);
+    } else {
+        epicsMutexUnlock(gtPvt.timeListLock);
+        printf("\tNo Providers registered.\n");
     }
-    return  epicsTimeOK;
+
+    printf("Event Time Providers:\n");
+    epicsMutexMustLock(gtPvt.eventListLock);
+    if ((items = ellCount(&gtPvt.eventProviders)))
+    {
+        gtProvider *ptp;
+        char *message;     /* Temporary output buffer */
+        char *pout;
+
+        message = calloc(items, 80);     /* Each provider needs 1 line, */
+        if (!message) {
+            epicsMutexUnlock(gtPvt.eventListLock);
+            printf("Out of memory\n");
+            return epicsTimeERROR;
+        }
+
+        pout = message;
+
+        for (ptp = (gtProvider *)ellFirst(&gtPvt.eventProviders);
+             ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+            pout += sprintf(pout, "    \"%s\", priority = %d\n",
+                ptp->name, ptp->priority);
+        }
+        epicsMutexUnlock(gtPvt.eventListLock);
+        puts(message);
+        free(message);
+    }
+    else
+    {
+        epicsMutexUnlock(gtPvt.eventListLock);
+        printf("\tNo Providers registered.\n");
+    }
+
+    return epicsTimeOK;
 }
 
 /*
- * Accessor routines for internal status values.
+ * Access to internal status values.
  */
 
-epicsShareFunc void generalTimeResetErrorCounts()
+void generalTimeResetErrorCounts(void)
 {
-    generalTime_Init();
-    pgeneralTimePvt->ErrorCounts = 0;
+    int key = epicsInterruptLock();
+    gtPvt.ErrorCounts = 0;
+    epicsInterruptUnlock(key);
 }
 
-epicsShareFunc int generalTimeGetErrorCounts()
+int generalTimeGetErrorCounts(void)
 {
-    generalTime_Init();
-    return  pgeneralTimePvt->ErrorCounts;
+    int key = epicsInterruptLock();
+    int errors = gtPvt.ErrorCounts;
+    epicsInterruptUnlock(key);
+    return errors;
 }
 
-epicsShareFunc void generalTimeGetBestTcp(char * desc)
-{/* the assignment to pLastKnownBestTcp is atomic and desc is never changed after registeration */
-    generalTime_Init();
-    if(pgeneralTimePvt->pLastKnownBestTcp)
-    {/* We know some good tcp */
-        strncpy(desc,pgeneralTimePvt->pLastKnownBestTcp->tp_desc,TP_DESC_LEN-1);
-        desc[TP_DESC_LEN-1]='\0';
-    }
-    else
-    {/* no good tcp */
-        strncpy(desc,"No Good Time-Current-Provider",TP_DESC_LEN-1);
-        desc[TP_DESC_LEN-1]='\0';
-    }
+const char * generalTimeCurrentTpName(void)
+{
+    if (gtPvt.lastTimeProvider)
+        return gtPvt.lastTimeProvider->name;
+    return NULL;
 }
 
-epicsShareFunc void generalTimeGetBestTep(char * desc)
-{/* the assignment to pLastKnownBestTep is atomic and desc is never changed after registeration */
-    generalTime_Init();
-    if(pgeneralTimePvt->pLastKnownBestTep)
-    {/* We know some good tep */
-        strncpy(desc,pgeneralTimePvt->pLastKnownBestTep->tp_desc,TP_DESC_LEN-1);
-        desc[TP_DESC_LEN-1]='\0';
-    }
-    else
-    {/* no good tep */
-        strncpy(desc,"No Good Time-Event-Provider",TP_DESC_LEN-1);
-        desc[TP_DESC_LEN-1]='\0';
-    }
+const char * generalTimeEventTpName(void)
+{
+    if (gtPvt.lastEventProvider)
+        return gtPvt.lastEventProvider->name;
+    return NULL;
 }

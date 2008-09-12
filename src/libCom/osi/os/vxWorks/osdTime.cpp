@@ -4,20 +4,18 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <vxWorks.h>
-#include <tickLib.h>
-#include <sysLib.h>
 #include <sntpcLib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "epicsTime.h"
-#include "errlog.h"
 #include "osiNTPTime.h"
-#include "osdSysTime.h"
+#include "osiClockTime.h"
 #include "generalTimeSup.h"
 #include "envDefs.h"
 
@@ -26,8 +24,18 @@ extern char* sysBootLine;
 
 static int timeRegister(void)
 {
+    /* If TIMEZONE not defined, set it from EPICS_TIMEZONE */
+    if (getenv("TIMEZONE") == NULL) {
+        const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
+        if (timezone == NULL) {
+            printf("NTPTime_Init: No Time Zone Information\n");
+        } else {
+            epicsEnvSet("TIMEZONE", timezone);
+        }
+    }
+
     NTPTime_Init(100); /* init NTP first so it can be used to sync SysTime */
-    SysTime_Init(LAST_RESORT_PRIORITY);
+    ClockTime_Init(CLOCKTIME_SYNC);
     return 1;
 }
 static int done = timeRegister();

@@ -3,30 +3,32 @@
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  * $Id$
  *
  * Author: W. Eric Norum
  */
-//
 
 #include <rtems.h>
 #include "epicsTime.h"
+#include "osdTime.h"
 #include "osiNTPTime.h"
-#include "osdSysTime.h"
+#include "osiClockTime.h"
 #include "generalTimeSup.h"
 
 extern "C" {
 
+extern rtems_interval rtemsTicksPerSecond;
 int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
 
 
 void osdTimeRegister(void)
 {
-    NTPTime_Init(100); /* init NTP first so it can be used to sync SysTime */
-    SysTime_Init(LAST_RESORT_PRIORITY);
+    /* Init NTP first so it can be used to sync ClockTime */
+    NTPTime_Init(100);
+    ClockTime_Init(CLOCKTIME_SYNC);
 }
 
 int osdNTPGet(struct timespec *ts)
@@ -42,20 +44,15 @@ void osdNTPReport(void)
 {
 }
 
-
-int
-osdTickGet(void)
+int osdTickGet(void)
 {
     rtems_interval t;
     rtems_clock_get (RTEMS_CLOCK_GET_TICKS_SINCE_BOOT, &t);
     return t;
 }
 
-int
-osdTickRateGet(void)
+int osdTickRateGet(void)
 {
-    extern rtems_interval rtemsTicksPerSecond;
-
     return rtemsTicksPerSecond;
 }
 
@@ -87,14 +84,18 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
 } // extern "C"
 
 /*
- * Register local time providers if EPICS is running (i.e. if this
- * code has been dynamically loaded into a running system).
+ * Static constructors are run too early in a standalone binary
+ * to be able to initialize the NTP time provider (the network
+ * is not available yet), so the RTEMS standalone startup code
+ * explicitly calls osdTimeRegister() at the appropriate time.
+ * However if we are loaded dynamically we *do* register our
+ * standard time providers at static constructor time; in this
+ * case the tick rate will have been set already.
  */
-class osdTimeReg {
-  public:
-    osdTimeReg() {
-        extern rtems_interval rtemsTicksPerSecond;
-        if (rtemsTicksPerSecond != 0) osdTimeRegister();
-    }
-};
-static osdTimeReg osdTimeRegObj;
+static int staticTimeRegister(void)
+{
+    if (rtemsTicksPerSecond != 0)
+        osdTimeRegister();
+    return 1;
+}
+static int done = staticTimeRegister();

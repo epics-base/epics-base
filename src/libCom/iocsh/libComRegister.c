@@ -312,11 +312,11 @@ static void generalTimeReportCallFunc(const iocshArgBuf *args)
     generalTimeReport(args[0].ival);
 }
 
-/* lastResortEventProviderInstall */
-static const iocshFuncDef lastResortEventProviderInstallFuncDef = {"lastResortEventProviderInstall", 0, NULL};
-static void lastResortEventProviderInstallCallFunc(const iocshArgBuf *args)
+/* installLastResortEventProvider */
+static const iocshFuncDef installLastResortEventProviderFuncDef = {"installLastResortEventProvider", 0, NULL};
+static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 {
-    lastResortEventProviderInstall();
+    installLastResortEventProvider();
 }
 
 void epicsShareAPI libComRegister(void)
@@ -345,5 +345,5 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&epicsThreadResumeFuncDef,epicsThreadResumeCallFunc);
     
     iocshRegister(&generalTimeReportFuncDef,generalTimeReportCallFunc);
-    iocshRegister(&lastResortEventProviderInstallFuncDef, lastResortEventProviderInstallCallFunc);
+    iocshRegister(&installLastResortEventProviderFuncDef, installLastResortEventProviderCallFunc);
 }

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include <stddef.h>
@@ -19,41 +19,36 @@
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
-extern "C" {
-static int osdTimeGetCurrent (epicsTimeStamp *pDest)
-{
-#   ifdef CLOCK_REALTIME
-        struct timespec ts;
-        int status;
-    
-        status = clock_gettime (CLOCK_REALTIME, &ts);
-        if (status) {
-            return epicsTimeERROR;
-        }
+#ifdef CLOCK_REALTIME
+    #include "osiClockTime.h"
 
-        *pDest = epicsTime (ts);
-        return epicsTimeOK;
-#   else
-        int status;
+    #define TIME_INIT ClockTime_Init(CLOCKTIME_NOSYNC)
+#else
+    extern "C" {
+    static int osdTimeGetCurrent (epicsTimeStamp *pDest)
+    {
         struct timeval tv;
         struct timezone tz;
-    
-      status = gettimeofday (&tv, &tz);
-        if (status) {
+
+        if (gettimeofday (&tv, &tz))
             return epicsTimeERROR;
-        }
-      *pDest = epicsTime (tv); 
+
+        *pDest = epicsTime(tv);
         return epicsTimeOK;
-#   endif
-}
-}
+    }
+    } // extern "C"
+
+    #define TIME_INIT generalTimeCurrentTpRegister("GetTimeOfDay", \
+        LAST_RESORT_PRIORITY, osdTimeGetCurrent)
+#endif
 
 static int timeRegister(void)
 {
-    generalTimeCurrentTpRegister("Posix Time", 100, osdTimeGetCurrent);
+    TIME_INIT;
     return 1;
 }
 static int done = timeRegister();
+
 
 int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
                        struct tm *pTM )
@@ -87,26 +82,26 @@ extern "C" epicsShareFunc void
 
     if(timeout<0.0) timeout = 0.0;
     else if(timeout>3600.0) timeout = 3600.0;
-#   ifdef CLOCK_REALTIME
-    status = clock_gettime(CLOCK_REALTIME,wakeTime);
-#   else
+#ifdef CLOCK_REALTIME
+    status = clock_gettime(CLOCK_REALTIME, wakeTime);
+#else
     {
-    struct timeval tv;
-    struct timezone tz;
-    status = gettimeofday(&tv, &tz);
-    wakeTime->tv_sec = tv.tv_sec;
-    wakeTime->tv_nsec = tv.tv_usec * 1000;
+        struct timeval tv;
+        struct timezone tz;
+        status = gettimeofday(&tv, &tz);
+        wakeTime->tv_sec = tv.tv_sec;
+        wakeTime->tv_nsec = tv.tv_usec * 1000;
     }
-#   endif
-    if(status) { 
-        printf("clock_gettime failed with error %s\n",strerror(errno));
-        cantProceed("convertDoubleToWakeTime"); 
+#endif
+    if (status) {
+        perror("convertDoubleToWakeTime");
+        cantProceed("convertDoubleToWakeTime");
     }
-    wait.tv_sec = static_cast < long > ( timeout );
-    wait.tv_nsec = static_cast < long > ( (timeout - (double)wait.tv_sec) * 1e9 );
-    wakeTime->tv_sec += wait.tv_sec;
+    wait.tv_sec  = static_cast< long >(timeout);
+    wait.tv_nsec = static_cast< long >((timeout - (double)wait.tv_sec) * 1e9);
+    wakeTime->tv_sec  += wait.tv_sec;
     wakeTime->tv_nsec += wait.tv_nsec;
-    if(wakeTime->tv_nsec>=1000000000L) {
+    if (wakeTime->tv_nsec >= 1000000000L) {
         wakeTime->tv_nsec -= 1000000000L;
         ++wakeTime->tv_sec;
     }

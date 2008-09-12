@@ -360,9 +360,13 @@ long epicsShareAPI asChangeClient(
 {
     ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
+    int		ind;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
+    for(ind=0; ind<strlen(host); ind++) {
+        host[ind] = (char)tolower((int)host[ind]);
+    }
     LOCK;
     pasgclient->level = asl;
     pasgclient->user = user;

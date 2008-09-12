@@ -333,21 +333,22 @@ long epicsShareAPI asAddClient(ASCLIENTPVT *pasClientPvt,ASMEMBERPVT asMemberPvt
 {
     ASGMEMBER	*pasgmember = asMemberPvt;
     ASGCLIENT	*pasgclient;
-    int		ind;
+    int		len, i;
 
     long	status;
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgmember) return(S_asLib_badMember);
     pasgclient = freeListCalloc(freeListPvt);
     if(!pasgclient) return(S_asLib_noMemory);
+    len = strlen(host);
+    for (i = 0; i < len; i++) {
+        host[i] = (char)tolower((int)host[i]);
+    }
     *pasClientPvt = pasgclient;
     pasgclient->pasgMember = asMemberPvt;
     pasgclient->level = asl;
     pasgclient->user = user;
     pasgclient->host = host;
-    for(ind=0; ind<strlen(pasgclient->host); ind++) {
-        pasgclient->host[ind] = (char)tolower((int)pasgclient->host[ind]);
-    }
     LOCK;
     ellAdd(&pasgmember->clientList,(ELLNODE *)pasgclient);
     status = asComputePvt(pasgclient);
@@ -360,12 +361,13 @@ long epicsShareAPI asChangeClient(
 {
     ASGCLIENT	*pasgclient = asClientPvt;
     long	status;
-    int		ind;
+    int		len, i;
 
     if(!asActive) return(S_asLib_asNotActive);
     if(!pasgclient) return(S_asLib_badClient);
-    for(ind=0; ind<strlen(host); ind++) {
-        host[ind] = (char)tolower((int)host[ind]);
+    len = strlen(host);
+    for (i = 0; i < len; i++) {
+        host[i] = (char)tolower((int)host[i]);
     }
     LOCK;
     pasgclient->level = asl;
@@ -1174,12 +1176,13 @@ static HAG *asHagAdd(const char *hagName)
 static long asHagAddHost(HAG *phag,const char *host)
 {
     HAGNAME *phagname;
-    int     i;
+    int     len, i;
 
     if (!phag) return 0;
-    phagname = asCalloc(1, sizeof(HAGNAME)+strlen(host)+1);
-    phagname->host = (char *)(phagname+1);
-    for (i = 0; i < strlen(host); i++) {
+    len = strlen(host);
+    phagname = asCalloc(1, sizeof(HAGNAME) + len + 1);
+    phagname->host = (char *)(phagname + 1);
+    for (i = 0; i < len; i++) {
         phagname->host[i] = (char)tolower((int)host[i]);
     }
     ellAdd(&phag->list, (ELLNODE *)phagname);

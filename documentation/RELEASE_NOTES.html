@@ -12,6 +12,51 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>General Time subsystem</h4>
+
+<p>The way in which EPICS gets the time has been significantly revised since
+R3.14.9 with the introduction of the General Time subsystem.  Two kinds of
+pluggable time providers are now supported, which return either the current time
+or the latest timestamp of a numbered Time Event from a hardware event system.
+All IOCs must have at least one Current Time provider, but Event Time providers
+are optional.  The General Time subsystem guarantees that the timestamps
+returned never step backwards, even when switching between time providers.</p>
+
+<p>A Current Time Provider reports the current wall-clock time if it is able to
+when asked; if it can't it says so, and the time subsystem will then ask the
+next provider in its list and so on until someone replies with the time.  Event
+Time providers are handled similarly, except that they are asked for the
+timestamp associated with a particular Time Event number rather than the current
+wall-clock time. The registered time providers can be listed using the IOC
+command <tt>generalTimeReport(int interest)</tt> and some time providers also
+have their own separate report commands.</p>
+
+<p>Different target architectures come with different default Current Time
+providers in Base.  The Unix-like architectures rely on the underlying operating
+system clock, which normally involves running something like ntpd as a separate
+process. The real-time operating systems vxWorks and RTEMS install two Current
+Time providers; the native OS Clock at the lowest priority (this provider
+includes a task to periodically reset the OS Clock from a higher priority time
+provider), and an NTP time provider which synchronizes the underlying OS' tick
+timer with an NTP server. Microsoft Windows targets using the Win32 API use a
+Windows-specific time provider which contains a built-in PLL</p>
+
+<p>There are no Event Time providers included with Base except for an optional
+"Last Resort" Event provider which can be installed if a site wants to be sure
+that every Time Event number will have a recent timestamp associated with it
+even if the hardware event system goes down. The Last Resort Event Time provider
+returns the current time for every Time Event number. To install this provider,
+run the command <tt>installLastResortEventProvider</tt> from your IOC startup
+script.</p>
+
+<p>Additional information about General Time and the time providers included
+with Base can be found in the IOC Application Developers Guide for R3.14.10,
+sections 9.7 and 20.6. General Time was originally written by David H. Thompson
+and Sheng Peng at ORNL, subsequently worked on by Babak Kalantari and Timo
+Korhonen of PSI, and merged into Base by Peter Denison from Diamond.  Andrew
+Johnson provided input into the design at various points and made various code
+revisions after the merge.</p>
+
 <h4>New ioc/dllPath.bat file for Win32</h4>
 
 <p>When creating an IOC with one of the win32-x86 target architectures, a file

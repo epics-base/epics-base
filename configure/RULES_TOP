@@ -13,36 +13,6 @@
 
 include $(CONFIG)/RULES_DIRS
 
-VALID_BUILDS += Host
-#---------------------------------------------------------------
-# Include installed cfg/RULES* files to get DIRECTORY_TARGETS names
-
-# Include RULES* files from current top
-RULES_TOP:=$(INSTALL_LOCATION)
-ifneq ($(wildcard $(RULES_TOP)/cfg/RULES*),)
--include $(wildcard $(RULES_TOP)/cfg/RULES*)
-endif
--include $(wildcard $(CONFIG)/RULES_OCTAVE)
-
-
-ifneq ($(CONFIG),$(TOP)/configure)
-RELEASE_TOPS = $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops )
-
-# Include RULES* files from tops defined in RELEASE* files
-ifneq ($(RELEASE_TOPS),)
-define TOP_RULES_template
-  RULES_TOP:=$$($(1))
-  -include $$(if $$(wildcard $$($(1))/cfg/RULES*), \
-                 $$(wildcard $$($(1))/cfg/RULES*),\
-                 nonexistantFilename)
-
-endef
-$(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))
-endif
-endif
-include $(CONFIG)/RULES_FILE_TYPE
-#---------------------------------------------------------------
-
 UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
         $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
         $(INSTALL_DB)

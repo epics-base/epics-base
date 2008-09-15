@@ -36,6 +36,7 @@ ifdef T_A
 endif
 
 include $(CONFIG)/CONFIG_COMMON
+include $(CONFIG)/CONFIG_FILE_TYPE
 
 #  Base-specific build options
 #
@@ -81,6 +82,25 @@ endif
 -include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
+endif
+
+# Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
+#
+ifneq ($(CONFIG),$(TOP)/configure)
+RELEASE_TOPS ?= $(shell $(PERL) $(TOOLS)/convertRelease.pl -T $(TOP) releaseTops )
+RELEASE_CFG_CONFIGS = $(foreach top, $(RELEASE_TOPS), $(wildcard $($(top))/cfg/CONFIG*))
+ifneq ($(RELEASE_CFG_CONFIGS),)
+include $(RELEASE_CFG_CONFIGS)
+endif
+endif
+
+# Include $(INSTALL_CFG)/CONFIG* definitions
+#
+ifndef T_A
+TOP_CFG_CONFIGS = $(wildcard $(INSTALL_CFG)/CONFIG*)
+ifneq ($(TOP_CFG_CONFIGS),)
+include $(TOP_CFG_CONFIGS)
+endif
 endif
 
 #  User specific definitions

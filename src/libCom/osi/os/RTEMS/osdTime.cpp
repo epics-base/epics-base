@@ -11,7 +11,12 @@
  * Author: W. Eric Norum
  */
 
+#include <epicsStdio.h>
 #include <rtems.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "epicsTime.h"
 #include "osdTime.h"
 #include "osiNTPTime.h"
@@ -22,7 +27,7 @@ extern "C" {
 
 extern rtems_interval rtemsTicksPerSecond;
 int rtems_bsdnet_get_ntp(int, int(*)(), struct timespec *);
-
+static int ntpSocket = -1;
 
 void osdTimeRegister(void)
 {
@@ -33,11 +38,29 @@ void osdTimeRegister(void)
 
 int osdNTPGet(struct timespec *ts)
 {
-    return rtems_bsdnet_get_ntp(-1, NULL, ts);
+    if (ntpSocket < 0)
+        return -1;
+    return rtems_bsdnet_get_ntp(ntpSocket, NULL, ts);
 }
 
 void osdNTPInit(void)
 {
+    struct sockaddr_in myAddr;
+
+    ntpSocket = socket (AF_INET, SOCK_DGRAM, 0);
+    if (ntpSocket < 0) {
+        printf("osdNTPInit() Can't create socket: %s\n", strerror (errno));
+        return;
+    }
+    memset (&myAddr, 0, sizeof myAddr);
+    myAddr.sin_family = AF_INET;
+    myAddr.sin_port = htons (123);
+    myAddr.sin_addr.s_addr = htonl (INADDR_ANY);
+    if (bind (ntpSocket, (struct sockaddr *)&myAddr, sizeof myAddr) < 0) {
+        printf("osdNTPInit() Can't bind socket: %s\n", strerror (errno));
+        close (ntpSocket);
+        ntpSocket = -1;
+    }
 }
 
 void osdNTPReport(void)

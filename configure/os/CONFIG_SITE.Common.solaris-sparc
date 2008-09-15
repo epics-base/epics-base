@@ -9,6 +9,7 @@
 # to include command-line editing and history support
 #
 
+# Readline library provides command-line editing and history in IOC shell
 #COMMANDLINE_LIBRARY = READLINE
 
 # Use stLport library instead of default Cstd library

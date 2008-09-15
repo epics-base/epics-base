@@ -33,7 +33,7 @@
 #include "taskwd.h"
 
 #define NSEC_PER_SEC 1000000000
-#define NTPTimeSyncInterval 10.0
+#define NTPTimeSyncInterval 60.0
 
 
 static struct {

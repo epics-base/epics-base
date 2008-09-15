@@ -1,0 +1,67 @@
+#*************************************************************************
+# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution. 
+#*************************************************************************
+# $Id$
+#
+# Macros and rules to create a new installation file type 
+#
+
+# --------------------------------------------------------------
+# Module developers can now define a new type of file, e.g. ABC, 
+# so that files of type ABC will be installed into a directory
+# defined by INSTALL_ABC. This is done by creating a new CONFIG<name>
+# file, e.g. CONFIG_ABC, with the following lines:
+#
+#       FILE_TYPE += ABC
+#       INSTALL_ABC = $(INSTALL_LOCATION)/abc
+#
+# The INSTALL_ABC directory should be be a subdirectory of 
+# $(INSTALL_LOCATION). The file type ABC should be target
+# architecture independent (alh files, medm files, edm files).
+#
+# Optional rules necessary for files of type ABC should be put in
+# a RULES_ABC file.
+#
+# The module developer installs new CONFIG* or RULES* files
+# into the directory $(INSTALL_LOCATION)/cfg by including the 
+# following Makefile line:
+#
+#       CFG += CONFIG_ABC RULES_ABC
+# 
+# Files of type ABC are installed into INSTALL_ABC directory
+# by adding a line like the following to a Makefile.
+#
+#       ABC += <filename1> <filename2> <filename3>
+#
+# Files in $(INSTALL_LOCATION)/cfg directory are now included by
+# the base config files so the definitions and rules are available
+# for use by later src directory Makefiles in the same module or
+# by other modules with a RELEASE line pointing to the TOP of 
+# the module with RULES_ABC.
+
+FILE_TYPE += ADL
+INSTALL_ADL = $(INSTALL_LOCATION)/adl
+
+FILE_TYPE += ALH
+INSTALL_ALH = $(INSTALL_LOCATION)/alh
+
+FILE_TYPE += CFG
+INSTALL_CFG = $(INSTALL_LOCATION)/cfg
+
+FILE_TYPE += EDL
+INSTALL_EDL = $(INSTALL_LOCATION)/edl
+
+FILE_TYPE += IDL
+INSTALL_IDL = $(INSTALL_LOCATION_LIB)/idl
+
+FILE_TYPE += PERL_MODULES
+INSTALL_PERL_MODULES = $(INSTALL_LOCATION_LIB)/perl
+
+INSTALLS_CFG= $(CFG:%= $(INSTALL_CFG)/%)
+DIRECTORY_TARGETS += $(foreach type, $(FILE_TYPE),$(INSTALL_$(type)))
+

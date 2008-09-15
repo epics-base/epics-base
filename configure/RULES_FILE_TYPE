@@ -8,128 +8,66 @@
 #*************************************************************************
 # $Id$
 #
-# Macros and rules to create a new installation file type 
-#
 
-# --------------------------------------------------------------
-# Module developers can now define a new type of file, e.g. ABC, 
-# so that files of type ABC will be installed into a directory
-# defined by INSTALL_ABC. This is done by creating a new RULES_ABC 
-# file with the following lines:
-#
-#       FILE_TYPE += ABC
-#       INSTALL_ABC =  $(INSTALL_LOCATION)/abc
-#
-#       (optional rules necessary for files of type ABC)
-#
-# The INSTALL_ABC directory should be be a subdirectory of 
-# $(INSTALL_LOCATION).  The file type ABC should be target
-# architecture independent (alh files, medm files, edm files).
-#
-# The module developer installs this new RULES file into the 
-# directory $(INSTALL_LOCATION)/cfg by including the 
-# following Makefile line:
-#
-#       CFG +=  RULES_ABC
-# 
-# Files of type ABC are installed into INSTALL_ABC directory
-# by adding a line like the following to a Makefile.
-#
-#       ABC += <filename1> <filename2> <filename3>
-#
-# Files in $(INSTALL_LOCATION)/cfg directory are now included by
-# the base config files so the definitions and rules are available
-# for use by other src directory Makefiles in the same module or
-# by other modules with a RELEASE line pointing to the TOP of 
-# the module with RULES_ABC.
-
-FILE_TYPE += ADL
-INSTALL_ADL = $(INSTALL_LOCATION)/adl
-
-FILE_TYPE += ALH
-INSTALL_ALH = $(INSTALL_LOCATION)/alh
-
-FILE_TYPE += CFG
-INSTALL_CFG = $(INSTALL_LOCATION)/cfg
-
-FILE_TYPE += EDL
-INSTALL_EDL = $(INSTALL_LOCATION)/edl
-
-FILE_TYPE += IDL
-INSTALL_IDL = $(INSTALL_LOCATION_LIB)/idl
-
-FILE_TYPE += PERL_MODULES
-INSTALL_PERL_MODULES = $(INSTALL_LOCATION_LIB)/perl
-
-SCRIPTS_HOST += $(PERL_SCRIPTS)
-# PERL_SCRIPTS are installed into existing $(INSTALL_BIN) for Host systems
-
-ifdef T_A
 #---------------------------------------------------------------
-# Include RULES* files from tops defined in RELEASE* files
-ifneq ($(RELEASE_TOPS),)
-define  TOP_RULES_template
-  RULES_TOP:=$$($(1))
-  -include $$(if $(patsubst $$($(1))/configure,,$$(CONFIG)),\
-         $$(strip $$($(1)))/configure/RULES_BUILD, \
-         nonexistantFilename)
-  -include $$(wildcard $$($(1))/cfg/RULES*) nonexistantFilename
-endef
-$(foreach top, $(RELEASE_TOPS), $(eval $(call TOP_RULES_template,$(top)) ))
+# Include <top>/configure/RULES_BUILD definitions from tops defined in RELEASE* files
+#
+RELEASE_RULES_BUILDS = $(foreach top, $(RELEASE_TOPS), $(wildcard $($(top))/configure/RULES_BUILD))
+ifneq ($(RELEASE_RULES_BUILDS),)
+  include $(RELEASE_RULES_BUILDS)
 endif
 
 #---------------------------------------------------------------
-# Include created RULES* files from current top
+# Include <top>/cfg/RULES* definitions from tops defined in RELEASE* files
 #
-RULES_TOP:=$(INSTALL_LOCATION)
-ifneq ($(CONFIG),$(TOP)/configure)
--include $(TOP)/configure/RULES_BUILD
+RELEASE_CFG_RULES = $(foreach top, $(RELEASE_TOPS), $(wildcard $($(top))/cfg/RULES*))
+ifneq ($(RELEASE_CFG_RULES),)
+  include $(RELEASE_CFG_RULES)
 endif
 
-RULES_TOP_FILES= $(wildcard $(RULES_TOP)/cfg/RULES*)
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-ifneq ($(CFG),)
-INSTALLS_CFG = $(CFG:%=$(INSTALL_CFG)/%)
-RULES_TOP_FILES+= $(INSTALLS_CFG)
-endif
-ifneq ($(RULES_TOP_FILES),)
-include $(sort $(RULES_TOP_FILES))
-endif
-else 
-  include $(RULES_TOP_FILES)
-endif
 #---------------------------------------------------------------
+# If this is not BASE then include TOP/configure/RULES_BUILD definitions
+#
+ifeq ($(wildcard $(TOP)/configure/CONFIG_BASE_VERSION),)
+TOP_RULES_BUILDS = $(wildcard $(TOP)/configure/RULES_BUILD)
+ifneq ($(TOP_RULES_BUILDS),)
+  include $(TOP_RULES_BUILDS)
+endif
+endif
 
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+#---------------------------------------------
+# Include existing and new $(INSTALL_CFG)/* definitions
+#
+TOP_CFG_FILES = $(sort $(wildcard $(INSTALL_CFG)/RULES*) \
+                       $(wildcard $(INSTALL_CFG)/CONFIG*) \
+                       $(addprefix $(INSTALL_CFG)/,$(CFG)))
+ifneq ($(TOP_CFG_FILES),)
+  include $(TOP_CFG_FILES)
+endif
+
+#---------------------------------------------------------------
 
 define FILE_TYPE_template
 
 $(1) += $$(if $$(strip $$($(1)_$$(ARCH_CLASS))),$$(subst -nil-,,$$($(1)_$$(ARCH_CLASS))), $$($(1)_DEFAULT))
 
 INSTALLS_$(1) = $$($(1):%=$$(INSTALL_$(1))/%)
-buildInstall : $$(INSTALLS_$(1))
-
-$$(INSTALL_$(1))/%: %
-	@echo "Installing $(1) file $$@"
-	@$$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
 $$(INSTALL_$(1))/%: ../%
 	@echo "Installing $(1) file $$@"
-	@$$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $$< $$(dir $$@)
+	@$$(INSTALL) -d -m  $$(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
-clean::
-	$$(RM) $$($(1))
+$$(INSTALL_$(1))/%: %
+	@echo "Installing $(1) file $$@"
+	@$$(INSTALL) -d -m  $$(INSTALL_PERMISSIONS) $$< $$(dir $$@)
+
+buildInstall : $$(INSTALLS_$(1))
 
 endef
 
 $(foreach type, $(FILE_TYPE),$(eval $(call FILE_TYPE_template,$(strip $(type)))))
-endif
+#---------------------------------------------
 
-#---------------------------------------------------------------
-endif
-
-define FILE_TYPE_template2
-DIRECTORY_TARGETS += $$(INSTALL_$(1))
-endef
-$(foreach type, $(FILE_TYPE),$(eval $(call FILE_TYPE_template2,$(strip $(type)))))
+clean::
+	@$(RM) $(foreach type, $(FILE_TYPE), $($(type)))
 

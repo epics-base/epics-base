@@ -37,6 +37,12 @@ static struct {
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
+#ifdef CLOCK_REALTIME
+/* This code is not used on systems without Posix CLOCK_REALTIME such
+ * as Darwin, but the only way to detect that is from the OS headers,
+ * so the Makefile can't exclude building this file on those systems.
+ */
+
 /* Forward references */
 
 static int ClockTimeGetCurrent(epicsTimeStamp *pDest);
@@ -147,7 +153,7 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
 
     /* If a Hi-Res clock is available and works, use it */
     #ifdef CLOCK_REALTIME_HR
-        clock_gettime(CLOCK_REALTIME_HD, &clockNow) &&
+        clock_gettime(CLOCK_REALTIME_HR, &clockNow) &&
     #endif
     clock_gettime(CLOCK_REALTIME, &clockNow);
 
@@ -164,6 +170,11 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
     return 0;
 }
 
+
+#endif /* CLOCK_REALTIME */
+/* Allow the following report routine to be compiled anyway
+ * to avoid getting a build warning from ranlib.
+ */
 
 /* Status Report */
 

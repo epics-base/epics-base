@@ -24,6 +24,11 @@
 
     #define TIME_INIT ClockTime_Init(CLOCKTIME_NOSYNC)
 #else
+    /* Some posix systems like Darwin don't have CLOCK_REALTIME */
+
+    #define TIME_INIT generalTimeCurrentTpRegister("GetTimeOfDay", \
+        LAST_RESORT_PRIORITY, osdTimeGetCurrent)
+
     extern "C" {
     static int osdTimeGetCurrent (epicsTimeStamp *pDest)
     {
@@ -37,9 +42,6 @@
         return epicsTimeOK;
     }
     } // extern "C"
-
-    #define TIME_INIT generalTimeCurrentTpRegister("GetTimeOfDay", \
-        LAST_RESORT_PRIORITY, osdTimeGetCurrent)
 #endif
 
 static int timeRegister(void)

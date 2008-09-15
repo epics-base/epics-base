@@ -44,6 +44,14 @@
     } // extern "C"
 #endif
 
+#ifdef CYGWIN32
+int clock_settime(clockid_t clock, const timespec *tp)
+{
+    return -EFAULT;
+}
+#endif
+
+
 static int timeRegister(void)
 {
     TIME_INIT;

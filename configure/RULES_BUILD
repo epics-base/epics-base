@@ -33,6 +33,9 @@ include $(CONFIG)/CONFIG_ADDONS
 #---------------------------------------------------------------
 # Set PROD, TESTPROD, OBJS, and LIBRARY
 
+SCRIPTS_HOST += $(PERL_SCRIPTS)
+# PERL_SCRIPTS are installed into existing $(INSTALL_BIN) for Host systems
+
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 LIBRARY += $(LIBRARY_HOST)
 LOADABLE_LIBRARY += $(LOADABLE_LIBRARY_HOST)
@@ -126,11 +129,17 @@ buildInstall : \
 clean::
 	@echo "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
-	$(INC) *$(RES) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
+	$(INC) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
+ifdef RES
+	@$(RM) *$(RES)
+endif
 ifdef BAF
-	@$(RM) $(PROD_BAF) $(LIB_BAF) *$(BOF)
+	@$(RM) $(PROD_BAF) $(LIB_BAF)
+endif
+ifdef BOF
+	@$(RM) *$(BOF)
 endif
 
 # WIN95/NT source browser

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "epicsUnitTest.h"

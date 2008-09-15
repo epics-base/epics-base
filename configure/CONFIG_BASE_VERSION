@@ -23,13 +23,13 @@ EPICS_VERSION = 3
 EPICS_REVISION = 14
 
 # This part may contain letters, eg 0beta1
-EPICS_MODIFICATION = 9
+EPICS_MODIFICATION = 10pre1
 
 # Not included if zero
 EPICS_PATCH_LEVEL = 0
 
 # This will be -CVS or empty at an official release point
-EPICS_CVS_SNAPSHOT=-CVS
+EPICS_CVS_SNAPSHOT=
 #EPICS_CVS_SNAPSHOT=
 
 # No changes should be needed below here

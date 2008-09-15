@@ -51,10 +51,11 @@ rtems_task Init (rtems_task_argument argument);
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
 
-#warning "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-#warning "needs review"
-#warning "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-/* This should be made BSP dependent, not CPU dependent !! */
+/*
+ * This should be made BSP dependent, not CPU dependent but I know of no
+ * appropriate conditionals to use.
+ * The new general time support makes including the RTC driverr less important.
+ */
 #if !defined(__mc68040__) && !defined(__mcf5200__) && !defined(mpc7455) && !defined(__arm__)  /* don't have RTC code */
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif

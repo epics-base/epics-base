@@ -19,17 +19,21 @@
 
 BASE_3_14=YES
 
+# EPICS_VERSION must be a number >0 and <256 
 EPICS_VERSION = 3
+
+# EPICS_REVISION must be a number >=0 and <256 
 EPICS_REVISION = 14
 
-# This part may contain letters, eg 4pre1
-EPICS_MODIFICATION = 10pre
+# EPICS_MODIFICATION must be a number >=0 and <256 
+EPICS_MODIFICATION = 10
 
+# EPICS_PATCH_LEVEL must be a number  (win32 resource file requirement)
 # Not included if zero
 EPICS_PATCH_LEVEL = 0
 
 # This will be -CVS or empty at an official release point
-EPICS_CVS_SNAPSHOT=-CVS
+EPICS_CVS_SNAPSHOT=-pre1-CVS
 #EPICS_CVS_SNAPSHOT=
 
 # No changes should be needed below here

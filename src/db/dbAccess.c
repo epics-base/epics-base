@@ -338,6 +338,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	    pbuffer += dbr_units_size;
 	}
 	if( (*options) & DBR_PRECISION ) {
+	    memset(pbuffer, '\0', dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){ 
 		(*prset->get_precision)(paddr,pbuffer);

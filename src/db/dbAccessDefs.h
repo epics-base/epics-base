@@ -111,7 +111,7 @@ epicsShareExtern volatile int interruptAccept;
         long            dp;      /* number of decimal places*/\
         double          unused;  /* for alignment */\
         } precision;
-        /* precision must be long to match the pointer arguments to
+        /* precision.dp must be long to match the pointer arguments to
          * RSET->get_precision() and recGblGetPrec(), which it's
          * too late to change now.  DBRprecision must be padded to
          * maintain 8-byte alignment. */

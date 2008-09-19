@@ -167,7 +167,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         // add in the configured addresses
         //
         addAddrToChannelAccessAddressList (
-            & BCastAddrList, pParam, beaconPort );
+            & BCastAddrList, pParam, beaconPort, pParam == & EPICS_CA_ADDR_LIST );
     }
  
     removeDuplicateAddresses ( & this->beaconAddrList, & BCastAddrList, 0 );
@@ -177,7 +177,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         ellInit ( & parsed );
         ellInit ( & filtered );
         // we dont care what port they are coming from
-        addAddrToChannelAccessAddressList ( & parsed, & EPICS_CAS_IGNORE_ADDR_LIST, 0 );
+        addAddrToChannelAccessAddressList ( & parsed, & EPICS_CAS_IGNORE_ADDR_LIST, 0, false );
         removeDuplicateAddresses ( & filtered, & parsed, true );
 
         while ( ELLNODE * pRawNode  = ellGet ( & filtered ) ) {

@@ -205,7 +205,7 @@ void rsrv_online_notify_task(void *pParm)
          * add in the configured addresses
          */
         addAddrToChannelAccessAddressList (
-            &autoAddrList, pParam, port);
+            &autoAddrList, pParam, port,  pParam == &EPICS_CA_ADDR_LIST );
     }
  
     removeDuplicateAddresses ( &beaconAddrList, &autoAddrList, 0 );

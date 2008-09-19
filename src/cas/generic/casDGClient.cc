@@ -831,6 +831,7 @@ caStatus casDGClient::processMsg ()
             }
 		    status = ( this->*pHandler ) ();
 		    if ( status ) {
+                this->in.removeMsg ( this->in.bytesPresent() );
 			    break;
 		    }
 

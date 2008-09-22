@@ -3,9 +3,10 @@
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for linux-x86 host - linux-x86-debug target build with debug compiler flags
-# Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86-debug
+# Definitions for linux-x86_64 host - linux-x86_64-debug target build with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.linux-x86_64.linux-x86_64-debug
 #-------------------------------------------------------
 
 include $(CONFIG)/os/CONFIG.linux-x86_64.linux-x86_64
 
+CROSS_OPT = NO

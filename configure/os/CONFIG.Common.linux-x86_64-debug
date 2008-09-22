@@ -10,4 +10,3 @@
 # Include definitions common to all linux-x86_64  target archs
 include $(CONFIG)/os/CONFIG.Common.linux-x86_64
 
-CROSS_OPT=NO

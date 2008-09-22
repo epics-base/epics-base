@@ -1,0 +1,14 @@
+# CONFIG.Common.vxWorks-ppc604_long-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for vxWorks-ppc604_long-debug target archs
+# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-ppc604_long-debug
+#-------------------------------------------------------
+
+# Include definitions common to all vxWorks archs
+include $(CONFIG)/os/CONFIG.Common.vxWorks-ppc604_long
+
+CROSS_OPT = NO
+

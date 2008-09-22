@@ -1,0 +1,19 @@
+# CONFIG.solaris-sparc64.solaris-sparc64-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-sparc64 host - solaris-sparc64-debug target build with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.solaris-sparc64.solaris-sparc64-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.Common.solaris-sparc64
+include $(CONFIG)/os/CONFIG.solaris-sparc64.solaris-sparc64
+
+#BUILD_CLASS = HOST
+#HOST_OPT = NO
+
+GNU = NO
+
+# Removes -O optimization and adds -g compile option
+CROSS_OPT=NO

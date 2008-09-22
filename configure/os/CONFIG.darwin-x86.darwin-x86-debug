@@ -1,0 +1,17 @@
+# CONFIG.darwin-x86.darwin-x86-debug
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for darwin-x86 host - darwin-x86-debug target build with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.darwin-x86.darwin-x86-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.Common.darwin-x86
+include $(CONFIG)/os/CONFIG.darwin-x86.darwin-x86
+
+# This will cause build failure when used with make -j option
+#BUILD_CLASS = HOST
+#HOST_OPT = NO
+
+CROSS_OPT=NO

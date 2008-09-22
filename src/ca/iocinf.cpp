@@ -240,7 +240,7 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
             }
         }
     }
-    addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port, FALSE );
+    addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_ADDR_LIST, port, false );
 
     removeDuplicateAddresses ( pList, &tmpList, 0 );
 }

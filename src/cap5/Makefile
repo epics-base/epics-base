@@ -17,18 +17,18 @@ ifneq ($(findstring win32,$(T_A)),)
   BAT = .bat
 endif
 
-EXPAND += cainfo.pl@ caput.pl@ caget.pl@ camonitor.pl@ CA.pm@
+ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
+  # Doesn't build on WIN32
+  LOADABLE_LIBRARY_HOST = Cap5
 
-PERL_SCRIPTS += cainfo.pl
-PERL_SCRIPTS += caput.pl
-PERL_SCRIPTS += caget.pl
-PERL_SCRIPTS += camonitor.pl
+  EXPAND += cainfo.pl@ caput.pl@ caget.pl@ camonitor.pl@ CA.pm@
 
-PERL_MODULES += CA.pm
+  PERL_SCRIPTS += cainfo.pl
+  PERL_SCRIPTS += caput.pl
+  PERL_SCRIPTS += caget.pl
+  PERL_SCRIPTS += camonitor.pl
 
-ifeq ($(findstring win32,$(T_A)),)
-# Doesn't build on WIN32 yet...
-LOADABLE_LIBRARY_HOST = Cap5
+  PERL_MODULES += CA.pm
 endif
 
 Cap5_SRCS = Cap5.xs
@@ -46,8 +46,8 @@ include $(TOP)/configure/RULES
 
 ifdef T_A
   PERL5_DIR = $(dir $(shell $(PERL) ../perlConfig.pl perl5))
-  XSUBPP = $(PERL) $(PERL5_DIR)xsubpp$(BAT)
-  PODCHECKER = $(PERL) $(PERL5_DIR)podchecker$(BAT)
+  XSUBPP = $(PERL5_DIR)xsubpp$(BAT)
+  PODCHECKER = $(PERL5_DIR)podchecker$(BAT)
   TYPEMAP = $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils/typemap
 
   %.c: ../%.xs

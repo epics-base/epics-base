@@ -90,7 +90,7 @@ cas_DEPEND_DIRS = ca gdd
 DIRS += excas
 excas_DEPEND_DIRS = cas as registry
 
-#DIRS += cap5
+DIRS += cap5
 cap5_DEPEND_DIRS = ca dbStatic
 
 

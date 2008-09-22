@@ -33,6 +33,9 @@ hostNameCache::hostNameCache (
     const osiSockAddr & addr, ipAddrToAsciiEngine & engine ) :
     dnsTransaction ( engine.createTransaction() ), nameLength ( 0 )
 {
+    sockAddrToDottedIP ( &addr.sa, hostNameBuf, sizeof ( hostNameBuf ) );
+    hostNameBuf[ sizeof ( hostNameBuf ) - 1 ] = '\0';
+    nameLength = strlen ( hostNameBuf );
     this->dnsTransaction.ipAddrToAscii ( addr, *this );
 }
 
@@ -49,11 +52,14 @@ hostNameCache::~hostNameCache ()
 void hostNameCache::transactionComplete ( const char * pHostNameIn )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    if ( this->nameLength == 0u ) {
-        strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) );
-        this->hostNameBuf[ sizeof ( this->hostNameBuf ) - 1 ] = '\0';
-        this->nameLength = strlen ( this->hostNameBuf );
-    }
+    // a few legacy clients have a direct pointer to this buffer so we
+    // set the entrire string to nill terminators before we start copying
+    // in the name (this reduces the chance that another thread will see
+    // garbage characters).
+    strncpy ( this->hostNameBuf, "", sizeof ( this->hostNameBuf ) );
+    strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) - 1 );
+    this->hostNameBuf[ sizeof ( this->hostNameBuf ) - 1 ] = '\0';
+    this->nameLength = strlen ( this->hostNameBuf );
 }
 
 unsigned hostNameCache::getName ( 

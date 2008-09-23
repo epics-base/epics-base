@@ -9,15 +9,10 @@
 # $Id$
 #
 
-BEGIN {
-    # Do not copy this BEGIN code for other tools,
-    # it's only needed so expandVars can bootstrap itself.
-    our $libperl = '@TOP@/lib/perl';
-    $libperl = '..' if ($libperl =~ m/^[@]TOP[@]/);
-}
-use lib $libperl;
-
 use strict;
+
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
 
 use EPICS::Getopts;
 use EPICS::Path;

@@ -11,13 +11,6 @@ include $(TOP)/configure/CONFIG
 # Bootstrap resolution: tools not installed yet
 TOOLS = $(TOP)/src/tools
 
-# Bootstrap resolution: expandVars.pl needs to be run on itself!
-EXPAND_TOOL = $(PERL) $(TOOLS)/expandVars.pl@
-
-EXPAND += convertRelease.pl@
-EXPAND += expandVars.pl@
-EXPAND += fullPathName.pl@
-
 PERL_MODULES += EPICS/Copy.pm
 PERL_MODULES += EPICS/Path.pm
 PERL_MODULES += EPICS/Release.pm

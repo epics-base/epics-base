@@ -1,98 +1,70 @@
 #!/usr/bin/perl
 
 use strict;
-use lib '@TOP@/lib/perl';
+
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use Getopt::Std;
 use CA;
 
-our ($opt_0, $opt_c, $opt_e, $opt_f, $opt_g, $opt_h, $opt_l,
-    $opt_n, $opt_s, $opt_t);
+our ($opt_0, $opt_a, $opt_C, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_n);
+our ($opt_s, $opt_t);
 our $opt_w = 1;
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
-HELP_MESSAGE() unless getopts('achlnstw:');
+HELP_MESSAGE() unless getopts('0:aC:d:e:f:g:hnstw:');
 HELP_MESSAGE() if $opt_h;
 
-die "No pv name specified. ('caput -h' gives help.)\n"
-    unless @ARGV;
-my $pv = shift;
+$opt_d = "DBR_$opt_d" if $opt_d && $opt_d !~ m/^DBR_/;
 
-die "No value specified. ('caput -h' gives help.)\n"
+die "No pv name specified. ('caget -h' gives help.)\n"
     unless @ARGV;
 
-my $chan = CA->new($pv);
-eval {
-    CA->pend_io($opt_w);
-};
+my @chans = map { CA->new($_); } @ARGV;
+
+eval { CA->pend_io($opt_w); };
 if ($@) {
     if ($@ =~ m/^ECA_TIMEOUT/) {
-        print "Channel connect timed out: '$pv' not found.\n";
-        exit 2;
+        my $err = (@chans > 1) ? 'some PV(s)' : "'" . $chans[0]->name . "'";
+        print "Channel connect timed out: $err not found.\n";
+        @chans = grep { $_->is_connected } @chans;
     } else {
         die $@;
     }
 }
 
-die "Write access denied for '$pv'.\n" unless $chan->write_access;
+my %rtype;
 
-my $n = $chan->element_count();
-die "Too many values given, '$pv' limit is $n\n"
-    unless $n >= @ARGV;
-
-my $type = $chan->field_type;
-$type = 'DBR_STRING'
-    if $opt_s && $type =~ m/ ^DBR_ENUM$ | ^DBR_FLOAT$ | ^DBR_DOUBLE$ /x;
-$type = 'DBR_LONG'
-    if $opt_n && $type eq 'DBR_ENUM';
-$type =~ s/^DBR_/DBR_TIME_/
-    if $opt_l;
-
-my @values;
-if ($type !~ m/ ^DBR_STRING$ | ^DBR_ENUM$ /x) {
-    # Make @ARGV strings numeric
-    @values = map { +$_; } @ARGV;
-} else {
-    # Use strings
-    @values = @ARGV;
-}
-
-my $done = 0;
-if ($opt_t) {
-    do_put();
-} else {
-    $chan->get_callback(\&old_callback, $type);
-}
-CA->pend_event(0.1) until $done;
-
-
-sub old_callback {
-    my ($chan, $status, $data) = @_;
-    die $status if $status;
-    display($chan, $type, $data, 'Old');
-    do_put();
-}
-
-sub do_put {
-    if ($opt_c) {
-        $chan->put_callback(\&put_callback, @values);
+map {
+    my $type;
+    if ($opt_d) {
+        $type = $opt_d;
     } else {
-        $chan->put(@values);
-        $chan->get_callback(\&new_callback, $type);
+        $type = $_->field_type;
+        $type = 'DBR_STRING'
+            if $opt_s && $type =~ m/ ^DBR_FLOAT$ | ^DBR_DOUBLE$ /x;
+        $type = 'DBR_LONG'
+            if $opt_n && $type eq 'DBR_ENUM';
+        $type =~ s/^DBR_/DBR_TIME_/
+            if $opt_a;
     }
-}
+    $rtype{$_} = $type;
+    my $count = $_->element_count;
+    $count = +$opt_C if $opt_C && $opt_C <= $count;
+    $_->get_callback(\&get_callback, $type, $count);
+} @chans;
 
-sub put_callback {
-    my ($chan, $status) = @_;
-    die $status if $status;
-    $chan->get_callback(\&new_callback, $type);
-}
+my $incomplete = @chans;
+CA->pend_event(0.1) while $incomplete;
 
-sub new_callback {
+
+sub get_callback {
     my ($chan, $status, $data) = @_;
     die $status if $status;
-    display($chan, $type, $data, 'New');
-    $done = 1;
+    display($chan, $rtype{$chan}, $data);
+    $incomplete--;
 }
 
 sub format_number {
@@ -115,14 +87,15 @@ sub format_number {
 }
 
 sub display {
-    my ($chan, $type, $data, $prefix) = @_;
+    my ($chan, $type, $data) = @_;
     if (ref $data eq 'ARRAY') {
-        display($chan, $type, join(' ', @{$data}), $prefix);
+        display($chan, $type, join(' ', scalar @{$data}, @{$data}));
     } elsif (ref $data eq 'HASH') {
         $type = $data->{TYPE};  # Can differ from request
         my $value = $data->{value};
         if (ref $value eq 'ARRAY') {
-            $value = join(' ', map { format_number($_, $type); } @{$value});
+            $value = join(' ', $data->{COUNT},
+                map { format_number($_, $type); } @{$value});
         } else {
             $value = format_number($value, $type);
         }
@@ -141,25 +114,32 @@ sub display {
         if ($opt_t) {
             print "$value\n";
         } else {
-            printf "$prefix : %-30s %s\n", $chan->name, $value;
+            printf "%-30s %s\n", $chan->name, $value;
         }
     }
 }
 
 sub HELP_MESSAGE {
-    print STDERR "\nUsage: caput [options] <PV name> <PV value> ...\n",
+    print STDERR "\nUsage: caget [options] <PV name> ...\n",
         "\n",
         "  -h: Help: Print this message\n",
         "Channel Access options:\n",
         "  -w <sec>:  Wait time, specifies longer CA timeout, default is $opt_w second\n",
-        "  -c: Use put_callback to wait for completion\n",
         "Format options:\n",
-        "  -t: Terse mode - print only sucessfully written value, without name\n",
-        "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n",
+        "  -t: Terse mode - print only value, without name\n",
+        "  -a: Wide mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n",
+        "  -d <type>: Request specific dbr type from one of the following:\n",
+        "        DBR_STRING       DBR_LONG       DBR_DOUBLE\n",
+        "        DBR_STS_STRING   DBR_STS_LONG   DBR_STS_DOUBLE\n",
+        "        DBR_TIME_STRING  DBR_TIME_LONG  DBR_TIME_DOUBLE\n",
+        "        DBR_GR_STRING    DBR_GR_LONG    DBR_GR_DOUBLE    DBR_GR_ENUM\n",
+        "        DBR_CTRL_STRING  DBR_CTRL_LONG  DBR_CTRL_DOUBLE  DBR_CTRL_ENUM\n",
+        "        DBR_CLASS_NAME   DBR_STSACK_STRING\n",
+        "Arrays: Value format: print number of values, then list of values\n",
+        "  Default:    Print all values\n",
+        "  -C <count>: Print first <count> elements of an array\n",
         "Enum format:\n",
-        "  Default: Auto - try value as ENUM string, then as index number\n",
-        "  -n: Force interpretation of values as numbers\n",
-        "  -s: Force interpretation of values as strings\n",
+        "  -n: Print DBF_ENUM value as number (default is enum string)\n",
         "Floating point type format:\n",
         "  Default: Use %g format\n",
         "  -e <nr>: Use %e format, with a precision of <nr> digits\n",
@@ -171,10 +151,6 @@ sub HELP_MESSAGE {
         "  -0x: Print as hex number\n",
         "  -0o: Print as octal number\n",
         "  -0b: Print as binary number\n",
-        "\n",
-        "Examples:\n",
-        "    caput my_channel 1.2\n",
-        "    caput my_waveform 1.2 2.4 3.6 4.8 6.0\n",
         "\n";
     exit 1;
 }

@@ -29,7 +29,8 @@ our @ISA = qw(DynaLoader);
 require DynaLoader;
 
 # Add our lib/<arch> directory to the library search path
-push @DynaLoader::dl_library_path, '@TOP@/lib/'.$ENV{EPICS_HOST_ARCH};
+use FindBin qw($Bin);
+push @DynaLoader::dl_library_path, "$Bin/../../lib/$ENV{EPICS_HOST_ARCH}";
 
 bootstrap Cap5 $VERSION;
 

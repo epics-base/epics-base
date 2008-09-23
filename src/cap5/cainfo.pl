@@ -1,7 +1,10 @@
 #!/usr/bin/perl
 
 use strict;
-use lib '@TOP@/lib/perl';
+
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use Getopt::Std;
 use CA;
 

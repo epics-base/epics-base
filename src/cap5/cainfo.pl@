@@ -13,7 +13,7 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 HELP_MESSAGE() unless getopts('hw:');
 HELP_MESSAGE() if $opt_h;
 
-die "No pv name specified. ('cainfo -h' for help.)\n"
+die "No pv name specified. ('cainfo -h' gives help.)\n"
     unless @ARGV;
 
 my @chans = map { CA->new($_); } @ARGV;

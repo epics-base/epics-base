@@ -16,7 +16,7 @@ HELP_MESSAGE() if $opt_h;
 
 $opt_d = "DBR_$opt_d" if $opt_d && $opt_d !~ m/^DBR_/;
 
-die "No pv name specified. ('caget -h' for help.)\n"
+die "No pv name specified. ('caget -h' gives help.)\n"
     unless @ARGV;
 
 my @chans = map { CA->new($_); } @ARGV;

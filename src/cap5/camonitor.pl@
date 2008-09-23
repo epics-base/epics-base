@@ -14,7 +14,7 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 HELP_MESSAGE() unless getopts('0:C:e:f:g:hm:nsw:');
 HELP_MESSAGE() if $opt_h;
 
-die "No pv name specified. ('camonitor -h' for help.)\n"
+die "No pv name specified. ('camonitor -h' gives help.)\n"
     unless @ARGV;
 
 my %monitors;
@@ -107,11 +107,11 @@ sub HELP_MESSAGE {
         "  -w <sec>:  Wait time, specifies longer CA timeout, default is $opt_w second\n",
         "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n",
         "             'v' (value), 'a' (alarm), 'l' (log). Default: '$opt_m'\n",
-        "Timestamps:\n",
-        "  Default: Print absolute timestamps (as reported by CA)\n",
-        "  -r: Relative timestamps (time elapsed since start of program)\n",
-        "  -i: Incremental timestamps (time elapsed since last update)\n",
-        "  -I: Incremental timestamps (time elapsed since last update for this channel)\n",
+#        "Timestamps:\n",
+#        "  Default: Print absolute timestamps (as reported by CA)\n",
+#        "  -r: Relative timestamps (time elapsed since start of program)\n",
+#        "  -i: Incremental timestamps (time elapsed since last update)\n",
+#        "  -I: Incremental timestamps (time elapsed since last update for this channel)\n",
         "Enum format:\n",
         "  -n: Print DBF_ENUM values as number (default are enum string values)\n",
         "Arrays: Value format: print number of values, then list of values\n",

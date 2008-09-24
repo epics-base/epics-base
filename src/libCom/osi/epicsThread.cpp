@@ -141,7 +141,7 @@ bool epicsThread::exitWait ( const double delay ) throw ()
         double exitWaitElapsed = 0.0;
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->cancel = true;
-        while ( ! this->terminated && exitWaitElapsed >= delay ) {
+        while ( ! this->terminated && exitWaitElapsed < delay ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->event.signal ();
             this->exitEvent.wait ( delay - exitWaitElapsed );

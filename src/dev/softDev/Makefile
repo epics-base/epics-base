@@ -48,6 +48,7 @@ LIBSRCS += devMbboDirectSoftCallback.c
 LIBSRCS += devSoSoftCallback.c
 
 LIBSRCS += devTimestamp.c
+LIBSRCS += devSoStdio.c
 
 LIBRARY_IOC += softDevIoc
 softDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com

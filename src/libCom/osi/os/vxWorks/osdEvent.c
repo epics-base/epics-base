@@ -18,21 +18,21 @@
 #include <sysLib.h>
 #include <limits.h>
 
-/* The following not defined in an vxWorks header */
+#include "epicsEvent.h"
+
+/* The following not defined in any vxWorks header */
 int sysClkRateGet(void);
 
-#include "epicsEvent.h"
-
 epicsEventId epicsEventCreate(epicsEventInitialState initialState)
 {
-  return((epicsEventId)semBCreate(
-    SEM_Q_FIFO,((initialState==epicsEventEmpty) ? SEM_EMPTY : SEM_FULL)));
+    return (epicsEventId) semBCreate(SEM_Q_FIFO,
+        (initialState == epicsEventEmpty) ? SEM_EMPTY : SEM_FULL);
 }
 
 epicsEventId epicsEventMustCreate(epicsEventInitialState initialState)
 {
-    epicsEventId id = epicsEventCreate (initialState);
-    assert (id);
+    epicsEventId id = epicsEventCreate(initialState);
+    assert(id);
     return id;
 }
 
@@ -41,8 +41,7 @@ void epicsEventDestroy(epicsEventId id)
     semDelete((SEM_ID)id);
 }
 
-epicsEventWaitStatus epicsEventWaitWithTimeout(
-    epicsEventId id, double timeOut)
+epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
 {
     int rate = sysClkRateGet();
     int status;
@@ -54,24 +53,30 @@ epicsEventWaitStatus epicsEventWaitWithTimeout(
         ticks = WAIT_FOREVER;
     } else {
         ticks = timeOut * rate;
-        if (ticks<=0) ticks = 1;
+        if (ticks <= 0)
+            ticks = 1;
     }
-    status = semTake((SEM_ID)id,ticks);
-    if(status==OK) return(epicsEventWaitOK);
-    if(errno==S_objLib_OBJ_TIMEOUT) return(epicsEventWaitTimeout);
-    return(epicsEventWaitError);
+    status = semTake((SEM_ID)id, ticks);
+    if (status == OK)
+        return epicsEventWaitOK;
+    if (errno == S_objLib_OBJ_TIMEOUT ||
+        (errno == S_objLib_OBJ_UNAVAILABLE && ticks == 0))
+        return epicsEventWaitTimeout;
+    return epicsEventWaitError;
 }
 
 epicsEventWaitStatus epicsEventTryWait(epicsEventId id)
 {
-    int status;
-    status = semTake((SEM_ID)id,NO_WAIT);
-    if(status==OK) return(epicsEventWaitOK);
-    if(errno==S_objLib_OBJ_UNAVAILABLE) return(epicsEventWaitTimeout);
-    return(epicsEventWaitError);
+    int status = semTake((SEM_ID)id, NO_WAIT);
+
+    if (status == OK)
+        return epicsEventWaitOK;
+    if (errno == S_objLib_OBJ_UNAVAILABLE)
+        return epicsEventWaitTimeout;
+    return epicsEventWaitError;
 }
 
-void epicsEventShow(epicsEventId id,unsigned int level)
+void epicsEventShow(epicsEventId id, unsigned int level)
 {
     semShow((SEM_ID)id,level);
 }

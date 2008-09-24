@@ -14,6 +14,7 @@
 
 #include <exception>
 #include <typeinfo>
+#include <algorithm>
 
 #include <stdio.h>
 #include <stddef.h>
@@ -126,28 +127,40 @@ void epicsThread::exitWait () throw ()
 
 bool epicsThread::exitWait ( const double delay ) throw ()
 {
-    // if destructor is running in managed thread then of 
-    // course we will not wait for the managed thread to 
-    // exit
-    if ( this->isCurrentThread() ) {
-        if ( this->pWaitReleaseFlag ) {
-            *this->pWaitReleaseFlag = true;
+    try {
+        // if destructor is running in managed thread then of 
+        // course we will not wait for the managed thread to 
+        // exit
+        if ( this->isCurrentThread() ) {
+            if ( this->pWaitReleaseFlag ) {
+                *this->pWaitReleaseFlag = true;
+            }
+            return true;
         }
-        return true;
+        epicsTime exitWaitBegin = epicsTime::getCurrent ();
+        double exitWaitElapsed = 0.0;
+        epicsGuard < epicsMutex > guard ( this->mutex );
+        this->cancel = true;
+        while ( ! this->terminated && exitWaitElapsed >= delay ) {
+            epicsGuardRelease < epicsMutex > unguard ( guard );
+            this->event.signal ();
+            this->exitEvent.wait ( delay - exitWaitElapsed );
+            epicsTime current = epicsTime::getCurrent ();
+            exitWaitElapsed = current - exitWaitBegin;
+        }
     }
-    epicsTime exitWaitBegin = epicsTime::getCurrent ();
-    double exitWaitElapsed = 0.0;
-    epicsGuard < epicsMutex > guard ( this->mutex );
-    this->cancel = true;
-    while ( ! this->terminated ) {
-        epicsGuardRelease < epicsMutex > unguard ( guard );
-        this->event.signal ();
-        this->exitEvent.wait ( delay - exitWaitElapsed );
-        epicsTime current = epicsTime::getCurrent ();
-        exitWaitElapsed = current - exitWaitBegin;
-        if ( exitWaitElapsed >= delay ) {
-            break;
-        }
+    catch ( std :: exception & except ) {
+        errlogPrintf ( 
+            "epicsThread::exitWait(): Unexpected exception "
+            " \"%s\"\n", 
+            except.what () );
+        epicsThreadSleep ( std :: min ( delay, 5.0 ) );
+    }
+    catch ( ... ) {
+        errlogPrintf ( 
+            "Non-standard unexpected exception in "
+            "epicsThread::exitWait()\n" );
+        epicsThreadSleep ( std :: min ( delay, 5.0 ) );
     }
     return this->terminated;
 }

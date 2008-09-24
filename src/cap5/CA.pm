@@ -28,9 +28,10 @@ our @ISA = qw(DynaLoader);
 
 require DynaLoader;
 
-# Add our lib/<arch> directory to the library search path
-use FindBin qw($Bin);
-push @DynaLoader::dl_library_path, "$Bin/../../lib/$ENV{EPICS_HOST_ARCH}";
+# Add our lib/<arch> directory to the shared library search path
+use File::Basename;
+my $Lib = dirname(__FILE__);
+push @DynaLoader::dl_library_path, "$Lib/../$ENV{EPICS_HOST_ARCH}";
 
 bootstrap Cap5 $VERSION;
 

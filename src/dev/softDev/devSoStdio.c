@@ -50,7 +50,7 @@ static long init(int pass)
     return 0;
 }
 
-static long write(stringoutRecord *prec)
+static long write_string(stringoutRecord *prec)
 {
     if (prec->dpvt)
         fprintf((FILE *)prec->dpvt, "%s\n", prec->val);
@@ -62,6 +62,6 @@ static struct {
     dset common;
     DEVSUPFUN write;
 } devSoStdio = {
-    {5, NULL, init, NULL, NULL},  write
+    {5, NULL, init, NULL, NULL}, write_string
 };
 epicsExportAddress(dset, devSoStdio);

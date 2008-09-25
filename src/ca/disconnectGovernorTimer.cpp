@@ -50,10 +50,12 @@ void disconnectGovernorTimer::shutdown (
     epicsGuard < epicsMutex > & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
-    epicsGuardRelease < epicsMutex > unguard ( guard );
     {
-        epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
-        this->timer.cancel ();
+        epicsGuardRelease < epicsMutex > unguard ( guard );
+        {
+            epicsGuardRelease < epicsMutex > cbUnguard ( cbGuard );
+            this->timer.cancel ();
+        }
     }
     while ( nciu * pChan = this->chanList.get () ) {
         pChan->channelNode::listMember = 

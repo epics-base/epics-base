@@ -22,10 +22,10 @@
  *	johill@lanl.gov
  */
 
+#include <algorithm>
+#include <cstring>
+
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
-
-#include <string.h>
-
 #include "hostNameCache.h"
 #include "epicsGuard.h"
 
@@ -56,10 +56,11 @@ void hostNameCache::transactionComplete ( const char * pHostNameIn )
     // set the entrire string to nill terminators before we start copying
     // in the name (this reduces the chance that another thread will see
     // garbage characters).
+    size_t newNameLen = std :: min < size_t > ( 
+        strlen ( pHostNameIn ), sizeof ( this->hostNameBuf ) - 1u );
     strncpy ( this->hostNameBuf, "", sizeof ( this->hostNameBuf ) );
     strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) - 1 );
-    this->hostNameBuf[ sizeof ( this->hostNameBuf ) - 1 ] = '\0';
-    this->nameLength = strlen ( this->hostNameBuf );
+    this->nameLength = newNameLen;
 }
 
 unsigned hostNameCache::getName ( 

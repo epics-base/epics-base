@@ -73,7 +73,7 @@ DIRS += RTEMS
 RTEMS_DEPEND_DIRS = libCom
 
 DIRS += libCom/test
-libCom/test_DEPEND_DIRS = libCom RTEMS
+libCom/test_DEPEND_DIRS = ca RTEMS
 
 DIRS += db/test
 db/test_DEPEND_DIRS = db RTEMS

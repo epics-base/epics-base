@@ -56,8 +56,10 @@ void hostNameCache::transactionComplete ( const char * pHostNameIn )
     // set the entrire string to nill terminators before we start copying
     // in the name (this reduces the chance that another thread will see
     // garbage characters).
-    size_t newNameLen = std :: min < size_t > ( 
-        strlen ( pHostNameIn ), sizeof ( this->hostNameBuf ) - 1u );
+    size_t newNameLen = strlen ( pHostNameIn );
+    if ( newNameLen > sizeof ( this->hostNameBuf ) - 1u ) {
+        newNameLen = sizeof ( this->hostNameBuf ) - 1u;
+    }
     strncpy ( this->hostNameBuf, "", sizeof ( this->hostNameBuf ) );
     strncpy ( this->hostNameBuf, pHostNameIn, sizeof ( this->hostNameBuf ) - 1 );
     this->nameLength = newNameLen;

@@ -36,7 +36,7 @@ static void testEpicsSnprintf() {
     const char *svalue = "OneTwoThreeFour";
     const char *format = "int %d float %8.2e string %s";
     const char *expected = exbuffer;
-    size_t size;
+    int size;
     int rtn, rlen;
     
     sprintf(exbuffer, format, ivalue, fvalue, svalue);

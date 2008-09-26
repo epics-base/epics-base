@@ -12,25 +12,54 @@
 
 #include "dbCommon.h"
 #include "devSup.h"
+#include "errlog.h"
 #include "recGbl.h"
 #include "recSup.h"
 #include "epicsExport.h"
 
 #include "stringoutRecord.h"
 
+typedef int (*PRINTFFUNC)(const char *fmt, ...);
+
+static int stderrPrintf(const char *fmt, ...);
+
+
+static struct outStream {
+    const char *name;
+    PRINTFFUNC print;
+} outStreams[] = {
+    {"stdout", printf},
+    {"stderr", stderrPrintf},
+    {"errlog", errlogPrintf},
+    {NULL, NULL}
+};
+
+static int stderrPrintf(const char *fmt, ...) {
+    va_list pvar;
+    int retval;
+
+    va_start(pvar, fmt);
+    retval = vfprintf(stderr, fmt, pvar);
+    va_end (pvar);
+
+    return retval;
+}
+
 static long add(dbCommon *pcommon) {
     stringoutRecord *prec = (stringoutRecord *) pcommon;
+    struct outStream *pstream;
 
     if (prec->out.type != INST_IO)
         return S_dev_badOutType;
 
-    if (strcmp(prec->out.value.instio.string, "stdout") == 0) {
-        prec->dpvt = stdout;
-    } else if (strcmp(prec->out.value.instio.string, "stderr") == 0) {
-        prec->dpvt = stderr;
-    } else
-        return -1;
-    return 0;
+    for (pstream = outStreams; pstream->name; ++pstream) {
+        if (strcmp(prec->out.value.instio.string, pstream->name) == 0) {
+            prec->dpvt = pstream;
+            return 0;
+        }
+    }
+    prec->dpvt = NULL;
+    return -1;
 }
 
 static long del(dbCommon *pcommon) {
@@ -52,8 +81,9 @@ static long init(int pass)
 
 static long write_string(stringoutRecord *prec)
 {
-    if (prec->dpvt)
-        fprintf((FILE *)prec->dpvt, "%s\n", prec->val);
+    struct outStream *pstream = (struct outStream *)prec->dpvt;
+    if (pstream)
+        pstream->print("%s\n", prec->val);
     return 0;
 }
 

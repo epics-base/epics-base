@@ -12,6 +12,14 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New "stdio" stringout device support</h4>
+
+<p>A new device support has been added that allows a stringout record to output
+one-line messages to stdout, stderr or the errlog subsystem.  Use DTYP="stdio"
+and set the OUT field to one of "@stdout", "@stderr" or "@errlog" to control the
+message destination.  A newline is appended to the contents of the record's VAL
+field before printing.</p>
+
 <h4>General Time subsystem</h4>
 
 <p>The way in which EPICS gets the time has been significantly revised since

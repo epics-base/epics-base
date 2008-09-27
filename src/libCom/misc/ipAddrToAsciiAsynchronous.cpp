@@ -140,10 +140,12 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine () {}
 
 static void ipAddrToAsciiEngineShutdownRequest ( void * )
 {
-    epicsGuard < epicsMutex > guard ( * ipAddrToAsciiEnginePrivate::pGlobalMutex );
+    epicsGuard < epicsMutex > 
+        guard ( * ipAddrToAsciiEnginePrivate :: pGlobalMutex );
     ipAddrToAsciiEnginePrivate :: shutdownRequest = true;
-    if ( ipAddrToAsciiEnginePrivate::numberOfReferences == 0u ) {
+    if ( ipAddrToAsciiEnginePrivate :: numberOfReferences == 0u ) {
         delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
+        ipAddrToAsciiEnginePrivate :: pEngine = 0;
     }
 }
 
@@ -216,14 +218,13 @@ void ipAddrToAsciiEnginePrivate::release ()
         assert ( ipAddrToAsciiEnginePrivate::numberOfReferences > 0u );
         ipAddrToAsciiEnginePrivate::numberOfReferences--;
         if ( ipAddrToAsciiEnginePrivate::numberOfReferences == 0u ) {
-            delete ipAddrToAsciiEnginePrivate::pEngine;
-            ipAddrToAsciiEnginePrivate::pEngine = 0;
             deleteGlobalMutexCondDetected = 
-                ipAddrToAsciiEnginePrivate::shutdownRequest;
+                ipAddrToAsciiEnginePrivate :: shutdownRequest;
         }
     }
     if ( deleteGlobalMutexCondDetected ) {
         delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
+        ipAddrToAsciiEnginePrivate :: pEngine = 0;
     }
 }
 

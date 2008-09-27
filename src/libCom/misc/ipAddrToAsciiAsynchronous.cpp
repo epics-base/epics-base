@@ -140,10 +140,15 @@ ipAddrToAsciiEngine::~ipAddrToAsciiEngine () {}
 
 static void ipAddrToAsciiEngineShutdownRequest ( void * )
 {
-    epicsGuard < epicsMutex > 
-        guard ( * ipAddrToAsciiEnginePrivate :: pGlobalMutex );
-    ipAddrToAsciiEnginePrivate :: shutdownRequest = true;
-    if ( ipAddrToAsciiEnginePrivate :: numberOfReferences == 0u ) {
+    bool deleteGlobalMutexCondDetected = false;
+    {
+        epicsGuard < epicsMutex > 
+            guard ( * ipAddrToAsciiEnginePrivate :: pGlobalMutex );
+        ipAddrToAsciiEnginePrivate :: shutdownRequest = true;
+        deleteGlobalMutexCondDetected = 
+            ( ipAddrToAsciiEnginePrivate :: numberOfReferences == 0 );
+    }
+    if ( deleteGlobalMutexCondDetected ) {
         delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
         ipAddrToAsciiEnginePrivate :: pEngine = 0;
     }

@@ -45,10 +45,14 @@ void usage (void)
     "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n"
     "             'v' (value), 'a' (alarm), 'l' (log). Default: va\n"
     "Timestamps:\n"
-    "  Default: Print absolute timestamps (as reported by CA)\n"
-    "  -r: Relative timestamps (time elapsed since start of program)\n"
-    "  -i: Incremental timestamps (time elapsed since last update)\n"
-    "  -I: Incremental timestamps (time elapsed since last update for this channel)\n"
+    "  Default: Print absolute timestamps (as reported by CA server)\n"
+    "  -t <key>:  Specify timestamp source(s) and type, with <key> containing\n"
+    "             's' = CA server (remote) timestamps\n"
+    "             'c' = CA client (local) timestamps (shown in '()'s)\n"
+    "             'n' = No timestamps\n"
+    "             'r' = relative timestamps (time elapsed since start of program)\n"
+    "             'i' = incremental timestamps (time elapsed since last update)\n"
+    "             'I' = incremental timestamps (time elapsed since last update, by channel)\n"
     "Enum format:\n"
     "  -n: Print DBF_ENUM values as number (default are enum string values)\n"
     "Arrays: Value format: print number of requested values, then list of values\n"
@@ -204,7 +208,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhriIm:se:f:g:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhm:se:f:g:#:d:0:w:t:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -212,14 +216,25 @@ int main (int argc, char *argv[])
         case 'n':               /* Print ENUM as index numbers */
             enumAsNr=1;
             break;
-        case 'r':               /* Select relative timestamps */
-            tsType = relative;
-            break;
-        case 'i':               /* Select incremental timestamps */
-            tsType = incremental;
-            break;
-        case 'I':               /* Select incremental timestamps (by channel) */
-            tsType = incrementalByChan;
+        case 't':               /* Select timestamp source(s) and type */
+            tsSrcServer = 0;
+            tsSrcClient = 0;
+            {
+                int i = 0;
+                char c;
+                while ((c = optarg[i++]))
+                    switch (c) {
+                    case 's': tsSrcServer = 1; break;
+                    case 'c': tsSrcClient = 1; break;
+                    case 'n': break;
+                    case 'r': tsType = relative; break;
+                    case 'i': tsType = incremental; break;
+                    case 'I': tsType = incrementalByChan; break;
+                    default :
+                        fprintf(stderr, "Invalid argument '%c' "
+                                "for option '-t' - ignored.\n", c);
+                    }
+            }
             break;
         case 'w':               /* Set CA timeout value */
             if(epicsScanDouble(optarg, &caTimeout) != 1)

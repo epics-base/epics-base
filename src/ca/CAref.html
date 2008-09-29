@@ -6,10 +6,11 @@
   <title>EPICS R3.14 Channel Access Reference Manual</title>
   <style type="text/css">
   <!--
-  h3 code {
-      background-color: #ddf;
-  }
-  -->
+h3 code {
+background-color: #ddf;
+}
+-->
+
   </style>
 </head>
 
@@ -411,7 +412,8 @@ other facility is already using the default port numbers. The default Channel
 Access port numbers have been registered with IANA.</p>
 
 <table cellspacing="1" cellpadding="1" width="80%" border="1">
-  <col><tbody>
+  <col>
+  <tbody>
     <tr>
       <th>Purpose</th>
       <th>Default</th>
@@ -1330,19 +1332,18 @@ the output.</p>
     </tr>
     <tr>
       <td>Default:</td>
-      <td>Print absolute timestamps (as reported by CA)</td>
+      <td>Print absolute timestamps (as reported by CA server)</td>
     </tr>
     <tr>
-      <td>-r</td>
-      <td>Relative timestamps (time elapsed since start of program)</td>
-    </tr>
-    <tr>
-      <td>-i</td>
-      <td>Incremental timestamps (time elapsed since last update)</td>
-    </tr>
-    <tr>
-      <td>-I</td>
-      <td>Incremental timestamps (time elapsed since last update for this
+      <td>-t &lt;key&gt;</td>
+      <td>Specify timestamp source(s) and type, with &lt;key&gt;
+        containing<br>
+        's' = CA server (remote) timestamps<br>
+        'c' = CA client (local) timestamps (shown in '()'s)<br>
+        'n' = no timestamps<br>
+        'r' = relative timestamps (time elapsed since start of program)<br>
+        'i' = incremental timestamps (time elapsed since last update)<br>
+        'I' = incremental timestamps (time elapsed since last update, by
         channel)</td>
     </tr>
     <tr>

@@ -28,13 +28,17 @@
 
 #include "tool_lib.h"
 
-/* Time stamps for program start, previous value (used for relative resp.
- * incremental times with monitors) */
-static epicsTimeStamp tsStart, tsPrevious;
+/* Time stamps for program start, first incoming monitor,
+   previous value (client and server stamp):
+   used for relative resp. incremental timestamps with monitors */
+static epicsTimeStamp tsStart, tsFirst, tsPreviousC, tsPreviousS;
 
-static int tsInit = 0;               /* Flag: Timestamps init'd */
+static int tsInitS = 0;              /* Flag: Server timestamps init'd */
+static int tsInitC = 0;              /* Flag: Client timestamps init'd */
 
-TimeT tsType = absolute;             /* Timestamp type flag (-riI options) */
+TimeT tsType = absolute;             /* Timestamp type flag (-t option) */
+int tsSrcServer = 1;                 /* Timestamp source flag (-t option) */
+int tsSrcClient = 0;                 /* Timestamp source flag (-t option) */
 IntFormatT outType = dec;            /* For -0.. output format option */
 
 char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) */
@@ -366,79 +370,90 @@ char *dbr2str (const void *value, unsigned type)
  *
  **************************************************************************-*/
  
-#define PRN_TIME_VAL_STS(TYPE,TYPE_ENUM)                                        \
-    printAbs = 0;                                                               \
-                                                                                \
-    switch (tsType) {                                                           \
-    case relative:                                                              \
-        ptsRef = &tsStart;                                                      \
-        break;                                                                  \
-    case incremental:                                                           \
-        ptsRef = &tsPrevious;                                                   \
-        break;                                                                  \
-    case incrementalByChan:                                                     \
-        ptsRef = &pv->tsPrevious;                                               \
-        break;                                                                  \
-    default :                                                                   \
-        printAbs = 1;                                                           \
-    }                                                                           \
-                                                                                \
-    if (!printAbs) {                                                            \
-        if (pv->firstStampPrinted)                                              \
-        {                                                                       \
-            printf("%10.4fs ", epicsTimeDiffInSeconds(                          \
-                       &(((struct TYPE *)value)->stamp), ptsRef) );             \
-        } else {                    /* First stamp is always absolute */        \
-            printAbs = 1;                                                       \
-            pv->firstStampPrinted = 1;                                          \
-        }                                                                       \
-    }                                                                           \
-                                                                                \
-    if (tsType == incrementalByChan)                                            \
-        pv->tsPrevious = ((struct TYPE *)value)->stamp;                         \
-                                                                                \
-    if (printAbs) {                                                             \
-        epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr,               \
-                            &(((struct TYPE *)value)->stamp));                  \
-        printf("%s ", timeText);                                                \
-    }                                                                           \
-                                                                                \
-    tsPrevious = ((struct TYPE *)value)->stamp;                                 \
-                                                                                \
-                             /* Print count if array */                         \
-    if ( nElems > 1 ) printf("%lu ", nElems);                                   \
-                             /* Print Values */                                 \
-    for (i=0; i<nElems; ++i) {                                                  \
-        printf ("%s ", val2str(value, TYPE_ENUM, i));                           \
-    }                                                                           \
-                             /* Print Status, Severity - if not NO_ALARM */     \
-    if ( ((struct TYPE *)value)->status || ((struct TYPE *)value)->severity )   \
-    {                                                                           \
-        printf("%s %s\n",                                                       \
-               stat_to_str(((struct TYPE *)value)->status),                     \
-               sevr_to_str(((struct TYPE *)value)->severity));                  \
-    } else {                                                                    \
-        printf("\n");                                                           \
+#define PRN_TIME_VAL_STS(TYPE,TYPE_ENUM)                                \
+    printAbs = !pv->firstStampPrinted;                                  \
+                                                                        \
+    ptsNewS = &((struct TYPE *)value)->stamp;                           \
+    ptsNewC = &tsNow;                                                   \
+                                                                        \
+    switch (tsType) {                                                   \
+    case relative:                                                      \
+        ptsRefC = &tsStart;                                             \
+        ptsRefS = &tsFirst;                                             \
+        break;                                                          \
+    case incremental:                                                   \
+        ptsRefC = &tsPreviousC;                                         \
+        ptsRefS = &tsPreviousS;                                         \
+        break;                                                          \
+    case incrementalByChan:                                             \
+        ptsRefC = &pv->tsPreviousC;                                     \
+        ptsRefS = &pv->tsPreviousS;                                     \
+        break;                                                          \
+    default :                                                           \
+        printAbs = 1;                                                   \
+    }                                                                   \
+                                                                        \
+    if (printAbs) {                                                     \
+        if (tsSrcServer) {                                              \
+            epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, ptsNewS); \
+            printf("%s ", timeText);                                    \
+        }                                                               \
+        if (tsSrcClient) {                                              \
+            epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, ptsNewC); \
+            printf("(%s) ", timeText);                                  \
+        }                                                               \
+        pv->firstStampPrinted = 1;                                      \
+    } else {                                                            \
+        if (tsSrcServer) {                                              \
+            printf("              %+12.6f ", epicsTimeDiffInSeconds(ptsNewS, ptsRefS) ); \
+        }                                                               \
+        if (tsSrcClient) {                                              \
+            printf("              (%+12.6f) ", epicsTimeDiffInSeconds(ptsNewC, ptsRefC) ); \
+        }                                                               \
+    }                                                                   \
+                                                                        \
+    if (tsType == incrementalByChan) {                                  \
+        pv->tsPreviousC = *ptsNewC;                                     \
+        pv->tsPreviousS = *ptsNewS;                                     \
+    }                                                                   \
+                                                                        \
+    tsPreviousC = *ptsNewC;                                             \
+    tsPreviousS = *ptsNewS;                                             \
+                                                                        \
+                             /* Print count if array */                 \
+    if ( nElems > 1 ) printf("%lu ", nElems);                           \
+                             /* Print Values */                         \
+    for (i=0; i<nElems; ++i) {                                          \
+        printf ("%s ", val2str(value, TYPE_ENUM, i));                   \
+    }                                                                   \
+                             /* Print Status, Severity - if not NO_ALARM */ \
+    if ( ((struct TYPE *)value)->status || ((struct TYPE *)value)->severity ) \
+    {                                                                   \
+        printf("%s %s\n",                                               \
+               stat_to_str(((struct TYPE *)value)->status),             \
+               sevr_to_str(((struct TYPE *)value)->severity));          \
+    } else {                                                            \
+        printf("\n");                                                   \
     }
 
 
 void print_time_val_sts (pv* pv, unsigned long nElems)
 {
-    char timeText[TIMETEXTLEN];
+    char timeText[2*TIMETEXTLEN+2];
     int i, printAbs;
     void* value = pv->value;
-    epicsTimeStamp *ptsRef = &tsStart;
+    epicsTimeStamp *ptsRefC, *ptsRefS;  /* Reference timestamps (client, server) */
+    epicsTimeStamp *ptsNewC, *ptsNewS;  /* Update timestamps (client, server) */
     epicsTimeStamp tsNow;
-
-    if (!tsInit)                /* Initialize start timestamp */
-    {
-        epicsTimeGetCurrent(&tsStart);
-        tsPrevious = tsStart;
-        tsInit = 1;
-    }
 
     epicsTimeGetCurrent(&tsNow);
     epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, &tsNow);
+
+    if (!tsInitS)
+    {
+        tsFirst = tsNow;
+        tsInitS = 1;
+    }
 
     printf("%-30s ", pv->name);
     if (!pv->onceConnected)
@@ -502,6 +517,12 @@ int create_pvs (pv* pvs, int nPvs, caCh *pCB)
     int n;
     int result;
     int returncode = 0;
+
+    if (!tsInitC)                /* Initialize start timestamp */
+    {
+        epicsTimeGetCurrent(&tsStart);
+        tsInitC = 1;
+    }
                                  /* Issue channel connections */
     for (n = 0; n < nPvs; n++) {
         result = ca_create_channel (pvs[n].name,

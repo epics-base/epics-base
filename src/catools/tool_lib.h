@@ -65,13 +65,16 @@ typedef struct
     unsigned long reqElems;
     int status;
     void* value;
-    epicsTimeStamp tsPrevious;
+    epicsTimeStamp tsPreviousC;
+    epicsTimeStamp tsPreviousS;
     char firstStampPrinted;
     char onceConnected;
 } pv;
 
 
-extern TimeT tsType;        /* Timestamp type flag (-r -i -I options) */
+extern TimeT tsType;        /* Timestamp type flag (-t option) */
+extern int tsSrcServer;     /* Timestamp source flag (-t option) */
+extern int tsSrcClient;     /* Timestamp source flag (-t option) */
 extern IntFormatT outType;  /* Flag used for -0.. output format option */
 extern int enumAsNr;        /* Used for -n option (get DBF_ENUM as number) */
 extern double caTimeout;    /* Wait time default (see -w option) */

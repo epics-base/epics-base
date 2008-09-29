@@ -105,6 +105,10 @@ CONFORM_CFLAGS_STRICT =
 CONFORM_CXXFLAGS_STRICT =
 
 #--------------------------------------------------
+# Override the usual RTEMS verbosity from ar
+ARFLAGS = rc
+
+#--------------------------------------------------
 # Command-line input support
 LDLIBS_LIBTECLA = -ltecla_r -lncurses
 LDLIBS_READLINE = -lreadline -lncurses

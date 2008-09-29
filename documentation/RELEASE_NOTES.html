@@ -12,13 +12,25 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>camonitor timestamp support</h4>
+
+<p>The <tt>camonitor</tt> program now supports the ability to display both
+server- and client-side timestamps, simultaneously if requested. The old
+command-line options <tt>-r</tt> <tt>-i</tt> and <tt>-I</tt> that controlled the
+timestamp display have been replaced with a new <tt>-t</tt> option that takes
+additional argument letters to control which timestamp sources and output format
+should be used.</p>
+
+<p>See the Command Line Tools section of the Channel Access reference manual or
+run <tt>camonitor -h</tt> for a summary of the options.</p>
+
 <h4>New "stdio" stringout device support</h4>
 
 <p>A new device support has been added that allows a stringout record to output
 one-line messages to stdout, stderr or the errlog subsystem.  Use DTYP="stdio"
 and set the OUT field to one of "@stdout", "@stderr" or "@errlog" to control the
 message destination.  A newline is appended to the contents of the record's VAL
-field before printing.</p>
+field when printing.</p>
 
 <h4>General Time subsystem</h4>
 

@@ -49,7 +49,7 @@ void usage (void)
     "  -t <key>:  Specify timestamp source(s) and type, with <key> containing\n"
     "             's' = CA server (remote) timestamps\n"
     "             'c' = CA client (local) timestamps (shown in '()'s)\n"
-    "             'n' = No timestamps\n"
+    "             'n' = no timestamps\n"
     "             'r' = relative timestamps (time elapsed since start of program)\n"
     "             'i' = incremental timestamps (time elapsed since last update)\n"
     "             'I' = incremental timestamps (time elapsed since last update, by channel)\n"

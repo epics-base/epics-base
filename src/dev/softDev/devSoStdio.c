@@ -22,6 +22,7 @@
 typedef int (*PRINTFFUNC)(const char *fmt, ...);
 
 static int stderrPrintf(const char *fmt, ...);
+static int logPrintf(const char *fmt, ...);
 
 
 static struct outStream {
@@ -30,7 +31,7 @@ static struct outStream {
 } outStreams[] = {
     {"stdout", printf},
     {"stderr", stderrPrintf},
-    {"errlog", errlogPrintf},
+    {"errlog", logPrintf},
     {NULL, NULL}
 };
 
@@ -40,6 +41,17 @@ static int stderrPrintf(const char *fmt, ...) {
 
     va_start(pvar, fmt);
     retval = vfprintf(stderr, fmt, pvar);
+    va_end (pvar);
+
+    return retval;
+}
+
+static int logPrintf(const char *fmt, ...) {
+    va_list pvar;
+    int retval;
+
+    va_start(pvar, fmt);
+    retval = errlogVprintf(fmt, pvar);
     va_end (pvar);
 
     return retval;

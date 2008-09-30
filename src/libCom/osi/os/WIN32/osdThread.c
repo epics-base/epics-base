@@ -793,13 +793,17 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep ( double seconds )
  * epicsThreadSleepQuantum ()
  */
 double epicsShareAPI epicsThreadSleepQuantum ()
-{
+{ 
     /*
      * Its worth noting here that the sleep quantum on windows can
      * mysteriously get better. I eventually tracked this down to 
      * codes that call timeBeginPeriod(1). Calling timeBeginPeriod()
      * specifying a better timer resolution also increases the interrupt
      * load. This appears to be related to java applet activity.
+     * The function timeGetDevCaps can tell us the range of periods
+     * that can be specified to timeBeginPeriod, but alas there
+     * appears to be no way to find out what the value of the global 
+     * minimum of all timeBeginPeriod calls for all processes is.
      */
     static const double secPerTick = 100e-9;
     DWORD adjustment;

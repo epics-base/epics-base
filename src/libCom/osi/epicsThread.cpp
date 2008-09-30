@@ -14,13 +14,13 @@
 
 #include <exception>
 #include <typeinfo>
-#include <algorithm>
 
 #include <stdio.h>
 #include <stddef.h>
 #include <float.h>
 
 #define epicsExportSharedSymbols
+#include "epicsAlgorithm.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsAssert.h"
@@ -154,13 +154,13 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             "epicsThread::exitWait(): Unexpected exception "
             " \"%s\"\n", 
             except.what () );
-        epicsThreadSleep ( std :: min ( delay, 5.0 ) );
+        epicsThreadSleep ( epicsMin ( delay, 5.0 ) );
     }
     catch ( ... ) {
         errlogPrintf ( 
             "Non-standard unexpected exception in "
             "epicsThread::exitWait()\n" );
-        epicsThreadSleep ( std :: min ( delay, 5.0 ) );
+        epicsThreadSleep ( epicsMin ( delay, 5.0 ) );
     }
     return this->terminated;
 }

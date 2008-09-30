@@ -14,6 +14,7 @@
 
 #include <exception>
 #include <typeinfo>
+#include <algorithm>
 
 #include <stdio.h>
 #include <stddef.h>

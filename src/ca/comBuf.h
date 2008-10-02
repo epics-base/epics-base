@@ -116,6 +116,8 @@ private:
     epicsUInt8 buf [ comBufSize ];
     void * operator new ( size_t size );
     void operator delete ( void * );
+    template < class T >
+    bool push ( const T * ); // disabled
 };
 
 inline void * comBuf::operator new ( size_t size, 

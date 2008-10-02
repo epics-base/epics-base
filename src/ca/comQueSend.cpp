@@ -106,10 +106,7 @@ void comQueSend::clear ()
 
 void comQueSend::copy_dbr_string ( const void * pValue )
 {
-    // this extra step is required by Borland BCC 5.5
-    const dbr_string_t & str = 
-        * static_cast <const dbr_string_t *> ( pValue );
-    this->push ( str );
+    this->push ( static_cast < const char * > ( pValue ), MAX_STRING_SIZE );
 }
 
 void comQueSend::copy_dbr_short ( const void * pValue )
@@ -186,7 +183,7 @@ const comQueSend::copyScalarFunc_t comQueSend::dbrCopyScalar [39] = {
 
 void comQueSend::copy_dbr_string ( const void *pValue, unsigned nElem ) 
 {
-    this->push ( static_cast <const dbr_string_t *> ( pValue ), nElem );
+    this->push ( static_cast < const char * > ( pValue ), nElem * MAX_STRING_SIZE );
 }
 
 void comQueSend::copy_dbr_short ( const void *pValue, unsigned nElem ) 

@@ -149,6 +149,9 @@ private:
         this->pushComBuf ( *pComBuf );
     }
 
+    template < class T >
+    inline void push ( const T * ); // disabled
+
     comQueSend ( const comQueSend & );
     comQueSend & operator = ( const comQueSend & );
 };

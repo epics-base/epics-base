@@ -55,86 +55,73 @@ to create and add the appropriate new configure files to the base/configure/os/d
 You can start by copying existing configuration files in the configure/os
 directory and then make changes for your new platforms.</blockquote>
 
-<blockquote><b>Host platforms (operating system - architecture - &lt;alternate
-c++ compiler>)</b>
+<blockquote>
+<h4>Host platforms (operating system - architecture [- alternate toolset])</h4>
 
 <blockquote>
-<tt>aix-ppc</tt>
-<br><tt>aix-ppc-gnu</tt>
-<br><tt>cygwin-x86</tt>
-<br><tt>darwin-ppc (Mac OS X)</tt>
-<br><tt>hpux-parisc</tt>
-<br><tt>hpux-parisc-gnu</tt>
-<br><tt>linux-ppc</tt>
-<br><tt>linux-ppc-bgl</tt>
-<br><tt>linux-x86</tt>
-<br><tt>linux-x86_64</tt>
-<br><tt>linux-x86-borland</tt>
-<br><tt>solaris-sparc</tt>
-<br><tt>solaris-sparc-gnu</tt>
-<br><tt>solaris-sparc64</tt>
-<br><tt>solaris-sparc64-gnu</tt>
-<br><tt>solaris-x86</tt>
-<br><tt>solaris-x86-gnu</tt>
-<br><tt>win32-x86</tt>
-<br><tt>win32-x86-borland</tt>
-<br><tt>win32-x86-cygwin</tt>
-<br><tt>win32-x86-mingw</tt>
-</blockquote>
+<pre>aix-ppc
+aix-ppc-gnu
+cygwin-x86
+darwin-ppc
+darwin-x86
+darwin-ppcx86
+freebsd-x86
+freebsd-x86_64
+hpux-parisc
+hpux-parisc-gnu
+linux-ppc
+linux-x86
+linux-x86_64
+linux-x86-borland
+solaris-sparc
+solaris-sparc-gnu
+solaris-sparc64
+solaris-sparc64-gnu
+solaris-x86
+solaris-x86-gnu
+win32-x86
+win32-x86-mingw
+win32-x86-cygwin
+</pre></blockquote>
 
-</blockquote>
-
-<blockquote><b>Debugging builds</b>
-
-<blockquote>
-<tt>linux-x86-debug</tt>
-<br><tt>linux-x86_64-debug</tt>
-<br><tt>solaris-sparc-debug</tt>
-<br><tt>win32-x86-debug</tt>
-</blockquote>
-
-
-</blockquote>
-</blockquote>
-
-<blockquote>
 <h4>
 Cross compile target platforms (operating system - architecture)</h4>
-</blockquote>
-
 <blockquote>
-<blockquote>
-<tt>linux-386 (linux-x86 host)</tt>
-<br><tt>linux-486 (linux-x86 host)</tt>
-<br><tt>linux-586 (linux-x86 host)</tt>
-<br><tt>linux-686 (linux-x86 host)</tt>
-<br><tt>linux-althon (linux-x86 host)</tt>
-<br><tt>linuxRT-mvme2100</tt>
-<br><tt>vxWorks-486</tt>
-<br><tt>vxWorks-68040</tt>
-<br><tt>vxWorks-68040lc</tt>
-<br><tt>vxWorks-68060</tt>
-<br><tt>vxWorks-pentium</tt>
-<br><tt>vxWorks-ppc603</tt>
-<br><tt>vxWorks-ppc603_long</tt>
-<br><tt>vxWorks-ppc604</tt>
-<br><tt>vxWorks-ppc604_long</tt>
-<br><tt>vxWorks6-mv2100</tt>
-<br><tt>vxWorks6-mv5100</tt>
-<br><tt>RTEMS-gen68360</tt>
-<br><tt>RTEMS-mcp750</tt>
-<br><tt>RTEMS-mvme167</tt>
-<br><tt>RTEMS-pc386</tt>
-<br><tt>RTEMS-psim</tt>
-<br><tt>RTEMS-uC5282</tt>
-</blockquote>
-</blockquote>
-
-<blockquote><b>Debugging builds</b>
-<blockquote>
-<tt>vxWorks-68040-debug</tt>
-</blockquote>
-</blockquote>
+<pre>linux-386
+linux-486
+linux-586
+linux-686
+linux-arm
+linux-arm_eb
+linux-arm_el
+linux-athlon
+linux-cris
+linux-cris_v10
+linux-cris_v32
+linux-xscale_be
+vxWorks-486
+vxWorks-68040
+vxWorks-68040lc
+vxWorks-68060
+vxWorks-pentium
+vxWorks-ppc603
+vxWorks-ppc603_long
+vxWorks-ppc604
+vxWorks-ppc604_long
+vxWorks-ppc604_altivec
+vxWorks-mpc8540
+RTEMS-at91rm9200ek
+RTEMS-beatnik
+RTEMS-gen68360
+RTEMS-mcp750
+RTEMS-mvme167
+RTEMS-mvme2100
+RTEMS-mvme3100
+RTEMS-mvme5500
+RTEMS-pc386
+RTEMS-psim
+RTEMS-uC5282
+</pre></blockquote>
 
 <h3>
 Supported compilers</h3>
@@ -155,7 +142,7 @@ path so that a gnumake version 3.81 or later is available.
 <p><b>gcc</b>
 <br>You must have gcc version 3.4.2 or later.
 <p><b>Perl</b>
-<br>You must have perl version 5.6 or later installed. The configure files
+<br>You must have perl version 5.8 or later installed. The configure files
 do not specify the perl full pathname. You need the perl executable
 in your search path.
 <p><b>Unzip and tar (Winzip on WIN32 systems)</b>

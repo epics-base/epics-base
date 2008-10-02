@@ -16,7 +16,8 @@ ARCH_CLASS = alpha
 CODE_CPPFLAGS =
 
 POSIX_CPPFLAGS += -pthread -ieee
-POSIX_LDFLAGS += -pthread -ieee
+# Unknown reason why this doesn't work in POSIX_LDFLAGS:
+POSIX_LDLIBS += -pthread -ieee
 
 OP_SYS_CPPFLAGS += -D_OSF_SOURCE
 OP_SYS_LDLIBS += -lrt

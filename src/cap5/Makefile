@@ -13,9 +13,6 @@ ifneq ($(findstring darwin,$(T_A)),)
   LOADABLE_SHRLIB_PREFIX =
   LOADABLE_SHRLIB_SUFFIX = .bundle
 endif
-ifneq ($(findstring win32,$(T_A)),)
-  BAT = .bat
-endif
 
 ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
   # Doesn't build on WIN32
@@ -49,7 +46,7 @@ ifdef T_A
 	$(RM) $@ $@_new
 	$(PERL) $(EXTUTILS)/xsubpp -typemap $(EXTUTILS)/typemap $< > $@_new && $(MV) $@_new $@
 
-  %.html: %.pm
+  %.html: ../%.pm
 	$(RM) $@
 	podchecker $< && pod2html --infile=$< --outfile=$@
 

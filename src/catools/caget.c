@@ -256,8 +256,10 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             else
             {
                 if (reqElems > 1) printf(" %lu ", reqElems);
-                for (i=0; i<reqElems; ++i)
-                    printf("%s ", val2str(pvs[n].value, pvs[n].dbrType, i));
+                for (i=0; i<reqElems; ++i) {
+                    if (i) printf (" ");
+                    printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                }
                 printf("\n");
             }
             break;
@@ -285,8 +287,10 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                     printf("    Element count:  %lu\n"
                            "    Value:          ",
                            reqElems);
-                    for (i=0; i<reqElems; ++i)       /* Print value(s) */
-                        printf("%s ", val2str(pvs[n].value, pvs[n].dbrType, i));
+                    for (i=0; i<reqElems; ++i) {     /* Print value(s) */
+                        if (i) printf (" ");
+                        printf(" %s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                    }
                     printf("\n");
                     if (pvs[n].dbrType > DBR_DOUBLE) /* Extended type extra info */
                         printf("%s\n", dbr2str(pvs[n].value, pvs[n].dbrType));

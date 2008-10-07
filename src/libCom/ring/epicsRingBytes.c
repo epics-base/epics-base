@@ -68,20 +68,20 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
         if (count < nbytes)
             nbytes = count;
         if (nbytes)
-            memcpy (value, &pring->buffer[nextGet], nbytes);
+            memcpy (value, (void *)&pring->buffer[nextGet], nbytes);
         nextGet += nbytes;
     }
     else {
         count = size - nextGet;
         if (count > nbytes)
             count = nbytes;
-        memcpy (value, &pring->buffer[nextGet], count);
+        memcpy (value, (void *)&pring->buffer[nextGet], count);
         nextGet += count;
         if (nextGet == size) {
             int nLeft = nbytes - count;
             if (nLeft > nextPut)
                 nLeft = nextPut;
-            memcpy (value+count, &pring->buffer[0], nLeft);
+            memcpy (value+count, (void *)&pring->buffer[0], nLeft);
             nextGet = nLeft;
             nbytes = count + nLeft;
         }
@@ -107,7 +107,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         if (nbytes > freeCount)
             nbytes = freeCount;
         if (nbytes)
-            memcpy (&pring->buffer[nextPut], value, nbytes);
+            memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
         nextPut += nbytes;
     }
     else {
@@ -117,12 +117,12 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
         if (copyCount)
-            memcpy (&pring->buffer[nextPut], value, copyCount);
+            memcpy ((void *)&pring->buffer[nextPut], value, copyCount);
         nextPut += copyCount;
         if (nextPut == size) {
             int nLeft = nbytes - copyCount;
             if (nLeft)
-                memcpy (&pring->buffer[0], value+copyCount, nLeft);
+                memcpy ((void *)&pring->buffer[0], value+copyCount, nLeft);
             nextPut = nLeft;
         }
     }

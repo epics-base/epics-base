@@ -14,7 +14,6 @@
 
 #include <exception>
 #include <typeinfo>
-#include <algorithm>
 
 #include <stdio.h>
 #include <stddef.h>
@@ -31,23 +30,6 @@
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
-
-// vxWorks 5.4 gcc fails during compile when I use std::exception
-using namespace std;
-
-// exception payload
-class epicsThread::unableToCreateThread : public exception {
-    const char * what () const throw () {
-        return "epicsThread class was unable to  create a new thread";
-    }
-};
-
-// exception payload
-class epicsThread::exitException : public exception {
-    const char * what () const throw () {
-        return "epicsThread class's private exit exception";
-    }
-};
 
 extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
 {
@@ -78,7 +60,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
             // this should behave as the C++ implementation intends when an 
             // exception isnt handled. If users dont like this behavior, they 
             // can install an application specific unexpected handler.
-            unexpected (); 
+            std::unexpected (); 
         }
     }
     catch ( ... ) {
@@ -94,7 +76,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
             // this should behave as the C++ implementation intends when an 
             // exception isnt handled. If users dont like this behavior, they 
             // can install an application specific unexpected handler.
-            unexpected ();
+            std::unexpected ();
         }
     }
     if ( ! waitRelease ) {
@@ -284,13 +266,6 @@ void epicsThread::setOkToBlock(bool isOkToBlock) throw ()
     epicsThreadSetOkToBlock(static_cast<int>(isOkToBlock));
 }
 
-class epicsThreadPrivateBase::unableToCreateThreadPrivate : public exception {
-    const char * what () const throw ()
-    {
-        return "epicsThreadPrivate:: unable to create thread private variable";
-    }
-};
-
 void epicsThreadPrivateBase::throwUnableToCreateThreadPrivate ()
 {
     throw epicsThreadPrivateBase::unableToCreateThreadPrivate ();
@@ -335,4 +310,4 @@ extern "C" {
 } // extern "C"
 
 // Ensure the main thread gets a unique ID
-static epicsThreadId epicsThreadMainId = epicsThreadGetIdSelf();
+epicsThreadId epicsThreadMainId = epicsThreadGetIdSelf();

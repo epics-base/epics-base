@@ -156,7 +156,9 @@ public:
     static const char * getNameSelf () throw ();
     static bool isOkToBlock () throw ();
     static void setOkToBlock ( bool isOkToBlock ) throw ();
-    class unableToCreateThread; /* exception payload */
+
+    /* exceptions */
+    class unableToCreateThread {};
 private:
     epicsThreadRunable & runable;
     epicsThreadId id;
@@ -173,12 +175,13 @@ private:
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
 
-    class exitException; /* exception payload */
+    /* exceptions */
+    class exitException {};
 };
 
 class epicsShareClass epicsThreadPrivateBase {
 public:
-    class unableToCreateThreadPrivate; /* exception */
+    class unableToCreateThreadPrivate {}; /* exception */
 protected:
     static void throwUnableToCreateThreadPrivate ();
 };

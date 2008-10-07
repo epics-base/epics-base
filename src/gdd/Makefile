@@ -77,26 +77,21 @@ include $(TOP)/configure/RULES
 #	not have been installed if we are building for
 #	the first time
 #	-> use explicit reference to the uninstalled files in '..'
-aitConvert$(OBJ): ../aitConvert.cc aitConvertGenerated.cc\
-		../aitConvert.h ../aitTypes.h
 
+aitConvert$(OBJ): $(COMMON_DIR)/aitConvertGenerated.cc
 
-dbMapper$(OBJ):	../gdd.h ../gddI.h ../gddContainer.h ../gddContainerI.h \
-		../gddArray.h ../gddScalar.h ../gddAppTable.h ../dbMapper.h \
-		$(INSTALL_INCLUDE)/gddApps.h ../aitTypes.h  ../gddUtils.h ../gddUtilsI.h
+dbMapper$(OBJ):	$(COMMON_DIR)/gddApps.h 
 
 # Rules for generated files
-#
-aitConvertGenerated.cc: $(INSTALL_HOST_BIN)/aitGen$(HOSTEXE) aitTypes.h
-	$(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
+
+$(COMMON_DIR)/aitConvertGenerated.cc: $(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
+	cd $(COMMON_DIR);$(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
 
 $(COMMON_DIR)/gddApps.h : $(INSTALL_HOST_BIN)/genApps$(HOSTEXE)
 	$(INSTALL_HOST_BIN)/genApps$(HOSTEXE) $@
 
 clean::
-	$(RM) aitConvertGenerated.cc gddApps.h
-
-aitConvert$(OBJ): aitConvertGenerated.cc
+	@$(RM) $(COMMON_DIR)/aitConvertGenerated.cc
 
 #	EOF base/src/gdd/Makefile
 

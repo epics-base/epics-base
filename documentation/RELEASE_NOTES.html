@@ -59,11 +59,11 @@ have their own separate report commands.</p>
 providers in Base.  The Unix-like architectures rely on the underlying operating
 system clock, which normally involves running something like ntpd as a separate
 process. The real-time operating systems vxWorks and RTEMS install two Current
-Time providers; the native OS Clock at the lowest priority (this provider
-includes a task to periodically reset the OS Clock from a higher priority time
-provider), and an NTP time provider which synchronizes the underlying OS' tick
+Time providers; the native operating system clock at the lowest priority (this provider
+includes a task to periodically reset the operating system clock from a higher priority time
+provider), and an NTP time provider which synchronizes the underlying operating sytem tick
 timer with an NTP server. Microsoft Windows targets using the Win32 API use a
-Windows-specific time provider which contains a built-in PLL</p>
+Windows-specific time provider which contains a built-in PLL.</p>
 
 <p>There are no Event Time providers included with Base except for an optional
 "Last Resort" Event provider which can be installed if a site wants to be sure
@@ -221,7 +221,7 @@ noticed that an empty string converts to the value 0 for all types other than
 character <tt>'0'</tt>, value 0x30.  Since these types are usually used for
 storing small integers or boolean values rather than ASCII characters, it was
 decided that this conversion is wrong so it has been changed to match the other
-nmeric conversions.</p>
+numeric conversions.</p>
 
 <h4>epicsShareAPI deprecated inside IOC</h4>
 
@@ -337,6 +337,7 @@ although the core developers lack the ability to test all of them:</p>
       <li>linux-cris_v32</li>
     </ul>
   </li>
+  <li>linux-xscale_be (tested with MOXA UC-7408 Plus)
 </ul>
 
 <h4>Added compile line header search directories</h4>
@@ -406,7 +407,7 @@ settting.</p>
 
 <p>The -ansi flag has been removed from CONFORM_FLAGS_STRICT and
 CONFORM_CXXFLAGS_STRICT -- there are many useful library functions whose
-prototypes are disabled when -ansi is used..</p>
+prototypes are disabled when -ansi is used.</p>
 
 <h4>SEL record (Mantis #295)</h4>
 

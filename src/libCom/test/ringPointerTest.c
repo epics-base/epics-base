@@ -27,7 +27,7 @@
 
 #define ringSize 10
 
-static int testExit = 0;
+static volatile int testExit = 0;
 
 typedef struct info {
     epicsEventId consumerEvent;

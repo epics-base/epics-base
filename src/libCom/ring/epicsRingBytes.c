@@ -22,20 +22,28 @@
 #include "cantProceed.h"
 #include "epicsRingBytes.h"
 
+/*
+ * Need at least one extra byte to be able to distinguish a completely
+ * full buffer from a completely empty one.  Allow for a little extra
+ * space to try and keep good alignment and avoid multiple calls to
+ * memcpy for a single put/get operation.
+ */
+#define SLOP    16
+
 typedef struct ringPvt {
-    int nextPut;
-    int nextGet;
-    int          size;
-    char         *buffer;
+    volatile int   nextPut;
+    volatile int   nextGet;
+    int            size;
+    volatile char *buffer;
 }ringPvt;
 
-
 epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
 {
     ringPvt *pring = mallocMustSucceed(sizeof(ringPvt),"epicsRingBytesCreate");
-    pring->size = size + 1;
+    pring->size = size + SLOP;
     pring->buffer = mallocMustSucceed(pring->size,"ringCreate");
-    pring->nextGet = pring->nextPut = 0;
+    pring->nextGet = 0;
+    pring->nextPut = 0;
     return((void *)pring);
 }
 
@@ -45,7 +53,7 @@ epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id)
     free((void *)pring->buffer);
     free((void *)pring);
 }
-
+
 epicsShareFunc int epicsShareAPI epicsRingBytesGet(
     epicsRingBytesId id, char *value,int nbytes)
 {
@@ -59,7 +67,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
         count = nextPut - nextGet;
         if (count < nbytes)
             nbytes = count;
-        memcpy (value, &pring->buffer[nextGet], nbytes);
+        if (nbytes)
+            memcpy (value, &pring->buffer[nextGet], nbytes);
         nextGet += nbytes;
     }
     else {
@@ -67,7 +76,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
         if (count > nbytes)
             count = nbytes;
         memcpy (value, &pring->buffer[nextGet], count);
-        if ((nextGet = nextGet + count) == size) {
+        nextGet += count;
+        if (nextGet == size) {
             int nLeft = nbytes - count;
             if (nLeft > nextPut)
                 nLeft = nextPut;
@@ -90,78 +100,68 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     int nextGet = pring->nextGet;
     int nextPut = pring->nextPut;
     int size = pring->size;
-    int count;
+    int freeCount, copyCount, topCount;
 
     if (nextPut < nextGet) {
-        count = nextGet - nextPut - 1;
-        if (nbytes > count)
-            nbytes = count;
-        memcpy (&pring->buffer[nextPut], value, nbytes);
-        nextPut += nbytes;
-    }
-    else if (nextGet == 0) {
-        count = size - nextPut - 1;
-        if (nbytes > count)
-            nbytes = count;
-        memcpy (&pring->buffer[nextPut], value, nbytes);
+        freeCount = nextGet - nextPut - SLOP;
+        if (nbytes > freeCount)
+            nbytes = freeCount;
+        if (nbytes)
+            memcpy (&pring->buffer[nextPut], value, nbytes);
         nextPut += nbytes;
     }
     else {
-        count = size - nextPut;
-        if (count > nbytes)
-            count = nbytes;
-        memcpy (&pring->buffer[nextPut], value, count);
-        if ((nextPut = nextPut + count) == size) {
-            int nLeft = nbytes - count;
-            if (nLeft > (nextGet - 1))
-                nLeft = nextGet - 1;
-            memcpy (&pring->buffer[0], value+count, nLeft);
+        freeCount = size - nextPut + nextGet - SLOP;
+        if (nbytes > freeCount)
+            nbytes = freeCount;
+        topCount = size - nextPut;
+        copyCount = (nbytes > topCount) ?  topCount : nbytes;
+        if (copyCount)
+            memcpy (&pring->buffer[nextPut], value, copyCount);
+        nextPut += copyCount;
+        if (nextPut == size) {
+            int nLeft = nbytes - copyCount;
+            if (nLeft)
+                memcpy (&pring->buffer[0], value+copyCount, nLeft);
             nextPut = nLeft;
-            nbytes = count + nLeft;
-        }
-        else {
-            nbytes = count;
-            nextPut = nextPut;
         }
     }
     pring->nextPut = nextPut;
     return nbytes;
 }
-
+
 epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
-    pring->nextGet = pring->nextPut = 0;
+    pring->nextGet = 0;
+    pring->nextPut = 0;
 }
-
+
 epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    int n;
+    int nextGet = pring->nextGet;
+    int nextPut = pring->nextPut;
 
-    n = pring->nextGet - pring->nextPut - 1;
-    if (n < 0)
-        n += pring->size;
-    return n;
+    if (nextPut < nextGet)
+        return nextGet - nextPut - SLOP;
+    else
+        return pring->size - nextPut + nextGet - SLOP;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    int n;
 
-    n = pring->nextPut - pring->nextGet;
-    if (n < 0)
-        n += pring->size;
-    return n;
+    return pring->size - epicsRingBytesFreeBytes(id) - SLOP;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesSize(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
-    return pring->size - 1;
+    return pring->size - SLOP;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
@@ -173,9 +173,5 @@ epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
 
 epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)
 {
-    ringPvt *pring = (ringPvt *)id;
-    int count;
-
-    count = (pring->nextPut - pring->nextGet) + 1;
-    return ((count == 0) || (count == pring->size));
+    return (epicsRingBytesFreeBytes(id) <= 0);
 }

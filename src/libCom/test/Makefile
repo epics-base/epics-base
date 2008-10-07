@@ -77,6 +77,11 @@ ringPointerTest_SRCS += ringPointerTest.c
 testHarness_SRCS += ringPointerTest.c
 TESTS += ringPointerTest
 
+TESTPROD_HOST += ringBytesTest
+ringBytesTest_SRCS += ringBytesTest.c
+testHarness_SRCS += ringBytesTest.c
+TESTS += ringBytesTest
+
 TESTPROD_HOST += epicsEventTest
 epicsEventTest_SRCS += epicsEventTest.cpp
 testHarness_SRCS += epicsEventTest.cpp

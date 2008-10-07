@@ -43,10 +43,10 @@ private: /* Prevent compiler-generated member functions */
     epicsRingPointer& operator=(const epicsRingPointer &);
 
 private: /* Data */
-    int nextPush;
-    int nextPop;
+    volatile int nextPush;
+    volatile int nextPop;
     int size;
-    T **buffer;
+    T  * volatile * buffer;
 };
 
 extern "C" {
@@ -93,10 +93,11 @@ inline epicsRingPointer<T>::~epicsRingPointer()
 template <class T>
 inline bool epicsRingPointer<T>::push(T *p)
 {
-    int newNext = nextPush +1;
+    int next = nextPush;
+    int newNext = next + 1;
     if(newNext>=size) newNext=0;
     if(newNext==nextPop) return(false);
-    buffer[nextPush] = p;
+    buffer[next] = p;
     nextPush = newNext;
     return(true);
 }
@@ -104,18 +105,21 @@ inline bool epicsRingPointer<T>::push(T *p)
 template <class T>
 inline T* epicsRingPointer<T>::pop()
 {
-    if(nextPop == nextPush) return(0);
-    T*p  = buffer[nextPop];
-    int newNext= nextPop;
-    ++newNext;
-    if(newNext >=size) newNext = 0;
-    nextPop = newNext;
+    int next = nextPop;
+    if(next == nextPush) return(0);
+    T*p  = buffer[next];
+    ++next;
+    if(next >=size) next = 0;
+    nextPop = next;
     return(p);
 }
 
 template <class T>
 inline void epicsRingPointer<T>::flush()
-{   nextPop = nextPush = 0;}
+{
+    nextPop = 0;
+    nextPush = 0;
+}
 
 template <class T>
 inline int epicsRingPointer<T>::getFree() const

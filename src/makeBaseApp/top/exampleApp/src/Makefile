@@ -58,7 +58,7 @@ _APPNAME__LIBS += _APPNAME_Support
 
 ifneq ($(SNCSEQ),)
     # Build sncExample into _APPNAME_Support
-    _APPNAME__SNCFLAGS += +r
+    sncExample_SNCFLAGS += +r
     _APPNAME__DBD += sncExample.dbd
     _APPNAME_Support_SRCS += sncExample.stt
     _APPNAME_Support_LIBS += seq pv

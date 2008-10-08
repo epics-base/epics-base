@@ -7,7 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-x86.solaris-x86-debug
 #-------------------------------------------------------
 
-include $(CONFIG)/os/Common.solaris-x86
 include $(CONFIG)/os/CONFIG.solaris-x86.solaris-x86
 
 #BUILD_CLASS = HOST

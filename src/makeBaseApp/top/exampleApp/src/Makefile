@@ -48,7 +48,7 @@ _APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
 _APPNAME__SRCS_vxWorks += -nil-
 
 # Add support from base/src/vxWorks if needed
-_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
+#_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
 # Link in the code from the support library
 _APPNAME__LIBS += _APPNAME_Support

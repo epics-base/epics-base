@@ -8,14 +8,14 @@
 cd ${TOP}
 
 ## Register all support components
-dbLoadDatabase("dbd/_APPNAME_.dbd",0,0)
-_CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase "dbd/_APPNAME_.dbd"
+_CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
 ## Load record instances
 #dbLoadRecords("db/xxx.db","user=_USER_Host")
 
 cd ${TOP}/iocBoot/${IOC}
-iocInit()
+iocInit
 
 ## Start any sequence programs
 #seq sncxxx,"user=_USER_Host"

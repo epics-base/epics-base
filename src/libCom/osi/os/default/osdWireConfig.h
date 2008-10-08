@@ -1,16 +1,18 @@
-//
-// Default version of osdWireConfig.h that might
-// work on UNIX like systems that define <sys/param.h>
-//
-//  Author Jeffrey O. Hill
-//  johill@lanl.gov
-//
+/*
+ * Default version of osdWireConfig.h that might
+ * work on UNIX like systems that define <sys/param.h>
+ *
+ * Author Jeffrey O. Hill
+ * johill@lanl.gov
+ */
 
 #ifndef osdWireConfig_h
 #define osdWireConfig_h
 
-// if compilation fails because this wasnt found then you may need to define an OS 
-// specific osdWireConfig.h
+/* This file must be usable from both C and C++ */
+
+/* if compilation fails because this wasnt found then you may need to define an OS 
+   specific osdWireConfig.h */
 #include <sys/param.h>
 
 #ifdef __BYTE_ORDER
@@ -53,10 +55,10 @@
 #           error EPICS hasnt been ported to <sys/param.h> specified FLOAT_WORD_ORDER
 #       endif
 #   else
-        // assume that if neither __FLOAT_WORD_ORDER nor FLOAT_WORD_ORDER are
-        // defined then weird fp ordered archs like arm nwfp aren't supported
+        /* assume that if neither __FLOAT_WORD_ORDER nor FLOAT_WORD_ORDER are
+           defined then weird fp ordered archs like arm nwfp aren't supported */
 #       define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 #   endif
 #endif
 
-#endif // ifdef osdWireConfig_h
+#endif /* ifdef osdWireConfig_h */

@@ -51,7 +51,6 @@ void MakeStringFuncTo(int i,int j,int k);
 void MakeFStringFuncFrom(int i,int j,int k);
 void MakeFStringFuncTo(int i,int j,int k);
 
-#define FILE_NAME "aitConvertGenerated.cc"
 #define pr fprintf
 
 #define AIT_TO_NET		0
@@ -116,9 +115,15 @@ int main(int argc,char* argv[])
 
     initMinMaxAIT ();
 
-	if((dfd=fopen(FILE_NAME,"w"))==NULL)
+	if(argc<2)
 	{
-		pr(stderr,"file %s failed to open\n",FILE_NAME);
+		fprintf(stderr,"You must enter a file name on command line\n");
+		return -1;
+	}
+
+	if((dfd=fopen(argv[1],"w"))==NULL)
+	{
+		pr(stderr,"file %s failed to open\n",argv[1]);
 		return -1;
 	}
 

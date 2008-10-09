@@ -85,7 +85,7 @@ dbMapper$(OBJ):	$(COMMON_DIR)/gddApps.h
 # Rules for generated files
 
 $(COMMON_DIR)/aitConvertGenerated.cc: $(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
-	cd $(COMMON_DIR);$(INSTALL_HOST_BIN)/aitGen$(HOSTEXE)
+	$(INSTALL_HOST_BIN)/aitGen$(HOSTEXE) $@
 
 $(COMMON_DIR)/gddApps.h : $(INSTALL_HOST_BIN)/genApps$(HOSTEXE)
 	$(INSTALL_HOST_BIN)/genApps$(HOSTEXE) $@

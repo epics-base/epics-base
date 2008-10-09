@@ -33,15 +33,15 @@
 #	where the start and end are mmddhh - that is month,day,hour
 #	eg EPICS_TIMEZONE=CUS::360:033102:102802
 #
-#	DST for 2007  US: Mar 11 - Nov 04
-#	              EU: Mar 25 - Oct 28
+#	DST for 2008  US: Mar 09 - Nov 02
+#	              EU: Mar 30 - Oct 26
 #	(see: http://www.worldtimezone.org/daylight.html)
 #
 # EPICS_TS_NTP_INET
 #	NTP or Unix time server ip address.  Uses boot host if not set.
 
-EPICS_TIMEZONE=CUS::360:031102:110402
-#EPICS_TIMEZONE=MET::-60:032502:102802
+EPICS_TIMEZONE=CUS::360:030902:110202
+#EPICS_TIMEZONE=MET::-60:033002:102602
 EPICS_TS_NTP_INET=
 
 # IOC Shell:

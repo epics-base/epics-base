@@ -1,13 +1,12 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* callbackTest.c */
+/* $Id$ */
 
 /* Author:  Marty Kraimer Date:    26JAN2000 */
 
@@ -18,66 +17,107 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "epicsThread.h"
-#include "errlog.h"
 #include "callback.h"
-#include "taskwd.h"
+#include "cantProceed.h"
+#include "epicsThread.h"
+#include "epicsEvent.h"
 #include "epicsTime.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+
+#define NCALLBACKS 168
+#define DELAY_QUANTUM 0.25
+
+#define TEST_DELAY(i) ((i / NUM_CALLBACK_PRIORITIES) * DELAY_QUANTUM)
+
 typedef struct myPvt {
-    CALLBACK callback;
-    double   requestedDiff;
+    CALLBACK cb1;
+    CALLBACK cb2;
     epicsTimeStamp start;
-}myPvt;
+    double delay;
+    int pass;
+} myPvt;
+
+epicsEventId finished;
+
 
 static void myCallback(CALLBACK *pCallback)
 {
     myPvt *pmyPvt;
-    epicsTimeStamp end;
-    double diff, error;
+    epicsTimeStamp now;
+    double delay, error;
 
-    callbackGetUser(pmyPvt,pCallback);
-    epicsTimeGetCurrent(&end);
-    diff = epicsTimeDiffInSeconds(&end,&pmyPvt->start);
-    error = fabs(pmyPvt->requestedDiff - diff);
-    testOk(error < 0.05, "callback time error %f", error);
+    epicsTimeGetCurrent(&now);
+    callbackGetUser(pmyPvt, pCallback);
+
+    if (pmyPvt->pass++ == 0) {
+        delay = 0.0;
+        error = epicsTimeDiffInSeconds(&now, &pmyPvt->start);
+        pmyPvt->start = now;
+        callbackRequestDelayed(&pmyPvt->cb2, pmyPvt->delay);
+    } else if (pmyPvt->pass == 2) {
+        double diff = epicsTimeDiffInSeconds(&now, &pmyPvt->start);
+        delay = pmyPvt->delay;
+        error = fabs(delay - diff);
+    } else {
+        testFail("pass = %d for delay = %f", pmyPvt->pass, pmyPvt->delay);
+        return;
+    }
+    testOk(error < 0.05, "delay %f seconds, callback time error %f",
+        delay, error);
 }
-    
-#define ncallbacks 5
+
+static void finalCallback(CALLBACK *pCallback)
+{
+    myCallback(pCallback);
+    epicsEventSignal(finished);
+}
 
 MAIN(callbackTest)
 {
-    myPvt *nowait[ncallbacks];
-    myPvt *wait[ncallbacks];
-    epicsTimeStamp start;
+    myPvt *pcbt[NCALLBACKS];
+    myPvt *pfinal;
     int i;
 
-    testPlan(ncallbacks * 2);
+    testPlan(NCALLBACKS * 2 + 2);
 
-    taskwdInit();
-    errlogInit(4096);
     callbackInit();
     epicsThreadSleep(1.0);
-    for(i=0; i<ncallbacks ; i++) {
-        nowait[i] = calloc(1,sizeof(myPvt));
-        callbackSetCallback(myCallback,&nowait[i]->callback);
-        callbackSetUser(nowait[i],&nowait[i]->callback);
-        callbackSetPriority(i%3,&nowait[i]->callback);
-        epicsTimeGetCurrent(&start);
-        nowait[i]->start = start;
-        nowait[i]->requestedDiff = 0.0;
-        callbackRequest(&nowait[i]->callback);
-        wait[i] = calloc(1,sizeof(myPvt));
-        callbackSetCallback(myCallback,&wait[i]->callback);
-        callbackSetUser(wait[i],&wait[i]->callback);
-        callbackSetPriority(i%3,&wait[i]->callback);
-        epicsTimeGetCurrent(&start);
-        wait[i]->start = start;
-        wait[i]->requestedDiff = (double)i;
-        callbackRequestDelayed(&wait[i]->callback,wait[i]->requestedDiff);
+
+    finished = epicsEventMustCreate(epicsEventEmpty);
+
+    for (i = 0; i < NCALLBACKS ; i++) {
+        pcbt[i] = callocMustSucceed(1, sizeof(myPvt), "pcbt");
+        callbackSetCallback(myCallback, &pcbt[i]->cb1);
+        callbackSetCallback(myCallback, &pcbt[i]->cb2);
+        callbackSetUser(pcbt[i], &pcbt[i]->cb1);
+        callbackSetUser(pcbt[i], &pcbt[i]->cb2);
+        callbackSetPriority(i % NUM_CALLBACK_PRIORITIES, &pcbt[i]->cb1);
+        callbackSetPriority(i % NUM_CALLBACK_PRIORITIES, &pcbt[i]->cb2);
+        pcbt[i]->delay = TEST_DELAY(i);
+        pcbt[i]->pass = 0;
     }
-    epicsThreadSleep((double)(ncallbacks + 2));
+
+    for (i = 0; i < NCALLBACKS ; i++) {
+        epicsTimeGetCurrent(&pcbt[i]->start);
+        callbackRequest(&pcbt[i]->cb1);
+    }
+
+    pfinal = callocMustSucceed(1, sizeof(myPvt), "final");
+    callbackSetCallback(myCallback, &pfinal->cb1);
+    callbackSetCallback(finalCallback, &pfinal->cb2);
+    callbackSetUser(pfinal, &pfinal->cb1);
+    callbackSetUser(pfinal, &pfinal->cb2);
+    callbackSetPriority(0, &pfinal->cb1);
+    callbackSetPriority(0, &pfinal->cb2);
+    pfinal->delay = TEST_DELAY(NCALLBACKS) + 1.0;
+    pfinal->pass = 0;
+
+    epicsTimeGetCurrent(&pfinal->start);
+    callbackRequest(&pfinal->cb1);
+
+    epicsEventWait(finished);
+
     return testDone();
 }

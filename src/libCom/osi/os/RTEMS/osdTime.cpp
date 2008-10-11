@@ -104,6 +104,9 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
     }
 }
 
+rtems_interval rtemsTicksPerSecond;
+double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
+
 } // extern "C"
 
 /*
@@ -119,6 +122,11 @@ static int staticTimeRegister(void)
 {
     if (rtemsTicksPerSecond != 0)
         osdTimeRegister();
+
+    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
+    rtemsTicksPerSecond_double = rtemsTicksPerSecond;
+    rtemsTicksPerTwoSeconds_double = rtemsTicksPerSecond_double * 2.0;
+
     return 1;
 }
 static int done = staticTimeRegister();

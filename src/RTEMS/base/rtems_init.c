@@ -51,9 +51,6 @@ void tzset(void);
 int fileno(FILE *);
 int main(int argc, char **argv);
 
-rtems_interval rtemsTicksPerSecond;
-double rtemsTicksPerSecond_double, rtemsTicksPerTwoSeconds_double;
-
 static void
 logReset (void)
 {
@@ -81,6 +78,8 @@ logReset (void)
 static void
 delayedPanic (const char *msg)
 {
+    extern rtems_interval rtemsTicksPerSecond;
+
     rtems_task_wake_after (rtemsTicksPerSecond);
     rtems_panic (msg);
 }
@@ -420,13 +419,6 @@ Init (rtems_task_argument ignored)
     rtems_task_priority newpri;
     rtems_status_code   sc;
     rtems_time_of_day   now;
-
-    /*
-     * Get configuration
-     */
-    rtems_clock_get (RTEMS_CLOCK_GET_TICKS_PER_SECOND, &rtemsTicksPerSecond);
-	rtemsTicksPerSecond_double = rtemsTicksPerSecond;
-	rtemsTicksPerTwoSeconds_double = rtemsTicksPerSecond_double * 2.0;
 
     /*
      * Explain why we're here

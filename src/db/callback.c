@@ -147,10 +147,15 @@ void callbackInit(void)
 /* This routine can be called from interrupt context */
 void callbackRequest(CALLBACK *pcallback)
 {
-    int priority = pcallback->priority;
+    int priority;
     int pushOK;
     int lockKey;
 
+    if (!pcallback) {
+        epicsPrintf("callbackRequest called with NULL pcallback\n");
+        return;
+    }
+    priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
         epicsPrintf("callbackRequest called with invalid priority\n");
         return;
@@ -174,6 +179,7 @@ static void ProcessCallback(CALLBACK *pcallback)
     dbCommon *pRec;
 
     callbackGetUser(pRec, pcallback);
+    if (!pRec) return;
     dbScanLock(pRec);
     (*pRec->rset->process)(pRec);
     dbScanUnlock(pRec);

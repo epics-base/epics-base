@@ -149,7 +149,7 @@ epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
     sc = rtems_semaphore_obtain (sid, wait, delay);
     if (sc == RTEMS_SUCCESSFUL)
         return epicsEventWaitOK;
-    else if (sc == RTEMS_TIMEOUT)
+    else if ((sc == RTEMS_TIMEOUT) || (sc == RTEMS_UNSATISFIED))
         return epicsEventWaitTimeout;
     else
         return epicsEventWaitError;

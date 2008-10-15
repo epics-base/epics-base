@@ -6,10 +6,6 @@
 \*************************************************************************/
 
 /*
- * This header fragment is intended to be included as part of epicsString.h
+ * epicsStrtod() for systems with working strtod() routine
  */
-
-/*
- * epicsStrtod() for systems with broken strtod() routine
- */
-epicsShareFunc double epicsStrtod(const char *str, char **endp); 
+#define epicsStrtod strtod

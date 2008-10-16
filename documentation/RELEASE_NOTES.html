@@ -12,6 +12,10 @@
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
 <!-- Insert new items below here ... -->
 
+<h4>RTEMS epicsEventWaitWithTimeout</h4>
+
+<p>Correctly return epicsEventWaitTimeout when event is not pending and timeout value is 0.0 secondsmore agressive.</p>
+
 <h4>epicsRingPointer, epicsRingBytes</h4>
 
 <p>Fixed a race condition exposed by compilers with more agressive

@@ -17,19 +17,19 @@ EPICS::Path - Path-handling utilities for EPICS tools
 
 =head1 SYNOPSIS
 
-    use lib '@EPICS_BASE@/lib/perl';
-    use EPICS::Path;
+  use lib '@EPICS_BASE@/lib/perl';
+  use EPICS::Path;
 
-    my $dir = UnixPath('C:\Program Files\EPICS');
-    print LocalPath($dir), "\n";
-    print AbsPath('../lib', $dir);
+  my $dir = UnixPath('C:\Program Files\EPICS');
+  print LocalPath($dir), "\n";
+  print AbsPath('../lib', $dir);
 
 =head1 DESCRIPTION
 
-C<EPICS::Path> provides functions for processing pathnames that are
-commonly needed by EPICS tools.  Windows is not the only culprit, some
-older automount daemons insert strange prefixes into absolute directory
-paths that we have to remove before storing the result for use later.
+C<EPICS::Path> provides functions for processing pathnames that are commonly
+needed by EPICS tools.  Windows is not the only culprit, some older automount
+daemons insert strange prefixes into absolute directory paths that we have to
+remove before storing the result for use later.
 
 
 =head1 FUNCTIONS
@@ -38,12 +38,11 @@ paths that we have to remove before storing the result for use later.
 
 =item UnixPath( I<PATH> )
 
-    C<UnixPath> should be used on any pathnames provided by external
-    tools to convert them into a form that Perl understands.
+C<UnixPath> should be used on any pathnames provided by external tools to
+convert them into a form that Perl understands.
 
-    On cygwin we convert Windows drive specs to the equivalent cygdrive
-    path, and on Windows we switch directory separators from back-slash
-    to forward slashes.
+On cygwin we convert Windows drive specs to the equivalent cygdrive path, and on
+Windows we switch directory separators from back-slash to forward slashes.
 
 =cut
 
@@ -60,16 +59,14 @@ sub UnixPath {
 
 =item LocalPath( I<PATH> )
 
-    C<LocalPath> should be used when generating pathnames for external
-    tools or to put into a file.  It converts paths from the Unix form
-    that Perl understands to any necessary external representation, and
-    also removes automounter prefixes to put the path into its canonical
-    form.
+C<LocalPath> should be used when generating pathnames for external tools or to
+put into a file.  It converts paths from the Unix form that Perl understands to
+any necessary external representation, and also removes automounter prefixes to
+put the path into its canonical form.
 
-    On cygwin we convert cygdrive paths to their equivalent Windows
-    drive specs.  Before Leopard, the Mac OS X automounter inserted a
-    verbose prefix, and in case anyone is still using SunOS it adds its
-    own prefix as well.
+On cygwin we convert cygdrive paths to their equivalent Windows drive specs. 
+Before Leopard, the Mac OS X automounter inserted a verbose prefix, and in case
+anyone is still using SunOS it adds its own prefix as well.
 
 =cut
 
@@ -91,17 +88,15 @@ sub LocalPath {
 
 =item AbsPath( I<PATH>, I<CWD> )
 
-    The C<abs_path()> function in Perl's C<Cwd> module doesn't like
-    non-existent path components other than in the final position, but
-    EPICS tools needs to be able to handle them in paths like
-    F<$(TOP)/lib/$(T_A)> before the F<$(TOP)/lib> directory has been
-    created.
+The C<abs_path()> function in Perl's C<Cwd> module doesn't like non-existent
+path components other than in the final position, but EPICS tools needs to be
+able to handle them in paths like F<$(TOP)/lib/$(T_A)> before the F<$(TOP)/lib>
+directory has been created.
 
-    C<AbsPath> takes a path I<PATH> and optionally an absolute path to a
-    directory that first is relative to; if the second argument is not
-    provided the current working directory is used.  The result returned
-    has been filtered through C<LocalPath()> to remove any automounter
-    prefixes.
+C<AbsPath> takes a path I<PATH> and optionally an absolute path to a directory
+that first is relative to; if the second argument is not provided the current
+working directory is used.  The result returned has been filtered through
+C<LocalPath()> to remove any automounter prefixes.
 
 =cut
 
@@ -118,7 +113,7 @@ sub AbsPath {
     }
 
     # Move leading ./ and ../ components from $path to $cwd
-    if (my ($dots, $not) = ($path =~ m[^ ( (?: \. \.? / )+ ) ( .* ) $]x)) {
+    if (my ($dots, $not) = ($path =~ m[^ ( (?: \. \.? /+ )+ ) ( .* ) $]x)) {
         $cwd .= "/$dots";
         $path = $not;
     }

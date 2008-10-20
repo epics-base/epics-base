@@ -46,7 +46,9 @@ static void testEpicsSnprintf() {
     
     for (size = 1; size < strlen(expected) + 5; ++size) {
         rtn = epicsSnprintf(buffer, size, format, ivalue, fvalue, svalue);
-        testOk(rtn == rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        testOk(rtn <= rlen-1, "epicsSnprintf(size=%d) = %d", size, rtn);
+        if (rtn != rlen-1)
+            testDiag("Return value does not indicate buffer size needed");
         testOk(strncmp(buffer, expected, size - 1) == 0,
             "buffer = '%s'", buffer);
         rtn = strlen(buffer);

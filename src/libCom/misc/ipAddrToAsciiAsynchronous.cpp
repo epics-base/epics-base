@@ -150,7 +150,7 @@ static void ipAddrToAsciiEngineShutdownRequest ( void * )
     }
     if ( deleteGlobalMutexCondDetected ) {
         delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
-        ipAddrToAsciiEnginePrivate :: pEngine = 0;
+        ipAddrToAsciiEnginePrivate :: pGlobalMutex = 0;
     }
 }
 
@@ -225,11 +225,13 @@ void ipAddrToAsciiEnginePrivate::release ()
         if ( ipAddrToAsciiEnginePrivate::numberOfReferences == 0u ) {
             deleteGlobalMutexCondDetected = 
                 ipAddrToAsciiEnginePrivate :: shutdownRequest;
+            delete ipAddrToAsciiEnginePrivate :: pEngine;
+            ipAddrToAsciiEnginePrivate :: pEngine = 0;
         }
     }
     if ( deleteGlobalMutexCondDetected ) {
         delete ipAddrToAsciiEnginePrivate :: pGlobalMutex;
-        ipAddrToAsciiEnginePrivate :: pEngine = 0;
+        ipAddrToAsciiEnginePrivate :: pGlobalMutex = 0;
     }
 }
 

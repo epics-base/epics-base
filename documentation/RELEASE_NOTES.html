@@ -268,14 +268,18 @@ should not affect the contents of <tt>Makefile</tt>s or any applications
 using Base. They do however require that the version of GNU Make used be 3.81
 or later. These changes are briefly:</p>
 <ul>
+
   <li><p>A new tool is provided that expands out <tt>@VAR@</tt> macros. By
     default it knows the value of <tt>@TOP@</tt>, <tt>@ARCH@</tt> and any
-    paths defined in the application's <tt>configure/RELEASE</tt> file, but
-    additional macros can be defined in the <tt>Makefile</tt> that uses it by
-    adding to the <tt>EXPAND_VARS</tt> macro like the example following,
-    which creates an <tt>@EXE@</tt> macro that expands out to <tt>.exe</tt>
-    on windows and to nothing on other platforms:</p>
+    paths defined in the application's <tt>configure/RELEASE</tt> file such
+    as @EPICS_BASE@, but additional macros can be defined in the
+    <tt>Makefile</tt> that uses it by adding to the <tt>EXPAND_VARS</tt>
+    variable like the example following, which creates an <tt>@EXE@</tt>
+    macro that expands out to <tt>.exe</tt> on windows targets and to
+    nothing on other platforms:</p>
+
     <pre>  EXPAND_VARS += EXE=$(EXE)</pre>
+
     <p>Files that contain <tt>@VAR@</tt> macros to be substituted must have
     an at sign <tt><b>@</b></tt> as the last character of their name and be
     listed in the <tt>EXPAND</tt> variable of their <tt>Makefile</tt>. The
@@ -283,24 +287,29 @@ or later. These changes are briefly:</p>
     <tt><b>@</b></tt> suffix removed, and is then available for compiling or
     installing using any other build mechanism.</p>
   </li>
+
   <li><p>Support has been added for installing Perl library modules. The
     <tt>Makefile</tt> variable <tt>PERL_MODULES</tt> can be set to a list of
     names of files to be installed into the <tt>$(TOP)/lib/perl</tt>
     directory. The above macro expansion facility can then be used in perl
     programs that use these libraries to set the perl search path to include
     that directory. The syntax for this is as follows:</p>
+
     <pre>  use lib '@TOP@/lib/perl';
   use MyModule;</pre>
+
     <p>The filenames listed in <tt>PERL_MODULES</tt> can include subdirectory
     path components and the build system will preserve these in the installed
     result.</p>
   </li>
+
   <li>The Perl scripts that were in <tt>configure/tools</tt> are now found in
     the new <tt>src/tools</tt> directory, and get installed into the
     appropriate <tt>bin/<i>hostarch</i></tt> directory at build time. Some of
     these scripts are no longer required and have been removed, and others
     are being modified to make them more modular, extracting common routines
     into perl library modules.</li>
+
   <li>The generated files that were created by running make in the
     <tt>configure</tt> directory are no longer required, having been replaced
     by additional mechanisms inside the build system files. This removes a

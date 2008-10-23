@@ -299,10 +299,12 @@ ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 MUNCH_CMD = $(LD) -o $@ $^
 
 #--------------------------------------------------
-# LEX default option (valid for EPICS base 3.13.0.beta12 and later)
+# LEX default options
 #
-# to allow characters that are not plain 7bit standard ASCII 
-LEXOPT +=  -8
+# Allow 8-bit characters
+LEXOPT += -8
+# Generate an "interactive" scanner, solves problems at EOF.
+LEXOPT += -I
 
 #--------------------------------------------------
 # Build compile line here

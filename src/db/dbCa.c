@@ -234,7 +234,7 @@ void epicsShareAPI dbCaRemoveLink(struct link *plink)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
 
-    assert(pca);
+    if (!pca) return;
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;

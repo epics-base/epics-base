@@ -42,6 +42,8 @@ buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
+ifeq ($(findstring j,$(MAKEFLAGS)),j)
+
 define DEP_template
 $(2): $$(EPICS_HOST_ARCH)
 $(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH)
@@ -49,6 +51,8 @@ endef
 
 $(foreach action, $(ACTIONS), $(foreach arch,\
       $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
+
+endif
 
 #*************************************************************************
 

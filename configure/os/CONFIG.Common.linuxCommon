@@ -29,5 +29,5 @@ SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
 PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
-LDLIBS_READLINE = -lreadline -lcurses
+LDLIBS_READLINE = -lreadline -lncurses
 

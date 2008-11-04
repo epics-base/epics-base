@@ -7,18 +7,29 @@
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.10</h1>
+<h1 align="center">EPICS Base Release 3.14.1x</h1>
+
+
+<h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
+<!-- Insert new items below here ... -->
+
+<h4>Linux: Use libncurses</h4>
+
+<p>Changed linux builds to link against libncurses instead of libcurses
+(suggested by Peter Zumbruch).</p>
+
 
 <h2 align="center">Changes between 3.14.9 and 3.14.10</h2>
-<!-- Insert new items below here ... -->
 
 <h4>RTEMS Release</h4>
 
-<p>RTEMS release 4.9 or newer is required.  If you are using the RTEMS NFS time provider you need to use RTEMS 4.9.1 or newer.</p>
+<p>RTEMS release 4.9 or newer is required.  If you are using the RTEMS NFS time
+provider you need to use RTEMS 4.9.1 or newer.</p>
 
 <h4>RTEMS epicsEventWaitWithTimeout</h4>
 
-<p>Correctly return epicsEventWaitTimeout when event is not pending and timeout value is 0.0 secondsmore agressive.</p>
+<p>Correctly return epicsEventWaitTimeout when event is not pending and timeout
+value is 0.0 secondsmore agressive.</p>
 
 <h4>epicsRingPointer, epicsRingBytes</h4>
 

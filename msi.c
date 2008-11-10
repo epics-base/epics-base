@@ -20,7 +20,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
- 
+
+#include <dbDefs.h>
 #include <macLib.h>
 #include <ellLib.h>
 
@@ -92,7 +93,7 @@ int main(int argc,char **argv)
 	for(i=1; i<argc; i++) argv[i] = argv[i + narg];
     }
     if(argc>2) {
-	fprintf(stderr,"too many files\n");
+	fprintf(stderr,"too many filename arguments\n");
 	usageExit();
     }
     if(argc==2) {
@@ -153,9 +154,8 @@ static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
     free((void *)pairs);
 }
 
-#define cmdNumberOf 2
 typedef enum {cmdInclude,cmdSubstitute} cmdType;
-static char *cmdName[cmdNumberOf] = {"include","substitute"};
+static const char *cmdNames[] = {"include","substitute"};
 static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
 {
     char *input;
@@ -181,13 +181,13 @@ static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
 	    int  cmdind=-1;
 	    int  i;
 	    
-	    for(i=0; i< cmdNumberOf; i++) {
-		if(strstr(command,cmdName[i])) {
+	    for(i=0; i< NELEMENTS(cmdNames); i++) {
+		if(strstr(command,cmdNames[i])) {
 		    cmdind = i;
 		}
 	    }
 	    if(cmdind<0) goto endif;
-	    p = command + strlen(cmdName[cmdind]);
+	    p = command + strlen(cmdNames[cmdind]);
 	    /*skip whitespace after command*/
 	    while(*p && (isspace(*p))) ++p;
 	    /*Next character must be quote*/
@@ -772,7 +772,7 @@ static void catMacroReplacements(subInfo *psubInfo,const char *value)
             newsize = psubInfo->curLength + len + 1;
         newbuf = calloc(1,newsize);
         if(!newbuf) {
-            fprintf(stderr,"calloc failed for size %u\n",newsize);
+            fprintf(stderr,"calloc failed for size %Zu\n",newsize);
             exit(1);
         }
         if(psubInfo->macroReplacements) {

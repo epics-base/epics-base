@@ -57,6 +57,7 @@ void usage (void)
     "Channel Access options:\n"
     "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous put (use ca_put_callback and wait for completion)\n"
+    "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
     "Format options:\n"
     "  -t: Terse mode - print only sucessfully written value, without name\n"
     "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n"
@@ -69,7 +70,7 @@ void usage (void)
     "      Value format: number of requested values, then list of values\n"
     "\nExample: caput my_channel 1.2\n"
     "  (puts 1.2 to my_channel)\n\n"
-	, DEFAULT_TIMEOUT);
+             , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
 }
 
 
@@ -252,7 +253,7 @@ int main (int argc, char *argv[])
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
     putenv("POSIXLY_CORRECT=");      /* Behave correct on GNU getopt systems */
 
-    while ((opt = getopt(argc, argv, ":cnlhats#:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":cnlhats#:w:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -292,6 +293,15 @@ int main (int argc, char *argv[])
                         "- ignored. ('caput -h' for help.)\n", optarg);
                 count = 0;
             }
+            break;
+        case 'p':               /* CA priority */
+            if (sscanf(optarg,"%u", &caPriority) != 1)
+            {
+                fprintf(stderr, "'%s' is not a valid CA priority "
+                        "- ignored. ('caget -h' for help.)\n", optarg);
+                caPriority = DEFAULT_CA_PRIORITY;
+            }
+            if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
             break;
         case '?':
             fprintf(stderr,

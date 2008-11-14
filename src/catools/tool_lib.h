@@ -44,7 +44,7 @@
  * being >=0 */
 
 
-#define CA_PRIORITY 50          /* CA priority */
+#define DEFAULT_CA_PRIORITY 0  /* Default CA priority */
 #define DEFAULT_TIMEOUT 1.0     /* Default CA timeout */
 
 
@@ -79,7 +79,7 @@ extern IntFormatT outType;  /* Flag used for -0.. output format option */
 extern int enumAsNr;        /* Used for -n option (get DBF_ENUM as number) */
 extern double caTimeout;    /* Wait time default (see -w option) */
 extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option) */
-
+extern capri caPriority;    /* CA priority */
 
 extern char *val2str (const void *v, unsigned type, int index);
 extern char *dbr2str (const void *value, unsigned type);

@@ -44,6 +44,7 @@ void usage (void)
     "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n"
     "             'v' (value), 'a' (alarm), 'l' (log). Default: va\n"
+    "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
     "Timestamps:\n"
     "  Default: Print absolute timestamps (as reported by CA server)\n"
     "  -t <key>:  Specify timestamp source(s) and type, with <key> containing\n"
@@ -71,7 +72,7 @@ void usage (void)
     "  -0b: Print as binary number\n"
     "\nExample: camonitor -f8 my_channel another_channel\n"
     "  (doubles are printed as %%f with precision of 8)\n\n"
-	, DEFAULT_TIMEOUT);
+             , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
 }
 
 
@@ -208,7 +209,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhm:se:f:g:#:d:0:w:t:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhm:se:f:g:#:d:0:w:t:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -251,6 +252,15 @@ int main (int argc, char *argv[])
                         "- ignored. ('caget -h' for help.)\n", optarg);
                 reqElems = 0;
             }
+            break;
+        case 'p':               /* CA priority */
+            if (sscanf(optarg,"%u", &caPriority) != 1)
+            {
+                fprintf(stderr, "'%s' is not a valid CA priority "
+                        "- ignored. ('caget -h' for help.)\n", optarg);
+                caPriority = DEFAULT_CA_PRIORITY;
+            }
+            if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
             break;
         case 'm':               /* Select CA event mask */
             eventMask = 0;

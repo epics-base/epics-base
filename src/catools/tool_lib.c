@@ -46,6 +46,7 @@ char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
 
 int enumAsNr = 0;        /* used for -n option - get DBF_ENUM as number */
 double caTimeout = 1.0;  /* wait time default (see -w option) */
+capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
 #define TIMETEXTLEN 28          /* Length of timestamp text buffer */
 
@@ -528,7 +529,7 @@ int create_pvs (pv* pvs, int nPvs, caCh *pCB)
         result = ca_create_channel (pvs[n].name,
                                     pCB,
                                     &pvs[n],
-                                    CA_PRIORITY,
+                                    caPriority,
                                     &pvs[n].chid);
         if (result != ECA_NORMAL) {
             fprintf(stderr, "CA error %s occurred while trying "

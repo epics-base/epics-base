@@ -52,6 +52,7 @@ void usage (void)
     "Channel Access options:\n"
     "  -w <sec>: Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -c: Asynchronous get (use ca_get_callback and wait for completion)\n"
+    "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
     "Format options:\n"
     "      Default output format is \"name value\"\n"
     "  -t: Terse mode - print only value, without name\n"
@@ -87,7 +88,7 @@ void usage (void)
     "  -0b: Print as binary number\n"
     "\nExample: caget -a -f8 my_channel another_channel\n"
     "  (uses wide output format, doubles are printed as %%f with precision of 8)\n\n"
-	, DEFAULT_TIMEOUT);
+             , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
 }
 
 
@@ -348,7 +349,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhse:f:g:#:d:0:w:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhse:f:g:#:d:0:w:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -401,6 +402,15 @@ int main (int argc, char *argv[])
                         "- ignored. ('caget -h' for help.)\n", optarg);
                 count = 0;
             }
+            break;
+        case 'p':               /* CA priority */
+            if (sscanf(optarg,"%u", &caPriority) != 1)
+            {
+                fprintf(stderr, "'%s' is not a valid CA priority "
+                        "- ignored. ('caget -h' for help.)\n", optarg);
+                caPriority = DEFAULT_CA_PRIORITY;
+            }
+            if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
             break;
         case 's':               /* Select string dbr for floating type data */
             floatAsString = 1;

@@ -37,8 +37,9 @@ void usage (void)
     "Channel Access options:\n"
     "  -w <sec>:   Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -s <level>: Call ca_client_status with the specified interest level\n"
+    "  -p <prio>:  CA priority (0-%u, default 0=lowest)\n"
     "\nExample: cainfo my_channel another_channel\n\n"
-	, DEFAULT_TIMEOUT);
+             , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
 }
 
 
@@ -133,7 +134,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhw:s:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhw:s:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -153,6 +154,15 @@ int main (int argc, char *argv[])
                         "- ignored. ('caget -h' for help.)\n", optarg);
                 statLevel = 0;
             }
+            break;
+        case 'p':               /* CA priority */
+            if (sscanf(optarg,"%u", &caPriority) != 1)
+            {
+                fprintf(stderr, "'%s' is not a valid CA priority "
+                        "- ignored. ('caget -h' for help.)\n", optarg);
+                caPriority = DEFAULT_CA_PRIORITY;
+            }
+            if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
             break;
         case '?':
             fprintf(stderr,

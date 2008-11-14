@@ -76,6 +76,9 @@ template unsigned comBuf :: push ( const short * pValue, unsigned nElem );
 template comBuf :: popStatus comBuf :: pop ( unsigned int & returnVal );
 template comBuf :: popStatus comBuf :: pop ( unsigned short & returnVal );
 template comBuf :: popStatus comBuf :: pop ( unsigned char & returnVal );
+template void WireSet ( float const &, unsigned char * );
+template void WireSet ( int const &, unsigned char * );
+template void WireSet ( short const &, unsigned char * );
 
 
 #ifdef _MSC_VER

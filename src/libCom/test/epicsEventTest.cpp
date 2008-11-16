@@ -185,7 +185,7 @@ MAIN(epicsEventTest)
     id = (epicsThreadId *)calloc(nthreads, sizeof(epicsThreadId));
     name = (char **)calloc(nthreads, sizeof(char *));
     for(int i = 0; i < nthreads; i++) {
-        name[i] = (char *)calloc(10, sizeof(char));
+        name[i] = (char *)calloc(16, sizeof(char));
         sprintf(name[i],"producer %d",i);
         id[i] = epicsThreadCreate(name[i], 40, stackSize, producer, pinfo);
         epicsThreadSleep(0.1);

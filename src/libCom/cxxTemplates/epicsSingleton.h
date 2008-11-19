@@ -21,123 +21,189 @@
 #include <new>
 
 #include "shareLib.h"
-#include "epicsMutex.h"
-#include "epicsGuard.h"
-#include "epicsThread.h"
 #include "epicsAssert.h"
-#include "compilerDependencies.h"
+
+class epicsShareClass SingletonUntyped {
+public:
+    SingletonUntyped ();
+    ~SingletonUntyped ();
+    typedef void * ( * PBuild ) ();
+    void incrRefCount ( PBuild );
+    typedef void ( * PDestroy ) ( void * );
+    void decrRefCount ( PDestroy );
+    void * pInstance () const;
+private:
+    void * _pInstance;
+    size_t _refCount;
+	SingletonUntyped ( const SingletonUntyped & );
+	SingletonUntyped & operator = ( const SingletonUntyped & );
+};
 
 // This class exists for the purpose of avoiding file scope
 // object chicken and egg problems. It implements thread safe
 // lazy initialization. To avoid locking overhead retain a
-// copy of the epicsSingleton::reference for future use. The
-// class referenced by epicsSingleton::reference is _not_
-// destroyed by ~epicsSingleton() because this would introduce
-// additional file scope chicken and egg problems.
+// copy of the epicsSingleton :: reference for future use. 
 template < class TYPE >
 class epicsSingleton {
 public:
-    epicsSingleton ();
-    ~epicsSingleton ();
-
-    // inline mf def for class within a template required by visual c++ 7
     class reference {
     public:
-        reference ( TYPE & tIn ):
-            instance ( tIn ) 
-        {
-        }
-
-        ~reference ()
-        {
-        }
-
-        TYPE * operator -> ()
-        { 
-            return & this->instance; 
-        }
-
-        const TYPE * operator -> () const 
-        {
-            typename epicsSingleton<TYPE>::reference & ref = 
-                const_cast < typename epicsSingleton<TYPE>::reference & > ( *this );
-            return ref.operator -> ();
-        }
-
-        TYPE & operator * () 
-        {
-            return * this->operator -> ();
-        }
-
-        const TYPE & operator * () const 
-        {
-            return * this->operator -> ();
-        }
-
-    private:
-        TYPE & instance;
+        reference ( epicsSingleton & );
+	    reference ( const reference & );
+        ~reference ();
 	    reference & operator = ( const reference & );
+        TYPE * operator -> ();
+        const TYPE * operator -> () const;
+        TYPE & operator * ();
+        const TYPE & operator * () const;
+    private:
+        epicsSingleton * _pSingleton;
+        reference (); // disabled
     };
-
-    // lock overhead every time these are called
-    typename epicsSingleton<TYPE>::reference getReference ();
-    const typename epicsSingleton<TYPE>::reference getReference () const;
-
+    epicsSingleton () {}
+    // mutex lock/unlock pair overhead incured
+    // when either of these are called
+    reference getReference ();
+    const reference getReference () const;
 private:
-    TYPE * pSingleton;
+    SingletonUntyped _singletonUntyped;
+    static void * _build ();
+    static void _destroy ( void * );
 	epicsSingleton ( const epicsSingleton & );
 	epicsSingleton & operator = ( const epicsSingleton & );
 };
 
 template < class TYPE >
-inline epicsSingleton<TYPE>::epicsSingleton () : 
-    pSingleton ( 0 )
+inline epicsSingleton < TYPE > :: reference :: 
+    reference ( epicsSingleton & es ):
+    _pSingleton ( & es ) 
 {
+    es._singletonUntyped.
+        incrRefCount ( & epicsSingleton < TYPE > :: _build );
 }
 
 template < class TYPE >
-inline epicsSingleton<TYPE>::~epicsSingleton ()
+inline epicsSingleton < TYPE > :: reference :: 
+    reference ( const reference & ref ) :
+    _pSingleton ( ref._pSingleton )
 {
-    // Deleting the singelton in the destructor causes problems when 
-    // there are file scope objects that reference the singleton in 
-    // their destructors. Since this class's purpose is to avoid these
-    // sorts of problems then clean up is left to other classes.
-}
-
-// SUN PRO generates warnings unless it sees an implementation
-#if defined ( __SUNPRO_CC ) && __SUNPRO_CC < 0x550
-    // SUN PRO 5.4 generates bogus warnings unless it sees an implementation
-    template < class TYPE >
-    inline epicsSingleton<TYPE>::epicsSingleton ( 
-        const epicsSingleton<TYPE> & )
-    {
-        assert ( 0 );
-    }
-    template < class TYPE >
-    inline epicsSingleton<TYPE> & epicsSingleton<TYPE>::operator = 
-        ( const epicsSingleton<TYPE> & )
-    {
-        assert ( 0 );
-    }
-#endif
-
-epicsShareFunc epicsMutex & epicsSingletonPrivateMutex ();
-
-// borland 5.5 is unable to build this function optimized if it is inline
-template < class TYPE >
-typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference ()
-{
-    {
-        epicsGuard < epicsMutex > guard ( epicsSingletonPrivateMutex() );
-        if ( ! this->pSingleton ) {
-            this->pSingleton = new TYPE;
-        }
-    }
-    return reference ( * this->pSingleton );
+    assert ( _pSingleton );
+    _pSingleton->_singletonUntyped.
+        incrRefCount ( & epicsSingleton < TYPE > :: _build );
 }
 
 template < class TYPE >
-inline const typename epicsSingleton<TYPE>::reference epicsSingleton<TYPE>::getReference () const
+inline epicsSingleton < TYPE > :: reference :: 
+    ~reference ()
+{
+    assert ( _pSingleton );
+    _pSingleton->_singletonUntyped.
+        decrRefCount ( & epicsSingleton < TYPE > :: _destroy );
+}
+
+template < class TYPE >
+typename epicsSingleton < TYPE > :: reference & 
+    epicsSingleton < TYPE > :: reference :: 
+        operator = ( const reference & ref )
+{
+    if ( _pSingleton != ref._pSingleton ) {
+        assert ( _pSingleton );
+        _pSingleton->_singletonUntyped.
+            decrRefCount ( epicsSingleton < TYPE > :: _destroy );
+        _pSingleton = ref._pSingleton;
+        assert ( _pSingleton );
+        _pSingleton->_singletonUntyped.
+            incrRefCount ( & epicsSingleton < TYPE > :: _build ); 
+    }
+    return *this;
+}
+
+template < class TYPE >
+inline TYPE * 
+    epicsSingleton < TYPE > :: reference :: 
+        operator -> ()
+{ 
+    assert ( _pSingleton );
+    return reinterpret_cast < TYPE * > 
+            ( _pSingleton->_singletonUntyped.pInstance () ); 
+}
+
+template < class TYPE >
+inline const TYPE * 
+    epicsSingleton < TYPE > :: reference :: 
+        operator -> () const 
+{
+    assert ( _pSingleton );
+    return reinterpret_cast < const TYPE * > 
+            ( _pSingleton->_singletonUntyped.pInstance () ); 
+}
+
+template < class TYPE >
+inline TYPE & 
+    epicsSingleton < TYPE > :: reference :: 
+        operator * () 
+{
+    return * this->operator -> ();
+}
+
+template < class TYPE >
+inline const TYPE & 
+    epicsSingleton < TYPE > :: reference :: 
+            operator * () const 
+{
+    return * this->operator -> ();
+}
+
+inline SingletonUntyped :: SingletonUntyped () : 
+    _pInstance ( 0 ), _refCount ( 0 )
+{
+}
+
+inline void * SingletonUntyped :: pInstance () const
+{
+    return _pInstance;
+}
+
+inline SingletonUntyped :: ~SingletonUntyped ()
+{
+    // we dont assert fail on non-zero _refCount
+    // and or non nill _pInstance here because this
+    // is designed to tolarate situations where 
+    // file scope epicsSingleton objects (which 
+    // theoretically dont have storage lifespan 
+    // issues) are deleted in a non-determanistic 
+    // order
+#   if 0
+        assert ( _refCount == 0 );
+        assert ( _pInstance == 0 );
+#   endif
+}
+
+template < class TYPE >
+void * epicsSingleton < TYPE > :: _build ()
+{
+    return new TYPE ();
+}
+
+template < class TYPE >
+void epicsSingleton < TYPE > :: 
+    _destroy ( void * pDestroyTypeless )
+{
+    TYPE * pDestroy = 
+        reinterpret_cast < TYPE * > ( pDestroyTypeless );
+    delete pDestroy;
+}
+
+template < class TYPE >
+inline typename epicsSingleton < TYPE > :: reference 
+    epicsSingleton < TYPE > :: getReference ()
+{
+    return reference ( * this );
+}
+
+template < class TYPE >
+inline const typename epicsSingleton < TYPE > :: reference 
+    epicsSingleton < TYPE > :: getReference () const
 {
     epicsSingleton < TYPE > * pConstCastAway = 
         const_cast < epicsSingleton < TYPE > * > ( this );

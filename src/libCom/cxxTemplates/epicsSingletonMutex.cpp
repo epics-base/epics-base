@@ -15,52 +15,49 @@
  *
  */
 
+#include <climits>
+
 #define epicsExportSharedSymbols
+#include "epicsMutex.h"
+#include "epicsGuard.h"
+#include "epicsThread.h"
 #include "epicsSingleton.h"
 
-extern "C" void epicsSingletonMutexOnce ( void * pParm );
+#ifndef SIZE_MAX
+#   define SIZE_MAX UINT_MAX
+#endif
 
-class epicsShareClass epicsSingletonMutex {
-public: 
-    epicsSingletonMutex ();
-    ~epicsSingletonMutex ();
-    epicsMutex & get ();
-private:
-    epicsThreadOnceId onceFlag;
-    epicsMutex * pMutex;
-    static void once ( void * );
-    friend void epicsSingletonMutexOnce ( void * pParm );
-};
+static epicsThreadOnceId epicsSigletonOnceFlag ( EPICS_THREAD_ONCE_INIT );
+static epicsMutex * pEPICSSigletonMutex = 0;
 
-epicsSingletonMutex::epicsSingletonMutex () :
-    onceFlag ( EPICS_THREAD_ONCE_INIT ), pMutex ( 0 )
+extern "C" void SingletonMutexOnce ( void * /* pParm */ )
 {
+    // This class exists for the purpose of avoiding file scope
+    // object chicken and egg problems. Therefore, pEPICSSigletonMutex 
+    // is never destroyed.
+    pEPICSSigletonMutex = new epicsMutex;
 }
 
-epicsSingletonMutex::~epicsSingletonMutex ()
+void SingletonUntyped :: incrRefCount ( PBuild pBuild )
 {
-    delete this->pMutex;
+    epicsThreadOnce ( & epicsSigletonOnceFlag, SingletonMutexOnce, 0 );
+    epicsGuard < epicsMutex > 
+        guard ( *pEPICSSigletonMutex );
+    assert ( _refCount < SIZE_MAX );
+    if ( _refCount == 0 ) {
+        _pInstance = ( * pBuild ) ();
+    }
+    _refCount++;
 }
 
-void epicsSingletonMutex::once ( void * pParm )
+void SingletonUntyped :: decrRefCount ( PDestroy pDestroy )
 {
-    epicsSingletonMutex *pSM = static_cast < epicsSingletonMutex * > ( pParm );
-    pSM->pMutex = new epicsMutex;
-}
-
-extern "C" void epicsSingletonMutexOnce ( void * pParm )
-{
-    epicsSingletonMutex::once ( pParm );
-}
-
-epicsMutex & epicsSingletonMutex::get ()
-{
-    epicsThreadOnce ( & this->onceFlag, epicsSingletonMutexOnce, this );
-    return * this->pMutex;
-}
-
-epicsMutex & epicsSingletonPrivateMutex ()
-{
-    static epicsSingletonMutex mutex;
-    return mutex.get ();
+    assert ( _refCount > 0 );
+    epicsGuard < epicsMutex > 
+        guard ( *pEPICSSigletonMutex );
+    _refCount--;
+    if ( _refCount == 0 ) {
+        ( *pDestroy ) ( _pInstance );
+        _pInstance = 0;
+    }
 }

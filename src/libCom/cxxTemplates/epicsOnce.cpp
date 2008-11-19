@@ -42,6 +42,8 @@ private:
     bool onceFlag;
     void destroy ();
     void once ();
+    epicsOnceImpl ( epicsOnceImpl & ); // disabled
+    epicsOnceImpl & operator = ( epicsOnceImpl & ); // disabled
 	static epicsSingleton < epicsMutex > mutex;
     static epicsSingleton < tsFreeList < class epicsOnceImpl, 16 > > freeList;
 };

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 //
@@ -40,7 +40,7 @@
 #include "epicsAssert.h"
 #include "epicsThread.h"
 
-#if defined ( DEBUG ) 
+#if defined ( DEBUG )
 #   define debugPrintf(argsInParen) ::printf argsInParen
 #else
 #   define debugPrintf(argsInParen)
@@ -51,14 +51,14 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 // GNU seems to require that 64 bit constants have LL on
 // them. The borland compiler fails to compile constants
 // with the LL suffix. MS compiler doesnt care.
-#ifdef __GNUC__ 
+#ifdef __GNUC__
 #define LL_CONSTANT(VAL) VAL ## LL
 #else
-#define LL_CONSTANT(VAL) VAL 
+#define LL_CONSTANT(VAL) VAL
 #endif
 
 // for mingw
-#if !defined ( MAXLONGLONG ) 
+#if !defined ( MAXLONGLONG )
 #define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
 #endif
 
@@ -85,7 +85,7 @@ private:
     epicsTimerNotify::expireStatus expire ( const epicsTime & );
 };
 
-static currentTime * pCurrentTime = 0;
+static volatile currentTime * pCurrentTime = 0;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =
@@ -96,11 +96,13 @@ static const LONGLONG ET_TICKS_PER_FT_TICK =
 //
 static int timeRegister(void)
 {
-    pCurrentTime = new currentTime ();
-    /* Must register with generalTime here since the epicsTimer
-     * in the PLL ends up calling epicsTime::getCurrent()
+    /* Register with generalTime first since the epicsTimerQueue started
+     * by the currentTime() constructor calls epicsTime::getCurrent() in
+     * its timer thread as it starts up.
      */
     generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
+
+    pCurrentTime = new currentTime ();
     pCurrentTime->startPLL ();
     return 1;
 }
@@ -111,8 +113,13 @@ static int done = timeRegister();
 //
 static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 {
-    if ( ! pCurrentTime ) {
-        return epicsTimeERROR;
+    while ( ! pCurrentTime ) {
+        /* A thread has called epicsTime::getCurrent() after this routine
+         * was registered with generalTime but before pCurrentTime was
+         * set in timeRegister() above.  We know that pCurrentTime will
+         * be set soon though, so we just wait for it.
+         */
+        Sleep(1);
     }
 
     pCurrentTime->getCurrentTime ( *pDest );
@@ -127,23 +134,18 @@ inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
 }
 
 static int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31,
-    31, 30, 31, 30, 31 }; 
+    31, 30, 31, 30, 31 };
 
-static bool isLeapYear ( DWORD year ) 
+static bool isLeapYear ( DWORD year )
 {
     if ( (year % 4) == 0 ) {
-        if ( ( year % 100 ) != 0 || ( year % 400 ) == 0 ) {
-            return true;         
-        }
-        else {
-            return false;         
-        }
-    } else {                 
-        return false;         
-    } 
-} 
+        return ( ( year % 100 ) != 0 || ( year % 400 ) == 0 );
+    } else {
+        return false;
+    }
+}
 
-static int dayOfYear ( DWORD day, DWORD month, DWORD year ) 
+static int dayOfYear ( DWORD day, DWORD month, DWORD year )
 {
     DWORD nDays = 0;
     for ( unsigned m = 1; m < month; m++ ) {
@@ -164,7 +166,7 @@ int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
     SYSTEMTIME st;
     BOOL status = FileTimeToSystemTime ( &ft, &st );
     if ( ! status ) {
-		return epicsTimeERROR;
+        return epicsTimeERROR;
     }
 
     pTM->tm_sec = st.wSecond; // seconds after the minute - [0,59]
@@ -176,15 +178,15 @@ int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
     pTM->tm_mon = st.wMonth - 1; // months since January - [0,11]
     assert ( st.wYear >= 1900 );
     pTM->tm_year = st.wYear - 1900; // years since 1900
-    pTM->tm_wday = st.wDayOfWeek; // days since Sunday - [0,6] 
-    pTM->tm_yday = dayOfYear ( st.wDay, st.wMonth, st.wYear ) - 1; 
+    pTM->tm_wday = st.wDayOfWeek; // days since Sunday - [0,6]
+    pTM->tm_yday = dayOfYear ( st.wDay, st.wMonth, st.wYear ) - 1;
     pTM->tm_isdst = 0;
 
-	return epicsTimeOK;
+    return epicsTimeOK;
 }
 
 // synthesize a reentrant localtime on WIN32
-int epicsShareAPI epicsTime_localtime ( 
+int epicsShareAPI epicsTime_localtime (
     const time_t * pAnsiTime, struct tm * pTM )
 {
     FILETIME ft;
@@ -193,24 +195,24 @@ int epicsShareAPI epicsTime_localtime (
     TIME_ZONE_INFORMATION tzInfo;
     DWORD tzStatus = GetTimeZoneInformation ( & tzInfo );
     if ( tzStatus == TIME_ZONE_ID_INVALID ) {
-		return epicsTimeERROR;
+        return epicsTimeERROR;
     }
-  
+
     //
-    // There are remarkable weaknessess in the FileTimeToLocalFileTime 
-    // interface so we dont use it here. Unfortunately, there is no 
+    // There are remarkable weaknessess in the FileTimeToLocalFileTime
+    // interface so we dont use it here. Unfortunately, there is no
     // corresponding function that works on file time.
     //
     SYSTEMTIME st;
     BOOL success = FileTimeToSystemTime ( & ft, & st );
     if ( ! success ) {
-		return epicsTimeERROR;
+        return epicsTimeERROR;
     }
     SYSTEMTIME lst;
     success = SystemTimeToTzSpecificLocalTime (
-        & tzInfo, & st, & lst ); 
+        & tzInfo, & st, & lst );
     if ( ! success ) {
-		return epicsTimeERROR;
+        return epicsTimeERROR;
     }
 
     //
@@ -220,28 +222,28 @@ int epicsShareAPI epicsTime_localtime (
     FILETIME lft;
     success = SystemTimeToFileTime ( & lst, & lft );
     if ( ! success ) {
-		return epicsTimeERROR;
+        return epicsTimeERROR;
     }
 
     int is_dst = -1; // unknown state of dst
-    if ( tzStatus != TIME_ZONE_ID_UNKNOWN && 
-            tzInfo.StandardDate.wMonth != 0 && 
+    if ( tzStatus != TIME_ZONE_ID_UNKNOWN &&
+            tzInfo.StandardDate.wMonth != 0 &&
             tzInfo.DaylightDate.wMonth != 0) {
-        // determine if the specified date is 
-        // in daylight savings time 
-        tzInfo.StandardDate.wYear = st.wYear; 
+        // determine if the specified date is
+        // in daylight savings time
+        tzInfo.StandardDate.wYear = st.wYear;
         FILETIME StandardDateFT;
-        success = SystemTimeToFileTime ( 
+        success = SystemTimeToFileTime (
             & tzInfo.StandardDate, & StandardDateFT );
         if ( ! success ) {
-		    return epicsTimeERROR;
+            return epicsTimeERROR;
         }
-        tzInfo.DaylightDate.wYear = st.wYear; 
+        tzInfo.DaylightDate.wYear = st.wYear;
         FILETIME DaylightDateFT;
-        success = SystemTimeToFileTime ( 
+        success = SystemTimeToFileTime (
             & tzInfo.DaylightDate, & DaylightDateFT );
         if ( ! success ) {
-		    return epicsTimeERROR;
+            return epicsTimeERROR;
         }
         if ( CompareFileTime ( & lft, & DaylightDateFT ) >= 0
                 && CompareFileTime ( & lft, & StandardDateFT ) < 0 ) {
@@ -261,11 +263,11 @@ int epicsShareAPI epicsTime_localtime (
     pTM->tm_mon = lst.wMonth - 1; // months since January - [0,11]
     assert ( lst.wYear >= 1900 );
     pTM->tm_year = lst.wYear - 1900; // years since 1900
-    pTM->tm_wday = lst.wDayOfWeek; // days since Sunday - [0,6] 
+    pTM->tm_wday = lst.wDayOfWeek; // days since Sunday - [0,6]
     pTM->tm_yday = dayOfYear ( lst.wDay, lst.wMonth, lst.wYear ) - 1;
     pTM->tm_isdst = is_dst;
 
-	return epicsTimeOK;
+    return epicsTimeOK;
 }
 
 currentTime::currentTime () :
@@ -288,10 +290,10 @@ currentTime::currentTime () :
     FILETIME ft;
     GetSystemTimeAsFileTime ( & ft );
     LARGE_INTEGER tmp;
-	QueryPerformanceCounter ( & tmp );
+    QueryPerformanceCounter ( & tmp );
     this->lastPerfCounter = tmp.QuadPart;
     // if no high resolution counters then default to low res file time
-	if ( QueryPerformanceFrequency ( & tmp ) ) {
+    if ( QueryPerformanceFrequency ( & tmp ) ) {
         this->perfCounterFreq = tmp.QuadPart;
         this->perfCtrPresent = true;
     }
@@ -304,12 +306,12 @@ currentTime::currentTime () :
     if ( liFileTime.QuadPart >= epicsEpochInFileTime ) {
         // the windows file time has a maximum resolution of 100 nS
         // and a nominal resolution of 10 mS - 16 mS
-	    this->epicsTimeLast = 
+        this->epicsTimeLast =
             ( liFileTime.QuadPart - epicsEpochInFileTime ) *
             ET_TICKS_PER_FT_TICK;
     }
     else {
-        errlogPrintf ( 
+        errlogPrintf (
             "win32 osdTime.cpp detected questionable "
             "system date prior to EPICS epoch\n" );
         this->epicsTimeLast = 0;
@@ -321,7 +323,7 @@ currentTime::currentTime () :
 
     // create frequency estimation timer when needed
     if ( this->perfCtrPresent ) {
-        this->pTimerQueue =  
+        this->pTimerQueue =
             & epicsTimerQueueActive::allocate ( true );
         this->pTimer = & this->pTimerQueue->createTimer ();
     }
@@ -338,31 +340,31 @@ currentTime::~currentTime ()
     }
 }
 
-void currentTime::getCurrentTime ( epicsTimeStamp & dest ) 
+void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 {
     if ( this->perfCtrPresent ) {
         EnterCriticalSection ( & this->mutex );
 
         LARGE_INTEGER curPerfCounter;
-	    QueryPerformanceCounter ( & curPerfCounter );
+        QueryPerformanceCounter ( & curPerfCounter );
 
         LONGLONG offset;
-	    if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
+        if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {
             offset = curPerfCounter.QuadPart - this->lastPerfCounter;
         }
         else {
-		    //
-		    // must have been a timer roll-over event
             //
-            // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+            // must have been a timer roll-over event
+            //
+            // It takes 9.223372036855e+18/perf_freq sec to roll over this
             // counter. This is currently about 245118 years using the perf
             // counter freq value on my system (1193182). Nevertheless, I
-            // have code for this situation because the performance 
+            // have code for this situation because the performance
             // counter resolution will more than likely improve over time.
-		    //
+            //
             offset = ( MAXLONGLONG - this->lastPerfCounter )
                                 + ( curPerfCounter.QuadPart + MAXLONGLONG );
-	    }
+        }
         if ( offset < MAXLONGLONG / EPICS_TIME_TICKS_PER_SEC ) {
             offset *= EPICS_TIME_TICKS_PER_SEC;
             offset /= this->perfCounterFreq;
@@ -375,9 +377,9 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
         }
         LONGLONG epicsTimeCurrent = this->epicsTimeLast + offset;
         if ( this->epicsTimeLast > epicsTimeCurrent ) {
-            double diff = static_cast < double > 
+            double diff = static_cast < double >
                 ( this->epicsTimeLast - epicsTimeCurrent );
-            errlogPrintf ( 
+            errlogPrintf (
                 "currentTime::getCurrentTime(): %f sec "
                 "time discontinuity detected\n",
                 diff );
@@ -387,16 +389,16 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 
         LeaveCriticalSection ( & this->mutex );
 
-	    dest.secPastEpoch = static_cast < epicsUInt32 > 
+        dest.secPastEpoch = static_cast < epicsUInt32 >
             ( epicsTimeCurrent / EPICS_TIME_TICKS_PER_SEC );
         dest.nsec = static_cast < epicsUInt32 >
             ( epicsTimeCurrent % EPICS_TIME_TICKS_PER_SEC );
     }
     else {
-        // if high resolution performance counters are not supported then 
+        // if high resolution performance counters are not supported then
         // fall back to low res file time
         FILETIME ft;
-    	GetSystemTimeAsFileTime ( & ft );
+        GetSystemTimeAsFileTime ( & ft );
         dest = epicsTime ( ft );
     }
 }
@@ -415,32 +417,32 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         SetThreadPriority ( GetCurrentThread (), THREAD_PRIORITY_TIME_CRITICAL );
         FILETIME ft;
         GetSystemTimeAsFileTime ( & ft );
-	    QueryPerformanceCounter ( & curPerfCounter );
+        QueryPerformanceCounter ( & curPerfCounter );
         SetThreadPriority ( GetCurrentThread (), originalPriority );
 
         curFileTime.LowPart = ft.dwLowDateTime;
-	    curFileTime.HighPart = ft.dwHighDateTime;
+        curFileTime.HighPart = ft.dwHighDateTime;
     }
 
     EnterCriticalSection ( & this->mutex );
 
     LONGLONG perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
-	if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
+    if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {
         perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
     }
     else {
-		//
-		// must have been a timer roll-over event
         //
-        // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+        // must have been a timer roll-over event
+        //
+        // It takes 9.223372036855e+18/perf_freq sec to roll over this
         // counter. This is currently about 245118 years using the perf
         // counter freq value on my system (1193182). Nevertheless, I
-        // have code for this situation because the performance 
+        // have code for this situation because the performance
         // counter resolution will more than likely improve over time.
-		//
+        //
         perfCounterDiff = ( MAXLONGLONG - this->lastPerfCounterPLL )
                             + ( curPerfCounter.QuadPart + MAXLONGLONG );
-	}
+    }
     this->lastPerfCounterPLL = curPerfCounter.QuadPart;
 
     LONGLONG fileTimeDiff = curFileTime.QuadPart - this->lastFileTimePLL;
@@ -453,7 +455,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         return expireStatus ( restart, 1.0 /* sec */ );
     }
 
-    LONGLONG freq = ( FILE_TIME_TICKS_PER_SEC * perfCounterDiff ) / fileTimeDiff; 
+    LONGLONG freq = ( FILE_TIME_TICKS_PER_SEC * perfCounterDiff ) / fileTimeDiff;
     LONGLONG delta = freq - this->perfCounterFreqPLL;
 
     // discard glitches
@@ -472,49 +474,49 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
     this->perfCounterFreqPLL += feedback;
 
     LONGLONG perfCounterDiffSinceLastFetch;
-	if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {	
-        perfCounterDiffSinceLastFetch = 
+    if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {
+        perfCounterDiffSinceLastFetch =
             curPerfCounter.QuadPart - this->lastPerfCounter;
     }
     else {
-		//
-		// must have been a timer roll-over event
         //
-        // It takes 9.223372036855e+18/perf_freq sec to roll over this 
+        // must have been a timer roll-over event
+        //
+        // It takes 9.223372036855e+18/perf_freq sec to roll over this
         // counter. This is currently about 245118 years using the perf
         // counter freq value on my system (1193182). Nevertheless, I
-        // have code for this situation because the performance 
+        // have code for this situation because the performance
         // counter resolution will more than likely improve over time.
-		//
-        perfCounterDiffSinceLastFetch = 
+        //
+        perfCounterDiffSinceLastFetch =
             ( MAXLONGLONG - this->lastPerfCounter )
                             + ( curPerfCounter.QuadPart + MAXLONGLONG );
-	}
+    }
 
     // Update the current estimated time.
-    this->epicsTimeLast += 
-        ( perfCounterDiffSinceLastFetch * EPICS_TIME_TICKS_PER_SEC ) 
+    this->epicsTimeLast +=
+        ( perfCounterDiffSinceLastFetch * EPICS_TIME_TICKS_PER_SEC )
             / this->perfCounterFreq;
     this->lastPerfCounter = curPerfCounter.QuadPart;
 
-    LONGLONG epicsTimeFromCurrentFileTime = 
+    LONGLONG epicsTimeFromCurrentFileTime =
         ( curFileTime.QuadPart - epicsEpochInFileTime ) *
         ET_TICKS_PER_FT_TICK;
 
     delta = epicsTimeFromCurrentFileTime - this->epicsTimeLast;
     if ( delta > EPICS_TIME_TICKS_PER_SEC || delta < -EPICS_TIME_TICKS_PER_SEC ) {
-        // When there is an abrupt shift in the current computed time vs 
-        // the time derived from the current file time then someone has 
-        // probabably adjusted the real time clock and the best reaction 
+        // When there is an abrupt shift in the current computed time vs
+        // the time derived from the current file time then someone has
+        // probabably adjusted the real time clock and the best reaction
         // is to just assume the new time base
-  	    this->epicsTimeLast = epicsTimeFromCurrentFileTime;
- 	    this->perfCounterFreq = this->perfCounterFreqPLL;
+        this->epicsTimeLast = epicsTimeFromCurrentFileTime;
+        this->perfCounterFreq = this->perfCounterFreqPLL;
         debugPrintf ( ( "currentTime: did someone adjust the date?\n" ) );
-    } 
+    }
     else {
-        // update the effective performance counter frequency that will bring 
+        // update the effective performance counter frequency that will bring
         // our calculated time base in syncy with file time one second from now.
-    	this->perfCounterFreq = 
+        this->perfCounterFreq =
             ( EPICS_TIME_TICKS_PER_SEC * this->perfCounterFreqPLL )
                 / ( delta + EPICS_TIME_TICKS_PER_SEC );
 
@@ -524,7 +526,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             debugPrintf ( ( "currentTime: out of bounds low freq excursion %d\n",
                 static_cast <int> ( lowLimit - this->perfCounterFreq ) ) );
             this->perfCounterFreq = lowLimit;
-        } 
+        }
         else {
             LONGLONG highLimit = this->perfCounterFreqPLL + bound;
             if ( this->perfCounterFreq > highLimit ) {
@@ -534,18 +536,18 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             }
         }
 
-#       if defined ( DEBUG ) 
+#       if defined ( DEBUG )
             LARGE_INTEGER sysFreq;
-	        QueryPerformanceFrequency ( & sysFreq );
-            double freqDiff = static_cast <int> 
+            QueryPerformanceFrequency ( & sysFreq );
+            double freqDiff = static_cast <int>
                 ( this->perfCounterFreq - sysFreq.QuadPart );
             freqDiff /= sysFreq.QuadPart;
             freqDiff *= 100.0;
-            double freqEstDiff = static_cast <int> 
+            double freqEstDiff = static_cast <int>
                 ( this->perfCounterFreqPLL - sysFreq.QuadPart );
             freqEstDiff /= sysFreq.QuadPart;
             freqEstDiff *= 100.0;
-            debugPrintf ( ( "currentTime: freq delta %f %% freq est delta %f %% time delta %f sec\n", 
+            debugPrintf ( ( "currentTime: freq delta %f %% freq est delta %f %% time delta %f sec\n",
                 freqDiff, freqEstDiff, static_cast < double > ( delta ) / EPICS_TIME_TICKS_PER_SEC ) );
 #       endif
     }
@@ -563,31 +565,31 @@ void currentTime::startPLL ()
 epicsTime::operator FILETIME () const
 {
     LARGE_INTEGER ftTicks;
-    ftTicks.QuadPart = ( this->secPastEpoch * FILE_TIME_TICKS_PER_SEC ) + 
+    ftTicks.QuadPart = ( this->secPastEpoch * FILE_TIME_TICKS_PER_SEC ) +
         ( this->nSec / ET_TICKS_PER_FT_TICK );
     ftTicks.QuadPart += epicsEpochInFileTime;
     FILETIME ts;
-	ts.dwLowDateTime = ftTicks.LowPart;
-	ts.dwHighDateTime = ftTicks.HighPart;
+    ts.dwLowDateTime = ftTicks.LowPart;
+    ts.dwHighDateTime = ftTicks.HighPart;
     return ts;
 }
 
 epicsTime::epicsTime ( const FILETIME & ts )
 {
     LARGE_INTEGER lift;
-	lift.LowPart = ts.dwLowDateTime;
-	lift.HighPart = ts.dwHighDateTime;
+    lift.LowPart = ts.dwLowDateTime;
+    lift.HighPart = ts.dwHighDateTime;
     if ( lift.QuadPart > epicsEpochInFileTime ) {
-        LONGLONG fileTimeTicksSinceEpochEPICS = 
+        LONGLONG fileTimeTicksSinceEpochEPICS =
             lift.QuadPart - epicsEpochInFileTime;
-	    this->secPastEpoch = static_cast < epicsUInt32 > 
+        this->secPastEpoch = static_cast < epicsUInt32 >
             ( fileTimeTicksSinceEpochEPICS / FILE_TIME_TICKS_PER_SEC );
         this->nSec = static_cast < epicsUInt32 >
-            ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) * 
+            ( ( fileTimeTicksSinceEpochEPICS % FILE_TIME_TICKS_PER_SEC ) *
             ET_TICKS_PER_FT_TICK );
     }
     else {
-	    this->secPastEpoch = 0;
+        this->secPastEpoch = 0;
         this->nSec = 0;
     }
 }

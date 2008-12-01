@@ -9,8 +9,3 @@
 # to omit command-line editing and history support
 #COMMANDLINE_LIBRARY = READLINE
 
-# Needed to find dlls for gcc, g++, as, cpp, ...
-# if MINGW_BIN not in user's path
-MINGW_BIN=C:/MinGW/bin
-export PATH := $(MINGW_BIN):$(PATH)
-

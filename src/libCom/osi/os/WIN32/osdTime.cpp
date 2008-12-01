@@ -85,7 +85,7 @@ private:
     epicsTimerNotify::expireStatus expire ( const epicsTime & );
 };
 
-static volatile currentTime * pCurrentTime = 0;
+static currentTime * volatile pCurrentTime = 0;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =

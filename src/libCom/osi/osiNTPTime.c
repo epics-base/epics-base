@@ -181,12 +181,12 @@ static void NTPTimeSync(void *dummy)
         epicsMutexMustLock(NTPTimePvt.lock);
         diff = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
         if (diff >= 0.0) {
-            NTPTimePvt.clockTime = timeNow;
             NTPTimePvt.ticksToSkip = 0;
         } else { /* dont go back in time */
             NTPTimePvt.ticksToSkip = -diff * NTPTimePvt.ticksPerSecond;
         }
         NTPTimePvt.clockTick = tickNow;
+        NTPTimePvt.clockTime = timeNow;
         NTPTimePvt.synchronized = 1;
         epicsMutexUnlock(NTPTimePvt.lock);
 

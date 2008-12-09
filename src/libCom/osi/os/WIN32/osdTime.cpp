@@ -85,7 +85,7 @@ private:
     epicsTimerNotify::expireStatus expire ( const epicsTime & );
 };
 
-static currentTime * volatile pCurrentTime = 0;
+static currentTime * pCurrentTime = 0;
 static const LONGLONG FILE_TIME_TICKS_PER_SEC = 10000000;
 static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =
@@ -96,13 +96,10 @@ static const LONGLONG ET_TICKS_PER_FT_TICK =
 //
 static int timeRegister(void)
 {
-    /* Register with generalTime first since the epicsTimerQueue started
-     * by the currentTime() constructor calls epicsTime::getCurrent() in
-     * its timer thread as it starts up.
-     */
+    pCurrentTime = new currentTime ();
+
     generalTimeCurrentTpRegister("PerfCounter", 150, osdTimeGetCurrent);
 
-    pCurrentTime = new currentTime ();
     pCurrentTime->startPLL ();
     return 1;
 }
@@ -113,14 +110,7 @@ static int done = timeRegister();
 //
 static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 {
-    while ( ! pCurrentTime ) {
-        /* A thread has called epicsTime::getCurrent() after this routine
-         * was registered with generalTime but before pCurrentTime was
-         * set in timeRegister() above.  We know that pCurrentTime will
-         * be set soon though, so we just wait for it.
-         */
-        Sleep(1);
-    }
+    assert ( pCurrentTime );
 
     pCurrentTime->getCurrentTime ( *pDest );
     return epicsTimeOK;
@@ -320,13 +310,6 @@ currentTime::currentTime () :
     this->perfCounterFreqPLL = this->perfCounterFreq;
     this->lastPerfCounterPLL = this->lastPerfCounter;
     this->lastFileTimePLL = liFileTime.QuadPart;
-
-    // create frequency estimation timer when needed
-    if ( this->perfCtrPresent ) {
-        this->pTimerQueue =
-            & epicsTimerQueueActive::allocate ( true );
-        this->pTimer = & this->pTimerQueue->createTimer ();
-    }
 }
 
 currentTime::~currentTime ()
@@ -559,7 +542,12 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 
 void currentTime::startPLL ()
 {
-    this->pTimer->start ( *this, 1.0 );
+    // create frequency estimation timer when needed
+    if ( this->perfCtrPresent && ! this->pTimerQueue ) {
+        this->pTimerQueue = & epicsTimerQueueActive::allocate ( true );
+        this->pTimer      = & this->pTimerQueue->createTimer ();
+        this->pTimer->start ( *this, 1.0 );
+    }
 }
 
 epicsTime::operator FILETIME () const

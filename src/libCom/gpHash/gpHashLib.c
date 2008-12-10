@@ -101,32 +101,33 @@ void epicsShareAPI gphInitPvt(void **ppvt,int size)
     *ppvt = (void *)pgphPvt;
     return;
 }
-	
-GPHENTRY * epicsShareAPI gphFind(void *pvt,const char *name,void *pvtid)
+
+GPHENTRY * epicsShareAPI gphFind(void *pvt, const char *name, void *pvtid)
 {
     int		hashInd;
     gphPvt	*pgphPvt = (gphPvt *)pvt;
     ELLLIST	**paplist;
     ELLLIST	*gphlist;
     GPHENTRY	*pgphNode;
-    
-    if(pgphPvt==NULL) return(NULL);
+
+    if (pgphPvt == NULL) return NULL;
     paplist = pgphPvt->paplist;
-    hashInd = hash(name,pgphPvt->nShift);
+    hashInd = hash(name, pgphPvt->nShift);
     epicsMutexMustLock(pgphPvt->lock);
-    if ((gphlist=paplist[hashInd]) == NULL) {
-	pgphNode = NULL;
+    gphlist = paplist[hashInd];
+    if (gphlist == NULL) {
+        pgphNode = NULL;
     } else {
-	pgphNode = (GPHENTRY *) ellFirst(gphlist);
+        pgphNode = (GPHENTRY *) ellFirst(gphlist);
     }
-    while(pgphNode) {
-	if(strcmp(name,(char *)pgphNode->name) == 0) {
-	    if(pvtid==pgphNode->pvtid) break;
-	}
-	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
+    while (pgphNode) {
+        if (strcmp(name, pgphNode->name) == 0) {
+            if (pvtid == pgphNode->pvtid) break;
+        }
+        pgphNode = (GPHENTRY *) ellNext((ELLNODE *)pgphNode);
     }
     epicsMutexUnlock(pgphPvt->lock);
-    return(pgphNode);
+    return pgphNode;
 }
 
 GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
@@ -137,28 +138,29 @@ GPHENTRY * epicsShareAPI gphAdd(void *pvt,const char *name,void *pvtid)
     ELLLIST	*plist;
     GPHENTRY	*pgphNode;
     
-    if(pgphPvt==NULL) return(NULL);
+    if (pgphPvt==NULL) return NULL;
     paplist = pgphPvt->paplist;
     hashInd = hash(name,pgphPvt->nShift);
     epicsMutexMustLock(pgphPvt->lock);
-    if(paplist[hashInd] == NULL) {
-	paplist[hashInd] = callocMustSucceed(1, sizeof(ELLLIST), "gphAdd");
-	ellInit(paplist[hashInd]);
+    plist = paplist[hashInd];
+    if (plist == NULL) {
+        plist = callocMustSucceed(1, sizeof(ELLLIST), "gphAdd");
+        ellInit(plist);
+        paplist[hashInd] = plist;
     }
-    plist=paplist[hashInd];
     pgphNode = (GPHENTRY *) ellFirst(plist);
-    while(pgphNode) {
-	if((strcmp(name,(char *)pgphNode->name) == 0)
-	&&(pvtid == pgphNode->pvtid)) {
+    while (pgphNode) {
+        if ((strcmp(name, pgphNode->name) == 0) &&
+            (pvtid == pgphNode->pvtid)) {
             epicsMutexUnlock(pgphPvt->lock);
-	    return(NULL);
-	}
-	pgphNode = (GPHENTRY *) ellNext((ELLNODE*)pgphNode);
+            return NULL;
+        }
+        pgphNode = (GPHENTRY *) ellNext((ELLNODE *)pgphNode);
     }
-    pgphNode = callocMustSucceed(1, (unsigned) sizeof(GPHENTRY), "gphAdd");
+    pgphNode = callocMustSucceed(1, sizeof(GPHENTRY), "gphAdd");
     pgphNode->name = name;
     pgphNode->pvtid = pvtid;
-    ellAdd(plist, (ELLNODE*)pgphNode);
+    ellAdd(plist, (ELLNODE *)pgphNode);
     epicsMutexUnlock(pgphPvt->lock);
     return (pgphNode);
 }

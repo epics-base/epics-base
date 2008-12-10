@@ -21,6 +21,7 @@
 #include "logClient.h"
 #include "errlog.h"
 #include "taskwd.h"
+#include "registry.h"
 #include "epicsGeneralTime.h"
 #include "libComRegister.h"
 
@@ -116,6 +117,13 @@ static const iocshFuncDef epicsEnvShowFuncDef = {"epicsEnvShow",1,epicsEnvShowAr
 static void epicsEnvShowCallFunc(const iocshArgBuf *args)
 {
     epicsEnvShow (args[0].sval);
+}
+
+/* registryDump */
+static const iocshFuncDef registryDumpFuncDef = {"registryDump",0,NULL};
+static void registryDumpCallFunc(const iocshArgBuf *args)
+{
+    registryDump ();
 }
 
 /* iocLogInit */
@@ -329,6 +337,7 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&epicsParamShowFuncDef, epicsParamShowCallFunc);
     iocshRegister(&epicsPrtEnvParamsFuncDef, epicsPrtEnvParamsCallFunc);
     iocshRegister(&epicsEnvShowFuncDef, epicsEnvShowCallFunc);
+    iocshRegister(&registryDumpFuncDef, registryDumpCallFunc);
 
     iocshRegister(&iocLogInitFuncDef, iocLogInitCallFunc);
     iocshRegister(&iocLogDisableFuncDef, iocLogDisableCallFunc);

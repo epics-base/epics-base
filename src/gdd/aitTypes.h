@@ -35,7 +35,14 @@ typedef float               aitFloat32;
 typedef double              aitFloat64;
 typedef aitUint32           aitIndex;
 typedef void*               aitPointer;
-typedef aitUint32           aitStatus;
+
+typedef union {
+    struct {
+        aitUint16 aitStat;
+        aitUint16 aitSevr;
+    } s;
+    aitUint32 u;
+} aitStatus;
 
 /* should the bool be added as a conversion type? it currently is not */
 typedef enum {

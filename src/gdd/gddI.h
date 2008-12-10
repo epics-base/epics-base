@@ -95,25 +95,26 @@ inline void gdd::setTimeStamp(const aitTimeStamp* const ts) { time_stamp=*ts; }
 inline void gdd::getTimeStamp(struct epicsTimeStamp* const ts) const { time_stamp.get(*ts); }
 inline void gdd::setTimeStamp(const struct epicsTimeStamp* const ts) { time_stamp=*ts; }
 
-inline void gdd::setStatus(aitUint32 s)		{ status=s; }
-inline void gdd::getStatus(aitUint32& s) const { s=status; }
+inline void gdd::setStatus(aitUint32 s) { status.u = s; }
+inline void gdd::getStatus(aitUint32& s) const { s = status.u; }
 inline void gdd::setStatus(aitUint16 high, aitUint16 low)
-	{ status=(((aitUint32)high)<<16)|low; }
+        { status.u = (aitUint32)high << 16 | low; }
 inline void gdd::getStatus(aitUint16& high, aitUint16& low) const
-	{ high=(aitUint16)(status>>16); low=(aitUint16)(status&0x0000ffff); }
+        { high = (aitUint16)(status.u >> 16);
+          low = (aitUint16)(status.u & 0x0000ffff); }
 
 inline void gdd::setStat(aitUint16 s)
-	{ aitUint16* x = (aitUint16*)&status; x[0]=s; }
+        { status.s.aitStat = s; }
 inline void gdd::setSevr(aitUint16 s)
-	{ aitUint16* x = (aitUint16*)&status; x[1]=s; }
+        { status.s.aitSevr = s; }
 inline aitUint16 gdd::getStat(void) const
-	{ aitUint16* x = (aitUint16*)&status; return x[0]; }
+        { return status.s.aitStat; }
 inline aitUint16 gdd::getSevr(void) const
-	{ aitUint16* x = (aitUint16*)&status; return x[1]; }
-inline void gdd::getStatSevr(aitInt16& st, aitInt16& se) const
-	{ st=getStat(); se=getSevr(); }
-inline void gdd::setStatSevr(aitInt16 st, aitInt16 se)
-	{ setStat(st); setSevr(se); }
+        { return status.s.aitSevr; }
+inline void gdd::getStatSevr(aitInt16& stat, aitInt16& sevr) const
+        { stat = status.s.aitStat; sevr = status.s.aitSevr; }
+inline void gdd::setStatSevr(aitInt16 stat, aitInt16 sevr)
+        { status.s.aitStat = stat; status.s.aitSevr = sevr; }
 
 inline gdd& gdd::operator=(const gdd& v)
 	{ memcpy(this,&v,sizeof(gdd)); return *this; }

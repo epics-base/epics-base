@@ -103,12 +103,14 @@ static int aitConvertStringString(void* d,const void* s,
 	for(i=0;i<c;i++) out[i]=in[i];
 	return 0;
 }
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetStringString(void* d,const void* s,
               aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertStringString(d,s,c, pEnumStringTable);}
 static int aitConvertFromNetStringString(void* d,const void* s,
               aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertStringString(d,s,c, pEnumStringTable);}
+#endif
 
 /* ------ all the fixed string conversion functions ------ */
 static int aitConvertFixedStringFixedString(void* d,const void* s,
@@ -118,12 +120,14 @@ static int aitConvertFixedStringFixedString(void* d,const void* s,
 	memcpy(d,s,len);
 	return 0;
 }
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetFixedStringFixedString(void* d,const void* s,
                   aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertFixedStringFixedString(d,s,c,pEnumStringTable);}
 static int aitConvertFromNetFixedStringFixedString(void* d,const void* s,
                   aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertFixedStringFixedString(d,s,c,pEnumStringTable);}
+#endif
 
 static int aitConvertStringFixedString(void* d,const void* s,
                     aitIndex c, const gddEnumStringTable *)
@@ -156,6 +160,7 @@ static int aitConvertFixedStringString(void* d,const void* s,
 	return 0;
 }
 
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetStringFixedString(void* d,const void* s,
               aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertStringFixedString(d,s,c,pEnumStringTable); }
@@ -168,6 +173,7 @@ static int aitConvertToNetFixedStringString(void* d,const void* s,
 static int aitConvertFromNetStringFixedString(void* d,const void* s,
               aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { return aitConvertFixedStringString(d,s,c,pEnumStringTable); }
+#endif
 
 static int aitConvertStringEnum16(void* d,const void* s,
                aitIndex c, const gddEnumStringTable *pEnumStringTable)
@@ -202,6 +208,7 @@ static int aitConvertStringEnum16(void* d,const void* s,
 	return status;
 }
 
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetStringEnum16(void* d,const void* s,
             aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { 
@@ -213,6 +220,7 @@ static int aitConvertFromNetStringEnum16(void* d,const void* s,
 { 
     return aitConvertStringEnum16(d,s,c,pEnumStringTable); 
 }
+#endif
 
 static int aitConvertFixedStringEnum16(void* d,const void* s,
          aitIndex c, const gddEnumStringTable *pEnumStringTable)
@@ -248,6 +256,7 @@ static int aitConvertFixedStringEnum16(void* d,const void* s,
 	return status;
 }
 
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetFixedStringEnum16(void* d,const void* s,
               aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { 
@@ -259,6 +268,7 @@ static int aitConvertFromNetFixedStringEnum16(void* d,const void* s,
 { 
     return aitConvertFixedStringEnum16(d,s,c,pEnumStringTable); 
 }
+#endif
 
 static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c, 
                         const gddEnumStringTable *pEnumStringTable)
@@ -316,6 +326,7 @@ static int aitConvertEnum16FixedString (void* d,const void* s,aitIndex c,
     return status;
 }
 
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetEnum16FixedString(void* d,const void* s,
                aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { 
@@ -327,6 +338,7 @@ static int aitConvertFromNetEnum16FixedString(void* d,const void* s,
 { 
     return aitConvertEnum16FixedString(d,s,c,pEnumStringTable); 
 }
+#endif
 
 static int aitConvertEnum16String (void* d,const void* s,
                aitIndex c, const gddEnumStringTable *pEnumStringTable)
@@ -384,6 +396,7 @@ static int aitConvertEnum16String (void* d,const void* s,
     return status;
 }
 
+#ifdef AIT_NEED_BYTE_SWAP
 static int aitConvertToNetEnum16String(void* d,const void* s,
                aitIndex c, const gddEnumStringTable *pEnumStringTable)
 { 
@@ -395,6 +408,7 @@ static int aitConvertFromNetEnum16String(void* d,const void* s,
 { 
     return aitConvertEnum16String(d,s,c,pEnumStringTable); 
 }
+#endif
 
 #define AIT_CONVERT 1
 #include "aitConvertGenerated.cc"

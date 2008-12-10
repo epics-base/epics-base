@@ -97,6 +97,7 @@ public:
 protected:
 	aitUint16 ref_cnt;
 	void* arg;
+	virtual ~gddDestructor () {}
 private:
 	gdd_NEWDEL_DATA
 };

@@ -1,16 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 //
 // Smart Pointer Class for GDD
-// ( automatically takes care of referencing / unreferening a gdd each time that it is used )
+// ( handles referencing / unreferencing a gdd each time it is used )
 //
 // Author: Jeff Hill
 //
@@ -59,7 +58,8 @@ template < class T >
 inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T & valueIn ) :
 	pValue ( & valueIn )
 {
-	assert ( ! this->pValue->reference () );
+        gddStatus status = this->pValue->reference ();
+        assert ( ! status );
 }
 
 template < class T >
@@ -67,7 +67,8 @@ inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T * pValueIn ) :
 	pValue ( pValueIn )
 {
 	if ( this->pValue != NULL ) {
-		assert ( ! this->pValue->reference () );
+                gddStatus status = this->pValue->reference ();
+                assert ( ! status );
 	}
 }
 
@@ -77,7 +78,8 @@ inline smartGDDPointerTemplate < T > ::
 	pValue ( ptrIn.pValue )
 {
 	if ( this->pValue != NULL ) {
-		assert ( ! this->pValue->reference () );
+                gddStatus status = this->pValue->reference ();
+                assert ( ! status );
 	}
 }
 
@@ -85,7 +87,8 @@ template < class T >
 inline smartGDDPointerTemplate < T > :: ~smartGDDPointerTemplate ()
 {
 	if ( this->pValue != NULL ) {
-		assert ( ! this->pValue->unreference () );
+                gddStatus status = this->pValue->reference ();
+                assert ( ! status );
 	}
 }
 
@@ -94,7 +97,8 @@ inline void smartGDDPointerTemplate < T > :: set ( T * pNewValue )
 {
     if ( this->pValue != pNewValue ) {
         if ( pNewValue ) {
-            assert ( ! pNewValue->reference () );
+            gddStatus status = pNewValue->reference ();
+            assert ( ! status );
         }
         if ( this->pValue ) {
             this->pValue->unreference ();

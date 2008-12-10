@@ -60,8 +60,10 @@ void gddGlobalCleanupAdd ( void * pBuf );
 #define gdd_NEWDEL_FUNC(fld) \
     void* operator new(size_t); \
     void operator delete(void*); \
-    char* newdel_next(void) { char** x=(char**)&(fld); return *x; } \
-    void newdel_setNext(char* n) { char** x=(char**)&(fld); *x=n; } \
+    char* newdel_next(void) { char* pfld = (char *)&fld; \
+        char** x = (char**)pfld; return *x; } \
+    void newdel_setNext(char* n) { char* pfld = (char *)&fld; \
+        char** x=(char**)pfld; *x=n; } \
     static void gddNewDelInit (void) { pNewdel_lock = new epicsMutex; } \
 
 

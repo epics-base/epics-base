@@ -11,7 +11,7 @@ cd topbin
 
 ## You may have to change _APPNAME_ to something else
 ## everywhere it appears in this file
-ld < _APPNAME_.munch
+ld 0,0, "_APPNAME_.munch"
 
 ## Register all support components
 cd top

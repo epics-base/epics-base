@@ -35,8 +35,8 @@ public:
 private:
     void * _pInstance;
     size_t _refCount;
-	SingletonUntyped ( const SingletonUntyped & );
-	SingletonUntyped & operator = ( const SingletonUntyped & );
+    SingletonUntyped ( const SingletonUntyped & );
+    SingletonUntyped & operator = ( const SingletonUntyped & );
 };
 
 // This class exists for the purpose of avoiding file scope
@@ -49,17 +49,17 @@ public:
     class reference {
     public:
         reference ( epicsSingleton & );
-	    reference ( const reference & );
+        reference ( const reference & );
         ~reference ();
-	    reference & operator = ( const reference & );
+        reference & operator = ( const reference & );
         TYPE * operator -> ();
         const TYPE * operator -> () const;
         TYPE & operator * ();
         const TYPE & operator * () const;
     private:
         epicsSingleton * _pSingleton;
-        reference (); // disabled
     };
+    friend class reference;
     epicsSingleton () {}
     // mutex lock/unlock pair overhead incured
     // when either of these are called
@@ -69,8 +69,8 @@ private:
     SingletonUntyped _singletonUntyped;
     static void * _build ();
     static void _destroy ( void * );
-	epicsSingleton ( const epicsSingleton & );
-	epicsSingleton & operator = ( const epicsSingleton & );
+    epicsSingleton ( const epicsSingleton & );
+    epicsSingleton & operator = ( const epicsSingleton & );
 };
 
 template < class TYPE >

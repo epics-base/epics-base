@@ -157,7 +157,6 @@ int iocRun(void)
    /* Enable scan tasks and some driver support functions.  */
     scanRun();
     dbCaRun();
-    interruptAccept = TRUE;
     if (iocState == iocBuilt)
         initHooks(initHookAfterInterruptAccept);
 
@@ -180,7 +179,6 @@ int iocPause(void)
     }
 
     rsrv_pause();
-    interruptAccept = FALSE;
     dbCaPause();
     scanPause();
     iocState = iocPaused;
@@ -461,9 +459,6 @@ static void exitDatabase(void *dummy)
     struct dsxt *pdsxt;
     DBLINK *plink;
     int j;
-
-    scanPause();
-    interruptAccept = FALSE;
 
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;

@@ -141,14 +141,16 @@ static void scanShutdown(void *arg)
 {
     int i;
 
-    scanOnce((dbCommon *)&exitOnce);
-    epicsEventWait(startStopEvent);
+    interruptAccept = FALSE;
 
     for (i = 0; i < nPeriodic; i++) {
         papPeriodic[i]->scanCtl = ctlExit;
         epicsEventSignal(papPeriodic[i]->loopEvent);
         epicsEventWait(startStopEvent);
     }
+
+    scanOnce((dbCommon *)&exitOnce);
+    epicsEventWait(startStopEvent);
 }
 
 long scanInit()
@@ -173,7 +175,9 @@ void scanRun(void)
 {
     int i;
 
+    interruptAccept = TRUE;
     scanCtl = ctlRun;
+
     for (i = 0; i < nPeriodic; i++)
         papPeriodic[i]->scanCtl = ctlRun;
 }
@@ -182,9 +186,11 @@ void scanPause(void)
 {
     int i;
 
-    scanCtl = ctlPause;
-    for (i = 0; i < nPeriodic; i++)
+    for (i = nPeriodic - 1; i >= 0; --i)
         papPeriodic[i]->scanCtl = ctlPause;
+
+    scanCtl = ctlPause;
+    interruptAccept = FALSE;
 }
 
 void scanAdd(struct dbCommon *precord)

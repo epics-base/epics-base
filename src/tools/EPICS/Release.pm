@@ -84,6 +84,8 @@ sub expandRelease {
 
     while (my ($macro, $path) = each %$Rmacros) {
         while (my ($pre,$var,$post) = $path =~ m/(.*)\$\((\w+?)\)(.*)/) {
+            warn "Undefined macro \$($var) used in RELEASE file\n"
+                unless exists $Rmacros->{$var};
             $path = $pre . $Rmacros->{$var} . $post;
             $Rmacros->{$macro} = $path;
         }

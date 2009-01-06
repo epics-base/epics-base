@@ -72,7 +72,10 @@ epicsShareFunc void epicsShareAPI epicsMutexDestroy(epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexUnlock(epicsMutexId id);
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexLock(
     epicsMutexId id);
-#define epicsMutexMustLock(ID) assert((epicsMutexLock((ID))==epicsMutexLockOK))
+#define epicsMutexMustLock(ID) {                        \
+    epicsMutexLockStatus status = epicsMutexLock(ID);   \
+    assert(status == epicsMutexLockOK);                 \
+}
 epicsShareFunc epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
     epicsMutexId id);
 epicsShareFunc void epicsShareAPI epicsMutexShow(

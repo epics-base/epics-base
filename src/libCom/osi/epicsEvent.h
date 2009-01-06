@@ -54,7 +54,10 @@ epicsShareFunc void epicsShareAPI epicsEventDestroy(epicsEventId id);
 epicsShareFunc void epicsShareAPI epicsEventSignal(epicsEventId id);
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait(
     epicsEventId id);
-#define epicsEventMustWait(ID) assert((epicsEventWait ((ID))==epicsEventWaitOK))
+#define epicsEventMustWait(ID) {                        \
+    epicsEventWaitStatus status = epicsEventWait(ID);   \
+    assert(status == epicsEventWaitOK);                 \
+}
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout(
     epicsEventId id, double timeOut);
 epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventTryWait(

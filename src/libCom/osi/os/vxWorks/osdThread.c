@@ -112,13 +112,16 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 
 void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
+    int result;
     epicsThreadInit();
-    assert(semTake(epicsThreadOnceMutex,WAIT_FOREVER)==OK);
+    result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
+    assert(result == OK);
     if (*id == 0) { /*  0 => first call */
         *id = -1;   /* -1 => func() active */
         semGive(epicsThreadOnceMutex);
         func(arg);
-        assert(semTake(epicsThreadOnceMutex,WAIT_FOREVER)==OK);
+        result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
+        assert(result == OK);
         *id = +1;   /* +1 => func() done */
     } else
         assert(*id > 0 /* func() called epicsThreadOnce() with same id */);

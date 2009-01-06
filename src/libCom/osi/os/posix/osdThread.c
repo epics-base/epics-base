@@ -111,42 +111,6 @@ if(status) { \
     exit(-1);\
 }
 
-/* myAtExit just cancels all threads. Someday propercleanup is needed*/
-static void myAtExit(void)
-{
-    epicsThreadOSD *pthreadInfo;
-    epicsThreadOSD *pthreadSelf;
-    static int ntimes=0;
-    int status;
-
-    ntimes++;
-    if(ntimes>1) {
-        fprintf(stderr,"osdThread myAtExit extered multiple times\n");
-        return;
-    }
-    epicsExitCallAtExits();
-    status = mutexLock(&listLock);
-    checkStatusQuit(status,"pthread_mutex_lock","myAtExit");
-    pthreadSelf = (epicsThreadOSD *)pthread_getspecific(getpthreadInfo);
-    if(pthreadSelf==NULL)
-        pthreadSelf = createImplicit();
-    pthreadInfo=(epicsThreadOSD *)ellLast(&pthreadList);
-    while(pthreadInfo) {
-        if(pthreadInfo != pthreadSelf /*dont cancel this thread*/
-        && (strcmp("_main_",pthreadInfo->name)!=0)){/* dont cancel main*/
-            pthread_cancel(pthreadInfo->tid);
-        }
-        pthreadInfo=(epicsThreadOSD *)ellPrevious(&pthreadInfo->node);
-    }
-    status = pthread_mutex_unlock(&listLock);
-    checkStatusQuit(status,"pthread_mutex_unlock","myAtExit");
-
-    /* delete all resources created by once */
-    free(pcommonAttr); pcommonAttr=0;
-    pthread_mutex_destroy(&listLock);
-    pthread_mutex_destroy(&onceLock);
-    pthread_key_delete(getpthreadInfo);
-}
 
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
 static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
@@ -291,7 +255,7 @@ static void once(void)
     pthreadInfo->isOnThreadList = 1;
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
-    status = atexit(myAtExit);
+    status = atexit(epicsExitCallAtExits);
     checkStatusOnce(status,"atexit");
     epicsThreadOnceCalled = 1;
 }

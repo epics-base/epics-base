@@ -57,10 +57,11 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
             errlogPrintf ( 
                 "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" in thread \"%s\" at %s\n",
                 except.what (), typeid ( except ).name (), name, date );
+            errlogFlush ();
             // this should behave as the C++ implementation intends when an 
             // exception isnt handled. If users dont like this behavior, they 
             // can install an application specific unexpected handler.
-            std::unexpected (); 
+            std::unexpected ();
         }
     }
     catch ( ... ) {
@@ -74,13 +75,11 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
                 "epicsThread: Unknown C++ exception in thread \"%s\" at %s\n",
                 name, date );
             errlogFlush ();
+            // this should behave as the C++ implementation intends when an 
+            // exception isnt handled. If users dont like this behavior, they 
+            // can install an application specific unexpected handler.
+            std::unexpected ();
         }
-        // The Linux NPTL library requires us to re-throw here; it uses
-        // an untyped exception object to shut down threads when we call
-        // pthread_cancel() in the os/posix/osdThread.c myAtExit()
-        // handler, and aborts with "FATAL: exception not rethrown" if
-        // we don't re-throw it.  This solution is incomplete though...
-        throw;
     }
     if ( ! waitRelease ) {
         epicsGuard < epicsMutex > guard ( pThread->mutex );

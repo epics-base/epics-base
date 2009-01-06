@@ -260,6 +260,23 @@ setBootConfigFromNVRAM(void)
      * location of the network configuration parameters.
      * Care must be taken to access the NVRAM a byte at a time.
      */
+
+#if defined(NVRAM_INDIRECT)
+   {
+      volatile char *addrLo = (volatile char *)0x80000074;
+      volatile char *addrHi = (volatile char *)0x80000075;
+      volatile char *data = (volatile char *)0x80000077;
+      int addr =  0x1000;
+      char *d = (char *)&nvram;
+
+      while (d < ((char *)&nvram + sizeof nvram)) {
+         *addrLo = addr & 0xFF;
+         *addrHi = (addr >> 8) & 0xFF;
+         *d++ = *data;
+         addr++;
+      }
+   }
+#else
     {
     volatile char *s = (volatile char *)0xFFE81000;
     char *d = (char *)&nvram;
@@ -267,7 +284,7 @@ setBootConfigFromNVRAM(void)
     while (d < ((char *)&nvram + sizeof nvram))
         *d++ = *s++;
     }
-
+#endif
     /*
      * Assume that the boot server is also the name, log and ntp server!
      */
@@ -275,7 +292,6 @@ setBootConfigFromNVRAM(void)
     rtems_bsdnet_config.ntp_server[0]  =
       rtems_bsdnet_bootp_server_name   = addr(server, nvram.ServerIPAddress);
     rtems_bsdnet_bootp_server_address.s_addr = nvram.ServerIPAddress;
-
     /*
      * Nothing better to use as host name!
      */
@@ -284,6 +300,7 @@ setBootConfigFromNVRAM(void)
 
     rtems_bsdnet_config.gateway = addr(gateway, nvram.GatewayIPAddress);
     rtems_bsdnet_config.ifconfig->ip_netmask = addr(ip_netmask, nvram.SubnetIPAddressMask);
+
     rtems_bsdnet_bootp_boot_file_name = nvram.BootFilenameString;
     rtems_bsdnet_bootp_cmdline = nvram.ArgumentFilenameString;
     splitRtemsBsdnetBootpCmdline();

@@ -31,11 +31,11 @@ builds with release R3.14. It describes procedures such that:</p>
 remove all files created by earlier builds.</p>
 
 <h3>Create a new R3.14 application</h3>
+
 <p>We will remove junkApp later.</p>
 <pre>mkdir &lt;top&gt;
 cd &lt;top&gt;
-&lt;full path to 3.14 base&gt;/bin/&lt;host_arch&gt;/makeBaseApp.pl -t example junk
-</pre>
+&lt;full path to 3.14 base&gt;/bin/&lt;host_arch&gt;/makeBaseApp.pl -t example junk</pre>
 
 <h3>Copy all *App and iocBoot directories and files to the new &lt;top&gt;
 directory</h3>
@@ -50,7 +50,8 @@ If sequence programs (*.st or *.stt files) exist in your application, add the
 SNCSEQ location definition for the R3.14 seq external module</p>
 
 <p><tt>SNCSEQ =&lt;full path to seq module top&gt;</tt></p>
-The R3.14 seq module must exist and be built with the same EPICS base R3.14 release.
+The R3.14 seq module must exist and be built with the same EPICS base R3.14
+release.
 
 <h3>Modify the Makefiles in &lt;top&gt;/*App directories.</h3>
 
@@ -142,8 +143,7 @@ LIBNAME = exampleLib
 INSTALLS += iocCore seq
       </pre>
     <p>In Makefile these become:</p>
-<pre>
-LIBRARY_vxWorks += exampleIoc
+    <pre>LIBRARY_vxWorks += exampleIoc
 exampleIoc_SRCS += xxxRecord.c
 exampleIoc_SRCS += devXxxSoft.c
 exampleIoc_LIBS += $(EPICS_BASE_IOC_LIBS)
@@ -173,9 +173,8 @@ baseLIBOBJS, Makefile.Host, and Makefile.Vx</p>
   You now can add the line include "base.dbd" to your
   &lt;appname&gt;Include.dbd file and remove the file
   &lt;name&gt;App/src/base.dbd from your src directory. The base.dbd from
-  base/dbd will be included.  However, if you only want a subset of
-  record definitions from base you should keep your base.dbd
-file.</blockquote>
+  base/dbd will be included.  However, if you only want a subset of record
+  definitions from base you should keep your base.dbd file.</blockquote>
 
 <h3>Record support</h3>
 
@@ -211,8 +210,8 @@ file.</blockquote>
   <blockquote>
     <pre>#include "epicsExport.h"</pre>
   </blockquote>
-  and add the following line after the dset definition:
-  struct  { ...} dev&lt;devname&gt;= { ...}; 
+  and add the following line after the dset definition: struct  { ...}
+  dev&lt;devname&gt;= { ...};
 
   <blockquote>
     <pre>epicsExportAddress(dset,dev&lt;devname&gt;);</pre>
@@ -238,61 +237,36 @@ file.</blockquote>
 
 <blockquote>
   Registration code for application specific functions, e.g. subroutine
-  record init and process functions, has been changed as follows
+  record init and process functions, must been changed as follows
 
-  <p>1) Include the registration support header files:</p>
-
-  <blockquote>
-    <pre>#include "dbDefs.h"
-#include "registryFunction.h"</pre>
-  </blockquote>
-  2) Include the export definitions header file after including all other
-  header files:
+  <p>1) Include the export definitions header file:</p>
 
   <blockquote>
-    <pre>#include "epicsExport.h"</pre>
+    <pre>#include "epicsExport.h"
+    </pre>
   </blockquote>
-  3) Make the application specific functions static functions, e.g.
+  2) Make the application specific functions static functions, e.g.
 
   <blockquote>
     <pre>static long mySubInit(subRecord *precord,processMethod process)
-static long mySubProcess(subRecord *precord)</pre>
+static long mySubProcess(subRecord *precord)
+    </pre>
   </blockquote>
-  4) Define a registryFunctionRef array of the application specific functions
-  to be registered, e.g.
+  3) Add an epicsExportFunction statement for each of the functions to be
+  registered, e.g.
 
   <blockquote>
-    <pre>static registryFunctionRef mySubRef[] = {
-    {"mySubInit",(REGISTRYFUNCTION)mySubInit},
-    {"mySubProcess",(REGISTRYFUNCTION)mySubProcess}
-};</pre>
+    <pre>epicsExportFunction(mySubInit);
+epicsExportFunction(mySubProcess);
+    </pre>
   </blockquote>
-  5) Add a new function to do the registration of the registryFunctionRef
-  array elements, e.g.
-
-  <blockquote>
-    <pre>void mySub(void)
-{
-    registryFunctionRefAdd(mySubRef,NELEMENTS(mySubRef));
-}</pre>
-  </blockquote>
-  6) Call the epicsExportRegistrar with the new registration function: e.g.
-
-  <blockquote>
-    <pre>epicsExportRegistrar(mySub);</pre>
-  </blockquote>
-  7) Remove the existing function lines in &lt;appname&gt;Include.dbd: e.g.
-  remove
+  4) Add a function statement for each of the functions to be registered in a
+  .dbd file that is included in the application, e.g.
 
   <blockquote>
     <pre>function("mySubInit")
-function("mySubProcess")</pre>
-  </blockquote>
-  8) Add a registrar statement to &lt;name&gt;Include.dbd with the new
-  registration function as parameter: e.g. add
-
-  <blockquote>
-    <pre>registrar("mySub")</pre>
+function("mySubProcess")
+    </pre>
   </blockquote>
 </blockquote>
 
@@ -301,10 +275,12 @@ function("mySubProcess")</pre>
 <p>Change " i<tt>nclude $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
 $(TOP)/configure/CONFIG"</tt></p>
 
-<p>If they do not already exist, add the lines
+<p>If they do not already exist, add the lines</p>
+
 <blockquote>
-<p><tt>DIRS += $(wildcard *ioc*)</tt></p>
-<p><tt>DIRS += $(wildcard as*)</tt></p>
+  <p><tt>DIRS += $(wildcard *ioc*)</tt></p>
+
+  <p><tt>DIRS += $(wildcard as*)</tt></p>
 </blockquote>
 
 <p>Change <tt>"include $(TOP)/config/RULES.iocBoot" </tt>to "i<tt>nclude
@@ -321,18 +297,19 @@ $(TOP)/configure/CONFIG"</tt></p>
 
 <p>to</p>
 
-<p><tt>ARCH = &lt;new arch specification e.g.
-vxWorks-68040&gt;</tt></p>
+<p><tt>ARCH = &lt;new arch specification e.g. vxWorks-68040&gt;</tt></p>
 
 <p>Change "<tt>include $(TOP)/config/RULES.ioc</tt>" to "<tt>include
 $(TOP)/configure/RULES.ioc"</tt></p>
 
 <p>If it exists remove the line</p>
 
-<p><tt>buildInstall: cdCommands </tt></p>
+<p><tt>buildInstall: cdCommands</tt></p>
 
 <p>Add the line</p>
+
 <p><tt>TARGETS = cdCommands</tt></p>
+
 <p>before the include for RULES.ioc line.</p>
 
 <h3>Modify st.cmd in &lt;top&gt;/iocBoot/ioc* directories.</h3>
@@ -378,6 +355,7 @@ add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
 <p>         <tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
 
 <p>to config/RELEASE and add <br>
+</p>
 
 <p></p>
 

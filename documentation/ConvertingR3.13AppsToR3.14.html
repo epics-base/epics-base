@@ -55,11 +55,11 @@ release.
 
 <h3>Modify the Makefiles in &lt;top&gt;/*App directories.</h3>
 
-<p>Change <tt>"include $(TOP)/config/CONFIG_APP"</tt> to <tt>"include
-$(TOP)/configure/CONFIG"</tt></p>
+<p>Change "<tt>include $(TOP)/config/CONFIG_APP</tt>" to "<tt>include
+$(TOP)/configure/CONFIG</tt>"</p>
 
-<p>Change " i<tt>nclude $(TOP)/config/RULES_DIRS</tt>" to  "<tt>include
-$(TOP)/configure/RULES_DIRS"</tt></p>
+<p>Change " i<tt>nclude $(TOP)/config/RULES_DIRS</tt>" to "<tt>include
+$(TOP)/configure/RULES_DIRS</tt>"</p>
 
 <h3>Modify the Makefiles in &lt;top&gt;/*App/*Db directories.</h3>
 
@@ -67,13 +67,13 @@ $(TOP)/configure/RULES_DIRS"</tt></p>
 Rename Makefile.Host to Makefile <br>
 Modify Makefile as follows:</p>
 
-<p>Change "<tt>TOP=../../.."</tt> to "<tt>TOP=../.."</tt></p>
+<p>Change "<tt>TOP=../../..</tt>" to "<tt>TOP=../..</tt>"</p>
 
-<p>Change    "i<tt>nclude $(TOP)/config/CONFIG_APP</tt>" to "<tt>include
-$(TOP)/configure/CONFIG"</tt></p>
+<p>Change "<tt>include $(TOP)/config/CONFIG_APP</tt>" to "<tt>include
+$(TOP)/configure/CONFIG</tt>"</p>
 
-<p>Change "<tt>include $(TOP)/config/RULES.Db" </tt>to <tt>"include
-$(TOP)/configure/RULES"</tt></p>
+<p>Change "<tt>include $(TOP)/config/RULES.Db" </tt>to "<tt>include
+$(TOP)/configure/RULES</tt>"</p>
 
 <p>Place all definitions between the include lines.</p>
 
@@ -239,16 +239,16 @@ baseLIBOBJS, Makefile.Host, and Makefile.Vx</p>
   Registration code for application specific functions, e.g. subroutine
   record init and process functions, must been changed as follows
 
-  <p>1) Include the export definitions header file:</p>
+  <p>1) Include the following header files:</p>
 
   <blockquote>
     <pre>#include "epicsExport.h"
-    </pre>
+#include "registerFunction.h"</pre>
   </blockquote>
   2) Make the application specific functions static functions, e.g.
 
   <blockquote>
-    <pre>static long mySubInit(subRecord *precord,processMethod process)
+    <pre>static long mySubInit(subRecord *precord)
 static long mySubProcess(subRecord *precord)
     </pre>
   </blockquote>
@@ -273,23 +273,22 @@ function("mySubProcess")
 <h3>Modify the Makefiles in &lt;top&gt;/iocBoot directory.</h3>
 
 <p>Change " i<tt>nclude $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
-$(TOP)/configure/CONFIG"</tt></p>
+$(TOP)/configure/CONFIG</tt>"</p>
 
 <p>If they do not already exist, add the lines</p>
 
 <blockquote>
-  <p><tt>DIRS += $(wildcard *ioc*)</tt></p>
-
-  <p><tt>DIRS += $(wildcard as*)</tt></p>
+  <pre>DIRS += $(wildcard *ioc*)
+DIRS += $(wildcard as*)</pre>
 </blockquote>
 
-<p>Change <tt>"include $(TOP)/config/RULES.iocBoot" </tt>to "i<tt>nclude
-$(TOP)/configure/RULES_DIRS"</tt></p>
+<p>Change "<tt>include $(TOP)/config/RULES.iocBoot</tt>" to "<tt>include
+$(TOP)/configure/RULES_DIRS</tt>".</p>
 
 <h3>Modify the Makefiles in &lt;top&gt;/iocBoot/ioc* directories.</h3>
 
-<p>Change <tt>"include $(TOP)/config/CONFIG_APP" </tt>to "<tt>include
-$(TOP)/configure/CONFIG"</tt></p>
+<p>Change "<tt>include $(TOP)/config/CONFIG_APP</tt>" to "<tt>include
+$(TOP)/configure/CONFIG</tt>"</p>
 
 <p>Change</p>
 
@@ -300,7 +299,7 @@ $(TOP)/configure/CONFIG"</tt></p>
 <p><tt>ARCH = &lt;new arch specification e.g. vxWorks-68040&gt;</tt></p>
 
 <p>Change "<tt>include $(TOP)/config/RULES.ioc</tt>" to "<tt>include
-$(TOP)/configure/RULES.ioc"</tt></p>
+$(TOP)/configure/RULES.ioc</tt>"</p>
 
 <p>If it exists remove the line</p>
 
@@ -319,7 +318,7 @@ $(TOP)/configure/RULES.ioc"</tt></p>
 ld &lt; iocCore</pre>
 
 <p>Change "<tt>ld &lt; &lt;libname&gt;Lib</tt>" to "<tt>ld &lt;
-&lt;libname&gt;.munch"</tt></p>
+&lt;libname&gt;.munch</tt>"</p>
 
 <p>Change "<tt>cd appbin</tt>" to "<tt>cd topbin</tt>"</p>
 
@@ -342,17 +341,17 @@ compiler will issue warning messages and the ioc may issue the message:
 
 <h3>Record support changes</h3>
 
-<p>The steppermotor, scan, and pid records are no longer in base.  If these
+<p>The steppermotor, scan, and pid records are no longer in base.  If these
 records are not used in your application, comment out references to them in
-base.dbd. If these record types are used at your site, they  should be
+base.dbd. If these record types are used at your site, they should be
 downloaded and built with base R3.14 by your EPICS administrator. To update
-the R3.14 location of these record types in your application you must  add
+the R3.14 location of these record types in your application you must add
 appropriate module definitions to your application's config/RELEASE file and
 add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
 
 <p>For example add</p>
 
-<p>         <tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
+<p><tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
 
 <p>to config/RELEASE and add <br>
 </p>
@@ -363,7 +362,7 @@ add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
 to your application src/Makefile.
 
 <p>You should consider changing any existing old steppermotor records to the
-new EPICS  motor record  module supported by Beamline Controls and Data
+new EPICS motor record module supported by Beamline Controls and Data
 Acquisition at APS.</p>
 
 <h3>RecDynLink.o and devPtSoft changes</h3>
@@ -372,7 +371,7 @@ Acquisition at APS.</p>
 separate EPICS modules.You must now add the appropriate module full path
 definitions to your application config/RELEASE file, and change
 <tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt> to the module
-definition bin directory in your application src directory files.  See
+definition bin directory in your application src directory files. See
 "Hardware support changes" below for instructions.</p>
 
 <h3>Hardware support changes</h3>
@@ -386,16 +385,16 @@ application, comment out references to them in base.dbd.</p>
 support for your site should be downloaded and built with base R3.14 by your
 EPICS administrator. You must now add the appropriate module full path
 definitions to your application config/RELEASE file, and change
-<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module  bin
+<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module bin
 directory in your application src directory files.</p>
 
 <p>For example, remove</p>
 
-<p>         <tt>LIBOBJS+=$(EPICS_BASE_BIN)/symb</tt></p>
+<p><tt>LIBOBJS+=$(EPICS_BASE_BIN)/symb</tt></p>
 
 <p>from baseLIBOBJS and add</p>
 
-<p>         <tt>LIBOBJS+=$(SYMB_BIN)/symb</tt></p>
+<p><tt>LIBOBJS+=$(SYMB_BIN)/symb</tt></p>
 
 <p>to your application src/Makefile, <br>
 and add the line</p>
@@ -408,13 +407,13 @@ and add the line</p>
 
 <p>The host tool dbLoadTemplate has been replace by a new EPICS extension,
 msi, which should be downloaded and built with base R3.14 by your EPICS
-administrator. dbLoadTemplate is still supported on iocs.  If, in your
+administrator. dbLoadTemplate is still supported on iocs. If, in your
 application, db files are created from template and substitution files you
-should  add the definition</p>
+should add the definition</p>
 
 <p><tt>MSI=&lt;full path name to msi executable&gt;</tt></p>
 
 <p>to your application config/RELEASE file.</p>
 <br>
- </body>
+</body>
 </html>

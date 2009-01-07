@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recGbl.c - Global record processing routines */
-/* base/src/db $Id$ */
+/* recGbl.c */
+/* $Id$ */
 
 /*
  *      Author:          Marty Kraimer
@@ -178,41 +177,41 @@ int  epicsShareAPI recGblInitConstantLink(
 	strcpy((char *)pdest,plink->value.constantStr);
 	break;
     case DBF_CHAR : {
-	short	value;
-	char	*pvalue = (char *)pdest;
+	epicsInt16 value;
+	epicsInt8 *pvalue = (epicsInt8 *)pdest;
 
 	sscanf(plink->value.constantStr,"%hi",&value);
 	*pvalue = value;
 	}
 	break;
     case DBF_UCHAR : {
-	unsigned short	value;
-	unsigned char	*pvalue = (unsigned char *)pdest;
+	epicsUInt16 value;
+	epicsUInt8 *pvalue = (epicsUInt8 *)pdest;
 
 	sscanf(plink->value.constantStr,"%hu",&value);
 	*pvalue = value;
 	}
 	break;
     case DBF_SHORT : 
-	sscanf(plink->value.constantStr,"%hi",(short *)pdest);
+	sscanf(plink->value.constantStr,"%hi",(epicsInt16 *)pdest);
 	break;
     case DBF_USHORT : 
     case DBF_ENUM : 
     case DBF_MENU : 
     case DBF_DEVICE : 
-	sscanf(plink->value.constantStr,"%hu",(unsigned short *)pdest);
+	sscanf(plink->value.constantStr,"%hu",(epicsUInt16 *)pdest);
 	break;
     case DBF_LONG : 
-	sscanf(plink->value.constantStr,"%li",(long *)pdest);
+	*(epicsInt32 *)pdest = strtol(plink->value.constantStr, NULL, 0);
 	break;
     case DBF_ULONG : 
-	sscanf(plink->value.constantStr,"%lu",(unsigned long *)pdest);
+	*(epicsUInt32 *)pdest = strtoul(plink->value.constantStr, NULL, 10);
 	break;
     case DBF_FLOAT : 
-	epicsScanFloat(plink->value.constantStr, (float *)pdest);
+	epicsScanFloat(plink->value.constantStr, (epicsFloat32 *)pdest);
 	break;
     case DBF_DOUBLE : 
-	epicsScanDouble(plink->value.constantStr, (double *)pdest);
+	epicsScanDouble(plink->value.constantStr, (epicsFloat64 *)pdest);
 	break;
     default:
 	epicsPrintf("Error in recGblInitConstantLink: Illegal DBF type\n");
@@ -224,12 +223,12 @@ int  epicsShareAPI recGblInitConstantLink(
 unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
     dbCommon *pdbc = precord;
-    unsigned short prev_stat = pdbc->stat;
-    unsigned short prev_sevr = pdbc->sevr;
-    unsigned short new_stat = pdbc->nsta;
-    unsigned short new_sevr = pdbc->nsev;
-    unsigned short val_mask = 0;
-    unsigned short stat_mask = 0;
+    epicsEnum16 prev_stat = pdbc->stat;
+    epicsEnum16 prev_sevr = pdbc->sevr;
+    epicsEnum16 new_stat = pdbc->nsta;
+    epicsEnum16 new_sevr = pdbc->nsev;
+    epicsEnum16 val_mask = 0;
+    epicsEnum16 stat_mask = 0;
 
     pdbc->stat = new_stat;
     pdbc->sevr = new_sevr;

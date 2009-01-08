@@ -1,13 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*dbPvdLib.c*/
+
+/* dbPvdLib.c */
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +23,6 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 
-
 int dbPvdHashTableSize = 512;
 static int dbPvdHashTableShift;
 #define NTABLESIZES 9
@@ -121,7 +121,7 @@ void    dbPvdInitPvt(dbBase *pdbbase)
     return;
 }
 
-PVDENTRY *dbPvdFind(dbBase *pdbbase,const char *name,int lenName)
+PVDENTRY *dbPvdFind(dbBase *pdbbase, const char *name, int lenName)
 {
     unsigned short	hashInd;
     ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
@@ -129,42 +129,44 @@ PVDENTRY *dbPvdFind(dbBase *pdbbase,const char *name,int lenName)
     PVDENTRY		*ppvdNode;
     
     hashInd = hash(name, lenName);
-    if ((pvdlist=ppvd[hashInd]) == NULL) return (NULL);
+    pvdlist = ppvd[hashInd];
+    if (pvdlist == NULL) return NULL;
     ppvdNode = (PVDENTRY *) ellFirst(pvdlist);
-    while(ppvdNode) {
-	if(strcmp(name,ppvdNode->precnode->recordname) == 0)
-		return(ppvdNode);
-	ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);
+    while (ppvdNode) {
+        if (strncmp(name, ppvdNode->precnode->recordname, lenName) == 0)
+            return ppvdNode;
+        ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);
     }
-    return (NULL);
+    return NULL;
 }
 
-PVDENTRY *dbPvdAdd(dbBase *pdbbase,dbRecordType *precordType,dbRecordNode *precnode)
+PVDENTRY *dbPvdAdd(dbBase *pdbbase, dbRecordType *precordType, dbRecordNode *precnode)
 {
     unsigned short	hashInd;
     ELLLIST		**ppvd = (ELLLIST **) pdbbase->ppvd;
     ELLLIST		*ppvdlist;
     PVDENTRY		*ppvdNode;
     int			lenName;
-    char		*name=precnode->recordname;
-    
-    lenName=strlen(name);
-    hashInd = hash(name, lenName);
-    if (ppvd[hashInd] == NULL) {
-	ppvd[hashInd] = dbCalloc(1, sizeof(ELLLIST));
-	ellInit(ppvd[hashInd]);
+    char		*name = precnode->recordname;
+
+    lenName  = strlen(name);
+    hashInd  = hash(name, lenName);
+    ppvdlist = ppvd[hashInd];
+    if (ppvdlist == NULL) {
+        ppvdlist = dbCalloc(1, sizeof(ELLLIST));
+        ellInit(ppvdlist);
+        ppvd[hashInd] = ppvdlist;
     }
-    ppvdlist=ppvd[hashInd];
     ppvdNode = (PVDENTRY *) ellFirst(ppvdlist);
-    while(ppvdNode) {
-	if(strcmp(name,(char *)ppvdNode->precnode->recordname)==0) return(NULL);
-	ppvdNode = (PVDENTRY *) ellNext((ELLNODE*)ppvdNode);
+    while (ppvdNode) {
+        if (strcmp(name, ppvdNode->precnode->recordname) == 0) return NULL;
+        ppvdNode = (PVDENTRY *) ellNext((ELLNODE *)ppvdNode);
     }
     ppvdNode = dbCalloc(1, sizeof(PVDENTRY));
-    ellAdd(ppvdlist, (ELLNODE*)ppvdNode);
     ppvdNode->precordType = precordType;
     ppvdNode->precnode = precnode;
-    return (ppvdNode);
+    ellAdd(ppvdlist, (ELLNODE *)ppvdNode);
+    return ppvdNode;
 }
 
 void dbPvdDelete(dbBase *pdbbase,dbRecordNode *precnode)

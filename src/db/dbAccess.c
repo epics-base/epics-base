@@ -1018,8 +1018,8 @@ long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,
         return(status);
 }
 
-devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *pdbRecordType, int dtyp) {
-    return (devSup *)ellNth(&pdbRecordType->devList, dtyp+1);
+devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
+    return (devSup *)ellNth(&prdes->devList, dtyp+1);
 }
 
 devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
@@ -1031,68 +1031,80 @@ devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
     return NULL;
 }
 
-static long dbPutFieldLink(
-    DBADDR *paddr,short dbrType,const void *pbuffer,long nRequest)
+static long dbPutFieldLink(DBADDR *paddr,
+    short dbrType, const void *pbuffer, long nRequest)
 {
-    long        status = 0;
-    long        special=paddr->special;
-    dbCommon    *precord = (dbCommon *)(paddr->precord);
-    DBLINK  *plink = (DBLINK *)paddr->pfield;
-    const char  *pstring = (const char *)pbuffer;
-    DBENTRY	dbEntry;
+    dbCommon    *precord = paddr->precord;
     dbFldDes    *pfldDes = paddr->pfldDes;
+    long        special = paddr->special;
+    DBLINK      *plink = (DBLINK *)paddr->pfield;
+    const char  *pstring = (const char *)pbuffer;
+    DBENTRY     dbEntry;
     DBADDR      dbaddr;
-    devSup *pdevSup = NULL;
+    struct dsxt *old_dsxt = NULL;
     struct dset *new_dset = NULL;
     struct dsxt *new_dsxt = NULL;
-    int inpOut;
-    short scan;
+    long        status;
+    int         isDevLink;
+    short       scan;
 
-    if ((dbrType!=DBR_STRING) && (dbrType!=DBR_CHAR) && (dbrType!=DBR_UCHAR))
+    switch (dbrType) {
+    case DBR_CHAR:
+    case DBR_UCHAR:
+        if (pstring[nRequest] != '\0')
+            return S_db_badDbrtype;
+        break;
+
+    case DBR_STRING:
+        break;
+
+    default:
         return S_db_badDbrtype;
+    }
 
-    if (((dbrType==DBR_CHAR) || (dbrType==DBR_UCHAR)) &&
-        (pstring[nRequest] != '\0'))
-        return S_db_badField;
+    dbInitEntry(pdbbase, &dbEntry);
+    status = dbFindRecord(&dbEntry, precord->name);
+    if (!status) status = dbFindField(&dbEntry, pfldDes->name);
+    if (status) goto finish;
 
-    dbInitEntry(pdbbase,&dbEntry);
-    status=dbFindRecord(&dbEntry,precord->name);
-    if (!status) status=dbFindField(&dbEntry,pfldDes->name);
-    if (status) return status;
-
-    inpOut = !(strcmp(pfldDes->name,"INP") && strcmp(pfldDes->name,"OUT"));
+    isDevLink = ellCount(&precord->rdes->devList) > 0 &&
+                (strcmp(pfldDes->name, "INP") == 0 ||
+                 strcmp(pfldDes->name, "OUT") == 0);
 
     dbLockSetGblLock();
     dbLockSetRecordLock(precord);
 
-    if (inpOut) {
-        pdevSup = dbDTYPtoDevSup(precord->rdes, precord->dtyp);
-        if (pdevSup == NULL) {
-            /* This record type has no registered device support, but does have
-             * an INP or OUT field which we're currently writing to.  We handle
-             * this INP/OUT field just like any other link field.
-             */
-            inpOut = 0;
-        } else {
+    scan = precord->scan;
+
+    if (isDevLink) {
+        devSup *pdevSup = dbDTYPtoDevSup(precord->rdes, precord->dtyp);
+        if (pdevSup) {
             new_dset = pdevSup->pdset;
             new_dsxt = pdevSup->pdsxt;
-            if (new_dset == NULL ||
-                new_dsxt == NULL ||
-                new_dsxt->add_record == NULL ||
-                (precord->dset &&
-                 ((pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset)) == NULL ||
-                  pdevSup->pdsxt == NULL ||
-                  pdevSup->pdsxt->del_record == NULL))) {
-                status = S_db_noSupport;
-                goto unlock;
-            }
         }
-    }
 
-    scan = precord->scan;
-    if (inpOut && (scan==menuScanI_O_Intr)) {
-        scanDelete(precord);
-        precord->scan = menuScanPassive;
+        if (precord->dset) {
+            pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset);
+            if (pdevSup)
+                old_dsxt = pdevSup->pdsxt;
+        }
+
+        if (new_dsxt == NULL ||
+            new_dsxt->add_record == NULL ||
+            old_dsxt == NULL ||
+            old_dsxt->del_record == NULL) {
+            status = S_db_noSupport;
+            goto unlock;
+        }
+
+        if (scan == menuScanI_O_Intr) {
+            scanDelete(precord);
+            precord->scan = menuScanPassive;
+        }
+
+        status = old_dsxt->del_record(precord);
+        if (status)
+            goto restoreScan;
     }
 
     switch (plink->type) { /* Old link type */
@@ -1122,31 +1134,38 @@ static long dbPutFieldLink(
         break;  /* should never get here */
 
     default: /* Hardware address */
-        if (!inpOut)
+        if (!isDevLink) {
             status = S_db_badHWaddr;
-        else
-            if (precord->dset)
-                status = pdevSup->pdsxt->del_record(precord);
-        if (status) goto restoreScan;
+            goto restoreScan;
+        }
         break;
     }
 
-    if (special) status = dbPutSpecial(paddr,0);
-    if (!status) status = dbPutString(&dbEntry,pstring);
+    if (special) status = dbPutSpecial(paddr, 0);
 
-    if (inpOut) {
-        precord->dset = new_dset;
-        precord->dpvt = NULL;
-        precord->pact = FALSE;
-    }
+    if (!status) status = dbPutString(&dbEntry, pstring);
 
-    if (!status && special) status = dbPutSpecial(paddr,1);
+    if (!status && special) status = dbPutSpecial(paddr, 1);
+
     if (status) {
-        if (inpOut) {
+        if (isDevLink) {
             precord->dset = NULL;
             precord->pact = TRUE;
         }
         goto postScanEvent;
+    }
+
+    if (isDevLink) {
+        precord->dpvt = NULL;
+        precord->dset = new_dset;
+        precord->pact = FALSE;
+
+        status = new_dsxt->add_record(precord);
+        if (status) {
+            precord->dset = NULL;
+            precord->pact = TRUE;
+            goto postScanEvent;
+        }
     }
 
     switch (plink->type) { /* New link type */
@@ -1154,6 +1173,7 @@ static long dbPutFieldLink(
         if (plink == &precord->tsel)
             recGblTSELwasModified(plink);
         plink->value.pv_link.precord = precord;
+
         if (!(plink->value.pv_link.pvlMask & (pvlOptCA|pvlOptCP|pvlOptCPP)) &&
             (dbNameToAddr(plink->value.pv_link.pvname, &dbaddr) == 0)) {
             /* It's a DB link */
@@ -1190,21 +1210,17 @@ static long dbPutFieldLink(
         break;  /* should never get here */
 
     default: /* Hardware address */
-        if (!inpOut)
+        if (!isDevLink) {
             status = S_db_badHWaddr;
-        else
-            status = new_dsxt->add_record(precord);
-        if (status) {
-            precord->dset = NULL;
-            precord->pact = TRUE;
             goto postScanEvent;
         }
         break;
     }
-    db_post_events(precord,plink,DBE_VALUE|DBE_LOG);
+    db_post_events(precord, plink, DBE_VALUE | DBE_LOG);
 
 restoreScan:
-    if (inpOut && (scan==menuScanI_O_Intr)) { /* undo scanDelete() */
+    if (isDevLink &&
+        scan == menuScanI_O_Intr) { /* undo scanDelete() */
         precord->scan = scan;
         scanAdd(precord);
     }
@@ -1213,6 +1229,7 @@ postScanEvent:
         db_post_events(precord, &precord->scan, DBE_VALUE|DBE_LOG);
 unlock:
     dbLockSetGblUnlock();
+finish:
     dbFinishEntry(&dbEntry);
     return status;
 }

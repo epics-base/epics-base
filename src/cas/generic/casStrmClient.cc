@@ -1413,9 +1413,7 @@ caStatus casStrmClient::createChanResponse (
         this->chanTable.remove ( *pChan->pChanI );
         this->chanList.remove ( *pChan->pChanI );
         pChan->pChanI->uninstallFromPV ( this->eventSys );
-		casPVI * pPVI = pChan->getPV()->pPVI;
         delete pChan->pChanI;
-        pPVI->deleteSignal ();
     }
 
     return status;

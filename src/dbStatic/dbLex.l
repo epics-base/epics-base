@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -41,6 +41,7 @@ static int yyreset(void)
 "breaktable"	return(tokenBREAKTABLE);
 "record"	return(tokenRECORD);
 "grecord"	return(tokenGRECORD);
+"alias" 	return(tokenALIAS);
 "info"		return(tokenINFO);
 "registrar"	return(tokenREGISTRAR);
 "function"	return(tokenFUNCTION);

@@ -1,13 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbLexRoutines.c	*/
+/* $Id$ */
+
 /* Author:  Marty Kraimer Date:    13JUL95*/
 
 /*The routines in this module are serially reusable NOT reentrant*/
@@ -983,6 +983,46 @@ static void dbRecordInfo(char *name, char *value)
                     dbGetRecordName(pdbentry), name, value);
 	yyerror(NULL);
 	return;
+    }
+}
+
+static void dbRecordAlias(char *name)
+{
+    DBENTRY		*pdbentry;
+    tempListNode	*ptempListNode;
+    long		status;
+
+    if(duplicate) return;
+    ptempListNode = (tempListNode *)ellFirst(&tempList);
+    pdbentry = ptempListNode->item;
+    status = dbCreateAlias(pdbentry, name);
+    if(status) {
+        epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
+                    name, dbGetRecordName(pdbentry));
+        yyerror(NULL);
+        return;
+    }
+}
+
+static void dbAlias(char *name, char *alias)
+{
+    DBENTRY	*pdbentry;
+    long	status;
+
+    pdbentry = dbAllocEntry(pdbbase);
+    status = dbFindRecord(pdbentry, name);
+    if (status) {
+        epicsPrintf("Can't create alias \"%s\", record \"%s\" not found\n",
+                    alias, name);
+        yyerror(NULL);
+        return;
+    }
+    status = dbCreateAlias(pdbentry, alias);
+    if(status) {
+        epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
+                    alias, name);
+        yyerror(NULL);
+        return;
     }
 }
 

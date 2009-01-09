@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 %{
@@ -19,7 +18,7 @@ static int yyAbort = 0;
 %start database
 
 %token tokenINCLUDE tokenPATH tokenADDPATH
-%token tokenMENU tokenCHOICE tokenRECORDTYPE
+%token tokenALIAS tokenMENU tokenCHOICE tokenRECORDTYPE
 %token tokenFIELD tokenINFO tokenREGISTRAR
 %token tokenDEVICE tokenDRIVER tokenBREAKTABLE
 %token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
@@ -47,6 +46,7 @@ database_item:	include
 	|	tokenBREAKTABLE	break_head break_body
 	|	tokenRECORD record_head record_body
 	|	tokenGRECORD grecord_head record_body
+	|	alias
 	;
 
 include:	tokenINCLUDE tokenSTRING
@@ -238,7 +238,19 @@ record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
 	if(dbStaticDebug>2) printf("record_info %s %s\n",$3,$5);
 	dbRecordInfo($3,$5); dbmfFree($3); dbmfFree($5);
 }
+	| tokenALIAS '(' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("record_alias %s\n",$3);
+	dbRecordAlias($3); dbmfFree($3);
+}
 	| include ;
+
+alias: tokenALIAS '(' tokenSTRING ',' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("alias %s %s\n",$3,$5);
+	dbAlias($3,$5); dbmfFree($3); dbmfFree($5);
+};
+
 
 %%
  

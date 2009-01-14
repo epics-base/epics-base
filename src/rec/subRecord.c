@@ -386,8 +386,8 @@ static long fetch_values(subRecord *prec)
     double *pvalue = &prec->a;
     int i;
 
-    for (i = 0; i < INP_ARG_MAX; i++) {
-        if (dbGetLink(plink++, DBR_DOUBLE, pvalue++, 0, 0))
+    for (i = 0; i < INP_ARG_MAX; i++, plink++, pvalue++) {
+        if (dbGetLink(plink, DBR_DOUBLE, pvalue, 0, 0))
             return -1;
     }
     return 0;

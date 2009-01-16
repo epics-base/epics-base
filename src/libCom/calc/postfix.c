@@ -337,7 +337,8 @@ epicsShareFunc long
 	    pstacktop--;	/* remove ( from stack */
 	    /* if there is a vararg operator before the opening paren,
 	       it inherits the (opening) paren's stack effect */
-	    if (pstacktop->type == VARARG_OPERATOR) {
+	    if ((pstacktop > stack) &&
+		pstacktop->type == VARARG_OPERATOR) {
 		pstacktop->runtime_effect = (pstacktop+1)->runtime_effect;
 		/* check for no arguments */
 		if (pstacktop->runtime_effect > 0) {

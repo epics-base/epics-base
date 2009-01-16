@@ -1006,24 +1006,20 @@ static void dbRecordAlias(char *name)
 
 static void dbAlias(char *name, char *alias)
 {
-    DBENTRY	*pdbentry;
-    long	status;
+    DBENTRY	dbEntry;
+    DBENTRY	*pdbEntry = &dbEntry;
 
-    pdbentry = dbAllocEntry(pdbbase);
-    status = dbFindRecord(pdbentry, name);
-    if (status) {
-        epicsPrintf("Can't create alias \"%s\", record \"%s\" not found\n",
+    dbInitEntry(pdbbase, pdbEntry);
+    if (dbFindRecord(pdbEntry, name)) {
+        epicsPrintf("Alias \"%s\" refers to unknown record \"%s\"\n",
                     alias, name);
         yyerror(NULL);
-        return;
-    }
-    status = dbCreateAlias(pdbentry, alias);
-    if(status) {
-        epicsPrintf("Can't create alias \"%s\" for \"%s\"\n",
+    } else if (dbCreateAlias(pdbEntry, alias)) {
+        epicsPrintf("Can't create alias \"%s\" referring to \"%s\"\n",
                     alias, name);
         yyerror(NULL);
-        return;
     }
+    dbFinishEntry(pdbEntry);
 }
 
 static void dbRecordBody(void)

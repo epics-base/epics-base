@@ -13,9 +13,43 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Added record aliases</h4>
+
+<p>Record definitions can declare their own alias names along with the field
+values, or a separate alias statement can also be used:</p>
+
+<blockquote><pre>record(ai,"canonicalName")
+{
+   alias("firstAlias")
+}
+alias("canonicalName","secondAlias")</pre></blockquote>
+
+<p>Aliases can only be created for records that have already been loaded by the
+IOC, although they don't have to appear in the same .db file. A CA client can
+discover that a record name is an alias by fetching its .NAME field, which will
+always return the canonical name for the record. Three new routines in the
+dbStaticLib library handle aliases:</p>
+
+<blockquote><pre>long dbCreateAlias(DBENTRY *pdbentry, const char *paliasName);
+int dbIsAlias(DBENTRY *pdbentry);
+long dbDeleteAliases(DBENTRY *pdbentry);</pre></blockquote>
+
+<p>Aliases are located using the existing record instance API (use
+<tt>dbIsAlias()</tt> to test whether a record is actually an alias or not), and
+can be deleted using <tt>dbDeleteRecord()</tt>.  The <tt>dbDeleteAliases()</tt>
+routine exists to delete all aliases of the selected record, and will return an
+error if used on an alias.</p>
+
+<p>Any out-of-tree tools that scan through all the records in the database using
+<tt>dbFirstRecord()</tt> and <tt>dbNextRecord()</tt> may need modifying to avoid
+duplicate processing of aliased record instances.  Also note that the set of
+info items for a record instance are not shared with its aliases, which each
+have their own info item namespace.</p>
+
 <h4>Added support for RTEMS-mvme2700</h4>
 
-<p>Supplied by Matt Rippa &lt;mrippa@gemini.edu&gt;. Should work for MVME2400, too.</p>
+<p>Supplied by Matt Rippa &lt;mrippa@gemini.edu&gt;. Should work for MVME2400,
+too.</p>
 
 <h4>CA Commandline tools: priority support</h4>
 

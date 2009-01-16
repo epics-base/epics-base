@@ -131,8 +131,14 @@ static const iocshArg * const dbnrArgs[1] = {&dbnrArg0};
 static const iocshFuncDef dbnrFuncDef = {"dbnr",1,dbnrArgs};
 static void dbnrCallFunc(const iocshArgBuf *args) { dbnr(args[0].ival);}
 
+/* dbla */
+static const iocshArg dblaArg0 = { "pattern",iocshArgString};
+static const iocshArg * const dblaArgs[1] = {&dblaArg0};
+static const iocshFuncDef dblaFuncDef = {"dbla",1,dblaArgs};
+static void dblaCallFunc(const iocshArgBuf *args) { dbla(args[0].sval);}
+
 /* dbgrep */
-static const iocshArg dbgrepArg0 = { "record name",iocshArgString};
+static const iocshArg dbgrepArg0 = { "pattern",iocshArgString};
 static const iocshArg * const dbgrepArgs[1] = {&dbgrepArg0};
 static const iocshFuncDef dbgrepFuncDef = {"dbgrep",1,dbgrepArgs};
 static void dbgrepCallFunc(const iocshArgBuf *args) { dbgrep(args[0].sval);}
@@ -301,6 +307,7 @@ void epicsShareAPI dbIocRegister(void)
     iocshRegister(&dbaFuncDef,dbaCallFunc);
     iocshRegister(&dblFuncDef,dblCallFunc);
     iocshRegister(&dbnrFuncDef,dbnrCallFunc);
+    iocshRegister(&dblaFuncDef,dblaCallFunc);
     iocshRegister(&dbgrepFuncDef,dbgrepCallFunc);
     iocshRegister(&dbgfFuncDef,dbgfCallFunc);
     iocshRegister(&dbpfFuncDef,dbpfCallFunc);

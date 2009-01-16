@@ -97,7 +97,8 @@ typedef struct dbInfoNode {	/*non-field per-record information*/
 }dbInfoNode;
 
 #define DBRN_FLAGS_VISIBLE 1
-#define DBRN_FLAGS_ALIAS   2
+#define DBRN_FLAGS_ISALIAS 2
+#define DBRN_FLAGS_HASALIAS 4
 
 typedef struct dbRecordNode {
 	ELLNODE		node;
@@ -139,6 +140,7 @@ typedef struct dbRecordType {
 	short		no_fields;	/* number of fields defined	*/
 	short		no_prompt;	/* number of fields to configure*/
 	short		no_links;	/* number of links		*/
+	short		no_aliases;
 	short		*link_ind;	/* addr of array of ind in papFldDes*/
 	char		**papsortFldName;/* ptr to array of ptr to fld names*/
 	short		*sortFldInd;	/* addr of array of ind in papFldDes*/

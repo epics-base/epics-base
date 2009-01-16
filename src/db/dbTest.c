@@ -204,6 +204,35 @@ long epicsShareAPI dbnr(int verbose)
     return 0;
 }
 
+long epicsShareAPI dbla(const char *pmask)
+{
+    DBENTRY dbentry;
+    DBENTRY *pdbentry = &dbentry;
+    long status;
+
+    if (!pdbbase) {
+        printf("No database loaded\n");
+        return 0;
+    }
+    dbInitEntry(pdbbase, pdbentry);
+    status = dbFirstRecordType(pdbentry);
+    while (!status) {
+        for (status = dbFirstRecord(pdbentry); !status;
+             status = dbNextRecord(pdbentry)) {
+            char *palias;
+
+            if (!dbIsAlias(pdbentry)) continue;
+            palias = dbGetRecordName(pdbentry);
+            if (pmask && *pmask && !epicsStrGlobMatch(palias, pmask)) continue;
+            dbFindField(pdbentry, "NAME");
+            printf("%s -> %s\n", palias, dbGetString(pdbentry));
+        }
+        status = dbNextRecordType(pdbentry);
+    }
+    dbFinishEntry(pdbentry);
+    return 0;
+}
+
 long epicsShareAPI dbgrep(const char *pmask)
 {
     DBENTRY dbentry;

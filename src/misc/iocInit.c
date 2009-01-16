@@ -322,7 +322,9 @@ static void initDatabase(void)
             devSup *pdevSup;
             struct dset *pdset;
 
-            if (!precord->name[0]) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
 
             precord->rset = prset;
             precord->rdes = pdbRecordType;
@@ -355,7 +357,10 @@ static void initDatabase(void)
             int j;
             devSup *pdevSup;
 
-            if (!precord->name[0]) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
+
             /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
             /* For all the links in the record type... */
             for (j = 0; j < pdbRecordType->no_links; j++) {
@@ -420,8 +425,10 @@ static void initDatabase(void)
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             dbCommon *precord = pdbRecordNode->precord;
 
-           /* Find pointer to record instance */
-            if (!precord->name[0]) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
+
             precord->rset = prset;
             if (prset->init_record) {
                 prset->init_record(precord, 1);
@@ -450,7 +457,10 @@ static void initialProcess(void)
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             dbCommon *precord = pdbRecordNode->precord;
 
-            if (!precord->name[0]) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
+
             if (precord->pini) {
                 dbProcess(precord);
             }
@@ -477,7 +487,9 @@ static void exitDatabase(void *dummy)
             devSup *pdevSup;
             struct dsxt *pdsxt;
 
-            if (!precord->name[0]) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
 
             /* For all the links in the record type... */
             for (j = 0; j < pdbRecordType->no_links; j++) {

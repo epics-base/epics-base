@@ -1527,6 +1527,35 @@ long epicsShareAPI dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     return(0);
 }
 
+long epicsShareAPI dbDeleteAliases(DBENTRY *pdbentry)
+{
+    dbBase		*pdbbase = pdbentry->pdbbase;
+    dbRecordType	*precordType = pdbentry->precordType;
+    dbRecordNode	*precnode = pdbentry->precnode;
+    ELLLIST     	*preclist = &precordType->recList;
+    dbRecordNode	*pAliasNode, *pAliasNodeNext;
+    DBENTRY		dbentry;
+    void *precord;
+
+    if (!precnode) return S_dbLib_recNotFound;
+    if (precnode->flags & DBRN_FLAGS_ISALIAS) return S_dbLib_recExists;
+    precord = precnode->precord;
+
+    dbInitEntry(pdbbase, &dbentry);
+    pAliasNode = (dbRecordNode *)ellFirst(preclist);
+    while (pAliasNode) {
+        pAliasNodeNext = (dbRecordNode *)ellNext(&pAliasNode->node);
+        if (pAliasNode->flags & DBRN_FLAGS_ISALIAS &&
+            pAliasNode->precord == precord &&
+            !dbFindRecord(&dbentry, pAliasNode->recordname)) {
+            dbDeleteRecord(&dbentry);
+        }
+        pAliasNode = pAliasNodeNext;
+    }
+    precnode->flags &= ~DBRN_FLAGS_HASALIAS;
+    return 0;
+}
+
 long epicsShareAPI dbDeleteRecord(DBENTRY *pdbentry)
 {
     dbBase		*pdbbase = pdbentry->pdbbase;
@@ -1536,15 +1565,19 @@ long epicsShareAPI dbDeleteRecord(DBENTRY *pdbentry)
     long		status;
 
     if (!precnode) return S_dbLib_recNotFound;
+    if (precnode->flags & DBRN_FLAGS_HASALIAS)
+        dbDeleteAliases(pdbentry);
+
     preclist = &precordType->recList;
     ellDelete(preclist, &precnode->node);
     dbPvdDelete(pdbbase, precnode);
-    if (dbIsAlias(pdbentry)) {
+    while (!dbFirstInfo(pdbentry)) {
+        dbDeleteInfo(pdbentry);
+    }
+    if (precnode->flags & DBRN_FLAGS_ISALIAS) {
         free(precnode->recordname);
+        precordType->no_aliases--;
     } else {
-        while (!dbFirstInfo(pdbentry)) {
-            dbDeleteInfo(pdbentry);
-        }
         status = dbFreeRecord(pdbentry);
         if (status) return status;
     }
@@ -1717,7 +1750,7 @@ int epicsShareAPI dbIsVisibleRecord(DBENTRY *pdbentry)
     return precnode->flags & DBRN_FLAGS_VISIBLE ? 1 : 0;
 }
 
-int epicsShareAPI dbCreateAlias(DBENTRY *pdbentry, const char *alias)
+long epicsShareAPI dbCreateAlias(DBENTRY *pdbentry, const char *alias)
 {
     dbRecordType	*precordType = pdbentry->precordType;
     dbRecordNode	*precnode = pdbentry->precnode;
@@ -1736,7 +1769,9 @@ int epicsShareAPI dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     pnewnode = dbCalloc(1, sizeof(dbRecordNode));
     pnewnode->recordname = epicsStrDup(alias);
     pnewnode->precord = precnode->precord;
-    pnewnode->flags = DBRN_FLAGS_ALIAS;
+    pnewnode->flags = DBRN_FLAGS_ISALIAS;
+    if (!(precnode->flags & DBRN_FLAGS_ISALIAS))
+        precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
     /* install record node in list in sorted postion */
     status = dbFirstRecord(pdbentry);
@@ -1750,6 +1785,7 @@ int epicsShareAPI dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     } else {
         ellAdd(preclist, &pnewnode->node);
     }
+    precordType->no_aliases++;
     pdbentry->precnode = pnewnode;
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);
     if (!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
@@ -1761,7 +1797,7 @@ int epicsShareAPI dbIsAlias(DBENTRY *pdbentry)
     dbRecordNode	*precnode = pdbentry->precnode;
 
     if(!precnode) return 0;
-    return precnode->flags & DBRN_FLAGS_ALIAS ? 1 : 0;
+    return precnode->flags & DBRN_FLAGS_ISALIAS ? 1 : 0;
 }
 
 long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,const char *newRecordName,int overWriteOK)

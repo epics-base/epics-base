@@ -145,9 +145,10 @@ epicsShareFunc long epicsShareAPI dbVisibleRecord(DBENTRY *pdbentry);
 epicsShareFunc long epicsShareAPI dbInvisibleRecord(DBENTRY *pdbentry);
 epicsShareFunc int epicsShareAPI dbIsVisibleRecord(DBENTRY *pdbentry);
 
-epicsShareFunc int epicsShareAPI dbCreateAlias(
+epicsShareFunc long epicsShareAPI dbCreateAlias(
     DBENTRY *pdbentry, const char *paliasName);
 epicsShareFunc int epicsShareAPI dbIsAlias(DBENTRY *pdbentry);
+epicsShareFunc long epicsShareAPI dbDeleteAliases(DBENTRY *pdbentry);
 
 epicsShareFunc long epicsShareAPI dbFindField(
     DBENTRY *pdbentry,const char *pfieldName);

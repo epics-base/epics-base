@@ -1,5 +1,6 @@
 record(calc, "$(user):calcExample$(no)")
 {
+	alias("$(user):calc$(no)")
 	field(DESC, "Counter No. $(no)")
 	field(SCAN,"$(scan)")
 	field(FLNK, "$(user):aiExample$(no)")
@@ -36,3 +37,4 @@ record(ai, "$(user):aiExample$(no)")
 	field(LSV, "MINOR")
 	field(LLSV, "MAJOR")
 }
+alias("$(user):aiExample$(no)","$(user):ai$(no)")

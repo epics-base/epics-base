@@ -327,7 +327,8 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-        nrecords += ellCount(&pdbRecordType->recList);
+        nrecords += ellCount(&pdbRecordType->recList)
+                    - pdbRecordType->no_aliases;
     }
     /*Allocate all of them at once */
     plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
@@ -338,6 +339,9 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
         pdbRecordNode;
         pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             precord = pdbRecordNode->precord;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
             plockRecord->precord = precord;
             precord->lset = plockRecord;
             plockRecord++;
@@ -350,7 +354,9 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
         pdbRecordNode;
         pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             precord = pdbRecordNode->precord;
-            if(!(precord->name[0])) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
             plockRecord = precord->lset;
             if(!plockRecord->plockSet) 
                 allocLockSet(plockRecord,listTypeScanLock,lockSetStateFree,0);

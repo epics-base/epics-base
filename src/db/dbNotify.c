@@ -546,6 +546,9 @@ int epicsShareAPI dbNotifyDump(void)
         pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             putNotifyPvt *pputNotifyPvt;
             precord = pdbRecordNode->precord;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
             if(!precord->ppn) continue;
             if(!precord->ppnr) continue;
             if(precord->ppn->paddr->precord != precord) continue;

@@ -705,7 +705,9 @@ static void buildScanLists(void)
              pdbRecordNode;
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             dbCommon *precord = pdbRecordNode->precord;
-            if (precord->name[0] == 0) continue;
+            if (!precord->name[0] ||
+                pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
+                continue;
             scanAdd(precord);
         }
     }

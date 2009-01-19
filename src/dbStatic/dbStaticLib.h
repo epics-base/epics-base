@@ -135,6 +135,7 @@ epicsShareFunc long epicsShareAPI dbFirstRecord(
     DBENTRY *pdbentry); /*first of record type*/
 epicsShareFunc long epicsShareAPI dbNextRecord(DBENTRY *pdbentry);
 epicsShareFunc int  epicsShareAPI dbGetNRecords(DBENTRY *pdbentry);
+epicsShareFunc int  epicsShareAPI dbGetNAliases(DBENTRY *pdbentry);
 epicsShareFunc char * epicsShareAPI dbGetRecordName(DBENTRY *pdbentry);
 epicsShareFunc long epicsShareAPI dbRenameRecord(
     DBENTRY *pdbentry,const char *newName);

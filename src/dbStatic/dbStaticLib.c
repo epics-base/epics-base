@@ -1668,6 +1668,14 @@ int epicsShareAPI dbGetNRecords(DBENTRY *pdbentry)
     return(ellCount(&precordType->recList));
 }
 
+int epicsShareAPI dbGetNAliases(DBENTRY *pdbentry)
+{
+    dbRecordType	*precordType = pdbentry->precordType;
+
+    if(!precordType) return(0);
+    return(precordType->no_aliases);
+}
+
 char * epicsShareAPI dbGetRecordName(DBENTRY *pdbentry)
 {
     dbRecordType *pdbRecordType = pdbentry->precordType;

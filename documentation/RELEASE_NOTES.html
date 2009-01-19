@@ -27,18 +27,21 @@ alias("canonicalName","secondAlias")</pre></blockquote>
 <p>Aliases can only be created for records that have already been loaded by the
 IOC, although they don't have to appear in the same .db file. A CA client can
 discover that a record name is an alias by fetching its .NAME field, which will
-always return the canonical name for the record. Three new routines in the
+always return the canonical name for the record. These new routines in the
 dbStaticLib library handle aliases:</p>
 
 <blockquote><pre>long dbCreateAlias(DBENTRY *pdbentry, const char *paliasName);
 int dbIsAlias(DBENTRY *pdbentry);
+int dbGetNAliases(DBENTRY *pdbentry)
 long dbDeleteAliases(DBENTRY *pdbentry);</pre></blockquote>
 
-<p>Aliases are located using the existing record instance API (use
-<tt>dbIsAlias()</tt> to test whether a record is actually an alias or not), and
-can be deleted using <tt>dbDeleteRecord()</tt>.  The <tt>dbDeleteAliases()</tt>
-routine exists to delete all aliases of the selected record, and will return an
-error if used on an alias.</p>
+<p>Aliases are located using the existing record instance API. Use
+<tt>dbIsAlias()</tt> to test whether a record is actually an alias or not.
+Aliasees can be deleted like record instances using <tt>dbDeleteRecord()</tt>
+which will not delete the underlying record if the DBENTRY refers to the alias
+(deleting a record instance does delete all its aliases though).  The
+<tt>dbDeleteAliases()</tt> routine deletes all aliases of the selected record,
+and will return an error if used on an alias.</p>
 
 <p>Any out-of-tree tools that scan through all the records in the database using
 <tt>dbFirstRecord()</tt> and <tt>dbNextRecord()</tt> may need modifying to avoid

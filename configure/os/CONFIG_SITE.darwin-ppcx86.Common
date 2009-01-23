@@ -10,4 +10,3 @@
 # Need this to get OS X readline rather than Fink (PPC-only) readline
 #
 OP_SYS_LDFLAGS +=  -L/usr/lib
-OP_SYS_CFLAGS += -g

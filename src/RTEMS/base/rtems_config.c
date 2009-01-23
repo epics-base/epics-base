@@ -20,16 +20,16 @@
  ***********************************************************************
  */
 
+#define CONFIGURE_UNIFIED_WORK_AREAS
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#define CONFIGURE_EXECUTIVE_RAM_SIZE        (2000*1024)
 #define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
 #define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)
 #define CONFIGURE_MAXIMUM_TIMERS            rtems_resource_unlimited(20)
 #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES    rtems_resource_unlimited(5)
 #define CONFIGURE_MAXIMUM_USER_EXTENSIONS   1
 
-#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 100
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 150
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 #define CONFIGURE_MAXIMUM_DRIVERS       8
 

@@ -23,5 +23,5 @@ OSITHREAD_USE_DEFAULT_STACK = NO
 HOSTEXE=.exe
 
 # Needed to find dlls for base installed build tools (antelope,eflex,...)
-PATH := $(EPICS_BASE_TOOLS_BIN):$(PATH)
+PATH := $(EPICS_BASE_BIN):$(PATH)
 

@@ -442,8 +442,13 @@ static void zeroDbentry(DBENTRY *pdbentry)
 
 static char *getpMessage(DBENTRY *pdbentry)
 {
-    if(!pdbentry->message) pdbentry->message = dbCalloc(1,messagesize);
-    return(pdbentry->message);
+    char *msg = pdbentry->message;
+    if (!msg) {
+        msg = dbCalloc(1, messagesize);
+        pdbentry->message = msg;
+    }
+    *msg = 0;
+    return msg;
 }
 
 static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname)
@@ -1934,7 +1939,6 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
     DBLINK 	*plink;
 
     message = getpMessage(pdbentry);
-    *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
     cvttype = pflddes->base;
     switch (pflddes->field_type) {
@@ -2492,7 +2496,6 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
 
     stringHasMacro = strstr(pstring,"$(") || strstr(pstring,"${");
     message = getpMessage(pdbentry);
-    *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
     if(strstr(pstring,"$(") || strstr(pstring,"${")) return(NULL);
     switch (pflddes->field_type) {
@@ -2645,7 +2648,6 @@ char *epicsShareAPI dbGetRange(DBENTRY *pdbentry)
     char		*message;
 
     message = getpMessage(pdbentry);
-    *message = 0;
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
     switch (pflddes->field_type) {
     case DBF_STRING: {strcpy(message,"STRING"); return(message);}

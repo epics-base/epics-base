@@ -67,9 +67,8 @@ since this will delay all other threads.
 #include "dbAccessDefs.h"
 #include "dbLock.h"
 
-#define STATIC static
 
-STATIC int dbLockIsInitialized = FALSE;
+static int dbLockIsInitialized = FALSE;
 
 typedef enum {
     listTypeScanLock = 0,
@@ -79,10 +78,10 @@ typedef enum {
 
 #define nlistType listTypeFree + 1
 
-STATIC ELLLIST lockSetList[nlistType];
-STATIC epicsMutexId globalLock;
-STATIC epicsMutexId lockSetModifyLock;
-STATIC unsigned long id = 0;
+static ELLLIST lockSetList[nlistType];
+static epicsMutexId globalLock;
+static epicsMutexId lockSetModifyLock;
+static unsigned long id = 0;
 
 typedef enum {
     lockSetStateFree=0, lockSetStateScanLock, lockSetStateRecordLock
@@ -110,7 +109,7 @@ typedef struct lockRecord {
 } lockRecord;
 
 /*private routines */
-STATIC void dbLockInitialize(void)
+static void dbLockInitialize(void)
 {
     int i;
 
@@ -121,7 +120,7 @@ STATIC void dbLockInitialize(void)
     dbLockIsInitialized = TRUE;
 }
 
-STATIC lockSet * allocLockSet(
+static lockSet * allocLockSet(
     lockRecord *plockRecord, listType type,
     lockSetState state, epicsThreadId thread_id)
 {

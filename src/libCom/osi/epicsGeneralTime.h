@@ -20,11 +20,19 @@ extern "C" {
 /* Time Events are numbered 0 through (NUM_TIME_EVENTS-1) */
 
 epicsShareFunc void generalTime_Init(void);
+
 epicsShareFunc int  installLastResortEventProvider(void);
+
 epicsShareFunc void generalTimeResetErrorCounts(void);
 epicsShareFunc int  generalTimeGetErrorCounts(void);
-epicsShareFunc const char * generalTimeCurrentTpName(void);
-epicsShareFunc const char * generalTimeEventTpName(void);
+
+epicsShareFunc const char * generalTimeCurrentProviderName(void);
+epicsShareFunc const char * generalTimeEventProviderName(void);
+epicsShareFunc const char * generalTimeHighestCurrentName(void);
+
+/* Original names, for compatibility */
+#define generalTimeCurrentTpName generalTimeCurrentProviderName
+#define generalTimeEventTpName generalTimeEventProviderName
 
 epicsShareFunc long generalTimeReport(int interest);
 

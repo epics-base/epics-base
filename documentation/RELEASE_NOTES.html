@@ -13,6 +13,55 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>generalTime and epicsTime updates</h4>
+
+<p>Allow time providers to supply timestamps in interrupt context.  A pair of
+new API routines in epicsTime.h <tt>epicsTimeGetCurrentInt()</tt> and
+<tt>epicsTimeGetEventInt()</tt> will check the most recently successful
+current-time or event-time provider and forward requests to the routine
+registered by that provider, if any.  The priority list is not traversed, so if
+the latest provider has not registered an interrupt-safe routine by calling
+<tt>generalTimeAddIntCurrentProvider()</tt> or
+<tt>generalTimeAddIntEventProvider()</tt> as appropriate, these API routines
+will return failure.  The resulting timestamp is not protected against backwards
+movement either.</p>
+
+<p>Added a routine <tt>generalTimeHighestCurrentName()</tt> which returns the
+name of the highest prority registered current time provider.  Comparing this
+with the name returned by <tt>generalTimeCurrentProviderName()</tt> permits an
+alarm to be generated if an IOC is not able to use the time provider it was
+designed to use. The General Time stringin device support keyword
+<tt>@TOPTCP</tt> has been added to make this name available in a database
+record.</p>
+
+<p>The following routines have been renamed, but the old name may still be used
+since a macro with the old name has been added:</p>
+
+<blockquote>
+<table border=1>
+  <tr>
+    <th>Old Name</th>
+    <th>New Name</th></tr>
+  <tr>
+    <td><tt>generalTimeCurrentTpRegister</tt></td>
+    <td><tt>generalTimeRegisterCurrentProvider</tt></td></tr>
+  <tr>
+    <td><tt>generalTimeEventTpRegister</tt></td>
+    <td><tt>generalTimeRegisterEventProvider</tt></td></tr>
+  <tr>
+    <td><tt>generalTimeCurrentTpName</tt></td>
+    <td><tt>generalTimeCurrentProviderName</tt></td></tr>
+  <tr>
+    <td><tt>generalTimeEventTpName</tt></td>
+    <td><tt>generalTimeEventProviderName</tt></td></tr>
+</table>
+</blockquote>
+
+<p>The routine <tt>generalTimeCreateSyncTimer()</tt> was not useful in practice
+due to time provider initialization issues, nor was its implementation protected
+properly for use on SMP systems so it has been deleted.  The deprecated and
+empty <tt>synchronize()</tt> method from the epicsTime class has also gone.</p>
+
 <h4>RTEMS Release</h4>
 
 <p>RTEMS release 4.10 or newer is required.  EPICS now uses

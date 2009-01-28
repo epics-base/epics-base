@@ -222,12 +222,17 @@ epicsExportAddress(dset, devLiGeneralTime);
 /********** stringin record **********/
 static const char * timeProvider(void)
 {
-    return generalTimeCurrentTpName();
+    return generalTimeCurrentProviderName();
+}
+
+static const char * highestProvider(void)
+{
+    return generalTimeHighestCurrentName();
 }
 
 static const char * eventProvider(void)
 {
-    return generalTimeEventTpName();
+    return generalTimeEventProviderName();
 }
 
 static struct si_channel {
@@ -235,6 +240,7 @@ static struct si_channel {
     const char * (*get)(void);
 } si_channels[] = {
     {"BESTTCP", timeProvider},
+    {"TOPTCP", highestProvider},
     {"BESTTEP", eventProvider},
 };
 

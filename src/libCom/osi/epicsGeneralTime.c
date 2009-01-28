@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2008 Diamond Light Source Ltd
 * Copyright (c) 2004 Oak Ridge National Laboratory
@@ -42,6 +42,10 @@ typedef struct {
         TIMECURRENTFUN Time;
         TIMEEVENTFUN   Event;
     } get;
+    union {
+        TIMECURRENTFUN Time;
+        TIMEEVENTFUN   Event;
+    } getInt;
 } gtProvider;
 
 static struct {
@@ -56,7 +60,6 @@ static struct {
     epicsTimeStamp  eventTime[NUM_TIME_EVENTS];
     epicsTimeStamp  lastProvidedBestTime;
 
-    epicsTimerQueueId sync_queue;
     int               ErrorCounts;
 } gtPvt;
 
@@ -98,7 +101,8 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
             /* check time is monotonic */
             if (epicsTimeGreaterThanEqual(pDest, &gtPvt.lastProvidedTime)) {
                 gtPvt.lastProvidedTime = *pDest;
-                gtPvt.lastTimeProvider = ptp;
+                if (ignore == 0)
+                    gtPvt.lastTimeProvider = ptp;
                 if (pPrio)
                     *pPrio = ptp->priority;
             } else {
@@ -113,7 +117,8 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
             break;
         }
     }
-    if (status == epicsTimeERROR)
+    if (status == epicsTimeERROR &&
+        ignore == 0)
         gtPvt.lastTimeProvider = NULL;
     epicsMutexUnlock(gtPvt.timeListLock);
 
@@ -123,6 +128,16 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
 int epicsShareAPI epicsTimeGetCurrent(epicsTimeStamp *pDest)
 {
     return generalTimeGetExceptPriority(pDest, NULL, 0);
+}
+
+int epicsTimeGetCurrentInt(epicsTimeStamp *pDest)
+{
+    gtProvider *ptp = gtPvt.lastTimeProvider;
+
+    if (ptp == NULL ||
+        ptp->getInt.Time == NULL) return epicsTimeERROR;
+
+    return ptp->getInt.Time(pDest);
 }
 
 
@@ -141,6 +156,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
     epicsMutexMustLock(gtPvt.eventListLock);
     for (ptp = (gtProvider *)ellFirst(&gtPvt.eventProviders);
          ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+
         status = ptp->get.Event(pDest, eventNumber);
         if (status != epicsTimeERROR) {
             gtPvt.lastEventProvider = ptp;
@@ -189,6 +205,20 @@ int epicsShareAPI epicsTimeGetEvent(epicsTimeStamp *pDest, int eventNumber)
     }
 }
 
+int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber)
+{
+    if (eventNumber == epicsTimeEventCurrentTime) {
+        return epicsTimeGetCurrentInt(pDest);
+    } else {
+        gtProvider *ptp = gtPvt.lastEventProvider;
+
+        if (ptp == NULL ||
+            ptp->getInt.Event == NULL) return epicsTimeERROR;
+
+        return ptp->getInt.Event(pDest, eventNumber);
+    }
+}
+
 
 /* Provider Registration */
 
@@ -215,7 +245,25 @@ static void insertProvider(gtProvider *ptp, ELLLIST *plist, epicsMutexId lock)
     epicsMutexUnlock(lock);
 }
 
-int generalTimeEventTpRegister(const char *name, int priority,
+static gtProvider * findProvider(ELLLIST *plist, epicsMutexId lock,
+    const char *name, int priority)
+{
+    gtProvider *ptp;
+
+    epicsMutexMustLock(lock);
+
+    for (ptp = (gtProvider *)ellFirst(plist);
+         ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
+        if (ptp->priority == ptp->priority &&
+            !strcmp(ptp->name, name))
+            break;
+    }
+
+    epicsMutexUnlock(lock);
+    return ptp;
+}
+
+int generalTimeRegisterEventProvider(const char *name, int priority,
     TIMEEVENTFUN getEvent)
 {
     gtProvider *ptp;
@@ -229,34 +277,62 @@ int generalTimeEventTpRegister(const char *name, int priority,
     if (ptp == NULL)
         return epicsTimeERROR;
 
-    ptp->name      = epicsStrDup(name);
-    ptp->priority  = priority;
-    ptp->get.Event = getEvent;
+    ptp->name         = epicsStrDup(name);
+    ptp->priority     = priority;
+    ptp->get.Event    = getEvent;
+    ptp->getInt.Event = NULL;
 
     insertProvider(ptp, &gtPvt.eventProviders, gtPvt.eventListLock);
 
     return epicsTimeOK;
 }
 
-int generalTimeCurrentTpRegister(const char *name, int priority,
-    TIMECURRENTFUN getCurrent)
+int generalTimeAddIntEventProvider(const char *name, int priority,
+    TIMEEVENTFUN getEvent)
+{
+    gtProvider *ptp = findProvider(&gtPvt.eventProviders, gtPvt.eventListLock,
+        name, priority);
+    if (ptp == NULL)
+        return epicsTimeERROR;
+
+    ptp->getInt.Event = getEvent;
+
+    return epicsTimeOK;
+}
+
+int generalTimeRegisterCurrentProvider(const char *name, int priority,
+    TIMECURRENTFUN getTime)
 {
     gtProvider *ptp;
 
     generalTime_Init();
 
-    if (name == NULL || getCurrent == NULL)
+    if (name == NULL || getTime == NULL)
         return epicsTimeERROR;
 
     ptp = (gtProvider *)malloc(sizeof(gtProvider));
     if (ptp == NULL)
         return epicsTimeERROR;
 
-    ptp->name     = epicsStrDup(name);
-    ptp->priority = priority;
-    ptp->get.Time = getCurrent;
+    ptp->name        = epicsStrDup(name);
+    ptp->priority    = priority;
+    ptp->get.Time    = getTime;
+    ptp->getInt.Time = NULL;
 
     insertProvider(ptp, &gtPvt.timeProviders, gtPvt.timeListLock);
+
+    return epicsTimeOK;
+}
+
+int generalTimeAddIntCurrentProvider(const char *name, int priority,
+    TIMECURRENTFUN getTime)
+{
+    gtProvider *ptp = findProvider(&gtPvt.timeProviders, gtPvt.timeListLock,
+        name, priority);
+    if (ptp == NULL)
+        return epicsTimeERROR;
+
+    ptp->getInt.Time = getTime;
 
     return epicsTimeOK;
 }
@@ -282,15 +358,6 @@ int installLastResortEventProvider(void)
 {
     return generalTimeEventTpRegister("Last Resort Event",
         LAST_RESORT_PRIORITY, lastResortGetEvent);
-}
-
-
-epicsTimerId generalTimeCreateSyncTimer(epicsTimerCallback cb, void *parm)
-{
-    if (!gtPvt.sync_queue) {
-        gtPvt.sync_queue = epicsTimerQueueAllocate(0, epicsThreadPriorityHigh);
-    }
-    return epicsTimerQueueCreateTimer(gtPvt.sync_queue, cb, parm);
 }
 
 
@@ -417,4 +484,14 @@ const char * generalTimeEventTpName(void)
     if (gtPvt.lastEventProvider)
         return gtPvt.lastEventProvider->name;
     return NULL;
+}
+
+const char * generalTimeHighestCurrentName(void)
+{
+    gtProvider *ptp;
+
+    epicsMutexMustLock(gtPvt.timeListLock);
+    ptp = (gtProvider *)ellFirst(&gtPvt.timeProviders);
+    epicsMutexUnlock(gtPvt.timeListLock);
+    return ptp ? ptp->name : NULL;
 }

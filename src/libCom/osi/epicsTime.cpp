@@ -200,14 +200,12 @@ epicsTime epicsTime::getCurrent ()
 epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
 {
     epicsTimeStamp current;
-    int status = epicsTimeGetEvent (&current, event.eventNumber);
+    int status = epicsTimeGetEvent (&current, event);
     if (status) {
         throwWithLocation ( unableToFetchCurrentTime () );
     }
     return epicsTime ( current );
 }
-
-void epicsTime::synchronize () {} // deprecated
 
 //
 // operator time_t_wrapper ()

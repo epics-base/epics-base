@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -105,6 +105,7 @@ static int tvsnPrint(char *str, size_t size, const char *format, va_list ap)
 epicsShareFunc int errlogPrintf(const char *pFormat, ...)
 {
     va_list pvar;
+    char *pbuffer;
     int nchar;
     int isOkToBlock;
 
@@ -121,10 +122,13 @@ epicsShareFunc int errlogPrintf(const char *pFormat, ...)
         va_end (pvar);
         fflush(stderr);
     }
+    pbuffer = msgbufGetFree(isOkToBlock);
+    if (!pbuffer) return 0;
     va_start(pvar, pFormat);
-    nchar = errlogVprintf(pFormat, pvar);
+    nchar = tvsnPrint(pbuffer, pvtData.maxMsgSize, pFormat?pFormat:"", pvar);
     va_end(pvar);
-    return(nchar);
+    msgbufSetSize(nchar);
+    return nchar;
 }
 
 epicsShareFunc int errlogVprintf(
@@ -143,8 +147,12 @@ epicsShareFunc int errlogVprintf(
     if (pvtData.atExit) return 0;
     isOkToBlock = epicsThreadIsOkToBlock();
     pbuffer = msgbufGetFree(isOkToBlock);
-    if (!pbuffer) return 0;
+    if (!pbuffer) {
+        vfprintf(stderr, pFormat, pvar);
+        return 0;
+    }
     nchar = tvsnPrint(pbuffer,pvtData.maxMsgSize,pFormat?pFormat:"",pvar);
+    fprintf(stderr, "%s", pbuffer);
     msgbufSetSize(nchar);
     return nchar;
 }

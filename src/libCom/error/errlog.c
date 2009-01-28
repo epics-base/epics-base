@@ -149,10 +149,14 @@ epicsShareFunc int errlogVprintf(
     pbuffer = msgbufGetFree(isOkToBlock);
     if (!pbuffer) {
         vfprintf(stderr, pFormat, pvar);
+        fflush(stderr);
         return 0;
     }
-    nchar = tvsnPrint(pbuffer,pvtData.maxMsgSize,pFormat?pFormat:"",pvar);
-    fprintf(stderr, "%s", pbuffer);
+    nchar = tvsnPrint(pbuffer, pvtData.maxMsgSize, pFormat?pFormat:"", pvar);
+    if (pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
+        fprintf(stderr, "%s", pbuffer);
+        fflush(stderr);
+    }
     msgbufSetSize(nchar);
     return nchar;
 }

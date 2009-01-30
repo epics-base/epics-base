@@ -570,7 +570,9 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep(double seconds)
     delayTime.tv_sec = (time_t)seconds;
     nanoseconds = (seconds - (double)delayTime.tv_sec) *1e9;
     delayTime.tv_nsec = (long)nanoseconds;
-    nanosleep(&delayTime,&remainingTime);
+    while (nanosleep(&delayTime, &remainingTime) == -1 &&
+           errno == EINTR)
+        delayTime = remainingTime;
 }
 
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf(void) {

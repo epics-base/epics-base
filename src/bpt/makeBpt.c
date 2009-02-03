@@ -71,8 +71,8 @@ static int getNumber(char **pbeg, double *value)
 	
 static void errExit(char *pmessage)
 {
-    fprintf(stderr,pmessage);
-    fprintf(stderr,"\n");
+    fprintf(stderr, "%s\n", pmessage);
+    fflush(stderr);
     exit(-1);
 }
 

@@ -22,7 +22,7 @@ extern "C" {
 
 /* define errMessage with a macro so we can print the file and line number*/
 #define errMessage(S, PM) \
-         errPrintf(S, __FILE__, __LINE__, PM)
+         errPrintf(S, __FILE__, __LINE__, "%s", PM)
 /* epicsPrintf and epicsVprintf old versions of errlog routines*/
 #define epicsPrintf errlogPrintf
 #define epicsVprintf errlogVprintf

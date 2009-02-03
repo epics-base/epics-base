@@ -30,11 +30,6 @@ menu(calcoutINAV) {
 }
 recordtype(calcout) {
 	include "dbCommon.dbd" 
-	field(VERS,DBF_DOUBLE) {
-		prompt("Code Version")
-		special(SPC_NOMOD)
-		initial("1")
-	}
 	field(RPVT,DBF_NOACCESS) {
 		prompt("Record Private")
 		special(SPC_NOMOD)

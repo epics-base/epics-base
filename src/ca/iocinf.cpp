@@ -97,7 +97,7 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
             continue;
         }
 
-        if ( ignoreNonDefaultPort && addr.sin_port != port ) {
+        if ( ignoreNonDefaultPort && ntohs ( addr.sin_port ) != port ) {
             continue;
         }
 

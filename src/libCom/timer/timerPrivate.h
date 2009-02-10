@@ -120,11 +120,14 @@ private:
     friend class timerQueueActiveMgr;
 };
 
+extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
+
 class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueActiveMgrPrivate {
 public:
-    timerQueueActive ( bool okToShare, unsigned priority );
+    typedef epicsSingleton < timerQueueActiveMgr > :: reference RefMgr;
+    timerQueueActive ( RefMgr &, bool okToShare, unsigned priority );
     epicsTimer & createTimer ();
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
     void show ( unsigned int level ) const;
@@ -132,6 +135,7 @@ public:
     unsigned threadPriority () const;
 protected:
     ~timerQueueActive ();
+    RefMgr _refMgr;
 private:
     timerQueue queue;
     epicsEvent rescheduleEvent;
@@ -151,9 +155,10 @@ private:
 
 class timerQueueActiveMgr {
 public:
+    typedef epicsSingleton < timerQueueActiveMgr > :: reference RefThis;
 	timerQueueActiveMgr ();
     ~timerQueueActiveMgr ();
-    epicsTimerQueueActiveForC & allocate ( bool okToShare, 
+    epicsTimerQueueActiveForC & allocate ( RefThis &, bool okToShare, 
         unsigned threadPriority = epicsThreadPriorityMin + 10 );
     void release ( epicsTimerQueueActiveForC & );
 private:
@@ -162,8 +167,6 @@ private:
 	timerQueueActiveMgr ( const timerQueueActiveMgr & );
     timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
-
-extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:
@@ -202,7 +205,7 @@ private:
 struct epicsTimerQueueActiveForC : public timerQueueActive, 
     public tsDLNode < epicsTimerQueueActiveForC > {
 public:
-    epicsTimerQueueActiveForC ( bool okToShare, unsigned priority );
+    epicsTimerQueueActiveForC ( RefMgr &, bool okToShare, unsigned priority );
     void release ();
     void * operator new ( size_t );
     void operator delete ( void * );

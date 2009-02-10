@@ -38,11 +38,13 @@ epicsTimerQueueActive & epicsTimerQueueActive::allocate ( bool okToShare, unsign
 {
     epicsSingleton < timerQueueActiveMgr >::reference pMgr = 
         timerQueueMgrEPICS.getReference ();
-    return pMgr->allocate ( okToShare, threadPriority );
+    return pMgr->allocate ( pMgr, okToShare, threadPriority );
 }
 
-timerQueueActive::timerQueueActive ( bool okToShareIn, unsigned priority ) :
-    queue ( *this ), thread ( *this, "timerQueue", 
+timerQueueActive ::
+    timerQueueActive ( RefMgr & refMgr, 
+        bool okToShareIn, unsigned priority ) :
+    _refMgr ( refMgr ), queue ( *this ), thread ( *this, "timerQueue", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ), priority ),
     sleepQuantum ( epicsThreadSleepQuantum() ), okToShare ( okToShareIn ), 
     exitFlag ( false ), terminateFlag ( false )

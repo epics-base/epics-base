@@ -23,7 +23,6 @@
 #include "epicsAssert.h"
 #include "epicsGuard.h"
 #include "tsFreeList.h"
-#include "epicsSingleton.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
@@ -45,7 +44,8 @@ private:
     epicsTime expireStamp;
     double expectedDelay;
     expireStatus expire ( const epicsTime & );
-    static epicsSingleton < tsFreeList < class delayVerify, 0x20 > > pFreeList;
+    delayVerify ( const delayVerify & );
+    delayVerify & operator = ( const delayVerify & );
 };
 
 static volatile unsigned expireCount;
@@ -151,7 +151,8 @@ protected:
 private:
     epicsTimer &timer;
     expireStatus expire ( const epicsTime & );
-    static epicsSingleton < tsFreeList < class cancelVerify, 0x20 > > pFreeList;
+    cancelVerify ( const cancelVerify & );
+    cancelVerify & operator = ( const cancelVerify & );
 };
 
 unsigned cancelVerify::cancelCount;
@@ -241,38 +242,39 @@ void testCancel ()
 }
 
 
-class expireDestroVerify : public epicsTimerNotify {
+class expireDestroyVerify : public epicsTimerNotify {
 public:
-    expireDestroVerify ( epicsTimerQueue & );
+    expireDestroyVerify ( epicsTimerQueue & );
     void start ( const epicsTime &expireTime );
     static unsigned destroyCount;
 protected:
-    virtual ~expireDestroVerify ();
+    virtual ~expireDestroyVerify ();
 private:
     epicsTimer & timer;
     expireStatus expire ( const epicsTime & );
-    static epicsSingleton < tsFreeList < class expireDestroVerify, 0x20 > > pFreeList;
+    expireDestroyVerify ( const expireDestroyVerify & );
+    expireDestroyVerify & operator = ( const expireDestroyVerify & );
 };
 
-unsigned expireDestroVerify::destroyCount;
+unsigned expireDestroyVerify::destroyCount;
 
-expireDestroVerify::expireDestroVerify ( epicsTimerQueue & queueIn ) :
+expireDestroyVerify::expireDestroyVerify ( epicsTimerQueue & queueIn ) :
     timer ( queueIn.createTimer () )
 {
 }
 
-expireDestroVerify::~expireDestroVerify ()
+expireDestroyVerify::~expireDestroyVerify ()
 {
     this->timer.destroy ();
-    ++expireDestroVerify::destroyCount;
+    ++expireDestroyVerify::destroyCount;
 }
 
-inline void expireDestroVerify::start ( const epicsTime & expireTime )
+inline void expireDestroyVerify::start ( const epicsTime & expireTime )
 {
     this->timer.start ( *this, expireTime );
 }
 
-epicsTimerNotify::expireStatus expireDestroVerify::expire ( const epicsTime & )
+epicsTimerNotify::expireStatus expireDestroyVerify::expire ( const epicsTime & )
 {
     delete this;
     return noRestart;
@@ -284,10 +286,10 @@ epicsTimerNotify::expireStatus expireDestroVerify::expire ( const epicsTime & )
 void testExpireDestroy ()
 {
     static const unsigned nTimers = 25u;
-    expireDestroVerify *pTimers[nTimers];
+    expireDestroyVerify *pTimers[nTimers];
     unsigned i;
     unsigned timerCount = 0;
-    expireDestroVerify::destroyCount = 0;
+    expireDestroyVerify::destroyCount = 0;
 
     testDiag ( "Testing timer destruction in expire()" );
 
@@ -295,11 +297,11 @@ void testExpireDestroy ()
         epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
 
     for ( i = 0u; i < nTimers; i++ ) {
-        pTimers[i] = new expireDestroVerify ( queue );
+        pTimers[i] = new expireDestroyVerify ( queue );
         timerCount += pTimers[i] ? 1 : 0;
     }
     testOk1 ( timerCount == nTimers );
-    testOk1 ( expireDestroVerify::destroyCount == 0 );
+    testOk1 ( expireDestroyVerify::destroyCount == 0 );
 
     testDiag ( "starting %d timers", nTimers );
     epicsTime cur = epicsTime::getCurrent ();
@@ -310,7 +312,7 @@ void testExpireDestroy ()
     testDiag ( "waiting until all timers should have expired" );
     epicsThreadSleep ( 5.0 );
 
-    testOk1 ( expireDestroVerify::destroyCount == nTimers );
+    testOk1 ( expireDestroyVerify::destroyCount == nTimers );
     queue.release ();
 }
 
@@ -328,7 +330,8 @@ private:
     unsigned nExpire;
     bool cancelCalled;
     expireStatus expire ( const epicsTime & );
-    static epicsSingleton < tsFreeList < class periodicVerify, 0x20 > > pFreeList;
+    periodicVerify ( const periodicVerify & );
+    periodicVerify & operator = ( const periodicVerify & );
 };
 
 periodicVerify::periodicVerify ( epicsTimerQueue & queueIn ) :

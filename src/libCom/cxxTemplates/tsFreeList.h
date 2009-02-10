@@ -35,18 +35,18 @@
 // 1) add the following static, private free list data members 
 // to your class
 //
-// static epicsSingleton < tsFreeList < class classXYZ > > pFreeList;
+// static tsFreeList < class classXYZ > freeList;
 //
 // 2) add the following member functions to your class
 // 
 // inline void * classXYZ::operator new ( size_t size )
 // {
-//    return classXYZ::pFreeList->allocate ( size );
+//    return freeList.allocate ( size );
 // }
 //
 // inline void classXYZ::operator delete ( void *pCadaver, size_t size )
 // {
-//    classXYZ::pFreeList->release ( pCadaver, size );
+//    freeList.release ( pCadaver, size );
 // }
 //
 // NOTES:

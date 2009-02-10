@@ -128,7 +128,7 @@ buildInstall : \
 
 clean::
 	@echo "Cleaning"
-	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME)\
+	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
@@ -149,6 +149,8 @@ browse: $(LIB_BAF) $(PROD_BAF)
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
+
+$(PROD): $(INSTALL_LIB_INSTALLS)
 
 #---------------------------------------------------------------
 #  The order of the following rules is

@@ -150,7 +150,7 @@ browse: $(LIB_BAF) $(PROD_BAF)
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
 
-$(PROD): $(INSTALL_LIB_INSTALLS)
+$(PRODNAME): $(INSTALL_LIB_INSTALLS)
 
 #---------------------------------------------------------------
 #  The order of the following rules is

@@ -1259,10 +1259,8 @@ void tcpiiu::hostNameSetRequest ( epicsGuard < epicsMutex > & guard ) // X aCC 4
     if ( ! CA_V41 ( this->minorProtocolVersion ) ) {
         return;
     }
-
-    epicsSingleton < localHostName >::reference 
-            ref ( localHostNameAtLoadTime.getReference () );
-    const char * pName = ref->pointer ();
+    
+    const char * pName = this->cacRef.pLocalHostName ();
     unsigned size = strlen ( pName ) + 1u;
     unsigned postSize = CA_MESSAGE_ALIGN ( size );
     assert ( postSize < 0xffff );

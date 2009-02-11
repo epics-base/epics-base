@@ -51,7 +51,6 @@ struct caHdrLargeArray {
     ca_uint16_t m_cmmd;         // operation to be performed 
 };
 
-class hostNameCache;
 class ipAddrToAsciiEngine;
 
 class tcpRecvThread : private epicsThreadRunable {

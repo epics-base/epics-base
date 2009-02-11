@@ -48,7 +48,7 @@ private:
     char cache [128];
 };
 
-extern epicsSingleton < localHostName > localHostNameAtLoadTime;
+extern epicsSingleton < localHostName > localHostNameCache;
 
 inline unsigned localHostName::nameLength () const
 {

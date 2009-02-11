@@ -36,6 +36,7 @@
 #include "epicsTimer.h"
 #include "epicsEvent.h"
 #include "freeList.h"
+#include "localHostName.h"
 
 #ifdef cach_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -212,8 +213,10 @@ public:
     static unsigned highestPriorityLevelBelow ( unsigned priority );
     void destroyIIU ( tcpiiu & iiu ); 
 
+    const char * pLocalHostName ();
+    
 private:
-    localHostName hostNameCache;
+    epicsSingleton < localHostName > :: reference _refLocalHostName;
     chronIntIdResTable < nciu > chanTable;
     //
     // !!!! There is at this point no good reason
@@ -432,6 +435,11 @@ inline nciu * cac::lookupChannel (
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->chanTable.lookup ( idIn );
+}
+
+inline const char * cac :: pLocalHostName ()
+{
+    return _refLocalHostName->pointer ();
 }
 
 #endif // ifdef cach

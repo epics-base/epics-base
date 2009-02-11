@@ -32,6 +32,18 @@
 #include "localHostName.h"
 #include "cacIO.h"
 
+class CACChannelPrivate {
+public:
+    CACChannelPrivate ();
+    unsigned getHostName ( char * pBuf, unsigned bufLength );
+    const char * pHostName ();
+private:
+    epicsSingleton < localHostName > :: reference
+        _refLocalHostName;
+};
+    
+static epicsThreadOnceId cacChannelIdOnce = EPICS_THREAD_ONCE_INIT;
+
 const cacChannel::priLev cacChannel::priorityMax = 99u;
 const cacChannel::priLev cacChannel::priorityMin = 0u;
 const cacChannel::priLev cacChannel::priorityDefault = priorityMin;
@@ -80,15 +92,40 @@ bool cacChannel::connected (
     return true;
 }
 
+CACChannelPrivate :: 
+    CACChannelPrivate() :
+    _refLocalHostName ( localHostNameCache.getReference () )
+{
+}
+
+inline unsigned CACChannelPrivate :: 
+    getHostName ( char * pBuf, unsigned bufLength )
+{
+    return _refLocalHostName->getName ( pBuf, bufLength );
+}
+    
+inline const char * CACChannelPrivate :: 
+    pHostName ()
+{
+    return _refLocalHostName->pointer ();
+}
+
+static CACChannelPrivate * pCACChannelPrivate = 0;
+    
+// runs once only for each process
+extern "C" void cacChannelSetup ( void * )
+{
+    pCACChannelPrivate = new CACChannelPrivate ();
+}
+
 // the default is to assume that it is a locally hosted channel
 unsigned cacChannel::getHostName ( 
     epicsGuard < epicsMutex > &,
     char * pBuf, unsigned bufLength ) const throw ()
 {
     if ( bufLength ) {
-        epicsSingleton < localHostName >::reference 
-                ref ( localHostNameAtLoadTime.getReference () );
-        return ref->getName ( pBuf, bufLength );
+        epicsThreadOnce ( & cacChannelIdOnce, cacChannelSetup, 0);
+        return pCACChannelPrivate->getHostName ( pBuf, bufLength );
     }
     return 0u;
 }
@@ -97,9 +134,8 @@ unsigned cacChannel::getHostName (
 const char * cacChannel::pHostName (
     epicsGuard < epicsMutex > & ) const throw ()
 {
-    epicsSingleton < localHostName >::reference 
-            ref ( localHostNameAtLoadTime.getReference () );
-    return ref->pointer ();
+    epicsThreadOnce ( & cacChannelIdOnce, cacChannelSetup, 0);
+    return pCACChannelPrivate->pHostName ();
 }
 
 cacContext::~cacContext () {}

@@ -23,7 +23,7 @@
 
 #include "localHostName.h"
 
-epicsSingleton < localHostName > localHostNameAtLoadTime;
+epicsSingleton < localHostName > localHostNameCache;
 
 localHostName::localHostName () :
     attachedToSockLib ( osiSockAttach () != 0 ), length ( 0u )

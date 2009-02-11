@@ -56,7 +56,6 @@
 #include "epicsMutex.h"
 #include "epicsGuard.h"
 #include "epicsThread.h"
-#include "epicsSingleton.h"
 
 #ifdef cacIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

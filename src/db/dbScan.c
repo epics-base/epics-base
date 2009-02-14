@@ -719,12 +719,12 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
 
     epicsMutexMustLock(psl->lock);
     pse = precord->spvt;
-    if (pse==NULL) {
+    if (pse == NULL) {
         pse = dbCalloc(1, sizeof(scan_element));
         precord->spvt = pse;
         pse->precord = precord;
     }
-    pse ->pscan_list = psl;
+    pse->pscan_list = psl;
     ptemp = (scan_element *)ellFirst(&psl->list);
     while (ptemp) {
         if (ptemp->precord->phas > precord->phas) {
@@ -743,14 +743,19 @@ static void deleteFromList(struct dbCommon *precord, scan_list *psl)
     scan_element *pse;
 
     epicsMutexMustLock(psl->lock);
-    if (precord->spvt==NULL) {
+    pse = precord->spvt;
+    if (pse == NULL) {
         epicsMutexUnlock(psl->lock);
+        errlogPrintf("dbScan: Tried to delete record from wrong scan list!\n"
+            "\t%s.SPVT = NULL, but psl = %p\n",
+            precord->name, (void *)psl);
         return;
     }
-    pse = precord->spvt;
-    if (pse == NULL || pse->pscan_list != psl) {
+    if (pse->pscan_list != psl) {
         epicsMutexUnlock(psl->lock);
-        errlogPrintf("deleteFromList failed");
+        errlogPrintf("dbScan: Tried to delete record from wrong scan list!\n"
+            "\t%s.SPVT->pscan_list = %p but psl = %p\n",
+            precord->name, (void *)pse, (void *)psl);
         return;
     }
     pse->pscan_list = NULL;

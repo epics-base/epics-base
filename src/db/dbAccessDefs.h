@@ -200,21 +200,21 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
 
 /* Global Database Access Routines*/
-#define dbGetLink(PLNK,DBRTYPE,PBUFFER,OPTIONS,NREQUEST) \
-    ((((PLNK)->type == CONSTANT) && (!(NREQUEST) &&(!OPTIONS))) \
-      ? 0\
+#define dbGetLink(PLNK, DBRTYPE, PBUFFER, OPTIONS, NREQUEST) \
+    ( ( ( (PLNK)->type == CONSTANT ) && \
+        ( (NREQUEST) == 0) &&\
+        ( (OPTIONS) == 0) ) \
+      ? 0 \
       : dbGetLinkValue((PLNK),(DBRTYPE), \
-	(void *)(PBUFFER),(OPTIONS),(NREQUEST)))
-#define dbPutLink(PLNK,DBRTYPE,PBUFFER,NREQUEST) \
-    (((PLNK)->type == CONSTANT) \
-    ? 0\
-    : dbPutLinkValue((PLNK),(DBRTYPE),(void *)(PBUFFER),(NREQUEST)))
+        (void *)(PBUFFER), (OPTIONS), (NREQUEST) ) )
+#define dbPutLink(PLNK, DBRTYPE, PBUFFER, NREQUEST) \
+    ( ( (PLNK)->type == CONSTANT) \
+      ? 0 \
+      : dbPutLinkValue( (PLNK), (DBRTYPE), (void *)(PBUFFER), (NREQUEST) ) )
 #define dbGetPdbAddrFromLink(PLNK) \
-    (\
-        ((PLNK)->type != DB_LINK) \
-        ? 0\
-        : (((struct dbAddr *)((PLNK)->value.pv_link.pvt))) \
-    )
+    ( ( (PLNK)->type != DB_LINK ) \
+      ? 0 \
+      : ( ( (struct dbAddr *)( (PLNK)->value.pv_link.pvt) ) ) )
 
 epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);

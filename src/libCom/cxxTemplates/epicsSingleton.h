@@ -51,7 +51,11 @@ public:
         reference ( epicsSingleton & );
         reference ( const reference & );
         ~reference ();
-        reference & operator = ( const reference & );
+	// this somewhat convoluted reference of the return
+	// type ref through the epicsSingleton template is
+	// required for the archaic Tornado gnu compiler
+        typename epicsSingleton < TYPE > :: reference & 
+	    operator = ( const reference & );
         TYPE * operator -> ();
         const TYPE * operator -> () const;
         TYPE & operator * ();

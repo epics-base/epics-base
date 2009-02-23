@@ -120,6 +120,8 @@ private:
     friend class timerQueueActiveMgr;
 };
 
+class timerQueueActiveMgr;
+
 class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueActiveMgrPrivate {

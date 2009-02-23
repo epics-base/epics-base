@@ -120,8 +120,6 @@ private:
     friend class timerQueueActiveMgr;
 };
 
-extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
-
 class timerQueueActive : public epicsTimerQueueActive, 
     public epicsThreadRunable, public epicsTimerQueueNotify,
     public timerQueueActiveMgrPrivate {
@@ -167,6 +165,8 @@ private:
 	timerQueueActiveMgr ( const timerQueueActiveMgr & );
     timerQueueActiveMgr & operator = ( const timerQueueActiveMgr & );
 };
+
+extern epicsSingleton < timerQueueActiveMgr > timerQueueMgrEPICS;
 
 class timerQueuePassive : public epicsTimerQueuePassive {
 public:

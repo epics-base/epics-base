@@ -25,10 +25,8 @@
  * Starting in Mac OS X 10.5 (Leopard) shared libraries and
  * bundles don't have direct access to environ (man environ).
  */
-#ifdef __AVAILABLE_MAC_OS_X_VERSION_10_5_AND_LATER
 # include <crt_externs.h>
 # define environ (*_NSGetEnviron())
-#endif
 
 #define epicsExportSharedSymbols
 #include <epicsStdioRedirect.h>

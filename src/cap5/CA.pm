@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-my $version = '0.2';
+my $version = '0.3';
 
 exists $ENV{EPICS_HOST_ARCH}
     or die "EPICS_HOST_ARCH environment variable not set";
@@ -240,10 +240,8 @@ class method.
 =item put( I<VALUE>, I<VALUE>, ... )
 
 The C<put> method makes a C<ca_put()> or C<ca_array_put()> call depending on the
-number of elements given in its argument list.  For single values the data type
-used depends on the actual data item provided by Perl.  For arrays the data type
-used will be the native type of the channel widened to one of C<STRING>, C<LONG>
-or C<DOUBLE>.
+number of elements given in its argument list.  The data type used will be the
+native type of the channel, widened to one of C<STRING>, C<LONG> or C<DOUBLE>.
 
 
 =item put_callback( I<SUB>, I<VALUE> )
@@ -593,7 +591,7 @@ not follow this pattern, but are still printable strings.
 
 =item [1] R3.14 Channel Access Reference Manual by Jeffrey O. Hill
 
-L<http://www.aps.anl.gov/epics/base/R3-14/9-docs/CAref.html>
+L<http://www.aps.anl.gov/epics/base/R3-14/10-docs/CAref.html>
 
 =back
 

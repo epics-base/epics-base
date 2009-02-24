@@ -483,6 +483,7 @@ void CA_put(SV *ca_ref, SV *val, ...) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     int num_values = items - 1;
     int status;
+    chtype type = best_type(pch);
     
     if (num_values == 1) {
         union {
@@ -490,22 +491,21 @@ void CA_put(SV *ca_ref, SV *val, ...) {
             dbr_double_t dbr_double;
             dbr_string_t dbr_string;
         } data;
-        chtype type;
         
-        if (SvIOKp(val)) {
+        switch (type) {
+        case DBF_LONG:
             data.dbr_long = SvIV(val);
-            type = DBR_LONG;
-        } else if (SvNOKp(val)) {
+            break;
+        case DBF_DOUBLE:
             data.dbr_double = SvNV(val);
-            type = DBR_DOUBLE;
-        } else {
+            break;
+        case DBF_STRING:
             strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
-            type = DBR_STRING;
+            break;
         }
         
         status = ca_put(type, pch->chan, &data);
     } else {
-        chtype type = best_type(pch);
         union {
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;
@@ -559,6 +559,7 @@ void CA_put_callback(SV *ca_ref, SV *sub, SV *val, ...) {
     SV *put_sub = newSVsv(sub);
     int n = items - 2;
     int status;
+    chtype type = best_type(pch);
     
     if (n == 1) {
         union {
@@ -566,22 +567,21 @@ void CA_put_callback(SV *ca_ref, SV *sub, SV *val, ...) {
             dbr_double_t dbr_double;
             dbr_string_t dbr_string;
         } data;
-        chtype type;
         
-        if (SvIOKp(val)) {
+        switch (type) {
+        case DBF_LONG:
             data.dbr_long = SvIV(val);
-            type = DBF_LONG;
-        } else if (SvNOKp(val)) {
+            break;
+        case DBF_DOUBLE:
             data.dbr_double = SvNV(val);
-            type = DBF_DOUBLE;
-        } else {
+            break;
+        case DBF_STRING:
             strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
-            type = DBF_STRING;
+            break;
         }
         
         status = ca_put_callback(type, pch->chan, &data, put_handler, put_sub);
     } else {
-        chtype type = best_type(pch);
         union {
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;

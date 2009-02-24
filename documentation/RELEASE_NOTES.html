@@ -13,6 +13,13 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Perl5 CA library</h4>
+
+<p>The <tt>CA::put</tt> and <tt>CA::put_callback</tt> methods now use the native
+type of the PV to determine which data type to use in all cases; earlier
+versions looked at the Perl data type for single-valued PVs, but this was
+truncating some double values into integers.</p>
+
 <h4>generalTime and epicsTime updates</h4>
 
 <p>Allow time providers to supply timestamps in interrupt context.  A pair of

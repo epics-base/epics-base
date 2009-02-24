@@ -41,7 +41,8 @@
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
 static long getStringString (
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char  *pbuffer = (char *)pto;
     char  *psrc=paddr->pfield;
@@ -72,7 +73,8 @@ static long getStringString (
 }
 
 static long getStringChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char	*pbuffer = (char *)pto;
     char	*psrc=(char *)paddr->pfield;
@@ -109,7 +111,8 @@ static long getStringChar(
 }
 
 static long getStringUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char	*pbuffer = (unsigned char *)pto;
     char		*psrc=(char *)paddr->pfield;
@@ -146,7 +149,8 @@ static long getStringUchar(
 }
 
 static long getStringShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short  *pbuffer = (short *)pto;
     char   *psrc=(char *)paddr->pfield;
@@ -183,7 +187,8 @@ static long getStringShort(
 }
 
 static long getStringUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short	*pbuffer = (unsigned short *)pto;
     char   		*psrc=(char *)paddr->pfield;
@@ -220,7 +225,8 @@ static long getStringUshort(
 }
 
 static long getStringLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32   *pbuffer = (epicsInt32 *)pto;
     char   *psrc=(char *)paddr->pfield;
@@ -257,7 +263,8 @@ static long getStringLong(
 }
 
 static long getStringUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32	*pbuffer = (epicsUInt32 *)pto;
     char   	*psrc=(char *)paddr->pfield;
@@ -296,7 +303,8 @@ static long getStringUlong(
 }
 
 static long getStringFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float  *pbuffer = (float *)pto;
     char   *psrc=(char *)paddr->pfield;
@@ -333,7 +341,8 @@ static long getStringFloat(
 }
 
 static long getStringDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     char   *psrc=(char *)paddr->pfield;
@@ -370,13 +379,15 @@ static long getStringDouble(
 }
 
 static long getStringEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     return(getStringUshort(paddr,pto,nRequest,no_elements,offset));
 }
 
 static long getCharString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -399,7 +410,8 @@ static long getCharString(
 }
 
 static long getCharChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -418,7 +430,8 @@ static long getCharChar(
 }
 
 static long getCharUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -437,7 +450,8 @@ static long getCharUchar(
 }
 
 static long getCharShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -456,7 +470,8 @@ static long getCharShort(
 }
 
 static long getCharUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -475,7 +490,8 @@ static long getCharUshort(
 }
 
 static long getCharLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -494,7 +510,8 @@ static long getCharLong(
 }
 
 static long getCharUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -513,7 +530,8 @@ static long getCharUlong(
 }
 
 static long getCharFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -532,7 +550,8 @@ static long getCharFloat(
 }
  
 static long getCharDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -551,7 +570,8 @@ static long getCharDouble(
 }
 
 static long getCharEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     char *psrc=(char *)(paddr->pfield);
@@ -570,7 +590,8 @@ static long getCharEnum(
 }
 
 static long getUcharString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -593,7 +614,8 @@ static long getUcharString(
 }
 
 static long getUcharChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -612,7 +634,8 @@ static long getUcharChar(
 }
 
 static long getUcharUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -631,7 +654,8 @@ static long getUcharUchar(
 }
 
 static long getUcharShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -650,7 +674,8 @@ static long getUcharShort(
 }
 
 static long getUcharUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -669,7 +694,8 @@ static long getUcharUshort(
 }
 
 static long getUcharLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -688,7 +714,8 @@ static long getUcharLong(
 }
 
 static long getUcharUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -707,7 +734,8 @@ static long getUcharUlong(
 }
 
 static long getUcharFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -726,7 +754,8 @@ static long getUcharFloat(
 }
  
 static long getUcharDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -745,7 +774,8 @@ static long getUcharDouble(
 }
 
 static long getUcharEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     unsigned char  *psrc=(unsigned char *)(paddr->pfield);
@@ -764,7 +794,8 @@ static long getUcharEnum(
 }
 
 static long getShortString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -787,7 +818,8 @@ static long getShortString(
 }
 
 static long getShortChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -806,7 +838,8 @@ static long getShortChar(
 }
 
 static long getShortUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -824,7 +857,8 @@ static long getShortUchar(
     return(0);
 }
 static long getShortShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -843,7 +877,8 @@ static long getShortShort(
 }
 
 static long getShortUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -862,7 +897,8 @@ static long getShortUshort(
 }
 
 static long getShortLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -881,7 +917,8 @@ static long getShortLong(
 }
 
 static long getShortUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -900,7 +937,8 @@ static long getShortUlong(
 }
 
 static long getShortFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -919,7 +957,8 @@ static long getShortFloat(
 }
  
 static long getShortDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -938,7 +977,8 @@ static long getShortDouble(
 }
 
 static long getShortEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     short *psrc=(short *)(paddr->pfield);
@@ -957,7 +997,8 @@ static long getShortEnum(
 }
 
 static long getUshortString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -980,7 +1021,8 @@ static long getUshortString(
 }
 
 static long getUshortChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -999,7 +1041,8 @@ static long getUshortChar(
 }
 
 static long getUshortUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1017,7 +1060,8 @@ static long getUshortUchar(
     return(0);
 }
 static long getUshortShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1036,7 +1080,8 @@ static long getUshortShort(
 }
 
 static long getUshortUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1055,7 +1100,8 @@ static long getUshortUshort(
 }
 
 static long getUshortLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1074,7 +1120,8 @@ static long getUshortLong(
 }
 
 static long getUshortUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1093,7 +1140,8 @@ static long getUshortUlong(
 }
 
 static long getUshortFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1112,7 +1160,8 @@ static long getUshortFloat(
 }
  
 static long getUshortDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1131,7 +1180,8 @@ static long getUshortDouble(
 }
 
 static long getUshortEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
@@ -1150,7 +1200,8 @@ static long getUshortEnum(
 }
 
 static long getLongString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1173,7 +1224,8 @@ static long getLongString(
 }
 
 static long getLongChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1192,7 +1244,8 @@ static long getLongChar(
 }
 
 static long getLongUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1211,7 +1264,8 @@ static long getLongUchar(
 }
 
 static long getLongShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1230,7 +1284,8 @@ static long getLongShort(
 }
 
 static long getLongUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1249,7 +1304,8 @@ static long getLongUshort(
 }
 
 static long getLongLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1268,7 +1324,8 @@ static long getLongLong(
 }
 
 static long getLongUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1287,7 +1344,8 @@ static long getLongUlong(
 }
 
 static long getLongFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1306,7 +1364,8 @@ static long getLongFloat(
 }
  
 static long getLongDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1325,7 +1384,8 @@ static long getLongDouble(
 }
 
 static long getLongEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16  *pbuffer = (epicsEnum16  *)pto;
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
@@ -1344,7 +1404,8 @@ static long getLongEnum(
 }
 
 static long getUlongString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char  *pbuffer = (char  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1367,7 +1428,8 @@ static long getUlongString(
 }
 
 static long getUlongChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char  *pbuffer = (char  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1386,7 +1448,8 @@ static long getUlongChar(
 }
 
 static long getUlongUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char  *pbuffer = (unsigned char  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1405,7 +1468,8 @@ static long getUlongUchar(
 }
 
 static long getUlongShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short  *pbuffer = (short  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1424,7 +1488,8 @@ static long getUlongShort(
 }
 
 static long getUlongUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short  *pbuffer = (unsigned short  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1443,7 +1508,8 @@ static long getUlongUshort(
 }
 
 static long getUlongLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32  *pbuffer = (epicsInt32  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1462,7 +1528,8 @@ static long getUlongLong(
 }
 
 static long getUlongUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32  *pbuffer = (epicsUInt32  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1481,7 +1548,8 @@ static long getUlongUlong(
 }
 
 static long getUlongFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float  *pbuffer = (float  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1500,7 +1568,8 @@ static long getUlongFloat(
 }
  
 static long getUlongDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double  *pbuffer = (double  *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1519,7 +1588,8 @@ static long getUlongDouble(
 }
 
 static long getUlongEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
@@ -1538,7 +1608,8 @@ static long getUlongEnum(
 }
 
 static long getFloatString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     float	*psrc=(float *)(paddr->pfield);
@@ -1567,7 +1638,8 @@ static long getFloatString(
 }
 
 static long getFloatChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1586,7 +1658,8 @@ static long getFloatChar(
 }
 
 static long getFloatUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1605,7 +1678,8 @@ static long getFloatUchar(
 }
 
 static long getFloatShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1624,7 +1698,8 @@ static long getFloatShort(
 }
 
 static long getFloatUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1643,7 +1718,8 @@ static long getFloatUshort(
 }
 
 static long getFloatLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1662,7 +1738,8 @@ static long getFloatLong(
 }
 
 static long getFloatUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1681,7 +1758,8 @@ static long getFloatUlong(
 }
 
 static long getFloatFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1700,7 +1778,8 @@ static long getFloatFloat(
 }
  
 static long getFloatDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1719,7 +1798,8 @@ static long getFloatDouble(
 }
 
 static long getFloatEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     float *psrc=(float *)(paddr->pfield);
@@ -1738,7 +1818,8 @@ static long getFloatEnum(
 }
 
 static long getDoubleString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1767,7 +1848,8 @@ static long getDoubleString(
 }
 
 static long getDoubleChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1786,7 +1868,8 @@ static long getDoubleChar(
 }
 
 static long getDoubleUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1805,7 +1888,8 @@ static long getDoubleUchar(
 }
 
 static long getDoubleShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1824,7 +1908,8 @@ static long getDoubleShort(
 }
 
 static long getDoubleUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1843,7 +1928,8 @@ static long getDoubleUshort(
 }
 
 static long getDoubleLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1862,7 +1948,8 @@ static long getDoubleLong(
 }
 
 static long getDoubleUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1881,7 +1968,8 @@ static long getDoubleUlong(
 }
 
 static long getDoubleFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1901,7 +1989,8 @@ static long getDoubleFloat(
 }
  
 static long getDoubleDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1920,7 +2009,8 @@ static long getDoubleDouble(
 }
 
 static long getDoubleEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     double *psrc=(double *)(paddr->pfield);
@@ -1939,7 +2029,8 @@ static long getDoubleEnum(
 }
 
 static long getEnumString(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     struct rset	*prset;
@@ -1953,7 +2044,8 @@ static long getEnumString(
 }
 
 static long getEnumChar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -1972,7 +2064,8 @@ static long getEnumChar(
 }
 
 static long getEnumUchar(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned char *pbuffer = (unsigned char *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -1991,7 +2084,8 @@ static long getEnumUchar(
 }
 
 static long getEnumShort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     short *pbuffer = (short *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2010,7 +2104,8 @@ static long getEnumShort(
 }
 
 static long getEnumUshort(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     unsigned short *pbuffer = (unsigned short *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2029,7 +2124,8 @@ static long getEnumUshort(
 }
 
 static long getEnumLong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsInt32 *pbuffer = (epicsInt32 *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2048,7 +2144,8 @@ static long getEnumLong(
 }
 
 static long getEnumUlong(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsUInt32 *pbuffer = (epicsUInt32 *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2067,7 +2164,8 @@ static long getEnumUlong(
 }
 
 static long getEnumFloat(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     float *pbuffer = (float *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2086,7 +2184,8 @@ static long getEnumFloat(
 }
  
 static long getEnumDouble(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     double *pbuffer = (double *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2105,7 +2204,8 @@ static long getEnumDouble(
 }
 
 static long getEnumEnum(
-    DBADDR *paddr, void *pto, long nRequest, long no_elements, long offset)
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     epicsEnum16 *pbuffer = (epicsEnum16 *)pto;
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
@@ -2123,8 +2223,9 @@ static long getEnumEnum(
     return(0);
 }
 
-static long getMenuString(DBADDR *paddr, void *pto,
-    long nRequest, long no_elements, long offset)
+static long getMenuString(
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char		*pbuffer = (char *)pto;
     dbFldDes		*pdbFldDes = paddr->pfldDes;
@@ -2149,8 +2250,9 @@ static long getMenuString(DBADDR *paddr, void *pto,
     return(0);
 }
 
-static long getDeviceString(DBADDR *paddr, void *pto,
-    long nRequest, long no_elements, long offset)
+static long getDeviceString(
+    const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
 {
     char		*pbuffer = (char *)pto;
     dbFldDes		*pdbFldDes = paddr->pfldDes;
@@ -2178,7 +2280,8 @@ static long getDeviceString(DBADDR *paddr, void *pto,
 /* DATABASE ACCESS PUT CONVERSION SUPPORT */
 
 static long putStringString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     char  *pdest=paddr->pfield;
@@ -2204,7 +2307,8 @@ static long putStringString(
 }
 
 static long putStringChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     char  *pdest=(char *)paddr->pfield;
@@ -2235,7 +2339,8 @@ static long putStringChar(
 }
 
 static long putStringUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     unsigned char  *pdest=(unsigned char *)paddr->pfield;
@@ -2266,7 +2371,8 @@ static long putStringUchar(
 }
 
 static long putStringShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     short  *pdest=(short *)paddr->pfield;
@@ -2297,7 +2403,8 @@ static long putStringShort(
 }
 
 static long putStringUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     unsigned short  *pdest=(unsigned short *)paddr->pfield;
@@ -2328,7 +2435,8 @@ static long putStringUshort(
 }
 
 static long putStringLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)paddr->pfield;
@@ -2359,7 +2467,8 @@ static long putStringLong(
 }
 
 static long putStringUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     epicsUInt32 *pdest=(epicsUInt32 *)paddr->pfield;
@@ -2392,7 +2501,8 @@ static long putStringUlong(
 }
 
 static long putStringFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     float  *pdest=(float *)paddr->pfield;
@@ -2424,7 +2534,8 @@ static long putStringFloat(
 }
 
 static long putStringDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     double  *pdest=(double *)paddr->pfield;
@@ -2456,7 +2567,8 @@ static long putStringDouble(
 }
 
 static long putStringEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     struct rset 	*prset;
@@ -2496,7 +2608,8 @@ static long putStringEnum(
 }
 
 static long putStringMenu(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     dbFldDes		*pdbFldDes = paddr->pfldDes;
@@ -2533,7 +2646,8 @@ static long putStringMenu(
 }
 
 static long putStringDevice(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     dbFldDes		*pdbFldDes = paddr->pfldDes;
@@ -2570,7 +2684,8 @@ static long putStringDevice(
 }
 
 static long putCharString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -2595,7 +2710,8 @@ static long putCharString(
 }
 
 static long putCharChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -2614,7 +2730,8 @@ static long putCharChar(
 }
 
 static long putCharUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -2633,7 +2750,8 @@ static long putCharUchar(
 }
 
 static long putCharShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -2652,7 +2770,8 @@ static long putCharShort(
 }
 
 static long putCharUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -2671,7 +2790,8 @@ static long putCharUshort(
 }
 
 static long putCharLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     epicsInt32 *pdest=(epicsInt32 *)(paddr->pfield);
@@ -2690,7 +2810,8 @@ static long putCharLong(
 }
 
 static long putCharUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     epicsUInt32 *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -2709,7 +2830,8 @@ static long putCharUlong(
 }
 
 static long putCharFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -2728,7 +2850,8 @@ static long putCharFloat(
 }
  
 static long putCharDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -2747,7 +2870,8 @@ static long putCharDouble(
 }
 
 static long putCharEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -2766,7 +2890,8 @@ static long putCharEnum(
 }
 
 static long putUcharString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -2791,7 +2916,8 @@ static long putUcharString(
 }
 
 static long putUcharChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -2810,7 +2936,8 @@ static long putUcharChar(
 }
 
 static long putUcharUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -2829,7 +2956,8 @@ static long putUcharUchar(
 }
 
 static long putUcharShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -2848,7 +2976,8 @@ static long putUcharShort(
 }
 
 static long putUcharUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -2867,7 +2996,8 @@ static long putUcharUshort(
 }
 
 static long putUcharLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -2886,7 +3016,8 @@ static long putUcharLong(
 }
 
 static long putUcharUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -2905,7 +3036,8 @@ static long putUcharUlong(
 }
 
 static long putUcharFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -2924,7 +3056,8 @@ static long putUcharFloat(
 }
  
 static long putUcharDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -2943,7 +3076,8 @@ static long putUcharDouble(
 }
 
 static long putUcharEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned char *pbuffer = (const unsigned char *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -2962,7 +3096,8 @@ static long putUcharEnum(
 }
 
 static long putShortString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -2987,7 +3122,8 @@ static long putShortString(
 }
 
 static long putShortChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3006,7 +3142,8 @@ static long putShortChar(
 }
 
 static long putShortUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -3025,7 +3162,8 @@ static long putShortUchar(
 }
 
 static long putShortShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -3044,7 +3182,8 @@ static long putShortShort(
 }
 
 static long putShortUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -3063,7 +3202,8 @@ static long putShortUshort(
 }
 
 static long putShortLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -3082,7 +3222,8 @@ static long putShortLong(
 }
 
 static long putShortUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -3101,7 +3242,8 @@ static long putShortUlong(
 }
 
 static long putShortFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -3120,7 +3262,8 @@ static long putShortFloat(
 }
  
 static long putShortDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -3139,7 +3282,8 @@ static long putShortDouble(
 }
 
 static long putShortEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const short *pbuffer = (const short *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -3158,7 +3302,8 @@ static long putShortEnum(
 }
 
 static long putUshortString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3183,7 +3328,8 @@ static long putUshortString(
 }
 
 static long putUshortChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3202,7 +3348,8 @@ static long putUshortChar(
 }
 
 static long putUshortUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -3221,7 +3368,8 @@ static long putUshortUchar(
 }
 
 static long putUshortShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -3240,7 +3388,8 @@ static long putUshortShort(
 }
 
 static long putUshortUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -3259,7 +3408,8 @@ static long putUshortUshort(
 }
 
 static long putUshortLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -3278,7 +3428,8 @@ static long putUshortLong(
 }
 
 static long putUshortUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -3297,7 +3448,8 @@ static long putUshortUlong(
 }
 
 static long putUshortFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -3316,7 +3468,8 @@ static long putUshortFloat(
 }
  
 static long putUshortDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -3335,7 +3488,8 @@ static long putUshortDouble(
 }
 
 static long putUshortEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const unsigned short *pbuffer = (const unsigned short *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -3354,7 +3508,8 @@ static long putUshortEnum(
 }
 
 static long putLongString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3379,7 +3534,8 @@ static long putLongString(
 }
 
 static long putLongChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3398,7 +3554,8 @@ static long putLongChar(
 }
 
 static long putLongUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -3417,7 +3574,8 @@ static long putLongUchar(
 }
 
 static long putLongShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -3436,7 +3594,8 @@ static long putLongShort(
 }
 
 static long putLongUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -3455,7 +3614,8 @@ static long putLongUshort(
 }
 
 static long putLongLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -3474,7 +3634,8 @@ static long putLongLong(
 }
 
 static long putLongUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -3493,7 +3654,8 @@ static long putLongUlong(
 }
 
 static long putLongFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -3512,7 +3674,8 @@ static long putLongFloat(
 }
  
 static long putLongDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -3531,7 +3694,8 @@ static long putLongDouble(
 }
 
 static long putLongEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsInt32 *pbuffer = (const epicsInt32 *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -3550,7 +3714,8 @@ static long putLongEnum(
 }
 
 static long putUlongString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3575,7 +3740,8 @@ static long putUlongString(
 }
 
 static long putUlongChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -3594,7 +3760,8 @@ static long putUlongChar(
 }
 
 static long putUlongUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -3613,7 +3780,8 @@ static long putUlongUchar(
 }
 
 static long putUlongShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -3632,7 +3800,8 @@ static long putUlongShort(
 }
 
 static long putUlongUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -3651,7 +3820,8 @@ static long putUlongUshort(
 }
 
 static long putUlongLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -3670,7 +3840,8 @@ static long putUlongLong(
 }
 
 static long putUlongUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -3689,7 +3860,8 @@ static long putUlongUlong(
 }
 
 static long putUlongFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -3708,7 +3880,8 @@ static long putUlongFloat(
 }
  
 static long putUlongDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -3727,7 +3900,8 @@ static long putUlongDouble(
 }
 
 static long putUlongEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsUInt32 *pbuffer = (const epicsUInt32 *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -3746,7 +3920,8 @@ static long putUlongEnum(
 }
 
 static long putFloatString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     char	*pdest=(char *)(paddr->pfield);
@@ -3776,7 +3951,8 @@ static long putFloatString(
 }
 
 static long putFloatChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     char   *pdest=(char *)(paddr->pfield);
@@ -3795,7 +3971,8 @@ static long putFloatChar(
 }
 
 static long putFloatUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     unsigned char   *pdest=(unsigned char *)(paddr->pfield);
@@ -3814,7 +3991,8 @@ static long putFloatUchar(
 }
 
 static long putFloatShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -3833,7 +4011,8 @@ static long putFloatShort(
 }
 
 static long putFloatUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -3852,7 +4031,8 @@ static long putFloatUshort(
 }
 
 static long putFloatLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -3871,7 +4051,8 @@ static long putFloatLong(
 }
 
 static long putFloatUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -3890,7 +4071,8 @@ static long putFloatUlong(
 }
 
 static long putFloatFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -3909,7 +4091,8 @@ static long putFloatFloat(
 }
  
 static long putFloatDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -3928,7 +4111,8 @@ static long putFloatDouble(
 }
 
 static long putFloatEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const float *pbuffer = (const float *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -3947,7 +4131,8 @@ static long putFloatEnum(
 }
 
 static long putDoubleString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     char	*pdest=(char *)(paddr->pfield);
@@ -3977,7 +4162,8 @@ static long putDoubleString(
 }
 
 static long putDoubleChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     char   *pdest=(char *)(paddr->pfield);
@@ -3996,7 +4182,8 @@ static long putDoubleChar(
 }
 
 static long putDoubleUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     unsigned char   *pdest=(unsigned char *)(paddr->pfield);
@@ -4015,7 +4202,8 @@ static long putDoubleUchar(
 }
 
 static long putDoubleShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -4034,7 +4222,8 @@ static long putDoubleShort(
 }
 
 static long putDoubleUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -4053,7 +4242,8 @@ static long putDoubleUshort(
 }
 
 static long putDoubleLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -4072,7 +4262,8 @@ static long putDoubleLong(
 }
 
 static long putDoubleUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -4091,7 +4282,8 @@ static long putDoubleUlong(
 }
 
 static long putDoubleFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -4111,7 +4303,8 @@ static long putDoubleFloat(
 }
  
 static long putDoubleDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -4130,7 +4323,8 @@ static long putDoubleDouble(
 }
 
 static long putDoubleEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const double *pbuffer = (const double *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -4149,7 +4343,8 @@ static long putDoubleEnum(
 }
 
 static long putEnumString(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -4174,7 +4369,8 @@ static long putEnumString(
 }
 
 static long putEnumChar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     char  *pdest=(char *)(paddr->pfield);
@@ -4193,7 +4389,8 @@ static long putEnumChar(
 }
 
 static long putEnumUchar(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
@@ -4212,7 +4409,8 @@ static long putEnumUchar(
 }
 
 static long putEnumShort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     short  *pdest=(short *)(paddr->pfield);
@@ -4231,7 +4429,8 @@ static long putEnumShort(
 }
 
 static long putEnumUshort(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
@@ -4250,7 +4449,8 @@ static long putEnumUshort(
 }
 
 static long putEnumLong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
@@ -4269,7 +4469,8 @@ static long putEnumLong(
 }
 
 static long putEnumUlong(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
@@ -4288,7 +4489,8 @@ static long putEnumUlong(
 }
 
 static long putEnumFloat(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     float  *pdest=(float *)(paddr->pfield);
@@ -4307,7 +4509,8 @@ static long putEnumFloat(
 }
  
 static long putEnumDouble(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     double  *pdest=(double *)(paddr->pfield);
@@ -4326,7 +4529,8 @@ static long putEnumDouble(
 }
 
 static long putEnumEnum(
-    DBADDR *paddr,const void *pfrom,long nRequest,long no_elements,long offset)
+    dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const epicsEnum16 *pbuffer = (const epicsEnum16 *)pfrom;
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
@@ -4353,8 +4557,7 @@ static long putEnumEnum(
  DBR_LONG,        DBR_ULONG,       DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
  ***************************************************************************/
 
-epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
-    (struct dbAddr *paddr, void *pbuffer, long nRequest, long no_elements, long offset) = {
+epicsShareDef GETCONVERTFUNC dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
 
 /* source is a DBF_STRING		*/
 {getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,
@@ -4404,9 +4607,7 @@ epicsShareDef long (*dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1])
  DBF_MENU,        DBF_DEVICE
  ***************************************************************************/
 
-epicsShareDef long (*dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1])(
-    struct dbAddr *paddr, const void *pbuffer,long nRequest, long no_elements,
-    long offset) = {
+epicsShareDef PUTCONVERTFUNC dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1] = {
 /* source is a DBR_STRING		*/
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
  putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,

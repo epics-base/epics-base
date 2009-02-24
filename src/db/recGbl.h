@@ -48,19 +48,19 @@ extern RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook;
 /* Global Record Support Routines */
 
 epicsShareFunc void epicsShareAPI recGblDbaddrError(
-    long status, struct dbAddr *paddr, const char *pcaller_name);
+    long status, const struct dbAddr *paddr, const char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecordError(
     long status, void *precord, const char *pcaller_name);
 epicsShareFunc void epicsShareAPI recGblRecSupError(
-    long status, struct dbAddr *paddr, const char *pcaller_name, const char *psupport_name);
+    long status, const struct dbAddr *paddr, const char *pcaller_name, const char *psupport_name);
 epicsShareFunc void epicsShareAPI recGblGetGraphicDouble(
-    struct dbAddr *paddr, struct dbr_grDouble *pgd);
+    const struct dbAddr *paddr, struct dbr_grDouble *pgd);
 epicsShareFunc void epicsShareAPI recGblGetControlDouble(
-    struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
+    const struct dbAddr *paddr, struct dbr_ctrlDouble *pcd);
 epicsShareFunc void epicsShareAPI recGblGetAlarmDouble(
-    struct dbAddr *paddr, struct dbr_alDouble *pad);
+    const struct dbAddr *paddr, struct dbr_alDouble *pad);
 epicsShareFunc void epicsShareAPI recGblGetPrec(
-    struct dbAddr *paddr, long *pprecision);
+    const struct dbAddr *paddr, long *pprecision);
 epicsShareFunc int  epicsShareAPI recGblInitConstantLink(
     struct link *plink,short dbftype,void *pdest);
 epicsShareFunc unsigned short epicsShareAPI recGblResetAlarms(void *precord);

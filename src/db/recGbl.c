@@ -51,7 +51,7 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
 
 
 
-void epicsShareAPI recGblDbaddrError(long status, struct dbAddr *paddr,
+void epicsShareAPI recGblDbaddrError(long status, const struct dbAddr *paddr,
     const char *pmessage)
 {
     dbCommon *precord = 0;
@@ -82,7 +82,7 @@ void epicsShareAPI recGblRecordError(long status, void *pdbc,
     return;
 }
 
-void epicsShareAPI recGblRecSupError(long status, struct dbAddr *paddr,
+void epicsShareAPI recGblRecSupError(long status, const struct dbAddr *paddr,
     const char *pmessage, const char *psupport_name)
 {
     dbCommon *precord = 0;
@@ -107,7 +107,7 @@ void epicsShareAPI recGblRecSupError(long status, struct dbAddr *paddr,
     return;
 }
 
-void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
+void epicsShareAPI recGblGetPrec(const struct dbAddr *paddr,long *precision)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
@@ -135,7 +135,7 @@ void epicsShareAPI recGblGetPrec(struct dbAddr *paddr,long *precision)
 }
 
 void epicsShareAPI recGblGetGraphicDouble(
-    struct dbAddr *paddr,struct dbr_grDouble *pgd)
+    const struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
@@ -146,7 +146,7 @@ void epicsShareAPI recGblGetGraphicDouble(
 }
 
 void epicsShareAPI recGblGetAlarmDouble(
-    struct dbAddr *paddr,struct dbr_alDouble *pad)
+    const struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
     pad->upper_warning_limit = 0;
@@ -157,7 +157,7 @@ void epicsShareAPI recGblGetAlarmDouble(
 }
 
 void epicsShareAPI recGblGetControlDouble(
-    struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+    const struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
     dbFldDes *pdbFldDes=paddr->pfldDes;
 

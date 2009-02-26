@@ -1,0 +1,13 @@
+# CONFIG.win-x86_64.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for win-x86_64 host archs
+# Sites may override these definitions in CONFIG_SITE.win-x86_64.Common
+#-------------------------------------------------------
+
+-include $(CONFIG)/os/CONFIG.win32-x86.Common
+
+WIND_HOST_TYPE = x86_64-win
+

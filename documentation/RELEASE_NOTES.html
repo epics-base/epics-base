@@ -13,6 +13,42 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Support for dynamic loading</h4>
+
+<p>The existing OSI epicsFindSymbol API has been expanded to support dynamic
+loading of binary files, on architectures where the facilities necessary to
+implement this are provided (currently Linux, Solaris, Darwin and vxWorks). A
+new but optional command is provided for iocsh which calls the new
+<tt>epicsLoadLibrary()</tt> function. In order to include this command in an
+IOC, you must include the <tt>dlload.dbd</tt> file; the command will then be
+installed when the IOC's <tt>ioc_registerRecordDeviceDriver</tt> routine is
+run.</p>
+
+<p>To dynamically load a new routine for use with the sub or aSub record types,
+you also have to register the subroutines at runtime. You can use the EPICS
+build system and the registerRecordDeviceDriver.pl script to write the necessary
+code for you, you just have to create a .dbd file that declares the functions in
+the library and add the derived .cpp file to the library sources. The product of
+your build should be a <tt>LOADABLE_LIBRARY</tt> to ensure that the correct
+linker commands are used.</p>
+
+<p>After a shared library is loaded into the IOC using the new iocsh
+<tt>dlload</tt> command you will usually have to run the
+<tt>lib_registerRecordDeviceDriver</tt> routine to register the components that
+were mentioned in the .dbd file. After registration the functions can be found
+as normal by setting the SNAM field of your sub or aSub record instances. Once
+loaded, shared libraries cannot be unloaded again as there is no way to be sure
+that some other part of the IOC doesn't still have a pointer to something inside
+the module.</p>
+
+<p>Components provided by a shared library can include functions for sub and
+aSub records, iocsh commands, time providers and sequence programs. Record and
+device support code may be possible, but there are complications in creating the
+.dbd file so we don't recommend it yet. It is possible to load libraries after
+iocInit, but the code is not re-entrant so should only be used from the main
+thread.  Adding new record types or device support will not work after
+iocInit.</p>
+
 <h4>Perl5 CA library</h4>
 
 <p>The <tt>CA::put</tt> and <tt>CA::put_callback</tt> methods now use the native

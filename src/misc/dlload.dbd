@@ -1,0 +1,3 @@
+# Including this DBD file adds the 'dlload' command to the IOC shell.
+
+registrar(dlloadRegistar)

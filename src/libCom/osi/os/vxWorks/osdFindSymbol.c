@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osi/os/vxWorks/osiFindSymbol */
@@ -15,9 +14,51 @@
 #include <string.h>
 #include <symLib.h>
 #include <sysSymTbl.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <loadLib.h>
 
 #include "dbmf.h"
+#include "epicsString.h"
 #include "epicsFindSymbol.h"
+
+static char *errmsg = NULL;
+static char *oldmsg = NULL;
+
+epicsShareFunc void * epicsLoadLibrary(const char *name)
+{
+    MODULE_ID m = 0;
+    int fd;
+
+    if (oldmsg) {
+        free(oldmsg);
+        oldmsg = NULL;
+    }
+    if (errmsg) {
+        free(errmsg);
+        errmsg = NULL;
+    }
+
+    fd = open(name, O_RDONLY, 0);
+    if (fd != ERROR) {
+        m = loadModule(fd, GLOBAL_SYMBOLS);
+        close(fd);
+    }
+
+    if (!m) {
+        errmsg = epicsStrDup(strerror(errno));
+    }
+    return m;
+}
+
+epicsShareFunc const char *epicsLoadError(void)
+{
+    if (oldmsg) free(oldmsg);
+    oldmsg = errmsg;
+    errmsg = NULL;
+    return oldmsg;
+}
+
 void *epicsFindSymbol(const char *name)
 {
     STATUS status;

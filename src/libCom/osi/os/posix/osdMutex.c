@@ -41,11 +41,10 @@ static int mutexLock(pthread_mutex_t *id)
 {
     int status;
 
-    while(1) {
-        status = pthread_mutex_lock(id);
-        if(status!=EINTR) return status;
+    while ((status = pthread_mutex_lock(id)) == EINTR) {
         errlogPrintf("pthread_mutex_lock returned EINTR. Violates SUSv3\n");
     }
+    return status;
 }
 
 /* Until these can be demonstrated to work leave them undefined*/
@@ -64,36 +63,40 @@ static int mutexLock(pthread_mutex_t *id)
 #if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
 typedef struct epicsMutexOSD {
     pthread_mutexattr_t mutexAttr;
-    pthread_mutex_t	lock;
-}epicsMutexOSD;
+    pthread_mutex_t     lock;
+} epicsMutexOSD;
 
 epicsMutexOSD * epicsMutexOsdCreate(void) {
     epicsMutexOSD *pmutex;
-    int           status;
+    int status;
 
-    pmutex = callocMustSucceed(1,sizeof(*pmutex),"epicsMutexOsdCreate");
+    pmutex = callocMustSucceed(1, sizeof(*pmutex), "epicsMutexOsdCreate");
     status = pthread_mutexattr_init(&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutexattr_init","epicsMutexOsdCreate");
+    checkStatusQuit(status,"pthread_mutexattr_init", "epicsMutexOsdCreate");
+
 #if defined _POSIX_THREAD_PRIO_INHERIT
-    status = pthread_mutexattr_setprotocol(
-        &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
-    if(errVerbose) checkStatus(status,"pthread_mutexattr_setprotocal");
+    status = pthread_mutexattr_setprotocol(&pmutex->mutexAttr,
+        PTHREAD_PRIO_INHERIT);
+    if (errVerbose) checkStatus(status, "pthread_mutexattr_setprotocal");
 #endif /*_POSIX_THREAD_PRIO_INHERIT*/
-    status = pthread_mutexattr_settype(&pmutex->mutexAttr,PTHREAD_MUTEX_RECURSIVE);
-    if(errVerbose) checkStatus(status,"pthread_mutexattr_settype");
-    status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutex_init","epicsMutexOsdCreate");
-    return(pmutex);
+
+    status = pthread_mutexattr_settype(&pmutex->mutexAttr,
+        PTHREAD_MUTEX_RECURSIVE);
+    if (errVerbose) checkStatus(status, "pthread_mutexattr_settype");
+
+    status = pthread_mutex_init(&pmutex->lock, &pmutex->mutexAttr);
+    checkStatusQuit(status, "pthread_mutex_init", "epicsMutexOsdCreate");
+    return pmutex;
 }
 
 void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
 {
-    int   status;
+    int status;
 
     status = pthread_mutex_destroy(&pmutex->lock);
-    checkStatus(status,"pthread_mutex_destroy");
+    checkStatus(status, "pthread_mutex_destroy");
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
-    checkStatus(status,"pthread_mutexattr_destroy");
+    checkStatus(status, "pthread_mutexattr_destroy");
     free(pmutex);
 }
 
@@ -102,33 +105,33 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
     int status;
 
     status = pthread_mutex_unlock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_unlock","epicsMutexOsdUnlock");
+    checkStatusQuit(status, "pthread_mutex_unlock", "epicsMutexOsdUnlock");
 }
 
 epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
 {
     int status;
 
-    if(!pmutex) return(epicsMutexLockError);
+    if (!pmutex) return epicsMutexLockError;
     status = mutexLock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdLock");
-    return(epicsMutexLockOK);
+    if (status == EINVAL) return epicsMutexLockError;
+    checkStatusQuit(status, "pthread_mutex_lock", "epicsMutexOsdLock");
+    return epicsMutexLockOK;
 }
 
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
 {
-    int pthreadStatus;
+    int status;
 
-    if(!pmutex) return(epicsMutexLockError);
-    pthreadStatus = pthread_mutex_trylock(&pmutex->lock);
-    if(pthreadStatus!=0) {
-        if(pthreadStatus==EBUSY) return(epicsMutexLockTimeout);
-        checkStatusQuit(pthreadStatus,"pthread_mutex_lock","epicsMutexOsdTryLock");
-    }
-    return(epicsMutexLockOK);
+    if (!pmutex) return epicsMutexLockError;
+    status = pthread_mutex_trylock(&pmutex->lock);
+    if (status == EINVAL) return epicsMutexLockError;
+    if (status == EBUSY) return epicsMutexLockTimeout;
+    checkStatusQuit(status, "pthread_mutex_lock", "epicsMutexOsdTryLock");
+    return epicsMutexLockOK;
 }
 
-void epicsMutexOsdShow(struct epicsMutexOSD * pmutex,unsigned int level)
+void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
 {
 }
 
@@ -144,34 +147,37 @@ typedef struct epicsMutexOSD {
     int			count;
     int			owned;  /* TRUE | FALSE */
     pthread_t		ownerTid;
-}epicsMutexOSD;
+} epicsMutexOSD;
 
 epicsMutexOSD * epicsMutexOsdCreate(void) {
     epicsMutexOSD *pmutex;
     int           status;
 
-    pmutex = callocMustSucceed(1,sizeof(*pmutex),"epicsMutexOsdCreate");
+    pmutex = callocMustSucceed(1, sizeof(*pmutex), "epicsMutexOsdCreate");
     status = pthread_mutexattr_init(&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutexattr_init","epicsMutexOsdCreate");
+    checkStatusQuit(status, "pthread_mutexattr_init", "epicsMutexOsdCreate");
+
 #if defined _POSIX_THREAD_PRIO_INHERIT
     status = pthread_mutexattr_setprotocol(
         &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
-    if(errVerbose) checkStatus(status,"pthread_mutexattr_setprotocal");
+    if (errVerbose) checkStatus(status, "pthread_mutexattr_setprotocal");
 #endif /*_POSIX_THREAD_PRIO_INHERIT*/
-    status = pthread_mutex_init(&pmutex->lock,&pmutex->mutexAttr);
-    checkStatusQuit(status,"pthread_mutex_init","epicsMutexOsdCreate");
+
+    status = pthread_mutex_init(&pmutex->lock, &pmutex->mutexAttr);
+    checkStatusQuit(status, "pthread_mutex_init", "epicsMutexOsdCreate");
+
 #if defined _POSIX_THREAD_PROCESS_SHARED
     status = pthread_condattr_init(&pmutex->condAttr);
-    checkStatus(status,"pthread_condattr_init");
+    checkStatus(status, "pthread_condattr_init");
     status = pthread_condattr_setpshared(&pmutex->condAttr,
         PTHREAD_PROCESS_PRIVATE);
-    checkStatus(status,"pthread_condattr_setpshared");
-    status = pthread_cond_init(&pmutex->waitToBeOwner,&pmutex->condAttr);
+    checkStatus(status, "pthread_condattr_setpshared");
+    status = pthread_cond_init(&pmutex->waitToBeOwner, &pmutex->condAttr);
 #else
-    status = pthread_cond_init(&pmutex->waitToBeOwner,0);
+    status = pthread_cond_init(&pmutex->waitToBeOwner, 0);
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
-    checkStatusQuit(status,"pthread_cond_init","epicsMutexOsdCreate");
-    return(pmutex);
+    checkStatusQuit(status, "pthread_cond_init", "epicsMutexOsdCreate");
+    return pmutex;
 }
 
 void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
@@ -179,14 +185,14 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
     int   status;
 
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
-    checkStatus(status,"pthread_cond_destroy");
+    checkStatus(status, "pthread_cond_destroy");
 #if defined _POSIX_THREAD_PROCESS_SHARED
     status = pthread_condattr_destroy(&pmutex->condAttr);
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
     status = pthread_mutex_destroy(&pmutex->lock);
-    checkStatus(status,"pthread_mutex_destroy");
+    checkStatus(status, "pthread_mutex_destroy");
     status = pthread_mutexattr_destroy(&pmutex->mutexAttr);
-    checkStatus(status,"pthread_mutexattr_destroy");
+    checkStatus(status, "pthread_mutexattr_destroy");
     free(pmutex);
 }
 
@@ -195,31 +201,34 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
     int status;
 
     status = mutexLock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdUnlock");
-    if((pmutex->count<=0) || (pmutex->ownerTid != pthread_self())) {
+    checkStatusQuit(status, "pthread_mutex_lock", "epicsMutexOsdUnlock");
+
+    if ((pmutex->count <= 0) || (pmutex->ownerTid != pthread_self())) {
         errlogPrintf("epicsMutexOsdUnlock but caller is not owner\n");
         status = pthread_mutex_unlock(&pmutex->lock);
-        checkStatusQuit(status,"pthread_mutex_unlock","epicsMutexOsdUnlock");
+        checkStatusQuit(status, "pthread_mutex_unlock", "epicsMutexOsdUnlock");
         return;
     }
+
     pmutex->count--;
-    if(pmutex->count == 0) {
+    if (pmutex->count == 0) {
         pmutex->owned = 0;
         pmutex->ownerTid = 0;
         pthread_cond_signal(&pmutex->waitToBeOwner);
     }
+
     status = pthread_mutex_unlock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_unlock","epicsMutexOsdUnlock");
+    checkStatusQuit(status, "pthread_mutex_unlock", "epicsMutexOsdUnlock");
 }
 
 static int condWait(pthread_cond_t *condId, pthread_mutex_t *mutexId)
 {
     int status;
-    while(1) {
-        status = pthread_cond_wait(condId,mutexId);
-        if(status!=EINTR) return status;
+
+    while ((status = pthread_cond_wait(condId, mutexId)) == EINTR) {
         errlogPrintf("pthread_cond_wait returned EINTR. Violates SUSv3\n");
     }
+    return status;
 }
 
 epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
@@ -227,44 +236,49 @@ epicsMutexLockStatus epicsMutexOsdLock(struct epicsMutexOSD * pmutex)
     pthread_t tid = pthread_self();
     int status;
 
-    if(!pmutex || !tid) return(epicsMutexLockError);
+    if (!pmutex || !tid) return epicsMutexLockError;
     status = mutexLock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_lock","epicsMutexOsdLock");
-    while(pmutex->owned && !pthread_equal(pmutex->ownerTid,tid))
-        condWait(&pmutex->waitToBeOwner,&pmutex->lock);
+    if (status == EINVAL) return epicsMutexLockError;
+    checkStatusQuit(status, "pthread_mutex_lock", "epicsMutexOsdLock");
+
+    while (pmutex->owned && !pthread_equal(pmutex->ownerTid, tid))
+        condWait(&pmutex->waitToBeOwner, &pmutex->lock);
     pmutex->ownerTid = tid;
     pmutex->owned = 1;
     pmutex->count++;
+
     status = pthread_mutex_unlock(&pmutex->lock);
-    checkStatusQuit(status,"pthread_mutex_unlock","epicsMutexOsdLock");
-    return(epicsMutexLockOK);
+    checkStatusQuit(status, "pthread_mutex_unlock", "epicsMutexOsdLock");
+    return epicsMutexLockOK;
 }
 
 epicsMutexLockStatus epicsMutexOsdTryLock(struct epicsMutexOSD * pmutex)
 {
     pthread_t tid = pthread_self();
-    epicsMutexLockStatus status;
-    int pthreadStatus;
+    epicsMutexLockStatus result;
+    int status;
 
-    pthreadStatus = mutexLock(&pmutex->lock);
-    checkStatusQuit(pthreadStatus,"pthread_mutex_lock","epicsMutexOsdTryLock");
-    if(!pmutex->owned || pthread_equal(pmutex->ownerTid,tid)) {
+    status = mutexLock(&pmutex->lock);
+    if (status == EINVAL) return epicsMutexLockError;
+    checkStatusQuit(status, "pthread_mutex_lock", "epicsMutexOsdTryLock");
+
+    if (!pmutex->owned || pthread_equal(pmutex->ownerTid, tid)) {
         pmutex->ownerTid = tid;
         pmutex->owned = 1;
         pmutex->count++;
-        status = epicsMutexLockOK;
+        result = epicsMutexLockOK;
+    } else {
+        result = epicsMutexLockTimeout;
     }
-    else {
-        status = epicsMutexLockTimeout;
-    }
-    pthreadStatus = pthread_mutex_unlock(&pmutex->lock);
-    checkStatusQuit(pthreadStatus,"pthread_mutex_unlock","epicsMutexOsdTryLock");
-    return(status);
+
+    status = pthread_mutex_unlock(&pmutex->lock);
+    checkStatusQuit(status, "pthread_mutex_unlock", "epicsMutexOsdTryLock");
+    return result;
 }
 
 void epicsMutexOsdShow(struct epicsMutexOSD *pmutex,unsigned int level)
 {
     printf("ownerTid %p count %d owned %d\n",
-        (void *)pmutex->ownerTid,pmutex->count,pmutex->owned);
+        (void *)pmutex->ownerTid, pmutex->count, pmutex->owned);
 }
 #endif /*defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500 */

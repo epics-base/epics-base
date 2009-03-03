@@ -1,23 +1,21 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* Alarm definitions (Must Match choiceGbl.ascii) */
+/* Alarm definitions, must match menuAlarmSevr.dbd and menuAlarmStat.dbd */
 /* $Id$ */
 
 /*
- *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
- *      Date:            11-7-90
+ *      Authors: Bob Dalesio and Marty Kraimer
+ *      Date:    11-7-90
  */
 
-#ifndef INCalarmh
-#define INCalarmh 1
+#ifndef INC_alarm_H
+#define INC_alarm_H
 
 #include "shareLib.h"
 #include "epicsTypes.h"
@@ -26,128 +24,89 @@
 extern "C" {
 #endif
 
-/* defines for the choice fields */
-/* ALARM SEVERITIES - NOTE: must match defs in choiceGbl.ascii GBL_ALARM_SEV */
-#define NO_ALARM		0x0
-#define	MINOR_ALARM		0x1
-#define	MAJOR_ALARM		0x2
-#define INVALID_ALARM		0x3
-#define ALARM_NSEV		INVALID_ALARM+1
 
-#ifndef NO_ALARMH_ENUM
+#define NO_ALARM            0
+
+/* ALARM SEVERITIES - must match menuAlarmSevr.dbd */
 
 typedef enum {
-	epicsSevNone = NO_ALARM, 
-	epicsSevMinor = MINOR_ALARM, 
-	epicsSevMajor = MAJOR_ALARM, 
-	epicsSevInvalid = INVALID_ALARM 
-}epicsAlarmSeverity;
-#define firstEpicsAlarmSev epicsSevNone
-#define lastEpicsAlarmSev epicsSevInvalid 
+    epicsSevNone = NO_ALARM,
+    epicsSevMinor,
+    epicsSevMajor,
+    epicsSevInvalid,
+    ALARM_NSEV
+} epicsAlarmSeverity;
 
-#ifdef epicsAlarmGLOBAL
-READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1] = {
-	"NO_ALARM",
-	"MINOR",
-	"MAJOR",
-	"INVALID",
-};
-#else /*epicsAlarmGLOBAL*/
-epicsShareExtern READONLY char *epicsAlarmSeverityStrings [lastEpicsAlarmSev+1];
-#endif /*epicsAlarmGLOBAL*/
+#define firstEpicsAlarmSev  epicsSevNone
+#define MINOR_ALARM         epicsSevMinor
+#define MAJOR_ALARM         epicsSevMajor
+#define INVALID_ALARM       epicsSevInvalid
+#define lastEpicsAlarmSev   epicsSevInvalid
 
-#endif /* NO_ALARMH_ENUM */
+epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
 
-/* ALARM STATUS  -NOTE: must match defs in choiceGbl.ascii GBL_ALARM_STAT */
-/* NO_ALARM = 0 as above */
-#define	READ_ALARM		1
-#define	WRITE_ALARM		2
-/* ANALOG ALARMS */
-#define	HIHI_ALARM		3
-#define	HIGH_ALARM		4
-#define	LOLO_ALARM		5
-#define	LOW_ALARM		6
-/* BINARY ALARMS */
-#define	STATE_ALARM		7
-#define	COS_ALARM		8
-/* other alarms */
-#define COMM_ALARM		9
-#define	TIMEOUT_ALARM		10
-#define	HW_LIMIT_ALARM		11
-#define	CALC_ALARM		12
-#define	SCAN_ALARM		13
-#define	LINK_ALARM		14
-#define	SOFT_ALARM		15
-#define	BAD_SUB_ALARM		16
-#define	UDF_ALARM		17
-#define	DISABLE_ALARM		18
-#define	SIMM_ALARM		19
-#define	READ_ACCESS_ALARM	20
-#define	WRITE_ACCESS_ALARM	21
-#define ALARM_NSTATUS		WRITE_ACCESS_ALARM + 1
 
-#ifndef NO_ALARMH_ENUM
+/* ALARM STATUS - must match menuAlarmStat.dbd */
 
 typedef enum {
-	epicsAlarmNone = NO_ALARM,
-	epicsAlarmRead = READ_ALARM, 
-	epicsAlarmWrite = WRITE_ALARM, 
-	epicsAlarmHiHi = HIHI_ALARM,
-	epicsAlarmHigh = HIGH_ALARM,
-	epicsAlarmLoLo = LOLO_ALARM,
-	epicsAlarmLow = LOW_ALARM,
-	epicsAlarmState = STATE_ALARM,
-	epicsAlarmCos = COS_ALARM,
-	epicsAlarmComm = COMM_ALARM,
-	epicsAlarmTimeout = TIMEOUT_ALARM,
-	epicsAlarmHwLimit = HW_LIMIT_ALARM,
-	epicsAlarmCalc = CALC_ALARM,
-	epicsAlarmScan = SCAN_ALARM,
-	epicsAlarmLink = LINK_ALARM,
-	epicsAlarmSoft = SOFT_ALARM,
-	epicsAlarmBadSub = BAD_SUB_ALARM,
-	epicsAlarmUDF = UDF_ALARM,
-	epicsAlarmDisable = DISABLE_ALARM,
-	epicsAlarmSimm = SIMM_ALARM,
-	epicsAlarmReadAccess = READ_ACCESS_ALARM,
-	epicsAlarmWriteAccess = WRITE_ACCESS_ALARM
-}epicsAlarmCondition;
-#define firstEpicsAlarmCond epicsSevNone
-#define lastEpicsAlarmCond epicsAlarmWriteAccess 
+    epicsAlarmNone = NO_ALARM,
+    epicsAlarmRead,
+    epicsAlarmWrite,
+    epicsAlarmHiHi,
+    epicsAlarmHigh,
+    epicsAlarmLoLo,
+    epicsAlarmLow,
+    epicsAlarmState,
+    epicsAlarmCos,
+    epicsAlarmComm,
+    epicsAlarmTimeout,
+    epicsAlarmHwLimit,
+    epicsAlarmCalc,
+    epicsAlarmScan,
+    epicsAlarmLink,
+    epicsAlarmSoft,
+    epicsAlarmBadSub,
+    epicsAlarmUDF,
+    epicsAlarmDisable,
+    epicsAlarmSimm,
+    epicsAlarmReadAccess,
+    epicsAlarmWriteAccess,
+    ALARM_NSTATUS
+} epicsAlarmCondition;
 
-#ifdef epicsAlarmGLOBAL
-READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1] = {
-	"NO_ALARM",
-	"READ",
-	"WRITE",
-	"HIHI",
-	"HIGH",
-	"LOLO",
-	"LOW",
-	"STATE",
-	"COS",
-	"COMM",
-	"TIMEOUT",
-	"HWLIMIT",
-	"CALC",
-	"SCAN",
-	"LINK",
-	"SOFT",
-	"BAD_SUB",
-	"UDF",
-	"DISABLE",
-	"SIMM",
-	"READ_ACCESS",
-	"WRITE_ACCESS",
-};
-#else /*epicsAlarmGLOBAL*/
-epicsShareExtern READONLY char *epicsAlarmConditionStrings [lastEpicsAlarmCond+1];
-#endif /*epicsAlarmGLOBAL*/
+#define firstEpicsAlarmCond epicsAlarmNone
+#define READ_ALARM          epicsAlarmRead
+#define WRITE_ALARM         epicsAlarmWrite
+#define HIHI_ALARM          epicsAlarmHiHi
+#define HIGH_ALARM          epicsAlarmHigh
+#define LOLO_ALARM          epicsAlarmLoLo
+#define LOW_ALARM           epicsAlarmLow
+#define STATE_ALARM         epicsAlarmState
+#define COS_ALARM           epicsAlarmCos
+#define COMM_ALARM          epicsAlarmComm
+#define TIMEOUT_ALARM       epicsAlarmTimeout
+#define HW_LIMIT_ALARM      epicsAlarmHwLimit
+#define CALC_ALARM          epicsAlarmCalc
+#define SCAN_ALARM          epicsAlarmScan
+#define LINK_ALARM          epicsAlarmLink
+#define SOFT_ALARM          epicsAlarmSoft
+#define BAD_SUB_ALARM       epicsAlarmBadSub
+#define UDF_ALARM           epicsAlarmUDF
+#define DISABLE_ALARM       epicsAlarmDisable
+#define SIMM_ALARM          epicsAlarmSimm
+#define READ_ACCESS_ALARM   epicsAlarmReadAccess
+#define WRITE_ACCESS_ALARM  epicsAlarmWriteAccess
+#define lastEpicsAlarmCond  epicsAlarmWriteAccess
 
-#endif /* NO_ALARMH_ENUM */
+epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* INCalarmh */
+#ifdef epicsAlarmGLOBAL
+#  include "alarmString.h"
+#endif
+
+
+#endif /* INC_alarm_H */

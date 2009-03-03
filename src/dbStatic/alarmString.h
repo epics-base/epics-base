@@ -6,31 +6,61 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*  $Id$ */
+/* $Id$ */
 
-/* String values for alarms (compatibility header) */
+/* String names for alarms */
 
-/* As of January 2004 (EPICS Base 3.14.5), the use of this file is
- *
- *                      D E P R E C A T E D
- *
- *         Please use the definitions in alarm.h instead.           */
-
-
-#ifndef INCalarmStringh
-#define INCalarmStringh 1
+#ifndef INC_alarmString_H
+#define INC_alarmString_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Use the strings from alarm.h */
+/* Compatibility with original alarmString.h names */
 
 #define alarmSeverityString epicsAlarmSeverityStrings
-epicsShareExtern const char *epicsAlarmSeverityStrings [];
-
 #define alarmStatusString epicsAlarmConditionStrings
-epicsShareExtern const char *epicsAlarmConditionStrings [];
+
+
+/* Name strings */
+
+/* ALARM SEVERITIES - must match menuAlarmSevr.dbd and alarm.h */
+
+const char * epicsAlarmSeverityStrings[] = {
+    "NO_ALARM",
+    "MINOR",
+    "MAJOR",
+    "INVALID"
+};
+
+
+/* ALARM STATUS - must match menuAlarmStat.dbd and alarm.h */
+
+const char * epicsAlarmConditionStrings[] = {
+    "NO_ALARM",
+    "READ",
+    "WRITE",
+    "HIHI",
+    "HIGH",
+    "LOLO",
+    "LOW",
+    "STATE",
+    "COS",
+    "COMM",
+    "TIMEOUT",
+    "HWLIMIT",
+    "CALC",
+    "SCAN",
+    "LINK",
+    "SOFT",
+    "BAD_SUB",
+    "UDF",
+    "DISABLE",
+    "SIMM",
+    "READ_ACCESS",
+    "WRITE_ACCESS"
+};
 
 #ifdef __cplusplus
 }

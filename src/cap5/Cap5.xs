@@ -1,9 +1,5 @@
 /* Provides an EPICS Channel Access client interface for Perl5. */
 
-/* ToDo:
- *   CA::add_exception_event($class, \&sub)
- */
-
 /* This macro disables perl's reentr.inc file, which we don't need
  * here and just generates unnecessary compiler warnings. */
 #define REENTRINC
@@ -147,7 +143,7 @@ SV * newSValarm(int sevr) {
     SV *alarm = &PL_sv_undef;
     if (sevr) {
         alarm = newSViv(sevr);
-        sv_setpv(alarm, alarmSeverityString[sevr]);
+        sv_setpv(alarm, epicsAlarmSeverityStrings[sevr]);
         SvIOK_on(alarm);
     }
     return alarm;
@@ -202,7 +198,7 @@ SV * newSVdbr(struct event_handler_args *peha) {
     
     /* Alarm status and severity are always in the same place */
     if (u->slngval.status)
-        val = newSVpv(alarmStatusString[u->slngval.status], 0);
+        val = newSVpv(epicsAlarmConditionStrings[u->slngval.status], 0);
     else
         val = &PL_sv_undef;
     hv_store(hash, "status", 6, val, 0);
@@ -642,7 +638,7 @@ void CA_put_acks(SV *ca_ref, SV *sevr, ...) {
         size_t slen;
         char *sname = SvPV(sevr, slen);
         for (acks = NO_ALARM; acks <= INVALID_ALARM; acks++) {
-            if (strcmp(sname, alarmSeverityString[acks]) == 0)
+            if (strcmp(sname, epicsAlarmSeverityStrings[acks]) == 0)
                 break;
         }
         if (acks > INVALID_ALARM)

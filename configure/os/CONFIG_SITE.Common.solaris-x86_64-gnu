@@ -1,0 +1,11 @@
+# CONFIG_SITE.Common.solaris-x86_64-gnu
+#
+# $Id$
+#
+# Site Specific definitions for solaris-x86_64-gnu target
+# Only the local epics system manager should modify this file
+
+# Include definitions common to all solaris-sparc-gnu target archs
+include $(CONFIG)/os/CONFIG_SITE.Common.solaris-x86-gnu
+
+COMMANDLINE_LIBRARY = EPICS

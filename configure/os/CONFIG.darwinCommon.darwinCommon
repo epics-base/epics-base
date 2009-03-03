@@ -94,8 +94,3 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 %.o: %.m
 	$(COMPILE.c) -c $<
 
-#
-# Pedantic produces way too many unnecessary messages
-#
-CONFORM_CFLAGS_STRICT=-ansi
-CONFORM_CXXFLAGS_STRICT=-ansi

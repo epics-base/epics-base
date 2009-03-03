@@ -47,11 +47,11 @@ VALID_BUILDS = Ioc
 #--------------------------------------------------
 # The RTEMS Makefiles redefine several macros, so we have to go
 # through the following contortions to get the EPICS flags back.
-CFLAGS = $(CONFORM_CFLAGS) $(CROSS_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS)\
+CFLAGS = $(CROSS_CFLAGS) $(OPT_CFLAGS) $(DEBUG_CFLAGS)\
  $(WARN_CFLAGS) $(TARGET_CFLAGS) $(USR_CFLAGS) $(ARCH_DEP_CFLAGS)\
  $(CODE_CFLAGS) $(STATIC_CFLAGS)  $(OP_SYS_CFLAGS) $(LIBRARY_SRC_CFLAGS)
 
-CXXFLAGS = $(CONFORM_CXXFLAGS) $(CROSS_CXXFLAGS) $(OPT_CXXFLAGS)\
+CXXFLAGS = $(CROSS_CXXFLAGS) $(OPT_CXXFLAGS)\
  $(DEBUG_CXXFLAGS) $(WARN_CXXFLAGS) $(TARGET_CXXFLAGS) $(USR_CXXFLAGS)\
  $(ARCH_DEP_CXXFLAGS) $(CODE_CXXFLAGS) $(STATIC_CXXCFLAGS) $(OP_SYS_CXXFLAGS)\
  $(LIBRARY_SRC_CFLAGS)
@@ -63,7 +63,7 @@ LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) \
 LDLIBS = $(STATIC_LDLIBS)\
  $(POSIX_LDLIBS) $(ARCH_DEP_LDLIBS) $(DEBUG_LDLIBS) $(OP_SYS_LDLIBS)
 
-CPPFLAGS += $(CONFORM_CPPFLAGS) $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS)\
+CPPFLAGS += $(CROSS_CPPFLAGS) $(POSIX_CPPFLAGS)\
 $(BASE_CPPFLAGS) $(TARGET_CPPFLAGS) $(USR_CPPFLAGS) $(ARCH_DEP_CPPFLAGS)\
  $(OP_SYS_CPPFLAGS) $(OP_SYS_INCLUDE_CPPFLAGS) $(CODE_CPPFLAGS)
 
@@ -97,12 +97,6 @@ STATIC_BUILD=YES
 SHARED_LIBRARIES=NO
 CODE_CFLAGS =
 CODE_CXXFLAGS =
-
-#--------------------------------------------------
-# RTEMS uses the inline keyword so -pedantic causes too many problems.
-# Using -ansi turns off lots of useful prototypes (e.g. strtok_r).
-CONFORM_CFLAGS_STRICT =
-CONFORM_CXXFLAGS_STRICT =
 
 #--------------------------------------------------
 # Override the usual RTEMS verbosity from ar

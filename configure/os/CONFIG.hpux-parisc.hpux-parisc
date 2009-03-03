@@ -14,11 +14,6 @@ RANLIB =
 AR = ar -rc
 LD = ld -r
 
-# Configure OS vendor C compiler
-CONFORM_CFLAGS_ANSI = -Aa -mt
-CONFORM_CFLAGS_STRICT = -Aa -mt
-CONFORM_CFLAGS_TRAD = -Ac -mt
-
 # Portability across different PA-RISC architecture versions
 CODE_CFLAGS = +DAportable +z
 WARN_CFLAGS_YES =
@@ -30,11 +25,6 @@ CXXCMPLR=STRICT
 
 # Selective filter for getting rid of bogus compiler warnings
 COMPILE_FILTER.cpp = 2>&1 | $(EPICS_BASE)/configure/tools/filterWarnings.pl
-
-# Configure OS vendor C++ compiler
-CONFORM_CXXFLAGS_NORMAL = -AA -Aa -mt
-CONFORM_CXXFLAGS_STRICT = -AA -Aa -mt
-#CONFORM_CXXFLAGS_STRICT += +p
 
 # Portability across different PA-RISC architecture versions
 CODE_CXXFLAGS = +DAportable +z

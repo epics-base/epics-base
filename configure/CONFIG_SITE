@@ -104,19 +104,6 @@ CROSS_COMPILER_TARGET_ARCHS=
 #
 CROSS_COMPILER_HOST_ARCHS=
 
-# Default ANSI level, individual Makefiles will override
-#  if they cannot support ANSI compilation.
-#   STRICT -  ANSI C - force warning flags
-#   ANSI   -  ANSI C
-#   TRAD   -  Standard C - Not appropriate here.
-CMPLR=STRICT
-
-# Default C++ compiler ANSI level
-#   STRICT -  ANSI C++ force strict warning flags
-#   NORMAL -  ANSI C++ optional warning flags
-#   Individual Makefiles may override
-CXXCMPLR=STRICT
-
 #  Build shared libraries?
 #        must be either YES or NO
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and

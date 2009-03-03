@@ -1,0 +1,12 @@
+# CONFIG.solaris-x86_64-gnu.Common
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Definitions for solaris-x86_64 gnu compiler host builds
+# Sites may override these definitions in CONFIG_SITE.solaris-sparc64-gnu.Common
+#-------------------------------------------------------
+
+#Include definitions common to solaris-x86-gnu hosts
+include $(CONFIG)/os/CONFIG.solaris-x86-gnu.Common
+

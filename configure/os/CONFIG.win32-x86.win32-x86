@@ -39,9 +39,9 @@ CC = cl
 #
 # Use of /Za would dissable DLL import/export keywords which
 # include/excludes using architecture neutral macros
-CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0
-CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0
-CONFORM_CFLAGS_TRAD = /nologo
+##CONFORM_CFLAGS_ANSI = /nologo /D__STDC__=0
+##CONFORM_CFLAGS_STRICT = /nologo /D__STDC__=0
+##CONFORM_CFLAGS_TRAD = /nologo
 
 #
 # /W<N> use warning level N
@@ -107,8 +107,8 @@ CPP = cl /C /E
 # /GR - generate code for run time type identification
 #
 CCC = cl /nologo /EHsc /GR
-CONFORM_CXXFLAGS_NORMAL =
-CONFORM_CXXFLAGS_STRICT = /D__STDC__=0
+#CONFORM_CXXFLAGS_NORMAL =
+#CONFORM_CXXFLAGS_STRICT = /D__STDC__=0
 CODE_CPPFLAGS += /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
 
 #

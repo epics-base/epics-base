@@ -43,22 +43,6 @@ CC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
 LD = $(BORLAND_BIN)/bcc32 -r
 RANLIB =
 
-#
-# __STDC__=0 works but not as cleanly as with
-# Microsoft Visual C++.
-# The Borland header files use ifdef __STDC__
-# to disable many nice things. This is overridden
-# by defining NO_BORLAND_STDC in the Makefile.
-#
-ifdef NO_BORLAND_STDC
-CONFORM_CFLAGS_ANSI =
-CONFORM_CFLAGS_STRICT =
-else
-CONFORM_CFLAGS_ANSI = -D__STDC__=0
-CONFORM_CFLAGS_STRICT = -D__STDC__=0
-endif
-CONFORM_CFLAGS_TRAD =
-
 # -w display warnings on
 # -g0 no limit to warning messages
 # some warning message here are always disabled because they are
@@ -87,18 +71,7 @@ CPP = $(BORLAND_BIN)/cpp32  -Sr
 PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(subst /,\\,$(INCLUDES)) -o$@ $<
 
 # Configure OS vendor C++ compiler
-#
-# __STDC__=0 works but not as cleanly as with
-# Microsoft Visual C++.
-# The Borland header files use ifdef __STDC__
-# to disable many nice things. This is overridden
-# by defining NO_BORLAND_STDC in the Makefile.
-#
 CCC = $(BORLAND_BIN)/bcc32 $(CCLINKOPT)
-ifndef NO_BORLAND_STDC
-CONFORM_CXXFLAGS_NORMAL = -D__STDC__=0
-CONFORM_CXXFLAGS_STRICT = -D__STDC__=0
-endif
 
 # -w display warnings on
 # -g0 no limit to warning messages

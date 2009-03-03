@@ -23,15 +23,6 @@ SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 
-CONFORM_CFLAGS_ANSI =
-CONFORM_CFLAGS_STRICT = -ansi
-CONFORM_CXXFLAGS_NORMAL =
-CONFORM_CXXFLAGS_STRICT = -ansi
-
-# -ansi build errors need fixing: u_long  undeclared, fd_set with no type
-CONFORM_CFLAGS_STRICT = 
-CONFORM_CXXFLAGS_STRICT = 
-
 # Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
 

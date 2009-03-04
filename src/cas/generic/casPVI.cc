@@ -375,10 +375,10 @@ void casPVI::clearOutstandingReads ( tsDLList < casAsyncIOI > & ioList )
 		++tmp;
         if ( iterIO->oneShotReadOP () ) {
             ioList.remove ( *iterIO );
+		    delete iterIO.pointer ();
             assert ( this->nIOAttached != 0 );
             this->nIOAttached--;
         }
-		delete iterIO.pointer ();
 		iterIO = tmp;
 	}
 }

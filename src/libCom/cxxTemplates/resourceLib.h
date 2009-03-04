@@ -335,6 +335,7 @@ void resTable<T,ID>::removeAll ( tsSLList<T> & destination )
             destination.add ( *pItem );
         }
     }
+    this->nInUse = 0;
 }
 
 //

@@ -922,8 +922,21 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
         dbFldDes *pfldDes = paddr->pfldDes;
         char *rtnString;
         char *pbuf = (char *)pbuffer;
+        int maxlen;
 
-        if(dbrType!=DBR_STRING) {
+        switch (dbrType) {
+        case DBR_STRING:
+            maxlen = MAX_STRING_SIZE - 1;
+            break;
+
+        case DBR_CHAR:
+        case DBR_UCHAR:
+            if (nRequest && *nRequest > 1) {
+                maxlen = *nRequest - 1;
+                break;
+            }
+            /* else fall through ... */
+        default:
             status = S_db_badDbrtype;
             goto done;
         }
@@ -936,14 +949,8 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
         if (!status) status = dbFindField(&dbEntry, pfldDes->name);
         if (!status) {
             rtnString = dbGetString(&dbEntry);
-            /*begin kludge for old db_access MAX_STRING_SIZE*/
-            if (strlen(rtnString) >= MAX_STRING_SIZE) {
-                strncpy(pbuf, rtnString, MAX_STRING_SIZE-1);
-                pbuf[MAX_STRING_SIZE-1] = 0;
-            } else {
-                strcpy(pbuf, rtnString);
-            }
-            /*end kludge for old db_access MAX_STRING_SIZE*/
+            strncpy(pbuf, rtnString, maxlen - 1);
+            pbuf[maxlen - 1] = 0;
         }
         dbFinishEntry(&dbEntry);
     } else {
@@ -964,13 +971,6 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     struct rset *prset;
     long status = 0;
 
-    if (paddr->special == SPC_ATTRIBUTE) {
-        if (dbrType != DBR_STRING) return S_db_badDbrtype;
-        if (!paddr->pfield) return S_db_badField;
-        strcpy((char *)pbuffer, (char *)paddr->pfield);
-        return 0;
-    }
-
     if (options && *options) {
         char *pbuf = pbuffer;
 
@@ -978,6 +978,33 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         pbuffer = pbuf;
     }
     if (nRequest && *nRequest == 0) return 0;
+
+    if (paddr->special == SPC_ATTRIBUTE) {
+        char *pbuf = pbuffer;
+        int maxlen;
+
+        if (!paddr->pfield) return S_db_badField;
+
+        switch (dbrType) {
+        case DBR_STRING:
+            maxlen = MAX_STRING_SIZE - 1;
+            break;
+
+        case DBR_CHAR:
+        case DBR_UCHAR:
+            if (nRequest && *nRequest > 1) {
+                maxlen = *nRequest - 1;
+                break;
+            }
+            /* else fall through ... */
+        default:
+            return S_db_badDbrtype;
+        }
+
+        strncpy(pbuf, (char *)paddr->pfield, maxlen - 1);
+        pbuf[maxlen - 1] = 0;
+        return 0;
+    }
 
     /* Check for valid request */
     if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {

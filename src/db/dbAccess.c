@@ -61,10 +61,22 @@ epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
 
 static short mapDBFToDBR[DBF_NTYPES] = {
-	DBR_STRING, DBR_CHAR, DBR_UCHAR, DBR_SHORT, DBR_USHORT, 
-	DBR_LONG, DBR_ULONG, DBR_FLOAT, DBR_DOUBLE,
-	DBR_ENUM, DBR_ENUM, DBR_ENUM,
-	DBR_STRING, DBR_STRING, DBR_STRING, DBR_NOACCESS
+    /* DBF_STRING   => */    DBR_STRING,
+    /* DBF_CHAR     => */    DBR_CHAR,
+    /* DBF_UCHAR    => */    DBR_UCHAR,
+    /* DBF_SHORT    => */    DBR_SHORT,
+    /* DBF_USHORT   => */    DBR_USHORT,
+    /* DBF_LONG     => */    DBR_LONG,
+    /* DBF_ULONG    => */    DBR_ULONG,
+    /* DBF_FLOAT    => */    DBR_FLOAT,
+    /* DBF_DOUBLE   => */    DBR_DOUBLE,
+    /* DBF_ENUM,    => */    DBR_ENUM,
+    /* DBF_MENU,    => */    DBR_ENUM,
+    /* DBF_DEVICE   => */    DBR_ENUM,
+    /* DBF_INLINK   => */    DBR_STRING,
+    /* DBF_OUTLINK  => */    DBR_STRING,
+    /* DBF_FWDLINK  => */    DBR_STRING,
+    /* DBF_NOACCESS => */    DBR_NOACCESS
 };
 
 /*
@@ -87,7 +99,7 @@ long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
     struct rset	*prset;
-    dbCommon 	*precord=(dbCommon *)(paddr->precord);
+    dbCommon 	*precord = paddr->precord;
     long	status=0;
     long	special=paddr->special;
 	
@@ -312,7 +324,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 
 	prset=dbGetRset(paddr);
 	/* Process options */
-	pcommon = (dbCommon *)(paddr->precord);
+	pcommon = paddr->precord;
 	if( (*options) & DBR_STATUS ) {
 	    unsigned short *pushort = (unsigned short *)pbuffer;
 
@@ -634,41 +646,46 @@ all_done:
  *    Returns error codes from StaticLib module, not
  *        from dbAccess.
  */
-long epicsShareAPI dbNameToAddr(const char *pname,DBADDR *paddr)
+long epicsShareAPI dbNameToAddr(const char *pname, DBADDR *paddr)
 {
-	DBENTRY		dbEntry;
-	long		status=0;
-	struct rset	*prset;
-	dbFldDes	*pflddes;
+    DBENTRY dbEntry;
+    dbFldDes *pflddes;
+    struct rset *prset;
+    long status = 0;
 
-    if((pname == NULL) || (*pname == '\0'))
+    if (!pname || !*pname || !pdbbase)
         return S_db_notFound;
-        if(!pdbbase) return(S_db_notFound);
-	dbInitEntry(pdbbase,&dbEntry);
-	status = dbFindRecord(&dbEntry,pname);
-	if(!status && !dbEntry.pfield) status=dbFindField(&dbEntry,"VAL");
-	if(status) {
-	    dbFinishEntry(&dbEntry);
-	    return(status);
-	}
-	paddr->precord = dbEntry.precnode->precord;
-	paddr->pfield = dbEntry.pfield;
-	pflddes = dbEntry.pflddes;
-	dbFinishEntry(&dbEntry);
-	paddr->pfldDes        = pflddes;
-	paddr->field_type     = pflddes->field_type;
-	paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
-	paddr->field_size     = pflddes->size;
-	paddr->special        = pflddes->special;
 
-	/*if special is SPC_DBADDR then call cvt_dbaddr		*/
-	/*it may change pfield,no_elements,field_type,dbr_field_type,*/
-	/*field_size,and special*/
-	paddr->no_elements=1;
-	if(((paddr->special)==SPC_DBADDR)
-	&& (prset=dbGetRset(paddr))
-	&& (prset->cvt_dbaddr)) status = (*prset->cvt_dbaddr)(paddr);
-	return(status);
+    dbInitEntry(pdbbase, &dbEntry);
+    status = dbFindRecord(&dbEntry, pname);
+    if (!status && !dbEntry.pfield)
+        status = dbFindField(&dbEntry, "VAL");
+    if (status) {
+        dbFinishEntry(&dbEntry);
+        return status;
+    }
+
+    paddr->precord = dbEntry.precnode->precord;
+    paddr->pfield = dbEntry.pfield;
+    pflddes = dbEntry.pflddes;
+    dbFinishEntry(&dbEntry);
+
+    paddr->pfldDes        = pflddes;
+    paddr->field_type     = pflddes->field_type;
+    paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
+    paddr->field_size     = pflddes->size;
+    paddr->special        = pflddes->special;
+    paddr->no_elements    = 1;
+
+    if ((paddr->special == SPC_DBADDR) &&
+        (prset = dbGetRset(paddr)) &&
+        prset->cvt_dbaddr)
+        /* cvt_dbaddr routine may change any of these elements of paddr:
+         *     pfield, no_elements, element_offset, field_type,
+         *     dbr_field_type, field_size, and/or special.
+         */
+        status = prset->cvt_dbaddr(paddr);
+    return status;
 }
 
 /* JOH 10-19-04 */
@@ -777,245 +794,251 @@ int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
 }
 
 
-long epicsShareAPI dbGetLinkValue(struct link *plink,
-    short dbrType, void *pbuffer,long *poptions, long *pnRequest)
+long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
+    void *pbuffer, long *poptions, long *pnRequest)
 {
-    long		status = 0;
+    long status = 0;
 
-    if(plink->type==CONSTANT) {
-	if(poptions) *poptions = 0;
-	if(pnRequest) *pnRequest = 0;
-    } else if(plink->type==DB_LINK) {
-	struct pv_link	*ppv_link = &(plink->value.pv_link);
-	DBADDR		*paddr = ppv_link->pvt;
-	dbCommon	*precord = plink->value.pv_link.precord;
+    if (plink->type == CONSTANT) {
+        if (poptions) *poptions = 0;
+        if (pnRequest) *pnRequest = 0;
+    } else if (plink->type == DB_LINK) {
+        struct pv_link *ppv_link = &(plink->value.pv_link);
+        DBADDR         *paddr = ppv_link->pvt;
+        dbCommon       *precord = plink->value.pv_link.precord;
 
-	/* scan passive records with links that are process passive  */
-	if(ppv_link->pvlMask&pvlOptPP) {
-	    dbCommon	*pfrom = paddr->precord;
-	    unsigned char   pact;
+        /* scan passive records with links that are process passive  */
+        if (ppv_link->pvlMask&pvlOptPP) {
+            dbCommon *pfrom = paddr->precord;
+            unsigned char pact;
 
-	    pact = precord->pact;
-	    precord->pact = TRUE;
-	    status = dbScanPassive(precord,pfrom);
-	    precord->pact = pact;
-	    if(status) return(status);
-	}
-	if(ppv_link->pvlMask&pvlOptMS && precord!= paddr->precord)
-	    recGblSetSevr(precord,LINK_ALARM,paddr->precord->sevr);
+            pact = precord->pact;
+            precord->pact = TRUE;
+            status = dbScanPassive(precord,pfrom);
+            precord->pact = pact;
+            if (status) return status;
+        }
+        if (ppv_link->pvlMask & pvlOptMS && precord != paddr->precord)
+            recGblSetSevr(precord, LINK_ALARM, paddr->precord->sevr);
 
-	if(ppv_link->getCvt && ppv_link->lastGetdbrType==dbrType) {
-	    status = (*ppv_link->getCvt)(paddr->pfield,pbuffer, paddr);
-	} else {
-	    unsigned short	dbfType= paddr->field_type;
-	    long		no_elements = paddr->no_elements;
+        if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
+            status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
+        } else {
+            unsigned short dbfType = paddr->field_type;
+            long       no_elements = paddr->no_elements;
 
-	    if((dbrType<0) || (dbrType>DBR_ENUM) || (dbfType > DBF_DEVICE)) {
-		status = S_db_badDbrtype;
-		recGblRecordError(status,(void *)precord,"GetLinkValue Failed");
-		recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-		return(status);
-	    }
-	    /*  attempt to make a fast link */
-	    if((!poptions || (*poptions == 0))
-	    && (no_elements == 1)
-	    && (!pnRequest || (*pnRequest == 1))
-	    && (paddr->special!=SPC_ATTRIBUTE) )
-	    {
-		ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-		status = (*ppv_link->getCvt) (paddr->pfield,pbuffer, paddr);
-	    }else{
-		status=dbGet(paddr,dbrType,pbuffer,poptions,pnRequest,NULL);
-		ppv_link->getCvt = 0;
-	    }
-	}
-	ppv_link->lastGetdbrType = dbrType;
-	if(status){
-	    recGblRecordError(status,(void *)precord,"dbGetLinkValue");
-	    recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-	}
-    }else if(plink->type==CA_LINK) {
-	struct dbCommon	*precord = plink->value.pv_link.precord;
-	const struct pv_link	*pcalink = &(plink->value.pv_link);
-	unsigned short sevr;
-
-	status=dbCaGetLink(plink,dbrType,pbuffer,&sevr,pnRequest);
-	if(status) {
-	    recGblSetSevr(precord,LINK_ALARM,INVALID_ALARM);
-	}else if(pcalink->pvlMask&pvlOptMS){
-	    recGblSetSevr(precord,LINK_ALARM,sevr);
-	}
-	if(poptions) *poptions = 0;
-    } else {
-	cantProceed("dbGetLinkValue: Illegal link type");
-    }
-    return(status);
-}
-
-long epicsShareAPI dbPutLinkValue(struct link *plink,
-    short dbrType,const void *pbuffer,long nRequest)
-{
-    long	status=0;
-
-    if(plink->type==DB_LINK) {
-        struct dbCommon	*psource = plink->value.pv_link.precord;
-        struct pv_link	*ppv_link= &(plink->value.pv_link);
-        DBADDR		*paddr	= (DBADDR*)(ppv_link->pvt);
-        dbCommon 	*pdest	= paddr->precord;
-
-        status=dbPut(paddr,dbrType,pbuffer,nRequest);
-        if(ppv_link->pvlMask&pvlOptMS)
-            recGblSetSevr(pdest,LINK_ALARM,psource->nsev);
-        if(status) return(status);
-        if((paddr->pfield==(void *)&pdest->proc)
-        || (ppv_link->pvlMask&pvlOptPP && pdest->scan==0)) {
-            /*if dbPutField caused asyn record to process   */
-            /* ask for reprocessing*/
-            if(pdest->putf) {
-                pdest->rpro = TRUE;
-            } else { /* otherwise ask for the record to be processed*/
-                status=dbScanLink(psource,pdest);
+            if (dbrType < 0 || dbrType > DBR_ENUM ||
+                dbfType > DBF_DEVICE) {
+                status = S_db_badDbrtype;
+                recGblRecordError(status, precord, "GetLinkValue Failed");
+                recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+                return status;
+            }
+            /*  attempt to make a fast link */
+            if ((!poptions || *poptions == 0) &&
+                no_elements == 1 &&
+                (!pnRequest || *pnRequest == 1) &&
+                paddr->special != SPC_ATTRIBUTE) {
+                ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
+                status = ppv_link->getCvt(paddr->pvalue, pbuffer, paddr);
+            } else {
+                ppv_link->getCvt = 0;
+                status = dbGet(paddr, dbrType, pbuffer, poptions, pnRequest, NULL);
             }
         }
-        if(status) recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
-    } else if(plink->type==CA_LINK) {
-        struct dbCommon	*psource = plink->value.pv_link.precord;
+        ppv_link->lastGetdbrType = dbrType;
+        if (status) {
+            recGblRecordError(status, precord, "dbGetLinkValue");
+            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        }
+    } else if (plink->type == CA_LINK) {
+        struct dbCommon *precord = plink->value.pv_link.precord;
+        const struct pv_link *pcalink = &plink->value.pv_link;
+        unsigned short sevr;
 
-        status = dbCaPutLink(plink,dbrType,pbuffer, nRequest);
-        if(status < 0)
-            recGblSetSevr(psource,LINK_ALARM,INVALID_ALARM);
+        status = dbCaGetLink(plink, dbrType, pbuffer, &sevr, pnRequest);
+        if (status) {
+            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+        } else if (pcalink->pvlMask & pvlOptMS) {
+            recGblSetSevr(precord, LINK_ALARM, sevr);
+        }
+        if (poptions) *poptions = 0;
     } else {
-            cantProceed("dbPutLinkValue: Illegal link type");
+        cantProceed("dbGetLinkValue: Illegal link type");
     }
-    return(status);
+    return status;
+}
+
+long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
+    const void *pbuffer, long nRequest)
+{
+    long status = 0;
+
+    if (plink->type == DB_LINK) {
+        struct dbCommon *psource = plink->value.pv_link.precord;
+        struct pv_link *ppv_link = &plink->value.pv_link;
+        DBADDR *paddr = (DBADDR *)ppv_link->pvt;
+        dbCommon *pdest = paddr->precord;
+
+        status = dbPut(paddr, dbrType, pbuffer, nRequest);
+        if (ppv_link->pvlMask & pvlOptMS)
+            recGblSetSevr(pdest, LINK_ALARM, psource->nsev);
+        if (status) return status;
+
+        if (paddr->pfield == (void *)&pdest->proc ||
+            (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
+            /*if dbPutField caused asyn record to process */
+            /* ask for reprocessing*/
+            if (pdest->putf) {
+                pdest->rpro = TRUE;
+            } else { /* otherwise ask for the record to be processed*/
+                status = dbScanLink(psource, pdest);
+            }
+        }
+        if (status)
+            recGblSetSevr(psource, LINK_ALARM, INVALID_ALARM);
+    } else if (plink->type == CA_LINK) {
+        struct dbCommon *psource = plink->value.pv_link.precord;
+
+        status = dbCaPutLink(plink, dbrType, pbuffer, nRequest);
+        if (status < 0)
+            recGblSetSevr(psource, LINK_ALARM, INVALID_ALARM);
+    } else {
+        cantProceed("dbPutLinkValue: Illegal link type");
+    }
+    return status;
 }
 
 long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
-    void *pbuffer, long *options,long *nRequest,void *pflin)
+    void *pbuffer, long *options, long *nRequest, void *pflin)
 {
-    short	dbfType = paddr->field_type;
-    dbCommon	*precord = (dbCommon *)(paddr->precord);
-    long	status = 0;
+    short dbfType = paddr->field_type;
+    dbCommon *precord = paddr->precord;
+    long status = 0;
 
     dbScanLock(precord);
-    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK) {
-	DBENTRY	dbEntry;
-	dbFldDes *pfldDes = paddr->pfldDes;
-	char	*rtnString;
-	char	*pbuf = (char *)pbuffer;
+    if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
+        DBENTRY dbEntry;
+        dbFldDes *pfldDes = paddr->pfldDes;
+        char *rtnString;
+        char *pbuf = (char *)pbuffer;
 
-	if(dbrType!=DBR_STRING) {
-	    status = S_db_badDbrtype;
-	    goto done;
-	}
-	if (options && (*options))
-	    getOptions(paddr, &pbuf, options, pflin);
-	if(nRequest && *nRequest==0) goto done;
-	dbInitEntry(pdbbase,&dbEntry);
-	status = dbFindRecord(&dbEntry,precord->name);
-	if(!status) status = dbFindField(&dbEntry,pfldDes->name);
-	if(!status) {
-	    rtnString = dbGetString(&dbEntry);
-	    /*begin kludge for old db_access MAX_STRING_SIZE*/
-	    if(strlen(rtnString)>=MAX_STRING_SIZE) {
-	        strncpy(pbuf,rtnString,MAX_STRING_SIZE-1);
-	        pbuf[MAX_STRING_SIZE-1] = 0;
-	    } else {
-	        strcpy(pbuf,rtnString);
-	    }
-	    /*end kludge for old db_access MAX_STRING_SIZE*/
-	}
-	dbFinishEntry(&dbEntry);
+        if(dbrType!=DBR_STRING) {
+            status = S_db_badDbrtype;
+            goto done;
+        }
+
+        if (options && (*options))
+            getOptions(paddr, &pbuf, options, pflin);
+        if (nRequest && *nRequest == 0) goto done;
+        dbInitEntry(pdbbase, &dbEntry);
+        status = dbFindRecord(&dbEntry, precord->name);
+        if (!status) status = dbFindField(&dbEntry, pfldDes->name);
+        if (!status) {
+            rtnString = dbGetString(&dbEntry);
+            /*begin kludge for old db_access MAX_STRING_SIZE*/
+            if (strlen(rtnString) >= MAX_STRING_SIZE) {
+                strncpy(pbuf, rtnString, MAX_STRING_SIZE-1);
+                pbuf[MAX_STRING_SIZE-1] = 0;
+            } else {
+                strcpy(pbuf, rtnString);
+            }
+            /*end kludge for old db_access MAX_STRING_SIZE*/
+        }
+        dbFinishEntry(&dbEntry);
     } else {
-	status = dbGet(paddr,dbrType,pbuffer,options,nRequest,pflin);
+        status = dbGet(paddr, dbrType, pbuffer, options, nRequest, pflin);
     }
 done:
     dbScanUnlock(precord);
-    return(status);
+    return status;
 }
 
-long epicsShareAPI dbGet(DBADDR *paddr,short dbrType,
-    void *pbuffer,long *options,long *nRequest,void *pflin)
+long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
+    void *pbuffer, long *options, long *nRequest, void *pflin)
 {
-	db_field_log	*pfl= (db_field_log *)pflin;
-	long		no_elements=paddr->no_elements;
-	long 		offset;
-	struct rset	*prset;
-	short		field_type=paddr->field_type;
-	long		(*pconvert_routine)();
-	long		status = 0;
-	char		message[80];
+    db_field_log *pfl = (db_field_log *)pflin;
+    short field_type  = paddr->field_type;
+    long no_elements  = paddr->no_elements;
+    long offset;
+    struct rset *prset;
+    long status = 0;
 
-	if(paddr->special == SPC_ATTRIBUTE) {
-	    if(dbrType!=DBR_STRING) return(S_db_badDbrtype);
-	    if(!paddr->pfield) return(S_db_badField);
-	    strcpy((char *)pbuffer,(char *)paddr->pfield);
-	    return(0);
-	}
-	prset=dbGetRset(paddr);
-	if(options && (*options)) {
-		char *pbuf = pbuffer;
+    if (paddr->special == SPC_ATTRIBUTE) {
+        if (dbrType != DBR_STRING) return S_db_badDbrtype;
+        if (!paddr->pfield) return S_db_badField;
+        strcpy((char *)pbuffer, (char *)paddr->pfield);
+        return 0;
+    }
 
-		getOptions(paddr,&pbuf,options,pflin);
-		pbuffer = pbuf;
-	}
-        if(nRequest && *nRequest==0) return(0);
-	/* Check for valid request */
-	if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE) ){
-		sprintf(message,"dbGet - database request type is %d",dbrType);
-		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		return(S_db_badDbrtype);
-	}
-	/* check for array			*/
-	if( no_elements>1 && prset && (prset->get_array_info) ) {
-		status = (*prset->get_array_info)(paddr,&no_elements,&offset);
-	}
-	else offset=0;
-	if(offset==0 && (!nRequest || no_elements==1)) {
-		if(nRequest) *nRequest = 1;
-		if(pfl!=NULL) {
-		    DBADDR	localAddr;
+    if (options && *options) {
+        char *pbuf = pbuffer;
 
-		    localAddr = *paddr; /*Structure copy*/
-		    localAddr.pfield = (char *)&pfl->field;
-		    status = (*dbFastGetConvertRoutine[field_type][dbrType])
-				(localAddr.pfield,pbuffer, &localAddr);
-		} else {
-		    status = (*dbFastGetConvertRoutine[field_type][dbrType])
-				(paddr->pfield,pbuffer, paddr);
-		}
-	} else {
-		long	n;
+        getOptions(paddr, &pbuf, options, pflin);
+        pbuffer = pbuf;
+    }
+    if (nRequest && *nRequest == 0) return 0;
 
-		if(nRequest) {
-			if(no_elements<(*nRequest)) *nRequest = no_elements;
-			n = *nRequest;
-		} else {
-			n = 1;
-		}
-		pconvert_routine=dbGetConvertRoutine[field_type][dbrType];
-		if(!pconvert_routine) {
-			sprintf(message,"dbGet - database request type is %d",
-				dbrType);
-			recGblDbaddrError(S_db_badDbrtype,paddr,message);
-			return(S_db_badDbrtype);
-		}
-		/* convert database field  and place it in the buffer */
-		if(n<=0) {
-			;/*do nothing*/
-		} else if(pfl!=NULL) {
-		    DBADDR	localAddr;
-	
-		    localAddr = *paddr; /*Structure copy*/
-		    localAddr.pfield = (char *)&pfl->field;
-		    status=(*pconvert_routine)(&localAddr,pbuffer,n,
-				no_elements,offset);
-		} else {
-		    status=(*pconvert_routine)(paddr,pbuffer,n,
-				no_elements,offset);
-		}
-	}
-        return(status);
+    /* Check for valid request */
+    if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
+        char message[80];
+
+        sprintf(message, "dbGet: Request type is %d\n", dbrType);
+        recGblDbaddrError(S_db_badDbrtype, paddr, message);
+        return S_db_badDbrtype;
+    }
+
+    /* check for array */
+    prset = dbGetRset(paddr);
+    if (no_elements > 1 && prset && prset->get_array_info) {
+        status = prset->get_array_info(paddr, &no_elements, &offset);
+    } else
+        offset = 0;
+
+    if (offset == 0 && (!nRequest || no_elements == 1)) {
+        if (nRequest) *nRequest = 1;
+        if (pfl != NULL) {
+            DBADDR localAddr = *paddr; /* Structure copy */
+
+            localAddr.pfield = (char *)&pfl->field;
+            status = dbFastGetConvertRoutine[field_type][dbrType]
+                (localAddr.pfield, pbuffer, &localAddr);
+        } else {
+            status = dbFastGetConvertRoutine[field_type][dbrType]
+                (paddr->pfield, pbuffer, paddr);
+        }
+    } else {
+        long n;
+        long (*convert)();
+
+        if (nRequest) {
+            if (no_elements<(*nRequest)) *nRequest = no_elements;
+            n = *nRequest;
+        } else {
+            n = 1;
+        }
+        convert = dbGetConvertRoutine[field_type][dbrType];
+        if (!convert) {
+            char message[80];
+
+            sprintf(message, "dbGet: Missing conversion for [%d][%d]\n",
+                    field_type, dbrType);
+            recGblDbaddrError(S_db_badDbrtype, paddr, message);
+            return S_db_badDbrtype;
+        }
+        /* convert database field  and place it in the buffer */
+        if (n <= 0) {
+            ;/*do nothing*/
+        } else if (pfl) {
+            DBADDR localAddr = *paddr; /* Structure copy */
+
+            localAddr.pfield = (char *)&pfl->field;
+            status = convert(&localAddr, pbuffer, n, no_elements, offset);
+        } else {
+            status = convert(paddr, pbuffer, n, no_elements, offset);
+        }
+    }
+    return status;
 }
 
 devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
@@ -1234,145 +1257,149 @@ finish:
     return status;
 }
 
-long epicsShareAPI dbPutField(
-    DBADDR *paddr,short dbrType,const void *pbuffer,long  nRequest)
+long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
+    const void *pbuffer, long nRequest)
 {
     long	status = 0;
     long	special  = paddr->special;
     dbFldDes	*pfldDes = paddr->pfldDes;
-    dbCommon 	*precord = paddr->precord;
+    dbCommon	*precord = paddr->precord;
     short	dbfType  = paddr->field_type;
 
-    if(special==SPC_ATTRIBUTE)
+    if (special == SPC_ATTRIBUTE)
         return S_db_noMod;
 
     /*check for putField disabled*/
     if (precord->disp &&
         (void *)(&precord->disp) != paddr->pfield)
-        return(S_db_putDisabled);
+        return S_db_putDisabled;
 
-    if(dbfType>=DBF_INLINK && dbfType<=DBF_FWDLINK)
-        return dbPutFieldLink(paddr,dbrType,pbuffer,nRequest);
+    if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK)
+        return dbPutFieldLink(paddr, dbrType, pbuffer, nRequest);
 
     dbScanLock(precord);
-    status=dbPut(paddr,dbrType,pbuffer,nRequest);
-    if(status==0){
-        if((paddr->pfield==(void *)&precord->proc)
-	||(pfldDes->process_passive && precord->scan==0 
-	&& dbrType<DBR_PUT_ACKT)) {
-	    if(precord->pact) {
-		if(precord->tpro)
-		    printf("%s: Active %s\n",
+    status = dbPut(paddr, dbrType, pbuffer, nRequest);
+    if (status == 0) {
+        if (paddr->pfield == (void *)&precord->proc ||
+            (pfldDes->process_passive &&
+             precord->scan == 0 &&
+             dbrType < DBR_PUT_ACKT)) {
+            if (precord->pact) {
+                if (precord->tpro)
+                    printf("%s: Active %s\n",
                         epicsThreadGetNameSelf(), precord->name);
-		precord->rpro = TRUE;
-	    } else {
-		/*indicate that dbPutField called dbProcess*/
-		precord->putf = TRUE;
-		status=dbProcess(precord);
-	    }
-	}
+                precord->rpro = TRUE;
+            } else {
+                /* indicate that dbPutField called dbProcess */
+                precord->putf = TRUE;
+                status = dbProcess(precord);
+            }
+        }
     }
     dbScanUnlock(precord);
-    return(status);
+    return status;
 }
 
 static long putAckt(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
     long no_elements, long offset)
 {
-    dbCommon *precord=(dbCommon *)(paddr->precord);
+    dbCommon *precord = paddr->precord;
 
-    if(*pbuffer == precord->ackt) return(0);
+    if (*pbuffer == precord->ackt) return 0;
     precord->ackt = *pbuffer;
-    db_post_events(precord,&precord->ackt,DBE_VALUE|DBE_ALARM);
-    if(!precord->ackt && precord->acks>precord->sevr) {
-	precord->acks = precord->sevr;
-	db_post_events(precord,&precord->acks,DBE_VALUE|DBE_ALARM);
+    db_post_events(precord, &precord->ackt, DBE_VALUE | DBE_ALARM);
+    if (!precord->ackt && precord->acks > precord->sevr) {
+        precord->acks = precord->sevr;
+        db_post_events(precord, &precord->acks, DBE_VALUE | DBE_ALARM);
     }
-    db_post_events(precord,NULL,DBE_ALARM);
-    return(0);
+    db_post_events(precord, NULL, DBE_ALARM);
+    return 0;
 }
 
 static long putAcks(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
     long no_elements, long offset)
 {
-    dbCommon *precord=(dbCommon *)(paddr->precord);
+    dbCommon *precord = paddr->precord;
 
-    if(*pbuffer >= precord->acks) {
-	precord->acks = 0;
-	db_post_events(precord,NULL,DBE_ALARM);
-	db_post_events(precord,&precord->acks,DBE_VALUE|DBE_ALARM);
+    if (*pbuffer >= precord->acks) {
+        precord->acks = 0;
+        db_post_events(precord, NULL, DBE_ALARM);
+        db_post_events(precord, &precord->acks, DBE_VALUE | DBE_ALARM);
     }
-    return(0);
+    return 0;
 }
 
-long epicsShareAPI dbPut(DBADDR *paddr,short dbrType,
-    const void *pbuffer,long nRequest)
+long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
+    const void *pbuffer, long nRequest)
 {
-	long		no_elements=paddr->no_elements;
-	long		dummy;
-	long		offset;
-	struct rset	*prset;
-	dbCommon 	*precord=(dbCommon *)(paddr->precord);
-	long		status=0;
-	dbFldDes	*pfldDes;
-	long		special=paddr->special;
-	short		field_type=paddr->field_type;
-	int		isValueField;
-	char		message[80];
+    dbCommon *precord = paddr->precord;
+    short field_type  = paddr->field_type;
+    long no_elements  = paddr->no_elements;
+    long special      = paddr->special;
+    long offset;
+    long status = 0;
+    dbFldDes *pfldDes;
+    int isValueField;
 
-        if(special==SPC_ATTRIBUTE) return(S_db_noMod);
-	if(dbrType==DBR_PUT_ACKT && field_type<=DBF_DEVICE) {
-	    return putAckt(paddr,(const unsigned short*)pbuffer,1l,1l,0l);
-	} else if(dbrType==DBR_PUT_ACKS && field_type<=DBF_DEVICE) {
-	    return putAcks(paddr,(const unsigned short*)pbuffer,1l,1l,0l);
-	} else if( INVALID_DB_REQ(dbrType) || (field_type>DBF_DEVICE)) {
-		sprintf(message,"dbPut - database request type is %d",dbrType);
-		recGblDbaddrError(S_db_badDbrtype,paddr,message);
-		return(S_db_badDbrtype);
-	}
-	
-	prset=dbGetRset(paddr);
-	
-	/* check for special processing	is required */
-	if(special) {
-	    status = dbPutSpecial(paddr,0);
-	    if(status) return(status);
-	}
-	if(no_elements<=1) {
-		status = (*dbFastPutConvertRoutine[dbrType][field_type])
-			(pbuffer,paddr->pfield, paddr);
-	} else {
-		if(prset && (prset->get_array_info) ) {
-			status= (*prset->get_array_info)
-				(paddr,&dummy,&offset);
-		}
-		else offset=0;
-		if(no_elements<(nRequest)) nRequest = no_elements;
-		status=(*dbPutConvertRoutine[dbrType][field_type])
-			(paddr,pbuffer,nRequest,no_elements,offset);
-		/* update array info	*/
-		if(prset && (prset->put_array_info) && !status) {
-			status= (*prset->put_array_info)
-				(paddr,nRequest);
-		}
-	}
-	if(status) return(status);
+    if (special == SPC_ATTRIBUTE) return S_db_noMod;
 
-	/* check for special processing	is required */
-	if(special) {
-	    status = dbPutSpecial(paddr,1);
-	    if(status) return(status);
-	}
-	/* propagate events for this field */
-	/* if the field is VAL and pvlMask&pvlOptPP is true dont propagate*/
-	pfldDes = paddr->pfldDes;
-	isValueField = dbIsValueField(pfldDes);
-	if (isValueField) precord->udf=FALSE;
-	if(precord->mlis.count &&
-	(!isValueField || (!pfldDes->process_passive)))
-		db_post_events(precord,paddr->pfield,DBE_VALUE|DBE_LOG);
+    if (dbrType == DBR_PUT_ACKT && field_type <= DBF_DEVICE) {
+        return putAckt(paddr, (unsigned short *)pbuffer, 1, 1, 0);
+    } else if (dbrType == DBR_PUT_ACKS && field_type <= DBF_DEVICE) {
+        return putAcks(paddr, (unsigned short *)pbuffer, 1, 1, 0);
+    } else if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
+        char message[80];
 
-	return(status);
+        sprintf(message, "dbPut: Request type is %d", dbrType);
+        recGblDbaddrError(S_db_badDbrtype, paddr, message);
+        return S_db_badDbrtype;
+    }
+
+    if (special) {
+        status = dbPutSpecial(paddr, 0);
+        if (status) return status;
+    }
+
+    if (no_elements <= 1) {
+        status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
+            paddr->pfield, paddr);
+    } else {
+        struct rset *prset = dbGetRset(paddr);
+
+        if (prset && prset->get_array_info) {
+            long dummy;
+
+            status = prset->get_array_info(paddr, &dummy, &offset);
+        }
+        else
+            offset = 0;
+        if (no_elements < nRequest) nRequest = no_elements;
+        status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
+            nRequest, no_elements, offset);
+
+        /* update array info */
+        if (prset && prset->put_array_info && !status) {
+            status = prset->put_array_info(paddr, nRequest);
+        }
+    }
+    if (status) return status;
+
+    /* check if special processing is required */
+    if (special) {
+        status = dbPutSpecial(paddr,1);
+        if (status) return status;
+    }
+
+    /* Propagate monitor events for this field, */
+    /* unless the field field is VAL and PP is true. */
+    pfldDes = paddr->pfldDes;
+    isValueField = dbIsValueField(pfldDes);
+    if (isValueField) precord->udf = FALSE;
+    if (precord->mlis.count &&
+        !(isValueField && pfldDes->process_passive))
+        db_post_events(precord, paddr->pfield, DBE_VALUE | DBE_LOG);
+
+    return status;
 }
 
 /* various utility routines */

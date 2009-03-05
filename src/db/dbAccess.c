@@ -840,7 +840,7 @@ long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
                 (!pnRequest || *pnRequest == 1) &&
                 paddr->special != SPC_ATTRIBUTE) {
                 ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-                status = ppv_link->getCvt(paddr->pvalue, pbuffer, paddr);
+                status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
             } else {
                 ppv_link->getCvt = 0;
                 status = dbGet(paddr, dbrType, pbuffer, poptions, pnRequest, NULL);

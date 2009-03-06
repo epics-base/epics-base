@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -78,8 +78,9 @@ long dbcar(char *precordname, int level)
     while (!status) {
         status = dbFirstRecord(pdbentry);
         while (!status) {
-            if (!precordname
-            || (strcmp(precordname,dbGetRecordName(pdbentry)) ==0)) {
+            if (precordname ?
+                !strcmp(precordname, dbGetRecordName(pdbentry)) :
+                !dbIsAlias(pdbentry)) {
                 pdbRecordType = pdbentry->precordType;
                 precord = (dbCommon *)pdbentry->precnode->precord;
                 for (j=0; j<pdbRecordType->no_links; j++) {
@@ -171,19 +172,25 @@ void dbcaStats(int *pchans, int *pdiscon)
     status = dbFirstRecordType(pdbentry);
     while (!status) {
         dbRecordType *pdbRecordType = pdbentry->precordType;
+
         status = dbFirstRecord(pdbentry);
         while (!status) {
             dbCommon *precord = (dbCommon *)pdbentry->precnode->precord;
             int j;
-            for (j=0; j<pdbRecordType->no_links; j++) {
-                int i = pdbRecordType->link_ind[j];
-                dbFldDes *pdbFldDes = pdbRecordType->papFldDes[i];
-                plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-                if (plink->type == CA_LINK) {
-                    caLink *pca = (caLink *)plink->value.pv_link.pvt;
-                    ncalinks++;
-                    if (pca && ca_state(pca->chid) == cs_conn) {
-                        nconnected++;
+
+            if (!dbIsAlias(pdbentry)) {
+                for (j=0; j<pdbRecordType->no_links; j++) {
+                    int i = pdbRecordType->link_ind[j];
+
+                    dbFldDes *pdbFldDes = pdbRecordType->papFldDes[i];
+                    plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+                    if (plink->type == CA_LINK) {
+                        caLink *pca = (caLink *)plink->value.pv_link.pvt;
+
+                        ncalinks++;
+                        if (pca && ca_state(pca->chid) == cs_conn) {
+                            nconnected++;
+                        }
                     }
                 }
             }

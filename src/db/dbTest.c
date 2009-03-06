@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -183,7 +183,9 @@ long epicsShareAPI dbnr(int verbose)
     DBENTRY *pdbentry=&dbentry;
     long status;
     int nrecords;
-    int total = 0;
+    int naliases;
+    int trecords = 0;
+    int taliases = 0;
 
     if (!pdbbase) {
         printf("No database loaded\n");
@@ -191,16 +193,23 @@ long epicsShareAPI dbnr(int verbose)
     }
     dbInitEntry(pdbbase, pdbentry);
     status = dbFirstRecordType(pdbentry);
-    if (status) printf("No record types loaded\n");
+    if (status) {
+        printf("No record types loaded\n");
+        return 0;
+    }
+    printf("Records  Aliases  Record Type\n");
     while (!status) {
-        nrecords = dbGetNRecords(pdbentry);
-        total += nrecords;
+        naliases = dbGetNAliases(pdbentry);
+        taliases += naliases;
+        nrecords = dbGetNRecords(pdbentry) - naliases;
+        trecords += nrecords;
         if (verbose || nrecords)
-            printf("%4d %s\n", nrecords, dbGetRecordTypeName(pdbentry));
+            printf(" %5d    %5d    %s\n",
+                nrecords, naliases, dbGetRecordTypeName(pdbentry));
         status = dbNextRecordType(pdbentry);
     }
     dbFinishEntry(pdbentry);
-    printf("Total Records: %d\n", total);
+    printf("Total %d records, %d aliases\n", trecords, taliases);
     return 0;
 }
 

@@ -163,7 +163,7 @@ ifdef CREATESUBSTITUTIONS
 $(COMMON_DIR)/%.substitutions:
 	@echo "Create substitutions"
 	@$(RM) $@
-	$(CREATESUBSTITUTIONS) $(COMMON_DIR)/$*
+	$(CREATESUBSTITUTIONS) $@
 endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions

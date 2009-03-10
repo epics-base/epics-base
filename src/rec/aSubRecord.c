@@ -412,6 +412,7 @@ static long cvt_dbaddr(DBADDR *paddr)
     if (fieldIndex >= aSubRecordA &&
         fieldIndex <= aSubRecordU) {
         int offset = fieldIndex - aSubRecordA;
+
         paddr->pfield      = (&prec->a  )[offset];
         paddr->no_elements = (&prec->noa)[offset];
         paddr->field_type  = (&prec->fta)[offset];
@@ -419,13 +420,14 @@ static long cvt_dbaddr(DBADDR *paddr)
     else if (fieldIndex >= aSubRecordVALA &&
              fieldIndex <= aSubRecordVALU) {
         int offset = fieldIndex - aSubRecordVALA;
+
         paddr->pfield      = (&prec->vala)[offset];
         paddr->no_elements = (&prec->nova)[offset];
         paddr->field_type  = (&prec->ftva)[offset];
     }
     else {
         errlogPrintf("aSubRecord::cvt_dbaddr called for %s.%s\n",
-            prec->name, ((dbFldDes *)paddr->pfldDes)->name);
+            prec->name, paddr->pfldDes->name);
         return 0;
     }
     paddr->dbr_field_type = paddr->field_type;
@@ -449,7 +451,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
     }
     else {
         errlogPrintf("aSubRecord::get_array_info called for %s.%s\n",
-            prec->name, ((dbFldDes *)paddr->pfldDes)->name);
+            prec->name, paddr->pfldDes->name);
     }
     *offset = 0;
 
@@ -472,7 +474,7 @@ static long put_array_info(DBADDR *paddr, long nNew)
     }
     else {
         errlogPrintf("aSubRecord::put_array_info called for %s.%s\n",
-            prec->name, ((dbFldDes *)paddr->pfldDes)->name);
+            prec->name, paddr->pfldDes->name);
     }
     return 0;
 }

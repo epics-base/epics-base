@@ -247,7 +247,7 @@ PROD_LDLIBS += $(addsuffix .lib, \
 
 LDLIBS_STATIC_YES = LDLIBS
 LDLIBS_SHARED_NO = LDLIBS
-PROD_LDLIBS += $($(firstword $(LDLIBS_STATIC_$(STATIC_BUILD)) \
+PROD_LDLIBS += $(STATIC_LDLIBS) $($(firstword $(LDLIBS_STATIC_$(STATIC_BUILD)) \
                $(LDLIBS_SHARED_$(SHARED_LIBRARIES))))
 
 #--------------------------------------------------

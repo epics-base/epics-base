@@ -32,7 +32,7 @@ SHRLIBNAME_YES = $(BUILD_LIBRARY:%=$(LIB_PREFIX)%$(SHRLIB_SUFFIX))
 LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX))
 
 #-------------------------------------------------------
-# shrlib: DEPLIBS, LDFLAGS, and LDLIBS definitions
+# shrlib: SHRLIB_DEPLIBS, SHRLIB_LDLIBS and SHRLIBDIR_LDFLAGS definitions
 
 # SHRLIB_LIBS deprecated
 LIB_LIBS += $(SHRLIB_LIBS)
@@ -43,16 +43,18 @@ SHRLIB_DEPLIBS=$(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
 	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
-SHRLIB_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(LIB_LIBS) $(USR_LIBS) \
- $($*_SYS_LIBS) $(LIB_SYS_LIBS) $(USR_SYS_LIBS)) $(LDLIBS)
+SHRLIB_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(LIB_LIBS) $(USR_LIBS))\
+ $(STATIC_LDLIBS) \
+ $(addprefix -l, $($*_SYS_LIBS) $(LIB_SYS_LIBS) $(USR_SYS_LIBS)) \
+ $(LDLIBS)
 
 SHRLIB_DEPLIB_DIRS = $(foreach word,$(sort $(dir $($*_DEPLIBS) $(SHRLIB_DEPLIBS))), \
-  $(shell $(PERL) $(TOOLS)/fullPathName.pl $(word)))
+   $(shell $(PERL) $(TOOLS)/fullPathName.pl $(word)))
 
 SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-L%)
 
 #-------------------------------------------------------
-# Prod: DEPLIBS, LDFLAGS, and LDLIBS definitions
+# Prod: PROD_DEPLIBS, PROD_LDLIBS and PRODDIR_LDFLAGS definitions
 
 PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
 	$(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib).*, \
@@ -60,8 +62,14 @@ PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
 	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
-PROD_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(PROD_LIBS) $(USR_LIBS)\
- $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
+PROD_LIBS_ARCHIVE=$(patsubst $(LIB_PREFIX)%$(LIB_SUFFIX),%,\
+ $(filter %$(LIB_SUFFIX),$(notdir $($*_DEPLIBS) $(PROD_DEPLIBS))))
+PROD_LIBS_SHARED=$(patsubst $(LIB_PREFIX)%$(SHRLIB_SUFFIX),%,\
+ $(filter %$(SHRLIB_SUFFIX),$(notdir $($*_DEPLIBS) $(PROD_DEPLIBS))))
+
+PROD_LDLIBS = $(addprefix -l, $(PROD_LIBS_ARCHIVE))\
+ $(STATIC_LDLIBS) \
+ $(addprefix -l, $(PROD_LIBS_SHARED) $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
 
 LDLIBS_STATIC_YES = LDLIBS
 LDLIBS_SHARED_NO = LDLIBS

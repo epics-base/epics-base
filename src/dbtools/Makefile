@@ -28,7 +28,7 @@ HTMLS += dbLoadTemplate.html
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)
 OBJLIB_vxWorks=dbtoolsIoc
-OBJLIB_SRCS = $(LIBSRCS)
+OBJLIB_SRCS = $(LIB_SRCS)
 endif
 
 include $(TOP)/configure/RULES

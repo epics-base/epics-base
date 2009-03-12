@@ -67,7 +67,7 @@ DIRS += dev
 dev_DEPEND_DIRS = rec misc
 
 DIRS += vxWorks
-vxWorks_DEPEND_DIRS = ca
+vxWorks_DEPEND_DIRS = registry misc dbtools
 
 DIRS += RTEMS
 RTEMS_DEPEND_DIRS = libCom

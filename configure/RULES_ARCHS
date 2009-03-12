@@ -42,7 +42,8 @@ buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
-ifeq ($(findstring j,$(MAKEFLAGS)),j)
+# j is NOT found in MAKEFLAGS when using make 3.8.1
+#ifeq ($(findstring j,$(MAKEFLAGS)),j)
 
 define DEP_template
 $(2): $$(EPICS_HOST_ARCH)
@@ -52,8 +53,7 @@ endef
 $(foreach action, $(ACTIONS), $(foreach arch,\
       $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
 
-endif
-
+#endif
 #*************************************************************************
 
 $(actionArchTargets) : $(buildDirs) O.Common

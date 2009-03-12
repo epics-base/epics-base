@@ -33,8 +33,9 @@ DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. $(INSTALL_DBFLAGS) $(RELEASE_DBF
 # Following line added for backward compatibilty
 DBD += $(DBDNAME)
 
-DBD += $(addsuffix .dbd,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
-INC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
+DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC)))
+DBD += $(addsuffix .dbd,$(DBDINC_NAME))
+INC += $(addsuffix .h,$(DBDINC_NAME))
 
 INSTALL_DBDS += $(addprefix $(INSTALL_DBD)/,$(notdir $(DBD)))
 
@@ -90,8 +91,8 @@ ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
 
-HINC += $(addsuffix .h,$(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC))))
-COMMON_DBDINC += $(addprefix $(COMMON_DIR),$(HINC))
+HINC += $(addsuffix .h,$(DBDINC_NAME))
+COMMON_DBDINC += $(addprefix $(COMMON_DIR)/,$(HINC))
 
 DBDDEPENDS_FILES += $(addsuffix $(DEP),$(COMMON_DBDS) \
                     $(COMMON_DBDINC) $(COMMON_DBS))
@@ -189,18 +190,30 @@ $(INSTALL_DB)/%.template: %.template
 ##################################################### INC files
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
 
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
+	@$(RM) $@$(DEP)
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTOMENUH) $< $@
 

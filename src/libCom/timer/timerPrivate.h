@@ -18,6 +18,8 @@
 #ifndef epicsTimerPrivate_h
 #define epicsTimerPrivate_h
 
+#include <typeinfo>
+
 #include "tsFreeList.h"
 #include "epicsSingleton.h"
 #include "tsDLList.h"
@@ -86,6 +88,8 @@ private:
     friend class timerQueue;
 };
 
+using std :: type_info;
+
 class timerQueue : public epicsTimerQueue {
 public:
     timerQueue ( epicsTimerQueueNotify &notify );
@@ -103,7 +107,11 @@ private:
     epicsTimerQueueNotify & notify;
     timer * pExpireTmr;
     epicsThreadId processThread;
+    epicsTime exceptMsgTimeStamp;
     bool cancelPending;
+    static const double exceptMsgMinPeriod;
+    void printExceptMsg ( const char * pName, 
+                const type_info & type );
 	timerQueue ( const timerQueue & );
     timerQueue & operator = ( const timerQueue & );
     friend class timer;

@@ -1,14 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*epicsString.c*/
-/*Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum, Mark Rivers*/
+/* $Id$ */
+
+/* Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum,
+ *          Mark Rivers, Andrew Johnson
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +24,7 @@
 #include "cantProceed.h"
 #include "epicsString.h"
 
-epicsShareFunc int dbTranslateEscape(char *to, const char *from)
+int dbTranslateEscape(char *to, const char *from)
 {
     const char *pfrom  = from;
     char       *pto = to;
@@ -88,8 +90,7 @@ epicsShareFunc int dbTranslateEscape(char *to, const char *from)
     return(nto);
 }
 
-epicsShareFunc int epicsStrCaseCmp(
-    const char *s1, const char *s2)
+int epicsStrCaseCmp(const char *s1, const char *s2)
 {
     int nexts1,nexts2;
     
@@ -106,8 +107,7 @@ epicsShareFunc int epicsStrCaseCmp(
     }
 }
 
-epicsShareFunc int epicsStrnCaseCmp(
-    const char *s1, const char *s2, int n)
+int epicsStrnCaseCmp(const char *s1, const char *s2, int n)
 {
     size_t ind = 0;
     int nexts1,nexts2;
@@ -127,13 +127,12 @@ epicsShareFunc int epicsStrnCaseCmp(
     return(0);
 }
 
-epicsShareFunc char * epicsStrDup(const char *s)
+char * epicsStrDup(const char *s)
 {
     return strcpy(mallocMustSucceed(strlen(s)+1,"epicsStrDup"),s);
 }
 
-epicsShareFunc int epicsStrPrintEscaped(
-    FILE *fp, const char *s, int n)
+int epicsStrPrintEscaped(FILE *fp, const char *s, int n)
 {
    int nout=0;
    while (n--) {
@@ -162,8 +161,8 @@ epicsShareFunc int epicsStrPrintEscaped(
    return nout;
 }
 
-epicsShareFunc int epicsStrSnPrintEscaped(
-    char *outbuf, int outsize, const char *inbuf, int inlen)
+int epicsStrSnPrintEscaped(char *outbuf, int outsize, const char *inbuf,
+    int inlen)
 {
    int maxout = outsize;
    int nout = 0;
@@ -205,8 +204,7 @@ epicsShareFunc int epicsStrSnPrintEscaped(
    return nout;
 }
 
-epicsShareFunc int epicsStrGlobMatch(
-    const char *str, const char *pattern)
+int epicsStrGlobMatch(const char *str, const char *pattern)
 {
     const char *cp=NULL, *mp=NULL;
     
@@ -237,7 +235,7 @@ epicsShareFunc int epicsStrGlobMatch(
     return !*pattern;
 }
 
-epicsShareFunc char * epicsStrtok_r(char *s, const char *delim, char **lasts)
+char * epicsStrtok_r(char *s, const char *delim, char **lasts)
 {
    const char *spanp;
    int c, sc;
@@ -282,3 +280,30 @@ cont:
       } while (sc != 0);
    }
 }
+
+
+unsigned int epicsStrHash(const char *str, unsigned int seed)
+{
+    unsigned int hash = seed;
+    char c;
+
+    while ((c = *str++)) {
+        hash ^= ~((hash << 11) ^ c ^ (hash >> 5));
+        if (!(c = *str++)) break;
+        hash ^= (hash << 7) ^ c ^ (hash >> 3);
+    }
+    return hash;
+}
+
+unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed)
+{
+    unsigned int hash = seed;
+
+    while (length--) {
+        hash ^= ~((hash << 11) ^ *str++ ^ (hash >> 5));
+        if (!length--) break;
+        hash ^= (hash << 7) ^ *str++ ^ (hash >> 3);
+    }
+    return hash;
+}
+

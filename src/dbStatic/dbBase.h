@@ -140,7 +140,7 @@ typedef struct dbRecordType {
 	short		no_fields;	/* number of fields defined	*/
 	short		no_prompt;	/* number of fields to configure*/
 	short		no_links;	/* number of links		*/
-	short		no_aliases;
+	short		no_aliases;	/* number of aliases in recList */
 	short		*link_ind;	/* addr of array of ind in papFldDes*/
 	char		**papsortFldName;/* ptr to array of ptr to fld names*/
 	short		*sortFldInd;	/* addr of array of ind in papFldDes*/
@@ -152,6 +152,9 @@ typedef struct dbRecordType {
 	int		rec_size;	/*record size in bytes          */
 }dbRecordType;
 
+struct dbPvd;           /* Contents private to dbPvdLib code */
+struct gphPvt;          /* Contents private to gpHashLib code */
+
 typedef struct dbBase {
 	ELLLIST		menuList;
 	ELLLIST		recordTypeList;
@@ -159,10 +162,10 @@ typedef struct dbBase {
 	ELLLIST		registrarList;
 	ELLLIST		functionList;
 	ELLLIST		variableList;
-	ELLLIST		bptList;	/*Break Point Table Head*/
+	ELLLIST		bptList;
 	void		*pathPvt;
-	void		*ppvd;      /* pointer to process variable directory*/
-	void		*pgpHash;	/*General purpose Hash Table*/
+	struct dbPvd	*ppvd;
+	struct gphPvt	*pgpHash;
 	short		ignoreMissingMenus;
 	short		loadCdefs;
 }dbBase;

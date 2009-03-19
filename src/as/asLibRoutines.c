@@ -113,7 +113,7 @@ long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction)
 	pasg->pavalue = asCalloc(CALCPERFORM_NARGS, sizeof(double));
 	pasg = (ASG *)ellNext((ELLNODE *)pasg);
     }
-    gphInitPvt(&((ASBASE *)pasbasenew)->phash,256);
+    gphInitPvt(&pasbasenew->phash, 256);
     /*Hash each uagname and each hagname*/
     puag = (UAG *)ellFirst(&pasbasenew->uagList);
     while(puag) {

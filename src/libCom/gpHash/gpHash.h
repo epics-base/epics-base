@@ -7,13 +7,13 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* gpHash.h */
-/* share/epicsH $Id$ */
+/* $Id$ */
 /* Author:  Marty Kraimer Date:    04-07-94 */
 
 /* gph provides a general purpose directory accessed via a hash table*/
-#ifndef INCgpHashh
-#define INCgpHashh 1
+
+#ifndef INC_gpHash_H
+#define INC_gpHash_H
 
 #include "shareLib.h"
 
@@ -26,24 +26,27 @@ typedef struct{
     void	*userPvt;	/*private for user*/
 } GPHENTRY;
 
+struct gphPvt;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*tableSize must be power of 2 in range 256 to 65536*/
-epicsShareFunc void epicsShareAPI gphInitPvt(void **ppvt,int tableSize);
-epicsShareFunc GPHENTRY * epicsShareAPI
-    gphFind(void *pvt,const char *name,void *pvtid);
-epicsShareFunc GPHENTRY * epicsShareAPI
-    gphAdd(void *pvt,const char *name,void *pvtid);
 epicsShareFunc void epicsShareAPI
-    gphDelete(void *pvt,const char *name,void *pvtid);
-epicsShareFunc void epicsShareAPI gphFreeMem(void *pvt);
-epicsShareFunc void epicsShareAPI gphDump(void *pvt);
-epicsShareFunc void epicsShareAPI gphDumpFP(FILE *fp,void *pvt);
+    gphInitPvt(struct gphPvt **ppvt, int tableSize);
+epicsShareFunc GPHENTRY * epicsShareAPI
+    gphFind(struct gphPvt *pvt, const char *name, void *pvtid);
+epicsShareFunc GPHENTRY * epicsShareAPI
+    gphAdd(struct gphPvt *pvt, const char *name, void *pvtid);
+epicsShareFunc void epicsShareAPI
+    gphDelete(struct gphPvt *pvt, const char *name, void *pvtid);
+epicsShareFunc void epicsShareAPI gphFreeMem(struct gphPvt *pvt);
+epicsShareFunc void epicsShareAPI gphDump(struct gphPvt *pvt);
+epicsShareFunc void epicsShareAPI gphDumpFP(FILE *fp, struct gphPvt *pvt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*INCgpHashh*/
+#endif /* INC_gpHash_H */

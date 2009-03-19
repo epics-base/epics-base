@@ -126,12 +126,14 @@ epicsShareExtern int asActive;
 /* definition of access rights*/
 typedef enum{asNOACCESS,asREAD,asWRITE} asAccessRights;
 
+struct gphPvt;
+
 /*Base pointers for access security*/
 typedef struct asBase{
 	ELLLIST	uagList;
 	ELLLIST	hagList;
 	ELLLIST	asgList;
-	void	*phash;
+	struct gphPvt *phash;
 } ASBASE;
 
 epicsShareExtern volatile ASBASE *pasbase;

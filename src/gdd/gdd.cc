@@ -973,7 +973,9 @@ gddStatus gdd::convertOffsetsToAddress(void)
 		else if(isScalar())
 		{
 			if(primitiveType()==aitEnumFixedString)
+			{
 				if(data.FString) setData(pdd+dp);
+			}
 			else if(primitiveType()==aitEnumString)
 			{
 				str=(aitString*)dataAddress();
@@ -1051,7 +1053,9 @@ gddStatus gdd::convertAddressToOffsets(void)
 		{
 			// handle the special string scalar cases
 			if(primitiveType()==aitEnumFixedString)
+			{
 				if(data.FString) setData((gdd*)(dp-pdd));
+			}
 			else if(primitiveType()==aitEnumString)
 			{
 				str=(aitString*)dataAddress();

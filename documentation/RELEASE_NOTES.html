@@ -13,6 +13,23 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New hash functions in epicsString.h</h4>
+
+<p>The existing routines used to hash strings have been replaced by a new pair
+of functions that are prototyped in the epicsString.h header file:</p>
+
+<pre>unsigned int epicsStrHash(const char *str, unsigned int seed);
+unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed);
+</pre>
+
+<p>The seed argument should normally be zero, but can be used to chain several
+hash calculations together to create a single value from multiple strings or
+memory buffers.  The resulting value should be masked with the appropriate
+number of bits for the desired hash width. These functions both use the same
+algorithm, and on most CPUs should be faster that the previous hash functions
+used in Base.  Use epicsStrHash() on nil-terminated strings, epicsMemHash() if
+the data might contain zero bytes.</p>
+
 <h4>Support for dynamic loading</h4>
 
 <p>The existing OSI epicsFindSymbol API has been expanded to support dynamic

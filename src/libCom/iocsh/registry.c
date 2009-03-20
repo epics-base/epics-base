@@ -23,7 +23,7 @@
 #include "gpHash.h"
 #include "registry.h"
 
-static void *gphPvt = 0;
+static struct gphPvt *gphPvt = 0;
 
 static void registryInit(int tableSize)
 {

@@ -3,6 +3,8 @@
 <html>
 <head>
   <meta content="text/html; charset=iso-8859-1">
+  <meta content="text/html; charset=iso-8859-1">
+  <meta content="text/html; charset=iso-8859-1">
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS Base R3.14.x Release Notes</title>
 </head>
@@ -13,22 +15,28 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<p></p>
+
+<h3>Darwin no longer uses _environ</h3>
+
+<p>The Darwin version of epicsEnvShow (in src/libCom/osi/os/Darwin/osdEnv.c)
+now uses _NSGetEnviron() to get the pointer to the environment string
+table.</p>
+
 <h4>New hash functions in epicsString.h</h4>
 
-<p>The existing routines used to hash strings have been replaced by a new pair
-of functions that are prototyped in the epicsString.h header file:</p>
-
+<p>The existing routines used to hash strings have been replaced by a new
+pair of functions that are prototyped in the epicsString.h header file:</p>
 <pre>unsigned int epicsStrHash(const char *str, unsigned int seed);
-unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed);
-</pre>
+unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed);</pre>
 
-<p>The seed argument should normally be zero, but can be used to chain several
-hash calculations together to create a single value from multiple strings or
-memory buffers.  The resulting value should be masked with the appropriate
-number of bits for the desired hash width. These functions both use the same
-algorithm, and on most CPUs should be faster that the previous hash functions
-used in Base.  Use epicsStrHash() on nil-terminated strings, epicsMemHash() if
-the data might contain zero bytes.</p>
+<p>The seed argument should normally be zero, but can be used to chain
+several hash calculations together to create a single value from multiple
+strings or memory buffers.  The resulting value should be masked with the
+appropriate number of bits for the desired hash width. These functions both
+use the same algorithm, and on most CPUs should be faster that the previous
+hash functions used in Base.  Use epicsStrHash() on nil-terminated strings,
+epicsMemHash() if the data might contain zero bytes.</p>
 
 <h4>Support for dynamic loading</h4>
 
@@ -41,37 +49,37 @@ IOC, you must include the <tt>dlload.dbd</tt> file; the command will then be
 installed when the IOC's <tt>ioc_registerRecordDeviceDriver</tt> routine is
 run.</p>
 
-<p>To dynamically load a new routine for use with the sub or aSub record types,
-you also have to register the subroutines at runtime. You can use the EPICS
-build system and the registerRecordDeviceDriver.pl script to write the necessary
-code for you, you just have to create a .dbd file that declares the functions in
-the library and add the derived .cpp file to the library sources. The product of
-your build should be a <tt>LOADABLE_LIBRARY</tt> to ensure that the correct
-linker commands are used.</p>
+<p>To dynamically load a new routine for use with the sub or aSub record
+types, you also have to register the subroutines at runtime. You can use the
+EPICS build system and the registerRecordDeviceDriver.pl script to write the
+necessary code for you, you just have to create a .dbd file that declares the
+functions in the library and add the derived .cpp file to the library
+sources. The product of your build should be a <tt>LOADABLE_LIBRARY</tt> to
+ensure that the correct linker commands are used.</p>
 
 <p>After a shared library is loaded into the IOC using the new iocsh
 <tt>dlload</tt> command you will usually have to run the
-<tt>lib_registerRecordDeviceDriver</tt> routine to register the components that
-were mentioned in the .dbd file. After registration the functions can be found
-as normal by setting the SNAM field of your sub or aSub record instances. Once
-loaded, shared libraries cannot be unloaded again as there is no way to be sure
-that some other part of the IOC doesn't still have a pointer to something inside
-the module.</p>
+<tt>lib_registerRecordDeviceDriver</tt> routine to register the components
+that were mentioned in the .dbd file. After registration the functions can be
+found as normal by setting the SNAM field of your sub or aSub record
+instances. Once loaded, shared libraries cannot be unloaded again as there is
+no way to be sure that some other part of the IOC doesn't still have a
+pointer to something inside the module.</p>
 
 <p>Components provided by a shared library can include functions for sub and
-aSub records, iocsh commands, time providers and sequence programs. Record and
-device support code may be possible, but there are complications in creating the
-.dbd file so we don't recommend it yet. It is possible to load libraries after
-iocInit, but the code is not re-entrant so should only be used from the main
-thread.  Adding new record types or device support will not work after
-iocInit.</p>
+aSub records, iocsh commands, time providers and sequence programs. Record
+and device support code may be possible, but there are complications in
+creating the .dbd file so we don't recommend it yet. It is possible to load
+libraries after iocInit, but the code is not re-entrant so should only be
+used from the main thread.  Adding new record types or device support will
+not work after iocInit.</p>
 
 <h4>Perl5 CA library</h4>
 
-<p>The <tt>CA::put</tt> and <tt>CA::put_callback</tt> methods now use the native
-type of the PV to determine which data type to use in all cases; earlier
-versions looked at the Perl data type for single-valued PVs, but this was
-truncating some double values into integers.</p>
+<p>The <tt>CA::put</tt> and <tt>CA::put_callback</tt> methods now use the
+native type of the PV to determine which data type to use in all cases;
+earlier versions looked at the Perl data type for single-valued PVs, but this
+was truncating some double values into integers.</p>
 
 <h4>generalTime and epicsTime updates</h4>
 
@@ -79,58 +87,67 @@ truncating some double values into integers.</p>
 new API routines in epicsTime.h <tt>epicsTimeGetCurrentInt()</tt> and
 <tt>epicsTimeGetEventInt()</tt> will check the most recently successful
 current-time or event-time provider and forward requests to the routine
-registered by that provider, if any.  The priority list is not traversed, so if
-the latest provider has not registered an interrupt-safe routine by calling
-<tt>generalTimeAddIntCurrentProvider()</tt> or
+registered by that provider, if any.  The priority list is not traversed, so
+if the latest provider has not registered an interrupt-safe routine by
+calling <tt>generalTimeAddIntCurrentProvider()</tt> or
 <tt>generalTimeAddIntEventProvider()</tt> as appropriate, these API routines
-will return failure.  The resulting timestamp is not protected against backwards
-movement either.</p>
+will return failure.  The resulting timestamp is not protected against
+backwards movement either.</p>
 
 <p>Added a routine <tt>generalTimeHighestCurrentName()</tt> which returns the
 name of the highest prority registered current time provider.  Comparing this
-with the name returned by <tt>generalTimeCurrentProviderName()</tt> permits an
-alarm to be generated if an IOC is not able to use the time provider it was
-designed to use. The General Time stringin device support keyword
+with the name returned by <tt>generalTimeCurrentProviderName()</tt> permits
+an alarm to be generated if an IOC is not able to use the time provider it
+was designed to use. The General Time stringin device support keyword
 <tt>@TOPTCP</tt> has been added to make this name available in a database
 record.</p>
 
-<p>The following routines have been renamed, but the old name may still be used
-since a macro with the old name has been added:</p>
+<p>The following routines have been renamed, but the old name may still be
+used since a macro with the old name has been added:</p>
 
 <blockquote>
-<table border=1>
-  <tr>
-    <th>Old Name</th>
-    <th>New Name</th></tr>
-  <tr>
-    <td><tt>generalTimeCurrentTpRegister</tt></td>
-    <td><tt>generalTimeRegisterCurrentProvider</tt></td></tr>
-  <tr>
-    <td><tt>generalTimeEventTpRegister</tt></td>
-    <td><tt>generalTimeRegisterEventProvider</tt></td></tr>
-  <tr>
-    <td><tt>generalTimeCurrentTpName</tt></td>
-    <td><tt>generalTimeCurrentProviderName</tt></td></tr>
-  <tr>
-    <td><tt>generalTimeEventTpName</tt></td>
-    <td><tt>generalTimeEventProviderName</tt></td></tr>
-</table>
+
+  <table border="1">
+    <tbody>
+      <tr>
+        <th>Old Name</th>
+        <th>New Name</th>
+      </tr>
+      <tr>
+        <td><tt>generalTimeCurrentTpRegister</tt></td>
+        <td><tt>generalTimeRegisterCurrentProvider</tt></td>
+      </tr>
+      <tr>
+        <td><tt>generalTimeEventTpRegister</tt></td>
+        <td><tt>generalTimeRegisterEventProvider</tt></td>
+      </tr>
+      <tr>
+        <td><tt>generalTimeCurrentTpName</tt></td>
+        <td><tt>generalTimeCurrentProviderName</tt></td>
+      </tr>
+      <tr>
+        <td><tt>generalTimeEventTpName</tt></td>
+        <td><tt>generalTimeEventProviderName</tt></td>
+      </tr>
+    </tbody>
+  </table>
 </blockquote>
 
-<p>The routine <tt>generalTimeCreateSyncTimer()</tt> was not useful in practice
-due to time provider initialization issues, nor was its implementation protected
-properly for use on SMP systems so it has been deleted.  The deprecated and
-empty <tt>synchronize()</tt> method from the epicsTime class has also gone.</p>
+<p>The routine <tt>generalTimeCreateSyncTimer()</tt> was not useful in
+practice due to time provider initialization issues, nor was its
+implementation protected properly for use on SMP systems so it has been
+deleted.  The deprecated and empty <tt>synchronize()</tt> method from the
+epicsTime class has also gone.</p>
 
 <h4>RTEMS Release</h4>
 
-<p>RTEMS release 4.10 or newer is required.  EPICS now uses
-unified executive/malloc memory pools.</p>
+<p>RTEMS release 4.10 or newer is required.  EPICS now uses unified
+executive/malloc memory pools.</p>
 
 <h4>RTEMS</h4>
 
-<p>RTEMS stack sizes have been reduced.  This allows more clients in
-machines with limited memory.</p>
+<p>RTEMS stack sizes have been reduced.  This allows more clients in machines
+with limited memory.</p>
 
 <p>RTEMS file descriptor allocation has been increased.</p>
 
@@ -139,41 +156,45 @@ machines with limited memory.</p>
 <p>Record definitions can declare their own alias names along with the field
 values, or a separate alias statement can also be used:</p>
 
-<blockquote><pre>record(ai,"canonicalName")
+<blockquote>
+  <pre>record(ai,"canonicalName")
 {
    alias("firstAlias")
 }
-alias("canonicalName","secondAlias")</pre></blockquote>
+alias("canonicalName","secondAlias")</pre>
+</blockquote>
 
-<p>Aliases can only be created for records that have already been loaded by the
-IOC, although they don't have to appear in the same .db file. A CA client can
-discover that a record name is an alias by fetching its .NAME field, which will
-always return the canonical name for the record. These new routines in the
-dbStaticLib library handle aliases:</p>
+<p>Aliases can only be created for records that have already been loaded by
+the IOC, although they don't have to appear in the same .db file. A CA client
+can discover that a record name is an alias by fetching its .NAME field,
+which will always return the canonical name for the record. These new
+routines in the dbStaticLib library handle aliases:</p>
 
-<blockquote><pre>long dbCreateAlias(DBENTRY *pdbentry, const char *paliasName);
+<blockquote>
+  <pre>long dbCreateAlias(DBENTRY *pdbentry, const char *paliasName);
 int dbIsAlias(DBENTRY *pdbentry);
 int dbGetNAliases(DBENTRY *pdbentry)
-long dbDeleteAliases(DBENTRY *pdbentry);</pre></blockquote>
+long dbDeleteAliases(DBENTRY *pdbentry);</pre>
+</blockquote>
 
 <p>Aliases are located using the existing record instance API. Use
 <tt>dbIsAlias()</tt> to test whether a record is actually an alias or not.
 Aliasees can be deleted like record instances using <tt>dbDeleteRecord()</tt>
-which will not delete the underlying record if the DBENTRY refers to the alias
-(deleting a record instance does delete all its aliases though).  The
-<tt>dbDeleteAliases()</tt> routine deletes all aliases of the selected record,
-and will return an error if used on an alias.</p>
+which will not delete the underlying record if the DBENTRY refers to the
+alias (deleting a record instance does delete all its aliases though).  The
+<tt>dbDeleteAliases()</tt> routine deletes all aliases of the selected
+record, and will return an error if used on an alias.</p>
 
-<p>Any out-of-tree tools that scan through all the records in the database using
-<tt>dbFirstRecord()</tt> and <tt>dbNextRecord()</tt> may need modifying to avoid
-duplicate processing of aliased record instances.  Also note that the set of
-info items for a record instance are not shared with its aliases, which each
-have their own info item namespace.</p>
+<p>Any out-of-tree tools that scan through all the records in the database
+using <tt>dbFirstRecord()</tt> and <tt>dbNextRecord()</tt> may need modifying
+to avoid duplicate processing of aliased record instances.  Also note that
+the set of info items for a record instance are not shared with its aliases,
+which each have their own info item namespace.</p>
 
 <h4>Added support for RTEMS-mvme2700</h4>
 
-<p>Supplied by Matt Rippa &lt;mrippa@gemini.edu&gt;. Should work for MVME2400,
-too.</p>
+<p>Supplied by Matt Rippa &lt;mrippa@gemini.edu&gt;. Should work for
+MVME2400, too.</p>
 
 <h4>CA Commandline tools: priority support</h4>
 
@@ -235,7 +256,7 @@ providers.</p>
 
 <p>A Current Time Provider reports the current wall-clock time if it is able
 to when asked; if it can't it says so, and the time subsystem will then ask
-the next provider in its list and so on until someone replies with the time. 
+the next provider in its list and so on until someone replies with the time.
 Event Time providers are handled similarly, except that they are asked for
 the timestamp associated with a particular Time Event number rather than the
 current wall-clock time. The registered time providers can be listed using
@@ -266,7 +287,7 @@ with Base can be found in the IOC Application Developers Guide for R3.14.10,
 sections 9.7 and 20.6. General Time was originally written by David H.
 Thompson and Sheng Peng at ORNL, subsequently worked on by Babak Kalantari
 and Timo Korhonen of PSI, and merged into Base by Peter Denison from Diamond.
- Andrew Johnson provided input into the design at various points and made
+Andrew Johnson provided input into the design at various points and made
 various code revisions after the merge.</p>
 
 <h4>New ioc/dllPath.bat file for Win32</h4>
@@ -314,7 +335,7 @@ differences between genSub and aSub are:</p>
     footprint of unneeded fields.</li>
   <li>aSub subroutines can be asynchronous, using the usual method of setting
     prec-&gt;pact to <tt>TRUE</tt> before returning and arranging for the
-    record's <tt>process()</tt> routine to be called to signal completion. 
+    record's <tt>process()</tt> routine to be called to signal completion.
     The output links are not written until the asynchronous completion
     callback, and input links are not read at asnychronous completion.</li>
 </ul>

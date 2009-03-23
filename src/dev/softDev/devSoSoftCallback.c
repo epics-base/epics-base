@@ -7,10 +7,10 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devSoSoftCallback.c */
+/* $Id$ */
 /*
- *      Author:  Marty Kraimer
- *      Date:    04NOV2003
+ *      Author: Marty Kraimer
+ *      Date:   04NOV2003
  */
 
 #include <stdlib.h>
@@ -29,39 +29,40 @@
 /* Create the dset for devSoSoftCallback */
 static long write_stringout();
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_stringout;
-}devSoSoftCallback={
-	5,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	write_stringout
+    long        number;
+    DEVSUPFUN   report;
+    DEVSUPFUN   init;
+    DEVSUPFUN   init_record;
+    DEVSUPFUN   get_ioint_info;
+    DEVSUPFUN   write_stringout;
+} devSoSoftCallback = {
+    5,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    write_stringout
 };
-epicsExportAddress(dset,devSoSoftCallback);
+epicsExportAddress(dset, devSoSoftCallback);
 
-static long write_stringout(pstringout)
-    struct stringoutRecord	*pstringout;
+static long write_stringout(stringoutRecord *pstringout)
 {
     struct link *plink = &pstringout->out;
     long status;
 
-    if(pstringout->pact) return(0);
-    if(plink->type!=CA_LINK) {
-        status = dbPutLink(plink,DBR_STRING,&pstringout->val,1);
-        return(status);
+    if (pstringout->pact) return 0;
+
+    if (plink->type != CA_LINK) {
+        return dbPutLink(plink, DBR_STRING, &pstringout->val, 1);
     }
-    status = dbCaPutLinkCallback(plink,DBR_STRING,&pstringout->val,1,
-        (dbCaCallback)dbCaCallbackProcess,plink);
-    if(status) {
-        recGblSetSevr(pstringout,LINK_ALARM,INVALID_ALARM);
-        return(status);
+
+    status = dbCaPutLinkCallback(plink, DBR_STRING, &pstringout->val, 1,
+        (dbCaCallback)dbCaCallbackProcess, plink);
+    if (status) {
+        recGblSetSevr(pstringout, LINK_ALARM, INVALID_ALARM);
+        return status;
     }
+
     pstringout->pact = TRUE;
-    return(0);
+    return 0;
 }

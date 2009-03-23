@@ -7,13 +7,12 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* devSoSoft.c */
-/* base/src/dev $Id$ */
+/* $Id$ */
 /*
- *      Author:		Janet Anderson
- *      Date:   	04-21-91
-*/
-
+ *      Author: Janet Anderson
+ *      Date:   21APR1991
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,35 +27,28 @@
 #include "epicsExport.h"
 
 /* Create the dset for devSoSoft */
-static long init_record();
 static long write_stringout();
 struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	write_stringout;
-}devSoSoft={
-	5,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	write_stringout
+    long        number;
+    DEVSUPFUN   report;
+    DEVSUPFUN   init;
+    DEVSUPFUN   init_record;
+    DEVSUPFUN   get_ioint_info;
+    DEVSUPFUN   write_stringout;
+} devSoSoft = {
+    5,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    write_stringout
 };
-epicsExportAddress(dset,devSoSoft);
-
-static long init_record(stringoutRecord *pstringout)
-{
-    return 0;
-} /* end init_record() */
+epicsExportAddress(dset, devSoSoft);
 
-static long write_stringout(pstringout)
-    struct stringoutRecord	*pstringout;
+static long write_stringout(stringoutRecord *pstringout)
 {
     long status;
 
-    status = dbPutLink(&pstringout->out,DBR_STRING,pstringout->val,1);
-    return(status);
+    status = dbPutLink(&pstringout->out, DBR_STRING, pstringout->val, 1);
+    return status;
 }

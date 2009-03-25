@@ -46,7 +46,6 @@ int dbStaticDebug = 0;
 static char *pNullString = "";
 #define messagesize	100
 #define RPCL_LEN 184
-#define MAX_FIELD_NAME_LENGTH 20
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[2]={"NMS","MS"};
@@ -299,24 +298,19 @@ done:
 
 static long putParmString(char **pparm,const char *pstring)
 {
-    size_t	size;
-
-    if(*pparm && (*pparm != pNullString)){
-	free((void *)(*pparm));
-	*pparm = pNullString;
+    if (*pparm && *pparm != pNullString) {
+        free(*pparm);
+        *pparm = pNullString;
     }
-    if(!pstring) return(0);
-    if(!(pstring = strchr(pstring,'@'))) return(0);
-    pstring++;
-    size = strlen(pstring) + 1;
-    if(size==1) return(0);
-    *pparm = dbCalloc(size, sizeof(char *));
-    strcpy(*pparm,pstring);
-    return(0);
+    if (!pstring) return 0;
+    pstring = strchr(pstring, '@');
+    if (!pstring || !*++pstring) return 0;
+    *pparm = epicsStrDup(pstring);
+    return 0;
 }
 
 void dbFreeLinkContents(struct link *plink)
-{ 
+{
     char *parm = NULL;
 
     switch(plink->type) {
@@ -331,7 +325,7 @@ void dbFreeLinkContents(struct link *plink)
 	case INST_IO: parm = plink->value.instio.string; break;
 	case BBGPIB_IO: parm = plink->value.bbgpibio.parm;break;
 	case VXI_IO: parm = plink->value.vxiio.parm; break;
-   	default:
+	default:
 	     epicsPrintf("dbFreeLink called but link type unknown\n");
     }
     if(parm && (parm != pNullString)) free((void *)parm);
@@ -1358,25 +1352,33 @@ long epicsShareAPI dbPutRecordAttribute(
     return(0);
 }
 
-long epicsShareAPI dbGetRecordAttribute(DBENTRY *pdbentry,const char *name)
+long dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    int			compare;
+    dbRecordType *precordType = pdbentry->precordType;
+    const char *pname = *ppname;
     dbRecordAttribute *pattribute;
 
-    if(!precordType) return(S_dbLib_recordTypeNotFound);
+    if (!precordType) return S_dbLib_recordTypeNotFound;
     pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
-    while(pattribute) {
-	compare = strcmp(pattribute->name,name);
-	if(compare==0) {
-	    pdbentry->pflddes = pattribute->pdbFldDes;
-	    pdbentry->pfield = pattribute->value;
-	    return(0);
-	}
-	if(compare>=0) break;
-	pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);
+    while (pattribute) {
+        int nameLen = strlen(pattribute->name);
+        int compare = strncmp(pattribute->name, pname, nameLen);
+        int ch = pname[nameLen];
+        if (compare == 0 && !(ch == '_' || isalnum(ch))) {
+            pdbentry->pflddes = pattribute->pdbFldDes;
+            pdbentry->pfield = pattribute->value;
+            *ppname = &pname[nameLen];
+            return 0;
+        }
+        if (compare >= 0) break;
+        pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);
     }
-    return(S_dbLib_fieldNotFound);
+    return S_dbLib_fieldNotFound;
+}
+
+long dbGetRecordAttribute(DBENTRY *pdbentry, const char *pname)
+{
+    return dbGetAttributePart(pdbentry, &pname);
 }
 
 long epicsShareAPI dbFirstField(DBENTRY *pdbentry,int dctonly)
@@ -1614,27 +1616,39 @@ long epicsShareAPI dbFreeRecords(DBBASE *pdbbase)
     return(0);
 }
 
-long epicsShareAPI dbFindRecord(DBENTRY *pdbentry, const char *name)
+long epicsShareAPI dbFindRecordPart(DBENTRY *pdbentry, const char **ppname)
 {
     dbBase      *pdbbase = pdbentry->pdbbase;
-    const char  *field;
+    const char  *pname = *ppname;
+    const char  *pfn;
     int         lenName;
     PVDENTRY    *ppvdNode;
 
     zeroDbentry(pdbentry);
-    field = strchr(name, '.');
-    if (field) {
-        lenName = field++ - name;
+    pfn = strchr(pname, '.');
+    if (pfn) {
+        lenName = pfn - pname;
     } else {
-        lenName = strlen(name);
+        lenName = strlen(pname);
     }
-    ppvdNode = dbPvdFind(pdbbase, name, lenName);
+
+    ppvdNode = dbPvdFind(pdbbase, pname, lenName);
     if (!ppvdNode)
         return S_dbLib_recNotFound;
+
     pdbentry->precnode = ppvdNode->precnode;
     pdbentry->precordType = ppvdNode->precordType;
-    if (field)
-        return dbFindField(pdbentry, field);
+    *ppname = pname + lenName;
+    return 0;
+}
+
+long epicsShareAPI dbFindRecord(DBENTRY *pdbentry, const char *pname)
+{
+    long status = dbFindRecordPart(pdbentry, &pname);
+
+    if (status) return status;
+    if (*pname == '.')
+        return dbFindField(pdbentry, ++pname);
     return 0;
 }
 
@@ -1867,64 +1881,86 @@ long epicsShareAPI dbCopyRecord(DBENTRY *pdbentry,const char *newRecordName,int 
     return(dbFindRecord(pdbentry,newRecordName));
 }
 
-long epicsShareAPI dbFindField(DBENTRY *pdbentry,const char *pname)
+long epicsShareAPI dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
 {
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    char		*precord;
-    dbFldDes  		*pflddes;
-    short           	top, bottom, test;
-    char  		**papsortFldName;
-    short          	*sortFldInd;
-    int			compare,ind;
-    char		fieldName[MAX_FIELD_NAME_LENGTH+1];
-    char		*pfieldName;
+    dbRecordType *precordType = pdbentry->precordType;
+    dbRecordNode *precnode = pdbentry->precnode;
+    const char   *pname = *ppname;
+    char         *precord;
+    short        top, bottom, test;
+    char         **papsortFldName;
+    short        *sortFldInd;
+    int          ch;
+    int          nameLen;
 
-    if(!precordType) return(S_dbLib_recordTypeNotFound);
-    if(!precnode) return(S_dbLib_recNotFound);
+    if (!precordType) return S_dbLib_recordTypeNotFound;
+    if (!precnode) return S_dbLib_recNotFound;
     precord = precnode->precord;
     papsortFldName = precordType->papsortFldName;
     sortFldInd = precordType->sortFldInd;
-    /*copy field name. Stop at null or blank or tab*/
-    pfieldName = &fieldName[0];
-    for(ind=0; ind<MAX_FIELD_NAME_LENGTH; ind++) {
-	if(*pname=='\0' || *pname==' ' || *pname=='\t') break;
-	*pfieldName++ = *pname++;
+
+    /* Measure field name length; name is a valid C identifier */
+    nameLen = 0;
+    if ((ch = *pname) &&
+        (ch == '_' || isalpha(ch))) {
+        while ((ch = pname[++nameLen]))
+            if (!(ch == '_' || isalnum(ch))) break;
     }
-    *pfieldName = '\0';
-    pfieldName = &fieldName[0];
-    /* check for default field name or VAL to be supplied */
-    if((*pfieldName==0) || (strcmp(pfieldName,"VAL")==0) ) {
-	if(!(pflddes=precordType->pvalFldDes)) 
-		return(S_dbLib_recordTypeNotFound);
-	pdbentry->pflddes = pflddes;
-	pdbentry->indfield = precordType->indvalFlddes;
-	return(dbGetFieldAddress(pdbentry));
+
+    /* Handle absent field name */
+    if (nameLen == 0) {
+        dbFldDes *pflddes = precordType->pvalFldDes;
+
+        if (!pflddes)
+            return S_dbLib_recordTypeNotFound;
+        pdbentry->pflddes = pflddes;
+        pdbentry->indfield = precordType->indvalFlddes;
+        *ppname = &pname[nameLen];
+        return dbGetFieldAddress(pdbentry);
     }
+
     /* binary search through ordered field names */
     top = precordType->no_fields - 1;
     bottom = 0;
     test = (top + bottom) / 2;
     while (1) {
-	/* check the field name */
-	compare = strcmp(papsortFldName[test],pfieldName);
-	if (compare == 0) {
-	    if(!(pflddes=precordType->papFldDes[sortFldInd[test]]))
-		return(S_dbLib_recordTypeNotFound);
-	    pdbentry->pflddes = pflddes;
-	    pdbentry->indfield = sortFldInd[test];
-	    return(dbGetFieldAddress(pdbentry));
-	} else if (compare > 0) {
-	    top = test - 1;
-	    if (top < bottom) break;
-	    test = (top + bottom) / 2;
-	} else {
-	    bottom = test + 1;
-	    if (top < bottom) break;
-	    test = (top + bottom) / 2;
-	}
+        int compare = strncmp(papsortFldName[test], pname, nameLen);
+        if (compare == 0)
+            compare = strlen(papsortFldName[test]) - nameLen;
+        if (compare == 0) {
+            dbFldDes *pflddes = precordType->papFldDes[sortFldInd[test]];
+
+            if (!pflddes)
+                return S_dbLib_recordTypeNotFound;
+            pdbentry->pflddes = pflddes;
+            pdbentry->indfield = sortFldInd[test];
+            *ppname = &pname[nameLen];
+            return dbGetFieldAddress(pdbentry);
+        } else if (compare > 0) {
+            top = test - 1;
+            if (top < bottom) break;
+            test = (top + bottom) / 2;
+        } else {
+            bottom = test + 1;
+            if (top < bottom) break;
+            test = (top + bottom) / 2;
+        }
     }
-    return(dbGetRecordAttribute(pdbentry,pfieldName));
+    return S_dbLib_fieldNotFound;
+}
+
+long epicsShareAPI dbFindField(DBENTRY *pdbentry,const char *pname)
+{
+    long status = dbFindFieldPart(pdbentry, &pname);
+    int ch;
+
+    if (status == S_dbLib_fieldNotFound)
+        return dbGetRecordAttribute(pdbentry, pname);
+    if (status) return status;
+
+    ch = *pname;
+    if (ch == 0 || isspace(ch)) return 0;
+    return S_dbLib_recNotFound;
 }
 
 int epicsShareAPI dbFoundField(DBENTRY *pdbentry)

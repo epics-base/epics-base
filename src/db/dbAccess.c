@@ -652,30 +652,51 @@ long epicsShareAPI dbNameToAddr(const char *pname, DBADDR *paddr)
     dbFldDes *pflddes;
     struct rset *prset;
     long status = 0;
+    long no_elements = 1;
+    short dbfType, dbrType;
 
     if (!pname || !*pname || !pdbbase)
         return S_db_notFound;
 
     dbInitEntry(pdbbase, &dbEntry);
-    status = dbFindRecord(&dbEntry, pname);
-    if (!status && !dbEntry.pfield)
-        status = dbFindField(&dbEntry, "VAL");
-    if (status) {
-        dbFinishEntry(&dbEntry);
-        return status;
-    }
+    status = dbFindRecordPart(&dbEntry, &pname);
+    if (status) goto finish;
+
+    if (*pname == '.') ++pname;
+    status = dbFindFieldPart(&dbEntry, &pname);
+    if (status == S_dbLib_fieldNotFound)
+        status = dbGetAttributePart(&dbEntry, &pname);
+    if (status) goto finish;
 
     paddr->precord = dbEntry.precnode->precord;
     paddr->pfield = dbEntry.pfield;
     pflddes = dbEntry.pflddes;
-    dbFinishEntry(&dbEntry);
 
-    paddr->pfldDes        = pflddes;
-    paddr->field_type     = pflddes->field_type;
-    paddr->dbr_field_type = mapDBFToDBR[pflddes->field_type];
-    paddr->field_size     = pflddes->size;
-    paddr->special        = pflddes->special;
-    paddr->no_elements    = 1;
+    dbfType = pflddes->field_type;
+    dbrType = mapDBFToDBR[dbfType];
+
+    if (*pname++ == '$') {
+        /* Some field types can be accessed as char arrays */
+        if (dbfType == DBF_STRING) {
+            dbfType     = DBF_CHAR;
+            dbrType     = DBR_CHAR;
+            no_elements = pflddes->size;
+        } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
+            /* Clients see a char array, but keep original dbfType */
+            dbrType     = DBR_CHAR;
+            no_elements = PVNAME_STRINGSZ + 12;
+        } else {
+            status = S_dbLib_fieldNotFound;
+            goto finish;
+        }
+    }
+
+    paddr->pfldDes     = pflddes;
+    paddr->field_type  = dbfType;
+    paddr->dbr_field_type = dbrType;
+    paddr->field_size  = pflddes->size;
+    paddr->special     = pflddes->special;
+    paddr->no_elements = no_elements;
 
     if ((paddr->special == SPC_DBADDR) &&
         (prset = dbGetRset(paddr)) &&
@@ -685,6 +706,9 @@ long epicsShareAPI dbNameToAddr(const char *pname, DBADDR *paddr)
          *     dbr_field_type, field_size, and/or special.
          */
         status = prset->cvt_dbaddr(paddr);
+
+finish:
+    dbFinishEntry(&dbEntry);
     return status;
 }
 
@@ -740,12 +764,10 @@ unsigned dbNameSizeOfPV ( const dbAddr * paddr )
     return recNameLen + fieldNameLen + 1;
 }
 
-long epicsShareAPI dbValueSize(
-	short     dbr_type
-)
+long epicsShareAPI dbValueSize(short dbr_type)
 {
-     /* sizes for value associated with each DBR request type */
-     static long size[] = {
+    /* sizes for value associated with each DBR request type */
+    static long size[] = {
         MAX_STRING_SIZE,             /* STRING       */
         sizeof(epicsInt8),           /* CHAR         */
         sizeof(epicsUInt8),          /* UCHAR        */
@@ -757,30 +779,26 @@ long epicsShareAPI dbValueSize(
         sizeof(epicsFloat64),        /* DOUBLE       */
         sizeof(epicsEnum16)};        /* ENUM         */
 
-     return(size[dbr_type]);
+    return(size[dbr_type]);
 }
 
 
-long epicsShareAPI dbBufferSize(
-     short     dbr_type,
-     long      options,
-     long      no_elements
-)
+long epicsShareAPI dbBufferSize(short dbr_type, long options, long no_elements)
 {
     long nbytes=0;
 
     nbytes += dbValueSize(dbr_type) * no_elements;
-    if(options & DBR_STATUS)	nbytes += dbr_status_size;
-    if(options & DBR_UNITS)	nbytes += dbr_units_size;
-    if(options & DBR_PRECISION) nbytes += dbr_precision_size;
-    if(options & DBR_TIME)	nbytes += dbr_time_size;
-    if(options & DBR_ENUM_STRS)	nbytes += dbr_enumStrs_size;
-    if(options & DBR_GR_LONG)	nbytes += dbr_grLong_size;
-    if(options & DBR_GR_DOUBLE)	nbytes += dbr_grDouble_size;
-    if(options & DBR_CTRL_LONG) nbytes += dbr_ctrlLong_size;
-    if(options & DBR_CTRL_DOUBLE)nbytes += dbr_ctrlDouble_size;
-    if(options & DBR_AL_LONG)   nbytes += dbr_alLong_size;
-    if(options & DBR_AL_DOUBLE) nbytes += dbr_alDouble_size;
+    if (options & DBR_STATUS)      nbytes += dbr_status_size;
+    if (options & DBR_UNITS)       nbytes += dbr_units_size;
+    if (options & DBR_PRECISION)   nbytes += dbr_precision_size;
+    if (options & DBR_TIME)        nbytes += dbr_time_size;
+    if (options & DBR_ENUM_STRS)   nbytes += dbr_enumStrs_size;
+    if (options & DBR_GR_LONG)     nbytes += dbr_grLong_size;
+    if (options & DBR_GR_DOUBLE)   nbytes += dbr_grDouble_size;
+    if (options & DBR_CTRL_LONG)   nbytes += dbr_ctrlLong_size;
+    if (options & DBR_CTRL_DOUBLE) nbytes += dbr_ctrlDouble_size;
+    if (options & DBR_AL_LONG)     nbytes += dbr_alLong_size;
+    if (options & DBR_AL_DOUBLE)   nbytes += dbr_alDouble_size;
     return(nbytes);
 }
 int epicsShareAPI dbLoadDatabase(const char *file, const char *path, const char *subs)
@@ -1016,8 +1034,10 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     }
 
     /* check for array */
-    prset = dbGetRset(paddr);
-    if (no_elements > 1 && prset && prset->get_array_info) {
+    if (paddr->special == SPC_DBADDR &&
+        no_elements > 1 &&
+        (prset = dbGetRset(paddr)) &&
+        prset->get_array_info) {
         status = prset->get_array_info(paddr, &no_elements, &offset);
     } else
         offset = 0;
@@ -1393,7 +1413,8 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
     } else {
         struct rset *prset = dbGetRset(paddr);
 
-        if (prset && prset->get_array_info) {
+        if (paddr->special == SPC_DBADDR &&
+            prset && prset->get_array_info) {
             long dummy;
 
             status = prset->get_array_info(paddr, &dummy, &offset);
@@ -1405,7 +1426,9 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
             nRequest, no_elements, offset);
 
         /* update array info */
-        if (prset && prset->put_array_info && !status) {
+        if (!status &&
+            paddr->special == SPC_DBADDR &&
+            prset && prset->put_array_info) {
             status = prset->put_array_info(paddr, nRequest);
         }
     }

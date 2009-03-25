@@ -2,9 +2,6 @@
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <meta content="text/html; charset=iso-8859-1">
-  <meta content="text/html; charset=iso-8859-1">
-  <meta content="text/html; charset=iso-8859-1">
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
   <title>EPICS Base R3.14.x Release Notes</title>
 </head>
@@ -15,9 +12,26 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
-<p></p>
+<h4>Long string support</h4>
 
-<h3>Darwin no longer uses _environ</h3>
+<p>The IOC now provides support for strings longer than 40 characters through
+Channel Access in a manner that is fully backwards compatible with older
+versions of the CA library, although not all CA clients can make use of this at
+the moment.</p>
+
+<p>Adding the suffix '$' to the field name of an IOC PV name (through either
+Channel Access or Database Access) causes the native type of that field to be
+reported as an array of DBF_CHAR, as long as the field type is DBF_STRING,
+DBF_INLINK, DBF_OUTLINK or DBF_FWDLINK. It is then possible to use a DBF_CHAR
+array to read, write and monitor values from that field, and the 40 character
+string length limit imposed by the DBF_STRING type is replaced by the amount of
+storage allocated for the string on the IOC (for link fields the limit is
+related to the maximum length of a record name). Both MEDM and EDM can already
+present such DBF_CHAR arrays as strings in their text widgets (although you do
+have to configure the widget to format it as text), so this solution already
+works with some CA clients, although by no means all clients support it yet.</p>
+
+<h4>Darwin no longer uses _environ</h4>
 
 <p>The Darwin version of epicsEnvShow (in src/libCom/osi/os/Darwin/osdEnv.c)
 now uses _NSGetEnviron() to get the pointer to the environment string
@@ -27,6 +41,7 @@ table.</p>
 
 <p>The existing routines used to hash strings have been replaced by a new
 pair of functions that are prototyped in the epicsString.h header file:</p>
+
 <pre>unsigned int epicsStrHash(const char *str, unsigned int seed);
 unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed);</pre>
 

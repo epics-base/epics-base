@@ -5,8 +5,8 @@
 
 # Where to find RTEMS
 #
-RTEMS_BASE=/usr/local/rtems/rtems-4.10
-RTEMS_VERSION=4.10
+RTEMS_BASE=/usr/local/rtems/rtems-4.9.2
+RTEMS_VERSION=4.9.2
 
 
 # If you're using neither BOOTP/DHCP nor FLASH to pick up your IOC

@@ -105,7 +105,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     if (nextPut < nextGet) {
         freeCount = nextGet - nextPut - SLOP;
         if (nbytes > freeCount)
-            nbytes = freeCount;
+            return 0;
         if (nbytes)
             memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
         nextPut += nbytes;
@@ -113,7 +113,7 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     else {
         freeCount = size - nextPut + nextGet - SLOP;
         if (nbytes > freeCount)
-            nbytes = freeCount;
+            return 0;
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
         if (copyCount)
@@ -134,8 +134,7 @@ epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
-    pring->nextGet = 0;
-    pring->nextPut = 0;
+    pring->nextGet = pring->nextPut;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)

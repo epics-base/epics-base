@@ -12,6 +12,11 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>epicsRingBytes</h4>
+
+<p>Partial puts are not supported.  An attempt to put more bytes than currently free will be rejected.</p>
+
+<h4>camonitor timestamp support</h4>
 <h4>Long string support</h4>
 
 <p>The IOC now provides support for strings longer than 40 characters through

@@ -361,6 +361,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	}
 	if( (*options) & DBR_TIME ) {
 	    epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
+
 	    if(pfl!=NULL) {
 		*ptime++ = pfl->time.secPastEpoch;
 		*ptime++ = pfl->time.nsec;
@@ -942,6 +943,10 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
         char *pbuf = (char *)pbuffer;
         int maxlen;
 
+        if (options && (*options))
+            getOptions(paddr, &pbuf, options, pflin);
+        if (nRequest && *nRequest == 0) goto done;
+
         switch (dbrType) {
         case DBR_STRING:
             maxlen = MAX_STRING_SIZE - 1;
@@ -959,9 +964,6 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
             goto done;
         }
 
-        if (options && (*options))
-            getOptions(paddr, &pbuf, options, pflin);
-        if (nRequest && *nRequest == 0) goto done;
         dbInitEntry(pdbbase, &dbEntry);
         status = dbFindRecord(&dbEntry, precord->name);
         if (!status) status = dbFindField(&dbEntry, pfldDes->name);

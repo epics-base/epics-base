@@ -9,6 +9,14 @@
 #       leave the line empty.
 #
 
--include $(TOP)/configure/os/CONFIG_SITE.Common.Common
-
 -include $(TOP)/configure/os/CONFIG_SITE.solaris-sparc.solaris-sparc
+
+XRTGRAPH_EXTENSIONS=
+XRTGRAPH=
+SCIPLOT=YES
+
+X11_LIB = /usr/lib
+X11_INC = /usr/include
+MOTIF_INC = /usr/include
+MOTIF_LIB = /usr/lib
+

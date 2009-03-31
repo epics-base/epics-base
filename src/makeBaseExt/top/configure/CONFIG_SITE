@@ -15,3 +15,6 @@ CROSS_COMPILER_TARGET_ARCHS =
 # define INSTALL_LOCATION here
 #INSTALL_LOCATION=<fullpathname>
 
+# Extensions don't normally build shared libraries 
+SHARED_LIBRARIES = NO
+

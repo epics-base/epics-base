@@ -1,8 +1,5 @@
 #RELEASE Location of external products
 #
-# Run "gnumake clean uninstall install" in the extensions
-# top directory each time a RELEASE* file is changed.
-#
 # NOTE: The build does not check dependancies on files
 # external to this application. Thus you should run
 # "gnumake clean uninstall install" in the top directory
@@ -18,6 +15,5 @@
 
 # Location of external products
 EPICS_BASE=_EPICS_BASE_
-TEMPLATE_TOP=_TEMPLATE_TOP_
 EPICS_EXTENSIONS = $(EPICS_BASE)/../extensions
 

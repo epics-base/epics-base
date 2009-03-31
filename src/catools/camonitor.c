@@ -59,6 +59,7 @@ void usage (void)
     "Arrays: Value format: print number of requested values, then list of values\n"
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
+    "  -S:         Print array of char as a string (long string)\n"
     "Floating point type format:\n"
     "  Default: Use %%g format\n"
     "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
@@ -98,7 +99,7 @@ void event_handler (evargs args)
         pv->dbrType = args.type;
         memcpy(pv->value, args.dbr, dbr_size_n(args.type, args.count));
 
-        print_time_val_sts(pv, pv->reqElems);
+        print_time_val_sts(pv, reqElems);
         fflush(stdout);
     }
 }
@@ -118,7 +119,6 @@ void connection_handler ( struct connection_handler_args args )
 {
     pv *ppv = ( pv * ) ca_puser ( args.chid );
     if ( args.op == CA_OP_CONN_UP ) {
-        int dbrType;
                                 /* Set up pv structure */
                                 /* ------------------- */
 
@@ -127,17 +127,17 @@ void connection_handler ( struct connection_handler_args args )
         ppv->dbfType = ca_field_type(ppv->chid);
 
                                 /* Set up value structures */
-        dbrType = dbf_type_to_DBR_TIME(ppv->dbfType); /* Use native type */
-        if (dbr_type_is_ENUM(dbrType))                  /* Enums honour -n option */
+        ppv->dbrType = dbf_type_to_DBR_TIME(ppv->dbfType); /* Use native type */
+        if (dbr_type_is_ENUM(ppv->dbrType))                  /* Enums honour -n option */
         {
-            if (enumAsNr) dbrType = DBR_TIME_INT;
-            else          dbrType = DBR_TIME_STRING;
+            if (enumAsNr) ppv->dbrType = DBR_TIME_INT;
+            else          ppv->dbrType = DBR_TIME_STRING;
         }
-        
+
         else if (floatAsString &&
-                 (dbr_type_is_FLOAT(dbrType) || dbr_type_is_DOUBLE(dbrType)))
+                 (dbr_type_is_FLOAT(ppv->dbrType) || dbr_type_is_DOUBLE(ppv->dbrType)))
         {
-            dbrType = DBR_TIME_STRING;
+            ppv->dbrType = DBR_TIME_STRING;
         }
                                 /* Adjust array count */
         if (reqElems == 0 || ppv->nElems < reqElems){
@@ -146,9 +146,6 @@ void connection_handler ( struct connection_handler_args args )
             ppv->reqElems = reqElems; /* Limit to specified number */
         }
 
-                                /* Remember dbrType */
-        ppv->dbrType  = dbrType;
-
         ppv->onceConnected = 1;
         nConn++;
                                 /* Issue CA request */
@@ -156,9 +153,9 @@ void connection_handler ( struct connection_handler_args args )
         /* install monitor once with first connect */
         if ( ! ppv->value ) {
                                     /* Allocate value structure */
-            ppv->value = calloc(1, dbr_size_n(dbrType, ppv->reqElems));           
+            ppv->value = calloc(1, dbr_size_n(ppv->dbrType, ppv->reqElems));
             if ( ppv->value ) {
-                ppv->status = ca_create_subscription(dbrType,
+                ppv->status = ca_create_subscription(ppv->dbrType,
                                                 ppv->reqElems,
                                                 ppv->chid,
                                                 eventMask,
@@ -174,7 +171,7 @@ void connection_handler ( struct connection_handler_args args )
     else if ( args.op == CA_OP_CONN_DOWN ) {
         nConn--;
         ppv->status = ECA_DISCONN;
-        print_time_val_sts(ppv, ppv->reqElems);
+        print_time_val_sts(ppv, reqElems);
     }
 }
 
@@ -209,7 +206,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhm:se:f:g:#:d:0:w:t:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhm:sSe:f:g:#:d:0:w:t:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -282,6 +279,9 @@ int main (int argc, char *argv[])
             break;
         case 's':               /* Select string dbr for floating type data */
             floatAsString = 1;
+            break;
+        case 'S':               /* Treat char array as (long) string */
+            charArrAsStr = 1;
             break;
         case 'e':               /* Select %e/%f/%g format, using <arg> digits */
         case 'f':
@@ -365,7 +365,7 @@ int main (int argc, char *argv[])
     for (n = 0; n < nPvs; n++)
     {
         if (!pvs[n].onceConnected)
-            print_time_val_sts(&pvs[n], pvs[n].reqElems);
+            print_time_val_sts(&pvs[n], reqElems);
     }
 
                                 /* Read and print data forever */

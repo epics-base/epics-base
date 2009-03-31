@@ -45,6 +45,7 @@ char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) *
 char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
 
 int enumAsNr = 0;        /* used for -n option - get DBF_ENUM as number */
+int charArrAsStr = 0;    /* used for -S option - treat char array as (long) string */
 double caTimeout = 1.0;  /* wait time default (see -w option) */
 capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
@@ -124,10 +125,7 @@ char *val2str (const void *v, unsigned type, int index)
         break;
     case DBR_CHAR:
         ch = ((dbr_char_t*) val_ptr)[index];
-        if(ch > 31 )
-            sprintf(str, "%d \'%c\'",ch,ch);
-        else
-            sprintf(str, "%d",ch);
+        sprintf(str, "%d",ch);
         break;
     case DBR_INT:
         sprint_long(str, ((dbr_int_t*) val_ptr)[index]);
@@ -138,12 +136,10 @@ char *val2str (const void *v, unsigned type, int index)
     case DBR_ENUM:
     {
         dbr_enum_t *val = (dbr_enum_t *)val_ptr;
-        if (dbr_type_is_GR(type))
-            sprintf(str,"%s (%d)", 
-                    ((struct dbr_gr_enum *)v)->strs[val[index]],val[index]);
-        else if (dbr_type_is_CTRL(type))
-            sprintf(str,"%s (%d)", 
-                    ((struct dbr_ctrl_enum *)v)->strs[val[index]],val[index]);
+        if (dbr_type_is_GR(type) && !enumAsNr)
+            sprintf(str, "%s", ((struct dbr_gr_enum *)v)->strs[val[index]]);
+        else if (dbr_type_is_CTRL(type) && !enumAsNr)
+            sprintf(str, "%s", ((struct dbr_ctrl_enum *)v)->strs[val[index]]);
         else
             sprintf(str, "%d", val[index]);
     }
@@ -421,11 +417,13 @@ char *dbr2str (const void *value, unsigned type)
     tsPreviousC = *ptsNewC;                                             \
     tsPreviousS = *ptsNewS;                                             \
                                                                         \
-                             /* Print count if array */                 \
-    if ( nElems > 1 ) printf("%lu ", nElems);                           \
-                             /* Print Values */                         \
-    for (i=0; i<nElems; ++i) {                                          \
-        printf ("%s ", val2str(value, TYPE_ENUM, i));                   \
+    if (charArrAsStr && dbr_type_is_CHAR(TYPE_ENUM) && (reqElems || pv->nElems > 1)) { \
+        printf("%s ", (dbr_char_t*) dbr_value_ptr(value, pv->dbrType)); \
+    } else {                                                            \
+        if (reqElems || pv->nElems > 1) printf("%lu ", pv->reqElems);   \
+        for (i=0; i<pv->reqElems; ++i) {                                \
+            printf("%s ", val2str(value, TYPE_ENUM, i));                \
+        }                                                               \
     }                                                                   \
                              /* Print Status, Severity - if not NO_ALARM */ \
     if ( ((struct TYPE *)value)->status || ((struct TYPE *)value)->severity ) \
@@ -438,7 +436,7 @@ char *dbr2str (const void *value, unsigned type)
     }
 
 
-void print_time_val_sts (pv* pv, unsigned long nElems)
+void print_time_val_sts (pv* pv, unsigned long reqElems)
 {
     char timeText[2*TIMETEXTLEN+2];
     int i, printAbs;

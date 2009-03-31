@@ -75,6 +75,7 @@ void usage (void)
     "Arrays: Value format: print number of requested values, then list of values\n"
     "  Default:    Print all values\n"
     "  -# <count>: Print first <count> elements of an array\n"
+    "  -S:         Print array of char as a string (long string)\n"
     "Floating point type format:\n"
     "  Default: Use %%g format\n"
     "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
@@ -157,27 +158,24 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* Set up value structures */
         if (format != specifiedDbr)
         {
-            dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
-            if (dbr_type_is_ENUM(dbrType))                  /* Enums honour -n option */
+            pvs[n].dbrType = dbf_type_to_DBR_TIME(pvs[n].dbfType); /* Use native type */
+            if (dbr_type_is_ENUM(pvs[n].dbrType))                  /* Enums honour -n option */
             {
-                if (enumAsNr) dbrType = DBR_TIME_INT;
-                else          dbrType = DBR_TIME_STRING;
+                if (enumAsNr) pvs[n].dbrType = DBR_TIME_INT;
+                else          pvs[n].dbrType = DBR_TIME_STRING;
             }
             else if (floatAsString &&
-                     (dbr_type_is_FLOAT(dbrType) || dbr_type_is_DOUBLE(dbrType)))
+                     (dbr_type_is_FLOAT(pvs[n].dbrType) || dbr_type_is_DOUBLE(pvs[n].dbrType)))
             {
-                dbrType = DBR_TIME_STRING;
+                pvs[n].dbrType = DBR_TIME_STRING;
             }
         }
                                 /* Adjust array count */
         if (reqElems == 0 || pvs[n].nElems < reqElems){
             pvs[n].reqElems = pvs[n].nElems; /* Use full number of points */
         } else {
-            pvs[n].reqElems = reqElems; /* Limit to specified number */
+            pvs[n].reqElems = reqElems;      /* Limit to specified number */
         }
-
-                                /* Remember dbrType */
-        pvs[n].dbrType  = dbrType;
 
                                 /* Issue CA request */
                                 /* ---------------- */
@@ -188,15 +186,15 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             pvs[n].onceConnected = 1;
             if (request == callback)
             {                          /* Event handler will allocate value */
-                result = ca_array_get_callback(dbrType,
+                result = ca_array_get_callback(pvs[n].dbrType,
                                                pvs[n].reqElems,
                                                pvs[n].chid,
                                                event_handler,
                                                (void*)&pvs[n]);
             } else {
                                        /* Allocate value structure */
-                pvs[n].value = calloc(1, dbr_size_n(dbrType, pvs[n].reqElems));
-                result = ca_array_get(dbrType,
+                pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].reqElems));
+                result = ca_array_get(pvs[n].dbrType,
                                       pvs[n].reqElems,
                                       pvs[n].chid,
                                       pvs[n].value);
@@ -239,11 +237,10 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* -------------- */
 
     for (n = 0; n < nPvs; n++) {
-        reqElems = pvs[n].reqElems;
 
         switch (format) {
         case plain:             /* Emulate old caget behaviour */
-            if (reqElems <= 1) printf("%-30s ", pvs[n].name);
+            if (pvs[n].reqElems <= 1) printf("%-30s ", pvs[n].name);
             else               printf("%s", pvs[n].name);
         case terse:
             if (pvs[n].status == ECA_DISCONN)
@@ -256,10 +253,14 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 printf("*** no data available (timeout)\n");
             else
             {
-                if (reqElems > 1) printf(" %lu ", reqElems);
-                for (i=0; i<reqElems; ++i) {
-                    if (i) printf (" ");
-                    printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
+                    printf(" %s", (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType));
+                } else {
+                    if (reqElems || pvs[n].nElems > 1) printf(" %lu", pvs[n].reqElems);
+                    for (i=0; i<pvs[n].reqElems; ++i) {
+                        if (i) printf (" ");
+                        printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                    }
                 }
                 printf("\n");
             }
@@ -277,20 +278,24 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 printf("    *** CA error %s\n", ca_message(pvs[n].status));
             else
             {
-                printf("    Data type:      %s (native: %s)\n",
-                       dbr_type_to_text(pvs[n].dbrType),
-                       dbf_type_to_text(pvs[n].dbfType));
+                printf("    Native data type: %s (CA uses %s)\n",
+                       dbf_type_to_text(pvs[n].dbfType),
+                       dbr_type_to_text(pvs[n].dbrType));
                 if (pvs[n].dbrType == DBR_CLASS_NAME)
-                    printf("    Class Name:     %s\n",
+                    printf("    Class Name:       %s\n",
                            *((dbr_string_t*)dbr_value_ptr(pvs[n].value,
                                                           pvs[n].dbrType)));
                 else {
-                    printf("    Element count:  %lu\n"
-                           "    Value:          ",
-                           reqElems);
-                    for (i=0; i<reqElems; ++i) {     /* Print value(s) */
-                        if (i) printf (" ");
-                        printf(" %s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                    printf("    Element count:    %lu\n"
+                           "    Value:            ",
+                           pvs[n].reqElems);
+                    if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
+                        printf(" %s", (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType));
+                    } else {
+                        for (i=0; i<pvs[n].reqElems; ++i) {
+                            if (i) printf (" ");
+                            printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
+                        }
                     }
                     printf("\n");
                     if (pvs[n].dbrType > DBR_DOUBLE) /* Extended type extra info */
@@ -349,7 +354,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhse:f:g:#:d:0:w:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhsSe:f:g:#:d:0:w:p:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -414,6 +419,9 @@ int main (int argc, char *argv[])
             break;
         case 's':               /* Select string dbr for floating type data */
             floatAsString = 1;
+            break;
+        case 'S':               /* Treat char array as (long) string */
+            charArrAsStr = 1;
             break;
         case 'e':               /* Select %e/%f/%g format, using <arg> digits */
         case 'f':

@@ -84,18 +84,18 @@ int cainfo (pv *pvs, int nPvs)
             dbrType = dbf_type_to_DBR(dbfType);
 
             printf("%s\n"
-                   "    State:         %s\n"
-                   "    Host:          %s\n"
-                   "    Access:        %sread, %swrite\n"
-                   "    Data type:     %s (native: %s)\n"
-                   "    Element count: %lu\n"
+                   "    State:            %s\n"
+                   "    Host:             %s\n"
+                   "    Access:           %sread, %swrite\n"
+                   "    Native data type: %s (CA uses %s)\n"
+                   "    Element count:    %lu\n"
                    , pvs[n].name,
                    stateStrings[state],
                    ca_host_name(pvs[n].chid),
                    boolStrings[ca_read_access(pvs[n].chid)],
                    boolStrings[ca_write_access(pvs[n].chid)],
-                   dbr_type_to_text(dbrType),
                    dbf_type_to_text(dbfType),
+                   dbr_type_to_text(dbrType),
                    nElems
                 );
         }

@@ -77,13 +77,14 @@ extern int tsSrcServer;     /* Timestamp source flag (-t option) */
 extern int tsSrcClient;     /* Timestamp source flag (-t option) */
 extern IntFormatT outType;  /* Flag used for -0.. output format option */
 extern int enumAsNr;        /* Used for -n option (get DBF_ENUM as number) */
+extern int charArrAsStr;    /* used for -S option - treat char array as (long) string */
 extern double caTimeout;    /* Wait time default (see -w option) */
 extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option) */
 extern capri caPriority;    /* CA priority */
 
 extern char *val2str (const void *v, unsigned type, int index);
 extern char *dbr2str (const void *value, unsigned type);
-extern void print_time_val_sts (pv *pv, unsigned long nElems);
+extern void print_time_val_sts (pv *pv, unsigned long reqElems);
 extern int  create_pvs (pv *pvs, int nPvs, caCh *pCB );
 extern int  connect_pvs (pv *pvs, int nPvs );
 

@@ -16,7 +16,6 @@
 
 <p>Partial puts are not supported.  An attempt to put more bytes than currently free will be rejected.</p>
 
-<h4>camonitor timestamp support</h4>
 <h4>Long string support</h4>
 
 <p>The IOC now provides support for strings longer than 40 characters through
@@ -31,10 +30,14 @@ DBF_INLINK, DBF_OUTLINK or DBF_FWDLINK. It is then possible to use a DBF_CHAR
 array to read, write and monitor values from that field, and the 40 character
 string length limit imposed by the DBF_STRING type is replaced by the amount of
 storage allocated for the string on the IOC (for link fields the limit is
-related to the maximum length of a record name). Both MEDM and EDM can already
-present such DBF_CHAR arrays as strings in their text widgets (although you do
-have to configure the widget to format it as text), so this solution already
-works with some CA clients, although by no means all clients support it yet.</p>
+related to the maximum length of a record name).</p>
+
+<p>The caget/caput/camonitor programs in src/catools can use long strings by
+adding the command-line option <tt>-S</tt> which causes them to handle an array
+of DBF_CHAR as a string.  Both MEDM and EDM can already present such DBF_CHAR
+arrays as strings in their text widgets (although you do have to configure the
+widget to format it as text), so this solution already works with some CA
+clients, although by no means all clients support it yet.</p>
 
 <h4>Darwin no longer uses _environ</h4>
 

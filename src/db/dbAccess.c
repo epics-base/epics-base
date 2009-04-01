@@ -950,6 +950,7 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
         switch (dbrType) {
         case DBR_STRING:
             maxlen = MAX_STRING_SIZE - 1;
+            if (nRequest && *nRequest > 1) *nRequest = 1;
             break;
 
         case DBR_CHAR:
@@ -1008,6 +1009,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         switch (dbrType) {
         case DBR_STRING:
             maxlen = MAX_STRING_SIZE - 1;
+            if (nRequest && *nRequest > 1) *nRequest = 1;
             break;
 
         case DBR_CHAR:

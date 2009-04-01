@@ -822,7 +822,7 @@ assignments. The value of the whole string is determined by the single
 non-assignment expression, which may appear anywhere in the string. For
 example, the following string causes a single CALC record to output the
 successive values of a sine curve in 1 degree intervals:
-<tt>sin(a); a:=a+d2r</tt></p>
+<tt>sin(a); a:=a+d2r</tt></p>
 
 <p>Previously any expression that performed an invalid operation which would
 generate a NaN or Inf result would be stopped immediately and return an error
@@ -861,8 +861,8 @@ and an Undefined/INVALID_ALARM being raised as a result.</p>
 <p>An empty string is no longer a legal expression, therefor the CALC and
 OCAL fields have been changed so that their default value is a literal
 <tt>"0"</tt> string. Also any calcout record device support must now add the
-line <tt>#include "postfix.h"</tt> before the
-<tt>#include "calcoutRecord.h"</tt> line in the source code.</p>
+line <tt>#include "postfix.h"</tt> before the
+<tt>#include "calcoutRecord.h"</tt> line in the source code.</p>
 
 <h4>recGblAlarmHook</h4>
 

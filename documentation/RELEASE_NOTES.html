@@ -12,6 +12,12 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>PINI Processing Phases</h4>
+
+<p>The PHAS field now controls the order in which records with PINI set are
+processed at initialization time, lower values of PHAS are scanned before
+higher ones.</p>
+
 <h4>Channel Access command line tool changes</h4>
 
 <p>The caget/caput/camonitor programs in src/catools now use '\' escape
@@ -22,17 +28,19 @@ to be used instead of the default space character.</p>
 
 <h4>New functions for escaping non-printables in epicsString.h</h4>
 
-<p>The existing routines used to escape non-printable characters have been replaced
-by a new set of functions that are prototyped in the epicsString.h header file:</p>
+<p>The existing routines used to escape non-printable characters have been
+replaced by a new set of functions that are prototyped in the epicsString.h
+header file:</p>
 
 <pre>int epicsStrnRawFromEscaped(char *outbuf, size_t outsize, const char *inbuf, size_t inlen);
 epicsShareFunc int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf, size_t inlen);
 epicsShareFunc size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen);</pre>
 
-<p>Both conversion functions take the output buffer (and its size), and the input
-buffer (and its size) as argument. They will convert non-printable characters
-from/to their '\'-escaped versions. The third function scans a raw input string
-and returns the number of characters needed for the escaped version.</p>
+<p>Both conversion functions take the output buffer (and its size), and the
+input buffer (and its size) as argument. They will convert non-printable
+characters from/to their '\'-escaped versions. The third function scans a raw
+input string and returns the number of characters needed for the escaped
+version.</p>
 
 <p>The existing function interfaces will be kept for compatibility, but their
 further use is deprecated.</p>
@@ -58,7 +66,7 @@ string length limit imposed by the DBF_STRING type is replaced by the amount of
 storage allocated for the string on the IOC (for link fields the limit is
 related to the maximum length of a record name).</p>
 
-<p>The caget/caput/camonitor programs in src/catools can use long strings by
+<p>The caget/caput/camonitor programs in src/catools can now use long strings by
 adding the command-line option <tt>-S</tt> which causes them to handle an array
 of DBF_CHAR as a string.  Both MEDM and EDM can already present such DBF_CHAR
 arrays as strings in their text widgets (although you do have to configure the
@@ -190,8 +198,8 @@ epicsTime class has also gone.</p>
 
 <h4>RTEMS Release</h4>
 
-<p>RTEMS release 4.9.2 or newer is required.  EPICS now configures RTEMS to use unified executive/malloc memory pools if available (RTEMS 4.10 and up).</p>
-
+<p>RTEMS release 4.9.2 or newer is required.  EPICS now configures RTEMS to use
+unified executive/malloc memory pools if available (RTEMS 4.10 and up).</p>
 <h4>RTEMS</h4>
 
 <p>RTEMS stack sizes have been reduced.  This allows more clients in machines

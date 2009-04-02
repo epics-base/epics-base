@@ -15,6 +15,8 @@
 #ifndef INCdbScanH
 #define INCdbScanH
 
+#include <limits.h>
+
 #include "menuScan.h"
 #include "shareLib.h"
 
@@ -26,6 +28,9 @@ extern "C" {
 #define SCAN_EVENT          menuScanEvent
 #define SCAN_IO_EVENT       menuScanI_O_Intr
 #define SCAN_1ST_PERIODIC   (menuScanI_O_Intr + 1)
+
+#define MAX_PHASE           SHRT_MAX
+#define MIN_PHASE           SHRT_MIN
 
 /*definitions for I/O Interrupt Scanning */
 struct io_scan_list;

@@ -116,18 +116,18 @@ typedef struct rpvtStruct {
     short    caLinkStat; /* NO_CA_LINKS, CA_LINKS_ALL_OK, CA_LINKS_NOT_OK */
 } rpvtStruct;
 
-static void checkAlarms(calcoutRecord *pcalc);
-static void monitor(calcoutRecord *pcalc);
-static int fetch_values(calcoutRecord *pcalc);
-static void execOutput(calcoutRecord *pcalc);
-static void checkLinks(calcoutRecord *pcalc);
+static void checkAlarms(calcoutRecord *prec);
+static void monitor(calcoutRecord *prec);
+static int fetch_values(calcoutRecord *prec);
+static void execOutput(calcoutRecord *prec);
+static void checkLinks(calcoutRecord *prec);
 static void checkLinksCallback(CALLBACK *arg);
-static long writeValue(calcoutRecord *pcalc);
+static long writeValue(calcoutRecord *prec);
 
 int    calcoutRecDebug;
 
 
-static long init_record(calcoutRecord *pcalc, int pass)
+static long init_record(calcoutRecord *prec, int pass)
 {
     DBLINK *plink;
     int i;
@@ -141,22 +141,22 @@ static long init_record(calcoutRecord *pcalc, int pass)
     rpvtStruct *prpvt;
 
     if (pass == 0) {
-        pcalc->rpvt = (rpvtStruct *) callocMustSucceed(1, sizeof(rpvtStruct), "calcoutRecord");
+        prec->rpvt = (rpvtStruct *) callocMustSucceed(1, sizeof(rpvtStruct), "calcoutRecord");
         return 0;
     }
-    if (!(pcalcoutDSET = (calcoutDSET *)pcalc->dset)) {
-        recGblRecordError(S_dev_noDSET, (void *)pcalc, "calcout:init_record");
+    if (!(pcalcoutDSET = (calcoutDSET *)prec->dset)) {
+        recGblRecordError(S_dev_noDSET, (void *)prec, "calcout:init_record");
         return S_dev_noDSET;
     }
     /* must have write defined */
     if ((pcalcoutDSET->number < 5) || (pcalcoutDSET->write ==NULL)) {
-        recGblRecordError(S_dev_missingSup, (void *)pcalc, "calcout:init_record");
+        recGblRecordError(S_dev_missingSup, (void *)prec, "calcout:init_record");
         return S_dev_missingSup;
     }
-    prpvt = pcalc->rpvt;
-    plink = &pcalc->inpa;
-    pvalue = &pcalc->a;
-    plinkValid = &pcalc->inav;
+    prpvt = prec->rpvt;
+    plink = &prec->inpa;
+    pvalue = &prec->a;
+    plinkValid = &prec->inav;
     for (i = 0; i <= CALCPERFORM_NARGS; i++, plink++, pvalue++, plinkValid++) {
         if (plink->type == CONSTANT) {
             /* Don't InitConstantLink the .OUT link */
@@ -174,113 +174,113 @@ static long init_record(calcoutRecord *pcalc, int pass)
         }
     }
 
-    pcalc->clcv = postfix(pcalc->calc, pcalc->rpcl, &error_number);
-    if (pcalc->clcv){
-        recGblRecordError(S_db_badField, (void *)pcalc,
+    prec->clcv = postfix(prec->calc, prec->rpcl, &error_number);
+    if (prec->clcv){
+        recGblRecordError(S_db_badField, (void *)prec,
                           "calcout: init_record: Illegal CALC field");
         errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
-                     pcalc->name, calcErrorStr(error_number), pcalc->calc);
+                     prec->name, calcErrorStr(error_number), prec->calc);
     }
 
-    pcalc->oclv = postfix(pcalc->ocal, pcalc->orpc, &error_number);
-    if (pcalc->dopt == calcoutDOPT_Use_OVAL && pcalc->oclv){
-        recGblRecordError(S_db_badField, (void *)pcalc,
+    prec->oclv = postfix(prec->ocal, prec->orpc, &error_number);
+    if (prec->dopt == calcoutDOPT_Use_OVAL && prec->oclv){
+        recGblRecordError(S_db_badField, (void *)prec,
                           "calcout: init_record: Illegal OCAL field");
         errlogPrintf("%s.OCAL: %s in expression \"%s\"\n",
-                     pcalc->name, calcErrorStr(error_number), pcalc->ocal);
+                     prec->name, calcErrorStr(error_number), prec->ocal);
     }
 
-    prpvt = pcalc->rpvt;
+    prpvt = prec->rpvt;
     callbackSetCallback(checkLinksCallback, &prpvt->checkLinkCb);
     callbackSetPriority(0, &prpvt->checkLinkCb);
-    callbackSetUser(pcalc, &prpvt->checkLinkCb);
+    callbackSetUser(prec, &prpvt->checkLinkCb);
     prpvt->cbScheduled = 0;
 
-    if (pcalcoutDSET->init_record) pcalcoutDSET->init_record(pcalc);
+    if (pcalcoutDSET->init_record) pcalcoutDSET->init_record(prec);
     return 0;
 }
 
-static long process(calcoutRecord *pcalc)
+static long process(calcoutRecord *prec)
 {
-    rpvtStruct *prpvt = pcalc->rpvt;
+    rpvtStruct *prpvt = prec->rpvt;
     int doOutput = 0;
 
-    if (!pcalc->pact) {
-        pcalc->pact = TRUE;
+    if (!prec->pact) {
+        prec->pact = TRUE;
         /* if some links are CA, check connections */
         if (prpvt->caLinkStat != NO_CA_LINKS) {
-            checkLinks(pcalc);
+            checkLinks(prec);
         }
-        if (fetch_values(pcalc) == 0) {
-            if (calcPerform(&pcalc->a, &pcalc->val, pcalc->rpcl)) {
-                recGblSetSevr(pcalc, CALC_ALARM, INVALID_ALARM);
+        if (fetch_values(prec) == 0) {
+            if (calcPerform(&prec->a, &prec->val, prec->rpcl)) {
+                recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
             } else {
-                pcalc->udf = isnan(pcalc->val);
+                prec->udf = isnan(prec->val);
             }
         }
-        checkAlarms(pcalc);
+        checkAlarms(prec);
         /* check for output link execution */
-        switch (pcalc->oopt) {
+        switch (prec->oopt) {
         case calcoutOOPT_Every_Time:
             doOutput = 1;
             break;
         case calcoutOOPT_On_Change:
-            if (fabs(pcalc->pval - pcalc->val) > pcalc->mdel) doOutput = 1;
+            if (fabs(prec->pval - prec->val) > prec->mdel) doOutput = 1;
             break;
         case calcoutOOPT_Transition_To_Zero:
-            if ((pcalc->pval != 0.0) && (pcalc->val == 0.0)) doOutput = 1;
+            if ((prec->pval != 0.0) && (prec->val == 0.0)) doOutput = 1;
             break;
         case calcoutOOPT_Transition_To_Non_zero:
-            if ((pcalc->pval == 0.0) && (pcalc->val != 0.0)) doOutput = 1;
+            if ((prec->pval == 0.0) && (prec->val != 0.0)) doOutput = 1;
             break;
         case calcoutOOPT_When_Zero:
-            if (pcalc->val == 0.0) doOutput = 1;
+            if (prec->val == 0.0) doOutput = 1;
             break;
         case calcoutOOPT_When_Non_zero:
-            if (pcalc->val != 0.0) doOutput = 1;
+            if (prec->val != 0.0) doOutput = 1;
             break;
         default:
             break;
         }
-        pcalc->pval = pcalc->val;
+        prec->pval = prec->val;
         if (doOutput) {
-            if (pcalc->odly > 0.0) {
-                pcalc->dlya = 1;
-                db_post_events(pcalc, &pcalc->dlya, DBE_VALUE);
+            if (prec->odly > 0.0) {
+                prec->dlya = 1;
+                db_post_events(prec, &prec->dlya, DBE_VALUE);
                 callbackRequestProcessCallbackDelayed(&prpvt->doOutCb,
-                        pcalc->prio, pcalc, (double)pcalc->odly);
+                        prec->prio, prec, (double)prec->odly);
                 return 0;
             } else {
-                pcalc->pact = FALSE;
-                execOutput(pcalc);
-                if (pcalc->pact) return 0;
-                pcalc->pact = TRUE;
+                prec->pact = FALSE;
+                execOutput(prec);
+                if (prec->pact) return 0;
+                prec->pact = TRUE;
             }
         }
     } else { /* pact == TRUE */
-        if (pcalc->dlya) {
-            pcalc->dlya = 0;
-            db_post_events(pcalc, &pcalc->dlya, DBE_VALUE);
+        if (prec->dlya) {
+            prec->dlya = 0;
+            db_post_events(prec, &prec->dlya, DBE_VALUE);
             /* Make pact FALSE for asynchronous device support*/
-            pcalc->pact = FALSE;
-            execOutput(pcalc);
-            if (pcalc->pact) return 0;
-            pcalc->pact = TRUE;
+            prec->pact = FALSE;
+            execOutput(prec);
+            if (prec->pact) return 0;
+            prec->pact = TRUE;
         } else {/*Device Support is asynchronous*/
-            writeValue(pcalc);
+            writeValue(prec);
         }
     }
-    recGblGetTimeStamp(pcalc);
-    monitor(pcalc);
-    recGblFwdLink(pcalc);
-    pcalc->pact = FALSE;
+    recGblGetTimeStamp(prec);
+    monitor(prec);
+    recGblFwdLink(prec);
+    prec->pact = FALSE;
     return 0;
 }
 
 static long special(DBADDR *paddr, int after)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
-    rpvtStruct  *prpvt = pcalc->rpvt;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
+    rpvtStruct  *prpvt = prec->rpvt;
     DBADDR      dbaddr;
     DBADDR      *pAddr = &dbaddr;
     short       error_number;
@@ -293,25 +293,25 @@ static long special(DBADDR *paddr, int after)
     if (!after) return 0;
     switch(fieldIndex) {
       case(calcoutRecordCALC):
-        pcalc->clcv = postfix(pcalc->calc, pcalc->rpcl, &error_number);
-        if (pcalc->clcv){
-            recGblRecordError(S_db_badField, (void *)pcalc,
+        prec->clcv = postfix(prec->calc, prec->rpcl, &error_number);
+        if (prec->clcv){
+            recGblRecordError(S_db_badField, (void *)prec,
                       "calcout: special(): Illegal CALC field");
             errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
-                         pcalc->name, calcErrorStr(error_number), pcalc->calc);
+                         prec->name, calcErrorStr(error_number), prec->calc);
         }
-        db_post_events(pcalc, &pcalc->clcv, DBE_VALUE);
+        db_post_events(prec, &prec->clcv, DBE_VALUE);
         return 0;
 
       case(calcoutRecordOCAL):
-        pcalc->oclv = postfix(pcalc->ocal, pcalc->orpc, &error_number);
-        if (pcalc->dopt == calcoutDOPT_Use_OVAL && pcalc->oclv){
-            recGblRecordError(S_db_badField, (void *)pcalc,
+        prec->oclv = postfix(prec->ocal, prec->orpc, &error_number);
+        if (prec->dopt == calcoutDOPT_Use_OVAL && prec->oclv){
+            recGblRecordError(S_db_badField, (void *)prec,
                     "calcout: special(): Illegal OCAL field");
             errlogPrintf("%s.OCAL: %s in expression \"%s\"\n",
-                         pcalc->name, calcErrorStr(error_number), pcalc->ocal);
+                         prec->name, calcErrorStr(error_number), prec->ocal);
         }
-        db_post_events(pcalc, &pcalc->oclv, DBE_VALUE);
+        db_post_events(prec, &prec->oclv, DBE_VALUE);
         return 0;
       case(calcoutRecordINPA):
       case(calcoutRecordINPB):
@@ -327,13 +327,13 @@ static long special(DBADDR *paddr, int after)
       case(calcoutRecordINPL):
       case(calcoutRecordOUT):
         lnkIndex = fieldIndex - calcoutRecordINPA;
-        plink   = &pcalc->inpa + lnkIndex;
-        pvalue  = &pcalc->a    + lnkIndex;
-        plinkValid = &pcalc->inav + lnkIndex;
+        plink   = &prec->inpa + lnkIndex;
+        pvalue  = &prec->a    + lnkIndex;
+        plinkValid = &prec->inav + lnkIndex;
         if (plink->type == CONSTANT) {
             if (fieldIndex != calcoutRecordOUT) {
                 recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-                db_post_events(pcalc, pvalue, DBE_VALUE);
+                db_post_events(prec, pvalue, DBE_VALUE);
             }
             *plinkValid = calcoutINAV_CON;
         } else if (!dbNameToAddr(plink->value.pv_link.pvname, pAddr)) {
@@ -349,7 +349,7 @@ static long special(DBADDR *paddr, int after)
                 prpvt->caLinkStat = CA_LINKS_NOT_OK;
             }
         }
-        db_post_events(pcalc, plinkValid, DBE_VALUE);
+        db_post_events(prec, plinkValid, DBE_VALUE);
         return 0;
       default:
         recGblDbaddrError(S_db_badChoice, paddr, "calc: special");
@@ -359,18 +359,18 @@ static long special(DBADDR *paddr, int after)
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    strncpy(units, pcalc->egu, DB_UNITS_SIZE);
+    strncpy(units, prec->egu, DB_UNITS_SIZE);
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *pprecision)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&pcalc->val) {
-        *pprecision = pcalc->prec;
+    if (paddr->pfield == (void *)&prec->val) {
+        *pprecision = prec->prec;
     } else {
         recGblGetPrec(paddr, pprecision);
     }
@@ -379,28 +379,28 @@ static long get_precision(DBADDR *paddr, long *pprecision)
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&pcalc->val ||
-        paddr->pfield == (void *)&pcalc->hihi ||
-        paddr->pfield == (void *)&pcalc->high ||
-        paddr->pfield == (void *)&pcalc->low ||
-        paddr->pfield == (void *)&pcalc->lolo) {
-        pgd->upper_disp_limit = pcalc->hopr;
-        pgd->lower_disp_limit = pcalc->lopr;
+    if (paddr->pfield == (void *)&prec->val ||
+        paddr->pfield == (void *)&prec->hihi ||
+        paddr->pfield == (void *)&prec->high ||
+        paddr->pfield == (void *)&prec->low ||
+        paddr->pfield == (void *)&prec->lolo) {
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
         return 0;
     }
 
-    if (paddr->pfield >= (void *)&pcalc->a &&
-        paddr->pfield <= (void *)&pcalc->l) {
-        pgd->upper_disp_limit = pcalc->hopr;
-        pgd->lower_disp_limit = pcalc->lopr;
+    if (paddr->pfield >= (void *)&prec->a &&
+        paddr->pfield <= (void *)&prec->l) {
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
         return 0;
     }
-    if (paddr->pfield >= (void *)&pcalc->la &&
-        paddr->pfield <= (void *)&pcalc->ll) {
-        pgd->upper_disp_limit = pcalc->hopr;
-        pgd->lower_disp_limit = pcalc->lopr;
+    if (paddr->pfield >= (void *)&prec->la &&
+        paddr->pfield <= (void *)&prec->ll) {
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
         return 0;
     }
     recGblGetGraphicDouble(paddr, pgd);
@@ -409,28 +409,28 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 
 static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&pcalc->val ||
-        paddr->pfield == (void *)&pcalc->hihi ||
-        paddr->pfield == (void *)&pcalc->high ||
-        paddr->pfield == (void *)&pcalc->low ||
-        paddr->pfield == (void *)&pcalc->lolo) {
-        pcd->upper_ctrl_limit = pcalc->hopr;
-        pcd->lower_ctrl_limit = pcalc->lopr;
+    if (paddr->pfield == (void *)&prec->val ||
+        paddr->pfield == (void *)&prec->hihi ||
+        paddr->pfield == (void *)&prec->high ||
+        paddr->pfield == (void *)&prec->low ||
+        paddr->pfield == (void *)&prec->lolo) {
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
         return 0;
     }
 
-    if (paddr->pfield >= (void *)&pcalc->a &&
-        paddr->pfield <= (void *)&pcalc->l) {
-        pcd->upper_ctrl_limit = pcalc->hopr;
-        pcd->lower_ctrl_limit = pcalc->lopr;
+    if (paddr->pfield >= (void *)&prec->a &&
+        paddr->pfield <= (void *)&prec->l) {
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
         return 0;
     }
-    if (paddr->pfield >= (void *)&pcalc->la &&
-        paddr->pfield <= (void *)&pcalc->ll) {
-        pcd->upper_ctrl_limit = pcalc->hopr;
-        pcd->lower_ctrl_limit = pcalc->lopr;
+    if (paddr->pfield >= (void *)&prec->la &&
+        paddr->pfield <= (void *)&prec->ll) {
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
         return 0;
     }
     recGblGetControlDouble(paddr, pcd);
@@ -439,13 +439,13 @@ static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    calcoutRecord *pcalc = (calcoutRecord *)paddr->precord;
+    calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&pcalc->val) {
-        pad->upper_alarm_limit = pcalc->hihi;
-        pad->upper_warning_limit = pcalc->high;
-        pad->lower_warning_limit = pcalc->low;
-        pad->lower_alarm_limit = pcalc->lolo;
+    if (paddr->pfield == (void *)&prec->val) {
+        pad->upper_alarm_limit = prec->hihi;
+        pad->upper_warning_limit = prec->high;
+        pad->lower_warning_limit = prec->low;
+        pad->lower_alarm_limit = prec->lolo;
     } else {
         recGblGetAlarmDouble(paddr, pad);
     }
@@ -508,61 +508,61 @@ static void checkAlarms(calcoutRecord *prec)
     return;
 }
 
-static void execOutput(calcoutRecord *pcalc)
+static void execOutput(calcoutRecord *prec)
 {
     long status;
 
     /* Determine output data */
-    switch(pcalc->dopt) {
+    switch(prec->dopt) {
     case calcoutDOPT_Use_VAL:
-        pcalc->oval = pcalc->val;
+        prec->oval = prec->val;
         break;
     case calcoutDOPT_Use_OVAL:
-        if (calcPerform(&pcalc->a, &pcalc->oval, pcalc->orpc)) {
-            recGblSetSevr(pcalc, CALC_ALARM, INVALID_ALARM);
+        if (calcPerform(&prec->a, &prec->oval, prec->orpc)) {
+            recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
         } else {
-            pcalc->udf = isnan(pcalc->oval);
+            prec->udf = isnan(prec->oval);
         }
         break;
     }
-    if (pcalc->udf){
-        recGblSetSevr(pcalc, UDF_ALARM, INVALID_ALARM);
+    if (prec->udf){
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
     }
 
     /* Check to see what to do if INVALID */
-    if (pcalc->nsev < INVALID_ALARM ) {
+    if (prec->nsev < INVALID_ALARM ) {
         /* Output the value */
-        status = writeValue(pcalc);
+        status = writeValue(prec);
         /* post event if output event != 0 */
-        if (pcalc->oevt > 0) {
-            post_event((int)pcalc->oevt);
+        if (prec->oevt > 0) {
+            post_event((int)prec->oevt);
         }
-    } else switch (pcalc->ivoa) {
+    } else switch (prec->ivoa) {
         case menuIvoaContinue_normally:
-            status = writeValue(pcalc);
+            status = writeValue(prec);
             /* post event if output event != 0 */
-            if (pcalc->oevt > 0) {
-                post_event((int)pcalc->oevt);
+            if (prec->oevt > 0) {
+                post_event((int)prec->oevt);
             }
             break;
         case menuIvoaDon_t_drive_outputs:
             break;
         case menuIvoaSet_output_to_IVOV:
-            pcalc->oval = pcalc->ivov;
-            status = writeValue(pcalc);
+            prec->oval = prec->ivov;
+            status = writeValue(prec);
             /* post event if output event != 0 */
-            if (pcalc->oevt > 0) {
-                post_event((int)pcalc->oevt);
+            if (prec->oevt > 0) {
+                post_event((int)prec->oevt);
             }
             break;
         default:
             status = -1;
-            recGblRecordError(S_db_badField, (void *)pcalc,
+            recGblRecordError(S_db_badField, (void *)prec,
                               "calcout:process Illegal IVOA field");
     }
 }
 
-static void monitor(calcoutRecord *pcalc)
+static void monitor(calcoutRecord *prec)
 {
         unsigned        monitor_mask;
         double          delta;
@@ -570,54 +570,54 @@ static void monitor(calcoutRecord *pcalc)
         double          *pprev;
         int             i;
 
-        monitor_mask = recGblResetAlarms(pcalc);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        delta = pcalc->mlst - pcalc->val;
+        delta = prec->mlst - prec->val;
         if (delta<0.0) delta = -delta;
-        if (delta > pcalc->mdel) {
+        if (delta > prec->mdel) {
                 /* post events for value change */
                 monitor_mask |= DBE_VALUE;
                 /* update last value monitored */
-                pcalc->mlst = pcalc->val;
+                prec->mlst = prec->val;
         }
         /* check for archive change */
-        delta = pcalc->alst - pcalc->val;
+        delta = prec->alst - prec->val;
         if (delta<0.0) delta = -delta;
-        if (delta > pcalc->adel) {
+        if (delta > prec->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;
                 /* update last archive value monitored */
-                pcalc->alst = pcalc->val;
+                prec->alst = prec->val;
         }
 
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pcalc, &pcalc->val, monitor_mask);
+                db_post_events(prec, &prec->val, monitor_mask);
         }
         /* check all input fields for changes*/
-        for (i = 0, pnew = &pcalc->a, pprev = &pcalc->la; i<CALCPERFORM_NARGS;
+        for (i = 0, pnew = &prec->a, pprev = &prec->la; i<CALCPERFORM_NARGS;
             i++, pnew++, pprev++) {
              if ((*pnew != *pprev) || (monitor_mask&DBE_ALARM)) {
-                  db_post_events(pcalc, pnew, monitor_mask|DBE_VALUE|DBE_LOG);
+                  db_post_events(prec, pnew, monitor_mask|DBE_VALUE|DBE_LOG);
                   *pprev = *pnew;
              }
         }
         /* Check OVAL field */
-        if (pcalc->povl != pcalc->oval) {
-            db_post_events(pcalc, &pcalc->oval, monitor_mask|DBE_VALUE|DBE_LOG);
-            pcalc->povl = pcalc->oval;
+        if (prec->povl != prec->oval) {
+            db_post_events(prec, &prec->oval, monitor_mask|DBE_VALUE|DBE_LOG);
+            prec->povl = prec->oval;
         }
         return;
 }
 
-static int fetch_values(calcoutRecord *pcalc)
+static int fetch_values(calcoutRecord *prec)
 {
         DBLINK  *plink; /* structure of the link field  */
         double          *pvalue;
         long            status = 0;
         int             i;
 
-        for (i = 0, plink = &pcalc->inpa, pvalue = &pcalc->a; i<CALCPERFORM_NARGS;
+        for (i = 0, plink = &prec->inpa, pvalue = &prec->a; i<CALCPERFORM_NARGS;
             i++, plink++, pvalue++) {
             int newStatus;
 
@@ -630,34 +630,34 @@ static int fetch_values(calcoutRecord *pcalc)
 static void checkLinksCallback(CALLBACK *arg)
 {
 
-    calcoutRecord *pcalc;
+    calcoutRecord *prec;
     rpvtStruct   *prpvt;
 
-    callbackGetUser(pcalc, arg);
-    prpvt = pcalc->rpvt;
+    callbackGetUser(prec, arg);
+    prpvt = prec->rpvt;
 
-    dbScanLock((dbCommon *)pcalc);
+    dbScanLock((dbCommon *)prec);
     prpvt->cbScheduled = 0;
-    checkLinks(pcalc);
-    dbScanUnlock((dbCommon *)pcalc);
+    checkLinks(prec);
+    dbScanUnlock((dbCommon *)prec);
 
 }
 
-static void checkLinks(calcoutRecord *pcalc)
+static void checkLinks(calcoutRecord *prec)
 {
 
     DBLINK *plink;
-    rpvtStruct *prpvt = pcalc->rpvt;
+    rpvtStruct *prpvt = prec->rpvt;
     int i;
     int stat;
     int caLink   = 0;
     int caLinkNc = 0;
     epicsEnum16 *plinkValid;
 
-    if (calcoutRecDebug) printf("checkLinks() for %p\n", pcalc);
+    if (calcoutRecDebug) printf("checkLinks() for %p\n", prec);
 
-    plink   = &pcalc->inpa;
-    plinkValid = &pcalc->inav;
+    plink   = &prec->inpa;
+    plinkValid = &prec->inav;
 
     for (i = 0; i<CALCPERFORM_NARGS+1; i++, plink++, plinkValid++) {
         if (plink->type == CA_LINK) {
@@ -668,12 +668,12 @@ static void checkLinks(calcoutRecord *pcalc)
             }
             else if (!stat && (*plinkValid == calcoutINAV_EXT)) {
                 *plinkValid = calcoutINAV_EXT_NC;
-                db_post_events(pcalc, plinkValid, DBE_VALUE);
+                db_post_events(prec, plinkValid, DBE_VALUE);
                 caLinkNc = 1;
             }
             else if (stat && (*plinkValid == calcoutINAV_EXT_NC)) {
                 *plinkValid = calcoutINAV_EXT;
-                db_post_events(pcalc, plinkValid, DBE_VALUE);
+                db_post_events(prec, plinkValid, DBE_VALUE);
             }
         }
     }
@@ -691,16 +691,16 @@ static void checkLinks(calcoutRecord *pcalc)
     }
 }
 
-static long writeValue(calcoutRecord *pcalc)
+static long writeValue(calcoutRecord *prec)
 {
-    calcoutDSET *pcalcoutDSET = (calcoutDSET *)pcalc->dset;
+    calcoutDSET *pcalcoutDSET = (calcoutDSET *)prec->dset;
 
 
     if (!pcalcoutDSET || !pcalcoutDSET->write) {
-        errlogPrintf("%s DSET write does not exist\n", pcalc->name);
-        recGblSetSevr(pcalc, SOFT_ALARM, INVALID_ALARM);
-        pcalc->pact = TRUE;
+        errlogPrintf("%s DSET write does not exist\n", prec->name);
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        prec->pact = TRUE;
         return(-1);
     }
-    return pcalcoutDSET->write(pcalc);
+    return pcalcoutDSET->write(prec);
 }

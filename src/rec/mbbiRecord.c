@@ -88,124 +88,124 @@ static void checkAlarms(mbbiRecord *);
 static void monitor(mbbiRecord *);
 static long readValue(mbbiRecord *);
 
-static void init_common(mbbiRecord *pmbbi)
+static void init_common(mbbiRecord *prec)
 {
         epicsUInt32 	*pstate_values;
 	char		*pstate_string;
         short  		i;
 
         /* determine if any states are defined */
-        pstate_values = &(pmbbi->zrvl); pstate_string = pmbbi->zrst;
-        pmbbi->sdef = FALSE;
-        for (i=0; i<16; i++, pstate_string += sizeof(pmbbi->zrst)) {
+        pstate_values = &(prec->zrvl); pstate_string = prec->zrst;
+        prec->sdef = FALSE;
+        for (i=0; i<16; i++, pstate_string += sizeof(prec->zrst)) {
                 if((*(pstate_values+i) != 0) || (*pstate_string !='\0')) {
-			pmbbi->sdef = TRUE;
+			prec->sdef = TRUE;
 			return;
 		}
 	}
 	return;
 }
 
-static long init_record(mbbiRecord *pmbbi, int pass)
+static long init_record(mbbiRecord *prec, int pass)
 {
     struct mbbidset *pdset;
     long status;
 
     if (pass==0) return(0);
 
-    if (pmbbi->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pmbbi->siml,DBF_USHORT,&pmbbi->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
-    if (pmbbi->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pmbbi->siol,DBF_USHORT,&pmbbi->sval);
+    if (prec->siol.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
     }
-    if(!(pdset = (struct mbbidset *)(pmbbi->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pmbbi,"mbbi: init_record");
+    if(!(pdset = (struct mbbidset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"mbbi: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_mbbi function defined */
     if( (pdset->number < 5) || (pdset->read_mbbi == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pmbbi,"mbbi: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"mbbi: init_record");
 	return(S_dev_missingSup);
     }
     /* initialize mask*/
-    pmbbi->mask = (1 << pmbbi->nobt) - 1;
+    prec->mask = (1 << prec->nobt) - 1;
 
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pmbbi))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    init_common(pmbbi);
+    init_common(prec);
     return(0);
 }
 
-static long process(mbbiRecord *pmbbi)
+static long process(mbbiRecord *prec)
 {
-	struct mbbidset	*pdset = (struct mbbidset *)(pmbbi->dset);
+	struct mbbidset	*pdset = (struct mbbidset *)(prec->dset);
 	long		status;
-	unsigned char    pact=pmbbi->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
-		pmbbi->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pmbbi,"read_mbbi");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_mbbi");
 		return(S_dev_missingSup);
 	}
 
-	status=readValue(pmbbi); /* read the new value */
+	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pmbbi->pact ) return(0);
-	pmbbi->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pmbbi);
+	recGblGetTimeStamp(prec);
 	if(status==0) { /* convert the value */
         	epicsUInt32 	*pstate_values;
         	short  		i;
-		epicsUInt32 rval = pmbbi->rval;
+		epicsUInt32 rval = prec->rval;
 
-		pmbbi->udf = FALSE;
-		if(pmbbi->shft>0) rval >>= pmbbi->shft;
-		if (pmbbi->sdef){
-			pstate_values = &(pmbbi->zrvl);
-			pmbbi->val = 65535;         /* initalize to unknown state*/
+		prec->udf = FALSE;
+		if(prec->shft>0) rval >>= prec->shft;
+		if (prec->sdef){
+			pstate_values = &(prec->zrvl);
+			prec->val = 65535;         /* initalize to unknown state*/
 			for (i = 0; i < 16; i++){
 				if (*pstate_values == rval){
-                               		pmbbi->val = i;
+                               		prec->val = i;
                                		break;
 			    	}
 			    	pstate_values++;
 			}
 		}else{
 			/* the raw value is the desired value */
-			pmbbi->val =  (unsigned short)rval;
+			prec->val =  (unsigned short)rval;
 		}
 	}
 	else if(status == 2) status = 0;
 
 	/* check for alarms */
-	checkAlarms(pmbbi);
+	checkAlarms(prec);
 
 	/* check event list */
-	monitor(pmbbi);
+	monitor(prec);
 
 	/* process the forward scan link record */
-	recGblFwdLink(pmbbi);
+	recGblFwdLink(prec);
 
-	pmbbi->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 
 static long special(DBADDR *paddr,int after)
 {
-    mbbiRecord     *pmbbi = (mbbiRecord *)(paddr->precord);
+    mbbiRecord     *prec = (mbbiRecord *)(paddr->precord);
     int            special_type = paddr->special;
     int            fieldIndex = dbGetFieldIndex(paddr);
 
     if(!after) return(0);
     switch(special_type) {
     case(SPC_MOD):
-	init_common(pmbbi);
+	init_common(prec);
         if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST)
-            db_post_events(pmbbi,&pmbbi->val,DBE_PROPERTY);
+            db_post_events(prec,&prec->val,DBE_PROPERTY);
         return(0);
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
@@ -215,7 +215,7 @@ static long special(DBADDR *paddr,int after)
 
 static long get_enum_str(DBADDR *paddr,char* pstring)
 {
-    mbbiRecord	*pmbbi=(mbbiRecord *)paddr->precord;
+    mbbiRecord	*prec=(mbbiRecord *)paddr->precord;
     char		*psource;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
@@ -225,9 +225,9 @@ static long get_enum_str(DBADDR *paddr,char* pstring)
     if(index!=mbbiRecordVAL) {
 	strcpy(pstring,"Illegal_Value");
     } else if(val<= 15) {
-	psource = (pmbbi->zrst);
-	psource += (val * sizeof(pmbbi->zrst));
-	strncpy(pstring,psource,sizeof(pmbbi->zrst));
+	psource = (prec->zrst);
+	psource += (val * sizeof(prec->zrst));
+	strncpy(pstring,psource,sizeof(prec->zrst));
     } else {
 	strcpy(pstring,"Illegal Value");
     }
@@ -236,15 +236,15 @@ static long get_enum_str(DBADDR *paddr,char* pstring)
 
 static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 {
-    mbbiRecord	*pmbbi=(mbbiRecord *)paddr->precord;
+    mbbiRecord	*prec=(mbbiRecord *)paddr->precord;
     char		*psource;
     int			i;
     short		no_str;
 
     no_str = 0;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    for(i=0,psource=(pmbbi->zrst); i<16; i++, psource += sizeof(pmbbi->zrst) ) {
-	strncpy(pes->strs[i],psource,sizeof(pmbbi->zrst));
+    for(i=0,psource=(prec->zrst); i<16; i++, psource += sizeof(prec->zrst) ) {
+	strncpy(pes->strs[i],psource,sizeof(prec->zrst));
 	if(*psource!=0) no_str=i+1;
     }
     pes->no_str=no_str;
@@ -253,113 +253,113 @@ static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 
 static long put_enum_str(DBADDR *paddr, char *pstring)
 {
-    mbbiRecord     *pmbbi=(mbbiRecord *)paddr->precord;
+    mbbiRecord     *prec=(mbbiRecord *)paddr->precord;
         char              *pstate_name;
         short             i;
 
-        if (pmbbi->sdef){
-                pstate_name = pmbbi->zrst;
+        if (prec->sdef){
+                pstate_name = prec->zrst;
                 for (i = 0; i < 16; i++){
-                        if(strncmp(pstate_name,pstring,sizeof(pmbbi->zrst))==0){
-        			pmbbi->val = i;
-					pmbbi->udf =  FALSE;
+                        if(strncmp(pstate_name,pstring,sizeof(prec->zrst))==0){
+        			prec->val = i;
+					prec->udf =  FALSE;
                                 return(0);
                         }
-                	pstate_name += sizeof(pmbbi->zrst);
+                	pstate_name += sizeof(prec->zrst);
                 }
         }
 	return(S_db_badChoice);
 }
 
-static void checkAlarms(mbbiRecord *pmbbi)
+static void checkAlarms(mbbiRecord *prec)
 {
 	unsigned short *severities;
-	unsigned short	val=pmbbi->val;
+	unsigned short	val=prec->val;
 
         /* check for udf alarm */
-        if(pmbbi->udf == TRUE ){
-                recGblSetSevr(pmbbi,UDF_ALARM,INVALID_ALARM);
+        if(prec->udf == TRUE ){
+                recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
         }
 
         /* check for  state alarm */
         /* unknown state */
         if (val > 15){
-                recGblSetSevr(pmbbi,STATE_ALARM,pmbbi->unsv);
+                recGblSetSevr(prec,STATE_ALARM,prec->unsv);
         } else {
         	/* in a state which is an error */
-        	severities = (unsigned short *)&(pmbbi->zrsv);
-                recGblSetSevr(pmbbi,STATE_ALARM,severities[pmbbi->val]);
+        	severities = (unsigned short *)&(prec->zrsv);
+                recGblSetSevr(prec,STATE_ALARM,severities[prec->val]);
 	}
 
         /* check for cos alarm */
-	if(val == pmbbi->lalm) return;
-        recGblSetSevr(pmbbi,COS_ALARM,pmbbi->cosv);
-	pmbbi->lalm = val;
+	if(val == prec->lalm) return;
+        recGblSetSevr(prec,COS_ALARM,prec->cosv);
+	prec->lalm = val;
 	return;
 }
 
-static void monitor(mbbiRecord *pmbbi)
+static void monitor(mbbiRecord *prec)
 {
 	unsigned short	monitor_mask;
 
-        monitor_mask = recGblResetAlarms(pmbbi);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        if (pmbbi->mlst != pmbbi->val){
+        if (prec->mlst != prec->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
-                pmbbi->mlst = pmbbi->val;
+                prec->mlst = prec->val;
         }
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pmbbi,&pmbbi->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
-        if(pmbbi->oraw!=pmbbi->rval) {
-                db_post_events(pmbbi,&pmbbi->rval,monitor_mask|DBE_VALUE);
-                pmbbi->oraw = pmbbi->rval;
+        if(prec->oraw!=prec->rval) {
+                db_post_events(prec,&prec->rval,monitor_mask|DBE_VALUE);
+                prec->oraw = prec->rval;
         }
         return;
 }
 
-static long readValue(mbbiRecord *pmbbi)
+static long readValue(mbbiRecord *prec)
 {
 	long		status;
-        struct mbbidset 	*pdset = (struct mbbidset *) (pmbbi->dset);
+        struct mbbidset 	*pdset = (struct mbbidset *) (prec->dset);
 
-	if (pmbbi->pact == TRUE){
-		status=(*pdset->read_mbbi)(pmbbi);
+	if (prec->pact == TRUE){
+		status=(*pdset->read_mbbi)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pmbbi->siml),DBR_USHORT,&(pmbbi->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pmbbi->simm == menuSimmNO){
-		status=(*pdset->read_mbbi)(pmbbi);
+	if (prec->simm == menuSimmNO){
+		status=(*pdset->read_mbbi)(prec);
 		return(status);
 	}
-	if (pmbbi->simm == menuSimmYES){
-		status=dbGetLink(&(pmbbi->siol),DBR_ULONG,&(pmbbi->sval),0,0);
+	if (prec->simm == menuSimmYES){
+		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pmbbi->val=(unsigned short)pmbbi->sval;
-			pmbbi->udf=FALSE;
+			prec->val=(unsigned short)prec->sval;
+			prec->udf=FALSE;
 		}
                 status=2; /* dont convert */
 	}
-	else if (pmbbi->simm == menuSimmRAW){
-		status=dbGetLink(&(pmbbi->siol),DBR_ULONG,&(pmbbi->sval),0,0);
+	else if (prec->simm == menuSimmRAW){
+		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pmbbi->rval=pmbbi->sval;
-			pmbbi->udf=FALSE;
+			prec->rval=prec->sval;
+			prec->udf=FALSE;
 		}
                 status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
-		recGblSetSevr(pmbbi,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pmbbi,SIMM_ALARM,pmbbi->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

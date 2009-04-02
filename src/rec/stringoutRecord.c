@@ -92,140 +92,140 @@ static void monitor(stringoutRecord *);
 static long writeValue(stringoutRecord *);
 
 
-static long init_record(stringoutRecord *pstringout, int pass)
+static long init_record(stringoutRecord *prec, int pass)
 {
     struct stringoutdset *pdset;
     long status=0;
 
     if (pass==0) return(0);
 
-    if (pstringout->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pstringout->siml,DBF_USHORT,&pstringout->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if(!(pdset = (struct stringoutdset *)(pstringout->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pstringout,"stringout: init_record");
+    if(!(pdset = (struct stringoutdset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"stringout: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_stringout functions defined */
     if( (pdset->number < 5) || (pdset->write_stringout == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pstringout,"stringout: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"stringout: init_record");
 	return(S_dev_missingSup);
     }
     /* get the initial value dol is a constant*/
-    if (pstringout->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pstringout->dol,DBF_STRING,pstringout->val))
-	    pstringout->udf=FALSE;
+    if (prec->dol.type == CONSTANT){
+	if(recGblInitConstantLink(&prec->dol,DBF_STRING,prec->val))
+	    prec->udf=FALSE;
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pstringout))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
     return(0);
 }
 
-static long process(stringoutRecord *pstringout)
+static long process(stringoutRecord *prec)
 {
-	struct stringoutdset	*pdset = (struct stringoutdset *)(pstringout->dset);
+	struct stringoutdset	*pdset = (struct stringoutdset *)(prec->dset);
 	long		 status=0;
-	unsigned char    pact=pstringout->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->write_stringout==NULL) ) {
-		pstringout->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pstringout,"write_stringout");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"write_stringout");
 		return(S_dev_missingSup);
 	}
-        if (!pstringout->pact
-        && (pstringout->dol.type != CONSTANT)
-        && (pstringout->omsl == menuOmslclosed_loop)) {
-		status = dbGetLink(&(pstringout->dol),
-			DBR_STRING,pstringout->val,0,0);
-		if(pstringout->dol.type!=CONSTANT && RTN_SUCCESS(status)) pstringout->udf=FALSE;
+        if (!prec->pact
+        && (prec->dol.type != CONSTANT)
+        && (prec->omsl == menuOmslclosed_loop)) {
+		status = dbGetLink(&(prec->dol),
+			DBR_STRING,prec->val,0,0);
+		if(prec->dol.type!=CONSTANT && RTN_SUCCESS(status)) prec->udf=FALSE;
 	}
 
-        if(pstringout->udf == TRUE ){
-                recGblSetSevr(pstringout,UDF_ALARM,INVALID_ALARM);
+        if(prec->udf == TRUE ){
+                recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
                 goto finish;
         }
 
-        if (pstringout->nsev < INVALID_ALARM )
-                status=writeValue(pstringout); /* write the new value */
+        if (prec->nsev < INVALID_ALARM )
+                status=writeValue(prec); /* write the new value */
         else {
-                switch (pstringout->ivoa) {
+                switch (prec->ivoa) {
                     case (menuIvoaContinue_normally) :
-                        status=writeValue(pstringout); /* write the new value */
+                        status=writeValue(prec); /* write the new value */
                         break;
                     case (menuIvoaDon_t_drive_outputs) :
                         break;
                     case (menuIvoaSet_output_to_IVOV) :
-                        if(pstringout->pact == FALSE){
-                                strcpy(pstringout->val,pstringout->ivov);
+                        if(prec->pact == FALSE){
+                                strcpy(prec->val,prec->ivov);
                         }
-                        status=writeValue(pstringout); /* write the new value */
+                        status=writeValue(prec); /* write the new value */
                         break;
                     default :
                         status=-1;
-                        recGblRecordError(S_db_badField,(void *)pstringout,
+                        recGblRecordError(S_db_badField,(void *)prec,
                                 "stringout:process Illegal IVOA field");
                 }
         }
 
 	/* check if device support set pact */
-	if ( !pact && pstringout->pact ) return(0);
+	if ( !pact && prec->pact ) return(0);
 finish:
-	pstringout->pact = TRUE;
-	recGblGetTimeStamp(pstringout);
-	monitor(pstringout);
-	recGblFwdLink(pstringout);
-	pstringout->pact=FALSE;
+	prec->pact = TRUE;
+	recGblGetTimeStamp(prec);
+	monitor(prec);
+	recGblFwdLink(prec);
+	prec->pact=FALSE;
 	return(status);
 }
 
-static void monitor(stringoutRecord *pstringout)
+static void monitor(stringoutRecord *prec)
 {
     unsigned short  monitor_mask;
 
-    monitor_mask = recGblResetAlarms(pstringout);
-    if(strncmp(pstringout->oval,pstringout->val,sizeof(pstringout->val))) {
+    monitor_mask = recGblResetAlarms(prec);
+    if(strncmp(prec->oval,prec->val,sizeof(prec->val))) {
 	monitor_mask |= DBE_VALUE|DBE_LOG;
-	strncpy(pstringout->oval,pstringout->val,sizeof(pstringout->val));
+	strncpy(prec->oval,prec->val,sizeof(prec->val));
     }
-    if (pstringout->mpst == stringoutPOST_Always)
+    if (prec->mpst == stringoutPOST_Always)
 	monitor_mask |= DBE_VALUE;
-    if (pstringout->apst == stringoutPOST_Always)
+    if (prec->apst == stringoutPOST_Always)
 	monitor_mask |= DBE_LOG;
     if(monitor_mask)
-	db_post_events(pstringout,&(pstringout->val[0]),monitor_mask);
+	db_post_events(prec,&(prec->val[0]),monitor_mask);
     return;
 }
 
-static long writeValue(stringoutRecord *pstringout)
+static long writeValue(stringoutRecord *prec)
 {
 	long		status;
-        struct stringoutdset 	*pdset = (struct stringoutdset *) (pstringout->dset);
+        struct stringoutdset 	*pdset = (struct stringoutdset *) (prec->dset);
 
-	if (pstringout->pact == TRUE){
-		status=(*pdset->write_stringout)(pstringout);
+	if (prec->pact == TRUE){
+		status=(*pdset->write_stringout)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pstringout->siml),DBR_USHORT,
-		&(pstringout->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_USHORT,
+		&(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pstringout->simm == NO){
-		status=(*pdset->write_stringout)(pstringout);
+	if (prec->simm == NO){
+		status=(*pdset->write_stringout)(prec);
 		return(status);
 	}
-	if (pstringout->simm == YES){
-		status=dbPutLink(&pstringout->siol,DBR_STRING,
-			pstringout->val,1);
+	if (prec->simm == YES){
+		status=dbPutLink(&prec->siol,DBR_STRING,
+			prec->val,1);
 	} else {
 		status=-1;
-		recGblSetSevr(pstringout,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pstringout,SIMM_ALARM,pstringout->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

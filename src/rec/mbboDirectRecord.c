@@ -96,7 +96,7 @@ static long writeValue(mbboDirectRecord *);
 
 #define NUM_BITS  16
 
-static long init_record(mbboDirectRecord *pmbboDirect, int pass)
+static long init_record(mbboDirectRecord *prec, int pass)
 {
     struct mbbodset *pdset;
     long status = 0;
@@ -105,131 +105,131 @@ static long init_record(mbboDirectRecord *pmbboDirect, int pass)
     if (pass==0) return(0);
 
     /* mbboDirect.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pmbboDirect->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pmbboDirect->siml,DBF_USHORT,&pmbboDirect->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if(!(pdset = (struct mbbodset *)(pmbboDirect->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pmbboDirect,"mbboDirect: init_record");
+    if(!(pdset = (struct mbbodset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"mbboDirect: init_record");
 	return(S_dev_noDSET);
     }
     /* must have write_mbbo function defined */
     if( (pdset->number < 5) || (pdset->write_mbbo == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pmbboDirect,"mbboDirect: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"mbboDirect: init_record");
 	return(S_dev_missingSup);
     }
-    if (pmbboDirect->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pmbboDirect->dol,DBF_USHORT,&pmbboDirect->val))
-        pmbboDirect->udf = FALSE;
+    if (prec->dol.type == CONSTANT){
+	if(recGblInitConstantLink(&prec->dol,DBF_USHORT,&prec->val))
+        prec->udf = FALSE;
     }
     /* initialize mask*/
-    pmbboDirect->mask = 0;
-    for (i=0; i<pmbboDirect->nobt; i++) {
-        pmbboDirect->mask <<= 1; /* shift left 1 bit*/
-        pmbboDirect->mask |= 1;  /* set low order bit*/
+    prec->mask = 0;
+    for (i=0; i<prec->nobt; i++) {
+        prec->mask <<= 1; /* shift left 1 bit*/
+        prec->mask |= 1;  /* set low order bit*/
     }
     if(pdset->init_record) {
 	epicsUInt32 rval;
 
-	status=(*pdset->init_record)(pmbboDirect);
+	status=(*pdset->init_record)(prec);
         /* init_record might set status */
 	if(status==0){
-		rval = pmbboDirect->rval;
-		if(pmbboDirect->shft>0) rval >>= pmbboDirect->shft;
-		pmbboDirect->val =  (unsigned short)rval;
-		pmbboDirect->udf = FALSE;
+		rval = prec->rval;
+		if(prec->shft>0) rval >>= prec->shft;
+		prec->val =  (unsigned short)rval;
+		prec->udf = FALSE;
 	} else if (status == 2) status = 0;
     }
     return(status);
 }
 
-static long process(mbboDirectRecord *pmbboDirect)
+static long process(mbboDirectRecord *prec)
 {
-    struct mbbodset	*pdset = (struct mbbodset *)(pmbboDirect->dset);
+    struct mbbodset	*pdset = (struct mbbodset *)(prec->dset);
     long		status=0;
-    unsigned char    pact=pmbboDirect->pact;
+    unsigned char    pact=prec->pact;
 
     if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
-	pmbboDirect->pact=TRUE;
-	recGblRecordError(S_dev_missingSup,(void *)pmbboDirect,"write_mbbo");
+	prec->pact=TRUE;
+	recGblRecordError(S_dev_missingSup,(void *)prec,"write_mbbo");
 	return(S_dev_missingSup);
     }
 
-    if (!pmbboDirect->pact) {
-	if(pmbboDirect->dol.type!=CONSTANT && pmbboDirect->omsl==menuOmslclosed_loop){
+    if (!prec->pact) {
+	if(prec->dol.type!=CONSTANT && prec->omsl==menuOmslclosed_loop){
 	    long status;
 	    unsigned short val;
 
-	    status = dbGetLink(&pmbboDirect->dol,DBR_USHORT,&val,0,0);
+	    status = dbGetLink(&prec->dol,DBR_USHORT,&val,0,0);
 	    if(status==0) {
-		pmbboDirect->val= val;
-		pmbboDirect->udf= FALSE;
+		prec->val= val;
+		prec->udf= FALSE;
 	    } 
 	    else {
-		recGblSetSevr(pmbboDirect,LINK_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
 		goto CONTINUE;
 	    }
 	}
-	if(pmbboDirect->udf) {
-	    recGblSetSevr(pmbboDirect,UDF_ALARM,INVALID_ALARM);
+	if(prec->udf) {
+	    recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
 	    goto CONTINUE;
 	}
-	if(pmbboDirect->nsev < INVALID_ALARM
-	&& pmbboDirect->sevr == INVALID_ALARM
-	&& pmbboDirect->omsl == menuOmslsupervisory) {
+	if(prec->nsev < INVALID_ALARM
+	&& prec->sevr == INVALID_ALARM
+	&& prec->omsl == menuOmslsupervisory) {
 	    /* reload value field with B0 - B15 */
 	    int offset = 1, i;
-	    unsigned char *bit = &(pmbboDirect->b0);
+	    unsigned char *bit = &(prec->b0);
 	    for (i=0; i<NUM_BITS; i++, offset = offset << 1, bit++) {
 		if (*bit)
-		    pmbboDirect->val |= offset;
+		    prec->val |= offset;
 		else
-		    pmbboDirect->val &= ~offset;
+		    prec->val &= ~offset;
 	    }
 	}
 	/* convert val to rval */
-	convert(pmbboDirect);
+	convert(prec);
     }
 
 CONTINUE:
-    if (pmbboDirect->nsev < INVALID_ALARM )
-	status=writeValue(pmbboDirect); /* write the new value */
+    if (prec->nsev < INVALID_ALARM )
+	status=writeValue(prec); /* write the new value */
     else
-	switch (pmbboDirect->ivoa) {
+	switch (prec->ivoa) {
 	    case (menuIvoaContinue_normally) :
-		status=writeValue(pmbboDirect); /* write the new value */
+		status=writeValue(prec); /* write the new value */
 		break;
 	    case (menuIvoaDon_t_drive_outputs) :
 		break;
 	    case (menuIvoaSet_output_to_IVOV) :
-		if (pmbboDirect->pact == FALSE){
-		    pmbboDirect->val=pmbboDirect->ivov;
-		    convert(pmbboDirect);
+		if (prec->pact == FALSE){
+		    prec->val=prec->ivov;
+		    convert(prec);
 		}
-		status=writeValue(pmbboDirect); /* write the new value */
+		status=writeValue(prec); /* write the new value */
 		break;
 	    default :
 		status=-1;
-		recGblRecordError(S_db_badField,(void *)pmbboDirect,
+		recGblRecordError(S_db_badField,(void *)prec,
 		    "mbboDirect: process Illegal IVOA field");
 	}
 
     /* check if device support set pact */
-    if ( !pact && pmbboDirect->pact ) return(0);
-    pmbboDirect->pact = TRUE;
+    if ( !pact && prec->pact ) return(0);
+    prec->pact = TRUE;
 
-    recGblGetTimeStamp(pmbboDirect);
+    recGblGetTimeStamp(prec);
     /* check event list */
-    monitor(pmbboDirect);
+    monitor(prec);
     /* process the forward scan link record */
-    recGblFwdLink(pmbboDirect);
-    pmbboDirect->pact=FALSE;
+    recGblFwdLink(prec);
+    prec->pact=FALSE;
     return(status);
 }
 
 static long special(DBADDR *paddr, int after)
 {
-    mbboDirectRecord     *pmbboDirect = (mbboDirectRecord *)(paddr->precord);
+    mbboDirectRecord     *prec = (mbboDirectRecord *)(paddr->precord);
     int special_type = paddr->special, offset = 1, i;
     unsigned char *bit;
 
@@ -241,38 +241,38 @@ static long special(DBADDR *paddr, int after)
         *    offset equals the offset in bit array.  Only do
         *    this if in supervisory mode.
         */
-        if (pmbboDirect->omsl == menuOmslclosed_loop)
+        if (prec->omsl == menuOmslclosed_loop)
            return(0);
 
-        offset = 1 << (((unsigned char *)paddr->pfield) - &(pmbboDirect->b0));
+        offset = 1 << (((unsigned char *)paddr->pfield) - &(prec->b0));
  
         if (*((char *)paddr->pfield)) {
           /* set field */
-           pmbboDirect->val |= offset;
+           prec->val |= offset;
         }
         else {
            /* zero field */
-           pmbboDirect->val &= ~offset;
+           prec->val &= ~offset;
         }
-	pmbboDirect->udf = FALSE;
+	prec->udf = FALSE;
  
-        convert(pmbboDirect);
+        convert(prec);
         return(0);
       case(SPC_RESET):
        /*
         *  If OMSL changes from closed_loop to supervisory,
         *     reload value field with B0 - B15
         */
-        bit = &(pmbboDirect->b0);
-        if (pmbboDirect->omsl == menuOmslsupervisory) {
+        bit = &(prec->b0);
+        if (prec->omsl == menuOmslsupervisory) {
            for (i=0; i<NUM_BITS; i++, offset = offset << 1, bit++) {
               if (*bit)
-                  pmbboDirect->val |= offset;
+                  prec->val |= offset;
               else
-                  pmbboDirect->val &= ~offset;
+                  prec->val &= ~offset;
             }
         }
-	pmbboDirect->udf = FALSE;
+	prec->udf = FALSE;
 
         return(0);
       default:
@@ -281,74 +281,74 @@ static long special(DBADDR *paddr, int after)
     }
 }
 
-static void monitor(mbboDirectRecord *pmbboDirect)
+static void monitor(mbboDirectRecord *prec)
 {
 	unsigned short	monitor_mask;
 
-        monitor_mask = recGblResetAlarms(pmbboDirect);
+        monitor_mask = recGblResetAlarms(prec);
 
         /* check for value change */
-        if (pmbboDirect->mlst != pmbboDirect->val){
+        if (prec->mlst != prec->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
-                pmbboDirect->mlst = pmbboDirect->val;
+                prec->mlst = prec->val;
         }
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pmbboDirect,&pmbboDirect->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
-        if(pmbboDirect->oraw!=pmbboDirect->rval) {
-                db_post_events(pmbboDirect,&pmbboDirect->rval,
+        if(prec->oraw!=prec->rval) {
+                db_post_events(prec,&prec->rval,
 		    monitor_mask|DBE_VALUE|DBE_LOG);
-                pmbboDirect->oraw = pmbboDirect->rval;
+                prec->oraw = prec->rval;
         }
-        if(pmbboDirect->orbv!=pmbboDirect->rbv) {
-                db_post_events(pmbboDirect,&pmbboDirect->rbv,
+        if(prec->orbv!=prec->rbv) {
+                db_post_events(prec,&prec->rbv,
 		    monitor_mask|DBE_VALUE|DBE_LOG);
-                pmbboDirect->orbv = pmbboDirect->rbv;
+                prec->orbv = prec->rbv;
         }
         return;
 }
 
-static void convert(mbboDirectRecord *pmbboDirect)
+static void convert(mbboDirectRecord *prec)
 {
        /* convert val to rval */
-	pmbboDirect->rval = (epicsUInt32)(pmbboDirect->val);
-	if(pmbboDirect->shft>0)
-             pmbboDirect->rval <<= pmbboDirect->shft;
+	prec->rval = (epicsUInt32)(prec->val);
+	if(prec->shft>0)
+             prec->rval <<= prec->shft;
 
 	return;
 }
 
-static long writeValue(mbboDirectRecord *pmbboDirect)
+static long writeValue(mbboDirectRecord *prec)
 {
 	long		status;
-        struct mbbodset *pdset = (struct mbbodset *) (pmbboDirect->dset);
+        struct mbbodset *pdset = (struct mbbodset *) (prec->dset);
 
-	if (pmbboDirect->pact == TRUE){
-		status=(*pdset->write_mbbo)(pmbboDirect);
+	if (prec->pact == TRUE){
+		status=(*pdset->write_mbbo)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pmbboDirect->siml),
-		DBR_ENUM,&(pmbboDirect->simm),0,0);
+	status=dbGetLink(&(prec->siml),
+		DBR_ENUM,&(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pmbboDirect->simm == NO){
-		status=(*pdset->write_mbbo)(pmbboDirect);
+	if (prec->simm == NO){
+		status=(*pdset->write_mbbo)(prec);
 		return(status);
 	}
-	if (pmbboDirect->simm == YES){
-		status=dbPutLink(&pmbboDirect->siol,DBR_USHORT,
-			&pmbboDirect->val,1);
+	if (prec->simm == YES){
+		status=dbPutLink(&prec->siol,DBR_USHORT,
+			&prec->val,1);
 	} else {
 		status=-1;
-		recGblSetSevr(pmbboDirect,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pmbboDirect,SIMM_ALARM,pmbboDirect->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

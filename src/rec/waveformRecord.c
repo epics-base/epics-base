@@ -87,92 +87,92 @@ struct wfdset { /* waveform dset */
 static void monitor(waveformRecord *);
 static long readValue(waveformRecord *);
 
-static long init_record(waveformRecord *pwf, int pass)
+static long init_record(waveformRecord *prec, int pass)
 {
     struct wfdset *pdset;
 
     if (pass==0){
-        if (pwf->nelm <= 0)
-            pwf->nelm = 1;
-        if (pwf->ftvl > DBF_ENUM)
-            pwf->ftvl = DBF_UCHAR;
-        pwf->bptr = calloc(pwf->nelm, dbValueSize(pwf->ftvl));
-        if (pwf->nelm == 1) {
-            pwf->nord = 1;
+        if (prec->nelm <= 0)
+            prec->nelm = 1;
+        if (prec->ftvl > DBF_ENUM)
+            prec->ftvl = DBF_UCHAR;
+        prec->bptr = calloc(prec->nelm, dbValueSize(prec->ftvl));
+        if (prec->nelm == 1) {
+            prec->nord = 1;
         } else {
-            pwf->nord = 0;
+            prec->nord = 0;
         }
         return 0;
     }
 
     /* wf.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pwf->siml.type == CONSTANT) {
-        recGblInitConstantLink(&pwf->siml,DBF_USHORT,&pwf->simm);
+    if (prec->siml.type == CONSTANT) {
+        recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
     /* must have dset defined */
-    if (!(pdset = (struct wfdset *)(pwf->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)pwf,"wf: init_record");
+    if (!(pdset = (struct wfdset *)(prec->dset))) {
+        recGblRecordError(S_dev_noDSET,(void *)prec,"wf: init_record");
         return S_dev_noDSET;
     }
     /* must have read_wf function defined */
     if ((pdset->number < 5) || (pdset->read_wf == NULL)) {
-        recGblRecordError(S_dev_missingSup,(void *)pwf,"wf: init_record");
+        recGblRecordError(S_dev_missingSup,(void *)prec,"wf: init_record");
         return S_dev_missingSup;
     }
     if (! pdset->init_record) return 0;
 
-    return (*pdset->init_record)(pwf);
+    return (*pdset->init_record)(prec);
 }
 
-static long process(waveformRecord *pwf)
+static long process(waveformRecord *prec)
 {
-    struct wfdset *pdset = (struct wfdset *)(pwf->dset);
+    struct wfdset *pdset = (struct wfdset *)(prec->dset);
     long           status;
-    unsigned char  pact=pwf->pact;
+    unsigned char  pact=prec->pact;
 
     if ((pdset==NULL) || (pdset->read_wf==NULL)) {
-        pwf->pact=TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)pwf, "read_wf");
+        prec->pact=TRUE;
+        recGblRecordError(S_dev_missingSup, (void *)prec, "read_wf");
         return S_dev_missingSup;
     }
 
-    if (pact && pwf->busy) return 0;
+    if (pact && prec->busy) return 0;
 
-    status=readValue(pwf); /* read the new value */
-    if (!pact && pwf->pact) return 0;
+    status=readValue(prec); /* read the new value */
+    if (!pact && prec->pact) return 0;
 
-    pwf->pact = TRUE;
-    pwf->udf = FALSE;
-    recGblGetTimeStamp(pwf);
+    prec->pact = TRUE;
+    prec->udf = FALSE;
+    recGblGetTimeStamp(prec);
 
-    monitor(pwf);
+    monitor(prec);
 
     /* process the forward scan link record */
-    recGblFwdLink(pwf);
+    recGblFwdLink(prec);
 
-    pwf->pact=FALSE;
+    prec->pact=FALSE;
     return 0;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    paddr->pfield = pwf->bptr;
-    paddr->no_elements = pwf->nelm;
-    paddr->field_type = pwf->ftvl;
-    paddr->field_size = dbValueSize(pwf->ftvl);
-    paddr->dbr_field_type = pwf->ftvl;
+    paddr->pfield = prec->bptr;
+    paddr->no_elements = prec->nelm;
+    paddr->field_type = prec->ftvl;
+    paddr->field_size = dbValueSize(prec->ftvl);
+    paddr->dbr_field_type = prec->ftvl;
 
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    *no_elements =  pwf->nord;
+    *no_elements =  prec->nord;
     *offset = 0;
 
     return 0;
@@ -180,30 +180,30 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    pwf->nord = nNew;
-    if (pwf->nord > pwf->nelm)
-        pwf->nord = pwf->nelm;
+    prec->nord = nNew;
+    if (prec->nord > prec->nelm)
+        prec->nord = prec->nelm;
 
     return 0;
 }
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    strncpy(units,pwf->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
 
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
-    *precision = pwf->prec;
+    *precision = prec->prec;
 
     if (fieldIndex != waveformRecordVAL)
         recGblGetPrec(paddr, precision);
@@ -213,11 +213,11 @@ static long get_precision(DBADDR *paddr, long *precision)
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
     if (dbGetFieldIndex(paddr) == waveformRecordVAL) {
-        pgd->upper_disp_limit = pwf->hopr;
-        pgd->lower_disp_limit = pwf->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else
         recGblGetGraphicDouble(paddr, pgd);
     return 0;
@@ -225,60 +225,60 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    waveformRecord *pwf = (waveformRecord *) paddr->precord;
+    waveformRecord *prec = (waveformRecord *) paddr->precord;
 
     if (dbGetFieldIndex(paddr) == waveformRecordVAL) {
-        pcd->upper_ctrl_limit = pwf->hopr;
-        pcd->lower_ctrl_limit = pwf->lopr;
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
     } else
         recGblGetControlDouble(paddr, pcd);
     return 0;
 }
 
-static void monitor(waveformRecord *pwf)
+static void monitor(waveformRecord *prec)
 {
     unsigned short monitor_mask;
 
-    monitor_mask = recGblResetAlarms(pwf);
+    monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(pwf, pwf->bptr, monitor_mask);
+    db_post_events(prec, prec->bptr, monitor_mask);
 
     return;
 
 }
 
-static long readValue(waveformRecord *pwf)
+static long readValue(waveformRecord *prec)
 {
     long          status;
-    struct wfdset *pdset = (struct wfdset *) pwf->dset;
+    struct wfdset *pdset = (struct wfdset *) prec->dset;
 
-    if (pwf->pact == TRUE){
-        return (*pdset->read_wf)(pwf);
+    if (prec->pact == TRUE){
+        return (*pdset->read_wf)(prec);
     }
 
-    status = dbGetLink(&(pwf->siml), DBR_ENUM, &(pwf->simm),0,0);
+    status = dbGetLink(&(prec->siml), DBR_ENUM, &(prec->simm),0,0);
     if (status)
         return status;
 
-    if (pwf->simm == NO){
-        return (*pdset->read_wf)(pwf);
+    if (prec->simm == NO){
+        return (*pdset->read_wf)(prec);
     }
 
-    if (pwf->simm == YES){
-        long nRequest = pwf->nelm;
-        status = dbGetLink(&(pwf->siol), pwf->ftvl, pwf->bptr, 0, &nRequest);
+    if (prec->simm == YES){
+        long nRequest = prec->nelm;
+        status = dbGetLink(&(prec->siol), prec->ftvl, prec->bptr, 0, &nRequest);
         /* nord set only for db links: needed for old db_access */
-        if (pwf->siol.type != CONSTANT) {
-            pwf->nord = nRequest;
+        if (prec->siol.type != CONSTANT) {
+            prec->nord = nRequest;
             if (status == 0)
-                pwf->udf=FALSE;
+                prec->udf=FALSE;
         }
     } else {
-        recGblSetSevr(pwf, SOFT_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
         return -1;
     }
-    recGblSetSevr(pwf, SIMM_ALARM, pwf->sims);
+    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
 
     return status;
 }

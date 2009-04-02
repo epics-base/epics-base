@@ -98,7 +98,7 @@ static long readValue(mbbiDirectRecord *);
 /* refreshes all the bit fields based on a hardware value
    and sends monitors if the bit's value or the record's
    severity/status have changed */
-static void refresh_bits(mbbiDirectRecord *pmbbiDirect, 
+static void refresh_bits(mbbiDirectRecord *prec, 
 			 unsigned short monitor_mask)
 {
    unsigned short i;
@@ -106,10 +106,10 @@ static void refresh_bits(mbbiDirectRecord *pmbbiDirect,
    unsigned short momask;
    unsigned char *bit;
 
-   bit = &(pmbbiDirect->b0);
+   bit = &(prec->b0);
    for (i=0; i<NUM_BITS; i++, mask = mask << 1, bit++) {
       momask = monitor_mask;
-      if (pmbbiDirect->val & mask) {
+      if (prec->val & mask) {
          if (*bit == 0) {
             *bit = 1;
             momask |= DBE_VALUE | DBE_LOG;
@@ -121,11 +121,11 @@ static void refresh_bits(mbbiDirectRecord *pmbbiDirect,
          }
       }
       if (momask)
-	 db_post_events(pmbbiDirect,bit,momask);
+	 db_post_events(prec,bit,momask);
    }
 }
 
-static long init_record(mbbiDirectRecord *pmbbiDirect, int pass)
+static long init_record(mbbiDirectRecord *prec, int pass)
 {
     struct mbbidset *pdset;
     long status;
@@ -133,143 +133,143 @@ static long init_record(mbbiDirectRecord *pmbbiDirect, int pass)
     if (pass==0) return(0);
 
     /* siml must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    if (pmbbiDirect->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pmbbiDirect->siml,DBF_USHORT,&pmbbiDirect->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
     /* siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pmbbiDirect->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pmbbiDirect->siol,DBF_USHORT,&pmbbiDirect->sval);
+    if (prec->siol.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
     }
 
-    if(!(pdset = (struct mbbidset *)(pmbbiDirect->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pmbbiDirect,"mbbiDirect: init_record");
+    if(!(pdset = (struct mbbidset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"mbbiDirect: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_mbbi function defined */
     if( (pdset->number < 5) || (pdset->read_mbbi == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pmbbiDirect,"mbbiDirect: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"mbbiDirect: init_record");
 	return(S_dev_missingSup);
     }
     /* initialize mask*/
-    pmbbiDirect->mask = (1 << pmbbiDirect->nobt) - 1;
+    prec->mask = (1 << prec->nobt) - 1;
 
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pmbbiDirect))) return(status);
-        refresh_bits(pmbbiDirect, 0);
+	if((status=(*pdset->init_record)(prec))) return(status);
+        refresh_bits(prec, 0);
     }
     return(0);
 }
 
-static long process(mbbiDirectRecord *pmbbiDirect)
+static long process(mbbiDirectRecord *prec)
 {
-	struct mbbidset	*pdset = (struct mbbidset *)(pmbbiDirect->dset);
+	struct mbbidset	*pdset = (struct mbbidset *)(prec->dset);
 	long		status;
-	unsigned char    pact=pmbbiDirect->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
-		pmbbiDirect->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pmbbiDirect,"read_mbbi");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_mbbi");
 		return(S_dev_missingSup);
 	}
 
-	status=readValue(pmbbiDirect); /* read the new value */
+	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pmbbiDirect->pact ) return(0);
-	pmbbiDirect->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pmbbiDirect);
+	recGblGetTimeStamp(prec);
 
 	if(status==0) { /* convert the value */
-		epicsUInt32 rval = pmbbiDirect->rval;
+		epicsUInt32 rval = prec->rval;
 
-		if(pmbbiDirect->shft>0) rval >>= pmbbiDirect->shft;
-		pmbbiDirect->val =  (unsigned short)rval;
-		pmbbiDirect->udf=FALSE;
+		if(prec->shft>0) rval >>= prec->shft;
+		prec->val =  (unsigned short)rval;
+		prec->udf=FALSE;
 
 	}
 	else if(status == 2) status = 0;
 
 	/* check event list */
-	monitor(pmbbiDirect);
+	monitor(prec);
 
 	/* process the forward scan link record */
-	recGblFwdLink(pmbbiDirect);
+	recGblFwdLink(prec);
 
-	pmbbiDirect->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
-static void monitor(mbbiDirectRecord *pmbbiDirect)
+static void monitor(mbbiDirectRecord *prec)
 {
 	unsigned short	monitor_mask;
 
-        monitor_mask = recGblResetAlarms(pmbbiDirect);
+        monitor_mask = recGblResetAlarms(prec);
 
 	/* send out bit field monitors (value change and sevr change) */
-        refresh_bits(pmbbiDirect, monitor_mask);
+        refresh_bits(prec, monitor_mask);
 
         /* check for value change */
-        if (pmbbiDirect->mlst != pmbbiDirect->val) {
+        if (prec->mlst != prec->val) {
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
-                pmbbiDirect->mlst = pmbbiDirect->val;
+                prec->mlst = prec->val;
         }
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pmbbiDirect,&pmbbiDirect->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
-        if(pmbbiDirect->oraw!=pmbbiDirect->rval) {
-                db_post_events(pmbbiDirect,&pmbbiDirect->rval,
+        if(prec->oraw!=prec->rval) {
+                db_post_events(prec,&prec->rval,
 		    monitor_mask|DBE_VALUE|DBE_LOG);
-                pmbbiDirect->oraw = pmbbiDirect->rval;
+                prec->oraw = prec->rval;
         }
         return;
 }
 
-static long readValue(mbbiDirectRecord *pmbbiDirect)
+static long readValue(mbbiDirectRecord *prec)
 {
 	long		status;
-        struct mbbidset 	*pdset = (struct mbbidset *) (pmbbiDirect->dset);
+        struct mbbidset 	*pdset = (struct mbbidset *) (prec->dset);
 
-	if (pmbbiDirect->pact == TRUE){
-		status=(*pdset->read_mbbi)(pmbbiDirect);
+	if (prec->pact == TRUE){
+		status=(*pdset->read_mbbi)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pmbbiDirect->siml),DBR_ENUM,
-		&(pmbbiDirect->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_ENUM,
+		&(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pmbbiDirect->simm == NO){
-		status=(*pdset->read_mbbi)(pmbbiDirect);
+	if (prec->simm == NO){
+		status=(*pdset->read_mbbi)(prec);
 		return(status);
 	}
-	if (pmbbiDirect->simm == menuSimmYES){
-		status=dbGetLink(&(pmbbiDirect->siol),
-				 DBR_ULONG,&(pmbbiDirect->sval),0,0);
+	if (prec->simm == menuSimmYES){
+		status=dbGetLink(&(prec->siol),
+				 DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pmbbiDirect->val=(unsigned short)pmbbiDirect->sval;
-			pmbbiDirect->udf=FALSE;
+			prec->val=(unsigned short)prec->sval;
+			prec->udf=FALSE;
 		}
 		status=2;	/* don't convert */
 	}
-	else if (pmbbiDirect->simm == menuSimmRAW){
-		status=dbGetLink(&(pmbbiDirect->siol),
-				 DBR_ULONG,&(pmbbiDirect->sval),0,0);
+	else if (prec->simm == menuSimmRAW){
+		status=dbGetLink(&(prec->siol),
+				 DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pmbbiDirect->rval=pmbbiDirect->sval;
-			pmbbiDirect->udf=FALSE;
+			prec->rval=prec->sval;
+			prec->udf=FALSE;
 		}
 		status=0;	/* convert since we've written RVAL */
 	} else {
 		status=-1;
-		recGblSetSevr(pmbbiDirect,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-	recGblSetSevr(pmbbiDirect,SIMM_ALARM,pmbbiDirect->sims);
+	recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

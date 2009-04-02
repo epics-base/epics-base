@@ -97,181 +97,181 @@ static void monitor(mbboRecord *);
 static long writeValue();
 
 
-static void init_common(mbboRecord *pmbbo)
+static void init_common(mbboRecord *prec)
 {
         epicsUInt32   *pstate_values;
 	char		*pstate_string;
         short           i;
 
         /* determine if any states are defined */
-        pstate_values = &(pmbbo->zrvl); pstate_string = pmbbo->zrst;
-        pmbbo->sdef = FALSE;
-        for (i=0; i<16; i++, pstate_string += sizeof(pmbbo->zrst)) {
+        pstate_values = &(prec->zrvl); pstate_string = prec->zrst;
+        prec->sdef = FALSE;
+        for (i=0; i<16; i++, pstate_string += sizeof(prec->zrst)) {
                 if((*(pstate_values+i)!= 0) || (*pstate_string !='\0')) {
-                        pmbbo->sdef = TRUE;
+                        prec->sdef = TRUE;
                         return;
                 }
         }
         return;
 }
 
-static long init_record(mbboRecord *pmbbo, int pass)
+static long init_record(mbboRecord *prec, int pass)
 {
     struct mbbodset *pdset;
     long status;
     int	i;
 
     if (pass==0) {
-        init_common(pmbbo);
+        init_common(prec);
         return(0);
     }
 
     /* mbbo.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pmbbo->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pmbbo->siml,DBF_USHORT,&pmbbo->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if(!(pdset = (struct mbbodset *)(pmbbo->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pmbbo,"mbbo: init_record");
+    if(!(pdset = (struct mbbodset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"mbbo: init_record");
 	return(S_dev_noDSET);
     }
     /* must have write_mbbo function defined */
     if( (pdset->number < 5) || (pdset->write_mbbo == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pmbbo,"mbbo: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"mbbo: init_record");
 	return(S_dev_missingSup);
     }
-    if (pmbbo->dol.type == CONSTANT){
-	if(recGblInitConstantLink(&pmbbo->dol,DBF_USHORT,&pmbbo->val))
-	    pmbbo->udf = FALSE;
+    if (prec->dol.type == CONSTANT){
+	if(recGblInitConstantLink(&prec->dol,DBF_USHORT,&prec->val))
+	    prec->udf = FALSE;
     }
 
     /* initialize mask*/
-    pmbbo->mask = 0;
-    for (i=0; i<pmbbo->nobt; i++) {
-        pmbbo->mask <<= 1; /* shift left 1 bit*/
-        pmbbo->mask |= 1;  /* set low order bit*/
+    prec->mask = 0;
+    for (i=0; i<prec->nobt; i++) {
+        prec->mask <<= 1; /* shift left 1 bit*/
+        prec->mask |= 1;  /* set low order bit*/
     }
     if( pdset->init_record ) {
 	epicsUInt32 rval;
 
-	status=(*pdset->init_record)(pmbbo);
+	status=(*pdset->init_record)(prec);
         /* init_record might set status */
-	init_common(pmbbo);
+	init_common(prec);
 	if(status==0){
-		rval = pmbbo->rval;
-		if(pmbbo->shft>0) rval >>= pmbbo->shft;
-		if (pmbbo->sdef){
+		rval = prec->rval;
+		if(prec->shft>0) rval >>= prec->shft;
+		if (prec->sdef){
 			epicsUInt32   *pstate_values;
 			short           i;
 
-			pstate_values = &(pmbbo->zrvl);
-			pmbbo->val = 65535;        /* initalize to unknown state*/
+			pstate_values = &(prec->zrvl);
+			prec->val = 65535;        /* initalize to unknown state*/
 			for (i = 0; i < 16; i++){
 				if (*pstate_values == rval){
-					pmbbo->val = i;
+					prec->val = i;
 					break;
 				}
 				pstate_values++;
 			}
 		}else{
 		/* the raw  is the desired val */
-		pmbbo->val =  (unsigned short)rval;
+		prec->val =  (unsigned short)rval;
 		}
-		pmbbo->udf = FALSE;
+		prec->udf = FALSE;
 	} else if (status==2) status=0;
     }
-    init_common(pmbbo);
+    init_common(prec);
     /* convert val to rval */
-    convert(pmbbo);
+    convert(prec);
     return(0);
 }
 
-static long process(mbboRecord *pmbbo)
+static long process(mbboRecord *prec)
 {
-    struct mbbodset	*pdset = (struct mbbodset *)(pmbbo->dset);
+    struct mbbodset	*pdset = (struct mbbodset *)(prec->dset);
     long		status=0;
-    unsigned char    pact=pmbbo->pact;
+    unsigned char    pact=prec->pact;
 
     if( (pdset==NULL) || (pdset->write_mbbo==NULL) ) {
-	pmbbo->pact=TRUE;
-	recGblRecordError(S_dev_missingSup,(void *)pmbbo,"write_mbbo");
+	prec->pact=TRUE;
+	recGblRecordError(S_dev_missingSup,(void *)prec,"write_mbbo");
 	return(S_dev_missingSup);
     }
 
-    if (!pmbbo->pact) {
-	if (pmbbo->dol.type != CONSTANT && pmbbo->omsl == menuOmslclosed_loop) {
+    if (!prec->pact) {
+	if (prec->dol.type != CONSTANT && prec->omsl == menuOmslclosed_loop) {
 	    long status;
 	    unsigned short val;
 
-	    status = dbGetLink(&pmbbo->dol,DBR_USHORT, &val,0,0);
+	    status = dbGetLink(&prec->dol,DBR_USHORT, &val,0,0);
 	    if(status==0) {
-		pmbbo->val= val;
-		pmbbo->udf= FALSE;
+		prec->val= val;
+		prec->udf= FALSE;
 	    } else {
-		recGblSetSevr(pmbbo,LINK_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
 		goto CONTINUE;
 	    }
 	}
-	if(pmbbo->udf==TRUE) {
-		recGblSetSevr(pmbbo,UDF_ALARM,INVALID_ALARM);
+	if(prec->udf==TRUE) {
+		recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
 		goto CONTINUE;
 	}
 	/* convert val to rval */
-	convert(pmbbo);
+	convert(prec);
     }
 
 CONTINUE:
     /* check for alarms */
-    checkAlarms(pmbbo);
+    checkAlarms(prec);
 
-    if (pmbbo->nsev < INVALID_ALARM )
-            status=writeValue(pmbbo); /* write the new value */
+    if (prec->nsev < INVALID_ALARM )
+            status=writeValue(prec); /* write the new value */
     else {
-            switch (pmbbo->ivoa) {
+            switch (prec->ivoa) {
                 case (menuIvoaContinue_normally) :
-                    status=writeValue(pmbbo); /* write the new value */
+                    status=writeValue(prec); /* write the new value */
                     break;
                 case (menuIvoaDon_t_drive_outputs) :
                     break;
                 case (menuIvoaSet_output_to_IVOV) :
-                    if (pmbbo->pact == FALSE){
-			pmbbo->val=pmbbo->ivov;
-			convert(pmbbo);
+                    if (prec->pact == FALSE){
+			prec->val=prec->ivov;
+			convert(prec);
 		    }
-                    status=writeValue(pmbbo); /* write the new value */
+                    status=writeValue(prec); /* write the new value */
                     break;
                 default :
                     status=-1;
-                    recGblRecordError(S_db_badField,(void *)pmbbo,
+                    recGblRecordError(S_db_badField,(void *)prec,
                             "mbbo:process Illegal IVOA field");
             }
     }
 
     /* check if device support set pact */
-    if ( !pact && pmbbo->pact ) return(0);
-    pmbbo->pact = TRUE;
+    if ( !pact && prec->pact ) return(0);
+    prec->pact = TRUE;
 
-    recGblGetTimeStamp(pmbbo);
+    recGblGetTimeStamp(prec);
     /* check event list */
-    monitor(pmbbo);
+    monitor(prec);
     /* process the forward scan link record */
-    recGblFwdLink(pmbbo);
-    pmbbo->pact=FALSE;
+    recGblFwdLink(prec);
+    prec->pact=FALSE;
     return(status);
 }
 
 static long special(DBADDR *paddr, int after)
 {
-    mbboRecord     *pmbbo = (mbboRecord *)(paddr->precord);
+    mbboRecord     *prec = (mbboRecord *)(paddr->precord);
     int            special_type = paddr->special;
     int            fieldIndex = dbGetFieldIndex(paddr);
 
     if(!after) return(0);
     switch(special_type) {
     case(SPC_MOD):
-        init_common(pmbbo);
+        init_common(prec);
         if (fieldIndex >= mbboRecordZRST && fieldIndex <= mbboRecordFFST)
-            db_post_events(pmbbo,&pmbbo->val,DBE_PROPERTY);
+            db_post_events(prec,&prec->val,DBE_PROPERTY);
         return(0);
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"mbbo: special");
@@ -281,7 +281,7 @@ static long special(DBADDR *paddr, int after)
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    mbboRecord *pmbbo=(mbboRecord *)paddr->precord;
+    mbboRecord *prec=(mbboRecord *)paddr->precord;
     int index;
 
     index = dbGetFieldIndex(paddr);
@@ -289,7 +289,7 @@ static long cvt_dbaddr(DBADDR *paddr)
         recGblDbaddrError(S_db_badField,paddr,"mbbo: cvt_dbaddr");
         return(0);
     }
-    if(!pmbbo->sdef)  {
+    if(!prec->sdef)  {
         paddr->field_type = DBF_USHORT;
         paddr->dbr_field_type = DBF_USHORT;
     }
@@ -298,7 +298,7 @@ static long cvt_dbaddr(DBADDR *paddr)
 
 static long get_enum_str(DBADDR *paddr, char *pstring)
 {
-    mbboRecord	*pmbbo=(mbboRecord *)paddr->precord;
+    mbboRecord	*prec=(mbboRecord *)paddr->precord;
     char		*psource;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
@@ -308,9 +308,9 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     if(index!=mbboRecordVAL) {
         strcpy(pstring,"Illegal_Value");
     } else if(val<= 15) {
-	psource = (pmbbo->zrst);
-	psource += (val * sizeof(pmbbo->zrst));
-	strncpy(pstring,psource,sizeof(pmbbo->zrst));
+	psource = (prec->zrst);
+	psource += (val * sizeof(prec->zrst));
+	strncpy(pstring,psource,sizeof(prec->zrst));
     } else {
 	strcpy(pstring,"Illegal Value");
     }
@@ -319,15 +319,15 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
 
 static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 {
-    mbboRecord	*pmbbo=(mbboRecord *)paddr->precord;
+    mbboRecord	*prec=(mbboRecord *)paddr->precord;
     char		*psource;
     int			i;
     short		no_str;
 
     no_str=0;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    for(i=0,psource=(pmbbo->zrst); i<16; i++, psource += sizeof(pmbbo->zrst) ) {
-	strncpy(pes->strs[i],psource,sizeof(pmbbo->zrst));
+    for(i=0,psource=(prec->zrst); i<16; i++, psource += sizeof(prec->zrst) ) {
+	strncpy(pes->strs[i],psource,sizeof(prec->zrst));
   	if(*psource!=0)no_str=i+1;
     }
     pes->no_str = no_str;
@@ -336,119 +336,119 @@ static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
 }
 static long put_enum_str(DBADDR *paddr,char *pstring)
 {
-    mbboRecord     *pmbbo=(mbboRecord *)paddr->precord;
+    mbboRecord     *prec=(mbboRecord *)paddr->precord;
         char              *pstate_name;
         short             i;
 
-        if (pmbbo->sdef){
-                pstate_name = pmbbo->zrst;
+        if (prec->sdef){
+                pstate_name = prec->zrst;
                 for (i = 0; i < 16; i++){
-                        if(strncmp(pstate_name,pstring,sizeof(pmbbo->zrst))==0){
-                                pmbbo->val = i;
+                        if(strncmp(pstate_name,pstring,sizeof(prec->zrst))==0){
+                                prec->val = i;
                                 return(0);
                         }
-                        pstate_name += sizeof(pmbbo->zrst);
+                        pstate_name += sizeof(prec->zrst);
                 }
         }
 	return(S_db_badChoice);
 }
 
-static void checkAlarms(mbboRecord *pmbbo)
+static void checkAlarms(mbboRecord *prec)
 {
 	unsigned short *severities;
-	unsigned short	val=pmbbo->val;
+	unsigned short	val=prec->val;
 
 
         /* check for  state alarm */
         /* unknown state */
         if (val > 15){
-                recGblSetSevr(pmbbo,STATE_ALARM,pmbbo->unsv);
+                recGblSetSevr(prec,STATE_ALARM,prec->unsv);
         } else {
         	/* in a state which is an error */
-        	severities = (unsigned short *)&(pmbbo->zrsv);
-                recGblSetSevr(pmbbo,STATE_ALARM,severities[pmbbo->val]);
+        	severities = (unsigned short *)&(prec->zrsv);
+                recGblSetSevr(prec,STATE_ALARM,severities[prec->val]);
 	}
 
         /* check for cos alarm */
-	if(val == pmbbo->lalm) return;
-        if(recGblSetSevr(pmbbo,COS_ALARM,pmbbo->cosv)) return;
-        pmbbo->lalm = val;
+	if(val == prec->lalm) return;
+        if(recGblSetSevr(prec,COS_ALARM,prec->cosv)) return;
+        prec->lalm = val;
 	return;
 }
 
-static void monitor(mbboRecord *pmbbo)
+static void monitor(mbboRecord *prec)
 {
 	unsigned short	monitor_mask;
 
-        monitor_mask = recGblResetAlarms(pmbbo);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        if (pmbbo->mlst != pmbbo->val){
+        if (prec->mlst != prec->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
-                pmbbo->mlst = pmbbo->val;
+                prec->mlst = prec->val;
         }
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pmbbo,&pmbbo->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
-        if(pmbbo->oraw!=pmbbo->rval) {
-                db_post_events(pmbbo,&pmbbo->rval,monitor_mask|DBE_VALUE);
-                pmbbo->oraw = pmbbo->rval;
+        if(prec->oraw!=prec->rval) {
+                db_post_events(prec,&prec->rval,monitor_mask|DBE_VALUE);
+                prec->oraw = prec->rval;
         }
-        if(pmbbo->orbv!=pmbbo->rbv) {
-                db_post_events(pmbbo,&pmbbo->rbv,monitor_mask|DBE_VALUE);
-                pmbbo->orbv = pmbbo->rbv;
+        if(prec->orbv!=prec->rbv) {
+                db_post_events(prec,&prec->rbv,monitor_mask|DBE_VALUE);
+                prec->orbv = prec->rbv;
         }
         return;
 }
 
-static void convert(mbboRecord *pmbbo)
+static void convert(mbboRecord *prec)
 {
-	epicsUInt32 *pvalues = &(pmbbo->zrvl);
+	epicsUInt32 *pvalues = &(prec->zrvl);
 
 	/* convert val to rval */
-	if(pmbbo->sdef) {
+	if(prec->sdef) {
 
-	    if(pmbbo->val>15) {
-		recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM);
+	    if(prec->val>15) {
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return;
 	    }
-	    pmbbo->rval = pvalues[pmbbo->val];
-	} else pmbbo->rval = (epicsUInt32)(pmbbo->val);
-	if(pmbbo->shft>0) pmbbo->rval <<= pmbbo->shft;
+	    prec->rval = pvalues[prec->val];
+	} else prec->rval = (epicsUInt32)(prec->val);
+	if(prec->shft>0) prec->rval <<= prec->shft;
 
 	return;
 }
 
 
 
-static long writeValue(mbboRecord *pmbbo)
+static long writeValue(mbboRecord *prec)
 {
 	long		status;
-        struct mbbodset 	*pdset = (struct mbbodset *) (pmbbo->dset);
+        struct mbbodset 	*pdset = (struct mbbodset *) (prec->dset);
 
-	if (pmbbo->pact == TRUE){
-		status=(*pdset->write_mbbo)(pmbbo);
+	if (prec->pact == TRUE){
+		status=(*pdset->write_mbbo)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pmbbo->siml),DBR_USHORT, &(pmbbo->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pmbbo->simm == NO){
-		status=(*pdset->write_mbbo)(pmbbo);
+	if (prec->simm == NO){
+		status=(*pdset->write_mbbo)(prec);
 		return(status);
 	}
-	if (pmbbo->simm == YES){
-		status=dbPutLink(&pmbbo->siol,DBR_USHORT, &pmbbo->val,1);
+	if (prec->simm == YES){
+		status=dbPutLink(&prec->siol,DBR_USHORT, &prec->val,1);
 	} else {
 		status=-1;
-		recGblSetSevr(pmbbo,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pmbbo,SIMM_ALARM,pmbbo->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

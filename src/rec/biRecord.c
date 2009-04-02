@@ -89,68 +89,68 @@ static void checkAlarms(biRecord *);
 static void monitor(biRecord *);
 static long readValue(biRecord *);
 
-static long init_record(biRecord *pbi, int pass)
+static long init_record(biRecord *prec, int pass)
 {
     struct bidset *pdset;
     long status;
 
     if (pass==0) return(0);
 
-    recGblInitConstantLink(&pbi->siml,DBF_USHORT,&pbi->simm);
-    recGblInitConstantLink(&pbi->siol,DBF_USHORT,&pbi->sval);
-    if(!(pdset = (struct bidset *)(pbi->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pbi,"bi: init_record");
+    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
+    if(!(pdset = (struct bidset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"bi: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_bi function defined */
     if( (pdset->number < 5) || (pdset->read_bi == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pbi,"bi: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"bi: init_record");
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pbi))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
     return(0);
 }
 
-static long process(biRecord *pbi)
+static long process(biRecord *prec)
 {
-	struct bidset	*pdset = (struct bidset *)(pbi->dset);
+	struct bidset	*pdset = (struct bidset *)(prec->dset);
 	long		 status;
-	unsigned char    pact=pbi->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_bi==NULL) ) {
-		pbi->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pbi,"read_bi");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_bi");
 		return(S_dev_missingSup);
 	}
 
-	status=readValue(pbi); /* read the new value */
+	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pbi->pact ) return(0);
-	pbi->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pbi);
+	recGblGetTimeStamp(prec);
 	if(status==0) { /* convert rval to val */
-		if(pbi->rval==0) pbi->val =0;
-		else pbi->val = 1;
-		pbi->udf = FALSE;
+		if(prec->rval==0) prec->val =0;
+		else prec->val = 1;
+		prec->udf = FALSE;
 	}
 	else if(status==2) status=0;
 	/* check for alarms */
-	checkAlarms(pbi);
+	checkAlarms(prec);
 	/* check event list */
-	monitor(pbi);
+	monitor(prec);
 	/* process the forward scan link record */
-	recGblFwdLink(pbi);
+	recGblFwdLink(prec);
 
-	pbi->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 static long get_enum_str(DBADDR *paddr, char *pstring)
 {
-    biRecord	*pbi=(biRecord *)paddr->precord;
+    biRecord	*prec=(biRecord *)paddr->precord;
     int                 index;
     unsigned short      *pfield = (unsigned short *)paddr->pfield;
 
@@ -159,11 +159,11 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     if(index!=biRecordVAL) {
 	strcpy(pstring,"Illegal_Value");
     } else if(*pfield==0) {
-	strncpy(pstring,pbi->znam,sizeof(pbi->znam));
-	pstring[sizeof(pbi->znam)] = 0;
+	strncpy(pstring,prec->znam,sizeof(prec->znam));
+	pstring[sizeof(prec->znam)] = 0;
     } else if(*pfield==1) {
-	strncpy(pstring,pbi->onam,sizeof(pbi->onam));
-	pstring[sizeof(pbi->onam)] = 0;
+	strncpy(pstring,prec->onam,sizeof(prec->onam));
+	pstring[sizeof(prec->onam)] = 0;
     } else {
 	strcpy(pstring,"Illegal_Value");
     }
@@ -172,118 +172,118 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
 
 static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
 {
-    biRecord	*pbi=(biRecord *)paddr->precord;
+    biRecord	*prec=(biRecord *)paddr->precord;
 
     pes->no_str = 2;
     memset(pes->strs,'\0',sizeof(pes->strs));
-    strncpy(pes->strs[0],pbi->znam,sizeof(pbi->znam));
-    if(*pbi->znam!=0) pes->no_str=1;
-    strncpy(pes->strs[1],pbi->onam,sizeof(pbi->onam));
-    if(*pbi->onam!=0) pes->no_str=2;
+    strncpy(pes->strs[0],prec->znam,sizeof(prec->znam));
+    if(*prec->znam!=0) pes->no_str=1;
+    strncpy(pes->strs[1],prec->onam,sizeof(prec->onam));
+    if(*prec->onam!=0) pes->no_str=2;
     return(0);
 }
 
 static long put_enum_str(DBADDR *paddr, char *pstring)
 {
-    biRecord     *pbi=(biRecord *)paddr->precord;
+    biRecord     *prec=(biRecord *)paddr->precord;
 
-    if(strncmp(pstring,pbi->znam,sizeof(pbi->znam))==0) pbi->val = 0;
-    else  if(strncmp(pstring,pbi->onam,sizeof(pbi->onam))==0) pbi->val = 1;
+    if(strncmp(pstring,prec->znam,sizeof(prec->znam))==0) prec->val = 0;
+    else  if(strncmp(pstring,prec->onam,sizeof(prec->onam))==0) prec->val = 1;
     else return(S_db_badChoice);
-    pbi->udf=FALSE;
+    prec->udf=FALSE;
     return(0);
 }
 
 
-static void checkAlarms(biRecord *pbi)
+static void checkAlarms(biRecord *prec)
 {
-	unsigned short val = pbi->val;
+	unsigned short val = prec->val;
 
 
-        if(pbi->udf == TRUE){
-                recGblSetSevr(pbi,UDF_ALARM,INVALID_ALARM);
+        if(prec->udf == TRUE){
+                recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
                 return;
         }
 
 	if(val>1)return;
         /* check for  state alarm */
         if (val == 0){
-                recGblSetSevr(pbi,STATE_ALARM,pbi->zsv);
+                recGblSetSevr(prec,STATE_ALARM,prec->zsv);
         }else{
-                recGblSetSevr(pbi,STATE_ALARM,pbi->osv);
+                recGblSetSevr(prec,STATE_ALARM,prec->osv);
         }
 
         /* check for cos alarm */
-	if(val == pbi->lalm) return;
-        recGblSetSevr(pbi,COS_ALARM,pbi->cosv);
-	pbi->lalm = val;
+	if(val == prec->lalm) return;
+        recGblSetSevr(prec,COS_ALARM,prec->cosv);
+	prec->lalm = val;
 	return;
 }
 
-static void monitor(biRecord *pbi)
+static void monitor(biRecord *prec)
 {
 	unsigned short	monitor_mask;
 
-        monitor_mask = recGblResetAlarms(pbi);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        if (pbi->mlst != pbi->val){
+        if (prec->mlst != prec->val){
                 /* post events for value change and archive change */
                 monitor_mask |= (DBE_VALUE | DBE_LOG);
                 /* update last value monitored */
-                pbi->mlst = pbi->val;
+                prec->mlst = prec->val;
         }
 
 	/* send out monitors connected to the value field */
 	if (monitor_mask){
-		db_post_events(pbi,&pbi->val,monitor_mask);
+		db_post_events(prec,&prec->val,monitor_mask);
 	}
-	if(pbi->oraw!=pbi->rval) {
-		db_post_events(pbi,&pbi->rval,
+	if(prec->oraw!=prec->rval) {
+		db_post_events(prec,&prec->rval,
 		    monitor_mask|DBE_VALUE|DBE_LOG);
-		pbi->oraw = pbi->rval;
+		prec->oraw = prec->rval;
 	}
 	return;
 }
 
-static long readValue(biRecord *pbi)
+static long readValue(biRecord *prec)
 {
 	long		status;
-        struct bidset 	*pdset = (struct bidset *) (pbi->dset);
+        struct bidset 	*pdset = (struct bidset *) (prec->dset);
 
-	if (pbi->pact == TRUE){
-		status=(*pdset->read_bi)(pbi);
+	if (prec->pact == TRUE){
+		status=(*pdset->read_bi)(prec);
 		return(status);
 	}
 
-	status = dbGetLink(&(pbi->siml),DBR_USHORT, &(pbi->simm),0,0);
+	status = dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pbi->simm == menuSimmNO){
-		status=(*pdset->read_bi)(pbi);
+	if (prec->simm == menuSimmNO){
+		status=(*pdset->read_bi)(prec);
 		return(status);
 	}
-	if (pbi->simm == menuSimmYES){
-		status=dbGetLink(&(pbi->siol),DBR_ULONG,&(pbi->sval),0,0);
+	if (prec->simm == menuSimmYES){
+		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pbi->val=(unsigned short)pbi->sval;
-			pbi->udf=FALSE;
+			prec->val=(unsigned short)prec->sval;
+			prec->udf=FALSE;
 		}
                 status=2; /* dont convert */
 	}
-	else if (pbi->simm == menuSimmRAW){
-		status=dbGetLink(&(pbi->siol),DBR_ULONG,&(pbi->sval),0,0);
+	else if (prec->simm == menuSimmRAW){
+		status=dbGetLink(&(prec->siol),DBR_ULONG,&(prec->sval),0,0);
 		if (status==0){
-			pbi->rval=pbi->sval;
-			pbi->udf=FALSE;
+			prec->rval=prec->sval;
+			prec->udf=FALSE;
 		}
 		status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
-		recGblSetSevr(pbi,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-	recGblSetSevr(pbi,SIMM_ALARM,pbi->sims);
+	recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

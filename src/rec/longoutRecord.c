@@ -85,118 +85,118 @@ struct longoutdset { /* longout input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	write_longout;/*(-1,0)=>(failure,success*/
 };
-static void checkAlarms(longoutRecord *plongout);
-static void monitor(longoutRecord *plongout);
-static long writeValue(longoutRecord *plongout);
-static void convert(longoutRecord *plongout, epicsInt32 value);
+static void checkAlarms(longoutRecord *prec);
+static void monitor(longoutRecord *prec);
+static long writeValue(longoutRecord *prec);
+static void convert(longoutRecord *prec, epicsInt32 value);
 
 
-static long init_record(longoutRecord *plongout, int pass)
+static long init_record(longoutRecord *prec, int pass)
 {
     struct longoutdset *pdset;
     long status=0;
 
     if (pass==0) return(0);
-    if (plongout->siml.type == CONSTANT) {
-	recGblInitConstantLink(&plongout->siml,DBF_USHORT,&plongout->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
-    if(!(pdset = (struct longoutdset *)(plongout->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)plongout,"longout: init_record");
+    if(!(pdset = (struct longoutdset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"longout: init_record");
 	return(S_dev_noDSET);
     }
     /* must have  write_longout functions defined */
     if( (pdset->number < 5) || (pdset->write_longout == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)plongout,"longout: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"longout: init_record");
 	return(S_dev_missingSup);
     }
-    if (plongout->dol.type == CONSTANT) {
-	if(recGblInitConstantLink(&plongout->dol,DBF_LONG,&plongout->val))
-	    plongout->udf=FALSE;
+    if (prec->dol.type == CONSTANT) {
+	if(recGblInitConstantLink(&prec->dol,DBF_LONG,&prec->val))
+	    prec->udf=FALSE;
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(plongout))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
     return(0);
 }
 
-static long process(longoutRecord *plongout)
+static long process(longoutRecord *prec)
 {
-	struct longoutdset	*pdset = (struct longoutdset *)(plongout->dset);
+	struct longoutdset	*pdset = (struct longoutdset *)(prec->dset);
 	long		 status=0;
 	epicsInt32	 value;
-	unsigned char    pact=plongout->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->write_longout==NULL) ) {
-		plongout->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)plongout,"write_longout");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"write_longout");
 		return(S_dev_missingSup);
 	}
-	if (!plongout->pact) {
-		if((plongout->dol.type != CONSTANT)
-                && (plongout->omsl == menuOmslclosed_loop)) {
-			status = dbGetLink(&(plongout->dol),DBR_LONG,
+	if (!prec->pact) {
+		if((prec->dol.type != CONSTANT)
+                && (prec->omsl == menuOmslclosed_loop)) {
+			status = dbGetLink(&(prec->dol),DBR_LONG,
 				&value,0,0);
-			if (plongout->dol.type!=CONSTANT && RTN_SUCCESS(status))
-				plongout->udf=FALSE;
+			if (prec->dol.type!=CONSTANT && RTN_SUCCESS(status))
+				prec->udf=FALSE;
 		}
 		else {
-			value = plongout->val;
+			value = prec->val;
 		}
-		if (!status) convert(plongout,value);
+		if (!status) convert(prec,value);
 	}
 
 	/* check for alarms */
-	checkAlarms(plongout);
+	checkAlarms(prec);
 
-        if (plongout->nsev < INVALID_ALARM )
-                status=writeValue(plongout); /* write the new value */
+        if (prec->nsev < INVALID_ALARM )
+                status=writeValue(prec); /* write the new value */
         else {
-                switch (plongout->ivoa) {
+                switch (prec->ivoa) {
                     case (menuIvoaContinue_normally) :
-                        status=writeValue(plongout); /* write the new value */
+                        status=writeValue(prec); /* write the new value */
                         break;
                     case (menuIvoaDon_t_drive_outputs) :
                         break;
                     case (menuIvoaSet_output_to_IVOV) :
-                        if(plongout->pact == FALSE){
-                                plongout->val=plongout->ivov;
+                        if(prec->pact == FALSE){
+                                prec->val=prec->ivov;
                         }
-                        status=writeValue(plongout); /* write the new value */
+                        status=writeValue(prec); /* write the new value */
                         break;
                     default :
                         status=-1;
-                        recGblRecordError(S_db_badField,(void *)plongout,
+                        recGblRecordError(S_db_badField,(void *)prec,
                                 "longout:process Illegal IVOA field");
                 }
         }
 
 	/* check if device support set pact */
-	if ( !pact && plongout->pact ) return(0);
-	plongout->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(plongout);
+	recGblGetTimeStamp(prec);
 
 	/* check event list */
-	monitor(plongout);
+	monitor(prec);
 
 	/* process the forward scan link record */
-	recGblFwdLink(plongout);
+	recGblFwdLink(prec);
 
-	plongout->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 static long get_units(DBADDR *paddr,char *units)
 {
-    longoutRecord *plongout=(longoutRecord *)paddr->precord;
+    longoutRecord *prec=(longoutRecord *)paddr->precord;
 
-    strncpy(units,plongout->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    longoutRecord *plongout=(longoutRecord *)paddr->precord;
+    longoutRecord *prec=(longoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == longoutRecordVAL
@@ -204,8 +204,8 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
     || fieldIndex == longoutRecordHIGH
     || fieldIndex == longoutRecordLOW
     || fieldIndex == longoutRecordLOLO) {
-        pgd->upper_disp_limit = plongout->hopr;
-        pgd->lower_disp_limit = plongout->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
@@ -213,7 +213,7 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    longoutRecord *plongout=(longoutRecord *)paddr->precord;
+    longoutRecord *prec=(longoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == longoutRecordVAL
@@ -222,26 +222,26 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     || fieldIndex == longoutRecordLOW
     || fieldIndex == longoutRecordLOLO) {
         /* do not change pre drvh/drvl behavior */
-        if(plongout->drvh > plongout->drvl) {
-            pcd->upper_ctrl_limit = plongout->drvh;
-            pcd->lower_ctrl_limit = plongout->drvl;
+        if(prec->drvh > prec->drvl) {
+            pcd->upper_ctrl_limit = prec->drvh;
+            pcd->lower_ctrl_limit = prec->drvl;
         } else {
-            pcd->upper_ctrl_limit = plongout->hopr;
-            pcd->lower_ctrl_limit = plongout->lopr;
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
         }
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    longoutRecord    *plongout=(longoutRecord *)paddr->precord;
+    longoutRecord    *prec=(longoutRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == longoutRecordVAL) {
-         pad->upper_alarm_limit = plongout->hihi;
-         pad->upper_warning_limit = plongout->high;
-         pad->lower_warning_limit = plongout->low;
-         pad->lower_alarm_limit = plongout->lolo;
+         pad->upper_alarm_limit = prec->hihi;
+         pad->upper_warning_limit = prec->high;
+         pad->lower_warning_limit = prec->low;
+         pad->lower_alarm_limit = prec->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
@@ -302,74 +302,74 @@ static void checkAlarms(longoutRecord *prec)
     return;
 }
 
-static void monitor(longoutRecord *plongout)
+static void monitor(longoutRecord *prec)
 {
 	unsigned short	monitor_mask;
 	epicsInt32	delta;
 
-        monitor_mask = recGblResetAlarms(plongout);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        delta = plongout->mlst - plongout->val;
+        delta = prec->mlst - prec->val;
         if(delta<0) delta = -delta;
-        if (delta > plongout->mdel || delta==0x80000000) {
+        if (delta > prec->mdel || delta==0x80000000) {
                 /* post events for value change */
                 monitor_mask |= DBE_VALUE;
                 /* update last value monitored */
-                plongout->mlst = plongout->val;
+                prec->mlst = prec->val;
         }
         /* check for archive change */
-        delta = plongout->alst - plongout->val;
+        delta = prec->alst - prec->val;
         if(delta<0) delta = -delta;
-        if (delta > plongout->adel || delta==0x80000000) {
+        if (delta > prec->adel || delta==0x80000000) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;
                 /* update last archive value monitored */
-                plongout->alst = plongout->val;
+                prec->alst = prec->val;
         }
 
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(plongout,&plongout->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
 	return;
 }
 
-static long writeValue(longoutRecord *plongout)
+static long writeValue(longoutRecord *prec)
 {
 	long status;
-        struct longoutdset *pdset = (struct longoutdset *) (plongout->dset);
+        struct longoutdset *pdset = (struct longoutdset *) (prec->dset);
 
-	if (plongout->pact == TRUE){
-		status=(*pdset->write_longout)(plongout);
+	if (prec->pact == TRUE){
+		status=(*pdset->write_longout)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(plongout->siml),DBR_USHORT,&(plongout->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
 	if (!RTN_SUCCESS(status))
 		return(status);
 
-	if (plongout->simm == NO){
-		status=(*pdset->write_longout)(plongout);
+	if (prec->simm == NO){
+		status=(*pdset->write_longout)(prec);
 		return(status);
 	}
-	if (plongout->simm == YES){
-		status=dbPutLink(&plongout->siol,DBR_LONG,&plongout->val,1);
+	if (prec->simm == YES){
+		status=dbPutLink(&prec->siol,DBR_LONG,&prec->val,1);
 	} else {
 		status=-1;
-		recGblSetSevr(plongout,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(plongout,SIMM_ALARM,plongout->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }
 
-static void convert(longoutRecord *plongout, epicsInt32 value)
+static void convert(longoutRecord *prec, epicsInt32 value)
 {
         /* check drive limits */
-	if(plongout->drvh > plongout->drvl) {
-        	if (value > plongout->drvh) value = plongout->drvh;
-        	else if (value < plongout->drvl) value = plongout->drvl;
+	if(prec->drvh > prec->drvl) {
+        	if (value > prec->drvh) value = prec->drvh;
+        	else if (value < prec->drvl) value = prec->drvl;
 	}
-	plongout->val = value;
+	prec->val = value;
 }

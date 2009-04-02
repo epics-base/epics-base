@@ -96,7 +96,7 @@ struct histogramdset { /* histogram input dset */
 /* control block for callback*/
 typedef struct myCallback {
      CALLBACK callback;
-     histogramRecord *phistogram;
+     histogramRecord *prec;
 }myCallback;
 
 static long add_count(histogramRecord *);
@@ -107,52 +107,52 @@ static long readValue(histogramRecord *);
 static void wdogCallback(CALLBACK *arg)
 {
      myCallback *pcallback;
-     histogramRecord *phistogram;
+     histogramRecord *prec;
 
      callbackGetUser(pcallback,arg);
-     phistogram = pcallback->phistogram;
+     prec = pcallback->prec;
      /* force post events for any count change */
-     if(phistogram->mcnt>0){
-          dbScanLock((struct dbCommon *)phistogram);
-          recGblGetTimeStamp(phistogram);
-          db_post_events(phistogram,phistogram->bptr,DBE_VALUE|DBE_LOG);
-          phistogram->mcnt=0;
-          dbScanUnlock((struct dbCommon *)phistogram);
+     if(prec->mcnt>0){
+          dbScanLock((struct dbCommon *)prec);
+          recGblGetTimeStamp(prec);
+          db_post_events(prec,prec->bptr,DBE_VALUE|DBE_LOG);
+          prec->mcnt=0;
+          dbScanUnlock((struct dbCommon *)prec);
      }
 
-     if(phistogram->sdel>0) {
+     if(prec->sdel>0) {
           /* start new watchdog timer on monitor */
-          callbackRequestDelayed(&pcallback->callback,(double)phistogram->sdel);
+          callbackRequestDelayed(&pcallback->callback,(double)prec->sdel);
      }
 
      return;
 }
-static long wdogInit(histogramRecord *phistogram)
+static long wdogInit(histogramRecord *prec)
 {
      myCallback *pcallback;
 
-     if(phistogram->wdog==NULL && phistogram->sdel>0) {
+     if(prec->wdog==NULL && prec->sdel>0) {
           /* initialize a watchdog timer */
           pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
-          pcallback->phistogram = phistogram;
+          pcallback->prec = prec;
 	  if(!pcallback) return -1;
           callbackSetCallback(wdogCallback,&pcallback->callback);
           callbackSetUser(pcallback,&pcallback->callback);
           callbackSetPriority(priorityLow,&pcallback->callback);
-          phistogram->wdog = (void *)pcallback;
+          prec->wdog = (void *)pcallback;
      }
 
-     if (!phistogram->wdog) return -1;
-     pcallback = (myCallback *)phistogram->wdog;
+     if (!prec->wdog) return -1;
+     pcallback = (myCallback *)prec->wdog;
      if(!pcallback) return -1;
-     if( phistogram->sdel>0) {
+     if( prec->sdel>0) {
          /* start new watchdog timer on monitor */
-         callbackRequestDelayed(&pcallback->callback,(double)phistogram->sdel);
+         callbackRequestDelayed(&pcallback->callback,(double)prec->sdel);
      }
      return 0;
 }
 
-static long init_record(histogramRecord *phistogram, int pass)
+static long init_record(histogramRecord *prec, int pass)
 {
      struct histogramdset *pdset;
      long status;
@@ -160,79 +160,79 @@ static long init_record(histogramRecord *phistogram, int pass)
      if (pass==0){
 
           /* allocate space for histogram array */
-          if(phistogram->bptr==NULL) {
-               if(phistogram->nelm<=0) phistogram->nelm=1;
-               phistogram->bptr = (epicsUInt32 *)calloc(phistogram->nelm,sizeof(epicsUInt32));
+          if(prec->bptr==NULL) {
+               if(prec->nelm<=0) prec->nelm=1;
+               prec->bptr = (epicsUInt32 *)calloc(prec->nelm,sizeof(epicsUInt32));
           }
 
           /* calulate width of array element */
-          phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
+          prec->wdth=(prec->ulim-prec->llim)/prec->nelm;
 
           return(0);
      }
 
-    wdogInit(phistogram);
+    wdogInit(prec);
 
-    if (phistogram->siml.type == CONSTANT) {
-	recGblInitConstantLink(&phistogram->siml,DBF_USHORT,&phistogram->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if (phistogram->siol.type == CONSTANT) {
-	recGblInitConstantLink(&phistogram->siol,DBF_DOUBLE,&phistogram->sval);
+    if (prec->siol.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
     }
 
      /* must have device support defined */
-     if(!(pdset = (struct histogramdset *)(phistogram->dset))) {
-          recGblRecordError(S_dev_noDSET,(void *)phistogram,"histogram: init_record");
+     if(!(pdset = (struct histogramdset *)(prec->dset))) {
+          recGblRecordError(S_dev_noDSET,(void *)prec,"histogram: init_record");
           return(S_dev_noDSET);
      }
      /* must have read_histogram function defined */
      if( (pdset->number < 6) || (pdset->read_histogram == NULL) ) {
-          recGblRecordError(S_dev_missingSup,(void *)phistogram,"histogram: init_record");
+          recGblRecordError(S_dev_missingSup,(void *)prec,"histogram: init_record");
           return(S_dev_missingSup);
      }
      /* call device support init_record */
      if( pdset->init_record ) {
-          if((status=(*pdset->init_record)(phistogram))) return(status);
+          if((status=(*pdset->init_record)(prec))) return(status);
      }
      return(0);
 }
 
-static long process(histogramRecord *phistogram)
+static long process(histogramRecord *prec)
 {
-     struct histogramdset     *pdset = (struct histogramdset *)(phistogram->dset);
+     struct histogramdset     *pdset = (struct histogramdset *)(prec->dset);
      long           status;
-     unsigned char    pact=phistogram->pact;
+     unsigned char    pact=prec->pact;
 
      if( (pdset==NULL) || (pdset->read_histogram==NULL) ) {
-          phistogram->pact=TRUE;
-          recGblRecordError(S_dev_missingSup,(void *)phistogram,"read_histogram");
+          prec->pact=TRUE;
+          recGblRecordError(S_dev_missingSup,(void *)prec,"read_histogram");
           return(S_dev_missingSup);
      }
 
-     status=readValue(phistogram); /* read the new value */
+     status=readValue(prec); /* read the new value */
      /* check if device support set pact */
-     if ( !pact && phistogram->pact ) return(0);
-     phistogram->pact = TRUE;
+     if ( !pact && prec->pact ) return(0);
+     prec->pact = TRUE;
 
-     recGblGetTimeStamp(phistogram);
+     recGblGetTimeStamp(prec);
 
-     if(status==0)add_count(phistogram);
+     if(status==0)add_count(prec);
      else if(status==2)status=0;
 
      /* check event list */
-     monitor(phistogram);
+     monitor(prec);
 
      /* process the forward scan link record */
-     recGblFwdLink(phistogram);
+     recGblFwdLink(prec);
 
-     phistogram->pact=FALSE;
+     prec->pact=FALSE;
      return(status);
 }
 
 static long special(DBADDR *paddr,int after)
 {
-     histogramRecord   *phistogram = (histogramRecord *)(paddr->precord);
+     histogramRecord   *prec = (histogramRecord *)(paddr->precord);
      int                special_type = paddr->special;
      int                fieldIndex = dbGetFieldIndex(paddr);
 
@@ -240,27 +240,27 @@ static long special(DBADDR *paddr,int after)
      if(!after) return(0);
      switch(special_type) {
      case(SPC_CALC):
-          if(phistogram->cmd <=1){
-               clear_histogram(phistogram);
-               phistogram->cmd =0;
-          } else if (phistogram->cmd ==2){
-               phistogram->csta=TRUE;
-               phistogram->cmd =0;
-          } else if (phistogram->cmd ==3){
-               phistogram->csta=FALSE;
-               phistogram->cmd =0;
+          if(prec->cmd <=1){
+               clear_histogram(prec);
+               prec->cmd =0;
+          } else if (prec->cmd ==2){
+               prec->csta=TRUE;
+               prec->cmd =0;
+          } else if (prec->cmd ==3){
+               prec->csta=FALSE;
+               prec->cmd =0;
           }
           return(0);
      case(SPC_MOD):
           /* increment frequency in histogram array */
-          add_count(phistogram);
+          add_count(prec);
           return(0);
      case(SPC_RESET):
           if (fieldIndex == histogramRecordSDEL) {
-              wdogInit(phistogram);
+              wdogInit(prec);
           } else {
-              phistogram->wdth=(phistogram->ulim-phistogram->llim)/phistogram->nelm;
-              clear_histogram(phistogram);
+              prec->wdth=(prec->ulim-prec->llim)/prec->nelm;
+              clear_histogram(prec);
           }
           return(0);
      default:
@@ -269,30 +269,30 @@ static long special(DBADDR *paddr,int after)
      }
 }
 
-static void monitor(histogramRecord *phistogram)
+static void monitor(histogramRecord *prec)
 {
      unsigned short  monitor_mask;
  
-     monitor_mask = recGblResetAlarms(phistogram);
+     monitor_mask = recGblResetAlarms(prec);
      /* post events for count change */
-     if(phistogram->mcnt>phistogram->mdel){
+     if(prec->mcnt>prec->mdel){
           /* post events for count change */
           monitor_mask |= DBE_VALUE|DBE_LOG;
           /* reset counts since monitor */
-          phistogram->mcnt = 0;
+          prec->mcnt = 0;
      }
      /* send out monitors connected to the value field */
-     if(monitor_mask) db_post_events(phistogram,phistogram->bptr,monitor_mask);
+     if(monitor_mask) db_post_events(prec,prec->bptr,monitor_mask);
 
      return;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
+    histogramRecord *prec=(histogramRecord *)paddr->precord;
 
-    paddr->pfield = (void *)(phistogram->bptr);
-    paddr->no_elements = phistogram->nelm;
+    paddr->pfield = (void *)(prec->bptr);
+    paddr->no_elements = prec->nelm;
     paddr->field_type = DBF_ULONG;
     paddr->field_size = sizeof(epicsUInt32);
     paddr->dbr_field_type = DBF_ULONG;
@@ -301,126 +301,126 @@ static long cvt_dbaddr(DBADDR *paddr)
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
+    histogramRecord *prec=(histogramRecord *)paddr->precord;
 
-    *no_elements =  phistogram->nelm;
+    *no_elements =  prec->nelm;
     *offset = 0;
     return(0);
 }
 
-static long add_count(histogramRecord *phistogram)
+static long add_count(histogramRecord *prec)
 {
      double            temp;
      epicsUInt32       *pdest;
      int               i;
 
-     if(phistogram->csta==FALSE) return(0);
+     if(prec->csta==FALSE) return(0);
 
-     if(phistogram->llim >= phistogram->ulim) {
-               if (phistogram->nsev<INVALID_ALARM) {
-                    phistogram->stat = SOFT_ALARM;
-                    phistogram->sevr = INVALID_ALARM;
+     if(prec->llim >= prec->ulim) {
+               if (prec->nsev<INVALID_ALARM) {
+                    prec->stat = SOFT_ALARM;
+                    prec->sevr = INVALID_ALARM;
                     return(-1);
                }
      }
-     if(phistogram->sgnl<phistogram->llim || phistogram->sgnl >= phistogram->ulim) return(0);
+     if(prec->sgnl<prec->llim || prec->sgnl >= prec->ulim) return(0);
 
-     temp=phistogram->sgnl-phistogram->llim;
-     for (i=1;i<=phistogram->nelm;i++){
-          if (temp<=(double)i*phistogram->wdth) break;
+     temp=prec->sgnl-prec->llim;
+     for (i=1;i<=prec->nelm;i++){
+          if (temp<=(double)i*prec->wdth) break;
      }
-     pdest=phistogram->bptr+i-1;
+     pdest=prec->bptr+i-1;
      if (*pdest == (epicsUInt32) ULONG_MAX) *pdest=0.0;
      (*pdest)++;
-     phistogram->mcnt++;
+     prec->mcnt++;
 
      return(0);
 }
 
-static long clear_histogram(histogramRecord *phistogram)
+static long clear_histogram(histogramRecord *prec)
 {
      int    i;
 
-     for (i=0;i<=phistogram->nelm-1;i++)
-           *(phistogram->bptr+i)=0.0;
-     phistogram->mcnt=phistogram->mdel+1;
-     phistogram->udf=FALSE;
+     for (i=0;i<=prec->nelm-1;i++)
+           *(prec->bptr+i)=0.0;
+     prec->mcnt=prec->mdel+1;
+     prec->udf=FALSE;
 
      return(0);
 }
 
-static long readValue(histogramRecord *phistogram)
+static long readValue(histogramRecord *prec)
 {
         long            status;
-        struct histogramdset   *pdset = (struct histogramdset *) (phistogram->dset);
+        struct histogramdset   *pdset = (struct histogramdset *) (prec->dset);
 
-        if (phistogram->pact == TRUE){
-                status=(*pdset->read_histogram)(phistogram);
+        if (prec->pact == TRUE){
+                status=(*pdset->read_histogram)(prec);
                 return(status);
         }
 
-        status=dbGetLink(&(phistogram->siml),DBR_USHORT,&(phistogram->simm),0,0);
+        status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
 
         if (status)
                 return(status);
 
-        if (phistogram->simm == NO){
-                status=(*pdset->read_histogram)(phistogram);
+        if (prec->simm == NO){
+                status=(*pdset->read_histogram)(prec);
                 return(status);
         }
-        if (phistogram->simm == YES){
-        	status=dbGetLink(&(phistogram->siol),DBR_DOUBLE,
-			&(phistogram->sval),0,0);
+        if (prec->simm == YES){
+        	status=dbGetLink(&(prec->siol),DBR_DOUBLE,
+			&(prec->sval),0,0);
 
                 if (status==0){
-                         phistogram->sgnl=phistogram->sval;
+                         prec->sgnl=prec->sval;
                 }
         } else {
                 status=-1;
-                recGblSetSevr(phistogram,SOFT_ALARM,INVALID_ALARM);
+                recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
                 return(status);
         }
-        recGblSetSevr(phistogram,SIMM_ALARM,phistogram->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
         return(status);
 }
 
 static long get_precision(DBADDR *paddr,long *precision)
 {
-    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
+    histogramRecord *prec=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
-    *precision = phistogram->prec;
+    *precision = prec->prec;
     if(fieldIndex == histogramRecordULIM
     || fieldIndex == histogramRecordLLIM
     || fieldIndex == histogramRecordSDEL
     || fieldIndex == histogramRecordSGNL
     || fieldIndex == histogramRecordSVAL
     || fieldIndex == histogramRecordWDTH) {
-       *precision = phistogram->prec;
+       *precision = prec->prec;
     }
     recGblGetPrec(paddr,precision);
     return(0);
 }
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
+    histogramRecord *prec=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == histogramRecordBPTR){
-        pgd->upper_disp_limit = phistogram->hopr;
-        pgd->lower_disp_limit = phistogram->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    histogramRecord *phistogram=(histogramRecord *)paddr->precord;
+    histogramRecord *prec=(histogramRecord *)paddr->precord;
     int     fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == histogramRecordBPTR){
-        pcd->upper_ctrl_limit = phistogram->hopr;
-        pcd->lower_ctrl_limit = phistogram->lopr;
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }

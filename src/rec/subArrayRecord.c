@@ -44,8 +44,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(subArrayRecord *psa, int pass);
-static long process(subArrayRecord *psa);
+static long init_record(subArrayRecord *prec, int pass);
+static long process(subArrayRecord *prec);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *paddr);
@@ -91,97 +91,97 @@ struct sadset { /* subArray dset */
         DEVSUPFUN       read_sa; /*returns: (-1,0)=>(failure,success)*/
 };
 
-static void monitor(subArrayRecord *psa);
-static long readValue(subArrayRecord *psa);
+static void monitor(subArrayRecord *prec);
+static long readValue(subArrayRecord *prec);
 
 
 
-static long init_record(subArrayRecord *psa, int pass)
+static long init_record(subArrayRecord *prec, int pass)
 {
     struct sadset *pdset;
 
     if (pass==0){
-        if (psa->malm <= 0)
-            psa->malm = 1;
-        if (psa->ftvl > DBF_ENUM)
-            psa->ftvl = DBF_UCHAR;
-        psa->bptr = calloc(psa->malm, dbValueSize(psa->ftvl));
-        psa->nord = 0;
+        if (prec->malm <= 0)
+            prec->malm = 1;
+        if (prec->ftvl > DBF_ENUM)
+            prec->ftvl = DBF_UCHAR;
+        prec->bptr = calloc(prec->malm, dbValueSize(prec->ftvl));
+        prec->nord = 0;
         return 0;
     }
 
     /* must have dset defined */
-    if (!(pdset = (struct sadset *)(psa->dset))) {
-        recGblRecordError(S_dev_noDSET,(void *)psa,"sa: init_record");
+    if (!(pdset = (struct sadset *)(prec->dset))) {
+        recGblRecordError(S_dev_noDSET,(void *)prec,"sa: init_record");
         return S_dev_noDSET;
     }
 
     /* must have read_sa function defined */
     if ( (pdset->number < 5) || (pdset->read_sa == NULL) ) {
-        recGblRecordError(S_dev_missingSup,(void *)psa,"sa: init_record");
+        recGblRecordError(S_dev_missingSup,(void *)prec,"sa: init_record");
         return S_dev_missingSup;
     }
 
     if (pdset->init_record)
-        return (*pdset->init_record)(psa);
+        return (*pdset->init_record)(prec);
 
     return 0;
 }
 
-static long process(subArrayRecord *psa)
+static long process(subArrayRecord *prec)
 {
-    struct sadset *pdset = (struct sadset *)(psa->dset);
+    struct sadset *pdset = (struct sadset *)(prec->dset);
     long           status;
-    unsigned char  pact=psa->pact;
+    unsigned char  pact=prec->pact;
 
     if ((pdset==NULL) || (pdset->read_sa==NULL)) {
-        psa->pact=TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)psa, "read_sa");
+        prec->pact=TRUE;
+        recGblRecordError(S_dev_missingSup, (void *)prec, "read_sa");
         return S_dev_missingSup;
     }
 
-    if (pact && psa->busy) return 0;
+    if (pact && prec->busy) return 0;
 
-    status=readValue(psa); /* read the new value */
-    if (!pact && psa->pact) return 0;
-    psa->pact = TRUE;
+    status=readValue(prec); /* read the new value */
+    if (!pact && prec->pact) return 0;
+    prec->pact = TRUE;
 
-    recGblGetTimeStamp(psa);
+    recGblGetTimeStamp(prec);
 
-    psa->udf = !!status; /* 0 or 1 */
+    prec->udf = !!status; /* 0 or 1 */
     if (status)
-        recGblSetSevr(psa, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
 
-    monitor(psa);
+    monitor(prec);
 
     /* process the forward scan link record */
-    recGblFwdLink(psa);
+    recGblFwdLink(prec);
 
-    psa->pact=FALSE;
+    prec->pact=FALSE;
     return 0;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    paddr->pfield = psa->bptr;
-    paddr->no_elements = psa->malm;
-    paddr->field_type = psa->ftvl;
-    paddr->field_size = dbValueSize(psa->ftvl);
-    paddr->dbr_field_type = psa->ftvl;
+    paddr->pfield = prec->bptr;
+    paddr->no_elements = prec->malm;
+    paddr->field_type = prec->ftvl;
+    paddr->field_size = dbValueSize(prec->ftvl);
+    paddr->dbr_field_type = prec->ftvl;
 
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    if (psa->udf)
+    if (prec->udf)
        *no_elements = 0;
     else
-       *no_elements = psa->nord;
+       *no_elements = prec->nord;
     *offset = 0;
 
     return 0;
@@ -189,31 +189,31 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    if (nNew > psa->malm)
-       psa->nord = psa->malm;
+    if (nNew > prec->malm)
+       prec->nord = prec->malm;
     else
-       psa->nord = nNew;
+       prec->nord = nNew;
 
     return 0;
 }
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    strncpy(units, psa->egu, DB_UNITS_SIZE);
+    strncpy(units, prec->egu, DB_UNITS_SIZE);
 
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
 
-    *precision = psa->prec;
+    *precision = prec->prec;
 
     if (fieldIndex != subArrayRecordVAL)
         recGblGetPrec(paddr, precision);
@@ -223,21 +223,21 @@ static long get_precision(DBADDR *paddr, long *precision)
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
     case subArrayRecordVAL:
-        pgd->upper_disp_limit = psa->hopr;
-        pgd->lower_disp_limit = psa->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
         break;
 
     case subArrayRecordINDX:
-        pgd->upper_disp_limit = psa->malm - 1;
+        pgd->upper_disp_limit = prec->malm - 1;
         pgd->lower_disp_limit = 0;
         break;
 
     case subArrayRecordNELM:
-        pgd->upper_disp_limit = psa->malm;
+        pgd->upper_disp_limit = prec->malm;
         pgd->lower_disp_limit = 1;
         break;
 
@@ -250,21 +250,21 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    subArrayRecord *psa = (subArrayRecord *) paddr->precord;
+    subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
     case subArrayRecordVAL:
-        pcd->upper_ctrl_limit = psa->hopr;
-        pcd->lower_ctrl_limit = psa->lopr;
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
         break;
 
     case subArrayRecordINDX:
-        pcd->upper_ctrl_limit = psa->malm - 1;
+        pcd->upper_ctrl_limit = prec->malm - 1;
         pcd->lower_ctrl_limit = 0;
         break;
 
     case subArrayRecordNELM:
-        pcd->upper_ctrl_limit = psa->malm;
+        pcd->upper_ctrl_limit = prec->malm;
         pcd->lower_ctrl_limit = 1;
         break;
 
@@ -275,32 +275,32 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     return 0;
 }
 
-static void monitor(subArrayRecord *psa)
+static void monitor(subArrayRecord *prec)
 {
     unsigned short monitor_mask;
 
-    monitor_mask = recGblResetAlarms(psa);
+    monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(psa, psa->bptr, monitor_mask);
+    db_post_events(prec, prec->bptr, monitor_mask);
 
     return;
 }
 
-static long readValue(subArrayRecord *psa)
+static long readValue(subArrayRecord *prec)
 {
     long            status;
-    struct sadset   *pdset = (struct sadset *) (psa->dset);
+    struct sadset   *pdset = (struct sadset *) (prec->dset);
 
-    if (psa->nelm > psa->malm)
-        psa->nelm = psa->malm;
+    if (prec->nelm > prec->malm)
+        prec->nelm = prec->malm;
 
-    if (psa->indx >= psa->malm)
-        psa->indx = psa->malm - 1;
+    if (prec->indx >= prec->malm)
+        prec->indx = prec->malm - 1;
 
-    status = (*pdset->read_sa)(psa);
+    status = (*pdset->read_sa)(prec);
 
-    if (psa->nord <= 0)
+    if (prec->nord <= 0)
         status = -1;
 
     return status;

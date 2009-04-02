@@ -99,49 +99,49 @@ typedef struct aidset { /* analog input dset */
 extern unsigned int     gts_trigger_counter;
 */
 
-static void checkAlarms(aiRecord *pai);
-static void convert(aiRecord *pai);
-static void monitor(aiRecord *pai);
-static long readValue(aiRecord *pai);
+static void checkAlarms(aiRecord *prec);
+static void convert(aiRecord *prec);
+static void monitor(aiRecord *prec);
+static long readValue(aiRecord *prec);
 
 static long init_record(void *precord,int pass)
 {
-    aiRecord	*pai = (aiRecord *)precord;
+    aiRecord	*prec = (aiRecord *)precord;
     aidset	*pdset;
-    double	eoff = pai->eoff, eslo = pai->eslo;
+    double	eoff = prec->eoff, eslo = prec->eslo;
 
     if (pass==0) return(0);
 
     /* ai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pai->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pai->siml,DBF_USHORT,&pai->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
     /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pai->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pai->siol,DBF_DOUBLE,&pai->sval);
+    if (prec->siol.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
     }
 
-    if(!(pdset = (aidset *)(pai->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pai,"ai: init_record");
+    if(!(pdset = (aidset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_ai function defined */
     if( (pdset->number < 6) || (pdset->read_ai == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pai,"ai: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"ai: init_record");
 	return(S_dev_missingSup);
     }
-    pai->init = TRUE;
+    prec->init = TRUE;
     /*The following is for old device support that doesnt know about eoff*/
-    if ((pai->eslo==1.0) && (pai->eoff==0.0)) {
-	pai->eoff = pai->egul;
+    if ((prec->eslo==1.0) && (prec->eoff==0.0)) {
+	prec->eoff = prec->egul;
     }
 
     if( pdset->init_record ) {
-	long status=(*pdset->init_record)(pai);
-	if (pai->linr == menuConvertSLOPE) {
-	    pai->eoff = eoff;
-	    pai->eslo = eslo;
+	long status=(*pdset->init_record)(prec);
+	if (prec->linr == menuConvertSLOPE) {
+	    prec->eoff = eoff;
+	    prec->eslo = eslo;
 	}
 	return (status);
     }
@@ -150,41 +150,41 @@ static long init_record(void *precord,int pass)
 
 static long process(void *precord)
 {
-	aiRecord	*pai = (aiRecord *)precord;
-	aidset		*pdset = (aidset *)(pai->dset);
+	aiRecord	*prec = (aiRecord *)precord;
+	aidset		*pdset = (aidset *)(prec->dset);
 	long		 status;
-	unsigned char    pact=pai->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
-		pai->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pai,"read_ai");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_ai");
 		return(S_dev_missingSup);
 	}
-	status=readValue(pai); /* read the new value */
+	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pai->pact ) return(0);
-	pai->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pai);
-	if (status==0) convert(pai);
+	recGblGetTimeStamp(prec);
+	if (status==0) convert(prec);
 	else if (status==2) status=0;
 
 	/* check for alarms */
-	checkAlarms(pai);
+	checkAlarms(prec);
 	/* check event list */
-	monitor(pai);
+	monitor(prec);
 	/* process the forward scan link record */
-        recGblFwdLink(pai);
+        recGblFwdLink(prec);
 
-	pai->init=FALSE;
-	pai->pact=FALSE;
+	prec->init=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 static long special(DBADDR *paddr,int after)
 {
-    aiRecord  	*pai = (aiRecord *)(paddr->precord);
-    aidset 	*pdset = (aidset *) (pai->dset);
+    aiRecord  	*prec = (aiRecord *)(paddr->precord);
+    aidset 	*pdset = (aidset *) (prec->dset);
     int          special_type = paddr->special;
 
     switch(special_type) {
@@ -193,17 +193,17 @@ static long special(DBADDR *paddr,int after)
 	    recGblDbaddrError(S_db_noMod,paddr,"ai: special");
 	    return(S_db_noMod);
 	}
-	pai->init=TRUE;
-	if ((pai->linr == menuConvertLINEAR) && pdset->special_linconv) {
-	    double eoff = pai->eoff;
-	    double eslo = pai->eslo;
+	prec->init=TRUE;
+	if ((prec->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	    double eoff = prec->eoff;
+	    double eslo = prec->eslo;
 	    long status;
-	    pai->eoff = pai->egul;
-	    status = (*pdset->special_linconv)(pai,after);
-	    if (eoff != pai->eoff)
-		db_post_events(pai, &pai->eoff, DBE_VALUE|DBE_LOG);
-	    if (eslo != pai->eslo)
-		db_post_events(pai, &pai->eslo, DBE_VALUE|DBE_LOG);
+	    prec->eoff = prec->egul;
+	    status = (*pdset->special_linconv)(prec,after);
+	    if (eoff != prec->eoff)
+		db_post_events(prec, &prec->eoff, DBE_VALUE|DBE_LOG);
+	    if (eslo != prec->eslo)
+		db_post_events(prec, &prec->eslo, DBE_VALUE|DBE_LOG);
 	    return(status);
 	}
 	return(0);
@@ -215,25 +215,25 @@ static long special(DBADDR *paddr,int after)
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    aiRecord	*pai=(aiRecord *)paddr->precord;
+    aiRecord	*prec=(aiRecord *)paddr->precord;
 
-    strncpy(units,pai->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    aiRecord	*pai=(aiRecord *)paddr->precord;
+    aiRecord	*prec=(aiRecord *)paddr->precord;
 
-    *precision = pai->prec;
-    if(paddr->pfield == (void *)&pai->val) return(0);
+    *precision = prec->prec;
+    if(paddr->pfield == (void *)&prec->val) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    aiRecord	*pai=(aiRecord *)paddr->precord;
+    aiRecord	*prec=(aiRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == aiRecordVAL
@@ -243,15 +243,15 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
     || fieldIndex == aiRecordLOLO
     || fieldIndex == aiRecordHOPR
     || fieldIndex == aiRecordLOPR) {
-        pgd->upper_disp_limit = pai->hopr;
-        pgd->lower_disp_limit = pai->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    aiRecord	*pai=(aiRecord *)paddr->precord;
+    aiRecord	*prec=(aiRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == aiRecordVAL
@@ -259,22 +259,22 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     || fieldIndex == aiRecordHIGH
     || fieldIndex == aiRecordLOW
     || fieldIndex == aiRecordLOLO) {
-	pcd->upper_ctrl_limit = pai->hopr;
-	pcd->lower_ctrl_limit = pai->lopr;
+	pcd->upper_ctrl_limit = prec->hopr;
+	pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    aiRecord	*pai=(aiRecord *)paddr->precord;
+    aiRecord	*prec=(aiRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == aiRecordVAL) {
-	pad->upper_alarm_limit = pai->hihi;
-	pad->upper_warning_limit = pai->high;
-	pad->lower_warning_limit = pai->low;
-	pad->lower_alarm_limit = pai->lolo;
+	pad->upper_alarm_limit = prec->hihi;
+	pad->upper_warning_limit = prec->high;
+	pad->lower_warning_limit = prec->low;
+	pad->lower_alarm_limit = prec->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
@@ -335,122 +335,122 @@ static void checkAlarms(aiRecord *prec)
     return;
 }
 
-static void convert(aiRecord *pai)
+static void convert(aiRecord *prec)
 {
 	double val;
 
 
-	val = (double)pai->rval + (double)pai->roff;
+	val = (double)prec->rval + (double)prec->roff;
 	/* adjust slope and offset */
-	if(pai->aslo!=0.0) val*=pai->aslo;
-	val+=pai->aoff;
+	if(prec->aslo!=0.0) val*=prec->aslo;
+	val+=prec->aoff;
 
 	/* convert raw to engineering units and signal units */
-	switch (pai->linr) {
+	switch (prec->linr) {
 	case menuConvertNO_CONVERSION:
 		break; /* do nothing*/
 	
 	case menuConvertLINEAR:
 	case menuConvertSLOPE:
-		val = (val * pai->eslo) + pai->eoff;
+		val = (val * prec->eslo) + prec->eoff;
 		break;
 	
 	default: /* must use breakpoint table */
-                if (cvtRawToEngBpt(&val,pai->linr,pai->init,(void *)&pai->pbrk,&pai->lbrk)!=0) {
-                      recGblSetSevr(pai,SOFT_ALARM,MAJOR_ALARM);
+                if (cvtRawToEngBpt(&val,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0) {
+                      recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
                 }
 	}
 
 	/* apply smoothing algorithm */
-	if (pai->smoo != 0.0){
-	    if (pai->init) pai->val = val;	/* initial condition */
-	    pai->val = val * (1.00 - pai->smoo) + (pai->val * pai->smoo);
+	if (prec->smoo != 0.0){
+	    if (prec->init) prec->val = val;	/* initial condition */
+	    prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
 	}else{
-	    pai->val = val;
+	    prec->val = val;
 	}
-	pai->udf = isnan(pai->val);
+	prec->udf = isnan(prec->val);
 	return;
 }
 
-static void monitor(aiRecord *pai)
+static void monitor(aiRecord *prec)
 {
 	unsigned short	monitor_mask;
 	double		delta;
 
-        monitor_mask = recGblResetAlarms(pai);
+        monitor_mask = recGblResetAlarms(prec);
 	/* check for value change */
-	delta = pai->mlst - pai->val;
+	delta = prec->mlst - prec->val;
 	if(delta<0.0) delta = -delta;
-	if (delta > pai->mdel) {
+	if (delta > prec->mdel) {
 		/* post events for value change */
 		monitor_mask |= DBE_VALUE;
 		/* update last value monitored */
-		pai->mlst = pai->val;
+		prec->mlst = prec->val;
 	}
 
 	/* check for archive change */
-	delta = pai->alst - pai->val;
+	delta = prec->alst - prec->val;
 	if(delta<0.0) delta = -delta;
-	if (delta > pai->adel) {
+	if (delta > prec->adel) {
 		/* post events on value field for archive change */
 		monitor_mask |= DBE_LOG;
 		/* update last archive value monitored */
-		pai->alst = pai->val;
+		prec->alst = prec->val;
 	}
 
 	/* send out monitors connected to the value field */
 	if (monitor_mask){
-		db_post_events(pai,&pai->val,monitor_mask);
-		if(pai->oraw != pai->rval) {
-			db_post_events(pai,&pai->rval,monitor_mask);
-			pai->oraw = pai->rval;
+		db_post_events(prec,&prec->val,monitor_mask);
+		if(prec->oraw != prec->rval) {
+			db_post_events(prec,&prec->rval,monitor_mask);
+			prec->oraw = prec->rval;
 		}
 	}
 	return;
 }
 
-static long readValue(aiRecord *pai)
+static long readValue(aiRecord *prec)
 {
 	long		status;
-        aidset 	*pdset = (aidset *) (pai->dset);
+        aidset 	*pdset = (aidset *) (prec->dset);
 
-	if (pai->pact == TRUE){
-		status=(*pdset->read_ai)(pai);
+	if (prec->pact == TRUE){
+		status=(*pdset->read_ai)(prec);
 		return(status);
 	}
 
-	status = dbGetLink(&(pai->siml),DBR_USHORT,&(pai->simm),0,0);
+	status = dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
 
 	if (status)
 		return(status);
 
-	if (pai->simm == menuSimmNO){
-		status=(*pdset->read_ai)(pai);
+	if (prec->simm == menuSimmNO){
+		status=(*pdset->read_ai)(prec);
 		return(status);
 	}
-	if (pai->simm == menuSimmYES){
-		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
+	if (prec->simm == menuSimmYES){
+		status = dbGetLink(&(prec->siol),DBR_DOUBLE,&(prec->sval),0,0);
 		if (status==0){
-			 pai->val=pai->sval;
-			 pai->udf=isnan(pai->val);
+			 prec->val=prec->sval;
+			 prec->udf=isnan(prec->val);
 		}
                 status=2; /* dont convert */
 	}
-	else if (pai->simm == menuSimmRAW){
-		status = dbGetLink(&(pai->siol),DBR_DOUBLE,&(pai->sval),0,0);
+	else if (prec->simm == menuSimmRAW){
+		status = dbGetLink(&(prec->siol),DBR_DOUBLE,&(prec->sval),0,0);
 		if (status==0) {
-			pai->udf=isnan(pai->sval);
-			if (!pai->udf) {
-				pai->rval=(long)floor(pai->sval);
+			prec->udf=isnan(prec->sval);
+			if (!prec->udf) {
+				prec->rval=(long)floor(prec->sval);
 			}
 		}
 		status=0; /* convert since we've written RVAL */
 	} else {
 		status=-1;
-		recGblSetSevr(pai,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pai,SIMM_ALARM,pai->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

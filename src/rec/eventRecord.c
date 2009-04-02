@@ -90,104 +90,104 @@ static void monitor(eventRecord *);
 static long readValue(eventRecord *);
 
 
-static long init_record(eventRecord *pevent, int pass)
+static long init_record(eventRecord *prec, int pass)
 {
     struct eventdset *pdset;
     long status=0;
 
     if (pass==0) return(0);
 
-    if (pevent->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pevent->siml,DBF_USHORT,&pevent->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if (pevent->siol.type == CONSTANT) {
-	recGblInitConstantLink(&pevent->siol,DBF_USHORT,&pevent->sval);
+    if (prec->siol.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
     }
 
-    if( (pdset=(struct eventdset *)(pevent->dset)) && (pdset->init_record) ) 
-		status=(*pdset->init_record)(pevent);
+    if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
+		status=(*pdset->init_record)(prec);
     return(status);
 }
 
-static long process(eventRecord *pevent)
+static long process(eventRecord *prec)
 {
-	struct eventdset	*pdset = (struct eventdset *)(pevent->dset);
+	struct eventdset	*pdset = (struct eventdset *)(prec->dset);
 	long		 status=0;
-	unsigned char    pact=pevent->pact;
+	unsigned char    pact=prec->pact;
 
 	if((pdset!=NULL) && (pdset->number >= 5) && pdset->read_event ) 
-                status=readValue(pevent); /* read the new value */
+                status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pevent->pact ) return(0);
-	pevent->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
  
-	if(pevent->val>0) post_event((int)pevent->val);
+	if(prec->val>0) post_event((int)prec->val);
 
-	recGblGetTimeStamp(pevent);
+	recGblGetTimeStamp(prec);
 
 	/* check event list */
-	monitor(pevent);
+	monitor(prec);
 
 	/* process the forward scan link record */
-	recGblFwdLink(pevent);
+	recGblFwdLink(prec);
 
-	pevent->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 
-static long get_value(eventRecord *pevent, struct valueDes *pvdes)
+static long get_value(eventRecord *prec, struct valueDes *pvdes)
 {
     pvdes->field_type = DBF_USHORT;
     pvdes->no_elements=1;
-    pvdes->pvalue = (void *)(&pevent->val);
+    pvdes->pvalue = (void *)(&prec->val);
     return(0);
 }
 
 
-static void monitor(eventRecord *pevent)
+static void monitor(eventRecord *prec)
 {
     unsigned short  monitor_mask;
 
     /* get previous stat and sevr  and new stat and sevr*/
-    monitor_mask = recGblResetAlarms(pevent);
-    db_post_events(pevent,&pevent->val,monitor_mask|DBE_VALUE);
+    monitor_mask = recGblResetAlarms(prec);
+    db_post_events(prec,&prec->val,monitor_mask|DBE_VALUE);
     return;
 }
 
-static long readValue(eventRecord *pevent)
+static long readValue(eventRecord *prec)
 {
         long            status;
-        struct eventdset   *pdset = (struct eventdset *) (pevent->dset);
+        struct eventdset   *pdset = (struct eventdset *) (prec->dset);
 
-        if (pevent->pact == TRUE){
-                status=(*pdset->read_event)(pevent);
+        if (prec->pact == TRUE){
+                status=(*pdset->read_event)(prec);
                 return(status);
         }
 
-        status=dbGetLink(&(pevent->siml),DBR_USHORT,&(pevent->simm),0,0);
+        status=dbGetLink(&(prec->siml),DBR_USHORT,&(prec->simm),0,0);
 
         if (status)
                 return(status);
 
-        if (pevent->simm == NO){
-                status=(*pdset->read_event)(pevent);
+        if (prec->simm == NO){
+                status=(*pdset->read_event)(prec);
                 return(status);
         }
-        if (pevent->simm == YES){
-                status=dbGetLink(&(pevent->siol),DBR_USHORT,
-			&(pevent->sval),0,0);
+        if (prec->simm == YES){
+                status=dbGetLink(&(prec->siol),DBR_USHORT,
+			&(prec->sval),0,0);
                 if (status==0) {
-                        pevent->val=pevent->sval;
-                        pevent->udf=FALSE;
+                        prec->val=prec->sval;
+                        prec->udf=FALSE;
                 }
         } else {
                 status=-1;
-                recGblSetSevr(pevent,SOFT_ALARM,INVALID_ALARM);
+                recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
                 return(status);
         }
-        recGblSetSevr(pevent,SIMM_ALARM,pevent->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
         return(status);
 }

@@ -95,174 +95,174 @@ static void monitor(aaoRecord *);
 static long writeValue(aaoRecord *);
 
 
-static long init_record(aaoRecord *paao, int pass)
+static long init_record(aaoRecord *prec, int pass)
 {
     struct aaodset *pdset;
     long status;
 
     if (pass == 0) {
-        if (paao->nelm <= 0) paao->nelm = 1;
+        if (prec->nelm <= 0) prec->nelm = 1;
         return 0;
     }
-    recGblInitConstantLink(&paao->siml, DBF_USHORT, &paao->simm);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
     /* must have dset defined */
-    if (!(pdset = (struct aaodset *)(paao->dset))) {
-        recGblRecordError(S_dev_noDSET, (void *)paao, "aao: init_record");
+    if (!(pdset = (struct aaodset *)(prec->dset))) {
+        recGblRecordError(S_dev_noDSET, (void *)prec, "aao: init_record");
         return S_dev_noDSET;
     }
     /* must have write_aao function defined */
     if (pdset->number < 5 || pdset->write_aao == NULL) {
-        recGblRecordError(S_dev_missingSup, (void *)paao, "aao: init_record");
+        recGblRecordError(S_dev_missingSup, (void *)prec, "aao: init_record");
         return S_dev_missingSup;
     }
     if (pdset->init_record) {
         /* init records sets the bptr to point to the data */
-        if ((status = pdset->init_record(paao)))
+        if ((status = pdset->init_record(prec)))
             return status;
     }
     return 0;
 }
 
-static long process(aaoRecord *paao)
+static long process(aaoRecord *prec)
 {
-    struct aaodset *pdset = (struct aaodset *)(paao->dset);
+    struct aaodset *pdset = (struct aaodset *)(prec->dset);
     long status;
-    unsigned char pact = paao->pact;
+    unsigned char pact = prec->pact;
 
     if (pdset == NULL || pdset->write_aao == NULL) {
-        paao->pact = TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)paao, "write_aao");
+        prec->pact = TRUE;
+        recGblRecordError(S_dev_missingSup, (void *)prec, "write_aao");
         return S_dev_missingSup;
     }
 
     if (pact) return 0;
 
-    status = writeValue(paao); /* write the data */
+    status = writeValue(prec); /* write the data */
 
-    paao->udf = FALSE;
-    recGblGetTimeStamp(paao);
+    prec->udf = FALSE;
+    recGblGetTimeStamp(prec);
 
-    monitor(paao);
+    monitor(prec);
     /* process the forward scan link record */
-    recGblFwdLink(paao);
+    recGblFwdLink(prec);
 
-    paao->pact = FALSE;
+    prec->pact = FALSE;
     return 0;
 }
 
-static long get_value(aaoRecord *paao, struct valueDes *pvdes)
+static long get_value(aaoRecord *prec, struct valueDes *pvdes)
 {
-    pvdes->no_elements = paao->nelm;
-    pvdes->pvalue      = paao->bptr;
-    pvdes->field_type  = paao->ftvl;
+    pvdes->no_elements = prec->nelm;
+    pvdes->pvalue      = prec->bptr;
+    pvdes->field_type  = prec->ftvl;
     return 0;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    paddr->pfield         = (void *)(paao->bptr);
-    paddr->no_elements    = paao->nelm;
-    paddr->field_type     = paao->ftvl;
-    paddr->field_size     = dbValueSize(paao->ftvl);
-    paddr->dbr_field_type = paao->ftvl;
+    paddr->pfield         = (void *)(prec->bptr);
+    paddr->no_elements    = prec->nelm;
+    paddr->field_type     = prec->ftvl;
+    paddr->field_size     = dbValueSize(prec->ftvl);
+    paddr->dbr_field_type = prec->ftvl;
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    *no_elements =  paao->nelm;
+    *no_elements =  prec->nelm;
     *offset = 0;
     return 0;
 }
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    paao->nelm = nNew;
+    prec->nelm = nNew;
     return 0;
 }
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    strncpy(units, paao->egu, DB_UNITS_SIZE);
+    strncpy(units, prec->egu, DB_UNITS_SIZE);
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    *precision = paao->prec;
-    if (paddr->pfield == (void *)paao->bptr) return 0;
+    *precision = prec->prec;
+    if (paddr->pfield == (void *)prec->bptr) return 0;
     recGblGetPrec(paddr, precision);
     return 0;
 }
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)paao->bptr) {
-        pgd->upper_disp_limit = paao->hopr;
-        pgd->lower_disp_limit = paao->lopr;
+    if (paddr->pfield == (void *)prec->bptr) {
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return 0;
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    aaoRecord *paao = (aaoRecord *)paddr->precord;
+    aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)paao->bptr){
-        pcd->upper_ctrl_limit = paao->hopr;
-        pcd->lower_ctrl_limit = paao->lopr;
+    if(paddr->pfield==(void *)prec->bptr){
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return 0;
 }
 
-static void monitor(aaoRecord *paao)
+static void monitor(aaoRecord *prec)
 {
     unsigned short monitor_mask;
 
-    monitor_mask = recGblResetAlarms(paao);
+    monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG | DBE_VALUE);
     if (monitor_mask)
-        db_post_events(paao, paao->bptr, monitor_mask);
+        db_post_events(prec, prec->bptr, monitor_mask);
 }
 
-static long writeValue(aaoRecord *paao)
+static long writeValue(aaoRecord *prec)
 {
     long status;
-    struct aaodset *pdset = (struct aaodset *)paao->dset;
+    struct aaodset *pdset = (struct aaodset *)prec->dset;
 
-    if (paao->pact == TRUE) {
+    if (prec->pact == TRUE) {
         /* no asyn allowed, pact true means do not process */
         return 0;
     }
 
-    status = dbGetLink(&paao->siml, DBR_ENUM, &paao->simm, 0, 0);
+    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
     if (status)
         return status;
 
-    if (paao->simm == NO) {
+    if (prec->simm == NO) {
         /* Call dev support */
-        status = pdset->write_aao(paao);
+        status = pdset->write_aao(prec);
         return status;
     }
-    if (paao->simm == YES) {
+    if (prec->simm == YES) {
         /* Call dev support */
-        status = pdset->write_aao(paao);
+        status = pdset->write_aao(prec);
         return status;
     }
     status = -1;
-    recGblSetSevr(paao, SIMM_ALARM, INVALID_ALARM);
+    recGblSetSevr(prec, SIMM_ALARM, INVALID_ALARM);
     return status;
 }
 

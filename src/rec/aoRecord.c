@@ -45,7 +45,7 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(aoRecord *pao, int pass);
+static long init_record(aoRecord *prec, int pass);
 static long process(aoRecord *);
 static long special(DBADDR *, int);
 #define get_value NULL
@@ -100,148 +100,148 @@ static void convert(aoRecord *, double);
 static void monitor(aoRecord *);
 static long writeValue(aoRecord *);
 
-static long init_record(aoRecord *pao, int pass)
+static long init_record(aoRecord *prec, int pass)
 {
     struct aodset *pdset;
-    double 	eoff = pao->eoff, eslo = pao->eslo;
+    double 	eoff = prec->eoff, eslo = prec->eslo;
     double	value;
 
     if (pass==0) return(0);
 
     /* ao.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pao->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pao->siml,DBF_USHORT,&pao->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    if(!(pdset = (struct aodset *)(pao->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pao,"ao: init_record");
+    if(!(pdset = (struct aodset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"ao: init_record");
 	return(S_dev_noDSET);
     }
     /* get the initial value if dol is a constant*/
-    if (pao->dol.type == CONSTANT) {
-	if(recGblInitConstantLink(&pao->dol,DBF_DOUBLE,&pao->val))
-	    pao->udf = isnan(pao->val);
+    if (prec->dol.type == CONSTANT) {
+	if(recGblInitConstantLink(&prec->dol,DBF_DOUBLE,&prec->val))
+	    prec->udf = isnan(prec->val);
     }
 
     /* must have write_ao function defined */
     if ((pdset->number < 6) || (pdset->write_ao ==NULL)) {
-	recGblRecordError(S_dev_missingSup,(void *)pao,"ao: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"ao: init_record");
 	return(S_dev_missingSup);
     }
-    pao->init = TRUE;
+    prec->init = TRUE;
     /*The following is for old device support that doesnt know about eoff*/
-    if ((pao->eslo==1.0) && (pao->eoff==0.0)) {
-	pao->eoff = pao->egul;
+    if ((prec->eslo==1.0) && (prec->eoff==0.0)) {
+	prec->eoff = prec->egul;
     }
 
     if (pdset->init_record) {
-	long status=(*pdset->init_record)(pao);
-	if (pao->linr == menuConvertSLOPE) {
-	    pao->eoff = eoff;
-	    pao->eslo = eslo;
+	long status=(*pdset->init_record)(prec);
+	if (prec->linr == menuConvertSLOPE) {
+	    prec->eoff = eoff;
+	    prec->eslo = eslo;
 	}
         switch(status){
         case(0): /* convert */
-	    value = (double)pao->rval + (double)pao->roff;
-	    if(pao->aslo!=0.0) value *= pao->aslo;
-	    value += pao->aoff;
-            if (pao->linr == menuConvertNO_CONVERSION){
+	    value = (double)prec->rval + (double)prec->roff;
+	    if(prec->aslo!=0.0) value *= prec->aslo;
+	    value += prec->aoff;
+            if (prec->linr == menuConvertNO_CONVERSION){
 		; /*do nothing*/
-            } else if ((pao->linr == menuConvertLINEAR) ||
-		      (pao->linr == menuConvertSLOPE)) {
-                value = value*pao->eslo + pao->eoff;
+            } else if ((prec->linr == menuConvertLINEAR) ||
+		      (prec->linr == menuConvertSLOPE)) {
+                value = value*prec->eslo + prec->eoff;
             }else{
-                if(cvtRawToEngBpt(&value,pao->linr,pao->init,
-			(void *)&pao->pbrk,&pao->lbrk)!=0) break;
+                if(cvtRawToEngBpt(&value,prec->linr,prec->init,
+			(void *)&prec->pbrk,&prec->lbrk)!=0) break;
             }
-	    pao->val = value;
-	    pao->udf = isnan(value);
+	    prec->val = value;
+	    prec->udf = isnan(value);
         break;
         case(2): /* no convert */
         break;
         default:
-	     recGblRecordError(S_dev_badInitRet,(void *)pao,"ao: init_record");
+	     recGblRecordError(S_dev_badInitRet,(void *)prec,"ao: init_record");
 	     return(S_dev_badInitRet);
         }
     }
-    pao->oval = pao->pval = pao->val;
+    prec->oval = prec->pval = prec->val;
     return(0);
 }
 
-static long process(aoRecord *pao)
+static long process(aoRecord *prec)
 {
-	struct aodset	*pdset = (struct aodset *)(pao->dset);
+	struct aodset	*pdset = (struct aodset *)(prec->dset);
 	long		 status=0;
-	unsigned char    pact=pao->pact;
+	unsigned char    pact=prec->pact;
 	double		value;
 
 	if ((pdset==NULL) || (pdset->write_ao==NULL)) {
-		pao->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pao,"write_ao");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"write_ao");
 		return(S_dev_missingSup);
 	}
 
 	/* fetch value and convert*/
-	if (pao->pact == FALSE) {
-                if ((pao->dol.type != CONSTANT)
-                && (pao->omsl == menuOmslclosed_loop)) {
-                    status = fetch_value(pao, &value);
+	if (prec->pact == FALSE) {
+                if ((prec->dol.type != CONSTANT)
+                && (prec->omsl == menuOmslclosed_loop)) {
+                    status = fetch_value(prec, &value);
                 }
                 else {
-                    value = pao->val;
+                    value = prec->val;
                 }
-		if(!status) convert(pao, value);
-		pao->udf = isnan(pao->val);
+		if(!status) convert(prec, value);
+		prec->udf = isnan(prec->val);
 	}
 
 	/* check for alarms */
-	checkAlarms(pao);
+	checkAlarms(prec);
 
-	if (pao->nsev < INVALID_ALARM )
-		status=writeValue(pao); /* write the new value */
+	if (prec->nsev < INVALID_ALARM )
+		status=writeValue(prec); /* write the new value */
 	else {
-    		switch (pao->ivoa) {
+    		switch (prec->ivoa) {
 		    case (menuIvoaContinue_normally) :
-			status=writeValue(pao); /* write the new value */
+			status=writeValue(prec); /* write the new value */
 		        break;
 		    case (menuIvoaDon_t_drive_outputs) :
 			break;
 		    case (menuIvoaSet_output_to_IVOV) :
-	                if(pao->pact == FALSE){
-			 	pao->val=pao->ivov;
-			 	value=pao->ivov;
-				convert(pao,value);
+	                if(prec->pact == FALSE){
+			 	prec->val=prec->ivov;
+			 	value=prec->ivov;
+				convert(prec,value);
                         }
-			status=writeValue(pao); /* write the new value */
+			status=writeValue(prec); /* write the new value */
 		        break;
 		    default :
 			status=-1;
-		        recGblRecordError(S_db_badField,(void *)pao,
+		        recGblRecordError(S_db_badField,(void *)prec,
 		                "ao:process Illegal IVOA field");
 		}
 	}
 
 	/* check if device support set pact */
-	if ( !pact && pao->pact ) return(0);
-	pao->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pao);
+	recGblGetTimeStamp(prec);
 
 	/* check event list */
-	monitor(pao);
+	monitor(prec);
 
 	/* process the forward scan link record */
-        recGblFwdLink(pao);
+        recGblFwdLink(prec);
 
-	pao->init=FALSE;
-	pao->pact=FALSE;
+	prec->init=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 static long special(DBADDR *paddr, int after)
 {
-    aoRecord     *pao = (aoRecord *)(paddr->precord);
-    struct aodset       *pdset = (struct aodset *) (pao->dset);
+    aoRecord     *prec = (aoRecord *)(paddr->precord);
+    struct aodset       *pdset = (struct aodset *) (prec->dset);
     int                 special_type = paddr->special;
 
     switch(special_type) {
@@ -250,17 +250,17 @@ static long special(DBADDR *paddr, int after)
             recGblDbaddrError(S_db_noMod,paddr,"ao: special");
             return(S_db_noMod);
         }
-	pao->init=TRUE;
-        if ((pao->linr == menuConvertLINEAR) && pdset->special_linconv) {
-	    double eoff = pao->eoff;
-	    double eslo = pao->eslo;
+	prec->init=TRUE;
+        if ((prec->linr == menuConvertLINEAR) && pdset->special_linconv) {
+	    double eoff = prec->eoff;
+	    double eslo = prec->eslo;
 	    long status;
-	    pao->eoff = pao->egul;
-	    status = (*pdset->special_linconv)(pao,after);
-	    if (eoff != pao->eoff)
-		db_post_events(pao, &pao->eoff, DBE_VALUE|DBE_LOG);
-            if (eslo != pao->eslo)
-		db_post_events(pao, &pao->eslo, DBE_VALUE|DBE_LOG);
+	    prec->eoff = prec->egul;
+	    status = (*pdset->special_linconv)(prec,after);
+	    if (eoff != prec->eoff)
+		db_post_events(prec, &prec->eoff, DBE_VALUE|DBE_LOG);
+            if (eslo != prec->eslo)
+		db_post_events(prec, &prec->eslo, DBE_VALUE|DBE_LOG);
 	    return (status);
 	}
 	return (0);
@@ -272,66 +272,66 @@ static long special(DBADDR *paddr, int after)
 
 static long get_units(DBADDR * paddr,char *units)
 {
-    aoRecord	*pao=(aoRecord *)paddr->precord;
+    aoRecord	*prec=(aoRecord *)paddr->precord;
 
-    strncpy(units,pao->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 static long get_precision(DBADDR *paddr,long *precision)
 {
-    aoRecord	*pao=(aoRecord *)paddr->precord;
+    aoRecord	*prec=(aoRecord *)paddr->precord;
 
-    *precision = pao->prec;
-    if(paddr->pfield == (void *)&pao->val
-    || paddr->pfield == (void *)&pao->oval
-    || paddr->pfield == (void *)&pao->pval) return(0);
+    *precision = prec->prec;
+    if(paddr->pfield == (void *)&prec->val
+    || paddr->pfield == (void *)&prec->oval
+    || paddr->pfield == (void *)&prec->pval) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    aoRecord	*pao=(aoRecord *)paddr->precord;
+    aoRecord	*prec=(aoRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pao->val
-    || paddr->pfield==(void *)&pao->hihi
-    || paddr->pfield==(void *)&pao->high
-    || paddr->pfield==(void *)&pao->low
-    || paddr->pfield==(void *)&pao->lolo
-    || paddr->pfield==(void *)&pao->oval
-    || paddr->pfield==(void *)&pao->pval){
-        pgd->upper_disp_limit = pao->hopr;
-        pgd->lower_disp_limit = pao->lopr;
+    if(paddr->pfield==(void *)&prec->val
+    || paddr->pfield==(void *)&prec->hihi
+    || paddr->pfield==(void *)&prec->high
+    || paddr->pfield==(void *)&prec->low
+    || paddr->pfield==(void *)&prec->lolo
+    || paddr->pfield==(void *)&prec->oval
+    || paddr->pfield==(void *)&prec->pval){
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    aoRecord	*pao=(aoRecord *)paddr->precord;
+    aoRecord	*prec=(aoRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pao->val
-    || paddr->pfield==(void *)&pao->hihi
-    || paddr->pfield==(void *)&pao->high
-    || paddr->pfield==(void *)&pao->low
-    || paddr->pfield==(void *)&pao->lolo
-    || paddr->pfield==(void *)&pao->oval
-    || paddr->pfield==(void *)&pao->pval){
-        pcd->upper_ctrl_limit = pao->drvh;
-        pcd->lower_ctrl_limit = pao->drvl;
+    if(paddr->pfield==(void *)&prec->val
+    || paddr->pfield==(void *)&prec->hihi
+    || paddr->pfield==(void *)&prec->high
+    || paddr->pfield==(void *)&prec->low
+    || paddr->pfield==(void *)&prec->lolo
+    || paddr->pfield==(void *)&prec->oval
+    || paddr->pfield==(void *)&prec->pval){
+        pcd->upper_ctrl_limit = prec->drvh;
+        pcd->lower_ctrl_limit = prec->drvl;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    aoRecord	*pao=(aoRecord *)paddr->precord;
+    aoRecord	*prec=(aoRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)&pao->val){
-         pad->upper_alarm_limit = pao->hihi;
-         pad->upper_warning_limit = pao->high;
-         pad->lower_warning_limit = pao->low;
-         pad->lower_alarm_limit = pao->lolo;
+    if(paddr->pfield==(void *)&prec->val){
+         pad->upper_alarm_limit = prec->hihi;
+         pad->upper_warning_limit = prec->high;
+         pad->lower_warning_limit = prec->low;
+         pad->lower_alarm_limit = prec->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
@@ -392,150 +392,150 @@ static void checkAlarms(aoRecord *prec)
     return;
 }
 
-static long fetch_value(aoRecord *pao,double *pvalue)
+static long fetch_value(aoRecord *prec,double *pvalue)
 {
 	short		save_pact;
 	long		status;
 
-	save_pact = pao->pact;
-	pao->pact = TRUE;
+	save_pact = prec->pact;
+	prec->pact = TRUE;
 
 	/* don't allow dbputs to val field */
-	pao->val=pao->pval;
+	prec->val=prec->pval;
 
-        status = dbGetLink(&pao->dol,DBR_DOUBLE,pvalue,0,0);
-        pao->pact = save_pact;
+        status = dbGetLink(&prec->dol,DBR_DOUBLE,pvalue,0,0);
+        prec->pact = save_pact;
 
 	if (status) {
-           recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
+           recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
            return(status);
 	}
 
-        if (pao->oif == aoOIF_Incremental)
-           *pvalue += pao->val;
+        if (prec->oif == aoOIF_Incremental)
+           *pvalue += prec->val;
 
 	return(0);
 }
 
-static void convert(aoRecord *pao, double value)
+static void convert(aoRecord *prec, double value)
 {
         /* check drive limits */
-	if(pao->drvh > pao->drvl) {
-        	if (value > pao->drvh) value = pao->drvh;
-        	else if (value < pao->drvl) value = pao->drvl;
+	if(prec->drvh > prec->drvl) {
+        	if (value > prec->drvh) value = prec->drvh;
+        	else if (value < prec->drvl) value = prec->drvl;
 	}
-	pao->val = value;
-	pao->pval = value;
+	prec->val = value;
+	prec->pval = value;
 
 	/* now set value equal to desired output value */
         /* apply the output rate of change */
-        if ( (pao->oroc) != 0.0 ){/*must be defined and >0*/
+        if ( (prec->oroc) != 0.0 ){/*must be defined and >0*/
 		double		diff;
 
-                diff = value - pao->oval;
+                diff = value - prec->oval;
                 if (diff < 0){
-                        if (pao->oroc < -diff) value = pao->oval - pao->oroc;
-                }else if (pao->oroc < diff) value = pao->oval + pao->oroc;
+                        if (prec->oroc < -diff) value = prec->oval - prec->oroc;
+                }else if (prec->oroc < diff) value = prec->oval + prec->oroc;
         }
-	pao->omod = (pao->oval!=value);
-	pao->oval = value;
+	prec->omod = (prec->oval!=value);
+	prec->oval = value;
 
         /* convert */
-        switch (pao->linr) {
+        switch (prec->linr) {
         case menuConvertNO_CONVERSION:
             break; /* do nothing*/
         case menuConvertLINEAR:
         case menuConvertSLOPE:
-            if (pao->eslo == 0.0) value = 0;
-            else value = (value - pao->eoff) / pao->eslo;
+            if (prec->eslo == 0.0) value = 0;
+            else value = (value - prec->eoff) / prec->eslo;
             break;
         default:
-            if(cvtEngToRawBpt(&value,pao->linr,pao->init,(void *)&pao->pbrk,&pao->lbrk)!=0){
-                recGblSetSevr(pao,SOFT_ALARM,MAJOR_ALARM);
+            if(cvtEngToRawBpt(&value,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0){
+                recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
                 return;
             }
         }
-	value -= pao->aoff;
-	if(pao->aslo!=0.0) value /= pao->aslo;
-	if (value >= 0.0) pao->rval = value + 0.5 - pao->roff;
-	else pao->rval = value - 0.5 - pao->roff;
+	value -= prec->aoff;
+	if(prec->aslo!=0.0) value /= prec->aslo;
+	if (value >= 0.0) prec->rval = value + 0.5 - prec->roff;
+	else prec->rval = value - 0.5 - prec->roff;
 }
 
 
-static void monitor(aoRecord *pao)
+static void monitor(aoRecord *prec)
 {
 	unsigned short	monitor_mask;
 	double		delta;
 
-        monitor_mask = recGblResetAlarms(pao);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        delta = pao->mlst - pao->val;
+        delta = prec->mlst - prec->val;
         if(delta<0.0) delta = -delta;
-        if (delta > pao->mdel) {
+        if (delta > prec->mdel) {
                 /* post events for value change */
                 monitor_mask |= DBE_VALUE;
                 /* update last value monitored */
-                pao->mlst = pao->val;
+                prec->mlst = prec->val;
         }
         /* check for archive change */
-        delta = pao->alst - pao->val;
+        delta = prec->alst - prec->val;
         if(delta<0.0) delta = -delta;
-        if (delta > pao->adel) {
+        if (delta > prec->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;
                 /* update last archive value monitored */
-                pao->alst = pao->val;
+                prec->alst = prec->val;
         }
 
 
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pao,&pao->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
-	if(pao->omod) monitor_mask |= (DBE_VALUE|DBE_LOG);
+	if(prec->omod) monitor_mask |= (DBE_VALUE|DBE_LOG);
 	if(monitor_mask) {
-		pao->omod = FALSE;
-		db_post_events(pao,&pao->oval,monitor_mask);
-		if(pao->oraw != pao->rval) {
-                	db_post_events(pao,&pao->rval,
+		prec->omod = FALSE;
+		db_post_events(prec,&prec->oval,monitor_mask);
+		if(prec->oraw != prec->rval) {
+                	db_post_events(prec,&prec->rval,
 			    monitor_mask|DBE_VALUE|DBE_LOG);
-			pao->oraw = pao->rval;
+			prec->oraw = prec->rval;
 		}
-		if(pao->orbv != pao->rbv) {
-                	db_post_events(pao,&pao->rbv,
+		if(prec->orbv != prec->rbv) {
+                	db_post_events(prec,&prec->rbv,
 			    monitor_mask|DBE_VALUE|DBE_LOG);
-			pao->orbv = pao->rbv;
+			prec->orbv = prec->rbv;
 		}
 	}
 	return;
 }
 
-static long writeValue(aoRecord *pao)
+static long writeValue(aoRecord *prec)
 {
 	long		status;
-        struct aodset 	*pdset = (struct aodset *) (pao->dset);
+        struct aodset 	*pdset = (struct aodset *) (prec->dset);
 
-	if (pao->pact == TRUE){
-		status=(*pdset->write_ao)(pao);
+	if (prec->pact == TRUE){
+		status=(*pdset->write_ao)(prec);
 		return(status);
 	}
 
-        status = dbGetLink(&pao->siml,DBR_USHORT,&(pao->simm),0,0);
+        status = dbGetLink(&prec->siml,DBR_USHORT,&(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pao->simm == NO){
-		status=(*pdset->write_ao)(pao);
+	if (prec->simm == NO){
+		status=(*pdset->write_ao)(prec);
 		return(status);
 	}
-	if (pao->simm == YES){
-		status = dbPutLink(&(pao->siol),DBR_DOUBLE,&(pao->oval),1);
+	if (prec->simm == YES){
+		status = dbPutLink(&(prec->siol),DBR_DOUBLE,&(prec->oval),1);
 	} else {
 		status=-1;
-		recGblSetSevr(pao,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pao,SIMM_ALARM,pao->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

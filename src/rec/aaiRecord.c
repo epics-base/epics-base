@@ -95,178 +95,178 @@ static void monitor(aaiRecord *);
 static long readValue(aaiRecord *);
 
 
-static long init_record(aaiRecord *paai, int pass)
+static long init_record(aaiRecord *prec, int pass)
 {
     struct aaidset *pdset;
     long status;
 
     if (pass == 0) {
-        if (paai->nelm <= 0) paai->nelm = 1;
+        if (prec->nelm <= 0) prec->nelm = 1;
         return 0;
     }
-    recGblInitConstantLink(&paai->siml, DBF_USHORT, &paai->simm);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
     /* must have dset defined */
-    if (!(pdset = (struct aaidset *)(paai->dset))) {
-        recGblRecordError(S_dev_noDSET, (void *)paai, "aai: init_record");
+    if (!(pdset = (struct aaidset *)(prec->dset))) {
+        recGblRecordError(S_dev_noDSET, (void *)prec, "aai: init_record");
         return S_dev_noDSET;
     }
     /* must have read_aai function defined */
     if (pdset->number < 5 || pdset->read_aai == NULL) {
-        recGblRecordError(S_dev_missingSup, (void *)paai, "aai: init_record");
+        recGblRecordError(S_dev_missingSup, (void *)prec, "aai: init_record");
         return S_dev_missingSup;
     }
     if (pdset->init_record) {
         /* init_record sets the bptr to point to the data */
-        if ((status = pdset->init_record(paai)))
+        if ((status = pdset->init_record(prec)))
             return status;
     }
     return 0;
 }
 
-static long process(aaiRecord *paai)
+static long process(aaiRecord *prec)
 {
-    struct aaidset *pdset = (struct aaidset *)(paai->dset);
+    struct aaidset *pdset = (struct aaidset *)(prec->dset);
     long status;
-    unsigned char pact = paai->pact;
+    unsigned char pact = prec->pact;
 
     if (pdset == NULL || pdset->read_aai == NULL) {
-        paai->pact = TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)paai, "read_aai");
+        prec->pact = TRUE;
+        recGblRecordError(S_dev_missingSup, (void *)prec, "read_aai");
         return S_dev_missingSup;
     }
 
     if (pact) return 0;
 
-    status = readValue(paai); /* read the new value */
+    status = readValue(prec); /* read the new value */
     /* check if device support set pact */
-    if (!pact && paai->pact) return 0;
-    paai->pact = TRUE;
+    if (!pact && prec->pact) return 0;
+    prec->pact = TRUE;
 
-    paai->udf = FALSE;
-    recGblGetTimeStamp(paai);
+    prec->udf = FALSE;
+    recGblGetTimeStamp(prec);
 
-    monitor(paai);
+    monitor(prec);
     /* process the forward scan link record */
-    recGblFwdLink(paai);
+    recGblFwdLink(prec);
 
-    paai->pact = FALSE;
+    prec->pact = FALSE;
     return 0;
 }
 
-static long get_value(aaiRecord *paai, struct valueDes *pvdes)
+static long get_value(aaiRecord *prec, struct valueDes *pvdes)
 {
-    pvdes->no_elements = paai->nelm;
-    pvdes->pvalue      = paai->bptr;
-    pvdes->field_type  = paai->ftvl;
+    pvdes->no_elements = prec->nelm;
+    pvdes->pvalue      = prec->bptr;
+    pvdes->field_type  = prec->ftvl;
     return 0;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    paddr->pfield         = (void *)(paai->bptr);
-    paddr->no_elements    = paai->nelm;
-    paddr->field_type     = paai->ftvl;
-    paddr->field_size     = dbValueSize(paai->ftvl);
-    paddr->dbr_field_type = paai->ftvl;
+    paddr->pfield         = (void *)(prec->bptr);
+    paddr->no_elements    = prec->nelm;
+    paddr->field_type     = prec->ftvl;
+    paddr->field_size     = dbValueSize(prec->ftvl);
+    paddr->dbr_field_type = prec->ftvl;
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    *no_elements =  paai->nelm;
+    *no_elements =  prec->nelm;
     *offset = 0;
     return 0;
 }
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    paai->nelm = nNew;
+    prec->nelm = nNew;
     return 0;
 }
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    strncpy(units, paai->egu, DB_UNITS_SIZE);
+    strncpy(units, prec->egu, DB_UNITS_SIZE);
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    *precision = paai->prec;
-    if (paddr->pfield == (void *)paai->bptr) return 0;
+    *precision = prec->prec;
+    if (paddr->pfield == (void *)prec->bptr) return 0;
     recGblGetPrec(paddr, precision);
     return 0;
 }
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)paai->bptr) {
-        pgd->upper_disp_limit = paai->hopr;
-        pgd->lower_disp_limit = paai->lopr;
+    if (paddr->pfield == (void *)prec->bptr) {
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr, pgd);
     return 0;
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    aaiRecord *paai = (aaiRecord *)paddr->precord;
+    aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)paai->bptr) {
-        pcd->upper_ctrl_limit = paai->hopr;
-        pcd->lower_ctrl_limit = paai->lopr;
+    if (paddr->pfield == (void *)prec->bptr) {
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr, pcd);
     return 0;
 }
 
-static void monitor(aaiRecord *paai)
+static void monitor(aaiRecord *prec)
 {
     unsigned short monitor_mask;
 
-    monitor_mask = recGblResetAlarms(paai);
+    monitor_mask = recGblResetAlarms(prec);
     monitor_mask |= (DBE_LOG | DBE_VALUE);
     if (monitor_mask)
-        db_post_events(paai, paai->bptr, monitor_mask);
+        db_post_events(prec, prec->bptr, monitor_mask);
 }
 
-static long readValue(aaiRecord *paai)
+static long readValue(aaiRecord *prec)
 {
     long status;
-    struct aaidset *pdset = (struct aaidset *)paai->dset;
+    struct aaidset *pdset = (struct aaidset *)prec->dset;
 
-    if (paai->pact == TRUE){
-        status = pdset->read_aai(paai);
+    if (prec->pact == TRUE){
+        status = pdset->read_aai(prec);
         return status;
     }
 
-    status = dbGetLink(&paai->siml, DBR_ENUM, &paai->simm, 0, 0);
+    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
     if (status)
         return(status);
 
-    if (paai->simm == NO){
+    if (prec->simm == NO){
         /* Call dev support */
-        status = pdset->read_aai(paai);
+        status = pdset->read_aai(prec);
         return status;
     }
-    if (paai->simm == YES){
+    if (prec->simm == YES){
         /* Simm processing split performed in devSup */
         /* Call dev support */
-        status = pdset->read_aai(paai);
+        status = pdset->read_aai(prec);
         return status;
     }
     status = -1;
-    recGblSetSevr(paai, SIMM_ALARM, INVALID_ALARM);
+    recGblSetSevr(prec, SIMM_ALARM, INVALID_ALARM);
     return status;
 }
 

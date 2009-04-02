@@ -90,116 +90,116 @@ static void monitor(stringinRecord *);
 static long readValue(stringinRecord *);
 
 
-static long init_record(stringinRecord *pstringin, int pass)
+static long init_record(stringinRecord *prec, int pass)
 {
     struct stringindset *pdset;
     long status;
 
     if (pass==0) return(0);
 
-    if (pstringin->siml.type == CONSTANT) {
-	recGblInitConstantLink(&pstringin->siml,DBF_USHORT,&pstringin->simm);
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
     /* stringin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
-    if (pstringin->siol.type == CONSTANT) {
-        recGblInitConstantLink(&pstringin->siol,DBF_STRING,pstringin->sval);
+    if (prec->siol.type == CONSTANT) {
+        recGblInitConstantLink(&prec->siol,DBF_STRING,prec->sval);
     } 
 
-    if(!(pdset = (struct stringindset *)(pstringin->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pstringin,"stringin: init_record");
+    if(!(pdset = (struct stringindset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"stringin: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_stringin function defined */
     if( (pdset->number < 5) || (pdset->read_stringin == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pstringin,"stringin: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"stringin: init_record");
 	return(S_dev_missingSup);
     }
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pstringin))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
     return(0);
 }
 
 /*
  */
-static long process(stringinRecord *pstringin)
+static long process(stringinRecord *prec)
 {
-	struct stringindset	*pdset = (struct stringindset *)(pstringin->dset);
+	struct stringindset	*pdset = (struct stringindset *)(prec->dset);
 	long		 status;
-	unsigned char    pact=pstringin->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_stringin==NULL) ) {
-		pstringin->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pstringin,"read_stringin");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_stringin");
 		return(S_dev_missingSup);
 	}
 
-	status=readValue(pstringin); /* read the new value */
+	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
-	if ( !pact && pstringin->pact ) return(0);
-	pstringin->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pstringin);
+	recGblGetTimeStamp(prec);
 
 	/* check event list */
-	monitor(pstringin);
+	monitor(prec);
 	/* process the forward scan link record */
-	recGblFwdLink(pstringin);
+	recGblFwdLink(prec);
 
-	pstringin->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
-static void monitor(stringinRecord *pstringin)
+static void monitor(stringinRecord *prec)
 {
     unsigned short  monitor_mask;
 
-    monitor_mask = recGblResetAlarms(pstringin);
-    if(strncmp(pstringin->oval,pstringin->val,sizeof(pstringin->val))) {
+    monitor_mask = recGblResetAlarms(prec);
+    if(strncmp(prec->oval,prec->val,sizeof(prec->val))) {
 	monitor_mask |= DBE_VALUE|DBE_LOG;
-	strncpy(pstringin->oval,pstringin->val,sizeof(pstringin->val));
+	strncpy(prec->oval,prec->val,sizeof(prec->val));
     }
-    if (pstringin->mpst == stringinPOST_Always)
+    if (prec->mpst == stringinPOST_Always)
 	monitor_mask |= DBE_VALUE;
-    if (pstringin->apst == stringinPOST_Always)
+    if (prec->apst == stringinPOST_Always)
 	monitor_mask |= DBE_LOG;
     if(monitor_mask)
-	db_post_events(pstringin,&(pstringin->val[0]),monitor_mask);
+	db_post_events(prec,&(prec->val[0]),monitor_mask);
     return;
 }
 
-static long readValue(stringinRecord *pstringin)
+static long readValue(stringinRecord *prec)
 {
 	long		status;
-        struct stringindset 	*pdset = (struct stringindset *) (pstringin->dset);
+        struct stringindset 	*pdset = (struct stringindset *) (prec->dset);
 
-	if (pstringin->pact == TRUE){
-		status=(*pdset->read_stringin)(pstringin);
+	if (prec->pact == TRUE){
+		status=(*pdset->read_stringin)(prec);
 		return(status);
 	}
 
-	status=dbGetLink(&(pstringin->siml),DBR_USHORT, &(pstringin->simm),0,0);
+	status=dbGetLink(&(prec->siml),DBR_USHORT, &(prec->simm),0,0);
 	if (status)
 		return(status);
 
-	if (pstringin->simm == NO){
-		status=(*pdset->read_stringin)(pstringin);
+	if (prec->simm == NO){
+		status=(*pdset->read_stringin)(prec);
 		return(status);
 	}
-	if (pstringin->simm == YES){
-		status=dbGetLink(&(pstringin->siol),DBR_STRING,
-			pstringin->sval,0,0);
+	if (prec->simm == YES){
+		status=dbGetLink(&(prec->siol),DBR_STRING,
+			prec->sval,0,0);
 		if (status==0) {
-			strcpy(pstringin->val,pstringin->sval);
-			pstringin->udf=FALSE;
+			strcpy(prec->val,prec->sval);
+			prec->udf=FALSE;
 		}
 	} else {
 		status=-1;
-		recGblSetSevr(pstringin,SOFT_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
 		return(status);
 	}
-        recGblSetSevr(pstringin,SIMM_ALARM,pstringin->sims);
+        recGblSetSevr(prec,SIMM_ALARM,prec->sims);
 
 	return(status);
 }

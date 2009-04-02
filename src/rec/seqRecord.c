@@ -40,10 +40,10 @@
 int	seqRecDebug = 0;
 
 /* Create RSET - Record Support Entry Table*/
-static long init_record(seqRecord *pseq, int pass);
-static long process(seqRecord *pseq);
-static int processNextLink(seqRecord *pseq);
-static long asyncFinish(seqRecord *pseq);
+static long init_record(seqRecord *prec, int pass);
+static long process(seqRecord *prec);
+static int processNextLink(seqRecord *prec);
+static long asyncFinish(seqRecord *prec);
 static void processCallback(CALLBACK *arg);
 static long get_precision(dbAddr *paddr, long *pprecision);
 
@@ -104,7 +104,7 @@ int processNextLink();
  * For each constant input link, fill in the DOV field
  *
  ******************************************************************************/
-static long init_record(seqRecord *pseq, int pass)
+static long init_record(seqRecord *prec, int pass)
 {
     int		index;
     linkDesc      *plink;
@@ -113,26 +113,26 @@ static long init_record(seqRecord *pseq, int pass)
     if (pass==0) return(0);
 
     if (seqRecDebug > 5)
-      printf("init_record(%s) entered\n", pseq->name);
+      printf("init_record(%s) entered\n", prec->name);
 
     /* Allocate a callback structure for use in processing */
     pcallbackSeq  = (callbackSeq *)calloc(1,sizeof(callbackSeq));
-    pcallbackSeq->pseqRecord = pseq;
+    pcallbackSeq->pseqRecord = prec;
     callbackSetCallback(processCallback,&pcallbackSeq->callback);
     callbackSetUser(pcallbackSeq,&pcallbackSeq->callback);
-    callbackSetPriority(pseq->prio,&pcallbackSeq->callback);
-    pseq->dpvt = (void *)pcallbackSeq;
+    callbackSetPriority(prec->prio,&pcallbackSeq->callback);
+    prec->dpvt = (void *)pcallbackSeq;
 
     /* Get link selection if sell is a constant and nonzero */
-    if (pseq->sell.type==CONSTANT)
+    if (prec->sell.type==CONSTANT)
     {
       if (seqRecDebug > 5)
-        printf("init_record(%s) SELL is a constant\n", pseq->name);
-      recGblInitConstantLink(&pseq->sell,DBF_USHORT,&pseq->seln);
+        printf("init_record(%s) SELL is a constant\n", prec->name);
+      recGblInitConstantLink(&prec->sell,DBF_USHORT,&prec->seln);
     }
 
   /* Copy over ALL the input link constants here */
-  plink = (linkDesc *)(&(pseq->dly1));
+  plink = (linkDesc *)(&(prec->dly1));
 
   index = 0;
   while (index < NUM_LINKS)
@@ -166,31 +166,31 @@ static long init_record(seqRecord *pseq, int pass)
  *
  *
  * NOTE:
- *   dbScanLock is already held for pseq before this function is called.
+ *   dbScanLock is already held for prec before this function is called.
  *
  *   We do NOT call processNextLink() if there is nothing to do, this prevents
  *   us from calling dbProcess() recursively.
  *
  ******************************************************************************/
-static long process(seqRecord *pseq)
+static long process(seqRecord *prec)
 {
-  callbackSeq	*pcb = (callbackSeq *) (pseq->dpvt);
+  callbackSeq	*pcb = (callbackSeq *) (prec->dpvt);
   linkDesc	*plink;
   unsigned short	lmask;
   int			tmp;
 
   if(seqRecDebug > 10)
-    printf("seqRecord: process(%s) pact = %d\n", pseq->name, pseq->pact);
+    printf("seqRecord: process(%s) pact = %d\n", prec->name, prec->pact);
 
-  if (pseq->pact)
+  if (prec->pact)
   { /* In async completion phase */
-    asyncFinish(pseq);
+    asyncFinish(prec);
     return(0);
   }
-  pseq->pact = TRUE;
+  prec->pact = TRUE;
 
   /* Reset the PRIO in case it was changed */
-  callbackSetPriority(pseq->prio,&pcb->callback);
+  callbackSetPriority(prec->prio,&pcb->callback);
 
   /*
    * We should not bother supporting seqSELM_All or seqSELM_Specified
@@ -198,43 +198,43 @@ static long process(seqRecord *pseq)
    * build the proper mask using these other silly modes if necessary.
    */
 
-  if (pseq->selm == seqSELM_All)
+  if (prec->selm == seqSELM_All)
   {
     lmask = (unsigned short) SELN_BIT_MASK;
   }
   else
   { 
     /* Fill in the SELN field */
-    if (pseq->sell.type != CONSTANT)
+    if (prec->sell.type != CONSTANT)
     {
-      dbGetLink(&(pseq->sell), DBR_USHORT, &(pseq->seln), 0,0);
+      dbGetLink(&(prec->sell), DBR_USHORT, &(prec->seln), 0,0);
     }
-    if  (pseq->selm == seqSELM_Specified)
+    if  (prec->selm == seqSELM_Specified)
     {
-      if(pseq->seln>10)
+      if(prec->seln>10)
       { /* Invalid selection number */
-        recGblSetSevr(pseq,SOFT_ALARM,INVALID_ALARM);
-        return(asyncFinish(pseq));
+        recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
+        return(asyncFinish(prec));
       }
-      if (pseq->seln == 0)
-        return(asyncFinish(pseq));	/* Nothing selected */
+      if (prec->seln == 0)
+        return(asyncFinish(prec));	/* Nothing selected */
 
       lmask = 1;
-      lmask <<= pseq->seln - 1;
+      lmask <<= prec->seln - 1;
     }
-    else if (pseq->selm == seqSELM_Mask)
+    else if (prec->selm == seqSELM_Mask)
     {
-      lmask = (pseq->seln) & SELN_BIT_MASK;
+      lmask = (prec->seln) & SELN_BIT_MASK;
     }
     else
     { /* Invalid selection option */
-      recGblSetSevr(pseq,SOFT_ALARM,INVALID_ALARM);
-      return(asyncFinish(pseq));
+      recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
+      return(asyncFinish(prec));
     }
   }
   /* Figure out which links are going to be processed */
   pcb->index = 0;
-  plink = (linkDesc *)(&(pseq->dly1));
+  plink = (linkDesc *)(&(prec->dly1));
   tmp = 1;
   while (lmask)
   {
@@ -258,12 +258,12 @@ static long process(seqRecord *pseq)
 
   if (!pcb->index)
   { /* There was nothing to do, finish record processing here */
-    return(asyncFinish(pseq));
+    return(asyncFinish(prec));
   }
 
   pcb->index = 0;
   /* Start doing the first forward link (We have at least one for sure) */
-  processNextLink(pseq);
+  processNextLink(prec);
 
   return(0);
 }
@@ -282,20 +282,20 @@ static long process(seqRecord *pseq)
  *
  *
  * NOTE:
- *   dbScanLock is already held for pseq before this function is called.
+ *   dbScanLock is already held for prec before this function is called.
  *
  ******************************************************************************/
-static int processNextLink(seqRecord *pseq)
+static int processNextLink(seqRecord *prec)
 {
-  callbackSeq   *pcb = (callbackSeq *) (pseq->dpvt);
+  callbackSeq   *pcb = (callbackSeq *) (prec->dpvt);
 
   if (seqRecDebug > 5)
-    printf("processNextLink(%s) looking for work to do, index = %d\n", pseq->name, pcb->index);
+    printf("processNextLink(%s) looking for work to do, index = %d\n", prec->name, pcb->index);
 
   if (pcb->plinks[pcb->index] == NULL)
   {
     /* None left, finish up. */
-    (*(struct rset *)(pseq->rset)).process(pseq);
+    (*(struct rset *)(prec->rset)).process(prec);
   }
   else
   {
@@ -317,28 +317,28 @@ static int processNextLink(seqRecord *pseq)
  * Finish record processing by posting any events and processing forward links.
  *
  * NOTE:
- *   dbScanLock is already held for pseq before this function is called.
+ *   dbScanLock is already held for prec before this function is called.
  *
  ******************************************************************************/
-static long asyncFinish(seqRecord *pseq)
+static long asyncFinish(seqRecord *prec)
 {
   unsigned short MonitorMask;
 
   if (seqRecDebug > 5)
-    printf("asyncFinish(%s) completing processing\n", pseq->name);
-  pseq->udf = FALSE;
+    printf("asyncFinish(%s) completing processing\n", prec->name);
+  prec->udf = FALSE;
  
-  MonitorMask = recGblResetAlarms(pseq);
+  MonitorMask = recGblResetAlarms(prec);
 
   if (MonitorMask)
-    db_post_events(pseq, &pseq->val, MonitorMask);
+    db_post_events(prec, &prec->val, MonitorMask);
 
   /* process the forward scan link record */
-  recGblFwdLink(pseq);
+  recGblFwdLink(prec);
 
-  recGblGetTimeStamp(pseq);
-  /* tsLocalTime(&pseq->time); */
-  pseq->pact = FALSE;
+  recGblGetTimeStamp(prec);
+  /* tsLocalTime(&prec->time); */
+  prec->pact = FALSE;
 
   return(0);
 }
@@ -355,21 +355,21 @@ static long asyncFinish(seqRecord *pseq)
  * call processNextLink() to schedule the processing of the next link-group
  *
  * NOTE:
- *   dbScanLock is NOT held for pseq when this function is called!!
+ *   dbScanLock is NOT held for prec when this function is called!!
  *
  ******************************************************************************/
 static void processCallback(CALLBACK *arg)
 {
   callbackSeq *pcb;
-  seqRecord *pseq;
+  seqRecord *prec;
   double	myDouble;
 
   callbackGetUser(pcb,arg);
-  pseq = pcb->pseqRecord;
-  dbScanLock((struct dbCommon *)pseq);
+  prec = pcb->pseqRecord;
+  dbScanLock((struct dbCommon *)prec);
 
   if (seqRecDebug > 5)
-    printf("processCallback(%s) processing field index %d\n", pseq->name, pcb->index+1);
+    printf("processCallback(%s) processing field index %d\n", prec->name, pcb->index+1);
 
   /* Save the old value */
   myDouble = pcb->plinks[pcb->index]->dov;
@@ -385,7 +385,7 @@ static void processCallback(CALLBACK *arg)
   {
     if (seqRecDebug > 0)
       printf("link %d changed from %f to %f\n", pcb->index, myDouble, pcb->plinks[pcb->index]->dov);
-    db_post_events(pseq, &pcb->plinks[pcb->index]->dov, DBE_VALUE|DBE_LOG);
+    db_post_events(prec, &pcb->plinks[pcb->index]->dov, DBE_VALUE|DBE_LOG);
   }
   else
   {
@@ -395,9 +395,9 @@ static void processCallback(CALLBACK *arg)
 
   /* Find the 'next' link-seq that is ready for processing. */
   pcb->index++;
-  processNextLink(pseq);
+  processNextLink(prec);
 
-  dbScanUnlock((struct dbCommon *)pseq);
+  dbScanUnlock((struct dbCommon *)prec);
   return;
 }
 
@@ -408,11 +408,11 @@ static void processCallback(CALLBACK *arg)
  *****************************************************************************/
 static long get_precision(dbAddr *paddr, long *pprecision)
 {
-    seqRecord	*pseq = (seqRecord *) paddr->precord;
+    seqRecord	*prec = (seqRecord *) paddr->precord;
 
-    *pprecision = pseq->prec;
+    *pprecision = prec->prec;
 
-    if(paddr->pfield < (void *)&pseq->val)
+    if(paddr->pfield < (void *)&prec->val)
 	return 0;			/* Field is NOT in dbCommon */
 
     recGblGetPrec(paddr, pprecision);	/* Field is in dbCommon */

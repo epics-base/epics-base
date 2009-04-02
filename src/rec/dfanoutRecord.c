@@ -92,51 +92,51 @@ static void push_values(dfanoutRecord *);
 #define OUT_ARG_MAX 8
 
 
-static long init_record(dfanoutRecord *pdfanout, int pass)
+static long init_record(dfanoutRecord *prec, int pass)
 {
     if (pass==0) return(0);
 
-    recGblInitConstantLink(&pdfanout->sell,DBF_USHORT,&pdfanout->seln);
+    recGblInitConstantLink(&prec->sell,DBF_USHORT,&prec->seln);
     /* get the initial value dol is a constant*/
-    if(recGblInitConstantLink(&pdfanout->dol,DBF_DOUBLE,&pdfanout->val))
-	    pdfanout->udf = isnan(pdfanout->val);
+    if(recGblInitConstantLink(&prec->dol,DBF_DOUBLE,&prec->val))
+	    prec->udf = isnan(prec->val);
     return(0);
 }
 
-static long process(dfanoutRecord *pdfanout)
+static long process(dfanoutRecord *prec)
 {
     long status=0;
 
-    if (!pdfanout->pact
-    && (pdfanout->dol.type != CONSTANT)
-    && (pdfanout->omsl == menuOmslclosed_loop)){
-	status = dbGetLink(&(pdfanout->dol),DBR_DOUBLE,&(pdfanout->val),0,0);
-	if(pdfanout->dol.type!=CONSTANT && RTN_SUCCESS(status))
-            pdfanout->udf = isnan(pdfanout->val);
+    if (!prec->pact
+    && (prec->dol.type != CONSTANT)
+    && (prec->omsl == menuOmslclosed_loop)){
+	status = dbGetLink(&(prec->dol),DBR_DOUBLE,&(prec->val),0,0);
+	if(prec->dol.type!=CONSTANT && RTN_SUCCESS(status))
+            prec->udf = isnan(prec->val);
     }
-    pdfanout->pact = TRUE;
-    recGblGetTimeStamp(pdfanout);
+    prec->pact = TRUE;
+    recGblGetTimeStamp(prec);
     /* Push out the data to all the forward links */
-    dbGetLink(&(pdfanout->sell),DBR_USHORT,&(pdfanout->seln),0,0);
-    checkAlarms(pdfanout);
-    push_values(pdfanout);
-    monitor(pdfanout);
-    recGblFwdLink(pdfanout);
-    pdfanout->pact=FALSE;
+    dbGetLink(&(prec->sell),DBR_USHORT,&(prec->seln),0,0);
+    checkAlarms(prec);
+    push_values(prec);
+    monitor(prec);
+    recGblFwdLink(prec);
+    prec->pact=FALSE;
     return(status);
 }
 
 static long get_units(DBADDR *paddr,char *units)
 {
-    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
+    dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
 
-    strncpy(units,pdfanout->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 static long get_precision(DBADDR *paddr,long *precision)
 {
-    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
+    dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -146,7 +146,7 @@ static long get_precision(DBADDR *paddr,long *precision)
     || fieldIndex == dfanoutRecordLOLO
     || fieldIndex == dfanoutRecordHOPR
     || fieldIndex == dfanoutRecordLOPR) {
-        *precision = pdfanout->prec;
+        *precision = prec->prec;
     } else {
         recGblGetPrec(paddr,precision);
     }
@@ -155,7 +155,7 @@ static long get_precision(DBADDR *paddr,long *precision)
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble	*pgd)
 {
-    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
+    dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -165,15 +165,15 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble	*pgd)
     || fieldIndex == dfanoutRecordLOLO
     || fieldIndex == dfanoutRecordHOPR
     || fieldIndex == dfanoutRecordLOPR) {
-        pgd->upper_disp_limit = pdfanout->hopr;
-        pgd->lower_disp_limit = pdfanout->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
+    dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == dfanoutRecordVAL
@@ -181,22 +181,22 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     || fieldIndex == dfanoutRecordHIGH
     || fieldIndex == dfanoutRecordLOW
     || fieldIndex == dfanoutRecordLOLO) {
-        pcd->upper_ctrl_limit = pdfanout->hopr;
-        pcd->lower_ctrl_limit = pdfanout->lopr;
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    dfanoutRecord *pdfanout=(dfanoutRecord *)paddr->precord;
+    dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
     int   fieldIndex = dbGetFieldIndex(paddr);
 
     
     if(fieldIndex == dfanoutRecordVAL) {
-         pad->upper_alarm_limit = pdfanout->hihi;
-         pad->upper_warning_limit = pdfanout->high;
-         pad->lower_warning_limit = pdfanout->low;
-         pad->lower_alarm_limit = pdfanout->lolo;
+         pad->upper_alarm_limit = prec->hihi;
+         pad->upper_warning_limit = prec->high;
+         pad->lower_warning_limit = prec->low;
+         pad->lower_alarm_limit = prec->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
@@ -257,77 +257,77 @@ static void checkAlarms(dfanoutRecord *prec)
     return;
 }
 
-static void monitor(dfanoutRecord *pdfanout)
+static void monitor(dfanoutRecord *prec)
 {
 	unsigned short	monitor_mask;
 
 	double		delta;
 
-        monitor_mask = recGblResetAlarms(pdfanout);
+        monitor_mask = recGblResetAlarms(prec);
         /* check for value change */
-        delta = pdfanout->mlst - pdfanout->val;
+        delta = prec->mlst - prec->val;
         if(delta<0) delta = -delta;
-        if (delta > pdfanout->mdel) {
+        if (delta > prec->mdel) {
                 /* post events for value change */
                 monitor_mask |= DBE_VALUE;
                 /* update last value monitored */
-                pdfanout->mlst = pdfanout->val;
+                prec->mlst = prec->val;
         }
         /* check for archive change */
-        delta = pdfanout->alst - pdfanout->val;
+        delta = prec->alst - prec->val;
         if(delta<0) delta = -delta;
-        if (delta > pdfanout->adel) {
+        if (delta > prec->adel) {
                 /* post events on value field for archive change */
                 monitor_mask |= DBE_LOG;
                 /* update last archive value monitored */
-                pdfanout->alst = pdfanout->val;
+                prec->alst = prec->val;
         }
 
         /* send out monitors connected to the value field */
         if (monitor_mask){
-                db_post_events(pdfanout,&pdfanout->val,monitor_mask);
+                db_post_events(prec,&prec->val,monitor_mask);
 	}
 	return;
 }
 
-static void push_values(dfanoutRecord *pdfanout)
+static void push_values(dfanoutRecord *prec)
 {
     struct link     *plink; /* structure of the link field  */
     int             i;
     long            status;
     unsigned short  state;
 
-    switch (pdfanout->selm){
+    switch (prec->selm){
     case (dfanoutSELM_All):
-        for(i=0, plink=&(pdfanout->outa); i<OUT_ARG_MAX; i++, plink++) {
-                status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
-                if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
+        for(i=0, plink=&(prec->outa); i<OUT_ARG_MAX; i++, plink++) {
+                status=dbPutLink(plink,DBR_DOUBLE,&(prec->val),1);
+                if(status) recGblSetSevr(prec,LINK_ALARM,MAJOR_ALARM);
         }
         break;
     case (dfanoutSELM_Specified):
-        if(pdfanout->seln>OUT_ARG_MAX) {
-            recGblSetSevr(pdfanout,SOFT_ALARM,INVALID_ALARM);
+        if(prec->seln>OUT_ARG_MAX) {
+            recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
             break;
         }
-        if(pdfanout->seln==0) break;
-        plink=&(pdfanout->outa);
-        plink += (pdfanout->seln -1);
-        status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
-        if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
+        if(prec->seln==0) break;
+        plink=&(prec->outa);
+        plink += (prec->seln -1);
+        status=dbPutLink(plink,DBR_DOUBLE,&(prec->val),1);
+        if(status) recGblSetSevr(prec,LINK_ALARM,MAJOR_ALARM);
         break;
     case (dfanoutSELM_Mask):
-        if(pdfanout->seln==0) break;
-        for(i=0, plink=&(pdfanout->outa), state=pdfanout->seln;
+        if(prec->seln==0) break;
+        for(i=0, plink=&(prec->outa), state=prec->seln;
         i<OUT_ARG_MAX;
         i++, plink++, state>>=1) {
             if(state&1) {
-                status=dbPutLink(plink,DBR_DOUBLE,&(pdfanout->val),1);
-                if(status) recGblSetSevr(pdfanout,LINK_ALARM,MAJOR_ALARM);
+                status=dbPutLink(plink,DBR_DOUBLE,&(prec->val),1);
+                if(status) recGblSetSevr(prec,LINK_ALARM,MAJOR_ALARM);
             }
         }
         break;
     default:
-        recGblSetSevr(pdfanout,SOFT_ALARM,INVALID_ALARM);
+        recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
     }
 
 }

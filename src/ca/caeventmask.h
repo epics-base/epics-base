@@ -22,16 +22,23 @@
     Trigger an event when a significant change in the channel's value
     occurs. Relies on the monitor deadband field under DCT.
 
-    DBE_LOG
+    DBE_ARCHIVE (DBE_LOG)
     Trigger an event when an archive significant change in the channel's
     valuue occurs. Relies on the archiver monitor deadband field under DCT.
 
     DBE_ALARM
     Trigger an event when the alarm state changes
 
+    DBE_PROPERTY
+    Trigger an event when a property change (control limit, graphical
+    limit, status string, enum string ...) occurs.
+
 */
-#define DBE_VALUE   (1<<0)  
-#define DBE_LOG     (1<<1)
-#define DBE_ALARM   (1<<2)  
+
+#define DBE_VALUE    (1<<0)
+#define DBE_ARCHIVE  (1<<1)
+#define DBE_LOG      DBE_ARCHIVE
+#define DBE_ALARM    (1<<2)
+#define DBE_PROPERTY (1<<3)
 
 #endif

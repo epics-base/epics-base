@@ -50,7 +50,7 @@ void usage (void)
     "Channel Access options:\n"
     "  -w <sec>:  Wait time, specifies CA timeout, default is %f second(s)\n"
     "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n"
-    "             'v' (value), 'a' (alarm), 'l' (log). Default: va\n"
+    "             'v' (value), 'a' (alarm), 'l' (log/archive), 'p' (property). Default: va\n"
     "  -p <prio>: CA priority (0-%u, default 0=lowest)\n"
     "Timestamps:\n"
     "  Default: Print absolute timestamps (as reported by CA server)\n"
@@ -278,11 +278,12 @@ int main (int argc, char *argv[])
                     case 'v': eventMask |= DBE_VALUE; break;
                     case 'a': eventMask |= DBE_ALARM; break;
                     case 'l': eventMask |= DBE_LOG; break;
-                    default :
-                        fprintf(stderr, "Invalid argument '%s' "
-                                "for option '-m' - ignored.\n", optarg);
-                        eventMask = DBE_VALUE | DBE_ALARM;
-                        err = 1;
+                    case 'p': eventMask |= DBE_PROPERTY; break;
+                        default :
+                            fprintf(stderr, "Invalid argument '%s' "
+                                    "for option '-m' - ignored.\n", optarg);
+                            eventMask = DBE_VALUE | DBE_ALARM;
+                            err = 1;
                     }
             }
             break;

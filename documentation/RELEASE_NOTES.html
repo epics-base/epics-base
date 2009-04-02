@@ -12,6 +12,23 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New event type DBE_PROPERTY</h4>
+
+<p>A new event type (flag in the Channel Access event mask) has been added
+to support subscriptions that get events whenever a property of the PV
+changes. This will allow clients to get notified on changes of control
+limits, graphical limits, state strings etc.</p>
+
+<p>The CA commandline tool camonitor and the CA Perl interface support
+the new event type.
+As a first working example, the mbbi and mbbo records have been extended
+to send a DBE_PROPERTY event when their status strings are updated.
+A more general mechanism to specify sending DBE_PROPERTY events through
+the DBD file will appear in 3.15.</p>
+
+<p>Application developers are encouraged to start using DBE_PROPERTY
+subscriptions.</p>
+
 <h4>PINI Processing Phases</h4>
 
 <p>The PHAS field now controls the order in which records with PINI set are

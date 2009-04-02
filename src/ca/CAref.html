@@ -12,6 +12,7 @@ background-color: #ddf;
 -->
 
 
+
  </style>
 </head>
 
@@ -32,11 +33,13 @@ Laboratory, SNS Division</span></p>
 <p><span style="font-size: x-small; font-weight:lighter;">Helmholtz-Zentrum
 Berlin (BESSY II)</span></p>
 
-<p><span style="font-size: xx-small; font-weight:lighter;">Copyright © 2002
-The University of Chicago, as Operator of Argonne National Laboratory.<br>
+<p><span style="font-size: xx-small; font-weight:lighter;">Copyright © 2009
+Helmholtz-Zentrum Berlin für Materialien und Energie GmbH.<br>
+Copyright © 2002 The University of Chicago, as Operator of Argonne National
+Laboratory.<br>
 Copyright © 2002 The Regents of the University of California, as Operator of
 Los Alamos National Laboratory.<br>
-Copyright © 2002 Helmholtz-Zentrum Berlin für Materialien und Energie
+Copyright © 2002 Berliner Speicherringgesellschaft für Synchrotronstrahlung
 GmbH.</span></p>
 
 <p><span style="font-size: xx-small; font-weight:lighter;">EPICS BASE
@@ -2864,10 +2867,11 @@ least one update indicating the current state of the channel.</p>
       <ul>
         <li>DBE_VALUE - Trigger events when the channel value exceeds the
           monitor dead band</li>
-        <li>DBE_LOG - Trigger events when the channel value exceeds the
-          archival dead band</li>
+        <li>DBE_ARCHIVE (or DBE_LOG) - Trigger events when the channel value
+          exceeds the archival dead band</li>
         <li>DBE_ALARM - Trigger events when the channel alarm state
-        changes.</li>
+        changes</li>
+        <li>DBE_PROPERTY - Trigger events when a channel property changes.</li>
       </ul>
       <p>For functions above that do not include a trigger specification,
       events will be triggered when there are significant changes in the

@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -196,13 +197,16 @@ static long process(mbbiRecord *pmbbi)
 static long special(DBADDR *paddr,int after)
 {
     mbbiRecord     *pmbbi = (mbbiRecord *)(paddr->precord);
-    int                 special_type = paddr->special;
+    int            special_type = paddr->special;
+    int            fieldIndex = dbGetFieldIndex(paddr);
 
     if(!after) return(0);
     switch(special_type) {
     case(SPC_MOD):
 	init_common(pmbbi);
-	return(0);
+        if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST)
+            db_post_events(pmbbi,&pmbbi->val,DBE_PROPERTY);
+        return(0);
     default:
         recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
         return(S_db_badChoice);

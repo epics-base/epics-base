@@ -157,7 +157,7 @@ size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen)
                 break;
             default:
                 if (!isprint((int)c))
-                    nout += 4;
+                    nout += 3;
                 break;
         }
     }

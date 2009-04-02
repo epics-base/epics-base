@@ -452,7 +452,8 @@ char *dbr2str (const void *value, unsigned type)
                fieldSeparator,                                          \
                sevr_to_str(((struct TYPE *)value)->severity));          \
     } else {                                                            \
-        printf("\n");                                                   \
+        printf("%c%c\n",                                                \
+               fieldSeparator, fieldSeparator);                         \
     }
 
 

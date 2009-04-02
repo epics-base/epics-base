@@ -71,85 +71,85 @@ typedef struct xxxset { /* xxx input dset */
 	DEVSUPFUN	read_xxx;
 }xxxdset;
 
-static void checkAlarms(xxxRecord *pxxx);
-static void monitor(xxxRecord *pxxx);
+static void checkAlarms(xxxRecord *prec);
+static void monitor(xxxRecord *prec);
 
 static long init_record(void *precord,int pass)
 {
-    xxxRecord	*pxxx = (xxxRecord *)precord;
+    xxxRecord	*prec = (xxxRecord *)precord;
     xxxdset	*pdset;
     long	status;
 
     if (pass==0) return(0);
 
-    if(!(pdset = (xxxdset *)(pxxx->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)pxxx,"xxx: init_record");
+    if(!(pdset = (xxxdset *)(prec->dset))) {
+	recGblRecordError(S_dev_noDSET,(void *)prec,"xxx: init_record");
 	return(S_dev_noDSET);
     }
     /* must have read_xxx function defined */
     if( (pdset->number < 5) || (pdset->read_xxx == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)pxxx,"xxx: init_record");
+	recGblRecordError(S_dev_missingSup,(void *)prec,"xxx: init_record");
 	return(S_dev_missingSup);
     }
 
     if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(pxxx))) return(status);
+	if((status=(*pdset->init_record)(prec))) return(status);
     }
     return(0);
 }
 
 static long process(void *precord)
 {
-	xxxRecord	*pxxx = (xxxRecord *)precord;
-	xxxdset		*pdset = (xxxdset *)(pxxx->dset);
+	xxxRecord	*prec = (xxxRecord *)precord;
+	xxxdset		*pdset = (xxxdset *)(prec->dset);
 	long		 status;
-	unsigned char    pact=pxxx->pact;
+	unsigned char    pact=prec->pact;
 
 	if( (pdset==NULL) || (pdset->read_xxx==NULL) ) {
-		pxxx->pact=TRUE;
-		recGblRecordError(S_dev_missingSup,(void *)pxxx,"read_xxx");
+		prec->pact=TRUE;
+		recGblRecordError(S_dev_missingSup,(void *)prec,"read_xxx");
 		return(S_dev_missingSup);
 	}
 
 	/* pact must not be set until after calling device support */
-	status=(*pdset->read_xxx)(pxxx);
+	status=(*pdset->read_xxx)(prec);
 	/* check if device support set pact */
-	if ( !pact && pxxx->pact ) return(0);
-	pxxx->pact = TRUE;
+	if ( !pact && prec->pact ) return(0);
+	prec->pact = TRUE;
 
-	recGblGetTimeStamp(pxxx);
+	recGblGetTimeStamp(prec);
 	/* check for alarms */
-	checkAlarms(pxxx);
+	checkAlarms(prec);
 	/* check event list */
-	monitor(pxxx);
+	monitor(prec);
 	/* process the forward scan link record */
-        recGblFwdLink(pxxx);
+        recGblFwdLink(prec);
 
-	pxxx->pact=FALSE;
+	prec->pact=FALSE;
 	return(status);
 }
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    xxxRecord	*pxxx=(xxxRecord *)paddr->precord;
+    xxxRecord	*prec=(xxxRecord *)paddr->precord;
 
-    strncpy(units,pxxx->egu,DB_UNITS_SIZE);
+    strncpy(units,prec->egu,DB_UNITS_SIZE);
     return(0);
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    xxxRecord	*pxxx=(xxxRecord *)paddr->precord;
+    xxxRecord	*prec=(xxxRecord *)paddr->precord;
 
-    *precision = pxxx->prec;
-    if(paddr->pfield == (void *)&pxxx->val) return(0);
+    *precision = prec->prec;
+    if(paddr->pfield == (void *)&prec->val) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
 
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
-    xxxRecord	*pxxx=(xxxRecord *)paddr->precord;
+    xxxRecord	*prec=(xxxRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == xxxRecordVAL
@@ -159,15 +159,15 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
     || fieldIndex == xxxRecordLOLO
     || fieldIndex == xxxRecordHOPR
     || fieldIndex == xxxRecordLOPR) {
-        pgd->upper_disp_limit = pxxx->hopr;
-        pgd->lower_disp_limit = pxxx->lopr;
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr,pgd);
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    xxxRecord	*pxxx=(xxxRecord *)paddr->precord;
+    xxxRecord	*prec=(xxxRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == xxxRecordVAL
@@ -175,98 +175,98 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     || fieldIndex == xxxRecordHIGH
     || fieldIndex == xxxRecordLOW
     || fieldIndex == xxxRecordLOLO) {
-	pcd->upper_ctrl_limit = pxxx->hopr;
-	pcd->lower_ctrl_limit = pxxx->lopr;
+	pcd->upper_ctrl_limit = prec->hopr;
+	pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
-    xxxRecord	*pxxx=(xxxRecord *)paddr->precord;
+    xxxRecord	*prec=(xxxRecord *)paddr->precord;
     int		fieldIndex = dbGetFieldIndex(paddr);
 
     if(fieldIndex == xxxRecordVAL) {
-	pad->upper_alarm_limit = pxxx->hihi;
-	pad->upper_warning_limit = pxxx->high;
-	pad->lower_warning_limit = pxxx->low;
-	pad->lower_alarm_limit = pxxx->lolo;
+	pad->upper_alarm_limit = prec->hihi;
+	pad->upper_warning_limit = prec->high;
+	pad->lower_warning_limit = prec->low;
+	pad->lower_alarm_limit = prec->lolo;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }
 
-static void checkAlarms(xxxRecord *pxxx)
+static void checkAlarms(xxxRecord *prec)
 {
 	double		val;
 	float		hyst, lalm, hihi, high, low, lolo;
 	unsigned short	hhsv, llsv, hsv, lsv;
 
-	if(pxxx->udf == TRUE ){
-		recGblSetSevr(pxxx,UDF_ALARM,INVALID_ALARM);
+	if(prec->udf == TRUE ){
+		recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
 		return;
 	}
-	hihi = pxxx->hihi; lolo = pxxx->lolo; high = pxxx->high; low = pxxx->low;
-	hhsv = pxxx->hhsv; llsv = pxxx->llsv; hsv = pxxx->hsv; lsv = pxxx->lsv;
-	val = pxxx->val; hyst = pxxx->hyst; lalm = pxxx->lalm;
+	hihi = prec->hihi; lolo = prec->lolo; high = prec->high; low = prec->low;
+	hhsv = prec->hhsv; llsv = prec->llsv; hsv = prec->hsv; lsv = prec->lsv;
+	val = prec->val; hyst = prec->hyst; lalm = prec->lalm;
 
 	/* alarm condition hihi */
 	if (hhsv && (val >= hihi || ((lalm==hihi) && (val >= hihi-hyst)))){
-	        if (recGblSetSevr(pxxx,HIHI_ALARM,pxxx->hhsv)) pxxx->lalm = hihi;
+	        if (recGblSetSevr(prec,HIHI_ALARM,prec->hhsv)) prec->lalm = hihi;
 		return;
 	}
 
 	/* alarm condition lolo */
 	if (llsv && (val <= lolo || ((lalm==lolo) && (val <= lolo+hyst)))){
-	        if (recGblSetSevr(pxxx,LOLO_ALARM,pxxx->llsv)) pxxx->lalm = lolo;
+	        if (recGblSetSevr(prec,LOLO_ALARM,prec->llsv)) prec->lalm = lolo;
 		return;
 	}
 
 	/* alarm condition high */
 	if (hsv && (val >= high || ((lalm==high) && (val >= high-hyst)))){
-	        if (recGblSetSevr(pxxx,HIGH_ALARM,pxxx->hsv)) pxxx->lalm = high;
+	        if (recGblSetSevr(prec,HIGH_ALARM,prec->hsv)) prec->lalm = high;
 		return;
 	}
 
 	/* alarm condition low */
 	if (lsv && (val <= low || ((lalm==low) && (val <= low+hyst)))){
-	        if (recGblSetSevr(pxxx,LOW_ALARM,pxxx->lsv)) pxxx->lalm = low;
+	        if (recGblSetSevr(prec,LOW_ALARM,prec->lsv)) prec->lalm = low;
 		return;
 	}
 
 	/* we get here only if val is out of alarm by at least hyst */
-	pxxx->lalm = val;
+	prec->lalm = val;
 	return;
 }
 
-static void monitor(xxxRecord *pxxx)
+static void monitor(xxxRecord *prec)
 {
 	unsigned short	monitor_mask;
 	double		delta;
 
-        monitor_mask = recGblResetAlarms(pxxx);
+        monitor_mask = recGblResetAlarms(prec);
 	/* check for value change */
-	delta = pxxx->mlst - pxxx->val;
+	delta = prec->mlst - prec->val;
 	if(delta<0.0) delta = -delta;
-	if (delta > pxxx->mdel) {
+	if (delta > prec->mdel) {
 		/* post events for value change */
 		monitor_mask |= DBE_VALUE;
 		/* update last value monitored */
-		pxxx->mlst = pxxx->val;
+		prec->mlst = prec->val;
 	}
 
 	/* check for archive change */
-	delta = pxxx->alst - pxxx->val;
+	delta = prec->alst - prec->val;
 	if(delta<0.0) delta = -delta;
-	if (delta > pxxx->adel) {
+	if (delta > prec->adel) {
 		/* post events on value field for archive change */
 		monitor_mask |= DBE_LOG;
 		/* update last archive value monitored */
-		pxxx->alst = pxxx->val;
+		prec->alst = prec->val;
 	}
 
 	/* send out monitors connected to the value field */
 	if (monitor_mask){
-		db_post_events(pxxx,&pxxx->val,monitor_mask);
+		db_post_events(prec,&prec->val,monitor_mask);
 	}
 	return;
 }

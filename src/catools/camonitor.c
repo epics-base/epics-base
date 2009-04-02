@@ -1,21 +1,28 @@
 /*************************************************************************\
- * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
- *     National Laboratory.
- * Copyright (c) 2002 The Regents of the University of California, as
- *     Operator of Los Alamos National Laboratory.
- * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
- *     Synchrotronstrahlung.
- * EPICS BASE Versions 3.13.7
- * and higher are distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution. 
+* Copyright (c) 2009 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
+* Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
+*     Synchrotronstrahlung.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* 
+/*
  *  Author: Ralph Lange (BESSY)
  *
  *  Modification History
  *  2008/04/16 Ralph Lange (BESSY)
  *     Updated usage info
+ *  2009/03/31 Larry Hoff (BNL)
+ *     Added field separators
+ *  2009/04/01 Ralph Lange (HZB/BESSY)
+ *     Added support for long strings (array of char) and quoting of nonprintable characters
  *
  */
 
@@ -71,6 +78,8 @@ void usage (void)
     "  -0x: Print as hex number\n"
     "  -0o: Print as octal number\n"
     "  -0b: Print as binary number\n"
+    "Alternate output field separator:\n"
+    "  -F <ofs>: Use <ofs> as an alternate output field separator\n"
     "\nExample: camonitor -f8 my_channel another_channel\n"
     "  (doubles are printed as %%f with precision of 8)\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
@@ -89,7 +98,7 @@ void usage (void)
  *
  **************************************************************************-*/
 
-void event_handler (evargs args)
+static void event_handler (evargs args)
 {
     pv* pv = args.usr;
 
@@ -115,7 +124,7 @@ void event_handler (evargs args)
  *
  **************************************************************************-*/
 
-void connection_handler ( struct connection_handler_args args )
+static void connection_handler ( struct connection_handler_args args )
 {
     pv *ppv = ( pv * ) ca_puser ( args.chid );
     if ( args.op == CA_OP_CONN_UP ) {
@@ -206,7 +215,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":nhm:sSe:f:g:#:d:0:w:t:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":nhm:sSe:f:g:#:d:0:w:t:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -238,7 +247,7 @@ int main (int argc, char *argv[])
             if(epicsScanDouble(optarg, &caTimeout) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid timeout value "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('camonitor -h' for help.)\n", optarg);
                 caTimeout = DEFAULT_TIMEOUT;
             }
             break;
@@ -246,7 +255,7 @@ int main (int argc, char *argv[])
             if (sscanf(optarg,"%ld", &reqElems) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid array element count "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('camonitor -h' for help.)\n", optarg);
                 reqElems = 0;
             }
             break;
@@ -254,7 +263,7 @@ int main (int argc, char *argv[])
             if (sscanf(optarg,"%u", &caPriority) != 1)
             {
                 fprintf(stderr, "'%s' is not a valid CA priority "
-                        "- ignored. ('caget -h' for help.)\n", optarg);
+                        "- ignored. ('camonitor -h' for help.)\n", optarg);
                 caPriority = DEFAULT_CA_PRIORITY;
             }
             if (caPriority > CA_PRIORITY_MAX) caPriority = CA_PRIORITY_MAX;
@@ -309,14 +318,17 @@ int main (int argc, char *argv[])
                         "for option '-0' - ignored.\n", optarg);
             }
             break;
+        case 'F':               /* Store this for output and tool_lib formatting */
+            fieldSeparator = (char) *optarg;
+            break;
         case '?':
             fprintf(stderr,
-                    "Unrecognized option: '-%c'. ('caget -h' for help.)\n",
+                    "Unrecognized option: '-%c'. ('camonitor -h' for help.)\n",
                     optopt);
             return 1;
         case ':':
             fprintf(stderr,
-                    "Option '-%c' requires an argument. ('caget -h' for help.)\n",
+                    "Option '-%c' requires an argument. ('camonitor -h' for help.)\n",
                     optopt);
             return 1;
         default :

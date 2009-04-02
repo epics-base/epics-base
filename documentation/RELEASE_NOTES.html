@@ -12,9 +12,35 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Channel Access command line tool changes</h4>
+
+<p>The caget/caput/camonitor programs in src/catools now use '\' escape
+sequences for non-printable characters.</p>
+
+<p>They provide a new option <tt>-F</tt> to set an output field separator
+to be used instead of the default space character.</p>
+
+<h4>New functions for escaping non-printables in epicsString.h</h4>
+
+<p>The existing routines used to escape non-printable characters have been replaced
+by a new set of functions that are prototyped in the epicsString.h header file:</p>
+
+<pre>int epicsStrnRawFromEscaped(char *outbuf, size_t outsize, const char *inbuf, size_t inlen);
+epicsShareFunc int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf, size_t inlen);
+epicsShareFunc size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen);</pre>
+
+<p>Both conversion functions take the output buffer (and its size), and the input
+buffer (and its size) as argument. They will convert non-printable characters
+from/to their '\'-escaped versions. The third function scans a raw input string
+and returns the number of characters needed for the escaped version.</p>
+
+<p>The existing function interfaces will be kept for compatibility, but their
+further use is deprecated.</p>
+
 <h4>epicsRingBytes</h4>
 
-<p>Partial puts are not supported.  An attempt to put more bytes than currently free will be rejected.</p>
+<p>Partial puts are not supported.
+An attempt to put more bytes than currently free will be rejected.</p>
 
 <h4>Long string support</h4>
 

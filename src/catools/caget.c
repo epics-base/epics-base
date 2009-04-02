@@ -1,16 +1,20 @@
 /*************************************************************************\
- * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
- *     National Laboratory.
- * Copyright (c) 2002 The Regents of the University of California, as
- *     Operator of Los Alamos National Laboratory.
- * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
- *     Synchrotronstrahlung.
- * EPICS BASE Versions 3.13.7
- * and higher are distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution. 
+* Copyright (c) 2009 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
+* Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
+* Copyright (c) 2006 Diamond Light Source Ltd.
+* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
+*     Synchrotronstrahlung.
+* EPICS BASE Versions 3.13.7
+* and higher are distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* 
+/*
  *  Author: Ralph Lange (BESSY)
  *
  *  Modification History
@@ -18,12 +22,17 @@
  *     Fixed problem with "-c -w 0" hanging forever
  *  2008/04/16 Ralph Lange (BESSY)
  *     Updated usage info
+ *  2009/03/31 Larry Hoff (BNL)
+ *     Added field separators
+ *  2009/04/01 Ralph Lange (HZB/BESSY)
+ *     Added support for long strings (array of char) and quoting of nonprintable characters
  *
  */
 
 #include <stdio.h>
-#include <epicsStdlib.h>
 #include <string.h>
+#include <epicsStdlib.h>
+#include <epicsString.h>
 
 #include <alarm.h>
 #include <cadef.h>
@@ -45,7 +54,7 @@ static int nRead = 0;           /* Number of channels that were read */
 static int floatAsString = 0;   /* Flag: fetch floats as string */
 
 
-void usage (void)
+static void usage (void)
 {
     fprintf (stderr, "\nUsage: caget [options] <PV name> ...\n\n"
     "  -h: Help: Print this message\n"
@@ -87,6 +96,8 @@ void usage (void)
     "  -0x: Print as hex number\n"
     "  -0o: Print as octal number\n"
     "  -0b: Print as binary number\n"
+    "Alternate output field separator:\n"
+    "  -F <ofs>: Use <ofs> as an alternate output field separator\n"
     "\nExample: caget -a -f8 my_channel another_channel\n"
     "  (uses wide output format, doubles are printed as %%f with precision of 8)\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);
@@ -105,7 +116,7 @@ void usage (void)
  *
  **************************************************************************-*/
 
-void event_handler (evargs args)
+static void event_handler (evargs args)
 {
     pv* ppv = args.usr;
 
@@ -140,7 +151,7 @@ void event_handler (evargs args)
  *
  **************************************************************************-*/
  
-int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
+static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
            chtype dbrType, unsigned long reqElems)
 {
     unsigned int i;
@@ -154,6 +165,7 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* Get natural type and array count */
         pvs[n].nElems  = ca_element_count(pvs[n].chid);
         pvs[n].dbfType = ca_field_type(pvs[n].chid);
+        pvs[n].dbrType = dbrType;
 
                                 /* Set up value structures */
         if (format != specifiedDbr)
@@ -240,8 +252,9 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
 
         switch (format) {
         case plain:             /* Emulate old caget behaviour */
-            if (pvs[n].reqElems <= 1) printf("%-30s ", pvs[n].name);
-            else               printf("%s", pvs[n].name);
+            if (pvs[n].reqElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
+            else                                               printf("%s", pvs[n].name);
+            printf("%c", fieldSeparator);
         case terse:
             if (pvs[n].status == ECA_DISCONN)
                 printf("*** not connected\n");
@@ -254,11 +267,16 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             else
             {
                 if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
-                    printf(" %s", (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType));
+                    dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
+                    int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
+                    char *d = calloc(dlen+1, sizeof(char));
+                    epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
+                    printf("%s", d);
+                    free(d);
                 } else {
-                    if (reqElems || pvs[n].nElems > 1) printf(" %lu", pvs[n].reqElems);
+                    if (reqElems || pvs[n].nElems > 1) printf("%lu%c", pvs[n].reqElems, fieldSeparator);
                     for (i=0; i<pvs[n].reqElems; ++i) {
-                        if (i) printf (" ");
+                        if (i) printf ("%c", fieldSeparator);
                         printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
                     }
                 }
@@ -278,8 +296,9 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 printf("    *** CA error %s\n", ca_message(pvs[n].status));
             else
             {
-                printf("    Native data type: %s (CA uses %s)\n",
-                       dbf_type_to_text(pvs[n].dbfType),
+                printf("    Native data type: %s\n",
+                       dbf_type_to_text(pvs[n].dbfType));
+                printf("    Request type:     %s\n",
                        dbr_type_to_text(pvs[n].dbrType));
                 if (pvs[n].dbrType == DBR_CLASS_NAME)
                     printf("    Class Name:       %s\n",
@@ -290,10 +309,15 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                            "    Value:            ",
                            pvs[n].reqElems);
                     if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
-                        printf(" %s", (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType));
+                        dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
+                        int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
+                        char *d = calloc(dlen+1, sizeof(char));
+                        epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
+                        printf("%s", d);
+                        free(d);
                     } else {
                         for (i=0; i<pvs[n].reqElems; ++i) {
-                            if (i) printf (" ");
+                            if (i) printf ("%c", fieldSeparator);
                             printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
                         }
                     }
@@ -328,7 +352,7 @@ int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
  *
  **************************************************************************-*/
 
-void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
+static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
 {
     if (*current != plain) 
         fprintf(stderr,
@@ -354,7 +378,7 @@ int main (int argc, char *argv[])
 
     setvbuf(stdout,NULL,_IOLBF,BUFSIZ);    /* Set stdout to line buffering */
 
-    while ((opt = getopt(argc, argv, ":taicnhsSe:f:g:#:d:0:w:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":taicnhsSe:f:g:#:d:0:w:p:F:")) != -1) {
         switch (opt) {
         case 'h':               /* Print usage */
             usage();
@@ -449,6 +473,9 @@ int main (int argc, char *argv[])
                 fprintf(stderr, "Invalid argument '%s' "
                         "for option '-0' - ignored.\n", optarg);
             }
+            break;
+        case 'F':               /* Store this for output and tool_lib formatting */
+            fieldSeparator = (char) *optarg;
             break;
         case '?':
             fprintf(stderr,

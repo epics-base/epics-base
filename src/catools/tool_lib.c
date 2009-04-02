@@ -1,4 +1,7 @@
 /*************************************************************************\
+* Copyright (c) 2009 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
+* Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -9,10 +12,17 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* 
+
+/*
  *  $Id$
  *
  *  Author: Ralph Lange (BESSY)
+ *
+ *  Modification History
+ *  2009/03/31 Larry Hoff (BNL)
+ *     Added field separators
+ *  2009/04/01 Ralph Lange (HZB/BESSY)
+ *     Added support for long strings (array of char) and quoting of nonprintable characters
  *
  */
 
@@ -24,6 +34,7 @@
 #include <alarm.h>
 #undef epicsAlarmGLOBAL
 #include <epicsTime.h>
+#include <epicsString.h>
 #include <cadef.h>
 
 #include "tool_lib.h"
@@ -43,6 +54,7 @@ IntFormatT outType = dec;            /* For -0.. output format option */
 
 char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) */
 char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
+char fieldSeparator = ' ';          /* OFS default is whitespace */
 
 int enumAsNr = 0;        /* used for -n option - get DBF_ENUM as number */
 int charArrAsStr = 0;    /* used for -S option - treat char array as (long) string */
@@ -96,7 +108,8 @@ void sprint_long (char *ret, long val)
 
 char *val2str (const void *v, unsigned type, int index)
 {
-    static char str[500];
+#define STR 500
+    static char str[STR];
     char ch;
     void *val_ptr;
     unsigned base_type;
@@ -115,7 +128,7 @@ char *val2str (const void *v, unsigned type, int index)
 
     switch (base_type) {
     case DBR_STRING:
-        sprintf(str, "%s",  ((dbr_string_t*) val_ptr)[index]);
+        epicsStrnEscapedFromRaw(str, STR, ((dbr_string_t*) val_ptr)[index], strlen(((dbr_string_t*) val_ptr)[index]));
         break;
     case DBR_FLOAT:
         sprintf(str, dblFormatStr, ((dbr_float_t*) val_ptr)[index]);
@@ -125,7 +138,7 @@ char *val2str (const void *v, unsigned type, int index)
         break;
     case DBR_CHAR:
         ch = ((dbr_char_t*) val_ptr)[index];
-        sprintf(str, "%d",ch);
+        sprintf(str, "%d", ch);
         break;
     case DBR_INT:
         sprint_long(str, ((dbr_int_t*) val_ptr)[index]);
@@ -134,15 +147,15 @@ char *val2str (const void *v, unsigned type, int index)
         sprint_long(str, ((dbr_long_t*) val_ptr)[index]);
         break;
     case DBR_ENUM:
-    {
-        dbr_enum_t *val = (dbr_enum_t *)val_ptr;
-        if (dbr_type_is_GR(type) && !enumAsNr)
-            sprintf(str, "%s", ((struct dbr_gr_enum *)v)->strs[val[index]]);
-        else if (dbr_type_is_CTRL(type) && !enumAsNr)
-            sprintf(str, "%s", ((struct dbr_ctrl_enum *)v)->strs[val[index]]);
-        else
-            sprintf(str, "%d", val[index]);
-    }
+        {
+            dbr_enum_t *val = (dbr_enum_t *)val_ptr;
+            if (dbr_type_is_GR(type) && !enumAsNr)
+                sprintf(str, "%s", ((struct dbr_gr_enum *)v)->strs[val[index]]);
+            else if (dbr_type_is_CTRL(type) && !enumAsNr)
+                sprintf(str, "%s", ((struct dbr_ctrl_enum *)v)->strs[val[index]]);
+            else
+                sprintf(str, "%d", val[index]);
+        }
     }
     return str;
 }
@@ -393,19 +406,19 @@ char *dbr2str (const void *value, unsigned type)
     if (printAbs) {                                                     \
         if (tsSrcServer) {                                              \
             epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, ptsNewS); \
-            printf("%s ", timeText);                                    \
+            printf("%s", timeText);                                     \
         }                                                               \
         if (tsSrcClient) {                                              \
             epicsTimeToStrftime(timeText, TIMETEXTLEN, timeFormatStr, ptsNewC); \
-            printf("(%s) ", timeText);                                  \
+            printf("(%s)", timeText);                                   \
         }                                                               \
         pv->firstStampPrinted = 1;                                      \
     } else {                                                            \
         if (tsSrcServer) {                                              \
-            printf("              %+12.6f ", epicsTimeDiffInSeconds(ptsNewS, ptsRefS) ); \
+            printf("              %+12.6f", epicsTimeDiffInSeconds(ptsNewS, ptsRefS) ); \
         }                                                               \
         if (tsSrcClient) {                                              \
-            printf("              (%+12.6f) ", epicsTimeDiffInSeconds(ptsNewC, ptsRefC) ); \
+            printf("              (%+12.6f)", epicsTimeDiffInSeconds(ptsNewC, ptsRefC) ); \
         }                                                               \
     }                                                                   \
                                                                         \
@@ -418,18 +431,25 @@ char *dbr2str (const void *value, unsigned type)
     tsPreviousS = *ptsNewS;                                             \
                                                                         \
     if (charArrAsStr && dbr_type_is_CHAR(TYPE_ENUM) && (reqElems || pv->nElems > 1)) { \
-        printf("%s ", (dbr_char_t*) dbr_value_ptr(value, pv->dbrType)); \
+        dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pv->value, pv->dbrType); \
+        int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s)); \
+        char *d = calloc(dlen+1, sizeof(char));                         \
+        epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s)); \
+        printf("%c%s", fieldSeparator, d);                              \
+        free(d);                                                        \
     } else {                                                            \
-        if (reqElems || pv->nElems > 1) printf("%lu ", pv->reqElems);   \
+        if (reqElems || pv->nElems > 1) printf("%c%lu", fieldSeparator, pv->reqElems); \
         for (i=0; i<pv->reqElems; ++i) {                                \
-            printf("%s ", val2str(value, TYPE_ENUM, i));                \
+            printf("%c%s", fieldSeparator, val2str(value, TYPE_ENUM, i)); \
         }                                                               \
     }                                                                   \
                              /* Print Status, Severity - if not NO_ALARM */ \
     if ( ((struct TYPE *)value)->status || ((struct TYPE *)value)->severity ) \
     {                                                                   \
-        printf("%s %s\n",                                               \
+        printf("%c%s%c%s\n",                                            \
+               fieldSeparator,                                          \
                stat_to_str(((struct TYPE *)value)->status),             \
+               fieldSeparator,                                          \
                sevr_to_str(((struct TYPE *)value)->severity));          \
     } else {                                                            \
         printf("\n");                                                   \
@@ -454,7 +474,9 @@ void print_time_val_sts (pv* pv, unsigned long reqElems)
         tsInitS = 1;
     }
 
-    printf("%-30s ", pv->name);
+    if (pv->reqElems <= 1 && fieldSeparator == ' ') printf("%-30s", pv->name);
+    else                                            printf("%s", pv->name);
+    printf("%c", fieldSeparator);
     if (!pv->onceConnected)
         printf("*** Not connected (PV not found)\n");
     else if (pv->status == ECA_DISCONN)

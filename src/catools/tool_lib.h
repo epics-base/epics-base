@@ -1,4 +1,6 @@
 /*************************************************************************\
+* Copyright (c) 2009 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -9,10 +11,15 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* 
+
+/*
  *  $Id$
  *
  *  Author: Ralph Lange (BESSY)
+ *
+ *  Modification History
+ *  2009/03/31 Larry Hoff (BNL)
+ *     Added field separators
  *
  */
 
@@ -80,6 +87,7 @@ extern int enumAsNr;        /* Used for -n option (get DBF_ENUM as number) */
 extern int charArrAsStr;    /* used for -S option - treat char array as (long) string */
 extern double caTimeout;    /* Wait time default (see -w option) */
 extern char dblFormatStr[]; /* Format string to print doubles (see -e -f option) */
+extern char fieldSeparator; /* Output field separator */
 extern capri caPriority;    /* CA priority */
 
 extern char *val2str (const void *v, unsigned type, int index);

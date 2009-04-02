@@ -12,7 +12,11 @@
 #define epicsMathh
 
 #include <math.h>
+#include <shareLib.h>
 
 #define finite(D) (isfinite(D) != 0)
+
+epicsShareExtern float epicsNAN;
+epicsShareExtern float epicsINF;
 
 #endif /* epicsMathh */

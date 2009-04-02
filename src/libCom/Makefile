@@ -199,6 +199,7 @@ SRCS += epicsMutex.cpp
 SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
+SRCS += epicsMath.cpp
 
 SRCS += epicsGeneralTime.c
 SRCS += osiClockTime.c

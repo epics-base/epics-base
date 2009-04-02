@@ -13,6 +13,7 @@
 
 #include <math.h>
 #include <float.h>
+#include <shareLib.h>
 
 #ifndef finite
 #define finite(D) _finite(D)
@@ -25,5 +26,8 @@
 #ifndef isinf
 #define isinf(D) ( !_finite(D) && !_isnan(D) ) 
 #endif
+
+epicsShareExtern float epicsNAN;
+epicsShareExtern float epicsINF;
 
 #endif /* epicsMathh */

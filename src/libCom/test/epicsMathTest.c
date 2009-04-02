@@ -28,9 +28,7 @@ MAIN(epicsMathTest)
     testOk(!isinf(c), "!isinf(0.0 / 1.0)");
     testOk(c == 0.0, "0.0 / 1.0 == 0.0");
     
-    a = 1.0;
-    b = 0.0;
-    c = a / b;
+    c = epicsINF;
     testOk(!isnan(c), "!isnan(1.0 / 0.0)");
     testOk(isinf(c), "isinf(1.0 / 0.0)");
     testOk(c == c, "1.0 / 0.0 == 1.0 / 0.0");
@@ -38,9 +36,7 @@ MAIN(epicsMathTest)
     testOk(c + -c != b, "inf + -inf != 0");
     testOk(-c + c != b, "-inf + inf != 0");
     
-    a = 0.0;
-    b = 0.0;
-    c = a / b;
+    c = epicsNAN;
     testOk(isnan(c), "isnan(0.0 / 0.0)");
     testOk(!isinf(c), "!isinf(0.0 / 0.0)");
     testOk(c != c, "0.0 / 0.0 != 0.0 / 0.0");

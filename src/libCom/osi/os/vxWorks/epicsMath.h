@@ -13,9 +13,13 @@
 
 #include <math.h>
 #include <private/mathP.h>
+#include <shareLib.h>
 
 #define isnan(D) isNan(D)
 #define isinf(D) isInf(D)
 #define finite(D) (!isNan(D) && !isInf(D))
+
+epicsShareExtern float epicsNAN;
+epicsShareExtern float epicsINF;
 
 #endif /* epicsMathh */

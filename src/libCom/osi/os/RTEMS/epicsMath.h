@@ -7,10 +7,15 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 #ifndef epicsMathh
 #define epicsMathh
 
 #include <math.h>
 #include <ieeefp.h>
+#include <shareLib.h>
+
+epicsShareExtern float epicsNAN;
+epicsShareExtern float epicsINF;
 
 #endif /* epicsMathh */

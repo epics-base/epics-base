@@ -178,62 +178,62 @@ char *val2str (const void *v, unsigned type, int index)
 /* Definitions for sprintf format strings and matching argument lists */
 
 #define FMT_TIME                                \
-    "    Timestamp:      %s"
+    "    Timestamp:        %s"
 
 #define ARGS_TIME(T)                            \
     timeText
 
 #define FMT_STS                                 \
-    "    Status:         %s\n"                  \
-    "    Severity:       %s"
+    "    Status:           %s\n"                \
+    "    Severity:         %s"
 
 #define ARGS_STS(T)                             \
     stat_to_str(((struct T *)value)->status),   \
     sevr_to_str(((struct T *)value)->severity)
 
-#define ARGS_STS_UNSIGNED(T)                            \
+#define ARGS_STS_UNSIGNED(T)                    \
     stat_to_str_unsigned(((struct T *)value)->status),  \
     sevr_to_str_unsigned(((struct T *)value)->severity)
 
 #define FMT_ACK                                 \
-    "    Ack transient?: %s\n"                  \
-    "    Ack severity:   %s"
+    "    Ack transient?:   %s\n"                \
+    "    Ack severity:     %s"
 
-#define ARGS_ACK(T)                                     \
-    ((struct T *)value)->ackt ? "YES" : "NO",           \
+#define ARGS_ACK(T)                             \
+    ((struct T *)value)->ackt ? "YES" : "NO",   \
     sevr_to_str_unsigned(((struct T *)value)->acks)
 
 #define FMT_UNITS                               \
-    "    Units:          %s"
+    "    Units:            %s"
 
 #define ARGS_UNITS(T)                           \
     ((struct T *)value)->units
 
 #define FMT_PREC                                \
-    "    Precision:      %d"
+    "    Precision:        %d"
 
 #define ARGS_PREC(T)                            \
     ((struct T *)value)->precision
 
 #define FMT_GR(FMT)                             \
-    "    Lo disp limit:  " #FMT "\n"            \
-    "    Hi disp limit:  " #FMT "\n"            \
-    "    Lo alarm limit: " #FMT "\n"            \
-    "    Lo warn limit:  " #FMT "\n"            \
-    "    Hi warn limit:  " #FMT "\n"            \
-    "    Hi alarm limit: " #FMT
+    "    Lo disp limit:    " #FMT "\n"          \
+    "    Hi disp limit:    " #FMT "\n"          \
+    "    Lo alarm limit:   " #FMT "\n"          \
+    "    Lo warn limit:    " #FMT "\n"          \
+    "    Hi warn limit:    " #FMT "\n"          \
+    "    Hi alarm limit:   " #FMT
 
-#define ARGS_GR(T,F)                                    \
-    (F)((struct T *)value)->lower_disp_limit,           \
-    (F)((struct T *)value)->upper_disp_limit,           \
-    (F)((struct T *)value)->lower_alarm_limit,          \
-    (F)((struct T *)value)->lower_warning_limit,        \
-    (F)((struct T *)value)->upper_warning_limit,        \
+#define ARGS_GR(T,F)                            \
+    (F)((struct T *)value)->lower_disp_limit,   \
+    (F)((struct T *)value)->upper_disp_limit,   \
+    (F)((struct T *)value)->lower_alarm_limit,  \
+    (F)((struct T *)value)->lower_warning_limit, \
+    (F)((struct T *)value)->upper_warning_limit, \
     (F)((struct T *)value)->upper_alarm_limit
 
 #define FMT_CTRL(FMT)                           \
-    "    Lo ctrl limit:  " #FMT "\n"            \
-    "    Hi ctrl limit:  " #FMT
+    "    Lo ctrl limit:    " #FMT "\n"          \
+    "    Hi ctrl limit:    " #FMT
 
 #define ARGS_CTRL(T,F)                          \
     (F)((struct T *)value)->lower_ctrl_limit,   \
@@ -283,10 +283,10 @@ char *val2str (const void *v, unsigned type, int index)
     n = ((struct T *)value)->no_str;                    \
     PRN_DBR_STS(T);                                     \
     sprintf(str+strlen(str),                            \
-                "\n    Enums:          (%2d)", n);      \
+                "\n    Enums:            (%2d)", n);    \
     for (i=0; i<n; i++)                                 \
         sprintf(str+strlen(str),                        \
-                "\n                    [%2d] %s", i,    \
+                "\n                      [%2d] %s", i,  \
                 ((struct T *)value)->strs[i]);
 
 

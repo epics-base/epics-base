@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 * Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -9,7 +10,7 @@
 /* $Id$ */
 
 /* Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum,
- *          Mark Rivers, Andrew Johnson
+ *          Mark Rivers, Andrew Johnson, Ralph Lange
  */
 
 #ifndef INC_epicsString_H
@@ -23,18 +24,23 @@
 extern "C" {
 #endif
 
-epicsShareFunc int dbTranslateEscape(char *s,const char *ct);
-epicsShareFunc int epicsStrCaseCmp(const char *s1,const char *s2);
-epicsShareFunc int epicsStrnCaseCmp(const char *s1,const char *s2, int n);
+epicsShareFunc int epicsStrnRawFromEscaped(char *outbuf,      size_t outsize,
+                                           const char *inbuf, size_t inlen);
+epicsShareFunc int epicsStrnEscapedFromRaw(char *outbuf,      size_t outsize,
+                                           const char *inbuf, size_t inlen);
+epicsShareFunc size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen);
+epicsShareFunc int epicsStrCaseCmp(const char *s1, const char *s2);
+epicsShareFunc int epicsStrnCaseCmp(const char *s1, const char *s2, int n);
 epicsShareFunc char * epicsStrDup(const char *s);
 epicsShareFunc int epicsStrPrintEscaped(FILE *fp, const char *s, int n);
-epicsShareFunc int epicsStrSnPrintEscaped(char *outbuf, int outsize,
-    const char *inbuf, int inlen);
+#define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 epicsShareFunc int epicsStrGlobMatch(const char *str, const char *pattern);
 epicsShareFunc char * epicsStrtok_r(char *s, const char *delim, char **lasts);
 epicsShareFunc unsigned int epicsStrHash(const char *str, unsigned int seed);
 epicsShareFunc unsigned int epicsMemHash(const char *str, size_t length,
-    unsigned int seed);
+                                         unsigned int seed);
+/* dbTranslateEscape is deprecated, use epicsStrnRawFromEscaped instead */
+epicsShareFunc int dbTranslateEscape(char *s, const char *ct);
 
 #ifdef __cplusplus
 }

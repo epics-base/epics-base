@@ -40,7 +40,8 @@ typedef struct caLink
 	chid 		chid;
 	short		link_action;
         /* The following have new values after each data event*/
-	unsigned short	sevr;
+	epicsEnum16	sevr;
+	epicsEnum16	stat;
 	epicsTimeStamp	timeStamp;
         /* The following have values after connection*/
 	short		dbrType;

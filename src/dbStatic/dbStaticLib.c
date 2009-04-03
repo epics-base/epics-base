@@ -48,7 +48,7 @@ static char *pNullString = "";
 #define RPCL_LEN 184
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
-static char *msstring[2]={"NMS","MS"};
+static char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"CONSTANT",CONSTANT},
@@ -91,7 +91,7 @@ static char *promptCONSTANT[] = {
 static char *promptINLINK[] = {
 	"         PV Name:",
 	"NPP PP CA CP CPP:",
-	"       NMS or MS:"};
+	"  NMS MS MSI MSS:"};
 static char *promptOUTLINK[] = {
 	"  PV Name:",
 	"NPP PP CA:",
@@ -2032,7 +2032,7 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
 		strcat(message," ");
 		strcat(message,ppstring[ppind]);
 		strcat(message," ");
-		strcat(message,msstring[pvlMask&pvlOptMS]);
+		strcat(message,msstring[pvlMask&pvlOptMsMode]);
 		break;
 	    }
 	    case VME_IO:
@@ -2290,8 +2290,10 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 			    else if(strstr(end,"CA")) ppOpt = pvlOptCA;
 			    else if(strstr(end,"CP")) ppOpt = pvlOptCP;
 			    else ppOpt = 0;
-		            if(strstr(end,"NMS")) msOpt = 0;
-		            else if(strstr(end,"MS")) msOpt = pvlOptMS;
+		            if(strstr(end,"NMS")) msOpt = pvlOptNMS;
+		            else if(strstr(end,"MSI")) msOpt = pvlOptMSI;
+		            else if(strstr(end,"MSS")) msOpt = pvlOptMSS;
+/*must be the last one:*/   else if(strstr(end,"MS")) msOpt = pvlOptMS;
 			    else msOpt = 0;
 		            *end = 0;
 			}
@@ -2301,8 +2303,10 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 			    else if(strstr(end,"PP")) ppOpt = pvlOptPP;
 			    else if(strstr(end,"CA")) ppOpt = pvlOptCA;
 			    else ppOpt = 0;
-		            if(strstr(end,"NMS")) msOpt = 0;
-		            else if(strstr(end,"MS")) msOpt = pvlOptMS;
+		            if(strstr(end,"NMS")) msOpt = pvlOptNMS;
+		            else if(strstr(end,"MSI")) msOpt = pvlOptMSI;
+		            else if(strstr(end,"MSS")) msOpt = pvlOptMSS;
+/*must be the last one:*/   else if(strstr(end,"MS")) msOpt = pvlOptMS;
 			    else msOpt = 0;
 		            *end = 0;
 			}
@@ -3104,8 +3108,7 @@ char  ** epicsShareAPI dbGetFormValue(DBENTRY *pdbentry)
 	else if(pvlMask&pvlOptCPP) strcpy(*value,"CPP");
 	else strcpy(*value,"NPP");
 	value++;
-	if(pvlMask&pvlOptMS) strcpy(*value,"MS");
-	else strcpy(*value,"NMS");
+	strcpy(*value, msstring[pvlMask&pvlOptMsMode]);
 	value++;
 	}
 	break;
@@ -3121,8 +3124,7 @@ char  ** epicsShareAPI dbGetFormValue(DBENTRY *pdbentry)
 	else if(pvlMask&pvlOptCA) strcpy(*value,"CA");
 	else strcpy(*value,"NPP");
 	value++;
-	if(pvlMask&pvlOptMS) strcpy(*value,"MS");
-	else strcpy(*value,"NMS");
+	strcpy(*value, msstring[pvlMask&pvlOptMsMode]);
 	value++;
 	}
 	break;
@@ -3295,7 +3297,10 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
 	    if((*value==NULL) || (strcmp(*value,"")==0)) msOpt = 0;
-	    else if(strstr(*value,"NMS")) msOpt = 0;
+	    else if(strstr(*value,"NMS")) msOpt = pvlOptNMS;
+	    else if(strstr(*value,"MSI")) msOpt = pvlOptMSI;
+	    else if(strstr(*value,"MSS")) msOpt = pvlOptMSS;
+            /*must be the last one:*/
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
 	    dbCopyEntryContents(pdbentry,plinkentry);
@@ -3329,7 +3334,10 @@ long epicsShareAPI dbPutForm(DBENTRY *pdbentry,char **value)
 	    value++; verify++;
 	    **verify = 0;  /*Initialize verify to NULL*/
 	    if((*value==NULL) || (strcmp(*value,"")==0)) msOpt = 0;
-	    else if(strstr(*value,"NMS")) msOpt = 0;
+	    else if(strstr(*value,"NMS")) msOpt = pvlOptNMS;
+	    else if(strstr(*value,"MSI")) msOpt = pvlOptMSI;
+	    else if(strstr(*value,"MSS")) msOpt = pvlOptMSS;
+            /*must be the last one:*/
 	    else if(strstr(*value,"MS")) msOpt = pvlOptMS;
 	    else strcpy(*verify,"Illegal. Chose a value");
 	    dbCopyEntryContents(pdbentry,plinkentry);

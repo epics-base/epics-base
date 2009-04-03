@@ -246,7 +246,7 @@ void epicsShareAPI dbCaRemoveLink(struct link *plink)
 }
 
 long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
-    unsigned short *psevr,long *nelements)
+    epicsEnum16 *pstat, epicsEnum16 *psevr, long *nelements)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
     long   status = 0;
@@ -258,6 +258,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     assert(pca->plink);
     if (!pca->isConnected || !pca->hasReadAccess) {
         pca->sevr = INVALID_ALARM;
+        pca->stat = LINK_ALARM;
         status = -1;
         goto done;
     }
@@ -271,6 +272,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         }
         if (!pca->gotInString) {
             pca->sevr = INVALID_ALARM;
+            pca->stat = LINK_ALARM;
             status = -1;
             goto done;
         }
@@ -285,6 +287,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     }
     if (!pca->gotInNative){
         pca->sevr = INVALID_ALARM;
+        pca->stat = LINK_ALARM;
         status = -1;
         goto done;
     }
@@ -315,6 +318,7 @@ long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         aConvert(&dbAddr, pdest, ntoget, ntoget, 0);
     }
 done:
+    if (pstat) *pstat = pca->stat;
     if (psevr) *psevr = pca->sevr;
     if (link_action) addAction(pca, link_action);
     epicsMutexUnlock(pca->lock);
@@ -423,12 +427,14 @@ long epicsShareAPI dbCaGetNelements(const struct link *plink, long *nelements)
     return 0;
 }
 
-long epicsShareAPI dbCaGetSevr(const struct link *plink, short *severity)
+long epicsShareAPI dbCaGetAlarm(const struct link *plink,
+    epicsEnum16 *pstat, epicsEnum16 *psevr)
 {
     caLink *pca;
 
     pcaGetCheck
-    *severity = pca->sevr;
+    if (pstat) *pstat = pca->stat;
+    if (psevr) *psevr = pca->sevr;
     epicsMutexUnlock(pca->lock);
     return 0;
 }
@@ -677,6 +683,7 @@ static void eventCallback(struct event_handler_args arg)
     }
     pdbr_time_double = (struct dbr_time_double *)arg.dbr;
     pca->sevr = pdbr_time_double->severity;
+    pca->stat = pdbr_time_double->status;
     memcpy(&pca->timeStamp, &pdbr_time_double->stamp, sizeof(epicsTimeStamp));
     if (precord) {
         struct pv_link *ppv_link = &plink->value.pv_link;

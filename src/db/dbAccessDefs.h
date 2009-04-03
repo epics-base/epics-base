@@ -215,6 +215,8 @@ struct dbr_alDouble     {DBRalDouble};
     ( ( (PLNK)->type != DB_LINK ) \
       ? 0 \
       : ( ( (struct dbAddr *)( (PLNK)->value.pv_link.pvt) ) ) )
+#define dbGetSevr(PLINK,PSEVERITY) \
+    dbGetAlarm((PLINK),NULL,(PSEVERITY));
 
 epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);
@@ -262,8 +264,8 @@ epicsShareFunc long epicsShareAPI dbGetPrecision(
     const struct link *plink,short *precision);
 epicsShareFunc long epicsShareAPI dbGetUnits(
     const struct link *plink,char *units,int unitsSize);
-epicsShareFunc long epicsShareAPI dbGetSevr(
-    const struct link *plink,short *severity);
+epicsShareFunc long epicsShareAPI dbGetAlarm(
+    const struct link *plink, epicsEnum16 *status,epicsEnum16 *severity);
 epicsShareFunc long epicsShareAPI dbGetTimeStamp(
     const struct link *plink,epicsTimeStamp *pstamp);
 

@@ -12,6 +12,19 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New link flags for alarm severity/status inheritance</h4>
+
+<p>Two new link flags have been introduced: MSI (maximize severity INVALID)
+and MSS (maximize severity and status).</p>
+
+<p>Through a link flagged as MSI the receiver side inherits the severity
+(similar to the MS flag), but only if it is INVALID.</p>
+
+<p>Through a link flagged as MSS the receiver side inherits as well the
+severity (similar to the MS flag) as the alarm status, thereby preserving
+the alarm status through MS chains instead of setting the status to LINK
+unconditionally.</p>
+
 <h4>New behaviour of get_alarm_double() in analog records</h4>
 
 <p>The behavior of get_alarm_double() in several record types, which

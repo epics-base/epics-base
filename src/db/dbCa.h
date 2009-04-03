@@ -33,7 +33,7 @@ epicsShareFunc void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
 epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
 epicsShareFunc long epicsShareAPI dbCaGetLink(
     struct link *plink,short dbrType,void *pbuffer,
-    unsigned short *psevr,long *nRequest);
+    epicsEnum16 *pstat,epicsEnum16 *psevr,long *nRequest);
 epicsShareFunc long epicsShareAPI dbCaPutLinkCallback(
     struct link *plink,short dbrType,const void *pbuffer,long nRequest,
     dbCaCallback callback,void *userPvt);
@@ -43,8 +43,10 @@ epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(const struct link *plink);
 /* The following are available after the link is connected*/
 epicsShareFunc long epicsShareAPI dbCaGetNelements(
     const struct link *plink,long *nelements);
-epicsShareFunc long epicsShareAPI dbCaGetSevr(
-    const struct link *plink,short *severity);
+#define dbCaGetSevr(plink,severity) \
+    dbCaGetAlarm((plink),NULL,(severity))
+epicsShareFunc long epicsShareAPI dbCaGetAlarm(const struct link *plink,
+    epicsEnum16 *status,epicsEnum16 *severity);
 epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
     const struct link *plink,epicsTimeStamp *pstamp);
 epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink);

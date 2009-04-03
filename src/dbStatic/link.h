@@ -54,17 +54,21 @@ epicsShareExtern maplinkType pamaplinkType[];
 
 /* structure of a PV_LINK DB_LINK and a CA_LINK	*/
 /*Options defined by pvlMask			*/
-#define pvlOptMS	0x1	/*Maximize Severity*/
-#define pvlOptPP	0x2	/*Process Passive*/
-#define pvlOptCA	0x4	/*Always make it a CA link*/
-#define pvlOptCP	0x8	/*CA + process on monitor*/
-#define pvlOptCPP	0x10	/*CA + process passive record on monitor*/
-#define pvlOptFWD	0x20	/*Generate ca_put for forward link*/
-#define pvlOptInpNative	0x40	/*Input native*/
-#define pvlOptInpString	0x80	/*Input as string*/
-#define pvlOptOutNative	0x100	/*Output native*/
-#define pvlOptOutString	0x200	/*Output as string*/
-#define pvlOptTSELisTime 0x400	/*Field TSEL is getting timeStamp*/
+#define pvlOptMsMode       0x3	/*Maximize Severity mode selection*/
+#define pvlOptNMS            0	/*Dont Maximize Severity*/
+#define pvlOptMS             1	/*Maximize Severity allways*/
+#define pvlOptMSI            2	/*Maximize Severity if INVALID*/
+#define pvlOptMSS            3	/*Maximize Severity and copy Status*/
+#define pvlOptPP           0x4	/*Process Passive*/
+#define pvlOptCA           0x8	/*Always make it a CA link*/
+#define pvlOptCP          0x10	/*CA + process on monitor*/
+#define pvlOptCPP         0x20	/*CA + process passive record on monitor*/
+#define pvlOptFWD         0x40	/*Generate ca_put for forward link*/
+#define pvlOptInpNative   0x80	/*Input native*/
+#define pvlOptInpString  0x100	/*Input as string*/
+#define pvlOptOutNative  0x200	/*Output native*/
+#define pvlOptOutString  0x400	/*Output as string*/
+#define pvlOptTSELisTime 0x800	/*Field TSEL is getting timeStamp*/
 
 typedef long (*LINKCVT)();
 

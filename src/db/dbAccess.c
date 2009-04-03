@@ -90,6 +90,17 @@ static short mapDBFToDBR[DBF_NTYPES] = {
 /* The following is to handle SPC_AS */
 static SPC_ASCALLBACK spcAsCallback = 0;
 
+static void inherit_severity(const struct pv_link *ppv_link,
+    dbCommon *pdest, epicsEnum16 stat, epicsEnum16 sevr)
+{
+    switch(ppv_link->pvlMask&pvlOptMsMode) {
+        case pvlOptNMS: break;
+        case pvlOptMSI: if (sevr < INVALID_ALARM) break;
+        case pvlOptMS:  recGblSetSevr(pdest,LINK_ALARM,sevr); break;
+        case pvlOptMSS: recGblSetSevr(pdest,stat,sevr); break;
+    }
+}
+
 void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 {
     spcAsCallback = func;
@@ -837,8 +848,9 @@ long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
             precord->pact = pact;
             if (status) return status;
         }
-        if (ppv_link->pvlMask & pvlOptMS && precord != paddr->precord)
-            recGblSetSevr(precord, LINK_ALARM, paddr->precord->sevr);
+        if(precord!= paddr->precord) {
+            inherit_severity(ppv_link,precord,paddr->precord->stat,paddr->precord->sevr);
+        }
 
         if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
             status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
@@ -873,13 +885,13 @@ long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
     } else if (plink->type == CA_LINK) {
         struct dbCommon *precord = plink->value.pv_link.precord;
         const struct pv_link *pcalink = &plink->value.pv_link;
-        unsigned short sevr;
+        epicsEnum16 sevr, stat;
 
-        status = dbCaGetLink(plink, dbrType, pbuffer, &sevr, pnRequest);
+        status=dbCaGetLink(plink,dbrType,pbuffer,&stat,&sevr,pnRequest);
         if (status) {
             recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-        } else if (pcalink->pvlMask & pvlOptMS) {
-            recGblSetSevr(precord, LINK_ALARM, sevr);
+        } else {
+            inherit_severity(pcalink,precord,stat,sevr);
         }
         if (poptions) *poptions = 0;
     } else {
@@ -900,8 +912,7 @@ long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
         dbCommon *pdest = paddr->precord;
 
         status = dbPut(paddr, dbrType, pbuffer, nRequest);
-        if (ppv_link->pvlMask & pvlOptMS)
-            recGblSetSevr(pdest, LINK_ALARM, psource->nsev);
+        inherit_severity(ppv_link,pdest,psource->nsta,psource->nsev);
         if (status) return status;
 
         if (paddr->pfield == (void *)&pdest->proc ||
@@ -1567,14 +1578,16 @@ long epicsShareAPI dbGetUnits(
     return(0);
 }
 
-long epicsShareAPI dbGetSevr(const struct link *plink,short *severity)
+long epicsShareAPI dbGetAlarm(const struct link *plink,
+    epicsEnum16 *status,epicsEnum16 *severity)
 {
     DBADDR *paddr;
 
-    if(plink->type == CA_LINK) return(dbCaGetSevr(plink,severity));
+    if(plink->type == CA_LINK) return(dbCaGetAlarm(plink,status,severity));
     if(plink->type !=DB_LINK) return(S_db_notFound);
     paddr = (DBADDR *)plink->value.pv_link.pvt;
-    *severity = paddr->precord->sevr;
+    if (status) *status = paddr->precord->stat;
+    if (severity) *severity = paddr->precord->sevr;
     return(0);
 }
 

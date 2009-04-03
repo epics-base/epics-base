@@ -82,6 +82,7 @@ static ELLLIST lockSetList[nlistType];
 static epicsMutexId globalLock;
 static epicsMutexId lockSetModifyLock;
 static unsigned long id = 0;
+static char *msstring[4]={"NMS","MS","MSI","MSS"};
 
 typedef enum {
     lockSetStateFree=0, lockSetStateScanLock, lockSetStateRecordLock
@@ -546,7 +547,7 @@ long epicsShareAPI dblsr(char *recordname,int level)
                 }
                 printf(" %s %s",
                     ((plink->value.pv_link.pvlMask&pvlOptPP)?" PP":"NPP"),
-                    ((plink->value.pv_link.pvlMask&pvlOptMS)?" MS":"NMS"));
+                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
                 printf(" %s\n",pdbAddr->precord->name);
             }
         }

@@ -29,8 +29,8 @@
 
 
 /* Create the dset for devMbboDirectSoftRaw */
-static long init_record();
-static long write_mbbo();
+static long init_record(mbboDirectRecord *prec);
+static long write_mbbo(mbboDirectRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;

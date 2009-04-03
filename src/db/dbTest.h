@@ -43,7 +43,7 @@ epicsShareFunc long epicsShareAPI dbtpf(const char *pname,const char *pvalue);
 epicsShareFunc long epicsShareAPI dbior(
     const char *pdrvName,int interest_level);
 /*Hardware Configuration Report*/
-epicsShareFunc int epicsShareAPI dbhcr();
+epicsShareFunc int epicsShareAPI dbhcr(void);
 
 #ifdef __cplusplus
 }

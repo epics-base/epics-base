@@ -77,7 +77,7 @@ epicsShareFunc void * epicsShareAPI registryFind(
     return(pentry->userPvt);
 }
 
-epicsShareFunc void epicsShareAPI registryFree()
+epicsShareFunc void epicsShareAPI registryFree(void)
 {
     if(!gphPvt) return;
     gphFreeMem(gphPvt);

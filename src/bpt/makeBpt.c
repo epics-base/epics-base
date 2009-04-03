@@ -76,9 +76,7 @@ static void errExit(char *pmessage)
     exit(-1);
 }
 
-int main(argc, argv)
-    int             argc;
-    char          **argv;
+int main(int argc, char **argv)
 {
     char	*pbeg;
     char	*pend;

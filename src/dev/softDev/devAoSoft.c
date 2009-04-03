@@ -33,10 +33,10 @@
 #include "epicsExport.h"
 
 /* added for Channel Access Links */
-static long init_record();
+static long init_record(aoRecord *prec);
 
 /* Create the dset for devAoSoft */
-static long write_ao();
+static long write_ao(aoRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;

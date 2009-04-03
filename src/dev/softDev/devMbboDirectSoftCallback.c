@@ -27,7 +27,7 @@
 #include "epicsExport.h"
 
 /* Create the dset for devMbboSoft */
-static long write_mbbo();
+static long write_mbbo(mbboDirectRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;

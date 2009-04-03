@@ -31,10 +31,10 @@
 #include "boRecord.h"
 #include "epicsExport.h"
 
-static long init_record();
+static long init_record(boRecord *prec);
 
 /* Create the dset for devBoSoft */
-static long write_bo();
+static long write_bo(boRecord *prec);
 
 struct {
 	long		number;

@@ -27,7 +27,7 @@
 #include "epicsExport.h"
 
 /* Create the dset for devSoSoftCallback */
-static long write_stringout();
+static long write_stringout(stringoutRecord *prec);
 struct {
     long        number;
     DEVSUPFUN   report;

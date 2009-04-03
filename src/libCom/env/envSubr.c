@@ -368,7 +368,7 @@ const ENV_PARAM *pParam)	/* pointer to config param structure */
 *
 *-*/
 long epicsShareAPI
-epicsPrtEnvParams()
+epicsPrtEnvParams(void)
 {
     const ENV_PARAM **ppParam = env_param_list;
      

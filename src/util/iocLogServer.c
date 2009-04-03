@@ -95,7 +95,7 @@ static int sighupPipe[2];
  *	main()
  *
  */
-int main()
+int main(void)
 {
 	struct sockaddr_in serverAddr;	/* server's address */
 	struct timeval timeout;
@@ -953,7 +953,7 @@ static void serviceSighupRequest(void *pParam)
  *
  *
  */
-static int getDirectory()
+static int getDirectory(void)
 {
 	FILE		*pipe;
 	char		dir[256];

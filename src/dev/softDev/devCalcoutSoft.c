@@ -29,7 +29,7 @@
 #include "calcoutRecord.h"
 #include "epicsExport.h"
 
-static long write_calcout();
+static long write_calcout(calcoutRecord *prec);
 
 struct {
     long	number;

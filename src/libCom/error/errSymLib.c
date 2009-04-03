@@ -62,7 +62,7 @@ extern ERRSYMTAB_ID errSymTbl;
  * ell nodes that have a common hash number.
  *
  ***************************************************************/
-int epicsShareAPI errSymBld()
+int epicsShareAPI errSymBld(void)
 {
     ERRSYMBOL      *errArray = errSymTbl->symbols;
     ELLLIST        *perrnumlist = &errnumlist;
@@ -245,7 +245,7 @@ void epicsShareAPI errSymLookup (long status, char * pBuf, unsigned bufLength)
 /****************************************************************
  * errSymDump
  ***************************************************************/
-void epicsShareAPI errSymDump()
+void epicsShareAPI errSymDump(void)
 {
 ERRNUMNODE    **phashnode = NULL;
 ERRNUMNODE     *pNextNode;

@@ -29,8 +29,8 @@
 #include "epicsExport.h"
 
 /* Create the dset for devHistogramSoft */
-static long init_record();
-static long read_histogram();
+static long init_record(histogramRecord *prec);
+static long read_histogram(histogramRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;

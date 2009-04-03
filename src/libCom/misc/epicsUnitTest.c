@@ -130,7 +130,7 @@ void testTodoBegin(const char *why) {
     epicsMutexUnlock(testLock);
 }
 
-void testTodoEnd() {
+void testTodoEnd(void) {
     todo = NULL;
 }
 

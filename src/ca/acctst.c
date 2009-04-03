@@ -2018,7 +2018,7 @@ void caTaskExitTest ( unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
-void verifyDataTypeMacros ()
+void verifyDataTypeMacros (void)
 {
     int type;
 

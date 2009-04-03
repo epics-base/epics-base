@@ -29,7 +29,7 @@
 #define LINE_1 "# This is first line of sample report\n"
 #define LINE_2 "# This is second and last line of sample report\n"
 
-static void testEpicsSnprintf() {
+static void testEpicsSnprintf(void) {
     char exbuffer[80], buffer[80];
     const int ivalue = 1234;
     const float fvalue = 1.23e4;

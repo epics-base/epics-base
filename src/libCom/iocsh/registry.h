@@ -25,7 +25,7 @@ epicsShareFunc int epicsShareAPI registryChange(
     void *registryID,const char *name,void *data);
 
 epicsShareFunc int epicsShareAPI registrySetTableSize(int size);
-epicsShareFunc void epicsShareAPI registryFree();
+epicsShareFunc void epicsShareAPI registryFree(void);
 epicsShareFunc int epicsShareAPI registryDump(void);
 
 #ifdef __cplusplus

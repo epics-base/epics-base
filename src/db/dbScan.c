@@ -153,7 +153,7 @@ static void scanShutdown(void *arg)
     epicsEventWait(startStopEvent);
 }
 
-long scanInit()
+long scanInit(void)
 {
     int i;
 
@@ -392,7 +392,7 @@ int scanpel(int event_number)   /* print event list */
     return 0;
 }
 
-int scanpiol()                  /* print io_event list */
+int scanpiol(void)                  /* print io_event list */
 {
     io_scan_list *piosl;
     int prio;
@@ -562,7 +562,7 @@ static void periodicTask(void *arg)
 }
 
 
-static void initPeriodic()
+static void initPeriodic(void)
 {
     dbMenu *pmenu;
     periodic_scan_list *ppsl;

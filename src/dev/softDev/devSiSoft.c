@@ -28,8 +28,8 @@
 #include "epicsExport.h"
 
 /* Create the dset for devSiSoft */
-static long init_record();
-static long read_stringin();
+static long init_record(stringinRecord *prec);
+static long read_stringin(stringinRecord *prec);
 
 struct {
     long      number;

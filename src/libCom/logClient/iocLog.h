@@ -29,7 +29,7 @@ extern "C" {
 epicsShareExtern int iocLogDisable;
 epicsShareFunc int epicsShareAPI iocLogInit (void);
 epicsShareFunc void epicsShareAPI iocLogShow (unsigned level);
-epicsShareFunc void epicsShareAPI iocLogFlush ();
+epicsShareFunc void epicsShareAPI iocLogFlush (void);
 
 #ifdef __cplusplus
 }

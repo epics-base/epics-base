@@ -31,10 +31,10 @@
 #include "epicsExport.h"
 
 /* added for Channel Access Links */
-static long init_record();
+static long init_record(boRecord *prec);
 
 /* Create the dset for devBoSoftRaw */
-static long write_bo();
+static long write_bo(boRecord *prec);
 
 struct {
 	long		number;

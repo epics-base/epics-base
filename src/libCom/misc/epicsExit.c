@@ -56,7 +56,7 @@ static void destroyExitPvt ( exitPvt * pep )
     free ( pep );
 }
 
-static exitPvt * createExitPvt ()
+static exitPvt * createExitPvt (void)
 {
     exitPvt * pep = calloc ( 1, sizeof ( * pep ) );
     if ( pep ) {

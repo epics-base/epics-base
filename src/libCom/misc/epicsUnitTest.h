@@ -28,7 +28,7 @@ epicsShareFunc void testFail(const char *fmt, ...)
 						EPICS_PRINTF_STYLE(1, 2);
 epicsShareFunc void testSkip(int skip, const char *why);
 epicsShareFunc void testTodoBegin(const char *why);
-epicsShareFunc void testTodoEnd();
+epicsShareFunc void testTodoEnd(void);
 epicsShareFunc int  testDiag(const char *fmt, ...)
 						EPICS_PRINTF_STYLE(1, 2);
 epicsShareFunc void testAbort(const char *fmt, ...)

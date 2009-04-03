@@ -72,7 +72,7 @@ LOCAL int getConfig (struct in_addr *pserver_addr, unsigned short *pserver_port)
 /*
  *  iocLogFlush ()
  */
-void epicsShareAPI epicsShareAPI iocLogFlush ()
+void epicsShareAPI epicsShareAPI iocLogFlush (void)
 {
     if (iocLogClient!=NULL) {
         logClientFlush (iocLogClient);
@@ -139,7 +139,7 @@ void epicsShareAPI iocLogShow (unsigned level)
 /*
  *  logClientInit(); deprecated
  */
-logClientId epicsShareAPI logClientInit ()
+logClientId epicsShareAPI logClientInit (void)
 {
     return iocLogClientInit ();
 }

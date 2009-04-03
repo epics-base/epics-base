@@ -94,7 +94,7 @@ struct mbbodset { /* multi bit binary output dset */
 static void checkAlarms(mbboRecord *);
 static void convert(mbboRecord *);
 static void monitor(mbboRecord *);
-static long writeValue();
+static long writeValue(mbboRecord *);
 
 
 static void init_common(mbboRecord *prec)

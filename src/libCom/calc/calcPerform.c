@@ -429,7 +429,7 @@ static unsigned short seed = 0xa3bf;
 static unsigned short multy = 191 * 8 + 5;  /* 191 % 8 == 5 */
 static unsigned short addy = 0x3141;
 
-static double calcRandom()
+static double calcRandom(void)
 {
     seed = (seed * multy) + addy;
 

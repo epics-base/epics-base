@@ -82,7 +82,7 @@ char *sprintf(); /* keep lint happy */
 void *memset();
 #else
 #if !defined(ultrix) && !defined(NeXT) && !defined(sgi) && !defined(hppa) && !defined(__osf__)
-char *memset();
+char *memset(void *, int, size_t);
 #endif
 #endif
 #endif

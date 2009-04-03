@@ -17,7 +17,7 @@
 #include "epicsString.h"
 #include "testMain.h"
 
-void testChars() {
+void testChars(void) {
     int i;
     char input[2] = {0, 0};
     char escaped[20];

@@ -76,7 +76,7 @@ static FILE *dfd;
 /*
  * maximum, minimum value for each ait type - joh
  */
-void initMinMaxAIT ()
+void initMinMaxAIT (void)
 {
     unsigned i;
 

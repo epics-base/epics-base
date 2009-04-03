@@ -26,7 +26,7 @@
 
 DBBASE *pdbbase = NULL;
 
-void usage() 
+void usage(void)
 {
     fprintf(stderr, "Usage:\n\tdbExpand -Ipath -ooutfile "
 	    "-S macro=value file1.dbd file2.dbd ...\n");

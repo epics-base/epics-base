@@ -1570,7 +1570,7 @@ LOCAL void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int
     SEND_UNLOCK ( client );
 }
 
-void initializePutNotifyFreeList ()
+void initializePutNotifyFreeList (void)
 {
     if ( ! rsrvPutNotifyFreeList ) {
         freeListInitPvt ( &rsrvPutNotifyFreeList, 

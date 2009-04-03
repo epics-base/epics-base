@@ -30,7 +30,7 @@
 #include "epicsExport.h"
 
 /* Create the dset for devBoCallbackSoft */
-static long write_bo();
+static long write_bo(boRecord *prec);
 
 struct {
 	long		number;

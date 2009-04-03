@@ -30,7 +30,7 @@
 #include "epicsExport.h"
 
 /* Create the dset for devAoSoftCallback */
-static long write_ao();
+static long write_ao(aoRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;

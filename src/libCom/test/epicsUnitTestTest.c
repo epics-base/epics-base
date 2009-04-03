@@ -16,7 +16,7 @@
 #define testOk1_success 1
 #define testOk1_failure 0
 
-int main () {
+int main (void) {
     testPlan(11);
     testOk(1, "testOk(1)");
     testOk(0, "testOk(0)");

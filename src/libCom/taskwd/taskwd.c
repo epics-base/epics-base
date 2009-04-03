@@ -161,7 +161,7 @@ static void twdInitOnce(void *arg)
     epicsAtExit(twdShutdown, NULL);
 }
 
-void taskwdInit()
+void taskwdInit(void)
 {
     static epicsThreadOnceId twdOnceFlag = EPICS_THREAD_ONCE_INIT;
     epicsThreadOnce(&twdOnceFlag, twdInitOnce, NULL);

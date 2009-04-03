@@ -279,7 +279,7 @@ epicsShareFunc void epicsShareAPI errlogSetSevToLog(
     pvtData.sevToLog = severity;
 }
 
-epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog()
+epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog(void)
 {
     errlogInit(0);
     return pvtData.sevToLog;
@@ -512,7 +512,7 @@ static void errlogThread(void)
     epicsEventSignal(pvtData.waitForExit);
 }
 
-static msgNode *msgbufGetNode()
+static msgNode *msgbufGetNode(void)
 {
     char *pbuffer = (char *)pvtData.pbuffer;
     msgNode *pnextSend = 0;
@@ -597,7 +597,7 @@ static char * msgbufGetSend(int *noConsoleMessage)
     return(pnextSend->message);
 }
 
-static void msgbufFreeSend()
+static void msgbufFreeSend(void)
 {
     msgNode *pnextSend;
 

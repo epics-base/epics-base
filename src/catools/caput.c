@@ -379,7 +379,11 @@ int main (int argc, char *argv[])
 
     pvs[0].name = argv[optind] ;   /* Copy PV name from command line */
 
-    connect_pvs(pvs, nPvs);
+    result = connect_pvs(pvs, nPvs); /* If the connection fails, we're done */
+    if (result) {
+        ca_context_destroy();
+        return result;
+    }
 
                                 /* Get values from command line */
     optind++;

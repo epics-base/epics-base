@@ -36,6 +36,7 @@
 #include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
+#include "epicsString.h"
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -237,15 +238,39 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 
 static void monitor(waveformRecord *prec)
 {
-    unsigned short monitor_mask;
+    unsigned short monitor_mask = 0;
+    unsigned int hash = 0;
 
     monitor_mask = recGblResetAlarms(prec);
-    monitor_mask |= (DBE_LOG|DBE_VALUE);
 
-    db_post_events(prec, prec->bptr, monitor_mask);
+    if (prec->mpst == waveformPOST_Always)
+        monitor_mask |= DBE_VALUE;
+    if (prec->apst == waveformPOST_Always)
+        monitor_mask |= DBE_LOG;
 
-    return;
+    /* Calculate hash if we are interested in OnChange events. */
+    if ((prec->mpst == waveformPOST_OnChange) ||
+        (prec->apst == waveformPOST_OnChange)) {
+        hash = epicsMemHash((char *)prec->bptr,
+            prec->nord * dbValueSize(prec->ftvl), 0);
 
+        /* Only post OnChange values if the hash is different. */
+        if (hash != prec->hash) {
+            if (prec->mpst == waveformPOST_OnChange)
+                monitor_mask |= DBE_VALUE;
+            if (prec->apst == waveformPOST_OnChange)
+                monitor_mask |= DBE_LOG;
+
+            /* Store hash for next process. */
+            prec->hash = hash;
+            /* Post HASH. */
+            db_post_events(prec, &prec->hash, DBE_VALUE);
+        }
+    }
+
+    if (monitor_mask) {
+        db_post_events(prec, prec->bptr, monitor_mask);
+    }
 }
 
 static long readValue(waveformRecord *prec)

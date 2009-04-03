@@ -53,54 +53,54 @@ struct {
 };
 epicsExportAddress(dset,devHistogramTestAsyn);
 
-static long init_record(phistogram)
-    struct histogramRecord	*phistogram;
+static long init_record(prec)
+    struct histogramRecord	*prec;
 {
     CALLBACK *pcallback;
 
     /* histogram.svl must be a CONSTANT*/
-    switch (phistogram->svl.type) {
+    switch (prec->svl.type) {
     case (CONSTANT) :
 	pcallback = (CALLBACK *)(calloc(1,sizeof(CALLBACK)));
-	phistogram->dpvt = (void *)pcallback;
-        if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
-            phistogram->udf = FALSE;
+	prec->dpvt = (void *)pcallback;
+        if(recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
+            prec->udf = FALSE;
 	break;
     default :
-	recGblRecordError(S_db_badField,(void *)phistogram,
+	recGblRecordError(S_db_badField,(void *)prec,
 	    "devHistogramTestAsyn (init_record) Illegal SVL field");
-        phistogram->pact=TRUE;
+        prec->pact=TRUE;
 	return(S_db_badField);
     }
     return(0);
 }
 
-static long read_histogram(phistogram)
-    struct histogramRecord	*phistogram;
+static long read_histogram(prec)
+    struct histogramRecord	*prec;
 {
-    CALLBACK *pcallback=(CALLBACK *)(phistogram->dpvt);
+    CALLBACK *pcallback=(CALLBACK *)(prec->dpvt);
 
     /* histogram.svl must be a CONSTANT*/
-    switch (phistogram->svl.type) {
+    switch (prec->svl.type) {
     case (CONSTANT) :
-	if(phistogram->pact) {
+	if(prec->pact) {
 		printf("Completed asynchronous processing: %s\n",
-                    phistogram->name);
+                    prec->name);
 		return(0); /*add count*/
 	} else {
-                if(phistogram->disv<=0) return(2);
+                if(prec->disv<=0) return(2);
                 printf("Starting asynchronous processing: %s\n",
-                    phistogram->name);
-                phistogram->pact=TRUE;
+                    prec->name);
+                prec->pact=TRUE;
                 callbackRequestProcessCallbackDelayed(
-                    pcallback,phistogram->prio,phistogram,
-                    (double)phistogram->disv);
+                    pcallback,prec->prio,prec,
+                    (double)prec->disv);
 		return(0);
 	}
     default :
-        if(recGblSetSevr(phistogram,SOFT_ALARM,INVALID_ALARM)){
-		if(phistogram->stat!=SOFT_ALARM) {
-			recGblRecordError(S_db_badField,(void *)phistogram,
+        if(recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM)){
+		if(prec->stat!=SOFT_ALARM) {
+			recGblRecordError(S_db_badField,(void *)prec,
 			    "devHistogramTestAsyn (read_histogram) Illegal SVL field");
 		}
 	}

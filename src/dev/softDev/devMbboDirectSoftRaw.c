@@ -48,24 +48,24 @@ struct {
 };
 epicsExportAddress(dset,devMbboDirectSoftRaw);
 
-static long init_record(mbboDirectRecord *pmbbo)
+static long init_record(mbboDirectRecord *prec)
 {
     long status = 0;
  
-    if (pmbbo->out.type != PV_LINK)
+    if (prec->out.type != PV_LINK)
        status = 2;
     /*to preserve old functionality*/
-    if(pmbbo->nobt == 0) pmbbo->mask = 0xffffffff;
-    pmbbo->mask <<= pmbbo->shft;
+    if(prec->nobt == 0) prec->mask = 0xffffffff;
+    prec->mask <<= prec->shft;
     return status;
 } /* end init_record() */
 
-static long write_mbbo(mbboDirectRecord	*pmbbo)
+static long write_mbbo(mbboDirectRecord	*prec)
 {
     long status;
     unsigned long data;
 
-    data = pmbbo->rval & pmbbo->mask;
-    status = dbPutLink(&pmbbo->out,DBR_LONG, &data,1);
+    data = prec->rval & prec->mask;
+    status = dbPutLink(&prec->out,DBR_LONG, &data,1);
     return(0);
 }

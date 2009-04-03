@@ -56,7 +56,7 @@ struct {
 epicsExportAddress(dset,devAoSoft);
 
 
-static long init_record(aoRecord *pao)
+static long init_record(aoRecord *prec)
 {
 
     long status=0;
@@ -65,11 +65,11 @@ static long init_record(aoRecord *pao)
 
 } /* end init_record() */
 
-static long write_ao(aoRecord *pao)
+static long write_ao(aoRecord *prec)
 {
     long status;
 
-    status = dbPutLink(&pao->out,DBR_DOUBLE, &pao->oval,1);
+    status = dbPutLink(&prec->out,DBR_DOUBLE, &prec->oval,1);
 
     return(status);
 }

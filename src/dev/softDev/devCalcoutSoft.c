@@ -43,7 +43,7 @@ struct {
 };
 epicsExportAddress(dset, devCalcoutSoft);
 
-static long write_calcout(calcoutRecord *pcalcout)
+static long write_calcout(calcoutRecord *prec)
 {
-    return dbPutLink(&pcalcout->out, DBR_DOUBLE, &pcalcout->oval, 1);
+    return dbPutLink(&prec->out, DBR_DOUBLE, &prec->oval, 1);
 }

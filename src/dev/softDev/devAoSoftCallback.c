@@ -49,22 +49,22 @@ struct {
 	NULL};
 epicsExportAddress(dset,devAoSoftCallback);
 
-static long write_ao(aoRecord *pao)
+static long write_ao(aoRecord *prec)
 {
-    struct link *plink = &pao->out;
+    struct link *plink = &prec->out;
     long status;
 
-    if(pao->pact) return(0);
+    if(prec->pact) return(0);
     if(plink->type!=CA_LINK) {
-        status = dbPutLink(plink,DBR_DOUBLE,&pao->oval,1);
+        status = dbPutLink(plink,DBR_DOUBLE,&prec->oval,1);
         return(status);
     }
-    status = dbCaPutLinkCallback(plink,DBR_DOUBLE,&pao->oval,1,
+    status = dbCaPutLinkCallback(plink,DBR_DOUBLE,&prec->oval,1,
         (dbCaCallback)dbCaCallbackProcess,plink);
     if(status) {
-        recGblSetSevr(pao,LINK_ALARM,INVALID_ALARM);
+        recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
         return(status);
     }
-    pao->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

@@ -45,24 +45,24 @@ struct {
 };
 epicsExportAddress(dset, devSoSoftCallback);
 
-static long write_stringout(stringoutRecord *pstringout)
+static long write_stringout(stringoutRecord *prec)
 {
-    struct link *plink = &pstringout->out;
+    struct link *plink = &prec->out;
     long status;
 
-    if (pstringout->pact) return 0;
+    if (prec->pact) return 0;
 
     if (plink->type != CA_LINK) {
-        return dbPutLink(plink, DBR_STRING, &pstringout->val, 1);
+        return dbPutLink(plink, DBR_STRING, &prec->val, 1);
     }
 
-    status = dbCaPutLinkCallback(plink, DBR_STRING, &pstringout->val, 1,
+    status = dbCaPutLinkCallback(plink, DBR_STRING, &prec->val, 1,
         (dbCaCallback)dbCaCallbackProcess, plink);
     if (status) {
-        recGblSetSevr(pstringout, LINK_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
         return status;
     }
 
-    pstringout->pact = TRUE;
+    prec->pact = TRUE;
     return 0;
 }

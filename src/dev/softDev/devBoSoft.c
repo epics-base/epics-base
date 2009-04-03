@@ -53,7 +53,7 @@ struct {
 };
 epicsExportAddress(dset,devBoSoft);
 
-static long init_record(boRecord *pbo)
+static long init_record(boRecord *prec)
 {
  
    long status=0;
@@ -64,11 +64,11 @@ static long init_record(boRecord *pbo)
  
 } /* end init_record() */
 
-static long write_bo(boRecord *pbo)
+static long write_bo(boRecord *prec)
 {
     long status;
 
-    status = dbPutLink(&pbo->out,DBR_USHORT,&pbo->val,1);
+    status = dbPutLink(&prec->out,DBR_USHORT,&prec->val,1);
 
     return(status);
 }

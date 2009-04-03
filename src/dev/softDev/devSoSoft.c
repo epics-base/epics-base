@@ -45,10 +45,10 @@ struct {
 };
 epicsExportAddress(dset, devSoSoft);
 
-static long write_stringout(stringoutRecord *pstringout)
+static long write_stringout(stringoutRecord *prec)
 {
     long status;
 
-    status = dbPutLink(&pstringout->out, DBR_STRING, pstringout->val, 1);
+    status = dbPutLink(&prec->out, DBR_STRING, prec->val, 1);
     return status;
 }

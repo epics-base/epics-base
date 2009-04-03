@@ -50,32 +50,32 @@ struct {
 };
 epicsExportAddress(dset,devHistogramSoft);
 
-static long init_record(histogramRecord	*phistogram)
+static long init_record(histogramRecord	*prec)
 {
     long status = 0;
 
     /* histogram.svl must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (phistogram->svl.type) {
+    switch (prec->svl.type) {
     case (CONSTANT) :
-        if(recGblInitConstantLink(&phistogram->svl,DBF_DOUBLE,&phistogram->sgnl))
-            phistogram->udf = FALSE;
+        if(recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
+            prec->udf = FALSE;
 	break;
     case (PV_LINK) :
     case (DB_LINK) :
     case (CA_LINK) :
 	break;
     default :
-	recGblRecordError(S_db_badField,(void *)phistogram,
+	recGblRecordError(S_db_badField,(void *)prec,
 		"devHistogramSoft (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
     return(status);
 }
 
-static long read_histogram(histogramRecord *phistogram)
+static long read_histogram(histogramRecord *prec)
 {
     long status;
 
-    status = dbGetLink(&phistogram->svl,DBR_DOUBLE, &phistogram->sgnl,0,0);
+    status = dbGetLink(&prec->svl,DBR_DOUBLE, &prec->sgnl,0,0);
     return(0); /*add count*/
 }

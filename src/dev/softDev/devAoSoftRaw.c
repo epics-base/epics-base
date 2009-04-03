@@ -33,7 +33,7 @@
 #include "epicsExport.h"
 
 /* Create the dset for devAoSoftRaw */
-static long write_ao(aoRecord *pao);
+static long write_ao(aoRecord *prec);
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -53,11 +53,11 @@ struct {
 };
 epicsExportAddress(dset,devAoSoftRaw);
 
-static long write_ao(aoRecord *pao)
+static long write_ao(aoRecord *prec)
 {
     long status;
 
-    status = dbPutLink(&pao->out,DBR_LONG,&pao->rval,1);
+    status = dbPutLink(&prec->out,DBR_LONG,&prec->rval,1);
 
     return(status);
 }

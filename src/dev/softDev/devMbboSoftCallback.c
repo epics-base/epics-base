@@ -45,22 +45,22 @@ struct {
 };
 epicsExportAddress(dset,devMbboSoftCallback);
 
-static long write_mbbo(mbboRecord *pmbbo)
+static long write_mbbo(mbboRecord *prec)
 {
-    struct link *plink = &pmbbo->out;
+    struct link *plink = &prec->out;
     long status;
 
-    if(pmbbo->pact) return(0);
+    if(prec->pact) return(0);
     if(plink->type!=CA_LINK) {
-        status = dbPutLink(plink,DBR_USHORT,&pmbbo->val,1);
+        status = dbPutLink(plink,DBR_USHORT,&prec->val,1);
         return(status);
     }
-    status = dbCaPutLinkCallback(plink,DBR_USHORT,&pmbbo->val,1,
+    status = dbCaPutLinkCallback(plink,DBR_USHORT,&prec->val,1,
         (dbCaCallback)dbCaCallbackProcess,plink);
     if(status) {
-        recGblSetSevr(pmbbo,LINK_ALARM,INVALID_ALARM);
+        recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
         return(status);
     }
-    pmbbo->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

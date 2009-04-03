@@ -43,22 +43,22 @@ struct {
 };
 epicsExportAddress(dset, devCalcoutSoftCallback);
 
-static long write_calcout(calcoutRecord *pcalcout)
+static long write_calcout(calcoutRecord *prec)
 {
-    struct link *plink = &pcalcout->out;
+    struct link *plink = &prec->out;
     long status;
 
-    if (pcalcout->pact) return 0;
+    if (prec->pact) return 0;
     if (plink->type != CA_LINK) {
-        status = dbPutLink(plink, DBR_DOUBLE, &pcalcout->oval, 1);
+        status = dbPutLink(plink, DBR_DOUBLE, &prec->oval, 1);
         return status;
     }
-    status = dbCaPutLinkCallback(plink, DBR_DOUBLE, &pcalcout->oval, 1,
+    status = dbCaPutLinkCallback(plink, DBR_DOUBLE, &prec->oval, 1,
         (dbCaCallback)dbCaCallbackProcess, plink);
     if (status) {
-        recGblSetSevr(pcalcout, LINK_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
         return status;
     }
-    pcalcout->pact = TRUE;
+    prec->pact = TRUE;
     return 0;
 }

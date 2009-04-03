@@ -46,15 +46,15 @@ struct {
 };
 epicsExportAddress(dset,devLoSoft);
 
-static long init_record(longoutRecord *plongout)
+static long init_record(longoutRecord *prec)
 {
     return(0);
 } /* end init_record() */
 
-static long write_longout(longoutRecord	*plongout)
+static long write_longout(longoutRecord	*prec)
 {
     long status;
 
-    status = dbPutLink(&plongout->out,DBR_LONG, &plongout->val,1);
+    status = dbPutLink(&prec->out,DBR_LONG, &prec->val,1);
     return(0);
 }

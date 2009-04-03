@@ -12,6 +12,17 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>New behaviour of get_alarm_double() in analog records</h4>
+
+<p>The behavior of get_alarm_double() in several record types, which
+have a value of type double and use alarm limits, has been changed.</p>
+
+<p>The old behaviour (always returning the current settings of the alarm
+limits fields) has been changed to returning epicsNAN (not-a-number)
+if the severity of the corresponding limit is NO_ALARM.
+This allows CA clients to suppress displaying of unused limits
+(e.g. at bargraphs).</p>
+
 <h4>New math constants epicsNAN and epicsINF</h4>
 
 <p>Two new math constants have been added to epicsMath.h: <tt>epicsNAN</tt>

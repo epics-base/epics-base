@@ -328,10 +328,10 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
     aoRecord	*prec=(aoRecord *)paddr->precord;
 
     if(paddr->pfield==(void *)&prec->val){
-         pad->upper_alarm_limit = prec->hihi;
-         pad->upper_warning_limit = prec->high;
-         pad->lower_warning_limit = prec->low;
-         pad->lower_alarm_limit = prec->lolo;
+        pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
+        pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
+        pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
+        pad->lower_alarm_limit = prec->llsv ? prec->lolo : epicsNAN;
     } else recGblGetAlarmDouble(paddr,pad);
     return(0);
 }

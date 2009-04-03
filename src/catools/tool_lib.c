@@ -1,6 +1,4 @@
 /*************************************************************************\
-* Copyright (c) 2009 Brookhaven Science Associates, as Operator of
-*     Brookhaven National Laboratory.
 * Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.

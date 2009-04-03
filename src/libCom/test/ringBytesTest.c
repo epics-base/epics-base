@@ -25,9 +25,6 @@
 
 #define RINGSIZE 10
 
-static char msg[] = "This is a very long string to be sent through the ring.  " 
-                    "It will take multiple transmissions, you know.";
-
 typedef struct info {
     epicsEventId consumerEvent;
     epicsRingBytesId	ring;
@@ -49,26 +46,6 @@ static void check(epicsRingBytesId ring, int expectedFree)
     testOk(isFull == expectedFull, "Full: %d == %d", isFull, expectedFull);
 }
     
-static void consumer(void *arg)
-{
-    info *pinfo = (info *)arg;
-    char getMsg[sizeof(msg) + RINGSIZE];
-    int i = 0;
-    int n;
-
-    testDiag("Consumer starting");
-    while(1) {
-        epicsEventMustWait(pinfo->consumerEvent);
-        n = epicsRingBytesGet(pinfo->ring, getMsg+i, RINGSIZE);
-        testOk(n != 0, "Read from ring");
-        i += n;
-        if (i >= sizeof(msg))
-            break;
-    }
-    testOk(i==sizeof(msg), "Correct number of bytes received %d==%d", i, (int)sizeof(msg));
-    testOk(strcmp(msg, getMsg) == 0, "Message received");
-}
-
 MAIN(ringBytesTest)
 {
     int i, n;
@@ -78,7 +55,7 @@ MAIN(ringBytesTest)
     char get[RINGSIZE+1];
     epicsRingBytesId ring;
 
-    testPlan(242);
+    testPlan(245);
 
     pinfo = calloc(1,sizeof(info));
     if (!pinfo) {
@@ -125,17 +102,17 @@ MAIN(ringBytesTest)
     testOk(n==0, "get from empty ring");
     check(ring, RINGSIZE);
 
-    epicsThreadCreate("consumer", 50, 
-        epicsThreadGetStackSize(epicsThreadStackSmall), consumer, pinfo);
-    epicsThreadSleep(0.1);
-
-    for (i = 0; i < sizeof(msg) ; ) {
-        n = epicsRingBytesPut(ring, msg+i, sizeof(msg)-i);
-        epicsEventSignal(consumerEvent);
-        epicsThreadSleep(0.2);
-        i += n;
-    }
-    epicsThreadSleep(0.2);
+    n = epicsRingBytesPut(ring, put, RINGSIZE+1);
+    testOk(n==0, "ring put beyond ring capacity (%d, expected 0)",n);
+    check(ring, RINGSIZE);
+    n = epicsRingBytesPut(ring, put, 1);
+    testOk(n==1, "ring put %d", 1);
+    check(ring, RINGSIZE-1);
+    n = epicsRingBytesPut(ring, put, RINGSIZE);
+    testOk(n==0, "ring put beyond ring capacity (%d, expected 0)",n);
+    check(ring, RINGSIZE-1);
+    n = epicsRingBytesGet(ring, get, 1);
+    testOk(n==1, "ring get %d", 1);
     check(ring, RINGSIZE);
 
     return testDone();

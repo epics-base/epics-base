@@ -53,6 +53,7 @@ static epicsThreadPrivateId exitPvtPerThread = 0;
 static void destroyExitPvt ( exitPvt * pep )
 {
     ellFree ( &pep->list );
+    free ( pep );
 }
 
 static exitPvt * createExitPvt ()

@@ -18,10 +18,6 @@ menu(calcoutDOPT) {
 	choice(calcoutDOPT_Use_VAL,"Use CALC")
 	choice(calcoutDOPT_Use_OVAL,"Use OCAL")
 }
-menu(calcoutINAP) {
-	choice(calcoutINAP_No,"No PROC on Change")
-	choice(calcoutINAP_Yes,"PROC on Change")
-}
 menu(calcoutINAV) {
 	choice(calcoutINAV_EXT_NC,"Ext PV NC")
 	choice(calcoutINAV_EXT,"Ext PV OK")

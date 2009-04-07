@@ -1,10 +1,10 @@
-//
-// vxWorks version of
-// osdWireConfig.h
-//
-//  Author Jeffrey O. Hill
-//  johill@lanl.gov
-//
+/*
+ * vxWorks version of
+ * osdWireConfig.h
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ */
 
 #ifndef osdWireConfig_h
 #define osdWireConfig_h
@@ -19,7 +19,7 @@
 #   error EPICS hasnt been ported to _BYTE_ORDER specified by vxWorks <types/vxArch.h>
 #endif
 
-// for now, assume that vxWorks doesnt run on weird arch like ARM NWFP
+/* for now, assume that vxWorks doesnt run on weird arch like ARM NWFP */
 #define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 
-#endif // ifdef osdWireConfig_h
+#endif /* ifdef osdWireConfig_h */

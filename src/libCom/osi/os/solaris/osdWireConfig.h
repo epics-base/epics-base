@@ -1,10 +1,10 @@
-//
-// Solaris version of
-// osdWireConfig.h
-//
-//  Author Jeffrey O. Hill
-//  johill@lanl.gov
-//
+/*
+ * Solaris version of
+ * osdWireConfig.h
+ *
+ *  Author Jeffrey O. Hill
+ *  johill@lanl.gov
+ */
 
 #ifndef osdWireConfig_h
 #define osdWireConfig_h
@@ -19,8 +19,8 @@
 #   error EPICS hasnt been ported to byte order specified by <sys/isa_defs.h> on Solaris
 #endif
 
-// for now, assume that Solaris doesnt run on weird arch like ARM NWFP
+/* for now, assume that Solaris doesnt run on weird arch like ARM NWFP */
 #define EPICS_FLOAT_WORD_ORDER EPICS_BYTE_ORDER
 
-#endif // ifdef osdWireConfig_h
+#endif /* ifdef osdWireConfig_h */
 

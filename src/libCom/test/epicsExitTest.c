@@ -26,7 +26,7 @@
 
 
 typedef struct info {
-    const char *name;
+    char name[64];
     epicsEventId terminate;
     epicsEventId terminated;
 }info;
@@ -55,7 +55,7 @@ static void thread(void *arg)
 {
     info *pinfo = (info *)arg;
 
-    pinfo->name = epicsThreadGetNameSelf();
+    strcpy(pinfo->name, epicsThreadGetNameSelf());
     testDiag("%s starting", pinfo->name);
     pinfo->terminate = epicsEventMustCreate(epicsEventEmpty);
     pinfo->terminated = epicsEventMustCreate(epicsEventEmpty);

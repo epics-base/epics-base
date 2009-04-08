@@ -2,9 +2,9 @@
 <HTML>
 README.html
 <BODY>
-<CENTER><H1>Installation Instructions</H1>
-<H2>EPICS base</H2>
-<H2>Release 3.14.*</H2><BR>
+<CENTER>
+<H1>Installation Instructions</H1>
+<H2>EPICS base Release 3.14.*</H2><BR>
 </CENTER>
 <HR>
 <H3> Table of Contents</H3>
@@ -55,7 +55,7 @@ README.html
 <BLOCKQUOTE>
 <PRE>aix-ppc
 aix-ppc-gnu
-cygwin-x86 (unix style API, links with cygwin1.dll)
+cygwin-x86 (unix style API, uses cygwin1.dll compatability library)
 darwin-ppc
 darwin-x86
 darwin-ppcx86
@@ -74,8 +74,8 @@ solaris-sparc64-gnu
 solaris-x86
 solaris-x86-gnu
 win32-x86
-win32-x86-mingw (WIN32 API, links with standard MS dlls)
-win32-x86-cygwin (WIN32 API, links with standard MS dlls)
+win32-x86-mingw (WIN32 API, uses MS dlls)
+win32-x86-cygwin (WIN32 API, uses MS dlls)
 </PRE>
 </BLOCKQUOTE>
 <H4> Cross compile target platforms (operating system - architecture)</H4>
@@ -189,120 +189,126 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
  hosted at APS with a list repeater at BESSY. See the EPICS home page
  for subscription instructions.</BLOCKQUOTE></BLOCKQUOTE>
 <H3><A NAME="0_0_10"> Directory Structure</A></H3>
-<BLOCKQUOTE>Distribution directory structure:</BLOCKQUOTE> <TT>&nbsp;&nbsp;&nbsp;&nbsp;
+<BLOCKQUOTE><H4>Distribution directory structure:</H4>
+<BLOCKQUOTE><TT>
  base&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Root directory of the base distribution</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 compatibility build
+<BR> <TT>base/config&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 compatibility build
  configuration files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/config/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl and shell scripts used
+<BR> <TT>base/config/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl and shell scripts used
  in the R3.13 build</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/configure&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system independent
+<BR> <TT>base/configure&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system independent
  build config files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/configure/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system dependent
+<BR> <TT>base/configure/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system dependent
  build config files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/configure/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl and shell scripts used
+<BR> <TT>base/configure/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl and shell scripts used
  in the build</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/documentation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Distributation documentation</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; All epics base source code in
+<BR> <TT>base/documentation&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Distributation documentation</TT>
+<BR> <TT>base/src&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; All epics base source code in
  subdirectories</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/RTEMS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Code to configure RTEMS for
+<BR> <TT>base/src/RTEMS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Code to configure RTEMS for
  EPICS</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/as&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access security</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/bpt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Break point table</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/ca&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/cap5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel Access client
+<BR> <TT>base/src/as&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access security</TT>
+<BR> <TT>base/src/bpt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Break point table</TT>
+<BR> <TT>base/src/ca&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access</TT>
+<BR> <TT>base/src/cap5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel Access client
  interface for Perl 5</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/cas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access server library
+<BR> <TT>base/src/cas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access server library
  and examples</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/catools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access tools caget,
+<BR> <TT>base/src/catools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access tools caget,
  cainfo, camonitor, caput</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/db&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database access</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/db/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database access tests</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dbStatic&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Static database access</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dbtools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database dbLoadTemplate tools</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/dev&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Device support (camacDev,
+<BR> <TT>base/src/db&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database access</TT>
+<BR> <TT>base/src/db/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database access tests</TT>
+<BR> <TT>base/src/dbStatic&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Static database access</TT>
+<BR> <TT>base/src/dbtools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Database dbLoadTemplate tools</TT>
+<BR> <TT>base/src/dev&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Device support (camacDev,
  softDev, and testDev)</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/excas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Example channel access server</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/gdd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General data descriptor</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General purpose library code
+<BR> <TT>base/src/excas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Example channel access server</TT>
+<BR> <TT>base/src/gdd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General data descriptor</TT>
+<BR> <TT>base/src/libCom&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General purpose library code
  in subdirectories</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/bucketLib&nbsp;&nbsp;&nbsp; Hash bucket</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/calc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Algebraic expression
+<BR> <TT>base/src/libCom/bucketLib&nbsp;&nbsp;&nbsp; Hash bucket</TT>
+<BR> <TT>base/src/libCom/calc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Algebraic expression
  interpreter</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cppStd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Support for C++ standard
+<BR> <TT>base/src/libCom/cppStd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Support for C++ standard
  template library</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cvtFast&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Fast number to string
+<BR> <TT>base/src/libCom/cvtFast&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Fast number to string
  conversion</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/cxxTemplates C++ templates and templates
+<BR> <TT>base/src/libCom/cxxTemplates C++ templates and templates
  tests</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/dbmf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Memory management for
+<BR> <TT>base/src/libCom/dbmf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Memory management for
  frequent alloc/free</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/ellLib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EPICS double linked list</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/env&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Default EPICS environment
+<BR> <TT>base/src/libCom/ellLib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EPICS double linked list</TT>
+<BR> <TT>base/src/libCom/env&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Default EPICS environment
  settings</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/error&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Error handling definitions
+<BR> <TT>base/src/libCom/error&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Error handling definitions
  and routines</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/fdmgr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; File descriptor manager</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/freeList&nbsp;&nbsp;&nbsp;&nbsp; Memory management using free
+<BR> <TT>base/src/libCom/fdmgr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; File descriptor manager</TT>
+<BR> <TT>base/src/libCom/freeList&nbsp;&nbsp;&nbsp;&nbsp; Memory management using free
  lists</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/gpHash&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General purpose hash table</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/logClient&nbsp;&nbsp;&nbsp; Logging client</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/macLib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Macro substitution handler</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/misc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Miscellaneous utilities</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/osi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system independent
+<BR> <TT>base/src/libCom/gpHash&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; General purpose hash table</TT>
+<BR> <TT>base/src/libCom/logClient&nbsp;&nbsp;&nbsp; Logging client</TT>
+<BR> <TT>base/src/libCom/macLib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Macro substitution handler</TT>
+<BR> <TT>base/src/libCom/misc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Miscellaneous utilities</TT>
+<BR> <TT>base/src/libCom/osi&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system independent
  code</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/osi/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system dependant
+<BR> <TT>base/src/libCom/osi/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Operating system dependant
  code in subdirectories</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/ring&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Methods for creating and
+<BR> <TT>base/src/libCom/ring&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Methods for creating and
  using ring buffers</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/taskwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Task watchdog</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test tools (timer, semBinary,
+<BR> <TT>base/src/libCom/taskwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Task watchdog</TT>
+<BR> <TT>base/src/libCom/test&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Test tools (timer, semBinary,
  semMutex,fdmgr, ...)</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/timer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Timer</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/libCom/tsDefs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 time stamp definitions
+<BR> <TT>base/src/libCom/timer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Timer</TT>
+<BR> <TT>base/src/libCom/tsDefs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 time stamp definitions
  and routines</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/makeBaseApp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl tool+templates to create
+<BR> <TT>base/src/makeBaseApp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl tool+templates to create
  ioc app dvl tree</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/makeBaseExt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl tool+templates to create
+<BR> <TT>base/src/makeBaseExt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl tool+templates to create
  extension dvl tree</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/misc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Miscellaneous (coreRelease,
+<BR> <TT>base/src/misc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Miscellaneous (coreRelease,
  iocInit, asSub*)</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/rec&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Record support</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/registry&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EPICS support function
+<BR> <TT>base/src/rec&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Record support</TT>
+<BR> <TT>base/src/registry&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EPICS support function
  registry</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/rsrv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access ioc resource
+<BR> <TT>base/src/rsrv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Channel access ioc resource
  server library</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/softIoc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Example softIoc</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl scripts used during the
+<BR> <TT>base/src/softIoc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Example softIoc</TT>
+<BR> <TT>base/src/tools&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perl scripts used during the
  builds</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/toolsComm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Code for the build tools
+<BR> <TT>base/src/toolsComm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Code for the build tools
  antelope and e_flex</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/util&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Utilities (ca_test,
+<BR> <TT>base/src/util&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Utilities (ca_test,
  iocLogServer, startCArepeater)</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/src/vxWorks&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 compatibility code
+<BR> <TT>base/src/vxWorks&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; R3.13 compatibility code
  specific to vxWorks</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; base/startup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Scripts for setting up path
+<BR> <TT>base/startup&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Scripts for setting up path
  and environment</TT>
-<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;</TT> Install directories created by the build:</P>
-<P><TT>&nbsp;&nbsp;&nbsp;&nbsp; bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed scripts and executables in
+</BLOCKQUOTE>
+<H4>Install directories created by the build:</H4>
+<BLOCKQUOTE>
+<P><TT>bin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed scripts and executables in
  subdirs</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; cfg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed build configuration
+<BR> <TT>cfg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed build configuration
  files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; db&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed data bases</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; dbd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed data base definitions</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; doc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed documentation files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed html documentation</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; include&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed header files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; include/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed os specific header files
+<BR> <TT>db&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed data bases</TT>
+<BR> <TT>dbd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed data base definitions</TT>
+<BR> <TT>doc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed documentation files</TT>
+<BR> <TT>html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed html documentation</TT>
+<BR> <TT>include&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed header files</TT>
+<BR> <TT>include/os&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed os specific header files
  in subdirs</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; javalib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed java class and jar files</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; lib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed libraries in arch
+<BR> <TT>javalib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed java class and jar files</TT>
+<BR> <TT>lib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed libraries in arch
  subdirectories</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; lib/perl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed perl modules</TT>
-<BR> <TT>&nbsp;&nbsp;&nbsp;&nbsp; templates&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed templates</TT></P>
+<BR> <TT>lib/perl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed perl modules</TT>
+<BR> <TT>templates&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Installed templates</TT></P>
+</BLOCKQUOTE>
+</BLOCKQUOTE>
 <H3><A NAME="0_0_11"> Build related components</A></H3>
 <BLOCKQUOTE>
-<LI> base/documentation/README* files</LI>
-<BR> <TT>README.1st&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instructions for setup and building epics
+<H4> base/documentation/README* files</H4>
+<BLOCKQUOTE>
+ <TT>README.1st&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Instructions for setup and building epics
  base</TT>
 <BR> <TT>README.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; html version of README.1st</TT>
 <BR> <TT>README.WIN32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Microsoft WIN32 specific instructions</TT>
@@ -314,10 +320,10 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
 <BR> <TT>KnownProblems.html&nbsp;&nbsp; List of known problems and workarounds</TT>
 <BR> <TT>Converting*To*.html&nbsp; Release specific conversion instructions</TT>
 <BR> <TT>Building*With*.html&nbsp; Release specific build instructions</TT>
-<BR> &nbsp;
-<LI> base/startup directory - contains scripts to set environment and
- path</LI>
-<BR> <TT>EpicsHostArch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c shell script to set EPICS_HOST_ARCH env
+</BLOCKQUOTE>
+<H4> base/startup directory - contains scripts to set environment and path</H4>
+<BLOCKQUOTE>
+ <TT>EpicsHostArch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c shell script to set EPICS_HOST_ARCH env
  variable</TT>
 <BR> <TT>EpicsHostArch.pl&nbsp;&nbsp;&nbsp; perl script to set EPICS_HOST_ARCH env
  variable</TT>
@@ -333,9 +339,10 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
  variables</TT>
 <BR> <TT>win32-debug.bat&nbsp;&nbsp;&nbsp;&nbsp; WIN32 debug bat file to set debug path and
  env variables</TT>
-<BR> &nbsp;
-<LI> base/configure&nbsp; directory - contains build definitions and rules</LI>
-<BR> <TT>CONFIG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Includes configure files and allows
+</BLOCKQUOTE>
+<H4> base/configure&nbsp; directory - contains build definitions and rules</H4>
+<BLOCKQUOTE>
+<TT>CONFIG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Includes configure files and allows
  variable overrides</TT>
 <BR> <TT>CONFIG.CrossCommon&nbsp;&nbsp;&nbsp; Cross build definitions</TT>
 <BR> <TT>CONFIG.gnuCommon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gnu compiler build definitions for all
@@ -370,8 +377,10 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
  and tar)</TT>
 <BR> <TT>Sample.Makefile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sample makefile with comments</TT>
 <BR> &nbsp;
-<LI> base/configure/os directory - contains os-arch specific definitions</LI>
-<BR> <TT>CONFIG.&lt;host&gt;.&lt;target&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific host-target build
+</BLOCKQUOTE>
+<H4> base/configure/os directory - contains os-arch specific definitions</H4>
+<BLOCKQUOTE>
+ <TT>CONFIG.&lt;host&gt;.&lt;target&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific host-target build
  definitions</TT>
 <BR> <TT>CONFIG.Common.&lt;target&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Specific target definitions for all
  hosts</TT>
@@ -392,15 +401,15 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
 <BR> <TT>CONFIG_SITE.&lt;host&gt;.Common&nbsp;&nbsp; Site specific host defs for all
  targets</TT>
 <BR> &nbsp;
-<LI> base/configure/tools directory - contains Perl scripts used for the
- build</LI>
-<BR> <TT>convertRelease.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Performs consistancy checks on RELEASE
+</BLOCKQUOTE>
+<H4> base/src/tools directory - contains Perl scripts used for the build</H4>
+<BLOCKQUOTE>
+ <TT>Makefile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Makefile for installing the scripts into cfg dir</TT><BR>
+ <TT>convertRelease.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Performs consistancy checks on RELEASE
  files</TT>
-<BR> <TT>cp.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This Perl script copies an existing
- file</TT>
 <BR> <TT>cvsclean.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Remove all .#* files in directory tree</TT>
-<BR> <TT>dos2unix.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Converts text file from DOS CR/LF to
- unix ISO</TT>
+<BR> <TT>dos2unix.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Converts text file from DOS CR/LF to unix ISO</TT>
+<BR> <TT>expandvars.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tool to expand @VAR@ variables while copying a file</TT>
 <BR> <TT>filterWarnings.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Filters warning messages during HP
  builds</TT>
 <BR> <TT>fullpathName.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Returns fullpath name of directory arg</TT>
@@ -409,16 +418,15 @@ http://www.aps.anl.gov/epics</A></BLOCKQUOTE>
 <BR> <TT>makeIncludeDbd.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creates *Include.dbd file from filename
  args</TT> files
 <BR> <TT>makeMakefile.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creates a Makefile in O.&lt;arch&gt; dirs</TT>
-<BR> <TT>makeMakefileInclude.pl&nbsp; Creates file to be included by Makefile</TT>
-<BR> <TT>mkdir.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creates a directory (like Unix mkdir)</TT>
+<BR> <TT>makeTestfile.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Generates a test harness $target.t file</TT>
 <BR> <TT>mkmf.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Generates dependencies from include
  stmnts</TT>
 <BR> <TT>munch.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creates a ctdt.c file for vxWorks
  targets</TT>
-<BR> <TT>mv.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Renames an existing file.</TT>
-<BR> <TT>replaceVAR.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Changes CapFast VAR(xxx) to $(xxx)
- notation</TT>
-<BR> <TT>rm.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Quietly removes an existing file</TT></BLOCKQUOTE>
+<BR> <TT>replaceVAR.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Changes CapFast VAR(xxx) to $(xxx) notation</TT>
+<BR> <TT>useManifestTool.pl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use MS VC++ version to set usage of Manifest Tool</TT>
+</BLOCKQUOTE>
+</BLOCKQUOTE>
 <H3><A NAME="0_0_12"> Building EPICS base (Unix and Win32)</A></H3>
 <BLOCKQUOTE>
 <H4> Unpack file</H4>
@@ -474,26 +482,38 @@ Files in the base/startup directory have been provided to
 <BLOCKQUOTE>
 <B>Site configuration</B>
 <BR> To configure EPICS, you may want to modify the default definitions
- in the following files:<BLOCKQUOTE> <TT>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp;</TT>
- Build choices. Specify target archs. <TT>configure/CONFIG_SITE_ENV</TT>
- Environment variable defaults <TT>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>
- TORNADO 2 full path location</BLOCKQUOTE><B> Host configuration</B>
+ in the following files:
+<BLOCKQUOTE> 
+ <TT>configure/CONFIG_SITE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Build choices. Specify target archs.<br></TT>
+ <TT>configure/CONFIG_SITE_ENV&nbsp;&nbsp;
+     Environment variable defaults</TT><br> 
+ <TT>configure/RELEASE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     TORNADO2 full path location</TT>
+</BLOCKQUOTE><B> Host configuration</B>
 <BR> To configure each host system, you may override the default
  definitions by adding a new file in the configure/os directory with
  override definitions. The new file should have the same name as the
  distribution file to be overridden except with CONFIG in the name
- changed to CONFIG_SITE.<BLOCKQUOTE><TT>
-configure/os/CONFIG.&lt;host&gt;.&lt;host&gt;</TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host build settings
-<BR> <TT>configure/os/CONFIG.&lt;host&gt;.Common</TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Host common build
- settings</BLOCKQUOTE><B> Target configuration</B>
+ changed to CONFIG_SITE.<BLOCKQUOTE>
+   <TT>configure/os/CONFIG.&lt;host&gt;.&lt;host&gt;
+      &nbsp;&nbsp;&nbsp; 
+      Host build settings</TT><BR>
+   <TT>configure/os/CONFIG.&lt;host&gt;.Common
+      &nbsp;&nbsp;&nbsp;
+      Host common build settings</TT>
+</BLOCKQUOTE><B> Target configuration</B>
 <BR> To configure each target system, you may override the default
  definitions by adding a new file in the configure/os directory with
  override definitions. The new file should have the same name as the
  distribution file to be overridden except with CONFIG in the name
  replaced by CONFIG_SITE. This step is necessary even if the host system
- is the only target system.<BLOCKQUOTE><TT>
-configure/os/CONFIG.Common.&lt;target&gt;</TT>&nbsp;&nbsp; Target common settings
-<BR> <TT>configure/os/CONFIG.&lt;host&gt;.&lt;target&gt;&nbsp;</TT> Host-target settings</BLOCKQUOTE><B>
+ is the only target system.<BLOCKQUOTE>
+  <TT>configure/os/CONFIG.Common.&lt;target&gt;&nbsp;&nbsp;
+       Target common settings</TT><BR> 
+  <TT>configure/os/CONFIG.&lt;host&gt;.&lt;target&gt;&nbsp;&nbsp;
+       Host-target settings</TT>
+</BLOCKQUOTE><B>
  R3.13 compatibility configuration</B>
 <BR> To configure EPICS base for building with R3.13 extensions and ioc
  applications , you must modify the default definitions in the

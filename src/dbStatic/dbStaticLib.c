@@ -1352,7 +1352,7 @@ long epicsShareAPI dbPutRecordAttribute(
     return(0);
 }
 
-long dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
+long epicsShareAPI dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
 {
     dbRecordType *precordType = pdbentry->precordType;
     const char *pname = *ppname;
@@ -1376,7 +1376,7 @@ long dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
     return S_dbLib_fieldNotFound;
 }
 
-long dbGetRecordAttribute(DBENTRY *pdbentry, const char *pname)
+long epicsShareAPI dbGetRecordAttribute(DBENTRY *pdbentry, const char *pname)
 {
     return dbGetAttributePart(pdbentry, &pname);
 }

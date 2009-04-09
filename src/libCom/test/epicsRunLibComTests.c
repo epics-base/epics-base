@@ -18,6 +18,7 @@
 int epicsThreadTest(void);
 int epicsTimerTest(void);
 int epicsAlgorithm(void);
+int epicsEllTest(void);
 int epicsCalcTest(void);
 int epicsEventTest(void);
 int epicsExceptionTest(void);

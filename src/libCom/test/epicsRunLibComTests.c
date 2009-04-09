@@ -53,6 +53,8 @@ void epicsRunLibComTests(void)
 
     runTest(epicsAlgorithm);
 
+    runTest(epicsEllTest);
+
     runTest(epicsCalcTest);
 
     runTest(epicsEventTest);

@@ -32,6 +32,11 @@ epicsMathTest_SRCS += epicsMathTest.c
 testHarness_SRCS += epicsMathTest.c
 TESTS += epicsMathTest
 
+TESTPROD_HOST += epicsEllTest
+epicsEllTest_SRCS += epicsEllTest.c
+testHarness_SRCS += epicsEllTest.c
+TESTS += epicsEllTest
+
 TESTPROD_HOST += epicsStdioTest
 epicsStdioTest_SRCS += epicsStdioTest.c
 testHarness_SRCS += epicsStdioTest.c

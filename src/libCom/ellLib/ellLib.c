@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$
@@ -12,8 +11,6 @@
  *      Author: John Winans (ANL)
  *      Date:   07-02-92
  */
-
-/* #define	DEBUG_DRIVER */
 
 #include <stdlib.h>
 
@@ -31,12 +28,7 @@
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 void epicsShareAPI ellInit (ELLLIST *pList)
-#else
-void epicsShareAPI ellInit (plist)
-ELLLIST	*plist;
-#endif
 {
   plist->node.next = NULL;
   plist->node.previous = NULL;
@@ -49,13 +41,7 @@ ELLLIST	*plist;
  * This function adds a node to the end of a linked list.
  *
  *****************************************************************************/
-#ifdef __STDC__
 void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode)
-#else
-void epicsShareAPI ellAdd (pList, pNode)
-ELLLIST *pList;
-ELLNODE *pNode;
-#endif
 {
   pNode->next = NULL;
   pNode->previous = pList->node.previous;
@@ -77,13 +63,7 @@ ELLNODE *pNode;
  * be empty at the begining of the operation.
  *
  *****************************************************************************/
-#ifdef __STDC__
 void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
-#else
-void epicsShareAPI ellConcat (pDstList, pAddList)
-ELLLIST *pDstList;
-ELLLIST *pAddList;
-#endif
 {
   if (pAddList->count == 0)
     return;	/* Add list is empty, nothing to add. */
@@ -114,12 +94,7 @@ ELLLIST *pAddList;
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 int  epicsShareAPI ellCount (ELLLIST *pList)
-#else
-int  epicsShareAPI ellCount (pList)
-ELLLIST *pList;
-#endif
 {
   return(pList->count);
 }
@@ -129,13 +104,7 @@ ELLLIST *pList;
  * This function deletes a specific node from a specified list;
  *
  *****************************************************************************/
-#ifdef __STDC__
 void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode)
-#else
-void epicsShareAPI ellDelete (pList, pNode)
-ELLLIST *pList;
-ELLNODE *pNode;
-#endif
 {
   if (pList->node.previous == pNode)
     pList->node.previous = pNode->previous;
@@ -161,15 +130,7 @@ ELLNODE *pNode;
  * when it is non-empty.
  *
  *****************************************************************************/
-#ifdef __STDC__
 void epicsShareAPI ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList)
-#else
-void epicsShareAPI ellExtract (pSrcList, pStartNode, pEndNode, pDstList)
-ELLLIST *pSrcList;
-ELLNODE *pStartNode;
-ELLNODE *pEndNode;
-ELLLIST *pDstList;
-#endif
 {
   ELLNODE	*pnode;
   int	count;
@@ -217,12 +178,7 @@ ELLLIST *pDstList;
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellFirst (ELLLIST *pList)
-#else
-ELLNODE * epicsShareAPI ellFirst (pList)
-ELLLIST *pList;
-#endif
 {
   return(pList->node.next);
 }
@@ -233,12 +189,7 @@ ELLLIST *pList;
  * removed from the list.  If the list is empty, NULL will be returned.
  *
  *****************************************************************************/
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellGet (ELLLIST *pList)
-#else
-ELLNODE * epicsShareAPI ellGet (pList)
-ELLLIST *pList;
-#endif
 {
   ELLNODE	*pnode = pList->node.next;
 
@@ -254,14 +205,7 @@ ELLLIST *pList;
  * list.
  *
  *****************************************************************************/
-#ifdef __STDC__
 void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
-#else
-void epicsShareAPI ellInsert (plist, pPrev, pNode)
-ELLLIST *plist;
-ELLNODE *pPrev;
-ELLNODE *pNode;
-#endif
 {
   if (pPrev != NULL)
   {
@@ -291,12 +235,7 @@ ELLNODE *pNode;
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellLast (ELLLIST *pList)
-#else
-ELLNODE * epicsShareAPI ellLast (pList)
-ELLLIST *pList;
-#endif
 {
   return(pList->node.previous);
 }
@@ -308,12 +247,7 @@ ELLLIST *pList;
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellNext (ELLNODE *pNode)
-#else
-ELLNODE * epicsShareAPI ellNext (pNode)
-ELLNODE *pNode;
-#endif
 {
   return(pNode->next);
 }
@@ -324,13 +258,7 @@ ELLNODE *pNode;
  * nodeNum'th node in the list, NULL will be returned.
  *
  *****************************************************************************/
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum)
-#else
-ELLNODE * epicsShareAPI ellNth (pList, nodeNum)
-ELLLIST *pList;
-int nodeNum;
-#endif
 {
   ELLNODE *pnode;
 
@@ -365,12 +293,7 @@ int nodeNum;
  *
  *****************************************************************************/
 #ifndef DLLLIB_USE_MACROS
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellPrevious (ELLNODE *pNode)
-#else
-ELLNODE * epicsShareAPI ellPrevious (pNode)
-ELLNODE *pNode;
-#endif
 {
   return(pNode->previous);
 }
@@ -381,13 +304,7 @@ ELLNODE *pNode;
  * no node that many steps from pNode, NULL will be returned.
  *
  *****************************************************************************/
-#ifdef __STDC__
 ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep)
-#else
-ELLNODE * epicsShareAPI ellNStep (pNode, nStep)
-ELLNODE *pNode;
-int nStep;
-#endif
 {
   if (nStep > 0)
   {
@@ -413,13 +330,7 @@ int nStep;
  * not in pList, -1 is returned.  Note that the first node is 1.
  *
  *****************************************************************************/
-#ifdef __STDC__
 int epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode)
-#else
-int epicsShareAPI ellFind (pList, pNode)
-ELLLIST *pList;
-ELLNODE *pNode;
-#endif
 {
   ELLNODE *got = pList->node.next;
   int	count = 1;
@@ -445,12 +356,7 @@ ELLNODE *pNode;
  * In other words, this is a pretty worthless function.
  *
  *****************************************************************************/
-#ifdef __STDC__
-void epicsShareAPI ellFree (ELLLIST *pList)
-#else
-void epicsShareAPI ellFree (pList)
-ELLLIST *pList;
-#endif
+void epicsShareAPI ellFree (ELLLIST *pList, FREEFUNC freeFunc)
 {
   ELLNODE *nnode = pList->node.next;
   ELLNODE *pnode;
@@ -459,7 +365,7 @@ ELLLIST *pList;
   {
     pnode = nnode;
     nnode = nnode->next;
-    free(pnode);
+    freeFunc(pnode);
   }
   pList->node.next = NULL;
   pList->node.previous = NULL;
@@ -504,305 +410,3 @@ void epicsShareAPI ellVerify (ELLLIST *pList)
 	assert (count==ellCount(pList));
 }
 
-#ifdef DEBUG_DRIVER
-/****************************************************************************
- *
- * This is a bunch of code that can be used to test the ellLib code.  It is
- * provided here so that you may use it if and when you decide to alter 
- * something in this file, you need not re-create it for testing purposes.
- *
- * In general, I believe that you will end up with a core dump if the tests
- * fail.  If all tests complete properly, there will be a:
- *            printf("All tests completed successful\n") 
- * to assure you of it.
- *
- *****************************************************************************/
-
-#include <malloc.h>
-#undef NULL
-#include <stdio.h>
-
-struct	myNode {
-  ELLNODE	ellNode;
-  int	list;
-  int	num;
-};
-main()
-{
-  ELLLIST	list1;
-  ELLLIST	list2;
-  int	i1, i2, i3;
-  struct myNode	*pmyNode, *pfirst, *pn1;
-
-  printf("\nellInit() check...  ");
-  list1.count = 27;
-  list1.node.next = (ELLNODE *) 0x01010101;
-  list1.node.previous = (ELLNODE *) 0x10101010;
-
-  ellInit(&list1);
-  ellInit(&list2);
-
-  if ((list1.count != 0)||(list1.node.next != NULL)||(list1.node.previous != NULL))
-  {
-    printf("FAILED!!!");
-    printf("list1.count %d, list1.node.next %08.8X, list1.node.previous %08.8X\n", list1.count, list1.node.next, list1.node.previous);
-    exit(1);
-  }
-  printf("ok");
-
-
-  /* First build a couple lists and fill them with nodes. */
-  printf("\nellAdd() check...  ");
-  i1 = 2;
-  pmyNode = (struct myNode *) malloc(sizeof(struct myNode));
-  pmyNode->ellNode.next = (ELLNODE *) 0x10101010;
-  pmyNode->ellNode.previous = (ELLNODE *) 0x10101010;
-
-  ellAdd(&list1, pmyNode);
-  pmyNode->list = 1;
-  pmyNode->num = 1;
-
-  if ((list1.count != 1)||(list1.node.next != (ELLNODE *)pmyNode)||
-      (list1.node.previous != (ELLNODE *)pmyNode)||(pmyNode->ellNode.next != NULL)||
-      (pmyNode->ellNode.previous != NULL))
-  {
-    printf("FAILED!!!!!\n");
-    exit(2);
-  }
-  pfirst = pmyNode;
-  while(i1 <= 21)	/* put 21 nodes into LIST1 */
-  {
-    pmyNode = (struct myNode *) malloc(sizeof(struct myNode));
-    ellAdd(&list1, pmyNode);
-    pmyNode->list = 1;
-    pmyNode->num = i1;
-    i1++;
-  }
-  if ((list1.count != 21)||(list1.node.next != (ELLNODE *)pfirst)||
-      (list1.node.previous != (ELLNODE *)pmyNode)||(pmyNode->ellNode.next != NULL))
-  {
-    printf("FAILED!!!\n");
-    exit(3);
-  }
-  printf("ok\nellFirst() check...  ");
-
-  if (ellFirst(&list1) != (ELLNODE *)pfirst)
-  {
-    printf("FAILED!!!\n");
-    exit(5);
-  }
-  printf("ok\nellLast() check...  ");
-  if (ellLast(&list1) != (ELLNODE *)pmyNode)
-  {
-    printf("FAILED!!!\n");
-    exit(6);
-  }
-  printf("ok\nellNext() check...  ");
-  if ((ellNext(pmyNode) != NULL)||(ellNext(pfirst) != (ELLNODE *)(pfirst->ellNode.next)))
-  {
-    printf("FAILED!!!\n");
-    exit(7);
-  }
-  printf("ok\nellNth() check...  ");
-  if ((ellNth(&list1, 0) != NULL)||
-      ((pn1 = (struct myNode *)ellNth(&list1, 21)) != pmyNode)||
-      (ellNth(&list1, 22) != NULL)||
-      (ellNth(&list1, 1) != (ELLNODE *)(pfirst))||
-      (ellNth(&list1, 2) != (ELLNODE *)(pfirst->ellNode.next))||
-      (ellNth(&list1, 20) != (ELLNODE *)(pmyNode->ellNode.previous)))
-  {
-    printf("FAILED!!!\n");
-    exit(8);
-  }
-  printf("ok\nellPrevious() check...  ");
-
-  if ((ellPrevious(pmyNode) != (ELLNODE *)(pmyNode->ellNode.previous))||
-     (ellPrevious(pfirst) != NULL)||
-     (ellPrevious(pfirst->ellNode.next) != (ELLNODE *)pfirst))
-  {
-    printf("FAILED!!!\n");
-    exit(9);
-  }
-  printf("ok\nellGet() check...  ");
-  if (((pn1 = (struct myNode *)ellGet(&list1)) != pfirst)||
-      (list1.node.next != pfirst->ellNode.next))
-  {
-    printf("FAILED!!!\n");
-    exit(10);
-  }
-  ellAdd(&list2, pn1);
-  if (((pn1 = (struct myNode *)ellGet(&list2)) != pfirst)||
-      (list2.node.next != NULL)||(list2.node.previous != NULL))
-  {
-    printf("FAILED!!!\n");
-    exit(11);
-  }
-  printf("ok\nellCount() check...  ");
-  if ((ellCount(&list1) != 20)||(ellCount(&list2) != 0))
-  {
-    printf("FAILED!!!\n");
-    exit(4);
-  }
-  printf("ok\nellConcat() check...  ");
-  ellConcat(&list1, &list2);
-  if ((ellCount(&list1) != 20)||(ellCount(&list2) != 0)||
-      (list1.node.previous != (ELLNODE *)pmyNode))
-  {
-    printf("FAILED!!! (12)\n");
-    exit(12);
-  }
-  ellAdd(&list2, pn1);
-  ellConcat(&list1, &list2);
-  if ((ellCount(&list1) != 21)||(ellCount(&list2) != 0)||
-      (list1.node.previous != (ELLNODE *)pn1)||
-      (list2.node.next != NULL)||(list2.node.previous!=NULL))
-  {
-    printf("FAILED!!! (13)\n");
-    printf("list1.count = %d list2.count = %d\n", ellCount(&list1), ellCount(&list2));
-    exit(13);
-  }
-  printf("ok\nellDelete() check...  ");
-  ellDelete(&list1, pn1);
-  if (ellCount(&list1) != 20)
-  {
-    printf("FAILED!!! (14)\n");
-    exit(14);
-  }
-  printf("ok\nellFind() check...  ");
-  ellAdd(&list2, pn1);
-  ellConcat(&list2, &list1);
-  i1 = -23;
-  if (ellFind(&list1, pn1) != -1)	/* empty list */
-  {
-    printf("FAILED!!! (15)\n");
-    exit(15);
-  }
-  if ((i1 = ellFind(&list2, pn1)) != pn1->num)	/* first node */
-  {
-    printf("FAILED!!! (16)\n");
-    exit(16);
-  }
-  pn1 = (struct myNode *)ellNth(&list2, 18);
-  if ((i1 = ellFind(&list2, pn1)) != 18)	/* 18th node */
-  {
-    printf("FAILED!!! (17)\n");
-    exit(17);
-  }
-  printf("ok\nellInsert() check...  ");
-  ellDelete(&list2, pn1);
-  ellInsert(&list2, NULL, pn1);			/* move node 18 to top */
-  if ((ellCount(&list2) != 21)||(((struct myNode *)(list2.node.next))->num != 18))
-  {
-    printf("FAILED!!! (18)\n");
-    exit (18);
-  }
-  if (ellFind(&list2, ellNth(&list2, 21)) != 21)
-  { /* Run thru all pointers to check integrity */
-    printf("FAILED!!! (19)\n");
-    exit(19);
-  }
-  pn1 = (struct myNode *)ellGet(&list2);
-  pmyNode = (struct myNode *)ellNth(&list2, 17);
-  ellInsert(&list2, pmyNode, pn1);
-  if (ellFind(&list2, ellNth(&list2, 21)) != 21)
-  { /* Run thru all pointers to check integrity */
-    printf("FAILED!!! (20)\n");
-    exit(20);
-  }
-  if ((((struct myNode *)(ellFirst(&list2)))->num != 1)||
-      (((struct myNode *)(ellNth(&list2,17)))->num != 17)||
-      (((struct myNode *)(ellNth(&list2,18)))->num != 18))
-  {
-    printf("FAILED!!! (21)\n");
-    exit(21);
-  }
-  pn1 = (struct myNode *)ellLast(&list2);
-  pmyNode = (struct myNode *) malloc(sizeof(struct myNode));
-  ellInsert(&list2, pn1, pmyNode);
-  if ((ellCount(&list2) != 22)||(ellFind(&list2, ellNth(&list2, 22)) != 22))
-  {
-    printf("FAILED!!! (33)\n");
-    exit(33);
-  }
-  ellDelete(&list2, pmyNode);
-  free(pmyNode);
-
-  printf("ok\nellExtract() check...  ");
-  ellExtract(&list2, ellNth(&list2,9), ellNth(&list2, 19), &list1);
-  if ((ellCount(&list2) != 10)||(ellCount(&list1) != 11))
-  {
-    printf("FAILED!!! (22)\n");
-    exit(22);
-  }
-  if ((ellFind(&list2, ellNth(&list2, 10)) != 10)||
-      (ellFind(&list1, ellNth(&list1, 11)) != 11))
-  {
-    printf("FAILED!!! (23)\n");
-    exit(23);
-  }
-  printf("ok\nellFree() check...  ");
-  ellFree(&list2);
-  if (ellCount(&list2) != 0)
-  {
-    printf("FAILED!!! (24)\n");
-    exit(24);
-  }
-  printf("ok\nellNStep() check...  ");
-  pn1 = (struct myNode *)ellFirst(&list1);
-  i1 = 1;
-  while(pn1 != NULL)
-  {
-    pn1->num = i1++;
-    pn1 = (struct myNode *)ellNext(pn1);
-  }
-  pn1 = (struct myNode *)ellFirst(&list1);
-  if (pn1 == NULL)
-  {
-    printf("FAILED!!! (30)\n");
-    exit(30);
-  }
-  pmyNode = (struct myNode *)ellNStep(pn1, 3);
-  if (pmyNode == NULL)
-  {
-    printf("FAILED!!! (27)\n");
-    exit(27);
-  }
-  if (pmyNode->num != 4)
-  {
-    printf("FAILED!!! (25)\n");
-    printf("got number %d\n", pmyNode->num);
-    exit(25);
-
-  }
-  pmyNode = (struct myNode *)ellNStep(pn1, 30);
-  if (pmyNode != NULL)
-  {
-    printf("FAILED!!! (26)\n");
-    exit(26);
-  }
-  pmyNode = (struct myNode *)ellNStep(pn1, 10);
-  if (pmyNode == NULL)
-  {
-    printf("FAILED!!! (28)\n");
-    exit(28);
-  }
-  if (pmyNode->num != 11)
-  {
-    printf("FAILED!!! (29)\n");
-    exit(29);
-  }
-  pmyNode = (struct myNode *)ellNStep(pmyNode, 0);
-  if (pmyNode->num != 11)
-  {
-    printf("FAILED!!! (31)\n");
-    exit(31);
-  }
-  pmyNode = (struct myNode *)ellNStep(pmyNode, -4);
-  if (pmyNode->num != 7)
-  {
-    printf("FAILED!!! (32)\n");
-    exit(32);
-  }
-  printf("ok\n\nAll tests completed successful\n");
-}
-#endif

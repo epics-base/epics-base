@@ -613,21 +613,8 @@ static void dbBkptCont(dbCommon *precord)
   ellDelete(&lset_stack, (ELLNODE *)pnode);
   --lset_stack_count;
 
-  {
-    /*
-     * free entrypoint queue
-     *
-     * avoid use of ellFree because problems on windows occur if the
-     * free is in a different DLL than the malloc
-     */
-    ELLNODE * nnode = pnode->ep_queue.node.next;
-    while ( nnode )
-    {
-        ELLNODE * pnode = nnode;
-        nnode = nnode->next;
-        free ( pnode );
-    }
-  }
+ /* free entrypoint queue */
+  ellFree(&pnode->ep_queue, free);
 
  /* remove execution semaphore */
   epicsEventDestroy(pnode->ex_sem);

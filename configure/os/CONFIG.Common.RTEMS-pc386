@@ -11,7 +11,7 @@ RTEMS_TARGET_CPU=i386
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
-	$(RTEMS_BASE)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< temp.bin
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< temp.bin
 	$(PROJECT_RELEASE)/build-tools/bin2boot $@ 0x00097E00 \
 		$(PROJECT_RELEASE)/lib/start16.bin 0x00097C00 0 temp.bin 0x00100000 0
 	rm -f temp.bin

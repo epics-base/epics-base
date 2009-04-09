@@ -9,9 +9,9 @@ ARCH_DEP_CFLAGS += -DNVRAM_INDIRECT
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
 define MUNCH_CMD
-	$(RTEMS_BASE)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
+	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary -R .comment -S $< rtems
 	gzip -f9 rtems
-	$(RTEMS_BASE)/bin/$(LD_FOR_TARGET) -o $@ \
+	$(RTEMS_TOOLS)/bin/$(LD_FOR_TARGET) -o $@ \
 		 $(PROJECT_RELEASE)/lib/bootloader.o \
 		--just-symbols=$< \
 		-b binary rtems.gz \

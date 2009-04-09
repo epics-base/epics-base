@@ -8,6 +8,10 @@
 RTEMS_BASE=/usr/local/rtems/rtems-4.9.2
 RTEMS_VERSION=4.9.2
 
+# Cross-compile toolchain in $(RTEMS_TOOLS)/bin
+#
+RTEMS_TOOLS=$(RTEMS_BASE)
+
 
 # If you're using neither BOOTP/DHCP nor FLASH to pick up your IOC
 # network configuration you must uncomment and specify your Internet 

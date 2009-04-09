@@ -188,7 +188,7 @@ void dbPvdFreeMem(dbBase *pdbbase)
     free(ppvd);
 }
 
-void dbPvdDump(dbBase *pdbbase, int verbose)
+void epicsShareAPI dbPvdDump(dbBase *pdbbase, int verbose)
 {
     unsigned int empty = 0;
     dbPvd *ppvd;

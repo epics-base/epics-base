@@ -12,29 +12,39 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Soft Channel ai device support and SMOO</h4>
+
+<p>The (probably unwritten) rules for ai device support have always required
+that any device support which sets the VAL field and returns "2" should also
+perform any other operations normally performed by the ai's convert() routine.
+In practice very few devices did this, but there are some which makes it
+impossible to move that smoothing function into the body of the record.  This
+change adds the support for SMOO filtering to the soft channel device support
+for the ai record.  The filter is short-circuited when a link recovers from a
+failure.</p>
+
 <h4>New link flags for alarm severity/status inheritance</h4>
 
-<p>Two new link flags have been introduced: MSI (maximize severity INVALID)
-and MSS (maximize severity and status).</p>
+<p>Two new link flags have been introduced: MSI (Maximize Severity INVALID)
+and MSS (Maximize Severity and Status).</p>
 
-<p>Through a link flagged as MSI the receiver side inherits the severity
-(similar to the MS flag), but only if it is INVALID.</p>
+<p>When a link is flagged MSI the receiving record inherits the target's
+severity as with the MS flag, but only if it is INVALID.</p>
 
-<p>Through a link flagged as MSS the receiver side inherits as well the
-severity (similar to the MS flag) as the alarm status, thereby preserving
-the alarm status through MS chains instead of setting the status to LINK
-unconditionally.</p>
+<p>When a link is flagged MSS the receiving record inherits the target's alarm
+status as well as its severity, thereby preserving the alarm status through MSS
+chains instead of setting that status to LINK.</p>
 
-<h4>New behaviour of get_alarm_double() in analog records</h4>
+<h4>Analog records get_alarm_double() semantics changed</h4>
 
-<p>The behavior of get_alarm_double() in several record types, which
-have a value of type double and use alarm limits, has been changed.</p>
+<p>The get_alarm_double() routine in several record types has been changed to
+make it easier for CA client applications to display the correct warning and
+alarm limits for a record.</p>
 
-<p>The old behaviour (always returning the current settings of the alarm
-limits fields) has been changed to returning epicsNAN (not-a-number)
-if the severity of the corresponding limit is NO_ALARM.
-This allows CA clients to suppress displaying of unused limits
-(e.g. at bargraphs).</p>
+<p>Originally these routines would always return the current values from the
+associated alarm limit fields, but now they will return epicsNAN (not-a-number)
+instead if the severity field of the corresponding limit is NO_ALARM. This
+allows CA clients to suppress the display of unused limits.</p>
 
 <h4>New math constants epicsNAN and epicsINF</h4>
 
@@ -48,15 +58,14 @@ to support subscriptions that get events whenever a property of the PV
 changes. This will allow clients to get notified on changes of control
 limits, graphical limits, state strings etc.</p>
 
-<p>The CA commandline tool camonitor and the CA Perl interface support
-the new event type.
-As a first working example, the mbbi and mbbo records have been extended
-to send a DBE_PROPERTY event when their status strings are updated.
-A more general mechanism to specify sending DBE_PROPERTY events through
-the DBD file will appear in 3.15.</p>
+<p>The CA commandline tool camonitor and the CA Perl interface support the new
+event type. As a first working example, the mbbi and mbbo records have been
+extended to send a DBE_PROPERTY event when their status strings are modified.
+A more general mechanism to specify sending DBE_PROPERTY events through the DBD
+file will appear in 3.15.</p>
 
-<p>Application developers are encouraged to start using DBE_PROPERTY
-subscriptions.</p>
+<p>Client application developers are encouraged to start using DBE_PROPERTY
+subscriptions to fetch channel attribute data.</p>
 
 <h4>PINI Processing Phases</h4>
 

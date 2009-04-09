@@ -195,6 +195,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
 	        if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
 	        if ( pevent->select & DBE_LOG ) printf( "LOG " );
 	        if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+	        if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
 	        printf ( "}" );
 
             if ( pevent->npend ) {

@@ -17,7 +17,15 @@
 /* same as (!isnan(x) && !finite(x)) */
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareExtern float epicsNAN;
 epicsShareExtern float epicsINF;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INC_epicsMath_H */

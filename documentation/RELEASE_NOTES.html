@@ -25,11 +25,13 @@ failure.</p>
 
 <h4>New link flags for alarm severity/status inheritance</h4>
 
-<p>Two new link flags have been introduced: MSI (Maximize Severity INVALID)
-and MSS (Maximize Severity and Status).</p>
+<p>Two new options have been introduced as alternatives to the existing NMS and
+MS flags: MSI (Maximize Severity INVALID) and MSS (Maximize Severity and
+Status).</p>
 
-<p>When a link is flagged MSI the receiving record inherits the target's
-severity as with the MS flag, but only if it is INVALID.</p>
+<p>When a link is flagged MSI the receiving record inherits the target's alarm
+severity just as it does with the MS flag, but only if that severity is
+INVALID.</p>
 
 <p>When a link is flagged MSS the receiving record inherits the target's alarm
 status as well as its severity, thereby preserving the alarm status through MSS

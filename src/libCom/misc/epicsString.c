@@ -11,6 +11,9 @@
 
 /* Authors: Jun-ichi Odagiri, Marty Kraimer, Eric Norum,
  *          Mark Rivers, Andrew Johnson, Ralph Lange
+ *
+ * Routines in this file should have corresponding test code in
+ *    libCom/test/epicsStringTest.c
  */
 
 #include <stdlib.h>
@@ -25,25 +28,26 @@
 #include "cantProceed.h"
 #include "epicsString.h"
 
-/* Deprecated: This may be insecure; use epicsStrnRawFromEscaped instead */
+/* Deprecated, use epicsStrnRawFromEscaped() instead */
 int dbTranslateEscape(char *to, const char *from)
 {
     size_t big_enough = strlen(from)+1;
     return epicsStrnRawFromEscaped(to, big_enough, from, big_enough);
 }
 
-int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from, size_t inlen)
+int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from,
+    size_t inlen)
 {
     const char *pfrom  = from;
     char       *pto = to;
     char        c;
-    int         nto=0, nfrom=0;
+    int         nto = 0, nfrom = 0;
 
-    while( (c = *pfrom++) && nto < outsize && nfrom < inlen){
+    while ((c = *pfrom++) && nto < outsize && nfrom < inlen) {
         nfrom++;
-        if(c == '\\') {
-            if( nfrom >= inlen || *pfrom == '\0' ) break;
-            switch( *pfrom ){
+        if (c == '\\') {
+            if (nfrom >= inlen || *pfrom == '\0') break;
+            switch (*pfrom) {
             case 'a':  pfrom++; nfrom++; *pto++ = '\a' ; nto++; break;
             case 'b':  pfrom++; nfrom++; *pto++ = '\b' ; nto++; break;
             case 'f':  pfrom++; nfrom++; *pto++ = '\f' ; nto++; break;
@@ -63,8 +67,8 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from, size_t i
                     unsigned int  ival;
                     unsigned char *pchar;
 
-                    for(i=0; i<3; i++) {
-                        if((*pfrom < '0') || (*pfrom > '7')) break;
+                    for (i=0; i<3; i++) {
+                        if ((*pfrom < '0') || (*pfrom > '7')) break;
                         strval[i] = *pfrom++; nfrom++;
                     }
                     sscanf(strval,"%o",&ival);
@@ -80,8 +84,8 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from, size_t i
                     unsigned char *pchar;
 
                     pfrom++; /*skip the x*/
-                    for(i=0; i<2; i++) {
-                        if(!isxdigit((int)*pfrom)) break;
+                    for (i=0; i<2; i++) {
+                        if (!isxdigit((int)*pfrom)) break;
                         strval[i] = *pfrom++; nfrom++;
                     }
                     sscanf(strval,"%x",&ival);
@@ -97,10 +101,11 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from, size_t i
         }
     }
     *pto = '\0'; /* NOTE that nto does not have to be incremented */
-    return(nto);
+    return nto;
 }
 
-int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf, size_t inlen)
+int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf,
+    size_t inlen)
 {
     int maxout = outsize;
     int nout = 0;
@@ -118,20 +123,19 @@ int epicsStrnEscapedFromRaw(char *outbuf, size_t outsize, const char *inbuf, siz
             case '\t':  len = epicsSnprintf(outpos, maxout, "\\t"); break;
             case '\v':  len = epicsSnprintf(outpos, maxout, "\\v"); break;
             case '\\':  len = epicsSnprintf(outpos, maxout, "\\\\"); ; break;
-            /*? does not follow C convention because trigraphs no longer important*/
-            case '\?':  len = epicsSnprintf(outpos, maxout, "?"); break;
             case '\'':  len = epicsSnprintf(outpos, maxout, "\\'"); break;
             case '\"':  len = epicsSnprintf(outpos, maxout, "\\\""); break;
             default:
                 if (isprint((int)c))
                     len = epicsSnprintf(outpos, maxout, "%c", c);
                 else
-                    len = epicsSnprintf(outpos, maxout, "\\%03o", (unsigned char)c);
+                    len = epicsSnprintf(outpos, maxout, "\\%03o",
+                        (unsigned char)c);
                 break;
         }
-        if(len<0) return -1;
+        if (len<0) return -1;
         nout += len;
-        if(nout < outsize) {
+        if (nout < outsize) {
             maxout -= len;
             outpos += len;
         } else {
@@ -147,18 +151,18 @@ size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen)
 {
     size_t nout = inlen;
 
-    while (inlen--)  {
+    while (inlen--) {
         char c = *inbuf++;
+
         switch (c) {
-            case '\a': case '\b': case '\f': case '\n':
-            case '\r': case '\t': case '\v': case '\\': 
-            case '\?': case '\'': case '\"':
-                inlen++;
-                break;
-            default:
-                if (!isprint((int)c))
-                    nout += 3;
-                break;
+        case '\a': case '\b': case '\f': case '\n':
+        case '\r': case '\t': case '\v': case '\\':
+        case '\'': case '\"':
+            nout++;
+            break;
+        default:
+            if (!isprint((int)c))
+                nout += 3;
         }
     }
     return nout;
@@ -166,51 +170,49 @@ size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen)
 
 int epicsStrCaseCmp(const char *s1, const char *s2)
 {
-    int nexts1,nexts2;
+    while (1) {
+        int ch1 = toupper(*s1);
+        int ch2 = toupper(*s2);
 
-    while(1) {
-        /* vxWorks implementation expands argument more than once!!! */
-        nexts1 = toupper(*s1);
-        nexts2 = toupper(*s2);
-        if(nexts1==0) return( (nexts2==0) ? 0 : 1 );
-        if(nexts2==0) return(-1);
-        if(nexts1<nexts2) return(-1);
-        if(nexts1>nexts2) return(1);
+        if (ch1 == 0) return (ch2 != 0);
+        if (ch2 == 0) return -1;
+        if (ch1 < ch2) return -1;
+        if (ch1 > ch2) return 1;
         s1++;
         s2++;
     }
 }
 
-int epicsStrnCaseCmp(const char *s1, const char *s2, int n)
+int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len)
 {
-    size_t ind = 0;
-    int nexts1,nexts2;
+    size_t i = 0;
 
-    while(1) {
-        if(ind++ >= (size_t)n) break;
-        /* vxWorks implementation expands argument more than once!!! */
-        nexts1 = toupper(*s1);
-        nexts2 = toupper(*s2);
-        if(nexts1==0) return( (nexts2==0) ? 0 : 1 );
-        if(nexts2==0) return(-1);
-        if(nexts1<nexts2) return(-1);
-        if(nexts1>nexts2) return(1);
+    while (i++ < len) {
+        int ch1 = toupper(*s1);
+        int ch2 = toupper(*s2);
+
+        if (ch1 == 0) return (ch2 != 0);
+        if (ch2 == 0) return -1;
+        if (ch1 < ch2) return -1;
+        if (ch1 > ch2) return 1;
         s1++;
         s2++;
     }
-    return(0);
+    return 0;
 }
 
 char * epicsStrDup(const char *s)
 {
-    return strcpy(mallocMustSucceed(strlen(s)+1,"epicsStrDup"),s);
+    return strcpy(mallocMustSucceed(strlen(s)+1, "epicsStrDup"), s);
 }
 
-int epicsStrPrintEscaped(FILE *fp, const char *s, int n)
+int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
 {
-   int nout=0;
-   while (n--) {
+   int nout = 0;
+
+   while (len--) {
        char c = *s++;
+
        switch (c) {
        case '\a':  nout += fprintf(fp, "\\a");  break;
        case '\b':  nout += fprintf(fp, "\\b");  break;
@@ -220,13 +222,11 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, int n)
        case '\t':  nout += fprintf(fp, "\\t");  break;
        case '\v':  nout += fprintf(fp, "\\v");  break;
        case '\\':  nout += fprintf(fp, "\\\\"); break;
-       /*? does not follow C convention because trigraphs no longer important*/
-       case '\?':  nout += fprintf(fp, "?");  break;
        case '\'':  nout += fprintf(fp, "\\'");  break;
        case '\"':  nout += fprintf(fp, "\\\"");  break;
        default:
            if (isprint((int)c))
-               nout += fprintf(fp, "%c", c);/* putchar(c) doesn't work on vxWorks */
+               nout += fprintf(fp, "%c", c);
            else
                nout += fprintf(fp, "\\%03o", (unsigned char)c);
            break;
@@ -237,8 +237,8 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, int n)
 
 int epicsStrGlobMatch(const char *str, const char *pattern)
 {
-    const char *cp=NULL, *mp=NULL;
-    
+    const char *cp = NULL, *mp = NULL;
+
     while ((*str) && (*pattern != '*')) {
         if ((*pattern != *str) && (*pattern != '?'))
             return 0;
@@ -272,9 +272,8 @@ char * epicsStrtok_r(char *s, const char *delim, char **lasts)
    int c, sc;
    char *tok;
 
-
    if (s == NULL && (s = *lasts) == NULL)
-      return (NULL);
+      return NULL;
 
    /*
     * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
@@ -288,7 +287,7 @@ cont:
 
    if (c == 0) {      /* no non-delimiter characters */
       *lasts = NULL;
-      return (NULL);
+      return NULL;
    }
    tok = s - 1;
 
@@ -306,7 +305,7 @@ cont:
             else
                s[-1] = 0;
             *lasts = s;
-            return (tok);
+            return tok;
          }
       } while (sc != 0);
    }
@@ -337,4 +336,3 @@ unsigned int epicsMemHash(const char *str, size_t length, unsigned int seed)
     }
     return hash;
 }
-

@@ -29,6 +29,8 @@ endif
 
 # Needed only by medm extension 
 #setenv EPICS_DISPLAY_PATH
+# Needed only by medm extension 
+setenv BROWSER firefox
 
 # Needed only by orbitscreen extension
 if ( ! $?ORBITSCREENHOME ) then

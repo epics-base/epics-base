@@ -32,6 +32,7 @@ fi
 
 # Needed only by medm extension
 #export EPICS_DISPLAY_PATH=/path/to/adl/files
+export BROWSER=firefox
 
 # Needed only by orbitscreen extension
 #if [ -z "${ORBITSCREENHOME}" ] ; then

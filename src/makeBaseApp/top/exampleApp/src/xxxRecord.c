@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "epicsMath.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "recGbl.h"

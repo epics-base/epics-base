@@ -62,14 +62,9 @@ PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
 	$(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
     $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
 
-PROD_LIBS_ARCHIVE=$(patsubst $(LIB_PREFIX)%$(LIB_SUFFIX),%,\
- $(filter %$(LIB_SUFFIX),$(notdir $($*_DEPLIBS) $(PROD_DEPLIBS))))
-PROD_LIBS_SHARED=$(patsubst $(LIB_PREFIX)%$(SHRLIB_SUFFIX),%,\
- $(filter %$(SHRLIB_SUFFIX),$(notdir $($*_DEPLIBS) $(PROD_DEPLIBS))))
-
-PROD_LDLIBS = $(addprefix -l, $(PROD_LIBS_ARCHIVE))\
+PROD_LDLIBS = $(addprefix -l, $($*_LDLIBS) $(PROD_LIBS) $(USR_LIBS)) \
  $(STATIC_LDLIBS) \
- $(addprefix -l, $(PROD_LIBS_SHARED) $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
+ $(addprefix -l, $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
 
 LDLIBS_STATIC_YES = LDLIBS
 LDLIBS_SHARED_NO = LDLIBS

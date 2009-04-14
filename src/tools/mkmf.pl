@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 #*************************************************************************
+# Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
@@ -98,7 +99,7 @@ sub scanFile {
    print "Scanning file $file\n" if $debug;
    open FILE, $file or return;
    foreach $line ( <FILE> ) {
-      $incfile = findNextIncName($line);
+      $incfile = findNextIncName($line,$file=~/\.substitutions$/);
       next if !$incfile;
       next if $output{$incfile};   
       push @includes,$incfile;
@@ -120,15 +121,20 @@ sub scanIncludesList {
 # find filename on #include line
 sub findNextIncName {
    my $line = shift;
+   my $is_subst = shift;
    my $incname = "";
    my $incfile = 0;
    my $dir;
 
    local $/ = $endline;
-    return 0 if not $line =~ /^\s*#?\s*include\s*(<.*?>|".*?")/;
-    $incname = substr $1, 1, length($1)-2;
-    print "DEBUG: $incname\n" if $debug;
-
+   if ($is_subst) {
+      return 0 if not $line =~ /^\s*file\s*([^\s{]*)/;
+      $incname = $1;
+   } else {
+      return 0 if not $line =~ /^#?\s*include\s*('.*?'|<.*?>|".*?")/;
+      $incname = substr $1, 1, length($1)-2;
+   }
+   print "DEBUG: $incname\n" if $debug;
 
    return $incname if -f $incname;
    return 0 if ( $incname =~ /^\// || $incname =~ /^\\/ );

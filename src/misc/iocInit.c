@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* iocInit.c */
 /* $Id$ */
 /*
  *      Original Author: Marty Kraimer
@@ -52,7 +51,7 @@
 #include "recSup.h"
 #include "envDefs.h"
 #include "rsrv.h"
-epicsShareFunc int epicsShareAPI asInit (void);
+#include "asDbLib.h"
 #include "dbStaticLib.h"
 #include "db_access_routines.h"
 #include "initHooks.h"
@@ -91,6 +90,7 @@ int iocBuild(void)
         errlogPrintf("iocBuild: IOC can only be initialized once\n");
         return -1;
     }
+    initHookAnnounce(initHookAtIocBuild);
 
     if (!epicsThreadIsOkToBlock()) {
         epicsThreadSetOkToBlock(1);
@@ -102,7 +102,7 @@ int iocBuild(void)
         return -1;
     }
     epicsSignalInstallSigHupIgnore();
-    initHooks(initHookAtBeginning);
+    initHookAnnounce(initHookAtBeginning);
 
     coreRelease();
     /* After this point, further calls to iocInit() are disallowed.  */
@@ -110,27 +110,27 @@ int iocBuild(void)
 
     taskwdInit();
     callbackInit();
-    initHooks(initHookAfterCallbackInit);
+    initHookAnnounce(initHookAfterCallbackInit);
 
     dbCaLinkInit();
-    initHooks(initHookAfterCaLinkInit);
+    initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
-    initHooks(initHookAfterInitDrvSup);
+    initHookAnnounce(initHookAfterInitDrvSup);
 
     initRecSup();
-    initHooks(initHookAfterInitRecSup);
+    initHookAnnounce(initHookAfterInitRecSup);
 
     initDevSup();
-    initHooks(initHookAfterInitDevSup);
+    initHookAnnounce(initHookAfterInitDevSup);
 
     initDatabase();
     dbLockInitRecords(pdbbase);
     dbBkptInit();
-    initHooks(initHookAfterInitDatabase);
+    initHookAnnounce(initHookAfterInitDatabase);
 
     finishDevSup();
-    initHooks(initHookAfterFinishDevSup);
+    initHookAnnounce(initHookAfterFinishDevSup);
 
     scanInit();
     if (asInit()) {
@@ -139,15 +139,17 @@ int iocBuild(void)
     }
     dbPutNotifyInit();
     epicsThreadSleep(.5);
-    initHooks(initHookAfterScanInit);
+    initHookAnnounce(initHookAfterScanInit);
 
     initialProcess();
-    initHooks(initHookAfterInitialProcess);
+    initHookAnnounce(initHookAfterInitialProcess);
 
     /* Start CA server threads */
     rsrv_init();
+    initHookAnnounce(initHookAfterCaServerInit);
 
     iocState = iocBuilt;
+    initHookAnnounce(initHookAfterIocBuilt);
     return 0;
 }
 
@@ -157,21 +159,25 @@ int iocRun(void)
         errlogPrintf("iocRun: IOC not paused\n");
         return -1;
     }
+    initHookAnnounce(initHookAtIocRun);
 
    /* Enable scan tasks and some driver support functions.  */
     scanRun();
     dbCaRun();
+    initHookAnnounce(initHookAfterDatabaseRunning);
     if (iocState == iocBuilt)
-        initHooks(initHookAfterInterruptAccept);
+        initHookAnnounce(initHookAfterInterruptAccept);
 
     rsrv_run();
+    initHookAnnounce(initHookAfterCaServerRunning);
     if (iocState == iocBuilt)
-        initHooks(initHookAtEnd);
+        initHookAnnounce(initHookAtEnd);
 
     errlogPrintf("iocRun: %s\n", iocState == iocBuilt ?
         "All initialization complete" :
         "IOC restarted");
     iocState = iocRunning;
+    initHookAnnounce(initHookAfterIocRunning);
     return 0;
 }
 
@@ -181,13 +187,18 @@ int iocPause(void)
         errlogPrintf("iocPause: IOC not running\n");
         return -1;
     }
+    initHookAnnounce(initHookAtIocPause);
 
     rsrv_pause();
+    initHookAnnounce(initHookAfterCaServerPaused);
+
     dbCaPause();
     scanPause();
-    iocState = iocPaused;
+    initHookAnnounce(initHookAfterDatabasePaused);
 
+    iocState = iocPaused;
     errlogPrintf("iocPause: IOC suspended\n");
+    initHookAnnounce(initHookAfterIocPaused);
     return 0;
 }
 

@@ -1,12 +1,12 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* src/db/initHooks.h */
+/* $Id$ */
 /*
  *      Authors:        Benjamin Franksen (BESY) and Marty Kraimer
  *      Date:           06-01-91
@@ -18,8 +18,13 @@
 
 #include "shareLib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This enum must agree with the array of names defined in initHookName() */
 typedef enum {
+    initHookAtIocBuild = 0,         /* Start of iocBuild/iocInit commands */
     initHookAtBeginning,
     initHookAfterCallbackInit,
     initHookAfterCaLinkInit,
@@ -30,18 +35,32 @@ typedef enum {
     initHookAfterFinishDevSup,
     initHookAfterScanInit,
     initHookAfterInitialProcess,
-    initHookAfterInterruptAccept,
-    initHookAtEnd
-}initHookState;
+    initHookAfterCaServerInit,
+    initHookAfterIocBuilt,          /* End of iocBuild command */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    initHookAtIocRun,               /* Start of iocRun command */
+    initHookAfterDatabaseRunning,
+    initHookAfterCaServerRunning,
+    initHookAfterIocRunning,        /* End of iocRun/iocInit commands */
+
+    initHookAtIocPause,             /* Start of iocPause command */
+    initHookAfterCaServerPaused,
+    initHookAfterDatabasePaused,
+    initHookAfterIocPaused,         /* End of iocPause command */
+
+/* Deprecated states, provided for backwards compatibility.
+ * These states are announced at the same point they were before,
+ * but will not be repeated if the IOC gets paused and restarted.
+ */
+    initHookAfterInterruptAccept,   /* After initHookAfterDatabaseRunning */
+    initHookAtEnd,                  /* Before initHookAfterIocRunning */
+} initHookState;
 
 typedef void (*initHookFunction)(initHookState state);
 epicsShareFunc int initHookRegister(initHookFunction func);
-epicsShareFunc void initHooks(initHookState state);
-epicsShareFunc const char *initHookName(initHookState state);
+epicsShareFunc void initHookAnnounce(initHookState state);
+epicsShareFunc const char *initHookName(int state);
+
 #ifdef __cplusplus
 }
 #endif

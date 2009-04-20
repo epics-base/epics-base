@@ -34,6 +34,7 @@
 
 #define NSEC_PER_SEC 1000000000
 #define NTPTimeSyncInterval 60.0
+#define NTPTimeSyncRetries 4
 
 
 static struct {
@@ -153,8 +154,7 @@ static void NTPTimeSync(void *dummy)
         tickNow = osdTickGet();
 
         if (status) {
-            /* Retry before failing */
-            if (++NTPTimePvt.syncsFailed >= 2 &&
+            if (++NTPTimePvt.syncsFailed > NTPTimeSyncRetries &&
                 NTPTimePvt.synchronized) {
                 errlogPrintf("NTPTimeSync: NTP requests failing - %s\n",
                     strerror(errno));

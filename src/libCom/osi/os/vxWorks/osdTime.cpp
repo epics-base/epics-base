@@ -42,7 +42,9 @@ static int done = timeRegister();
 
 int osdNTPGet(struct timespec *ts)
 {
-    return sntpcTimeGet(const_cast<char *>(pserverAddr), sysClkRateGet(), ts);
+    return sntpcTimeGet(const_cast<char *>(pserverAddr),
+        4 * sysClkRateGet(),    /* 4 second timeout for NTP request*/
+        ts);
 }
 
 void osdNTPInit(void)

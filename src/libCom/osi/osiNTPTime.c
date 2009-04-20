@@ -138,8 +138,6 @@ void NTPTime_Shutdown(void *dummy)
 
 static void NTPTimeSync(void *dummy)
 {
-    int prevStatusBad = 0;
-
     taskwdInsert(0, NULL, NULL);
 
     for (epicsEventWaitWithTimeout(NTPTimePvt.loopEvent, NTPTimeSyncInterval);
@@ -155,25 +153,19 @@ static void NTPTimeSync(void *dummy)
         tickNow = osdTickGet();
 
         if (status) {
-            NTPTimePvt.syncsFailed++;
-
-            /* Keep trying for 1 minute before reporting failure */
-            if (NTPTimePvt.syncsFailed < 60 / NTPTimeSyncInterval)
-                continue;
-
-            if (!prevStatusBad)
+            /* Retry before failing */
+            if (++NTPTimePvt.syncsFailed >= 2 &&
+                NTPTimePvt.synchronized) {
                 errlogPrintf("NTPTimeSync: NTP requests failing - %s\n",
                     strerror(errno));
-
-            prevStatusBad = 1;
-            NTPTimePvt.synchronized = 0;
+                NTPTimePvt.synchronized = 0;
+            }
             continue;
         }
 
         NTPTimePvt.syncsFailed = 0;
-        if (prevStatusBad) {
+        if (!NTPTimePvt.synchronized) {
             errlogPrintf("NTPTimeSync: Sync recovered.\n");
-            prevStatusBad = 0;
         }
 
         epicsTimeFromTimespec(&timeNow, &timespecNow);

@@ -60,11 +60,13 @@ MAIN(ringPointerTest)
     int value[ringSize*2];
     int *pgetValue;
     epicsRingPointerId ring;
+    epicsThreadId tid;
 
     testPlan(54);
 
     for (i=0; i<ringSize*2; i++) value[i] = i;
     pinfo = calloc(1,sizeof(info));
+    if(!pinfo) testAbort("calloc failed");
     pinfo->consumerEvent = consumerEvent = epicsEventMustCreate(epicsEventEmpty);
     if (!consumerEvent) {
         testAbort("epicsEventMustCreate failed");
@@ -84,8 +86,9 @@ MAIN(ringPointerTest)
     }
     testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
 
-    epicsThreadCreate("consumer", 50, 
+    tid=epicsThreadCreate("consumer", 50, 
         epicsThreadGetStackSize(epicsThreadStackSmall), consumer, pinfo);
+    if(!tid) testAbort("epicsThreadCreate failed");
     epicsThreadSleep(0.1);
 
     for (i=0; i<ringSize*2; i++) {

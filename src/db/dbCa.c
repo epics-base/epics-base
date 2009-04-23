@@ -36,9 +36,10 @@
 #include "cadef.h"
 #include "epicsAssert.h"
 #include "epicsExit.h"
+#include "cantProceed.h"
 
 /* We can't include dbStaticLib.h here */
-epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj,size_t size);
+#define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"

@@ -23,6 +23,7 @@
 #include "dbBase.h"
 #include "link.h"
 #include "errMdef.h"
+#include "cantProceed.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -240,8 +241,8 @@ epicsShareFunc void epicsShareAPI dbReportDeviceConfig(DBBASE *pdbbase,
     FILE *report);
 
 /* Misc useful routines*/
-epicsShareFunc void * epicsShareAPI dbCalloc(size_t nobj, size_t size);
-epicsShareFunc void * epicsShareAPI dbMalloc(size_t size);
+#define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
+#define dbMalloc(size) mallocMustSucceed(size,"dbMalloc")
 epicsShareFunc void epicsShareAPI dbCatString(char **string, int *stringLength,
     char *pnew, char *separator);
 

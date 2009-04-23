@@ -512,20 +512,6 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 }
 
 /* Beginning of Public Routines */
-void * epicsShareAPI dbCalloc(size_t nobj,size_t size)
-{
-    void *p;
-
-    p=callocMustSucceed(nobj,size,"dbCalloc");
-    return(p);
-}
-void * epicsShareAPI dbMalloc(size_t size)
-{
-    void *p;
-
-    p=mallocMustSucceed(size,"dbMalloc");
-    return(p);
-}
 
 #define INC_SIZE	256
 void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *separator)

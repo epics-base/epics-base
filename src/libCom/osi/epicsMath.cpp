@@ -21,5 +21,7 @@ static float makeINF ( void )
     return a / b;
 }
 
+extern "C" {
 epicsShareDef float epicsNAN = makeNAN();
 epicsShareDef float epicsINF = makeINF();
+}

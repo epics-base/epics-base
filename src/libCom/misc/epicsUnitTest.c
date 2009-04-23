@@ -23,6 +23,7 @@
 #include "epicsExit.h"
 #include "epicsTime.h"
 #include "ellLib.h"
+#include "cantProceed.h"
 
 typedef struct {
     ELLNODE node;
@@ -191,7 +192,8 @@ int testDone(void) {
     }
     if (Harness) {
         if (failed) {
-            testFailure *fault = calloc(1, sizeof(testFailure));
+            testFailure *fault = callocMustSucceed(1, sizeof(testFailure),
+                "testDone calloc");
             fault->name     = testing;
             fault->tests    = tested;
             fault->failures = failed;

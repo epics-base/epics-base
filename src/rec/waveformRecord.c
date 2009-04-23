@@ -32,6 +32,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "cantProceed.h"
 #define GEN_SIZE_OFFSET
 #include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -97,7 +98,8 @@ static long init_record(waveformRecord *prec, int pass)
             prec->nelm = 1;
         if (prec->ftvl > DBF_ENUM)
             prec->ftvl = DBF_UCHAR;
-        prec->bptr = calloc(prec->nelm, dbValueSize(prec->ftvl));
+        prec->bptr = callocMustSucceed(prec->nelm, dbValueSize(prec->ftvl),
+            "waveform calloc failed");
         if (prec->nelm == 1) {
             prec->nord = 1;
         } else {

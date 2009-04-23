@@ -25,13 +25,15 @@
 static long addRec(struct dbCommon *prec)
 {
     prec->dpvt = calloc(1, sizeof(CALLBACK));
-    return 0;
+    return !prec->dpvt;
 }
 
 static long delRec(struct dbCommon *prec)
 {
-    callbackCancelDelayed((CALLBACK *)prec->dpvt);
-    free(prec->dpvt);
+    if (prec->dpvt) {
+        callbackCancelDelayed((CALLBACK *)prec->dpvt);
+        free(prec->dpvt);
+    }
     return 0;
 }
 

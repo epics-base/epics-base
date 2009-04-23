@@ -36,6 +36,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "cantProceed.h"
 #define GEN_SIZE_OFFSET
 #include "subArrayRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -105,7 +106,8 @@ static long init_record(subArrayRecord *prec, int pass)
             prec->malm = 1;
         if (prec->ftvl > DBF_ENUM)
             prec->ftvl = DBF_UCHAR;
-        prec->bptr = calloc(prec->malm, dbValueSize(prec->ftvl));
+        prec->bptr = callocMustSucceed(prec->malm, dbValueSize(prec->ftvl),
+            "subArrayRecord calloc failed");
         prec->nord = 0;
         return 0;
     }

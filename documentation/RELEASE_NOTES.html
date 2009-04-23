@@ -12,6 +12,69 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>PINI Processing and PHAS values</h4>
+
+<p>The PINI field now has its own menu type with two more choices, <tt>RUN</tt>
+and <tt>PAUSE</tt>, in addition to the previous <tt>NO</tt> and <tt>YES</tt>
+values which remain and mean the same. The new values cause the record to be
+processed during the announcement of the new <tt>initHookAtIocRun</tt> and
+<tt>initHookAtIocPause</tt> states respectively.  Records with <tt>PINI=YES</tt>
+will be processed during the <tt>iocBuild</tt> stageof <tt>iocInit</tt>, and
+will be follwed by records with <tt>PINI=RUN</tt> during the <tt>iocRun</tt>
+stage. If an <tt>iocPause</tt> command is given, any records with
+<tt>PINI=PAUSE</tt> will be processed, and a subsequent <tt>iocRun</tt> command
+causes the <tt>PINI=RUN</tt> records to be processed again.</p>
+
+<p>The PHAS field now controls the order in which records are processed as a
+result of the PINI mechanism; lower values of PHAS are scanned before higher
+ones.</p>
+
+<h4>Additional initHook states</h4>
+
+<p>Several new initHook states have been added which are announced while the IOC
+is being paused or restarted.  The original states remain unchanged, although a
+couple of the later ones are deprecated where using the new states makes more
+sense.  The enum that defines all the states is now:</p>
+
+<blockquote>
+<pre>typedef enum {
+    initHookAtIocBuild = 0,         /* Start of iocBuild/iocInit commands */
+    initHookAtBeginning,
+    initHookAfterCallbackInit,
+    initHookAfterCaLinkInit,
+    initHookAfterInitDrvSup,
+    initHookAfterInitRecSup,
+    initHookAfterInitDevSup,
+    initHookAfterInitDatabase,
+    initHookAfterFinishDevSup,
+    initHookAfterScanInit,
+    initHookAfterInitialProcess,
+    initHookAfterCaServerInit,
+    initHookAfterIocBuilt,          /* End of iocBuild command */
+
+    initHookAtIocRun,               /* Start of iocRun command */
+    initHookAfterDatabaseRunning,
+    initHookAfterCaServerRunning,
+    initHookAfterIocRunning,        /* End of iocRun/iocInit commands */
+
+    initHookAtIocPause,             /* Start of iocPause command */
+    initHookAfterCaServerPaused,
+    initHookAfterDatabasePaused,
+    initHookAfterIocPaused,         /* End of iocPause command */
+
+/* Deprecated states, provided for backwards compatibility.
+ * These states are announced at the same point they were before,
+ * but will not be repeated if the IOC gets paused and restarted.
+ */
+    initHookAfterInterruptAccept,   /* After initHookAfterDatabaseRunning */
+    initHookAtEnd,                  /* Before initHookAfterIocRunning */
+} initHookState;</pre>
+</blockquote>
+
+<p>The two deprecated states will only ever be announced once, whereas the newer
+ones will repeat as often as the <tt>iocPause</tt> and <tt>iocRun</tt> commands
+are executed.</p>
+
 <h4>Soft Channel ai device support and SMOO</h4>
 
 <p>The (probably unwritten) rules for ai device support have always required
@@ -68,12 +131,6 @@ file will appear in 3.15.</p>
 
 <p>Client application developers are encouraged to start using DBE_PROPERTY
 subscriptions to fetch channel attribute data.</p>
-
-<h4>PINI Processing Phases</h4>
-
-<p>The PHAS field now controls the order in which records with PINI set are
-processed at initialization time, lower values of PHAS are scanned before
-higher ones.</p>
 
 <h4>Channel Access command line tool changes</h4>
 

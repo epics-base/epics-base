@@ -313,7 +313,7 @@ static int create_break( struct brkCreateInfo *pbci, brkInt *pabrkInt,
  *************************************************************************/
 
     /* Must start with table entry corresponding to engLow; */
-    i = ilow;
+    i = (int) ilow;
     if (i >= ntable - 1)
 	i = ntable - 2;
     rawBeg = table[i] + (table[i + 1] - table[i]) * (ilow - (double) i);

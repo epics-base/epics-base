@@ -315,7 +315,7 @@ static long getStringFloat(
 		*pbuffer = value;
 		return(0);
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = 0.0;
+		*pbuffer = 0;
 		return(0);
 	} else {
 		return(-1);
@@ -326,7 +326,7 @@ static long getStringFloat(
 	if(epicsScanFloat(psrc, &value) == 1) {
 	    *pbuffer = value;
 	} else if(strlen(psrc) == 0) {
-		*pbuffer = 0.0;
+		*pbuffer = 0;
 	} else {
 		return(-1);
 	}
@@ -1935,12 +1935,12 @@ static long getDoubleLong(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+	*pbuffer = (epicsInt32)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+	*pbuffer++ = (epicsInt32)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -1955,12 +1955,12 @@ static long getDoubleUlong(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+	*pbuffer = (epicsUInt32)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+	*pbuffer++ = (epicsUInt32)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -4249,12 +4249,12 @@ static long putDoubleLong(
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+	*pdest = (epicsInt32)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+	*pdest++ = (epicsInt32)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
@@ -4269,12 +4269,12 @@ static long putDoubleUlong(
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+	*pdest = (epicsUInt32)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+	*pdest++ = (epicsUInt32)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }

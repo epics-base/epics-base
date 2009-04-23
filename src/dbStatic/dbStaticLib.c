@@ -811,8 +811,8 @@ long epicsShareAPI dbAddPath(DBBASE *pdbbase,const char *path)
     expectingPath = FALSE;
     sawMissingPath = FALSE;
     while (*path) {
-	int len;
-		
+	size_t len;
+
 	/* preceding white space is removed */
 	if (isspace((int)*path)) {
 	    path++;
@@ -2540,7 +2540,7 @@ char * epicsShareAPI dbVerify(DBENTRY *pdbentry,const char *pstring)
     if(strstr(pstring,"$(") || strstr(pstring,"${")) return(NULL);
     switch (pflddes->field_type) {
     case DBF_STRING: {
-	    unsigned int length;
+	    size_t length;
 
 	    length=strlen(pstring);
 	    if(length>=pflddes->size) {

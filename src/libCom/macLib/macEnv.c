@@ -1,8 +1,7 @@
 /*************************************************************************\
-* Copyright (c) 2003 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$
@@ -15,8 +14,8 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
-#include <epicsAssert.h>
-#include <epicsString.h>
+#include "cantProceed.h"
+#include "epicsString.h"
 #include "macLib.h"
 
 char * epicsShareAPI
@@ -24,23 +23,21 @@ macEnvExpand(const char *str)
 {
     MAC_HANDLE *handle;
     static char *pairs[] = { "", "environ", NULL, NULL };
-    long status;
-    int destCapacity = 128;
+    long destCapacity = 128;
     char *dest = NULL;
     int n;
 
-    status = macCreateHandle(&handle, pairs);
-    assert(status == 0);
+    if (macCreateHandle(&handle, pairs))
+        cantProceed("macEnvExpand: macCreateHandle failed.");
 
     do {
         destCapacity *= 2;
         /*
          * Use free/malloc rather than realloc since there's no need to
-         * bother copying the contents if realloc needs to move the buffer
+         * keep the original contents.
          */
         free(dest);
-        dest = malloc(destCapacity);
-        assert(dest != 0);
+        dest = mallocMustSucceed(destCapacity, "macEnvExpand");
         n = macExpandString(handle, str, dest, destCapacity);
     } while (n >= (destCapacity - 1));
 
@@ -48,12 +45,13 @@ macEnvExpand(const char *str)
         free(dest);
         dest = NULL;
     } else {
-        int unused = destCapacity - ++n;
+        size_t unused = destCapacity - ++n;
+
         if (unused >= 20)
             dest = realloc(dest, n);
     }
 
-    status = macDeleteHandle(handle);
-    assert(status == 0);
+    if (macDeleteHandle(handle))
+        cantProceed("macEnvExpand: macDeleteHandle failed.");
     return dest;
 }

@@ -419,46 +419,53 @@ static long fetch_value(aoRecord *prec,double *pvalue)
 
 static void convert(aoRecord *prec, double value)
 {
-        /* check drive limits */
-	if(prec->drvh > prec->drvl) {
-        	if (value > prec->drvh) value = prec->drvh;
-        	else if (value < prec->drvl) value = prec->drvl;
-	}
-	prec->val = value;
-	prec->pval = value;
+    /* check drive limits */
+    if (prec->drvh > prec->drvl) {
+        if (value > prec->drvh)
+            value = prec->drvh;
+        else if (value < prec->drvl)
+            value = prec->drvl;
+    }
+    prec->val = value;
+    prec->pval = value;
 
-	/* now set value equal to desired output value */
-        /* apply the output rate of change */
-        if ( (prec->oroc) != 0.0 ){/*must be defined and >0*/
-		double		diff;
+    /* now set value equal to desired output value */
+    /* apply the output rate of change */
+    if (prec->oroc != 0){/*must be defined and >0*/
+        double diff;
 
-                diff = value - prec->oval;
-                if (diff < 0){
-                        if (prec->oroc < -diff) value = prec->oval - prec->oroc;
-                }else if (prec->oroc < diff) value = prec->oval + prec->oroc;
+        diff = value - prec->oval;
+        if (diff < 0) {
+            if (prec->oroc < -diff)
+                value = prec->oval - prec->oroc;
+        } else if (prec->oroc < diff)
+            value = prec->oval + prec->oroc;
+    }
+    prec->omod = (prec->oval!=value);
+    prec->oval = value;
+
+    /* convert */
+    switch (prec->linr) {
+    case menuConvertNO_CONVERSION:
+        break; /* do nothing*/
+    case menuConvertLINEAR:
+    case menuConvertSLOPE:
+        if (prec->eslo == 0.0) value = 0;
+        else value = (value - prec->eoff) / prec->eslo;
+        break;
+    default:
+        if (cvtEngToRawBpt(&value, prec->linr, prec->init,
+            (void *)&prec->pbrk, &prec->lbrk) != 0) {
+            recGblSetSevr(prec, SOFT_ALARM, MAJOR_ALARM);
+            return;
         }
-	prec->omod = (prec->oval!=value);
-	prec->oval = value;
-
-        /* convert */
-        switch (prec->linr) {
-        case menuConvertNO_CONVERSION:
-            break; /* do nothing*/
-        case menuConvertLINEAR:
-        case menuConvertSLOPE:
-            if (prec->eslo == 0.0) value = 0;
-            else value = (value - prec->eoff) / prec->eslo;
-            break;
-        default:
-            if(cvtEngToRawBpt(&value,prec->linr,prec->init,(void *)&prec->pbrk,&prec->lbrk)!=0){
-                recGblSetSevr(prec,SOFT_ALARM,MAJOR_ALARM);
-                return;
-            }
-        }
-	value -= prec->aoff;
-	if(prec->aslo!=0.0) value /= prec->aslo;
-	if (value >= 0.0) prec->rval = value + 0.5 - prec->roff;
-	else prec->rval = value - 0.5 - prec->roff;
+    }
+    value -= prec->aoff;
+    if (prec->aslo != 0) value /= prec->aslo;
+    if (value >= 0.0)
+        prec->rval = (epicsInt32)(value + 0.5) - prec->roff;
+    else
+        prec->rval = (epicsInt32)(value - 0.5) - prec->roff;
 }
 
 

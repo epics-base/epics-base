@@ -11,17 +11,17 @@
 
 #include "epicsUnitTest.h"
 #include "epicsAlgorithm.h"
+#include "epicsMath.h"
 #include "testMain.h"
 
 MAIN(epicsAlgorithm)
 {
     testPlan(22);
     
-    float f0 = 0.0;
     float f1 = 3.3f;
     float f2 = 3.4f;
-    float Inf = 1.0 / f0;
-    float NaN = 0.0 / f0;
+    float Inf = epicsINF;
+    float NaN = epicsNAN;
     
     testOk(epicsMin(f1, f2) == f1,     "epicsMin(f1, f2)");
     testOk(epicsMin(f1, -Inf) == -Inf, "epicsMin(f1, -Inf)");
@@ -43,20 +43,20 @@ MAIN(epicsAlgorithm)
     testOk(isnan(epicsMax(f1, NaN)),   "epicsMax(f1, NaN)");
     testOk(epicsMax(f1, Inf) == Inf,   "epicsMax(f1, Inf)");
     
-    epicsSwap(f1,f2);
+    epicsSwap(f1, f2);
     testOk(f1==3.4f && f2==3.3f, "epicsSwap(f1, f2)");
     
     int i1 = 3;
     int i2 = 4;
     
-    testOk(epicsMin(i1,i2)==i1, "epicsMin(i1,i2)");
-    testOk(epicsMin(i2,i1)==i1, "epicsMin(i2,i1)");
+    testOk(epicsMin(i1, i2) == i1, "epicsMin(i1,i2)");
+    testOk(epicsMin(i2, i1) == i1, "epicsMin(i2,i1)");
     
-    testOk(epicsMax(i1,i2)==i2, "epicsMax(i1,i2)");
-    testOk(epicsMax(i2,i1)==i2, "epicsMax(i2,i1)");
+    testOk(epicsMax(i1, i2) == i2, "epicsMax(i1,i2)");
+    testOk(epicsMax(i2, i1) == i2, "epicsMax(i2,i1)");
     
-    epicsSwap(i1,i2);
-    testOk(i1==4 && i2==3, "epicsSwap(i1,i2)");
+    epicsSwap(i1, i2);
+    testOk(i1 == 4 && i2 == 3, "epicsSwap(i1, i2)");
     
     return testDone();
 }

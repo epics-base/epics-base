@@ -222,7 +222,7 @@ static long cvt_st_f(
    float value;
 
    if (*from == 0) {
-      *to = 0.0;
+      *to = 0;
       return 0;
    }
    if (epicsScanFloat(from, &value) == 1) {
@@ -909,14 +909,14 @@ static long cvt_d_l(
      epicsFloat64 *from,
      epicsInt32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt32)*from; return(0); }
 
 /* Convert Double to Unsigned Long */
 static long cvt_d_ul(
      epicsFloat64 *from,
      epicsUInt32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt32)*from; return(0); }
 
 /* Convert Double to Float */
 static long cvt_d_f(

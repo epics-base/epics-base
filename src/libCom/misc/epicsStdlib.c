@@ -1,20 +1,19 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonna LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*epicsStdlib.c*/
 /*Author: Eric Norum */
 
 #include <ctype.h>
-#include <math.h>
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
+#include "epicsMath.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
 
@@ -39,32 +38,33 @@ epicsShareFunc int epicsScanFloat(const char *str, float *dest)
     dtmp = epicsStrtod(str, &endp);
     if (endp == str)
         return 0;
-    *dest = dtmp;
+    *dest = (float)dtmp;
     return 1;
 }
 
 /* Systems with a working strtod() just #define epicsStrtod strtod */
 #ifndef epicsStrtod
-epicsShareFunc double epicsStrtod( 
-    const char *str, char **endp)
+epicsShareFunc double epicsStrtod(const char *str, char **endp)
 {
-    const unsigned char *cp = (const unsigned char *) str;
-    double num = 1.0;
-    double den = 0.0;
+    const char *cp = str;
+    int negative = 0;
+    double res;
 
     while (isspace((int)*cp))
         cp++;
+
     if (*cp == '+') {
         cp++;
-    }
-    else if (*cp == '-') {
-        num = -1.0;
+    } else if (*cp == '-') {
+        negative = 1;
         cp++;
     }
+
     if (!isalpha((int)*cp))
         return strtod(str, endp);
-    if (epicsStrnCaseCmp("NAN", (const char *) cp, 3) == 0) {
-        num = 0.0;
+
+    if (epicsStrnCaseCmp("NAN", cp, 3) == 0) {
+        res = epicsNAN;
         cp += 3;
         if (*cp == '(') {
             cp++;
@@ -72,19 +72,20 @@ epicsShareFunc double epicsStrtod(
                 continue;
         }
     }
-    else if (epicsStrnCaseCmp("INF", (const char *) cp, 3) == 0) {
+    else if (epicsStrnCaseCmp("INF", cp, 3) == 0) {
+        res = negative ? -epicsINF : epicsINF;
         cp += 3;
-        if (epicsStrnCaseCmp("INITY", (const char *) cp, 5) == 0) {
+        if (epicsStrnCaseCmp("INITY", cp, 5) == 0) {
             cp += 5;
         }
+    } else {
+        cp = str;
+        res = 0;
     }
-    else {
-        cp = (const unsigned char *) str;
-        num = 0.0;
-        den = 1.0;
-    }
+
     if (endp)
         *endp = (char *)cp;
-    return num / den;
+
+    return res;
 }
 #endif

@@ -186,7 +186,8 @@ static int
     }
 
     while (pel >= ptable) {
-	int len = strlen(pel->name);
+	size_t len = strlen(pel->name);
+
 	if (epicsStrnCaseCmp(*ppsrc, pel->name, len) == 0) {
 	    *ppel = pel;
 	    *ppsrc += len;

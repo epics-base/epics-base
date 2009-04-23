@@ -330,7 +330,7 @@ static long add_count(histogramRecord *prec)
           if (temp<=(double)i*prec->wdth) break;
      }
      pdest=prec->bptr+i-1;
-     if (*pdest == (epicsUInt32) ULONG_MAX) *pdest=0.0;
+     if (*pdest == (epicsUInt32) UINT_MAX) *pdest=0;
      (*pdest)++;
      prec->mcnt++;
 
@@ -339,14 +339,14 @@ static long add_count(histogramRecord *prec)
 
 static long clear_histogram(histogramRecord *prec)
 {
-     int    i;
+    int i;
 
-     for (i=0;i<=prec->nelm-1;i++)
-           *(prec->bptr+i)=0.0;
-     prec->mcnt=prec->mdel+1;
-     prec->udf=FALSE;
+    for (i = 0; i < prec->nelm; i++)
+        prec->bptr[i] = 0;
+    prec->mcnt = prec->mdel + 1;
+    prec->udf = FALSE;
 
-     return(0);
+    return(0);
 }
 
 static long readValue(histogramRecord *prec)

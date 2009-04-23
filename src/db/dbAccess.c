@@ -216,8 +216,8 @@ static void get_graphics(DBADDR *paddr, char **ppbuffer,
 
 		if(got_data) {
 		    struct dbr_grLong *pgr=(struct dbr_grLong*)pbuffer;
-		    pgr->upper_disp_limit = grd.upper_disp_limit;
-		    pgr->lower_disp_limit = grd.lower_disp_limit;
+		    pgr->upper_disp_limit = (epicsInt32)grd.upper_disp_limit;
+		    pgr->lower_disp_limit = (epicsInt32)grd.lower_disp_limit;
 		} else {
 		    memset(pbuffer,'\0',dbr_grLong_size);
 		    *options = (*options) ^ DBR_GR_LONG; /*Turn off option*/
@@ -256,8 +256,8 @@ static void get_control(DBADDR *paddr, char **ppbuffer,
 
 		if(got_data) {
 		    struct dbr_ctrlLong *pctrl=(struct dbr_ctrlLong*)pbuffer;
-		    pctrl->upper_ctrl_limit = ctrld.upper_ctrl_limit;
-		    pctrl->lower_ctrl_limit = ctrld.lower_ctrl_limit;
+		    pctrl->upper_ctrl_limit = (epicsInt32)ctrld.upper_ctrl_limit;
+		    pctrl->lower_ctrl_limit = (epicsInt32)ctrld.lower_ctrl_limit;
 		} else {
 		    memset(pbuffer,'\0',dbr_ctrlLong_size);
 		    *options = (*options) ^ DBR_CTRL_LONG; /*Turn off option*/
@@ -297,10 +297,10 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
 
 		if(got_data) {
 		    struct dbr_alLong *pal=(struct dbr_alLong*)pbuffer;
-		    pal->upper_alarm_limit = ald.upper_alarm_limit;
-		    pal->upper_warning_limit = ald.upper_warning_limit;
-		    pal->lower_warning_limit = ald.lower_warning_limit;
-		    pal->lower_alarm_limit = ald.lower_alarm_limit;
+		    pal->upper_alarm_limit = (epicsInt32)ald.upper_alarm_limit;
+		    pal->upper_warning_limit = (epicsInt32)ald.upper_warning_limit;
+		    pal->lower_warning_limit = (epicsInt32)ald.lower_warning_limit;
+		    pal->lower_alarm_limit = (epicsInt32)ald.lower_alarm_limit;
 		} else {
 		    memset(pbuffer,'\0',dbr_alLong_size);
 		    *options = (*options) ^ DBR_AL_LONG; /*Turn off option*/

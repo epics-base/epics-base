@@ -44,6 +44,7 @@
 #include "dbLock.h"
 #include "devSup.h"
 #include "drvSup.h"
+#include "menuPini.h"
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
@@ -313,9 +314,9 @@ static void finishDevSup(void)
  * Iterate through all record instances (but not aliases),
  * calling a function for each one.
  */
-typedef void (*recIterFunc)(dbRecordType *pdbRecordType, dbCommon *precord);
+typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
 
-static void iterateRecords(recIterFunc func)
+static void iterateRecords(recIterFunc func, void *user)
 {
     dbRecordType *pdbRecordType;
 
@@ -333,13 +334,14 @@ static void iterateRecords(recIterFunc func)
                 pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
                 continue;
 
-            func(pdbRecordType, precord);
+            func(pdbRecordType, precord, user);
         }
     }
     return;
 }
 
-static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord)
+static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
 {
     struct rset *prset = pdbRecordType->prset;
     devSup *pdevSup;
@@ -362,7 +364,8 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord)
         prset->init_record(precord, 0);
 }
 
-static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord)
+static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
 {
     devSup *pdevSup;
     int j;
@@ -416,33 +419,22 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord)
     }
 }
 
-/* Find range of PHAS for records where PINI is true */
-static short minPhase, maxPhase;
-
-static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord)
+static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
 {
     struct rset *prset = pdbRecordType->prset;
-    short phase = precord->phas;
 
     if (!prset) return;         /* unlikely */
 
     if (prset->init_record)
         prset->init_record(precord, 1);
-
-    if (precord->pini) {
-        if (phase > maxPhase) maxPhase = phase;
-        if (phase < minPhase) minPhase = phase;
-    }
 }
 
 static void initDatabase(void)
 {
-    minPhase = MAX_PHASE;
-    maxPhase = MIN_PHASE;
-
-    iterateRecords(doInitRecord0);
-    iterateRecords(doResolveLinks);
-    iterateRecords(doInitRecord1);
+    iterateRecords(doInitRecord0, NULL);
+    iterateRecords(doResolveLinks, NULL);
+    iterateRecords(doInitRecord1, NULL);
 
     epicsAtExit(exitDatabase, NULL);
     return;
@@ -452,36 +444,76 @@ static void initDatabase(void)
  *  Process database records at initialization ordered by phase
  *     if their pini (process at init) field is set.
  */
-static short piniPhase, nextPhase;
+typedef struct {
+    int this;
+    int next;
+    epicsEnum16 pini;
+} phaseData_t;
 
-static void doRecordPini(dbRecordType *pdbRecordType, dbCommon *precord)
+static void doRecordPini(dbRecordType *rtype, dbCommon *precord, void *user)
 {
-    int phase;
+    phaseData_t *pphase = (phaseData_t *)user;
+    int phas;
 
-    if (!precord->pini) return;
+    if (precord->pini != pphase->pini) return;
 
-    phase = precord->phas;
-    if (phase == piniPhase)
+    phas = precord->phas;
+    if (phas == pphase->this) {
+        dbScanLock(precord);
         dbProcess(precord);
-    else if (phase > piniPhase && phase < nextPhase)
-        nextPhase = phase;
+        dbScanUnlock(precord);
+    } else if (phas > pphase->this && phas < pphase->next)
+        pphase->next = phas;
+}
+
+static void piniProcess(int pini)
+{
+    phaseData_t phase;
+    phase.next = MIN_PHASE;
+    phase.pini = pini;
+
+    /* This scans through the whole database as many times as needed.
+     * During the first pass it is unlikely to find any records with
+     * PHAS = MIN_PHASE, but during each iteration it looks for the
+     * phase value of the next pass to run.  Note that PHAS fields can
+     * be changed at runtime, so we have to look for the lowest value
+     * of PHAS each time.
+     */
+    do {
+        phase.this = phase.next;
+        phase.next = MAX_PHASE + 1;
+        iterateRecords(doRecordPini, &phase);
+    } while (phase.next != MAX_PHASE + 1);
+}
+
+static void piniProcessHook(initHookState state)
+{
+    switch (state) {
+    case initHookAtIocRun:
+        piniProcess(menuPiniRUN);
+        break;
+
+    case initHookAtIocPause:
+        piniProcess(menuPiniPAUSE);
+        break;
+
+    default:
+        break;
+    }
 }
 
 static void initialProcess(void)
 {
-    nextPhase = minPhase;
-    do {
-        piniPhase = nextPhase;
-        nextPhase = maxPhase;
-        iterateRecords(doRecordPini);
-    } while (piniPhase != maxPhase);
+    initHookRegister(piniProcessHook);
+    piniProcess(menuPiniYES);
 }
 
 
 /*
  * Shutdown processing.
  */
-static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord)
+static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
 {
     devSup *pdevSup;
     struct dsxt *pdsxt;
@@ -507,6 +539,6 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord)
 
 static void exitDatabase(void *dummy)
 {
-    iterateRecords(doCloseLinks);
+    iterateRecords(doCloseLinks, NULL);
     iocState = iocStopped;
 }

@@ -6,14 +6,9 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-include "menuAlarmSevr.dbd"
-include "menuAlarmStat.dbd"
-include "menuCompress.dbd"
-include "menuFtype.dbd"
-include "menuIvoa.dbd"
-include "menuOmsl.dbd"
-include "menuPini.dbd"
-include "menuPriority.dbd"
-include "menuScan.dbd"
-include "menuSimm.dbd"
-include "menuYesNo.dbd"
+menu(menuPini) {
+	choice(menuPiniNO,"NO")
+	choice(menuPiniYES,"YES")
+	choice(menuPiniRUN,"RUN")
+	choice(menuPiniPAUSE,"PAUSE")
+}

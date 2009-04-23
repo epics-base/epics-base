@@ -40,6 +40,7 @@ DBDINC += menuCompress
 DBDINC += menuFtype
 DBDINC += menuIvoa
 DBDINC += menuOmsl
+DBDINC += menuPini
 DBDINC += menuPriority
 DBDINC += menuScan
 DBDINC += menuYesNo

@@ -35,7 +35,7 @@
 		prompt("Process at iocInit")
 		promptgroup(GUI_SCAN)
 		interest(1)
-		menu(menuYesNo)
+		menu(menuPini)
 	}
 	field(PHAS,DBF_SHORT) {
 		prompt("Scan Phase")

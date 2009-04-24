@@ -45,10 +45,10 @@ static char rcsid[] =
 
 /* declare functions that have forward references */
 
-void dump_associated_rules PROTO((FILE*, int));
-void dump_transitions PROTO((FILE*, int[]));
-void sympartition PROTO((int[], int, int[], int[]));
-int symfollowset PROTO((int[], int, int, int[]));
+void dump_associated_rules (FILE*, int);
+void dump_transitions (FILE*, int[]);
+void sympartition (int[], int, int[], int[]);
+int symfollowset (int[], int, int, int[]);
 
 
 /* check_for_backtracking - check a DFA state for backtracking
@@ -62,11 +62,8 @@ int symfollowset PROTO((int[], int, int, int[]));
  * associated with this state
  */
 
-void check_for_backtracking( ds, state )
-int ds;
-int state[];
-
-    {
+void check_for_backtracking(int ds, int state[])
+{
     if ( (reject && ! dfaacc[ds].dfaacc_set) || ! dfaacc[ds].dfaacc_state )
 	{ /* state is non-accepting */
 	++num_backtracking;
@@ -109,12 +106,8 @@ int state[];
  *    accset[1 .. nacc] is the list of accepting numbers for the DFA state.
  */
 
-void check_trailing_context( nfa_states, num_states, accset, nacc )
-int *nfa_states, num_states;
-int *accset;
-register int nacc;
-
-    {
+void check_trailing_context(int *nfa_states, int num_states, int *accset, register int nacc)
+{
     register int i, j;
 
     for ( i = 1; i <= num_states; ++i )
@@ -159,11 +152,8 @@ register int nacc;
  * and writes a report to the given file
  */
 
-void dump_associated_rules( file, ds )
-FILE *file;
-int ds;
-
-    {
+void dump_associated_rules(FILE *file, int ds)
+{
     register int i, j;
     register int num_associated_rules = 0;
     int rule_set[MAX_ASSOC_RULES + 1];
@@ -214,11 +204,8 @@ int ds;
  * is done to the given file.
  */
 
-void dump_transitions( file, state )
-FILE *file;
-int state[];
-
-    {
+void dump_transitions(FILE *file, int state[])
+{
     register int i, ec;
     int out_char_set[CSIZE];
 
@@ -265,10 +252,8 @@ int state[];
  *    hashval is the hash value for the dfa corresponding to the state set
  */
 
-int *epsclosure( t, ns_addr, accset, nacc_addr, hv_addr )
-int *t, *ns_addr, accset[], *nacc_addr, *hv_addr;
-
-    {
+int *epsclosure(int *t, int *ns_addr, int accset[], int *nacc_addr, int *hv_addr)
+{
     register int stkpos, ns, tsp;
     int numstates = *ns_addr, nacc, hashval, transsym, nfaccnum;
     int stkend, nstate;
@@ -388,9 +373,8 @@ int *t, *ns_addr, accset[], *nacc_addr, *hv_addr;
 
 /* increase_max_dfas - increase the maximum number of DFAs */
 
-void increase_max_dfas()
-
-    {
+void increase_max_dfas(void)
+{
     current_max_dfas += MAX_DFAS_INCREMENT;
 
     ++num_reallocs;
@@ -417,15 +401,16 @@ void increase_max_dfas()
  *  dfa starts out in state #1.
  */
 
-void ntod()
-
-    {
+void ntod(void)
+{
     int *accset, ds, nacc, newds;
     int sym, hashval, numstates, dsize;
     int num_full_table_rows;	/* used only for -f */
     int *nset, *dset;
     int targptr, totaltrans, i, comstate, comfreq, targ;
-    int *epsclosure(), snstods(), symlist[CSIZE + 1];
+    int *epsclosure(int *t, int *ns_addr, int *accset, int *nacc_addr, int *hv_addr);
+    int snstods(int *sns, int numstates, int *accset, int nacc, int hashval, int *newds_addr);
+    int symlist[CSIZE + 1];
     int num_start_states;
     int todo_head, todo_next;
 
@@ -781,10 +766,8 @@ void ntod()
  * on return, the dfa state number is in newds.
  */
 
-int snstods( sns, numstates, accset, nacc, hashval, newds_addr )
-int sns[], numstates, accset[], nacc, hashval, *newds_addr;
-
-    {
+int snstods(int sns[], int numstates, int accset[], int nacc, int hashval, int *newds_addr)
+{
     int didsort = 0;
     register int i, j;
     int newds, *oldsns;
@@ -907,10 +890,8 @@ int sns[], numstates, accset[], nacc, hashval, *newds_addr;
  *    numstates = symfollowset( ds, dsize, transsym, nset );
  */
 
-int symfollowset( ds, dsize, transsym, nset )
-int ds[], dsize, transsym, nset[];
-
-    {
+int symfollowset(int ds[], int dsize, int transsym, int nset[])
+{
     int ns, tsp, sym, i, j, lenccl, ch, numstates;
     int ccllist;
 
@@ -993,11 +974,8 @@ bottom:
  *    sympartition( ds, numstates, symlist, duplist );
  */
 
-void sympartition( ds, numstates, symlist, duplist )
-int ds[], numstates, duplist[];
-int symlist[];
-
-    {
+void sympartition(int ds[], int numstates, int symlist[], int duplist[])
+{
     int tch, i, j, k, ns, dupfwd[CSIZE + 1], lenccl, cclp, ich;
 
     /* partitioning is done by creating equivalence classes for those

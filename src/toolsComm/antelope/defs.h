@@ -276,9 +276,9 @@ extern short final_state;
 
 /* global functions */
 
-extern char *allocate();
-extern bucket *lookup();
-extern bucket *make_bucket();
+extern char *allocate(unsigned int n);
+extern bucket *lookup(char *name);
+extern bucket *make_bucket(char *name);
 
 
 /* system variables */
@@ -288,8 +288,8 @@ extern int errno;
 
 /* system functions */
 
-extern void free();
-extern char *calloc();
-extern char *malloc();
-extern char *realloc();
-extern char *strcpy();
+extern void free(void *);
+extern char *calloc(size_t, size_t);
+extern char *malloc(size_t);
+extern char *realloc(void *, size_t);
+extern char *strcpy(char *, const char *);

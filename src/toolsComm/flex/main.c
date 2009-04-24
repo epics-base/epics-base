@@ -57,9 +57,9 @@ static char flex_version[] = "2.3";
 
 /* declare functions that have forward references */
 
-void flexinit PROTO((int, char**));
-void readin PROTO(());
-void set_up_initial_allocations PROTO(());
+void flexinit (int, char**);
+void readin ();
+void set_up_initial_allocations ();
 
 
 /* these globals are all defined and commented in flexdef.h */

@@ -22,9 +22,6 @@
 #include <stdlib.h>
 #include <osfcn.h>
 
-/* use prototypes in function declarations */
-#define YY_USE_PROTOS
-
 /* the "const" storage-class-modifier is valid */
 #define YY_USE_CONST
 
@@ -40,7 +37,6 @@ void free( void* );
 #include <stdlib.h>
 #endif	/* __GNUC__ */
 
-#define YY_USE_PROTOS
 #define YY_USE_CONST
 
 #endif	/* __STDC__ */
@@ -54,20 +50,6 @@ void free( void* );
 
 #ifndef YY_USE_CONST
 #define const
-#endif
-
-
-#ifdef YY_USE_PROTOS
-#define YY_PROTO(proto) proto
-#else
-#define YY_PROTO(proto) ()
-/* we can't get here if it's an ANSI C compiler, or a C++ compiler,
- * so it's got to be a K&R compiler, and therefore there's no standard
- * place from which to include these definitions
- */
-char *malloc();
-int free();
-int read();
 #endif
 
 
@@ -150,7 +132,7 @@ int read();
 /* default declaration of generated scanner - a define so the user can
  * easily add parameters
  */
-#define YY_DECL int yylex YY_PROTO(( void )) 
+#define YY_DECL int yylex ( void ) 
 
 /* code executed at the end of each rule */
 #define YY_BREAK break;
@@ -985,23 +967,23 @@ static int yy_start = 0;	/* start state number */
  */
 static int yy_did_buffer_switch_on_eof;
 
-static yy_state_type yy_get_previous_state YY_PROTO(( void ));
-static yy_state_type yy_try_NUL_trans YY_PROTO(( yy_state_type current_state ));
-static int yy_get_next_buffer YY_PROTO(( void ));
-static void yyunput YY_PROTO(( YY_CHAR c, YY_CHAR *buf_ptr ));
-void yyrestart YY_PROTO(( FILE *input_file ));
-void yy_switch_to_buffer YY_PROTO(( YY_BUFFER_STATE new_buffer ));
-void yy_load_buffer_state YY_PROTO(( void ));
-YY_BUFFER_STATE yy_create_buffer YY_PROTO(( FILE *file, int size ));
-void yy_delete_buffer YY_PROTO(( YY_BUFFER_STATE b ));
-void yy_init_buffer YY_PROTO(( YY_BUFFER_STATE b, FILE *file ));
+static yy_state_type yy_get_previous_state ( void );
+static yy_state_type yy_try_NUL_trans ( yy_state_type current_state );
+static int yy_get_next_buffer ( void );
+static void yyunput ( YY_CHAR c, YY_CHAR *buf_ptr );
+void yyrestart ( FILE *input_file );
+void yy_switch_to_buffer ( YY_BUFFER_STATE new_buffer );
+void yy_load_buffer_state ( void );
+YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size );
+void yy_delete_buffer ( YY_BUFFER_STATE b );
+void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
 
 #define yy_new_buffer yy_create_buffer
 
 #ifdef __cplusplus
-static int yyinput YY_PROTO(( void ));
+static int yyinput ( void );
 #else
-static int input YY_PROTO(( void ));
+static int input ( void );
 #endif
 
 YY_DECL
@@ -2103,13 +2085,7 @@ static yy_state_type yy_get_previous_state()
  *     next_state = yy_try_NUL_trans( current_state );
  */
 
-#ifdef YY_USE_PROTOS
 static yy_state_type yy_try_NUL_trans( register yy_state_type yy_current_state )
-#else
-static yy_state_type yy_try_NUL_trans( yy_current_state )
-register yy_state_type yy_current_state;
-#endif
-
     {
     register int yy_is_jam;
 
@@ -2128,14 +2104,7 @@ register yy_state_type yy_current_state;
     }
 
 
-#ifdef YY_USE_PROTOS
 static void yyunput( YY_CHAR c, register YY_CHAR *yy_bp )
-#else
-static void yyunput( c, yy_bp )
-YY_CHAR c;
-register YY_CHAR *yy_bp;
-#endif
-
     {
     register YY_CHAR *yy_cp = yy_c_buf_p;
 
@@ -2176,7 +2145,7 @@ register YY_CHAR *yy_bp;
 #ifdef __cplusplus
 static int yyinput()
 #else
-static int input()
+static int input(void)
 #endif
 
     {
@@ -2241,26 +2210,14 @@ static int input()
     }
 
 
-#ifdef YY_USE_PROTOS
 void yyrestart( FILE *input_file )
-#else
-void yyrestart( input_file )
-FILE *input_file;
-#endif
-
     {
     yy_init_buffer( yy_current_buffer, input_file );
     yy_load_buffer_state();
     }
 
 
-#ifdef YY_USE_PROTOS
 void yy_switch_to_buffer( YY_BUFFER_STATE new_buffer )
-#else
-void yy_switch_to_buffer( new_buffer )
-YY_BUFFER_STATE new_buffer;
-#endif
-
     {
     if ( yy_current_buffer == new_buffer )
 	return;
@@ -2285,12 +2242,7 @@ YY_BUFFER_STATE new_buffer;
     }
 
 
-#ifdef YY_USE_PROTOS
 void yy_load_buffer_state( void )
-#else
-void yy_load_buffer_state()
-#endif
-
     {
     yy_n_chars = yy_current_buffer->yy_n_chars;
     yytext = yy_c_buf_p = yy_current_buffer->yy_buf_pos;
@@ -2299,14 +2251,7 @@ void yy_load_buffer_state()
     }
 
 
-#ifdef YY_USE_PROTOS
 YY_BUFFER_STATE yy_create_buffer( FILE *file, int size )
-#else
-YY_BUFFER_STATE yy_create_buffer( file, size )
-FILE *file;
-int size;
-#endif
-
     {
     YY_BUFFER_STATE b;
 
@@ -2331,13 +2276,7 @@ int size;
     }
 
 
-#ifdef YY_USE_PROTOS
 void yy_delete_buffer( YY_BUFFER_STATE b )
-#else
-void yy_delete_buffer( b )
-YY_BUFFER_STATE b;
-#endif
-
     {
     if ( b == yy_current_buffer )
 	yy_current_buffer = (YY_BUFFER_STATE) 0;
@@ -2347,14 +2286,7 @@ YY_BUFFER_STATE b;
     }
 
 
-#ifdef YY_USE_PROTOS
 void yy_init_buffer( YY_BUFFER_STATE b, FILE *file )
-#else
-void yy_init_buffer( b, file )
-YY_BUFFER_STATE b;
-FILE *file;
-#endif
-
     {
     b->yy_input_file = file;
 

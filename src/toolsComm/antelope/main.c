@@ -64,12 +64,11 @@ char  *rassoc;
 short **derives;
 char *nullable;
 
-extern char *mktemp();
-extern char *getenv();
+extern char *mktemp(char *);
+extern char *getenv(const char *);
 
 
-done(k)
-int k;
+done(int k)
 {
     if (action_file) { fclose(action_file); }
     if (text_file) { fclose(text_file); }
@@ -84,7 +83,7 @@ void onintr(int StupidInconsistantSignalTypes)
 }
 
 
-set_signals()
+set_signals(void)
 {
 #ifdef SIGINT
     if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -101,16 +100,14 @@ set_signals()
 }
 
 
-usage()
+usage(void)
 {
     fprintf(stderr, "usage: %s [-dlrtv] [-b file_prefix] [-p symbol_prefix] filename\n", myname);
     exit(1);
 }
 
 
-getargs(argc, argv)
-int argc;
-char *argv[];
+getargs(int argc, char *argv[])
 {
     register int i;
     register char *s;
@@ -216,8 +213,7 @@ no_more_options:;
 
 
 char *
-allocate(n)
-unsigned n;
+allocate(unsigned int n)
 {
     register char *p;
 
@@ -234,7 +230,7 @@ unsigned n;
 /*
  * joh - removed use TMPDIR variable by WIN32 here
  */
-create_file_names()
+create_file_names(void)
 {
     int len;
  
@@ -277,7 +273,7 @@ create_file_names()
 }
 
 
-open_files()
+open_files(void)
 {
     create_file_names();
 
@@ -329,9 +325,7 @@ open_files()
 
 
 int
-main(argc, argv)
-int argc;
-char *argv[];
+main(int argc, char *argv[])
 {
     set_signals();
     getargs(argc, argv);

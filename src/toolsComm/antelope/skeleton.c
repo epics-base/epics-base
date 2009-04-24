@@ -29,11 +29,7 @@ char *banner[] =
     "#define yyclearin (yychar=(-1))",
     "#define yyerrok (yyerrflag=0)",
     "#define YYRECOVERING (yyerrflag!=0)",
-    "#ifdef __STDC__",		/* JRW */
     "static int yyparse(void);",/* JRW */
-    "#else",			/* JRW */
-    "static int yyparse();",	/* JRW */
-    "#endif",			/* JRW */
     0
 };
 
@@ -93,13 +89,8 @@ char *body[] =
     "#define YYREJECT goto yyabort",
     "#define YYACCEPT goto yyaccept",
     "#define YYERROR goto yyerrlab",
-    "#ifdef __STDC__",		/* JRW */
     "static int",		/* JRW */
     "yyparse(void)",		/* JRW */
-    "#else",			/* JRW */
-    "static int",		/* JRW */
-    "yyparse()",		/* JRW */
-    "#endif",			/* JRW */
     "{",
     "    register int yym, yyn, yystate;",
     "#if YYDEBUG",
@@ -294,8 +285,7 @@ char *trailer[] =
 };
 
 
-write_section(section)
-char *section[];
+write_section(char *section[])
 {
     register int c;
     register int i;

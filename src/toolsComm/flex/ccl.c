@@ -50,11 +50,8 @@ static char rcsid[] =
  *    ccladd( cclp, ch );
  */
 
-void ccladd( cclp, ch )
-int cclp;
-int ch;
-
-    {
+void ccladd(int cclp, int ch)
+{
     int ind, len, newpos, i;
 
     len = ccllen[cclp];
@@ -89,9 +86,8 @@ int ch;
  *    new_ccl = cclinit();
  */
 
-int cclinit()
-
-    {
+int cclinit(void)
+{
     if ( ++lastccl >= current_maxccls )
 	{
 	current_maxccls += MAX_CCLS_INCREMENT;
@@ -129,10 +125,8 @@ int cclinit()
  *    cclnegate( ccl );
  */
 
-void cclnegate( cclp )
-int cclp;
-
-    {
+void cclnegate(int cclp)
+{
     cclng[cclp] = 1;
     }
 
@@ -149,11 +143,8 @@ int cclp;
  * has a non-zero value in the set array.
  */
 
-void list_character_set( file, cset )
-FILE *file;
-int cset[];
-
-    {
+void list_character_set(FILE *file, int cset[])
+{
     register int i;
     char *readable_form();
 

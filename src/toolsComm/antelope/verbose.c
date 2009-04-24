@@ -13,7 +13,7 @@
 
 static short *null_rules;
 
-verbose()
+verbose(void)
 {
     register int i;
 
@@ -38,7 +38,7 @@ verbose()
 }
 
 
-log_unused()
+log_unused(void)
 {
     register int i;
     register short *p;
@@ -57,7 +57,7 @@ log_unused()
 }
 
 
-log_conflicts()
+log_conflicts(void)
 {
     register int i;
 
@@ -85,8 +85,7 @@ log_conflicts()
 }
 
 
-print_state(state)
-int state;
+print_state(int state)
 {
     if (state)
 	fprintf(verbose_file, "\n\n");
@@ -99,8 +98,7 @@ int state;
 }
 
 
-print_conflicts(state)
-int state;
+print_conflicts(int state)
 {
     register int symbol, act, number;
     register action *p;
@@ -147,8 +145,7 @@ int state;
 }
 
 
-print_core(state)
-int state;
+print_core(int state)
 {
     register int i;
     register int k;
@@ -183,8 +180,7 @@ int state;
 }
 
 
-print_nulls(state)
-int state;
+print_nulls(int state)
 {
     register action *p;
     register int i, j, k, nnulls;
@@ -227,8 +223,7 @@ int state;
 }
 
 
-print_actions(stateno)
-int stateno;
+print_actions(int stateno)
 {
     register action *p;
     register shifts *sp;
@@ -254,8 +249,7 @@ int stateno;
 }
 
 
-print_shifts(p)
-register action *p;
+print_shifts(register action *p)
 {
     register int count;
     register action *q;
@@ -279,9 +273,7 @@ register action *p;
 }
 
 
-print_reductions(p, defred)
-register action *p;
-register int defred;
+print_reductions(register action *p, register int defred)
 {
     register int k, anyreds;
     register action *q;
@@ -317,8 +309,7 @@ register int defred;
 }
 
 
-print_gotos(stateno)
-int stateno;
+print_gotos(int stateno)
 {
     register int i, k;
     register int as;

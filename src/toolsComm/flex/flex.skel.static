@@ -11,22 +11,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* use prototypes in function declarations */
-#define YY_USE_PROTOS
-
 /* the "const" storage-class-modifier is valid */
 #define YY_USE_CONST
 
 
 #ifndef YY_USE_CONST
 #define const
-#endif
-
-
-#ifdef YY_USE_PROTOS
-#define YY_PROTO(proto) proto
-#else
-#define YY_PROTO(proto) ()
 #endif
 
 
@@ -60,7 +50,7 @@
  */
 
 /* #define yyterminate() return ( YY_NULL )  replaced by jbk */
-static int yyterminate_internal( YY_PROTO(void) );
+static int yyterminate_internal( void );
 #define yyterminate() return yyterminate_internal()
 
 /* report a fatal error */
@@ -112,7 +102,7 @@ static int yyterminate_internal( YY_PROTO(void) );
 /* default declaration of generated scanner - a define so the user can
  * easily add parameters - jbk added the static to YY_DECL
  */
-#define YY_DECL static int yylex YY_PROTO(( void )) 
+#define YY_DECL static int yylex ( void ) 
 
 /* code executed at the end of each rule */
 #define YY_BREAK break;
@@ -227,25 +217,25 @@ static int yy_start = 0;	/* start state number */
  */
 static int yy_did_buffer_switch_on_eof;
 
-static yy_state_type yy_get_previous_state YY_PROTO(( void ));
-static yy_state_type yy_try_NUL_trans YY_PROTO(( yy_state_type current_state ));
-static int yy_get_next_buffer YY_PROTO(( void ));
-static void yyunput YY_PROTO(( YY_CHAR c, YY_CHAR *buf_ptr ));
+static yy_state_type yy_get_previous_state ( void );
+static yy_state_type yy_try_NUL_trans ( yy_state_type current_state );
+static int yy_get_next_buffer ( void );
+static void yyunput ( YY_CHAR c, YY_CHAR *buf_ptr );
 
 /* jbk added static in front all these */
-static void yyrestart YY_PROTO(( FILE *input_file ));
-static void yy_switch_to_buffer YY_PROTO(( YY_BUFFER_STATE new_buffer ));
-static void yy_load_buffer_state YY_PROTO(( void ));
-static YY_BUFFER_STATE yy_create_buffer YY_PROTO(( FILE *file, int size ));
-static void yy_delete_buffer YY_PROTO(( YY_BUFFER_STATE b ));
-static void yy_init_buffer YY_PROTO(( YY_BUFFER_STATE b, FILE *file ));
+static void yyrestart ( FILE *input_file );
+static void yy_switch_to_buffer ( YY_BUFFER_STATE new_buffer );
+static void yy_load_buffer_state ( void );
+static YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size );
+static void yy_delete_buffer ( YY_BUFFER_STATE b );
+static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
 
 #define yy_new_buffer yy_create_buffer
 
 #ifdef __cplusplus
-static int yyinput YY_PROTO(( void ));
+static int yyinput ( void );
 #else
-static int input YY_PROTO(( void ));
+static int input ( void );
 #endif
 
 YY_DECL
@@ -433,7 +423,7 @@ do_action:	/* this label is used only to access EOF actions */
  *     EOB_ACT_END_OF_FILE - end of file
  */
 
-static int yy_get_next_buffer( YY_PROTO(void) )
+static int yy_get_next_buffer( void )
 
     {
     register YY_CHAR *dest = yy_current_buffer->yy_ch_buf;
@@ -514,7 +504,7 @@ static int yy_get_next_buffer( YY_PROTO(void) )
  *     yy_state_type yy_get_previous_state();
  */
 
-static yy_state_type yy_get_previous_state( YY_PROTO(void) )
+static yy_state_type yy_get_previous_state( void )
 
     {
     register yy_state_type yy_current_state;
@@ -537,13 +527,7 @@ static yy_state_type yy_get_previous_state( YY_PROTO(void) )
  *     next_state = yy_try_NUL_trans( current_state );
  */
 
-#ifdef YY_USE_PROTOS
 static yy_state_type yy_try_NUL_trans( register yy_state_type yy_current_state )
-#else
-static yy_state_type yy_try_NUL_trans( yy_current_state )
-register yy_state_type yy_current_state;
-#endif
-
     {
     register int yy_is_jam;
 %% code to find the next state, and perhaps do backtracking, goes here
@@ -552,14 +536,7 @@ register yy_state_type yy_current_state;
     }
 
 
-#ifdef YY_USE_PROTOS
 static void yyunput( YY_CHAR c, register YY_CHAR *yy_bp )
-#else
-static void yyunput( c, yy_bp )
-YY_CHAR c;
-register YY_CHAR *yy_bp;
-#endif
-
     {
     register YY_CHAR *yy_cp = yy_c_buf_p;
 
@@ -598,9 +575,9 @@ register YY_CHAR *yy_bp;
 
 
 #ifdef __cplusplus
-static int yyinput( YY_PROTO(void) )
+static int yyinput( void )
 #else
-static int input( YY_PROTO(void) )
+static int input( void )
 #endif
 
     {
@@ -666,13 +643,7 @@ static int input( YY_PROTO(void) )
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static void yyrestart( FILE *input_file )
-#else
-static void yyrestart( input_file )
-FILE *input_file;
-#endif
-
     {
     if ( yy_current_buffer )
 	yy_init_buffer( yy_current_buffer, input_file );
@@ -684,13 +655,7 @@ FILE *input_file;
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static void yy_switch_to_buffer( YY_BUFFER_STATE new_buffer )
-#else
-static void yy_switch_to_buffer( new_buffer )
-YY_BUFFER_STATE new_buffer;
-#endif
-
     {
     if ( yy_current_buffer == new_buffer )
 	return;
@@ -716,12 +681,7 @@ YY_BUFFER_STATE new_buffer;
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static void yy_load_buffer_state( void )
-#else
-static void yy_load_buffer_state()
-#endif
-
     {
     yy_n_chars = yy_current_buffer->yy_n_chars;
     yytext = yy_c_buf_p = yy_current_buffer->yy_buf_pos;
@@ -731,14 +691,7 @@ static void yy_load_buffer_state()
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static YY_BUFFER_STATE yy_create_buffer( FILE *file, int size )
-#else
-static YY_BUFFER_STATE yy_create_buffer( file, size )
-FILE *file;
-int size;
-#endif
-
     {
     YY_BUFFER_STATE b;
 
@@ -764,13 +717,7 @@ int size;
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static void yy_delete_buffer( YY_BUFFER_STATE b )
-#else
-static void yy_delete_buffer( b )
-YY_BUFFER_STATE b;
-#endif
-
     {
     if ( b == yy_current_buffer )
 	yy_current_buffer = (YY_BUFFER_STATE) 0;
@@ -781,14 +728,7 @@ YY_BUFFER_STATE b;
 
 
 /* jbk added static in front of func */
-#ifdef YY_USE_PROTOS
 static void yy_init_buffer( YY_BUFFER_STATE b, FILE *file )
-#else
-static void yy_init_buffer( b, file )
-YY_BUFFER_STATE b;
-FILE *file;
-#endif
-
     {
     b->yy_input_file = file;
 
@@ -811,7 +751,7 @@ FILE *file;
     b->yy_eof_status = EOF_NOT_SEEN;
     }
 
-static int yyterminate_internal( YY_PROTO(void) )
+static int yyterminate_internal( void )
 {
 	/* jbk fix - buffer created by yy_create_buffer needs to be freed */
 	yy_delete_buffer(yy_current_buffer);

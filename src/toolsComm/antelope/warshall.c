@@ -9,9 +9,7 @@
 \*************************************************************************/
 #include "defs.h"
 
-transitive_closure(R, n)
-unsigned *R;
-int n;
+transitive_closure(unsigned int *R, int n)
 {
     register int rowsize;
     register unsigned i;
@@ -61,9 +59,7 @@ int n;
     }
 }
 
-reflexive_transitive_closure(R, n)
-unsigned *R;
-int n;
+reflexive_transitive_closure(unsigned int *R, int n)
 {
     register int rowsize;
     register unsigned i;

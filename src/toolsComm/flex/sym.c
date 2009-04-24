@@ -45,14 +45,14 @@ static char rcsid[] =
 
 /* declare functions that have forward references */
 
-int hashfunct PROTO((register char[], int));
+int hashfunct (register char[], int);
 
 
 struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE];
 struct hash_entry *sctbl[START_COND_HASH_SIZE];
 struct hash_entry *ccltab[CCL_HASH_SIZE];
 
-struct hash_entry *findsym();
+struct hash_entry *findsym(register char *sym, struct hash_entry **table, int table_size);
 
 
 /* addsym - add symbol and definitions to symbol table
@@ -67,14 +67,8 @@ struct hash_entry *findsym();
  * -1 is returned if the symbol already exists, and the change not made.
  */
 
-int addsym( sym, str_def, int_def, table, table_size )
-register char sym[];
-char *str_def;
-int int_def;
-hash_table table;
-int table_size;
-
-    {
+int addsym(register char *sym, char *str_def, int int_def, struct hash_entry **table, int table_size)
+{
     int hash_val = hashfunct( sym, table_size );
     register struct hash_entry *sym_entry = table[hash_val];
     register struct hash_entry *new_entry;
@@ -123,11 +117,8 @@ int table_size;
  *    cclinstal( ccltxt, cclnum );
  */
 
-void cclinstal( ccltxt, cclnum )
-Char ccltxt[];
-int cclnum;
-
-    {
+void cclinstal(Char *ccltxt, int cclnum)
+{
     /* we don't bother checking the return status because we are not called
      * unless the symbol is new
      */
@@ -146,10 +137,8 @@ int cclnum;
  *    cclval/0 = ccllookup( ccltxt );
  */
 
-int ccllookup( ccltxt )
-Char ccltxt[];
-
-    {
+int ccllookup(Char *ccltxt)
+{
     return ( findsym( (char *) ccltxt, ccltab, CCL_HASH_SIZE )->int_val );
     }
 
@@ -164,12 +153,8 @@ Char ccltxt[];
  *    sym_entry = findsym( sym, table, table_size );
  */
 
-struct hash_entry *findsym( sym, table, table_size )
-register char sym[];
-hash_table table;
-int table_size;
-
-    {
+struct hash_entry *findsym(register char *sym, struct hash_entry **table, int table_size)
+{
     register struct hash_entry *sym_entry = table[hashfunct( sym, table_size )];
     static struct hash_entry empty_entry =
 	{
@@ -195,11 +180,8 @@ int table_size;
  *    hash_val = hashfunct( str, hash_size );
  */
 
-int hashfunct( str, hash_size )
-register char str[];
-int hash_size;
-
-    {
+int hashfunct(register char *str, int hash_size)
+{
     register int hashval;
     register int locstr;
 
@@ -221,11 +203,8 @@ int hash_size;
  *    ndinstal( nd, def );
  */
 
-void ndinstal( nd, def )
-char nd[];
-Char def[];
-
-    {
+void ndinstal(char *nd, Char *def)
+{
     char *copy_string();
     Char *copy_unsigned_string();
 
@@ -243,10 +222,8 @@ Char def[];
  *    def/NULL = ndlookup( nd );
  */
 
-Char *ndlookup( nd )
-char nd[];
-
-    {
+Char *ndlookup(char *nd)
+{
     return ( (Char *) findsym( nd, ndtbl, NAME_TABLE_HASH_SIZE )->str_val );
     }
 
@@ -262,11 +239,8 @@ char nd[];
  *    the start condition is Exclusive if xcluflg is true
  */
 
-void scinstal( str, xcluflg )
-char str[];
-int xcluflg;
-
-    {
+void scinstal(char *str, int xcluflg)
+{
     char *copy_string();
 
     /* bit of a hack.  We know how the default start-condition is
@@ -316,9 +290,7 @@ int xcluflg;
  *    scnum/0 = sclookup( str );
  */
 
-int sclookup( str )
-char str[];
-
-    {
+int sclookup(char *str)
+{
     return ( findsym( str, sctbl, START_COND_HASH_SIZE )->int_val );
     }

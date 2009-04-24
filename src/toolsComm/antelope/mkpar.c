@@ -23,13 +23,13 @@ short final_state;
 static int SRcount;
 static int RRcount;
 
-extern action *parse_actions();
-extern action *get_shifts();
-extern action *add_reductions();
-extern action *add_reduce();
+extern action *parse_actions(register int stateno);
+extern action *get_shifts(int stateno);
+extern action *add_reductions(int stateno, register action *actions);
+extern action *add_reduce(register action *actions, register int ruleno, register int symbol);
 
 
-make_parser()
+make_parser(void)
 {
     register int i;
 
@@ -46,8 +46,7 @@ make_parser()
 
 
 action *
-parse_actions(stateno)
-register int stateno;
+parse_actions(register int stateno)
 {
     register action *actions;
 
@@ -58,8 +57,7 @@ register int stateno;
 
 
 action *
-get_shifts(stateno)
-int stateno;
+get_shifts(int stateno)
 {
     register action *actions, *temp;
     register shifts *sp;
@@ -93,9 +91,7 @@ int stateno;
 }
 
 action *
-add_reductions(stateno, actions)
-int stateno;
-register action *actions;
+add_reductions(int stateno, register action *actions)
 {
     register int i, j, m, n;
     register int ruleno, tokensetsize;
@@ -119,9 +115,7 @@ register action *actions;
 
 
 action *
-add_reduce(actions, ruleno, symbol)
-register action *actions;
-register int ruleno, symbol;
+add_reduce(register action *actions, register int ruleno, register int symbol)
 {
     register action *temp, *prev, *next;
 
@@ -159,7 +153,7 @@ register int ruleno, symbol;
 }
 
 
-find_final_state()
+find_final_state(void)
 {
     register int goal, i;
     register short *to_state;
@@ -176,7 +170,7 @@ find_final_state()
 }
 
 
-unused_rules()
+unused_rules(void)
 {
     register int i;
     register action *p;
@@ -208,7 +202,7 @@ unused_rules()
 }
 
 
-remove_conflicts()
+remove_conflicts(void)
 {
     register int i;
     register int symbol;
@@ -283,7 +277,7 @@ remove_conflicts()
 }
 
 
-total_conflicts()
+total_conflicts(void)
 {
     fprintf(stderr, "%s: ", myname);
     if (SRtotal == 1)
@@ -304,8 +298,7 @@ total_conflicts()
 
 
 int
-sole_reduction(stateno)
-int stateno;
+sole_reduction(int stateno)
 {
     register int count, ruleno;
     register action *p;
@@ -332,7 +325,7 @@ int stateno;
 }
 
 
-defreds()
+defreds(void)
 {
     register int i;
 
@@ -341,8 +334,7 @@ defreds()
 	defred[i] = sole_reduction(i);
 }
  
-free_action_row(p)
-register action *p;
+free_action_row(register action *p)
 {
   register action *q;
 
@@ -354,7 +346,7 @@ register action *p;
     }
 }
 
-free_parser()
+free_parser(void)
 {
   register int i;
 

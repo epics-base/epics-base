@@ -48,9 +48,8 @@ static char rcsid[] =
  *    ccl2ecl();
  */
 
-void ccl2ecl()
-
-    {
+void ccl2ecl(void)
+{
     int i, ich, newlen, cclp, ccls, cclmec;
 
     for ( i = 1; i <= lastccl; ++i )
@@ -119,10 +118,8 @@ void ccl2ecl()
  *  Returned is the number of classes.
  */
 
-int cre8ecs( fwd, bck, num )
-int fwd[], bck[], num;
-
-    {
+int cre8ecs(int fwd[], int bck[], int num)
+{
     int i, j, numcl;
 
     numcl = 0;
@@ -156,10 +153,8 @@ int fwd[], bck[], num;
  *  Returns the number of equivalence classes used.
  */
 
-int ecs_from_xlation( ecmap )
-int ecmap[];
-
-    {
+int ecs_from_xlation(int ecmap[])
+{
     int i;
     int nul_is_alone = false;
     int did_default_xlation_class = false;
@@ -240,11 +235,8 @@ int ecmap[];
  * NUL_mapping is the value which NUL (0) should be mapped to.
  */
 
-void mkeccl( ccls, lenccl, fwd, bck, llsiz, NUL_mapping )
-Char ccls[];
-int lenccl, fwd[], bck[], llsiz, NUL_mapping;
-
-    {
+void mkeccl(unsigned char ccls[], int lenccl, int fwd[], int bck[], int llsiz, int NUL_mapping)
+{
     int cclp, oldec, newec;
     int cclm, i, j;
     static unsigned char cclflags[CSIZE];	/* initialized to all '\0' */
@@ -339,10 +331,8 @@ next_pt:
  *    mkechar( tch, fwd, bck );
  */
 
-void mkechar( tch, fwd, bck )
-int tch, fwd[], bck[];
-
-    {
+void mkechar(int tch, int fwd[], int bck[])
+{
     /* if until now the character has been a proper subset of
      * an equivalence class, break it away to create a new ec
      */

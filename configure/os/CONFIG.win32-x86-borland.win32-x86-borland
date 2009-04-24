@@ -128,10 +128,6 @@ OPT_LDFLAGS =
 SHRLIB_CFLAGS=
 ARCH_DEP_CFLAGS=
 
-#	to identify the general architecture class:
-#	should be BSD, SYSV, WIN32, ...
-#	is: WIN32, sun4, hpux, linux, ...
-#
 OS_CLASS=WIN32
 POSIX=NO
 

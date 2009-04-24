@@ -10,7 +10,6 @@
 # ARCH_<host_arch> = <epics_host_arch>
 ARCH_solaris = solaris-sparc
 ARCH_solarisGnu = solaris-sparc-gnu
-ARCH_sun4 = sun4-sparc
 ARCH_Linux = linux-x86
 ARCH_Darwin = darwin-ppc
 ARCH_WIN32 = win32-x86

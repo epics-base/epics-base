@@ -175,14 +175,14 @@ LIB_BAF=$(addsuffix $(BAF),$(basename $(LIBRARY)))
 #--------------------------------------------------
 # C preprocessor, compiler, and linker flag defaults
 
-# Target architecture specific (solaris,sun4,mv167,...) flags
+# Target architecture specific flags
 ARCH_DEP_CPPFLAGS =
 ARCH_DEP_CFLAGS =
 ARCH_DEP_CXXFLAGS = $(ARCH_DEP_CFLAGS)
 ARCH_DEP_LDFLAGS =
 ARCH_DEP_LDLIBS =
 
-# Target operating system specific (Unix,Vx,WIN32...) flags
+# Target operating system specific flags
 OP_SYS_CPPFLAGS =
 OP_SYS_CFLAGS =
 OP_SYS_CXXFLAGS = $(OP_SYS_CFLAGS)

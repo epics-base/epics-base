@@ -3,11 +3,10 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-# $Id#
+# $Id$
 #
 #	check for add-on CFLAGS and CXXFLAGS
 #
@@ -20,8 +19,8 @@
 #	4) if you have the special case that your USR_CFLAGS_$(OS_CLASS) is
 #	   empty but you don't want 3), you have to define it as '-nil-', e.g.:
 #		USR_CFLAGS = <defines for all systems>
-#		USR_CFLAGS_sun4 = -nil-
-#		USR_CFLAGS_DEFAULT = <defines for most systems, not sun4>
+#		USR_CFLAGS_WIN = -nil-
+#		USR_CFLAGS_DEFAULT = <defines for most systems, not WIN32>
 #
 #    These rules apply to these Makefile-variables:
 #    USR_CFLAGS    C flags

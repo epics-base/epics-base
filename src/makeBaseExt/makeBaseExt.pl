@@ -124,6 +124,8 @@ sub get_commandline_opts { #no args
 	    s/EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_), break;
 	}
 	close IN;
+    } elsif ($ENV{EPICS_MBA_BASE}) { # third choice is env var EPICS_MBA_BASE
+        $epics_base = UnixPath($ENV{EPICS_MBA_BASE});
     } elsif ($command =~ m|/bin/|) { # assume script was called with full path to base
 	$epics_base = $command;
 	$epics_base =~ s|(/.*)/bin/.*makeBaseExt.*|$1|;
@@ -262,12 +264,14 @@ where
 	  If this is specified the other options are not used
  -b base  Set the location of EPICS base (full path)
           If not specified, base path is taken from configure/RELEASE
-          If configure does not exist, base path is taken from command
+          If configure does not exist, from environment
+          If not found in environment, from makeBaseApp.pl location
  -d       Verbose output (useful for debugging)
 
 Environment:
 EPICS_MBE_DEF_EXT_TYPE  Ext type you want to use as default
 EPICS_MBE_TEMPLATE_TOP  Template top directory
+EPICS_MBA_BASE          Location of EPICS base
 
 Example: Create example extension 
 

@@ -1,7 +1,7 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # makeBaseExt 
 
-# Authors: Ralph Lange and Marty Kraimer
+# Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 # $Id$
 
 use Cwd;
@@ -14,6 +14,7 @@ $user = GetUser();
 $cwd  = cwd();
 $eEXTTYPE = $ENV{EPICS_MBE_DEF_EXT_TYPE};
 $eTOP     = $ENV{EPICS_MBE_TEMPLATE_TOP};
+$eBASE    = $ENV{EPICS_MBE_BASE};
 
 &get_commandline_opts;		# Read and check options
 
@@ -124,8 +125,8 @@ sub get_commandline_opts { #no args
 	    s/EPICS_BASE\s*=\s*// and $epics_base = UnixPath($_), break;
 	}
 	close IN;
-    } elsif ($ENV{EPICS_MBA_BASE}) { # third choice is env var EPICS_MBA_BASE
-        $epics_base = UnixPath($ENV{EPICS_MBA_BASE});
+    } elsif ($eBASE) { # third choice is env var EPICS_MBE_BASE
+        $epics_base = UnixPath($eBASE);
     } elsif ($command =~ m|/bin/|) { # assume script was called with full path to base
 	$epics_base = $command;
 	$epics_base =~ s|(/.*)/bin/.*makeBaseExt.*|$1|;
@@ -271,7 +272,7 @@ where
 Environment:
 EPICS_MBE_DEF_EXT_TYPE  Ext type you want to use as default
 EPICS_MBE_TEMPLATE_TOP  Template top directory
-EPICS_MBA_BASE          Location of EPICS base
+EPICS_MBE_BASE          Location of EPICS base
 
 Example: Create example extension 
 

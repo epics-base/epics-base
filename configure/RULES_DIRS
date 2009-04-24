@@ -38,7 +38,7 @@ all : install
 rebuild : clean install
 
 # Create directory dependancies lines for GNU make -j option
-# Only works with GNU make 3.80 or later (uses eval function)
+# Only works with GNU make 3.81 or later (uses eval function)
 define DEP_template1
 $(1): $$($(1)_DEPEND_DIRS)
 endef

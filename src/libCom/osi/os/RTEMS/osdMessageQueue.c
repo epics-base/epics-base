@@ -159,7 +159,7 @@ static int receiveMessage(
     uint32_t wait,
     rtems_interval delay)
 {
-    uint32_t rsize;
+    size_t rsize;
     rtems_status_code sc;
     
     if (size < id->maxSize) {

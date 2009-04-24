@@ -65,7 +65,7 @@ void
 InterruptContextMessageDaemon (void *unused)
 {
     const char *message;
-    uint32_t size;
+    size_t size;
     rtems_status_code sc;
 
     sc = rtems_message_queue_create (rtems_build_name ('I', 'C', 'M', 'Q'),

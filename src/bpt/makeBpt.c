@@ -201,7 +201,7 @@ got_header:
     brkCreateInfo.nTable = ndata;
     pdata = (double *)calloc(brkCreateInfo.nTable,sizeof(double));
     if(!pdata) {
-	fprintf(stderr,"calloc failed for table length %d\n",brkCreateInfo.nTable);
+	fprintf(stderr,"calloc failed for table length %ld\n",brkCreateInfo.nTable);
 	exit(-1);
     }
     pnext = phead;

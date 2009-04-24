@@ -30,7 +30,7 @@ int connectWithTimeout (int sfd,
                         struct timeval *timeout)
 {
     struct timeval sv;
-    int svlen = sizeof sv;
+    socklen_t svlen = sizeof sv;
     int ret;
 
     if (!timeout)

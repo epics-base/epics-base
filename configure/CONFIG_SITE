@@ -24,8 +24,6 @@
 #	darwin-ppcx86          (Universal binaries for both CPUs)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
-#	hpux-parisc            (HP compiler used for host builds)
-#	hpux-parisc-gnu        (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)

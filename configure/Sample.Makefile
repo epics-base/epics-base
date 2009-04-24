@@ -63,9 +63,9 @@ a_file_CPPFLAGS_WIN32   = -DVERSION='WIN32 port'
 #	again: if INC_$(OS_CLASS) is defined, it is added to INC,
 #	otherwise INC_DEFAULT (if defined) is added:
 #
-INC_DEFAULT = for_all_but_WIN32_or_hp700.h
+INC_DEFAULT = for_all_but_WIN32_or_vxWorks.h
 INC_WIN32   = only_for_WIN32.h
-INC_hpux   = -nil-		# hpux uses no special include
+INC_vxWorks = -nil-		# vxWorks uses no special include
 INC         = file.h
 
 # --------------------------------------------------------------------

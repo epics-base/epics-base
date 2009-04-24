@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <fcntl.h> /* for open() */
 #include <rtems/rtems_bsdnet.h>
 #include <bsp.h>
 #include <string.h>

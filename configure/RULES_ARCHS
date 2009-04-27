@@ -36,13 +36,14 @@ buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
 #*************************************************************************
 # Create epics_host_arch dependancies for GNU make -j option
-# Only works with GNU make 3.80 or later (uses eval function)
+# Only works with GNU make 3.81 or later (uses eval function)
 # Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
 # cross arch builds
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
-# j is NOT found in MAKEFLAGS when using make 3.8.1
+# j is NOT found in MAKEFLAGS when using make 3.81
+# Hope to uncomment this for GNU make 3.82
 #ifeq ($(findstring j,$(MAKEFLAGS)),j)
 
 define DEP_template

@@ -178,7 +178,7 @@ epicsUInt8 comQueRecv::popUInt8 ()
     if ( ! pComBuf ) {
         comBuf::throwInsufficentBytesException ();
     }
-    epicsUInt8 tmp;
+    epicsUInt8 tmp = 0;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( ! status.success ) {
         comBuf::throwInsufficentBytesException ();
@@ -238,11 +238,11 @@ bool comQueRecv::popOldMsgHeader ( caHdrLargeArray & msg )
     unsigned avail = pComBuf->occupiedBytes ();
     if ( avail >= sizeof ( caHdr ) ) {
         pComBuf->pop ( msg.m_cmmd );
-        ca_uint16_t smallPostsize;
+        ca_uint16_t smallPostsize = 0;
         pComBuf->pop ( smallPostsize );
         msg.m_postsize = smallPostsize;
         pComBuf->pop ( msg.m_dataType );
-        ca_uint16_t smallCount;
+        ca_uint16_t smallCount = 0;
         pComBuf->pop ( smallCount );
         msg.m_count = smallCount;
         pComBuf->pop ( msg.m_cid );

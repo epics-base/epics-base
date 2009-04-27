@@ -32,8 +32,8 @@
 #include "epicsExport.h"
 
 /* Create the dset for devHistogramTestAsyn */
-static long init_record();
-static long read_histogram();
+static long init_record(struct histogramRecord *phistogram);
+static long read_histogram(struct histogramRecord *phistogram);
 struct {
 	long		number;
 	DEVSUPFUN	report;
@@ -53,8 +53,7 @@ struct {
 };
 epicsExportAddress(dset,devHistogramTestAsyn);
 
-static long init_record(prec)
-    struct histogramRecord	*prec;
+static long init_record(struct histogramRecord *prec)
 {
     CALLBACK *pcallback;
 
@@ -75,8 +74,7 @@ static long init_record(prec)
     return(0);
 }
 
-static long read_histogram(prec)
-    struct histogramRecord	*prec;
+static long read_histogram(struct histogramRecord *prec)
 {
     CALLBACK *pcallback=(CALLBACK *)(prec->dpvt);
 

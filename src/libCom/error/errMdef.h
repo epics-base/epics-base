@@ -19,20 +19,9 @@
 
 #ifdef __cplusplus
 extern "C" {
-#define errMDefUseProtoANSI
 #endif
 
-#ifdef __STDC__
-#ifndef errMDefUseProtoANSI
-#define errMDefUseProtoANSI
-#endif
-#endif
-
-#ifdef errMDefUseProtoANSI
-#       include <stdarg.h>
-#else
-#       include <varargs.h>
-#endif
+#include <stdarg.h>
 
 #include "ellLib.h"
 #include "shareLib.h"
@@ -68,7 +57,6 @@ extern "C" {
 #define M_bucket	(525 <<16) /*Bucket Hash*/
 #define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
 
-#ifdef errMDefUseProtoANSI
 epicsShareFunc void epicsShareAPI errSymLookup(long status, char *pBuf, unsigned bufLength);
 epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);
 epicsShareFunc void epicsShareAPI errSymTestPrint(long errNum);
@@ -78,18 +66,6 @@ epicsShareFunc void epicsShareAPI errSymDump(void);
 epicsShareFunc void epicsShareAPI tstErrSymFind(void);
 
 epicsShareFunc int epicsShareAPI errSymFind(long status, char *pBuf); /* depricated */
-
-#else /* errMDefUseProtoANSI */ 
-
-epicsShareFunc void epicsShareAPI errSymTest();
-epicsShareFunc void epicsShareAPI errSymTestPrint();
-epicsShareFunc int epicsShareAPI errSymBld();
-epicsShareFunc int epicsShareAPI errSymbolAdd();
-epicsShareFunc void epicsShareAPI errSymDump();
-epicsShareFunc void epicsShareAPI tstErrSymFind();
-
-epicsShareFunc void epicsShareAPI errSymFind();/* depricated */
-#endif /* errMDefUseProtoANSI */ 
 
 #ifdef __cplusplus
 }

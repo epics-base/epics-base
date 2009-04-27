@@ -34,17 +34,9 @@ extern "C" {
 #	define assert(ignore)  ((void) 0)
 #else /* NDEBUG */
 
-#if defined(__STDC__) || defined(__cplusplus)
-
 epicsShareFunc extern void epicsShareAPI 
 	epicsAssert (const char *pFile, const unsigned line, 
 			const char *pExp, const char *pAuthorName);
-
-#else /*__STDC__ or __cplusplus*/
-
-epicsShareFunc extern void epicsShareAPI epicsAssert ();
-
-#endif /*__STDC__ or __cplusplus*/
 
 #if (defined(__STDC__) || defined(__cplusplus)) && !defined(VAXC)
 

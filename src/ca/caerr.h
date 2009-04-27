@@ -145,22 +145,11 @@
 #define ECA_CONNSEQTMO      DEFMSG(CA_K_WARNING,   59)
 #define ECA_UNRESPTMO       DEFMSG(CA_K_WARNING,   60)
 
-#ifdef __STDC__ 
-#define CAERR_USE_FUNC_PROTO
-#endif
-
 #ifdef __cplusplus
-#ifndef CAERR_USE_FUNC_PROTO
-#define CAERR_USE_FUNC_PROTO
-#endif
 extern "C" {
 #endif
 
-#ifdef CAERR_USE_FUNC_PROTO
 epicsShareFunc READONLY char * epicsShareAPI ca_message(long ca_status);
-#else /* CAERR_USE_FUNC_PROTO */
-READONLY char *ca_message();
-#endif
 
 epicsShareExtern READONLY char * ca_message_text [];
 

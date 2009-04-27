@@ -28,20 +28,8 @@
  * done in two ifdef steps so that we will remain compatible with
  * traditional C
  */
-#ifdef __cplusplus
-#   define CAC_ANSI_FUNC_PROTO
-#endif
-
-#ifdef __STDC__ 
-#   ifndef CAC_ANSI_FUNC_PROTO
-#       define CAC_ANSI_FUNC_PROTO
-#   endif
-#endif
-
 #ifndef CA_DONT_INCLUDE_STDARGH
-#   ifdef CAC_ANSI_FUNC_PROTO 
-#       include <stdarg.h>
-#   endif
+#   include <stdarg.h>
 #endif
 
 #ifdef epicsExportSharedSymbols
@@ -77,11 +65,7 @@ struct  connection_handler_args {
     long    op;    /* one of CA_OP_CONN_UP or CA_OP_CONN_DOWN */
 };
 
-#ifdef CAC_ANSI_FUNC_PROTO
 typedef void caCh (struct connection_handler_args args);
-#else /*CAC_ANSI_FUNC_PROTO*/
-typedef void caCh ();
-#endif /*CAC_ANSI_FUNC_PROTO*/
 
 typedef struct ca_access_rights {
     unsigned    read_access:1;
@@ -94,11 +78,7 @@ struct  access_rights_handler_args {
     caar    ar;     /* new access rights state */
 };
 
-#ifdef CAC_ANSI_FUNC_PROTO
 typedef void caArh (struct access_rights_handler_args args);
-#else /*CAC_ANSI_FUNC_PROTO*/
-typedef void caArh ();
-#endif /*CAC_ANSI_FUNC_PROTO*/
 
 /*  The conversion routine to call for each type    */
 #define VALID_TYPE(TYPE)  (((unsigned short)TYPE)<=LAST_BUFFER_TYPE)
@@ -120,17 +100,11 @@ typedef struct event_handler_args {
     READONLY void   *dbr;   /* a pointer to the item returned */
     int             status; /* ECA_XXX status of the requested op from the server */
 } evargs;
-#ifdef CAC_ANSI_FUNC_PROTO
 typedef void caEventCallBackFunc (struct event_handler_args);
-#else /*CAC_ANSI_FUNC_PROTO*/
-typedef void caEventCallBackFunc ();
-#endif /*CAC_ANSI_FUNC_PROTO*/
 
 epicsShareFunc void epicsShareAPI ca_test_event
 (
-#ifdef CAC_ANSI_FUNC_PROTO 
     struct event_handler_args
-#endif /*CAC_ANSI_FUNC_PROTO*/
 );
 
 /* arguments passed to user exception handlers */
@@ -182,7 +156,6 @@ typedef unsigned CA_SYNC_GID;
             __LINE__); \
 }
 
-#ifdef CAC_ANSI_FUNC_PROTO
 
 #define TYPENOTCONN (-1) /* the channel's native type when disconnected   */
 epicsShareFunc short epicsShareAPI ca_field_type (chid chan);
@@ -918,98 +891,6 @@ epicsShareFunc int epicsShareAPI ca_add_masked_array_event
  */
 epicsShareFunc int epicsShareAPI ca_modify_user_name ( const char *pUserName );
 epicsShareFunc int epicsShareAPI ca_modify_host_name ( const char *pHostName );
-
-#else /* CAC_ANSI_FUNC_PROTO */
-epicsShareFunc short epicsShareAPI ca_field_type ();
-epicsShareFunc unsigned long epicsShareAPI ca_element_count ();
-epicsShareFunc char * epicsShareAPI ca_name ();
-epicsShareFunc enum channel_state epicsShareAPI ca_state ();
-epicsShareFunc void epicsShareAPI ca_set_puser ();
-epicsShareFunc void epicsShareAPI ca_get_puser ();
-epicsShareFunc unsigned epicsShareAPI ca_read_access ();
-epicsShareFunc unsigned epicsShareAPI ca_write_access ();
-epicsShareFunc int epicsShareAPI ca_task_initialize ();
-epicsShareFunc int epicsShareAPI ca_task_exit ();
-epicsShareFunc int epicsShareAPI ca_search_and_connect ();
-epicsShareFunc int epicsShareAPI ca_build_and_connect ();
-epicsShareFunc int epicsShareAPI ca_change_connection_event ();
-epicsShareFunc int epicsShareAPI ca_replace_access_rights_event ();
-epicsShareFunc int epicsShareAPI ca_add_exception_event ();
-epicsShareFunc int epicsShareAPI ca_clear_channel ();
-epicsShareFunc int epicsShareAPI ca_array_put ();
-epicsShareFunc int epicsShareAPI ca_array_put_callback ();
-epicsShareFunc int epicsShareAPI ca_array_get ();
-epicsShareFunc int epicsShareAPI ca_array_get_callback ();
-epicsShareFunc int epicsShareAPI ca_add_masked_array_event ();
-epicsShareFunc int epicsShareAPI ca_clear_event ();
-epicsShareFunc int epicsShareAPI ca_create_subscription ();
-epicsShareFunc int epicsShareAPI ca_clear_subscription ();
-epicsShareFunc int epicsShareAPI ca_pend ();
-epicsShareFunc int epicsShareAPI ca_test_io ();
-epicsShareFunc int epicsShareAPI ca_flush_io ();
-epicsShareFunc void epicsShareAPI ca_signal ();
-epicsShareFunc void epicsShareAPI ca_signal_with_file_and_lineno ();
-epicsShareFunc void epicsShareAPI ca_signal_formated ();
-epicsShareFunc char * epicsShareAPI ca_host_name ();
-typedef void CAFDHANDLER (); 
-epicsShareFunc int epicsShareAPI ca_add_fd_registration();
-epicsShareFunc int epicsShareAPI ca_replace_printf_handler ();
-epicsShareFunc int epicsShareAPI ca_sg_create();
-epicsShareFunc int epicsShareAPI ca_sg_delete();
-epicsShareFunc int epicsShareAPI ca_sg_block();
-epicsShareFunc int epicsShareAPI ca_sg_test();
-epicsShareFunc int epicsShareAPI ca_sg_reset();
-epicsShareFunc int epicsShareAPI ca_sg_array_get();
-epicsShareFunc int epicsShareAPI ca_sg_array_put();
-epicsShareFunc int epicsShareAPI ca_sg_stat();
-epicsShareFunc int epicsShareAPI ca_modify_user_name();
-epicsShareFunc int epicsShareAPI ca_modify_host_name();
-epicsShareFunc int epicsShareAPI ca_v42_ok();
-epicsShareFunc char * epicsShareAPI ca_version();
-epicsShareFunc int epicsShareAPI ca_import();
-epicsShareFunc int epicsShareAPI ca_import_cancel();
-epicsShareFunc int epicsShareAPI ca_channel_status ();
-epicsShareFunc int epicsShareAPI ca_client_status ();
-#define ca_build_channel(NAME,XXXXX,CHIDPTR,YYYYY)\
-    ca_build_and_connect(NAME, XXXXX, 1, CHIDPTR, YYYYY, 0, 0)
-#define ca_array_build(NAME,XXXXX, ZZZZZZ, CHIDPTR,YYYYY)\
-    ca_build_and_connect(NAME, XXXXX, ZZZZZZ, CHIDPTR, YYYYY, 0, 0)
-#define ca_search(pChanName, pChanID)\
-    ca_search_and_connect(pChanName, pChanID, 0, 0)
-#define ca_bput(chan, pValue) \
-    ca_array_put(DBR_STRING, 1, chan, (READONLY dbr_string_t *) (pValue))
-#define ca_rput(chan,pValue) \
-    ca_array_put(DBR_FLOAT, 1, chan, (READONLY dbr_float_t *) pValue)
-#define ca_put(type, chan, pValue) ca_array_put(type, 1, chan, pValue)
-#define ca_bget(chan, pValue) \
-    ca_array_get(DBR_STRING, 1, chan, (dbr_string_t *)(pValue))
-#define ca_rget(chan, pValue) \
-    ca_array_get(DBR_FLOAT, 1, chan, (dbr_float_t *)(pValue))
-#define ca_get(type, chan, pValue) ca_array_get(type, 1, chan, pValue)
-#define ca_bget_callback(chan, pFunc, pArg)\
-    ca_array_get_callback(DBR_STRING, 1, chan, pFunc, pArg)
-#define ca_rget_callback(chan, pFunc, pArg)\
-    ca_array_get_callback(DBR_FLOAT, 1, chan, pFunc, pArg)
-#define ca_get_callback(type, chan, pFunc, pArg)\
-    ca_array_get_callback(type, 1, chan, pFunc, pArg)
-#define ca_put_callback(type, chan, pValue, pFunc, pArg) \
-    ca_array_put_callback(type, 1u, chan, pValue, pFunc, pArg)
-#define ca_add_event(type,chan,pFunc,pArg,pEventID)\
-    ca_add_array_event(type,1,chan,pFunc,pArg,0.0,0.0,0.0,pEventID)
-#define ca_add_delta_event(TYPE,CHID,ENTRY,ARG,DELTA,EVID)\
-        ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,DELTA,DELTA,0.0,EVID)
-#define ca_add_general_event(TYPE,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-    ca_add_array_event(TYPE,1,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)
-#define ca_add_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID)\
-ca_add_masked_array_event(TYPE,COUNT,CHID,ENTRY,ARG,P_DELTA,N_DELTA,TO,EVID, DBE_VALUE | DBE_ALARM)
-int ca_pend_event ();
-#define ca_poll() ca_pend_event(1e-12)
-int ca_pend_io ();
-#define ca_sg_get(gid, type, chan, pValue) \
-ca_sg_array_get(gid, type, 1u, chan, pValue)
-#define ca_sg_put(gid, type, chan, pValue) \
-ca_sg_array_put(gid, type, 1u, chan, pValue)
-#endif /* CAC_ANSI_FUNC_PROTO */
 
 #ifdef __cplusplus
 }

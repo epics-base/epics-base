@@ -21,48 +21,50 @@ extern "C" {
 #endif
 
 typedef void (*dbCaCallback)(void *userPvt);
-epicsShareFunc void epicsShareAPI dbCaCallbackProcess(struct link *plink);
+epicsShareFunc void dbCaCallbackProcess(struct link *plink);
 
-epicsShareFunc void epicsShareAPI dbCaLinkInit(void);
-epicsShareFunc void epicsShareAPI dbCaRun(void);
-epicsShareFunc void epicsShareAPI dbCaPause(void);
+epicsShareFunc void dbCaLinkInit(void);
+epicsShareFunc void dbCaRun(void);
+epicsShareFunc void dbCaPause(void);
 
-epicsShareFunc void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
-    dbCaCallback connect,dbCaCallback monitor,void *userPvt);
-#define dbCaAddLink(plink) dbCaAddLinkCallback((plink),0,0,0)
-epicsShareFunc void epicsShareAPI dbCaRemoveLink(struct link *plink);
-epicsShareFunc long epicsShareAPI dbCaGetLink(
-    struct link *plink,short dbrType,void *pbuffer,
-    epicsEnum16 *pstat,epicsEnum16 *psevr,long *nRequest);
-epicsShareFunc long epicsShareAPI dbCaPutLinkCallback(
-    struct link *plink,short dbrType,const void *pbuffer,long nRequest,
-    dbCaCallback callback,void *userPvt);
-#define dbCaPutLink(plink,dbrType,pbuffer,nRequest) \
-    dbCaPutLinkCallback((plink),(dbrType),(pbuffer),(nRequest),0,0)
-epicsShareFunc int epicsShareAPI dbCaIsLinkConnected(const struct link *plink);
+epicsShareFunc void dbCaAddLinkCallback(struct link *plink,
+    dbCaCallback connect, dbCaCallback monitor, void *userPvt);
+#define dbCaAddLink(plink) dbCaAddLinkCallback((plink), 0, 0, 0)
+epicsShareFunc void dbCaRemoveLink(struct link *plink);
+epicsShareFunc long dbCaGetLink(struct link *plink,
+    short dbrType, void *pbuffer, epicsEnum16 *pstat, epicsEnum16 *psevr,
+    long *nRequest);
+epicsShareFunc long dbCaPutLinkCallback(struct link *plink,
+    short dbrType, const void *pbuffer,long nRequest,
+    dbCaCallback callback, void *userPvt);
+#define dbCaPutLink(plink, dbrType, pbuffer, nRequest) \
+    dbCaPutLinkCallback((plink), (dbrType), (pbuffer), (nRequest), 0, 0)
+epicsShareFunc int dbCaIsLinkConnected(const struct link *plink);
+
 /* The following are available after the link is connected*/
-epicsShareFunc long epicsShareAPI dbCaGetNelements(
-    const struct link *plink,long *nelements);
-#define dbCaGetSevr(plink,severity) \
-    dbCaGetAlarm((plink),NULL,(severity))
-epicsShareFunc long epicsShareAPI dbCaGetAlarm(const struct link *plink,
-    epicsEnum16 *status,epicsEnum16 *severity);
-epicsShareFunc long epicsShareAPI dbCaGetTimeStamp(
-    const struct link *plink,epicsTimeStamp *pstamp);
-epicsShareFunc int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink);
+epicsShareFunc long dbCaGetNelements(const struct link *plink,
+    long *nelements);
+#define dbCaGetSevr(plink, severity) \
+    dbCaGetAlarm((plink), NULL, (severity))
+epicsShareFunc long dbCaGetAlarm(const struct link *plink,
+    epicsEnum16 *status, epicsEnum16 *severity);
+epicsShareFunc long dbCaGetTimeStamp(const struct link *plink,
+    epicsTimeStamp *pstamp);
+epicsShareFunc int dbCaGetLinkDBFtype(const struct link *plink);
+
 /*The following  are available after attribute request is complete*/
-epicsShareFunc long epicsShareAPI dbCaGetAttributes(
-    const struct link *plink,dbCaCallback callback,void *userPvt);
-epicsShareFunc long epicsShareAPI dbCaGetControlLimits(
-    const struct link *plink,double *low, double *high);
-epicsShareFunc long epicsShareAPI dbCaGetGraphicLimits(
-    const struct link *plink,double *low, double *high);
-epicsShareFunc long epicsShareAPI dbCaGetAlarmLimits(
-    const struct link *plink,double *lolo, double *low, double *high, double *hihi);
-epicsShareFunc long epicsShareAPI dbCaGetPrecision(
-    const struct link *plink,short *precision);
-epicsShareFunc long epicsShareAPI dbCaGetUnits(
-    const struct link *plink,char *units,int unitsSize);
+epicsShareFunc long dbCaGetAttributes(const struct link *plink,
+    dbCaCallback callback, void *userPvt);
+epicsShareFunc long dbCaGetControlLimits(const struct link *plink,
+    double *low, double *high);
+epicsShareFunc long dbCaGetGraphicLimits(const struct link *plink,
+    double *low, double *high);
+epicsShareFunc long dbCaGetAlarmLimits(const struct link *plink,
+    double *lolo, double *low, double *high, double *hihi);
+epicsShareFunc long dbCaGetPrecision(const struct link *plink,
+    short *precision);
+epicsShareFunc long dbCaGetUnits(const struct link *plink,
+    char *units, int unitsSize);
 
 extern struct ca_client_context * dbCaClientContext;
 

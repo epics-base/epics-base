@@ -163,7 +163,7 @@ static void addAction(caLink *pca, short link_action)
         epicsEventSignal(workListEvent);
 }
 
-void epicsShareAPI dbCaCallbackProcess(struct link *plink)
+void dbCaCallbackProcess(struct link *plink)
 {
     dbCommon *pdbCommon = plink->value.pv_link.precord;
 
@@ -181,7 +181,7 @@ static void dbCaShutdown(void *arg)
     }
 }
 
-void epicsShareAPI dbCaLinkInit(void)
+void dbCaLinkInit(void)
 {
     dbServiceIOInit();
     ellInit(&workList);
@@ -197,19 +197,19 @@ void epicsShareAPI dbCaLinkInit(void)
     epicsAtExit(dbCaShutdown, NULL);
 }
 
-void epicsShareAPI dbCaRun(void)
+void dbCaRun(void)
 {
     dbCaCtl = ctlRun;
     epicsEventSignal(workListEvent);
 }
 
-void epicsShareAPI dbCaPause(void)
+void dbCaPause(void)
 {
     dbCaCtl = ctlPause;
     epicsEventSignal(workListEvent);
 }
 
-void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
+void dbCaAddLinkCallback(struct link *plink,
     dbCaCallback connect, dbCaCallback monitor, void *userPvt)
 {
     caLink *pca;
@@ -231,7 +231,7 @@ void epicsShareAPI dbCaAddLinkCallback(struct link *plink,
     epicsMutexUnlock(pca->lock);
 }
 
-void epicsShareAPI dbCaRemoveLink(struct link *plink)
+void dbCaRemoveLink(struct link *plink)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
 
@@ -246,7 +246,7 @@ void epicsShareAPI dbCaRemoveLink(struct link *plink)
     addAction(pca, CA_CLEAR_CHANNEL);
 }
 
-long epicsShareAPI dbCaGetLink(struct link *plink,short dbrType, void *pdest,
+long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
     epicsEnum16 *pstat, epicsEnum16 *psevr, long *nelements)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
@@ -326,7 +326,7 @@ done:
     return status;
 }
 
-long epicsShareAPI dbCaPutLinkCallback(struct link *plink,short dbrType,
+long dbCaPutLinkCallback(struct link *plink,short dbrType,
     const void *pbuffer,long nRequest,dbCaCallback callback,void *userPvt)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
@@ -396,7 +396,7 @@ long epicsShareAPI dbCaPutLinkCallback(struct link *plink,short dbrType,
     return status;
 }
 
-int epicsShareAPI dbCaIsLinkConnected(const struct link *plink)
+int dbCaIsLinkConnected(const struct link *plink)
 {
     caLink *pca;
 
@@ -418,7 +418,7 @@ int epicsShareAPI dbCaIsLinkConnected(const struct link *plink)
         return -1; \
     }
 
-long epicsShareAPI dbCaGetNelements(const struct link *plink, long *nelements)
+long dbCaGetNelements(const struct link *plink, long *nelements)
 {
     caLink *pca;
 
@@ -428,7 +428,7 @@ long epicsShareAPI dbCaGetNelements(const struct link *plink, long *nelements)
     return 0;
 }
 
-long epicsShareAPI dbCaGetAlarm(const struct link *plink,
+long dbCaGetAlarm(const struct link *plink,
     epicsEnum16 *pstat, epicsEnum16 *psevr)
 {
     caLink *pca;
@@ -440,7 +440,7 @@ long epicsShareAPI dbCaGetAlarm(const struct link *plink,
     return 0;
 }
 
-long epicsShareAPI dbCaGetTimeStamp(const struct link *plink,
+long dbCaGetTimeStamp(const struct link *plink,
     epicsTimeStamp *pstamp)
 {
     caLink *pca;
@@ -451,7 +451,7 @@ long epicsShareAPI dbCaGetTimeStamp(const struct link *plink,
     return 0;
 }
 
-int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink)
+int dbCaGetLinkDBFtype(const struct link *plink)
 {
     caLink *pca;
     int  type;
@@ -462,7 +462,7 @@ int epicsShareAPI dbCaGetLinkDBFtype(const struct link *plink)
     return type;
 }
 
-long epicsShareAPI dbCaGetAttributes(const struct link *plink,
+long dbCaGetAttributes(const struct link *plink,
     dbCaCallback callback,void *userPvt)
 {
     caLink *pca;
@@ -482,7 +482,7 @@ long epicsShareAPI dbCaGetAttributes(const struct link *plink,
     return 0;
 }
 
-long epicsShareAPI dbCaGetControlLimits(const struct link *plink,
+long dbCaGetControlLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -498,7 +498,7 @@ long epicsShareAPI dbCaGetControlLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long epicsShareAPI dbCaGetGraphicLimits(const struct link *plink,
+long dbCaGetGraphicLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -514,7 +514,7 @@ long epicsShareAPI dbCaGetGraphicLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long epicsShareAPI dbCaGetAlarmLimits(const struct link *plink,
+long dbCaGetAlarmLimits(const struct link *plink,
     double *lolo, double *low, double *high, double *hihi)
 {
     caLink *pca;
@@ -532,7 +532,7 @@ long epicsShareAPI dbCaGetAlarmLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long epicsShareAPI dbCaGetPrecision(const struct link *plink, short *precision)
+long dbCaGetPrecision(const struct link *plink, short *precision)
 {
     caLink *pca;
     int gotAttributes;
@@ -544,7 +544,7 @@ long epicsShareAPI dbCaGetPrecision(const struct link *plink, short *precision)
     return gotAttributes ? 0 : -1;
 }
 
-long epicsShareAPI dbCaGetUnits(const struct link *plink,
+long dbCaGetUnits(const struct link *plink,
     char *units, int unitsSize)
 {
     caLink *pca;

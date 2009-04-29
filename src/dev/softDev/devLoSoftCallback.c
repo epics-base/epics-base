@@ -57,7 +57,7 @@ static long write_longout(longoutRecord	*prec)
         return(status);
     }
     status = dbCaPutLinkCallback(plink,DBR_LONG,&prec->val,1,
-        (dbCaCallback)dbCaCallbackProcess,plink);
+        dbCaCallbackProcess,plink);
     if(status) {
         recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
         return(status);

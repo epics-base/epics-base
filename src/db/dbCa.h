@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 typedef void (*dbCaCallback)(void *userPvt);
-epicsShareFunc void dbCaCallbackProcess(struct link *plink);
+epicsShareFunc void dbCaCallbackProcess(void *usrPvt);
 
 epicsShareFunc void dbCaLinkInit(void);
 epicsShareFunc void dbCaRun(void);

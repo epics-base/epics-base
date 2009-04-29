@@ -56,7 +56,7 @@ static long write_mbbo(mbboRecord *prec)
         return(status);
     }
     status = dbCaPutLinkCallback(plink,DBR_USHORT,&prec->val,1,
-        (dbCaCallback)dbCaCallbackProcess,plink);
+        dbCaCallbackProcess,plink);
     if(status) {
         recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
         return(status);

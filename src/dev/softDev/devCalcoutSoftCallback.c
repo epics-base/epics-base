@@ -54,7 +54,7 @@ static long write_calcout(calcoutRecord *prec)
         return status;
     }
     status = dbCaPutLinkCallback(plink, DBR_DOUBLE, &prec->oval, 1,
-        (dbCaCallback)dbCaCallbackProcess, plink);
+        dbCaCallbackProcess, plink);
     if (status) {
         recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
         return status;

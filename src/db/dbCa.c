@@ -163,8 +163,9 @@ static void addAction(caLink *pca, short link_action)
         epicsEventSignal(workListEvent);
 }
 
-void dbCaCallbackProcess(struct link *plink)
+void dbCaCallbackProcess(void *usrPvt)
 {
+    struct link *plink = (struct link *)usrPvt;
     dbCommon *pdbCommon = plink->value.pv_link.precord;
 
     dbScanLock(pdbCommon);

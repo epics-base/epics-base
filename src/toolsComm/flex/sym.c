@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* sym - symbol table routines */
@@ -45,14 +44,14 @@ static char rcsid[] =
 
 /* declare functions that have forward references */
 
-int hashfunct (register char[], int);
+int hashfunct (char[], int);
 
 
 struct hash_entry *ndtbl[NAME_TABLE_HASH_SIZE];
 struct hash_entry *sctbl[START_COND_HASH_SIZE];
 struct hash_entry *ccltab[CCL_HASH_SIZE];
 
-struct hash_entry *findsym(register char *sym, struct hash_entry **table, int table_size);
+struct hash_entry *findsym(char *sym, struct hash_entry **table, int table_size);
 
 
 /* addsym - add symbol and definitions to symbol table
@@ -67,12 +66,12 @@ struct hash_entry *findsym(register char *sym, struct hash_entry **table, int ta
  * -1 is returned if the symbol already exists, and the change not made.
  */
 
-int addsym(register char *sym, char *str_def, int int_def, struct hash_entry **table, int table_size)
+int addsym(char *sym, char *str_def, int int_def, struct hash_entry **table, int table_size)
 {
     int hash_val = hashfunct( sym, table_size );
-    register struct hash_entry *sym_entry = table[hash_val];
-    register struct hash_entry *new_entry;
-    register struct hash_entry *successor;
+    struct hash_entry *sym_entry = table[hash_val];
+    struct hash_entry *new_entry;
+    struct hash_entry *successor;
 
     while ( sym_entry )
 	{
@@ -153,9 +152,9 @@ int ccllookup(Char *ccltxt)
  *    sym_entry = findsym( sym, table, table_size );
  */
 
-struct hash_entry *findsym(register char *sym, struct hash_entry **table, int table_size)
+struct hash_entry *findsym(char *sym, struct hash_entry **table, int table_size)
 {
-    register struct hash_entry *sym_entry = table[hashfunct( sym, table_size )];
+    struct hash_entry *sym_entry = table[hashfunct( sym, table_size )];
     static struct hash_entry empty_entry =
 	{
 	(struct hash_entry *) 0, (struct hash_entry *) 0, NULL, NULL, 0,
@@ -180,10 +179,10 @@ struct hash_entry *findsym(register char *sym, struct hash_entry **table, int ta
  *    hash_val = hashfunct( str, hash_size );
  */
 
-int hashfunct(register char *str, int hash_size)
+int hashfunct(char *str, int hash_size)
 {
-    register int hashval;
-    register int locstr;
+    int hashval;
+    int locstr;
 
     hashval = 0;
     locstr = 0;

@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dfa - DFA construction routines */
@@ -106,15 +105,15 @@ void check_for_backtracking(int ds, int state[])
  *    accset[1 .. nacc] is the list of accepting numbers for the DFA state.
  */
 
-void check_trailing_context(int *nfa_states, int num_states, int *accset, register int nacc)
+void check_trailing_context(int *nfa_states, int num_states, int *accset, int nacc)
 {
-    register int i, j;
+    int i, j;
 
     for ( i = 1; i <= num_states; ++i )
 	{
 	int ns = nfa_states[i];
-	register int type = state_type[ns];
-	register int ar = assoc_rule[ns];
+	int type = state_type[ns];
+	int ar = assoc_rule[ns];
 
 	if ( type == STATE_NORMAL || rule_type[ar] != RULE_VARIABLE )
 	    { /* do nothing */
@@ -154,15 +153,15 @@ void check_trailing_context(int *nfa_states, int num_states, int *accset, regist
 
 void dump_associated_rules(FILE *file, int ds)
 {
-    register int i, j;
-    register int num_associated_rules = 0;
+    int i, j;
+    int num_associated_rules = 0;
     int rule_set[MAX_ASSOC_RULES + 1];
     int *dset = dss[ds];
     int size = dfasiz[ds];
     
     for ( i = 1; i <= size; ++i )
 	{
-	register rule_num = rule_linenum[assoc_rule[dset[i]]];
+	int rule_num = rule_linenum[assoc_rule[dset[i]]];
 
 	for ( j = 1; j <= num_associated_rules; ++j )
 	    if ( rule_num == rule_set[j] )
@@ -206,7 +205,7 @@ void dump_associated_rules(FILE *file, int ds)
 
 void dump_transitions(FILE *file, int state[])
 {
-    register int i, ec;
+    int i, ec;
     int out_char_set[CSIZE];
 
     for ( i = 0; i < csize; ++i )
@@ -254,7 +253,7 @@ void dump_transitions(FILE *file, int state[])
 
 int *epsclosure(int *t, int *ns_addr, int accset[], int *nacc_addr, int *hv_addr)
 {
-    register int stkpos, ns, tsp;
+    int stkpos, ns, tsp;
     int numstates = *ns_addr, nacc, hashval, transsym, nfaccnum;
     int stkend, nstate;
     static int did_stk_init = false, *stk; 
@@ -405,7 +404,7 @@ void ntod(void)
 {
     int *accset, ds, nacc, newds;
     int sym, hashval, numstates, dsize;
-    int num_full_table_rows;	/* used only for -f */
+    int num_full_table_rows = 0;	/* used only for -f */
     int *nset, *dset;
     int targptr, totaltrans, i, comstate, comfreq, targ;
     int *epsclosure(int *t, int *ns_addr, int *accset, int *nacc_addr, int *hv_addr);
@@ -673,7 +672,7 @@ void ntod(void)
 
 	if ( caseins && ! useecs )
 	    {
-	    register int j;
+	    int j;
 
 	    for ( i = 'A', j = 'a'; i <= 'Z'; ++i, ++j )
 		state[i] = state[j];
@@ -769,7 +768,7 @@ void ntod(void)
 int snstods(int sns[], int numstates, int accset[], int nacc, int hashval, int *newds_addr)
 {
     int didsort = 0;
-    register int i, j;
+    int i, j;
     int newds, *oldsns;
 
     for ( i = 1; i <= lastdfa; ++i )

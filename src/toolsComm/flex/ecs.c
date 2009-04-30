@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* ecs - equivalence class routines */
@@ -263,7 +262,7 @@ void mkeccl(unsigned char ccls[], int lenccl, int fwd[], int bck[], int llsiz, i
 	    { /* look for the symbol in the character class */
 	    for ( ; j < lenccl; ++j )
 		{
-		register int ccl_char;
+		int ccl_char;
 
 		if ( NUL_mapping && ccls[j] == 0 )
 		    ccl_char = NUL_mapping;

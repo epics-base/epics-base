@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* tblcmp - table compression routines */
@@ -45,7 +44,7 @@ static char rcsid[] =
 
 /* declarations for functions that have forward references */
 
-void mkentry (register int*, int, int, int, int);
+void mkentry (int*, int, int, int, int);
 void mkprot (int[], int, int);
 void mktemplate (int[], int, int);
 void mv2front (int);
@@ -234,7 +233,7 @@ void bldtbl(int *state, int statenum, int totaltrans, int comstate, int comfreq)
 void cmptmps(void)
 {
     int tmpstorage[CSIZE + 1];
-    register int *tmp = tmpstorage, i, j;
+    int *tmp = tmpstorage, i, j;
     int totaltrans, trans;
 
     peakpairs = numtemps * numecs + tblend;
@@ -304,7 +303,7 @@ void cmptmps(void)
 
 void expand_nxt_chk(void)
 {
-    register int old_max = current_max_xpairs;
+    int old_max = current_max_xpairs;
 
     current_max_xpairs += MAX_XPAIRS_INCREMENT;
 
@@ -342,9 +341,9 @@ int find_table_space(int *state, int numtrans)
     /* firstfree is the position of the first possible occurrence of two
      * consecutive unused records in the chk and nxt arrays
      */
-    register int i;
-    register int *state_ptr, *chk_ptr;
-    register int *ptr_to_last_entry_in_state;
+    int i;
+    int *state_ptr, *chk_ptr;
+    int *ptr_to_last_entry_in_state;
 
     /* if there are too many out-transitions, put the state at the end of
      * nxt and chk
@@ -435,7 +434,7 @@ int find_table_space(int *state, int numtrans)
  */
 void inittbl(void)
 {
-    register int i;
+    int i;
 
     bzero( (char *) chk, current_max_xpairs * sizeof( int ) / sizeof( char ) );
 
@@ -519,9 +518,9 @@ void mkdeftbl(void)
  * state array.
  */
 
-void mkentry(register int *state, int numchars, int statenum, int deflink, int totaltrans)
+void mkentry(int *state, int numchars, int statenum, int deflink, int totaltrans)
 {
-    register int minec, maxec, i, baseaddr;
+    int minec, maxec, i, baseaddr;
     int tblbase, tbllast;
 
     if ( totaltrans == 0 )
@@ -811,8 +810,8 @@ void mv2front(int qelm)
 
 void place_state(int *state, int statenum, int transnum)
 {
-    register int i;
-    register int *state_ptr;
+    int i;
+    int *state_ptr;
     int position = find_table_space( state, transnum );
 
     /* base is the table of start positions */
@@ -889,8 +888,8 @@ void stack1(int statenum, int sym, int nextstate, int deflink)
 
 int tbldiff(int *state, int pr, int *ext)
 {
-    register int i, *sp = state, *ep = ext, *protp;
-    register int numdiff = 0;
+    int i, *sp = state, *ep = ext, *protp;
+    int numdiff = 0;
 
     protp = &protsave[numecs * (pr - 1)];
 

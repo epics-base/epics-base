@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* misc - miscellaneous flex routines */
@@ -81,7 +80,7 @@ void action_out(void)
 
 void *allocate_array(int size, int element_size)
 {
-    register void *mem;
+    void *mem;
 
     /* on 16-bit int machines (e.g., 80286) we might be trying to
      * allocate more than a signed int can hold, and that won't
@@ -107,7 +106,7 @@ void *allocate_array(int size, int element_size)
  *    true/false = all_lower( str );
  */
 
-int all_lower(register Char *str)
+int all_lower(Char *str)
 {
     while ( *str )
 	{
@@ -128,7 +127,7 @@ int all_lower(register Char *str)
  *    true/false = all_upper( str );
  */
 
-int all_upper(register Char *str)
+int all_upper(Char *str)
 {
     while ( *str )
 	{
@@ -157,7 +156,7 @@ int all_upper(register Char *str)
 
 void bubble(int v[], int n)
 {
-    register int i, j, k;
+    int i, j, k;
 
     for ( i = n; i > 1; --i )
 	for ( j = 1; j < i; ++j )
@@ -178,7 +177,7 @@ void bubble(int v[], int n)
  *    c = clower( c );
  */
 
-Char clower(register int c)
+Char clower(int c)
 {
     return ( (isascii( c ) && isupper( c )) ? tolower( c ) : c );
     }
@@ -191,9 +190,9 @@ Char clower(register int c)
  *    copy = copy_string( str );
  */
 
-char *copy_string(register char *str)
+char *copy_string(char *str)
 {
-    register char *c;
+    char *c;
     char *copy;
 
     /* find length */
@@ -220,9 +219,9 @@ char *copy_string(register char *str)
  *    copy = copy_unsigned_string( str );
  */
 
-Char *copy_unsigned_string(register Char *str)
+Char *copy_unsigned_string(Char *str)
 {
-    register Char *c;
+    Char *c;
     Char *copy;
 
     /* find length */
@@ -391,7 +390,7 @@ typedef long time_t;
 char *flex_gettime(void)
 {
     time_t t, time(time_t *);
-    char *result, *ctime(const time_t *), *copy_string(register char *str);
+    char *result, *ctime(const time_t *), *copy_string(char *str);
 
     t = time( (long *) 0 );
 
@@ -582,7 +581,7 @@ int myctoi(Char *array)
 Char myesc(Char *array)
 {
     Char c, esc_char;
-    register int sptr;
+    int sptr;
 
     switch ( array[1] )
 	{
@@ -686,7 +685,7 @@ int otoi(Char *str)
  * The returned string is in static storage.
  */
 
-char *readable_form(register int c)
+char *readable_form(int c)
 {
     static char rform[10];
 
@@ -723,7 +722,7 @@ char *readable_form(register int c)
 
 void *reallocate_array(void *array, int size, int element_size)
 {
-    register void *new_array;
+    void *new_array;
 
     /* same worry as in allocate_array(): */
     if ( size * element_size <= 0 )

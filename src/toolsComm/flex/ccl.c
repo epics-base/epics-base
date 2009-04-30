@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* ccl - routines for character classes */
@@ -145,7 +144,7 @@ void cclnegate(int cclp)
 
 void list_character_set(FILE *file, int cset[])
 {
-    register int i;
+    int i;
     char *readable_form();
 
     putc( '[', file );
@@ -154,7 +153,7 @@ void list_character_set(FILE *file, int cset[])
 	{
 	if ( cset[i] )
 	    {
-	    register int start_char = i;
+	    int start_char = i;
 
 	    putc( ' ', file );
 

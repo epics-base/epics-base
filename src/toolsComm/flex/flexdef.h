@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* flexdef - definitions file for flex */
@@ -37,8 +36,18 @@
 
 /* @(#) $Header$ (LBL) */
 
-#ifndef FILE
+#ifndef INC_flexdef_H
+#define INC_flexdef_H
+
 #include <stdio.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+#ifdef __GNUC__
+#define NORETURN __attribute__((noreturn))
+#else
+#define NORETURN
 #endif
 
 /* always be prepared to generate an 8-bit scanner */
@@ -57,57 +66,6 @@
 #define DEFAULT_CSIZE 128
 #endif
 
-#ifdef USG
-#define SYS_V
-#endif
-
-#ifdef SYS_V
-#include <string.h>
-#else
-
-#include <strings.h>
-#ifdef lint
-char *sprintf(); /* keep lint happy */
-#endif
-#ifdef SCO_UNIX
-void *memset();
-#else
-#if !defined(ultrix) && !defined(NeXT) && !defined(sgi) && !defined(hppa) && !defined(__osf__)
-char *memset(void *, int, size_t);
-#endif
-#endif
-#endif
-
-#ifndef bzero
-#ifdef AMIGA
-#define bzero(s, n) setmem((char *)(s), n, '\0')
-#ifndef abs
-#define abs(x) ((x) < 0 ? -(x) : (x))
-#endif
-#else
-#define bzero(s, n) (void) memset((char *)(s), '\0', n)
-#endif
-#endif
-
-#ifdef VMS
-#define unlink delete
-#define SHORT_FILE_NAMES
-#endif
-
-#ifdef __STDC__
-
-#ifdef __GNUC__
-#include <stddef.h>
-void *malloc( size_t );
-void free( void* );
-#else
-#include <stdlib.h>
-#endif
-
-#else	/* ! __STDC__ */
-char *malloc(), *realloc();
-#endif
-
 
 /* maximum line length we'll have to deal with */
 #define MAXLINE BUFSIZ
@@ -120,13 +78,6 @@ char *malloc(), *realloc();
 #endif
 #ifndef max
 #define max(x,y) ((x) > (y) ? (x) : (y))
-#endif
-
-#ifdef MS_DOS
-#ifndef abs
-#define abs(x) ((x) < 0 ? -(x) : (x))
-#endif
-#define SHORT_FILE_NAMES
 #endif
 
 #define true 1
@@ -718,7 +669,7 @@ extern void make_tables (void);	/* generate transition tables */
 
 /* from file main.c */
 
-extern void flexend (int);
+extern void flexend (int) NORETURN;
 
 
 /* from file misc.c */
@@ -727,10 +678,10 @@ extern void flexend (int);
 extern void action_out (void);
 
 /* true if a string is all lower case */
-extern int all_lower (register Char *);
+extern int all_lower (Char *);
 
 /* true if a string is all upper case */
-extern int all_upper (register Char *);
+extern int all_upper (Char *);
 
 /* bubble sort an integer array */
 extern void bubble (int [], int);
@@ -741,7 +692,7 @@ extern void cshell (Char [], int, int);
 extern void dataend (void);	/* finish up a block of data declarations */
 
 /* report an error message and terminate */
-extern void flexerror (char[]);
+extern void flexerror (char[]) NORETURN;
 
 /* report a fatal error message and terminate */
 extern void flexfatal (char[]);
@@ -790,7 +741,7 @@ extern int link_machines (int, int);
 /* mark each "beginning" state in a machine as being a "normal" (i.e.,
  * not trailing context associated) state
  */
-extern void mark_beginning_as_normal (register int);
+extern void mark_beginning_as_normal (int);
 
 /* make a machine that branches to two machines */
 extern int mkbranch (int, int);
@@ -881,3 +832,7 @@ extern int read (int, char*, int);
 extern int unlink (char*);
 #endif
 extern int write (int, char*, int);
+
+
+#endif /* INC_flexdef_H */
+

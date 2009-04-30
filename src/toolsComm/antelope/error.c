@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* routines for printing error messages  */
@@ -12,6 +11,7 @@
 #include "defs.h"
 
 
+void
 fatal(char *msg)
 {
     fprintf(stderr, "%s: f - %s\n", myname, msg);
@@ -19,6 +19,7 @@ fatal(char *msg)
 }
 
 
+void
 no_space(void)
 {
     fprintf(stderr, "%s: f - out of space\n", myname);
@@ -26,6 +27,7 @@ no_space(void)
 }
 
 
+void
 open_error(char *filename)
 {
     fprintf(stderr, "%s: f - cannot open \"%s\"\n", myname, filename);
@@ -33,6 +35,7 @@ open_error(char *filename)
 }
 
 
+void
 unexpected_EOF(void)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unexpected end-of-file\n",
@@ -41,9 +44,10 @@ unexpected_EOF(void)
 }
 
 
+static int
 print_pos(char *st_line, char *st_cptr)
 {
-    register char *s;
+    char *s;
 
     if (st_line == 0) return(0);
     for (s = st_line; *s != '\n'; ++s)
@@ -67,6 +71,7 @@ print_pos(char *st_line, char *st_cptr)
 }
 
 
+void
 syntax_error(int st_lineno, char *st_line, char *st_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", syntax error\n",
@@ -76,6 +81,7 @@ syntax_error(int st_lineno, char *st_line, char *st_cptr)
 }
 
 
+void
 unterminated_comment(int c_lineno, char *c_line, char *c_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unmatched /*\n",
@@ -85,6 +91,7 @@ unterminated_comment(int c_lineno, char *c_line, char *c_cptr)
 }
 
 
+void
 unterminated_string(int s_lineno, char *s_line, char *s_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unterminated string\n",
@@ -94,6 +101,7 @@ unterminated_string(int s_lineno, char *s_line, char *s_cptr)
 }
 
 
+void
 unterminated_text(int t_lineno, char *t_line, char *t_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unmatched %%{\n",
@@ -103,6 +111,7 @@ unterminated_text(int t_lineno, char *t_line, char *t_cptr)
 }
 
 
+void
 unterminated_union(int u_lineno, char *u_line, char *u_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unterminated %%union \
@@ -112,6 +121,7 @@ declaration\n", myname, u_lineno, input_file_name);
 }
 
 
+void
 over_unionized(char *u_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", too many %%union \
@@ -121,6 +131,7 @@ declarations\n", myname, lineno, input_file_name);
 }
 
 
+void
 illegal_tag(int t_lineno, char *t_line, char *t_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal tag\n",
@@ -130,6 +141,7 @@ illegal_tag(int t_lineno, char *t_line, char *t_cptr)
 }
 
 
+void
 illegal_character(char *c_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal character\n",
@@ -139,6 +151,7 @@ illegal_character(char *c_cptr)
 }
 
 
+void
 used_reserved(char *s)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal use of reserved symbol \
@@ -147,6 +160,7 @@ used_reserved(char *s)
 }
 
 
+void
 tokenized_start(char *s)
 {
      fprintf(stderr, "%s: e - line %d of \"%s\", the start symbol %s cannot be \
@@ -155,6 +169,7 @@ declared to be a token\n", myname, lineno, input_file_name, s);
 }
 
 
+void
 retyped_warning(char *s)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", the type of %s has been \
@@ -162,6 +177,7 @@ redeclared\n", myname, lineno, input_file_name, s);
 }
 
 
+void
 reprec_warning(char *s)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", the precedence of %s has been \
@@ -169,6 +185,7 @@ redeclared\n", myname, lineno, input_file_name, s);
 }
 
 
+void
 revalued_warning(char *s)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", the value of %s has been \
@@ -176,6 +193,7 @@ redeclared\n", myname, lineno, input_file_name, s);
 }
 
 
+void
 terminal_start(char *s)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", the start symbol %s is a \
@@ -184,6 +202,7 @@ token\n", myname, lineno, input_file_name, s);
 }
 
 
+void
 restarted_warning(void)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", the start symbol has been \
@@ -191,6 +210,7 @@ redeclared\n", myname, lineno, input_file_name);
 }
 
 
+void
 no_grammar(void)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", no grammar has been \
@@ -199,6 +219,7 @@ specified\n", myname, lineno, input_file_name);
 }
 
 
+void
 terminal_lhs(int s_lineno)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", a token appears on the lhs \
@@ -207,6 +228,7 @@ of a production\n", myname, s_lineno, input_file_name);
 }
 
 
+void
 prec_redeclared(void)
 {
     fprintf(stderr, "%s: w - line %d of  \"%s\", conflicting %%prec \
@@ -214,6 +236,7 @@ specifiers\n", myname, lineno, input_file_name);
 }
 
 
+void
 unterminated_action(int a_lineno, char *a_line, char *a_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", unterminated action\n",
@@ -223,6 +246,7 @@ unterminated_action(int a_lineno, char *a_line, char *a_cptr)
 }
 
 
+void
 dollar_warning(int a_lineno, int i)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", $%d references beyond the \
@@ -230,6 +254,7 @@ end of the current rule\n", myname, a_lineno, input_file_name, i);
 }
 
 
+void
 dollar_error(int a_lineno, char *a_line, char *a_cptr)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", illegal $-name\n",
@@ -239,6 +264,7 @@ dollar_error(int a_lineno, char *a_line, char *a_cptr)
 }
 
 
+void
 untyped_lhs(void)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $$ is untyped\n",
@@ -247,6 +273,7 @@ untyped_lhs(void)
 }
 
 
+void
 untyped_rhs(int i, char *s)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $%d (%s) is untyped\n",
@@ -255,6 +282,7 @@ untyped_rhs(int i, char *s)
 }
 
 
+void
 unknown_rhs(int i)
 {
     fprintf(stderr, "%s: e - line %d of \"%s\", $%d is untyped\n",
@@ -263,6 +291,7 @@ unknown_rhs(int i)
 }
 
 
+void
 default_action_warning(void)
 {
     fprintf(stderr, "%s: w - line %d of \"%s\", the default action assigns an \
@@ -270,6 +299,7 @@ undefined value to $$\n", myname, lineno, input_file_name);
 }
 
 
+void
 undefined_goal(char *s)
 {
     fprintf(stderr, "%s: e - the start symbol %s is undefined\n", myname, s);
@@ -277,6 +307,7 @@ undefined_goal(char *s)
 }
 
 
+void
 undefined_symbol_warning(char *s)
 {
     fprintf(stderr, "%s: w - the symbol %s is undefined\n", myname, s);

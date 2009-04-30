@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -18,9 +17,6 @@ int nstates;
 core *first_state;
 shifts *first_shift;
 reductions *first_reduction;
-
-int get_state(int symbol);
-core *new_state(int symbol);
 
 static core **state_set;
 static core *this_state;
@@ -38,16 +34,27 @@ static short **kernel_base;
 static short **kernel_end;
 static short *kernel_items;
 
-void
+static int get_state(int symbol);
+static void initialize_states(void);
+static void new_itemsets(void);
+static core *new_state(int symbol);
+static void save_shifts(void);
+static void save_reductions(void);
+#ifdef DEBUG
+static void print_derives(void);
+#endif
+
+
+static void
 allocate_itemsets(void)
 {
-    register short *itemp;
-    register short *item_end;
-    register int symbol;
-    register int i;
-    register int count;
-    register int max;
-    register short *symbol_count;
+    short *itemp;
+    short *item_end;
+    int symbol;
+    int i;
+    int count;
+    int max;
+    short *symbol_count;
 
     count = 0;
     symbol_count = NEW2(nsyms, short);
@@ -80,7 +87,7 @@ allocate_itemsets(void)
     kernel_end = NEW2(nsyms, short *);
 }
 
-void
+static void
 allocate_storage(void)
 {
     allocate_itemsets();
@@ -89,12 +96,12 @@ allocate_storage(void)
     state_set = NEW2(nitems, core *);
 }
 
-void
+static void
 append_states(void)
 {
-    register int i;
-    register int j;
-    register int symbol;
+    int i;
+    int j;
+    int symbol;
 
 #ifdef	TRACE
     fprintf(stderr, "Entering append_states()\n");
@@ -118,7 +125,7 @@ append_states(void)
     }
 }
 
-void
+static void
 free_storage(void)
 {
     FREE(shift_symbol);
@@ -131,7 +138,7 @@ free_storage(void)
 }
 
 
-void
+static void
 generate_states(void)
 {
     allocate_storage();
@@ -159,16 +166,16 @@ generate_states(void)
 
 
 
-int
+static int
 get_state(int symbol)
 {
-    register int key;
-    register short *isp1;
-    register short *isp2;
-    register short *iend;
-    register core *sp;
-    register int found;
-    register int n;
+    int key;
+    short *isp1;
+    short *isp2;
+    short *iend;
+    core *sp;
+    int found;
+    int n;
 
 #ifdef	TRACE
     fprintf(stderr, "Entering get_state(%d)\n", symbol);
@@ -222,12 +229,12 @@ get_state(int symbol)
 }
 
 
-void
+static void
 initialize_states(void)
 {
-    register int i;
-    register short *start_derives;
-    register core *p;
+    int i;
+    short *start_derives;
+    core *p;
 
     start_derives = derives[start_symbol];
     for (i = 0; start_derives[i] >= 0; ++i)
@@ -249,14 +256,14 @@ initialize_states(void)
     nstates = 1;
 }
 
-void
+static void
 new_itemsets(void)
 {
-    register int i;
-    register int shiftcount;
-    register short *isp;
-    register short *ksp;
-    register int symbol;
+    int i;
+    int shiftcount;
+    short *isp;
+    short *ksp;
+    int symbol;
 
     for (i = 0; i < nsyms; i++)
 	kernel_end[i] = 0;
@@ -286,14 +293,14 @@ new_itemsets(void)
 
 
 
-core *
+static core *
 new_state(int symbol)
 {
-    register int n;
-    register core *p;
-    register short *isp1;
-    register short *isp2;
-    register short *iend;
+    int n;
+    core *p;
+    short *isp1;
+    short *isp2;
+    short *iend;
 
 #ifdef	TRACE
     fprintf(stderr, "Entering new_state(%d)\n", symbol);
@@ -324,8 +331,8 @@ new_state(int symbol)
 }
 
 
-/* show_cores is used for debugging */
-void
+#ifdef DEBUG
+static void
 show_cores(void)
 {
     core *p;
@@ -359,8 +366,7 @@ show_cores(void)
 }
 
 
-/* show_ritems is used for debugging */
-void
+static void
 show_ritems(void)
 {
     int i;
@@ -370,8 +376,7 @@ show_ritems(void)
 }
 
 
-/* show_rrhs is used for debugging */
-void
+static void
 show_rrhs(void)
 {
     int i;
@@ -381,8 +386,7 @@ show_rrhs(void)
 }
 
 
-/* show_shifts is used for debugging */
-void
+static void
 show_shifts(void)
 {
     shifts *p;
@@ -399,14 +403,15 @@ show_shifts(void)
 	    printf("\t%d\n", p->shift[i]);
     }
 }
+#endif
 
-void
+static void
 save_shifts(void)
 {
-    register shifts *p;
-    register short *sp1;
-    register short *sp2;
-    register short *send;
+    shifts *p;
+    short *sp1;
+    short *sp2;
+    short *send;
 
     p = (shifts *) allocate((unsigned) (sizeof(shifts) +
 			(nshifts - 1) * sizeof(short)));
@@ -434,16 +439,16 @@ save_shifts(void)
 }
 
 
-void
+static void
 save_reductions(void)
 {
-    register short *isp;
-    register short *rp1;
-    register short *rp2;
-    register int item;
-    register int count;
-    register reductions *p;
-    register short *rend;
+    short *isp;
+    short *rp1;
+    short *rp2;
+    int item;
+    int count;
+    reductions *p;
+    short *rend;
 
     count = 0;
     for (isp = itemset; isp < itemsetend; isp++)
@@ -483,12 +488,12 @@ save_reductions(void)
     }
 }
 
-void
+static void
 set_derives(void)
 {
-    register int i, k;
-    register int lhs;
-    register short *rules;
+    int i, k;
+    int lhs;
+    short *rules;
 
     derives = NEW2(nsyms, short *);
     rules = NEW2(nvars + nrules, short);
@@ -514,7 +519,7 @@ set_derives(void)
 #endif
 }
 
-void
+static void
 free_derives(void)
 {
     FREE(derives[start_symbol]);
@@ -522,11 +527,11 @@ free_derives(void)
 }
 
 #ifdef	DEBUG
-void
+static void
 print_derives(void)
 {
-    register int i;
-    register short *sp;
+    int i;
+    short *sp;
 
     printf("\nDERIVES\n\n");
 
@@ -544,11 +549,11 @@ print_derives(void)
 }
 #endif
 
-void
+static void
 set_nullable(void)
 {
-    register int i, j;
-    register int empty;
+    int i, j;
+    int empty;
     int done;
 
     nullable = MALLOC(nsyms);
@@ -593,7 +598,7 @@ set_nullable(void)
 #endif
 }
 
-void
+static void
 free_nullable(void)
 {
     FREE(nullable);

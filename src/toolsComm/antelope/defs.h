@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 #include <assert.h>
@@ -274,22 +273,95 @@ extern short *rules_used;
 extern short nunused;
 extern short final_state;
 
-/* global functions */
+/*
+ * global functions
+ */
 
+#ifdef __GNUC__
+#define NORETURN __attribute__((noreturn))
+#else
+#define NORETURN
+#endif
+
+/* main.c */
+extern void done(int k) NORETURN;
 extern char *allocate(unsigned int n);
-extern bucket *lookup(char *name);
+
+/* error.c */
+extern void no_space(void) NORETURN;
+extern void fatal(char *msg) NORETURN;
+extern void open_error(char *filename) NORETURN;
+extern void unexpected_EOF(void) NORETURN;
+extern void syntax_error(int st_lineno, char *st_line, char *st_cptr) NORETURN;
+extern void unterminated_comment(int c_lineno, char *c_line, char *c_cptr) NORETURN;
+extern void unterminated_string(int s_lineno, char *s_line, char *s_cptr) NORETURN;
+extern void unterminated_text(int t_lineno, char *t_line, char *t_cptr) NORETURN;
+extern void unterminated_union(int u_lineno, char *u_line, char *u_cptr) NORETURN;
+extern void over_unionized(char *u_cptr) NORETURN;
+extern void illegal_tag(int t_lineno, char *t_line, char *t_cptr) NORETURN;
+extern void illegal_character(char *c_cptr) NORETURN;
+extern void used_reserved(char *s) NORETURN;
+extern void tokenized_start(char *s) NORETURN;
+extern void retyped_warning(char *s);
+extern void reprec_warning(char *s);
+extern void revalued_warning(char *s);
+extern void terminal_start(char *s);
+extern void restarted_warning(void);
+extern void no_grammar(void) NORETURN;
+extern void terminal_lhs(int s_lineno) NORETURN;
+extern void prec_redeclared(void);
+extern void unterminated_action(int a_lineno, char *a_line, char *a_cptr) NORETURN;
+extern void dollar_warning(int a_lineno, int i);
+extern void dollar_error(int a_lineno, char *a_line, char *a_cptr) NORETURN;
+extern void untyped_lhs(void) NORETURN;
+extern void untyped_rhs(int i, char *s) NORETURN;
+extern void unknown_rhs(int i) NORETURN;
+extern void default_action_warning(void);
+extern void undefined_goal(char *s) NORETURN;
+extern void undefined_symbol_warning(char *s);
+
+/* symtab.c */
 extern bucket *make_bucket(char *name);
+extern bucket *lookup(char *name);
+extern void create_symbol_table(void);
+extern void free_symbol_table(void);
+extern void free_symbols(void);
 
+/* closure.c */
+extern void set_first_derives(void);
+extern void closure(short int *nucleus, int n);
+extern void finalize_closure(void);
 
-/* system variables */
+/* reader.c */
+extern void reader(void);
 
-extern int errno;
+/* lr0.c */
+extern void lr0(void);
 
+/* lalr.c */
+extern void lalr(void);
 
-/* system functions */
+/* mkpar.c */
+extern void make_parser(void);
+extern void free_parser(void);
 
-extern void free(void *);
-extern char *calloc(size_t, size_t);
-extern char *malloc(size_t);
-extern char *realloc(void *, size_t);
-extern char *strcpy(char *, const char *);
+/* warshall.c */
+extern void reflexive_transitive_closure(unsigned int *R, int n);
+
+/* output.c */
+extern void output(void);
+extern int default_goto(int symbol);
+extern int matching_vector(int vector);
+extern int pack_vector(int vector);
+
+/* skeleton.c */
+extern void write_section(char *section[]);
+
+/* verbose.c */
+extern void verbose(void);
+
+/* system includes */
+
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>

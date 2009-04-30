@@ -3,16 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 #include "defs.h"
 
-/*  The definition of yysccsid in the banner should be replaced with	*/
-/*  a #pragma ident directive if the target C compiler supports		*/
-/*  #pragma ident directives.						*/
-/*									*/
 /*  If the skeleton is changed, the banner should be changed so that	*/
 /*  the altered version can be easily distinguished from the original.	*/
 /*									*/
@@ -68,7 +63,7 @@ char *header[] =
     "#endif",
     "#if YYDEBUG",				/* MRK */
     "static int yydebug;",			/* JRW */
-    "#endif",					/* MRK */	
+    "#endif",					/* MRK */
     "static int yynerrs;",			/* JRW */
     "static int yyerrflag;",			/* JRW */
     "static int yychar;",			/* JRW */
@@ -92,9 +87,9 @@ char *body[] =
     "static int",		/* JRW */
     "yyparse(void)",		/* JRW */
     "{",
-    "    register int yym, yyn, yystate;",
+    "    int yym, yyn, yystate;",
     "#if YYDEBUG",
-    "    register char *yys;",
+    "    char *yys;",
     "    extern char *getenv();",
     "",
     "    if ((yys = getenv(\"YYDEBUG\")))",
@@ -285,18 +280,19 @@ char *trailer[] =
 };
 
 
+void
 write_section(char *section[])
 {
-    register int c;
-    register int i;
-    register char *s;
-    register FILE *f;
+    int c;
+    int i;
+    char *s;
+    FILE *f;
 
     f = code_file;
-    for (i = 0; s = section[i]; ++i)
+    for (i = 0; (s = section[i]); ++i)
     {
 	++outline;
-	while (c = *s)
+	while ((c = *s))
 	{
 	    putc(c, f);
 	    ++s;

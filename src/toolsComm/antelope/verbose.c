@@ -3,21 +3,32 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 #include "defs.h"
 
-
 static short *null_rules;
 
+static void log_unused(void);
+static void log_conflicts(void);
+static void print_state(int state);
+static void print_conflicts(int state);
+static void print_core(int state);
+static void print_nulls(int state);
+static void print_actions(int state);
+static void print_shifts(action *p);
+static void print_reductions(action *p, int defred);
+static void print_gotos(int stateno);
+
+
+void
 verbose(void)
 {
-    register int i;
+    int i;
 
-    if (!vflag) return(0);
+    if (!vflag) return;
 
     null_rules = (short *) MALLOC(nrules*sizeof(short));
     if (null_rules == 0) no_space();
@@ -33,15 +44,14 @@ verbose(void)
 
     fprintf(verbose_file, "\n\n%d terminals, %d nonterminals\n", ntokens, nvars);
     fprintf(verbose_file, "%d grammar rules, %d states\n", nrules - 2, nstates);
-
-	return(0);
 }
 
 
+static void
 log_unused(void)
 {
-    register int i;
-    register short *p;
+    int i;
+    short *p;
 
     fprintf(verbose_file, "\n\nRules never reduced:\n");
     for (i = 3; i < nrules; ++i)
@@ -57,9 +67,10 @@ log_unused(void)
 }
 
 
+static void
 log_conflicts(void)
 {
-    register int i;
+    int i;
 
     fprintf(verbose_file, "\n\n");
     for (i = 0; i < nstates; i++)
@@ -85,6 +96,7 @@ log_conflicts(void)
 }
 
 
+static void
 print_state(int state)
 {
     if (state)
@@ -98,10 +110,11 @@ print_state(int state)
 }
 
 
+static void
 print_conflicts(int state)
 {
-    register int symbol, act, number;
-    register action *p;
+    int symbol, act = 0, number = 0;
+    action *p;
 
     symbol = -1;
     for (p = parser[state]; p; p = p->next)
@@ -145,14 +158,15 @@ print_conflicts(int state)
 }
 
 
+static void
 print_core(int state)
 {
-    register int i;
-    register int k;
-    register int rule;
-    register core *statep;
-    register short *sp;
-    register short *sp1;
+    int i;
+    int k;
+    int rule;
+    core *statep;
+    short *sp;
+    short *sp1;
 
     statep = state_table[state];
     k = statep->nitems;
@@ -180,10 +194,11 @@ print_core(int state)
 }
 
 
+static void
 print_nulls(int state)
 {
-    register action *p;
-    register int i, j, k, nnulls;
+    action *p;
+    int i, j, k, nnulls;
 
     nnulls = 0;
     for (p = parser[state]; p; p = p->next)
@@ -223,11 +238,12 @@ print_nulls(int state)
 }
 
 
+static void
 print_actions(int stateno)
 {
-    register action *p;
-    register shifts *sp;
-    register int as;
+    action *p;
+    shifts *sp;
+    int as;
 
     if (stateno == final_state)
 	fprintf(verbose_file, "\t$end  accept\n");
@@ -249,10 +265,11 @@ print_actions(int stateno)
 }
 
 
-print_shifts(register action *p)
+static void
+print_shifts(action *p)
 {
-    register int count;
-    register action *q;
+    int count;
+    action *q;
 
     count = 0;
     for (q = p; q; q = q->next)
@@ -273,10 +290,11 @@ print_shifts(register action *p)
 }
 
 
-print_reductions(register action *p, register int defred)
+static void
+print_reductions(action *p, int defred)
 {
-    register int k, anyreds;
-    register action *q;
+    int k, anyreds;
+    action *q;
 
     anyreds = 0;
     for (q = p; q ; q = q->next)
@@ -309,12 +327,13 @@ print_reductions(register action *p, register int defred)
 }
 
 
+static void
 print_gotos(int stateno)
 {
-    register int i, k;
-    register int as;
-    register short *to_state;
-    register shifts *sp;
+    int i, k;
+    int as;
+    short *to_state;
+    shifts *sp;
 
     putc('\n', verbose_file);
     sp = shift_table[stateno];

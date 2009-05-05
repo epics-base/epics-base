@@ -7,8 +7,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -158,6 +157,10 @@ int caget (pv *pvs, int nPvs, OutputT format,
             pvs[n].onceConnected = 1;
                                    /* Allocate value structure */
             pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].reqElems));
+            if(!pvs[n].value){
+                fprintf(stderr,"Allocation failed\n");
+                exit(1);
+            }
             result = ca_array_get(pvs[n].dbrType,
                                   pvs[n].reqElems,
                                   pvs[n].chid,
@@ -201,6 +204,10 @@ int caget (pv *pvs, int nPvs, OutputT format,
                     dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
                     int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                     char *d = calloc(dlen+1, sizeof(char));
+                    if(!d){
+                        fprintf(stderr,"Allocation failed\n");
+                        exit(1);
+                    }
                     epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
                     printf("%s", d);
                     free(d);
@@ -400,6 +407,10 @@ int main (int argc, char *argv[])
             len++;
         }
         cbuf = calloc(len, sizeof(char));
+        if (!cbuf) {
+            fprintf(stderr, "Memory allocation failed.\n");
+            return 1;
+        }
         strcpy(cbuf, argv[optind]);
 
         if (argc > optind+1) {
@@ -416,6 +427,10 @@ int main (int argc, char *argv[])
 
     sbuf = calloc (count, sizeof(EpicsStr));
     dbuf = calloc (count, sizeof(double));
+    if(!sbuf || !dbuf) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 1;
+    }
 
                                 /*  ENUM? Special treatment */
 
@@ -481,6 +496,10 @@ int main (int argc, char *argv[])
             count = len;
             dbrType = DBR_CHAR;
             ebuf = calloc(strlen(cbuf), sizeof(char));
+            if(!ebuf) {
+                fprintf(stderr, "Memory allocation failed\n");
+                return 1;
+            }
             epicsStrnRawFromEscaped(ebuf, strlen(cbuf), cbuf, strlen(cbuf));
         } else {
             for (i = 0; i < count; ++i) {

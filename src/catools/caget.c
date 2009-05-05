@@ -7,8 +7,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -204,6 +203,10 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             } else {
                                        /* Allocate value structure */
                 pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].reqElems));
+                if(!pvs[n].value) {
+                    fprintf(stderr,"Allocation failed\n");
+                    return 1;
+                }
                 result = ca_array_get(pvs[n].dbrType,
                                       pvs[n].reqElems,
                                       pvs[n].chid,
@@ -268,9 +271,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                     dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
                     int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                     char *d = calloc(dlen+1, sizeof(char));
-                    epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
-                    printf("%s", d);
-                    free(d);
+                    if(d) {
+                        epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
+                        printf("%s", d);
+                        free(d);
+                    } else {
+                        fprintf(stderr,"Failed to allocate space for escaped string\n");
+                    }
                 } else {
                     if (reqElems || pvs[n].nElems > 1) printf("%lu%c", pvs[n].reqElems, fieldSeparator);
                     for (i=0; i<pvs[n].reqElems; ++i) {
@@ -310,9 +317,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                         dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
                         int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                         char *d = calloc(dlen+1, sizeof(char));
-                        epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
-                        printf("%s", d);
-                        free(d);
+                        if(d) {
+                            epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));
+                            printf("%s", d);
+                            free(d);
+                        } else {
+                            fprintf(stderr,"Failed to allocate space for escaped string\n");
+                        }
                     } else {
                         for (i=0; i<pvs[n].reqElems; ++i) {
                             if (i) printf ("%c", fieldSeparator);

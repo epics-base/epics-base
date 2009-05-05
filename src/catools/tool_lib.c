@@ -6,8 +6,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -430,9 +429,13 @@ char *dbr2str (const void *value, unsigned type)
         dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pv->value, pv->dbrType); \
         int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s)); \
         char *d = calloc(dlen+1, sizeof(char));                         \
-        epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s)); \
-        printf("%c%s", fieldSeparator, d);                              \
-        free(d);                                                        \
+        if(d) {                                                         \
+            epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));\
+            printf("%c%s", fieldSeparator, d);                          \
+            free(d);                                                    \
+        } else {                                                        \
+            printf("Failed to allocate for print_time_val_sts\n");      \
+        }                                                               \
     } else {                                                            \
         if (reqElems || pv->nElems > 1) printf("%c%lu", fieldSeparator, pv->reqElems); \
         for (i=0; i<pv->reqElems; ++i) {                                \

@@ -118,8 +118,7 @@ long epicsShareAPI dbl(const char *precordTypename, const char *fields)
     if (fields) {
         char *pnext;
 
-        fieldnames = calloc(strlen(fields) + 1, sizeof(char));
-        strcpy(fieldnames, fields);
+        fieldnames = epicsStrDup(fields);
         nfields = 1;
         pnext = fieldnames;
         while (*pnext && (pnext = strchr(pnext,' '))) {

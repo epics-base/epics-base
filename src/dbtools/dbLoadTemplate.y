@@ -277,6 +277,15 @@ int epicsShareAPI dbLoadTemplate(char* sub_file)
 
 	vars = (char**)malloc(VAR_MAX_VARS * sizeof(char*));
 	sub_collect = malloc(VAR_MAX_VAR_STRING);
+	if (!vars || !sub_collect)
+	{
+		free(vars);
+		free(sub_collect);
+		fclose(fp);
+		fprintf(stderr, "dbLoadTemplate: Out of memory!\n");
+		return -1;
+	}
+
 	sub_collect[0]='\0';
 	var_count=0;
 	sub_count=0;

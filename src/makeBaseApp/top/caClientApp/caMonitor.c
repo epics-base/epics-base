@@ -9,6 +9,8 @@
 
 #include "cadef.h"
 #include "dbDefs.h"
+#include "epicsString.h"
+#include "cantProceed.h"
 
 #define MAX_PV 1000
 #define MAX_PV_NAME_LEN 40
@@ -81,26 +83,29 @@ int main(int argc,char **argv)
     char	*pstr;
     FILE	*fp;
 
-    if(argc != 2) {
+    if (argc != 2) {
         fprintf(stderr,"usage: caMonitor filename\n");
         exit(1);
     }
     filename = argv[1];
     fp = fopen(filename,"r");
-    if(!fp) {
+    if (!fp) {
         perror("fopen failed");
         return(1);
     }
-    while(1) {
-	if(npv >= MAX_PV ) break;
-	pstr = fgets(tempStr,MAX_PV_NAME_LEN,fp);
-	if(!pstr) break;
-	if(strlen(pstr) <=1) continue;
-	pstr[strlen(pstr)-1] = '\0'; /*strip off newline*/
-	pname[npv] = calloc(1,strlen(pstr) + 1);
-	strcpy(pname[npv],pstr);
-	pmynode[npv] = (MYNODE *)calloc(1,sizeof(MYNODE));
-	npv++;
+    while (npv < MAX_PV) {
+        size_t len;
+
+        pstr = fgets(tempStr, MAX_PV_NAME_LEN, fp);
+        if (!pstr) break;
+
+        len = strlen(pstr);
+        if (len <= 1) continue;
+
+        pstr[len - 1] = '\0'; /* Strip newline */
+        pname[npv] = epicsStrDup(pstr);
+        pmynode[npv] = callocMustSucceed(1, sizeof(MYNODE), "caMonitor");
+        npv++;
     }
     SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),

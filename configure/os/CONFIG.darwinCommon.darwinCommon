@@ -1,4 +1,4 @@
-# CONFIG.Common.darwinCommon
+# CONFIG.darwinCommon.darwinCommon
 #
 # $Id$
 # This file is maintained by the build community.
@@ -94,3 +94,4 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 %.o: %.m
 	$(COMPILE.c) -c $<
 
+-include $(CONFIG)/os/CONFIG_SITE.darwinCommon.darwinCommon

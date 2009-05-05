@@ -30,3 +30,6 @@ PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 LDLIBS_READLINE = -lreadline -lcurses
 
 GNU_LDLIBS_YES = -lgcc_pic
+
+-include $(CONFIG)/os/CONFIG_SITE.Common.freebsdCommon
+

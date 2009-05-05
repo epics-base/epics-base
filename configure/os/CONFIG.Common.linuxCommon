@@ -36,3 +36,5 @@ PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline -lncurses
 
+-include $(CONFIG)/os/CONFIG_SITE.Common.linuxCommon
+

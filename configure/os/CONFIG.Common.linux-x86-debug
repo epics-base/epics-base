@@ -10,3 +10,4 @@
 # Include definitions common to all linux-x86  target archs
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
+HOST_OPT=NO

@@ -10,3 +10,5 @@
 # Include definitions common to all solaris-sparc  target archs
 include $(CONFIG)/os/CONFIG.Common.solaris-sparc
 
+# Removes -O optimization and adds -g compile option
+HOST_OPT=NO

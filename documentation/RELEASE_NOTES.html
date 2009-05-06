@@ -12,6 +12,16 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Universal Binaries on Darwin</h4>
+
+<p>It is now possible to configure Base on Darwin to build universal binaries
+containing an installation-specific choice of 32- and 64-bit CPU architectures.
+This is controlled through the definition of the ARCH_CLASS variable in the
+configure/os/CONFIG_SITE.Common.&lt;arch&gt; file for the particular target
+architecture you are using (darwin-ppc, darwin-x86 or darwin-ppcx86). There are
+comments and example settings in those files.  Note that to my knowledge EPICS
+Base has not been thoroughly tested on the 64-bit darwin architectures.</p>
+
 <h4>HPUX, SGI and VMS files deleted</h4>
 
 <p>We have not supported or tested EPICS Base on HPUX for several releases; the

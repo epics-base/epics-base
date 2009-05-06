@@ -5,8 +5,3 @@
 #
 # Site override definitions for darwin-ppcx86 host builds
 #-------------------------------------------------------
-
-#
-# Need this to get OS X readline rather than Fink (PPC-only) readline
-#
-OP_SYS_LDFLAGS +=  -L/usr/lib

@@ -8,9 +8,8 @@
 #-------------------------------------------------------
 
 #
-# Architecture-specific information
-#
-ARCH_CLASS = ppc
+# To build universal binaries, configure ARCH_CLASS
+# in the file CONFIG_SITE.Common.darwin-ppc
 
 # Include definitions common to all Darwin targets
 include $(CONFIG)/os/CONFIG.darwinCommon.darwinCommon

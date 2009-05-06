@@ -1,0 +1,14 @@
+# CONFIG_SITE.Common.darwin-ppc
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Site override definitions for darwin-ppc target builds
+#-------------------------------------------------------
+
+# Select which CPU architectures to include in your universal binaries:
+#   ppc
+#   ppc64   - Not tested
+
+ARCH_CLASS = ppc
+#ARCH_CLASS = ppc ppc64

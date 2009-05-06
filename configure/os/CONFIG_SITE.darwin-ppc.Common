@@ -5,5 +5,3 @@
 #
 # Site override definitions for darwin-ppc host builds
 #-------------------------------------------------------
-
-CROSS_COMPILER_TARGET_ARCHS = # RTEMS-uC5282 RTEMS-mvme5500  RTEMS-mvme2100

@@ -3,8 +3,8 @@
 # $Id$
 # This file is maintained by the build community.
 #
-# Definitions for darwin target builds
-# Sites may override these definitions in CONFIG_SITE.Common.darwin-<arch>
+# Common definitions for darwin builds
+# Sites may override these definitions in CONFIG_SITE.darwinCommon.darwinCommon
 #-------------------------------------------------------
 
 # Include definitions common to all Unix targets
@@ -17,6 +17,18 @@ include $(CONFIG)/CONFIG.gnuCommon
 # Set OS-specific information
 #
 OS_CLASS = Darwin
+
+#
+# Build architecture flags
+#   For Darwin, ARCH_CLASS may be empty, or may contain a list of CPU
+#   architectures which must be valid arguments to the -arch options
+#   for the cc and ld commands.
+#   ARCH_CLASS is defined in a CONFIG_SITE file which is not loaded
+#   until after this file.
+#
+ARCH_DEP_FLAGS = $(addprefix -arch ,$(ARCH_CLASS))
+ARCH_DEP_CFLAGS += $(ARCH_DEP_FLAGS)
+ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 
 #
 # Special flags for Darwin

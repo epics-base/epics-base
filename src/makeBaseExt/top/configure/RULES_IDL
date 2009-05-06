@@ -6,8 +6,8 @@ ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 INSTALL_IDL                = $(INSTALL_LOCATION)/idllib
 DIRECTORY_TARGETS += $(INSTALL_IDL)
 
-ifneq ($(strip $(IDLS_$(ARCH_CLASS))),)
-IDLS += $(subst -nil-,,$(IDLS_$(ARCH_CLASS)))
+ifneq ($(strip $(IDLS_$(OS_CLASS))),)
+IDLS += $(subst -nil-,,$(IDLS_$(OS_CLASS)))
 else
 ifdef IDLS_DEFAULT
 IDLS += $(IDLS_DEFAULT)

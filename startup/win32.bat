@@ -42,9 +42,7 @@ REM    ---- Visual Studio 2005 -----
 REM call "C:\Program files\Microsoft Visual Studio 8\VC\bin\vcvars32.bat"
 REM    ---- Visual Studio 2008 -----
 call "C:\Program files\Microsoft Visual Studio 9.0\VC\bin\vcvars32.bat"
-set PATH=%PATH%;C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
-set INCLUDE=%INCLUDE%;C:\Program Files\Microsoft SDKs\Windows\v6.0A\include
-set LIB=%LIB%;C:\Program Files\Microsoft SDKs\Windows\v6.0A\lib
+
 
 REM    --------------- EPICS -----------------------------
 REM    -- R3.14 requirements

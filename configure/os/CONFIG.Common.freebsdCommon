@@ -31,5 +31,7 @@ LDLIBS_READLINE = -lreadline -lcurses
 
 GNU_LDLIBS_YES = -lgcc_pic
 
+#--------------------------------------------------
+# Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.freebsdCommon
-
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).freebsdCommon

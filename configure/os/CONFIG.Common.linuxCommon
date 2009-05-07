@@ -36,5 +36,7 @@ PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline -lncurses
 
+#--------------------------------------------------
+# Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.linuxCommon
-
+-include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).linuxCommon

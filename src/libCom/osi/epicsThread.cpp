@@ -15,9 +15,10 @@
 #include <exception>
 #include <typeinfo>
 
-#include <stdio.h>
-#include <stddef.h>
-#include <float.h>
+#include <cstdio>
+#include <cstddef>
+#include <cfloat>
+#include <cstring>
 
 #define epicsExportSharedSymbols
 #include "epicsAlgorithm.h"
@@ -30,6 +31,30 @@
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
+    
+void epicsThread :: printLastChanceExceptionMessage ( 
+    const char * pExceptionTypeName,
+    const char * pExceptionContext )
+{ 
+    char date[64];
+    try {
+        epicsTime cur = epicsTime :: getCurrent ();
+        cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+    }
+    catch ( ... ) {
+        strcpy ( date, "<UKN DATE>" );
+    }
+    char name [128];
+    epicsThreadGetName ( this->id, name, sizeof ( name ) );
+    errlogPrintf ( 
+        "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" in thread \"%s\" at %s\n",
+        pExceptionContext, pExceptionTypeName, name, date );
+    errlogFlush ();
+    // this should behave as the C++ implementation intends when an 
+    // exception isnt handled. If users dont like this behavior, they 
+    // can install an application specific unexpected handler.
+    std::unexpected ();
+}
 
 extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
 {
@@ -49,36 +74,14 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     }
     catch ( std::exception & except ) {
         if ( ! waitRelease ) {
-            epicsTime cur = epicsTime::getCurrent ();
-            char date[64];
-            cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
-            char name [128];
-            epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
-            errlogPrintf ( 
-                "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" in thread \"%s\" at %s\n",
-                except.what (), typeid ( except ).name (), name, date );
-            errlogFlush ();
-            // this should behave as the C++ implementation intends when an 
-            // exception isnt handled. If users dont like this behavior, they 
-            // can install an application specific unexpected handler.
-            std::unexpected ();
+            pThread->printLastChanceExceptionMessage ( 
+                typeid ( except ).name (), except.what () );
         }
     }
     catch ( ... ) {
         if ( ! waitRelease ) {
-            epicsTime cur = epicsTime::getCurrent ();
-            char date[64];
-            cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
-            char name [128];
-            epicsThreadGetName ( pThread->id, name, sizeof ( name ) );
-            errlogPrintf ( 
-                "epicsThread: Unknown C++ exception in thread \"%s\" at %s\n",
-                name, date );
-            errlogFlush ();
-            // this should behave as the C++ implementation intends when an 
-            // exception isnt handled. If users dont like this behavior, they 
-            // can install an application specific unexpected handler.
-            std::unexpected ();
+            pThread->printLastChanceExceptionMessage ( 
+                "catch ( ... )", "Non-standard C++ exception" );
         }
     }
     if ( ! waitRelease ) {

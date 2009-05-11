@@ -174,7 +174,9 @@ private:
     epicsThread ( const epicsThread & );
     epicsThread & operator = ( const epicsThread & );
     friend void epicsThreadCallEntryPoint ( void * );
-
+    void printLastChanceExceptionMessage ( 
+        const char * pExceptionTypeName,
+        const char * pExceptionContext );
     /* exceptions */
     class exitException {};
 };

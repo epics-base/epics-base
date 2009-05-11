@@ -173,7 +173,12 @@ extern "C" void epicsShareAPI
 extern "C" double epicsShareAPI 
     epicsTimerQueuePassiveProcess ( epicsTimerQueuePassiveId pQueue )
 {
-    return pQueue->process ( epicsTime::getCurrent() );
+    try {
+        return pQueue->process ( epicsTime::getCurrent() );
+    }
+    catch ( ... ) {
+        return 1.0;
+    }
 }
 
 extern "C" epicsTimerId epicsShareAPI epicsTimerQueuePassiveCreateTimer (

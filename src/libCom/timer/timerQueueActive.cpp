@@ -18,6 +18,7 @@
 
 #define epicsExportSharedSymbols
 #include "timerPrivate.h"
+#include "errlog.h"
 
 #ifdef _MSC_VER
 #   pragma warning ( push )
@@ -63,13 +64,44 @@ timerQueueActive::~timerQueueActive ()
     this->exitEvent.signal ();
 }
 
-void timerQueueActive::run ()
+void timerQueueActive :: _printLastChanceExceptionMessage ( 
+    const char * pExceptionTypeName,
+    const char * pExceptionContext )
+{ 
+    char date[64];
+    try {
+        epicsTime cur = epicsTime :: getCurrent ();
+        cur.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
+    }
+    catch ( ... ) {
+        strcpy ( date, "<UKN DATE>" );
+    }
+    errlogPrintf ( 
+        "timerQueueActive: Unexpected C++ exception \"%s\" with type \"%s\" "
+        "while processing timer queue, at %s\n",
+        pExceptionContext, pExceptionTypeName, date );
+}
+
+
+void timerQueueActive :: run ()
 {
     this->exitFlag = false;
     while ( ! this->terminateFlag ) {
-        double delay = this->queue.process ( epicsTime::getCurrent() );
-        debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
-        this->rescheduleEvent.wait ( delay );
+        try {
+            double delay = this->queue.process ( epicsTime::getCurrent() );
+            debugPrintf ( ( "timer thread sleeping for %g sec (max)\n", delay ) );
+            this->rescheduleEvent.wait ( delay );
+        }
+        catch ( std :: exception & except ) {
+            _printLastChanceExceptionMessage (
+                typeid ( except ).name (), except.what () );
+            epicsThreadSleep ( 10.0 );
+        }
+        catch ( ... ) {
+            _printLastChanceExceptionMessage (
+                "catch ( ... )", "Non-standard C++ exception" );
+            epicsThreadSleep ( 10.0 );
+        }
     }
     this->exitFlag = true; 
     this->exitEvent.signal (); // no access to queue after exitEvent signal

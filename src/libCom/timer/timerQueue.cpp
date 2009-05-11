@@ -14,7 +14,8 @@
  *              505 665 1831
  */
 
-#include <stdio.h>
+#include <cstdio>
+#include <cfloat>
 
 #define epicsExportSharedSymbols
 #include "epicsGuard.h"
@@ -46,13 +47,22 @@ timerQueue::~timerQueue ()
 void timerQueue ::
     printExceptMsg ( const char * pName, const type_info & type )
 {
-    epicsTime cur = epicsTime :: getCurrent ();
-    double delay = cur - this->exceptMsgTimeStamp;
-    if ( delay >= exceptMsgMinPeriod ) {
-        this->exceptMsgTimeStamp = cur;
-        char date[64];
+    char date[64];
+    double delay;
+    try {
+        epicsTime cur = epicsTime :: getCurrent ();
+        delay = cur - this->exceptMsgTimeStamp;
         cur.strftime ( date, sizeof ( date ), 
                         "%a %b %d %Y %H:%M:%S.%f" );
+        if ( delay >= exceptMsgMinPeriod ) {
+            this->exceptMsgTimeStamp = cur;
+        }
+    }
+    catch ( ... ) {
+        delay = DBL_MAX;
+        strcpy ( date, "UKN DATE" );
+    }
+    if ( delay >= exceptMsgMinPeriod ) {
         // we dont touch the typeid for the timer expiration
         // notify interface here because they might have 
         // destroyed the timer during its callback

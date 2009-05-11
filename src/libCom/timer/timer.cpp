@@ -197,7 +197,12 @@ void timer::show ( unsigned int level ) const
     }
     double delay;
     if ( this->curState == statePending || this->curState == stateActive ) {
-        delay = this->exp - epicsTime::getCurrent();
+        try {
+            delay = this->exp - epicsTime::getCurrent();
+        }
+        catch ( ... ) {
+            delay = - DBL_MAX;
+        }
     }
     else {
         delay = -DBL_MAX;

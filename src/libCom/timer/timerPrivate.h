@@ -156,6 +156,9 @@ private:
     void run ();
     void reschedule ();
     double quantum ();
+    void _printLastChanceExceptionMessage ( 
+                const char * pExceptionTypeName,
+                const char * pExceptionContext );
     epicsTimerQueue & getEpicsTimerQueue ();
 	timerQueueActive ( const timerQueueActive & );
     timerQueueActive & operator = ( const timerQueueActive & );

@@ -740,6 +740,7 @@ static caStatus createDBRDD ( unsigned dbrType,
     caStatus status = convertContainerMemberToAtomic ( 
         *pDescRet, gddAppType_value, elemCount );
     if ( status != S_cas_success ) {
+        pDescRet->unreference ();
  		return status;
     }
 
@@ -750,6 +751,7 @@ static caStatus createDBRDD ( unsigned dbrType,
         status = convertContainerMemberToAtomic ( 
             *pDescRet, gddAppType_enums, MAX_ENUM_STATES );
         if ( status != S_cas_success ) {
+            pDescRet->unreference ();
  		    return status;
         }
     }

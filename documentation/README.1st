@@ -131,7 +131,7 @@ Software requirements
     versions of vendor C and C++ compilers may be used for native compilation.
 
     Perl
-    You must have perl version 5.8 or later installed. The configure files do 
+    You must have perl version 5.8.1 or later installed. The configure files do 
     not specify the perl full pathname. You need the perl executable in your 
     search path.
 
@@ -153,7 +153,7 @@ Software requirements
     support packages. Consult the vxWorks documentation for details.
 
     RTEMS
-    For RTEMS targets, you must use RTEMS version 4.9.2 or later.
+    For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or later.
 
     GNU readline or Tecla library
     GNU readline and Tecla librararies can be used by the IOC shell to provide 
@@ -177,8 +177,11 @@ Host system storage requirements
 Documentation
 
     EPICS documentation is available on the WWW via the EPICS home page at APS: 
-    URL http://www.aps.anl.gov/epics available on the IOC software, Base R3.14, 
-    release number, web page which can be accessed from the APS EPICS home page.
+    URL http://www.aps.anl.gov/epics by selecting IOC software/ Base R3.14/ 
+    <release number>.
+
+    Release specific documentation can be found in the base/documentation 
+    directory of the distribution.
 
 WWW pages
 
@@ -485,7 +488,7 @@ Example application and extension
     to quickly implement a complete EPICS system and be able to run channel 
     access clients on the host system.
 
-    Also, a perl script, makeBaseExt.pl, is included in the distribution file. 
+    A perl script, makeBaseExt.pl, is included in the distribution file. 
     This script will create a sample extension that can be built and executed. 
     The makeBaseApp.pl and makeBaseExt.pl scripts are installed into the install
     location bin/<hostarch> directory during the base build.

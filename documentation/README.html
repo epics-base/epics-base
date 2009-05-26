@@ -25,6 +25,7 @@ README.html
 <LI><A HREF="#0_0_14"> Multiple host platforms</A></LI>
 </UL>
 <HR>
+
 <H3><A NAME="0_0_1"> What is EPICS base?</A></H3>
 <BLOCKQUOTE>The Experimental Physics and Industrial Control Systems
  (EPICS) is an extensible set of software components and tools with
@@ -35,12 +36,15 @@ README.html
  function. EPICS base allows an arbitrary number of target systems, IOCs
  (input/output controllers), and host systems, OPIs (operator
  interfaces) of various types.</BLOCKQUOTE>
+
 <H3><A NAME="0_0_2"> What is new in this release?</A></H3>
 <BLOCKQUOTE> Please check the RELEASE_NOTES file in the distribution for
  description of changes and release migration details.</BLOCKQUOTE>
+
 <H3><A NAME="0_0_3"> Copyright</A></H3>
 <BLOCKQUOTE>Please review the COPYRIGHT* files included in the
  distribution for legal terms of usage.</BLOCKQUOTE>
+
 <H3><A NAME="0_0_4"> Supported platforms</A></H3>
 <BLOCKQUOTE>Currently this version of EPICS base has been built on the
  following hosts for the following targets. If you are trying to build
@@ -50,6 +54,7 @@ README.html
  the base/configure/os/directory. You can start by copying existing
  configuration files in the configure/os directory and then make changes
  for your new platforms.</BLOCKQUOTE><BLOCKQUOTE>
+
 <H4>Host platforms (operating system - architecture [- alternate
  toolset])</H4>
 <BLOCKQUOTE>
@@ -74,6 +79,7 @@ win32-x86-mingw (WIN32 API, uses MS dlls)
 win32-x86-cygwin (WIN32 API, uses MS dlls)
 </PRE>
 </BLOCKQUOTE>
+
 <H4> Cross compile target platforms (operating system - architecture)</H4>
 <BLOCKQUOTE>
 <PRE>linux-386
@@ -113,6 +119,7 @@ RTEMS-uC5282
 </PRE>
 </BLOCKQUOTE>
 </BLOCKQUOTE>
+
 <H3><A NAME="0_0_5"> Supported compilers</A></H3>
 <BLOCKQUOTE>This version of EPICS base has been built and tested using
  the host vendor's C and C++ compilers as well as the GNU gcc and g++
@@ -120,25 +127,32 @@ RTEMS-uC5282
  cross-compiled targets. You may need the host vendor's C++ compiler in
  your search path to do EPICS builds. Check definitions of CC and CCC in
  base/configure/os/CONFIG.&lt;host&gt;.&lt;host&gt;.</BLOCKQUOTE>
+
 <H3><A NAME="0_0_6"> Software requirements</A></H3>
+
 <BLOCKQUOTE><B>GNU make</B>
 <BR> You must use GNU make, gnumake, for any EPICS builds. Set your path
  so that a gnumake version 3.81 or later is available.
+
 <P><B>gcc</B>
 <BR> For most cases, you must have gcc version 3.4.2 or later.
  Appropriate versions of vendor C and C++ compilers may be used for
  native compilation.</P>
+
 <P><B>Perl</B>
-<BR> You must have perl version 5.8 or later installed. The configure
+<BR> You must have perl version 5.8.1 or later installed. The configure
  files do not specify the perl full pathname. You need the perl
  executable in your search path.</P>
+
 <P><B>Unzip and tar (Winzip on WIN32 systems)</B>
 <BR> You must have tools available to unzip and untar the EPICS base
  distribution file.</P>
+
 <P><B>Target systems</B>
 <BR> EPICS supports IOCs running on embedded platforms such as VxWorks
  and RTEMS via cross-compilers. EPICS also supports ?soft? IOCs running
  as processes on the host platform.</P>
+
 <P><B>Tornado 2</B>
 <BR> You must have Tornado 2 installed if any of your target systems are
  vxWorks systems. Tornado 2 provides the cross-compiler and header files
@@ -146,8 +160,9 @@ RTEMS-uC5282
  Tornado 2 should be specified in the base/configure/RELEASE or
  base/configure/RELEASE.&lt;hostarch&gt; file. You will also need one or more
  board support packages. Consult the vxWorks documentation for details.</P>
+
 <P><B>RTEMS</B>
-<BR> For RTEMS targets, you must use RTEMS version 4.9.2 or later.</P>
+<BR> For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or later.</P>
 <P><B>GNU readline or Tecla library</B>
 <BR> GNU readline and Tecla librararies can be used by the IOC shell to
  provide command line editing and command line history recall and edit.
@@ -169,9 +184,12 @@ RTEMS-uC5282
 <H3><A NAME="0_0_8"> Documentation</A></H3>
 <BLOCKQUOTE>EPICS documentation is available on the WWW via the EPICS
  home page at APS: URL<A href="http://www.aps.anl.gov/epics">
- http://www.aps.anl.gov/epics</A> available on the IOC software, Base
- R3.14, release number, web page which can be accessed from the APS
- EPICS home page.</BLOCKQUOTE>
+ http://www.aps.anl.gov/epics</A> by selection IOC software/ Base
+ R3.14/ <release number>.
+ </BLOCKQUOTE>
+<BLOCKQUOTE>Release specific documenataion can be found in the base/documentation 
+directory of the distribution.
+</BLOCKQUOTE>
 <H3><A NAME="0_0_9"> WWW pages</A></H3>
 <BLOCKQUOTE>
 <H4> EPICS home page at APS</H4>
@@ -546,7 +564,7 @@ Build choices. Specify target archs.<br></TT>
  access clients on the host system.
  </BLOCKQUOTE>
  <BLOCKQUOTE>
- Also, a perl script,
+ A perl script,
  makeBaseExt.pl, is included in the distribution file. This script will
  create a sample extension that can be built and executed. The
  makeBaseApp.pl and makeBaseExt.pl scripts are installed into the

@@ -15,10 +15,10 @@
 #include <exception>
 #include <typeinfo>
 
-#include <cstdio>
-#include <cstddef>
-#include <cfloat>
-#include <cstring>
+#include <stdio.h>
+#include <stddef.h>
+#include <float.h>
+#include <string.h>
 
 #define epicsExportSharedSymbols
 #include "epicsAlgorithm.h"

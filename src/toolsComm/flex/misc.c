@@ -392,7 +392,7 @@ char *flex_gettime(void)
     time_t t, time(time_t *);
     char *result, *ctime(const time_t *), *copy_string(char *str);
 
-    t = time( (long *) 0 );
+    t = time( NULL );
 
     result = copy_string( ctime( &t ) );
 
@@ -585,14 +585,7 @@ Char myesc(Char *array)
 
     switch ( array[1] )
 	{
-#if 0
 	case 'a': return ( '\a' );
-#else
-	case 'a':
-		assert(0);		/* \a causes some obscure problem with ANSI compilers */
-						/* EPICS never uses it anyway, so this should be OK */
-		break;
-#endif
 	case 'b': return ( '\b' );
 	case 'f': return ( '\f' );
 	case 'n': return ( '\n' );

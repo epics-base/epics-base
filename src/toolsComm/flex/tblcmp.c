@@ -312,7 +312,7 @@ void expand_nxt_chk(void)
     nxt = reallocate_integer_array( nxt, current_max_xpairs );
     chk = reallocate_integer_array( chk, current_max_xpairs );
 
-    bzero( (char *) (chk + old_max),
+    memset( (char *) (chk + old_max), 0,
 	   MAX_XPAIRS_INCREMENT * sizeof( int ) / sizeof( char ) );
     }
 
@@ -436,7 +436,8 @@ void inittbl(void)
 {
     int i;
 
-    bzero( (char *) chk, current_max_xpairs * sizeof( int ) / sizeof( char ) );
+    memset( (char *) chk, 0,
+           current_max_xpairs * sizeof( int ) / sizeof( char ) );
 
     tblend = 0;
     firstfree = tblend + 1;

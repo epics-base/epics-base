@@ -3,8 +3,7 @@
  *     National Laboratory.
  * Copyright (c) 2002 The Regents of the University of California, as
  *     Operator of Los Alamos National Laboratory.
- * EPICS BASE Versions 3.13.7
- * and higher are distributed subject to a Software License Agreement found
+ * EPICS BASE is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -28,7 +27,6 @@ typedef void ( *pSigFunc ) ( int );
 
 static pSigFunc pReplacedSigHupFunc = 0;
 static pSigFunc pReplacedSigPipeFunc = 0;
-static pSigFunc pReplacedSigAlarmFunc = 0;
 
 /*
  * localInstallSigHandler ()
@@ -97,23 +95,6 @@ static void ignoreSigPipe ( int signal )
 }
 
 /*
- * ignoreSigAlarm ()
- */
-extern "C" {
-static void ignoreSigAlarm ( int signal )
-{
-    static volatile int reentered = 1;
-
-    if (--reentered == 0) {
-        if ( pReplacedSigAlarmFunc ) {
-            ( *pReplacedSigAlarmFunc ) ( signal );
-        }
-    }
-    ++reentered;
-}
-}
-
-/*
  * epicsSignalInstallSigHupIgnore ()
  */
 epicsShareFunc void epicsShareAPI epicsSignalInstallSigHupIgnore (void)
@@ -134,22 +115,14 @@ epicsShareFunc void epicsShareAPI epicsSignalInstallSigPipeIgnore (void)
 /*
  * epicsSignalInstallSigAlarmIgnore ()
  */
-epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void ) 
+epicsShareFunc void epicsShareAPI epicsSignalInstallSigAlarmIgnore ( void )
 {
-    localInstallSigHandler ( SIGALRM, 
-        ignoreSigAlarm, & pReplacedSigAlarmFunc );
+    // Removed; this functionality was only required by HPUX,
+    // and it interferes with the posix timer API on Linux.
 }
 
 /*
  * epicsSignalRaiseSigAlarm ()
  */
 epicsShareFunc void epicsShareAPI epicsSignalRaiseSigAlarm 
-                                        ( struct epicsThreadOSD * threadId ) 
-{
-    pthread_t id = epicsThreadGetPosixThreadId ( threadId );
-    int status = pthread_kill ( id, SIGALRM );
-    if ( status ) {
-        errlogPrintf ( "Failed to send SIGALARM to thread. Status = \"%s\"\n", 
-            strerror ( status ) );
-    }
-}
+                                  ( struct epicsThreadOSD * /* threadId */ ) {}

@@ -24,6 +24,10 @@ unexport GCC_EXEC_PREFIX
 # Get RTEMS_BASE definition
 -include $(CONFIG)/os/CONFIG_SITE.Common.RTEMS
 
+ifneq ($(CONFIG),$(TOP)/configure)
+-include $(TOP)/configure/CONFIG_SITE.Common.RTEMS
+endif
+
 #-------------------------------------------------------
 # Pick up the RTEMS tool/path definitions from the RTEMS BSP directory.
 include $(RTEMS_BASE)/$(RTEMS_TARGET_CPU)-rtems$(RTEMS_VERSION)/$(subst RTEMS-,,$(T_A))/Makefile.inc

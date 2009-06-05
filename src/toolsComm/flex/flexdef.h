@@ -43,6 +43,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #ifdef __GNUC__
 #define NORETURN __attribute__((noreturn))

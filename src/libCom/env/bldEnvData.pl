@@ -42,7 +42,7 @@ $tool=~ s'.*/'';
 #
 open SRC, "<$env_defs" or die "Cannot open $env_defs";
 while (<SRC>) {
-	if (m/epicsShareExtern\s+READONLY\s+ENV_PARAM\s+([A-Za-z_]\w*)\s*;/) {
+	if (m/epicsShareExtern\s+const\s+ENV_PARAM\s+([A-Za-z_]\w*)\s*;/) {
 		$need_var{$1} = 1;
 	}
 }
@@ -100,14 +100,14 @@ foreach $var (@vars) {
 	print "Warning: No default value found for $var\n"
 	    unless exists $value{$var};
 
-	print OUT "epicsShareDef READONLY ENV_PARAM $var =\n",
+	print OUT "epicsShareDef const ENV_PARAM $var =\n",
 		  "\t{\"$var\", \"$default\"};\n";
 }
 
 # Now create an array pointing to all parameters
 
 print OUT "\n",
-	  "epicsShareDef READONLY ENV_PARAM* env_param_list[] = {\n";
+	  "epicsShareDef const ENV_PARAM* env_param_list[] = {\n";
 
 # Contents are the addresses of each parameter
 foreach $var (@vars) {

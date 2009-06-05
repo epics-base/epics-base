@@ -110,7 +110,7 @@ LOCAL void eventCallback(struct event_handler_args arg)
     ASGINP	*pasginp = (ASGINP *)arg.usr;
     ASG		*pasg;
     CAPVT	*pcapvt;
-    READONLY struct dbr_sts_double *pdata;
+    const struct dbr_sts_double *pdata;
 
     if(caStatus!=ECA_NORMAL) {
 	if(chid) {

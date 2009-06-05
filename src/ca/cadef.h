@@ -97,7 +97,7 @@ typedef struct event_handler_args {
     chanId          chid;   /* channel id */
     long            type;   /* the type of the item returned */ 
     long            count;  /* the element count of the item returned */
-    READONLY void   *dbr;   /* a pointer to the item returned */
+    const void      *dbr;   /* a pointer to the item returned */
     int             status; /* ECA_XXX status of the requested op from the server */
 } evargs;
 typedef void caEventCallBackFunc (struct event_handler_args);
@@ -116,8 +116,8 @@ struct exception_handler_args {
     void            *addr;  /* user's address to write results of CA_OP_GET */
     long            stat;   /* channel access ECA_XXXX status code */
     long            op;     /* CA_OP_GET, CA_OP_PUT, ..., CA_OP_OTHER */
-    READONLY char   *ctx;   /* a character string containing context info */
-    READONLY char   *pFile; /* source file name (may be NULL) */
+    const char      *ctx;   /* a character string containing context info */
+    const char      *pFile; /* source file name (may be NULL) */
     unsigned        lineNo; /* source file line number (may be zero) */
 };
 
@@ -289,7 +289,7 @@ epicsShareFunc int epicsShareAPI ca_clear_channel
  * pValue       R       new channel value string copied from this location
  */
 #define ca_bput(chan, pValue) \
-ca_array_put(DBR_STRING, 1u, chan, (READONLY dbr_string_t *) (pValue))
+ca_array_put(DBR_STRING, 1u, chan, (const dbr_string_t *) (pValue))
 
 /*
  * ca_rput()
@@ -300,7 +300,7 @@ ca_array_put(DBR_STRING, 1u, chan, (READONLY dbr_string_t *) (pValue))
  * pValue       R       new channel value copied from this location
  */
 #define ca_rput(chan,pValue) \
-ca_array_put(DBR_FLOAT, 1u, chan, (READONLY dbr_float_t *) pValue)
+ca_array_put(DBR_FLOAT, 1u, chan, (const dbr_float_t *) pValue)
 
 /*
  * ca_put()
@@ -814,7 +814,7 @@ epicsShareFunc int epicsShareAPI ca_v42_ok (chid chan);
  *
  * returns the CA version string
  */
-epicsShareFunc READONLY char * epicsShareAPI ca_version (void);
+epicsShareFunc const char * epicsShareAPI ca_version (void);
 
 /*
  * ca_replace_printf_handler ()

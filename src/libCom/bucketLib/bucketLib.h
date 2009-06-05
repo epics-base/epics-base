@@ -36,8 +36,8 @@ typedef enum {bidtUnsigned, bidtPointer, bidtString} buckTypeOfId;
 
 typedef struct item{
 	struct item	*pItem;
-	READONLY void	*pId;
-	READONLY void   *pApp;
+	const void	*pId;
+	const void   *pApp;
 	buckTypeOfId	type;
 }ITEM;
 
@@ -58,23 +58,23 @@ epicsShareFunc int epicsShareAPI bucketShow (BUCKET *pb);
  * the item is deleted from the bucket !!
  */
 epicsShareFunc int epicsShareAPI bucketAddItemUnsignedId (BUCKET *prb, 
-		READONLY unsigned *pId, READONLY void *pApp);
+		const unsigned *pId, const void *pApp);
 epicsShareFunc int epicsShareAPI bucketAddItemPointerId (BUCKET *prb, 
-		void * READONLY *pId, READONLY void *pApp);
+		void * const *pId, const void *pApp);
 epicsShareFunc int epicsShareAPI bucketAddItemStringId (BUCKET *prb, 
-		READONLY char *pId, READONLY void *pApp);
+		const char *pId, const void *pApp);
 
-epicsShareFunc int epicsShareAPI bucketRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
-epicsShareFunc int epicsShareAPI bucketRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);
-epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, READONLY char *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemPointerId (BUCKET *prb, void * const *pId);
+epicsShareFunc int epicsShareAPI bucketRemoveItemStringId (BUCKET *prb, const char *pId);
 
-epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
-epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * READONLY *pId);
-epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, READONLY char *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupItemUnsignedId (BUCKET *prb, const unsigned *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupItemPointerId (BUCKET *prb, void * const *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupItemStringId (BUCKET *prb, const char *pId);
 
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId);
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * READONLY *pId);
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, READONLY char *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId);
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId);
 
 
 /*

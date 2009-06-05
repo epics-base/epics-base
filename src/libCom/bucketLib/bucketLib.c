@@ -486,15 +486,15 @@ LOCAL void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const void
 
 	return pApp;
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, READONLY unsigned *pId)
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemUnsignedId (BUCKET *prb, const unsigned *pId)
 {
     return bucketLookupAndRemoveItem(prb, &BSET[bidtUnsigned], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * READONLY *pId)
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemPointerId (BUCKET *prb, void * const *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtPointer], pId);
 }
-epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, READONLY char *pId)
+epicsShareFunc void * epicsShareAPI bucketLookupAndRemoveItemStringId (BUCKET *prb, const char *pId)
 {
 	return bucketLookupAndRemoveItem(prb, &BSET[bidtString], pId);
 }

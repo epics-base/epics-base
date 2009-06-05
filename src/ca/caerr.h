@@ -149,9 +149,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc READONLY char * epicsShareAPI ca_message(long ca_status);
+epicsShareFunc const char * epicsShareAPI ca_message(long ca_status);
 
-epicsShareExtern READONLY char * ca_message_text [];
+epicsShareExtern const char * ca_message_text [];
 
 #ifdef __cplusplus
 }

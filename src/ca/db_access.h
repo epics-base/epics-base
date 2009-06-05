@@ -128,12 +128,12 @@ typedef epicsOldString dbr_class_name_t;
  * of type DBR types. In some cases we select the a
  * larger type to avoid loss of information
  */
-epicsShareExtern READONLY int epicsTypeToDBR_XXXX [lastEpicsType+1];
+epicsShareExtern const int epicsTypeToDBR_XXXX [lastEpicsType+1];
 
 /*
  * The DBR_XXXX types are indicies into this array
  */
-epicsShareExtern READONLY epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
+epicsShareExtern const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1];
 
 /* values returned for each field type
  * 	DBR_STRING	returns a NULL terminated string
@@ -529,10 +529,10 @@ struct dbr_ctrl_double{
 ((unsigned)((COUNT)<=0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 
 /* size for each type - array indexed by the DBR_ type code */
-epicsShareExtern READONLY unsigned short dbr_size[LAST_BUFFER_TYPE+1];
+epicsShareExtern const unsigned short dbr_size[LAST_BUFFER_TYPE+1];
 
 /* size for each type's value - array indexed by the DBR_ type code */
-epicsShareExtern READONLY unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
+epicsShareExtern const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
 
 /* class for each type's value */
 enum dbr_value_class { 
@@ -541,7 +541,7 @@ enum dbr_value_class {
 		dbr_class_string, 
 		dbr_class_max};
 
-epicsShareExtern READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
+epicsShareExtern const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1];
 
 /* 
  * ptr to value given a pointer to the structure and the DBR type
@@ -555,7 +555,7 @@ epicsShareExtern READONLY enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+
 #define dbr_value_ptr_from_structure(PDBR, STRUCTURE)\
 ((void *)(((char *)PDBR)+BYTE_OS(STRUCTURE, value)))
 
-epicsShareExtern READONLY unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
+epicsShareExtern const unsigned short dbr_value_offset[LAST_BUFFER_TYPE+1];
 
 
 /* union for each fetch buffers */
@@ -724,13 +724,13 @@ union db_access_val{
         (type) + 4*(dbf_text_dim-2)   :  -1  )
 
 
-epicsShareExtern READONLY char	    *dbf_text[LAST_TYPE+3];
-epicsShareExtern READONLY short	    dbf_text_dim;
-epicsShareExtern READONLY char      *dbf_text_invalid;
+epicsShareExtern const char	    *dbf_text[LAST_TYPE+3];
+epicsShareExtern const short	    dbf_text_dim;
+epicsShareExtern const char      *dbf_text_invalid;
 
-epicsShareExtern READONLY char	    *dbr_text[LAST_BUFFER_TYPE+1];
-epicsShareExtern READONLY short	    dbr_text_dim;
-epicsShareExtern READONLY char      *dbr_text_invalid;
+epicsShareExtern const char	    *dbr_text[LAST_BUFFER_TYPE+1];
+epicsShareExtern const short	    dbr_text_dim;
+epicsShareExtern const char      *dbr_text_invalid;
 #endif /*db_accessHFORdb_accessC*/
 
 #ifdef __cplusplus

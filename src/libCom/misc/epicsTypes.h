@@ -131,7 +131,7 @@ typedef enum {
  * of type name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDef READONLY char *epicsTypeNames [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeNames [lastEpicsType+1] = {
         "epicsInt8",
         "epicsUInt8",
         "epicsInt16",
@@ -145,7 +145,7 @@ epicsShareDef READONLY char *epicsTypeNames [lastEpicsType+1] = {
         "epicsOldString",
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 /*
@@ -153,7 +153,7 @@ epicsShareExtern READONLY char *epicsTypeNames [lastEpicsType+1];
  * of type code name strings.
  */
 #ifdef epicsTypesGLOBAL
-epicsShareDef READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeCodeNames [lastEpicsType+1] = {
         "epicsInt8T",
         "epicsUInt8T",
         "epicsInt16T",
@@ -167,11 +167,11 @@ epicsShareDef READONLY char *epicsTypeCodeNames [lastEpicsType+1] = {
         "epicsOldStringT",
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern READONLY char *epicsTypeCodeNames [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeCodeNames [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #ifdef epicsTypesGLOBAL
-epicsShareDef READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
+epicsShareDef const unsigned epicsTypeSizes [lastEpicsType+1] = {
         sizeof (epicsInt8),
         sizeof (epicsUInt8),
         sizeof (epicsInt16),
@@ -185,7 +185,7 @@ epicsShareDef READONLY unsigned epicsTypeSizes [lastEpicsType+1] = {
         sizeof (epicsOldString),
 };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern READONLY unsigned epicsTypeSizes [lastEpicsType+1];
+epicsShareExtern const unsigned epicsTypeSizes [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 /*
@@ -200,7 +200,7 @@ typedef enum {
     epicsStringC,
     epicsOldStringC} epicsTypeClass;
 #ifdef epicsTypesGLOBAL
-epicsShareDef READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
+epicsShareDef const epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
         epicsIntC,
         epicsUIntC,
         epicsIntC,
@@ -214,12 +214,12 @@ epicsShareDef READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1] = {
         epicsOldStringC
     };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern READONLY epicsTypeClass epicsTypeClasses [lastEpicsType+1];
+epicsShareExtern const epicsTypeClass epicsTypeClasses [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 
 #ifdef epicsTypesGLOBAL
-epicsShareDef READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
+epicsShareDef const char *epicsTypeAnyFieldName [lastEpicsType+1] = {
             "int8",
             "uInt8",
             "int16",
@@ -233,7 +233,7 @@ epicsShareDef READONLY char *epicsTypeAnyFieldName [lastEpicsType+1] = {
             "", /* Old Style Strings will not be in epicsAny type */
     };
 #else /* epicsTypesGLOBAL */
-epicsShareExtern READONLY char *epicsTypeAnyFieldName [lastEpicsType+1];
+epicsShareExtern const char *epicsTypeAnyFieldName [lastEpicsType+1];
 #endif /* epicsTypesGLOBAL */
 
 #endif /* INCepicsTypesh */

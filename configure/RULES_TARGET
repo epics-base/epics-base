@@ -82,9 +82,9 @@ $(1)_DLL_DEPLIBS=$$(foreach lib, $$($(1)_DLL_LIBS),\
 
 $$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
 $$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_DEPLIBS)
-$$(LIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
-$$(LIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
-$$(LIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
+$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
+$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
+$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
 endef
 
 $(foreach target, $(LIBRARY), \

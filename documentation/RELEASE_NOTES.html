@@ -12,6 +12,17 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Use of SIGALRM disabled</h4>
+
+<p>Previous releases that supported HPUX required that EPICS trap and be able to
+generate the SIGALRM signal in order to break out of a blocking socket system
+call on those systems (Posix only). There were two API routines that had to be
+called by any code using sockets to properly support this. Since we no longer
+support HPUX this code is no longer required, and as it breaks the Posix timer
+interface on Linux it has been disabled in this release. The API routines now do
+nothing on all platforms, and will be removed before the 3.15 Release of
+Base.</p>
+
 <h4>Universal Binaries on Darwin</h4>
 
 <p>It is now possible to configure Base on Darwin to build universal binaries

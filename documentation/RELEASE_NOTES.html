@@ -12,6 +12,13 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>bi, bo, mbbi, mbbo ENUM string fields</h4>
+
+<p>The existing Channel Access protocol transports 26 bytes for each ENUM
+string, but the fields used to hold ENUM strings in the discrete record types
+were configured to be 16 (mbbi/mbbo) or 20 (bi/bo) bytes long. These have all
+been increased to match the CA limit.</p>
+
 <h4>Use of SIGALRM disabled</h4>
 
 <p>Previous releases that supported HPUX required that EPICS trap and be able to

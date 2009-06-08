@@ -172,7 +172,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
@@ -180,7 +180,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
@@ -188,7 +188,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
@@ -196,7 +196,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
@@ -204,7 +204,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
@@ -212,7 +212,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
@@ -220,7 +220,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
@@ -228,7 +228,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
@@ -236,7 +236,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
@@ -244,7 +244,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
@@ -252,7 +252,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
@@ -260,7 +260,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
@@ -268,7 +268,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
@@ -276,7 +276,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
@@ -284,7 +284,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
@@ -292,7 +292,7 @@ recordtype(mbbo) {
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
-		size(16)
+		size(26)
 	}
 	field(ZRSV,DBF_MENU) {
 		prompt("State Zero Severity")

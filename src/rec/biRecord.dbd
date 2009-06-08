@@ -46,14 +46,14 @@ recordtype(bi) {
 		promptgroup(GUI_CALC)
 		pp(TRUE)
 		interest(1)
-		size(20)
+		size(26)
 	}
 	field(ONAM,DBF_STRING) {
 		prompt("One Name")
 		promptgroup(GUI_CLOCK)
 		pp(TRUE)
 		interest(1)
-		size(20)
+		size(26)
 	}
 	field(RVAL,DBF_ULONG) {
 		prompt("Raw Value")

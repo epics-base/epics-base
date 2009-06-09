@@ -12,6 +12,7 @@ include $(CONFIG)/RULES_DIRS
 
 build: buildInstall
 install: buildInstall
+$(ARCH): buildInstall
 
 ifneq ($(findstring $(ARCH),$(BUILD_ARCHS)),)
 buildInstall: $(TARGETS)

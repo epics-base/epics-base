@@ -108,5 +108,5 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 
 #--------------------------------------------------
 # Allow site overrides
--include $(CONFIG)/os/CONFIG_SITE.Common.darwinCommon
+-include $(CONFIG)/os/CONFIG_SITE.darwinCommon.darwinCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).darwinCommon

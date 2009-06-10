@@ -246,16 +246,6 @@ static void initRecSup(void)
         }
     }
 }
-
-static long do_nothing(struct dbCommon *precord) { return 0; }
-
-/* Dummy DSXT used for soft device supports */
-struct dsxt devSoft_DSXT = {
-    do_nothing,
-    do_nothing
-};
-
-static devSup *pthisDevSup = NULL;
 
 static void initDevSup(void)
 {
@@ -264,45 +254,35 @@ static void initDevSup(void)
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-        for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-             pthisDevSup;
-             pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
-            struct dset *pdset = registryDeviceSupportFind(pthisDevSup->name);
+        devSup *pdevSup;
+
+        for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+             pdevSup;
+             pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+            struct dset *pdset = registryDeviceSupportFind(pdevSup->name);
 
             if (!pdset) {
-                errlogPrintf("device support %s not found\n",pthisDevSup->name);
+                errlogPrintf("device support %s not found\n",pdevSup->name);
                 continue;
             }
-            if (pthisDevSup->link_type == CONSTANT)
-                pthisDevSup->pdsxt = &devSoft_DSXT;
-            pthisDevSup->pdset = pdset;
-            if (pdset->init) {
-                pdset->init(0);
-            }
+            dbInitDevSup(pdevSup, pdset);   /* Calls pdset->init(0) */
         }
     }
 }
 
-epicsShareFunc void devExtend(dsxt *pdsxt)
-{
-    if (!pthisDevSup)
-        errlogPrintf("devExtend() called outside of initDevSup()\n");
-    else {
-        pthisDevSup->pdsxt = pdsxt;
-    }
-}
-
-static void finishDevSup(void) 
+static void finishDevSup(void)
 {
     dbRecordType *pdbRecordType;
 
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
-        for (pthisDevSup = (devSup *)ellFirst(&pdbRecordType->devList);
-             pthisDevSup;
-             pthisDevSup = (devSup *)ellNext(&pthisDevSup->node)) {
-            struct dset *pdset = pthisDevSup->pdset;
+        devSup *pdevSup;
+
+        for (pdevSup = (devSup *)ellFirst(&pdbRecordType->devList);
+             pdevSup;
+             pdevSup = (devSup *)ellNext(&pdevSup->node)) {
+            struct dset *pdset = pdevSup->pdset;
 
             if (pdset && pdset->init)
                 pdset->init(1);

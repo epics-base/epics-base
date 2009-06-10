@@ -27,6 +27,7 @@
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+#include "devSup.h"
 #include "special.h"
 
 
@@ -157,6 +158,38 @@ static void doubleToString(double value,char *preturn)
     return;
 }
 
+
+static long do_nothing(struct dbCommon *precord) { return 0; }
+
+/* Dummy DSXT used for soft device supports */
+struct dsxt devSoft_DSXT = {
+    do_nothing,
+    do_nothing
+};
+
+static devSup *pthisDevSup = NULL;
+
+void dbInitDevSup(devSup *pdevSup, dset *pdset)
+{
+    pdevSup->pdset = pdset;
+    if (pdevSup->link_type == CONSTANT)
+        pdevSup->pdsxt = &devSoft_DSXT;
+
+    if (pdset->init) {
+        pthisDevSup = pdevSup;
+        pdset->init(0);
+        pthisDevSup = NULL;
+    }
+}
+
+void devExtend(dsxt *pdsxt)
+{
+    if (!pthisDevSup)
+        errlogPrintf("devExtend() called outside of dbInitDevSup()\n");
+    else {
+        pthisDevSup->pdsxt = pdsxt;
+    }
+}
 
 long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 {

@@ -10,19 +10,19 @@
 #RULES.ioc
 include $(CONFIG)/RULES_DIRS
 
-build: buildInstall
-install: buildInstall
+build$(DIVIDER)$(ARCH) build: buildInstall
+install$(DIVIDER)$(ARCH) install: buildInstall
 $(ARCH): buildInstall
 
-ifneq ($(findstring $(ARCH),$(BUILD_ARCHS)),)
-buildInstall: $(TARGETS)
+ifeq ($(filter $(ARCH),$(BUILD_ARCHS)),$(ARCH))
+buildInstall$(DIVIDER)$(ARCH) buildInstall: $(TARGETS)
 
-clean:
+clean$(DIVIDER)$(ARCH) clean:
 	$(RM) cdCommands envPaths dllPath.bat
 
 else 
-buildInstall:
-clean:
+buildInstall$(DIVIDER)$(ARCH) buildInstall:
+clean$(DIVIDER)$(ARCH) clean:
 endif
 
 cdCommands envPaths dllPath.bat: $(wildcard $(TOP)/configure/RELEASE*) \

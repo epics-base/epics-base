@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* ellLib.h  $Id$
+/* $Id$
  *
  *      Author: John Winans (ANL)
  *      Date:   07-02-92
@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-#define DLLLIB_USE_MACROS
-
 typedef struct ELLNODE {
     struct ELLNODE *next;
     struct ELLNODE *previous;
@@ -34,24 +32,15 @@ typedef struct ELLLIST {
 
 typedef void (*FREEFUNC)(void *);
 
-#ifdef DLLLIB_USE_MACROS
-    #define ellInit(PLIST) {\
-        (PLIST)->node.next = (PLIST)->node.previous = NULL;\
-        (PLIST)->count = 0;\
-    }
-    #define ellCount(PLIST)    ((PLIST)->count)
-    #define ellFirst(PLIST)    ((PLIST)->node.next)
-    #define ellLast(PLIST)     ((PLIST)->node.previous)
-    #define ellNext(PNODE)     ((PNODE)->next)
-    #define ellPrevious(PNODE) ((PNODE)->previous)
-#else
-    epicsShareFunc void epicsShareAPI ellInit (ELLLIST *pList);
-    epicsShareFunc int epicsShareAPI ellCount (ELLLIST *pList);
-    epicsShareFunc ELLNODE * epicsShareAPI ellFirst (ELLLIST *pList);
-    epicsShareFunc ELLNODE * epicsShareAPI ellLast (ELLLIST *pList);
-    epicsShareFunc ELLNODE * epicsShareAPI ellNext (ELLNODE *pNode);
-    epicsShareFunc ELLNODE * epicsShareAPI ellPrevious (ELLNODE *pNode);
-#endif /* DLLLIB_USE_MACROS */
+#define ellInit(PLIST) {\
+    (PLIST)->node.next = (PLIST)->node.previous = NULL;\
+    (PLIST)->count = 0;\
+}
+#define ellCount(PLIST)    ((PLIST)->count)
+#define ellFirst(PLIST)    ((PLIST)->node.next)
+#define ellLast(PLIST)     ((PLIST)->node.previous)
+#define ellNext(PNODE)     ((PNODE)->next)
+#define ellPrevious(PNODE) ((PNODE)->previous)
 
 epicsShareFunc void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode);
 epicsShareFunc void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);

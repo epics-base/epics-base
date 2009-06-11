@@ -18,43 +18,25 @@
 #include "epicsAssert.h"
 #include "ellLib.h"
 
-#if     !defined(NULL) 
-#define NULL            0
-#endif
-
-/****************************************************************************
- *
- * Initialize a new linked list header structure.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-void epicsShareAPI ellInit (ELLLIST *pList)
-{
-  plist->node.next = NULL;
-  plist->node.previous = NULL;
-  plist->count = 0;
-  return;
-}
-#endif
 /****************************************************************************
  *
  * This function adds a node to the end of a linked list.
  *
  *****************************************************************************/
-void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode)
+void ellAdd (ELLLIST *pList, ELLNODE *pNode)
 {
-  pNode->next = NULL;
-  pNode->previous = pList->node.previous;
+    pNode->next = NULL;
+    pNode->previous = pList->node.previous;
 
-  if (pList->count)
-    pList->node.previous->next = pNode;
-  else
-    pList->node.next = pNode;
+    if (pList->count)
+        pList->node.previous->next = pNode;
+    else
+        pList->node.next = pNode;
 
-  pList->node.previous = pNode;
-  pList->count++;
+    pList->node.previous = pNode;
+    pList->count++;
 
-  return;
+    return;
 }
 /****************************************************************************
  *
@@ -63,62 +45,50 @@ void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode)
  * be empty at the begining of the operation.
  *
  *****************************************************************************/
-void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
+void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList)
 {
-  if (pAddList->count == 0)
-    return;	/* Add list is empty, nothing to add. */
+    if (pAddList->count == 0)
+        return;	/* Add list is empty, nothing to add. */
 
-  if (pDstList->count == 0)
-  { /* Destination list is empty... just transfer the add list over. */
-    pDstList->node.next = pAddList->node.next;
-    pDstList->node.previous = pAddList->node.previous;
-    pDstList->count = pAddList->count;
-  }
-  else
-  { /* Destination list not empty... append the add list. */
-    pDstList->node.previous->next = pAddList->node.next;
-    pAddList->node.next->previous = pDstList->node.previous;
-    pDstList->node.previous = pAddList->node.previous;
-    pDstList->count += pAddList->count;
-  }
+    if (pDstList->count == 0) {
+        /* Destination list is empty... just transfer the add list over. */
+        pDstList->node.next = pAddList->node.next;
+        pDstList->node.previous = pAddList->node.previous;
+        pDstList->count = pAddList->count;
+    } else {
+        /* Destination list not empty... append the add list. */
+        pDstList->node.previous->next = pAddList->node.next;
+        pAddList->node.next->previous = pDstList->node.previous;
+        pDstList->node.previous = pAddList->node.previous;
+        pDstList->count += pAddList->count;
+    }
 
-  pAddList->count = 0;
-  pAddList->node.next = NULL;
-  pAddList->node.previous = NULL;
+    pAddList->count = 0;
+    pAddList->node.next = NULL;
+    pAddList->node.previous = NULL;
 
-  return;
+    return;
 }
-/****************************************************************************
- *
- * This function returns the number of nodes that are found in a list.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-int  epicsShareAPI ellCount (ELLLIST *pList)
-{
-  return(pList->count);
-}
-#endif
 /****************************************************************************
  *
  * This function deletes a specific node from a specified list;
  *
  *****************************************************************************/
-void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode)
+void ellDelete (ELLLIST *pList, ELLNODE *pNode)
 {
-  if (pList->node.previous == pNode)
-    pList->node.previous = pNode->previous;
-  else
-    pNode->next->previous = pNode->previous;
+    if (pList->node.previous == pNode)
+        pList->node.previous = pNode->previous;
+    else
+        pNode->next->previous = pNode->previous;
 
-  if (pList->node.next == pNode)
-    pList->node.next = pNode->next;
-  else
-    pNode->previous->next = pNode->next;
+    if (pList->node.next == pNode)
+        pList->node.next = pNode->next;
+    else
+        pNode->previous->next = pNode->next;
 
-  pList->count--;
+    pList->count--;
 
-  return;
+    return;
 }
 /****************************************************************************
  *
@@ -130,73 +100,60 @@ void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode)
  * when it is non-empty.
  *
  *****************************************************************************/
-void epicsShareAPI ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList)
+void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList)
 {
-  ELLNODE	*pnode;
-  int	count;
+    ELLNODE *pnode;
+    int count;
 
-  /* Cut the list out of the source list (update count later) */
-  if (pStartNode->previous != NULL)
-    pStartNode->previous->next = pEndNode->next;
-  else
-    pSrcList->node.next = pEndNode->next;
+    /* Cut the list out of the source list (update count later) */
+    if (pStartNode->previous != NULL)
+        pStartNode->previous->next = pEndNode->next;
+    else
+        pSrcList->node.next = pEndNode->next;
 
-  if (pEndNode->next != NULL)
-  {
-    pEndNode->next->previous = pStartNode->previous;
-    pEndNode->next = NULL;
-  }
-  else
-    pSrcList->node.previous = pStartNode->previous;
+    if (pEndNode->next != NULL) {
+        pEndNode->next->previous = pStartNode->previous;
+        pEndNode->next = NULL;
+    }
+    else
+        pSrcList->node.previous = pStartNode->previous;
 
-  /* Place the sublist into the destination list */
-  pStartNode->previous = pDstList->node.previous;
-  if (pDstList->count)
-    pDstList->node.previous->next = pStartNode;
-  else
-    pDstList->node.next = pStartNode;
+    /* Place the sublist into the destination list */
+    pStartNode->previous = pDstList->node.previous;
+    if (pDstList->count)
+        pDstList->node.previous->next = pStartNode;
+    else
+        pDstList->node.next = pStartNode;
 
-  pDstList->node.previous = pEndNode;
+    pDstList->node.previous = pEndNode;
 
-  /* Adjust the counts */
-  pnode = pStartNode;
-  count = 1;
-  while(pnode != pEndNode)
-  {
-    pnode = pnode->next;
-    count++;
-  }
-  pSrcList->count -= count;
-  pDstList->count += count;
+    /* Adjust the counts */
+    pnode = pStartNode;
+    count = 1;
+    while(pnode != pEndNode)
+    {
+        pnode = pnode->next;
+        count++;
+    }
+    pSrcList->count -= count;
+    pDstList->count += count;
 
-  return;
+    return;
 }
-/****************************************************************************
- *
- * This function returns the first node in the specified list.  The node is 
- * NOT removed from the list.  If the list is empty, NULL will be returned.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-ELLNODE * epicsShareAPI ellFirst (ELLLIST *pList)
-{
-  return(pList->node.next);
-}
-#endif
 /****************************************************************************
  *
  * This function returns the first node in the specified list.  The node is
  * removed from the list.  If the list is empty, NULL will be returned.
  *
  *****************************************************************************/
-ELLNODE * epicsShareAPI ellGet (ELLLIST *pList)
+ELLNODE * ellGet (ELLLIST *pList)
 {
-  ELLNODE	*pnode = pList->node.next;
+    ELLNODE *pnode = pList->node.next;
 
-  if (pnode != NULL)
-    ellDelete(pList, pnode);
+    if (pnode != NULL)
+        ellDelete(pList, pnode);
 
-  return(pnode);
+    return pnode;
 }
 /****************************************************************************
  *
@@ -205,124 +162,79 @@ ELLNODE * epicsShareAPI ellGet (ELLLIST *pList)
  * list.
  *
  *****************************************************************************/
-void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
+void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
 {
-  if (pPrev != NULL)
-  {
-    pNode->previous = pPrev;
-    pNode->next = pPrev->next;
-    pPrev->next = pNode;
-  }
-  else
-  {
-    pNode->previous = NULL;
-    pNode->next = plist->node.next;
-    plist->node.next = pNode;
-  }
-  if (pNode->next == NULL)
-    plist->node.previous = pNode;
-  else
-    pNode->next->previous = pNode;
+    if (pPrev != NULL) {
+        pNode->previous = pPrev;
+        pNode->next = pPrev->next;
+        pPrev->next = pNode;
+    } else {
+        pNode->previous = NULL;
+        pNode->next = plist->node.next;
+        plist->node.next = pNode;
+    }
 
-  plist->count++;
+    if (pNode->next == NULL)
+        plist->node.previous = pNode;
+    else
+        pNode->next->previous = pNode;
 
-  return;
+    plist->count++;
+
+    return;
 }
-/****************************************************************************
- *
- * This function returns the last node in a list.  The node is NOT removed 
- * from the list.  If the list is empty, NULL will be returned.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-ELLNODE * epicsShareAPI ellLast (ELLLIST *pList)
-{
-  return(pList->node.previous);
-}
-#endif
-/****************************************************************************
- *
- * This function returns the node following pNode.  The node is NOT remodev from
- * the list.  If pNode is the last element in the list, NULL will be returned.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-ELLNODE * epicsShareAPI ellNext (ELLNODE *pNode)
-{
-  return(pNode->next);
-}
-#endif
 /****************************************************************************
  *
  * This function returns the nodeNum'th element in pList.  If there is no 
  * nodeNum'th node in the list, NULL will be returned.
  *
  *****************************************************************************/
-ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum)
+ELLNODE * ellNth (ELLLIST *pList, int nodeNum)
 {
-  ELLNODE *pnode;
+    ELLNODE *pnode;
 
-  if ((nodeNum < 1)||(pList->count == 0))
-    return(NULL);
+    if ((nodeNum < 1) || (pList->count == 0))
+        return NULL;
 
-  if (nodeNum > pList->count/2)
-  {
-    if (nodeNum > pList->count)
-      return(NULL);
+    if (nodeNum > pList->count/2) {
+        if (nodeNum > pList->count)
+            return NULL;
 
-    pnode = pList->node.previous;
-    nodeNum = pList->count - nodeNum;
-    while(nodeNum)
-    {
-      pnode = pnode->previous;
-      nodeNum--;
+        pnode = pList->node.previous;
+        nodeNum = pList->count - nodeNum;
+        while(nodeNum) {
+            pnode = pnode->previous;
+            nodeNum--;
+        }
+        return pnode;
     }
-    return(pnode);
-  }
 
-  pnode = pList->node.next;
-  while(--nodeNum > 0)
-    pnode = pnode->next;
+    pnode = pList->node.next;
+    while (--nodeNum > 0)
+        pnode = pnode->next;
 
-  return(pnode);
+    return pnode;
 }
-/****************************************************************************
- *
- * This function returns the node that preceeds pNode.  If pNode is the first
- * element in the list, NULL will be returned.
- *
- *****************************************************************************/
-#ifndef DLLLIB_USE_MACROS
-ELLNODE * epicsShareAPI ellPrevious (ELLNODE *pNode)
-{
-  return(pNode->previous);
-}
-#endif
 /****************************************************************************
  *
  * This function returns the node, nStep nodes forward from pNode.  If there is
  * no node that many steps from pNode, NULL will be returned.
  *
  *****************************************************************************/
-ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep)
+ELLNODE * ellNStep (ELLNODE *pNode, int nStep)
 {
-  if (nStep > 0)
-  {
-    while ((pNode != NULL) && nStep)
-    {
-      pNode = pNode->next;
-      nStep--;
+    if (nStep > 0) {
+        while ((pNode != NULL) && nStep) {
+            pNode = pNode->next;
+            nStep--;
+        }
+    } else {
+        while ((pNode != NULL) && nStep) {
+            pNode = pNode->previous;
+            nStep++;
+        }
     }
-  }
-  else
-  {
-    while ((pNode != NULL) && nStep)
-    {
-      pNode = pNode->previous;
-      nStep++;
-    }
-  }
-  return(pNode);
+    return pNode;
 }
 /****************************************************************************
  *
@@ -330,25 +242,24 @@ ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep)
  * not in pList, -1 is returned.  Note that the first node is 1.
  *
  *****************************************************************************/
-int epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode)
+int ellFind (ELLLIST *pList, ELLNODE *pNode)
 {
-  ELLNODE *got = pList->node.next;
-  int	count = 1;
+    ELLNODE *got = pList->node.next;
+    int count = 1;
 
-  while ((got != pNode) && (got != NULL))
-  {
-    got = got->next;
-    count++;
-  }
-  if (got == NULL)
-    return(-1);
-    
-  return(count);
+    while ((got != pNode) && (got != NULL)) {
+        got = got->next;
+        count++;
+    }
+    if (got == NULL)
+        return -1;
+
+    return count;
 }
 /****************************************************************************
  *
  * This function frees the nodes in a list.  It makes the list into an empty
- * list, and free()'s all the nodes that are (were) in that list.
+ * list, and calls freeFunc() for all the nodes that are (were) in that list.
  *
  * NOTE: the nodes in the list are free()'d on the assumption that the node
  * structures were malloc()'d one-at-a-time and that the ELLNODE structure is
@@ -356,22 +267,20 @@ int epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode)
  * In other words, this is a pretty worthless function.
  *
  *****************************************************************************/
-void epicsShareAPI ellFree (ELLLIST *pList, FREEFUNC freeFunc)
+void ellFree (ELLLIST *pList, FREEFUNC freeFunc)
 {
-  ELLNODE *nnode = pList->node.next;
-  ELLNODE *pnode;
+    ELLNODE *nnode = pList->node.next;
+    ELLNODE *pnode;
 
-  while (nnode != NULL)
-  {
-    pnode = nnode;
-    nnode = nnode->next;
-    freeFunc(pnode);
-  }
-  pList->node.next = NULL;
-  pList->node.previous = NULL;
-  pList->count = 0;
-
-  return;
+    while (nnode != NULL)
+    {
+        pnode = nnode;
+        nnode = nnode->next;
+        freeFunc(pnode);
+    }
+    pList->node.next = NULL;
+    pList->node.previous = NULL;
+    pList->count = 0;
 }
 
 /****************************************************************************
@@ -380,33 +289,30 @@ void epicsShareAPI ellFree (ELLLIST *pList, FREEFUNC freeFunc)
  * joh 12-12-97
  *
  *****************************************************************************/
-void epicsShareAPI ellVerify (ELLLIST *pList) 
+void ellVerify (ELLLIST *pList)
 {
-	ELLNODE *pNode;
-	ELLNODE *pNext;
-	int count;
+    ELLNODE *pNode;
+    ELLNODE *pNext;
+    int count = 0;
 
-	assert (pList);
+    assert (pList);
 
-	count = 0u;	
-	pNode = ellFirst(pList);
-	if (pNode) {
-		assert (ellPrevious(pNode)==NULL);
-		while (1) {
-			count++;
-			pNext = ellNext(pNode);
-			if (pNext) {
-				assert (ellPrevious(pNext)==pNode);
-			}
-			else {
-				break;
-			}
-			pNode = pNext;
-		}
-		assert (ellNext(pNode)==NULL);
-	}
+    pNode = ellFirst(pList);
+    if (pNode) {
+        assert (ellPrevious(pNode) == NULL);
+        while (1) {
+            count++;
+            pNext = ellNext(pNode);
+            if (pNext) {
+                assert (ellPrevious(pNext) == pNode);
+            } else {
+                break;
+            }
+            pNode = pNext;
+        }
+        assert (ellNext(pNode) == NULL);
+    }
 
-	assert (pNode==ellLast(pList));
-	assert (count==ellCount(pList));
+    assert (pNode == ellLast(pList));
+    assert (count == ellCount(pList));
 }
-

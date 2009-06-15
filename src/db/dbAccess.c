@@ -1176,8 +1176,8 @@ static long dbPutFieldLink(DBADDR *paddr,
 
         if (new_dsxt == NULL ||
             new_dsxt->add_record == NULL ||
-            old_dsxt == NULL ||
-            old_dsxt->del_record == NULL) {
+            (precord->dset && old_dsxt == NULL) ||
+            (old_dsxt && old_dsxt->del_record == NULL)) {
             status = S_db_noSupport;
             goto unlock;
         }
@@ -1187,9 +1187,11 @@ static long dbPutFieldLink(DBADDR *paddr,
             precord->scan = menuScanPassive;
         }
 
-        status = old_dsxt->del_record(precord);
-        if (status)
-            goto restoreScan;
+        if (old_dsxt) {
+            status = old_dsxt->del_record(precord);
+            if (status)
+                goto restoreScan;
+        }
     }
 
     switch (plink->type) { /* Old link type */

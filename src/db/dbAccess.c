@@ -1136,7 +1136,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     switch (dbrType) {
     case DBR_CHAR:
     case DBR_UCHAR:
-        if (pstring[nRequest] != '\0')
+        if (pstring[nRequest - 1] != '\0')
             return S_db_badDbrtype;
         break;
 

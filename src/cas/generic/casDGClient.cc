@@ -838,26 +838,19 @@ caStatus casDGClient::processMsg ()
             this->in.removeMsg ( msgSize );
 	    }
     }
-    catch ( std::bad_alloc & ) {
-        status = this->sendErr ( 
-            this->ctx.getMsg(), invalidResID, ECA_ALLOCMEM, 
-            "inablility to allocate memory in "
-            "the server disconnected client" );
-        status = S_cas_noMemory;
-    }
     catch ( std::exception & except ) {
+        this->in.removeMsg ( this->in.bytesPresent() );
 		status = this->sendErr ( 
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
-            "C++ exception \"%s\" in server "
-            "diconnected client",
+            "C++ exception \"%s\" in CA circuit server",
             except.what () );
         status = S_cas_internal;
     }
     catch (...) {
+        this->in.removeMsg ( this->in.bytesPresent() );
 		status = this->sendErr ( 
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
-            "unexpected C++ exception in server "
-            "diconnected client" );
+            "unexpected C++ exception in CA datagram server" );
         status = S_cas_internal;
     }
 

@@ -417,6 +417,9 @@ static void errlogInitPvt(void *arg)
     pvtData.waitForExit = epicsEventMustCreate(epicsEventEmpty);
     pvtData.pbuffer = callocMustSucceed(1, pvtData.buffersize,
         "errlogInitPvt");
+
+    errSymBld();    /* Better not to do this lazily... */
+
     tid = epicsThreadCreate("errlog", epicsThreadPriorityLow,
         epicsThreadGetStackSize(epicsThreadStackSmall),
         (EPICSTHREADFUNC)errlogThread, 0);

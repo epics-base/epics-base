@@ -258,24 +258,24 @@ ifneq (,$(wildcard ../baseLIBOBJS))
 $(LIBNAME): ../baseLIBOBJS
 endif
 
-# rule for lib (archive of object files) creation
 $(LIBNAME): $(LIBRARY_OBJS)
 
-$(LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX):
+$(DLL_LINK_LIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS) 
+
+$(LIBNAME) $(DLL_LINK_LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX):
 	@$(RM) $@
 	$(ARCMD)
 ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
 endif # RANLIB
 
-$(DLL_LINK_LIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS) 
-
 $(SHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
-ifneq ($(SHRLIB_SUFFIX),.dll)
 $(SHRLIBNAME):$(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
+ifeq ($(SHRLIB_SUFFIX),.dll)
+	$(MT_DLL_COMMAND)
 endif
 
 $(LOADABLE_SHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
@@ -435,15 +435,6 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: ../%
 $(INSTALL_TEMPLATES_SUBDIR)/%: %
 	@echo "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
-
-ifeq ($(SHRLIB_SUFFIX),.dll)
-ifeq ($(SHARED_LIBRARIES),YES)
-$(LIB_PREFIX)%$(LIB_SUFFIX) $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
-	@$(RM)  $(LIB_PREFIX)$*$(LIB_SUFFIX) $(SHRLIB_PREFIX)$*$(SHRLIB_SUFFIX)
-	$(LINK.shrlib)
-	$(MT_DLL_COMMAND)
-endif
-endif
 
 -include $(CONFIG)/RULES_EXPAND
 

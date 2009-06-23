@@ -1,7 +1,5 @@
 # CONFIG
 
-# You might want to change this to some shared set of rules, e.g.
-# RULES=/path/to/epics/support/modules/rules/x-y
 RULES=$(EPICS_BASE)
 
 include $(TOP)/configure/RELEASE

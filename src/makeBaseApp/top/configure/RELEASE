@@ -15,6 +15,10 @@
 #  RELEASE.$(EPICS_HOST_ARCH).Common
 #  RELEASE.Common.$(T_A)
 #  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+#
+# If using a module with a shared set of rules, point RULES at 
+# its top directory: 
+# RULES=/path/to/epics/support/modules/rules/x-y
 
 TEMPLATE_TOP=_TEMPLATE_TOP_
 

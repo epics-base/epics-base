@@ -24,3 +24,11 @@
 # define INSTALL_LOCATION here
 #INSTALL_LOCATION=<fullpathname>
 
+# CHECK_RELEASE controls the consistency checking of the support
+# applications defined in the $(TOP)/configure/RELEASE* files.
+# Normally CHECK_RELEASE should be set to YES.
+# Set CHECK_RELEASE to NO to disable checking completely.
+# Set CHECK_RELEASE to WARN to perform consistency checking,
+# but continue the build even if conflicts are found.
+CHECK_RELEASE = YES
+

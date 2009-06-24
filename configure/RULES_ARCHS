@@ -12,8 +12,6 @@
 
 all: install
 
-build install buildInstall: $(CHECK_RELEASE_$(CHECK_RELEASE))
-
 rebuild: clean install
 
 ACTIONS = inc
@@ -72,26 +70,6 @@ O.Common:
 	$(MKDIR) O.Common
 
 #
-# RELEASE consistency checking
-
-# The RELEASE.$(EPICS_HOST_ARCH) files don't need to be included here:
-targetReleaseFiles = $(wildcard $(foreach arch, $(BUILD_ARCHS), \
-		$(TOP)/configure/RELEASE.Common.$(arch) \
-		$(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(arch)))
-
-checkReleaseTargets = $(addprefix checkRelease, $(suffix $(targetReleaseFiles)))
-checkRelease: $(checkReleaseTargets)
-	$(CONVERTRELEASE) checkRelease
-$(checkReleaseTargets):checkRelease.%:
-	$(CONVERTRELEASE) -a $* checkRelease
-
-warnReleaseTargets = $(addprefix warnRelease, $(suffix $(targetReleaseFiles)))
-warnRelease: $(warnReleaseTargets)
-	-$(CONVERTRELEASE) checkRelease
-$(warnReleaseTargets):warnRelease.%:
-	-$(CONVERTRELEASE) -a $* checkRelease
-
-#
 # special clean rule
 #
 clean ::
@@ -110,4 +88,3 @@ realclean ::
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS)
 .PHONY : $(ACTIONS) clean realclean archclean all
-.PHONY : checkRelease $(checkReleaseTargets)

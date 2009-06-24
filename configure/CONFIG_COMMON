@@ -111,6 +111,10 @@ CROSS_WARN=YES
 GNU=NO
 
 #-------------------------------------------------------
+# Run checkRelease in $(TOP)/configure/O.*
+CONFIG_TARGETS += $(CHECK_RELEASE_$(CHECK_RELEASE))
+
+#-------------------------------------------------------
 # Prefix and suffix
 DEP=.depends
 OBJ = .

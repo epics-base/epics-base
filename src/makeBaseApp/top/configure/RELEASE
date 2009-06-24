@@ -1,4 +1,4 @@
-#RELEASE Location of external products
+#RELEASE Location of external support modules
 #
 # IF YOU MAKE ANY CHANGES to this file you MUST at least run
 # "gnumake" in this directory afterwards; you usually need
@@ -15,20 +15,14 @@
 #  RELEASE.$(EPICS_HOST_ARCH).Common
 #  RELEASE.Common.$(T_A)
 #  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
-#
-# If using a module with a shared set of rules, point RULES at 
-# its top directory: 
-# RULES=/path/to/epics/support/modules/rules/x-y
 
 TEMPLATE_TOP=_TEMPLATE_TOP_
 
-#If using the sequencer, point SNCSEQ at its top directory:
+# If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
 
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=_EPICS_BASE_
 
-#Capfast users may need the following definitions
-#CAPFAST_TEMPLATES=
-#SCH2EDIF_PATH=
-
+# Set RULES to use build rules from somewhere other than EPICS_BASE:
+#RULES=/path/to/epics/support/module/rules/x-y

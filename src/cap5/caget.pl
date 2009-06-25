@@ -8,16 +8,15 @@ use lib "$Bin/../../lib/perl";
 use Getopt::Std;
 use CA;
 
-our ($opt_0, $opt_a, $opt_C, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_n);
-our ($opt_s, $opt_t);
+our ($opt_0, $opt_a, $opt_c, $opt_d, $opt_e, $opt_f, $opt_g, $opt_h, $opt_n);
+our ($opt_s, $opt_S, $opt_t);
+our $opt_F = ' ';
 our $opt_w = 1;
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
-HELP_MESSAGE() unless getopts('0:aC:d:e:f:g:hnstw:');
+HELP_MESSAGE() unless getopts('0:ac:d:e:f:F:g:hnsStw:');
 HELP_MESSAGE() if $opt_h;
-
-$opt_d = "DBR_$opt_d" if $opt_d && $opt_d !~ m/^DBR_/;
 
 die "No pv name specified. ('caget -h' gives help.)\n"
     unless @ARGV;
@@ -44,15 +43,16 @@ map {
     } else {
         $type = $_->field_type;
         $type = 'DBR_STRING'
-            if $opt_s && $type =~ m/ ^DBR_FLOAT$ | ^DBR_DOUBLE$ /x;
+            if $opt_s && $type =~ m/ ^ DBR_ ( DOUBLE | FLOAT ) $ /x;
         $type = 'DBR_LONG'
-            if $opt_n && $type eq 'DBR_ENUM';
+            if ($opt_n && $type eq 'DBR_ENUM')
+            || (!$opt_S && $type eq 'DBR_CHAR');
         $type =~ s/^DBR_/DBR_TIME_/
             if $opt_a;
     }
     $rtype{$_} = $type;
     my $count = $_->element_count;
-    $count = +$opt_C if $opt_C && $opt_C <= $count;
+    $count = +$opt_c if $opt_c && $opt_c <= $count;
     $_->get_callback(\&get_callback, $type, $count);
 } @chans;
 
@@ -89,32 +89,57 @@ sub format_number {
 sub display {
     my ($chan, $type, $data) = @_;
     if (ref $data eq 'ARRAY') {
-        display($chan, $type, join(' ', scalar @{$data}, @{$data}));
+        display($chan, $type, join($opt_F, scalar @{$data}, @{$data}));
     } elsif (ref $data eq 'HASH') {
-        $type = $data->{TYPE};  # Can differ from request
-        my $value = $data->{value};
-        if (ref $value eq 'ARRAY') {
-            $value = join(' ', $data->{COUNT},
-                map { format_number($_, $type); } @{$value});
+        printf "%s\n", $chan->name;
+        my $dtype = $data->{TYPE};  # Can differ from request
+        printf "    Native data type: %s\n", $chan->field_type;
+        printf "    Request type:     %s\n", $dtype;
+        printf "    Element count:    %d\n", $data->{COUNT}
+            if exists $data->{COUNT};
+        my $val = $data->{value};
+        if (ref $val eq 'ARRAY') {
+            printf "    Value:            %s\n", join($opt_F,
+                map { format_number($_, $dtype); } @{$val});
         } else {
-            $value = format_number($value, $type);
+            printf "    Value:            %s\n", format_number($val, $dtype);
         }
-        my $stamp;
         if (exists $data->{stamp}) {
             my @t = localtime $data->{stamp};
             splice @t, 6;
             $t[5] += 1900;
             $t[0] += $data->{stamp_fraction};
-            $stamp = sprintf "%4d-%02d-%02d %02d:%02d:%09.6f", reverse @t;
+            printf "    Timestamp:        %4d-%02d-%02d %02d:%02d:%09.6f\n",
+                reverse @t;
         }
-        printf "%-30s %s %s %s %s\n", $chan->name,
-            $stamp, $value, $data->{status}, $data->{severity};
+        printf "    Status:           %s\n", $data->{status};
+        printf "    Severity:         %s\n", $data->{severity};
+        if (exists $data->{units}) {
+            printf "    Units:            %s\n", $data->{units};
+        }
+        if (exists $data->{precision}) {
+            printf "    Precision:        %d\n", $data->{precision};
+        }
+        if (exists $data->{upper_disp_limit}) {
+            printf "    Lo disp limit:    %d\n", $data->{lower_disp_limit};
+            printf "    Hi disp limit:    %d\n", $data->{upper_disp_limit};
+        }
+        if (exists $data->{upper_alarm_limit}) {
+            printf "    Lo alarm limit:   %d\n", $data->{lower_alarm_limit};
+            printf "    Lo warn limit:    %d\n", $data->{lower_warning_limit};
+            printf "    Hi warn limit:    %d\n", $data->{upper_warning_limit};
+            printf "    Hi alarm limit:   %d\n", $data->{upper_alarm_limit};
+        }
+        if (exists $data->{upper_ctrl_limit}) {
+            printf "    Lo ctrl limit:    %d\n", $data->{lower_ctrl_limit};
+            printf "    Hi ctrl limit:    %d\n", $data->{upper_ctrl_limit};
+        }
     } else {
         my $value = format_number($data, $type);
         if ($opt_t) {
             print "$value\n";
         } else {
-            printf "%-30s %s\n", $chan->name, $value;
+            printf "%s%s%s\n", $chan->name, $opt_F, $value;
         }
     }
 }
@@ -137,7 +162,8 @@ sub HELP_MESSAGE {
         "        DBR_CLASS_NAME   DBR_STSACK_STRING\n",
         "Arrays: Value format: print number of values, then list of values\n",
         "  Default:    Print all values\n",
-        "  -C <count>: Print first <count> elements of an array\n",
+        "  -c <count>: Print first <count> elements of an array\n",
+        "  -S:         Print array of char as a string (long string)\n",
         "Enum format:\n",
         "  -n: Print DBF_ENUM value as number (default is enum string)\n",
         "Floating point type format:\n",
@@ -151,7 +177,8 @@ sub HELP_MESSAGE {
         "  -0x: Print as hex number\n",
         "  -0o: Print as octal number\n",
         "  -0b: Print as binary number\n",
+        "Set output field separator:\n",
+        "  -F <ofs>: Use <ofs> to separate fields on output\n",
         "\n";
     exit 1;
 }
-

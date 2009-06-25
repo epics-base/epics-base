@@ -21,7 +21,9 @@ typedef union {
 
 typedef struct CA_channel {
     chid chan;
-    CA_data data;
+    CA_data data;   /* Value storage for CA::get */
+    char *sdata;    /* String storage for CA::get */
+    size_t ssize;   /* Length allocated for sdata, excluding nil */
     SV *chan_ref;
     SV *conn_sub;
     SV *rights_sub;
@@ -95,7 +97,7 @@ const char * get_error_msg(int status) {
         "ECA_CONNSEQTMO - Virtual circuit connection sequence aborted",
         "ECA_UNRESPTMO - Virtual circuit unresponsive"
     };
-    
+
     return messages[CA_EXTRACT_MSG_NO(status)];
 }
 
@@ -106,8 +108,11 @@ chtype best_type(CA_channel *pch) {
     case DBF_STRING:
     case DBF_ENUM:
         return DBF_STRING;
-    case DBF_INT:
     case DBF_CHAR:
+        if (ca_element_count(pch->chan) > 1)
+            return DBF_CHAR;
+        /* Fall through */
+    case DBF_INT:
     case DBF_LONG:
         return DBF_LONG;
     case DBF_FLOAT:
@@ -124,6 +129,7 @@ SV * newSVdbf(chtype type, const void *dbr, int index) {
     switch (type) {
         char *pc;
         size_t len;
+
     case DBR_STRING:
         pc = (char *)dbr + index * MAX_STRING_SIZE;
         len = strlen(pc);
@@ -158,11 +164,13 @@ SV * newSVdbr(struct event_handler_args *peha) {
     SV *val;
     chtype value_type;
     union db_access_val *u;
-    
+
     if (dbr_type_is_STRING(peha->type) ||
         peha->type == DBR_STSACK_STRING ||
         peha->type == DBR_CLASS_NAME)
         value_type = DBR_STRING;
+    else if (dbr_type_is_CHAR(peha->type))
+        value_type = DBR_CHAR;
     else if (dbr_type_is_LONG(peha->type))
         value_type = DBR_LONG;
     else if (dbr_type_is_DOUBLE(peha->type))
@@ -174,28 +182,38 @@ SV * newSVdbr(struct event_handler_args *peha) {
         croak("Unexpected data type %s",
             dbf_type_to_text(peha->type));
     }
-    
-    if (is_primitive && peha->count == 1) {     /* Primitive => Scalar */
+
+    if (is_primitive) {
+        if (value_type == DBR_CHAR) {
+            /* Long string => Perl scalar */
+            return newSVpv(peha->dbr, 0);
+        }
+
+        if (peha->count != 1) {
+            /* Array of values => Perl array reference */
+            AV *array;
+            int i;
+
+            array = newAV();
+            for (i = 0; i < peha->count; i++) {
+                av_push(array, newSVdbf(value_type, peha->dbr, i));
+            }
+            return newRV_noinc((SV *)array);
+        }
+
+        /* Single value => Perl scalar */
         return newSVdbf(value_type, peha->dbr, 0);
     }
-    
-    if (is_primitive) {                         /* Array => Array Ref */
-        AV *array = newAV();
-        int i;
-        for (i = 0; i < peha->count; i++) {
-            av_push(array, newSVdbf(value_type, peha->dbr, i));
-        }
-        return newRV_noinc((SV *)array);
-    }
-    
-    u = (union db_access_val *)peha->dbr;       /* Compound => Hash Ref */
+
+    /* Compound => Perl hash reference */
+    u = (union db_access_val *)peha->dbr;
     hash = newHV();
-    
-    /* Meta-data */
+
+    /* Add basic meta-data */
     hv_store(hash, "TYPE", 4,
         newSVpv(dbr_type_to_text(peha->type), 0), 0);
     hv_store(hash, "COUNT", 5, newSViv(peha->count), 0);
-    
+
     /* Alarm status and severity are always in the same place */
     if (u->slngval.status)
         val = newSVpv(epicsAlarmConditionStrings[u->slngval.status], 0);
@@ -204,15 +222,15 @@ SV * newSVdbr(struct event_handler_args *peha) {
     hv_store(hash, "status", 6, val, 0);
     hv_store(hash, "severity", 8,
         newSValarm(u->slngval.severity), 0);
-    
+
     if (peha->type == DBR_GR_ENUM ||
         peha->type == DBR_CTRL_ENUM) {
         AV *strings = newAV();
         int n = u->genmval.no_str;
         int i;
-        
+
         val = newSViv(u->genmval.value);
-        
+
         for (i = 0; i < n; i++) {
             size_t slen = strlen(u->genmval.strs[i]);
             if (slen > MAX_ENUM_STRING_SIZE)
@@ -228,17 +246,23 @@ SV * newSVdbr(struct event_handler_args *peha) {
         hv_store(hash, "no_str", 6,
             newSViv(u->genmval.no_str), 0);
         hv_store(hash, "value", 5, val, 0);
-        
+
         return newRV_noinc((SV *)hash);
     }
-    
+
     /* Value */
-    if (peha->count == 1) {
+    if (value_type == DBR_CHAR) {
+        /* Long string => Perl scalar */
+        val = newSVpv(dbr_value_ptr(peha->dbr, peha->type), 0);
+    } else if (peha->count == 1) {
+        /* Single value => Perl scalar */
         val = newSVdbf(value_type,
             dbr_value_ptr(peha->dbr, peha->type), 0);
     } else {
+        /* Array of values => Perl array reference */
         AV *array = newAV();
         int i;
+
         for (i = 0; i < peha->count; i++) {
             av_push(array, newSVdbf(value_type,
                 dbr_value_ptr(peha->dbr, peha->type), i));
@@ -246,10 +270,11 @@ SV * newSVdbr(struct event_handler_args *peha) {
         val = newRV_noinc((SV *)array);
     }
     hv_store(hash, "value", 5, val, 0);
-    
+
     /* Timestamp follows status and severity in DBR_TIME */
     if (dbr_type_is_TIME(peha->type)) {
         struct timespec t;
+
         epicsTimeToTimespec(&t, &u->tlngval.stamp);
         hv_store(hash, "stamp", 5,
             newSViv(t.tv_sec), 0);
@@ -258,6 +283,7 @@ SV * newSVdbr(struct event_handler_args *peha) {
     }
     else if (peha->type == DBR_STSACK_STRING) {
         struct dbr_stsack_string *s = (struct dbr_stsack_string *)peha->dbr;
+
         hv_store(hash, "ackt", 4,
             newSViv(s->ackt), 0);
         hv_store(hash, "acks", 4,
@@ -270,7 +296,7 @@ SV * newSVdbr(struct event_handler_args *peha) {
         size_t ulen;
         void *limit;
         int i = dbr_type_is_CTRL(peha->type) ? 7 : 5;
-        
+
         if (value_type == DBR_DOUBLE) {
             units = u->gdblval.units;
             limit = &u->gdblval.upper_disp_limit;
@@ -280,11 +306,11 @@ SV * newSVdbr(struct event_handler_args *peha) {
             units = u->glngval.units;
             limit = &u->glngval.upper_disp_limit;
         }
-        
+
         ulen = strlen(units);
         hv_store(hash, "units", 5, newSVpv(units,
             ulen < MAX_UNITS_SIZE ? ulen : MAX_UNITS_SIZE), 0);
-        
+
         while (i >= 0) {
             static const char * const limit_name[] = {
                 "upper_disp_limit", "lower_disp_limit",
@@ -292,12 +318,13 @@ SV * newSVdbr(struct event_handler_args *peha) {
                 "lower_warning_limit", "lower_alarm_limit",
                 "upper_ctrl_limit", "lower_ctrl_limit",
             };
+
             hv_store(hash, limit_name[i], strlen(limit_name[i]),
                 newSVdbf(value_type, limit, i), 0);
             i--;
         }
     }
-    
+
     return newRV_noinc((SV *)hash);
 }
 
@@ -317,32 +344,32 @@ void io_handler(struct event_handler_args *peha, enum io_type io) {
         SV *status = &PL_sv_undef;
         SV *data = &PL_sv_undef;
         dSP;
-        
+
         ENTER;
         SAVETMPS;
-        
+
         if (peha->status != ECA_NORMAL) {
             status = sv_2mortal(newSVpv(get_error_msg(peha->status), 0));
         } else if (io != IO_PUT) {
             data = sv_2mortal(newSVdbr(peha));
         }
-        
+
         sv_setsv(ERRSV, &PL_sv_undef);
-        
+
         PUSHMARK(SP);
         XPUSHs(pch->chan_ref);
         XPUSHs(status);
         XPUSHs(data);
         PUTBACK;
-        
+
         call_sv(code, G_VOID | G_DISCARD | G_EVAL | G_KEEPERR);
-        
+
         if (io != IO_MONITOR)
             SvREFCNT_dec(code);
-        
+
         if (SvTRUE(ERRSV))
             croak(Nullch);
-        
+
         FREETMPS;
         LEAVE;
     }
@@ -360,12 +387,11 @@ int replace_handler(SV * sub, SV ** ph_sub, long *phandler) {
     } else {
         if (*ph_sub == NULL)
             return FALSE;
-        
+
         SvREFCNT_dec(*ph_sub);
         *ph_sub = NULL;
         *phandler = 0;
     }
-    
     return TRUE;
 }
 
@@ -377,20 +403,20 @@ int replace_handler(SV * sub, SV ** ph_sub, long *phandler) {
 static
 void connect_handler(struct connection_handler_args cha) {
     CA_channel *pch = ca_puser(cha.chid);
-    
+
     PERL_SET_CONTEXT(p5_ctx);
     {
         dSP;
-        
+
         SvSetSV(ERRSV, &PL_sv_undef);
-        
+
         PUSHMARK(SP);
         XPUSHs(pch->chan_ref);
         XPUSHs(cha.op == CA_OP_CONN_UP ? &PL_sv_yes : &PL_sv_no);
         PUTBACK;
-        
+
         call_sv(pch->conn_sub, G_EVAL | G_VOID | G_DISCARD | G_KEEPERR);
-        
+
         if (SvTRUE(ERRSV))
             croak(Nullch);
     }
@@ -403,14 +429,14 @@ SV * CA_new(const char *class, const char *name, ...) {
     CA_channel *pch;
     caCh *handler;
     int status;
-    
+
     Newz(0, pch, 1, CA_channel);
     sv_setiv(ca_obj, (IV)pch);
     SvREADONLY_on(ca_obj);
-    
+
     pch->chan_ref = ca_ref;
     SvREFCNT_inc(ca_ref);
-    
+
     if (items > 2
         && SvOK(ST(2))) {
         /* Connection handler provided */
@@ -418,7 +444,7 @@ SV * CA_new(const char *class, const char *name, ...) {
         handler = &connect_handler;
     } else
         handler = NULL;
-    
+
     status = ca_create_channel(name, handler, pch, 0, &pch->chan);
     if (status != ECA_NORMAL) {
         SvREFCNT_dec(ca_ref);
@@ -426,7 +452,7 @@ SV * CA_new(const char *class, const char *name, ...) {
             SvREFCNT_dec(pch->conn_sub);
         croak(get_error_msg(status));
     }
-    
+
     return ca_ref;
 }
 
@@ -436,21 +462,23 @@ SV * CA_new(const char *class, const char *name, ...) {
 void CA_DESTROY(SV *ca_ref) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     int status;
-    
+
     status = ca_clear_channel(pch->chan);
-    
+
     if (pch->conn_sub)
         SvREFCNT_dec(pch->conn_sub);
-    
+
     if (pch->rights_sub)
         SvREFCNT_dec(pch->rights_sub);
-    
+
+    if (pch->sdata)
+        Safefree(pch->sdata);
+
     SvREFCNT_dec(pch->chan_ref);
     Safefree(pch);
-    
-    if (status != ECA_NORMAL) {
+
+    if (status != ECA_NORMAL)
         croak(get_error_msg(status));
-    }
 }
 
 
@@ -460,12 +488,12 @@ void CA_change_connection_event(SV *ca_ref, SV *sub) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     caCh *handler = &connect_handler;
     int status;
-    
+
     if (! replace_handler(sub, &pch->conn_sub, (long *)&handler))
         return;
-    
+
     status = ca_change_connection_event(pch->chan, handler);
-    
+
     if (status != ECA_NORMAL) {
         croak(get_error_msg(status));
     }
@@ -479,38 +507,53 @@ void CA_put(SV *ca_ref, SV *val, ...) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     int num_values = items - 1;
     int status;
-    chtype type = best_type(pch);
-    
+
     if (num_values == 1) {
-        union {
-            dbr_long_t   dbr_long;
-            dbr_double_t dbr_double;
-            dbr_string_t dbr_string;
-        } data;
-        
-        switch (type) {
-        case DBF_LONG:
-            data.dbr_long = SvIV(val);
-            break;
-        case DBF_DOUBLE:
-            data.dbr_double = SvNV(val);
-            break;
-        case DBF_STRING:
-            strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
-            break;
+        if (ca_field_type(pch->chan) == DBF_CHAR &&
+            ca_element_count(pch->chan) > 1) {
+            size_t len;
+            char *long_string = SvPV(val, len);
+
+            status = ca_array_put(DBF_CHAR, len+1, pch->chan, long_string);
+        } else {
+            union {
+                dbr_long_t   dbr_long;
+                dbr_double_t dbr_double;
+                dbr_string_t dbr_string;
+            } data;
+            chtype type = best_type(pch);
+
+            switch (type) {
+            case DBF_LONG:
+                data.dbr_long = SvIV(val);
+                break;
+            case DBF_DOUBLE:
+                data.dbr_double = SvNV(val);
+                break;
+            case DBF_STRING:
+                strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
+                break;
+            }
+            status = ca_put(type, pch->chan, &data);
         }
-        
-        status = ca_put(type, pch->chan, &data);
     } else {
         union {
+            dbr_char_t   *dbr_char;
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;
             char         *dbr_string;
             void         *dbr;
         } p;
         int i;
-        
+        chtype type = best_type(pch);
+
         switch (type) {
+        case DBF_CHAR:
+            New(0, p.dbr_char, num_values, dbr_char_t);
+            for (i = 0; i < num_values; i++) {
+                p.dbr_char[i] = SvIV(ST(i + 1));
+            }
+            break;
         case DBF_LONG:
             New(0, p.dbr_long, num_values, dbr_long_t);
             for (i = 0; i < num_values; i++) {
@@ -531,7 +574,7 @@ void CA_put(SV *ca_ref, SV *val, ...) {
             }
             break;
         }
-        
+
         status = ca_array_put(type, num_values, pch->chan, p.dbr);
         Safefree(p.dbr);
     }
@@ -553,62 +596,79 @@ void CA_put_callback(SV *ca_ref, SV *sub, SV *val, ...) {
     dXSARGS;
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     SV *put_sub = newSVsv(sub);
-    int n = items - 2;
+    int num_values = items - 2;
     int status;
-    chtype type = best_type(pch);
-    
-    if (n == 1) {
-        union {
-            dbr_long_t   dbr_long;
-            dbr_double_t dbr_double;
-            dbr_string_t dbr_string;
-        } data;
-        
-        switch (type) {
-        case DBF_LONG:
-            data.dbr_long = SvIV(val);
-            break;
-        case DBF_DOUBLE:
-            data.dbr_double = SvNV(val);
-            break;
-        case DBF_STRING:
-            strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
-            break;
+
+    if (num_values == 1) {
+        if (ca_field_type(pch->chan) == DBF_CHAR &&
+            ca_element_count(pch->chan) > 1) {
+            size_t len;
+            char *long_string = SvPV(val, len);
+
+            status = ca_array_put_callback(DBF_CHAR, len+1, pch->chan,
+                long_string, put_handler, put_sub);
+        } else {
+            union {
+                dbr_long_t   dbr_long;
+                dbr_double_t dbr_double;
+                dbr_string_t dbr_string;
+            } data;
+            chtype type = best_type(pch);
+
+            switch (type) {
+            case DBF_LONG:
+                data.dbr_long = SvIV(val);
+                break;
+            case DBF_DOUBLE:
+                data.dbr_double = SvNV(val);
+                break;
+            case DBF_STRING:
+                strncpy(data.dbr_string, SvPV_nolen(val), MAX_STRING_SIZE);
+                break;
+            }
+
+            status = ca_put_callback(type, pch->chan, &data, put_handler, put_sub);
         }
-        
-        status = ca_put_callback(type, pch->chan, &data, put_handler, put_sub);
     } else {
         union {
+            dbr_char_t   *dbr_char;
             dbr_long_t   *dbr_long;
             dbr_double_t *dbr_double;
             char         *dbr_string;
             void         *dbr;
         } p;
         int i;
-        
+        chtype type = best_type(pch);
+
         switch (type) {
+        case DBF_CHAR:
+            New(0, p.dbr_char, num_values, dbr_char_t);
+            for (i = 0; i < num_values; i++) {
+                p.dbr_char[i] = SvIV(ST(i + 1));
+            }
+            break;
         case DBF_LONG:
-            New(0, p.dbr_long, n, dbr_long_t);
-            for (i = 0; i < n; i++) {
+            New(0, p.dbr_long, num_values, dbr_long_t);
+            for (i = 0; i < num_values; i++) {
                 p.dbr_long[i] = SvIV(ST(i + 2));
             }
             break;
         case DBF_DOUBLE:
-            New(0, p.dbr_double, n, dbr_double_t);
-            for (i = 0; i < n; i++) {
+            New(0, p.dbr_double, num_values, dbr_double_t);
+            for (i = 0; i < num_values; i++) {
                 p.dbr_double[i] = SvNV(ST(i + 2));
             }
             break;
         case DBF_STRING:
-            New(0, p.dbr_string, n * MAX_STRING_SIZE, char);
-            for (i = 0; i < n; i++) {
+            New(0, p.dbr_string, num_values * MAX_STRING_SIZE, char);
+            for (i = 0; i < num_values; i++) {
                 char * src = SvPV_nolen(ST(i + 2));
                 strncpy(p.dbr_string + i, src, MAX_STRING_SIZE);
             }
             break;
         }
-        
-        status = ca_array_put_callback(type, n, pch->chan, p.dbr,
+
+        status = ca_array_put_callback(type, num_values, pch->chan, p.dbr,
             put_handler, put_sub);
         Safefree(p.dbr);
     }
@@ -627,7 +687,7 @@ void CA_put_acks(SV *ca_ref, SV *sevr, ...) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     dbr_put_acks_t acks;
     int status;
-    
+
     if (! SvOK(sevr)) {
         acks = NO_ALARM;
     } else if (SvIOK(sevr)) {
@@ -644,7 +704,7 @@ void CA_put_acks(SV *ca_ref, SV *sevr, ...) {
         if (acks > INVALID_ALARM)
             croak("Bad acknowledgment severity '%s'", sname);
     }
-    
+
     if (items > 2) {
         SV *put_sub = newSVsv(ST(2));
         status = ca_put_callback(DBR_PUT_ACKS, pch->chan, &acks,
@@ -653,10 +713,10 @@ void CA_put_acks(SV *ca_ref, SV *sevr, ...) {
             SvREFCNT_dec(put_sub);
     } else
         status = ca_put(DBR_PUT_ACKS, pch->chan, &acks);
-    
+
     if (status != ECA_NORMAL)
         croak(get_error_msg(status));
-    
+
     XSRETURN(0);
 }
 
@@ -668,7 +728,7 @@ void CA_put_ackt(SV *ca_ref, int ack, ...) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     dbr_put_ackt_t ackt = !! ack;   /* 0 or 1 only */
     int status;
-    
+
     if (items > 2) {
         SV *put_sub = newSVsv(ST(2));
         status = ca_put_callback(DBR_PUT_ACKT, pch->chan, &ackt,
@@ -677,10 +737,10 @@ void CA_put_ackt(SV *ca_ref, int ack, ...) {
             SvREFCNT_dec(put_sub);
     } else
         status = ca_put(DBR_PUT_ACKS, pch->chan, &ackt);
-    
+
     if (status != ECA_NORMAL)
         croak(get_error_msg(status));
-    
+
     XSRETURN(0);
 }
 
@@ -689,7 +749,23 @@ void CA_put_ackt(SV *ca_ref, int ack, ...) {
 
 void CA_get(SV *ca_ref) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
-    int status = ca_get(best_type(pch), pch->chan, &pch->data);
+    size_t count = ca_element_count(pch->chan);
+    int status;
+
+    if (ca_field_type(pch->chan) == DBF_CHAR &&
+        count > 1) {
+        if (!pch->sdata) {
+            Newx(pch->sdata, count + 1, char);
+            pch->ssize = count;
+        } else if (pch->ssize < count) { /* Reconnected to larger array? */
+            Safefree(pch->sdata);
+            Newx(pch->sdata, count + 1, char);
+            pch->ssize = count;
+        }
+        status = ca_array_get(DBF_CHAR, count, pch->chan, pch->sdata);
+    } else {
+        status = ca_get(best_type(pch), pch->chan, &pch->data);
+    }
     if (status != ECA_NORMAL) {
         croak(get_error_msg(status));
     }
@@ -700,6 +776,11 @@ void CA_get(SV *ca_ref) {
 
 SV * CA_value(SV *ca_ref) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
+    if (ca_field_type(pch->chan) == DBF_CHAR &&
+        ca_element_count(pch->chan) > 1 &&
+        pch->sdata) {
+        return newSVpv(pch->sdata, 0);
+    }
     return newSVdbf(best_type(pch), &pch->data, 0);
 }
 
@@ -720,7 +801,7 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
     int count = ca_element_count(pch->chan);
     int i = 2;
     const char *croak_msg;
-    
+
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
@@ -733,6 +814,7 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
         } else if (SvPOKp(ST(i))) {
             /* String => Type arg */
             char *treq = SvPV_nolen(ST(i));
+
             dbr_text_to_type(treq, type);
             if (type < 0 ||
                 type == DBR_PUT_ACKT ||
@@ -750,22 +832,20 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
                 type += (DBR_DOUBLE - DBR_FLOAT);
             else if (dbr_type_is_ENUM(type))
                 type += (DBR_STRING - DBR_ENUM);
-            else if (dbr_type_is_CHAR(type))
-                type += (DBR_LONG - DBR_CHAR);
         }
         i++;
     }
-    
+
     status = ca_array_get_callback(type, count,
         pch->chan, get_handler, get_sub);
     if (status != ECA_NORMAL) {
         croak_msg = get_error_msg(status);
         goto exit_croak;
     }
-    
+
     XSRETURN(0);
     return;
-    
+
 exit_croak:
     SvREFCNT_dec(get_sub);
     croak(croak_msg);
@@ -792,11 +872,12 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
     evid event;
     int status;
     const char *croak_msg;
-    
+
     if (strchr(mask_str, 'v') || strchr(mask_str, 'V')) mask |= DBE_VALUE;
     if (strchr(mask_str, 'l') || strchr(mask_str, 'L')) mask |= DBE_LOG;
     if (strchr(mask_str, 'a') || strchr(mask_str, 'A')) mask |= DBE_ALARM;
-    
+    if (strchr(mask_str, 'p') || strchr(mask_str, 'P')) mask |= DBE_PROPERTY;
+
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
@@ -810,6 +891,7 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
             /* String => Type arg */
             size_t tlen;
             char *treq = SvPV(ST(i), tlen);
+
             dbr_text_to_type(treq, type);
             if (type < 0) {
                 croak_msg = "Unknown data type";
@@ -828,25 +910,23 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
                 type += (DBR_DOUBLE - DBR_FLOAT);
             else if (dbr_type_is_ENUM(type))
                 type += (DBR_STRING - DBR_ENUM);
-            else if (dbr_type_is_CHAR(type))
-                type += (DBR_LONG - DBR_CHAR);
         }
         i++;
     }
-    
+
     status = ca_create_subscription(type, count, pch->chan, mask,
         subscription_handler, mon_sub, &event);
     if (status != ECA_NORMAL) {
         croak_msg = get_error_msg(status);
         goto exit_croak;
     }
-    
+
     sv_setiv(mon_obj, (IV)event);
     SvREADONLY_on(mon_obj);
     SvREFCNT_inc(mon_ref);
-    
+
     return mon_ref;
-    
+
 exit_croak:
     SvREFCNT_dec(mon_ref);
     SvREFCNT_dec(mon_sub);
@@ -859,13 +939,13 @@ exit_croak:
 void CA_clear_subscription(const char *class, SV *mon_ref) {
     evid event = (evid)SvIV(SvRV(mon_ref));
     int status;
-    
+
     if (! sv_isa(mon_ref, "CA::Subscription")) {
         croak("Not a CA::Subscription");
     }
-    
+
     status = ca_clear_subscription(event);
-    
+
     if (status != ECA_NORMAL) {
         croak(get_error_msg(status));
     }
@@ -919,7 +999,7 @@ static
 void exception_handler(struct exception_handler_args eha) {
     if (! exception_sub)
         return;
-    
+
     PERL_SET_CONTEXT(p5_ctx);
     {
         SV *channel = &PL_sv_undef;
@@ -930,10 +1010,10 @@ void exception_handler(struct exception_handler_args eha) {
             "GET", "PUT", "CREATE_CHANNEL", "ADD_EVENT", "CLEAR_EVENT", "OTHER"
         };
         dSP;
-        
+
         ENTER;
         SAVETMPS;
-        
+
         if (eha.chid) {
             CA_channel *pch = ca_puser(eha.chid);
             channel = pch->chan_ref;
@@ -941,7 +1021,7 @@ void exception_handler(struct exception_handler_args eha) {
         if (eha.stat != ECA_NORMAL) {
             status = sv_2mortal(newSVpv(get_error_msg(eha.stat), 0));
         }
-        
+
         op = newSViv(eha.op);
         sv_setpv(op, opString[eha.op]);
         SvIOK_on(op);
@@ -953,16 +1033,16 @@ void exception_handler(struct exception_handler_args eha) {
             hv_store(hash, "FILE", 4, newSVpv(eha.pFile, 0), 0);
         if (eha.lineNo)
             hv_store(hash, "LINE", 4, newSVuv(eha.lineNo), 0);
-        
+
         PUSHMARK(SP);
         XPUSHs(channel);
         XPUSHs(status);
         XPUSHs(sv_2mortal(newSVpv(eha.ctx, 0)));
         XPUSHs(sv_2mortal(newRV_noinc((SV *)hash)));
         PUTBACK;
-        
+
         call_sv(exception_sub, G_EVAL | G_VOID | G_DISCARD);
-        
+
         FREETMPS;
         LEAVE;
     }
@@ -971,12 +1051,12 @@ void exception_handler(struct exception_handler_args eha) {
 void CA_add_exception_event(const char *class, SV *sub) {
     caExceptionHandler *handler = exception_handler;
     int status;
-    
+
     if (! replace_handler(sub, &exception_sub, (long *)&handler))
         return;
-    
+
     status = ca_add_exception_event(handler, NULL);
-    
+
     if (status != ECA_NORMAL) {
         SvREFCNT_dec(exception_sub);
         exception_sub = NULL;
@@ -994,32 +1074,32 @@ static
 int printf_handler(const char *format, va_list args) {
     if (! printf_sub)
         return 0;
-    
+
     PERL_SET_CONTEXT(p5_ctx);
     {
         SV *printf_str;
         dSP;
         va_list argcopy;
-        
+
         ENTER;
         SAVETMPS;
-        
+
 #ifdef __GNUC__
         __va_copy(argcopy, args);
 #else
         va_copy(argcopy, args);
 #endif
-        
+
         printf_str = NEWSV(0, strlen(format) + 32);
         sv_vsetpvf(printf_str, format, &argcopy);
         va_end(argcopy);
-        
+
         PUSHMARK(SP);
         XPUSHs(sv_2mortal(printf_str));
         PUTBACK;
-        
+
         call_sv(printf_sub, G_EVAL | G_VOID | G_DISCARD);
-        
+
         FREETMPS;
         LEAVE;
     }
@@ -1029,12 +1109,12 @@ int printf_handler(const char *format, va_list args) {
 void CA_replace_printf_handler(const char *class, SV *sub) {
     caPrintfFunc *handler = printf_handler;
     int status;
-    
+
     if (! replace_handler(sub, &printf_sub, (long *)&handler))
         return;
-    
+
     status = ca_replace_printf_handler(handler);
-    
+
     if (status != ECA_NORMAL) {
         SvREFCNT_dec(printf_sub);
         printf_sub = NULL;

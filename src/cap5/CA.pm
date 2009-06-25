@@ -97,9 +97,9 @@ CA - Perl 5 interface to EPICS Channel Access
 C<CA> is an efficient interface to the EPICS Channel Access client library for
 use by Perl 5 programs.  It provides most of the functionality of the C library
 (omitting Synchronous Groups) but only handles the three standard Perl data
-types integer (long), floating point (double) and string. Programmers who
-understand the C API will very quickly pick up how to use this library since the
-calls and concepts are virtually identical.
+types integer (long), floating point (double) and string (now including long
+strings). Programmers who understand the C API will very quickly pick up how to
+use this library since the calls and concepts are virtually identical.
 
 
 =head1 FUNCTIONS
@@ -179,11 +179,13 @@ in preference to the equivalent code S<C<< $chan->state eq 'connected' >>>.
 =item value
 
 The C<get> method makes a C<ca_get()> request for a single element of the Perl
-type closest to the channel's native data type (C<DBF_ENUM> fields will be
-fetched as strings).  Once the server has returned the value (for which see the
-C<pend_io> function below) it can be retrieved using the channel's C<value>
-method.  Note that this method deliberately has only very limited capabilities;
-the C<get_callback> method must be used for more complex requirements.
+type closest to the channel's native data type; a C<DBF_ENUM> field will be
+fetched as a DBF_STRING, and a C<DBF_CHAR> array with multiple elements will
+converted into a Perl string.  Once the server has returned the value (for which
+see the C<pend_io> function below) it can be retrieved using the channel's
+C<value> method.  Note that the C<get> method deliberately only provides limited
+capabilities; the C<get_callback> method must be used for more complex
+requirements.
 
 
 =item get_callback( I<SUB> )
@@ -196,21 +198,22 @@ the C<get_callback> method must be used for more complex requirements.
 
 The C<get_callback> method takes a subroutine reference or name and calls that
 routine when the server returns the data requested.  With no other arguments the
-request will be for native data type of the channel, and if the channel is an
-array it will request all possible array elements.  The subroutine will be
-called with three arguments: the channel object, a status value from the server,
-and the returned data.  If there was no error the status value will be C<undef>
-and the data will be valid; if there was an error the data will be C<undef> and
-the status is a printable string giving more information.  The format of the
-data is described under L</"Channel Data"> below.
+data type requested will be the widened form of the channel's native type
+(widening is discussed below), and if the channel is an array the request will
+fetch all available elements.  The callback subroutine will be given three
+arguments: the channel object, a status value from the server, and the returned
+data.  If there were no errors the status value will be C<undef> and the data
+will be valid; if an error occurred the data will be C<undef> and the status a
+printable string giving more information.  The format of the data is described
+under L</"Channel Data"> below.
 
 The element count can be overridden by providing an integer argument in the
-range 1 .. C<element_count>. The data type can also be given as a string naming
+range 1 .. C<element_count>.  The data type can also be given as a string naming
 the desired C<DBR_xxx_yyy> type; the actual type used will have the C<yyy> part
-widened to one of C<STRING>, C<LONG> or C<DOUBLE>.  The valid type names are
-listed in the L<Channel Access Reference Manual|/"SEE ALSO"> under the section
-titled Channel Access Data Types; look in the CA Type Code column of the two
-tables
+widened to one of C<STRING>, C<CHAR>, C<LONG> or C<DOUBLE>.  The valid type
+names are listed in the L<Channel Access Reference Manual|/"SEE ALSO"> under the
+section titled Channel Access Data Types; look in the CA Type Code column of the
+two tables.
 
 
 =item create_subscription( I<MASK>, I<SUB> )
@@ -223,11 +226,12 @@ tables
 
 Register a state change subscription and specify a subroutine to be called
 whenever the process variable undergoes a significant state change.  I<MASK>
-must be a string containing one or more of the letters C<v>, C<l> and C<a> which
-indicate that this subscription is for Value, Log or Alarm changes.  The
-subroutine I<SUB> is called as described in the C<get_callback> method, and the
-same optional I<TYPE> and I<COUNT> arguments may be supplied to modify the data
-type and element count requested from the server.
+must be a string containing one or more of the letters C<v>, C<l>, C<a> and C<p>
+which indicate that this subscription is for Value, Log (Archive), Alarm and
+Property changes. The subroutine I<SUB> is called as described for the
+C<get_callback> method above, and the same optional I<TYPE> and I<COUNT>
+arguments may be supplied to modify the data type and element count requested
+from the server.
 
 The C<create_subscription> method returns a C<ca::subscription> object which is
 required to cancel that particular subscription.  Either call the C<clear>
@@ -241,7 +245,8 @@ class method.
 
 The C<put> method makes a C<ca_put()> or C<ca_array_put()> call depending on the
 number of elements given in its argument list.  The data type used will be the
-native type of the channel, widened to one of C<STRING>, C<LONG> or C<DOUBLE>.
+native type of the channel, widened to one of C<STRING>, array of C<CHAR>,
+C<LONG> or C<DOUBLE>.
 
 
 =item put_callback( I<SUB>, I<VALUE> )
@@ -297,7 +302,9 @@ hash, depending on the data type that was used for the data transfer.  If the
 request was for a single item of one of the basic data types, the data argument
 will be a perl scalar that holds the value directly.  If the request was for
 multiple items of one of the basic types, the data argument will be a reference
-to an array holding the data.
+to an array holding the data.  There is one exception though; if the data type
+requested was for an array of C<DBF_CHAR> values that array will be represented
+as a single Perl string contining all the characters before the first zero byte.
 
 If the request was for one of the compound data types, the data argument will be
 a reference to a hash with keys as described below.  Keys that are not classed
@@ -314,12 +321,16 @@ These metadata will always be present in the hash:
 
 =item TYPE
 
-The C<DBR_xxx_yyy> name of the data type from the server.
+The C<DBR_xxx_yyy> name of the data type from the server.  This might have been
+widened from the original type used to request or subscribe for the data.
 
 
 =item COUNT
 
-The number of elements in the data returned by the server.
+The number of elements in the data returned by the server.  If the data type is
+C<DBF_CHAR> the value given for C<COUNT> is the number of bytes (including
+trailing zeros) returned by the server, although the value field is given as a
+Perl string contining all the characters before the first zero byte.
 
 =back
 
@@ -333,9 +344,10 @@ These fields are always present in the hash:
 
 =item value
 
-The actual process variable data.  If I<COUNT> is 1 C<value> will be the data as
-a scalar; if the channel returned multiple elements, C<value> will be a
-reference to an array of scalars.
+The actual process variable data, expressed as a Perl scalar or a reference to
+an array of scalars, depending on the request.  An array of C<DBF_CHAR> elements
+will be represented as a string; to access the array elements as numeric values
+the request must be for the C<DBF_LONG> equivalent data type.
 
 If I<TYPE> is C<DBR_GR_ENUM> or C<DBR_CTRL_ENUM>, C<value> can be accessed both
 as the integer choice value and (if within range) as the string associated with
@@ -351,7 +363,7 @@ The alarm status of the PV as a printable string, or C<undef> if not in alarm.
 
 The alarm severity of the PV, or C<undef> if not in alarm.  A defined severity
 can be used as a human readable string or as a number giving the numeric value
-of the alarm severity (1 = MINOR, 2 = MAJOR, 3 = INVALID).
+of the alarm severity (1 = C<MINOR>, 2 = C<MAJOR>, 3 = C<INVALID>).
 
 =back
 
@@ -507,6 +519,10 @@ Flush the send buffer and process CA's background activities for I<TIMEOUT>
 seconds.  This function always blocks for the full I<TIMEOUT> period, and if a
 value of zero is used it will never return.
 
+It is generally advisable to replace any uses of Perl's built-in function
+C<sleep> with calls to this routine, allowing Channel Access to make use of the
+delay time to perform any necessary housekeeping operations.
+
 
 =item poll
 
@@ -558,10 +574,10 @@ where the exception was noticed.
 =item replace_printf_handler( I<SUB> )
 
 This function provides a method to trap error messages from the CA client
-library and redirect them to some other place than the C<STDERR> stream.  The
+library and redirect them to somewhere other than the C<STDERR> stream.  The
 subroutine provided will be called with a single string argument every time the
 client library wishes to output an error or warning message.  Note that a single
-message may result in several calls to this subroutine.
+error or warning message may result in several calls to this subroutine.
 
 To revert back to the original handler, call C<< CA->replace_printf_handler() >>
 passing C<undef> as the subroutine reference.
@@ -591,7 +607,7 @@ not follow this pattern, but are still printable strings.
 
 =item [1] R3.14 Channel Access Reference Manual by Jeffrey O. Hill
 
-L<http://www.aps.anl.gov/epics/base/R3-14/10-docs/CAref.html>
+L<http://www.aps.anl.gov/epics/base/R3-14/11-docs/CAref.html>
 
 =back
 

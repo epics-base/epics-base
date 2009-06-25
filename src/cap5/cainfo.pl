@@ -35,8 +35,6 @@ if ($@) {
 
 map { display($_); } @chans;
 
-undef @chans;
-
 
 sub display {
     my $chan = shift;

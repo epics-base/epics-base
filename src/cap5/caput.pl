@@ -9,12 +9,12 @@ use Getopt::Std;
 use CA;
 
 our ($opt_0, $opt_c, $opt_e, $opt_f, $opt_g, $opt_h, $opt_l,
-    $opt_n, $opt_s, $opt_t);
+    $opt_n, $opt_s, $opt_S, $opt_t);
 our $opt_w = 1;
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
-HELP_MESSAGE() unless getopts('achlnstw:');
+HELP_MESSAGE() unless getopts('achlnsStw:');
 HELP_MESSAGE() if $opt_h;
 
 die "No pv name specified. ('caput -h' gives help.)\n"
@@ -45,14 +45,15 @@ die "Too many values given, '$pv' limit is $n\n"
 
 my $type = $chan->field_type;
 $type = 'DBR_STRING'
-    if $opt_s && $type =~ m/ ^DBR_ENUM$ | ^DBR_FLOAT$ | ^DBR_DOUBLE$ /x;
+    if $opt_s && $type =~ m/ ^ DBR_ (ENUM | FLOAT | DOUBLE) $ /x;
 $type = 'DBR_LONG'
-    if $opt_n && $type eq 'DBR_ENUM';
+    if ($opt_n && $type eq 'DBR_ENUM')
+    || (!$opt_S && $type eq 'DBR_CHAR');
 $type =~ s/^DBR_/DBR_TIME_/
     if $opt_l;
 
 my @values;
-if ($type !~ m/ ^DBR_STRING$ | ^DBR_ENUM$ /x) {
+if ($type !~ m/ ^ DBR_ (STRING | ENUM | CHAR) $ /x) {
     # Make @ARGV strings numeric
     @values = map { +$_; } @ARGV;
 } else {
@@ -159,6 +160,7 @@ sub HELP_MESSAGE {
         "Format options:\n",
         "  -t: Terse mode - print only sucessfully written value, without name\n",
         "  -l: Long mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n",
+        "  -S: Put string as an array of char (long string)\n",
         "Enum format:\n",
         "  Default: Auto - try value as ENUM string, then as index number\n",
         "  -n: Force interpretation of values as numbers\n",

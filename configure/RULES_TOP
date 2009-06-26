@@ -32,7 +32,7 @@ ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 	$(ECHO)
-# The $(ECHO) above stops a "nothing to be done for cleandirs" message
+# The echo above stops a "nothing to be done for cleandirs" message
 
 distclean: realclean realuninstall
 

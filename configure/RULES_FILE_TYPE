@@ -54,11 +54,11 @@ $(1) += $$(if $$(strip $$($(1)_$$(OS_CLASS))),$$(subst -nil-,,$$($(1)_$$(OS_CLAS
 INSTALLS_$(1) = $$($(1):%=$$(INSTALL_$(1))/%)
 
 $$(INSTALL_$(1))/%: ../%
-	@echo "Installing $(1) file $$@"
+	$(ECHO) "Installing $(1) file $$@"
 	@$$(INSTALL) -d -m  $$(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
 $$(INSTALL_$(1))/%: %
-	@echo "Installing $(1) file $$@"
+	$(ECHO) "Installing $(1) file $$@"
 	@$$(INSTALL) -d -m  $$(INSTALL_PERMISSIONS) $$< $$(dir $$@)
 
 buildInstall : $$(INSTALLS_$(1))

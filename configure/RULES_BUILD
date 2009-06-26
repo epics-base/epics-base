@@ -127,7 +127,7 @@ buildInstall : \
 	$(INSTALL_BIN_INSTALLS)
 
 clean::
-	@echo "Cleaning"
+	$(ECHO) "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
@@ -207,7 +207,7 @@ $(OBJLIBNAME):%$(OBJ):
 
 # WIN95/NT source browser
 %.bsc: %.sbr
-	@echo "building source browser archive $@"
+	$(ECHO) "building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $<
 
@@ -254,7 +254,7 @@ endif
 ifdef BAF
 
 $(LIB_BAF): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
-	@echo "Building source browser archive $@"
+	$(ECHO) "Building source browser archive $@"
 	@$(RM) $@
 	$(BAFCMD) $^
 
@@ -330,14 +330,14 @@ runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
 ## Install rules for BIN_INSTALLS and LIB_INSTALLS
 define  BIN_INSTALLS_template
 $$(INSTALL_BIN)/$$(notdir $(1)) : $(1)
-	@echo "Installing $$(<F)"
+	$(ECHO) "Installing $$(<F)"
 	@$$(INSTALL) -d -m $$(BIN_PERMISSIONS) $$^ $$(INSTALL_BIN)
 endef
 $(foreach file, $(BIN_INSTALLS), $(eval $(call BIN_INSTALLS_template, $(file))))
 
 define  LIB_INSTALLS_template
 $$(INSTALL_LIB)/$$(notdir $(1)) : $(1)
-	@echo "Installing $$(<F)"
+	$(ECHO) "Installing $$(<F)"
 	@$$(INSTALL) -d -m $$(LIB_PERMISSIONS) $$^ $$(INSTALL_LIB)
 endef
 $(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
@@ -345,30 +345,30 @@ $(foreach file, $(LIB_INSTALLS), $(eval $(call LIB_INSTALLS_template, $(file))))
 #---------------------------------------------------------------
 
 $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
-	@echo "Installing os-specific script $@"
+	$(ECHO) "Installing os-specific script $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: %
-	@echo "Installing created file $@"
+	$(ECHO) "Installing created file $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../%
-	@echo "Installing script $@"
+	$(ECHO) "Installing script $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_LIB)/%.a: %.a
-	@echo "Installing library $@"
+	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
 endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
-	@echo "Installing library $@"
+	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
 $(INSTALL_SHRLIB)/lib%: lib%
-	@echo "Installing shared library $@"
+	$(ECHO) "Installing shared library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
 ifneq (,$(strip $(SHRLIB_VERSION)))
 	@$(RM) $(subst .$(SHRLIB_VERSION),,$@)
@@ -378,20 +378,20 @@ endif # SHRLIB_VERSION
 
 ifneq ($(INSTALL_TCLLIB),$(INSTALL_BIN))
 $(INSTALL_TCLLIB)/%: %
-	@echo "Installing Tcl library $@"
+	$(ECHO) "Installing Tcl library $@"
 	@$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
 
 $(INSTALL_TCLLIB)/%: ../%
-	@echo "Installing Tcl library $@"
+	$(ECHO) "Installing Tcl library $@"
 	@$(INSTALL) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_TCLLIB)
 endif
 
 $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
-	@echo "Updating $@"
-	@echo eval auto_mkindex $(INSTALL_TCLLIB) "$(TCLLIBNAME)" | tclsh
+	$(ECHO) "Updating $@"
+	$(ECHO) eval auto_mkindex $(INSTALL_TCLLIB) "$(TCLLIBNAME)" | tclsh
 
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
-	@echo "Installing loadable shared library $@"
+	$(ECHO) "Installing loadable shared library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
 ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
 	@$(RM) $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
@@ -399,47 +399,49 @@ ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
 endif # LOADABLE_SHRLIB_VERSION
 
 $(INSTALL_CONFIG)/%: %
-	@echo "Installing config file $@"
+	$(ECHO) "Installing config file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_CONFIG)/%: ../%
-	@echo "Installing config file $@"
+	$(ECHO) "Installing config file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
-	@echo "Installing generated generic include file $@"
+	@echo $(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
+	@echo  $(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	$(ECHO) "Installing generated generic include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/% : %
-	@echo "Installing generic include file $@"
+	$(ECHO) "Installing generic include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
-	@echo "Installing os dependent include file $@"
+	$(ECHO) "Installing os dependent include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: %
-	@echo "Installing doc $@"
+	$(ECHO) "Installing doc $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(INSTALL_DOC)
 
 $(INSTALL_DOC)/%: ../%
-	@echo "Installing doc $@"
+	$(ECHO) "Installing doc $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(INSTALL_DOC)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: %
-	@echo "Installing html $@"
+	$(ECHO) "Installing html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
-	@echo "Installing html $@"
+	$(ECHO) "Installing html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%
-	@echo "Installing $@"
+	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: %
-	@echo "Installing $@"
+	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 -include $(CONFIG)/RULES_EXPAND

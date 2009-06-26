@@ -114,40 +114,40 @@ $(JAVA_DIRECTORY_TARGETS):
 endif
 
 $(COMMON_JAVAINC):$(JAVAINC_CLASSFILES)
-	@echo Creating header files $(COMMON_JAVAINC)
+	$(ECHO) Creating header files $(COMMON_JAVAINC)
 	@$(RM) $@
 	$(JAVAHCMD) $(JAVAINC_CLASSNAMES)
 
 $(COMMON_TESTCLASSES): $(addprefix ../,$(DEPTESTJAVA))
-	@echo Creating test java class files $(COMMON_TESTCLASSES)
+	$(ECHO) Creating test java class files $(COMMON_TESTCLASSES)
 	@$(RM) $@
 	$(JAVACCMD) -d $(COMMON_DIR) $^
 
 $(INSTALL_CLASSES): $(addprefix ../,$(JAVA))
-	@echo Creating java class files 
+	$(ECHO) Creating java class files 
 	@$(RM) $@
 	$(JAVACCMD) -d $(INSTALL_JAVA) $^
 
 $(INSTALL_JAVADOC): $(addprefix ../,$(JAVA))
-	@echo Creating java doc files 
+	$(ECHO) Creating java doc files 
 	@$(RM) $@
 	$(JAVADOCCMD) -d $(addprefix $(INSTALL_HTML)/,$(JAVADOC)) $^
 
 $(COMMON_DIR)/%.jar: $(JARDEPFILES)
-	@echo Creating java jar file $@
+	$(ECHO) Creating java jar file $@
 	@$(RM) $@
 	$(JARCMD)
 
 $(INSTALL_JAVA)/%.jar: $(COMMON_DIR)/%.jar
-	@echo "Installing java jar file $@"
+	$(ECHO) "Installing java jar file $@"
 	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_JAVA)/%.jar: %.jar
-	@echo "Installing java jar file $@"
+	$(ECHO) "Installing java jar file $@"
 	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(addprefix $(INSTALL_JAVA)/, $(JARINPUT)): $(INSTALL_JAVA)/%: ../%
-	@echo "Installing jar input file $@"
+	$(ECHO) "Installing jar input file $@"
 	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PHONY: all install buildInstall rebuild clean build inc

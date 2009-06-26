@@ -123,6 +123,10 @@ CMPLR_PREFIX=
 LIB_PREFIX=
 SHRLIB_PREFIX= $(LIB_PREFIX)
 
+#-------------------------------------------------------
+# Make $(ECHO) output - suppress $(ECHO)ing if make's '-s' flag is set
+ECHO := $(if $(findstring s,$(MAKEFLAGS)),\#,@echo)
+
 #--------------------------------------------------
 # vpath directories
 POSIX_YES = os/posix
@@ -321,7 +325,7 @@ HDEPENDS_FLAGS =
 HDEPENDS_INCLUDES = $(subst -I,,$(INCLUDES))
 HDEPENDSFLAGS = -m $*$(DEP) $(HDEPENDS_INCLUDES) $@ $<
 HDEPENDS_CMD_YES   = -$(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
-HDEPENDS_CMD_NO   = echo ""
+HDEPENDS_CMD_NO   = $(ECHO) ""
 HDEPENDS_CMD  = $(HDEPENDS_CMD_$(HDEPENDS))
 
 #--------------------------------------------------

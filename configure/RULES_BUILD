@@ -407,8 +407,6 @@ $(INSTALL_CONFIG)/%: ../%
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
-	@echo $(INSTALL_INCLUDE)/% : $(COMMON_DIR)/%
-	@echo  $(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 	$(ECHO) "Installing generated generic include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 

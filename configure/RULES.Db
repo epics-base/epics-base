@@ -208,14 +208,14 @@ $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
 	@$(DBDDEPENDS_CMD)
 	$(ECHO) "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
-	$(DBTOMENUH) $< $@
+	$(DBTOMENUH) $(DBDFLAGS) $< $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	$(ECHO) "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
-	$(DBTOMENUH) $< $@
+	$(DBTOMENUH) $(DBDFLAGS) $< $@
 
 .PRECIOUS: $(COMMON_DIR)/%.h
 
@@ -229,14 +229,14 @@ $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
 	$(ECHO) "$<:../Makefile" >> $@$(DEP)
-	@$(ECHO) "Expanding dbd"
+	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $@$(DEP)
 	@$(DBDDEPENDS_CMD)
-	@$(ECHO) "Expanding dbd"
+	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
@@ -245,16 +245,16 @@ $(COMMON_DIR)/%Include.dbd:
 	$(PERL) $(TOOLS)/makeIncludeDbd.pl $($*_DBD) $@
 
 $(INSTALL_DBD)/%: $(COMMON_DIR)/%
-	@$(ECHO) "Installing created dbd file $@"
+	$(ECHO) "Installing created dbd file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DBD)/%: %
-	@$(ECHO) "Installing dbd file $@"
+	$(ECHO) "Installing dbd file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 define  DBD_INSTALLS_template
 $$(INSTALL_DBD)/$$(notdir $(1)) : $(1)
-	@$(ECHO) "Installing $$@"
+	$(ECHO) "Installing $$@"
 	@$$(INSTALL) -d -m $$(INSTALL_PERMISSIONS) $$^ $$(INSTALL_DBD)
 endef
 $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
@@ -271,7 +271,7 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 #$(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
 #	@$(RM) $@$(DEP)
 #	@$(MAKEDBDEPENDS) $@ $^  >> $@$(DEP)
-#	@$(ECHO) "Inflating database from $^"
+#	$(ECHO) "Inflating database from $^"
 #	@$(RM) $@
 #	$(MSI) $(DBFLAGS) -S$< $(firstword $(patsubst %.substitutions,,$^)) > msi.tmp
 #	$(MV) msi.tmp $@
@@ -279,8 +279,8 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $@$(DEP)
 	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $@$(DEP)
-	@$(ECHO) "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
-	@$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
+	$(ECHO) "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
+	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > msi.tmp
 	$(MV) msi.tmp $@
@@ -288,7 +288,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 $(COMMON_DIR)/%.db$(RAW): %.template
 	@$(RM) $@$(DEP)
 	@$(MAKEDBDEPENDS) $@ $^  >> $@$(DEP)
-	@$(ECHO) "Inflating database from $<"
+	$(ECHO) "Inflating database from $<"
 	@$(RM) $@
 	$(MSI) $(DBFLAGS)  $< > msi.tmp
 	$(MV) msi.tmp $@

@@ -42,18 +42,18 @@ typedef void (*FREEFUNC)(void *);
 #define ellNext(PNODE)     ((PNODE)->next)
 #define ellPrevious(PNODE) ((PNODE)->previous)
 
-epicsShareFunc void epicsShareAPI ellAdd (ELLLIST *pList, ELLNODE *pNode);
-epicsShareFunc void epicsShareAPI ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
-epicsShareFunc void epicsShareAPI ellDelete (ELLLIST *pList, ELLNODE *pNode);
-epicsShareFunc void epicsShareAPI ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
-epicsShareFunc ELLNODE * epicsShareAPI ellGet (ELLLIST *pList);
-epicsShareFunc void epicsShareAPI ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
-epicsShareFunc ELLNODE * epicsShareAPI ellNth (ELLLIST *pList, int nodeNum);
-epicsShareFunc ELLNODE * epicsShareAPI ellNStep (ELLNODE *pNode, int nStep);
-epicsShareFunc int  epicsShareAPI ellFind (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void ellAdd (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
+epicsShareFunc void ellDelete (ELLLIST *pList, ELLNODE *pNode);
+epicsShareFunc void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
+epicsShareFunc ELLNODE * ellGet (ELLLIST *pList);
+epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
+epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
+epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
+epicsShareFunc int  ellFind (ELLLIST *pList, ELLNODE *pNode);
 /* ellFree has to take a free function to work properly on Windows */
-epicsShareFunc void epicsShareAPI ellFree (ELLLIST *pList, FREEFUNC freeFunc);
-epicsShareFunc void epicsShareAPI ellVerify (ELLLIST *pList);
+epicsShareFunc void ellFree (ELLLIST *pList, FREEFUNC freeFunc);
+epicsShareFunc void ellVerify (ELLLIST *pList);
 
 #ifdef __cplusplus
 }

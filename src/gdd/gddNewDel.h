@@ -95,18 +95,17 @@ void gddGlobalCleanupAdd ( void * pBuf );
     int tot; \
     clas *nn,*dn; \
     epicsThreadOnce ( &once, clas##_gddNewDelInit, 0 ); \
+    epicsGuard < epicsMutex > guard ( *clas::pNewdel_lock ); \
     if(!clas::newdel_freelist) { \
         tot=gdd_CHUNK_NUM; \
         nn=(clas*)malloc(gdd_CHUNK(clas)); \
         gddGlobalCleanupAdd (nn); \
         for(dn=nn;--tot;dn++) dn->newdel_setNext((char*)(dn+1)); \
-        epicsGuard < epicsMutex > guard ( *clas::pNewdel_lock ); \
         (dn)->newdel_setNext(clas::newdel_freelist); \
         clas::newdel_freelist=(char*)nn; \
     } \
     if(size==sizeof(clas)) { \
         { \
-            epicsGuard < epicsMutex > guard ( *clas::pNewdel_lock ); \
             dn=(clas*)clas::newdel_freelist; \
             clas::newdel_freelist=((clas*)clas::newdel_freelist)->newdel_next(); \
         } \

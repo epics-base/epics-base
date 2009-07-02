@@ -48,20 +48,27 @@ removed.</p>
 
 <h4>PINI Processing and PHAS values</h4>
 
-<p>The PINI field now has its own menu type with two more choices, <tt>RUN</tt>
-and <tt>PAUSE</tt>, in addition to the previous <tt>NO</tt> and <tt>YES</tt>
-values which remain and mean the same. The new values cause the record to be
-processed during the announcement of the new <tt>initHookAtIocRun</tt> and
-<tt>initHookAtIocPause</tt> states respectively.  Records with <tt>PINI=YES</tt>
-will be processed during the <tt>iocBuild</tt> stageof <tt>iocInit</tt>, and
-will be follwed by records with <tt>PINI=RUN</tt> during the <tt>iocRun</tt>
-stage. If an <tt>iocPause</tt> command is given, any records with
-<tt>PINI=PAUSE</tt> will be processed, and a subsequent <tt>iocRun</tt> command
-causes the <tt>PINI=RUN</tt> records to be processed again.</p>
+<p>The PINI field now has its own menu type with four more choices,
+<tt>RUN</tt>, <tt>RUNNING</tt>, <tt>PAUSE</tt> and <tt>PAUSED</tt>. The earlier
+<tt>NO</tt> and <tt>YES</tt> values for this field remain as before and cause
+the same processing as before. The new values cause records to be processed
+during the announcement of the new <tt>initHookAtIocRun</tt>,
+<tt>initHookAfterIocRunning</tt>, <tt>initHookAtIocPause</tt> and
+<tt>initHookAfterIocPaused</tt> states respectively.</p>
+
+<p>Records with <tt>PINI=YES</tt> will be processed during the <tt>iocBuild</tt>
+stage of <tt>iocInit</tt>, follwed by records with <tt>PINI=RUN</tt> during the
+<tt>iocRun</tt> stage and records with <tt>PINI=RUNNING</tt> during the
+<tt>initHookAfterIocRunning</tt> stage. If an <tt>iocPause</tt> command is
+given, any records with <tt>PINI=PAUSE</tt> will be processed at the
+<tt>initHookAtIocPause</tt> stage followed by records with <tt>PINI=PAUSED</tt>
+will be processed at the <tt>initHookAfterIocPaused</tt> stage. A subsequent
+<tt>iocRun</tt> command causes the <tt>PINI=RUN</tt> and <tt>PINI=RUNNING</tt>
+records to be processed again.</p>
 
 <p>The PHAS field now controls the order in which records are processed as a
-result of the PINI mechanism; lower values of PHAS are scanned before higher
-ones.</p>
+result of the PINI mechanism; within each stage, lower values of PHAS are
+scanned before higher ones.</p>
 
 <h4>Additional initHook states</h4>
 

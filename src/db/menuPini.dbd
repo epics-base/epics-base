@@ -10,5 +10,7 @@ menu(menuPini) {
 	choice(menuPiniNO,"NO")
 	choice(menuPiniYES,"YES")
 	choice(menuPiniRUN,"RUN")
+	choice(menuPiniRUNNING,"RUNNING")
 	choice(menuPiniPAUSE,"PAUSE")
+	choice(menuPiniPAUSED,"PAUSED")
 }

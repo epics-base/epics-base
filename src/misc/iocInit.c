@@ -473,8 +473,16 @@ static void piniProcessHook(initHookState state)
         piniProcess(menuPiniRUN);
         break;
 
+    case initHookAfterIocRunning:
+        piniProcess(menuPiniRUNNING);
+        break;
+
     case initHookAtIocPause:
         piniProcess(menuPiniPAUSE);
+        break;
+
+    case initHookAfterIocPaused:
+        piniProcess(menuPiniPAUSED);
         break;
 
     default:

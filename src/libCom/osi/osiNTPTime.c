@@ -117,7 +117,7 @@ static void NTPTime_InitOnce(void *pprio)
     iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
 
     /* Finally register as a time provider */
-    generalTimeCurrentTpRegister("NTP", *(int *)pprio, NTPTimeGetCurrent);
+    generalTimeRegisterCurrentProvider("NTP", *(int *)pprio, NTPTimeGetCurrent);
 }
 
 void NTPTime_Init(int priority)

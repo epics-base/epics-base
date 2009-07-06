@@ -90,7 +90,7 @@ static void ClockTime_InitOnce(void *psync)
         iocshRegister(&ShutdownFuncDef, ShutdownCallFunc);
 
     /* Finally register as a time provider */
-    generalTimeCurrentTpRegister("OS Clock", LAST_RESORT_PRIORITY,
+    generalTimeRegisterCurrentProvider("OS Clock", LAST_RESORT_PRIORITY,
         ClockTimeGetCurrent);
 }
 

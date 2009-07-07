@@ -273,7 +273,7 @@ private:
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
     unsigned beaconAnomalyCount;
-    bool iiuUninstallInProgress;
+    unsigned iiuExistenceCount;
 
     void recycleReadNotifyIO ( 
         epicsGuard < epicsMutex > &, netReadNotifyIO &io );

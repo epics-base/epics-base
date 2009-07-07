@@ -143,7 +143,7 @@ cac::cac (
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
     beaconAnomalyCount ( 0u ),
-    iiuUninstallInProgress ( false )
+    iiuExistenceCount ( 0u )
 {
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -263,7 +263,7 @@ cac::~cac ()
     //
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        while ( this->circuitList.count() > 0 || this->iiuUninstallInProgress ) {
+        while ( this->iiuExistenceCount > 0 ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->iiuUninstall.wait ();
         }
@@ -541,6 +541,7 @@ void cac::transferChanToVirtCircuit (
             }
             this->serverTable.add ( *pnewiiu );
             this->circuitList.add ( *pnewiiu );
+            this->iiuExistenceCount++;
             pBHE->registerIIU ( guard, *pnewiiu );
             piiu = pnewiiu.release ();
             newIIU = true;
@@ -1121,7 +1122,6 @@ void cac::destroyIIU ( tcpiiu & iiu )
     {
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
-        this->iiuUninstallInProgress = true;
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
             iiu.getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
@@ -1154,7 +1154,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->freeListVirtualCircuit.release ( & iiu );
-        this->iiuUninstallInProgress = false;
+        this->iiuExistenceCount--;
         // signal iiu uninstal event so that cac can properly shut down
         this->iiuUninstall.signal();
     }

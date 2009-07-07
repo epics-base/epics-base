@@ -2180,7 +2180,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
 
     for ( i = 0; i < NELEMENTS(test); i++ ) {
         test[i].count = 0;
-        test[i].lastValue = -1.0;
+        test[i].lastValue = -1.0f;
         SEVCHK(ca_add_event(DBR_GR_FLOAT, chan, updateTestEvent,
             &test[i], &test[i].id),NULL);
     }
@@ -2235,7 +2235,7 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
         for ( j = 0; j < NELEMENTS(test); j++ ) {
             SEVCHK ( ca_clear_event ( test[j].id ), NULL );
             test[j].count = 0;
-            test[j].lastValue = -1.0;
+            test[j].lastValue = -1.0f;
             SEVCHK ( ca_add_event ( DBR_GR_FLOAT, chan, updateTestEvent,
                 &test[j], &test[j].id ) , NULL );
         } 

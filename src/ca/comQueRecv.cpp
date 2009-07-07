@@ -178,7 +178,7 @@ epicsUInt8 comQueRecv::popUInt8 ()
     if ( ! pComBuf ) {
         comBuf::throwInsufficentBytesException ();
     }
-    epicsUInt8 tmp = 0;
+    epicsUInt8 tmp = '\0';
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( ! status.success ) {
         comBuf::throwInsufficentBytesException ();
@@ -197,7 +197,7 @@ epicsUInt16 comQueRecv::popUInt16 ()
         comBuf::throwInsufficentBytesException ();
     }
     // try first for all in one buffer efficent version
-    epicsUInt16 tmp;
+    epicsUInt16 tmp = 0;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
         this->nBytesPending -= sizeof ( epicsUInt16 );
@@ -216,7 +216,7 @@ epicsUInt32 comQueRecv::popUInt32 ()
         comBuf::throwInsufficentBytesException ();
     }
     // try first for all in one buffer efficent version
-    epicsUInt32 tmp;
+    epicsUInt32 tmp = 0;
     comBuf::popStatus status = pComBuf->pop ( tmp );
     if ( status.success ) {
         this->nBytesPending -= sizeof ( epicsUInt32 );

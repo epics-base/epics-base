@@ -1555,9 +1555,9 @@ void tcpiiu::subscriptionRequest (
         CA_V49 ( this->minorProtocolVersion ) );
 
     // extension
-    this->sendQue.pushFloat32 ( 0.0 ); // m_lval
-    this->sendQue.pushFloat32 ( 0.0 ); // m_hval
-    this->sendQue.pushFloat32 ( 0.0 ); // m_toval
+    this->sendQue.pushFloat32 ( 0.0f ); // m_lval
+    this->sendQue.pushFloat32 ( 0.0f ); // m_hval
+    this->sendQue.pushFloat32 ( 0.0f ); // m_toval
     this->sendQue.pushUInt16 ( static_cast < ca_uint16_t > ( mask ) ); // m_mask
     this->sendQue.pushUInt16 ( 0u ); // m_pad
     minder.commit ();

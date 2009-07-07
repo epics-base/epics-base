@@ -426,7 +426,6 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
 	const caHdrLargeArray * mp = this->ctx.getMsg();
 	caStatus status;
 	casChannelI * pChan;
-	const gdd * pDesc;
 
 	status = this->verifyRequest ( pChan );
 	if ( status != ECA_NORMAL ) {
@@ -458,9 +457,11 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
             status, "read access denied" );
 	}
 
+    const gdd * pDesc = 0;
 	status = this->read ( pDesc ); 
 	if ( status == S_casApp_success ) {
 		status = this->readResponse ( guard, pChan, *mp, *pDesc, S_cas_success );
+		pDesc->unreference ();
 	}
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
@@ -472,10 +473,6 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
 		status = this->sendErrWithEpicsStatus ( guard, mp, 
             pChan->getCID(), status, ECA_GETFAIL );
 	}
-
-    if ( pDesc ) {
-        pDesc->unreference ();
-    }
 
 	return status;
 }
@@ -544,7 +541,6 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
 {
 	const caHdrLargeArray * mp = this->ctx.getMsg();
 	casChannelI * pChan;
-	const gdd * pDesc;
 	int status;
 
 	status = this->verifyRequest ( pChan );
@@ -561,9 +557,11 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
 		return this->readNotifyFailureResponse ( guard, *mp, ECA_NORDACCESS );
 	}
 
+    const gdd * pDesc = 0;
 	status = this->read ( pDesc ); 
 	if ( status == S_casApp_success ) {
 		status = this->readNotifyResponse ( guard, pChan, *mp, *pDesc, status );
+		pDesc->unreference ();
 	}
 	else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
@@ -572,12 +570,8 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->readNotifyResponse ( guard, pChan, *mp, *pDesc, status );
+		status  = this->readNotifyFailureResponse ( guard, *mp, ECA_GETFAIL );
 	}
-
-    if ( pDesc ) {
-        pDesc->unreference ();
-    }
 
 	return status;
 }
@@ -1634,12 +1628,17 @@ caStatus casStrmClient::eventAddAction (
 	// to postpone asynchronous IO we can safely restart this
 	// request later.
 	//
-	const gdd * pDD;
+	const gdd * pDD = 0;
 	status = this->read ( pDD ); 
 	//
 	// always send immediate monitor response at event add
 	//
-    if ( status == S_casApp_asyncCompletion ) {
+	if ( status == S_cas_success ) {
+		status = this->monitorResponse ( guard, *pciu, 
+                    *mp, *pDD, status );
+        pDD->unreference ();
+	}
+    else if ( status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
 	}
 	else if ( status == S_casApp_postponeAsyncIO ) {
@@ -1649,8 +1648,7 @@ caStatus casStrmClient::eventAddAction (
 		pciu->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-		status = this->monitorResponse ( guard, *pciu, 
-                    *mp, *pDD, status );
+        status = this->monitorFailureResponse ( guard, *mp, ECA_GETFAIL );
 	}
 
 	if ( status == S_cas_success ) {
@@ -1659,10 +1657,6 @@ caStatus casStrmClient::eventAddAction (
             mp->m_dataType, mask );
         pciu->installMonitor ( mon );
 	}
-
-    if ( pDD ) {
-        pDD->unreference ();
-    }
 
 	return status;
 }

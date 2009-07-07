@@ -123,7 +123,7 @@ private:
             const caHdrLargeArray &, const caStatus status );
 	caStatus monitorResponse ( epicsGuard < casClientMutex > &,
         casChannelI & chan, const caHdrLargeArray & msg, 
-		const gdd & desc, const caStatus status );
+		const gdd &, const caStatus status );
     caStatus enumPostponedCreateChanResponse ( epicsGuard < casClientMutex > &,
         casChannelI & chan, const caHdrLargeArray & hdr );
     caStatus privateCreateChanResponse ( epicsGuard < casClientMutex > &,

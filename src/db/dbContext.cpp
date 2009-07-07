@@ -33,7 +33,6 @@
 #include "caerr.h" // should be eliminated here in the future
 #include "epicsEvent.h"
 #include "epicsThread.h"
-#include "epicsSingleton.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"

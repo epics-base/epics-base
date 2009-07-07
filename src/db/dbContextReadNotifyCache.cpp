@@ -155,8 +155,9 @@ void dbContextReadNotifyCacheAllocator::show ( unsigned level ) const
             pNext = _pReadNotifyCache->pNext;
             count++;
         }
-        printf ( "\tcount %u and size %lu\n", 
-            count, _readNotifyCacheSize );
+        printf ( "\tcount %lu and size %lu\n", 
+            static_cast < unsigned long > ( count ), 
+            _readNotifyCacheSize );
     }
 }
 

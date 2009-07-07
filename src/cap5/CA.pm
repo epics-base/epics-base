@@ -200,12 +200,7 @@ The C<get_callback> method takes a subroutine reference or name and calls that
 routine when the server returns the data requested.  With no other arguments the
 data type requested will be the widened form of the channel's native type
 (widening is discussed below), and if the channel is an array the request will
-fetch all available elements.  The callback subroutine will be given three
-arguments: the channel object, a status value from the server, and the returned
-data.  If there were no errors the status value will be C<undef> and the data
-will be valid; if an error occurred the data will be C<undef> and the status a
-printable string giving more information.  The format of the data is described
-under L</"Channel Data"> below.
+fetch all available elements.
 
 The element count can be overridden by providing an integer argument in the
 range 1 .. C<element_count>.  The data type can also be given as a string naming
@@ -214,6 +209,23 @@ widened to one of C<STRING>, C<CHAR>, C<LONG> or C<DOUBLE>.  The valid type
 names are listed in the L<Channel Access Reference Manual|/"SEE ALSO"> under the
 section titled Channel Access Data Types; look in the CA Type Code column of the
 two tables.
+
+The callback subroutine will be given three arguments: the channel object, a
+status value from the server, and the returned data.  If there were no errors
+the status value will be C<undef> and the data will be valid; if an error
+occurred the data will be C<undef> and the status a printable string giving more
+information.  The format of the data is described under L</"Channel Data">
+below.
+
+Callback subroutines should only call Perl's C<exit>, C<die> or similar
+functions if they are expecting the program to exit at that time; attempts to
+C<die> with an exception object in the callback and catch that using C<eval> in
+the main thread are not likely to succeed and will probably result in a crash. 
+Callbacks should not perform any operations that would block for more than a
+fraction of a second as this will hold up network communications with the
+relevent server and could cause the Perl program and/or the Channel Access
+server to crash.  Calling C<< CA->pend_event >> from within a callback is not
+permitted by the underlying Channel Access library.
 
 
 =item create_subscription( I<MASK>, I<SUB> )
@@ -258,8 +270,9 @@ subroutine reference or name I<SUB> which is called when the server reports that
 all actions resulting from the put have completed.  For some applications this
 callback can be delayed by minutes, hours or possibly even longer.  The data
 type is chosen the same way as for C<put>.  The arguments to the subroutine will
-be the channel object and the status value from the server which is C<undef> or
-a printable string if an error occurred.
+be the channel object and the status value from the server, which is either
+C<undef> or a printable string if an error occurred.  The same restrictions
+apply to the callback subroutine as described in C<get_callback> above.
 
 
 =item put_acks( I<SEVR> )
@@ -268,10 +281,10 @@ a printable string if an error occurred.
 
 Applications that need to ackowledge alarms by doing a C<ca_put()> with type
 C<DBR_PUT_ACKS> can do so using the C<put_acks> method.  The severity argument
-can be an integer from zero through three or a string containing one of the
-corresponding EPICS severity names C<NO_ALARM>, C<MINOR>, C<MAJOR> or
-C<INVALID>.  If a subroutine reference is provided it will be called as describe
-in C<put_callback> above.
+may be provided as an integer from zero through three or as a string containing
+one of the corresponding EPICS severity names C<NO_ALARM>, C<MINOR>, C<MAJOR> or
+C<INVALID>.  If a subroutine reference is provided it will be called after the
+operation has completed on the server as described in C<put_callback> above.
 
 
 =item put_ackt( I<TRANS> )
@@ -281,7 +294,7 @@ in C<put_callback> above.
 This method is for applications that need to enable/disable transient alarms by
 doing a C<ca_put()> with type C<DBR_PUT_ACKT>.  The C<TRANS> argument is a
 true/false value, and an optional subroutine reference can be provided as
-above.
+described above.
 
 
 =item change_connection_event( I<SUB> )
@@ -487,7 +500,9 @@ class method syntax, e.g. C<< CA->pend_io(10) >>.
 Flush outstanding IO requests to the server. This routine is useful for users
 who need to flush requests prior to performing client side labor in parallel
 with labor performed in the server. Outstanding requests are also sent whenever
-the buffer which holds them becomes full.
+the buffer which holds them becomes full. Note that the routine can return
+before all flush operations have completed, so immediately calling Perl's
+C<exit> or C<die> functions may result in some communications being discarded.
 
 
 =item test_io

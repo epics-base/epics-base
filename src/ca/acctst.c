@@ -2842,6 +2842,67 @@ void verifyName (
     SEVCHK ( status, NULL );
 }
 
+void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
+{
+    unsigned i;
+
+    showProgressBegin ( "verifyContextRundownFlush", interestLevel );
+
+    for ( i=0u; i < 1000; i++ ) {
+        const dbr_double_t stim = i;
+        
+        {  
+            chid chan;
+            int status;
+            status = ca_context_create ( ca_disable_preemptive_callback );
+            SEVCHK ( status, "context create failed" );
+            
+            status = ca_create_channel  ( pName, 0, 0, 0, & chan );
+            SEVCHK ( status, NULL );
+            
+            status = ca_pend_io( timeoutToPendIO );
+            SEVCHK ( status, "channel connect failed" );
+            
+            status = ca_put ( DBR_DOUBLE, chan, & stim );
+            SEVCHK ( status, "channel put failed" );
+    
+            status = ca_clear_channel ( chan );
+            SEVCHK ( status, NULL );
+    
+            ca_context_destroy ();
+        }
+        
+        {
+            chid chan;
+            int status;
+            dbr_double_t resp;
+            status = ca_context_create ( ca_disable_preemptive_callback );
+            SEVCHK ( status, "context create failed" );
+            
+            status = ca_create_channel  ( pName, 0, 0, 0, & chan );
+            SEVCHK ( status, NULL );
+            
+            status = ca_pend_io( timeoutToPendIO );
+            SEVCHK ( status, "channel connect failed" );
+    
+            status = ca_get ( DBR_DOUBLE, chan, & resp );
+            SEVCHK ( status, "channel get failed" );
+    
+            status = ca_pend_io ( timeoutToPendIO );
+            SEVCHK ( status, "get, pend io failed" );
+            
+            assert ( stim == resp );
+    
+            status = ca_clear_channel ( chan );
+            SEVCHK ( status, NULL );
+    
+            ca_context_destroy ();
+        }
+    }
+    
+    showProgressEnd ( interestLevel );
+}
+
 int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
@@ -2979,6 +3040,8 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     /* SEVCHK ( status, NULL ); */
 
     caTaskExitTest ( interestLevel );
+    
+    verifyContextRundownFlush ( pName, interestLevel );
     
     free ( pChans );
 

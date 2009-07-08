@@ -23,32 +23,33 @@ struct myItem {
 MAIN(epicsEllTest)
 {
     ELLLIST list1;
-    ELLLIST list2;
-    int i1;
+    ELLLIST list2 = ELLLIST_INIT;
+    int i1 = 1;
     struct myItem *pitem, *pfirst, *pick;
 
-    testPlan(67);
+    testPlan(70);
 
     list1.count = 27;
     list1.node.next = (ELLNODE *) 0x01010101;
     list1.node.previous = (ELLNODE *) 0x10101010;
 
     ellInit(&list1);
-    ellInit(&list2);
-
     testOk1(list1.count == 0);
     testOk1(list1.node.next == NULL);
     testOk1(list1.node.previous == NULL);
 
+    testOk1(list2.count == 0);
+    testOk1(list2.node.next == NULL);
+    testOk1(list2.node.previous == NULL);
+
     /* First build a couple lists and fill them with nodes. */
-    i1 = 2;
     pitem = (struct myItem *) malloc(sizeof(struct myItem));
     pitem->node.next = (ELLNODE *) 0x10101010;
     pitem->node.previous = (ELLNODE *) 0x10101010;
+    pitem->list = 1;
+    pitem->num = i1++;
 
     ellAdd(&list1, &pitem->node);
-    pitem->list = 1;
-    pitem->num = 1;
 
     testOk1(list1.count == 1);
     testOk1(list1.node.next == &pitem->node);
@@ -59,10 +60,9 @@ MAIN(epicsEllTest)
     pfirst = pitem;
     while (i1 <= 21) {      /* put 21 nodes into LIST1 */
         pitem = (struct myItem *) malloc(sizeof(struct myItem));
-        ellAdd(&list1, &pitem->node);
         pitem->list = 1;
-        pitem->num = i1;
-        i1++;
+        pitem->num = i1++;
+        ellAdd(&list1, &pitem->node);
     }
 
     testOk1(list1.count == 21);

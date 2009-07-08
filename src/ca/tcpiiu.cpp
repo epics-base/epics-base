@@ -1775,8 +1775,10 @@ void tcpiiu::disconnectAllChannels (
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
-        this->clearChannelRequest ( guard, 
-            pChan->getSID(guard), pChan->getCID(guard) );
+        // we dont yet know the server's id so we cant
+        // send a channel delete request and will instead 
+        // trust that the server can do the proper cleanup
+        // when the circuit disconnects
         discIIU.installDisconnectedChannel ( guard, *pChan );
     }
     
@@ -1788,19 +1790,35 @@ void tcpiiu::disconnectAllChannels (
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
         discIIU.installDisconnectedChannel ( guard, *pChan );
         pChan->unresponsiveCircuitNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->connectedList.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
         discIIU.installDisconnectedChannel ( guard, *pChan );
         pChan->unresponsiveCircuitNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {
+        // if we know that the circuit is unresponsive
+        // then we dont send a channel delete request and 
+        // will instead trust that the server can do the 
+        // proper cleanup when the circuit disconnects
         pChan->disconnectAllIO ( cbGuard, guard );
         discIIU.installDisconnectedChannel ( guard, *pChan );
+    }
+    
+    while ( nciu * pChan = this->subscripUpdateReqPend.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
+        discIIU.installDisconnectedChannel ( guard, *pChan );
+        pChan->unresponsiveCircuitNotify ( cbGuard, guard );
     }
 
     this->channelCountTot = 0u;
@@ -1814,22 +1832,20 @@ void tcpiiu::unlinkAllChannels (
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
-
+    
     while ( nciu * pChan = this->createReqPend.get () ) {
-        // with server prior to V42 IO could exit here
-        pChan->disconnectAllIO ( cbGuard, guard );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
-        pChan->disconnectAllIO ( cbGuard, guard );
-        this->clearChannelRequest ( guard, 
-            pChan->getSID(guard), pChan->getCID(guard) );
+        // we dont yet know the server's id so we cant
+        // send a channel delete request and will instead 
+        // trust that the server can do the proper cleanup
+        // when the circuit disconnects
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
     
     while ( nciu * pChan = this->v42ConnCallbackPend.get () ) {
-        pChan->disconnectAllIO ( cbGuard, guard );
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
@@ -1837,16 +1853,31 @@ void tcpiiu::unlinkAllChannels (
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->connectedList.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {
         pChan->disconnectAllIO ( cbGuard, guard );
+        // if we know that the circuit is unresponsive
+        // then we dont send a channel delete request and 
+        // will instead trust that the server can do the 
+        // proper cleanup when the circuit disconnects
+        pChan->serviceShutdownNotify ( cbGuard, guard );
+    }
+    
+     while ( nciu * pChan = this->subscripUpdateReqPend.get () ) {
+        pChan->disconnectAllIO ( cbGuard, guard );
+        this->clearChannelRequest ( guard, 
+            pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 

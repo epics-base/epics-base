@@ -321,12 +321,12 @@ long epicsShareAPI dbpf(const char *pname,const char *pvalue)
         unsigned short value;
 
         sscanf(pvalue, "%hu", &value);
-        status=dbPutField(&addr, DBR_ENUM, &value, 1L);
+        status = dbPutField(&addr, DBR_ENUM, &value, 1L);
     } else if (addr.dbr_field_type == DBR_CHAR &&
         addr.no_elements > 1) {
         status = dbPutField(&addr, DBR_CHAR, pvalue, strlen(pvalue) + 1);
     } else {
-        status=dbPutField(&addr, DBR_STRING, pvalue, 1L);
+        status = dbPutField(&addr, DBR_STRING, pvalue, 1L);
     }
     if (status) {
          errMessage(status,"- dbPutField error\n");

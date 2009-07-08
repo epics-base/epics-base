@@ -456,6 +456,7 @@ SV * CA_new(const char *class, const char *name, ...) {
     return ca_ref;
 }
 
+static int destroyed = 0;
 
 /* CA::DESTROY($ca_ref) */
 
@@ -463,7 +464,7 @@ void CA_DESTROY(SV *ca_ref) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
     int status;
 
-    status = ca_clear_channel(pch->chan);
+    status = destroyed ? ECA_NORMAL : ca_clear_channel(pch->chan);
 
     if (pch->conn_sub)
         SvREFCNT_dec(pch->conn_sub);
@@ -479,6 +480,14 @@ void CA_DESTROY(SV *ca_ref) {
 
     if (status != ECA_NORMAL)
         croak(get_error_msg(status));
+}
+
+
+/* CA::context_destroy($class) */
+
+void CA_context_destroy(const char *class) {
+    ca_context_destroy();
+    destroyed = 1;
 }
 
 
@@ -1220,35 +1229,15 @@ CA_new (class, name, ...)
 void
 CA_DESTROY (ca_ref)
 	SV *	ca_ref
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_DESTROY(ca_ref);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
+
+void
+CA_context_destroy (class)
+	const char *	class
 
 void
 CA_change_connection_event (ca_ref, sub)
 	SV *	ca_ref
 	SV *	sub
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_change_connection_event(ca_ref, sub);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_put (ca_ref, val, ...)
@@ -1322,18 +1311,6 @@ CA_put_ackt (ca_ref, ack, ...)
 void
 CA_get (ca_ref)
 	SV *	ca_ref
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_get(ca_ref);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 SV *
 CA_value (ca_ref)
@@ -1374,35 +1351,11 @@ void
 CA_clear_subscription (class, mon_ref)
 	const char *	class
 	SV *	mon_ref
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_clear_subscription(class, mon_ref);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_pend_io (class, timeout)
 	const char *	class
 	double	timeout
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_pend_io(class, timeout);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 int
 CA_test_io (class)
@@ -1412,84 +1365,24 @@ void
 CA_pend_event (class, timeout)
 	const char *	class
 	double	timeout
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_pend_event(class, timeout);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_poll (class)
 	const char *	class
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_poll(class);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_flush_io (class)
 	const char *	class
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_flush_io(class);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_add_exception_event (class, sub)
 	const char *	class
 	SV *	sub
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_add_exception_event(class, sub);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 void
 CA_replace_printf_handler (class, sub)
 	const char *	class
 	SV *	sub
-    PREINIT:
-	I32* temp;
-    PPCODE:
-	temp = PL_markstack_ptr++;
-	CA_replace_printf_handler(class, sub);
-	if (PL_markstack_ptr != temp) {
-          /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
-        }
-        /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
 
 const char *
 CA_field_type (ca_ref)

@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-my $version = '0.3';
+my $version = '0.4';
 
 exists $ENV{EPICS_HOST_ARCH}
     or die "EPICS_HOST_ARCH environment variable not set";
@@ -34,6 +34,13 @@ my $Lib = dirname(__FILE__);
 push @DynaLoader::dl_library_path, "$Lib/../$ENV{EPICS_HOST_ARCH}";
 
 bootstrap Cap5 $VERSION;
+
+
+package CA;
+# This END block runs the ca_context_destroy function, but we don't
+# document it since the user never needs to call it explicitly.
+
+END { CA->context_destroy; }
 
 
 package CA::Subscription;
@@ -501,8 +508,7 @@ Flush outstanding IO requests to the server. This routine is useful for users
 who need to flush requests prior to performing client side labor in parallel
 with labor performed in the server. Outstanding requests are also sent whenever
 the buffer which holds them becomes full. Note that the routine can return
-before all flush operations have completed, so immediately calling Perl's
-C<exit> or C<die> functions may result in some communications being discarded.
+before all flush operations have completed.
 
 
 =item test_io

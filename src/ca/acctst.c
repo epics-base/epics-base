@@ -2903,6 +2903,31 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
     showProgressEnd ( interestLevel );
 }
 
+void verifyContextRundownChanStillExist ( 
+    const char * pName, unsigned interestLevel )
+{
+    chid chan[10000];
+    int status;
+    unsigned i;
+
+    showProgressBegin ( "verifyContextRundownChanStillExist", interestLevel );
+
+    status = ca_context_create ( ca_disable_preemptive_callback );
+    SEVCHK ( status, "context create failed" );
+    
+    for ( i = 0; i < NELEMENTS ( chan ); i++ ) {
+        status = ca_create_channel  ( pName, 0, 0, 0, & chan[i] );
+        SEVCHK ( status, NULL );
+    }
+    
+    status = ca_pend_io( timeoutToPendIO );
+    SEVCHK ( status, "channel connect failed" );
+
+    ca_context_destroy ();
+    
+    showProgressEnd ( interestLevel );
+}
+
 int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount, 
 			unsigned repetitionCount, enum ca_preemptive_callback_select select )
 {
@@ -3042,6 +3067,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     caTaskExitTest ( interestLevel );
     
     verifyContextRundownFlush ( pName, interestLevel );
+    verifyContextRundownChanStillExist ( pName, interestLevel );
     
     free ( pChans );
 

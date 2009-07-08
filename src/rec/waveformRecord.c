@@ -33,11 +33,13 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "cantProceed.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 #include "epicsString.h"
+
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -288,11 +290,11 @@ static long readValue(waveformRecord *prec)
     if (status)
         return status;
 
-    if (prec->simm == NO){
+    if (prec->simm == menuYesNoNO){
         return (*pdset->read_wf)(prec);
     }
 
-    if (prec->simm == YES){
+    if (prec->simm == menuYesNoYES){
         long nRequest = prec->nelm;
         status = dbGetLink(&(prec->siol), prec->ftvl, prec->bptr, 0, &nRequest);
         /* nord set only for db links: needed for old db_access */

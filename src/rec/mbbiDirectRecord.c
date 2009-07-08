@@ -243,7 +243,7 @@ static long readValue(mbbiDirectRecord *prec)
 	if (status)
 		return(status);
 
-	if (prec->simm == NO){
+	if (prec->simm == menuSimmNO){
 		status=(*pdset->read_mbbi)(prec);
 		return(status);
 	}

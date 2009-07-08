@@ -28,6 +28,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "longoutRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -346,11 +347,11 @@ static long writeValue(longoutRecord *prec)
 	if (!RTN_SUCCESS(status))
 		return(status);
 
-	if (prec->simm == NO){
+	if (prec->simm == menuYesNoNO){
 		status=(*pdset->write_longout)(prec);
 		return(status);
 	}
-	if (prec->simm == YES){
+	if (prec->simm == menuYesNoYES){
 		status=dbPutLink(&prec->siol,DBR_LONG,&prec->val,1);
 	} else {
 		status=-1;

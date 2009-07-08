@@ -31,6 +31,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "longinRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -306,11 +307,11 @@ static long readValue(longinRecord *prec)
 	if (status)
 		return(status);
 
-	if (prec->simm == NO){
+	if (prec->simm == menuYesNoNO){
 		status=(*pdset->read_longin)(prec);
 		return(status);
 	}
-	if (prec->simm == YES){
+	if (prec->simm == menuYesNoYES){
 		status=dbGetLink(&(prec->siol),DBR_LONG,
 			&(prec->sval),0,0);
 

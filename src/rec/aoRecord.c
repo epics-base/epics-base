@@ -36,6 +36,7 @@
 #include "recGbl.h"
 #include "menuConvert.h"
 #include "menuOmsl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "aoRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -531,11 +532,11 @@ static long writeValue(aoRecord *prec)
 	if (status)
 		return(status);
 
-	if (prec->simm == NO){
+	if (prec->simm == menuYesNoNO){
 		status=(*pdset->write_ao)(prec);
 		return(status);
 	}
-	if (prec->simm == YES){
+	if (prec->simm == menuYesNoYES){
 		status = dbPutLink(&(prec->siol),DBR_DOUBLE,&(prec->oval),1);
 	} else {
 		status=-1;

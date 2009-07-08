@@ -36,6 +36,7 @@
 #include "devSup.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "aaoRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -251,12 +252,12 @@ static long writeValue(aaoRecord *prec)
     if (status)
         return status;
 
-    if (prec->simm == NO) {
+    if (prec->simm == menuYesNoNO) {
         /* Call dev support */
         status = pdset->write_aao(prec);
         return status;
     }
-    if (prec->simm == YES) {
+    if (prec->simm == menuYesNoYES) {
         /* Call dev support */
         status = pdset->write_aao(prec);
         return status;

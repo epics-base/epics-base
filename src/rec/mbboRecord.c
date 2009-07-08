@@ -38,6 +38,7 @@
 #undef  GEN_SIZE_OFFSET
 #include "menuOmsl.h"
 #include "menuIvoa.h"
+#include "menuYesNo.h"
 #include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/
@@ -437,11 +438,11 @@ static long writeValue(mbboRecord *prec)
 	if (status)
 		return(status);
 
-	if (prec->simm == NO){
+	if (prec->simm == menuYesNoNO){
 		status=(*pdset->write_mbbo)(prec);
 		return(status);
 	}
-	if (prec->simm == YES){
+	if (prec->simm == menuYesNoYES){
 		status=dbPutLink(&prec->siol,DBR_USHORT, &prec->val,1);
 	} else {
 		status=-1;

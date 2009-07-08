@@ -32,6 +32,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "eventRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -171,11 +172,11 @@ static long readValue(eventRecord *prec)
         if (status)
                 return(status);
 
-        if (prec->simm == NO){
+        if (prec->simm == menuYesNoNO){
                 status=(*pdset->read_event)(prec);
                 return(status);
         }
-        if (prec->simm == YES){
+        if (prec->simm == menuYesNoYES){
                 status=dbGetLink(&(prec->siol),DBR_USHORT,
 			&(prec->sval),0,0);
                 if (status==0) {

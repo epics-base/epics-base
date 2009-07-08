@@ -36,6 +36,7 @@
 #include "special.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "histogramRecord.h"
 #undef  GEN_SIZE_OFFSET
@@ -364,11 +365,11 @@ static long readValue(histogramRecord *prec)
         if (status)
                 return(status);
 
-        if (prec->simm == NO){
+        if (prec->simm == menuYesNoNO){
                 status=(*pdset->read_histogram)(prec);
                 return(status);
         }
-        if (prec->simm == YES){
+        if (prec->simm == menuYesNoYES){
         	status=dbGetLink(&(prec->siol),DBR_DOUBLE,
 			&(prec->sval),0,0);
 

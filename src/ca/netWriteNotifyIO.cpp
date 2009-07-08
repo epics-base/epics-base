@@ -64,8 +64,8 @@ void netWriteNotifyIO::completion (
     epicsGuard < epicsMutex > & guard,
     cacRecycle & recycle )
 {
-    this->notify.completion ( guard );
     this->privateChanForIO.ioCompletionNotify ( guard, *this );
+    this->notify.completion ( guard );
     this->~netWriteNotifyIO ();
     recycle.recycleWriteNotifyIO ( guard, *this );
 }

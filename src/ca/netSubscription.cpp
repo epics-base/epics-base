@@ -92,9 +92,9 @@ void netSubscription::exception (
         this->subscribed = false;
     }
     if ( status == ECA_CHANDESTROY ) {
+        this->privateChanForIO.ioCompletionNotify ( guard, *this );
         this->notify.exception ( 
             guard, status, pContext, UINT_MAX, 0 );
-        this->privateChanForIO.ioCompletionNotify ( guard, *this );
         this->~netSubscription ();
         recycle.recycleSubscription ( guard, *this );
     }
@@ -116,9 +116,9 @@ void netSubscription::exception (
         this->subscribed = false;
     }
     if ( status == ECA_CHANDESTROY ) {
+        this->privateChanForIO.ioCompletionNotify ( guard, *this );
         this->notify.exception ( 
             guard, status, pContext, UINT_MAX, 0 );
-        this->privateChanForIO.ioCompletionNotify ( guard, *this );
         this->~netSubscription ();
         recycle.recycleSubscription ( guard, *this );
     }

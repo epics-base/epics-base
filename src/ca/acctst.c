@@ -2068,11 +2068,11 @@ dbr_float_t monitorUpdateTestPattern ( unsigned iter )
     return ( (float) iter ) * 10.12345f + 10.7f;
 }
 
-void getCallbackClearsChannel ( struct event_handler_args args )
+void callbackClearsChannel ( struct event_handler_args args )
 {
     int status;
     status = ca_clear_channel ( args.chid );
-    SEVCHK ( status, "clearChannelInGetCallbackTest clear channel" );
+    SEVCHK ( status, "clearChannelInXxxxCallbackTest clear channel" );
 }
 
 void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
@@ -2088,11 +2088,62 @@ void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
     status = ca_pend_io ( 10.0 );
     SEVCHK ( status, "clearChannelInGetCallbackTest connect channel" );
     
-    status = ca_get_callback ( DBR_DOUBLE, chan, getCallbackClearsChannel, 0 );
+    status = ca_get_callback ( DBR_DOUBLE, chan, callbackClearsChannel, 0 );
     SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
     
     status = ca_flush_io ();
     SEVCHK ( status, "clearChannelInGetCallbackTest flush" );
+    
+    showProgressEnd ( level );
+}
+
+void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
+{
+    const dbr_double_t value = 1.1;
+    chid chan;
+    int status;
+    
+    showProgressBegin ( "clearChannelInPutCallbackTest", level );
+
+    status = ca_create_channel ( pName, 0, 0, 0, & chan );
+    SEVCHK ( status, "clearChannelInPutCallbackTest create channel" );
+
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "clearChannelInPutCallbackTest connect channel" );
+
+    status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
+                        callbackClearsChannel, 0 );
+    SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
+    
+    status = ca_flush_io ();
+    SEVCHK ( status, "clearChannelInPutCallbackTest flush" );
+    
+    showProgressEnd ( level );
+}
+
+void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
+{
+    const dbr_double_t value = 1.1;
+    chid chan;
+    int status;
+    
+    showProgressBegin ( "clearChannelInSubscrCallbackTest", level );
+
+    status = ca_create_channel ( pName, 0, 0, 0, & chan );
+    SEVCHK ( status, "clearChannelInSubscrCallbackTest create channel" );
+
+    status = ca_pend_io ( 10.0 );
+    SEVCHK ( status, "clearChannelInSubscrCallbackTest connect channel" );
+
+    status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
+                        callbackClearsChannel, 0 );
+                        
+    status = ca_create_subscription ( DBR_DOUBLE, 1, chan, 
+        DBE_VALUE, callbackClearsChannel, 0, 0 );
+    SEVCHK ( status, "clearChannelInSubscrCallbackTest subscribe" );
+    
+    status = ca_flush_io ();
+    SEVCHK ( status, "clearChannelInSubscrCallbackTest flush" );
     
     showProgressEnd ( level );
 }
@@ -2983,6 +3034,8 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
 
     verifyName ( pName, interestLevel );
     clearChannelInGetCallbackTest ( pName, interestLevel );
+    clearChannelInPutCallbackTest ( pName, interestLevel );
+    clearChannelInSubscrCallbackTest ( pName, interestLevel );
     monitorAddConnectionCallbackTest ( pName, interestLevel );
     verifyConnectWithDisconnectedChannels ( pName, interestLevel );
     grEnumTest ( chan, interestLevel );

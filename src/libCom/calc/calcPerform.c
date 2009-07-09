@@ -12,17 +12,18 @@
  *	Date:	07-27-87
  */
 
-#include	<stdlib.h>
-#include	<stddef.h>
-#include	<stdio.h>
-#include	<string.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #define epicsExportSharedSymbols
-#include	"osiUnistd.h"
-#include	"dbDefs.h"
-#include	"epicsMath.h"
-#include	"postfix.h"
-#include	"postfixPvt.h"
+#include "osiUnistd.h"
+#include "dbDefs.h"
+#include "epicsMath.h"
+#include "errlog.h"
+#include "postfix.h"
+#include "postfixPvt.h"
 
 static double calcRandom(void);
 static int cond_search(const char **ppinst, int match);

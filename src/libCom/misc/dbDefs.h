@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Id$
@@ -13,64 +12,38 @@
  *      Date:            6-1-90
  */
 
-#ifndef INCdbDefsh
-#define INCdbDefsh 1
+#ifndef INC_dbDefs_H
+#define INC_dbDefs_H
 
-#if     defined(NO)
-#undef NO
+#ifdef TRUE
+#   undef TRUE
 #endif
-#define NO	0
+#define TRUE 1
 
-#if     defined(YES)
-#undef YES
+#ifdef FALSE
+#   undef FALSE
 #endif
-#define YES            1
-
-#if     defined(TRUE)
-#undef TRUE
-#endif
-#define TRUE            1
-
-#if     defined(FALSE)
-#undef FALSE
-#endif
-#define FALSE           0
-
-#ifndef NONE
-#define NONE            (-1)    /* for times when NULL won't do */
-#endif
+#define FALSE 0
 
 #ifndef LOCAL 
-#define LOCAL static
+#   define LOCAL static
 #endif
 
+/* number of elements in an array */
 #ifndef NELEMENTS
-#define NELEMENTS(array)                /* number of elements in an array */ \
-                (sizeof (array) / sizeof ((array) [0]))
+#   define NELEMENTS(array) (sizeof (array) / sizeof ((array) [0]))
 #endif
 
-#ifndef __cplusplus
-
-#ifndef max
-#define max(x, y)       (((x) < (y)) ? (y) : (x))
-#endif
-#ifndef min
-#define min(x, y)       (((x) < (y)) ? (x) : (y))
-#endif
-
-#endif
-
+/* byte offset of member in structure*/
 #ifndef OFFSET
-#define OFFSET(structure, member)       /* byte offset of member in structure*/\
-                ((int) &(((structure *) 0) -> member))
+#   define OFFSET(structure, member) ((int) &(((structure *) 0) -> member))
 #endif
 
-#define PVNAME_STRINGSZ		61		/* includes NULL terminator for PVNAME_SZ */
-#define	PVNAME_SZ	(PVNAME_STRINGSZ - 1)	/*Process Variable Name Size	*/
+/*Process Variable Name Size */
+/* PVNAME_STRINGSZ includes the nil terminator */
+#define PVNAME_STRINGSZ 61
+#define PVNAME_SZ (PVNAME_STRINGSZ - 1)
 
-#define DB_MAX_CHOICES	30
+#define DB_MAX_CHOICES 30
 
-#include "errMdef.h"
-#include "epicsTypes.h"
-
-#endif /* INCdbDefsh */
+#endif /* INC_dbDefs_H */

@@ -3,12 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* errMdef.h  err.h - Error Handling definitions */
-/* share/epicsH $Id$ */
+/* Error Handling definitions */
+/* $Id$ */
 /*
  *      Author:          Marty Kraimer
  *      Date:            6-1-90
@@ -17,18 +16,11 @@
 #ifndef INCerrMdefh
 #define INCerrMdefh
 
+#include "shareLib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdarg.h>
-
-#include "ellLib.h"
-#include "shareLib.h"
-
-/*The following is only included because before 3.13.0beta12 errMessage */
-/*and errPrintf were defined here					*/
-#include "errlog.h"
 
 #define RTN_SUCCESS(STATUS) ((STATUS)==0)
 

@@ -36,6 +36,7 @@
 #include "epicsTime.h"
 #include "tsFreeList.h"
 #include "errMdef.h"
+#include "errlog.h"
 
 #include "caerr.h" // this needs to be eliminated
 #include "db_access.h" // this needs to be eliminated

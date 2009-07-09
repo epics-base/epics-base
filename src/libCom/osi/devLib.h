@@ -20,6 +20,7 @@
 
 #include "dbDefs.h"
 #include "osdVME.h"
+#include "errMdef.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus

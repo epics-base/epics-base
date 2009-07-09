@@ -15,6 +15,7 @@
 #ifndef INCdbBaseh
 #define INCdbBaseh 1
 
+#include "epicsTypes.h"
 #include "dbFldTypes.h"
 #include "ellLib.h"
 #include "dbDefs.h"

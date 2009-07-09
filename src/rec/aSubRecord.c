@@ -27,6 +27,7 @@
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"
 #include "errMdef.h"
+#include "errlog.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "special.h"

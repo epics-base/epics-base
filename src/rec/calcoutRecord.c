@@ -29,6 +29,7 @@
 #include "cantProceed.h"
 #include "epicsMath.h"
 #include "errMdef.h"
+#include "errlog.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "recGbl.h"

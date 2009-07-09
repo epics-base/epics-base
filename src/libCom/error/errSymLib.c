@@ -35,6 +35,8 @@
 #include "dbDefs.h"
 #include "errMdef.h"
 #include "errSymTbl.h"
+#include "ellLib.h"
+#include "errlog.h"
 
 
 static unsigned short errhash(long errNum);

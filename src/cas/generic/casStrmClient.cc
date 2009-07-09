@@ -23,6 +23,7 @@ typedef unsigned long arrayElementCount;
 #include "dbMapper.h"		// ait to dbr types
 #include "gddAppTable.h"    // EPICS application type table
 #include "gddApps.h"		// gdd predefined application type codes
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "casStrmClient.h"

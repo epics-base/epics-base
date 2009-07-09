@@ -28,6 +28,7 @@ static const char sccsID[] = "@(#) $Id$";
 #include "dbDefs.h"
 #include "epicsMutex.h"
 #include "errlog.h"
+#include "ellLib.h"
 #include "devLib.h"
 
 LOCAL ELLLIST addrAlloc[atLast];

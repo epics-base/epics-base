@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -16,6 +16,7 @@
 #ifndef INCdevSuph
 #define INCdevSuph 1
 
+#include "errMdef.h"
 #include "shareLib.h"
 
 /* structures defined elsewhere */

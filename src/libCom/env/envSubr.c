@@ -44,6 +44,7 @@
 #include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
 #include "errMdef.h"
+#include "errlog.h"
 #include "envDefs.h"
 #include "epicsAssert.h"
 #include "osiSock.h"

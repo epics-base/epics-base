@@ -15,10 +15,12 @@
  *              505 665 1831
  */
 
+#include <stdarg.h>
 #include <stdexcept>
 
 #include "epicsGuard.h"
 #include "epicsVersion.h"
+#include "errlog.h"
 
 #include "addrList.h"
 

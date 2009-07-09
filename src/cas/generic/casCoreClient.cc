@@ -15,6 +15,8 @@
  *              505 665 1831
  */
 
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
 #include "casCoreClient.h"
 #include "casAsyncPVExistIOI.h"

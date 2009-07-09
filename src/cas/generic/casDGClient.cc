@@ -18,6 +18,7 @@
 #include "gddApps.h"
 #include "caerr.h"
 #include "osiWireFormat.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "casDGClient.h"

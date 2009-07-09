@@ -90,6 +90,7 @@ $Date$</span></small></p>
   <li><a href="#catime">catime - CA client library performance test</a></li>
   <li><a href="#ca_test">ca_test - dump the value of a PV in each external data
     type to the console</a></li>
+  <li><a href="#excas">excas - an example server</a></li>
 </ul>
 
 <h3 style=""><a href="#CommandTools">Command Line Tools</a></h3>
@@ -1571,9 +1572,166 @@ etc.</p>
   </tbody>
 </table>
 
-<p></p>
+<h3><a name="excas" id="excas">excas</a></h3>
 
-<h2><a name="Troublesho">Troubleshooting</a></h2>
+<p>excas [options]</p>
+
+<p>This is an example CA server that is sometimes used for testing purposes. An
+example server can be created with the makeBaseApp perl script, as descibed in
+the application Developer's Guide.</p>
+
+<table border="1">
+  <caption>Options</caption>
+  <col>
+  <col>
+  <tbody>
+    <tr>
+      <th>Option</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td>-duuuu</td>
+      <td>set level uuuu for debug messages, where uuuu is an positive integer
+        number</td>
+    </tr>
+    <tr>
+      <td>-paaaa</td>
+      <td>prefix all of the PV names below with aaaa changing the name of
+        "bill" to "xyz:bill"</td>
+    </tr>
+    <tr>
+      <td>-tn.n</td>
+      <td>set execution time where n.n is a positive real number</td>
+    </tr>
+    <tr>
+      <td>-cuuuu</td>
+      <td>set the numbered alias count</td>
+    </tr>
+    <tr>
+      <td>-s1 or -s0</td>
+      <td>-s1 is the default it enables periodic scanning of the PV replacing
+        the PV with its value added with a small random change, -s0 turns off
+        type of periodic scanning </td>
+    </tr>
+    <tr>
+      <td>-ss1 or -ss0</td>
+      <td>-ss1 is the default it enables synchronous scanning, and -ss0 turns
+        on asynchronous scanning</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The example server has a compile time fixed set of example variables.</p>
+
+<table border="1">
+  <caption>Process Variables</caption>
+  <col>
+  <col>
+  <col>
+  <col>
+  <col>
+  <col>
+  <col>
+  <tbody>
+    <tr>
+      <th>PV Name</th>
+      <th>Number of Elements</th>
+      <th>IO Type</th>
+      <th>Data Type</th>
+      <th>High Limit</th>
+      <th>Low Limit</th>
+      <th>Scan Period</th>
+    </tr>
+    <tr>
+      <td>jane</td>
+      <td>1</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>0.0</td>
+      <td>0.1 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>fred</td>
+      <td>1</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>2.0 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>janet</td>
+      <td>1</td>
+      <td>Asynchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>0.0</td>
+      <td>0.1 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>freddy</td>
+      <td>1</td>
+      <td>Asynchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>2.0 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>alan</td>
+      <td>100</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>2.0 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>albert</td>
+      <td>1000</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>20.0 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>boot</td>
+      <td>1</td>
+      <td>Synchronous</td>
+      <td>enumerated, 16 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>changed only by client</td>
+    </tr>
+    <tr>
+      <td>booty</td>
+      <td>1</td>
+      <td>Asynchronous</td>
+      <td>enumerated, 16 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>1.0 Seconds, random noise changes</td>
+    </tr>
+    <tr>
+      <td>bill</td>
+      <td>1</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>changed only by client</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>Bugs</h4>
+
+<p>Not all of the options listed above have been tested recently.</p>
+
+<h2><span style="width: auto;"><a
+name="Troublesho">Troubleshooting</a></span></h2>
 
 <h3><a name="When">When Clients Do Not Connect to Their Server</a></h3>
 

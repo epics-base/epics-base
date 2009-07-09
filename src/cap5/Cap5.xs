@@ -764,11 +764,11 @@ void CA_get(SV *ca_ref) {
     if (ca_field_type(pch->chan) == DBF_CHAR &&
         count > 1) {
         if (!pch->sdata) {
-            Newx(pch->sdata, count + 1, char);
+            New(0, pch->sdata, count + 1, char);
             pch->ssize = count;
         } else if (pch->ssize < count) { /* Reconnected to larger array? */
             Safefree(pch->sdata);
-            Newx(pch->sdata, count + 1, char);
+            New(0, pch->sdata, count + 1, char);
             pch->ssize = count;
         }
         status = ca_array_get(DBF_CHAR, count, pch->chan, pch->sdata);

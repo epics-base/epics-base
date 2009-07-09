@@ -31,10 +31,6 @@
 #   define debugPrintf(argsInParen)
 #endif
 
-#ifndef NELEMENTS
-#   define NELEMENTS(array)    (sizeof(array)/sizeof((array)[0]))
-#endif
-
 #if defined ( CLOCKS_PER_SEC )
 #   define CAC_SIGNIFICANT_DELAY ( 1.0 / CLOCKS_PER_SEC )
 #else

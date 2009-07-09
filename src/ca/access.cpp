@@ -23,6 +23,7 @@
 #include <new>
 #include <float.h>
 
+#include "dbDefs.h"
 #include "epicsExit.h"
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"

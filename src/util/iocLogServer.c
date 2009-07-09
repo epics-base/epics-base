@@ -30,6 +30,7 @@
 #include	<signal.h>
 #endif
 
+#include        "dbDefs.h"
 #include	"epicsAssert.h"
 #include 	"fdmgr.h"
 #include 	"envDefs.h"
@@ -41,13 +42,6 @@ static long ioc_log_file_limit;
 static char ioc_log_file_name[256];
 static char ioc_log_file_command[256];
 
-
-#ifndef TRUE
-#define	TRUE 1
-#endif
-#ifndef FALSE
-#define	FALSE 0
-#endif
 
 struct iocLogClient {
 	int insock;

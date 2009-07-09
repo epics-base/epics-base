@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <string> // vxWorks 6.0 requires this include 
 
+#include "dbDefs.h"
 #include "epicsGuard.h"
 #include "epicsVersion.h"
 #include "osiProcess.h"

@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -27,24 +26,7 @@
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "freeList.h"	/* bucketLib uses freeListLib inside the DLL */
-
-/*
- * force these to be included before bucketLib.h
- * includes them
- */
-#include "errMdef.h"
-#include "epicsTypes.h"
 #include "bucketLib.h"
-
-#ifndef TRUE
-#define TRUE 1
-#endif /* TRUE */
-#ifndef FALSE
-#define FALSE 0
-#endif /* FALSE */
-#ifndef max
-#define max(A,B) ((A)>(B)?(A):(B))
-#endif /* max */
 
 /*
  * these data type dependent routines are
@@ -593,7 +575,7 @@ epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
 		}
 		X += count;
 		XX += count*count;
-		maxEntries = max (count, maxEntries);
+		if (count > maxEntries) maxEntries = count;
 		ppi++;
 	}
 

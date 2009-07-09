@@ -27,19 +27,12 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
 #include "epicsTime.h"
+#include "dbDefs.h"
 #include "envDefs.h"
 #include "caDiagnostics.h"
 #include "cadef.h"
 #include "fdmgr.h"
 #include "epicsExit.h"
-
-#ifndef min
-#define min(A,B) ((A)>(B)?(B):(A))
-#endif
-
-#ifndef NELEMENTS
-#define NELEMENTS(A) ( sizeof (A) / sizeof (A[0]) )
-#endif
 
 typedef struct appChan {
     char name[64];

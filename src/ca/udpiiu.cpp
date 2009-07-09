@@ -25,6 +25,7 @@
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
 #include "envDefs.h"
+#include "dbDefs.h"
 #include "osiProcess.h"
 #include "osiWireFormat.h"
 #include "epicsAlgorithm.h"

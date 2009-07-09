@@ -15,7 +15,9 @@
 //
 
 #define AIT_CONVERT_SOURCE 1
+
 #include <stdio.h>
+#include <epicsAlgorithm.h>
 #include <epicsStdlib.h>
 #include <limits.h>
 #include "epicsStdio.h"
@@ -32,10 +34,6 @@ int aitNoConvert(void* /*dest*/,const void* /*src*/,aitIndex /*count*/, const gd
 #endif
 #ifdef AIT_FROM_NET_CONVERT
 #undef AIT_FROM_NET_CONVERT
-#endif
-
-#ifndef min
-#define min(A,B) ((A)<(B)?(A):(B))
 #endif
 
 /* put the fixed conversion functions here (ones not generated) */
@@ -87,7 +85,7 @@ bool putDoubleToString (
         return false;
     }
     size_t nCharU = static_cast < size_t > ( nChar );
-	nChar = min ( nCharU, strSize-1 ) + 1;
+	nChar = epicsMin ( nCharU, strSize-1 ) + 1;
 	memset ( &pString[nChar], '\0', strSize - nChar );
     return true;
 }

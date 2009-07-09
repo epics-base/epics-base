@@ -14,17 +14,15 @@
 // 
 
 #define DB_MAPPER_SOURCE 1
+
 #include <stdio.h>
+#include <epicsAlgorithm.h>
 
 #define epicsExportSharedSymbols
 #include "gddApps.h"
 #include "gddAppTable.h"
 #include "dbMapper.h"
 // #include "templates/dbMapperTempl.h"
-
-#ifndef min
-#    define min(a,b) (((a)<(b))?(a):(b))
-#endif
 
 // hardcoded in same order as aitConvert.h
 // no way to detect a string type!!!!!!!
@@ -1030,7 +1028,7 @@ static smartGDDPointer mapGraphicEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-    unsigned minl = min(sizeof(aitFixedString),sizeof(str[0].fixed_string)) - 1;
+    unsigned minl = epicsMin(sizeof(aitFixedString),sizeof(str[0].fixed_string)) - 1;
 	for (i=0;i<sz;i++) {
 		strncpy (str[i].fixed_string, &(db->strs[i][0]), minl);
 		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);
@@ -1072,7 +1070,7 @@ static smartGDDPointer mapControlEnumToGdd(void* v, aitIndex /*count*/)
 			sz=db->no_str;
 	}
 
-    unsigned minl = min(sizeof(aitFixedString),MAX_ENUM_STRING_SIZE) - 1;
+    unsigned minl = epicsMin(sizeof(aitFixedString),(size_t)MAX_ENUM_STRING_SIZE) - 1;
 	for (i=0;i<sz;i++) {
 		strncpy(str[i].fixed_string,&(db->strs[i][0]), minl);
 		memset(&str[i].fixed_string[minl], '\0', sizeof(aitFixedString)-minl);

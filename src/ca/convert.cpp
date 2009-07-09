@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include "dbDefs.h"
 #include "osiSock.h"
 #include "osiWireFormat.h"
 

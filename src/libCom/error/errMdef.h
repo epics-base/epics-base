@@ -57,8 +57,6 @@ epicsShareFunc int epicsShareAPI errSymbolAdd (long errNum,char *name);
 epicsShareFunc void epicsShareAPI errSymDump(void);
 epicsShareFunc void epicsShareAPI tstErrSymFind(void);
 
-epicsShareFunc int epicsShareAPI errSymFind(long status, char *pBuf); /* depricated */
-
 #ifdef __cplusplus
 }
 #endif

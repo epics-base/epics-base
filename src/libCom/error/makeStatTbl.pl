@@ -26,7 +26,7 @@
 # numbers, eg. "M_".  The table is created on standard output.
 #
 # This tool's primary use is for creating an error status table used
-# by errPrint, and errSymFind.
+# by errPrint, and errSymLookup.
 #
 # FILES
 # errMdef.h   module number file for each h directory

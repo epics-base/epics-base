@@ -51,7 +51,7 @@ typedef struct errnumnode {
 #define NHASH 256
 
 
-static ELLLIST errnumlist;
+static ELLLIST errnumlist = ELLLIST_INIT;
 static ERRNUMNODE **hashtable;
 static int initialized = FALSE;
 extern ERRSYMTAB_ID errSymTbl;
@@ -67,7 +67,6 @@ extern ERRSYMTAB_ID errSymTbl;
 int epicsShareAPI errSymBld(void)
 {
     ERRSYMBOL      *errArray = errSymTbl->symbols;
-    ELLLIST        *perrnumlist = &errnumlist;
     ERRNUMNODE     *perrNumNode = NULL;
     ERRNUMNODE     *pNextNode = NULL;
     ERRNUMNODE    **phashnode = NULL;
@@ -90,7 +89,7 @@ int epicsShareAPI errSymBld(void)
 	    continue;
 	}
     }
-    perrNumNode = (ERRNUMNODE *) ellFirst(perrnumlist);
+    perrNumNode = (ERRNUMNODE *) ellFirst(&errnumlist);
     while (perrNumNode) {
 	/* hash each perrNumNode->errNum */
 	hashInd = errhash(perrNumNode->errNum);
@@ -130,13 +129,12 @@ unsigned short errnum;
  ***************************************************************/
 int epicsShareAPI errSymbolAdd (long errNum,char *name)
 {
-    ELLLIST        *perrnumlist = &errnumlist;
     ERRNUMNODE     *pNew;
 
     pNew = (ERRNUMNODE*)callocMustSucceed(1,sizeof(ERRNUMNODE),"errSymbolAdd");
     pNew->errNum = errNum;
     pNew->message = name;
-    ellAdd(perrnumlist,(ELLNODE*)pNew);
+    ellAdd(&errnumlist,(ELLNODE*)pNew);
     return(0);
 }
 
@@ -195,15 +193,6 @@ static void errRawCopy ( long statusToDecode, char *pBuf, unsigned bufLength )
     }
 }
 
-/****************************************************************
- * errSymFind - deprecated
- ***************************************************************/
-int epicsShareAPI errSymFind (long status, char * pBuf)
-{
-    errSymLookup ( status, pBuf, UINT_MAX );
-    return 0;
-}
-
 /****************************************************************
  * errSymLookup
  ***************************************************************/

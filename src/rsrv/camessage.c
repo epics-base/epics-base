@@ -49,7 +49,7 @@
 
 #define RECORD_NAME(PADDR) ((PADDR)->precord->name)
 
-LOCAL EVENTFUNC read_reply;
+static EVENTFUNC read_reply;
 
 #define logBadId(CLIENT, MP, PPL)\
 logBadIdWithFileAndLineno(CLIENT, MP, PPL, __FILE__, __LINE__)
@@ -90,7 +90,7 @@ typedef struct rsrv_put_notify {
  *
  * (dont drop below some max block threshold)
  */
-LOCAL void *casCalloc(size_t count, size_t size)
+static void *casCalloc(size_t count, size_t size)
 {
     if ( UINT_MAX / size >= count ) {
         if (!osiSufficentSpaceInPool(size*count)) {
@@ -108,7 +108,7 @@ LOCAL void *casCalloc(size_t count, size_t size)
  *
  * used to be a macro
  */
-LOCAL struct channel_in_use *MPTOPCIU (const caHdrLargeArray *mp)
+static struct channel_in_use *MPTOPCIU (const caHdrLargeArray *mp)
 {
     struct channel_in_use   *pciu;
     const unsigned      id = mp->m_cid;
@@ -127,7 +127,7 @@ LOCAL struct channel_in_use *MPTOPCIU (const caHdrLargeArray *mp)
  *  send buffer lock must be on while in this routine
  *
  */
-LOCAL void vsend_err(
+static void vsend_err(
 const caHdrLargeArray   *curp,
 int                     status,
 struct client           *client,
@@ -242,7 +242,7 @@ va_list                 args
  *  send buffer lock must be on while in this routine
  *
  */
-LOCAL void send_err (
+static void send_err (
 const caHdrLargeArray   *curp,
 int                     status,
 struct client           *client,
@@ -260,7 +260,7 @@ const char              *pformat,
  *  Debug aid - print the header part of a message.
  *
  */
-LOCAL void log_header (
+static void log_header (
     const char              *pContext,
     struct client           *client,
     const caHdrLargeArray   *mp,
@@ -298,7 +298,7 @@ LOCAL void log_header (
 /*
  * logBadIdWithFileAndLineno()
  */
-LOCAL void logBadIdWithFileAndLineno(
+static void logBadIdWithFileAndLineno(
 struct client       *client, 
 caHdrLargeArray     *mp,
 const void          *pPayload,
@@ -316,7 +316,7 @@ unsigned            lineno
 /*
  * bad_udp_cmd_action()
  */
-LOCAL int bad_udp_cmd_action ( caHdrLargeArray *mp, 
+static int bad_udp_cmd_action ( caHdrLargeArray *mp, 
                        void *pPayload, struct client *pClient )
 {
     log_header ("invalid (damaged?) request code from UDP", 
@@ -327,7 +327,7 @@ LOCAL int bad_udp_cmd_action ( caHdrLargeArray *mp,
 /*
  * udp_echo_action()
  */
-LOCAL int udp_echo_action ( caHdrLargeArray *mp, 
+static int udp_echo_action ( caHdrLargeArray *mp, 
                            void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
@@ -347,7 +347,7 @@ LOCAL int udp_echo_action ( caHdrLargeArray *mp,
 /*
  * bad_tcp_cmd_action()
  */
-LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload, 
+static int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload, 
                            struct client *client )
 {
     const char *pCtx = "invalid (damaged?) request code from TCP";
@@ -367,7 +367,7 @@ LOCAL int bad_tcp_cmd_action ( caHdrLargeArray *mp, void *pPayload,
 /*
  * tcp_version_action()
  */
-LOCAL int tcp_version_action ( caHdrLargeArray *mp, void *pPayload, 
+static int tcp_version_action ( caHdrLargeArray *mp, void *pPayload, 
                            struct client *client )
 {
     double tmp;
@@ -408,7 +408,7 @@ LOCAL int tcp_version_action ( caHdrLargeArray *mp, void *pPayload,
 /*
  * tcp_echo_action()
  */
-LOCAL int tcp_echo_action ( caHdrLargeArray *mp, 
+static int tcp_echo_action ( caHdrLargeArray *mp, 
                        void *pPayload, struct client *pClient )
 {
     char *pPayloadOut;
@@ -428,7 +428,7 @@ LOCAL int tcp_echo_action ( caHdrLargeArray *mp,
 /*
  * events_on_action ()
  */
-LOCAL int events_on_action ( caHdrLargeArray *mp, 
+static int events_on_action ( caHdrLargeArray *mp, 
                        void *pPayload, struct client *pClient )
 {
     db_event_flow_ctrl_mode_off ( pClient->evuser );
@@ -438,7 +438,7 @@ LOCAL int events_on_action ( caHdrLargeArray *mp,
 /*
  * events_off_action ()
  */
-LOCAL int events_off_action ( caHdrLargeArray *mp, 
+static int events_off_action ( caHdrLargeArray *mp, 
                        void *pPayload, struct client *pClient )
 {
     db_event_flow_ctrl_mode_on ( pClient->evuser );
@@ -453,7 +453,7 @@ LOCAL int events_off_action ( caHdrLargeArray *mp,
  * substantial complication introduced here by the need for backwards
  * compatibility
  */
-LOCAL void no_read_access_event ( struct client *pClient,
+static void no_read_access_event ( struct client *pClient,
     struct event_ext *pevext )
 {
     char *pPayloadOut;
@@ -498,7 +498,7 @@ LOCAL void no_read_access_event ( struct client *pClient,
 /*
  *  read_reply()
  */
-LOCAL void read_reply ( void *pArg, struct dbAddr *paddr, 
+static void read_reply ( void *pArg, struct dbAddr *paddr, 
                        int eventsRemaining, db_field_log *pfl )
 {
     ca_uint32_t cid;
@@ -634,7 +634,7 @@ LOCAL void read_reply ( void *pArg, struct dbAddr *paddr,
 /*
  * read_action ()
  */
-LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pClient )
+static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pClient )
 {
     struct channel_in_use *pciu = MPTOPCIU ( mp );
     const int readAccess = asCheckGet ( pciu->asClientPVT );
@@ -729,7 +729,7 @@ LOCAL int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pC
 /*
  * read_notify_action()
  */
-LOCAL int read_notify_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int read_notify_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     struct channel_in_use *pciu;
     struct event_ext evext;
@@ -762,7 +762,7 @@ LOCAL int read_notify_action ( caHdrLargeArray *mp, void *pPayload, struct clien
 /*
  * write_action()
  */
-LOCAL int write_action ( caHdrLargeArray *mp, 
+static int write_action ( caHdrLargeArray *mp, 
                         void *pPayload, struct client *client )
 {
     struct channel_in_use   *pciu;
@@ -839,7 +839,7 @@ LOCAL int write_action ( caHdrLargeArray *mp,
 /*
  * host_name_action()
  */
-LOCAL int host_name_action ( caHdrLargeArray *mp, void *pPayload,
+static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
     unsigned                size;
@@ -918,7 +918,7 @@ LOCAL int host_name_action ( caHdrLargeArray *mp, void *pPayload,
 /*
  * client_name_action()
  */
-LOCAL int client_name_action ( caHdrLargeArray *mp, void *pPayload,
+static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
     unsigned                size;
@@ -993,7 +993,7 @@ LOCAL int client_name_action ( caHdrLargeArray *mp, void *pPayload,
 /*
  * casCreateChannel ()
  */
-LOCAL struct channel_in_use *casCreateChannel (
+static struct channel_in_use *casCreateChannel (
 struct client   *client,
 struct dbAddr   *pAddr,
 unsigned    cid
@@ -1073,7 +1073,7 @@ unsigned    cid
  * If access right state changes then inform the client.
  *
  */
-LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
+static void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 {
     struct client * pclient;
     struct channel_in_use * pciu;
@@ -1146,7 +1146,7 @@ LOCAL void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
 /*
  * access_rights_reply()
  */
-LOCAL void access_rights_reply ( struct channel_in_use * pciu )
+static void access_rights_reply ( struct channel_in_use * pciu )
 {
     unsigned        ar;
     int             v41;
@@ -1186,7 +1186,7 @@ LOCAL void access_rights_reply ( struct channel_in_use * pciu )
 /*
  * claim_ciu_reply()
  */
-LOCAL void claim_ciu_reply ( struct channel_in_use * pciu )
+static void claim_ciu_reply ( struct channel_in_use * pciu )
 {
     int v42 = CA_V42 ( pciu->client->minor_version_number );
     access_rights_reply ( pciu );
@@ -1224,7 +1224,7 @@ LOCAL void claim_ciu_reply ( struct channel_in_use * pciu )
 /*
  * claim_ciu_action()
  */
-LOCAL int claim_ciu_action ( caHdrLargeArray *mp, 
+static int claim_ciu_action ( caHdrLargeArray *mp, 
                             void *pPayload, client *client )
 {
     int status;
@@ -1390,7 +1390,7 @@ LOCAL int claim_ciu_action ( caHdrLargeArray *mp,
  *
  * (called by the db call back thread)
  */
-LOCAL void write_notify_call_back(putNotify *ppn)
+static void write_notify_call_back(putNotify *ppn)
 {
     struct channel_in_use * pciu = (struct channel_in_use *) ppn->usrPvt;
     struct client * pClient;
@@ -1429,7 +1429,7 @@ LOCAL void write_notify_call_back(putNotify *ppn)
  * write_notify_reply()
  * (called by the CA server event task via the extra labor interface)
  */
-LOCAL void write_notify_reply ( struct client * pClient )
+static void write_notify_reply ( struct client * pClient )
 {
     while(TRUE){
         caHdrLargeArray msgtmp;
@@ -1505,7 +1505,7 @@ LOCAL void write_notify_reply ( struct client * pClient )
 /*
  * sendAllUpdateAS()
  */
-LOCAL void sendAllUpdateAS ( struct client *client )
+static void sendAllUpdateAS ( struct client *client )
 {
     struct channel_in_use *pciu; 
 
@@ -1549,7 +1549,7 @@ void rsrv_extra_labor ( void * pArg )
 /*
  * putNotifyErrorReply
  */
-LOCAL void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int statusCA )
+static void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, int statusCA )
 {
     int status;
 
@@ -1698,7 +1698,7 @@ void rsrvFreePutNotify ( client *pClient,
 /*
  * write_notify_action()
  */
-LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload, 
+static int write_notify_action ( caHdrLargeArray *mp, void *pPayload, 
                                struct client  *client )
 {
     unsigned size;
@@ -1830,7 +1830,7 @@ LOCAL int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
  * event_add_action()
  *
  */
-LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *client)
+static int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *client)
 {
     struct mon_info *pmi = (struct mon_info *) pPayload;
     int spaceAvailOnFreeList;
@@ -1935,7 +1935,7 @@ LOCAL int event_add_action (caHdrLargeArray *mp, void *pPayload, struct client *
 /*
  *  clear_channel_reply()
  */
-LOCAL int clear_channel_reply ( caHdrLargeArray *mp, 
+static int clear_channel_reply ( caHdrLargeArray *mp, 
         void *pPayload, struct client  *client )
 {
      struct event_ext *pevext;
@@ -2039,7 +2039,7 @@ LOCAL int clear_channel_reply ( caHdrLargeArray *mp,
  * Much more efficient now since the event blocks hang off the channel in use
  * blocks not all together off the client block.
  */
-LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
      struct channel_in_use  *pciu;
      struct event_ext       *pevext;
@@ -2111,7 +2111,7 @@ LOCAL int event_cancel_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
 /*
  *  read_sync_reply()
  */
-LOCAL int read_sync_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int read_sync_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     int status;
     SEND_LOCK(client);
@@ -2133,7 +2133,7 @@ LOCAL int read_sync_reply ( caHdrLargeArray *mp, void *pPayload, struct client *
  *  Only when requested by the client 
  *  send search failed reply
  */
-LOCAL void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client)
+static void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client)
 {
     int status;
     SEND_LOCK ( client );
@@ -2151,7 +2151,7 @@ LOCAL void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct clien
 /*
  * udp_version_action()
  */
-LOCAL int udp_version_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int udp_version_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     if ( mp->m_count != 0 ) {
         client->minor_version_number = mp->m_count;
@@ -2192,7 +2192,7 @@ int rsrv_version_reply ( struct client *client )
 /*
  *  search_reply()
  */
-LOCAL int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     struct dbAddr   tmp_addr;
     ca_uint16_t     *pMinorVersion;
@@ -2304,7 +2304,7 @@ typedef int (*pProtoStubTCP) (caHdrLargeArray *mp, void *pPayload, struct client
 /*
  * TCP protocol jump table
  */
-LOCAL const pProtoStubTCP tcpJumpTable[] = 
+static const pProtoStubTCP tcpJumpTable[] = 
 {
     tcp_version_action,
     event_add_action,
@@ -2340,7 +2340,7 @@ LOCAL const pProtoStubTCP tcpJumpTable[] =
  * UDP protocol jump table
  */
 typedef int (*pProtoStubUDP) (caHdrLargeArray *mp, void *pPayload, struct client *client);
-LOCAL const pProtoStubUDP udpJumpTable[] = 
+static const pProtoStubUDP udpJumpTable[] = 
 {
     udp_version_action,
     bad_udp_cmd_action,

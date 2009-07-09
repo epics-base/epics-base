@@ -39,8 +39,6 @@
 #define epicsExportSharedSymbols
 #endif
 
-#define LOCAL static
-
 /* a modified ca header with capacity for large arrays */
 typedef struct caHdrLargeArray {
     ca_uint32_t m_postsize;     /* size of message extension */

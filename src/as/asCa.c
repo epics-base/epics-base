@@ -38,13 +38,13 @@
 
 int asCaDebug = 0;
 epicsExportAddress(int,asCaDebug);
-LOCAL int firstTime = TRUE;
-LOCAL epicsThreadId threadid=0;
-LOCAL int caInitializing=FALSE;
-LOCAL epicsMutexId asCaTaskLock;		/*lock access to task */
-LOCAL epicsEventId asCaTaskWait;		/*Wait for task to respond*/
-LOCAL epicsEventId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
-LOCAL epicsEventId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
+static int firstTime = TRUE;
+static epicsThreadId threadid=0;
+static int caInitializing=FALSE;
+static epicsMutexId asCaTaskLock;		/*lock access to task */
+static epicsEventId asCaTaskWait;		/*Wait for task to respond*/
+static epicsEventId asCaTaskAddChannels;	/*Tell asCaTask to add channels*/
+static epicsEventId asCaTaskClearChannels;/*Tell asCaTask to clear channels*/
 
 typedef struct {
     struct dbr_sts_double rtndata;
@@ -86,7 +86,7 @@ static void exceptionCallback(struct exception_handler_args args)
 }
 
 /*connectCallback only handles disconnects*/
-LOCAL void connectCallback(struct connection_handler_args arg)
+static void connectCallback(struct connection_handler_args arg)
 {
     chid		chid = arg.chid;
     ASGINP		*pasginp = (ASGINP *)ca_puser(chid);
@@ -103,7 +103,7 @@ LOCAL void connectCallback(struct connection_handler_args arg)
     }
 }
 
-LOCAL void eventCallback(struct event_handler_args arg)
+static void eventCallback(struct event_handler_args arg)
 {
     int		caStatus = arg.status;
     chid	chid = arg.chid;
@@ -159,7 +159,7 @@ LOCAL void eventCallback(struct event_handler_args arg)
     if(!caInitializing) asComputeAsg(pasg);
 }
 
-LOCAL void asCaTask(void)
+static void asCaTask(void)
 {
     ASG		*pasg;
     ASGINP	*pasginp;

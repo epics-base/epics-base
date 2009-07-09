@@ -42,9 +42,6 @@
 #ifndef FALSE
 #define FALSE 0
 #endif /* FALSE */
-#ifndef LOCAL
-#define LOCAL static
-#endif /* LOCAL */
 #ifndef max
 #define max(A,B) ((A)>(B)?(A):(B))
 #endif /* max */
@@ -56,12 +53,12 @@
 typedef BUCKETID bucketHash(BUCKET *pb, const void *pId);
 typedef ITEM **bucketCompare(ITEM **ppi, const void *pId);
 
-LOCAL bucketCompare   bucketUnsignedCompare;
-LOCAL bucketCompare   bucketPointerCompare;
-LOCAL bucketCompare   bucketStringCompare;
-LOCAL bucketHash      bucketUnsignedHash;
-LOCAL bucketHash      bucketPointerHash;
-LOCAL bucketHash      bucketStringHash;
+static bucketCompare   bucketUnsignedCompare;
+static bucketCompare   bucketPointerCompare;
+static bucketCompare   bucketStringCompare;
+static bucketHash      bucketUnsignedHash;
+static bucketHash      bucketPointerHash;
+static bucketHash      bucketStringHash;
 
 typedef struct {
 	bucketHash      *pHash;
@@ -69,15 +66,15 @@ typedef struct {
 	buckTypeOfId	type;
 }bucketSET;
 
-LOCAL bucketSET BSET[] = {
+static bucketSET BSET[] = {
 	{bucketUnsignedHash, bucketUnsignedCompare, bidtUnsigned},
 	{bucketPointerHash, bucketPointerCompare, bidtPointer},
 	{bucketStringHash, bucketStringCompare, bidtString}
 };
 
-LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, 
+static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, 
 			const void *pId, const void *pApp);
-LOCAL void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
+static void *bucketLookupItem(BUCKET *pb, bucketSET *pBSET, const void *pId);
 
 
 
@@ -165,7 +162,7 @@ main()
 /*
  * bucketUnsignedCompare()
  */
-LOCAL ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
+static ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
 {
 	unsigned	id;	
 	unsigned	*pItemId;
@@ -188,7 +185,7 @@ LOCAL ITEM **bucketUnsignedCompare (ITEM **ppi, const void *pId)
 /*
  * bucketPointerCompare()
  */
-LOCAL ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
+static ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 {
 	void		*ptr;	
 	void		**pItemId;
@@ -211,7 +208,7 @@ LOCAL ITEM **bucketPointerCompare (ITEM **ppi, const void *pId)
 /*
  * bucketStringCompare ()
  */
-LOCAL ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
+static ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 {
 	const char	*pStr = pId;	
 	ITEM		*pi;
@@ -233,7 +230,7 @@ LOCAL ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
 /*
  * bucketUnsignedHash ()
  */
-LOCAL BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
+static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 {
 	const unsigned	*pUId = pId;	
 	unsigned 	src;
@@ -255,7 +252,7 @@ LOCAL BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 /*
  * bucketPointerHash ()
  */
-LOCAL BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
+static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 {
 	void * const	*ppId = (void * const *) pId;	
 	unsigned long	src;
@@ -283,7 +280,7 @@ LOCAL BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 /*
  * bucketStringHash ()
  */
-LOCAL BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
+static BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 {
 	const char	*pStr = pId;	
 	BUCKETID	hashid;
@@ -411,7 +408,7 @@ epicsShareFunc int epicsShareAPI
 {
 	return bucketAddItem(prb, &BSET[bidtString], pId, pApp);
 }
-LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const void *pApp)
+static int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const void *pApp)
 {
 	BUCKETID	hashid;
 	ITEM		**ppi;
@@ -455,7 +452,7 @@ LOCAL int bucketAddItem(BUCKET *prb, bucketSET *pBSET, const void *pId, const vo
 /*
  * bucketLookupAndRemoveItem ()
  */
-LOCAL void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
+static void *bucketLookupAndRemoveItem (BUCKET *prb, bucketSET *pBSET, const void *pId)
 {
 	BUCKETID	hashid;
 	ITEM		**ppi;
@@ -538,7 +535,7 @@ epicsShareFunc void * epicsShareAPI
 {
 	return bucketLookupItem(prb, &BSET[bidtString], pId);
 }
-LOCAL void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
+static void *bucketLookupItem (BUCKET *pb, bucketSET *pBSET, const void *pId)
 {
 	BUCKETID	hashid;
 	ITEM		**ppi;

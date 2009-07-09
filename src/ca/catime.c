@@ -34,10 +34,6 @@
 
 #include "caDiagnostics.h"
 
-#ifndef LOCAL
-#define LOCAL static
-#endif
-
 #ifndef NULL
 #define NULL 0
 #endif
@@ -62,7 +58,7 @@ typedef void tf ( ti *pItems, unsigned iterations, unsigned *pInlineIter );
 /*
  * test_pend()
  */
-LOCAL void test_pend(
+static void test_pend(
 ti          *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -99,7 +95,7 @@ unsigned    *pInlineIter
 /*
  * test_search ()
  */
-LOCAL void test_search (
+static void test_search (
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -122,7 +118,7 @@ unsigned    *pInlineIter
  * test_sync_search()
  */
 #if 0
-LOCAL void test_sync_search(
+static void test_sync_search(
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -145,7 +141,7 @@ unsigned    *pInlineIter
 /*
  * test_free ()
  */
-LOCAL void test_free(
+static void test_free(
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -166,7 +162,7 @@ unsigned    *pInlineIter
 /*
  * test_put ()
  */
-LOCAL void test_put(
+static void test_put(
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -258,7 +254,7 @@ unsigned    *pInlineIter
 /*
  * test_get ()
  */
-LOCAL void test_get(
+static void test_get(
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -338,7 +334,7 @@ unsigned    *pInlineIter
 /*
  * test_wait ()
  */
-LOCAL void test_wait (
+static void test_wait (
 ti      *pItems,
 unsigned    iterations,
 unsigned    *pInlineIter
@@ -364,7 +360,7 @@ unsigned    *pInlineIter
 /*
  * measure_get_latency
  */
-LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
+static void measure_get_latency (ti *pItems, unsigned iterations)
 {
     epicsTimeStamp end_time;
     epicsTimeStamp start_time;
@@ -411,7 +407,7 @@ LOCAL void measure_get_latency (ti *pItems, unsigned iterations)
 /*
  * printSearchStat()
  */
-LOCAL void printSearchStat ( const ti  *pi, unsigned iterations )
+static void printSearchStat ( const ti  *pi, unsigned iterations )
 {
     unsigned i;
     double  X = 0u;
@@ -474,7 +470,7 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
 /*
  * test ()
  */
-LOCAL void test ( ti *pItems, unsigned iterations )
+static void test ( ti *pItems, unsigned iterations )
 {
     unsigned nBytes;
 

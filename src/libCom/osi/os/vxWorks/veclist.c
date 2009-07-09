@@ -213,7 +213,7 @@ union pointer{
 	struct char_array 	char_overlay;
 };
 
-LOCAL
+static
 void *fetch_pointer(unsigned char *plow_byte)
 {
 	union pointer	p;

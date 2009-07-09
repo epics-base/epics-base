@@ -22,22 +22,18 @@
 #include "logClient.h"
 #include "iocLog.h"
 
-#ifndef LOCAL
-#define LOCAL static
-#endif
-
 int iocLogDisable = 0;
 
 static const int iocLogSuccess = 0;
 static const int iocLogError = -1;
 
-LOCAL logClientId iocLogClient;
+static logClientId iocLogClient;
 
 /*
  *  getConfig()
  *  Get Server Configuration
  */
-LOCAL int getConfig (struct in_addr *pserver_addr, unsigned short *pserver_port)
+static int getConfig (struct in_addr *pserver_addr, unsigned short *pserver_port)
 {
     long status;
     long epics_port;
@@ -82,7 +78,7 @@ void epicsShareAPI epicsShareAPI iocLogFlush (void)
 /*
  *  iocLogClientInit()
  */
-LOCAL logClientId iocLogClientInit (void)
+static logClientId iocLogClientInit (void)
 {
     int status;
     logClientId id;

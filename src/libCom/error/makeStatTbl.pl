@@ -104,7 +104,7 @@ foreach $line ( @err_sym_line )
 
 
 print OUT "\n";
-print OUT "LOCAL ERRSYMBOL symbols[] =\n";
+print OUT "static ERRSYMBOL symbols[] =\n";
 print OUT "{\n";
 
 for ($i=0; $i<$count; ++$i)
@@ -115,7 +115,7 @@ for ($i=0; $i<$count; ++$i)
 
 print OUT "};\n";
 print OUT "\n";
-print OUT "LOCAL ERRSYMTAB symTbl =\n";
+print OUT "static ERRSYMTAB symTbl =\n";
 print OUT "{\n";
 print OUT "\tNELEMENTS(symbols),  /* current number of symbols in table */\n";
 print OUT "\tsymbols,             /* ptr to symbol array */\n";

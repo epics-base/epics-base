@@ -60,7 +60,7 @@ epicsThreadPrivateId rsrvCurrentClient;
  *  handle each of them
  *
  */
-LOCAL void req_server (void *pParm)
+static void req_server (void *pParm)
 {
     unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned priorityOfBeacons;
@@ -332,7 +332,7 @@ int rsrv_pause (void)
     return RSRV_OK;
 }
 
-LOCAL unsigned countChanListBytes ( 
+static unsigned countChanListBytes ( 
     struct client *client, ELLLIST * pList )
 {
     struct channel_in_use   * pciu;
@@ -351,7 +351,7 @@ LOCAL unsigned countChanListBytes (
     return bytes_reserved;
 }
 
-LOCAL void showChanList ( 
+static void showChanList ( 
     struct client * client, ELLLIST * pList )
 {
     unsigned i = 0u;
@@ -375,7 +375,7 @@ LOCAL void showChanList (
 /*
  *  log_one_client ()
  */
-LOCAL void log_one_client (struct client *client, unsigned level)
+static void log_one_client (struct client *client, unsigned level)
 {
     char                    *pproto;
     double                  send_delay;
@@ -610,7 +610,7 @@ void destroy_client ( struct client *client )
     freeListFree ( rsrvClientFreeList, client );
 }
 
-LOCAL void destroyAllChannels ( 
+static void destroyAllChannels ( 
     struct client * client, ELLLIST * pList )
 {
     if ( !client->chanListLock || !client->eventqLock ) {

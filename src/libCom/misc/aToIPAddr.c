@@ -20,10 +20,6 @@
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 
-#ifndef LOCAL
-#define LOCAL static
-#endif
-
 #ifndef NELEMENTS
 #define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
 #endif /*NELEMENTS*/
@@ -31,7 +27,7 @@
 /*
  * addrArrayToUL ()
  */
-LOCAL int addrArrayToUL (const unsigned short *pAddr, unsigned nElements, struct in_addr *pIpAddr)
+static int addrArrayToUL (const unsigned short *pAddr, unsigned nElements, struct in_addr *pIpAddr)
 {
 	unsigned i;
 	unsigned long addr = 0ul;
@@ -53,7 +49,7 @@ LOCAL int addrArrayToUL (const unsigned short *pAddr, unsigned nElements, struct
  * !! ipAddr should be passed in in network byte order !!
  * !! port is passed in in host byte order !!
  */
-LOCAL int initIPAddr (struct in_addr ipAddr, unsigned short port, struct sockaddr_in *pIP)
+static int initIPAddr (struct in_addr ipAddr, unsigned short port, struct sockaddr_in *pIP)
 {
 	memset (pIP, '\0', sizeof(*pIP));
 	pIP->sin_family = AF_INET;

@@ -43,8 +43,3 @@
  */
 #define taskwdInsert(A,B,C)
 #define taskwdRemove(A)
-
-#ifndef LOCAL
-#define LOCAL static
-#endif /*LOCAL*/
-

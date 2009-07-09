@@ -54,7 +54,7 @@
 /*
  * clean_addrq
  */
-LOCAL void clean_addrq(void)
+static void clean_addrq(void)
 {
     struct channel_in_use * pciu;
     struct channel_in_use * pnextciu;

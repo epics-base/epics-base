@@ -34,10 +34,6 @@
 
 #include "logClient.h"
 
-#ifndef LOCAL
-#define LOCAL static
-#endif
-
 static const int logClientSuccess = 0;
 static const int logClientError = -1;
 
@@ -57,14 +53,14 @@ typedef struct {
     int                 connFailStatus;
 } logClient;
 
-LOCAL const double      LOG_RESTART_DELAY = 5.0; /* sec */
-LOCAL const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
-LOCAL const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
+static const double      LOG_RESTART_DELAY = 5.0; /* sec */
+static const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
+static const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
  * logClientClose ()
  */
-LOCAL void logClientClose ( logClient *pClient )
+static void logClientClose ( logClient *pClient )
 {
 #   ifdef DEBUG
         fprintf (stderr, "log client: lingering for connection close...");
@@ -101,7 +97,7 @@ LOCAL void logClientClose ( logClient *pClient )
 /*
  * logClientDestroy
  */
-LOCAL void logClientDestroy (logClientId id)
+static void logClientDestroy (logClientId id)
 {
     enum epicsSocketSystemCallInterruptMechanismQueryInfo interruptInfo;
     logClient *pClient = (logClient *) id;
@@ -286,7 +282,7 @@ void epicsShareAPI logClientFlush ( logClientId id )
 /*
  *  logClientMakeSock ()
  */
-LOCAL void logClientMakeSock (logClient *pClient)
+static void logClientMakeSock (logClient *pClient)
 {
     
 #   ifdef DEBUG
@@ -318,7 +314,7 @@ LOCAL void logClientMakeSock (logClient *pClient)
 /*
  *  logClientConnect()
  */
-LOCAL void logClientConnect (logClient *pClient)
+static void logClientConnect (logClient *pClient)
 {
     osiSockIoctl_t  optval;
     int             errnoCpy;
@@ -430,7 +426,7 @@ LOCAL void logClientConnect (logClient *pClient)
 /*
  * logClientRestart ()
  */
-LOCAL void logClientRestart ( logClientId id )
+static void logClientRestart ( logClientId id )
 {
     logClient *pClient = (logClient *)id;
 

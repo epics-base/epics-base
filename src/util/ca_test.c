@@ -22,18 +22,14 @@
 #include <stdio.h>
 #include <epicsStdlib.h>
 
-#ifndef LOCAL
-#define LOCAL static
-#endif
-
 #include "cadef.h"
 #include "epicsTime.h"
 
 int ca_test(char *pname, char *pvalue);
-LOCAL int cagft(char *pname);
-LOCAL void printit(struct  event_handler_args args);
-LOCAL int capft(char *pname, char *pvalue);
-LOCAL void verify_value(chid chan_id, chtype type);
+static int cagft(char *pname);
+static void printit(struct  event_handler_args args);
+static int capft(char *pname, char *pvalue);
+static void verify_value(chid chan_id, chtype type);
 
 static unsigned long outstanding;
 
@@ -70,7 +66,7 @@ char	*pvalue
  *
  *	test ca get over the range of CA data types
  */
-LOCAL int cagft(char *pname)
+static int cagft(char *pname)
 {	
 	const unsigned maxTries = 1000ul;
 	unsigned ntries = 0u;
@@ -158,7 +154,7 @@ LOCAL int cagft(char *pname)
 /*
  *	PRINTIT()
  */
-LOCAL void printit ( struct event_handler_args args )
+static void printit ( struct event_handler_args args )
 {
 	if ( args.status == ECA_NORMAL ) {
 		ca_dump_dbr ( args.type, args.count, args.dbr );
@@ -176,7 +172,7 @@ LOCAL void printit ( struct event_handler_args args )
  *	test ca_put() over a range of data types
  *	
  */
-LOCAL int capft(
+static int capft(
 char		*pname,
 char		*pvalue
 )
@@ -310,7 +306,7 @@ skip_rest:
  *
  * initiate print out the values in a database access interface structure
  */
-LOCAL void verify_value(chid chan_id, chtype type)
+static void verify_value(chid chan_id, chtype type)
 {
 	int status;
 

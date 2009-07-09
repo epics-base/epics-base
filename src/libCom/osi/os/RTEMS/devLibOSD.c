@@ -30,7 +30,7 @@
 
 typedef void    myISR (void *pParam);
 
-LOCAL myISR *isrFetch(unsigned vectorNumber, void **parg);
+static myISR *isrFetch(unsigned vectorNumber, void **parg);
 
 /*
  * this routine needs to be in the symbol table
@@ -38,7 +38,7 @@ LOCAL myISR *isrFetch(unsigned vectorNumber, void **parg);
  */
 void unsolicitedHandlerEPICS(int vectorNumber);
 
-LOCAL myISR *defaultHandlerAddr[]={
+static myISR *defaultHandlerAddr[]={
     (myISR*)unsolicitedHandlerEPICS,
 };
 
@@ -72,7 +72,7 @@ int EPICStovxWorksAddrType[]
  * maps logical address to physical address, but does not detect
  * two device drivers that are using the same address range
  */
-LOCAL long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
+static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
         size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
@@ -90,9 +90,9 @@ long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValu
 /* RTEMS specific init */
 
 /*devA24Malloc and devA24Free are not implemented*/
-LOCAL void *devA24Malloc(size_t size) { return 0;}
-LOCAL void devA24Free(void *pBlock) {};
-LOCAL long rtmsDevInit(void);
+static void *devA24Malloc(size_t size) { return 0;}
+static void devA24Free(void *pBlock) {};
+static long rtmsDevInit(void);
 
 /*
  * used by bind in devLib.c
@@ -106,7 +106,7 @@ static devLibVirtualOS rtemsVirtualOS = {
 devLibVirtualOS *pdevLibVirtualOS = &rtemsVirtualOS;
 
 /* RTEMS specific initialization */
-LOCAL long
+static long
 rtmsDevInit(void)
 {
     /* assume the vme bridge has been initialized by bsp */
@@ -204,7 +204,7 @@ long devDisableInterruptLevelVME (unsigned level)
 /*
  * rtmsDevMapAddr ()
  */
-LOCAL long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
+static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
             size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress)
 {
     long status;
@@ -271,7 +271,7 @@ long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValu
 /*
  *      isrFetch()
  */
-LOCAL myISR *isrFetch(unsigned vectorNumber, void **parg)
+static myISR *isrFetch(unsigned vectorNumber, void **parg)
 {
     /*
      * fetch the handler or C stub attached at this vector

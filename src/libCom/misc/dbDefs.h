@@ -15,6 +15,8 @@
 #ifndef INC_dbDefs_H
 #define INC_dbDefs_H
 
+#include <stddef.h>
+
 #ifdef TRUE
 #   undef TRUE
 #endif
@@ -36,7 +38,7 @@
 
 /* byte offset of member in structure*/
 #ifndef OFFSET
-#   define OFFSET(structure, member) ((int) &(((structure *) 0) -> member))
+#   define OFFSET(structure, member) offsetof(structure, member)
 #endif
 
 /*Process Variable Name Size */

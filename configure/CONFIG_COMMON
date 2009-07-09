@@ -124,7 +124,7 @@ LIB_PREFIX=
 SHRLIB_PREFIX= $(LIB_PREFIX)
 
 #-------------------------------------------------------
-# Make $(ECHO) output - suppress $(ECHO)ing if make's '-s' flag is set
+# Make echo output - suppress echoing if make's '-s' flag is set
 ECHO := $(if $(findstring s,$(MAKEFLAGS)),\#,@echo)
 
 #--------------------------------------------------

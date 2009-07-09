@@ -29,7 +29,7 @@ typedef struct initHookLink {
     initHookFunction func;
 } initHookLink;
 
-static ELLLIST functionList;
+static ELLLIST functionList = ELLLIST_INIT;
 static epicsMutexId listLock;
 
 /*
@@ -37,7 +37,6 @@ static epicsMutexId listLock;
  */
 static void initHookOnce(void *arg)
 {
-    ellInit(&functionList);
     listLock = epicsMutexMustCreate();
 }
 

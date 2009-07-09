@@ -78,7 +78,7 @@ typedef struct epicsThreadOSD {
 static pthread_key_t getpthreadInfo;
 static pthread_mutex_t onceLock;
 static pthread_mutex_t listLock;
-static ELLLIST pthreadList;
+static ELLLIST pthreadList = ELLLIST_INIT;
 static commonAttr *pcommonAttr = 0;
 static int epicsThreadOnceCalled = 0;
 
@@ -211,7 +211,6 @@ static void once(void)
     checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
     status = pthread_mutex_init(&listLock,0);
     checkStatusQuit(status,"pthread_mutex_init","epicsThreadInit");
-    ellInit(&pthreadList);
     pcommonAttr = calloc(1,sizeof(commonAttr));
     if(!pcommonAttr) checkStatusOnceQuit(errno,"calloc","epicsThreadInit");
     status = pthread_attr_init(&pcommonAttr->attr);

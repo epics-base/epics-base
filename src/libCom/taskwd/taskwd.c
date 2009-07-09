@@ -58,15 +58,15 @@ union twdNode {
 
 /* Registered Tasks */
 static epicsMutexId tLock;
-static ELLLIST tList;
+static ELLLIST tList = ELLLIST_INIT;
 
 /* Active Monitors */
 static epicsMutexId mLock;
-static ELLLIST mList;
+static ELLLIST mList = ELLLIST_INIT;
 
 /* Free List */
 static epicsMutexId fLock;
-static ELLLIST fList;
+static ELLLIST fList = ELLLIST_INIT;
 
 /* Watchdog task control */
 static enum {
@@ -140,13 +140,8 @@ static void twdInitOnce(void *arg)
     epicsThreadId tid;
 
     tLock = epicsMutexMustCreate();
-    ellInit(&tList);
-
     mLock = epicsMutexMustCreate();
-    ellInit(&mList);
-
     fLock = epicsMutexMustCreate();
-    ellInit(&fList);
 
     twdCtl = twdctlRun;
     loopEvent = epicsEventMustCreate(epicsEventEmpty);

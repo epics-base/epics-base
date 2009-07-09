@@ -95,7 +95,7 @@ typedef struct inputFile{
 	FILE		*fp;
 	int		line_num;
 }inputFile;
-static ELLLIST inputFileList;
+static ELLLIST inputFileList = ELLLIST_INIT;
 
 static inputFile *pinputFileNow = NULL;
 static DBBASE *pdbbase = NULL;
@@ -105,7 +105,7 @@ typedef struct tempListNode {
 	void	*item;
 }tempListNode;
 
-static ELLLIST tempList;
+static ELLLIST tempList = ELLLIST_INIT;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
 
@@ -212,8 +212,6 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	}
     }
     my_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
-    ellInit(&inputFileList);
-    ellInit(&tempList);
     freeListInitPvt(&freeListPvt,sizeof(tempListNode),100);
     if(substitutions) {
 	if(macCreateHandle(&macHandle,NULL)) {

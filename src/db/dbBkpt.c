@@ -153,7 +153,7 @@ long lset_stack_count = 0;
  *    The semaphore is used to prevent conflicts while
  *    operating with this stack.
  */
-static ELLLIST lset_stack;
+static ELLLIST lset_stack = ELLLIST_INIT;
 static epicsMutexId bkpt_stack_sem = 0;
 
 /*
@@ -257,7 +257,6 @@ void epicsShareAPI dbBkptInit(void)
 {
     if (! bkpt_stack_sem) {
         bkpt_stack_sem = epicsMutexMustCreate();
-        ellInit(&lset_stack);
         lset_stack_count = 0;
     }
 }

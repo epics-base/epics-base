@@ -53,7 +53,7 @@
 extern void dbServiceIOInit();
 
 
-static ELLLIST workList;    /* Work list for dbCaTask */
+static ELLLIST workList = ELLLIST_INIT;    /* Work list for dbCaTask */
 static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
 static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 static int removesOutstanding = 0;
@@ -185,7 +185,6 @@ static void dbCaShutdown(void *arg)
 void dbCaLinkInit(void)
 {
     dbServiceIOInit();
-    ellInit(&workList);
     workListLock = epicsMutexMustCreate();
     workListEvent = epicsEventMustCreate(epicsEventEmpty);
     startStopEvent = epicsEventMustCreate(epicsEventEmpty);

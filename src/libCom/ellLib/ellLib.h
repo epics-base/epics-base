@@ -25,14 +25,14 @@ typedef struct ELLNODE {
     struct ELLNODE *previous;
 } ELLNODE;
 
-#define ELLNODE_INIT ((ELLNODE) {NULL, NULL})
+#define ELLNODE_INIT {NULL, NULL}
 
 typedef struct ELLLIST {
     ELLNODE node;
     int     count;
 } ELLLIST;
 
-#define ELLLIST_INIT ((ELLLIST) {ELLNODE_INIT, 0})
+#define ELLLIST_INIT {ELLNODE_INIT, 0}
 
 typedef void (*FREEFUNC)(void *);
 

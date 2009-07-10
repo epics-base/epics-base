@@ -41,6 +41,4 @@ include $(TOP)/configure/RULES
 clean::
 	$(RM) parse.c parse.h
 
-inc depends: $(INSTALL_PROD)
-
 #	EOF Makefile.Host for base/src/toolsComm/flex

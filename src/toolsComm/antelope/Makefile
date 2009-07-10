@@ -27,4 +27,3 @@ PROD_LIBS = Com
 
 include $(TOP)/configure/RULES
 
-inc: $(INSTALL_PROD)

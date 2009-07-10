@@ -63,6 +63,4 @@ dbYacc.c: dbLex.c ../dbLexRoutines.c
 clean::
 	@$(RM) dbLex.c dbYacc.c 
 
-inc depends : $(LIBTARGETS) $(INSTALL_PROD)
-
 #	EOF Makefile.Host for base/src/dbStatic

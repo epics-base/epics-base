@@ -12,6 +12,38 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Several macros and includes removed from dbDefs.h</h4>
+
+<p>The definitions for the macros <tt>YES</tt>, <tt>NO</tt>, <tt>NONE</tt>,
+<tt>min()</tt> and <tt>max()</tt> have been deleted. <tt>YES</tt> and
+<tt>NO</tt> have been replaced by <tt>menuYesNoYES</tt> and <tt>menuYesNoNO</tt>
+from the menuYesNo.h file where they were used in several record types. The
+other macros were not being used anywhere in Base, sncseq or Asyn.</p>
+
+<p>The macro <tt>LOCAL</tt> that was a synonym for <tt>static</tt> is now
+deprecated and will be deleted soon, please adjust your code to use the latter
+keyword.  Any uses of the <tt>READONLY</tt> macro from shareLib.h must now be
+replaced by the keyword <tt>const</tt>.</p>
+
+<p>The dbDefs.h file was also unnecessarily including some other libCom header
+files which may have to be manually added to out-of-tree source files that
+relied on this. The general rule for header files is that a header should only
+include other headers that are needed for its own inclusion in any source
+file. The <tt>#include</tt> statements that might need to be added are:</p>
+
+<ul>
+  <li>#include &lt;stdarg.h&gt;</li>
+  <li>#include "errlog.h"</li>
+  <li>#include "errMdef.h"</li>
+  <li>#include "ellLib.h"</li>
+  <li>#include "epicsTypes.h"</li>
+</ul>
+
+<h4>Perl CA library shutdown</h4>
+
+<p>The Perl CA library has been modified to properly flush the Channel Access
+I/O queues when a program using the library exits.</p>
+
 <h4>bi, bo, mbbi, mbbo ENUM string fields</h4>
 
 <p>The existing Channel Access protocol transports 26 bytes for each ENUM

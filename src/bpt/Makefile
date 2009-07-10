@@ -26,5 +26,7 @@ makeBpt_SRCS=makeBpt
 
 include $(TOP)/configure/RULES
 
-$(COMMON_DBDS): $(INSTALL_PROD)
+#$(COMMON_DBDS): $(INSTALL_PROD)
+
+$(COMMON_DBDS): $(MAKEBPT)
 

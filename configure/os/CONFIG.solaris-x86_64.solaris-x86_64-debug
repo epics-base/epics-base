@@ -10,10 +10,7 @@
 include $(CONFIG)/os/CONFIG.Common.solaris-x86_64
 include $(CONFIG)/os/CONFIG.solaris-x86_64.solaris-x86_64
 
-#BUILD_CLASS = HOST
-#HOST_OPT = NO
-
-GNU = NO
+BUILD_CLASS=HOST
 
 # Removes -O optimization and adds -g compile option
-CROSS_OPT=NO
+HOST_OPT=NO

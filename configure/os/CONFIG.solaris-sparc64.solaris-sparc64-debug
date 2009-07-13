@@ -10,10 +10,7 @@
 include $(CONFIG)/os/CONFIG.Common.solaris-sparc64
 include $(CONFIG)/os/CONFIG.solaris-sparc64.solaris-sparc64
 
-#BUILD_CLASS = HOST
-#HOST_OPT = NO
-
-GNU = NO
+BUILD_CLASS=HOST
 
 # Removes -O optimization and adds -g compile option
-CROSS_OPT=NO
+HOST_OPT=NO

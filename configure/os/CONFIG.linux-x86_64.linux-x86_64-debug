@@ -7,6 +7,8 @@
 # Sites may override these definitions in CONFIG_SITE.linux-x86_64.linux-x86_64-debug
 #-------------------------------------------------------
 
-include $(CONFIG)/os/CONFIG.linux-x86_64.linux-x86_64
+include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
 
-CROSS_OPT = NO
+BUILD_CLASS=HOST
+
+HOST_OPT = NO

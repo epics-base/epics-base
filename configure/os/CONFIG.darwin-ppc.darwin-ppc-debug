@@ -10,8 +10,5 @@
 -include $(CONFIG)/os/CONFIG.Common.darwin-ppc
 -include $(CONFIG)/os/CONFIG.darwin-ppc.darwin-ppc
 
-# This will cause build failure when used with make -j option
-#BUILD_CLASS = HOST
-#HOST_OPT = NO
-
-CROSS_OPT=NO
+BUILD_CLASS=HOST
+HOST_OPT = NO

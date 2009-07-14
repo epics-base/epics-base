@@ -1581,7 +1581,6 @@ example server can be created with the makeBaseApp perl script, as descibed in
 the application Developer's Guide.</p>
 
 <table border="1">
-  <caption>Options</caption>
   <col>
   <col>
   <tbody>
@@ -1590,33 +1589,33 @@ the application Developer's Guide.</p>
       <th>Description</th>
     </tr>
     <tr>
-      <td>-duuuu</td>
+      <td>-d &lt;uuuu&gt;</td>
       <td>set level uuuu for debug messages, where uuuu is an positive integer
         number</td>
     </tr>
     <tr>
-      <td>-paaaa</td>
-      <td>prefix all of the PV names below with aaaa changing the name of
-        "bill" to "xyz:bill"</td>
+      <td>-p &lt;aaaa&gt;</td>
+      <td>prefix all of the PV names below with aaaa changing, for example, the
+        name of "bill" to "xyz:bill"</td>
     </tr>
     <tr>
-      <td>-tn.n</td>
+      <td>-t &lt;n.n&gt;</td>
       <td>set execution time where n.n is a positive real number</td>
     </tr>
     <tr>
-      <td>-cuuuu</td>
+      <td>-c &lt;uuuu&gt;</td>
       <td>set the numbered alias count</td>
     </tr>
     <tr>
-      <td>-s1 or -s0</td>
-      <td>-s1 is the default it enables periodic scanning of the PV replacing
-        the PV with its value added with a small random change, -s0 turns off
-        type of periodic scanning </td>
+      <td>-s &lt;nnn&gt;</td>
+      <td>the default, nnn is one, enables periodic scanning of the PV
+        replacing the PV with its value added with a small random change, when
+        nnn is zero it turns off this type of periodic scanning </td>
     </tr>
     <tr>
-      <td>-ss1 or -ss0</td>
-      <td>-ss1 is the default it enables synchronous scanning, and -ss0 turns
-        on asynchronous scanning</td>
+      <td>-ss &lt;nnn&gt;</td>
+      <td>the default, nnn is one, enables synchronous scanning, and if nnn is
+        zero it turns on asynchronous scanning</td>
     </tr>
   </tbody>
 </table>
@@ -1624,7 +1623,6 @@ the application Developer's Guide.</p>
 <p>The example server has a compile time fixed set of example variables.</p>
 
 <table border="1">
-  <caption>Process Variables</caption>
   <col>
   <col>
   <col>
@@ -1634,7 +1632,7 @@ the application Developer's Guide.</p>
   <col>
   <tbody>
     <tr>
-      <th>PV Name</th>
+      <th>Process Variable Name</th>
       <th>Number of Elements</th>
       <th>IO Type</th>
       <th>Data Type</th>
@@ -1717,6 +1715,24 @@ the application Developer's Guide.</p>
     <tr>
       <td>bill</td>
       <td>1</td>
+      <td>Synchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>changed only by client</td>
+    </tr>
+    <tr>
+      <td>billy</td>
+      <td>1</td>
+      <td>Asynchronous</td>
+      <td>float point, 64 bits</td>
+      <td>10.0</td>
+      <td>-10.0</td>
+      <td>changed only by client</td>
+    </tr>
+    <tr>
+      <td>bloaty</td>
+      <td>100000</td>
       <td>Synchronous</td>
       <td>float point, 64 bits</td>
       <td>10.0</td>

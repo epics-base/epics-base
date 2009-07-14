@@ -10,4 +10,6 @@
 include $(CONFIG)/os/CONFIG.Common.cygwin-x86
 include $(CONFIG)/os/CONFIG.cygwin-x86.cygwin-x86
 
-CROSS_OPT = NO
+BUILD_CLASS = HOST
+
+HOST_OPT = NO

@@ -10,4 +10,6 @@
 include $(CONFIG)/os/CONFIG.Common.win32-x86-mingw
 include $(CONFIG)/os/CONFIG.win32-x86-mingw.win32-x86-mingw
 
-CROSS_OPT=NO
+BUILD_CLASS = HOST
+
+HOST_OPT=NO

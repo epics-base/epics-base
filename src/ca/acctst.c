@@ -2070,10 +2070,16 @@ void callbackClearsChannel ( struct event_handler_args args )
 
 void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
 {
+    unsigned i;
     chid chan;
     int status;
     
     showProgressBegin ( "clearChannelInGetCallbackTest", level );
+
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
 
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInGetCallbackTest create channel" );
@@ -2084,19 +2090,27 @@ void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
     status = ca_get_callback ( DBR_DOUBLE, chan, callbackClearsChannel, 0 );
     SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
     
-    status = ca_flush_io ();
-    SEVCHK ( status, "clearChannelInGetCallbackTest flush" );
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
     
     showProgressEnd ( level );
 }
 
 void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
 {
+    unsigned i;
     const dbr_double_t value = 1.1;
     chid chan;
     int status;
     
     showProgressBegin ( "clearChannelInPutCallbackTest", level );
+
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
 
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInPutCallbackTest create channel" );
@@ -2106,47 +2120,62 @@ void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
 
     status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
                         callbackClearsChannel, 0 );
-    SEVCHK ( status, "clearChannelInGetCallbackTest get callback" );
+    SEVCHK ( status, "clearChannelInPutCallbackTest get callback" );
     
-    status = ca_flush_io ();
-    SEVCHK ( status, "clearChannelInPutCallbackTest flush" );
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
     
     showProgressEnd ( level );
 }
 
 void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
 {
+    unsigned i;
     const dbr_double_t value = 1.1;
     chid chan;
     int status;
     
     showProgressBegin ( "clearChannelInSubscrCallbackTest", level );
 
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
+
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest create channel" );
 
     status = ca_pend_io ( 10.0 );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest connect channel" );
-
-    status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
-                        callbackClearsChannel, 0 );
                         
     status = ca_create_subscription ( DBR_DOUBLE, 1, chan, 
         DBE_VALUE, callbackClearsChannel, 0, 0 );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest subscribe" );
-    
-    status = ca_flush_io ();
-    SEVCHK ( status, "clearChannelInSubscrCallbackTest flush" );
+
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
     
     showProgressEnd ( level );
 }
 
 void monitorAddConnectionCallback ( struct connection_handler_args args ) 
 {
-    int status;
-    status = ca_create_subscription ( DBR_DOUBLE, 1, 
-        args.chid, DBE_VALUE, nUpdatesTester, ca_puser ( args.chid ), 0 );
-    SEVCHK ( status, "monitorAddConnectionCallback create subscription" );
+    if ( args.op == CA_OP_CONN_UP ) {
+        unsigned * pEventCount = ( unsigned * ) ca_puser ( args.chid );
+        int status;
+        assert ( *pEventCount == 0u );
+        (*pEventCount)++;
+        status = ca_create_subscription ( DBR_DOUBLE, 1, 
+            args.chid, DBE_VALUE, nUpdatesTester, ca_puser ( args.chid ), 0 );
+        SEVCHK ( status, "monitorAddConnectionCallback create subscription" );
+    }
+    else {
+        fprintf ( stderr, "disconnect during monitorAddConnectionCallbackTest?\n" );
+    }
 }
 
 /*
@@ -2157,6 +2186,7 @@ void monitorAddConnectionCallback ( struct connection_handler_args args )
  */
 void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLevel )
 {
+    unsigned i;
     chid chan;
     int status;
     unsigned eventCount = 0u;
@@ -2164,26 +2194,34 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
     
     showProgressBegin ( "monitorAddConnectionCallbackTest", interestLevel );
 
+    for ( i = 0; ca_get_ioc_connection_count () > 0 ; i++ ) {
+        ca_pend_event ( 0.1 );
+        assert ( i < 100 );
+    }
+
     status = ca_create_channel ( pName, 
         monitorAddConnectionCallback, &eventCount, 0, & chan );
     SEVCHK ( status, "monitorAddConnectionCallbackTest create channel" );
 
-    while ( eventCount == 0 ) {
+    while ( eventCount < 2 ) {
         ca_pend_event ( 0.1 );
     }
-    assert ( eventCount == 1u );
+    assert ( eventCount == 2u );
     
     status = ca_get_callback ( DBR_DOUBLE, chan, nUpdatesTester, &getCallbackCount );
     SEVCHK ( status, "monitorAddConnectionCallback get callback" );
     while ( getCallbackCount == 0 ) {
         ca_pend_event ( 0.1 );
     }
-    assert ( eventCount == 1u );
+    assert ( eventCount == 2u );
     assert ( getCallbackCount == 1u );
 
     status = ca_clear_channel ( chan );
     SEVCHK ( status, "monitorAddConnectionCallbackTest clear channel" );
     
+    status = ca_flush_io ();
+    SEVCHK ( status, "monitorAddConnectionCallbackTest flush" );
+
     showProgressEnd ( interestLevel );
 }
 
@@ -2573,7 +2611,7 @@ void verifyTearDownWhenChannelConnected ( const char * pName,
         status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, "immediate tear down get pend io failed" );
 
-        ca_context_destroy ();        
+        ca_context_destroy ();    
     }
 
     ca_context_create ( select );
@@ -2593,7 +2631,7 @@ void verifyImmediateTearDown ( const char * pName,
 
     showProgressBegin ( "verifyImmediateTearDown", interestLevel );
 
-    for ( i = 0u; i < 1000; i++ ) {
+    for ( i = 0u; i < 100; i++ ) {
         chid chan;
         int status;
         dbr_long_t value = i % 2;
@@ -2614,7 +2652,10 @@ void verifyImmediateTearDown ( const char * pName,
             SEVCHK ( status, "immediate tear down channel get failed" );
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "immediate tear down channel get failed" );
-            assert ( currentValue == ( (i + 1) % 2 ) );
+            if ( currentValue != ( (i + 1) % 2 ) ) {
+                printf ( "currentValue = %i i = %i", currentValue, i );
+                assert ( currentValue == ( (i + 1) % 2 ) );
+            }
         }
         status = ca_put ( DBR_LONG, chan, & value );
         SEVCHK ( status, "immediate tear down channel put failed" );
@@ -2622,7 +2663,7 @@ void verifyImmediateTearDown ( const char * pName,
         SEVCHK ( status, "immediate tear down channel clear failed" );
         ca_context_destroy ();
         /* epicsThreadSleep ( 1e-15 ); */
-        if ( i % 100 == 0 ) {
+        if ( i % 10 == 0 ) {
             showProgress ( interestLevel );
         }
     }
@@ -2808,12 +2849,13 @@ void verifyDisconnect (
 {
     int disconnectFlag = 0;
     unsigned count = 0;
-    chid chan;
+    chid chan0;
+    chid chan1;
     int status;
 
     status = ca_create_channel  ( 
         pName, verifyClearChannelOnDisconnectCallback, 
-        & disconnectFlag, 0, & chan );
+        & disconnectFlag, 0, & chan0 );
     SEVCHK ( status, NULL );
 
     fprintf ( stdout, "Waiting for test channel to connect." );
@@ -2824,7 +2866,7 @@ void verifyDisconnect (
             fprintf ( stdout, "." );
             fflush ( stdout );
         }
-    } while ( ca_state ( chan ) != cs_conn );
+    } while ( ca_state ( chan0 ) != cs_conn );
     fprintf ( stdout, "confirmed.\n" );
 
     /*
@@ -2833,7 +2875,7 @@ void verifyDisconnect (
      * completed.
      */
     if ( ca_get_ioc_connection_count () == 0 ) {
-        status = ca_clear_channel ( chan );
+        status = ca_clear_channel ( chan0 );
         SEVCHK ( status, NULL );
         return;
     }
@@ -2854,17 +2896,17 @@ void verifyDisconnect (
     /* channel cleared by disconnect handler */
 
     status = ca_create_channel  ( 
-        pName, 0, 0, 0, & chan );
+        pName, 0, 0, 0, & chan1 );
     SEVCHK ( status, NULL );
 
     fprintf ( stdout, "Waiting for test channel to connect." );
     fflush ( stdout );
-    while ( ca_state ( chan ) != cs_conn ) {
+    while ( ca_state ( chan1 ) != cs_conn ) {
         ca_pend_event ( 5.0 );
         fprintf ( stdout, "." );
         fflush ( stdout );
     }
-    status = ca_clear_channel ( chan );
+    status = ca_clear_channel ( chan1 );
     SEVCHK ( status, NULL );
     fprintf ( stdout, "confirmed.\n" );
 
@@ -3005,8 +3047,11 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
 
     connections = ca_get_ioc_connection_count ();
     assert ( connections == 0u );
-
     unequalServerBufferSizeTest ( pName, interestLevel );
+    clearChannelInGetCallbackTest ( pName, interestLevel );
+    clearChannelInPutCallbackTest ( pName, interestLevel );
+    clearChannelInSubscrCallbackTest ( pName, interestLevel );
+    monitorAddConnectionCallbackTest ( pName, interestLevel );
 
     showProgressBegin ( "connecting to test channel", interestLevel );
     status = ca_search ( pName, & chan );
@@ -3026,10 +3071,6 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     }
 
     verifyName ( pName, interestLevel );
-    clearChannelInGetCallbackTest ( pName, interestLevel );
-    clearChannelInPutCallbackTest ( pName, interestLevel );
-    clearChannelInSubscrCallbackTest ( pName, interestLevel );
-    monitorAddConnectionCallbackTest ( pName, interestLevel );
     verifyConnectWithDisconnectedChannels ( pName, interestLevel );
     grEnumTest ( chan, interestLevel );
     test_sync_groups ( chan, interestLevel );

@@ -360,6 +360,10 @@ int epicsShareAPI ca_create_channel (
 
 /*
  *  ca_clear_channel ()
+ *
+ * a known defect here is that there will be a
+ * crash if they destroy the channel after destroying 
+ * its context
  */
 // extern "C"
 int epicsShareAPI ca_clear_channel ( chid pChan )

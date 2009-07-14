@@ -69,9 +69,7 @@ ioBlockedList::ioBlockedList ()
 //
 ioBlockedList::~ioBlockedList ()
 {
-    ioBlocked *pB;
-    
-    while ( (pB = this->get ()) ) {
+    for ( ioBlocked * pB = this->get (); pB; pB = this->get () ) {
         pB->pList = NULL;
     }
 }
@@ -86,14 +84,13 @@ ioBlockedList::~ioBlockedList ()
 void ioBlockedList::signal ()
 {
     tsDLList<ioBlocked> tmp;
-    ioBlocked *pB;
     
     //
     // move all of the items onto tmp
     //
     tmp.add(*this);
     
-    while ( (pB = tmp.get ()) ) {
+    for ( ioBlocked * pB = tmp.get (); pB; pB = tmp.get () ) {
         pB->pList = NULL;
         pB->ioBlockedSignal ();
     }

@@ -116,6 +116,13 @@ caStatus casStrmClient::processMsg ()
 {
     epicsGuard < casClientMutex > guard ( this->mutex );
 	int status = S_cas_success;
+	
+	// protect against service returning s_casApp_success when it
+	// returned S_casApp_postponeAsyncIO before, but no
+	// asyn IO completed since the last attempt
+	if ( this->isBlocked () ) {
+	    return S_casApp_postponeAsyncIO;
+	}
 
     try {
 
@@ -457,7 +464,7 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
 		return this->sendErr ( guard, mp, pChan->getCID(), 
             status, "read access denied" );
 	}
-
+	
     const gdd * pDesc = 0;
 	status = this->read ( pDesc ); 
 	if ( status == S_casApp_success ) {

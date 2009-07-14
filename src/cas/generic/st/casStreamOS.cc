@@ -217,6 +217,7 @@ void casStreamIOWakeup::show ( unsigned level ) const
 //
 epicsTimerNotify::expireStatus casStreamIOWakeup::expire ( const epicsTime & /* currentTime */ )
 {
+    assert ( this->pOS );
     casStreamOS	& tmpOS = *this->pOS;
     this->pOS = 0;
 	tmpOS.processInput();

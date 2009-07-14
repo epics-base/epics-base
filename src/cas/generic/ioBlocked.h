@@ -36,6 +36,7 @@ friend class ioBlockedList;
 public:
 	ioBlocked ();
 	virtual ~ioBlocked ();
+    bool isBlocked ();
 private:
 	class ioBlockedList * pList;
 	virtual void ioBlockedSignal ();
@@ -51,6 +52,11 @@ public:
 	ioBlockedList ( const ioBlockedList & );
 	ioBlockedList & operator = ( const ioBlockedList & );
 };
+
+inline bool ioBlocked :: isBlocked ()
+{
+    return this->pList != NULL;
+}
 
 #endif // ioBlockedh
  

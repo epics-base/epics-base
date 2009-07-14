@@ -173,7 +173,7 @@ public:
         unsigned sidIn, ca_uint16_t typeIn, arrayElementCount countIn );
     void uninstallChan ( 
         epicsGuard < epicsMutex > & guard, nciu & chan );
-    void connectNotify ( 
+    bool connectNotify ( 
         epicsGuard < epicsMutex > &, nciu & chan );
     void nameResolutionMsgEndNotify ();
 

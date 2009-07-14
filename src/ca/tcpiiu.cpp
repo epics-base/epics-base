@@ -1916,24 +1916,28 @@ void tcpiiu::nameResolutionMsgEndNotify ()
     }
 }
 
-void tcpiiu::connectNotify ( 
+bool tcpiiu :: connectNotify ( 
     epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
+    bool wasExpected = false;
     // this improves robustness in the face of a server sending
     // protocol that does not match its declared protocol revision
     if ( chan.channelNode::listMember == channelNode::cs_createRespPend ) {
         this->createRespPend.remove ( chan );
         this->subscripReqPend.add ( chan );
         chan.channelNode::listMember = channelNode::cs_subscripReqPend;
+        wasExpected = true;
     }
     else if ( chan.channelNode::listMember == channelNode::cs_v42ConnCallbackPend ) {
         this->v42ConnCallbackPend.remove ( chan );
         this->subscripReqPend.add ( chan );
         chan.channelNode::listMember = channelNode::cs_subscripReqPend;
+        wasExpected = true;
     }
     // the TCP send thread is awakened by its receive thread whenever the receive thread
     // is about to block if this->subscripReqPend has items in it
+    return wasExpected;
 }
 
 void tcpiiu::uninstallChan ( 

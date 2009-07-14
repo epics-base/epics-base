@@ -1046,9 +1046,16 @@ bool cac::createChannelRespAction (
         else {
             sidTmp = pChan->getSID (guard);
         }
-        iiu.connectNotify ( guard, *pChan );
-        pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
-            mgr.cbGuard, guard );
+        bool wasExpected = iiu.connectNotify ( guard, *pChan );
+        if ( wasExpected ) {
+            pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
+                mgr.cbGuard, guard );
+        }
+        else {
+            errlogPrintf ( 
+                "CA Client Library: Ignored duplicate create channel "
+                "response from CA server?\n" );
+        }
     }
     else if ( iiu.ca_v44_ok ( guard ) ) {
         // this indicates a claim response for a resource that does

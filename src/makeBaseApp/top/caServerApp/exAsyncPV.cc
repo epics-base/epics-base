@@ -77,6 +77,12 @@ exAsyncWriteIO::~exAsyncWriteIO()
 {
 	this->pv.removeIO();
     this->timer.destroy ();
+    // if the timer hasnt expired, and the value 
+    // hasnt been written then force it to happen
+    // now so that regression testing works
+    if ( this->pValue.valid () ) {
+        this->pv.update ( *this->pValue );
+    }
 }
 
 //
@@ -85,8 +91,8 @@ exAsyncWriteIO::~exAsyncWriteIO()
 //
 epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* currentTime */ ) 
 {
-	caStatus status;
-	status = this->pv.update ( *this->pValue );
+	caStatus status = this->pv.update ( *this->pValue );
+	this->pValue.set ( 0 );
 	this->postIOCompletion ( status );
     return noRestart;
 }

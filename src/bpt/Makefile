@@ -26,5 +26,5 @@ makeBpt_SRCS=makeBpt
 
 include $(TOP)/configure/RULES
 
-$(COMMON_DBDS): $(MAKEBPT)
+$(COMMON_DBDS): $(TOOLS)/makeBpt$(HOSTEXE)
 

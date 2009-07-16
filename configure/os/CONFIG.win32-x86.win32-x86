@@ -31,6 +31,8 @@ BAFCMD = bscmake /nologo /o $@
 # Configure OS vendor C compiler
 CC = cl
 
+GNU = NO
+
 #
 # /W<N> use warning level N
 # (maximum (lint type) warnings at level 4)

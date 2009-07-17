@@ -58,8 +58,8 @@ template < class T >
 inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T & valueIn ) :
 	pValue ( & valueIn )
 {
-        gddStatus status = this->pValue->reference ();
-        assert ( ! status );
+    gddStatus status = this->pValue->reference ();
+    assert ( ! status );
 }
 
 template < class T >
@@ -67,8 +67,8 @@ inline smartGDDPointerTemplate < T >::smartGDDPointerTemplate ( T * pValueIn ) :
 	pValue ( pValueIn )
 {
 	if ( this->pValue != NULL ) {
-                gddStatus status = this->pValue->reference ();
-                assert ( ! status );
+        gddStatus status = this->pValue->reference ();
+        assert ( ! status );
 	}
 }
 
@@ -78,8 +78,8 @@ inline smartGDDPointerTemplate < T > ::
 	pValue ( ptrIn.pValue )
 {
 	if ( this->pValue != NULL ) {
-                gddStatus status = this->pValue->reference ();
-                assert ( ! status );
+        gddStatus status = this->pValue->reference ();
+        assert ( ! status );
 	}
 }
 
@@ -87,8 +87,8 @@ template < class T >
 inline smartGDDPointerTemplate < T > :: ~smartGDDPointerTemplate ()
 {
 	if ( this->pValue != NULL ) {
-                gddStatus status = this->pValue->reference ();
-                assert ( ! status );
+        gddStatus status = this->pValue->unreference ();
+        assert ( ! status );
 	}
 }
 

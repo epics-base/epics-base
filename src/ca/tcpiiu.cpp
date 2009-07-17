@@ -456,8 +456,7 @@ void tcpRecvThread::run ()
         this->iiu.cacRef.attachToClientCtx ();
 
         comBuf * pComBuf = 0;
-        bool breakOut = false;
-        while ( ! breakOut ) {
+        while ( true ) {
 
             //
             // We leave the bytes pending and fetch them after
@@ -473,9 +472,10 @@ void tcpRecvThread::run ()
             pComBuf->fillFromWire ( this->iiu, stat );
 
             epicsTime currentTime = epicsTime::getCurrent ();
-
+                
             {
                 epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+                
                 if ( ! this->validFillStatus ( guard, stat ) ) {
                     break;
                 }
@@ -497,6 +497,7 @@ void tcpRecvThread::run ()
                 callbackManager mgr ( this->ctxNotify, this->cbMutex );
 
                 epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+
                 
                 // route legacy V42 channel connect through the recv thread -
                 // the only thread that should be taking the callback lock
@@ -505,58 +506,31 @@ void tcpRecvThread::run ()
                     pChan->connect ( mgr.cbGuard, guard );
                 }
 
-                // force the receive watchdog to be reset every 5 frames
-                unsigned contiguousFrameCount = 0;
-                while ( stat.bytesCopied ) {
-                    if ( stat.bytesCopied == pComBuf->capacityBytes () ) {
-                        if ( this->iiu.contigRecvMsgCount >= 
-                            contiguousMsgCountWhichTriggersFlowControl ) {
-                            this->iiu.busyStateDetected = true;
-                        }
-                        else { 
-                            this->iiu.contigRecvMsgCount++;
-                        }
+                if ( stat.bytesCopied == pComBuf->capacityBytes () ) {
+                    if ( this->iiu.contigRecvMsgCount >= 
+                        contiguousMsgCountWhichTriggersFlowControl ) {
+                        this->iiu.busyStateDetected = true;
                     }
-                    else {
-                        this->iiu.contigRecvMsgCount = 0u;
-                        this->iiu.busyStateDetected = false;
-                    }         
-                    this->iiu.unacknowledgedSendBytes = 0u;
+                    else { 
+                        this->iiu.contigRecvMsgCount++;
+                    }
+                }
+                else {
+                    this->iiu.contigRecvMsgCount = 0u;
+                    this->iiu.busyStateDetected = false;
+                }         
+                this->iiu.unacknowledgedSendBytes = 0u;
 
-                    bool protocolOK = false;
-                    {
-                        epicsGuardRelease < epicsMutex > unguard ( guard );
-                        // execute receive labor
-                        protocolOK = this->iiu.processIncoming ( currentTime, mgr );
-                    }
+                bool protocolOK = false;
+                {
+                    epicsGuardRelease < epicsMutex > unguard ( guard );
+                    // execute receive labor
+                    protocolOK = this->iiu.processIncoming ( currentTime, mgr );
+                }
 
-                    if ( ! protocolOK ) {
-                        this->iiu.initiateAbortShutdown ( guard );
-                        breakOut = true;
-                        break;
-                    }
-
-                    if ( ! this->iiu.bytesArePendingInOS ()
-                        || ++contiguousFrameCount > 5 ) {
-                        break;
-                    }
-
-                    {
-                        epicsGuardRelease < epicsMutex > unguard ( guard );
-                        if ( ! pComBuf ) {
-                            pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
-                        }
-                        pComBuf->fillFromWire ( this->iiu, stat );
-                    }
-
-                    if ( this->validFillStatus ( guard, stat ) ) {
-                        this->iiu.recvQue.pushLastComBufReceived ( *pComBuf );
-                        pComBuf = 0;
-                    }
-                    else {
-                        breakOut = true;
-                        break;
-                    }
+                if ( ! protocolOK ) {
+                    this->iiu.initiateAbortShutdown ( guard );
+                    break;
                 }
                 this->iiu._receiveThreadIsBusy = false;
                 // reschedule connection activity watchdog

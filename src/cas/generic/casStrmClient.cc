@@ -81,8 +81,10 @@ casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & mgrIn )
     pUserName ( 0 ),
     pHostName ( 0 ),
     incommingBytesToDrain ( 0 ),
+    pendingResponseStatus ( S_cas_success ),
     minor_version_number ( 0 ),
-    payloadNeedsByteSwap ( true )
+    payloadNeedsByteSwap ( true ),
+    responseIsPending ( false )
 {
     this->pHostName = new char [1u];
     *this->pHostName = '\0';
@@ -995,6 +997,19 @@ caStatus casStrmClient::writeNotifyAction (
 	if ( status != ECA_NORMAL ) {
 		return casStrmClient::writeNotifyResponseECA_XXX ( guard, *mp, status );
 	}
+	
+	// dont allow a request that completed with the service in the
+	// past, but was incomplete because no response was sent be
+	// executed twice with the service
+	if ( this->responseIsPending ) {
+		int status = this->writeNotifyResponse ( guard, *pChan, 
+		            *mp, this->pendingResponseStatus );
+		if ( status == S_cas_success ) {
+		    this->pendingResponseStatus = S_cas_success;
+		    this->responseIsPending = false;
+		}
+		return status;
+	}
 
 	//
 	// verify write access
@@ -1021,7 +1036,13 @@ caStatus casStrmClient::writeNotifyAction (
 		pChan->getPVI().addItemToIOBLockedList(*this);
 	}
 	else {
-		status = casStrmClient::writeNotifyResponse ( guard, *pChan, *mp, status );
+	    int writeNotifyServiceStatus = status;
+		status = this->writeNotifyResponse ( 
+		                    guard, *pChan, *mp, status );
+        if ( status != S_cas_success ) {
+            this->pendingResponseStatus = writeNotifyServiceStatus;
+		    this->responseIsPending = true;
+		}
 	}
 
 	return status;

@@ -63,8 +63,10 @@ private:
 	char * pUserName;
 	char * pHostName;
     unsigned incommingBytesToDrain;
+    int pendingResponseStatus;
 	ca_uint16_t minor_version_number;
     bool payloadNeedsByteSwap;
+    bool responseIsPending;
 
 	caStatus createChannel ( const char * pName );
 	caStatus verifyRequest ( casChannelI * & pChan );

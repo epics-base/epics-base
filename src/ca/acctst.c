@@ -1181,19 +1181,24 @@ void verifyHighThroughputWriteCallback ( chid chan, unsigned interestLevel )
 
     if ( ca_write_access (chan) && ca_v42_ok (chan) ) {
         unsigned count = 0u;
+        dbr_double_t dval;
         showProgressBegin ( "verifyHighThroughputWriteCallback", interestLevel );
         for ( i=0; i<10000; i++ ) {
-            dbr_float_t fval = 3.3F;
+            dval = i + 1;
             status = ca_array_put_callback (
-                    DBR_FLOAT, 1, chan, &fval,
+                    DBR_DOUBLE, 1, chan, &dval,
                     nUpdatesTester, &count );
             SEVCHK ( status, NULL );
         }
         SEVCHK ( ca_flush_io (), NULL );
-        while ( count < 10000u ) {
-            epicsThreadSleep ( 0.1 );
-            ca_poll (); /* emulate typical GUI */
-        }
+        dval = 0.0;
+        status = ca_get ( DBR_DOUBLE, chan, &dval );
+        SEVCHK ( status, 
+            "verifyHighThroughputWriteCallback, verification get" );
+        status = ca_pend_io ( 10.0 );
+        SEVCHK ( status, 
+            "verifyHighThroughputWriteCallback, verification get pend" );
+        assert ( dval == i );
         showProgressEnd ( interestLevel );
     }
     else {
@@ -2653,7 +2658,7 @@ void verifyImmediateTearDown ( const char * pName,
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "immediate tear down channel get failed" );
             if ( currentValue != ( (i + 1) % 2 ) ) {
-                printf ( "currentValue = %i i = %i", currentValue, i );
+                printf ( "currentValue = %i, i = %i", currentValue, i );
                 assert ( currentValue == ( (i + 1) % 2 ) );
             }
         }

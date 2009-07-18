@@ -2658,7 +2658,7 @@ void verifyImmediateTearDown ( const char * pName,
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "immediate tear down channel get failed" );
             if ( currentValue != ( (i + 1) % 2 ) ) {
-                printf ( "currentValue = %i, i = %i", currentValue, i );
+                printf ( "currentValue = %i, i = %i\n", currentValue, i );
                 assert ( currentValue == ( (i + 1) % 2 ) );
             }
         }

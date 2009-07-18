@@ -1195,7 +1195,7 @@ void verifyHighThroughputWriteCallback ( chid chan, unsigned interestLevel )
         status = ca_get ( DBR_DOUBLE, chan, &dval );
         SEVCHK ( status, 
             "verifyHighThroughputWriteCallback, verification get" );
-        status = ca_pend_io ( 10.0 );
+        status = ca_pend_io ( timeoutToPendIO );
         SEVCHK ( status, 
             "verifyHighThroughputWriteCallback, verification get pend" );
         assert ( dval == i );
@@ -2089,7 +2089,7 @@ void clearChannelInGetCallbackTest ( const char *pName, unsigned level )
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInGetCallbackTest create channel" );
 
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInGetCallbackTest connect channel" );
     
     status = ca_get_callback ( DBR_DOUBLE, chan, callbackClearsChannel, 0 );
@@ -2120,7 +2120,7 @@ void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInPutCallbackTest create channel" );
 
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInPutCallbackTest connect channel" );
 
     status = ca_put_callback ( DBR_DOUBLE, chan, & value, 
@@ -2152,7 +2152,7 @@ void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
     status = ca_create_channel ( pName, 0, 0, 0, & chan );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest create channel" );
 
-    status = ca_pend_io ( 10.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "clearChannelInSubscrCallbackTest connect channel" );
                         
     status = ca_create_subscription ( DBR_DOUBLE, 1, chan, 
@@ -2803,7 +2803,7 @@ void verifyConnectWithDisconnectedChannels (
         assert ( status == ECA_NORMAL );
     }
 
-    status = ca_pend_io ( 1.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_TIMEOUT );
 
     /* wait a long time for the search interval to increase */
@@ -2821,7 +2821,7 @@ void verifyConnectWithDisconnectedChannels (
      * though there is one permanently 
      * diasconnected channel 
      */
-    status = ca_pend_io ( 1.0 );
+    status = ca_pend_io ( timeoutToPendIO );
     assert ( status == ECA_NORMAL );
 
     status = ca_clear_channel ( validChan );

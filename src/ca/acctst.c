@@ -2639,7 +2639,7 @@ void verifyImmediateTearDown ( const char * pName,
     for ( i = 0u; i < 100; i++ ) {
         chid chan;
         int status;
-        dbr_long_t value = i % 2;
+        dbr_long_t value = i % 8;
         ca_context_create ( select );
         ca_task_initialize ();
         status = ca_create_channel ( pName, 0, 0, 0, & chan );
@@ -2657,7 +2657,7 @@ void verifyImmediateTearDown ( const char * pName,
             SEVCHK ( status, "immediate tear down channel get failed" );
             status = ca_pend_io ( timeoutToPendIO );
             SEVCHK ( status, "immediate tear down channel get failed" );
-            if ( currentValue != ( (i + 1) % 2 ) ) {
+            if ( currentValue != ( (i + 1) % 8 ) ) {
                 printf ( "currentValue = %i, i = %i\n", currentValue, i );
                 assert ( currentValue == ( (i + 1) % 2 ) );
             }

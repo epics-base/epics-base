@@ -103,9 +103,11 @@ private:
         const caHdrLargeArray & msg,  const caStatus ECA_XXXX );
 	caStatus writeNotifyResponseECA_XXX ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray & msg, const caStatus status );
-    caStatus sendErrWithEpicsStatus (  epicsGuard < casClientMutex > &,
+    caStatus sendErrWithEpicsStatus ( epicsGuard < casClientMutex > &,
         const caHdrLargeArray * pMsg, ca_uint32_t cid, caStatus epicsStatus, 
         caStatus clientStatus );
+    caStatus writeActionSendFailureStatus ( epicsGuard < casClientMutex > &, 
+        const caHdrLargeArray &, ca_uint32_t cid, caStatus );
 
 	//
 	// one function for each CA request type that has

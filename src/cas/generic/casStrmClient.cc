@@ -888,6 +888,32 @@ caStatus casStrmClient::monitorResponse (
 }
 
 /*
+ * casStrmClient::writeActionSendFailureStatus()
+ */
+caStatus casStrmClient ::
+    writeActionSendFailureStatus ( epicsGuard < casClientMutex > & guard, 
+        const caHdrLargeArray & msg, ca_uint32_t cid, caStatus status )
+{	
+    caStatus ecaStatus;
+    if ( status == S_cas_noMemory ) {
+        ecaStatus = ECA_ALLOCMEM;
+    }
+    else if ( status == S_cas_noConvert ) {
+        ecaStatus = ECA_NOCONVERT;
+    }
+    else if ( status == S_cas_badType ) {
+        ecaStatus = ECA_BADTYPE;
+    }
+    else {
+        ecaStatus = ECA_PUTFAIL;
+    }
+	status = this->sendErrWithEpicsStatus ( guard, & msg, cid,
+                status, ecaStatus );
+    return status;
+}
+
+
+/*
  * casStrmClient::writeAction()
  */
 caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
@@ -906,6 +932,19 @@ caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 		    return this->sendErr ( guard, mp, invalidResID, 
                 status, "get request" );
         }
+	}
+	
+	// dont allow a request that completed with the service in the
+	// past, but was incomplete because no response was sent be
+	// executed twice with the service
+	if ( this->responseIsPending ) {
+        status = this->writeActionSendFailureStatus ( guard, *mp,
+                pChan->getCID(), this->pendingResponseStatus );
+		if ( status == S_cas_success ) {
+		    this->pendingResponseStatus = S_cas_success;
+		    this->responseIsPending = false;
+		}
+		return status;
 	}
 
 	//
@@ -937,24 +976,13 @@ caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 		pChan->getPVI().addItemToIOBLockedList ( *this );
 	}
 	else {
-        caStatus ecaStatus;
-        if ( status == S_cas_noMemory ) {
-            ecaStatus = ECA_ALLOCMEM;
-        }
-        else if ( status == S_cas_noConvert ) {
-            ecaStatus = ECA_NOCONVERT;
-        }
-        else if ( status == S_cas_badType ) {
-            ecaStatus = ECA_BADTYPE;
-        }
-        else {
-            ecaStatus = ECA_PUTFAIL;
-        }
-		status = this->sendErrWithEpicsStatus ( guard, mp, pChan->getCID(),
-                    status, ecaStatus );
-		//
-		// I have assumed that the server tool has deleted the gdd here
-		//
+	    int writeServiceStatus = status;
+        status = this->writeActionSendFailureStatus ( guard, *mp,
+                pChan->getCID(), writeServiceStatus );
+        if ( status != S_cas_success ) {
+            this->pendingResponseStatus = writeServiceStatus;
+		    this->responseIsPending = true;
+		}
 	}
 
 	//
@@ -1037,8 +1065,8 @@ caStatus casStrmClient::writeNotifyAction (
 	}
 	else {
 	    int writeNotifyServiceStatus = status;
-		status = this->writeNotifyResponse ( 
-		                    guard, *pChan, *mp, status );
+		status = this->writeNotifyResponse ( guard, *pChan, *mp, 
+		                            writeNotifyServiceStatus );
         if ( status != S_cas_success ) {
             this->pendingResponseStatus = writeNotifyServiceStatus;
 		    this->responseIsPending = true;

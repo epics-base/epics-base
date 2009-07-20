@@ -4,34 +4,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <title>Known Problems R3.14.10-RC1</title>
+  <title>Known Problems R3.14.11-RC1</title>
 </head>
 
 <body>
-<h1 style="text-align: center">EPICS Base R3.14.10: Known Problems</h1>
+<h1 style="text-align: center">EPICS Base R3.14.11: Known Problems</h1>
 
 <ul>
-  <li>Parallel make (<tt>make -j</tt>) does not work on cygwin-x86 targets,
-    probably due to a missing dependency in the EPICS build rules.</li>
-
-  <li>Some older Perl versions do not properly install the xsubpp program. This
-    will prevent the build in src/cap5 from completing &mdash; the build will
-    finish with an error like this:
-
-    <blockquote><pre>/bin/sh: /bin/xsubpp: not found
-make[3]: *** [Cap5.c] Error 1
-make[3]: Leaving directory `/home/phoebus3/ANJ/epics/base/3-14-dev/src/cap5/O.solaris-x86'
-make[2]: *** [install.solaris-x86] Error 2
-make[2]: Leaving directory `/home/phoebus3/ANJ/epics/base/3-14-dev/src/cap5'
-make[1]: *** [cap5.install] Error 2
-make[1]: Leaving directory `/home/phoebus3/ANJ/epics/base/3-14-dev/src'
-make: *** [src.install] Error 2</pre></blockquote>
-
-    As long as you don't intend to use the Perl5 CA interface this error is
-    harmless, as cap5 is the last directory to be compiled in Base. If you need
-    the Perl5 CA inteface, fix your Perl installation so that the perl binary
-    and the xsubpp program (or soft links to them) are both found in the same
-    directory.</li>
+  <li></li>
 
 </ul>
 

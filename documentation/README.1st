@@ -169,10 +169,10 @@ Software requirements
 
 Host system storage requirements
 
-    The GNU zipped tar file is approximately 1.4 MB in size. The unzipped 
-    untarred distribution source tree is approximately 7.3 MB. The build created
-    files for each host take approximately 40 MB and the build created files for
-    each target take approximately 10 MB.
+    The GNU zipped tar file is approximately 1.5 MB in size. The unzipped 
+    untarred distribution source tree is approximately 7.4 MB. The build created
+    files for each host take approximately 37 MB and the build created files for
+    each cross target take approximately 15 MB.
 
 Documentation
 

@@ -15,5 +15,8 @@
 
 # Location of external products
 EPICS_BASE=_EPICS_BASE_
-EPICS_EXTENSIONS = $(EPICS_BASE)/../extensions
+EPICS_EXTENSIONS = $(TOP)
+
+# OAG_APPS may be needed by extension SDDS 
+#OAG_APPS=$(TOP)/../../oag/apps
 

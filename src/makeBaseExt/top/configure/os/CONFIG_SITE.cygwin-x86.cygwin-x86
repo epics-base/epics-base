@@ -29,8 +29,8 @@ IDL = /usr/local/idl
 #  IDL=$(IDL)/external/rpc is the sun4 version
 IDLRPC = $(IDL)/external/rpc.solaris
 
-X11_LIB = d:/cygwin/usr/X11R6/lib
-X11_INC = d:/cygwin/usr/X11R6/include
+X11_LIB = c:/cygwin/lib
+X11_INC = c:/cygwin/include
 
 MOTIF_LIB = $(X11_LIB)
 MOTIF_INC = $(X11_INC)

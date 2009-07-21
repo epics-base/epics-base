@@ -11,8 +11,8 @@
 
 -include $(TOP)/configure/os/CONFIG_SITE.solaris-sparc.solaris-sparc
 
-XRTGRAPH_EXTENSIONS=
-XRTGRAPH=
+#XRTGRAPH_EXTENSIONS=
+#XRTGRAPH=
 SCIPLOT=YES
 
 X11_LIB = /usr/lib

@@ -12,7 +12,7 @@
 -include $(TOP)/configure/os/CONFIG_SITE.linux-x86.linux-x86
 
 X11_LIB=/usr/lib64
-X11_INC=/usr/include/X11
+X11_INC=/usr/include
 
 # OpenMotif location
 MOTIF_LIB=/usr/lib64

@@ -17,7 +17,7 @@ YACCOPT = -l -d
 
 SKELETON_FILE = include/flex.skel.static
 
-USR_CPPFLAGS = -DDEFAULT_SKELETON_FILE="\"$(SKELETON_FILE)\""
+USR_CPPFLAGS = -DDEFAULT_SKELETON_FILE=$(SKELETON_FILE)
 
 INC += flex.skel.static
 

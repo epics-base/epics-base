@@ -34,6 +34,8 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#define ENQUOTE(path) #path
+
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1990 The Regents of the University of California.\n\
@@ -294,7 +296,7 @@ void flexend(int status)
 	if ( usemecs )
 	    putc( 'm', stderr );
 
-	if ( strcmp( skelname, DEFAULT_SKELETON_FILE ) )
+	if ( strcmp( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) ) )
 	    fprintf( stderr, " -S%s", skelname );
 
 	putc( '\n', stderr );
@@ -557,7 +559,7 @@ get_next_arg: /* used by -C and -S flags in lieu of a "continue 2" control */
 	static char skeleton_name_storage[400];
 
 	skelname = skeleton_name_storage;
-	(void) strcpy( skelname, DEFAULT_SKELETON_FILE );
+	(void) strcpy( skelname, ENQUOTE(DEFAULT_SKELETON_FILE) );
 	}
 
     if ( ! use_stdout )

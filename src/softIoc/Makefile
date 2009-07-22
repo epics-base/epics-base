@@ -1,8 +1,6 @@
 ##########################################################################
 # Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
-# Copyright (c) 2003 The Regents of the University of California, as
-#     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution.
 ##########################################################################
@@ -18,7 +16,7 @@ softIoc_DBD += base.dbd
 softIoc_DBD += dlload.dbd
 softIoc_DBD += system.dbd
 
-ABS_INSTALL_DIR = $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+ABS_INSTALL_DIR = $(shell $(PERL) $(TOOLS)/fullPathName.pl -e $(INSTALL_LOCATION))
 USR_CXXFLAGS += -DEPICS_BASE=$(ABS_INSTALL_DIR)
 
 softIoc_SRCS += softIoc_registerRecordDeviceDriver.cpp

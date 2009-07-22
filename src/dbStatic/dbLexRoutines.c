@@ -872,10 +872,14 @@ static void dbBreakBody(void)
 	double slope =
 	  (paBrkInt[i+1].eng - paBrkInt[i].eng)/
 	  (paBrkInt[i+1].raw - paBrkInt[i].raw);
+	if (!dbBptNotMonotonic && slope == 0) {
+	    yyerrorAbort("breaktable slope is zero");
+	    return;
+	}
 	if (i == 0) {
 	    down = (slope < 0);
 	} else if (!dbBptNotMonotonic && down != (slope < 0)) {
-	    yyerrorAbort("breaktable: curve slope changes sign");
+	    yyerrorAbort("breaktable slope changes sign");
 	    return;
 	}
 	paBrkInt[i].slope = slope;

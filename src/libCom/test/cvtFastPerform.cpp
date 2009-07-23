@@ -51,7 +51,7 @@ void Test :: execute ()
     static const unsigned lowPrecision = 2;
     static const unsigned highPrecision = DBL_MANT_DIG;
     
-    for ( unsigned i = 0; i < 10; i++ ) {
+    for ( unsigned i = 0; i < 3; i++ ) {
         double mVal = rand ();
         mVal /= (RAND_MAX + 1);
         double fEVal = rand ();
@@ -60,6 +60,14 @@ void Test :: execute ()
         fEVal += DBL_MIN_EXP;
         int eVal = static_cast < int > ( fEVal + 0.5 );
         _srcVal = ldexp ( mVal, eVal );
+        for ( _prec = lowPrecision; 
+                        _prec <= highPrecision; _prec += 4u ) {
+            _measure ();
+        }
+        _srcVal = rand ();
+        _srcVal /= (RAND_MAX + 1);
+        _srcVal *= 10.0;
+        _srcVal -= 5.0;
         for ( _prec = lowPrecision; 
                         _prec <= highPrecision; _prec += 4u ) {
             _measure ();

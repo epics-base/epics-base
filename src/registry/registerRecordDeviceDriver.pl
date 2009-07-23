@@ -1,12 +1,11 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # registerRecordDeviceDriver 
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
@@ -152,7 +151,14 @@ if (@variables) {
 
 #Now actual registration code.
 
-print "int $subname(DBBASE *pbase)\n{\n";
+print << "END" ;
+int $subname(DBBASE *pbase)
+{
+    if (!pbase) {
+        printf("pdbbase is NULL; you must load a DBD file first.\\n");
+        return -1;
+    }
+END
 
 if($numberRecordType>0) {
     print "    registerRecordTypes(pbase, $numberRecordType, ",

@@ -59,7 +59,7 @@ static struct taskVar *taskVarHead;
 /*
  * Support for `once-only' execution
  */
-static int initialized;
+static int initialized = 0;
 static epicsMutexId onceMutex;
 
 /*

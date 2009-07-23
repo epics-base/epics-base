@@ -21,6 +21,8 @@
 #include <epicsStdlib.h>
 #include <limits.h>
 #include "epicsStdio.h"
+#include "cvtFast.h"
+
 #define epicsExportSharedSymbols
 #include "aitConvert.h"
 
@@ -69,7 +71,7 @@ bool putDoubleToString (
     const double in, const gddEnumStringTable * pEST, 
     char * pString, size_t strSize ) 
 {
-    if ( strSize == 0u ) {
+    if ( strSize <= 1u ) {
         return false;
     }
     if ( pEST && in >= 0 && in <= UINT_MAX ) {
@@ -79,11 +81,33 @@ bool putDoubleToString (
             return true;
         }
     }
+#if 1
+    bool cvtDoubleToStringInRange = 
+        ( in < 1.e4 && in > 1.e-4 ) ||
+        ( in > -1.e4 && in < -1.e-4 ) || 
+        in == 0.0;
+    // conservative
+    static const unsigned cvtDoubleToStringSizeMax = 15;
+    int nChar;
+    if ( cvtDoubleToStringInRange && 
+            strSize > cvtDoubleToStringSizeMax ) {
+        nChar = cvtDoubleToString ( in, pString, 4 );
+    }
+    else {
+	    nChar = epicsSnprintf ( 
+            pString, strSize-1, "%g", in );
+    }
+    if ( nChar < 1 ) {
+        return false;
+    }
+    assert ( nChar < strSize );
+#else
 	int nChar = epicsSnprintf ( 
         pString, strSize-1, "%g", in );
 	if ( nChar <= 0 ) {
         return false;
     }
+#endif
     size_t nCharU = static_cast < size_t > ( nChar );
 	nChar = epicsMin ( nCharU, strSize-1 ) + 1;
 	memset ( &pString[nChar], '\0', strSize - nChar );

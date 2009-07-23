@@ -165,6 +165,9 @@ fdmgrTest_SRCS += fdmgrTest.c
 fdmgrTest_LIBS += ca
 # FIXME: program never exits.
 
+TESTPROD_HOST += cvtFastPerform
+cvtFastPerform_SRCS += cvtFastPerform.cpp
+testHarness_SRCS += cvtFastPerform.cpp
 
 include $(TOP)/configure/RULES
 

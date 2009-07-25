@@ -230,11 +230,11 @@ outBufClient::flushCondition outBuf :: flush ()
     }
 
     bufSizeT nBytesSent;
-    epicsTime beg = epicsTime::getCurrent ();
+    //epicsTime beg = epicsTime::getCurrent ();
     outBufClient :: flushCondition cond = 
         this->client.xSend ( this->pBuf, this->stack, nBytesSent );
-    epicsTime end = epicsTime::getCurrent ();
-    printf ( "send of %u bytes, stat =%s, cost us %f u sec\n", 
+    //epicsTime end = epicsTime::getCurrent ();
+    //printf ( "send of %u bytes, stat =%s, cost us %f u sec\n", 
         this->stack, this->client.ppFlushCondText[cond], ( end - beg ) * 1e6 );
     if ( cond == outBufClient::flushProgress ) {
         if ( nBytesSent >= this->stack ) {
@@ -245,10 +245,10 @@ outBufClient::flushCondition outBuf :: flush ()
             //
             // memmove() is ok with overlapping buffers
             //
-            epicsTime beg = epicsTime::getCurrent ();
+            //epicsTime beg = epicsTime::getCurrent ();
             memmove ( this->pBuf, &this->pBuf[nBytesSent], len );
-            epicsTime end = epicsTime::getCurrent ();
-            printf ( "mem move cost us %f nano sec\n", ( end - beg ) * 1e9 );
+            //epicsTime end = epicsTime::getCurrent ();
+            //printf ( "mem move cost us %f nano sec\n", ( end - beg ) * 1e9 );
             this->stack = len;
         }
 

@@ -95,7 +95,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
     
 	/* cache the TCP send buffer size */
 	int size = MAX_TCP;
-	int n = sizeof ( size ) ;
+	osiSockLen_t n = sizeof ( size ) ;
 	status = getsockopt ( this->sock, SOL_SOCKET,
 			SO_SNDBUF, reinterpret_cast < char * > ( & size ), & n );
 	if ( status < 0 || n != sizeof ( size ) ) {

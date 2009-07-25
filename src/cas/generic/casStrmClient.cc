@@ -112,9 +112,9 @@ casStrmClient::~casStrmClient ()
 }
 
 //
-// casStrmClient::processMsg ()
+// casStrmClient :: processMsg ()
 //
-caStatus casStrmClient::processMsg ()
+caStatus casStrmClient :: processMsg ()
 {
     epicsGuard < casClientMutex > guard ( this->mutex );
 	int status = S_cas_success;
@@ -141,7 +141,7 @@ caStatus casStrmClient::processMsg ()
                 this->incommingBytesToDrain = 0u;
             }
         }
-
+        
 	    //
 	    // process any messages in the in buffer
 	    //
@@ -2330,60 +2330,20 @@ inline bool caServerI::roomForNewChannel() const
 //
 //  casStrmClient::xSend()
 //
-outBufClient::flushCondition casStrmClient::xSend ( char * pBufIn,
-                                             bufSizeT nBytesAvailableToSend,
-                                             bufSizeT nBytesNeedToBeSent,
-                                             bufSizeT & nActualBytes )
+outBufClient::flushCondition casStrmClient ::
+    xSend ( char * pBufIn, bufSizeT nBytesToSend, bufSizeT & nBytesSent )
 {
-    outBufClient::flushCondition stat = outBufClient::flushDisconnect;
-    bufSizeT nActualBytesDelta;
-    bufSizeT totalBytes;
-
-    assert ( nBytesAvailableToSend >= nBytesNeedToBeSent );
-	
-    totalBytes = 0u;
-    while ( true ) {
-        stat = this->osdSend ( &pBufIn[totalBytes],
-                              nBytesAvailableToSend-totalBytes, nActualBytesDelta );
-        if ( stat != outBufClient::flushProgress ) {
-            if ( totalBytes > 0 ) {
-                nActualBytes = totalBytes;
-		        //
-		        // !! this time fetch may be slowing things down !!
-		        //
-		        //this->lastSendTS = epicsTime::getCurrent();
-                stat = outBufClient::flushProgress;
-                break;
-            }
-            else {
-                break;
-            }
-        }
-		
-        totalBytes += nActualBytesDelta;
-		
-        if ( totalBytes >= nBytesNeedToBeSent ) {
-		    //
-		    // !! this time fetch may be slowing things down !!
-		    //
-		    //this->lastSendTS = epicsTime::getCurrent();
-            nActualBytes = totalBytes;
-            stat = outBufClient::flushProgress;
-            break;
-        }
-    }
-	return stat;
+    return this->osdSend ( pBufIn, nBytesToSend, nBytesSent );
 }
 
 //
 // casStrmClient::xRecv()
 //
-inBufClient::fillCondition casStrmClient::xRecv ( char * pBufIn, bufSizeT nBytes,
+inBufClient::fillCondition casStrmClient::xRecv ( char * pBufIn, bufSizeT nBytesToRecv,
                                  inBufClient::fillParameter, bufSizeT & nActualBytes )
 {
-	inBufClient::fillCondition stat;
-	
-	stat = this->osdRecv ( pBufIn, nBytes, nActualBytes );
+	inBufClient::fillCondition stat = 
+        this->osdRecv ( pBufIn, nBytesToRecv, nActualBytes );
     //
     // this is used to set the time stamp for write GDD's
     //
@@ -2515,7 +2475,7 @@ bufSizeT casStrmClient::inBufBytesAvailable () const
     return this->in.bytesAvailable ();
 }
 
-bufSizeT casStrmClient::outBufBytesPresent () const
+bufSizeT casStrmClient :: outBytesPresent () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->out.bytesPresent ();

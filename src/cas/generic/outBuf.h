@@ -47,12 +47,18 @@ private:
 
 class outBufClient {            // X aCC 655
 public:
-    enum flushCondition { flushNone, flushProgress, flushDisconnect };
+    enum flushCondition { 
+        flushNone = 0, 
+        flushProgress = 1, 
+        flushDisconnect = 2 
+    };
+    static const char * ppFlushCondText[3];
 	virtual unsigned getDebugLevel () const = 0;
 	virtual void sendBlockSignal () = 0;
-	virtual flushCondition xSend ( char *pBuf, bufSizeT nBytesAvailableToSend, 
-		bufSizeT nBytesNeedToBeSent, bufSizeT &nBytesSent ) = 0;
+	virtual flushCondition xSend ( char *pBuf, bufSizeT nBytesToSend, 
+		                            bufSizeT & nBytesSent ) = 0;
 	virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
+    virtual bufSizeT osSendBufferSize () const = 0;
 protected:
     virtual ~outBufClient() {}
 };
@@ -72,7 +78,7 @@ public:
 	// flush output queue
 	// (returns the number of bytes sent)
     //
-    outBufClient::flushCondition flush ( bufSizeT spaceRequired=bufSizeT_MAX );
+    outBufClient::flushCondition flush ();
 
 	void show (unsigned level) const;
 
@@ -128,13 +134,7 @@ private:
 //
 inline bufSizeT outBuf::bytesPresent () const
 {
-    //
-    // Note on use of lock here:
-    // This guarantees that any pushCtx() operation
-    // in progress completes before another thread checks.
-    //
-    bufSizeT result = this->stack;
-	return result;
+	return this->stack;
 }
 
 //

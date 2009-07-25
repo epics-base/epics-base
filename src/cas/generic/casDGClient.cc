@@ -408,18 +408,15 @@ void casDGClient::sendBeacon ( ca_uint32_t beaconNumber )
 //
 // casDGClient::xSend()
 //
-outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, // X aCC 361
-        bufSizeT nBytesAvailableToSend, bufSizeT nBytesNeedToBeSent,
-        bufSizeT &nBytesSent ) 
+outBufClient::flushCondition casDGClient::xSend ( char *pBufIn, 
+                        bufSizeT nBytesToSend, bufSizeT & nBytesSent ) 
 {
-    assert ( nBytesAvailableToSend >= nBytesNeedToBeSent );
-
     bufSizeT totalBytes = 0;
-    while ( totalBytes < nBytesNeedToBeSent ) {
+    while ( totalBytes < nBytesToSend ) {
         cadg *pHdr = reinterpret_cast < cadg * > ( & pBufIn[totalBytes] );
 
-        assert ( totalBytes <= bufSizeT_MAX-pHdr->cadg_nBytes );
-        assert ( totalBytes + pHdr->cadg_nBytes <= nBytesAvailableToSend );
+        assert ( totalBytes <= bufSizeT_MAX - pHdr->cadg_nBytes );
+        assert ( totalBytes + pHdr->cadg_nBytes <= nBytesToSend );
 
         char * pDG = reinterpret_cast < char * > ( pHdr + 1 );
         unsigned sizeDG = pHdr->cadg_nBytes - sizeof ( *pHdr );

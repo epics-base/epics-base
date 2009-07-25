@@ -46,12 +46,12 @@ public:
 	void userName ( char * pBuf, unsigned bufSize ) const;
 	ca_uint16_t protocolRevision () const;
     void sendVersion ();
+    bufSizeT outBytesPresent () const;
 protected:
 	caStatus processMsg ();
     bool inBufFull () const;
     bufSizeT inBufBytesAvailable () const;
     inBufClient::fillCondition inBufFill ();
-    bufSizeT outBufBytesPresent () const;
 private:
     char hostNameStr [32];
     inBuf in;
@@ -149,8 +149,8 @@ private:
 	caStatus writeScalarData();
 	caStatus writeString();
 
-    outBufClient::flushCondition xSend ( char * pBuf, bufSizeT nBytesAvailableToSend,
-			bufSizeT nBytesNeedToBeSent, bufSizeT & nBytesSent );
+    outBufClient::flushCondition xSend ( char * pBuf, bufSizeT nBytesToSend,
+			                                bufSizeT & nBytesSent );
     inBufClient::fillCondition xRecv ( char * pBuf, bufSizeT nBytesToRecv,
 			inBufClient::fillParameter parm, bufSizeT & nByesRecv );
 

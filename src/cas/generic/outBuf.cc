@@ -15,10 +15,18 @@
  */
 
 #include "errlog.h"
+#include "epicsTime.h"
 
 #define epicsExportSharedSymbols
 #include "outBuf.h" 
 #include "osiWireFormat.h"
+
+const char * outBufClient :: ppFlushCondText[3] = 
+{
+    "flushNone",
+    "flushProgress",
+    "flushDisconnect"
+};
 
 //
 // outBuf::outBuf()
@@ -62,11 +70,10 @@ caStatus outBuf::allocRawMsg ( bufSizeT msgsize, void **ppMsg )
     stackNeeded = this->bufSize - msgsize;
 
     if ( this->stack > stackNeeded ) {
-		
         //
         // Try to flush the output queue
         //
-        this->flush ( this->stack - stackNeeded );
+        this->flush ();
 
         //
         // If this failed then the fd is nonblocking 
@@ -216,45 +223,32 @@ void outBuf::commitMsg ( ca_uint32_t reducedPayloadSize )
 //
 // outBuf::flush ()
 //
-outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
+outBufClient::flushCondition outBuf :: flush ()
 {
-    bufSizeT nBytes;
-    bufSizeT nBytesRequired;
-    outBufClient::flushCondition cond;
-
     if ( this->ctxRecursCount > 0 ) {
         return outBufClient::flushNone;
     }
 
-    if ( spaceRequired > this->bufSize ) {
-        nBytesRequired = this->stack;
-    }
-    else {
-        bufSizeT stackPermitted;
-
-        stackPermitted = this->bufSize - spaceRequired;
-        if ( this->stack > stackPermitted ) {
-            nBytesRequired = this->stack - stackPermitted;
-        }
-        else {
-            nBytesRequired = 0u;
-        }
-    }
-
-    cond = this->client.xSend ( this->pBuf, this->stack, 
-                                nBytesRequired, nBytes );
+    bufSizeT nBytesSent;
+    epicsTime beg = epicsTime::getCurrent ();
+    outBufClient :: flushCondition cond = 
+        this->client.xSend ( this->pBuf, this->stack, nBytesSent );
+    epicsTime end = epicsTime::getCurrent ();
+    printf ( "send of %u bytes, stat =%s, cost us %f u sec\n", 
+        this->stack, this->client.ppFlushCondText[cond], ( end - beg ) * 1e6 );
     if ( cond == outBufClient::flushProgress ) {
-        bufSizeT len;
-
-        if ( nBytes >= this->stack ) {
+        if ( nBytesSent >= this->stack ) {
             this->stack = 0u;	
         }
         else {
-            len = this->stack-nBytes;
+            bufSizeT len = this->stack - nBytesSent;
             //
             // memmove() is ok with overlapping buffers
             //
-            memmove ( this->pBuf, &this->pBuf[nBytes], len );
+            epicsTime beg = epicsTime::getCurrent ();
+            memmove ( this->pBuf, &this->pBuf[nBytesSent], len );
+            epicsTime end = epicsTime::getCurrent ();
+            printf ( "mem move cost us %f nano sec\n", ( end - beg ) * 1e9 );
             this->stack = len;
         }
 
@@ -262,7 +256,7 @@ outBufClient::flushCondition outBuf::flush ( bufSizeT spaceRequired )
             char buf[64];
             this->client.hostName ( buf, sizeof ( buf ) );
             fprintf ( stderr, "CAS outgoing: %u byte reply to %s\n",
-                           nBytes, buf );
+                           nBytesSent, buf );
         }
     }
     return cond;

@@ -68,11 +68,13 @@ public:
 	void show ( unsigned level ) const;
 	casProcCond processInput ();
 	void eventFlush ();
+    void printStatus ( const char * pCtx ) const;
 private:
 	casStreamEvWakeup evWk;
 	casStreamIOWakeup ioWk;
 	class casStreamWriteReg * pWtReg;
 	class casStreamReadReg * pRdReg;
+	bufSizeT _sendBacklogThresh;
 	bool sendBlocked;
 	void armSend ();
 	void armRecv ();
@@ -83,6 +85,7 @@ private:
 	void sendBlockSignal ();
 	void ioBlockedSignal ();
 	void eventSignal ();
+    bool _sendNeeded () const;
 	casStreamOS ( const casStreamOS & );
 	casStreamOS & operator = ( const casStreamOS & );
     friend class casStreamWriteReg;

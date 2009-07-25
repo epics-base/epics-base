@@ -235,7 +235,7 @@ outBufClient::flushCondition outBuf :: flush ()
         this->client.xSend ( this->pBuf, this->stack, nBytesSent );
     //epicsTime end = epicsTime::getCurrent ();
     //printf ( "send of %u bytes, stat =%s, cost us %f u sec\n", 
-        this->stack, this->client.ppFlushCondText[cond], ( end - beg ) * 1e6 );
+    //    this->stack, this->client.ppFlushCondText[cond], ( end - beg ) * 1e6 );
     if ( cond == outBufClient::flushProgress ) {
         if ( nBytesSent >= this->stack ) {
             this->stack = 0u;	

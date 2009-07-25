@@ -236,4 +236,3 @@ caNetAddr casIntfIO::serverAddress () const
 {
     return caNetAddr (this->addr);
 }
-

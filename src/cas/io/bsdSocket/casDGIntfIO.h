@@ -39,10 +39,10 @@ public:
         inBufClient::fillParameter parm, bufSizeT & nBytesActual, caNetAddr & addr );
 	virtual void show ( unsigned level ) const;
 
-	static bufSizeT optimumOutBufferSize ();
 	static bufSizeT optimumInBufferSize ();
 
     bufSizeT incomingBytesPresent () const;
+    bufSizeT osSendBufferSize () const ;
 
 private:
     tsFreeList < ipIgnoreEntry, 128 > ipIgnoreEntryFreeList;

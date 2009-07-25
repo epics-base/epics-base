@@ -31,16 +31,16 @@ public:
 	void xSetNonBlocking ();
     const caNetAddr getAddr() const;
 	void hostName ( char *pBuf, unsigned bufSize ) const;
-
+	bufSizeT incomingBytesPresent () const;
+	bufSizeT osSendBufferSize () const;
 private:
 	SOCKET sock;
 	struct sockaddr_in addr;
+	bufSizeT _osSendBufferSize;
 	xBlockingStatus blockingFlag;
 
     bool sockHasBeenShutdown;
 	xBlockingStatus blockingState() const;
-	bufSizeT incomingBytesPresent() const;
-	static bufSizeT optimumBufferSize ();
 	void osdShow ( unsigned level ) const;
 	outBufClient::flushCondition osdSend ( const char *pBuf, bufSizeT nBytesReq, 
 		bufSizeT & nBytesActual );

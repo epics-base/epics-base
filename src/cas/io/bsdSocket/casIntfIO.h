@@ -53,7 +53,7 @@ public:
         clientBufMemoryManager & ) const;
 
     caNetAddr serverAddress () const;
-
+    
 private:
 	SOCKET sock;
 	struct sockaddr_in addr;

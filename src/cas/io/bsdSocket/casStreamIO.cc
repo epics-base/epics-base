@@ -19,7 +19,8 @@
 casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
                           const ioArgsToNewStreamIO & args ) :
 	casStrmClient ( cas, bufMgr ), sock ( args.sock ), addr (  args.addr), 
-        blockingFlag ( xIsBlocking ), sockHasBeenShutdown ( false )
+        _osSendBufferSize ( MAX_TCP ), blockingFlag ( xIsBlocking ), 
+        sockHasBeenShutdown ( false )
  {
 	assert ( sock >= 0 );
 	int yes = true;
@@ -91,7 +92,19 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 	    throw S_cas_internal;
 	}
 #endif
-
+    
+	/* cache the TCP send buffer size */
+	int size = MAX_TCP;
+	int n = sizeof ( size ) ;
+	status = getsockopt ( this->sock, SOL_SOCKET,
+			SO_SNDBUF, reinterpret_cast < char * > ( & size ), & n );
+	if ( status < 0 || n != sizeof ( size ) ) {
+		size = MAX_TCP;
+	}
+	if ( size <= MAX_TCP ) {
+		size = MAX_TCP;
+	}
+	_osSendBufferSize = static_cast < bufSizeT > ( size );
 }
 
 // casStreamIO::~casStreamIO()
@@ -255,8 +268,9 @@ xBlockingStatus casStreamIO::blockingState() const
 	return this->blockingFlag;
 }
 
-// casStreamIO::incomingBytesPresent()
-bufSizeT casStreamIO::incomingBytesPresent () const // X aCC 361
+
+// casStreamIO :: incomingBytesPresent()
+bufSizeT casStreamIO :: incomingBytesPresent () const 
 {
     int status;
     osiSockIoctl_t nchars = 0;
@@ -293,32 +307,10 @@ void casStreamIO::hostName ( char * pInBuf, unsigned bufSizeIn ) const
 	ipAddrToA ( & this->addr, pInBuf, bufSizeIn );
 }
 
-// casStreamIO:::optimumBufferSize()
-bufSizeT casStreamIO::optimumBufferSize () 
+// casStreamIO :: osSendBufferSize ()
+bufSizeT casStreamIO :: osSendBufferSize () const 
 {
-
-#if 0
-	int n;
-	int size;
-	int status;
-
-	/* fetch the TCP send buffer size */
-	n = sizeof ( size) ;
-	status = getsockopt ( this->sock, SOL_SOCKET,
-			SO_SNDBUF, (char *) & size, & n );
-	if ( status < 0 || n != sizeof ( size ) ) {
-		size = 0x400;
-	}
-
-	if (size<=0) {
-		size = 0x400;
-	}
-printf("the tcp buf size is %d\n", size);
-	return (bufSizeT) size;
-#else
-// this needs to be MAX_TCP (until we fix the array problem)
-	return (bufSizeT) MAX_TCP; // X aCC 392
-#endif
+    return _osSendBufferSize;
 }
 
 // casStreamIO::getFD()

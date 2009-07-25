@@ -500,38 +500,21 @@ bufSizeT casDGIntfIO::optimumInBufferSize ()
 #endif
 }
 
-bufSizeT casDGIntfIO::optimumOutBufferSize () 
+bufSizeT casDGIntfIO :: 
+    osSendBufferSize () const 
 {
-    
-#if 1
-    //
-    // must update client before the message size can be
-    // increased here
-    //
-    return MAX_UDP_SEND;
-#else
-    int n;
-    int size;
-    int status;
-    
-
     /* fetch the TCP send buffer size */
-    n = sizeof(size);
-    status = getsockopt(
-        this->sock,
-        SOL_SOCKET,
-        SO_SNDBUF,
-        (char *)&size,
-        &n);
-    if(status < 0 || n != sizeof(size)){
+    int size = MAX_UDP_SEND;
+    int n = sizeof ( size );
+    int status = getsockopt( this->sock, SOL_SOCKET, SO_SNDBUF,
+                    reinterpret_cast < char * > ( & size ), & n );
+    if ( status < 0 || n != sizeof(size) ) {
         size = MAX_UDP_SEND;
     }
-    
-    if (size<=0) {
+    if ( size <= MAX_UDP_SEND ) {
         size = MAX_UDP_SEND;
     }
-    return (bufSizeT) size;
-#endif
+    return static_cast < bufSizeT > ( size );
 }
 
 SOCKET casDGIntfIO::makeSockDG ()

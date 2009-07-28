@@ -70,16 +70,16 @@
 #include "asDbLib.h"
 #include "iocInit.h"
 #include "iocsh.h"
+#include "epicsInstallDir.h"
 
 extern "C" int softIoc_registerRecordDeviceDriver(struct dbBase *pdbbase);
 
-#define QUOTE(x) #x
-#define DBD_FILE(top) QUOTE(top) "/dbd/softIoc.dbd"
-#define EXIT_FILE(top) QUOTE(top) "/db/softIocExit.db"
+#define DBD_FILE EPICS_BASE "/dbd/softIoc.dbd"
+#define EXIT_FILE EPICS_BASE "/db/softIocExit.db"
 
 const char *arg0;
-const char *base_dbd = DBD_FILE(EPICS_BASE);
-const char *exit_db = EXIT_FILE(EPICS_BASE);
+const char *base_dbd = DBD_FILE;
+const char *exit_db = EXIT_FILE;
 
 
 static void exitSubroutine(subRecord *precord) {

@@ -146,7 +146,7 @@ static long process(subRecord *prec)
     if (!pact && prec->pact) return 0;
     prec->pact = TRUE;
 
-    /* Old async signal, deprecated */
+    /* Asynchronous function (documented API!) */
     if (status == 1) return 0;
 
     recGblGetTimeStamp(prec);

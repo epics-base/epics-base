@@ -11,6 +11,7 @@
 #include "epicsTime.h"
 #include "testMain.h"
 
+using namespace std;
 
 typedef void ( * PTestFunc ) ( const double &, char * pBug, size_t bufSize );
 

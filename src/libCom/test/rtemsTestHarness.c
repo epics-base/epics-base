@@ -6,11 +6,13 @@
 \*************************************************************************/
 
 #include "epicsExit.h"
+#include "epicsGeneralTime.h"
 
 int
 main(int argc, char **argv)
 {
     extern void epicsRunLibComTests(void);
+    generalTimeReport(1);
     epicsRunLibComTests();
     epicsExit(0);
     return 0;

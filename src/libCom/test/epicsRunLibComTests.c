@@ -36,6 +36,7 @@ int ringPointerTest(void);
 int ringBytesTest(void);
 int blockingSockTest(void);
 int taskwdTest(void);
+int cvtFastPerform(void);
 int epicsExitTest(void);
 
 void epicsRunLibComTests(void)
@@ -89,6 +90,8 @@ void epicsRunLibComTests(void)
     runTest(blockingSockTest);
 
     runTest(taskwdTest);
+
+    runTest(cvtFastPerform);
 
     /*
      * Exit must come last as it never returns

@@ -9,6 +9,7 @@
 #include "epicsStdio.h"
 #include "cvtFast.h"
 #include "epicsTime.h"
+#include "testMain.h"
 
 
 typedef void ( * PTestFunc ) ( const double &, char * pBug, size_t bufSize );
@@ -129,7 +130,7 @@ void TestSNPrintf :: _target ()
                 static_cast < int > ( _prec ), _srcVal );
 }
 
-int main ()
+MAIN(cvtFastPerform)
 {
     TestCvtFastDouble testCvtFastDouble;
     TestSNPrintf testSNPrintf;

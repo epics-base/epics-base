@@ -19,9 +19,13 @@
  *                         RTEMS CONFIGURATION                         *
  ***********************************************************************
  */
-
-#define CONFIGURE_UNIFIED_WORK_AREAS
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+
+#if __RTEMS_MAJOR__>4 || ( __RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9 )
+#  define CONFIGURE_UNIFIED_WORK_AREAS
+#else
+#  define CONFIGURE_EXECUTIVE_RAM_SIZE (2000*1024)
+#endif
 
 #define CONFIGURE_MAXIMUM_TASKS             rtems_resource_unlimited(30)
 #define CONFIGURE_MAXIMUM_SEMAPHORES        rtems_resource_unlimited(500)

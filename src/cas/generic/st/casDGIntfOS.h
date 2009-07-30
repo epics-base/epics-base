@@ -23,26 +23,21 @@ class casDGIntfOS : public casDGIntfIO {
     friend class casDGReadReg;
     friend class casDGBCastReadReg;
     friend class casDGWriteReg;
+    friend class casDGEvWakeup;
+    friend class casDGIOWakeup;
+    friend class casStreamEvWakeup;
 public:
     casDGIntfOS ( caServerI &, clientBufMemoryManager &,
         const caNetAddr & addr, bool autoBeaconAddr = true, 
         bool addConfigBeaconAddr = false);
-
 	virtual ~casDGIntfOS ();
-
 	virtual void show (unsigned level) const;
-
-    void processInput();
-
-	void eventFlush ();
-
 private:
     casDGIOWakeup ioWk;
     casDGEvWakeup evWk;
 	class casDGReadReg * pRdReg;
 	class casDGBCastReadReg * pBCastRdReg; // fix for solaris bug
 	class casDGWriteReg * pWtReg;
-	bool sendBlocked;
 
     void armRecv ();
     void armSend ();

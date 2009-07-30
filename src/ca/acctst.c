@@ -2138,7 +2138,6 @@ void clearChannelInPutCallbackTest ( const char *pName, unsigned level )
 void clearChannelInSubscrCallbackTest ( const char *pName, unsigned level )
 {
     unsigned i;
-    const dbr_double_t value = 1.1;
     chid chan;
     int status;
     
@@ -2798,12 +2797,12 @@ void verifyConnectWithDisconnectedChannels (
 
     for ( i= 0u; i < NELEMENTS ( bogusChan ); i++ ) {
         char buf[256];
-        sprintf ( buf, "aChannelThatShouldNeverNeverNeverExit%u", i );
+        sprintf ( buf, "aChannelThatShouldNeverNeverNeverExist%u", i );
         status = ca_create_channel ( buf, 0, 0, 0, & bogusChan[i] );
         assert ( status == ECA_NORMAL );
     }
 
-    status = ca_pend_io ( timeoutToPendIO );
+    status = ca_pend_io ( 0.001 );
     assert ( status == ECA_TIMEOUT );
 
     /* wait a long time for the search interval to increase */

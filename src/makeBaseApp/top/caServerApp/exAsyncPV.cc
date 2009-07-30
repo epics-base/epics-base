@@ -23,13 +23,14 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 {
 	exAsyncReadIO	*pIO;
 	
-	if (this->simultAsychIOCount>=maxSimultAsyncIO) {
+	if ( this->simultAsychIOCount >= this->cas.maxSimultAsyncIO () ) {
 		return S_casApp_postponeAsyncIO;
 	}
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncReadIO ( this->cas, ctx, *this, valueIn );
+	pIO = new exAsyncReadIO ( this->cas, ctx, 
+	                *this, valueIn, this->asyncDelay );
 	if (!pIO) {
 		return S_casApp_noMemory;
 	}
@@ -45,13 +46,14 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 {
 	exAsyncWriteIO *pIO;
 	
-	if ( this->simultAsychIOCount >= maxSimultAsyncIO ) {
+	if ( this->simultAsychIOCount >= this->cas.maxSimultAsyncIO() ) {
 		return S_casApp_postponeAsyncIO;
 	}
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncWriteIO ( this->cas, ctx, *this, valueIn );
+	pIO = new exAsyncWriteIO ( this->cas, ctx, *this, 
+	                    valueIn, this->asyncDelay );
 	if ( ! pIO ) {
 		return S_casApp_noMemory;
 	}
@@ -63,11 +65,12 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 // exAsyncWriteIO::exAsyncWriteIO()
 //
 exAsyncWriteIO::exAsyncWriteIO ( exServer & cas,
-        const casCtx & ctxIn, exAsyncPV & pvIn, const gdd & valueIn ) :
+        const casCtx & ctxIn, exAsyncPV & pvIn, 
+        const gdd & valueIn, double asyncDelay ) :
 	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
         timer ( cas.createTimer () ), pValue(valueIn)
 {
-    this->timer.start ( *this, 0.1 );
+    this->timer.start ( *this, asyncDelay );
 }
 
 //
@@ -101,11 +104,12 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* cur
 // exAsyncReadIO::exAsyncReadIO()
 //
 exAsyncReadIO::exAsyncReadIO ( exServer & cas, const casCtx & ctxIn, 
-                              exAsyncPV & pvIn, gdd & protoIn ) :
+                              exAsyncPV & pvIn, gdd & protoIn,
+                              double asyncDelay ) :
 	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
         timer ( cas.createTimer() ), pProto ( protoIn )
 {
-    this->timer.start ( *this, 0.1 );
+    this->timer.start ( *this, asyncDelay );
 }
 
 //

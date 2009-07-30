@@ -51,8 +51,6 @@
 #   define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))
 #endif
 
-#define maxSimultAsyncIO 1000u
-
 //
 // info about all pv in this server
 //
@@ -62,28 +60,27 @@ class exPV;
 class exServer;
 
 //
-// pvInfo
-//
+// pvInfo 
+// 
 class pvInfo {
-public:
-    pvInfo ( double scanPeriodIn, const char *pNameIn, 
-            aitFloat32 hoprIn, aitFloat32 loprIn,
-            aitEnum typeIn, excasIoType ioTypeIn, 
-            unsigned countIn );
-    pvInfo ( const pvInfo & copyIn );
+public: 
+        
+    pvInfo ( double scanPeriodIn, const  char * pNameIn, 
+        aitFloat32  hoprIn, aitFloat32  loprIn,  aitEnum typeIn,  
+        excasIoType ioTypeIn, unsigned  countIn );
+    pvInfo (  const pvInfo  & copyIn  );
     ~pvInfo ();
-    double getScanPeriod () const;
-    const char *getName () const;
-    double getHopr () const;
-    double getLopr () const;
-    aitEnum getType () const;
-    excasIoType getIOType () const;
-    unsigned getElementCount () const;
-    void unlinkPV ();
-    exPV *createPV ( exServer & exCAS, 
-        bool preCreateFlag, bool scanOn );
+    double getScanPeriod () const; 
+    const  char * getName () 
+    const; double  getHopr () const; 
+    double getLopr () const; 
+    aitEnum getType () const; 
+    excasIoType  getIOType () const; 
+    unsigned getElementCount () const; 
+    void unlinkPV (); 
+    exPV *createPV  ( exServer &  exCAS, bool  preCreateFlag, 
+        bool  scanOn, double  asyncDelay ); 
     void deletePV ();
-
 private:
     const double scanPeriod;
     const char * pName;
@@ -277,7 +274,8 @@ class exServer : private caServer {
 public:
     exServer ( const char * const pvPrefix, 
         unsigned aliasCount, bool scanOn,
-        bool asyncScan );
+        bool asyncScan, double asyncDelay,
+        unsigned maxSimultAsyncIO );
     ~exServer ();
     void show ( unsigned level ) const;
     void removeIO ();
@@ -287,11 +285,15 @@ public:
 	void setDebugLevel ( unsigned level );
 
     void destroyAllPV ();
+    
+    unsigned maxSimultAsyncIO () const;
 
 private:
     resTable < pvEntry, stringId > stringResTbl;
     epicsTimerQueueActive * pTimerQueue;
     unsigned simultAsychIOCount;
+    const unsigned _maxSimultAsyncIO;
+    double asyncDelay;
     bool scanOn;
 
     void installAliasName ( pvInfo & info, const char * pAliasName );
@@ -310,12 +312,13 @@ private:
     //
     static pvInfo pvList[];
     static const unsigned pvListNElem;
-
+    
     //
     // on-the-fly PVs 
     //
     static pvInfo bill;
     static pvInfo billy;
+    static pvInfo bloater;
     static pvInfo bloaty;
     static pvInfo boot;
     static pvInfo booty;
@@ -327,11 +330,12 @@ private:
 class exAsyncPV : public exScalarPV {
 public:
     exAsyncPV ( exServer & cas, pvInfo &setup, 
-        bool preCreateFlag, bool scanOnIn );
+        bool preCreateFlag, bool scanOnIn, double asyncDelay );
     caStatus read ( const casCtx & ctxIn, gdd & protoIn );
     caStatus write ( const casCtx & ctxIn, const gdd & value );
     void removeIO();
 private:
+    double asyncDelay;
     unsigned simultAsychIOCount;
     exAsyncPV & operator = ( const exAsyncPV & );
     exAsyncPV ( const exAsyncPV & );
@@ -357,7 +361,8 @@ private:
 //
 class exAsyncWriteIO : public casAsyncWriteIO, public epicsTimerNotify {
 public:
-    exAsyncWriteIO ( exServer &, const casCtx & ctxIn, exAsyncPV &, const gdd & );
+    exAsyncWriteIO ( exServer &, const casCtx & ctxIn, 
+            exAsyncPV &, const gdd &, double asyncDelay );
     ~exAsyncWriteIO ();
 private:
     exAsyncPV & pv;
@@ -373,7 +378,8 @@ private:
 //
 class exAsyncReadIO : public casAsyncReadIO, public epicsTimerNotify {
 public:
-    exAsyncReadIO ( exServer &, const casCtx &, exAsyncPV &, gdd & );
+    exAsyncReadIO ( exServer &, const casCtx &, 
+            exAsyncPV &, gdd &, double asyncDelay );
     virtual ~exAsyncReadIO ();
 private:
     exAsyncPV & pv;
@@ -410,12 +416,13 @@ private:
 class exAsyncCreateIO : public casAsyncPVAttachIO, public epicsTimerNotify {
 public:
     exAsyncCreateIO ( pvInfo & pviIn, exServer & casIn, 
-        const casCtx & ctxIn, bool scanOnIn );
+        const casCtx & ctxIn, bool scanOnIn, double asyncDelay );
     virtual ~exAsyncCreateIO ();
 private:
     pvInfo & pvi;
     epicsTimer & timer;
     exServer & cas;
+    double asyncDelay;
     bool scanOn;
     expireStatus expire ( const epicsTime & currentTime );
     exAsyncCreateIO & operator = ( const exAsyncCreateIO & );
@@ -566,10 +573,17 @@ inline void exServer::removeIO()
     }
 }
 
+inline unsigned exServer :: maxSimultAsyncIO () const
+{
+    return this->_maxSimultAsyncIO;
+}
+
 inline exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup, 
-                             bool preCreateFlag, bool scanOnIn ) :
+                             bool preCreateFlag, bool scanOnIn,
+                             double asyncDelayIn ) :
+    asyncDelay ( asyncDelayIn ),
     exScalarPV ( cas, setup, preCreateFlag, scanOnIn ),
-    simultAsychIOCount ( 0u ) 
+    simultAsychIOCount ( 0u )
 {
 }
 

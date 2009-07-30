@@ -41,7 +41,7 @@ public:
 
 	static bufSizeT optimumInBufferSize ();
 
-    bufSizeT incomingBytesPresent () const;
+    bufSizeT dgInBytesPending () const;
     bufSizeT osSendBufferSize () const ;
 
 private:

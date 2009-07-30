@@ -394,13 +394,14 @@ casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
         return outBufClient::flushNone;
     }
 }
-
-bufSizeT casDGIntfIO::incomingBytesPresent () const // X aCC 361
+    
+bufSizeT casDGIntfIO ::
+    dgInBytesPending () const 
 {
 	int status;
 	osiSockIoctl_t nchars = 0;
 
-	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); // X aCC 392
+	status = socket_ioctl ( this->sock, FIONREAD, & nchars ); 
 	if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

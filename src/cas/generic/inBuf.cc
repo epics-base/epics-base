@@ -51,12 +51,12 @@ inBuf::~inBuf ()
 //
 // inBuf::show()
 //
-void inBuf::show (unsigned level) const
+void inBuf :: show (unsigned level) const
 {
     if ( level > 1u ) {
         printf (
             "\tUnprocessed request bytes = %d\n",
-            this->bytesAvailable());
+            this->bytesPresent () );
     }
 }
 
@@ -73,8 +73,9 @@ inBufClient::fillCondition inBuf::fill ( inBufClient::fillParameter parm )
 	// move back any prexisting data to the start of the buffer
 	//
 	if ( this->nextReadIndex > 0 ) {
-		bufSizeT unprocessedBytes;
-		unprocessedBytes = this->bytesInBuffer - this->nextReadIndex;
+		assert ( this->bytesInBuffer >= this->nextReadIndex );
+		bufSizeT unprocessedBytes = 
+		    this->bytesInBuffer - this->nextReadIndex;
 		//
 		// memmove() handles overlapping buffers
 		//

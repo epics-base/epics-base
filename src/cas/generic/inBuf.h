@@ -51,7 +51,6 @@ public:
     // this is a hack for a Solaris IP kernel feature
     enum fillParameter { fpNone, fpUseBroadcastInterface };
     virtual unsigned getDebugLevel () const = 0;
-    virtual bufSizeT incomingBytesPresent () const = 0;
     virtual fillCondition xRecv ( char *pBuf, bufSizeT nBytesToRecv, 
         enum fillParameter parm, bufSizeT &nByesRecv ) = 0;
     virtual void hostName ( char *pBuf, unsigned bufSize ) const = 0;
@@ -66,7 +65,6 @@ public:
         bufSizeT ioMinSizeIn );
     virtual ~inBuf ();
     bufSizeT bytesPresent () const;
-    bufSizeT bytesAvailable () const;
     bool full () const;
     inBufClient::fillCondition fill ( 
         inBufClient::fillParameter parm = inBufClient::fpNone );  
@@ -105,17 +103,6 @@ private:
 inline bufSizeT inBuf::bytesPresent () const 
 {
 	return this->bytesInBuffer - this->nextReadIndex;
-}
-
-//
-// inBuf::bytesAvailable()
-//
-inline bufSizeT inBuf::bytesAvailable () const 
-{
-	bufSizeT bp;
-	bp = this->bytesPresent ();
-	bp += this->client.incomingBytesPresent ();
-	return bp;
 }
 
 //

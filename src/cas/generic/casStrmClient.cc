@@ -131,7 +131,7 @@ caStatus casStrmClient :: processMsg ()
         // drain message that does not fit
         if ( this->incommingBytesToDrain ) {
             unsigned bytesLeft = this->in.bytesPresent();
-            if ( bytesLeft  < this->incommingBytesToDrain ) {
+            if ( bytesLeft < this->incommingBytesToDrain ) {
                 this->in.removeMsg ( bytesLeft );
                 this->incommingBytesToDrain -= bytesLeft;
                 return S_cas_success;
@@ -158,6 +158,7 @@ caStatus casStrmClient :: processMsg ()
 	            //
                 caHdr smallHdr;
                 if ( bytesLeft < sizeof ( smallHdr ) ) {
+                    status = S_cas_success;
                     break;
                 }
 
@@ -173,6 +174,7 @@ caStatus casStrmClient :: processMsg ()
                     ca_uint32_t LWA[2];
                     hdrSize = sizeof ( smallHdr ) + sizeof ( LWA );
                     if ( bytesLeft < hdrSize ) {
+                        status = S_cas_success;
                         break;
                     }
                     //
@@ -195,7 +197,7 @@ caStatus casStrmClient :: processMsg ()
                 if ( payloadSize & 0x7 ) {
                     caServerI::dumpMsg ( this->pHostName, this->pUserName, & msgTmp, 0, 
                         "CAS: Stream request wasn't 8 byte aligned\n" );
-                    status = this->sendErr ( guard, & msgTmp, invalidResID, ECA_INTERNAL, 
+                    this->sendErr ( guard, & msgTmp, invalidResID, ECA_INTERNAL, 
                         "Stream request wasn't 8 byte aligned" );
                     status = S_cas_internal;
                     break;
@@ -203,6 +205,7 @@ caStatus casStrmClient :: processMsg ()
 
                 msgSize = hdrSize + payloadSize;
                 if ( bytesLeft < msgSize ) {
+                    status = S_cas_success;
                     if ( msgSize > this->in.bufferSize() ) {
                         this->in.expandBuffer ();
                         // msg to large - set up message drain
@@ -212,8 +215,10 @@ caStatus casStrmClient :: processMsg ()
                                 "memory in server or EPICS_CA_MAX_ARRAY_BYTES\n" );
                             status = this->sendErr ( guard, & msgTmp, invalidResID, ECA_TOLARGE, 
                                 "client's request didnt fit within the CA server's message buffer" );
-                            this->in.removeMsg ( bytesLeft );
-                            this->incommingBytesToDrain = msgSize - bytesLeft;
+                            if ( status == S_cas_success ) {
+                                this->in.removeMsg ( bytesLeft );
+                                this->incommingBytesToDrain = msgSize - bytesLeft;
+                            }
                         }
                     }
                     break;
@@ -253,14 +258,14 @@ caStatus casStrmClient :: processMsg ()
 	    }
     }
     catch ( std::bad_alloc & ) {
-        status = this->sendErr ( guard,
+        this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_ALLOCMEM, 
             "inablility to allocate memory in "
             "the CA server - disconnected client" );
         status = S_cas_noMemory;
     }
     catch ( std::exception & except ) {
-		status = this->sendErr ( guard,
+		this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "C++ exception \"%s\" in server - "
             "disconnected client",
@@ -268,7 +273,7 @@ caStatus casStrmClient :: processMsg ()
         status = S_cas_internal;
     }
     catch ( ... ) {
-		status = this->sendErr ( guard,
+		this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "unexpected C++ exception in server "
             "diconnected client" );
@@ -2468,14 +2473,16 @@ inBufClient::fillCondition casStrmClient::inBufFill ()
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->in.fill ();
 }
-
-bufSizeT casStrmClient::inBufBytesAvailable () const
+    
+bufSizeT casStrmClient :: 
+    inBufBytesPending () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    return this->in.bytesAvailable ();
+    return this->in.bytesPresent ();
 }
 
-bufSizeT casStrmClient :: outBytesPresent () const
+bufSizeT casStrmClient :: 
+    outBufBytesPending () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->out.bytesPresent ();

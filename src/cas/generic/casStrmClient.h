@@ -46,12 +46,12 @@ public:
 	void userName ( char * pBuf, unsigned bufSize ) const;
 	ca_uint16_t protocolRevision () const;
     void sendVersion ();
-    bufSizeT outBytesPresent () const;
 protected:
 	caStatus processMsg ();
     bool inBufFull () const;
-    bufSizeT inBufBytesAvailable () const;
     inBufClient::fillCondition inBufFill ();
+    bufSizeT inBufBytesPending () const;
+    bufSizeT outBufBytesPending () const;
 private:
     char hostNameStr [32];
     inBuf in;

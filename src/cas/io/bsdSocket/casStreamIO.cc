@@ -267,15 +267,14 @@ xBlockingStatus casStreamIO::blockingState() const
 {
 	return this->blockingFlag;
 }
-
-
-// casStreamIO :: incomingBytesPresent()
-bufSizeT casStreamIO :: incomingBytesPresent () const 
+	
+// casStreamIO :: inCircuitBytesPending()
+bufSizeT casStreamIO :: inCircuitBytesPending () const 
 {
     int status;
     osiSockIoctl_t nchars = 0;
     
-    status = socket_ioctl ( this->sock, FIONREAD, &nchars ); // X aCC 392
+    status = socket_ioctl ( this->sock, FIONREAD, &nchars ); 
     if ( status < 0 ) {
         int localError = SOCKERRNO;
         if (

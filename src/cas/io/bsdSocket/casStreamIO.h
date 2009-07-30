@@ -31,7 +31,7 @@ public:
 	void xSetNonBlocking ();
     const caNetAddr getAddr() const;
 	void hostName ( char *pBuf, unsigned bufSize ) const;
-	bufSizeT incomingBytesPresent () const;
+	bufSizeT inCircuitBytesPending () const;
 	bufSizeT osSendBufferSize () const;
 private:
 	SOCKET sock;

@@ -48,12 +48,12 @@ public:
     caStatus sendErr ( const caHdrLargeArray * curp, 
         ca_uint32_t cid, const int reportedStatus, 
         const char *pformat, ... );
-protected:
     caStatus processDG ();
+protected:
     bool inBufFull () const;
     void inBufFill ( inBufClient::fillParameter );
-    bufSizeT inBufBytesAvailable () const;
-    bufSizeT outBufBytesPresent () const;
+    bufSizeT inBufBytesPending () const;
+    bufSizeT outBufBytesPending () const;
     outBufClient::flushCondition flush ();
 private:
     inBuf in;

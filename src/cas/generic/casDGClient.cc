@@ -707,13 +707,15 @@ void casDGClient::inBufFill ( inBufClient::fillParameter parm )
     this->in.fill ( parm );
 }
 
-bufSizeT casDGClient::inBufBytesAvailable () const
+bufSizeT casDGClient ::
+    inBufBytesPending () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    return this->in.bytesAvailable ();
+    return this->in.bytesPresent ();
 }
 
-bufSizeT casDGClient::outBufBytesPresent () const
+bufSizeT casDGClient ::
+    outBufBytesPending () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->out.bytesPresent ();

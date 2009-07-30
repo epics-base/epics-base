@@ -21,7 +21,6 @@
 // 1) This library is not thread safe
 //
 
-#undef FD_SETSIZE
 #define FD_SETSIZE 4096
 
 //
@@ -51,15 +50,15 @@ const unsigned uSecPerSec = 1000u * mSecPerSec;
 //
 epicsShareFunc fdManager::fdManager () : 
     sleepQuantum ( epicsThreadSleepQuantum () ), 
-        fdSetsPtr ( new fd_set [fdrNEnums+1] ),
+        fdSetsPtr ( new fd_set [fdrNEnums] ),
         pTimerQueue ( 0 ), maxFD ( 0 ), processInProg ( false ), 
         pCBReg ( 0 )
 {
     int status = osiSockAttach ();
     assert (status);
 
-    for ( size_t i = 0u; i <= fdrNEnums; i++ ) {
-        FD_ZERO ( &fdSetsPtr[i] ); // X aCC 392
+    for ( size_t i = 0u; i < fdrNEnums; i++ ) {
+        FD_ZERO ( &fdSetsPtr[i] ); 
     }
 }
 
@@ -124,8 +123,10 @@ epicsShareFunc void fdManager::process (double delay)
         tv.tv_sec = static_cast<long> ( minDelay );
         tv.tv_usec = static_cast<long> ( (minDelay-tv.tv_sec) * uSecPerSec );
 
-        int status = select (this->maxFD, &this->fdSetsPtr[fdrRead], 
-            &this->fdSetsPtr[fdrWrite], &this->fdSetsPtr[fdrException], &tv);
+        fd_set * pReadSet = & this->fdSetsPtr[fdrRead];
+        fd_set * pWriteSet = & this->fdSetsPtr[fdrWrite];
+        fd_set * pExceptSet = & this->fdSetsPtr[fdrException];
+        int status = select (this->maxFD, pReadSet, pWriteSet, pExceptSet, &tv);
 
         this->pTimerQueue->process(epicsTime::getCurrent());
 
@@ -135,16 +136,17 @@ epicsShareFunc void fdManager::process (double delay)
             // Look for activity
             //
             iter=this->regList.firstIter ();
-            while ( iter.valid () ) {
-                tsDLIter<fdReg> tmp = iter;
+            while ( iter.valid () && status > 0 ) {
+                tsDLIter < fdReg > tmp = iter;
                 tmp++;
                 if (FD_ISSET(iter->getFD(), &this->fdSetsPtr[iter->getType()])) {
                     FD_CLR(iter->getFD(), &this->fdSetsPtr[iter->getType()]);
                     this->regList.remove(*iter);
                     this->activeList.add(*iter);
                     iter->state = fdReg::active;
+                    status--;
                 }
-                iter=tmp;
+                iter = tmp;
             }
 
             //
@@ -182,6 +184,12 @@ epicsShareFunc void fdManager::process (double delay)
         }
         else if ( status < 0 ) {
             int errnoCpy = SOCKERRNO;
+            
+            // dont depend on flags being properly set if 
+            // an error is retuned from select
+            for ( size_t i = 0u; i < fdrNEnums; i++ ) {
+                FD_ZERO ( &fdSetsPtr[i] );
+            }
 
             //
             // print a message if its an unexpected error

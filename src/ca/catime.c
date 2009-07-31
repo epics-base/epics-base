@@ -407,7 +407,7 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
 /*
  * printSearchStat()
  */
-static void printSearchStat ( const ti  *pi, unsigned iterations )
+static void printSearchStat ( const ti * pi, unsigned iterations )
 {
     unsigned i;
     double  X = 0u;
@@ -556,7 +556,7 @@ int catime ( const char * channelName,
 
     printf ( "channel connect test\n" );
     timeIt ( test_search, pItemList, channelCount, nBytesSent, nBytesRecv );
-    printSearchStat ( pItemList, channelCount, nBytesSent, nBytesRecv );
+    printSearchStat ( pItemList, channelCount );
     
     for ( i = 0; i < channelCount; i++ ) {
         size_t count = ca_element_count ( pItemList[i].chix );
@@ -567,7 +567,7 @@ int catime ( const char * channelName,
     }
 
     printf (
-        "channel name=%s, native type=%d, native count=%lu\n",
+        "channel name=%s, native type=%d, native count=%u\n",
         ca_name (pItemList[0].chix),
         ca_field_type (pItemList[0].chix),
         pItemList[0].count );

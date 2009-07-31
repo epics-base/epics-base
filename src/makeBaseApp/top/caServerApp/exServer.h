@@ -581,8 +581,8 @@ inline unsigned exServer :: maxSimultAsyncIO () const
 inline exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup, 
                              bool preCreateFlag, bool scanOnIn,
                              double asyncDelayIn ) :
-    asyncDelay ( asyncDelayIn ),
     exScalarPV ( cas, setup, preCreateFlag, scanOnIn ),
+    asyncDelay ( asyncDelayIn ),
     simultAsychIOCount ( 0u )
 {
 }

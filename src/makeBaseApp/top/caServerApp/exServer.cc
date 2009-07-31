@@ -401,7 +401,7 @@ exAsyncCreateIO ::
     const casCtx &ctxIn, bool scanOnIn, double asyncDelayIn ) :
     casAsyncPVAttachIO ( ctxIn ), pvi ( pviIn ), 
         timer ( casIn.createTimer () ), 
-        cas ( casIn ), scanOn ( scanOnIn ), asyncDelay ( asyncDelayIn ) 
+        cas ( casIn ), asyncDelay ( asyncDelayIn ), scanOn ( scanOnIn )
 {
     this->timer.start ( *this, 0.00001 );
 }

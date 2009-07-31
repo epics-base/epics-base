@@ -476,11 +476,29 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
  */
 static void test ( ti *pItems, unsigned iterations )
 {
+    unsigned payloadSize, dblPayloadSize;
     unsigned nBytesSent, nBytesRecv;
 
+    payloadSize =     
+        dbr_size_n ( pItems[0].type, pItems[0].count );
+    payloadSize = CA_MESSAGE_ALIGN ( payloadSize );
+
+    dblPayloadSize = dbr_size [ DBR_DOUBLE ];
+    dblPayloadSize = CA_MESSAGE_ALIGN ( dblPayloadSize );
+    
+    if ( payloadSize > dblPayloadSize ) {
+        unsigned factor = payloadSize / dblPayloadSize;
+        while ( factor ) {
+            if ( iterations > 10 * factor ) {
+                iterations /= factor;
+                break;
+            }
+            factor /= 2;
+        }
+    }
+
     printf ( "\t### async put test ###\n");
-    nBytesSent = sizeof ( caHdr ) + 
-        CA_MESSAGE_ALIGN( dbr_size[pItems[0].type]*pItems[0].count );
+    nBytesSent = sizeof ( caHdr ) + CA_MESSAGE_ALIGN( payloadSize );
     nBytesRecv = 0u;
     timeIt ( test_put, pItems, iterations, 
         nBytesSent * iterations, 
@@ -488,19 +506,23 @@ static void test ( ti *pItems, unsigned iterations )
 
     printf ( "\t### async get test ###\n");
     nBytesSent = sizeof ( caHdr );
-    nBytesRecv = sizeof ( caHdr ) + 
-        CA_MESSAGE_ALIGN ( dbr_size[pItems[0].type]*pItems[0].count );
-    timeIt ( test_get, pItems, iterations/2, 
-        nBytesSent * ( iterations / 2 ), 
-        nBytesRecv * ( iterations / 2 ) );
+    nBytesRecv = sizeof ( caHdr ) + CA_MESSAGE_ALIGN ( payloadSize );
+    timeIt ( test_get, pItems, iterations, 
+        nBytesSent * ( iterations ), 
+        nBytesRecv * ( iterations ) );
 
     printf ("\t### synch get test ###\n");
     nBytesSent = sizeof ( caHdr );
-    nBytesRecv = sizeof ( caHdr ) + 
-        CA_MESSAGE_ALIGN ( dbr_size[pItems[0].type]*pItems[0].count );
-    timeIt ( test_wait, pItems, iterations/100, 
-        nBytesSent * ( iterations / 100 ),
-        nBytesRecv * ( iterations / 100 ) );
+    nBytesRecv = sizeof ( caHdr ) + CA_MESSAGE_ALIGN ( payloadSize );
+    if ( iterations > 100 ) {
+        iterations /= 100;
+    }
+    else if ( iterations > 10 ) {
+        iterations /= 10;
+    }
+    timeIt ( test_wait, pItems, iterations, 
+        nBytesSent * iterations,
+        nBytesRecv * iterations );
 }
 
 /*
@@ -514,7 +536,7 @@ int catime ( const char * channelName,
     unsigned strsize;
     unsigned nBytesSent, nBytesRecv;
     ti *pItemList;
-
+    
     if ( channelCount == 0 ) {
         printf ( "channel count was zero\n" );
         return 0;
@@ -605,6 +627,7 @@ int catime ( const char * channelName,
     printf ( "---------------\n" );
     test ( pItemList, channelCount );
 
+    
     for ( i = 0; i < channelCount; i++ ) {
         dbr_string_t * pStrVal = ( dbr_string_t * ) pItemList[i].pValue;
         double val = i;

@@ -12,7 +12,6 @@
 // $Id$
 //
 
-
 #include "fdManager.h"
 #include "errlog.h"
 
@@ -27,7 +26,6 @@ public:
 	casDGReadReg ( casDGIntfOS & osIn ) :
 		fdReg (osIn.getFD(), fdrRead), os (osIn) {}
 	~casDGReadReg ();
-
 	void show (unsigned level) const;
 private:
 	casDGIntfOS &os;
@@ -81,8 +79,7 @@ casDGIntfOS::casDGIntfOS (
             autoBeaconAddr, addConfigBeaconAddr ),
 	pRdReg ( 0 ),
     pBCastRdReg ( 0 ),
-    pWtReg ( 0 ),
-    sendBlocked ( false )
+    pWtReg ( 0 )
 {
 	this->xSetNonBlocking();
     this->armRecv();
@@ -142,7 +139,17 @@ epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & /* curr
 {
     casEventSys::processStatus ps = this->pOS->eventSysProcess ();
     if ( ps.nAccepted > 0u ) {
-        this->pOS->eventFlush ();
+        // We do not wait for any impartial, or complete, 
+        // messages in the input queue to be processed
+        // because.
+        // A) IO postponement might be preventing the 
+        // input queue processing from proceeding.
+        // B) Since both reads and events get processed
+        // before going back to select to find out if we
+        // can do a write then we naturally tend to
+        // combine get responses and subscription responses
+        // into one write.
+        this->pOS->armSend ();
     }
     this->pOS = 0;
     return noRestart;
@@ -168,21 +175,23 @@ casDGIOWakeup::~casDGIOWakeup()
 // casDGIOWakeup::expire()
 //
 // Running this indirectly off of the timer queue
-// guarantees that we will not call processInput()
+// guarantees that we will not call processDG()
 // recursively
 //
-epicsTimerNotify::expireStatus casDGIOWakeup::expire( const epicsTime & /* currentTime */ )
+epicsTimerNotify :: expireStatus 
+    casDGIOWakeup :: expire( const epicsTime & /* currentTime */ )
 {
-	//
-	// in case there is something in the input buffer
-	// and currently nothing to be read from UDP 
-	//
-	// processInput() does an armRecv() so
-	// if recv is not armed, there is space in
-	// the input buffer, and there eventually will
-	// be something to read from TCP this works
-	//
-	this->pOS->processInput ();
+	caStatus status = this->pOS->processDG ();
+	if ( status != S_cas_success &&
+		 status != S_cas_sendBlocked &&
+		 status != S_casApp_postponeAsyncIO ) {
+        char pName[64u];
+        this->pOS->hostName (pName, sizeof (pName));
+		errPrintf (status, __FILE__, __LINE__,
+	        "unexpected problem with UDP input from \"%s\"", pName);
+	}
+    this->pOS->armRecv ();
+    this->pOS->armSend ();
     this->pOS = 0;
     return noRestart;
 }
@@ -243,7 +252,7 @@ void casDGIntfOS::disarmRecv()
 //
 void casDGIntfOS::armSend()
 {
-	if ( this->outBufBytesPresent () == 0u ) {
+	if ( this->outBufBytesPending () == 0u ) {
 		return;
 	}
 
@@ -275,20 +284,6 @@ void casDGIntfOS::ioBlockedSignal()
 void casDGIntfOS::eventSignal()
 {
     this->evWk.start ( *this );
-}
-
-//
-// casDGIntfOS::eventFlush()
-//
-void casDGIntfOS::eventFlush()
-{
-	//
-	// if there is nothing pending in the input
-	// queue, then flush the output queue
-	//
-	if ( this->inBufBytesAvailable() == 0u ) {
-		this->armSend ();
-	}
 }
 
 //
@@ -396,7 +391,6 @@ void casDGWriteReg::show(unsigned level) const
 //
 void casDGIntfOS::sendBlockSignal()
 {
-	this->sendBlocked = true;
 	this->armSend();
 }
 
@@ -412,47 +406,54 @@ void casDGIntfOS::sendCB()
 	// attempt to flush the output buffer 
 	//
 	outBufClient::flushCondition flushCond = this->flush ();
-	if ( flushCond != flushProgress ) {
-        return;
-	}
+	if ( flushCond == flushProgress ) {
+	    //
+	    // If we are unable to flush out all of the events 
+	    // in casDgEvWakeup::expire() because the
+	    // client is slow then we must check again here when
+	    // we _are_ able to write to see if additional events 
+	    // can be sent to the slow client.
+	    //
+        this->eventSysProcess ();
 
-	if ( this->sendBlocked ) {
-		this->sendBlocked = false;
-	}
+	    //
+	    // If we were able to send something then we need
+	    // to process the input queue in case we were send
+	    // blocked.
+	    //
+	    caStatus status = this->processDG ();
+	    if (    status != S_cas_success && 
+                status != S_cas_sendBlocked &&
+                status != S_casApp_postponeAsyncIO ) {
+            char pName[64u];
+            this->hostName (pName, sizeof (pName));
+		    errPrintf (status, __FILE__, __LINE__,
+	            "unexpected problem with UDP input from \"%s\"", pName);
+	    }
+    }
 
 #	if defined(DEBUG)
-		printf ("write attempted on %d result was %d\n", this->getFD(), flushCond);
+		printf ("write attempted on %d result was %d\n", this->getFD(), flushCond );
 		printf ("Recv backlog %u\n", this->inBuf::bytesPresent());
 		printf ("Send backlog %u\n", this->outBuf::bytesPresent());
 #	endif
 
-	//
-	// If we are unable to flush out all of the events 
-	// in casDgEvWakeup::expire() because the
-	// client is slow then we must check again here when
-	// we _are_ able to write to see if additional events 
-	// can be sent to the slow client.
-	//
-    this->eventSysProcess ();
-
-	//
-	// If we were able to send something then we need
-	// to process the input queue in case we were send
-	// blocked.
-	//
-	this->processInput ();
-
     //
     // this reenables receipt of incoming frames once
-    // the output has been flushed 
+    // the output has been flushed in case the receive
+    // side is blocked due to lack of buffer space
     //
     this->armRecv ();
+
+
+    // once we start sending we continue until done
+    this->armSend ();
 }
 
 //
 // casDGIntfOS::recvCB()
 //
-void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
+void casDGIntfOS :: recvCB ( inBufClient::fillParameter parm )
 {	
 	assert ( this->pRdReg );
 
@@ -460,7 +461,17 @@ void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
     // copy in new messages 
     //
     this->inBufFill ( parm );
-    this->processInput ();
+	caStatus status = this->processDG ();
+	if ( status != S_cas_success &&
+		 status != S_cas_sendBlocked &&
+		 status != S_casApp_postponeAsyncIO ) {
+        char pName[64u];
+        this->hostName (pName, sizeof (pName));
+		errPrintf (status, __FILE__, __LINE__,
+	        "unexpected problem with UDP input from \"%s\"", pName);
+	}
+
+    this->armSend ();
 
 	//
 	// If there isnt any space then temporarily 
@@ -474,41 +485,6 @@ void casDGIntfOS::recvCB ( inBufClient::fillParameter parm )
 	//
 	if ( this->inBufFull() ) {
 		this->disarmRecv(); // this deletes the casDGReadReg object
-	}
-}
-
-//
-// casDGIntfOS::processInput()
-//
-void casDGIntfOS::processInput()
-{
-	caStatus status;
-
-    //
-    // attempt to process the datagram in the input
-    // buffer
-    //
-	status = this->processDG ();
-	if (status!=S_cas_success &&
-		status!=S_cas_sendBlocked &&
-		status!=S_casApp_postponeAsyncIO) {
-        char pName[64u];
-
-        this->hostName (pName, sizeof (pName));
-		errPrintf (status, __FILE__, __LINE__,
-	        "unexpected problem with UDP input from \"%s\"", pName);
-	}
-
-	//
-	// if anything is in the send buffer
-	// and there are not requests pending in the 
-    // input buffer then keep sending the output 
-    // buffer until it is empty
-	//
-    if ( this->outBufBytesPresent() > 0u ) {
-        if ( this->inBufBytesAvailable () == 0 ) {
-            this->armSend ();
-        }
 	}
 }
 

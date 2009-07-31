@@ -397,11 +397,12 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
     stdDev = sqrt ( XX/iterations - mean*mean );
     printf ( 
         "Get Latency - "
-        "mean = %3.1f sec, "
-        "std dev = %3.1f sec, "
-        "min = %3.1f sec "
-        "max = %3.1f sec\n",
-        mean, stdDev, min, max );
+        "mean = %3.1f uS, "
+        "std dev = %3.1f uS, "
+        "min = %3.1f uS "
+        "max = %3.1f uS\n",
+        mean * 1e6, stdDev * 1e6, 
+        min * 1e6, max * 1e6 );
 }
 
 /*
@@ -435,7 +436,7 @@ static void printSearchStat ( const ti * pi, unsigned iterations )
         "Search tries per chan - "
         "mean = %3.1f "
         "std dev = %3.1f "
-        "min = 3.1%f "
+        "min = %3.1f "
         "max = %3.1f\n",
         mean, stdDev, min, max);
 }
@@ -600,7 +601,7 @@ int catime ( const char * channelName,
         }
         pItemList[i].type = DBR_DOUBLE; 
     }
-    printf ( "DBR_DOUBLE test\n" );
+    printf ( "DBR_DOUBLE Test\n" );
     printf ( "---------------\n" );
     test ( pItemList, channelCount );
 
@@ -630,8 +631,8 @@ int catime ( const char * channelName,
     printf ( "------------\n" );
     test ( pItemList, channelCount );
 
-    printf ( "Round Trip LAtency Test\n" );
-    printf ( "-----------------------\n" );
+    printf ( "Get Latency Test\n" );
+    printf ( "----------------\n" );
     for ( i = 0; i < channelCount; i++ ) {
         dbr_double_t * pDblVal = ( dbr_double_t * ) pItemList[i].pValue;
         for ( j = 0; j < pItemList[i].count; j++ ) {

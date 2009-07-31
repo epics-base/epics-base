@@ -396,7 +396,7 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
     mean = X/iterations;
     stdDev = sqrt ( XX/iterations - mean*mean );
     printf ( 
-        "Round trip get delays - "
+        "Get Latency - "
         "mean = %3.1f sec, "
         "std dev = %3.1f sec, "
         "min = %3.1f sec "
@@ -451,9 +451,9 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
     double              delay;
     unsigned            inlineIter;
 
-    epicsTimeGetCurrent (&start_time);
+    epicsTimeGetCurrent ( &start_time );
     (*pfunc) ( pItems, iterations, &inlineIter );
-    epicsTimeGetCurrent (&end_time);
+    epicsTimeGetCurrent ( &end_time );
     delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
     if ( delay > 0.0 ) {
         double freq = ( iterations * inlineIter ) / delay;
@@ -477,25 +477,26 @@ static void test ( ti *pItems, unsigned iterations )
 {
     unsigned nBytesSent, nBytesRecv;
 
-    printf ( "\tasync put test\n");
+    printf ( "\t### async put test ###\n");
     nBytesSent = sizeof ( caHdr ) + 
-        OCT_ROUND( dbr_size[pItems[0].type]*pItems[0].count );
+        CA_MESSAGE_ALIGN( dbr_size[pItems[0].type]*pItems[0].count );
     nBytesRecv = 0u;
     timeIt ( test_put, pItems, iterations, 
-        nBytesSent * iterations, nBytesRecv * iterations );
+        nBytesSent * iterations, 
+        nBytesRecv * iterations );
 
-    printf ( "\tasync get test\n");
+    printf ( "\t### async get test ###\n");
     nBytesSent = sizeof ( caHdr );
     nBytesRecv = sizeof ( caHdr ) + 
-        OCT_ROUND ( dbr_size[pItems[0].type]*pItems[0].count );
+        CA_MESSAGE_ALIGN ( dbr_size[pItems[0].type]*pItems[0].count );
     timeIt ( test_get, pItems, iterations/2, 
         nBytesSent * ( iterations / 2 ), 
         nBytesRecv * ( iterations / 2 ) );
 
-    printf ("\tsynch get test\n");
+    printf ("\t### synch get test ###\n");
     nBytesSent = sizeof ( caHdr );
     nBytesRecv = sizeof ( caHdr ) + 
-        OCT_ROUND ( dbr_size[pItems[0].type]*pItems[0].count );
+        CA_MESSAGE_ALIGN ( dbr_size[pItems[0].type]*pItems[0].count );
     timeIt ( test_wait, pItems, iterations/100, 
         nBytesSent * ( iterations / 100 ),
         nBytesRecv * ( iterations / 100 ) );
@@ -549,12 +550,13 @@ int catime ( const char * channelName,
         pItemList[i].name[strsize]= '\0';
         pItemList[i].count = 0;
         pItemList[i].pValue = 0;
-        nBytesSent += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) 
+        nBytesSent += 2 * ( CA_MESSAGE_ALIGN ( strlen ( pItemList[i].name ) ) 
                             + sizeof (caHdr) );
         nBytesRecv += 2 * sizeof (caHdr);
     }
 
-    printf ( "channel connect test\n" );
+    printf ( "Channel Connect Test\n" );
+    printf ( "--------------------\n" );
     timeIt ( test_search, pItemList, channelCount, nBytesSent, nBytesRecv );
     printSearchStat ( pItemList, channelCount );
     
@@ -572,7 +574,8 @@ int catime ( const char * channelName,
         ca_field_type (pItemList[0].chix),
         pItemList[0].count );
 
-    printf ("\tpend event test\n");
+    printf ("Pend Event Test\n");
+    printf ( "----------------\n" );
     timeIt ( test_pend, NULL, 100, 0, 0 );
 
     for ( i = 0; i < channelCount; i++ ) {
@@ -584,7 +587,8 @@ int catime ( const char * channelName,
         }
         pItemList[i].type = DBR_FLOAT; 
     }
-    printf ( "float test\n" );
+    printf ( "DBR_FLOAT Test\n" );
+    printf ( "--------------\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
@@ -596,7 +600,8 @@ int catime ( const char * channelName,
         }
         pItemList[i].type = DBR_DOUBLE; 
     }
-    printf ( "double test\n" );
+    printf ( "DBR_DOUBLE test\n" );
+    printf ( "---------------\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
@@ -608,7 +613,8 @@ int catime ( const char * channelName,
         }
         pItemList[i].type = DBR_STRING; 
     }
-    printf ( "string test\n" );
+    printf ( "DBR_STRING Test\n" );
+    printf ( "---------------\n" );
     test ( pItemList, channelCount );
 
     for ( i = 0; i < channelCount; i++ ) {
@@ -620,10 +626,12 @@ int catime ( const char * channelName,
         }
         pItemList[i].type = DBR_INT; 
     }
-    printf ( "integer test\n" );
+    printf ( "DBR_INT Test\n" );
+    printf ( "------------\n" );
     test ( pItemList, channelCount );
 
-    printf ( "round trip jitter test\n" );
+    printf ( "Round Trip LAtency Test\n" );
+    printf ( "-----------------------\n" );
     for ( i = 0; i < channelCount; i++ ) {
         dbr_double_t * pDblVal = ( dbr_double_t * ) pItemList[i].pValue;
         for ( j = 0; j < pItemList[i].count; j++ ) {
@@ -633,7 +641,8 @@ int catime ( const char * channelName,
     }   
     measure_get_latency ( pItemList, channelCount );
 
-    printf ("free test\n");
+    printf ( "Free Channel Test\n" );
+    printf ( "-----------------\n" );
     timeIt ( test_free, pItemList, channelCount, 0, 0 );
 
     SEVCHK ( ca_task_exit (), "Unable to free resources at exit" );

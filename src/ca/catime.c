@@ -395,7 +395,12 @@ static void measure_get_latency (ti *pItems, unsigned iterations)
 
     mean = X/iterations;
     stdDev = sqrt ( XX/iterations - mean*mean );
-    printf ( "Round trip get delays - mean=%f sec, std dev=%f sec, min=%f sec max=%f sec\n",
+    printf ( 
+        "Round trip get delays - "
+        "mean = %3.1f sec, "
+        "std dev = %3.1f sec, "
+        "min = %3.1f sec "
+        "max = %3.1f sec\n",
         mean, stdDev, min, max );
 }
 
@@ -426,14 +431,20 @@ static void printSearchStat ( const ti  *pi, unsigned iterations )
 
     mean = X / iterations;
     stdDev = sqrt( XX / iterations - mean * mean );
-    printf ( "Search tries per chan - mean=%f std dev=%f min=%f max=%f\n",
+    printf ( 
+        "Search tries per chan - "
+        "mean = %3.1f "
+        "std dev = %3.1f "
+        "min = 3.1%f "
+        "max = %3.1f\n",
         mean, stdDev, min, max);
 }
 
 /*
  * timeIt ()
  */
-void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
+void timeIt ( tf *pfunc, ti *pItems, unsigned iterations,
+    unsigned nBytesSent, unsigned nBytesRecv )
 {
     epicsTimeStamp      end_time;
     epicsTimeStamp      start_time;
@@ -441,24 +452,21 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
     unsigned            inlineIter;
 
     epicsTimeGetCurrent (&start_time);
-    (*pfunc) (pItems, iterations, &inlineIter);
+    (*pfunc) ( pItems, iterations, &inlineIter );
     epicsTimeGetCurrent (&end_time);
-    delay = epicsTimeDiffInSeconds (&end_time, &start_time);
-    if (delay>0.0) {
+    delay = epicsTimeDiffInSeconds ( &end_time, &start_time );
+    if ( delay > 0.0 ) {
         double freq = ( iterations * inlineIter ) / delay;
-        printf ( "Elapsed Per Item = %12.8f sec, %10.1f Items per sec", 
-            1.0 / freq, freq );
+        printf ( "Per Op, %8.4f uS ( %8.4f MHz )", 
+            1e6 / freq, freq / 1e6 );
         if ( pItems != NULL ) {
-            printf(", %3.1f Mbps\n", 
-                (inlineIter*nBytes*CHAR_BIT)/(delay*1e6));
+            printf(", %8.4f snd Mbps, %8.4f rcv Mbps\n", 
+                (inlineIter*nBytesSent*CHAR_BIT)/(delay*1e6),
+                (inlineIter*nBytesRecv*CHAR_BIT)/(delay*1e6) );
         }
         else {
             printf ("\n");
         }
-    }
-    else {
-        printf ("Elapsed Per Item = %12.8f sec\n", 
-            delay/(iterations*inlineIter));
     }
 }
 
@@ -467,22 +475,30 @@ void timeIt ( tf *pfunc, ti *pItems, unsigned iterations, unsigned nBytes )
  */
 static void test ( ti *pItems, unsigned iterations )
 {
-    unsigned nBytes;
+    unsigned nBytesSent, nBytesRecv;
 
     printf ( "\tasync put test\n");
-    nBytes = sizeof ( caHdr ) + 
+    nBytesSent = sizeof ( caHdr ) + 
         OCT_ROUND( dbr_size[pItems[0].type]*pItems[0].count );
-    timeIt ( test_put, pItems, iterations, nBytes * iterations );
+    nBytesRecv = 0u;
+    timeIt ( test_put, pItems, iterations, 
+        nBytesSent * iterations, nBytesRecv * iterations );
 
     printf ( "\tasync get test\n");
-    nBytes = 2 * sizeof ( caHdr ) + 
+    nBytesSent = sizeof ( caHdr );
+    nBytesRecv = sizeof ( caHdr ) + 
         OCT_ROUND ( dbr_size[pItems[0].type]*pItems[0].count );
-    timeIt ( test_get, pItems, iterations/2, nBytes * ( iterations / 2 ) );
+    timeIt ( test_get, pItems, iterations/2, 
+        nBytesSent * ( iterations / 2 ), 
+        nBytesRecv * ( iterations / 2 ) );
 
     printf ("\tsynch get test\n");
-    nBytes = 2 * sizeof ( caHdr ) + 
+    nBytesSent = sizeof ( caHdr );
+    nBytesRecv = sizeof ( caHdr ) + 
         OCT_ROUND ( dbr_size[pItems[0].type]*pItems[0].count );
-    timeIt ( test_wait, pItems, iterations/100, nBytes * ( iterations / 100 ) );
+    timeIt ( test_wait, pItems, iterations/100, 
+        nBytesSent * ( iterations / 100 ),
+        nBytesRecv * ( iterations / 100 ) );
 }
 
 /*
@@ -494,7 +510,7 @@ int catime ( const char * channelName,
     unsigned i;
     int j;
     unsigned strsize;
-    unsigned nBytes;
+    unsigned nBytesSent, nBytesRecv;
     ti *pItemList;
 
     if ( channelCount == 0 ) {
@@ -520,7 +536,8 @@ int catime ( const char * channelName,
     }
 
     strsize = sizeof ( pItemList[0].name ) - 1;
-    nBytes = 0;
+    nBytesSent = 0;
+    nBytesRecv = 0;
     for ( i=0; i < channelCount; i++ ) {
         if ( appNF == appendNumber ) {
             sprintf ( pItemList[i].name,"%.*s%.6u",
@@ -532,12 +549,14 @@ int catime ( const char * channelName,
         pItemList[i].name[strsize]= '\0';
         pItemList[i].count = 0;
         pItemList[i].pValue = 0;
-        nBytes += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) + 2 * sizeof (caHdr) );
+        nBytesSent += 2 * ( OCT_ROUND ( strlen ( pItemList[i].name ) ) 
+                            + sizeof (caHdr) );
+        nBytesRecv += 2 * sizeof (caHdr);
     }
 
     printf ( "channel connect test\n" );
-    timeIt ( test_search, pItemList, channelCount, nBytes );
-    printSearchStat ( pItemList, channelCount );
+    timeIt ( test_search, pItemList, channelCount, nBytesSent, nBytesRecv );
+    printSearchStat ( pItemList, channelCount, nBytesSent, nBytesRecv );
     
     for ( i = 0; i < channelCount; i++ ) {
         size_t count = ca_element_count ( pItemList[i].chix );
@@ -554,7 +573,7 @@ int catime ( const char * channelName,
         pItemList[0].count );
 
     printf ("\tpend event test\n");
-    timeIt (test_pend, NULL, 100, 0);
+    timeIt ( test_pend, NULL, 100, 0, 0 );
 
     for ( i = 0; i < channelCount; i++ ) {
         dbr_float_t * pFltVal = ( dbr_float_t * ) pItemList[i].pValue;
@@ -615,7 +634,7 @@ int catime ( const char * channelName,
     measure_get_latency ( pItemList, channelCount );
 
     printf ("free test\n");
-    timeIt ( test_free, pItemList, channelCount, 0 );
+    timeIt ( test_free, pItemList, channelCount, 0, 0 );
 
     SEVCHK ( ca_task_exit (), "Unable to free resources at exit" );
     

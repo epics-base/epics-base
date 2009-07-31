@@ -1694,7 +1694,7 @@ void tcpiiu::decrementBlockingForFlushCount (
     guard.assertIdenticalMutex ( this->mutex );
     assert ( this->blockingForFlush > 0u );
     this->blockingForFlush--;
-    if ( this->blockingForFlush == 0 ) {
+    if ( this->blockingForFlush > 0 ) {
         this->flushBlockEvent.signal ();
     }
 }

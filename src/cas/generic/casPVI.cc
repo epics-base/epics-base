@@ -464,6 +464,23 @@ caStatus casPVI::write ( const casCtx & ctx, const gdd & value )
     }
 }
 
+caStatus casPVI::writeNotify ( const casCtx & ctx, const gdd & value )
+{
+    epicsGuard < epicsMutex > guard ( this->mutex );
+    if ( this->pPV ) {
+        caStatus status = this->pPV->beginTransaction ();
+        if ( status != S_casApp_success ) {
+            return status;
+        }
+        status = this->pPV->writeNotify ( ctx, value );
+        this->pPV->endTransaction ();
+        return status;
+    }
+    else {
+        return S_cas_disconnect;
+    }
+}
+
 casChannel * casPVI::createChannel ( const casCtx & ctx,
     const char * const pUserName, const char * const pHostName )
 {

@@ -101,6 +101,17 @@ caStatus casChannelI::write ( const casCtx & ctx, const gdd & value )
     return status;
 }
 
+caStatus casChannelI::writeNotify ( const casCtx & ctx, const gdd & value )
+{
+    caStatus status = this->chan.beginTransaction ();
+    if ( status != S_casApp_success ) {
+        return status;
+    }
+    status = this->chan.writeNotify ( ctx, value );
+    this->chan.endTransaction ();
+    return status;
+}
+
 void casChannelI::postDestroyEvent ()
 {
     if ( ! this->serverDeletePending ) {

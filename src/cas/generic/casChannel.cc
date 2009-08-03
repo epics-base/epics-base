@@ -90,6 +90,11 @@ caStatus casChannel::write ( const casCtx & ctx, const gdd & value )
     return ctx.getPV()->write ( ctx, value );
 }
 
+caStatus casChannel::writeNotify ( const casCtx & ctx, const gdd & value )
+{
+    return ctx.getPV()->writeNotify ( ctx, value );
+}
+
 void casChannel::show ( unsigned level ) const
 {
 	if ( level > 2u ) {

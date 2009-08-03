@@ -142,12 +142,13 @@ private:
 	caStatus accessRightsResponse ( 
         epicsGuard < casClientMutex > &, casChannelI * pciu );
 
-	caStatus read ( const gdd * & pDesc );
-	caStatus write ();
 
-	caStatus writeArrayData();
-	caStatus writeScalarData();
-	caStatus writeString();
+    typedef caStatus ( casChannelI :: * PWriteMethod ) ( 
+        const casCtx &, const gdd & );
+	caStatus read ( const gdd * & pDesc );
+	caStatus write ( PWriteMethod );
+	caStatus writeArrayData( PWriteMethod );
+	caStatus writeScalarData( PWriteMethod );
 
     outBufClient::flushCondition xSend ( char * pBuf, bufSizeT nBytesToSend,
 			                                bufSizeT & nBytesSent );

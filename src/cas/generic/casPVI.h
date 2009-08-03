@@ -77,6 +77,7 @@ public:
     void show ( unsigned level ) const;
     caStatus read ( const casCtx & ctx, gdd & prototype );
     caStatus write ( const casCtx & ctx, const gdd & value );
+    caStatus writeNotify ( const casCtx & ctx, const gdd & value );
     casChannel * createChannel ( const casCtx & ctx,
         const char * const pUserName, const char * const pHostName );
     aitEnum bestExternalType () const;

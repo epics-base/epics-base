@@ -392,16 +392,31 @@ public:
     // asynchronous IO operation (read or write) completes
     // against the PV.
     //
-    // NOTE:
+    // NOTES:
     // o The incoming GDD with application type "value" is always 
     // converted to the PV.bestExternalType() primitive type.
     // o The time stamp in the incoming GDD is set to the time that
     // the last message was received from the client.
     // o Currently, no container type GDD's are passed here and
     // the application type is always "value". This may change.
+    // o The write interface is called when the server receives 
+    // ca_put request and the writeNotify interface is called 
+    // when the server receives ca_put_callback request.
+    // o A writeNotify request is considered complete and therefore
+    // ready for asynchronous completion notification when any
+    // action that it initiates, and any cascaded actions, complete.
+    // o In an IOC context intermediate write requets can be discarded
+    // as long as the final writeRequest is always executed. In an
+    // IOC context intermediate writeNotify requests are never discarded.
+    // o If the service does not implement writeNotify then 
+    // the base implementation of casPV :: writeNotify calls 
+    // casPV :: write thereby preserving backwards compatibility
+    // with the original interface which included a virtual write
+    // method but not a virtual writeNotify method.
     //
     epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
-    
+    epicsShareFunc virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
+
     //
     // chCreate() is called each time that a PV is attached to
     // by a client. The server tool may choose not to
@@ -599,6 +614,14 @@ public:
     // is called - see casPV::write() for additional comments.
     //
     epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
+
+    //
+    // writeNotify 
+    //
+    // If this function is not provided in the derived class then casPV::writeNotify()
+    // is called - see casPV::writeNotify() for additional comments.
+    //
+    epicsShareFunc virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
 
     //
     // This is called for each channel in the server if

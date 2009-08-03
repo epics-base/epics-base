@@ -112,6 +112,18 @@ caStatus casPV::write (const casCtx &, const gdd &)
 }
 
 //
+// casPV::writeNotify()
+//
+caStatus casPV :: writeNotify (
+    const casCtx & ctx, const gdd & val )
+{
+    // plumbed this way to preserve backwards 
+    // compatibility with the old interface which
+    // did not include a writeNotify interface
+	return this->write ( ctx, val );
+}
+
+//
 // casPV::bestExternalType()
 //
 aitEnum casPV::bestExternalType () const

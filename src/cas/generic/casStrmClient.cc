@@ -973,7 +973,7 @@ caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 	//
 	// initiate the  write operation
 	//
-	status = this->write (); 
+    status = this->write ( & casChannelI :: write ); 
 	if ( status == S_casApp_success || status == S_casApp_asyncCompletion ) {
 		status = S_cas_success;
 	}
@@ -1061,7 +1061,7 @@ caStatus casStrmClient::writeNotifyAction (
 	//
 	// initiate the  write operation
 	//
-	status = this->write(); 
+	status = this->write ( & casChannelI :: writeNotify ); 
 	if (status == S_casApp_asyncCompletion) {
 		status = S_cas_success;
 	}
@@ -2023,7 +2023,7 @@ caStatus casStrmClient::accessRightsResponse (
 //
 // casStrmClient::write()
 //
-caStatus casStrmClient::write()
+caStatus casStrmClient :: write ( PWriteMethod pWriteMethod )
 {
 	const caHdrLargeArray *pHdr = this->ctx.getMsg();
 	caStatus status;
@@ -2054,10 +2054,10 @@ caStatus casStrmClient::write()
 	// lumped in with arrays
 	//
 	if ( pHdr->m_count > 1u ) {
-		status = this->writeArrayData ();
+		status = this->writeArrayData ( pWriteMethod );
 	}
 	else {
-		status = this->writeScalarData ();
+		status = this->writeScalarData ( pWriteMethod );
 	}
 
 	//
@@ -2089,7 +2089,7 @@ caStatus casStrmClient::write()
 //
 // casStrmClient::writeScalarData()
 //
-caStatus casStrmClient::writeScalarData ()
+caStatus casStrmClient :: writeScalarData ( PWriteMethod pWriteMethod )
 {
 	const caHdrLargeArray * pHdr = this->ctx.getMsg ();
 
@@ -2147,7 +2147,7 @@ caStatus casStrmClient::writeScalarData ()
 	    //
 	    // call the server tool's virtual function
 	    //
-	    status = this->ctx.getChannel()->write ( this->ctx, *pDD );
+	    status = ( this->ctx.getChannel()->*pWriteMethod ) ( this->ctx, *pDD );
     }
 
 	//
@@ -2163,7 +2163,7 @@ caStatus casStrmClient::writeScalarData ()
 //
 // casStrmClient::writeArrayData()
 //
-caStatus casStrmClient::writeArrayData()
+caStatus casStrmClient :: writeArrayData ( PWriteMethod pWriteMethod )
 {
 	const caHdrLargeArray *pHdr = this->ctx.getMsg ();
 
@@ -2246,7 +2246,7 @@ caStatus casStrmClient::writeArrayData()
 	    //
 	    // call the server tool's virtual function
 	    //
-	    status = this->ctx.getChannel()->write ( this->ctx, *pDD );
+	    status = ( this->ctx.getChannel()->*pWriteMethod ) ( this->ctx, *pDD );
     }
     else {
         status = S_cas_noConvert;

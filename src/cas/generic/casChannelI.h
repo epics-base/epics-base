@@ -54,6 +54,7 @@ public:
 	bool confirmationRequested () const;
     caStatus read ( const casCtx & ctx, gdd & prototype );
     caStatus write ( const casCtx & ctx, const gdd & value );
+    caStatus writeNotify ( const casCtx & ctx, const gdd & value );
 	void show ( unsigned level ) const;
 private:
     chanIntfForPV privateForPV;

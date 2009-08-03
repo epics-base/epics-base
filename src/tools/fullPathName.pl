@@ -12,7 +12,6 @@ eval 'exec perl -S -w  $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # Determines an absolute pathname for its argument,
 # which may be either a relative or absolute path and
 # might have trailing directory names that don't exist yet.
-# The -e option escapes any back-slashes by doubling them.
 
 use strict;
 
@@ -22,22 +21,17 @@ use lib "$Bin/../../lib/perl";
 use Getopt::Std;
 use EPICS::Path;
 
-our ($opt_e);
+our ($opt_h);
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
-getopts('e') or &HELP_MESSAGE;
-&HELP_MESSAGE unless @ARGV == 1;
+&HELP_MESSAGE if !getopts('h') || $opt_h || @ARGV != 1;
 
 my $path = AbsPath(shift);
-
-$path =~ s/\\/\\\\/gx if $opt_e;
 
 print "$path\n";
 
 
 sub HELP_MESSAGE {
-    print STDERR <<EOF;
-Usage: fullPathName.pl [-e] filepath
-EOF
+    print STDERR "Usage: fullPathName.pl [-h] pathname\n";
     exit 2;
 }

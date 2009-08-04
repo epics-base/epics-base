@@ -181,7 +181,7 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
         removeDuplicateAddresses ( & filtered, & parsed, true );
 
         while ( ELLNODE * pRawNode  = ellGet ( & filtered ) ) {
-		    assert ( offsetof (osiSockAddrNode, node) == 0 );
+		    STATIC_ASSERT ( offsetof (osiSockAddrNode, node) == 0 );
 		    osiSockAddrNode * pNode = reinterpret_cast < osiSockAddrNode * > ( pRawNode );
             if ( pNode->addr.sa.sa_family == AF_INET ) {
                 ipIgnoreEntry * pIPI = new ( this->ipIgnoreEntryFreeList )

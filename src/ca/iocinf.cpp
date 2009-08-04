@@ -127,7 +127,7 @@ extern "C" void epicsShareAPI removeDuplicateAddresses
     ELLNODE *pRawNode;
 
     while ( (pRawNode  = ellGet ( pSrcList ) ) ) {
-		assert ( offsetof (osiSockAddrNode, node) == 0 );
+		STATIC_ASSERT ( offsetof (osiSockAddrNode, node) == 0 );
 		osiSockAddrNode *pNode = reinterpret_cast <osiSockAddrNode *> ( pRawNode );
         osiSockAddrNode *pTmpNode;
 

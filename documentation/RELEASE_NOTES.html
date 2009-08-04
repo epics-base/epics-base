@@ -3,14 +3,25 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.x Release Notes</title>
+  <title>EPICS Base R3.14.11-CVS Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.1x</h1>
+<h1 align="center">EPICS Base Release 3.14.11-CVS</h1>
 
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
+
+<h4>Compile-time assertions</h4>
+
+<p>A new macro has been added to epicsAssert.h which performs assertion checks
+at compile-time. <tt>STATIC_ASSERT(<i>expr</i>)</tt> can only be used when
+<tt><i>expr</i></tt> can be evaluated by the compiler, and will cause the
+compilation to fail if it evaluates to false. The resulting compiler error
+message might appear a little obscure, but it does provide some explanation and
+contains the line where the failure was discovered. Future versions of the C++
+standard will probably contain a similar facility <tt>static_assert(<i>expr</i>,
+<i>message</i>)</tt> but will require compiler support to be implemented.</p>
 
 <h4>Several changes made to dbDefs.h</h4>
 

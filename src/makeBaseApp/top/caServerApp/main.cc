@@ -99,7 +99,7 @@ extern int main ( int argc, const char **argv )
             "usage: %s [-d <debug level> -t <execution time> -p <PV name prefix> " 
             "-c <numbered alias count> -s <1=scan on (default), 0=scan off> "
             "-ss <1=synchronous scan (default), 0=asynchronous scan> "
-            "-a <max array size> -ad <async delay>"
+            "-a <max array size> -ad <async delay> "
             "-an <max simultaneous async>\n", 
             argv[0]);
 

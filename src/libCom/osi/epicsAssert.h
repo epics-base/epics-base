@@ -31,23 +31,24 @@ extern "C" {
 #undef assert
 
 #ifdef NDEBUG
-#   define assert(ignore)  ((void) 0)
+#   define assert(ignore) ((void) 0)
 #else /* NDEBUG */
 
 epicsShareFunc void epicsAssert (const char *pFile, const unsigned line,
     const char *pExp, const char *pAuthorName);
 
-#if (defined(__STDC__) || defined(__cplusplus)) && !defined(VAXC)
-#   define assert(exp) \
-    ( (exp) ? (void) 0 : \
-        epicsAssert( __FILE__, __LINE__, #exp, epicsAssertAuthor ) )
-#else /* __STDC__ or __cplusplus */
-#   define assert(exp) \
-    ( (exp) ? (void) 0 : \
-        epicsAssert( __FILE__, __LINE__, "", epicsAssertAuthor ) )
-#endif /* (__STDC__ or __cplusplus) and not VAXC */
+#   define assert(exp) ((exp) ? (void)0 : \
+        epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
 #endif  /* NDEBUG */
+
+
+/* Compile-time checks */
+#define STATIC_JOIN(x, y) STATIC_JOIN2(x, y)
+#define STATIC_JOIN2(x, y) x ## y
+#define STATIC_ASSERT(expr) \
+    typedef int STATIC_JOIN(static_assert_failed_at_line_, __LINE__) \
+    [ (expr) ? 1 : -1 ]
 
 
 #ifdef __cplusplus

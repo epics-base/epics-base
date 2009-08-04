@@ -60,7 +60,6 @@ template class tsFreeList < syncGroupWriteNotify, 128, epicsMutexNOOP >;
 template class tsFreeList < comBuf, 0x20 >;
 template class tsFreeList < getCallback, 1024, epicsMutexNOOP >;
 template class tsFreeList < getCopy, 1024, epicsMutexNOOP >;
-template class tsFreeList < hostNameCache, 16 >;
 template class tsFreeList < msgForMultiplyDefinedPV, 16 >;
 template class tsFreeList < nciu, 1024, epicsMutexNOOP>;
 template class tsFreeList < oldChannelNotify, 1024, epicsMutexNOOP >;

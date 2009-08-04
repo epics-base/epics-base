@@ -27,7 +27,8 @@
 #endif
 #define FALSE 0
 
-#ifndef LOCAL 
+/* deprecated, use static */
+#ifndef LOCAL
 #   define LOCAL static
 #endif
 
@@ -36,9 +37,22 @@
 #   define NELEMENTS(array) (sizeof (array) / sizeof ((array) [0]))
 #endif
 
-/* byte offset of member in structure*/
+/* byte offset of member in structure - deprecated, use offsetof */
 #ifndef OFFSET
 #   define OFFSET(structure, member) offsetof(structure, member)
+#endif
+
+/* Subtract member byte offset, returning pointer to parent object */
+#ifndef CONTAINER
+# ifdef __GNUC__
+#   define CONTAINER(ptr, structure, member) ({                     \
+        const __typeof(((structure*)0)->member) *_ptr = (ptr);      \
+        (structure*)((char*)_ptr - offsetof(structure, member));    \
+    })
+# else
+#   define CONTAINER(ptr, structure, member) \
+        ((structure*)((char*)(ptr) - offsetof(structure, member)))
+# endif
 #endif
 
 /*Process Variable Name Size */

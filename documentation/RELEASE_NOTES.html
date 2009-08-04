@@ -12,7 +12,7 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
-<h4>Several macros and includes removed from dbDefs.h</h4>
+<h4>Several changes made to dbDefs.h</h4>
 
 <p>The definitions for the macros <tt>YES</tt>, <tt>NO</tt>, <tt>NONE</tt>,
 <tt>min()</tt> and <tt>max()</tt> have been deleted. <tt>YES</tt> and
@@ -21,15 +21,15 @@ from the menuYesNo.h file where they were used in several record types. The
 other macros were not being used anywhere in Base, sncseq or Asyn.</p>
 
 <p>The macro <tt>LOCAL</tt> that was a synonym for <tt>static</tt> is now
-deprecated and will be deleted soon, please adjust your code to use the latter
-keyword.  Any uses of the <tt>READONLY</tt> macro from shareLib.h must now be
-replaced by the keyword <tt>const</tt>.</p>
+deprecated and will be deleted in R3.15, please adjust your code to use the
+latter keyword.  All uses of the <tt>READONLY</tt> macro from shareLib.h must
+now be replaced by the keyword <tt>const</tt> as the macro has been deleted.</p>
 
-<p>The dbDefs.h file was also unnecessarily including some other libCom header
+<p>The dbDefs.h file was unnecessarily including various other libCom header
 files which may have to be manually added to out-of-tree source files that
 relied on this. The general rule for header files is that a header should only
-include other headers that are needed for its own inclusion in any source
-file. The <tt>#include</tt> statements that might need to be added are:</p>
+include other headers that are needed for its own inclusion in any source file.
+The <tt>#include</tt> statements that might need to be added are:</p>
 
 <ul>
   <li>#include &lt;stdarg.h&gt;</li>
@@ -38,6 +38,13 @@ file. The <tt>#include</tt> statements that might need to be added are:</p>
   <li>#include "ellLib.h"</li>
   <li>#include "epicsTypes.h"</li>
 </ul>
+
+<p>A new macro <tt>CONTAINER(pointer, type, member)</tt> has been added which
+calculates and returns a pointer to the parent structure when given a pointer to
+a member, the structure type and the name of the member in that structure.  On
+GNU compilers the type of the pointer is checked to ensure that it matches the
+member, so code using this macro should be built using gcc for additional
+confidence.</p>
 
 <h4>Long-deprecated errSymFind() function deleted</h4>
 

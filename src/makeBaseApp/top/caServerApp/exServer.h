@@ -333,9 +333,11 @@ public:
         bool preCreateFlag, bool scanOnIn, double asyncDelay );
     caStatus read ( const casCtx & ctxIn, gdd & protoIn );
     caStatus write ( const casCtx & ctxIn, const gdd & value );
+    caStatus writeNotify ( const casCtx & ctxIn, const gdd & value );
     void removeIO();
 private:
     double asyncDelay;
+    smartConstGDDPointer pStandbyValue;
     unsigned simultAsychIOCount;
     exAsyncPV & operator = ( const exAsyncPV & );
     exAsyncPV ( const exAsyncPV & );
@@ -585,16 +587,6 @@ inline exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup,
     asyncDelay ( asyncDelayIn ),
     simultAsychIOCount ( 0u )
 {
-}
-
-inline void exAsyncPV::removeIO ()
-{
-    if ( this->simultAsychIOCount > 0u ) {
-        this->simultAsychIOCount--;
-    }
-    else {
-        fprintf ( stderr, "inconsistent simultAsychIOCount?\n" );
-    }
 }
 
 inline exChannel::exChannel ( const casCtx & ctxIn ) : 

@@ -17,7 +17,6 @@
 
 //
 // exAsyncPV::read()
-// (virtual replacement for the default)
 //
 caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 {
@@ -39,26 +38,65 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 }
 
 //
-// exAsyncPV::write()
-// (virtual replacement for the default)
+// exAsyncPV::writeNotify()
 //
-caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
-{
-	exAsyncWriteIO *pIO;
-	
+caStatus exAsyncPV::writeNotify ( const casCtx &ctx, const gdd &valueIn )
+{	
 	if ( this->simultAsychIOCount >= this->cas.maxSimultAsyncIO() ) {
 		return S_casApp_postponeAsyncIO;
 	}
 
 	this->simultAsychIOCount++;
 
-	pIO = new exAsyncWriteIO ( this->cas, ctx, *this, 
+	exAsyncWriteIO * pIO = new 
+        exAsyncWriteIO ( this->cas, ctx, *this, 
 	                    valueIn, this->asyncDelay );
 	if ( ! pIO ) {
+        this->simultAsychIOCount--;
 		return S_casApp_noMemory;
 	}
-
 	return S_casApp_asyncCompletion;
+}
+
+//
+// exAsyncPV::write()
+//
+caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
+{
+	// implement the dicard intermediate values, but last value
+    // sent always applied behavior that IOCs provide excepting
+    // that we will alow N requests to pend instead of a limit
+    // of only one imposed in the IOC
+	if ( this->simultAsychIOCount >= this->cas.maxSimultAsyncIO() ) {
+        pStandbyValue.set ( & valueIn );
+		return S_casApp_success;
+	}
+
+	this->simultAsychIOCount++;
+
+	exAsyncWriteIO * pIO = new 
+        exAsyncWriteIO ( this->cas, ctx, *this, 
+	                    valueIn, this->asyncDelay );
+	if ( ! pIO ) {
+        this->simultAsychIOCount--;
+		return S_casApp_noMemory;
+	}
+	return S_casApp_asyncCompletion;
+}
+
+void exAsyncPV::removeIO ()
+{
+    if ( this->simultAsychIOCount > 0u ) {
+        this->simultAsychIOCount--;
+        if ( this->simultAsychIOCount == 0 && 
+            pStandbyValue.valid () ) {
+            this->update ( *this->pStandbyValue );
+            this->pStandbyValue.set ( 0 );
+        }
+    }
+    else {
+        fprintf ( stderr, "inconsistent simultAsychIOCount?\n" );
+    }
 }
 
 //
@@ -78,7 +116,6 @@ exAsyncWriteIO::exAsyncWriteIO ( exServer & cas,
 //
 exAsyncWriteIO::~exAsyncWriteIO()
 {
-	this->pv.removeIO();
     this->timer.destroy ();
     // if the timer hasnt expired, and the value 
     // hasnt been written then force it to happen
@@ -86,6 +123,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
     if ( this->pValue.valid () ) {
         this->pv.update ( *this->pValue );
     }
+	this->pv.removeIO();
 }
 
 //

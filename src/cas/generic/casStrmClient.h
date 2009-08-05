@@ -62,10 +62,11 @@ private:
 	epicsTime lastRecvTS;
 	char * pUserName;
 	char * pHostName;
+    smartGDDPointer pValueRead;
     unsigned incommingBytesToDrain;
-    int pendingResponseStatus;
+    caStatus pendingResponseStatus;
 	ca_uint16_t minor_version_number;
-    bool payloadNeedsByteSwap;
+    bool reqPayloadNeedsByteSwap;
     bool responseIsPending;
 
 	caStatus createChannel ( const char * pName );
@@ -145,7 +146,7 @@ private:
 
     typedef caStatus ( casChannelI :: * PWriteMethod ) ( 
         const casCtx &, const gdd & );
-	caStatus read ( const gdd * & pDesc );
+	caStatus read ();
 	caStatus write ( PWriteMethod );
 	caStatus writeArrayData( PWriteMethod );
 	caStatus writeScalarData( PWriteMethod );
@@ -170,6 +171,7 @@ private:
         const unsigned lineno, const unsigned idIn );
     void casChannelDestroyFromInterfaceNotify ( casChannelI & chan, 
         bool immediatedSestroyNeeded );
+    static void issuePosponeWhenNonePendingWarning ( const char * pReqTypeStr );
 
 	casStrmClient ( const casStrmClient & );
 	casStrmClient & operator = ( const casStrmClient & );

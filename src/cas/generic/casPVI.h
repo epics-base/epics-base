@@ -51,6 +51,7 @@ public:
     caServerI * getPCAS () const;
     caStatus attachToServer ( caServerI & cas );
     aitIndex nativeCount ();
+    bool ioIsPending () const;
 	void clearOutstandingReads ( tsDLList < class casAsyncIOI > &);
     void destroyAllIO ( 
         tsDLList < casAsyncIOI > & );
@@ -111,6 +112,11 @@ inline const gddEnumStringTable & casPVI::enumStringTable () const
 inline casPV * casPVI::apiPointer ()
 {
     return this->pPV;
+}
+
+inline bool casPVI :: ioIsPending () const
+{
+    return this->nIOAttached > 0u;
 }
 
 #endif // casPVIh

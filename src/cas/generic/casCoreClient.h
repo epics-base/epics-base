@@ -135,8 +135,6 @@ protected:
 	casCtx ctx;
     bool userStartedAsyncIO;
 
-    bool ioIsPending () const;
-
 private:
     // for io that does not have a channel
 	tsDLList < casAsyncIOI > ioList;
@@ -247,11 +245,6 @@ inline void casCoreClient::casMonEventDestroy (
     casMonEvent & ev, epicsGuard < evSysMutex > & guard )
 {
     this->eventSys.casMonEventDestroy ( ev, guard );
-}
-
-inline bool casCoreClient :: ioIsPending () const
-{
-    return this->ioList.count () > 0u;
 }
 
 #endif // casCoreClienth

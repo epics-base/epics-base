@@ -1363,7 +1363,7 @@ caStatus casStrmClient::claimChannelAction (
 	}
 	else if ( pvar.getStatus() == S_casApp_postponeAsyncIO ) {
         caServerI & casi ( * this->ctx.getServer() );
-        if ( this->ioIsPending () ) {
+        if ( casi.ioIsPending () ) {
             casi.addItemToIOBLockedList ( *this );
             return S_casApp_postponeAsyncIO;
         }
@@ -1375,7 +1375,7 @@ caStatus casStrmClient::claimChannelAction (
             // So in that situation we tell the client that
             // the service refused the request, and this
             // caused the request to fail.
-            this->issuePosponeWhenNonePendingWarning ( "create channel" );
+            this->issuePosponeWhenNonePendingWarning ( "PV attach channel" );
             return this->createChanResponse ( guard, this->ctx, 
                                     S_cas_posponeWhenNonePending );
         }

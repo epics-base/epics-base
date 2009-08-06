@@ -44,7 +44,8 @@ caServerI::caServerI ( caServer & tool ) :
     beaconAnomalyGov ( * new beaconAnomalyGovernor ( *this ) ),
     debugLevel ( 0u ),
     nEventsProcessed ( 0u ),
-    nEventsPosted ( 0u )
+    nEventsPosted ( 0u ),
+    ioInProgressCount ( 0u )
 {
 	assert ( & adapter != NULL );
 

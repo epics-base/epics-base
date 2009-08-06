@@ -25,6 +25,7 @@ casAsyncPVAttachIOI::casAsyncPVAttachIOI (
 	casAsyncIOI ( ctx ), msg ( *ctx.getMsg() ),
     asyncPVAttachIO ( intf ), retVal ( S_cas_badParameter )
 {
+    ctx.getServer()->incrementIOInProgCount ();
     ctx.getClient()->installAsynchIO ( *this );
 }
 
@@ -42,6 +43,7 @@ caStatus casAsyncPVAttachIOI::cbFuncAsyncIO (
     // uninstall here in case the channel is deleted 
     // further down the call stack
     this->client.uninstallAsynchIO ( *this );
+    this->client.getCAS().decrementIOInProgCount ();
 
 	if ( this->msg.m_cmmd == CA_PROTO_CREATE_CHAN ) {
         casCtx tmpCtx;
@@ -58,6 +60,7 @@ caStatus casAsyncPVAttachIOI::cbFuncAsyncIO (
 	}
 
     if ( status == S_cas_sendBlocked ) {
+        this->client.getCAS().incrementIOInProgCount ();
         this->client.installAsynchIO ( *this );
     }
 

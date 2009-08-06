@@ -30,6 +30,7 @@ casAsyncPVExistIOI::casAsyncPVExistIOI (
     protocolRevision ( ctx.getClient()->protocolRevision () ),
     sequenceNumber ( ctx.getClient()->datagramSequenceNumber () )
 {
+    ctx.getServer()->incrementIOInProgCount ();
     ctx.getClient()->installAsynchIO ( *this );
 }
 
@@ -61,6 +62,7 @@ caStatus casAsyncPVExistIOI::cbFuncAsyncIO (
 
     if ( status != S_cas_sendBlocked ) {
         this->client.uninstallAsynchIO ( *this );
+        this->client.getCAS().decrementIOInProgCount ();
     }
 
     return status;

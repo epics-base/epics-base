@@ -76,6 +76,9 @@ public:
         const char * pHostName, const char * pUserName,
         const struct caHdrLargeArray * mp, const void * dp, 
         const char * pFormat, ... );
+    bool ioIsPending () const;
+    void incrementIOInProgCount ();
+    void decrementIOInProgCount ();
 private:
     clientBufMemoryManager clientBufMemMgr;
     tsFreeList < casMonitor, 1024 > casMonitorFreeList;
@@ -89,6 +92,7 @@ private:
 	unsigned debugLevel;
     unsigned nEventsProcessed; 
     unsigned nEventsPosted; 
+    unsigned ioInProgressCount;
 
     casEventMask valueEvent; // DBE_VALUE registerEvent("value")
 	casEventMask logEvent; 	// DBE_LOG registerEvent("log") 
@@ -135,6 +139,23 @@ inline casEventMask caServerI::logEventMask() const
 inline casEventMask caServerI::alarmEventMask() const
 {
     return this->alarmEvent;
+}
+
+inline bool caServerI :: ioIsPending () const
+{
+    return ( ioInProgressCount > 0u );
+}
+
+inline void caServerI :: incrementIOInProgCount ()
+{
+    assert ( ioInProgressCount < UINT_MAX );
+    ioInProgressCount++;
+}
+
+inline void caServerI :: decrementIOInProgCount ()
+{
+    assert ( ioInProgressCount > 0 );
+    ioInProgressCount--;
 }
 
 #endif // caServerIh

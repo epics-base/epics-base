@@ -78,7 +78,7 @@ typedef aitUint32 caStatus;
 #define S_cas_pvAlreadyAttached (M_cas | 31) /*PV attached to another server*/
 #define S_cas_badRequest (M_cas | 32) /*client's request was invalid*/
 #define S_cas_invalidAsynchIO (M_cas | 33) /*inappropriate asynchronous IO type*/
-#define S_cas_posponeWhenNonePending (M_cas | 33) /*request postponement, none pending*/
+#define S_cas_posponeWhenNonePending (M_cas | 34) /*request postponement, none pending*/
 
 /*
  * ===========================================================

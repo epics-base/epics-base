@@ -1392,7 +1392,7 @@ void casStrmClient ::
     issuePosponeWhenNonePendingWarning ( const char * pReqTypeStr )
 {
     errlogPrintf ( "service attempted to postpone %s IO when "
-        "no IO was pending against the target\n" );
+        "no IO was pending against the target\n", pReqTypeStr );
     errlogPrintf ( "server library will not receive a restart event, "
         "and so failure response was sent to client\n" );
 }
@@ -1678,7 +1678,7 @@ caStatus casStrmClient::channelCreateFailedResp (
 	}
 	else if ( createStatus != S_casApp_pvNotFound ) {
 		errMessage ( createStatus, 
-            "- Server unable to create a new PV");
+            "- Server unable to create a new PV" );
 	}
     caStatus status;
 	if ( CA_V46 ( this->minor_version_number ) ) {

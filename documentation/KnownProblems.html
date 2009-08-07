@@ -4,14 +4,21 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <title>Known Problems R3.14.11-RC1</title>
+  <title>Known Problems in R3.14.11</title>
 </head>
 
 <body>
 <h1 style="text-align: center">EPICS Base R3.14.11: Known Problems</h1>
 
 <ul>
-  <li></li>
+
+  <li>The libCom test suite program epicsCalcTest test #66 fails on some linux
+    systems. This is not a bug in EPICS and will not be fixed; it actually
+    demonstrates that the GCC optimizer is not generating the same result for
+    the expression <tt>isinf(-Inf)</tt> that the glibc function returns at
+    runtime. Both versions return a non-zero result for infinite arguments, but
+    the GCC optimized version applies the sign of its infinite argument to its
+    return value, whereas glibc always returns +1.</li>
 
 </ul>
 

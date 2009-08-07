@@ -1,20 +1,23 @@
-#RELEASE Location of external support modules
+# RELEASE - Location of external support modules
 #
-# IF YOU MAKE ANY CHANGES to this file you MUST at least run
-# "gnumake" in this directory afterwards; you usually need
-# to run "gnumake rebuild" in the application's top level
-# directory each time this file is changed.
+# IF YOU MAKE ANY CHANGES to this file you must subsequently
+# do a "gnumake rebuild" in this application's top level
+# directory.
 #
-# NOTE: The build does not check dependencies against files
-# that are outside this application, thus you should run
-# "gnumake distclean install" in the top directory each time
-# EPICS_BASE, SNCSEQ, or any other external module defined
-# in the RELEASE file is rebuilt.
+# The build process does not check dependencies against files
+# that are outside this application, thus you should do a
+# "gnumake rebuild" in the top level directory after EPICS_BASE
+# or any other external module pointed to below is rebuilt.
 #
-# Host/target specific settings can be specified in files named
+# Host- or target-specific settings can be given in files named
 #  RELEASE.$(EPICS_HOST_ARCH).Common
 #  RELEASE.Common.$(T_A)
 #  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+#
+# This file should ONLY define paths to other support modules,
+# or include statements that pull in similar RELEASE files.
+# Build settings that are NOT module paths should appear in a
+# CONFIG_SITE file.
 
 TEMPLATE_TOP=_TEMPLATE_TOP_
 
@@ -24,5 +27,6 @@ TEMPLATE_TOP=_TEMPLATE_TOP_
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=_EPICS_BASE_
 
-# Set RULES to use build rules from somewhere other than EPICS_BASE:
+# Set RULES here if you want to take build rules from somewhere
+# other than EPICS_BASE:
 #RULES=/path/to/epics/support/module/rules/x-y

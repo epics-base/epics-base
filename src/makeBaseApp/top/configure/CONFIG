@@ -1,10 +1,13 @@
-# CONFIG
+# CONFIG - Load build configuration data
+#
+# Do not make changes to this file!
 
+# Allow user to override where the build rules come from
 RULES = $(EPICS_BASE)
 
+# RELEASE files point to other application tops
 include $(TOP)/configure/RELEASE
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
-
 ifdef T_A
 -include $(TOP)/configure/RELEASE.Common.$(T_A)
 -include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
@@ -13,11 +16,12 @@ endif
 CONFIG = $(RULES)/configure
 include $(CONFIG)/CONFIG
 
-# Override for definition in base
+# Override the Base definition:
 INSTALL_LOCATION = $(TOP)
+
+# CONFIG_SITE files contain other build configuration settings
 include $(TOP)/configure/CONFIG_SITE
 -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
-
 ifdef T_A
  -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
  -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)

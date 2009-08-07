@@ -288,6 +288,16 @@ clients, although by no means all clients support it yet.</p>
 now uses _NSGetEnviron() to get the pointer to the environment string
 table.</p>
 
+<h4>gpHash argument type changed</h4>
+
+<p>Out-of-tree users of libCom's gpHash routines should change the type of their
+pointer to their gpHash table to avoid compiler warnings. The first argument to
+all of the <tt>gph...()</tt> routines used to be a <tt>void&nbsp;*</tt> (or a
+pointer to one for <tt>gphInit()</tt>) but is now a <tt>struct
+gphPvt&nbsp;*</tt> (<tt>struct gphPvt&nbsp;**</tt> for <tt>gphInit</tt>) for
+better type safety. The definition of the structure has not been made public,
+although a declaration is provided in <tt>gpHash.h</tt>.</p>
+
 <h4>New hash functions in epicsString.h</h4>
 
 <p>The existing routines used to hash strings have been replaced by a new
@@ -487,7 +497,7 @@ time provider you need to use RTEMS 4.9.1 or newer.</p>
 <h4>RTEMS epicsEventWaitWithTimeout</h4>
 
 <p>Correctly return epicsEventWaitTimeout when event is not pending and
-timeout value is 0.0 secondsmore agressive.</p>
+timeout value is 0.0 seconds.</p>
 
 <h4>epicsRingPointer, epicsRingBytes</h4>
 

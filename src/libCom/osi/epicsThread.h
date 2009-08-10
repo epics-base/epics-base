@@ -149,6 +149,7 @@ public:
     bool isSuspended () const throw ();
     bool isCurrentThread () const throw ();
     bool operator == ( const epicsThread & ) const throw ();
+    void show ( unsigned level ) const throw ();
     /* these operate on the current thread */
     static void suspendSelf () throw ();
     static void sleep (double seconds) throw ();

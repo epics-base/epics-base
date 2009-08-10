@@ -276,6 +276,27 @@ void epicsThreadPrivateBase::throwUnableToCreateThreadPrivate ()
     throw epicsThreadPrivateBase::unableToCreateThreadPrivate ();
 }
 
+void epicsThread :: show ( unsigned level ) const throw ()
+{
+    ::printf ( "epicsThread at %p\n", this->id );
+    if ( level > 0u ) {
+        epicsThreadShow ( this->id, level - 1 );
+        if ( level > 1u ) {
+            ::printf ( "pWaitReleaseFlag = %p\n", this->pWaitReleaseFlag );
+            ::printf ( "begin = %c, cancel = %c, terminated = %c\n",
+                this->begin ? 'T' : 'F',
+                this->cancel ? 'T' : 'F',
+                this->terminated ? 'T' : 'F' );
+            this->runable.show ( level - 2u );
+            this->mutex.show ( level - 2u );
+            ::printf ( "general purpose event\n" );
+            this->event.show ( level - 2u );
+            ::printf ( "exit event\n" );
+            this->exitEvent.show ( level - 2u );
+        }
+    }
+}
+
 extern "C" {
     static epicsThreadOnceId okToBlockOnce = EPICS_THREAD_ONCE_INIT;
     epicsThreadPrivateId okToBlockPrivate;

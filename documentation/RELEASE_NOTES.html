@@ -12,6 +12,33 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items below here ... -->
 
+<h4>Application configure files</h4>
+
+<p>The configuration directory files installed by makeBaseApp.pl have been
+changing in recent releases to make them work more like the files in the Base
+configuration directory. The CONFIG_APP file has gone, and its functionality is
+now performed by the CONFIG file which should only be modified in exceptional
+circumstances. The variables that used to be set in the CONFIG file now appear
+in the new CONFIG_SITE file, and can be overridden for specific combinations of
+host and target architectures by creating a file with name matching one of these
+patterns:</p>
+
+<ul>
+  <li>CONFIG_SITE.&lt;host-arch&gt;.Common</li>
+  <li>CONFIG_SITE.Common.&lt;target-arch&gt;</li>
+  <li>CONFIG_SITE.&lt;host-arch&gt;.&lt;target-arch&gt;</li>
+</ul>
+
+<p>Note that the setting for <tt>CHECK_RELEASE</tt> in the CONFIG_SITE files is
+not compatible with previous releases of Base; if you are creating an
+application that has to work with earlier releases, move the
+<tt>CHECK_RELEASE</tt> setting back to the configure/Makefile where it used to
+live.</p>
+
+<p>The RELEASE file(s) can now define the variable <tt>RULES</tt> if you wish
+the application to use build rules from some module other than EPICS_BASE. The
+rules must appear in a configure subdirectory just like they do in Base.</p>
+
 <h4>Compile-time assertions</h4>
 
 <p>A new macro has been added to epicsAssert.h which performs assertion checks

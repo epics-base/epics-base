@@ -288,6 +288,12 @@ failed in ../../../../src/cas/generic/st/ioBlocked.cc line 112</p>
 R3.13 client </p>
 <p>Mantis 329 fix - GW hang, pthread_mutex_lock failed: error Invalid 
 argument message </p>
+<p>Mantis 329 fix - gateway hangs temporarily under heavy load on 8-core 
+64bit RHEL5  </p>
+<ul>
+<li>High throughput performance appears to be much better now for both 
+scalars and large arrays, but more testing needed in operational gateways</li>
+</ul>
 
 <h4>Timer Queue Library</h4>
 <p>Mantis 336 fix - timer queue should have try / catch block around call to 

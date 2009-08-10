@@ -289,23 +289,31 @@ epicsTimerNotify::expireStatus searchTimer::expire (
     return expireStatus ( restart, this->period ( guard ) );
 }
 
-void searchTimer::show ( unsigned level ) const
+void searchTimer :: show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    ::printf ( "search timer delay %f\n", this->period ( guard ) );
-    ::printf ( "%u channels with search request pending\n", 
-        this->chanListReqPending.count () );
-    tsDLIterConst < nciu > pChan = this->chanListReqPending.firstIter ();
-	while ( pChan.valid () ) {
-        pChan->show ( level - 1u );
-        pChan++;
-    }
-    ::printf ( "%u channels with search response pending\n", 
-        this->chanListRespPending.count () );
-    pChan = this->chanListRespPending.firstIter ();
-	while ( pChan.valid () ) {
-        pChan->show ( level - 1u );
-        pChan++;
+    ::printf ( "searchTimer with period %f\n", this->period ( guard ) );
+    if ( level > 0 ) {
+        ::printf ( "channels with search request pending = %u\n", 
+            this->chanListReqPending.count () );
+        if ( level > 1u ) {
+            tsDLIterConst < nciu > pChan = 
+                this->chanListReqPending.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
+        ::printf ( "channels with search response pending = %u\n", 
+            this->chanListRespPending.count () );
+        if ( level > 1u ) {
+            tsDLIterConst < nciu > pChan = 
+                this->chanListRespPending.firstIter ();
+	        while ( pChan.valid () ) {
+                pChan->show ( level - 2u );
+                pChan++;
+            }
+        }
     }
 }
 

@@ -79,11 +79,14 @@ epicsTimerNotify::expireStatus disconnectGovernorTimer::expire (
 void disconnectGovernorTimer::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
-    ::printf ( "disconnect governor timer:\n" );
-    tsDLIterConst < nciu > pChan = this->chanList.firstIter ();
-	while ( pChan.valid () ) {
-        pChan->show ( level - 1u );
-        pChan++;
+    ::printf ( "disconnect governor timer: with %u channels pending\n",
+        this->chanList.count () );
+    if ( level > 0u ) {
+        tsDLIterConst < nciu > pChan = this->chanList.firstIter ();
+	    while ( pChan.valid () ) {
+            pChan->show ( level - 1u );
+            pChan++;
+        }
     }
 }
 

@@ -31,7 +31,7 @@ endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	@$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
-	$(ECHO)
+	@echo
 # The echo above stops a "nothing to be done for cleandirs" message
 
 distclean: realclean realuninstall
@@ -52,32 +52,32 @@ uninstallDirs:
 	@$(RMDIR) $(UNINSTALL_DIRS)
 
 help:
-	$(ECHO) "Usage: gnumake [options] [target] ..."
-	$(ECHO) "Targets supported by all Makefiles:"
-	$(ECHO) "     install        - Builds and installs all targets (default rule)"
-	$(ECHO) "     all            - Same as install"
-	$(ECHO) "     buildInstall   - Same as install"
-	$(ECHO) "     clean          - Removes the O.<arch> dirs created by running make"
-	$(ECHO) "                      In O.<arch> dir, clean removes build created files"
-	$(ECHO) "     realclean      - Removes ALL O.<arch> dirs"
-	$(ECHO) "                      Cannot be used within an O.<arch> dir"
-	$(ECHO) "     rebuild        - Same as clean install"
-	$(ECHO) "     inc            - Installs header files"
-	$(ECHO) "     build          - Builds all targets"
-	$(ECHO) "     archclean      - Removes O.<arch> dirs but not O.Common dir"
-	$(ECHO) "\"Partial\" build targets supported by Makefiles:"
-	$(ECHO) "     inc.<arch>     - Installs <arch> only header files."
-	$(ECHO) "     install.<arch> - Builds and installs <arch> only."
-	$(ECHO) "     clean.<arch>   - Cleans <arch> binaries in O.<arch> dirs only."
-	$(ECHO) "     build.<arch>   - Builds <arch> only."
-	$(ECHO) "Targets supported by top level Makefile:"
-	$(ECHO) "     uninstall      - Cleans directories created by the install."
-	$(ECHO) "     realuninstall  - Removes ALL install dirs"
-	$(ECHO) "     distclean      - Same as realclean realuninstall."
-	$(ECHO) "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
-	$(ECHO) "     help           - Prints this list of valid make targets "
-	$(ECHO) "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
-	$(ECHO) "     xxxRecord.o"
+	@echo "Usage: gnumake [options] [target] ..."
+	@echo "Targets supported by all Makefiles:"
+	@echo "     install        - Builds and installs all targets (default rule)"
+	@echo "     all            - Same as install"
+	@echo "     buildInstall   - Same as install"
+	@echo "     clean          - Removes the O.<arch> dirs created by running make"
+	@echo "                      In O.<arch> dir, clean removes build created files"
+	@echo "     realclean      - Removes ALL O.<arch> dirs"
+	@echo "                      Cannot be used within an O.<arch> dir"
+	@echo "     rebuild        - Same as clean install"
+	@echo "     inc            - Installs header files"
+	@echo "     build          - Builds all targets"
+	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
+	@echo "\"Partial\" build targets supported by Makefiles:"
+	@echo "     inc.<arch>     - Installs <arch> only header files."
+	@echo "     install.<arch> - Builds and installs <arch> only."
+	@echo "     clean.<arch>   - Cleans <arch> binaries in O.<arch> dirs only."
+	@echo "     build.<arch>   - Builds <arch> only."
+	@echo "Targets supported by top level Makefile:"
+	@echo "     uninstall      - Cleans directories created by the install."
+	@echo "     realuninstall  - Removes ALL install dirs"
+	@echo "     distclean      - Same as realclean realuninstall."
+	@echo "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
+	@echo "     help           - Prints this list of valid make targets "
+	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
+	@echo "     xxxRecord.o"
 
 .PHONY : $(uninstallArchTargets)
 .PHONY : uninstall help cleandirs distclean uninstallDirs realuninstall

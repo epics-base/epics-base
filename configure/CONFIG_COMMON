@@ -81,6 +81,10 @@ INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 COMMON_DIR = ../O.Common
 
 #-------------------------------------------------------
+# Make echo output - suppress echoing if make's '-s' flag is set
+ECHO := $(if $(findstring s,$(MAKEFLAGS)),\#,@echo)
+
+#-------------------------------------------------------
 ifdef T_A
 
 INSTALL_LIB                 = $(INSTALL_LOCATION_LIB)/$(T_A)
@@ -122,10 +126,6 @@ CMPLR_SUFFIX=
 CMPLR_PREFIX=
 LIB_PREFIX=
 SHRLIB_PREFIX= $(LIB_PREFIX)
-
-#-------------------------------------------------------
-# Make echo output - suppress echoing if make's '-s' flag is set
-ECHO := $(if $(findstring s,$(MAKEFLAGS)),\#,@echo)
 
 #--------------------------------------------------
 # vpath directories

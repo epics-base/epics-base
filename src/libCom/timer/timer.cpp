@@ -189,12 +189,6 @@ epicsTimer::expireInfo timer::getExpireInfo () const
 void timer::show ( unsigned int level ) const
 {
     epicsGuard < epicsMutex > locker ( this->queue.mutex );
-    const char * pName = "<no notify attached>";
-    const char *pStateName;
-
-    if ( this->pNotify ) {
-        pName = typeid ( *this->pNotify ).name ();
-    }
     double delay;
     if ( this->curState == statePending || this->curState == stateActive ) {
         try {
@@ -207,6 +201,7 @@ void timer::show ( unsigned int level ) const
     else {
         delay = -DBL_MAX;
     }
+    const char *pStateName;
     if ( this->curState == statePending ) {
         pStateName = "pending";
     }
@@ -219,8 +214,8 @@ void timer::show ( unsigned int level ) const
     else {
         pStateName = "corrupt";
     }
-    printf ( "%s, state = %s, delay = %f\n",
-        pName, pStateName, delay );
+    printf ( "timer, state = %s, delay = %f\n",
+        pStateName, delay );
     if ( level >= 1u && this->pNotify ) {
         this->pNotify->show ( level - 1u );
     }

@@ -131,7 +131,10 @@ void timerQueueActive::show ( unsigned int level ) const
 {
     printf ( "EPICS threaded timer queue at %p\n", 
         static_cast <const void *> ( this ) );
-    if ( level >=1u ) {
+    if ( level > 0u ) {
+        // specifying level one here avoids recursive 
+        // show callback
+        this->thread.show ( 1u );
         this->queue.show ( level - 1u );
         printf ( "reschedule event\n" );
         this->rescheduleEvent.show ( level - 1u );

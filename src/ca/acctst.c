@@ -1439,7 +1439,8 @@ void singleSubscriptionDeleteTest ( chid chan, unsigned interestLevel  )
             unsigned j = 0;
             while ( j < i ) {
                 temp = (float) j++;
-                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), NULL);
+                SEVCHK ( ca_put (DBR_FLOAT, chan, &temp), 
+                    "singleSubscriptionDeleteTest - one of multiple puts" );
             }
             ca_flush_io ();
         }

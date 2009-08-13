@@ -137,20 +137,18 @@ void casDGEvWakeup::show ( unsigned level ) const
 //
 epicsTimerNotify::expireStatus casDGEvWakeup::expire ( const epicsTime & /* currentTime */ )
 {
-    casEventSys::processStatus ps = this->pOS->eventSysProcess ();
-    if ( ps.nAccepted > 0u ) {
-        // We do not wait for any impartial, or complete, 
-        // messages in the input queue to be processed
-        // because.
-        // A) IO postponement might be preventing the 
-        // input queue processing from proceeding.
-        // B) Since both reads and events get processed
-        // before going back to select to find out if we
-        // can do a write then we naturally tend to
-        // combine get responses and subscription responses
-        // into one write.
-        this->pOS->armSend ();
-    }
+    this->pOS->eventSysProcess ();
+    // We do not wait for any impartial, or complete, 
+    // messages in the input queue to be processed
+    // because.
+    // A) IO postponement might be preventing the 
+    // input queue processing from proceeding.
+    // B) Since both reads and events get processed
+    // before going back to select to find out if we
+    // can do a write then we naturally tend to
+    // combine get responses and subscription responses
+    // into one write.
+    this->pOS->armSend ();
     this->pOS = 0;
     return noRestart;
 }
@@ -183,8 +181,7 @@ epicsTimerNotify :: expireStatus
 {
 	caStatus status = this->pOS->processDG ();
 	if ( status != S_cas_success &&
-		 status != S_cas_sendBlocked &&
-		 status != S_casApp_postponeAsyncIO ) {
+		 status != S_cas_sendBlocked ) {
         char pName[64u];
         this->pOS->hostName (pName, sizeof (pName));
 		errPrintf (status, __FILE__, __LINE__,
@@ -423,11 +420,10 @@ void casDGIntfOS::sendCB()
 	    //
 	    caStatus status = this->processDG ();
 	    if (    status != S_cas_success && 
-                status != S_cas_sendBlocked &&
-                status != S_casApp_postponeAsyncIO ) {
+                status != S_cas_sendBlocked ) {
             char pName[64u];
             this->hostName (pName, sizeof (pName));
-		    errPrintf (status, __FILE__, __LINE__,
+		    errPrintf ( status, __FILE__, __LINE__,
 	            "unexpected problem with UDP input from \"%s\"", pName);
 	    }
     }
@@ -463,8 +459,7 @@ void casDGIntfOS :: recvCB ( inBufClient::fillParameter parm )
     this->inBufFill ( parm );
 	caStatus status = this->processDG ();
 	if ( status != S_cas_success &&
-		 status != S_cas_sendBlocked &&
-		 status != S_casApp_postponeAsyncIO ) {
+		 status != S_cas_sendBlocked ) {
         char pName[64u];
         this->hostName (pName, sizeof (pName));
 		errPrintf (status, __FILE__, __LINE__,

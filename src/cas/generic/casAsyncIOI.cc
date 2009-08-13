@@ -100,8 +100,6 @@ caStatus casAsyncIOI::cbFunc (
 	    this->ioComplete = true;
     }
 
-	this->client.getCAS().ioBlockedList::signal ();
-
 	// dont use "this" after destroying the object here
 	delete this;
 

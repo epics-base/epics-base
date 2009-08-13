@@ -54,11 +54,13 @@ void putCallback::completion ( epicsGuard < epicsMutex > & guard  )
     args.status = ECA_NORMAL;
     args.dbr = 0;
     caEventCallBackFunc * pFuncTmp = this->pFunc;
+    // fetch client context and destroy prior to releasing
+    // the lock and calling cb in case they destroy channel there
+    this->chan.getClientCtx().destroyPutCallback ( guard, *this );
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         ( *pFuncTmp ) ( args );
     }
-    this->chan.getClientCtx().destroyPutCallback ( guard, *this );
 }
 
 void putCallback::exception (  
@@ -75,12 +77,17 @@ void putCallback::exception (
         args.status = status;
         args.dbr = 0;
         caEventCallBackFunc * pFuncTmp = this->pFunc;
+        // fetch client context and destroy prior to releasing
+        // the lock and calling cb in case they destroy channel there
+        this->chan.getClientCtx().destroyPutCallback ( guard, *this );
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
-            ( *pFuncTmp ) (args);
+            ( *pFuncTmp ) ( args );
         }
     }
-    this->chan.getClientCtx().destroyPutCallback ( guard, *this );
+    else {
+        this->chan.getClientCtx().destroyPutCallback ( guard, *this );
+    }
 }
 
 void * putCallback::operator new ( size_t ) // X aCC 361

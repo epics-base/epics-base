@@ -68,12 +68,7 @@ public:
 	casEventSys ( casCoreClient & );
 	~casEventSys ();
 	void show ( unsigned level ) const;
-    struct processStatus {
-        casProcCond cond;
-        unsigned nAccepted;
-    };
-	processStatus process ( 
-        epicsGuard < casClientMutex > & guard );
+	casProcCond process ( epicsGuard < casClientMutex > & guard );
 	void installMonitor ();
 	void removeMonitor ();
     void prepareMonitorForDestroy ( casMonitor & mon );
@@ -97,6 +92,7 @@ public:
 private:
     mutable evSysMutex mutex;
 	tsDLList < casEvent > eventLogQue;
+	tsDLList < casEvent > ioQue;
     tsFreeList < casMonEvent, 1024, epicsMutexNOOP > casMonEventFreeList;
     casCoreClient & client;
 	class casEventPurgeEv * pPurgeEvent; // flow control purge complete event
@@ -104,7 +100,7 @@ private:
 	unsigned maxLogEntries; // max log entries
 	bool destroyPending;
 	bool replaceEvents; // replace last existing event on queue
-	bool dontProcess; // flow ctl is on - dont process event queue
+	bool dontProcessSubscr; // flow ctl is on - dont process subscr event queue
 
 	bool full () const;
 	casEventSys ( const casEventSys & );
@@ -141,7 +137,7 @@ inline casEventSys::casEventSys ( casCoreClient & clientIn ) :
 	maxLogEntries ( individualEventEntries ),
 	destroyPending ( false ),
 	replaceEvents ( false ), 
-	dontProcess ( false ) 
+	dontProcessSubscr ( false ) 
 {
 }
 

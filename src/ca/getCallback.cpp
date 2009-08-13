@@ -77,12 +77,17 @@ void getCallback::exception (
         args.status = status;
         args.dbr = 0;
         caEventCallBackFunc * pFuncTmp = this->pFunc;
+        // fetch client context and destroy prior to releasing
+        // the lock and calling cb in case they destroy channel there
+        this->chan.getClientCtx().destroyGetCallback ( guard, *this );
         {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             ( *pFuncTmp ) ( args );
         }
     }
-    this->chan.getClientCtx().destroyGetCallback ( guard, *this );
+    else {
+        this->chan.getClientCtx().destroyGetCallback ( guard, *this );
+    }
 }
 
 void * getCallback::operator new ( size_t ) // X aCC 361

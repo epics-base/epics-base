@@ -2339,7 +2339,10 @@ void monitorUpdateTest ( chid chan, unsigned interestLevel )
         SEVCHK ( ca_get ( DBR_FLOAT, chan, &getResp ), NULL );
         SEVCHK ( ca_pend_io ( timeoutToPendIO ), NULL );
 
-        assert ( getResp == temp );
+        if ( getResp != temp ) {
+            printf ( "getResp=%f, temp=%f\n", getResp, temp );
+            assert ( getResp == temp );
+        }
 
         /*
          * wait for all of the monitors to have correct values

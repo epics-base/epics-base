@@ -99,7 +99,7 @@ public:
     bool okToStartAsynchIO ();
 	void setDestroyPending ();
 
-    casEventSys::processStatus eventSysProcess();
+    casProcCond eventSysProcess();
 
 	caStatus addToEventQueue ( casAsyncIOI &, 
         bool & onTheQueue, bool & posted );
@@ -172,7 +172,7 @@ inline void casCoreClient::postEvent (
     }
 }
 
-inline casEventSys::processStatus casCoreClient::eventSysProcess ()
+inline casProcCond casCoreClient :: eventSysProcess ()
 {
     epicsGuard < casClientMutex > guard ( this->mutex );
 	return this->eventSys.process ( guard );

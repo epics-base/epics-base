@@ -65,24 +65,30 @@ void getCopy::completion (
         memcpy ( this->pValue, pDataIn, size );
         this->cacCtx.decrementOutstandingIO ( guard, this->ioSeqNo );
         this->cacCtx.destroyGetCopy ( guard, *this );
+        // this object destroyed by preceding function call
     }
     else {
         this->exception ( guard, ECA_INTERNAL, 
             "bad data type match in get copy back response",
             typeIn, countIn);
+        // this object destroyed by preceding function call
     }
 }
 
 void getCopy::exception (
     epicsGuard < epicsMutex > & guard,
-    int status, const char *pContext, unsigned /* typeIn */, arrayElementCount /* countIn */ )
+    int status, const char *pContext, 
+    unsigned /* typeIn */, arrayElementCount /* countIn */ )
 {
     oldChannelNotify & chanTmp ( this->chan );
     unsigned typeTmp ( this->type );
     arrayElementCount countTmp ( this->count );
+    ca_client_context & caClientCtx ( this->cacCtx );
+    // fetch client context and destroy prior to releasing
+    // the lock and calling cb in case they destroy channel there
     this->cacCtx.destroyGetCopy ( guard, *this );
     if ( status != ECA_CHANDESTROY ) {
-        this->cacCtx.exception ( guard, status, pContext, 
+        caClientCtx.exception ( guard, status, pContext, 
             __FILE__, __LINE__, chanTmp, typeTmp, 
             countTmp, CA_OP_GET );
     }

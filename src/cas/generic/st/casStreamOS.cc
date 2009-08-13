@@ -148,8 +148,8 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::
     expire ( const epicsTime & /* currentTime */ )
 {
     this->os.printStatus ( "casStreamEvWakeup tmr expire" );
-    casEventSys::processStatus ps = os.eventSysProcess ();
-    if ( ps.nAccepted > 0u ) {
+    casProcCond pc = os.eventSysProcess ();
+ 	if ( pc == casProcOk ) {
         // We do not wait for any impartial, or complete, 
         // messages in the input queue to be processed
         // because.
@@ -168,7 +168,7 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::
         // message is pending in the input queue.
         this->os.armSend ();
     }
-	if ( ps.cond != casProcOk ) {
+    else {
 		//
 		// ok to delete the client here
 		// because casStreamEvWakeup::expire()
@@ -190,15 +190,16 @@ epicsTimerNotify::expireStatus casStreamEvWakeup::
 //
 // casStreamEvWakeup::start()
 //
+// care is needed here because this is called
+// asynchronously by postEvent
+//
+// there is some overhead here but care is taken
+// in the caller of this routine to call this
+// only when its the 2nd event on the queue
+//
 void casStreamEvWakeup::start( casStreamOS & )
 {    
     this->os.printStatus ( "casStreamEvWakeup tmr start" );
-    // care is needed here because this is called
-    // asynchronously by postEvent
-    //
-    // there is some overhead here but care is taken
-    // in the caller of this routine to call this
-    // only when its the 2nd event on the queue
     this->timer.start ( *this, 0.0 );
 }
 
@@ -254,9 +255,19 @@ epicsTimerNotify::expireStatus casStreamIOWakeup ::
     }
     else if ( status == S_cas_sendBlocked ) {
         tmpOS.armSend ();
+        // always activate receives if space is available
+        // in the in buf
+        tmpOS.armRecv ();
     }
     else if ( status == S_casApp_postponeAsyncIO ) {
+        // we should be back on the IO blocked list
+        // if S_casApp_postponeAsyncIO was returned
+        // so this function will be called again when
+        // another asynchronous request completes
         tmpOS.armSend ();
+        // always activate receives if space is available
+        // in the in buf
+        tmpOS.armRecv ();
     }
     else {
         errMessage ( status,
@@ -332,6 +343,7 @@ inline void casStreamOS::disarmSend ()
 
 //
 // casStreamOS::ioBlockedSignal()
+// (called by main thread when lock is applied)
 //
 void casStreamOS::ioBlockedSignal()
 {
@@ -340,6 +352,8 @@ void casStreamOS::ioBlockedSignal()
 
 //
 // casStreamOS::eventSignal()
+// (called by any thread asynchronously
+// when an event is posted)
 //
 void casStreamOS::eventSignal()
 {
@@ -441,7 +455,9 @@ void casStreamOS :: recvCB ()
         return;
 	}
     else if ( fillCond == casFillNone ) {
-        this->disarmRecv ();
+        if ( this->inBufFull() ) {
+            this->disarmRecv ();
+        }
     }
     else {
 	    printStatus ( "recv CB req proc" );
@@ -544,8 +560,8 @@ void casStreamOS::sendCB ()
 	// we _are_ able to write to see if additional events 
 	// can be sent to the slow client.
 	//
-    casEventSys::processStatus ps = this->eventSysProcess ();
-	if ( ps.cond != casProcOk ) {
+    casProcCond pc = this->eventSysProcess ();
+	if ( pc != casProcOk ) {
 		//
 		// ok to delete the client here
 		// because casStreamWriteReg::callBack()
@@ -610,8 +626,8 @@ bool casStreamOS ::
     _sendNeeded () const 
 {
     bool sn = this->outBufBytesPending() >= this->_sendBacklogThresh;
-    sn = sn || ( this->inBufBytesPending () == 0u );
-    return sn;
+    bufSizeT inBytesPending = this->inBufBytesPending ();
+    return sn || ( inBytesPending == 0u );
 }   
     
 

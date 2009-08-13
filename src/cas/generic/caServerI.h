@@ -156,6 +156,7 @@ inline void caServerI :: decrementIOInProgCount ()
 {
     assert ( ioInProgressCount > 0 );
     ioInProgressCount--;
+    this->ioBlockedList::signal ();
 }
 
 #endif // caServerIh

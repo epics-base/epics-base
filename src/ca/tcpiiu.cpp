@@ -468,6 +468,7 @@ void tcpRecvThread::run ()
             if ( ! pComBuf ) {
                 pComBuf = new ( this->iiu.comBufMemMgr ) comBuf;
             }
+
             statusWireIO stat;
             pComBuf->fillFromWire ( this->iiu, stat );
 
@@ -497,7 +498,6 @@ void tcpRecvThread::run ()
                 callbackManager mgr ( this->ctxNotify, this->cbMutex );
 
                 epicsGuard < epicsMutex > guard ( this->iiu.mutex );
-
                 
                 // route legacy V42 channel connect through the recv thread -
                 // the only thread that should be taking the callback lock
@@ -506,19 +506,6 @@ void tcpRecvThread::run ()
                     pChan->connect ( mgr.cbGuard, guard );
                 }
 
-                if ( stat.bytesCopied == pComBuf->capacityBytes () ) {
-                    if ( this->iiu.contigRecvMsgCount >= 
-                        contiguousMsgCountWhichTriggersFlowControl ) {
-                        this->iiu.busyStateDetected = true;
-                    }
-                    else { 
-                        this->iiu.contigRecvMsgCount++;
-                    }
-                }
-                else {
-                    this->iiu.contigRecvMsgCount = 0u;
-                    this->iiu.busyStateDetected = false;
-                }         
                 this->iiu.unacknowledgedSendBytes = 0u;
 
                 bool protocolOK = false;
@@ -542,6 +529,40 @@ void tcpRecvThread::run ()
                     sendWakeupNeeded = true;
                 }
             }
+            
+            //
+            // we dont feel comfortable calling this with a lock applied
+            // (it might block for longer than we like)
+            //
+            // we would prefer to improve efficency by trying, first, a 
+            // recv with the new MSG_DONTWAIT flag set, but there isnt 
+            // universal support
+            //
+            bool bytesArePending = this->iiu.bytesArePendingInOS ();
+            {
+                epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+                if ( bytesArePending ) {
+                    if ( ! this->iiu.busyStateDetected ) {
+                        this->iiu.contigRecvMsgCount++;
+                        if ( this->iiu.contigRecvMsgCount >= 
+                            this->iiu.cacRef.maxContiguousFrames ( guard ) ) {
+                            this->iiu.busyStateDetected = true;
+                            sendWakeupNeeded = true;
+                        }
+                    }
+                }
+                else {
+                    // if no bytes are pending then we must immediately
+                    // switch off flow control w/o waiting for more
+                    // data to arrive
+                    this->iiu.contigRecvMsgCount = 0u;
+                    if ( this->iiu.busyStateDetected ) {
+                        sendWakeupNeeded = true;
+                        this->iiu.busyStateDetected = false;
+                    }
+                }
+            }
+
             if ( sendWakeupNeeded ) {
                 this->iiu.sendThreadFlushEvent.signal ();
             }

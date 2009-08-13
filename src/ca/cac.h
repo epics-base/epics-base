@@ -198,6 +198,7 @@ public:
     unsigned largeBufferSizeTCP () const;
     char * allocateLargeBufferTCP ();
     void releaseLargeBufferTCP ( char * );
+    unsigned maxContiguousFrames ( epicsGuard < epicsMutex > & ) const;
 
     // misc
     const char * userNamePointer () const;
@@ -272,6 +273,7 @@ private:
     epicsThreadId initializingThreadsId;
     unsigned initializingThreadsPriority;
     unsigned maxRecvBytesTCP;
+    unsigned maxContigFrames;
     unsigned beaconAnomalyCount;
     unsigned iiuExistenceCount;
 
@@ -440,6 +442,12 @@ inline nciu * cac::lookupChannel (
 inline const char * cac :: pLocalHostName ()
 {
     return _refLocalHostName->pointer ();
+}
+
+inline unsigned cac :: 
+    maxContiguousFrames ( epicsGuard < epicsMutex > & ) const
+{
+    return maxContigFrames;
 }
 
 #endif // ifdef cach

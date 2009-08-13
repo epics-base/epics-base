@@ -143,6 +143,7 @@ cac::cac (
     initializingThreadsId ( epicsThreadGetIdSelf() ),
     initializingThreadsPriority ( epicsThreadGetPrioritySelf() ),
     maxRecvBytesTCP ( MAX_TCP ),
+    maxContigFrames ( contiguousMsgCountWhichTriggersFlowControl ),
     beaconAnomalyCount ( 0u ),
     iiuExistenceCount ( 0u )
 {
@@ -214,6 +215,11 @@ cac::cac (
         freeListInitPvt ( &this->tcpLargeRecvBufFreeList, this->maxRecvBytesTCP, 1 );
         if ( ! this->tcpLargeRecvBufFreeList ) {
             throw std::bad_alloc ();
+        }
+        unsigned bufsPerArray = this->maxRecvBytesTCP / comBuf::capacityBytes ();
+        if ( bufsPerArray > 1u ) {
+            maxContigFrames = bufsPerArray * 
+                contiguousMsgCountWhichTriggersFlowControl;
         }
     }
     catch ( ... ) {

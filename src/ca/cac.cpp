@@ -553,12 +553,15 @@ void cac::transferChanToVirtCircuit (
             piiu = pnewiiu.release ();
             newIIU = true;
         }
-        catch ( std::bad_alloc & ) {
+        catch ( std :: exception & except ) {
+            errlogPrintf ( 
+                "CAC: exception during virtual circuit creation \"%s\"\n",
+                except.what () );
             return;
         }
         catch ( ... ) {
             errlogPrintf ( 
-                "CAC: Unexpected exception during virtual circuit creation\n" );
+                "CAC: nonstandard exception during virtual circuit creation\n" );
             return;
         }
     }

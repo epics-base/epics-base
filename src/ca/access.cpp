@@ -351,6 +351,13 @@ int epicsShareAPI ca_create_channel (
     catch ( cacChannel::unsupportedByService & ) {
         return ECA_UNAVAILINSERV;
     }
+    catch ( std :: exception & except ) {
+        pcac->printFormated ( 
+            "ca_create_channel: "
+            "unexpected exception was \"%s\"", 
+            except.what () );
+        return ECA_INTERNAL;
+    }
     catch ( ... ) {
         return ECA_INTERNAL;
     }

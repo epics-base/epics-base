@@ -159,7 +159,7 @@ public:
     static void setOkToBlock ( bool isOkToBlock ) throw ();
 
     /* exceptions */
-    class unableToCreateThread {};
+    class unableToCreateThread;
 private:
     epicsThreadRunable & runable;
     epicsThreadId id;

@@ -31,7 +31,19 @@
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
-    
+
+class epicsThread :: unableToCreateThread : 
+    public std :: exception {
+public:
+    const char * what () const throw ();
+};
+
+const char * epicsThread :: 
+    unableToCreateThread :: what () const throw ()
+{
+    return "unable to create thread";
+}
+
 void epicsThread :: printLastChanceExceptionMessage ( 
     const char * pExceptionTypeName,
     const char * pExceptionContext )
@@ -47,7 +59,8 @@ void epicsThread :: printLastChanceExceptionMessage (
     char name [128];
     epicsThreadGetName ( this->id, name, sizeof ( name ) );
     errlogPrintf ( 
-        "epicsThread: Unexpected C++ exception \"%s\" with type \"%s\" in thread \"%s\" at %s\n",
+        "epicsThread: Unexpected C++ exception \"%s\" "
+        "with type \"%s\" in thread \"%s\" at %s\n",
         pExceptionContext, pExceptionTypeName, name, date );
     errlogFlush ();
     // this should behave as the C++ implementation intends when an 

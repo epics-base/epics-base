@@ -2992,6 +2992,10 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
     
             ca_context_destroy ();
         }
+
+        if ( i % 100 == 0 ) {
+            showProgress ( interestLevel );
+        }
     }
     
     showProgressEnd ( interestLevel );

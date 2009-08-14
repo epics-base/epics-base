@@ -14,6 +14,8 @@
 
 <h4>Channel Access changes</h4>
 
+<p>Mantis 359 fix - ca client library flow control mode related issues </p>
+
 <p>Mantis 357 fix - high throughput multithreaded ca client appl thread could
 be trapped in lib.</p>
 
@@ -34,13 +36,13 @@ causes failure </p>
 <p>Mantis 242 fix - invalid DBR type not screened in client library when
 doing a put </p>
 
-<p>Mantis 331 fix - manual config beacon addr list fails on little endian
-arch</p>
-
 <h4>Portable Channel Access Server changes</h4>
 
 <p> These changes impact the Gateway (Proxy server) and other servers but not
 the IOC.</h4>
+
+<p>Mantis 360 fix - server is unresponsive for one of its clients, when 
+async io postponed and in flow control mode </p>
 
 <p>Mantis 358 fix - PCAS service snap-in has no way to determine if its a put,
 or a put calback.</p>

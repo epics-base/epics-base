@@ -571,7 +571,7 @@ inline void exServer::removeIO()
     }
     else {
         fprintf ( stderr, 
-        "simultAsychIOCount underflow?\n" );
+            "simultAsychIOCount underflow?\n" );
     }
 }
 

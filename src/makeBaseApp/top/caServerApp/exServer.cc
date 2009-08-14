@@ -199,12 +199,13 @@ pvExistReturn exServer::pvExistTest // X aCC 361
 
         this->simultAsychIOCount++;
 
-        exAsyncExistIO  *pIO;
-        pIO = new exAsyncExistIO ( pvi, ctxIn, *this );
-        if (pIO) {
+        exAsyncExistIO * pIO = 
+            new exAsyncExistIO ( pvi, ctxIn, *this );
+        if ( pIO ) {
             return pverAsyncCompletion;
         }
         else {
+            this->simultAsychIOCount--;
             return pverDoesNotExistHere;
         }
     }
@@ -259,6 +260,7 @@ pvAttachReturn exServer::pvAttach // X aCC 361
             return S_casApp_asyncCompletion;
         }
         else {
+            this->simultAsychIOCount--;
             return S_casApp_noMemory;
         }
     }

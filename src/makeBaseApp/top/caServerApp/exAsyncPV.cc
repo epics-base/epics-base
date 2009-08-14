@@ -26,14 +26,12 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 		return S_casApp_postponeAsyncIO;
 	}
 
-	this->simultAsychIOCount++;
-
 	pIO = new exAsyncReadIO ( this->cas, ctx, 
 	                *this, valueIn, this->asyncDelay );
-	if (!pIO) {
+	if ( ! pIO ) {
 		return S_casApp_noMemory;
 	}
-
+	this->simultAsychIOCount++;
     return S_casApp_asyncCompletion;
 }
 
@@ -46,15 +44,13 @@ caStatus exAsyncPV::writeNotify ( const casCtx &ctx, const gdd &valueIn )
 		return S_casApp_postponeAsyncIO;
 	}
 
-	this->simultAsychIOCount++;
-
 	exAsyncWriteIO * pIO = new 
         exAsyncWriteIO ( this->cas, ctx, *this, 
 	                    valueIn, this->asyncDelay );
 	if ( ! pIO ) {
-        this->simultAsychIOCount--;
 		return S_casApp_noMemory;
 	}
+	this->simultAsychIOCount++;
 	return S_casApp_asyncCompletion;
 }
 
@@ -63,7 +59,7 @@ caStatus exAsyncPV::writeNotify ( const casCtx &ctx, const gdd &valueIn )
 //
 caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 {
-	// implement the dicard intermediate values, but last value
+	// implement the discard intermediate values, but last value
     // sent always applied behavior that IOCs provide excepting
     // that we will alow N requests to pend instead of a limit
     // of only one imposed in the IOC
@@ -72,15 +68,13 @@ caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 		return S_casApp_success;
 	}
 
-	this->simultAsychIOCount++;
-
 	exAsyncWriteIO * pIO = new 
         exAsyncWriteIO ( this->cas, ctx, *this, 
 	                    valueIn, this->asyncDelay );
 	if ( ! pIO ) {
-        this->simultAsychIOCount--;
 		return S_casApp_noMemory;
 	}
+	this->simultAsychIOCount++;
 	return S_casApp_asyncCompletion;
 }
 
@@ -130,7 +124,8 @@ exAsyncWriteIO::~exAsyncWriteIO()
 // exAsyncWriteIO::expire()
 // (a virtual function that runs when the base timer expires)
 //
-epicsTimerNotify::expireStatus exAsyncWriteIO::expire ( const epicsTime & /* currentTime */ ) 
+epicsTimerNotify::expireStatus exAsyncWriteIO::
+    expire ( const epicsTime & /* currentTime */ ) 
 {
 	caStatus status = this->pv.update ( *this->pValue );
 	this->pValue.set ( 0 );
@@ -166,13 +161,11 @@ exAsyncReadIO::~exAsyncReadIO()
 //
 epicsTimerNotify::expireStatus exAsyncReadIO::expire ( const epicsTime & /* currentTime */ )
 {
-	caStatus status;
-
 	//
 	// map between the prototype in and the
 	// current value
 	//
-	status = this->pv.exPV::readNoCtx ( this->pProto );
+	caStatus status = this->pv.exPV::readNoCtx ( this->pProto );
 
 	//
 	// post IO completion

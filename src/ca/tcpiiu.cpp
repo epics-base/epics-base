@@ -26,6 +26,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include <string>
 #include "errlog.h"
 
 #define epicsExportSharedSymbols
@@ -694,13 +695,15 @@ tcpiiu::tcpiiu (
 {
     this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
+        cac.releaseSmallBufferTCP ( this->pCurData );
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf ( "CAC: unable to create virtual circuit because \"%s\"\n",
-            sockErrBuf );
-        cac.releaseSmallBufferTCP ( this->pCurData );
-        throw std::bad_alloc ();
+        std :: string reason = 
+            "CAC: TCP circuit creation failure because \"";
+        reason += sockErrBuf;
+        reason += "\"";
+        throw std :: runtime_error ( reason );
     }
 
     int flag = true;
@@ -748,7 +751,7 @@ tcpiiu::tcpiiu (
         if (status < 0) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ("CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
+            errlogPrintf ( "CAC: problems setting socket option SO_SNDBUF = \"%s\"\n",
                 sockErrBuf );
         }
         i = MAX_MSG_SIZE;

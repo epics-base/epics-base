@@ -28,12 +28,14 @@
 #include "epicsGuard.h"
 #include "errlog.h"
 
+using namespace std;
+
 epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
 
 class epicsThread :: unableToCreateThread : 
-    public std :: exception {
+    public exception {
 public:
     const char * what () const throw ();
 };

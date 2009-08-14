@@ -26,6 +26,7 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
+#include <stdexcept>
 #include <string>
 #include "errlog.h"
 
@@ -42,6 +43,8 @@
 #include "epicsSignal.h"
 #include "caerr.h"
 #include "udpiiu.h"
+
+using namespace std;
 
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
@@ -703,7 +706,7 @@ tcpiiu::tcpiiu (
             "CAC: TCP circuit creation failure because \"";
         reason += sockErrBuf;
         reason += "\"";
-        throw std :: runtime_error ( reason );
+        throw runtime_error ( reason );
     }
 
     int flag = true;

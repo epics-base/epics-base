@@ -253,11 +253,11 @@ caStatus casEventPurgeEv::cbFunc (
 caStatus casEventSys::addToEventQueue ( casAsyncIOI & event, 
     bool & onTheQueue, bool & posted, bool & wakeupNeeded )
 {
-    wakeupNeeded = false;
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
 	    // dont allow them to post completion more than once
         if ( posted || onTheQueue ) {
+            wakeupNeeded = false;
             return S_cas_redundantPost;
         }
         posted = true;
@@ -358,7 +358,7 @@ bool casEventSys::postEvent ( tsDLList < casMonitor > & monitorList,
 		            pLog = 0;
 	            }
             	
-                signalNeeded = 
+                signalNeeded |= 
                     !this->dontProcessSubscr && 
                     this->eventLogQue.count() == 0 &&
                     this->ioQue.count() == 0;

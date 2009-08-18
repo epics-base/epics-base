@@ -20,6 +20,9 @@
 #include <float.h>
 #include <string.h>
 
+// The following is required for Solaris builds
+#undef __EXTENSIONS__
+
 #define epicsExportSharedSymbols
 #include "epicsAlgorithm.h"
 #include "epicsTime.h"

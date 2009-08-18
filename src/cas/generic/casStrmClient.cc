@@ -280,7 +280,7 @@ caStatus casStrmClient :: processMsg ()
 		this->sendErr ( guard,
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "unexpected C++ exception in server "
-            "diconnected client" );
+            "disconnected client" );
         status = S_cas_internal;
     }
 

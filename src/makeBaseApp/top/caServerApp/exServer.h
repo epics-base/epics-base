@@ -334,11 +334,14 @@ public:
     caStatus read ( const casCtx & ctxIn, gdd & protoIn );
     caStatus write ( const casCtx & ctxIn, const gdd & value );
     caStatus writeNotify ( const casCtx & ctxIn, const gdd & value );
-    void removeIO();
+    void removeReadIO();
+    void removeWriteIO();
+    caStatus updateFromAsyncWrite ( const gdd & );
 private:
     double asyncDelay;
     smartConstGDDPointer pStandbyValue;
-    unsigned simultAsychIOCount;
+    unsigned simultAsychReadIOCount;
+    unsigned simultAsychWriteIOCount;
     exAsyncPV & operator = ( const exAsyncPV & );
     exAsyncPV ( const exAsyncPV & );
 };
@@ -578,15 +581,6 @@ inline void exServer::removeIO()
 inline unsigned exServer :: maxSimultAsyncIO () const
 {
     return this->_maxSimultAsyncIO;
-}
-
-inline exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup, 
-                             bool preCreateFlag, bool scanOnIn,
-                             double asyncDelayIn ) :
-    exScalarPV ( cas, setup, preCreateFlag, scanOnIn ),
-    asyncDelay ( asyncDelayIn ),
-    simultAsychIOCount ( 0u )
-{
 }
 
 inline exChannel::exChannel ( const casCtx & ctxIn ) : 

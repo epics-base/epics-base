@@ -100,9 +100,6 @@ const struct sockaddr_in    *pnet_addr
 
 LOCAL void verifyChanAndDisconnect(IIU *piiu, enum channel_state state);
 
-#ifdef CONVERSION_REQUIRED 
-extern CACVRTFUNC *cac_dbr_cvrt[];
-#endif /*CONVERSION_REQUIRED*/
 
 
 /*

@@ -12,6 +12,16 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Build system dependency change</h4>
+
+<p>In order to get GNU make parallel execution (-j option) to work proprely for
+multiple target architectures, a new dependency had to be added. Now all
+cross-compiled builds depend on their host build. This means that when a
+<tt>make <i>crosstargetarch</i></tt> command is issued, the EPICS_HOST_ARCH
+target build will be executed first, followed by the <i>crosstargetarch</i>
+build. Builds done in an O.<i>arch</i> directory will still only build the
+<i>arch</i> targets however.</p>
+
 <h4>Channel Access changes</h4>
 
 <p>Mantis 359 fix - ca client library flow control mode related issues </p>

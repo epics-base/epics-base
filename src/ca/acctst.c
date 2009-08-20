@@ -2740,6 +2740,8 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
         assert ( status >= 0 );
     }
 
+    showProgress ( interestLevel );
+
     status = ca_add_event ( DBR_FLOAT, newChan, 
         nUpdatesTester, & eventCount,  & subscription );
     assert ( status == ECA_NORMAL );
@@ -2753,6 +2755,8 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
         status = fdmgr_pend_event ( mgrCtx, & tmo );
         assert ( status >= 0 );
     }
+
+    showProgress ( interestLevel );
 
     status = ca_clear_event ( subscription );
     assert ( status == ECA_NORMAL );
@@ -2776,6 +2780,8 @@ void fdManagerVerify ( const char * pName, unsigned interestLevel )
         }
         assert ( eventCount++ < 100 );
     }
+
+    showProgress ( interestLevel );
 
     status = ca_clear_channel ( newChan );
     assert ( status == ECA_NORMAL );

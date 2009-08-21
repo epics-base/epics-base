@@ -24,7 +24,10 @@ build. Builds done in an O.<i>arch</i> directory will still only build the
 
 <h4>Channel Access changes</h4>
 
-<p>Mantis 359 fix - ca client library flow control mode related issues </p>
+<p>Mantis 361 fix - ca_add_fd_registration users might not receive select
+wakeup</p>
+
+<p>Mantis 359 fix - ca client library flow control mode related issues</p>
 
 <p>Mantis 357 fix - high throughput multithreaded ca client appl thread could
 be trapped in lib.</p>
@@ -37,14 +40,14 @@ be trapped in lib.</p>
 ca_put_callback()</p>
 
 <p>Mantis 346 fix - deleting the chid passed in from within put cb handler
-causes failure </p>
+causes failure</p>
 
 <p>Mantis 284 fix - channel clear protocol warning messages from PCAS</p>
 
-<p>Mantis 237 fix - SEGV from simple CA client during context destroy </p>
+<p>Mantis 237 fix - SEGV from simple CA client during context destroy</p>
 
 <p>Mantis 242 fix - invalid DBR type not screened in client library when
-doing a put </p>
+doing a put</p>
 
 <h4>Portable Channel Access Server changes</h4>
 
@@ -52,7 +55,7 @@ doing a put </p>
 the IOC.</h4>
 
 <p>Mantis 360 fix - server is unresponsive for one of its clients, when 
-async io postponed and in flow control mode </p>
+async io postponed and in flow control mode</p>
 
 <p>Mantis 358 fix - PCAS service snap-in has no way to determine if its a put,
 or a put calback.</p>
@@ -81,7 +84,7 @@ R3.13 client</p>
 argument message</p>
 
 <p>Mantis 352 fix - gateway hangs temporarily under heavy load on 8-core 
-64bit RHEL5  </p>
+64bit RHEL5</p>
 
 <ul>
 <li>High throughput performance appears to be much better now for both scalars
@@ -94,11 +97,11 @@ and large arrays, but more testing needed in operational gateways</li>
 user's expiration callback</p>
 
 <p>Mantis 332 fix - epicsTimerTest failure, windows vista 64, dual core
-SMP system </p>
+SMP system</p>
 
 <h4>LibCom</h4>
 
-<p>Mantis 328 fixed - orderly shutdown for soft IOC fails </p>
+<p>Mantis 328 fixed - orderly shutdown for soft IOC fails</p>
 
 <h4>Application configure files</h4>
 

@@ -12,13 +12,8 @@
 
 <ul>
 
-  <li>The libCom test suite program epicsCalcTest test #66 fails on some linux
-    systems. This is not a bug in EPICS and will not be fixed; it actually
-    demonstrates that the GCC optimizer is not generating the same result for
-    the expression <tt>isinf(-Inf)</tt> that the glibc function returns at
-    runtime. Both versions return a non-zero result for infinite arguments, but
-    the GCC optimized version applies the sign of its infinite argument to its
-    return value, whereas glibc always returns +1.</li>
+  <li>The epicsMutexTest program sometimes runs an extra test, resulting in
+    a failure report from 'make -s runtests'.  This is harmless.</li>
 
 </ul>
 

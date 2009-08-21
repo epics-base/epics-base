@@ -404,6 +404,7 @@ private:
     void callbackProcessingCompleteNotify ();
     cacContext & createNetworkContext ( 
         epicsMutex & mutualExclusion, epicsMutex & callbackControl );
+    void _sendWakeupMsg ();
 
 	ca_client_context ( const ca_client_context & );
 	ca_client_context & operator = ( const ca_client_context & );

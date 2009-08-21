@@ -253,6 +253,11 @@ void ca_client_context::registerForFileDescriptorCallBack (
     this->fdRegFunc = pFunc;
     this->fdRegArg = pArg;
     this->fdRegFuncNeedsToBeCalled = true;
+    if ( pFunc ) {
+        // the receive thread might already be blocking
+        // w/o having sent the wakeup message
+        this->_sendWakeupMsg ();
+    }
 // should block here until releated callback in progress completes
 }
 
@@ -557,11 +562,11 @@ int ca_client_context::pendEvent ( const double & timeout )
                         0, & tmpAddr.sa, & addrSize );
             } while ( status > 0 );
         }
-        this->noWakeupSincePend = true;
         while ( this->callbackThreadsPending > 0 ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
             this->callbackThreadActivityComplete.wait ( 30.0 );
         }
+        this->noWakeupSincePend = true;
     }
 
     double elapsed = epicsTime::getCurrent() - current;
@@ -613,17 +618,22 @@ void ca_client_context::callbackProcessingInitiateNotify ()
             }
         }
         if ( sendNeeded ) {
-            // send short udp message to wake up a file descriptor manager
-            // when a message arrives
-            osiSockAddr tmpAddr;
-            tmpAddr.ia.sin_family = AF_INET;
-            tmpAddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
-            tmpAddr.ia.sin_port = htons ( this->localPort );
-            char buf = 0;
-            sendto ( this->sock, & buf, sizeof ( buf ),
-                    0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
+            _sendWakeupMsg ();
         }
     }
+}
+
+void ca_client_context :: _sendWakeupMsg ()
+{
+    // send short udp message to wake up a file descriptor manager
+    // when a message arrives
+    osiSockAddr tmpAddr;
+    tmpAddr.ia.sin_family = AF_INET;
+    tmpAddr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK );
+    tmpAddr.ia.sin_port = htons ( this->localPort );
+    char buf = 0;
+    sendto ( this->sock, & buf, sizeof ( buf ),
+            0, & tmpAddr.sa, sizeof ( tmpAddr.sa ) );
 }
 
 void ca_client_context::callbackProcessingCompleteNotify ()

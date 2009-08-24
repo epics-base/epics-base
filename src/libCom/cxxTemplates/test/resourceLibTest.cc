@@ -25,6 +25,9 @@ typedef intId<unsigned,8,16> testIntId;
 typedef intId<unsigned,8> testIntId;
 #endif
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 static void empty()
 {
 }
@@ -34,7 +37,7 @@ public:
 	albert (resTable< albert, testIntId > &atIn, unsigned idIn) : 
 		testIntId(idIn), at(atIn) 
     {
-        assert (at.add (*this)==0);
+        verify (at.add (*this)==0);
     }
 	void show (unsigned /* level */) 
 	{
@@ -125,52 +128,52 @@ int main()
 
 	intTbl.setTableSize ( 100000 );
 
-	assert (intTbl.add(fred0)==0);
+	verify (intTbl.add(fred0)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred1)==0);
+	verify (intTbl.add(fred1)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred2)==0);
+	verify (intTbl.add(fred2)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred3)==0);
+	verify (intTbl.add(fred3)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred4)==0);
+	verify (intTbl.add(fred4)==0);
     intTbl.verify ();
 
 	intTbl.setTableSize ( 200000 );
 
-	assert (intTbl.add(fred5)==0);
+	verify (intTbl.add(fred5)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred6)==0);
+	verify (intTbl.add(fred6)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred7)==0);
+	verify (intTbl.add(fred7)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred8)==0);
+	verify (intTbl.add(fred8)==0);
     intTbl.verify ();
-	assert (intTbl.add(fred9)==0);
+	verify (intTbl.add(fred9)==0);
     intTbl.verify ();
 
 	start = clock();
 	for (i=0; i<LOOPS; i++) {
 		pFred = intTbl.lookup(intId1);	
-		assert(pFred==&fred1);
+		verify(pFred==&fred1);
 		pFred = intTbl.lookup(intId2);	
-		assert(pFred==&fred2);
+		verify (pFred==&fred2);
 		pFred = intTbl.lookup(intId3);	
-		assert(pFred==&fred3);
+		verify (pFred==&fred3);
 		pFred = intTbl.lookup(intId4);	
-		assert(pFred==&fred4);
+		verify (pFred==&fred4);
 		pFred = intTbl.lookup(intId5);	
-		assert(pFred==&fred5);
+		verify (pFred==&fred5);
 		pFred = intTbl.lookup(intId6);	
-		assert(pFred==&fred6);
+		verify (pFred==&fred6);
 		pFred = intTbl.lookup(intId7);	
-		assert(pFred==&fred7);
+		verify (pFred==&fred7);
 		pFred = intTbl.lookup(intId8);	
-		assert(pFred==&fred8);
+		verify (pFred==&fred8);
 		pFred = intTbl.lookup(intId9);	
-		assert(pFred==&fred9);
+		verify (pFred==&fred9);
 		pFred = intTbl.lookup(intId0);	
-		assert(pFred==&fred0);
+		verify (pFred==&fred0);
 	}
 	finish = clock();
 
@@ -187,35 +190,35 @@ int main()
 	intTbl.remove(intId1);
 	intTbl.remove(intId2);
 	pFred = intTbl.lookup(intId1);	
-	assert(pFred==0);
+	verify (pFred==0);
 	pFred = intTbl.lookup(intId2);	
-	assert(pFred==0);
+	verify (pFred==0);
     
-	assert (strTbl.add(jane1)==0);
-	assert (strTbl.add(jane2)==0);
+	verify (strTbl.add(jane1)==0);
+	verify (strTbl.add(jane2)==0);
 
 	start = clock();
 	for(i=0; i<LOOPS; i++){
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId1);	
-		assert(pJane==&jane1);
+		verify (pJane==&jane1);
 		pJane = strTbl.lookup(strId2);	
-		assert(pJane==&jane2);
+		verify (pJane==&jane2);
 	}
 	finish = clock();
 
@@ -264,7 +267,7 @@ int main()
 
 	for (i=0; i<elementCount; i++) {
 		pAlbert[i] = new albert (alTbl, i);
-		assert ( pAlbert[i] );
+		verify ( pAlbert[i] );
 	}
 	alTbl.verify ();
 	alTbl.show (1u);
@@ -276,26 +279,26 @@ int main()
         i++;
         alTblIter++;
     }
-    assert ( i == elementCount );
+    verify ( i == elementCount );
 	alTbl.verify ();
 
 	for ( i = 0; i < elementCount; i++ ) {
-		assert ( pAlbert[i] == alTbl.lookup( pAlbert[i]->getId() ) );
+		verify ( pAlbert[i] == alTbl.lookup( pAlbert[i]->getId() ) );
 	}
 	alTbl.verify ();
 
     for ( i = 0; i < elementCount; i += 2 ) {
-        assert ( pAlbert[i] == alTbl.remove ( pAlbert[i]->getId() ) );
+        verify ( pAlbert[i] == alTbl.remove ( pAlbert[i]->getId() ) );
 	}
 	alTbl.verify ();
 
     for ( i = 0; i < elementCount; i += 2 ) {
-        assert ( 0 == alTbl.lookup ( pAlbert[i]->getId() ) );
+        verify ( 0 == alTbl.lookup ( pAlbert[i]->getId() ) );
 	}
 	alTbl.verify ();
 
     for ( i = 1; i < elementCount; i += 2 ) {
-        assert ( pAlbert[i] == alTbl.lookup ( pAlbert[i]->getId() ) );
+        verify ( pAlbert[i] == alTbl.lookup ( pAlbert[i]->getId() ) );
  	}
 	alTbl.verify ();
 

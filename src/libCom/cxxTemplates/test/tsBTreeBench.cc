@@ -67,7 +67,8 @@ int main ()
 
 	clk = clock ();
 	for (i=0u; i<LOOPCOUNT; i++) {
-		assert ( tree.verify(a) );
+        bool success = tree.verify(a);
+		assert ( success );
 	}
 	diff = clock () - clk;
         delay = diff;
@@ -77,13 +78,14 @@ int main ()
 
 	clk = clock ();
 	while ( ( pA = list.get () ) ) {
-		assert (tree.remove(*pA));
+        bool success = tree.remove(*pA);
+		assert ( success );
 	}
 	diff = clock () - clk;
-        delay = diff;
-        delay = delay/CLOCKS_PER_SEC;
-        delay = delay/LOOPCOUNT;
-        printf ("delay = %15.10f\n", delay);
+    delay = diff;
+    delay = delay/CLOCKS_PER_SEC;
+    delay = delay/LOOPCOUNT;
+    printf ("delay = %15.10f\n", delay);
 
 	tree.traverse (&A::show);
 

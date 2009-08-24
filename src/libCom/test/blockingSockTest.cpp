@@ -18,6 +18,9 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 union address {
     struct sockaddr_in ia;
     struct sockaddr sa;
@@ -73,7 +76,7 @@ circuit::circuit ( SOCKET sockIn ) :
     recvWakeup ( false ), 
     sendWakeup ( false )
 {
-    assert ( this->sock != INVALID_SOCKET );
+    verify ( this->sock != INVALID_SOCKET );
 }
 
 bool circuit::recvWakeupDetected () const
@@ -89,7 +92,7 @@ bool circuit::sendWakeupDetected () const
 void circuit::shutdown ()
 {
     int status = ::shutdown ( this->sock, SHUT_RDWR );
-    assert ( status == 0 );
+    verify ( status == 0 );
 }
 
 void circuit::signal ()
@@ -141,14 +144,14 @@ clientCircuit::clientCircuit ( const address & addrIn ) :
     address tmpAddr = addrIn;
     int status = ::connect ( 
         this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
-    assert ( status == 0 );
+    verify ( status == 0 );
 
     circuit * pCir = this;
     this->id = epicsThreadCreate ( 
         "client circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    assert ( this->id );
+    verify ( this->id );
 }
 
 
@@ -166,7 +169,7 @@ server::server ( const address & addrIn ) :
     sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
     id ( 0 ), exit ( false )
 {
-    assert ( this->sock != INVALID_SOCKET );
+    verify ( this->sock != INVALID_SOCKET );
 
     // setup server side
     address tmpAddr = addrIn;
@@ -177,7 +180,7 @@ server::server ( const address & addrIn ) :
         testAbort ( "Stop all CA servers before running this test." );
     }
     status = listen ( this->sock, 10 );
-    assert ( status == 0 );
+    verify ( status == 0 );
 }
 
 void server::start ()
@@ -186,7 +189,7 @@ void server::start ()
         "server daemon", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         serverDaemon, this );
-    assert ( this->id );
+    verify ( this->id );
 }
 
 void server::daemon () 
@@ -197,9 +200,9 @@ void server::daemon ()
         osiSocklen_t addressSize = sizeof ( addr );
         SOCKET ns = accept ( this->sock, 
             & addr.sa, & addressSize );
-        assert ( ns != INVALID_SOCKET );
+        verify ( ns != INVALID_SOCKET );
         circuit * pCir = new serverCircuit ( ns );
-        assert ( pCir );
+        verify ( pCir );
     }
 }
 
@@ -211,7 +214,7 @@ serverCircuit::serverCircuit ( SOCKET sockIn ) :
         "server circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    assert ( threadId );
+    verify ( threadId );
 }
 
 const char * serverCircuit::pName ()
@@ -253,7 +256,7 @@ MAIN(blockingSockTest)
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
-    assert ( ! client.recvWakeupDetected () );
+    verify ( ! client.recvWakeupDetected () );
 
     client.shutdown ();
     epicsThreadSleep ( 1.0 );

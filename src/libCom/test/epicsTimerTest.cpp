@@ -26,6 +26,8 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
 static const double delayVerifyOffset = 1.0; // sec 
 
@@ -368,7 +370,7 @@ epicsTimerNotify::expireStatus periodicVerify::expire ( const epicsTime & )
     for ( unsigned i = 0u; i < 1000; i++ ) {
         root = sqrt ( root );
     }
-    assert ( ! this->cancelCalled );
+    verify ( ! this->cancelCalled );
     double delay = rand ();
     delay = delay / RAND_MAX;
     delay /= 10.0;

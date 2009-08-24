@@ -14,6 +14,9 @@
 #include "bucketLib.h"
 #include "testMain.h"
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 MAIN(buckTest)
 {
         unsigned	id1;
@@ -36,35 +39,35 @@ MAIN(buckTest)
         id1 = 0x1000a432;
         pValSave1 = "fred";
         s = bucketAddItemUnsignedId(pb, &id1, pValSave1);
-        assert (s == S_bucket_success);
+        verify (s == S_bucket_success);
  
         pValSave2 = "jane";
 	id2 = 0x0000a432;
         s = bucketAddItemUnsignedId(pb, &id2, pValSave2);
-        assert (s == S_bucket_success);
+        verify (s == S_bucket_success);
  
         start = clock();
         for(i=0; i<LOOPS; i++){
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id1);
-                assert(pVal == pValSave1);
+                verify (pVal == pValSave1);
                 pVal = bucketLookupItemUnsignedId(pb, &id2);
-                assert(pVal == pValSave2);
+                verify (pVal == pValSave2);
         }
         finish = clock();
  

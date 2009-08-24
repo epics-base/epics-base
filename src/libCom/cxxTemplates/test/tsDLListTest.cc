@@ -14,6 +14,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 class fred : public tsDLNode<fred> {
 public:
     fred(const char * const pNameIn) : pName(pNameIn){}
@@ -46,16 +49,16 @@ int main ()
     list.add (*pFred);
     list.add (*pFredII);
     tsDLIter <fred> iter = list.firstIter();
-    assert (iter.pointer() == pFred);
+    verify (iter.pointer() == pFred);
     iter++;
-    assert (iter.pointer() == pFredII);
+    verify (iter.pointer() == pFredII);
     list.remove(*pFred);
     list.add(*pFred);
     pFredBack = list.get();
-    assert (pFredBack == pFredII);
+    verify (pFredBack == pFredII);
     pFredBack = list.get();
-    assert (pFredBack == pFred);
-    assert (list.count() == 0u);
+    verify (pFredBack == pFred);
+    verify (list.count() == 0u);
     list.add(*pFred);
     list.add(*pFredII);
     list.add(* new fred("C"));
@@ -70,9 +73,9 @@ int main ()
     pJane = new jane("JA");
     janeList.add(*pJane);   
     pJane = new jane("JB");
-    assert ( janeList.find ( *pJane ) == -1 );
+    verify ( janeList.find ( *pJane ) == -1 );
     janeList.add(*pJane);   
-    assert ( janeList.find ( *pJane ) == 1 );
+    verify ( janeList.find ( *pJane ) == 1 );
 
     while ( janeFwdIter.valid() ) {
         janeFwdIter->show();
@@ -96,21 +99,21 @@ int main ()
         i++;
         bdIter++;
     }
-    assert ( i == janeList.count () );
+    verify ( i == janeList.count () );
 
     iter = list.firstIter();
     while ( iter.pointer() ) {
         list.remove( * iter.pointer() );
         iter++;
     }
-    assert(list.count()==0);
+    verify (list.count()==0);
 
     janeFwdIter = janeList.firstIter();
     while ( janeFwdIter.valid() ) {
         janeList.remove( * janeFwdIter.pointer() );
         janeFwdIter++;
     }
-    assert(janeList.count()==0);
+    verify (janeList.count()==0);
 
     pJane = new jane("JA");
     janeList.add(*pJane);   
@@ -121,7 +124,7 @@ int main ()
         janeList.remove( * janeBwdIter.pointer() );
         janeBwdIter--;
     }
-    assert(janeList.count()==0);
+    verify (janeList.count()==0);
 
     return 0;
 }

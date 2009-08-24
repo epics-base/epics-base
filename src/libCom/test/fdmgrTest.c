@@ -15,6 +15,9 @@
 #include "epicsAssert.h"
 #include "cadef.h"
 
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 static const unsigned uSecPerSec = 1000000;
 
 typedef struct cbStructCreateDestroyFD {
@@ -38,12 +41,12 @@ void fdCreateDestroyHandler (void *pArg, int fd, int open)
     if (open) {
         printf ("new fd = %d\n", fd);
         status = fdmgr_add_callback (pCBFD->pfdm, fd, fdi_read, fdHandler, pArg);
-        assert (status==0);
+        verify (status==0);
     }
     else {
         printf ("terminated fd = %d\n", fd);
         status = fdmgr_clear_callback (pCBFD->pfdm, fd, fdi_read);
-        assert (status==0);
+        verify (status==0);
     }
 }
 
@@ -74,13 +77,13 @@ void testTimer (fdctx *pfdm, double delay)
     tmo.tv_sec = (unsigned long) delay;
     tmo.tv_usec = (unsigned long) ((delay - tmo.tv_sec) * uSecPerSec);
     aid = fdmgr_add_timeout (pfdm, &tmo, alarmCB, &cbs);
-    assert (aid!=fdmgrNoAlarm);
+    verify (aid!=fdmgrNoAlarm);
 
     while (!cbs.done) {
         tmo.tv_sec = (unsigned long) delay;
         tmo.tv_usec = (unsigned long) ((delay - tmo.tv_sec) * uSecPerSec);
         status = fdmgr_pend_event (pfdm, &tmo);
-        assert (status==0);
+        verify (status==0);
     }
 
     measuredDelay = epicsTimeDiffInSeconds (&cbs.time, &begin);
@@ -98,7 +101,7 @@ int main (int argc, char **argv)
     chid chan;
 
     pfdm = fdmgr_init ();
-    assert (pfdm);
+    verify (pfdm);
 
     SEVCHK (ca_task_initialize(), NULL);
     cbsfd.pfdm = pfdm;
@@ -121,12 +124,12 @@ int main (int argc, char **argv)
         tmo.tv_usec = 100000;
         cbsfd.trig = 0;
         status = fdmgr_pend_event (pfdm, &tmo);
-        assert (status==0);
+        verify (status==0);
         ca_poll ();
     }
 
     status = fdmgr_delete (pfdm);
-    assert (status==0);
+    verify (status==0);
     
     printf ( "Test Complete\n" );
     

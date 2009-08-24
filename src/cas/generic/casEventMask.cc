@@ -21,9 +21,13 @@
 
 #define epicsExportSharedSymbols
 #include "casdef.h"
+#include "epicsAssert.h"
 #include "casEventRegistry.h"
 
 #ifdef TEST
+#define verify(exp) ((exp) ? (void)0 : \
+    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
+
 main ()
 {
 	casEventRegistry 	reg;
@@ -49,20 +53,20 @@ main ()
 	art2.show(10u);
 	reg.show(10u);
 
-	assert (bill1 == bill2);
-	assert (bill1 == bill3);
-	assert (jane != bill1);
-	assert (jane != art1);
-	assert (bill1 != art1);
-	assert (art1 == art2);
+	verify (bill1 == bill2);
+	verify (bill1 == bill3);
+	verify (jane != bill1);
+	verify (jane != art1);
+	verify (bill1 != art1);
+	verify (art1 == art2);
 
 	artBill = art1 | bill1;
 	tmp = artBill & art1;
-	assert (tmp.eventsSelected());
+	verify (tmp.eventsSelected());
 	tmp = artBill & bill1;
-	assert (tmp.eventsSelected());
+	verify (tmp.eventsSelected());
 	tmp = artBill&jane;
-	assert (tmp.noEventsSelected());
+	verify (tmp.noEventsSelected());
 }
 #endif
 
@@ -128,10 +132,8 @@ casEventMaskEntry::casEventMaskEntry (
 	casEventRegistry & regIn, casEventMask maskIn, const char * pName ) :
 	casEventMask ( maskIn ), stringId ( pName ), reg ( regIn )
 {
-	int 	stat;
-
 	assert ( this->resourceName() != NULL );
-	stat = this->reg.add ( *this );
+	int stat = this->reg.add ( *this );
 	assert ( stat == 0 );
 }
 

@@ -66,7 +66,6 @@ void caConnTest ( const char *pNameIn, unsigned channelCountIn, double delayIn )
     channelCount = channelCountIn;
 
     pChans = new chid [channelCount];
-    assert ( pChans );
 	
 	while ( 1 ) {
         connCount = 0u;

@@ -36,7 +36,6 @@ void caEventRate ( const char *pName, unsigned count )
     unsigned eventCount = 0u;
 
     chid * pChidTable = new chid [ count ];
-    assert ( pChidTable );
 
     {
         printf ( "Connecting to CA Channel \"%s\" %u times.", 

@@ -511,7 +511,10 @@ void ca_repeater ()
 
     pBuf = new char [MAX_UDP_RECV];
 
-    assert ( osiSockAttach() );
+    {
+        bool success = osiSockAttach();
+        assert ( success );
+    }
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );

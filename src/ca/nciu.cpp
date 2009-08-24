@@ -79,8 +79,8 @@ void nciu::destroy (
     epicsGuard < epicsMutex > & guard )
 {    
     while ( baseNMIU * pNetIO = this->eventq.first () ) {
-        assert ( this->cacCtx.destroyIO ( 
-            guard, pNetIO->getId (), *this ) );
+        bool success = this->cacCtx.destroyIO ( guard, pNetIO->getId (), *this );
+        assert ( success );
     }
     
     // if the claim reply has not returned yet then we will issue

@@ -145,7 +145,8 @@ private:
             return;
         }
         pComBuf = newComBuf ();
-        assert ( pComBuf->push ( val ) );
+        bool success = pComBuf->push ( val );
+        assert ( success );
         this->pushComBuf ( *pComBuf );
     }
 

@@ -50,7 +50,6 @@ public:
     {
         pvInfo::pFirst = this;
         this->pName = new char [strlen(pNameIn)+1u];
-        assert(this->pName);
         strcpy(this->pName, pNameIn);
     }
     

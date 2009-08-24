@@ -128,7 +128,8 @@ void epicsThread::exit ()
 
 void epicsThread::exitWait () throw ()
 {
-    assert ( this->exitWait ( DBL_MAX ) );
+    bool success = this->exitWait ( DBL_MAX );
+    assert ( success );
 }
 
 bool epicsThread::exitWait ( const double delay ) throw ()

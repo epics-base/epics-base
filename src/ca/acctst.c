@@ -1813,6 +1813,10 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
      * verify read response matches values written
      */
     for ( i = 0; i < ca_element_count ( chan ); i++ ) {
+        if ( pWF[i] != pRF[i] ) {
+            printf ( "i=%u, pWF[i]=%f, pRF[i]=%f",
+                i, pWF[i], pRF[i]);
+        }
         verify ( pWF[i] == pRF[i] );
     }
 

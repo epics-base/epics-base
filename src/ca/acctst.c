@@ -1814,7 +1814,7 @@ void arrayTest ( chid chan, unsigned maxArrayBytes, unsigned interestLevel )
      */
     for ( i = 0; i < ca_element_count ( chan ); i++ ) {
         if ( pWF[i] != pRF[i] ) {
-            printf ( "i=%u, pWF[i]=%f, pRF[i]=%f",
+            printf ( "i=%u, pWF[i]=%f, pRF[i]=%f\n",
                 i, pWF[i], pRF[i]);
         }
         verify ( pWF[i] == pRF[i] );

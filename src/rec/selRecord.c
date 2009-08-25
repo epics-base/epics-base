@@ -84,11 +84,6 @@ static void do_sel(selRecord *);
 static int fetch_values(selRecord *);
 static void monitor(selRecord *);
 
-/* This needed to prevent the MS optimizer from barfing */
-static double divide(double num, double den) { return num / den; }
-
-static double NaN, Inf;
-
 
 static long init_record(selRecord *prec, int pass)
 {
@@ -98,9 +93,6 @@ static long init_record(selRecord *prec, int pass)
 
     if (pass==0) return(0);
 
-    NaN = divide(0.0, 0.0);
-    Inf = divide(1.0, 0.0);
-
     /* get seln initial value if nvl is a constant*/
     if (prec->nvl.type == CONSTANT ) {
 	recGblInitConstantLink(&prec->nvl,DBF_USHORT,&prec->seln);
@@ -109,7 +101,7 @@ static long init_record(selRecord *prec, int pass)
     plink = &prec->inpa;
     pvalue = &prec->a;
     for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-	*pvalue = NaN;
+	*pvalue = epicsNAN;
 	if (plink->type==CONSTANT) {
 	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
 	}
@@ -365,7 +357,7 @@ static void do_sel(selRecord *prec)
 	val = *(pvalue+prec->seln);
 	break;
     case (selSELM_High_Signal):
-	val = -Inf;
+	val = -epicsINF;
 	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue) && val < *pvalue) {
 		val = *pvalue;
@@ -374,7 +366,7 @@ static void do_sel(selRecord *prec)
 	}
 	break;
     case (selSELM_Low_Signal):
-	val = Inf;
+	val = epicsINF;
 	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue) && val > *pvalue) {
 		val = *pvalue;
@@ -384,7 +376,7 @@ static void do_sel(selRecord *prec)
 	break;
     case (selSELM_Median_Signal):
 	count = 0;
-	order[0] = NaN;
+	order[0] = epicsNAN;
 	for (i = 0; i < SEL_MAX; i++,pvalue++){
 	    if (!isnan(*pvalue)){
 		/* Insertion sort */

@@ -9,6 +9,11 @@
 #define epicsExportSharedSymbols
 #include <epicsMath.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4723)
+#endif
+
 static float makeNAN ( void )
 {
     float a = 0, b = 0;
@@ -25,3 +30,8 @@ extern "C" {
 epicsShareDef float epicsNAN = makeNAN();
 epicsShareDef float epicsINF = makeINF();
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+

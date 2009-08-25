@@ -135,7 +135,7 @@ epicsShareFunc long
 	    if (itop)
 		*ptop = (long) *ptop % itop;
 	    else
-		*ptop = 0.0 / itop;   /* NaN */
+		*ptop = epicsNAN;   /* NaN */
 	    break;
 
 	case POWER:

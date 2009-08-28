@@ -2218,14 +2218,14 @@ void monitorAddConnectionCallbackTest ( const char *pName, unsigned interestLeve
     while ( eventCount < 2 ) {
         ca_pend_event ( 0.1 );
     }
-    verify ( eventCount == 2u );
+    verify ( eventCount >= 2u );
     
     status = ca_get_callback ( DBR_DOUBLE, chan, nUpdatesTester, &getCallbackCount );
     SEVCHK ( status, "monitorAddConnectionCallback get callback" );
     while ( getCallbackCount == 0 ) {
         ca_pend_event ( 0.1 );
     }
-    verify ( eventCount == 2u );
+    verify ( eventCount >= 2u );
     verify ( getCallbackCount == 1u );
 
     status = ca_clear_channel ( chan );

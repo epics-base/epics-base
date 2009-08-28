@@ -613,7 +613,7 @@ static void dbBkptCont(dbCommon *precord)
   --lset_stack_count;
 
  /* free entrypoint queue */
-  ellFree(&pnode->ep_queue, free);
+  ellFree(&pnode->ep_queue);
 
  /* remove execution semaphore */
   epicsEventDestroy(pnode->ex_sem);

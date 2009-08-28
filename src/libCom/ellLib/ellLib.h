@@ -45,6 +45,7 @@ typedef void (*FREEFUNC)(void *);
 #define ellLast(PLIST)     ((PLIST)->node.previous)
 #define ellNext(PNODE)     ((PNODE)->next)
 #define ellPrevious(PNODE) ((PNODE)->previous)
+#define ellFree(PLIST)     ellFree2(PLIST, free)
 
 epicsShareFunc void ellAdd (ELLLIST *pList, ELLNODE *pNode);
 epicsShareFunc void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
@@ -55,8 +56,7 @@ epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
 epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  ellFind (ELLLIST *pList, ELLNODE *pNode);
-/* ellFree has to take a free function to work properly on Windows */
-epicsShareFunc void ellFree (ELLLIST *pList, FREEFUNC freeFunc);
+epicsShareFunc void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc);
 epicsShareFunc void ellVerify (ELLLIST *pList);
 
 #ifdef __cplusplus

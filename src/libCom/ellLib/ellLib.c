@@ -263,11 +263,10 @@ int ellFind (ELLLIST *pList, ELLNODE *pNode)
  *
  * NOTE: the nodes in the list are free()'d on the assumption that the node
  * structures were malloc()'d one-at-a-time and that the ELLNODE structure is
- * the first thing in the "rest of" the node structure.  
- * In other words, this is a pretty worthless function.
+ * the first member of the parent structure.
  *
  *****************************************************************************/
-void ellFree (ELLLIST *pList, FREEFUNC freeFunc)
+void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc)
 {
     ELLNODE *nnode = pList->node.next;
     ELLNODE *pnode;

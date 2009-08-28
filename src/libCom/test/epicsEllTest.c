@@ -161,7 +161,7 @@ MAIN(epicsEllTest)
     testOk1(ellFind(&list2, ellNth(&list2, 10)) == 10);
     testOk1(ellFind(&list1, ellNth(&list1, 11)) == 11);
 
-    ellFree(&list2, free);
+    ellFree(&list2);
     testOk1(ellCount(&list2) == 0);
 
     pick = (struct myItem *)ellFirst(&list1);
@@ -190,7 +190,7 @@ MAIN(epicsEllTest)
     pitem = (struct myItem *)ellNStep(&pitem->node, -4);
     testOk1(pitem->num == 7);
 
-    ellFree(&list1, free);
+    ellFree2(&list1, free);
     testOk1(ellCount(&list1) == 0);
 
     return testDone();

@@ -12,13 +12,6 @@
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 <!-- Insert new items immediately below here ... -->
 
-<h4>Extra argument to ellFree()</h4>
-
-<p>To work properly from Windows DLLs we had to add a second argument to the
-ellFree() function, which should be passed the free function to be called. In
-most cases this will involve just adding <tt><b>, free</b></tt> to the argument
-list.</p>
-
 <h4>Time provider on Win32</h4>
 
 <p>A race condition meant that sometimes EPICS programs (including the internal

@@ -20,6 +20,21 @@
 #include "gdd.h"
 #include "shareLib.h"
 
+//
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !! WARNING WARNING WARNING WARNING WARNING WARNING WARNING !!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// // be careful to manually unreference here
+// // (the reference count is initialized to one by the gdd ctor)
+// Gdd * pDD0 = new gdd;
+// smartGDDPointer pDD1 (pDD0);
+// pDD0->unreference ();
+// 
+// // from here on down the smart pointer maintains the ref count
+// smartGDDPointer pDD2 = pDD1;
+// smartGDDPointer pDD3 = pDD2;
+// pDD2 = pDD3;
+//
 template < class T >
 class smartGDDPointerTemplate {
 public:

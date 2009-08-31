@@ -830,9 +830,9 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
         if ( status == ECA_NORMAL ) {
             if ( resp != req ) {
                 printf (
-    "get block test failed - val written %d\n", req );
+    "short tmo get block test failed - val written %d\n", req );
                 printf (
-    "get block test failed - val read %d\n", resp );
+    "short tmo tmo get block test failed - val read %d\n", resp );
                 verify ( 0 );
             }
         }
@@ -847,9 +847,9 @@ void verifyBlockInPendIO ( chid chan, unsigned interestLevel  )
         SEVCHK ( ca_pend_io (timeoutToPendIO) , NULL );
         if ( resp != req ) {
             printf (
-    "get block test failed - val written %d\n", req);
+    "long tmo get block test failed - val written %d\n", req);
             printf (
-    "get block test failed - val read %d\n", resp);
+    "long tmo get block test failed - val read %d\n", resp);
             verify (0);
         }
         showProgressEnd ( interestLevel );

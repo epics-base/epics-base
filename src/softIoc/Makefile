@@ -9,6 +9,8 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+PERL_SCRIPTS += makeInstallDir.pl
+
 PROD_IOC = softIoc
 
 INC += epicsInstallDir.h
@@ -28,5 +30,5 @@ DB += softIocExit.db
 
 include $(TOP)/configure/RULES
 
-$(COMMON_DIR)/epicsInstallDir.h:
-	$(PERL) ../makeInstallDir.pl $(INSTALL_LOCATION) > $@
+$(COMMON_DIR)/epicsInstallDir.h: $(INSTALL_BIN)/makeInstallDir.pl
+	$(PERL) $< $(INSTALL_LOCATION) > $@

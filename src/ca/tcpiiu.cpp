@@ -582,17 +582,23 @@ void tcpRecvThread::run ()
             "CA client library tcp receive thread "
             "terminating due to no space in pool "
             "C++ exception\n" );
+        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+        this->iiu.initiateCleanShutdown ( guard );
     }
     catch ( std::exception & except ) {
         errlogPrintf ( 
             "CA client library tcp receive thread "
             "terminating due to C++ exception \"%s\"\n", 
             except.what () );
+        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+        this->iiu.initiateCleanShutdown ( guard );
     }
     catch ( ... ) {
         errlogPrintf ( 
             "CA client library tcp receive thread "
-            "terminating due to a C++ exception\n" );
+            "terminating due to a non-standard C++ exception\n" );
+        epicsGuard < epicsMutex > guard ( this->iiu.mutex );
+        this->iiu.initiateCleanShutdown ( guard );
     }
 }
 

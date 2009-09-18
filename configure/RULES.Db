@@ -114,9 +114,19 @@ COMMON_DBDS = $(DBD)
 COMMON_DBS = $(DB)
 COMMONS = $(DBD) $(DB)
 
+ACTIONS = inc
+ACTIONS += build
+ACTIONS += install
+ACTIONS += buildInstall
+ACTIONS += browse
+ACTIONS += runtests
+
+actionArchTargets = $(foreach x, $(ACTIONS),\ $(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
+
+cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 -include $(TOP)/configure/CONFIG_APP_INCLUDE
 
-all:    install
+all: install
 
 install: buildInstall
 
@@ -125,6 +135,11 @@ buildInstall : build
 rebuild: clean install
 
 .PHONY: all inc build install clean rebuild buildInstall
+
+$(actionArchTargets) $(BUILD_ARCHS):install
+$(cleanArchTargets):clean
+
+.PHONY: $(BUILD_ARCHS) $(actionArchTargets) $(cleanArchTargets)
 
 endif # T_A defined
 

@@ -230,7 +230,8 @@ endif:
 	    n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
 	    fputs(buffer,stdout);
 	    if (!unexpWarned && n<0) {
-		fprintf(stderr,"Warning: unexpanded macros in ouput\n");
+		fprintf(stderr, "Warning: Some macros cannot be expanded:\n"
+                    "    %s\n", input);
 		unexpWarned++;
 	    }
 	}

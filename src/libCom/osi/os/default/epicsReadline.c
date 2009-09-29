@@ -1,10 +1,11 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* iocsh.cpp */
+/* $Id$ */
 /* Author:  Eric Norum Date: 12DEC2001 */
 
 #include <stdio.h>
@@ -18,6 +19,8 @@
 #define EPICS_COMMANDLINE_LIBRARY_EPICS     0
 #define EPICS_COMMANDLINE_LIBRARY_LIBTECLA  1
 #define EPICS_COMMANDLINE_LIBRARY_READLINE  2
+#define EPICS_COMMANDLINE_LIBRARY_READLINE_CURSES  2
+#define EPICS_COMMANDLINE_LIBRARY_READLINE_NCURSES 2
 
 #ifndef EPICS_COMMANDLINE_LIBRARY
 #define EPICS_COMMANDLINE_LIBRARY EPICS_COMMANDLINE_LIBRARY_EPICS

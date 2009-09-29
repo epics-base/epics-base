@@ -33,8 +33,12 @@ SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
 # Set runtime path for products
 PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
 
-#  Definitions used when COMMANDLINE_LIBRARY is READLINE
-LDLIBS_READLINE = -lreadline -lncurses
+# Link libraries controlled by COMMANDLINE_LIBRARY
+# The newest Linux versions only need readline, older ones need both
+# readline and ncurses, and the oldest need readline and curses
+LDLIBS_READLINE = -lreadline
+LDLIBS_READLINE_NCURSES = -lreadline -lncurses
+LDLIBS_READLINE_CURSES = -lreadline -lcurses
 
 #--------------------------------------------------
 # Allow site overrides

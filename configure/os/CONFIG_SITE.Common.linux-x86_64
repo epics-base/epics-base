@@ -17,7 +17,13 @@
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
 
-# If readline is not installed comment the following line
-# to omit command-line editing and history support
+# Depending on your version of Linux you'll want one of the following
+# lines to enable command-line editing and history support.  If you're
+# not sure which, start with the top one and work downwards until the
+# build doesn't fail to link the readline library.  If none of them
+# work, comment them all out.
 COMMANDLINE_LIBRARY = READLINE
+#COMMANDLINE_LIBRARY = READLINE_NCURSES
+#COMMANDLINE_LIBRARY = READLINE_CURSES
+
 OP_SYS_CFLAGS += -g

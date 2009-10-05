@@ -186,6 +186,7 @@ SV * newSVdbr(struct event_handler_args *peha) {
     if (is_primitive) {
         if (value_type == DBR_CHAR) {
             /* Long string => Perl scalar */
+            ((char *)peha->dbr) [peha->count - 1] = 0;
             return newSVpv(peha->dbr, 0);
         }
 
@@ -252,8 +253,11 @@ SV * newSVdbr(struct event_handler_args *peha) {
 
     /* Value */
     if (value_type == DBR_CHAR) {
+        char *str = dbr_value_ptr(peha->dbr, peha->type);
+
         /* Long string => Perl scalar */
-        val = newSVpv(dbr_value_ptr(peha->dbr, peha->type), 0);
+        str[peha->count - 1] = 0;
+        val = newSVpv(str, 0);
     } else if (peha->count == 1) {
         /* Single value => Perl scalar */
         val = newSVdbf(value_type,
@@ -890,9 +894,9 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
-            /* Interger => Count arg */
+            /* Interger => Count arg, zero means native size */
             count = SvIV(ST(i));
-            if (count < 1 || count > ca_element_count(pch->chan)) {
+            if (count < 0 || count > ca_element_count(pch->chan)) {
                 croak_msg = "Requested array size is out of range";
                 goto exit_croak;
             }

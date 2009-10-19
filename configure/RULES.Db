@@ -163,7 +163,7 @@ clean::
 	@$(RM) *_registerRecordDeviceDriver.cpp
 	@$(RM) $(TARGETS)
 
-realclean: clean
+realclean:: clean
 
 ##################################################### CapFast filter
 

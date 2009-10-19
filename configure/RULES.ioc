@@ -33,6 +33,6 @@ else
 	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 endif
 
-realclean:
+realclean::
 	$(RM) cdCommands envPaths dllPath.bat
 

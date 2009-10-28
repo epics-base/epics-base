@@ -55,6 +55,8 @@ static char *substituteGetReplacements(void *substitutePvt);
 /*Exit status*/
 static int exitStatus = 0;
 
+int opt_V = 0;
+
 
 int main(int argc,char **argv)
 {
@@ -86,6 +88,7 @@ int main(int argc,char **argv)
 	    strcpy(substitutionName,pval);
 	} else if(strncmp(argv[1],"-V",2)==0) {
 	    macSuppressWarning(macPvt,0);
+	    opt_V = 1;
 	    narg = 1; /* no argument for this option */
 	} else {
 	    usageExit();
@@ -231,8 +234,8 @@ endif:
 	    n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
 	    fputs(buffer,stdout);
 	    if (!unexpWarned && n<0) {
-		fprintf(stderr, "Warning: Some macros cannot be expanded:\n"
-                    "    %s\n", input);
+		fprintf(stderr, "Warning: Undefined macros present%s\n",
+			opt_V ? "" : ", use  msi -V  to list");
 		unexpWarned++;
 	    }
 	}

@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#include <epicsVersion.h>
 #include <dbDefs.h>
 #include <macLib.h>
 #include <ellLib.h>

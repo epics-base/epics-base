@@ -13,24 +13,24 @@
 sub readReleaseFiles {
     my ($relfile, $Rmacros, $Rapps, $arch) = @_;
 
-    return unless (-r $relfile);
+    return unless (-e $relfile);
     &readRelease($relfile, $Rmacros, $Rapps);
 
     my $hostarch = $ENV{'EPICS_HOST_ARCH'};
     if ($hostarch) {
         my $hrelfile = "$relfile.$hostarch";
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-r $hrelfile);
+        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
         $hrelfile .= '.Common';
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-r $hrelfile);
+        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
     }
 
     if ($arch) {
         my $crelfile = "$relfile.Common.$arch";
-        &readRelease($crelfile, $Rmacros, $Rapps) if (-r $crelfile);
+        &readRelease($crelfile, $Rmacros, $Rapps) if (-e $crelfile);
 
         if ($hostarch) {
             my $arelfile = "$relfile.$hostarch.$arch";
-            &readRelease($arelfile, $Rmacros, $Rapps) if (-r $arelfile);
+            &readRelease($arelfile, $Rmacros, $Rapps) if (-e $arelfile);
         }
     }
 }
@@ -70,7 +70,7 @@ sub readRelease {
         }
         # Handle "include <path>" and "-include <path>" syntax
         ($path) = m/^ \s* -? include \s+ (.*)/x;
-        &readRelease($path, $Rmacros, $Rapps) if (-r $path);
+        &readRelease($path, $Rmacros, $Rapps) if (-e $path);
     }
     close $IN;
 }

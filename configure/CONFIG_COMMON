@@ -366,8 +366,8 @@ INSTALL_LIB_INSTALLS = $(addprefix $(INSTALL_LIB)/,$(notdir $(LIB_INSTALLS)))
 #---------------------------------------------------------------
 # Installed file permissions
 BIN_PERMISSIONS = 555
-LIB_PERMISSIONS = 644
-INSTALL_PERMISSIONS = 644
+LIB_PERMISSIONS = 444
+INSTALL_PERMISSIONS = 444
 
 #---------------------------------------------------------------
 #

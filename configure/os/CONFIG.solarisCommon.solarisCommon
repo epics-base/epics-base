@@ -58,6 +58,10 @@ OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 #COMPILE_FILTER.c = 2>&1 | $(EPICS_BASE)/configure/tools/filterWarnings.pl
 #COMPILE_FILTER.cpp = $(COMPILE_FILTER.c)
 
+# Header dependency file generation command
+HDEPENDS_METHOD=CMD 
+HDEPENDSCMD = $(if $(filter .c,$(suffix $<)),$(COMPILE.c),$(COMPILE.cpp)) -xM1 $< >$*$(DEP)
+
 #--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.solarisCommon.solarisCommon

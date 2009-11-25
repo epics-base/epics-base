@@ -359,9 +359,6 @@ $(INSTALL_BIN)/%: ../%
 $(INSTALL_LIB)/%.a: %.a
 	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
-ifneq ($(strip $(RANLIB)),)
-	$(RANLIB) $@
-endif # RANLIB
 
 $(INSTALL_LIB)/%.lib: %.lib
 	$(ECHO) "Installing library $@"

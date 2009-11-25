@@ -8,6 +8,14 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
+
+# Use hdepends command (not GNU compiler flags)
+# to generate header file dependancies for Darwin.
+# Darwin has multiple -arch compiler flags.
+ifeq ($(OS_CLASS),Darwin)
+HDEPENDS_METHOD = CMD
+endif
+
 ifneq ($(findstring darwin,$(T_A)),)
   # Perl loadable libraries on Darwin have funny names
   LOADABLE_SHRLIB_PREFIX =

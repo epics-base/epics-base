@@ -196,10 +196,6 @@ OP_SYS_CXXFLAGS = $(OP_SYS_CFLAGS)
 OP_SYS_LDFLAGS =
 OP_SYS_INCLUDES =
 
-# SOURCE* used by WIN32 only
-SOURCE_CFLAG =
-SOURCE_CXXCFLAG =
-
 # Makefile specific flags
 USR_INCLUDES =
 USR_CFLAGS =
@@ -310,8 +306,8 @@ LEXOPT += -I
 # Build compile line here
 
 PATH_FILTER = $(1)
-COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
-COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_CXXFLAG)
+COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES))
+COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES))
 
 #--------------------------------------------------
 # C preprocessor command

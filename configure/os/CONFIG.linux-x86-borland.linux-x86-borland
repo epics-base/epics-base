@@ -118,7 +118,7 @@ OBJ=.o
 
 #       Problem: BorlandC does not recognize  *.cc as C++ source,
 #       we have to compile xx.cc  using the flag -P xx.cc,
-SOURCE_CXXFLAG = -P
+COMPILER_CXXFLAGS = -P
 
 #	Operating system flags 
 OP_SYS_CFLAGS =

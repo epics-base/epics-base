@@ -45,7 +45,8 @@ static int tsInitC = 0;              /* Flag: Client timestamps init'd */
 TimeT tsType = absolute;             /* Timestamp type flag (-t option) */
 int tsSrcServer = 1;                 /* Timestamp source flag (-t option) */
 int tsSrcClient = 0;                 /* Timestamp source flag (-t option) */
-IntFormatT outType = dec;            /* For -0.. output format option */
+IntFormatT outTypeI = dec;           /* For -0.. output format option */
+IntFormatT outTypeF = dec;           /* For -l.. output format option */
 
 char dblFormatStr[30] = "%g"; /* Format string to print doubles (-efg options) */
 char timeFormatStr[30] = "%Y-%m-%d %H:%M:%S.%06f"; /* Time format string */
@@ -60,7 +61,7 @@ capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
 
 
-void sprint_long (char *ret, long val)
+void sprint_long (char *ret, long val, IntFormatT outType)
 {
     long i, bit, skip=-1L;   /* used only for printing bits */
     switch (outType) {
@@ -108,6 +109,7 @@ char *val2str (const void *v, unsigned type, int index)
     char ch;
     void *val_ptr;
     unsigned base_type;
+    dbr_long_t val_long;
 
     if (!dbr_type_is_valid(type)) {
         strcpy (str, "*** invalid type");
@@ -126,20 +128,36 @@ char *val2str (const void *v, unsigned type, int index)
         epicsStrnEscapedFromRaw(str, STR, ((dbr_string_t*) val_ptr)[index], strlen(((dbr_string_t*) val_ptr)[index]));
         break;
     case DBR_FLOAT:
-        sprintf(str, dblFormatStr, ((dbr_float_t*) val_ptr)[index]);
+        if (outTypeF == dec) {
+          sprintf(str, dblFormatStr, ((dbr_float_t*) val_ptr)[index]);
+        } else {
+          if (((dbr_float_t*) val_ptr)[index] > 0.0)
+            val_long = ((dbr_float_t*) val_ptr)[index] + 0.5;
+          else
+            val_long = ((dbr_float_t*) val_ptr)[index] - 0.5;
+          sprint_long(str, val_long, outTypeF);
+        }
         break;
     case DBR_DOUBLE:
-        sprintf(str, dblFormatStr, ((dbr_double_t*) val_ptr)[index]);
+        if (outTypeF == dec) {
+          sprintf(str, dblFormatStr, ((dbr_double_t*) val_ptr)[index]);
+        } else {
+          if (((dbr_double_t*) val_ptr)[index] > 0.0)
+            val_long = ((dbr_double_t*) val_ptr)[index] + 0.5;
+          else
+            val_long = ((dbr_double_t*) val_ptr)[index] - 0.5;
+          sprint_long(str, val_long, outTypeF);
+        }
         break;
     case DBR_CHAR:
         ch = ((dbr_char_t*) val_ptr)[index];
         sprintf(str, "%d", ch);
         break;
     case DBR_INT:
-        sprint_long(str, ((dbr_int_t*) val_ptr)[index]);
+        sprint_long(str, ((dbr_int_t*) val_ptr)[index], outTypeI);
         break;
     case DBR_LONG:
-        sprint_long(str, ((dbr_long_t*) val_ptr)[index]);
+        sprint_long(str, ((dbr_long_t*) val_ptr)[index], outTypeI);
         break;
     case DBR_ENUM:
         {

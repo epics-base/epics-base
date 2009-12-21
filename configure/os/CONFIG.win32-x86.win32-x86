@@ -166,12 +166,12 @@ BAF=.bsc
 BOF=.sbr
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
-#       we have to compile xx.cc  using the flag -Tp xx.cc,
-#       i.e.  -Tp  has to be immediately before the source file name
-SOURCE_CXXFLAG = /Tp
+#       so we do C++ compiles using the global flag -TP 
+COMPILER_CXXFLAGS = /TP
 
 #	Operating system flags 
 OP_SYS_CFLAGS =
+OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 
 #
 # WIN32 specific include files

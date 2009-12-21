@@ -69,8 +69,8 @@ TEMPLATE_FILENAME=$(firstword $(wildcard $($*_TEMPLATE) $(addprefix ../,$($*_TEM
 # dbst based database optimization
 ifeq '$(DB_OPT)' 'YES'
 RAW=.raw
-COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB)))
-COMMON_DBS += $(addsuffix $(RAW),$(addprefix $(COMMON_DIR)/,$(filter %.db,$(DB))))
+DBS = $(filter %.db,$(DB)) $(addsuffix $(RAW),$(filter %.db,$(DB)))
+COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(DBS))
 endif
 
 INSTALL_DB_INSTALLS = $(addprefix $(INSTALL_DB)/,$(notdir $(DB_INSTALLS)))
@@ -86,7 +86,7 @@ ACF_CPPFLAGS = $(ACF_CPPFLAGS_$(GNU))
 
 ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
                 $(SRC_INCLUDES) -I$(INSTALL_DB)
-ACFDEPENDS_CMD = -$(MKMF) -m $@$(DEP) $(subst -I,,$(ACF_INCLUDES)) $@ $<
+ACFDEPENDS_CMD = -$(MKMF) -m $@ $(subst -I,,$(ACF_INCLUDES)) $(addprefix $(COMMON_DIR)/,$(patsubst %$(DEP),%,$@)) $<
 ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
@@ -94,11 +94,11 @@ ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 HINC += $(addsuffix .h,$(DBDINC_NAME))
 COMMON_DBDINC += $(addprefix $(COMMON_DIR)/,$(HINC))
 
-DBDDEPENDS_FILES += $(addsuffix $(DEP),$(COMMON_DBDS) \
-                    $(COMMON_DBDINC) $(COMMON_DBS))
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) $(DBS) \
+                    $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
 
 DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))
-DBDDEPENDS_CMD = -$(MKMF) -m $@$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
+DBDDEPENDS_CMD = -$(MKMF) -m $@ $(DBDDEPENDS_FLAGS) $(addprefix $(COMMON_DIR)/,$(patsubst %$(DEP),%,$@)) $<
 
 MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
@@ -206,32 +206,38 @@ $(INSTALL_DB)/%.template: %.template
 ##################################################### INC files
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
-	@$(RM) $@$(DEP)
-	@$(DBDDEPENDS_CMD)
-	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
-	@$(RM) $@$(DEP)
-	@$(DBDDEPENDS_CMD)
-	@echo "$<:../Makefile" >> $@$(DEP)
-	@$(RM) $@
+	$(RM) $@
 	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
 
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
-	@$(RM) $@$(DEP)
-	@$(DBDDEPENDS_CMD)
-	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTOMENUH) $(DBDFLAGS) $< $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
-	@$(RM) $@$(DEP)
-	@$(DBDDEPENDS_CMD)
-	@echo "$<:../Makefile" >> $@$(DEP)
 	@$(RM) $@
 	$(DBTOMENUH) $(DBDFLAGS) $< $@
+
+%Record.h$(DEP): $(COMMON_DIR)/%Record.dbd
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@
+
+%Record.h$(DEP): %Record.dbd
+	$(RM) $@
+	$(DBDDEPENDS_CMD)
+
+menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@
+
+menu%.h$(DEP): menu%.dbd
+	@$(RM) $@
+	$(DBDDEPENDS_CMD)
 
 .PRECIOUS: $(COMMON_DIR)/%.h
 
@@ -241,20 +247,28 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	@$(RM) $@
 	$(MAKEBPT) $< $@
 
-$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
-	@$(RM) $@$(DEP)
+bpt%.dbd$(DEP): bpt%.data
+	@$(RM) $@
 	@$(DBDDEPENDS_CMD)
-	@echo "$<:../Makefile" >> $@$(DEP)
+
+$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
 	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
-$(COMMON_DIR)/%.dbd: %Include.dbd 
-	@$(RM) $@$(DEP)
+%.dbd$(DEP): $(COMMON_DIR)/%Include.dbd 
+	@$(RM) $@
 	@$(DBDDEPENDS_CMD)
+	@echo "$<:../Makefile" >> $@
+
+$(COMMON_DIR)/%.dbd: %Include.dbd 
 	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
+
+%.dbd$(DEP): %Include.dbd 
+	@$(RM) $@
+	@$(DBDDEPENDS_CMD)
 
 $(COMMON_DIR)/%Include.dbd:
 	@$(RM) $@
@@ -284,34 +298,32 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 	@$(REPLACEVAR) < $@.VAR > $@
 	@$(RM) $@.VAR
 
-#$(COMMON_DIR)/%.db$(RAW): %.substitutions %.template
-#	@$(RM) $@$(DEP)
-#	@$(MAKEDBDEPENDS) $@ $^  >> $@$(DEP)
-#	$(ECHO) "Inflating database from $^"
-#	@$(RM) $@
-#	$(MSI) $(DBFLAGS) -S$< $(firstword $(patsubst %.substitutions,,$^)) > msi.tmp
-#	$(MV) msi.tmp $@
-
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
-	@$(RM) $@$(DEP)
-	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $@$(DEP)
-	@echo "$@:$(TEMPLATE_FILENAME)" >> $@$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > msi.tmp
 	$(MV) msi.tmp $@
 
 $(COMMON_DIR)/%.db$(RAW): %.template
-	@$(RM) $@$(DEP)
-	@$(MAKEDBDEPENDS) $@ $^  >> $@$(DEP)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@
 	$(MSI) $(DBFLAGS)  $< > msi.tmp
 	$(MV) msi.tmp $@
 
-$(COMMON_DIR)/%.acf: %.acs
+%.db$(RAW)$(DEP): %.substitutions
+	@$(RM) $@
+	$(MAKEDBDEPENDS) $(patsubst %$(DEP),%,$@) $< $(TEMPLATE_FILENAME) >> $@
+	@echo "$(patsubst %$(DEP),%,$@):$(TEMPLATE_FILENAME)" >> $@
+
+%.db$(RAW)$(DEP): %.template
+	@$(RM) $@
+	@$(MAKEDBDEPENDS) $@ $^  >> $@
+
+%.acf$(DEP): %.acs
 	@$(RM) $@$(DEP)
 	@$(ACFDEPENDS_CMD)
+
+$(COMMON_DIR)/%.acf: %.acs
 	$(ECHO) "Creating acf file $@"
 	@$(RM) $@
 	$(ACF_CMD)

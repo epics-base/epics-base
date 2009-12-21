@@ -20,4 +20,6 @@ ARCH_DEP_CFLAGS = -m486
 ARCH_DEP_CXXFLAGS += -x 'c++' 
 ARCH_DEP_CFLAGS += -fno-defer-pop
 
+# Allow site overrides
+-include $(CONFIG)/os/CONFIG_SITE.Common.vxWorks-486
 

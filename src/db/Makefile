@@ -46,9 +46,7 @@ DBDINC += menuScan
 DBDINC += menuYesNo
 DBDINC += menuSimm
 
-INC += dbCommon.h
-
-DBD+=  dbCommon.dbd
+DBDINC += dbCommon
 DBD+=  menuGlobal.dbd
 
 LIB_SRCS += dbLock.c
@@ -89,11 +87,11 @@ endif
 
 include $(TOP)/configure/RULES
 
+dbCommon.h$(DEP): ../dbCommonRecord.dbd ../dbCommon.dbd
+	@$(RM) $@
+	@-$(MKMF) -m $@ ..  $(COMMON_DIR)/dbCommon.h $<
+
 $(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
-	@$(RM) $@$(DEP)
-	@-$(MKMF) -m $@$(DEP) ..  $@ $<
 	$(RM) $@
 	$(DBTORECORDTYPEH) -I .. $< $@
-
-inc: $(INSTALL_DBD)/dbCommon.dbd
 

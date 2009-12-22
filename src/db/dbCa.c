@@ -347,7 +347,10 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
         /* Send as DBR_STRING */
         if (!pca->pputString) {
             pca->pputString = dbCalloc(1, MAX_STRING_SIZE);
+/* Disabled by ANJ, needs a link flag to allow user to control this.
+ * Setting these makes the reconnect callback re-do the last CA put.
             plink->value.pv_link.pvlMask |= pvlOptOutString;
+ */
         }
         fConvert = dbFastPutConvertRoutine[dbrType][dbDBRoldToDBFnew[DBR_STRING]];
         status = fConvert(pbuffer, pca->pputString, 0);
@@ -360,7 +363,9 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
         if (!pca->pputNative) {
             pca->pputNative = dbCalloc(pca->nelements,
                 dbr_value_size[ca_field_type(pca->chid)]);
-            plink->value.pv_link.pvlMask |= pvlOptOutString;
+/* Fixed and disabled by ANJ, see comment above.
+            plink->value.pv_link.pvlMask |= pvlOptOutNative;
+ */
         }
         if (nRequest == 1){
             long (*fConvert)(const void *from, void *to, struct dbAddr *paddr);
@@ -584,6 +589,7 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     pca->hasReadAccess = ca_read_access(arg.chid);
     pca->hasWriteAccess = ca_write_access(arg.chid);
+
     if (pca->gotFirstConnection) {
         if (pca->nelements != ca_element_count(arg.chid) ||
             pca->dbrType != ca_field_type(arg.chid)) {
@@ -596,10 +602,10 @@ static void connectionCallback(struct connection_handler_args arg)
                 ~(pvlOptInpNative | pvlOptInpString |
                   pvlOptOutNative | pvlOptOutString);
 
-            pca->gotInNative = 0;
-            pca->gotOutNative=0;
-            pca->gotInString=0;
-            pca->gotOutString=0;
+            pca->gotInNative  = 0;
+            pca->gotOutNative = 0;
+            pca->gotInString  = 0;
+            pca->gotOutString = 0;
             free(pca->pgetNative); pca->pgetNative = 0;
             free(pca->pgetString); pca->pgetString = 0;
             free(pca->pputNative); pca->pputNative = 0;

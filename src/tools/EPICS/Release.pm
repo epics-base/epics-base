@@ -13,10 +13,12 @@
 sub readReleaseFiles {
     my ($relfile, $Rmacros, $Rapps, $arch) = @_;
 
+    my $hostarch = $ENV{'EPICS_HOST_ARCH'};
+    $Rmacros->{'EPICS_HOST_ARCH'} = $hostarch if $hostarch;
+
     return unless (-e $relfile);
     &readRelease($relfile, $Rmacros, $Rapps);
 
-    my $hostarch = $ENV{'EPICS_HOST_ARCH'};
     if ($hostarch) {
         my $hrelfile = "$relfile.$hostarch";
         &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
@@ -50,44 +52,60 @@ sub readRelease {
         s/ \s+ $//x;            # Remove trailing whitespace
         next if m/^ \s* $/x;    # Skip blank lines
 
-        # Expand all already-defined macros in the line:
-        while (my ($pre,$var,$post) = m/ (.*) \$\( (\w+) \) (.*) /x) {
-            last unless exists $Rmacros->{$var};
-            $_ = $pre . $Rmacros->{$var} . $post;
-        }
-
-        # Handle "<macro> = <path>"
-        my ($macro, $path) = m/^ \s* (\w+) \s* = \s* (.*) /x;
+        # Handle "<macro> = <path>" plus the := and ?= variants
+        my ($macro, $op, $val) = m/^ \s* (\w+) \s* ([?:]?=) \s* (.*) /x;
         if ($macro ne '') {
-            $macro='TOP' if $macro =~ m/^ INSTALL_LOCATION /x;
+            $macro = 'TOP' if $macro =~ m/^ INSTALL_LOCATION /x;
             if (exists $Rmacros->{$macro}) {
-                delete $Rmacros->{$macro};
+                next if $op eq '?=';
             } else {
                 push @$Rapps, $macro;
             }
-            $Rmacros->{$macro} = $path;
+            $val = expandMacros($val, $Rmacros) if $op eq ':=';
+            $Rmacros->{$macro} = $val;
             next;
         }
         # Handle "include <path>" and "-include <path>" syntax
-        ($path) = m/^ \s* -? include \s+ (.*)/x;
-        &readRelease($path, $Rmacros, $Rapps) if (-e $path);
+        my ($op, $path) = m/^ \s* (-? include) \s+ (.*)/x;
+        $path = expandMacros($path, $Rmacros);
+        if (-e $path) {
+            &readRelease($path, $Rmacros, $Rapps);
+        } elsif ($op eq "include") {
+            warn "EPICS/Release.pm: Include file '$path' not found\n";
+        }
     }
     close $IN;
 }
 
 #
-# Expand any (possibly nested) macros that were defined after use
+# Expand all (possibly nested) macros in a string
+#
+sub expandMacros {
+    my ($str, $Rmacros) = @_;
+    # $Rmacros is a reference to a hash
+
+    while (my ($pre, $var, $post) = $str =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
+        last unless exists $Rmacros->{$var};
+        $str = $pre . $Rmacros->{$var} . $post;
+    }
+    return $str;
+}
+
+#
+# Expand all (possibly nested) macros in dictionary
 #
 sub expandRelease {
     my ($Rmacros) = @_;
     # $Rmacros is a reference to a hash
 
-    while (my ($macro, $path) = each %$Rmacros) {
-        while (my ($pre,$var,$post) = $path =~ m/(.*)\$\((\w+?)\)(.*)/) {
-            warn "Undefined macro \$($var) used in RELEASE file\n"
+    while (my ($macro, $val) = each %$Rmacros) {
+        while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
+            warn "EPICS/Release.pm: Undefined macro \$($var) used\n"
                 unless exists $Rmacros->{$var};
-            $path = $pre . $Rmacros->{$var} . $post;
-            $Rmacros->{$macro} = $path;
+            die "EPICS/Release.pm: Circular definition of macro $macro\n"
+                if $macro eq $var;
+            $val = $pre . $Rmacros->{$var} . $post;
+            $Rmacros->{$macro} = $val;
         }
     }
 }

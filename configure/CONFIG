@@ -87,7 +87,7 @@ endif
 # Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
 #
 ifneq ($(CONFIG),$(TOP)/configure)
-RELEASE_TOPS ?= $(shell $(PERL) $(TOOLS)/convertRelease.pl -T $(TOP) releaseTops )
+RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
 RELEASE_CFG_CONFIGS = $(foreach top, $(RELEASE_TOPS), $(wildcard $($(top))/cfg/CONFIG*))
 ifneq ($(RELEASE_CFG_CONFIGS),)
 include $(RELEASE_CFG_CONFIGS)

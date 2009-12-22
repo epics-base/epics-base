@@ -1,13 +1,14 @@
-/* epicsStdioRedirect.h */
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
+/* epicsStdioRedirect.h */
+
 #ifndef epicsStdioRedirecth
 #define epicsStdioRedirecth
 
@@ -24,11 +25,22 @@ extern "C" {
 #undef stderr
 #define stderr epicsGetStderr()
 
-/*The following are for making printf be fprintf(stdout */
+/* Make printf, puts and putchar use *our* version of stdout */
+
 #ifdef printf
-#undef printf
-#endif /*printf*/
+#  undef printf
+#endif /* printf */
 #define printf epicsStdoutPrintf
+
+#ifdef puts
+#  undef puts
+#endif /* puts */
+#define puts epicsStdoutPuts
+
+#ifdef putchar
+#  undef putchar
+#endif /* putchar */
+#define putchar epicsStdoutPutchar
 
 #ifdef  __cplusplus
 }

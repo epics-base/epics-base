@@ -1,14 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*epicsStdio.c*/
-/*Author: Marty Kraimer*/
+
+/* epicsStdio.c */
+
+/* Author: Marty Kraimer */
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -91,13 +92,24 @@ void  epicsShareAPI epicsSetThreadStderr(FILE *fp)
     epicsThreadPrivateSet(stderrThreadPrivateId,fp);
 }
 
-int epicsShareAPI epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
+int epicsShareAPI epicsStdoutPrintf(const char *pFormat, ...)
 {
     va_list     pvar;
     int         nchar;
     FILE        *stream = epicsGetStdout();
+
     va_start(pvar, pFormat);
-    nchar = vfprintf(stream,pFormat,pvar);
-    va_end (pvar);
-    return(nchar);
+    nchar = vfprintf(stream, pFormat, pvar);
+    va_end(pvar);
+    return nchar;
+}
+
+int epicsShareAPI epicsStdoutPuts(const char *str)
+{
+    return fprintf(epicsGetStdout(), "%s\n", str);
+}
+
+int epicsShareAPI epicsStdoutPutchar(int c)
+{
+    return putc(c, epicsGetStdout());
 }

@@ -1,13 +1,14 @@
-/* epicsStdio.h */
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
+/* epicsStdio.h */
+
 #ifndef epicsStdioh
 #define epicsStdioh
 
@@ -57,6 +58,8 @@ epicsShareFunc void  epicsShareAPI epicsSetThreadStderr(FILE *);
 
 epicsShareFunc int epicsShareAPI epicsStdoutPrintf(
     const char *pformat, ...) EPICS_PRINTF_STYLE(1,2);
+epicsShareFunc int epicsShareAPI epicsStdoutPuts(const char *str);
+epicsShareFunc int epicsShareAPI epicsStdoutPutchar(int c);
 
 #ifdef  __cplusplus
 }

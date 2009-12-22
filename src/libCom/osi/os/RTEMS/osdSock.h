@@ -61,7 +61,7 @@ typedef socklen_t osiSocklen_t;
 #define SOCK_EINTR EINTR
 #define SOCK_EPIPE EPIPE
 #define SOCK_EMFILE EMFILE
-#define SOCK_SHUTDOWN ESHUTDOWN
+#define SOCK_SHUTDOWN EPIPE
 #define SOCK_ENOTSOCK ENOTSOCK
 #define SOCK_EBADF EBADF
 

@@ -135,7 +135,7 @@
 #define TS_DST_BEGIN -90	/* first Sun in Apr (Apr 1 = 90) */
 #define TS_DST_END 303		/* last Sun in Oct (Oct 31 = 303) */
 #else   /* Years from 2007 */
-#define TS_DST_BEGIN (59+14)	/* second Sun in Mar (Mar 1 = 59) */
+#define TS_DST_BEGIN (59+13)	/* second Sun in Mar (Mar 1 = 59) */
 #define TS_DST_END -304		/* first Sun in Nov (Nov 1 = 304) */
 #endif
 #define TS_DST_HOUR_ON 2	/* 2 a.m. (standard time) */

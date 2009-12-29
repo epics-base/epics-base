@@ -140,7 +140,7 @@ int iocBuild(void)
         errlogPrintf("iocBuild: asInit Failed.\n");
         return -1;
     }
-    dbPutNotifyInit();
+    dbProcessNotifyInit();
     epicsThreadSleep(.5);
     initHookAnnounce(initHookAfterScanInit);
 

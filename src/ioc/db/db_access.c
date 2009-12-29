@@ -994,39 +994,61 @@ int epicsShareAPI db_put_field(struct dbAddr *paddr, int src_type,
 }
 
 
-epicsShareFunc int epicsShareAPI dbPutNotifyMapType (putNotify *ppn, short oldtype)
+static int mapOldType (short oldtype)
 {
-    switch(oldtype) {
-    case(oldDBR_STRING):
-        ppn->dbrType = DBR_STRING;
+    int dbrType = -1;
+
+    switch (oldtype) {
+    case oldDBR_STRING:
+        dbrType = DBR_STRING;
         break;
-/*  case(oldDBR_INT): */
-    case(oldDBR_SHORT):
-        ppn->dbrType = DBR_SHORT;
+/*  case oldDBR_INT: */
+    case oldDBR_SHORT:
+        dbrType = DBR_SHORT;
         break;
-    case(oldDBR_FLOAT):
-        ppn->dbrType = DBR_FLOAT;
+    case oldDBR_FLOAT:
+        dbrType = DBR_FLOAT;
         break;
-    case(oldDBR_ENUM):
-         ppn->dbrType = DBR_ENUM;
+    case oldDBR_ENUM:
+        dbrType = DBR_ENUM;
         break;
-    case(oldDBR_CHAR):
-        ppn->dbrType = DBR_UCHAR;
+    case oldDBR_CHAR:
+        dbrType = DBR_UCHAR;
         break;
-    case(oldDBR_LONG):
-        ppn->dbrType = DBR_LONG;
+    case oldDBR_LONG:
+        dbrType = DBR_LONG;
         break;
-    case(oldDBR_DOUBLE):
-         ppn->dbrType = DBR_DOUBLE;
+    case oldDBR_DOUBLE:
+        dbrType = DBR_DOUBLE;
         break;
-    case(oldDBR_PUT_ACKT):
-         ppn->dbrType = DBR_PUT_ACKT;
+    case oldDBR_PUT_ACKT:
+        dbrType = DBR_PUT_ACKT;
         break;
-    case(oldDBR_PUT_ACKS):
-         ppn->dbrType = DBR_PUT_ACKS;
+    case oldDBR_PUT_ACKS:
+        dbrType = DBR_PUT_ACKS;
         break;
     default:
         return -1;
     }
-    return 0;
+    return dbrType;
+}
+
+int epicsShareAPI db_put_process(processNotify *ppn, notifyPutType type,
+    int src_type, const void *psrc, int no_elements)
+{
+    int status = 0;
+    int dbrType =  mapOldType(src_type);
+    switch(type) {
+    case putDisabledType:
+        ppn->status = notifyError;
+        return 0;
+    case putFieldType:
+        status = dbPutField(ppn->paddr,dbrType,psrc,no_elements);
+        break;
+    case putType:
+        status = dbPut(ppn->paddr,dbrType,psrc,no_elements);
+        break;
+    }
+    if (status) ppn->status = notifyError;
+    return 1;
 }

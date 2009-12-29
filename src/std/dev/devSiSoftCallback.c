@@ -104,7 +104,7 @@ static long init_record(struct stringinRecord *pstringin)
 
     if(plink->type!=INST_IO) {
         recGblRecordError(S_db_badField,(void *)pstringin,
-            "devSiSoftCallback (init_record) linked record not found");
+            "devSiSoftCallback (init_record) Illegal INP field");
         pstringin->pact=TRUE;
         return(S_db_badField);
     }
@@ -115,7 +115,7 @@ static long init_record(struct stringinRecord *pstringin)
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
         recGblRecordError(status,(void *)pstringin,
-            "devSiSoftCallback (init_record) Illegal INP field");
+            "devSiSoftCallback (init_record) linked record not found");
         pstringin->pact=TRUE;
         return(status);
     }

@@ -104,7 +104,7 @@ static long init_record(struct mbbiRecord *pmbbi)
 
     if(plink->type!=INST_IO) {
         recGblRecordError(S_db_badField,(void *)pmbbi,
-            "devMbbiSoftCallback (init_record) linked record not found");
+            "devMbbiSoftCallback (init_record) Illegal INP field");
         pmbbi->pact=TRUE;
         return(S_db_badField);
     }
@@ -115,7 +115,7 @@ static long init_record(struct mbbiRecord *pmbbi)
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
         recGblRecordError(status,(void *)pmbbi,
-            "devMbbiSoftCallback (init_record) Illegal INP field");
+            "devMbbiSoftCallback (init_record) linked record not found");
         pmbbi->pact=TRUE;
         return(status);
     }

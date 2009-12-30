@@ -59,8 +59,8 @@ typedef struct notifyInfo {
 
 static void getCallback(processNotify *ppn,notifyGetType type)
 {
-    struct stringinRecord *pstringin = (struct stringinRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pstringin->dpvt;
+    struct stringinRecord *prec = (struct stringinRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
     int status = 0;
     long no_elements = 1;
     long options = 0;
@@ -84,16 +84,16 @@ static void getCallback(processNotify *ppn,notifyGetType type)
 
 static void doneCallback(processNotify *ppn)
 {
-    struct stringinRecord *pstringin = (struct stringinRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pstringin->dpvt;
+    struct stringinRecord *prec = (struct stringinRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback,pstringin->prio,pstringin);
+    callbackRequestProcessCallback(pnotifyInfo->pcallback,prec->prio,prec);
 }
 
 
-static long init_record(struct stringinRecord *pstringin)
+static long init_record(struct stringinRecord *prec)
 {
-    DBLINK *plink = &pstringin->inp;
+    DBLINK *plink = &prec->inp;
     struct instio *pinstio;
     char  *pvname;
     DBADDR *pdbaddr=NULL;
@@ -103,9 +103,9 @@ static long init_record(struct stringinRecord *pstringin)
     processNotify  *ppn=NULL;
 
     if(plink->type!=INST_IO) {
-        recGblRecordError(S_db_badField,(void *)pstringin,
+        recGblRecordError(S_db_badField,(void *)prec,
             "devSiSoftCallback (init_record) Illegal INP field");
-        pstringin->pact=TRUE;
+        prec->pact=TRUE;
         return(S_db_badField);
     }
     pinstio=(struct instio*)&(plink->value);
@@ -114,9 +114,9 @@ static long init_record(struct stringinRecord *pstringin)
         "devSiSoftCallback::init_record");
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
-        recGblRecordError(status,(void *)pstringin,
+        recGblRecordError(status,(void *)prec,
             "devSiSoftCallback (init_record) linked record not found");
-        pstringin->pact=TRUE;
+        prec->pact=TRUE;
         return(status);
     }
     pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
@@ -127,29 +127,29 @@ static long init_record(struct stringinRecord *pstringin)
         "devSiSoftCallback::init_record");
     pnotifyInfo->ppn = ppn;
     pnotifyInfo->pcallback = pcallback;
-    ppn->usrPvt = pstringin;
+    ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
-    pstringin->dpvt = pnotifyInfo;
+    prec->dpvt = pnotifyInfo;
     return 0;
 }
 
-static long read_stringin(stringinRecord *pstringin)
+static long read_stringin(stringinRecord *prec)
 {
-    notifyInfo *pnotifyInfo = (notifyInfo *)pstringin->dpvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    if(pstringin->pact) {
+    if(prec->pact) {
         if(pnotifyInfo->status) {
-            recGblSetSevr(pstringin,READ_ALARM,INVALID_ALARM);
+            recGblSetSevr(prec,READ_ALARM,INVALID_ALARM);
             return(pnotifyInfo->status);
         }
-        strcpy(pstringin->val,pnotifyInfo->value);
-        pstringin->udf = FALSE;
+        strcpy(prec->val,pnotifyInfo->value);
+        prec->udf = FALSE;
         return(0);
     }
     dbProcessNotify(pnotifyInfo->ppn);
-    pstringin->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

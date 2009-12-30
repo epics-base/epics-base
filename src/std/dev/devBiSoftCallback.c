@@ -59,8 +59,8 @@ typedef struct notifyInfo {
 
 static void getCallback(processNotify *ppn,notifyGetType type)
 {
-    struct biRecord *pbi = (struct biRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pbi->dpvt;
+    struct biRecord *prec = (struct biRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
     int status = 0;
     long no_elements = 1;
     long options = 0;
@@ -84,16 +84,16 @@ static void getCallback(processNotify *ppn,notifyGetType type)
 
 static void doneCallback(processNotify *ppn)
 {
-    struct biRecord *pbi = (struct biRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pbi->dpvt;
+    struct biRecord *prec = (struct biRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback,pbi->prio,pbi);
+    callbackRequestProcessCallback(pnotifyInfo->pcallback,prec->prio,prec);
 }
 
 
-static long init_record(struct biRecord *pbi)
+static long init_record(struct biRecord *prec)
 {
-    DBLINK *plink = &pbi->inp;
+    DBLINK *plink = &prec->inp;
     struct instio *pinstio;
     char  *pvname;
     DBADDR *pdbaddr=NULL;
@@ -103,9 +103,9 @@ static long init_record(struct biRecord *pbi)
     processNotify  *ppn=NULL;
 
     if(plink->type!=INST_IO) {
-        recGblRecordError(S_db_badField,(void *)pbi,
+        recGblRecordError(S_db_badField,(void *)prec,
             "devBiSoftCallback (init_record) Illegal INP field");
-        pbi->pact=TRUE;
+        prec->pact=TRUE;
         return(S_db_badField);
     }
     pinstio=(struct instio*)&(plink->value);
@@ -114,9 +114,9 @@ static long init_record(struct biRecord *pbi)
         "devBiSoftCallback::init_record");
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
-        recGblRecordError(status,(void *)pbi,
+        recGblRecordError(status,(void *)prec,
             "devBiSoftCallback (init_record) linked record not found");
-        pbi->pact=TRUE;
+        prec->pact=TRUE;
         return(status);
     }
     pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
@@ -127,29 +127,29 @@ static long init_record(struct biRecord *pbi)
         "devBiSoftCallback::init_record");
     pnotifyInfo->ppn = ppn;
     pnotifyInfo->pcallback = pcallback;
-    ppn->usrPvt = pbi;
+    ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
-    pbi->dpvt = pnotifyInfo;
+    prec->dpvt = pnotifyInfo;
     return 0;
 }
 
-static long read_bi(biRecord *pbi)
+static long read_bi(biRecord *prec)
 {
-    notifyInfo *pnotifyInfo = (notifyInfo *)pbi->dpvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    if(pbi->pact) {
+    if(prec->pact) {
         if(pnotifyInfo->status) {
-            recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
+            recGblSetSevr(prec,READ_ALARM,INVALID_ALARM);
             return(2);
         }
-        pbi->val = pnotifyInfo->value;
-        pbi->udf = FALSE;
+        prec->val = pnotifyInfo->value;
+        prec->udf = FALSE;
         return(2);
     }
     dbProcessNotify(pnotifyInfo->ppn);
-    pbi->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

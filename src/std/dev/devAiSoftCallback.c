@@ -59,8 +59,8 @@ typedef struct notifyInfo {
 
 static void getCallback(processNotify *ppn,notifyGetType type)
 {
-    struct aiRecord *pai = (struct aiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pai->dpvt;
+    struct aiRecord *prec = (struct aiRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
     int status = 0;
     long no_elements = 1;
     long options = 0;
@@ -84,16 +84,16 @@ static void getCallback(processNotify *ppn,notifyGetType type)
 
 static void doneCallback(processNotify *ppn)
 {
-    struct aiRecord *pai = (struct aiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pai->dpvt;
+    struct aiRecord *prec = (struct aiRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback,pai->prio,pai);
+    callbackRequestProcessCallback(pnotifyInfo->pcallback,prec->prio,prec);
 }
 
 
-static long init_record(struct aiRecord *pai)
+static long init_record(struct aiRecord *prec)
 {
-    DBLINK *plink = &pai->inp;
+    DBLINK *plink = &prec->inp;
     struct instio *pinstio;
     char  *pvname;
     DBADDR *pdbaddr=NULL;
@@ -103,9 +103,9 @@ static long init_record(struct aiRecord *pai)
     processNotify  *ppn=NULL;
 
     if(plink->type!=INST_IO) {
-        recGblRecordError(S_db_badField,(void *)pai,
+        recGblRecordError(S_db_badField,(void *)prec,
             "devAiSoftCallback (init_record) Illegal INP field");
-        pai->pact=TRUE;
+        prec->pact=TRUE;
         return(S_db_badField);
     }
     pinstio=(struct instio*)&(plink->value);
@@ -114,9 +114,9 @@ static long init_record(struct aiRecord *pai)
         "devAiSoftCallback::init_record");
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
-        recGblRecordError(status,(void *)pai,
+        recGblRecordError(status,(void *)prec,
             "devAiSoftCallback (init_record) linked record not found");
-        pai->pact=TRUE;
+        prec->pact=TRUE;
         return(status);
     }
     pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
@@ -127,29 +127,29 @@ static long init_record(struct aiRecord *pai)
         "devAiSoftCallback::init_record");
     pnotifyInfo->ppn = ppn;
     pnotifyInfo->pcallback = pcallback;
-    ppn->usrPvt = pai;
+    ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
-    pai->dpvt = pnotifyInfo;
+    prec->dpvt = pnotifyInfo;
     return 0;
 }
 
-static long read_ai(aiRecord *pai)
+static long read_ai(aiRecord *prec)
 {
-    notifyInfo *pnotifyInfo = (notifyInfo *)pai->dpvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    if(pai->pact) {
+    if(prec->pact) {
         if(pnotifyInfo->status) {
-            recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+            recGblSetSevr(prec,READ_ALARM,INVALID_ALARM);
             return(2);
         }
-        pai->val = pnotifyInfo->value;
-        pai->udf = FALSE;
+        prec->val = pnotifyInfo->value;
+        prec->udf = FALSE;
         return(2);
     }
     dbProcessNotify(pnotifyInfo->ppn);
-    pai->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

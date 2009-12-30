@@ -59,8 +59,8 @@ typedef struct notifyInfo {
 
 static void getCallback(processNotify *ppn,notifyGetType type)
 {
-    struct mbbiRecord *pmbbi = (struct mbbiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pmbbi->dpvt;
+    struct mbbiRecord *prec = (struct mbbiRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
     int status = 0;
     long no_elements = 1;
     long options = 0;
@@ -84,16 +84,16 @@ static void getCallback(processNotify *ppn,notifyGetType type)
 
 static void doneCallback(processNotify *ppn)
 {
-    struct mbbiRecord *pmbbi = (struct mbbiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)pmbbi->dpvt;
+    struct mbbiRecord *prec = (struct mbbiRecord *)ppn->usrPvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback,pmbbi->prio,pmbbi);
+    callbackRequestProcessCallback(pnotifyInfo->pcallback,prec->prio,prec);
 }
 
 
-static long init_record(struct mbbiRecord *pmbbi)
+static long init_record(struct mbbiRecord *prec)
 {
-    DBLINK *plink = &pmbbi->inp;
+    DBLINK *plink = &prec->inp;
     struct instio *pinstio;
     char  *pvname;
     DBADDR *pdbaddr=NULL;
@@ -103,9 +103,9 @@ static long init_record(struct mbbiRecord *pmbbi)
     processNotify  *ppn=NULL;
 
     if(plink->type!=INST_IO) {
-        recGblRecordError(S_db_badField,(void *)pmbbi,
+        recGblRecordError(S_db_badField,(void *)prec,
             "devMbbiSoftCallback (init_record) Illegal INP field");
-        pmbbi->pact=TRUE;
+        prec->pact=TRUE;
         return(S_db_badField);
     }
     pinstio=(struct instio*)&(plink->value);
@@ -114,9 +114,9 @@ static long init_record(struct mbbiRecord *pmbbi)
         "devMbbiSoftCallback::init_record");
     status = dbNameToAddr(pvname,pdbaddr);
     if(status) {
-        recGblRecordError(status,(void *)pmbbi,
+        recGblRecordError(status,(void *)prec,
             "devMbbiSoftCallback (init_record) linked record not found");
-        pmbbi->pact=TRUE;
+        prec->pact=TRUE;
         return(status);
     }
     pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
@@ -127,29 +127,29 @@ static long init_record(struct mbbiRecord *pmbbi)
         "devMbbiSoftCallback::init_record");
     pnotifyInfo->ppn = ppn;
     pnotifyInfo->pcallback = pcallback;
-    ppn->usrPvt = pmbbi;
+    ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
-    pmbbi->dpvt = pnotifyInfo;
+    prec->dpvt = pnotifyInfo;
     return 0;
 }
 
-static long read_mbbi(mbbiRecord *pmbbi)
+static long read_mbbi(mbbiRecord *prec)
 {
-    notifyInfo *pnotifyInfo = (notifyInfo *)pmbbi->dpvt;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    if(pmbbi->pact) {
+    if(prec->pact) {
         if(pnotifyInfo->status) {
-            recGblSetSevr(pmbbi,READ_ALARM,INVALID_ALARM);
+            recGblSetSevr(prec,READ_ALARM,INVALID_ALARM);
             return(2);
         }
-        pmbbi->val = pnotifyInfo->value;
-        pmbbi->udf = FALSE;
+        prec->val = pnotifyInfo->value;
+        prec->udf = FALSE;
         return(2);
     }
     dbProcessNotify(pnotifyInfo->ppn);
-    pmbbi->pact = TRUE;
+    prec->pact = TRUE;
     return(0);
 }

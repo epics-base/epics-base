@@ -45,6 +45,7 @@ dbRecStd_SRCS += devGeneralTime.c
 dbRecStd_SRCS += devAiSoftCallback.c
 dbRecStd_SRCS += devBiSoftCallback.c
 dbRecStd_SRCS += devLiSoftCallback.c
+dbRecStd_SRCS += devMbbiDirectSoftCallback.c
 dbRecStd_SRCS += devMbbiSoftCallback.c
 dbRecStd_SRCS += devSiSoftCallback.c
 

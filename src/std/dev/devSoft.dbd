@@ -30,6 +30,7 @@ device(mbboDirect,CONSTANT,devMbboDirectSoftRaw,"Raw Soft Channel")
 device(ai,INST_IO,devAiSoftCallback,"Async Soft Channel")
 device(bi,INST_IO,devBiSoftCallback,"Async Soft Channel")
 device(mbbi,INST_IO,devMbbiSoftCallback,"Async Soft Channel")
+device(mbbiDirect,INST_IO,devMbbiDirectSoftCallback,"Async Soft Channel")
 device(longin,INST_IO,devLiSoftCallback,"Async Soft Channel")
 device(stringin,INST_IO,devSiSoftCallback,"Async Soft Channel")
 

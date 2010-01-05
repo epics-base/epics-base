@@ -1,10 +1,9 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #	$Id$
@@ -28,20 +27,22 @@
 
 # Time service:
 # EPICS_TIMEZONE
-#	local timezone info for vxWorks IOCs.  The format required is
-#	<name>::<minutesWest>:<start daylight>:<end daylight>
+#	local timezone info for vxWorks and RTEMS IOCs.  The format is
+#	    <name>::<minutesWest>:<start daylight>:<end daylight>
 #	where the start and end are mmddhh - that is month,day,hour
 #	eg EPICS_TIMEZONE=CUS::360:033102:102802
 #
-#	DST for 2009  US: Mar 08 - Nov 01
-#	              EU: Mar 29 - Oct 25
+#	DST for 2010  US: Mar 14 - Nov 07
+#	              EU: Mar 28 - Oct 31
+#	DST for 2011  US: Mar 13 - Nov 06
+#	              EU: Mar 27 - Oct 30
 #	(see: http://www.worldtimezone.org/daylight.html)
-#
+
+EPICS_TIMEZONE=CUS::360:031402:110702
+#EPICS_TIMEZONE=MET::-60:032802:103102
+
 # EPICS_TS_NTP_INET
 #	NTP or Unix time server ip address.  Uses boot host if not set.
-
-EPICS_TIMEZONE=CUS::360:030802:110102
-#EPICS_TIMEZONE=MET::-60:032902:102502
 EPICS_TS_NTP_INET=
 
 # IOC Shell:

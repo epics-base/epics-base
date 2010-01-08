@@ -11,10 +11,6 @@
  *      Authors:  Marty Kraimer & Andrew Johnson
  */
 
-/* TODO:
- *      Support MS/MSS/MSI link flags
- */
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -25,6 +21,7 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbNotify.h"
+#include "epicsAssert.h"
 #include "recGbl.h"
 #include "recSup.h"
 #include "devSup.h"
@@ -32,38 +29,37 @@
 #include "aiRecord.h"
 #include "epicsExport.h"
 
+
+#define GET_OPTIONS (DBR_STATUS | DBR_TIME)
+
 typedef struct notifyInfo {
     processNotify *ppn;
     CALLBACK *pcallback;
-    double value;
+    long options;
     int status;
     int smooth;
+    struct {
+        DBRstatus
+        DBRtime
+        epicsFloat64 value;
+    } buffer;
 } notifyInfo;
+
 
 static void getCallback(processNotify *ppn, notifyGetType type)
 {
     aiRecord *prec = (aiRecord *)ppn->usrPvt;
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
-    int status = 0;
     long no_elements = 1;
-    long options = 0;
 
     if (ppn->status == notifyCanceled) {
         printf("devAiSoftCallback::getCallback notifyCanceled\n");
         return;
     }
 
-    switch (type) {
-    case getFieldType:
-        status = dbGetField(ppn->paddr, DBR_DOUBLE, &pnotifyInfo->value,
-                            &options, &no_elements, 0);
-        break;
-    case getType:
-        status = dbGet(ppn->paddr, DBR_DOUBLE, &pnotifyInfo->value,
-                       &options, &no_elements, 0);
-        break;
-    }
-    pnotifyInfo->status = status;
+    assert(type == getFieldType);
+    pnotifyInfo->status = dbGetField(ppn->paddr, DBR_DOUBLE,
+        &pnotifyInfo->buffer, &pnotifyInfo->options, &no_elements, 0);
 }
 
 static void doneCallback(processNotify *ppn)
@@ -104,7 +100,7 @@ static long add_record(dbCommon *pcommon)
     plink->type = PN_LINK;
     plink->value.pv_link.precord = pcommon;
     plink->value.pv_link.pvt = pdbaddr;
-    plink->value.pv_link.pvlMask = 0;
+    plink->value.pv_link.pvlMask &= pvlOptMsMode;   /* Severity flags only */
 
     ppn = callocMustSucceed(1, sizeof(*ppn),
         "devAiSoftCallback::add_record");
@@ -119,6 +115,7 @@ static long add_record(dbCommon *pcommon)
     pnotifyInfo->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
         "devAiSoftCallback::add_record");
     pnotifyInfo->ppn = ppn;
+    pnotifyInfo->options = GET_OPTIONS;
 
     prec->dpvt = pnotifyInfo;
     return 0;
@@ -130,7 +127,7 @@ static long del_record(dbCommon *pcommon) {
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
     if (plink->type == CONSTANT) return 0;
-    assert (plink->type == PN_LINK);
+    assert(plink->type == PN_LINK);
 
     dbNotifyCancel(pnotifyInfo->ppn);
     free(pnotifyInfo->ppn);
@@ -194,15 +191,32 @@ static long read_ai(aiRecord *prec)
 
     /* Apply smoothing algorithm */
     if (prec->smoo != 0.0 && pnotifyInfo->smooth)
-        prec->val = pnotifyInfo->value * (1.0 - prec->smoo) + prec->val * prec->smoo;
+        prec->val = prec->val * prec->smoo +
+            pnotifyInfo->buffer.value * (1.0 - prec->smoo);
     else
-        prec->val = pnotifyInfo->value;
+        prec->val = pnotifyInfo->buffer.value;
     prec->udf = FALSE;
     pnotifyInfo->smooth = TRUE;
 
+    switch (prec->inp.value.pv_link.pvlMask & pvlOptMsMode) {
+        case pvlOptNMS:
+            break;
+        case pvlOptMSI:
+            if (pnotifyInfo->buffer.severity < INVALID_ALARM)
+                break;
+            /* else fall through */
+        case pvlOptMS:
+            recGblSetSevr(prec, LINK_ALARM, pnotifyInfo->buffer.severity);
+            break;
+        case pvlOptMSS:
+            recGblSetSevr(prec, pnotifyInfo->buffer.status,
+                pnotifyInfo->buffer.severity);
+            break;
+    }
+
     if (prec->tsel.type == CONSTANT &&
         prec->tse == epicsTimeEventDeviceTime)
-        prec->time = prec->inp.value.pv_link.precord->time;
+        prec->time = pnotifyInfo->buffer.time;
     return 2;
 }
 

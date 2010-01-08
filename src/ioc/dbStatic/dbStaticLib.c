@@ -2018,11 +2018,13 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
 		}
 		break;
             case PN_LINK:
-                if(plink->value.pv_link.pvname)
-                    strcpy(message,plink->value.pv_link.pvname);
-                else
-                    strcpy(message,"");
-                break;
+		if(plink->value.pv_link.pvname)
+		    strcpy(message,plink->value.pv_link.pvname);
+		else
+		    strcpy(message,"");
+		strcat(message," ");
+		strcat(message,msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+		break;
 	    case PV_LINK:
 	    case CA_LINK:
 	    case DB_LINK: {

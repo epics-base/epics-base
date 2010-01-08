@@ -21,6 +21,7 @@
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbNotify.h"
+#include "epicsAssert.h"
 #include "recGbl.h"
 #include "recSup.h"
 #include "devSup.h"
@@ -28,37 +29,36 @@
 #include "longinRecord.h"
 #include "epicsExport.h"
 
+
+#define GET_OPTIONS (DBR_STATUS | DBR_TIME)
+
 typedef struct notifyInfo {
     processNotify *ppn;
     CALLBACK *pcallback;
-    epicsInt32 value;
+    long options;
     int status;
+    struct {
+        DBRstatus
+        DBRtime
+        epicsInt32 value;
+    } buffer;
 } notifyInfo;
+
 
 static void getCallback(processNotify *ppn, notifyGetType type)
 {
     longinRecord *prec = (longinRecord *)ppn->usrPvt;
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
-    int status = 0;
     long no_elements = 1;
-    long options = 0;
 
     if (ppn->status == notifyCanceled) {
         printf("devLiSoftCallback::getCallback notifyCanceled\n");
         return;
     }
 
-    switch (type) {
-    case getFieldType:
-        status = dbGetField(ppn->paddr, DBR_LONG, &pnotifyInfo->value,
-                            &options, &no_elements, 0);
-        break;
-    case getType:
-        status = dbGet(ppn->paddr, DBR_LONG, &pnotifyInfo->value,
-                       &options, &no_elements, 0);
-        break;
-    }
-    pnotifyInfo->status = status;
+    assert(type == getFieldType);
+    pnotifyInfo->status = dbGetField(ppn->paddr, DBR_LONG,
+        &pnotifyInfo->buffer, &pnotifyInfo->options, &no_elements, 0);
 }
 
 static void doneCallback(processNotify *ppn)
@@ -99,7 +99,7 @@ static long add_record(dbCommon *pcommon)
     plink->type = PN_LINK;
     plink->value.pv_link.precord = pcommon;
     plink->value.pv_link.pvt = pdbaddr;
-    plink->value.pv_link.pvlMask = 0;
+    plink->value.pv_link.pvlMask &= pvlOptMsMode;   /* Severity flags only */
 
     ppn = callocMustSucceed(1, sizeof(*ppn),
         "devLiSoftCallback::add_record");
@@ -114,6 +114,7 @@ static long add_record(dbCommon *pcommon)
     pnotifyInfo->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
         "devLiSoftCallback::add_record");
     pnotifyInfo->ppn = ppn;
+    pnotifyInfo->options = GET_OPTIONS;
 
     prec->dpvt = pnotifyInfo;
     return 0;
@@ -125,7 +126,7 @@ static long del_record(dbCommon *pcommon) {
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
     if (plink->type == CONSTANT) return 0;
-    assert (plink->type == PN_LINK);
+    assert(plink->type == PN_LINK);
 
     dbNotifyCancel(pnotifyInfo->ppn);
     free(pnotifyInfo->ppn);
@@ -186,12 +187,28 @@ static long read_li(longinRecord *prec)
         return pnotifyInfo->status;
     }
 
-    prec->val = pnotifyInfo->value;
+    prec->val = pnotifyInfo->buffer.value;
     prec->udf = FALSE;
+
+    switch (prec->inp.value.pv_link.pvlMask & pvlOptMsMode) {
+        case pvlOptNMS:
+            break;
+        case pvlOptMSI:
+            if (pnotifyInfo->buffer.severity < INVALID_ALARM)
+                break;
+            /* else fall through */
+        case pvlOptMS:
+            recGblSetSevr(prec, LINK_ALARM, pnotifyInfo->buffer.severity);
+            break;
+        case pvlOptMSS:
+            recGblSetSevr(prec, pnotifyInfo->buffer.status,
+                pnotifyInfo->buffer.severity);
+            break;
+    }
 
     if (prec->tsel.type == CONSTANT &&
         prec->tse == epicsTimeEventDeviceTime)
-        prec->time = prec->inp.value.pv_link.precord->time;
+        prec->time = pnotifyInfo->buffer.time;
     return 0;
 }
 

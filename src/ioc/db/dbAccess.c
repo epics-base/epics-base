@@ -1216,10 +1216,10 @@ static long dbPutFieldLink(DBADDR *paddr,
         plink->value.pv_link.lastGetdbrType = 0;
         break;
 
+    case PV_LINK:
     case CONSTANT:
         break;  /* do nothing */
 
-    case PV_LINK:
     case MACRO_LINK:
         break;  /* should never get here */
 
@@ -1292,7 +1292,7 @@ static long dbPutFieldLink(DBADDR *paddr,
         break;
 
     case CONSTANT:
-        break;
+        break;  /* do nothing */
 
     case DB_LINK:
     case CA_LINK:

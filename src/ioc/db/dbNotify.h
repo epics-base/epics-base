@@ -45,7 +45,7 @@ typedef enum {
 
 typedef enum {
     getFieldType,
-    getType
+    getType     /* FIXME: Never used? */
 }notifyGetType;
 
 typedef enum {

@@ -35,13 +35,15 @@ extern "C" {
 #define GPIB_IO		5
 #define BITBUS_IO	6
 #define MACRO_LINK	7
+
+#define PN_LINK         9
 #define DB_LINK		10
 #define CA_LINK		11
 #define INST_IO		12		/* instrument */
 #define	BBGPIB_IO	13		/* bitbus -> gpib */
 #define RF_IO		14
 #define VXI_IO		15
-#define LINK_NTYPES 14
+#define LINK_NTYPES 15
 typedef struct maplinkType{
 	char	*strvalue;
 	int	value;

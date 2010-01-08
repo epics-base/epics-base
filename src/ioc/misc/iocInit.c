@@ -426,7 +426,6 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
-    devSup *pdevSup;
     int j;
 
     /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
@@ -435,6 +434,19 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         dbFldDes *pdbFldDes =
             pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+        int isDevLink = ellCount(&precord->rdes->devList) > 0 &&
+            (strcmp(pdbFldDes->name, "INP") == 0 || strcmp(pdbFldDes->name, "OUT") == 0);
+
+        if (isDevLink) {
+            devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
+
+            if (pdevSup) {
+                struct dsxt *pdsxt = pdevSup->pdsxt;
+                if (pdsxt && pdsxt->add_record) {
+                    pdsxt->add_record(precord);
+                }
+            }
+        }
 
         if (plink->type == PV_LINK) {
             DBADDR dbaddr;
@@ -467,13 +479,6 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                     }
                 }
             }
-        }
-    }
-    pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
-    if (pdevSup) {
-        struct dsxt *pdsxt = pdevSup->pdsxt;
-        if (pdsxt && pdsxt->add_record) {
-            pdsxt->add_record(precord);
         }
     }
 }

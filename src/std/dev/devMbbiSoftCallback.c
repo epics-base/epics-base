@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -8,17 +8,16 @@
 \*************************************************************************/
 /* devMbbiSoftCallback.c */
 /*
- *      Author:  Marty Kraimer
- *      Date:    23APR2008
+ *      Authors:  Marty Kraimer & Andrew Johnson
  */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "alarm.h"
 #include "callback.h"
 #include "cantProceed.h"
+#include "dbCommon.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
 #include "dbNotify.h"
@@ -29,54 +28,34 @@
 #include "mbbiRecord.h"
 #include "epicsExport.h"
 
-/* Create the dset for devMbbiSoftCallback */
-static long init_record();
-static long read_mbbi();
-struct {
-	long		number;
-	DEVSUPFUN	report;
-	DEVSUPFUN	init;
-	DEVSUPFUN	init_record;
-	DEVSUPFUN	get_ioint_info;
-	DEVSUPFUN	read_mbbi;
-	DEVSUPFUN	special_linconv;
-}devMbbiSoftCallback={
-	6,
-	NULL,
-	NULL,
-	init_record,
-	NULL,
-	read_mbbi,
-	NULL};
-epicsExportAddress(dset,devMbbiSoftCallback);
-
 typedef struct notifyInfo {
     processNotify *ppn;
     CALLBACK *pcallback;
-    unsigned short value;
-    int    status;
-}notifyInfo;
+    epicsEnum16 value;
+    int status;
+} notifyInfo;
 
-static void getCallback(processNotify *ppn,notifyGetType type)
+static void getCallback(processNotify *ppn, notifyGetType type)
 {
-    struct mbbiRecord *prec = (struct mbbiRecord *)ppn->usrPvt;
+    mbbiRecord *prec = (mbbiRecord *)ppn->usrPvt;
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
     int status = 0;
     long no_elements = 1;
     long options = 0;
 
-    if(ppn->status==notifyCanceled) {
-        printf("dbtpn:getCallback notifyCanceled\n");
+    if (ppn->status == notifyCanceled) {
+        printf("devMbbiSoftCallback::getCallback notifyCanceled\n");
         return;
     }
-    switch(type) {
+
+    switch (type) {
     case getFieldType:
-        status = dbGetField(ppn->paddr,DBR_USHORT,&pnotifyInfo->value,
-                            &options,&no_elements,0);
+        status = dbGetField(ppn->paddr, DBR_ENUM, &pnotifyInfo->value,
+                            &options, &no_elements,0);
         break;
     case getType:
-        status = dbGet(ppn->paddr,DBR_USHORT,&pnotifyInfo->value,
-                       &options,&no_elements,0);
+        status = dbGet(ppn->paddr,DBR_ENUM, &pnotifyInfo->value,
+                       &options, &no_elements, 0);
         break;
     }
     pnotifyInfo->status = status;
@@ -84,55 +63,108 @@ static void getCallback(processNotify *ppn,notifyGetType type)
 
 static void doneCallback(processNotify *ppn)
 {
-    struct mbbiRecord *prec = (struct mbbiRecord *)ppn->usrPvt;
+    mbbiRecord *prec = (mbbiRecord *)ppn->usrPvt;
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback,prec->prio,prec);
+    callbackRequestProcessCallback(pnotifyInfo->pcallback, prec->prio, prec);
 }
 
-
-static long init_record(struct mbbiRecord *prec)
+static long add_record(dbCommon *pcommon)
 {
+    mbbiRecord *prec = (mbbiRecord *)pcommon;
     DBLINK *plink = &prec->inp;
-    struct instio *pinstio;
-    char  *pvname;
-    DBADDR *pdbaddr=NULL;
-    long  status;
+    DBADDR *pdbaddr;
+    long status;
     notifyInfo *pnotifyInfo;
-    CALLBACK *pcallback;
-    processNotify  *ppn=NULL;
+    processNotify *ppn;
 
-    if(plink->type!=INST_IO) {
-        recGblRecordError(S_db_badField,(void *)prec,
-            "devMbbiSoftCallback (init_record) Illegal INP field");
-        prec->pact=TRUE;
-        return(S_db_badField);
+    if (plink->type == CONSTANT) return 0;
+
+    if (plink->type != PV_LINK) {
+        recGblRecordError(S_db_badField, (void *)prec,
+            "devMbbiSoftCallback (add_record) Illegal INP field");
+        return S_db_badField;
     }
-    pinstio=(struct instio*)&(plink->value);
-    pvname = pinstio->string;
+
     pdbaddr = callocMustSucceed(1, sizeof(*pdbaddr),
-        "devMbbiSoftCallback::init_record");
-    status = dbNameToAddr(pvname,pdbaddr);
-    if(status) {
-        recGblRecordError(status,(void *)prec,
-            "devMbbiSoftCallback (init_record) linked record not found");
-        prec->pact=TRUE;
-        return(status);
+        "devMbbiSoftCallback::add_record");
+    status = dbNameToAddr(plink->value.pv_link.pvname, pdbaddr);
+    if (status) {
+        free(pdbaddr);
+        recGblRecordError(status, (void *)prec,
+            "devMbbiSoftCallback (add_record) linked record not found");
+        return status;
     }
-    pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
-        "devMbbiSoftCallback::init_record");
-    pcallback = callocMustSucceed(1, sizeof(*pcallback),
-        "devMbbiSoftCallback::init_record");
+
+    plink->type = PN_LINK;
+    plink->value.pv_link.precord = pcommon;
+    plink->value.pv_link.pvt = pdbaddr;
+    plink->value.pv_link.pvlMask = 0;
+
     ppn = callocMustSucceed(1, sizeof(*ppn),
-        "devMbbiSoftCallback::init_record");
-    pnotifyInfo->ppn = ppn;
-    pnotifyInfo->pcallback = pcallback;
+        "devMbbiSoftCallback::add_record");
     ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
+
+    pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
+        "devMbbiSoftCallback::add_record");
+    pnotifyInfo->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
+        "devMbbiSoftCallback::add_record");
+    pnotifyInfo->ppn = ppn;
+
     prec->dpvt = pnotifyInfo;
+    return 0;
+}
+
+static long del_record(dbCommon *pcommon) {
+    mbbiRecord *prec = (mbbiRecord *)pcommon;
+    DBLINK *plink = &prec->inp;
+    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
+
+    if (plink->type == CONSTANT) return 0;
+    assert (plink->type == PN_LINK);
+
+    dbNotifyCancel(pnotifyInfo->ppn);
+    free(pnotifyInfo->ppn);
+    free(pnotifyInfo->pcallback);
+    free(pnotifyInfo);
+    free(plink->value.pv_link.pvt);
+
+    plink->type = PV_LINK;
+    plink->value.pv_link.pvt = NULL;
+    return 0;
+}
+
+static struct dsxt dsxtSoftCallback = {
+    add_record, del_record
+};
+
+static long init(int pass)
+{
+    if (pass == 0) devExtend(&dsxtSoftCallback);
+    return 0;
+}
+
+static long init_record(mbbiRecord *prec)
+{
+    /* INP must be CONSTANT or PN_LINK */
+    switch (prec->inp.type) {
+    case CONSTANT:
+        if (recGblInitConstantLink(&prec->inp, DBR_ENUM, &prec->val))
+            prec->udf = FALSE;
+        break;
+    case PN_LINK:
+        /* Handled by add_record */
+        break;
+    default:
+        recGblRecordError(S_db_badField, (void *)prec,
+            "devMbbiSoftCallback (init_record) Illegal INP field");
+        prec->pact = TRUE;
+        return S_db_badField;
+    }
     return 0;
 }
 
@@ -140,16 +172,35 @@ static long read_mbbi(mbbiRecord *prec)
 {
     notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
 
-    if(prec->pact) {
-        if(pnotifyInfo->status) {
-            recGblSetSevr(prec,READ_ALARM,INVALID_ALARM);
-            return(2);
-        }
-        prec->val = pnotifyInfo->value;
-        prec->udf = FALSE;
-        return(2);
+    if (!prec->dpvt)
+        return 2;
+
+    if (!prec->pact) {
+        dbProcessNotify(pnotifyInfo->ppn);
+        prec->pact = TRUE;
+        return 0;
     }
-    dbProcessNotify(pnotifyInfo->ppn);
-    prec->pact = TRUE;
-    return(0);
+
+    if (pnotifyInfo->status) {
+        recGblSetSevr(prec, READ_ALARM, INVALID_ALARM);
+        return 2;
+    }
+
+    prec->val = pnotifyInfo->value;
+    prec->udf = FALSE;
+
+    if (prec->tsel.type == CONSTANT &&
+        prec->tse == epicsTimeEventDeviceTime)
+        prec->time = prec->inp.value.pv_link.precord->time;
+    return 2;
 }
+
+/* Create the dset for devMbbiSoftCallback */
+struct {
+    dset common;
+    DEVSUPFUN read_mbbi;
+} devMbbiSoftCallback = {
+    {5, NULL, init, init_record, NULL},
+    read_mbbi
+};
+epicsExportAddress(dset,devMbbiSoftCallback);

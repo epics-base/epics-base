@@ -15,14 +15,15 @@
  *              630 252 4793
  */
 
+#include <stdexcept>
+#include <string.h>
+
 #define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"
 #include <ellLib.h>
 #include <epicsAssert.h>
 #include <epicsEvent.h>
 #include <epicsMutex.h>
-#include <stdexcept>
-#include <string.h>
 
 /*
  * Event cache

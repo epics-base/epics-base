@@ -33,6 +33,7 @@ WIND_BASE = /usr/local/vw/tornado22-$(ARCH_CLASS)
 #WIND_BASE = /ade/vxWorks/$(VXWORKS_VERSION)
 
 
-# WorkBench Version number, used with vxWorks 6.6 and later
+# WorkBench Version number, required for vxWorks 6.x
 
+#WORKBENCH_VERSION = 2.6
 #WORKBENCH_VERSION = 3.0

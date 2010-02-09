@@ -472,14 +472,14 @@ int generalTimeGetErrorCounts(void)
     return errors;
 }
 
-const char * generalTimeCurrentTpName(void)
+const char * generalTimeCurrentProviderName(void)
 {
     if (gtPvt.lastTimeProvider)
         return gtPvt.lastTimeProvider->name;
     return NULL;
 }
 
-const char * generalTimeEventTpName(void)
+const char * generalTimeEventProviderName(void)
 {
     if (gtPvt.lastEventProvider)
         return gtPvt.lastEventProvider->name;

@@ -251,7 +251,6 @@ recordtype(aSub) {
 		prompt("Input value J")
 		asl(ASL0)
 		special(SPC_DBADDR)
-		pp(TRUE)
 		interest(2)
 		extra("void *j")
 	}

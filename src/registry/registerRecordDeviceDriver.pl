@@ -9,7 +9,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-($file, $subname) = @ARGV;
+($file, $subname, $bldTop) = @ARGV;
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
 $numberDriverSupport = 0;
@@ -47,14 +47,20 @@ close(INP) or die "$! closing file";
 
 
 # beginning of generated routine
-print "/* THIS IS A GENERATED FILE. DO NOT EDIT! */\n",
-      "/* Generated from $file */\n",
-      "\n",
-      "#include \"registryCommon.h\"\n",
-      "#include \"iocsh.h\"\n",
-      "#include \"iocshRegisterCommon.h\"\n",
-      "\n",
-      "extern \"C\" {\n";
+print << "END" ;
+/* THIS IS A GENERATED FILE. DO NOT EDIT! */
+/* Generated from $file */
+
+#include <string.h>
+
+#include "epicsStdlib.h"
+#include "iocsh.h"
+#include "iocshRegisterCommon.h"
+#include "registryCommon.h"
+
+extern "C" {
+
+END
 
 #definitions for recordtype
 if($numberRecordType>0) {
@@ -151,13 +157,26 @@ if (@variables) {
 
 #Now actual registration code.
 
+print "int $subname(DBBASE *pbase)\n{\n";
+
+print << "END" if ($bldTop ne '') ;
+    const char *bldTop = "$bldTop";
+    const char *envTop = getenv("TOP");
+
+    if (envTop && strcmp(envTop, bldTop)) {
+        printf("Warning: IOC is booting with TOP = \\"%s\\"\\n"
+               "          but was built with TOP = \\"%s\\"\\n",
+               envTop, bldTop);
+    }
+
+END
+
 print << "END" ;
-int $subname(DBBASE *pbase)
-{
     if (!pbase) {
         printf("pdbbase is NULL; you must load a DBD file first.\\n");
         return -1;
     }
+
 END
 
 if($numberRecordType>0) {
@@ -199,16 +218,12 @@ static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
 /*
  * Register commands on application startup
  */
-class IoccrfReg {
-  public:
-    IoccrfReg() {
-        iocshRegisterCommon();
-        iocshRegister(&registerRecordDeviceDriverFuncDef,registerRecordDeviceDriverCallFunc);
-    }
-};
-#if !defined(__GNUC__) || !(__GNUC__<2 || (__GNUC__==2 && __GNUC_MINOR__<=95))
-namespace { IoccrfReg iocshReg; }
-#else
-IoccrfReg iocshReg;
-#endif
+static int Registration() {
+    iocshRegisterCommon();
+    iocshRegister(&registerRecordDeviceDriverFuncDef,
+        registerRecordDeviceDriverCallFunc);
+    return 0;
+}
+
+static int done = Registration();
 END

@@ -17,53 +17,57 @@
 
 MAIN(epicsMathTest)
 {
-    double a,b,c;
+    double huge = 1e300;
+    double tiny = 1e-300;
+    double c;
     
-    testPlan(24);
+    testPlan(35);
     
-    a = 0.0;
-    b = 1.0;
-    c = a / b;
-    testOk(!isnan(c), "!isnan(0.0 / 1.0)");
-    testOk(!isinf(c), "!isinf(0.0 / 1.0)");
-    testOk(c == 0.0, "0.0 / 1.0 == 0.0");
+    testOk1(!isnan(0.0));
+    testOk1(!isinf(0.0));
     
-    c = epicsINF;
-    testOk(!isnan(c), "!isnan(1.0 / 0.0)");
-    testOk(isinf(c), "isinf(1.0 / 0.0)");
-    testOk(c == c, "1.0 / 0.0 == 1.0 / 0.0");
-    testOk(c - c != b, "inf - inf != 0");
-    testOk(c + -c != b, "inf + -inf != 0");
-    testOk(-c + c != b, "-inf + inf != 0");
+    testOk1(!isnan(epicsINF));
+    testOk1(isinf(epicsINF));
+    testOk1(epicsINF == epicsINF);
+    testOk1(epicsINF > 0.0);
+    testOk1(epicsINF - epicsINF != 0.0);
+    testOk1(epicsINF + -epicsINF != 0.0);
+    testOk1(-epicsINF + epicsINF != 0.0);
+    testOk1(isnan(epicsINF - epicsINF));
+    testOk1(isnan(epicsINF + -epicsINF));
+    testOk1(isnan(-epicsINF + epicsINF));
     
-    c = epicsNAN;
-    testOk(isnan(c), "isnan(0.0 / 0.0)");
-    testOk(!isinf(c), "!isinf(0.0 / 0.0)");
-    testOk(c != c, "0.0 / 0.0 != 0.0 / 0.0");
-    testOk(isnan(c - c), "isnan(nan - nan)");
-    testOk(isnan(c + -c), "isnan(nan + -nan)");
-    testOk(isnan(-c + c), "isnan(-nan + nan)");
+    testOk1(isnan(epicsNAN));
+    testOk1(!isinf(epicsNAN));
+    testOk1(epicsNAN != epicsNAN);
+    testOk1(!(epicsNAN < epicsNAN));
+    testOk1(!(epicsNAN <= epicsNAN));
+    testOk1(!(epicsNAN == epicsNAN));
+    testOk1(!(epicsNAN >= epicsNAN));
+    testOk1(!(epicsNAN > epicsNAN));
+    testOk1(isnan(epicsNAN - epicsNAN));
+    testOk1(isnan(epicsNAN + -epicsNAN));
+    testOk1(isnan(-epicsNAN + epicsNAN));
     
-    a = 1e300;
-    b = 1e-300;
-    c = a / b;
+    c = huge / tiny;
     testOk(!isnan(c), "!isnan(1e300 / 1e-300)");
     testOk(isinf(c), "isinf(1e300 / 1e-300)");
     testOk(c > 0.0, "1e300 / 1e-300 > 0.0");
     
-    a = -1e300;
-    b = 1e-300;
-    c = a / b;
+    c = (-huge) / tiny;
     testOk(!isnan(c), "!isnan(-1e300 / 1e-300)");
     testOk(isinf(c), "isinf(-1e300 / 1e-300)");
     testOk(c < 0.0, "-1e300 / 1e-300 < 0.0");
     
-    a = 1e300;
-    b = 1e300;
-    c = a / b;
+    c = huge / huge;
     testOk(!isnan(c), "!isnan(1e300 / 1e300)");
     testOk(!isinf(c), "!isinf(1e300 / 1e300)");
     testOk(c == 1.0, "1e300 / 1e300 == 1.0");
+    
+    c = tiny / tiny;
+    testOk(!isnan(c), "!isnan(1e-300 / 1e-300)");
+    testOk(!isinf(c), "!isinf(1e-300 / 1e-300)");
+    testOk(c == 1.0, "1e300 / 1e-300 == 1.0");
     
     return testDone();
 }

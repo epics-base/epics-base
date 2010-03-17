@@ -46,8 +46,6 @@
 #include "epicsTime.h"
 #include "cantProceed.h"
 
-#define STATIC static
-
 /*putNotify.state values */
 typedef enum {
     putNotifyNotActive,
@@ -86,15 +84,15 @@ typedef struct notifyGlobal {
     ELLLIST      freeList;
 }notifyGlobal;
 
-STATIC notifyGlobal *pnotifyGlobal = 0;
+static notifyGlobal *pnotifyGlobal = 0;
 
 /*Local routines*/
-STATIC void putNotifyInit(putNotify *ppn);
-STATIC void putNotifyCleanup(putNotify *ppn);
-STATIC void restartCheck(putNotifyRecord *ppnr);
-STATIC void callUser(dbCommon *precord,putNotify *ppn);
-STATIC void notifyCallback(CALLBACK *pcallback);
-STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord);
+static void putNotifyInit(putNotify *ppn);
+static void putNotifyCleanup(putNotify *ppn);
+static void restartCheck(putNotifyRecord *ppnr);
+static void callUser(dbCommon *precord,putNotify *ppn);
+static void notifyCallback(CALLBACK *pcallback);
+static void putNotifyCommon(putNotify *ppn,dbCommon *precord);
 
 #define ellSafeAdd(list,listnode) \
 { \
@@ -110,7 +108,7 @@ STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord);
     (listnode)->isOnList=0; \
 }
 
-STATIC void putNotifyInit(putNotify *ppn)
+static void putNotifyInit(putNotify *ppn)
 {
     putNotifyPvt *pputNotifyPvt;
 
@@ -135,7 +133,7 @@ STATIC void putNotifyInit(putNotify *ppn)
     ppn->pputNotifyPvt = pputNotifyPvt;
 }
 
-STATIC void putNotifyCleanup(putNotify *ppn)
+static void putNotifyCleanup(putNotify *ppn)
 {
     putNotifyPvt *pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
 
@@ -144,7 +142,7 @@ STATIC void putNotifyCleanup(putNotify *ppn)
     ppn->pputNotifyPvt = 0;
 }
 
-STATIC void restartCheck(putNotifyRecord *ppnr)
+static void restartCheck(putNotifyRecord *ppnr)
 {
     dbCommon *precord = ppnr->precord;
     putNotify *pfirst;
@@ -167,7 +165,7 @@ STATIC void restartCheck(putNotifyRecord *ppnr)
     callbackRequest(&pputNotifyPvt->callback);
 }
 
-STATIC void callUser(dbCommon *precord,putNotify *ppn)
+static void callUser(dbCommon *precord,putNotify *ppn)
 {
     putNotifyPvt *pputNotifyPvt = (putNotifyPvt *)ppn->pputNotifyPvt;
 
@@ -198,7 +196,7 @@ STATIC void callUser(dbCommon *precord,putNotify *ppn)
     return;
 }
 
-STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord)
+static void putNotifyCommon(putNotify *ppn,dbCommon *precord)
 {
     long	status=0;
     dbFldDes	*pfldDes = ppn->paddr->pfldDes;
@@ -245,7 +243,7 @@ STATIC void putNotifyCommon(putNotify *ppn,dbCommon *precord)
     callUser(precord,ppn);
 }
 
-STATIC void notifyCallback(CALLBACK *pcallback)
+static void notifyCallback(CALLBACK *pcallback)
 {
     putNotify	*ppn=NULL;
     dbCommon	*precord;
@@ -459,7 +457,7 @@ typedef struct tpnInfo {
     putNotify    *ppn;
 }tpnInfo;
 
-STATIC void dbtpnCallback(putNotify *ppn)
+static void dbtpnCallback(putNotify *ppn)
 {
     putNotifyStatus status = ppn->status;
     tpnInfo         *ptpnInfo = (tpnInfo *)ppn->usrPvt;

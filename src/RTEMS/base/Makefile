@@ -16,7 +16,6 @@ SRCS += rtems_init.c
 SRCS += rtems_config.c
 SRCS += rtems_netconfig.c
 SRCS += rtems_util.c
-SRCS += rtems_dummyreg.c
 SRCS += setBootConfigFromNVRAM.c
 SRCS += epicsRtemsInitHookPre.c
 SRCS += epicsRtemsInitHookPost.c

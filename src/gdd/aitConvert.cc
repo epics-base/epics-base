@@ -100,7 +100,7 @@ bool putDoubleToString (
     if ( nChar < 1 ) {
         return false;
     }
-    assert ( nChar < strSize );
+    assert ( size_t(nChar) < strSize );
 #else
 	int nChar = epicsSnprintf ( 
         pString, strSize-1, "%g", in );

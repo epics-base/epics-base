@@ -18,6 +18,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <math.h>
+
 #define epicsExportSharedSymbols
 #include "epicsTimer.h"
 #include "epicsGuard.h"
@@ -127,7 +129,7 @@ epicsShareFunc epicsTimerNotify::expireStatus::expireStatus
         throw std::logic_error 
             ( "no timer restart was requested, but a delay was specified?" );
     }
-    if ( this->delay < 0.0 ) {
+    if ( this->delay < 0.0 || !isfinite(this->delay) ) {
         throw std::logic_error 
             ( "timer restart was requested, but a negative delay was specified?" );
     }
@@ -135,12 +137,12 @@ epicsShareFunc epicsTimerNotify::expireStatus::expireStatus
 
 epicsShareFunc bool epicsTimerNotify::expireStatus::restart () const
 {
-    return this->delay >= 0.0;
+    return this->delay >= 0.0 && isfinite(this->delay);
 }
 
 epicsShareFunc double epicsTimerNotify::expireStatus::expirationDelay () const
 {
-    if ( this->delay < 0.0 ) {
+    if ( this->delay < 0.0 || !isfinite(this->delay) ) {
         throw std::logic_error 
             ( "no timer restart was requested, but you are asking for a restart delay?" );
     }

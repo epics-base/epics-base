@@ -171,6 +171,7 @@ static long init_record(boRecord *prec,int pass)
 		prec->udf = FALSE;
 	} else if (status==2) status=0;
     }
+    prec->mlst = prec->val;
     /* convert val to rval */
     if ( prec->mask != 0 ) {
 	if(prec->val==0) prec->rval = 0;

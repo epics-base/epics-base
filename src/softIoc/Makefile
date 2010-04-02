@@ -30,5 +30,7 @@ DB += softIocExit.db
 
 include $(TOP)/configure/RULES
 
+softMain$(OBJ) : $(COMMON_DIR)/epicsInstallDir.h
+
 $(COMMON_DIR)/epicsInstallDir.h: $(INSTALL_BIN)/makeInstallDir.pl
 	$(PERL) $< $(INSTALL_LOCATION) > $@

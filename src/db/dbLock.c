@@ -236,6 +236,12 @@ void epicsShareAPI dbScanLock(dbCommon *precord)
     epicsMutexLockStatus status;
     epicsThreadId idSelf = epicsThreadGetIdSelf();
 
+    /*
+     * If this assertion is failing it is likely because iocInit
+     * has not completed.  It must complete before normal record
+     * processing is possible.  Consider using an initHook to
+     * detect when this occurs.
+     */
     assert(dbLockIsInitialized);
     while(1) {
         epicsMutexMustLock(lockSetModifyLock);

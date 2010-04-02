@@ -33,11 +33,9 @@
 #include "epicsMutex.h"
 #include "epicsThread.h"
 
-#define STATIC static
-
-STATIC int firstTime = 1;
-STATIC ELLLIST mutexList;
-STATIC ELLLIST freeList;
+static int firstTime = 1;
+static ELLLIST mutexList;
+static ELLLIST freeList;
 
 struct epicsMutexParm {
     ELLNODE node;
@@ -49,7 +47,7 @@ struct epicsMutexParm {
     int lineno;
 };
 
-STATIC epicsMutexOSD * epicsMutexGlobalLock;
+static epicsMutexOSD * epicsMutexGlobalLock;
 
 
 // vxWorks 5.4 gcc fails during compile when I use std::exception

@@ -80,10 +80,14 @@ epicsExportAddress(rset,compressRSET);
 static void reset(compressRecord *prec)
 {
     prec->nuse = 0;
-    prec->off= 0;
+    prec->off = 0;
     prec->inx = 0;
     prec->cvb = 0.0;
     prec->res = 0;
+    /* allocate memory for the summing buffer for conversions requiring it */
+    if (prec->alg == compressALG_Average && prec->sptr == 0){
+        prec->sptr = (double *)calloc(prec->nsam,sizeof(double));
+    }
 }
 
 static void monitor(compressRecord *prec)
@@ -292,10 +296,6 @@ static long init_record(compressRecord *prec, int pass)
     if (pass==0){
 	if(prec->nsam<1) prec->nsam = 1;
 	prec->bptr = (double *)calloc(prec->nsam,sizeof(double));
-	/* allocate memory for the summing buffer for conversions requiring it */
-	if (prec->alg == compressALG_Average){
-                prec->sptr = (double *)calloc(prec->nsam,sizeof(double));
-	}
         reset(prec);
     }
     return(0);

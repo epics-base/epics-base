@@ -127,6 +127,9 @@ static long init_record(subRecord *prec, int pass)
         recGblRecordError(S_db_BadSub, (void *)prec, "recSub(init_record)");
         return S_db_BadSub;
     }
+    prec->mlst = prec->val;
+    prec->alst = prec->val;
+    prec->lalm = prec->val;
     return 0;
 }
 

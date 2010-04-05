@@ -198,6 +198,11 @@ static long init_record(calcoutRecord *prec, int pass)
     prpvt->cbScheduled = 0;
 
     if (pcalcoutDSET->init_record) pcalcoutDSET->init_record(prec);
+    prec->pval = prec->val;
+    prec->mlst = prec->val;
+    prec->alst = prec->val;
+    prec->lalm = prec->val;
+    prec->povl = prec->oval;
     return 0;
 }
 

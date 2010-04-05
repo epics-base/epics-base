@@ -121,6 +121,9 @@ static long init_record(longinRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
+    prec->mlst = prec->val;
+    prec->alst = prec->val;
+    prec->lalm = prec->val;
     return(0);
 }
 

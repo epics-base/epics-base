@@ -119,7 +119,8 @@ static long init_record(stringinRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    strncpy(prec->oval,prec->val,sizeof(prec->val));
+    STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
+    strcpy(prec->oval,prec->val);
     return(0);
 }
 
@@ -158,9 +159,9 @@ static void monitor(stringinRecord *prec)
     unsigned short  monitor_mask;
 
     monitor_mask = recGblResetAlarms(prec);
-    if(strncmp(prec->oval,prec->val,sizeof(prec->val))) {
+    if(strcmp(prec->oval,prec->val)) {
 	monitor_mask |= DBE_VALUE|DBE_LOG;
-	strncpy(prec->oval,prec->val,sizeof(prec->val));
+	strcpy(prec->oval,prec->val);
     }
     if (prec->mpst == stringinPOST_Always)
 	monitor_mask |= DBE_VALUE;

@@ -1,11 +1,11 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
 /*  
@@ -47,6 +47,7 @@
 #include "searchTimer.h"
 #include "disconnectGovernorTimer.h"
 #include "repeaterSubscribeTimer.h"
+#include "SearchDest.h"
 
 extern "C" void cacRecvThreadUDP ( void *pParam );
 
@@ -97,7 +98,9 @@ public:
         epicsMutex & callbackControl, 
         epicsMutex & mutualExclusion, 
         cacContextNotify &,
-        class cac & );
+        class cac &,
+        unsigned port,
+        tsDLList < SearchDest > & );
     virtual ~udpiiu ();
     void installNewChannel ( 
         epicsGuard < epicsMutex > &, nciu &, netiiu * & );
@@ -108,17 +111,41 @@ public:
     void shutdown ( epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
     void show ( unsigned level ) const;
-
+    
     // exceptions
     class noSocket {};
 
 private:
+    class SearchDestUDP :
+        public SearchDest {
+    public:
+        SearchDestUDP ( const osiSockAddr &, udpiiu & );
+        void searchRequest ( 
+            epicsGuard < epicsMutex > &, const char * pBuf, size_t bufLen );
+        void show ( 
+            epicsGuard < epicsMutex > &, unsigned level ) const;
+    private:
+        osiSockAddr _destAddr;
+        udpiiu & _udpiiu;
+    };
+    class SearchRespCallback : 
+        public SearchDest :: Callback {
+    public:
+        SearchRespCallback ( udpiiu & );
+        void notify (
+            const caHdr &, const void * pPayload,
+            const osiSockAddr &, const epicsTime & );
+        void show ( 
+            epicsGuard < epicsMutex > &, unsigned level ) const;
+    private:
+        udpiiu & _udpiiu;
+    };
     char xmitBuf [MAX_UDP_SEND];   
     char recvBuf [MAX_UDP_RECV];
     udpRecvThread recvThread;
     repeaterSubscribeTimer repeaterSubscribeTmr;
     disconnectGovernorTimer govTmr;
-    ELLLIST dest;
+    tsDLList < SearchDest > _searchDestList;
     double maxPeriod;
     double rtteMean;
     double rtteMeanDev;

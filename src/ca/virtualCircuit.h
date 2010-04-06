@@ -1,12 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*  
  *
  *                              
@@ -37,6 +38,7 @@
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
 #include "hostNameCache.h"
+#include "SearchDest.h"
 #include "compilerDependencies.h"
 
 class callbackManager;
@@ -101,7 +103,8 @@ public:
     tcpiiu ( cac & cac, epicsMutex & mutualExclusion, epicsMutex & callbackControl, 
         cacContextNotify &, double connectionTimeout, epicsTimerQueue & timerQueue, 
         const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion, 
-        ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn );
+        ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn,
+        const bool nameService );
     ~tcpiiu ();
     void start (
         epicsGuard < epicsMutex > & );
@@ -175,14 +178,32 @@ public:
         epicsGuard < epicsMutex > & guard, nciu & chan );
     bool connectNotify ( 
         epicsGuard < epicsMutex > &, nciu & chan );
-    void nameResolutionMsgEndNotify ();
+    
+    void searchRespNotify ( 
+        const epicsTime &, const caHdrLargeArray & );
+    void versionRespNotify ( const caHdrLargeArray & );
 
     void * operator new ( size_t size, 
         tsFreeList < class tcpiiu, 32, epicsMutexNOOP >  & );
-    epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ))
+    epicsPlacementDeleteOperator (( void *,
+        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ));
 
 private:
+    class SearchDestTCP :
+        public SearchDest {
+    public:
+        SearchDestTCP ( tcpiiu *, cac &, const osiSockAddr & );
+        void searchRequest ( epicsGuard < epicsMutex > & guard,
+             const char * pbuf, size_t len );
+        void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
+        void disable ();
+    private:
+        tcpiiu * _ptcpiiu;
+        cac & _cac;
+        const osiSockAddr & _addr;
+        bool _active;
+    };
+
     hostNameCache hostNameCacheInstance;
     tcpRecvThread recvThread;
     tcpSendThread sendThread;
@@ -205,6 +226,7 @@ private:
     comBufMemoryManager & comBufMemMgr;
     cac & cacRef;
     char * pCurData;
+    SearchDestTCP * pSearchDest;
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     unsigned minorProtocolVersion;
@@ -224,6 +246,7 @@ private:
     unsigned unacknowledgedSendBytes;
     unsigned channelCountTot;
     bool _receiveThreadIsBusy;
+    bool _nameService;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 

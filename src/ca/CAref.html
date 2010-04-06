@@ -19,25 +19,25 @@ background-color: #ddf;
 
 <h1>EPICS R3.14 Channel Access Reference Manual</h1>
 <address>
-  Jeffrey O. Hill 
+  Jeffrey O. Hill
 </address>
 
 <p><span style="font-size: x-small; font-weight:lighter;">Los Alamos National
 Laboratory, SNS Division</span></p>
 <address>
-  Ralph Lange 
+  Ralph Lange
 </address>
 
 <p><span style="font-size: x-small; font-weight:lighter;">Helmholtz-Zentrum
 Berlin (BESSY II)</span></p>
 
-<p><span style="font-size: xx-small; font-weight:lighter;">Copyright © 2009
-Helmholtz-Zentrum Berlin für Materialien und Energie GmbH.<br>
-Copyright © 2002 The University of Chicago, as Operator of Argonne National
+<p><span style="font-size: xx-small; font-weight:lighter;">Copyright ï¿½ 2009
+Helmholtz-Zentrum Berlin fï¿½r Materialien und Energie GmbH.<br>
+Copyright ï¿½ 2002 The University of Chicago, as Operator of Argonne National
 Laboratory.<br>
-Copyright © 2002 The Regents of the University of California, as Operator of
+Copyright ï¿½ 2002 The Regents of the University of California, as Operator of
 Los Alamos National Laboratory.<br>
-Copyright © 2002 Berliner Speicherringgesellschaft für Synchrotronstrahlung
+Copyright ï¿½ 2002 Berliner Speicherringgesellschaft fï¿½r Synchrotronstrahlung
 GmbH.</span></p>
 
 <p><span style="font-size: xx-small; font-weight:lighter;">EPICS BASE Versions
@@ -105,7 +105,7 @@ $Date$</span></small></p>
 
 <h3><a href="#Troublesho">Troubleshooting</a></h3>
 <ul>
-  <li><a href="#When">When Clients Do Not Connect to Their Server</a> 
+  <li><a href="#When">When Clients Do Not Connect to Their Server</a>
     <ul>
       <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
         Match</a></li>
@@ -136,7 +136,7 @@ $Date$</span></small></p>
   <li><a href="#Connection">Connection Management</a></li>
   <li><a href="#Thread">Thread Safety and Preemptive Callback to User
   Code</a></li>
-  <li><a href="#Client2">CA Client Contexts and Application Specific Auxillary
+  <li><a href="#Client2">CA Client Contexts and Application Specific Auxiliary
     Threads</a></li>
   <li><a href="#Polling">Polling the CA Client Library From Single Threaded
     Applications</a></li>
@@ -148,7 +148,7 @@ $Date$</span></small></p>
   handlers</a></li>
 </ul>
 
-<h3>Functionality Index </h3>
+<h3>Functionality Indexï¿½</h3>
 <ul>
   <li><a href="#ca_context_create">create CA client context</a></li>
   <li><a href="#ca_context_destroy">terminate CA client context</a></li>
@@ -158,7 +158,7 @@ $Date$</span></small></p>
   <li><a href="#ca_put">write to a channel and wait for initiated activities to
     complete</a></li>
   <li><a href="#ca_get">read from a channel</a></li>
-  <li><a href="#ca_add_event">subscribe for state change updates</a></li>
+  <li><a href="#ca_add_event">subscribeï¿½for state change updates</a></li>
   <li><a href="#ca_clear_event">cancel a subscription</a></li>
   <li><a href="#ca_pend_io">block for certain requests to complete</a></li>
   <li><a href="#ca_test_io">test to see if certain requests have
@@ -178,13 +178,13 @@ $Date$</span></small></p>
   <li><a href="#ca_get">ca_array_get_callback</a></li>
   <li><a href="#ca_put">ca_array_put</a></li>
   <li><a href="#ca_put">ca_array_put_callback</a></li>
-  <li><a href="#ca_attach_context">ca_attach_context </a></li>
+  <li><a href="#ca_attach_context">ca_attach_contextï¿½</a></li>
   <li><a href="#ca_clear_channel">ca_clear_channel</a></li>
   <li><a href="#ca_clear_event">ca_clear_subscription</a></li>
   <li><a href="#ca_client_status">ca_client_status</a></li>
   <li><a href="#ca_context_create">ca_context_create</a></li>
   <li><a href="#ca_context_destroy">ca_context_destroy</a></li>
-  <li><a href="CAref.html#ca_client_status">ca_context_status</a></li>
+  <li><a href="#ca_client_status">ca_context_status</a></li>
   <li><a href="#ca_create_channel">ca_create_channel</a></li>
   <li><a href="#ca_add_event">ca_create_subscription</a></li>
   <li><a href="#ca_current_context">ca_current_context</a></li>
@@ -299,7 +299,7 @@ is used.</p>
     </tr>
     <tr>
       <td>EPICS_CA_SERVER_PORT</td>
-      <td>i &gt; 5000</td>
+      <td>iï¿½&gt; 5000</td>
       <td>5064</td>
     </tr>
     <tr>
@@ -327,7 +327,7 @@ shell that is in use.</p>
   <tbody>
     <tr>
       <td>C shell</td>
-      <td>setenv EPICS_CA_ADDR_LIST  1.2.3.4</td>
+      <td>setenv EPICS_CA_ADDR_LISTï¿½ 1.2.3.4</td>
     </tr>
     <tr>
       <td>bash</td>
@@ -335,7 +335,7 @@ shell that is in use.</p>
     </tr>
     <tr>
       <td>vxWorks shell</td>
-      <td>putenv ( "EPICS_CA_ADDR_LIST =1.2.3.4" )</td>
+      <td>putenv ( "EPICS_CA_ADDR_LISTï¿½=1.2.3.4" )</td>
     </tr>
     <tr>
       <td>DOS command line</td>
@@ -362,7 +362,7 @@ to operate over a wide area network (WAN).</p>
 
 <h3><a name="Network">IP Network Administration Background Information</a></h3>
 
-<p>Channel Access is implemented using internet protocols (IP). IP addresses
+<p>Channel Access is implementedï¿½using internet protocols (IP). IP addresses
 are divided into host and network portions. The boundary between each portion
 is determined by the IP netmask. Portions of the IP address corresponding to
 zeros in the netmask specify the hosts address within an IP subnet. Portions of
@@ -415,7 +415,7 @@ independent control systems that will share the same network. For instance, a
 site might set up an operational control system and a test control system on
 the same network. In this situation it is desirable for the test system and the
 operational system to use identical PV names without fear of collision. A site
-might also configure the CA port numbers because some other facility is already
+might also configure the CA port numbersï¿½because some other facility is already
 using the default port numbers. The default Channel Access port numbers have
 been registered with IANA.</p>
 
@@ -716,7 +716,7 @@ in the variable EPICS_TS_MIN_WEST.</p>
 EPICS_CA_MAX_ARRAY_BYTES determines the size of the largest array that may pass
 through CA. Prior to this version only arrays smaller than 16k bytes could be
 transfered. The CA libraries maintains a free list of 16384 byte network
-buffers that are used for ordinary communication. If EPICS_CA_MAX_ARRAY_BYTES 
+buffers that are used for ordinary communication. If EPICS_CA_MAX_ARRAY_BYTESï¿½
 is larger than 16384 then a second free list of larger data buffers is
 established and used only after a client send its first large array request.</p>
 
@@ -751,7 +751,7 @@ been done to address this issue so far).</em></p>
     </tr>
     <tr>
       <td>EPICS_CAS_SERVER_PORT</td>
-      <td>i &gt; 5000</td>
+      <td>iï¿½&gt; 5000</td>
       <td>EPICS_CA_SERVER_PORT</td>
     </tr>
     <tr>
@@ -766,12 +766,12 @@ been done to address this issue so far).</em></p>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_PERIOD</td>
-      <td>r &gt; 0.1 seconds</td>
+      <td>rï¿½&gt; 0.1 seconds</td>
       <td>EPICS_CA_BEACON_PERIOD</td>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_PORT</td>
-      <td>i &gt; 5000</td>
+      <td>iï¿½&gt; 5000</td>
       <td>EPICS_CA_REPEATER_PORT</td>
     </tr>
     <tr>
@@ -824,8 +824,8 @@ the contents of EPICS_CA_ADDR_LIST is used to augment the list. Otherwise, the
 list is not augmented.</p>
 
 <p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for
-server beacons. The only exception to this occurs when ports are specified in
-EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
+server beacons. The only exception to this occurs when  ports are specified
+in EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
 EPICS_CAS_BEACON_PORT is not specified then beacons are sent to the port
 specified in EPICS_CA_REPEATER_PORT.</p>
 
@@ -846,7 +846,7 @@ not implemet this feature</em>.</p>
 
 <p>Name resolution requests originating from any of the IP addresses specified
 in the EPICS_CAS_IGNORE_ADDR_LIST parameter are not replied to.<em>In R3.14 and
-previous releases the CA server employed by iocCore does not implemet this
+previous releases the CA server employed by iocCore does not implement this
 feature.</em></p>
 
 <h4>Client Configuration that also Applies to Servers</h4>
@@ -1082,11 +1082,11 @@ the output.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
     </tr>
     <tr>
       <td>-c</td>
-      <td>Asynchronous get (use ca_get_callback and wait for completion)</td>
+      <td>Asynchronous get (use ca_get_callback instead of ca_get)</td>
     </tr>
     <tr>
       <td>-p &lt;prio&gt;</td>
@@ -1115,7 +1115,7 @@ the output.</p>
     </tr>
     <tr>
       <td>-d &lt;type&gt;</td>
-      <td>Request specific dbr type; use string (DBR_ prefix may be omitted) 
+      <td>Request specific dbr type; use string (DBR_ prefix may be omitted)
 
         <p>or number of one of the following types:</p>
 
@@ -1341,7 +1341,7 @@ the output.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
     </tr>
     <tr>
       <td>-m &lt;mask&gt;</td>
@@ -1495,7 +1495,7 @@ command line is used.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
     </tr>
     <tr>
       <td>-c</td>
@@ -1583,7 +1583,7 @@ etc.</p>
     </tr>
     <tr>
       <td>-w &lt;sec&gt;</td>
-      <td>Wait time, specifies CA timeout, default is 1.0 second(s)</td>
+      <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
     </tr>
     <tr>
       <td>-s &lt;level&gt;</td>
@@ -1973,8 +1973,8 @@ OS and even between different versions of the same OS.</p>
 <p>If the subscription update producer in the server produces subscription
 updates faster than the subscription update consumer in the client consumes
 them, then events have to be discarded if the buffering in the server
-isn&rsquo;t allowed to grow to an infinite size. This is a law of nature
-&ndash; based on queuing theory of course.</p>
+isn't allowed to grow to an infinite size. This is a law of nature
+- based on queuing theory of course.</p>
 
 <p>What is done depends on the version of the CA server. All server versions
 place quotas on the maximum number of subscription updates allowed on the
@@ -1996,10 +1996,10 @@ server to resume with subscription updates. This prevents slow clients from
 getting time warped, but also guarantees that intervening events are discarded
 until the slow client catches up.</p>
 
-<p>There is currently no message on the IOC&rsquo;s console when a particular
-client is slow on the uptake. A message of this type used to exist many years
-ago, but it was a source of confusion (and what we will call message noise) so
-it was removed. </p>
+<p>There is currently no message on the IOC's console when a
+particular client is slow on the uptake. A message of this type used to exist
+many years ago, but it was a source of confusion (and what we will call
+message noise) so it was removed. </p>
 
 <p>There is unfortunately no field in the protocol allowing the server to
 indicate that an intervening subscription update was discarded. We should
@@ -2310,7 +2310,7 @@ void myCallback ( struct event_handler_args args )
 <h3><a name="Channel1">Channel Access Exceptions</a></h3>
 
 <p>When the server detects a failure, and there is no client call back function
-attached to the request, then an exception handler is executed in the client.
+attached to the request, thenï¿½an exception handler is executed in the client.
 The default exception handler prints a message on the console and exits if the
 exception condition is severe. Certain internal exceptions within the CA client
 library, and failures detected by the SEVCHK macro may also cause the exception
@@ -2332,8 +2332,8 @@ library functions that request them.</p>
 <h3><a name="Arrays">Arrays</a></h3>
 
 <p>For routines that require an argument specifying the number of array
-elements, no more than the process variable's maximum native element count may
-be requested. The process variable's maximum native element count is available
+elements, no more than theï¿½process variable's maximumï¿½native element count may
+be requested. The process variable'sï¿½maximum native element count is available
 from ca_element_count() when the channel is connected. If less elements than
 the process variable's native element count are requested the requested values
 will be fetched beginning at element zero. By default CA limits the number of
@@ -2383,7 +2383,7 @@ CA's auxiliary threads when the main initiating channel access thread is not
 inside of a function in the channel access client library. Otherwise, the
 user's call back functions will be called only when the main initiating channel
 access thread is executing inside of the CA client library. When the CA client
-library invokes a user's call back function it will always wait for the current
+library invokes a user'sï¿½call back function it will always wait for the current
 callback to complete prior to executing another call back function. Programmers
 enabling preemptive callback should be familiar with using mutex locks to
 create a reliable multi-threaded program.</p>
@@ -2431,6 +2431,7 @@ explicitly <em>or implicitly</em> with
 ca_create_context(ca_disable_preemptive_callback). Once a thread has joined
 with a CA context it need only make ordinary ca_xxxx() library calls to use the
 context.</p>
+
 
 <p>A CA client library context can be shut down and cleaned up, after
 destroying any channels or application specific threads that are attached to
@@ -2484,9 +2485,9 @@ questionable practice for the following reasons.</p>
 <ul>
   <li>The vxWorks shell thread runs at the very highest priority in the system
     and therefore socket calls are made at a priority that is above the
-    priority of tNetTask &minus; a practice that has caused the WRS IP kernel
+    priority of tNetTask - a practice that has caused the WRS IP kernel
     to get sick in the past. That symptom was observed some time ago, but we
-    don&rsquo;t know if WRS has fixed the problem.</li>
+    don't know if WRS has fixed the problem.</li>
 </ul>
 <ul>
   <li>The vxWorks shell thread runs at the very highest priority in the system
@@ -2501,7 +2502,7 @@ questionable practice for the following reasons.</p>
 <ul>
   <li>In EPICS R3.13 the CA client library installed vxWorks task exit handlers
     behaved strangely if CA functions were called from the vxWorks shell,
-    ca_task_exit() wasn&rsquo;t called, and the vxWorks shell restarted. In
+    ca_task_exit() wasn't called, and the vxWorks shell restarted. In
     EPICS R3.14 vxWorks task exit handlers are not installed and therefore
     cleanup is solely the responsibility of the user. With EPICS R3.14 the user
     must call ca_context_destroy or ca_task_exit to clean up on vxWorks. This
@@ -2584,7 +2585,7 @@ void ca_context_destroy();</pre>
 
 <h4>Description</h4>
 
-<p>Shut down the calling thread's channel access client context and free any
+<p>Shut down the calling thread'sï¿½channel access client context and free any
 resources allocated. Detach the calling thread from any CA client context.</p>
 
 <p>Any user-created threads that have attached themselves to the CA context
@@ -2637,8 +2638,8 @@ the routine writes a channel identifier into the user's variable of type
 on a channel.</p>
 
 <p>The circuit may be initially connected or disconnected depending on the
-state of the network and the location of the channel. A channel will only enter
-a connected state after server's address is determined, and only if channel
+state of the network and the location of the channel. A channel will onlyï¿½enter
+aï¿½connected state after server's address is determined, and only if channel
 access successfully establishes a virtual circuit through the network to the
 server. Channel access routines that send a request to a server will return
 ECA_DISCONNCHID if the channel is currently disconnected.</p>
@@ -2676,7 +2677,7 @@ time.</p>
     <dd>A nil terminated process variable name string. EPICS process control
       function block database variable names are of the form "&lt;record
       name&gt;.&lt;field name&gt;". If the field name and the period separator
-      are omitted then the "VAL" field is implicit. For example "RFHV01" and
+      are omitted then the "VAL" field is implicit. For example "RFHV01" and
       "RFHV01.VAL" reference the same EPICS process control function block
       database variable.</dd>
 </dl>
@@ -2685,7 +2686,7 @@ time.</p>
     <dd>Optional address of the user's call back function to be run when the
       connection state changes. Casual users of channel access may decide to
       set this field to nil or 0 if they do not need to have a call back
-      function run in response to each connection state change event. 
+      function run in response to each connection state change event.
       <p>The following structure is passed <em>by value </em>to the user's
       connection connection callback function. The <code>op</code> field will
       be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
@@ -2701,8 +2702,8 @@ time.</p>
 </dl>
 <dl>
   <dt><code>PUSER</code></dt>
-    <dd>The value of this void pointer argument is retained in
-      storage associated with the specified channel. See the MACROS manual page
+    <dd>The value of this void pointer argument is retained in
+      storage associated with the specified channel. See the MACROS manual page
       for reading and writing this field. Casual users of channel access may
       wish to set this field to nil or 0.</dd>
 </dl>
@@ -2743,7 +2744,7 @@ int ca_clear_channel (chid CHID);</code></pre>
 
 <h4>Description</h4>
 
-<p>Shutdown and reclaim resources associated with a channel created by
+<p>Shutdown and reclaim resourcesï¿½associated with a channel created by
 ca_create_channel().</p>
 
 <p>All remote operation requests such as the above are accumulated (buffered)
@@ -2753,7 +2754,7 @@ efficiently sent over the network in one message.</p>
 
 <p>Clearing a channel does not cause its disconnect handler to be called, but
 clearing a channel does shutdown and reclaim any channel state change event
-subscriptions (monitors) registered with the channel.</p>
+subscriptionsï¿½(monitors) registeredï¿½with theï¿½channel.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -2787,13 +2788,13 @@ int ca_array_put_callback ( chtype TYPE,
 
 <p>Write a scalar or array value to a process variable.</p>
 
-<p>When ca_array_put  or ca_put are invoked the client will receive no response
+<p>When ca_array_putï¿½ or ca_put are invoked the client will receive no response
 unless the request can not be fulfilled in the server. If unsuccessful an
 exception handler is run on the client side. </p>
 
 <p>When ca_array_put_callback are invoked the user supplied asynchronous call
-back is called only after the initiated write operation, and all actions
-resulting from the initiating write operation, complete.</p>
+back is called only after the initiated write operation, and all actions
+resulting from the initiating write operation, complete.</p>
 
 <p>If unsuccessful the call back function is invoked indicating failure status.
 </p>
@@ -2802,7 +2803,7 @@ resulting from the initiating write operation, complete.</p>
 then the client's call back function is called with failure status, but this
 does not guarantee that the server did not receive and process the request
 before the disconnect. If a connection is lost and then resumed outstanding ca
-put requests are not automatically reissued following reconnect.</p>
+put requests are not automatically reissued following reconnect.</p>
 
 <p>All of these functions return ECA_DISCONN if the channel is currently
 disconnected.</p>
@@ -2860,7 +2861,7 @@ do not cause the record to be processed.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>address of <a href="#User">user supplied callback function</a> to be
+    <dd>address of <a href="#User">user suppliedï¿½callback function</a> to be
       run when the requested operation completes</dd>
 </dl>
 <dl>
@@ -2888,7 +2889,7 @@ do not cause the record to be processed.</p>
 <p>ECA_DISCONN - Channel is disconnected</p>
 
 <h4>See Also</h4>
-ca_flush_io() 
+ca_flush_io()
 
 <p>ca_pend_event()</p>
 
@@ -2916,7 +2917,7 @@ assumed to be stable in the application supplied buffer until after ECA_NORMAL
 is returned from ca_pend_io. If a connection is lost outstanding ca get
 requests are not automatically reissued following reconnect.</p>
 When ca_get_callback or ca_array_get_callback are invoked a value is read
-from the channel and then the user's callback is invoked with a pointer to the
+from the channel and then the user's callback is invoked with a pointer to the
 retrieved value. Note that ca_pend_io will not block for the delivery of values
 requested by ca_get_callback. If the channel disconnects before a ca get
 callback request can be completed, then the clients call back function is
@@ -2992,7 +2993,7 @@ when a CA get request is initiated.</p>
 <p>ECA_DISCONN - Channel is disconnected</p>
 
 <h4>See Also</h4>
-ca_pend_io() 
+ca_pend_io()
 
 <p>ca_pend_event()</p>
 
@@ -3010,7 +3011,7 @@ int ca_create_subscription ( chtype TYPE,
 <h4>Description</h4>
 
 <p>Register a state change subscription and specify a call back function to be
-invoked whenever the process variable undergoes significant state changes. A
+invoked whenever the process variable undergoes significant state changes. A
 significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
 deadband field determines the magnitude of a significant change for for the
@@ -3018,7 +3019,7 @@ process variable's value. Each call to this function consumes resources in the
 client library and potentially a CA server until one of ca_clear_channel or
 ca_clear_event is called.</p>
 
-<p>Subscriptions may be installed or canceled against both connected and
+<p>Subscriptions may be installed or canceled against both connected and
 disconnected channels. The specified USERFUNC is called once immediately after
 the subscription is installed with the process variable's current state if the
 process variable is connected. Otherwise, the specified USERFUNC is called
@@ -3027,7 +3028,7 @@ variable. The specified USERFUNC is called immediately with the process
 variable's current state from within ca_add_event() if the client and the
 process variable share the same address space.</p>
 
-<p>If a subscription is installed on a channel in a disconnected state then the
+<p>If a subscription is installed on a channel in a disconnected state then the
 requested count will be set to the native maximum element count of the channel
 if the requested count is larger.</p>
 
@@ -3038,8 +3039,8 @@ over the network in one message.</p>
 
 <p>If at any time after subscribing, read access to the specified process
 variable is lost, then the call back will be invoked immediately indicating
-that read access was lost via the status argument. When read access is restored
-normal event processing will resume starting always with at least one update
+that read access was lost via the status argument. When read access is restored
+normal event processing will resume starting always with at least one update
 indicating the current state of the channel.</p>
 
 <p>A better name for this function might have been ca_subscribe.</p>
@@ -3066,7 +3067,7 @@ indicating the current state of the channel.</p>
 </dl>
 <dl>
   <dt><code>USRERFUNC</code></dt>
-    <dd>The address of <a href="#User">user supplied callback function</a> to
+    <dd>The address of <a href="#User">user supplied callbackï¿½function</a> to
       be invoked with each subscription update.</dd>
 </dl>
 <dl>
@@ -3082,7 +3083,7 @@ indicating the current state of the channel.</p>
   <dt><code>PEVID</code></dt>
     <dd>This is a pointer to user supplied event id which is overwritten if
       successful. This event id can later be used to clear a specific
-      event. This option may may be omitted by passing a nil pointer.</dd>
+      event. This option may may be omitted by passing a nil pointer.</dd>
 </dl>
 <dl>
   <dt><code>MASK</code></dt>
@@ -3117,7 +3118,7 @@ indicating the current state of the channel.</p>
 <p>ECA_ADDFAIL - A local database event add failed</p>
 
 <h4>See Also</h4>
-ca_pend_event() 
+ca_pend_event()
 
 <p>ca_flush_io()</p>
 
@@ -3130,7 +3131,7 @@ int ca_clear_subscription ( evid EVID );</code></pre>
 <p>Cancel a subscription.</p>
 
 <p>All ca_clear_event() requests such as the above are accumulated (buffered)
-and not forwarded to the server until one of ca_flush_io, ca_pend_io,
+and not forwarded to theï¿½server until one of ca_flush_io, ca_pend_io,
 ca_pend_event, or ca_sg_pend are called. This allows several requests to be
 efficiently sent together in one message.</p>
 
@@ -3167,7 +3168,7 @@ time.</p>
 </ul>
 
 <p>If ECA_TIMEOUT is returned then get requests may be reissued followed by a
-subsequent call to ca_pend_io(). Specifically, the function will block only for
+subsequent call to ca_pend_io(). Specifically, the function will block only for
 outstanding <a href="#ca_get">ca_get</a> requests issued, and also any channels
 created specifying a nill connection handler function pointer, after the last
 call to ca_pend_io() or ca client context creation whichever is later. Note
@@ -3177,7 +3178,7 @@ href="#ca_clear_channel">ca_clear_channel</a> is called first.</p>
 
 <p>If no <a href="#ca_get">ca_get</a> or connection state change events are
 outstanding then ca_pend_io() will flush the send buffer and return immediately
-<em>without processing any outstanding channel access background
+<em>without processing any outstanding channel access background
 activities</em>.</p>
 
 <p>The delay specified to ca_pend_io() should take into account worst case
@@ -3192,7 +3193,7 @@ pending.</p>
 <dl>
   <dt>TIMEOUT</dt>
     <dd>Specifies the time out interval. A <code>TIMEOUT</code> interval of
-      zero specifies forever.</dd>
+      zero specifies forever.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3205,7 +3206,7 @@ timeout</p>
 <p>ECA_EVDISALLOW - Function inappropriate for use within an event handler</p>
 
 <h4>See Also</h4>
-<a href="#ca_get">ca_get</a>() 
+<a href="#ca_get">ca_get</a>()
 
 <p><a href="#ca_create_channel">ca_create_channel</a>()</p>
 
@@ -3217,12 +3218,12 @@ int ca_test_io();</code></pre>
 
 <h4>Description</h4>
 
-<p>This function tests to see if all <a href="#ca_get">ca_get</a> requests are
+<p>This function tests to see if all <a href="#ca_get">ca_get</a> requests are
 complete and channels created specifying a nill connection callback function
 pointer are connected. It will report the status of outstanding <a
 href="#ca_get">ca_get</a> requests issued, and channels created specifying a
 nill connection callback function pointer, after the last call to ca_pend_io()
-or CA context initialization whichever is later.</p>
+or CA context initialization whichever is later.</p>
 
 <h4>Returns</h4>
 
@@ -3280,8 +3281,8 @@ int ca_flush_io();</pre>
 
 <h4>Description</h4>
 
-<p>Flush outstanding IO requests to the server. This routine might be useful
-to users who need to flush requests prior to performing client side labor in
+<p>Flushï¿½outstanding IO requests to the server.ï¿½This routine might be useful
+toï¿½usersï¿½who needï¿½to flush requestsï¿½prior toï¿½performing client side labor in
 parallel with labor performed in the server.</p>
 
 <p>Outstanding requests are also sent whenever the buffer which holds them
@@ -3324,7 +3325,7 @@ this purpose.</p>
 </dl>
 <dl>
   <dt><code>CONTEXT_STRING</code></dt>
-    <dd>A null terminated character string to supply as error context to
+    <dd>A null terminated character string to supply as error context to
       diagnostics.</dd>
 </dl>
 
@@ -3345,9 +3346,9 @@ back.</p>
 
 <p>When an error occurs in the server asynchronous to the clients thread then
 information about this type of error is passed from the server to the client in
-an exception message. When the client receives this exception message an
+an exception message. When the client receives this exception message an
 exception handler callback is called.The default exception handler prints a
-diagnostic message on the client's standard out and terminates execution if the
+diagnostic message on the client's standard out and terminates execution if the
 error condition is severe.</p>
 
 <p>Note that certain fields in "struct exception_handler_args" are not
@@ -3364,7 +3365,7 @@ field should not be used.</p>
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op </code>field can be one of
       <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
-      CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code> 
+      CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code>
       <pre><code>struct exception_handler_args {
     void            *usr;   /* user argument supplied when installed */
     chanId          chid;   /* channel id (may be nill) */
@@ -3419,7 +3420,7 @@ id="ca_add_fd_">ca_add_fd_registration()</a></code></h3>
 <h4>Description</h4>
 
 <p>For use with the services provided by a file descriptor manager (IO
-multiplexor) such as ""fdmgr.c". A file descriptor manager is often needed when
+multiplexor) such as "fdmgr.c". A file descriptor manager is often needed when
 two file descriptor IO intensive libraries such as the EPICS channel access
 client library and the X window system client library must coexist in the same
 UNIX process. This function allows an application code to be notified whenever
@@ -3535,7 +3536,7 @@ specified channel.</p>
   <li>whenever the access rights state of a connected channel changes</li>
 </ul>
 
-<p>When a channel is created no access rights handler is installed.</p>
+<p>When a channel is createdï¿½no access rights handler is installed.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3587,7 +3588,7 @@ chtype ca_field_type ( CHID );</code></pre>
 <h4>Returns</h4>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>The data type code will be a member of the set of DBF_XXXX in
+    <dd>The data type code will beï¿½a member of theï¿½set of DBF_XXXX in
       db_access.h. The constant TYPENOTCONN is returned if the channel is
       disconnected.<a name="ca_element_count"></a></dd>
 </dl>
@@ -3598,7 +3599,7 @@ unsigned ca_element_count ( CHID );</code></pre>
 
 <h4>Description</h4>
 
-<p>Return the maximum array element count in  the server for the specified IO
+<p>Return the maximum array element count inï¿½ the server for the specified IO
 channel.</p>
 
 <h4>Arguments</h4>
@@ -3610,7 +3611,7 @@ channel.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>COUNT</code></dt>
-    <dd>The maximum array element count in  the server. An element count of
+    <dd>Theï¿½maximum array element count inï¿½ the server. An element count of
       zero is returned if the channel is disconnected.</dd>
 </dl>
 
@@ -3641,7 +3642,7 @@ void ca_set_puser ( chid CHID, void *PUSER );</code></pre>
 
 <h4>Description</h4>
 
-<p>Set a user private void pointer variable retained with each channel for use
+<p>Set a user private void pointer variable retained with each channel for use
 at the users discretion.</p>
 
 <h4>Arguments</h4>
@@ -3750,8 +3751,8 @@ int ca_read_access ( CHID );</code></pre>
 
 <h4>Description</h4>
 
-<p>Returns boolean true if the client currently has read access to the
-specified channel and boolean false otherwise.</p>
+<p>Returnsï¿½boolean trueï¿½if the client currently has read access to the
+specified channel andï¿½boolean falseï¿½otherwise.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3762,8 +3763,8 @@ specified channel and boolean false otherwise.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>STRING</code></dt>
-    <dd>boolean true if the client currently has read access to the specified
-      channel and boolean false otherwise</dd>
+    <dd>boolean trueï¿½if the client currently has read access to the specified
+      channel andï¿½boolean falseï¿½otherwise</dd>
 </dl>
 
 <h3><code><a name="L6941">ca_write_access()</a></code></h3>
@@ -3772,8 +3773,8 @@ int ca_write_access ( CHID );</code></pre>
 
 <h4>Description</h4>
 
-<p>Returns boolean true if the client currently has write access to the
-specified channel and boolean false otherwise.</p>
+<p>Returnsï¿½boolean trueï¿½if the client currently hasï¿½write access to the
+specified channel andï¿½boolean falseï¿½otherwise.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3784,8 +3785,8 @@ specified channel and boolean false otherwise.</p>
 <h4>Returns</h4>
 <dl>
   <dt><code>STRING</code></dt>
-    <dd>boolean true if the client currently has write access to the specified
-      channel and boolean false otherwise</dd>
+    <dd>boolean true if the client currently has write access to the specified
+      channel and boolean false otherwise</dd>
 </dl>
 
 <h3><code><a name="dbr_size[]">dbr_size[]</a></code></h3>
@@ -3794,12 +3795,12 @@ extern unsigned dbr_size[/*TYPE*/];</code></pre>
 
 <h4>Description</h4>
 
-<p>An array that returns the size in bytes for a DBR_XXXX type.</p>
+<p>An array that returns the size in bytes for a DBR_XXXX type.</p>
 
 <h4>Arguments</h4>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>The data type code. A member of the set of DBF_XXXX in db_access.h.</dd>
+    <dd>The data type code. A member of the set of DBF_XXXX in db_access.h.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3814,7 +3815,7 @@ unsigned dbr_size_n  (  TYPE, COUNT  );</code></pre>
 
 <h4>Description</h4>
 
-<p>Returns the size in bytes for a DBR_XXXX type with COUNT elements. If the
+<p>Returns the size in bytes for a DBR_XXXX type withï¿½COUNT elements.ï¿½If the
 DBR type is a structure then the value field is the last field in the
 structure. If COUNT is greater than one then COUNT-1 elements are appended to
 the end of the structure so that they can be addressed as an array through a
@@ -3850,7 +3851,7 @@ field is returned otherwise the size of the type is returned.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>The data type code. A member of the set of DBF_XXXX in db_access.h.</dd>
+    <dd>The data type code. A member of the set of DBF_XXXX in db_access.h.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3872,7 +3873,7 @@ type.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>The data type code. A member of the set of DBR_XXXX in db_access.h.</dd>
+    <dd>The data type code. A member of the set of DBR_XXXX in db_access.h.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3937,7 +3938,7 @@ SEVCHK ( status, Sync group create failed );</code></pre>
 <p>ECA_ALLOCMEM - Failed, unable to allocate memory</p>
 
 <h4>See Also</h4>
-ca_sg_delete() 
+ca_sg_delete()
 
 <p>ca_sg_block()</p>
 
@@ -3996,7 +3997,7 @@ any pending channel access activities.</p>
 
 <p>Values written into your program's variables by a channel access synchronous
 group request should not be referenced by your program until ECA_NORMAL has
-been received from ca_sg_block(). This routine will process pending channel
+been received from ca_sg_block(). This routine will process pending channel
 access background activity while it is waiting.</p>
 
 <h4>Arguments</h4>
@@ -4028,7 +4029,7 @@ SEVCHK(status, Sync group block failed);</code></pre>
 
 <h3><code><a name="ca_sg_test">ca_sg_test()</a></code></h3>
 <pre><code>#include &lt;cadef.h&gt;
-int ca_sg_test  ( CA_SYNC_GID GID )</code></pre>
+int ca_sg_testï¿½ ( CA_SYNC_GID GID )</code></pre>
 
 <h4>Description</h4>
 
@@ -4087,7 +4088,7 @@ status = ca_sg_reset(gid);</code></pre>
 int ca_sg_array_put ( CA_SYNC_GID GID, chtype TYPE, 
         unsigned long COUNT, chid CHID, void *PVALUE );</code></pre>
 
-<p>Write a value, or array of values, to a channel and increment the
+<p>Write a value, or array of values, to a channel and increment the
 outstanding request count of a synchronous group. The ca_sg_array_put
 functionality is implemented using ca_array_put_callback.</p>
 
@@ -4157,8 +4158,8 @@ synchronous group. The ca_sg_array_get functionality is implemented using
 ca_array_get_callback.</p>
 
 <p>The values written into your program's variables by ca_sg_get should not be
-referenced by your program until ECA_NORMAL has been received from ca_sg_block
-, or until ca_sg_test returns ECA_IODONE.</p>
+referenced by your program until ECA_NORMAL has been received from ca_sg_block,
+or until ca_sg_test returns ECA_IODONE.</p>
 
 <p>All remote operation requests such as the above are accumulated (buffered)
 and not forwarded to the server until one of ca_flush_io, ca_pend_io,
@@ -4186,7 +4187,7 @@ reissued.</p>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
-    <dd>channel identifier</dd>
+    <dd>channelï¿½identifier</dd>
 </dl>
 <dl>
   <dt><code>PVALUE</code></dt>
@@ -4196,9 +4197,9 @@ reissued.</p>
 
 <h4>Returns</h4>
 
-<p>ECA_NORMAL - Normal successful completion </p>
+<p>ECA_NORMAL - Normal successful completionï¿½</p>
 
-<p>ECA_BADSYNCGRP - Invalid synchronous group </p>
+<p>ECA_BADSYNCGRP - Invalid synchronous groupï¿½</p>
 
 <p>ECA_BADCHID - Corrupted CHID</p>
 
@@ -4224,7 +4225,7 @@ int ca_context_status ( struct ca_client_context *,
 <h4>Description</h4>
 
 <p>Prints information about the client context including, at higher interest
-levels, status for each channel. Lacking a CA context pointer,
+levels, status for each channel. Lacking a CA context pointer,
 ca_client_status() prints information about the calling threads CA context.</p>
 
 <h4>Arguments</h4>
@@ -4404,7 +4405,6 @@ void * PDBR );</code></p>
       bytes</dd>
 </dl>
 
-<p><small>$Id$
-.</small></p>
+<p></p>
 </body>
 </html>

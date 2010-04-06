@@ -1,17 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*  
+
+/*
  *  Author: Jeffrey O. Hill
- *      hill@luke.lanl.gov
- *      (505) 665 1831
- *  Date:   5-88
+ *
  */
 
 #include <stddef.h>
@@ -2190,9 +2189,9 @@ int rsrv_version_reply ( struct client *client )
 }
 
 /*
- *  search_reply()
+ *  search_reply_udp ()
  */
-static int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *client )
+static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
     struct dbAddr   tmp_addr;
     ca_uint16_t     *pMinorVersion;
@@ -2299,6 +2298,66 @@ static int search_reply ( caHdrLargeArray *mp, void *pPayload, struct client *cl
     return RSRV_OK;
 }
 
+/*
+ *  search_reply_tcp ()
+ */
+static int search_reply_tcp ( 
+    caHdrLargeArray *mp, void *pPayload, struct client *client )
+{
+    struct dbAddr   tmp_addr;
+    char            *pName = (char *) pPayload;
+    int             status;
+    int             spaceAvailOnFreeList;
+    size_t          spaceNeeded;
+    size_t          reasonableMonitorSpace = 10;
+
+    /*
+     * check the sanity of the message
+     */
+    if (mp->m_postsize<=1) {
+        log_header ("empty PV name in UDP search request?", 
+            client, mp, pPayload, 0);
+        return RSRV_OK;
+    }
+    pName[mp->m_postsize-1] = '\0';
+
+    /* Exit quickly if channel not on this node */
+    status = db_name_to_addr (pName, &tmp_addr);
+    if (status) {
+        DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pPayLoad ) );
+        if (mp->m_dataType == DOREPLY)
+            search_fail_reply ( mp, pPayload, client );
+        return RSRV_OK;
+    }
+
+    /*
+     * stop further use of server if memory becomes scarse
+     */
+    spaceAvailOnFreeList =     freeListItemsAvail ( rsrvChanFreeList ) > 0
+                            && freeListItemsAvail ( rsrvEventFreeList ) > reasonableMonitorSpace;
+    spaceNeeded = sizeof (struct channel_in_use) + 
+        reasonableMonitorSpace * sizeof (struct event_ext);
+    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
+        SEND_LOCK(client);
+        send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );
+        SEND_UNLOCK(client);
+        return RSRV_OK;
+    }
+
+    SEND_LOCK ( client );
+    status = cas_copy_in_header ( client, CA_PROTO_SEARCH, 
+        0, ca_server_port, 0, ~0U, mp->m_available, 0 );
+    if ( status != ECA_NORMAL ) {
+        SEND_UNLOCK ( client );
+        return RSRV_ERROR;
+    }
+
+    cas_commit_msg ( client, 0 );
+    SEND_UNLOCK ( client );
+
+    return RSRV_OK;
+}
+
 typedef int (*pProtoStubTCP) (caHdrLargeArray *mp, void *pPayload, struct client *client);
 
 /*
@@ -2312,7 +2371,7 @@ static const pProtoStubTCP tcpJumpTable[] =
     read_action,
     write_action,
     bad_tcp_cmd_action,
-    bad_tcp_cmd_action,
+    search_reply_tcp,
     bad_tcp_cmd_action,
     events_off_action,
     events_on_action,
@@ -2348,7 +2407,7 @@ static const pProtoStubUDP udpJumpTable[] =
     bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,
-    search_reply,
+    search_reply_udp,
     bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,

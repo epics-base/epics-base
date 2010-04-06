@@ -1,29 +1,27 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*
- *      $Id$
- *
  *      Author  Jeffrey O. Hill
- *              johill@lanl.gov
- *              505 665 1831
  */
 
 // *must* be defined before including net_convert.h
 typedef unsigned long arrayElementCount;
 
 #include "osiWireFormat.h"
-#include "net_convert.h"	// byte order conversion from libca
-#include "dbMapper.h"		// ait to dbr types
+#include "net_convert.h"    // byte order conversion from libca
+#include "dbMapper.h"       // ait to dbr types
 #include "gddAppTable.h"    // EPICS application type table
-#include "gddApps.h"		// gdd predefined application type codes
+#include "gddApps.h"        // gdd predefined application type codes
 #include "errlog.h"
+#include "osiPoolStatus.h"  // is there sufficent space in pool 
 
 #define epicsExportSharedSymbols
 #include "casStrmClient.h"
@@ -47,7 +45,7 @@ casStrmClient::pCASMsgHandler const casStrmClient::msgHandlers[] =
 	& casStrmClient::readAction,
 	& casStrmClient::writeAction,
     & casStrmClient::uknownMessageAction, 
-    & casStrmClient::uknownMessageAction, 
+    & casStrmClient::searchAction, 
     & casStrmClient::uknownMessageAction, 
 	& casStrmClient::eventsOffAction,
 	& casStrmClient::eventsOnAction,
@@ -74,10 +72,13 @@ casStrmClient::pCASMsgHandler const casStrmClient::msgHandlers[] =
 //
 // casStrmClient::casStrmClient()
 //
-casStrmClient::casStrmClient ( caServerI & cas, clientBufMemoryManager & mgrIn ) :
+casStrmClient::casStrmClient ( 
+        caServerI & cas, clientBufMemoryManager & mgrIn, 
+        const caNetAddr & clientAddr ) :
     casCoreClient ( cas ),
     in ( *this, mgrIn, 1 ), 
     out ( *this, mgrIn ),
+    _clientAddr ( clientAddr ),
     pUserName ( 0 ),
     pHostName ( 0 ),
     incommingBytesToDrain ( 0 ),
@@ -141,7 +142,7 @@ caStatus casStrmClient :: processMsg ()
                 this->incommingBytesToDrain = 0u;
             }
         }
-        
+
 	    //
 	    // process any messages in the in buffer
 	    //
@@ -618,30 +619,30 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
 	}
 
     {
-	    caStatus servStat = this->read (); 
-	    if ( servStat == S_casApp_success ) {
+        caStatus servStat = this->read (); 
+        if ( servStat == S_casApp_success ) {
             assert ( pValueRead.valid () );
 		    caStatus status = this->readNotifyResponse ( 
                                     guard, pChan, *mp, 
                                     *pValueRead, servStat );
             this->responseIsPending = ( status != S_cas_success );
             return status;
-	    }
-	    else if ( servStat == S_casApp_asyncCompletion ) {
-		    return S_cas_success;
-	    }
-	    else if ( servStat == S_casApp_postponeAsyncIO ) {
+        }
+        else if ( servStat == S_casApp_asyncCompletion ) {
+            return S_cas_success;
+        }
+        else if ( servStat == S_casApp_postponeAsyncIO ) {
             return S_casApp_postponeAsyncIO;
-	    }
-	    else {
-		    caStatus status = this->readNotifyFailureResponse ( 
-                                        guard, *mp, ECA_GETFAIL );
+        }
+        else {
+            caStatus status = this->readNotifyFailureResponse ( 
+                              guard, *mp, ECA_GETFAIL );
             if ( status != S_cas_success ) {
                 this->pendingResponseStatus = servStat;
-		        this->responseIsPending = true;
-		    }
+                this->responseIsPending = true;
+            }
             return status;
-	    }
+        }
     }
 }
 
@@ -1025,23 +1026,23 @@ caStatus casStrmClient::writeAction ( epicsGuard < casClientMutex > & guard )
 	//
     {
         caStatus servStat = this->write ( & casChannelI :: write ); 
-	    if ( servStat == S_casApp_success || 
+        if ( servStat == S_casApp_success || 
                 servStat == S_casApp_asyncCompletion ) {
 		    return S_cas_success;
-	    }
-	    else if ( servStat == S_casApp_postponeAsyncIO ) {
+        }
+        else if ( servStat == S_casApp_postponeAsyncIO ) {
             return S_casApp_postponeAsyncIO;
-	    }
-	    else {
+        }
+        else {
             caStatus status = 
                 this->writeActionSendFailureStatus ( guard, *mp, 
                                         pChan->getCID(), servStat );
             if ( status != S_cas_success ) {
                 this->pendingResponseStatus = servStat;
 		        this->responseIsPending = true;
-		    }
+            }
             return status;
-	    }
+        }
     }
 
 	//
@@ -1192,6 +1193,221 @@ caStatus casStrmClient::writeNotifyResponseECA_XXX (
 	}
 
 	return status;
+}
+
+//
+// casStrmClient :: asyncSearchResp()
+//
+caStatus casStrmClient :: asyncSearchResponse ( 
+    epicsGuard < casClientMutex > & guard, const caNetAddr & /* outAddr */,
+	const caHdrLargeArray & msg, const pvExistReturn & retVal,
+    ca_uint16_t /* protocolRevision */, ca_uint32_t /* sequenceNumber */ )
+{
+    return this->searchResponse ( guard, msg, retVal );
+}
+
+// casStrmClient :: hostName()
+void casStrmClient :: hostName ( char * pInBuf, unsigned bufSizeIn ) const
+{
+    _clientAddr.stringConvert ( pInBuf, bufSizeIn );
+}
+
+//
+// caStatus casStrmClient :: searchResponse()
+//
+caStatus casStrmClient :: searchResponse ( 
+    epicsGuard < casClientMutex > & guard, 
+    const caHdrLargeArray & msg, 
+    const pvExistReturn & retVal )
+{    
+    if ( retVal.getStatus() != pverExistsHere ) {
+        return S_cas_success;
+    }
+    
+    //
+    // starting with V4.1 the count field is used (abused)
+    // by the client to store the minor version number of 
+    // the client.
+    //
+    // Old versions expect alloc of channel in response
+    // to a search request. This is no longer supported.
+    //
+    if ( !CA_V44( msg.m_count ) ) {
+        errlogPrintf ( 
+            "client \"%s\" using EPICS R3.11 CA "
+            "connect protocol was ignored\n", 
+            pHostName );
+        //
+        // old connect protocol was dropped when the
+        // new API was added to the server (they must
+        // now use clients at EPICS 3.12 or higher)
+        //
+        caStatus status = this->sendErr ( 
+            guard, & msg, invalidResID, ECA_DEFUNCT,
+            "R3.11 connect sequence from old client was ignored" );
+        return status;
+    }
+
+    //
+    // cid field is abused to carry the IP 
+    // address in CA_V48 or higher
+    // (this allows a CA servers to serve
+    // as a directory service)
+    //
+    // data type field is abused to carry the IP 
+    // port number here CA_V44 or higher
+    // (this allows multiple CA servers on one
+    // host)
+    //
+    ca_uint32_t serverAddr;
+    ca_uint16_t serverPort;
+    if ( CA_V48( msg.m_count ) ) {    
+        struct sockaddr_in  ina;
+        if ( retVal.addrIsValid() ) {
+            caNetAddr addr = retVal.getAddr();
+            ina = addr.getSockIP();
+            //
+            // If they dont specify a port number then the default
+            // CA server port is assumed when it it is a server
+            // address redirect (it is never correct to use this
+            // server's port when it is a redirect).
+            //
+            if ( ina.sin_port == 0u ) {
+                ina.sin_port = htons ( CA_SERVER_PORT );
+            }
+        }
+        else {
+            //
+            // We dont fill in the servers address here because
+            // the client has a tcp circuit to us and he knows
+            // our address
+            //
+            ina.sin_addr.s_addr = htonl ( ~0U );
+            ina.sin_port = htons ( 0 );
+        }
+        serverAddr = ntohl ( ina.sin_addr.s_addr );
+        serverPort = ntohs ( ina.sin_port );
+    }
+    else {
+        serverAddr = ntohl ( ~0U );
+        serverPort = ntohs ( 0 );
+    }
+    
+    caStatus status = this->out.copyInHeader ( CA_PROTO_SEARCH, 
+        0, serverPort, 0, serverAddr, msg.m_available, 0 );
+    //
+    // Starting with CA V4.1 the minor version number
+    // is appended to the end of each search reply.
+    // This value is ignored by earlier clients. 
+    //
+    if ( status == S_cas_success ) {
+        this->out.commitMsg ();
+    }
+    
+    return status;
+}
+
+//
+// casStrmClient :: searchAction()
+//
+caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
+{
+	const caHdrLargeArray	*mp = this->ctx.getMsg();
+    const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
+	caStatus	            status;
+
+    //
+    // check the sanity of the message
+    //
+    if ( mp->m_postsize <= 1 ) {
+	    caServerI::dumpMsg ( this->pHostName, "?", mp, this->ctx.getData(), 
+            "empty PV name extension in TCP search request?\n" );
+        return S_cas_success;
+    }
+
+    if ( pChanName[0] == '\0' ) {
+	    caServerI::dumpMsg ( this->pHostName, "?", mp, this->ctx.getData(), 
+            "zero length PV name in UDP search request?\n" );
+        return S_cas_success;
+    }
+
+    // check for an unterminated string before calling server tool
+    // by searching backwards through the string (some early versions 
+    // of the client library might not be setting the pad bytes to nill)
+    for ( unsigned i = mp->m_postsize-1; pChanName[i] != '\0'; i-- ) {
+        if ( i <= 1 ) {
+	        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
+                "unterminated PV name in UDP search request?\n" );
+            return S_cas_success;
+        }
+    }
+
+	if ( this->getCAS().getDebugLevel() > 6u ) {
+		this->hostName ( this->pHostName, sizeof ( pHostName ) );
+		printf ( "\"%s\" is searching for \"%s\"\n", 
+            pHostName, pChanName );
+	}
+
+	//
+	// verify that we have sufficent memory for a PV and a
+	// monitor prior to calling PV exist test so that when
+	// the server runs out of memory we dont reply to
+	// search requests, and therefore dont thrash through
+	// caServer::pvExistTest() and casCreatePV::pvAttach()
+	//
+    if ( ! osiSufficentSpaceInPool ( 0 ) ) {
+        return S_cas_success;
+    }
+
+	//
+	// ask the server tool if this PV exists
+	//
+	this->userStartedAsyncIO = false;
+	pvExistReturn pver = 
+		this->getCAS()->pvExistTest ( 
+		    this->ctx, _clientAddr, pChanName );
+
+	//
+	// prevent problems when they initiate
+	// async IO but dont return status
+	// indicating so (and vise versa)
+	//
+	if ( this->userStartedAsyncIO ) {
+        if ( pver.getStatus() != pverAsyncCompletion ) {
+		    errMessage ( S_cas_badParameter, 
+		        "- assuming asynch IO status from caServer::pvExistTest()");
+        }
+        status = S_cas_success;
+	}
+	else {
+	    //
+	    // otherwise we assume sync IO operation was initiated
+	    //
+        switch ( pver.getStatus() ) {
+        case pverExistsHere:
+		    status = this->searchResponse ( guard, *mp, pver );
+            break;
+
+        case pverDoesNotExistHere:
+            status = S_cas_success;
+            break;
+
+        case pverAsyncCompletion:
+		    errMessage ( S_cas_badParameter, 
+		        "- unexpected asynch IO status from "
+		        "caServer::pvExistTest() ignored");
+            status = S_cas_success;
+            break;
+
+        default:
+		    errMessage ( S_cas_badParameter, 
+		        "- invalid return from "
+		        "caServer::pvExistTest() ignored");
+            status = S_cas_success;
+            break;
+	    }
+	}
+    return status;
 }
 
 /*
@@ -2610,9 +2826,8 @@ inBufClient::fillCondition casStrmClient::inBufFill ()
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->in.fill ();
 }
-    
-bufSizeT casStrmClient :: 
-    inBufBytesPending () const
+
+bufSizeT casStrmClient :: inBufBytesPending () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     return this->in.bytesPresent ();

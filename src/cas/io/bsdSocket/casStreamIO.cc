@@ -1,13 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE is distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 //
-// $Id$
+// Author: Jeff Hill
 //
 
 #include "errlog.h"
@@ -17,11 +18,13 @@
 
 // casStreamIO::casStreamIO()
 casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
-                          const ioArgsToNewStreamIO & args ) :
-	casStrmClient ( cas, bufMgr ), sock ( args.sock ), addr (  args.addr), 
-        _osSendBufferSize ( MAX_TCP ), blockingFlag ( xIsBlocking ), 
-        sockHasBeenShutdown ( false )
- {
+                           const ioArgsToNewStreamIO & args ) :
+    casStrmClient ( cas, bufMgr, args.clientAddr ),
+    sock ( args.sock ),  
+    _osSendBufferSize ( MAX_TCP ), 
+    blockingFlag ( xIsBlocking ),
+    sockHasBeenShutdown ( false )
+{
 	assert ( sock >= 0 );
 	int yes = true;
 	int	status;
@@ -152,7 +155,7 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
  			char buf[64];
-            ipAddrToA (&this->addr, buf, sizeof(buf));
+            this->hostName ( buf, sizeof ( buf ) );
 			errlogPrintf (
 "CAS: TCP socket send to \"%s\" failed because \"%s\"\n",
 				buf, sockErrBuf );
@@ -197,7 +200,7 @@ casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
             myerrno != SOCK_ETIMEDOUT ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            ipAddrToA (&this->addr, buf, sizeof(buf));
+            this->hostName ( buf, sizeof ( buf ) );
             errlogPrintf(
 		"CAS: client %s disconnected because \"%s\"\n",
                 buf, sockErrBuf );
@@ -236,10 +239,8 @@ void casStreamIO::osdShow (unsigned level) const
         static_cast <const void *> ( this ) );
 	if (level>1u) {
 		char buf[64];
-		ipAddrToA(&this->addr, buf, sizeof(buf));
-		printf (
-			"client=%s, port=%x\n",
-			buf, ntohs(this->addr.sin_port));
+		this->hostName ( buf, sizeof ( buf ) );
+		printf ( "client = \"%s\"\n", buf );
 	}
 }
 
@@ -286,7 +287,7 @@ bufSizeT casStreamIO :: inCircuitBytesPending () const
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
             char buf[64];
-            ipAddrToA ( &this->addr, buf, sizeof(buf) );
+            this->hostName ( buf, sizeof ( buf ) );
             errlogPrintf ("CAS: FIONREAD for %s failed because \"%s\"\n",
                 buf, sockErrBuf );
         }
@@ -298,12 +299,6 @@ bufSizeT casStreamIO :: inCircuitBytesPending () const
     else {
         return ( bufSizeT ) nchars;
     }
-}
-
-// casStreamIO::hostName()
-void casStreamIO::hostName ( char * pInBuf, unsigned bufSizeIn ) const
-{
-	ipAddrToA ( & this->addr, pInBuf, bufSizeIn );
 }
 
 // casStreamIO :: osSendBufferSize ()

@@ -1,16 +1,15 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*
  *      Author: Jeffrey O. Hill
- *              hill@luke.lanl.gov
- *              (505) 665 1831
  */
 
 #include <string>
@@ -314,6 +313,3 @@ void CASG::operator delete ( void * )
     errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
         __FILE__, __LINE__ );
 }
-
-
- 

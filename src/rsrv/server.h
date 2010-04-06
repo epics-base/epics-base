@@ -1,17 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+ * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE Versions 3.13.7
+ * and higher are distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*
  *  Author: Jeffrey O. Hill
- *      hill@luke.lanl.gov
- *      (505) 665 1831
- *  Date:   5-88
+ *
  */
 
 #ifndef INCLserverh
@@ -29,7 +28,7 @@
 #include "asLib.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
-#define CA_MINOR_PROTOCOL_REVISION 11
+#define CA_MINOR_PROTOCOL_REVISION 12
 #include "caProto.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -47,7 +46,7 @@ typedef struct caHdrLargeArray {
     ca_uint32_t m_available;    /* protocol stub dependent   */
     ca_uint16_t m_dataType;     /* operation data type       */
     ca_uint16_t m_cmmd;         /* operation to be performed */
-}caHdrLargeArray;
+} caHdrLargeArray;
 
 /*
  * !! buf must be the first item in this structure !!

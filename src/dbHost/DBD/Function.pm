@@ -1,4 +1,5 @@
 package DBD::Function;
+use DBD::Util;
 @ISA = qw(DBD::Util);
 
 sub init {

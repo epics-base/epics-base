@@ -16,6 +16,7 @@ PERL_MODULES += DBD/Device.pm
 PERL_MODULES += DBD/Driver.pm
 PERL_MODULES += DBD/Function.pm
 PERL_MODULES += DBD/Menu.pm
+PERL_MODULES += DBD/Output.pm
 PERL_MODULES += DBD/Parser.pm
 PERL_MODULES += DBD/Recfield.pm
 PERL_MODULES += DBD/Recordtype.pm
@@ -24,7 +25,7 @@ PERL_MODULES += DBD/Variable.pm
 
 PERL_SCRIPTS += dbdToMenuH.pl
 PERL_SCRIPTS += dbdToRecordtypeH.pl
-PERL_SCRIPTS += dbExpand.pl
+PERL_SCRIPTS += dbdExpand.pl
 
 include $(TOP)/configure/RULES
  

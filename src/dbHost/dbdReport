@@ -1,8 +1,11 @@
 #!/usr/bin/perl
 
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use DBD;
 use DBD::Parser;
-use Getopts;
+use EPICS::Getopts;
 use macLib;
 use Readfile;
 use Text::Wrap;

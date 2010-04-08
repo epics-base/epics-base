@@ -65,7 +65,7 @@ sub installList ($@) {
 sub installMacros ($$) {
     my $this = shift;
     $_ = shift;
-    until (pos($_) == length($_)) {
+    until (defined pos($_) and pos($_) == length($_)) {
         m/\G \s* /xgc;    # Skip whitespace
         if (m/\G ( \w+ ) \s* /xgc) {
             my ($name, $val) = ($1);
@@ -166,10 +166,11 @@ sub _translate ($$$$) {
 sub _trans ($$$$$) {
     my ($this, $entry, $level, $term, $R) = @_;
     return $$R
-        if ($$R =~ m/\A [^\$]* \Z/x);   # Short-circuit if no macros
+        if (!defined $$R or
+            $$R =~ m/\A [^\$]* \Z/x);   # Short-circuit if no macros
     my $quote = 0;
     my $val;
-    until (pos($$R) == length($$R)) {
+    until (defined pos($$R) and pos($$R) == length($$R)) {
         if ($term and ($$R =~ m/\G (?= [$term] ) /xgc)) {
             last;
         }

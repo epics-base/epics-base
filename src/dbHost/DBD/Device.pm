@@ -5,14 +5,14 @@ use DBD::Base;
 my %link_types = (
 	CONSTANT  => qr/$RXnum/o,
 	PV_LINK   => qr/$RXname \s+ [.NPCAMS ]*/ox,
-	VME_IO    => qr/\# (?: \s* [CS] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	CAMAC_IO  => qr/\# (?: \s* [BCNAF] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	RF_IO     => qr/\# (?: \s* [RMDE] \s* $RXdex)*/ox,
-	AB_IO     => qr/\# (?: \s* [LACS] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	GPIB_IO   => qr/\# (?: \s* [LA] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	BITBUS_IO => qr/\# (?: \s* [LNPS] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	BBGPIB_IO => qr/\# (?: \s* [LBG] \s* $RXdex)* \s* (?: @ .*)?/ox,
-	VXI_IO    => qr/\# (?: \s* [VCS] \s* $RXdex)* \s* (?: @ .*)?/ox,
+	VME_IO    => qr/\# (?: \s* [CS] \s* $RXintx)* \s* (?: @ .*)?/ox,
+	CAMAC_IO  => qr/\# (?: \s* [BCNAF] \s* $RXintx)* \s* (?: @ .*)?/ox,
+	RF_IO     => qr/\# (?: \s* [RMDE] \s* $RXintx)*/ox,
+	AB_IO     => qr/\# (?: \s* [LACS] \s* $RXintx)* \s* (?: @ .*)?/ox,
+	GPIB_IO   => qr/\# (?: \s* [LA] \s* $RXintx)* \s* (?: @ .*)?/ox,
+	BITBUS_IO => qr/\# (?: \s* [LNPS] \s* $RXuintx)* \s* (?: @ .*)?/ox,
+	BBGPIB_IO => qr/\# (?: \s* [LBG] \s* $RXuintx)* \s* (?: @ .*)?/ox,
+	VXI_IO    => qr/\# (?: \s* [VCS] \s* $RXintx)* \s* (?: @ .*)?/ox,
 	INST_IO   => qr/@.*/
 );
 

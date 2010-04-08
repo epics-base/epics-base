@@ -7,7 +7,7 @@ use macLib;
 use Readfile;
 
 getopts('DI@S@o:') or
-    die "Usage: dbToMenuH [-D] [-I dir] [-S macro=val] [-o menu.h] file.dbd [menu.h]";
+    die "Usage: dbToRecordtypeH [-D] [-I dir] [-S macro=val] [-o menu.h] file.dbd [menu.h]";
 
 my @path = map { split /[:;]/ } @opt_I;
 my $macros = macLib->new(@opt_S);
@@ -27,10 +27,15 @@ if ($opt_o) {
 }
 
 # Derive a name for the include guard
-($guard_name = $outfile) =~ tr/a-zA-Z0-9_/_/cs;
+my $guard_name = $outfile;
+$guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
 &ParseDBD($dbd, &Readfile($infile, $macros, \@opt_I));
+
+my $rtypes = $dbd->recordtypes;
+die "Input file must contain a single recordtype definition.\n"
+    unless (1 == keys %{$rtypes});
 
 if ($opt_D) {
     my %filecount;
@@ -41,11 +46,19 @@ if ($opt_D) {
     open OUTFILE, ">$outfile" or die "Can't open $outfile: $!\n";
     print OUTFILE "/* $outfile generated from $infile */\n\n",
         "#ifndef INC_${guard_name}\n",
-        "#define INC_${guard_name}\n\n";
+        "#define INC_${guard_name}\n\n",
+        "#include \"ellLib.h\"\n",
+        "#include \"epicsMutex.h\"\n",
+        "#include \"link.h\"\n",
+        "#include \"epicsTime.h\"\n",
+        "#include \"epicsTypes.h\"\n\n";
     my $menus = $dbd->menus;
     while (($name, $menu) = each %{$menus}) {
         print OUTFILE $menu->toEnum;
     }
+    print OUTFILE "\n";
+    my ($name, $rtyp) = each %{$rtypes};
+    print OUTFILE $rtyp->toStruct;
     print OUTFILE "\n#endif /* INC_${guard_name} */\n";
     close OUTFILE;
 }

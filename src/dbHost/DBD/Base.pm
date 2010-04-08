@@ -6,21 +6,23 @@ use Carp;
 require Exporter;
 
 @ISA = qw(Exporter);
-@EXPORT = qw(&pushContext &popContext &dieContext &warnContext
-    &identifier &unquote &escapeCcomment &escapeCstring
-    $RXident $RXname $RXuint $RXint $RXdex $RXnum $RXdqs $RXsqs $RXstr);
+@EXPORT = qw(&pushContext &popContext &dieContext &warnContext &identifier
+    &unquote &escapeCcomment &escapeCstring $RXident $RXname $RXuint $RXint
+    $RXhex $RXoct $RXuintx $RXintx $RXnum $RXdqs $RXsqs $RXstr);
 
 
-our $RXident = qr/[a-zA-Z][a-zA-Z0-9_]*/;
-our $RXname = qr/[a-zA-Z0-9_\-:.<>;]+/;
-our $RXhex = qr/ (?: 0 [xX] [0-9A-Fa-f]+ ) /x;
-our $RXuint = qr/ \d+ /x;
-our $RXint = qr/ -? $RXuint /ox;
-our $RXdex = qr/ ( $RXhex | $RXuint ) /x;
-our $RXnum = qr/-? (?: \d+ ) | (?: \d* \. \d+ ) (?: [eE] [-+]? \d+ )?/x;
-our $RXdqs = qr/" (?: [^"] | \\" )* "/x;
-our $RXsqs = qr/' (?: [^'] | \\' )* '/x;
-our $RXstr = qr/ ( $RXname | $RXnum | $RXdqs | $RXsqs ) /ox;
+our $RXident = qr/ [a-zA-Z] [a-zA-Z0-9_]* /x;
+our $RXname =  qr/ [a-zA-Z0-9_\-:.<>;]+ /x;
+our $RXhex =   qr/ (?: 0 [xX] [0-9A-Fa-f]+ ) /x;
+our $RXoct =   qr/ 0 [0-7]* /x;
+our $RXuint =  qr/ \d+ /x;
+our $RXint =   qr/ -? $RXuint /ox;
+our $RXuintx = qr/ ( $RXhex | $RXoct | $RXuint ) /ox;
+our $RXintx =  qr/ ( $RXhex | $RXoct | $RXint ) /ox;
+our $RXnum =   qr/ -? (?: \d+ | \d* \. \d+ ) (?: [eE] [-+]? \d+ )? /x;
+our $RXdqs =   qr/" (?: [^"] | \\" )* " /x;
+our $RXsqs =   qr/' (?: [^'] | \\' )* ' /x;
+our $RXstr =   qr/ ( $RXname | $RXnum | $RXdqs | $RXsqs ) /ox;
 
 our @context;
 

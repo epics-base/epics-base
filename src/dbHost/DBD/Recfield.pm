@@ -5,12 +5,12 @@ use DBD::Base;
 # The hash value is a regexp that matches all legal values of this field
 our %field_types = (
     DBF_STRING   => qr/.{0,40}/,
-    DBF_CHAR     => $RXint,
-    DBF_UCHAR    => $RXuint,
-    DBF_SHORT    => $RXint,
-    DBF_USHORT   => $RXuint,
-    DBF_LONG     => $RXint,
-    DBF_ULONG    => $RXuint,
+    DBF_CHAR     => $RXintx,
+    DBF_UCHAR    => $RXuintx,
+    DBF_SHORT    => $RXintx,
+    DBF_USHORT   => $RXuintx,
+    DBF_LONG     => $RXintx,
+    DBF_ULONG    => $RXuintx,
     DBF_FLOAT    => $RXnum,
     DBF_DOUBLE   => $RXnum,
     DBF_ENUM     => qr/.*/,
@@ -37,13 +37,22 @@ our %field_attrs = (
     menu        => qr/$RXident/o
 );
 
+sub new {
+    my ($class, $name, $type) = @_;
+    dieContext("Illegal field type '$type', valid field types are:",
+        sort keys %field_types) unless exists $field_types{$type};
+    my $this = {};
+    bless $this, "${class}::${type}";
+    return $this->init($name, $type);
+}
+
 sub init {
     my $this = shift;
     my $name = shift;
     my $type = unquote(shift);
     $this->SUPER::init($name, "record field name");
-    exists $field_types{$type} or dieContext("Illegal field type '$type', ".
-        "valid field types are:", sort keys %field_types);
+    dieContext("Illegal field type '$type', valid field types are:",
+        sort keys %field_types) unless exists $field_types{$type};
     $this->{DBF_TYPE} = $type;
     $this->{ATTR_INDEX} = {};
     return $this;
@@ -74,23 +83,333 @@ sub attribute {
     return $this->attributes->{$attr};
 }
 
-sub legal_value {
-    my ($this, $value) = @_;
-    my $dbf_type = $this->dbf_type;
-    return $value =~ m/^ $field_types{$dbf_type} $/x;
-}
-
 sub check_valid {
-    # Internal validity checks of the field definition
     my $this = shift;
     my $name = $this->name;
     my $default = $this->attribute("initial");
     dieContext("Default value '$default' is invalid for field '$name'")
         if (defined($default) and !$this->legal_value($default));
-    dieContext("Menu name not defined for field '$name'")
-        if ($this->dbf_type eq "DBF_MENU"
-            and !defined($this->attribute("menu")));
-    # FIXME: Add more checks here?
+}
+
+#    dieContext("Menu name missing for field '$name'")
+#        if ($this->dbf_type eq "DBF_MENU" and
+#            !defined($this->attribute("menu")));
+
+sub toDeclaration {
+    my ($this, $ctype) = @_;
+    my $name = lc $this->name;
+    my $result = "$ctype $name;";
+    my $prompt = $this->attribute('prompt');
+    $result .= "\t/* $prompt */" if defined $prompt;
+    return $result;
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_STRING;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    return (length $value < $this->attribute('size'));
+    # NB - we use '<' to allow space for the terminating nil byte
+}
+
+sub check_valid {
+    my $this = shift;
+    dieContext("Size missing for DBF_STRING field '$name'")
+        unless exists $this->attributes->{'size'};
+    $this->SUPER::check_valid;
+}
+
+sub toDeclaration {
+    my $this = shift;
+    my $name = lc $this->name;
+    my $size = $this->attribute('size');
+    my $result = "char ${name}[${size}];";
+    my $prompt = $this->attribute('prompt');
+    $result .= "\t/* $prompt */" if defined $prompt;
+    return $result;
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_CHAR;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXint $/x and
+            $value >= -128 and
+            $value <= 127);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("signed char");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_UCHAR;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXuint $/x and
+            $value >= 0 and
+            $value <= 255);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("unsigned char");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_SHORT;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXint $/x and
+            $value >= -32768 and
+            $value <= 32767);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("signed short");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_USHORT;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXuint $/x and
+            $value >= 0 and
+            $value <= 65535);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("unsigned short");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_LONG;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXint $/x);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsInt32");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_ULONG;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXuint $/x and
+            $value >= 0);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("unsigned long");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_FLOAT;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    return ($value =~ m/^ $RXnum $/x);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("float");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_DOUBLE;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    return ($value =~ m/^ $RXnum $/x);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("double");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_ENUM;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsEnum16");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_MENU;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    # FIXME: If we know the menu name and the menu exists, check further
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsEnum16");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_DEVICE;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsEnum16");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_INLINK;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("DBLINK");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_OUTLINK;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("DBLINK");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_FWDLINK;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    return 1;
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("DBLINK");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_NOACCESS;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    return ($value eq '');
+}
+
+sub check_valid {
+    my $this = shift;
+    dieContext("Type information missing for DBF_NOACCESS field '$name'")
+        unless defined($this->attribute("extra"));
+    $this->SUPER::check_valid;
+}
+
+sub toDeclaration {
+    my $this = shift;
+    my $name = lc $this->name;
+    my $result = $this->attribute('extra') . ";";
+    my $prompt = $this->attribute('prompt');
+    $result .= "\t/* $prompt */" if defined $prompt;
+    return $result;
 }
 
 1;

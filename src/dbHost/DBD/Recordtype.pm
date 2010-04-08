@@ -7,10 +7,10 @@ use Carp;
 sub init {
 	my $this = shift;
 	$this->SUPER::init(@_);
-        $this->{FIELDS} = [];		# Ordered list
-	$this->{FIELD_INDEX} = {};	# Indexed by name
-	$this->{DEVICES} = [];		# Ordered list
-	$this->{DEVICE_INDEX} = {};	# Indexed by choice
+        $this->{FIELD_LIST} = [];
+	$this->{FIELD_INDEX} = {};
+	$this->{DEVICE_LIST} = [];
+	$this->{DEVICE_INDEX} = {};
         return $this;
 }
 
@@ -21,12 +21,12 @@ sub add_field {
 	dieContext("Duplicate field name '$field_name'")
 		if exists $this->{FIELD_INDEX}->{$field_name};
 	$field->check_valid;
-	push $this->{FIELDS}, $field;
+	push @{$this->{FIELD_LIST}}, $field;
 	$this->{FIELD_INDEX}->{$field_name} = $field;
 }
 
 sub fields {
-	return shift->{FIELDS};
+	return @{shift->{FIELD_LIST}};
 }
 
 sub field_names { # In their original order...
@@ -39,8 +39,8 @@ sub field_names { # In their original order...
 }
 
 sub field {
-	my ($this, $field) = @_;
-	return $this->{FIELD_INDEX}->{$field};
+	my ($this, $field_name) = @_;
+	return $this->{FIELD_INDEX}->{$field_name};
 }
 
 sub add_device {
@@ -54,17 +54,16 @@ sub add_device {
 			if ($old->link_type ne $device->link_type);
 		push @warning, "DSETs differ"
 			if ($old->name ne $device->name);
-		warnContext @warning;
+		warnContext(@warning);
 		return;
 	}
-	$device->check_valid;
-	push $this->{DEVICES}, $device;
+	push @{$this->{DEVICE_LIST}}, $device;
 	$this->{DEVICE_INDEX}->{$choice} = $device;
 }
 
 sub devices {
 	my $this = shift;
-	return $this->{DEVICES};
+	return @{$this->{DEVICE_LIST}};
 }
 
 sub device {

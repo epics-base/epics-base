@@ -7,7 +7,7 @@ use Carp;
 sub init {
 	my ($this, $name) = @_;
 	$this->SUPER::init($name, "breakpoint table name");
-        $this->{POINTS} = [];
+        $this->{POINT_LIST} = [];
         return $this;
 }
 
@@ -17,16 +17,16 @@ sub add_point {
 	$raw = unquote($raw);
 	confess "Engineering value undefined!" unless defined $eng;
 	$eng = unquote($eng);
-	push @{$this->{POINTS}}, [$raw, $eng];
+	push @{$this->{POINT_LIST}}, [$raw, $eng];
 }
 
 sub points {
-	return @{shift->{POINTS}};
+	return @{shift->{POINT_LIST}};
 }
 
 sub point {
     my ($this, $idx) = @_;
-    return $this->{POINTS}[$idx];
+    return $this->{POINT_LIST}[$idx];
 }
 
 1;

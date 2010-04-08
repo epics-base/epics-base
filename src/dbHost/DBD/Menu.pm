@@ -5,7 +5,7 @@ use DBD::Util;
 sub init {
     my ($this, $name) = @_;
     $this->SUPER::init($name, "menu name");
-    $this->{CHOICES} = [];
+    $this->{CHOICE_LIST} = [];
     $this->{CHOICE_INDEX} = {};
     return $this;
 }
@@ -18,17 +18,17 @@ sub add_choice {
     	dieContext("Duplicate choice name") if ($pair->[0] eq $name);
     	dieContext("Duplicate choice string") if ($pair->[1] eq $value);
     }
-    push @{$this->{CHOICES}}, [$name, $value];
+    push @{$this->{CHOICE_LIST}}, [$name, $value];
     $this->{CHOICE_INDEX}->{$value} = $name;
 }
 
 sub choices {
-    return @{shift->{CHOICES}};
+    return @{shift->{CHOICE_LIST}};
 }
 
 sub choice {
     my ($this, $idx) = @_;
-    return $this->{CHOICES}[$idx];
+    return $this->{CHOICE_LIST}[$idx];
 }
 
 sub legal_choice {

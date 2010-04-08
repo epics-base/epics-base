@@ -34,9 +34,11 @@ sub slurp {
 }
 
 sub macval {
-    my ($macro, $Rmacros) = @_;
+    my ($macro, $def, $Rmacros) = @_;
     if (exists $Rmacros->{$macro}) {
         return $Rmacros->{$macro};
+    } elsif (defined $def) {
+    	return $def;
     } else {
         warn "Warning: No value for macro \$($macro)\n";
 	return undef;
@@ -47,7 +49,10 @@ sub expandMacros {
     my ($Rmacros, @input) = @_;
     my @output;
     foreach (@input) {
-	s/\$\((\w+)\)/&macval($1, $Rmacros)/eg unless /^\s*#/;
+	# FIXME: This is wrong, use Text::Balanced, starting from:
+	# @result = extract_bracketed($_, '{}()\'"', '\s*\$')
+	s/ \$ \( (\w+) (?: = (.*) )? \) / &macval($1, $2, $Rmacros) /egx
+		unless /^\s*#/;
 	push @output, $_;
     }
     return @output;

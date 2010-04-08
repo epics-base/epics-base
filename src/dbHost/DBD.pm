@@ -1,7 +1,7 @@
 package DBD;
 
+use DBD::Util;
 use DBD::Breaktable;
-use DBD::Device;
 use DBD::Driver;
 use DBD::Menu;
 use DBD::Recordtype;
@@ -10,48 +10,73 @@ use DBD::Registrar;
 use DBD::Function;
 use DBD::Variable;
 
+use Carp;
+
 sub new {
         my $proto = shift;
         my $class = ref($proto) || $proto;
         my $this = {
-		BREAKTABLES => {},
-		DEVICES     => {},
-		DRIVERS     => {},
-		MENUS       => {},
-		RECORDTYPES => {},
-		REGISTRARS  => {},
-		FUNCTIONS   => {},
-		VARIABLES   => {}
+		'DBD::Breaktable' => {},
+		'DBD::Driver'     => {},
+		'DBD::Function'   => {},
+		'DBD::Menu'       => {},
+		'DBD::Recordtype' => {},
+		'DBD::Registrar'  => {},
+		'DBD::Variable'   => {}
 	};
         bless $this, $class;
 	return $this;
 }
 
-sub add_breaktable {
-}
-
-sub add_driver {
-}
-
-sub add_menu {
-}
-
-sub add_recordtype {
-}
-
-sub add_registrar {
-}
-
-sub add_function {
-}
-
-sub add_variable {
+sub add {
 	my ($this, $obj) = @_;
-	confess "Not a DBD::Variable" unless $obj->isa('DBD::Variable');
+	my $obj_class;
+	foreach (keys %{$this}) {
+		next unless m/^DBD::/;
+		$obj_class = $_ and last if $obj->isa($_);
+	}
+	confess "Unknown object type"
+		unless defined $obj_class;
 	my $obj_name = $obj->name;
-	dieContext("Duplicate variable '$obj_name'")
-		if exists $this->{VARIABLES}->{$obj_name};
-	$this->{VARIABLES}->{$obj_name} = $obj;
+	dieContext("Duplicate name '$obj_name'")
+		if exists $this->{$obj_class}->{$obj_name};
+	$this->{$obj_class}->{$obj_name} = $obj;
+}
+
+sub breaktables {
+	return %{shift->{'DBD::Breaktable'}};
+}
+
+sub drivers {
+	return %{shift->{'DBD::Driver'}};
+}
+
+sub functions {
+	return %{shift->{'DBD::Function'}};
+}
+
+sub menus {
+	return %{shift->{'DBD::Menu'}};
+}
+sub menu {
+	my ($this, $menu_name) = @_;
+	return $this->{'DBD::Menu'}->{$menu_name};
+}
+
+sub recordtypes {
+	return %{shift->{'DBD::Recordtype'}};
+}
+sub recordtype {
+	my ($this, $rtyp_name) = @_;
+	return $this->{'DBD::Recordtype'}->{$rtyp_name};
+}
+
+sub registrars {
+	return %{shift->{'DBD::Registrar'}};
+}
+
+sub variables {
+	return %{shift->{'DBD::Variable'}};
 }
 
 1;

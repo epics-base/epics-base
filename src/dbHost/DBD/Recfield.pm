@@ -45,7 +45,7 @@ sub init {
 	exists $field_types{$type} or dieContext("Illegal field type '$type', ".
 		"valid field types are:", sort keys %field_types);
 	$this->{DBF_TYPE} = $type;
-	$this->{ATTRIBUTES} = {};
+	$this->{ATTR_INDEX} = {};
 	return $this;
 }
 
@@ -62,11 +62,11 @@ sub add_attribute {
 		unless exists $field_attrs{$attr};
 	dieContext("Bad value '$value' for field '$attr' attribute")
 		unless $value =~ m/^ $field_attrs{$attr} $/x;
-	$this->{ATTRIBUTES}->{$attr} = $value;
+	$this->{ATTR_INDEX}->{$attr} = $value;
 }
 
 sub attributes {
-	return shift->{ATTRIBUTES};
+	return shift->{ATTR_INDEX};
 }
 
 sub attribute {

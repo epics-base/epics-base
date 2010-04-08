@@ -39,12 +39,28 @@ sub legal_choice {
 
 sub toDeclaration {
     my $this = shift;
+    my $name = $this->name;
     my @choices = map {
         "\t" . @{$_}[0] . "\t/* " . escapeCcomment(@{$_}[1]) . " */"
     } $this->choices;
     return "typedef enum {\n" .
-               join(",\n", @choices) . 
-           "\n} " . $this->name . ";\n";
+               join(",\n", @choices) .
+           "\n\t${name}_NUM_CHOICES\n" .
+           "} $name;\n";
+}
+
+sub toDefinition {
+    my $this = shift;
+    my $name = $this->name;
+    my @strings = map {
+        "\t\"" . escapeCstring(@{$_}[1]) . "\""
+    } $this->choices;
+    return "static const char * const ${name}MenuData = {\n" .
+               join(",\n", @strings) . "};\n\n" .
+           "dbMenu ${name}MenuData = {\n" .
+           "\t\"" . escapeCstring(name) . "\",\n" .
+           "\t${name}_NUM_CHOICES,\n" .
+           "\t${name}ChoiceStrings\n};\n";
 }
 
 1;

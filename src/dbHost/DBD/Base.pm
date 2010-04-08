@@ -76,11 +76,14 @@ sub identifier {
 
 sub escapeCcomment {
     ($_) = @_;
-    s/\*\//**/;
+    s/\*\//**/g;
     return $_;
 }
 
 sub escapeCstring {
+    ($_) = @_;
+    # How to do this?
+    return $_;
 }
 
 

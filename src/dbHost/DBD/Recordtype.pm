@@ -79,8 +79,8 @@ sub toDeclaration {
     } $this->fields;
     my $name = $this->name;
     $name .= "Record" unless $name eq "dbCommon";
-    return "typedef struct $name {\n\t" .
-               join("\n\t", @fields) .
+    return "typedef struct $name {\n" .
+               join("\n", @fields) .
            "\n} $name;\n";
 }
 

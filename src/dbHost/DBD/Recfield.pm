@@ -29,7 +29,7 @@ our %field_attrs = (
     promptgroup => qr/^GUI_\w+$/,
     prompt      => qr/^.*$/,
     special     => qr/^(?:SPC_\w+|\d{3,})$/,
-    pp          => qr/^(?:YES|NO|TRUE|FALSE)$/,
+    pp          => qr/^(?:TRUE|FALSE)$/,
     interest    => qr/^\d+$/,
     base        => qr/^(?:DECIMAL|HEX)$/,
     size        => qr/^\d+$/,
@@ -102,9 +102,9 @@ sub check_valid {
 sub toDeclaration {
     my ($this, $ctype) = @_;
     my $name = lc $this->name;
-    my $result = "$ctype $name;";
+    my $result = sprintf "    %-19s %-12s", $ctype, "$name;";
     my $prompt = $this->attribute('prompt');
-    $result .= "\t/* $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 
@@ -133,9 +133,9 @@ sub toDeclaration {
     my ($this) = @_;
     my $name = lc $this->name;
     my $size = $this->attribute('size');
-    my $result = "char ${name}[${size}];";
+    my $result = sprintf "    %-19s %-12s", 'char', "${name}[${size}];";
     my $prompt = $this->attribute('prompt');
-    $result .= "\t/* $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 
@@ -416,10 +416,10 @@ sub check_valid {
 
 sub toDeclaration {
     my ($this) = @_;
-    my $name = lc $this->name;
-    my $result = $this->attribute('extra') . ";";
+    my $extra = $this->attribute('extra');
+    my $result = sprintf "    %-32s", "$extra;";
     my $prompt = $this->attribute('prompt');
-    $result .= "\t/* $prompt */" if defined $prompt;
+    $result .= "/* $prompt */" if defined $prompt;
     return $result;
 }
 

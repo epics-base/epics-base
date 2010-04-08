@@ -39,23 +39,8 @@ sub new ($@) {
     return $this;
 }
 
-sub putValue ($$$) {
-    my ($this, $name, $raw) = @_;
-    if (exists $this->{macros}[0]{$name}) {
-        if (!defined $raw) {
-            delete $this->{macros}[0]{$name};
-        } else {
-            $this->{macros}[0]{$name}{raw} = $raw;
-        }
-    } else {
-        my $entry = macLib::entry->new($name, 'macro');
-        $entry->{raw} = $raw;
-        $this->{macros}[0]{$name} = $entry;
-    }
-    $this->{dirty} = 1;
-}
-
 sub installList ($@) {
+    # Argument is a list of strings which are arguments to installMacros
     my $this = shift;
     while (@_) {
         $this->installMacros(shift);
@@ -63,11 +48,12 @@ sub installList ($@) {
 }
 
 sub installMacros ($$) {
+    # Argument is a string: a=1,b="2",c,d='hello'
     my $this = shift;
     $_ = shift;
     until (defined pos($_) and pos($_) == length($_)) {
         m/\G \s* /xgc;    # Skip whitespace
-        if (m/\G ( \w+ ) \s* /xgc) {
+        if (m/\G ( [A-Za-z0-9_-]+ ) \s* /xgc) {
             my ($name, $val) = ($1);
             if (m/\G = \s* /xgc) {
                 # The value follows, handle quotes and escapes
@@ -91,6 +77,22 @@ sub installMacros ($$) {
             last;
         }
     }
+}
+
+sub putValue ($$$) {
+    my ($this, $name, $raw) = @_;
+    if (exists $this->{macros}[0]{$name}) {
+        if (!defined $raw) {
+            delete $this->{macros}[0]{$name};
+        } else {
+            $this->{macros}[0]{$name}{raw} = $raw;
+        }
+    } else {
+        my $entry = macLib::entry->new($name, 'macro');
+        $entry->{raw} = $raw;
+        $this->{macros}[0]{$name} = $entry;
+    }
+    $this->{dirty} = 1;
 }
 
 sub pushScope ($) {

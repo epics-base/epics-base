@@ -48,6 +48,11 @@ if ($opt_D) {
     while (($name, $menu) = each %{$menus}) {
         print OUTFILE $menu->toDeclaration;
     }
-    print OUTFILE "\n#endif /* $guard_name */\n";
+    print OUTFILE "\n#ifdef GEN_MENU_CHOICES\n\n";
+    while (($name, $menu) = each %{$menus}) {
+        print OUTFILE $menu->toDefinition;
+    }
+    print OUTFILE "\n#endif /* GEN_MENU_CHOICES */\n",
+        "#endif /* $guard_name */\n";
     close OUTFILE;
 }

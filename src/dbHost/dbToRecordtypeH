@@ -54,13 +54,30 @@ if ($opt_D) {   # Output dependencies only, to stdout
         "extern \"C\" {\n",
         "#endif\n\n";
 
-    my $menus = $dbd->menus;
-    while (($name, $menu) = each %{$menus}) {
-        print OUTFILE $menu->toDeclaration;
-    }
-    print OUTFILE "\n" if scalar %{$menus};
-
     my ($rn, $rtyp) = each %{$rtypes};
+
+    my @menu_fields = grep {
+            $_->dbf_type eq 'DBF_MENU'
+        } $rtyp->fields;
+    my %menu_used;
+    # We don't need @menus_used any more, but the %menu_used hash is set here
+    my @menus_used = grep {
+            !$menu_used{$_}++
+        } map {
+            $_->attribute('menu')
+        } @menu_fields;
+    my $menus_defined = $dbd->menus;
+    while (($name, $menu) = each %{$menus_defined}) {
+        print OUTFILE $menu->toDeclaration;
+        if ($menu_used{$name}) {
+            delete $menu_used{$name}
+        } else {
+            warn "Menu '$name' defined but not used\n";
+        }
+    }
+    my @menus_external = keys %menu_used;
+    print OUTFILE "\n" if scalar %{$menus_defined};
+
     print OUTFILE $rtyp->toDeclaration;
 
     unless ($rn eq 'dbCommon') {
@@ -68,28 +85,33 @@ if ($opt_D) {   # Output dependencies only, to stdout
         print OUTFILE "\ntypedef enum {\n",
             join(",\n", map { "\t${rn}Record$_ = " . $n++ } $rtyp->field_names),
             "\n} ${rn}FieldIndex;\n\n";
-        print OUTFILE "#ifdef GEN_SIZE_OFFSET\n",
-            join("\n",
-                map { "static const char ${rn}FieldName$_\[] = \"$_\";" }
-                $rtyp->field_names),
-            "\n\n";
+        print OUTFILE "#ifdef GEN_SIZE_OFFSET\n\n";
+        print OUTFILE (map {
+                "extern const dbMenu ${_}MenuMetaData;\n"
+            } @menus_external), "\n";
+        while (($name, $menu) = each %{$menus_defined}) {
+            print OUTFILE $menu->toDefinition, "\n";
+        }
+        print OUTFILE (map {
+            "static const char ${rn}FieldName$_\[] = \"$_\";\n" }
+            $rtyp->field_names), "\n";
         $n=0;
-        print OUTFILE "static const dbRecordData ${rn}RecordRecordData;\n\n",
-            "static dbFldDes ${rn}RecordFieldData[] = {\n",
+        print OUTFILE "static const dbRecordData ${rn}RecordMetaData;\n\n",
+            "static dbFldDes ${rn}FieldMetaData[] = {\n",
             join(",\n", map {
                     my $fn = $_->name;
-                    "    { ${rn}RecordFieldName$fn," .
+                    "    { ${rn}FieldName$fn," .
                         $_->dbf_type . ',"' .
                         $_->attribute('initial') . '",' .
                         ($_->attribute('special') || '0') . ',' .
                         ($_->attribute('pp') || 'FALSE') . ',' .
                         ($_->attribute('interest') || '0') . ',' .
                         ($_->attribute('asl') || 'ASL0') . ',' .
-                        $n++ . ",\n\t\&${rn}RecordRecordData," .
+                        $n++ . ",\n\t\&${rn}RecordMetaData," .
                         "GEOMETRY_DATA(${rn}Record," . lc($fn) . ') }';
                 } $rtyp->fields),
             "\n};\n\n";
-        print OUTFILE "static const short ${rn}RecordFieldLinks[] = {\n",
+        print OUTFILE "static const ${rn}FieldIndex ${rn}RecordLinkFields[] = {\n",
             join(",\n", map {
                     "    ${rn}Record" . $_->name; 
                 } grep {
@@ -97,59 +119,55 @@ if ($opt_D) {   # Output dependencies only, to stdout
                 } $rtyp->fields),
             "\n};\n\n";
         my @sorted_names = sort $rtyp->field_names;
-        print OUTFILE "static const char * const ${rn}RecordFieldSortedNames[] = {\n",
+        print OUTFILE "static const char * const ${rn}RecordSortedFieldNames[] = {\n",
             join(",\n", map {
-                "    ${rn}RecordFieldName$_"
+                "    ${rn}FieldName$_"
             } @sorted_names),
             "\n};\n\n";
-        print OUTFILE "static const short ${rn}RecordFieldSortedIndex[] = {\n",
+        print OUTFILE "static const ${rn}FieldIndex ${rn}RecordSortedFieldIndex[] = {\n",
             join(",\n", map {
                 "    ${rn}Record$_"
             } @sorted_names),
             "\n};\n\n";
         print OUTFILE "extern rset ${rn}RSET;\n\n",
-            "static const dbRecordData ${rn}RecordRecordData = {\n",
+            "static const dbRecordData ${rn}RecordMetaData = {\n",
             "    \"$rn\",\n",
             "    sizeof(${rn}Record),\n",
-            "    NELEMENTS(${rn}RecordFieldData),\n",
-            "    ${rn}RecordFieldData,\n",
+            "    NELEMENTS(${rn}FieldMetaData),\n",
+            "    ${rn}FieldMetaData,\n",
             "    ${rn}RecordVAL,\n",
-            "    \&${rn}RecordFieldData[${rn}RecordVAL],\n",
-            "    NELEMENTS(${rn}RecordFieldLinks),\n",
-            "    ${rn}RecordFieldLinks,\n",
-            "    ${rn}RecordFieldSortedNames,\n",
-            "    ${rn}RecordFieldSortedIndex,\n",
+            "    \&${rn}FieldMetaData[${rn}RecordVAL],\n",
+            "    NELEMENTS(${rn}RecordLinkFields),\n",
+            "    ${rn}RecordLinkFields,\n",
+            "    ${rn}RecordSortedFieldNames,\n",
+            "    ${rn}RecordSortedFieldIndex,\n",
             "    \&${rn}RSET\n",
             "};\n\n";
-        my @menu_fields = grep {
-                $_->dbf_type eq 'DBF_MENU'
-            } $rtyp->fields;
-        my %menu_uniq;
-        my @menu_names = grep {
-                !$menu_uniq{$_}++
-            } map {
-                $_->attribute('menu')
-            } @menu_fields;
-        print OUTFILE join ("\n", map {
-                "extern dbMenu ${_}MenuData;"
-            } @menu_names), "\n\n";
-        print OUTFILE "dbRecordType * ${rn}RecordRegistrar(dbBase *pbase, int nDevs)\n",
+        print OUTFILE "dbRecordType * epicsShareAPI ${rn}RecordRegistrar(dbBase *pbase, int nDevs)\n",
             "{\n",
-            "    dbRecordType *prt;\n";
+            "    dbRecordType *prt = dbCreateRecordtype(&${rn}RecordMetaData, nDevs);\n";
+        print OUTFILE "    ${rn}FieldMetaData[${rn}RecordDTYP].typDat.pdevMenu = \&prt->devMenu;\n";
+        while (($name, $menu) = each %{$menus_defined}) {
+            print OUTFILE "    dbRegisterMenu(pbase, \&${name}MenuMetaData);\n";
+        }
         print OUTFILE map {
-                "    dbRegisterMenu(pbase, \&${_}MenuData);\n"
-            } @menu_names;
-        print OUTFILE map {
-                "    ${rn}RecordFieldData[${rn}Record" . 
+                "    ${rn}FieldMetaData[${rn}Record" . 
                 $_->name .
-                "].typDat.pmenu = \&" .
+                "].typDat.pmenu = \n".
+                "        \&" .
                 $_->attribute('menu') .
-                "MenuData;\n"
+                "MenuMetaData;\n";
             } @menu_fields;
-        # ... FIXME ... Missing prt, devMenu, CT_HEX/CT_DECIMAL
+        print OUTFILE map {
+                    "    ${rn}FieldMetaData[${rn}Record" .
+                    $_->name .
+                "].typDat.base = CT_HEX;\n"; 
+                } grep {
+                    $_->attribute('base') eq 'HEX';
+                } $rtyp->fields;
+        print OUTFILE "    dbRegisterRecordtype(pbase, prt);\n";
         print OUTFILE "    return prt;\n}\n\n",
-            "epicsExportRegistrar(${rn}RecordSizeOffset);\n",
-            "#endif\n";
+            "#endif /* GEN_SIZE_OFFSET */\n";
     }
     print OUTFILE "\n#ifdef __cplusplus\n",
         "} /* extern \"C\" */\n",

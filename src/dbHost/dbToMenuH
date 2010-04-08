@@ -48,11 +48,16 @@ if ($opt_D) {
     while (($name, $menu) = each %{$menus}) {
         print OUTFILE $menu->toDeclaration;
     }
-    print OUTFILE "\n#ifdef GEN_MENU_CHOICES\n\n";
-    while (($name, $menu) = each %{$menus}) {
-        print OUTFILE $menu->toDefinition;
-    }
-    print OUTFILE "\n#endif /* GEN_MENU_CHOICES */\n",
-        "#endif /* $guard_name */\n";
+# FIXME: Where to put metadata for widely used menus?
+# In the generated menu.h file is wrong: can't create a list of menu.h files.
+# Can only rely on registerRecordDeviceDriver output, so we must require that
+# all such menus be named "menu...", and any other menus must be defined in
+# the record.dbd file that needs them.
+#    print OUTFILE "\n#ifdef GEN_MENU_METADATA\n\n";
+#    while (($name, $menu) = each %{$menus}) {
+#        print OUTFILE $menu->toDefinition;
+#    }
+#    print OUTFILE "\n#endif /* GEN_MENU_METADATA */\n";
+    print OUTFILE "\n#endif /* $guard_name */\n";
     close OUTFILE;
 }

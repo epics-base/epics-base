@@ -6,16 +6,16 @@ use Getopts;
 use macLib;
 use Readfile;
 
-getopts('DI@S@o:') or
-    die "Usage: dbToRecordtypeH [-D] [-I dir] [-S macro=val] [-o menu.h] file.dbd [menu.h]";
+my $tool = 'dbToRecordtypeH';
+getopts('DI@o:') or
+    die "Usage: $tool [-D] [-I dir] [-o xRecord.h] xRecord.dbd [xRecord.h]\n";
 
 my @path = map { split /[:;]/ } @opt_I;
-my $macros = macLib->new(@opt_S);
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;
 $infile =~ m/\.dbd$/ or
-    die "Input file '$infile' must have '.dbd' extension\n";
+    die "$tool: Input file '$infile' must have '.dbd' extension\n";
 
 my $outfile;
 if ($opt_o) {
@@ -24,41 +24,65 @@ if ($opt_o) {
     $outfile = shift @ARGV;
 } else {
     ($outfile = $infile) =~ s/\.dbd$/.h/;
+    $outfile =~ s/^.*\///;
+    $outfile =~ s/dbCommonRecord/dbCommon/;
 }
 
 # Derive a name for the include guard
-my $guard_name = $outfile;
+my $guard_name = "INC_$outfile";
 $guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
-&ParseDBD($dbd, &Readfile($infile, $macros, \@opt_I));
+&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
 
 my $rtypes = $dbd->recordtypes;
-die "Input file must contain a single recordtype definition.\n"
+die "$tool: Input file must contain a single recordtype definition.\n"
     unless (1 == keys %{$rtypes});
 
-if ($opt_D) {
+if ($opt_D) {   # Output dependencies only, to stdout
     my %filecount;
     my @uniqfiles = grep { not $filecount{$_}++ } @inputfiles;
     print "$outfile: ", join(" \\\n    ", @uniqfiles), "\n\n";
     print map { "$_:\n" } @uniqfiles;
 } else {
-    open OUTFILE, ">$outfile" or die "Can't open $outfile: $!\n";
+    open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
     print OUTFILE "/* $outfile generated from $infile */\n\n",
-        "#ifndef INC_${guard_name}\n",
-        "#define INC_${guard_name}\n\n",
+        "#ifndef $guard_name\n",
+        "#define $guard_name\n\n",
         "#include \"ellLib.h\"\n",
         "#include \"epicsMutex.h\"\n",
         "#include \"link.h\"\n",
         "#include \"epicsTime.h\"\n",
-        "#include \"epicsTypes.h\"\n\n";
+        "#include \"epicsTypes.h\"\n",
+        "#include \"epicsExport.h\"\n\n",
+        "#ifdef __cplusplus\n",
+        "extern \"C\" {\n",
+        "#endif\n\n";
+
     my $menus = $dbd->menus;
     while (($name, $menu) = each %{$menus}) {
-        print OUTFILE $menu->toEnum;
+        print OUTFILE $menu->toDeclaration;
     }
-    print OUTFILE "\n";
-    my ($name, $rtyp) = each %{$rtypes};
-    print OUTFILE $rtyp->toStruct;
-    print OUTFILE "\n#endif /* INC_${guard_name} */\n";
+    print OUTFILE "\n" if scalar %{$menus};
+
+    my ($rn, $rtyp) = each %{$rtypes};
+    print OUTFILE $rtyp->toDeclaration;
+
+    unless ($rn eq 'dbCommon') {
+        print OUTFILE "\nenum {\n",
+            join(",\n", map { "\t${rn}Record$_" } $rtyp->field_names),
+            "\n};\n\n";
+
+        print OUTFILE "#ifdef GEN_SIZE_OFFSET\n",
+            "static int ${rn}RecordSizeOffset(dbRecordType *pdbRecordType)\n",
+            "{\n";
+        # ... FIXME: add size-offset data, etc.
+        print OUTFILE "}\n\n",
+            "epicsExportRegistrar(${rn}RecordSizeOffset);\n\n";
+    }
+    print OUTFILE "#ifdef __cplusplus\n",
+        "} /* extern \"C\" */\n",
+        "#endif\n\n",
+        "#endif /* $guard_name */\n";
     close OUTFILE;
 }

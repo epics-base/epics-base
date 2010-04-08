@@ -24,17 +24,17 @@ our %field_types = (
 
 # The hash value is a regexp that matches all legal values of this attribute
 our %field_attrs = (
-    asl         => qr/ASL[01]/,
-    initial     => qr/.*/,
-    promptgroup => qr/GUI_\w+/,
-    prompt      => qr/.*/,
-    special     => qr/(?:SPC_\w+|\d{3,})/,
-    pp          => qr/(?:YES|NO|TRUE|FALSE)/,
-    interest    => qr/\d+/,
-    base        => qr/(?:DECIMAL|HEX)/,
-    size        => qr/\d+/,
-    extra       => qr/.*/,
-    menu        => qr/$RXident/o
+    asl         => qr/^ASL[01]$/,
+    initial     => qr/^.*$/,
+    promptgroup => qr/^GUI_\w+$/,
+    prompt      => qr/^.*$/,
+    special     => qr/^(?:SPC_\w+|\d{3,})$/,
+    pp          => qr/^(?:YES|NO|TRUE|FALSE)$/,
+    interest    => qr/^\d+$/,
+    base        => qr/^(?:DECIMAL|HEX)$/,
+    size        => qr/^\d+$/,
+    extra       => qr/^.*$/,
+    menu        => qr/^$RXident$/o
 );
 
 sub new {
@@ -47,9 +47,8 @@ sub new {
 }
 
 sub init {
-    my $this = shift;
-    my $name = shift;
-    my $type = unquote(shift);
+    my ($this, $name, $type) = @_;
+    unquote $type;
     $this->SUPER::init($name, "record field name");
     dieContext("Illegal field type '$type', valid field types are:",
         sort keys %field_types) unless exists $field_types{$type};
@@ -62,15 +61,24 @@ sub dbf_type {
     return shift->{DBF_TYPE};
 }
 
+sub set_number {
+    my ($this, $number) = @_;
+    $this->{NUMBER} = $number;
+}
+
+sub number {
+    return shift->{NUMBER};
+}
+
 sub add_attribute {
-    my $this = shift;
-    my $attr = shift;
-    my $value = unquote(shift);
+    my ($this, $attr, $value) = @_;
+    unquote $value;
+    my $match = $field_attrs{$attr};
     dieContext("Unknown field attribute '$1', valid attributes are:",
            sort keys %field_attrs)
-        unless exists $field_attrs{$attr};
+        unless defined $match;
     dieContext("Bad value '$value' for field '$attr' attribute")
-        unless $value =~ m/^ $field_attrs{$attr} $/x;
+        unless $value =~ m/$match/;
     $this->{ATTR_INDEX}->{$attr} = $value;
 }
 
@@ -84,16 +92,12 @@ sub attribute {
 }
 
 sub check_valid {
-    my $this = shift;
+    my ($this) = @_;
     my $name = $this->name;
     my $default = $this->attribute("initial");
     dieContext("Default value '$default' is invalid for field '$name'")
         if (defined($default) and !$this->legal_value($default));
 }
-
-#    dieContext("Menu name missing for field '$name'")
-#        if ($this->dbf_type eq "DBF_MENU" and
-#            !defined($this->attribute("menu")));
 
 sub toDeclaration {
     my ($this, $ctype) = @_;
@@ -119,14 +123,14 @@ sub legal_value {
 }
 
 sub check_valid {
-    my $this = shift;
+    my ($this) = @_;
     dieContext("Size missing for DBF_STRING field '$name'")
         unless exists $this->attributes->{'size'};
     $this->SUPER::check_valid;
 }
 
 sub toDeclaration {
-    my $this = shift;
+    my ($this) = @_;
     my $name = lc $this->name;
     my $size = $this->attribute('size');
     my $result = "char ${name}[${size}];";
@@ -192,7 +196,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("signed short");
+    return shift->SUPER::toDeclaration("short");
 }
 
 
@@ -315,6 +319,13 @@ sub legal_value {
     return 1;
 }
 
+sub check_valid {
+    my ($this) = @_;
+    dieContext("Menu name missing for DBF_MENU field '$name'")
+        unless defined($this->attribute("menu"));
+    $this->SUPER::check_valid;
+}
+
 sub toDeclaration {
     return shift->SUPER::toDeclaration("epicsEnum16");
 }
@@ -397,14 +408,14 @@ sub legal_value {
 }
 
 sub check_valid {
-    my $this = shift;
+    my ($this) = @_;
     dieContext("Type information missing for DBF_NOACCESS field '$name'")
         unless defined($this->attribute("extra"));
     $this->SUPER::check_valid;
 }
 
 sub toDeclaration {
-    my $this = shift;
+    my ($this) = @_;
     my $name = lc $this->name;
     my $result = $this->attribute('extra') . ";";
     my $prompt = $this->attribute('prompt');

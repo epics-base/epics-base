@@ -26,10 +26,10 @@ our $debug=0;
 
 sub ParseDBD {
     my $dbd = shift;
-    $_ = join '', @_;
+    $_ = shift;
     while (1) {
-        if (parseCommon()) {}
-        elsif (m/\G menu \s* \( \s* $string \s* \) \s* \{/oxgc) {
+        parseCommon();
+        if (m/\G menu \s* \( \s* $string \s* \) \s* \{/oxgc) {
             print "Menu: $1\n" if $debug;
             parse_menu($dbd, $1);
         }
@@ -75,24 +75,27 @@ sub ParseDBD {
 }
 
 sub parseCommon {
-    # Skip leading whitespace
-    m/\G \s* /oxgc;
+    while (1) {
+        # Skip leading whitespace
+        m/\G \s* /oxgc;
 
-    if (m/\G \#\#!BEGIN\{ ( [^}]* ) \}!\#\# \n/oxgc) {
-        print "File-Begin: $1\n" if $debug;
-        pushContext("file '$1'");
+        if (m/\G \# /oxgc) {
+            if (m/\G \#!BEGIN\{ ( [^}]* ) \}!\#\# \n/oxgc) {
+                print "File-Begin: $1\n" if $debug;
+                pushContext("file '$1'");
+            }
+            elsif (m/\G \#!END\{ ( [^}]* ) \}!\#\# \n?/oxgc) {
+                print "File-End: $1\n" if $debug;
+                popContext("file '$1'");
+            }
+            else {
+                m/\G (.*) \n/oxgc;
+                print "Comment: $1\n" if $debug;
+            }
+        } else {
+            return;
+        }
     }
-    elsif (m/\G \#\#!END\{ ( [^}]* ) \}!\#\# \n/oxgc) {
-        print "File-End: $1\n" if $debug;
-        popContext("file '$1'");
-    }
-    elsif (m/\G \# (.*) \n/oxgc) {
-        print "Comment: $1\n" if $debug;
-    }
-    else {
-        return 0;
-    }
-    return 1;
 }
 
 sub parse_menu {
@@ -100,9 +103,8 @@ sub parse_menu {
     pushContext("menu($name)");
     my $menu = DBD::Menu->new($name);
     while(1) {
-        if (parseCommon()) {}
-        elsif (m/\G choice \s* \( \s* $string \s* ,
-                          \s* $string \s* \)/oxgc) {
+        parseCommon();
+        if (m/\G choice \s* \( \s* $string \s* , \s* $string \s* \)/oxgc) {
             print " Menu-Choice: $1, $2\n" if $debug;
             $menu->add_choice($1, $2);
         }
@@ -123,8 +125,8 @@ sub parse_breaktable {
     pushContext("breaktable($name)");
     my $bt = DBD::Breaktable->new($name);
     while(1) {
-        if (parseCommon()) {}
-        elsif (m/\G point\s* \(\s* $string \s* , \s* $string \s* \)/oxgc) {
+        parseCommon();
+        if (m/\G point\s* \(\s* $string \s* , \s* $string \s* \)/oxgc) {
             print " Breaktable-Point: $1, $2\n" if $debug;
             $bt->add_point($1, $2);
         }
@@ -149,9 +151,8 @@ sub parse_recordtype {
     pushContext("recordtype($name)");
     my $rtyp = DBD::Recordtype->new($name);
     while(1) {
-        if (parseCommon()) {}
-        elsif (m/\G field \s* \( \s* $string \s* ,
-                          \s* $string \s* \) \s* \{/oxgc) {
+        parseCommon();
+        if (m/\G field \s* \( \s* $string \s* , \s* $string \s* \) \s* \{/oxgc) {
             print " Recordtype-Field: $1, $2\n" if $debug;
             parse_field($rtyp, $1, $2);
         }
@@ -172,8 +173,8 @@ sub parse_field {
     my $fld = DBD::Recfield->new($name, $field_type);
     pushContext("field($name, $field_type)");
     while(1) {
-        if (parseCommon()) {}
-        elsif (m/\G (\w+) \s* \( \s* $string \s* \)/oxgc) {
+        parseCommon();
+        if (m/\G (\w+) \s* \( \s* $string \s* \)/oxgc) {
             print "  Field-Attribute: $1, $2\n" if $debug;
             $fld->add_attribute($1, $2);
         }

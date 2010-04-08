@@ -15,14 +15,14 @@ sub slurp {
     my @path = @{$Rpath};
     print "slurp($FILE):\n" if $debug;
     if ($FILE !~ m[/]) {
-	foreach $dir (@path) {
-	    print " trying $dir/$FILE\n" if $debug;
-	    if (-r "$dir/$FILE") {
-		$FILE = "$dir/$FILE";
-		last;
-	    }
-	}
-	die "Can't find file '$FILE'\n" unless -r $FILE;
+        foreach $dir (@path) {
+            print " trying $dir/$FILE\n" if $debug;
+            if (-r "$dir/$FILE") {
+                $FILE = "$dir/$FILE";
+                last;
+            }
+        }
+        die "Can't find file '$FILE'\n" unless -r $FILE;
     }
     print " opening $FILE\n" if $debug;
     open FILE, "<$FILE" or die "Can't open $FILE: $!\n";
@@ -32,16 +32,13 @@ sub slurp {
     push @lines, "##!END{$FILE}!##\n";
     close FILE or die "Error closing $FILE: $!\n";
     print " read ", scalar @lines, " lines\n" if $debug;
-    return @lines;
+    return join '', @lines;
 }
 
 sub expandMacros {
-    my ($macros, @input) = @_;
-    my @output;
-    foreach (@input) {
-	push @output, $macros->expandString($_);
-    }
-    return @output;
+    my ($macros, $input) = @_;
+    return $input unless $macros;
+    return $macros->expandString($input);
 }
 
 sub splitPath {
@@ -56,37 +53,38 @@ my $RXnam = qr/[a-zA-Z0-9_\-:.[\]<>;]+/o;
 my $string = qr/ ( $RXnam | $RXstr ) /ox;
 
 sub unquote {
-    my ($string) = @_;
-    $string = $1 if $string =~ m/^"(.*)"$/o;
-    return $string;
+    my ($s) = @_;
+    $s =~ s/^"(.*)"$/$1/o;
+    return $s;
 }
 
 sub Readfile {
     my ($file, $macros, $Rpath) = @_;
     print "Readfile($file)\n" if $debug;
-    my @input = &expandMacros($macros, &slurp($file, $Rpath));
+    my $input = &expandMacros($macros, &slurp($file, $Rpath));
+    my @input = split /\n/, $input;
     my @output;
     foreach (@input) {
-	if (m/^ \s* include \s+ $string /ox) {
-	    $arg = &unquote($1);
-	    print " include $arg\n" if $debug;
-	    push @output, "##! include \"$arg\"\n";
-	    push @output, &Readfile($arg, $macros, $Rpath);
-	} elsif (m/^ \s* addpath \s+ $string /ox) {
-	    $arg = &unquote($1);
-	    print " addpath $arg\n" if $debug;
-	    push @output, "##! addpath \"$arg\"\n";
-	    push @{$Rpath}, &splitPath($arg);
-	} elsif (m/^ \s* path \s+ $string /ox) {
-	    $arg = &unquote($1);
-	    print " path $arg\n" if $debug;
-	    push @output, "##! path \"$arg\"\n";
-	    @{$Rpath} = &splitPath($arg);
-	} else {
-	    push @output, $_;
-	}
+        if (m/^ \s* include \s+ $string /ox) {
+            $arg = &unquote($1);
+            print " include $arg\n" if $debug;
+            push @output, "##! include \"$arg\"";
+            push @output, &Readfile($arg, $macros, $Rpath);
+        } elsif (m/^ \s* addpath \s+ $string /ox) {
+            $arg = &unquote($1);
+            print " addpath $arg\n" if $debug;
+            push @output, "##! addpath \"$arg\"";
+            push @{$Rpath}, &splitPath($arg);
+        } elsif (m/^ \s* path \s+ $string /ox) {
+            $arg = &unquote($1);
+            print " path $arg\n" if $debug;
+            push @output, "##! path \"$arg\"";
+            @{$Rpath} = &splitPath($arg);
+        } else {
+            push @output, $_;
+        }
     }
-    return @output;
+    return join "\n", @output;
 }
 
 1;

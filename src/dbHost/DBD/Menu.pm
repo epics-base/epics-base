@@ -13,7 +13,7 @@ sub init {
 sub add_choice {
     my ($this, $name, $value) = @_;
     $name = identifier($name, "Choice name");
-    $value = unquote($value, "Choice value");
+    unquote $value;
     foreach $pair ($this->choices) {
     	dieContext("Duplicate choice name") if ($pair->[0] eq $name);
     	dieContext("Duplicate choice string") if ($pair->[1] eq $value);
@@ -32,12 +32,12 @@ sub choice {
 }
 
 sub legal_choice {
-    my $this = shift;
-    my $value = unquote(shift);
+    my ($this, $value) = @_;
+    unquote $value;
     return exists $this->{CHOICE_INDEX}->{$value};
 }
 
-sub toEnum {
+sub toDeclaration {
     my $this = shift;
     my @choices = map {
         "\t" . @{$_}[0] . "\t/* " . escapeCcomment(@{$_}[1]) . " */"

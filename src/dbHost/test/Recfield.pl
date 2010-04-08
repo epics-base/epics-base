@@ -1,12 +1,14 @@
 #!/usr/bin/perl
 
-use Test::More tests => 75;
+use Test::More tests => 76;
 
 use DBD::Recfield;
 
 my $fld_string = DBD::Recfield->new('str', 'DBF_STRING');
 isa_ok $fld_string, 'DBD::Recfield';
 isa_ok $fld_string, 'DBD::Recfield::DBF_STRING';
+$fld_string->set_number(0);
+is $fld_string->number, 0, 'Field number';
 $fld_string->add_attribute("size", "41");
 is keys %{$fld_string->attributes}, 1, "Size set";
 ok $fld_string->legal_value("Hello, world!"), 'Legal value';

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 12;
+use Test::More tests => 14;
 
 use DBD::Recordtype;
 use DBD::Recfield;
@@ -31,6 +31,9 @@ my @names = $rtyp->field_names;
 is_deeply \@names, ['NAME', 'DTYP'], 'Field name list';
 
 is $rtyp->field('NAME'), $fld1, 'Field name lookup';
+
+is $fld1->number, 0, 'Field number 0';
+is $fld2->number, 1, 'Field number 1';
 
 is $rtyp->devices, 0, 'No devices yet';
 

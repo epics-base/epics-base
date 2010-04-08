@@ -55,15 +55,15 @@ sub warnContext {
 
 # Input checking
 
-sub unquote {
-    my ($string) = @_;
-    $string =~ m/^"(.*)"$/o and $string = $1;
-    return $string;
+sub unquote (\$) {
+    my ($s) = @_;
+    $$s =~ s/^"(.*)"$/$1/o;
+    return $$s;
 }
 
 sub identifier {
-    my $id = unquote(shift);
-    my $what = shift;
+    my ($id, $what) = @_;
+    unquote $id;
     confess "$what undefined!" unless defined $id;
     $id =~ m/^$RXident$/o or dieContext("Illegal $what '$id'",
         "Identifiers are used in C code so must start with a letter, followed",
@@ -75,7 +75,7 @@ sub identifier {
 # Output filtering
 
 sub escapeCcomment {
-    $_ = shift;
+    ($_) = @_;
     s/\*\//**/;
     return $_;
 }
@@ -87,8 +87,7 @@ sub escapeCstring {
 # Base class routines for the DBD component objects
 
 sub new {
-    my $proto = shift;
-    my $class = ref($proto) || $proto;
+    my $class = shift;
     my $this = {};
     bless $this, $class;
     return $this->init(@_);

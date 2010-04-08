@@ -14,9 +14,9 @@ sub init {
 sub add_point {
 	my ($this, $raw, $eng) = @_;
 	confess "Raw value undefined!" unless defined $raw;
-	$raw = unquote($raw);
 	confess "Engineering value undefined!" unless defined $eng;
-	$eng = unquote($eng);
+	unquote $raw;
+	unquote $eng;
 	push @{$this->{POINT_LIST}}, [$raw, $eng];
 }
 

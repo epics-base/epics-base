@@ -21,6 +21,7 @@ sub add_field {
     dieContext("Duplicate field name '$field_name'")
         if exists $this->{FIELD_INDEX}->{$field_name};
     $field->check_valid;
+    $field->set_number(scalar @{$this->{FIELD_LIST}});
     push @{$this->{FIELD_LIST}}, $field;
     $this->{FIELD_INDEX}->{$field_name} = $field;
 }
@@ -71,7 +72,7 @@ sub device {
     return $this->{DEVICE_INDEX}->{$choice};
 }
 
-sub toStruct {
+sub toDeclaration {
     my $this = shift;
     my @fields = map {
         $_->toDeclaration

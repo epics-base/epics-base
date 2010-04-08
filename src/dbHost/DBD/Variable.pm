@@ -7,7 +7,7 @@ my %var_types = ("int" => 1, "double" => 1);
 sub init {
     my ($this, $name, $type) = @_;
     if (defined $type) {
-    	$type = unquote($type);
+    	unquote $type;
     } else {
 	$type = "int";
     }

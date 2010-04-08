@@ -6,16 +6,16 @@ use Getopts;
 use macLib;
 use Readfile;
 
-getopts('DI@S@o:') or
-    die "Usage: dbToMenuH [-D] [-I dir] [-S macro=val] [-o menu.h] file.dbd [menu.h]";
+my $tool = 'dbToMenuH';
+getopts('DI@o:') or
+    die "Usage: $tool: [-D] [-I dir] [-o menu.h] menu.dbd [menu.h]\n";
 
 my @path = map { split /[:;]/ } @opt_I;
-my $macros = macLib->new(@opt_S);
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;
 $infile =~ m/\.dbd$/ or
-    die "Input file '$infile' must have '.dbd' extension\n";
+    die "$tool: Input file '$infile' must have '.dbd' extension\n";
 
 my $outfile;
 if ($opt_o) {
@@ -24,13 +24,15 @@ if ($opt_o) {
     $outfile = shift @ARGV;
 } else {
     ($outfile = $infile) =~ s/\.dbd$/.h/;
+    $outfile =~ s/^.*\///;
 }
 
 # Derive a name for the include guard
-($guard_name = $outfile) =~ tr/a-zA-Z0-9_/_/cs;
+my $guard_name = "INC_$outfile";
+$guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
-&ParseDBD($dbd, &Readfile($infile, $macros, \@opt_I));
+&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
 
 if ($opt_D) {
     my %filecount;
@@ -38,14 +40,14 @@ if ($opt_D) {
     print "$outfile: ", join(" \\\n    ", @uniqfiles), "\n\n";
     print map { "$_:\n" } @uniqfiles;
 } else {
-    open OUTFILE, ">$outfile" or die "Can't open $outfile: $!\n";
+    open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
     print OUTFILE "/* $outfile generated from $infile */\n\n",
-        "#ifndef INC_${guard_name}\n",
-        "#define INC_${guard_name}\n\n";
+        "#ifndef $guard_name\n",
+        "#define $guard_name\n\n";
     my $menus = $dbd->menus;
     while (($name, $menu) = each %{$menus}) {
-        print OUTFILE $menu->toEnum;
+        print OUTFILE $menu->toDeclaration;
     }
-    print OUTFILE "\n#endif /* INC_${guard_name} */\n";
+    print OUTFILE "\n#endif /* $guard_name */\n";
     close OUTFILE;
 }

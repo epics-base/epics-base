@@ -43,7 +43,7 @@ sub ParseDBD {
         }
         elsif (m/\G function \s* \( \s* $string \s* \)/oxgc) {
             print "Function: $1\n" if $debug;
-            $dbd->add(DBD::Function($1));
+            $dbd->add(DBD::Function->new($1));
         }
         elsif (m/\G breaktable \s* \( \s* $string \s* \) \s* \{/oxgc) {
             print "Breaktable: $1\n" if $debug;

@@ -28,6 +28,8 @@ sub slurp {
     open FILE, "<$FILE" or die "Can't open $FILE: $!\n";
     push @inputfiles, $FILE;
     my @lines = ("##!BEGIN{$FILE}!##\n");
+    # Consider replacing these markers with C pre-processor linemarkers.
+    # See 'info cpp' * Preprocessor Output:: for details.
     push @lines, <FILE>;
     push @lines, "##!END{$FILE}!##\n";
     close FILE or die "Error closing $FILE: $!\n";

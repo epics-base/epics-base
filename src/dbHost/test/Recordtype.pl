@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 14;
+use Test::More tests => 17;
 
 use DBD::Recordtype;
 use DBD::Recfield;
@@ -46,3 +46,9 @@ is_deeply \@devices, [$dev1], 'Device list';
 
 is $rtyp->device('test device'), $dev1, 'Device name lookup';
 
+is $rtyp->cdefs, 0, 'No cdefs yet';
+$rtyp->add_cdef("cdef");
+is $rtyp->cdefs, 1, 'First cdef added';
+
+my @cdefs = $rtyp->cdefs;
+is_deeply \@cdefs, ["cdef"], 'cdef list';

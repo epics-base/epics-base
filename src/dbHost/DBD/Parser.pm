@@ -161,6 +161,10 @@ sub parse_recordtype {
             $dbd->add($rtyp);
             popContext("recordtype($name)");
             return;
+        }
+        elsif (m/\G % (.*) \n/oxgc) {
+            print " Recordtype-Cdef: $1\n" if $debug;
+            $rtyp->add_cdef($1);
         } else {
             m/\G (.*) $/moxgc or dieContext("Unexpected end of input");
             dieContext("Syntax error in '$1'");

@@ -11,6 +11,7 @@ sub init {
     $this->{FIELD_INDEX} = {};
     $this->{DEVICE_LIST} = [];
     $this->{DEVICE_INDEX} = {};
+    $this->{CDEFS} = [];
     return $this;
 }
 
@@ -72,6 +73,15 @@ sub device {
     return $this->{DEVICE_INDEX}->{$choice};
 }
 
+sub add_cdef {
+    my ($this, $cdef) = @_;
+    push @{$this->{CDEFS}}, $cdef;
+}
+
+sub cdefs {
+    return @{shift->{CDEFS}};
+}
+
 sub toDeclaration {
     my $this = shift;
     my @fields = map {
@@ -79,7 +89,8 @@ sub toDeclaration {
     } $this->fields;
     my $name = $this->name;
     $name .= "Record" unless $name eq "dbCommon";
-    return "typedef struct $name {\n" .
+    my $cdefs = join("\n", $this->cdefs);
+    return "$cdefs\ntypedef struct $name {\n" .
                join("\n", @fields) .
            "\n} $name;\n";
 }

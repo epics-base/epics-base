@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use ReadDBD;
+use Getopts;
+use Readfile;
+use Text::Wrap;
+
+#$Readfile::debug = 1;
+#$ReadDBD::debug = 1;
+
+getopts('I@S@') or die usage();
+
+sub usage() {
+    "Usage: dbdReport [-I dir] [-S macro=val] file.dbd";
+}
+
+my @path = map { split /[:;]/ } @opt_I;
+my %macros = map { split /=/ } map { split /,/ } @opt_S;
+
+&ParseDBD(&Readfile(shift @ARGV, \%macros, \@opt_I));
+
+$Text::Wrap::columns = 70;
+
+print wrap("Menus:\t", "\t", join(', ', sort keys %menus)), "\n"
+	if %menus;
+print wrap("Drivers: ", "\t", join(', ', sort keys %drivers)), "\n"
+	if %drivers;
+print wrap("Variables: ", "\t", join(', ', sort keys %variables)), "\n"
+	if %variables;
+print wrap("Registrars: ", "\t", join(', ', sort keys %registrars)), "\n"
+	if %registrars;
+print wrap("Breaktables: ", "\t", join(', ', sort keys %breaktables)), "\n"
+	if %breaktables;
+if (%recordtypes) {
+    @rtypes = sort keys %recordtypes;
+    print wrap("Recordtypes: ", "\t", join(', ', @rtypes)), "\n";
+    foreach (@rtypes) {
+    	print wrap("Devices($_): ", "\t",
+		   join(', ', sort keys %{$devices{$_}})), "\n"
+		if $devices{$_};
+    }
+}

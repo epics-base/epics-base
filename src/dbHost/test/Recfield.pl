@@ -14,7 +14,7 @@ is keys %{$fld_string->attributes}, 1, "Size set";
 ok $fld_string->legal_value("Hello, world!"), 'Legal value';
 ok !$fld_string->legal_value("x"x41), 'Illegal string';
 $fld_string->check_valid;
-is $fld_string->toDeclaration, "char str[41];", "C declaration";
+like $fld_string->toDeclaration, qr/^\s*char\s+str\[41\];\s*$/, "C declaration";
 
 my $fld_char = DBD::Recfield->new('chr', 'DBF_CHAR');
 isa_ok $fld_char, 'DBD::Recfield';
@@ -26,7 +26,7 @@ ok $fld_char->legal_value("-128"), 'Legal - value';
 ok $fld_char->legal_value("127"), 'Legal + value';
 ok !$fld_char->legal_value("0x80"), 'Illegal + hex value';
 $fld_char->check_valid;
-is $fld_char->toDeclaration, "signed char chr;", "C declaration";
+like $fld_char->toDeclaration, qr/^\s*signed\s+char\s+chr;\s*$/, "C declaration";
 
 my $fld_uchar = DBD::Recfield->new('uchr', 'DBF_UCHAR');
 isa_ok $fld_uchar, 'DBD::Recfield';
@@ -38,7 +38,7 @@ ok $fld_uchar->legal_value("0"), 'Legal 0 value';
 ok $fld_uchar->legal_value("0377"), 'Legal + value';
 ok !$fld_uchar->legal_value("0400"), 'Illegal + octal value';
 $fld_uchar->check_valid;
-is $fld_uchar->toDeclaration, "unsigned char uchr;", "C declaration";
+like $fld_uchar->toDeclaration, qr/^\s*unsigned\s+char\s+uchr;\s*$/, "C declaration";
 
 my $fld_short = DBD::Recfield->new('shrt', 'DBF_SHORT');
 isa_ok $fld_short, 'DBD::Recfield';
@@ -50,7 +50,7 @@ ok $fld_short->legal_value("-32768"), 'Legal - value';
 ok $fld_short->legal_value("32767"), 'Legal + value';
 ok !$fld_short->legal_value("0x8000"), 'Illegal + hex value';
 $fld_short->check_valid;
-is $fld_short->toDeclaration, "signed short shrt;", "C declaration";
+like $fld_short->toDeclaration, qr/^\s*short\s+shrt;\s*$/, "C declaration";
 
 my $fld_ushort = DBD::Recfield->new('ushrt', 'DBF_USHORT');
 isa_ok $fld_ushort, 'DBD::Recfield';
@@ -62,7 +62,7 @@ ok $fld_ushort->legal_value("0"), 'Legal 0 value';
 ok $fld_ushort->legal_value("65535"), 'Legal + value';
 ok !$fld_ushort->legal_value("0x10000"), 'Illegal + hex value';
 $fld_ushort->check_valid;
-is $fld_ushort->toDeclaration, "unsigned short ushrt;", "C declaration";
+like $fld_ushort->toDeclaration, qr/^\s*unsigned\s+short\s+ushrt;\s*$/, "C declaration";
 
 my $fld_long = DBD::Recfield->new('lng', 'DBF_LONG');
 isa_ok $fld_long, 'DBD::Recfield';
@@ -73,7 +73,7 @@ ok $fld_long->legal_value("-12345678"), 'Legal - value';
 ok $fld_long->legal_value("0x12345678"), 'Legal + value';
 ok !$fld_long->legal_value("0xfigure"), 'Illegal value';
 $fld_long->check_valid;
-is $fld_long->toDeclaration, "epicsInt32 lng;", "C declaration";
+like $fld_long->toDeclaration, qr/^\s*epicsInt32\s+lng;\s*$/, "C declaration";
 
 my $fld_ulong = DBD::Recfield->new('ulng', 'DBF_ULONG');
 isa_ok $fld_ulong, 'DBD::Recfield';
@@ -85,7 +85,7 @@ ok $fld_ulong->legal_value("00"), 'Legal 0 value';
 ok $fld_ulong->legal_value("0xffffffff"), 'Legal + value';
 ok !$fld_ulong->legal_value("0xfacepaint"), 'Illegal value';
 $fld_ulong->check_valid;
-is $fld_ulong->toDeclaration, "unsigned long ulng;", "C declaration";
+like $fld_ulong->toDeclaration, qr/^\s*unsigned\s+long\s+ulng;\s*$/, "C declaration";
 
 my $fld_float = DBD::Recfield->new('flt', 'DBF_FLOAT');
 isa_ok $fld_float, 'DBD::Recfield';
@@ -96,7 +96,7 @@ ok $fld_float->legal_value("-1.2345678e9"), 'Legal - value';
 ok $fld_float->legal_value("0.12345678e9"), 'Legal + value';
 ok !$fld_float->legal_value("0x1.5"), 'Illegal value';
 $fld_float->check_valid;
-is $fld_float->toDeclaration, "float flt;", "C declaration";
+like $fld_float->toDeclaration, qr/^\s*float\s+flt;\s*$/, "C declaration";
 
 my $fld_double = DBD::Recfield->new('dbl', 'DBF_DOUBLE');
 isa_ok $fld_double, 'DBD::Recfield';
@@ -107,5 +107,5 @@ ok $fld_double->legal_value("-12345e-67"), 'Legal - value';
 ok $fld_double->legal_value("12345678e+9"), 'Legal + value';
 ok !$fld_double->legal_value("e5"), 'Illegal value';
 $fld_double->check_valid;
-is $fld_double->toDeclaration, "double dbl;", "C declaration";
+like $fld_double->toDeclaration, qr/^\s*double\s+dbl;\s*$/, "C declaration";
 

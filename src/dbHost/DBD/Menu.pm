@@ -45,7 +45,7 @@ sub toDeclaration {
     } $this->choices;
     return "typedef enum {\n" .
                join(",\n", @choices) .
-           "\n\t${name}_NUM_CHOICES\n" .
+           ",\n\t${name}_NUM_CHOICES\n" .
            "} $name;\n\n";
 }
 
@@ -55,12 +55,12 @@ sub toDefinition {
     my @strings = map {
         "\t\"" . escapeCstring(@{$_}[1]) . "\""
     } $this->choices;
-    return "static const char * const ${name}ChoiceStrings = {\n" .
+    return "static const char * const ${name}ChoiceStrings[] = {\n" .
                join(",\n", @strings) . "\n};\n" .
            "const dbMenu ${name}MenuMetaData = {\n" .
            "\t\"" . escapeCstring($name) . "\",\n" .
            "\t${name}_NUM_CHOICES,\n" .
-           "\t${name}ChoiceStrings\n};\n";
+           "\t${name}ChoiceStrings\n};\n\n";
 }
 
 1;

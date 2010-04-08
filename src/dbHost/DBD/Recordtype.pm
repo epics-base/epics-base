@@ -64,8 +64,7 @@ sub add_device {
 }
 
 sub devices {
-    my $this = shift;
-    return @{$this->{DEVICE_LIST}};
+    return @{shift->{DEVICE_LIST}};
 }
 
 sub device {
@@ -82,6 +81,10 @@ sub cdefs {
     return @{shift->{CDEFS}};
 }
 
+sub toCdefs {
+    return join("\n", shift->cdefs) . "\n\n";
+}
+
 sub toDeclaration {
     my $this = shift;
     my @fields = map {
@@ -89,10 +92,9 @@ sub toDeclaration {
     } $this->fields;
     my $name = $this->name;
     $name .= "Record" unless $name eq "dbCommon";
-    my $cdefs = join("\n", $this->cdefs);
-    return "$cdefs\ntypedef struct $name {\n" .
+    return "typedef struct $name {\n" .
                join("\n", @fields) .
-           "\n} $name;\n";
+           "\n} $name;\n\n";
 }
 
 1;

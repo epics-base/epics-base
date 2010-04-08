@@ -21,4 +21,9 @@ is_deeply $menu->choice(1), ['ch2', 'Choice 2'], 'Second choice found';
 ok !$menu->legal_choice('Choice 3'), 'Third choice not legal';
 is_deeply $menu->choice(2), undef, 'Third choice undefined';
 
-is $menu->toEnum, "typedef enum {\n\tch1\t/* Choice 1 */,\n\tch2\t/* Choice 2 */\n} test;\n", 'enum';
+like $menu->toDeclaration, qr/ ^
+    \s* typedef \s+ enum \s+ {
+    \s+     ch1 \s+ \/\* [^*]* \*\/,
+    \s+     ch2 \s+ \/\* [^*]* \*\/,
+    \s+     test_NUM_CHOICES ,?
+    \s+ } \s+ test; \s* $ /x, 'C declaration';

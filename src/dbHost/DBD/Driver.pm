@@ -1,6 +1,6 @@
 package DBD::Driver;
-use DBD::Util;
-@ISA = qw(DBD::Util);
+use DBD::Base;
+@ISA = qw(DBD::Base);
 
 sub init {
     return shift->SUPER::init(shift, "driver entry table name");

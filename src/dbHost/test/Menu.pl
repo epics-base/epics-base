@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 use DBD::Menu;
 
@@ -21,3 +21,4 @@ is_deeply $menu->choice(1), ['ch2', 'Choice 2'], 'Second choice found';
 ok !$menu->legal_choice('Choice 3'), 'Third choice not legal';
 is_deeply $menu->choice(2), undef, 'Third choice undefined';
 
+is $menu->toEnum, "typedef enum {\n\tch1\t/* Choice 1 */,\n\tch2\t/* Choice 2 */\n} test;\n", 'enum';

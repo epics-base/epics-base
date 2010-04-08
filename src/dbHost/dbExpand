@@ -6,21 +6,23 @@
 
 use Getopts;
 use Readfile;
+use macLib;
 
 getopts('DI@S@o:') or
     die "Usage: dbExpand [-D] [-I dir] [-S macro=val] [-o out.dbd] in.dbd ...";
 
 my @path = map { split /[:;]/ } @opt_I;
-my %macros = map { split /=/ } map { split /,/ } @opt_S;
 my @output;
 
+my $macros = macLib->new(@opt_S);
+
 while (@ARGV) {
-    my @file = &Readfile(shift @ARGV, \%macros, \@opt_I);
+    my @file = &Readfile(shift @ARGV, $macros, \@opt_I);
     # Strip the stuff that Readfile() added:
     push @output, grep !/^\#\#!/, @file
 }
 
-if ($opt_D) {
+if ($opt_D) {   # Output dependencies, not the expanded data
     my %filecount;
     my @uniqfiles = grep { not $filecount{$_}++ } @inputfiles;
     print "$opt_o: ", join(" \\\n    ", @uniqfiles), "\n\n";

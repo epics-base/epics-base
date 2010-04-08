@@ -1,6 +1,6 @@
 package DBD::Variable;
-use DBD::Util;
-@ISA = qw(DBD::Util);
+use DBD::Base;
+@ISA = qw(DBD::Base);
 
 my %var_types = ("int" => 1, "double" => 1);
 

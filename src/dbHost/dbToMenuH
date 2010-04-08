@@ -1,14 +1,18 @@
 #!/usr/bin/perl
 
-use ReadDBD;
+use DBD;
+use DBD::Parser;
 use Getopts;
+use macLib;
 use Readfile;
 
 getopts('DI@S@o:') or
     die "Usage: dbToMenu [-D] [-I dir] [-S macro=val] [-o menu.h] file.dbd [menu.h]";
 
 my @path = map { split /[:;]/ } @opt_I;
-my %macros = map { split /=/ } map { split /,/ } @opt_S;
+my $macros = macLib->new(@opt_S);
+my $dbd = DBD->new();
+
 my $infile = shift @ARGV;
 $infile =~ m/\.dbd$/ or
     die "Input file '$infile' must have '.dbd' extension\n";
@@ -26,7 +30,7 @@ if ($opt_o) {
 ($guard_name = $outfile) =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
-&ParseDBD(&Readfile($infile, \%macros, \@opt_I));
+&ParseDBD($dbd, &Readfile($infile, $macros, \@opt_I));
 
 if ($opt_D) {
     my %filecount;
@@ -36,17 +40,12 @@ if ($opt_D) {
 } else {
     open OUTFILE, ">$outfile" or die "Can't open $outfile: $!\n";
     print OUTFILE "/* $outfile generated from $infile */\n\n",
-	"#ifndef INC_${guard_name}\n",
-	"#define INC_${guard_name}\n\n";
-    foreach $name (keys %menus) {
-	print OUTFILE &menuToEnum($menus{$name}, $name);
+        "#ifndef INC_${guard_name}\n",
+        "#define INC_${guard_name}\n\n";
+    my $menus = $dbd->menus;
+    while (($name, $menu) = each %{$menus}) {
+        print OUTFILE $menu->toEnum;
     }
     print OUTFILE "#endif /* INC_${guard_name} */\n";
     close OUTFILE;
-}
-
-sub menuToEnum {
-    my ($Rmenu, $name) = @_;
-    my @choices = map { "\t" . @{$_}[0] } @{$Rmenu};
-    return "typedef enum {\n" . join(",\n", @choices) . "\n} $name;\n\n";
 }

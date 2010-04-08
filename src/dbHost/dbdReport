@@ -1,42 +1,52 @@
 #!/usr/bin/perl
 
-use ReadDBD;
+use DBD;
+use DBD::Parser;
 use Getopts;
+use macLib;
 use Readfile;
 use Text::Wrap;
 
 #$Readfile::debug = 1;
-#$ReadDBD::debug = 1;
+#$DBD::Parser::debug = 1;
 
 getopts('I@S@') or die usage();
 
 sub usage() {
-    "Usage: dbdReport [-I dir] [-S macro=val] file.dbd";
+    "Usage: dbdReport [-I dir:dir2] [-S macro=val,...] file.dbd ...";
 }
 
 my @path = map { split /[:;]/ } @opt_I;
-my %macros = map { split /=/ } map { split /,/ } @opt_S;
+my $macros = macLib->new(@opt_S);
+my $dbd = DBD->new();
 
-&ParseDBD(&Readfile(shift @ARGV, \%macros, \@opt_I));
+&ParseDBD($dbd, &Readfile(shift @ARGV, $macros, \@opt_I));
 
-$Text::Wrap::columns = 70;
+$Text::Wrap::columns = 75;
 
-print wrap("Menus:\t", "\t", join(', ', sort keys %menus)), "\n"
-	if %menus;
-print wrap("Drivers: ", "\t", join(', ', sort keys %drivers)), "\n"
-	if %drivers;
-print wrap("Variables: ", "\t", join(', ', sort keys %variables)), "\n"
-	if %variables;
-print wrap("Registrars: ", "\t", join(', ', sort keys %registrars)), "\n"
-	if %registrars;
-print wrap("Breaktables: ", "\t", join(', ', sort keys %breaktables)), "\n"
-	if %breaktables;
+my @menus = sort keys %{$dbd->menus};
+print wrap("Menus:\t", "\t", join(', ', @menus)), "\n"
+        if @menus;
+my @drivers = sort keys %{$dbd->drivers};
+print wrap("Drivers: ", "\t", join(', ', @drivers)), "\n"
+        if @drivers;
+my @variables = sort keys %{$dbd->variables};
+print wrap("Variables: ", "\t", join(', ', @variables)), "\n"
+        if @variables;
+my @registrars = sort keys %{$dbd->registrars};
+print wrap("Registrars: ", "\t", join(', ', @registrars)), "\n"
+        if @registrars;
+my @breaktables = sort keys %{$dbd->breaktables};
+print wrap("Breaktables: ", "\t", join(', ', @breaktables)), "\n"
+        if @breaktables;
+my %recordtypes = %{$dbd->recordtypes};
 if (%recordtypes) {
     @rtypes = sort keys %recordtypes;
     print wrap("Recordtypes: ", "\t", join(', ', @rtypes)), "\n";
-    foreach (@rtypes) {
-    	print wrap("Devices($_): ", "\t",
-		   join(', ', sort keys %{$devices{$_}})), "\n"
-		if $devices{$_};
+    foreach my $rtyp (@rtypes) {
+        my @devices = $recordtypes{$rtyp}->devices;
+        print wrap("Devices($rtyp): ", "\t",
+                   join(', ', map {$_->choice} @devices)), "\n"
+            if @devices;
     }
 }

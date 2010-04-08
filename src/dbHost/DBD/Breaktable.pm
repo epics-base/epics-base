@@ -1,6 +1,6 @@
 package DBD::Breaktable;
-use DBD::Util;
-@ISA = qw(DBD::Util);
+use DBD::Base;
+@ISA = qw(DBD::Base);
 
 use Carp;
 

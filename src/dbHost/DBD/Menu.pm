@@ -1,6 +1,6 @@
 package DBD::Menu;
-use DBD::Util;
-@ISA = qw(DBD::Util);
+use DBD::Base;
+@ISA = qw(DBD::Base);
 
 sub init {
     my ($this, $name) = @_;
@@ -35,6 +35,16 @@ sub legal_choice {
     my $this = shift;
     my $value = unquote(shift);
     return exists $this->{CHOICE_INDEX}->{$value};
+}
+
+sub toEnum {
+    my $this = shift;
+    my @choices = map {
+        "\t" . @{$_}[0] . "\t/* " . escapeCcomment(@{$_}[1]) . " */"
+    } $this->choices;
+    return "typedef enum {\n" .
+               join(",\n", @choices) . 
+           "\n} " . $this->name . ";\n";
 }
 
 1;

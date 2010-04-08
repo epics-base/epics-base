@@ -1,6 +1,6 @@
 package DBD::Device;
-use DBD::Util;
-@ISA = qw(DBD::Util);
+use DBD::Base;
+@ISA = qw(DBD::Base);
 
 my %link_types = (
 	CONSTANT  => qr/$RXnum/o,

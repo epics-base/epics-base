@@ -26,8 +26,8 @@ package macLib;
 
 use Carp;
 
-sub new ($%) {
-    my ($proto, %values) = @_;
+sub new ($@) {
+    my $proto = shift;
     my $class = ref($proto) || $proto;
     my $this = {
         dirty => 0,
@@ -35,22 +35,8 @@ sub new ($%) {
         macros => [{}], # [0] is current scope, [1] is parent etc.
     };
     bless $this, $class;
-    $this->installHash(%values);
+    $this->installList(@_);
     return $this;
-}
-
-sub suppressWarning($$) {
-    my ($this, $suppress) = @_;
-    $this->{noWarn} = $suppress;
-}
-
-sub expandString($$) {
-    my ($this, $src) = @_;
-    $this->_expand;
-    my $entry = macLib::entry->new($src, 'string');
-    my $result = $this->_translate($entry, 0, $src);
-    return $result unless $entry->{error};
-    return $this->{noWarn} ? $result : undef;
 }
 
 sub putValue ($$$) {
@@ -69,24 +55,23 @@ sub putValue ($$$) {
     $this->{dirty} = 1;
 }
 
-sub installHash ($%) {
-    my ($this, %values) = @_;
-    foreach $key (keys %values) {
-        $this->putValue($key, $values{$key});
+sub installList ($@) {
+    my $this = shift;
+    while (@_) {
+        $this->installMacros(shift);
     }
 }
 
 sub installMacros ($$) {
     my $this = shift;
     $_ = shift;
-    my $eos = 0;
-    until ($eos ||= m/\G \z/xgc) {
+    until (pos($_) == length($_)) {
         m/\G \s* /xgc;    # Skip whitespace
         if (m/\G ( \w+ ) \s* /xgc) {
             my ($name, $val) = ($1);
             if (m/\G = \s* /xgc) {
                 # The value follows, handle quotes and escapes
-                until ($eos ||= m/\G \z/xgc) {
+                until (pos($_) == length($_)) {
                     if (m/\G , /xgc) { last; }
                     elsif (m/\G ' ( ( [^'] | \\ ' )* ) ' /xgc) { $val .= $1; }
                     elsif (m/\G " ( ( [^"] | \\ " )* ) " /xgc) { $val .= $1; }
@@ -95,10 +80,10 @@ sub installMacros ($$) {
                     else { die "How did I get here?"; }
                 }
                 $this->putValue($name, $val);
-            } elsif (m/\G , /xgc or ($eos ||= m/\G \z/xgc)) {
+            } elsif (m/\G , /xgc or (pos($_) == length($_))) {
                 $this->putValue($name, undef);
             } else {
-                die "How did I get here?";
+                warn "How did I get here?";
             }
         } elsif (m/\G ( .* )/xgc) {
             croak "Can't find a macro definition in '$1'";
@@ -110,23 +95,39 @@ sub installMacros ($$) {
 
 sub pushScope ($) {
     my ($this) = @_;
-    push @{$this->{macros}}, {};
+    unshift @{$this->{macros}}, {};
 }
 
 sub popScope ($) {
     my ($this) = @_;
-    pop @{$this->{macros}};
+    shift @{$this->{macros}};
+}
+
+sub suppressWarning($$) {
+    my ($this, $suppress) = @_;
+    $this->{noWarn} = $suppress;
+}
+
+sub expandString($$) {
+    my ($this, $src) = @_;
+    $this->_expand;
+    my $entry = macLib::entry->new($src, 'string');
+    my $result = $this->_translate($entry, 0, $src);
+    return $result unless $entry->{error};
+    return $this->{noWarn} ? $result : undef;
 }
 
 sub reportMacros ($) {
     my ($this) = @_;
     $this->_expand;
-    print "Macro report\n";
+    print "Macro report\n============\n";
     foreach my $scope (@{$this->{macros}}) {
         foreach my $name (keys %{$scope}) {
             my $entry = $scope->{$name};
             $entry->report;
         }
+    } continue {
+        print " -- scope ends --\n";
     }
 }
 
@@ -168,7 +169,7 @@ sub _trans ($$$$$) {
         if ($$R =~ m/\A [^\$]* \Z/x);   # Short-circuit if no macros
     my $quote = 0;
     my $val;
-    until ($$R =~ m/\G \z/xgc) {
+    until (pos($$R) == length($$R)) {
         if ($term and ($$R =~ m/\G (?= [$term] ) /xgc)) {
             last;
         }
@@ -218,7 +219,7 @@ sub _trans ($$$$$) {
             } elsif ($$R =~ m/\G \\? ( . ) /xgc) {
                 $val .= $1;
             } else {
-                die "How did I get here?";
+                warn "How did I get here? level=$level";
             }
         } else {                # Level 0
             if ($$R =~ m/\G \\ ( . ) /xgc) {
@@ -228,7 +229,7 @@ sub _trans ($$$$$) {
             } elsif ($$R =~ m/\G ( . ) /xgc) {
                 $val .= $1;
             } else {
-                die "How did I get here?";
+                warn "How did I get here? level=$level";
             }
         }
     }

@@ -2,6 +2,8 @@ package Readfile;
 require 5.000;
 require Exporter;
 
+use macLib;
+
 @ISA = qw(Exporter);
 @EXPORT = qw(@inputfiles &Readfile);
 
@@ -16,7 +18,7 @@ sub slurp {
 	foreach $dir (@path) {
 	    print " trying $dir/$FILE\n" if $debug;
 	    if (-r "$dir/$FILE") {
-	   	$FILE = "$dir/$FILE";
+		$FILE = "$dir/$FILE";
 		last;
 	    }
 	}
@@ -33,27 +35,11 @@ sub slurp {
     return @lines;
 }
 
-sub macval {
-    my ($macro, $def, $Rmacros) = @_;
-    if (exists $Rmacros->{$macro}) {
-        return $Rmacros->{$macro};
-    } elsif (defined $def) {
-    	return $def;
-    } else {
-        warn "Warning: No value for macro \$($macro)\n";
-	return undef;
-    }
-}
-
 sub expandMacros {
-    my ($Rmacros, @input) = @_;
+    my ($macros, @input) = @_;
     my @output;
     foreach (@input) {
-	# FIXME: This is wrong, use Text::Balanced, starting from:
-	# @result = extract_bracketed($_, '{}()\'"', '\s*\$')
-	s/ \$ \( (\w+) (?: = (.*) )? \) / &macval($1, $2, $Rmacros) /egx
-		unless /^\s*#/;
-	push @output, $_;
+	push @output, $macros->expandString($_);
     }
     return @output;
 }
@@ -76,16 +62,16 @@ sub unquote {
 }
 
 sub Readfile {
-    my ($file, $Rmacros, $Rpath) = @_;
+    my ($file, $macros, $Rpath) = @_;
     print "Readfile($file)\n" if $debug;
-    my @input = &expandMacros($Rmacros, &slurp($file, $Rpath));
+    my @input = &expandMacros($macros, &slurp($file, $Rpath));
     my @output;
     foreach (@input) {
 	if (m/^ \s* include \s+ $string /ox) {
 	    $arg = &unquote($1);
 	    print " include $arg\n" if $debug;
 	    push @output, "##! include \"$arg\"\n";
-	    push @output, &Readfile($arg, $Rmacros, $Rpath);
+	    push @output, &Readfile($arg, $macros, $Rpath);
 	} elsif (m/^ \s* addpath \s+ $string /ox) {
 	    $arg = &unquote($1);
 	    print " addpath $arg\n" if $debug;

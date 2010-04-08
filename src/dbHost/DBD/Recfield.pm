@@ -156,7 +156,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("signed char");
+    return shift->SUPER::toDeclaration("epicsInt8");
 }
 
 
@@ -176,7 +176,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("unsigned char");
+    return shift->SUPER::toDeclaration("epicsUInt8");
 }
 
 
@@ -196,7 +196,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("short");
+    return shift->SUPER::toDeclaration("epicsInt16");
 }
 
 
@@ -216,7 +216,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("unsigned short");
+    return shift->SUPER::toDeclaration("epicsUInt16");
 }
 
 
@@ -253,7 +253,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("unsigned long");
+    return shift->SUPER::toDeclaration("epicsUInt32");
 }
 
 
@@ -270,7 +270,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("float");
+    return shift->SUPER::toDeclaration("epicsFloat32");
 }
 
 
@@ -287,7 +287,7 @@ sub legal_value {
 }
 
 sub toDeclaration {
-    return shift->SUPER::toDeclaration("double");
+    return shift->SUPER::toDeclaration("epicsFloat64");
 }
 
 
@@ -417,7 +417,7 @@ sub check_valid {
 sub toDeclaration {
     my ($this) = @_;
     my $extra = $this->attribute('extra');
-    my $result = sprintf "    %-32s", "$extra;";
+    my $result = sprintf "    %-31s ", "$extra;";
     my $prompt = $this->attribute('prompt');
     $result .= "/* $prompt */" if defined $prompt;
     return $result;

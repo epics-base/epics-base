@@ -41,11 +41,11 @@ sub toDeclaration {
     my $this = shift;
     my $name = $this->name;
     my @choices = map {
-        "\t" . @{$_}[0] . "\t/* " . escapeCcomment(@{$_}[1]) . " */"
+        sprintf "    %-31s /* %s */", @{$_}[0], escapeCcomment(@{$_}[1]);
     } $this->choices;
     return "typedef enum {\n" .
                join(",\n", @choices) .
-           ",\n\t${name}_NUM_CHOICES\n" .
+           ",\n    ${name}_NUM_CHOICES\n" .
            "} $name;\n\n";
 }
 

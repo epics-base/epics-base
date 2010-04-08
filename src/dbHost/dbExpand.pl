@@ -4,7 +4,10 @@
 # duplicate definitions, unlike the dbStaticLib version.  It does do the
 # include file expansion and macro substitution though.
 
-use Getopts;
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
+use EPICS::Getopts;
 use Readfile;
 use macLib;
 

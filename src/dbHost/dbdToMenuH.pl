@@ -1,12 +1,19 @@
 #!/usr/bin/perl
+# $Id$
 
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
+use EPICS::Getopts;
+use File::Basename;
 use DBD;
 use DBD::Parser;
-use Getopts;
 use macLib;
 use Readfile;
 
-my $tool = 'dbToMenuH';
+my $tool = 'dbdToMenuH.pl';
+
+use vars qw($opt_D @opt_I $opt_o $opt_s);
 getopts('DI@o:') or
     die "Usage: $tool: [-D] [-I dir] [-o menu.h] menu.dbd [menu.h]\n";
 
@@ -16,6 +23,7 @@ my $dbd = DBD->new();
 my $infile = shift @ARGV;
 $infile =~ m/\.dbd$/ or
     die "$tool: Input file '$infile' must have '.dbd' extension\n";
+my $inbase = basename($infile);
 
 my $outfile;
 if ($opt_o) {
@@ -26,9 +34,10 @@ if ($opt_o) {
     ($outfile = $infile) =~ s/\.dbd$/.h/;
     $outfile =~ s/^.*\///;
 }
+my $outbase = basename($outfile);
 
 # Derive a name for the include guard
-my $guard_name = "INC_$outfile";
+my $guard_name = "INC_$outbase";
 $guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
@@ -41,11 +50,11 @@ if ($opt_D) {
     print map { "$_:\n" } @uniqfiles;
 } else {
     open OUTFILE, ">$outfile" or die "$tool: Can't open $outfile: $!\n";
-    print OUTFILE "/* $outfile generated from $infile */\n\n",
+    print OUTFILE "/* $outbase generated from $inbase */\n\n",
         "#ifndef $guard_name\n",
         "#define $guard_name\n\n";
     my $menus = $dbd->menus;
-    while (($name, $menu) = each %{$menus}) {
+    while (my ($name, $menu) = each %{$menus}) {
         print OUTFILE $menu->toDeclaration;
     }
 # FIXME: Where to put metadata for widely used menus?

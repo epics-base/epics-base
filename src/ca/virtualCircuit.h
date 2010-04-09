@@ -200,7 +200,7 @@ private:
     private:
         tcpiiu * _ptcpiiu;
         cac & _cac;
-        const osiSockAddr & _addr;
+        const osiSockAddr _addr;
         bool _active;
     };
 

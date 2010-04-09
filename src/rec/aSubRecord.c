@@ -210,6 +210,9 @@ static long init_record(aSubRecord *prec, int pass)
             return S_db_BadSub;
         }
     }
+    STATIC_ASSERT(sizeof(prec->onam)==sizeof(prec->snam));
+    strcpy(prec->onam, prec->snam);
+    prec->oval = prec->val;
     return 0;
 }
 

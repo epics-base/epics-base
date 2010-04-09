@@ -135,6 +135,9 @@ static long init_record(mbbiRecord *prec, int pass)
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
     init_common(prec);
+    prec->mlst = prec->val;
+    prec->lalm = prec->val;
+    prec->oraw = prec->rval;
     return(0);
 }
 

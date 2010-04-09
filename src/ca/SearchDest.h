@@ -11,7 +11,10 @@
 #ifndef SearchDest_h
 #define SearchDest_h
 
-#include "tsDLList.h"
+#include <osiSock.h>
+#include <epicsTime.h>
+#include <tsDLList.h>
+#include "caProto.h"
 
 class channelNode;
 class epicsMutex;

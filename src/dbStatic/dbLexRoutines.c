@@ -113,6 +113,8 @@ static void yyerrorAbort(char *str)
 {
     yyerror(str);
     yyAbort = TRUE;
+    while (ellCount(&tempList))
+        popFirstTemp();
 }
 
 static void allocTemp(void *pvoid)

@@ -17,7 +17,7 @@ use File::Basename;
 use DBD;
 use DBD::Parser;
 use EPICS::macLib;
-use Readfile;
+use EPICS::Readfile;
 
 my $tool = 'dbdToRecordtypeH.pl';
 

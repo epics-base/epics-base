@@ -16,7 +16,7 @@ use DBD;
 use DBD::Parser;
 use DBD::Output;
 use EPICS::Getopts;
-use Readfile;
+use EPICS::Readfile;
 use EPICS::macLib;
 
 getopts('DI@S@o:') or

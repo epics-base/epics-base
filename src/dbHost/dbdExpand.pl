@@ -22,7 +22,7 @@ use EPICS::macLib;
 getopts('DI@S@o:') or
     die "Usage: dbdExpand [-D] [-I dir] [-S macro=val] [-o out.dbd] in.dbd ...";
 
-my @path = map { split /[:;]/ } @opt_I;
+my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 

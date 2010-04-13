@@ -25,7 +25,7 @@ use vars qw($opt_D @opt_I $opt_o $opt_s);
 getopts('DI@o:') or
     die "Usage: $tool: [-D] [-I dir] [-o menu.h] menu.dbd [menu.h]\n";
 
-my @path = map { split /[:;]/ } @opt_I;
+my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;

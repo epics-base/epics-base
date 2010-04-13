@@ -1,4 +1,13 @@
-package macLib::entry;
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# $Id$
+
+package EPICS::macLib::entry;
 
 sub new ($$) {
     my $class = shift;
@@ -22,7 +31,7 @@ sub report ($) {
 }
 
 
-package macLib;
+package EPICS::macLib;
 
 use Carp;
 
@@ -88,7 +97,7 @@ sub putValue ($$$) {
             $this->{macros}[0]{$name}{raw} = $raw;
         }
     } else {
-        my $entry = macLib::entry->new($name, 'macro');
+        my $entry = EPICS::macLib::entry->new($name, 'macro');
         $entry->{raw} = $raw;
         $this->{macros}[0]{$name} = $entry;
     }
@@ -113,7 +122,7 @@ sub suppressWarning($$) {
 sub expandString($$) {
     my ($this, $src) = @_;
     $this->_expand;
-    my $entry = macLib::entry->new($src, 'string');
+    my $entry = EPICS::macLib::entry->new($src, 'string');
     my $result = $this->_translate($entry, 0, $src);
     return $result unless $entry->{error};
     return $this->{noWarn} ? $result : undef;

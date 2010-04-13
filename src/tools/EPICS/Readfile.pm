@@ -1,8 +1,17 @@
-package Readfile;
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# $Id$
+
+package EPICS::Readfile;
 require 5.000;
 require Exporter;
 
-use macLib;
+use EPICS::macLib;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(@inputfiles &Readfile);

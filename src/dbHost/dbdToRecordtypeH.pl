@@ -1,4 +1,12 @@
 #!/usr/bin/perl
+
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
 # $Id$
 
 use FindBin qw($Bin);
@@ -8,7 +16,7 @@ use EPICS::Getopts;
 use File::Basename;
 use DBD;
 use DBD::Parser;
-use macLib;
+use EPICS::macLib;
 use Readfile;
 
 my $tool = 'dbdToRecordtypeH.pl';

@@ -7,8 +7,6 @@
 TOP=../..
 include $(TOP)/configure/CONFIG
 
-PERL_MODULES += macLib.pm
-PERL_MODULES += Readfile.pm
 PERL_MODULES += DBD.pm
 PERL_MODULES += DBD/Base.pm
 PERL_MODULES += DBD/Breaktable.pm

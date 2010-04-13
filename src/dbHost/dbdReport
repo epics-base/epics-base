@@ -1,16 +1,25 @@
 #!/usr/bin/perl
 
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# $Id$
+
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
 
 use DBD;
 use DBD::Parser;
 use EPICS::Getopts;
-use macLib;
+use EPICS::macLib;
 use Readfile;
 use Text::Wrap;
 
-#$Readfile::debug = 1;
+#$EPICS::Readfile::debug = 1;
 #$DBD::Parser::debug = 1;
 
 getopts('I@S@') or die usage();
@@ -20,7 +29,7 @@ sub usage() {
 }
 
 my @path = map { split /[:;]/ } @opt_I;
-my $macros = macLib->new(@opt_S);
+my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 
 &ParseDBD($dbd, &Readfile(shift @ARGV, $macros, \@opt_I));

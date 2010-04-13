@@ -1,5 +1,14 @@
 #!/usr/bin/perl
 
+#*************************************************************************
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+
+# $Id$
+
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
 
@@ -8,13 +17,13 @@ use DBD::Parser;
 use DBD::Output;
 use EPICS::Getopts;
 use Readfile;
-use macLib;
+use EPICS::macLib;
 
 getopts('DI@S@o:') or
     die "Usage: dbdExpand [-D] [-I dir] [-S macro=val] [-o out.dbd] in.dbd ...";
 
 my @path = map { split /[:;]/ } @opt_I;
-my $macros = macLib->new(@opt_S);
+my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 
 while (@ARGV) {

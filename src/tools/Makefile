@@ -14,7 +14,9 @@ TOOLS = $(TOP)/src/tools
 PERL_MODULES += EPICS/Copy.pm
 PERL_MODULES += EPICS/Path.pm
 PERL_MODULES += EPICS/Release.pm
+PERL_MODULES += EPICS/Readfile.pm
 PERL_MODULES += EPICS/Getopts.pm
+PERL_MODULES += EPICS/macLib.pm
 
 PERL_SCRIPTS += convertRelease.pl
 PERL_SCRIPTS += cvsclean.pl

@@ -6,9 +6,9 @@ use Carp;
 require Exporter;
 
 @ISA = qw(Exporter);
-@EXPORT = qw(&pushContext &popContext &dieContext &warnContext &identifier
-    &unquote &escapeCcomment &escapeCstring $RXident $RXname $RXuint $RXint
-    $RXhex $RXoct $RXuintx $RXintx $RXnum $RXdqs $RXsqs $RXstr);
+@EXPORT = qw(&pushContext &popContext &dieContext &warnContext &is_reserved
+    &identifier &unquote &escapeCcomment &escapeCstring $RXident $RXname
+    $RXuint $RXint $RXhex $RXoct $RXuintx $RXintx $RXnum $RXdqs $RXsqs $RXstr);
 
 
 our $RXident = qr/ [a-zA-Z] [a-zA-Z0-9_]* /x;
@@ -61,6 +61,21 @@ sub unquote (\$) {
     return $$s;
 }
 
+# Reserved words from C++ and the DB/DBD file parser
+my %reserved = map { $_ => undef } qw(and and_eq asm auto bitand bitor bool
+    break case catch char class compl const const_cast continue default delete
+    do double dynamic_cast else enum explicit export extern false float for
+    friend goto if inline int long mutable namespace new not not_eq operator or
+    or_eq private protected public register reinterpret_cast return short signed
+    sizeof static static_cast struct switch template this throw true try typedef
+    typeid typename union unsigned using virtual void volatile wchar_t while xor
+    xor_eq addpath alias breaktable choice device driver field function grecord
+    include info menu path record recordtype registrar variable);
+sub is_reserved {
+    my $id = shift;
+    return exists $reserved{$id};
+}
+
 sub identifier {
     my ($id, $what) = @_;
     unquote $id;
@@ -68,6 +83,9 @@ sub identifier {
     $id =~ m/^$RXident$/o or dieContext("Illegal $what '$id'",
         "Identifiers are used in C code so must start with a letter, followed",
         "by letters, digits and/or underscore characters only.");
+    dieContext("Illegal $what '$id'",
+        "Identifier is a C++ reserved word.")
+        if is_reserved($id);
     return $id;
 }
 

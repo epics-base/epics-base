@@ -99,9 +99,19 @@ sub check_valid {
         if (defined($default) and !$this->legal_value($default));
 }
 
+# The C structure member name is usually the field name converted to
+# lower-case.  However if that is a reserved word, use the original.
+sub C_name {
+    my ($this) = @_;
+    my $name = lc $this->name;
+    $name = $this->name
+        if is_reserved($name);
+    return $name;
+}
+
 sub toDeclaration {
     my ($this, $ctype) = @_;
-    my $name = lc $this->name;
+    my $name = $this->C_name;
     my $result = sprintf "    %-19s %-12s", $ctype, "$name;";
     my $prompt = $this->attribute('prompt');
     $result .= "/* $prompt */" if defined $prompt;

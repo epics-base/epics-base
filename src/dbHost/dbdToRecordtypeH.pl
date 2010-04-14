@@ -122,13 +122,13 @@ sub oldtables {
         "{\n" .
         "    ${rn}Record *prec = 0;\n" .
         join("\n", map {
-                "    prt->papFldDes[${rn}Record$_]->size = " .
-                "sizeof(prec->" . lc($_) . ");"
-            } $rtyp->field_names) . "\n" .
+                "    prt->papFldDes[${rn}Record" . $_->name . "]->size = " .
+                "sizeof(prec->" . $_->C_name . ");"
+            } $rtyp->fields) . "\n" .
         join("\n", map {
-                "    prt->papFldDes[${rn}Record$_]->offset = " .
-                "(char *)&prec->" . lc($_) . " - (char *)prec;"
-            } $rtyp->field_names) . "\n" .
+                "    prt->papFldDes[${rn}Record" . $_->name . "]->offset = " .
+                "(char *)&prec->" . $_->C_name . " - (char *)prec;"
+            } $rtyp->fields) . "\n" .
         "    prt->rec_size = sizeof(*prec);\n" .
         "    return 0;\n" .
         "}\n" .
@@ -154,6 +154,7 @@ sub newtables {
         "static dbFldDes ${rn}FieldMetaData[] = {\n",
         join(",\n", map {
                 my $fn = $_->name;
+                my $cn = $_->C_name;
                 "    { ${rn}FieldName${fn}," .
                     $_->dbf_type . ',"' .
                     $_->attribute('initial') . '",' .
@@ -162,7 +163,7 @@ sub newtables {
                     ($_->attribute('interest') || '0') . ',' .
                     ($_->attribute('asl') || 'ASL0') . ',' .
                     $n++ . ",\n\t\&${rn}RecordMetaData," .
-                    "GEOMETRY_DATA(${rn}Record," . lc($fn) . ') }';
+                    "GEOMETRY_DATA(${rn}Record,$cn) }";
             } $rtyp->fields),
         "\n};\n\n";
     print OUTFILE "static const ${rn}FieldIndex ${rn}RecordLinkFieldIndices[] = {\n",

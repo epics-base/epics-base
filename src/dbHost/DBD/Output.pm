@@ -42,17 +42,17 @@ sub OutputRecordtypes {
     my ($out, $recordtypes) = @_;
     while (my ($name, $recordtype) = each %{$recordtypes}) {
         printf $out "recordtype(%s) {\n", $name;
+        print $out "    %$_\n"
+            foreach $recordtype->cdefs;
         foreach $field ($recordtype->fields) {
             printf $out "    field(%s, %s) {\n",
                 $field->name, $field->dbf_type;
             while (my ($attr, $val) = each %{$field->attributes}) {
-                $val = "\"$val\"" if $val =~ m/\s/;
+                $val = "\"$val\"" if $val !~ m/^[a-zA-Z0-9_\-+:.\[\]<>;]*$/;
                 printf $out "        %s(%s)\n", $attr, $val;
             }
             print $out "    }\n";
         }
-        print $out "% $_\n"
-            foreach $recordtype->cdefs;
         printf $out "}\n";
         printf $out "device(%s, %s, %s, \"%s\")\n",
             $name, $_->link_type, $_->name, $_->choice

@@ -95,16 +95,34 @@ private:
     void run ();
 };
 
-class tcpiiu : 
+class SearchDestTCP : public SearchDest {
+public:
+    SearchDestTCP ( cac &, const osiSockAddr & );
+    void searchRequest ( epicsGuard < epicsMutex > & guard,
+         const char * pbuf, size_t len );
+    void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
+    void setCircuit ( tcpiiu * );
+    void disable ();
+    void enable ();
+private:
+    tcpiiu * _ptcpiiu;
+    cac & _cac;
+    const osiSockAddr _addr;
+    bool _active;
+};
+
+class tcpiiu :
         public netiiu, public tsDLNode < tcpiiu >,
         public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
+    friend void SearchDestTCP::searchRequest ( epicsGuard < epicsMutex > & guard,
+                                               const char * pbuf, size_t len );
 public:
     tcpiiu ( cac & cac, epicsMutex & mutualExclusion, epicsMutex & callbackControl, 
         cacContextNotify &, double connectionTimeout, epicsTimerQueue & timerQueue, 
         const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion, 
         ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn,
-        const bool nameService );
+        SearchDestTCP * pSearchDestIn = NULL);
     ~tcpiiu ();
     void start (
         epicsGuard < epicsMutex > & );
@@ -189,21 +207,6 @@ public:
         tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ));
 
 private:
-    class SearchDestTCP :
-        public SearchDest {
-    public:
-        SearchDestTCP ( tcpiiu *, cac &, const osiSockAddr & );
-        void searchRequest ( epicsGuard < epicsMutex > & guard,
-             const char * pbuf, size_t len );
-        void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
-        void disable ();
-    private:
-        tcpiiu * _ptcpiiu;
-        cac & _cac;
-        const osiSockAddr _addr;
-        bool _active;
-    };
-
     hostNameCache hostNameCacheInstance;
     tcpRecvThread recvThread;
     tcpSendThread sendThread;
@@ -246,7 +249,6 @@ private:
     unsigned unacknowledgedSendBytes;
     unsigned channelCountTot;
     bool _receiveThreadIsBusy;
-    bool _nameService;
     bool busyStateDetected; // only modified by the recv thread
     bool flowControlActive; // only modified by the send process thread
     bool echoRequestPending; 
@@ -280,6 +282,7 @@ private:
     bool bytesArePendingInOS () const;
     void decrementBlockingForFlushCount ( 
         epicsGuard < epicsMutex > & guard );
+    bool isNameService () const;
 
     // send protocol stubs
     void echoRequest ( 
@@ -409,5 +412,14 @@ inline void tcpiiu::probeResponseNotify (
     this->recvDog.probeResponseNotify ( cbGuard );
 }
 
-#endif // ifdef virtualCircuith
+inline bool tcpiiu::isNameService () const
+{
+    return ( this->pSearchDest != NULL );
+}
 
+inline void SearchDestTCP::setCircuit ( tcpiiu * piiu )
+{
+    _ptcpiiu = piiu;
+}
+
+#endif // ifdef virtualCircuith

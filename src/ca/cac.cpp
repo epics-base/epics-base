@@ -258,9 +258,11 @@ cac::cac (
     while ( osiSockAddrNode *
         pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
         tcpiiu * piiu = NULL;
+        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
+        this->registerSearchDest ( guard, * pdst );
         bool newIIU = findOrCreateVirtCircuit (
             guard, pNode->addr, cacChannel::priorityDefault,
-            piiu, CA_UKN_MINOR_VERSION, true );
+            piiu, CA_UKN_MINOR_VERSION, pdst );
         free ( pNode );
         if ( newIIU ) {
             piiu->start ( guard );
@@ -513,7 +515,7 @@ cacChannel & cac::createChannel (
 bool cac::findOrCreateVirtCircuit ( 
     epicsGuard < epicsMutex > & guard, const osiSockAddr & addr,
     unsigned priority, tcpiiu *& piiu, unsigned minorVersionNumber,
-    const bool nameService ) 
+    SearchDestTCP * pSearchDest )
 {
     guard.assertIdenticalMutex ( this->mutex );
     bool newIIU = false;
@@ -530,7 +532,7 @@ bool cac::findOrCreateVirtCircuit (
                     new ( this->freeListVirtualCircuit ) tcpiiu ( 
                         *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
                         this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
-                        this->ipToAEngine, priority, nameService ) );
+                        this->ipToAEngine, priority, pSearchDest ) );
 
             bhe * pBHE = this->beaconTable.lookup ( addr.ia );
             if ( ! pBHE ) {

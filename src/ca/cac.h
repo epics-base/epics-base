@@ -185,7 +185,7 @@ public:
         epicsGuard < epicsMutex > &, SearchDest & req );
     bool findOrCreateVirtCircuit (
         epicsGuard < epicsMutex > &, const osiSockAddr &,
-        unsigned, tcpiiu *&, unsigned, const bool );
+        unsigned, tcpiiu *&, unsigned, SearchDestTCP * pSearchDest = NULL );
 
     // diagnostics
     unsigned circuitCount ( epicsGuard < epicsMutex > & ) const;

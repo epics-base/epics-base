@@ -450,6 +450,10 @@ void tcpRecvThread::run ()
                 this->iiu.cacRef.destroyIIU ( this->iiu );
                 return;
             }
+            if ( this->iiu.isNameService () ) {
+                this->iiu.pSearchDest->setCircuit ( &this->iiu );
+                this->iiu.pSearchDest->enable ();
+            }
         }
 
         this->iiu.sendThread.start ();
@@ -631,7 +635,7 @@ void tcpRecvThread::connect (
                 continue;
             }
             else if ( errnoCpy == SOCK_SHUTDOWN ) {
-                if ( ! this->iiu._nameService ) {
+                if ( ! this->iiu.isNameService () ) {
                     break;
                 }
             }
@@ -639,14 +643,18 @@ void tcpRecvThread::connect (
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ( "CAC: Unable to connect because \"%s\"\n", 
+                errlogPrintf ( "CAC: Unable to connect because \"%s\"\n",
                     sockErrBuf );
-                if ( ! this->iiu._nameService ) {
+                if ( ! this->iiu.isNameService () ) {
                     this->iiu.disconnectNotify ( guard );
                     break;
                 }
             }
-            epicsThreadSleep ( this->iiu.cacRef.connectionTimeout ( guard ) );
+            {
+                double sleepTime = this->iiu.cacRef.connectionTimeout ( guard );
+                epicsGuardRelease < epicsMutex > unguard ( guard );
+                epicsThreadSleep ( sleepTime );
+            }
             continue;
         }
     }
@@ -663,7 +671,7 @@ tcpiiu::tcpiiu (
         comBufMemoryManager & comBufMemMgrIn,
         unsigned minorVersion, ipAddrToAsciiEngine & engineIn, 
         const cacChannel::priLev & priorityIn,
-        const bool nameService ) :
+        SearchDestTCP * pSearchDestIn ) :
     caServerID ( addrIn.ia, priorityIn ),
     hostNameCacheInstance ( addrIn, engineIn ),
     recvThread ( *this, cbMutexIn, ctxNotifyIn, "CAC-TCP-recv", 
@@ -684,7 +692,7 @@ tcpiiu::tcpiiu (
     comBufMemMgr ( comBufMemMgrIn ),
     cacRef ( cac ),
     pCurData ( cac.allocateSmallBufferTCP () ),
-    pSearchDest ( NULL ),
+    pSearchDest ( pSearchDestIn ),
     mutex ( mutexIn ),
     cbMutex ( cbMutexIn ),
     minorProtocolVersion ( minorVersion ),
@@ -696,7 +704,6 @@ tcpiiu::tcpiiu (
     unacknowledgedSendBytes ( 0u ),
     channelCountTot ( 0u ),
     _receiveThreadIsBusy ( false ),
-    _nameService ( nameService ),
     busyStateDetected ( false ),
     flowControlActive ( false ),
     echoRequestPending ( false ),
@@ -821,12 +828,8 @@ tcpiiu::tcpiiu (
     }
 #   endif
 
-    if ( _nameService ) {
-#pragma message ( "exception thrown here might not cleanup socket" )
-        epicsGuard < epicsMutex > guard ( this->mutex );
-        SearchDestTCP * pSearchDestTCP = new SearchDestTCP ( this, cacRef, addrIn );
-        cacRef.registerSearchDest ( guard, *pSearchDestTCP );
-        this->pSearchDest = pSearchDestTCP;
+    if ( isNameService() ) {
+        pSearchDest->setCircuit ( this );
     }
 
     memset ( (void *) &this->curMsg, '\0', sizeof ( this->curMsg ) );
@@ -1849,7 +1852,7 @@ void tcpiiu::disconnectAllChannels (
 
     this->channelCountTot = 0u;
 
-    if ( ! _nameService ) {
+    if ( ! isNameService () ) {
         this->initiateCleanShutdown ( guard );
     }
 }
@@ -1911,7 +1914,7 @@ void tcpiiu::unlinkAllChannels (
 
     this->channelCountTot = 0u;
 
-    if ( ! _nameService ) {
+    if ( ! isNameService () ) {
         this->initiateCleanShutdown ( guard );
     }
 }
@@ -1989,7 +1992,7 @@ void tcpiiu::uninstallChan (
     }
     chan.channelNode::listMember = channelNode::cs_none;
     this->channelCountTot--;
-    if ( this->channelCountTot == 0 && ! _nameService ) {
+    if ( this->channelCountTot == 0 && ! this->isNameService() ) {
         this->initiateCleanShutdown ( guard );
     }
 }
@@ -2109,38 +2112,43 @@ bool tcpiiu::searchMsg (
         guard, id, pName, nameLength );
 }
 
-tcpiiu :: SearchDestTCP :: SearchDestTCP (
-    tcpiiu * tcpiiuIn, cac & cacIn, const osiSockAddr & addrIn ) :
-    _ptcpiiu ( tcpiiuIn ),
+SearchDestTCP :: SearchDestTCP (
+    cac & cacIn, const osiSockAddr & addrIn ) :
+    _ptcpiiu ( NULL ),
     _cac ( cacIn ),
     _addr ( addrIn ),
-    _active ( true )
+    _active ( false )
 {
 }
 
-void tcpiiu :: SearchDestTCP :: disable ()
+void SearchDestTCP :: disable ()
 {
     _active = false;
+    _ptcpiiu = NULL;
 }
 
-void tcpiiu :: SearchDestTCP :: searchRequest (
+void SearchDestTCP :: enable ()
+{
+    _active = true;
+}
+
+void SearchDestTCP :: searchRequest (
     epicsGuard < epicsMutex > & guard,
         const char * pBuf, size_t len  )
 {
     // restart circuit if it was shut down
-    if ( ! _active ) {
+    if ( ! _ptcpiiu ) {
         tcpiiu * piiu = NULL;
         bool newIIU = _cac.findOrCreateVirtCircuit (
             guard, _addr, cacChannel::priorityDefault,
-            piiu, CA_UKN_MINOR_VERSION, true );
+            piiu, CA_UKN_MINOR_VERSION, this );
         if ( newIIU ) {
             piiu->start ( guard );
         }
         _ptcpiiu = piiu;
-        _active = true;
     }
 
-    // does this server support TCP-based name resolution
+    // does this server support TCP-based name resolution?
     if ( CA_V412 ( _ptcpiiu->minorProtocolVersion ) ) {
         guard.assertIdenticalMutex ( _ptcpiiu->mutex );
         assert ( CA_MESSAGE_ALIGN ( len ) == len );
@@ -2151,7 +2159,7 @@ void tcpiiu :: SearchDestTCP :: searchRequest (
     }
 }
 
-void tcpiiu :: SearchDestTCP :: show (
+void SearchDestTCP :: show (
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     :: printf ( "tcpiiu :: SearchDestTCP\n" );

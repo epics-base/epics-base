@@ -93,6 +93,7 @@ static long readValue(stringinRecord *);
 
 static long init_record(stringinRecord *prec, int pass)
 {
+    STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     struct stringindset *pdset;
     long status;
 
@@ -119,7 +120,6 @@ static long init_record(stringinRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     strcpy(prec->oval,prec->val);
     return(0);
 }

@@ -95,6 +95,7 @@ static long writeValue(stringoutRecord *);
 
 static long init_record(stringoutRecord *prec, int pass)
 {
+    STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     struct stringoutdset *pdset;
     long status=0;
 
@@ -121,7 +122,6 @@ static long init_record(stringoutRecord *prec, int pass)
     if( pdset->init_record ) {
 	if((status=(*pdset->init_record)(prec))) return(status);
     }
-    STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
     strcpy(prec->oval,prec->val);
     return(0);
 }

@@ -12,6 +12,58 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Many Record Types</h4>
+
+<p>Record types were not setting many 'last value' fields at initialization,
+assuming that the VAL field would always hold the default value and thus not
+giving correct initial monitor behavior in some circumstances.</p>
+
+<h4>Compress Record Type</h4>
+
+<p>Fixed crash when ALG (algorithm) was changed to Average at runtime.</p>
+
+<h4>configure/RELEASE Enhancements</h4>
+
+<p>Variable definitions in a <tt>configure/RELEASE</tt> file may now use the
+<tt>:=</tt> or <tt>?=</tt> assignment syntax.  Release file processing now
+prints a warning if an include file can't be not found (use <tt>-include</tt> if
+this is expected) or if an undefined macro is used, and aborts if a circular
+definition is expanded.  The variable <tt>EPICS_HOST_ARCH</tt> can now be used,
+but target-architecture-specific values must be set in a target-specific
+<tt>configure/RELEASE</tt> file such as <tt>RELEASE.Common.linux-x86</tt>.</p>
+
+<h4>VxWorks 6.7 support</h4>
+
+<p>Added build support for the latest Wind River release.</p>
+
+<h4>Dependency file generation</h4>
+
+<p>Changes to the way in which we generate header dependency files, which are
+now named with a <tt>.d</tt> suffix instead of <tt>.depends</tt>.  We now use
+the compiler to generate these if possible, and create them in the
+<tt>O.$(T_A)</tt> directory.</p>
+
+<h4>Installed file permissions</h4>
+
+<p>We now install libraries and other non-executable files with mode 444 rather
+than 644.</p>
+
+<h4>CA Perl5: strings and array subscriptions</h4>
+
+<p>In some circumstances a string received from CA might not have been properly
+zero-terminated; this has now been fixed.  <tt>CA::create_subscription()</tt>
+would not accept a zero for the subscription array length; this is now
+permitted, in the underlying CA API this means use the native length from the
+server.</p>
+
+<h4>Linking Readline on Linux</h4>
+
+<p>Different Linux distributions have different requirements when linking
+readline; some need <tt>-lcurses</tt>, others <tt>-lncurses</tt> and others
+don't require either.  The <tt>configure/os/CONFIG_SITE.Common.linux-*</tt>
+files now make this configuration easy to choose between different settings for
+the <tt>COMMANDLINE_LIBRARY</tt> variable.</p>
+
 <h4>CA Command Line Tools Changes</h4>
 
 <p>Three new options were added to the <tt>caget</tt> and <tt>camonitor</tt>

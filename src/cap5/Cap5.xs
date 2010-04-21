@@ -155,6 +155,13 @@ SV * newSValarm(int sevr) {
     return alarm;
 }
 
+static
+void hashAdd(HV *hash, const char *key, I32 klen, SV *val) {
+    SV **result = hv_store(hash, key, klen, val, 0);
+
+    if (result == NULL)
+        SvREFCNT_dec(val);
+}
 
 static
 SV * newSVdbr(struct event_handler_args *peha) {
@@ -211,18 +218,18 @@ SV * newSVdbr(struct event_handler_args *peha) {
     hash = newHV();
 
     /* Add basic meta-data */
-    hv_store(hash, "TYPE", 4,
-        newSVpv(dbr_type_to_text(peha->type), 0), 0);
-    hv_store(hash, "COUNT", 5, newSViv(peha->count), 0);
+    hashAdd(hash, "TYPE", 4,
+        newSVpv(dbr_type_to_text(peha->type), 0));
+    hashAdd(hash, "COUNT", 5, newSViv(peha->count));
 
     /* Alarm status and severity are always in the same place */
     if (u->slngval.status)
         val = newSVpv(epicsAlarmConditionStrings[u->slngval.status], 0);
     else
         val = &PL_sv_undef;
-    hv_store(hash, "status", 6, val, 0);
-    hv_store(hash, "severity", 8,
-        newSValarm(u->slngval.severity), 0);
+    hashAdd(hash, "status", 6, val);
+    hashAdd(hash, "severity", 8,
+        newSValarm(u->slngval.severity));
 
     if (peha->type == DBR_GR_ENUM ||
         peha->type == DBR_CTRL_ENUM) {
@@ -242,11 +249,11 @@ SV * newSVdbr(struct event_handler_args *peha) {
                 SvIOK_on(val);
             }
         }
-        hv_store(hash, "strs", 4,
-            newRV_noinc((SV *)strings), 0);
-        hv_store(hash, "no_str", 6,
-            newSViv(u->genmval.no_str), 0);
-        hv_store(hash, "value", 5, val, 0);
+        hashAdd(hash, "strs", 4,
+            newRV_noinc((SV *)strings));
+        hashAdd(hash, "no_str", 6,
+            newSViv(u->genmval.no_str));
+        hashAdd(hash, "value", 5, val);
 
         return newRV_noinc((SV *)hash);
     }
@@ -273,25 +280,25 @@ SV * newSVdbr(struct event_handler_args *peha) {
         }
         val = newRV_noinc((SV *)array);
     }
-    hv_store(hash, "value", 5, val, 0);
+    hashAdd(hash, "value", 5, val);
 
     /* Timestamp follows status and severity in DBR_TIME */
     if (dbr_type_is_TIME(peha->type)) {
         struct timespec t;
 
         epicsTimeToTimespec(&t, &u->tlngval.stamp);
-        hv_store(hash, "stamp", 5,
-            newSViv(t.tv_sec), 0);
-        hv_store(hash, "stamp_fraction", 14,
-            newSVnv((double)t.tv_nsec / 1e9), 0);
+        hashAdd(hash, "stamp", 5,
+            newSViv(t.tv_sec));
+        hashAdd(hash, "stamp_fraction", 14,
+            newSVnv((double)t.tv_nsec / 1e9));
     }
     else if (peha->type == DBR_STSACK_STRING) {
         struct dbr_stsack_string *s = (struct dbr_stsack_string *)peha->dbr;
 
-        hv_store(hash, "ackt", 4,
-            newSViv(s->ackt), 0);
-        hv_store(hash, "acks", 4,
-            newSValarm(s->acks), 0);
+        hashAdd(hash, "ackt", 4,
+            newSViv(s->ackt));
+        hashAdd(hash, "acks", 4,
+            newSValarm(s->acks));
     }
     else if (value_type != DBR_STRING &&
         (dbr_type_is_GR(peha->type) ||
@@ -304,16 +311,16 @@ SV * newSVdbr(struct event_handler_args *peha) {
         if (value_type == DBR_DOUBLE) {
             units = u->gdblval.units;
             limit = &u->gdblval.upper_disp_limit;
-            hv_store(hash, "precision", 9,
-                newSViv(u->gdblval.precision), 0);
+            hashAdd(hash, "precision", 9,
+                newSViv(u->gdblval.precision));
         } else { /* value_type == DBR_LONG */
             units = u->glngval.units;
             limit = &u->glngval.upper_disp_limit;
         }
 
         ulen = strlen(units);
-        hv_store(hash, "units", 5, newSVpv(units,
-            ulen < MAX_UNITS_SIZE ? ulen : MAX_UNITS_SIZE), 0);
+        hashAdd(hash, "units", 5, newSVpv(units,
+            ulen < MAX_UNITS_SIZE ? ulen : MAX_UNITS_SIZE));
 
         while (i >= 0) {
             static const char * const limit_name[] = {
@@ -323,8 +330,8 @@ SV * newSVdbr(struct event_handler_args *peha) {
                 "upper_ctrl_limit", "lower_ctrl_limit",
             };
 
-            hv_store(hash, limit_name[i], strlen(limit_name[i]),
-                newSVdbf(value_type, limit, i), 0);
+            hashAdd(hash, limit_name[i], strlen(limit_name[i]),
+                newSVdbf(value_type, limit, i));
             i--;
         }
     }
@@ -372,7 +379,7 @@ void io_handler(struct event_handler_args *peha, enum io_type io) {
             SvREFCNT_dec(code);
 
         if (SvTRUE(ERRSV))
-            croak(Nullch);
+            croak(NULL);
 
         FREETMPS;
         LEAVE;
@@ -422,7 +429,7 @@ void connect_handler(struct connection_handler_args cha) {
         call_sv(pch->conn_sub, G_EVAL | G_VOID | G_DISCARD | G_KEEPERR);
 
         if (SvTRUE(ERRSV))
-            croak(Nullch);
+            croak(NULL);
     }
 }
 
@@ -1038,14 +1045,14 @@ void exception_handler(struct exception_handler_args eha) {
         op = newSViv(eha.op);
         sv_setpv(op, opString[eha.op]);
         SvIOK_on(op);
-        hv_store(hash, "OP", 2, op, 0);
-        hv_store(hash, "TYPE", 4,
-            newSVpv(dbr_type_to_text(eha.type), 0), 0);
-        hv_store(hash, "COUNT", 5, newSViv(eha.count), 0);
+        hashAdd(hash, "OP", 2, op);
+        hashAdd(hash, "TYPE", 4,
+            newSVpv(dbr_type_to_text(eha.type), 0));
+        hashAdd(hash, "COUNT", 5, newSViv(eha.count));
         if (eha.pFile)
-            hv_store(hash, "FILE", 4, newSVpv(eha.pFile, 0), 0);
+            hashAdd(hash, "FILE", 4, newSVpv(eha.pFile, 0));
         if (eha.lineNo)
-            hv_store(hash, "LINE", 4, newSVuv(eha.lineNo), 0);
+            hashAdd(hash, "LINE", 4, newSVuv(eha.lineNo));
 
         PUSHMARK(SP);
         XPUSHs(channel);

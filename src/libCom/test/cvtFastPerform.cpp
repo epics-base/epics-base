@@ -18,6 +18,7 @@ typedef void ( * PTestFunc ) ( const double &, char * pBug, size_t bufSize );
 class Test {
 public:
     Test ();
+    virtual ~Test ();
     void execute ();
 protected:
     char _pDst[128];
@@ -45,6 +46,10 @@ protected:
 Test ::
     Test () :
     _srcVal ( 0.0 ), _prec ( 0 )
+{
+}
+
+Test :: ~Test () 
 {
 }
 

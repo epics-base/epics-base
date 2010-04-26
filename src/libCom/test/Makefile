@@ -151,7 +151,8 @@ rtemsTestHarness_SRCS += $(testHarness_SRCS)
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 
-# The following are not test programs, they measure performance
+# The following are not test programs, they measure performance.
+# They should not be added to TESTS or to epicsRunLibComTests.c
 
 TESTPROD_HOST += epicsThreadPerform
 epicsThreadPerform_SRCS += epicsThreadPerform.cpp

@@ -997,24 +997,33 @@ epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned l
 /*
  * epicsThreadOnce ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadOnceOsd (
+epicsShareFunc void epicsShareAPI epicsThreadOnce (
     epicsThreadOnceId *id, void (*func)(void *), void *arg )
 {
+    static struct epicsThreadOSD threadOnceComplete;
+    #define EPICS_THREAD_ONCE_DONE & threadOnceComplete
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
 
     assert ( pGbl );
     
     EnterCriticalSection ( & pGbl->mutex );
 
-    if ( *id == 0 ) {
-        *id = -1;
+    if ( *id == EPICS_THREAD_ONCE_INIT ) { /* first call */
+        *id = epicsThreadGetIdSelf();      /* mark active */
         LeaveCriticalSection ( & pGbl->mutex );
-        ( *func ) ( arg );
+        func ( arg );
         EnterCriticalSection ( & pGbl->mutex );
-        *id = 1;
+        *id = EPICS_THREAD_ONCE_DONE;      /* mark done */
+    } else if ( *id == epicsThreadGetIdSelf() ) {
+        LeaveCriticalSection ( & pGbl->mutex );
+        cantProceed( "Recursive epicsThreadOnce() initialization\n" );
     } else
-        assert(*id > 0 /* func() called epicsThreadOnce() with same id */);
-
+        while ( *id != EPICS_THREAD_ONCE_DONE ) {
+            /* Another thread is in the above func(arg) call. */
+            LeaveCriticalSection ( & pGbl->mutex );
+            epicsThreadSleep ( epicsThreadSleepQuantum() );
+            EnterCriticalSection ( & pGbl->mutex );
+        }
     LeaveCriticalSection ( & pGbl->mutex );
 }
 

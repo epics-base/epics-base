@@ -110,21 +110,39 @@ unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
     return stackSizeTable[stackSizeClass];
 }
 
-void epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
+struct epicsThreadOSD {};
+    /* Strictly speaking this should be a WIND_TCB, but we only need it to
+     * be able to create an epicsThreadId that is guaranteed never to be
+     * the same as any current TID, and since TIDs are pointers this works.
+     */
+
+void epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
+    static struct epicsThreadOSD threadOnceComplete;
+    #define EPICS_THREAD_ONCE_DONE &threadOnceComplete
     int result;
+
     epicsThreadInit();
     result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
     assert(result == OK);
-    if (*id == 0) { /*  0 => first call */
-        *id = -1;   /* -1 => func() active */
+    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+        *id = epicsThreadGetIdSelf();    /* mark active */
         semGive(epicsThreadOnceMutex);
         func(arg);
         result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
         assert(result == OK);
-        *id = +1;   /* +1 => func() done */
+        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+    } else if (*id == epicsThreadGetIdSelf()) {
+        semGive(epicsThreadOnceMutex);
+        cantProceed("Recursive epicsThreadOnce() initialization\n");
     } else
-        assert(*id > 0 /* func() called epicsThreadOnce() with same id */);
+        while (*id != EPICS_THREAD_ONCE_DONE) {
+            /* Another thread is in the above func(arg) call. */
+            semGive(epicsThreadOnceMutex);
+            epicsThreadSleep(epicsThreadSleepQuantum());
+            result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
+            assert(result == OK);
+        }
     semGive(epicsThreadOnceMutex);
 }
 
@@ -132,13 +150,13 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
 {
     int tid = taskIdSelf();
 
-    taskVarAdd(tid,(int *)&papTSD);
+    taskVarAdd(tid,(int *)(char *)&papTSD);
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
     (*func)(parm);
     epicsExitCallAtThreadExits ();
     free(papTSD);
-    taskVarDelete(tid,(int *)&papTSD);
+    taskVarDelete(tid,(int *)(char *)&papTSD);
 }
 
 #ifdef ALTIVEC

@@ -321,40 +321,43 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadSt
 #endif /*_POSIX_THREAD_ATTR_STACKSIZE*/
 }
 
-/* epicsThreadOnce is a macro that calls epicsThreadOnceOsd */
-epicsShareFunc void epicsShareAPI epicsThreadOnceOsd(epicsThreadOnceId *id, void (*func)(void *), void *arg)
+epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
 {
+    static struct epicsThreadOSD threadOnceComplete;
+    #define EPICS_THREAD_ONCE_DONE &threadOnceComplete
     int status;
+
     epicsThreadInit();
     status = mutexLock(&onceLock);
     if(status) {
-        fprintf(stderr,"epicsThreadOnceOsd: pthread_mutex_lock returned %s.\n",
+        fprintf(stderr,"epicsThreadOnce: pthread_mutex_lock returned %s.\n",
             strerror(status));
         exit(-1);
     }
-    if (*id == 0) { /*  0 => first call */
-        *id = -1;   /* -1 => func() active */
-        /* avoid recursive locking */
+
+    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+        *id = epicsThreadGetIdSelf();    /* mark active */
         status = pthread_mutex_unlock(&onceLock);
-        checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
+        checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
         func(arg);
         status = mutexLock(&onceLock);
-        checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
-        *id = +1;   /* +1 => func() done */
+        checkStatusQuit(status,"pthread_mutex_lock", "epicsThreadOnce");
+        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+    } else if (*id == epicsThreadGetIdSelf()) {
+        status = pthread_mutex_unlock(&onceLock);
+        checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
+        cantProceed("Recursive epicsThreadOnce() initialization\n");
     } else
-        while (*id < 0) {
-            /* Someone is in the above func(arg) call.  If that someone is
-             * actually us, we're screwed, but the other OS implementations
-             * will fire an assert() that should detect this condition.
-             */
+        while (*id != EPICS_THREAD_ONCE_DONE) {
+            /* Another thread is in the above func(arg) call. */
             status = pthread_mutex_unlock(&onceLock);
-            checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
-            epicsThreadSleep(0.01);
+            checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
+            epicsThreadSleep(epicsThreadSleepQuantum());
             status = mutexLock(&onceLock);
-            checkStatusQuit(status,"pthread_mutex_lock","epicsThreadOnceOsd");
+            checkStatusQuit(status,"pthread_mutex_lock", "epicsThreadOnce");
         }
     status = pthread_mutex_unlock(&onceLock);
-    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnceOsd");
+    checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnce");
 }
 
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,

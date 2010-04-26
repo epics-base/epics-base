@@ -57,6 +57,11 @@ epicsThreadTest_SRCS += epicsThreadTest.cpp
 testHarness_SRCS += epicsThreadTest.cpp
 TESTS += epicsThreadTest
 
+TESTPROD_HOST += epicsThreadOnceTest
+epicsThreadOnceTest_SRCS += epicsThreadOnceTest.c
+testHarness_SRCS += epicsThreadOnceTest.c
+TESTS += epicsThreadOnceTest
+
 TESTPROD_HOST += epicsThreadPriorityTest
 epicsThreadPriorityTest_SRCS += epicsThreadPriorityTest.cpp
 testHarness_SRCS += epicsThreadPriorityTest.cpp

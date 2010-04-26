@@ -445,7 +445,7 @@ epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize)
     static epicsThreadOnceId errlogOnceFlag = EPICS_THREAD_ONCE_INIT;
     struct initArgs config;
 
-    if (errlogOnceFlag > 0 && pvtData.atExit)
+    if (pvtData.atExit)
         return 0;
 
     if (bufsize < BUFFER_SIZE) bufsize = BUFFER_SIZE;

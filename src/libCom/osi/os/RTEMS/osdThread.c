@@ -473,18 +473,29 @@ epicsThreadId epicsThreadGetId (const char *name)
 /*
  * Ensure func() is run only once.
  */
-void epicsThreadOnceOsd(epicsThreadOnceId *id, void(*func)(void *), void *arg)
+void epicsThreadOnce(epicsThreadOnceId *id, void(*func)(void *), void *arg)
 {
+    static struct epicsThreadOSD threadOnceComplete;
+    #define EPICS_THREAD_ONCE_DONE &threadOnceComplete
+
     if (!initialized) epicsThreadInit();
     epicsMutexMustLock(onceMutex);
-    if (*id == 0) {
-        *id = -1;
+    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+        *id = epicsThreadGetIdSelf();    /* mark active */
         epicsMutexUnlock(onceMutex);
         func(arg);
         epicsMutexMustLock(onceMutex);
-        *id = 1;
+        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+    } else if (*id == epicsThreadGetIdSelf()) {
+        epicsMutexUnlock(onceMutex);
+        cantProceed("Recursive epicsThreadOnce() initialization\n");
     } else
-        assert(*id > 0 /* func() called epicsThreadOnce() with same id */);
+        while (*id != EPICS_THREAD_ONCE_DONE) {
+            /* Another thread is in the above func(arg) call. */
+            epicsMutexUnlock(onceMutex);
+            epicsThreadSleep(epicsThreadSleepQuantum());
+            epicsMutexMustLock(onceMutex);
+        }
     epicsMutexUnlock(onceMutex);
 }
 

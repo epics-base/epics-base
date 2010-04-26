@@ -48,22 +48,16 @@ typedef enum {
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize(
     epicsThreadStackSizeClass size);
 
-typedef int epicsThreadOnceId;
-#define EPICS_THREAD_ONCE_INIT 0
-
-/* void epicsThreadOnce(epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg); */
-/* epicsThreadOnce is implemented as a macro */
-/* epicsThreadOnceOsd should not be called by user code */
-epicsShareFunc void epicsShareAPI epicsThreadOnceOsd(
-    epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
-
-#define epicsThreadOnce(id,func,arg) \
-epicsThreadOnceOsd((id),(func),(arg))
-
-epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
-
 /* (epicsThreadId)0 is guaranteed to be an invalid thread id */
 typedef struct epicsThreadOSD *epicsThreadId;
+
+typedef epicsThreadId epicsThreadOnceId;
+#define EPICS_THREAD_ONCE_INIT 0
+
+epicsShareFunc void epicsShareAPI epicsThreadOnce(
+    epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
+
+epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (
     const char * name, unsigned int priority, unsigned int stackSize,

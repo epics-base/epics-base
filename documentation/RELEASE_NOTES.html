@@ -12,6 +12,13 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Rewrite epicsThreadOnce()</h4>
+
+<p>Michael Davidsaver suggested a better implementation of epicsThreadOnce()
+which makes it possible for all architectures to detect recursive initialization
+functions.  This change also renames the routines to remove the original macro
+and fixes some questionable usage in places.</p>
+
 <h4>Many Record Types</h4>
 
 <p>Record types were not setting many 'last value' fields at initialization,

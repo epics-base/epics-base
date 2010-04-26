@@ -7,9 +7,6 @@
 
 /*
  * Run libCom tests as a batch
- *
- * This is part of the work being done to provide a unified set of automated
- * tests for EPICS.  Many more changes will be forthcoming.
  */
 #include <stdio.h>
 #include <epicsThread.h>
@@ -27,6 +24,7 @@ int epicsMessageQueueTest(void);
 int epicsMutexTest(void);
 int epicsStdioTest(void);
 int epicsStringTest(void);
+int epicsThreadOnceTest(void);
 int epicsThreadPriorityTest(void);
 int epicsThreadPrivateTest(void);
 int epicsTimeTest(void);
@@ -72,6 +70,8 @@ void epicsRunLibComTests(void)
     runTest(epicsStdioTest);
 
     runTest(epicsStringTest);
+
+    runTest(epicsThreadOnceTest);
 
     runTest(epicsThreadPriorityTest);
 

@@ -123,21 +123,14 @@ GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
-# C++ host processing
+# Wind River moved nm out of GNU_DIR in some versions
 
 WORKBENCH_BIN = $(WIND_BASE)/workbench-$(WORKBENCH_VERSION)/$(WIND_HOST_TYPE)/bin
 
-NM_DIR_5 = $(GNU_BIN)
-NM_DIR_6.0 = $(GNU_BIN)
-NM_DIR_6.1 = $(GNU_BIN)
-NM_DIR_6.2 = $(GNU_BIN)
-NM_DIR_6.3 = $(GNU_BIN)
 NM_DIR_6.4 = $(WORKBENCH_BIN)
 NM_DIR_6.5 = $(WORKBENCH_BIN)
 NM_DIR_6.6 = $(WORKBENCH_BIN)
-NM_DIR_6.7 = $(WORKBENCH_BIN)
-NM_DIR_6 = $(NM_DIR_$(VXWORKS_VERSION))
-NM_DIR = $(NM_DIR_$(VXWORKS_MAJOR_VERSION))
+NM_DIR = $(firstword $(NM_DIR_$(VXWORKS_VERSION)) $(GNU_BIN))
 
 NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 

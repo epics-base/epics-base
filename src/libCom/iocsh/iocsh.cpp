@@ -245,12 +245,12 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
                 errno = 0;
                 argBuf->ival = strtoul (arg, &endp, 0);
                 if (errno == ERANGE) {
-                    showError (filename, lineno, "Integer `%s' out of range", arg);
+                    showError (filename, lineno, "Integer '%s' out of range", arg);
                     return 0;
                 }
             }
             if (*endp) {
-                showError (filename, lineno, "Illegal integer `%s'", arg);
+                showError (filename, lineno, "Illegal integer '%s'", arg);
                 return 0;
             }
         }
@@ -263,7 +263,7 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
         if (arg && *arg) {
             argBuf->dval = epicsStrtod (arg, &endp);
             if (*endp) {
-                showError (filename, lineno, "Illegal double `%s'", arg);
+                showError (filename, lineno, "Illegal double '%s'", arg);
                 return 0;
             }
         }
@@ -294,7 +294,7 @@ cvtArg (const char *filename, int lineno, char *arg, iocshArgBuf *argBuf, const 
             argBuf->vval = *iocshPpdbbase;
             break;
         }
-        showError (filename, lineno, "Expecting `pdbbase' got `%s'", arg);
+        showError (filename, lineno, "Expecting 'pdbbase' got '%s'", arg);
         return 0;
 
     default:
@@ -404,7 +404,7 @@ static void helpCallFunc(const iocshArgBuf *args)
     if (argc == 1) {
         int l, col = 0;
 
-        printf ("Type `help command_name' to get more information about a particular command.\n");
+        printf ("Type 'help command_name' to get more information about a particular command.\n");
         iocshTableLock ();
         for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
             piocshFuncDef = pcmd->pFuncDef;

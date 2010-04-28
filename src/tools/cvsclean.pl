@@ -11,11 +11,11 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 # $Id$
 #
-# Find and delete cvs .#* files in all dirs of directory tree
+# Find and delete cvs .#* and editor backup *~
+# files from all dirs of the directory tree.
 
 use File::Find;
 
 @ARGV = ('.') unless @ARGV;
 
-find sub { unlink if -f && m/^\.\#/ }, @ARGV;
-
+find sub { unlink if -f && m/(^\.\#)|(~$)/ }, @ARGV;

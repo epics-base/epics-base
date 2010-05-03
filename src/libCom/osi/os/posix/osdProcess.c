@@ -97,7 +97,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
     /*
      * overlay the specified executable
      */
-    status = execlp (pBaseExecutableName, pBaseExecutableName, NULL);
+    status = execlp (pBaseExecutableName, pBaseExecutableName, (char *)NULL);
     if ( status < 0 ) { 
         fprintf ( stderr, "**** The executable \"%s\" couldn't be located\n", pBaseExecutableName );
         fprintf ( stderr, "**** because of errno = \"%s\".\n", strerror (errno) );

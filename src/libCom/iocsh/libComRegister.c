@@ -201,10 +201,10 @@ static void epicsThreadShowAllCallFunc(const iocshArgBuf *args)
     epicsThreadShowAll(args[0].ival);
 }
 
-/* thread (thread information) */
+/* epicsThreadShow */
 static const iocshArg threadArg0 = { "[-level] [thread ...]", iocshArgArgv};
 static const iocshArg * const threadArgs[1] = { &threadArg0 };
-static const iocshFuncDef threadFuncDef = {"thread",1,threadArgs};
+static const iocshFuncDef threadFuncDef = {"epicsThreadShow",1,threadArgs};
 static void threadCallFunc(const iocshArgBuf *args)
 {
     int i = 1;
@@ -231,7 +231,7 @@ static void threadCallFunc(const iocshArgBuf *args)
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
-                printf ("*** argument %d (%s) is not a valid thread name ***\n", i, cp);
+                printf ("\t'%s' is not a known thread name\n", cp);
                 continue;
             }
         }

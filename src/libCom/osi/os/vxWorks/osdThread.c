@@ -313,10 +313,13 @@ void epicsThreadShowAll(unsigned int level)
     taskShow(0,2);
 }
 
-void epicsThreadShow(epicsThreadId id,unsigned int level)
+void epicsThreadShow(epicsThreadId id, unsigned int level)
 {
     int tid = (int)id;
-    taskShow(tid,level);
+
+    if (level > 1) level = 1;
+    if (tid)
+        taskShow(tid, level);
 }
 
 /* The following algorithm was thought of by Andrew Johnson APS/ASD .

@@ -201,7 +201,7 @@ static int myInputFunction(char *buf, int max_size)
 	    fgetsRtn = fgets(mac_input_buffer,BUF_SIZE,stream);
 	    if(fgetsRtn) {
 		n = macExpandString(macHandle,mac_input_buffer,
-		    my_buffer,BUF_SIZE-1);
+		    my_buffer,BUF_SIZE);
 		if(n<0) {
 		    epicsPrintf("access security: macExpandString failed\n"
 			"input line: %s\n",mac_input_buffer);

@@ -44,9 +44,31 @@ static void check(const char *str, const char *expect)
     }
 }
 
+static void ovcheck(void)
+{
+    char output[54];
+    long status;
+
+    macPutValue(h, "OVVAR","abcdefghijklmnopqrstuvwxyz");
+
+    memset(output, '~', sizeof output);
+    status = macExpandString(h, "abcdefghijklmnopqrstuvwxyz$(OVVAR)", output, 52);
+    testOk(status == 51, "expansion returned %ld, expected 51", status);
+    testOk(output[50] == 'y', "final character %x, expect 79 (y)", output[50]);
+    testOk(output[51] == '\0', "terminator character %x, expect 0", output[51]);
+    testOk(output[52] == '~', "sentinel character %x, expect 7e, (~)", output[52]);
+
+    memset(output, '~', sizeof output);
+    status = macExpandString(h, "abcdefghijklmnopqrstuvwxyz$(OVVAR)", output, 53);
+    testOk(status == 52, "expansion returned %ld, expected 52", status);
+    testOk(output[51] == 'z', "final character %x, expect 7a (z)", output[51]);
+    testOk(output[52] == '\0', "terminator character %x, expect 0", output[52]);
+    testOk(output[53] == '~', "sentinel character %x, expect 7e, (~)", output[53]);
+}
+
 MAIN(macLibTest)
 {
-    testPlan(81);
+    testPlan(89);
 
     if (macCreateHandle(&h, NULL))
         testAbort("macCreateHandle() failed");
@@ -192,6 +214,8 @@ MAIN(macLibTest)
     check("${FOO=GRIBBLE,BAR=${FOO}}", "!$(BAR,recursive)");
     check("${FOO,FOO=${FOO}}", "!$(FOO,recursive)");
     check("${FOO=GRIBBLE,FOO=${FOO}}", "!$(FOO,recursive)");
+
+    ovcheck();
 
     return testDone();
 }

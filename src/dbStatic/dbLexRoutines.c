@@ -314,7 +314,7 @@ static int db_yyinput(char *buf, int max_size)
 			pinputFileNow->fp);
 		if(fgetsRtn) {
 		    n = macExpandString(macHandle,mac_input_buffer,
-			my_buffer,MY_BUFFER_SIZE-1);
+			my_buffer,MY_BUFFER_SIZE);
 		    if(n<0) {
 			errPrintf(0,__FILE__, __LINE__,
 			"macExpandString failed for file %s",

@@ -171,7 +171,7 @@ epicsShareAPI macSuppressWarning(
  * This is a very basic and powerful routine. It's basically a wrapper
  * around the the translation "engine" trans()
  */
-long                            /* #chars copied, <0 if any macros are */
+long                            /* strlen(dest), <0 if any macros are */
                                 /* undefined */
 epicsShareAPI macExpandString(
     MAC_HANDLE  *handle,        /* opaque handle */
@@ -180,8 +180,7 @@ epicsShareAPI macExpandString(
 
     char        *dest,          /* destination string */
 
-    long        maxlen )        /* maximum number of characters to copy */
-                                /* to destination string */
+    long        capacity )      /* capacity of destination buffer (dest) */
 {
     MAC_ENTRY entry;
     const char *s;
@@ -196,7 +195,11 @@ epicsShareAPI macExpandString(
 
     /* debug output */
     if ( handle->debug & 1 )
-        printf( "macExpandString( %s, maxlen = %ld )\n", src, maxlen );
+        printf( "macExpandString( %s, capacity = %ld )\n", src, capacity );
+
+    /* Check size */
+    if (capacity <= 1)
+        return -1;
 
     /* expand raw values if necessary */
     if ( expand( handle ) < 0 )
@@ -211,7 +214,7 @@ epicsShareAPI macExpandString(
     s  = src;
     d  = dest;
     *d = '\0';
-    trans( handle, &entry, 0, "", &s, &d, d + maxlen );
+    trans( handle, &entry, 0, "", &s, &d, d + capacity - 1 );
 
     /* return +/- #chars copied depending on successful expansion */
     length = d - dest;
@@ -228,7 +231,7 @@ epicsShareAPI macExpandString(
  * Define the value of a macro. A NULL value deletes the macro if it
  * already existed
  */
-long                            /* length of value */
+long                            /* strlen(value) */
 epicsShareAPI macPutValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
@@ -286,7 +289,7 @@ epicsShareAPI macPutValue(
 /*
  * Return the value of a macro
  */
-long                            /* #chars copied (<0 if undefined) */
+long                            /* strlen(value), <0 if undefined */
 epicsShareAPI macGetValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
@@ -295,8 +298,7 @@ epicsShareAPI macGetValue(
     char        *value,         /* string to receive macro value or name */
                                 /* argument if macro is undefined */
 
-    long        maxlen )        /* maximum number of characters to copy */
-                                /* to value */
+    long        capacity )      /* capacity of destination buffer (value) */
 {
     MAC_ENTRY   *entry;         /* pointer to this macro's entry structure */
     long        length;         /* number of characters returned */
@@ -314,31 +316,30 @@ epicsShareAPI macGetValue(
     /* look up macro name */
     entry = lookup( handle, name, FALSE );
 
-    /* if maxlen <= 0 or VALUE == NULL just return -1 / 0 for undefined /
+    /* if capacity <= 1 or VALUE == NULL just return -1 / 0 for undefined /
        defined macro */
-    if ( maxlen <= 0 || value == NULL ) {
+    if ( capacity <= 1 || value == NULL ) {
         return ( entry == NULL ) ? -1 : 0;
     }
 
     /* if not found, copy name to value and return minus #chars copied */
     if ( entry == NULL ) {
-        strncpy( value, name, maxlen );
-        return ( value[maxlen-1] == '\0' ) ? - (long) strlen( name ) : -maxlen;
+        strncpy( value, name, capacity );
+        return ( value[capacity-1] == '\0' ) ? - (long) strlen( name ) : -capacity;
     }
 
     /* expand raw values if necessary; if fail (can only fail because of
        memory allocation failure), return same as if not found */
     if ( expand( handle ) < 0 ) {
         errlogPrintf( "macGetValue: failed to expand raw values\n" );
-        strncpy( value, name, maxlen );
-        return ( value[maxlen-1] == '\0' ) ? - (long) strlen( name ) : -maxlen;
+        strncpy( value, name, capacity );
+        return ( value[capacity-1] == '\0' ) ? - (long) strlen( name ) : -capacity;
     }
 
     /* copy value and return +/- #chars copied depending on successful
        expansion */
-/* FIXME: nul-terminator */
-    strncpy( value, entry->value, maxlen );
-    length = ( value[maxlen-1] == '\0' ) ? entry->length : maxlen;
+    strncpy( value, entry->value, capacity );
+    length = ( value[capacity-1] == '\0' ) ? entry->length : capacity;
 
     return ( entry->error ) ? -length : length;
 }
@@ -694,7 +695,7 @@ static void trans( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "trans-> entry = %p, level = %d, maxlen = %u, discard = %s, "
+        printf( "trans-> entry = %p, level = %d, capacity = %u, discard = %s, "
         "rawval = %s\n", entry, level, (unsigned int)(valend - *value), discard ? "T" : "F", *rawval );
 
     /* initially not in quotes */
@@ -777,7 +778,7 @@ static void refer ( MAC_HANDLE *handle, MAC_ENTRY *entry, int level,
 
     /* debug output */
     if ( handle->debug & 2 )
-        printf( "refer-> entry = %p, level = %d, maxlen = %u, rawval = %s\n",
+        printf( "refer-> entry = %p, level = %d, capacity = %u, rawval = %s\n",
                 entry, level, (unsigned int)(valend - *value), *rawval );
 
     /* step over '$(' or '${' */

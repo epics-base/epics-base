@@ -65,7 +65,7 @@ epicsShareAPI macSuppressWarning(
     int         falseTrue       /*0 means issue, 1 means suppress*/
 );
 
-epicsShareFunc long             /* #chars copied, <0 if any macros are */
+epicsShareFunc long             /* strlen(dest), <0 if any macros are */
                                 /* undefined */
 epicsShareAPI macExpandString(
     MAC_HANDLE  *handle,        /* opaque handle */
@@ -74,12 +74,11 @@ epicsShareAPI macExpandString(
 
     char        *dest,          /* destination string */
 
-    long        maxlen          /* maximum number of characters to copy */
-                                /* to destination string */
+    long        capacity        /* capacity of destination buffer (dest) */
 );
 
 
-epicsShareFunc long             /* length of value */
+epicsShareFunc long             /* strlen(value) */
 epicsShareAPI macPutValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
@@ -88,7 +87,7 @@ epicsShareAPI macPutValue(
     const char  *value          /* macro value */
 );
 
-epicsShareFunc long             /* #chars copied (<0 if undefined) */
+epicsShareFunc long             /* strlen(value), <0 if undefined */
 epicsShareAPI macGetValue(
     MAC_HANDLE  *handle,        /* opaque handle */
 
@@ -97,8 +96,7 @@ epicsShareAPI macGetValue(
     char        *value,         /* string to receive macro value or name */
                                 /* argument if macro is undefined */
 
-    long        maxlen          /* maximum number of characters to copy */
-                                /* to value */
+    long        capacity        /* capacity of destination buffer (value) */
 );
 
 epicsShareFunc long             /* 0 = OK; <0 = ERROR */

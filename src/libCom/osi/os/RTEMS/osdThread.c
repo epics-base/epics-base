@@ -475,8 +475,7 @@ epicsThreadId epicsThreadGetId (const char *name)
  */
 void epicsThreadOnce(epicsThreadOnceId *id, void(*func)(void *), void *arg)
 {
-    static struct epicsThreadOSD threadOnceComplete;
-    #define EPICS_THREAD_ONCE_DONE &threadOnceComplete
+    #define EPICS_THREAD_ONCE_DONE (epicsThreadId) 1
 
     if (!initialized) epicsThreadInit();
     epicsMutexMustLock(onceMutex);

@@ -107,11 +107,6 @@ epicsExceptionTest_SRCS += epicsExceptionTest.cpp
 testHarness_SRCS += epicsExceptionTest.cpp
 TESTS += epicsExceptionTest
 
-TESTPROD_HOST += epicsMessageQueueTest
-epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
-testHarness_SRCS += epicsMessageQueueTest.cpp
-TESTS += epicsMessageQueueTest
-
 TESTPROD_HOST += macEnvExpandTest
 macEnvExpandTest_SRCS += macEnvExpandTest.c
 testHarness_SRCS += macEnvExpandTest.c
@@ -134,6 +129,11 @@ testHarness_SRCS += blockingSockTest.cpp
 blockingSockTest_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 blockingSockTest_SYS_LIBS_solaris = socket
 TESTS += blockingSockTest
+
+TESTPROD_HOST += epicsMessageQueueTest
+epicsMessageQueueTest_SRCS += epicsMessageQueueTest.cpp
+testHarness_SRCS += epicsMessageQueueTest.cpp
+TESTS += epicsMessageQueueTest
 
 
 # The testHarness runs all the test programs in a known working order.

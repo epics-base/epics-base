@@ -1,0 +1,233 @@
+#!/usr/bin/perl
+
+
+use DBD;
+use DBD::Parser;
+use Getopts;
+use macLib;
+use Readfile;
+
+my $tool = 'dbdToHtml';
+getopts('DI@o:') or
+    die "Usage: $tool [-D] [-I dir] [-o xRecord.h] xRecord.dbd [xRecord.h]\n";
+
+my @path = map { split /[:;]/ } @opt_I;
+my $dbd = DBD->new();
+
+my $infile = shift @ARGV;
+$infile =~ m/\.dbd$/ or
+    die "$tool: Input file '$infile' must have '.dbd' extension\n";
+my $outfile;
+if ($opt_o) {
+    $outfile = $opt_o;
+} elsif (@ARGV) {
+    $outfile = shift @ARGV;
+} else {
+    ($outfile = $infile) =~ s/\.dbd$/.h/;
+    $outfile =~ s/^.*\///;
+    $outfile =~ s/dbCommonRecord/dbCommon/;
+}
+
+print "<H1>$infile </H1><BR>\n";
+
+&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
+
+my $rtypes = $dbd->recordtypes;
+
+my ($rn, $rtyp) = each %{$rtypes};
+print "<H2>Record Name $rn </H2>\n";
+
+my @fields = $rtyp->fields;
+
+#create a Hash to store the table of field information for each GUI type
+%dbdTables = (
+	   "GUI_COMMON" => "",
+	   "GUI_COMMON" => "",
+	   "GUI_ALARMS" => "",
+	   "GUI_BITS1" => "",
+	   "GUI_BITS2" => "",
+	   "GUI_CALC" => "",
+	   "GUI_CLOCK" => "",
+	   "GUI_COMPRESS" => "",
+	   "GUI_CONVERT" => "",
+	   "GUI_DISPLAY" => "",
+	   "GUI_HIST" => "",
+	   "GUI_INPUTS" => "",
+	   "GUI_LINKS" => "",
+	   "GUI_MBB" => "",
+	   "GUI_MOTOR" => "",
+	   "GUI_OUTPUT" => "",
+	   "GUI_PID" => "",
+	   "GUI_PULSE" => "",
+	   "GUI_SELECT" => "",
+	   "GUI_SEQ1" => "",
+	   "GUI_SEQ2" => "",
+	   "GUI_SEQ3" => "",
+	   "GUI_SUB" => "",
+	   "GUI_TIMER" => "",
+	   "GUI_WAVE" => "",
+	   "GUI_SCAN" => "",
+	   "GUI_NONE" => ""
+	   );
+
+
+#Loop over all of the fields.  Build a string that contains the table body
+#for each of the GUI Types based on which fields go with which GUI type.
+foreach $fVal (@fields) {
+    my $pg = $fVal->attribute('promptgroup');
+    while ( ($typ1, $content) = each %dbdTables) {
+	if ( $pg eq $typ1 or ($pg eq "" and $typ1 eq "GUI_NONE")) {
+	    buildTableRow($fVal, $dbdTables{$typ1} );
+	}
+    }
+}
+
+#Write out each table
+while ( ($typ2, $content) = each %dbdTables) {
+    printHtmlTable($typ2, $content);
+}
+
+
+#add a field to a table body.  The specified field and table body are passed 
+#in as parameters
+sub buildTableRow {
+    my ( $fld, $outStr) = @_;
+    $longDesc = "&nbsp";
+    %htmlCellFmt = (
+	rowStart => "<TR><TH rowspan = \"2\">",
+	nextCell => "</TH><TH>",
+        endRow   => "</TH></TR>",
+	nextRow  => "<TR><TH colspan = \"7\" align=left>"
+        );
+    my %cellFmt = %htmlCellFmt;
+    my $rowStart = $cellFmt{rowStart};
+    my $nextCell = $cellFmt{nextCell};
+    my $endRow   = $cellFmt{endRow};
+    my $nextRow  = $cellFmt{nextRow};
+    $outStr = $outStr . $rowStart;
+    $outStr = $outStr . $fld->name;
+    $outStr = $outStr . $nextCell;
+    $outStr = $outStr . $fld->attribute('prompt');
+    $outStr = $outStr . $nextCell;
+    my $recType = $fld->dbf_type;
+    $typStr = $recType;
+   if ($recType eq "DBF_STRING") {
+	$typStr = $recType . " [" . $fld->attribute('size') . "]";
+    }
+    
+    $outStr = $outStr . $typStr;
+    $outStr = $outStr . $nextCell;
+    $outStr = $outStr . design($fld);
+    $outStr = $outStr . $nextCell;
+    my $initial = $fld->attribute('initial');
+    if ( $initial eq '' ) {$initial = "&nbsp";}
+    $outStr = $outStr . $initial;
+    $outStr = $outStr . $nextCell;
+    $outStr = $outStr . readable($fld);
+    $outStr = $outStr . $nextCell;
+    $outStr = $outStr . writable($fld);
+    $outStr = $outStr . $nextCell;
+    $outStr = $outStr . processPassive($fld);
+    $outStr = $outStr . $endRow;
+    $outStr = $outStr . "\n";
+    $outStr = $outStr . $nextRow;
+    $outStr = $outStr . $longDesc;
+    $outStr = $outStr . $endRow;
+    $outStr = $outStr . "\n";
+    $_[1] = $outStr;
+}
+
+#Check if the prompt group is defined so that this can be used by clients
+sub design {
+    my $fld = $_[0];
+    my $pg = $fld->attribute('promptgroup');
+    if ( $pg eq '' ) {
+	my $result = 'No';
+    }
+    else {
+        my $result = 'Yes';
+    } 
+}
+
+#Check if this field is readable by clients
+sub readable {
+    my $fld = $_[0];
+    if ( $fld->attribute('special') eq "SPC_DBADDR") {
+	$return = "Probably";
+    }
+    else{
+	if ( $fld->dbf_type eq "DBF_NOACCESS" ) {
+	    $return = "No";
+	}
+	else {
+	    $return = "Yes"
+	}
+    }
+}
+
+#Check if this field is writable by clients
+sub writable {
+    my $fld = $_[0];
+    my $spec = $fld->attribute('special');
+    if ( $spec eq "SPC_NOMOD" ) {
+	$return = "No";
+    }
+    else {
+	if ( $spec ne "SPC_DBADDR") {
+	    if ( $fld->dbf_type eq "DBF_NOACCESS" ) {
+		$return = "No";
+	    }
+	    else {
+		$return = "Yes";
+	    }
+	}
+	else {
+	    $return = "Maybe";
+	}
+    }
+}
+
+
+#Check to see if the field is process passive on caput
+sub processPassive {
+    my $fld = $_[0];
+    $pp = $fld->attribute('pp');
+    if ( $pp eq "YES" or $pp eq "TRUE" ) {
+	$result = "Yes";
+    }
+    elsif ( $PP eq "NO" or $pp eq "FALSE"  or $pp eq "" ) {
+	$result = "No";
+    }
+}
+
+#print the start row to define a table
+sub printTableStart {
+    print "<TABLE border =\"1\"  > \n";
+    print "<CAPTION><EM>$_[0]</EM></CAPTION>";
+    print "<th>Field</th>\n";
+    print "<th>Summary</th>\n";
+    print "<th>Type</th>\n";
+    print "<th>DCT</th>\n";
+    print "<th>Default</th>\n";
+    print "<th>Read</th>\n";
+    print "<th>Write</th>\n";
+    print "<th>caPut=PP</th></tr>\n";
+
+}
+
+#print the tail end of the table
+sub printTableEnd {
+    print "</TABLE>\n";
+}
+
+# Print the table for a GUI type.  The name of the GUI type and the Table body
+# for this type are fed in as parameters
+sub printHtmlTable {
+    my ($typ2, $content) = $_;
+    if ( (length $_[1]) gt 0) {
+	printTableStart($_[0]);
+	print "$_[1]\n";
+	printTableEnd();
+    }
+    
+}

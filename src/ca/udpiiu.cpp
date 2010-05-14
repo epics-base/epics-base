@@ -275,9 +275,6 @@ udpiiu::~udpiiu ()
         this->shutdown ( cbGuard, guard );
     }
 
-    // avoid use of ellFree because problems on windows occur if the
-    // free is in a different DLL than the malloc
-    
     tsDLIter < SearchDest > iter ( _searchDestList.firstIter () );
     while ( iter.valid () )
     {

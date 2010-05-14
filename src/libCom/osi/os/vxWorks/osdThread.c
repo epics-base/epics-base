@@ -125,24 +125,26 @@ void epicsThreadOnce(epicsThreadOnceId *id, void (*func)(void *), void *arg)
     epicsThreadInit();
     result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
     assert(result == OK);
-    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
-        *id = epicsThreadGetIdSelf();    /* mark active */
-        semGive(epicsThreadOnceMutex);
-        func(arg);
-        result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
-        assert(result == OK);
-        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
-    } else if (*id == epicsThreadGetIdSelf()) {
-        semGive(epicsThreadOnceMutex);
-        cantProceed("Recursive epicsThreadOnce() initialization\n");
-    } else
-        while (*id != EPICS_THREAD_ONCE_DONE) {
-            /* Another thread is in the above func(arg) call. */
+    if (*id != EPICS_THREAD_ONCE_DONE) {
+        if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+            *id = epicsThreadGetIdSelf();    /* mark active */
             semGive(epicsThreadOnceMutex);
-            epicsThreadSleep(epicsThreadSleepQuantum());
+            func(arg);
             result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
             assert(result == OK);
-        }
+            *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+        } else if (*id == epicsThreadGetIdSelf()) {
+            semGive(epicsThreadOnceMutex);
+            cantProceed("Recursive epicsThreadOnce() initialization\n");
+        } else
+            while (*id != EPICS_THREAD_ONCE_DONE) {
+                /* Another thread is in the above func(arg) call. */
+                semGive(epicsThreadOnceMutex);
+                epicsThreadSleep(epicsThreadSleepQuantum());
+                result = semTake(epicsThreadOnceMutex, WAIT_FOREVER);
+                assert(result == OK);
+            }
+    }
     semGive(epicsThreadOnceMutex);
 }
 

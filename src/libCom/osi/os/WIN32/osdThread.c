@@ -1009,22 +1009,24 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce (
     
     EnterCriticalSection ( & pGbl->mutex );
 
-    if ( *id == EPICS_THREAD_ONCE_INIT ) { /* first call */
-        *id = epicsThreadGetIdSelf();      /* mark active */
-        LeaveCriticalSection ( & pGbl->mutex );
-        func ( arg );
-        EnterCriticalSection ( & pGbl->mutex );
-        *id = EPICS_THREAD_ONCE_DONE;      /* mark done */
-    } else if ( *id == epicsThreadGetIdSelf() ) {
-        LeaveCriticalSection ( & pGbl->mutex );
-        cantProceed( "Recursive epicsThreadOnce() initialization\n" );
-    } else
-        while ( *id != EPICS_THREAD_ONCE_DONE ) {
-            /* Another thread is in the above func(arg) call. */
+    if ( *id != EPICS_THREAD_ONCE_DONE ) {
+        if ( *id == EPICS_THREAD_ONCE_INIT ) { /* first call */
+            *id = epicsThreadGetIdSelf();      /* mark active */
             LeaveCriticalSection ( & pGbl->mutex );
-            epicsThreadSleep ( epicsThreadSleepQuantum() );
+            func ( arg );
             EnterCriticalSection ( & pGbl->mutex );
-        }
+            *id = EPICS_THREAD_ONCE_DONE;      /* mark done */
+        } else if ( *id == epicsThreadGetIdSelf() ) {
+            LeaveCriticalSection ( & pGbl->mutex );
+            cantProceed( "Recursive epicsThreadOnce() initialization\n" );
+        } else
+            while ( *id != EPICS_THREAD_ONCE_DONE ) {
+                /* Another thread is in the above func(arg) call. */
+                LeaveCriticalSection ( & pGbl->mutex );
+                epicsThreadSleep ( epicsThreadSleepQuantum() );
+                EnterCriticalSection ( & pGbl->mutex );
+            }
+    }
     LeaveCriticalSection ( & pGbl->mutex );
 }
 

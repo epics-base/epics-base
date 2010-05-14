@@ -335,27 +335,29 @@ epicsShareFunc void epicsShareAPI epicsThreadOnce(epicsThreadOnceId *id, void (*
         exit(-1);
     }
 
-    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
-        *id = epicsThreadGetIdSelf();    /* mark active */
-        status = pthread_mutex_unlock(&onceLock);
-        checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
-        func(arg);
-        status = mutexLock(&onceLock);
-        checkStatusQuit(status,"pthread_mutex_lock", "epicsThreadOnce");
-        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
-    } else if (*id == epicsThreadGetIdSelf()) {
-        status = pthread_mutex_unlock(&onceLock);
-        checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
-        cantProceed("Recursive epicsThreadOnce() initialization\n");
-    } else
-        while (*id != EPICS_THREAD_ONCE_DONE) {
-            /* Another thread is in the above func(arg) call. */
+    if (*id != EPICS_THREAD_ONCE_DONE) {
+        if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+            *id = epicsThreadGetIdSelf();    /* mark active */
             status = pthread_mutex_unlock(&onceLock);
             checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
-            epicsThreadSleep(epicsThreadSleepQuantum());
+            func(arg);
             status = mutexLock(&onceLock);
             checkStatusQuit(status,"pthread_mutex_lock", "epicsThreadOnce");
-        }
+            *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+        } else if (*id == epicsThreadGetIdSelf()) {
+            status = pthread_mutex_unlock(&onceLock);
+            checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
+            cantProceed("Recursive epicsThreadOnce() initialization\n");
+        } else
+            while (*id != EPICS_THREAD_ONCE_DONE) {
+                /* Another thread is in the above func(arg) call. */
+                status = pthread_mutex_unlock(&onceLock);
+                checkStatusQuit(status,"pthread_mutex_unlock", "epicsThreadOnce");
+                epicsThreadSleep(epicsThreadSleepQuantum());
+                status = mutexLock(&onceLock);
+                checkStatusQuit(status,"pthread_mutex_lock", "epicsThreadOnce");
+            }
+    }
     status = pthread_mutex_unlock(&onceLock);
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadOnce");
 }

@@ -479,22 +479,24 @@ void epicsThreadOnce(epicsThreadOnceId *id, void(*func)(void *), void *arg)
 
     if (!initialized) epicsThreadInit();
     epicsMutexMustLock(onceMutex);
-    if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
-        *id = epicsThreadGetIdSelf();    /* mark active */
-        epicsMutexUnlock(onceMutex);
-        func(arg);
-        epicsMutexMustLock(onceMutex);
-        *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
-    } else if (*id == epicsThreadGetIdSelf()) {
-        epicsMutexUnlock(onceMutex);
-        cantProceed("Recursive epicsThreadOnce() initialization\n");
-    } else
-        while (*id != EPICS_THREAD_ONCE_DONE) {
-            /* Another thread is in the above func(arg) call. */
+    if (*id != EPICS_THREAD_ONCE_DONE) {
+        if (*id == EPICS_THREAD_ONCE_INIT) { /* first call */
+            *id = epicsThreadGetIdSelf();    /* mark active */
             epicsMutexUnlock(onceMutex);
-            epicsThreadSleep(epicsThreadSleepQuantum());
+            func(arg);
             epicsMutexMustLock(onceMutex);
-        }
+            *id = EPICS_THREAD_ONCE_DONE;    /* mark done */
+        } else if (*id == epicsThreadGetIdSelf()) {
+            epicsMutexUnlock(onceMutex);
+            cantProceed("Recursive epicsThreadOnce() initialization\n");
+        } else
+            while (*id != EPICS_THREAD_ONCE_DONE) {
+                /* Another thread is in the above func(arg) call. */
+                epicsMutexUnlock(onceMutex);
+                epicsThreadSleep(epicsThreadSleepQuantum());
+                epicsMutexMustLock(onceMutex);
+            }
+    }
     epicsMutexUnlock(onceMutex);
 }
 

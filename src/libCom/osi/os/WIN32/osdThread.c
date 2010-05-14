@@ -34,7 +34,6 @@
 #include "shareLib.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
-#include "errlog.h"
 #include "epicsAssert.h"
 #include "ellLib.h"
 #include "epicsExit.h"
@@ -373,10 +372,10 @@ static unsigned epicsThreadGetOsiPriorityValue ( int osdPriority )
     }
 
     if ( magnitude >= stateCount ) {
-        errlogPrintf ( 
+        fprintf ( stderr,
             "Unrecognized WIN32 thread priority level %d.\n", 
             osdPriority );
-        errlogPrintf ( 
+        fprintf ( stderr,
             "Mapping to EPICS thread priority level epicsThreadPriorityMin.\n" );
         return epicsThreadPriorityMin;
     }
@@ -452,12 +451,14 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize ( epicsThreadS
     static const unsigned stackSizeTable[epicsThreadStackBig+1] = {4000, 6000, 11000};
 
     if (stackSizeClass<epicsThreadStackSmall) {
-        errlogPrintf("epicsThreadGetStackSize illegal argument (too small)");
+        fprintf ( stderr,
+            "epicsThreadGetStackSize illegal argument (too small)");
         return stackSizeTable[epicsThreadStackBig];
     }
 
     if (stackSizeClass>epicsThreadStackBig) {
-        errlogPrintf("epicsThreadGetStackSize illegal argument (too large)");
+        fprintf ( stderr,
+            "epicsThreadGetStackSize illegal argument (too large)");
         return stackSizeTable[epicsThreadStackBig];
     }
 

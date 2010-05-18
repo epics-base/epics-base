@@ -89,10 +89,13 @@ receiver(void *arg)
         expectmsg[sender-1] = 1;
     while (!testExit) {
         cbuf[0] = '\0';
-        len = q->receive(cbuf, sizeof cbuf);
-        if ((sscanf(cbuf, "Sender %d -- %d", &sender, &msgNum) == 2)
-         && (sender >= 1)
-         && (sender <= 4)) {
+        len = q->receive(cbuf, sizeof cbuf, 2.0);
+        if (len < 0 && !testExit) {
+            testDiag("receiver() received unexpected timeout");
+            ++errors;
+        }
+        else if (sscanf(cbuf, "Sender %d -- %d", &sender, &msgNum) == 2 &&
+                 sender >= 1 && sender <= 4) {
             if (expectmsg[sender-1] != msgNum) {
                 ++errors;
                 testDiag("%s received %d '%.*s' -- expected %d", epicsThreadGetNameSelf(), len, len, cbuf, expectmsg[sender-1]);

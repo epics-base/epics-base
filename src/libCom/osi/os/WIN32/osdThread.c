@@ -47,7 +47,7 @@ typedef struct win32ThreadGlobal {
     DWORD tlsIndexThreadLibraryEPICS;
 } win32ThreadGlobal;
 
-typedef struct win32ThreadParam {
+typedef struct epicsThreadOSD {
     ELLNODE node;
     HANDLE handle;
     EPICSTHREADFUNC funptr;

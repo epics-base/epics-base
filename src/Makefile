@@ -82,10 +82,10 @@ DIRS += softIoc
 softIoc_DEPEND_DIRS = dev dbtools RTEMS
 
 DIRS += gdd
-gdd_DEPEND_DIRS = libCom
+gdd_DEPEND_DIRS = ca
 
 DIRS += cas
-cas_DEPEND_DIRS = ca gdd
+cas_DEPEND_DIRS = gdd
 
 DIRS += excas
 excas_DEPEND_DIRS = cas as registry

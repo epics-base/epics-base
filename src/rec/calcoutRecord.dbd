@@ -259,6 +259,7 @@ recordtype(calcout) {
 		prompt("Event To Issue")
 		promptgroup(GUI_CLOCK)
 		asl(ASL0)
+		size(40)
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")

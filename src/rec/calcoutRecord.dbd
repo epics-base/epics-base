@@ -255,7 +255,7 @@ recordtype(calcout) {
 		prompt("OCAL Valid")
 		interest(1)
 	}
-	field(OEVT,DBF_USHORT) {
+	field(OEVT,DBF_STRING) {
 		prompt("Event To Issue")
 		promptgroup(GUI_CLOCK)
 		asl(ASL0)

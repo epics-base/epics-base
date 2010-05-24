@@ -103,7 +103,7 @@ static long init_record(eventRecord *prec, int pass)
     }
 
     if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_USHORT,&prec->sval);
+	recGblInitConstantLink(&prec->siol,DBF_STRING,&prec->sval);
     }
 
     if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
@@ -123,7 +123,7 @@ static long process(eventRecord *prec)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
  
-	if(prec->val>0) post_event((int)prec->val);
+	post_named_event(prec->val);
 
 	recGblGetTimeStamp(prec);
 
@@ -140,7 +140,7 @@ static long process(eventRecord *prec)
 
 static long get_value(eventRecord *prec, struct valueDes *pvdes)
 {
-    pvdes->field_type = DBF_USHORT;
+    pvdes->field_type = DBF_STRING;
     pvdes->no_elements=1;
     pvdes->pvalue = (void *)(&prec->val);
     return(0);
@@ -177,10 +177,10 @@ static long readValue(eventRecord *prec)
                 return(status);
         }
         if (prec->simm == menuYesNoYES){
-                status=dbGetLink(&(prec->siol),DBR_USHORT,
+                status=dbGetLink(&(prec->siol),DBR_STRING,
 			&(prec->sval),0,0);
                 if (status==0) {
-                        prec->val=prec->sval;
+                        strcpy(prec->val, prec->sval);
                         prec->udf=FALSE;
                 }
         } else {

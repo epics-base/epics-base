@@ -32,6 +32,11 @@ extern "C" {
 #define MAX_PHASE           SHRT_MAX
 #define MIN_PHASE           SHRT_MIN
 
+
+#ifndef __GNUC__
+#define __attribute(dummy)
+#endif
+
 /*definitions for I/O Interrupt Scanning */
 struct io_scan_list;
 
@@ -43,7 +48,9 @@ epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
 
-epicsShareFunc void post_event(int event);
+epicsShareFunc void post_event(int event) __attribute__ ((deprecated))
+	__attribute__ ((warning ("use post_named_event instead")));
+epicsShareFunc void post_named_event(char* event);
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);
@@ -54,7 +61,7 @@ epicsShareFunc int scanOnceSetQueueSize(int size);
 epicsShareFunc int scanppl(double rate);
 
 /*print event lists*/
-epicsShareFunc int scanpel(int event_number);
+epicsShareFunc int scanpel(char *event_name);
 
 /*print io_event list*/
 epicsShareFunc int scanpiol(void);

@@ -539,27 +539,21 @@ static void execOutput(calcoutRecord *prec)
     if (prec->nsev < INVALID_ALARM ) {
         /* Output the value */
         status = writeValue(prec);
-        /* post event if output event != 0 */
-        if (prec->oevt > 0) {
-            post_event((int)prec->oevt);
-        }
+        /* post output event if set */
+        post_named_event(prec->oevt);
     } else switch (prec->ivoa) {
         case menuIvoaContinue_normally:
             status = writeValue(prec);
-            /* post event if output event != 0 */
-            if (prec->oevt > 0) {
-                post_event((int)prec->oevt);
-            }
+            /* post output event if set */
+            post_named_event(prec->oevt);
             break;
         case menuIvoaDon_t_drive_outputs:
             break;
         case menuIvoaSet_output_to_IVOV:
             prec->oval = prec->ivov;
             status = writeValue(prec);
-            /* post event if output event != 0 */
-            if (prec->oevt > 0) {
-                post_event((int)prec->oevt);
-            }
+            /* post output event if set */
+            post_named_event(prec->oevt);
             break;
         default:
             status = -1;

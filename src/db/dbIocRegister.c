@@ -266,11 +266,11 @@ static void scanpplCallFunc(const iocshArgBuf *args)
 { scanppl(args[0].dval);}
 
 /* scanpel */
-static const iocshArg scanpelArg0 = { "event number",iocshArgInt};
+static const iocshArg scanpelArg0 = { "event name",iocshArgString};
 static const iocshArg * const scanpelArgs[1] = {&scanpelArg0};
 static const iocshFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
 static void scanpelCallFunc(const iocshArgBuf *args)
-{ scanpel(args[0].ival);}
+{ scanpel(args[0].sval);}
 
 /* scanpiol */
 static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0};

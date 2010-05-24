@@ -43,10 +43,11 @@
 		special(SPC_SCAN)
 		interest(1)
 	}
-	field(EVNT,DBF_SHORT) {
-		prompt("Event Number")
+	field(EVNT,DBF_STRING) {
+		prompt("Event Name")
 		promptgroup(GUI_SCAN)
 		special(SPC_SCAN)
+		size(41)
 		interest(1)
 	}
 	field(TSE,DBF_SHORT) {

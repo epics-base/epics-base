@@ -941,6 +941,20 @@ void			(*pFunction)(void *) )
     return (*pdevLibVirtualOS->pDevDisconnectInterruptVME) (vectorNumber, pFunction);
 }
 
+int devInterruptInUseVME (unsigned level)
+{
+    long status;
+
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if (status) {
+            return status;
+        }
+    }
+
+    return (*pdevLibVirtualOS->pDevInterruptInUseVME) (level);
+}
+
 long devEnableInterruptLevelVME (unsigned level)
 {
     long status;

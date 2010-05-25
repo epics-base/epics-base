@@ -128,6 +128,8 @@ static long vxDevEnableInterruptLevelVME (unsigned level);
 
 static long vxDevDisableInterruptLevelVME (unsigned level);
 
+static int vxDevInterruptInUseVME (unsigned vectorNumber);
+
 /*
  * used by dynamic bind in devLib.c
  */
@@ -135,7 +137,7 @@ static devLibVirtualOS vxVirtualOS = {
     vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
     vxDevConnectInterruptVME, vxDevDisconnectInterruptVME,
     vxDevEnableInterruptLevelVME, vxDevDisableInterruptLevelVME,
-    devA24Malloc,devA24Free,devInit
+    devA24Malloc,devA24Free,devInit,vxDevInterruptInUseVME
 };
 devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
 
@@ -373,7 +375,7 @@ static myISR *isrFetch(unsigned vectorNumber)
 /*
  * determine if a VME interrupt vector is in use
  */
-int devInterruptInUseVME (unsigned vectorNumber)
+static int vxDevInterruptInUseVME (unsigned vectorNumber)
 {
 #if CPU_FAMILY == PPC
     return FALSE;

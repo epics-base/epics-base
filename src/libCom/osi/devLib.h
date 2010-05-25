@@ -330,6 +330,11 @@ typedef struct devLibVirtualOS {
         void *(*pDevA24Malloc)(size_t nbytes);
         void (*pDevA24Free)(void *pBlock);
         long (*pDevInit)(void);
+
+	/*
+	 * test if VME interrupt has an ISR connected
+	 */
+	int (*pDevInterruptInUseVME) (unsigned vectorNumber);
 }devLibVirtualOS;
 epicsShareExtern devLibVirtualOS *pdevLibVirtualOS;
 

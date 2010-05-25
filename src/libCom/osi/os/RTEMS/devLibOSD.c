@@ -101,6 +101,8 @@ static long rtmsDevEnableInterruptLevelVME (unsigned level);
 
 static long rtmsDevDisableInterruptLevelVME (unsigned level);
 
+static int rtemsDevInterruptInUseVME (unsigned vectorNumber);
+
 /* RTEMS specific init */
 
 /*devA24Malloc and devA24Free are not implemented*/
@@ -115,7 +117,7 @@ static devLibVirtualOS rtemsVirtualOS = {
     rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
     rtmsDevConnectInterruptVME, rtmsDevDisconnectInterruptVME,
     rtmsDevEnableInterruptLevelVME, rtmsDevDisableInterruptLevelVME,
-    devA24Malloc,devA24Free,rtmsDevInit
+    devA24Malloc,devA24Free,rtmsDevInit,rtemsDevInterruptInUseVME
 };
 devLibVirtualOS *pdevLibVirtualOS = &rtemsVirtualOS;
 
@@ -296,7 +298,7 @@ static myISR *isrFetch(unsigned vectorNumber, void **parg)
 /*
  * determine if a VME interrupt vector is in use
  */
-int devInterruptInUseVME (unsigned vectorNumber)
+static int rtemsDevInterruptInUseVME (unsigned vectorNumber)
 {
     int i;
     myISR *psub;

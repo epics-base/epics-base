@@ -12,6 +12,19 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>devLib cleanup</h4>
+
+<ul>
+<li>Add VME connect/disconnect IRQ calls to the "virtual os" table</li>
+<li>It is now possible to compile all devLib code on targets without runtime support</li>
+<li>All internal functions are made static.  Some were not before.</li>
+<li>Move VME calls to devLibVME.h.  devLib.h contains general defintions and error codes.</li>
+<li>For compatibility devLib.h includes devLibVME.h unless the macro NO_DEVLIB_COMPAT is defined.</li>
+<li>The "virtual os" table is renamed from pdevLibVirtualOS to pdevLibVME to reflect the fact
+that other bus types would use seperate tables.</li>
+<li>The "virtual os" table API has been moved to a seperate header devLibVMEImpl.h.</li>
+</ul>
+
 <h4>Rewrite epicsThreadOnce()</h4>
 
 <p>Michael Davidsaver suggested a better implementation of epicsThreadOnce()

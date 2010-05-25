@@ -17,10 +17,6 @@ use CA;
 
 ######### Globals ##########
 
-# Non APS users will want to modify theDbdFile default settings
-
-my $theDbdFile = "/net/helios/iocapps/R3.13.9/ioc/linac/2/dbd/linac.dbd";
-
 my $hostArch;
 if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
     $hostArch = $ENV{"EPICS_HOST_ARCH"} ;
@@ -30,6 +26,7 @@ if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
 
 our( $opt_d, $opt_f, $opt_r);
 my $usage = "Usage:\n $0 [-d dbd_file] ( [-f record_type] | [-r] | [record_name] ) [interest]\n";
+my $theDbdFile;
 my %record = ();    # Empty hash to put dbd data in
 my $iIdx = 0;       # Array indexes for interest, data type and base
 my $tIdx = 1;
@@ -77,6 +74,11 @@ if($opt_d) {                            # command line has highest priority
 elsif (exists $ENV{CAPR_DBD_FILE}) {    # Use the env var if it exists
     $theDbdFile = $ENV{CAPR_DBD_FILE};
 }                                        # Otherwise use the default set above
+else {
+    die "Error: no default dbd defined\n".
+     "Specify dbd with -d option or CAPR_DBD_FILE environment variable\n".
+     $usage;
+}
 
 parseDbd($theDbdFile);
 print "Using $theDbdFile\n\n";

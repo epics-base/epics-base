@@ -234,7 +234,6 @@ sub getFieldParams {
     $fType     = $fieldType{$record{$recType}{$field}[$tIdx]};
     $fInterest = $record{$recType}{$field}[$iIdx];
     $fBase       = $record{$recType}{$field}[$bIdx];
-    #print("getFieldParams: $recType, $field, $fType, $fInterest\n");
     return($fType, $fInterest, $fBase);
 }
 

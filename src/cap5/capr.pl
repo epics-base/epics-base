@@ -24,8 +24,8 @@ if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
     $hostArch="solaris-sparc";
 }
 
-our( $opt_d, $opt_f, $opt_r);
-my $usage = "Usage:\n $0 [-d dbd_file] ( [-f record_type] | [-r] | [record_name] ) [interest]\n";
+our( $opt_h, $opt_d, $opt_f, $opt_r);
+
 my $theDbdFile;
 my %record = ();    # Empty hash to put dbd data in
 my $iIdx = 0;       # Array indexes for interest, data type and base
@@ -62,7 +62,8 @@ my $cadebug = 0;
 
 ######### Main program ############
 
-getopts('d:f:r') or die "$usage";
+HELP_MESSAGE() unless getopts('hd:f:r');
+HELP_MESSAGE() if $opt_h;
 
 # Select the dbd file to use
 if($opt_d) {                            # command line has highest priority
@@ -72,9 +73,7 @@ elsif (exists $ENV{CAPR_DBD_FILE}) {    # Use the env var if it exists
     $theDbdFile = $ENV{CAPR_DBD_FILE};
 }                                        # Otherwise use the default set above
 else {
-    die "Error: no default dbd defined\n".
-     "Specify dbd with -d option or CAPR_DBD_FILE environment variable\n".
-     $usage;
+    die "No dbd file defined. ('capr.pl -h' gives help)\n";
 }
 
 parseDbd($theDbdFile);
@@ -95,7 +94,7 @@ if($opt_f) {
 
 # Do the business
 # Allow commas between arguments as in vxWorks dbpr
-die "$usage" unless defined $ARGV[0];
+HELP_MESSAGE() unless defined $ARGV[0];
 $ARGV[0] =~ s/,/ /;                     # Get rid of pesky comma if it's there
 if($ARGV[0] =~ m/\s+\d/) {              # If we replace comma with a space,
     ($ARGV[0], $ARGV[1]) = split(/ /, $ARGV[0]); #split it
@@ -345,7 +344,7 @@ sub caget_callback {
 
 # Given record name and interest level prints data from record fields
 # that are at or below the interest level specified.
-# Useage: printRecord( $recordName, $interestLevel)
+# Usage: printRecord( $recordName, $interestLevel)
 sub printRecord {
     my $name = $_[0];
     my $interest = $_[1];
@@ -432,3 +431,25 @@ sub printRecordList {
     }
 }
 
+sub HELP_MESSAGE {
+    print STDERR "\n",
+"Usage: capr.pl -h\n",
+"       capr.pl [-d dbd_file] -r\n",
+"       capr.pl [-d dbd_file] -f <record_type>\n",
+"       capr.pl [-d dbd_file] <record_name> <interest>\n",
+"Description:\n",
+"   Attempts to perform a record print \"dbpr\" via channel access\n",
+"   for record_name at a given interest level.\n",
+"   The default interest level is 0.\n\n",
+"   If used with the f or r options, prints fields/record type lists.\n",
+"\n",
+"Options:\n",
+"   -h: Help: Prints this message\n",
+"   -d Dbd file: specify dbd file used to read record definitions.\n",
+"      If omitted, the environment variable CAPR_DBD_FILE must be defined\n",
+"   -r Prints the list of record types\n",
+"   -f Prints list of fields, interest level, type and base for the\n",
+"      given record type\n",
+"\n";
+    exit 1;
+}

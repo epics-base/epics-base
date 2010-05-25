@@ -22,6 +22,7 @@
 #include "osdVME.h"
 #include "errMdef.h"
 #include "shareLib.h"
+#include "devLib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +55,7 @@ epicsShareExtern const char *epicsAddressTypeName[];
  * To retain compatibility include everything by default
  */
 #ifndef NO_DEVLIB_COMPAT
-#  include  "devLibImpl.h"
+#  include  "devLibVMEImpl.h"
 #endif
 
 #ifdef __cplusplus

@@ -31,8 +31,8 @@ static const char sccsID[] = "@(#) devLib.c,v 1.1.2.11 2009/07/09 16:37:23 anj E
 #include "ellLib.h"
 
 #define NO_DEVLIB_COMPAT
-#include "devLib.h"
-#include "devLibImpl.h"
+#include "devLibVME.h"
+#include "devLibVMEImpl.h"
 
 static ELLLIST addrAlloc[atLast];
 static ELLLIST addrFree[atLast];

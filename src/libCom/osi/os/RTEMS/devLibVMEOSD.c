@@ -17,7 +17,7 @@
 #include <epicsExit.h>
 #include <rtems.h>
 #include <bsp.h>
-#include "devLib.h"
+#include "devLibVME.h"
 #include <epicsInterrupt.h>
 
 #if defined(__PPC__) || defined(__mcf528x__)

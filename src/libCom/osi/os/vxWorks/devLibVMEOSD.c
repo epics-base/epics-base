@@ -28,7 +28,7 @@
 #include <vxLib.h>
 
 #include "epicsFindSymbol.h"
-#include "devLib.h"
+#include "devLibVME.h"
 #include "errlog.h"
 
 typedef void    myISR (void *pParam);

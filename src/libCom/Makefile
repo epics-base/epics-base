@@ -192,6 +192,7 @@ INC += epicsStdioRedirect.h
 INC += epicsGetopt.h
 
 INC += devLib.h
+INC += devLibImpl.h
 INC += osdVME.h
 
 SRCS += epicsThread.cpp

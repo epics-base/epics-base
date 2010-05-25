@@ -46,6 +46,21 @@ typedef enum {
  */
 extern const char *epicsAddressTypeName[];
 
+#ifdef __cplusplus
+}
+#endif
+
+/*
+ * To retain compatibility include everything by default
+ */
+#ifndef NO_DEVLIB_COMPAT
+#  include  "devLibImpl.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 epicsShareFunc long devAddressMap(void); /* print an address map */
 
 /*
@@ -279,64 +294,6 @@ epicsShareFunc void devLibA24Free(void *pBlock);
  * boundary for its type)
  */
 #define devPtrAlignTest(PTR) (!(devCreateAlignmentMask(*PTR)&(long)(PTR)))
-
-/*
- * virtual OS layer for devLib.c
- */
-typedef struct devLibVirtualOS {
-	/*
-	 * maps logical address to physical address, but does not detect
-	 * two device drivers that are using the same address range
-	 */
-	long (*pDevMapAddr) (epicsAddressType addrType, unsigned options,
-			size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
-
-	/*
-	 * a bus error safe "wordSize" read at the specified address which returns 
-	 * unsuccessful status if the device isnt present
-	 */
-	long (*pDevReadProbe) (unsigned wordSize, volatile const void *ptr, void *pValueRead);
-
-	/*
-	 * a bus error safe "wordSize" write at the specified address which returns 
-	 * unsuccessful status if the device isnt present
-	 */
-	long (*pDevWriteProbe) (unsigned wordSize, volatile void *ptr, const void *pValueWritten);
-
-	/*
-	 * connect ISR to a VME interrupt vector
-	 * (required for backwards compatibility)
-	 */
-	long (*pDevConnectInterruptVME) (unsigned vectorNumber, 
-						void (*pFunction)(void *), void  *parameter);
-
-	/*
-	 * disconnect ISR from a VME interrupt vector
-	 * (required for backwards compatibility)
-	 */
-	long (*pDevDisconnectInterruptVME) (unsigned vectorNumber,
-						void (*pFunction)(void *));
-
-	/*
-	 * enable VME interrupt level
-	 */
-	long (*pDevEnableInterruptLevelVME) (unsigned level);
-
-	/*
-	 * disable VME interrupt level
-	 */
-	long (*pDevDisableInterruptLevelVME) (unsigned level);
-        /* malloc/free A24 address space */
-        void *(*pDevA24Malloc)(size_t nbytes);
-        void (*pDevA24Free)(void *pBlock);
-        long (*pDevInit)(void);
-
-	/*
-	 * test if VME interrupt has an ISR connected
-	 */
-	int (*pDevInterruptInUseVME) (unsigned vectorNumber);
-}devLibVirtualOS;
-epicsShareExtern devLibVirtualOS *pdevLibVirtualOS;
 
 /*
  * error codes (and messages) associated with devLib.c

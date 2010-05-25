@@ -29,7 +29,10 @@ static const char sccsID[] = "@(#) $Id$";
 #include "epicsMutex.h"
 #include "errlog.h"
 #include "ellLib.h"
+
+#define NO_DEVLIB_COMPAT
 #include "devLib.h"
+#include "devLibImpl.h"
 
 static ELLLIST addrAlloc[atLast];
 static ELLLIST addrFree[atLast];

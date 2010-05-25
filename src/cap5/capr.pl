@@ -17,10 +17,6 @@ use CA;
 
 ######### Globals ##########
 
-# Non APS users will want to modify theDbdFile default settings
-
-my $theDbdFile = "/net/helios/iocapps/R3.13.9/ioc/linac/2/dbd/linac.dbd";
-
 my $hostArch;
 if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
     $hostArch = $ENV{"EPICS_HOST_ARCH"} ;
@@ -28,8 +24,9 @@ if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
     $hostArch="solaris-sparc";
 }
 
-our( $opt_d, $opt_f, $opt_r);
-my $usage = "Usage:\n $0 [-d dbd_file] ( [-f record_type] | [-r] | [record_name] ) [interest]\n";
+our( $opt_h, $opt_d, $opt_f, $opt_r);
+
+my $theDbdFile;
 my %record = ();    # Empty hash to put dbd data in
 my $iIdx = 0;       # Array indexes for interest, data type and base
 my $tIdx = 1;
@@ -58,17 +55,15 @@ my %fieldType = (
                 DBF_NOACCESS    => "ezcaNoAccess"
 );
 
-# globals for parallel_caget
+# globals for sub caget
 my %callback_data;
 my $callback_incomplete;
-# globals for caget
-my $caget_data;
-my $caget_incomplete;
 my $cadebug = 0;
 
 ######### Main program ############
 
-getopts('d:f:r') or die "$usage";
+HELP_MESSAGE() unless getopts('hd:f:r');
+HELP_MESSAGE() if $opt_h;
 
 # Select the dbd file to use
 if($opt_d) {                            # command line has highest priority
@@ -77,6 +72,9 @@ if($opt_d) {                            # command line has highest priority
 elsif (exists $ENV{CAPR_DBD_FILE}) {    # Use the env var if it exists
     $theDbdFile = $ENV{CAPR_DBD_FILE};
 }                                        # Otherwise use the default set above
+else {
+    die "No dbd file defined. ('capr.pl -h' gives help)\n";
+}
 
 parseDbd($theDbdFile);
 print "Using $theDbdFile\n\n";
@@ -96,13 +94,14 @@ if($opt_f) {
 
 # Do the business
 # Allow commas between arguments as in vxWorks dbpr
-die "$usage" unless defined $ARGV[0];
+HELP_MESSAGE() unless defined $ARGV[0];
 $ARGV[0] =~ s/,/ /;                     # Get rid of pesky comma if it's there
 if($ARGV[0] =~ m/\s+\d/) {              # If we replace comma with a space,
     ($ARGV[0], $ARGV[1]) = split(/ /, $ARGV[0]); #split it
 }
 $ARGV[0] =~ s/\s+//;                    # Remove any spaces
 $ARGV[0] =~ s/\..*//;                   # Get rid of field name if it's there
+$ARGV[1] = 0 unless defined $ARGV[1];   # default interest level is 0
 $ARGV[1] =~ s/\D//g;                    # Make sure we only use digits
 $ARGV[1] = $ARGV[1] || 0;               # interest defaults to 0
 printRecord($ARGV[0], $ARGV[1]);        # Do the do
@@ -217,8 +216,10 @@ sub getRecType {
     my $type;
     my $data;
 
-    $data = caget($name);
-    if ($data =~ m/Invalid channel name/) { die "Record \"$_[0]\" not found\n"; }
+    my $fields_read = caget( $name );
+
+    if ( $fields_read != 1 ) { die "Record \"$_[0]\" not found\n"; }
+    $data = $callback_data{ $name };
     chomp $data;
     $data =~ s/\s+//;
     #print("$name is a \"$data\"type\n");
@@ -265,10 +266,10 @@ sub printField {
         $outStr = sprintf("%-5s %x", $field, $fieldData);
     } elsif ( $dataType eq "ezcaDouble" || $dataType eq "ezcaFloat" ) {
         $outStr = sprintf("%-5s %.8f", $field, $fieldData);
-    } elsif ( $dataType eq "ezcaChar" ) { 
+    } elsif ( $dataType eq "ezcaChar" ) {
         $outStr = sprintf("%-5s %d", $field, ord($fieldData));
     }else {
-        # ezcaByte, ezcaShort, ezcaLong 
+        # ezcaByte, ezcaShort, ezcaLong
         $outStr = sprintf("%-5s %d", $field, $fieldData);
     }
 
@@ -291,13 +292,20 @@ sub printField {
     return($col);
 }
 
-#  grab a list of pvs simultaneously
+#  Query for a list of fields simultaneously.
 #  The results are filled in the the %callback_data global hash
 #  and the result of the operation is the number of read pvs
-# Usage: $read_pvs = parallel_caget( @pvlist )
-sub parallel_caget {
+#
+#  NOTE: Not re-entrant because results are written to global hash
+#        %callback_data
+#
+#  Usage: $fields_read = caget( @pvlist )
+sub caget {
     my @chans = map { CA->new($_); } @_;
     my $wait = 1;
+
+    #clear results;
+    %callback_data = ();
 
     eval { CA->pend_io($wait); };
     if ($@) {
@@ -321,10 +329,10 @@ sub parallel_caget {
         $_->get_callback(\&caget_callback, $type);
     } @chans;
 
-    my $read_pvs = @chans;
+    my $fields_read = @chans;
     $callback_incomplete = @chans;
     CA->pend_event(0.1) while $callback_incomplete;
-    return $read_pvs;
+    return $fields_read;
 }
 
 sub caget_callback {
@@ -336,7 +344,7 @@ sub caget_callback {
 
 # Given record name and interest level prints data from record fields
 # that are at or below the interest level specified.
-# Useage: printRecord( $recordName, $interestLevel)
+# Usage: printRecord( $recordName, $interestLevel)
 sub printRecord {
     my $name = $_[0];
     my $interest = $_[1];
@@ -347,10 +355,10 @@ sub printRecord {
     $recType = getRecType($name);
     print("$name is record type $recType\n");
     exists($record{$recType})  || die "Record type $recType not found in dbd file --";
-    
-    #capture list of fields to obtain
-    my @list = ();      #fiels to read
-    my @fields_pr = ();    #fields for print-out
+
+    #capture list of fields
+    my @readlist = ();  #fields to read via CA
+    my @fields_pr = (); #fields for print-out
     my @ftypes = ();    #types, from parser
     my @bases = ();     #bases, from parser
     foreach $field (sort keys %{$record{$recType}}) {
@@ -362,18 +370,19 @@ sub printRecord {
             if( $interest >= $fInterest ) {
                 $fToGet = $name . "." . $field;
                 push @fields_pr, $field;
-                push @list, $fToGet;
+                push @readlist, $fToGet;
                 push @ftypes, $fType;
                 push @bases, $base;
             }
         }
     }
-    my $read_pvs = parallel_caget( @list );
+    my $fields_read = caget( @readlist );
 
+    # print while iterating over lists gathered
     $col = 0;
-    for (my $i=0; $i < scalar @list; $i++) {
+    for (my $i=0; $i < scalar @readlist; $i++) {
         $field  = $fields_pr[$i];
-        $fToGet = $list[$i];
+        $fToGet = $readlist[$i];
         $data   = $callback_data{$fToGet};
         $fType  = $ftypes[$i];
         chomp $data;
@@ -422,52 +431,25 @@ sub printRecordList {
     }
 }
 
-
-# returns a terse result of a caget operation
-# using perlCA
-sub caget {
-    my $name = $_[0];
-    print $name . "\n" if $cadebug;
-    show_call_stack() if $cadebug;
-    my $channel = CA->new($name);
-    my $wait = 1;
-    eval {  CA->pend_io($wait); };
-    if ($@) {
-        if ($@ =~ m/^ECA_TIMEOUT/) {
-            my $err =  "'" . $channel . "'";
-            print "Channel connect timed out: $err not found.\n";
-        }
-        die $@;
-    }
-    my $type = $channel->field_type;
-    my $count = $channel->element_count;
-    $channel->get_callback(\&callback_handler, $type);
-    $caget_incomplete = 1;
-    CA->pend_event(0.1) while ($caget_incomplete); 
-    return $caget_data;
+sub HELP_MESSAGE {
+    print STDERR "\n",
+"Usage: capr.pl -h\n",
+"       capr.pl [-d dbd_file] -r\n",
+"       capr.pl [-d dbd_file] -f <record_type>\n",
+"       capr.pl [-d dbd_file] <record_name> <interest>\n",
+"Description:\n",
+"   Attempts to perform a record print \"dbpr\" via channel access\n",
+"   for record_name at a given interest level.\n",
+"   The default interest level is 0.\n\n",
+"   If used with the f or r options, prints fields/record type lists.\n",
+"\n",
+"Options:\n",
+"   -h: Help: Prints this message\n",
+"   -d Dbd file: specify dbd file used to read record definitions.\n",
+"      If omitted, the environment variable CAPR_DBD_FILE must be defined\n",
+"   -r Prints the list of record types\n",
+"   -f Prints list of fields, interest level, type and base for the\n",
+"      given record type\n",
+"\n";
+    exit 1;
 }
-
-sub callback_handler
-{
-    my ($chan, $status, $data) = @_;
-    die $status if $status;
-    #display($chan, $type, $data);
-    $caget_data = $data;
-    $caget_incomplete=0;
-}
-
-sub show_call_stack {
-  my ( $path, $line, $subr );
-  my $max_depth = 30;
-  my $i = 1;
-  print("--- Begin stack trace ---\n");
-  my @call_details;
-  @call_details = caller($i);
-  while ( (@call_details) && ($i<$max_depth) ) {
-    print("$call_details[1] line $call_details[2] in function $call_details[3]\n");
-    $i = $i +1;
-    @call_details = caller($i);
-  }
-  print("--- End stack trace ---\n");
-}
-

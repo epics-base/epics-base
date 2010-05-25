@@ -8,8 +8,11 @@
 #######################################################################
 
 use strict;
+
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+
 use Getopt::Std;
-use lib "/dls_sw/epics/R3.14.11/base/lib/perl";
 use CA;
 
 ######### Globals ##########
@@ -83,11 +86,6 @@ if($opt_f) {
     printRecordList($opt_f);
     exit;
 }
-#my @data;
-#@data = EZCA::Get("S:BM:TMDispAI.VAL", "ezcaDouble",1);
-#if( $data[0] )  { die "ca get error on field --" };
-#print(" $data[1] ");
-#die "end";
 
 # Do the business
 # Allow commas between arguments as in vxWorks dbpr

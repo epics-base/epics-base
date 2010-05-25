@@ -155,6 +155,7 @@ long epicsShareAPI dbl(const char *precordTypename, const char *fields)
                     if (!strcmp(papfields[ifield], "recordType")) {
                         pvalue = dbGetRecordTypeName(pdbentry);
                     } else {
+			printf(", ");
                         continue;
                     }
                 } else {

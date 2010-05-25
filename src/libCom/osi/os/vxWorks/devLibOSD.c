@@ -114,13 +114,27 @@ static void *devA24Malloc(size_t size);
 static void devA24Free(void *pBlock);
 static long devInit(void) { return 0;}
 
+static long vxDevConnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)(),
+    void  *parameter);
+
+static long vxDevDisconnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)() 
+);
+
+static long vxDevEnableInterruptLevelVME (unsigned level);
+
+static long vxDevDisableInterruptLevelVME (unsigned level);
+
 /*
  * used by dynamic bind in devLib.c
  */
 static devLibVirtualOS vxVirtualOS = {
     vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
-    devConnectInterruptVME, devDisconnectInterruptVME,
-    devEnableInterruptLevelVME, devDisableInterruptLevelVME,
+    vxDevConnectInterruptVME, vxDevDisconnectInterruptVME,
+    vxDevEnableInterruptLevelVME, vxDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,devInit
 };
 devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
@@ -130,7 +144,7 @@ devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
  *
  * wrapper to minimize driver dependency on vxWorks
  */
-long devConnectInterruptVME (
+static long vxDevConnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)(),
     void  *parameter)
@@ -154,7 +168,7 @@ long devConnectInterruptVME (
 
 /*
  *
- *  devDisconnectInterruptVME()
+ *  vxDevDisconnectInterruptVME()
  *
  *  wrapper to minimize driver dependency on vxWorks
  *
@@ -163,7 +177,7 @@ long devConnectInterruptVME (
  *  an interrupt handler that was installed by another driver
  *
  */
-long devDisconnectInterruptVME (
+static long vxDevDisconnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)() 
 )
@@ -198,7 +212,7 @@ long devDisconnectInterruptVME (
 /*
  * enable VME interrupt level
  */
-long devEnableInterruptLevelVME (unsigned level)
+static long vxDevEnableInterruptLevelVME (unsigned level)
 {
 #   if CPU_FAMILY != I80X86 
         int s;
@@ -250,7 +264,7 @@ long devDisableInterruptLevelISA (unsigned level)
 /*
  * disable VME interrupt level
  */
-long devDisableInterruptLevelVME (unsigned level)
+static long vxDevDisableInterruptLevelVME (unsigned level)
 {
 #   if CPU_FAMILY != I80X86
         int s;

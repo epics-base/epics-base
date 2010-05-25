@@ -907,6 +907,68 @@ long devNoResponseProbe (epicsAddressType addrType,
     return SUCCESS;
 }
 
+long devConnectInterruptVME(
+unsigned	vectorNumber,
+void		(*pFunction)(void *),
+void		*parameter )
+{
+    long status;
+
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if (status) {
+            return status;
+        }
+    }
+
+    return (*pdevLibVirtualOS->pDevConnectInterruptVME) (vectorNumber, 
+                    pFunction, parameter);
+}
+
+long devDisconnectInterruptVME(
+unsigned		vectorNumber,
+void			(*pFunction)(void *) )
+{
+    long status;
+
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if (status) {
+            return status;
+        }
+    }
+
+    return (*pdevLibVirtualOS->pDevDisconnectInterruptVME) (vectorNumber, pFunction);
+}
+
+long devEnableInterruptLevelVME (unsigned level)
+{
+    long status;
+
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if (status) {
+            return status;
+        }
+    }
+
+    return (*pdevLibVirtualOS->pDevEnableInterruptLevelVME) (level);
+}
+
+long devDisableInterruptLevelVME (unsigned level)
+{
+    long status;
+
+    if (!devLibInitFlag) {
+        status = devLibInit();
+        if (status) {
+            return status;
+        }
+    }
+
+    return (*pdevLibVirtualOS->pDevDisableInterruptLevelVME) (level);
+}
+
 /*
  * devConnectInterrupt ()
  *

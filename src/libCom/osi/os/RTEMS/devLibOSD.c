@@ -87,6 +87,20 @@ long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue
  */
 long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
 
+static long rtmsDevConnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)(),
+    void  *parameter);
+
+static long rtmsDevDisconnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)() 
+);
+
+static long rtmsDevEnableInterruptLevelVME (unsigned level);
+
+static long rtmsDevDisableInterruptLevelVME (unsigned level);
+
 /* RTEMS specific init */
 
 /*devA24Malloc and devA24Free are not implemented*/
@@ -99,8 +113,8 @@ static long rtmsDevInit(void);
  */
 static devLibVirtualOS rtemsVirtualOS = {
     rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
-    devConnectInterruptVME, devDisconnectInterruptVME,
-    devEnableInterruptLevelVME, devDisableInterruptLevelVME,
+    rtmsDevConnectInterruptVME, rtmsDevDisconnectInterruptVME,
+    rtmsDevEnableInterruptLevelVME, rtmsDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,rtmsDevInit
 };
 devLibVirtualOS *pdevLibVirtualOS = &rtemsVirtualOS;
@@ -119,7 +133,7 @@ rtmsDevInit(void)
  *
  * wrapper to minimize driver dependency on OS
  */
-long devConnectInterruptVME (
+static long rtmsDevConnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)(),
     void  *parameter)
@@ -152,7 +166,7 @@ long devConnectInterruptVME (
  *  an interrupt handler that was installed by another driver
  *
  */
-long devDisconnectInterruptVME (
+static long rtmsDevDisconnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)() 
 )
@@ -188,7 +202,7 @@ long devDisconnectInterruptVME (
 /*
  * enable VME interrupt level
  */
-long devEnableInterruptLevelVME (unsigned level)
+static long rtmsDevEnableInterruptLevelVME (unsigned level)
 {
     return BSP_enableVME_int_lvl(level);
 }
@@ -196,7 +210,7 @@ long devEnableInterruptLevelVME (unsigned level)
 /*
  * disable VME interrupt level
  */
-long devDisableInterruptLevelVME (unsigned level)
+static long rtmsDevDisableInterruptLevelVME (unsigned level)
 {
     return BSP_disableVME_int_lvl(level);
 }

@@ -113,13 +113,13 @@ static long rtmsDevInit(void);
 /*
  * used by bind in devLib.c
  */
-static devLibVirtualOS rtemsVirtualOS = {
+static devLibVME rtemsVirtualOS = {
     rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
     rtmsDevConnectInterruptVME, rtmsDevDisconnectInterruptVME,
     rtmsDevEnableInterruptLevelVME, rtmsDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,rtmsDevInit,rtemsDevInterruptInUseVME
 };
-devLibVirtualOS *pdevLibVirtualOS = &rtemsVirtualOS;
+devLibVME *pdevLibVME = &rtemsVirtualOS;
 
 /* RTEMS specific initialization */
 static long

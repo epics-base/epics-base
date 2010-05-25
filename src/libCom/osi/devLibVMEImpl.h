@@ -29,12 +29,12 @@ extern "C" {
 /*
  * virtual OS layer for devLib.c
  *
- * The global virtual OS table pdevLibVirtualOS controls
+ * The global virtual OS table pdevLibVME controls
  * the behaviour of the functions defined in devLib.h.
  * All of which call into the functions found in this table
  * to perform system specific tasks.
  */
-typedef struct devLibVirtualOS {
+typedef struct devLibVME {
 	/*
 	 * maps logical address to physical address, but does not detect
 	 * two device drivers that are using the same address range
@@ -86,9 +86,9 @@ typedef struct devLibVirtualOS {
 	 * test if VME interrupt has an ISR connected
 	 */
 	int (*pDevInterruptInUseVME) (unsigned vectorNumber);
-}devLibVirtualOS;
+}devLibVME;
 
-epicsShareExtern devLibVirtualOS *pdevLibVirtualOS;
+epicsShareExtern devLibVME *pdevLibVME;
 
 #ifdef __cplusplus
 }

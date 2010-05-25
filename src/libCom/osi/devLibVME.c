@@ -170,7 +170,7 @@ long devBusToLocalAddr(
     /*
      * Call the virtual os routine to map the bus address to a CPU address
      */
-    status = (*pdevLibVirtualOS->pDevMapAddr) (addrType, 0, busAddr, 4, &localAddress);
+    status = (*pdevLibVME->pDevMapAddr) (addrType, 0, busAddr, 4, &localAddress);
     if (status) {
         errPrintf (status, __FILE__, __LINE__, "%s bus address =0X%X\n",
             epicsAddressTypeName[addrType], (unsigned int)busAddr);
@@ -278,7 +278,7 @@ long devReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
         }
     }
 
-    return (*pdevLibVirtualOS->pDevReadProbe) (wordSize, ptr, pValue);
+    return (*pdevLibVME->pDevReadProbe) (wordSize, ptr, pValue);
 }
 
 /*
@@ -298,7 +298,7 @@ long devWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
         }
     }
 
-    return (*pdevLibVirtualOS->pDevWriteProbe) (wordSize, ptr, pValue);
+    return (*pdevLibVME->pDevWriteProbe) (wordSize, ptr, pValue);
 }
 
 /*
@@ -335,7 +335,7 @@ static long devInstallAddr (
      * always map through the virtual os in case the memory
      * management is set up there
      */
-    status = (*pdevLibVirtualOS->pDevMapAddr) (addrType, 0, base, 
+    status = (*pdevLibVME->pDevMapAddr) (addrType, 0, base, 
                 size, &pPhysicalAddress);
     if (status) {
         errPrintf (status, __FILE__, __LINE__, "%s base=0X%X size = 0X%X",
@@ -700,8 +700,8 @@ static long devLibInit (void)
 
 
     if(devLibInitFlag) return(SUCCESS);
-    if(!pdevLibVirtualOS) {
-        epicsPrintf ("pdevLibVirtualOS is NULL\n");
+    if(!pdevLibVME) {
+        epicsPrintf ("pdevLibVME is NULL\n");
         return S_dev_internal;
     }
 
@@ -730,7 +730,7 @@ static long devLibInit (void)
     }
     epicsMutexUnlock(addrListLock);
     devLibInitFlag = TRUE;
-    return pdevLibVirtualOS->pDevInit();
+    return pdevLibVME->pDevInit();
 }
 
 /*
@@ -892,7 +892,7 @@ long devNoResponseProbe (epicsAddressType addrType,
              * every byte in the block must 
              * map to a physical address
              */
-            s = (*pdevLibVirtualOS->pDevMapAddr) (addrType, 0, probe, wordSize, &pPhysical);
+            s = (*pdevLibVME->pDevMapAddr) (addrType, 0, probe, wordSize, &pPhysical);
             if (s!=SUCCESS) {
                 return s;
             }
@@ -900,7 +900,7 @@ long devNoResponseProbe (epicsAddressType addrType,
             /*
              * verify that no device is present
              */
-            s = (*pdevLibVirtualOS->pDevReadProbe)(wordSize, pPhysical, &allWordSizes);
+            s = (*pdevLibVME->pDevReadProbe)(wordSize, pPhysical, &allWordSizes);
             if (s==SUCCESS) {
                 return S_dev_addressOverlap;
             }
@@ -924,7 +924,7 @@ void		*parameter )
         }
     }
 
-    return (*pdevLibVirtualOS->pDevConnectInterruptVME) (vectorNumber, 
+    return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber, 
                     pFunction, parameter);
 }
 
@@ -941,7 +941,7 @@ void			(*pFunction)(void *) )
         }
     }
 
-    return (*pdevLibVirtualOS->pDevDisconnectInterruptVME) (vectorNumber, pFunction);
+    return (*pdevLibVME->pDevDisconnectInterruptVME) (vectorNumber, pFunction);
 }
 
 int devInterruptInUseVME (unsigned level)
@@ -955,7 +955,7 @@ int devInterruptInUseVME (unsigned level)
         }
     }
 
-    return (*pdevLibVirtualOS->pDevInterruptInUseVME) (level);
+    return (*pdevLibVME->pDevInterruptInUseVME) (level);
 }
 
 long devEnableInterruptLevelVME (unsigned level)
@@ -969,7 +969,7 @@ long devEnableInterruptLevelVME (unsigned level)
         }
     }
 
-    return (*pdevLibVirtualOS->pDevEnableInterruptLevelVME) (level);
+    return (*pdevLibVME->pDevEnableInterruptLevelVME) (level);
 }
 
 long devDisableInterruptLevelVME (unsigned level)
@@ -983,7 +983,7 @@ long devDisableInterruptLevelVME (unsigned level)
         }
     }
 
-    return (*pdevLibVirtualOS->pDevDisableInterruptLevelVME) (level);
+    return (*pdevLibVME->pDevDisableInterruptLevelVME) (level);
 }
 
 /*
@@ -1009,7 +1009,7 @@ void                    *parameter)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVirtualOS->pDevConnectInterruptVME) (vectorNumber, 
+        return (*pdevLibVME->pDevConnectInterruptVME) (vectorNumber, 
                     pFunction, parameter);
     default:
         return S_dev_uknIntType;
@@ -1040,7 +1040,7 @@ void                    (*pFunction)(void *)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVirtualOS->pDevDisconnectInterruptVME) (vectorNumber, 
+        return (*pdevLibVME->pDevDisconnectInterruptVME) (vectorNumber, 
                     pFunction);
     default:
         return S_dev_uknIntType;
@@ -1068,7 +1068,7 @@ unsigned                level)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVirtualOS->pDevEnableInterruptLevelVME) (level);
+        return (*pdevLibVME->pDevEnableInterruptLevelVME) (level);
     default:
         return S_dev_uknIntType;
     }
@@ -1095,7 +1095,7 @@ unsigned                level)
     switch(intType){
     case intVME:
     case intVXI:
-        return (*pdevLibVirtualOS->pDevDisableInterruptLevelVME) (level);
+        return (*pdevLibVME->pDevDisableInterruptLevelVME) (level);
     default:
         return S_dev_uknIntType;
     }
@@ -1144,7 +1144,7 @@ void *devLibA24Malloc(size_t size)
     if (devLibA24Debug)
         epicsPrintf ("devLibA24Malloc(%u) entered\n", (unsigned int)size);
     
-    ret = pdevLibVirtualOS->pDevA24Malloc(size);
+    ret = pdevLibVME->pDevA24Malloc(size);
     return(ret);
 }
 
@@ -1153,5 +1153,5 @@ void devLibA24Free(void *pBlock)
     if (devLibA24Debug)
         epicsPrintf("devLibA24Free(%p) entered\n", pBlock);
     
-    pdevLibVirtualOS->pDevA24Free(pBlock);
+    pdevLibVME->pDevA24Free(pBlock);
 }

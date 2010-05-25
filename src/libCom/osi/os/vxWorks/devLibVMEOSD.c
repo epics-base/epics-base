@@ -133,13 +133,13 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber);
 /*
  * used by dynamic bind in devLib.c
  */
-static devLibVirtualOS vxVirtualOS = {
+static devLibVME vxVirtualOS = {
     vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
     vxDevConnectInterruptVME, vxDevDisconnectInterruptVME,
     vxDevEnableInterruptLevelVME, vxDevDisableInterruptLevelVME,
     devA24Malloc,devA24Free,devInit,vxDevInterruptInUseVME
 };
-devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
+devLibVME *pdevLibVME = &vxVirtualOS;
 
 /*
  * devConnectInterruptVME

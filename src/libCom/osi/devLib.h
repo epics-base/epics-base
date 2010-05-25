@@ -61,6 +61,12 @@ extern const char *epicsAddressTypeName[];
 extern "C" {
 #endif
 
+/*
+ *  General API
+ *
+ *  This section applies to all bus types
+ */
+
 epicsShareFunc long devAddressMap(void); /* print an address map */
 
 /*
@@ -129,32 +135,16 @@ epicsShareFunc long devAllocAddress(
 			volatile void **pLocalAddress);
 
 /*
+ * VME API
+ *
+ * Functions in this section apply only to the VME bus type
+ */
+
+/*
  * connect ISR to a VME interrupt vector
  */
 epicsShareFunc long devConnectInterruptVME(
 			unsigned vectorNumber,
-			void (*pFunction)(void *),
-			void  *parameter);
-
-/*
- * connect ISR to an ISA interrupt level
- * (not implemented)
- * (API should be reviewed)
- */
-epicsShareFunc long devConnectInterruptISA(
-			unsigned interruptLevel,
-			void (*pFunction)(void *),
-			void  *parameter);
-
-/*
- * connect ISR to a PCI interrupt
- * (not implemented)
- * (API should be reviewed)
- */
-epicsShareFunc long devConnectInterruptPCI(
-			unsigned bus,
-			unsigned device,
-			unsigned function,
 			void (*pFunction)(void *),
 			void  *parameter);
 
@@ -170,6 +160,47 @@ epicsShareFunc long devDisconnectInterruptVME(
 			void (*pFunction)(void *));
 
 /*
+ * determine if a VME interrupt vector is in use
+ *
+ * returns boolean
+ */
+epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
+
+/*
+ * enable VME interrupt level
+ */
+epicsShareFunc long devEnableInterruptLevelVME (unsigned level);
+
+/*
+ * disable VME interrupt level
+ */
+epicsShareFunc long devDisableInterruptLevelVME (unsigned level);
+
+/*
+ * Routines to allocate and free memory in the A24 memory region.
+ *
+ */
+epicsShareFunc void *devLibA24Malloc(size_t);
+epicsShareFunc void *devLibA24Calloc(size_t);
+epicsShareFunc void devLibA24Free(void *pBlock);
+
+/*
+ * ISA API
+ *
+ * Functions in this section apply only to the ISA bus type
+ */
+
+/*
+ * connect ISR to an ISA interrupt level
+ * (not implemented)
+ * (API should be reviewed)
+ */
+epicsShareFunc long devConnectInterruptISA(
+			unsigned interruptLevel,
+			void (*pFunction)(void *),
+			void  *parameter);
+
+/*
  * disconnect ISR from an ISA interrupt level
  * (not implemented)
  * (API should be reviewed)
@@ -181,6 +212,43 @@ epicsShareFunc long devDisconnectInterruptVME(
 epicsShareFunc long devDisconnectInterruptISA(
 			unsigned interruptLevel,
 			void (*pFunction)(void *));
+
+/*
+ * determine if an ISA interrupt level is in use
+ * (not implemented)
+ *
+ * returns boolean
+ */
+epicsShareFunc int devInterruptLevelInUseISA (unsigned interruptLevel);
+
+/*
+ * enable ISA interrupt level
+ */
+epicsShareFunc long devEnableInterruptLevelISA (unsigned level);
+
+/*
+ * disable ISA interrupt level
+ */
+epicsShareFunc long devDisableInterruptLevelISA (unsigned level);
+
+
+/*
+ * PCI API
+ *
+ * Functions in this section apply only to the ISA bus type
+ */
+
+/*
+ * connect ISR to a PCI interrupt
+ * (not implemented)
+ * (API should be reviewed)
+ */
+epicsShareFunc long devConnectInterruptPCI(
+			unsigned bus,
+			unsigned device,
+			unsigned function,
+			void (*pFunction)(void *),
+			void  *parameter);
 
 /*
  * disconnect ISR from a PCI interrupt
@@ -198,21 +266,6 @@ epicsShareFunc long devDisconnectInterruptPCI(
 			void (*pFunction)(void *));
 
 /*
- * determine if a VME interrupt vector is in use
- *
- * returns boolean
- */
-epicsShareFunc int devInterruptInUseVME (unsigned vectorNumber);
-
-/*
- * determine if an ISA interrupt level is in use
- * (not implemented)
- *
- * returns boolean
- */
-epicsShareFunc int devInterruptLevelInUseISA (unsigned interruptLevel);
-
-/*
  * determine if a PCI interrupt is in use
  * (not implemented)
  *
@@ -221,17 +274,6 @@ epicsShareFunc int devInterruptLevelInUseISA (unsigned interruptLevel);
 epicsShareFunc int devInterruptInUsePCI (unsigned bus, unsigned device, 
 							  unsigned function);
 
-typedef enum {intVME, intVXI, intISA} epicsInterruptType;
-
-/*
- * enable VME interrupt level
- */
-epicsShareFunc long devEnableInterruptLevelVME (unsigned level);
-
-/*
- * enable ISA interrupt level
- */
-epicsShareFunc long devEnableInterruptLevelISA (unsigned level);
 
 /*
  * not implemented - API needs to be reviewed 
@@ -240,28 +282,15 @@ epicsShareFunc long devEnableInterruptLevelPCI (unsigned level,
 			unsigned bus, unsigned device, unsigned function);
 
 /*
- * disable VME interrupt level
- */
-epicsShareFunc long devDisableInterruptLevelVME (unsigned level);
-
-/*
- * disable ISA interrupt level
- */
-epicsShareFunc long devDisableInterruptLevelISA (unsigned level);
-
-/*
  * not implemented - API needs to be reviewed 
  */
 epicsShareFunc long devDisableInterruptLevelPCI (unsigned level,
 			unsigned bus, unsigned device, unsigned function);
 
+
 /*
- * Routines to allocate and free memory in the A24 memory region.
- *
+ * Support macros
  */
-epicsShareFunc void *devLibA24Malloc(size_t);
-epicsShareFunc void *devLibA24Calloc(size_t);
-epicsShareFunc void devLibA24Free(void *pBlock);
 
 /*
  * Normalize a digital value and convert it to type TYPE
@@ -336,6 +365,15 @@ epicsShareFunc void devLibA24Free(void *pBlock);
 #define S_dev_badCRCSR (M_devLib| 35) /*Invalid VME CR/CSR address*/
 #define S_dev_vxWorksIntEnFail S_dev_intEnFail
 
+
+/*
+ * Deprecated interface
+ */
+
+#ifndef NO_DEVLIB_OLD_INTERFACE
+
+typedef enum {intVME, intVXI, intISA} epicsInterruptType;
+
 /*
  * NOTE: this routine has been deprecated. It exists
  * for backwards compatibility purposes only.
@@ -393,6 +431,8 @@ epicsShareFunc long devDisableInterruptLevel (
  * in a future release.
  */
 epicsShareFunc long locationProbe (epicsAddressType addrType, char *pLocation);
+
+#endif /* NO_DEVLIB_OLD_INTERFACE */
 
 /*
  * Some vxWorks convenience routines

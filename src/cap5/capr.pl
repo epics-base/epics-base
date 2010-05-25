@@ -217,9 +217,9 @@ sub getRecType {
     my $type;
     my $data;
 
-    my $read_pvs = caget( $name );
-    
-    if ( $read_pvs != 1 ) { die "Record \"$_[0]\" not found\n"; }
+    my $fields_read = caget( $name );
+
+    if ( $fields_read != 1 ) { die "Record \"$_[0]\" not found\n"; }
     $data = $callback_data{ $name };
     chomp $data;
     $data =~ s/\s+//;
@@ -267,10 +267,10 @@ sub printField {
         $outStr = sprintf("%-5s %x", $field, $fieldData);
     } elsif ( $dataType eq "ezcaDouble" || $dataType eq "ezcaFloat" ) {
         $outStr = sprintf("%-5s %.8f", $field, $fieldData);
-    } elsif ( $dataType eq "ezcaChar" ) { 
+    } elsif ( $dataType eq "ezcaChar" ) {
         $outStr = sprintf("%-5s %d", $field, ord($fieldData));
     }else {
-        # ezcaByte, ezcaShort, ezcaLong 
+        # ezcaByte, ezcaShort, ezcaLong
         $outStr = sprintf("%-5s %d", $field, $fieldData);
     }
 
@@ -293,21 +293,21 @@ sub printField {
     return($col);
 }
 
-#  Query for a list of pvs simultaneously
+#  Query for a list of fields simultaneously.
 #  The results are filled in the the %callback_data global hash
 #  and the result of the operation is the number of read pvs
 #
 #  NOTE: Not re-entrant because results are written to global hash
 #        %callback_data
 #
-#  Usage: $read_pvs = caget( @pvlist )
+#  Usage: $fields_read = caget( @pvlist )
 sub caget {
     my @chans = map { CA->new($_); } @_;
     my $wait = 1;
-    
+
     #clear results;
     %callback_data = ();
-    
+
     eval { CA->pend_io($wait); };
     if ($@) {
         if ($@ =~ m/^ECA_TIMEOUT/) {
@@ -330,10 +330,10 @@ sub caget {
         $_->get_callback(\&caget_callback, $type);
     } @chans;
 
-    my $read_pvs = @chans;
+    my $fields_read = @chans;
     $callback_incomplete = @chans;
     CA->pend_event(0.1) while $callback_incomplete;
-    return $read_pvs;
+    return $fields_read;
 }
 
 sub caget_callback {
@@ -356,10 +356,10 @@ sub printRecord {
     $recType = getRecType($name);
     print("$name is record type $recType\n");
     exists($record{$recType})  || die "Record type $recType not found in dbd file --";
-    
-    #capture list of fields to obtain
-    my @list = ();      #fiels to read
-    my @fields_pr = ();    #fields for print-out
+
+    #capture list of fields
+    my @readlist = ();  #fields to read via CA
+    my @fields_pr = (); #fields for print-out
     my @ftypes = ();    #types, from parser
     my @bases = ();     #bases, from parser
     foreach $field (sort keys %{$record{$recType}}) {
@@ -371,18 +371,19 @@ sub printRecord {
             if( $interest >= $fInterest ) {
                 $fToGet = $name . "." . $field;
                 push @fields_pr, $field;
-                push @list, $fToGet;
+                push @readlist, $fToGet;
                 push @ftypes, $fType;
                 push @bases, $base;
             }
         }
     }
-    my $read_pvs = caget( @list );
+    my $fields_read = caget( @readlist );
 
+    # print while iterating over lists gathered
     $col = 0;
-    for (my $i=0; $i < scalar @list; $i++) {
+    for (my $i=0; $i < scalar @readlist; $i++) {
         $field  = $fields_pr[$i];
-        $fToGet = $list[$i];
+        $fToGet = $readlist[$i];
         $data   = $callback_data{$fToGet};
         $fType  = $ftypes[$i];
         chomp $data;
@@ -429,20 +430,5 @@ sub printRecordList {
     else {
         print("Record type $type not defined in dbd file $theDbdFile\n");
     }
-}
-
-sub show_call_stack {
-  my ( $path, $line, $subr );
-  my $max_depth = 30;
-  my $i = 1;
-  print("--- Begin stack trace ---\n");
-  my @call_details;
-  @call_details = caller($i);
-  while ( (@call_details) && ($i<$max_depth) ) {
-    print("$call_details[1] line $call_details[2] in function $call_details[3]\n");
-    $i = $i +1;
-    @call_details = caller($i);
-  }
-  print("--- End stack trace ---\n");
 }
 

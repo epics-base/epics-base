@@ -368,21 +368,8 @@ sub printRecord {
             }
         }
     }
-    my $read_pvs;
-    $read_pvs = parallel_caget( @list );
+    my $read_pvs = parallel_caget( @list );
 
-    print "====-------------====";
-    for (my $i=0; $i < scalar @list; $i++) {
-        $field  = $fields_pr[$i];
-        $fToGet = $list[$i];
-        $data   = $callback_data{$fToGet};
-        $fType  = $ftypes[$i];
-        $base   = $bases[$i];
-        my $len = length $data;
-        chomp $data;
-        print "$field ($fType-$len): $data\n";
-    }
-    print "-------------====";
     $col = 0;
     for (my $i=0; $i < scalar @list; $i++) {
         $field  = $fields_pr[$i];

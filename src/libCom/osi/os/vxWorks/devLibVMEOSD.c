@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
- * $Id$
+ * devLibOSD.c,v 1.1.2.9 2009/07/09 16:37:23 anj Exp
  *
  * Archictecture dependent support for common device driver resources 
  *

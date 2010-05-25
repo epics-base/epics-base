@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
-/* $Id$ */
+/* devLib.c,v 1.1.2.11 2009/07/09 16:37:23 anj Exp */
 
 /*
  *  Original Author: Marty Kraimer
@@ -18,7 +18,7 @@
  * .01  06-14-93    joh needs devAllocInterruptVector() routine
  */
 
-static const char sccsID[] = "@(#) $Id$";
+static const char sccsID[] = "@(#) devLib.c,v 1.1.2.11 2009/07/09 16:37:23 anj Exp";
 
 #include <string.h>
 #include <stdio.h>

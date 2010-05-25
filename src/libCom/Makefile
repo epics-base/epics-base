@@ -192,7 +192,8 @@ INC += epicsStdioRedirect.h
 INC += epicsGetopt.h
 
 INC += devLib.h
-INC += devLibImpl.h
+INC += devLibVME.h
+INC += devLibVMEImpl.h
 INC += osdVME.h
 
 SRCS += epicsThread.cpp
@@ -231,8 +232,8 @@ SRCS += osdProcess.c
 SRCS += osdNetIntf.c
 SRCS += osdMessageQueue.c
 
-SRCS += devLib.c
-SRCS += devLibOSD.c
+SRCS += devLibVME.c
+SRCS += devLibVMEOSD.c
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h

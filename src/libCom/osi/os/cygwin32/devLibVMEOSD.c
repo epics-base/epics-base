@@ -5,7 +5,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Id$ */
+/* devLibOSD.c,v 1.1.2.1 2009/06/15 16:10:05 anj Exp */
 
 #include <stdlib.h>
 

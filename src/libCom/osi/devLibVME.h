@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.h */
-/* $Id$ */
+/* devLib.h,v 1.1.2.8 2009/07/09 15:27:43 anj Exp */
 
 /*
  * Original Author: Marty Kraimer 

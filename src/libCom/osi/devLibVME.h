@@ -232,63 +232,6 @@ epicsShareFunc long devEnableInterruptLevelISA (unsigned level);
  */
 epicsShareFunc long devDisableInterruptLevelISA (unsigned level);
 
-
-/*
- * PCI API
- *
- * Functions in this section apply only to the ISA bus type
- */
-
-/*
- * connect ISR to a PCI interrupt
- * (not implemented)
- * (API should be reviewed)
- */
-epicsShareFunc long devConnectInterruptPCI(
-			unsigned bus,
-			unsigned device,
-			unsigned function,
-			void (*pFunction)(void *),
-			void  *parameter);
-
-/*
- * disconnect ISR from a PCI interrupt
- * (not implemented)
- * (API should be reviewed)
- *
- * The parameter pFunction should be set to the C function pointer that 
- * was connected. It is used as a key to prevent a driver from inadvertently
- * removing an interrupt handler that it didn't install 
- */
-epicsShareFunc long devDisconnectInterruptPCI(
-			unsigned bus,
-			unsigned device,
-			unsigned function,
-			void (*pFunction)(void *));
-
-/*
- * determine if a PCI interrupt is in use
- * (not implemented)
- *
- * returns boolean
- */
-epicsShareFunc int devInterruptInUsePCI (unsigned bus, unsigned device, 
-							  unsigned function);
-
-
-/*
- * not implemented - API needs to be reviewed 
- */
-epicsShareFunc long devEnableInterruptLevelPCI (unsigned level,
-			unsigned bus, unsigned device, unsigned function);
-
-/*
- * not implemented - API needs to be reviewed 
- */
-epicsShareFunc long devDisableInterruptLevelPCI (unsigned level,
-			unsigned bus, unsigned device, unsigned function);
-
-
 /*
  * Deprecated interface
  */

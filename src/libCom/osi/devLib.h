@@ -44,7 +44,7 @@ typedef enum {
  * pointer to an array of strings for each of
  * the above address types
  */
-extern const char *epicsAddressTypeName[];
+epicsShareExtern const char *epicsAddressTypeName[];
 
 #ifdef __cplusplus
 }

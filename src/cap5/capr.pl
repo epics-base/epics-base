@@ -55,12 +55,9 @@ my %fieldType = (
                 DBF_NOACCESS    => "ezcaNoAccess"
 );
 
-# globals for parallel_caget
+# globals for sub caget
 my %callback_data;
 my $callback_incomplete;
-# globals for caget
-my $caget_data;
-my $caget_incomplete;
 my $cadebug = 0;
 
 ######### Main program ############
@@ -105,6 +102,7 @@ if($ARGV[0] =~ m/\s+\d/) {              # If we replace comma with a space,
 }
 $ARGV[0] =~ s/\s+//;                    # Remove any spaces
 $ARGV[0] =~ s/\..*//;                   # Get rid of field name if it's there
+$ARGV[1] = 0 unless defined $ARGV[1];   # default interest level is 0
 $ARGV[1] =~ s/\D//g;                    # Make sure we only use digits
 $ARGV[1] = $ARGV[1] || 0;               # interest defaults to 0
 printRecord($ARGV[0], $ARGV[1]);        # Do the do
@@ -219,8 +217,10 @@ sub getRecType {
     my $type;
     my $data;
 
-    $data = caget($name);
-    if ($data =~ m/Invalid channel name/) { die "Record \"$_[0]\" not found\n"; }
+    my $read_pvs = caget( $name );
+    
+    if ( $read_pvs != 1 ) { die "Record \"$_[0]\" not found\n"; }
+    $data = $callback_data{ $name };
     chomp $data;
     $data =~ s/\s+//;
     #print("$name is a \"$data\"type\n");
@@ -293,14 +293,21 @@ sub printField {
     return($col);
 }
 
-#  grab a list of pvs simultaneously
+#  Query for a list of pvs simultaneously
 #  The results are filled in the the %callback_data global hash
 #  and the result of the operation is the number of read pvs
-# Usage: $read_pvs = parallel_caget( @pvlist )
-sub parallel_caget {
+#
+#  NOTE: Not re-entrant because results are written to global hash
+#        %callback_data
+#
+#  Usage: $read_pvs = caget( @pvlist )
+sub caget {
     my @chans = map { CA->new($_); } @_;
     my $wait = 1;
-
+    
+    #clear results;
+    %callback_data = ();
+    
     eval { CA->pend_io($wait); };
     if ($@) {
         if ($@ =~ m/^ECA_TIMEOUT/) {
@@ -370,7 +377,7 @@ sub printRecord {
             }
         }
     }
-    my $read_pvs = parallel_caget( @list );
+    my $read_pvs = caget( @list );
 
     $col = 0;
     for (my $i=0; $i < scalar @list; $i++) {
@@ -422,40 +429,6 @@ sub printRecordList {
     else {
         print("Record type $type not defined in dbd file $theDbdFile\n");
     }
-}
-
-
-# returns a terse result of a caget operation
-# using perlCA
-sub caget {
-    my $name = $_[0];
-    print $name . "\n" if $cadebug;
-    show_call_stack() if $cadebug;
-    my $channel = CA->new($name);
-    my $wait = 1;
-    eval {  CA->pend_io($wait); };
-    if ($@) {
-        if ($@ =~ m/^ECA_TIMEOUT/) {
-            my $err =  "'" . $channel . "'";
-            print "Channel connect timed out: $err not found.\n";
-        }
-        die $@;
-    }
-    my $type = $channel->field_type;
-    my $count = $channel->element_count;
-    $channel->get_callback(\&callback_handler, $type);
-    $caget_incomplete = 1;
-    CA->pend_event(0.1) while ($caget_incomplete); 
-    return $caget_data;
-}
-
-sub callback_handler
-{
-    my ($chan, $status, $data) = @_;
-    die $status if $status;
-    #display($chan, $type, $data);
-    $caget_data = $data;
-    $caget_incomplete=0;
 }
 
 sub show_call_stack {

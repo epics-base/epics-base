@@ -31,7 +31,7 @@ if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
 our( $opt_d, $opt_f, $opt_r);
 my $usage = "Usage:\n $0 [-d dbd_file] ( [-f record_type] | [-r] | [record_name] ) [interest]\n";
 my %record = ();    # Empty hash to put dbd data in
-my $iIdx = 0;        # Array indexes for interest, data type and base
+my $iIdx = 0;       # Array indexes for interest, data type and base
 my $tIdx = 1;
 my $bIdx = 2;
 my %device = ();    # Empty hash to record which rec types have device support
@@ -58,6 +58,13 @@ my %fieldType = (
                 DBF_NOACCESS    => "ezcaNoAccess"
 );
 
+# globals for parallel_caget
+my %callback_data;
+my $callback_incomplete;
+# globals for caget
+my $caget_data;
+my $caget_incomplete;
+my $cadebug = 0;
 
 ######### Main program ############
 
@@ -286,6 +293,49 @@ sub printField {
     return($col);
 }
 
+#  grab a list of pvs simultaneously
+#  The results are filled in the the %callback_data global hash
+#  and the result of the operation is the number of read pvs
+# Usage: $read_pvs = parallel_caget( @pvlist )
+sub parallel_caget {
+    my @chans = map { CA->new($_); } @_;
+    my $wait = 1;
+
+    eval { CA->pend_io($wait); };
+    if ($@) {
+        if ($@ =~ m/^ECA_TIMEOUT/) {
+            my $err = (@chans > 1) ? 'some PV(s)' : "'" . $chans[0]->name . "'";
+            print "Channel connect timed out: $err not found.\n";
+            foreach my $chan (@chans) {
+                $callback_data{$chan->name} = "<timeout>"
+                  unless $chan->is_connected;
+            }
+            @chans = grep { $_->is_connected } @chans;
+        } else {
+            die $@;
+        }
+    }
+
+    map {
+        my $type;
+        $type = $_->field_type;
+        #$callback_data{$_->name} =  undef;
+        $_->get_callback(\&caget_callback, $type);
+    } @chans;
+
+    my $read_pvs = @chans;
+    $callback_incomplete = @chans;
+    CA->pend_event(0.1) while $callback_incomplete;
+    return $read_pvs;
+}
+
+sub caget_callback {
+    my ($chan, $status, $data) = @_;
+    die $status if $status;
+    $callback_data{$chan->name} = $data;
+    $callback_incomplete--;
+}
+
 # Given record name and interest level prints data from record fields
 # that are at or below the interest level specified.
 # Useage: printRecord( $recordName, $interestLevel)
@@ -295,12 +345,16 @@ sub printRecord {
     my ($error, $recType, $field, $fType, $fInterest, $data);
     my ($fToGet, $col, $base);
     #print("checking record $name, interest $interest\n");
-    $col = 0;
 
     $recType = getRecType($name);
     print("$name is record type $recType\n");
     exists($record{$recType})  || die "Record type $recType not found in dbd file --";
-
+    
+    #capture list of fields to obtain
+    my @list = ();      #fiels to read
+    my @fields_pr = ();    #fields for print-out
+    my @ftypes = ();    #types, from parser
+    my @bases = ();     #bases, from parser
     foreach $field (sort keys %{$record{$recType}}) {
         # Skip DTYP field if this rec type doesn't have device support defined
         if($field eq "DTYP" && !(exists($device{$recType}))) { next; }
@@ -309,14 +363,24 @@ sub printRecord {
         unless( $fType eq "ezcaNoAccess" ) {
             if( $interest >= $fInterest ) {
                 $fToGet = $name . "." . $field;
-                $data = caget($fToGet);
-                chomp $data;
-                #$data =~ s/\s+//;
-                #if( $data[0] )  { die "ca get error on field $field --" };
-                $col = printField($field, $data, $fType, $base, $col);
-                #print ("fType = $fType $data[1]\n");
+                push @fields_pr, $field;
+                push @list, $fToGet;
+                push @ftypes, $fType;
+                push @bases, $base;
             }
         }
+    }
+    my $read_pvs;
+    $read_pvs = parallel_caget( @list );
+
+    $col = 0;
+    for (my $i=0; $i < scalar @list; $i++) {
+        $field  = $fields_pr[$i];
+        $fToGet = $list[$i];
+        $data   = $callback_data{$fToGet};
+        $fType  = $ftypes[$i];
+        chomp $data;
+        $col = printField($field, $data, $fType, $base, $col);
     }
     print("\n");  # Final line feed
 }
@@ -361,10 +425,6 @@ sub printRecordList {
     }
 }
 
-# variable to communicate callback handler result
-my $callback_data;
-my $incomplete;
-my $cadebug = 0;
 
 # returns a terse result of a caget operation
 # using perlCA
@@ -385,9 +445,9 @@ sub caget {
     my $type = $channel->field_type;
     my $count = $channel->element_count;
     $channel->get_callback(\&callback_handler, $type);
-    $incomplete = 1;
-    CA->pend_event(0.1) while ($incomplete); 
-    return $callback_data;
+    $caget_incomplete = 1;
+    CA->pend_event(0.1) while ($caget_incomplete); 
+    return $caget_data;
 }
 
 sub callback_handler
@@ -395,8 +455,8 @@ sub callback_handler
     my ($chan, $status, $data) = @_;
     die $status if $status;
     #display($chan, $type, $data);
-    $callback_data = $data;
-    $incomplete=0;
+    $caget_data = $data;
+    $caget_incomplete=0;
 }
 
 sub show_call_stack {

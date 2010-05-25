@@ -36,7 +36,7 @@ static myISR *isrFetch(unsigned vectorNumber, void **parg);
  * this routine needs to be in the symbol table
  * for this code to work correctly
  */
-void unsolicitedHandlerEPICS(int vectorNumber);
+static void unsolicitedHandlerEPICS(int vectorNumber);
 
 static myISR *defaultHandlerAddr[]={
     (myISR*)unsolicitedHandlerEPICS,
@@ -79,13 +79,13 @@ static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
  * a bus error safe "wordSize" read at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
+static long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
  * a bus error safe "wordSize" write at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
+static long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
 
 static long rtmsDevConnectInterruptVME (
     unsigned vectorNumber,
@@ -250,7 +250,7 @@ static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
  * unsuccessful status if the device isnt present
  */
 rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
-long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
+static long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
     long status;
 
@@ -269,7 +269,7 @@ long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue
  * a bus error safe "wordSize" write at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
+static long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {
     long status;
 
@@ -335,7 +335,7 @@ static int rtemsDevInterruptInUseVME (unsigned vectorNumber)
  *  macro to declare handler prototypes...
  *
  */
-void unsolicitedHandlerEPICS(int vectorNumber)
+static void unsolicitedHandlerEPICS(int vectorNumber)
 {
     /*
      * call epicInterruptContextMessage()

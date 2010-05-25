@@ -104,10 +104,11 @@ static char *priorityName[NUM_CALLBACK_PRIORITIES] = {
 typedef struct event_scan_list {
     CALLBACK            callback;
     scan_list           scan_list;
-    char                event_name[MAX_STRING_SIZE];
     struct event_scan_list *next;
+    char                event_name[MAX_STRING_SIZE];
 } event_scan_list;
 static event_scan_list *pevent_list[NUM_CALLBACK_PRIORITIES];
+static epicsMutexId event_list_lock[NUM_CALLBACK_PRIORITIES];
 
 
 /* IO_EVENT*/
@@ -207,36 +208,45 @@ void scanAdd(struct dbCommon *precord)
     } else if (scan == menuScanEvent) {
         char* evnt;
         int prio;
-        event_scan_list **ppesl;
+        event_scan_list *pesl;
 
         evnt = precord->evnt;
         if (*evnt == 0) {
             recGblRecordError(S_db_badField, (void *)precord,
-                "scanAdd detected illegal EVNT value");
-            precord->scan = menuScanPassive;
+                "scanAdd: illegal empty EVNT value");
+            /*precord->scan = menuScanPassive;*/
+            return;
+        }
+        if (strlen(evnt) >= MAX_STRING_SIZE) {
+            recGblRecordError(S_db_badField, (void *)precord,
+                "scanAdd: too long EVNT value");
+            /*precord->scan = menuScanPassive;*/
             return;
         }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: illegal prio field");
-            precord->scan = menuScanPassive;
+            /*precord->scan = menuScanPassive;*/
             return;
         }
-		for (ppesl = &pevent_list[prio]; *ppesl; ppesl=&(*ppesl)->next) {
-        	if (strcmp((*ppesl)->event_name, evnt) == 0) break;
+        epicsMutexMustLock(event_list_lock[prio]);
+        for (pesl = pevent_list[prio]; pesl; pesl=pesl->next) {
+            if (strcmp(pesl->event_name, evnt) == 0) break;
         }
-
-        if (*ppesl == NULL) {
-            *ppesl = dbCalloc(1, sizeof(event_scan_list));
-            strcpy((*ppesl)->event_name, evnt);
-            (*ppesl)->scan_list.lock = epicsMutexMustCreate();
-            callbackSetCallback(eventCallback, &(*ppesl)->callback);
-            callbackSetPriority(prio, &(*ppesl)->callback);
-            callbackSetUser(*ppesl, &(*ppesl)->callback);
-            ellInit(&(*ppesl)->scan_list.list);
+        if (pesl == NULL) {
+            pesl = dbCalloc(1, sizeof(event_scan_list));
+            strcpy(pesl->event_name, evnt);
+            pesl->scan_list.lock = epicsMutexMustCreate();
+            callbackSetCallback(eventCallback, &pesl->callback);
+            callbackSetPriority(prio, &pesl->callback);
+            callbackSetUser(pesl, &pesl->callback);
+            ellInit(&pesl->scan_list.list);
+            pesl->next=pevent_list[prio];
+            pevent_list[prio]=pesl;
         }
-        addToList(precord, &(*ppesl)->scan_list);
+        epicsMutexUnlock(event_list_lock[prio]);
+        addToList(precord, &pesl->scan_list);
     } else if (scan == menuScanI_O_Intr) {
         io_scan_list *piosl = NULL;
         int prio;
@@ -297,27 +307,19 @@ void scanDelete(struct dbCommon *precord)
         scan_list *psl = 0;
 
         evnt = precord->evnt;
-        if (*evnt == 0) {
-            recGblRecordError(S_db_badField, (void *)precord,
-                "scanAdd detected illegal EVNT value");
-            precord->scan = menuScanPassive;
-            return;
-        }
         prio = precord->prio;
         if (prio < 0 || prio >= NUM_CALLBACK_PRIORITIES) {
             recGblRecordError(-1, (void *)precord,
-                "scanAdd: illegal prio field");
-            precord->scan = menuScanPassive;
+                "scanDelete detected illegal PRIO field");
             return;
         }
-        for (pesl = pevent_list[prio]; pesl; pesl=pesl->next) {
-        	if (strcmp(pesl->event_name, evnt) == 0) break;
+        epicsMutexMustLock(event_list_lock[prio]);
+        pesl = pevent_list[prio];
+        epicsMutexUnlock(event_list_lock[prio]);
+        for (; pesl; pesl=pesl->next) {
+            if (strcmp(pesl->event_name, evnt) == 0) break;
         }
-        if (pesl) psl = &pesl->scan_list;
-        if (!pesl || !psl) 
-            recGblRecordError(-1, (void *)precord,
-                "scanDelete for bad evnt");
-        else
+        if (pesl && (psl = &pesl->scan_list))
             deleteFromList(precord, psl);
     } else if (scan == menuScanI_O_Intr) {
         io_scan_list *piosl=NULL;
@@ -385,11 +387,14 @@ int scanpel(char* evnt)   /* print event list */
     event_scan_list *pesl;
     
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-    	for (pesl = pevent_list[prio]; pesl; pesl = pesl->next) {
-        	if (evnt || strcmp(pesl->event_name, evnt) == 0) {
-            	if (ellCount(&pesl->scan_list.list) == 0) continue;
-            	sprintf(message, "Event \"%s\" Priority %s", evnt, priorityName[prio]);
-            	printList(&pesl->scan_list, message);
+        epicsMutexMustLock(event_list_lock[prio]);
+        pesl = pevent_list[prio];
+        epicsMutexUnlock(event_list_lock[prio]);
+        for (; pesl; pesl = pesl->next) {
+            if (!evnt || strcmp(pesl->event_name, evnt) == 0) {
+                if (ellCount(&pesl->scan_list.list) == 0) continue;
+                sprintf(message, "Event \"%s\" Priority %s", pesl->event_name, priorityName[prio]);
+                printList(&pesl->scan_list, message);
             }
         }
     }
@@ -427,7 +432,8 @@ static void initEvent(void)
     int prio;
 
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-    	pevent_list[prio] = NULL;
+        pevent_list[prio] = NULL;
+        event_list_lock[prio] = epicsMutexMustCreate();
     }
 }
 
@@ -439,8 +445,11 @@ void post_named_event(char* evnt)
     if (scanCtl != ctlRun) return;
     if (!evnt || *evnt == 0) return;
     for (prio=0; prio<NUM_CALLBACK_PRIORITIES; prio++) {
-    	for (pesl = pevent_list[prio]; pesl; pesl=pesl->next) {
-        	if (strcmp(pesl->event_name, evnt) == 0) {
+        epicsMutexMustLock(event_list_lock[prio]);
+        pesl = pevent_list[prio];
+        epicsMutexUnlock(event_list_lock[prio]);
+        for (; pesl; pesl=pesl->next) {
+            if (strcmp(pesl->event_name, evnt) == 0) {
                 if (ellCount(&pesl->scan_list.list) >0)
                     callbackRequest((void *)pesl);
             }
@@ -450,10 +459,10 @@ void post_named_event(char* evnt)
 
 void post_event(int event)
 {
-	char event_name[10];
+    char event_name[10];
     
     sprintf(event_name, "%i", event);
-	post_named_event(event_name);
+    post_named_event(event_name);
 }
 
 void scanIoInit(IOSCANPVT *ppioscanpvt)

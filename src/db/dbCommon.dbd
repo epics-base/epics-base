@@ -47,7 +47,7 @@
 		prompt("Event Name")
 		promptgroup(GUI_SCAN)
 		special(SPC_SCAN)
-		size(41)
+		size(40)
 		interest(1)
 	}
 	field(TSE,DBF_SHORT) {

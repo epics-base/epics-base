@@ -265,11 +265,10 @@ sub printField {
         $outStr = sprintf("%-5s %x", $field, $fieldData);
     } elsif ( $dataType eq "ezcaDouble" || $dataType eq "ezcaFloat" ) {
         $outStr = sprintf("%-5s %.8f", $field, $fieldData);
-    } elsif ( $dataType eq "ezcaShort" ) { 
-        $outStr = sprintf("%-5s %d", $field, $fieldData);
     } elsif ( $dataType eq "ezcaChar" ) { 
         $outStr = sprintf("%-5s %d", $field, ord($fieldData));
     }else {
+        # ezcaByte, ezcaShort, ezcaLong 
         $outStr = sprintf("%-5s %d", $field, $fieldData);
     }
 
@@ -280,7 +279,6 @@ sub printField {
     else { $wide = 80;}
 
     $pad = $wide - $len;
-    #print "outStr=$outStr .. pad=$pad\n";
 
     if( $col + $wide > $screenWidth ) {
         print("\n");
@@ -373,6 +371,18 @@ sub printRecord {
     my $read_pvs;
     $read_pvs = parallel_caget( @list );
 
+    print "====-------------====";
+    for (my $i=0; $i < scalar @list; $i++) {
+        $field  = $fields_pr[$i];
+        $fToGet = $list[$i];
+        $data   = $callback_data{$fToGet};
+        $fType  = $ftypes[$i];
+        $base   = $bases[$i];
+        my $len = length $data;
+        chomp $data;
+        print "$field ($fType-$len): $data\n";
+    }
+    print "-------------====";
     $col = 0;
     for (my $i=0; $i < scalar @list; $i++) {
         $field  = $fields_pr[$i];

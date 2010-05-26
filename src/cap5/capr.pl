@@ -55,7 +55,7 @@ my $cadebug = 0;
 
 ######### Main program ############
 
-HELP_MESSAGE() unless getopts('hd:f:r');
+HELP_MESSAGE() unless getopts("hd:f:r");
 HELP_MESSAGE() if $opt_h;
 
 # Select the dbd file to use
@@ -69,7 +69,7 @@ elsif (exists $ENV{EPICS_BASE}) {
     $theDbdFile = $ENV{EPICS_BASE} . "/dbd/softIoc.dbd";
 }
 else {
-    die "No dbd file defined. ('capr.pl -h' gives help)\n";
+    die "No dbd file defined. (\"capr.pl -h\" gives help)\n";
 }
 
 parseDbd($theDbdFile);
@@ -217,7 +217,7 @@ sub getRecType {
 
     my $fields_read = caget( $name );
 
-    if ( $fields_read != 1 ) { die "Record \"$_[0]\" not found\n"; }
+    if ( $fields_read != 1 ) { die "Could not determine \"$_[0]\" record type.\n"; }
     $data = $callback_data{ $name };
     chomp $data;
     $data =~ s/\s+//;
@@ -311,7 +311,7 @@ sub caget {
     eval { CA->pend_io($wait); };
     if ($@) {
         if ($@ =~ m/^ECA_TIMEOUT/) {
-            my $err = (@chans > 1) ? 'some PV(s)' : "'" . $chans[0]->name . "'";
+            my $err = (@chans > 1) ? "some PV(s)" : "\"" . $chans[0]->name . "\"";
             print "Channel connect timed out: $err not found.\n";
             foreach my $chan (@chans) {
                 $timed_out{$chan->name} = ( $chan->is_connected ) ? 0 : 1;
@@ -444,7 +444,7 @@ sub HELP_MESSAGE {
 "       capr.pl [-d dbd_file] -f <record_type>\n",
 "       capr.pl [-d dbd_file] <record_name> <interest>\n",
 "Description:\n",
-"   Attempts to perform a 'dbpr' record print via channel access for record_name at a given\n",
+"   Attempts to perform a \"dbpr\" record print via channel access for record_name at a given\n",
 "   interest level. The default interest level is 0.\n\n",
 "   If used with the f or r options, prints fields/record type lists.\n",
 "\n",

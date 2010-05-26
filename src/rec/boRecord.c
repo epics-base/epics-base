@@ -272,23 +272,27 @@ static long process(boRecord *prec)
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    if(dbGetFieldIndex(paddr) == indexof(HIGH)) strcpy(units, "s");
+    if(dbGetFieldIndex(paddr) == indexof(HIGH))
+        strcpy(units, "s");
     return(0);
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    if(dbGetFieldIndex(paddr) == indexof(HIGH)) *precision = 2;
-    else recGblGetPrec(paddr,precision);
+    if(dbGetFieldIndex(paddr) == indexof(HIGH))
+        *precision = 2;
+    else
+        recGblGetPrec(paddr,precision);
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
-    recGblGetControlDouble(paddr,pcd);
     if(dbGetFieldIndex(paddr) == indexof(HIGH)) {
         pcd->lower_ctrl_limit = 0.0;
-    }
+        pcd->upper_ctrl_limit = 10.0;
+    } else
+        recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

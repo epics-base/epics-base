@@ -1,4 +1,21 @@
+/*************************************************************************\
+* Copyright (c) 2010 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+/* devLib.h */
+/* $Id$ */
 
+/*
+ * Original Author: Marty Kraimer
+ *  Author:     Jeff Hill
+ *  Date:       03-10-93
+ */
 #ifndef EPICSDEVLIB_H
 #define EPICSDEVLIB_H
 

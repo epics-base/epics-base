@@ -1,4 +1,6 @@
 /*************************************************************************\
+* Copyright (c) 2010 Brookhaven Science Associates, as Operator of
+*     Brookhaven National Laboratory.
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -7,7 +9,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
-/* devLib.c,v 1.1.2.11 2009/07/09 16:37:23 anj Exp */
+/* $Id$ */
 
 /*
  *  Original Author: Marty Kraimer
@@ -18,7 +20,7 @@
  * .01  06-14-93    joh needs devAllocInterruptVector() routine
  */
 
-static const char sccsID[] = "@(#) devLib.c,v 1.1.2.11 2009/07/09 16:37:23 anj Exp";
+static const char sccsID[] = "@(#) $Id$";
 
 #include <string.h>
 #include <stdio.h>

@@ -191,80 +191,107 @@ static long special(DBADDR *paddr, int after)
     return S_db_BadSub;
 }
 
+#define indexof(field) subRecord##field
+
 static long get_units(DBADDR *paddr, char *units)
 {
     subRecord *prec = (subRecord *)paddr->precord;
+    int index = dbGetFieldIndex(paddr);
 
-    strncpy(units, prec->egu, DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        if((index >= indexof(A) && index <= indexof(L))
+        || (index >= indexof(LA) && index <= indexof(LL))) {
+            /* We need a way to get units for A-L */;
+        } else {
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+        }
+    }
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *precision)
+static long get_precision(DBADDR *paddr, long *pprecision)
 {
     subRecord *prec = (subRecord *)paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
+    int index = dbGetFieldIndex(paddr);
 
-    *precision = prec->prec;
-    if (fieldIndex != subRecordVAL)
-        recGblGetPrec(paddr, precision);
-
+    *pprecision = prec->prec;
+    if (index == indexof(VAL)) {
+	return 0;
+    }
+    if((index >= indexof(A) && index <= indexof(L))
+    || (index >= indexof(LA) && index <= indexof(LL))) {
+        /* We need a way to get precision for A-L */;
+        *pprecision=15;
+    }
+    recGblGetPrec(paddr, pprecision);
     return 0;
 }
 
-
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     subRecord *prec = (subRecord *)paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
-
-    switch (fieldIndex) {
-    case subRecordVAL:
-    case subRecordHIHI:     case subRecordHIGH:
-    case subRecordLOW:      case subRecordLOLO:
-    case subRecordA:        case subRecordB:
-    case subRecordC:        case subRecordD:
-    case subRecordE:        case subRecordF:
-    case subRecordG:        case subRecordH:
-    case subRecordI:        case subRecordJ:
-    case subRecordK:        case subRecordL:
-    case subRecordLA:       case subRecordLB:
-    case subRecordLC:       case subRecordLD:
-    case subRecordLE:       case subRecordLF:
-    case subRecordLG:       case subRecordLH:
-    case subRecordLI:       case subRecordLJ:
-    case subRecordLK:       case subRecordLL:
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        break;
-
-    default:
-        recGblGetGraphicDouble(paddr, pgd);
+    int index = dbGetFieldIndex(paddr);
+    
+    switch (index) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+#ifdef __GNUC__
+        case indexof(A) ... indexof(L):
+        case indexof(LA) ... indexof(LL):
+            break;
+        default:
+#else
+            break;
+        default:
+            if((index >= indexof(A) && index <= indexof(L))
+            || (index >= indexof(LA) && index <= indexof(LL)))
+                break;
+#endif
+            recGblGetGraphicDouble(paddr,pgd);
+            return 0;
     }
+    pgd->upper_disp_limit = prec->hopr;
+    pgd->lower_disp_limit = prec->lopr;
     return 0;
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     subRecord *prec = (subRecord *)paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
-
-    switch (fieldIndex) {
-    case subRecordVAL:
-    case subRecordHIHI:     case subRecordHIGH:
-    case subRecordLOW:      case subRecordLOLO:
-    case subRecordA:        case subRecordB:
-    case subRecordC:        case subRecordD:
-    case subRecordE:        case subRecordF:
-    case subRecordG:        case subRecordH:
-    case subRecordI:        case subRecordJ:
-    case subRecordK:        case subRecordL:
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        break;
-
-    default:
-        recGblGetControlDouble(paddr, pcd);
+    int index = dbGetFieldIndex(paddr);
+    
+    switch (index) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+#ifdef __GNUC__
+        case indexof(A) ... indexof(L):
+        case indexof(LA) ... indexof(LL):
+            break;
+        default:
+#else
+            break;
+        default:
+            if((index >= indexof(A) && index <= indexof(L))
+            || (index >= indexof(LA) && index <= indexof(LL)))
+                break;
+#endif
+            recGblGetControlDouble(paddr,pcd);
+            return 0;
     }
+    pcd->upper_ctrl_limit = prec->hopr;
+    pcd->lower_ctrl_limit = prec->lopr;
     return 0;
 }
 

@@ -194,25 +194,30 @@ static long put_array_info(DBADDR *paddr, long nNew)
     return 0;
 }
 
+#define indexof(field) waveformRecord##field
+
 static long get_units(DBADDR *paddr, char *units)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    strncpy(units,prec->egu,DB_UNITS_SIZE);
-
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+            if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
+                break; 
+        case indexof(HOPR):
+        case indexof(LOPR):
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
 
     *precision = prec->prec;
-
-    if (fieldIndex != waveformRecordVAL)
+    if (dbGetFieldIndex(paddr) != indexof(VAL))
         recGblGetPrec(paddr, precision);
-
     return 0;
 }
 
@@ -220,11 +225,22 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    if (dbGetFieldIndex(paddr) == waveformRecordVAL) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-    } else
-        recGblGetGraphicDouble(paddr, pgd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        case indexof(BUSY):
+            pgd->upper_disp_limit = 1;
+            pgd->lower_disp_limit = 0;
+            break;
+        case indexof(NORD):
+            pgd->upper_disp_limit = prec->nelm;
+            pgd->lower_disp_limit = 0;
+            break;
+        default:
+            recGblGetGraphicDouble(paddr, pgd);
+    }
     return 0;
 }
 
@@ -232,11 +248,22 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    if (dbGetFieldIndex(paddr) == waveformRecordVAL) {
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-    } else
-        recGblGetControlDouble(paddr, pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        case indexof(BUSY):
+            pcd->upper_ctrl_limit = 1;
+            pcd->lower_ctrl_limit = 0;
+            break;
+        case indexof(NORD):
+            pcd->upper_ctrl_limit = prec->nelm;
+            pcd->lower_ctrl_limit = 0;
+            break;
+        default:
+            recGblGetControlDouble(paddr, pcd);
+    }
     return 0;
 }
 

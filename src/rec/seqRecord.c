@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
+ 
 /*
  * $Id$
  *
@@ -39,34 +39,48 @@
 
 int	seqRecDebug = 0;
 
-/* Create RSET - Record Support Entry Table*/
-static long init_record(seqRecord *prec, int pass);
-static long process(seqRecord *prec);
 static int processNextLink(seqRecord *prec);
 static long asyncFinish(seqRecord *prec);
 static void processCallback(CALLBACK *arg);
-static long get_precision(dbAddr *paddr, long *pprecision);
+
+/* Create RSET - Record Support Entry Table*/
+#define report NULL
+#define initialize NULL
+static long init_record(seqRecord *prec, int pass);
+static long process(seqRecord *prec);
+#define special NULL
+#define get_value NULL
+#define cvt_dbaddr NULL
+#define get_array_info NULL
+#define put_array_info NULL
+static long get_units(DBADDR *, char *);
+static long get_precision(dbAddr *paddr, long *);
+#define get_enum_str NULL
+#define get_enum_strs NULL
+#define put_enum_str NULL
+#define get_graphic_double NULL
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+#define get_alarm_double NULL
 
 rset seqRSET={
 	RSETNUMBER,
-	NULL,			/* report */
-	NULL,			/* initialize */
+	report,			/* report */
+	initialize,		/* initialize */
 	init_record,		/* init_record */
 	process,		/* process */
-	NULL,			/* special */
-	NULL,			/* get_value */
-	NULL,			/* cvt_dbaddr */
-	NULL,			/* get_array_info */
-	NULL,			/* put_array_info */
-	NULL,			/* get_units */
+	special,		/* special */
+	get_value,		/* get_value */
+	cvt_dbaddr,		/* cvt_dbaddr */
+	get_array_info,		/* get_array_info */
+	put_array_info,		/* put_array_info */
+	get_units,		/* get_units */
 	get_precision,		/* get_precision */
-	NULL,			/* get_enum_str */
-	NULL,			/* get_enum_strs */
-	NULL,			/* put_enum_str */
-	NULL,			/* get_graphic_double */
-	NULL,			/* get_control_double */
-	NULL 			/* get_alarm_double */
-
+	get_enum_str,		/* get_enum_str */
+	get_enum_strs,		/* get_enum_strs */
+	put_enum_str,		/* put_enum_str */
+	get_graphic_double,	/* get_graphic_double */
+	get_control_double,	/* get_control_double */
+	get_alarm_double 	/* get_alarm_double */
 };
 epicsExportAddress(rset,seqRSET);
 
@@ -406,15 +420,84 @@ static void processCallback(CALLBACK *arg)
  * Return the precision value from PREC
  *
  *****************************************************************************/
+#define indexof(field) seqRecord##field
+
+static long get_units(DBADDR *paddr, char *units)
+{
+    switch (dbGetFieldIndex(paddr)) {
+        /* we need something for DO1-DOA, either EGU1-EGUA or
+           read EGU from DOL1-DOLA if possible
+        */
+        case indexof(DLY1):
+        case indexof(DLY2):
+        case indexof(DLY3):
+        case indexof(DLY4):
+        case indexof(DLY5):
+        case indexof(DLY6):
+        case indexof(DLY7):
+        case indexof(DLY8):
+        case indexof(DLY9):
+        case indexof(DLYA):
+            strcpy(units, "s");
+            break;
+        case indexof(DO1):
+        case indexof(DO2):
+        case indexof(DO3):
+        case indexof(DO4):
+        case indexof(DO5):
+        case indexof(DO6):
+        case indexof(DO7):
+        case indexof(DO8):
+        case indexof(DO9):
+        case indexof(DOA):
+            /* we need something here, either EGU1-EGUA or
+               read EGU from DOL1-DOLA if possible
+            */
+            break;
+    }
+    return(0);
+}
+
 static long get_precision(dbAddr *paddr, long *pprecision)
 {
     seqRecord	*prec = (seqRecord *) paddr->precord;
 
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(DLY1):
+        case indexof(DLY2):
+        case indexof(DLY3):
+        case indexof(DLY4):
+        case indexof(DLY5):
+        case indexof(DLY6):
+        case indexof(DLY7):
+        case indexof(DLY8):
+        case indexof(DLY9):
+        case indexof(DLYA):
+            *pprecision = 2;
+            return(0);
+            /* maybe we need specific PRECs for DO1-DOA
+            */
+    }
     *pprecision = prec->prec;
+    recGblGetPrec(paddr, pprecision);
+    return(0);
+}
 
-    if(paddr->pfield < (void *)&prec->val)
-	return 0;			/* Field is NOT in dbCommon */
-
-    recGblGetPrec(paddr, pprecision);	/* Field is in dbCommon */
-    return 0;
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+{
+    recGblGetControlDouble(paddr,pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(DLY1):
+        case indexof(DLY2):
+        case indexof(DLY3):
+        case indexof(DLY4):
+        case indexof(DLY5):
+        case indexof(DLY6):
+        case indexof(DLY7):
+        case indexof(DLY8):
+        case indexof(DLY9):
+        case indexof(DLYA):
+            pcd->lower_ctrl_limit = 0.0;
+    }
+    return(0);
 }

@@ -398,11 +398,16 @@ static long put_array_info(DBADDR *paddr, long nNew)
     return(0);
 }
 
+#define indexof(field) compressRecord##field
+
 static long get_units(DBADDR *paddr,char *units)
 {
     compressRecord *prec=(compressRecord *)paddr->precord;
 
-    strncpy(units,prec->egu,DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE
+    || dbGetFieldIndex(paddr) == indexof(VAL)) {
+        strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return(0);
 }
 
@@ -411,7 +416,7 @@ static long get_precision(DBADDR *paddr, long *precision)
     compressRecord	*prec=(compressRecord *)paddr->precord;
 
     *precision = prec->prec;
-    if(paddr->pfield == (void *)prec->bptr) return(0);
+    if(dbGetFieldIndex(paddr) == indexof(BPTR)) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -420,12 +425,16 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     compressRecord *prec=(compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)prec->bptr
-    || paddr->pfield==(void *)&prec->ihil
-    || paddr->pfield==(void *)&prec->ilil){
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(BPTR):
+        case indexof(IHIL):
+        case indexof(ILIL):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        default:
+            recGblGetGraphicDouble(paddr,pgd);
+    }
     return(0);
 }
 
@@ -433,11 +442,15 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     compressRecord *prec=(compressRecord *)paddr->precord;
 
-    if(paddr->pfield==(void *)prec->bptr
-    || paddr->pfield==(void *)&prec->ihil
-    || paddr->pfield==(void *)&prec->ilil){
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(BPTR):
+        case indexof(IHIL):
+        case indexof(ILIL):
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
+    }
     return(0);
 }

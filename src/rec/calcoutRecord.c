@@ -59,7 +59,7 @@ static long get_precision(DBADDR *, long *);
 #define get_enum_strs NULL
 #define put_enum_str NULL
 static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
-static long get_ctrl_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset calcoutRSET = {
@@ -79,7 +79,7 @@ rset calcoutRSET = {
     get_enum_strs,
     put_enum_str,
     get_graphic_double,
-    get_ctrl_double,
+    get_control_double,
     get_alarm_double
 };
 epicsExportAddress(rset, calcoutRSET);
@@ -363,23 +363,49 @@ static long special(DBADDR *paddr, int after)
     }
 }
 
+#define indexof(field) calcoutRecord##field
+
 static long get_units(DBADDR *paddr, char *units)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
+    int index = dbGetFieldIndex(paddr);
 
-    strncpy(units, prec->egu, DB_UNITS_SIZE);
+    if(index == indexof(ODLY)) {
+        strcpy(units, "s");
+        return 0;
+    }
+
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        if((index >= indexof(A) && index <= indexof(L))
+        || (index >= indexof(LA) && index <= indexof(LL))) {
+            /* We need a way to get units for A-L */;
+        } else {
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+        }
+    }
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *pprecision)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
+    int index = dbGetFieldIndex(paddr);
 
-    if (paddr->pfield == (void *)&prec->val) {
-        *pprecision = prec->prec;
-    } else {
-        recGblGetPrec(paddr, pprecision);
+    if(index == indexof(ODLY)) {
+        *pprecision = 2;
+        return 0;
     }
+    
+    *pprecision = prec->prec;
+    if (index == indexof(VAL)) {
+	return 0;
+    }
+    if((index >= indexof(A) && index <= indexof(L))
+    || (index >= indexof(LA) && index <= indexof(LL))) {
+        /* We need a way to get precision for A-L */;
+        *pprecision=15;
+    }
+    recGblGetPrec(paddr, pprecision);
     return 0;
 }
 
@@ -387,59 +413,71 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&prec->val ||
-        paddr->pfield == (void *)&prec->hihi ||
-        paddr->pfield == (void *)&prec->high ||
-        paddr->pfield == (void *)&prec->low ||
-        paddr->pfield == (void *)&prec->lolo) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        return 0;
+    int index = dbGetFieldIndex(paddr);
+    
+    switch (index) {
+        case indexof(ODLY):
+            return 0;
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+#ifdef __GNUC__
+        case indexof(A) ... indexof(L):
+        case indexof(LA) ... indexof(LL):
+            break;
+        default:
+#else
+            break;
+        default:
+            if((index >= indexof(A) && index <= indexof(L))
+            || (index >= indexof(LA) && index <= indexof(LL)))
+                break;
+#endif
+            recGblGetGraphicDouble(paddr,pgd);
+            return 0;
     }
-
-    if (paddr->pfield >= (void *)&prec->a &&
-        paddr->pfield <= (void *)&prec->l) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        return 0;
-    }
-    if (paddr->pfield >= (void *)&prec->la &&
-        paddr->pfield <= (void *)&prec->ll) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        return 0;
-    }
-    recGblGetGraphicDouble(paddr, pgd);
+    pgd->upper_disp_limit = prec->hopr;
+    pgd->lower_disp_limit = prec->lopr;
     return 0;
 }
 
-static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-
-    if (paddr->pfield == (void *)&prec->val ||
-        paddr->pfield == (void *)&prec->hihi ||
-        paddr->pfield == (void *)&prec->high ||
-        paddr->pfield == (void *)&prec->low ||
-        paddr->pfield == (void *)&prec->lolo) {
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        return 0;
+    int index = dbGetFieldIndex(paddr);
+    
+    switch (index) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+#ifdef __GNUC__
+        case indexof(A) ... indexof(L):
+        case indexof(LA) ... indexof(LL):
+            break;
+        default:
+#else
+            break;
+        default:
+            if((index >= indexof(A) && index <= indexof(L))
+            || (index >= indexof(LA) && index <= indexof(LL)))
+                break;
+#endif
+            recGblGetControlDouble(paddr,pcd);
+            if (index == indexof(ODLY)) pcd->lower_ctrl_limit = 0.0;
+            return 0;
     }
-
-    if (paddr->pfield >= (void *)&prec->a &&
-        paddr->pfield <= (void *)&prec->l) {
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        return 0;
-    }
-    if (paddr->pfield >= (void *)&prec->la &&
-        paddr->pfield <= (void *)&prec->ll) {
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        return 0;
-    }
-    recGblGetControlDouble(paddr, pcd);
+    pcd->upper_ctrl_limit = prec->hopr;
+    pcd->lower_ctrl_limit = prec->lopr;
     return 0;
 }
 
@@ -447,7 +485,7 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)&prec->val) {
+    if (dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;

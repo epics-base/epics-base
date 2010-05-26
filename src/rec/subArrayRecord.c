@@ -201,25 +201,30 @@ static long put_array_info(DBADDR *paddr, long nNew)
     return 0;
 }
 
+#define indexof(field) subArrayRecord##field
+
 static long get_units(DBADDR *paddr, char *units)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
-    strncpy(units, prec->egu, DB_UNITS_SIZE);
-
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+            if (prec->ftvl == DBF_STRING || prec->ftvl == DBF_ENUM)
+                break; 
+        case indexof(HOPR):
+        case indexof(LOPR):
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
 
     *precision = prec->prec;
-
-    if (fieldIndex != subArrayRecordVAL)
+    if (dbGetFieldIndex(paddr) != indexof(VAL))
         recGblGetPrec(paddr, precision);
-
     return 0;
 }
 
@@ -228,25 +233,29 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-    case subArrayRecordVAL:
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        break;
-
-    case subArrayRecordINDX:
-        pgd->upper_disp_limit = prec->malm - 1;
-        pgd->lower_disp_limit = 0;
-        break;
-
-    case subArrayRecordNELM:
-        pgd->upper_disp_limit = prec->malm;
-        pgd->lower_disp_limit = 1;
-        break;
-
-    default:
-        recGblGetGraphicDouble(paddr, pgd);
+        case indexof(VAL):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        case indexof(INDX):
+            pgd->upper_disp_limit = prec->malm - 1;
+            pgd->lower_disp_limit = 0;
+            break;
+        case indexof(NELM):
+            pgd->upper_disp_limit = prec->malm;
+            pgd->lower_disp_limit = 0;
+            break;
+        case indexof(NORD):
+            pgd->upper_disp_limit = prec->malm;
+            pgd->lower_disp_limit = 0;
+            break;
+         case indexof(BUSY):
+            pgd->upper_disp_limit = 1;
+            pgd->lower_disp_limit = 0;
+            break;
+       default:
+            recGblGetGraphicDouble(paddr, pgd);
     }
-
     return 0;
 }
 
@@ -255,25 +264,29 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-    case subArrayRecordVAL:
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        break;
-
-    case subArrayRecordINDX:
-        pcd->upper_ctrl_limit = prec->malm - 1;
-        pcd->lower_ctrl_limit = 0;
-        break;
-
-    case subArrayRecordNELM:
-        pcd->upper_ctrl_limit = prec->malm;
-        pcd->lower_ctrl_limit = 1;
-        break;
-
-    default:
-        recGblGetControlDouble(paddr, pcd);
+        case indexof(VAL):
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        case indexof(INDX):
+            pcd->upper_ctrl_limit = prec->malm - 1;
+            pcd->lower_ctrl_limit = 0;
+            break;
+        case indexof(NELM):
+            pcd->upper_ctrl_limit = prec->malm;
+            pcd->lower_ctrl_limit = 1;
+            break;
+        case indexof(NORD):
+            pcd->upper_ctrl_limit = prec->malm;
+            pcd->lower_ctrl_limit = 0;
+            break;
+        case indexof(BUSY):
+            pcd->upper_ctrl_limit = 1;
+            pcd->lower_ctrl_limit = 0;
+            break;
+        default:
+            recGblGetControlDouble(paddr, pcd);
     }
-
     return 0;
 }
 

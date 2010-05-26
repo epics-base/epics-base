@@ -126,73 +126,72 @@ static long process(dfanoutRecord *prec)
     return(status);
 }
 
+#define indexof(field) dfanoutRecord##field
+
 static long get_units(DBADDR *paddr,char *units)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
 
-    strncpy(units,prec->egu,DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return(0);
 }
 
 static long get_precision(DBADDR *paddr,long *precision)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
-    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == dfanoutRecordVAL
-    || fieldIndex == dfanoutRecordHIHI
-    || fieldIndex == dfanoutRecordHIGH
-    || fieldIndex == dfanoutRecordLOW
-    || fieldIndex == dfanoutRecordLOLO
-    || fieldIndex == dfanoutRecordHOPR
-    || fieldIndex == dfanoutRecordLOPR) {
-        *precision = prec->prec;
-    } else {
-        recGblGetPrec(paddr,precision);
-    }
+    *precision = prec->prec;
+    if (dbGetFieldIndex(paddr) == indexof(VAL)) return(0);
+    recGblGetPrec(paddr,precision);
     return(0);
 }
 
-static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble	*pgd)
+static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
-    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == dfanoutRecordVAL
-    || fieldIndex == dfanoutRecordHIHI
-    || fieldIndex == dfanoutRecordHIGH
-    || fieldIndex == dfanoutRecordLOW
-    || fieldIndex == dfanoutRecordLOLO
-    || fieldIndex == dfanoutRecordHOPR
-    || fieldIndex == dfanoutRecordLOPR) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        default:
+            recGblGetGraphicDouble(paddr,pgd);
+    }
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
-    int   fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == dfanoutRecordVAL
-    || fieldIndex == dfanoutRecordHIHI
-    || fieldIndex == dfanoutRecordHIGH
-    || fieldIndex == dfanoutRecordLOW
-    || fieldIndex == dfanoutRecordLOLO) {
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+	    pcd->upper_ctrl_limit = prec->hopr;
+	    pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
+    }
     return(0);
 }
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
     dfanoutRecord *prec=(dfanoutRecord *)paddr->precord;
-    int   fieldIndex = dbGetFieldIndex(paddr);
-
     
-    if(fieldIndex == dfanoutRecordVAL) {
+    if(dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;

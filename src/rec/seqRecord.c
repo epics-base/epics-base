@@ -58,9 +58,9 @@ static long get_precision(dbAddr *paddr, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
-#define get_graphic_double NULL
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
-#define get_alarm_double NULL
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset seqRSET={
 	RSETNUMBER,
@@ -421,39 +421,21 @@ static void processCallback(CALLBACK *arg)
  *
  *****************************************************************************/
 #define indexof(field) seqRecord##field
+#define get_dol(prec, fieldOffset) \
+    &((linkDesc*)&prec->dly1)[fieldOffset>>2].dol
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    switch (dbGetFieldIndex(paddr)) {
-        /* we need something for DO1-DOA, either EGU1-EGUA or
-           read EGU from DOL1-DOLA if possible
-        */
-        case indexof(DLY1):
-        case indexof(DLY2):
-        case indexof(DLY3):
-        case indexof(DLY4):
-        case indexof(DLY5):
-        case indexof(DLY6):
-        case indexof(DLY7):
-        case indexof(DLY8):
-        case indexof(DLY9):
-        case indexof(DLYA):
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
             strcpy(units, "s");
             break;
-        case indexof(DO1):
-        case indexof(DO2):
-        case indexof(DO3):
-        case indexof(DO4):
-        case indexof(DO5):
-        case indexof(DO6):
-        case indexof(DO7):
-        case indexof(DO8):
-        case indexof(DO9):
-        case indexof(DOA):
-            /* we need something here, either EGU1-EGUA or
-               read EGU from DOL1-DOLA if possible
-            */
-            break;
+        case 2: /* DOn */
+            dbGetUnits(get_dol(prec, fieldOffset),
+                units, DB_UNITS_SIZE);
     }
     return(0);
 }
@@ -461,43 +443,68 @@ static long get_units(DBADDR *paddr, char *units)
 static long get_precision(dbAddr *paddr, long *pprecision)
 {
     seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    short precision;
 
-    switch (dbGetFieldIndex(paddr)) {
-        case indexof(DLY1):
-        case indexof(DLY2):
-        case indexof(DLY3):
-        case indexof(DLY4):
-        case indexof(DLY5):
-        case indexof(DLY6):
-        case indexof(DLY7):
-        case indexof(DLY8):
-        case indexof(DLY9):
-        case indexof(DLYA):
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
             *pprecision = 2;
-            return(0);
-            /* maybe we need specific PRECs for DO1-DOA
-            */
+            return 0;
+        case 2: /* DOn */
+            if (dbGetPrecision(get_dol(prec, fieldOffset),
+                &precision) == 0) {
+                *pprecision = precision;
+                return 0;
+            }
     }
     *pprecision = prec->prec;
     recGblGetPrec(paddr, pprecision);
+    return 0;
+}
+
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
+{
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
+            pgd->lower_disp_limit = 0.0;
+            pgd->lower_disp_limit = 10.0;
+            return 0;
+        case 2: /* DOn */
+            dbGetGraphicLimits(get_dol(prec, fieldOffset),
+                &pgd->lower_disp_limit,
+                &pgd->upper_disp_limit);
+            return 0;
+    }
+    recGblGetGraphicDouble(paddr,pgd);
+    return 0;
+}    
+    
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+{
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    recGblGetControlDouble(paddr,pcd);
+    if (fieldOffset >= 0 && (fieldOffset & 2) == 0) /* DLYn */
+        pcd->lower_ctrl_limit = 0.0;
     return(0);
 }
 
-static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    recGblGetControlDouble(paddr,pcd);
-    switch (dbGetFieldIndex(paddr)) {
-        case indexof(DLY1):
-        case indexof(DLY2):
-        case indexof(DLY3):
-        case indexof(DLY4):
-        case indexof(DLY5):
-        case indexof(DLY6):
-        case indexof(DLY7):
-        case indexof(DLY8):
-        case indexof(DLY9):
-        case indexof(DLYA):
-            pcd->lower_ctrl_limit = 0.0;
-    }
-    return(0);
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    if (fieldOffset >= 0 && (fieldOffset & 2) == 2)  /* DOn */
+        dbGetAlarmLimits(get_dol(prec, fieldOffset),
+            &pad->lower_alarm_limit,
+            &pad->lower_warning_limit,
+            &pad->upper_warning_limit,
+            &pad->upper_alarm_limit);
+    else
+        recGblGetAlarmDouble(paddr, pad);
+    return 0;
 }
+

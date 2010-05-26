@@ -365,23 +365,31 @@ static long special(DBADDR *paddr, int after)
 
 #define indexof(field) calcoutRecord##field
 
+static long get_linkNumber(int fieldIndex) {
+    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+        return fieldIndex - indexof(A);
+    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+        return fieldIndex - indexof(LA);
+    return -1;
+}
+
 static long get_units(DBADDR *paddr, char *units)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-    int index = dbGetFieldIndex(paddr);
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
-    if(index == indexof(ODLY)) {
+    if(fieldIndex == indexof(ODLY)) {
         strcpy(units, "s");
         return 0;
     }
 
     if(paddr->pfldDes->field_type == DBF_DOUBLE) {
-        if((index >= indexof(A) && index <= indexof(L))
-        || (index >= indexof(LA) && index <= indexof(LL))) {
-            /* We need a way to get units for A-L */;
-        } else {
+        linkNumber = get_linkNumber(dbGetFieldIndex(paddr));
+        if (linkNumber >= 0)
+            dbGetUnits(&prec->inpa + linkNumber, units, DB_UNITS_SIZE);
+        else
             strncpy(units,prec->egu,DB_UNITS_SIZE);
-        }
     }
     return 0;
 }
@@ -389,35 +397,36 @@ static long get_units(DBADDR *paddr, char *units)
 static long get_precision(DBADDR *paddr, long *pprecision)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-    int index = dbGetFieldIndex(paddr);
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
-    if(index == indexof(ODLY)) {
+    if(fieldIndex == indexof(ODLY)) {
         *pprecision = 2;
         return 0;
     }
-    
     *pprecision = prec->prec;
-    if (index == indexof(VAL)) {
+    if (fieldIndex == indexof(VAL)) {
 	return 0;
     }
-    if((index >= indexof(A) && index <= indexof(L))
-    || (index >= indexof(LA) && index <= indexof(LL))) {
-        /* We need a way to get precision for A-L */;
-        *pprecision=15;
-    }
-    recGblGetPrec(paddr, pprecision);
+    linkNumber = get_linkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        short precision;
+        if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
+            *pprecision = precision;
+        else
+            *pprecision = 15;
+    } else
+        recGblGetPrec(paddr, pprecision);
     return 0;
 }
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-
-    int index = dbGetFieldIndex(paddr);
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
     
-    switch (index) {
-        case indexof(ODLY):
-            return 0;
+    switch (fieldIndex) {
         case indexof(VAL):
         case indexof(HIHI):
         case indexof(HIGH):
@@ -426,32 +435,30 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
         case indexof(LALM):
         case indexof(ALST):
         case indexof(MLST):
-#ifdef __GNUC__
-        case indexof(A) ... indexof(L):
-        case indexof(LA) ... indexof(LL):
+            pgd->lower_disp_limit = prec->lopr;
+            pgd->upper_disp_limit = prec->hopr;
             break;
-        default:
-#else
-            break;
-        default:
-            if((index >= indexof(A) && index <= indexof(L))
-            || (index >= indexof(LA) && index <= indexof(LL)))
-                break;
-#endif
+        case indexof(ODLY):
             recGblGetGraphicDouble(paddr,pgd);
-            return 0;
+            pgd->lower_disp_limit = 0.0;
+            break;       
+        default:
+            linkNumber = get_linkNumber(fieldIndex);
+            if (linkNumber >= 0) {
+                dbGetGraphicLimits(&prec->inpa + linkNumber,
+                    &pgd->lower_disp_limit,
+                    &pgd->upper_disp_limit);
+            } else
+                recGblGetGraphicDouble(paddr,pgd);
     }
-    pgd->upper_disp_limit = prec->hopr;
-    pgd->lower_disp_limit = prec->lopr;
     return 0;
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
-    int index = dbGetFieldIndex(paddr);
     
-    switch (index) {
+    switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
         case indexof(HIHI):
         case indexof(HIGH):
@@ -460,38 +467,40 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
         case indexof(LALM):
         case indexof(ALST):
         case indexof(MLST):
-#ifdef __GNUC__
-        case indexof(A) ... indexof(L):
-        case indexof(LA) ... indexof(LL):
+            pcd->lower_ctrl_limit = prec->lopr;
+            pcd->upper_ctrl_limit = prec->hopr;
             break;
+        case indexof(ODLY):
+            pcd->lower_ctrl_limit = 0.0;
+            pcd->upper_ctrl_limit = 10.0;
+            break;       
         default:
-#else
-            break;
-        default:
-            if((index >= indexof(A) && index <= indexof(L))
-            || (index >= indexof(LA) && index <= indexof(LL)))
-                break;
-#endif
             recGblGetControlDouble(paddr,pcd);
-            if (index == indexof(ODLY)) pcd->lower_ctrl_limit = 0.0;
-            return 0;
     }
-    pcd->upper_ctrl_limit = prec->hopr;
-    pcd->lower_ctrl_limit = prec->lopr;
     return 0;
 }
 
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
-    if (dbGetFieldIndex(paddr) == indexof(VAL)) {
+    if (fieldIndex == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
         pad->lower_alarm_limit = prec->llsv ? prec->lolo : epicsNAN;
     } else {
-        recGblGetAlarmDouble(paddr, pad);
+        linkNumber = get_linkNumber(fieldIndex);
+        if (linkNumber >= 0) {
+            dbGetAlarmLimits(&prec->inpa + linkNumber,
+                &pad->lower_alarm_limit,
+                &pad->lower_warning_limit,
+                &pad->upper_warning_limit,
+                &pad->upper_alarm_limit);
+        } else
+	    recGblGetAlarmDouble(paddr, pad);
     }
     return 0;
 }

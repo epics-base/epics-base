@@ -82,4 +82,9 @@ recordtype(aao) {
 		interest(2)
 		menu(menuAlarmSevr)
 	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Sim Output Specifctn")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
 }

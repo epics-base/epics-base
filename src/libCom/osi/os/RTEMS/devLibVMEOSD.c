@@ -72,34 +72,34 @@ int EPICStovxWorksAddrType[]
  * maps logical address to physical address, but does not detect
  * two device drivers that are using the same address range
  */
-static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
+static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
         size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress);
 
 /*
  * a bus error safe "wordSize" read at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-static long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
+static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue);
 
 /*
  * a bus error safe "wordSize" write at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-static long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
+static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue);
 
-static long rtmsDevConnectInterruptVME (
+static long rtemsDevConnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)(),
     void  *parameter);
 
-static long rtmsDevDisconnectInterruptVME (
+static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)() 
 );
 
-static long rtmsDevEnableInterruptLevelVME (unsigned level);
+static long rtemsDevEnableInterruptLevelVME (unsigned level);
 
-static long rtmsDevDisableInterruptLevelVME (unsigned level);
+static long rtemsDevDisableInterruptLevelVME (unsigned level);
 
 static int rtemsDevInterruptInUseVME (unsigned vectorNumber);
 
@@ -108,22 +108,22 @@ static int rtemsDevInterruptInUseVME (unsigned vectorNumber);
 /*devA24Malloc and devA24Free are not implemented*/
 static void *devA24Malloc(size_t size) { return 0;}
 static void devA24Free(void *pBlock) {};
-static long rtmsDevInit(void);
+static long rtemsDevInit(void);
 
 /*
  * used by bind in devLib.c
  */
 static devLibVME rtemsVirtualOS = {
-    rtmsDevMapAddr, rtmsDevReadProbe, rtmsDevWriteProbe, 
-    rtmsDevConnectInterruptVME, rtmsDevDisconnectInterruptVME,
-    rtmsDevEnableInterruptLevelVME, rtmsDevDisableInterruptLevelVME,
-    devA24Malloc,devA24Free,rtmsDevInit,rtemsDevInterruptInUseVME
+    rtemsDevMapAddr, rtemsDevReadProbe, rtemsDevWriteProbe, 
+    rtemsDevConnectInterruptVME, rtemsDevDisconnectInterruptVME,
+    rtemsDevEnableInterruptLevelVME, rtemsDevDisableInterruptLevelVME,
+    devA24Malloc,devA24Free,rtemsDevInit,rtemsDevInterruptInUseVME
 };
 devLibVME *pdevLibVME = &rtemsVirtualOS;
 
 /* RTEMS specific initialization */
 static long
-rtmsDevInit(void)
+rtemsDevInit(void)
 {
     /* assume the vme bridge has been initialized by bsp */
     /* init BSP extensions [memProbe etc.] */
@@ -135,7 +135,7 @@ rtmsDevInit(void)
  *
  * wrapper to minimize driver dependency on OS
  */
-static long rtmsDevConnectInterruptVME (
+static long rtemsDevConnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)(),
     void  *parameter)
@@ -168,7 +168,7 @@ static long rtmsDevConnectInterruptVME (
  *  an interrupt handler that was installed by another driver
  *
  */
-static long rtmsDevDisconnectInterruptVME (
+static long rtemsDevDisconnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)() 
 )
@@ -204,7 +204,7 @@ static long rtmsDevDisconnectInterruptVME (
 /*
  * enable VME interrupt level
  */
-static long rtmsDevEnableInterruptLevelVME (unsigned level)
+static long rtemsDevEnableInterruptLevelVME (unsigned level)
 {
     return BSP_enableVME_int_lvl(level);
 }
@@ -212,15 +212,15 @@ static long rtmsDevEnableInterruptLevelVME (unsigned level)
 /*
  * disable VME interrupt level
  */
-static long rtmsDevDisableInterruptLevelVME (unsigned level)
+static long rtemsDevDisableInterruptLevelVME (unsigned level)
 {
     return BSP_disableVME_int_lvl(level);
 }
 
 /*
- * rtmsDevMapAddr ()
+ * rtemsDevMapAddr ()
  */
-static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
+static long rtemsDevMapAddr (epicsAddressType addrType, unsigned options,
             size_t logicalAddress, size_t size, volatile void **ppPhysicalAddress)
 {
     long status;
@@ -250,7 +250,7 @@ static long rtmsDevMapAddr (epicsAddressType addrType, unsigned options,
  * unsuccessful status if the device isnt present
  */
 rtems_status_code bspExtMemProbe(void *addr, int write, int size, void *pval);
-static long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
+static long rtemsDevReadProbe (unsigned wordSize, volatile const void *ptr, void *pValue)
 {
     long status;
 
@@ -269,7 +269,7 @@ static long rtmsDevReadProbe (unsigned wordSize, volatile const void *ptr, void 
  * a bus error safe "wordSize" write at the specified address which returns 
  * unsuccessful status if the device isnt present
  */
-static long rtmsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
+static long rtemsDevWriteProbe (unsigned wordSize, volatile void *ptr, const void *pValue)
 {
     long status;
 

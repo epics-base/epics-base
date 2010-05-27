@@ -89,6 +89,13 @@ include $(CONFIG)/RULES_TARGET
 PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 
 #---------------------------------------------------------------
+#   Generate a test specification if any tests are defined.
+#
+ifneq (,$(strip $(TESTS)))
+TARGETS+=testspec
+endif
+
+#---------------------------------------------------------------
 #   Libraries 
 #
 

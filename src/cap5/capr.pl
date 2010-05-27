@@ -286,7 +286,7 @@ sub printField {
         $col = 0;
     }
 
-    print sprintf("$outStr%*s",$pad," ");
+    print $outStr . sprintf("%*s",$pad," ");
     $col = $col + $wide;
 
     return($col);

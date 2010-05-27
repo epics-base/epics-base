@@ -142,11 +142,12 @@ testHarness_SRCS += epicsRunLibComTests.c
 PROD_vxWorks = vxTestHarness
 vxTestHarness_SRCS += $(testHarness_SRCS)
 vxTestHarness_OBJS += $(INSTALL_BIN)/vxComLibrary
+TESTSPEC_vxWorks = vxTestHarness.munch; epicsRunLibComTests
 
 PROD_RTEMS += rtemsTestHarness
 rtemsTestHarness_SRCS += rtemsTestHarness.c
 rtemsTestHarness_SRCS += $(testHarness_SRCS)
-
+TESTSPEC_RTEMS = rtemsTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

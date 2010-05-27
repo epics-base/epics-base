@@ -82,4 +82,9 @@ recordtype(aai) {
 		interest(2)
 		menu(menuAlarmSevr)
 	}
+	field(SIOL,DBF_INLINK) {
+		prompt("Sim Input Specifctn")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
 }

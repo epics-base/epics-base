@@ -17,13 +17,6 @@ use CA;
 
 ######### Globals ##########
 
-my $hostArch;
-if ( defined $ENV{"EPICS_HOST_ARCH"} ) {
-    $hostArch = $ENV{"EPICS_HOST_ARCH"} ;
-} else {
-    $hostArch="solaris-sparc";
-}
-
 our( $opt_h, $opt_d, $opt_f, $opt_r);
 
 my $theDbdFile;
@@ -34,46 +27,49 @@ my $bIdx = 2;
 my %device = ();    # Empty hash to record which rec types have device support
 my $DEBUG=0;        # DEBUG
 
-# EPICS field types referenced to their equivalent EZCA types
+# EPICS field types
 my %fieldType = (
-                DBF_STRING      => "ezcaString",
-                DBF_BYTE        => "ezcaByte",
-                DBF_CHAR        => "ezcaByte",
-                DBF_UCHAR       => "ezcaChar",
-                DBF_SHORT       => "ezcaShort",
-                DBF_USHORT      => "ezcaLong",
-                DBF_LONG        => "ezcaLong",
-                DBF_ULONG       => "ezcaDouble",
-                DBF_FLOAT       => "ezcaFloat",
-                DBF_DOUBLE      => "ezcaDouble",
-                DBF_ENUM        => "ezcaString",
-                DBF_MENU        => "ezcaString",
-                DBF_DEVICE      => "ezcaString",
-                DBF_INLINK      => "ezcaString",
-                DBF_OUTLINK     => "ezcaString",
-                DBF_FWDLINK     => "ezcaString",
-                DBF_NOACCESS    => "ezcaNoAccess"
+                DBF_CHAR        => "DBF_CHAR",
+                DBF_UCHAR       => "DBF_CHAR",
+                DBF_DOUBLE      => "DBF_FLOAT",
+                DBF_FLOAT       => "DBF_FLOAT",
+                DBF_LONG        => "DBF_LONG",
+                DBF_SHORT       => "DBF_LONG",
+                DBF_ULONG       => "DBF_LONG",
+                DBF_USHORT      => "DBF_LONG",
+                DBF_DEVICE      => "DBF_STRING",
+                DBF_ENUM        => "DBF_STRING",
+                DBF_FWDLINK     => "DBF_STRING",
+                DBF_INLINK      => "DBF_STRING",
+                DBF_MENU        => "DBF_STRING",
+                DBF_OUTLINK     => "DBF_STRING",
+                DBF_STRING      => "DBF_STRING",
+                DBF_NOACCESS    => "DBF_NOACCESS",
 );
 
 # globals for sub caget
 my %callback_data;
+my %timed_out;
 my $callback_incomplete;
 my $cadebug = 0;
 
 ######### Main program ############
 
-HELP_MESSAGE() unless getopts('hd:f:r');
+HELP_MESSAGE() unless getopts("hd:f:r");
 HELP_MESSAGE() if $opt_h;
 
 # Select the dbd file to use
 if($opt_d) {                            # command line has highest priority
     $theDbdFile = $opt_d;
 }
-elsif (exists $ENV{CAPR_DBD_FILE}) {    # Use the env var if it exists
-    $theDbdFile = $ENV{CAPR_DBD_FILE};
+elsif (exists $ENV{EPICS_CAPR_DBD_FILE}) {    # Use the env var if it exists
+    $theDbdFile = $ENV{EPICS_CAPR_DBD_FILE};
 }                                        # Otherwise use the default set above
+elsif (exists $ENV{EPICS_BASE}) {
+    $theDbdFile = $ENV{EPICS_BASE} . "/dbd/softIoc.dbd";
+}
 else {
-    die "No dbd file defined. ('capr.pl -h' gives help)\n";
+    die "No dbd file defined. (\"capr.pl -h\" gives help)\n";
 }
 
 parseDbd($theDbdFile);
@@ -101,11 +97,14 @@ if($ARGV[0] =~ m/\s+\d/) {              # If we replace comma with a space,
 }
 $ARGV[0] =~ s/\s+//;                    # Remove any spaces
 $ARGV[0] =~ s/\..*//;                   # Get rid of field name if it's there
-$ARGV[1] = 0 unless defined $ARGV[1];   # default interest level is 0
-$ARGV[1] =~ s/\D//g;                    # Make sure we only use digits
-$ARGV[1] = $ARGV[1] || 0;               # interest defaults to 0
+if ( defined $ARGV[1] ) {
+    $ARGV[1] =~ s/\D//g;                # Make sure we only use digits
+    $ARGV[1] = $ARGV[1] || 0;           # blank => interest level set to 0
+}
+else {
+    $ARGV[1] = 0;                       # interest defaults to 0
+}
 printRecord($ARGV[0], $ARGV[1]);        # Do the do
-
 
 ########## End of main ###########
 
@@ -218,7 +217,7 @@ sub getRecType {
 
     my $fields_read = caget( $name );
 
-    if ( $fields_read != 1 ) { die "Record \"$_[0]\" not found\n"; }
+    if ( $fields_read != 1 ) { die "Could not determine \"$_[0]\" record type.\n"; }
     $data = $callback_data{ $name };
     chomp $data;
     $data =~ s/\s+//;
@@ -260,16 +259,17 @@ sub printField {
 
     $field = $fieldName . ":";
 
-    if( $dataType eq "ezcaString" ) {
+    if( $dataType eq "DBF_STRING" ) {
         $outStr = sprintf("%-5s %s", $field, $fieldData);
     } elsif ( $base eq "HEX" ) {
-        $outStr = sprintf("%-5s %x", $field, $fieldData);
-    } elsif ( $dataType eq "ezcaDouble" || $dataType eq "ezcaFloat" ) {
+         my $val = ( $dataType eq "DBF_CHAR" ) ? ord($fieldData) : $fieldData;
+         $outStr = sprintf("%-5s %x", $field, $val);
+    } elsif ( $dataType eq "DBF_DOUBLE" || $dataType eq "DBF_FLOAT" ) {
         $outStr = sprintf("%-5s %.8f", $field, $fieldData);
-    } elsif ( $dataType eq "ezcaChar" ) {
+    } elsif ( $dataType eq "DBF_CHAR" ) {
         $outStr = sprintf("%-5s %d", $field, ord($fieldData));
     }else {
-        # ezcaByte, ezcaShort, ezcaLong
+        # DBF_LONG, DBF_SHORT, DBF_UCHAR, DBF_ULONG, DBF_USHORT
         $outStr = sprintf("%-5s %d", $field, $fieldData);
     }
 
@@ -306,15 +306,15 @@ sub caget {
 
     #clear results;
     %callback_data = ();
+    %timed_out = ();
 
     eval { CA->pend_io($wait); };
     if ($@) {
         if ($@ =~ m/^ECA_TIMEOUT/) {
-            my $err = (@chans > 1) ? 'some PV(s)' : "'" . $chans[0]->name . "'";
+            my $err = (@chans > 1) ? "some PV(s)" : "\"" . $chans[0]->name . "\"";
             print "Channel connect timed out: $err not found.\n";
             foreach my $chan (@chans) {
-                $callback_data{$chan->name} = "<timeout>"
-                  unless $chan->is_connected;
+                $timed_out{$chan->name} = ( $chan->is_connected ) ? 0 : 1;
             }
             @chans = grep { $_->is_connected } @chans;
         } else {
@@ -366,7 +366,7 @@ sub printRecord {
         if($field eq "DTYP" && !(exists($device{$recType}))) { next; }
 
         ($fType, $fInterest, $base) = getFieldParams($recType, $field);
-        unless( $fType eq "ezcaNoAccess" ) {
+        unless( $fType eq "DBF_NOACCESS" ) {
             if( $interest >= $fInterest ) {
                 $fToGet = $name . "." . $field;
                 push @fields_pr, $field;
@@ -383,9 +383,15 @@ sub printRecord {
     for (my $i=0; $i < scalar @readlist; $i++) {
         $field  = $fields_pr[$i];
         $fToGet = $readlist[$i];
-        $data   = $callback_data{$fToGet};
-        $fType  = $ftypes[$i];
-        chomp $data;
+        if ( $timed_out{$fToGet} ) {
+            $fType = $fieldType{DBF_STRING};
+            $data  = "<timeout>";
+        }
+        else {
+            $fType  = $ftypes[$i];
+            $data   = $callback_data{$fToGet};
+            chomp $data;
+        }
         $col = printField($field, $data, $fType, $base, $col);
     }
     print("\n");  # Final line feed
@@ -438,15 +444,15 @@ sub HELP_MESSAGE {
 "       capr.pl [-d dbd_file] -f <record_type>\n",
 "       capr.pl [-d dbd_file] <record_name> <interest>\n",
 "Description:\n",
-"   Attempts to perform a record print \"dbpr\" via channel access\n",
-"   for record_name at a given interest level.\n",
-"   The default interest level is 0.\n\n",
+"   Attempts to perform a \"dbpr\" record print via channel access for record_name at a given\n",
+"   interest level. The default interest level is 0.\n\n",
 "   If used with the f or r options, prints fields/record type lists.\n",
 "\n",
 "Options:\n",
 "   -h: Help: Prints this message\n",
 "   -d Dbd file: specify dbd file used to read record definitions.\n",
-"      If omitted, the environment variable CAPR_DBD_FILE must be defined\n",
+"      The default can be specified with the EPICS_CAPR_DBD_FILE environment\n",
+"      variable. The default file is \$(EPICS_BASE)/dbd/softIoc.dbd\n",
 "   -r Prints the list of record types\n",
 "   -f Prints list of fields, interest level, type and base for the\n",
 "      given record type\n",

@@ -29,6 +29,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsString.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -51,7 +52,7 @@
 static long init_record(aaoRecord *, int);
 static long process(aaoRecord *);
 #define special NULL
-static long get_value(aaoRecord *, struct valueDes *);
+#define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long);
@@ -180,18 +181,11 @@ static long process(aaoRecord *prec)
     return status;
 }
 
-static long get_value(aaoRecord *prec, struct valueDes *pvdes)
-{
-    pvdes->no_elements = prec->nelm;
-    pvdes->pvalue      = prec->bptr;
-    pvdes->field_type  = prec->ftvl;
-    return 0;
-}
-
 static long cvt_dbaddr(DBADDR *paddr)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
+    printf("cvt_dbaddr\n");
     paddr->pfield         = prec->bptr;
     paddr->no_elements    = prec->nelm;
     paddr->field_type     = prec->ftvl;
@@ -204,6 +198,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
+    printf("get_array_info\n");
     *no_elements =  prec->nord;
     *offset = 0;
     return 0;
@@ -213,6 +208,7 @@ static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
+    printf("put_array_info\n");
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
@@ -262,9 +258,35 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 static void monitor(aaoRecord *prec)
 {
     unsigned short monitor_mask;
+    unsigned int hash = 0;
 
     monitor_mask = recGblResetAlarms(prec);
-    monitor_mask |= (DBE_LOG | DBE_VALUE);
+
+    if (prec->mpst == aaoPOST_Always)
+        monitor_mask |= DBE_VALUE;
+    if (prec->apst == aaoPOST_Always)
+        monitor_mask |= DBE_LOG;
+
+    /* Calculate hash if we are interested in OnChange events. */
+    if ((prec->mpst == aaoPOST_OnChange) ||
+        (prec->apst == aaoPOST_OnChange)) {
+        hash = epicsMemHash(prec->bptr,
+            prec->nord * dbValueSize(prec->ftvl), 0);
+
+        /* Only post OnChange values if the hash is different. */
+        if (hash != prec->hash) {
+            if (prec->mpst == aaoPOST_OnChange)
+                monitor_mask |= DBE_VALUE;
+            if (prec->apst == aaoPOST_OnChange)
+                monitor_mask |= DBE_LOG;
+
+            /* Store hash for next process. */
+            prec->hash = hash;
+            /* Post HASH. */
+            db_post_events(prec, &prec->hash, DBE_VALUE);
+        }
+    }
+
     if (monitor_mask)
         db_post_events(prec, prec->bptr, monitor_mask);
 }

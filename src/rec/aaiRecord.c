@@ -29,6 +29,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsString.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -51,7 +52,7 @@
 static long init_record(aaiRecord *, int);
 static long process(aaiRecord *);
 #define special NULL
-static long get_value(aaiRecord *, struct valueDes *);
+#define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long);
@@ -180,14 +181,6 @@ static long process(aaiRecord *prec)
     return status;
 }
 
-static long get_value(aaiRecord *prec, struct valueDes *pvdes)
-{
-    pvdes->no_elements = prec->nelm;
-    pvdes->pvalue      = prec->bptr;
-    pvdes->field_type  = prec->ftvl;
-    return 0;
-}
-
 static long cvt_dbaddr(DBADDR *paddr)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
@@ -262,9 +255,35 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 static void monitor(aaiRecord *prec)
 {
     unsigned short monitor_mask;
+    unsigned int hash = 0;
 
     monitor_mask = recGblResetAlarms(prec);
-    monitor_mask |= (DBE_LOG | DBE_VALUE);
+
+    if (prec->mpst == aaiPOST_Always)
+        monitor_mask |= DBE_VALUE;
+    if (prec->apst == aaiPOST_Always)
+        monitor_mask |= DBE_LOG;
+
+    /* Calculate hash if we are interested in OnChange events. */
+    if ((prec->mpst == aaiPOST_OnChange) ||
+        (prec->apst == aaiPOST_OnChange)) {
+        hash = epicsMemHash(prec->bptr,
+            prec->nord * dbValueSize(prec->ftvl), 0);
+
+        /* Only post OnChange values if the hash is different. */
+        if (hash != prec->hash) {
+            if (prec->mpst == aaiPOST_OnChange)
+                monitor_mask |= DBE_VALUE;
+            if (prec->apst == aaiPOST_OnChange)
+                monitor_mask |= DBE_LOG;
+
+            /* Store hash for next process. */
+            prec->hash = hash;
+            /* Post HASH. */
+            db_post_events(prec, &prec->hash, DBE_VALUE);
+        }
+    }
+
     if (monitor_mask)
         db_post_events(prec, prec->bptr, monitor_mask);
 }

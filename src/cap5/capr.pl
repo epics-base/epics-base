@@ -146,14 +146,14 @@ sub parseDbd {
         chomp;
         print("line $i - level $level\n") if ($DEBUG);
             #$line = $dbd[$i] || die "Unexpected end of file: $dbdFile, line $.";
-        if( m/recordtype/ ) {
+        if( m/recordtype\(/ ) {
             ($level == 0) || die "dbd file format error in or before line $i --";
             m/\((.*)\)/;                    #get record type
             #@records = (@records, $1);
             $isArecord = 1;
             $thisRecord = $1;
         }
-        if( m/field/ ) {
+        if( m/field\(/ ) {
             ($level == 1 && $isArecord) || die "dbd file format error in or before line $i --";
             m/\((.*),/;                        # get field name
             $thisField = $1;
@@ -162,12 +162,12 @@ sub parseDbd {
             $isAfield = 1;
             #print("$1 , line $i ");
         }
-        if( m/interest/ ) {
+        if( m/interest\(/ ) {
             ($level == 2 && $isAfield) || die "dbd file format error in or before line $i --";
             m/\((.*)\)/ ;                    # get interest level, default = 0
             $interest = $1;
         }
-        if( m/base/ ) {
+        if( m/base\(/ ) {
             ($level == 2 && $isAfield) || die "dbd file format error in or before line $i --";
             m/\((.*)\)/ ;                    # get base, default = DECIMAL
             $thisBase = $1;
@@ -196,7 +196,7 @@ sub parseDbd {
             $level--;
         }
         # Parse for record types with device support
-        if( m/device/ ) {
+        if( m/device\(/ ) {
             m/\((.*?),/;
             if(!exists($device{$1})) {
                 # Use a hash to make a list of record types with device support

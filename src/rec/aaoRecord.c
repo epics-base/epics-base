@@ -185,7 +185,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    printf("cvt_dbaddr\n");
     paddr->pfield         = prec->bptr;
     paddr->no_elements    = prec->nelm;
     paddr->field_type     = prec->ftvl;
@@ -198,7 +197,6 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    printf("get_array_info\n");
     *no_elements =  prec->nord;
     *offset = 0;
     return 0;
@@ -208,7 +206,6 @@ static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    printf("put_array_info\n");
     prec->nord = nNew;
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;

@@ -71,12 +71,9 @@ static long init_record(aaoRecord *prec)
 
 static long write_aao(aaoRecord *prec)
 {
-    long nRequest = prec->nelm;
+    long nRequest = prec->nord;
     dbPutLink(prec->simm == menuYesNoYES ? &prec->siol : &prec->out,
         prec->ftvl, prec->bptr, nRequest);
-    if (nRequest>0) {
-        prec->nord = nRequest;
-    }
 
     return 0;
 }

@@ -231,7 +231,7 @@ epicsShareAPI macParseDefns(
     free( ( char * ) del );
 
     /* debug output */
-    if ( handle->debug & 1 )
+    if ( handle != NULL && handle->debug & 1 )
 	printf( "macParseDefns() -> %d\n", num / 2 );
 
     /* success exit; return number of definitions */

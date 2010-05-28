@@ -92,6 +92,11 @@ typedef struct devLibVME {
 
 epicsShareExtern devLibVME *pdevLibVME;
 
+#ifndef NO_DEVLIB_COMPAT
+#  define pdevLibVirtualOS pdevLibVME
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

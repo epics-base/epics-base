@@ -12,6 +12,14 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Attributes of Non-VAL Fields</h4>
+
+<p>Non-VAL fields now report meaningful information for precision, units,
+graphic limits, control limits, and alarm limits instead of simply using
+PREC, EGU, HOPR, LOPR, DRVL, DRVH, HIHI, HIGH, LOW, and LOLO. All delay
+fields have precision 2 and units "s". Input fields like A-L of the calc record
+read these information from the corresponding INPn link if possible.
+
 <h4>Rewrite epicsThreadOnce()</h4>
 
 <p>Michael Davidsaver suggested a better implementation of epicsThreadOnce()

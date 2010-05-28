@@ -11,6 +11,13 @@
 
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
+<h4>Record Types aai and aao</h4>
+<p>Fixed bug in memory allocation that caused crashes when linking other records
+to aai or aao.
+Fixed bug where NELM was modified instead of NORD.
+Added Soft Channel device support.
+Added SIOL link and proper simulation mode for Soft Channel support.
+Added MPST, APST and HASH fields for monitor on change support like in waveform record.
 
 <h4>Rewrite epicsThreadOnce()</h4>
 

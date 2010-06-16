@@ -516,14 +516,14 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 /* Beginning of Public Routines */
 
 #define INC_SIZE	256
-void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *separator)
+void epicsShareAPI dbCatString(char **string,int *stringLength,char *src,char *separator)
 {
     if((*string==NULL)
-    || ((strlen(*string)+strlen(new)+2) > (size_t)*stringLength)) {
+    || ((strlen(*string)+strlen(src)+2) > (size_t)*stringLength)) {
 	char	*newString;
 	size_t	size;
 
-	size = strlen(new);
+        size = strlen(src);
 	if(*string) size += strlen(*string);
 	/*Make size multiple of INC_SIZE*/
 	size = ((size + 2 + INC_SIZE)/INC_SIZE) * INC_SIZE;
@@ -538,8 +538,8 @@ void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *s
 	strcat(*string,separator);
 	*stringLength += strlen(separator);
     }
-    strcat(*string,new);
-    *stringLength += strlen(new);
+    strcat(*string,src);
+    *stringLength += strlen(src);
 }
 
 dbBase * epicsShareAPI dbAllocBase(void)

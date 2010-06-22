@@ -183,6 +183,7 @@ union value{
 struct link{
 	union value	value;
 	short		type;
+        char		*text;		/* original INP/OUT link text */
 };
 
 typedef struct link DBLINK;

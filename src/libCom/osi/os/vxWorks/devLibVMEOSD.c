@@ -28,7 +28,7 @@
 #include <vxLib.h>
 
 #include "epicsFindSymbol.h"
-#include "devLib.h"
+#include "devLibVME.h"
 #include "errlog.h"
 
 typedef void    myISR (void *pParam);
@@ -52,7 +52,7 @@ static myISR *isrFetch(unsigned vectorNumber);
  * this routine needs to be in the symbol table
  * for this code to work correctly
  */
-void unsolicitedHandlerEPICS(int vectorNumber);
+static void unsolicitedHandlerEPICS(int vectorNumber);
 
 /*
  * this is in veclist.c
@@ -114,23 +114,39 @@ static void *devA24Malloc(size_t size);
 static void devA24Free(void *pBlock);
 static long devInit(void) { return 0;}
 
+static long vxDevConnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)(),
+    void  *parameter);
+
+static long vxDevDisconnectInterruptVME (
+    unsigned vectorNumber,
+    void (*pFunction)() 
+);
+
+static long vxDevEnableInterruptLevelVME (unsigned level);
+
+static long vxDevDisableInterruptLevelVME (unsigned level);
+
+static int vxDevInterruptInUseVME (unsigned vectorNumber);
+
 /*
  * used by dynamic bind in devLib.c
  */
-static devLibVirtualOS vxVirtualOS = {
+static devLibVME vxVirtualOS = {
     vxDevMapAddr, vxDevReadProbe, vxDevWriteProbe, 
-    devConnectInterruptVME, devDisconnectInterruptVME,
-    devEnableInterruptLevelVME, devDisableInterruptLevelVME,
-    devA24Malloc,devA24Free,devInit
+    vxDevConnectInterruptVME, vxDevDisconnectInterruptVME,
+    vxDevEnableInterruptLevelVME, vxDevDisableInterruptLevelVME,
+    devA24Malloc,devA24Free,devInit,vxDevInterruptInUseVME
 };
-devLibVirtualOS *pdevLibVirtualOS = &vxVirtualOS;
+devLibVME *pdevLibVME = &vxVirtualOS;
 
 /*
  * devConnectInterruptVME
  *
  * wrapper to minimize driver dependency on vxWorks
  */
-long devConnectInterruptVME (
+static long vxDevConnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)(),
     void  *parameter)
@@ -154,7 +170,7 @@ long devConnectInterruptVME (
 
 /*
  *
- *  devDisconnectInterruptVME()
+ *  vxDevDisconnectInterruptVME()
  *
  *  wrapper to minimize driver dependency on vxWorks
  *
@@ -163,7 +179,7 @@ long devConnectInterruptVME (
  *  an interrupt handler that was installed by another driver
  *
  */
-long devDisconnectInterruptVME (
+static long vxDevDisconnectInterruptVME (
     unsigned vectorNumber,
     void (*pFunction)() 
 )
@@ -198,7 +214,7 @@ long devDisconnectInterruptVME (
 /*
  * enable VME interrupt level
  */
-long devEnableInterruptLevelVME (unsigned level)
+static long vxDevEnableInterruptLevelVME (unsigned level)
 {
 #   if CPU_FAMILY != I80X86 
         int s;
@@ -250,7 +266,7 @@ long devDisableInterruptLevelISA (unsigned level)
 /*
  * disable VME interrupt level
  */
-long devDisableInterruptLevelVME (unsigned level)
+static long vxDevDisableInterruptLevelVME (unsigned level)
 {
 #   if CPU_FAMILY != I80X86
         int s;
@@ -359,7 +375,7 @@ static myISR *isrFetch(unsigned vectorNumber)
 /*
  * determine if a VME interrupt vector is in use
  */
-int devInterruptInUseVME (unsigned vectorNumber)
+static int vxDevInterruptInUseVME (unsigned vectorNumber)
 {
 #if CPU_FAMILY == PPC
     return FALSE;
@@ -397,7 +413,7 @@ int devInterruptInUseVME (unsigned vectorNumber)
  *  disconnected vector
  *
  */
-void unsolicitedHandlerEPICS(int vectorNumber)
+static void unsolicitedHandlerEPICS(int vectorNumber)
 {
     /*
      * call logMsg() and not errMessage()

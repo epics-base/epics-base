@@ -85,7 +85,7 @@ DIRS += gdd
 gdd_DEPEND_DIRS = ca
 
 DIRS += cas
-cas_DEPEND_DIRS = gdd
+cas_DEPEND_DIRS = gdd dbStatic
 
 DIRS += excas
 excas_DEPEND_DIRS = cas as registry

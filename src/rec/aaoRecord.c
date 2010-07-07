@@ -313,7 +313,7 @@ static long writeValue(aaoRecord *prec)
            simulation mode.
            Thus call device now.
         */
-        recGblSetSevr(prec, SIMM_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
         return pdset->write_aao(prec);
     }
     recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);

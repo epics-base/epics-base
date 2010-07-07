@@ -144,12 +144,13 @@ int main(int argc, char **argv)
 	if(*pend!='"') errExit("Illegal Header");
 	len = pend - pbeg;
 	if(len<=1) errExit("Illegal Header");
-	pname = calloc(len,sizeof(char));
+	pname = calloc(len+1,sizeof(char));
 	if(!pname) {
 	    fprintf(stderr,"calloc failed while processing line %d\n",linenum);
 	    exit(-1);
 	}
 	strncpy(pname,pbeg,len);
+	pname[len]='\0';
 	pbeg = pend + 1;
 	if(getNumber(&pbeg,&value)) errExit("Illegal Header");
 	brkCreateInfo.engLow = value;

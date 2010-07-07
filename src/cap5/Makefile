@@ -29,6 +29,7 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
   PERL_SCRIPTS += cainfo.pl
   PERL_SCRIPTS += caput.pl
   PERL_SCRIPTS += caget.pl
+  PERL_SCRIPTS += capr.pl
   PERL_SCRIPTS += camonitor.pl
 
   PERL_MODULES += CA.pm

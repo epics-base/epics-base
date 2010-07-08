@@ -9,7 +9,6 @@
 /* recAai.c - Record Support Routines for Array Analog In records */
 /*
  *      Original Author: Dave Barker
- *      Date:            10/24/93
  *
  *      C  E  B  A  F
  *     
@@ -18,6 +17,8 @@
  *
  *      Copyright SURA CEBAF 1993.
  *
+ *      Current Author: Dirk Zimoch <dirk.zimoch@psi.ch>
+ *      Date:            27-MAY-2010
  */
 
 #include <stddef.h>
@@ -28,14 +29,17 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsString.h"
 #include "alarm.h"
 #include "dbAccess.h"
-#include "dbScan.h"
 #include "dbEvent.h"
+#include "dbFldTypes.h"
+#include "dbScan.h"
 #include "devSup.h"
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "cantProceed.h"
 #include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "aaiRecord.h"
@@ -48,7 +52,7 @@
 static long init_record(aaiRecord *, int);
 static long process(aaiRecord *);
 #define special NULL
-static long get_value(aaiRecord *, struct valueDes *);
+#define get_value NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long);
@@ -84,42 +88,66 @@ rset aaiRSET={
 epicsExportAddress(rset,aaiRSET);
 
 struct aaidset { /* aai dset */
-    long            number;
-    DEVSUPFUN       dev_report;
-    DEVSUPFUN       init;
-    DEVSUPFUN       init_record; /*returns: (-1,0)=>(failure,success)*/
-    DEVSUPFUN       get_ioint_info;
-    DEVSUPFUN       read_aai; /*returns: (-1,0)=>(failure,success)*/
+    long      number;
+    DEVSUPFUN dev_report;
+    DEVSUPFUN init;
+    DEVSUPFUN init_record; /*returns: (-1,0)=>(failure,success)*/
+    DEVSUPFUN get_ioint_info;
+    DEVSUPFUN read_aai; /*returns: (-1,0)=>(failure,success)*/
 };
 
 static void monitor(aaiRecord *);
 static long readValue(aaiRecord *);
 
-
 static long init_record(aaiRecord *prec, int pass)
 {
-    struct aaidset *pdset;
     long status;
+    struct aaidset *pdset = (struct aaidset *)(prec->dset);
 
-    if (pass == 0) {
-        if (prec->nelm <= 0) prec->nelm = 1;
-        return 0;
-    }
-    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
     /* must have dset defined */
-    if (!(pdset = (struct aaidset *)(prec->dset))) {
-        recGblRecordError(S_dev_noDSET, (void *)prec, "aai: init_record");
+    if (!pdset) {
+        recGblRecordError(S_dev_noDSET, prec, "aai: init_record");
         return S_dev_noDSET;
     }
+    
+    if (pass == 0) {
+        if (prec->nelm <= 0)
+            prec->nelm = 1;
+        if (prec->ftvl > DBF_ENUM)
+            prec->ftvl = DBF_UCHAR;
+        if (prec->nelm == 1) {
+            prec->nord = 1;
+        } else {
+            prec->nord = 0;
+        }
+            
+        /* we must call pdset->init_record in pass 0
+           because it may set prec->bptr which must
+           not change after links are established before pass 1
+        */
+           
+        if (pdset->init_record) {
+            /* init_record may set the bptr to point to the data */
+            if ((status = pdset->init_record(prec)))
+                return status;
+        }
+        if (!prec->bptr) {
+            /* device support did not allocate memory so we must do it */
+            prec->bptr = callocMustSucceed(prec->nelm, dbValueSize(prec->ftvl),
+                "aai: buffer calloc failed");
+        }
+        return 0;
+    }
+    
+    /* SIML must be a CONSTANT or a PV_LINK or a DB_LINK */
+    if (prec->siml.type == CONSTANT) {
+	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    }
+    
     /* must have read_aai function defined */
     if (pdset->number < 5 || pdset->read_aai == NULL) {
-        recGblRecordError(S_dev_missingSup, (void *)prec, "aai: init_record");
+        recGblRecordError(S_dev_missingSup, prec, "aai: init_record");
         return S_dev_missingSup;
-    }
-    if (pdset->init_record) {
-        /* init_record sets the bptr to point to the data */
-        if ((status = pdset->init_record(prec)))
-            return status;
     }
     return 0;
 }
@@ -132,14 +160,11 @@ static long process(aaiRecord *prec)
 
     if (pdset == NULL || pdset->read_aai == NULL) {
         prec->pact = TRUE;
-        recGblRecordError(S_dev_missingSup, (void *)prec, "read_aai");
+        recGblRecordError(S_dev_missingSup, prec, "read_aai");
         return S_dev_missingSup;
     }
 
-    if (pact) return 0;
-
     status = readValue(prec); /* read the new value */
-    /* check if device support set pact */
     if (!pact && prec->pact) return 0;
     prec->pact = TRUE;
 
@@ -151,22 +176,14 @@ static long process(aaiRecord *prec)
     recGblFwdLink(prec);
 
     prec->pact = FALSE;
-    return 0;
-}
-
-static long get_value(aaiRecord *prec, struct valueDes *pvdes)
-{
-    pvdes->no_elements = prec->nelm;
-    pvdes->pvalue      = prec->bptr;
-    pvdes->field_type  = prec->ftvl;
-    return 0;
+    return status;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    paddr->pfield         = (void *)(prec->bptr);
+    paddr->pfield         = prec->bptr;
     paddr->no_elements    = prec->nelm;
     paddr->field_type     = prec->ftvl;
     paddr->field_size     = dbValueSize(prec->ftvl);
@@ -178,7 +195,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    *no_elements =  prec->nelm;
+    *no_elements =  prec->nord;
     *offset = 0;
     return 0;
 }
@@ -187,7 +204,9 @@ static long put_array_info(DBADDR *paddr, long nNew)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    prec->nelm = nNew;
+    prec->nord = nNew;
+    if (prec->nord > prec->nelm)
+        prec->nord = prec->nelm;
     return 0;
 }
 
@@ -204,7 +223,7 @@ static long get_precision(DBADDR *paddr, long *precision)
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
     *precision = prec->prec;
-    if (paddr->pfield == (void *)prec->bptr) return 0;
+    if (paddr->pfield == prec->bptr) return 0;
     recGblGetPrec(paddr, precision);
     return 0;
 }
@@ -213,7 +232,7 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)prec->bptr) {
+    if (paddr->pfield == prec->bptr) {
         pgd->upper_disp_limit = prec->hopr;
         pgd->lower_disp_limit = prec->lopr;
     } else recGblGetGraphicDouble(paddr, pgd);
@@ -224,7 +243,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     aaiRecord *prec = (aaiRecord *)paddr->precord;
 
-    if (paddr->pfield == (void *)prec->bptr) {
+    if (paddr->pfield == prec->bptr) {
         pcd->upper_ctrl_limit = prec->hopr;
         pcd->lower_ctrl_limit = prec->lopr;
     } else recGblGetControlDouble(paddr, pcd);
@@ -234,9 +253,35 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 static void monitor(aaiRecord *prec)
 {
     unsigned short monitor_mask;
+    unsigned int hash = 0;
 
     monitor_mask = recGblResetAlarms(prec);
-    monitor_mask |= (DBE_LOG | DBE_VALUE);
+
+    if (prec->mpst == aaiPOST_Always)
+        monitor_mask |= DBE_VALUE;
+    if (prec->apst == aaiPOST_Always)
+        monitor_mask |= DBE_LOG;
+
+    /* Calculate hash if we are interested in OnChange events. */
+    if ((prec->mpst == aaiPOST_OnChange) ||
+        (prec->apst == aaiPOST_OnChange)) {
+        hash = epicsMemHash(prec->bptr,
+            prec->nord * dbValueSize(prec->ftvl), 0);
+
+        /* Only post OnChange values if the hash is different. */
+        if (hash != prec->hash) {
+            if (prec->mpst == aaiPOST_OnChange)
+                monitor_mask |= DBE_VALUE;
+            if (prec->apst == aaiPOST_OnChange)
+                monitor_mask |= DBE_LOG;
+
+            /* Store hash for next process. */
+            prec->hash = hash;
+            /* Post HASH. */
+            db_post_events(prec, &prec->hash, DBE_VALUE);
+        }
+    }
+
     if (monitor_mask)
         db_post_events(prec, prec->bptr, monitor_mask);
 }
@@ -253,21 +298,25 @@ static long readValue(aaiRecord *prec)
 
     status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
     if (status)
-        return(status);
+        return status;
 
     if (prec->simm == menuYesNoNO){
-        /* Call dev support */
-        status = pdset->read_aai(prec);
-        return status;
+        return pdset->read_aai(prec);
     }
+    
     if (prec->simm == menuYesNoYES){
-        /* Simm processing split performed in devSup */
-        /* Call dev support */
-        status = pdset->read_aai(prec);
-        return status;
+        /* Device suport is responsible for buffer
+           which might be read-only so we may not be
+           allowed to call dbGetLink on it.
+           Maybe also device support has an advanced
+           simulation mode.
+           Thus call device now.
+        */
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        return pdset->read_aai(prec);
     }
-    status = -1;
-    recGblSetSevr(prec, SIMM_ALARM, INVALID_ALARM);
-    return status;
+
+    recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+    return -1;
 }
 

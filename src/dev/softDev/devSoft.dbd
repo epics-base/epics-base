@@ -1,3 +1,5 @@
+device(aai,CONSTANT,devAaiSoft,"Soft Channel")
+device(aao,CONSTANT,devAaoSoft,"Soft Channel")
 device(ai,CONSTANT,devAiSoft,"Soft Channel")
 device(ao,CONSTANT,devAoSoft,"Soft Channel")
 device(bi,CONSTANT,devBiSoft,"Soft Channel")

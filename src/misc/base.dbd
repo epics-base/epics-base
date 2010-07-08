@@ -8,6 +8,8 @@ include "menuGlobal.dbd"
 include "menuConvert.dbd"
 
 # Record types
+include "aaiRecord.dbd"
+include "aaoRecord.dbd"
 include "aiRecord.dbd"
 include "aoRecord.dbd"
 include "aSubRecord.dbd"

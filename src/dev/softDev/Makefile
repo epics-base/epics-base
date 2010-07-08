@@ -12,6 +12,8 @@ include $(TOP)/configure/CONFIG
 
 DBD += devSoft.dbd
 
+LIBSRCS += devAaiSoft.c
+LIBSRCS += devAaoSoft.c
 LIBSRCS += devAiSoft.c
 LIBSRCS += devAiSoftRaw.c
 LIBSRCS += devAoSoft.c

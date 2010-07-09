@@ -28,10 +28,12 @@ STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic
 
 # Set runtime path for shared libraries
-SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+SHRLIBDIR_RPATH_LDFLAGS_YES += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath,%)
+SHRLIBDIR_LDFLAGS += $(SHRLIBDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
 # Set runtime path for products
-PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+PRODDIR_RPATH_LDFLAGS_YES += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath,%)
+PRODDIR_LDFLAGS += $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
 # Link libraries controlled by COMMANDLINE_LIBRARY
 # The newest Linux versions only need readline, older ones need both

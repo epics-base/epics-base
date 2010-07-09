@@ -23,8 +23,10 @@ ifeq ($(BUILD_CLASS),CROSS)
     CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
 
     # Provide a link-time path for shared libraries
-    SHRLIBDIR_LDFLAGS += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    SHRLIBDIR_RPATH_LDFLAGS_YES += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    SHRLIBDIR_LDFLAGS += $(SHRLIBDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 
     # Provide a link-time path for products
-    PRODDIR_LDFLAGS += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    PRODDIR_RPATH_LDFLAGS_YES += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+    PRODDIR_LDFLAGS += $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
 endif

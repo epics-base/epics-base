@@ -171,3 +171,7 @@ EPICS_SITE_VERSION =
 # between the various stages of compilation.
 GCC_PIPE = NO
 
+#  Include RPATH when linking executables and libraries.
+#       must be either YES or NO
+LINKER_USE_RPATH=YES
+

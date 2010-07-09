@@ -1,6 +1,5 @@
 #  $Id$
 
-# Microsoft Visual C++ .NET is the default compiler
 # If you have Visual C++ 6.0, uncomment the following override lines
 # This will to eliminate warnings about unknown options /GL, /LTCG, and /w44355.
 #OPT_CFLAGS_YES = /Ox
@@ -12,8 +11,7 @@
 #WARN_CXXFLAGS_YES = /W3 
 
 
-# iF you have Visual C++ 8.0 or 8.0 express, uncomment the following override.
-# This will to eliminate warnings about /GX being deprecated.
-#
+# If you have Visual C++ 8.0 or 8.0 express, uncomment the following override.
+# This will eliminate warnings about /GX being deprecated.
 #CCC = cl /nologo /EHsc /GR
 

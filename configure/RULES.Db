@@ -301,14 +301,14 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@
-	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > msi.tmp
-	$(MV) msi.tmp $@
+	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
+	$(MV) $*.tmp $@
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@
-	$(MSI) $(DBFLAGS)  $< > msi.tmp
-	$(MV) msi.tmp $@
+	$(MSI) $(DBFLAGS)  $< > $*.tmp
+	$(MV) $*.tmp $@
 
 %.db$(RAW)$(DEP): %.substitutions
 	@$(RM) $@

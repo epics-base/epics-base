@@ -25,6 +25,10 @@ else
 CONFIG ?= $(EPICS_BASE)/configure
 endif
 
+#
+EPICS_HOST_ARCH ?= $(shell $(CONFIG)/../startup/EpicsHostArch.pl)
+#
+
 -include $(CONFIG)/os/CONFIG_COMPAT
 
 -include $(CONFIG)/RELEASE

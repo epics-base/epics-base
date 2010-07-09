@@ -1,7 +1,9 @@
 # $Id$
 
 device(ai,CONSTANT,devTestAsyn,"Test Asyn")
+device(aai,CONSTANT,devTestAsyn,"Test Asyn")
 device(ao,CONSTANT,devTestAsyn,"Test Asyn")
+device(aao,CONSTANT,devTestAsyn,"Test Asyn")
 device(bi,CONSTANT,devTestAsyn,"Test Asyn")
 device(bo,CONSTANT,devTestAsyn,"Test Asyn")
 device(calcout,CONSTANT,devTestAsyn,"Test Asyn")

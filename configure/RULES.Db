@@ -28,6 +28,21 @@ INSTALL_DBFLAGS += -I $(INSTALL_LOCATION)/db
 DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
 DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. $(INSTALL_DBFLAGS) $(RELEASE_DBFLAGS)
 
+#####################################################
+# To allow os specific dbd files AND have the -j option work properly,
+# add the following lines to your ioc application Makefile
+#
+# # These lines may be committed to RULES.Db for a future base release.
+# CROSS_TARGET_OS_TYPES = $(sort $(foreach target,  \
+#     $(CROSS_COMPILER_TARGET_ARCHS),$(firstword $(subst -, ,$(target)))))
+# DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
+#
+# and then add something like the following os specific lines
+#
+# DBD_vxWorks += abcVx.dbd
+# DBD_RTEMS += abcRTEMS.dbd
+# DBD_solaris += abcSolaris.dbd
+#
 #####################################################  Targets
 
 # Following line added for backward compatibilty

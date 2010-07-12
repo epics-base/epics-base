@@ -12,7 +12,11 @@ eval 'exec perl -S -w  $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 my $versionString=`cl 2>&1`;
 
-if ($versionString =~ m/Version 14./) {
+if ($versionString =~ m/Version 16./) {
+ $status=0;
+} elsif ($versionString =~ m/Version 15./){
+ $status=1;
+} elsif ($versionString =~ m/Version 14./){
  $status=1;
 } elsif ($versionString =~ m/Version 13.10/){
  $status=0;
@@ -25,7 +29,7 @@ if ($versionString =~ m/Version 14./) {
 } elsif ($versionString =~ m/Version 10./){
  $status=0;
 } else {
- $status=1;
+ $status=0;
 }
 print "$status\n";
 exit;

@@ -23,7 +23,7 @@ WINLINK = link
 
 RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
 
-ARCMD = lib /nologo /verbose /out:$@ $(LIBRARY_LD_OBJS)
+ARCMD = lib /nologo /verbose /out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 
 BAFCMD = bscmake /nologo /o $@
 
@@ -149,6 +149,8 @@ RANLIB=
 LINK_OPT_FLAGS_YES = /LTCG /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%) 
 LINK_OPT_FLAGS_NO = /debug /incremental:no /fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
+LIB_OPT_FLAGS_YES =  /LTCG
+LIB_OPT_LDFLAGS = $(LIB_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=
 SHRLIB_CFLAGS=

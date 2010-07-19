@@ -216,7 +216,7 @@ struct dbr_alDouble     {DBRalDouble};
       ? 0 \
       : ( ( (struct dbAddr *)( (PLNK)->value.pv_link.pvt) ) ) )
 #define dbGetSevr(PLINK,PSEVERITY) \
-    dbGetAlarm((PLINK),NULL,(PSEVERITY));
+    dbGetAlarm((PLINK),NULL,(PSEVERITY))
 
 epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);

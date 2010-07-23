@@ -21,7 +21,7 @@
  */
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 
-#if __RTEMS_MAJOR__>4 || ( __RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9 )
+#if __RTEMS_MAJOR__>4 || (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9) || (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__==9 && __RTEMS_REVISION__==99)
 #  define CONFIGURE_UNIFIED_WORK_AREAS
 #else
 #  define CONFIGURE_EXECUTIVE_RAM_SIZE (2000*1024)
@@ -54,6 +54,9 @@ rtems_task Init (rtems_task_argument argument);
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+
+#define CONFIGURE_FILESYSTEM_NFS
+#define CONFIGURE_FILESYSTEM_IMFS
 
 /*
  * This should be made BSP dependent, not CPU dependent but I know of no

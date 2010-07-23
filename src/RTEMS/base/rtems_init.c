@@ -169,6 +169,41 @@ initialize_local_filesystem(char **argv)
     return 0;
 }
 
+#ifndef OMIT_NFS_SUPPORT
+#if __RTEMS_MAJOR__>4 || \
+   (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9) || \
+   (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__==9 && __RTEMS_REVISION__==99)
+static int
+nfsMount(char *uidhost, char *path, char *mntpoint)
+{
+    int   devl = strlen(uidhost) + strlen(path) + 2;
+    char *dev;
+    int   rval = -1;
+
+    if ((dev = malloc(devl)) == NULL) {
+        fprintf(stderr,"nfsMount: out of memory\n");
+        return -1;
+    }
+    sprintf(dev, "%s:%s", uidhost, path);
+    printf("Mount %s on %s\n", dev, mntpoint);
+    if (rtems_mkdir(mntpoint, S_IRWXU | S_IRWXG | S_IRWXO))
+        printf("Warning -- unable to make directory \"%s\"\n", mntpoint);
+    if (mount(dev, mntpoint, RTEMS_FILESYSTEM_TYPE_NFS,
+                             RTEMS_FILESYSTEM_READ_WRITE, NULL)) {
+        perror("mount failed");
+    }
+    else {
+        rval = 0;
+    }
+    free(dev);
+    return rval;
+}
+#define NFS_INIT
+#else
+#define NFS_INIT    rpcUdpInit(); nfsInit(0,0);
+#endif
+#endif
+
 static void
 initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 {
@@ -198,8 +233,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
     int l = 0;
 
     printf ("***** Initializing NFS *****\n");
-    rpcUdpInit();
-    nfsInit(0,0);
+    NFS_INIT
     if (env_nfsServer && env_nfsPath && env_nfsMountPoint) {
         server_name = env_nfsServer;
         server_path = env_nfsPath;

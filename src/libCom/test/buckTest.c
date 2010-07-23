@@ -9,6 +9,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "epicsAssert.h"
 #include "bucketLib.h"

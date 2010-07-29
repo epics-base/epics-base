@@ -92,6 +92,7 @@ VX_GNU_VERSION_6.4 = 3.4.4
 VX_GNU_VERSION_6.5 = 3.4.4
 VX_GNU_VERSION_6.6 = 4.1.2
 VX_GNU_VERSION_6.7 = 4.1.2
+VX_GNU_VERSION_6.8 = 4.1.2
 VX_GNU_VERSION = $(VX_GNU_VERSION_$(VXWORKS_VERSION))
 
 VX_GNU_MAJOR_VERSION = $(basename $(basename $(VX_GNU_VERSION)))
@@ -123,13 +124,16 @@ GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND
 GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
 
 #--------------------------------------------------
-# Wind River moved nm out of GNU_DIR in some versions
+# Wind River moved nm out of GNU_BIN in some versions
 
 WORKBENCH_BIN = $(WIND_BASE)/workbench-$(WORKBENCH_VERSION)/$(WIND_HOST_TYPE)/bin
+UTILITIES_BIN = $(WIND_BASE)/utilities-$(UTILITIES_VERSION)/$(WIND_HOST_TYPE)/bin
 
 NM_DIR_6.4 = $(WORKBENCH_BIN)
 NM_DIR_6.5 = $(WORKBENCH_BIN)
 NM_DIR_6.6 = $(WORKBENCH_BIN)
+NM_DIR_6.7 = $(GNU_BIN)
+NM_DIR_6.8 = $(UTILITIES_BIN)
 NM_DIR = $(firstword $(NM_DIR_$(VXWORKS_VERSION)) $(GNU_BIN))
 
 NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
@@ -155,12 +159,10 @@ export TOOL_FAMILY = GNU
 
 #--------------------------------------------------
 # Operating system flags
-BSD_DEFINE_VERSION_6.7 = -DBSD=44
-OP_BSD_DEFINE = $(BSD_DEFINE_VERSION_$(VXWORKS_VERSION))
-OP_SYS_CPPFLAGS += -DvxWorks $(OP_BSD_DEFINE)
-OP_SYS_CFLAGS += -fno-builtin $(OP_BSD_DEFINE)
+OP_SYS_CPPFLAGS += -DvxWorks
+OP_SYS_CFLAGS += -fno-builtin
 
-# Fix for vxWorks headers that use macros defined in vxWorks.h but
+# Fix for vxWorks 5 headers that use macros defined in vxWorks.h but
 # which don't actually include vxWorks.h themselves, for example the
 # target/h/sys/stat.h file which uses ULONG
 OP_SYS_INCLUDE_CPPFLAGS_5 += -include $(VX_DIR)/target/h/vxWorks.h

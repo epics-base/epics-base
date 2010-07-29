@@ -26,6 +26,8 @@ extern "C" {
 #include <sockLib.h>
 #include <ioLib.h>
 #include <sys/ioctl.h>
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -89,7 +91,9 @@ typedef int osiSocklen_t;
 #   define INADDR_NONE (0xffffffff)
 #endif 
 
-#if ( defined (BSD) && ( BSD >= 44 ) )
+#if defined(_SIZEOF_ADDR_IFREQ)
+#   define ifreq_size(pifreq) _SIZEOF_ADDR_IFREQ(*pifreq)
+#elif ( defined (BSD) && ( BSD >= 44 ) )
 #   define ifreq_size(pifreq) (pifreq->ifr_addr.sa_len + sizeof(pifreq->ifr_name))
 #else
 #   define ifreq_size(pifreq) sizeof(*pifreq)

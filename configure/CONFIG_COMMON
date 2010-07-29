@@ -292,7 +292,7 @@ ARCMD = $(AR) $(ARFLAGS) $(USR_ARFLAGS) $@  $(LIBRARY_LD_OBJS)
 
 #--------------------------------------------------
 # 'Munch' link-edit
-MUNCH_CMD = $(LD) -o $@ $^
+MUNCH_CMD = $(LD) $(MUNCH_LDFLAGS) -o $@ $^
 
 #--------------------------------------------------
 # LEX default options

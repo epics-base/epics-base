@@ -135,6 +135,14 @@ NM_DIR = $(firstword $(NM_DIR_$(VXWORKS_VERSION)) $(GNU_BIN))
 NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 
 #--------------------------------------------------
+# A linker script is essential for munching from vxWorks 6.6 onwards
+# (i.e. with versions that use gcc 4.1.2 or later).  It can be used
+# with any vxWorks 5 or 6 version, but apparently should not be used
+# when compiling for 68K (which isn't supported in vxWorks 6 anyway)
+MUNCH_LDFLAGS_6 = -T $(VX_DIR)/target/h/tool/gnu/ldscripts/link.OUT
+MUNCH_LDFLAGS = $(MUNCH_LDFLAGS_$(VXWORKS_MAJOR_VERSION))
+
+#--------------------------------------------------
 # The follow 2 exports prevent gnu cross-compiler
 # from finding wrong assembler (as).
 export WIND_BASE

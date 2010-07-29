@@ -302,7 +302,7 @@ $(LOADABLE_SHRLIBNAME):$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 
 %_ctdt.c : %.nm
 	@$(RM) $@
-	$(PERL) $(TOOLS)/munch.pl <  $< > $@
+	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
 $(MUNCHNAME):%$(MUNCH_SUFFIX) : $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@

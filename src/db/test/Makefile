@@ -17,6 +17,8 @@ callbackTest_SRCS += callbackTest.c
 OBJS_IOC_vxWorks += callbackTest
 TESTS += callbackTest
 
+# When we add more test programs here, this must become a vxTestHarness
+TESTSPEC_vxWorks = callbackTest.o; callbackTest
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

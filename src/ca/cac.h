@@ -3,23 +3,20 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*  
- *
- *                              
+
+/*
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *	Author Jeffrey O. Hill
- *	johill@lanl.gov
- *	505 665 1831
+ *
+ *
+ *  Author: Jeff Hill
+ *
  */
 
 #ifndef cach
@@ -182,6 +179,13 @@ public:
         int status, const char * pContext,
         const char * pFileName, unsigned lineNo );
 
+    // search destination management
+    void registerSearchDest (
+        epicsGuard < epicsMutex > &, SearchDest & req );
+    bool findOrCreateVirtCircuit (
+        epicsGuard < epicsMutex > &, const osiSockAddr &,
+        unsigned, tcpiiu *&, unsigned, SearchDestTCP * pSearchDest = NULL );
+
     // diagnostics
     unsigned circuitCount ( epicsGuard < epicsMutex > & ) const;
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
@@ -191,6 +195,7 @@ public:
     int varArgsPrintFormated ( 
         epicsGuard < epicsMutex > & callbackControl, 
         const char *pformat, va_list args ) const;
+    double connectionTimeout ( epicsGuard < epicsMutex > & );
 
     // buffer management
     char * allocateSmallBufferTCP ();
@@ -235,6 +240,7 @@ private:
     resTable < bhe, inetAddrID > beaconTable;
     resTable < tcpiiu, caServerID > serverTable;
     tsDLList < tcpiiu > circuitList;
+    tsDLList < SearchDest > searchDestList;
     tsFreeList 
         < class tcpiiu, 32, epicsMutexNOOP > 
             freeListVirtualCircuit;
@@ -275,6 +281,7 @@ private:
     unsigned maxRecvBytesTCP;
     unsigned maxContigFrames;
     unsigned beaconAnomalyCount;
+    unsigned short _serverPort;
     unsigned iiuExistenceCount;
 
     void recycleReadNotifyIO ( 
@@ -302,6 +309,8 @@ private:
     bool echoRespAction ( callbackManager &, tcpiiu &, 
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool writeNotifyRespAction ( callbackManager &, tcpiiu &, 
+        const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
+    bool searchRespAction ( callbackManager &, tcpiiu &, 
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     bool readNotifyRespAction ( callbackManager &, tcpiiu &, 
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
@@ -444,11 +453,17 @@ inline const char * cac :: pLocalHostName ()
     return _refLocalHostName->pointer ();
 }
 
-inline unsigned cac :: 
+inline unsigned cac ::
     maxContiguousFrames ( epicsGuard < epicsMutex > & ) const
 {
     return maxContigFrames;
+}    
+
+inline double cac ::
+    connectionTimeout ( epicsGuard < epicsMutex > & guard )
+{    
+    guard.assertIdenticalMutex ( this->mutex );
+    return this->connTMO;
 }
 
 #endif // ifdef cach
-

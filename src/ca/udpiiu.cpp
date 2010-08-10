@@ -3,10 +3,10 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*
  *
  *                    L O S  A L A M O S
@@ -73,7 +73,9 @@ udpiiu::udpiiu (
     epicsMutex & cbMutexIn, 
     epicsMutex & cacMutexIn,
     cacContextNotify & ctxNotifyIn,
-    cac & cac ) :
+    cac & cac,
+    unsigned port,
+    tsDLList < SearchDest > & searchDestListIn ) :
     recvThread ( *this, ctxNotifyIn, cbMutexIn, "CAC-UDP", 
         epicsThreadGetStackSize ( epicsThreadStackMedium ),
         cac::lowestPriorityLevelAbove (
@@ -95,7 +97,7 @@ udpiiu::udpiiu (
     lastReceivedSeqNo ( 0 ),
     sock ( 0 ),
     repeaterPort ( 0 ),
-    serverPort ( 0 ),
+    serverPort ( port ),
     localPort ( 0 ),
     shutdownCmd ( false ),
     lastReceivedSeqNoIsValid ( false )
@@ -149,10 +151,6 @@ udpiiu::udpiiu (
     this->repeaterPort = 
         envGetInetPortConfigParam ( &EPICS_CA_REPEATER_PORT,
                                     static_cast <unsigned short> (CA_REPEATER_PORT) );
-
-    this->serverPort = 
-        envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
-                                    static_cast <unsigned short> (CA_SERVER_PORT) );
 
     this->sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
     if ( this->sock == INVALID_SOCKET ) {
@@ -238,8 +236,19 @@ udpiiu::udpiiu (
      * load user and auto configured
      * broadcast address list
      */
-    ellInit ( & this->dest );    // X aCC 392
-    configureChannelAccessAddressList ( & this->dest, this->sock, this->serverPort );
+    ELLLIST dest;
+    ellInit ( & dest );
+    configureChannelAccessAddressList ( & dest, this->sock, this->serverPort );
+    while ( osiSockAddrNode * 
+        pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+        SearchDestUDP & searchDest = * 
+            new SearchDestUDP ( pNode->addr, *this );
+        _searchDestList.add ( searchDest );
+        free ( pNode );
+    }
+
+    /* add list of tcp name service addresses */
+    _searchDestList.add ( searchDestListIn );
     
     caStartRepeaterIfNotInstalled ( this->repeaterPort );
 
@@ -265,14 +274,12 @@ udpiiu::~udpiiu ()
         this->shutdown ( cbGuard, guard );
     }
 
-    // avoid use of ellFree because problems on windows occur if the
-    // free is in a different DLL than the malloc
-    ELLNODE * nnode = this->dest.node.next;
-    while ( nnode )
+    tsDLIter < SearchDest > iter ( _searchDestList.firstIter () );
+    while ( iter.valid () )
     {
-        ELLNODE * pnode = nnode;
-        nnode = nnode->next;
-        free ( pnode );
+        SearchDest & curr ( *iter );
+        iter++;
+        delete & curr;
     }
     
     epicsSocketDestroy ( this->sock );
@@ -344,7 +351,7 @@ void udpRecvThread::run ()
 {
     epicsThreadPrivateSet ( caClientCallbackThreadId, &this->iiu );
     
-    if ( ellCount ( & this->iiu.dest ) == 0 ) { // X aCC 392
+    if ( this->iiu._searchDestList.count () == 0 ) { 
         callbackManager mgr ( this->ctxNotify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->iiu.cacMutex );
         genLocalExcep ( mgr.cbGuard, guard, 
@@ -614,26 +621,31 @@ bool udpiiu::versionAction (
     return true;
 }
 
-bool udpiiu::searchRespAction ( // X aCC 361
-        const caHdr &msg,
-        const osiSockAddr &  addr, const epicsTime & currentTime )
+bool udpiiu :: searchRespAction ( 
+    const caHdr & msg, const osiSockAddr & addr, 
+    const epicsTime & currentTime )
 {
+    /*
+     * we dont currently know what to do with channel's 
+     * found to be at non-IP type addresses
+     */
     if ( addr.sa.sa_family != AF_INET ) {
-        return false;
+        return true;
     }
 
     /*
      * Starting with CA V4.1 the minor version number
-     * is appended to the end of each search reply.
+     * is appended to the end of each UDP search reply.
      * This value is ignored by earlier clients.
      */
     ca_uint32_t minorVersion;
-    if ( msg.m_postsize >= sizeof (minorVersion) ){
+    if ( msg.m_postsize >= sizeof ( minorVersion ) ){
         /*
          * care is taken here not to break gcc 3.2 aggressive alias
          * analysis rules
          */
-        ca_uint8_t * pPayLoad = ( ca_uint8_t *) ( &msg + 1 );
+        const ca_uint8_t * pPayLoad = 
+            reinterpret_cast < const ca_uint8_t *> ( & msg + 1 );
         unsigned byte0 = pPayLoad[0];
         unsigned byte1 = pPayLoad[1];
         minorVersion = ( byte0 << 8u ) | byte1;
@@ -667,12 +679,12 @@ bool udpiiu::searchRespAction ( // X aCC 361
     }
 
     if ( CA_V42 ( minorVersion ) ) {
-       this->cacRef.transferChanToVirtCircuit 
+       cacRef.transferChanToVirtCircuit 
             ( msg.m_available, msg.m_cid, 0xffff, 
                 0, minorVersion, serverAddr, currentTime );
     }
     else {
-        this->cacRef.transferChanToVirtCircuit 
+        cacRef.transferChanToVirtCircuit 
             ( msg.m_available, msg.m_cid, msg.m_dataType, 
                 msg.m_count, minorVersion, serverAddr, currentTime );
     }
@@ -895,62 +907,168 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
     return true;
 }
 
-bool udpiiu::datagramFlush ( 
-    epicsGuard < epicsMutex > &, const epicsTime & /* currentTime */ )
+udpiiu :: SearchDestUDP :: SearchDestUDP ( 
+    const osiSockAddr & destAddr, udpiiu & udpiiuIn ) :
+    _destAddr ( destAddr ), _udpiiu ( udpiiuIn )
 {
+}
+
+void udpiiu :: SearchDestUDP :: searchRequest ( 
+            epicsGuard < epicsMutex > & guard, const char * pBuf, size_t bufSize )
+{
+    guard.assertIdenticalMutex ( _udpiiu.cacMutex );
+    assert ( bufSize <= INT_MAX );
+    int bufSizeAsInt = static_cast < int > ( bufSize );
+    while ( true ) {
+        // This const_cast is needed for vxWorks:
+        int status = sendto ( _udpiiu.sock, const_cast<char *>(pBuf), bufSizeAsInt, 0, 
+                & _destAddr.sa, sizeof ( _destAddr.sa ) );
+        if ( status == bufSizeAsInt ) {
+            break;
+        }
+        if ( status >= 0 ) {
+            errlogPrintf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
+            break;
+        }
+        else {
+            int localErrno = SOCKERRNO;
+
+            if ( localErrno == SOCK_EINTR ) {
+                if ( _udpiiu.shutdownCmd ) {
+                    break;
+                }
+                else {
+                    continue;
+                }
+            }
+            else if ( localErrno == SOCK_SHUTDOWN ) {
+                break;
+            }
+            else if ( localErrno == SOCK_ENOTSOCK ) {
+                break;
+            }
+            else if ( localErrno == SOCK_EBADF ) {
+                break;
+            }
+            else {
+                char sockErrBuf[64];
+                epicsSocketConvertErrnoToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ) );
+                char buf[64];
+                sockAddrToDottedIP ( &_destAddr.sa, buf, sizeof ( buf ) );
+                errlogPrintf (
+                    "CAC: error = \"%s\" sending UDP msg to %s\n",
+                    sockErrBuf, buf);
+                break;
+            }
+        }
+    }
+}
+            
+void udpiiu :: SearchDestUDP :: show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
+{
+    guard.assertIdenticalMutex ( _udpiiu.cacMutex );
+    char buf[64];
+    sockAddrToDottedIP ( &_destAddr.sa, buf, sizeof ( buf ) );
+    :: printf ( "UDP Search destination \"%s\"\n", buf );
+}
+
+udpiiu :: SearchRespCallback :: SearchRespCallback ( udpiiu & udpiiuIn ) : 
+    _udpiiu ( udpiiuIn )
+{
+}
+    
+void udpiiu :: SearchRespCallback :: notify (
+    const caHdr & msg, const void * pPayloadUntyped,
+        const osiSockAddr & addr, const epicsTime & currentTime )
+{   
+    /*
+     * we dont currently know what to do with channel's 
+     * found to be at non-IP type addresses
+     */
+    if ( addr.sa.sa_family != AF_INET ) {
+        return;
+    }
+
+    /*
+     * Starting with CA V4.1 the minor version number
+     * is appended to the end of each search reply.
+     * This value is ignored by earlier clients.
+     */
+    ca_uint32_t minorVersion;
+    if ( msg.m_postsize >= sizeof ( minorVersion ) ){
+        /*
+         * care is taken here not to break gcc 3.2 aggressive alias
+         * analysis rules
+         */
+        const ca_uint8_t * pPayLoad = reinterpret_cast < const ca_uint8_t *> ( pPayloadUntyped );
+        unsigned byte0 = pPayLoad[0];
+        unsigned byte1 = pPayLoad[1];
+        minorVersion = ( byte0 << 8u ) | byte1;
+    }
+    else {
+        minorVersion = CA_UKN_MINOR_VERSION;
+    }
+
+    /*
+     * the type field is abused to carry the port number
+     * so that we can have multiple servers on one host
+     */
+    osiSockAddr serverAddr;
+    serverAddr.ia.sin_family = AF_INET;
+    if ( CA_V48 ( minorVersion ) ) {
+        if ( msg.m_cid != INADDR_BROADCAST ) {
+            serverAddr.ia.sin_addr.s_addr = htonl ( msg.m_cid );
+        }
+        else {
+            serverAddr.ia.sin_addr = addr.ia.sin_addr;
+        }
+        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+    }
+    else if ( CA_V45 (minorVersion) ) {
+        serverAddr.ia.sin_port = htons ( msg.m_dataType );
+        serverAddr.ia.sin_addr = addr.ia.sin_addr;
+    }
+    else {
+        serverAddr.ia.sin_port = htons ( _udpiiu.serverPort );
+        serverAddr.ia.sin_addr = addr.ia.sin_addr;
+    }
+
+    if ( CA_V42 ( minorVersion ) ) {
+       _udpiiu.cacRef.transferChanToVirtCircuit 
+            ( msg.m_available, msg.m_cid, 0xffff, 
+                0, minorVersion, serverAddr, currentTime );
+    }
+    else {
+        _udpiiu.cacRef.transferChanToVirtCircuit 
+            ( msg.m_available, msg.m_cid, msg.m_dataType, 
+                msg.m_count, minorVersion, serverAddr, currentTime );
+    }
+}
+
+void udpiiu :: SearchRespCallback :: show ( 
+    epicsGuard < epicsMutex > & guard, unsigned level ) const
+{
+    guard.assertIdenticalMutex ( _udpiiu.cacMutex );
+    ::printf ( "udpiiu :: SearchRespCallback\n" );
+}
+
+bool udpiiu :: datagramFlush ( 
+    epicsGuard < epicsMutex > & guard, const epicsTime & currentTime )
+{
+    guard.assertIdenticalMutex ( cacMutex );
+
     // dont send the version header by itself
     if ( this->nBytesInXmitBuf <= sizeof ( caHdr ) ) {
         return false;
     }
 
-    osiSockAddrNode *pNode = ( osiSockAddrNode * ) // X aCC 749
-            ellFirst ( & this->dest ); 
-    while ( pNode ) {
-        int status;
-
-        assert ( this->nBytesInXmitBuf <= INT_MAX );
-        status = sendto ( this->sock, this->xmitBuf,   
-                (int) this->nBytesInXmitBuf, 0, 
-                &pNode->addr.sa, sizeof ( pNode->addr.sa ) );
-        if ( status != (int) this->nBytesInXmitBuf ) {
-            if ( status >= 0 ) {
-                errlogPrintf ( "CAC: UDP sendto () call returned strange xmit count?\n" );
-                break;
-            }
-            else {
-                int localErrno = SOCKERRNO;
-
-                if ( localErrno == SOCK_EINTR ) {
-                    if ( this->shutdownCmd ) {
-                        break;
-                    }
-                    else {
-                        continue;
-                    }
-                }
-                else if ( localErrno == SOCK_SHUTDOWN ) {
-                    break;
-                }
-                else if ( localErrno == SOCK_ENOTSOCK ) {
-                    break;
-                }
-                else if ( localErrno == SOCK_EBADF ) {
-                    break;
-                }
-                else {
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString ( 
-                        sockErrBuf, sizeof ( sockErrBuf ) );
-                    char buf[64];
-                    sockAddrToDottedIP ( &pNode->addr.sa, buf, sizeof ( buf ) );
-                    errlogPrintf (
-                        "CAC: error = \"%s\" sending UDP msg to %s\n",
-                        sockErrBuf, buf);
-                    break;
-                }
-            }
-        }
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
+    tsDLIter < SearchDest > iter ( _searchDestList.firstIter () );
+    while ( iter.valid () )
+    {
+        iter->searchRequest ( guard, this->xmitBuf, this->nBytesInXmitBuf );
+        iter++;
     }
 
     this->nBytesInXmitBuf = 0u;
@@ -960,7 +1078,7 @@ bool udpiiu::datagramFlush (
     return true;
 }
 
-void udpiiu::show ( unsigned level ) const
+void udpiiu :: show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
 
@@ -968,7 +1086,17 @@ void udpiiu::show ( unsigned level ) const
     if ( level > 1u ) {
         ::printf ("\trepeater port %u\n", this->repeaterPort );
         ::printf ("\tdefault server port %u\n", this->serverPort );
-        printChannelAccessAddressList ( & this->dest );
+        ::printf ( "Search Destination List with %u items\n", 
+            _searchDestList.count () );
+        if ( level > 2u ) {
+            tsDLIterConst < SearchDest > iter ( 
+                _searchDestList.firstIter () );
+            while ( iter.valid () )
+            {
+                iter->show ( guard, level - 2 );
+                iter++;
+            }
+        }
     }
     if ( level > 2u ) {
         ::printf ("\tsocket identifier %d\n", this->sock );

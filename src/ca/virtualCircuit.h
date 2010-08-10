@@ -3,10 +3,10 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 /*  
  *
  *                              
@@ -37,6 +37,7 @@
 #include "tcpRecvWatchdog.h"
 #include "tcpSendWatchdog.h"
 #include "hostNameCache.h"
+#include "SearchDest.h"
 #include "compilerDependencies.h"
 
 class callbackManager;
@@ -93,15 +94,34 @@ private:
     void run ();
 };
 
-class tcpiiu : 
+class SearchDestTCP : public SearchDest {
+public:
+    SearchDestTCP ( cac &, const osiSockAddr & );
+    void searchRequest ( epicsGuard < epicsMutex > & guard,
+         const char * pbuf, size_t len );
+    void show ( epicsGuard < epicsMutex > & guard, unsigned level ) const;
+    void setCircuit ( tcpiiu * );
+    void disable ();
+    void enable ();
+private:
+    tcpiiu * _ptcpiiu;
+    cac & _cac;
+    const osiSockAddr _addr;
+    bool _active;
+};
+
+class tcpiiu :
         public netiiu, public tsDLNode < tcpiiu >,
         public tsSLNode < tcpiiu >, public caServerID, 
         private wireSendAdapter, private wireRecvAdapter {
+    friend void SearchDestTCP::searchRequest ( epicsGuard < epicsMutex > & guard,
+                                               const char * pbuf, size_t len );
 public:
     tcpiiu ( cac & cac, epicsMutex & mutualExclusion, epicsMutex & callbackControl, 
         cacContextNotify &, double connectionTimeout, epicsTimerQueue & timerQueue, 
         const osiSockAddr & addrIn, comBufMemoryManager &, unsigned minorVersion, 
-        ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn );
+        ipAddrToAsciiEngine & engineIn, const cacChannel::priLev & priorityIn,
+        SearchDestTCP * pSearchDestIn = NULL);
     ~tcpiiu ();
     void start (
         epicsGuard < epicsMutex > & );
@@ -175,12 +195,15 @@ public:
         epicsGuard < epicsMutex > & guard, nciu & chan );
     bool connectNotify ( 
         epicsGuard < epicsMutex > &, nciu & chan );
-    void nameResolutionMsgEndNotify ();
+    
+    void searchRespNotify ( 
+        const epicsTime &, const caHdrLargeArray & );
+    void versionRespNotify ( const caHdrLargeArray & );
 
     void * operator new ( size_t size, 
         tsFreeList < class tcpiiu, 32, epicsMutexNOOP >  & );
-    epicsPlacementDeleteOperator (( void *, 
-        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ))
+    epicsPlacementDeleteOperator (( void *,
+        tsFreeList < class tcpiiu, 32, epicsMutexNOOP > & ));
 
 private:
     hostNameCache hostNameCacheInstance;
@@ -205,6 +228,7 @@ private:
     comBufMemoryManager & comBufMemMgr;
     cac & cacRef;
     char * pCurData;
+    SearchDestTCP * pSearchDest;
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     unsigned minorProtocolVersion;
@@ -257,6 +281,7 @@ private:
     bool bytesArePendingInOS () const;
     void decrementBlockingForFlushCount ( 
         epicsGuard < epicsMutex > & guard );
+    bool isNameService () const;
 
     // send protocol stubs
     void echoRequest ( 
@@ -386,5 +411,14 @@ inline void tcpiiu::probeResponseNotify (
     this->recvDog.probeResponseNotify ( cbGuard );
 }
 
-#endif // ifdef virtualCircuith
+inline bool tcpiiu::isNameService () const
+{
+    return ( this->pSearchDest != NULL );
+}
 
+inline void SearchDestTCP::setCircuit ( tcpiiu * piiu )
+{
+    _ptcpiiu = piiu;
+}
+
+#endif // ifdef virtualCircuith

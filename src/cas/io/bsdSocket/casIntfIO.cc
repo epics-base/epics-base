@@ -3,14 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
+
 //
-// $Id$
-//
-// Author Jeff Hill
+// Author: Jeff Hill
 //
 
 #include <stdio.h>
@@ -35,11 +33,11 @@ const unsigned caServerConnectPendQueueSize = 5u;
 // casIntfIO::casIntfIO()
 //
 casIntfIO::casIntfIO ( const caNetAddr & addrIn ) : 
-	sock ( INVALID_SOCKET ),
+    sock ( INVALID_SOCKET ),
     addr ( addrIn.getSockIP() )
 {
-	int status;
-	osiSocklen_t addrSize;
+    int status;
+    osiSocklen_t addrSize;
     bool portChange;
 
 	if ( ! osiSockAttach () ) {
@@ -152,9 +150,9 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
 {
     static bool oneMsgFlag = false;
 
-    struct sockaddr	newAddr;
-    osiSocklen_t length = ( osiSocklen_t ) sizeof ( newAddr );
-    SOCKET newSock = epicsSocketAccept ( this->sock, & newAddr, & length );
+    struct sockaddr newClientAddr;
+    osiSocklen_t length = ( osiSocklen_t ) sizeof ( newClientAddr );
+    SOCKET newSock = epicsSocketAccept ( this->sock, & newClientAddr, & length );
     if ( newSock == INVALID_SOCKET ) {
         int errnoCpy = SOCKERRNO;
         if ( errnoCpy != SOCK_EWOULDBLOCK && ! oneMsgFlag ) {
@@ -166,14 +164,14 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
         }
         return NULL;
     }
-    else if ( sizeof ( newAddr ) > (size_t) length ) {
+    else if ( sizeof ( newClientAddr ) > (size_t) length ) {
         epicsSocketDestroy ( newSock );
         errlogPrintf ( "CAS: accept returned bad address len?\n" );
         return NULL;
     }
     oneMsgFlag = false;
     ioArgsToNewStreamIO args;
-    args.addr = newAddr;
+    args.clientAddr = newClientAddr;
     args.sock = newSock;
     casStreamOS	* pOS = new casStreamOS ( cas, bufMgr, args );
     if ( ! pOS ) {
@@ -197,25 +195,25 @@ casStreamOS *casIntfIO::newStreamClient ( caServerI & cas,
 //
 void casIntfIO::setNonBlocking()
 {
-        int status;
-        osiSockIoctl_t yes = true;
+    int status;
+    osiSockIoctl_t yes = true;
  
-        status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
-        if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf (
-                "%s:CAS: server non blocking IO set fail because \"%s\"\n",
-                            __FILE__, sockErrBuf );
-        }
+    status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
+    if ( status < 0 ) {
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+        errlogPrintf (
+            "%s:CAS: server non blocking IO set fail because \"%s\"\n",
+            __FILE__, sockErrBuf );
+    }
 }
- 
+
 //
 // casIntfIO::getFD()
 //
 int casIntfIO::getFD() const
 {
-        return this->sock;
+    return this->sock;
 }
 
 //
@@ -223,9 +221,9 @@ int casIntfIO::getFD() const
 //
 void casIntfIO::show(unsigned level) const
 {
-	if (level>2u) {
-		printf(" casIntfIO::sock = %d\n", this->sock);
-	}
+    if (level>2u) {
+        printf(" casIntfIO::sock = %d\n", this->sock);
+    }
 }
 
 //

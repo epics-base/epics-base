@@ -3,12 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*  
- *
+
+/*
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
@@ -16,6 +15,7 @@
  *  Copyright, 1986, The Regents of the University of California.
  *
  *  Author: Jeff Hill
+ *
  */
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
@@ -34,6 +34,7 @@
 #include "errlog.h"
 
 #define epicsExportSharedSymbols
+#include "addrList.h"
 #include "iocinf.h"
 #include "cac.h"
 #include "inetAddrID.h"
@@ -62,7 +63,7 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
     &cac::readRespAction,
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
-    &cac::badTCPRespAction,
+    &cac::searchRespAction,
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
@@ -177,6 +178,10 @@ cac::cac (
             strncpy ( this->pUserName, tmp, len );
         }
 
+        this->_serverPort = 
+            envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
+                                        static_cast <unsigned short> (CA_SERVER_PORT) );
+
         status = envGetDoubleConfigParam ( &EPICS_CA_CONN_TMO, &this->connTMO );
         if ( status ) {
             this->connTMO = CA_CONN_VERIFY_PERIOD;
@@ -233,6 +238,34 @@ cac::cac (
         }
         this->timerQueue.release ();
         throw;
+    }
+
+    /*
+     * load user configured tcp name server address list,
+     * create virtual circuits, and add them to server table
+     */
+    ELLLIST dest, tmpList;
+
+    ellInit ( & dest );
+    ellInit ( & tmpList );
+
+    addAddrToChannelAccessAddressList ( &tmpList, &EPICS_CA_NAME_SERVERS, this->_serverPort, false );
+    removeDuplicateAddresses ( &dest, &tmpList, 0 );
+
+    epicsGuard < epicsMutex > guard ( this->mutex );
+
+    while ( osiSockAddrNode *
+        pNode = reinterpret_cast < osiSockAddrNode * > ( ellGet ( & dest ) ) ) {
+        tcpiiu * piiu = NULL;
+        SearchDestTCP * pdst = new SearchDestTCP ( *this, pNode->addr );
+        this->registerSearchDest ( guard, * pdst );
+        bool newIIU = findOrCreateVirtCircuit (
+            guard, pNode->addr, cacChannel::priorityDefault,
+            piiu, CA_UKN_MINOR_VERSION, pdst );
+        free ( pNode );
+        if ( newIIU ) {
+            piiu->start ( guard );
+        }
     }
 }
 
@@ -468,13 +501,65 @@ cacChannel & cac::createChannel (
     if ( ! this->pudpiiu ) {
         this->pudpiiu = new udpiiu ( 
             guard, this->timerQueue, this->cbMutex, 
-            this->mutex, this->notify, *this );
+            this->mutex, this->notify, *this, this->_serverPort,
+            this->searchDestList );
     }
 
     nciu * pNetChan = new ( this->channelFreeList ) 
             nciu ( *this, noopIIU, chan, pName, pri );
     this->chanTable.idAssignAdd ( *pNetChan );
     return *pNetChan;
+}
+
+bool cac::findOrCreateVirtCircuit ( 
+    epicsGuard < epicsMutex > & guard, const osiSockAddr & addr,
+    unsigned priority, tcpiiu *& piiu, unsigned minorVersionNumber,
+    SearchDestTCP * pSearchDest )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    bool newIIU = false;
+
+    if ( piiu ) {
+        if ( ! piiu->alive ( guard ) ) {
+            return newIIU;
+        }
+    }
+    else {
+        try {
+            autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
+                    this->freeListVirtualCircuit,
+                    new ( this->freeListVirtualCircuit ) tcpiiu ( 
+                        *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
+                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
+                        this->ipToAEngine, priority, pSearchDest ) );
+
+            bhe * pBHE = this->beaconTable.lookup ( addr.ia );
+            if ( ! pBHE ) {
+                pBHE = new ( this->bheFreeList ) 
+                                    bhe ( this->mutex, epicsTime (), 0u, addr.ia );
+                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
+                    return newIIU;
+                }
+            }
+            this->serverTable.add ( *pnewiiu );
+            this->circuitList.add ( *pnewiiu );
+            pBHE->registerIIU ( guard, *pnewiiu );
+            piiu = pnewiiu.release ();
+            newIIU = true;
+        }
+        catch ( std :: exception & except ) {
+            errlogPrintf ( 
+                "CAC: exception during virtual circuit creation \"%s\"\n",
+                except.what () );
+            return newIIU;
+        }
+        catch ( ... ) {
+            errlogPrintf ( 
+                "CAC: Nonstandard exception during virtual circuit creation\n" );
+            return newIIU;
+        }
+    }
+    return newIIU;
 }
 
 void cac::transferChanToVirtCircuit ( 
@@ -484,7 +569,7 @@ void cac::transferChanToVirtCircuit (
     const epicsTime & currentTime )
 {
     if ( addr.sa.sa_family != AF_INET ) {
-        return ;
+        return;
     }
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -501,6 +586,7 @@ void cac::transferChanToVirtCircuit (
      * Ignore duplicate search replies
      */
     osiSockAddr chanAddr = pChan->getPIIU(guard)->getNetworkAddress (guard);
+
     if ( chanAddr.sa.sa_family != AF_UNSPEC ) {
         if ( ! sockAddrAreIdentical ( &addr, &chanAddr ) ) {
             char acc[64];
@@ -519,52 +605,12 @@ void cac::transferChanToVirtCircuit (
         return;
     }
 
-    /*
-     * look for an existing virtual circuit
-     */
-    bool newIIU = false;
     caServerID servID ( addr.ia, pChan->getPriority(guard) );
     tcpiiu * piiu = this->serverTable.lookup ( servID );
-    if ( piiu ) {
-        if ( ! piiu->alive ( guard ) ) {
-            return;
-        }
-    }
-    else {
-        try {
-            autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
-                    this->freeListVirtualCircuit,
-                    new ( this->freeListVirtualCircuit ) tcpiiu ( 
-                        *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
-                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
-                        this->ipToAEngine, pChan->getPriority(guard) ) );
-            bhe * pBHE = this->beaconTable.lookup ( addr.ia );
-            if ( ! pBHE ) {
-                pBHE = new ( this->bheFreeList ) 
-                                    bhe ( this->mutex, epicsTime (), 0u, addr.ia );
-                if ( this->beaconTable.add ( *pBHE ) < 0 ) {
-                    return;
-                }
-            }
-            this->serverTable.add ( *pnewiiu );
-            this->circuitList.add ( *pnewiiu );
-            this->iiuExistenceCount++;
-            pBHE->registerIIU ( guard, *pnewiiu );
-            piiu = pnewiiu.release ();
-            newIIU = true;
-        }
-        catch ( std :: exception & except ) {
-            errlogPrintf ( 
-                "CAC: exception during virtual circuit creation \"%s\"\n",
-                except.what () );
-            return;
-        }
-        catch ( ... ) {
-            errlogPrintf ( 
-                "CAC: nonstandard exception during virtual circuit creation\n" );
-            return;
-        }
-    }
+
+    bool newIIU = findOrCreateVirtCircuit (
+        guard, addr,
+        pChan->getPriority(guard), piiu, minorVersionNumber );
 
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse ( 
@@ -746,9 +792,10 @@ netSubscription & cac::subscriptionRequest (
     return *pIO.release ();
 }
 
-bool cac::versionAction ( callbackManager &, tcpiiu &, 
-    const epicsTime &, const caHdrLargeArray &, void * )
+bool cac::versionAction ( callbackManager &, tcpiiu & iiu, 
+    const epicsTime &, const caHdrLargeArray & msg, void * )
 {
+    iiu.versionRespNotify ( msg );
     return true;
 }
  
@@ -828,6 +875,15 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
                 hdr.m_dataType, hdr.m_count );
         }
     }
+    return true;
+}
+
+bool cac::searchRespAction ( callbackManager &, tcpiiu & iiu, 
+    const epicsTime & currentTime, const caHdrLargeArray & msg, 
+        void * /* pMsgBdy */ )
+{
+    assert ( this->pudpiiu );
+    iiu.searchRespNotify ( currentTime, msg );
     return true;
 }
 
@@ -1076,7 +1132,7 @@ bool cac::createChannelRespAction (
 }
 
 bool cac::verifyAndDisconnectChan ( 
-    callbackManager & mgr, tcpiiu &, 
+    callbackManager & mgr, tcpiiu &,
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBody */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1139,6 +1195,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
     {
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
+
         if ( iiu.channelCount ( guard ) ) {
             char hostNameTmp[64];
             iiu.getHostName ( guard, hostNameTmp, sizeof ( hostNameTmp ) );
@@ -1166,13 +1223,14 @@ void cac::destroyIIU ( tcpiiu & iiu )
     // this waits for send/recv threads to exit
     // this also uses the cac free lists so cac must wait 
     // for this to finish before it shuts down
+
     iiu.~tcpiiu ();
 
     {
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->freeListVirtualCircuit.release ( & iiu );
         this->iiuExistenceCount--;
-        // signal iiu uninstal event so that cac can properly shut down
+        // signal iiu uninstall event so that cac can properly shut down
         this->iiuUninstall.signal();
     }
     // do not touch "this" after lock is released above
@@ -1230,3 +1288,10 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     this->mdpvFreeList.release ( & mfmdpv );
 }
 
+void cac::registerSearchDest (
+    epicsGuard < epicsMutex > & guard,
+    SearchDest & req )
+{
+    guard.assertIdenticalMutex ( this->mutex );
+    this->searchDestList.add ( req );
+}

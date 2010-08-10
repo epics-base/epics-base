@@ -12,6 +12,15 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>CA over TCP connections</h4>
+
+<p>Merged the CA-over-TCP changes developed by Ralph and Jeff at the 2008 EPICS
+Codeathon for the CA client library and both servers (CAS and RSRV).  This adds
+a new CA configuration variable <tt>CA_NAME_SERVERS</tt> which is used by the
+client library as a list of host names or addresses of CA servers to be
+connected to and queried over TCP sockets.  This can be used to tunnel CA
+connections over ssh.  See the CA reference manual for more details.</p>
+
 <h4>Record Types aai and aao</h4>
 
 <ul>

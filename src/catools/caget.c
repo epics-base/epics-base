@@ -127,6 +127,7 @@ static void event_handler (evargs args)
         ppv->value   = calloc(1, dbr_size_n(args.type, args.count));
         memcpy(ppv->value, args.dbr, dbr_size_n(args.type, args.count));
         ppv->onceConnected = 1;
+        ppv->nElems = args.count;
         nRead++;
     }
 }
@@ -183,11 +184,9 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             }
         }
                                 /* Adjust array count */
-        if (reqElems == 0 || pvs[n].nElems < reqElems){
-            pvs[n].reqElems = pvs[n].nElems; /* Use full number of points */
-        } else {
-            pvs[n].reqElems = reqElems;      /* Limit to specified number */
-        }
+        if (reqElems > pvs[n].nElems)
+            reqElems = pvs[n].nElems;
+        pvs[n].reqElems = reqElems;
 
                                 /* Issue CA request */
                                 /* ---------------- */
@@ -205,13 +204,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                                (void*)&pvs[n]);
             } else {
                                        /* Allocate value structure */
-                pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].reqElems));
+                pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].nElems));
                 if(!pvs[n].value) {
                     fprintf(stderr,"Allocation failed\n");
                     return 1;
                 }
                 result = ca_array_get(pvs[n].dbrType,
-                                      pvs[n].reqElems,
+                                      pvs[n].nElems,
                                       pvs[n].chid,
                                       pvs[n].value);
             }
@@ -253,10 +252,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* -------------- */
 
     for (n = 0; n < nPvs; n++) {
+        /* Truncate the data printed to what was requested. */
+        if (pvs[n].reqElems != 0  && pvs[n].nElems > pvs[n].reqElems)
+            pvs[n].nElems = pvs[n].reqElems;
 
         switch (format) {
         case plain:             /* Emulate old caget behaviour */
-            if (pvs[n].reqElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
+            if (pvs[n].nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pvs[n].name);
             else                                               printf("%s", pvs[n].name);
             printf("%c", fieldSeparator);
         case terse:
@@ -270,7 +272,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 printf("*** no data available (timeout)\n");
             else
             {
-                if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
+                if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].nElems > 1)) {
                     dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
                     int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                     char *d = calloc(dlen+1, sizeof(char));
@@ -282,8 +284,8 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                         fprintf(stderr,"Failed to allocate space for escaped string\n");
                     }
                 } else {
-                    if (reqElems || pvs[n].nElems > 1) printf("%lu%c", pvs[n].reqElems, fieldSeparator);
-                    for (i=0; i<pvs[n].reqElems; ++i) {
+                    if (reqElems || pvs[n].nElems > 1) printf("%lu%c", pvs[n].nElems, fieldSeparator);
+                    for (i=0; i<pvs[n].nElems; ++i) {
                         if (i) printf ("%c", fieldSeparator);
                         printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
                     }
@@ -315,8 +317,8 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 else {
                     printf("    Element count:    %lu\n"
                            "    Value:            ",
-                           pvs[n].reqElems);
-                    if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].reqElems > 1)) {
+                           pvs[n].nElems);
+                    if (charArrAsStr && dbr_type_is_CHAR(pvs[n].dbrType) && (reqElems || pvs[n].nElems > 1)) {
                         dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pvs[n].value, pvs[n].dbrType);
                         int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s));
                         char *d = calloc(dlen+1, sizeof(char));
@@ -328,7 +330,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                             fprintf(stderr,"Failed to allocate space for escaped string\n");
                         }
                     } else {
-                        for (i=0; i<pvs[n].reqElems; ++i) {
+                        for (i=0; i<pvs[n].nElems; ++i) {
                             if (i) printf ("%c", fieldSeparator);
                             printf("%s", val2str(pvs[n].value, pvs[n].dbrType, i));
                         }

@@ -64,8 +64,8 @@ typedef struct
     chid  chid;
     long  dbfType;
     long  dbrType;
-    unsigned long nElems;
-    unsigned long reqElems;
+    unsigned long nElems;       // True length of data in value
+    unsigned long reqElems;     // Requested length of data
     int status;
     void* value;
     epicsTimeStamp tsPreviousC;

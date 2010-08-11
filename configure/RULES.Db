@@ -309,20 +309,20 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 ##################################################### DB files
 
 $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf 
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
-	@$(REPLACEVAR) < $@.VAR > $@
-	@$(RM) $@.VAR
+	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $*.VAR $<
+	@$(REPLACEVAR) < $*.VAR > $@
+	@$(RM) $*.VAR
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
-	@$(RM) $@
+	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
 	$(MV) $*.tmp $@
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	$(ECHO) "Inflating database from $<"
-	@$(RM) $@
-	$(MSI) $(DBFLAGS)  $< > $*.tmp
+	@$(RM) $@ $*.tmp
+	$(MSI) $(DBFLAGS) $< > $*.tmp
 	$(MV) $*.tmp $@
 
 %.db$(RAW)$(DEP): %.substitutions
@@ -386,16 +386,15 @@ IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
         $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION) ) )
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
-	@$(RM) $@ temp.cpp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > temp.cpp
-	$(MV) temp.cpp $@
+	@$(RM) $@ $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(MV) $*.tmp $@
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
-	@$(RM) $@ temp.cpp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > temp.cpp
-	$(MV) temp.cpp $@
+	@$(RM) $@ $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(MV) $*.tmp $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
 
 ##################################################### END OF FILE
-

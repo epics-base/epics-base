@@ -292,32 +292,25 @@ int cas_copy_in_header (
         }
     }
 
-    if ( alignedPayloadSize < 0xffff && nElem < 0xffff ) {
-        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];        
-        pMsg->m_cmmd = htons ( response );   
-        pMsg->m_postsize = htons ( ( ( ca_uint16_t ) alignedPayloadSize ) ); 
-        pMsg->m_dataType = htons ( dataType );  
-        pMsg->m_count = htons ( ( ( ca_uint16_t ) nElem ) );      
-        pMsg->m_cid = htonl ( cid );          
-        pMsg->m_available = htonl ( responseSpecific );  
-        if ( ppPayload ) {
-            *ppPayload = ( void * ) ( pMsg + 1 );
-        }
+    caHdr *pMsg = (caHdr *) &pclient->send.buf[pclient->send.stk];
+    pMsg->m_cmmd = htons(response);
+    pMsg->m_dataType = htons(dataType);
+    pMsg->m_cid = htonl(cid);
+    pMsg->m_available = htonl(responseSpecific);
+    if (alignedPayloadSize < 0xffff && nElem < 0xffff) {
+        pMsg->m_postsize = htons(((ca_uint16_t) alignedPayloadSize));
+        pMsg->m_count = htons(((ca_uint16_t) nElem));
+        if (ppPayload)
+            *ppPayload = (void *) (pMsg + 1);
     }
     else {
-        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];
-        ca_uint32_t *pW32 = ( ca_uint32_t * ) ( pMsg + 1 );
-        pMsg->m_cmmd = htons ( response );   
-        pMsg->m_postsize = htons ( 0xffff ); 
-        pMsg->m_dataType = htons ( dataType );  
-        pMsg->m_count = htons ( 0u );      
-        pMsg->m_cid = htonl ( cid );          
-        pMsg->m_available = htonl ( responseSpecific ); 
-        pW32[0] = htonl ( alignedPayloadSize );
-        pW32[1] = htonl ( nElem );
-        if ( ppPayload ) {
-            *ppPayload = ( void * ) ( pW32 + 2 );
-        }
+        ca_uint32_t *pW32 = (ca_uint32_t *) (pMsg + 1);
+        pMsg->m_postsize = htons(0xffff);
+        pMsg->m_count = htons(0u);
+        pW32[0] = htonl(alignedPayloadSize);
+        pW32[1] = htonl(nElem);
+        if (ppPayload)
+            *ppPayload = (void *) (pW32 + 2);
     }
 
     /* zero out pad bytes */

@@ -39,6 +39,9 @@ epicsShareFunc int epicsShareAPI db_put_field(
     DBADDR *paddr, int src_type,const void *psrc, int no_elements);
 epicsShareFunc int epicsShareAPI db_get_field(
     DBADDR *paddr, int dest_type,void *pdest, int no_elements, void *pfl);
+epicsShareFunc int db_get_field_and_count(
+    struct dbAddr *paddr, int buffer_type,
+    void *pbuffer, long *nRequest, void *pfl);
 
 
 #ifdef __cplusplus

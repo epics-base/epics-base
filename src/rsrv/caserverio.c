@@ -336,6 +336,20 @@ void cas_set_header_cid ( struct client *pClient, ca_uint32_t cid )
     pMsg->m_cid = htonl ( cid );
 }
 
+void cas_set_header_count (struct client *pClient, ca_uint32_t count)
+{
+    caHdr *pMsg = (caHdr *) &pClient->send.buf[pClient->send.stk];
+    if (pMsg->m_postsize == htons(0xffff)) {
+        assert(pMsg->m_count == 0);
+        ca_uint32_t *pLW = (ca_uint32_t *) (pMsg + 1);
+        pLW[1] = htonl(count);
+    }
+    else {
+        assert(count < 65536);
+        pMsg->m_count = htons((ca_uint16_t) count);
+    }
+}
+
 void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
 {
     caHdr * pMsg = ( caHdr * ) &pClient->send.buf[pClient->send.stk];

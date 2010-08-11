@@ -83,7 +83,7 @@ public:
     void show ( 
         epicsGuard < epicsMutex > &, unsigned level ) const;
     arrayElementCount getCount (
-        epicsGuard < epicsMutex > & ) const;
+        epicsGuard < epicsMutex > &, bool allow_zero ) const;
     unsigned getType (
         epicsGuard < epicsMutex > & ) const;
     unsigned getMask (
@@ -242,11 +242,11 @@ inline netSubscription * netSubscription::factory (
 }
 
 inline arrayElementCount netSubscription::getCount (
-    epicsGuard < epicsMutex > & guard ) const // X aCC 361
+    epicsGuard < epicsMutex > & guard, bool allow_zero ) const // X aCC 361
 {
     //guard.assertIdenticalMutex ( this->mutex );
     arrayElementCount nativeCount = this->privateChanForIO.nativeElementCount ( guard );
-    if ( this->count == 0u || this->count > nativeCount ) {
+    if ( (this->count == 0u && !allow_zero) || this->count > nativeCount ) {
         return nativeCount;
     }
     else {

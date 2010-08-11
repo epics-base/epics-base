@@ -205,6 +205,7 @@ public:
     void disconnectAllIO ( 
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
     bool connected ( epicsGuard < epicsMutex > & ) const; 
+    unsigned getcount() const { return count; }
 
 private:
     tsDLList < class baseNMIU > eventq;

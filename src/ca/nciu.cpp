@@ -291,9 +291,6 @@ cacChannel::ioStatus nciu::read (
     if ( countIn > this->count ) {
         throw cacChannel::outOfBounds ();
     }
-    if ( countIn == 0 ) {
-        countIn = this->count;
-    }
 
     //
     // fail out if their arguments are invalid

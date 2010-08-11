@@ -3,13 +3,15 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osi/os/vxWorks/epicsThread.c */
 
 /* Author:  Marty Kraimer Date:    25AUG99 */
+
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 
 #include <stddef.h>
 #include <string.h>

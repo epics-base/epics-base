@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osdEnv.c */
@@ -14,6 +13,9 @@
  * Routines to modify/display environment variables and EPICS parameters
  *
  */
+
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 
 #include <string.h>
 #include <stdlib.h>

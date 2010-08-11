@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
+
 #include <errno.h>
 
 #include <sys/types.h>
@@ -26,8 +29,6 @@ extern "C" {
 #include <sockLib.h>
 #include <ioLib.h>
 #include <sys/ioctl.h>
-/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
-#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>

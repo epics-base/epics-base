@@ -8,6 +8,9 @@
 \*************************************************************************/
 /* osi/os/vxWorks/osiFindSymbol */
 
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
+
 #include <vxWorks.h>
 #include <stdlib.h>
 #include <stdio.h>

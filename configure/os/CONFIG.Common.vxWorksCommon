@@ -164,9 +164,10 @@ OP_SYS_CFLAGS += -fno-builtin
 
 # Fix for vxWorks 5 headers that use macros defined in vxWorks.h but
 # which don't actually include vxWorks.h themselves, for example the
-# target/h/sys/stat.h file which uses ULONG
-OP_SYS_INCLUDE_CPPFLAGS_5 += -include $(VX_DIR)/target/h/vxWorks.h
-OP_SYS_INCLUDE_CPPFLAGS = $(OP_SYS_INCLUDE_CPPFLAGS_$(VXWORKS_MAJOR_VERSION))
+# target/h/sys/stat.h file which uses ULONG.  This also stops dbDefs.h
+# from defining the OFFSET macro, which generates lots of warnings in
+# both vxWorks 5 and 6.
+OP_SYS_INCLUDE_CPPFLAGS += -include $(VX_DIR)/target/h/vxWorks.h
 
 #--------------------------------------------------
 # Optimization: Officially vxWorks only supports -O2 or less.

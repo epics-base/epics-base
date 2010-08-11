@@ -27,7 +27,7 @@
 #include "asLib.h"
 #include "dbAddr.h"
 #include "dbNotify.h"
-#define CA_MINOR_PROTOCOL_REVISION 12
+#define CA_MINOR_PROTOCOL_REVISION 13
 #include "caProto.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -226,6 +226,7 @@ int cas_copy_in_header (
     ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
     ca_uint32_t responseSpecific, void **pPayload );
 void cas_set_header_cid ( struct client *pClient, ca_uint32_t );
+void cas_set_header_count (struct client *pClient, ca_uint32_t count);
 void cas_commit_msg ( struct client *pClient, ca_uint32_t size );
 
 #endif /*INCLserverh*/

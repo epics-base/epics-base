@@ -280,6 +280,9 @@ int epicsShareAPI ca_array_get ( chtype type,
         if ( type < 0 ) {
             return ECA_BADTYPE;
         }
+        if ( count == 0 )
+            return ECA_BADCOUNT;
+
         unsigned tmpType = static_cast < unsigned > ( type );
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
         pChan->eliminateExcessiveSendBacklog ( guard );

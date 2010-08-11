@@ -41,7 +41,7 @@
 #   include "shareLib.h"
 #endif
 
-#define CA_MINOR_PROTOCOL_REVISION 12
+#define CA_MINOR_PROTOCOL_REVISION 13
 #include "caProto.h"
 
 #include "cacIO.h"
@@ -205,6 +205,7 @@ public:
     void disconnectAllIO ( 
         epicsGuard < epicsMutex > &, epicsGuard < epicsMutex > & );
     bool connected ( epicsGuard < epicsMutex > & ) const; 
+    unsigned getcount() const { return count; }
 
 private:
     tsDLList < class baseNMIU > eventq;

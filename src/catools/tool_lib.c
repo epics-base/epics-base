@@ -455,8 +455,8 @@ char *dbr2str (const void *value, unsigned type)
             printf("Failed to allocate for print_time_val_sts\n");      \
         }                                                               \
     } else {                                                            \
-        if (reqElems || pv->nElems > 1) printf("%c%lu", fieldSeparator, pv->reqElems); \
-        for (i=0; i<pv->reqElems; ++i) {                                \
+        if (reqElems || pv->nElems > 1) printf("%c%lu", fieldSeparator, pv->nElems); \
+        for (i=0; i<pv->nElems; ++i) {                                \
             printf("%c%s", fieldSeparator, val2str(value, TYPE_ENUM, i)); \
         }                                                               \
     }                                                                   \
@@ -492,7 +492,7 @@ void print_time_val_sts (pv* pv, unsigned long reqElems)
         tsInitS = 1;
     }
 
-    if (pv->reqElems <= 1 && fieldSeparator == ' ') printf("%-30s", pv->name);
+    if (pv->nElems <= 1 && fieldSeparator == ' ') printf("%-30s", pv->name);
     else                                            printf("%s", pv->name);
     printf("%c", fieldSeparator);
     if (!pv->onceConnected)

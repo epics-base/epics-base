@@ -605,7 +605,7 @@ static void read_reply ( void *pArg, struct dbAddr *paddr,
                 payload_size = data_size;
                 cas_set_header_count(pClient, item_count);
             }
-            else
+            else if (payload_size > data_size)
                 memset(
                     (char *) pPayload + data_size, 0, payload_size - data_size);
         }

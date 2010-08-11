@@ -41,7 +41,7 @@
 #   include "shareLib.h"
 #endif
 
-#define CA_MINOR_PROTOCOL_REVISION 12
+#define CA_MINOR_PROTOCOL_REVISION 13
 #include "caProto.h"
 
 #include "cacIO.h"

@@ -5,8 +5,8 @@
 
 # Where to find RTEMS
 #
-RTEMS_BASE=/usr/local/rtems/rtems-4.9.2
 RTEMS_VERSION=4.9.2
+RTEMS_BASE=/usr/local/rtems/rtems-$(RTEMS_VERSION)
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #

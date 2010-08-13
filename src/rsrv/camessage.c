@@ -507,6 +507,9 @@ static void read_reply ( void *pArg, struct dbAddr *paddr,
     const int readAccess = asCheckGet ( pciu->asClientPVT );
     int status;
     int v41;
+    int autosize;
+    long item_count;
+    ca_uint32_t payload_size;
 
     SEND_LOCK ( pClient );
 
@@ -531,10 +534,10 @@ static void read_reply ( void *pArg, struct dbAddr *paddr,
     /* If the client has requested a zero element count we interpret this as a
      * request for all avaiable elements.  In this case we initialise the
      * header with the maximum element size specified by the database. */
-    int autosize = pevext->msg.m_count == 0;
-    long item_count =
+    autosize = pevext->msg.m_count == 0;
+    item_count =
         autosize ? paddr->no_elements : pevext->msg.m_count;
-    ca_uint32_t payload_size = dbr_size_n(pevext->msg.m_dataType, item_count);
+    payload_size = dbr_size_n(pevext->msg.m_dataType, item_count);
     status = cas_copy_in_header(
         pClient, pevext->msg.m_cmmd, payload_size,
         pevext->msg.m_dataType, item_count, cid, pevext->msg.m_available,

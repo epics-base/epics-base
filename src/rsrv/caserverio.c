@@ -257,6 +257,7 @@ int cas_copy_in_header (
 {
     unsigned    msgSize;
     ca_uint32_t alignedPayloadSize;
+    caHdr *pMsg;
 
     if ( payloadSize > UINT_MAX - sizeof ( caHdr ) - 8u ) {
         return ECA_TOLARGE;
@@ -296,7 +297,7 @@ int cas_copy_in_header (
         }
     }
 
-    caHdr *pMsg = (caHdr *) &pclient->send.buf[pclient->send.stk];
+    pMsg = (caHdr *) &pclient->send.buf[pclient->send.stk];
     pMsg->m_cmmd = htons(response);
     pMsg->m_dataType = htons(dataType);
     pMsg->m_cid = htonl(cid);
@@ -337,8 +338,10 @@ void cas_set_header_count (struct client *pClient, ca_uint32_t count)
 {
     caHdr *pMsg = (caHdr *) &pClient->send.buf[pClient->send.stk];
     if (pMsg->m_postsize == htons(0xffff)) {
+        ca_uint32_t *pLW;
+
         assert(pMsg->m_count == 0);
-        ca_uint32_t *pLW = (ca_uint32_t *) (pMsg + 1);
+        pLW = (ca_uint32_t *) (pMsg + 1);
         pLW[1] = htonl(count);
     }
     else {

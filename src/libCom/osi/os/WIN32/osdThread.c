@@ -433,7 +433,7 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 
     magnitude = osdPriorityMagFromPriorityOSI ( priority, stateCount );
 
-    if ( magnitude > 1u ) {
+    if ( magnitude > 0u ) {
         *pPriorityJustBelow = osiPriorityMagFromMagnitueOSD ( magnitude - 1u, stateCount );
         status = epicsThreadBooleanStatusSuccess;
     }

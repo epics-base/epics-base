@@ -286,7 +286,6 @@ cac::~cac ()
             //
             // shutdown all tcp circuits
             //
-            this->iiuExistenceCount = this->circuitList.count();
             tsDLIter < tcpiiu > iter = this->circuitList.firstIter ();
             while ( iter.valid() ) {
                 // this causes a clean shutdown to occur
@@ -544,6 +543,7 @@ bool cac::findOrCreateVirtCircuit (
             }
             this->serverTable.add ( *pnewiiu );
             this->circuitList.add ( *pnewiiu );
+            this->iiuExistenceCount++;
             pBHE->registerIIU ( guard, *pnewiiu );
             piiu = pnewiiu.release ();
             newIIU = true;

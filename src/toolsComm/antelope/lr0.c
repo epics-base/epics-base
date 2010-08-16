@@ -519,7 +519,7 @@ set_derives(void)
 #endif
 }
 
-static void
+void
 free_derives(void)
 {
     FREE(derives[start_symbol]);
@@ -598,7 +598,7 @@ set_nullable(void)
 #endif
 }
 
-static void
+void
 free_nullable(void)
 {
     FREE(nullable);

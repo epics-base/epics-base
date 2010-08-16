@@ -1850,10 +1850,7 @@ void tcpiiu::disconnectAllChannels (
     }
 
     this->channelCountTot = 0u;
-
-    if ( ! isNameService () ) {
-        this->initiateCleanShutdown ( guard );
-    }
+    this->initiateCleanShutdown ( guard );
 }
 
 void tcpiiu::unlinkAllChannels ( 
@@ -1912,10 +1909,7 @@ void tcpiiu::unlinkAllChannels (
     }
 
     this->channelCountTot = 0u;
-
-    if ( ! isNameService () ) {
-        this->initiateCleanShutdown ( guard );
-    }
+    this->initiateCleanShutdown ( guard );
 }
 
 void tcpiiu::installChannel ( 

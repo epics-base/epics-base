@@ -12,6 +12,31 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Dynamic arrays over CA</h4>
+
+<p>Dymanic array sizing was developed by Michael Abbott at the 2010 EPICS
+Codeathon. It permits a CA client to fetch only the currently valid elements of
+an array by specifying a COUNT of zero to either of the ca_array_get_callback()
+or ca_create_subscription() routines. It has never before been legal to pass a
+COUNT of zero to the ca_array_get_callback() routine, but this development does
+introduce a subtle change to the published API of the ca_create_subscription()
+routine.</p>
+
+<p>In previous releases a COUNT of zero for a subscription meant use the
+ca_element_count() for the channel, but from this release it can return fewer
+elements (never more), at the behest of the server. The number of elements can
+vary with subsequent array update events, so a client that uses this technique
+must use the count field of the event_handler_args in its callback function each
+time it is called to obtain the correct element count from the server. Note that
+the ca_element_count() value for a channel is only updated at connection time,
+and supplies the maximum number of elements that the server array variable can
+hold.</p>
+
+<p>Dynamic arrays are currently only supported by the CA client library and IOC
+server RSRV; the portable CAS does not understand them in this release. Newer
+clients using this feature with an older server will revert to the previous
+behavior.</p>
+
 <h4>CA over TCP connections</h4>
 
 <p>Merged the CA-over-TCP changes developed by Ralph and Jeff at the 2008 EPICS

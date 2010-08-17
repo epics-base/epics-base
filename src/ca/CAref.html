@@ -2297,11 +2297,11 @@ ca_put_callback, ca_get_callback, and ca_add_event all request notification of
 asynchronous completion via this mechanism. The <code>event_handler_args
 </code>structure is passed <em>by value</em> to the application supplied
 callback. In this structure the <code>dbr</code> field is a void pointer to any
-data that might be returned. The <code>s</code><code>tatus </code>field will be
+data that might be returned. The <code>status</code> field will be
 set to one of the CA error codes in caerr.h and will indicate the status of the
 operation performed in the IOC. If the status field isn't set to ECA_NORMAL or
 data isn't normally returned from the operation (i.e. put call back) then you
-should expect that the <code>dbr </code>field will be set to a nill pointer
+should expect that the <code>dbr</code> field will be set to a nill pointer
 (zero). The fields <code>usr</code>, <code>chid</code>, and <code>type</code>
 are set to the values specified when the request was made by the application.
 The "dbr" pointer, and any data that it points to, are valid only when
@@ -2352,8 +2352,8 @@ library functions that request them.</p>
 <p>For routines that require an argument specifying the number of array
 elements, no more than the process variable's maximum native element count may
 be requested. The process variable's maximum native element count is available
-from ca_element_count() when the channel is connected. If less elements than
-the process variable's native element count are requested the requested values
+from ca_element_count() when the channel is connected. If fewer elements than
+the process variable's native element count are requested, the requested values
 will be fetched beginning at element zero. By default CA limits the number of
 elements in an array to be no more than approximately 16k divided by the size
 of one element in the array. Starting with EPICS R3.14 the maximum array size
@@ -2381,12 +2381,12 @@ href="#ca_create_channel">ca_create_channel</a></code>. The <code><a
 href="#ca_pend_io">ca_pend_io</a></code> approach is best suited to simple
 command line programs with short runtime duration, and the connection callback
 method is best suited to toolkit components with long runtime duration. Use of
-<code><a href="#ca_state">ca_state</a> </code>is appropriate only in programs
+<code><a href="#ca_state">ca_state</a></code> is appropriate only in programs
 that prefer to poll for connection state changes instead of opting for
 asynchronous notification. The <code>ca_pend_io</code> function blocks only for
 channels created specifying a nill connection handler callback function. The
 user's connection state change function will be run immediately from within
-<code><a href="#ca_create_channel">ca_create_channel</a> </code>if the CA
+<code><a href="#ca_create_channel">ca_create_channel</a></code> if the CA
 client and CA server are both hosted within the same address space (within the
 same process).</p>
 
@@ -2709,9 +2709,9 @@ time.</p>
       <p>The following structure is passed <em>by value </em>to the user's
       connection connection callback function. The <code>op</code> field will
       be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
-      channel connects, and to <code>CA_OP_CONN_DOWN </code>when the channel
+      channel connects, and to <code>CA_OP_CONN_DOWN</code> when the channel
       disconnects. See <code><a href="#ca_puser">ca_puser</a></code> if the
-      <code>PUSER </code>argument is required in your callback
+      <code>PUSER</code> argument is required in your callback
       handler<code>.</code></p>
       <pre>struct  ca_connection_handler_args {
     chanId  chid;  /* channel id */
@@ -2973,7 +2973,8 @@ when a CA get request is initiated.</p>
 <dl>
   <dt><code>COUNT</code></dt>
     <dd>Element count to be read from the specified channel. Must match the
-      array pointed to by PVALUE.</dd>
+      array pointed to by PVALUE. For ca_array_get_callback a count of zero
+      means use the current element count from the server.</dd>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
@@ -3081,7 +3082,7 @@ indicating the current state of the channel.</p>
 <dl>
   <dt><code>COUNT</code></dt>
     <dd>The element count to be read from the specified channel. A count of
-      zero specifies the native elemnt count.</dd>
+      zero means use the current element count from the server.</dd>
 </dl>
 <dl>
   <dt><code>CHID</code></dt>
@@ -3391,7 +3392,7 @@ field should not be used.</p>
     <dd>Address of user callback function to be executed when an exceptions
       occur. Passing a nil value causes the default exception handler to be
       reinstalled. The following structure is passed by value to the user's
-      callback function. Currently, the <code>op </code>field can be one of
+      callback function. Currently, the <code>op</code> field can be one of
       <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
       CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code>
       <pre>struct exception_handler_args {

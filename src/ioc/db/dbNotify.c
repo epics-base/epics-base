@@ -92,6 +92,7 @@ static void notifyCleanup(processNotify *ppn);
 static void restartCheck(processNotifyRecord *ppnr);
 static void callDone(dbCommon *precord,processNotify *ppn);
 static void processNotifyCommon(processNotify *ppn,dbCommon *precord);
+static void notifyCallback(CALLBACK *pcallback);
 
 #define ellSafeAdd(list,listnode) \
 { \

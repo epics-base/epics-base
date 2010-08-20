@@ -22,12 +22,13 @@
 #include "dbLoadTemplate.h"
 
 static int line_num;
-static int yyerror();
+static int yyerror(char* str);
 
 #define VAR_MAX_VAR_STRING 5000
 #define VAR_MAX_VARS 100
 
 static char *sub_collect = NULL;
+static char *gbl_collect;
 static char** vars = NULL;
 static char* db_file_name = NULL;
 static int var_count, sub_count;
@@ -39,6 +40,7 @@ static int var_count, sub_count;
 %token <Str> WORD QUOTE
 %token DBFILE
 %token PATTERN
+%token GLOBAL
 %token EQUALS COMMA
 %left O_PAREN C_PAREN
 %left O_BRACE C_BRACE
@@ -127,7 +129,7 @@ subs: subs sub
 
 sub: WORD O_BRACE vals C_BRACE
     {
-        sub_collect[strlen(sub_collect) - 1] = '\0';
+        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
 #ifdef ERROR_STUFF
         fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
 #endif
@@ -136,12 +138,12 @@ sub: WORD O_BRACE vals C_BRACE
         else
             fprintf(stderr, "Error: no db file name given\n");
         dbmfFree($1);
-        sub_collect[0] = '\0';
+        *gbl_collect = '\0';
         sub_count = 0;
     }
     | O_BRACE vals C_BRACE
     {
-        sub_collect[strlen(sub_collect) - 1] = '\0';
+        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
 #ifdef ERROR_STUFF
         fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
 #endif
@@ -149,7 +151,7 @@ sub: WORD O_BRACE vals C_BRACE
             dbLoadRecords(db_file_name, sub_collect);
         else
             fprintf(stderr, "Error: no db file name given\n");
-        sub_collect[0] = '\0';
+        *gbl_collect = '\0';
         sub_count = 0;
     }
     ;
@@ -162,10 +164,10 @@ vals: vals val
 val: QUOTE
     {
         if (sub_count <= var_count) {
-            strcat(sub_collect, vars[sub_count]);
-            strcat(sub_collect, "=\"");
-            strcat(sub_collect, $1);
-            strcat(sub_collect, "\",");
+            strcat(gbl_collect, vars[sub_count]);
+            strcat(gbl_collect, "=\"");
+            strcat(gbl_collect, $1);
+            strcat(gbl_collect, "\",");
             sub_count++;
         }
         dbmfFree($1);
@@ -173,10 +175,10 @@ val: QUOTE
     | WORD
     {
         if (sub_count <= var_count) {
-            strcat(sub_collect, vars[sub_count]);
-            strcat(sub_collect, "=");
-            strcat(sub_collect, $1);
-            strcat(sub_collect, ",");
+            strcat(gbl_collect, vars[sub_count]);
+            strcat(gbl_collect, "=");
+            strcat(gbl_collect, $1);
+            strcat(gbl_collect, ",");
             sub_count++;
         }
         dbmfFree($1);
@@ -189,7 +191,7 @@ var_subs: var_subs var_sub
 
 var_sub: WORD O_BRACE sub_pats C_BRACE
     {
-        sub_collect[strlen(sub_collect) - 1] = '\0';
+        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
 #ifdef ERROR_STUFF
         fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
 #endif
@@ -198,12 +200,12 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
         else
             fprintf(stderr, "Error: no db file name given\n");
         dbmfFree($1);
-        sub_collect[0] = '\0';
+        *gbl_collect = '\0';
         sub_count = 0;
     }
     | O_BRACE sub_pats C_BRACE
     {
-        sub_collect[strlen(sub_collect) - 1] = '\0';
+        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
 #ifdef ERROR_STUFF
         fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
 #endif
@@ -211,7 +213,7 @@ var_sub: WORD O_BRACE sub_pats C_BRACE
             dbLoadRecords(db_file_name, sub_collect);
         else
             fprintf(stderr, "Error: no db file name given\n");
-        sub_collect[0] = '\0';
+        *gbl_collect = '\0';
         sub_count = 0;
     }
     ;
@@ -223,19 +225,19 @@ sub_pats: sub_pats sub_pat
 
 sub_pat: WORD EQUALS WORD
     {
-        strcat(sub_collect, $1);
-        strcat(sub_collect, "=");
-        strcat(sub_collect, $3);
-        strcat(sub_collect, ",");
+        strcat(gbl_collect, $1);
+        strcat(gbl_collect, "=");
+        strcat(gbl_collect, $3);
+        strcat(gbl_collect, ",");
         dbmfFree($1); dbmfFree($3);
         sub_count++;
     }
     | WORD EQUALS QUOTE
     {
-        strcat(sub_collect, $1);
-        strcat(sub_collect, "=\"");
-        strcat(sub_collect, $3);
-        strcat(sub_collect, "\",");
+        strcat(gbl_collect, $1);
+        strcat(gbl_collect, "=\"");
+        strcat(gbl_collect, $3);
+        strcat(gbl_collect, "\",");
         dbmfFree($1); dbmfFree($3);
         sub_count++;
     }
@@ -257,7 +259,7 @@ static int yyerror(char* str)
 
 static int is_not_inited = 1;
 
-int epicsShareAPI dbLoadTemplate(char* sub_file)
+int epicsShareAPI dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 {
     FILE *fp;
     int ind;
@@ -285,7 +287,14 @@ int epicsShareAPI dbLoadTemplate(char* sub_file)
         return -1;
     }
 
-    sub_collect[0] = '\0';
+    if (cmd_collect && *cmd_collect) {
+        strcpy(sub_collect, cmd_collect);
+        strcat(sub_collect, ",");
+        gbl_collect = sub_collect + strlen(sub_collect);
+    } else {
+        gbl_collect = sub_collect;
+        *gbl_collect = '\0';
+    }
     var_count = 0;
     sub_count = 0;
 

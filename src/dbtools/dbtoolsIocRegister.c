@@ -13,17 +13,20 @@
 
 
 /* dbLoadTemplate */
-static const iocshArg dbLoadTemplateArg0 = { "file name",iocshArgString};
-static const iocshArg * const dbLoadTemplateArgs[1] = {&dbLoadTemplateArg0};
+static const iocshArg dbLoadTemplateArg0 = {"filename", iocshArgString};
+static const iocshArg dbLoadTemplateArg1 = {"var=value", iocshArgString};
+static const iocshArg * const dbLoadTemplateArgs[2] = {
+    &dbLoadTemplateArg0, &dbLoadTemplateArg1
+};
 static const iocshFuncDef dbLoadTemplateFuncDef =
-    {"dbLoadTemplate",1,dbLoadTemplateArgs};
+    {"dbLoadTemplate", 2, dbLoadTemplateArgs};
 static void dbLoadTemplateCallFunc(const iocshArgBuf *args)
 {
-    dbLoadTemplate(args[0].sval);
+    dbLoadTemplate(args[0].sval, args[1].sval);
 }
 
 
 void epicsShareAPI dbtoolsIocRegister(void)
 {
-    iocshRegister(&dbLoadTemplateFuncDef,dbLoadTemplateCallFunc);
+    iocshRegister(&dbLoadTemplateFuncDef, dbLoadTemplateCallFunc);
 }

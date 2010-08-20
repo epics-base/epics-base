@@ -20,6 +20,7 @@ bareword    [a-zA-Z0-9_\-+:./\\\[\]<>;]
 
 "pattern" { return(PATTERN);    }
 "file"    { return(DBFILE);     }
+"global"  { return(GLOBAL);     }
 
 {doublequote}({dstringchar}|{escape})*{doublequote} |
 {singlequote}({sstringchar}|{escape})*{singlequote} {

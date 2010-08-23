@@ -14,16 +14,19 @@ include $(TOP)/configure/CONFIG
 INC += dbLoadTemplate.h
 INC += dbtoolsIocRegister.h
 
-LIB_SRCS += dbLoadTemplate.c
-LIB_SRCS += dbtoolsIocRegister.c
-
 LIBRARY_IOC = dbtoolsIoc
 
+LIB_SRCS += dbLoadTemplate.c
+LIB_SRCS += dbtoolsIocRegister.c
 dbtoolsIoc_LIBS = dbIoc dbStaticIoc Com
-
 dbtoolsIoc_RCS = dbtoolsIoc.rc
-
 HTMLS += dbLoadTemplate.html
+
+PROD_HOST = msi
+
+msi_SRCS = msi.c
+msi_LIBS += Com
+HTMLS = msi.html
 
 # For R3.13 compatibility only
 ifeq ($(strip $(COMPAT_313)),YES)

@@ -283,6 +283,7 @@ private:
     unsigned beaconAnomalyCount;
     unsigned short _serverPort;
     unsigned iiuExistenceCount;
+    bool cacShutdownInProgress;
 
     void recycleReadNotifyIO ( 
         epicsGuard < epicsMutex > &, netReadNotifyIO &io );

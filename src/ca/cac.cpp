@@ -146,7 +146,8 @@ cac::cac (
     maxRecvBytesTCP ( MAX_TCP ),
     maxContigFrames ( contiguousMsgCountWhichTriggersFlowControl ),
     beaconAnomalyCount ( 0u ),
-    iiuExistenceCount ( 0u )
+    iiuExistenceCount ( 0u ),
+    cacShutdownInProgress ( false )
 {
 	if ( ! osiSockAttach () ) {
         throwWithLocation ( caErrorCode (ECA_INTERNAL) );
@@ -282,7 +283,10 @@ cac::~cac ()
         epicsGuard < epicsMutex > guard ( this->mutex );
         if ( this->pudpiiu ) {
             this->pudpiiu->shutdown ( cbGuard, guard );
-    
+
+            // make sure no new tcp circuits are created
+            this->cacShutdownInProgress = true;
+
             //
             // shutdown all tcp circuits
             //
@@ -574,6 +578,13 @@ void cac::transferChanToVirtCircuit (
     }
 
     epicsGuard < epicsMutex > guard ( this->mutex );
+
+    /*
+     * Do not open new circuits while the cac is shutting down
+     */
+    if ( this->cacShutdownInProgress ) {
+        return;
+    }
 
     /*
      * ignore search replies for deleted channels

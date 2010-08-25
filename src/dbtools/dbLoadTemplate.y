@@ -118,6 +118,7 @@ substitutions: pattern_substitutions
     ;
 
 pattern_substitutions: PATTERN O_BRACE C_BRACE
+    | PATTERN O_BRACE C_BRACE pattern_definitions
     | PATTERN O_BRACE pattern_names C_BRACE
     | PATTERN O_BRACE pattern_names C_BRACE pattern_definitions
     ;

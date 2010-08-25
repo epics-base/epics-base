@@ -1,0 +1,4 @@
+# comment line
+$(a)
+this is a test $(b)
+$(d)

@@ -1,0 +1,9 @@
+#test of a pattern
+   pattern {a,b}
+{xxx,"yyy"}
+   {zzz   ,   ttt}
+
+{
+    vvv
+    zzz
+}

@@ -1,0 +1,5 @@
+{a=111,b="222"}
+{ 	a 	= 	aaa   ,   b=bbb}
+{a=	aaa
+b=	bbb
+}

@@ -27,15 +27,15 @@ static int yyerror(char* str);
 #define VAR_MAX_VAR_STRING 5000
 #define VAR_MAX_VARS 100
 
-static char *sub_collect = NULL;
-static char *gbl_collect;
+static char *sub_collect;
+static char *sub_locals;
 static char** vars = NULL;
 static char* db_file_name = NULL;
 static int var_count, sub_count;
 
 %}
 
-%start template
+%start substitution_file
 
 %token <Str> WORD QUOTE
 %token DBFILE
@@ -55,67 +55,83 @@ static int var_count, sub_count;
 
 %%
 
-template: templs
-    | subst
+substitution_file: global_or_template
+    | substitution_file global_or_template
     ;
 
-templs: templs templ
-    | templ
+global_or_template: global_definitions
+    | template_substitutions
     ;
 
-templ: templ_head O_BRACE subst C_BRACE
-    | templ_head
+global_definitions: GLOBAL O_BRACE C_BRACE
+    | GLOBAL O_BRACE variable_definitions C_BRACE
     {
-        if (db_file_name)
-            dbLoadRecords(db_file_name, NULL);
-        else
-            fprintf(stderr, "Error: no db file name given\n");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "global_definitions: %s\n", sub_collect+1);
+    #endif
+        sub_locals += strlen(sub_locals);
     }
     ;
 
-templ_head: DBFILE WORD
+template_substitutions: template_filename O_BRACE C_BRACE
     {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "template_substitutions: %s unused\n", db_file_name);
+    #endif
+        dbmfFree(db_file_name);
+        db_file_name = NULL;
+    }
+    | template_filename O_BRACE substitutions C_BRACE
+    {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "template_substitutions: %s finished\n", db_file_name);
+    #endif
+        dbmfFree(db_file_name);
+        db_file_name = NULL;
+    }
+    ;
+
+template_filename: DBFILE WORD
+    {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "template_filename: %s\n", $2);
+    #endif
         var_count = 0;
-        if (db_file_name)
-            dbmfFree(db_file_name);
         db_file_name = dbmfMalloc(strlen($2)+1);
         strcpy(db_file_name, $2);
         dbmfFree($2);
     }
     | DBFILE QUOTE
     {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "template_filename: \"%s\"\n", $2);
+    #endif
         var_count = 0;
-        if (db_file_name)
-            dbmfFree(db_file_name);
         db_file_name = dbmfMalloc(strlen($2)+1);
         strcpy(db_file_name, $2);
         dbmfFree($2);
     }
     ;
 
-subst: PATTERN pattern subs
-    | PATTERN pattern
-    | var_subs
+substitutions: pattern_substitutions
+    | variable_substitutions
     ;
 
-pattern: O_BRACE vars C_BRACE
+pattern_substitutions: PATTERN O_BRACE C_BRACE
+    | PATTERN O_BRACE pattern_names C_BRACE
+    | PATTERN O_BRACE pattern_names C_BRACE pattern_definitions
+    ;
+
+pattern_names: pattern_name
+    | pattern_names COMMA
+    | pattern_names pattern_name
+    ;
+
+pattern_name: WORD
     {
-#ifdef ERROR_STUFF
-        int i;
-        for (i = 0; i < var_count; i++)
-            fprintf(stderr, "variable = (%s)\n", vars[i]);
-        fprintf(stderr, "var_count = %d\n", var_count);
-#endif
-    }
-    ;
-
-vars: vars var
-    | vars COMMA var
-    | var
-    ;
-
-var: WORD
-    {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_name: [%d] = %s\n", var_count, $1);
+    #endif
         vars[var_count] = dbmfMalloc(strlen($1)+1);
         strcpy(vars[var_count], $1);
         var_count++;
@@ -123,123 +139,153 @@ var: WORD
     }
     ;
 
-subs: subs sub
-    | sub
+pattern_definitions: pattern_definition
+    | pattern_definitions pattern_definition
     ;
 
-sub: WORD O_BRACE vals C_BRACE
+pattern_definition: O_BRACE C_BRACE
     {
-        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
-#ifdef ERROR_STUFF
-        fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
-#endif
-        if (db_file_name)
-            dbLoadRecords(db_file_name, sub_collect);
-        else
-            fprintf(stderr, "Error: no db file name given\n");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_definition: pattern_values empty\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
+    }
+    | O_BRACE pattern_values C_BRACE
+    {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_definition:\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
+        *sub_locals = '\0';
+        sub_count = 0;
+    }
+    | WORD O_BRACE pattern_values C_BRACE
+    {   /* DEPRECATED SYNTAX */
+        fprintf(stderr,
+            "dbLoadTemplate: Substitution file uses deprecated syntax.\n"
+            "    the string '%s' on line %d that comes just before the\n"
+            "    '{' character is extraneous and should be removed.\n",
+            $1, line_num);
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_definition:\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
         dbmfFree($1);
-        *gbl_collect = '\0';
-        sub_count = 0;
-    }
-    | O_BRACE vals C_BRACE
-    {
-        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
-#ifdef ERROR_STUFF
-        fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
-#endif
-        if (db_file_name)
-            dbLoadRecords(db_file_name, sub_collect);
-        else
-            fprintf(stderr, "Error: no db file name given\n");
-        *gbl_collect = '\0';
+        *sub_locals = '\0';
         sub_count = 0;
     }
     ;
 
-vals: vals val
-    | vals COMMA val
-    | val
+pattern_values: pattern_value
+    | pattern_values COMMA
+    | pattern_values pattern_value
     ;
 
-val: QUOTE
+pattern_value: QUOTE
     {
-        if (sub_count <= var_count) {
-            strcat(gbl_collect, vars[sub_count]);
-            strcat(gbl_collect, "=\"");
-            strcat(gbl_collect, $1);
-            strcat(gbl_collect, "\",");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_value: [%d] = \"%s\"\n", sub_count, $1);
+    #endif
+        if (sub_count < var_count) {
+            strcat(sub_locals, ",");
+            strcat(sub_locals, vars[sub_count]);
+            strcat(sub_locals, "=\"");
+            strcat(sub_locals, $1);
+            strcat(sub_locals, "\"");
             sub_count++;
+        } else {
+            fprintf(stderr, "dbLoadTemplate: Too many values given, line %d.\n",
+                line_num);
         }
         dbmfFree($1);
     }
     | WORD
     {
-        if (sub_count <= var_count) {
-            strcat(gbl_collect, vars[sub_count]);
-            strcat(gbl_collect, "=");
-            strcat(gbl_collect, $1);
-            strcat(gbl_collect, ",");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "pattern_value: [%d] = %s\n", sub_count, $1);
+    #endif
+        if (sub_count < var_count) {
+            strcat(sub_locals, ",");
+            strcat(sub_locals, vars[sub_count]);
+            strcat(sub_locals, "=");
+            strcat(sub_locals, $1);
             sub_count++;
+        } else {
+            fprintf(stderr, "dbLoadTemplate: Too many values given, line %d.\n",
+                line_num);
         }
         dbmfFree($1);
     }
     ;
 
-var_subs: var_subs var_sub
-    | var_sub
+variable_substitutions: variable_substitution
+    | variable_substitutions variable_substitution
     ;
 
-var_sub: WORD O_BRACE sub_pats C_BRACE
+variable_substitution: O_BRACE C_BRACE
     {
-        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
-#ifdef ERROR_STUFF
-        fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
-#endif
-        if (db_file_name)
-            dbLoadRecords(db_file_name, sub_collect);
-        else
-            fprintf(stderr, "Error: no db file name given\n");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "variable_substitution: variable_definitions empty\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
+    }
+    | O_BRACE variable_definitions C_BRACE
+    {
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "variable_substitution:\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
+        *sub_locals = '\0';
+    }
+    | WORD O_BRACE variable_definitions C_BRACE
+    {   /* DEPRECATED SYNTAX */
+        fprintf(stderr,
+            "dbLoadTemplate: Substitution file uses deprecated syntax.\n"
+            "    the string '%s' on line %d that comes just before the\n"
+            "    '{' character is extraneous and should be removed.\n",
+            $1, line_num);
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "variable_substitution:\n");
+        fprintf(stderr, "    dbLoadRecords(%s)\n", sub_collect+1);
+    #endif
+        dbLoadRecords(db_file_name, sub_collect+1);
         dbmfFree($1);
-        *gbl_collect = '\0';
-        sub_count = 0;
-    }
-    | O_BRACE sub_pats C_BRACE
-    {
-        gbl_collect[strlen(gbl_collect) - 1] = '\0';    /* drop ',' */
-#ifdef ERROR_STUFF
-        fprintf(stderr, "dbLoadRecords(%s)\n", sub_collect);
-#endif
-        if (db_file_name)
-            dbLoadRecords(db_file_name, sub_collect);
-        else
-            fprintf(stderr, "Error: no db file name given\n");
-        *gbl_collect = '\0';
-        sub_count = 0;
+        *sub_locals = '\0';
     }
     ;
 
-sub_pats: sub_pats sub_pat
-    | sub_pats COMMA sub_pat
-    | sub_pat
+variable_definitions: variable_definition
+    | variable_definitions COMMA
+    | variable_definitions variable_definition
     ;
 
-sub_pat: WORD EQUALS WORD
+variable_definition: WORD EQUALS WORD
     {
-        strcat(gbl_collect, $1);
-        strcat(gbl_collect, "=");
-        strcat(gbl_collect, $3);
-        strcat(gbl_collect, ",");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "variable_definition: %s = %s\n", $1, $3);
+    #endif
+        strcat(sub_locals, ",");
+        strcat(sub_locals, $1);
+        strcat(sub_locals, "=");
+        strcat(sub_locals, $3);
         dbmfFree($1); dbmfFree($3);
-        sub_count++;
     }
     | WORD EQUALS QUOTE
     {
-        strcat(gbl_collect, $1);
-        strcat(gbl_collect, "=\"");
-        strcat(gbl_collect, $3);
-        strcat(gbl_collect, "\",");
+    #ifdef ERROR_STUFF
+        fprintf(stderr, "variable_definition: %s = \"%s\"\n", $1, $3);
+    #endif
+        strcat(sub_locals, ",");
+        strcat(sub_locals, $1);
+        strcat(sub_locals, "=\"");
+        strcat(sub_locals, $3);
+        strcat(sub_locals, "\"");
         dbmfFree($1); dbmfFree($3);
-        sub_count++;
     }
     ;
 
@@ -262,7 +308,7 @@ static int is_not_inited = 1;
 int epicsShareAPI dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 {
     FILE *fp;
-    int ind;
+    int i;
 
     line_num = 1;
 
@@ -286,14 +332,14 @@ int epicsShareAPI dbLoadTemplate(const char *sub_file, const char *cmd_collect)
         fprintf(stderr, "dbLoadTemplate: Out of memory!\n");
         return -1;
     }
+    strcpy(sub_collect, ",");
 
     if (cmd_collect && *cmd_collect) {
-        strcpy(sub_collect, cmd_collect);
-        strcat(sub_collect, ",");
-        gbl_collect = sub_collect + strlen(sub_collect);
+        strcat(sub_collect, cmd_collect);
+        sub_locals = sub_collect + strlen(sub_collect);
     } else {
-        gbl_collect = sub_collect;
-        *gbl_collect = '\0';
+        sub_locals = sub_collect;
+        *sub_locals = '\0';
     }
     var_count = 0;
     sub_count = 0;
@@ -307,8 +353,8 @@ int epicsShareAPI dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 
     yyparse();
 
-    for (ind = 0; ind < var_count; ind++) {
-        dbmfFree(vars[ind]);
+    for (i = 0; i < var_count; i++) {
+        dbmfFree(vars[i]);
     }
     free(vars);
     free(sub_collect);

@@ -380,11 +380,7 @@ void flexend(int status)
 	fprintf( stderr, "  %d total table entries needed\n", tblsiz );
 	}
 
-#ifndef VMS
     exit( status );
-#else
-    exit( status + 1 );
-#endif
 }
 
 

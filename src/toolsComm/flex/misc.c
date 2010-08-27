@@ -375,11 +375,7 @@ void flexfatal(char *msg)
 /* include sys/types.h to use time_t and make lint happy */
 
 #ifndef MS_DOS
-#ifndef VMS
 #include <sys/types.h>
-#else
-#include <types.h>
-#endif
 #endif
 
 #ifdef MS_DOS

@@ -378,7 +378,7 @@ $(INSTALL_LIB)/%.lib: %.lib
 	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
-$(INSTALL_SHRLIB)/lib%: lib%
+$(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing shared library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
 ifneq (,$(strip $(SHRLIB_VERSION)))

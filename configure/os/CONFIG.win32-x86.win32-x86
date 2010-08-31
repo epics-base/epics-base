@@ -201,7 +201,7 @@ DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$*)))
 #	x.exp: what you need to build the dll (in no variable)
 #
 LINK.shrlib = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$*.lib /out:$*.dll $(DLL_DEF_FLAG)
-LINK.shrlib += $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+LINK.shrlib += $(call PATH_FILTER, $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS))
 MUNCH_CMD =  $(CCC) /Fo $@ $^
 
 
@@ -277,7 +277,7 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 #--------------------------------------------------
 # Linker definition
 LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:$@ \
-	$(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
+	$(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
 
 #--------------------------------------------------
 # UseManifestTool.pl checks MS Visual c++ compiler version number to

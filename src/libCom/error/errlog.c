@@ -357,6 +357,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         va_start(pvar, pformat);
         vfprintf(stderr, pformat, pvar);
         va_end(pvar);
+        fputc('\n', stderr);
         fflush(stderr);
     }
     if (pvtData.atExit) return;

@@ -12,8 +12,6 @@
 
 all: install
 
-rebuild: clean install
-
 ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
@@ -46,7 +44,7 @@ CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
 define DEP_template
 $(2): $$(EPICS_HOST_ARCH)
-$(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH)
+$(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH) O.$(2)
 endef
 
 $(foreach action, $(ACTIONS), $(foreach arch,\
@@ -54,6 +52,12 @@ $(foreach action, $(ACTIONS), $(foreach arch,\
 
 #endif
 #*************************************************************************
+
+# Allows rebuild to work with parallel builds option, -j.
+ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
+$(buildDirs) O.Common : clean
+rebuild: install
+endif
 
 $(actionArchTargets) : $(buildDirs) O.Common
 	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. T_A=$(archPart) $(actionPart)
@@ -86,5 +90,5 @@ realclean ::
 
 .PHONY : $(actionArchTargets)
 .PHONY : $(cleanArchTargets)
-.PHONY : $(BUILD_ARCHS)
+.PHONY : $(BUILD_ARCHS) rebuild
 .PHONY : $(ACTIONS) clean realclean archclean all

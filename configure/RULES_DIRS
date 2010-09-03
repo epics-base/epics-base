@@ -35,7 +35,12 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
 
 all : install
 
-rebuild : clean install
+# Allows rebuild to work with parallel builds option, -j.
+ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
+$(foreach dir, $(DIRS), $(dir)$(DIVIDER)install): \
+    $(foreach dir, $(DIRS), $(dir)$(DIVIDER)clean)
+rebuild: $(foreach dir, $(DIRS), $(dir)$(DIVIDER)install)
+endif
 
 # Create directory dependancies lines for GNU make -j option
 # Only works with GNU make 3.81 or later (uses eval function)

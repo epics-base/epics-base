@@ -115,6 +115,9 @@ install: buildInstall
 
 buildInstall : build 
 
+# Allows rebuild to work with parallel builds option, -j.
+install: $(patsubst rebuild,clean,$(filter rebuild,$(MAKECMDGOALS)))
+
 rebuild: clean install
 
 build : inc 

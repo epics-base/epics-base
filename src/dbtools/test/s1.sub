@@ -1,0 +1,20 @@
+global {a=gbl-a, b=gbl-b}
+file t1.txt {
+    pattern {a, b, c}
+    {}
+    {pat-a}
+    {pat-a, pat-b}
+    {pat-a, pat-b, pat-c}
+    {pat-a, pat-b}
+    {pat-a}
+    {}
+}
+file t1.txt {
+    {}
+    {a=val-a}
+    {a=val-a, b=val-b}
+    {a=val-a, b=val-b, c=val-c}
+    {a=val-a, b=val-b}
+    {a=val-a}
+    {}
+}

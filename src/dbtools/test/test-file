@@ -1,0 +1,14 @@
+This is test-file
+
+With $(a) & ${b}:
+include "include-file"
+
+substitute "a=aaa,b=bbb"
+On defining a=$(a) & b=${b}:
+include "include-file"
+
+substitute "a=\"aa\""
+On setting a=$(a):
+include "include-file"
+
+End of test-file.

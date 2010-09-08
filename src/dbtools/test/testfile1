@@ -1,4 +1,0 @@
-This is testfile1
-in testfile1 $(a)=a
-in testfile1 $(b)=b
-end of testfile1

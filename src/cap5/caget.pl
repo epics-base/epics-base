@@ -121,18 +121,18 @@ sub display {
             printf "    Precision:        %d\n", $data->{precision};
         }
         if (exists $data->{upper_disp_limit}) {
-            printf "    Lo disp limit:    %d\n", $data->{lower_disp_limit};
-            printf "    Hi disp limit:    %d\n", $data->{upper_disp_limit};
+            printf "    Lo disp limit:    %g\n", $data->{lower_disp_limit};
+            printf "    Hi disp limit:    %g\n", $data->{upper_disp_limit};
         }
         if (exists $data->{upper_alarm_limit}) {
-            printf "    Lo alarm limit:   %d\n", $data->{lower_alarm_limit};
-            printf "    Lo warn limit:    %d\n", $data->{lower_warning_limit};
-            printf "    Hi warn limit:    %d\n", $data->{upper_warning_limit};
-            printf "    Hi alarm limit:   %d\n", $data->{upper_alarm_limit};
+            printf "    Lo alarm limit:   %g\n", $data->{lower_alarm_limit};
+            printf "    Lo warn limit:    %g\n", $data->{lower_warning_limit};
+            printf "    Hi warn limit:    %g\n", $data->{upper_warning_limit};
+            printf "    Hi alarm limit:   %g\n", $data->{upper_alarm_limit};
         }
         if (exists $data->{upper_ctrl_limit}) {
-            printf "    Lo ctrl limit:    %d\n", $data->{lower_ctrl_limit};
-            printf "    Hi ctrl limit:    %d\n", $data->{upper_ctrl_limit};
+            printf "    Lo ctrl limit:    %g\n", $data->{lower_ctrl_limit};
+            printf "    Hi ctrl limit:    %g\n", $data->{upper_ctrl_limit};
         }
     } else {
         my $value = format_number($data, $type);

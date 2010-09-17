@@ -77,7 +77,7 @@ CA - Perl 5 interface to EPICS Channel Access
     printf "    Access:        %sread, %swrite\n",
         $access[$chan->read_access], $access[$chan->write_access];
 
-    die "PV not found!" unless chan->is_connected;
+    die "PV not found!" unless $chan->is_connected;
 
     $chan->get;
     CA->pend_io(1);
@@ -210,7 +210,9 @@ data type requested will be the widened form of the channel's native type
 fetch all available elements.
 
 The element count can be overridden by providing an integer argument in the
-range 1 .. C<element_count>.  The data type can also be given as a string naming
+range 1 .. C<element_count>.  Note that the count argument must be an integer;
+add 0 to it if it is necessary to convert it from a string.
+The optional data type I<TYPE> should be a string naming
 the desired C<DBR_xxx_yyy> type; the actual type used will have the C<yyy> part
 widened to one of C<STRING>, C<CHAR>, C<LONG> or C<DOUBLE>.  The valid type
 names are listed in the L<Channel Access Reference Manual|/"SEE ALSO"> under the
@@ -348,7 +350,7 @@ widened from the original type used to request or subscribe for the data.
 =item COUNT
 
 The number of elements in the data returned by the server.  If the data type is
-C<DBF_CHAR> the value given for C<COUNT> is the number of bytes (including
+C<DBF_CHAR> the value given for C<COUNT> is the number of bytes (including any
 trailing zeros) returned by the server, although the value field is given as a
 Perl string contining all the characters before the first zero byte.
 

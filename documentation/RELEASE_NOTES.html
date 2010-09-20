@@ -33,9 +33,11 @@ and supplies the maximum number of elements that the server array variable can
 hold.</p>
 
 <p>Dynamic arrays are currently only supported by the CA client library and IOC
-server RSRV; the portable CAS does not understand them in this release. Newer
-clients using this feature with an older server will revert to the previous
-behavior.</p>
+server RSRV, the Perl CA library and the catools programs. The portable CAS does
+not understand them, and database links that connect over CA do not attempt to
+use them either. CA clients that try to use this functionality with a server
+that does not support it will receive the same full-sized zero-filled arrays
+that previous releases supported.</p>
 
 <h4>CA over TCP connections</h4>
 

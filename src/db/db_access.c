@@ -149,94 +149,57 @@ int epicsShareAPI db_name_to_addr(const char *pname, struct dbAddr *paddr)
 int epicsShareAPI db_get_field(struct dbAddr *paddr,
     int buffer_type, void *pbuffer, int no_elements, void *pfl)
 {
+    long nRequest = no_elements;
+    int result = db_get_field_and_count(
+        paddr, buffer_type, pbuffer, &nRequest, pfl);
+    if (nRequest < no_elements)
+        /* If the database request returned fewer elements than requested then
+         * fill out the remainder of the array with zeros. */
+        memset(
+            (char *)pbuffer + dbr_size_n(buffer_type, nRequest), 0,
+            (no_elements - nRequest) * dbr_value_size[buffer_type]);
+    return result;
+}
+
+/* Performs the work of the public db_get_field API, but also returns the number
+ * of elements actually copied to the buffer.  The caller is responsible for
+ * zeroing the remaining part of the buffer. */
+int epicsShareAPI db_get_field_and_count(
+    struct dbAddr *paddr, int buffer_type,
+    void *pbuffer, long *nRequest, void *pfl)
+{
     long status;
     long options;
-    long nRequest;
     long i;
+    long zero = 0;
 
-   /* The order of the DBR* elements in the "new" structures below is
+   /* The order of the DBR* elements in the "newSt" structures below is
     * very important and must correspond to the order of processing
     * in the dbAccess.c dbGet() and getOptions() routines.
     */
 
     switch(buffer_type) {
     case(oldDBR_STRING):
-        {
-            DBSTRING *pvalue = (DBSTRING *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_STRING, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i][0] = 0;
-        }
+        status = dbGetField(paddr, DBR_STRING, pbuffer, &zero, nRequest, pfl);
         break;
 /*  case(oldDBR_INT): */
     case(oldDBR_SHORT):
-        {
-            dbr_short_t *pvalue = (dbr_short_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_SHORT, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_SHORT, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_FLOAT):
-        {
-            dbr_float_t *pvalue = (dbr_float_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_FLOAT, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_FLOAT, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_ENUM):
-        {
-            dbr_enum_t *pvalue = (dbr_enum_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_ENUM, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_ENUM, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_CHAR):
-        {
-            dbr_char_t *pvalue = (dbr_char_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_CHAR, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_CHAR, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_LONG):
-        {
-            dbr_long_t *pvalue = (dbr_long_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_LONG, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_LONG, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_DOUBLE):
-        {
-            dbr_double_t *pvalue = (dbr_double_t *)pbuffer;
-
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_DOUBLE, pbuffer, &options, &nRequest,
-                pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
-        }
+        status = dbGetField(paddr, DBR_DOUBLE, pbuffer, &zero, nRequest, pfl);
         break;
 
     case(oldDBR_STS_STRING):
@@ -247,19 +210,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            DBSTRING *pvalue = (DBSTRING *)pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_STRING, pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i][0] = 0;
+            status = dbGetField(paddr, DBR_STRING, pold->value, &zero,
+                nRequest, pfl);
         }
         break;
 /*  case(oldDBR_STS_INT): */
@@ -269,19 +226,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_short_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+            status = dbGetField(paddr, DBR_SHORT, &pold->value, &zero,
+                nRequest, pfl);
         }
         break;
     case(oldDBR_STS_FLOAT):
@@ -290,19 +241,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_float_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &zero,
+                nRequest, pfl);
         }
         break;
     case(oldDBR_STS_ENUM):
@@ -311,19 +256,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_enum_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &nRequest,
-                    pfl);
+            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_ENUM, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+            status = dbGetField(paddr, DBR_ENUM, &pold->value, &zero,
+                nRequest, pfl);
         }
         break;
     case(oldDBR_STS_CHAR):
@@ -332,19 +271,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_char_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_UCHAR, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+            status = dbGetField(paddr, DBR_UCHAR, &pold->value, &zero,
+                nRequest, pfl);
         }
         break;
     case(oldDBR_STS_LONG):
@@ -353,19 +286,13 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_long_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            options = 0;
-            nRequest = no_elements;
-            status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+            status = dbGetField(paddr, DBR_LONG, &pold->value, &zero,
+                nRequest, pfl);
         }
         break;
     case(oldDBR_STS_DOUBLE):
@@ -374,19 +301,14 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            dbr_double_t *pvalue = &pold->value;
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
 
@@ -397,20 +319,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            DBSTRING *pvalue = (DBSTRING *)(pold->value);
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &nRequest,
-                    pfl);
+            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
-                status = dbGetField(paddr, DBR_STRING, pold->value, &options,
-                        &nRequest, pfl);
-                for (i = nRequest; i < no_elements; i++) pvalue[i][0] = 0;
+            status = dbGetField(paddr, DBR_STRING, pold->value, &options,
+                    nRequest, pfl);
         }
         break;
 /*  case(oldDBR_TIME_INT): */
@@ -421,20 +338,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_short_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_TIME_FLOAT):
@@ -444,20 +356,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_float_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_TIME_ENUM):
@@ -467,20 +374,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_enum_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_ENUM, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_TIME_CHAR):
@@ -490,20 +392,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_char_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_CHAR, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_CHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_CHAR, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_TIME_LONG):
@@ -513,20 +410,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_long_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_TIME_DOUBLE):
@@ -536,20 +428,15 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRstatus
                 DBRtime
             } newSt;
-            dbr_double_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_TIME;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
 
@@ -564,12 +451,9 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRgrLong
                 DBRalLong
             } newSt;
-            dbr_short_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -581,10 +465,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_GR_FLOAT):
@@ -597,13 +479,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRgrDouble
                 DBRalDouble
             } newSt;
-            dbr_float_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_AL_DOUBLE;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -616,10 +495,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_warning_limit = epicsConvertDoubleToFloat(newSt.upper_warning_limit);
             pold->lower_warning_limit = epicsConvertDoubleToFloat(newSt.lower_warning_limit);
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
 /*  case(oldDBR_GR_ENUM): see oldDBR_CTRL_ENUM */
@@ -632,12 +509,9 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRgrLong
                 DBRalLong
             } newSt;
-            dbr_char_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -649,10 +523,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_UCHAR, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_GR_LONG):
@@ -664,12 +536,9 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRgrLong
                 DBRalLong
             } newSt;
-            dbr_long_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -681,10 +550,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_GR_DOUBLE):
@@ -697,13 +564,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRgrDouble
                 DBRalDouble
             } newSt;
-            dbr_double_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_AL_DOUBLE;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -716,10 +580,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
 
@@ -734,13 +596,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRctrlLong
                 DBRalLong
             } newSt;
-            dbr_short_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -754,10 +613,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_CTRL_FLOAT):
@@ -771,13 +628,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRctrlDouble
                 DBRalDouble
             } newSt;
-            dbr_float_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_CTRL_DOUBLE | DBR_AL_DOUBLE;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -792,10 +646,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_ctrl_limit = epicsConvertDoubleToFloat(newSt.upper_ctrl_limit);
             pold->lower_ctrl_limit = epicsConvertDoubleToFloat(newSt.lower_ctrl_limit);
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_GR_ENUM):
@@ -807,14 +659,11 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRenumStrs
             } newSt;
             short no_str;
-            dbr_enum_t *pvalue = &pold->value;
 
             memset(pold, '\0', sizeof(struct dbr_ctrl_enum));
             /* first get status and severity */
             options = DBR_STATUS | DBR_ENUM_STRS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             no_str = newSt.no_str;
@@ -824,10 +673,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 strncpy(pold->strs[i], newSt.strs[i], sizeof(pold->strs[i]));
             /*now get values*/
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_ENUM, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_CTRL_CHAR):
@@ -840,13 +687,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRctrlLong
                 DBRalLong
             } newSt;
-            dbr_char_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -860,10 +704,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_UCHAR, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_CTRL_LONG):
@@ -876,13 +718,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRctrlLong
                 DBRalLong
             } newSt;
-            dbr_long_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -896,10 +735,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
     case(oldDBR_CTRL_DOUBLE):
@@ -913,13 +750,10 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
                 DBRctrlDouble
                 DBRalDouble
             } newSt;
-            dbr_double_t *pvalue = &pold->value;
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_CTRL_DOUBLE | DBR_AL_DOUBLE;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -934,10 +768,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
-                &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i] = 0;
+                nRequest, pfl);
         }
         break;
 
@@ -947,21 +779,16 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
             struct {
                 DBRstatus
             } newSt;
-            DBSTRING *pvalue = (DBSTRING *)(pold->value);
 
             options = DBR_STATUS;
-            nRequest = 0;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &nRequest,
-                pfl);
+            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->ackt = newSt.ackt;
             pold->acks = newSt.acks;
             options = 0;
-            nRequest = no_elements;
             status = dbGetField(paddr, DBR_STRING, pold->value,
-                &options, &nRequest, pfl);
-            for (i = nRequest; i < no_elements; i++) pvalue[i][0] = 0;
+                &options, nRequest, pfl);
         }
         break;
 

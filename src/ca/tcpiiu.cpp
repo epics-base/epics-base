@@ -1464,6 +1464,8 @@ void tcpiiu::readNotifyRequest ( epicsGuard < epicsMutex > & guard, // X aCC 431
     if ( nElem > maxElem ) {
         throw cacChannel::msgBodyCacheTooSmall ();
     }
+    if (nElem == 0 && !CA_V413(this->minorProtocolVersion))
+       nElem = chan.getcount();
     comQueSendMsgMinder minder ( this->sendQue, guard );
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_READ_NOTIFY, 0u, 
@@ -1559,7 +1561,8 @@ void tcpiiu::subscriptionRequest (
     if ( mask > 0xffff ) {
         throw cacChannel::badEventSelection ();
     }
-    arrayElementCount nElem = subscr.getCount ( guard );
+    arrayElementCount nElem = subscr.getCount (
+        guard, CA_V413(this->minorProtocolVersion) );
     arrayElementCount maxBytes;
     if ( CA_V49 ( this->minorProtocolVersion ) ) {
         maxBytes = this->cacRef.largeBufferSizeTCP ();
@@ -1605,7 +1608,8 @@ void tcpiiu::subscriptionUpdateRequest (
     if ( this->state != iiucs_connected ) {
         return;
     }
-    arrayElementCount nElem = subscr.getCount ( guard );
+    arrayElementCount nElem = subscr.getCount (
+        guard, CA_V413(this->minorProtocolVersion) );
     arrayElementCount maxBytes;
     if ( CA_V49 ( this->minorProtocolVersion ) ) {
         maxBytes = this->cacRef.largeBufferSizeTCP ();
@@ -1643,7 +1647,8 @@ void tcpiiu::subscriptionCancelRequest ( epicsGuard < epicsMutex > & guard, // X
     this->sendQue.insertRequestHeader ( 
         CA_PROTO_EVENT_CANCEL, 0u, 
         static_cast < ca_uint16_t > ( subscr.getType ( guard ) ), 
-        static_cast < ca_uint16_t > ( subscr.getCount ( guard ) ), 
+        static_cast < ca_uint16_t > ( subscr.getCount (
+            guard, CA_V413(this->minorProtocolVersion) ) ),
         chan.getSID(guard), subscr.getId(), 
         CA_V49 ( this->minorProtocolVersion ) );
     minder.commit ();

@@ -107,6 +107,7 @@ static void event_handler (evargs args)
     if (args.status == ECA_NORMAL)
     {
         pv->dbrType = args.type;
+        pv->nElems = args.count;
         memcpy(pv->value, args.dbr, dbr_size_n(args.type, args.count));
 
         print_time_val_sts(pv, reqElems);
@@ -150,11 +151,9 @@ static void connection_handler ( struct connection_handler_args args )
             ppv->dbrType = DBR_TIME_STRING;
         }
                                 /* Adjust array count */
-        if (reqElems == 0 || ppv->nElems < reqElems){
-            ppv->reqElems = ppv->nElems; /* Use full number of points */
-        } else {
-            ppv->reqElems = reqElems; /* Limit to specified number */
-        }
+        if (reqElems > ppv->nElems)
+            reqElems = ppv->nElems;
+        ppv->reqElems = reqElems;
 
         ppv->onceConnected = 1;
         nConn++;
@@ -163,7 +162,7 @@ static void connection_handler ( struct connection_handler_args args )
         /* install monitor once with first connect */
         if ( ! ppv->value ) {
                                     /* Allocate value structure */
-            ppv->value = calloc(1, dbr_size_n(ppv->dbrType, ppv->reqElems));
+            ppv->value = calloc(1, dbr_size_n(ppv->dbrType, ppv->nElems));
             if ( ppv->value ) {
                 ppv->status = ca_create_subscription(ppv->dbrType,
                                                 ppv->reqElems,

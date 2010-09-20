@@ -33,6 +33,10 @@
 #define epicsExportSharedSymbols
 #include "server.h"
 
+/* As an optimisation, any message allocated with a large header is resized to
+ * use a small header if the payload size is below this threshold. */
+#define SMALL_MESSAGE_THRESHOLD     65
+
 /*
  *  cas_send_bs_msg()
  *
@@ -253,6 +257,7 @@ int cas_copy_in_header (
 {
     unsigned    msgSize;
     ca_uint32_t alignedPayloadSize;
+    caHdr *pMsg;
 
     if ( payloadSize > UINT_MAX - sizeof ( caHdr ) - 8u ) {
         return ECA_TOLARGE;
@@ -292,32 +297,25 @@ int cas_copy_in_header (
         }
     }
 
-    if ( alignedPayloadSize < 0xffff && nElem < 0xffff ) {
-        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];        
-        pMsg->m_cmmd = htons ( response );   
-        pMsg->m_postsize = htons ( ( ( ca_uint16_t ) alignedPayloadSize ) ); 
-        pMsg->m_dataType = htons ( dataType );  
-        pMsg->m_count = htons ( ( ( ca_uint16_t ) nElem ) );      
-        pMsg->m_cid = htonl ( cid );          
-        pMsg->m_available = htonl ( responseSpecific );  
-        if ( ppPayload ) {
-            *ppPayload = ( void * ) ( pMsg + 1 );
-        }
+    pMsg = (caHdr *) &pclient->send.buf[pclient->send.stk];
+    pMsg->m_cmmd = htons(response);
+    pMsg->m_dataType = htons(dataType);
+    pMsg->m_cid = htonl(cid);
+    pMsg->m_available = htonl(responseSpecific);
+    if (alignedPayloadSize < 0xffff && nElem < 0xffff) {
+        pMsg->m_postsize = htons(((ca_uint16_t) alignedPayloadSize));
+        pMsg->m_count = htons(((ca_uint16_t) nElem));
+        if (ppPayload)
+            *ppPayload = (void *) (pMsg + 1);
     }
     else {
-        caHdr *pMsg = ( caHdr * ) &pclient->send.buf[pclient->send.stk];
-        ca_uint32_t *pW32 = ( ca_uint32_t * ) ( pMsg + 1 );
-        pMsg->m_cmmd = htons ( response );   
-        pMsg->m_postsize = htons ( 0xffff ); 
-        pMsg->m_dataType = htons ( dataType );  
-        pMsg->m_count = htons ( 0u );      
-        pMsg->m_cid = htonl ( cid );          
-        pMsg->m_available = htonl ( responseSpecific ); 
-        pW32[0] = htonl ( alignedPayloadSize );
-        pW32[1] = htonl ( nElem );
-        if ( ppPayload ) {
-            *ppPayload = ( void * ) ( pW32 + 2 );
-        }
+        ca_uint32_t *pW32 = (ca_uint32_t *) (pMsg + 1);
+        pMsg->m_postsize = htons(0xffff);
+        pMsg->m_count = htons(0u);
+        pW32[0] = htonl(alignedPayloadSize);
+        pW32[1] = htonl(nElem);
+        if (ppPayload)
+            *ppPayload = (void *) (pW32 + 2);
     }
 
     /* zero out pad bytes */
@@ -336,6 +334,22 @@ void cas_set_header_cid ( struct client *pClient, ca_uint32_t cid )
     pMsg->m_cid = htonl ( cid );
 }
 
+void cas_set_header_count (struct client *pClient, ca_uint32_t count)
+{
+    caHdr *pMsg = (caHdr *) &pClient->send.buf[pClient->send.stk];
+    if (pMsg->m_postsize == htons(0xffff)) {
+        ca_uint32_t *pLW;
+
+        assert(pMsg->m_count == 0);
+        pLW = (ca_uint32_t *) (pMsg + 1);
+        pLW[1] = htonl(count);
+    }
+    else {
+        assert(count < 65536);
+        pMsg->m_count = htons((ca_uint16_t) count);
+    }
+}
+
 void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
 {
     caHdr * pMsg = ( caHdr * ) &pClient->send.buf[pClient->send.stk];
@@ -343,8 +357,19 @@ void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
     if ( pMsg->m_postsize == htons ( 0xffff ) ) {
         ca_uint32_t * pLW = ( ca_uint32_t * ) ( pMsg + 1 );
         assert ( size <= ntohl ( *pLW ) );
-        pLW[0] = htonl ( size );
-        size += sizeof ( caHdr ) + 2 * sizeof ( *pLW );
+        if (size < SMALL_MESSAGE_THRESHOLD) {
+            /* If the message is sufficiently small it can be worth converting a
+             * large message header into a small header.  This saves us all of 8
+             * bytes over the wire, so it's not such a big deal. */
+            pMsg->m_postsize = htons((ca_uint16_t) size);
+            pMsg->m_count = htons((ca_uint16_t) ntohl(pLW[1]));
+            memmove(pLW, pLW + 2, size);
+            size += sizeof(caHdr);
+        }
+        else {
+            pLW[0] = htonl ( size );
+            size += sizeof ( caHdr ) + 2 * sizeof ( *pLW );
+        }
     }
     else {
         assert ( size <= ntohs ( pMsg->m_postsize ) );

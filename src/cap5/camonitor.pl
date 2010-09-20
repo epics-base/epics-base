@@ -6,9 +6,11 @@ use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
 
 use Getopt::Std;
+use Scalar::Util qw(looks_like_number);
 use CA;
 
-our ($opt_0, $opt_c, $opt_e, $opt_f, $opt_g, $opt_h, $opt_n, $opt_s, $opt_S);
+our ($opt_0, $opt_e, $opt_f, $opt_g, $opt_h, $opt_n, $opt_s, $opt_S);
+our $opt_c = 0;
 our $opt_F = ' ';
 our $opt_w = 1;
 our $opt_m = 'va';
@@ -17,6 +19,9 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
 HELP_MESSAGE() unless getopts('0:c:e:f:F:g:hm:nsSw:');
 HELP_MESSAGE() if $opt_h;
+
+die "caget: -c option takes a positive number\n"
+    unless looks_like_number($opt_c) && $opt_c >= 0;
 
 die "No pv name specified. ('camonitor -h' gives help.)\n"
     unless @ARGV;
@@ -45,11 +50,8 @@ sub conn_callback {
             || (!$opt_S && $type eq 'DBR_CHAR');
         $type =~ s/^DBR_/DBR_TIME_/;
         
-        my $count = $chan->element_count;
-        $count = +$opt_c if $opt_c && $opt_c <= $count;
-        
         $monitors{$chan} =
-            $chan->create_subscription($opt_m, \&mon_callback, $type, $count);
+            $chan->create_subscription($opt_m, \&mon_callback, $type, 0+$opt_c);
     }
 }
 

@@ -524,16 +524,16 @@ struct dbr_ctrl_double{
 	dbr_double_t	value;			/* current value */
 };
 
-#ifndef db_accessHFORdb_accessC
 #define dbr_size_n(TYPE,COUNT)\
 ((unsigned)((COUNT)<=0?dbr_size[TYPE]:dbr_size[TYPE]+((COUNT)-1)*dbr_value_size[TYPE]))
 
 /* size for each type - array indexed by the DBR_ type code */
-epicsShareExtern const unsigned short dbr_size[LAST_BUFFER_TYPE+1];
+epicsShareExtern const unsigned short dbr_size[];
 
 /* size for each type's value - array indexed by the DBR_ type code */
-epicsShareExtern const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1];
+epicsShareExtern const unsigned short dbr_value_size[];
 
+#ifndef db_accessHFORdb_accessC
 /* class for each type's value */
 enum dbr_value_class { 
 		dbr_class_int, 

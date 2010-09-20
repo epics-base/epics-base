@@ -782,7 +782,7 @@ void CA_get(SV *ca_ref) {
             New(0, pch->sdata, count + 1, char);
             pch->ssize = count;
         }
-        status = ca_array_get(DBF_CHAR, count, pch->chan, pch->sdata);
+        status = ca_array_get(DBF_CHAR, 0, pch->chan, pch->sdata);
     } else {
         status = ca_get(best_type(pch), pch->chan, &pch->data);
     }
@@ -818,16 +818,16 @@ void CA_get_callback(SV *ca_ref, SV *sub, ...) {
     SV *get_sub = newSVsv(sub);
     int status;
     chtype type = best_type(pch);
-    int count = ca_element_count(pch->chan);
+    int count = 0;
     int i = 2;
     const char *croak_msg;
 
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
-            /* Interger => Count arg */
+            /* Interger => Count arg, zero means current size */
             count = SvIV(ST(i));
-            if (count < 1 || count > ca_element_count(pch->chan)) {
+            if (count < 0 || count > ca_element_count(pch->chan)) {
                 croak_msg = "Requested array size is out of range";
                 goto exit_croak;
             }
@@ -901,7 +901,7 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
     while (items > i
         && SvOK(ST(i))) {
         if (SvIOK(ST(i))) {
-            /* Interger => Count arg, zero means native size */
+            /* Interger => Count arg, zero means current size */
             count = SvIV(ST(i));
             if (count < 0 || count > ca_element_count(pch->chan)) {
                 croak_msg = "Requested array size is out of range";

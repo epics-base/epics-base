@@ -210,8 +210,9 @@ data type requested will be the widened form of the channel's native type
 fetch all available elements.
 
 The element count can be overridden by providing an integer argument in the
-range 1 .. C<element_count>.  Note that the count argument must be an integer;
-add 0 to it if it is necessary to convert it from a string.
+range 0 .. C<element_count>, where zero means use the current length from the
+server.  Note that the count argument must be an integer; add 0 to it if it is
+necessary to convert it from a string.
 The optional data type I<TYPE> should be a string naming
 the desired C<DBR_xxx_yyy> type; the actual type used will have the C<yyy> part
 widened to one of C<STRING>, C<CHAR>, C<LONG> or C<DOUBLE>.  The valid type

@@ -1,0 +1,16 @@
+# CONFIG.Common.ios-x86
+#
+# This file is maintained by the build community.
+#
+# Definitions for ios-x86 target builds
+#-------------------------------------------------------
+
+IOS_PLATFORM = iPhoneSimulator
+
+#
+# Architecture-specific information
+#
+ARCH_CLASS = i386
+
+# Include definitions common to all iOS targets
+include $(CONFIG)/os/CONFIG.Common.iosCommon

@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -20,6 +20,7 @@
 
 #define epicsExportSharedSymbols
 #define ERRLOG_INIT
+#include "adjustment.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "cantProceed.h"
@@ -36,7 +37,6 @@
 
 #define BUFFER_SIZE 1280
 #define MAX_MESSAGE_SIZE 256
-#define MAX_ALIGNMENT 8
 
 /*Declare storage for errVerbose */
 epicsShareDef int errVerbose = 0;
@@ -76,13 +76,14 @@ static struct {
     ELLLIST      listenerList;
     ELLLIST      msgQueue;
     msgNode      *pnextSend;
-    int	         errlogInitFailed;
-    int	         buffersize;
-    int	         maxMsgSize;
-    int	         sevToLog;
-    int	         toConsole;
-    int	         missedMessages;
-    void         *pbuffer;
+    int          errlogInitFailed;
+    int          buffersize;
+    int          maxMsgSize;
+    int          msgNeeded;
+    int          sevToLog;
+    int          toConsole;
+    int          missedMessages;
+    char         *pbuffer;
 } pvtData;
 
 
@@ -373,7 +374,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
         pnext += nchar; totalChar += nchar;
     }
     va_start(pvar, pformat);
-    nchar = tvsnPrint(pnext, pvtData.maxMsgSize, pformat, pvar);
+    nchar = tvsnPrint(pnext, pvtData.maxMsgSize - totalChar - 1, pformat, pvar);
     va_end(pvar);
     if (nchar>0) {
         pnext += nchar;
@@ -406,6 +407,8 @@ static void errlogInitPvt(void *arg)
     pvtData.errlogInitFailed = TRUE;
     pvtData.buffersize = pconfig->bufsize;
     pvtData.maxMsgSize = pconfig->maxMsgSize;
+    pvtData.msgNeeded = adjustToWorstCaseAlignment(pvtData.maxMsgSize +
+        sizeof(msgNode));
     ellInit(&pvtData.listenerList);
     ellInit(&pvtData.msgQueue);
     pvtData.toConsole = TRUE;
@@ -518,32 +521,29 @@ static void errlogThread(void)
 
 static msgNode *msgbufGetNode(void)
 {
-    char *pbuffer = (char *)pvtData.pbuffer;
-    msgNode *pnextSend = 0;
+    char *pbuffer = pvtData.pbuffer;
+    char *pnextFree;
+    msgNode *pnextSend;
 
     if (ellCount(&pvtData.msgQueue) == 0 ) {
-        pnextSend = (msgNode *)pbuffer;
+        pnextFree = pbuffer;        /* Reset if empty */
     } else {
-        int needed;
-        int remaining;
-        msgNode *plast;
+        msgNode *pfirst = (msgNode *)ellFirst(&pvtData.msgQueue);
+        msgNode *plast = (msgNode *)ellLast(&pvtData.msgQueue);
+        char *plimit = pbuffer + pvtData.buffersize;
 
-        plast = (msgNode *)ellLast(&pvtData.msgQueue);
-        needed = pvtData.maxMsgSize + sizeof(msgNode) + MAX_ALIGNMENT;
-        remaining = pvtData.buffersize
-            - ((plast->message - pbuffer) + plast->length);
-        if (needed < remaining) {
-            int length, adjust;
-
-            length = plast->length;
-            /*Make length a multiple of MAX_ALIGNMENT*/
-            adjust = length%MAX_ALIGNMENT;
-            if(adjust) length += (MAX_ALIGNMENT-adjust);
-            pnextSend = (msgNode *)(plast->message + length);
+        pnextFree = plast->message + adjustToWorstCaseAlignment(plast->length);
+        if (pfirst <= plast &&
+            pnextFree + pvtData.msgNeeded > plimit) {
+            pnextFree = pbuffer;    /* Hit end, wrap to start */
+            plimit = (char *)pfirst;
+        }
+        if (pnextFree + pvtData.msgNeeded > plimit) {
+            return 0;               /* No room */
         }
     }
-    if (!pnextSend) return 0;
-    pnextSend->message = (char *)pnextSend + sizeof(msgNode);
+    pnextSend = (msgNode *)pnextFree;
+    pnextSend->message = pnextFree + sizeof(msgNode);
     pnextSend->length = 0;
     return pnextSend;
 }
@@ -558,8 +558,7 @@ static char *msgbufGetFree(int noConsoleMessage)
 
         pnextSend = msgbufGetNode();
         nchar = sprintf(pnextSend->message,
-            "errlog = %d messages were discarded\n",
-            pvtData.missedMessages);
+            "errlog: %d messages were discarded\n", pvtData.missedMessages);
         pnextSend->length = nchar + 1;
         pvtData.missedMessages = 0;
         ellAdd(&pvtData.msgQueue, &pnextSend->node);
@@ -568,7 +567,7 @@ static char *msgbufGetFree(int noConsoleMessage)
     if (pnextSend) {
         pnextSend->noConsoleMessage = noConsoleMessage;
         pnextSend->length = 0;
-        return pnextSend->message;
+        return pnextSend->message;  /* NB: msgQueueLock is still locked */
     }
     ++pvtData.missedMessages;
     epicsMutexUnlock(pvtData.msgQueueLock);

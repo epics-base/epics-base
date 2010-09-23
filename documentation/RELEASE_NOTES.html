@@ -12,9 +12,20 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Added Apple iOS target architectures</h4>
+
+<p>Tom Pelaia II and Mark Engbretson contributed build configuration files to
+cross-compile Base for Apple's iOS operating system as used in the iPhone and
+iPad. The target architecture for these is ios-arm, and there is also an ios-x86
+target which compiles for the iPhone Simulator running on darwin-x86.</p>
+
+<p>To build these for iOS, uncomment the <tt>CROSS_COMPILER_TARGET_ARCHS</tt>
+definition in <tt>configure/os/CONFIG_SITE.darwin-x86.Common</tt> and check the
+settings in <tt>configure/os/CONFIG_SITE.Common.iosCommon</tt>.</p>
+
 <h4>Dynamic arrays over CA</h4>
 
-<p>Dymanic array sizing was developed by Michael Abbott at the 2010 EPICS
+<p>Dynamic array sizing was developed by Michael Abbott at the 2010 EPICS
 Codeathon. It permits a CA client to fetch only the currently valid elements of
 an array by specifying a COUNT of zero to either of the ca_array_get_callback()
 or ca_create_subscription() routines. It has never before been legal to pass a

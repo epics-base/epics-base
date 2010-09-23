@@ -1,0 +1,24 @@
+# CONFIG_SITE.Common.iosCommon
+#
+# $Id$
+# This file is maintained by the build community.
+#
+# Site-specific settings for Apple iOS builds
+#-------------------------------------------------------
+
+# iOS Version number
+
+#IOS_VERSION = 3.2
+IOS_VERSION = 4.1
+
+
+# Most sites will want shared libraries
+
+STATIC_BUILD=NO
+SHARED_LIBRARIES=YES
+
+
+# Platform path, this is probably correct
+
+XCODE_PATH := $(shell xcode-select -print-path)
+PLATFORM_DIR = $(XCODE_PATH)/Platforms/$(IOS_PLATFORM).platform

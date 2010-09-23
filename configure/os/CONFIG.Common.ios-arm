@@ -1,0 +1,22 @@
+# CONFIG.Common.ios-arm
+#
+# This file is maintained by the build community.
+#
+# Definitions for ios-arm target builds
+#-------------------------------------------------------
+
+IOS_PLATFORM = iPhoneOS
+
+#
+# Architecture-specific information
+#
+ARCH_CLASS = armv6
+
+OP_SYS_CFLAGS += -fno-inline-functions
+
+# iOS optimization flags for arm architecture
+OPT_CFLAGS_YES = -O2
+OPT_CXXFLAGS_YES = -O2
+
+# Include definitions common to all iphone targets
+include $(CONFIG)/os/CONFIG.Common.iosCommon

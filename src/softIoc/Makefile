@@ -31,7 +31,7 @@ include $(TOP)/configure/RULES
 softMain$(OBJ) : epicsInstallDir.h
 
 epicsInstallDir.h:
-	@echo "FINAL_LOCATION=$(FINAL_LOCATION)"
+	$(ECHO) "FINAL_LOCATION=$(FINAL_LOCATION)"
 	$(PERL) ../makeInstallDir.pl $(FINAL_LOCATION) > $@
 
 clean::

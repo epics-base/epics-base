@@ -9,11 +9,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PERL_SCRIPTS += makeInstallDir.pl
-
 PROD_IOC = softIoc
-
-INC += epicsInstallDir.h
 
 DBD += softIoc.dbd
 softIoc_DBD += base.dbd
@@ -28,9 +24,16 @@ softIoc_LIBS = $(EPICS_BASE_IOC_LIBS)
 
 DB += softIocExit.db
 
+FINAL_LOCATION ?= $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+
 include $(TOP)/configure/RULES
 
-softMain$(OBJ) : $(COMMON_DIR)/epicsInstallDir.h
+softMain$(OBJ) : epicsInstallDir.h
 
-$(COMMON_DIR)/epicsInstallDir.h: $(INSTALL_BIN)/makeInstallDir.pl
-	$(PERL) $< $(INSTALL_LOCATION) > $@
+epicsInstallDir.h:
+	@echo "FINAL_LOCATION=$(FINAL_LOCATION)"
+	$(PERL) ../makeInstallDir.pl $(FINAL_LOCATION) > $@
+
+clean::
+	@$(RM) epicsInstallDir.h
+

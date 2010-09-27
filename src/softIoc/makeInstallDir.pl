@@ -16,7 +16,7 @@ use EPICS::Path;
 
 die "Path to INSTALL_LOCATION missing\n" unless @ARGV == 1;
 
-my $path = AbsPath(shift);
+my $path = shift;
 
 $path =~ s/\\/\\\\/gx;
 

@@ -455,9 +455,8 @@ int main (int argc, char *argv[])
                     return 1;
                 }
                 if (dbuf[i] >= bufGrEnum.no_str) {
-                    fprintf(stderr, "Enum index value '%s' too large.\n",
+                    fprintf(stderr, "Warning: enum index value '%s' may be too large.\n",
                             *(argv+optind+i));
-                    return 1;
                 }
             }
             dbrType = DBR_DOUBLE;
@@ -482,8 +481,7 @@ int main (int argc, char *argv[])
                         return 1;
                     }
                     if (dbuf[i] >= bufGrEnum.no_str) {
-                        fprintf(stderr, "Enum index value '%s' too large.\n", sbuf[i]);
-                        return 1;
+                        fprintf(stderr, "Warning: enum index value '%s' may be too large.\n", sbuf[i]);
                     }
                     dbrType = DBR_DOUBLE;
                 }

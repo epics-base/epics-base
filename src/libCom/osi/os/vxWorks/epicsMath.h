@@ -14,9 +14,16 @@
 #include <private/mathP.h>
 #include <shareLib.h>
 
-#define isnan(D) isNan(D)
+/* private/mathP.h defines NAN as 4, and uses its value in the
+ * isNan() macro.  We need mathP.h for isInf(), but can create
+ * our own isnan() test.  epicsMath.cpp requires that NAN either
+ * be undef or yield the NaN value, so this solves the issue.
+ */
+#undef NAN
+
+#define isnan(D) (!(D == D))
 #define isinf(D) isInf(D)
-#define finite(D) (!isNan(D) && !isInf(D))
+#define finite(D) (!isnan(D) && !isInf(D))
 
 #ifdef __cplusplus
 extern "C" {

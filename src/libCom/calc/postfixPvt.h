@@ -1,23 +1,25 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* postfixPvt.h
- *      Author:          Bob Dalesio
+ *      Original Author: Bob Dalesio
  *      Date:            9-21-88
  */
 
 /* Notes:
  *  1. The FETCH_A through FETCH_L and STORE_A through STORE_L opcodes must
  *     be contiguous.
- *  2. The LITERAL opcode is followed by its double value.
- *  3. You can't quite use strlen() on an RPN buffer, since the literal
- *     double value can contain nil bytes.
+ *  2. The LITERAL opcodes are followed by a binary representation of their
+ *     values, but these are not aligned properly.
+ *  3. The var-arg functions MIN, MAX, FINITE and ISNAN are followed by
+ *     a byte giving the number of arguments to process.
+ *  4. You can't use strlen() on an RPN buffer since the literal values
+ *     can contain zero bytes.
  */
 
 #ifndef INCpostfixPvth
@@ -28,7 +30,7 @@
 typedef enum {
 	END_EXPRESSION = 0,
     /* Operands */
-	LITERAL, FETCH_VAL,
+	LITERAL_DOUBLE, LITERAL_INT, FETCH_VAL,
 	FETCH_A, FETCH_B, FETCH_C, FETCH_D, FETCH_E, FETCH_F,
 	FETCH_G, FETCH_H, FETCH_I, FETCH_J, FETCH_K, FETCH_L,
     /* Assignment */

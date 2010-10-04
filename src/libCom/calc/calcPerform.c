@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -43,21 +43,26 @@ epicsShareFunc long
     double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
-    long itop;				/* integer from top of stack */
+    int itop;				/* integer from top of stack */
+    int op;
     int nargs;
 
     /* initialize */
     ptop = stack;
 
     /* RPN evaluation loop */
-    while (*pinst != END_EXPRESSION){
-	switch (*pinst){
+    while ((op = *pinst++) != END_EXPRESSION){
+	switch (op){
 
-	case LITERAL:
-	    ++ptop;
-	    ++pinst;
-	    memcpy((void *)ptop, pinst, sizeof(double));
-	    pinst += sizeof(double) - 1;
+	case LITERAL_DOUBLE:
+	    memcpy((void *)++ptop, pinst, sizeof(double));
+	    pinst += sizeof(double);
+	    break;
+
+	case LITERAL_INT:
+	    memcpy(&itop, pinst, sizeof(int));
+	    *++ptop = itop;
+	    pinst += sizeof(int);
 	    break;
 
 	case FETCH_VAL:
@@ -76,7 +81,7 @@ epicsShareFunc long
 	case FETCH_J:
 	case FETCH_K:
 	case FETCH_L:
-	    *++ptop = parg[*pinst - FETCH_A];
+	    *++ptop = parg[op - FETCH_A];
 	    break;
 
 	case STORE_A:
@@ -91,7 +96,7 @@ epicsShareFunc long
 	case STORE_J:
 	case STORE_K:
 	case STORE_L:
-	    parg[*pinst - STORE_A] = *ptop--;
+	    parg[op - STORE_A] = *ptop--;
 	    break;
 
 	case CONST_PI:
@@ -160,7 +165,7 @@ epicsShareFunc long
 	    break;
 
 	case MAX:
-	    nargs = *++pinst;
+	    nargs = *pinst++;
 	    while (--nargs) {
 		top = *ptop--;
 		if (*ptop < top || isnan(top))
@@ -169,7 +174,7 @@ epicsShareFunc long
 	    break;
 
 	case MIN:
-	    nargs = *++pinst;
+	    nargs = *pinst++;
 	    while (--nargs) {
 		top = *ptop--;
 		if (*ptop > top || isnan(top))
@@ -231,7 +236,7 @@ epicsShareFunc long
 	    break;
 
 	case FINITE:
-	    nargs = *++pinst;
+	    nargs = *pinst++;
 	    top = finite(*ptop);
 	    while (--nargs) {
 		--ptop;
@@ -245,7 +250,7 @@ epicsShareFunc long
 	    break;
 
 	case ISNAN:
-	    nargs = *++pinst;
+	    nargs = *pinst++;
 	    top = isnan(*ptop);
 	    while (--nargs) {
 		--ptop;
@@ -350,12 +355,9 @@ epicsShareFunc long
 	    break;
 
 	default:
-	    errlogPrintf("calcPerform: Bad Opcode %d at %p\n",*pinst, pinst);
+	    errlogPrintf("calcPerform: Bad Opcode %d at %p\n", op, pinst-1);
 	    return -1;
 	}
-
-	/* Advance to next opcode */
-	++pinst;
     }
 
     /* The stack should now have one item on it, the expression value */
@@ -372,11 +374,20 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
     unsigned long inputs = 0;
     unsigned long stores = 0;
     char op;
-    while ((op = *pinst) != END_EXPRESSION) {
+    while ((op = *pinst++) != END_EXPRESSION) {
 	switch (op) {
 
-	case LITERAL:
+	case LITERAL_DOUBLE:
 	    pinst += sizeof(double);
+	    break;
+	case LITERAL_INT:
+	    pinst += sizeof(int);
+	    break;
+	case MIN:
+	case MAX:
+	case FINITE:
+	case ISNAN:
+	    pinst++;
 	    break;
 
 	case FETCH_A:
@@ -413,7 +424,6 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
 	default:
 	    break;
 	}
-	pinst++;
     }
     if (pinputs) *pinputs = inputs;
     if (pstores) *pstores = stores;
@@ -439,24 +449,37 @@ static double calcRandom(void)
 }
 
 /* Search the instruction stream for a matching operator, skipping any
- * other conditional instructions found
+ * other conditional instructions found, and leave *ppinst pointing to
+ * the next instruction to be executed.
  */
 static int cond_search(const char **ppinst, int match)
 {
-    const char *pinst = *ppinst + 1;
+    const char *pinst = *ppinst;
     int count = 1;
     int op;
 
-    while ((op = *pinst) != END_EXPRESSION) {
+    while ((op = *pinst++) != END_EXPRESSION) {
 	if (op == match && --count == 0) {
 	    *ppinst = pinst;
 	    return 0;
-	} else if (op == COND_IF)
-	    count++;
-	else if (op == LITERAL)
+	}
+	switch (op) {
+	case LITERAL_DOUBLE:
 	    pinst += sizeof(double);
-	pinst++;
+	    break;
+	case LITERAL_INT:
+	    pinst += sizeof(int);
+	    break;
+	case MIN:
+	case MAX:
+	case FINITE:
+	case ISNAN:
+	    pinst++;
+	    break;
+	case COND_IF:
+	    count++;
+	    break;
+	}
     }
     return 1;
 }
-

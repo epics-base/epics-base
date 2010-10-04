@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
@@ -66,13 +66,31 @@ void testCalc(const char *expr, double expected) {
     return;
 }
 
+void testArgs(const char *expr, unsigned long einp, unsigned long eout) {
+    char rpn[MAX_POSTFIX_SIZE];
+    short err = 0;
+    unsigned long vinp, vout;
+
+    if (postfix(expr, rpn, &err)) {
+	testFail("postfix: %s in expression '%s'", calcErrorStr(err), expr);
+	return;
+    }
+    if (calcArgUsage(rpn, &vinp, &vout)) {
+	testFail("calcArgUsage returned error for '%s'", expr);
+	return;
+    }
+    if (!testOk(vinp == einp && vout == eout, "Args for '%s'", expr)) {
+	testDiag("Expected (%lx, %lx) got (%lx, %lx)", einp, eout, vinp, vout);
+    }
+}
+
 void testBadExpr(const char *expr, short expected_err) {
     /* Parse an invalid expression, test against expected error code */
     char rpn[MAX_POSTFIX_SIZE];
     short err = 0;
 
     postfix(expr, rpn, &err);
-    if (!testOk(err == expected_err, "%s (bad expression)", expr)) {
+    if (!testOk(err == expected_err, "Bad expression '%s'", expr)) {
 	testDiag("Expected '%s', actually got '%s'",
 	    calcErrorStr(expected_err), calcErrorStr(err));
 	calcExprDump(rpn);
@@ -83,8 +101,22 @@ void testBadExpr(const char *expr, short expected_err) {
 /* Test an expression that is also valid C code */
 #define testExpr(expr) testCalc(#expr, expr);
 
+/* These are the argument bits for testArgs */
+#define A_A 0x001
+#define A_B 0x002
+#define A_C 0x004
+#define A_D 0x008
+#define A_E 0x010
+#define A_F 0x020
+#define A_G 0x040
+#define A_H 0x080
+#define A_I 0x100
+#define A_J 0x200
+#define A_K 0x400
+#define A_L 0x800
 
-/* Macros to make some expressions into valid C code */
+
+/* Macros and functions to make some expressions into valid C code */
 
 #ifndef PI
 #define PI 3.14159265358979
@@ -198,7 +230,7 @@ MAIN(epicsCalcTest)
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
     
-    testPlan(533);
+    testPlan(566);
     
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -780,7 +812,39 @@ MAIN(epicsCalcTest)
     testCalc("1+(1|2)**3", 1+pow((double) (1 | 2), 3.));// 8 6
     testExpr(1+(1?(1<2):(1>2))*2);
     
+    testArgs("a", A_A, 0);
+    testArgs("A", A_A, 0);
+    testArgs("B", A_B, 0);
+    testArgs("C", A_C, 0);
+    testArgs("D", A_D, 0);
+    testArgs("E", A_E, 0);
+    testArgs("F", A_F, 0);
+    testArgs("G", A_G, 0);
+    testArgs("H", A_H, 0);
+    testArgs("I", A_I, 0);
+    testArgs("J", A_J, 0);
+    testArgs("K", A_K, 0);
+    testArgs("L", A_L, 0);
+    testArgs("A+B+C+D+E+F+G+H+I+J+K+L",
+	A_A|A_B|A_C|A_D|A_E|A_F|A_G|A_H|A_I|A_J|A_K|A_L, 0);
+    testArgs("0.1;A:=0", 0, A_A);
+    testArgs("1.1;B:=0", 0, A_B);
+    testArgs("2.1;C:=0", 0, A_C);
+    testArgs("3.1;D:=0", 0, A_D);
+    testArgs("4.1;E:=0", 0, A_E);
+    testArgs("5.1;F:=0", 0, A_F);
+    testArgs("6.1;G:=0", 0, A_G);
+    testArgs("7.1;H:=0", 0, A_H);
+    testArgs("8.1;I:=0", 0, A_I);
+    testArgs("9.1;J:=0", 0, A_J);
+    testArgs("10.1;K:=0", 0, A_K);
+    testArgs("11.1;L:=0", 0, A_L);
+    testArgs("12.1;A:=0;B:=A;C:=B;D:=C", 0, A_A|A_B|A_C|A_D);
+    testArgs("13.1;B:=A;A:=B;C:=D;D:=C", A_A|A_D, A_A|A_B|A_C|A_D);
+    
     // Malformed expressions
+    testBadExpr("1*", CALC_ERR_INCOMPLETE);
+    testBadExpr("*1", CALC_ERR_SYNTAX);
     testBadExpr("MIN", CALC_ERR_INCOMPLETE);
     testBadExpr("MIN()", CALC_ERR_SYNTAX);
     testBadExpr("MIN(A,)", CALC_ERR_SYNTAX);
@@ -789,6 +853,9 @@ MAIN(epicsCalcTest)
     testBadExpr("MAX()", CALC_ERR_SYNTAX);
     testBadExpr("MAX(A,)", CALC_ERR_SYNTAX);
     testBadExpr("MAX(A,B,)", CALC_ERR_SYNTAX);
+    testBadExpr("1?", CALC_ERR_CONDITIONAL);
+    testBadExpr("1?1", CALC_ERR_CONDITIONAL);
+    testBadExpr(":1", CALC_ERR_SYNTAX);
     
     return testDone();
 }

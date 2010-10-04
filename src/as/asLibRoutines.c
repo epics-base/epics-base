@@ -1323,17 +1323,10 @@ static long asAsgRuleCalc(ASGRULE *pasgrule,const char *calc)
     unsigned long stores;
 
     if (!pasgrule) return 0;
-    insize = strlen(calc);
-    if (insize > MAX_INFIX_SIZE) {
-	pasgrule->calc = NULL;
-	pasgrule->rpcl = NULL;
-	status = S_asLib_badCalc;
-	errlogPrintf("CALC expression too long: '%s'\n", calc);
-	return status;
-    }
-    pasgrule->calc = asCalloc(1, insize+1);
+    insize = strlen(calc) + 1;
+    pasgrule->calc = asCalloc(1, insize);
     strcpy(pasgrule->calc, calc);
-    pasgrule->rpcl = asCalloc(1, MAX_POSTFIX_SIZE);
+    pasgrule->rpcl = asCalloc(1, INFIX_TO_POSTFIX_SIZE(insize));
     status = postfix(pasgrule->calc, pasgrule->rpcl, &err);
     if(status) {
 	free((void *)pasgrule->calc);

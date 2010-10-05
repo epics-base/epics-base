@@ -12,7 +12,6 @@
 // 
 // $Revision-Id$
 // 
-// $Log$
 
 #define epicsExportSharedSymbols
 #include "gddAppTable.h"

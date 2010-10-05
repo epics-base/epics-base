@@ -132,7 +132,8 @@ sub binDirs {
 }
 
 #
-# Generate cdCommands file with cd path strings for vxWorks IOCs
+# Generate cdCommands file with cd path strings for vxWorks IOCs and
+# RTEMS IOCs using CEXP (need parentheses around command arguments).
 #
 sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
@@ -149,22 +150,26 @@ sub cdCommands {
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
     
-    print OUT "putenv \"ARCH=$arch\"\n";
-    print OUT "putenv \"IOC=$ioc\"\n";
+    print OUT "putenv(\"ARCH=$arch\")\n";
+    print OUT "putenv(\"IOC=$ioc\")\n";
     
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
         my $app_lc = lc($app);
-        print OUT "$app_lc = \"$iocpath\"\n" if (-d $path);
-        print OUT "putenv \"$app=$iocpath\"\n" if (-d $path);
-        print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n" if (-d "$path/bin/$arch");
+        print OUT "$app_lc = \"$iocpath\"\n"
+            if (-d $path);
+        print OUT "putenv(\"$app=$iocpath\")\n"
+            if (-d $path);
+        print OUT "${app_lc}bin = \"$iocpath/bin/$arch\"\n"
+            if (-d "$path/bin/$arch");
     }
     close OUT;
 }
 
 #
-# Generate envPaths file with epicsEnvSet commands for other IOCs
+# Generate envPaths file with epicsEnvSet commands for iocsh IOCs.
+# Include parentheses anyway in case CEXP users want to use this.
 #
 sub envPaths {
     die "Architecture not set (use -a option)" unless ($arch);

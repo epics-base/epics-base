@@ -9,7 +9,7 @@
 \*************************************************************************/
 
 /* 
- * $Id$
+ * $Revision-Id$
  *
  * route vxWorks logMsg messages into the EPICS logging system
  *

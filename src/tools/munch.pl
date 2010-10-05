@@ -7,7 +7,7 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
-#  $Id$
+#  $Revision-Id$
 #
 # Creates a ctdt.c file of C++ static constructors and destructors,
 # as required for all vxWorks binaries containing C++ code.

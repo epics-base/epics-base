@@ -9,7 +9,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Id$
+// $Revision-Id$
 //
 // casOSD.h - Channel Access Server OS dependent wrapper
 // 

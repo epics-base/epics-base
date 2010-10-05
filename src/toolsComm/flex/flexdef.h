@@ -34,7 +34,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/* @(#) $Header$ (LBL) */
+/* @(#) $Revision-Id$ (LBL) */
 
 #ifndef INC_flexdef_H
 #define INC_flexdef_H

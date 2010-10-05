@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 #
 # Definitions for vxWorks-ppc603 targets with >32MB of RAM
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc603_long

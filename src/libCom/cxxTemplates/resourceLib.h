@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Id$
+ *      $Revision-Id$
  *
  *      General hash table templates for fast indexing of resources
  *      of any base resource type and any resource identifier type. Fast 

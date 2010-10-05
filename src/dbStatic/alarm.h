@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* Alarm definitions, must match menuAlarmSevr.dbd and menuAlarmStat.dbd */
-/* $Id$ */
+/* $Revision-Id$ */
 
 /*
  *      Authors: Bob Dalesio and Marty Kraimer

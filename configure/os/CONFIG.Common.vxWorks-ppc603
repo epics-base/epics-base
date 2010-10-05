@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 #
 # Definitions for vxWorks-ppc603 targets: PPC603 and PMC8240 CPUs
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc603

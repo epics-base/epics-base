@@ -1,6 +1,6 @@
 # CONFIG.darwin-ppc.darwin-ppc-debug
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for darwin-ppc host - darwin-ppc-debug target build with debug compiler flags

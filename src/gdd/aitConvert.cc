@@ -11,7 +11,7 @@
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
-// $Id$
+// $Revision-Id$
 //
 
 #define AIT_CONVERT_SOURCE 1

@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* drvSup.h	Driver Support	*/
-/* share/epicsH $Id$ */
+/* share/epicsH $Revision-Id$ */
 
 /*
  *      Author:          Marty Kraimer

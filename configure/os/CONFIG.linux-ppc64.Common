@@ -1,6 +1,6 @@
 # CONFIG.linux-ppc64.Common
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for linux-ppc64 host builds

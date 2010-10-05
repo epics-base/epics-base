@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Date:            12-20-88

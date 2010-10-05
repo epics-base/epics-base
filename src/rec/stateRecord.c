@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* recState.c - Record Support Routines for State records */
 /*

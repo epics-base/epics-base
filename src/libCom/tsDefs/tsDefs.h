@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Id$
+ *      $Revision-Id$
  * This file contains the old R3.13 
  * time stamp definitions and routines
  * needed by epics extensions. They exist 

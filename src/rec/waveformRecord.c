@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* recWaveform.c - Record Support Routines for Waveform records */
 /*

@@ -14,7 +14,7 @@
  *
  */
 
-static char ht2992_h_RCSID[] = "$Header$";
+static char ht2992_h_RCSID[] = "$Revision-Id$";
 
 /********************************/
 /* GLOBAL DATA			*/

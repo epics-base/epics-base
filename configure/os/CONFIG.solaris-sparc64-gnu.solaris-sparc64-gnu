@@ -1,6 +1,6 @@
 # CONFIG.solaris-sparc64-gnu.solaris-sparc64-gnu
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for solaris-sparc64 gnu compiler host - solaris-sparc64 gnu compiler target builds

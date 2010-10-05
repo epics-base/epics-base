@@ -2,7 +2,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # makeBaseExt 
 
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
-# $Id$
+# $Revision-Id$
 
 use Cwd;
 use Getopt::Std;

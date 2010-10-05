@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* Author:  Marty Kraimer Date:    04JAN99 */
 

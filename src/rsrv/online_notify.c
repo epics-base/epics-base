@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *  $Id$
+ *  $Revision-Id$
  *
  *  tell CA clients this a server has joined the network
  *

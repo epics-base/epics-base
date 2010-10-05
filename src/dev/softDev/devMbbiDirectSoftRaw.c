@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$
+/* $Revision-Id$
  *
  *      Original Authors: Bob Dalesio and Matthew Needes
  *      Date: 10-08-93

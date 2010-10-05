@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 #
 # This file defines the standard record types and device support
 # provided by Base and (usually) loaded into all IOCs.

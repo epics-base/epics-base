@@ -14,7 +14,7 @@
  * Author:	Jim Kowalkowski
  * Date:	3/97
  *
- * $Id$
+ * $Revision-Id$
  *
  * ***********************************************************************
  * Adds ability to put array data into a DD, get it out, and adjust it

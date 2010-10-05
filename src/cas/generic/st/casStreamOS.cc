@@ -8,7 +8,7 @@
 \*************************************************************************/
 //
 // casStreamOS.cc
-// $Id$
+// $Revision-Id$
 //
 // TO DO:
 // o armRecv() and armSend() should return bad status when

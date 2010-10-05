@@ -11,7 +11,7 @@
 // Author:	Jim Kowalkowski
 // Date:	3/97
 //
-// $Id$
+// $Revision-Id$
 //
 
 // -------------------------- Error messages -------------------------

@@ -11,7 +11,7 @@
 // Author: Jim Kowalkowski
 // Date: 6/20/96
 //
-// $Id$
+// $Revision-Id$
 //
 
 #include <stdio.h>

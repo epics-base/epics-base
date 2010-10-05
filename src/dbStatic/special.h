@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* special.h */
-/* share/epicsH $Id$ */
+/* share/epicsH $Revision-Id$ */
 
 /*
  *      Author:          Marty Kraimer

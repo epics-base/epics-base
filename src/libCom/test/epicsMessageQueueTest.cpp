@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
- *      $Id$
+ *      $Revision-Id$
  *
  *      Author  W. Eric Norum
  *              norume@aps.anl.gov

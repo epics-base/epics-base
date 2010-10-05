@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devBoSoft.c */
-/* base/src/dev $Id$ */
+/* base/src/dev $Revision-Id$ */
 
 /* devBoSoft.c - Device Support Routines for  Soft Binary Output*/
 /*

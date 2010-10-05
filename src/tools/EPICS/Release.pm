@@ -5,7 +5,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 
 #
 # Parse all relevent configure/RELEASE* files and includes

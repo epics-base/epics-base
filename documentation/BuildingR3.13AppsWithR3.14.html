@@ -15,7 +15,7 @@
 
 <p><br>
 This document describes how to modify a R3.13 vxWorks application so that it
-builds with release R3.14.  It describes an easy way to modify
+builds with release R3.14. It describes an easy way to modify
 applications subject to the following restrictions:</p>
 <ul>
   <li>The application still uses config rules rather than the configure rules
@@ -42,7 +42,7 @@ to remove all files and directories created by earlier builds.
 
 <h3>Update RELEASE</h3>
 
-<p>Change  the <tt>EPICS_BASE</tt> definition to point to the R3.14 base
+<p>Change the <tt>EPICS_BASE</tt> definition to point to the R3.14 base
 release. All hardware support and some soft support is now unbundled. For
 example the sequencer is unbundled. You must obtain and build all required
 unbundled products before you can build the application. The location of each
@@ -141,7 +141,7 @@ to
 
 <h3>recGbl calls</h3>
 
-<p>You may need to add the line  "<tt>#include "recGbl.h</tt>" to any source
+<p>You may need to add the line "<tt>#include "recGbl.h</tt>" to any source
 files that have recGbl* calls so that the file will compile without
 errors.</p>
 
@@ -164,9 +164,9 @@ and add
 to your application src/Makefile.
 
 <p>You should consider changing any existing old steppermotor records to the
-new EPICS  <a
+new EPICS <a
 href="http://www.aps.anl.gov/upd/people/sluiter/epics/modules/mechanism/motor/index.html">motor
-record</a>  module supported by Beamline Controls and Data Acquisition at
+record</a> module supported by Beamline Controls and Data Acquisition at
 APS.</p>
 
 <h3>RecDynLink.o and devPtSoft changes</h3>
@@ -178,14 +178,14 @@ them in base.dbd and baseLIBOBJS if they are not used in application.</p>
 
 <p>All hardware support (dev, drv and dbd files) has been unbundled from base
 R3.14. This support includes the files <tt>symb, symb.dbd, drvHp1404a.o,
-drvEpvxiMsg.o, and drvEpvxi.o</tt>.  If they are not used in your
+drvEpvxiMsg.o, and drvEpvxi.o</tt>. If they are not used in your
 application, comment out references to these files in base.dbd and
 baseLIBOBJS.</p>
 
 <p>Hardware support files now exist as separate modules available for
 download from the <a href="http://www.aps.anl.gov/epics/">EPICS www home page
 at ANL</a>. You must now download all the hardware support modules needed for
-your application, build the modules with R3.14 base,  add the appropriate
+your application, build the modules with R3.14 base, add the appropriate
 module full path definitions to your application config/RELEASE file, and
 change <tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt> to the
 module definition bin directory in your application src directory files.</p>
@@ -201,9 +201,9 @@ into your application config/RELEASE file .
 
 <p>After a gnumake in the symb module followed by a gnumake in the
 application config directory, the definitions <tt>SYMB_BIN</tt> and
-<tt>SYMB_LIB</tt> will be created,  the directory $(SYMB)/include will be
-added to the include directories on the compiler command lines  (in the
-<tt>INSTALL_INCLUDES</tt> definition)  and the directory $(SYMB)/dbd will be
+<tt>SYMB_LIB</tt> will be created, the directory $(SYMB)/include will be
+added to the include directories on the compiler command lines (in the
+<tt>INSTALL_INCLUDES</tt> definition) and the directory $(SYMB)/dbd will be
 added to the dbd search directories on the dbExpand command lines (in the
 <tt>INSTALL_DBDFLAGS</tt> definition).</p>
 

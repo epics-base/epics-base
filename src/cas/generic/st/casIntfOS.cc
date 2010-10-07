@@ -11,7 +11,7 @@
 /*
  *
  * casIntfOS.cc
- * $Id$
+ * $Revision-Id$
  *
  *
  */

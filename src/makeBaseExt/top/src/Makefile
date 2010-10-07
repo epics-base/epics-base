@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 
 TOP = ..
 include $(TOP)/configure/CONFIG

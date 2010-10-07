@@ -8,7 +8,7 @@
 \*************************************************************************/
 /* libmain - flex run-time support library "main" function */
 
-/* $Header$ */
+/* $Revision-Id$ */
 
 extern int yylex();
 

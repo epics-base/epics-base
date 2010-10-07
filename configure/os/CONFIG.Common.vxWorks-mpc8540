@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 #
 # Definitions for vxWorks-mpc8540 targets: MPC8540 CPU with >32MB RAM.
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-mpc8540

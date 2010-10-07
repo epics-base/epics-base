@@ -16,7 +16,7 @@
 #endif
 
 /*
- *  $Id$
+ *  $Revision-Id$
  *
  *  Author: Jeffrey O. Hill
  *

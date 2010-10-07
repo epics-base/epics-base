@@ -8,7 +8,7 @@
 
 /*
  * Hooks into RTEMS startup code
- *  $Id$
+ *  $Revision-Id$
  */
 #include <bsp.h>
 #include <rtems/rtems_bsdnet.h>

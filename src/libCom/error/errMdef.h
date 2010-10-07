@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* Error Handling definitions */
-/* $Id$ */
+/* $Revision-Id$ */
 /*
  *      Author:          Marty Kraimer
  *      Date:            6-1-90

@@ -33,7 +33,9 @@
 <h1>EPICS Base Release Procedures &amp; Checklist</h1>
 
 <blockquote>
-  <p>$Id$</p>
+  <p>$Date$<br />
+    $Authors$<br />
+    $Revision-Id$</p>
 </blockquote>
 
 <p>This document describes the procedures and provides a checklist of tasks
@@ -42,7 +44,7 @@ that should be performed when creating new releases of EPICS Base.</p>
 <h3>The Release Process</h3>
 
 <p>The version released on the Feature Freeze date is designated the first
-pre-release, <tt>-pre1</tt>. The first Release Candidate <tt>-RC1</tt> is the
+pre-release, <tt>-pre1</tt>. The first Release Candidate <tt>-rc1</tt> is the
 first version that has undergone widespread testing and which has no known
 problems in it that are slated to be fixed in this release. New versions should
 be made at about weekly intervals during the testing and debugging period, and
@@ -61,7 +63,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
   <dt><strong>Release Manager</strong> (Andrew Johnson)</dt>
     <dd>Responsible for the release</dd>
   <dt><strong>Configuration Manager</strong> (Janet Anderson)</dt>
-    <dd>Responsible for committing version number updates to CVS and for
+    <dd>Responsible for committing version number updates and for
       creating tarfiles</dd>
   <dt><strong>Platform Developers</strong></dt>
     <dd>Responsible for individual operating system platforms</dd>
@@ -77,33 +79,33 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <th>Check</th>
       <th>Who</th>
       <th>Description</th>
-    </tr>
+      </tr>
     <tr>
       <th colspan="3">Preparing for a release</th>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Release Manager</td>
       <td>Email all developers about the upcoming release and ask for a list
         of remaining jobs that must be finished.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>All developers</td>
-      <td>Check the Mantis bug tracker for any outstanding items and handle
+      <td>Check the bug tracker for any outstanding items and handle
         appropriately. All bugs that have been fixed should have been marked
-        as resolved.</td>
-    </tr>
+        as Fix Committed.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Set the Feature Freeze date, by which time all CVS commits for
+      <td>Set the Feature Freeze date, by which time all Bazaar commits for
         enhancements and new functionality should have been completed. After
         this date, commits should only be made to fix problems that show up
         during testing.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Release Manager<br />
         &amp; all developers</td>
       <td>Ensure that documentation will be updated before the release date:
@@ -114,218 +116,267 @@ relevent roles unless the Release Manager designates otherwise:</p>
           <li>Other documents</li>
         </ul>
       </td>
-    </tr>
+      </tr>
     <tr>
-      <th colspan="3">Creating pre-release and Release Candidate versions</th>
-    </tr>
+      <td>&nbsp;</td>
+      <td>Release Manager</td>
+      <td>Review and update this document for the upcoming release.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
+      <td>Website Manager</td>
+      <td>Create a release milestone on Launchpad if necessary and set the
+        expected release date. Note that pre-release and release-candidate
+        versions do not appear on Launchpad, only the final release.</td>
+      </tr>
+    <tr>
+      <th colspan="3">Creating pre-release and release-candidate versions</th>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
-      <td>Tag the module in CVS. Pre-release version tags take the form
-        <tt>R<i>x</i>-<i>y</i>-<i>z</i>-pre<i>n</i></tt> while Release
-        Candidate tags take the form
-        <tt>R<i>x</i>-<i>y</i>-<i>z</i>-RC<i>m</i></tt>.
-        </td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>Configuration Manager</td>
-      <td>Export the tagged version and create a tarfile of the result:
+      <td>Tag the module in Bazaar, using these tag conventions:
+        <ul>
+          <li>
+            <tt>R3.14.12-pre<i>n</i></tt>
+            &mdash; pre-release tag
+            </li>
+          <li>
+            <tt>R3.14.12-rc<i>n</i></tt>
+            &mdash; release candidate tag, note the <tt>rc</tt> is now
+            lower-case</li>
+        </ul>
         <blockquote><tt>
-          cvs export -kv -d base-x.y.z-pre1 -r Rx-y-z-pre1 epics/base<br />
-          tar cfz baseRx.y.z-pre1.tar.gz base-x.y.z-pre1
-          </tt></blockquote></td>
-    </tr>
+          cd ~/base/mirror-3.14<br />
+          bzr tag R3.14.12-rc<i>n</i>
+          </tt></blockquote>
+        </td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
+      <td>Configuration Manager</td>
+      <td>Export the tagged version into a tarfile. Note that this command
+        generates a gzipped tarfile directly from the repository:
+        <blockquote><tt>
+          cd ~/base<br />
+          bzr export --keywords=publish
+          --root=base-3.14.12-rc<i>n</i>
+          -r tag:R3.14.12-rc<i>n</i>
+          baseR3.14.12-rc<i>n</i>.tar.gz
+          mirror-3.14
+          </tt></blockquote>
+        This requires that the Bazaar keywords plugin is installed and
+        configured properly.
+        </td>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
       <td>Test the tarfile by extracting its contents and building it on at
-        least one supported platform</td>
-    </tr>
+        least one supported platform.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
-      <td>Copy the tar file to the Base download area of the website</td>
-    </tr>
+      <td>Copy the tar file to the Base download area of the website.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Create or update a website subdirectory to hold the release
-        documentation, and copy in the files from the base/documentation
-        directory of the tarfile.</td>
-    </tr>
+        documentation, and copy in selected files from the base/documentation
+        and base/html directories of the tarfile.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Create or modify the webpage for the new release with links to the
-        release documents and tar file. Pre-release and RC versions should use
-        the page and URL for the final release version number.</td>
-    </tr>
+        release documents and tar file. Pre-release and release-candidate
+        versions should use the page and URL for the final release version
+        number.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>Add the new pre-release tar file to the website Base download index
-        page.</td>
-    </tr>
+      <td>Add the new tar file to the website Base download index page.</td>
+      </tr>
     <tr>
       <th colspan="3">Testing</th>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Platform Developers</td>
       <td>Run the built-in test programs on all available host platforms using
         <blockquote><tt>
           make -s runtests
         </tt></blockquote></td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Platform Developers</td>
       <td>Run the CA client side regression tests on all available host
         platforms.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Platform Developers</td>
       <td>Build and run the
-        <a href="https://svn.aps.anl.gov/trac/epics/soft-test">IOC Soft-Test</a>
+        <a href="https://launchpad.net/epics-base-tests">epics-base-tests</a>
         suite on all available platforms.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Platform Developers</td>
       <td>Check that all makeBaseApp templates build and run properly, all
-        xxxApp and xxxBoot types and any internal options, e.g. setting
-        <tt>STATIC_BUILD=YES</tt> or using a different <tt>INSTALL_LOCATION</tt>
-        in configure/CONFIG_SITE.</td>
-    </tr>
+        <i>xxxApp</i> and <i>xxxBoot</i> types and any internal options, e.g.
+        setting <tt>STATIC_BUILD=YES</tt> or using a different
+        <tt>INSTALL_LOCATION</tt> in configure/CONFIG_SITE.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Platform Developers</td>
       <td>Build the SNL Sequencer against this version of Base, and check that
         the makeBaseApp example builds and runs correctly with it.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Application Developers</td>
       <td>Build external applications against this version of Base on all
         available platforms and test as appropriate.  Application code changes
         may be necessary where the EPICS Base APIs have been modified.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Release Manager</td>
       <td>Check that documentation has been updated:
         <ul>
-          <li>Application Developers Guide</li>
+          <li><a href="https://launchpad.net/epics-appdev">Application
+            Developers Guide</a></li>
           <li>Release Notes</li>
           <li>Known Problems (hopefully empty)</li>
           <li>Other documents (converting...)</li>
-        </ul>
-      </td>
-    </tr>
+          </ul>
+        </td>
+      </tr>
     <tr>
       <th colspan="3">Release Approval</th>
     </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Release Manager</td>
       <td>Obtain a positive <q>Ok to release</q> from all platform developers
-        when a Release Candidate version has gone a whole week without any
+        once a Release Candidate version has gone a whole week without any
         issues being reported.</td>
-    </tr>
+      </tr>
     <tr>
       <th colspan="3">Creating the final release version</th>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
-      <td>Tag the module in CVS. Official base release version tags take the
-        form <tt>R<i>x</i>-<i>y</i>-<i>z</i>[-<i>n</i>]</tt></td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>Configuration Manager</td>
-      <td>Export the tagged version and create a tarfile of the result:
+      <td>Tag the module in Bazaar:
         <blockquote><tt>
-          cvs export -kv -d base-x.y.z -r Rx-y-z epics/base<br />
-          tar cfz baseRx.y.z.tar.gz base-x.y.z
-          </tt></blockquote></td>
-    </tr>
+          cd ~/base/mirror-3.14<br />
+          bzr tag R3.14.12</i>
+          </tt></blockquote>
+        </td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
+      <td>Configuration Manager</td>
+      <td>Export the tagged version into a tarfile. Note that this command
+        generates a gzipped tarfile directly from the repository:
+        <blockquote><tt>
+          cd ~/base<br />
+          bzr export --keywords=publish
+          --root=base-3.14.12
+          -r tag:R3.14.12
+          baseR3.14.12.tar.gz
+          mirror-3.14
+          </tt></blockquote>
+        This requires that the Bazaar keywords plugin is installed and
+        configured properly.
+        </td>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
       <td>Test the tar file by extracting its contents and building it on at
         least one supported platform</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <th colspan="3">Publish and Announce it</th>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
       <td>Configuration Manager</td>
       <td>Copy the tar file to the Base download area of the website</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Update the website subdirectory that holds the release
         documentation, and copy in the files from the base/documentation
         directory of the tarfile.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Update the webpage for the new release with links to the release
         documents and tar file.</td>
-    </tr>
+      </tr>
     <tr>
-      <th colspan="3">Announce it</th>
-    </tr>
-    <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Add the new release tar file to the website Base download index
         page.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Link to the release webpage from other relevent areas of the
         website - update front page and sidebars.</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>Add the new Version number to the Mantis bug tracker.</td>
-    </tr>
+      <td>Upload the release tar file to the Launchpad download area.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>Close all Mantis bug reports that were marked as resolved and which
-        have been fixed in this release.</td>
-    </tr>
+      <td>Add the new Version number to the Launchpad bug tracker.</td>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
+      <td>Website Manager</td>
+      <td>Find all Launchpad bug reports with the status Fix Committed which
+        have been fixed in this release and mark them Fix Released.</td>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
       <td>Release Manager</td>
       <td>Email tech-talk</td>
-    </tr>
+      </tr>
     <tr>
-      <td> </td>
+      <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Add an entry to the website News page, linking to the new version
       webpage.</td>
-    </tr>
-  </tbody>
-</table>
+      </tr>
+    </tbody>
+  </table>
 </body>
 </html>

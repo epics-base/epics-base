@@ -9,7 +9,7 @@
 
 //
 // casDGIntfOS.cc
-// $Id$
+// $Revision-Id$
 //
 
 #include "fdManager.h"

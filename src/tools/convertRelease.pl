@@ -9,7 +9,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-# $Id$
+# $Revision-Id$
 #
 # Convert configure/RELEASE file(s) into something else.
 #

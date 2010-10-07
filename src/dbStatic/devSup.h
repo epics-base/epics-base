@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devSup.h	Device Support		*/
-/* $Id$ */
+/* $Revision-Id$ */
 /*
  *      Author:          Marty Kraimer
  *      Date:            6-1-90

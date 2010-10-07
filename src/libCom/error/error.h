@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* error.h - errMessage symbol table header */
-/* share/epicsH $Id$ */
+/* share/epicsH $Revision-Id$ */
 
 /*
  *      Author:          Marty Kraimer

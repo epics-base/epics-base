@@ -1,6 +1,6 @@
 # CONFIG_COMPAT
 #
-# $Id$
+# $Revision-Id$
 #
 # Convert old HOST_ARCH environment variable to
 # new EPICS_HOST_ARCH environment variable 

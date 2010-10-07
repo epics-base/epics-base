@@ -7,7 +7,7 @@
 * found in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* Author: Andrew Johnson	Date: 2003-04-08 */
 

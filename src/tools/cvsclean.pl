@@ -9,7 +9,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 #
 # Find and delete cvs .#* and editor backup *~
 # files from all dirs of the directory tree.

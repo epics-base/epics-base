@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id$ */
+/* $Revision-Id$ */
 /*
  *	Author: Julie Sander and Bob Dalesio
  *	Date:	07-27-87

@@ -86,27 +86,27 @@ compiler will issue warning messages and the ioc may issue the message:
 
 <h3>Record support changes</h3>
 
-<p>The steppermotor, scan, and pid records are no longer in base.  If these
+<p>The steppermotor, scan, and pid records are no longer in base. If these
 records are not used in your application, comment out references to them in
-base.dbd. If these record types are used at your site, they  should be
+base.dbd. If these record types are used at your site, they should be
 downloaded and built with base R3.14 by your EPICS administrator. To update
-the R3.14 location of these record types in your application you must  add
+the R3.14 location of these record types in your application you must add
 appropriate module definitions to your application's config/RELEASE file and
 add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
 
 <p>For example add</p>
 
-<p>         <tt>PID=&lt;full path to modules directory&gt;/pid</tt></p>
+<pre>    PID=&lt;full path to modules directory&gt;/pid
+</pre>
 
 <p>to config/RELEASE and add <br>
 
-<p></p>
-
-<p><tt>LIBOBJS += $(PID_BIN)/pidRecord.o</tt></p>
+<pre>    LIBOBJS += $(PID_BIN)/pidRecord.o
+</pre>
 to your application src/Makefile.
 
 <p>You should consider changing any existing old steppermotor records to the
-new EPICS  motor record  module supported by Beamline Controls and Data
+new EPICS motor record module supported by Beamline Controls and Data
 Acquisition at APS.</p>
 
 <h3>RecDynLink.o and devPtSoft changes</h3>
@@ -115,7 +115,7 @@ Acquisition at APS.</p>
 separate EPICS modules.You must now add the appropriate module full path
 definitions to your application config/RELEASE file, and change
 <tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt> to the module
-definition bin directory in your application src directory files.  See
+definition bin directory in your application src directory files. See
 "Hardware support changes" below for instructions.</p>
 
 <h3>Hardware support changes</h3>
@@ -129,21 +129,24 @@ application, comment out references to them in base.dbd.</p>
 support for your site should be downloaded and built with base R3.14 by your
 EPICS administrator. You must now add the appropriate module full path
 definitions to your application config/RELEASE file, and change
-<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module  bin
+<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module bin
 directory in your application src directory files.</p>
 
 <p>For example, remove</p>
 
-<p>         <tt>LIBOBJS+=$(EPICS_BASE_BIN)/symb</tt></p>
+<pre>    LIBOBJS+=$(EPICS_BASE_BIN)/symb
+</pre>
 
 <p>from baseLIBOBJS and add</p>
 
-<p>         <tt>LIBOBJS+=$(SYMB_BIN)/symb</tt></p>
+<pre>    LIBOBJS+=$(SYMB_BIN)/symb
+</pre>
 
 <p>to your application src/Makefile, <br>
 and add the line</p>
 
-<p><tt>SYMB=&lt;full path definition for the built module SYMB&gt;</tt></p>
+<pre>    SYMB=&lt;full path definition for the built module SYMB&gt;
+</pre>
 
 <p>into your application config/RELEASE file .</p>
 
@@ -151,13 +154,12 @@ and add the line</p>
 
 <p>The host tool dbLoadTemplate has been replace by a new EPICS extension,
 msi, which should be downloaded and built with base R3.14 by your EPICS
-administrator. dbLoadTemplate is still supported on iocs.  If, in your
+administrator. dbLoadTemplate is still supported on iocs. If, in your
 application, db files are created from template and substitution files you
-should  add the definition</p>
+should add the definition</p>
 
 <p><tt>MSI=&lt;full path name to msi executable&gt;</tt></p>
 
 <p>to your application config/RELEASE file.</p>
-<br>
- </body>
+</body>
 </html>

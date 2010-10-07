@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -7,7 +7,7 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#  $Id$
+#  $Revision-Id$
 #
 #  EPICS Version information
 #
@@ -32,15 +32,15 @@ EPICS_MODIFICATION = 11
 # Not included if zero
 EPICS_PATCH_LEVEL = 0
 
-# This will end in -CVS between official releases
-EPICS_CVS_SNAPSHOT=-CVS
-#EPICS_CVS_SNAPSHOT=-pre1
-#EPICS_CVS_SNAPSHOT=-pre1-CVS
-#EPICS_CVS_SNAPSHOT=-RC1
-#EPICS_CVS_SNAPSHOT=-RC1-CVS
-#EPICS_CVS_SNAPSHOT=-RC2
-#EPICS_CVS_SNAPSHOT=-RC2-CVS
-#EPICS_CVS_SNAPSHOT=
+# This will end in -DEV between official releases
+EPICS_DEV_SNAPSHOT=-DEV
+#EPICS_DEV_SNAPSHOT=-pre1
+#EPICS_DEV_SNAPSHOT=-pre1-DEV
+#EPICS_DEV_SNAPSHOT=-rc1
+#EPICS_DEV_SNAPSHOT=-rc1-DEV
+#EPICS_DEV_SNAPSHOT=-rc2
+#EPICS_DEV_SNAPSHOT=-rc2-DEV
+#EPICS_DEV_SNAPSHOT=
 
 # No changes should be needed below here
 
@@ -53,8 +53,12 @@ ifneq ($(strip $(EPICS_SITE_VERSION)),)
 endif
 
 EPICS_SHORT_VERSION=$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)$(EPICS_PATCH_VSTRING)
-EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_CVS_SNAPSHOT)$(EPICS_SITE_VSTRING)
+EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_DEV_SNAPSHOT)$(EPICS_SITE_VSTRING)
 EPICS_VERSION_STRING="EPICS Version $(EPICS_VERSION_NUMBER)"
 
-CVS_DATE="\$$Date$$"
-CVS_TAG="\$$Name$$"
+COMMIT_DATE="\$$Date$$"
+
+# Provide these in case anyone is still using the old names
+EPICS_CVS_SNAPSHOT=$(EPICS_DEV_SNAPSHOT)
+CVS_DATE=$(COMMIT_DATE)
+CVS_TAG="-no-tags-"

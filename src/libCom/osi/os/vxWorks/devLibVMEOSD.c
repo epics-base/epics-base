@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
- * $Id$
+ * $Revision-Id$
  *
  * Archictecture dependent support for common device driver resources 
  *

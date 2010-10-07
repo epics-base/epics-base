@@ -11,7 +11,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 #*************************************************************************
 
 # Converts text file in DOS CR/LF format to unix ISO format
-#  $Id$
+#  $Revision-Id$
 
 @files=@ARGV;
 

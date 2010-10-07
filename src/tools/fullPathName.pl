@@ -7,7 +7,7 @@ eval 'exec perl -S -w  $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 
 # Determines an absolute pathname for its argument,
 # which may be either a relative or absolute path and

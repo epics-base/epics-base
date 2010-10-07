@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 /*	Author: Marty Kraimer	Date: 03-24-94	*/
 
 #include <stdlib.h>

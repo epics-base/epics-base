@@ -9,8 +9,18 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.12</h1>
 
+
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
+
+<h4>Expanded CALC expressions</h4>
+
+<p>The calc and calcout records can now accept infix expressions up to 79
+characters long, although you have to use long string support to read or write
+any that are more than 39 characters. The postfix interpreter now sports an
+integer literal token as well as the double literal one, which reduces the
+maximum size of a postfix buffer needed for any specific size of infix buffer by
+a factor of 2/3.</p>
 
 <h4>Added Apple iOS target architectures</h4>
 
@@ -162,6 +172,7 @@ the <tt>COMMANDLINE_LIBRARY</tt> variable.</p>
 
 <p>Three new options were added to the <tt>caget</tt> and <tt>camonitor</tt>
 utilities, to allow printing float values (rounded) as hex, octal or binary.</p>
+
 
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 

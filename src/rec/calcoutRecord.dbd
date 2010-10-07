@@ -45,7 +45,7 @@ recordtype(calcout) {
 		promptgroup(GUI_CALC)
 		special(SPC_CALC)
 		pp(TRUE)
-		size(40)
+		size(80)
 		initial("0")
 	}
 	field(CLCV,DBF_LONG) {
@@ -248,7 +248,7 @@ recordtype(calcout) {
 		promptgroup(GUI_CALC)
 		special(SPC_CALC)
 		pp(TRUE)
-		size(40)
+		size(80)
 		initial("0")
 	}
 	field(OCLV,DBF_LONG) {
@@ -495,12 +495,12 @@ recordtype(calcout) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(40)]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
 	}
 	field(ORPC,DBF_NOACCESS) {
 		prompt("Reverse Polish OCalc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(40)]")
+		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(80)]")
 	}
 }

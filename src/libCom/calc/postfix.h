@@ -1,14 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* postfix.h
- *      Author:          Bob Dalesio
+ *      Original Author: Bob Dalesio
  *      Date:            9-21-88
  */
 
@@ -20,14 +19,23 @@
 #define CALCPERFORM_NARGS 12
 #define CALCPERFORM_STACK 80
 
-#define INFIX_TO_POSTFIX_SIZE(n) (((n-2)>>2)*21 + ((n-2)&2)*5 + 10)
-/* The above is calculated from the following expression fragments:
- *  1?1:  4 chars expand to 21 chars
- *  1+    2 chars expand to 10 chars
- *  1     1 char expands to 9 chars
- * All other infix operators convert by a factor of 1:1 or less.
- * Allow 1 char each for the infix and postfix terminators,
- * and the infix must be a complete expression
+#define INFIX_TO_POSTFIX_SIZE(n) (n*21/6)
+/* The above expression is an estimate of the maximum postfix buffer
+ * size needed for a given infix expression buffer.  The actual size
+ * needed is never larger than this value, although it is actually a
+ * few bytes smaller for some sizes.
+ *
+ * The maximum expansion from infix to postfix is for the sub-expression
+ *    .1?.1:
+ * which is 6 characters long and results in 21 bytes of postfix:
+ *    .1 => LITERAL_DOUBLE + 8 byte value
+ *    ?  => COND_IF
+ *    .1 => LITERAL_DOUBLE + 8 byte value
+ *    :  => COND_ELSE
+ *    ...
+ *       => COND_END
+ * For other short expressions the factor 21/6 always gives a big enough
+ * postfix buffer (proven by hand, look at '1+' and '.1+' as well).
  */
 
 /* These are not hard limits, just default sizes for the database */

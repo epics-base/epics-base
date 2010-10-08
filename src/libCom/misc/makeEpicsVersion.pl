@@ -27,9 +27,9 @@ while (<$VARS>) {
     next if m/^\s*#/;   # Skip comments
     if (m/^EPICS_VERSION\s*=\s*(\d+)/)              { $ver = $1; }
     if (m/^EPICS_REVISION\s*=\s*(\d+)/)             { $rev = $1; }
-    if (m/^EPICS_MODIFICATION\s*=\s*([0-9a-z]+)/)   { $mod = $1; }
+    if (m/^EPICS_MODIFICATION\s*=\s*(\d+)/)         { $mod = $1; }
     if (m/^EPICS_PATCH_LEVEL\s*=\s*(\d+)/)          { $patch = $1; }
-    if (m/^EPICS_DEV_SNAPSHOT\s*=\s*([DEV-]+)/)     { $snapshot = $1; }
+    if (m/^EPICS_DEV_SNAPSHOT\s*=\s*([-\w]*)/)      { $snapshot = $1; }
     if (m/^COMMIT_DATE\s*=\s*"\\(.*)"/)             { $commit_date = $1; }
 }
 close $VARS;

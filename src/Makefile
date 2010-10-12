@@ -61,7 +61,7 @@ DIRS += rec
 rec_DEPEND_DIRS = as registry
 
 DIRS += misc
-misc_DEPEND_DIRS = rsrv rec
+misc_DEPEND_DIRS = dbTools rsrv rec
 
 DIRS += dev
 dev_DEPEND_DIRS = rec misc

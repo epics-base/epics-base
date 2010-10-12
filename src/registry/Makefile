@@ -31,10 +31,5 @@ registryIoc_LIBS  = dbStaticIoc Com
 
 registryIoc_RCS = registryIoc.rc
 
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks = registryIoc
-OBJLIB_SRCS = $(LIB_SRCS)
-endif
-
 include $(TOP)/configure/RULES
 

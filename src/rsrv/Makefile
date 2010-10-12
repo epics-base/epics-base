@@ -30,10 +30,4 @@ rsrvIoc_LIBS = asIoc dbIoc ca Com
 rsrvIoc_SYS_LIBS_WIN32 := ws2_32
 rsrvIoc_RCS = rsrvIoc.rc
 
-# For R3.13 compatibility only
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks=rsrvIoc
-OBJLIB_SRCS = $(LIB_SRCS)
-endif
-
 include $(TOP)/configure/RULES

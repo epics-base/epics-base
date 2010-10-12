@@ -3,8 +3,7 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP=../..
@@ -74,11 +73,6 @@ LIBRARY_IOC += recIoc
 
 recIoc_LIBS = asIoc dbIoc registryIoc dbStaticIoc ca Com
 recIoc_RCS = recIoc.rc
-
-# For R3.13 compatability
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJS_vxWorks = $(LIBSRCS:%.c=%)
-endif
 
 include $(TOP)/configure/RULES
 

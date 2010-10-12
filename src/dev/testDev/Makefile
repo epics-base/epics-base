@@ -19,9 +19,4 @@ LIBRARY_IOC = testDevIoc
 testDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 testDevIoc_RCS = testDevIoc.rc
 
-# For R3.13 compatability
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJS_vxWorks = $(LIBSRCS:%.c=%)
-endif
-
 include $(TOP)/configure/RULES

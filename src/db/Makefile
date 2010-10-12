@@ -79,12 +79,6 @@ dbIoc_LIBS = dbStaticIoc ca Com
 
 dbIoc_RCS = dbIoc.rc
 
-# For R3.13 compatibility only
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks=dbIoc
-OBJLIB_SRCS = $(LIB_SRCS)
-endif
-
 include $(TOP)/configure/RULES
 
 dbCommon.h$(DEP): ../dbCommonRecord.dbd ../dbCommon.dbd

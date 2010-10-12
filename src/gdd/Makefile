@@ -62,13 +62,6 @@ genApps_SYS_LIBS_WIN32 = ws2_32
 # aitGen.c doesn't compile for linux-arm at -O3 when using gcc-3.4.5
 aitGen_CFLAGS_linux-arm = -O2
 
-# Switch off potentially bogus warnings on HPUX 11 - detailed warning
-# suppression in the source code would be too much effort with respect
-# to gdd's limited future
-
-HPWARNFLAGS_NO = +W361 +W392 +W655 +W749 +W818 +W930
-USR_CXXFLAGS_hpux = $(HPWARNFLAGS_$(GNU))
-
 include $(TOP)/configure/RULES
 
 # cannot generate these dependencies automatically
@@ -92,6 +85,3 @@ $(COMMON_DIR)/gddApps.h : $(TOOLS)/genApps$(HOSTEXE)
 
 clean::
 	@$(RM) $(COMMON_DIR)/aitConvertGenerated.cc
-
-#	EOF base/src/gdd/Makefile
-

@@ -35,12 +35,6 @@ PROD_HOST = ascheck
 ascheck_SRCS = ascheck.c
 PROD_LIBS = asHost dbStaticHost ca Com
 
-# For R3.13 compatibility only
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks=asIoc
-OBJLIB_SRCS += $(LIB_SRCS) $(asIoc_SRCS)
-endif
-
 include $(TOP)/configure/RULES
 
 # Extra rule since asLib_lex.c is included by asLib.c

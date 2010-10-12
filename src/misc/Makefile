@@ -32,11 +32,5 @@ LIBRARY_IOC = miscIoc
 miscIoc_RCS = miscIoc.rc
 miscIoc_LIBS  = rsrvIoc asIoc dbtoolsIoc dbIoc registryIoc dbStaticIoc ca Com
 
-# For R3.13 compatibility only
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks=miscIoc
-OBJLIB_SRCS = $(LIB_SRCS)
-endif
-
 include $(TOP)/configure/RULES
 

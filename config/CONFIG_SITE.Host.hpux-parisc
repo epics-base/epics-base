@@ -1,4 +1,0 @@
-# $Revision-Id$
-
-# hpux-parisc is the new name for hp700
--include $(EPICS_BASE)/config/CONFIG_SITE.Host.hp700

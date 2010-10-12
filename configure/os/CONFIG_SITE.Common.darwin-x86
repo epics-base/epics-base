@@ -6,9 +6,10 @@
 # Site override definitions for darwin-x86 target builds
 #-------------------------------------------------------
 
-# Select which CPU architectures to include in your universal binaries:
+# Select which CPU architecture(s) to include in your MacOS binaries:
 #   i386
-#   x86_64  - Needs MacOS 10.5 or 10.4 with Universal SDK
+#   x86_64  - Needs MacOS 10.4 with the Universal SDK, or 10.5 and later
 
 ARCH_CLASS = i386
+#ARCH_CLASS = x86_64
 #ARCH_CLASS = i386 x86_64

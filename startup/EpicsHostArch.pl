@@ -5,8 +5,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
@@ -27,14 +26,10 @@ sub GetEpicsHostArch { # no args
     $arch=$Config{'archname'};
     if ($arch =~ /sun4-solaris/)       { return "solaris-sparc";
     } elsif ($arch =~ m/i86pc-solaris/) { return "solaris-x86";
-    } elsif ($arch =~ m/sun4-sunos/)    { return "sun4-68k";
     } elsif ($arch =~ m/i[3-6]86-linux/)    { return "linux-x86";
     } elsif ($arch =~ m/x86_64-linux/)    { return "linux-x86_64";
     } elsif ($arch =~ m/MSWin32-x86/)   { return "win32-x86";
     } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
-    } elsif ($arch =~ m/PA-RISC1.1/)    { return "hpux-parisc";
-    } elsif ($arch =~ m/PA-RISC2.0/)    { return "hpux-parisc";
-    } elsif ($arch =~ m/alpha-dec_osf/)    { return "osf-alpha";
     } elsif ($arch =~ m/darwin/)        {
             my($kernel, $hostname, $release, $version, $cpu) = POSIX::uname();
             if ($cpu =~ m/Power Macintosh/) { return "darwin-ppc";  }

@@ -19,6 +19,7 @@
 
 #include "menuScan.h"
 #include "shareLib.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,11 +33,6 @@ extern "C" {
 #define MAX_PHASE           SHRT_MAX
 #define MIN_PHASE           SHRT_MIN
 
-
-#ifndef __GNUC__
-#define __attribute(dummy)
-#endif
-
 /*definitions for I/O Interrupt Scanning */
 struct io_scan_list;
 
@@ -48,8 +44,7 @@ epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
 
-epicsShareFunc void post_event(int event) __attribute__ ((deprecated))
-	__attribute__ ((warning ("use post_named_event instead")));
+epicsShareFunc void post_event(int event) EPICS_DEPRECATED;
 epicsShareFunc void post_named_event(char* event);
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);

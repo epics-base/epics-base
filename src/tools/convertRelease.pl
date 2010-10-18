@@ -208,6 +208,7 @@ sub checkRelease {
         readReleaseFiles($relfile, \%check, \@order, $arch);
         expandRelease(\%check, \@order);
         delete $check{TOP};
+        delete $check{EPICS_HOST_ARCH};
         
         while (my ($parent, $ppath) = each %check) {
             if (exists $macros{$parent} &&

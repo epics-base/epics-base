@@ -55,7 +55,7 @@ void osdNTPInit(void)
     }
     memset (&myAddr, 0, sizeof myAddr);
     myAddr.sin_family = AF_INET;
-    myAddr.sin_port = htons (123);
+    myAddr.sin_port = htons (0);
     myAddr.sin_addr.s_addr = htonl (INADDR_ANY);
     if (bind (ntpSocket, (struct sockaddr *)&myAddr, sizeof myAddr) < 0) {
         printf("osdNTPInit() Can't bind socket: %s\n", strerror (errno));

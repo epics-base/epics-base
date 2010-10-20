@@ -149,6 +149,7 @@ static void NTPTimeSync(void *dummy)
         epicsTimeStamp  timeNow;
         epicsUInt32     tickNow;
         double          diff;
+        double          ntpDelta;
 
         status = osdNTPGet(&timespecNow);
         tickNow = osdTickGet();
@@ -163,12 +164,20 @@ static void NTPTimeSync(void *dummy)
             continue;
         }
 
+        epicsTimeFromTimespec(&timeNow, &timespecNow);
+        ntpDelta = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.syncTime);
+
+        if (ntpDelta <= 0.0 && NTPTimePvt.synchronized) {
+            errlogPrintf("NTPTimeSync: NTP time not increasing, delta = %g\n",
+                ntpDelta);
+            NTPTimePvt.synchronized = 0;
+            continue;
+        }
+
         NTPTimePvt.syncsFailed = 0;
         if (!NTPTimePvt.synchronized) {
             errlogPrintf("NTPTimeSync: Sync recovered.\n");
         }
-
-        epicsTimeFromTimespec(&timeNow, &timespecNow);
 
         epicsMutexMustLock(NTPTimePvt.lock);
         diff = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.clockTime);
@@ -182,8 +191,7 @@ static void NTPTimeSync(void *dummy)
         NTPTimePvt.synchronized = 1;
         epicsMutexUnlock(NTPTimePvt.lock);
 
-        NTPTimePvt.tickRate = (tickNow - NTPTimePvt.syncTick) /
-            epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.syncTime);
+        NTPTimePvt.tickRate = (tickNow - NTPTimePvt.syncTick) / ntpDelta;
         NTPTimePvt.syncTick = tickNow;
         NTPTimePvt.syncTime = timeNow;
     }

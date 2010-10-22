@@ -99,10 +99,12 @@ static void NTPTime_InitOnce(void *pprio)
     /* Try to sync with NTP server */
     if (!osdNTPGet(&timespecNow)) {
         NTPTimePvt.syncTick = osdTickGet();
-        epicsTimeFromTimespec(&NTPTimePvt.syncTime, &timespecNow);
-        NTPTimePvt.clockTick = NTPTimePvt.syncTick;
-        NTPTimePvt.clockTime = NTPTimePvt.syncTime;
-        NTPTimePvt.synchronized = 1;
+        if (timespecNow.tv_sec > POSIX_TIME_AT_EPICS_EPOCH && epicsTimeOK ==
+            epicsTimeFromTimespec(&NTPTimePvt.syncTime, &timespecNow)) {
+            NTPTimePvt.clockTick = NTPTimePvt.syncTick;
+            NTPTimePvt.clockTime = NTPTimePvt.syncTime;
+            NTPTimePvt.synchronized = 1;
+        }
     }
 
     /* Start the sync thread */
@@ -164,9 +166,14 @@ static void NTPTimeSync(void *dummy)
             continue;
         }
 
-        epicsTimeFromTimespec(&timeNow, &timespecNow);
-        ntpDelta = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.syncTime);
+        if (timespecNow.tv_sec <= POSIX_TIME_AT_EPICS_EPOCH ||
+            epicsTimeFromTimespec(&timeNow, &timespecNow) == epicsTimeERROR) {
+            errlogPrintf("NTPTimeSync: Bad time received from NTP server\n");
+            NTPTimePvt.synchronized = 0;
+            continue;
+        }
 
+        ntpDelta = epicsTimeDiffInSeconds(&timeNow, &NTPTimePvt.syncTime);
         if (ntpDelta <= 0.0 && NTPTimePvt.synchronized) {
             errlogPrintf("NTPTimeSync: NTP time not increasing, delta = %g\n",
                 ntpDelta);

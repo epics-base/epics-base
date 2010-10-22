@@ -69,3 +69,9 @@ LIBNAME = $(LIBNAME_$(SHARED_LIBRARIES))
 #	dll install location
 INSTALL_SHRLIB = $(INSTALL_BIN)
 
+
+# Cygwin supports the sunrpc package in versions before 1.7.
+# Cygwin supports the tirpc (Transport Independent RPC) package in versions 1.7 and later.
+# uname -r return a string like "1.76(0230/5/3)"
+CYGWIN_RPC_LIB= $(if $(findstring 1.5,$(shell uname -r)),rpc,tirpc)
+

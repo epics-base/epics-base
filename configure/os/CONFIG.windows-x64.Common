@@ -9,5 +9,5 @@
 
 -include $(CONFIG)/os/CONFIG.win32-x86.Common
 
-WIND_HOST_TYPE = x64-win
+WIND_HOST_TYPE = x86-win32
 

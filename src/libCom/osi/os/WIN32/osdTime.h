@@ -17,10 +17,12 @@
 #ifndef osdTimeh
 #define osdTimeh
 
+#if defined(_MINGW) && ! defined(_TIMESPEC_DEFINED)
 struct timespec {
 	time_t tv_sec; /* seconds since some epoch */
 	long tv_nsec; /* nanoseconds within the second */
 };
+#endif /* defined(_MINGW) && ! defined(_TIMESPEC_DEFINED) */
 
 #endif /* ifndef osdTimeh */
 

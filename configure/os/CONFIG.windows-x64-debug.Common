@@ -1,0 +1,12 @@
+# CONFIG.windows-x64-debug.Common
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for windows-x64 debug with debug compiler flags
+# Sites may override these definitions in CONFIG_SITE.windows-x64-debug.Common
+#-------------------------------------------------------
+
+#Include definitions common to windows-x64 hosts
+include $(CONFIG)/os/CONFIG.windows-x64.Common
+

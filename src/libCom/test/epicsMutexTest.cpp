@@ -39,7 +39,7 @@ extern "C" void mutexThread(void * arg)
 {
     info *pinfo = (info *)arg;
     testDiag("mutexThread %d starting", pinfo->threadnum);
-    while (!pinfo->quit) {
+    while (pinfo->quit--) {
         epicsMutexLockStatus status = epicsMutexLock(pinfo->mutex);
         testOk(status == epicsMutexLockOK,
             "mutexThread %d epicsMutexLock returned %d",
@@ -226,7 +226,7 @@ void verifyTryLock ()
         epicsThreadGetStackSize(epicsThreadStackSmall),
         verifyTryLockThread, &verify );
 
-    epicsEventWait ( verify.done );
+    testOk1(epicsEventWait ( verify.done ) == epicsEventWaitOK);
 
     epicsMutexUnlock ( verify.mutex );
     epicsMutexDestroy ( verify.mutex );
@@ -236,6 +236,7 @@ void verifyTryLock ()
 MAIN(epicsMutexTest)
 {
     const int nthreads = 3;
+    const int nrounds = 5;
     unsigned int stackSize;
     epicsThreadId *id;
     int i;
@@ -245,7 +246,7 @@ MAIN(epicsMutexTest)
     epicsMutexId mutex;
     int status;
 
-    testPlan(19);
+    testPlan(5 + nthreads * nrounds);
 
     verifyTryLock ();
 
@@ -268,16 +269,13 @@ MAIN(epicsMutexTest)
         pinfo[i] = (info *)calloc(1,sizeof(info));
         pinfo[i]->threadnum = i;
         pinfo[i]->mutex = mutex;
+        pinfo[i]->quit = nrounds;
         arg[i] = pinfo[i];
         id[i] = epicsThreadCreate(name[i],40,stackSize,
                                   mutexThread,
                                   arg[i]);
     }
-    epicsThreadSleep(5.0);
-    for(i=0; i<nthreads; i++) {
-        pinfo[i]->quit = 1;
-    }
-    epicsThreadSleep(2.0);
+    epicsThreadSleep(2.0 + nrounds);
 
     epicsMutexPerformance ();
 

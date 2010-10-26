@@ -17,7 +17,7 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 use strict;
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ("$Bin/../../lib/perl", $Bin);
 
 use Cwd qw(cwd abs_path);
 use Getopt::Std;

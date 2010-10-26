@@ -12,7 +12,7 @@
 use strict;
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ("$Bin/../../lib/perl", $Bin);
 
 use EPICS::Getopts;
 use EPICS::Path;

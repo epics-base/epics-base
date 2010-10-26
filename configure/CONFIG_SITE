@@ -47,6 +47,7 @@
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
 #	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
+#	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
 
 
 #  EPICS_HOST_ARCH is a required environment variable

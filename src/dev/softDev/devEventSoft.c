@@ -71,17 +71,18 @@ static long read_event(eventRecord *prec)
     long status;
     char newEvent[MAX_STRING_SIZE];
 
-    if (prec->inp.type == CONSTANT) return 0;
-    status = dbGetLinkValue(&prec->inp, DBR_STRING, newEvent, 0, 0);
-    if (!status) {
+    if (prec->inp.type != CONSTANT)
+    {
+        status = dbGetLinkValue(&prec->inp, DBR_STRING, newEvent, 0, 0);
+        if (status) return status;
         if (strcmp(newEvent, prec->val) != 0) {
             strcpy(prec->val, newEvent);
             prec->epvt = eventNameToHandle(prec->val);
         }
-        prec->udf = FALSE;
-        if (prec->tsel.type == CONSTANT &&
-            prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(&prec->inp, &prec->time);
     }
-    return status;
+    prec->udf = FALSE;
+    if (prec->tsel.type == CONSTANT &&
+        prec->tse == epicsTimeEventDeviceTime)
+        dbGetTimeStamp(&prec->inp, &prec->time);
+    return 0;
 }

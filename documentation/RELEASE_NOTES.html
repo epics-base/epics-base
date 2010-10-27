@@ -12,9 +12,28 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
-<h4>Named Soft Events</h4>
 
-<p>Soft events can now be meaningful strings instead of numbers 1-255. 
+<h4>devLib cleanup</h4>
+
+<ul>
+<li>Add VME connect/disconnect IRQ calls to the "virtual os" table</li>
+<li>It is now possible to compile all devLib code on targets without runtime
+support</li>
+<li>All internal functions are made static. Some were not before.</li>
+<li>Move VME calls to <tt>devLibVME.h</tt>. <tt>devLib.h</tt> contains general
+defintions and error codes.</li>
+<li>For compatibility <tt>devLib.h</tt> includes <tt>devLibVME.h</tt> unless the
+macro <tt>NO_DEVLIB_COMPAT</tt> is defined.</li>
+<li>The "virtual os" table was renamed from <tt>pdevLibVirtualOS</tt> to
+<tt>pdevLibVME</tt> reflecting the fact that other bus types will need seperate
+tables.</li>
+<li>The "virtual os" table API has been moved to a seperate header file,
+<tt>devLibVMEImpl.h</tt>.</li>
+</ul>
+
+<h4>DTYP and INP/OUT order</h4>
+
+<p>The fields DTYP and INP/OUT can now be specified in any order.</p>
 
 <h4>Rewrite epicsThreadOnce()</h4>
 
@@ -32,6 +51,10 @@ giving correct initial monitor behavior in some circumstances.</p>
 <h4>Compress Record Type</h4>
 
 <p>Fixed crash when ALG (algorithm) was changed to Average at runtime.</p>
+
+<h4>Named Soft Events</h4>
+
+<p>Soft events can now be meaningful strings instead of numbers 1-255. 
 
 <h4>configure/RELEASE Enhancements</h4>
 

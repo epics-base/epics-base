@@ -64,16 +64,16 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 	startupInfo.wShowWindow = SW_SHOWMINNOACTIVE;
 	
 	status =  CreateProcess ( 
-		            NULL, // pointer to name of executable module (not required if command line is specified)
-		            (char *) pBaseExecutableName, // pointer to command line string 
-		            NULL, // pointer to process security attributes 
-		            NULL, // pointer to thread security attributes 
-		            FALSE, // handle inheritance flag 
-		            CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS, // creation flags 
-		            NULL, // pointer to new environment block (defaults to caller's environement)
-		            NULL, // pointer to current directory name  (defaults to caller's current directory)
-		            &startupInfo, // pointer to STARTUPINFO 
-		            &processInfo // pointer to PROCESS_INFORMATION 
+                            NULL, /* pointer to name of executable module (not required if command line is specified) */
+                            (char *) pBaseExecutableName, /* pointer to command line string */
+                            NULL, /* pointer to process security attributes */
+                            NULL, /* pointer to thread security attributes */
+                            FALSE, /* handle inheritance flag */
+                            CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS, /* creation flags */
+                            NULL, /* pointer to new environment block (defaults to caller's environement) */
+                            NULL, /* pointer to current directory name  (defaults to caller's current directory) */
+                            &startupInfo, /* pointer to STARTUPINFO */
+                            &processInfo /* pointer to PROCESS_INFORMATION */
 	); 
 	if ( status == 0 ) {
 		DWORD W32status;
@@ -84,7 +84,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
 			GetLastError (),
-			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                        MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
 				(LPTSTR) &errStrMsgBuf,
 			0,
 			NULL 
@@ -107,24 +107,24 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 					FORMAT_MESSAGE_ARGUMENT_ARRAY | 80,
 				"%1 \"%2\". %3 %4 %5 \"%6\"",
 				0,
-				MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                                MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
 				(LPTSTR) &complteMsgBuf,
 				0,
 				pFmtArgs 
 			);
 			if (W32status) {
-				// Display the string.
+                                /* Display the string. */
 				MessageBox (NULL, complteMsgBuf, "Configuration Problem", 
 					MB_OK | MB_ICONINFORMATION);
 				LocalFree (complteMsgBuf);
 			}
 			else {
-				// Display the string.
+                                /* Display the string. */
 				MessageBox (NULL, errStrMsgBuf, "Failed to start executable", 
 					MB_OK | MB_ICONINFORMATION);
 			}
 
-			// Free the buffer.
+                        /* Free the buffer. */
 			LocalFree (errStrMsgBuf);
 		}
 		else {
@@ -137,16 +137,17 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
 
     return osiSpawnDetachedProcessSuccess;
 
-	//
-	// use of spawn here causes problems when the ca repeater
-	// inherits open files (and sockets) from the spawning
-	// process
-	//
-	//status = _spawnlp (_P_DETACH, pBaseExecutableName, pBaseExecutableName, NULL);
-	//if (status<0) {
-	//	errlogPrintf ("!!WARNING!!\n");
-	//	errlogPrintf ("Unable to locate the EPICS executable \"%s\".\n",
-	//		pBaseExecutableName);
-	//	errlogPrintf ("You may need to modify your environment.\n");
-	//}
+        /*
+          use of spawn here causes problems when the ca repeater
+          inherits open files (and sockets) from the spawning
+          process
+
+          status = _spawnlp (_P_DETACH, pBaseExecutableName, pBaseExecutableName, NULL);
+          if (status<0) {
+                errlogPrintf ("!!WARNING!!\n");
+                errlogPrintf ("Unable to locate the EPICS executable \"%s\".\n",
+                        pBaseExecutableName);
+                errlogPrintf ("You may need to modify your environment.\n");
+          }
+         */
 }

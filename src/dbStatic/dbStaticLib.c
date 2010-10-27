@@ -277,6 +277,19 @@ static long setLinkType(DBENTRY *pdbentry)
     plink = (DBLINK *)pdbentry->pfield;
     if (plink->type == link_type) goto done;
 
+    if (plink->text)
+    {
+        /* re-parse link text when DTYP has changed */
+        char * link_text;
+        link_text = plink->text;
+        plink->text = NULL;
+        dbFreeLinkContents(plink);
+        plink->type = link_type;
+        dbPutString(pdbentry, link_text);
+        free(link_text);
+        goto done;
+    }
+
     type = plink->type;
     if ((type == CONSTANT || type == PV_LINK || type == DB_LINK || type == CA_LINK) &&
 	(link_type == CONSTANT || link_type == PV_LINK)) goto done;
@@ -331,6 +344,7 @@ void dbFreeLinkContents(struct link *plink)
 	     epicsPrintf("dbFreeLink called but link type unknown\n");
     }
     if(parm && (parm != pNullString)) free((void *)parm);
+    if(plink->text) free(plink->text);
     memset((char *)plink,0,sizeof(struct link));
 }
 
@@ -516,14 +530,14 @@ dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 /* Beginning of Public Routines */
 
 #define INC_SIZE	256
-void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *separator)
+void epicsShareAPI dbCatString(char **string,int *stringLength,char *src,char *separator)
 {
     if((*string==NULL)
-    || ((strlen(*string)+strlen(new)+2) > (size_t)*stringLength)) {
+    || ((strlen(*string)+strlen(src)+2) > (size_t)*stringLength)) {
 	char	*newString;
 	size_t	size;
 
-	size = strlen(new);
+        size = strlen(src);
 	if(*string) size += strlen(*string);
 	/*Make size multiple of INC_SIZE*/
 	size = ((size + 2 + INC_SIZE)/INC_SIZE) * INC_SIZE;
@@ -538,8 +552,8 @@ void epicsShareAPI dbCatString(char **string,int *stringLength,char *new,char *s
 	strcat(*string,separator);
 	*stringLength += strlen(separator);
     }
-    strcat(*string,new);
-    *stringLength += strlen(new);
+    strcat(*string,src);
+    *stringLength += strlen(src);
 }
 
 dbBase * epicsShareAPI dbAllocBase(void)
@@ -2224,6 +2238,8 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    errMessage(status,"in dbPutString from setLinkType");
 		    return status;
 		}
+                /* store link text in case DTYP changes later */
+                plink->text = epicsStrDup(pstring);
 	    }
 	    if (strlen(pstring) >= sizeof(string)) {
 	        status = S_dbLib_badField;

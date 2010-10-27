@@ -10,6 +10,6 @@
 #include <stdlib.h>
 
 #define epicsExportSharedSymbols
-#include "devLib.h"
+#include "devLibVME.h"
 
-epicsShareDef devLibVirtualOS *pdevLibVirtualOS = NULL;
+epicsShareDef devLibVME *pdevLibVME = NULL;

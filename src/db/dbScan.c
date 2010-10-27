@@ -289,7 +289,7 @@ void scanDelete(struct dbCommon *precord)
                 "scanDelete detected illegal PRIO field");
             return;
         }
-        do /* multitheading: make sure pel is consistent */
+        do /* multithreading: make sure pel is consistent */
             pel = pevent_list[0];
         while (pel != pevent_list[0]);
         for (; pel; pel=pel->next) {
@@ -362,7 +362,7 @@ int scanpel(char* eventname)   /* print event list */
     int prio;
     event_list *pel;
     
-    do /* multitheading: make sure pel is consistent */
+    do /* multithreading: make sure pel is consistent */
         pel = pevent_list[0];
     while (pel != pevent_list[0]);
     for (; pel; pel = pel->next) {
@@ -460,7 +460,7 @@ void post_event(int event)
     event_list* pel;
     
     if (event <= 0 || event > 255) return;
-    do { /* multitheading: make sure pel is consistent */
+    do { /* multithreading: make sure pel is consistent */
         pel = pevent_list[event];
     } while (pel != pevent_list[event]);
     postEvent(pel);

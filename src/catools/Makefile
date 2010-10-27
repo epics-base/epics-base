@@ -15,14 +15,16 @@ include $(TOP)/configure/CONFIG
 SHARED_LIBRARIES = NO
 
 # Build but don't install catools as a static library
-LIBRARY_HOST += catools
+LIBRARY += catools
 INSTALL_LIBS =
 
 catools_SRCS += tool_lib.c
 catools_LIBS += ca Com
 
 # Build and link programs against the catools library
-PROD_HOST += caget camonitor cainfo caput
+PROD_DEFAULT += caget camonitor cainfo caput
+PROD_vxWorks = -nil-
+PROD_RTEMS = -nil-
 
 PROD_LIBS += catools ca Com
 catools_DIR = .

@@ -12,8 +12,16 @@ recordtype(event) {
 	field(VAL,DBF_STRING) {
 		prompt("Event Name To Post")
 		promptgroup(GUI_INPUTS)
+		special(SPC_MOD)
 		asl(ASL0)
 		size(40)
+	}
+	%#include "dbScan.h"
+        field(EPVT, DBF_NOACCESS) {
+		prompt("Event private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("EVENTPVT epvt")
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")

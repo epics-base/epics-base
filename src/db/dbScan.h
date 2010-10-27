@@ -37,6 +37,7 @@ extern "C" {
 struct io_scan_list;
 
 typedef struct io_scan_list *IOSCANPVT;
+typedef struct event_list *EVENTPVT;
 
 struct dbCommon;
 
@@ -44,8 +45,9 @@ epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
 
+epicsShareFunc EVENTPVT eventNameToHandle(char* event);
+epicsShareFunc void postEvent(EVENTPVT epvt);
 epicsShareFunc void post_event(int event) EPICS_DEPRECATED;
-epicsShareFunc void post_named_event(char* event);
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);

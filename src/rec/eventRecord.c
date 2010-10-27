@@ -32,6 +32,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "special.h"
 #include "menuYesNo.h"
 #define GEN_SIZE_OFFSET
 #include "eventRecord.h"
@@ -43,7 +44,7 @@
 #define initialize NULL
 static long init_record(eventRecord *, int);
 static long process(eventRecord *);
-#define special NULL
+static long special(DBADDR *, int);
 static long get_value(eventRecord *, struct valueDes *);
 #define cvt_dbaddr NULL
 #define get_array_info NULL
@@ -106,6 +107,8 @@ static long init_record(eventRecord *prec, int pass)
 	recGblInitConstantLink(&prec->siol,DBF_STRING,&prec->sval);
     }
 
+    prec->epvt = eventNameToHandle(prec->val);
+
     if( (pdset=(struct eventdset *)(prec->dset)) && (pdset->init_record) ) 
 		status=(*pdset->init_record)(prec);
     return(status);
@@ -123,7 +126,7 @@ static long process(eventRecord *prec)
 	if ( !pact && prec->pact ) return(0);
 	prec->pact = TRUE;
  
-	post_named_event(prec->val);
+	postEvent(prec->epvt);
 
 	recGblGetTimeStamp(prec);
 
@@ -137,7 +140,18 @@ static long process(eventRecord *prec)
 	return(status);
 }
 
+
+static long special(DBADDR *paddr, int after)
+{
+    eventRecord *prec = (eventRecord *)paddr->precord;
+    
+    if (!after) return 0;
+    if (dbGetFieldIndex(paddr) == eventRecordVAL) {
+        prec->epvt = eventNameToHandle(prec->val);
+    }
+}
 
+
 static long get_value(eventRecord *prec, struct valueDes *pvdes)
 {
     pvdes->field_type = DBF_STRING;
@@ -180,7 +194,10 @@ static long readValue(eventRecord *prec)
                 status=dbGetLink(&(prec->siol),DBR_STRING,
 			&(prec->sval),0,0);
                 if (status==0) {
-                        strcpy(prec->val, prec->sval);
+                        if (strcmp(prec->sval, prec->val) != 0) {
+                                strcpy(prec->val, prec->sval);
+                                prec->epvt = eventNameToHandle(prec->val);
+                        }
                         prec->udf=FALSE;
                 }
         } else {

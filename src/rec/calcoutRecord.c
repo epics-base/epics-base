@@ -197,6 +197,8 @@ static long init_record(calcoutRecord *prec, int pass)
     callbackSetUser(prec, &prpvt->checkLinkCb);
     prpvt->cbScheduled = 0;
 
+    prec->epvt = eventNameToHandle(prec->oevt);
+    
     if (pcalcoutDSET->init_record) pcalcoutDSET->init_record(prec);
     prec->pval = prec->val;
     prec->mlst = prec->val;
@@ -356,6 +358,9 @@ static long special(DBADDR *paddr, int after)
             }
         }
         db_post_events(prec, plinkValid, DBE_VALUE);
+        return 0;
+      case(calcoutRecordOEVT):
+        prec->epvt = eventNameToHandle(prec->oevt);
         return 0;
       default:
         recGblDbaddrError(S_db_badChoice, paddr, "calc: special");
@@ -540,12 +545,12 @@ static void execOutput(calcoutRecord *prec)
         /* Output the value */
         status = writeValue(prec);
         /* post output event if set */
-        post_named_event(prec->oevt);
+        if (prec->epvt) postEvent(prec->epvt);
     } else switch (prec->ivoa) {
         case menuIvoaContinue_normally:
             status = writeValue(prec);
             /* post output event if set */
-            post_named_event(prec->oevt);
+            if (prec->epvt) postEvent(prec->epvt);
             break;
         case menuIvoaDon_t_drive_outputs:
             break;
@@ -553,7 +558,7 @@ static void execOutput(calcoutRecord *prec)
             prec->oval = prec->ivov;
             status = writeValue(prec);
             /* post output event if set */
-            post_named_event(prec->oevt);
+            if (prec->epvt) postEvent(prec->epvt);
             break;
         default:
             status = -1;

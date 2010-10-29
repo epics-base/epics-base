@@ -22,6 +22,7 @@ epicsThreadOnceId onceFlag = EPICS_THREAD_ONCE_INIT;
 epicsThreadOnceId twiceFlag = EPICS_THREAD_ONCE_INIT;
 epicsMutexId lock;
 epicsEventId go;
+epicsEventId done;
 
 int runCount  = 0;
 int initCount = 0;
@@ -49,6 +50,8 @@ void onceThread(void *ctx)
 
     epicsMutexMustLock(lock);
     doneCount++;
+    if (doneCount == runCount)
+        epicsEventSignal(done);
     epicsMutexUnlock(lock);
 }
 
@@ -79,6 +82,7 @@ MAIN(epicsThreadOnceTest)
     testPlan(3 + NUM_ONCE_THREADS);
 
     go = epicsEventMustCreate(epicsEventEmpty);
+    done = epicsEventMustCreate(epicsEventEmpty);
     lock = epicsMutexMustCreate();
 
     for (i = 0; i < NUM_ONCE_THREADS; i++) {
@@ -92,12 +96,13 @@ MAIN(epicsThreadOnceTest)
     epicsThreadSleep(0.1);
 
     testOk(runCount == NUM_ONCE_THREADS, "runCount = %d", runCount);
-    epicsEventSignal(go);
-    epicsThreadSleep(0.1);
+    epicsEventSignal(go); /* Use epicsEventBroadcast(go) when available */
+    epicsEventMustWait(done);
 
     testOk(doneCount == NUM_ONCE_THREADS, "doneCount = %d", doneCount);
     testDiag("init was run by %s", initBy);
 
+    testDiag("Expecting thread recurse to suspend:");
     tid = epicsThreadCreate("recurse", epicsThreadPriorityMedium,
             epicsThreadGetStackSize(epicsThreadStackSmall),
             recurseThread, 0);

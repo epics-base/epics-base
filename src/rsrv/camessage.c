@@ -1566,6 +1566,7 @@ static void putNotifyErrorReply ( struct client *client, caHdrLargeArray *mp, in
         0u, mp->m_dataType, mp->m_count, statusCA, 
         mp->m_available, 0 );
     if ( status != ECA_NORMAL ) {
+        SEND_UNLOCK ( client );
         errlogPrintf ("%s at %d: should always get sufficent space for put notify error reply\n",
             __FILE__, __LINE__);
         return;
@@ -2144,6 +2145,7 @@ static void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
     status = cas_copy_in_header ( client, CA_PROTO_NOT_FOUND, 
         0u, mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, NULL );
     if ( status != ECA_NORMAL ) {
+        SEND_UNLOCK ( client );
         errlogPrintf ( "%s at %d: should always get sufficent space for search fail reply?\n",
             __FILE__, __LINE__ );
         return;

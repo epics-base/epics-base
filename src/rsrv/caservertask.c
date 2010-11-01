@@ -416,8 +416,8 @@ static void log_one_client (struct client *client, unsigned level)
             send_delay, recv_delay);
         printf( 
         "\tUnprocessed request bytes=%u, Undelivered response bytes=%u\n", 
-            client->send.stk,
-            client->recv.cnt - client->recv.stk ); 
+            client->recv.cnt - client->recv.stk,
+            client->send.stk ); 
         printf( 
         "\tState=%s%s%s\n", 
             state[client->disconnect?1:0],

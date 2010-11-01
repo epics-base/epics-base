@@ -1,16 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id$
+/* $Revision-Id$
  *
  * Subroutines used to convert an infix expression to a postfix expression
  *
- *      Author:          Bob Dalesio
+ *      Original Author: Bob Dalesio
  *      Date:            12-12-86
 */
 
@@ -69,17 +69,17 @@ static const ELEMENT operands[] = {
 {"!",		7, 8,	0,	UNARY_OPERATOR, REL_NOT},
 {"(",		0, 8,	0,	UNARY_OPERATOR,	NOT_GENERATED},
 {"-",		7, 8,	0,	UNARY_OPERATOR,	UNARY_NEG},
-{".",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"0",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"1",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"2",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"3",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"4",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"5",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"6",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"7",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"8",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
-{"9",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
+{".",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"0",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"1",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"2",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"3",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"4",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"5",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"6",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"7",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"8",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"9",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"A",		0, 0,	1,	OPERAND,	FETCH_A},
 {"ABS",		7, 8,	0,	UNARY_OPERATOR,	ABS_VAL},
 {"ACOS",	7, 8,	0,	UNARY_OPERATOR,	ACOS},
@@ -101,7 +101,7 @@ static const ELEMENT operands[] = {
 {"G",		0, 0,	1,	OPERAND,	FETCH_G},
 {"H",		0, 0,	1,	OPERAND,	FETCH_H},
 {"I",		0, 0,	1,	OPERAND,	FETCH_I},
-{"INF",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
+{"INF",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"ISINF",	7, 8,	0,	UNARY_OPERATOR,	ISINF},
 {"ISNAN",	7, 8,	0,	VARARG_OPERATOR,ISNAN},
 {"J",		0, 0,	1,	OPERAND,	FETCH_J},
@@ -113,7 +113,7 @@ static const ELEMENT operands[] = {
 {"MAX",		7, 8,	0,	VARARG_OPERATOR,MAX},
 {"MIN",		7, 8,	0,	VARARG_OPERATOR,MIN},
 {"NINT",	7, 8,	0,	UNARY_OPERATOR,	NINT},
-{"NAN",		0, 0,	1,	LITERAL_OPERAND,LITERAL},
+{"NAN",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"NOT",		7, 8,	0,	UNARY_OPERATOR,	BIT_NOT},
 {"PI",		0, 0,	1,	OPERAND,	CONST_PI},
 {"R2D",		0, 0,	1,	OPERAND,	CONST_R2D},
@@ -214,7 +214,8 @@ epicsShareFunc long
     int cond_count = 0;
     char *pout = ppostfix;
     char *pnext;
-    double constant;
+    double lit_d;
+    int lit_i;
 
     if (psrc == NULL || *psrc == '\0' ||
 	pout == NULL || perror == NULL) {
@@ -237,18 +238,25 @@ epicsShareFunc long
 	    break;
 
 	case LITERAL_OPERAND:
-	    *pout++ = pel->code;
 	    runtime_depth += pel->runtime_effect;
 
 	    psrc -= strlen(pel->name);
-	    constant = epicsStrtod(psrc, &pnext);
+	    lit_d = epicsStrtod(psrc, &pnext);
 	    if (pnext == psrc) {
 		*perror = CALC_ERR_BAD_LITERAL;
 		goto bad;
 	    }
 	    psrc = pnext;
-	    memcpy(pout, (void *)&constant, sizeof(double));
-	    pout += sizeof(double);
+	    lit_i = lit_d;
+	    if (lit_d != (double) lit_i) {
+		*pout++ = pel->code;
+		memcpy(pout, (void *)&lit_d, sizeof(double));
+		pout += sizeof(double);
+	    } else {
+		*pout++ = LITERAL_INT;
+		memcpy(pout, (void *)&lit_i, sizeof(int));
+		pout += sizeof(int);
+	    }
 
 	    operand_needed = FALSE;
 	    break;
@@ -500,7 +508,7 @@ epicsShareFunc void
     static const char *opcodes[] = {
 	"End Expression",
     /* Operands */
-	"LITERAL", "VAL",
+	"LITERAL_DOUBLE", "LITERAL_INT", "VAL",
 	"FETCH_A", "FETCH_B", "FETCH_C", "FETCH_D", "FETCH_E", "FETCH_F",
 	"FETCH_G", "FETCH_H", "FETCH_I", "FETCH_J", "FETCH_K", "FETCH_L",
     /* Assignment */
@@ -571,14 +579,20 @@ epicsShareFunc void
 	"NOT_GENERATED"
     };
     char op;
-    double lit;
+    double lit_d;
+    int lit_i;
     
     while ((op = *pinst) != END_EXPRESSION) {
 	switch (op) {
-	case LITERAL:
-	    memcpy((void *)&lit, ++pinst, sizeof(double));
-	    printf("\tLiteral: %g\n", lit);
+	case LITERAL_DOUBLE:
+	    memcpy((void *)&lit_d, ++pinst, sizeof(double));
+	    printf("\tDouble %g\n", lit_d);
 	    pinst += sizeof(double);
+	    break;
+	case LITERAL_INT:
+	    memcpy((void *)&lit_i, ++pinst, sizeof(int));
+	    printf("\tInteger %d\n", lit_i);
+	    pinst += sizeof(int);
 	    break;
 	case MIN:
 	case MAX:

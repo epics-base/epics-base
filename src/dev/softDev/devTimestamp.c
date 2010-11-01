@@ -5,7 +5,7 @@
 * in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 /*
  * Device support for EPICS time stamps
  *

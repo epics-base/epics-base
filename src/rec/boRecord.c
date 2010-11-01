@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* recBo.c - Record Support Routines for Binary Output records */
 /*

@@ -9,8 +9,30 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.12</h1>
 
+
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
+
+<h4>Added windows-x64 target</h4>
+
+<p>64-bit binaries for Microsoft Windows platforms can now be built using the
+target architecture windows-x64, which is also a valid cross-build target for a
+win32-x86 host.  We do not currently support 64-bit MinGW or Cygwin builds.</p>
+
+<h4>Deleted osf-alpha targets</h4>
+
+<p>Kazuro Furukawa has been unable to compile EPICS Base on this target for the
+last few releases and it's not really needed any more, so the targets have been
+deleted from this release.</p>
+
+<h4>Expanded CALC expressions</h4>
+
+<p>The calc and calcout records can now accept infix expressions up to 79
+characters long, although you have to use long string support to read or write
+any that are more than 39 characters. The postfix interpreter now sports an
+integer literal token as well as the double literal one, which reduces the
+maximum size of a postfix buffer needed for any specific size of infix buffer by
+a factor of 2/3.</p>
 
 <h4>Added Apple iOS target architectures</h4>
 
@@ -70,6 +92,12 @@ to aai or aao.</li>
 <li>Added MPST, APST and HASH fields for monitor on change support like in
 waveform record.</li>
 </ul>
+
+<h4>New capr.pl script</h4>
+
+<p>This Perl program attempts to replicate the behaviour of the IOC command
+'dbpr' over Channel Access, printing the fields and values of the named record.
+Run <tt>capr.pl -h</tt> for usage information.</p>
 
 <h4>devLib cleanup</h4>
 
@@ -162,6 +190,7 @@ the <tt>COMMANDLINE_LIBRARY</tt> variable.</p>
 
 <p>Three new options were added to the <tt>caget</tt> and <tt>camonitor</tt>
 utilities, to allow printing float values (rounded) as hex, octal or binary.</p>
+
 
 <h2 align="center">Changes between 3.14.10 and 3.14.11</h2>
 

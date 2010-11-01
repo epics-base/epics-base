@@ -12,7 +12,7 @@ eval 'exec perl -S $0 ${1+"$@"}'      # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 #
 #  Author: Ralph Lange
 #

@@ -35,7 +35,7 @@
  */
 
 /*
- * $Id$
+ * $Revision-Id$
  */
 
 #include <ctype.h>

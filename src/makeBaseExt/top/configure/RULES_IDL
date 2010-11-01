@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 
 ifdef T_A
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)

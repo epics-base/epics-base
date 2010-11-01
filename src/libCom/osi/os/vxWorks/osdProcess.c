@@ -8,7 +8,7 @@
 \*************************************************************************/
 
 /* 
- * $Id$
+ * $Revision-Id$
  * 
  * Operating System Dependent Implementation of osiProcess.h
  *

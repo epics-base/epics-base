@@ -36,7 +36,7 @@
 
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header$ (LBL)";
+    "@(#) $Revision-Id$ (LBL)";
 #endif
 
 #include <ctype.h>

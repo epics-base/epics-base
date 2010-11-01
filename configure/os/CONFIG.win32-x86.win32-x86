@@ -1,6 +1,6 @@
 # CONFIG.win32-x86.win32-x86
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for win32-x86 target archs when host arch is win32-x86
@@ -187,7 +187,7 @@ OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY = @12
 
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
+WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
 #
 # specify dll .def file only if it exists

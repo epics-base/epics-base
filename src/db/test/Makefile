@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -10,15 +10,19 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbIoc dbStaticHost ca Com
+callbackTest_LIBS = dbIoc
+callbackTest_LIBS_DEFAULT = dbStaticHost
+callbackTest_LIBS_vxWorks = dbStaticIoc
+callbackTest_LIBS_RTEMS   = dbStaticIoc
+PROD_LIBS = ca Com
 
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
-OBJS_IOC_vxWorks += callbackTest
+PROD_vxWorks += callbackTest
 TESTS += callbackTest
 
 # When we add more test programs here, this must become a vxTestHarness
-TESTSPEC_vxWorks = callbackTest.o; callbackTest
+TESTSPEC_vxWorks = callbackTest.munch; callbackTest
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

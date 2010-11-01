@@ -1,6 +1,6 @@
 # CONFIG_SITE.Common.darwin-ppc
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Site override definitions for darwin-ppc target builds
@@ -11,4 +11,5 @@
 #   ppc64   - Not tested
 
 ARCH_CLASS = ppc
+#ARCH_CLASS = ppc64
 #ARCH_CLASS = ppc ppc64

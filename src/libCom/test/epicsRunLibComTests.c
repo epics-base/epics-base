@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
@@ -20,6 +20,7 @@ int epicsThreadTest(void);
 int epicsTimerTest(void);
 int epicsAlgorithm(void);
 int epicsEllTest(void);
+int epicsErrlogTest(void);
 int epicsCalcTest(void);
 int epicsEventTest(void);
 int epicsExceptionTest(void);
@@ -57,6 +58,8 @@ void epicsRunLibComTests(void)
     runTest(epicsAlgorithm);
 
     runTest(epicsEllTest);
+
+    runTest(epicsErrlogTest);
 
     runTest(epicsCalcTest);
 

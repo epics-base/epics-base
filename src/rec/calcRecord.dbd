@@ -17,7 +17,7 @@ recordtype(calc) {
 		promptgroup(GUI_CALC)
 		special(SPC_CALC)
 		pp(TRUE)
-		size(40)
+		size(80)
 		initial("0")
 	}
 	field(INPA,DBF_INLINK) {
@@ -296,6 +296,6 @@ recordtype(calc) {
 		prompt("Reverse Polish Calc")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(40)]")
+		extra("char	rpcl[INFIX_TO_POSTFIX_SIZE(80)]")
 	}
 }

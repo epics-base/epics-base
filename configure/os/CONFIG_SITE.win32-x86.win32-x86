@@ -1,4 +1,4 @@
-#  $Id$
+#  $Revision-Id$
 
 # If you have Visual C++ 6.0, uncomment the following override lines
 # This will to eliminate warnings about unknown options /GL, /LTCG, and /w44355.

@@ -6,13 +6,13 @@
 # Author: Andrew Johnson <anj@aps.anl.gov>
 # Date: 10 February 2005
 #
-# $Id$
+# $Revision-Id$
 #
 
 use strict;
 
 use FindBin qw($Bin);
-use lib "$Bin/../../lib/perl";
+use lib ("$Bin/../../lib/perl", $Bin);
 
 use EPICS::Getopts;
 use EPICS::Path;

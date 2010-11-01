@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$ */
+/* $Revision-Id$ */
 
 /* Interface between old database access and new
  *
@@ -152,12 +152,16 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
     long nRequest = no_elements;
     int result = db_get_field_and_count(
         paddr, buffer_type, pbuffer, &nRequest, pfl);
-    if (nRequest < no_elements)
-        /* If the database request returned fewer elements than requested then
-         * fill out the remainder of the array with zeros. */
-        memset(
-            (char *)pbuffer + dbr_size_n(buffer_type, nRequest), 0,
-            (no_elements - nRequest) * dbr_value_size[buffer_type]);
+    if (nRequest < no_elements) {
+        /* The database request returned fewer elements than requested, so
+         * fill the remainder of the buffer with zeros.
+         */
+        int val_size = dbr_value_size[buffer_type];
+        int offset = dbr_size[buffer_type] + (nRequest - 1) * val_size;
+        int nbytes = (no_elements - nRequest) * val_size;
+
+        memset((char *)pbuffer + offset, 0, nbytes);
+    }
     return result;
 }
 

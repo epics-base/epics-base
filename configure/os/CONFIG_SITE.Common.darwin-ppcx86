@@ -1,6 +1,6 @@
 # CONFIG_SITE.Common.darwin-ppcx86
 #
-# $Id$
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Site override definitions for darwin-ppcx86 target builds
@@ -10,9 +10,14 @@
 #   ppc
 #   i386
 #   ppc64   - Not tested
-#   x86_64  - Needs MacOS 10.5 or 10.4 with Universal SDK
+#   x86_64  - Needs MacOS 10.4 with Universal SDK, or 10.5 or later.
 
 ARCH_CLASS = ppc i386
+#ARCH_CLASS = ppc x86_64
 #ARCH_CLASS = ppc i386 x86_64
+#ARCH_CLASS = ppc64 i386
+#ARCH_CLASS = ppc64 x86_64
+#ARCH_CLASS = ppc64 i386 x86_64
 #ARCH_CLASS = ppc ppc64 i386
+#ARCH_CLASS = ppc ppc64 x86_64
 #ARCH_CLASS = ppc ppc64 i386 x86_64

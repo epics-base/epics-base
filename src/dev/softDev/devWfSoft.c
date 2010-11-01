@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$
+/* $Revision-Id$
  *
  *      Original Authors: Bob Dalesio and Marty Kraimer
  *      Date: 6-1-90

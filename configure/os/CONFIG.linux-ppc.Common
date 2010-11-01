@@ -9,4 +9,3 @@
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
-WIND_HOST_TYPE = ppc-linux

@@ -24,38 +24,24 @@ sysname=`uname`
 case $sysname in
     Linux )
         os=linux
-	cpu=`uname -m`
+        cpu=`uname -m`
         case $cpu in i386 | i486 | i586 | i686 )
             cpu=x86
-			;;
-		esac
+            ;;
+        esac
         if [ ${cpu} = "x86_64" ]; then
             cpu=x86_64
-	fi
-	echo ${os}-${cpu}${suffix}
+        fi
+        echo ${os}-${cpu}${suffix}
         ;;
     Darwin )
         os=darwin
-	cpu=`uname -m`
+        cpu=`uname -m`
         case "$cpu" in
             "Power Macintosh") cpu=ppc ;;
             "i386") cpu=x86 ;;
         esac
-	echo ${os}-${cpu}${suffix}
-        ;;
-    HP-UX )
-        os=hpux
-		cpu=`uname -m`
-        case $cpu in 
-	    9000/[346]??) cpu=m68k ;;
-	    9000/[78]??) cpu=parisc ;;
-		esac
-		echo ${os}-${cpu}${suffix}
-        ;;
-    OSF1 )
-        os=osf
-	cpu=`uname -m`
-	echo ${os}-${cpu}${suffix}
+        echo ${os}-${cpu}${suffix}
         ;;
     SunOS )
         version=`uname -r | sed '1s/^\([0-9]*\).*$/\1/'`
@@ -64,16 +50,16 @@ case $sysname in
         else
             os=sun4
         fi
-		cpu=`uname -m`
+        cpu=`uname -m`
         case $cpu in
-		 sun4*)
+        sun4*)
             cpu=sparc
-			;;
+            ;;
         i86pc)
             cpu=x86
-			;;
-		esac
-		echo ${os}-${cpu}${suffix}
+            ;;
+        esac
+        echo ${os}-${cpu}${suffix}
         ;;
     * )
         sysname=`uname -o`

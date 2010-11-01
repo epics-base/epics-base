@@ -10,9 +10,8 @@
 // Author: Jim Kowalkowski
 // Date: 2/96
 // 
-// $Id$
+// $Revision-Id$
 // 
-// $Log$
 
 #define epicsExportSharedSymbols
 #include "gddAppTable.h"

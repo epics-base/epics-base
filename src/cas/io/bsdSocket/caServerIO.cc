@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Id$
+// $Revision-Id$
 //
 // verify connection state prior to doing anything in this file
 //

@@ -7,7 +7,7 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-# $Id$
+# $Revision-Id$
 #
 
 TOP = ..
@@ -61,7 +61,7 @@ DIRS += rec
 rec_DEPEND_DIRS = as registry
 
 DIRS += misc
-misc_DEPEND_DIRS = rsrv rec
+misc_DEPEND_DIRS = dbtools rsrv rec
 
 DIRS += dev
 dev_DEPEND_DIRS = rec misc

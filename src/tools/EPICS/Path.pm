@@ -5,7 +5,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 
 use Carp;
 use Cwd qw(getcwd abs_path);

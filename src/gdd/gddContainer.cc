@@ -15,7 +15,7 @@
 // Author:	Jim Kowalkowski
 // Date:	3/97
 //
-// $Id$
+// $Revision-Id$
 //
 #define epicsExportSharedSymbols
 #include "gdd.h"

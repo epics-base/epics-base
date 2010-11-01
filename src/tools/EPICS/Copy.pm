@@ -5,7 +5,7 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 
 # Copy directories and files from a template
 

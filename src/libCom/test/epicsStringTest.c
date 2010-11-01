@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Id$
+/* $Revision-Id$
  *
  *      Author  Marty Kraimer
  */
@@ -33,8 +33,8 @@ void testChars(void) {
         t = epicsStrnRawFromEscaped(result, sizeof(result), escaped, s);
         testOk(needed == s && t == 1 &&
             result[0] == input[0] && result[1] == 0,
-            "escaped char 0x%2.2x -> \"%s\" (%Zd) -> 0x%2.2x",
-            input[0] & 0xff, escaped, needed, result[0] & 0xff);
+            "escaped char 0x%2.2x -> \"%s\" (%d) -> 0x%2.2x",
+            input[0] & 0xff, escaped, (int) needed, result[0] & 0xff);
     }
 }
 

@@ -6,14 +6,14 @@
 #< envPaths
 
 ## Register all support components
-dbLoadDatabase "dbd/_APPNAME_.dbd"
-_CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
+dbLoadDatabase("dbd/_APPNAME_.dbd")
+_CSAFEAPPNAME__registerRecordDeviceDriver(pdbbase)
 
 ## Load record instances
-#dbLoadTemplate "db/_APPNAME_.substitutions"
-#dbLoadRecords "db/_APPNAME_.db", "user=_USER_"
+#dbLoadTemplate("db/_APPNAME_.substitutions")
+#dbLoadRecords("db/_APPNAME_.db", "user=_USER_")
 
 iocInit
 
 ## Start any sequence programs
-#seq sncxxx, "user=_USER_"
+#seq(sncxxx, "user=_USER_")

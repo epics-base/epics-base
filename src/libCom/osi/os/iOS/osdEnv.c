@@ -6,7 +6,7 @@
 
 /* osdEnv.c */
 /*
- * $Id$
+ * $Revision-Id$
  *
  * Author: Eric Norum
  *   Date: May 7, 2001

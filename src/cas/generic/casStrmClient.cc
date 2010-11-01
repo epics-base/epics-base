@@ -91,7 +91,7 @@ casStrmClient::casStrmClient (
 
     this->pUserName = new ( std::nothrow ) char [1u];
     if ( ! this->pUserName ) {
-        free ( this->pHostName );
+        delete [] this->pHostName;
         throw std::bad_alloc();
     }
     *this->pUserName= '\0';

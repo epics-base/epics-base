@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* share/epicsH/dbAsLib.h	*/
-/*  $Id$ */
+/*  $Revision-Id$ */
 /* Author:  Marty Kraimer Date:    02-23-94*/
 
 #ifndef INCdbAsLibh

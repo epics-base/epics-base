@@ -106,6 +106,52 @@ static void producer(void *arg)
     testOk(errors == 0, "%s: errors = %d", name, errors);
 }
 
+#define SLEEPERCOUNT 3
+struct wakeInfo {
+    epicsEventId event;
+    epicsMutexId countMutex;
+    int          count;
+};
+static void sleeper(void *arg)
+{
+    struct wakeInfo *wp = (struct wakeInfo *)arg;
+    epicsEventMustWait(wp->event);
+    epicsMutexLock(wp->countMutex);
+    wp->count++;
+    epicsMutexUnlock(wp->countMutex);
+}
+static void eventWakeupTest(void)
+{
+    struct wakeInfo wakeInfo, *wp = &wakeInfo;
+    int i, c;
+
+    wp->event = epicsEventMustCreate(epicsEventEmpty);
+    wp->countMutex = epicsMutexMustCreate();
+    wp->count = 0;
+    for (i = 0 ; i < SLEEPERCOUNT ; i++)
+        epicsThreadCreate("Sleeper",
+                          epicsThreadPriorityScanHigh,
+                          epicsThreadGetStackSize(epicsThreadStackSmall),
+                          sleeper,
+                          wp);
+    epicsThreadSleep(0.5);
+    epicsMutexLock(wp->countMutex);
+    c = wp->count;
+    epicsMutexUnlock(wp->countMutex);
+    testOk(c == 0, "all threads still sleeping");
+    for (i = 1 ; i <= SLEEPERCOUNT ; i++) {
+        epicsEventSignal(wp->event);
+        epicsThreadSleep(0.5);
+        epicsMutexLock(wp->countMutex);
+        c = wp->count;
+        epicsMutexUnlock(wp->countMutex);
+        testOk(c == i, "%d thread%s awakened, expected %d", c, c == 1 ? "" : "s", i);
+    }
+    epicsEventDestroy(wp->event);
+    epicsMutexDestroy(wp->countMutex);
+}
+
+
 } // extern "C"
 
 static double eventWaitMeasureDelayError( const epicsEventId &id, const double & delay )
@@ -144,7 +190,7 @@ MAIN(epicsEventTest)
     epicsEventId event;
     int status;
 
-    testPlan(11);
+    testPlan(12+SLEEPERCOUNT);
 
     event = epicsEventMustCreate(epicsEventEmpty);
 
@@ -200,6 +246,7 @@ MAIN(epicsEventTest)
     epicsThreadSleep(1.0);
 
     eventWaitTest();
+    eventWakeupTest();
 
     return testDone();
 }

@@ -9,7 +9,7 @@
 \*************************************************************************/
 
 /* 
- * $Id$
+ * $Revision-Id$
  * 
  * Operating System Independent Interface to Process Environment
  *

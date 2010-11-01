@@ -11,7 +11,7 @@
 To build base:
 <ol>
 <li>
-Set the EPICS_HOST_ARCH environment variable to darwin-ppc.
+Set the EPICS_HOST_ARCH environment variable to darwin-ppc, darwin-x86 or darwin-ppcx86.
 The scripts in the
 base/startup directory can automate this.  For example, here's part
 of my Bash login script (~/.bash_login):
@@ -28,20 +28,27 @@ EPICS_EXTENSIONS="${HOME}/src/EPICS/extensions"
 <code>cd</code> to the EPICS base top-level source directory.
 </li>
 <li>
+Uncomment the appropriate line in the relevent
+EPICS_BASE/configure/os/CONFIG_SITE.Common.darwin-xxx file for your EPICS_HOST_ARCH value.
+Newer versions of OS X (e.g. Snow Leopard) may include only 64 bit versions of some OS libraries,
+so should only have the x86_64 ARCH_CLASS.
+</li>
+<li>
 Run <code>make</code>.
 </li>
 </ol>
 
-
 </li>
 
 <li>
-As distributed, EPICS on Mac OS X uses the default command line input
+As distributed, EPICS on Mac OS X uses the readline command line input
 routines.  IOC applications are more pleasant to interact with if
 either the readline or libtecla library is used.  The easiest
 way to get either or both of these libraries on to your system is to
 download and install them using the either the DarwinPorts
-distribution or the Fink package manager.
+distribution or the Fink package manager. If you don't want to install
+the readline library, set the COMMANDLINE_LIBRARY variable in one of
+the CONFIG_SITE files to EPICS.
 <p>
 Information on DarwinPorts is available from
 <a href="http://www.opendarwin.org/projects/darwinports/">the DarwinPorts
@@ -174,6 +181,6 @@ runAppleScript(const char *format, ...)
 }
 <pre>
 <hr>
-$Id$
+$Revision-Id$
 </body>
 </html>

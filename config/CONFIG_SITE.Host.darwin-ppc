@@ -1,4 +1,4 @@
-# $Id$
+# $Revision-Id$
 
 -include $(EPICS_BASE)/config/CONFIG_SITE.Host.Darwin
 

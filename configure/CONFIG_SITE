@@ -7,7 +7,7 @@
 # in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
-#  $Id$
+#  $Revision-Id$
 #
 #  CONFIG_SITE  - Global site configuration file
 #
@@ -20,11 +20,12 @@
 #	aix-ppc-gnu            (GNU compiler used for host builds)
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	darwin-ppc             (PowerPC based Apple running OSX)
-#	darwin-x86             (Intel based Apple running OSX)
 #	darwin-ppcx86          (Universal binaries for both CPUs)
+#	darwin-x86             (Intel based Apple running OSX)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
+#	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
 #	linux-x86-borland      (Borland C++ compiler used for host builds)
@@ -34,15 +35,19 @@
 #	solaris-sparc64-gnu    (GNU compiler used for host builds)
 #	solaris-x86            (Sun compiler used for host builds)
 #	solaris-x86-gnu        (GNU compiler used for host builds)
+#	solaris-x86_64         (Sun compiler used for host builds)
+#	solaris-x86_64-gnu     (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86-mingw        (MinGW compiler used for host builds)
 #	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
+#	win32-x86-mingw        (MinGW compiler used for host builds)
+#	windows-x64            (MS Visual C++ compiler used for host builds)
 
 #  Debugging builds 
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
 #	win32-x86-debug        (MS Visual C++ compiler with debug option for host builds)
+#	windows-x64-debug      (MS Visual C++ compiler with debug option for host builds)
 
 
 #  EPICS_HOST_ARCH is a required environment variable
@@ -53,13 +58,16 @@
 #  The cross-compiler architectures to build EPICS for
 #
 #  Currently Supporting:
+
+#       ios-arm
+#       ios-386
 #       linux-386               (linux-x86 host)
 #       linux-486               (linux-x86 host)
 #       linux-586               (linux-x86 host)
 #       linux-686               (linux-x86 host)
-#       linux-arm
-#       linux-arm_eb
-#       linux-arm_el
+#       linux-arm               (linux-x86 host)
+#       linux-arm_eb            (linux-x86 host)
+#       linux-arm_el            (linux-x86 host)
 #       linux-athlon            (linux-x86 host)
 #       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
@@ -82,6 +90,7 @@
 #       RTEMS-mcp750
 #       RTEMS-mvme167
 #       RTEMS-mvme2100
+#       RTEMS-mvme2700
 #       RTEMS-mvme3100
 #       RTEMS-mvme5500
 #       RTEMS-pc386

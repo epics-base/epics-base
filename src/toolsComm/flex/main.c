@@ -45,7 +45,7 @@ char copyright[] =
 /*
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header$ (LBL)";
+    "@(#) $Revision-Id$ (LBL)";
 #endif
 
 #include "flexdef.h"

@@ -7,7 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Id$
+/* $Revision-Id$
  * devAaiSoft.c - Device Support Routines for soft Waveform Records
  *
  *      Original Author: Bob Dalesio

@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *      $Id$
+ *      $Revision-Id$
  *
  *      type safe singly linked list templates
  *

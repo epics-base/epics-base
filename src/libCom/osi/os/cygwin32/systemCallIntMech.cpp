@@ -13,6 +13,8 @@
  *      Author:		Jeff Hill 
  */
 
+#include <cygwin/version.h>
+
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 

@@ -28,7 +28,7 @@
  */
 
 /* code using a timer must implement epicsTimerNotify */
-class epicsTimerNotify {
+class epicsShareClass epicsTimerNotify {
 public:
     enum restart_t { noRestart, restart };
     class expireStatus {
@@ -41,13 +41,13 @@ public:
         double delay;
     };
 
-    epicsShareFunc virtual ~epicsTimerNotify () = 0;
+    virtual ~epicsTimerNotify () = 0;
     /* return "noRestart" or "expireStatus ( restart, 30.0 )" */
     virtual expireStatus expire ( const epicsTime & currentTime ) = 0;
-    epicsShareFunc virtual void show ( unsigned int level ) const;
+    virtual void show ( unsigned int level ) const;
 };
 
-class epicsTimer {              /* X aCC 655 */
+class epicsShareClass epicsTimer {              /* X aCC 655 */
 public:
     /* calls cancel (see warning below) and then destroys the timer */
     virtual void destroy () = 0;
@@ -67,7 +67,7 @@ public:
     double getExpireDelay ();
     virtual void show ( unsigned int level ) const = 0;
 protected:
-    epicsShareFunc virtual ~epicsTimer () = 0; /* protected => delete() must not be called */
+    virtual ~epicsTimer () = 0; /* protected => delete() must not be called */
 };
 
 class epicsTimerQueue {         /* X aCC 655 */

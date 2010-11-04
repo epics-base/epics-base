@@ -26,7 +26,17 @@
 #ifndef tcpRecvWatchdogh  
 #define tcpRecvWatchdogh
 
+#ifdef epicsExportSharedSymbols
+#   define tcpRecvWatchdogh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "epicsTimer.h"
+
+#ifdef tcpRecvWatchdogh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
 
 class tcpiiu;
 

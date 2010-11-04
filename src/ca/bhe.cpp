@@ -360,6 +360,6 @@ void bheFreeStore::release ( void * pCadaver )
     freeList.release ( pCadaver );
 }
 
-epicsShareFunc bheMemoryManager::~bheMemoryManager () {}
+bheMemoryManager::~bheMemoryManager () {}
 
 

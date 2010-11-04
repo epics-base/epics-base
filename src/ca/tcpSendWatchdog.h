@@ -26,7 +26,18 @@
 #ifndef tcpSendWatchdogh  
 #define tcpSendWatchdogh
 
+
+#ifdef epicsExportSharedSymbols
+#   define tcpSendWatchdogh_epicsExportSharedSymbols
+#   undef epicsExportSharedSymbols
+#endif
+
 #include "epicsTimer.h"
+
+#ifdef tcpSendWatchdogh_epicsExportSharedSymbols
+#   define epicsExportSharedSymbols
+#   include "shareLib.h"
+#endif
 
 class tcpSendWatchdog : private epicsTimerNotify {
 public:

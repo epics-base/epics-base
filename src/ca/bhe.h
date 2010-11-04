@@ -45,9 +45,9 @@ class bheMemoryManager;
 
 // using a pure abstract wrapper class around the free list avoids
 // Tornado 2.0.1 GNU compiler bugs
-class bheMemoryManager {
+class epicsShareClass bheMemoryManager {
 public:
-    epicsShareFunc virtual ~bheMemoryManager ();
+    virtual ~bheMemoryManager ();
     virtual void * allocate ( size_t ) = 0;
     virtual void release ( void * ) = 0;
 };

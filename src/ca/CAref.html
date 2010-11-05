@@ -458,7 +458,7 @@ Environment</a> below.</p>
 beacons and replies to broadcast PV search requests you need to permit
 inbound UDP packets with source port EPICS_CA_SERVER_PORT (default is 5064)
 or destination port EPICS_CA_REPEATER_PORT (default is 5065). On systems
-using iptables this can be accomplished by a rule like</p>
+using iptables this can be accomplished by rules like</p>
 
 <pre>
      -A INPUT -s 192.168.0.0/22 -p udp --sport 5064 -j ACCEPT

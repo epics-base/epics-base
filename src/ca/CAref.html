@@ -64,6 +64,7 @@ $Date$</span></small></p>
   <li><a href="#Network">IP Network Administration Background
   Information</a></li>
   <li><a href="#port">IP port numbers</a></li>
+  <li><a href="#firewall">Firewalls</a></li>
   <li><a href="#Environmen">WAN Environment</a></li>
   <li><a href="#Disconnect">Disconnect Time Out Interval / Server Beacon
     Period</a></li>
@@ -450,6 +451,32 @@ been registered with IANA.</p>
 different port numbers then an extended syntax may be used with the
 EPICS_CA_ADDR_LIST environment variable. See <a href="#Environmen">WAN
 Environment</a> below.</p>
+
+<h3><a name="firewall">Firewalls</a></h3>
+
+<p>If you want channel access clients on a machine to be able to see
+beacons and replies to broadcast PV search requests you need to permit
+inbound UDP packets with source port EPICS_CA_SERVER_PORT (default is 5064)
+or destination port EPICS_CA_REPEATER_PORT (default is 5065). On systems
+using iptables this can be accomplished by a rule like</p>
+
+<pre>
+     -A INPUT -s 192.168.0.0/22 -p udp --sport 5064 -j ACCEPT
+     -A INPUT -s 192.168.0.0/22 -p udp --dport 5065 -j ACCEPT
+</pre>
+
+<p>If you want channel access servers (e.g. "soft IOCs") on a machine to be
+able to see clients you need to permit inbound TCP or UDP packets with source
+port EPICS_CA_SERVER_PORT (default is 5064).  On systems using iptables this
+can be accomplished by rules like</p>
+
+<pre>
+     -A INPUT -s 192.168.0.0/22 -p udp --dport 5064 -j ACCEPT
+     -A INPUT -s 192.168.0.0/22 -p tcp --dport 5064 -j ACCEPT
+</pre>
+
+<p>In all cases the "-s 192.168.0.0/22" specifies the range of addresses from
+which you wish to accept packets.</p>
 
 <h3><a name="Environmen">WAN Environment</a></h3>
 

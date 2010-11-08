@@ -26,7 +26,4 @@ LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 # Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
 
-OPT_CFLAGS_NO = -g
-OPT_CXXFLAGS_NO = -g
-
 OP_SYS_LDLIBS = -lws2_32 

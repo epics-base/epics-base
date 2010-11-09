@@ -10,5 +10,5 @@
 #       leave the line empty.
 #
 
--include $(TOP)/configure/os/CONFIG_SITE.solaris-sparc.solaris-sparc
+-include $(TOP)/configure/os/CONFIG_SITE.solaris-sparc64.solaris-sparc64
 

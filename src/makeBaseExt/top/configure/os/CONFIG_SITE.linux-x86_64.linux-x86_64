@@ -30,7 +30,7 @@ JAVA_DIR=/usr
 # Sciplot and XRTgraph used by medm
 SCIPLOT=YES
 #XRTGRAPH_EXTENSIONS = YES
-#XRTGRAPH = /usr/local/xrtgraph
+#XRTGRAPH = /usr/local/xrtgraph64
 XRTGRAPH_EXTENSIONS =
 XRTGRAPH =
 

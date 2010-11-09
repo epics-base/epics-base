@@ -38,10 +38,13 @@ IV_LIB=/usr/local/interviews/lib/O.solaris
 WINGZ_INC = /opt/local/Wingz2/incl
 WINGZ_LIB = /opt/local/Wingz2/lib
 #MATHEMATICA = /usr/local/math
+
 # Define XRTGRAPH_EXTENSIONS = YES only if using XRT/graph 3.x
 #   and you want the extensions for MEDM
-XRTGRAPH_EXTENSIONS = YES
-XRTGRAPH = /opt/local/xrtgraph
+#XRTGRAPH_EXTENSIONS = YES
+#XRTGRAPH = /opt/local/xrtgraph
+SCIPLOT = YES
+
 QUESTWIN = /usr/local/questwin
 
 TK_LIB = /opt/local/lib

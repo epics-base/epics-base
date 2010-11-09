@@ -86,9 +86,9 @@ QUESTWIN =
 # Define XRTGRAPH_EXTENSIONS = YES only if using XRT/graph 3.x
 #   and you want the extensions for MEDM
 XRTGRAPH_EXTENSIONS = NO
-XRTGRAPH =
-# Define SCIPLOT if you don't have XRT/graph
-#SCIPLOT = YES
+#XRTGRAPH =
+
+SCIPLOT = YES
 
 # z library created in SDDS extension
 ZLIB_CFLAG = -DzLib
@@ -98,8 +98,7 @@ z_DIR = $(EPICS_EXTENSIONS_LIB)
 CLAPACK_INCLUDE = c:/CLAPACK/include
 CLAPACK_LIB = c:/CLAPACK/lib
 
-
-EXCEED = Exceed7.10
+EXCEED = Exceed13.0
 
 ifeq ($(EXCEED),Exceed5)
   X11_LIB = c:/exceed5/xdk/lib
@@ -191,6 +190,18 @@ ifeq ($(EXCEED),Exceed12.0)
   HCLXmu_DIR=$(X11_LIB)
   EXCEED_CFLAGS=/DXMSTATIC /DMOTIFAPP
 endif
+ifeq ($(EXCEED),Exceed13.0)
+  XDK=C:/Exceed13.0/XDK
+  X11_LIB = $(XDK)/lib
+  X11_INC = $(XDK)/include
+  EXCEED_XLIBS=XmStatic XmStatXt Xlib HCLXmu
+  XmStatic_DIR=$(X11_LIB)
+  XmStatXt_DIR=$(X11_LIB)
+  Xlib_DIR=$(X11_LIB)
+  HCLXmu_DIR=$(X11_LIB)
+  EXCEED_CFLAGS=/DXMSTATIC /DMOTIFAPP
+endif
+
 
 ######################################################
 # Override for XFree86/LessTif

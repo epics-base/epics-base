@@ -31,7 +31,8 @@ TK_TCL = /usr/lib
 IDL =
 
 #JAVA_DIR=/usr/local/java
-JAVA_DIR=/usr/java/j2sdk1.4.1
+#JAVA_DIR=/usr/java/j2sdk1.4.1
+JAVA_DIR=/usr
 JAVA_INC=$(JAVA_DIR)/include
 
 INTERVIEWS_BIN=/usr/local/interviews/bin/O.Linux

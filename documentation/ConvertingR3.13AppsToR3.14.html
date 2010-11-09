@@ -172,7 +172,7 @@ exampleIoc_SRCS += devXxxSoft.c
 exampleIoc_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 PROD_IOC_vxWorks = example
-example_SRCS += sncExample.stt
+example_SRCS += sncExample.st
 example_LIBS += exampleIoc
 example_LIBS += seq pv
 example_LIBS += $(EPICS_BASE_IOC_LIBS)
@@ -263,7 +263,7 @@ dev<i>name</i> = { ... };</q></p>
 <h3>Registration code changed</h3>
 
 <p>Registration code for application specific functions, e.g. subroutine record
-init and process functions, must been changed as follows</p>
+init and process functions, must be changed as follows</p>
 
 <ol>
   <li>Include the following header files after all existing #includes:
@@ -468,4 +468,9 @@ should add the definition</p>
 
 <p>to your application config/RELEASE file.</p>
 </body>
+
+<h3>Optional <i>top</i>/configure/CONFIG_SITE changes.</h3>
+
+<p>Review and optionally modify site build settings.</p>
+
 </html>

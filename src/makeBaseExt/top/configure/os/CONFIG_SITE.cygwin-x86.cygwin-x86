@@ -10,6 +10,7 @@
 #
 
 -include $(TOP)/configure/os/CONFIG_SITE.Common.Common
+-include $(TOP)/configure/os/CONFIG_SITE.win32-x86.win32-x86
 
 # ---------- java definitions
 JAVA_DIR=c:/j2sdk1.4.1_01
@@ -29,11 +30,11 @@ IDL = /usr/local/idl
 #  IDL=$(IDL)/external/rpc is the sun4 version
 IDLRPC = $(IDL)/external/rpc.solaris
 
-X11_LIB = c:/cygwin/lib
-X11_INC = c:/cygwin/include
+#X11_LIB = c:/cygwin/lib
+#X11_INC = c:/cygwin/include
 
-MOTIF_LIB = $(X11_LIB)
-MOTIF_INC = $(X11_INC)
+#MOTIF_LIB = $(X11_LIB)
+#MOTIF_INC = $(X11_INC)
 
 OPENWIN =
 INTERVIEWS_BIN =

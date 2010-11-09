@@ -1,0 +1,8 @@
+#
+# $Revision-Id$
+#
+# Site Specific Configuration Information
+# Only the local epics system manager should modify this file
+
+-include $(TOP)/configure/os/CONFIG_SITE.solaris-x86.solaris-x86
+

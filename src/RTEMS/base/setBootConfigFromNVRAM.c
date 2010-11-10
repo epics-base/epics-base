@@ -1,8 +1,16 @@
+/*************************************************************************\
+* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <fcntl.h> /* for open() */
+#include <fcntl.h>
+#include <unistd.h>
 #include <rtems/rtems_bsdnet.h>
 #include <bsp.h>
 #include <string.h>

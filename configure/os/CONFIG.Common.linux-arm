@@ -29,4 +29,10 @@ ifeq ($(BUILD_CLASS),CROSS)
     # Provide a link-time path for products
     PRODDIR_RPATH_LDFLAGS_YES += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
     PRODDIR_LDFLAGS += $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
+
+    LDLIBS_READLINE += -lreadline -lcurses
+    LDFLAGS_READLINE += -L$(GNU_DIR)/lib
+    RUNTIME_LDFLAGS_READLINE += -R$(GNU_DIR)/lib
+    RUNTIME_LDFLAGS += $(RUNTIME_LDFLAGS_$(COMMANDLINE_LIBRARY))
+
 endif

@@ -72,15 +72,24 @@ static long read_sa(subArrayRecord *prec)
 
     if (nRequest > prec->malm)
         nRequest = prec->malm;
-    dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
-    prec->nord = ecount = nRequest - prec->indx;
+
+    if (prec->inp.type == CONSTANT)
+        nRequest = prec->nord;
+    else
+        dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+
+    ecount = nRequest - prec->indx;
     if (ecount > 0) {
         int esize = dbValueSize(prec->ftvl);
+
         if (ecount > prec->nelm)
             ecount = prec->nelm;
         memmove(prec->bptr, (char *)prec->bptr + prec->indx * esize,
                 ecount * esize);
-    }
+    } else
+        ecount = 0;
+
+    prec->nord = ecount;
 
     if (nRequest > 0 &&
         prec->tsel.type == CONSTANT &&

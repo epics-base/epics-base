@@ -13,6 +13,14 @@
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Enable array puts to subArray records</h4>
+
+<p>It is now possible to put an array into the VAL field of a soft channel
+subArray record whose INP field is empty. Processing the record then causes the
+sub-array extraction process to be done on the current VAL array. This can be
+used to feed a sequence of values into some other record (set INDX=1 and
+NELM=MALM and read one element out of the VAL field each time).</p>
+
 <h4>Added windows-x64 target</h4>
 
 <p>64-bit binaries for Microsoft Windows platforms can now be built using the

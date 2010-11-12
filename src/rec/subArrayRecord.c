@@ -194,9 +194,8 @@ static long put_array_info(DBADDR *paddr, long nNew)
     subArrayRecord *prec = (subArrayRecord *) paddr->precord;
 
     if (nNew > prec->malm)
-       prec->nord = prec->malm;
-    else
-       prec->nord = nNew;
+        nNew = prec->malm;
+    prec->nord = nNew;
 
     return 0;
 }

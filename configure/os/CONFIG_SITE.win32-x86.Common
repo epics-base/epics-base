@@ -8,5 +8,4 @@
 # jba test overrides
 #CROSS_COMPILER_TARGET_ARCHS=vxWorks-486
 #CROSS_COMPILER_TARGET_ARCHS+=vxWorks-68040
-#VX_DIR = T:/tornado20
 #INSTALL_LOCATION = G:/testInstall

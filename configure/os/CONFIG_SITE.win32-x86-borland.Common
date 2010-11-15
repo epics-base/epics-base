@@ -7,6 +7,5 @@
  
 # jba overrides
 #CROSS_COMPILER_TARGET_ARCHS=vxWorks-486
-#VX_DIR = T:/tornado20
 
 BORLAND = c:\\Borland\\Bcc55

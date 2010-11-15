@@ -9,6 +9,8 @@
 
 -include $(CONFIG)/os/CONFIG.Common.darwin-ppc
 -include $(CONFIG)/os/CONFIG.darwin-ppc.darwin-ppc
+-include $(CONFIG)/os/CONFIG_SITE.Common.darwin-ppc
+-include $(CONFIG)/os/CONFIG_SITE.darwin-ppc.darwin-ppc
 
 BUILD_CLASS=HOST
 HOST_OPT = NO

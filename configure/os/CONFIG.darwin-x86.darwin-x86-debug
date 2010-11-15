@@ -9,6 +9,9 @@
 
 -include $(CONFIG)/os/CONFIG.Common.darwin-x86
 -include $(CONFIG)/os/CONFIG.darwin-x86.darwin-x86
+-include $(CONFIG)/os/CONFIG_SITE.Common.darwin-x86
+-include $(CONFIG)/os/CONFIG_SITE.darwin-x86.darwin-x86
+
 
 BUILD_CLASS=HOST
 HOST_OPT = NO

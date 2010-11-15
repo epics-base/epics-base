@@ -552,7 +552,9 @@ static char *msgbufGetFree(int noConsoleMessage)
 {
     msgNode *pnextSend;
 
-    epicsMutexMustLock(pvtData.msgQueueLock);
+    if (epicsMutexLock(pvtData.msgQueueLock) != epicsMutexLockOK)
+        return 0;
+
     if ((ellCount(&pvtData.msgQueue) == 0) && pvtData.missedMessages) {
         int nchar;
 

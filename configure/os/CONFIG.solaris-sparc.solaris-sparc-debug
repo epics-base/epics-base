@@ -7,7 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc-debug
 #-------------------------------------------------------
 
--include $(CONFIG)/os/CONFIG.Common.solaris-sparc
 -include $(CONFIG)/os/CONFIG.solaris-sparc.solaris-sparc
 -include $(CONFIG)/os/CONFIG_SITE.Common.solaris-sparc
 -include $(CONFIG)/os/CONFIG_SITE.solaris-sparc.solaris-sparc

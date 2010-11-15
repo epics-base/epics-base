@@ -7,7 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86-debug
 #-------------------------------------------------------
 
-#-include $(CONFIG)/os/CONFIG.Common.linux-x86
 -include $(CONFIG)/os/CONFIG.linux-x86.linux-x86
 #-include $(CONFIG)/os/CONFIG_SITE.Common.linux-x86
 #-include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-x86

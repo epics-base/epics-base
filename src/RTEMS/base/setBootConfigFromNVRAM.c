@@ -133,12 +133,13 @@ motScriptParm(const char *mot_script_boot, char parm)
     int l;
 
     while (*mot_script_boot != '\0') {
-        if (isspace(*mot_script_boot)
+        if (isspace(*(unsigned char *)mot_script_boot)
          && (*(mot_script_boot+1) == '-')
          && (*(mot_script_boot+2) == parm)) {
             mot_script_boot += 3;
             cp = mot_script_boot;
-            while ((*mot_script_boot != '\0') && !isspace(*mot_script_boot))
+            while ((*mot_script_boot != '\0') &&
+                   !isspace(*(unsigned char *)mot_script_boot))
                 mot_script_boot++;
             l = mot_script_boot - cp;
             ret = malloc(l+1);

@@ -99,8 +99,8 @@ installation.</p>
 
 <p>epicsEvent is now explicitly required to act as a simple binary semaphore.
 A single epicsEventSignal call must awaken just one thread when multiple
-threads are waiting for the event.  A test thats checks for this has been
-added to epicsEventTest and the application developers guide is being updated
+threads are waiting for the event.  A test that checks for this has been
+added to epicsEventTest and the Application Developer's Guide has been updated
 to describe this requirement.</p>
 
 <h4>Enable array puts to subArray records</h4>
@@ -183,8 +183,8 @@ connections over ssh.  See the CA reference manual for more details.</p>
 <h4>Record Types aai and aao</h4>
 
 <ul>
-<li>Fixed bug in memory allocation that caused crashes when linking other records
-to aai or aao.</li>
+<li>Fixed bug in memory allocation that caused crashes when linking other
+records to aai or aao.</li>
 <li>Fixed bug where NELM was modified instead of NORD.</li>
 <li>Added Soft Channel device support.</li>
 <li>Added SIOL link and proper simulation mode for Soft Channel support.</li>
@@ -212,19 +212,20 @@ macro <tt>NO_DEVLIB_COMPAT</tt> is defined.</li>
 <li>The "virtual os" table was renamed from <tt>pdevLibVirtualOS</tt> to
 <tt>pdevLibVME</tt> reflecting the fact that other bus types will need seperate
 tables.</li>
-<li>The "virtual os" table API has been moved to a seperate header file,
+<li>The "virtual os" table API has been moved to a different header file,
 <tt>devLibVMEImpl.h</tt>.</li>
 </ul>
 
 <h4>DTYP and INP/OUT order</h4>
 
-<p>The fields DTYP and INP/OUT can now be specified in any order.</p>
+<p>The fields DTYP and INP/OUT can now be specified in any order in a database
+instance (.db) file.</p>
 
 <h4>Rewrite epicsThreadOnce()</h4>
 
 <p>Michael Davidsaver suggested a better implementation of epicsThreadOnce()
 which makes it possible for all architectures to detect recursive initialization
-functions.  This change also renames the routines to remove the original macro
+functions.  This change also renames the routines to remove the original macro,
 and fixes some questionable usage in places.</p>
 
 <h4>Many Record Types</h4>
@@ -235,7 +236,7 @@ giving correct initial monitor behavior in some circumstances.</p>
 
 <h4>Compress Record Type</h4>
 
-<p>Fixed crash when ALG (algorithm) was changed to Average at runtime.</p>
+<p>Fixed a crash when ALG (algorithm) was changed to Average at runtime.</p>
 
 <h4>configure/RELEASE Enhancements</h4>
 
@@ -247,9 +248,11 @@ definition is expanded.  The variable <tt>EPICS_HOST_ARCH</tt> can now be used,
 but target-architecture-specific values must be set in a target-specific
 <tt>configure/RELEASE</tt> file such as <tt>RELEASE.Common.linux-x86</tt>.</p>
 
-<h4>VxWorks 6.7 support</h4>
+<h4>VxWorks 6.7 and 6.8 support</h4>
 
-<p>Added build support for the latest Wind River release.</p>
+<p>Added build support for the latest Wind River releases.  This does not
+include the ability to run on SMP vxWorks systems though, those will need some
+more extensive modifications.</p>
 
 <h4>RTEMS 4.10 support</h4>
 
@@ -261,7 +264,7 @@ is used.</p>
 
 <p>Changes to the way in which we generate header dependency files, which are
 now named with a <tt>.d</tt> suffix instead of <tt>.depends</tt>.  We now use
-the compiler to generate these if possible, and create them in the
+the compiler to generate these where possible, and create them in the
 <tt>O.$(T_A)</tt> directory.</p>
 
 <h4>Installed file permissions</h4>

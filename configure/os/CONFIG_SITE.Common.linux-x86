@@ -18,12 +18,19 @@
 #    to inform the system of the shared library location.
 
 # Depending on your version of Linux you'll want one of the following
-# lines to enable command-line editing and history support.  If you're
+# lines to enable command-line editing and history in iocsh.  If you're
 # not sure which, start with the top one and work downwards until the
-# build doesn't fail to link the readline library.  If none of them
-# work, comment them all out.
-#COMMANDLINE_LIBRARY = READLINE
-COMMANDLINE_LIBRARY = READLINE_NCURSES
+# build doesn't fail to link the readline library.  If none of them work,
+# comment them all out to build without readline support.
+
+# No other libraries needed (recent Fedora, Ubuntu etc.):
+COMMANDLINE_LIBRARY = READLINE
+
+# Needs -lncurses (RHEL 5 etc.):
+#COMMANDLINE_LIBRARY = READLINE_NCURSES
+
+# Needs -lcurses (older versions)
 #COMMANDLINE_LIBRARY = READLINE_CURSES
+
 
 OP_SYS_CFLAGS += -g

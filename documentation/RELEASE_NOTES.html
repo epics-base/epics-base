@@ -286,7 +286,11 @@ server.</p>
 readline; some need <tt>-lcurses</tt>, others <tt>-lncurses</tt> and others
 don't require either.  The <tt>configure/os/CONFIG_SITE.Common.linux-*</tt>
 files now make this configuration easy to choose between different settings for
-the <tt>COMMANDLINE_LIBRARY</tt> variable.</p>
+the <tt>COMMANDLINE_LIBRARY</tt> variable.  If your build fails as it's trying
+to create the <tt>antelope</tt> binary in the Base directory
+<tt>src/toolsComm/antelope/O.<i>arch</i></tt> this is almost certainly the
+problem. You will need to do a <tt>make rebuild</tt> from the top of Base after
+fixing the setting of <tt>COMMANDLINE_LIBRARY</tt>.</p>
 
 <h4>CA Command Line Tools Changes</h4>
 

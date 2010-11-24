@@ -87,7 +87,7 @@ static void usage (void)
     "  -e <nr>: Use %%e format, with a precision of <nr> digits\n"
     "  -f <nr>: Use %%f format, with a precision of <nr> digits\n"
     "  -g <nr>: Use %%g format, with a precision of <nr> digits\n"
-    "  -s:      Get value as string (may honour server-side precision)\n"
+    "  -s:      Get value as string (honors server-side precision)\n"
     "  -lx:     Round to long integer and print as hex number\n"
     "  -lo:     Round to long integer and print as octal number\n"
     "  -lb:     Round to long integer and print as binary number\n"

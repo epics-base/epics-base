@@ -56,11 +56,6 @@ LIBRARY_IOC += softDevIoc
 softDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
 softDevIoc_RCS = softDevIoc.rc
 
-# For R3.13 compatability
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJS_vxWorks = $(LIBSRCS:%.c=%)
-endif
-
 include $(TOP)/configure/RULES
 
 

@@ -66,9 +66,6 @@ misc_DEPEND_DIRS = dbtools rsrv rec
 DIRS += dev
 dev_DEPEND_DIRS = rec misc
 
-DIRS += vxWorks
-vxWorks_DEPEND_DIRS = registry misc dbtools
-
 DIRS += RTEMS
 RTEMS_DEPEND_DIRS = libCom
 

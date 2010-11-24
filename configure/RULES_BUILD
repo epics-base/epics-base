@@ -245,21 +245,6 @@ endif
 	@$(RM) $@
 	$(MV) lex.yy.c $@
 
-# Adl2dl rule
-%.dl : ../%.adl
-	@$(RM) $@
-	-$(ADL2DL) $< $@
-
-# Mangen Rule:
-%.1:%
-	$(MANGEN) -s $<
-	$(MV) $(<F).nr $(<F).1
-
-# Mangen Rule:
-%.1:../%
-	$(MANGEN) -s $<
-	$(MV) $(<F).nr $(<F).1
-
 # WIN95/NT source browser
 ifdef BAF
 
@@ -268,10 +253,6 @@ $(LIB_BAF): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
 	@$(RM) $@
 	$(BAFCMD) $^
 
-endif
-
-ifneq (,$(wildcard ../baseLIBOBJS))
-$(LIBNAME): ../baseLIBOBJS
 endif
 
 $(LIBNAME): $(LIBRARY_OBJS)

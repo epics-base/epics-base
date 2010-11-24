@@ -1,4 +1,0 @@
-#  CONFIG_SITE.Vx.ppc604
-
-# APS override of tornado directory for ppc
-#VX_DIR_YES = /usr/local/vw/tornado101ppc2

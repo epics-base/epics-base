@@ -35,12 +35,6 @@ dbStaticIoc_SRCS += dbStaticIocRegister.c
 LIBRARY_HOST += dbStaticHost
 LIBRARY_IOC += dbStaticIoc
 
-# For R3.13 compatibility only
-ifeq ($(strip $(COMPAT_313)),YES)
-OBJLIB_vxWorks=dbStaticIoc
-OBJLIB_SRCS = $(LIBSRCS) $(dbStaticIoc_SRCS)
-endif
-
 dbStaticHost_LIBS = Com
 dbStaticIoc_LIBS = Com
 
@@ -62,5 +56,3 @@ dbYacc.c: dbLex.c ../dbLexRoutines.c
 
 clean::
 	@$(RM) dbLex.c dbYacc.c 
-
-#	EOF Makefile.Host for base/src/dbStatic

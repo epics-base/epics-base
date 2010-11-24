@@ -159,12 +159,13 @@ static long get_units(DBADDR *paddr, char *units)
 static long get_precision(DBADDR *paddr, long *pprecision)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if (paddr->pfield == (void *)&prec->val) {
-	*pprecision = prec->prec;
-    } else {
+    *pprecision = prec->prec;
+
+    if (fieldIndex != calcRecordVAL)
 	recGblGetPrec(paddr, pprecision);
-    }
+
     return 0;
 }
 

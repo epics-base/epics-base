@@ -144,17 +144,17 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.14.12-pre<i>n</i></tt>
+            <tt>R3.15.1-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.14.12-rc<i>n</i></tt>
+            <tt>R3.15.1-rc<i>n</i></tt>
             &mdash; release candidate tag, note the <tt>rc</tt> is now
             lower-case</li>
         </ul>
         <blockquote><tt>
-          cd ~/base/mirror-3.14<br />
-          bzr tag R3.14.12-rc<i>n</i>
+          cd ~/base/mirror-3.15<br />
+          bzr tag R3.15.1-rc<i>n</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -166,10 +166,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.14.12-rc<i>n</i>
-          -r tag:R3.14.12-rc<i>n</i>
-          baseR3.14.12-rc<i>n</i>.tar.gz
-          mirror-3.14
+          --root=base-3.15.1-rc<i>n</i>
+          -r tag:R3.15.1-rc<i>n</i>
+          baseR3.15.1-rc<i>n</i>.tar.gz
+          mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
         configured properly.
@@ -288,8 +288,8 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Configuration Manager</td>
       <td>Tag the module in Bazaar:
         <blockquote><tt>
-          cd ~/base/mirror-3.14<br />
-          bzr tag R3.14.12</i>
+          cd ~/base/mirror-3.15<br />
+          bzr tag R3.15.1</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -301,10 +301,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.14.12
-          -r tag:R3.14.12
-          baseR3.14.12.tar.gz
-          mirror-3.14
+          --root=base-3.15.1
+          -r tag:R3.15.1
+          baseR3.15.1.tar.gz
+          mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
         configured properly.
@@ -353,11 +353,6 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>Upload the release tar file to the Launchpad download area.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Website Manager</td>
-      <td>Add the new Version number to the Launchpad bug tracker.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>

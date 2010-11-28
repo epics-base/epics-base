@@ -6,7 +6,7 @@
 <BODY>
 <CENTER>
 <H1>Installation Instructions</H1>
-<H2>EPICS Base Release 3.14.*</H2><BR>
+<H2>EPICS Base Release 3.15.*</H2><BR>
 </CENTER>
 <HR>
 <H3> Table of Contents</H3>
@@ -132,11 +132,8 @@
 
 <PRE>
         base                         Root directory of the base distribution
-        base/config                  R3.13 compatibility build configuration files
-        base/config/tools            Perl and shell scripts used in the R3.13 build
         base/configure               Operating system independent build config files
         base/configure/os            Operating system dependent build config files
-        base/configure/tools         Perl and shell scripts used in the build
         base/documentation           Distributation documentation
         base/src                     All epics base source code in subdirectories
         base/src/RTEMS               Code to configure RTEMS for EPICS
@@ -186,7 +183,6 @@
         base/src/tools               Perl scripts used during the builds
         base/src/toolsComm           Code for the build tools antelope and e_flex
         base/src/util                Utilities (ca_test, iocLogServer, startCArepeater)
-        base/src/vxWorks             R3.13 compatibility code specific to vxWorks
         base/startup                 Scripts for setting up path and environment
 </PRE>
 
@@ -270,7 +266,6 @@
         CONFIG.UnixCommon.Common    Definitions for Unix hosts and all targets
         CONFIG.Common.UnixCommon    Definitions for Unix targets and all hosts
         CONFIG.Common.vxWorksCommon Specific host definitions for all vx targets
-        CONFIG_COMPAT               R3.13 arch compatibility definitions
         CONFIG_SITE.&lt;host&gt;.&lt;target&gt; Site specific host-target definitions
         CONFIG_SITE.Common.&lt;target&gt; Site specific target defs for all hosts
         CONFIG_SITE.&lt;host&gt;.Common   Site specific host defs for all targets
@@ -311,15 +306,15 @@ Files in the base/startup directory have been provided to
  help set required path and other environment variables.
 
 <P><B>EPICS_HOST_ARCH</B><BR>
- Before you can build or use EPICS R3.14, the environment variable
+ Before you can build or use EPICS R3.15, the environment variable
  EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
  base/startup directory has been provided to help set EPICS_HOST_ARCH.
  You should have EPICS_HOST_ARCH set to your host operating system
  followed by a dash and then your host architecture, e.g. solaris-sparc.
  If you are not using the OS vendor's c/c++ compiler for host builds,
  you will need another dash followed by the alternate compiler name
- (e.g. &quot;-gnu&quot; for GNU c/c++ compilers on a solaris host or &quot;-borland&quot;
- for Borland c/c++ compilers on a WIN32 host). See configure/CONFIG_SITE
+ (e.g. &quot;-gnu&quot; for GNU c/c++ compilers on a solaris host or &quot;-mingw&quot;
+ for MinGW c/c++ compilers on a WIN32 host). See configure/CONFIG_SITE
  for a list of supported EPICS_HOST_ARCH values.</P>
 
 <P><B>PERLLIB</B><BR>
@@ -336,23 +331,16 @@ Files in the base/startup directory have been provided to
  solaris systems you need uname in your path.</P>
 
 <P><B>LD_LIBRARY_PATH</B><BR>
- It is no longer necessary to have LD_LIBRARY_PATH include EPICS
- directories on a Unix type system. R3.14 shared libraries and
- executables will contain the full path name to libraries they require.
- However, if you move the EPICS directories from their build-time
- location then in order for libraries to be found at runtime
- LD_LIBRARY_PATH must include the full pathname to
- $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking executables.
- Building shared libraries is now the default setting for all Unix type
- hosts. NOTE: You will still need LD_LIBRARY_PATH for R3.13 extension
- shared libraries even if the R3.13 extensions are built with R3.14
- base.</P>
 
-<P><B>Win32 PATH</B><BR>
- On WIN32 systems, for R3.14.7 and later, it is no longer necessary
- to add fullpathname to $(INSTALL_LOCATION)/bin/$(EPICS_HOST_ARCH) to
- your path for finding dlls during EPICS builds. The win32 configure
- files in base now add this directory to the path definition.</P>
+ R3.15 shared libraries and executables normally contain the full path
+ to any libraries they require.
+ However, if you move the EPICS files or directories from their build-time
+ location then in order for the shared libraries to be found at runtime
+ LD_LIBRARY_PATH must include the full pathname to
+ $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking executables, or
+ some equivalent OS-specific mechanism (such as /etc/ld.so.conf on Linux)
+ must be used.
+ Shared libraries are now built by default on all Unix type hosts.</P>
 </BLOCKQUOTE>
 
 <H4>Do site-specific build configuration</H4>
@@ -390,12 +378,6 @@ Files in the base/startup directory have been provided to
         configure/os/CONFIG.Common.&lt;target&gt;     Target common settings
         configure/os/CONFIG.&lt;host&gt;.&lt;target&gt;     Host-target settings
 </PRE>
-
-<B>R3.13 compatibility configuration</B><BR>
- To configure EPICS base for building with R3.13 extensions and ioc
- applications , you must modify the default definitions in the
- base/config/CONFIG_SITE* files to agree with definitions you made in
- base/configure and base/configure/os files.
 </BLOCKQUOTE>
 
 <H4>Build EPICS base</H4>
@@ -424,7 +406,7 @@ Files in the base/startup directory have been provided to
  and then executed to try out this release of base. 
 
 <P>
- Instructions for building and executing the 3.14 example application
+ Instructions for building and executing the 3.15 example application
  can be found in the section &quot;Example Application&quot; of Chapter 2,
  &quot;Getting Started&quot;, in the &quot;IOC Application Developer's Guide&quot; for this
  release. The &quot;Example IOC Application&quot; section briefly explains how to

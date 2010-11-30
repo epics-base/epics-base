@@ -32,7 +32,7 @@
 
 #define GET_OPTIONS (DBR_STATUS | DBR_TIME)
 
-typedef struct notifyInfo {
+typedef struct devPvt {
     processNotify *ppn;
     CALLBACK *pcallback;
     long options;
@@ -43,13 +43,13 @@ typedef struct notifyInfo {
         DBRtime
         epicsFloat64 value;
     } buffer;
-} notifyInfo;
+} devPvt;
 
 
 static void getCallback(processNotify *ppn, notifyGetType type)
 {
     aiRecord *prec = (aiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
+    devPvt *pdevPvt = (devPvt *)prec->dpvt;
     long no_elements = 1;
 
     if (ppn->status == notifyCanceled) {
@@ -58,16 +58,16 @@ static void getCallback(processNotify *ppn, notifyGetType type)
     }
 
     assert(type == getFieldType);
-    pnotifyInfo->status = dbGetField(ppn->paddr, DBR_DOUBLE,
-        &pnotifyInfo->buffer, &pnotifyInfo->options, &no_elements, 0);
+    pdevPvt->status = dbGetField(ppn->paddr, DBR_DOUBLE,
+        &pdevPvt->buffer, &pdevPvt->options, &no_elements, 0);
 }
 
 static void doneCallback(processNotify *ppn)
 {
     aiRecord *prec = (aiRecord *)ppn->usrPvt;
-    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
+    devPvt *pdevPvt = (devPvt *)prec->dpvt;
 
-    callbackRequestProcessCallback(pnotifyInfo->pcallback, prec->prio, prec);
+    callbackRequestProcessCallback(pdevPvt->pcallback, prec->prio, prec);
 }
 
 static long add_record(dbCommon *pcommon)
@@ -76,7 +76,7 @@ static long add_record(dbCommon *pcommon)
     DBLINK *plink = &prec->inp;
     DBADDR *pdbaddr;
     long  status;
-    notifyInfo *pnotifyInfo;
+    devPvt *pdevPvt;
     processNotify *ppn;
 
     if (plink->type == CONSTANT) return 0;
@@ -110,29 +110,29 @@ static long add_record(dbCommon *pcommon)
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
 
-    pnotifyInfo = callocMustSucceed(1, sizeof(*pnotifyInfo),
+    pdevPvt = callocMustSucceed(1, sizeof(*pdevPvt),
         "devAiSoftCallback::add_record");
-    pnotifyInfo->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
+    pdevPvt->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
         "devAiSoftCallback::add_record");
-    pnotifyInfo->ppn = ppn;
-    pnotifyInfo->options = GET_OPTIONS;
+    pdevPvt->ppn = ppn;
+    pdevPvt->options = GET_OPTIONS;
 
-    prec->dpvt = pnotifyInfo;
+    prec->dpvt = pdevPvt;
     return 0;
 }
 
 static long del_record(dbCommon *pcommon) {
     aiRecord *prec = (aiRecord *)pcommon;
     DBLINK *plink = &prec->inp;
-    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
+    devPvt *pdevPvt = (devPvt *)prec->dpvt;
 
     if (plink->type == CONSTANT) return 0;
     assert(plink->type == PN_LINK);
 
-    dbNotifyCancel(pnotifyInfo->ppn);
-    free(pnotifyInfo->ppn);
-    free(pnotifyInfo->pcallback);
-    free(pnotifyInfo);
+    dbNotifyCancel(pdevPvt->ppn);
+    free(pdevPvt->ppn);
+    free(pdevPvt->pcallback);
+    free(pdevPvt);
     free(plink->value.pv_link.pvt);
 
     plink->type = PV_LINK;
@@ -172,51 +172,51 @@ static long init_record(aiRecord *prec)
 
 static long read_ai(aiRecord *prec)
 {
-    notifyInfo *pnotifyInfo = (notifyInfo *)prec->dpvt;
+    devPvt *pdevPvt = (devPvt *)prec->dpvt;
 
     if (!prec->dpvt)
         return 2;
 
     if (!prec->pact) {
-        dbProcessNotify(pnotifyInfo->ppn);
+        dbProcessNotify(pdevPvt->ppn);
         prec->pact = TRUE;
         return 0;
     }
 
-    if (pnotifyInfo->status) {
+    if (pdevPvt->status) {
         recGblSetSevr(prec, READ_ALARM, INVALID_ALARM);
-        pnotifyInfo->smooth = FALSE;
+        pdevPvt->smooth = FALSE;
         return 2;
     }
 
     /* Apply smoothing algorithm */
-    if (prec->smoo != 0.0 && pnotifyInfo->smooth)
+    if (prec->smoo != 0.0 && pdevPvt->smooth)
         prec->val = prec->val * prec->smoo +
-            pnotifyInfo->buffer.value * (1.0 - prec->smoo);
+            pdevPvt->buffer.value * (1.0 - prec->smoo);
     else
-        prec->val = pnotifyInfo->buffer.value;
+        prec->val = pdevPvt->buffer.value;
     prec->udf = FALSE;
-    pnotifyInfo->smooth = TRUE;
+    pdevPvt->smooth = TRUE;
 
     switch (prec->inp.value.pv_link.pvlMask & pvlOptMsMode) {
         case pvlOptNMS:
             break;
         case pvlOptMSI:
-            if (pnotifyInfo->buffer.severity < INVALID_ALARM)
+            if (pdevPvt->buffer.severity < INVALID_ALARM)
                 break;
             /* else fall through */
         case pvlOptMS:
-            recGblSetSevr(prec, LINK_ALARM, pnotifyInfo->buffer.severity);
+            recGblSetSevr(prec, LINK_ALARM, pdevPvt->buffer.severity);
             break;
         case pvlOptMSS:
-            recGblSetSevr(prec, pnotifyInfo->buffer.status,
-                pnotifyInfo->buffer.severity);
+            recGblSetSevr(prec, pdevPvt->buffer.status,
+                pdevPvt->buffer.severity);
             break;
     }
 
     if (prec->tsel.type == CONSTANT &&
         prec->tse == epicsTimeEventDeviceTime)
-        prec->time = pnotifyInfo->buffer.time;
+        prec->time = pdevPvt->buffer.time;
     return 2;
 }
 

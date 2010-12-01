@@ -33,8 +33,9 @@
 #define GET_OPTIONS (DBR_STATUS | DBR_TIME)
 
 typedef struct devPvt {
-    processNotify *ppn;
-    CALLBACK *pcallback;
+    DBADDR dbaddr;
+    processNotify pn;
+    CALLBACK callback;
     long options;
     int status;
     struct {
@@ -66,7 +67,7 @@ static void doneCallback(processNotify *ppn)
     biRecord *prec = (biRecord *)ppn->usrPvt;
     devPvt *pdevPvt = (devPvt *)prec->dpvt;
 
-    callbackRequestProcessCallback(pdevPvt->pcallback, prec->prio, prec);
+    callbackRequestProcessCallback(&pdevPvt->callback, prec->prio, prec);
 }
 
 static long add_record(dbCommon *pcommon)
@@ -86,11 +87,19 @@ static long add_record(dbCommon *pcommon)
         return S_db_badField;
     }
 
-    pdbaddr = callocMustSucceed(1, sizeof(*pdbaddr),
-        "devBiSoftCallback::add_record");
+    pdevPvt = calloc(1, sizeof(*pdevPvt));
+    if (!pdevPvt) {
+        status = S_db_noMemory;
+        recGblRecordError(status, (void *)prec,
+            "devBiSoftCallback (add_record) out of memory, calloc() failed");
+        return status;
+    }
+    pdbaddr = &pdevPvt->dbaddr;
+    ppn = &pdevPvt->pn;
+
     status = dbNameToAddr(plink->value.pv_link.pvname, pdbaddr);
     if (status) {
-        free(pdbaddr);
+        free(pdevPvt);
         recGblRecordError(status, (void *)prec,
             "devBiSoftCallback (add_record) link target not found");
         return status;
@@ -101,19 +110,12 @@ static long add_record(dbCommon *pcommon)
     plink->value.pv_link.pvt = pdbaddr;
     plink->value.pv_link.pvlMask &= pvlOptMsMode;   /* Severity flags only */
 
-    ppn = callocMustSucceed(1, sizeof(*ppn),
-        "devBiSoftCallback::add_record");
     ppn->usrPvt = prec;
     ppn->paddr = pdbaddr;
     ppn->getCallback = getCallback;
     ppn->doneCallback = doneCallback;
     ppn->requestType = processGetRequest;
 
-    pdevPvt = callocMustSucceed(1, sizeof(*pdevPvt),
-        "devBiSoftCallback::add_record");
-    pdevPvt->pcallback = callocMustSucceed(1, sizeof(CALLBACK),
-        "devBiSoftCallback::add_record");
-    pdevPvt->ppn = ppn;
     pdevPvt->options = GET_OPTIONS;
 
     prec->dpvt = pdevPvt;
@@ -128,11 +130,8 @@ static long del_record(dbCommon *pcommon) {
     if (plink->type == CONSTANT) return 0;
     assert(plink->type == PN_LINK);
 
-    dbNotifyCancel(pdevPvt->ppn);
-    free(pdevPvt->ppn);
-    free(pdevPvt->pcallback);
+    dbNotifyCancel(&pdevPvt->pn);
     free(pdevPvt);
-    free(plink->value.pv_link.pvt);
 
     plink->type = PV_LINK;
     plink->value.pv_link.pvt = NULL;
@@ -177,7 +176,7 @@ static long read_bi(biRecord *prec)
         return 2;
 
     if (!prec->pact) {
-        dbProcessNotify(pdevPvt->ppn);
+        dbProcessNotify(&pdevPvt->pn);
         prec->pact = TRUE;
         return 0;
     }

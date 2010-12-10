@@ -1,18 +1,13 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
 #  $Revision-Id$
-#
-#  The developer may edit this file.
-# assume T_A is the host arch if not specified
-
 #
 #  Common build definitions
 #
@@ -31,8 +26,6 @@ ifeq ($(origin EPICS_HOST_ARCH), undefined)
 EPICS_HOST_ARCH := $(shell $(CONFIG)/../startup/EpicsHostArch.pl)
 endif
 #
-
--include $(CONFIG)/os/CONFIG_COMPAT
 
 -include $(CONFIG)/RELEASE
 -include $(CONFIG)/RELEASE.$(EPICS_HOST_ARCH)
@@ -118,23 +111,3 @@ ifdef T_A
 -include $(HOME)/configure/CONFIG_USER.Common.$(T_A)
 -include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH).$(T_A)
 endif
-
-#  All options
-#   may be overridden here.
-#
-# EXAMPLES
-# --------
-#  Build client objects statically ?  must be either YES or NO
-#STATIC_BUILD=NO
-#  Host build optimization,   must be either YES or NO
-#HOST_OPT=YES
-#  Cross build optimization,  must be either YES or NO
-#CROSS_OPT=YES
-#  Generate Verbose Compiler Warnings for host build,  must be either YES or NO
-#HOST_WARN=YES
-#  Generate Verbose Compiler Warnings for cross compile builds,  must be either YES or NO
-#CROSS_WARN=YES
-#etc.
-
-#CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
-

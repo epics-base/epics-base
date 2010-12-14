@@ -18,6 +18,9 @@ $numberDriverSupport = 0;
 $c_bad_ident_chars = '[^0-9A-Za-z_]';
 $subname =~ s/$c_bad_ident_chars/_/g;
 
+# Escape back-slashes in Windows path
+$bldTop =~ s(\\)(\\\\)g if $^O eq 'MSWin32';
+
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
     next if m/ ^ \s* \# /x;

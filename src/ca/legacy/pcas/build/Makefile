@@ -7,10 +7,10 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP := ../../..
-CAS := $(TOP)/src/cas
+TOP := ../../../../..
+CAS := $(TOP)/src/ca/legacy/pcas
 SRC := $(CAS)/generic
-CA := $(CAS)/../ca
+CA := $(TOP)/src/ca/client
 IOSRC := $(CAS)/io/bsdSocket
 STSRC := $(SRC)/st
 

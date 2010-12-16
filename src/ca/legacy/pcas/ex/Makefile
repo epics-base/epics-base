@@ -7,13 +7,13 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-TOP=../..
+TOP=../../../../..
 
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += $(EPICS_BASE_HOST_LIBS)
 
-SRC_DIRS += $(TOP)/src/makeBaseApp/top/caServerApp
+SRC_DIRS += $(TOP)/src/template/base/top/caServerApp
 
 #
 # Added ws2_32 winmm user32 for the non-dll build

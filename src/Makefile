@@ -15,80 +15,80 @@ include $(TOP)/configure/CONFIG
 
 DIRS += tools
 
-DIRS += makeBaseApp
-makeBaseApp_DEPEND_DIRS = tools
+DIRS += template/base
+template/base_DEPEND_DIRS = tools
 
-DIRS += makeBaseExt
-makeBaseExt_DEPEND_DIRS = tools
+DIRS += template/ext
+template/ext_DEPEND_DIRS = tools
 
 DIRS += libCom
 libCom_DEPEND_DIRS = tools
 
-DIRS += toolsComm
-toolsComm_DEPEND_DIRS = libCom
+DIRS += libCom/tools
+libCom/tools_DEPEND_DIRS = libCom
 
-DIRS += ca
-ca_DEPEND_DIRS = libCom
+DIRS += ca/client
+ca/client_DEPEND_DIRS = libCom
 
-DIRS += dbStatic
-dbStatic_DEPEND_DIRS = toolsComm
+DIRS += ioc/dbStatic
+ioc/dbStatic_DEPEND_DIRS = libCom/tools
 
-DIRS += registry
-registry_DEPEND_DIRS = dbStatic
+DIRS += ioc/registry
+ioc/registry_DEPEND_DIRS = ioc/dbStatic
 
-DIRS += bpt
-bpt_DEPEND_DIRS = dbStatic
+DIRS += ioc/bpt
+ioc/bpt_DEPEND_DIRS = ioc/dbStatic
 
-DIRS += db
-db_DEPEND_DIRS = bpt ca
+DIRS += ioc/db
+ioc/db_DEPEND_DIRS = ioc/bpt ca/client
 
-DIRS += as
-as_DEPEND_DIRS = db
+DIRS += ioc/as
+ioc/as_DEPEND_DIRS = ioc/db
 
 DIRS += util
-util_DEPEND_DIRS = ca
+util_DEPEND_DIRS = ca/client
 
-DIRS += dbtools
-dbtools_DEPEND_DIRS = db
+DIRS += ioc/dbtemplate
+ioc/dbtemplate_DEPEND_DIRS = ioc/db
 
-DIRS += catools
-catools_DEPEND_DIRS = ca dbStatic
+DIRS += ca/client/tools
+ca/client/tools_DEPEND_DIRS = ca/client ioc/dbStatic
 
-DIRS += rsrv
-rsrv_DEPEND_DIRS = as
+DIRS += ioc/rsrv
+ioc/rsrv_DEPEND_DIRS = ioc/as
 
-DIRS += rec
-rec_DEPEND_DIRS = as registry
+DIRS += std/rec
+std/rec_DEPEND_DIRS = ioc/as ioc/registry
 
-DIRS += misc
-misc_DEPEND_DIRS = dbtools rsrv rec
+DIRS += ioc/misc
+ioc/misc_DEPEND_DIRS = ioc/dbtemplate ioc/rsrv std/rec
 
-DIRS += dev
-dev_DEPEND_DIRS = rec misc
+DIRS += std/dev
+std/dev_DEPEND_DIRS = std/rec ioc/misc
 
-DIRS += RTEMS
-RTEMS_DEPEND_DIRS = libCom
+DIRS += libCom/RTEMS
+libCom/RTEMS_DEPEND_DIRS = libCom
 
 DIRS += libCom/test
-libCom/test_DEPEND_DIRS = ca RTEMS
+libCom/test_DEPEND_DIRS = ca/client libCom/RTEMS
 
-DIRS += db/test
-db/test_DEPEND_DIRS = db RTEMS
+DIRS += ioc/db/test
+ioc/db/test_DEPEND_DIRS = ioc/db libCom/RTEMS
 
-DIRS += softIoc
-softIoc_DEPEND_DIRS = dev dbtools RTEMS
+DIRS += std/softIoc
+std/softIoc_DEPEND_DIRS = std/dev ioc/dbtemplate libCom/RTEMS
 
-DIRS += gdd
-gdd_DEPEND_DIRS = ca
+DIRS += ca/legacy/gdd
+ca/legacy/gdd_DEPEND_DIRS = ca/client
 
-DIRS += cas
-cas_DEPEND_DIRS = gdd dbStatic
+DIRS += ca/legacy/pcas
+ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd ioc/dbStatic
 
-DIRS += excas
-excas_DEPEND_DIRS = cas as registry
+DIRS += ca/legacy/pcas/ex
+ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas ioc/as ioc/registry
 
-DIRS += cap5
-cap5_DEPEND_DIRS = ca dbStatic
+DIRS += ca/client/perl
+ca/client/perl_DEPEND_DIRS = ca/client ioc/dbStatic
 
 
 include $(TOP)/configure/RULES_DIRS

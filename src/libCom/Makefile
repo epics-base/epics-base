@@ -294,15 +294,15 @@ PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 #	for bldErrSymTbl:
 #
 ERR_S_FILES += $(TOP)/src/libCom/osi/devLib.h
-ERR_S_FILES += $(TOP)/src/as/asLib.h
-ERR_S_FILES += $(TOP)/src/db/dbAccessDefs.h
-ERR_S_FILES += $(TOP)/src/dbStatic/devSup.h
-ERR_S_FILES += $(TOP)/src/dbStatic/drvSup.h
-ERR_S_FILES += $(TOP)/src/dbStatic/recSup.h
-ERR_S_FILES += $(TOP)/src/dbStatic/dbStaticLib.h
+ERR_S_FILES += $(TOP)/src/ioc/as/asLib.h
+ERR_S_FILES += $(TOP)/src/ioc/db/dbAccessDefs.h
+ERR_S_FILES += $(TOP)/src/ioc/dbStatic/devSup.h
+ERR_S_FILES += $(TOP)/src/ioc/dbStatic/drvSup.h
+ERR_S_FILES += $(TOP)/src/ioc/dbStatic/recSup.h
+ERR_S_FILES += $(TOP)/src/ioc/dbStatic/dbStaticLib.h
 ERR_S_FILES += $(LIBCOM)/error/errMdef.h
-ERR_S_FILES += $(TOP)/src/cas/generic/casdef.h
-ERR_S_FILES += $(TOP)/src/gdd/gddAppFuncTable.h
+ERR_S_FILES += $(TOP)/src/ca/legacy/pcas/generic/casdef.h
+ERR_S_FILES += $(TOP)/src/ca/legacy/gdd/gddAppFuncTable.h
 
 include $(TOP)/configure/RULES
 

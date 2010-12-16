@@ -9,6 +9,10 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
+use FindBin qw($Bin);
+use lib "$Bin/../../lib/perl";
+use EPICS::Path;
+
 ($file, $subname, $bldTop) = @ARGV;
 $numberRecordType = 0;
 $numberDeviceSupport = 0;
@@ -18,8 +22,9 @@ $numberDriverSupport = 0;
 $c_bad_ident_chars = '[^0-9A-Za-z_]';
 $subname =~ s/$c_bad_ident_chars/_/g;
 
-# Escape back-slashes in Windows path
-$bldTop =~ s(\\)(\\\\)g if $^O eq 'MSWin32';
+# Process bldTop like convertRelease.pl does
+$bldTop = LocalPath(UnixPath($bldTop));
+$bldTop =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
 
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {

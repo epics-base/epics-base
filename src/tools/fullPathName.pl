@@ -28,6 +28,9 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
 my $path = AbsPath(shift);
 
+# Escape shell special characters unless on Windows, which doesn't allow them.
+$path =~ s/([!"\$&'\(\)*,:;<=>?\[\\\]^`{|}])/\\\1/g unless $^O eq 'MSWin32';
+
 print "$path\n";
 
 

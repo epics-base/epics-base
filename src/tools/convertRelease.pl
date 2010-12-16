@@ -144,6 +144,7 @@ sub cdCommands {
     
     my $startup = $cwd;
     $startup =~ s/^$root/$iocroot/o if ($opt_t);
+    $startup =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
     
     print OUT "startup = \"$startup\"\n";
     
@@ -156,6 +157,7 @@ sub cdCommands {
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
+        $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
         my $app_lc = lc($app);
         print OUT "$app_lc = \"$iocpath\"\n"
             if (-d $path);
@@ -187,6 +189,7 @@ sub envPaths {
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
+        $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
         print OUT "epicsEnvSet(\"$app\",\"$iocpath\")\n" if (-d $path);
     }
     close OUT;

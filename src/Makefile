@@ -27,6 +27,9 @@ libCom_DEPEND_DIRS = tools
 DIRS += libCom/tools
 libCom/tools_DEPEND_DIRS = libCom
 
+DIRS += libCom/as
+libCom/as_DEPEND_DIRS = libCom libCom/tools
+
 DIRS += ca/client
 ca/client_DEPEND_DIRS = libCom
 
@@ -43,7 +46,7 @@ DIRS += ioc/db
 ioc/db_DEPEND_DIRS = ioc/bpt ca/client
 
 DIRS += ioc/as
-ioc/as_DEPEND_DIRS = ioc/db
+ioc/as_DEPEND_DIRS = ioc/db libCom/as
 
 DIRS += util
 util_DEPEND_DIRS = ca/client

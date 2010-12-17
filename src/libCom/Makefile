@@ -294,7 +294,7 @@ PROD_SYS_LIBS_WIN32 = ws2_32 advapi32
 #	for bldErrSymTbl:
 #
 ERR_S_FILES += $(TOP)/src/libCom/osi/devLib.h
-ERR_S_FILES += $(TOP)/src/ioc/as/asLib.h
+ERR_S_FILES += $(TOP)/src/libCom/as/asLib.h
 ERR_S_FILES += $(TOP)/src/ioc/db/dbAccessDefs.h
 ERR_S_FILES += $(TOP)/src/ioc/dbStatic/devSup.h
 ERR_S_FILES += $(TOP)/src/ioc/dbStatic/drvSup.h

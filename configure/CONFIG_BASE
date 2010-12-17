@@ -22,7 +22,7 @@ endif
 # Epics base Ioc libraries 
 
 EPICS_BASE_IOC_LIBS += recIoc softDevIoc
-EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc
+EPICS_BASE_IOC_LIBS += miscIoc rsrvIoc dbtoolsIoc asIoc asHost
 EPICS_BASE_IOC_LIBS += dbIoc registryIoc dbStaticIoc ca Com 
 
 #---------------------------------------------------------------

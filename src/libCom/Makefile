@@ -110,11 +110,22 @@ SRCS += iocsh.cpp
 SRCS += registry.c
 SRCS += libComRegister.c
 
-SRC_DIRS += $(LIBCOM)/logClient
+SRC_DIRS += $(LIBCOM)/log
 INC += iocLog.h
 INC += logClient.h
 SRCS += iocLog.c
 SRCS += logClient.c
+
+PROD_HOST += iocLogServer
+
+iocLogServer_SYS_LIBS_solaris += socket
+iocLogServer_SYS_LIBS_WIN32   += user32
+
+iocLogServer_SRCS = iocLogServer.c
+iocLogServer_LIBS  = Com
+
+SCRIPTS_solaris := S99logServer
+SCRIPTS_Linux := S99logServer
 
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
@@ -320,6 +331,9 @@ errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 
 $(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION $(CONFIG)/CONFIG_SITE
 	$(PERL) $(LIBCOM)/misc/makeEpicsVersion.pl $(CONFIG)/CONFIG_BASE_VERSION $(@D) $(EPICS_SITE_VERSION)
+
+S99%: ../log/rc2.%
+	sed -e s%:INSTALL_BIN:%`cd $(INSTALL_BIN); pwd`% $< >$@
 
 clean::
 	@$(RM) errSymTbl.c envData.c

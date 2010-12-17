@@ -95,5 +95,18 @@ caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp
 
 casw_SYS_LIBS_solaris = socket
 
+SCRIPTS_solaris := S99caRepeater
+SCRIPTS_Linux := S99caRepeater
+
+SRC_DIRS += $(TOP)/src/ca/client/test
+PROD_HOST += ca_test
+ca_test_SRCS = ca_test_main.c ca_test.c
+ca_test_LIBS  = ca Com
+ca_test_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
+
+OBJS_vxWorks += ca_test
+
 include $(TOP)/configure/RULES
 
+S99%: ../rc2.%
+	sed -e s%:INSTALL_BIN:%`cd $(INSTALL_BIN); pwd`% $< >$@

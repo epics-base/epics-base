@@ -48,9 +48,6 @@ ioc/db_DEPEND_DIRS = ioc/bpt ca/client
 DIRS += ioc/as
 ioc/as_DEPEND_DIRS = ioc/db libCom/as
 
-DIRS += util
-util_DEPEND_DIRS = ca/client
-
 DIRS += ioc/dbtemplate
 ioc/dbtemplate_DEPEND_DIRS = ioc/db
 

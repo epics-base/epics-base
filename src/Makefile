@@ -21,6 +21,8 @@ template/base_DEPEND_DIRS = tools
 DIRS += template/ext
 template/ext_DEPEND_DIRS = tools
 
+# Common
+
 DIRS += libCom
 libCom_DEPEND_DIRS = tools
 
@@ -30,8 +32,33 @@ libCom/tools_DEPEND_DIRS = libCom
 DIRS += libCom/as
 libCom/as_DEPEND_DIRS = libCom libCom/tools
 
+DIRS += libCom/RTEMS
+libCom/RTEMS_DEPEND_DIRS = libCom
+
+DIRS += libCom/test
+libCom/test_DEPEND_DIRS = libCom/RTEMS
+
+# Channel Access
+
 DIRS += ca/client
 ca/client_DEPEND_DIRS = libCom
+
+DIRS += ca/client/tools
+ca/client/tools_DEPEND_DIRS = ca/client
+
+DIRS += ca/legacy/gdd
+ca/legacy/gdd_DEPEND_DIRS = ca/client
+
+DIRS += ca/legacy/pcas
+ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd
+
+DIRS += ca/legacy/pcas/ex
+ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas ioc/as ioc/registry
+
+DIRS += ca/client/perl
+ca/client/perl_DEPEND_DIRS = ca/client
+
+# PDB Core
 
 DIRS += ioc/dbStatic
 ioc/dbStatic_DEPEND_DIRS = libCom/tools
@@ -51,44 +78,25 @@ ioc/as_DEPEND_DIRS = ioc/db libCom/as
 DIRS += ioc/dbtemplate
 ioc/dbtemplate_DEPEND_DIRS = ioc/db
 
-DIRS += ca/client/tools
-ca/client/tools_DEPEND_DIRS = ca/client
-
 DIRS += ioc/rsrv
 ioc/rsrv_DEPEND_DIRS = ioc/as
-
-DIRS += std/rec
-std/rec_DEPEND_DIRS = ioc/as ioc/registry
 
 DIRS += ioc/misc
 ioc/misc_DEPEND_DIRS = ioc/dbtemplate ioc/rsrv std/rec
 
-DIRS += std/dev
-std/dev_DEPEND_DIRS = std/rec ioc/misc
-
-DIRS += libCom/RTEMS
-libCom/RTEMS_DEPEND_DIRS = libCom
-
-DIRS += libCom/test
-libCom/test_DEPEND_DIRS = ca/client libCom/RTEMS
-
 DIRS += ioc/db/test
 ioc/db/test_DEPEND_DIRS = ioc/db libCom/RTEMS
 
+# PDB Standard Record Definitions
+
+DIRS += std/rec
+std/rec_DEPEND_DIRS = ioc/as ioc/registry
+
+DIRS += std/dev
+std/dev_DEPEND_DIRS = std/rec ioc/misc
+
 DIRS += std/softIoc
 std/softIoc_DEPEND_DIRS = std/dev ioc/dbtemplate libCom/RTEMS
-
-DIRS += ca/legacy/gdd
-ca/legacy/gdd_DEPEND_DIRS = ca/client
-
-DIRS += ca/legacy/pcas
-ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd
-
-DIRS += ca/legacy/pcas/ex
-ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas ioc/as ioc/registry
-
-DIRS += ca/client/perl
-ca/client/perl_DEPEND_DIRS = ca/client
 
 
 include $(TOP)/configure/RULES_DIRS

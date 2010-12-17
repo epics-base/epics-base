@@ -226,16 +226,16 @@ $(OBJLIBNAME):%$(OBJ):
 #
 ifeq ($(findstring -d, $(YACCOPT)),-d)
 %.h %.c: %.y
-	$(RM) $*.c y.tab.c
-	$(RM) $*.h y.tab.h
-	$(YACC) $(YACCOPT) $<
-	$(MV) y.tab.c $*.c
-	$(MV) y.tab.h $*.h
+	$(RM) $*.c $*.tab.c
+	$(RM) $*.h $*.tab.h
+	$(YACC) -b$* $(YACCOPT) $<
+	$(MV) $*.tab.c $*.c
+	$(MV) $*.tab.h $*.h
 else
 %.c: %.y
-	$(RM) $*.c y.tab.c
-	$(YACC) $(YACCOPT) $<
-	$(MV) y.tab.c $*.c
+	$(RM) $*.c $*.tab.c
+	$(YACC) -b$* $(YACCOPT) $<
+	$(MV) $*.tab.c $*.c
 endif
 
 %.c: %.l

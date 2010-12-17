@@ -52,7 +52,7 @@ DIRS += ioc/dbtemplate
 ioc/dbtemplate_DEPEND_DIRS = ioc/db
 
 DIRS += ca/client/tools
-ca/client/tools_DEPEND_DIRS = ca/client ioc/dbStatic
+ca/client/tools_DEPEND_DIRS = ca/client
 
 DIRS += ioc/rsrv
 ioc/rsrv_DEPEND_DIRS = ioc/as
@@ -82,13 +82,13 @@ DIRS += ca/legacy/gdd
 ca/legacy/gdd_DEPEND_DIRS = ca/client
 
 DIRS += ca/legacy/pcas
-ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd ioc/dbStatic
+ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd
 
 DIRS += ca/legacy/pcas/ex
 ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas ioc/as ioc/registry
 
 DIRS += ca/client/perl
-ca/client/perl_DEPEND_DIRS = ca/client ioc/dbStatic
+ca/client/perl_DEPEND_DIRS = ca/client
 
 
 include $(TOP)/configure/RULES_DIRS

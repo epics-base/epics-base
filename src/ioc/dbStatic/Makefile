@@ -10,8 +10,6 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-INC += alarm.h
-INC += alarmString.h
 INC += dbBase.h
 INC += dbFldTypes.h
 INC += dbStaticLib.h

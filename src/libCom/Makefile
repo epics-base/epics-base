@@ -134,6 +134,8 @@ SRCS += macEnv.c
 SRCS += macUtil.c
 
 SRC_DIRS += $(LIBCOM)/misc
+INC += alarm.h
+INC += alarmString.h
 INC += adjustment.h
 INC += cantProceed.h
 INC += dbDefs.h

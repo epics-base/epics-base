@@ -220,23 +220,21 @@ $(OBJLIBNAME):%$(OBJ):
 	@$(RM) $@
 	$(BAFCMD) $<
 
+YACCOPT ?= $($*_YACCOPT)
 #
 # rename the y.tab.h file only if we
 # are creating it
 #
-ifeq ($(findstring -d, $(YACCOPT)),-d)
-%.h %.c: %.y
-	$(RM) $*.c $*.tab.c
-	$(RM) $*.h $*.tab.h
-	$(YACC) -b$* $(YACCOPT) $<
-	$(MV) $*.tab.c $*.c
-	$(MV) $*.tab.h $*.h
-else
 %.c: %.y
-	$(RM) $*.c $*.tab.c
+	$(RM) $*.tab.c
+	$(RM) $*.tab.h
 	$(YACC) -b$* $(YACCOPT) $<
 	$(MV) $*.tab.c $*.c
-endif
+	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)
+
+# must be a seperate rule since when not using '-d' the
+# prefix for .h will be different then .c
+%.h : %.c %.y
 
 %.c: %.l
 	@$(RM) lex.yy.c

@@ -13,7 +13,7 @@ SET(RTEMS_BSP @RTEMS_BSP@)
 # which compilers to use for C and C++
 SET(CMAKE_C_COMPILER @C_COMPILER@)
 SET(CMAKE_CXX_COMPILER @CXX_COMPILER@)
-SET(CMAKE_OBJCOPY @OBJCOPY@)
+SET(CMAKE_OBJCOPY @OBJCOPY@ CACHE FILEPATH "xx" FORCE)
 
 # here is the target environment located
 #  Note: can add mode to list

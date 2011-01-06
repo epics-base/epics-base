@@ -70,7 +70,7 @@ protected:
     virtual ~epicsTimer () = 0; /* protected => delete() must not be called */
 };
 
-class epicsTimerQueue {         /* X aCC 655 */
+class epicsShareClass epicsTimerQueue {         /* X aCC 655 */
 public:
     virtual epicsTimer & createTimer () = 0;
     virtual void show ( unsigned int level ) const = 0;
@@ -88,7 +88,7 @@ protected:
     epicsShareFunc virtual ~epicsTimerQueueActive () = 0;
 };
 
-class epicsTimerQueueNotify {   /* X aCC 655 */
+class epicsShareClass epicsTimerQueueNotify {   /* X aCC 655 */
 public:
     /* called when a new timer is inserted into the queue and the */
     /* delay to the next expire has changed */
@@ -100,7 +100,7 @@ protected:
     epicsShareFunc virtual ~epicsTimerQueueNotify () = 0;
 };
 
-class epicsTimerQueuePassive /* X aCC 655 */
+class epicsShareClass epicsTimerQueuePassive /* X aCC 655 */
     : public epicsTimerQueue {
 public:
     static epicsShareFunc epicsTimerQueuePassive & create ( epicsTimerQueueNotify & );

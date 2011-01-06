@@ -21,14 +21,13 @@ use Cwd 'abs_path';
 
 #	We need exactly one argument:
 $usage="Usage:\tbldEnvData <config-Directory>";
-die $usage unless $#ARGV==0;
+die $usage unless $#ARGV==1;
 
 $config_dir      = abs_path($ARGV[0]);
 $config_env      = "${config_dir}/CONFIG_ENV";
 $config_site_env = "${config_dir}/CONFIG_SITE_ENV";
 
-$env_dir    = abs_path("../env");
-$env_defs   = "${env_dir}/envDefs.h";
+$env_defs   = abs_path($ARGV[1]);
 
 $out_name   = "envData.c";
 

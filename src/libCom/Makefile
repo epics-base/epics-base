@@ -319,7 +319,7 @@ osdSock$(OBJ): $(COMMON_DIR)/epicsVersion.h
 
 envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl \
 	$(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV
-	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(CONFIG)
+	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(CONFIG) ../env/envDefs.h
 
 errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)

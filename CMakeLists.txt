@@ -158,6 +158,31 @@ mark_as_advanced(
 if(CMAKE_CROSSCOMPILING AND NOT IMPORT_EXECUTABLES)
   find_package(EPICSHostTools REQUIRED)
 
+  # locate internal code generators
+  find_program(AITGEN
+    NAMES aitGen
+    PATHS ${EPICS_HOST_BASE}
+    PATH_SUFFIXES bin/${EPICS_HOST_ARCH}
+                  bin
+    NO_DEFAULT_PATH
+    DOC "Location of aitGen executable"
+  )
+  if(EPICSHostTools_FIND_REQUIRED AND NOT AITGEN)
+    message(FATAL_ERROR "Missing aitGen")
+  endif(EPICSHostTools_FIND_REQUIRED AND NOT AITGEN)
+
+  find_program(GENAPPS
+    NAMES genApps
+    PATHS ${EPICS_HOST_BASE}
+    PATH_SUFFIXES bin/${EPICS_HOST_ARCH}
+                  bin
+    NO_DEFAULT_PATH
+    DOC "Location of genApps executable"
+  )
+  if(EPICSHostTools_FIND_REQUIRED AND NOT GENAPPS)
+    message(FATAL_ERROR "Missing genApps")
+  endif(EPICSHostTools_FIND_REQUIRED AND NOT GENAPPS)
+
 else(CMAKE_CROSSCOMPILING AND NOT IMPORT_EXECUTABLES)
 
   if(IMPORT_EXECUTABLES)

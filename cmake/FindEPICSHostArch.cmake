@@ -10,6 +10,8 @@
 #  HOST_IOC        - True if host can build (native) IOC things
 #
 
+include(FindPackageMessage)
+
 if(CMAKE_HOST_UNIX)
   if(CMAKE_HOST_SYSTEM_NAME MATCHES Linux)
     set(HOST_IOC 1)
@@ -49,5 +51,7 @@ else(CMAKE_HOST_UNIX)
   message(FATAL_ERROR "Unable to determine EPICS host OS class")
 endif(CMAKE_HOST_UNIX)
 
-message(STATUS "Host: ${EPICS_HOST_ARCH}")
-message(STATUS "Host Class: ${HOST_OS_CLASS}")
+find_package_message(EPICSHostArch
+   "EPICS Host: ${EPICS_HOST_ARCH} (${HOST_OS_CLASS})"
+   "[${EPICS_HOST_ARCH}][${HOST_OS_CLASS}]"
+)

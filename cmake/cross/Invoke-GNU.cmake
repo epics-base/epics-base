@@ -9,18 +9,24 @@ if(target MATCHES "mingw")
   set(SYSTEM_NAME "Windows")
   set(GNU_NAME "${target}")
 
-elseif(target MATCHES "^[^-]*-rtems([0-9.]*)-[^-]*$")
+elseif(target MATCHES "rtems")
   set(SYSTEM_NAME "RTEMS")
-  string(REGEX REPLACE "^[^-]*-rtems([0-9.]*)-[^-]*$" "\\1" SYSTEM_VERSION ${target})
-  string(REGEX REPLACE "^[^-]*-[^-]*-([^-]*)$" "\\1" RTEMS_BSP ${target})
-  string(REGEX REPLACE "^([^-]*-[^-]*)-[^-]*$" "\\1" GNU_NAME ${target})
+  string(REGEX REPLACE "^.*rtems([0-9.]*).*$" "\\1" SYSTEM_VERSION ${target})
+  # BSP is given at as a suffix
+  string(REGEX REPLACE "^.*-([^-]*)$" "\\1" RTEMS_BSP ${target})
+  # strip off the BSP name
+  string(REGEX REPLACE "^(.*)-[^-]*$" "\\1" GNU_NAME ${target})
   message(STATUS "SYSTEM_VERSION=${SYSTEM_VERSION}")
   message(STATUS "RTEMS_BSP=${RTEMS_BSP}")
   message(STATUS "GNU_NAME=${GNU_NAME}")
 
-else(target MATCHES "mingw")
+elseif(target MATCHES "linux")
   set(SYSTEM_NAME "Linux")
   set(GNU_NAME "${target}")
+
+else(target MATCHES "mingw")
+  # these should get filtered out in Control.cmake, but...
+  message(FATAL_ERROR "Invalid target ${target}")
 
 endif(target MATCHES "mingw")
 # Target CPU
@@ -115,6 +121,6 @@ if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
     COMMAND "$(MAKE)"
     VERBATIM
     DEPENDS ${HOSTTOOLTARGETS}
-    COMMENT "Building for cross target GNU"
+    COMMENT "Building for cross target ${target}"
   )
 endif(CMAKE_GENERATOR STREQUAL "Unix Makefiles")

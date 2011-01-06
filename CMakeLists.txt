@@ -5,7 +5,8 @@ project(EPICSBASE C CXX)
 enable_testing()
 
 # Local modules
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(EPICS_CMAKE_ROOT "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${EPICS_CMAKE_ROOT}")
 
 find_package(EPICSHostArch)
 find_package(EPICSArch)

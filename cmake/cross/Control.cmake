@@ -10,13 +10,16 @@ set(TARGETS ""
 foreach(target ${TARGETS})
 
   if(target MATCHES "linux")
-    include(${CMAKE_SOURCE_DIR}/cmake/cross/Invoke-GNU.cmake)
+    include(cross/Invoke-GNU)
 
   elseif(target MATCHES "mingw")
-    include(${CMAKE_SOURCE_DIR}/cmake/cross/Invoke-GNU.cmake)
+    include(cross/Invoke-GNU)
 
   elseif(target MATCHES "rtems")
-    include(${CMAKE_SOURCE_DIR}/cmake/cross/Invoke-GNU.cmake)
+    include(cross/Invoke-GNU)
+
+  else(target MATCHES "linux")
+    message(STATUS "Unknown target ${target}")
 
   endif(target MATCHES "linux")
 

@@ -86,7 +86,7 @@ execute_process(
   RESULT_VARIABLE CMD1
 )
 
-set(TEMPLATE  "${CMAKE_SOURCE_DIR}/cmake/cross/Toolchain-GNU.cmake.in")
+set(TEMPLATE  "${EPICS_CMAKE_ROOT}/cross/Toolchain-GNU.cmake.in")
 set(TOOLCHAIN "${CMAKE_BINARY_DIR}/build-${target}/Toolchain.cmake")
 
 configure_file("${TEMPLATE}" "${TOOLCHAIN}" @ONLY)
@@ -94,7 +94,8 @@ configure_file("${TEMPLATE}" "${TOOLCHAIN}" @ONLY)
 execute_process(
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/build-${target}
   COMMAND ${CMAKE_COMMAND}
-      -DCMAKE_MODULE_PATH:PATH=${CMAKE_SOURCE_DIR}/cmake
+      -DEPICS_CMAKE_ROOT:PATH=${EPICS_CMAKE_ROOT}
+      -DCMAKE_MODULE_PATH:PATH=${CMAKE_MODULE_PATH}
       -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${TOOLCHAIN}
       -DIMPORT_EXECUTABLES:FILEPATH=${CMAKE_BINARY_DIR}/hosttools.cmake
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}

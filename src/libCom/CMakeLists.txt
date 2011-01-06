@@ -60,7 +60,7 @@ set(OSD_HEADER_NAMES
 
 set(OSD_SRC_NAMES
   atReboot
-  devLibOSD
+  devLibVMEOSD
   epicsDynLink
   epicsGetopt
   epicsReadline
@@ -141,6 +141,8 @@ set(OSI_HEADERS
   osi/epicsStdio.h
   osi/epicsStdioRedirect.h
   osi/devLib.h
+  osi/devLibVME.h
+  osi/devLibVMEImpl.h
 )
 
 set(OSI_SRC
@@ -157,7 +159,7 @@ set(OSI_SRC
   osi/osiSock.c
 
   osi/epicsStdio.c
-  osi/devLib.c
+  osi/devLibVME.c
 
   ${OSD_SRCS}
 )

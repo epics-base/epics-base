@@ -43,6 +43,7 @@ set_target_properties(dbdbd
 )
 
 install(FILES
+    cvtTable.h
     ${CMAKE_CURRENT_BINARY_DIR}/menuConvert.h
     ${CMAKE_CURRENT_BINARY_DIR}/bptTypeJdegC.h
     ${CMAKE_CURRENT_BINARY_DIR}/bptTypeJdegF.h

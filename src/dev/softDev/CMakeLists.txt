@@ -16,6 +16,8 @@ set(LIB_DBD
 )
 
 set(LIB_SRC
+  devAaiSoft.c
+  devAaoSoft.c
   devAiSoft.c
   devAiSoftRaw.c
   devAoSoft.c

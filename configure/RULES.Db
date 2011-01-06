@@ -367,14 +367,12 @@ IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
         $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION) ) )
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
-	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $@
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) $@
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
-	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $@
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
 .PRECIOUS: %$(DEP)

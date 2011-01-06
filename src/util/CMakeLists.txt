@@ -25,5 +25,5 @@ set_target_properties(ca_test iocLogServer
 )
 
 install(TARGETS ca_test iocLogServer
-  RUNTIME DESTINATION ${EPICS_BIN_DIR}
+  RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
 )

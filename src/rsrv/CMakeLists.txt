@@ -33,5 +33,5 @@ add_both_library(rsrvIoc
 )
 
 install(FILES ${LIB_HEADERS}
-  DESTINATION ${EPICS_INCLUDE_DIR}
+  DESTINATION ${EPICS_INSTALL_INCLUDE}
 )

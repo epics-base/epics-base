@@ -32,10 +32,10 @@ add_both_library(registryIoc
 
 if(HOST)
   install(FILES registerRecordDeviceDriver.pl
-    DESTINATION ${EPICS_BIN_DIR}
+    DESTINATION ${EPICS_INSTALL_BIN}
   )
 endif(HOST)
 
 install(FILES ${LIB_HEADERS}
-  DESTINATION ${EPICS_INCLUDE_DIR}
+  DESTINATION ${EPICS_INSTALL_INCLUDE}
 )

@@ -140,18 +140,18 @@ set(BASE_SOVERSION ${EPICS_VERSION}.${EPICS_REVISION}.${EPICS_MODIFICATION})
 
 # Define install layout
 
-set(EPICS_BIN_DIR "bin/${T_A}" CACHE FILEPATH "Location for installed binaries")
-set(EPICS_LIB_DIR "lib/${T_A}" CACHE FILEPATH "Location for all libraries")
-set(EPICS_INCLUDE_DIR "include" CACHE FILEPATH "Location for C/C++ headers")
-set(EPICS_OS_INCLUDE_DIR "include/os/${OS_CLASS}" CACHE FILEPATH "Location for OSD C/C++ Headers")
-set(EPICS_DBD_DIR "dbd" CACHE FILEPATH "Location for EPICS DBD files")
-set(EPICS_DB_DIR "db" CACHE FILEPATH "Location for EPICS DB files")
+set(EPICS_INSTALL_BIN "bin/${T_A}" CACHE FILEPATH "Location for installed binaries")
+set(EPICS_INSTALL_LIB "lib/${T_A}" CACHE FILEPATH "Location for all libraries")
+set(EPICS_INSTALL_INCLUDE "include" CACHE FILEPATH "Location for C/C++ headers")
+set(EPICS_INSTALL_INCLUDE_OS "include/os/${OS_CLASS}" CACHE FILEPATH "Location for OSD C/C++ Headers")
+set(EPICS_INSTALL_DBD "dbd" CACHE FILEPATH "Location for EPICS DBD files")
+set(EPICS_INSTALL_DB "db" CACHE FILEPATH "Location for EPICS DB files")
 set(EPICS_CMAKE_DIR "cmake" CACHE FILEPATH "Location for CMake files which allow Apps to find EPICS Base")
 
 mark_as_advanced(
-  EPICS_BIN_DIR EPICS_LIB_DIR
-  EPICS_INCLUDE_DIR EPICS_OS_INCLUDE_DIR
-  EPICS_DBD_DIR EPICS_DB_DIR
+  EPICS_INSTALL_BIN EPICS_INSTALL_LIB
+  EPICS_INSTALL_INCLUDE EPICS_INSTALL_INCLUDE_OS
+  EPICS_INSTALL_DBD EPICS_INSTALL_DB
   EPICS_CMAKE_DIR
 )
 

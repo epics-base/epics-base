@@ -53,5 +53,5 @@ set_target_properties(
 )
 
 install(TARGETS caget caput camonitor cainfo
-  RUNTIME DESTINATION ${EPICS_BIN_DIR}
+  RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
 )

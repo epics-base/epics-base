@@ -38,8 +38,8 @@ set_target_properties(e_flex
 )
 
 install(TARGETS e_flex
-  RUNTIME DESTINATION ${EPICS_BIN_DIR}
+  RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
 )
 install(FILES flex.skel.static
-  DESTINATION ${EPICS_INCLUDE_DIR}
+  DESTINATION ${EPICS_INSTALL_INCLUDE}
 )

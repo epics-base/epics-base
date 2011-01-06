@@ -24,7 +24,7 @@ macro(add_ioc_executable IOC_NAME)
 
     if(NOT IOC_SKIP_INSTALL)
       install(TARGETS ${IOC_NAME}
-        RUNTIME DESTINATION ${EPICS_BIN_DIR}
+        RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
       )
     endif(NOT IOC_SKIP_INSTALL)
 
@@ -37,7 +37,7 @@ macro(add_ioc_executable IOC_NAME)
         DEPENDS ${IOC_NAME}
       )
       install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${IOC_NAME}.boot
-        DESTINATION ${EPICS_BIN_DIR}
+        DESTINATION ${EPICS_INSTALL_BIN}
       )
     endif(NEED_MUNCH AND NOT SKIP_MUNCH)
   endif(HOST OR RTEMS)

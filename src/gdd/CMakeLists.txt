@@ -85,7 +85,7 @@ if(HOST)
   target_link_libraries(genApps Com${UTIL})
 
   install(TARGETS aitGen genApps
-    RUNTIME DESTINATION ${EPICS_BIN_DIR}
+    RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
   )
 
 endif(HOST)
@@ -107,5 +107,5 @@ set_source_files_properties(aitConvert.cc
 )
 
 install(FILES ${LIB_HEADERS}
-  DESTINATION ${EPICS_INCLUDE_DIR}
+  DESTINATION ${EPICS_INSTALL_INCLUDE}
 )

@@ -25,5 +25,5 @@ set_target_properties(antelope
 )
 
 install(TARGETS antelope
-  RUNTIME DESTINATION ${EPICS_BIN_DIR}
+  RUNTIME DESTINATION ${EPICS_INSTALL_BIN}
 )

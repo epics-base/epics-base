@@ -119,10 +119,11 @@ epicsShareFunc int errlogPrintf(const char *pFormat, ...)
     errlogInit(0);
     if (pvtData.atExit || (isOkToBlock && pvtData.toConsole)) {
         va_start(pvar, pFormat);
-        vfprintf(stderr, pFormat, pvar);
+        nchar = vfprintf(stderr, pFormat, pvar);
         va_end (pvar);
         fflush(stderr);
     }
+    if (pvtData.atExit) return nchar;
     pbuffer = msgbufGetFree(isOkToBlock);
     if (!pbuffer) return 0;
     va_start(pvar, pFormat);

@@ -33,10 +33,6 @@
 #define epicsExportSharedSymbols
 #include "server.h"
 
-/* As an optimisation, any message allocated with a large header is resized to
- * use a small header if the payload size is below this threshold. */
-#define SMALL_MESSAGE_THRESHOLD     65
-
 /*
  *  cas_send_bs_msg()
  *
@@ -357,19 +353,8 @@ void cas_commit_msg ( struct client *pClient, ca_uint32_t size )
     if ( pMsg->m_postsize == htons ( 0xffff ) ) {
         ca_uint32_t * pLW = ( ca_uint32_t * ) ( pMsg + 1 );
         assert ( size <= ntohl ( *pLW ) );
-        if (size < SMALL_MESSAGE_THRESHOLD) {
-            /* If the message is sufficiently small it can be worth converting a
-             * large message header into a small header.  This saves us all of 8
-             * bytes over the wire, so it's not such a big deal. */
-            pMsg->m_postsize = htons((ca_uint16_t) size);
-            pMsg->m_count = htons((ca_uint16_t) ntohl(pLW[1]));
-            memmove(pLW, pLW + 2, size);
-            size += sizeof(caHdr);
-        }
-        else {
-            pLW[0] = htonl ( size );
-            size += sizeof ( caHdr ) + 2 * sizeof ( *pLW );
-        }
+        pLW[0] = htonl ( size );
+        size += sizeof ( caHdr ) + 2 * sizeof ( *pLW );
     }
     else {
         assert ( size <= ntohs ( pMsg->m_postsize ) );

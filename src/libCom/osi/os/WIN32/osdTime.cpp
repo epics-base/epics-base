@@ -409,8 +409,8 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 
     EnterCriticalSection ( & this->mutex );
 
-    LONGLONG perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
-    if ( curPerfCounter.QuadPart >= this->lastPerfCounter ) {
+    LONGLONG perfCounterDiff;
+    if ( curPerfCounter.QuadPart >= this->lastPerfCounterPLL ) {
         perfCounterDiff = curPerfCounter.QuadPart - this->lastPerfCounterPLL;
     }
     else {

@@ -38,19 +38,20 @@ buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
-# j is NOT found in MAKEFLAGS when using make 3.81
-# Hope to uncomment this for GNU make 3.82
-#ifeq ($(findstring j,$(MAKEFLAGS)),j)
-
 define DEP_template
 $(2): $$(EPICS_HOST_ARCH)
 $(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH) O.$(2)
 endef
 
-$(foreach action, $(ACTIONS), $(foreach arch,\
+ifeq (MAKE_VERSION,3.81)
+   $(foreach action, $(ACTIONS), $(foreach arch,\
       $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
-
-#endif
+else
+ifeq ($(findstring j,$(MAKEFLAGS)),j)
+   $(foreach action, $(ACTIONS), $(foreach arch,\
+      $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
+endif
+endif
 #*************************************************************************
 
 # Allows rebuild to work with parallel builds option, -j.

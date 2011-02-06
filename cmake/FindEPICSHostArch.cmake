@@ -53,6 +53,10 @@ else(CMAKE_HOST_UNIX)
   message(FATAL_ERROR "Unable to determine EPICS host OS class")
 endif(CMAKE_HOST_UNIX)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(EPICS_HOST_ARCH "${EPICS_HOST_ARCH}-debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 find_package_message(EPICSHostArch
    "EPICS Host: ${EPICS_HOST_ARCH} (${HOST_OS_CLASS})"
    "[${EPICS_HOST_ARCH}][${HOST_OS_CLASS}]"

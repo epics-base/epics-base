@@ -61,6 +61,10 @@ else(UNIX)
   message(FATAL_ERROR "Unable to determine EPICS OS class")
 endif(UNIX)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(T_A "${T_A}-debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
 find_package_message(EPICSArch
    "EPICS Target: ${T_A} (${OS_CLASS})"
    "[${T_A}][${OS_CLASS}]"

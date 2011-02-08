@@ -13,6 +13,29 @@
 <h2 align="center">Changes between 3.14.x and 3.15.1</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>
+Reworked the epicsEvent C &amp; C++ APIs</h3>
+
+<ul>
+  <li>Renamed the enum epicsEventWaitStatus to epicsEventStatus</li>
+  <li>Defined epicsEventWaitStatus as a macro for epicsEventStatus</li>
+  <li>Renamed epicsEventWaitOk to epicsEventOk</li>
+  <li>Renamed epicsEventWaitError to epicsEventError</li>
+  <li>Defined epicsEventWaitOK and epicsEventWaitError as macros</li>
+  <li>Added epicsEventTrigger(id) which triggers an event and returns OK or an
+    error status if the underlying OS primitives report an error</li>
+  <li>Added epicsEventMustTrigger(id) which halts on error</li>
+  <li>Defined epicsEventSignal(id) as a macro for epicsEventMustTrigger(id)</li>
+  <li>Added a new C++ method epicsEvent::trigger() which throws an
+    epicsEvent::invalidSemaphore in the event of an error</li>
+  <li>epicsEvent::signal() makes an inline call to epicsEvent::trigger()</li>
+  <li>epicsEventWait() and epicsEventWaitWithTimeout() now return an error
+    status if the underlying OS primitives report an error</li>
+  <li>All the epicsEventMust...() routines are now implemented in the common
+    libCom/osi/epicsEvent.cpp source file, and call cantProceed() instead of
+    mis-using assert()</li>
+  <li>Implemented epicsEventShow() on Posix</li>
+</ul>
 
 <h3>
 Moved src/RTEMS/base directory</h3>

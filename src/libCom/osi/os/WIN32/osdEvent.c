@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osdEvent.c */
@@ -27,7 +26,6 @@
 #define epicsExportSharedSymbols
 #include "shareLib.h"
 #include "epicsEvent.h"
-#include "epicsAssert.h"
 
 typedef struct epicsEventOSD {
     HANDLE handle;
@@ -54,17 +52,6 @@ epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate (
 }
 
 /*
- * epicsEventMustCreate ()
- */
-epicsShareFunc epicsEventId epicsShareAPI epicsEventMustCreate (
-    epicsEventInitialState initialState ) 
-{
-    epicsEventId id = epicsEventCreate ( initialState );
-    assert ( id );
-    return id;
-}
-
-/*
  * epicsEventDestroy ()
  */
 epicsShareFunc void epicsShareAPI epicsEventDestroy ( epicsEventId pSem ) 
@@ -76,32 +63,32 @@ epicsShareFunc void epicsShareAPI epicsEventDestroy ( epicsEventId pSem )
 /*
  * epicsEventSignal ()
  */
-epicsShareFunc void epicsShareAPI epicsEventSignal ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTrigger ( epicsEventId pSem ) 
 {
     BOOL status;
     status = SetEvent ( pSem->handle );
-    assert ( status ); 
+    return status ? epicsEventError : epicsEventOK;
 }
 
 /*
  * epicsEventWait ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWait ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWait ( epicsEventId pSem ) 
 { 
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
     if ( status == WAIT_OBJECT_0 ) {
-        return epicsEventWaitOK;
+        return epicsEventOK;
     }
     else {
-        return epicsEventWaitError;
+        return epicsEventError;
     }
 }
 
 /*
  * epicsEventWaitWithTimeout ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
+epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 { 
     static const unsigned mSecPerSec = 1000;
@@ -122,32 +109,32 @@ epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventWaitWithTimeout (
     }
     status = WaitForSingleObject ( pSem->handle, tmo );
     if ( status == WAIT_OBJECT_0 ) {
-        return epicsEventWaitOK;
+        return epicsEventOK;
     }
     else if ( status == WAIT_TIMEOUT ) {
         return epicsEventWaitTimeout;
     }
     else {
-        return epicsEventWaitError;
+        return epicsEventError;
     }
 }
 
 /*
  * epicsEventTryWait ()
  */
-epicsShareFunc epicsEventWaitStatus epicsShareAPI epicsEventTryWait ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTryWait ( epicsEventId pSem ) 
 { 
     DWORD status;
 
     status = WaitForSingleObject ( pSem->handle, 0 );
     if ( status == WAIT_OBJECT_0 ) {
-        return epicsEventWaitOK;
+        return epicsEventOK;
     }
     else if ( status == WAIT_TIMEOUT ) {
         return epicsEventWaitTimeout;
     }
     else {
-        return epicsEventWaitError;
+        return epicsEventError;
     }
 }
 

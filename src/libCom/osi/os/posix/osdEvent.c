@@ -94,6 +94,7 @@ epicsShareFunc epicsEventStatus epicsEventTrigger(epicsEventId pevent)
     }
     status = pthread_mutex_unlock(&pevent->mutex);
     checkStatusReturn(status, "pthread_mutex_unlock", "epicsEventTrigger");
+    return epicsEventOK;
 }
 
 epicsShareFunc epicsEventStatus epicsEventWait(epicsEventId pevent)

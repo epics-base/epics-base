@@ -34,7 +34,7 @@ typedef struct epicsEventOSD {
 /*
  * epicsEventCreate ()
  */
-epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate (
+epicsShareFunc epicsEventId epicsEventCreate (
     epicsEventInitialState initialState ) 
 {
     epicsEventOSD *pSem;
@@ -54,26 +54,26 @@ epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate (
 /*
  * epicsEventDestroy ()
  */
-epicsShareFunc void epicsShareAPI epicsEventDestroy ( epicsEventId pSem ) 
+epicsShareFunc void epicsEventDestroy ( epicsEventId pSem ) 
 {
     CloseHandle ( pSem->handle );
     free ( pSem );
 }
 
 /*
- * epicsEventSignal ()
+ * epicsEventTrigger ()
  */
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTrigger ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsEventTrigger ( epicsEventId pSem ) 
 {
     BOOL status;
     status = SetEvent ( pSem->handle );
-    return status ? epicsEventError : epicsEventOK;
+    return status ? epicsEventOK : epicsEventError;
 }
 
 /*
  * epicsEventWait ()
  */
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWait ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsEventWait ( epicsEventId pSem ) 
 { 
     DWORD status;
     status = WaitForSingleObject (pSem->handle, INFINITE);
@@ -88,7 +88,7 @@ epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWait ( epicsEventId pSem
 /*
  * epicsEventWaitWithTimeout ()
  */
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWaitWithTimeout (
+epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout (
     epicsEventId pSem, double timeOut )
 { 
     static const unsigned mSecPerSec = 1000;
@@ -122,7 +122,7 @@ epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWaitWithTimeout (
 /*
  * epicsEventTryWait ()
  */
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTryWait ( epicsEventId pSem ) 
+epicsShareFunc epicsEventStatus epicsEventTryWait ( epicsEventId pSem ) 
 { 
     DWORD status;
 
@@ -141,6 +141,6 @@ epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTryWait ( epicsEventId p
 /*
  * epicsEventShow ()
  */
-epicsShareFunc void epicsShareAPI epicsEventShow ( epicsEventId id, unsigned level ) 
+epicsShareFunc void epicsEventShow ( epicsEventId id, unsigned level ) 
 { 
 }

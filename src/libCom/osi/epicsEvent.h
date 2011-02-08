@@ -52,23 +52,23 @@ private:
 extern "C" {
 #endif /*__cplusplus */
 
-epicsShareFunc epicsEventId epicsShareAPI epicsEventCreate(
+epicsShareFunc epicsEventId epicsEventCreate(
     epicsEventInitialState initialState);
-epicsShareFunc epicsEventId epicsShareAPI epicsEventMustCreate (
+epicsShareFunc epicsEventId epicsEventMustCreate (
     epicsEventInitialState initialState);
-epicsShareFunc void epicsShareAPI epicsEventDestroy(epicsEventId id);
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTrigger(
+epicsShareFunc void epicsEventDestroy(epicsEventId id);
+epicsShareFunc epicsEventStatus epicsEventTrigger(
     epicsEventId id);
-epicsShareFunc void epicsShareAPI epicsEventMustTrigger(epicsEventId id);
+epicsShareFunc void epicsEventMustTrigger(epicsEventId id);
 #define epicsEventSignal(ID) epicsEventMustTrigger(ID)
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWait(
+epicsShareFunc epicsEventStatus epicsEventWait(
     epicsEventId id);
-epicsShareFunc void epicsShareAPI epicsEventMustWait(epicsEventId id);
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventWaitWithTimeout(
+epicsShareFunc void epicsEventMustWait(epicsEventId id);
+epicsShareFunc epicsEventStatus epicsEventWaitWithTimeout(
     epicsEventId id, double timeOut);
-epicsShareFunc epicsEventStatus epicsShareAPI epicsEventTryWait(
+epicsShareFunc epicsEventStatus epicsEventTryWait(
     epicsEventId id);
-epicsShareFunc void epicsShareAPI epicsEventShow(
+epicsShareFunc void epicsEventShow(
     epicsEventId id, unsigned int level);
 
 #ifdef __cplusplus

@@ -630,17 +630,20 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
         free ( pParmWIN32 );
         return NULL;
     }
+    
+    EnterCriticalSection ( & pGbl->mutex );
+    ellAdd ( & pGbl->threadList, & pParmWIN32->node );
+    LeaveCriticalSection ( & pGbl->mutex );
 
     wstat =  ResumeThread ( pParmWIN32->handle );
     if (wstat==0xFFFFFFFF) {
+		    EnterCriticalSection ( & pGbl->mutex );
+		    ellDelete ( & pGbl->threadList, & pParmWIN32->node );
+		    LeaveCriticalSection ( & pGbl->mutex );
         CloseHandle ( pParmWIN32->handle ); 
         free ( pParmWIN32 );
         return NULL;
     }
-
-    EnterCriticalSection ( & pGbl->mutex );
-    ellAdd ( & pGbl->threadList, & pParmWIN32->node );
-    LeaveCriticalSection ( & pGbl->mutex );
 
     return ( epicsThreadId ) pParmWIN32;
 }

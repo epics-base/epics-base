@@ -1866,10 +1866,14 @@ void tcpiiu::unlinkAllChannels (
     guard.assertIdenticalMutex ( this->mutex );
 
     while ( nciu * pChan = this->createReqPend.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->createRespPend.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         // we dont yet know the server's id so we cant
         // send a channel delete request and will instead 
         // trust that the server can do the proper cleanup
@@ -1878,12 +1882,16 @@ void tcpiiu::unlinkAllChannels (
     }
     
     while ( nciu * pChan = this->v42ConnCallbackPend.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );
         pChan->serviceShutdownNotify ( cbGuard, guard );
     }
 
     while ( nciu * pChan = this->subscripReqPend.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         pChan->disconnectAllIO ( cbGuard, guard );
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );
@@ -1891,6 +1899,8 @@ void tcpiiu::unlinkAllChannels (
     }
 
     while ( nciu * pChan = this->connectedList.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         pChan->disconnectAllIO ( cbGuard, guard );
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );
@@ -1898,6 +1908,8 @@ void tcpiiu::unlinkAllChannels (
     }
 
     while ( nciu * pChan = this->unrespCircuit.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         pChan->disconnectAllIO ( cbGuard, guard );
         // if we know that the circuit is unresponsive
         // then we dont send a channel delete request and 
@@ -1907,6 +1919,8 @@ void tcpiiu::unlinkAllChannels (
     }
     
      while ( nciu * pChan = this->subscripUpdateReqPend.get () ) {
+        pChan->channelNode::listMember = 
+            channelNode::cs_none;
         pChan->disconnectAllIO ( cbGuard, guard );
         this->clearChannelRequest ( guard, 
             pChan->getSID(guard), pChan->getCID(guard) );

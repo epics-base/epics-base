@@ -148,6 +148,7 @@ PRODNAME = $(addsuffix $(EXE),$(basename $(PROD)))
 TESTPRODNAME = $(addsuffix $(EXE),$(basename $(TESTPROD)))
 
 SHRLIBNAME = $(SHRLIBNAME_$(SHARED_LIBRARIES))
+TESTSHRLIBNAME = $(TESTSHRLIBNAME_$(SHARED_LIBRARIES))
 
 JAVA =
 JAR =
@@ -244,7 +245,7 @@ STATIC_LDLIBS = $(STATIC_LDLIBS_$(STATIC_BUILD))
 
 #--------------------------------------------------
 # cflags for shared library src files (from SHRLIB_CFLAGS)
-LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OBJSNAME) $(LIBRARY_OBJS)))
+LIBRARY_SRCS=$(basename $(foreach lib,$(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY),$($(lib)_OBJSNAME) $(LIBRARY_OBJS)))
 LIBRARY_SRC_CFLAGS=$($(patsubst $*,SHRLIB,$(findstring $*,$(LIBRARY_SRCS)))_CFLAGS)
 
 #--------------------------------------------------
@@ -335,7 +336,7 @@ HDEPENDS_CFLAGS = $(HDEPENDS_CFLAGS_$(HDEPENDS))
 #--------------------------------------------------
 # depends definition
 
-TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
+TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(TESTLIBRARY) $(LIBRARY), $($(name)_SRCS))
 SRC_FILES = $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
 HDEPENDS_FILES_YES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 HDEPENDS_FILES = $(if $(filter NO,$(HDEPENDS)),,$(HDEPENDS_FILES_YES))

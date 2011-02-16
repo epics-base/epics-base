@@ -23,7 +23,7 @@ $(1)_$(2) += $$(if $$(strip $$($(1)_$(2)_$$(OS_CLASS))), \
 endef
 
 $(foreach type, SRCS RCS OBJS LDFLAGS OBJLIBS LDOBJS SYS_LIBS , \
-$(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) , \
+$(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) , \
     $(eval $(call TARGET_template,$(strip $(target)),$(type)))))
 
 #-----------------------------------------------------------------------
@@ -56,7 +56,7 @@ $(1)_DEPLIBS = $$(foreach lib, $$($(1)_LDLIBS),\
 
 endef
 
-$(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(LOADABLE_LIBRARY) , \
+$(foreach target, $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) , \
     $(eval $(call TARGET2_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
@@ -72,7 +72,6 @@ $(foreach target, $(PROD) $(TESTPROD), \
 #-----------------------------------------------------------------------
 
 define LIBRARY_template
-BUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
 
 $(1)_DLL_DEPLIBS=$$(foreach lib, $$($(1)_DLL_LIBS),\
  $$(firstword $$(wildcard $$(addsuffix /$$(LIB_PREFIX)$$(lib).*,\
@@ -87,8 +86,26 @@ $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
 endef
 
-$(foreach target, $(LIBRARY), \
+$(foreach target, $(LIBRARY) $(TESTLIBRARY), \
     $(eval $(call LIBRARY_template,$(strip $(target)))))
+
+#-----------------------------------------------------------------------
+
+define LIBRARY2_template
+BUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
+endef
+
+$(foreach target, $(LIBRARY), \
+    $(eval $(call LIBRARY2_template,$(strip $(target)))))
+
+#-----------------------------------------------------------------------
+
+define LIBRARY3_template
+TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
+endef
+
+$(foreach target, $(TESTLIBRARY), \
+    $(eval $(call LIBRARY3_template,$(strip $(target)))))
 
 #-----------------------------------------------------------------------
 
@@ -108,4 +125,6 @@ endef
 
 $(foreach target, $(LOADABLE_LIBRARY), \
     $(eval $(call LOADABLE_LIBRARY_template,$(strip $(target)))))
+
+#-----------------------------------------------------------------------
 

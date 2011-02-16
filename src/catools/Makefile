@@ -15,8 +15,7 @@ include $(TOP)/configure/CONFIG
 SHARED_LIBRARIES = NO
 
 # Build but don't install catools as a static library
-LIBRARY += catools
-INSTALL_LIBS =
+TESTLIBRARY += catools
 
 catools_SRCS += tool_lib.c
 catools_LIBS += ca Com

@@ -87,8 +87,10 @@ $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
 
 # Needed for -j parallel builds option
 ifeq ($$(SHARED_LIBRARIES),YES)
+ifdef SHRLIB_SUFFIX
 $$(INSTALL_LIB)/$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):  \
  $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
+endif
 endif
 
 endef

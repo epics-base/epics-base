@@ -84,6 +84,13 @@ $$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_DEPLIBS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
+
+# Needed for -j parallel builds option
+ifeq ($$(SHARED_LIBRARIES),YES)
+$$(INSTALL_LIB)/$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):  \
+ $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
+endif
+
 endef
 
 $(foreach target, $(LIBRARY) $(TESTLIBRARY), \

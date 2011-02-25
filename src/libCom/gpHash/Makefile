@@ -9,5 +9,5 @@
 
 SRC_DIRS += $(LIBCOM)/gpHash
 INC += gpHash.h
-SRCS += gpHashLib.c
+Com_SRCS += gpHashLib.c
 HTMLS += gpHash/gpHash.html

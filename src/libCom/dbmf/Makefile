@@ -9,5 +9,5 @@
 
 SRC_DIRS += $(LIBCOM)/dbmf
 INC += dbmf.h
-SRCS += dbmf.c
+Com_SRCS += dbmf.c
 

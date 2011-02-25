@@ -10,8 +10,8 @@
 SRC_DIRS += $(LIBCOM)/log
 INC += iocLog.h
 INC += logClient.h
-SRCS += iocLog.c
-SRCS += logClient.c
+Com_SRCS += iocLog.c
+Com_SRCS += logClient.c
 
 PROD_HOST += iocLogServer
 

@@ -26,12 +26,6 @@ template/ext_DEPEND_DIRS = tools
 DIRS += libCom
 libCom_DEPEND_DIRS = tools
 
-DIRS += libCom/tools
-libCom/tools_DEPEND_DIRS = libCom
-
-DIRS += libCom/as
-libCom/as_DEPEND_DIRS = libCom libCom/tools
-
 DIRS += libCom/RTEMS
 libCom/RTEMS_DEPEND_DIRS = libCom
 
@@ -61,7 +55,7 @@ ca/client/perl_DEPEND_DIRS = ca/client
 # PDB Core
 
 DIRS += ioc/dbStatic
-ioc/dbStatic_DEPEND_DIRS = libCom/tools
+ioc/dbStatic_DEPEND_DIRS = libCom
 
 DIRS += ioc/registry
 ioc/registry_DEPEND_DIRS = ioc/dbStatic
@@ -73,7 +67,7 @@ DIRS += ioc/db
 ioc/db_DEPEND_DIRS = ioc/bpt ca/client
 
 DIRS += ioc/as
-ioc/as_DEPEND_DIRS = ioc/db libCom/as
+ioc/as_DEPEND_DIRS = ioc/db libCom
 
 DIRS += ioc/dbtemplate
 ioc/dbtemplate_DEPEND_DIRS = ioc/db

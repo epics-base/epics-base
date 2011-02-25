@@ -12,6 +12,7 @@ include $(TOP)/configure/CONFIG
 SRC = $(TOP)/src
 LIBCOM = $(SRC)/libCom
 
+include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile
 include $(LIBCOM)/calc/Makefile
 include $(LIBCOM)/cvtFast/Makefile
@@ -22,6 +23,7 @@ include $(LIBCOM)/ellLib/Makefile
 include $(LIBCOM)/env/Makefile
 include $(LIBCOM)/error/Makefile
 include $(LIBCOM)/fdmgr/Makefile
+include $(LIBCOM)/flex/Makefile
 include $(LIBCOM)/freeList/Makefile
 include $(LIBCOM)/gpHash/Makefile
 include $(LIBCOM)/iocsh/Makefile
@@ -33,6 +35,7 @@ include $(LIBCOM)/ring/Makefile
 include $(LIBCOM)/taskwd/Makefile
 include $(LIBCOM)/timer/Makefile
 include $(LIBCOM)/tsDefs/Makefile
+include $(LIBCOM)/yacc/Makefile
 
 # Library to build:
 LIBRARY=Com

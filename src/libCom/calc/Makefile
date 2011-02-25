@@ -9,6 +9,6 @@
 
 SRC_DIRS += $(LIBCOM)/calc
 INC += postfix.h
-SRCS += postfix.c
-SRCS += calcPerform.c
+Com_SRCS += postfix.c
+Com_SRCS += calcPerform.c
 

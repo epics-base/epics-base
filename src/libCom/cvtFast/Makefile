@@ -9,5 +9,5 @@
 
 SRC_DIRS += $(LIBCOM)/cvtFast
 INC += cvtFast.h
-SRCS += cvtFast.c
+Com_SRCS += cvtFast.c
 

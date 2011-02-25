@@ -9,6 +9,6 @@
 
 SRC_DIRS += $(LIBCOM)/macLib
 INC += macLib.h
-SRCS += macCore.c
-SRCS += macEnv.c
-SRCS += macUtil.c
+Com_SRCS += macCore.c
+Com_SRCS += macEnv.c
+Com_SRCS += macUtil.c

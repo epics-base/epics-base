@@ -25,6 +25,6 @@ asIoc_RCS = asIoc.rc
 
 PROD_HOST = ascheck
 ascheck_SRCS = ascheck.c
-PROD_LIBS = asHost dbStaticHost Com
+PROD_LIBS = dbStaticHost Com
 
 include $(TOP)/configure/RULES

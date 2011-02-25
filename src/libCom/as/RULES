@@ -11,11 +11,12 @@
 
 # This is a Makefile fragment, see src/libCom/Makefile.
 
-SRC_DIRS += $(LIBCOM)/as
+# Extra rule since asLib_lex.c is included by asLib.c
+asLib$(OBJ): asLib_lex.c
 
-INC += asLib.h
-INC += asTrapWrite.h
+# Ensure that lexer and parser are built before they are needed
+asLib.c: $(call PATH_FILTER, $(TOOLS)/antelope$(HOSTEXE))
+asLib_lex.c: $(call PATH_FILTER, $(TOOLS)/e_flex$(HOSTEXE))
 
-LIB_SRCS += asLib.c
-LIB_SRCS += asTrapWrite.c
-
+clean::
+	@$(RM) asLib.c asLib_lex.c

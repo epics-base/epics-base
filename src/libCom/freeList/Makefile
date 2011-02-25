@@ -9,5 +9,5 @@
 
 SRC_DIRS += $(LIBCOM)/freeList
 INC += freeList.h
-SRCS += freeListLib.c
+Com_SRCS += freeListLib.c
 HTMLS += freeList/freeList.html

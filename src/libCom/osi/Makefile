@@ -52,61 +52,61 @@ INC += devLibVME.h
 INC += devLibVMEImpl.h
 INC += osdVME.h
 
-SRCS += epicsThread.cpp
-SRCS += epicsMutex.cpp
-SRCS += epicsEvent.cpp
-SRCS += epicsTime.cpp
-SRCS += epicsMessageQueue.cpp
-SRCS += epicsMath.cpp
+Com_SRCS += epicsThread.cpp
+Com_SRCS += epicsMutex.cpp
+Com_SRCS += epicsEvent.cpp
+Com_SRCS += epicsTime.cpp
+Com_SRCS += epicsMessageQueue.cpp
+Com_SRCS += epicsMath.cpp
 
-SRCS += epicsGeneralTime.c
+Com_SRCS += epicsGeneralTime.c
 
 # Time providers
-SRCS += osiClockTime.c
-SRCS_vxWorks += osiNTPTime.c
-SRCS_RTEMS += osiNTPTime.c
+Com_SRCS += osiClockTime.c
+Com_SRCS_vxWorks += osiNTPTime.c
+Com_SRCS_RTEMS += osiNTPTime.c
 
-SRCS += osdSock.c
-SRCS += osdSockAddrReuse.cpp
-SRCS += osiSock.c
-SRCS += systemCallIntMech.cpp
-SRCS += epicsSocketConvertErrnoToString.cpp
-SRCS += osdAssert.c
-SRCS += osdFindSymbol.c
-SRCS += osdInterrupt.c
-SRCS += osdPoolStatus.c
-SRCS += osdSignal.cpp
+Com_SRCS += osdSock.c
+Com_SRCS += osdSockAddrReuse.cpp
+Com_SRCS += osiSock.c
+Com_SRCS += systemCallIntMech.cpp
+Com_SRCS += epicsSocketConvertErrnoToString.cpp
+Com_SRCS += osdAssert.c
+Com_SRCS += osdFindSymbol.c
+Com_SRCS += osdInterrupt.c
+Com_SRCS += osdPoolStatus.c
+Com_SRCS += osdSignal.cpp
 
 osdEnv_CFLAGS_WIN32= -U__STDC__
 
-SRCS += osdEnv.c
+Com_SRCS += osdEnv.c
 
 # Command-line input support
 epicsReadline_CFLAGS += -DEPICS_COMMANDLINE_LIBRARY=EPICS_COMMANDLINE_LIBRARY_$(COMMANDLINE_LIBRARY)
 epicsReadline_INCLUDES += $(INCLUDES_$(COMMANDLINE_LIBRARY))
 
-SRCS += epicsReadline.c
+Com_SRCS += epicsReadline.c
 
-SRCS += epicsTempFile.cpp
-SRCS += epicsStdio.c
-SRCS += osdStdio.c
+Com_SRCS += epicsTempFile.cpp
+Com_SRCS += epicsStdio.c
+Com_SRCS += osdStdio.c
 
 #POSIX thread priority scheduling flag
 THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
 osdThread_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 
-SRCS += osdThread.c
-SRCS += osdMutex.c
-SRCS += osdEvent.c
-SRCS += osdTime.cpp
-SRCS += osdProcess.c
-SRCS += osdNetIntf.c
-SRCS += osdMessageQueue.c
+Com_SRCS += osdThread.c
+Com_SRCS += osdMutex.c
+Com_SRCS += osdEvent.c
+Com_SRCS += osdTime.cpp
+Com_SRCS += osdProcess.c
+Com_SRCS += osdNetIntf.c
+Com_SRCS += osdMessageQueue.c
 
-SRCS += devLibVME.c
-SRCS += devLibVMEOSD.c
+Com_SRCS += devLibVME.c
+Com_SRCS += devLibVMEOSD.c
 
-SRCS_vxWorks += atReboot.cpp
+Com_SRCS_vxWorks += atReboot.cpp
 
 # For old vxWorks applications
 INC_vxWorks += camacLib.h
@@ -114,14 +114,14 @@ INC_vxWorks += epicsDynLink.h
 INC_vxWorks += module_types.h
 INC_vxWorks += task_params.h
 
-SRCS_vxWorks += epicsDynLink.c
-SRCS_vxWorks += veclist.c
-SRCS_vxWorks += logMsgToErrlog.cpp
+Com_SRCS_vxWorks += epicsDynLink.c
+Com_SRCS_vxWorks += veclist.c
+Com_SRCS_vxWorks += logMsgToErrlog.cpp
 
 #This forces the vxWorks compatibility stuff to be loaded
 OBJS_vxWorks = vxComLibrary
 
-SRCS_WIN32 += epicsGetopt.c 
-SRCS_WIN32 += setThreadName.cpp
-#SRCS_WIN32 += dllmain.cpp
-SRCS_WIN32 += forceBadAllocException.cpp
+Com_SRCS_WIN32 += epicsGetopt.c 
+Com_SRCS_WIN32 += setThreadName.cpp
+#Com_SRCS_WIN32 += dllmain.cpp
+Com_SRCS_WIN32 += forceBadAllocException.cpp

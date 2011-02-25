@@ -9,9 +9,9 @@
 
 SRC_DIRS += $(LIBCOM)/timer
 INC += epicsTimer.h
-SRCS += epicsTimer.cpp
-SRCS += timer.cpp
-SRCS += timerQueue.cpp
-SRCS += timerQueueActive.cpp
-SRCS += timerQueueActiveMgr.cpp
-SRCS += timerQueuePassive.cpp
+Com_SRCS += epicsTimer.cpp
+Com_SRCS += timer.cpp
+Com_SRCS += timerQueue.cpp
+Com_SRCS += timerQueueActive.cpp
+Com_SRCS += timerQueueActiveMgr.cpp
+Com_SRCS += timerQueuePassive.cpp

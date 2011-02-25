@@ -15,9 +15,9 @@ INC += errSymTbl.h
 INC += errlog.h
 INC += error.h
 
-SRCS += errlog.c
-SRCS += errSymLib.c
-SRCS += errSymTbl.c
+Com_SRCS += errlog.c
+Com_SRCS += errSymLib.c
+Com_SRCS += errSymTbl.c
 
 # For bldErrSymTbl
 #

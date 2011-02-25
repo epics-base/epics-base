@@ -10,4 +10,4 @@
 #tsDefs contains R3.13 compatibility tsStamp code
 SRC_DIRS += $(LIBCOM)/tsDefs
 INC += tsDefs.h
-SRCS += tsDefs.c
+Com_SRCS += tsDefs.c

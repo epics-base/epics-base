@@ -9,4 +9,4 @@
 
 SRC_DIRS += $(LIBCOM)/bucketLib
 INC += bucketLib.h
-SRCS += bucketLib.c
+Com_SRCS += bucketLib.c

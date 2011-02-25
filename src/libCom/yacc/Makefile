@@ -7,13 +7,23 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-TOP=../../..
+# This is a Makefile fragment, see src/libCom/Makefile.
 
-include $(TOP)/configure/CONFIG
+SRC_DIRS += $(LIBCOM)/yacc
 
-DIRS = antelope flex 
+antelope_SRCS += closure.c
+antelope_SRCS += error.c
+antelope_SRCS += lalr.c
+antelope_SRCS += lr0.c
+antelope_SRCS += antelope.c
+antelope_SRCS += mkpar.c
+antelope_SRCS += output.c
+antelope_SRCS += reader.c
+antelope_SRCS += skeleton.c
+antelope_SRCS += symtab.c
+antelope_SRCS += verbose.c
+antelope_SRCS += warshall.c
+antelope_OBJS += epicsTempFile$(OBJ)
 
-flex_DEPEND_DIRS += antelope
-
-include $(TOP)/configure/RULES_DIRS
+PROD_HOST += antelope
 

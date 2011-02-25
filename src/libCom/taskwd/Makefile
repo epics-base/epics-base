@@ -9,4 +9,4 @@
 
 SRC_DIRS += $(LIBCOM)/taskwd
 INC += taskwd.h
-SRCS += taskwd.c
+Com_SRCS += taskwd.c

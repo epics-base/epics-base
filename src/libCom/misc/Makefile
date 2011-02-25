@@ -31,13 +31,13 @@ INC += testMain.h
 # epicsVersion.h is created by this Makefile
 INC += epicsVersion.h
 
-SRCS += aToIPAddr.c
-SRCS += adjustment.c
-SRCS += cantProceed.c
-SRCS += epicsConvert.c
-SRCS += epicsExit.c
-SRCS += epicsStdlib.c
-SRCS += epicsString.c
-SRCS += truncateFile.c
-SRCS += ipAddrToAsciiAsynchronous.cpp
-SRCS += epicsUnitTest.c
+Com_SRCS += aToIPAddr.c
+Com_SRCS += adjustment.c
+Com_SRCS += cantProceed.c
+Com_SRCS += epicsConvert.c
+Com_SRCS += epicsExit.c
+Com_SRCS += epicsStdlib.c
+Com_SRCS += epicsString.c
+Com_SRCS += truncateFile.c
+Com_SRCS += ipAddrToAsciiAsynchronous.cpp
+Com_SRCS += epicsUnitTest.c

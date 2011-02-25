@@ -10,5 +10,5 @@
 SRC_DIRS += $(LIBCOM)/fdmgr
 INC += fdManager.h
 INC += fdmgr.h
-SRCS += fdmgr.cpp
-SRCS += fdManager.cpp
+Com_SRCS += fdmgr.cpp
+Com_SRCS += fdManager.cpp

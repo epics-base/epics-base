@@ -703,5 +703,5 @@ char msg[];
 
 #include "scan.c"
 #include "yylex.c"
-#include "main.c"
+#include "flex.c"
 

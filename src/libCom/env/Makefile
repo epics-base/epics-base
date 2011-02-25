@@ -11,6 +11,6 @@ SRC_DIRS += $(LIBCOM)/env
 
 INC += envDefs.h
 
-SRCS += envSubr.c
-SRCS += envData.c
+Com_SRCS += envSubr.c
+Com_SRCS += envData.c
 

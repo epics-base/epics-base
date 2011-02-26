@@ -10,7 +10,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 # Ensure that the lexer is built before it is needed
-parse.c: $(call PATH_FILTER, $(TOOLS)/antelope$(HOSTEXE))
+parse.c: $(YACC)
 
 clean::
 	$(RM) parse.c parse.h

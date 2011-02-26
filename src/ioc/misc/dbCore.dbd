@@ -1,0 +1,14 @@
+# dbCore.dbd
+#
+# $Revision-Id$
+#
+# This file provides iocsh access to variables that control some lesser-used
+# and debugging features of the IOC database code.
+
+# Access security subroutines
+variable(asCaDebug,int)
+
+# Static database access variables
+variable(dbRecordsOnceOnly,int)
+variable(dbBptNotMonotonic,int)
+

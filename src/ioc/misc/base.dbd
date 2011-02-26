@@ -43,9 +43,6 @@ include "devSoft.dbd"
 
 # Access security subroutines
 registrar(asSub)
-variable(asCaDebug,int)
 
-# dbStaticLib settings
-variable(dbRecordsOnceOnly,int)
-variable(dbBptNotMonotonic,int)
+include "dbCore.dbd"
 

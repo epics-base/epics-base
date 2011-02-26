@@ -11,17 +11,18 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-SRC_DIRS += $(IOCDIR)/as
+$(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
 
-INC += asDbLib.h
-INC += asCa.h
-INC += asIocRegister.h
+dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+	@$(RM) $@
+	@-$(MKMF) -m $@ ../db  $(COMMON_DIR)/dbCommon.h $<
 
-dbCore_SRCS += asDbLib.c
-dbCore_SRCS += asCa.c
-dbCore_SRCS += asIocRegister.c
+$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+	$(RM) $@
+	$(DBTORECORDTYPEH) -I ../db $< $@
 
-PROD_HOST += ascheck
-ascheck_SRCS = ascheck.c
-ascheck_LIBS = dbStaticHost
+$(COMMON_DIR)/dbCommon.h: $(DBTORECORDTYPEH)
+
+$(patsubst %,$(COMMON_DIR)/%.h,$(DBDINC) menuConvert menuGlobal) : \
+$(COMMON_DIR)/%.h : $(DBTOMENUH)
 

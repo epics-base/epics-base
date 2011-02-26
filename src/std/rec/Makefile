@@ -71,7 +71,7 @@ LIBSRCS += waveformRecord.c
 
 LIBRARY_IOC += recIoc
 
-recIoc_LIBS = asIoc dbIoc registryIoc dbStaticIoc ca Com
+recIoc_LIBS = dbCore ca Com
 recIoc_RCS = recIoc.rc
 
 include $(TOP)/configure/RULES

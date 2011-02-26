@@ -52,8 +52,10 @@ LIBSRCS += devSoSoftCallback.c
 LIBSRCS += devTimestamp.c
 LIBSRCS += devSoStdio.c
 
+LIB_SRCS += asSubRecordFunctions.c
+
 LIBRARY_IOC += softDevIoc
-softDevIoc_LIBS += miscIoc recIoc asIoc dbIoc registryIoc dbStaticIoc ca Com
+softDevIoc_LIBS += dbCore ca Com
 softDevIoc_RCS = softDevIoc.rc
 
 include $(TOP)/configure/RULES

@@ -1,16 +1,16 @@
 #*************************************************************************
-# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP=../../..
-include $(TOP)/configure/CONFIG
 
-#       includes to install from this sub-project
-#
+# This is a Makefile fragment, see src/ioc/Makefile.
+
+SRC_DIRS += $(IOCDIR)/db
+
 INC += callback.h
 INC += dbAccess.h
 INC += dbAccessDefs.h
@@ -49,43 +49,28 @@ DBDINC += menuSimm
 DBDINC += dbCommon
 DBD+=  menuGlobal.dbd
 
-LIB_SRCS += dbLock.c
-LIB_SRCS += dbAccess.c
-LIB_SRCS += dbBkpt.c
-LIB_SRCS += dbConvert.c
-LIB_SRCS += dbFastLinkConv.c
-LIB_SRCS += dbNotify.c
-LIB_SRCS += dbScan.c
-LIB_SRCS += dbEvent.c
-LIB_SRCS += dbTest.c
-LIB_SRCS += db_access.c
-LIB_SRCS += db_test.c
-LIB_SRCS += recGbl.c
-LIB_SRCS += callback.c
-LIB_SRCS += dbCa.c
-LIB_SRCS += dbCaTest.c
-LIB_SRCS += initHooks.c
-LIB_SRCS += cvtBpt.c
-LIB_SRCS += dbContext.cpp
-LIB_SRCS += dbChannelIO.cpp
-LIB_SRCS += dbSubscriptionIO.cpp
-LIB_SRCS += dbPutNotifyBlocker.cpp
-LIB_SRCS += dbContextReadNotifyCache.cpp
-LIB_SRCS += templateInstances.cpp
-LIB_SRCS += dbIocRegister.c
-
-LIBRARY_IOC = dbIoc
-dbIoc_LIBS = dbStaticIoc ca Com
-
-dbIoc_RCS = dbIoc.rc
-
-include $(TOP)/configure/RULES
-
-dbCommon.h$(DEP): ../dbCommonRecord.dbd ../dbCommon.dbd
-	@$(RM) $@
-	@-$(MKMF) -m $@ ..  $(COMMON_DIR)/dbCommon.h $<
-
-$(COMMON_DIR)/dbCommon.h: ../dbCommonRecord.dbd ../dbCommon.dbd
-	$(RM) $@
-	$(DBTORECORDTYPEH) -I .. $< $@
+dbCore_SRCS += dbLock.c
+dbCore_SRCS += dbAccess.c
+dbCore_SRCS += dbBkpt.c
+dbCore_SRCS += dbConvert.c
+dbCore_SRCS += dbFastLinkConv.c
+dbCore_SRCS += dbNotify.c
+dbCore_SRCS += dbScan.c
+dbCore_SRCS += dbEvent.c
+dbCore_SRCS += dbTest.c
+dbCore_SRCS += db_access.c
+dbCore_SRCS += db_test.c
+dbCore_SRCS += recGbl.c
+dbCore_SRCS += callback.c
+dbCore_SRCS += dbCa.c
+dbCore_SRCS += dbCaTest.c
+dbCore_SRCS += initHooks.c
+dbCore_SRCS += cvtBpt.c
+dbCore_SRCS += dbContext.cpp
+dbCore_SRCS += dbChannelIO.cpp
+dbCore_SRCS += dbSubscriptionIO.cpp
+dbCore_SRCS += dbPutNotifyBlocker.cpp
+dbCore_SRCS += dbContextReadNotifyCache.cpp
+dbCore_SRCS += templateInstances.cpp
+dbCore_SRCS += dbIocRegister.c
 

@@ -47,50 +47,30 @@ DIRS += ca/legacy/pcas
 ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd
 
 DIRS += ca/legacy/pcas/ex
-ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas ioc/as ioc/registry
+# needs ioc for dbStaticHost
+ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas libCom ioc
 
 DIRS += ca/client/perl
 ca/client/perl_DEPEND_DIRS = ca/client
 
 # PDB Core
 
-DIRS += ioc/dbStatic
-ioc/dbStatic_DEPEND_DIRS = libCom
-
-DIRS += ioc/registry
-ioc/registry_DEPEND_DIRS = ioc/dbStatic
-
-DIRS += ioc/bpt
-ioc/bpt_DEPEND_DIRS = ioc/dbStatic
-
-DIRS += ioc/db
-ioc/db_DEPEND_DIRS = ioc/bpt ca/client
-
-DIRS += ioc/as
-ioc/as_DEPEND_DIRS = ioc/db libCom
-
-DIRS += ioc/dbtemplate
-ioc/dbtemplate_DEPEND_DIRS = ioc/db
-
-DIRS += ioc/rsrv
-ioc/rsrv_DEPEND_DIRS = ioc/as
-
-DIRS += ioc/misc
-ioc/misc_DEPEND_DIRS = ioc/dbtemplate ioc/rsrv std/rec
+DIRS += ioc
+ioc_DEPEND_DIRS = libCom ca/client
 
 DIRS += ioc/db/test
-ioc/db/test_DEPEND_DIRS = ioc/db libCom/RTEMS
+ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
 
 # PDB Standard Record Definitions
 
 DIRS += std/rec
-std/rec_DEPEND_DIRS = ioc/as ioc/registry
+std/rec_DEPEND_DIRS = ioc
 
 DIRS += std/dev
-std/dev_DEPEND_DIRS = std/rec ioc/misc
+std/dev_DEPEND_DIRS = std/rec ioc
 
 DIRS += std/softIoc
-std/softIoc_DEPEND_DIRS = std/dev ioc/dbtemplate libCom/RTEMS
+std/softIoc_DEPEND_DIRS = std/dev ioc libCom/RTEMS
 
 
 include $(TOP)/configure/RULES_DIRS

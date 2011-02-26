@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -7,30 +7,23 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-TOP=../../..
-include $(TOP)/configure/CONFIG
+# This is a Makefile fragment, see src/ioc/Makefile.
+
+SRC_DIRS += $(IOCDIR)/misc
 
 DBD += base.dbd
 DBD += system.dbd
 DBD += dlload.dbd
+DBD += dbCore.dbd
 
 INC += epicsRelease.h
 INC += iocInit.h
 INC += miscIocRegister.h
 INC += iocshRegisterCommon.h
 
-LIB_SRCS += epicsRelease.c
-LIB_SRCS += iocInit.c
-LIB_SRCS += asSubRecordFunctions.c
-LIB_SRCS += miscIocRegister.c
-LIB_SRCS += dlload.c
-LIB_SRCS += iocshRegisterCommon.c
-
-
-LIBRARY_IOC = miscIoc
-
-miscIoc_RCS = miscIoc.rc
-miscIoc_LIBS  = rsrvIoc asIoc dbtoolsIoc dbIoc registryIoc dbStaticIoc ca Com
-
-include $(TOP)/configure/RULES
+dbCore_SRCS += epicsRelease.c
+dbCore_SRCS += iocInit.c
+dbCore_SRCS += miscIocRegister.c
+dbCore_SRCS += dlload.c
+dbCore_SRCS += iocshRegisterCommon.c
 

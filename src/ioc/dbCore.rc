@@ -18,13 +18,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments","Miscellaneous Tools Library for EPICS\0"
+            VALUE "Comments","Database Core Library for EPICS\0"
             VALUE "CompanyName", "The EPICS collaboration\0"
-            VALUE "FileDescription", "Miscellaneous Tools Library\0"
+            VALUE "FileDescription", "Database Core Library\0"
             VALUE "FileVersion", EPICS_VERSION_STRING "\0"
-            VALUE "InternalName", "misc\0"
-            VALUE "LegalCopyright", "Copyright (C) Univ. of California, Univ. of Chicago\0"
-            VALUE "OriginalFilename", "misc.dll\0"
+            VALUE "InternalName", "dbCore\0"
+            VALUE "LegalCopyright", "Copyright (C) Univ. of California, UChicago Argonne LLC\0"
+            VALUE "OriginalFilename", "dbCore.dll\0"
             VALUE "ProductName", "Experimental Physics and Industrial Control System (EPICS)\0"
             VALUE "ProductVersion", EPICS_VERSION_STRING "\0"
         END

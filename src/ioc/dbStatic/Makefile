@@ -1,14 +1,15 @@
 #*************************************************************************
-# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP=../../..
 
-include $(TOP)/configure/CONFIG
+# This is a Makefile fragment, see src/ioc/Makefile.
+
+SRC_DIRS += $(IOCDIR)/dbStatic
 
 INC += dbBase.h
 INC += dbFldTypes.h
@@ -22,35 +23,34 @@ INC += drvSup.h
 INC += recSup.h
 INC += dbStaticIocRegister.h
 
-LIBSRCS += dbStaticLib.c
-LIBSRCS += dbYacc.c
-LIBSRCS += dbPvdLib.c
+STATIC_SRCS += dbStaticLib.c
+STATIC_SRCS += dbYacc.c
+STATIC_SRCS += dbPvdLib.c
 
+dbCore_SRCS += $(STATIC_SRCS)
+dbCore_SRCS += dbStaticRun.c
+dbCore_SRCS += dbStaticIocRegister.c
+
+dbStaticHost_SRCS += $(STATIC_SRCS)
 dbStaticHost_SRCS += dbStaticNoRun.c 
-dbStaticIoc_SRCS += dbStaticRun.c
-dbStaticIoc_SRCS += dbStaticIocRegister.c
 
 LIBRARY_HOST += dbStaticHost
-LIBRARY_IOC += dbStaticIoc
 
 dbStaticHost_LIBS = Com
-dbStaticIoc_LIBS = Com
 
-dbStaticHost_RCS = dbStaticHost.rc
-dbStaticIoc_RCS = dbStaticIoc.rc
-
-PROD_LIBS := dbStaticHost Com
-PROD_HOST = dbReadTest dbExpand dbToMenuH dbToRecordtypeH
+PROD_HOST += dbReadTest dbExpand dbToMenuH dbToRecordtypeH
 
 dbReadTest_SRCS = dbReadTest.c
 dbExpand_SRCS = dbExpand.c
 dbToMenuH_SRCS = dbToMenuH.c
 dbToRecordtypeH_SRCS = dbToRecordtypeH.c
 
-include $(TOP)/configure/RULES
+# Include dbStaticHost objects directly in executables
+# because of a Circular dependency induced by a rule
+#  $(INSTALL_LIBS): $(INSTALL_SHRLIBS)
+# in RULES_BUILD
+dbReadTest_SRCS += $(dbStaticHost_SRCS)
+dbExpand_SRCS += $(dbStaticHost_SRCS)
+dbToMenuH_SRCS += $(dbStaticHost_SRCS)
+dbToRecordtypeH_SRCS += $(dbStaticHost_SRCS)
 
-# Extra rule since dbLexRoutines.c is included in dbYacc.c
-dbYacc.c: dbLex.c ../dbLexRoutines.c
-
-clean::
-	@$(RM) dbLex.c dbYacc.c 

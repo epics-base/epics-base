@@ -9,19 +9,9 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-SRC_DIRS += $(IOCDIR)/bpt
+# dbLoadTemplate_lex.c is included by dbLoadTemplate.c
+dbLoadTemplate.c: dbLoadTemplate_lex.c $(IOCDIR)/dbtemplate/dbLoadTemplate.h
 
-INC += cvtTable.h
-
-DBD += menuConvert.dbd
-INC += menuConvert.h
-
-BPT_DBD += bptTypeJdegC.dbd
-BPT_DBD += bptTypeJdegF.dbd
-BPT_DBD += bptTypeKdegC.dbd
-BPT_DBD += bptTypeKdegF.dbd
-DBD += $(BPT_DBD)
-
-PROD_HOST += makeBpt
-makeBpt_SRCS=makeBpt
+clean::
+	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c 
 

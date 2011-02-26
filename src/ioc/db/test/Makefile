@@ -10,7 +10,7 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-callbackTest_LIBS = dbIoc
+callbackTest_LIBS = dbCore
 callbackTest_LIBS_DEFAULT = dbStaticHost
 callbackTest_LIBS_vxWorks = dbStaticIoc
 callbackTest_LIBS_RTEMS   = dbStaticIoc

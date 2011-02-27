@@ -20,7 +20,226 @@ Enabled histogram record type</h3>
 
 <p>
 The histogram record was not included in the base.dbd file in any 3.14 release,
-but has now been added along with its associated soft device support.</p>
+but has now been added along with its associated soft device support. The build
+system now generates the list of all the record.dbd files in base automatically
+in src/std/rec/Makefile.</p>
+
+<h3>Reorganization of src/</h3>
+
+<p>Reorganization of subdirectories of src/ to better represent the relation
+between different parts as described in the following table.</p>
+
+<p>This change also allows the number of libraries built to be reduced to:
+libCap5.so,  libca.so,   libdbCore.so,    libdbStaticHost.so,
+libCom.so,   libcas.so,  libdbRecStd.so, and  libgdd.so</p>
+
+<table border="1"><tbody>
+<tr>
+ <th>Component</th>
+ <th>Dependency</th>
+ <th>Library name</th>
+ <th>Description</th>
+</tr>
+<tr>
+ <td>src/tools</td>
+ <td></td>
+ <td></td>
+ <td>Build system scripts</td>
+</tr>
+<tr>
+ <td>src/libCom</td>
+ <td>src/tools</td>
+ <td>Com</td>
+ <td>Utility routines and OS-independant API</td>
+</tr>
+<tr>
+ <td>src/template</td>
+ <td>src/tools</td>
+ <td></td>
+ <td>User application templates (e.g. makeBaseApp)</td>
+</tr>
+<tr>
+ <td>src/ca/client</td>
+ <td>src/libCom</td>
+ <td>ca</td>
+ <td>Channel Access client</td>
+</tr>
+<tr>
+ <td>src/ca/legacy/gdd</td>
+ <td>src/ca/client</td>
+ <td>gdd</td>
+ <td>Generic data layer for PCAS</td>
+</tr>
+<tr>
+ <td>src/ca/legacy/pcas</td>
+ <td>src/ca/legacy/gdd</td>
+ <td>cas</td>
+ <td>Portable Channel Access Server</td>
+</tr>
+<tr>
+ <td>src/ioc</td>
+ <td>src/ca</td>
+ <td>dbCore</td>
+ <td>Core database processing functions</td>
+</tr>
+<tr>
+ <td>src/std</td>
+ <td>src/ioc</td>
+ <td>dbRecStd</td>
+ <td>Standard records, soft device support and the softIoc </td>
+</tr>
+</tbody></table>
+
+<p>
+In order to better reflect these relations the following
+directories and files were moved as described:</p>
+
+<table border="1"><tbody>
+<tr>
+  <th colspan="2">Relocations</th>
+</tr>
+<tr>
+  <th>Previous</th><th>New</th>
+</tr>
+<tr>
+  <th colspan="2">libCom</th>
+</tr>
+<tr>
+  <td>src/RTEMS</td>
+  <td>src/libCom/RTEMS</td>
+</tr>
+<tr>
+  <td>src/toolsComm/flex</td>
+  <td>src/libCom/flex</td>
+</tr>
+<tr>
+  <td>src/toolsComm/antelope</td>
+  <td>src/libCom/yacc</td>
+</tr>
+<tr>
+  <td align="right">src/dbStatic/alarm.h<br>.../alarmString.h</td>
+  <td>src/libCom/misc/</td>
+</tr>
+<tr>
+  <th colspan="2">IOC Core Components</th>
+</tr>
+<tr>
+  <td>src/bpt</td>
+  <td>src/ioc/bpt</td>
+</tr>
+<tr>
+  <td>src/db</td>
+  <td>src/ioc/db</td>
+</tr>
+<tr>
+  <td>src/dbStatic</td>
+  <td>src/ioc/dbStatic</td>
+</tr>
+<tr>
+  <td>src/dbtools</td>
+  <td>src/ioc/dbtemplate</td>
+</tr>
+<tr>
+  <td>src/misc</td>
+  <td>src/ioc/misc</td>
+</tr>
+<tr>
+  <td>src/registry</td>
+  <td>src/ioc/registry</td>
+</tr>
+<tr>
+  <td>src/rsrv</td>
+  <td>src/ioc/rsrv <a href="#rsrv">1</a></td>
+</tr>
+<tr>
+  <th colspan="2">Standard Record Definitions</th>
+</tr>
+<tr>
+  <td>src/dev/softDev</td>
+  <td>src/std/dev</td>
+</tr>
+<tr>
+  <td>src/rec</td>
+  <td>src/std/rec</td>
+</tr>
+<tr>
+  <td>src/softIoc</td>
+  <td>src/std/softIoc</td>
+</tr>
+<tr>
+  <th colspan="2">Channel Access</th>
+</tr>
+<tr>
+  <td>src/ca</td>
+  <td>src/ca/client</td>
+</tr>
+<tr>
+  <td>src/catools</td>
+  <td>src/ca/client/tools</td>
+</tr>
+<tr>
+  <td>src/cap5</td>
+  <td>src/ca/client/perl</td>
+</tr>
+<tr>
+  <td>src/gdd</td>
+  <td>src/ca/legacy/gdd</td>
+</tr>
+<tr>
+  <td>src/cas</td>
+  <td>src/ca/legacy/pcas</td>
+</tr>
+<tr>
+  <td>src/excas</td>
+  <td>src/ca/legacy/pcas/ex</td>
+</tr>
+<tr>
+  <th colspan="2">User Templates</th>
+</tr>
+<tr>
+  <td>src/makeBaseApp</td>
+  <td>src/template/base</td>
+</tr>
+<tr>
+  <td>src/makeBaseExt</td>
+  <td>src/template/ext</td>
+</tr>
+<tr>
+  <th colspan="2">Dispersed</th>
+</tr>
+<tr>
+  <td rowspan="3">src/util <a href="#util">2</a></td>
+  <td>src/ca/client</td>
+</tr>
+<tr>
+  <td>src/ca/client/test</td>
+</tr>
+<tr>
+  <td>src/libCom/log</td>
+</tr>
+<tr>
+  <td rowspan="2">src/as <a href="#as">3</a></td>
+  <td>src/libCom/as</td>
+</tr>
+<tr>
+  <td>src/ioc/as</td>
+</tr>
+</tbody></table>
+
+<p><a name="rsrv">1</a>
+RSRV is built as part of dbCore due to its tight (bidirectional) coupling
+with the other database code.</p>
+
+<p><a name="util">2</a>
+The contents for src/util/ moved to three locations.  The caRepeater init script
+was moved to src/ca/client/.  ca_test is now in src/ca/client/test/.
+The iocLogServer was moved into the same directory (src/libCom/log) as
+the log client code.</p>
+
+<p><a name="as">3</a>
+The Access Security code has been divided, with the parts not related to the 
+database (lexer/parser and trap registration) becoming part of libCom.
+The remaining components are included in the dbCore library</p>
 
 <h3>
 Moved src/RTEMS/base directory</h3>

@@ -21,8 +21,7 @@ endif
 #---------------------------------------------------------------
 # Epics base Ioc libraries 
 
-EPICS_BASE_IOC_LIBS += recIoc softDevIoc
-EPICS_BASE_IOC_LIBS += dbCore ca Com 
+EPICS_BASE_IOC_LIBS += dbRecStd dbCore ca Com 
 
 #---------------------------------------------------------------
 # Epics base Host libraries 

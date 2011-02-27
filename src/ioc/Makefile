@@ -13,7 +13,7 @@ include $(TOP)/configure/CONFIG
 SRC = $(TOP)/src
 IOCDIR = $(SRC)/ioc
 
-LIBRARY += dbCore
+LIBRARY_IOC += dbCore
 dbCore_LIBS += ca Com
 dbCore_SYS_LIBS_WIN32 += ws2_32
 

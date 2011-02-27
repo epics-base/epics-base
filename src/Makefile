@@ -63,14 +63,8 @@ ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
 
 # PDB Standard Record Definitions
 
-DIRS += std/rec
-std/rec_DEPEND_DIRS = ioc
-
-DIRS += std/dev
-std/dev_DEPEND_DIRS = std/rec ioc
-
-DIRS += std/softIoc
-std/softIoc_DEPEND_DIRS = std/dev ioc libCom/RTEMS
+DIRS += std
+std_DEPEND_DIRS = ioc libCom/RTEMS
 
 
 include $(TOP)/configure/RULES_DIRS

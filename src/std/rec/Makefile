@@ -1,13 +1,15 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 The University of Chicago, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP=../../..
-include $(TOP)/configure/CONFIG
+
+# This is a Makefile fragment, see src/std/Makefile.
+
+SRC_DIRS += $(STDDIR)/rec
 
 DBDINC += aaiRecord
 DBDINC += aaoRecord
@@ -39,40 +41,37 @@ DBDINC += subRecord
 DBDINC += subArrayRecord
 DBDINC += waveformRecord
 
-LIBSRCS += aaiRecord.c
-LIBSRCS += aaoRecord.c
-LIBSRCS += aiRecord.c
-LIBSRCS += aoRecord.c
-LIBSRCS += aSubRecord.c
-LIBSRCS += biRecord.c
-LIBSRCS += boRecord.c
-LIBSRCS += calcRecord.c
-LIBSRCS += calcoutRecord.c
-LIBSRCS += compressRecord.c
-LIBSRCS += dfanoutRecord.c
-LIBSRCS += eventRecord.c
-LIBSRCS += fanoutRecord.c
-LIBSRCS += histogramRecord.c
-LIBSRCS += longinRecord.c
-LIBSRCS += longoutRecord.c
-LIBSRCS += mbbiRecord.c
-LIBSRCS += mbbiDirectRecord.c
-LIBSRCS += mbboRecord.c
-LIBSRCS += mbboDirectRecord.c
-LIBSRCS += permissiveRecord.c
-LIBSRCS += selRecord.c
-LIBSRCS += seqRecord.c
-LIBSRCS += stateRecord.c
-LIBSRCS += stringinRecord.c
-LIBSRCS += stringoutRecord.c
-LIBSRCS += subRecord.c
-LIBSRCS += subArrayRecord.c
-LIBSRCS += waveformRecord.c
+DBD += stdRecords.dbd
 
-LIBRARY_IOC += recIoc
+stdRecords_DBD = $(patsubst %,%.dbd,$(DBDINC))
 
-recIoc_LIBS = dbCore ca Com
-recIoc_RCS = recIoc.rc
-
-include $(TOP)/configure/RULES
+dbRecStd_SRCS += aaiRecord.c
+dbRecStd_SRCS += aaoRecord.c
+dbRecStd_SRCS += aiRecord.c
+dbRecStd_SRCS += aoRecord.c
+dbRecStd_SRCS += aSubRecord.c
+dbRecStd_SRCS += biRecord.c
+dbRecStd_SRCS += boRecord.c
+dbRecStd_SRCS += calcRecord.c
+dbRecStd_SRCS += calcoutRecord.c
+dbRecStd_SRCS += compressRecord.c
+dbRecStd_SRCS += dfanoutRecord.c
+dbRecStd_SRCS += eventRecord.c
+dbRecStd_SRCS += fanoutRecord.c
+dbRecStd_SRCS += histogramRecord.c
+dbRecStd_SRCS += longinRecord.c
+dbRecStd_SRCS += longoutRecord.c
+dbRecStd_SRCS += mbbiRecord.c
+dbRecStd_SRCS += mbbiDirectRecord.c
+dbRecStd_SRCS += mbboRecord.c
+dbRecStd_SRCS += mbboDirectRecord.c
+dbRecStd_SRCS += permissiveRecord.c
+dbRecStd_SRCS += selRecord.c
+dbRecStd_SRCS += seqRecord.c
+dbRecStd_SRCS += stateRecord.c
+dbRecStd_SRCS += stringinRecord.c
+dbRecStd_SRCS += stringoutRecord.c
+dbRecStd_SRCS += subRecord.c
+dbRecStd_SRCS += subArrayRecord.c
+dbRecStd_SRCS += waveformRecord.c
 

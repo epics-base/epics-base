@@ -11,7 +11,6 @@
 
 SRC_DIRS += $(IOCDIR)/misc
 
-DBD += base.dbd
 DBD += system.dbd
 DBD += dlload.dbd
 DBD += dbCore.dbd

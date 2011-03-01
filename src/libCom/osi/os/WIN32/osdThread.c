@@ -124,7 +124,7 @@ BOOL WINAPI DllMain (
 #if _WIN32_WINNT >= 0x0501 
         /* 
          * Only in WXP 
-         * Thats a shame becaus ethis is probably much faster
+         * Thats a shame because this is probably much faster
          */
         success = GetModuleHandleEx (
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
@@ -268,7 +268,8 @@ static void threadCleanupWIN32 ( void )
         return;
     }
 
-    while ( ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ) ) ) {
+    while ( ( pParm = ( win32ThreadParam * ) 
+        ellFirst ( & pGbl->threadList ) ) ) {
         epicsParmCleanupWIN32 ( pParm );
     }
 
@@ -446,7 +447,8 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 /*
  * epicsThreadGetStackSize ()
  */
-epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass ) 
+epicsShareFunc unsigned int epicsShareAPI 
+    epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass ) 
 {
     static const unsigned stackSizeTable[epicsThreadStackBig+1] = {4000, 6000, 11000};
 
@@ -628,17 +630,20 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (const char *pName,
         free ( pParmWIN32 );
         return NULL;
     }
+    
+    EnterCriticalSection ( & pGbl->mutex );
+    ellAdd ( & pGbl->threadList, & pParmWIN32->node );
+    LeaveCriticalSection ( & pGbl->mutex );
 
     wstat =  ResumeThread ( pParmWIN32->handle );
     if (wstat==0xFFFFFFFF) {
+		    EnterCriticalSection ( & pGbl->mutex );
+		    ellDelete ( & pGbl->threadList, & pParmWIN32->node );
+		    LeaveCriticalSection ( & pGbl->mutex );
         CloseHandle ( pParmWIN32->handle ); 
         free ( pParmWIN32 );
         return NULL;
     }
-
-    EnterCriticalSection ( & pGbl->mutex );
-    ellAdd ( & pGbl->threadList, & pParmWIN32->node );
-    LeaveCriticalSection ( & pGbl->mutex );
 
     return ( epicsThreadId ) pParmWIN32;
 }
@@ -955,10 +960,17 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
             (void *) pParm, idForFormat, pParm->epicsPriority,
             epics_GetThreadPriorityAsString ( pParm->handle ),
             epicsThreadIsSuspended ( id ) ? "suspend" : "ok" );
+        if ( level ) {
+            fprintf (epicsGetStdout(), " %-8p %-8p ",
+                (void *) pParm->handle, (void *) pParm->parm );
+        }
     }
     else {
         fprintf (epicsGetStdout(), 
             "NAME            EPICS-ID WIN32-ID EPICS-PRI WIN32-PRI STATE  " );
+        if ( level ) {
+            fprintf (epicsGetStdout(), " HANDLE   FUNCTION PARAMETER" );
+        }
     }
     fprintf (epicsGetStdout(),"\n" );
 }

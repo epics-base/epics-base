@@ -169,6 +169,8 @@ bool epicsThread::exitWait ( const double delay ) throw ()
             "epicsThread::exitWait()\n" );
         epicsThreadSleep ( epicsMin ( delay, 5.0 ) );
     }
+    // the event mechanism is used for other purposes
+    this->event.signal ();
     return this->terminated;
 }
 

@@ -260,29 +260,31 @@ MAIN(epicsErrlogTest)
     for (i = 0; i < N; i++) {
         errlogPrintfNoConsole(msg);
     }
+    epicsThreadSleep(0.1); /* should really be a second Event */
 
     testOk1(pvt.count == 0);
 
-    epicsThreadSleep(0.1); /* should really be a second Event */
-
-    pvt.jam = -2; /* Block before #th message */
+    /* Extract the first 2 messages, 2*(sizeof(msgNode) + 128) bytes */
+    pvt.jam = -2;
     epicsEventSignal(pvt.jammer);
     epicsThreadSleep(0.1);
 
-    testDiag("Drain %u messages", pvt.count);
+    testDiag("Drained %u messages", pvt.count);
     testOk1(pvt.count == 2);
 
-    testDiag("Add two more (%d total)", (int) N+2);
-    errlogPrintfNoConsole(msg);
+    /* The buffer has space for 1 more message: sizeof(msgNode) + 256 bytes */
+    errlogPrintfNoConsole(msg); /* Use up that space */
+
+    testDiag("Overflow the buffer");
     errlogPrintfNoConsole(msg);
 
     testOk1(pvt.count == 2);
 
-    epicsEventSignal(pvt.jammer);
+    epicsEventSignal(pvt.jammer); /* Empty */
     errlogFlush();
-    testDiag("Logged %u messages", pvt.count);
 
-    testOk1(pvt.count == N+2);
+    testDiag("Logged %u messages", pvt.count);
+    testOk1(pvt.count == N+1);
 
     /* Clean up */
     errlogRemoveListener(&logClient);

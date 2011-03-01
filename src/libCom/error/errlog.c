@@ -534,8 +534,10 @@ static msgNode *msgbufGetNode(void)
         char *plimit = pbuffer + pvtData.buffersize;
 
         pnextFree = plast->message + adjustToWorstCaseAlignment(plast->length);
-        if (pfirst <= plast &&
-            pnextFree + pvtData.msgNeeded > plimit) {
+        if (pfirst > plast) {
+            plimit = (char *)pfirst;
+        }
+        else if (pnextFree + pvtData.msgNeeded > plimit) {
             pnextFree = pbuffer;    /* Hit end, wrap to start */
             plimit = (char *)pfirst;
         }

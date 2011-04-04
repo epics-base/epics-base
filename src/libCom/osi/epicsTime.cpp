@@ -74,8 +74,6 @@ public:
     bool useDiffTimeOptimization;
 };
 
-static const epicsTimeLoadTimeInit lti;
-
 //
 // epicsTimeLoadTimeInit ()
 //
@@ -125,6 +123,9 @@ inline void epicsTime::addNanoSec (long nSecAdj)
 //
 epicsTime::epicsTime ( const time_t_wrapper & ansiTimeTicks )
 {
+    // avoid c++ static initialization order issues
+    static epicsTimeLoadTimeInit & lti = * new epicsTimeLoadTimeInit ();
+
     //
     // try to directly map time_t into an unsigned long integer because this is 
     // faster on systems w/o hardware floating point and a simple integer type time_t.
@@ -212,6 +213,8 @@ epicsTime epicsTime::getEvent (const epicsTimeEvent &event)
 //
 epicsTime::operator time_t_wrapper () const
 {
+    // avoid c++ static initialization order issues
+    static epicsTimeLoadTimeInit & lti = * new epicsTimeLoadTimeInit ();
     time_t_wrapper wrap;
 
     if ( lti.useDiffTimeOptimization ) {

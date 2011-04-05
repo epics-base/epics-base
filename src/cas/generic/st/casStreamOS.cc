@@ -321,7 +321,7 @@ inline void casStreamOS::disarmRecv ()
 //
 // casStreamOS::armSend()
 //
-inline void casStreamOS::armSend()
+void casStreamOS::armSend()
 {
 	if ( this->outBufBytesPending() == 0u ) {
 		return;

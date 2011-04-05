@@ -209,7 +209,17 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
 {
 #ifdef OMIT_NFS_SUPPORT
     printf ("***** Initializing TFTP *****\n");
+#if __RTEMS_MAJOR__>4 || \
+   (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9) || \
+   (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__==9 && __RTEMS_REVISION__==99)
+    mount_and_make_target_path(NULL,
+                               "/TFTP",
+                               RTEMS_FILESYSTEM_TYPE_TFTPFS,
+                               RTEMS_FILESYSTEM_READ_WRITE,
+                               NULL);
+#else
     rtems_bsdnet_initialize_tftp_filesystem ();
+#endif
     if (!hasLocalFilesystem) {
         char *path;
         int pathsize = 200;

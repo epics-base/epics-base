@@ -9,7 +9,8 @@
 # iOS Version number
 
 #IOS_VERSION = 3.2
-IOS_VERSION = 4.1
+#IOS_VERSION = 4.1
+IOS_VERSION = 4.3
 
 
 # Most sites will want shared libraries

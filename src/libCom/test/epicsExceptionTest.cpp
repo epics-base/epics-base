@@ -55,6 +55,7 @@ class exThread : public epicsThreadRunable {
 public:
     exThread ();
     void waitForCompletion ();
+    ~exThread() {};
 private:
     epicsThread thread;
     bool done;

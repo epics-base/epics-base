@@ -1,0 +1,13 @@
+# $Revision-Id$
+#
+# Definitions for vxWorks-ppc32sf targets
+# Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc32sf
+#
+# This file is maintained by the EPICS build community.
+#-------------------------------------------------------
+
+# Inherit the settings from vxWorks-ppc32
+include $(CONFIG)/os/CONFIG.Common.vxWorks-ppc32
+
+# Tell compiler to use software floating-point
+ARCH_DEP_CFLAGS += -msoft-float

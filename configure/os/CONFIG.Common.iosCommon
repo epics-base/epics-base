@@ -55,7 +55,7 @@ CCC = $(GNU_BIN)/c++
 
 #-------------------------------------------------------
 # Linker flags
-OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib
+OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib -L$(SDK_DIR)/usr/lib/system
 
 #-------------------------------------------------------
 # Shared libraries

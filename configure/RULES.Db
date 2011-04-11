@@ -109,7 +109,8 @@ ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 HINC += $(addsuffix .h,$(DBDINC_NAME))
 COMMON_DBDINC += $(addprefix $(COMMON_DIR)/,$(HINC))
 
-DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) $(DBS) \
+DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
+                    $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
 
 DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))

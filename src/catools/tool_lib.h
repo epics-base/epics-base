@@ -5,8 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -49,6 +48,13 @@
 
 #define DEFAULT_CA_PRIORITY 0  /* Default CA priority */
 #define DEFAULT_TIMEOUT 1.0     /* Default CA timeout */
+
+#ifndef _WIN32
+#  define LINE_BUFFER(stream) setvbuf(stream, NULL, _IOLBF, BUFSIZ)
+#else
+/* Windows doesn't support line mode, turn buffering off completely */
+#  define LINE_BUFFER(stream) setvbuf(stream, NULL, _IONBF, 0)
+#endif
 
 
 /* Type of timestamp */

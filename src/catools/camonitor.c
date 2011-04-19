@@ -6,8 +6,7 @@
 *     Operator of Los Alamos National Laboratory.
 * Copyright (c) 2002 Berliner Elektronenspeicherringgesellschaft fuer
 *     Synchrotronstrahlung.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -214,7 +213,7 @@ int main (int argc, char *argv[])
     int nPvs;                   /* Number of PVs */
     pv* pvs = 0;                /* Array of PV structures */
 
-    setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
+    LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
     while ((opt = getopt(argc, argv, ":nhm:sSe:f:g:l:#:0:w:t:p:F:")) != -1) {
         switch (opt) {

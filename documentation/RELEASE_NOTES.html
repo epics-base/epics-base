@@ -3,15 +3,119 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12 Release Notes</title>
+  <title>EPICS Base R3.14.12.1 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.12</h1>
+<h1 align="center">EPICS Base Release 3.14.12.1</h1>
+
+<!-- Insert new items immediately below here ... -->
+
+<h2 align="center">Changes between 3.14.12 and 3.14.12.1</h2>
+
+<p>This release only contains changes that fix bugs or add build configuration
+files for new or updated target architectures.  No new functionality has been
+added, and as this is a patch release the software has not gone through as
+rigorous a testing regime as it does for a normal minor release.</p>
+
+<h4>Launchpad Bugs Resolved</h4>
+
+<p>The following are links to bugs in the Launchpad bug tracker that have been
+fixed in this release:</p>
+
+<ul>
+<li>693534
+  <a href="https://launchpad.net/bugs/693534">
+    errlog causes crash on IOC exit</a></li>
+<li>701673
+  <a href="https://launchpad.net/bugs/701673">
+    Large array problem in 3.14.12</a></li>
+<li>717252
+  <a href="https://launchpad.net/bugs/771252">
+    local caput causes ioc crash on win32</a></li>
+<li>750549 
+  <a href="https://launchpad.net/bugs/750549 ">
+    epicsTime has non-portable c++ static initialization</a></li>
+<li>753137
+  <a href="https://launchpad.net/bugs/753137">
+    Makefile dependency checking of database files is broken</a></li>
+</ul>
+
+<h4>New/Updated target architectures</h4>
+
+<p>The following target architectures have been added or updated:</p>
+
+<dl>
+<dt>vxWorks-mpc8548</dt>
+<dt>vxWorks-mpc8548-debug</dt>
+<dd style="margin-bottom: 1ex">This PowerPC CPU is used on the Emerson MVME4100
+  VME CPU board (from Ernest Williams, SLAC).</dd>
+
+<dt>vxWorks-ppc32</dt>
+<dt>vxWorks-ppc32sf</dt>
+<dt>vxWorks-ppc32-debug</dt>
+<dt>vxWorks-ppc32sf-debug</dt>
+<dd style="margin-bottom: 1ex">New generic 32-bit PowerPC targets for vxWorks
+  6.x, using hardware or software floating-point. These targets can be used
+  instead of the CPU-specific ppc603, ppc604, mpc8540 and mpc8548 targets (and
+  their _long alternatives, these targets are all compiled with the -mlongcall
+  flag) to reduce the number of distinct build targets needed when supporting
+  multiple PowerPC board types.</dd>
+
+<dt>ios-386</dt>
+<dt>ios-arm</dt>
+<dd style="margin-bottom: 1ex">Updated for iOS 4.3, which is now the default OS
+  version (from Tom Palaia, ORNL).</dd>
+
+</dl>
+
+<h4>RTEMS TFTP filesystem</h4>
+
+<p>Use the new mount API to initialize TFTP on newer RTEMS versions.</p>
+
+<h4>C++ build issues on older Solaris compiler</h4>
+
+<p>Dirk Zimoch reported some problems building with an older SUNWspro C++
+compiler which have been resolved where possible.</p>
+
+<h4>FreeBSD broadcast problem</h4>
+
+<p>The <tt>ifreq_size</tt> macro in freebsd/osdsock.h must be different in BSD
+4.4.</p>
+
+<h4>Thread exit synchronization</h4>
+
+<p>When finished waiting for a thread to exit, signal the event in case other
+  threads are waiting also.</p>
+
+<h4>Win32 osdTime provider fix</h4>
+
+<p>Jeff Hill fixed the last time compare in PLL drift factor update loop.</p>
+
+<h4>Errlog can lose messages</h4>
+
+<p>Systems that generate large numbers of errlog messages or have a slow message
+  listener could overwrite older messages in the message buffer after the buffer
+  wraps. This also corrects and annotates the test code to describe what's being
+  checked.</p>
+
+<p>When the IOC is shutting down, the errlog thread should process all queued
+  messages before it quits.</p>
+
+<h4>Back-slash escapes for Win32</h4>
+
+<p>Stephen Norum pointed out the need for various Perl scripts to escape
+back-slash characters in Windows file paths.</p>
+
+<h4>catools on Windows</h4>
+
+<p>Windows 7 does not properly support line-mode buffering of stdio streams; the
+catools programs used this mode to ensure that they could be used in pipelines,
+but in Windows 7 they became fully buffered and are not flushed when the program
+exits, so buffering of stdout has now been completely disabled on Windows.</p>
 
 
 <h2 align="center">Changes between 3.14.11 and 3.14.12</h2>
-<!-- Insert new items immediately below here ... -->
 
 <h4>Launchpad Bugs Resolved</h4>
 

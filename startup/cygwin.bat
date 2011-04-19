@@ -14,76 +14,110 @@ REM  Site-specific EPICS environment settings
 REM 
 REM  sites should modify these definitions
 
-
-REM    ===================================================
+REM ======================================================
 REM    ====== REQUIRED ENVIRONMENT VARIABLES FOLLOW ======
-REM
-REM    --------------- WINDOWS ---------------------------
-REM    ----- WIN95 -----
-REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
-REM    ----- WINNT -----
-REM set PATH=C:\WINNT;C:\WINNT\SYSTEM32
-REM    ----- WINXP -----
-set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\system32\Wbem
+REM ======================================================
 
-REM    --------------- GNU tools -------------------------
-REM    -- cygwin contains GNU make, perl, gcc, g++, vim, ...
-REM    -- Can be preceeded or replaced with paths to GNU make and perl
-REM    -- need grep from here NOT from cvs directory
-REM    -- some tools may need a tmp directory
+REM ======================================================
+REM   ---------------- WINDOWS ---------------------------
+REM ======================================================
+REM ----- WIN95 -----
+REM set PATH=C:\WINDOWS;C:\WINDOWS\COMMAND
+REM ----- WINNT, WIN2000  -----
+REM set PATH=C:\WINNT;C:\WINNT\SYSTEM32
+REM ----- WINXP, Vista, Windows 7 -----
+set PATH=C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\SYSTEM32\Wbem
+
+REM ======================================================
+REM   ---------------- make and perl ---------------------
+REM ======================================================
+
+REM   --------------- ActiveState perl -------------------
+set PATH=C:\Perl\bin;%PATH%
+
+REM    --------------- mingw make ------------------------
+REM set PATH=C:\mingw-make\bin;%PATH%
+REM set PATH=C:\mingw-make82-3\bin;%PATH%
+
+REM   --------------- gnuwin32 make ----------------------
+set PATH=C:\gnuwin32\bin;%PATH%
+
+REM ======================================================
+REM ---------------- cygwin tools ------------------------
+REM ======================================================
+REM    (make & perl if above perl and make are REMs)
+REM    Dont use cygwin GNU make and Perl!  
+REM    cygwin contains tk/tcl, vim, perl, and many unix tools
+REM    need grep from here NOT from cvs directory
+set PATH=%PATH%;.;..
 set PATH=%PATH%;c:\cygwin\bin
 
-REM    --------------- EPICS -----------------------------
-REM    -- R3.14 requirements
+REM ======================================================
+REM --------------- EPICS --------------------------------
+REM ======================================================
 set EPICS_HOST_ARCH=cygwin-x86
 set PATH=%PATH%;G:\epics\base\bin\%EPICS_HOST_ARCH%
 set PATH=%PATH%;G:\epics\extensions\bin\%EPICS_HOST_ARCH%
 
-REM    ===================================================
-REM    ====== OPTIONAL ENVIRONMENT VARIABLES FOLLOW ======
+REM ======================================================
+REM ------- OPTIONAL ENVIRONMENT VARIABLES FOLLOW --------
+REM ======================================================
 
-REM    ---------------- EPICS tools ----------------------
-REM    -- HOST_ARCH needed for Makefile.Host builds
-set HOST_ARCH=cygwin32
+REM ======================================================
+REM ----------------- remote CVS -------------------------
+REM ======================================================
+REM set CVS_RSH=c:/cygwin/bin/ssh.exe
+REM set CVSROOT=:ext:jba@aps.anl.gov:/usr/local/epicsmgr/cvsroot
+REM set HOME=c:/users/%USERNAME%
+REM set HOME=c:/users/jba
 
-REM    --------------- GNU make flags --------------------
-REM set MAKEFLAGS=-w
+REM ======================================================
+REM ------------------- Bazaar ---------------------------
+REM ======================================================
+set PATH=%PATH%;C:\Program files\Bazaar
 
-REM    --------------- EPICS Channel Access --------------
-REM    -- Uncomment and modify the following lines
-REM    -- to override the base/configure/CONFIG_ENV defaults
-REM set EPICS_CA_ADDR_LIST=n.n.n.n n.n.n.n
+REM ======================================================
+REM ----------------- GNU make flags ---------------------
+REM ======================================================
+set MAKEFLAGS=-w
+
+REM ======================================================
+REM -------------- vim (use cygwin vim ) -----------------
+REM ======================================================
+REM HOME needed by vim to write .viminfo file.
+REM VIM needed by vim to find _vimrc file.
+REM set VIM=c:\cygwin
+
+REM ======================================================
+REM --------------- Epics Channel Access -----------------
+REM    Modify and uncomment the following lines
+REM    to override the base/configure/CONFIG_ENV defaults
+REM ======================================================
+REM set EPICS_CA_ADDR_LIST=n.n.n.n  n.n.n.n
 REM set EPICS_CA_AUTO_ADDR_LIST=YES
 
-REM    --------------- cygwin vim ------------------------
-REM    -- HOME needed by vim to find _vimrc file.
-REM set HOME=/home/%USERNAME%
-REM    -- VIM needed by vim to find help files.
-REM set VIM=/usr/share/vim/vim61
+REM set EPICS_CA_CONN_TMO=30.0
+REM set EPICS_CA_BEACON_PERIOD=15.0
+REM set EPICS_CA_REPEATER_PORT=5065
+REM set EPICS_CA_SERVER_PORT=5064
+REM set EPICS_TS_MIN_WEST=420
 
-REM    --------------- remote cvs (use cygwin cvs) -------
-REM    -- HOME needed by cvs for .cvsrc file (set in vim above) 
-REM set CVSROOT=:ext:%USERNAME%@venus.aps.anl.gov:/usr/local/epicsmgr/cvsroot
-REM set CVS_RSH=/bin/ssh.exe
-
-REM    --------------- JAVA ------------------------------
-REM    -- Needed for java extensions
-REM set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
+REM ======================================================
+REM --------------- JAVA ---------------------------------
+REM ======================================================
+REM    Needed for java extensions
 REM set CLASSPATH=G:\epics\extensions\javalib
+REM set PATH=%PATH%;C:\j2sdk1.4.1_01\bin
+REM set CLASSPATH=%CLASSPATH%;C:\j2sdk1.4.1_01\lib\tools.jar
 
-REM    --------------- X11+Motif--------------------------
-REM    -- Exceed or cygwin Xfree86 needed for Xwindows extensions
-REM
-REM    -- Exceed ( Cygwin should preceed Exceed in path)
-REM set PATH=%PATH%;C:\Exceed
-REM    ------ Exceed 2007 ------
-REM set PATH=%PATH%;C:\Program Files\Hummingbird\Connectivity\12.00\Exceed\
-REM    ------ Exceed 2008 ------
-REM set PATH=%PATH%;C:\Program Files\Hummingbird\Connectivity\13.00\Exceed\
-REM    --
-REM    -- or
-REM    ----- cygwin Xfree86 -----
-REM set PATH=%PATH%;c:\cygwin\usr\X11R6\bin
-REM set DISPLAY=localhost:0
+REM ======================================================
+REM --------------- Exceed -------------------------------
+REM    Needed for X11 extensions
+REM ======================================================
+REM set EX_VER=7.10
+REM set EX_VER=12.00
+REM set EX_VER=14.00
+REM set PATH=%PATH%;C:\Exceed%EX_VER%\XDK\
+REM set PATH=%PATH%;C:\Program Files\Hummingbird\Connectivity\%EX_VER%\Exceed\
 
-REM    ===================================================
+

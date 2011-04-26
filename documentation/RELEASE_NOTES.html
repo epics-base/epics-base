@@ -14,8 +14,8 @@
 <h2 align="center">Changes between 3.14.12 and 3.14.12.1</h2>
 
 <p>This release only contains changes that fix bugs or add build configuration
-files for new or updated target architectures.  No new functionality has been
-added, and as this is a patch release the software has not gone through as
+files for new or updated target architectures.  No functionality has been
+changed, and as this is a patch release the software has not gone through as
 rigorous a testing regime as it does for a normal minor release.</p>
 
 <h4>Launchpad Bugs Resolved</h4>
@@ -68,6 +68,12 @@ fixed in this release:</p>
   version (from Tom Palaia, ORNL).</dd>
 
 </dl>
+
+<h4>IOCSH_STARTUP_SCRIPT environment variable</h4>
+
+<p>The function <tt>iocsh(const char *pathname)</tt> now sets the environment
+variable <tt>IOCSH_STARTUP_SCRIPT</tt> to the value of its pathname
+argument before it starts executing the script commands.</p>
 
 <h4>RTEMS-mvme5500</h4>
 

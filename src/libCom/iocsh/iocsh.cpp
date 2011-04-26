@@ -798,6 +798,7 @@ iocshBody (const char *pathname, const char *commandLine)
 int epicsShareAPI
 iocsh (const char *pathname)
 {
+    epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshBody(pathname, NULL);
 }
 

@@ -1,11 +1,19 @@
 #
+# CONFIG.Common.RTEMS-mvme3100
+# $Revision-Id$
+# Author: W. Eric Norum <wenorum@lbl.gov>
+#
 # All RTEMS targets use the same Makefile fragment
 #
-override EXE=.elf
+EXE = .elf
 RTEMS_TARGET_CPU = powerpc
-GNU_TARGET=powerpc-rtems
+GNU_TARGET = powerpc-rtems
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_MOTLOAD
+ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_MBUF_SPACE=2048
+ARCH_DEP_CFLAGS += -DRTEMS_NETWORK_CONFIG_CLUSTER_SPACE=5120
+
+OP_SYS_LDLIBS += -lbspExt
 
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
@@ -13,15 +21,12 @@ define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
 endef
 
-CROSS_COMPILER_TARGET_ARCHS=RTEMS-beatnik
-
 include $(CONFIG)/os/CONFIG.Common.RTEMS
+
 RTEMSSYMS=$(PRODNAME:%$(EXE)=%.sym)
 RTEMSIMGS=$(PRODNAME:%$(EXE)=%.bin)
 INSTALL_RTEMSSYMS=$(RTEMSSYMS:%=$(INSTALL_BIN)/%)
 INSTALL_RTEMSIMGS=$(RTEMSIMGS:%=$(INSTALL_BIN)/%)
-
-OP_SYS_LDLIBS += -lbspExt
 
 %.sym: %$(EXE)
 	$(XSYMS) $^ $@

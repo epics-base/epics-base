@@ -69,6 +69,21 @@ fixed in this release:</p>
 
 </dl>
 
+<h4>RTEMS-mvme5500</h4>
+
+<p>This target now automatically links binary files with the bspExt library, and
+adds the extension <tt>.elf</tt> to their filenames, matching the other mvme
+targets.</p>
+
+<h4>RTEMS Network Buffer Configuration</h4>
+
+<p>Add the macros <tt>RTEMS_NETWORK_CONFIG_MBUF_SPACE</tt> and
+<tt>RTEMS_NETWORK_CONFIG_MBUF_SPACE</tt> to rtems_netconfig.c to allow
+customization of the network buffer space allocated.  The configuration files
+for the RTEMS-mvme3100, RTEMS-mvme5500 and RTEMS-beatnik targets now default to
+allocating 2MB for mbufs and 5MB for clusters; other RTEMS targets will continue
+to use 180KB and 350KB rspectively.</p>
+
 <h4>RTEMS TFTP filesystem</h4>
 
 <p>Use the new mount API to initialize TFTP on newer RTEMS versions.</p>

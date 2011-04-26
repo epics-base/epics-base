@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -94,6 +93,17 @@ static struct rtems_bsdnet_ifconfig bsp_driver_config = {
 #endif
 
 /*
+ * Allow site- and BSP-specific network buffer space configuration.
+ * The macro values are specified in KBytes.
+ */
+#ifndef RTEMS_NETWORK_CONFIG_MBUF_SPACE
+# define RTEMS_NETWORK_CONFIG_MBUF_SPACE 180
+#endif
+#ifndef RTEMS_NETWORK_CONFIG_CLUSTER_SPACE
+# define RTEMS_NETWORK_CONFIG_CLUSTER_SPACE 350
+#endif
+
+/*
  * Network configuration
  */
 struct rtems_bsdnet_config rtems_bsdnet_config = {
@@ -104,8 +114,8 @@ struct rtems_bsdnet_config rtems_bsdnet_config = {
                            /*   EPICS scan thread. */
                            /* If non-zero then the network daemons will run */
                            /*   at this *RTEMS* priority */
-    180*1024,              /* MBUF space */
-    350*1024,              /* MBUF cluster space */
+    RTEMS_NETWORK_CONFIG_MBUF_SPACE*1024,
+    RTEMS_NETWORK_CONFIG_CLUSTER_SPACE*1024,
     NULL,                  /* Host name */
     MY_DOMAINNAME,         /* Domain name */
 };

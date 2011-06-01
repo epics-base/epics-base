@@ -1,17 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocLogServer.c */
-/* base/src/util $Revision-Id$ */
+/* $Revision-Id$ */
 
 /*
- *	archive logMsg() from several IOC's to a common rotating file	
+ *	archive logMsg() from several IOC's to a common rotating file
  *
  *
  * 	    Author: 	Jeffrey O. Hill 
@@ -903,39 +902,34 @@ static void serviceSighupRequest(void *pParam)
 	}
 
 	/*
-	 * If it's changed, open the new file.
+	 * Try (re)opening the file.
 	 */
-	if (strcmp(ioc_log_file_name, pserver->outfile) == 0) {
+	status = openLogFile(pserver);
+	if(status<0){
 		fprintf(stderr,
-			"iocLogServer: log file name unchanged; not re-opened\n");
-	}
-	else {
+			"File access problems to `%s' because `%s'\n", 
+			ioc_log_file_name,
+			strerror(errno));
+		/* Revert to old filename */
+		strcpy(ioc_log_file_name, pserver->outfile);
 		status = openLogFile(pserver);
 		if(status<0){
 			fprintf(stderr,
-				"File access problems to `%s' because `%s'\n", 
+				"File access problems to `%s' because `%s'\n",
 				ioc_log_file_name,
 				strerror(errno));
-			strcpy(ioc_log_file_name, pserver->outfile);
-			status = openLogFile(pserver);
-			if(status<0){
-				fprintf(stderr,
-                                "File access problems to `%s' because `%s'\n",
-                                ioc_log_file_name,
-                                strerror(errno));
-				return;
-			}
-			else {
-				fprintf(stderr,
-				"iocLogServer: re-opened old log file %s\n",
-				ioc_log_file_name);
-			}
+			return;
 		}
 		else {
 			fprintf(stderr,
-				"iocLogServer: opened new log file %s\n",
+				"iocLogServer: re-opened old log file %s\n",
 				ioc_log_file_name);
 		}
+	}
+	else {
+		fprintf(stderr,
+			"iocLogServer: opened new log file %s\n",
+			ioc_log_file_name);
 	}
 }
 

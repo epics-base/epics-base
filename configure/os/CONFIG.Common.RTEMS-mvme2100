@@ -1,14 +1,17 @@
 #
+# CONFIG.Common.RTEMS-mvme3100
 # $Revision-Id$
-# Author: W. Eric Norum
-#         Canadian Light Source
-#         eric@cls.usask.ca
+# Author: W. Eric Norum <wenorum@lbl.gov>
 #
 # All RTEMS targets use the same Makefile fragment
 #
+EXE = .elf
 RTEMS_TARGET_CPU = powerpc
+GNU_TARGET = powerpc-rtems
 ARCH_DEP_CFLAGS += -DMY_DO_BOOTP=NULL
 ARCH_DEP_CFLAGS += -DHAVE_PPCBUG
+
+OP_SYS_LDLIBS += -lbspExt
 
 MUNCH_SUFFIX = .boot
 MUNCHNAME = $(PRODNAME:%$(EXE)=%$(MUNCH_SUFFIX))
@@ -23,7 +26,5 @@ define MUNCH_CMD
 		-Map $<.map
 	rm -f rtems.gz
 endef
-
-OP_SYS_LDLIBS += -lbspExt
 
 include $(CONFIG)/os/CONFIG.Common.RTEMS

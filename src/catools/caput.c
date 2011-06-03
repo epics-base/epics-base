@@ -275,8 +275,8 @@ int main (int argc, char *argv[])
     int nPvs;                   /* Number of PVs */
     pv* pvs = 0;                /* Array of PV structures */
 
-    setvbuf(stdout,NULL,_IOLBF,BUFSIZ);   /* Set stdout to line buffering */
-    putenv("POSIXLY_CORRECT=");      /* Behave correct on GNU getopt systems */
+    LINE_BUFFER(stdout);        /* Configure stdout buffering */
+    putenv("POSIXLY_CORRECT="); /* Behave correct on GNU getopt systems */
 
     while ((opt = getopt(argc, argv, ":cnlhatsS#:w:p:F:")) != -1) {
         switch (opt) {

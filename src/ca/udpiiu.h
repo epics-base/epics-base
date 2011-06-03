@@ -149,8 +149,8 @@ private:
     double rtteMean;
     double rtteMeanDev;
     cac & cacRef;
-    mutable epicsMutex & cbMutex;
-    mutable epicsMutex & cacMutex;
+    epicsMutex & cbMutex;
+    epicsMutex & cacMutex;
     epics_auto_ptr < epics_auto_ptr < class searchTimer >, eapt_array > ppSearchTmr;
     unsigned nBytesInXmitBuf;
     unsigned nTimers;

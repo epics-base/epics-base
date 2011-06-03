@@ -78,12 +78,15 @@
 #       vxWorks-68040lc
 #       vxWorks-68060
 #       vxWorks-pentium
+#       vxWorks-ppc32           (32-bit PowerPC CPUs with full FPU)
+#       vxWorks-ppc32sf         (32-bit PowerPC CPUs without FPU)
 #       vxWorks-ppc603
 #       vxWorks-ppc603_long
 #       vxWorks-ppc604
 #       vxWorks-ppc604_long
 #       vxWorks-ppc604_altivec
 #       vxWorks-mpc8540
+#       vxWorks-mpc8548
 #       RTEMS-at91rm9200ek
 #       RTEMS-beatnik
 #       RTEMS-gen68360
@@ -103,7 +106,7 @@
 # override 
 #
 CROSS_COMPILER_TARGET_ARCHS=
-#CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
+#CROSS_COMPILER_TARGET_ARCHS=vxWorks-ppc32
 
 #  If only a subset of the host architectures perform
 #  the build for the CROSS_COMPILER_TARGET_ARCHS

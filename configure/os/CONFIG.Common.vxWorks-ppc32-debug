@@ -1,0 +1,14 @@
+# CONFIG.Common.vxWorks-ppc32-debug
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for vxWorks-ppc32-debug target archs
+# Sites may override these definitions in CONFIG_SITE.Common.vxWorks-ppc32-debug
+#-------------------------------------------------------
+
+# Include definitions common to all vxWorks archs
+include $(CONFIG)/os/CONFIG.Common.vxWorks-ppc32
+
+CROSS_OPT = NO
+

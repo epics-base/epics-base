@@ -196,8 +196,8 @@ private:
     dbContextReadNotifyCache readNotifyCache;
     dbEventCtx ctx;
     unsigned long stateNotifyCacheSize;
-    mutable epicsMutex & mutex;
-    mutable epicsMutex & cbMutex;
+    epicsMutex & mutex;
+    epicsMutex & cbMutex;
     cacContextNotify & notify;
     epics_auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;

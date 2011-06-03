@@ -64,7 +64,6 @@ put into a file.  It converts paths from the Unix form that Perl understands to
 any necessary external representation, and also removes automounter prefixes to
 put the path into its canonical form.
 
-On cygwin we convert cygdrive paths to their equivalent Windows drive specs. 
 Before Leopard, the Mac OS X automounter inserted a verbose prefix, and in case
 anyone is still using SunOS it adds its own prefix as well.
 
@@ -72,9 +71,7 @@ anyone is still using SunOS it adds its own prefix as well.
 
 sub LocalPath {
     my ($newpath) = @_;
-    if ($^O eq 'cygwin') {
-        $newpath =~ s{^/cygdrive/([a-zA-Z])/}{$1:/};
-    } elsif ($^O eq 'darwin') {
+    if ($^O eq 'darwin') {
         # Darwin automounter
         $newpath =~ s{^/private/var/auto\.}{/};
     } elsif ($^O eq 'sunos') {

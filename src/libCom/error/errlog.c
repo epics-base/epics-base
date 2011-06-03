@@ -495,9 +495,7 @@ static void errlogThread(void)
     epicsAtExit(exitHandler,0);
     while (TRUE) {
         epicsEventMustWait(pvtData.waitForWork);
-        if (pvtData.atExit) break;
         while ((pmessage = msgbufGetSend(&noConsoleMessage))) {
-            if (pvtData.atExit) break;
             epicsMutexMustLock(pvtData.listenerLock);
             if (pvtData.toConsole && !noConsoleMessage) {
                 fprintf(stderr,"%s",pmessage);

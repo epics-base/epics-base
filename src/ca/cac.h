@@ -266,8 +266,8 @@ private:
     // **** lock hierarchy ****
     // 1) callback lock must always be acquired before
     // the primary mutex if both locks are needed
-    mutable epicsMutex & mutex; 
-    mutable epicsMutex & cbMutex; 
+    epicsMutex & mutex;
+    epicsMutex & cbMutex;
     epicsEvent iiuUninstall;
     ipAddrToAsciiEngine & ipToAEngine;
     epicsTimerQueueActive & timerQueue;

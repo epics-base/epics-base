@@ -43,7 +43,7 @@ $(2): $$(EPICS_HOST_ARCH)
 $(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH) O.$(2)
 endef
 
-ifeq (MAKE_VERSION,3.81)
+ifeq ($(MAKE_VERSION),3.81)
    $(foreach action, $(ACTIONS), $(foreach arch,\
       $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
 else

@@ -205,11 +205,6 @@ $(OBJLIBNAME):%$(OBJ):
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
-%$(OBJ): %.C
-	@$(HDEPENDS_CMD)
-	@$(RM) $@
-	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
-
 # WIN95/NT resource compiler
 %$(RES): %.rc
 	@$(RM) $@

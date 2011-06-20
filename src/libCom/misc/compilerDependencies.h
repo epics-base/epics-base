@@ -95,7 +95,7 @@
 /*
  * Deprecation marker
  */
-#ifdef __GNUC__
+#if defined( __GNUC__ ) && (__GNUC__ > 2)
 # define EPICS_DEPRECATED __attribute__((deprecated))
 #else
 # define EPICS_DEPRECATED

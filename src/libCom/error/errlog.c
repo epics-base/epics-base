@@ -41,7 +41,6 @@
 /*Declare storage for errVerbose */
 epicsShareDef int errVerbose = 0;
 
-static void errlogCleanup(void);
 static void exitHandler(void *);
 static void errlogThread(void);
 
@@ -391,8 +390,15 @@ static void exitHandler(void *pvt)
     pvtData.atExit = 1;
     epicsEventSignal(pvtData.waitForWork);
     epicsEventMustWait(pvtData.waitForExit);
+
+    free(pvtData.pbuffer);
+    epicsMutexDestroy(pvtData.flushLock);
+    epicsEventDestroy(pvtData.flush);
+    epicsEventDestroy(pvtData.waitForFlush);
+    epicsMutexDestroy(pvtData.listenerLock);
+    epicsMutexDestroy(pvtData.msgQueueLock);
+    epicsEventDestroy(pvtData.waitForWork);
     epicsEventDestroy(pvtData.waitForExit);
-    return;
 }
 
 struct initArgs {
@@ -431,18 +437,6 @@ static void errlogInitPvt(void *arg)
     if (tid) {
         pvtData.errlogInitFailed = FALSE;
     }
-}
-
-static void errlogCleanup(void)
-{
-    free(pvtData.pbuffer);
-    epicsMutexDestroy(pvtData.flushLock);
-    epicsEventDestroy(pvtData.flush);
-    epicsEventDestroy(pvtData.waitForFlush);
-    epicsMutexDestroy(pvtData.listenerLock);
-    epicsMutexDestroy(pvtData.msgQueueLock);
-    epicsEventDestroy(pvtData.waitForWork);
-    /*Note that exitHandler must destroy waitForExit*/
 }
 
 epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize)
@@ -514,7 +508,6 @@ static void errlogThread(void)
         epicsThreadSleep(.2); /*just wait an extra .2 seconds*/
         epicsEventSignal(pvtData.waitForFlush);
     }
-    errlogCleanup();
     epicsEventSignal(pvtData.waitForExit);
 }
 

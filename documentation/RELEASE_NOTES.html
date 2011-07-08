@@ -13,51 +13,58 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>Another race condition in errlog cleaned up</h4>
+
+<p>If it was still busy when the IOC was closed down, the errlog thread could
+have preempted the exit handler and freed the various internal pvtData mutex and
+event objects too soon.</p>
+
 <h4>Top-level make target changes</h4>
 
-<p>Several make targets have been changed. Note that these can only be used from an
-application's &lt;top&gt; directory.</p>
+<p>Several make targets have been changed. Note that these can only be used from
+an application's &lt;top&gt; directory.</p>
 
 <dl>
   <dt><code>make uninstall.&lt;arch&gt;</code></dt>
-  <dd>Deletes the bin/&lt;arch&gt; and lib/&lt;arch&gt; directories for &lt;arch&gt;
-    only. Note that &lt;arch&gt; does not have to be an architecture that this host is
-    configured to build, it works for any arch.</dd>
+  <dd>Deletes the bin/&lt;arch&gt; and lib/&lt;arch&gt; directories for
+    &lt;arch&gt; only. Note that &lt;arch&gt; does not have to be an
+    architecture that this host is configured to build, it works for any
+    arch.</dd>
 
   <dt><code>make archuninstall</code></dt>
   <dd>Deletes the bin/&lt;arch&gt; and lib/&lt;arch&gt; directories for all
-    architectures that this host is configured to build. Should not affect files used
-    for multiple architectures, or for host or target architectures that this host is
-    not configured to build.</dd>
+    architectures that this host is configured to build. Should not affect files
+    used for multiple architectures, or for host or target architectures that
+    this host is not configured to build.</dd>
 
   <dt><code>make uninstall</code></dt>
-  <dd>Does archuninstall and also deletes the other install directories include, db,
-    dbd, doc, html, templates and java. This will affect subsequent builds for other
-    architectures, but it doesn't delete their bin/&lt;arch&gt; or lib/&lt;arch&gt;
-    contents.</dd>
+  <dd>Does archuninstall and also deletes the other install directories include,
+    db, dbd, doc, html, templates and java. This will affect subsequent builds
+    for other architectures, but it doesn't delete their bin/&lt;arch&gt; or
+    lib/&lt;arch&gt; contents.</dd>
 
   <dt><code>make realuninstall</code></dt>
   <dd>Deletes all install directories for all architectures.</dd>
 
   <dt><code>make distclean</code></dt>
-  <dd>Does realclean realuninstall as before, and also now does a cvsclean, which
-    removes file remnants from CVS operations named <code>.#*</code> and editor
-    backups named <code>*~</code> throughout the source tree.</dd>
+  <dd>Does realclean realuninstall as before, and also now does a cvsclean,
+    which removes file remnants from CVS operations named <code>.#*</code> and
+    editor backups named <code>*~</code> throughout the source tree.</dd>
 
 </dl>
 
 <h4>Compress record type</h4>
 
-<p>This record now posts monitors on its NUSE field whenever its value changes. A new
-field OUSE was added to support this.</p>
+<p>This record now posts monitors on its NUSE field whenever its value changes.
+A new field OUSE was added to support this.</p>
 
 <h4>Remove C++ build rule for <code>.C</code> files</h4>
 
 <p>An early convention on Unix systems was to name C++ files with an upper-case
 extention, <code>.C</code>. This does not work on Windows or MacOS where the
-filesystems are case-insensitive, and the C++ build rule was causing problems so has
-been eliminated. Any remaining C++ source files that are still using this convention
-will have to be renamed, preferably to <code>.cpp</code></p>
+filesystems are case-insensitive, and the C++ build rule was causing problems so
+has been eliminated. Any remaining C++ source files that are still using this
+convention will have to be renamed, preferably to <code>.cpp</code></p>
 
 <h4>Support <code>make -s</code> on Windows</h4>
 
@@ -66,9 +73,11 @@ combinations. This has now been fixed.</p>
 
 <h4>iocLogServer now supports logrotate</h4>
 
-<p>The feature in the iocLogServer that closed and reopened the logfile used to ignore
-the SIGHUP signal when the log filename did not change. This has now been changed so
-these logfiles can be used with the standard Linux logrotate package.</p>
+<p>The feature in the iocLogServer that closed and reopened the logfile used to
+ignore the SIGHUP signal when the log filename did not change. This has now been
+changed so these logfiles can be used with the standard Linux logrotate
+package.</p>
+
 
 <h2 align="center">Changes between 3.14.12 and 3.14.12.1</h2>
 

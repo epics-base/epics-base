@@ -480,7 +480,7 @@ void epicsAtomicSetPerformance ()
     testDiag ( "epicsAtomicSet() takes %f microseconds", delay );
 }
 
-MAIN(osiAtomicTest)
+MAIN(epicsAtomicPerform)
 {
     testPlan(5);
     //

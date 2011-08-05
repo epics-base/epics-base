@@ -55,13 +55,13 @@ static void tns ( void *arg )
 
 MAIN(osiAtomicTest)
 {
-    static const size_t N = 1000;
     const unsigned int stackSize = 
         epicsThreadGetStackSize ( epicsThreadStackSmall );
 
     testPlan(8);
 
     {
+        static const size_t N = 100;
         size_t i;
         TestDataIncrDecr testData = { 0, N };;
         epicsAtomicSetSizeT ( & testData.m_testValue, N );
@@ -88,6 +88,7 @@ MAIN(osiAtomicTest)
     }
 
     {
+        static const size_t N = 10;
         size_t i;
         TestDataTNS testData = { 1, N, N };
         epicsAtomicSetSizeT ( & testData.m_testIterationsSet, 0u );

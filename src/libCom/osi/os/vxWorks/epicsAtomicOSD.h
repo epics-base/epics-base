@@ -12,12 +12,13 @@
  *  johill@lanl.gov
  */
 
-#ifndef osdAtomic_h
-#define osdAtomic_h
+#ifndef epicsAtomicOSD_h
+#define epicsAtomicOSD_h
 
 #if defined ( OSD_ATOMIC_INLINE )
 
 #include "vxWorks.h" /* obtain the version of vxWorks */
+#include "epicsAssert.h"
 
 /*
  * With vxWorks 6.6 and later we need to use vxAtomicLib
@@ -30,7 +31,6 @@
 
 #include <limits.h>
 #include <vxAtomicLib.h>
-#include "epicsAssert.h"
      
 #ifdef __cplusplus
 extern "C" {
@@ -135,6 +135,7 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 
 #else /* _WRS_VXWORKS_MAJOR * 100 + _WRS_VXWORKS_MINOR >= 606 */
 
+#include "vxLib.h"
 #include "intLib.h"
 
 #ifdef __cplusplus
@@ -143,26 +144,34 @@ extern "C" {
 
 OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    /* 
-     * no need for memory barrior since this 
-     * is a single cpu system.
-     */
-    const int key = intLock ();
-    const size_t result = ++(*pTarget);
-    intUnlock ( key );
-    return result;
+#   ifdef __m68k__
+        return ++(*pTarget);
+#   else
+      /* 
+       * no need for memory barrior since this 
+       * is a single cpu system.
+       */
+      const int key = intLock ();
+      const size_t result = ++(*pTarget);
+      intUnlock ( key );
+      return result;
+#   endif
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    /* 
-     * no need for memory barrior since this 
-     * is a single cpu system 
-     */
-    const int key = intLock ();
-    const size_t result = --(*pTarget);
-    intUnlock ( key );
-    return result;
+#   ifdef __m68k__
+        return --(*pTarget);
+#   else
+      /* 
+       * no need for memory barrior since this 
+       * is a single cpu system 
+       */
+      const int key = intLock ();
+      const size_t result = --(*pTarget);
+      intUnlock ( key );
+      return result;
+#endif
 }
 
 OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
@@ -195,9 +204,7 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 {
     STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
-    int * const pTarg = ( int * ) ( pTarget );
-    const BOOL weSetIt = vxTas ( pTarg, 0, 1 );
-    return weSetIt != 0;
+    return vxTas ( pTarget );
 }
 
 #ifdef __cplusplus
@@ -208,4 +215,4 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 
 #endif /* if defined ( OSD_ATOMIC_INLINE ) */
 
-#endif /* osdAtomic_h */
+#endif /* epicsAtomicOSD_h */

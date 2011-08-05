@@ -13,8 +13,8 @@
  *  johill@lanl.gov
  */
 
-#ifndef osdAtomic_h
-#define osdAtomic_h
+#ifndef epicsAtomicOSD_h
+#define epicsAtomicOSD_h
 
 #if defined ( OSD_ATOMIC_INLINE )
 
@@ -102,4 +102,4 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 
 #endif /* if defined ( OSD_ATOMIC_INLINE ) */
 
-#endif /* osdAtomic_h */
+#endif /* epicsAtomicOSD_h */

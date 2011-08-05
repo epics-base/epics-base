@@ -35,7 +35,7 @@ extern "C" {
 
 OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 {
-    const uchar_t oldVal = atomic_cas_uint ( pTarget, 0u, 1u );
+    const uint_t oldVal = atomic_cas_uint ( pTarget, 0u, 1u );
     return oldVal == 0u;
 }
 

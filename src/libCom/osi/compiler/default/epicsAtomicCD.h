@@ -13,13 +13,13 @@
  *  johill@lanl.gov
  */
 
-#ifndef cdAtomic_h
-#define cdAtomic_h
+#ifndef epicsAtomicCD_h
+#define epicsAtomicCD_h
 
 #if __STDC_VERSION__ >= 199901L || defined ( __cplusplus )
 #   define OSD_ATOMIC_INLINE inline
 #endif
 
-#include "osdAtomic.h"
+#include "epicsAtomicOSD.h"
 
-#endif /* cdAtomic_h */
+#endif /* epicsAtomicCD_h */

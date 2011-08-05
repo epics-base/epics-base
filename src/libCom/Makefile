@@ -184,6 +184,10 @@ INC += osiUnistd.h
 INC += osiWireFormat.h
 INC += osdWireFormat.h
 INC += osdWireConfig.h
+INC += epicsAtomic.h
+INC += epicsAtomicLocked.h
+INC += epicsAtomicOSD.h
+INC += epicsAtomicCD.h
 INC += epicsEndian.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
@@ -202,6 +206,8 @@ SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
 SRCS += epicsMath.cpp
+SRCS += epicsAtomicLocked.cpp
+SRCS += epicsAtomicOSD.cpp
 
 SRCS += epicsGeneralTime.c
 SRCS += osiClockTime.c
@@ -221,6 +227,7 @@ SRCS += epicsReadline.c
 SRCS += epicsTempFile.cpp
 SRCS += epicsStdio.c
 SRCS += osdStdio.c
+
 
 osdEnv_CFLAGS_WIN32= -U__STDC__
 

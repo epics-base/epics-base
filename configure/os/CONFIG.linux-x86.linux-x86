@@ -16,3 +16,8 @@ STATIC_LDLIBS_NO=
 
 SHRLIB_LDFLAGS += -Wl,-h$@
 LOADABLE_SHRLIB_LDFLAGS += -Wl,-h$@
+
+# this means that atomic instrnsics are available, but that
+# users with 486 processors and earlier will need specialized
+# configure files
+ARCH_DEP_CFLAGS += -march=i586

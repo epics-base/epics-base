@@ -13,8 +13,8 @@
  *  johill@lanl.gov
  */
 
-#ifndef cdAtomic_h
-#define cdAtomic_h
+#ifndef epicsAtomicCD_h
+#define epicsAtomicCD_h
 
 #if defined ( __cplusplus )
 #   define OSD_ATOMIC_INLINE inline
@@ -22,6 +22,6 @@
 #   define OSD_ATOMIC_INLINE __inline
 #endif
 
-#include "osdAtomic.h"
+#include "epicsAtomicOSD.h"
 
-#endif /* cdAtomic_h */
+#endif /* epicsAtomicCD_h */

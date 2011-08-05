@@ -13,8 +13,8 @@
  *  johill@lanl.gov
  */
 
-#ifndef cdAtomic_h
-#define cdAtomic_h
+#ifndef epicsAtomicCD_h
+#define epicsAtomicCD_h
 
 #ifndef __GNUC__
 #   error this header is only for use with the gnu compiler
@@ -90,8 +90,8 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
      * not available as gcc intrinsics so we
      * will employ an os specific inline solution
      */
-#   include "osdAtomic.h"
+#   include "epicsAtomicOSD.h"
 
 #endif /* if GCC_ATOMIC_INTRINSICS_AVAIL */
 
-#endif /* cdAtomic_h */
+#endif /* epicsAtomicCD_h */

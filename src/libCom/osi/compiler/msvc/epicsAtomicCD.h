@@ -13,8 +13,8 @@
  *  johill@lanl.gov
  */
 
-#ifndef cdAtomic_h
-#define cdAtomic_h
+#ifndef epicsAtomicCD_h
+#define epicsAtomicCD_h
 
 #include "epicsAssert.h"
 
@@ -157,9 +157,9 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 
 #if defined ( __cplusplus )
 #   define OSD_ATOMIC_INLINE inline
-#   include "osdAtomic.h"
+#   include "epicsAtomicOSD.h"
 #endif
 
 #endif /* ifdef _MSC_EXTENSIONS */
 
-#endif /* cdAtomic_h */
+#endif /* epicsAtomicCD_h */

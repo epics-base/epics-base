@@ -13,9 +13,9 @@
  *  johill@lanl.gov
  */
 
-#ifndef osdAtomic
-#define osdAtomic
+#ifndef epicsAtomicOSD_h
+#define epicsAtomicOSD_h
 
 #include "epicsAtomicLocked.h"
 
-#endif /* osdAtomic */
+#endif /* epicsAtomicOSD_h */

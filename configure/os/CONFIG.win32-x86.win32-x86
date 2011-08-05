@@ -124,7 +124,7 @@ OPT_CXXFLAGS_YES = /Ox /GL
 # /D_CRTDBG_MAP_ALLOC
 # /RTCsu catch bugs occurring only in optimized code
 # /DEPICS_FREELIST_DEBUG good for detecting mem mrg bugs
-OPT_CXXFLAGS_NO = /RTCsu /Zi 
+OPT_CXXFLAGS_NO = /RTCsu /Zi
 
 # specify object file name and location
 OBJ_CXXFLAG = /Fo

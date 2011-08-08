@@ -34,7 +34,7 @@ public:
     void * pInstance () const;
 private:
     void * _pInstance;
-    size_t _refCount;
+    std :: size_t _refCount;
     SingletonUntyped ( const SingletonUntyped & );
     SingletonUntyped & operator = ( const SingletonUntyped & );
 };

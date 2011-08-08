@@ -26,9 +26,6 @@
  */
 #if _WRS_VXWORKS_MAJOR * 100 + _WRS_VXWORKS_MINOR >= 606
 
-#define __STDC_LIMIT_MACROS /* define SIZE_MAX for c++ */
-#include <stdint.h>
-
 #include <limits.h>
 #include <vxAtomicLib.h>
      
@@ -37,16 +34,16 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*
- * we make the probably correct guess that if SIZE_MAX 
+ * we make the probably correct guess that if ULONG_MAX 
  * is the same as UINT_MAX then sizeof ( atomic_t )
  * will be the same as sizeof ( size_t )
  *
- * if SIZE_MAX != UINT_MAX then its 64 bit vxWorks and
+ * if ULONG_MAX != UINT_MAX then its 64 bit vxWorks and
  * WRS doesnt not supply at this time the atomic interface 
  * for 8 byte integers that is needed - so that architecture 
  * receives the lock synchronized version
  */
-#if SIZE_MAX == UINT_MAX
+#if ULONG_MAX == UINT_MAX
 
 STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( size_t ) );
 
@@ -126,7 +123,7 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 {
     STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( unsigned ) );
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return vxCas ( pTarget, 0, 1 ) != 0;
+    return vxCas ( pTarg, 0, 1 ) != 0;
 }
 
 #ifdef __cplusplus

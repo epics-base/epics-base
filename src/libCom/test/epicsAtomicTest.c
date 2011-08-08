@@ -53,7 +53,7 @@ static void tns ( void *arg )
     epicsAtomicIncrSizeT ( & pTestData->m_testIterationsSet );
 }
 
-MAIN(osiAtomicTest)
+MAIN(epicsAtomicTest)
 {
     const unsigned int stackSize = 
         epicsThreadGetStackSize ( epicsThreadStackSmall );

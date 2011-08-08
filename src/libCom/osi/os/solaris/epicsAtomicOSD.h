@@ -48,46 +48,64 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal
 
 OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    return atomic_inc_uint_nv ( pTarget );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return atomic_inc_uint_nv ( pTarg );
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    return atomic_dec_uint_nv ( pTarget );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return atomic_dec_uint_nv ( pTarg );
 }
 
 OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
 {
-    atomic_swap_uint ( pTarget, newVal );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    atomic_swap_uint ( pTarg, newVal );
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
-    return atomic_or_uint_nv ( pTarget, 0U );
+    /* 
+     * we cast away const, but are careful not to modify 
+     * the target
+     */
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return atomic_or_uint_nv ( pTarg, 0U );
 }
 
-#else /* SIZE_MAX == UINT_MAX */
+#elif SIZE_MAX == ULONG_MAX
 
 OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    return atomic_inc_ulong_nv ( pTarget );
+    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
+    return atomic_inc_ulong_nv ( pTarg );
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    return atomic_dec_ulong_nv ( pTarget );
+    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
+    return atomic_dec_ulong_nv ( pTarg );
 }
 
 OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
 {
-    atomic_swap_ulong ( pTarget, newval );
+    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
+    atomic_swap_ulong ( pTarg, newval );
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
-    return atomic_or_ulong_nv ( pTarget, 0U );
+    /* 
+     * we cast away const, but are careful not to modify 
+     * the target
+     */
+    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
+    return atomic_or_ulong_nv ( pTarg, 0UL );
 }
 
+#else
+#   error unsupported solaris architecture
 #endif /* SIZE_MAX == UINT_MAX */
 
 #ifdef __cplusplus

@@ -424,8 +424,8 @@ void epicsAtomicIncrPerformance ()
 void atomicCompareAndSetPerformance ()
 {
     epicsTime begin = epicsTime::getCurrent ();
-    size_t target;
-    epicsAtomicSetSizeT ( & target, 0 );
+    unsigned target;
+    epicsAtomicSetUIntT ( & target, 0 );
     testOk1 ( ! target );
     for ( unsigned i = 0; i < N; i++ ) {
         oneThousandAtomicTestAndSet ( target );
@@ -469,7 +469,7 @@ void ownershipPassRefPerformance ()
 void epicsAtomicSetPerformance ()
 {
     epicsTime begin = epicsTime::getCurrent ();
-    unsigned target;
+    size_t target;
     for ( unsigned i = 0; i < N; i++ ) {
         oneThousandAtomicSet ( target );
     }
@@ -480,7 +480,7 @@ void epicsAtomicSetPerformance ()
     testDiag ( "epicsAtomicSet() takes %f microseconds", delay );
 }
 
-MAIN(osiAtomicTest)
+MAIN(epicsAtomicPerform)
 {
     testPlan(5);
     //

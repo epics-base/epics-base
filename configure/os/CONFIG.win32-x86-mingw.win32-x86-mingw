@@ -18,11 +18,6 @@ RANLIB = ranlib
 RES=.coff
 RCCMD = windres $(INCLUDES) $< $@
 
-# this means that atomic instrnsics are available, but that
-# users with 486 processors and earlier will need specialized
-# configure files
-ARCH_DEP_CFLAGS += -march=i586
-
 # No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
 SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)

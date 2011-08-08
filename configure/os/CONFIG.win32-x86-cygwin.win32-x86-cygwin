@@ -23,11 +23,6 @@ SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 
-# this means that atomic instrnsics are available, but that
-# users with 486 processors and earlier will need specialized
-# configure files
-ARCH_DEP_CFLAGS += -march=i586
-
 # Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =
 

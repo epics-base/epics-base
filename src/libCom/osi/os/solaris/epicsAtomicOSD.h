@@ -91,7 +91,7 @@ OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
 {
     unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
-    atomic_swap_ulong ( pTarg, newval );
+    atomic_swap_ulong ( pTarg, newVal );
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )

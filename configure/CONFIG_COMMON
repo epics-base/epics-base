@@ -83,7 +83,7 @@ COMMON_DIR = ../O.Common
 #-------------------------------------------------------
 # Make echo output - suppress echoing if make's '-s' flag is set
 COMMENT = \#
-ECHO = @$(if $(findstring s,$(MAKEFLAGS)),$(COMMENT),echo)
+ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(COMMENT),echo)
 
 #-------------------------------------------------------
 ifdef T_A

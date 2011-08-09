@@ -421,7 +421,7 @@ void epicsAtomicIncrPerformance ()
     testDiag ( "epicsAtomicIncr() takes %f microseconds", delay );
 }
 
-void atomicCompareAndSetPerformance ()
+void atomicTestAndSetPerformance ()
 {
     epicsTime begin = epicsTime::getCurrent ();
     unsigned target;

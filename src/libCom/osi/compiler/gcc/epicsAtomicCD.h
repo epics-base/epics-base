@@ -23,7 +23,7 @@
 #define OSD_ATOMIC_INLINE __inline__
 
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)
-#define GCC_ATOMIC_CONCATR( A, B ) A ## B
+#define GCC_ATOMIC_CONCATR( A, B ) ( A ## B )
 
 #define GCC_ATOMIC_INTRINSICS_AVAIL_UINT_T \
     GCC_ATOMIC_CONCAT ( \
@@ -35,8 +35,13 @@
         __GCC_HAVE_SYNC_COMPARE_AND_SWAP_, \
         __SIZEOF_SIZE_T__ )
         
+#define GCC_ATOMIC_INTRINSICS_MIN_X86 \
+    ( defined ( __i486 ) || defined ( __pentium ) || \
+    defined ( __pentiumpro ) || defined ( __MMX__ ) )
+    
 #define GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER \
-    defined ( __i386 ) && ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 401
+    ( GCC_ATOMIC_INTRINSICS_MIN_X86 && \
+    ( ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 401 ) )
 
 #if ( GCC_ATOMIC_INTRINSICS_AVAIL_UINT_T \
     && GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T ) \

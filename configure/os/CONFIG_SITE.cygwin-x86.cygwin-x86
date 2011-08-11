@@ -9,3 +9,5 @@
 #  GNU_DIR used when COMMANDLINE_LIBRARY is READLINE
 #GNU_DIR=C:/cygwin
 
+# default minimum host hardware architecture
+#ARCH_DEP_CFLAGS += -march=i586

@@ -16,9 +16,6 @@ ARCH_DEP_CPPFLAGS += -D_X86_
 ARCH_DEP_CFLAGS += -m32
 ARCH_DEP_LDFLAGS += -m32
 
-# default minimum target architecture is pentium
-ARCH_DEP_CFLAGS += -march=i586
-
 # If your crosscompiler name has a GNU target prefix like <gnutarget>-gcc,
 # e.g. x86-redhat-linux-gcc, put a GNU_TARGET definition in
 # CONFIG_SITE.<host>.linux-x86 file, e.g. GNU_TARGET=x86-redhat-linux

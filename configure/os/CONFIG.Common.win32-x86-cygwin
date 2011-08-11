@@ -23,9 +23,6 @@ POSIX_LDLIBS += -lpthread
 ARCH_DEP_CFLAGS += -m32
 ARCH_DEP_LDFLAGS += -m32
 
-# default minimum target architecture is pentium
-ARCH_DEP_CFLAGS += -march=i586
-
 # With no-cygwin option:
 #	compiler defines _X86_ 1
 #	compiler defines __MSVCRT__ 1

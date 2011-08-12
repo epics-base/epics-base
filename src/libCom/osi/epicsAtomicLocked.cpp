@@ -86,6 +86,12 @@ size_t epicsLockedGetSizeT ( const size_t * pTarget )
     return *pTarget;
 }
 
+unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
+{
+    AtomicGuard atomicGuard;
+    return *pTarget;
+}
+
 unsigned epicsLockedTestAndSetUIntT ( unsigned * pTarget )
 {
     AtomicGuard atomicGuard;

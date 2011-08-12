@@ -33,13 +33,19 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/* necessary for next two functions */
+/* necessary for next three functions */
 STATIC_ASSERT ( sizeof ( LONG ) == sizeof ( unsigned ) );
 
 OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
 {
     LONG * const pTarg = ( LONG * ) ( pTarget );
     InterlockedExchange ( pTarg, ( LONG ) newVal );
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+{
+    LONG * const pTarg = ( LONG * ) ( pTarget );
+    return InterlockedExchangeAdd ( pTarg, 0 );
 }
 
 OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )

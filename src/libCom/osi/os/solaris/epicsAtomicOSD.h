@@ -44,6 +44,16 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal
     atomic_swap_uint ( pTarget, newVal );
 }
 
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+{
+    /* 
+     * we cast away const, but are careful not to modify 
+     * the target
+     */
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return atomic_or_uint_nv ( pTarg, 0U );
+}
+
 #if SIZE_MAX == UINT_MAX
 
 OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )

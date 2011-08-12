@@ -83,6 +83,12 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
     return *pTarget;
 }
 
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+{
+    __sync_synchronize ();
+    return *pTarget;
+}
+
 OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 {
     const size_t prev = __sync_lock_test_and_set ( pTarget, 1u );

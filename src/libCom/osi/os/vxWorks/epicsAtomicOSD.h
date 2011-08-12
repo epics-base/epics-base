@@ -126,6 +126,13 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
     return vxCas ( pTarg, 0, 1 ) != 0;
 }
 
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+{
+    STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( unsigned ) );
+    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
+    return ( unsigned ) vxAtomicGet ( pTarg );
+}
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */
@@ -190,6 +197,15 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
+{
+    /* 
+     * no need for memory barrior since this 
+     * is a single cpu system 
+     */
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
     /* 
      * no need for memory barrior since this 

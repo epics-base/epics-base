@@ -52,6 +52,11 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
     return epicsLockedGetSizeT ( pTarget );
 }
 
+OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+{
+    return epicsLockedGetUIntT ( pTarget );
+}
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */
@@ -63,6 +68,7 @@ OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 #   define epicsAtomicSetSizeT epicsLockedSetSizeT
 #   define epicsAtomicSetUIntT epicsLockedSetUIntT
 #   define epicsAtomicGetSizeT epicsLockedGetSizeT
+#   define epicsAtomicGetUIntT epicsLockedGetUIntT
 #   define epicsAtomicTestAndSetUIntT epicsLockedTestAndSetUIntT
 
 #endif /* if defined ( OSD_ATOMIC_INLINE ) */

@@ -58,6 +58,7 @@ epicsShareFunc void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newValue 
  * fetch target in cache, return new value of target
  */
 epicsShareFunc size_t epicsAtomicGetSizeT ( const size_t * pTarget );
+epicsShareFunc unsigned epicsAtomicGetUIntT ( const unsigned * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
@@ -84,6 +85,7 @@ epicsShareFunc size_t epicsLockedDecrSizeT ( size_t * pTarget );
 epicsShareFunc void epicsLockedSetSizeT ( size_t * pTarget, size_t newVal );
 epicsShareFunc void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal );
 epicsShareFunc size_t epicsLockedGetSizeT ( const size_t * pTarget );
+epicsShareFunc unsigned epicsLockedGetUIntT ( const unsigned * pTarget );
 epicsShareFunc unsigned epicsLockedTestAndSetUIntT ( unsigned * pTarget );
 
 #ifdef __cplusplus

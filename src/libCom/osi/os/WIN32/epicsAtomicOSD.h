@@ -20,9 +20,6 @@
 
 #include <limits.h>
 
-#define __STDC_LIMIT_MACROS /* define SIZE_MAX for c++ */
-#include <stdint.h>
-
 #include "epicsAssert.h"
 
 #define STRICT
@@ -33,37 +30,70 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/* 
+ * mingw doesnt currently provide MemoryBarrier
+ * (this is mostly for testing purposes as the gnu
+ * intrinsics are used if compiling for 486 or better 
+ * minimum hardware)
+ */
+#ifdef __MINGW32__
+    extern inline void MemoryBarrier() {
+        int fence = 0;
+        __asm__ __volatile__( "xchgl %%eax,%0 ":"=r" (fence) );
+    }
+#endif // ifdef __MINGW32__
+
 /* necessary for next three functions */
 STATIC_ASSERT ( sizeof ( LONG ) == sizeof ( unsigned ) );
 
 OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
 {
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    InterlockedExchange ( pTarg, ( LONG ) newVal );
+    *pTarget = newVal;
+    MemoryBarrier ();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+{
+    *pTarget = newVal;
+    MemoryBarrier ();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    *pTarget = newVal;
+    MemoryBarrier ();
 }
 
 OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    return InterlockedExchangeAdd ( pTarg, 0 );
+    MemoryBarrier ();
+    return *pTarget;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
+OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
-    long * const pTarg = ( LONG * ) ( pTarget );
-    return InterlockedCompareExchange ( pTarg, 1, 0 ) == 0;
+    MemoryBarrier ();
+    return *pTarget;
 }
 
-/* 
- * on win32 a LONG is 32 bits, but I am concerned that
- * we shouldnt use LONG_MAX here because with certain
- * compilers a long will be 64 bits wide
- */
-#define WIN32_LONG_MAX 0xffffffff
-#if SIZE_MAX == WIN32_LONG_MAX
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+{
+    MemoryBarrier ();
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                            unsigned oldVal, unsigned newVal )
+{
+    LONG * const pTarg = ( LONG * ) ( pTarget );
+    return (unsigned) InterlockedCompareExchange ( pTarg, 
+                                    (LONG) newVal, (LONG) oldVal );
+}
+
+#if defined ( _WIN32 )
 
 /*
- * necessary for next four functions 
+ * necessary for next five functions 
  *
  * looking at the MS documentation it appears that they will
  * keep type long the same size as an int on 64 bit builds
@@ -82,22 +112,18 @@ OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
     return InterlockedDecrement ( pTarg );
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     LONG * const pTarg = ( LONG * ) ( pTarget );
-    InterlockedExchange ( pTarg, ( LONG ) newVal );
+    return (EpicsAtomicPtrT) InterlockedCompareExchange ( pTarg, 
+                                    (LONG) newVal, (LONG) oldVal );
 }
 
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    return InterlockedExchangeAdd ( pTarg, 0 );
-}
-
-#else /* SIZE_MAX == WIN32_LONG_MAX */
+#elif defined ( _WIN64 ) 
 
 /*
- * necessary for next four functions 
+ * necessary for next five functions 
  */
 STATIC_ASSERT ( sizeof ( LONGLONG ) == sizeof ( size_t ) );
 
@@ -113,19 +139,15 @@ OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
     return InterlockedDecrement64 ( pTarg );
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     LONGLONG * const pTarg = ( LONGLONG * ) ( pTarget );
-    InterlockedExchange64 ( pTarg, ( LONGLONG ) newVal );
+    return (EpicsAtomicPtrT) InterlockedCompareExchange64 ( pTarg, 
+                                    (LONGLONG) newVal, (LONGLONG) oldVal );
 }
 
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    LONGLONG * const pTarg = ( LONGLONG * ) ( pTarget );
-    return InterlockedExchangeAdd64 ( pTarg, 0 );
-}
-
-#endif /* SIZE_MAX == WIN32_LONG_MAX */
+#endif /* if defined ( _WIN32 ) */
 
 #ifdef __cplusplus
 } /* end of extern "C" */

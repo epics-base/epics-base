@@ -39,15 +39,16 @@
     ( defined ( __i486 ) || defined ( __pentium ) || \
     defined ( __pentiumpro ) || defined ( __MMX__ ) )
     
+#define GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER \
+    ( ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 401 )
+
 #define GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER \
     ( GCC_ATOMIC_INTRINSICS_MIN_X86 && \
-    ( ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 401 ) )
+    GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER )
 
 #if ( GCC_ATOMIC_INTRINSICS_AVAIL_UINT_T \
     && GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T ) \
     || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
-
-#define OSD_ATOMIC_GCC
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +78,13 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget,
     __sync_synchronize ();
 }
 
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, 
+                                        EpicsAtomicPtrT newValue )
+{
+    *pTarget = newValue;
+    __sync_synchronize ();
+}
+
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
     __sync_synchronize ();
@@ -89,10 +97,22 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
     return *pTarget;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
-    const size_t prev = __sync_lock_test_and_set ( pTarget, 1u );
-    return prev == 0;
+    __sync_synchronize ();
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                        unsigned oldVal, unsigned newVal )
+{
+    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+{
+    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
 #ifdef __cplusplus
@@ -101,6 +121,11 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
 
 #else /* if GCC_ATOMIC_INTRINSICS_AVAIL */
     
+#   if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER && __i386
+        /* 386 hardware is probably rare today even in embedded systems */
+#       warning "this code will run much faster if specifying i486 or better"
+#   endif
+
     /*
      * not available as gcc intrinsics so we
      * will employ an os specific inline solution

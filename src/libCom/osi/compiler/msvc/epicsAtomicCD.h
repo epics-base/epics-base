@@ -24,21 +24,6 @@
 
 #ifdef _MSC_EXTENSIONS
 
-/*
- * I have discovered an anomaly in visual c++ where
- * the DLL instantiation of an exported inline interface
- * does not occur in a c++ code unless "inline" is used.
- */
-#if defined ( __cplusplus )
-#   define OSD_ATOMIC_INLINE inline
-#elif defined ( _MSC_VER )
-#   define OSD_ATOMIC_INLINE __inline
-#endif
-
-#if defined ( _M_X64 ) || defined ( _M_IA64 )
-#   define OSD_ATOMIC_64
-#endif /* defined ( _M_X64 ) || defined ( _M_IA64 ) */
-
 #include <intrin.h>
 
 #pragma intrinsic ( _InterlockedExchange )
@@ -52,6 +37,33 @@
 #   pragma intrinsic ( _InterlockedDecrement64 )
 #   pragma intrinsic ( _InterlockedExchange64 )
 #   pragma intrinsic ( _InterlockedExchangeAdd64 )
+#endif
+
+#if _MSC_VER >= 1200
+#   define OSD_ATOMIC_INLINE __forceinline
+#else
+#   define OSD_ATOMIC_INLINE __inline
+#endif
+
+#if defined ( _M_IX86 )
+#   pragma warning( push )
+#   pragma warning( disable : 4793 )
+    OSD_ATOMIC_INLINE void OSD_ATOMIC_SYNC ()
+    {
+        long fence;
+        __asm { xchg fence, eax }
+    }
+#   pragma warning( pop )
+#elif defined ( _M_X64 )
+#   define OSD_ATOMIC_64
+#   pragma intrinsic ( __faststorefence )
+#   define OSD_ATOMIC_SYNC __faststorefence
+#elif defined ( _M_IA64 )
+#   define OSD_ATOMIC_64
+#   pragma intrinsic ( __mf )
+#   define OSD_ATOMIC_SYNC __mf
+#else
+#   error unexpected target architecture, msvc version of epicsAtomicCD.h
 #endif
 
 /*
@@ -71,27 +83,53 @@ STATIC_ASSERT ( sizeof ( long ) == sizeof ( unsigned ) );
 
 OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
 {
-    long * const pTarg = ( long * ) ( pTarget );
-    _InterlockedExchange ( pTarg, ( long ) newVal );
+    *pTarget = newVal;
+    OSD_ATOMIC_SYNC ();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+{
+    *pTarget = newVal;
+    OSD_ATOMIC_SYNC ();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, 
+                                            EpicsAtomicPtrT newVal )
+{
+    *pTarget = newVal;
+    OSD_ATOMIC_SYNC ();
 }
 
 OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
-    long * const pTarg = ( long * ) ( pTarget );
-    return _InterlockedExchangeAdd ( pTarg, 0 );
+    OSD_ATOMIC_SYNC ();
+    return *pTarget;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
+OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
+{
+    OSD_ATOMIC_SYNC ();
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+{
+    OSD_ATOMIC_SYNC ();
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                            unsigned oldVal, unsigned newVal )
 {
     long * const pTarg = ( long * ) ( pTarget );
-    return _InterlockedCompareExchange ( pTarg, 1, 0 ) == 0;
+    return (unsigned) _InterlockedCompareExchange ( pTarg, 
+                                    (long) newVal, (long) oldVal );
 }
-
 
 #if ! OSD_ATOMIC_64
 
 /*
- * necessary for next four functions 
+ * necessary for next five functions 
  *
  * looking at the MS documentation it appears that they will
  * keep type long the same size as an int on 64 bit builds
@@ -110,22 +148,18 @@ OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
     return _InterlockedDecrement ( pTarg );
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                                    EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     long * const pTarg = ( long * ) ( pTarget );
-    _InterlockedExchange ( pTarg, ( long ) newVal );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    long * const pTarg = ( long * ) ( pTarget );
-    return _InterlockedExchangeAdd ( pTarg, 0 );
+    return (EpicsAtomicPtrT) _InterlockedCompareExchange ( pTarg, 
+                                    (long) newVal, (long) oldVal );
 }
 
 #else /* ! OSD_ATOMIC_64 */
 
 /*
- * necessary for next four functions 
+ * necessary for next five functions 
  */
 STATIC_ASSERT ( sizeof ( long long ) == sizeof ( size_t ) );
 
@@ -141,16 +175,12 @@ OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
     return _InterlockedDecrement64 ( pTarg );
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
-    long long * const pTarg = ( long long * ) ( pTarget );
-    _InterlockedExchange64 ( pTarg, ( long long ) newVal );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    long long * const pTarg = ( long long * ) ( pTarget );
-    return _InterlockedExchangeAdd64 ( pTarg, 0 );
+    long long * const pTarg = ( longlong * ) ( pTarget );
+    return (EpicsAtomicPtrT) _InterlockedCompareExchange64 ( pTarg, 
+                                    (long long) newVal, (long long) oldVal );
 }
 
 #endif /* ! OSD_ATOMIC_64 */

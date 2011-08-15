@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+typedef void * EpicsAtomicPtrT;
+
 /*
  * lock out other smp processors from accessing the target,
  * sync target in cache, add one to target, flush target in 
@@ -53,26 +55,31 @@ epicsShareFunc size_t epicsAtomicDecrSizeT ( size_t * pTarget );
  */
 epicsShareFunc void epicsAtomicSetSizeT  ( size_t * pTarget, size_t newValue ); 
 epicsShareFunc void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newValue );
+epicsShareFunc void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newValue );
 
 /*
  * fetch target in cache, return new value of target
  */
 epicsShareFunc size_t epicsAtomicGetSizeT ( const size_t * pTarget );
 epicsShareFunc unsigned epicsAtomicGetUIntT ( const unsigned * pTarget );
+epicsShareFunc EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
- * sync target in cache, if target is zero set target to 
- * non-zero (true) value, flush target in cache, allow out 
- * other smp processors to access the target, return true if 
- * this request changed the target from a zero value to a 
- * non-zero (true) value and otherwise false
+ * sync target in cache, if target is equal to oldVal set target 
+ * to newVal, flush target in cache, allow other smp processors 
+ * to access the target, return the original value stored in the
+ * target
  *
- * test and set is chosen as the primitive here because,
- * compared to comapare-and-swap it is more likely to
- * be implemented atomically on old architectures such as 68k
+ * !!!! beware, this will not guarantee an atomic operation
+ * !!!! on legacy vxWorks (prior to 6.6) if the target operand 
+ * !!!! is on a multi-commander bus (such as the VME bus)
  */
-epicsShareFunc unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget );
+epicsShareFunc unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                        unsigned oldVal, unsigned newVal );
+epicsShareFunc EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal );
+
 
 /*
  * the following are, never inline and always synchronized by a global 
@@ -84,9 +91,14 @@ epicsShareFunc size_t epicsLockedIncrSizeT ( size_t * pTarget );
 epicsShareFunc size_t epicsLockedDecrSizeT ( size_t * pTarget );
 epicsShareFunc void epicsLockedSetSizeT ( size_t * pTarget, size_t newVal );
 epicsShareFunc void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal );
+epicsShareFunc void epicsLockedSetPtrT ( unsigned * pTarget, EpicsAtomicPtrT newVal );
 epicsShareFunc size_t epicsLockedGetSizeT ( const size_t * pTarget );
 epicsShareFunc unsigned epicsLockedGetUIntT ( const unsigned * pTarget );
-epicsShareFunc unsigned epicsLockedTestAndSetUIntT ( unsigned * pTarget );
+epicsShareFunc EpicsAtomicPtrT epicsLockedGetPtrT ( const unsigned * pTarget );
+epicsShareFunc unsigned epicsLockedCmpAndSwapUIntT ( unsigned * pTarget, 
+                                        unsigned oldval, unsigned newval );
+epicsShareFunc EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal );
 
 #ifdef __cplusplus
 } /* end of extern "C" */

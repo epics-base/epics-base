@@ -305,46 +305,46 @@ inline void oneThousandAtomicIncr ( size_t & target )
     oneHundredAtomicIncr ( target );
 }
 
-inline void tenAtomicTestAndSet ( unsigned & target )
+inline void tenAtomicCmpAndSwap ( unsigned & target )
 {
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
-    epicsAtomicTestAndSetUIntT ( & target );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
 }
 
-inline void oneHundredAtomicTestAndSet ( unsigned & target )
+inline void oneHundredAtomicCmpAndSwap ( unsigned & target )
 {
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
-    tenAtomicTestAndSet ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
+    tenAtomicCmpAndSwap ( target );
 }
 
-inline void oneThousandAtomicTestAndSet ( unsigned & target )
+inline void oneThousandAtomicCmpAndSwap ( unsigned & target )
 {
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
-    oneHundredAtomicTestAndSet ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
+    oneHundredAtomicCmpAndSwap ( target );
 }
 
 inline void tenAtomicSet ( size_t & target )
@@ -421,20 +421,20 @@ void epicsAtomicIncrPerformance ()
     testDiag ( "epicsAtomicIncr() takes %f microseconds", delay );
 }
 
-void atomicTestAndSetPerformance ()
+void atomicCmpAndSwapPerformance ()
 {
     epicsTime begin = epicsTime::getCurrent ();
     unsigned target;
     epicsAtomicSetUIntT ( & target, 0 );
     testOk1 ( ! target );
     for ( unsigned i = 0; i < N; i++ ) {
-        oneThousandAtomicTestAndSet ( target );
+        oneThousandAtomicCmpAndSwap ( target );
     }
     double delay = epicsTime::getCurrent () -  begin;
     testOk1 ( target );
     delay /= N * 1000u; // convert to delay per call
     delay *= 1e6; // convert to micro seconds
-    testDiag ( "epicsAtomicCompareAndSet() takes %f microseconds", delay );
+    testDiag ( "epicsAtomicCmpAndSwap() takes %f microseconds", delay );
 }
 
 void recursiveOwnershipRetPerformance ()
@@ -494,6 +494,6 @@ MAIN(epicsAtomicPerform)
     epicsAtomicIncrPerformance ();
     recursiveOwnershipRetPerformance ();
     ownershipPassRefPerformance ();
-    atomicCompareAndSetPerformance ();
+    atomicCmpAndSwapPerformance ();
     return testDone();
 }

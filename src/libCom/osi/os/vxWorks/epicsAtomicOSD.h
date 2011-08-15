@@ -75,13 +75,32 @@ OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
     vxAtomicSet ( pTarg, newVal ); 
 }
 
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
+    vxAtomicSet ( pTarg, newVal ); 
+}
+
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
     return ( size_t ) vxAtomicGet ( pTarg );
 }
 
-#else /* SIZE_MAX == UINT_MAX */
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+{
+    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
+    return ( EpicsAtomicPtrT ) vxAtomicGet ( pTarg );
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+{
+    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
+    return (EpicsAtomicPtrT) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
+}
+
+#else /* ULONG_MAX == UINT_MAX */
 
 /*
  * if its 64 bit vxWorks and the compiler doesnt
@@ -104,12 +123,28 @@ OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
     epicsLockedSetSizeT ( pTarget, newVal );
 }
 
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    epicsLockedSetPtrT ( pTarget, newVal );
+}
+
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
     return epicsLockedGetSizeT ( pTarget );
 }
 
-#endif /* SIZE_MAX == UINT_MAX */
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+{
+    return epicsLockedGetPtrT ( pTarget );
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+{
+    return epicsLockedCmpAndSwapPtrT ( pTarget, oldVal, newVal );
+}
+
+#endif /* ULONG_MAX == UINT_MAX */
 
 STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( unsigned ) );
 
@@ -119,18 +154,18 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal
     vxAtomicSet ( pTarg, newVal ); 
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
-{
-    STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( unsigned ) );
-    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
-    return vxCas ( pTarg, 0, 1 ) != 0;
-}
-
 OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
     STATIC_ASSERT ( sizeof ( atomic_t ) == sizeof ( unsigned ) );
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
     return ( unsigned ) vxAtomicGet ( pTarg );
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                            unsigned oldVal, unsigned newVal )
+{
+    atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
+    return (unsigned) vxCas ( pTarg, (atomic_t) oldVal, (atomic_t) newVal );
 }
 
 #ifdef __cplusplus
@@ -196,6 +231,15 @@ OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal
     *pTarget = newVal; 
 }
 
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    /* 
+     * no need for memory barrior since this 
+     * is a single cpu system 
+     */
+    *pTarget = newVal; 
+}
+
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
     /* 
@@ -214,10 +258,51 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
     return *pTarget;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
-    STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
-    return vxTas ( pTarget );
+    /* 
+     * no need for memory barrior since this 
+     * is a single cpu system 
+     */
+    return *pTarget;
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                            unsigned oldVal, unsigned newVal )
+{
+      /* 
+       * no need for memory barrior since this 
+       * is a single cpu system 
+       *
+       * !!!! beware, this will not guarantee an atomic operation
+       * !!!! if the target operand is on the VME bus
+       */
+      const int key = intLock ();
+      const unsigned curr = *pTarget;
+      if ( curr == oldVal ) {
+          *pTarget = newVal;
+      }
+      intUnlock ( key );
+      return curr;
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+{
+      /* 
+       * no need for memory barrior since this 
+       * is a single cpu system 
+       *
+       * !!!! beware, this will not guarantee an atomic operation
+       * !!!! if the target operand is on the VME bus
+       */
+      const int key = intLock ();
+      const EpicsAtomicPtrT curr = *pTarget;
+      if ( curr == oldVal ) {
+          *pTarget = newVal;
+      }
+      intUnlock ( key );
+      return curr;
 }
 
 #ifdef __cplusplus

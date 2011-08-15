@@ -22,16 +22,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
-{
-    return epicsLockedTestAndSetUIntT ( pTarget );
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
-{
-    epicsLockedSetUIntT ( pTarget, newVal );
-}
-
 OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
     return epicsLockedIncrSizeT ( pTarget );
@@ -57,6 +47,33 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
     return epicsLockedGetUIntT ( pTarget );
 }
 
+OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
+{
+    epicsLockedSetUIntT ( pTarget, newVal );
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    epicsLockedSetPtrT ( pTarget, newVal );
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+{
+    return epicsLockedGetPtrT ( pTarget );
+}
+
+OSD_ATOMIC_INLINE unsigned epicsAomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                        unsigned oldVal, unsigned newVal )
+{
+    return epicsLockedCmpAndSwapUIntT ( pTarget, oldVal, newVal );
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                                        EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
+{
+    return epicsLockedCmpAndSwapPtrT ( pTarget, oldVal, newVal );
+}
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */
@@ -67,9 +84,12 @@ OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 #   define epicsAtomicDecrSizeT epicsLockedDecrSizeT
 #   define epicsAtomicSetSizeT epicsLockedSetSizeT
 #   define epicsAtomicSetUIntT epicsLockedSetUIntT
+#   define epicsAtomicSetPtrT epicsLockedSetPtrT
 #   define epicsAtomicGetSizeT epicsLockedGetSizeT
 #   define epicsAtomicGetUIntT epicsLockedGetUIntT
-#   define epicsAtomicTestAndSetUIntT epicsLockedTestAndSetUIntT
+#   define epicsAtomicGetPtrT epicsLockedGetPtrT
+#   define epicsAtomicCmpAndSwapUIntT epicsLockedCmpAndSwapUIntT
+#   define epicsAtomicCmpAndSwapPtrT epicsLockedCmpAndSwapPtrT
 
 #endif /* if defined ( OSD_ATOMIC_INLINE ) */
 

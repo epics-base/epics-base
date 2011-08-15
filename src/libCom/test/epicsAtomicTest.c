@@ -27,94 +27,147 @@ static void decr ( void *arg )
     epicsAtomicIncrSizeT ( & pTestData->m_testIterations );
 }
 
-typedef struct TestDataTNS {
+typedef struct TestDataTNS_UIntT {
     unsigned m_testValue;
     size_t m_testIterationsSet;
     size_t m_testIterationsNotSet;
-} TestDataTNS;
+} TestDataTNS_UIntT;
+
+typedef struct TestDataTNS_PtrT {
+    EpicsAtomicPtrT m_testValue;
+    size_t m_testIterationsSet;
+    size_t m_testIterationsNotSet;
+} TestDataTNS_PtrT;
+
 
 int isModulo ( size_t N, size_t n ) 
 {
     return ( n % N ) == 0u;
 }
 
-static void tns ( void *arg )
+static void tns_UIntT ( void *arg )
 {
-    TestDataTNS * const pTestData = (TestDataTNS *) arg;
+    TestDataTNS_UIntT * const pTestData = (TestDataTNS_UIntT *) arg;
     /*
      * intentionally waste cpu and maximize
      * contention for the shared data
      */
     epicsAtomicIncrSizeT ( & pTestData->m_testIterationsNotSet );
-    while ( ! epicsAtomicTestAndSetUIntT ( & pTestData->m_testValue ) ) {
+    while ( ! epicsAtomicCmpAndSwapUIntT ( & pTestData->m_testValue, 0u, 1u ) ) {
     }
-    testOk ( epicsAtomicGetUIntT ( & pTestData->m_testValue ),
-                "test and set must leave operand in true state" );
     epicsAtomicDecrSizeT ( & pTestData->m_testIterationsNotSet );
     epicsAtomicSetUIntT ( & pTestData->m_testValue, 0u );
     epicsAtomicIncrSizeT ( & pTestData->m_testIterationsSet );
 }
 
-MAIN(epicsAtomicTest)
+static void tns_PtrT ( void *arg )
+{
+    static char dummy = 0;
+    TestDataTNS_PtrT * const pTestData = (TestDataTNS_PtrT *) arg;
+    /*
+     * intentionally waste cpu and maximize
+     * contention for the shared data
+     */
+    epicsAtomicIncrSizeT ( & pTestData->m_testIterationsNotSet );
+    while ( ! epicsAtomicCmpAndSwapPtrT ( & pTestData->m_testValue, 0, & dummy ) ) {
+    }
+    epicsAtomicDecrSizeT ( & pTestData->m_testIterationsNotSet );
+    epicsAtomicSetPtrT ( & pTestData->m_testValue, 0u );
+    epicsAtomicIncrSizeT ( & pTestData->m_testIterationsSet );
+}
+
+MAIN(osiAtomicTest)
 {
     const unsigned int stackSize = 
         epicsThreadGetStackSize ( epicsThreadStackSmall );
 
-    static const size_t N_incrDecr = 100;
-    static const size_t N_testAndSet = 10;
-        
-    testPlan( 9 + N_testAndSet );
+    testPlan(14);
 
     {
-
+        static const size_t N = 100;
         size_t i;
-        TestDataIncrDecr testData = { 0, N_incrDecr };
-        epicsAtomicSetSizeT ( & testData.m_testValue, N_incrDecr );
-        testOk ( epicsAtomicGetSizeT ( & testData.m_testValue ) == N_incrDecr,
+        TestDataIncrDecr testData = { 0, N };;
+        epicsAtomicSetSizeT ( & testData.m_testValue, N );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testValue ) == N,
                     "set/get %u", testData.m_testValue );
         epicsAtomicSetSizeT ( & testData.m_testIterations, 0u );
         testOk ( epicsAtomicGetSizeT ( & testData.m_testIterations ) == 0u,
                     "set/get %u", testData.m_testIterations );
-        for ( i = 0u; i < N_incrDecr; i++ ) {
-            epicsThreadCreate ( "incr", 50, stackSize, incr, & testData );
-            epicsThreadCreate ( "decr", 50, stackSize, decr, & testData );
+        for ( i = 0u; i < N; i++ ) {
+            epicsThreadCreate ( "incr",
+                        50, stackSize, incr, & testData );
+            epicsThreadCreate ( "decr",
+                        50, stackSize, decr, & testData );
         }
-        while ( testData.m_testIterations < 2 * N_incrDecr ) {
+        while ( testData.m_testIterations < 2 * N ) {
             epicsThreadSleep ( 0.01 );
         }
-        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterations ) == 2 * N_incrDecr,
-                    "incr/decr iterations %u", testData.m_testIterations );
-        testOk ( epicsAtomicGetSizeT ( & testData.m_testValue ) == N_incrDecr, 
-                    "incr/decr final value %u", testData.m_testValue );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterations ) == 2 * N,
+                    "incr/decr iterations %u", 
+                    testData.m_testIterations );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testValue ) == N, 
+                    "incr/decr final value %u", 
+                    testData.m_testValue );
     }
 
     {
+        static const unsigned initVal = 1;
+        static const size_t N = 10;
         size_t i;
-        TestDataTNS testData = { 1, N_testAndSet, N_testAndSet };
+        TestDataTNS_UIntT testData = { 0, N, N };
         epicsAtomicSetSizeT ( & testData.m_testIterationsSet, 0u );
         testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsSet ) == 0u,
                     "set/get %u", testData.m_testIterationsSet );
         epicsAtomicSetSizeT ( & testData.m_testIterationsNotSet, 0u );
         testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsNotSet ) == 0u,
                     "set/get %u", testData.m_testIterationsNotSet );
-        for ( i = 0u; i < N_testAndSet; i++ ) {
+        epicsAtomicSetUIntT ( & testData.m_testValue, initVal );
+        testOk ( epicsAtomicGetUIntT ( & testData.m_testValue ) == initVal,
+                    "PtrT set/get %u", testData.m_testValue );
+        for ( i = 0u; i < N; i++ ) {
             epicsThreadCreate ( "tns",
-                        50, stackSize, tns, & testData );
+                        50, stackSize, tns_UIntT, & testData );
         }
         epicsAtomicSetUIntT ( & testData.m_testValue, 0u );
-        while ( testData.m_testIterationsSet < N_testAndSet ) {
+        while ( testData.m_testIterationsSet < N ) {
             epicsThreadSleep ( 0.01 );
         }
-        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsSet ) == N_testAndSet,
-                    "test and set iterations %u", testData.m_testIterationsSet );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsSet ) == N,
+                    "test and set iterations %u", 
+                    testData.m_testIterationsSet );
         testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsNotSet ) == 0u,
-                    "test and set not-set tracking = %u", testData.m_testIterationsNotSet );
+                    "test and set not-set tracking = %u", 
+                    testData.m_testIterationsNotSet );
+    }
+
         {
-            static unsigned setVal = 5;
-            epicsAtomicSetUIntT ( & testData.m_testValue, setVal );
-            testOk ( epicsAtomicGetUIntT ( & testData.m_testValue ) == setVal,
-                        "unsigned version of set and get must concur" );
+        static const size_t N = 10;
+        static char dummy;
+        size_t i;
+        TestDataTNS_PtrT testData = { 0, N, N };
+        epicsAtomicSetSizeT ( & testData.m_testIterationsSet, 0u );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsSet ) == 0u,
+                    "set/get %u", testData.m_testIterationsSet );
+        epicsAtomicSetSizeT ( & testData.m_testIterationsNotSet, 0u );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsNotSet ) == 0u,
+                    "SizeT set/get %u", testData.m_testIterationsNotSet );
+        epicsAtomicSetPtrT ( & testData.m_testValue, & dummy );
+        testOk ( epicsAtomicGetPtrT ( & testData.m_testValue ) == & dummy,
+                    "PtrT set/get %p", testData.m_testValue );
+        for ( i = 0u; i < N; i++ ) {
+            epicsThreadCreate ( "tns",
+                        50, stackSize, tns_PtrT, & testData );
         }
+        epicsAtomicSetPtrT ( & testData.m_testValue, 0u );
+        while ( testData.m_testIterationsSet < N ) {
+            epicsThreadSleep ( 0.01 );
+        }
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsSet ) == N,
+                    "test and set iterations %u", 
+                    testData.m_testIterationsSet );
+        testOk ( epicsAtomicGetSizeT ( & testData.m_testIterationsNotSet ) == 0u,
+                    "test and set not-set tracking = %u", 
+                    testData.m_testIterationsNotSet );
     }
 
     return testDone();

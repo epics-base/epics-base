@@ -33,90 +33,65 @@
 extern "C" {
 #endif /* __cplusplus */
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicTestAndSetUIntT ( unsigned * pTarget )
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                                        unsigned oldVal, unsigned newVal )
 {
-    const uint_t oldVal = atomic_cas_uint ( pTarget, 0u, 1u );
-    return oldVal == 0u;
+    return atomic_cas_uint ( pTarget, oldVal, newVal );
+}
+
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+{
+    return atomic_cas_ptr ( pTarget, oldVal, newVal );
+}
+
+OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
+{
+    void * const pTarg = ( void * ) ( pTarget );
+    return ( size_t ) atomic_inc_ptr_nv ( pTarg );
+}
+
+OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
+{
+    void * const pTarg = ( void * ) ( pTarget );
+    return atomic_dec_ptr_nv ( pTarg );
 }
 
 OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
 {
-    atomic_swap_uint ( pTarget, newVal );
+    *pTarget = newVal;
+    membar_producer();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+{
+    *pTarget = newVal;
+    membar_producer();
+}
+
+OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    *pTarget = newVal;
+    membar_producer();
 }
 
 OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
-    /* 
-     * we cast away const, but are careful not to modify 
-     * the target
-     */
-    unsigned * const pTarg = ( unsigned * ) ( pTarget );
-    return atomic_or_uint_nv ( pTarg, 0U );
-}
-
-#if SIZE_MAX == UINT_MAX
-
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
-{
-    unsigned * const pTarg = ( unsigned * ) ( pTarget );
-    return atomic_inc_uint_nv ( pTarg );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
-{
-    unsigned * const pTarg = ( unsigned * ) ( pTarget );
-    return atomic_dec_uint_nv ( pTarg );
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
-{
-    unsigned * const pTarg = ( unsigned * ) ( pTarget );
-    atomic_swap_uint ( pTarg, newVal );
+    membar_consumer ();
+    return *pTarget;
 }
 
 OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
-    /* 
-     * we cast away const, but are careful not to modify 
-     * the target
-     */
-    unsigned * const pTarg = ( unsigned * ) ( pTarget );
-    return atomic_or_uint_nv ( pTarg, 0U );
+    membar_consumer ();
+    return *pTarget;
 }
 
-#elif SIZE_MAX == ULONG_MAX
-
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
-    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
-    return atomic_inc_ulong_nv ( pTarg );
+    membar_consumer ();
+    return *pTarget;
 }
-
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
-{
-    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
-    return atomic_dec_ulong_nv ( pTarg );
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
-{
-    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
-    atomic_swap_ulong ( pTarg, newVal );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    /* 
-     * we cast away const, but are careful not to modify 
-     * the target
-     */
-    unsigned long * const pTarg = ( unsigned long * ) ( pTarget );
-    return atomic_or_ulong_nv ( pTarg, 0UL );
-}
-
-#else
-#   error unsupported solaris architecture
-#endif /* SIZE_MAX == UINT_MAX */
 
 #ifdef __cplusplus
 } /* end of extern "C" */

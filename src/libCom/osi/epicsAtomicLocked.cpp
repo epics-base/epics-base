@@ -24,6 +24,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsAtomic.h"
+#include "epicsThread.h"
 #include "epicsMutex.h"
 
 namespace {
@@ -33,23 +34,47 @@ public:
     AtomicGuard ();
     ~AtomicGuard ();
 private:
-    static epicsMutexOSD & m_mutex;
+    static epicsMutexOSD * m_pMutex;
+    static epicsThreadOnceId m_onceFlag;
+    static void m_once ( void * );
 };
 
 //
-// see c++ FAQ, static init order fiasco 
+// c++ 0x specifies the behavior for concurrent
+// access to block scope statics but some compiler
+// writers, lacking clear guidance in the earlier
+// c++ standards, curiously implement thread unsafe 
+// block static variables despite ensuring for 
+// proper multithreaded behavior for many other
+// parst of the compiler infrastructure such as
+// runtime support for exception handling
 //
-epicsMutexOSD & AtomicGuard :: m_mutex = * epicsMutexOsdCreate ();
+// since this is potentially used by the implementation
+// of staticInstance we cant use it here and must use
+// epicsThreadOnce despite its perfomance pentalty
+//
+// using epicsThreadOnce here (at this time) increases 
+// the overhead of AtomicGuard by as much as 100% 
+//
+epicsMutexOSD * AtomicGuard :: m_pMutex = 0;
+epicsThreadOnceId AtomicGuard :: m_onceFlag = EPICS_THREAD_ONCE_INIT;
+
+void AtomicGuard :: m_once ( void * )
+{
+    m_pMutex = epicsMutexOsdCreate ();
+}
 
 inline AtomicGuard :: AtomicGuard ()
 {
-    const int status = epicsMutexOsdLock ( & m_mutex );
+
+    epicsThreadOnce ( & m_onceFlag, m_once, 0 );
+    const int status = epicsMutexOsdLock ( m_pMutex );
     assert ( status == epicsMutexLockOK );
 }
 
 inline AtomicGuard :: ~AtomicGuard ()
 {
-    epicsMutexOsdUnlock ( & m_mutex );
+    epicsMutexOsdUnlock ( m_pMutex );
 }
 
 } // end of anonymous namespace
@@ -92,14 +117,26 @@ unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
     return *pTarget;
 }
 
-unsigned epicsLockedTestAndSetUIntT ( unsigned * pTarget )
+unsigned epicsLockedCmpAndSwapUIntT ( unsigned * pTarget, 
+                            unsigned oldval, unsigned newval )
 {
     AtomicGuard atomicGuard;
-    const bool weWillSetIt = ( *pTarget == 0u );
-    if ( weWillSetIt ) {
-        *pTarget = 1u;
+    const unsigned cur = *pTarget;
+    if ( cur == oldval ) {
+        *pTarget = newval;
     }
-    return weWillSetIt;
+    return cur;
+}
+
+EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
+{
+    AtomicGuard atomicGuard;
+    const EpicsAtomicPtrT cur = *pTarget;
+    if ( cur == oldval ) {
+        *pTarget = newval;
+    }
+    return cur;
 }
 
 } // end of extern "C" 

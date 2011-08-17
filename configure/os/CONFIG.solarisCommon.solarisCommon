@@ -7,6 +7,8 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
 #-------------------------------------------------------
 
+CMPLR_CLASS = solStudio
+
 SPARCWORKS = /opt/SUNWspro
 GNU = NO
 

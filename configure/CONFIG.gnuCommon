@@ -12,6 +12,8 @@
 
 GNU = YES
 
+CMPLR_CLASS = gcc
+
 GNU_BIN = $(GNU_DIR)/bin
 GNU_LIB = $(GNU_DIR)/lib
 

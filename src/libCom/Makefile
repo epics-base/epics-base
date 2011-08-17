@@ -136,7 +136,6 @@ INC += epicsExport.h
 INC += unixFileName.h
 INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
-INC += compilerDependencies.h
 INC += epicsUnitTest.h
 INC += testMain.h
 SRCS += aToIPAddr.c
@@ -195,6 +194,8 @@ INC += devLib.h
 INC += devLibVME.h
 INC += devLibVMEImpl.h
 INC += osdVME.h
+INC += compilerDependencies.h
+INC += compilerSpecific.h
 
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp

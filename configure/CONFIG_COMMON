@@ -133,11 +133,14 @@ POSIX_YES = os/posix
 GENERIC_SRC_DIRS = .. $(SRC_DIRS)
 OS_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
        $(addprefix $(dir)/, os/$(OS_CLASS) $(POSIX_$(POSIX)) os/default ))
-ALL_SRC_DIRS = $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
+CMPLR_SRC_DIRS += . $(foreach dir, .. $(SRC_DIRS), \
+       $(addprefix $(dir)/, compiler/$(CMPLR_CLASS) compiler/default ))
+ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 
 #--------------------------------------------------
 # compile line include directories
 INSTALL_INCLUDES += \
+       -I$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS) \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
        -I$(INSTALL_INCLUDE)
 SRC_INCLUDES = -I$(COMMON_DIR) $(addprefix -I, $(wildcard $(ALL_SRC_DIRS)))
@@ -379,23 +382,34 @@ INSTALL_PERMISSIONS = 444
 #
 # auto determine the directory paths that things are installed to
 # RULES:
-# 1) found in any one of several os specific area
+# 0) found in any one of several compiler specific paths
+#       => install to $(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)
+# 1) not found in (0) and found in any one of several OS specific paths
 #       => install to $(INSTALL_INCLUDE)/os/$(OS_CLASS)
-# 2) not foundin (1) and found in generic area
+# 2) not found in (1) and found in generic paths
 #       => install to $(INSTALL_INCLUDE)
 # 3) not found in (1) or (2) then may be (not yet) computer generated
 #       => install into $(INSTALL_INCLUDE)/os/$(OS_CLASS) and let
 #       build rules work on vpath
 #
 # These rules guarantee that the users include from
-# no more than two directories
+# no more than three directories
 #
 INSTALL_INC += $(foreach inc, $(INC), \
     $(firstword \
+        $(CMPLR_INSTALL_INC) \
         $(OS_INSTALL_INC) \
         $(GENERIC_INSTALL_INC) \
         $(GENERATED_INSTALL_INC) ) )
 INSTALL_INC += $(addprefix $(INSTALL_INCLUDE)/os/$(OS_CLASS)/, $(INC_$(OS_CLASS)) )
+
+#
+# Rule 0
+#
+CMPLR_INSTALL_INC = $(addprefix $(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/, $(INSTALL_INC_jjj) )
+INSTALL_INC_jjj = $(foreach dir, $(CMPLR_SRC_DIRS), $(INSTALL_INC_iii)  )
+INSTALL_INC_iii = $(subst $(dir)/, , $(INSTALL_INC_hhh) )
+INSTALL_INC_hhh = $(wildcard $(addsuffix /$(inc), $(dir)) )
 
 #
 # Rule 1

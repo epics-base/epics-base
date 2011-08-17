@@ -1,4 +1,3 @@
 
-# default minimum host hardware architecture
-#ARCH_DEP_CFLAGS += -march=i586
+
 

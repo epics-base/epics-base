@@ -14,6 +14,3 @@
 #AR = $(CMPLR_PREFIX)ar -rc
 #LD = $(CMPLR_PREFIX)ld -r
 #RANLIB = $(CMPLR_PREFIX)ranlib
-
-# default minimum host hardware architecture
-ARCH_DEP_CFLAGS += -march=i586

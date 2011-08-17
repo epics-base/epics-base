@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2011 LANS LLC, as Operator of
 *     Los Alamos National Laboratory.
@@ -62,14 +61,14 @@ OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * p
     return epicsLockedGetPtrT ( pTarget );
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAomicCmpAndSwapUIntT ( unsigned * pTarget, 
+OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
                                         unsigned oldVal, unsigned newVal )
 {
     return epicsLockedCmpAndSwapUIntT ( pTarget, oldVal, newVal );
 }
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                                        EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
+OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                                        EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     return epicsLockedCmpAndSwapPtrT ( pTarget, oldVal, newVal );
 }
@@ -94,5 +93,4 @@ OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * 
 #endif /* if defined ( OSD_ATOMIC_INLINE ) */
 
 #endif /* epicsAtomicLocked_h */
-
 

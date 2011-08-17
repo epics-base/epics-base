@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2011 LANS LLC, as Operator of
 *     Los Alamos National Laboratory.
@@ -105,13 +104,25 @@ void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal )
     *pTarget = newVal;
 }
 
+void epicsLockedSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    AtomicGuard atomicGuard;
+    *pTarget = newVal;
+}
+
+unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
+{
+    AtomicGuard atomicGuard;
+    return *pTarget;
+}
+
 size_t epicsLockedGetSizeT ( const size_t * pTarget )
 {
     AtomicGuard atomicGuard;
     return *pTarget;
 }
 
-unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
+EpicsAtomicPtrT epicsLockedGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
     AtomicGuard atomicGuard;
     return *pTarget;
@@ -140,7 +151,4 @@ EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget,
 }
 
 } // end of extern "C" 
-
-
-
 

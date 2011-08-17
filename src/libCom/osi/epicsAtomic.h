@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2011 LANS LLC, as Operator of
 *     Los Alamos National Laboratory.
@@ -91,10 +90,10 @@ epicsShareFunc size_t epicsLockedIncrSizeT ( size_t * pTarget );
 epicsShareFunc size_t epicsLockedDecrSizeT ( size_t * pTarget );
 epicsShareFunc void epicsLockedSetSizeT ( size_t * pTarget, size_t newVal );
 epicsShareFunc void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal );
-epicsShareFunc void epicsLockedSetPtrT ( unsigned * pTarget, EpicsAtomicPtrT newVal );
+epicsShareFunc void epicsLockedSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal );
 epicsShareFunc size_t epicsLockedGetSizeT ( const size_t * pTarget );
 epicsShareFunc unsigned epicsLockedGetUIntT ( const unsigned * pTarget );
-epicsShareFunc EpicsAtomicPtrT epicsLockedGetPtrT ( const unsigned * pTarget );
+epicsShareFunc EpicsAtomicPtrT epicsLockedGetPtrT ( const EpicsAtomicPtrT * pTarget );
 epicsShareFunc unsigned epicsLockedCmpAndSwapUIntT ( unsigned * pTarget, 
                                         unsigned oldval, unsigned newval );
 epicsShareFunc EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 

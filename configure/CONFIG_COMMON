@@ -140,7 +140,7 @@ ALL_SRC_DIRS = $(CMPLR_SRC_DIRS) $(OS_SRC_DIRS) $(GENERIC_SRC_DIRS)
 #--------------------------------------------------
 # compile line include directories
 INSTALL_INCLUDES += \
-        -I$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS) \
+       -I$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS) \
        -I$(INSTALL_INCLUDE)/os/$(OS_CLASS) \
        -I$(INSTALL_INCLUDE)
 SRC_INCLUDES = -I$(COMMON_DIR) $(addprefix -I, $(wildcard $(ALL_SRC_DIRS)))

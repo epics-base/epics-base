@@ -160,7 +160,7 @@ export TOOL_FAMILY = GNU
 
 #--------------------------------------------------
 # Operating system flags
-OP_SYS_CPPFLAGS += -DvxWorks
+OP_SYS_CPPFLAGS += -DvxWorks=vxWorks
 OP_SYS_CFLAGS += -fno-builtin
 
 # Fix for vxWorks 5 headers that use macros defined in vxWorks.h but

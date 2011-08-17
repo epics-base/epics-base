@@ -1,10 +1,9 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
@@ -13,73 +12,73 @@
 
 include $(CONFIG)/RULES_DIRS
 
+distclean: realclean cvsclean realuninstall
+
+CVSCLEAN=$(firstword $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
+cvsclean:
+	$(PERL) $(CVSCLEAN)
+
+realuninstall: uninstallDirs
+	$(RMDIR) $(INSTALL_LOCATION_BIN)
+	$(RMDIR) $(INSTALL_LOCATION_LIB)
+
 UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
         $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
         $(INSTALL_DB)
 UNINSTALL_DIRS += $(DIRECTORY_TARGETS)
+uninstallDirs:
+	$(RMDIR) $(UNINSTALL_DIRS)
 
-uninstallArchTargets = $(foreach arch,$(BUILD_ARCHS), uninstall$(DIVIDER)$(arch))
+uninstall: archuninstall uninstallDirs
+
+archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
+	@$(MAKE) -f Makefile cleandirs
+
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
-
-$(uninstallArchTargets): uninstallDirs
-	@$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart) $(INSTALL_LOCATION_LIB)/$(archPart) 
+uninstall$(DIVIDER)%:
+	$(RMDIR) $(INSTALL_LOCATION_BIN)/$(archPart)
+	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
 
 cleandirs:
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
-	@$(RMDIR) $(INSTALL_LOCATION_BIN)
+	$(RMDIR) $(INSTALL_LOCATION_BIN)
 endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
-	@$(RMDIR) $(INSTALL_LOCATION_LIB)
+	$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
 	@echo
 # The echo above stops a "nothing to be done for cleandirs" message
 
-distclean: realclean realuninstall
-
-CVSCLEAN=$(firstword $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
-
-cvsclean:
-	@$(PERL) $(CVSCLEAN) 
-
-realuninstall:
-	@$(RMDIR) $(INSTALL_LOCATION_BIN) $(INSTALL_LOCATION_LIB)
-	@$(RMDIR) $(UNINSTALL_DIRS)
-
-uninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
-	@$(MAKE) -f Makefile  cleandirs
-
-uninstallDirs:
-	@$(RMDIR) $(UNINSTALL_DIRS)
-
 help:
 	@echo "Usage: gnumake [options] [target] ..."
 	@echo "Targets supported by all Makefiles:"
-	@echo "     install        - Builds and installs all targets (default rule)"
-	@echo "     all            - Same as install"
-	@echo "     buildInstall   - Same as install"
+	@echo "     all            - Same as install (default rule)"
+	@echo "     inc            - Installs header files"
+	@echo "     build          - Builds and installs all targets"
+	@echo "     install        - Builds and installs all targets"
+	@echo "     buildInstall   - Same as install (deprecated)"
 	@echo "     clean          - Removes the O.<arch> dirs created by running make"
 	@echo "                      In O.<arch> dir, clean removes build created files"
 	@echo "     realclean      - Removes ALL O.<arch> dirs"
 	@echo "                      Cannot be used within an O.<arch> dir"
 	@echo "     rebuild        - Same as clean install"
-	@echo "     inc            - Installs header files"
-	@echo "     build          - Builds all targets"
 	@echo "     archclean      - Removes O.<arch> dirs but not O.Common dir"
 	@echo "\"Partial\" build targets supported by Makefiles:"
 	@echo "     inc.<arch>     - Installs <arch> only header files."
+	@echo "     build.<arch>   - Builds and installs <arch> only."
 	@echo "     install.<arch> - Builds and installs <arch> only."
 	@echo "     clean.<arch>   - Cleans <arch> binaries in O.<arch> dirs only."
-	@echo "     build.<arch>   - Builds <arch> only."
+	@echo "     uninstall.<arch> - Remove bin & lib directories for <arch> only."
 	@echo "Targets supported by top level Makefile:"
-	@echo "     uninstall      - Cleans directories created by the install."
+	@echo "     archuninstall  - Remove bin & lib directories created by this hostarch."
+	@echo "     uninstall      - Remove install directories created by this hostarch."
 	@echo "     realuninstall  - Removes ALL install dirs"
-	@echo "     distclean      - Same as realclean realuninstall."
+	@echo "     distclean      - Same as realclean cvsclean realuninstall."
 	@echo "     cvsclean       - Removes cvs .#* files in all dirs of directory tree"
 	@echo "     help           - Prints this list of valid make targets "
 	@echo "Indiv. object targets are supported by O.<arch> level Makefile .e.g"
 	@echo "     xxxRecord.o"
 
-.PHONY : $(uninstallArchTargets)
-.PHONY : uninstall help cleandirs distclean uninstallDirs realuninstall
-.PHONY : cvsclean
+.PHONY: cleandirs distclean cvsclean realuninstall archuninstall uninstallDirs
+.PHONY: uninstall help
 

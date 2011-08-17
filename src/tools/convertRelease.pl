@@ -19,7 +19,7 @@ use strict;
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl", $Bin);
 
-use Cwd qw(cwd abs_path);
+use Cwd qw(cwd);
 use Getopt::Std;
 use EPICS::Path;
 use EPICS::Release;
@@ -215,7 +215,7 @@ sub checkRelease {
         
         while (my ($parent, $ppath) = each %check) {
             if (exists $macros{$parent} &&
-                abs_path($macros{$parent}) ne abs_path($ppath)) {
+                AbsPath($macros{$parent}) ne AbsPath($ppath)) {
                 print "\n" unless ($status);
                 print "Definition of $parent conflicts with $app support.\n";
                 print "In this application a RELEASE file defines\n";

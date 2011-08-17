@@ -95,6 +95,10 @@ recordtype(compress) {
 		prompt("Number Used")
 		special(SPC_NOMOD)
 	}
+	field(OUSE,DBF_ULONG) {
+		prompt("Old Number Used")
+		special(SPC_NOMOD)
+	}
 	field(BPTR,DBF_NOACCESS) {
 		prompt("Buffer Pointer")
 		special(SPC_NOMOD)

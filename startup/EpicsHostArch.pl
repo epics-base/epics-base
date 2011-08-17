@@ -1,7 +1,7 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # EpicsHostArch.pl
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -34,6 +34,7 @@ sub GetEpicsHostArch { # no args
             my($kernel, $hostname, $release, $version, $cpu) = POSIX::uname();
             if ($cpu =~ m/Power Macintosh/) { return "darwin-ppc";  }
             elsif ($cpu =~ m/i386/)         { return "darwin-x86";  }
+            elsif ($cpu =~ m/x86_64/)       { return "darwin-x86";  }
             else                            { return "unsupported"; }
     } else { return "unsupported"; }
 }

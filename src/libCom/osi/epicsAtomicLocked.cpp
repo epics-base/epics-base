@@ -105,13 +105,25 @@ void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal )
     *pTarget = newVal;
 }
 
+void epicsLockedSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+{
+    AtomicGuard atomicGuard;
+    *pTarget = newVal;
+}
+
+unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
+{
+    AtomicGuard atomicGuard;
+    return *pTarget;
+}
+
 size_t epicsLockedGetSizeT ( const size_t * pTarget )
 {
     AtomicGuard atomicGuard;
     return *pTarget;
 }
 
-unsigned epicsLockedGetUIntT ( const unsigned * pTarget )
+EpicsAtomicPtrT epicsLockedGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
     AtomicGuard atomicGuard;
     return *pTarget;

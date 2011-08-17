@@ -506,6 +506,7 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     devSup *pdevSup;
     struct dsxt *pdsxt;
     int j;
+    int locked = 0;
 
     for (j = 0; j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes =
@@ -513,7 +514,12 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
         if (plink->type == CA_LINK) {
+            if (!locked) {
+                dbScanLock(precord);
+                locked = 1;
+            }
             dbCaRemoveLink(plink);
+            plink->type = CONSTANT;
         }
     }
 
@@ -521,7 +527,15 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         (pdevSup = dbDSETtoDevSup(pdbRecordType, precord->dset)) &&
         (pdsxt = pdevSup->pdsxt) &&
         pdsxt->del_record) {
+        if (!locked) {
+            dbScanLock(precord);
+            locked = 1;
+        }
         pdsxt->del_record(precord);
+    }
+    if (locked) {
+        precord->pact = TRUE;
+        dbScanUnlock(precord);
     }
 }
 

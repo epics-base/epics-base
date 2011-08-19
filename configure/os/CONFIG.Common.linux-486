@@ -10,7 +10,7 @@
 # Include definitions common to all linux x86 targets
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
-ARCH_DEP_CFLAGS += -march=i486
+ARCH_DEP_CFLAGS = -march=i486
 
 ifeq ($(BUILD_CLASS),CROSS)
    VALID_BUILDS = Ioc

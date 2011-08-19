@@ -11,7 +11,7 @@
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
 # i686 is euivalent to pentiumpro
-ARCH_DEP_CFLAGS += -march=i686
+ARCH_DEP_CFLAGS = -march=i686
 
 ifeq ($(BUILD_CLASS),CROSS)
    VALID_BUILDS = Ioc

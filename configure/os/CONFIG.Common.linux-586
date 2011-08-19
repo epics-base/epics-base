@@ -11,7 +11,7 @@
 include $(CONFIG)/os/CONFIG.Common.linux-x86
 
 # i586 is equivalent to pentium
-ARCH_DEP_CFLAGS += -march=i586
+ARCH_DEP_CFLAGS = -march=i586
 
 ifeq ($(BUILD_CLASS),CROSS)
    VALID_BUILDS = Ioc

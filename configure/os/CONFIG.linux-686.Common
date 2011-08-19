@@ -1,0 +1,13 @@
+# CONFIG.linux-686.Common
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-686 host builds
+# Sites may override these definitions in CONFIG_SITE.linux-686.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common
+
+WIND_HOST_TYPE = x86-linux

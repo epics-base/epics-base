@@ -50,6 +50,8 @@
     && GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T ) \
     || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
 
+#define OSD_ATOMIC_INLINE_DEFINITION
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -120,11 +122,6 @@ OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * 
 #endif
 
 #else /* if GCC_ATOMIC_INTRINSICS_AVAIL */
-    
-#   if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER && __i386
-        /* 386 hardware is probably rare today even in embedded systems */
-#       warning "this code will run much faster if specifying i486 or better"
-#   endif
 
     /*
      * not available as gcc intrinsics so we

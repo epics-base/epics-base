@@ -11,86 +11,108 @@
  *  Author Jeffrey O. Hill
  *  johill@lanl.gov
  */
+ 
+//
+// The epicsAtomicXxxxx functions herein are implemented with C++ but directly 
+// callable by C code, and therefore they must not be instantiated inline. 
+// Therefore, this isnt a traditional header file because it has function
+// definitions that are not inline, and must therefore be included by only 
+// one module in the executable - typically this is the epicsAtomicOSD
+// c++ source file. These out-of-line function definitions are placed in a
+// header file so that there is potential code reuse when instantiating for 
+// a specific OS. An alternative option would have been to place these 
+// function definitions in a OS type conditionally compiled source file
+// but this wasnt done because I suspect that selecting the posix version
+// would require a proliferation of "SRCS_XXXX += xxx.cpp" in the libCom 
+// Makefile for every variety of Unix (a maintenance headache when new 
+// varieties of UNIX are configured).
+//
+// Aee also the comments in epicsAtomicGuard header.
+//
 
 #ifndef epicsAtomicLocked_h
 #define epicsAtomicLocked_h
 
-#if defined ( OSD_ATOMIC_INLINE )
+#ifndef __cplusplus
+#   error epicsAtomicLocked.h is intended only for use only by C++ code
+#endif
 
-#ifdef __cplusplus
+#include "epicsAtomic.h" // always cross check the function prototypes
+#include "epicsAtomicGuard.h" 
+
 extern "C" {
-#endif /* __cplusplus */
 
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
+size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    return epicsLockedIncrSizeT ( pTarget );
+    AtomicGuard atomicGuard;
+    return ++(*pTarget);
 }
 
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
+size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    return epicsLockedDecrSizeT ( pTarget );
+    AtomicGuard atomicGuard;
+    return --(*pTarget);
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
 {
-    epicsLockedSetSizeT ( pTarget, newVal );
+    AtomicGuard atomicGuard;
+    *pTarget = newVal;
 }
 
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
+void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
 {
-    return epicsLockedGetSizeT ( pTarget );
+    AtomicGuard atomicGuard;
+    *pTarget = newVal;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
 {
-    return epicsLockedGetUIntT ( pTarget );
+    AtomicGuard atomicGuard;
+    *pTarget = newVal;
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
+unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
 {
-    epicsLockedSetUIntT ( pTarget, newVal );
+    AtomicGuard atomicGuard;
+    return *pTarget;
 }
 
-OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+size_t epicsAtomicGetSizeT ( const size_t * pTarget )
 {
-    epicsLockedSetPtrT ( pTarget, newVal );
+    AtomicGuard atomicGuard;
+    return *pTarget;
 }
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
 {
-    return epicsLockedGetPtrT ( pTarget );
+    AtomicGuard atomicGuard;
+    return *pTarget;
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
-                                        unsigned oldVal, unsigned newVal )
+unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
+                            unsigned oldval, unsigned newval )
 {
-    return epicsLockedCmpAndSwapUIntT ( pTarget, oldVal, newVal );
+    AtomicGuard atomicGuard;
+    const unsigned cur = *pTarget;
+    if ( cur == oldval ) {
+        *pTarget = newval;
+    }
+    return cur;
 }
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                                        EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+                            EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
 {
-    return epicsLockedCmpAndSwapPtrT ( pTarget, oldVal, newVal );
+    AtomicGuard atomicGuard;
+    const EpicsAtomicPtrT cur = *pTarget;
+    if ( cur == oldval ) {
+        *pTarget = newval;
+    }
+    return cur;
 }
 
-#ifdef __cplusplus
-} /* end of extern "C" */
-#endif /* __cplusplus */
-
-#else /* if defined ( OSD_ATOMIC_INLINE ) */
-
-#   define epicsAtomicIncrSizeT epicsLockedIncrSizeT
-#   define epicsAtomicDecrSizeT epicsLockedDecrSizeT
-#   define epicsAtomicSetSizeT epicsLockedSetSizeT
-#   define epicsAtomicSetUIntT epicsLockedSetUIntT
-#   define epicsAtomicSetPtrT epicsLockedSetPtrT
-#   define epicsAtomicGetSizeT epicsLockedGetSizeT
-#   define epicsAtomicGetUIntT epicsLockedGetUIntT
-#   define epicsAtomicGetPtrT epicsLockedGetPtrT
-#   define epicsAtomicCmpAndSwapUIntT epicsLockedCmpAndSwapUIntT
-#   define epicsAtomicCmpAndSwapPtrT epicsLockedCmpAndSwapPtrT
-
-#endif /* if defined ( OSD_ATOMIC_INLINE ) */
+} // end of extern "C"
 
 #endif /* epicsAtomicLocked_h */
 

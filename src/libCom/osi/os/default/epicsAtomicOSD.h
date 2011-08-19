@@ -16,6 +16,4 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#include "epicsAtomicLocked.h"
-
 #endif /* epicsAtomicOSD_h */

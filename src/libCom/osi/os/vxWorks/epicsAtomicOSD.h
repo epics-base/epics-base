@@ -28,6 +28,8 @@
 
 #include <limits.h>
 #include <vxAtomicLib.h>
+
+#define OSD_ATOMIC_INLINE_DEFINITION
      
 #ifdef __cplusplus
 extern "C" {

@@ -66,6 +66,8 @@
 #   error unexpected target architecture, msvc version of epicsAtomicCD.h
 #endif
 
+#define OSD_ATOMIC_INLINE_DEFINITION
+
 /*
  * The windows doc appears to recommend defining InterlockedExchange
  * to be _InterlockedExchange to cause it to be an intrinsic, but that

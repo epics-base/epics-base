@@ -80,25 +80,6 @@ epicsShareFunc EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTa
                             EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal );
 
 
-/*
- * the following are, never inline and always synchronized by a global 
- * mutual exclusion lock, implementations of the epicsAtomicXxxx interface
- * which may used to implement the epicsAtomicXxxx functions when 
- * more efficent primitives aren't available
- */
-epicsShareFunc size_t epicsLockedIncrSizeT ( size_t * pTarget );
-epicsShareFunc size_t epicsLockedDecrSizeT ( size_t * pTarget );
-epicsShareFunc void epicsLockedSetSizeT ( size_t * pTarget, size_t newVal );
-epicsShareFunc void epicsLockedSetUIntT ( unsigned * pTarget, unsigned newVal );
-epicsShareFunc void epicsLockedSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal );
-epicsShareFunc size_t epicsLockedGetSizeT ( const size_t * pTarget );
-epicsShareFunc unsigned epicsLockedGetUIntT ( const unsigned * pTarget );
-epicsShareFunc EpicsAtomicPtrT epicsLockedGetPtrT ( const EpicsAtomicPtrT * pTarget );
-epicsShareFunc unsigned epicsLockedCmpAndSwapUIntT ( unsigned * pTarget, 
-                                        unsigned oldval, unsigned newval );
-epicsShareFunc EpicsAtomicPtrT epicsLockedCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal );
-
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif

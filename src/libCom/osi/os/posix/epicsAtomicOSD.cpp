@@ -24,9 +24,12 @@
  *  than pthread_once.
  */
 
+#include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define epicsExportSharedSymbols
+#include "epicsAssert.h"
 #include "epicsAtomic.h"
 
 // If we have an inline implementation then implement 
@@ -39,11 +42,12 @@
 namespace {
 
 // a statically initialized mutex doesnt need to be destroyed 
-static pthread_mutex_t AtomicGuard :: mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 inline AtomicGuard :: AtomicGuard () throw ()
 {
     unsigned countDown = 1000u;
+    int status;
     while ( true ) {
         status = pthread_mutex_lock ( & mutex );
         if ( status != EINTR ) break;

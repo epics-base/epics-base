@@ -52,3 +52,4 @@ namespace {
 } // end of anonymous namespace
 
 #endif // ifndef epicsAtomicGuard_h
+

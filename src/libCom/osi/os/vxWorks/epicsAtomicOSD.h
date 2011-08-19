@@ -20,6 +20,8 @@
 #include "vxWorks.h" /* obtain the version of vxWorks */
 #include "epicsAssert.h"
 
+#define OSD_ATOMIC_INLINE_DEFINITION
+
 /*
  * With vxWorks 6.6 and later we need to use vxAtomicLib
  * to implement this functionality correctly on SMP systems
@@ -29,8 +31,6 @@
 #include <limits.h>
 #include <vxAtomicLib.h>
 
-#define OSD_ATOMIC_INLINE_DEFINITION
-     
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

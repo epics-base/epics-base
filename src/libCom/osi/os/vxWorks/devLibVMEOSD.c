@@ -50,9 +50,9 @@ static myISR *isrFetch(unsigned vectorNumber);
 
 /*
  * this routine needs to be in the symbol table
- * for this code to work correctly
+ * (i.e. not static) for this code to work correctly
  */
-static void unsolicitedHandlerEPICS(int vectorNumber);
+void unsolicitedHandlerEPICS(int vectorNumber);
 
 /*
  * this is in veclist.c
@@ -412,8 +412,10 @@ static int vxDevInterruptInUseVME (unsigned vectorNumber)
  *  interrupt and an interrupt arrives on the
  *  disconnected vector
  *
+ * This routine needs to be in the symbol table
+ * (i.e. not static) for this code to work correctly
  */
-static void unsolicitedHandlerEPICS(int vectorNumber)
+void unsolicitedHandlerEPICS(int vectorNumber)
 {
     /*
      * call logMsg() and not errMessage()

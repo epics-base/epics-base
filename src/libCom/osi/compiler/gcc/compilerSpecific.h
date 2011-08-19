@@ -53,7 +53,10 @@
 /*
  * Deprecation marker if possible
  */
-
-#define EPICS_DEPRECATED __attribute__((deprecated))
+#if  (__GNUC__ > 2)
+#   define EPICS_DEPRECATED __attribute__((deprecated))
+#else
+#   define EPICS_DEPRECATED
+#endif
 
 #endif  /* ifndef compilerSpecific_h */

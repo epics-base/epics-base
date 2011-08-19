@@ -33,7 +33,9 @@ BAFCMD = bscmake /nologo /o $@
 # Configure OS vendor C compiler
 CC = cl
 
+# Override CONFIG.gnuCommon for cross builds.
 GNU = NO
+HDEPENDS_METHOD = CMD
 
 #
 # /W<N> use warning level N

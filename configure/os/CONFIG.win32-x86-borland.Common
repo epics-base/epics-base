@@ -8,11 +8,11 @@
 #-------------------------------------------------------
 
 CP = $(PERL) -MExtUtils::Command -e cp
-MV = $(PERL) -MExtUtils::Command -e mv 
+MV = $(PERL) -MExtUtils::Command -e mv
 RM = $(PERL) -MExtUtils::Command -e rm_f
 MKDIR = $(PERL) -MExtUtils::Command -e mkpath
 RMDIR = $(PERL) -MExtUtils::Command -e rm_rf
-COMMENT = REM
+COMMENT = $(PERL) -e ''
 
 WIND_HOST_TYPE = x86-win32
 OSITHREAD_USE_DEFAULT_STACK = NO

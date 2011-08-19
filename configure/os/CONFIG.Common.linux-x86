@@ -12,9 +12,11 @@ include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
 ARCH_CLASS = x86
 
+ARCH_DEP_CFLAGS = -mtune=generic
 ARCH_DEP_CPPFLAGS += -D_X86_
-ARCH_DEP_CFLAGS += -m32
-ARCH_DEP_LDFLAGS += -m32
+
+OP_SYS_CFLAGS += -m32
+OP_SYS_LDFLAGS += -m32
 
 # If your crosscompiler name has a GNU target prefix like <gnutarget>-gcc,
 # e.g. x86-redhat-linux-gcc, put a GNU_TARGET definition in

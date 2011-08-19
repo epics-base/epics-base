@@ -29,6 +29,8 @@
 #define __STDC_LIMIT_MACROS /* define SIZE_MAX for c++ */
 #include <stdint.h>
 
+#define OSD_ATOMIC_INLINE_DEFINITION
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -96,10 +98,6 @@ OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * p
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */
-
-#else /* ifdef __SunOS_5_10  */
-
-#include "epicsAtomicLocked.h"
 
 #endif /* ifdef __SunOS_5_10 */
 

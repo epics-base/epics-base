@@ -30,6 +30,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define OSD_ATOMIC_INLINE_DEFINITION
+
 /* 
  * mingw doesnt currently provide MemoryBarrier
  * (this is mostly for testing purposes as the gnu

@@ -136,7 +136,6 @@ INC += epicsExport.h
 INC += unixFileName.h
 INC += locationException.h
 INC += ipAddrToAsciiAsynchronous.h
-INC += compilerDependencies.h
 INC += epicsUnitTest.h
 INC += testMain.h
 SRCS += aToIPAddr.c
@@ -185,9 +184,8 @@ INC += osiWireFormat.h
 INC += osdWireFormat.h
 INC += osdWireConfig.h
 INC += epicsAtomic.h
-INC += epicsAtomicLocked.h
-INC += epicsAtomicOSD.h
 INC += epicsAtomicCD.h
+INC += epicsAtomicOSD.h
 INC += epicsEndian.h
 INC += epicsReadline.h
 INC += epicsMessageQueue.h
@@ -199,6 +197,8 @@ INC += devLib.h
 INC += devLibVME.h
 INC += devLibVMEImpl.h
 INC += osdVME.h
+INC += compilerDependencies.h
+INC += compilerSpecific.h
 
 SRCS += epicsThread.cpp
 SRCS += epicsMutex.cpp
@@ -206,7 +206,6 @@ SRCS += epicsEvent.cpp
 SRCS += epicsTime.cpp
 SRCS += epicsMessageQueue.cpp
 SRCS += epicsMath.cpp
-SRCS += epicsAtomicLocked.cpp
 SRCS += epicsAtomicOSD.cpp
 
 SRCS += epicsGeneralTime.c
@@ -227,7 +226,6 @@ SRCS += epicsReadline.c
 SRCS += epicsTempFile.cpp
 SRCS += epicsStdio.c
 SRCS += osdStdio.c
-
 
 osdEnv_CFLAGS_WIN32= -U__STDC__
 

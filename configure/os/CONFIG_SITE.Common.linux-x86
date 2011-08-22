@@ -32,11 +32,5 @@ COMMANDLINE_LIBRARY = READLINE
 # Needs -lcurses (older versions)
 #COMMANDLINE_LIBRARY = READLINE_CURSES
 
-# Optionally specify a specific machine type and/or cpu type.
-# Generate instructions for a specific machine type with -march=<cpu-type>
-# Tune for a specific cpu-type  with -mtune=<cpu-type>
-# Specifying -march=<cpu-type> implies -mtune=<cpu-type>.
-#ARCH_DEP_CFLAGS = -mtune=i686 -march=i686 
-
 OP_SYS_CFLAGS += -g
 

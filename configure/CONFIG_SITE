@@ -171,3 +171,7 @@ GCC_PIPE = NO
 #       must be either YES or NO
 LINKER_USE_RPATH=YES
 
+# For linux-x86 target builds, tune GNU compiler for cpu-type
+# (e.g. generic, i386, i486, i586, or i686)
+GNU_TUNE_CFLAGS = -mtune=generic
+

@@ -571,19 +571,23 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
             pClient->sock==INVALID_SOCKET?"INVALID":"OK",
             pClient->connectCount);
     }
+
+    if(logClientPrefix) {
+        printf ("log client: a log prefix has been set \"%s\"\n", logClientPrefix);
+    }
 }
 
 /*
  * iocLogPrefix()
  **/
-int epicsShareAPI iocLogPrefix(const char* prefix)
+void epicsShareAPI iocLogPrefix(const char* prefix)
 {
-    // If we have already established a log prefix, free it
+    // If we have already established a log prefix, do not let the user change it
     // Note iocLogPrefix is expected to be set in the cmd file during initialization. 
     // We do not anticipate changing this after it has been set
     if(logClientPrefix) {
-        free(logClientPrefix);
-        logClientPrefix = NULL;
+        printf ("log client: a log prefix has already been established \"%s\". Ignoring this call \n", logClientPrefix);
+        return;
     }
 
     if(prefix) {

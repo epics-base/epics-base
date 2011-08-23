@@ -15,80 +15,56 @@ include $(TOP)/configure/CONFIG
 
 DIRS += tools
 
-DIRS += makeBaseApp
-makeBaseApp_DEPEND_DIRS = tools
+DIRS += template/base
+template/base_DEPEND_DIRS = tools
 
-DIRS += makeBaseExt
-makeBaseExt_DEPEND_DIRS = tools
+DIRS += template/ext
+template/ext_DEPEND_DIRS = tools
+
+# Common
 
 DIRS += libCom
 libCom_DEPEND_DIRS = tools
 
-DIRS += toolsComm
-toolsComm_DEPEND_DIRS = libCom
-
-DIRS += ca
-ca_DEPEND_DIRS = libCom
-
-DIRS += dbStatic
-dbStatic_DEPEND_DIRS = toolsComm
-
-DIRS += registry
-registry_DEPEND_DIRS = dbStatic
-
-DIRS += bpt
-bpt_DEPEND_DIRS = dbStatic
-
-DIRS += db
-db_DEPEND_DIRS = bpt ca
-
-DIRS += as
-as_DEPEND_DIRS = db
-
-DIRS += util
-util_DEPEND_DIRS = ca
-
-DIRS += dbtools
-dbtools_DEPEND_DIRS = db
-
-DIRS += catools
-catools_DEPEND_DIRS = ca dbStatic
-
-DIRS += rsrv
-rsrv_DEPEND_DIRS = as
-
-DIRS += rec
-rec_DEPEND_DIRS = as registry
-
-DIRS += misc
-misc_DEPEND_DIRS = dbtools rsrv rec
-
-DIRS += dev
-dev_DEPEND_DIRS = rec misc
-
-DIRS += RTEMS
-RTEMS_DEPEND_DIRS = libCom
+DIRS += libCom/RTEMS
+libCom/RTEMS_DEPEND_DIRS = libCom
 
 DIRS += libCom/test
-libCom/test_DEPEND_DIRS = ca RTEMS
+libCom/test_DEPEND_DIRS = libCom/RTEMS
 
-DIRS += db/test
-db/test_DEPEND_DIRS = db RTEMS
+# Channel Access
 
-DIRS += softIoc
-softIoc_DEPEND_DIRS = dev dbtools RTEMS
+DIRS += ca/client
+ca/client_DEPEND_DIRS = libCom
 
-DIRS += gdd
-gdd_DEPEND_DIRS = ca
+DIRS += ca/client/tools
+ca/client/tools_DEPEND_DIRS = ca/client
 
-DIRS += cas
-cas_DEPEND_DIRS = gdd dbStatic
+DIRS += ca/legacy/gdd
+ca/legacy/gdd_DEPEND_DIRS = ca/client
 
-DIRS += excas
-excas_DEPEND_DIRS = cas as registry
+DIRS += ca/legacy/pcas
+ca/legacy/pcas_DEPEND_DIRS = ca/legacy/gdd
 
-DIRS += cap5
-cap5_DEPEND_DIRS = ca dbStatic
+DIRS += ca/legacy/pcas/ex
+# needs ioc for dbStaticHost
+ca/legacy/pcas/ex_DEPEND_DIRS = ca/legacy/pcas libCom ioc
+
+DIRS += ca/client/perl
+ca/client/perl_DEPEND_DIRS = ca/client
+
+# PDB Core
+
+DIRS += ioc
+ioc_DEPEND_DIRS = libCom ca/client
+
+DIRS += ioc/db/test
+ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
+
+# PDB Standard Record Definitions
+
+DIRS += std
+std_DEPEND_DIRS = ioc libCom/RTEMS
 
 
 include $(TOP)/configure/RULES_DIRS

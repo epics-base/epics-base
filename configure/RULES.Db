@@ -263,7 +263,7 @@ $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $@
-	@$(DBEXPAND) $(DBDFLAGS) -o $@ $<
+	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $(notdir $@)$(DEP)

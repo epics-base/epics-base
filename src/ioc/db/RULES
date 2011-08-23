@@ -1,0 +1,28 @@
+#*************************************************************************
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2010 Brookhaven Science Associates, as Operator of
+#     Brookhaven National Lab.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+# This is a Makefile fragment, see src/ioc/Makefile.
+
+$(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
+
+dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+	@$(RM) $@
+	@-$(MKMF) -m $@ ../db  $(COMMON_DIR)/dbCommon.h $<
+
+$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+	$(RM) $@
+	$(DBTORECORDTYPEH) -I ../db $< $@
+
+$(COMMON_DIR)/dbCommon.h: $(DBTORECORDTYPEH)
+
+$(patsubst %,$(COMMON_DIR)/%.h,$(DBDINC) menuConvert menuGlobal) : \
+$(COMMON_DIR)/%.h : $(DBTOMENUH)
+

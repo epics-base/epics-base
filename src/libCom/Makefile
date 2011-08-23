@@ -46,6 +46,7 @@ Com_RCS = Com.rc
 
 include $(TOP)/configure/RULES
 
+include $(LIBCOM)/as/RULES
 include $(LIBCOM)/env/RULES
 include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES

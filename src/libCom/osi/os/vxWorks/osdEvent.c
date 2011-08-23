@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* os/vxWorks/osdEvent.c */
@@ -29,19 +28,12 @@ epicsEventId epicsEventCreate(epicsEventInitialState initialState)
         (initialState == epicsEventEmpty) ? SEM_EMPTY : SEM_FULL);
 }
 
-epicsEventId epicsEventMustCreate(epicsEventInitialState initialState)
-{
-    epicsEventId id = epicsEventCreate(initialState);
-    assert(id);
-    return id;
-}
-
 void epicsEventDestroy(epicsEventId id)
 {
     semDelete((SEM_ID)id);
 }
 
-epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
+epicsEventStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
 {
     int rate = sysClkRateGet();
     int status;
@@ -58,22 +50,22 @@ epicsEventWaitStatus epicsEventWaitWithTimeout(epicsEventId id, double timeOut)
     }
     status = semTake((SEM_ID)id, ticks);
     if (status == OK)
-        return epicsEventWaitOK;
+        return epicsEventOK;
     if (errno == S_objLib_OBJ_TIMEOUT ||
         (errno == S_objLib_OBJ_UNAVAILABLE && ticks == 0))
         return epicsEventWaitTimeout;
-    return epicsEventWaitError;
+    return epicsEventError;
 }
 
-epicsEventWaitStatus epicsEventTryWait(epicsEventId id)
+epicsEventStatus epicsEventTryWait(epicsEventId id)
 {
     int status = semTake((SEM_ID)id, NO_WAIT);
 
     if (status == OK)
-        return epicsEventWaitOK;
+        return epicsEventOK;
     if (errno == S_objLib_OBJ_UNAVAILABLE)
         return epicsEventWaitTimeout;
-    return epicsEventWaitError;
+    return epicsEventError;
 }
 
 void epicsEventShow(epicsEventId id, unsigned int level)

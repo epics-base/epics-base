@@ -16,6 +16,31 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <!-- Insert new items immediately below here ... -->
 
 <h3>
+Reworked the epicsEvent C &amp; C++ APIs</h3>
+
+<ul>
+  <li>Renamed the enum epicsEventWaitStatus to epicsEventStatus</li>
+  <li>Defined epicsEventWaitStatus as a macro for epicsEventStatus</li>
+  <li>Renamed epicsEventWaitOk to epicsEventOk</li>
+  <li>Renamed epicsEventWaitError to epicsEventError</li>
+  <li>Defined epicsEventWaitOK and epicsEventWaitError as macros</li>
+  <li>Added epicsEventTrigger(id) which triggers an event and returns OK or an
+    error status if the underlying OS primitives report an error</li>
+  <li>Added epicsEventMustTrigger(id) which halts on error</li>
+  <li>Defined epicsEventSignal(id) as a macro for epicsEventMustTrigger(id)</li>
+  <li>Added a new C++ method epicsEvent::trigger() which throws an
+    epicsEvent::invalidSemaphore in the event of an error</li>
+  <li>epicsEvent::signal() makes an inline call to epicsEvent::trigger()</li>
+  <li>epicsEventWait() and epicsEventWaitWithTimeout() now return an error
+    status if the underlying OS primitives report an error</li>
+  <li>All the epicsEventMust...() routines are now implemented in the common
+    libCom/osi/epicsEvent.cpp source file, and call cantProceed() instead of
+    mis-using assert()</li>
+  <li>Implemented epicsEventShow() on Posix</li>
+  <li>Win32: Removed all epicsShareAPI decorations</li>
+</ul>
+
+<h3>
 Enabled histogram record type</h3>
 
 <p>
@@ -24,7 +49,8 @@ but has now been added along with its associated soft device support. The build
 system now generates the list of all the record.dbd files in base automatically
 in src/std/rec/Makefile.</p>
 
-<h3>Reorganization of src/</h3>
+<h3>
+Reorganization of src/</h3>
 
 <p>Reorganization of subdirectories of src/ to better represent the relation
 between different parts as described in the following table.</p>

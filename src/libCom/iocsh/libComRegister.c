@@ -191,6 +191,15 @@ static void errlogCallFunc(const iocshArgBuf *args)
     errlogPrintfNoConsole("%s\n", args[0].sval);
 }
 
+/* iocLogPrefix */
+static const iocshArg iocLogPrefixArg0 = { "prefix",iocshArgString};
+static const iocshArg * const iocLogPrefixArgs[1] = {&iocLogPrefixArg0};
+static const iocshFuncDef iocLogPrefixFuncDef = {"iocLogPrefix",1,iocLogPrefixArgs};
+static void iocLogPrefixCallFunc(const iocshArgBuf *args)
+{
+    iocLogPrefix(args[0].sval);
+}
+
 /* epicsThreadShowAll */
 static const iocshArg epicsThreadShowAllArg0 = { "level",iocshArgInt};
 static const iocshArg * const epicsThreadShowAllArgs[1] = {&epicsThreadShowAllArg0};
@@ -355,6 +364,7 @@ void epicsShareAPI libComRegister(void)
     iocshRegister(&errlogInitFuncDef,errlogInitCallFunc);
     iocshRegister(&errlogInit2FuncDef,errlogInit2CallFunc);
     iocshRegister(&errlogFuncDef, errlogCallFunc);
+    iocshRegister(&iocLogPrefixFuncDef, iocLogPrefixCallFunc);
 
     iocshRegister(&epicsThreadShowAllFuncDef,epicsThreadShowAllCallFunc);
     iocshRegister(&threadFuncDef, threadCallFunc);

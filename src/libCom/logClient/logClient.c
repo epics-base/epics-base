@@ -58,6 +58,11 @@ static const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
 static const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
+ * The logClientPrefix stores a prefix that is sent as a prefix for all log messages.
+ */
+static char* logClientPrefix = NULL;
+
+/*
  * logClientClose ()
  */
 static void logClientClose ( logClient *pClient )
@@ -160,21 +165,13 @@ static void logClientDestroy (logClientId id)
 }
 
 /* 
- * logClientSend ()
+ * private method with code refactored out of logClientSend. 
+ * This method relies on the mutex being obtained on pClient->mutex (which happens in logClientSend prior to this method being called) 
  */
-void epicsShareAPI logClientSend ( logClientId id, const char * message )
-{
-    logClient * pClient = ( logClient * ) id;
+static void sendLogMessageinChunks(logClient * pClient, const char * message) {
     unsigned strSize;
 
-    if ( ! pClient || ! message ) {
-        return;
-    }
-
     strSize = strlen ( message );
-
-    epicsMutexMustLock ( pClient->mutex );
-
     while ( strSize ) {
         unsigned msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
@@ -231,9 +228,30 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
             break;
         }
     }
-    
+}
+
+
+/* 
+ * logClientSend ()
+ */
+void epicsShareAPI logClientSend ( logClientId id, const char * message )
+{
+    logClient * pClient = ( logClient * ) id;
+
+    if ( ! pClient || ! message ) {
+        return;
+    }
+
+    epicsMutexMustLock ( pClient->mutex );
+
+    if(logClientPrefix) {
+        sendLogMessageinChunks(pClient, logClientPrefix);
+    }
+    sendLogMessageinChunks(pClient, message);
+
     epicsMutexUnlock (pClient->mutex);
 }
+
 
 void epicsShareAPI logClientFlush ( logClientId id )
 {
@@ -554,4 +572,28 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
             pClient->connectCount);
     }
 }
+
+/*
+ * iocLogPrefix()
+ **/
+int epicsShareAPI iocLogPrefix(const char* prefix)
+{
+    // If we have already established a log prefix, free it
+    // Note iocLogPrefix is expected to be set in the cmd file during initialization. 
+    // We do not anticipate changing this after it has been set
+    if(logClientPrefix) {
+        free(logClientPrefix);
+        logClientPrefix = NULL;
+    }
+
+    if(prefix) {
+        unsigned prefixLen = strlen(prefix);
+        if(prefixLen > 0) {
+            char* localCopy = malloc(prefixLen+1);
+            strcpy(localCopy, prefix);
+            logClientPrefix = localCopy;
+        }
+    }	
+}
+
 

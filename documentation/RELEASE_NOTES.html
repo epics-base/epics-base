@@ -35,5 +35,15 @@ Removed 3.13 compatibility</h3>
 Removed the 3.13 &lt;top&gt;/config directory and build compatibility rules and
 variables, and various conversion documents.</p>
 
+<h3>
+Added support for iocLogPrefix</h3>
+
+<p>
+Added a <code>iocLogPrefix</code> command to <code>ioCsh</code>. This establishes a prefix that will be
+common to all log messages as they are sent to the iocLogServer. This lets us use the
+"fac=&lt;<i>facility</i>&gt;" syntax for displaying the facility, process name etc. in log viewers like the
+<code>cmlogviewer<code>.
+</p>
+
 </body>
 </html>

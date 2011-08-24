@@ -22,6 +22,11 @@
 #include "errlog.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "iocLog.h"
+#include "logClient.h"
+#include "envDefs.h"
+#include "osiSock.h"
+#include "fdmgr.h"
 
 #define LOGBUFSIZE 2048
 
@@ -75,6 +80,27 @@ typedef struct {
     int jam;
 } clientPvt;
 
+static void testLogPrefix(void);
+static void acceptNewClient( void *pParam );
+static void readFromClient( void *pParam );
+static void testPrefixLogandCompare( const char* logmessage);
+
+static void *pfdctx;
+static SOCKET sock;
+static SOCKET insock;
+
+static const char* prefixactualmsg[]= {
+                     "A message without prefix",
+                     "A message with prefix",
+                     "DONE"
+                     };
+static const char prefixexpectedmsg[] =  "A message without prefix"
+                     "fac=LI21 A message with prefix"
+                     "fac=LI21 DONE"
+                     ;
+static char prefixmsgbuffer[1024];
+
+
 static
 void logClient(void* raw, const char* msg)
 {
@@ -115,7 +141,7 @@ MAIN(epicsErrlogTest)
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(25);
+    testPlan(35);
 
     strcpy(msg, truncmsg);
 
@@ -289,5 +315,143 @@ MAIN(epicsErrlogTest)
     /* Clean up */
     errlogRemoveListener(&logClient);
 
+    testLogPrefix();
+
     return testDone();
 }
+/*
+ * Tests the log prefix code
+ * Since the log prefix is only applied to log messages as they are going out on the socket, 
+ * we need to create a server listening on a port, accept connections etc.
+ * This code is a reduced version of the code in iocLogServer. 
+ */
+static void testLogPrefix(void) {
+    struct sockaddr_in serverAddr;
+    int status;
+    struct timeval timeout;
+    struct sockaddr_in actualServerAddr;
+    osiSocklen_t actualServerAddrSize;
+
+
+    testDiag("Testing iocLogPrefix");
+    
+    timeout.tv_sec = 5; /* in seconds */
+    timeout.tv_usec = 0;
+
+    memset((void*)prefixmsgbuffer, 0, sizeof prefixmsgbuffer);
+        
+    /* Clear "errlog: <n> messages were discarded" status */
+    errlogPrintfNoConsole(".");
+    errlogFlush();
+
+    sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
+    testOk1(sock != INVALID_SOCKET);
+
+    // We listen on a an available port.
+    memset((void *)&serverAddr, 0, sizeof serverAddr);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(0);
+
+    status = bind (sock,
+                   (struct sockaddr *)&serverAddr,
+                   sizeof (serverAddr) );
+    testOk1(status >= 0);
+
+    status = listen(sock, 10);
+    testOk1(status >= 0);
+
+    // Determine the port that the OS chose
+    actualServerAddrSize = sizeof actualServerAddr;
+    memset((void *)&actualServerAddr, 0, sizeof serverAddr);
+    status = getsockname(sock, (struct sockaddr *) &actualServerAddr, &actualServerAddrSize);
+    testOk1(status >= 0);
+
+    char portstring[16];
+    sprintf(portstring, "%d", ntohs(actualServerAddr.sin_port)); 
+    testDiag("Listening on port %s", portstring);
+
+    // Set the EPICS environment variables for logging.
+    epicsEnvSet ( "EPICS_IOC_LOG_INET", "localhost" );
+    epicsEnvSet ( "EPICS_IOC_LOG_PORT", portstring );
+
+    pfdctx = (void *) fdmgr_init();
+    testOk1(pfdctx != NULL);
+
+    status = fdmgr_add_callback(
+                  pfdctx,
+                  sock,
+                  fdi_read,
+                  acceptNewClient,
+                  &serverAddr);
+    testOk1(status >= 0);
+
+    status = iocLogInit ();
+    testOk1(status >= 0);
+    fdmgr_pend_event(pfdctx, &timeout);
+
+    testPrefixLogandCompare(prefixactualmsg[0]); 
+    
+    iocLogPrefix("fac=LI21 ");
+    testPrefixLogandCompare(prefixactualmsg[1]); 
+    testPrefixLogandCompare(prefixactualmsg[2]); 
+    
+    close(sock);
+}
+
+static void testPrefixLogandCompare( const char* logmessage ) {
+    struct timeval timeout;
+    timeout.tv_sec = 5; /* in seconds */
+    timeout.tv_usec = 0;
+        
+    errlogPrintfNoConsole(logmessage);
+    errlogFlush();
+    iocLogFlush();
+    fdmgr_pend_event(pfdctx, &timeout);
+}
+
+static void acceptNewClient ( void *pParam )
+{
+    osiSocklen_t addrSize;
+    struct sockaddr_in addr;
+    int status;
+
+    addrSize = sizeof ( addr );
+    insock = epicsSocketAccept ( sock, (struct sockaddr *)&addr, &addrSize );
+    testOk1(insock!=INVALID_SOCKET && addrSize >= sizeof (addr) );
+
+    status = fdmgr_add_callback(
+                  pfdctx,
+                  insock,
+                  fdi_read,
+                  readFromClient,
+                  NULL);
+    testOk1(status >= 0);
+}
+
+static void readFromClient(void *pParam)
+{
+    char recvbuf[1024];
+    int recvLength;
+
+    memset(&recvbuf, 0, 1024);
+    recvLength = recv(insock,
+                      &recvbuf,
+                      1024,
+                      0);
+    if (recvLength > 0) {
+      strcat(prefixmsgbuffer, recvbuf);
+     
+      // If we have received all of the messages. 
+      if(strstr(prefixmsgbuffer, "DONE") != NULL) {
+          int prefixcmp = strncmp(prefixexpectedmsg, prefixmsgbuffer, strlen(prefixexpectedmsg));
+          if(prefixcmp != 0)  { 
+             printf("Expected %s\n", prefixexpectedmsg);
+             printf("Obtained %s\n", prefixmsgbuffer);
+          }
+
+          testOk1(prefixcmp == 0);
+      }
+    }
+}
+
+

@@ -58,6 +58,11 @@ static const double      LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT = 5.0; /* sec */
 static const double      LOG_SERVER_SHUTDOWN_TIMEOUT = 30.0; /* sec */
 
 /*
+ * If set using iocLogPrefix() this string is prepended to all log messages:
+ */
+static char* logClientPrefix = NULL;
+
+/*
  * logClientClose ()
  */
 static void logClientClose ( logClient *pClient )
@@ -159,22 +164,13 @@ static void logClientDestroy (logClientId id)
     free ( pClient );
 }
 
-/* 
- * logClientSend ()
+/*
+ * This method requires the pClient->mutex be owned already.
  */
-void epicsShareAPI logClientSend ( logClientId id, const char * message )
-{
-    logClient * pClient = ( logClient * ) id;
+static void sendMessageChunk(logClient * pClient, const char * message) {
     unsigned strSize;
 
-    if ( ! pClient || ! message ) {
-        return;
-    }
-
     strSize = strlen ( message );
-
-    epicsMutexMustLock ( pClient->mutex );
-
     while ( strSize ) {
         unsigned msgBufBytesLeft = 
             sizeof ( pClient->msgBuf ) - pClient->nextMsgIndex;
@@ -231,9 +227,30 @@ void epicsShareAPI logClientSend ( logClientId id, const char * message )
             break;
         }
     }
-    
+}
+
+
+/* 
+ * logClientSend ()
+ */
+void epicsShareAPI logClientSend ( logClientId id, const char * message )
+{
+    logClient * pClient = ( logClient * ) id;
+
+    if ( ! pClient || ! message ) {
+        return;
+    }
+
+    epicsMutexMustLock ( pClient->mutex );
+
+    if (logClientPrefix) {
+        sendMessageChunk(pClient, logClientPrefix);
+    }
+    sendMessageChunk(pClient, message);
+
     epicsMutexUnlock (pClient->mutex);
 }
+
 
 void epicsShareAPI logClientFlush ( logClientId id )
 {
@@ -553,5 +570,36 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
             pClient->sock==INVALID_SOCKET?"INVALID":"OK",
             pClient->connectCount);
     }
+
+    if (logClientPrefix) {
+        printf ("log client: prefix is \"%s\"\n", logClientPrefix);
+    }
 }
 
+/*
+ * iocLogPrefix()
+ */
+void epicsShareAPI iocLogPrefix(const char * prefix)
+{
+
+    /* If we have already established a log prefix, don't let the user change
+     * it.  The iocLogPrefix command is expected to be run from the IOC startup
+     * script during initialization; the prefix can't be changed once it has
+     * been set.
+     */
+
+    if (logClientPrefix) {
+        printf ("iocLogPrefix: The prefix was already set to \"%s\" "
+            "and can't be changed.\n", logClientPrefix);
+        return;
+    }
+
+    if (prefix) {
+        unsigned prefixLen = strlen(prefix);
+        if (prefixLen > 0) {
+            char * localCopy = malloc(prefixLen+1);
+            strcpy(localCopy, prefix);
+            logClientPrefix = localCopy;
+        }
+    }
+}

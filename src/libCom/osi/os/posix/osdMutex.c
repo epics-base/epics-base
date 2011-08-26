@@ -80,7 +80,9 @@ epicsMutexOSD * epicsMutexOsdCreate(void) {
 
     status = pthread_mutexattr_settype(&pmutex->mutexAttr,
         PTHREAD_MUTEX_RECURSIVE);
-    if (errVerbose) checkStatus(status, "pthread_mutexattr_settype");
+    checkStatus(status, "pthread_mutexattr_settype");
+    if (status)
+        goto fail;
 
     status = pthread_mutex_init(&pmutex->lock, &pmutex->mutexAttr);
     if (status)

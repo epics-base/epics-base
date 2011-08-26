@@ -19,7 +19,6 @@
 
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
-#include "cantProceed.h"
 #include "epicsRingBytes.h"
 
 /*
@@ -39,9 +38,11 @@ typedef struct ringPvt {
 
 epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
 {
-    ringPvt *pring = mallocMustSucceed(sizeof(ringPvt),"epicsRingBytesCreate");
+    ringPvt *pring = malloc(sizeof(ringPvt) + size + SLOP);
+    if(!pring)
+        return NULL;
     pring->size = size + SLOP;
-    pring->buffer = mallocMustSucceed(pring->size,"ringCreate");
+    pring->buffer = (char*)&pring[1];
     pring->nextGet = 0;
     pring->nextPut = 0;
     return((void *)pring);
@@ -50,7 +51,6 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
 epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    free((void *)pring->buffer);
     free((void *)pring);
 }
 

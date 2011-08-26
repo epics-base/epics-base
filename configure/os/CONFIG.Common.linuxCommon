@@ -20,7 +20,9 @@ POSIX_LDLIBS = -lpthread
 # -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
 OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
-OP_SYS_LDLIBS += -lrt -ldl
+# add -rdynamic so that more symbols (all globals, not only
+# cross-referenced ones) are available to 'backtrace'.
+OP_SYS_LDLIBS += -lrt -ldl -rdynamic
 
 # Added here for cross-target builds which include this file
 STATIC_LDFLAGS_YES= -Wl,-Bstatic

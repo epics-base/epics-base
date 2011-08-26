@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -19,8 +19,9 @@ dbRecStd_LIBS = dbCore ca Com
 
 dbRecStd_RCS += dbRecStd.rc
 
-include $(STDDIR)/dev/Makefile
 include $(STDDIR)/rec/Makefile
+include $(STDDIR)/dev/Makefile
+include $(STDDIR)/test/Makefile
 include $(STDDIR)/softIoc/Makefile
 
 include $(TOP)/configure/RULES

@@ -104,7 +104,11 @@ GPHENTRY * epicsShareAPI gphAdd(gphPvt *pgphPvt, const char *name, void *pvtid)
     epicsMutexMustLock(pgphPvt->lock);
     plist = paplist[hash];
     if (plist == NULL) {
-        plist = callocMustSucceed(1, sizeof(ELLLIST), "gphAdd");
+        plist = calloc(1, sizeof(ELLLIST));
+        if(!plist){
+            epicsMutexUnlock(pgphPvt->lock);
+            return NULL;
+        }
         ellInit(plist);
         paplist[hash] = plist;
     }
@@ -119,10 +123,12 @@ GPHENTRY * epicsShareAPI gphAdd(gphPvt *pgphPvt, const char *name, void *pvtid)
         pgphNode = (GPHENTRY *) ellNext((ELLNODE *)pgphNode);
     }
 
-    pgphNode = callocMustSucceed(1, sizeof(GPHENTRY), "gphAdd");
-    pgphNode->name = name;
-    pgphNode->pvtid = pvtid;
-    ellAdd(plist, (ELLNODE *)pgphNode);
+    pgphNode = calloc(1, sizeof(GPHENTRY));
+    if(pgphNode) {
+        pgphNode->name = name;
+        pgphNode->pvtid = pvtid;
+        ellAdd(plist, (ELLNODE *)pgphNode);
+    }
 
     epicsMutexUnlock(pgphPvt->lock);
     return (pgphNode);

@@ -221,7 +221,7 @@ void testCAS ()
 				testData.m_testIterationsNotSet );
 }
 
-MAIN ( osiAtomicTest )
+MAIN ( epicsAtomicTest )
 {
 
     testPlan ( 31 );

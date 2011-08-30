@@ -217,7 +217,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicLock ( EpicsAtomicLockKey * pKey )
     pKey->m_key = intLock ();
 }
 
-EPICS_ATOMIC_INLINE EpicsAtomicLockKey epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
+EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
 {
     intUnlock ( pKey->m_key );
 }

@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStdioRedirect.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
@@ -26,13 +27,11 @@
 #include "freeList.h"
 #include "macLib.h"
 #include "postfix.h"
- 
+#include "asLib.h"
+
 static epicsMutexId asLock;
 #define LOCK epicsMutexMustLock(asLock)
 #define UNLOCK epicsMutexUnlock(asLock)
-
-#define epicsExportSharedSymbols
-#include "asLib.h"
 
 /*following must be global because asCa nneeds it*/
 epicsShareDef ASBASE volatile *pasbase=NULL;

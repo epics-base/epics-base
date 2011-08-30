@@ -20,9 +20,11 @@
 #include <string.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "dbStaticLib.h"
-#include "epicsStdioRedirect.h"
 #include "link.h"
+#undef epicsExportSharedSymbols
+#include "epicsStdioRedirect.h"
 /*definitions needed because of old vs new database access*/
 #undef DBR_SHORT
 #undef DBR_PUT_ACKT

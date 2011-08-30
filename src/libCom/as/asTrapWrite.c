@@ -20,13 +20,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#define epicsExportSharedSymbols
 #include "ellLib.h"
 #include "freeList.h"
 #include "epicsStdioRedirect.h"
 #include "cantProceed.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
-#define epicsExportSharedSymbols
+
 #include "asLib.h"
 #include "asTrapWrite.h"
 

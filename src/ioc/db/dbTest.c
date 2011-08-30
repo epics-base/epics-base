@@ -23,6 +23,8 @@
 #include "epicsMutex.h"
 #include "epicsStdioRedirect.h"
 #include "ellLib.h"
+#include "epicsString.h"
+#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "link.h"
@@ -33,8 +35,6 @@
 #include "dbCommon.h"
 #include "special.h"
 #include "db_field_log.h"
-#include "epicsString.h"
-#define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbLock.h"
 #include "dbAccessDefs.h"

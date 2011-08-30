@@ -8,7 +8,9 @@
 \*************************************************************************/
 #include <signal.h>
 #include "defs.h"
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
+#undef epicsExportSharedSymbols
 
 char dflag;
 char lflag;

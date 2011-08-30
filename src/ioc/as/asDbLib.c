@@ -15,12 +15,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "epicsStdioRedirect.h"
-#include "dbDefs.h"
+#include "errlog.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
-#include "errlog.h"
+#include "epicsStdioRedirect.h"
+#include "dbDefs.h"
 #include "taskwd.h"
+#define epicsExportSharedSymbols
 #include "alarm.h"
 #include "caeventmask.h"
 #include "callback.h"
@@ -31,7 +32,6 @@
 #include "dbEvent.h"
 #include "dbCommon.h"
 #include "recSup.h"
-#define epicsExportSharedSymbols
 #include "asLib.h"
 #include "asCa.h"
 #include "asDbLib.h"

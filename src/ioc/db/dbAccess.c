@@ -30,6 +30,8 @@
 #include "epicsTime.h"
 #include "alarm.h"
 #include "ellLib.h"
+#include "errMdef.h"
+#define epicsExportSharedSymbols
 #include "dbStaticLib.h"
 #include "dbBase.h"
 #include "link.h"
@@ -41,8 +43,6 @@
 #include "dbCommon.h"
 #include "dbFldTypes.h"
 #include "special.h"
-#include "errMdef.h"
-#define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "callback.h"
 #include "dbScan.h"

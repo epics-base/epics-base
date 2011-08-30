@@ -34,13 +34,13 @@
 #include "cantProceed.h"
 #include "epicsRingPointer.h"
 #include "epicsPrint.h"
+#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbFldTypes.h"
 #include "link.h"
 #include "devSup.h"
 #include "dbCommon.h"
-#define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "callback.h"
 #include "dbAccessDefs.h"

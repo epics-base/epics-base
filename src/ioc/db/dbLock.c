@@ -49,20 +49,19 @@ since this will delay all other threads.
 
 #include "epicsStdioRedirect.h"
 #include "dbDefs.h"
-#include "dbBase.h"
+#include "epicsPrint.h"
+#include "errMdef.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsAssert.h"
 #include "cantProceed.h"
 #include "ellLib.h"
+#define epicsExportSharedSymbols
 #include "dbBase.h"
 #include "dbStaticLib.h"
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbCommon.h"
-#include "epicsPrint.h"
-#include "errMdef.h"
-#define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbAccessDefs.h"
 #include "dbLock.h"

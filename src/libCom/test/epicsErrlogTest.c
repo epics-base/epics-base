@@ -403,7 +403,7 @@ static void testLogPrefix(void) {
     iocLogPrefix(prefixstring);
     testPrefixLogandCompare(prefixactualmsg[1]);
     testPrefixLogandCompare(prefixactualmsg[2]);
-    close(sock);
+    epicsSocketDestroy(sock);
 }
 
 static void testPrefixLogandCompare( const char* logmessage ) {
@@ -439,8 +439,8 @@ static void readFromClient(void *pParam)
     char recvbuf[1024];
     int recvLength;
 
-    memset(&recvbuf, 0, 1024);
-    recvLength = recv(insock, &recvbuf, 1024, 0);
+    memset(recvbuf, 0, 1024);
+    recvLength = recv(insock, recvbuf, 1024, 0);
     if (recvLength > 0) {
         strcat(prefixmsgbuffer, recvbuf);
 

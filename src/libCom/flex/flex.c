@@ -51,7 +51,9 @@ static char rcsid[] =
 #include "flexdef.h"
 */
 
+#define epicsExportSharedSymbols
 #include "epicsStdio.h"
+#undef epicsExportSharedSymbols
 
 static char flex_version[] = "2.3";
 

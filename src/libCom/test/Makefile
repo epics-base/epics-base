@@ -39,6 +39,7 @@ TESTS += epicsEllTest
 
 TESTPROD_HOST += epicsErrlogTest
 epicsErrlogTest_SRCS += epicsErrlogTest.c
+epicsErrlogTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsErrlogTest.c
 TESTS += epicsErrlogTest
 

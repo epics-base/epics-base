@@ -55,6 +55,9 @@ open my $OUT, '>', $epicsVersion
 print $OUT <<"END_OUTPUT";
 /* Generated epicsVersion.h */
 
+#ifndef INC_epicsVersion_H
+#define INC_epicsVersion_H
+
 #define EPICS_VERSION        $ver
 #define EPICS_REVISION       $rev
 #define EPICS_MODIFICATION   $mod
@@ -64,10 +67,14 @@ print $OUT <<"END_OUTPUT";
 #define EPICS_VERSION_STRING "EPICS $ver_str"
 #define epicsReleaseVersion  "EPICS R$ver_str $commit_date"
 
+#define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
+#define EPICS_VERSION_INT VERSION_INT($ver, $rev, $mod, $patch)
+
 /* The following names are deprecated, use the equivalent name above */
 #define EPICS_UPDATE_LEVEL   EPICS_PATCH_LEVEL
 #define EPICS_CVS_SNAPSHOT   EPICS_DEV_SNAPSHOT
 
+#endif /* INC_epicsVersion_H */
 END_OUTPUT
 
 close $OUT;

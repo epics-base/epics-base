@@ -17,9 +17,9 @@
 #define epicsAtomicCD_h
 
 #if defined ( __cplusplus )
-#   define OSD_ATOMIC_INLINE inline
+#   define EPICS_ATOMIC_INLINE inline
 #else
-#   define OSD_ATOMIC_INLINE __inline
+#   define EPICS_ATOMIC_INLINE __inline
 #endif
 
 #include "epicsAtomicOSD.h"

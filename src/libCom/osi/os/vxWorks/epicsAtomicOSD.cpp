@@ -1,9 +1,7 @@
 
 /*************************************************************************\
-* Copyright (c) 2011 LANS LLC, as Operator of
+* Copyright (c) 2011 LANS LLC, as Operator of 
 *     Los Alamos National Laboratory.
-* Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
-*     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -13,15 +11,12 @@
  *  johill@lanl.gov
  */
 
-#ifndef epicsAtomicCD_h
-#define epicsAtomicCD_h
+#define epicsExportSharedSymbols
+#include "epicsAtomic.h"
 
-#if defined ( __cplusplus )
-#   define EPICS_ATOMIC_INLINE inline
-#else
-#   define EPICS_ATOMIC_INLINE __inline__
+// if the compiler is unable to inline then instantiate out-of-line
+#ifndef EPICS_ATOMIC_INLINE
+#define EPICS_ATOMIC_INLINE
+#include "epicsAtomic.h"
 #endif
 
-#include "epicsAtomicOSD.h"
-
-#endif /* epicsAtomicCD_h */

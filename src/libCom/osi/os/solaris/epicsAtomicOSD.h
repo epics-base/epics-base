@@ -16,84 +16,141 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#if defined ( OSD_ATOMIC_INLINE )
+#if defined ( EPICS_ATOMIC_INLINE )
 
 /* 
  * atomic.h exists only in Solaris 10 or higher
  */
 #if defined ( __SunOS_5_10 )
 
-#include <limits.h>
 #include <atomic.h>
-
-#define __STDC_LIMIT_MACROS /* define SIZE_MAX for c++ */
-#include <stdint.h>
-
-#define OSD_ATOMIC_INLINE_DEFINITION
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
-                                        unsigned oldVal, unsigned newVal )
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#define EPICS_ATOMIC_READ_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE int epicsAtomicReadMemoryBarrier ()  
 {
-    return atomic_cas_uint ( pTarget, oldVal, newVal );
+    membar_consumer ();
 }
+#endif
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE int epicsAtomicWriteMemoryBarrier ()  
+{
+    membar_producer ();
+}
+#endif
+
+#ifndef EPICS_ATOMIC_CAS_INTT
+#define EPICS_ATOMIC_CAS_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, 
+                                               int oldVal, int newVal )
+{
+    STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
+    return ( int ) atomic_cas_uint ( pTarget, ( unsigned ) oldVal, 
+                                        ( unsigned ) newVal );
+}
+#endif
+
+#ifndef EPICS_ATOMIC_CAS_SIZET
+#define EPICS_ATOMIC_CAS_SIZET
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapSizeT ( 
+                                                  size_t * pTarget,
+                                                  size_t oldVal, size_t newVal )
+{
+    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
+    void ** ppPtr = (void **) pTarget;
+    return ( size_t ) atomic_cas_ptr ( ppPtr, ( void * )oldVal, ( void * )newVal );
+}
+#endif
+
+#ifndef EPICS_ATOMIC_CAS_PTRT
+#define EPICS_ATOMIC_CAS_PTRT
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
+                                       EpicsAtomicPtrT * pTarget, 
+                                       EpicsAtomicPtrT oldVal, 
+                                       EpicsAtomicPtrT newVal )
 {
     return atomic_cas_ptr ( pTarget, oldVal, newVal );
 }
+#endif
 
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
+#ifndef EPICS_ATOMIC_INCR_INTT
+#define EPICS_ATOMIC_INCR_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 {
-    void * const pTarg = ( void * ) ( pTarget );
-    return ( size_t ) atomic_inc_ptr_nv ( pTarg );
+    STATIC_ASSERT ( sizeof ( unsigned ) == sizeof ( int ) );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return ( int ) atomic_inc_uint_nv ( pTarg );
 }
+#endif
 
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
+#ifndef EPICS_ATOMIC_INCR_SIZET
+#define EPICS_ATOMIC_INCR_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    void * const pTarg = ( void * ) ( pTarget );
-    return atomic_dec_ptr_nv ( pTarg );
+    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
+    void ** const ppTarg = ( void ** ) ( pTarget );
+    return ( size_t ) atomic_inc_ptr_nv ( ppTarg );
 }
+#endif
 
-OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
+#ifndef EPICS_ATOMIC_DECR_INTT
+#define EPICS_ATOMIC_DECR_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
 {
-    *pTarget = newVal;
-    membar_producer();
+    STATIC_ASSERT ( sizeof ( unsigned ) == sizeof ( int ) );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return ( int ) atomic_dec_uint_nv ( pTarg );
 }
+#endif
 
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
+#ifndef EPICS_ATOMIC_DECR_SIZET
+#define EPICS_ATOMIC_DECR_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    *pTarget = newVal;
-    membar_producer();
+    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
+    void ** const pTarg = ( void ** ) ( pTarget );
+    return ( size_t ) atomic_dec_ptr_nv ( pTarg );
 }
+#endif
 
-OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
+#ifndef EPICS_ATOMIC_ADD_INTT
+#define EPICS_ATOMIC_ADD_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 {
-    *pTarget = newVal;
-    membar_producer();
+    STATIC_ASSERT ( sizeof ( unsigned ) == sizeof ( int ) );
+    unsigned * const pTarg = ( unsigned * ) ( pTarget );
+    return ( int ) atomic_add_int_nv ( pTarg, delta );
 }
+#endif
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+#ifndef EPICS_ATOMIC_ADD_SIZET
+#define EPICS_ATOMIC_ADD_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, 
+                                                 size_t delta )
 {
-    membar_consumer ();
-    return *pTarget;
+    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
+    void ** const pTarg = ( void ** ) ( pTarget );
+    return ( size_t ) atomic_add_ptr_nv ( pTarg, ( ssize_t ) delta );
 }
+#endif
 
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
+#ifndef EPICS_ATOMIC_SUB_SIZET
+#define EPICS_ATOMIC_SUB_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, 
+                                                 size_t delta )
 {
-    membar_consumer ();
-    return *pTarget;
+    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
+    void ** const pTarg = ( void ** ) ( pTarget );
+    ssize_t = sdelta = ( ssize_t ) delta;
+    return ( size_t ) atomic_add_ptr_nv ( pTarg, -sdelta );
 }
-
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
-{
-    membar_consumer ();
-    return *pTarget;
-}
+#endif
 
 #ifdef __cplusplus
 } /* end of extern "C" */
@@ -101,6 +158,9 @@ OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * p
 
 #endif /* ifdef __SunOS_5_10 */
 
-#endif /* if defined ( OSD_ATOMIC_INLINE ) */
+#include "epicsAtomicDefault.h"
+
+#endif /* if defined ( EPICS_ATOMIC_INLINE ) */
 
 #endif /* epicsAtomicOSD_h */
+

@@ -109,8 +109,8 @@ testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
 TESTPROD_HOST += epicsAtomicTest
-epicsAtomicTest_SRCS += epicsAtomicTest.c
-testHarness_SRCS += epicsAtomicTest.c
+epicsAtomicTest_SRCS += epicsAtomicTest.cpp
+testHarness_SRCS += epicsAtomicTest.cpp
 TESTS += epicsAtomicTest
 
 TESTPROD_HOST += epicsExceptionTest

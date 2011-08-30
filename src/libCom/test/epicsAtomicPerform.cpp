@@ -1,6 +1,8 @@
 
 #include <cstdlib>
+#include <cstdio>
 #include <cassert>
+#include <typeinfo>
 
 #include "epicsInterrupt.h"
 #include "epicsAtomic.h"
@@ -9,6 +11,8 @@
 #include "testMain.h"
 
 using std :: size_t;
+using namespace epics; 
+using namespace atomic;
 
 class RefCtr {
 public:
@@ -214,234 +218,184 @@ inline void passRefOwnership1000 ( const Ownership & ownershipIn, Ownership & ow
 
 time_t extTime = 0;
 
+template < class T >
+class OrdinaryIncr {
+public:
+    OrdinaryIncr () : m_target ( 0 ) {}
+    void run ();
+    void diagnostic ( double delay );
+private:	
+    T m_target;
+};
+
 // tests the time it takes to perform a call to an external 
 // function and also increment an integer word. The 
 // epicsInterruptIsInterruptContext function is an 
 // out-of-line function implemented in a sharable library 
 // so hopefully it wont be optimized away.
-inline void tenOrdinaryIncr ( size_t & target )
+template < class T >
+inline void OrdinaryIncr < T > :: run ()
 {
-    int result = 0;
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    result += epicsInterruptIsInterruptContext ();
-    target = static_cast < unsigned > ( result );
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
+    m_target += epicsInterruptIsInterruptContext ();
 }
 
-inline void oneHundredOrdinaryIncr ( size_t & target )
+template < class T >
+void OrdinaryIncr < T > :: diagnostic ( double delay )
 {
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
-    tenOrdinaryIncr ( target );
+    delay /= 10.0;
+    delay *= 1e6;
+    const char * const pName = typeid ( T ) . name ();
+    testDiag ( "raw incr of \"%s\" and a NOOP function call takes %f microseconds", 
+                         pName, delay );
 }
 
-inline void oneThousandOrdinaryIncr ( size_t & target )
+template < class T >
+class AtomicIncr {
+public:
+    AtomicIncr () : m_target ( 0 ) {}
+    void run ();
+    void diagnostic ( double delay );
+private:	
+    T m_target;
+};
+
+template < class T >
+inline void AtomicIncr < T > :: run ()
 {
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
-    oneHundredOrdinaryIncr ( target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
+    increment ( m_target );
 }
 
-inline void tenAtomicIncr ( size_t & target )
+template < class T >
+void AtomicIncr < T > :: diagnostic ( double delay )
 {
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
-    epicsAtomicIncrSizeT ( & target );
+    delay /= 10.0;
+    delay *= 1e6;
+    const char * const pName = typeid ( T ) . name ();
+    testDiag ( "epicsAtomicIncr \"%s\" takes %f microseconds", 
+                        pName, delay );
 }
 
-inline void oneHundredAtomicIncr ( size_t & target )
+template < class T > T trueValue ();
+template < class T > T falseValue ();
+
+// int
+template <>
+inline int trueValue < int > () { return 1; }
+
+template <>
+inline int falseValue < int > () { return 0; }
+
+// size_t 
+template <>
+inline size_t trueValue < size_t > () { return 1u; }
+
+template <>
+inline size_t falseValue < size_t > () { return 0u; }
+
+// EpicsAtomicPtrT
+template <>
+inline EpicsAtomicPtrT trueValue < EpicsAtomicPtrT > () 
+{ static char c; return & c; }
+
+template <>
+inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > () 
+{ return 0u; }
+
+template < class T >
+class AtomicCmpAndSwap {
+public:
+    AtomicCmpAndSwap () : m_target ( 0 ) {}
+    void run ();
+    void diagnostic ( double delay );
+private:	
+    T m_target;
+};
+
+template < class T >
+inline void AtomicCmpAndSwap < T > :: run ()
 {
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
-    tenAtomicIncr ( target );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
+    compareAndSwap ( m_target, falseValue < T > (), trueValue < T > () );
 }
 
-inline void oneThousandAtomicIncr ( size_t & target )
+template < class T >
+void AtomicCmpAndSwap < T > :: diagnostic ( double delay )
 {
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
-    oneHundredAtomicIncr ( target );
+    delay /= 10.0;
+    delay *= 1e6;
+    const char * const pName = typeid ( T ) . name ();
+    testDiag ( "epicsAtomicCmpAndSwap of \"%s\" takes %f microseconds", 
+                         pName, delay );
 }
 
-inline void tenAtomicCmpAndSwap ( unsigned & target )
+template < class T >
+class AtomicSet {
+public:
+    AtomicSet () : m_target ( 0 ) {}
+    void run ();
+    void diagnostic ( double delay );
+private:	
+    T m_target;
+};
+
+template < class T >
+inline void AtomicSet < T > :: run ()
 {
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
-    epicsAtomicCmpAndSwapUIntT ( & target, false, true );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
+    set ( m_target, 0 );
 }
 
-inline void oneHundredAtomicCmpAndSwap ( unsigned & target )
+template < class T >
+void AtomicSet < T > :: diagnostic ( double delay )
 {
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-    tenAtomicCmpAndSwap ( target );
-}
-
-inline void oneThousandAtomicCmpAndSwap ( unsigned & target )
-{
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-    oneHundredAtomicCmpAndSwap ( target );
-}
-
-inline void tenAtomicSet ( size_t & target )
-{
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-    epicsAtomicSetSizeT ( & target, 0 );
-}
-
-inline void oneHundredAtomicSet ( size_t & target )
-{
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-    tenAtomicSet ( target );
-}
-
-inline void oneThousandAtomicSet ( size_t & target )
-{
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
-    oneHundredAtomicSet ( target );
+    delay /= 10.0;
+    delay *= 1e6;
+    const char * const pName = typeid ( T ) . name ();
+    testDiag ( "epicsAtomicSet of \"%s\" takes %f microseconds", 
+		    pName, delay );
 }
 
 static const unsigned N = 10000;
-
-void ordinaryIncrPerformance ()
-{
-    epicsTime begin = epicsTime::getCurrent ();
-    size_t target;
-    epicsAtomicSetSizeT ( & target, 0 );
-    for ( unsigned i = 0; i < N; i++ ) {
-        oneThousandOrdinaryIncr ( target );
-    }
-    double delay = epicsTime::getCurrent () -  begin;
-    testOk1 ( target == 0u );
-    delay /= N * 1000u; // convert to delay per call
-    delay *= 1e6; // convert to micro seconds
-    testDiag ( "raw incr and a NOOP function call takes %f microseconds", delay );
-}
-
-void epicsAtomicIncrPerformance ()
-{
-    epicsTime begin = epicsTime::getCurrent ();
-    size_t target;
-    epicsAtomicSetSizeT ( & target, 0 );
-    for ( unsigned i = 0; i < N; i++ ) {
-        oneThousandAtomicIncr ( target );
-    }
-    double delay = epicsTime::getCurrent () -  begin;
-    testOk1 ( target == N * 1000u );
-    delay /= N * 1000u; // convert to delay per call
-    delay *= 1e6; // convert to micro seconds
-    testDiag ( "epicsAtomicIncr() takes %f microseconds", delay );
-}
-
-void atomicCmpAndSwapPerformance ()
-{
-    epicsTime begin = epicsTime::getCurrent ();
-    unsigned target;
-    epicsAtomicSetUIntT ( & target, 0 );
-    testOk1 ( ! target );
-    for ( unsigned i = 0; i < N; i++ ) {
-        oneThousandAtomicCmpAndSwap ( target );
-    }
-    double delay = epicsTime::getCurrent () -  begin;
-    testOk1 ( target );
-    delay /= N * 1000u; // convert to delay per call
-    delay *= 1e6; // convert to micro seconds
-    testDiag ( "epicsAtomicCmpAndSwap() takes %f microseconds", delay );
-}
 
 void recursiveOwnershipRetPerformance ()
 {
     RefCtr refCtr;
     epicsTime begin = epicsTime::getCurrent ();
-    for ( unsigned i = 0; i < N; i++ ) {
+    for ( size_t i = 0; i < N; i++ ) {
         Ownership ownership ( refCtr );
         recurRetOwner1000 ( ownership );
     }
@@ -455,7 +409,7 @@ void ownershipPassRefPerformance ()
 {
     RefCtr refCtr;
     epicsTime begin = epicsTime::getCurrent ();
-    for ( unsigned i = 0; i < N; i++ ) {
+    for ( size_t i = 0; i < N; i++ ) {
         Ownership ownershipSrc ( refCtr );
         Ownership ownershipDest;
         passRefOwnership1000 ( ownershipSrc, ownershipDest );
@@ -466,34 +420,87 @@ void ownershipPassRefPerformance ()
     testDiag ( "passRefOwnership() takes %f microseconds", delay );
 }
 
-void epicsAtomicSetPerformance ()
+template < class T >
+class Ten 
 {
-    epicsTime begin = epicsTime::getCurrent ();
-    size_t target;
-    for ( unsigned i = 0; i < N; i++ ) {
-        oneThousandAtomicSet ( target );
-    }
-    double delay = epicsTime::getCurrent () -  begin;
-    testOk1 ( target == 0u );
-    delay /= N * 1000u; // convert to delay per call
-    delay *= 1e6; // convert to micro seconds
-    testDiag ( "epicsAtomicSet() takes %f microseconds", delay );
+public:
+    void run ();
+    void diagnostic ( double delay );
+    typedef Ten < Ten < T > > Hundred;
+    typedef Ten < Hundred > Thousand;
+private:
+    T m_target;
+};
+
+template < class T >
+inline void Ten < T > :: run ()
+{
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
+    m_target.run ();
 }
 
-MAIN(epicsAtomicPerform)
+template < class T >
+void Ten < T > :: diagnostic ( double delay )
 {
-    testPlan(5);
+    m_target.diagnostic ( delay / 10.0 );
+}
+
+template < class T >
+void measurePerformance ()
+{
+    epicsTime begin = epicsTime::getCurrent ();
+    T target;
+    for ( size_t i = 0; i < N; i++ ) {
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+        target.run ();
+    }
+    double delay = epicsTime::getCurrent () -  begin;
+    delay /= ( N * 10u ); // convert to delay per call
+    target.diagnostic ( delay );
+}
+
+template < class T > 
+void measure ()
+{
+    measurePerformance < typename Ten < T > :: Hundred > ();
+}
+
+MAIN ( epicsAtomicPerform )
+{
+    testPlan ( 0 );
     //
     // The tests running here are measuring fast
     // functions so they tend to be impacted
     // by where the cache lines are wrt to the
-    // virtual pages perhaps
+    // virtual pages perhap
     //
-    epicsAtomicSetPerformance ();
-    ordinaryIncrPerformance ();
-    epicsAtomicIncrPerformance ();
+    measure < AtomicSet < int > > ();
+    measure < AtomicSet < size_t > > ();
+    measure < AtomicSet < void * > > ();
+    measure < OrdinaryIncr < int > > ();
+    measure < OrdinaryIncr < size_t > > ();
+    measure < AtomicIncr < int > > ();
+    measure < AtomicIncr < size_t > > ();
+    measure < AtomicCmpAndSwap < int > > ();
+    measure < AtomicCmpAndSwap < size_t > > ();
+    measure < AtomicCmpAndSwap < void * > > ();
     recursiveOwnershipRetPerformance ();
     ownershipPassRefPerformance ();
-    atomicCmpAndSwapPerformance ();
     return testDone();
 }

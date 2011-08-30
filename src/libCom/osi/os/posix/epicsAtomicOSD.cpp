@@ -9,67 +9,100 @@
 /*
  *  Author Jeffrey O. Hill
  *  johill@lanl.gov
- *
- *  Provide a global mutex version of AtomicGuard on POSIX
- *  systems for when we dont have more efficent compiler or 
- *  OS primitives intriniscs to use instead.
- *
- *  We implement this mutex-based AtomicGuard primitive directly 
- *  upon the standalone POSIX pthread library so that the epicsAtomic 
- *  library can be used to implement other primitives such 
- *  epicsThreadOnce.
- *
- *  We use a static initialized pthread mutex to minimize code 
- *  size, and are also optimistic that this can be more efficent 
- *  than pthread_once.
  */
 
+#define epicsExportSharedSymbols
+#include "epicsAtomic.h"
+
+// if the compiler is unable to inline then instantiate out-of-line
+#ifndef EPICS_ATOMIC_INLINE
+#define EPICS_ATOMIC_INLINE
+#include "epicsAtomic.h"
+#endif
+
+/* Authors: Jeffrey O. Hill */
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
 
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
+
+// if the compiler is unable to inline then instantiate out-of-line
+#ifndef EPICS_ATOMIC_INLINE
+#define EPICS_ATOMIC_INLINE
 #include "epicsAtomic.h"
+#endif
 
-// If we have an inline implementation then implement 
-// nothing that conflicts here
-#if ! defined ( OSD_ATOMIC_INLINE_DEFINITION )
+#ifndef EPICS_ATOMIC_LOCK
 
-// get the interface for class AtomicGuard
-#include "epicsAtomicGuard.h"
+/*
+ * Slow, but probably correct on all systems.
+ * Useful only if something more efficent isnt 
+ * provided based on knowledge of the compiler 
+ * or OS 
+ *
+ * A statically initialized pthread mutex doesnt 
+ * need to be destroyed 
+ * 
+ * !!!!!
+ * !!!!! WARNING 
+ * !!!!!
+ * !!!!! Do not use this implementation on systems where
+ * !!!!! code runs at interrupt context. If so, then 
+ * !!!!! an implementation must be provided that is based
+ * !!!!! on a compiler intrinsic or an interrpt lock and or
+ * !!!!! a spin lock primitive
+ * !!!!!
+ */
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-namespace {
-
-// a statically initialized mutex doesnt need to be destroyed 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-inline AtomicGuard :: AtomicGuard () throw ()
+void epicsAtomicLock ( EpicsAtomicLockKey * )
 {
     unsigned countDown = 1000u;
     int status;
     while ( true ) {
         status = pthread_mutex_lock ( & mutex );
-        if ( status != EINTR ) break;
+        if ( status == 0 ) return;
+        assert ( status == EINTR );
         static const useconds_t retryDelayUSec = 100000;
         usleep ( retryDelayUSec );
         countDown--;
         assert ( countDown );
     }
-    assert ( status == 0 );
 }
 
-inline AtomicGuard :: ~AtomicGuard () throw ()
+void epicsAtomicUnlock ( EpicsAtomicLockKey * )
 {
     const int status = pthread_mutex_unlock ( & mutex );
     assert ( status == 0 );
 }
 
-} // end of namespace anonymous
+#endif // ifndef EPICS_ATOMIC_LOCK
 
-// Define the epicsAtomicXxxx functions out-of-line using this 
-// implementation of AtomicGuard. Note that this isnt a traditional 
-// c++ header file.
-#include "epicsAtomicLocked.h"
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+// Slow, but probably correct on all systems.
+// Useful only if something more efficent isnt 
+// provided based on knowledge of the compiler 
+// or OS 
+void epicsAtomicReadMemoryBarrier ()
+{
+    EpicsAtomicLockKey key;
+    epicsAtomicLock ( & key  );
+    epicsAtomicUnlock ( & key  );
+}
+#endif
 
-#endif // if ! defined ( #define OSD_ATOMIC_INLINE_DEFINITION )
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+// Slow, but probably correct on all systems.
+// Useful only if something more efficent isnt 
+// provided based on knowledge of the compiler 
+// or OS 
+void epicsAtomicWriteMemoryBarrier ()
+{
+    EpicsAtomicLockKey key;
+    epicsAtomicLock ( & key  );
+    epicsAtomicUnlock ( & key  );
+}
+#endif
+

@@ -45,6 +45,7 @@ INC += osiWireFormat.h
 INC += osdWireFormat.h
 INC += osdWireConfig.h
 INC += epicsAtomic.h
+INC += epicsAtomicDefault.h
 INC += epicsAtomicLocked.h
 INC += epicsAtomicOSD.h
 INC += epicsAtomicCD.h
@@ -130,6 +131,8 @@ Com_SRCS_vxWorks += logMsgToErrlog.cpp
 
 #This forces the vxWorks compatibility stuff to be loaded
 OBJS_vxWorks = vxComLibrary
+
+INC_WIN32 += epicsAtomicMS.h
 
 Com_SRCS_WIN32 += epicsGetopt.c 
 Com_SRCS_WIN32 += setThreadName.cpp

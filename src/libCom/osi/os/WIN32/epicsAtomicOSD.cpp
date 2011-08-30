@@ -14,13 +14,9 @@
 #define epicsExportSharedSymbols
 #include "epicsAtomic.h"
 
-//
-// We need a default epicsAtopmicOSD.cpp which is empty for use when 
-// a compiler or inline OS specific implementation is provided. See 
-// "osi/os/posix/epicsAtomicOSD.cpp" for an example OS specific generic 
-// out-of-line implementation based on a mutex lock.
-//
-#if ! defined ( OSD_ATOMIC_INLINE_DEFINITION )
-#   error the epicsAtomicXxxxx functions definitions are misssing
+// if the compiler is unable to inline then instantiate out-of-line
+#ifndef EPICS_ATOMIC_INLINE
+#define EPICS_ATOMIC_INLINE
+#include "epicsAtomic.h"
 #endif
 

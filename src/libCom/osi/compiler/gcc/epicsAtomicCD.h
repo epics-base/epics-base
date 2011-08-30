@@ -20,12 +20,12 @@
 #   error this header is only for use with the gnu compiler
 #endif
 
-#define OSD_ATOMIC_INLINE __inline__
+#define EPICS_ATOMIC_INLINE __inline__
 
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)
 #define GCC_ATOMIC_CONCATR( A, B ) ( A ## B )
 
-#define GCC_ATOMIC_INTRINSICS_AVAIL_UINT_T \
+#define GCC_ATOMIC_INTRINSICS_AVAIL_INT_T \
     GCC_ATOMIC_CONCAT ( \
         __GCC_HAVE_SYNC_COMPARE_AND_SWAP_, \
         __SIZEOF_INT__ )
@@ -46,89 +46,127 @@
     ( GCC_ATOMIC_INTRINSICS_MIN_X86 && \
     GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER )
 
-#if ( GCC_ATOMIC_INTRINSICS_AVAIL_UINT_T \
-    && GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T ) \
-    || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
-
-#define OSD_ATOMIC_INLINE_DEFINITION
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
-{
-    return __sync_add_and_fetch ( pTarget, 1u );
-}
+/* 
+ * We are optimistic that __sync_synchronize is implemented
+ * in all version four gcc invarient of target. The gnu doc 
+ * seems to say that when not supported by architecture a call
+ * to an external function is generated but in practice
+ * this isnt the case for some of the atomic intrinsics, and 
+ * so there is an undefined symbol. So far we have not seen 
+ * that with __sync_synchronize, but we can only guess based
+ * on experimental evidence.
+ *
+ * For example we know that when generating object code for
+ * 386 most of the atomic instrinsics are not present and
+ * we see undefined symbols with mingw, but we dont have
+ * troubles with __sync_synchronize.
+ */
+#if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
 
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
-{
-    return __sync_sub_and_fetch ( pTarget, 1u );
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, 
-                                        size_t newValue )
-{
-    *pTarget = newValue;
-    __sync_synchronize ();
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, 
-                                        unsigned newValue )
-{
-    *pTarget = newValue;
-    __sync_synchronize ();
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, 
-                                        EpicsAtomicPtrT newValue )
-{
-    *pTarget = newValue;
-    __sync_synchronize ();
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#define EPICS_ATOMIC_READ_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
 {
     __sync_synchronize ();
-    return *pTarget;
 }
+#endif
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 {
     __sync_synchronize ();
-    return *pTarget;
 }
+#endif
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
+#endif /* if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER */
+
+#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T \
+    || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER 
+
+#define EPICS_ATOMIC_INCR_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 {
-    __sync_synchronize ();
-    return *pTarget;
+    return __sync_add_and_fetch ( pTarget, 1 );
 }
 
-OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
-                                        unsigned oldVal, unsigned newVal )
+#define EPICS_ATOMIC_DECR_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
+{
+    return __sync_sub_and_fetch ( pTarget, 1 );
+}
+
+#define EPICS_ATOMIC_ADD_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
+{
+    return __sync_add_and_fetch ( pTarget, delta ); 
+}
+
+#define EPICS_ATOMIC_CAS_INTT
+EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, 
+                                        int oldVal, int newVal )
 {
     return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
+#endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T */
+
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T \
+    || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER 
+
+#define EPICS_ATOMIC_INCR_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
+{
+    return __sync_add_and_fetch ( pTarget, 1u );
+}
+
+#define EPICS_ATOMIC_DECR_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
+{
+    return __sync_sub_and_fetch ( pTarget, 1u );
+}
+
+#define EPICS_ATOMIC_ADD_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta )
+{
+    return __sync_add_and_fetch ( pTarget, delta ); 
+}
+
+#define EPICS_ATOMIC_SUB_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta )
+{
+    return __sync_sub_and_fetch ( pTarget, delta ); 
+}
+
+#define EPICS_ATOMIC_CAS_SIZET
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget, 
+                                        size_t oldVal, size_t newVal )
+{
+    return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
+}
+
+#define EPICS_ATOMIC_CAS_PTRT
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
+                            EpicsAtomicPtrT * pTarget, 
                             EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
 {
     return __sync_val_compare_and_swap ( pTarget, oldVal, newVal);
 }
 
+#endif /* if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T */
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif
 
-#else /* if GCC_ATOMIC_INTRINSICS_AVAIL */
-
-    /*
-     * not available as gcc intrinsics so we
-     * will employ an os specific inline solution
-     */
-#   include "epicsAtomicOSD.h"
-
-#endif /* if GCC_ATOMIC_INTRINSICS_AVAIL */
+/*
+ * if currently unavailable as gcc intrinsics we
+ * will try for an os specific inline solution
+ */
+#include "epicsAtomicOSD.h"
 
 #endif /* epicsAtomicCD_h */

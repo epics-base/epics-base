@@ -17,7 +17,7 @@
 #define epicsAtomicCD_h
 
 #if __STDC_VERSION__ >= 199901L || defined ( __cplusplus )
-#   define OSD_ATOMIC_INLINE inline
+#   define EPICS_ATOMIC_INLINE inline
 #endif
 
 #include "epicsAtomicOSD.h"

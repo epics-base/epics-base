@@ -12,149 +12,38 @@
  *  Author Jeffrey O. Hill
  *  johill@lanl.gov
  */
- 
+
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#if defined ( OSD_ATOMIC_INLINE )
-
-#include <limits.h>
-
-#include "epicsAssert.h"
-
-#define STRICT
 #define VC_EXTRALEAN
-#include <windows.h>
+#define STRICT
+#include "windows.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#if defined ( _WIN64 )
+#    define MS_ATOMIC_64
+#endif
 
-#define OSD_ATOMIC_INLINE_DEFINITION
+#define MS_LONG LONG 
+#define MS_InterlockedExchange InterlockedExchange
+#define MS_InterlockedCompareExchange InterlockedCompareExchange
+#define MS_InterlockedIncrement InterlockedIncrement 
+#define MS_InterlockedDecrement InterlockedDecrement 
+#define MS_InterlockedExchange InterlockedExchange
+#define MS_InterlockedExchangeAdd InterlockedExchangeAdd
+#if defined ( MS_ATOMIC_64 )
+#   define MS_LONGLONG LONGLONG 
+#   define MS_InterlockedIncrement64 InterlockedIncrement64
+#   define MS_InterlockedDecrement64 InterlockedDecrement64 
+#   define MS_InterlockedExchange64 InterlockedExchange64 
+#   define MS_InterlockedExchangeAdd64 InterlockedExchangeAdd64 
+#   define MS_InterlockedCompareExchange InterlockedCompareExchange64
+#endif
 
-/* 
- * mingw doesnt currently provide MemoryBarrier
- * (this is mostly for testing purposes as the gnu
- * intrinsics are used if compiling for 486 or better 
- * minimum hardware)
- */
-#ifdef __MINGW32__
-    extern inline void MemoryBarrier() {
-        int fence = 0;
-        __asm__ __volatile__( "xchgl %%eax,%0 ":"=r" (fence) );
-    }
-#endif // ifdef __MINGW32__
+#ifdef EPICS_ATOMIC_INLINE
+#    include "epicsAtomicMS.h"
+#    include "epicsAtomicDefault.h"
+#endif
 
-/* necessary for next three functions */
-STATIC_ASSERT ( sizeof ( LONG ) == sizeof ( unsigned ) );
+#endif /* epicsAtomicOSD_h */
 
-OSD_ATOMIC_INLINE void epicsAtomicSetUIntT ( unsigned * pTarget, unsigned newVal )
-{
-    *pTarget = newVal;
-    MemoryBarrier ();
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetSizeT ( size_t * pTarget, size_t newVal )
-{
-    *pTarget = newVal;
-    MemoryBarrier ();
-}
-
-OSD_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newVal )
-{
-    *pTarget = newVal;
-    MemoryBarrier ();
-}
-
-OSD_ATOMIC_INLINE unsigned epicsAtomicGetUIntT ( const unsigned * pTarget )
-{
-    MemoryBarrier ();
-    return *pTarget;
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget )
-{
-    MemoryBarrier ();
-    return *pTarget;
-}
-
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget )
-{
-    MemoryBarrier ();
-    return *pTarget;
-}
-
-OSD_ATOMIC_INLINE unsigned epicsAtomicCmpAndSwapUIntT ( unsigned * pTarget, 
-                                            unsigned oldVal, unsigned newVal )
-{
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    return (unsigned) InterlockedCompareExchange ( pTarg, 
-                                    (LONG) newVal, (LONG) oldVal );
-}
-
-#if defined ( _WIN32 )
-
-/*
- * necessary for next five functions 
- *
- * looking at the MS documentation it appears that they will
- * keep type long the same size as an int on 64 bit builds
- */
-STATIC_ASSERT ( sizeof ( LONG ) == sizeof ( size_t ) );
-
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
-{
-    LONG * const pTarg = ( LONG * ) pTarget;
-    return InterlockedIncrement ( pTarg );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
-{
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    return InterlockedDecrement ( pTarg );
-}
-
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
-{
-    LONG * const pTarg = ( LONG * ) ( pTarget );
-    return (EpicsAtomicPtrT) InterlockedCompareExchange ( pTarg, 
-                                    (LONG) newVal, (LONG) oldVal );
-}
-
-#elif defined ( _WIN64 ) 
-
-/*
- * necessary for next five functions 
- */
-STATIC_ASSERT ( sizeof ( LONGLONG ) == sizeof ( size_t ) );
-
-OSD_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
-{
-    LONGLONG * const pTarg = ( LONGLONG * ) pTarget;
-    return InterlockedIncrement64 ( pTarg );
-}
-
-OSD_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
-{
-    LONGLONG * const pTarg = ( LONGLONG * ) ( pTarget );
-    return InterlockedDecrement64 ( pTarg );
-}
-
-OSD_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( EpicsAtomicPtrT * pTarget, 
-                            EpicsAtomicPtrT oldVal, EpicsAtomicPtrT newVal )
-{
-    LONGLONG * const pTarg = ( LONGLONG * ) ( pTarget );
-    return (EpicsAtomicPtrT) InterlockedCompareExchange64 ( pTarg, 
-                                    (LONGLONG) newVal, (LONGLONG) oldVal );
-}
-
-#endif /* if defined ( _WIN32 ) */
-
-#ifdef __cplusplus
-} /* end of extern "C" */
-#endif /* __cplusplus */
-
-#endif /* if defined ( OSD_ATOMIC_INLINE ) */
-
-#endif /* ifndef epicsAtomicOSD_h */

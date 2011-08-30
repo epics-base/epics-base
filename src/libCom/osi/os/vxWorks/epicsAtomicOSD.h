@@ -33,16 +33,16 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#ifndef EPICS_READ_MEMORY_BARRIER
-#define EPICS_READ_MEMORY_BARRIER
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#define EPICS_ATOMIC_READ_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () 
 {
     VX_MEM_BARRIER_R ();
 }
 #endif
 
-#ifndef EPICS_WRITE_MEMORY_BARRIER
-#define EPICS_WRITE_MEMORY_BARRIER
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () 
 {
     VX_MEM_BARRIER_W ();
@@ -223,8 +223,8 @@ EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
 }
 #endif
 
-#ifndef EPICS_READ_MEMORY_BARRIER
-#define EPICS_READ_MEMORY_BARRIER
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#define EPICS_ATOMIC_READ_MEMORY_BARRIER
 /* 
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)
@@ -232,8 +232,8 @@ EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () {}
 #endif
 
-#ifndef EPICS_WRITE_MEMORY_BARRIER
-#define EPICS_WRITE_MEMORY_BARRIER
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 /* 
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)

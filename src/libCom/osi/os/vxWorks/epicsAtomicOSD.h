@@ -229,7 +229,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)
  */
-EPICS_ATOMIC_INLINE void epicsReadMemoryBarrier () {}
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () {}
 #endif
 
 #ifndef EPICS_WRITE_MEMORY_BARRIER
@@ -238,7 +238,7 @@ EPICS_ATOMIC_INLINE void epicsReadMemoryBarrier () {}
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)
  */
-EPICS_ATOMIC_INLINE void epicsWriteMemoryBarrier () {}
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () {}
 #endif
 
 #ifdef __cplusplus

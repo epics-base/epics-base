@@ -35,7 +35,7 @@ extern "C" {
 
 #ifndef EPICS_READ_MEMORY_BARRIER
 #define EPICS_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsReadMemoryBarrier () 
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () 
 {
     VX_MEM_BARRIER_R ();
 }
@@ -43,7 +43,7 @@ EPICS_ATOMIC_INLINE void epicsReadMemoryBarrier ()
 
 #ifndef EPICS_WRITE_MEMORY_BARRIER
 #define EPICS_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsWriteMemoryBarrier () 
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () 
 {
     VX_MEM_BARRIER_W ();
 }

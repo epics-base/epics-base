@@ -98,7 +98,10 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta 
     atomic_t * const pTarg = ( atomic_t * ) ( pTarget );
     const atomic_t oldVal = vxAtomicAdd ( pTarg, (atomic_t) delta );
     return delta + ( size_t ) oldVal;
-} #endif #ifndef EPICS_ATOMIC_SUB_SIZET
+} 
+#endif 
+
+#ifndef EPICS_ATOMIC_SUB_SIZET
 #define EPICS_ATOMIC_SUB_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta )
 {

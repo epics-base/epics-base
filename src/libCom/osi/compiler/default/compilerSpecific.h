@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
@@ -30,16 +29,5 @@
 
 #endif /* __cplusplus */
 
-/*
- * Enable format-string checking if possible
- * (our default guess is that the compiler doesnt implement non-standard extensions)
- */
-#define EPICS_PRINTF_STYLE(f,a)
-
-/*
- * Deprecation marker
- * (our default guess is that the compiler doesnt implement non-standard extensions)
- */
-#define EPICS_DEPRECATED
 
 #endif  /* ifndef compilerSpecific_h */

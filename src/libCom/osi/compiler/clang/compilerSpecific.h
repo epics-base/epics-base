@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
@@ -21,12 +20,6 @@
 #   error compiler/clang/compilerSpecific.h is only for use with the clang compiler
 #endif
 
-/*
- * WARNING: the current state of this file is only based on reading clang manuals
- * and has not actually been tested with the compiler
- */
-#pragma warning compiler/clang/compilerSpecific.h is based on reading the manual, but hasnt been tested with the clang compiler
-
 #ifdef __cplusplus
 
 /*
@@ -39,21 +32,18 @@
 #endif /* __cplusplus */
 
 /*
- * Enable format-string checking if possible
+ * __has_attribute() is not supported on all versions of clang yet
  */
-#if __has_attribute(format)
-#   define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
-#else
-#   define EPICS_PRINTF_STYLE
-#endif
 
 /*
- * Deprecation marker if possible
+ * Enable format-string checking
  */
-#if __has_attribute(deprecated)
-#   define EPICS_DEPRECATED __attribute__((deprecated))
-#else
-#   define EPICS_DEPRECATED
-#endif
+#define EPICS_PRINTF_STYLE(f,a) __attribute__((format(__printf__,f,a)))
+
+/*
+ * Deprecation marker
+ */
+#define EPICS_DEPRECATED __attribute__((deprecated))
+
 
 #endif  /* ifndef compilerSpecific_h */

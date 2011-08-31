@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
@@ -43,5 +42,21 @@
 #endif
 
 #endif /* __cplusplus */
+
+
+#ifndef EPICS_PRINTF_STYLE
+/*
+ * No format-string checking
+ */
+#   define EPICS_PRINTF_STYLE(f,a)
+#endif
+
+#ifndef EPICS_DEPRECATED
+/*
+ * No deprecation markers
+ */
+#define EPICS_DEPRECATED
+#endif
+
 
 #endif  /* ifndef compilerDependencies_h */

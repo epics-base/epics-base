@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
@@ -19,6 +18,10 @@
 
 #ifndef __GNUC__
 #   error compiler/gcc/compilerSpecific.h is only for use with the gnu compiler
+#endif
+
+#ifdef __clang__
+#   error compiler/gcc/compilerSpecific.h is not for use with the clang compiler
 #endif
  
 #ifdef __cplusplus
@@ -55,8 +58,7 @@
  */
 #if  (__GNUC__ > 2)
 #   define EPICS_DEPRECATED __attribute__((deprecated))
-#else
-#   define EPICS_DEPRECATED
 #endif
+
 
 #endif  /* ifndef compilerSpecific_h */

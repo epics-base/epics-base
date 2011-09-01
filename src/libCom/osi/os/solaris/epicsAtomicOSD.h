@@ -16,14 +16,14 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#if defined ( EPICS_ATOMIC_INLINE )
+#if defined ( __SunOS_5_10 )
 
 /* 
  * atomic.h exists only in Solaris 10 or higher
  */
-#if defined ( __SunOS_5_10 )
-
 #include <atomic.h>
+
+#include "epicsAssert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE int epicsAtomicReadMemoryBarrier ()  
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()  
 {
     membar_consumer ();
 }
@@ -39,7 +39,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicReadMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE int epicsAtomicWriteMemoryBarrier ()  
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()  
 {
     membar_producer ();
 }
@@ -51,19 +51,20 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                                int oldVal, int newVal )
 {
     STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
-    return ( int ) atomic_cas_uint ( pTarget, ( unsigned ) oldVal, 
+    unsigned * const pTarg = reinterpret_cast < unsigned * > ( pTarget );
+    return ( int ) atomic_cas_uint ( pTarg, ( unsigned ) oldVal, 
                                         ( unsigned ) newVal );
 }
 #endif
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapSizeT ( 
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( 
                                                   size_t * pTarget,
                                                   size_t oldVal, size_t newVal )
 {
     STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** ppPtr = (void **) pTarget;
+    void ** const ppPtr = (void **) pTarget;
     return ( size_t ) atomic_cas_ptr ( ppPtr, ( void * )oldVal, ( void * )newVal );
 }
 #endif
@@ -147,7 +148,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
 {
     STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
     void ** const pTarg = ( void ** ) ( pTarget );
-    ssize_t = sdelta = ( ssize_t ) delta;
+    ssize_t sdelta = ( ssize_t ) delta;
     return ( size_t ) atomic_add_ptr_nv ( pTarg, -sdelta );
 }
 #endif
@@ -156,11 +157,28 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
 } /* end of extern "C" */
 #endif /* __cplusplus */
 
+#else /* ifdef __SunOS_5_10 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* 
+ * its less than 5.10 so we forward reference to the out-of-line posix 
+ * pthread lock implementation of epicsAtomicLock and epicsAtomicUnlock
+ * before including "epicsAtomicDefault.h"
+ */
+struct EpicsAtomicLockKey {};
+epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
+epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif /* __cplusplus */
+
 #endif /* ifdef __SunOS_5_10 */
 
 #include "epicsAtomicDefault.h"
-
-#endif /* if defined ( EPICS_ATOMIC_INLINE ) */
 
 #endif /* epicsAtomicOSD_h */
 

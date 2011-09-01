@@ -40,10 +40,8 @@
 #   define MS_InterlockedCompareExchange InterlockedCompareExchange64
 #endif
 
-#ifdef EPICS_ATOMIC_INLINE
-#    include "epicsAtomicMS.h"
-#    include "epicsAtomicDefault.h"
-#endif
+#include "epicsAtomicMS.h"
+#include "epicsAtomicDefault.h"
 
 #endif /* epicsAtomicOSD_h */
 

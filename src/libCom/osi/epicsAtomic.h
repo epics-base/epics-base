@@ -97,9 +97,9 @@ epicsShareFunc EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
  * options for inline compiler instrinsic or os specific 
  * implementations of the above function prototypes
  *
- * its importnat for certaiin compiler to define the
+ * for some of the compilers we must define the
  * inline functions before they get used in the c++ 
- * code below
+ * inine functions below
  */
 #include "epicsAtomicCD.h"
 

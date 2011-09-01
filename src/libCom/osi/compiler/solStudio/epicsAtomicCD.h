@@ -22,6 +22,10 @@
 #   define EPICS_ATOMIC_INLINE __inline
 #endif
 
+/* 
+ * we have an inline keyword so we can proceed
+ * with an os specific inline instantiation
+ */
 #include "epicsAtomicOSD.h"
 
 #endif /* epicsAtomicCD_h */

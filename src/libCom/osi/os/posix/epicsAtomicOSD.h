@@ -22,11 +22,7 @@ epicsShareFunc void epicsAtomicWriteMemoryBarrier ();
 epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
 epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
 
-#ifdef EPICS_ATOMIC_INLINE
-
 #include "epicsAtomicDefault.h"
-
-#endif /* ifdef EPICS_ATOMIC_INLINE */
 
 #endif /* epicsAtomicOSD_h */
 

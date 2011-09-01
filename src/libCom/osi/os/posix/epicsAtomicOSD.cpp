@@ -7,31 +7,22 @@
 \*************************************************************************/
 
 /*
- *  Author Jeffrey O. Hill
+ *  Author: Jeffrey O. Hill
  *  johill@lanl.gov
  */
 
-#define epicsExportSharedSymbols
-#include "epicsAtomic.h"
-
-// if the compiler is unable to inline then instantiate out-of-line
-#ifndef EPICS_ATOMIC_INLINE
-#define EPICS_ATOMIC_INLINE
-#include "epicsAtomic.h"
-#endif
-
-/* Authors: Jeffrey O. Hill */
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
 
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
+#include "epicsAtomic.h"
 
 // if the compiler is unable to inline then instantiate out-of-line
 #ifndef EPICS_ATOMIC_INLINE
-#define EPICS_ATOMIC_INLINE
-#include "epicsAtomic.h"
+#   define EPICS_ATOMIC_INLINE
+#   include "epicsAtomicOSD.h"
 #endif
 
 #ifndef EPICS_ATOMIC_LOCK

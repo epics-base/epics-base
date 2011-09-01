@@ -16,12 +16,6 @@
 #ifndef epicsAtomicDefault_h
 #define epicsAtomicDefault_h
 
-/* 
- * EPICS_ATOMIC_INLINE might be defined, but empty for an out-of-line 
- * instantiation
- */
-#ifdef EPICS_ATOMIC_INLINE 
-
 #ifdef __cpluplus
 extern "C" {
 #endif
@@ -227,8 +221,6 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 #ifdef __cpluplus
 } /* end of extern "C" */
 #endif
-
-#endif /* EPICS_ATOMIC_INLINE */
 
 #endif /* epicsAtomicDefault_h */
 

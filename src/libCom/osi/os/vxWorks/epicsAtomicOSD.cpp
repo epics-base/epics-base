@@ -16,7 +16,6 @@
 
 // if the compiler is unable to inline then instantiate out-of-line
 #ifndef EPICS_ATOMIC_INLINE
-#define EPICS_ATOMIC_INLINE
-#include "epicsAtomic.h"
+#   define EPICS_ATOMIC_INLINE
+#   include "epicsAtomicOSD.h"
 #endif
-

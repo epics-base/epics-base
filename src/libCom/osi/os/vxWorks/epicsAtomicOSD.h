@@ -15,8 +15,6 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#if defined ( EPICS_ATOMIC_INLINE )
-
 #include "vxWorks.h" /* obtain the version of vxWorks */
 #include "epicsAssert.h"
 
@@ -248,8 +246,6 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () {}
 #endif /* _WRS_VXWORKS_MAJOR * 100 + _WRS_VXWORKS_MINOR >= 606 */
 
 #include "epicsAtomicDefault.h"
-
-#endif /* if defined ( EPICS_ATOMIC_INLINE ) */
 
 #endif /* epicsAtomicOSD_h */
 

@@ -114,7 +114,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 
 /* 
  * if unavailable as an intrinsic we will try
- * for os specific solution
+ * for os specific inline solution
  */
 #include "epicsAtomicOSD.h"
 

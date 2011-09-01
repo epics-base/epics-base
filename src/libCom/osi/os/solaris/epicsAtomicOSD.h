@@ -51,7 +51,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                                int oldVal, int newVal )
 {
     STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
-    unsigned * const pTarg = reinterpret_cast < unsigned * > ( pTarget );
+    unsigned * const pTarg = ( unsigned * ) pTarget;
     return ( int ) atomic_cas_uint ( pTarg, ( unsigned ) oldVal, 
                                         ( unsigned ) newVal );
 }

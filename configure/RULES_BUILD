@@ -237,10 +237,10 @@ YACCOPT ?= $($*_YACCOPT)
 %.h : %.c %.y
 
 %.c: %.l
-	@$(RM) lex.yy.c
-	$(LEX) $(LEXOPT) $<
+	@$(RM) $*.yy.c
+	$(LEX) $(LEXOPT) -t $< > $*.yy.c
 	@$(RM) $@
-	$(MV) lex.yy.c $@
+	$(MV) $*.yy.c $@
 
 # WIN95/NT source browser
 ifdef BAF

@@ -7,6 +7,8 @@
 # Sites may override these definitions in CONFIG_SITE.win32-x86-borland.win32-x86-borland
 #-------------------------------------------------------
 
+CMPLR_CLASS = borland
+
 # Win32 valid build types and include directory suffixes
 
 VALID_BUILDS = Host Ioc

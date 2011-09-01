@@ -34,9 +34,9 @@ COMMANDLINE_LIBRARY = READLINE
 
 OP_SYS_CFLAGS += -g
 
-# Some Linux distributions provide clang as an alternative to GCC.
-# To use clang if you have it, uncomment these three lines:
-#CC             = clang
-#CCC            = clang++
-#GNU_LDLIBS_YES =
-
+# Uncomment the followings lines to build with CLANG instead of GCC.
+#
+#GNU         = NO
+#CMPLR_CLASS = clang
+#CC          = clang
+#CCC         = clang++

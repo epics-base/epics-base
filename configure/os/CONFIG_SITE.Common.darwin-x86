@@ -14,10 +14,9 @@ ARCH_CLASS = i386
 #ARCH_CLASS = x86_64
 #ARCH_CLASS = i386 x86_64
 
-#
 # Uncomment the followings lines to build with CLANG instead of GCC.
 #
-#CC             = clang
-#CCC            = clang++
-#GNU_LDLIBS_YES =
-
+#GNU         = NO
+#CMPLR_CLASS = clang
+#CC          = clang
+#CCC         = clang++

@@ -408,7 +408,11 @@ $(INSTALL_INCLUDE)/% : %
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_INCLUDE)/os/$(OS_CLASS)/% : %
-	$(ECHO) "Installing os dependent include file $@"
+	$(ECHO) "Installing OS dependent include file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+	
+$(INSTALL_INCLUDE)/compiler/$(CMPLR_CLASS)/% : %
+	$(ECHO) "Installing compiler dependent include file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DOC)/%: %

@@ -8,6 +8,10 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 SRC_DIRS += $(LIBCOM)/osi
+
+INC += compilerDependencies.h
+INC += compilerSpecific.h
+
 INC += osiFileName.h
 INC += osiSock.h
 INC += osdSock.h

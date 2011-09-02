@@ -21,7 +21,7 @@
 /* 
  * atomic.h exists only in Solaris 10 or higher
  */
-#include <atomic.h>
+#include <sys/atomic.h>
 
 #include "epicsAssert.h"
 
@@ -157,26 +157,20 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
 } /* end of extern "C" */
 #endif /* __cplusplus */
 
-#else /* ifdef __SunOS_5_10 */
+#endif /* ifdef __SunOS_5_10 */
+
+struct EpicsAtomicLockKey {};
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/* 
- * its less than 5.10 so we forward reference to the out-of-line posix 
- * pthread lock implementation of epicsAtomicLock and epicsAtomicUnlock
- * before including "epicsAtomicDefault.h"
- */
-struct EpicsAtomicLockKey {};
 epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
 epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
 
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif /* __cplusplus */
-
-#endif /* ifdef __SunOS_5_10 */
 
 #include "epicsAtomicDefault.h"
 

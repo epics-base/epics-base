@@ -17,10 +17,17 @@
 #define epicsAtomicOSD_h
 
 struct EpicsAtomicLockKey {};
-epicsShareFunc void epicsAtomicReadMemoryBarrier ();
-epicsShareFunc void epicsAtomicWriteMemoryBarrier ();
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
 epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif /* __cplusplus */
 
 #include "epicsAtomicDefault.h"
 

@@ -226,8 +226,8 @@ YACCOPT ?= $($*_YACCOPT)
 # are creating it
 #
 %.c: %.y
-	$(RM) $*.tab.c
-	$(RM) $*.tab.h
+	@$(RM) $*.tab.c
+	@$(RM) $*.tab.h
 	$(YACC) -b$* $(YACCOPT) $<
 	$(MV) $*.tab.c $*.c
 	$(if $(findstring -d, $(YACCOPT)),$(MV) $*.tab.h $*.h,)

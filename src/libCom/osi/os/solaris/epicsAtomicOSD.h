@@ -21,7 +21,7 @@
 /* 
  * atomic.h exists only in Solaris 10 or higher
  */
-#include <sys/atomic.h>
+#include <atomic.h>
 
 #include "epicsAssert.h"
 
@@ -63,9 +63,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
                                                   size_t * pTarget,
                                                   size_t oldVal, size_t newVal )
 {
-    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** const ppPtr = (void **) pTarget;
-    return ( size_t ) atomic_cas_ptr ( ppPtr, ( void * )oldVal, ( void * )newVal );
+    STATIC_ASSERT ( sizeof ( ulong_t ) == sizeof ( size_t ) );
+    return atomic_cas_ulong ( pTarget, oldVal, newVal );
 }
 #endif
 
@@ -94,9 +93,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 #define EPICS_ATOMIC_INCR_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
-    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** const ppTarg = ( void ** ) ( pTarget );
-    return ( size_t ) atomic_inc_ptr_nv ( ppTarg );
+    STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
+    return atomic_inc_ulong_nv ( pTarget );
 }
 #endif
 
@@ -114,9 +112,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
 #define EPICS_ATOMIC_DECR_SIZET
 EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
-    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** const pTarg = ( void ** ) ( pTarget );
-    return ( size_t ) atomic_dec_ptr_nv ( pTarg );
+    STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
+    return atomic_dec_ulong_nv ( pTarget );
 }
 #endif
 
@@ -135,9 +132,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, 
                                                  size_t delta )
 {
-    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** const pTarg = ( void ** ) ( pTarget );
-    return ( size_t ) atomic_add_ptr_nv ( pTarg, ( ssize_t ) delta );
+    STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
+    return atomic_add_long_nv ( pTarget, ( long ) delta );
 }
 #endif
 
@@ -146,10 +142,9 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
 EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, 
                                                  size_t delta )
 {
-    STATIC_ASSERT ( sizeof ( void * ) == sizeof ( size_t ) );
-    void ** const pTarg = ( void ** ) ( pTarget );
-    ssize_t sdelta = ( ssize_t ) delta;
-    return ( size_t ) atomic_add_ptr_nv ( pTarg, -sdelta );
+    STATIC_ASSERT ( sizeof ( ulong_t ) == sizeof ( size_t ) );
+    long sdelta = ( long ) delta;
+    return atomic_add_long_nv ( pTarget, -sdelta );
 }
 #endif
 

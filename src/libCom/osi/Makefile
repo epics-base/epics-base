@@ -46,7 +46,6 @@ INC += osdWireFormat.h
 INC += osdWireConfig.h
 INC += epicsAtomic.h
 INC += epicsAtomicDefault.h
-INC += epicsAtomicLocked.h
 INC += epicsAtomicOSD.h
 INC += epicsAtomicCD.h
 INC += epicsEndian.h
@@ -67,7 +66,6 @@ Com_SRCS += epicsEvent.cpp
 Com_SRCS += epicsTime.cpp
 Com_SRCS += epicsMessageQueue.cpp
 Com_SRCS += epicsMath.cpp
-Com_SRCS += epicsAtomicLocked.cpp
 Com_SRCS += epicsAtomicOSD.cpp
 
 Com_SRCS += epicsGeneralTime.c

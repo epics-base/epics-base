@@ -64,7 +64,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
                                                   size_t oldVal, size_t newVal )
 {
     STATIC_ASSERT ( sizeof ( ulong_t ) == sizeof ( size_t ) );
-    return atomic_cas_ulong ( pTarget, oldVal, newVal );
+    ulong_t * const pTarg = ( ulong_t * ) pTarget;
+    return ( size_t ) atomic_cas_ulong ( pTarg, oldVal, newVal );
 }
 #endif
 
@@ -94,7 +95,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
     STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
-    return atomic_inc_ulong_nv ( pTarget );
+    ulong_t * const pTarg = ( ulong_t * ) pTarget;
+    return ( size_t ) atomic_inc_ulong_nv ( pTarg );
 }
 #endif
 
@@ -113,7 +115,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
 EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
     STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
-    return atomic_dec_ulong_nv ( pTarget );
+    ulong_t * const pTarg = ( ulong_t * ) pTarget;
+    return ( size_t ) atomic_dec_ulong_nv ( pTarg );
 }
 #endif
 
@@ -133,7 +136,8 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
                                                  size_t delta )
 {
     STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
-    return atomic_add_long_nv ( pTarget, ( long ) delta );
+    ulong_t * const pTarg = ( ulong_t * ) pTarget;
+    return ( size_t ) atomic_add_long_nv ( pTarg, ( long ) delta );
 }
 #endif
 
@@ -143,8 +147,9 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
                                                  size_t delta )
 {
     STATIC_ASSERT ( sizeof ( ulong_t ) == sizeof ( size_t ) );
+    ulong_t * const pTarg = ( ulong_t * ) pTarget;
     long sdelta = ( long ) delta;
-    return atomic_add_long_nv ( pTarget, -sdelta );
+    return ( size_t ) atomic_add_long_nv ( pTarg, -sdelta );
 }
 #endif
 

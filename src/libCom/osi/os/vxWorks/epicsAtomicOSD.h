@@ -15,6 +15,11 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
+/* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
+#ifndef _VSB_CONFIG_FILE
+#   define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
+#endif
+
 #include "vxWorks.h" /* obtain the version of vxWorks */
 #include "epicsAssert.h"
 

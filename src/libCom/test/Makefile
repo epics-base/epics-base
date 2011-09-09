@@ -109,6 +109,11 @@ epicsMutexTest_SRCS += epicsMutexTest.cpp
 testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
+TESTPROD_HOST += epicsAtomicTest
+epicsAtomicTest_SRCS += epicsAtomicTest.cpp
+testHarness_SRCS += epicsAtomicTest.cpp
+TESTS += epicsAtomicTest
+
 TESTPROD_HOST += epicsExceptionTest
 epicsExceptionTest_SRCS += epicsExceptionTest.cpp
 testHarness_SRCS += epicsExceptionTest.cpp
@@ -178,6 +183,10 @@ testHarness_SRCS += buckTest.c
 fdmgrTest_SRCS += fdmgrTest.c
 fdmgrTest_LIBS += ca
 # FIXME: program never exits.
+
+TESTPROD_HOST += epicsAtomicPerform
+epicsAtomicPerform_SRCS += epicsAtomicPerform.cpp
+testHarness_SRCS += epicsAtomicPerform.cpp
 
 TESTPROD_HOST += cvtFastPerform
 cvtFastPerform_SRCS += cvtFastPerform.cpp

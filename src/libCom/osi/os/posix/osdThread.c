@@ -514,7 +514,7 @@ static epicsThreadOSD *createImplicit(void)
     int status;
 
     tid = pthread_self();
-    sprintf(name, "non-EPICS_%d", (int)tid);
+    sprintf(name, "non-EPICS_%ld", (long)tid);
     pthreadInfo = create_threadInfo(name);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;

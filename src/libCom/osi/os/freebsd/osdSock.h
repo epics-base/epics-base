@@ -10,10 +10,6 @@
 #ifndef osdSockH
 #define osdSockH
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 
 #include <sys/types.h>
@@ -28,10 +24,6 @@ extern "C" {
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #ifndef IPPORT_USERRESERVED
 #define IPPORT_USERRESERVED 5000

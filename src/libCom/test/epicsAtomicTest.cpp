@@ -132,10 +132,10 @@ void testIncrDecr ()
     TestDataIncrDecr < T > testData = { 0, N };
     set ( testData.m_testValue, NT  );
     testOk ( get ( testData.m_testValue ) == NT,
-	    "set/get %u", testData.m_testValue );
+	    "get returns initial incr/decr test data value that was set" );
     set ( testData.m_testIterations, 0u );
     testOk ( get ( testData.m_testIterations ) == 0u,
-	    "set/get %u", testData.m_testIterations );
+	    "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
         epicsThreadCreate ( "incr",
 		    50, stackSize, incr < T >, & testData );
@@ -146,11 +146,9 @@ void testIncrDecr ()
         epicsThreadSleep ( 0.01 );
     }
     testOk ( get ( testData.m_testIterations ) == 2 * N,
-	    "incr/decr iterations %u", 
-	    testData.m_testIterations );
+	    "proper number of incr/decr test thread iterations" );
     testOk ( get ( testData.m_testValue ) == NT, 
-	    "incr/decr final value %u", 
-	    testData.m_testValue );
+	    "proper final incr/decr test value" );
 }
 
 template < class T >
@@ -166,10 +164,10 @@ void testAddSub ()
     TestDataIncrDecr < T > testData = { 0, N };
     set ( testData.m_testValue, NDT  );
     testOk ( get ( testData.m_testValue ) == NDT,
-	    "set/get %u", testData.m_testValue );
+	    "get returns initial add/sub test data value that was set" );
     set ( testData.m_testIterations, 0u );
     testOk ( get ( testData.m_testIterations ) == 0u,
-	    "set/get %u", testData.m_testIterations );
+	    "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
         epicsThreadCreate ( "add",
 		    50, stackSize, add < T >, & testData );
@@ -180,11 +178,9 @@ void testAddSub ()
         epicsThreadSleep ( 0.01 );
     }
     testOk ( get ( testData.m_testIterations ) == 2 * N,
-	    "add/sub iterations %u", 
-	    testData.m_testIterations );
+	    "proper number of add/sub test thread iterations" );
     testOk ( get ( testData.m_testValue ) == NDT, 
-	    "add/sub final value %u", 
-	    testData.m_testValue );
+	    "proper final add/sub test value" );
 }
 
 template < class T >
@@ -198,10 +194,12 @@ void testCAS ()
 	TestDataCAS < T > testData = { 0, N, N };
 	set ( testData.m_testIterationsSet, 0 );
 	testOk ( get ( testData.m_testIterationsSet ) == 0u,
-				"set/get %u", testData.m_testIterationsSet );
+				"get returns initial CAS test thread "
+                "iterations set value" );
 	set ( testData.m_testIterationsNotSet, 0 );
 	testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
-				"set/get %u", testData.m_testIterationsNotSet );
+				"get returns initial CAS test thread "
+                "iterations not set value" );
 	set ( testData.m_testValue, trueValue < T > () );
 	testOk ( get ( testData.m_testValue ) == trueValue < T > (),
 				"set/get a true value" );
@@ -214,11 +212,9 @@ void testCAS ()
 		epicsThreadSleep ( 0.01 );
 	}
 	testOk ( get ( testData.m_testIterationsSet ) == N,
-				"test and set iterations %u", 
-				testData.m_testIterationsSet );
+				"proper number of CAS test thread set iterations" );
 	testOk ( get ( testData.m_testIterationsNotSet ) == 0u,
-				"test and set not-set tracking = %u", 
-				testData.m_testIterationsNotSet );
+				"proper number of CAS test thread not set iterations" );
 }
 
 MAIN ( epicsAtomicTest )
@@ -236,3 +232,4 @@ MAIN ( epicsAtomicTest )
 
     return testDone ();
 }
+

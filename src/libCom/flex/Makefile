@@ -33,3 +33,4 @@ e_flex_OBJS += epicsTempFile$(OBJ)
 
 PROD_HOST += e_flex
 
+CLEANS += parse.c parse.h

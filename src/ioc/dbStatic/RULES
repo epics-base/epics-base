@@ -11,6 +11,3 @@
 
 # dbLexRoutines.c is included in dbYacc.c
 dbYacc.c: dbLex.c $(IOCDIR)/dbStatic/dbLexRoutines.c
-
-clean::
-	@$(RM) dbLex.c dbYacc.c 

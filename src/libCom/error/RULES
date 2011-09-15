@@ -9,6 +9,3 @@
 
 errSymTbl.c: $(ERR_S_FILES) $(LIBCOM)/error/makeStatTbl.pl
 	$(PERL) $(LIBCOM)/error/makeStatTbl.pl  $(ERR_S_FILES)
-
-clean::
-	@$(RM) errSymTbl.c

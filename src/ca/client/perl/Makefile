@@ -46,6 +46,8 @@ ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
   HTMLS = CA.html
 endif
 
+CLEANS += Cap5.c pod2htmd.tmp pod2htmi.tmp
+
 include $(TOP)/configure/RULES
 
 ifdef T_A
@@ -59,6 +61,4 @@ ifdef T_A
 	$(RM) $@
 	podchecker $< && pod2html --infile=$< --outfile=$@
 
-  clean::
-	$(RM) Cap5.c
 endif

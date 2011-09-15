@@ -68,6 +68,9 @@ endef
 $(foreach type, $(FILE_TYPE),$(eval $(call FILE_TYPE_template,$(strip $(type)))))
 #---------------------------------------------
 
-clean::
+clean: file_type_clean
+
+file_type_clean:
 	@$(RM) $(foreach type, $(FILE_TYPE), $($(type)))
 
+.PHONY : file_type_clean

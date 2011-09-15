@@ -12,6 +12,3 @@
 # dbLoadTemplate_lex.c is included by dbLoadTemplate.c
 dbLoadTemplate.c: dbLoadTemplate_lex.c $(IOCDIR)/dbtemplate/dbLoadTemplate.h
 
-clean::
-	@$(RM) dbLoadTemplate_lex.c dbLoadTemplate.c 
-

@@ -17,7 +17,11 @@ $(EXPANDED): %: ../%@
 	@$(RM) $@
 	@$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@
 
-clean::
+clean: expand_clean
+
+expand_clean:
 	@$(RM) $(EXPANDED)
+
+.PHONY : expand_clean
 
 endif

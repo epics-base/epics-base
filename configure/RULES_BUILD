@@ -137,13 +137,15 @@ buildInstall : \
 	$(INSTALL_TEMPLATE) \
 	$(INSTALL_BIN_INSTALLS)
 
-clean::
+clean: build_clean
+
+build_clean:
 	$(ECHO) "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) \
 	$(LIBNAME) $(TESTLIBNAME) $(SHRLIBNAME) $(TESTSHRLIBNAME) \
 	$(DLL_LINK_LIBNAME) $(TESTDLL_LINK_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
-	$(INC) $(TARGETS) $(TDS)\
+	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
 ifdef RES
@@ -444,7 +446,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
-.PHONY: all inc build install clean rebuild buildInstall
+.PHONY: all inc build install clean rebuild buildInstall build_clean
 .PHONY: runtests checkRelease warnRelease
 
 endif # BASE_RULES_BUILD

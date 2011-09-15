@@ -31,9 +31,13 @@ $(1) : $$($(1)_SRCS)
 endef
 $(foreach file, $(OCTAVES),$(eval $(call OCTAVES_template,$(strip $(file)))))
 
+clean: octave_clean
+
 #This clean works from O.* dirs.
-clean:: 
+octave_clean: 
 	@$(RM) *.mex *.m
+
+.PHONY: octave_clean
 
 .PRECIOUS: *.m *.mex
 

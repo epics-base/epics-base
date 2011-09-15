@@ -54,3 +54,4 @@ dbExpand_SRCS += $(dbStaticHost_SRCS)
 dbToMenuH_SRCS += $(dbStaticHost_SRCS)
 dbToRecordtypeH_SRCS += $(dbStaticHost_SRCS)
 
+CLEANS += dbLex.c dbYacc.c

@@ -14,3 +14,4 @@ INC += envDefs.h
 Com_SRCS += envSubr.c
 Com_SRCS += envData.c
 
+CLEANS += envData.c

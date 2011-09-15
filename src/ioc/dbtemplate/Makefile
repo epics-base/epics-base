@@ -19,3 +19,4 @@ dbCore_SRCS += dbtoolsIocRegister.c
 
 HTMLS += dbtemplate/dbLoadTemplate.html
 
+CLEANS += dbLoadTemplate_lex.c dbLoadTemplate.c

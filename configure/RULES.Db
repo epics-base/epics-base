@@ -174,12 +174,16 @@ build : $(COMMON_DBDS) $(COMMON_DBS) \
 	$(DBDDEPENDS_FILES) $(TARGETS) \
 	$(INSTALL_DB_INSTALLS) $(INSTALL_DBD_INSTALLS)
 
-clean:: 
+clean: db_clean
+
+db_clean : 
 	@$(RM) $(COMMONS) $(DBDDEPENDS_FILES)
 	@$(RM) *_registerRecordDeviceDriver.cpp
 	@$(RM) $(TARGETS)
 
-realclean:: clean
+.PHONY : db_clean
+
+realclean: clean
 
 ##################################################### CapFast filter
 

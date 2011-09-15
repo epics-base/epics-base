@@ -48,7 +48,7 @@ DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. $(INSTALL_DBFLAGS) $(RELEASE_DBF
 # Following line added for backward compatibilty
 DBD += $(DBDNAME)
 
-DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.db,%,$(DBDINC)))
+DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.dbd,%,$(DBDINC)))
 DBD += $(addsuffix .dbd,$(DBDINC_NAME))
 INC += $(addsuffix .h,$(DBDINC_NAME))
 

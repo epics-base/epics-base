@@ -87,8 +87,6 @@ cas_LIBS = ca gdd Com
 cas_SYS_LIBS_WIN32 = ws2_32
 cas_RCS = cas.rc
 
+CLEANS += Templates.DB
+
 include $(TOP)/configure/RULES
-
-clean::
-	@$(RM) Templates.DB
-

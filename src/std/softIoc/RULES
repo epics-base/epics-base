@@ -15,6 +15,3 @@ epicsInstallDir.h:
 	$(ECHO) "FINAL_LOCATION=$(FINAL_LOCATION)"
 	$(PERL) $(STDDIR)/softIoc/makeInstallDir.pl '$(FINAL_LOCATION)' > $@
 
-clean::
-	@$(RM) epicsInstallDir.h
-

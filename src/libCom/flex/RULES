@@ -11,6 +11,3 @@
 
 # Ensure that the lexer is built before it is needed
 parse.c: $(YACC)
-
-clean::
-	$(RM) parse.c parse.h

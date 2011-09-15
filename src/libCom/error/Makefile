@@ -32,3 +32,4 @@ ERR_S_FILES += $(LIBCOM)/error/errMdef.h
 ERR_S_FILES += $(SRC)/ca/legacy/pcas/generic/casdef.h
 ERR_S_FILES += $(SRC)/ca/legacy/gdd/gddAppFuncTable.h
 
+CLEANS += errSymTbl.c

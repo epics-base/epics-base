@@ -102,8 +102,10 @@ build:  $(COMMON_TESTCLASSES)
 
 buildInstall : $(INSTALL_JAR) $(INSTALL_JAVADOC)
 
+clean: java_clean
+
 #This clean works only from O.* dirs.
-clean:: 
+java_clean: 
 	@$(RMDIR) $(INSTALL_CLASSES) $(PACKAGEDIRS)
 	@$(RM) $(INSTALL_JAR) $(INSTALL_JAVADOC)
 	@$(RM) $(COMMON_TESTCLASSES) $(COMMON_JAVAINC)
@@ -150,7 +152,7 @@ $(addprefix $(INSTALL_JAVA)/, $(JARINPUT)): $(INSTALL_JAVA)/%: ../%
 	$(ECHO) "Installing jar input file $@"
 	@$(INSTALL) -d -m  $(INSTALL_PERMISSIONS) $< $(@D)
 
-.PHONY: all install buildInstall rebuild clean build inc
+.PHONY: all install buildInstall rebuild clean build inc java_clean
 
 .PRECIOUS: $(COMMON_JAVAINC)
 

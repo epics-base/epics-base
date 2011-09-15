@@ -28,3 +28,5 @@ DB += softIocExit.db
 
 FINAL_LOCATION ?= $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
 
+CLEANS += epicsInstallDir.h
+

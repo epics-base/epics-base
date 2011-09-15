@@ -62,6 +62,8 @@ genApps_SYS_LIBS_WIN32 = ws2_32
 # aitGen.c doesn't compile for linux-arm at -O3 when using gcc-3.4.5
 aitGen_CFLAGS_linux-arm = -O2
 
+CLEANS += $(COMMON_DIR)/aitConvertGenerated.cc
+
 include $(TOP)/configure/RULES
 
 # cannot generate these dependencies automatically
@@ -83,5 +85,3 @@ $(COMMON_DIR)/aitConvertGenerated.cc: $(TOOLS)/aitGen$(HOSTEXE)
 $(COMMON_DIR)/gddApps.h : $(TOOLS)/genApps$(HOSTEXE)
 	$(TOOLS)/genApps$(HOSTEXE) $@
 
-clean::
-	@$(RM) $(COMMON_DIR)/aitConvertGenerated.cc

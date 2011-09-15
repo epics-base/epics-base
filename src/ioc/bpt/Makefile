@@ -13,8 +13,7 @@ SRC_DIRS += $(IOCDIR)/bpt
 
 INC += cvtTable.h
 
-DBD += menuConvert.dbd
-INC += menuConvert.h
+DBDINC += menuConvert
 
 BPT_DBD += bptTypeJdegC.dbd
 BPT_DBD += bptTypeJdegF.dbd

@@ -17,6 +17,3 @@ asLib$(OBJ): asLib_lex.c
 # Ensure that lexer and parser are built before they are needed
 asLib.c: $(call PATH_FILTER, $(TOOLS)/antelope$(HOSTEXE))
 asLib_lex.c: $(call PATH_FILTER, $(TOOLS)/e_flex$(HOSTEXE))
-
-clean::
-	@$(RM) asLib.c asLib_lex.c

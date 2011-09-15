@@ -336,7 +336,7 @@ HDEPENDS_CFLAGS = $(HDEPENDS_CFLAGS_$(HDEPENDS))
 #--------------------------------------------------
 # depends definition
 
-TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY), $($(name)_SRCS))
+TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(LIBRARY) $(LOADABLE_LIBRARY), $($(name)_SRCS))
 SRC_FILES = $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
 HDEPENDS_FILES_YES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 HDEPENDS_FILES = $(if $(filter NO,$(HDEPENDS)),,$(HDEPENDS_FILES_YES))

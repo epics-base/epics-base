@@ -210,7 +210,7 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                     return 1;
                 }
                 result = ca_array_get(pvs[n].dbrType,
-                                      pvs[n].nElems,
+                                      pvs[n].reqElems,
                                       pvs[n].chid,
                                       pvs[n].value);
             }

@@ -300,6 +300,7 @@ private:
     // These are needed for the vxWorks 5.5 compiler:
     friend class udpiiu::SearchDestUDP;
     friend class udpiiu::SearchRespCallback;
+    friend class udpiiu::M_repeaterTimerNotify;
 };
 
 #endif // udpiiuh

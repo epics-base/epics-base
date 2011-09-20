@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
@@ -14,10 +13,6 @@
 
 #ifndef osdSockH
 #define osdSockH
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <errno.h>
 
@@ -35,10 +30,7 @@ extern "C" {
 #include <netdb.h>
 #include <unistd.h> /* close() and others */
 
-#ifdef __cplusplus
-}
-#endif
- 
+
 typedef int SOCKET;
 #define INVALID_SOCKET (-1)
 #define SOCKERRNO errno

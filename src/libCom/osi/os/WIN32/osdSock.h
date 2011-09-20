@@ -3,15 +3,12 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef osdSockH
+#define osdSockH
 
 #include <time.h>
 #include <errno.h>
@@ -25,9 +22,6 @@ extern "C" {
 #endif
 #include <winsock2.h>
 
-#ifdef __cplusplus
-}
-#endif
 
 #define SOCKERRNO WSAGetLastError()
 
@@ -79,3 +73,4 @@ typedef int osiSocklen_t;
 
 epicsShareFunc unsigned epicsShareAPI wsaMajorVersion ();
 
+#endif /*osdSockH*/

@@ -13,10 +13,6 @@
 #ifndef osdSockH
 #define osdSockH
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 
 #include <sys/types.h>
@@ -24,8 +20,6 @@ extern "C" {
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-/*#include <sys/filio.h>
-#include <sys/sockio.h>*/
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -34,10 +28,6 @@ extern "C" {
 #include <unistd.h> /* close() and others */
 
 
-#ifdef __cplusplus
-}
-#endif
- 
 typedef int                     SOCKET;
 #define INVALID_SOCKET          (-1)
 #define SOCKERRNO               errno

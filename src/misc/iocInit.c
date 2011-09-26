@@ -44,6 +44,7 @@
 #include "dbLock.h"
 #include "devSup.h"
 #include "drvSup.h"
+#include "menuConvert.h"
 #include "menuPini.h"
 #include "registryRecordType.h"
 #include "registryDeviceSupport.h"
@@ -68,6 +69,7 @@ static enum {
 } iocState = iocVirgin;
 
 /* define forward references*/
+static int checkDatabase(dbBase *pdbbase);
 static void initDrvSup(void);
 static void initRecSup(void);
 static void initDevSup(void);
@@ -98,8 +100,8 @@ int iocBuild(void)
     }
 
     errlogPrintf("Starting iocInit\n");
-    if (!pdbbase) {
-        errlogPrintf("iocBuild: Aborting, no database loaded!\n");
+    if (checkDatabase(pdbbase)) {
+        errlogPrintf("iocBuild: Aborting, bad database definition (DBD)!\n");
         return -1;
     }
     epicsSignalInstallSigHupIgnore();
@@ -200,6 +202,83 @@ int iocPause(void)
     iocState = iocPaused;
     errlogPrintf("iocPause: IOC suspended\n");
     initHookAnnounce(initHookAfterIocPaused);
+    return 0;
+}
+
+/*
+ * Database sanity checks
+ *
+ * This is not an attempt to sanity-check the whole .dbd file, only
+ * two menus normally get modified by users: menuConvert and menuScan.
+ *
+ * The menuConvert checks were added to flag problems with IOCs
+ * converted from 3.13.x, where the SLOPE choice didn't exist.
+ *
+ * The menuScan checks make sure the user didn't fiddle too much
+ * when creating new periodic scan choices.
+ */
+
+static int checkDatabase(dbBase *pdbbase)
+{
+    const dbMenu *pMenu;
+
+    if (!pdbbase) {
+        errlogPrintf("checkDatabase: No database definitions loaded.\n");
+        return -1;
+    }
+
+    pMenu = dbFindMenu(pdbbase, "menuConvert");
+    if (!pMenu) {
+        errlogPrintf("checkDatabase: menuConvert not defined.\n");
+        return -1;
+    }
+    if (pMenu->nChoice <= menuConvertLINEAR) {
+        errlogPrintf("checkDatabase: menuConvert has too few choices.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuConvertNO_CONVERSION],
+               "menuConvertNO_CONVERSION")) {
+        errlogPrintf("checkDatabase: menuConvertNO_CONVERSION doesn't match.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuConvertSLOPE], "menuConvertSLOPE")) {
+        errlogPrintf("checkDatabase: menuConvertSLOPE doesn't match.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuConvertLINEAR], "menuConvertLINEAR")) {
+        errlogPrintf("checkDatabase: menuConvertLINEAR doesn't match.\n");
+        return -1;
+    }
+
+    pMenu = dbFindMenu(pdbbase, "menuScan");
+    if (!pMenu) {
+        errlogPrintf("checkDatabase: menuScan not defined.\n");
+        return -1;
+    }
+    if (pMenu->nChoice <= menuScanI_O_Intr) {
+        errlogPrintf("checkDatabase: menuScan has too few choices.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuScanPassive],
+               "menuScanPassive")) {
+        errlogPrintf("checkDatabase: menuScanPassive doesn't match.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuScanEvent],
+               "menuScanEvent")) {
+        errlogPrintf("checkDatabase: menuScanEvent doesn't match.\n");
+        return -1;
+    }
+    if (strcmp(pMenu->papChoiceName[menuScanI_O_Intr],
+               "menuScanI_O_Intr")) {
+        errlogPrintf("checkDatabase: menuScanI_O_Intr doesn't match.\n");
+        return -1;
+    }
+    if (pMenu->nChoice <= SCAN_1ST_PERIODIC) {
+        errlogPrintf("checkDatabase: menuScan has no periodic choices.\n");
+        return -1;
+    }
+
     return 0;
 }
 

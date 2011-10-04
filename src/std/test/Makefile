@@ -11,7 +11,4 @@
 
 SRC_DIRS += $(STDDIR)/test
 
-DBD += devTestAsyn.dbd
-
-dbRecStd_SRCS += devHistogramTestAsyn.c
-dbRecStd_SRCS += devTestAsyn.c
+# Currently empty...

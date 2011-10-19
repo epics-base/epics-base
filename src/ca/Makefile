@@ -92,7 +92,7 @@ PROD_LIBS = ca Com
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
 PROD_HOST += caRepeater catime acctst caConnTest casw caEventRate
-OBJS_IOC_vxWorks += catime acctst caConnTest casw caEventRate
+OBJS_IOC += catime acctst caConnTest casw caEventRate acctstRegister
 caRepeater_SRCS = caRepeater.cpp
 catime_SRCS = catimeMain.c catime.c 
 acctst_SRCS = acctstMain.c acctst.c 

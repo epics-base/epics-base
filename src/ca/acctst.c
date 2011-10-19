@@ -10,6 +10,10 @@
 
 /*
  * CA regression test
+ * Authors:
+ * Jeff Hill
+ * Murali Shankar - initial versions of verifyMultithreadSubscr
+ * 
  */
 
 /*
@@ -26,6 +30,8 @@
  */
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 #include "epicsAssert.h"
+#include "epicsMutex.h"
+#include "epicsEvent.h"
 #include "epicsTime.h"
 #include "dbDefs.h"
 #include "envDefs.h"
@@ -2719,6 +2725,186 @@ void fdRegCB ( void * parg, int fd, int opened )
     }
 }
 
+typedef struct {
+    char m_chanName[100u];
+    struct ca_client_context * m_pCtx;
+    chid m_chan;
+    epicsMutexId m_mutex;
+    epicsEventId m_testCompleteEvent;
+    epicsEventId m_threadExitEvent;
+    size_t m_nUpdatesReceived;
+    size_t m_nUpdatesRequired;
+    int m_testInitiated;
+    int m_testComplete;
+    unsigned m_interestLevel;
+} MultiThreadSubscrTest;
+
+static void testMultithreadSubscrSubscrCallback 
+                        ( struct event_handler_args eha )
+{
+    const epicsEventId firstUpdateEvent = ( epicsEventId ) eha.usr;
+    epicsEventSignal ( firstUpdateEvent );
+}
+
+static void testMultithreadSubscrCreateSubscr ( void * pParm ) 
+{
+    static unsigned nElem = 0;
+    int testComplete = FALSE;
+    evid id;
+    epicsEventId firstUpdateEvent;
+    epicsEventWaitStatus eventWaitStatus;   
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+                                ( MultiThreadSubscrTest * ) pParm;
+
+    /* this is required for the ca_flush below to work correctly */
+    int status = ca_attach_context ( pMultiThreadSubscrTest->m_pCtx );
+    verify ( status == ECA_NORMAL );
+    firstUpdateEvent = epicsEventMustCreate ( epicsEventEmpty );
+    verify ( firstUpdateEvent );
+    status = ca_create_subscription ( 
+                            DBR_TIME_LONG, 
+                            nElem, 
+                            pMultiThreadSubscrTest->m_chan, 
+                            DBE_VALUE, 
+                            testMultithreadSubscrSubscrCallback, 
+                            firstUpdateEvent, 
+                            & id );
+    verify ( status == ECA_NORMAL );
+    status = ca_flush_io ();
+    verify ( status == ECA_NORMAL );
+    /* wait for first update */
+    eventWaitStatus = epicsEventWaitWithTimeout ( 
+                            firstUpdateEvent, 60.0 * 10 );
+    verify ( eventWaitStatus ==  epicsEventWaitOK );
+    epicsEventDestroy ( firstUpdateEvent );
+    status = ca_clear_subscription ( id );
+    verify ( status == ECA_NORMAL );
+    epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
+    pMultiThreadSubscrTest->m_nUpdatesReceived++;
+    testComplete = ( pMultiThreadSubscrTest->m_nUpdatesReceived == 
+                    pMultiThreadSubscrTest->m_nUpdatesRequired );
+    pMultiThreadSubscrTest->m_testComplete = testComplete;
+    epicsMutexUnlock ( pMultiThreadSubscrTest->m_mutex );
+    if ( testComplete ) {
+        epicsEventSignal ( pMultiThreadSubscrTest->m_testCompleteEvent );
+    }
+}
+
+void testMultithreadSubscrConnHandler ( struct connection_handler_args args )
+{
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+                        ( MultiThreadSubscrTest * ) ca_puser ( args.chid );
+    epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
+    if ( !pMultiThreadSubscrTest->m_testInitiated && 
+            args.op == CA_OP_CONN_UP ) {
+        int i;
+        pMultiThreadSubscrTest->m_testInitiated = TRUE;
+        for ( i = 0; i < pMultiThreadSubscrTest->m_nUpdatesRequired; i++ ) {
+            char threadname[64];
+            epicsThreadId threadId;
+            sprintf(threadname, "testSubscr%06u", i);
+            threadId = epicsThreadCreate ( threadname, 
+                        epicsThreadPriorityMedium, 
+                        epicsThreadGetStackSize(epicsThreadStackSmall), 
+                        testMultithreadSubscrCreateSubscr, 
+                        pMultiThreadSubscrTest );
+            verify ( threadId );
+        }
+    }
+    epicsMutexUnlock ( pMultiThreadSubscrTest->m_mutex );
+}
+
+void testMultithreadSubscr ( void * pParm )
+{
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+                                ( MultiThreadSubscrTest * ) pParm;
+    int status;
+    unsigned i;
+
+    status = ca_context_create ( ca_enable_preemptive_callback );
+    verify ( status == ECA_NORMAL );
+    pMultiThreadSubscrTest->m_pCtx = ca_current_context ();
+    verify ( pMultiThreadSubscrTest->m_pCtx );
+    status = ca_create_channel (
+                pMultiThreadSubscrTest->m_chanName,
+                testMultithreadSubscrConnHandler,
+                pMultiThreadSubscrTest,
+                CA_PRIORITY_MIN, 
+                & pMultiThreadSubscrTest->m_chan );
+    verify ( status == ECA_NORMAL );
+
+    showProgressBegin ( "verifyMultithreadSubscr", 
+            pMultiThreadSubscrTest->m_interestLevel );
+    i = 0;
+    while ( TRUE ) {
+        int success = FALSE;
+        epicsEventWaitStatus eventWaitStatus;
+        epicsMutexMustLock ( pMultiThreadSubscrTest->m_mutex );
+        success = pMultiThreadSubscrTest->m_testComplete;
+        epicsMutexUnlock ( pMultiThreadSubscrTest->m_mutex );
+        if ( success ) {
+            break;
+        }
+        eventWaitStatus = epicsEventWaitWithTimeout ( 
+                            pMultiThreadSubscrTest->m_testCompleteEvent, 0.1 );
+        verify ( eventWaitStatus ==  epicsEventWaitOK || 
+                eventWaitStatus ==  epicsEventWaitTimeout );
+        if ( i++ % 100 == 0u ) 
+            showProgress ( pMultiThreadSubscrTest->m_interestLevel );
+        verify ( i < 1000 );
+    }
+    showProgressEnd ( pMultiThreadSubscrTest->m_interestLevel );
+
+    status = ca_clear_channel ( pMultiThreadSubscrTest->m_chan );
+    verify ( status == ECA_NORMAL );
+    ca_context_destroy ();
+    epicsEventSignal ( pMultiThreadSubscrTest->m_threadExitEvent );
+}
+
+/*
+ * test installation of subscriptions similar to usage paterns
+ * employed by modern versions of the sequencer
+ */
+void verifyMultithreadSubscr ( const char * pName, unsigned interestLevel )
+{
+    static unsigned nSubscr = 3000;
+    epicsThreadId threadId;
+    MultiThreadSubscrTest * const pMultiThreadSubscrTest = 
+                                (MultiThreadSubscrTest*) calloc ( 1, 
+                                    sizeof ( MultiThreadSubscrTest ) );
+    verify ( pMultiThreadSubscrTest);
+    pMultiThreadSubscrTest->m_mutex = epicsMutexMustCreate ();
+    verify ( pMultiThreadSubscrTest->m_mutex );
+    pMultiThreadSubscrTest->m_testCompleteEvent = 
+                epicsEventMustCreate ( epicsEventEmpty );
+    verify ( pMultiThreadSubscrTest->m_testCompleteEvent );
+    pMultiThreadSubscrTest->m_threadExitEvent = 
+                epicsEventMustCreate ( epicsEventEmpty );
+    verify ( pMultiThreadSubscrTest->m_threadExitEvent );
+    strncpy ( pMultiThreadSubscrTest->m_chanName, pName, 
+            sizeof ( pMultiThreadSubscrTest->m_chanName ) );
+    pMultiThreadSubscrTest->m_chanName
+        [ sizeof ( pMultiThreadSubscrTest->m_chanName ) - 1u ] = '\0';
+    pMultiThreadSubscrTest->m_nUpdatesRequired = nSubscr;
+    pMultiThreadSubscrTest->m_interestLevel = interestLevel;
+    threadId = epicsThreadCreate ( 
+                "testMultithreadSubscr", 
+                epicsThreadPriorityMedium, 
+                epicsThreadGetStackSize(epicsThreadStackSmall), 
+                testMultithreadSubscr, pMultiThreadSubscrTest );
+    verify ( threadId );
+    {
+        epicsEventWaitStatus eventWaitStatus;
+        eventWaitStatus = epicsEventWaitWithTimeout ( 
+                pMultiThreadSubscrTest->m_threadExitEvent, 1000.0 );
+        verify  ( eventWaitStatus == epicsEventWaitOK );
+    }
+    epicsEventDestroy ( pMultiThreadSubscrTest->m_testCompleteEvent );
+    epicsEventDestroy ( pMultiThreadSubscrTest->m_threadExitEvent );
+    epicsMutexDestroy ( pMultiThreadSubscrTest->m_mutex );
+    free ( pMultiThreadSubscrTest );
+}
+
 void fdManagerVerify ( const char * pName, unsigned interestLevel )
 {
     int status;
@@ -2965,17 +3151,22 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
             SEVCHK ( status, "context create failed" );
             
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
-            SEVCHK ( status, NULL );
-            
-            status = ca_pend_io( timeoutToPendIO );
-            SEVCHK ( status, "channel connect failed" );
-            
-            status = ca_put ( DBR_DOUBLE, chan, & stim );
-            SEVCHK ( status, "channel put failed" );
-    
-            status = ca_clear_channel ( chan );
-            SEVCHK ( status, NULL );
-    
+            /*
+             * currently in-memory channels cant be used with this test
+             * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
+             */
+            if ( status != ECA_UNAVAILINSERV ) {
+                SEVCHK ( status, NULL );
+                
+                status = ca_pend_io( timeoutToPendIO );
+                SEVCHK ( status, "channel connect failed" );
+                
+                status = ca_put ( DBR_DOUBLE, chan, & stim );
+                SEVCHK ( status, "channel put failed" );
+        
+                status = ca_clear_channel ( chan );
+                SEVCHK ( status, NULL );
+            }
             ca_context_destroy ();
         }
         
@@ -2985,24 +3176,28 @@ void verifyContextRundownFlush ( const char * pName, unsigned interestLevel )
             dbr_double_t resp;
             status = ca_context_create ( ca_disable_preemptive_callback );
             SEVCHK ( status, "context create failed" );
-            
+           
             status = ca_create_channel  ( pName, 0, 0, 0, & chan );
             SEVCHK ( status, NULL );
-            
-            status = ca_pend_io( timeoutToPendIO );
-            SEVCHK ( status, "channel connect failed" );
-    
-            status = ca_get ( DBR_DOUBLE, chan, & resp );
-            SEVCHK ( status, "channel get failed" );
-    
-            status = ca_pend_io ( timeoutToPendIO );
-            SEVCHK ( status, "get, pend io failed" );
-            
-            verify ( stim == resp );
-    
-            status = ca_clear_channel ( chan );
-            SEVCHK ( status, NULL );
-    
+            /*
+             * currently in-memory channels cant be used with this test
+             * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
+             */
+            if ( status != ECA_UNAVAILINSERV ) {
+                status = ca_pend_io( timeoutToPendIO );
+                SEVCHK ( status, "channel connect failed" );
+        
+                status = ca_get ( DBR_DOUBLE, chan, & resp );
+                SEVCHK ( status, "channel get failed" );
+        
+                status = ca_pend_io ( timeoutToPendIO );
+                SEVCHK ( status, "get, pend io failed" );
+                
+                verify ( stim == resp );
+        
+                status = ca_clear_channel ( chan );
+                SEVCHK ( status, NULL );
+            }
             ca_context_destroy ();
         }
 
@@ -3028,6 +3223,13 @@ void verifyContextRundownChanStillExist (
     
     for ( i = 0; i < NELEMENTS ( chan ); i++ ) {
         status = ca_create_channel  ( pName, 0, 0, 0, & chan[i] );
+        /*
+         * currently in-memory channels cant be used with this test
+         * !!!! FIX ME, FIX ME, FIX ME, FIX ME !!!!
+         */
+        if ( status == ECA_UNAVAILINSERV ) {
+            break;
+        }
         SEVCHK ( status, NULL );
     }
     
@@ -3123,6 +3325,7 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
     verifyHighThroughputReadCallback ( chan, interestLevel );
     verifyHighThroughputWriteCallback ( chan, interestLevel );
     verifyBadString ( chan, interestLevel );
+    verifyMultithreadSubscr ( pName, interestLevel );
     if ( select != ca_enable_preemptive_callback ) {
         fdManagerVerify ( pName, interestLevel ); 
     }

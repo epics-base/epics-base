@@ -185,7 +185,8 @@ epicsShareFunc enum channel_state epicsShareAPI ca_state (chid chan);
 epicsShareFunc int epicsShareAPI ca_task_initialize (void);
 enum ca_preemptive_callback_select 
 { ca_disable_preemptive_callback, ca_enable_preemptive_callback };
-epicsShareFunc int epicsShareAPI ca_context_create (enum ca_preemptive_callback_select select);
+epicsShareFunc int epicsShareAPI 
+        ca_context_create (enum ca_preemptive_callback_select select);
 epicsShareFunc void epicsShareAPI ca_detach_context (); 
 
 /************************************************************************/

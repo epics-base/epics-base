@@ -1,12 +1,10 @@
-
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -18,8 +16,6 @@
 #include <iocsh.h>
 #include "caDiagnostics.h"
 
-namespace {
-
 /* Information needed by iocsh */
 static const iocshArg     acctstArg0 = { "channel name", iocshArgString };
 static const iocshArg     acctstArg1 = { "interest level", iocshArgInt };
@@ -27,12 +23,12 @@ static const iocshArg     acctstArg2 = { "channel count", iocshArgInt };
 static const iocshArg     acctstArg3 = { "repetition count", iocshArgInt };
 static const iocshArg     acctstArg4 = { "preemptive callback select", iocshArgInt };
 
-static const iocshArg    *acctstArgs[] = 
-{ 
-    &acctstArg0,  
-    &acctstArg1,  
-    &acctstArg2,  
-    &acctstArg3,  
+static const iocshArg    *acctstArgs[] =
+{
+    &acctstArg0,
+    &acctstArg1,
+    &acctstArg2,
+    &acctstArg3,
     &acctstArg4
 };
 static const iocshFuncDef acctstFuncDef = {"acctst", 5, acctstArgs};
@@ -70,7 +66,4 @@ AutoInit :: AutoInit ()
 }
 
 AutoInit autoInit;
-
-} // end of anonymous namespace
-
 

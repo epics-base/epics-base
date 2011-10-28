@@ -17,6 +17,11 @@ epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...
 TESTS += epicsUnitTestTest
 
+TESTPROD_HOST += epicsTypesTest
+epicsTypesTest_SRCS += epicsTypesTest.cpp
+testHarness_SRCS += epicsTypesTest.cpp
+TESTS += epicsTypesTest
+
 TESTPROD_HOST += epicsCalcTest
 epicsCalcTest_SRCS += epicsCalcTest.cpp
 testHarness_SRCS += epicsCalcTest.cpp

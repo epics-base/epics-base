@@ -1,11 +1,10 @@
 #!/usr/bin/perl
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
@@ -62,18 +61,13 @@ foreach $source ( @files )
 	$basename=$source;
 	$basename=~s'.*[/\\]'';
 	$target  = "$install_dir/$basename";
+	$temp    = "$target.$$";
 
-	#	The Win32 filesystem seems to be 'slow',
-	#	i.e. $target may look like 'up to date'
-	#	unless you wait an hour.
-	#	-> skip this test on WIN32 ?
-	#if (-f $target  and  $^O ne "MSWin32")
 	if (-f $target)
 	{
-		if (-M $target  <  -M $source    and
+		if (-M $target  <  -M $source and
 		    -C $target  <  -C $source)
 		{
-			print "$target is up to date\n";
 			next;
 		}
 		else
@@ -84,8 +78,9 @@ foreach $source ( @files )
 		}
 	}
 
-	# print "Installing $source into $install_dir\n";
-	copy ($source, $target) or die "Copy failed";
+	#	Using copy + rename fixes problems with parallel builds:
+	copy ($source, $temp) or die "Copy failed: $!\n";
+	rename ($temp, $target) or die "Rename failed: $!\n";
 
 	#	chmod 0555 <read-only> DOES work on WIN32, but:
 	#	Another chmod 0777 to make it write- and deletable

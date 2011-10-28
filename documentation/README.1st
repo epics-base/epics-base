@@ -1,25 +1,25 @@
                            Installation Instructions
 
-                           EPICS Base Release 3.14.*
+                           EPICS Base Release 3.15.*
 
    --------------------------------------------------------------------------
 
   Table of Contents
 
-     * What is EPICS base?
-     * What is new in this release?
-     * Copyright
-     * Supported platforms
-     * Supported compilers
-     * Software requirements
-     * Host system storage requirements
-     * Documentation
-     * WWW pages
-     * Directory Structure
-     * Build related components
-     * Building EPICS base (Unix and Win32)
-     * Example application and extension
-     * Multiple host platforms
+     * What is EPICS base?
+     * What is new in this release?
+     * Copyright
+     * Supported platforms
+     * Supported compilers
+     * Software requirements
+     * Host system storage requirements
+     * Documentation
+     * WWW pages
+     * Directory Structure
+     * Build related components
+     * Building EPICS base (Unix and Win32)
+     * Example application and extension
+     * Multiple host platforms
 
    --------------------------------------------------------------------------
 
@@ -86,12 +86,15 @@
      as processes on the host platform.
 
      vxWorks
-     You must have vxWorks installed if any of your target systems are
-     vxWorks systems. This provides the cross-compiler and header files
-     needed to build for these target systems. The absolute path to and
-     version number of the vxWorks installation is normally specified in the
-     base/configure/os/CONFIG_SITE.Common.vxWorksCommon file. Consult the
-     EPICS web pages about [1]vxWorks 5.x and [2]vxWorks 6.x and the
+     You must have vxWorks 5.5.x or 6.x installed if any of your target
+     systems are vxWorks systems; the C++ compiler for vxWorks 5.4 is now too
+     old to support. The vxWorks installation provides the cross-compiler and
+     header files needed to build for these targets. The absolute path to and
+     the version number of the vxWorks installation must be set in the
+     base/configure/os/CONFIG_SITE.Common.vxWorksCommon file or in one of its
+     target-specific overrides.
+
+     Consult the vxWorks 5.x or vxWorks 6.x EPICS web pages about and the
      vxWorks documentation for information about configuring your vxWorks
      operating system for use with EPICS.
 
@@ -121,8 +124,7 @@
 
   Documentation
 
-     EPICS documentation is available through the [3]EPICS website at
-     Argonne.
+     EPICS documentation is available through the EPICS website at Argonne.
 
      Release specific documenataion can also be found in the
      base/documentation directory of the distribution.
@@ -132,11 +134,8 @@
     Distribution directory structure:
 
          base                         Root directory of the base distribution
-         base/config                  R3.13 compatibility build configuration files
-         base/config/tools            Perl and shell scripts used in the R3.13 build
          base/configure               Operating system independent build config files
          base/configure/os            Operating system dependent build config files
-         base/configure/tools         Perl and shell scripts used in the build
          base/documentation           Distributation documentation
          base/src                     All epics base source code in subdirectories
          base/src/RTEMS               Code to configure RTEMS for EPICS
@@ -186,7 +185,6 @@
          base/src/tools               Perl scripts used during the builds
          base/src/toolsComm           Code for the build tools antelope and e_flex
          base/src/util                Utilities (ca_test, iocLogServer, startCArepeater)
-         base/src/vxWorks             R3.13 compatibility code specific to vxWorks
          base/startup                 Scripts for setting up path and environment
 
     Install directories created by the build:
@@ -263,7 +261,6 @@
          CONFIG.UnixCommon.Common    Definitions for Unix hosts and all targets
          CONFIG.Common.UnixCommon    Definitions for Unix targets and all hosts
          CONFIG.Common.vxWorksCommon Specific host definitions for all vx targets
-         CONFIG_COMPAT               R3.13 arch compatibility definitions
          CONFIG_SITE.<host>.<target> Site specific host-target definitions
          CONFIG_SITE.Common.<target> Site specific target defs for all hosts
          CONFIG_SITE.<host>.Common   Site specific host defs for all targets
@@ -298,7 +295,7 @@
        required path and other environment variables.
 
        EPICS_HOST_ARCH
-       Before you can build or use EPICS R3.14, the environment variable
+       Before you can build or use EPICS R3.15, the environment variable
        EPICS_HOST_ARCH must be defined. A perl script EpicsHostArch.pl in the
        base/startup directory has been provided to help set EPICS_HOST_ARCH.
        You should have EPICS_HOST_ARCH set to your host operating system
@@ -306,7 +303,7 @@
        solaris-sparc. If you are not using the OS vendor's c/c++ compiler for
        host builds, you will need another dash followed by the alternate
        compiler name (e.g. "-gnu" for GNU c/c++ compilers on a solaris host
-       or "-borland" for Borland c/c++ compilers on a WIN32 host). See
+       or "-mingw" for MinGW c/c++ compilers on a WIN32 host). See
        configure/CONFIG_SITE for a list of supported EPICS_HOST_ARCH values.
 
        PERLLIB
@@ -323,23 +320,14 @@
        solaris systems you need uname in your path.
 
        LD_LIBRARY_PATH
-       It is no longer necessary to have LD_LIBRARY_PATH include EPICS
-       directories on a Unix type system. R3.14 shared libraries and
-       executables will contain the full path name to libraries they require.
-       However, if you move the EPICS directories from their build-time
-       location then in order for libraries to be found at runtime
-       LD_LIBRARY_PATH must include the full pathname to
-       $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking executables.
-       Building shared libraries is now the default setting for all Unix type
-       hosts. NOTE: You will still need LD_LIBRARY_PATH for R3.13 extension
-       shared libraries even if the R3.13 extensions are built with R3.14
-       base.
-
-       Win32 PATH
-       On WIN32 systems, for R3.14.7 and later, it is no longer necessary to
-       add fullpathname to $(INSTALL_LOCATION)/bin/$(EPICS_HOST_ARCH) to your
-       path for finding dlls during EPICS builds. The win32 configure files
-       in base now add this directory to the path definition.
+       R3.15 shared libraries and executables normally contain the full path
+       to any libraries they require. However, if you move the EPICS files or
+       directories from their build-time location then in order for the
+       shared libraries to be found at runtime LD_LIBRARY_PATH must include
+       the full pathname to $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when
+       invoking executables, or some equivalent OS-specific mechanism (such
+       as /etc/ld.so.conf on Linux) must be used. Shared libraries are now
+       built by default on all Unix type hosts.
 
     Do site-specific build configuration
 
@@ -372,12 +360,6 @@
          configure/os/CONFIG.Common.<target>     Target common settings
          configure/os/CONFIG.<host>.<target>     Host-target settings
 
-       R3.13 compatibility configuration
-       To configure EPICS base for building with R3.13 extensions and ioc
-       applications , you must modify the default definitions in the
-       base/config/CONFIG_SITE* files to agree with definitions you made in
-       base/configure and base/configure/os files.
-
     Build EPICS base
 
        After configuring the build you should be able to build EPICS base by
@@ -401,7 +383,7 @@
      script will create a sample application that can be built and then
      executed to try out this release of base.
 
-     Instructions for building and executing the 3.14 example application can
+     Instructions for building and executing the 3.15 example application can
      be found in the section "Example Application" of Chapter 2, "Getting
      Started", in the "IOC Application Developer's Guide" for this release.
      The "Example IOC Application" section briefly explains how to create and
@@ -433,9 +415,3 @@
      EPICS base for a specific host/target combination you must have the
      proper host/target C/C++ cross compiler and target header files and the
      base/configure/os directory must have the appropriate configure files.
-
-References
-
-   1. http://www.aps.anl.gov/epics/base/tornado.php
-   2. http://www.aps.anl.gov/epics/base/vxWorks6.php
-   3. http://www.aps.anl.gov/epics/

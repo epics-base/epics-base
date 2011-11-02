@@ -127,13 +127,13 @@ int cainfo (pv *pvs, int nPvs)
 
 int main (int argc, char *argv[])
 {
-    int n = 0;
+    int n;
     int result;                 /* CA result */
 
     int opt;                    /* getopt() current option */
 
     int nPvs;                   /* Number of PVs */
-    pv* pvs = 0;                /* Array of PV structures */
+    pv* pvs;                    /* Array of PV structures */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
@@ -195,7 +195,7 @@ int main (int argc, char *argv[])
     result = ca_context_create(ca_disable_preemptive_callback);
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
-                "to start channel access '%s'.\n", ca_message(result), pvs[n].name);
+                "to start channel access.\n", ca_message(result));
         return 1;
     }
                                 /* Allocate PV structure array */

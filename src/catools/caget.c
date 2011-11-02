@@ -126,7 +126,6 @@ static void event_handler (evargs args)
         ppv->dbrType = args.type;
         ppv->value   = calloc(1, dbr_size_n(args.type, args.count));
         memcpy(ppv->value, args.dbr, dbr_size_n(args.type, args.count));
-        ppv->onceConnected = 1;
         ppv->nElems = args.count;
         nRead++;
     }
@@ -159,12 +158,13 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
     int n, result;
 
     for (n = 0; n < nPvs; n++) {
+        unsigned long nElems;
 
                                 /* Set up pvs structure */
                                 /* -------------------- */
 
                                 /* Get natural type and array count */
-        pvs[n].nElems  = ca_element_count(pvs[n].chid);
+        nElems         = ca_element_count(pvs[n].chid);
         pvs[n].dbfType = ca_field_type(pvs[n].chid);
         pvs[n].dbrType = dbrType;
 
@@ -183,10 +183,6 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                 pvs[n].dbrType = DBR_TIME_STRING;
             }
         }
-                                /* Adjust array count */
-        if (reqElems > pvs[n].nElems)
-            reqElems = pvs[n].nElems;
-        pvs[n].reqElems = reqElems;
 
                                 /* Issue CA request */
                                 /* ---------------- */
@@ -196,21 +192,24 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
             nConn++;
             pvs[n].onceConnected = 1;
             if (request == callback)
-            {                          /* Event handler will allocate value */
+            {
+                /* Event handler will allocate value and set nElems */
+                pvs[n].reqElems = reqElems > nElems ? nElems : reqElems;
                 result = ca_array_get_callback(pvs[n].dbrType,
                                                pvs[n].reqElems,
                                                pvs[n].chid,
                                                event_handler,
                                                (void*)&pvs[n]);
             } else {
-                                       /* Allocate value structure */
+                /* We allocate value structure and set nElems */
+                pvs[n].nElems = reqElems && reqElems < nElems ? reqElems : nElems;
                 pvs[n].value = calloc(1, dbr_size_n(pvs[n].dbrType, pvs[n].nElems));
-                if(!pvs[n].value) {
-                    fprintf(stderr,"Allocation failed\n");
+                if (!pvs[n].value) {
+                    fprintf(stderr,"Memory allocation failed\n");
                     return 1;
                 }
                 result = ca_array_get(pvs[n].dbrType,
-                                      pvs[n].reqElems,
+                                      pvs[n].nElems,
                                       pvs[n].chid,
                                       pvs[n].value);
             }
@@ -252,9 +251,6 @@ static int caget (pv *pvs, int nPvs, RequestT request, OutputT format,
                                 /* -------------- */
 
     for (n = 0; n < nPvs; n++) {
-        /* Truncate the data printed to what was requested. */
-        if (pvs[n].reqElems != 0  && pvs[n].nElems > pvs[n].reqElems)
-            pvs[n].nElems = pvs[n].reqElems;
 
         switch (format) {
         case plain:             /* Emulate old caget behaviour */
@@ -377,7 +373,7 @@ static void complainIfNotPlainAndSet (OutputT *current, const OutputT requested)
 
 int main (int argc, char *argv[])
 {
-    int n = 0;
+    int n;
     int result;                 /* CA result */
     OutputT format = plain;     /* User specified format */
     RequestT request = get;     /* User specified request type */
@@ -389,7 +385,7 @@ int main (int argc, char *argv[])
     int digits = 0;             /* getopt() no. of float digits */
 
     int nPvs;                   /* Number of PVs */
-    pv* pvs = 0;                /* Array of PV structures */
+    pv* pvs;                    /* Array of PV structures */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
@@ -529,7 +525,7 @@ int main (int argc, char *argv[])
     result = ca_context_create(ca_disable_preemptive_callback);
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
-                "to start channel access '%s'.\n", ca_message(result), pvs[n].name);
+                "to start channel access.\n", ca_message(result));
         return 1;
     }
                                 /* Allocate PV structure array */

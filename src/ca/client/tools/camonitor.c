@@ -92,7 +92,7 @@ void usage (void)
  * Function:	event_handler
  *
  * Description:	CA event_handler for request type callback
- * 		Allocates the dbr structure and copies the data
+ * 		Prints the event data
  *
  * Arg(s) In:	args  -  event handler args (see CA manual)
  *
@@ -107,10 +107,12 @@ static void event_handler (evargs args)
     {
         pv->dbrType = args.type;
         pv->nElems = args.count;
-        memcpy(pv->value, args.dbr, dbr_size_n(args.type, args.count));
+        pv->value = (void *) args.dbr;    /* casting away const */
 
         print_time_val_sts(pv, reqElems);
         fflush(stdout);
+
+        pv->value = NULL;
     }
 }
 
@@ -129,51 +131,39 @@ static void connection_handler ( struct connection_handler_args args )
 {
     pv *ppv = ( pv * ) ca_puser ( args.chid );
     if ( args.op == CA_OP_CONN_UP ) {
+        nConn++;
+        if (!ppv->onceConnected) {
+            ppv->onceConnected = 1;
                                 /* Set up pv structure */
                                 /* ------------------- */
 
                                 /* Get natural type and array count */
-        ppv->nElems  = ca_element_count(ppv->chid);
-        ppv->dbfType = ca_field_type(ppv->chid);
+            ppv->dbfType = ca_field_type(ppv->chid);
+            ppv->dbrType = dbf_type_to_DBR_TIME(ppv->dbfType); /* Use native type */
+            if (dbr_type_is_ENUM(ppv->dbrType))                /* Enums honour -n option */
+            {
+                if (enumAsNr) ppv->dbrType = DBR_TIME_INT;
+                else          ppv->dbrType = DBR_TIME_STRING;
+            }
+            else if (floatAsString &&
+                     (dbr_type_is_FLOAT(ppv->dbrType) || dbr_type_is_DOUBLE(ppv->dbrType)))
+            {
+                ppv->dbrType = DBR_TIME_STRING;
+            }
+                                /* Set request count */
+            ppv->nElems   = ca_element_count(ppv->chid);
+            ppv->reqElems = reqElems > ppv->nElems ? ppv->nElems : reqElems;
 
-                                /* Set up value structures */
-        ppv->dbrType = dbf_type_to_DBR_TIME(ppv->dbfType); /* Use native type */
-        if (dbr_type_is_ENUM(ppv->dbrType))                  /* Enums honour -n option */
-        {
-            if (enumAsNr) ppv->dbrType = DBR_TIME_INT;
-            else          ppv->dbrType = DBR_TIME_STRING;
-        }
-
-        else if (floatAsString &&
-                 (dbr_type_is_FLOAT(ppv->dbrType) || dbr_type_is_DOUBLE(ppv->dbrType)))
-        {
-            ppv->dbrType = DBR_TIME_STRING;
-        }
-                                /* Adjust array count */
-        if (reqElems > ppv->nElems)
-            reqElems = ppv->nElems;
-        ppv->reqElems = reqElems;
-
-        ppv->onceConnected = 1;
-        nConn++;
                                 /* Issue CA request */
                                 /* ---------------- */
-        /* install monitor once with first connect */
-        if ( ! ppv->value ) {
-                                    /* Allocate value structure */
-            ppv->value = calloc(1, dbr_size_n(ppv->dbrType, ppv->nElems));
-            if ( ppv->value ) {
-                ppv->status = ca_create_subscription(ppv->dbrType,
+            /* install monitor once with first connect */
+            ppv->status = ca_create_subscription(ppv->dbrType,
                                                 ppv->reqElems,
                                                 ppv->chid,
                                                 eventMask,
                                                 event_handler,
                                                 (void*)ppv,
                                                 NULL);
-                if ( ppv->status != ECA_NORMAL ) {
-                    free ( ppv->value );
-                }
-            }
         }
     }
     else if ( args.op == CA_OP_CONN_DOWN ) {
@@ -203,7 +193,7 @@ static void connection_handler ( struct connection_handler_args args )
 int main (int argc, char *argv[])
 {
     int returncode = 0;
-    int n = 0;
+    int n;
     int result;                 /* CA result */
     IntFormatT outType;         /* Output type */
 
@@ -211,7 +201,7 @@ int main (int argc, char *argv[])
     int digits = 0;             /* getopt() no. of float digits */
 
     int nPvs;                   /* Number of PVs */
-    pv* pvs = 0;                /* Array of PV structures */
+    pv* pvs;                    /* Array of PV structures */
 
     LINE_BUFFER(stdout);        /* Configure stdout buffering */
 
@@ -356,7 +346,7 @@ int main (int argc, char *argv[])
     result = ca_context_create(ca_disable_preemptive_callback);
     if (result != ECA_NORMAL) {
         fprintf(stderr, "CA error %s occurred while trying "
-                "to start channel access '%s'.\n", ca_message(result), pvs[n].name);
+                "to start channel access.\n", ca_message(result));
         return 1;
     }
                                 /* Allocate PV structure array */

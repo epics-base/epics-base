@@ -232,19 +232,30 @@ int           min = sched_get_priority_min(prm->policy);
 int           max = sched_get_priority_max(prm->policy);
 int           low, try;
 
-    prm->min_pri = -1;
-    prm->max_pri = -1;
-
     if ( -1 == min || -1 == max ) {
-        /* something is very wrong... */
+        /* something is very wrong; maintain old behavior
+         * (warning message if sched_get_priority_xxx() fails
+         * and use default policy's sched_priority [even if
+         * that is likely to cause epicsThreadCreate to fail
+         * because that priority is not suitable for SCHED_FIFO]).
+         */
+        prm->min_pri = prm->max_pri = -1;
         return 0;
     }
+
 
     if ( try_pri(min, prm->policy) ) {
         /* cannot create thread at minimum priority;
          * probably no permission to use SCHED_FIFO
-         * at all.
+         * at all. However, we still must return
+         * a priority range accepted by the SCHED_FIFO
+         * policy. Otherwise, epicsThreadCreate() cannot
+         * detect the unsufficient permission (EPERM)
+         * and fall back to a non-RT thread (because
+         * pthread_attr_setschedparam would fail with
+         * EINVAL due to the bad priority).
          */
+        prm->min_pri = prm->max_pri = min;
         return 0;
     }
 

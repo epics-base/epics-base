@@ -74,7 +74,7 @@ void dbPutNotifyBlocker::cancel (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    if ( this->pn.paddr ) {
+    if ( this->pNotify ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
         dbNotifyCancel ( &this->pn );
     }
@@ -100,26 +100,31 @@ void dbPutNotifyBlocker::expandValueBuf (
 
 extern "C" void putNotifyCompletion ( putNotify *ppn )
 {
-    dbPutNotifyBlocker * pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
-    {
-        epicsGuard < epicsMutex > guard ( pBlocker->mutex );
-        if ( pBlocker->pNotify ) {
-            if ( pBlocker->pn.status != putNotifyOK) {
-                pBlocker->pNotify->exception ( 
-                    guard, ECA_PUTFAIL,  "put notify unsuccessful",
-                    static_cast <unsigned> (pBlocker->pn.dbrType), 
-                    static_cast <unsigned> (pBlocker->pn.nRequest) );
-            }
-            else {
-                pBlocker->pNotify->completion ( guard );
-            }
+    dbPutNotifyBlocker * const pBlocker = 
+            static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
+    epicsGuard < epicsMutex > guard ( pBlocker->mutex );
+    cacWriteNotify * const pNtfy = pBlocker->pNotify;
+    if ( pNtfy ) {
+        pBlocker->pNotify = 0;
+        // Its necessary to signal the initiators now before we call
+        // the user callback. This is less efficent, and potentially
+        // causes more thread context switching, but its probably 
+        // unavoidable because its possible that the use callback 
+        // might destroy this object.
+        pBlocker->block.signal ();
+        if ( pBlocker->pn.status != putNotifyOK ) {
+            pNtfy->exception ( 
+                guard, ECA_PUTFAIL,  "put notify unsuccessful",
+                static_cast < unsigned > (pBlocker->pn.dbrType), 
+                static_cast < unsigned > (pBlocker->pn.nRequest) );
         }
         else {
-            errlogPrintf ( "put notify completion with nill pNotify?\n" );
+            pNtfy->completion ( guard );
         }
-        pBlocker->pNotify = 0;
     }
-    pBlocker->block.signal ();
+    else {
+        errlogPrintf ( "put notify completion with nill pNotify?\n" );
+    }
 }
 
 void dbPutNotifyBlocker::initiatePutNotify ( 

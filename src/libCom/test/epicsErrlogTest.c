@@ -143,7 +143,7 @@ MAIN(epicsErrlogTest)
     pvt.expect = "Testing";
     pvt.checkLen = strlen(pvt.expect);
 
-    errlogPrintfNoConsole(pvt.expect);
+    errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
     testOk1(pvt.count == 1);
@@ -153,7 +153,7 @@ MAIN(epicsErrlogTest)
     pvt2.expect = pvt.expect = "Testing2";
     pvt2.checkLen = pvt.checkLen = strlen(pvt.expect);
 
-    errlogPrintfNoConsole(pvt.expect);
+    errlogPrintfNoConsole("%s", pvt.expect);
     errlogFlush();
 
     testOk1(pvt.count == 2);
@@ -165,7 +165,7 @@ MAIN(epicsErrlogTest)
     pvt2.expect = "Testing3";
     pvt2.checkLen = strlen(pvt2.expect);
 
-    errlogPrintfNoConsole(pvt2.expect);
+    errlogPrintfNoConsole("%s", pvt2.expect);
     errlogFlush();
 
     testOk1(pvt.count == 2);
@@ -188,7 +188,7 @@ MAIN(epicsErrlogTest)
     pvt.expect = truncmsg;
     pvt.checkLen = 255;
 
-    errlogPrintfNoConsole(longmsg);
+    errlogPrintfNoConsole("%s", longmsg);
     errlogFlush();
 
     testOk1(pvt.count == 3);
@@ -201,7 +201,7 @@ MAIN(epicsErrlogTest)
      */
     pvt.jam = 1;
 
-    errlogPrintfNoConsole(longmsg);
+    errlogPrintfNoConsole("%s", longmsg);
     epicsThreadSleep(0.1);
 
     testOk1(pvt.count == 3);
@@ -227,7 +227,7 @@ MAIN(epicsErrlogTest)
         pvt.jam = 1;
 
         for (i = 0; i < N; i++) {
-            errlogPrintfNoConsole(msg);
+            errlogPrintfNoConsole("%s", msg);
         }
 
         epicsEventSignal(pvt.jammer);
@@ -258,7 +258,7 @@ MAIN(epicsErrlogTest)
     testDiag("Filling with %d messages of size %d", (int) N, (int) mlen);
 
     for (i = 0; i < N; i++) {
-        errlogPrintfNoConsole(msg);
+        errlogPrintfNoConsole("%s", msg);
     }
     epicsThreadSleep(0.1); /* should really be a second Event */
 
@@ -273,10 +273,10 @@ MAIN(epicsErrlogTest)
     testOk1(pvt.count == 2);
 
     /* The buffer has space for 1 more message: sizeof(msgNode) + 256 bytes */
-    errlogPrintfNoConsole(msg); /* Use up that space */
+    errlogPrintfNoConsole("%s", msg); /* Use up that space */
 
     testDiag("Overflow the buffer");
-    errlogPrintfNoConsole(msg);
+    errlogPrintfNoConsole("%s", msg);
 
     testOk1(pvt.count == 2);
 

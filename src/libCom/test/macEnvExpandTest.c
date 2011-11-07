@@ -42,7 +42,7 @@ static void check(const char *str, const char *expect)
         testDiag("Got \"%s\", expected \"%s\".\n", got, expect);
         pass = 0;
     }
-    testOk(pass, str);
+    testOk(pass, "%s", str);
 }
 
 MAIN(macEnvExpandTest)

@@ -251,7 +251,6 @@ int caget (pv *pvs, int nPvs, OutputT format,
 
 int main (int argc, char *argv[])
 {
-    int n;
     int i;
     int result;                 /* CA result */
     OutputT format = plain;     /* User specified format */

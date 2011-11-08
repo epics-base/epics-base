@@ -4,10 +4,15 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # Authors: Ralph Lange, Marty Kraimer, Andrew Johnson and Janet Anderson
 # $Revision-Id$
 
+use FindBin qw($Bin);
+use lib ("$Bin/../../lib/perl", $Bin);
+
 use Cwd;
 use Getopt::Std;
 use File::Find;
-use File::Path;
+use File::Path 'mkpath';
+use EPICS::Path;
+use EPICS::Release;
 
 $app_top  = cwd();
 
@@ -17,10 +22,8 @@ $app_top  = cwd();
 $bad_ident_chars = '[^0-9A-Za-z_]';
 
 &GetUser;		# Ensure we know who's in charge
-&readRelease("configure/RELEASE", \%release, \@apps) if (-r "configure/RELEASE");
-&readRelease("configure/RELEASE.$ENV{EPICS_HOST_ARCH}", \%release, \@apps)
-   if (-r "configure/RELEASE.$ENV{EPICS_HOST_ARCH}");
-&expandRelease(\%release, \@apps);
+&readReleaseFiles("configure/RELEASE", \%release, \@apps);
+&expandRelease(\%release);
 &get_commandline_opts;	# Check command-line options
 
 #
@@ -298,57 +301,6 @@ sub get_commandline_opts { #no args
 }
 
 #
-# Parse a configure/RELEASE file.
-#
-# NB: This subroutine also appears in base/configure/tools/convertRelease.pl
-# If you make changes here, they will be needed there as well.
-#
-sub readRelease {
-    my ($file, $Rmacros, $Rapps) = @_;
-    # $Rmacros is a reference to a hash, $Rapps a ref to an array
-    my ($pre, $var, $post, $macro, $path);
-    local *IN;
-    open(IN, $file) or die "Can't open $file: $!\n";
-    while (<IN>) {
-	chomp;
-	s/\r$//;		# Shouldn't need this, but sometimes...
-	s/\s*#.*$//;		# Remove trailing comments
-        next if /^\s*$/;	# Skip blank lines
-	
-	# Expand all already-defined macros in the line:
-	while (($pre,$var,$post) = /(.*)\$\((\w+)\)(.*)/) {
-	    last unless (exists $Rmacros->{$var});
-	    $_ = $pre . $Rmacros->{$var} . $post;
-	}
-	
-	# Handle "<macro> = <path>"
-	($macro, $path) = /^\s*(\w+)\s*=\s*(.*)/;
-	if ($macro ne "") {
-	    $Rmacros->{$macro} = $path;
-	    push @$Rapps, $macro;
-	    next;
-	}
-	# Handle "include <path>" syntax
-	($path) = /^\s*include\s+(.*)/;
-	&readRelease($path, $Rmacros, $Rapps) if (-r $path);
-    }
-    close IN;
-}
-
-sub expandRelease {
-    my ($Rmacros, $Rapps) = @_;
-    # $Rmacros is a reference to a hash, $Rapps a ref to an array
-    
-    # Expand any (possibly nested) macros that were defined after use
-    while (($macro, $path) = each %$Rmacros) {
-	while (($pre,$var,$post) = $path =~ /(.*)\$\((\w+)\)(.*)/) {
-	    $path = $pre . $Rmacros->{$var} . $post;
-	    $Rmacros->{$macro} = $path;
-	}
-    }
-}
-
-#
 # List application types
 #
 sub ListAppTypes { # no args
@@ -479,30 +431,4 @@ sub GetUser {
 	chomp $user;
     }
     die "No user name" unless $user;
-}
-
-# Path rewriting rules for various OSs
-# These functions are duplicated in configure/convertRelease.pl
-sub UnixPath {
-    my ($newpath) = @_;
-    if ($^O eq 'cygwin') {
-	$newpath =~ s{\\}{/}go;
-	$newpath =~ s{^([a-zA-Z]):/}{/cygdrive/$1/};
-    } elsif ($^O eq 'MSWin32') {
-	$newpath =~ s{\\}{/}go;
-    } elsif ($^O eq 'sunos') {
-	$newpath =~ s{^/tmp_mnt/}{/};
-    }
-    return $newpath;
-}
-
-sub LocalPath {
-    my ($newpath) = @_;
-    if ($^O eq "cygwin") {
-	$newpath =~ s{^/cygdrive/([a-zA-Z])/}{$1:/};
-    } elsif ($^O eq "darwin") {
-	# These rules are likely to be site-specific
-	$newpath =~ s{^/private/var/auto\.home/}{/home/};    # APS
-    }
-    return $newpath;
 }

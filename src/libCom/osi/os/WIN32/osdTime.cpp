@@ -303,8 +303,8 @@ currentTime::currentTime () :
     }
     else {
         errlogPrintf (
-            "win32 osdTime.cpp detected questionable "
-            "system date prior to EPICS epoch\n" );
+            "win32 osdTime.cpp init detected questionable "
+            "system date prior to EPICS epoch, epics time will not advance\n" );
         this->epicsTimeLast = 0;
     }
 
@@ -483,9 +483,32 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             / this->perfCounterFreq;
     this->lastPerfCounter = curPerfCounter.QuadPart;
 
-    LONGLONG epicsTimeFromCurrentFileTime =
-        ( curFileTime.QuadPart - epicsEpochInFileTime ) *
-        ET_TICKS_PER_FT_TICK;
+    LONGLONG epicsTimeFromCurrentFileTime;
+    
+    {
+        static bool firstMessageWasSent = false;
+        if ( curFileTime.QuadPart >= epicsEpochInFileTime ) {
+            epicsTimeFromCurrentFileTime =
+                ( curFileTime.QuadPart - epicsEpochInFileTime ) *
+                ET_TICKS_PER_FT_TICK;
+            firstMessageWasSent = false;
+        }
+        else {
+            /*
+             * if the system time jumps to before the EPICS epoch
+             * then latch to the EPICS epoch printing only one
+             * warning message the first time that the issue is
+             * detected
+             */
+            if ( ! firstMessageWasSent ) {
+                errlogPrintf (
+                    "win32 osdTime.cpp time PLL update detected questionable "
+                    "system date prior to EPICS epoch, epics time will not advance\n" );
+                firstMessageWasSent = true;
+            }
+            epicsTimeFromCurrentFileTime = 0;
+        }
+    }
 
     delta = epicsTimeFromCurrentFileTime - this->epicsTimeLast;
     if ( delta > EPICS_TIME_TICKS_PER_SEC || delta < -EPICS_TIME_TICKS_PER_SEC ) {

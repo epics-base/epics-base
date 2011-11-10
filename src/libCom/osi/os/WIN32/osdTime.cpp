@@ -60,6 +60,7 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 // for mingw
 #if !defined ( MAXLONGLONG )
 #define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
+#define MINLONGLONG LL_CONSTANT(~0x7fffffffffffffff)
 #endif
 
 static const LONGLONG epicsEpochInFileTime = LL_CONSTANT(0x01b41e2a18d64000);
@@ -346,7 +347,7 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
             // counter resolution will more than likely improve over time.
             //
             offset = ( MAXLONGLONG - this->lastPerfCounter )
-                                + ( curPerfCounter.QuadPart + MAXLONGLONG );
+                                + ( curPerfCounter.QuadPart - MINLONGLONG ) + 1;
         }
         if ( offset < MAXLONGLONG / EPICS_TIME_TICKS_PER_SEC ) {
             offset *= EPICS_TIME_TICKS_PER_SEC;
@@ -424,7 +425,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         // counter resolution will more than likely improve over time.
         //
         perfCounterDiff = ( MAXLONGLONG - this->lastPerfCounterPLL )
-                            + ( curPerfCounter.QuadPart + MAXLONGLONG );
+                            + ( curPerfCounter.QuadPart - MINLONGLONG ) + 1;
     }
     this->lastPerfCounterPLL = curPerfCounter.QuadPart;
 
@@ -473,7 +474,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         //
         perfCounterDiffSinceLastFetch =
             ( MAXLONGLONG - this->lastPerfCounter )
-                            + ( curPerfCounter.QuadPart + MAXLONGLONG );
+                            + ( curPerfCounter.QuadPart - MINLONGLONG ) + 1;
     }
 
     // Update the current estimated time.

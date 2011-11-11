@@ -395,6 +395,8 @@ void currentTime::getCurrentTime ( epicsTimeStamp & dest )
 //
 epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 {
+    EnterCriticalSection ( & this->mutex );
+
     // avoid interruptions by briefly becoming a time critical thread
     LARGE_INTEGER curFileTime;
     LARGE_INTEGER curPerfCounter;
@@ -409,8 +411,6 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         curFileTime.LowPart = ft.dwLowDateTime;
         curFileTime.HighPart = ft.dwHighDateTime;
     }
-
-    EnterCriticalSection ( & this->mutex );
 
     LONGLONG perfCounterDiff;
     if ( curPerfCounter.QuadPart >= this->lastPerfCounterPLL ) {

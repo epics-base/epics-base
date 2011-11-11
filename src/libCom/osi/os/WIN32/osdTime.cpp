@@ -82,7 +82,7 @@ private:
     epicsTimerQueueActive * pTimerQueue;
     epicsTimer * pTimer;
     bool perfCtrPresent;
-
+    static const int pllDelay; /* integer seconds */
     epicsTimerNotify::expireStatus expire ( const epicsTime & );
 };
 
@@ -92,6 +92,8 @@ static const LONGLONG EPICS_TIME_TICKS_PER_SEC = 1000000000;
 static const LONGLONG ET_TICKS_PER_FT_TICK =
             EPICS_TIME_TICKS_PER_SEC / FILE_TIME_TICKS_PER_SEC;
 
+const int currentTime :: pllDelay = 5;
+    
 //
 // Start and register time provider
 //
@@ -433,10 +435,10 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
     this->lastFileTimePLL = curFileTime.QuadPart;
 
     // discard glitches
-    if ( fileTimeDiff == 0 ) {
+    if ( fileTimeDiff <= 0 ) {
         LeaveCriticalSection( & this->mutex );
-        debugPrintf ( ( "currentTime: file time difference in PLL was zero\n" ) );
-        return expireStatus ( restart, 1.0 /* sec */ );
+        debugPrintf ( ( "currentTime: file time difference in PLL was less than zero\n" ) );
+        return expireStatus ( restart, pllDelay /* sec */ );
     }
 
     LONGLONG freq = ( FILE_TIME_TICKS_PER_SEC * perfCounterDiff ) / fileTimeDiff;
@@ -450,7 +452,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
             static_cast < int > ( -bound ),
             static_cast < int > ( delta ),
             static_cast < int > ( bound ) ) );
-        return expireStatus ( restart, 1.0 /* sec */ );
+        return expireStatus ( restart, pllDelay /* sec */ );
     }
 
     // update feedback loop estimating the performance counter's frequency
@@ -475,6 +477,20 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
         perfCounterDiffSinceLastFetch =
             ( MAXLONGLONG - this->lastPerfCounter )
                             + ( curPerfCounter.QuadPart - MINLONGLONG ) + 1;
+    }
+    
+    // discard performance counter delay measurement glitches
+    {
+        const LONGLONG expectedDly = this->perfCounterFreq * pllDelay;
+        const LONGLONG bnd = expectedDly / 4;
+        if ( perfCounterDiffSinceLastFetch <= 0 || 
+                perfCounterDiffSinceLastFetch >= expectedDly + bnd ) {
+            LeaveCriticalSection( & this->mutex );
+            debugPrintf ( ( "perf ctr measured delay out of bounds m=%d max=%d\n",               
+                static_cast < int > ( perfCounterDiffSinceLastFetch ),
+                static_cast < int > ( expectedDly + bnd ) ) );
+            return expireStatus ( restart, pllDelay /* sec */ );
+        }
     }
 
     // Update the current estimated time.
@@ -561,7 +577,7 @@ epicsTimerNotify::expireStatus currentTime::expire ( const epicsTime & )
 
     LeaveCriticalSection ( & this->mutex );
 
-    return expireStatus ( restart, 1.0 /* sec */ );
+    return expireStatus ( restart, pllDelay /* sec */ );
 }
 
 void currentTime::startPLL ()
@@ -570,7 +586,7 @@ void currentTime::startPLL ()
     if ( this->perfCtrPresent && ! this->pTimerQueue ) {
         this->pTimerQueue = & epicsTimerQueueActive::allocate ( true );
         this->pTimer      = & this->pTimerQueue->createTimer ();
-        this->pTimer->start ( *this, 1.0 );
+        this->pTimer->start ( *this, pllDelay );
     }
 }
 

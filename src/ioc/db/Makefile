@@ -30,24 +30,25 @@ INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
 INC += dbIocRegister.h
-# The following go away what old database access goes away
 INC += db_access_routines.h
 INC += db_convert.h
 
-DBDINC += menuAlarmSevr
-DBDINC += menuAlarmStat
-DBDINC += menuCompress
-DBDINC += menuFtype
-DBDINC += menuIvoa
-DBDINC += menuOmsl
-DBDINC += menuPini
-DBDINC += menuPriority
-DBDINC += menuScan
-DBDINC += menuYesNo
-DBDINC += menuSimm
+# Generate menuGlobal.dbd automatically
+DBD += menuGlobal.dbd
+menuGlobal_DBD += menuAlarmSevr.dbd
+menuGlobal_DBD += menuAlarmStat.dbd
+menuGlobal_DBD += menuCompress.dbd
+menuGlobal_DBD += menuFtype.dbd
+menuGlobal_DBD += menuIvoa.dbd
+menuGlobal_DBD += menuOmsl.dbd
+menuGlobal_DBD += menuPini.dbd
+menuGlobal_DBD += menuPriority.dbd
+menuGlobal_DBD += menuScan.dbd
+menuGlobal_DBD += menuYesNo.dbd
+menuGlobal_DBD += menuSimm.dbd
 
+DBDINC += $(basename $(menuGlobal_DBD))
 DBDINC += dbCommon
-DBD+=  menuGlobal.dbd
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c

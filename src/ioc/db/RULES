@@ -11,15 +11,16 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-$(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
+# $(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
 
 dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
 	@$(RM) $@
-	@-$(MKMF) -m $@ ../db  $(COMMON_DIR)/dbCommon.h $<
+	@$(MKMF) -m $@ ../db $(COMMON_DIR)/dbCommon.h $<
 
 $(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
-	$(RM) $@
-	$(DBTORECORDTYPEH) -I ../db $< $@
+	@$(RM) $(notdir $@)
+	$(DBTORECORDTYPEH) -I ../db $< $(notdir $@)
+	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/dbCommon.h: $(DBTORECORDTYPEH)
 

@@ -904,9 +904,9 @@ long epicsShareAPI dbWriteRecordFP(
     if(!precordTypename) {
 	status = dbFirstRecordType(pdbentry);
 	if(status) {
-	    fprintf(stderr,"dbWriteRecordFP: No record descriptions\n");
+	    /* No record descriptions, so no record instances */
     	    dbFinishEntry(pdbentry);
-	    return(status);
+	    return(0);
 	}
     } else {
 	status = dbFindRecordType(pdbentry,precordTypename);

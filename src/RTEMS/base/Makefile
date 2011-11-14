@@ -12,15 +12,14 @@ include $(TOP)/configure/CONFIG
 
 INC += epicsRtemsInitHooks.h
 
-SRCS += rtems_init.c
-SRCS += rtems_config.c
-SRCS += rtems_netconfig.c
-SRCS += rtems_util.c
-SRCS += setBootConfigFromNVRAM.c
-SRCS += epicsRtemsInitHookPre.c
-SRCS += epicsRtemsInitHookPost.c
+rtemsCom_SRCS += rtems_init.c
+rtemsCom_SRCS += rtems_config.c
+rtemsCom_SRCS += rtems_netconfig.c
+rtemsCom_SRCS += rtems_util.c
+rtemsCom_SRCS += setBootConfigFromNVRAM.c
+rtemsCom_SRCS += epicsRtemsInitHookPre.c
+rtemsCom_SRCS += epicsRtemsInitHookPost.c
 
 LIBRARY_RTEMS = rtemsCom
-LIBRARY_SRCS = $(SRCS) $(BUILD_ARCHS)
 
 include $(TOP)/configure/RULES

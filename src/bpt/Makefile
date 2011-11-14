@@ -22,7 +22,8 @@ DBD += bptTypeKdegF.dbd
 
 PROD_LIBS = Com
 PROD_HOST += makeBpt
-makeBpt_SRCS=makeBpt
+
+makeBpt_SRCS = makeBpt
 
 include $(TOP)/configure/RULES
 

@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -19,22 +19,22 @@
 
 BASE_3_14=YES
 
-# EPICS_VERSION must be a number >0 and <256 
+# EPICS_VERSION must be a number >0 and <256
 EPICS_VERSION = 3
 
-# EPICS_REVISION must be a number >=0 and <256 
+# EPICS_REVISION must be a number >=0 and <256
 EPICS_REVISION = 14
 
-# EPICS_MODIFICATION must be a number >=0 and <256 
+# EPICS_MODIFICATION must be a number >=0 and <256
 EPICS_MODIFICATION = 12
 
 # EPICS_PATCH_LEVEL must be a number  (win32 resource file requirement)
 # Not included if zero
-EPICS_PATCH_LEVEL = 1
+EPICS_PATCH_LEVEL = 2
 
 # This will end in -DEV between official releases
-EPICS_DEV_SNAPSHOT=-DEV
-#EPICS_DEV_SNAPSHOT=-pre1
+#EPICS_DEV_SNAPSHOT=-DEV
+EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2
 #EPICS_DEV_SNAPSHOT=-pre2-DEV

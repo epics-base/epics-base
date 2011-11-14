@@ -3,15 +3,78 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12.2 Release Notes</title>
+  <title>EPICS Base R3.14.12.2-pre1 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.12.2</h1>
+<h1 align="center">EPICS Base Release 3.14.12.2-pre1</h1>
 
-<h2 align="center">Changes between 3.14.12.1 and 3.14.12.2</h2>
+<h2 align="center">Changes between 3.14.12.1 and 3.14.12.2-pre1</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h4>Launchpad Bugs Resolved</h4>
+
+<p>The following are links to bugs in the Launchpad bug tracker that have been
+fixed in this release:</p>
+
+<ul>
+<li>697509
+  <a href="https://launchpad.net/bugs/697509">
+    Thread synchronization issue in libCom/osi/os/WIN32/osdTime.cpp</a></li>
+<li>697516
+  <a href="https://launchpad.net/bugs/697516">
+    Crash occurs in Com.dll if filetime is before the EPICS epoch </a></li>
+<li>697517
+  <a href="https://launchpad.net/bugs/697517">
+    WIN32 osdtime should handle the system time change properly</a></li>
+<li>697519
+  <a href="https://launchpad.net/bugs/697519">
+    The incorrect way to compute the roll-over in WIN32 osdTime.cpp</a></li>
+<li>736273
+  <a href="https://launchpad.net/bugs/736273">
+    nonstandard c++ mutable ref in cac</a></li>
+<li>786979
+  <a href="https://launchpad.net/bugs/786979">
+    incorrect ref counting for timer queues</a></li>
+<li>794749
+  <a href="https://launchpad.net/bugs/794749">
+    3.14.12 caget without -c always requests maximum element count</a></li>
+<li>816678
+  <a href="https://launchpad.net/bugs/816678">
+    g++ generic thunk generation fails virtual varargs</a></li>
+<li>831648
+  <a href="https://launchpad.net/bugs/831648">
+    RTEMS dynamically loaded app fails to execute osdTimeRegister</a></li>
+<li>835138
+  <a href="https://launchpad.net/bugs/835138">
+    Incorrect calculation oss priorities for posix threads</a></li>
+<li>861214
+  <a href="https://launchpad.net/bugs/861214">
+    epicsThreadOnce crashes in static object destructor on win32</a></li>
+<li>861627
+  <a href="https://launchpad.net/bugs/861627">
+    RULES.db has incorrect dbExpand flags</a></li>
+<li>878372
+  <a href="https://launchpad.net/bugs/878372">
+    in-memory channel, ca client subscribe isnt thread safe</a></li>
+<li>878387
+  <a href="https://launchpad.net/bugs/878387">
+    In memory channel clear fails from put callback function</a></li>
+</ul>
+
+<h4>Added database sanity checks to iocInit</h4>
+
+<p>Two menus may legitimately be modified by users; some checks have been added
+that run at iocInit and make sure the choices haven't been changed too much for
+the IOC to function properly:</p>
+
+<ul>
+<li><tt>menuConvert</tt> is checked to flag problems with IOCs converted from
+  3.13.x, where the SLOPE choice didn't exist.</p>
+<li><tt>menuScan</tt> is checked to ensure the three initial choices are still
+  present and that there is at least one periodic scan rate.</li>
+</ul>
 
 <h4>Fix various catools issues</h4>
 

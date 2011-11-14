@@ -17,15 +17,15 @@ PROD_LIBS += $(EPICS_BASE_HOST_LIBS)
 #
 # Added ws2_32 winmm user32 for the non-dll build
 #
-SYS_PROD_LIBS_WIN32 += ws2_32 advapi32 user32
+PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 
-SRCS += main.cc
-SRCS += exServer.cc
-SRCS += exPV.cc
-SRCS += exVectorPV.cc
-SRCS += exScalarPV.cc
-SRCS += exAsyncPV.cc
-SRCS += exChannel.cc
+casexample_SRCS += main.cc
+casexample_SRCS += exServer.cc
+casexample_SRCS += exPV.cc
+casexample_SRCS += exVectorPV.cc
+casexample_SRCS += exScalarPV.cc
+casexample_SRCS += exAsyncPV.cc
+casexample_SRCS += exChannel.cc
 
 PROD_HOST = casexample
 

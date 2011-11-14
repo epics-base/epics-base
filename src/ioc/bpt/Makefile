@@ -22,5 +22,6 @@ BPT_DBD += bptTypeKdegF.dbd
 DBD += $(BPT_DBD)
 
 PROD_HOST += makeBpt
-makeBpt_SRCS=makeBpt
+
+makeBpt_SRCS = makeBpt
 

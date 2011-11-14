@@ -33,18 +33,18 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
   PERL_SCRIPTS += camonitor.pl
 
   PERL_MODULES += CA.pm
+
+  ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
+    # Can only create docs in Host build
+    HTMLS_DIR = .
+    HTMLS = CA.html
+  endif
 endif
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com
 Cap5_INCLUDES = -I$(shell $(PERL) ../perlConfig.pl archlib)/CORE
 Cap5_CFLAGS = $(shell $(PERL) ../perlConfig.pl ccflags)
-
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-  # Can only create docs in Host build
-  HTMLS_DIR = .
-  HTMLS = CA.html
-endif
 
 CLEANS += Cap5.c pod2htmd.tmp pod2htmi.tmp
 

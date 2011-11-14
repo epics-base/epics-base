@@ -23,8 +23,8 @@ PROD_LIBS := cas ca gdd Com
 #
 PROD_SYS_LIBS_WIN32 := ws2_32 advapi32 user32
 
-SRCS += main.cc
-SRCS += directoryServer.cc
+caDirServ_SRCS += main.cc
+caDirServ_SRCS += directoryServer.cc
 
 PROD_HOST = caDirServ
 

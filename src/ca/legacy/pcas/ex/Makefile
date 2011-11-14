@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -18,7 +18,7 @@ SRC_DIRS += $(TOP)/src/template/base/top/caServerApp
 #
 # Added ws2_32 winmm user32 for the non-dll build
 #
-SYS_PROD_LIBS_WIN32 += ws2_32 advapi32 user32
+PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 
 
 PROD_HOST = excas

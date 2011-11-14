@@ -272,10 +272,6 @@ static void threadCleanupWIN32 ( void )
         ellFirst ( & pGbl->threadList ) ) ) {
         epicsParmCleanupWIN32 ( pParm );
     }
-
-    TlsFree ( pGbl->tlsIndexThreadLibraryEPICS );
-
-    DeleteCriticalSection ( & pGbl->mutex );
 }
 
 /*

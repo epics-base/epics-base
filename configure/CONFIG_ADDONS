@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -34,6 +34,7 @@
 #    LIBSRCS       source files for building libraries (deprecated)
 #    PROD_OBJS     object files for building prods
 #    LIB_OBJS      object files for building libraries
+#    USR_OBJS      object files for building libraries and prods
 #    USR_LIBS      libs needed by PROD and TESTPROD and LIBRARY
 #    PROD_LIBS     libs needed by PROD and TESTPROD
 #    LIB_LIBS      libs needed by shared LIBRARY

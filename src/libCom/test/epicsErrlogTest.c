@@ -215,7 +215,7 @@ MAIN(epicsErrlogTest)
     pvt.expect = truncmsg;
     pvt.checkLen = 255;
 
-    errlogPrintfNoConsole(longmsg);
+    errlogPrintfNoConsole("%s", longmsg);
     errlogFlush();
 
     testOk1(pvt.count == 3);
@@ -228,7 +228,7 @@ MAIN(epicsErrlogTest)
      */
     pvt.jam = 1;
 
-    errlogPrintfNoConsole(longmsg);
+    errlogPrintfNoConsole("%s", longmsg);
     epicsThreadSleep(0.1);
 
     testOk1(pvt.count == 3);

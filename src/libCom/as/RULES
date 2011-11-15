@@ -12,7 +12,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 # Extra rule since asLib_lex.c is included by asLib.c
-asLib$(OBJ): asLib_lex.c
+asLib$(DEP): asLib_lex.c
 
 # Ensure that lexer and parser are built before they are needed
 asLib.c: $(call PATH_FILTER, $(TOOLS)/antelope$(HOSTEXE))

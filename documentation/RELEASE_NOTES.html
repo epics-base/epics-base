@@ -15,6 +15,36 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+
+<h4>Parallel Builds</h4>
+
+<p>
+As EPICS sites get computers with more CPUs they report additional bugs in our
+parallel build rules. Various issues have been fixed by separating out the build
+rules that generate dependency (.d) files, ensuring that they are constructed at
+the appropriate time in the build.</p>
+
+<p>
+These rule changes can cause additional warning messages to appear when building
+support modules. Where an application provides its own Makefile rules it may now
+have to add rules to construct an associated dependency file. In many cases
+though the change needed is just to replace a dependency for a
+<tt>target$(OBJ)</tt> with the <tt>target$(DEP)</tt> so this</p>
+
+<pre>
+    myLib$(OBJ): myLib_lex.c</pre>
+
+<p>
+becomes</p>
+
+<pre>
+    myLib$(DEP): myLib_lex.c</pre>
+
+<p>
+To debug build issues assocated with dependency files, use the command <tt>make
+--debug=m</tt> which tells GNUmake to display information about what it is doing
+during the first pass when it updates its makefiles.</p>
+
 <h3>
 Changes to epicsVersion.h</h3>
 

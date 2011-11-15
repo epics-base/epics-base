@@ -11,6 +11,8 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
+menuGlobal.dbd$(DEP): $(DBEXPAND)
+
 # $(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
 
 dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd

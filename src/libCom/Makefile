@@ -222,8 +222,6 @@ SRCS += epicsTempFile.cpp
 SRCS += epicsStdio.c
 SRCS += osdStdio.c
 
-osdEnv_CFLAGS_WIN32= -U__STDC__
-
 SRCS += osdThread.c
 SRCS += osdMutex.c
 SRCS += osdEvent.c

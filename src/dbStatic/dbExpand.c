@@ -23,8 +23,6 @@
 #include "gpHash.h"
 #include "osiFileName.h"
 
-epicsShareExtern int dbBptNotMonotonic;   /* from dbLexRoutines.c */
-
 DBBASE *pdbbase = NULL;
 
 void usage(void)

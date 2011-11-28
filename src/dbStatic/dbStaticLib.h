@@ -74,6 +74,8 @@ epicsShareFunc DBENTRY * epicsShareAPI dbCopyEntry(DBENTRY *pdbentry);
 epicsShareFunc void epicsShareAPI dbCopyEntryContents(DBENTRY *pfrom,
     DBENTRY *pto);
 
+epicsShareExtern int dbBptNotMonotonic;
+
 epicsShareFunc long epicsShareAPI dbReadDatabase(DBBASE **ppdbbase,
     const char *filename, const char *path, const char *substitutions);
 epicsShareFunc long epicsShareAPI dbReadDatabaseFP(DBBASE **ppdbbase,

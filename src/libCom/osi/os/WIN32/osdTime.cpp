@@ -60,6 +60,8 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 // for mingw
 #if !defined ( MAXLONGLONG )
 #define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
+#endif
+#if !defined ( MINLONGLONG )
 #define MINLONGLONG LL_CONSTANT(~0x7fffffffffffffff)
 #endif
 

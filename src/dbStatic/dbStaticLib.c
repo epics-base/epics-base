@@ -3916,7 +3916,7 @@ void  epicsShareAPI dbDumpField(
 	    else
 		printf("\t     field_type: %s\n", pamapdbfType[j].strvalue);
 	    printf("\tprocess_passive: %hd\n",pdbFldDes->process_passive);
-	    printf("\t           base: %hd\n",pdbFldDes->base);
+	    printf("\t           base: %d\n",pdbFldDes->base);
 	    if(!pdbFldDes->promptgroup) {
 		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);
 	    } else {
@@ -3929,7 +3929,7 @@ void  epicsShareAPI dbDumpField(
 		}
 	    }
 	    printf("\t       interest: %hd\n", pdbFldDes->interest);
-	    printf("\t       as_level: %hd\n",pdbFldDes->as_level);
+	    printf("\t       as_level: %d\n",pdbFldDes->as_level);
             printf("\t        initial: %s\n",
                 (pdbFldDes->initial ? pdbFldDes->initial : ""));
 	    if(pdbFldDes->field_type==DBF_MENU) {

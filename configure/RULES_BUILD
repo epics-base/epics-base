@@ -167,6 +167,10 @@ checkRelease:
 	$(CONVERTRELEASE) checkRelease
 warnRelease:
 	-$(CONVERTRELEASE) checkRelease
+noCheckRelease:
+ifeq ($(EPICS_HOST_ARCH),$(T_A))
+	@echo "Warning: RELEASE file consistency checks have been disabled"
+endif
 
 #---------------------------------------------------------------
 #  The order of the following rules is
@@ -458,7 +462,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all inc build install clean rebuild buildInstall
-.PHONY: runtests checkRelease warnRelease
+.PHONY: runtests checkRelease warnRelease noCheckRelease
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

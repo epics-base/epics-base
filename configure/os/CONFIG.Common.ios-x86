@@ -1,8 +1,11 @@
 # CONFIG.Common.ios-x86
 #
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for ios-x86 target builds
+# Sites may override these definitions in CONFIG_SITE.Common.ios-x86
+# or CONFIG_SITE.<host>.ios-x86
 #-------------------------------------------------------
 
 IOS_PLATFORM = iPhoneSimulator

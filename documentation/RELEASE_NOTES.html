@@ -13,6 +13,30 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>Build configurations updated for Apple iOS targets</h4>
+
+<p>The build process can now construct universal binaries containing both ARMv6
+and ARMv7 code, and several defaults have been changed when building for iOS
+targets:</p>
+
+<ul>
+
+<li>The default value for IOS_VERSION is now 5.0, edit the setting in
+<tt>configure/os/CONFIG_SITE.Common.iosCommon</tt> to use an older version.</li>
+
+<li>With the introduction of iOS 5.0 we have switched the C++ compiler for
+ios-arm from GNU g++ to using the LLVM-based clang++ (the GNU compilers are
+apparetnly no longer included with the SDK).  This can be switched back by
+editing the new <tt>CONFIG_SITE.Common.ios-arm</tt> file.</li>
+
+<li>Like the Darwin builds, universal binaries can now be compiled for the
+ios-arm target, containing either or both ARMv6 and ARMv7 instructions. This is
+configured by setting ARCH_CLASS in the new <tt>CONFIG_SITE.Common.ios-arm</tt>
+file. The default is now to build for ARMv7 only, which is not compatible with
+the original iPhone 1 or 3G, or with the iPod Touch Generations 1 or 2.</li>
+
+</ul>
+
 <h4>Added <tt>-b</tt> option to dbExpand</h4>
 
 <p>This turns off monotonic checking of breakpoint tables.</p>

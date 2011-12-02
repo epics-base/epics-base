@@ -1,16 +1,14 @@
 # CONFIG.Common.ios-arm
 #
+# $Revision-Id$
 # This file is maintained by the build community.
 #
 # Definitions for ios-arm target builds
+# Sites may override these definitions in CONFIG_SITE.Common.ios-arm
+# or CONFIG_SITE.<host>.ios-arm
 #-------------------------------------------------------
 
 IOS_PLATFORM = iPhoneOS
-
-#
-# Architecture-specific information
-#
-ARCH_CLASS = armv6
 
 OP_SYS_CFLAGS += -fno-inline-functions
 

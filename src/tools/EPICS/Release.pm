@@ -7,6 +7,8 @@
 
 # $Revision-Id$
 
+use Carp;
+
 #
 # Parse all relevent configure/RELEASE* files and includes
 #
@@ -44,7 +46,7 @@ sub readRelease {
     my ($file, $Rmacros, $Rapps) = @_;
     # $Rmacros is a reference to a hash, $Rapps a ref to an array
 
-    open(my $IN, '<', $file) or die "Can't open $file: $!\n";
+    open(my $IN, '<', $file) or croak "Can't open $file: $!\n";
     while (<$IN>) {
         chomp;
         s/ \r $//x;             # Shouldn't need this, but sometimes...
@@ -71,7 +73,7 @@ sub readRelease {
         if (-e $path) {
             &readRelease($path, $Rmacros, $Rapps);
         } elsif ($op eq "include") {
-            warn "EPICS/Release.pm: Include file '$path' not found\n";
+            carp "EPICS/Release.pm: Include file '$path' not found\n";
         }
     }
     close $IN;
@@ -100,9 +102,9 @@ sub expandRelease {
 
     while (my ($macro, $val) = each %$Rmacros) {
         while (my ($pre,$var,$post) = $val =~ m/ (.*) \$\( (\w+) \) (.*) /x) {
-            warn "EPICS/Release.pm: Undefined macro \$($var) used\n"
+            carp "EPICS/Release.pm: Undefined macro \$($var) used\n"
                 unless exists $Rmacros->{$var};
-            die "EPICS/Release.pm: Circular definition of macro $macro\n"
+            croak "EPICS/Release.pm: Circular definition of macro $macro\n"
                 if $macro eq $var;
             $val = $pre . $Rmacros->{$var} . $post;
             $Rmacros->{$macro} = $val;

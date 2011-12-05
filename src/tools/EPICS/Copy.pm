@@ -7,6 +7,8 @@
 
 # $Revision-Id$
 
+use Carp;
+
 # Copy directories and files from a template
 
 sub copyTree {
@@ -15,7 +17,7 @@ sub copyTree {
     # $Rtextsubs contains substitutions for file content.
 
     opendir my $FILES, $src
-        or die "opendir failed while copying $src: $!\n";
+        or croak "opendir failed while copying $src: $!\n";
     my @entries = readdir $FILES;
     closedir $FILES;
 
@@ -36,9 +38,9 @@ sub copyTree {
             print "." unless $opt_d;
             copyFile($srcName, $dstName, $Rtextsubs);
         } elsif (-l $srcName) {
-            warn "\nSoft link in template, ignored:\n\t$srcName\n";
+            carp "\nSoft link in template, ignored:\n\t$srcName\n";
         } else {
-            warn "\nUnknown file type in template, ignored:\n\t$srcName\n";
+            carp "\nUnknown file type in template, ignored:\n\t$srcName\n";
         }
     }
 }
@@ -46,11 +48,11 @@ sub copyTree {
 sub copyDir {
     my ($src, $dst, $Rnamesubs, $Rtextsubs) = @_;
     if (-e $dst && ! -d $dst) {
-        warn "\nTarget exists but is not a directory, skipping:\n\t$dst\n";
+        carp "\nTarget exists but is not a directory, skipping:\n\t$dst\n";
         return;
     }
     print "Creating directory '$dst'\n" if $opt_d;
-    mkdir $dst, 0777 or die "Can't create $dst: $!\n"
+    mkdir $dst, 0777 or croak "Can't create $dst: $!\n"
         unless -d $dst;
     copyTree($src, $dst, $Rnamesubs, $Rtextsubs);
 }
@@ -61,7 +63,7 @@ sub copyFile {
     print "Creating file '$dst'\n" if $opt_d;
     open(my $SRC, '<', $src)
         and open(my $DST, '>', $dst)
-        or die "$! copying $src to $dst\n";
+        or croak "$! copying $src to $dst\n";
     while (<$SRC>) {
         # Substitute any @VARS@ in the text
         s{@(\w+?)@}

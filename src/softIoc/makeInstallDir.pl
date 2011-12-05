@@ -14,6 +14,8 @@ die "Path to INSTALL_LOCATION missing\n" unless @ARGV == 1;
 my $path = shift;
 
 $path =~ s/\\/\\\\/gx;
+$path =~ s/^'//;
+$path =~ s/'$//;
 
 print "/* THIS IS A GENERATED FILE. DO NOT EDIT! */\n",
       "\n",

@@ -13,6 +13,22 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>Path for Cap5 loadable library changed</h4>
+
+<p>The perl CA module makes use of a loadable library, which used to be loaded
+from the base/lib/&lt;host-arch&gt; directory.  However different versions of
+Perl require different loadable library binaries as the Perl ABI can change.
+Now the library will be installed into and loaded from the directory
+base/lib/perl/&lt;version&gt;/&lt;archname&gt; where both &lt;version&gt; and
+&lt;archname&gt; are taken from the Perl configuration.  This makes it possible
+for the same Perl script to be run on both RHEL5 and RHEL6 workstations say, even
+though they use different versions of Perl.</p>
+
+<p>To achieve that, first build EPICS Base using the older OS version.  Then
+on a machine running the newer version, go into the base/src/cap5 directory and
+run a <tt>make rebuild</tt> command.  This will rebuild the libCap5.so file and
+install it into the location appropriate for its Perl version and architecture.</p>
+
 <h4>Build configurations updated for Apple iOS targets</h4>
 
 <p>The build process can now construct universal binaries containing both ARMv6

@@ -231,6 +231,18 @@ void casStreamIOWakeup::show ( unsigned level ) const
 }
 
 //
+// casStreamOS::armRecv ()
+//
+inline void casStreamOS::armRecv()
+{
+	if ( ! this->pRdReg ) {
+		if ( ! this->inBufFull() ) {
+			this->pRdReg = new casStreamReadReg ( *this );
+		}
+	}
+}
+
+//
 // casStreamIOWakeup::expire()
 //
 // This is called whenever asynchronous IO completes
@@ -295,18 +307,6 @@ void casStreamIOWakeup::start ( casStreamOS &os  )
         this->timer.start ( *this, 0.0 );
     }
     this->pOS->printStatus ( "casStreamIOWakeup tmr start" );
-}
-
-//
-// casStreamOS::armRecv ()
-//
-inline void casStreamOS::armRecv()
-{
-	if ( ! this->pRdReg ) {
-		if ( ! this->inBufFull() ) {
-			this->pRdReg = new casStreamReadReg ( *this );
-		}
-	}
 }
 
 //

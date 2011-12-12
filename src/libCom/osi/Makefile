@@ -86,8 +86,6 @@ Com_SRCS += osdInterrupt.c
 Com_SRCS += osdPoolStatus.c
 Com_SRCS += osdSignal.cpp
 
-osdEnv_CFLAGS_WIN32= -U__STDC__
-
 Com_SRCS += osdEnv.c
 
 # Command-line input support

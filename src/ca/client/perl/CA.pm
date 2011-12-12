@@ -6,9 +6,6 @@ use warnings;
 
 my $version = '0.4';
 
-exists $ENV{EPICS_HOST_ARCH}
-    or die "EPICS_HOST_ARCH environment variable not set";
-
 
 package CA;
 
@@ -26,12 +23,17 @@ package Cap5;
 our $VERSION = $version;
 our @ISA = qw(DynaLoader);
 
+# Library is specific to the Perl version and archname
+use Config;
+my $perl_version  = $Config::Config{version};
+my $perl_archname = $Config::Config{archname};
+
 require DynaLoader;
 
 # Add our lib/<arch> directory to the shared library search path
 use File::Basename;
 my $Lib = dirname(__FILE__);
-push @DynaLoader::dl_library_path, "$Lib/../$ENV{EPICS_HOST_ARCH}";
+push @DynaLoader::dl_library_path, "$Lib/$perl_version/$perl_archname";
 
 bootstrap Cap5 $VERSION;
 

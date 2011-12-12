@@ -1109,7 +1109,7 @@ gddStatus gdd::clearData(void)
 			str->clear();
         }
         else if ( this->primitiveType() == aitEnumFixedString ) {
-            memset ( this->data.FString, '\0', sizeof ( this->data.FString ) );
+            memset ( this->data.FString, '\0', sizeof(aitFixedString) );
         }
         else {
             memset ( & this->data, '\0', sizeof ( this->data ) );

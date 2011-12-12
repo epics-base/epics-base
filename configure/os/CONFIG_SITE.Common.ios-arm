@@ -1,0 +1,28 @@
+# CONFIG_SITE.Common.ios-arm
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Site-specific settings for ios-arm target builds
+#-------------------------------------------------------
+
+# Which ARM instruction set(s) to generate code for:
+#   Most iOS devices can run programs compiled for both the
+#   ARMv6 and ARMv7 instruction sets. ARMv7 code is usually
+#   more efficient, but the older devices listed below can only
+#   use the ARMv6 instruction set. Including both architectures
+#   generates a Universal binary, which is larger and takes
+#   longer to compile but runs efficiently on all devices.
+#
+#   ARMv6-only devices: iPhone 1 or 3G, iPod Touch Gen 1 or 2
+#
+ARCH_CLASS = armv7
+#ARCH_CLASS = armv6 armv7
+#ARCH_CLASS = armv6
+
+
+# Uncomment these two definitions to use g++ instead of clang++
+# which may be needed in some circumstances:
+#
+#CCC = $(GNU_BIN)/c++
+#GNU_LDLIBS_YES = -lgcc

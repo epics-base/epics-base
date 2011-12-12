@@ -22,6 +22,11 @@ ifneq ($(findstring darwin,$(T_A)),)
   LOADABLE_SHRLIB_SUFFIX = .bundle
 endif
 
+PERL_VERSION = $(shell $(PERL) ../perlConfig.pl version)
+PERL_ARCHNAME = $(shell $(PERL) ../perlConfig.pl archname)
+PERL_ARCHPATH = $(PERL_VERSION)/$(PERL_ARCHNAME)
+
+ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
   # Doesn't build on WIN32
   LOADABLE_LIBRARY_HOST = Cap5
@@ -33,12 +38,11 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
   PERL_SCRIPTS += camonitor.pl
 
   PERL_MODULES += CA.pm
+  PERL_MODULES += $(PERL_ARCHPATH)/$(LOADABLE_SHRLIB_PREFIX)Cap5$(LOADABLE_SHRLIB_SUFFIX)
 
-  ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-    # Can only create docs in Host build
-    HTMLS_DIR = .
-    HTMLS = CA.html
-  endif
+  HTMLS_DIR = .
+  HTMLS = CA.html
+endif
 endif
 
 Cap5_SRCS = Cap5.xs
@@ -61,4 +65,7 @@ ifdef T_A
 	$(RM) $@
 	podchecker $< && pod2html --infile=$< --outfile=$@
 
+  $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)/%: %
+	$(ECHO) "Installing loadable shared library $@"
+	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)
 endif

@@ -3,7 +3,7 @@
 # $Revision-Id$
 # This file is maintained by the build community.
 #
-# Definitions for iOS target archs
+# Definitions for all Apple iOS builds
 # Sites may override these definitions in CONFIG_SITE.Common.iosCommon
 # or CONFIG_SITE.<host>.iosCommon
 #-------------------------------------------------------
@@ -29,8 +29,14 @@ SDK_DIR = $(PLATFORM_DIR)/Developer/SDKs/$(IOS_PLATFORM)$(IOS_VERSION).sdk
 
 #-------------------------------------------------------
 # Build architecture flags
-ARCH_DEP_CFLAGS += -arch $(ARCH_CLASS)
-ARCH_DEP_LDFLAGS += -arch $(ARCH_CLASS)
+#   ARCH_CLASS must contain a list of CPU architectures which must be
+#   valid arguments to the -arch options for the cc and ld commands.
+#   ARCH_CLASS is defined in a CONFIG_SITE file which is not loaded
+#   until after this file.
+#
+ARCH_DEP_FLAGS = $(addprefix -arch ,$(ARCH_CLASS))
+ARCH_DEP_CFLAGS += $(ARCH_DEP_FLAGS)
+ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 
 #--------------------------------------------------
 # Operating system flags
@@ -49,9 +55,9 @@ OPT_CXXFLAGS_YES += -g
 #-------------------------------------------------------
 # Compiler definitions:
 #   Use clang instead of gcc
-#   Must use g++ still
 CC = $(GNU_BIN)/clang
-CCC = $(GNU_BIN)/c++
+CCC = $(GNU_BIN)/clang++
+GNU_LDLIBS_YES =
 
 #-------------------------------------------------------
 # Linker flags
@@ -79,6 +85,15 @@ CODE_CXXFLAGS = -fno-common
 vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 %.o: %.m
 	$(COMPILE.c) -c $<
+
+#--------------------------------------------------
+# Header dependency file generation
+#
+# Use compiler when ARCH_CLASS is a single arch value
+# otherwise use perl script command
+SINGLE_ARCH=$(filter 1,$(words $(ARCH_CLASS)))
+HDEPENDS_CFLAGS = $(if $(SINGLE_ARCH),$(HDEPENDS_CFLAGS_$(HDEPENDS)))
+HDEPENDS_METHOD = $(if $(SINGLE_ARCH),CFLAGS,CMD)
 
 #--------------------------------------------------
 # Allow site overrides

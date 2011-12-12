@@ -10,7 +10,8 @@
 
 #IOS_VERSION = 3.2
 #IOS_VERSION = 4.1
-IOS_VERSION = 4.3
+#IOS_VERSION = 4.3
+IOS_VERSION = 5.0
 
 
 # Most sites will want shared libraries

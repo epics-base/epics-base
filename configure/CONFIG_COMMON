@@ -47,7 +47,7 @@ DB_OPT = NO
 #-------------------------------------------------------
 # Check configure/RELEASE file for consistency
 CHECK_RELEASE_YES = checkRelease
-CHECK_RELEASE_NO =
+CHECK_RELEASE_NO = noCheckRelease
 CHECK_RELEASE_WARN = warnRelease
 
 #-------------------------------------------------------

@@ -24,8 +24,8 @@ vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 # dbExpand
 INSTALL_DBDFLAGS += -I $(INSTALL_DBD)
 INSTALL_DBFLAGS += -I $(INSTALL_DB)
-DBDFLAGS = $(USR_DBDFLAGS) -I . -I .. $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. $(INSTALL_DBFLAGS) $(RELEASE_DBFLAGS)
+DBDFLAGS = $(USR_DBDFLAGS) -I. -I.. -I$(COMMON_DIR) $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. -I$(COMMON_DIR) $(INSTALL_DBFLAGS) $(RELEASE_DBFLAGS)
 
 #####################################################
 # To allow os specific dbd files AND have the -j option work properly,

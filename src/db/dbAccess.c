@@ -969,7 +969,7 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
 
         case DBR_CHAR:
         case DBR_UCHAR:
-            if (nRequest && *nRequest > 1) {
+            if (nRequest && *nRequest > 0) {
                 maxlen = *nRequest - 1;
                 break;
             }
@@ -984,8 +984,8 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
         if (!status) status = dbFindField(&dbEntry, pfldDes->name);
         if (!status) {
             rtnString = dbGetString(&dbEntry);
-            strncpy(pbuf, rtnString, maxlen - 1);
-            pbuf[maxlen - 1] = 0;
+            strncpy(pbuf, rtnString, maxlen);
+            pbuf[maxlen] = 0;
         }
         dbFinishEntry(&dbEntry);
     } else {
@@ -1028,7 +1028,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
 
         case DBR_CHAR:
         case DBR_UCHAR:
-            if (nRequest && *nRequest > 1) {
+            if (nRequest && *nRequest > 0) {
                 maxlen = *nRequest - 1;
                 break;
             }
@@ -1037,8 +1037,8 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
             return S_db_badDbrtype;
         }
 
-        strncpy(pbuf, (char *)paddr->pfield, maxlen - 1);
-        pbuf[maxlen - 1] = 0;
+        strncpy(pbuf, (char *)paddr->pfield, maxlen);
+        pbuf[maxlen] = 0;
         return 0;
     }
 

@@ -568,6 +568,12 @@ iocshBody (const char *pathname, const char *commandLine)
             puts(line);
 
         /*
+         * Ignore lines that become comment lines after macro expansion
+         */
+        if (*line == '#')
+            continue;
+
+        /*
          * Break line into words
          */
         icout = icin = 0;

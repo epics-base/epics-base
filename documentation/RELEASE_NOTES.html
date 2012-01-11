@@ -3,15 +3,37 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12.2 Release Notes</title>
+  <title>EPICS Base R3.14.12.2-DEV Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.12.2</h1>
+<h1 align="center">EPICS Base Release 3.14.12.2-DEV</h1>
 
-<h2 align="center">Changes between 3.14.12.1 and 3.14.12.2</h2>
+<h2 align="center">Changes between 3.14.12.2 and 3.14.12.3</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h4>Comments in iocsh scripts</h4>
+
+<p>The IOC shell was very particular about comments in previous versions of
+Base. If the <tt>#</tt> character was indented using white-space characters it
+had to be followed immediately by a white-space, comma or parenthesis character,
+and macLib would report errors if the rest of the comment contained any
+undefined macros. These restrictions have now been removed. The comment
+character can come from expanding a macro without it having to be followed by
+white-space, although in this case macLib will still report errors due to
+undefined or circular macro definitions.</p>
+
+<h4>MacOS-X: Don't use Ports/Fink unless configured</h4>
+
+<p>Previous releases would automatically use headers and link to libraries found
+in the DarwinPorts and Fink installation directories. This is now controlled by
+entries in the <tt>CONFIG_SITE.darwinCommon.darwinCommon</tt> file in the
+<tt>configure/os</tt> directory, which are commented out by default. Recent
+versions of MacOS-X come with an implementation of readline, so those additional
+code repositories are no longer required.</p>
+
+<h2 align="center">Changes between 3.14.12.1 and 3.14.12.2</h2>
 
 <h4>Path for Cap5 loadable library changed</h4>
 

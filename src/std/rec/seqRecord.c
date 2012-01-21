@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
+ 
 /*
  * $Revision-Id$
  *
@@ -39,34 +39,48 @@
 
 int	seqRecDebug = 0;
 
-/* Create RSET - Record Support Entry Table*/
-static long init_record(seqRecord *prec, int pass);
-static long process(seqRecord *prec);
 static int processNextLink(seqRecord *prec);
 static long asyncFinish(seqRecord *prec);
 static void processCallback(CALLBACK *arg);
-static long get_precision(dbAddr *paddr, long *pprecision);
+
+/* Create RSET - Record Support Entry Table*/
+#define report NULL
+#define initialize NULL
+static long init_record(seqRecord *prec, int pass);
+static long process(seqRecord *prec);
+#define special NULL
+#define get_value NULL
+#define cvt_dbaddr NULL
+#define get_array_info NULL
+#define put_array_info NULL
+static long get_units(DBADDR *, char *);
+static long get_precision(dbAddr *paddr, long *);
+#define get_enum_str NULL
+#define get_enum_strs NULL
+#define put_enum_str NULL
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset seqRSET={
 	RSETNUMBER,
-	NULL,			/* report */
-	NULL,			/* initialize */
+	report,			/* report */
+	initialize,		/* initialize */
 	init_record,		/* init_record */
 	process,		/* process */
-	NULL,			/* special */
-	NULL,			/* get_value */
-	NULL,			/* cvt_dbaddr */
-	NULL,			/* get_array_info */
-	NULL,			/* put_array_info */
-	NULL,			/* get_units */
+	special,		/* special */
+	get_value,		/* get_value */
+	cvt_dbaddr,		/* cvt_dbaddr */
+	get_array_info,		/* get_array_info */
+	put_array_info,		/* put_array_info */
+	get_units,		/* get_units */
 	get_precision,		/* get_precision */
-	NULL,			/* get_enum_str */
-	NULL,			/* get_enum_strs */
-	NULL,			/* put_enum_str */
-	NULL,			/* get_graphic_double */
-	NULL,			/* get_control_double */
-	NULL 			/* get_alarm_double */
-
+	get_enum_str,		/* get_enum_str */
+	get_enum_strs,		/* get_enum_strs */
+	put_enum_str,		/* put_enum_str */
+	get_graphic_double,	/* get_graphic_double */
+	get_control_double,	/* get_control_double */
+	get_alarm_double 	/* get_alarm_double */
 };
 epicsExportAddress(rset,seqRSET);
 
@@ -406,15 +420,91 @@ static void processCallback(CALLBACK *arg)
  * Return the precision value from PREC
  *
  *****************************************************************************/
+#define indexof(field) seqRecord##field
+#define get_dol(prec, fieldOffset) \
+    &((linkDesc*)&prec->dly1)[fieldOffset>>2].dol
+
+static long get_units(DBADDR *paddr, char *units)
+{
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
+            strcpy(units, "s");
+            break;
+        case 2: /* DOn */
+            dbGetUnits(get_dol(prec, fieldOffset),
+                units, DB_UNITS_SIZE);
+    }
+    return(0);
+}
+
 static long get_precision(dbAddr *paddr, long *pprecision)
 {
     seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    short precision;
 
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
+            *pprecision = 2;
+            return 0;
+        case 2: /* DOn */
+            if (dbGetPrecision(get_dol(prec, fieldOffset),
+                &precision) == 0) {
+                *pprecision = precision;
+                return 0;
+            }
+    }
     *pprecision = prec->prec;
-
-    if(paddr->pfield < (void *)&prec->val)
-	return 0;			/* Field is NOT in dbCommon */
-
-    recGblGetPrec(paddr, pprecision);	/* Field is in dbCommon */
+    recGblGetPrec(paddr, pprecision);
     return 0;
 }
+
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
+{
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+    
+    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+        case 0: /* DLYn */
+            pgd->lower_disp_limit = 0.0;
+            pgd->lower_disp_limit = 10.0;
+            return 0;
+        case 2: /* DOn */
+            dbGetGraphicLimits(get_dol(prec, fieldOffset),
+                &pgd->lower_disp_limit,
+                &pgd->upper_disp_limit);
+            return 0;
+    }
+    recGblGetGraphicDouble(paddr,pgd);
+    return 0;
+}    
+    
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+{
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    recGblGetControlDouble(paddr,pcd);
+    if (fieldOffset >= 0 && (fieldOffset & 2) == 0) /* DLYn */
+        pcd->lower_ctrl_limit = 0.0;
+    return(0);
+}
+
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
+{
+    seqRecord	*prec = (seqRecord *) paddr->precord;
+    int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
+
+    if (fieldOffset >= 0 && (fieldOffset & 2) == 2)  /* DOn */
+        dbGetAlarmLimits(get_dol(prec, fieldOffset),
+            &pad->lower_alarm_limit,
+            &pad->lower_warning_limit,
+            &pad->upper_warning_limit,
+            &pad->upper_alarm_limit);
+    else
+        recGblGetAlarmDouble(paddr, pad);
+    return 0;
+}
+

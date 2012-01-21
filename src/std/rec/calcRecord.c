@@ -54,28 +54,28 @@ static long get_precision(DBADDR *paddr, long *precision);
 #define get_enum_strs NULL
 #define put_enum_str NULL
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd);
-static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd);
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd);
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad);
 
 rset calcRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_ctrl_double,
-	get_alarm_double
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset, calcRSET);
 
@@ -96,15 +96,15 @@ static long init_record(calcRecord *prec, int pass)
     plink = &prec->inpa;
     pvalue = &prec->a;
     for (i = 0; i < CALCPERFORM_NARGS; i++, plink++, pvalue++) {
-	if (plink->type == CONSTANT) {
-	    recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-	}
+        if (plink->type == CONSTANT) {
+            recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
+        }
     }
     if (postfix(prec->calc, prec->rpcl, &error_number)) {
-	recGblRecordError(S_db_badField, (void *)prec,
-			  "calc: init_record: Illegal CALC field");
-	errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
-		     prec->name, calcErrorStr(error_number), prec->calc);
+        recGblRecordError(S_db_badField, (void *)prec,
+                          "calc: init_record: Illegal CALC field");
+        errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
+                     prec->name, calcErrorStr(error_number), prec->calc);
     }
     return 0;
 }
@@ -112,10 +112,11 @@ static long init_record(calcRecord *prec, int pass)
 static long process(calcRecord *prec)
 {
     prec->pact = TRUE;
-    if (fetch_values(prec)==0) {
-	if (calcPerform(&prec->a, &prec->val, prec->rpcl)) {
-	    recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
-	} else prec->udf = isnan(prec->val);
+    if (fetch_values(prec) == 0) {
+        if (calcPerform(&prec->a, &prec->val, prec->rpcl)) {
+            recGblSetSevr(prec, CALC_ALARM, INVALID_ALARM);
+        } else
+            prec->udf = isnan(prec->val);
     }
     recGblGetTimeStamp(prec);
     /* check for alarms */
@@ -135,24 +136,41 @@ static long special(DBADDR *paddr, int after)
 
     if (!after) return 0;
     if (paddr->special == SPC_CALC) {
-	if (postfix(prec->calc, prec->rpcl, &error_number)) {
-	    recGblRecordError(S_db_badField, (void *)prec,
-			      "calc: Illegal CALC field");
-	    errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
-			 prec->name, calcErrorStr(error_number), prec->calc);
-	    return S_db_badField;
-	}
-	return 0;
+        if (postfix(prec->calc, prec->rpcl, &error_number)) {
+            recGblRecordError(S_db_badField, (void *)prec,
+                              "calc: Illegal CALC field");
+            errlogPrintf("%s.CALC: %s in expression \"%s\"\n",
+                         prec->name, calcErrorStr(error_number), prec->calc);
+            return S_db_badField;
+        }
+        return 0;
     }
     recGblDbaddrError(S_db_badChoice, paddr, "calc::special - bad special value!");
     return S_db_badChoice;
 }
 
+#define indexof(field) calcRecord##field
+
+static long get_linkNumber(int fieldIndex) {
+    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+        return fieldIndex - indexof(A);
+    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+        return fieldIndex - indexof(LA);
+    return -1;
+}
+
 static long get_units(DBADDR *paddr, char *units)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
+    int linkNumber;
 
-    strncpy(units, prec->egu, DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        linkNumber = get_linkNumber(dbGetFieldIndex(paddr));
+        if (linkNumber >= 0)
+            dbGetUnits(&prec->inpa + linkNumber, units, DB_UNITS_SIZE);
+        else
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return 0;
 }
 
@@ -160,86 +178,97 @@ static long get_precision(DBADDR *paddr, long *pprecision)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
     *pprecision = prec->prec;
-
-    if (fieldIndex != calcRecordVAL)
-	recGblGetPrec(paddr, pprecision);
-
+    if (fieldIndex == indexof(VAL)) {
+        return 0;
+    }
+    linkNumber = get_linkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        short precision;
+        if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
+            *pprecision = precision;
+        else
+            *pprecision = 15;
+    } else
+        recGblGetPrec(paddr, pprecision);
     return 0;
 }
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
-
-    if (paddr->pfield == (void *)&prec->val ||
-	paddr->pfield == (void *)&prec->hihi ||
-	paddr->pfield == (void *)&prec->high ||
-	paddr->pfield == (void *)&prec->low ||
-	paddr->pfield == (void *)&prec->lolo) {
-	pgd->upper_disp_limit = prec->hopr;
-	pgd->lower_disp_limit = prec->lopr;
-	return 0;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
+    
+    switch (fieldIndex) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+            pgd->lower_disp_limit = prec->lopr;
+            pgd->upper_disp_limit = prec->hopr;
+            break;
+        default:
+            linkNumber = get_linkNumber(fieldIndex);
+            if (linkNumber >= 0) {
+                dbGetGraphicLimits(&prec->inpa + linkNumber,
+                    &pgd->lower_disp_limit,
+                    &pgd->upper_disp_limit);
+            } else
+                recGblGetGraphicDouble(paddr,pgd);
     }
-
-    if (paddr->pfield >= (void *)&prec->a &&
-	paddr->pfield <= (void *)&prec->l) {
-	pgd->upper_disp_limit = prec->hopr;
-	pgd->lower_disp_limit = prec->lopr;
-	return 0;
-    }
-    if (paddr->pfield >= (void *)&prec->la &&
-	paddr->pfield <= (void *)&prec->ll) {
-	pgd->upper_disp_limit = prec->hopr;
-	pgd->lower_disp_limit = prec->lopr;
-	return 0;
-    }
-    recGblGetGraphicDouble(paddr, pgd);
     return 0;
 }
 
-static long get_ctrl_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
-
-    if (paddr->pfield == (void *)&prec->val ||
-	paddr->pfield == (void *)&prec->hihi ||
-	paddr->pfield == (void *)&prec->high ||
-	paddr->pfield == (void *)&prec->low ||
-	paddr->pfield == (void *)&prec->lolo) {
-	pcd->upper_ctrl_limit = prec->hopr;
-	pcd->lower_ctrl_limit = prec->lopr;
-	return 0;
+    
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+            pcd->lower_ctrl_limit = prec->lopr;
+            pcd->upper_ctrl_limit = prec->hopr;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
     }
-
-    if (paddr->pfield >= (void *)&prec->a &&
-	paddr->pfield <= (void *)&prec->l) {
-	pcd->upper_ctrl_limit = prec->hopr;
-	pcd->lower_ctrl_limit = prec->lopr;
-	return 0;
-    }
-    if (paddr->pfield >= (void *)&prec->la &&
-	paddr->pfield <= (void *)&prec->ll) {
-	pcd->upper_ctrl_limit = prec->hopr;
-	pcd->lower_ctrl_limit = prec->lopr;
-	return 0;
-    }
-    recGblGetControlDouble(paddr, pcd);
     return 0;
 }
 
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
-    if (paddr->pfield == (void *)&prec->val) {
-        pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
-        pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
-        pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
+    if (fieldIndex == indexof(VAL)) {
         pad->lower_alarm_limit = prec->llsv ? prec->lolo : epicsNAN;
+        pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
+        pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
+        pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
     } else {
-	recGblGetAlarmDouble(paddr, pad);
+        linkNumber = get_linkNumber(fieldIndex);
+        if (linkNumber >= 0) {
+            dbGetAlarmLimits(&prec->inpa + linkNumber,
+                &pad->lower_alarm_limit,
+                &pad->lower_warning_limit,
+                &pad->upper_warning_limit,
+                &pad->upper_alarm_limit);
+        } else
+            recGblGetAlarmDouble(paddr, pad);
     }
     return 0;
 }
@@ -311,34 +340,34 @@ static void monitor(calcRecord *prec)
     delta = prec->mlst - prec->val;
     if (delta < 0.0) delta = -delta;
     if (delta > prec->mdel) {
-	/* post events for value change */
-	monitor_mask |= DBE_VALUE;
-	/* update last value monitored */
-	prec->mlst = prec->val;
+        /* post events for value change */
+        monitor_mask |= DBE_VALUE;
+        /* update last value monitored */
+        prec->mlst = prec->val;
     }
     /* check for archive change */
     delta = prec->alst - prec->val;
     if (delta < 0.0) delta = -delta;
     if (delta > prec->adel) {
-	/* post events on value field for archive change */
-	monitor_mask |= DBE_LOG;
-	/* update last archive value monitored */
-	prec->alst = prec->val;
+        /* post events on value field for archive change */
+        monitor_mask |= DBE_LOG;
+        /* update last archive value monitored */
+        prec->alst = prec->val;
     }
 
     /* send out monitors connected to the value field */
     if (monitor_mask){
-	db_post_events(prec, &prec->val, monitor_mask);
+        db_post_events(prec, &prec->val, monitor_mask);
     }
     /* check all input fields for changes*/
     pnew = &prec->a;
     pprev = &prec->la;
     for (i = 0; i < CALCPERFORM_NARGS; i++, pnew++, pprev++) {
-	if (*pnew != *pprev ||
-	    monitor_mask & DBE_ALARM) {
-	    db_post_events(prec, pnew, monitor_mask | DBE_VALUE | DBE_LOG);
-	    *pprev = *pnew;
-	}
+        if (*pnew != *pprev ||
+            monitor_mask & DBE_ALARM) {
+            db_post_events(prec, pnew, monitor_mask | DBE_VALUE | DBE_LOG);
+            *pprev = *pnew;
+        }
     }
     return;
 }
@@ -353,10 +382,10 @@ static int fetch_values(calcRecord *prec)
     plink = &prec->inpa;
     pvalue = &prec->a;
     for(i = 0; i < CALCPERFORM_NARGS; i++, plink++, pvalue++) {
-	int newStatus;
+        int newStatus;
 
-	newStatus = dbGetLink(plink, DBR_DOUBLE, pvalue, 0, 0);
-	if (status == 0) status = newStatus;
+        newStatus = dbGetLink(plink, DBR_DOUBLE, pvalue, 0, 0);
+        if (status == 0) status = newStatus;
     }
     return status;
 }

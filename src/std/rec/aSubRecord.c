@@ -53,14 +53,14 @@ static long special(DBADDR *, int);
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long );
-#define get_units          NULL
+static long get_units(DBADDR *, char *);
 static long get_precision(DBADDR *, long *);
 #define get_enum_str       NULL
 #define get_enum_strs      NULL
 #define put_enum_str       NULL
-#define get_graphic_double NULL
-#define get_control_double NULL
-#define get_alarm_double   NULL
+static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
+static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
 rset aSubRSET = {
     RSETNUMBER,
@@ -330,15 +330,116 @@ static long fetch_values(aSubRecord *prec)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *precision)
+#define indexof(field) aSubRecord##field
+
+static long get_inlinkNumber(int fieldIndex) {
+    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(U))
+        return fieldIndex - indexof(A);
+    return -1;
+}
+
+static long get_outlinkNumber(int fieldIndex) {
+    if (fieldIndex >= indexof(VALA) && fieldIndex <= indexof(VALU))
+        return fieldIndex - indexof(VALA);
+    return -1;
+}
+
+static long get_units(DBADDR *paddr, char *units)
 {
     aSubRecord *prec = (aSubRecord *)paddr->precord;
+    int linkNumber;
 
-    *precision = prec->prec;
-    recGblGetPrec(paddr, precision);
+    linkNumber = get_inlinkNumber(dbGetFieldIndex(paddr));
+    if (linkNumber >= 0) {
+        dbGetUnits(&prec->inpa + linkNumber, units, DB_UNITS_SIZE);
+        return 0;
+    }
+    linkNumber = get_outlinkNumber(dbGetFieldIndex(paddr));
+    if (linkNumber >= 0) {
+        dbGetUnits(&prec->outa + linkNumber, units, DB_UNITS_SIZE);
+    }
     return 0;
 }
 
+static long get_precision(DBADDR *paddr, long *pprecision)
+{
+    aSubRecord *prec = (aSubRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
+    short precision;
+
+    *pprecision = prec->prec;
+    linkNumber = get_inlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
+            *pprecision = precision;
+        return 0;
+    } 
+    linkNumber = get_outlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        if (dbGetPrecision(&prec->outa + linkNumber, &precision) == 0)
+            *pprecision = precision;
+        return 0;
+    } 
+    recGblGetPrec(paddr, pprecision);
+    return 0;
+}
+
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
+{
+    aSubRecord *prec = (aSubRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
+    
+    linkNumber = get_inlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        dbGetGraphicLimits(&prec->inpa + linkNumber,
+            &pgd->lower_disp_limit,
+            &pgd->upper_disp_limit);
+        return 0;
+    }
+    linkNumber = get_outlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        dbGetGraphicLimits(&prec->outa + linkNumber,
+            &pgd->lower_disp_limit,
+            &pgd->upper_disp_limit);
+    }
+    return 0;
+}
+
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
+{
+    recGblGetControlDouble(paddr,pcd);
+    return 0;
+}
+
+static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
+{
+    aSubRecord *prec = (aSubRecord *)paddr->precord;
+    int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
+
+    linkNumber = get_inlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        dbGetAlarmLimits(&prec->inpa + linkNumber,
+            &pad->lower_alarm_limit,
+            &pad->lower_warning_limit,
+            &pad->upper_warning_limit,
+            &pad->upper_alarm_limit);
+        return 0;
+    }
+    linkNumber = get_outlinkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        dbGetAlarmLimits(&prec->outa + linkNumber,
+            &pad->lower_alarm_limit,
+            &pad->lower_warning_limit,
+            &pad->upper_warning_limit,
+            &pad->upper_alarm_limit);
+        return 0;
+    }
+    recGblGetAlarmDouble(paddr, pad);
+    return 0;
+}
 
 static void monitor(aSubRecord *prec)
 {

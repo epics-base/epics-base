@@ -15,6 +15,14 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Attributes of Non-VAL Fields</h3>
+
+<p>Non-VAL fields now report meaningful information for precision, units,
+graphic limits, control limits, and alarm limits instead of simply using
+PREC, EGU, HOPR, LOPR, DRVL, DRVH, HIHI, HIGH, LOW, and LOLO. All delay
+fields have precision 2 and units "s". Input fields like A-L of the calc record
+read these information from the corresponding INPn link if possible.
+
 <h3>
 Changes to epicsVersion.h</h3>
 

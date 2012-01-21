@@ -83,6 +83,9 @@ rset histogramRSET={
 };
 epicsExportAddress(rset,histogramRSET);
 
+int histogramSDELprecision = 2;
+epicsExportAddress(int, histogramSDELprecision);
+
 struct histogramdset { /* histogram input dset */
      long          number;
      DEVSUPFUN     dev_report;
@@ -410,7 +413,7 @@ static long get_precision(DBADDR *paddr,long *precision)
             *precision = prec->prec;
             break;
         case indexof(SDEL):
-            *precision = 2;
+            *precision = histogramSDELprecision;
             break;
         default:
             recGblGetPrec(paddr,precision);

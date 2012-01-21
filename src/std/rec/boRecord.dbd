@@ -149,3 +149,6 @@ recordtype(bo) {
 		interest(2)
 	}
 }
+
+variable(boHIGHprecision, int)
+variable(boHIGHlimit, double)

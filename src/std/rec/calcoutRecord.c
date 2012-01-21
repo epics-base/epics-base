@@ -83,7 +83,12 @@ rset calcoutRSET = {
     get_alarm_double
 };
 epicsExportAddress(rset, calcoutRSET);
-
+
+int calcoutODLYprecision = 2;
+epicsExportAddress(int, calcoutODLYprecision);
+double calcoutODLYlimit = 100000;
+epicsExportAddress(double, calcoutODLYlimit);
+
 typedef struct calcoutDSET {
     long       number;
     DEVSUPFUN  dev_report;
@@ -401,7 +406,7 @@ static long get_precision(DBADDR *paddr, long *pprecision)
     int linkNumber;
 
     if(fieldIndex == indexof(ODLY)) {
-        *pprecision = 2;
+        *pprecision = calcoutODLYprecision;
         return 0;
     }
     *pprecision = prec->prec;
@@ -472,8 +477,8 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
             break;
         case indexof(ODLY):
             pcd->lower_ctrl_limit = 0.0;
-            pcd->upper_ctrl_limit = 10.0;
-            break;       
+            pcd->upper_ctrl_limit = calcoutODLYlimit;
+            break;
         default:
             recGblGetControlDouble(paddr,pcd);
     }

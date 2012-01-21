@@ -20,8 +20,11 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <p>Non-VAL fields now report meaningful information for precision, units,
 graphic limits, control limits, and alarm limits instead of simply using
 PREC, EGU, HOPR, LOPR, DRVL, DRVH, HIHI, HIGH, LOW, and LOLO. All delay
-fields have precision 2 and units "s". Input fields like A-L of the calc record
-read these information from the corresponding INPn link if possible.
+fields have a default precision of 2 digits, units "s" and control limits
+of 0 to 100,000 seconds (these precision and limit values can be changed
+for each record type as a whole at runtime by updating a registered global
+variable). Input fields like A-L of the calc record read their metadata
+from the corresponding INPn link if possible.</p>
 
 <h3>
 Changes to epicsVersion.h</h3>

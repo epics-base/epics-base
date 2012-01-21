@@ -82,6 +82,11 @@ rset boRSET={
 };
 epicsExportAddress(rset,boRSET);
 
+int boHIGHprecision = 2;
+epicsExportAddress(int, boHIGHprecision);
+double boHIGHlimit = 100000;
+epicsExportAddress(double, boHIGHlimit);
+
 struct bodset { /* binary output dset */
 	long		number;
 	DEVSUPFUN	dev_report;
@@ -280,7 +285,7 @@ static long get_units(DBADDR *paddr, char *units)
 static long get_precision(DBADDR *paddr, long *precision)
 {
     if(dbGetFieldIndex(paddr) == indexof(HIGH))
-        *precision = 2;
+        *precision = boHIGHprecision;
     else
         recGblGetPrec(paddr,precision);
     return(0);
@@ -290,7 +295,7 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
     if(dbGetFieldIndex(paddr) == indexof(HIGH)) {
         pcd->lower_ctrl_limit = 0.0;
-        pcd->upper_ctrl_limit = 10.0;
+        pcd->upper_ctrl_limit = boHIGHlimit;
     } else
         recGblGetControlDouble(paddr,pcd);
     return(0);

@@ -84,6 +84,11 @@ rset seqRSET={
 };
 epicsExportAddress(rset,seqRSET);
 
+int seqDLYprecision = 2;
+epicsExportAddress(int, seqDLYprecision);
+double seqDLYlimit = 100000;
+epicsExportAddress(double, seqDLYlimit);
+
 /* Total number of link-groups in a sequence record */
 #define NUM_LINKS	10
 #define SELN_BIT_MASK	~(0xffff << NUM_LINKS)
@@ -448,7 +453,7 @@ static long get_precision(dbAddr *paddr, long *pprecision)
 
     if (fieldOffset >= 0) switch (fieldOffset & 2) {
         case 0: /* DLYn */
-            *pprecision = 2;
+            *pprecision = seqDLYprecision;
             return 0;
         case 2: /* DOn */
             if (dbGetPrecision(get_dol(prec, fieldOffset),
@@ -486,9 +491,11 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
 
-    recGblGetControlDouble(paddr,pcd);
-    if (fieldOffset >= 0 && (fieldOffset & 2) == 0) /* DLYn */
+    if (fieldOffset >= 0 && (fieldOffset & 2) == 0) { /* DLYn */
         pcd->lower_ctrl_limit = 0.0;
+        pcd->upper_ctrl_limit = seqDLYlimit;
+    } else
+        recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 

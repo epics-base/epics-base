@@ -1,6 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -267,20 +267,25 @@ CONTINUE:
 
 static long special(DBADDR *paddr, int after)
 {
-    mbboRecord     *prec = (mbboRecord *)(paddr->precord);
-    int            special_type = paddr->special;
-    int            fieldIndex = dbGetFieldIndex(paddr);
+    mbboRecord *prec = (mbboRecord *)(paddr->precord);
+    int special_type = paddr->special;
+    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_MOD):
+    if (!after) return 0;
+    switch (special_type) {
+    case SPC_MOD:
         init_common(prec);
-        if (fieldIndex >= mbboRecordZRST && fieldIndex <= mbboRecordFFST)
-            db_post_events(prec,&prec->val,DBE_PROPERTY);
-        return(0);
+        if (fieldIndex >= mbboRecordZRST && fieldIndex <= mbboRecordFFST) {
+            int event = DBE_PROPERTY;
+
+            if (prec->val == fieldIndex - mbboRecordZRST)
+                event |= DBE_VALUE | DBE_LOG;
+            db_post_events(prec, &prec->val, event);
+        }
+        return 0;
     default:
-        recGblDbaddrError(S_db_badChoice,paddr,"mbbo: special");
-        return(S_db_badChoice);
+        recGblDbaddrError(S_db_badChoice, paddr, "mbbo: special");
+        return S_db_badChoice;
     }
 }
 

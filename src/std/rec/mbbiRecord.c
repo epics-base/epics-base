@@ -1,6 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -197,22 +197,27 @@ static long process(mbbiRecord *prec)
 }
 
 
-static long special(DBADDR *paddr,int after)
+static long special(DBADDR *paddr, int after)
 {
-    mbbiRecord     *prec = (mbbiRecord *)(paddr->precord);
-    int            special_type = paddr->special;
-    int            fieldIndex = dbGetFieldIndex(paddr);
+    mbbiRecord *prec = (mbbiRecord *)(paddr->precord);
+    int special_type = paddr->special;
+    int fieldIndex = dbGetFieldIndex(paddr);
 
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_MOD):
-	init_common(prec);
-        if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST)
-            db_post_events(prec,&prec->val,DBE_PROPERTY);
-        return(0);
+    if (!after) return 0;
+    switch (special_type) {
+    case SPC_MOD:
+        init_common(prec);
+        if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST) {
+            int event = DBE_PROPERTY;
+
+            if (prec->val == fieldIndex - mbbiRecordZRST)
+                event |= DBE_VALUE | DBE_LOG;
+            db_post_events(prec, &prec->val, event);
+        }
+        return 0;
     default:
-        recGblDbaddrError(S_db_badChoice,paddr,"mbbi: special");
-        return(S_db_badChoice);
+        recGblDbaddrError(S_db_badChoice, paddr, "mbbi: special");
+        return S_db_badChoice;
     }
 }
 

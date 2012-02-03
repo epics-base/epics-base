@@ -85,8 +85,13 @@ void testStdoutRedir (const char *report)
     testOk1(stdout == realStdout);
 
     errno = 0;
-    if (!testOk1(!fclose(stream)))
-        testDiag("fclose error: %s\n", strerror(errno));
+    if (!testOk1(!fclose(stream))) {
+        testDiag("fclose error: %s", strerror(errno));
+#ifdef vxWorks
+        testDiag("The above test fails if you don't cd to a writable directory");
+        testDiag("before running the test. The next test will also fail...");
+#endif
+    }
 
     if (!testOk1((stream = fopen(report, "r")) != NULL)) {
         testDiag("'%s' could not be opened for reading: %s",

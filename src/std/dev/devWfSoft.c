@@ -20,6 +20,7 @@
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "dbEvent.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "waveformRecord.h"
@@ -75,6 +76,7 @@ static long read_wf(waveformRecord *prec)
         if (prec->tsel.type == CONSTANT &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
+	db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     }
 
     return 0;

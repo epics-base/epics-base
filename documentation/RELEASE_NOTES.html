@@ -15,6 +15,13 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Post events on Waveform record's NORD field</h3>
+
+<p>When the record type or soft device support modify the NORD field of a
+waveform record they now also post a DBE_VALUE and DBE_LOG event, signalling the
+array length change to any clients monitoring the NORD field.  Input device
+support routines should be modified to do this as well.</p>
+
 <h3>Attributes of Non-VAL Fields</h3>
 
 <p>Non-VAL fields now report meaningful information for precision, units,

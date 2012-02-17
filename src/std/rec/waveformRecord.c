@@ -177,7 +177,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     waveformRecord *prec = (waveformRecord *) paddr->precord;
 
-    *no_elements =  prec->nord;
+    *no_elements = prec->nord;
     *offset = 0;
 
     return 0;
@@ -191,6 +191,7 @@ static long put_array_info(DBADDR *paddr, long nNew)
     if (prec->nord > prec->nelm)
         prec->nord = prec->nelm;
 
+    db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     return 0;
 }
 
@@ -327,6 +328,7 @@ static long readValue(waveformRecord *prec)
         /* nord set only for db links: needed for old db_access */
         if (prec->siol.type != CONSTANT) {
             prec->nord = nRequest;
+	    db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
             if (status == 0)
                 prec->udf=FALSE;
         }

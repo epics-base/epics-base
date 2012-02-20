@@ -1,7 +1,9 @@
 /*caMonitor.c*/
-/* This example accepts a file containing a list of pvs to monitor
- * It prints a message for all ca evemts: connection, access rights, data
+
+/* This example accepts the name of a file containing a list of pvs to monitor.
+ * It prints a message for all ca events: connection, access rights and monitor.
  */
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -110,18 +112,18 @@ int main(int argc,char **argv)
     SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");
-    for(i=0; i<npv; i++) {
+    for (i=0; i<npv; i++) {
 	SEVCHK(ca_create_channel(pname[i],connectionCallback,
 		pmynode[i],20,&pmynode[i]->mychid),
 		"ca_create_channel");
 	SEVCHK(ca_replace_access_rights_event(pmynode[i]->mychid,
 		accessRightsCallback),
 		"ca_replace_access_rights_event");
-	SEVCHK(ca_add_event(DBR_STRING,pmynode[i]->mychid,eventCallback,
-		pmynode[i],&pmynode[i]->myevid), 
-		"ca_add_event");
+	SEVCHK(ca_create_subscription(DBR_STRING,1,pmynode[i]->mychid,
+		DBE_VALUE,eventCallback,pmynode[i],&pmynode[i]->myevid),
+		"ca_create_subscription");
     }
     /*Should never return from following call*/
     SEVCHK(ca_pend_event(0.0),"ca_pend_event");
-    return(0);
+    return 0;
 }

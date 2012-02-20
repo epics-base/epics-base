@@ -545,10 +545,19 @@ iocshBody (const char *pathname, const char *commandLine)
         lineno++;
 
         /*
-         * Ignore comment lines other than to echo
-         * them if they came from a script.
+         * Skip leading white-space
          */
-        if (*raw == '#') {
+        icin = 0;
+        while ((c = raw[icin]) && isspace(c)) {
+            icin++;
+        }
+
+        /*
+         * Ignore comment lines other than to echo
+         * them if they came from a script.  This
+         * avoids macLib errors from comments.
+         */
+        if (c == '#') {
             if ((prompt == NULL) && (commandLine == NULL))
                 puts(raw);
             continue;
@@ -562,15 +571,28 @@ iocshBody (const char *pathname, const char *commandLine)
             continue;
 
         /*
-         * Echo commands read from scripts
+         * Skip leading white-space coming from a macro
+         */
+        while ((c = line[icin]) && isspace(c)) {
+            icin++;
+        }
+
+        /*
+         * Echo non-empty lines read from a script
          */
         if ((prompt == NULL) && *line && (commandLine == NULL))
             puts(line);
 
         /*
+         * Ignore lines that became a comment or empty after macro expansion
+         */
+        if (!c || c == '#')
+            continue;
+
+        /*
          * Break line into words
          */
-        icout = icin = 0;
+        icout = 0;
         inword = 0;
         argc = 0;
         quote = EOF;

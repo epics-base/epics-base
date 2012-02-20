@@ -446,7 +446,10 @@ epicsShareFunc epicsThreadBooleanStatus epicsShareAPI epicsThreadHighestPriority
 epicsShareFunc unsigned int epicsShareAPI 
     epicsThreadGetStackSize ( epicsThreadStackSizeClass stackSizeClass ) 
 {
-    static const unsigned stackSizeTable[epicsThreadStackBig+1] = {4000, 6000, 11000};
+    #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
+    static const unsigned stackSizeTable[epicsThreadStackBig+1] = {
+        STACK_SIZE(1), STACK_SIZE(2), STACK_SIZE(4)
+    };
 
     if (stackSizeClass<epicsThreadStackSmall) {
         fprintf ( stderr,

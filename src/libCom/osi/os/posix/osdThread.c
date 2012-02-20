@@ -398,9 +398,6 @@ static void epicsThreadInit(void)
 }
 
 
-#define ARCH_STACK_FACTOR 1024
-
-
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
 #if ! defined (_POSIX_THREAD_ATTR_STACKSIZE)
@@ -408,8 +405,10 @@ epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadSt
 #elif defined (OSITHREAD_USE_DEFAULT_STACK)
     return 0;
 #else
-    static const unsigned stackSizeTable[epicsThreadStackBig+1] =
-        {128*ARCH_STACK_FACTOR, 256*ARCH_STACK_FACTOR, 512*ARCH_STACK_FACTOR};
+    #define STACK_SIZE(f) (f * 0x10000 * sizeof(void *))
+    static const unsigned stackSizeTable[epicsThreadStackBig+1] = {
+        STACK_SIZE(1), STACK_SIZE(2), STACK_SIZE(4)
+    };
     if (stackSizeClass<epicsThreadStackSmall) {
         errlogPrintf("epicsThreadGetStackSize illegal argument (too small)");
         return stackSizeTable[epicsThreadStackBig];

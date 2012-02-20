@@ -143,6 +143,7 @@ private:
     public:
         M_repeaterTimerNotify ( udpiiu & iiu ) : 
             m_udpiiu ( iiu ) {}
+        ~M_repeaterTimerNotify (); /* for sunpro compiler */
         // repeaterTimerNotify
         void repeaterRegistrationMessage ( 
             unsigned attemptNumber );

@@ -317,7 +317,7 @@ long epicsShareAPI dbpf(const char *pname,const char *pvalue)
     if (nameToAddr(pname, &addr)) return -1;
     /* For enumerated types must allow for ENUM rather than string*/
     /* If entire field is digits then use DBR_ENUM else DBR_STRING*/
-    if (addr.dbr_field_type == DBR_ENUM && !*pvalue &&
+    if (addr.dbr_field_type == DBR_ENUM && *pvalue &&
         strspn(pvalue,"0123456789") == strlen(pvalue)) {
         unsigned short value;
 

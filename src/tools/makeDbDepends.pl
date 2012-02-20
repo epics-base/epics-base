@@ -14,8 +14,8 @@ my $target = shift @ARGV;
 my %depends;
 
 while (my $line = <>) {
-    $depends{$2}++ if $line =~ m/^\s*file\s*(["']?)(.*)\1/;
-    $depends{$1}++ if $line =~ m/^\s*include\s+"(.*)"/;
+    $depends{$2}++ if $line =~ m/^ \s* file \s* (["']?) (\S*) \1 /x;
+    $depends{$1}++ if $line =~ m/^ \s* include \s* "(.*)" /x;
 }
 
 if (%depends) {

@@ -1,0 +1,20 @@
+# CONFIG_SITE.darwinCommon.darwinCommon
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Site specific definitions for darwin builds
+#-------------------------------------------------------
+
+# Uncomment the following two definitions to enable the use of DarwinPorts packages.
+#
+#OP_SYS_INCLUDES += -I/opt/local/include
+# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
+#OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /opt/local/lib/*))))
+
+# Uncomment the following two definitions to enable the use of Fink packages.
+#
+#OP_SYS_INCLUDES += -I/sw/include
+# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
+#OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /sw/lib/*))))
+

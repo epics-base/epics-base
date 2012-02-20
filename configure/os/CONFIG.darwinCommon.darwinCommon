@@ -53,20 +53,6 @@ OPT_CFLAGS_YES += -g
 OPT_CXXFLAGS_YES += -g
 
 #
-# The following two definitions enable the use of DarwinPorts packages.
-#
-OP_SYS_INCLUDES += -I/opt/local/include
-# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
-OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /opt/local/lib/*))))
-
-#
-# The following two definitions enable the use of Fink packages.
-#
-OP_SYS_INCLUDES += -I/sw/include
-# dir/firstword/wildcard used to avoid warning -L: directory name (...) does not exist
-OP_SYS_LDFLAGS +=  $(addprefix -L,$(dir $(firstword $(wildcard /sw/lib/*))))
-
-#
 # Libraries for command-line editing.
 #
 LDLIBS_READLINE = -lreadline

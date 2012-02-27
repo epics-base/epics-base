@@ -43,10 +43,6 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 OP_SYS_CFLAGS += -isysroot $(SDK_DIR) -D__IPHONE_OS_VERSION_MIN_REQUIRED=30200
 
 #--------------------------------------------------
-# Don't try to use precompiled headers when converting sequencer files
-CPPSNCFLAGS += -no-cpp-precomp
-
-#--------------------------------------------------
 # Always compile in debugging symbol table information
 #
 OPT_CFLAGS_YES += -g
@@ -54,13 +50,20 @@ OPT_CXXFLAGS_YES += -g
 
 #-------------------------------------------------------
 # Compiler definitions:
-#   Use clang instead of gcc
-CC = $(GNU_BIN)/clang
-CCC = $(GNU_BIN)/clang++
-GNU_LDLIBS_YES =
+
+CC_GNU  = gcc
+CCC_GNU = g++
+CC_LLVM  = llvm-gcc
+CCC_LLVM = llvm-g++
+CC_CLANG  = clang
+CCC_CLANG = clang++
+
+CC = $(firstword $(wildcard $(GNU_BIN)/$(CC_$(COMPILER))) $(CC_$(COMPILER)))
+CCC = $(firstword $(wildcard $(GNU_BIN)/$(CCC_$(COMPILER))) $(CCC_$(COMPILER)))
 
 #-------------------------------------------------------
 # Linker flags
+GNU_LDLIBS_YES =
 OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib -L$(SDK_DIR)/usr/lib/system
 
 #-------------------------------------------------------

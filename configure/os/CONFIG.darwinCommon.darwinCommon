@@ -37,11 +37,6 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 OP_SYS_CFLAGS += -fno-common
 
 #
-# Don't try to use precompiled headers when converting sequencer files
-#
-CPPSNCFLAGS += -no-cpp-precomp
-
-#
 # Darwin os definition
 #
 OP_SYS_CPPFLAGS += -Ddarwin

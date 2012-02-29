@@ -238,7 +238,7 @@ MAIN(epicsCalcTest)
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
     
-    testPlan(566);
+    testPlan(570);
     
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -325,11 +325,15 @@ MAIN(epicsCalcTest)
     testExpr(isinf(NaN));
     testExpr(isnan(0));
     testExpr(isnan(Inf));
+    testExpr(isnan(-Inf));
     testExpr(isnan(NaN));
     testCalc("isnan(0,1,2)", 0);
     testCalc("isnan(0,1,NaN)", 1);
     testCalc("isnan(0,NaN,2)", 1);
     testCalc("isnan(NaN,1,2)", 1);
+    testCalc("isnan(0,1,Inf)", 0);
+    testCalc("isnan(0,Inf,2)", 0);
+    testCalc("isnan(Inf,1,2)", 0);
     testCalc("isnan(0,1,-Inf)", 0);
     testCalc("isnan(0,-Inf,2)", 0);
     testCalc("isnan(-Inf,1,2)", 0);

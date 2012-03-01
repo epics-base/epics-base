@@ -1,6 +1,0 @@
-This directory contains the old R3.13 
-time stamp definitions and routines
-needed by epics extensions. They exist 
-for compatibility purposes only and 
-should not be used by new code.
-

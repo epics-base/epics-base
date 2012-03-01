@@ -16,6 +16,14 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <!-- Insert new items immediately below here ... -->
 
 <h3>
+Removed tsDefs.h</h3>
+
+<p>
+The deprecated tsDefs API was provided for 3.13 compatibility only, and has now
+been removed.  Convert any remaining code that used it to call the epicsTime API
+instead.</p>
+
+<h3>
 Changes to epicsVersion.h</h3>
 
 <p>

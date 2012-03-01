@@ -34,7 +34,6 @@ include $(LIBCOM)/osi/Makefile
 include $(LIBCOM)/ring/Makefile
 include $(LIBCOM)/taskwd/Makefile
 include $(LIBCOM)/timer/Makefile
-include $(LIBCOM)/tsDefs/Makefile
 include $(LIBCOM)/yacc/Makefile
 
 # Library to build:

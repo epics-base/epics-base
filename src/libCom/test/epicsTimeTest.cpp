@@ -38,22 +38,17 @@ struct l_fp { /* NTP time stamp */
     epicsUInt32 l_uf; /* fractional seconds */
 };
 
-epicsTime useSomeCPU;
-
 static const unsigned mSecPerSec = 1000u;
 static const unsigned uSecPerSec = 1000u * mSecPerSec;
 static const unsigned nSecPerSec = 1000u * uSecPerSec;
-
+static const double precisionEPICS = 1.0 / nSecPerSec;
 
 MAIN(epicsTimeTest)
 {
-    const unsigned wasteTime = 100000u;
+    const int wasteTime = 100000;
     const int nTimes = 10;
-    const double precisionEPICS = 1.0 / nSecPerSec;
 
-    testPlan(15 + nTimes * 18);
-
-    const epicsTime begin = epicsTime::getCurrent();
+    testPlan(16 + nTimes * 18);
 
     {
         const epicsTimeStamp epochTS = {0, 0};
@@ -64,16 +59,6 @@ MAIN(epicsTimeTest)
         testOk1(epicsEpoch.ansi_tm.tm_hour == 0);
         testOk1(epicsEpoch.ansi_tm.tm_yday == 0);
         testOk1(epicsEpoch.ansi_tm.tm_year == 90);
-    }
-
-    {
-        epicsTime tsi = epicsTime::getCurrent ();
-        l_fp ntp = tsi;
-        epicsTime tsf = ntp;
-        const double diff = fabs ( tsf - tsi );
-        // the difference in the precision of the two time formats
-        static const double precisionNTP = 1.0 / ( 1.0 + 0xffffffff );
-        testOk1(diff <= precisionEPICS + precisionNTP);
     }
 
     {   // badNanosecTest
@@ -90,7 +75,7 @@ MAIN(epicsTimeTest)
         }
     }
 
-    {
+    {   // strftime() output
         char buf[80];
         epicsTime et;
 
@@ -125,70 +110,87 @@ MAIN(epicsTimeTest)
         pFormat = "%%S.%%05f";
         et.strftime(buf, sizeof(buf), pFormat);
         testOk(strcmp(buf, "%S.%05f") == 0, "'%s' => '%s'", pFormat, buf);
+
+        char bigBuf [512];
+        memset(bigBuf, '\a', sizeof(bigBuf));
+        bigBuf[ sizeof(bigBuf) - 1] = '\0';
+        et.strftime(buf, sizeof(buf), bigBuf);
+        testOk(strcmp(buf, "<invalid format>") == 0, "bad format => '%s'", buf);
     }
 
-    {   // invalidFormatTest
-        char bigBuf [512];
-        char buf [32];
-        memset(bigBuf, '\a', sizeof(bigBuf ));
-        bigBuf[ sizeof(bigBuf) - 1] = '\0';
-        begin.strftime(buf, sizeof(buf), bigBuf);
-        testOk(strcmp(buf, "<invalid format>") == 0, "bad format => '%s'", buf);
+    epicsTime now;
+    try {
+        now = epicsTime::getCurrent();
+        testPass("default time provider");
+    }
+    catch ( ... ) {
+        testFail("epicsTime::getCurrent() throws");
+        testAbort("Can't continue, check your time provider");
+    }
+
+    {
+        l_fp ntp = now;
+        epicsTime tsf = ntp;
+        const double diff = fabs(tsf - now);
+        // the difference in the precision of the two time formats
+        static const double precisionNTP = 1.0 / (1.0 + 0xffffffff);
+        testOk1(diff <= precisionEPICS + precisionNTP);
     }
 
     testDiag("Running %d loops", nTimes);
 
-    for (int iTimes=0; iTimes < nTimes; ++iTimes) {
-        for (unsigned i=0; i<wasteTime; i++) {
-            useSomeCPU = epicsTime::getCurrent();
+    const epicsTime begin = epicsTime::getCurrent();
+
+    for (int loop = 0; loop < nTimes; ++loop) {
+        for (int i = 0; i < wasteTime; ++i) {
+            now = epicsTime::getCurrent();
         }
 
-        const epicsTime end = epicsTime::getCurrent();
-        const double diff = end - begin;
+        const double diff = now - begin;
 
-        if (iTimes == 0) {
+        if (loop == 0) {
             testDiag ("%d calls to epicsTime::getCurrent() "
                 "averaged %6.3f usec each", wasteTime,
-                diff*1e6/wasteTime);
+                diff * 1e6 / wasteTime);
         }
 
-        epicsTime copy = end;
-        testOk1(copy == end);
-        testOk1(copy <= end);
-        testOk1(copy >= end);
+        epicsTime copy = now;
+        testOk1(copy == now);
+        testOk1(copy <= now);
+        testOk1(copy >= now);
 
-        testOk1(end > begin);
-        testOk1(end >= begin);
-        testOk1(begin != end);
-        testOk1(begin < end);
-        testOk1(begin <= end);
+        testOk1(now > begin);
+        testOk1(now >= begin);
+        testOk1(begin != now);
+        testOk1(begin < now);
+        testOk1(begin <= now);
 
-        testOk1(end - end == 0);
-        testOk(fabs((end - begin) - diff) < precisionEPICS * 0.01,
-               "end - begin ~= diff");
+        testOk1(now - now == 0);
+        testOk(fabs((now - begin) - diff) < precisionEPICS * 0.01,
+               "now - begin ~= diff");
 
         testOk1(begin + 0 == begin);
-        testOk1(begin + diff == end);
-        testOk1(end - 0 == end);
-        testOk1(end - diff == begin);
+        testOk1(begin + diff == now);
+        testOk1(now - 0 == now);
+        testOk1(now - diff == begin);
 
-        epicsTime end2 = begin;
-        end2 += diff;
-        testOk(end2 == end, "(begin += diff) == end");
+        epicsTime end = begin;
+        end += diff;
+        testOk(end == now, "(begin += diff) == now");
 
-        end2 = end;
-        end2 -= diff;
-        testOk(end2 == begin, "(end -= diff) == begin");
+        end = now;
+        end -= diff;
+        testOk(end == begin, "(now -= diff) == begin");
 
         // test struct tm round-trip conversion
         local_tm_nano_sec ansiDate = begin;
         epicsTime beginANSI = ansiDate;
-        testOk1(beginANSI + diff == end);
+        testOk1(beginANSI + diff == now);
 
         // test struct timespec round-trip conversion
         struct timespec ts = begin;
         epicsTime beginTS = ts;
-        testOk1(beginTS + diff == end);
+        testOk1(beginTS + diff == now);
     }
 
     return testDone();

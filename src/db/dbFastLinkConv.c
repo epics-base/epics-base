@@ -272,7 +272,7 @@ static long cvt_st_e(
 	    status = (*prset->get_enum_strs)(paddr,&enumStrs);
 	    if(!status) {
 		nchoices = enumStrs.no_str;
-		nargs = sscanf(from," %u %n",&ind,&nchars);
+		nargs = sscanf(from,"%u%n",&ind,&nchars);
 		if(nargs==1 && nchars==strlen(from) && ind<nchoices) {
 		    *pfield = ind;
 		    return(0);
@@ -315,7 +315,7 @@ static long cvt_st_menu(
 		return(0);
 	    }
 	}
-	nargs = sscanf(from," %u %n",&ind,&nchars);
+	nargs = sscanf(from,"%u%n",&ind,&nchars);
 	if(nargs==1 && nchars==strlen(from) && ind<nChoice) {
 	    *to = ind;
 	    return(0);
@@ -347,7 +347,7 @@ static long cvt_st_device(
 		return(0);
 	    }
 	}
-	nargs = sscanf(from," %u %n",&ind,&nchars);
+	nargs = sscanf(from,"%u%n",&ind,&nchars);
 	if(nargs==1 && nchars==strlen(from) && ind<nChoice) {
 	    *to = ind;
 	    return(0);

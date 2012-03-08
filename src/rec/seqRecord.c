@@ -90,8 +90,6 @@ typedef struct callbackSeq {
   int		index;
 }callbackSeq;
 
-int processNextLink();
-
 
 /*****************************************************************************
  *
@@ -327,7 +325,9 @@ static long asyncFinish(seqRecord *prec)
   if (seqRecDebug > 5)
     printf("asyncFinish(%s) completing processing\n", prec->name);
   prec->udf = FALSE;
- 
+
+  recGblGetTimeStamp(prec);
+
   MonitorMask = recGblResetAlarms(prec);
 
   if (MonitorMask)
@@ -336,8 +336,6 @@ static long asyncFinish(seqRecord *prec)
   /* process the forward scan link record */
   recGblFwdLink(prec);
 
-  recGblGetTimeStamp(prec);
-  /* tsLocalTime(&prec->time); */
   prec->pact = FALSE;
 
   return(0);
@@ -376,6 +374,8 @@ static void processCallback(CALLBACK *arg)
 
   dbGetLink(&(pcb->plinks[pcb->index]->dol), DBR_DOUBLE,
 	&(pcb->plinks[pcb->index]->dov),0,0);
+
+  recGblGetTimeStamp(prec);
 
   /* Dump the value to the destination field */
   dbPutLink(&(pcb->plinks[pcb->index]->lnk), DBR_DOUBLE,

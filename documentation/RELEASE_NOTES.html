@@ -28,6 +28,22 @@ fixed in this release:</p>
     RHEL5 nss ldap update cause stack size related failure</a></li>
 </ul>
 
+<h4>Calcout and Seq record timestamps</h4>
+
+<p>Both the calcout and seq record types were not updating the record's
+timestamp before calling db_post_events() for some field updates.  The calcout
+record type will now update the record's timestamp before it posts a channel
+access monitor on the DLYA field; this happens twice during record processing if
+the ODLY field is larger than 0.</p>
+
+<p>Timestamps from all seq record monitor events have been wrong since 1995 or
+earlier, the time being provided was from the last time the record processed. 
+Now the record timestamp will be updated between reading each DOL1..DOLA link
+and posting the monitor on the associated DO1..DOA field.  The VAL field is
+never given a value by the record processing code, but is used for posting
+monitors when the alarm status or severity gets updated at the end of record
+processing.  Alarm monitors are now timestamped properly at that time.</p>
+
 <h4>Comments in iocsh scripts</h4>
 
 <p>The IOC shell was very particular about comments in previous versions of

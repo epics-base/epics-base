@@ -36,6 +36,9 @@
 #include "mbbiRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
+
+/* Hysterisis for alarm filtering: 1-1/e */
+#define THRESHOLD 0.6321
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -84,7 +87,7 @@ struct mbbidset { /* multi bit binary input dset */
 	DEVSUPFUN	get_ioint_info;
 	DEVSUPFUN	read_mbbi;/*(0,2)=>(success, success no convert)*/
 };
-static void checkAlarms(mbbiRecord *);
+static void checkAlarms(mbbiRecord *, epicsTimeStamp *);
 static void monitor(mbbiRecord *);
 static long readValue(mbbiRecord *);
 
@@ -146,12 +149,15 @@ static long process(mbbiRecord *prec)
 	struct mbbidset	*pdset = (struct mbbidset *)(prec->dset);
 	long		status;
 	unsigned char    pact=prec->pact;
+	epicsTimeStamp   timeLast;
 
 	if( (pdset==NULL) || (pdset->read_mbbi==NULL) ) {
 		prec->pact=TRUE;
 		recGblRecordError(S_dev_missingSup,(void *)prec,"read_mbbi");
 		return(S_dev_missingSup);
 	}
+
+	timeLast = prec->time;
 
 	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
@@ -184,7 +190,7 @@ static long process(mbbiRecord *prec)
 	else if(status == 2) status = 0;
 
 	/* check for alarms */
-	checkAlarms(prec);
+	checkAlarms(prec, &timeLast);
 
 	/* check event list */
 	monitor(prec);
@@ -279,14 +285,20 @@ static long put_enum_str(DBADDR *paddr, char *pstring)
 	return(S_db_badChoice);
 }
 
-static void checkAlarms(mbbiRecord *prec)
+static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
 {
+	
+    double aftc, afvl;
+   
+        unsigned short alarm; 
+	epicsEnum16 asev;
 	unsigned short *severities;
 	unsigned short	val=prec->val;
 
         /* check for udf alarm */
         if(prec->udf == TRUE ){
                 recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
+                prec->afvl = 0;
         }
 
         /* check for  state alarm */
@@ -296,8 +308,36 @@ static void checkAlarms(mbbiRecord *prec)
         } else {
         	/* in a state which is an error */
         	severities = (unsigned short *)&(prec->zrsv);
+		/*
                 recGblSetSevr(prec,STATE_ALARM,severities[prec->val]);
+		*/
+		alarm = severities[prec->val];
+
 	}
+
+	aftc = prec->aftc;
+	afvl = 0.;
+
+	if(aftc > 0.) {
+		afvl = prec->afvl;
+		if(afvl == 0.) {
+			afvl = (double) alarm;
+		} else {
+			double t = epicsTimeDiffInSeconds(&prec->time, timeLast);
+			double alpha = aftc / (t + aftc);
+
+			afvl = alpha * afvl +
+				((afvl>0.)?(1.-alpha):(alpha-1.)) * alarm;
+			if(afvl - floor(afvl) > THRESHOLD)
+				afvl = -afvl;
+
+			alarm = abs((int)floor(afvl));
+		}
+	}
+
+
+	asev = alarm;
+	recGblSetSevr(prec, STATE_ALARM, asev);
 
         /* check for cos alarm */
 	if(val == prec->lalm) return;

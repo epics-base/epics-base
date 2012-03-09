@@ -15,6 +15,23 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Alarm filtering added to input record types</h3>
+
+<p>The record types ai, calc, longin and mbbi have a new alarm filter added to
+them. This provides a low-pass filter that can be used to delay the reporting of
+alarms caused by the input level passing the HIGH, HIHI, LOW or LOLO values. The
+filter is controlled with a new AFTC field that sets the filter's time constant.
+The default value for this field is zero, which keeps the record's original
+alarm behaviour.</p>
+
+<p>The record must be scanned often enough for the filtering action to work
+effectively and the alarm severity can only change when the record is processed,
+but that processing does not have to be regular; the filter uses the time since
+the record last processed in its calculation. Setting AFTC to a positive number
+of seconds will delay the record going into or out of a minor alarm severity or
+from minor to major severity until the input signal has been in that range for
+that number of seconds.</p>
+
 <h3>Post events on Waveform record's NORD field</h3>
 
 <p>When the record type or soft device support modify the NORD field of a

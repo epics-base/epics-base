@@ -93,6 +93,16 @@ recordtype(longin) {
 		promptgroup(GUI_ALARMS)
 		interest(1)
 	}
+        field(AFTC, DBF_DOUBLE) {
+                prompt("Alarm Filter Time Constant")
+                promptgroup(GUI_ALARMS)
+                interest(1)
+        }
+        field(AFVL, DBF_DOUBLE) {
+                prompt("Alarm Filter Value")
+                special(SPC_NOMOD)
+                interest(3)
+        }
 	field(ADEL,DBF_LONG) {
 		prompt("Archive Deadband")
 		promptgroup(GUI_DISPLAY)

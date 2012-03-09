@@ -138,6 +138,11 @@ recordtype(ai) {
 		promptgroup(GUI_ALARMS)
 		interest(1)
 	}
+	field(AFTC,DBF_DOUBLE) {
+		prompt("Alarm Filter Time Constant")
+		promptgroup(GUI_ALARMS)
+		interest(1)
+	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
 		promptgroup(GUI_DISPLAY)
@@ -150,6 +155,11 @@ recordtype(ai) {
 	}
 	field(LALM,DBF_DOUBLE) {
 		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(AFVL,DBF_DOUBLE) {
+		prompt("Alarm Filter Value")
 		special(SPC_NOMOD)
 		interest(3)
 	}

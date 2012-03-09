@@ -394,6 +394,16 @@ recordtype(mbbi) {
 		interest(1)
 		menu(menuAlarmSevr)
 	}
+        field(AFTC, DBF_DOUBLE) {
+                prompt("Alarm Filter Time Constant")
+                promptgroup(GUI_ALARMS)
+                interest(1)
+        }
+        field(AFVL, DBF_DOUBLE) {
+                prompt("Alarm Filter Value")
+                special(SPC_NOMOD)
+                interest(3)
+        }
 	field(UNSV,DBF_MENU) {
 		prompt("Unknown State Severity")
 		promptgroup(GUI_MBB)

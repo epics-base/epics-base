@@ -387,7 +387,7 @@ $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 ifneq ($(SHRLIB_SUFFIX),.dll)
 ifneq (,$(strip $(SHRLIB_VERSION)))
 	@$(RM) $(subst .$(SHRLIB_VERSION),,$@)
-	ln -s $< $(subst .$(SHRLIB_VERSION),,$@)
+	ln -s $< $(@:.$(SHRLIB_VERSION)=)
 endif # SHRLIB_VERSION
 endif # SHRLIB_SUFFIX
 
@@ -410,7 +410,7 @@ $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
 ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
 	@$(RM) $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
-	ln -s $< $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
+	ln -s $< $(@:.$(LOADABLE_SHRLIB_VERSION)=)
 endif # LOADABLE_SHRLIB_VERSION
 
 $(INSTALL_CONFIG)/%: %

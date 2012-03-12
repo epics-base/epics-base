@@ -97,11 +97,6 @@ typedef struct aidset { /* analog input dset */
 }aidset;
 
 
-/*Following from timing system		*/
-/*
-extern unsigned int     gts_trigger_counter;
-*/
-
 static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime);
 static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);

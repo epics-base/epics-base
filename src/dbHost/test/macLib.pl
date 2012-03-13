@@ -1,13 +1,16 @@
 #!/usr/bin/perl
 
+use FindBin qw($Bin);
+use lib "$Bin/../../../lib/perl";
+
 use Test::More tests => 34;
 
-use macLib;
+use EPICS::macLib;
 
 use Data::Dumper;
 
-my $m = macLib->new;
-isa_ok $m, 'macLib';
+my $m = EPICS::macLib->new;
+isa_ok $m, 'EPICS::macLib';
 is $m->expandString(''), '', 'Empty string';
 is $m->expandString('$(undef)'), undef, 'Warning $(undef)';
 

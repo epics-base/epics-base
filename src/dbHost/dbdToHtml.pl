@@ -16,7 +16,7 @@ use DBD;
 use DBD::Parser;
 use EPICS::Getopts;
 use EPICS::macLib;
-use Readfile;
+use EPICS::Readfile;
 
 my $tool = 'dbdToHtml';
 getopts('DI@o:') or

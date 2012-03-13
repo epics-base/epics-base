@@ -20,9 +20,3 @@ dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
 $(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
 	$(RM) $@
 	$(DBTORECORDTYPEH) -I ../db $< $@
-
-$(COMMON_DIR)/dbCommon.h: $(DBTORECORDTYPEH)
-
-$(patsubst %,$(COMMON_DIR)/%.h,$(DBDINC) menuConvert menuGlobal) : \
-$(COMMON_DIR)/%.h : $(DBTOMENUH)
-

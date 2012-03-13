@@ -23,9 +23,6 @@ template/ext_DEPEND_DIRS = tools
 
 # Common
 
-DIRS += dbHost
-dbHost_DEPEND_DIRS = tools
-
 DIRS += libCom
 libCom_DEPEND_DIRS = tools
 

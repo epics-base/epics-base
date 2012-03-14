@@ -15,6 +15,9 @@ include $(TOP)/configure/CONFIG
 
 DIRS += tools
 
+DIRS += tools/test
+tools/test_DEPEND_DIRS = tools
+
 DIRS += template/base
 template/base_DEPEND_DIRS = tools
 

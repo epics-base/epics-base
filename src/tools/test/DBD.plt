@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+use FindBin qw($Bin);
+use lib "$Bin/../../../../lib/perl";
+
 use Test::More tests => 18;
 
 use DBD;

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use FindBin qw($Bin);
-use lib "$Bin/../../../lib/perl";
+use lib "$Bin/../../../../lib/perl";
 
 use Test::More tests => 34;
 

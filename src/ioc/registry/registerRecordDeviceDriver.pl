@@ -1,7 +1,7 @@
 eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
     if $running_under_some_shell; # registerRecordDeviceDriver 
 #*************************************************************************
-# Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -9,52 +9,35 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
+use strict;
+
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
-use EPICS::Path;
 
-($file, $subname, $bldTop) = @ARGV;
-$numberRecordType = 0;
-$numberDeviceSupport = 0;
-$numberDriverSupport = 0;
+use DBD;
+use DBD::Parser;
+use EPICS::Readfile;
+use EPICS::Path;
+use Text::Wrap;
+
+my ($file, $subname, $bldTop) = @ARGV;
+
+my $dbd = DBD->new();
+&ParseDBD($dbd, &Readfile($file));
+
+$Text::Wrap::columns = 75;
 
 # Eliminate chars not allowed in C symbol names
-$c_bad_ident_chars = '[^0-9A-Za-z_]';
+my $c_bad_ident_chars = '[^0-9A-Za-z_]';
 $subname =~ s/$c_bad_ident_chars/_/g;
 
 # Process bldTop like convertRelease.pl does
 $bldTop = LocalPath(UnixPath($bldTop));
 $bldTop =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
 
-open(INP,"$file") or die "$! opening file";
-while(<INP>) {
-    next if m/ ^ \s* \# /x;
-    if (m/ \b recordtype \s* \( \s* (\w+) \s* \) /x) {
-        $recordType[$numberRecordType++] = $1;
-    }
-    elsif (m/ \b device \s* \( \s* (\w+) \W+ \w+ \W+ (\w+) /x) {
-        $deviceRecordType[$numberDeviceSupport] = $1;
-        $deviceSupport[$numberDeviceSupport] = $2;
-        $numberDeviceSupport++;
-    }
-    elsif (m/ \b driver \s* \( \s* (\w+) \s* \) /x) {
-        $driverSupport[$numberDriverSupport++] = $1;
-    }
-    elsif (m/ \b registrar \s* \( \s* (\w+) \s* \) /x) {
-        push @registrars, $1;
-    }
-    elsif (m/ \b function \s* \( \s* (\w+) \s* \) /x) {
-        push @registrars, "register_func_$1";
-    }
-    elsif (m/ \b variable \s* \( \s* (\w+) \s* , \s* (\w+) \s* \) /x) {
-        $varType{$1} = $2;
-        push @variables, $1;
-    }
-}
-close(INP) or die "$! closing file";
 
+# Start of generated file
 
-# beginning of generated routine
 print << "END" ;
 /* THIS IS A GENERATED FILE. DO NOT EDIT! */
 /* Generated from $file */
@@ -70,104 +53,115 @@ extern "C" {
 
 END
 
-#definitions for recordtype
-if($numberRecordType>0) {
-    for ($i=0; $i<$numberRecordType; $i++) {
-        print "epicsShareExtern rset *pvar_rset_$recordType[$i]RSET;\n";
-        print "epicsShareExtern int (*pvar_func_$recordType[$i]RecordSizeOffset)(dbRecordType *pdbRecordType);\n"
+my %rectypes = %{$dbd->recordtypes};
+my @dsets;
+if (%rectypes) {
+    my @rtypnames = sort keys %rectypes;
+
+    # Declare the record support entry tables
+    print wrap('epicsShareExtern rset ', '    ',
+        join(', ', map {"*pvar_rset_${_}RSET"} @rtypnames)), ";\n\n";
+
+    # Declare the RecordSizeOffset functions
+    print "typedef int (*rso_func)(dbRecordType *pdbRecordType);\n";
+    print wrap('epicsShareExtern rso_func ', '    ',
+        join(', ', map {"pvar_func_${_}RecordSizeOffset"} @rtypnames)), ";\n\n";
+
+    # List of record type names
+    print "static const char * const recordTypeNames[] = {\n";
+    print wrap('    ', '    ', join(', ', map {"\"$_\""} @rtypnames));
+    print "\n};\n\n";
+
+    # List of pointers to each RSET and RecordSizeOffset function
+    print "static const recordTypeLocation rtl[] = {\n";
+    print join(",\n", map {
+            "    {pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
+        } @rtypnames);
+    print "\n};\n\n";
+
+    for my $rtype (@rtypnames) {
+        my @devices = $rectypes{$rtype}->devices;
+        for my $dtype (@devices) {
+            my $dset = $dtype->name;
+            push @dsets, $dset;
+        }
     }
-    print "\nstatic const char * const recordTypeNames[$numberRecordType] = {\n";
-    for ($i=0; $i<$numberRecordType; $i++) {
-        print "    \"$recordType[$i]\"";
-        if($i < $numberRecordType-1) { print ",";}
-        print "\n";
+
+    if (@dsets) {
+        # Declare the device support entry tables
+        print wrap('epicsShareExtern dset ', '    ',
+            join(', ', map {"*pvar_dset_$_"} @dsets)), ";\n\n";
+
+        # List of dset names
+        print "static const char * const deviceSupportNames[] = {\n";
+        print wrap('    ', '    ', join(', ', map {"\"$_\""} @dsets));
+        print "\n};\n\n";
+
+        # List of pointers to each dset
+        print "static const dset * const devsl[] = {\n";
+        print wrap('    ', '    ', join(", ", map {"pvar_dset_$_"} @dsets));
+        print "\n};\n\n";
     }
+}
+
+my %drivers = %{$dbd->drivers};
+if (%drivers) {
+    my @drivers = sort keys %drivers;
+
+    # Declare the driver entry tables
+    print wrap('epicsShareExtern drvet ', '    ',
+        join(', ', map {"*pvar_drvet_$_"} @drivers)), ";\n\n";
+
+    # List of drvet names
+    print "static const char *driverSupportNames[] = {\n";
+    print wrap('    ', '    ', join(', ', map {"\"$_\""} @drivers));
     print "};\n\n";
 
-    print "static const recordTypeLocation rtl[$i] = {\n";
-    for ($i=0; $i<$numberRecordType; $i++) {
-        print "    {pvar_rset_$recordType[$i]RSET, pvar_func_$recordType[$i]RecordSizeOffset}";
-        if($i < $numberRecordType-1) { print ",";}
-        print "\n";
-    }
+    # List of pointers to each drvet
+    print "static struct drvet *drvsl[] = {\n";
+    print join(",\n", map {"    pvar_drvet_$_"} @drivers);
     print "};\n\n";
 }
 
-#definitions for device
-if($numberDeviceSupport>0) {
-    for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "epicsShareExtern dset *pvar_dset_$deviceSupport[$i];\n";
-    }
-    print "\nstatic const char * const deviceSupportNames[$numberDeviceSupport] = {\n";
-    for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "    \"$deviceSupport[$i]\"";
-        if($i < $numberDeviceSupport-1) { print ",";}
-        print "\n";
-    }
-    print "};\n\n";
-
-    print "static const dset * const devsl[$i] = {\n";
-    for ($i=0; $i<$numberDeviceSupport; $i++) {
-        print "    pvar_dset_$deviceSupport[$i]";
-        if($i < $numberDeviceSupport-1) { print ",";}
-        print "\n";
-    }
-    print "};\n\n";
+my @registrars = sort keys %{$dbd->registrars};
+my @functions = sort keys %{$dbd->functions};
+push @registrars, map {"register_func_$_"} @functions;
+if (@registrars) {
+    # Declare the registrar functions
+    print "typedef void (*reg_func)(void);\n";
+    print wrap('epicsShareExtern reg_func ', '    ',
+        join(', ', map {"pvar_func_$_"} @registrars)), ";\n\n";
 }
 
-#definitions for driver
-if($numberDriverSupport>0) {
-    for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "epicsShareExtern drvet *pvar_drvet_$driverSupport[$i];\n";
+my %variables = %{$dbd->variables};
+if (%variables) {
+    my @varnames = sort keys %variables;
+
+    # Declare the variables
+    for my $var (@varnames) {
+        my $vtype = $variables{$var}->var_type;
+        print "epicsShareExtern $vtype * const pvar_${vtype}_$var;\n";
     }
-    print "\nstatic const char *driverSupportNames[$numberDriverSupport] = {\n";
-    for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "    \"$driverSupport[$i]\"";
-        if($i < $numberDriverSupport-1) { print ",";}
-        print "\n";
+
+    # Generate the structure for registering variables with iocsh
+    print "\nstatic struct iocshVarDef vardefs[] = {\n";
+    for my $var (@varnames) {
+        my $vtype = $variables{$var}->var_type;
+        my $itype = $variables{$var}->iocshArg_type;
+        print "    {\"$var\", $itype, pvar_${vtype}_$var},\n";
     }
-    print "};\n\n";
-    
-    print "static struct drvet *drvsl[$i] = {\n";
-    for ($i=0; $i<$numberDriverSupport; $i++) {
-        print "    pvar_drvet_$driverSupport[$i]";
-        if($i < $numberDriverSupport-1) { print ",";}
-        print "\n";
-    }
-    print "};\n\n";
+    print "    {NULL, iocshArgInt, NULL}\n};\n\n";
 }
 
-#definitions registrar
-if(@registrars) {
-    foreach $reg (@registrars) {
-	print "epicsShareExtern void (*pvar_func_$reg)(void);\n";
-    }
-    print "\n";
-}
+# Now for actual registration routine
 
-if (@variables) {
-    foreach $var (@variables) {
-        print "epicsShareExtern $varType{$var} *pvar_$varType{$var}_$var;\n";
-    }
-    %iocshTypes = (
-        'int' => 'iocshArgInt',
-        'double' => 'iocshArgDouble'
-    );
-    print "static struct iocshVarDef vardefs[] = {\n";
-    foreach $var (@variables) {
-        $argType = $iocshTypes{$varType{$var}};
-        die "Unknown variable type $varType{$var} for variable $var"
-            unless $argType;
-        print "\t{\"$var\", $argType, (void * const)pvar_$varType{$var}_$var},\n";
-    }
-    print "\t{NULL, iocshArgInt, NULL}\n};\n\n";
-}
+print << "END";
+int $subname(DBBASE *pbase)
+{
+    static int executed = 0;
+END
 
-#Now actual registration code.
-
-print "int $subname(DBBASE *pbase)\n{\n";
-
-print << "END" if ($bldTop ne '') ;
+print << "END" if $bldTop ne '';
     const char *bldTop = "$bldTop";
     const char *envTop = getenv("TOP");
 
@@ -179,57 +173,62 @@ print << "END" if ($bldTop ne '') ;
 
 END
 
-print << "END" ;
+print << 'END';
     if (!pbase) {
-        printf("pdbbase is NULL; you must load a DBD file first.\\n");
+        printf("pdbbase is NULL; you must load a DBD file first.\n");
         return -1;
     }
 
+    if (executed) {
+        printf("Registration already done.\n");
+        return 0;
+    }
+    executed = 1;
+
 END
 
-if($numberRecordType>0) {
-    print "    registerRecordTypes(pbase, $numberRecordType, ",
-				  "recordTypeNames, rtl);\n";
-}
-if($numberDeviceSupport>0) {
-    print "    registerDevices(pbase, $numberDeviceSupport, ",
-				  "deviceSupportNames, devsl);\n";
-}
-if($numberDriverSupport>0) {
-    print "    registerDrivers(pbase, $numberDriverSupport, ",
-				  "driverSupportNames, drvsl);\n";
-}
-foreach $reg (@registrars) {
-    print "    (*pvar_func_$reg)();\n";
-}
+print << 'END' if %rectypes;
+    registerRecordTypes(pbase, NELEMENTS(rtl), recordTypeNames, rtl);
+END
 
-if (@variables) {
-    print "    iocshRegisterVariable(vardefs);\n";
-}
-print << "END" ;
+print << 'END' if @dsets;
+    registerDevices(pbase, NELEMENTS(devsl), deviceSupportNames, devsl);
+END
+
+print << 'END' if %drivers;
+    registerDrivers(pbase, NELEMENTS(drvsl), driverSupportNames, drvsl);
+END
+
+print << "END" for @registrars;
+    pvar_func_$_();
+END
+
+print << 'END' if %variables;
+    iocshRegisterVariable(vardefs);
+END
+
+print << "END";
     return 0;
 }
 
-/* registerRecordDeviceDriver */
-static const iocshArg registerRecordDeviceDriverArg0 =
-                                            {"pdbbase",iocshArgPdbbase};
-static const iocshArg *registerRecordDeviceDriverArgs[1] =
-                                            {&registerRecordDeviceDriverArg0};
-static const iocshFuncDef registerRecordDeviceDriverFuncDef =
-                {"$subname",1,registerRecordDeviceDriverArgs};
-static void registerRecordDeviceDriverCallFunc(const iocshArgBuf *)
+/* $subname */
+static const iocshArg rrddArg0 = {"pdbbase", iocshArgPdbbase};
+static const iocshArg *rrddArgs[] = {&rrddArg0};
+static const iocshFuncDef rrddFuncDef =
+    {"$subname", 1, rrddArgs};
+static void rrddCallFunc(const iocshArgBuf *)
 {
     $subname(*iocshPpdbbase);
 }
 
 } // extern "C"
+
 /*
  * Register commands on application startup
  */
 static int Registration() {
     iocshRegisterCommon();
-    iocshRegister(&registerRecordDeviceDriverFuncDef,
-        registerRecordDeviceDriverCallFunc);
+    iocshRegister(&rrddFuncDef, rrddCallFunc);
     return 0;
 }
 

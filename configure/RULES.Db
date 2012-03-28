@@ -227,31 +227,31 @@ $(INSTALL_DB)/%.template: %.template
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $@
-	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $@
-	$(DBTORECORDTYPEH) $(DBDFLAGS)  $< $@
+	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $@
-	$(DBTOMENUH) $(DBDFLAGS) $< $@
+	$(DBTOMENUH) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $@
-	$(DBTOMENUH) $(DBDFLAGS) $< $@
+	$(DBTOMENUH) $(DBDFLAGS) -o $@ $<
 
 .PRECIOUS: $(COMMON_DIR)/%.h
 
@@ -261,18 +261,18 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	@$(RM) $@
 	$(MAKEBPT) $< $@
 
-$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
+$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	$(ECHO) "$<:../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $@
 	$(DBEXPAND) $(DBDFLAGS) -o $@ $<

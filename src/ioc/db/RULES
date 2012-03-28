@@ -13,10 +13,8 @@
 
 $(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
 
-dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
-	@$(RM) $@
-	@-$(MKMF) -m $@ ../db  $(COMMON_DIR)/dbCommon.h $<
-
-$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd
+	@$(RM) $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D -I ../db -o $@ $< > $(notdir $@)$(DEP)
 	$(RM) $@
-	$(DBTORECORDTYPEH) -I ../db $< $@
+	$(DBTORECORDTYPEH) -I ../db -o $@ $<

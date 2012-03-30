@@ -9,7 +9,8 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_IOC = softIoc
+PROD_IOC_DEFAULT = softIoc
+PROD_IOC_iOS = -nil-
 
 DBD += softIoc.dbd
 softIoc_DBD += base.dbd

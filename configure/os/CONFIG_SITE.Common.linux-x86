@@ -46,3 +46,9 @@ COMMANDLINE_LIBRARY = READLINE
 # This does cost disk space, but not memory as debug symbols are not
 # loaded into RAM when the binary is loaded.
 OPT_CFLAGS_YES += -g
+
+
+# Tune GNU compiler output for a specific cpu-type
+# (e.g. generic, i386, i486, i586, or i686)
+GNU_TUNE_CFLAGS = -mtune=generic
+

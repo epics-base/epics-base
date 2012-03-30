@@ -212,7 +212,8 @@ MUNCH_CMD =  $(CCC) /Fo $@ $^
 #	But: if there are no objects LIBRARY_LD_OBJS to include
 #	in this library (may be for e.g. base/src/libCompat
 #	on some archs), don't define (and build) any library!
-SHRLIB_SUFFIX=.dll
+SHRLIB_SUFFIX_BASE = .dll
+SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE)
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 

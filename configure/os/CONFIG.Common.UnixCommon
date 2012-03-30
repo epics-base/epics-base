@@ -19,8 +19,9 @@ OBJ = .o
 #Library prefix and suffixes
 LIB_PREFIX = lib
 LIB_SUFFIX = .a
-SHRLIB_SUFFIX = .so$(addprefix .,$(SHRLIB_VERSION))
-LOADABLE_SHRLIB_SUFFIX = .so$(addprefix .,$(LOADABLE_SHRLIB_VERSION))
+SHRLIB_SUFFIX_BASE = .so
+SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE).$(SHRLIB_VERSION)
+LOADABLE_SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE).$(LOADABLE_SHRLIB_VERSION)
 LOADABLE_SHRLIB_PREFIX = lib
 
 #-------------------------------------------------------

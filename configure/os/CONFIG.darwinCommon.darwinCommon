@@ -70,7 +70,8 @@ SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
        -install_name $(shell perl $(TOOLS)/fullPathName.pl $(INSTALL_LIB))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(SHRLIB_VERSION)
-SHRLIB_SUFFIX = .$(SHRLIB_VERSION).dylib
+SHRLIB_SUFFIX_BASE = .dylib
+SHRLIB_SUFFIX = .$(SHRLIB_VERSION)$(SHRLIB_SUFFIX_BASE)
 
 LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
 

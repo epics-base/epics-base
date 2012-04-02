@@ -113,9 +113,6 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
 
-DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))
-DBDDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
-
 MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
 ##################################################### 
@@ -307,8 +304,8 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $(notdir $@)$(DEP)
-	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $(notdir $@)$(DEP)
-	$(ECHO) "$@:$(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
+	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) > $(notdir $@)$(DEP)
+	@echo "$@: $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
@@ -316,7 +313,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $^  >> $(notdir $@)$(DEP)
+	@$(MAKEDBDEPENDS) $@ $< > $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) $< > $*.tmp

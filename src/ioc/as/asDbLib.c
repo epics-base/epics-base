@@ -21,6 +21,7 @@
 #include "epicsStdioRedirect.h"
 #include "dbDefs.h"
 #include "taskwd.h"
+#include "asLib.h"
 #define epicsExportSharedSymbols
 #include "alarm.h"
 #include "caeventmask.h"
@@ -32,7 +33,6 @@
 #include "dbEvent.h"
 #include "dbCommon.h"
 #include "recSup.h"
-#include "asLib.h"
 #include "asCa.h"
 #include "asDbLib.h"
 

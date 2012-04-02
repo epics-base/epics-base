@@ -31,8 +31,8 @@
 #include "alarm.h"
 #include "epicsStdioRedirect.h"
 
-#include "epicsExport.h"
 #include "asLib.h"
+#include "epicsExport.h"
 #include "asDbLib.h"
 #include "asCa.h"
 

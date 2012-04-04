@@ -19,7 +19,7 @@ builds with release R3.14. It describes procedures such that:</p>
   <li>The application uses the configure rules which are new to R3.14.</li>
   <li>The OSI (Operating System Independent) features of R3.14 are available,
     i.e. iocCore products can be build for vxWorks as well as other
-    platforms, e.g. solaris and linux.</li>
+    platforms, e.g. Solaris and Linux.</li>
 </ul>
 
 <h3>Gnumake clean uninstall</h3>
@@ -47,10 +47,14 @@ find *App iocBoot -print | cpio -pvmd <i>/path/to/new/top</i></pre>
 
 <h3>Modify <i>top</i>/configure/RELEASE</h3>
 
-<p>Copy definitions of external modules excluding EPICS_BASE and
-TEMPLATES_TOP from old application RELEASE file. <br>
-If sequence programs (*.st or *.stt files) exist in your application, add the
-SNCSEQ location definition for the R3.14 sncseq external module</p>
+<p>Copy definitions of external modules excluding <tt>EPICS_BASE</tt> and
+<tt>TEMPLATE_TOP</tt> from your old application config/RELEASE file. In many
+cases the modules you actually use under R3.14 will be different to the R3.13
+modules, but the old module names here give you a starting-point for what there
+replacements will be.</p>
+
+<p>If any sequence programs (*.st or *.stt files) exist in your application, add
+the SNCSEQ location definition for the R3.14 sncseq external module.</p>
 
 <blockquote>
   <pre>SNCSEQ = <i>/path/to/sncseq</i></pre>
@@ -107,7 +111,7 @@ still to convert):</p>
   </blockquote>
 
 <p>This new Makefile  has comments explaining how to build the various host
-and ioc products. Lets consider some examples</p>
+and IOC products. Lets consider some examples</p>
 <ul>
   <li>Host programs
     <p>Makefile.Host contains definitions like:</p>
@@ -149,7 +153,7 @@ DBDNAME = exampleApp.dbd</pre>
     <p>NOTES: Change exampleApp.dbd to example.dbd in all st.cmd files. Also
     this definition assumes that file exampleInclude.dbd exists.</p>
   </li>
-  <li>Create the ioc application:
+  <li>Create the IOC application:
     <p>Makefile.Vx contains statements like:</p>
     <blockquote>
       <pre>SRCS.c += ../xxxRecord.c
@@ -198,21 +202,22 @@ baseLIBOBJS, Makefile.Host, and Makefile.Vx</p>
   </blockquote>
 
 <p>to your <i>appname</i>Include.dbd file and remove the file
-<i>name</i>App/src/base.dbd from your src directory. The base.dbd from base/dbd
-will be used instead. If you only want to load a subset of the record
-definitions from base you can keep your own copy of base.dbd, but you should
-copy the one from your R3.14 base and edit that rather than trying to re-use the
-R3.13 version from your old application.</p>
+<i>name</i>App/src/base.dbd from your src directory. The base.dbd file from
+$(EPICS_BASE)/dbd will be used instead. If you only want to load a subset of the
+record definitions from base you can keep a local edited copy of the base.dbd
+file but you should copy it from $(EPICS_BASE)/dbd and edit that rather than
+trying to re-use the R3.13 version from your old application area.</p>
 
 <h3>Record support</h3>
 
-<p>Add the following line after all existing #includes</p>
+<p>Add the following header file inclusion after all other <tt>#include</tt>
+  statements:</p>
 
 <blockquote>
   <pre>#include "epicsExport.h"</pre>
   </blockquote>
 
-<p>The structure rset is now a typedef so change</p>
+<p>The <tt>struct rset</tt> is now available as a typedef so change</p>
 
 <blockquote>
   <pre>struct rset <i>recordname</i>RSET = { ... };</pre>
@@ -224,65 +229,68 @@ R3.13 version from your old application.</p>
   <pre>rset <i>recordname</i>RSET = { ... };</pre>
   </blockquote>
 
-<p>and add the following line after the <q>rset <i>recordname</i>RSET = { ...
-};</q> definition.</p>
+<p>and add the following line immediately after that definition:</p>
 
 <blockquote>
-  <pre>epicsExportAddress(rset,<i>recordname</i>RSET);</pre>
+  <pre>epicsExportAddress(rset, <i>recordname</i>RSET);</pre>
   </blockquote>
 
 <h3>Device support</h3>
 
-<p>Add the following line after all existing #includes</p>
+<p>Add the following header file inclusion after all other <tt>#include</tt>
+  statements:</p>
 
 <blockquote>
   <pre>#include "epicsExport.h"</pre>
   </blockquote>
 
-<p>and add the following line after the dset definition <q>struct { ... }
-dev<i>name</i> = { ... };</q></p>
+<p>and add the following line after every dset definition <tt>struct { ... }
+  dev<i>name</i> = { ... };</tt> in the file.</p>
 
 <blockquote>
-  <pre>epicsExportAddress(dset,dev<i>name</i>);</pre>
+  <pre>epicsExportAddress(dset, dev<i>name</i>);</pre>
   </blockquote>
 
 <h3>Driver support</h3>
 
-<p>Add the following line after all existing #includes</p>
+<p>Add the following header file inclusion after all other <tt>#include</tt>
+  statements:</p>
 
 <blockquote>
   <pre>#include "epicsExport.h"</pre>
   </blockquote>
 
-<p>and add the following line after the drvet drv<i>name</i> definition</p>
+<p>and add the following line after the <tt>drvet drv<i>name</i></tt>
+  definition:</p>
 
 <blockquote>
-  <pre>epicsExportAddress(drvet,drv<i>name</i>);</pre>
+  <pre>epicsExportAddress(drvet, drv<i>name</i>);</pre>
   </blockquote>
 
 <h3>Registration code changed</h3>
 
 <p>Registration code for application specific functions, e.g. subroutine record
-init and process functions, must be changed as follows</p>
+  init and process functions, must be changed as follows</p>
 
 <ol>
-  <li>Include the following header files after all existing #includes:
+  <li>Add the following header file inclusions after all other <tt>#include</tt>
+    statements:
     <blockquote>
       <pre>#include "registryFunction.h"
 #include "epicsExport.h"</pre>
       </blockquote></li>
 
-  <li>Make the application specific functions static functions, e.g.
+  <li>Mark the application specific functions as <tt>static</tt>, e.g.
     <blockquote>
       <pre>static long mySubInit(subRecord *precord)
 static long mySubProcess(subRecord *precord)</pre>
       </blockquote></li>
 
-  <li>Add an epicsExportFunction statement for each of the functions to be
-    registered, e.g.
+  <li>Add an <tt>epicsRegisterFunction</tt> statement for each of the functions
+    to be registered, e.g.
     <blockquote>
-      <pre>epicsExportFunction(mySubInit);
-epicsExportFunction(mySubProcess);</pre>
+      <pre>epicsRegisterFunction(mySubInit);
+epicsRegisterFunction(mySubProcess);</pre>
       </blockquote></li>
 
   <li>Add a function statement for each of the functions to be registered in a
@@ -292,6 +300,21 @@ epicsExportFunction(mySubProcess);</pre>
 function("mySubProcess")</pre>
       </blockquote></li>
 </ol>
+
+<h3>Additional Headers</h3>
+
+<p>It may be necessary to add one or more of the following header file
+  inclusions to any C source file if you get warnings or errors from the
+  compilation process. The most likely file missing is errlog.h.</p>
+
+<ul>
+  <li><tt>#include &lt;stdarg.h&gt;</tt></li>
+  <li><tt>#include "errlog.h"</tt></li>
+  <li><tt>#include "errMdef.h"</tt></li>
+  <li><tt>#include "ellLib.h"</tt></li>
+  <li><tt>#include "epicsTypes.h"</tt></li>
+</ul>
+
 
 <h3>Modify the Makefiles in <i>top</i>/iocBoot directory.</h3>
 
@@ -351,14 +374,13 @@ $(TOP)/configure/RULES.ioc</tt></q></p>
 ld &lt; iocCore</pre>
   </blockquote>
 
-<p>Change <q><tt>ld &lt; <i>name</i>Lib</tt></q> to
+<p>The <tt>ld</tt> command in vxWorks 5.5.2 doesn't clean up its standard input
+stream properly, so we now recommend passing the filename to it as an argument
+instead. Change <q><tt>ld &lt; <i>name</i>Lib</tt></q> to
 
 <blockquote>
   <pre>ld 0,0, "<i>name</i>.munch"</pre>
-
-  <p>(The <tt>ld</tt> command in vxWorks 5.5.2 doesn't clean up its standard
-  input properly, so we now recommend passing the filename to it directly
-  instead.)</p> </blockquote>
+  </blockquote>
 
 <p>Change <q><tt>cd appbin</tt></q> to <q><tt>cd topbin</tt></q></p>
 
@@ -381,58 +403,42 @@ to
 
 <p>If any source file makes calls to recGbl routines make sure it includes
 <tt>recGbl.h</tt>. If it doesn't the compiler will issue warning messages and
-the ioc may issue the message: <q>undefined symbol: _recGblSetSevr</q>.</p>
+the IOC may not compile properly, or on vxWorks you could see the load-time
+error: <q>undefined symbol: _recGblSetSevr</q>.</p>
 
 <h3>Record support changes</h3>
 
-<p>The steppermotor, scan, and pid records are no longer in base.  If these
-records are not used in your application, comment out references to them in
-base.dbd. If these record types are used at your site, they should be
-downloaded and built with base R3.14 by your EPICS administrator. To update
-the R3.14 location of these record types in your application you must add
-appropriate module definitions to your application's config/RELEASE file and
-add <tt>LIBOBJS</tt> definitions to the src Makefile.</p>
+<p>The steppermotor, scan, and pid records are no longer in base. If these
+record types are used at your site, their unbundled modules should be downloaded
+from the EPICS website and built with base R3.14 by your EPICS administrator. To
+use these record types in your application you must add them to the application
+just like any other external support module.  Most modules provide instructions
+on how to use them in an IOC application.</p>
 
-<p>For example add</p>
-
-<blockquote>
-  <pre>PID = <i>/path/to/modules</i>/pid</pre>
-  </blockquote>
-
-<p>to config/RELEASE and add</p>
-
-<blockquote>
-  <pre>LIBOBJS += $(PID_BIN)/pidRecord.o</pre>
-  </blockquote>
-
-<p>to your application src/Makefile.</p>
-
-<p>You should consider changing any existing old steppermotor records to the
-new EPICS motor record module supported by Beamline Controls and Data
-Acquisition at APS.</p>
+<p>Consider changing any existing old steppermotor records to the EPICS motor
+record module supported by the Beamline Controls and Data Acquisition group at
+APS.</p>
 
 <h3>RecDynLink.o and devPtSoft changes</h3>
 
 <p>recDynLink.o and devPtSoft.o are no longer in EPICS base and now exist as
-separate EPICS modules.You must now add the appropriate module full path
-definitions to your application config/RELEASE file, and change
-<tt>LIBOBJS</tt> location definition <tt>$(EPICS_BASE_BIN)</tt> to the module
-definition bin directory in your application src directory files. See
-<q>Hardware support changes</q> below for instructions.</p>
+separate unbundled EPICS modules.  As with the three record types described
+above these must now be built separately and added as support modules to any
+applications that need them.</p>
 
 <h3>Hardware support changes</h3>
 
 <p>All hardware support (dev, drv and dbd files) except soft support has been
 unbundled from base R3.14. This support includes the files symb.dbd,
 drvHp1404a.o, drvEpvxiMsg.o, and drvEpvxi.o. If these are not used by your
-application, comment out references to them in base.dbd.</p>
+application, remove any references to them from your dbd files.</p>
 
-<p>Hardware support now exists as separate EPICS modules. The hardware
-support for your site should be downloaded and built with base R3.14 by your
-EPICS administrator. You must now add the appropriate module full path
-definitions to your application config/RELEASE file, and change
-<tt>LIBOBJS</tt> location from <tt>$(EPICS_BASE_BIN) </tt>to the module bin
-directory in your application src directory files.</p>
+<p>Hardware support now exists as separate EPICS modules. The hardware support
+modules used at your site should be downloaded and built with base R3.14 by your
+EPICS administrator. To use them, add the appropriate module full path
+definitions to your application configure/RELEASE file, and make the documented
+changes to your Makefile to link their binaries into the your IOC
+executable.</p>
 
 <p>For example, remove</p>
 
@@ -440,7 +446,7 @@ directory in your application src directory files.</p>
   <pre>LIBOBJS += $(EPICS_BASE_BIN)/symb</pre>
   </blockquote>
 
-<p>from baseLIBOBJS and add</p>
+<p>from <tt>baseLIBOBJS</tt> and add</p>
 
 <blockquote>
   <pre>LIBOBJS += $(SYMB_BIN)/symb</pre>
@@ -452,25 +458,25 @@ directory in your application src directory files.</p>
   <pre>SYMB = &lt;full path definition for the built module SYMB&gt;</pre>
   </blockquote>
 
-<p>into your application config/RELEASE file.</p>
+<p>into your application configure/RELEASE file.</p>
 
 <h3>dbLoadtemplate tool changes</h3>
 
-<p>The host tool dbLoadTemplate has been replace by a new EPICS extension,
+<p>The host tool dbLoadTemplate has been replace by a new EPICS extension called
 msi, which should be downloaded and built with base R3.14 by your EPICS
-administrator. dbLoadTemplate is still supported on iocs. If, in your
-application, db files are created from template and substitution files you
-should add the definition</p>
+administrator. dbLoadTemplate is still supported on IOCs. If the msi executable
+is not in your default search path and in your application db files are created
+from template and substitution files, you should add the definition</p>
 
 <blockquote>
   <pre>MSI = &lt;full path name to msi executable&gt;</pre>
   </blockquote>
 
-<p>to your application config/RELEASE file.</p>
-</body>
+<p>to your application's configure/RELEASE file.</p>
 
-<h3>Optional <i>top</i>/configure/CONFIG_SITE changes.</h3>
+<h3>Optional <i>top</i>/configure/CONFIG_SITE changes</h3>
 
 <p>Review and optionally modify site build settings.</p>
 
+</body>
 </html>

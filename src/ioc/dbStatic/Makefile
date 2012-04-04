@@ -32,26 +32,10 @@ dbCore_SRCS += dbStaticRun.c
 dbCore_SRCS += dbStaticIocRegister.c
 
 dbStaticHost_SRCS += $(STATIC_SRCS)
-dbStaticHost_SRCS += dbStaticNoRun.c 
+dbStaticHost_SRCS += dbStaticNoRun.c
 
 LIBRARY_HOST += dbStaticHost
 
 dbStaticHost_LIBS = Com
-
-PROD_HOST += dbReadTest dbExpand dbToMenuH dbToRecordtypeH
-
-dbReadTest_SRCS = dbReadTest.c
-dbExpand_SRCS = dbExpand.c
-dbToMenuH_SRCS = dbToMenuH.c
-dbToRecordtypeH_SRCS = dbToRecordtypeH.c
-
-# Include dbStaticHost objects directly in executables
-# because of a Circular dependency induced by a rule
-#  $(INSTALL_LIBS): $(INSTALL_SHRLIBS)
-# in RULES_BUILD
-dbReadTest_SRCS += $(dbStaticHost_SRCS)
-dbExpand_SRCS += $(dbStaticHost_SRCS)
-dbToMenuH_SRCS += $(dbStaticHost_SRCS)
-dbToRecordtypeH_SRCS += $(dbStaticHost_SRCS)
 
 CLEANS += dbLex.c dbYacc.c

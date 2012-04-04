@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2010 Brookhaven Science Associates, as Operator of
 #     Brookhaven National Lab.
@@ -11,21 +11,11 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-menuGlobal.dbd$(DEP): $(DBEXPAND)
-
 # $(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
 
-dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
-	@$(RM) $@
-	@$(MKMF) -m $@ ../db $(COMMON_DIR)/dbCommon.h $<
-
-$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/dbCommon.dbd
+$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd
+	@$(RM) $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D -I ../db -o $@ $< > $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
-	$(DBTORECORDTYPEH) -I ../db $< $(notdir $@)
+	$(DBTORECORDTYPEH) -I ../db -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
-
-$(COMMON_DIR)/dbCommon.h: $(DBTORECORDTYPEH)
-
-$(patsubst %,$(COMMON_DIR)/%.h,$(DBDINC) menuConvert menuGlobal) : \
-$(COMMON_DIR)/%.h : $(DBTOMENUH)
-

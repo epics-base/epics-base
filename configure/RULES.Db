@@ -112,9 +112,6 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
 
-DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))
-DBDDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
-
 MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
 ##################################################### 
@@ -226,34 +223,34 @@ $(INSTALL_DB)/%.template: %.template
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
-	$(DBTORECORDTYPEH) $(DBDFLAGS) $< $(notdir $@)
+	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
-	$(DBTORECORDTYPEH) $(DBDFLAGS) $< $(notdir $@)
+	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
-	$(DBTOMENUH) $(DBDFLAGS) $< $(notdir $@)
+	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
-	$(DBTOMENUH) $(DBDFLAGS) $< $(notdir $@)
+	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 .PRECIOUS: $(COMMON_DIR)/%.h
@@ -264,10 +261,10 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd 
+$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $(notdir $@)
 	@$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
@@ -275,8 +272,8 @@ $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $(notdir $@)$(DEP)
-	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
+	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
@@ -313,8 +310,8 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $(notdir $@)$(DEP)
-	echo "$@ : $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
+	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) > $(notdir $@)$(DEP)
+	@echo "$@: $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
@@ -322,7 +319,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $^  >> $(notdir $@)$(DEP)
+	@$(MAKEDBDEPENDS) $@ $< > $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) $< > $*.tmp

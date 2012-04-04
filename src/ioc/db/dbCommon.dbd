@@ -82,14 +82,14 @@
 		prompt("Monitor lock")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("epicsMutexId	mlok")
+		extra("epicsMutexId        mlok")
 	}
 	%#include "ellLib.h"
 	field(MLIS,DBF_NOACCESS) {
 		prompt("Monitor List")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("ELLLIST		mlis")
+		extra("ELLLIST             mlis")
 	}
 	field(DISP,DBF_UCHAR) {
 		prompt("Disable putField")
@@ -167,13 +167,13 @@
 		prompt("Access Security Pvt")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct asgMember *asp")
+		extra("struct asgMember    *asp")
 	}
 	field(PPN,DBF_NOACCESS) {
 		prompt("addr of PUTNOTIFY")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct putNotify *ppn")
+		extra("struct putNotify    *ppn")
 	}
 	field(PPNR,DBF_NOACCESS) {
 		prompt("pputNotifyRecord")
@@ -191,19 +191,19 @@
 		prompt("Address of RSET")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct rset	*rset")
+		extra("struct rset         *rset")
 	}
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct dset	*dset")
+		extra("struct dset         *dset")
 	}
 	field(DPVT,DBF_NOACCESS) {
 		prompt("Device Private")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("void		*dpvt")
+		extra("void                *dpvt")
 	}
 	field(RDES,DBF_NOACCESS) {
 		prompt("Address of dbRecordType")
@@ -215,7 +215,7 @@
 		prompt("Lock Set")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct lockRecord *lset")
+		extra("struct lockRecord   *lset")
 	}
 	field(PRIO,DBF_MENU) {
 		prompt("Scheduling Priority")
@@ -231,7 +231,7 @@
 		prompt("Break Point")
 		special(SPC_NOMOD)
 		interest(1)
-		extra("char bkpt")
+		extra("char                bkpt")
 	}
 	field(UDF,DBF_UCHAR) {
 		prompt("Undefined")
@@ -245,7 +245,7 @@
 		prompt("Time")
 		special(SPC_NOMOD)
 		interest(2)
-		extra("epicsTimeStamp	time")
+		extra("epicsTimeStamp      time")
 	}
 	field(FLNK,DBF_FWDLINK) {
 		prompt("Forward Process Link")

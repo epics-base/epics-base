@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #*************************************************************************
-# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -8,106 +8,85 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#	InstallEpics.pl
+# InstallEpics.pl
 #
-#	InstallEpics is used within makefiles to copy new versions of
-#	files into a destination directory.
-#	Based on installEpics shell script.
+# InstallEpics is used within makefiles to copy new versions of
+# files into a destination directory.
 #
-#	2-4-97 -kuk-
-#
-##########################################################
+# Author: Kay Kasemir 02-04-1997
 
+use strict;
+
+use File::Basename;
 use Getopt::Std;
 use File::Path;
 use File::Copy;
 
-$tool=$0;
-$tool=~ s'.*[/\\].+'';	# basename
-$mode=0755;
+my $tool = basename($0);
+my $mode = 0755;
 
-# get command line options
+our ($opt_d, $opt_h, $opt_m, $opt_q);
+
 getopt "m";
-$mode = oct ($opt_m) if ($opt_m);
+$mode = oct $opt_m if $opt_m;
 
-#	Complain about obsolete options:
-Usage("unknown option given") if ($opt_g or $opt_o or $opt_c or $opt_s);
+Usage() if $opt_h;
 
-$num_files = $#ARGV;
-# at least two args required
-Usage ("Nothing to install") if ($num_files < 1);
+Usage('Nothing to install') if @ARGV < 2;
 
-#	split args in file1 ... fileN target_dir:
-@files=@ARGV[0..$num_files-1];
-$install_dir=$ARGV[$num_files];
-$install_dir =~ s[\\][/]g;	# maybe fix DOS-style path
+my $install_dir = pop @ARGV;    # Last arg
+
+$install_dir =~ s[\\][/]g if $^O eq 'cygwin' || $^O eq 'MSWin32';
 $install_dir =~ s[/$][];	# remove trailing '/'
 $install_dir =~ s[//][/]g;	# replace '//' by '/'
 
-#	Do we have to create the directory?
-unless ( (-d $install_dir) || (-l $install_dir) )
-{
-	#	Create dir only if -d option given
-	Usage ("$install_dir does not exist") unless ($opt_d);
+# Do we have to create the directory?
+unless (-d $install_dir || -l $install_dir) {
+    # Create dir only if -d option given
+    die "$tool: Directory $install_dir does not exist" unless $opt_d;
 
-	#	Create all the subdirs that lead to $install_dir
-	mkpath ($install_dir, 1, 0777);
+    # Create all the subdirs that lead to $install_dir
+    mkpath($install_dir, !$opt_q, 0777);
 }
 
-foreach $source ( @files )
-{
-	Usage ("Can't find file '$source'") unless -f $source;
+foreach my $source (@ARGV) {
+    die "$tool: No such file '$source'" unless -f $source;
 
-	$basename=$source;
-	$basename=~s'.*[/\\]'';
-	$target  = "$install_dir/$basename";
-	$temp    = "$target.$$";
+    my $basename = basename($source);
+    my $target   = "$install_dir/$basename";
+    my $temp     = "$target.$$";
 
-	if (-f $target)
-	{
-		if (-M $target  <  -M $source and
-		    -C $target  <  -C $source)
-		{
-			next;
-		}
-		else
-		{
-			#	remove old target, make sure it is deletable:
-			chmod 0777, $target;
-			unlink $target;
-		}
-	}
+    if (-f $target) {
+        next if -M $target < -M $source and -C $target < -C $source;
+        # Remove old target, making sure it is deletable first
+        chmod 0777, $target;
+        unlink $target;
+    }
 
-	#	Using copy + rename fixes problems with parallel builds:
-	copy ($source, $temp) or die "Copy failed: $!\n";
-	rename ($temp, $target) or die "Rename failed: $!\n";
+    # Using copy + rename fixes problems with parallel builds
+    copy($source, $temp) or die "$tool: Copy failed: $!\n";
+    rename $temp, $target or die "$tool: Rename failed: $!\n";
 
-	#	chmod 0555 <read-only> DOES work on WIN32, but:
-	#	Another chmod 0777 to make it write- and deletable
-	#	will then fail.
-	#	-> you have to use Win32::SetFileAttributes
-	#	   to get rid of those files from within Perl.
-	#	Because the chmod is not really needed on WIN32,
-	#	just skip it!
-	chmod $mode, $target unless ($^O eq "MSWin32");
+    # chmod 0555 <read-only> DOES work on Win32, but the above
+    # chmod 0777 fails to install a newer version on top.
+    chmod $mode, $target unless $^O eq 'MSWin32';
 }
 
-sub Usage
-{
-	my ($txt) = @_;
+sub Usage {
+    my ($txt) = @_;
+    my $omode = sprintf '%#o', $mode;
 
-	print "Usage:\n";
-	print "\t$tool [ -m mode ] file ... directory\n";
-	print "\n";
-	print "\t-d             Create non-existing directories\n";
-	print "\t-m mode        Set the mode for the installed file";
-		print " (0755 by default)\n";
-	print "\tfile           Name of file\n";
-	print "\tdirectory      Destination directory\n";
+    print << "END";
+Usage: $tool [OPTIONS]... SRCS... DEST
+  -d        Create non-existing directories
+  -h        Print usage
+  -m mode   Octal permissions for installed files ($omode by default)
+  -q        Install quietly
+  SRCS      Source files to be installed
+  DEST      Destination directory
+END
 
-	print "$txt\n" if $txt;
+    print "\n$txt\n" if $txt;
 
-	exit 2;
+    exit $opt_h ? 0 : 2;
 }
-
-#	EOF installEpics.pl

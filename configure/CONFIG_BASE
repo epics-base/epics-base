@@ -65,7 +65,8 @@ CONVERTRELEASE             = $(PERL) $(TOOLS)/convertRelease.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products
-INSTALL = $(PERL) $(TOOLS)/installEpics.pl
+INSTALL_QUIETLY := $(if $(findstring s,$(MAKEFLAGS)),-q,)
+INSTALL = $(PERL) $(TOOLS)/installEpics.pl $(INSTALL_QUIETLY)
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)
 

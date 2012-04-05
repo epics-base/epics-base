@@ -9,4 +9,4 @@
 
 envData.c: $(LIBCOM)/env/envDefs.h $(LIBCOM)/env/bldEnvData.pl \
 	$(CONFIG)/CONFIG_ENV $(CONFIG)/CONFIG_SITE_ENV
-	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(CONFIG)
+	$(PERL) $(LIBCOM)/env/bldEnvData.pl $(INSTALL_QUIETLY) $(CONFIG)

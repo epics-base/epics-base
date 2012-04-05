@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #*************************************************************************
-# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -10,18 +10,27 @@
 
 use strict;
 
-my ($ver, $rev, $mod, $patch, $snapshot, $commit_date);
+use Getopt::Std;
+use File::Basename;
 
-my ($infile, $outdir, $site_ver) = @ARGV;
+my $tool = basename($0);
 
-die "Usage: perl makeEpicsVersion.pl CONFIG_BASE_VERSION outdir siteversion"
-    unless ($infile && $outdir);
+our ($opt_h, $opt_q, $opt_v);
+our $opt_o = 'epicsVersion.h';
 
-print "Building epicsVersion.h from $infile\n";
+$Getopt::Std::OUTPUT_HELP_VERSION = 1;
+
+&HELP_MESSAGE unless getopts('ho:qv:') && @ARGV == 1;
+&HELP_MESSAGE if $opt_h;
+
+my ($infile) = @ARGV;
+
+print "Building $opt_o from $infile\n" unless $opt_q;
 
 open my $VARS, '<', $infile
-    or die "Can't open $infile: $!\n";
+    or die "$tool: Can't open $infile: $!\n";
 
+my ($ver, $rev, $mod, $patch, $snapshot, $commit_date);
 while (<$VARS>) {
     chomp;
     next if m/^\s*#/;   # Skip comments
@@ -35,46 +44,50 @@ while (<$VARS>) {
 close $VARS;
 
 map {
-    die "Variable missing from $infile" unless defined $_;
+    die "$tool: Variable missing from $infile" unless defined $_;
 } $ver, $rev, $mod, $patch, $snapshot, $commit_date;
 
 my $ver_str = "$ver.$rev.$mod";
 $ver_str .= ".$patch" if $patch > 0;
 $ver_str .= $snapshot if $snapshot ne '';
-$ver_str .= "-$site_ver" if $site_ver;
+$ver_str .= "-$opt_v" if $opt_v;
 
-print "Found EPICS Version $ver_str\n";
+print "Found EPICS Version $ver_str\n" unless $opt_q;
 
-my $epicsVersion="$outdir/epicsVersion.h";
+open my $OUT, '>', $opt_o
+    or die "$tool: Can't create $opt_o: $!\n";
 
-mkdir ($outdir, 0777)  unless -d $outdir;
+my $obase = basename($opt_o, '.h');
 
-open my $OUT, '>', $epicsVersion
-    or die "Cannot create $epicsVersion: $!\n";
+print $OUT <<"END";
+/* Generated file $opt_o */
 
-print $OUT <<"END_OUTPUT";
-/* Generated epicsVersion.h */
-
-#ifndef INC_epicsVersion_H
-#define INC_epicsVersion_H
+#ifndef INC_${obase}_H
+#define INC_${obase}_H
 
 #define EPICS_VERSION        $ver
 #define EPICS_REVISION       $rev
 #define EPICS_MODIFICATION   $mod
 #define EPICS_PATCH_LEVEL    $patch
 #define EPICS_DEV_SNAPSHOT   "$snapshot"
-#define EPICS_SITE_VERSION   "$site_ver"
+#define EPICS_SITE_VERSION   "$opt_v"
 #define EPICS_VERSION_STRING "EPICS $ver_str"
 #define epicsReleaseVersion  "EPICS R$ver_str $commit_date"
 
 #define VERSION_INT(V,R,M,P) ( ((V)<<24) | ((R)<<16) | ((M)<<8) | (P))
 #define EPICS_VERSION_INT VERSION_INT($ver, $rev, $mod, $patch)
 
-/* The following names are deprecated, use the equivalent name above */
-#define EPICS_UPDATE_LEVEL   EPICS_PATCH_LEVEL
-#define EPICS_CVS_SNAPSHOT   EPICS_DEV_SNAPSHOT
-
-#endif /* INC_epicsVersion_H */
-END_OUTPUT
+#endif /* INC_${obase}_H */
+END
 
 close $OUT;
+
+sub HELP_MESSAGE {
+    print STDERR "Usage: $tool [options] CONFIG_BASE_VERSION\n",
+        "  -h       Help: Print this message\n",
+        "  -q       Quiet: Only print errors\n",
+        "  -o file  Output filename, default is $opt_o\n",
+        "  -v vers  Site-specific version string\n",
+        "\n";
+    exit 1;
+}

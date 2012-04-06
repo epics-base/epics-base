@@ -76,6 +76,7 @@ all:	install
 -include $(CONFIG)/RULES_JAVA
 
 ifneq (,$(strip $(HDEPENDS_FILES)))
+$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
 -include $(HDEPENDS_FILES)
 endif
 
@@ -200,18 +201,27 @@ $(OBJLIBNAME):%$(OBJ):
 	@$(RM) $@
 	$(COMPILE.ctdt) $<
 
-%$(OBJ): %.c
+%$(DEP):%.c
+	@$(RM) $@
 	@$(HDEPENDS_CMD)
+
+%$(DEP):%.cc
+	@$(RM) $@
+	@$(HDEPENDS_CMD)
+
+%$(DEP):%.cpp
+	@$(RM) $@
+	@$(HDEPENDS_CMD)
+
+%$(OBJ): %.c
 	@$(RM) $@
 	$(COMPILE.c) $(call PATH_FILTER,$<) $(COMPILE_FILTER.c)
 
 %$(OBJ): %.cc
-	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
 %$(OBJ): %.cpp
-	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 

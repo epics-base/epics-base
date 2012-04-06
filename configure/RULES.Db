@@ -90,6 +90,8 @@ endif
 INSTALL_DB_INSTALLS = $(addprefix $(INSTALL_DB)/,$(notdir $(DB_INSTALLS)))
 INSTALL_DBD_INSTALLS = $(addprefix $(INSTALL_DBD)/,$(notdir $(DBD_INSTALLS)))
 
+COMMONDEP_TARGET = $(COMMON_DIR)/$(basename $@)
+
 #####################################################  acf files
 # An access security configuration file, *.acf, can be created from
 # an *.acs file (has format of acf file plus #include "filename" lines)
@@ -100,7 +102,7 @@ ACF_CPPFLAGS = $(ACF_CPPFLAGS_$(GNU))
 
 ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
                 $(SRC_INCLUDES) -I$(INSTALL_DB)
-ACFDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(subst -I,,$(ACF_INCLUDES)) $@ $<
+ACFDEPENDS_CMD = $(MKMF) -m $@ $(subst -I,,$(ACF_INCLUDES)) $(COMMONDEP_TARGET) $<
 ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
@@ -110,7 +112,8 @@ COMMON_DBDINC += $(addprefix $(COMMON_DIR)/,$(HINC))
 
 DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
-                    $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
+                    $(patsubst $(COMMON_DIR)/%,%, \
+                    $(filter-out $(COMMON_DIR)/bpt%.dbd,$(COMMON_DBDS))))
 
 MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
@@ -159,8 +162,6 @@ ifneq (,$(strip $(DBDDEPENDS_FILES)))
 -include $(DBDDEPENDS_FILES)
 endif
 
-$(DBDDEPENDS_FILES):
-
 #####################################################  build dependancies, clean rule
 
 inc : $(COMMON_INC) $(INSTALL_INC)
@@ -180,6 +181,51 @@ db_clean :
 .PHONY : db_clean
 
 realclean: clean
+
+##################################################### Dependency files
+
+%Record.h$(DEP): $(COMMON_DIR)/%Record.dbd
+	@$(RM) $@
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+%Record.h$(DEP): %Record.dbd
+	@$(RM) $@
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd
+	@$(RM) $@
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+menu%.h$(DEP): menu%.dbd
+	@$(RM) $@
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+%.dbd$(DEP): $(COMMON_DIR)/%Include.dbd 
+	@$(RM) $@
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+%.dbd$(DEP): %Include.dbd
+	@$(RM) $@
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+%.db$(RAW)$(DEP): %.substitutions
+	@$(RM) $@
+	$(MAKEDBDEPENDS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME) > $@
+	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
+
+%.db$(RAW)$(DEP): %.template
+	@$(RM) $@
+	@$(MAKEDBDEPENDS) $(COMMONDEP_TARGET) $< > $@
+
+%.acf$(DEP): %.acs
+	@$(RM) $@
+	@$(ACFDEPENDS_CMD)
 
 ##################################################### CapFast filter
 
@@ -222,33 +268,21 @@ $(INSTALL_DB)/%.template: %.template
 ##################################################### INC files
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%Record.h: %Record.dbd
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBTOMENUH) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
@@ -258,23 +292,18 @@ $(COMMON_DIR)/menu%.h: menu%.dbd
 ##################################################### DBD files
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data 
+	@$(RM) $(notdir $@)
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
-	$(ECHO) "Expanding dbd"
+	$(ECHO) "Expanding created dbd file $(notdir $<)"
 	@$(RM) $(notdir $@)
-	@$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
+	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd 
-	@$(RM) $(notdir $@)$(DEP)
-	@$(DBEXPAND) -D $(DBDFLAGS) -o $@ $< > $(notdir $@)$(DEP)
-	@echo "$@: ../Makefile" >> $(notdir $@)$(DEP)
-	$(ECHO) "Expanding dbd"
+	$(ECHO) "Expanding dbd file $<"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
@@ -309,25 +338,18 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 	@$(RM) $*.VAR
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
-	@$(RM) $(notdir $@)$(DEP)
-	$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) > $(notdir $@)$(DEP)
-	@echo "$@: $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
 	$(MV) $*.tmp $@
 
 $(COMMON_DIR)/%.db$(RAW): %.template
-	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $< > $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) $< > $*.tmp
 	$(MV) $*.tmp $@
 
 $(COMMON_DIR)/%.acf: %.acs
-	@$(RM) $(notdir $@)$(DEP)
-	@$(ACFDEPENDS_CMD)
 	$(ECHO) "Creating acf file $@"
 	@$(RM) $@
 	$(ACF_CMD)
@@ -385,6 +407,5 @@ IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
 	$(MV) $*.tmp $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
-.PRECIOUS: %$(DEP)
 
 ##################################################### END OF FILE

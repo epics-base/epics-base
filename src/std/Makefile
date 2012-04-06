@@ -12,8 +12,6 @@ include $(TOP)/configure/CONFIG
 
 STDDIR=$(TOP)/src/std
 
-USR_DBDFLAGS += -I ../rec -I ../dev -I ../softIoc
-
 LIBRARY_IOC += dbRecStd
 dbRecStd_LIBS = dbCore ca Com
 

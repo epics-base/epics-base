@@ -55,14 +55,9 @@ LOADABLE_SHRLIB_LDFLAGS = -G -h $@ -z text
 
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 
-# Filter for getting rid of "invalid white space character in directive" compiler warnings
-# when including headers created during win32 build.
-#COMPILE_FILTER.c = 2>&1 | $(EPICS_BASE)/configure/tools/filterWarnings.pl
-#COMPILE_FILTER.cpp = $(COMPILE_FILTER.c)
-
 # Header dependency file generation command
-HDEPENDS_METHOD=CMD 
-HDEPENDSCMD = $(if $(filter .c,$(suffix $<)),$(COMPILE.c),$(COMPILE.cpp)) -xM1 $< >$*$(DEP)
+HDEPENDS_METHOD = CFLAGS
+HDEPENDSCFLAGS = -xM1 > $*$(DEP)
 
 #--------------------------------------------------
 # Allow site overrides

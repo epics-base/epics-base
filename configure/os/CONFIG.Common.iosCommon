@@ -43,10 +43,6 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 OP_SYS_CFLAGS += -isysroot $(SDK_DIR) -D__IPHONE_OS_VERSION_MIN_REQUIRED=30200
 
 #--------------------------------------------------
-# Don't try to use precompiled headers when converting sequencer files
-CPPSNCFLAGS += -no-cpp-precomp
-
-#--------------------------------------------------
 # Always compile in debugging symbol table information
 #
 OPT_CFLAGS_YES += -g
@@ -54,14 +50,24 @@ OPT_CXXFLAGS_YES += -g
 
 #-------------------------------------------------------
 # Compiler definitions:
-#   Use clang instead of gcc
-CC = $(GNU_BIN)/clang
-CCC = $(GNU_BIN)/clang++
-CMPLR_CLASS = clang
-GNU_LDLIBS_YES =
+
+CC_GNU  = gcc
+CCC_GNU = g++
+CMPLR_CLASS_GNU = gcc
+CC_LLVM  = llvm-gcc
+CCC_LLVM = llvm-g++
+CMPLR_CLASS_LLVM = gcc
+CC_CLANG  = clang
+CCC_CLANG = clang++
+CMPLR_CLASS_CLANG = clang
+
+CC = $(firstword $(wildcard $(GNU_BIN)/$(CC_$(COMPILER))) $(CC_$(COMPILER)))
+CCC = $(firstword $(wildcard $(GNU_BIN)/$(CCC_$(COMPILER))) $(CCC_$(COMPILER)))
+CMPLR_CLASS = $(CMPLR_CLASS_$(COMPLER))
 
 #-------------------------------------------------------
 # Linker flags
+GNU_LDLIBS_YES =
 OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib -L$(SDK_DIR)/usr/lib/system
 
 #-------------------------------------------------------
@@ -71,7 +77,8 @@ SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
        -install_name $(shell perl $(TOOLS)/fullPathName.pl $(INSTALL_LIB))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(SHRLIB_VERSION)
-SHRLIB_SUFFIX = .$(SHRLIB_VERSION).dylib
+SHRLIB_SUFFIX_BASE = .dylib
+SHRLIB_SUFFIX = .$(SHRLIB_VERSION)$(SHRLIB_SUFFIX_BASE)
 
 LOADABLE_SHRLIB_LDFLAGS = -bundle -flat_namespace -undefined suppress
 

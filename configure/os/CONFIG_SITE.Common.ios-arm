@@ -19,10 +19,3 @@
 ARCH_CLASS = armv7
 #ARCH_CLASS = armv6 armv7
 #ARCH_CLASS = armv6
-
-
-# Uncomment these two definitions to use g++ instead of clang++
-# which may be needed in some circumstances:
-#
-#CCC = $(GNU_BIN)/c++
-#GNU_LDLIBS_YES = -lgcc

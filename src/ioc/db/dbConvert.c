@@ -416,7 +416,7 @@ static long getCharChar(
     char *pbuffer = (char *)pto;
     char *psrc=(char *)(paddr->pfield);
 
-    if (paddr->pfldDes->field_type == DBF_STRING) {
+    if (paddr->pfldDes && paddr->pfldDes->field_type == DBF_STRING) {
         /* This is a DBF_STRING field being read as a long string.
          * The buffer we return must be zero-terminated.
          */
@@ -443,7 +443,7 @@ static long getCharUchar(
     unsigned char *pbuffer = (unsigned char *)pto;
     char *psrc=(char *)(paddr->pfield);
 
-    if (paddr->pfldDes->field_type == DBF_STRING) {
+    if (paddr->pfldDes && paddr->pfldDes->field_type == DBF_STRING) {
         /* This is a DBF_STRING field being read as a long string.
          * The buffer we return must be zero-terminated.
          */
@@ -2600,7 +2600,7 @@ static long putStringEnum(
 	    status = (*prset->get_enum_strs)(paddr,&enumStrs);
 	    if(!status) {
 		nchoices = enumStrs.no_str;
-		nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+		nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
 		if(nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
 		    *pfield = ind;
 		    return(0);
@@ -2649,7 +2649,7 @@ static long putStringMenu(
 		return(0);
 	    }
 	}
-	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
 	if(nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
 	    *pfield = ind;
 	    return(0);
@@ -2687,7 +2687,7 @@ static long putStringDevice(
 		return(0);
 	    }
 	}
-	nargs = sscanf(pbuffer," %u %n",&ind,&nchars);
+	nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
 	if(nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
 	    *pfield = ind;
 	    return(0);

@@ -165,6 +165,7 @@ GCC_PIPE = NO
 
 # Set RPATH when linking executables and libraries.
 #  Must be either YES or NO.  If you set this to NO you must also provide a
-#  way for Base executables to find their shared libraries at build-time.
+#  way for Base executables to find their shared libraries when they are
+#  run at build-time, e.g. set the LD_LIBRARY_PATH environment variable.
 LINKER_USE_RPATH = YES
 

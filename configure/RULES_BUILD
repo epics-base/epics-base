@@ -369,10 +369,10 @@ $(INSTALL_LIB)/%.lib: %.lib
 $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing shared library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
-ifneq ($(SHRLIB_SUFFIX),.dll)
+ifneq ($(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(SHRLIB_VERSION)))
-	@$(RM) $(subst .$(SHRLIB_VERSION),,$@)
-	ln -s $< $(subst .$(SHRLIB_VERSION),,$@)
+	@$(RM) $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
+	ln -s $< $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 endif # SHRLIB_VERSION
 endif # SHRLIB_SUFFIX
 
@@ -393,10 +393,12 @@ $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing loadable shared library $@"
 	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
+ifneq ($(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
-	@$(RM) $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
-	ln -s $< $(subst .$(LOADABLE_SHRLIB_VERSION),,$@)
+	@$(RM) $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
+	ln -s $< $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)
 endif # LOADABLE_SHRLIB_VERSION
+endif # LOADABLE_SHRLIB_SUFFIX
 
 $(INSTALL_CONFIG)/%: %
 	$(ECHO) "Installing config file $@"

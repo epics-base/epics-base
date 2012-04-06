@@ -252,6 +252,7 @@ static long process(calcoutRecord *prec)
         if (doOutput) {
             if (prec->odly > 0.0) {
                 prec->dlya = 1;
+                recGblGetTimeStamp(prec);
                 db_post_events(prec, &prec->dlya, DBE_VALUE);
                 callbackRequestProcessCallbackDelayed(&prpvt->doOutCb,
                         prec->prio, prec, (double)prec->odly);
@@ -263,9 +264,11 @@ static long process(calcoutRecord *prec)
                 prec->pact = TRUE;
             }
         }
+        recGblGetTimeStamp(prec);
     } else { /* pact == TRUE */
         if (prec->dlya) {
             prec->dlya = 0;
+            recGblGetTimeStamp(prec);
             db_post_events(prec, &prec->dlya, DBE_VALUE);
             /* Make pact FALSE for asynchronous device support*/
             prec->pact = FALSE;
@@ -274,9 +277,9 @@ static long process(calcoutRecord *prec)
             prec->pact = TRUE;
         } else {/*Device Support is asynchronous*/
             writeValue(prec);
+            recGblGetTimeStamp(prec);
         }
     }
-    recGblGetTimeStamp(prec);
     monitor(prec);
     recGblFwdLink(prec);
     prec->pact = FALSE;

@@ -9,7 +9,8 @@
 
 SRC_DIRS += $(STDDIR)/softIoc
 
-PROD_IOC = softIoc
+PROD_IOC_DEFAULT = softIoc
+PROD_IOC_iOS = -nil-
 
 DBD += base.dbd
 DBD += softIoc.dbd

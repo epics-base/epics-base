@@ -57,6 +57,7 @@ OPT_CXXFLAGS_YES += -g
 #   Use clang instead of gcc
 CC = $(GNU_BIN)/clang
 CCC = $(GNU_BIN)/clang++
+CMPLR_CLASS = clang
 GNU_LDLIBS_YES =
 
 #-------------------------------------------------------

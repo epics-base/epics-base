@@ -24,6 +24,7 @@ catools_LIBS += ca Com
 PROD_DEFAULT += caget camonitor cainfo caput
 PROD_vxWorks = -nil-
 PROD_RTEMS = -nil-
+PROD_iOS = -nil-
 
 PROD_LIBS += catools ca Com
 catools_DIR = .

@@ -10,7 +10,7 @@
 #
 #	Rules for making things specified in Makefile
 #
-#	we are in O.$(OS_CLASS), but most sources are one dir above:
+#	we are in O.$(T_A), but most sources are elsewhere
 #
 
 ifndef BASE_RULES_BUILD
@@ -19,13 +19,12 @@ BASE_RULES_BUILD=1
 vpath %.c $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
-vpath %.C $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.rc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.h $(USR_VPATH) $(ALL_SRC_DIRS)
-vpath %.H $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.skel.static $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.y $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.l $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.pl $(USR_VPATH) $(ALL_SRC_DIRS)
 
 #---------------------------------------------------------------
 

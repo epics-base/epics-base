@@ -18,7 +18,7 @@ INC += registryFunction.h
 INC += registryCommon.h
 INC += registryIocRegister.h
 
-SCRIPTS_HOST += registry/registerRecordDeviceDriver.pl
+SCRIPTS_HOST += registerRecordDeviceDriver.pl
 
 dbCore_SRCS += registryRecordType.c
 dbCore_SRCS += registryDeviceSupport.c

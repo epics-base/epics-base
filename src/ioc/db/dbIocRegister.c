@@ -266,11 +266,21 @@ static void scanpplCallFunc(const iocshArgBuf *args)
 { scanppl(args[0].dval);}
 
 /* scanpel */
-static const iocshArg scanpelArg0 = { "event number",iocshArgInt};
+static const iocshArg scanpelArg0 = { "event name",iocshArgString};
 static const iocshArg * const scanpelArgs[1] = {&scanpelArg0};
 static const iocshFuncDef scanpelFuncDef = {"scanpel",1,scanpelArgs};
 static void scanpelCallFunc(const iocshArgBuf *args)
-{ scanpel(args[0].ival);}
+{ scanpel(args[0].sval);}
+
+/* postEvent */
+static const iocshArg postEventArg0 = { "event name",iocshArgString};
+static const iocshArg * const postEventArgs[1] = {&postEventArg0};
+static const iocshFuncDef postEventFuncDef = {"postEvent",1,postEventArgs};
+static void postEventCallFunc(const iocshArgBuf *args)
+{
+    EVENTPVT pel = eventNameToHandle(args[0].sval);
+    postEvent(pel);
+}
 
 /* scanpiol */
 static const iocshFuncDef scanpiolFuncDef = {"scanpiol",0};
@@ -328,6 +338,7 @@ void epicsShareAPI dbIocRegister(void)
     iocshRegister(&scanOnceSetQueueSizeFuncDef,scanOnceSetQueueSizeCallFunc);
     iocshRegister(&scanpplFuncDef,scanpplCallFunc);
     iocshRegister(&scanpelFuncDef,scanpelCallFunc);
+    iocshRegister(&postEventFuncDef,postEventCallFunc);
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);

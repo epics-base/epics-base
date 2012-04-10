@@ -9,10 +9,19 @@
 #*************************************************************************
 recordtype(event) {
 	include "dbCommon.dbd" 
-	field(VAL,DBF_USHORT) {
-		prompt("Event Number To Post")
+	field(VAL,DBF_STRING) {
+		prompt("Event Name To Post")
 		promptgroup(GUI_INPUTS)
+		special(SPC_MOD)
 		asl(ASL0)
+		size(40)
+	}
+	%#include "dbScan.h"
+	field(EPVT, DBF_NOACCESS) {
+		prompt("Event private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("EVENTPVT epvt")
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
@@ -24,8 +33,9 @@ recordtype(event) {
 		promptgroup(GUI_INPUTS)
 		interest(1)
 	}
-	field(SVAL,DBF_USHORT) {
+	field(SVAL,DBF_STRING) {
 		prompt("Simulation Value")
+		size(40)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")

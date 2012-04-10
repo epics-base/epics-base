@@ -15,6 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>Named Soft Events</h4>
+
+<p>Soft events can now be given meaningful names instead of just using the
+numbers 1-255. The EVNT field is now a DBF_STRING. The <tt>post_event()</tt> API
+is now deprecated but still works. It should be replaced by code that in advance
+looks up the <tt>EVNTPVT</tt> event handle associated with the named event by
+calling <tt>eventNameToHandle(char *)</tt>, and when that event occurs passes
+that handle to the new <tt>postEvent(EVNTPVT)</tt> routine (which may be called
+from interrupt level). A new iocsh command <tt>postEvent <i>name</i></tt> will
+trigger a named event from the command-line or a startup script (on vxWorks the
+expression <tt>postEvent(eventNameToHandle("<i>name</i>"))</tt> must be used
+instead though).</p>
 
 <h4>Parallel Builds</h4>
 

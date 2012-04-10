@@ -255,10 +255,19 @@ recordtype(calcout) {
 		prompt("OCAL Valid")
 		interest(1)
 	}
-	field(OEVT,DBF_USHORT) {
+	field(OEVT,DBF_STRING) {
 		prompt("Event To Issue")
 		promptgroup(GUI_CLOCK)
+		special(SPC_MOD)
 		asl(ASL0)
+		size(40)
+	}
+	%#include "dbScan.h"
+	field(EPVT, DBF_NOACCESS) {
+		prompt("Event private")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("EVENTPVT epvt")
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID output action")

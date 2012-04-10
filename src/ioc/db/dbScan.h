@@ -19,6 +19,7 @@
 
 #include "menuScan.h"
 #include "shareLib.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,7 @@ extern "C" {
 struct io_scan_list;
 
 typedef struct io_scan_list *IOSCANPVT;
+typedef struct event_list *EVENTPVT;
 
 struct dbCommon;
 
@@ -43,7 +45,9 @@ epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
 
-epicsShareFunc void post_event(int event);
+epicsShareFunc EVENTPVT eventNameToHandle(const char* event);
+epicsShareFunc void postEvent(EVENTPVT epvt);
+epicsShareFunc void post_event(int event) EPICS_DEPRECATED;
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);
@@ -54,7 +58,7 @@ epicsShareFunc int scanOnceSetQueueSize(int size);
 epicsShareFunc int scanppl(double rate);
 
 /*print event lists*/
-epicsShareFunc int scanpel(int event_number);
+epicsShareFunc int scanpel(const char *event_name);
 
 /*print io_event list*/
 epicsShareFunc int scanpiol(void);

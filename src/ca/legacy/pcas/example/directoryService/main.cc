@@ -206,7 +206,4 @@ static int parseDirectoryFP (FILE *pf, const char *pFileName)
         }
         nPV++;
     }
-#if defined ( __HP_aCC ) && ( _HP_aCC <= 033300 )
-    return 0; // Make HP compiler happy
-#endif
 }

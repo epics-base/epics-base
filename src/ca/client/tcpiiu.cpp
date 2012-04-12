@@ -1275,9 +1275,6 @@ bool tcpiiu::processIncoming (
         this->msgHeaderAvailable = false;
         this->curDataBytes = 0u;
     }
-#   if defined ( __HP_aCC ) && _HP_aCC <= 033300
-        return false; // to make hpux compiler happy...
-#   endif
 }
 
 void tcpiiu::hostNameSetRequest ( epicsGuard < epicsMutex > & guard )

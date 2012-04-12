@@ -105,7 +105,7 @@ void getCopy::show ( unsigned level ) const
     }
 }
 
-void * getCopy::operator new ( size_t ) // X aCC 361
+void * getCopy::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

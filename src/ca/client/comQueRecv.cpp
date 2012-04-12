@@ -155,7 +155,7 @@ epicsUInt32 comQueRecv::multiBufferPopUInt32 ()
         unsigned byte3 = this->popUInt8();
         unsigned byte4 = this->popUInt8();
         tmp = static_cast <epicsUInt32>
-            ( ( byte1 << 24u ) | ( byte2 << 16u ) | //X aCC 392
+            ( ( byte1 << 24u ) | ( byte2 << 16u ) |
               ( byte3 << 8u ) | byte4 );
     }
     else {

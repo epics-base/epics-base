@@ -201,7 +201,7 @@ udpiiu::udpiiu (
     memset ( (char *)&addr, 0 , sizeof (addr) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-    addr.ia.sin_port = htons ( PORT_ANY ); // X aCC 818
+    addr.ia.sin_port = htons ( PORT_ANY );
     status = bind (this->sock, &addr.sa, sizeof (addr) );
     if ( status < 0 ) {
         char sockErrBuf[64];
@@ -471,7 +471,7 @@ void epicsShareAPI caRepeaterRegistrationMessage (
     }
 
     memset ( (char *) &msg, 0, sizeof (msg) );
-    AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = REPEATER_REGISTER; // X aCC 818
+    AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = REPEATER_REGISTER;
     msg.m_available = saddr.ia.sin_addr.s_addr;
 
     /*

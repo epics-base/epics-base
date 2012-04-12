@@ -119,7 +119,7 @@ void netReadNotifyIO::forceSubscriptionUpdate (
 {
 }
 
-void * netReadNotifyIO::operator new ( size_t ) // X aCC 361
+void * netReadNotifyIO::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

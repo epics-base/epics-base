@@ -295,7 +295,7 @@ void CASG::exception (
     }
 }
 
-void * CASG::operator new ( size_t ) // X aCC 361
+void * CASG::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

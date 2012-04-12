@@ -43,7 +43,7 @@
 #include "caProto.h"
 #include "netiiu.h"
 
-class disconnectGovernorNotify { // X aCC 655
+class disconnectGovernorNotify {
 public:
     virtual ~disconnectGovernorNotify () = 0;
     virtual void govExpireNotify ( 

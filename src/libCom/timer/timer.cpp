@@ -221,7 +221,7 @@ void timer::show ( unsigned int level ) const
     }
 }
 
-void * timer::operator new ( size_t ) // X aCC 361
+void * timer::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly
@@ -239,7 +239,7 @@ void timer::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
-void * epicsTimerForC::operator new ( size_t ) // X aCC 361
+void * epicsTimerForC::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

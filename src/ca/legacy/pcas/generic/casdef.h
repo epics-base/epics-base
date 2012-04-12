@@ -113,7 +113,7 @@ class casPVI;
 class casCtx;
 class casChannel;
 
-class epicsShareClass pvExistReturn { // X aCC 361
+class epicsShareClass pvExistReturn {
 public:
     // most server tools will use this
     pvExistReturn ( pvExistReturnEnum s = pverDoesNotExistHere );

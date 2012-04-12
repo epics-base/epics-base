@@ -49,7 +49,7 @@ static const unsigned CASG_MAGIC = 0xFAB4CAFE;
 // used to control access to CASG's recycle routines which
 // should only be indirectly invoked by CASG when its lock
 // is applied
-class casgRecycle {             // X aCC 655
+class casgRecycle {
 public:
     virtual void recycleSyncGroupWriteNotify ( 
         epicsGuard < epicsMutex > &, class syncGroupWriteNotify & io ) = 0;

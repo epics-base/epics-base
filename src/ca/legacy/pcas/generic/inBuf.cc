@@ -117,7 +117,7 @@ inBufClient::fillCondition inBuf::fill ( inBufClient::fillParameter parm )
 //
 // inBuf::pushCtx ()
 //
-const inBufCtx inBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
+const inBufCtx inBuf::pushCtx ( bufSizeT headerSize,
                                bufSizeT bodySize )
 {
     if ( headerSize + bodySize > ( this->bytesInBuffer - this->nextReadIndex ) || 
@@ -140,7 +140,7 @@ const inBufCtx inBuf::pushCtx ( bufSizeT headerSize, // X aCC 361
 //
 // inBuf::popCtx ()
 //
-bufSizeT inBuf::popCtx ( const inBufCtx &ctx ) // X aCC 361
+bufSizeT inBuf::popCtx ( const inBufCtx &ctx )
 {
     if ( ctx.stat==inBufCtx::pushCtxSuccess ) {
         bufSizeT bytesRemoved = this->nextReadIndex;

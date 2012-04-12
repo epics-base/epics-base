@@ -74,7 +74,7 @@ private:
 // for this breaking out into a seperate class
 // from pvInfo)
 //
-class pvEntry // X aCC 655
+class pvEntry
     : public stringId, public tsSLNode<pvEntry> {
 public:
     pvEntry (const pvInfo  &infoIn, directoryServer &casIn, 

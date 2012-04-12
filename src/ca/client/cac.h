@@ -55,7 +55,7 @@ class netSubscription;
 // used to control access to cac's recycle routines which
 // should only be indirectly invoked by CAC when its lock
 // is applied
-class cacRecycle {              // X aCC 655
+class cacRecycle {
 public:
     virtual void recycleReadNotifyIO ( 
         epicsGuard < epicsMutex > &, netReadNotifyIO &io ) = 0;

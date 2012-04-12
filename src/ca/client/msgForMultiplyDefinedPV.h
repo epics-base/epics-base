@@ -39,7 +39,7 @@
 #   define epicsExportSharedSymbols
 #endif
 
-class callbackForMultiplyDefinedPV { // X aCC 655
+class callbackForMultiplyDefinedPV {
 public:
     virtual ~callbackForMultiplyDefinedPV () = 0;
     virtual void pvMultiplyDefinedNotify ( 

@@ -94,7 +94,7 @@ void nciu::destroy (
     this->cacCtx.destroyChannel ( guard, *this );
 }
 
-void * nciu::operator new ( size_t ) // X aCC 361
+void * nciu::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

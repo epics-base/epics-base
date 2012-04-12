@@ -157,13 +157,13 @@ inline T & smartGDDPointerTemplate < T > :: operator * () const
 }
 
 template < class T >
-inline bool smartGDDPointerTemplate < T > :: operator ! () const // X aCC 361
+inline bool smartGDDPointerTemplate < T > :: operator ! () const
 {
     return this->pValue ? false : true;
 }
 
 template < class T >
-inline bool smartGDDPointerTemplate < T > :: valid () const // X aCC 361
+inline bool smartGDDPointerTemplate < T > :: valid () const
 {
     return this->pValue ? true : false;
 }

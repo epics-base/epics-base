@@ -36,7 +36,7 @@ public:
     virtual ~ipAddrToAsciiCallBack () = 0;
 };
 
-class epicsShareClass ipAddrToAsciiTransaction { // X aCC 655
+class epicsShareClass ipAddrToAsciiTransaction {
 public:
     virtual void release () = 0; 
     virtual void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & ) = 0;
@@ -46,7 +46,7 @@ protected:
     virtual ~ipAddrToAsciiTransaction () = 0;
 };
 
-class epicsShareClass ipAddrToAsciiEngine { // X aCC 655
+class epicsShareClass ipAddrToAsciiEngine {
 public:
     virtual void release () = 0; 
     virtual ipAddrToAsciiTransaction & createTransaction () = 0;

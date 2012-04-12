@@ -433,7 +433,7 @@ chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 }
 
 // extern "C"
-int epicsShareAPI ca_pend ( ca_real timeout, int early ) // X aCC 361
+int epicsShareAPI ca_pend ( ca_real timeout, int early )
 {
     if ( early ) {
         return ca_pend_io ( timeout );
@@ -516,7 +516,7 @@ int epicsShareAPI ca_flush_io ()
 /*
  *  CA_TEST_IO ()
  */
-int epicsShareAPI ca_test_io () // X aCC 361
+int epicsShareAPI ca_test_io ()
 {
     ca_client_context *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -551,7 +551,7 @@ void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * (if they call this routine again).
  */
 // extern "C"
-const char * epicsShareAPI ca_message ( long ca_status ) // X aCC 361
+const char * epicsShareAPI ca_message ( long ca_status )
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO ( ca_status );
 

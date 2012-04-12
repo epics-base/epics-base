@@ -44,7 +44,7 @@ public:
     virtual void release ( void * ) = 0; 
 };
 
-class wireSendAdapter { // X aCC 655
+class wireSendAdapter {
 public:
     virtual unsigned sendBytes ( const void * pBuf, 
         unsigned nBytesInBuf, 
@@ -65,7 +65,7 @@ struct statusWireIO {
     swioCircuitState circuitState;
 };
 
-class wireRecvAdapter { // X aCC 655
+class wireRecvAdapter {
 public:
     virtual void recvBytes ( void * pBuf, 
         unsigned nBytesInBuf, statusWireIO & ) = 0;

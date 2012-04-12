@@ -167,7 +167,7 @@ pvExistReturn exServer::pvExistTest
 //
 // exServer::pvExistTest()
 //
-pvExistReturn exServer::pvExistTest // X aCC 361
+pvExistReturn exServer::pvExistTest
     ( const casCtx& ctxIn, const char * pPVName )
 {
     //
@@ -214,7 +214,7 @@ pvExistReturn exServer::pvExistTest // X aCC 361
 //
 // exServer::pvAttach()
 //
-pvAttachReturn exServer::pvAttach // X aCC 361
+pvAttachReturn exServer::pvAttach
     (const casCtx &ctx, const char *pName)
 {
     //

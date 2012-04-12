@@ -60,7 +60,7 @@ static int timeRegister(void)
 static int done = timeRegister();
 
 
-int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
+int epicsTime_gmtime ( const time_t *pAnsiTime,
                        struct tm *pTM )
 {
     struct tm * pRet = gmtime_r ( pAnsiTime, pTM );
@@ -72,7 +72,7 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, // X aCC 361
     }
 }
 
-int epicsTime_localtime ( const time_t *clock, // X aCC 361
+int epicsTime_localtime ( const time_t *clock,
                           struct tm *result )
 {
     struct tm * pRet = localtime_r ( clock, result );

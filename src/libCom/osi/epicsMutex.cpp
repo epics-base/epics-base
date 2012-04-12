@@ -239,7 +239,7 @@ void epicsMutex::lock ()
     }
 }
 
-bool epicsMutex::tryLock () // X aCC 361
+bool epicsMutex::tryLock ()
 {
     epicsMutexLockStatus status = epicsMutexTryLock ( this->id );
     if ( status == epicsMutexLockOK ) {

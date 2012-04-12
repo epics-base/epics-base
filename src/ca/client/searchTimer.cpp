@@ -124,7 +124,7 @@ void searchTimer::moveChannels (
 // searchTimer::expire ()
 //
 epicsTimerNotify::expireStatus searchTimer::expire ( 
-    const epicsTime & currentTime ) // X aCC 361
+    const epicsTime & currentTime )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 

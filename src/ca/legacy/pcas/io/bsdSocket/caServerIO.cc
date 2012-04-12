@@ -167,7 +167,7 @@ void caServerIO::show (unsigned /* level */) const
 //
 // getToken()
 //
-static char *getToken(const char **ppString, // X aCC 361
+static char *getToken(const char **ppString,
                       char *pBuf, unsigned bufSIze)
 {
     const char *pToken;

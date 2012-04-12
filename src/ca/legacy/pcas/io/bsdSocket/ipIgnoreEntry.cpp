@@ -67,7 +67,7 @@ void ipIgnoreEntry::operator delete ( void * pCadaver,
 }
 #endif
 
-void * ipIgnoreEntry::operator new ( size_t ) // X aCC 361
+void * ipIgnoreEntry::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

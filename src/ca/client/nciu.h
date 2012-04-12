@@ -121,7 +121,7 @@ private:
     friend class disconnectGovernorTimer;
 };
 
-class privateInterfaceForIO { // X aCC 655
+class privateInterfaceForIO {
 public:
     virtual void ioCompletionNotify ( 
         epicsGuard < epicsMutex > &, class baseNMIU & ) = 0;

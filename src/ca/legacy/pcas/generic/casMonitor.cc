@@ -77,7 +77,7 @@ void casMonitor::installNewEventLog (
             this->overFlowEvent.swapValues ( *pLog );
 			eventLogQue.insertAfter ( *pLog, this->overFlowEvent );
             assert ( this->nPend != UCHAR_MAX );
-		    this->nPend++; // X aCC 818
+		    this->nPend++;
 		}
 		else {
 			// replace the old OVF value with the current one
@@ -97,7 +97,7 @@ void casMonitor::installNewEventLog (
         }
         pLog->assign ( event );
         assert ( this->nPend != UCHAR_MAX );
-		this->nPend++; // X aCC 818
+		this->nPend++;
     }
     eventLogQue.add ( *pLog );
 }
@@ -117,7 +117,7 @@ caStatus casMonitor::executeEvent ( casCoreClient & client,
 
     client.getCAS().incrEventsProcessedCounter ();
     assert ( this->nPend != 0u );
-	this->nPend--; // X aCC 818
+	this->nPend--;
 
 	// delete event object if it isnt a cache entry
 	// saved in the call back object

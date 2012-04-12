@@ -83,7 +83,7 @@ dbContext::~dbContext ()
     }
 }
 
-cacChannel & dbContext::createChannel ( // X aCC 361
+cacChannel & dbContext::createChannel (
     epicsGuard < epicsMutex > & guard, const char * pName, 
     cacChannelNotify & notifyIn, cacChannel::priLev priority )
 {

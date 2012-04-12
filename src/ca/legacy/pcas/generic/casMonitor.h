@@ -39,7 +39,7 @@
 class casMonitor;
 class casClientMutex;
 
-class casMonitorCallbackInterface { // X aCC 655
+class casMonitorCallbackInterface {
 public:
 	virtual caStatus casMonitorCallBack ( 
         epicsGuard < casClientMutex > &, casMonitor &,

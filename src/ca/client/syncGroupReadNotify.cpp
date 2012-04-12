@@ -58,7 +58,7 @@ syncGroupReadNotify * syncGroupReadNotify::factory (
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList, 
     struct CASG & sg, chid chan, void * pValueIn )
 {
-    return new ( freeList ) // X aCC 930
+    return new ( freeList )
         syncGroupReadNotify ( sg, chan, pValueIn );
 }
 
@@ -122,7 +122,7 @@ void syncGroupReadNotify::show (
     }
 }
 
-void * syncGroupReadNotify::operator new ( size_t ) // X aCC 361
+void * syncGroupReadNotify::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

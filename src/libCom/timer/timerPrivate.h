@@ -118,7 +118,7 @@ private:
     friend struct epicsTimerForC;
 };
 
-class timerQueueActiveMgrPrivate { // X aCC 655
+class timerQueueActiveMgrPrivate {
 public:
     timerQueueActiveMgrPrivate ();
 protected:

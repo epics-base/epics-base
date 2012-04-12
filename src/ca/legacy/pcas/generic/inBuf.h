@@ -44,7 +44,7 @@ private:
     bufSizeT nextReadIndex;
 };
 
-class inBufClient {             // X aCC 655
+class inBufClient {
 public:
     enum fillCondition { casFillNone,  casFillProgress,  
         casFillDisconnect };

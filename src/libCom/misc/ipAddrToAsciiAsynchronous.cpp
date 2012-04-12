@@ -272,7 +272,7 @@ inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, ts
 }
 #endif
 
-void * ipAddrToAsciiTransactionPrivate::operator new ( size_t ) // X aCC 361
+void * ipAddrToAsciiTransactionPrivate::operator new ( size_t )
 {
     // The HPUX compiler seems to require this even though no code
     // calls it directly

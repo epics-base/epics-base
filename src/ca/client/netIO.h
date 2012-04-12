@@ -42,7 +42,7 @@
 
 class privateInterfaceForIO;
 
-class baseNMIU : public tsDLNode < baseNMIU >, // X aCC 655
+class baseNMIU : public tsDLNode < baseNMIU >,
         public chronIntIdRes < baseNMIU > {
 public:
     virtual void destroy ( 
@@ -237,12 +237,12 @@ inline netSubscription * netSubscription::factory (
     class privateInterfaceForIO & chan, unsigned type, arrayElementCount count, 
     unsigned mask, cacStateNotify &notify )
 {
-    return new ( freeList ) netSubscription ( chan, type, // X aCC 930
+    return new ( freeList ) netSubscription ( chan, type,
                                 count, mask, notify );
 }
 
 inline arrayElementCount netSubscription::getCount (
-    epicsGuard < epicsMutex > & guard, bool allow_zero ) const // X aCC 361
+    epicsGuard < epicsMutex > & guard, bool allow_zero ) const
 {
     //guard.assertIdenticalMutex ( this->mutex );
     arrayElementCount nativeCount = this->privateChanForIO.nativeElementCount ( guard );
@@ -268,7 +268,7 @@ inline netReadNotifyIO * netReadNotifyIO::factory (
     tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & freeList, 
     privateInterfaceForIO & ioComplNotifIntf, cacReadNotify & notify )
 {
-    return new ( freeList ) netReadNotifyIO ( ioComplNotifIntf, notify ); // X aCC 930
+    return new ( freeList ) netReadNotifyIO ( ioComplNotifIntf, notify );
 }
 
 inline void * netReadNotifyIO::operator new ( size_t size, 
@@ -289,7 +289,7 @@ inline netWriteNotifyIO * netWriteNotifyIO::factory (
     tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & freeList, 
     privateInterfaceForIO & ioComplNotifyIntf, cacWriteNotify & notify )
 {
-    return new ( freeList ) netWriteNotifyIO ( ioComplNotifyIntf, notify ); // X aCC 930
+    return new ( freeList ) netWriteNotifyIO ( ioComplNotifyIntf, notify );
 }
 
 inline void * netWriteNotifyIO::operator new ( size_t size, 

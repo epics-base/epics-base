@@ -45,7 +45,7 @@ unsigned exVectorPV::maxDimension() const
 //
 // exVectorPV::maxBound()
 //
-aitIndex exVectorPV::maxBound (unsigned dimension) const // X aCC 361
+aitIndex exVectorPV::maxBound (unsigned dimension) const
 {
     if (dimension==0u) {
         return this->info.getElementCount();

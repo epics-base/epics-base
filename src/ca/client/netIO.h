@@ -106,7 +106,6 @@ private:
     const unsigned mask;
     bool subscribed;
     class netSubscription * isSubscription ();
-    void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netSubscription, 1024, epicsMutexNOOP > & );
@@ -147,7 +146,6 @@ protected:
 private:
     cacReadNotify & notify;
     class privateInterfaceForIO & privateChanForIO;
-    void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netReadNotifyIO, 1024, epicsMutexNOOP > & );
@@ -190,7 +188,6 @@ protected:
 private:
     cacWriteNotify & notify;
     privateInterfaceForIO & privateChanForIO;
-    void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class netWriteNotifyIO, 1024, epicsMutexNOOP > & );

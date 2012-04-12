@@ -117,14 +117,6 @@ void netWriteNotifyIO::forceSubscriptionUpdate (
 {
 }
 
-void * netWriteNotifyIO::operator new ( size_t )
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( 
-        "why is the compiler calling private operator new" );
-}
-
 void netWriteNotifyIO::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if

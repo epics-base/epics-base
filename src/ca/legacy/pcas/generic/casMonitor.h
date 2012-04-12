@@ -87,7 +87,6 @@ private:
 	unsigned char nPend;
     bool destroyPending;
 	bool ovf;
-    void * operator new ( size_t );
     void operator delete ( void * );
 	casMonitor ( const casMonitor & );
 	casMonitor & operator = ( const casMonitor & );

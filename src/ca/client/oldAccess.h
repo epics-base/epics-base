@@ -162,7 +162,6 @@ private:
         unsigned type, arrayElementCount count );
 	oldChannelNotify ( const oldChannelNotify & );
 	oldChannelNotify & operator = ( const oldChannelNotify & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -195,7 +194,6 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
 	getCopy ( const getCopy & );
 	getCopy & operator = ( const getCopy & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -221,7 +219,6 @@ private:
         const char * pContext, unsigned type, arrayElementCount count );
 	getCallback ( const getCallback & );
 	getCallback & operator = ( const getCallback & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -245,7 +242,6 @@ private:
         unsigned type, arrayElementCount count );
 	putCallback ( const putCallback & );
 	putCallback & operator = ( const putCallback & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -278,7 +274,6 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
 	oldSubscription ( const oldSubscription & );
 	oldSubscription & operator = ( const oldSubscription & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

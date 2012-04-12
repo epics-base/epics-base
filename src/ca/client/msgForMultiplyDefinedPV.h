@@ -64,7 +64,6 @@ private:
     void transactionComplete ( const char * pHostName );
 	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
 	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

@@ -204,13 +204,6 @@ void * dbChannelIO::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-void * dbChannelIO::operator new ( size_t )
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
-
 #ifdef CXX_PLACEMENT_DELETE
 void dbChannelIO::operator delete ( void *pCadaver, 
     tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )

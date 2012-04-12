@@ -335,7 +335,6 @@ private:
 
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

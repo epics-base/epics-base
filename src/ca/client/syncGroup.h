@@ -104,7 +104,6 @@ private:
     cacChannel::ioid id;
     bool idIsValid;
     bool ioComplete;
-    void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & );
@@ -145,7 +144,6 @@ private:
     cacChannel::ioid id;
     bool idIsValid;
     bool ioComplete;
-    void * operator new ( size_t );
     void operator delete ( void * );
     void * operator new ( size_t, 
         tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & );
@@ -215,7 +213,6 @@ private:
 	CASG ( const CASG & );
 	CASG & operator = ( const CASG & );
 
-    void * operator new ( size_t size );
     void operator delete ( void * );
 
     ~CASG ();

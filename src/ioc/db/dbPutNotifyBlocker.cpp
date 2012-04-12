@@ -212,13 +212,6 @@ void * dbPutNotifyBlocker::operator new ( size_t size,
     return freeList.allocate ( size );
 }
 
-void * dbPutNotifyBlocker::operator new ( size_t )
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
-
 #ifdef CXX_PLACEMENT_DELETE
 void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
     tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & freeList )

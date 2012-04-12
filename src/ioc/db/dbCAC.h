@@ -110,7 +110,6 @@ private:
     dbSubscriptionIO ( const dbSubscriptionIO & );
     dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
     virtual ~dbSubscriptionIO ();
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

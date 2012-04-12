@@ -114,7 +114,6 @@ private:
     unsigned nextWriteIndex;
     unsigned nextReadIndex;
     epicsUInt8 buf [ comBufSize ];
-    void * operator new ( size_t size );
     void operator delete ( void * );
     template < class T >
     bool push ( const T * ); // disabled

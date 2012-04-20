@@ -42,6 +42,7 @@ static void substituteDestruct(subInfo *pvt);
 static int substituteGetNextSet(subInfo *pvt, char **filename);
 static int substituteGetGlobalSet(subInfo *pvt);
 static char *substituteGetReplacements(subInfo *pvt);
+static char *substituteGetGlobalReplacements(subInfo *pvt);
 
 /* Forward references to local routines */
 static void usageExit(void);
@@ -111,7 +112,7 @@ int main(int argc,char **argv)
         substituteOpen(&substitutePvt,substitutionName);
         do {
             if ((isGlobal = substituteGetGlobalSet(substitutePvt))) {
-                pval = substituteGetReplacements(substitutePvt);
+                pval = substituteGetGlobalReplacements(substitutePvt);
                 if(pval) {
                     addMacroReplacements(macPvt,pval);
                 }
@@ -620,6 +621,44 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
     return(1);
 }
 
+static char *substituteGetGlobalReplacements(subInfo *psubInfo)
+{
+    subFile     *psubFile = psubInfo->psubFile;
+
+    if(psubInfo->macroReplacements) psubInfo->macroReplacements[0] = 0;
+    psubInfo->curLength = 0;
+    while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
+    if(psubFile->token==tokenRBrace && psubInfo->isFile) {
+        psubInfo->isFile = 0;
+        free(psubInfo->filename);
+        psubInfo->filename = 0;
+        freePattern(psubInfo);
+        subGetNextToken(psubFile);
+        return(0);
+    }
+    if(psubFile->token==tokenEOF) return(0);
+    if(psubFile->token!=tokenLBrace) return(0);
+    while(1) {
+        switch(subGetNextToken(psubFile)) {
+            case tokenRBrace:
+                subGetNextToken(psubFile);
+                if (!psubInfo->macroReplacements) {
+                    catMacroReplacements(psubInfo,"");
+                }
+                return(psubInfo->macroReplacements);
+            case tokenSeparater:
+                catMacroReplacements(psubInfo,",");
+                break;
+            case tokenString:
+                catMacroReplacements(psubInfo,psubFile->string);
+                break;
+            default:
+                subFileErrPrint(psubFile,"Parse error, illegal token");
+                exit(1);
+        }
+    }
+}
+
 static char *substituteGetReplacements(subInfo *psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;

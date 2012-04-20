@@ -9,10 +9,6 @@
 
 <h1>msi: Macro Substitution and Include Tool</h1>
 
-<blockquote>
-<p>Version 1.5, 10th November, 2008</p>
-</blockquote>
-
 <h2>Introduction</h2>
 
 <p>msi is a general purpose macro substitution/include tool. It accepts as input
@@ -114,9 +110,8 @@ specify an illegal switch, e.g.</p>
 substitution is performed. If no file is given then input is read from stdin.
 Variable instances to be substituted by macro values are expressed in the
 template using the syntax <tt>$(</tt><i>name</i><tt>)</tt> or
-<tt>${</tt><i>name</i><tt>}</tt>. If msi has been built with EPICS Base version
-3.14.7 or later, the template can also provide default values to be used when a
-macro has not been given a value, using the syntax
+<tt>${</tt><i>name</i><tt>}</tt>. The template can also provide default values
+to be used when a macro has not been given a value, using the syntax
 <tt>$(</tt><i>name</i><tt>=</tt><i>default</i><tt>)</tt> or
 <tt>${</tt><i>name</i><tt>=</tt><i>default</i><tt>}</tt>.</p>
 
@@ -230,9 +225,9 @@ first name is Irma
 family name is Kraimer</pre>
 </blockquote>
 
-<p>Note that on an IOC when using the <tt>dbLoadTemplate</tt> command, the
-template file does not support the <tt>substitute</tt> command, although
-<tt>include</tt> is supported.</p>
+<p>Note that the IOC's <tt>dbLoadTemplate</tt> command does not support the
+<tt>substitute</tt> syntax in template files, although the <tt>include</tt>
+syntax is supported.</p>
 
 <h2>Substitution File Format</h2>
 
@@ -242,8 +237,10 @@ dbTemplate format. We will discuss each separately.</p>
 <h3>Regular format</h3>
 
 <blockquote>
-<pre>{var1=set1_val1, var2=set1_val2, ...}
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+{var1=set1_val1, var2=set1_val2, ...}
 {var2=set2_val2, var1=set2_val1, ...}
+global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
 {var1=set3_val1, var2=set3_val2, ...}
 {var2=set4_val2, var1=set4_val1, ...}</pre>
 </blockquote>
@@ -254,24 +251,27 @@ set of braces containing macro replacement values.</p>
 <h3>Pattern format</h3>
 
 <blockquote>
-<pre>pattern {var1, var2, ...}
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+pattern {var1, var2, ...}
 {set1_val1, set1_val2, ...}
 {set2_val1, set2_val2, ...}
 pattern {var2, var1, ...}
+global {gbl_var1=gbl_val3, gbl_var2=gbl_val4, ...}
 {set3_val2, set3_val1, ...}
 {set4_val2, set4_val2, ...}</pre>
 </blockquote>
 
 <p>This produces the same result as the regular format example above.</p>
 
-<h3>dbTemplate Format</h3>
+<h3>dbLoadTemplate Format</h3>
 
 <p>This format is an extension of the format accepted by the EPICS IOC command
 <tt>dbLoadTemplate</tt>, and allows templates to be expanded on the host rather
 by using dbLoadTemplate at IOC boot time.</p>
 
 <blockquote>
-<pre>file template {
+<pre>global {gbl_var1=gbl_val1, gbl_var2=gbl_val2, ...}
+file templatefile {
     <i>pattern format or regular format</i>
 }
 file "${WHERE}/template2" {
@@ -289,6 +289,11 @@ the filenames listed in the substitutions files.</p>
 <p>A comment line may appear anywhere in a substitution file, and will be
 ignored. A comment line is any line beginning with the character <tt>#</tt>,
 which must be the very first character on the line.</p>
+
+<p>Global definitions may supplement or override the macro values supplied on
+the command-line using the <tt>-M</tt> switch, and set default values that will
+survive for the remainder of the file unless another global definition of the
+same macro changes it.</p>
 
 <p>For definitions within braces given in any of the file formats, a separator
 must be given between items. A separator is either a comma, or one or more of
@@ -310,11 +315,10 @@ all equivalent:</p>
 }</pre>
 </blockquote>
 
-<p>Within a substitutions file, the file name may appear inside double
-quotation marks; these are only required if the name contains environment
+<p>Within a substitutions file, the file name may appear inside double quotation
+marks; these are required if the name contains certain characters or environment
 variable macros of the form ${ENV_VAR} or $(ENV_VAR), which will be expanded
-before the file is opened. Environment variable macro expansion is only
-available when msi has been built using EPICS base R3.14.3 or newer.</p>
+before the file is opened.</p>
 
 <h3>Regular substitution example</h3>
 
@@ -334,8 +338,9 @@ family name is ${family}</pre>
 <p> and the file <tt>substitute</tt> is</p>
 
 <blockquote>
-<pre>{first=Marty,family=Kraimer}
-{first=Irma,family=Kraimer}</pre>
+<pre>global {family=Kraimer}
+{first=Marty}
+{first=Irma}</pre>
 </blockquote>
 
 <p>The following is the output produced:</p>
@@ -420,14 +425,6 @@ family name is Kraimer
 first name is Irma
 family name is Kraimer</pre>
 </blockquote>
-
-<h2>Building msi</h2>
-
-<p>msi is built as a normal extensions product, and can be built with any
-version of EPICS Base from 3.13.0beta11 onwards. Base version 3.14.3 or later
-is required if the ability to expand environment variables in filenames is
-needed. Base version 3.14.7 or later is required to allow the use of default
-macro values in template files.</p>
 
 </body>
 </html>

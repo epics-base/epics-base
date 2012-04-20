@@ -19,6 +19,7 @@
 #include <dbDefs.h>
 #include <macLib.h>
 #include <ellLib.h>
+#include <epicsString.h>
 
 #define MAX_BUFFER_SIZE 4096
 
@@ -79,8 +80,7 @@ int main(int argc,char **argv)
         } else if(strncmp(argv[1],"-M",2)==0) {
             addMacroReplacements(macPvt,pval);
         } else if(strncmp(argv[1],"-S",2)==0) {
-            substitutionName = calloc(strlen(pval)+1,sizeof(char));
-            strcpy(substitutionName,pval);
+            substitutionName = epicsStrDup(pval);
         } else if(strncmp(argv[1],"-V",2)==0) {
             macSuppressWarning(macPvt,0);
             dontWarnUndef = 0;
@@ -99,8 +99,7 @@ int main(int argc,char **argv)
         usageExit();
     }
     if(argc==2) {
-        templateName = calloc(strlen(argv[1])+1,sizeof(char));
-        strcpy(templateName,argv[1]);
+        templateName = epicsStrDup(argv[1]);
     }
     if(!substitutionName) {
         makeSubstitutions(inputPvt,macPvt,templateName);
@@ -132,6 +131,7 @@ int main(int argc,char **argv)
         } while (isGlobal || isFile);
         substituteDestruct(substitutePvt);
     }
+    macDeleteHandle(macPvt);
     inputDestruct(inputPvt);
     free(templateName);
     free(substitutionName);
@@ -421,15 +421,11 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     }
     pinputFile = calloc(1,sizeof(inputFile));
     if(ppathNode) {
-        pinputFile->filename = calloc(1,strlen(fullname)+1);
-        strcpy(pinputFile->filename,fullname);
-        free(fullname);
+        pinputFile->filename = fullname;
     } else if(filename) {
-        pinputFile->filename = calloc(1,strlen(filename)+1);
-        strcpy(pinputFile->filename,filename);
+        pinputFile->filename = epicsStrDup(filename);
     } else {
-        pinputFile->filename = calloc(1,strlen("stdin")+1);
-        strcpy(pinputFile->filename,"stdin");
+        pinputFile->filename = epicsStrDup("stdin");
     }
     pinputFile->fp = fp;
     ellInsert(&pinputData->inputFileList,0,&pinputFile->node);
@@ -614,8 +610,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         if(psubFile->token!=tokenString) break;
         ppatternNode = calloc(1,sizeof(patternNode));
         ellAdd(&psubInfo->patternList,&ppatternNode->node);
-        ppatternNode->var = calloc(strlen(psubFile->string)+1,sizeof(char));
-        strcpy(ppatternNode->var,psubFile->string);
+        ppatternNode->var = epicsStrDup(psubFile->string);
     }
     if(psubFile->token!=tokenRBrace) {
         subFileErrPrint(psubFile,"Parse error, expecting }");

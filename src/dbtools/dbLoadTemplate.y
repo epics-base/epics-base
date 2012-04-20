@@ -144,7 +144,8 @@ pattern_definitions: pattern_definition
     | pattern_definitions pattern_definition
     ;
 
-pattern_definition: O_BRACE C_BRACE
+pattern_definition: global_definitions
+    | O_BRACE C_BRACE
     {
     #ifdef ERROR_STUFF
         fprintf(stderr, "pattern_definition: pattern_values empty\n");
@@ -226,7 +227,8 @@ variable_substitutions: variable_substitution
     | variable_substitutions variable_substitution
     ;
 
-variable_substitution: O_BRACE C_BRACE
+variable_substitution: global_definitions
+    | O_BRACE C_BRACE
     {
     #ifdef ERROR_STUFF
         fprintf(stderr, "variable_substitution: variable_definitions empty\n");

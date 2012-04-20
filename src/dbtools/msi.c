@@ -22,26 +22,30 @@
 
 #define MAX_BUFFER_SIZE 4096
 
-/*Forward references to local routines*/
+/* Module to read the template files */
+typedef struct inputData inputData;
+
+static void inputConstruct(inputData **ppvt);
+static void inputDestruct(inputData *pvt);
+static void inputAddPath(inputData *pvt, char *pval);
+static void inputBegin(inputData *pvt, char *fileName);
+static char *inputNextLine(inputData *pvt);
+static void inputNewIncludeFile(inputData *pvt, char *name);
+static void inputErrPrint(inputData *pvt);
+
+/* Module to read the substitution file */
+typedef struct subInfo subInfo;
+
+static void substituteOpen(subInfo **ppvt, char *substitutionName);
+static void substituteDestruct(subInfo *pvt);
+static int substituteGetNextSet(subInfo *pvt, char **filename);
+static int substituteGetGlobalSet(subInfo *pvt);
+static char *substituteGetReplacements(subInfo *pvt);
+
+/* Forward references to local routines */
 static void usageExit(void);
-static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval);
-static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName);
-
-/*Routines that read the template files */
-static void inputConstruct(void **inputPvt);
-static void inputDestruct(void *inputPvt);
-static void inputAddPath(void *inputPvt, char *pval);
-static void inputBegin(void *inputPvt,char *fileName);
-static char *inputNextLine(void *inputPvt);
-static void inputNewIncludeFile(void *inputPvt,char *name);
-static void inputErrPrint(void *inputPvt);
-
-/*Routines that read the substitution file */
-static void substituteDestruct(void *substitutePvt);
-static void substituteOpen(void **substitutePvt,char *substitutionName);
-static int substituteGetNextSet(void *substitutePvt,char **filename);
-static int substituteGetGlobalSet(void *substitutePvt);
-static char *substituteGetReplacements(void *substitutePvt);
+static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
+static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
 
 /*Global variables */
 static int dontWarnUndef = 1;
@@ -49,7 +53,7 @@ static int dontWarnUndef = 1;
 
 int main(int argc,char **argv)
 {
-    void *inputPvt;
+    inputData *inputPvt;
     MAC_HANDLE *macPvt;
     char *pval;
     int  narg;
@@ -101,7 +105,7 @@ int main(int argc,char **argv)
     if(!substitutionName) {
         makeSubstitutions(inputPvt,macPvt,templateName);
     } else {
-        void *substitutePvt;
+        subInfo *substitutePvt;
         char *filename = 0;
         int isGlobal, isFile;
 
@@ -129,8 +133,8 @@ int main(int argc,char **argv)
         substituteDestruct(substitutePvt);
     }
     inputDestruct(inputPvt);
-    free((void *)templateName);
-    free((void *)substitutionName);
+    free(templateName);
+    free(substitutionName);
     return 0;
 }
 
@@ -165,13 +169,14 @@ static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
             fprintf(stderr,"Error from macInstallMacros\n");
             usageExit();
         }
-        free((void *)pairs);
+        free(pairs);
     }
 }
 
 typedef enum {cmdInclude,cmdSubstitute} cmdType;
 static const char *cmdNames[] = {"include","substitute"};
-static void makeSubstitutions(void *inputPvt,void *macPvt,char *templateName)
+
+static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName)
 {
     char *input;
     static char buffer[MAX_BUFFER_SIZE];
@@ -263,17 +268,17 @@ typedef struct pathNode {
     char        *directory;
 } pathNode;
 
-typedef struct inputData {
+struct inputData {
     ELLLIST     inputFileList;
     ELLLIST     pathList;
     char        inputBuffer[MAX_BUFFER_SIZE];
-}inputData;
+};
 
 static void inputOpenFile(inputData *pinputData,char *filename);
 static void inputCloseFile(inputData *pinputData);
 static void inputCloseAllFiles(inputData *pinputData);
 
-static void inputConstruct(void **ppvt)
+static void inputConstruct(inputData **ppvt)
 {
     inputData   *pinputData;
 
@@ -283,23 +288,21 @@ static void inputConstruct(void **ppvt)
     *ppvt = pinputData;
 }
 
-static void inputDestruct(void *pvt)
+static void inputDestruct(inputData *pinputData)
 {
-    inputData   *pinputData = (inputData *)pvt;
     pathNode    *ppathNode;
 
     inputCloseAllFiles(pinputData);
     while((ppathNode = (pathNode *)ellFirst(&pinputData->pathList))) {
         ellDelete(&pinputData->pathList,&ppathNode->node);
-        free((void *)ppathNode->directory);
-        free((void *)ppathNode);
+        free(ppathNode->directory);
+        free(ppathNode);
     }
-    free(pvt);
+    free(pinputData);
 }
 
-static void inputAddPath(void *pvt, char *path)
+static void inputAddPath(inputData *pinputData, char *path)
 {
-    inputData   *pinputData = (inputData *)pvt;
     ELLLIST     *ppathList = &pinputData->pathList;
     pathNode    *ppathNode;
     const char  *pcolon;
@@ -335,17 +338,14 @@ static void inputAddPath(void *pvt, char *path)
     return;
 }
 
-static void inputBegin(void *pvt,char *fileName)
+static void inputBegin(inputData *pinputData, char *fileName)
 {
-    inputData   *pinputData = (inputData *)pvt;
-
     inputCloseAllFiles(pinputData);
     inputOpenFile(pinputData,fileName);
 }
 
-static char *inputNextLine(void *pvt)
+static char *inputNextLine(inputData *pinputData)
 {
-    inputData   *pinputData = (inputData *)pvt;
     inputFile   *pinputFile;
     char        *pline;
 
@@ -360,16 +360,13 @@ static char *inputNextLine(void *pvt)
     return(0);
 }
 
-static void inputNewIncludeFile(void *pvt,char *name)
+static void inputNewIncludeFile(inputData *pinputData, char *name)
 {
-    inputData   *pinputData = (inputData *)pvt;
-
     inputOpenFile(pinputData,name);
 }
 
-static void inputErrPrint(void *pvt)
+static void inputErrPrint(inputData *pinputData)
 {
-    inputData   *pinputData = (inputData *)pvt;
     inputFile   *pinputFile;
 
     fprintf(stderr,"input: '%s' at ",pinputData->inputBuffer);
@@ -413,20 +410,20 @@ static void inputOpenFile(inputData *pinputData,char *filename)
             strcat(fullname,filename);
             fp = fopen(fullname,"r");
             if(fp) break;
-            free((void *)fullname);
+            free(fullname);
             ppathNode = (pathNode *)ellNext(&ppathNode->node);
         }
     }
     if(!fp) {
         fprintf(stderr,"msi: Can't open file '%s'\n",filename);
-        inputErrPrint((void *)pinputData);
+        inputErrPrint(pinputData);
         exit(1);
     }
     pinputFile = calloc(1,sizeof(inputFile));
     if(ppathNode) {
         pinputFile->filename = calloc(1,strlen(fullname)+1);
         strcpy(pinputFile->filename,fullname);
-        free((void *)fullname);
+        free(fullname);
     } else if(filename) {
         pinputFile->filename = calloc(1,strlen(filename)+1);
         strcpy(pinputFile->filename,filename);
@@ -478,9 +475,9 @@ typedef struct subFile {
 typedef struct patternNode {
     ELLNODE     node;
     char        *var;
-}patternNode;
+} patternNode;
 
-typedef struct subInfo {
+struct subInfo {
     subFile     *psubFile;
     int         isFile;
     char        *filename;
@@ -489,7 +486,7 @@ typedef struct subInfo {
     size_t      size;
     size_t      curLength;
     char        *macroReplacements;
-}subInfo;
+};
 
 static char *subGetNextLine(subFile *psubFile);
 static tokenType subGetNextToken(subFile *psubFile);
@@ -505,8 +502,8 @@ void freeSubFile(subInfo *psubInfo)
         if(fclose(psubFile->fp))
             fprintf(stderr,"msi: Can't close substitution file\n");
     }
-    free((void *)psubFile);
-    free((void *)psubInfo->filename);
+    free(psubFile);
+    free(psubInfo->filename);
     psubInfo->psubFile = 0;
 }
 
@@ -521,24 +518,22 @@ void freePattern(subInfo *psubInfo)
     psubInfo->isPattern = 0;
 }
 
-static void substituteDestruct(void *pvt)
+static void substituteDestruct(subInfo *psubInfo)
 {
-    subInfo     *psubInfo = (subInfo *)pvt;
-
     freeSubFile(psubInfo);
     freePattern(psubInfo);
-    free((void *)psubInfo);
+    free(psubInfo);
     return;
 }
 
-static void substituteOpen(void **ppvt,char *substitutionName)
+static void substituteOpen(subInfo **ppvt,char *substitutionName)
 {
     subInfo     *psubInfo;
     subFile     *psubFile;
     FILE        *fp;
 
     psubInfo = calloc(1,sizeof(subInfo));
-    *ppvt = (void *)psubInfo;
+    *ppvt = psubInfo;
     psubFile = calloc(1,sizeof(subFile));
     psubInfo->psubFile = psubFile;
     ellInit(&psubInfo->patternList);
@@ -556,9 +551,8 @@ static void substituteOpen(void **ppvt,char *substitutionName)
     return;
 }
 
-static int substituteGetGlobalSet(void *pvt)
+static int substituteGetGlobalSet(subInfo *psubInfo)
 {
-    subInfo     *psubInfo = (subInfo *)pvt;
     subFile     *psubFile = psubInfo->psubFile;
 
     while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
@@ -569,9 +563,8 @@ static int substituteGetGlobalSet(void *pvt)
     return(0);
 }
 
-static int substituteGetNextSet(void *pvt,char **filename)
+static int substituteGetNextSet(subInfo *psubInfo,char **filename)
 {
-    subInfo     *psubInfo = (subInfo *)pvt;
     subFile     *psubFile = psubInfo->psubFile;
     patternNode *ppatternNode;
 
@@ -585,7 +578,7 @@ static int substituteGetNextSet(void *pvt,char **filename)
             exit(1);
         }
         freePattern(psubInfo);
-        free((void *)psubInfo->filename);
+        free(psubInfo->filename);
         if(psubFile->string[0]=='"'&&psubFile->string[strlen(psubFile->string)-1]=='"') {
             psubFile->string[strlen(psubFile->string)-1]='\0';
             psubInfo->filename = macEnvExpand(psubFile->string+1);
@@ -632,9 +625,8 @@ static int substituteGetNextSet(void *pvt,char **filename)
     return(1);
 }
 
-static char *substituteGetReplacements(void *pvt)
+static char *substituteGetReplacements(subInfo *psubInfo)
 {
-    subInfo     *psubInfo = (subInfo *)pvt;
     subFile     *psubFile = psubInfo->psubFile;
     patternNode *ppatternNode;
 
@@ -643,7 +635,7 @@ static char *substituteGetReplacements(void *pvt)
     while(psubFile->token==tokenSeparater) subGetNextToken(psubFile);
     if(psubFile->token==tokenRBrace && psubInfo->isFile) {
         psubInfo->isFile = 0;
-        free((void *)psubInfo->filename);
+        free(psubInfo->filename);
         psubInfo->filename = 0;
         freePattern(psubInfo);
         subGetNextToken(psubFile);

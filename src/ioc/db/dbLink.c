@@ -142,6 +142,7 @@ static void dbDbRemoveLink(struct link *plink)
     plink->value.pv_link.pvt = 0;
     plink->value.pv_link.getCvt = 0;
     plink->value.pv_link.lastGetdbrType = 0;
+    plink->type = PV_LINK;
     dbLockSetSplit(plink->value.pv_link.precord);
 }
 

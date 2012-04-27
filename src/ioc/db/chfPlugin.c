@@ -362,7 +362,7 @@ static void parse_abort(chFilter *filter) {
     chfFilter *f = (chfFilter*) filter->puser;
 
     /* Call the plugin to tell it we're aborting */
-    if (p->pif->parse_error) p->pif->parse_error();
+    if (p->pif->parse_error) p->pif->parse_error(f->puser);
     if (p->pif->freePvt) p->pif->freePvt(f->puser);
     freeInstanceData(f);
 }
@@ -376,7 +376,7 @@ static parse_result parse_end(chFilter *filter)
     /* Check if all required arguments were supplied */
     for(i = 0; i < (p->nopts/32)+1; i++) {
         if ((f->found[i] & p->required[i]) != p->required[i]) {
-            if (p->pif->parse_error) p->pif->parse_error();
+            if (p->pif->parse_error) p->pif->parse_error(f->puser);
             if (p->pif->freePvt) p->pif->freePvt(f->puser);
             freeInstanceData(f);
             return parse_stop;

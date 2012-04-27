@@ -109,8 +109,10 @@ typedef struct chfPluginIf {
     /** @brief A parsing error occurred.
      *
      * <em>Called after parsing failed with an error.</em>
+     *
+     * @param pvt Pointer to private structure.
      */
-    void (* parse_error) (void);
+    void (* parse_error) (void *pvt);
 
     /** @brief Configuration has been parsed successfully.
      *

@@ -91,4 +91,5 @@ dbCore_SRCS += dbState.c
 dbCore_SRCS += ts.c
 dbCore_SRCS += dbnd.c
 dbCore_SRCS += arr.c
+dbCore_SRCS += sync.c
 

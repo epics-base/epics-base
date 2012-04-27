@@ -195,10 +195,10 @@ typedef struct chfPluginIf {
      *
      * @param chan dbChannel for which the report is requested.
      * @param pvt Pointer to private structure.
-     * @param intro Line header string to be printed at the beginning of each line.
      * @param level Interest level.
+     * @param indent Number of spaces to print before each output line.
      */
-    void (* channel_report) (dbChannel *chan, void *pvt, const char *intro, int level);
+    void (* channel_report) (dbChannel *chan, void *pvt, int level, const unsigned short indent);
 
     /* FIXME: More filter routines here ... */
 

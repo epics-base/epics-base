@@ -132,7 +132,7 @@ void c_reg_post(chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_f
 {
     testOk(e & e_reg_post, "channel_register_post called");
 }
-void c_report(chFilter *filter, const char *intro, int level)
+void c_report(chFilter *filter, int level, const unsigned short indent)
 {
     testOk(e & e_report, "channel_report called, level = %d", level);
 }
@@ -214,7 +214,7 @@ MAIN(dbChannelTest)
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelShow(pch, "# ", 1);
+    dbChannelShow(pch, 1, 2);
 
     e = e_close;
     if (pch) dbChannelDelete(pch);

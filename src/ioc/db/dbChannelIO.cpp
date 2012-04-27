@@ -155,12 +155,12 @@ void dbChannelIO::show (
         dbChannelRecord ( this->dbch ) -> name );
 
     if ( level > 0u ) {
-        printf ( "\ttype %s, element count %li, field at %p\n",
+        printf ( "        type %s, element count %li, field at %p\n",
             dbf_type_to_text ( dbChannelExportType ( this->dbch ) ),
             dbChannelElements ( this->dbch ),
             dbChannelField ( this->dbch ) );
         if ( level > 1u ) {
-            dbChannelFilterShow ( this->dbch, "\t", level - 2u );
+            dbChannelFilterShow ( this->dbch, level - 2u, 8 );
             this->serviceIO.show ( level - 2u );
             this->serviceIO.showAllIO ( *this, level - 2u );
         }

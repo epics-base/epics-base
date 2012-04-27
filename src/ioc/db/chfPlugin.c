@@ -504,13 +504,13 @@ static void channel_register_post(chFilter *filter,
         p->pif->channelRegisterPost(filter->chan, f->puser, cb_out, arg_out, probe);
 }
 
-static void channel_report(chFilter *filter, const char *intro, int level)
+static void channel_report(chFilter *filter, int level, const unsigned short indent)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
 
     if (p->pif->channel_report)
-        p->pif->channel_report(filter->chan, f->puser, intro, level);
+        p->pif->channel_report(filter->chan, f->puser, level, indent);
 }
 
 static void channel_close(chFilter *filter)

@@ -469,7 +469,7 @@ long dbChannelOpen(dbChannel *chan)
     db_field_log p;
     probe.field_type  = dbChannelFieldType(chan);
     probe.no_elements = dbChannelElements(chan);
-    probe.element_size  = dbChannelElementSize(chan);
+    probe.field_size  = dbChannelFieldSize(chan);
     p = probe;
 
     /*
@@ -507,7 +507,7 @@ long dbChannelOpen(dbChannel *chan)
 
     /* Save probe results */
     chan->final_no_elements  = probe.no_elements;
-    chan->final_element_size = probe.element_size;
+    chan->final_field_size = probe.field_size;
     chan->final_type         = probe.field_type;
     chan->dbr_final_type     = dbDBRnewToDBRold[mapDBFToDBR[probe.field_type]];
 
@@ -547,7 +547,7 @@ short dbChannelExportType(dbChannel *chan)
     return chan->addr.dbr_field_type;
 }
 
-short dbChannelElementSize(dbChannel *chan)
+short dbChannelFieldSize(dbChannel *chan)
 {
     return chan->addr.field_size;
 }
@@ -567,9 +567,9 @@ short dbChannelFinalExportType(dbChannel *chan)
     return chan->dbr_final_type;
 }
 
-short dbChannelFinalElementSize(dbChannel *chan)
+short dbChannelFinalFieldSize(dbChannel *chan)
 {
-    return chan->final_element_size;
+    return chan->final_field_size;
 }
 
 short dbChannelSpecial(dbChannel *chan)
@@ -624,24 +624,41 @@ long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
     return dbPutField(&chan->addr, type, pbuffer, nRequest);
 }
 
-void dbChannelShow(dbChannel *chan, const char *intro, int level)
+void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
 {
     long elems = chan->addr.no_elements;
+    long felems = chan->final_no_elements;
     int count = ellCount(&chan->filters);
-    printf("%schannel name: %s\n", intro, chan->name);
+    int pre   = ellCount(&chan->pre_chain);
+    int post  = ellCount(&chan->post_chain);
+    int i;
+
+    for (i = 0; i < indent; i++) printf(" ");
+    printf("channel name: %s\n", chan->name);
+    for (i = 0; i < indent; i++) printf(" ");
     /* FIXME: show field_type as text */
-    printf("%s  field_type=%d, %ld element%s, %d filter%s\n",
-            intro, chan->addr.field_type, elems, elems == 1 ? "" : "s",
-            count, count == 1 ? "" : "s");
+    printf("  field_type=%d (%dB), %ld element%s, %d filter%s",
+           chan->addr.field_type, chan->addr.field_size, elems, elems == 1 ? "" : "s",
+           count, count == 1 ? "" : "s");
+    if (count)
+        printf(" (%d pre eventq, %d post eventq)\n", pre, post);
+    else
+        printf("\n");
     if (level > 0)
-        dbChannelFilterShow(chan, intro, level - 1);
+        dbChannelFilterShow(chan, level - 1, indent + 2);
+    if (count) {
+        for (i = 0; i < indent; i++) printf(" ");
+        /* FIXME: show field_type as text */
+        printf("  final field_type=%d (%dB), %ld element%s\n",
+               chan->final_type, chan->final_field_size, felems, felems == 1 ? "" : "s");
+    }
 }
 
-void dbChannelFilterShow(dbChannel *chan, const char *intro, int level)
+void dbChannelFilterShow(dbChannel *chan, int level, const unsigned short indent)
 {
     chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        filter->plug->fif->channel_report(filter, intro, level);
+        filter->plug->fif->channel_report(filter, level, indent);
         filter = (chFilter *) ellNext(&filter->list_node);
     }
 }

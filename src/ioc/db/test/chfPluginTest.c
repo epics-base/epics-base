@@ -20,7 +20,6 @@
 
 #define PATTERN 0x55555555
 #define TYPE_START 0xAAA
-#define R_INTRO "abc"
 #define R_LEVEL 42
 
 /* Expected / actually run callback bit definitions */
@@ -348,10 +347,9 @@ static void channelRegisterPost(dbChannel *chan, void *user,
     *arg_out = user;
 }
 
-static void channel_report(dbChannel *chan, void *user, const char *intro, int level)
+static void channel_report(dbChannel *chan, void *user, int level, const unsigned short indent)
 {
     testOk(user == puser1 || user == puser2, "channel_report: user pointer valid");
-    testOk(!(strcmp(intro, R_INTRO)), "channel_report: intro string correct");
     testOk(level == R_LEVEL - 1, "channel_report: level correct");
     if (user == puser1) {
         testOk(e1 & e_report, "channel_report (1) called");
@@ -439,7 +437,7 @@ MAIN(chfPluginTest)
     dbChannel *pch;
     db_field_log *pfl;
 
-    testPlan(1783);
+    testPlan(1754);
 
     db_init_events();
 
@@ -654,7 +652,7 @@ MAIN(chfPluginTest)
     db_delete_field_log(pfl); \
     if (!testOk(c1 == e1, "run filter chains: all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
     e1 = e_report; c1 = 0; \
-    dbChannelShow(pch, R_INTRO, R_LEVEL); \
+    dbChannelShow(pch, R_LEVEL, 0); \
     if (!testOk(c1 == e1, "report: all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
     e1 = e_close | e_free; c1 = 0; \
     if (pch) dbChannelDelete(pch); \
@@ -686,7 +684,7 @@ MAIN(chfPluginTest)
     if (!testOk(c2 == e2, "run filter chains (2): all expected calls happened")) testDiag("expected %#x - called %#x", e2, c2); \
     e1 = e_report; c1 = 0; \
     e2 = e_report; c2 = 0; \
-    dbChannelShow(pch, R_INTRO, R_LEVEL); \
+    dbChannelShow(pch, R_LEVEL, 0); \
     if (!testOk(c1 == e1, "report (1): all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
     if (!testOk(c2 == e2, "report (2): all expected calls happened")) testDiag("expected %#x - called %#x", e2, c2); \
     e1 = e_close | e_free; c1 = 0; \

@@ -839,7 +839,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
             localAddr.field_type = pfl->field_type;
-            localAddr.field_size = pfl->element_size;
+            localAddr.field_size = pfl->field_size;
             localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;
@@ -875,7 +875,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
             localAddr.field_type = pfl->field_type;
-            localAddr.field_size = pfl->element_size;
+            localAddr.field_size = pfl->field_size;
             localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;

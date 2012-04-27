@@ -355,8 +355,8 @@ static void showChanList (
     epicsMutexMustLock ( client->chanListLock );
     pciu = (struct channel_in_use *) pList->node.next;
     while ( pciu ){
-        dbChannelShow ( pciu->dbch, "\t", level );
-        printf( "\t  # on eventq=%d, access=%c%c\n",
+        dbChannelShow ( pciu->dbch, level, 8 );
+        printf( "          # on eventq=%d, access=%c%c\n",
             ellCount ( &pciu->eventq ),
             asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
             rsrvCheckPut ( pciu ) ? 'w': '-' );

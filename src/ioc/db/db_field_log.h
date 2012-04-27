@@ -43,7 +43,7 @@ union native_value {
       	long		dbf_long;
       	double		dbf_double;
 #ifdef DB_EVENT_LOG_STRINGS
-      	char		dbf_string[MAXSTRINGSIZE];
+        char		dbf_string[MAX_STRING_SIZE];
 #endif
 };
 
@@ -86,7 +86,7 @@ typedef struct db_field_log {
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
     short        field_type;  /* DBF type of data */
-    short      element_size;  /* Data size */
+    short        field_size;  /* Data size */
     long        no_elements;  /* No of array elements */
     union {
         struct dbfl_val v;

@@ -54,7 +54,7 @@ int gft(char *pname)
     printf("Record Address: 0x%p\n", precord);
     printf("   Export Type: %d\n", type);
     printf(" Field Address: 0x%p\n", dbChannelField(chan));
-    printf("    Field Size: %d\n", dbChannelElementSize(chan));
+    printf("    Field Size: %d\n", dbChannelFieldSize(chan));
     printf("   No Elements: %ld\n", elements);
 
     if (elements > MAX_ELEMS)
@@ -108,7 +108,7 @@ int epicsShareAPI pft(char *pname, char *pvalue)
     printf("Record Address: 0x%p\n", precord);
     printf("   Export Type: %d\n", type);
     printf(" Field Address: 0x%p\n", dbChannelField(chan));
-    printf("    Field Size: %d\n", dbChannelElementSize(chan));
+    printf("    Field Size: %d\n", dbChannelFieldSize(chan));
     printf("   No Elements: %ld\n", elements);
 
     if (dbChannel_put(chan, DBR_STRING,pvalue, 1) < 0)

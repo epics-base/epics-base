@@ -425,7 +425,7 @@ dbEventSubscription epicsShareAPI db_add_event (
      * there upon wakeup)
      */
     if( dbChannelElements(chan) == 1 &&
-        dbChannelElementSize(chan) <= sizeof(union native_value)) {
+        dbChannelFieldSize(chan) <= sizeof(union native_value)) {
         pevent->useValque = TRUE;
     }
     else {
@@ -649,7 +649,7 @@ db_field_log* epicsShareAPI db_create_event_log (struct evSubscrip *pevent)
              */
             memcpy(&pLog->u.v.field,
                    dbChannelField(chan),
-                   dbChannelElementSize(chan));
+                   dbChannelFieldSize(chan));
         } else {
             pLog->type = dbfl_type_rec;
         }

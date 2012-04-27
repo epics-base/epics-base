@@ -44,14 +44,6 @@ typedef struct myStruct {
     int sent6;
     char        c;
     char        c1[2];
-    chPostEventFunc *pe_pre;
-    void        *pe_pre_arg;
-    chPostEventFunc *pe_post;
-    void        *pe_post_arg;
-    chPostEventFunc *st_pre;
-    void        *st_pre_arg;
-    chPostEventFunc *st_post;
-    void        *st_post_arg;
 } myStruct;
 
 static const
@@ -173,26 +165,16 @@ static long channel_open(dbChannel *chan, void *user)
     return c_open_return;
 }
 
-static void channelRegisterPreEventQue(dbChannel *chan, void *user,
-                                       chPostEventFunc *pe_in,   void *pe_arg_in,
-                                       chSetTypeFunc *st_in,     void *st_arg_in,
-                                       chPostEventFunc **pe_out, void **pe_arg_out,
-                                       chSetTypeFunc **st_out,   void **st_arg_out)
+static void channelRegisterPre(dbChannel *chan, void *user,
+                               chPostEventFunc **cb_out, void **arg_out)
 {
     myStruct *my = (myStruct*)user;
-    my->pe_pre = pe_in;
-    my->pe_pre_arg = pe_arg_in;
 }
 
-static void channelRegisterPostEventQue(dbChannel *chan, void *user,
-                                        chPostEventFunc *pe_in,   void *pe_arg_in,
-                                        chSetTypeFunc *st_in,     void *st_arg_in,
-                                        chPostEventFunc **pe_out, void **pe_arg_out,
-                                        chSetTypeFunc **st_out,   void **st_arg_out)
+static void channelRegisterPost(dbChannel *chan, void *user,
+                                chPostEventFunc **cb_out, void **arg_out)
 {
     myStruct *my = (myStruct*)user;
-    my->pe_post = pe_in;
-    my->pe_post_arg = pe_arg_in;
 }
 
 static void channel_report(dbChannel *chan, void *user, const char *intro, int level)
@@ -217,8 +199,8 @@ static chfPluginIf myPif = {
     parse_ok,
 
     channel_open,
-    channelRegisterPreEventQue,
-    channelRegisterPostEventQue,
+    channelRegisterPre,
+    channelRegisterPost,
     channel_report,
     channel_close
 };

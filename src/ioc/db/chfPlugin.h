@@ -137,38 +137,19 @@ typedef struct chfPluginIf {
      * This function is called to establish the stack of plugins that an event
      * is passed through between the database and the event queue.
      *
-     * The plugin must call the supplied 'pe_in' function (usually within
-     * its own post-event callback) with 'pe_arg_in' as first argument to forward
-     * the data to the next plugin towards the event queue.
-     * It must set pe_out to point to its own post-event callback in order to be
-     * called when a data update is sent from the database towards the event queue.
-     *
-     * The plugin must call the supplied 'st_in' function (from within
-     * its own set-type callback) with 'st_arg_in' as first argument after changing
-     * the data type and/or array size of 'chan'.
+     * The plugin must set pe_out to point to its own post-event callback in order
+     * to be called when a data update is sent from the database towards the
+     * event queue.
      *
      * @param chan dbChannel for which the connection is being made.
      * @param pvt Pointer to private structure.
-     * @param pe_in Pointer to the next plugin's post-event callback
-     * @param pe_arg_in Argument that must be supplied when this plugin calls
-     *        the next plugin's post-event callback
-     * @param st_in Pointer to the next plugin's set-type callback
-     * @param st_arg_in Argument that must be supplied when this plugin calls
-     *        the next plugin's set-type callback
-     * @param pe_out Pointer to this plugin's post-event callback (set to NULL to bypass
-     *        this plugin)
-     * @param pe_arg_out Argument that must be supplied when calling
-     *        this plugin's post-event callback
-     * @param st_out Pointer to this plugin's set-type callback (set to NULL if plugin
-     *        does not change the data type or size)
-     * @param st_arg_out Argument that must be supplied when calling
-     *        this plugin's set-type callback
+     * @param cb_out Pointer to this plugin's post-event callback (NULL to bypass
+     *        this plugin).
+     * @param arg_out Argument that must be supplied when calling
+     *        this plugin's post-event callback.
      */
-    void (* channelRegisterPreEventQue) (dbChannel *chan, void *pvt,
-                                         chPostEventFunc *pe_in,   void *pe_arg_in,
-                                         chSetTypeFunc *st_in,     void *st_arg_in,
-                                         chPostEventFunc **pe_out, void **pe_arg_out,
-                                         chSetTypeFunc **st_out,   void **st_arg_out);
+    void (* channelRegisterPre) (dbChannel *chan, void *pvt,
+                                 chPostEventFunc **cb_out, void **arg_out);
 
     /** @brief Register callbacks for post-event-queue operation.
      *
@@ -178,12 +159,9 @@ typedef struct chfPluginIf {
      * is passed through between the event queue and the final user (CA server or
      * database access).
      *
-     * The plugin must call the supplied 'pe_in' function (usually within
-     * its own post-event callback) with 'arg_in' as first argument to forward
-     * the data to the next plugin towards the final user.
-     * It must set pe_out to point to its own post-event callback in order to be
-     * called when a data update is sent from the event queue towards the final
-     * user.
+     * The plugin must set pe_out to point to its own post-event callback in order
+     * to be called when a data update is sent from the event queue towards the
+     * final user.
      *
      * The plugin must call the supplied 'st_in' function (from within
      * its own set-type callback) with 'arg_in' as first argument after changing
@@ -191,26 +169,13 @@ typedef struct chfPluginIf {
      *
      * @param chan dbChannel for which the connection is being made.
      * @param pvt Pointer to private structure.
-     * @param pe_in Pointer to the next plugin's post-event callback
-     * @param pe_arg_in Argument that must be supplied when this plugin calls
-     *        the next plugin's post-event callback
-     * @param st_in Pointer to the next plugin's set-type callback
-     * @param st_arg_in Argument that must be supplied when this plugin calls
-     *        the next plugin's set-type callback
-     * @param pe_out Pointer to this plugin's post-event callback (set to NULL to bypass
-     *        this plugin)
-     * @param pe_arg_out Argument that must be supplied when calling
-     *        this plugin's post-event callback
-     * @param st_out Pointer to this plugin's set-type callback (set to NULL if plugin
-     *        does not change the data type or size)
-     * @param st_arg_out Argument that must be supplied when calling
-     *        this plugin's set-type callback
+     * @param cb_out Pointer to this plugin's post-event callback (NULL to bypass
+     *        this plugin).
+     * @param arg_out Argument that must be supplied when calling
+     *        this plugin's post-event callback.
      */
-    void (* channelRegisterPostEventQue) (dbChannel *chan, void *pvt,
-                                          chPostEventFunc *pe_in,   void *pe_arg_in,
-                                          chSetTypeFunc *st_in,     void *st_arg_in,
-                                          chPostEventFunc **pe_out, void **pe_arg_out,
-                                          chSetTypeFunc **st_out,   void **st_arg_out);
+    void (* channelRegisterPost) (dbChannel *chan, void *pvt,
+                                  chPostEventFunc **cb_out, void **arg_out);
 
     /** @brief Channel report request.
      *

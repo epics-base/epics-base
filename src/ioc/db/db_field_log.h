@@ -52,11 +52,12 @@ typedef void (dbfl_freeFunc)(struct db_field_log *pfl);
 /* Types of db_field_log: rec = use record, val = val inside, ref = reference inside */
 typedef enum dbfl_type {
     dbfl_type_rec = 0,
-    dbfl_type_val,
-    dbfl_type_ref
+    dbfl_type_value,
+    dbfl_type_ref,
+    dbfl_type_probe
 } dbfl_type;
 
-#define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
+#define dbflTypeStr(t) (t==dbfl_type_value?"val":t==dbfl_type_rec?"rec":t==dbfl_type_probe?"prb":"ref")
 
 struct dbfl_val {
     union native_value field; /* Field value */
@@ -74,7 +75,7 @@ typedef struct db_field_log {
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
     short        field_type;  /* DBF type of data */
-    short        field_size;  /* Data size */
+    short      element_size;  /* Data size */
     long        no_elements;  /* No of array elements */
     union {
         struct dbfl_val v;

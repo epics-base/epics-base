@@ -41,26 +41,21 @@ typedef struct evSubscrip {
 
 typedef struct chFilter chFilter;
 
-/* Prototype for the post event function that is called recursively in filter stacks */
-typedef void (chPostEventFunc)(void *pvt, struct evSubscrip *event, db_field_log *pLog);
-
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     const char *name;
-    dbAddr addr;
+    dbAddr addr;              /* address structure for record/field */
     long  final_no_elements;  /* final number of elements (arrays) */
     short final_element_size; /* final size of element */
     short final_type;         /* final type of database field */
     short dbr_final_type;     /* final field type as seen by database request */
-    chPostEventFunc *pre_event_cb;
-    void *pre_event_arg;
-    chPostEventFunc *post_event_cb;
-    void *post_event_arg;
-    ELLLIST filters;
+    ELLLIST filters;          /* list of filters as created from JSON */
+    ELLLIST pre_chain;        /* list of filters to be called pre-event-queue */
+    ELLLIST post_chain;       /* list of filters to be called post-event-queue */
 } dbChannel;
 
-/* Prototype for the set type function that is called recursively in filter stacks */
-typedef void (chSetTypeFunc)(void *pvt, long no_elements, short field_type, short element_size);
+/* Prototype for the post event function that is called in filter stacks */
+typedef db_field_log* (chPostEventFunc)(void *pvt, dbChannel *chan, db_field_log *pLog);
 
 /* Return values from chFilterIf->parse_* routines: */
 typedef enum {
@@ -102,16 +97,8 @@ typedef struct chFilterIf {
 
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
-    void (* channel_register_pre_eventq) (chFilter *filter,
-                                          chPostEventFunc *pe_in,   void *arg_pe_in,
-                                          chSetTypeFunc *st_in,     void *arg_st_in,
-                                          chPostEventFunc **pe_out, void **arg_pe_out,
-                                          chSetTypeFunc **st_out,   void **arg_st_out);
-    void (* channel_register_post_eventq)(chFilter *filter,
-                                          chPostEventFunc *pe_in,   void *arg_pe_in,
-                                          chSetTypeFunc *st_in,     void *arg_st_in,
-                                          chPostEventFunc **pe_out, void **arg_pe_out,
-                                          chSetTypeFunc **st_out,   void **arg_st_out);
+    void (* channel_register_pre) (chFilter *filter, chPostEventFunc **cb_out, void **arg_out);
+    void (* channel_register_post)(chFilter *filter, chPostEventFunc **cb_out, void **arg_out);
     void (* channel_report)(chFilter *filter, const char *intro, int level);
     /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);
@@ -128,8 +115,14 @@ typedef struct chFilterPlugin {
 /* A chFilter holds data for a single filter instance */
 struct chFilter {
     ELLNODE node;
+    ELLNODE pre_node;
+    ELLNODE post_node;
     dbChannel *chan;
     const chFilterPlugin *plug;
+    chPostEventFunc *pre_func;
+    void *pre_arg;
+    chPostEventFunc *post_func;
+    void *post_arg;
     void *puser;
 };
 
@@ -167,6 +160,8 @@ epicsShareFunc void dbChannelFilterShow(dbChannel *chan, const char *intro,
 epicsShareFunc void dbChannelDelete(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif, void *puser);
+epicsShareFunc db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn);
+epicsShareFunc db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn);
 epicsShareFunc const chFilterPlugin * dbFindFilter(const char *key, size_t len);
 
 #ifdef __cplusplus

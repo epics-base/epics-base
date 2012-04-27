@@ -72,7 +72,6 @@ epicsShareFunc void epicsShareAPI db_cancel_event (dbEventSubscription es);
 epicsShareFunc void epicsShareAPI db_post_single_event (dbEventSubscription es);
 epicsShareFunc void epicsShareAPI db_event_enable (dbEventSubscription es);
 epicsShareFunc void epicsShareAPI db_event_disable (dbEventSubscription es);
-epicsShareFunc void epicsShareAPI db_post_single_event_final (void *pvt, struct evSubscrip *pevent, struct db_field_log *pLog);
 
 epicsShareFunc void epicsShareAPI db_delete_field_log (struct db_field_log *pfl);
 

@@ -116,17 +116,13 @@ long c_open(chFilter *filter)
     testOk(e & e_open, "channel_open called");
     return 0;
 }
-void c_reg_pre(chFilter *filter,
-               chPostEventFunc *pe_in,   void *pe_arg_in, chSetTypeFunc *st_in,   void *st_arg_in,
-               chPostEventFunc **pe_out, void **arg_out,  chSetTypeFunc **st_out, void **st_arg_out)
+void c_reg_pre(chFilter *filter, chPostEventFunc **cb_out, void **arg_out)
 {
-    testOk(e & e_reg_pre, "channel_register_pre_event_queue called");
+    testOk(e & e_reg_pre, "channel_register_pre called");
 }
-void c_reg_post(chFilter *filter,
-                chPostEventFunc *pe_in,   void *pe_arg_in, chSetTypeFunc *st_in,   void *st_arg_in,
-                chPostEventFunc **pe_out, void **arg_out,  chSetTypeFunc **st_out, void **st_arg_out)
+void c_reg_post(chFilter *filter, chPostEventFunc **cb_out, void **arg_out)
 {
-    testOk(e & e_reg_post, "channel_register_post_event_queue called");
+    testOk(e & e_reg_post, "channel_register_post called");
 }
 void c_report(chFilter *filter, const char *intro, int level)
 {

@@ -621,20 +621,20 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 }
 
 /*
- *  DB_POST_SINGLE_EVENT_FIRST()
+ *  DB_CREATE_EVENT_LOG()
  *
  *  NOTE: This assumes that the db scan lock is already applied
  *        (as it copies data from the record)
  */
-db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
+static db_field_log* db_create_event_log (struct evSubscrip *pevent)
 {
-    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);;
+    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
     if (pLog) {
         struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
         if (pevent->useValque) {
-            pLog->type = dbfl_type_val;
+            pLog->type = dbfl_type_value;
             pLog->stat = prec->stat;
             pLog->sevr = prec->sevr;
             pLog->time = prec->time;
@@ -656,10 +656,10 @@ db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
 }
 
 /*
- *  DB_POST_SINGLE_EVENT_FINAL()
+ *  DB_QUEUE_EVENT_LOG()
  *
  */
-void db_post_single_event_final (void *pvt, evSubscrip *pevent, db_field_log *pLog)
+static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
 {
     struct event_que    *ev_que;
     int firstEventFlag;
@@ -783,10 +783,9 @@ unsigned int    caEventMask
          */
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
-            /* Call the head of the filter chain */
-            pevent->chan->pre_event_cb(pevent->chan->pre_event_arg,
-                                        pevent,
-                                        db_post_single_event_first(pevent));
+            db_field_log *pLog = db_create_event_log(pevent);
+            pLog = dbChannelRunPreChain(pevent->chan, pLog);
+            db_queue_event_log(pevent, pLog);
         }
     }
 
@@ -805,10 +804,9 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
 
     dbScanLock (prec);
 
-    /* Call the head of the filter chain */
-    pevent->chan->pre_event_cb(pevent->chan->pre_event_arg,
-                                pevent,
-                                db_post_single_event_first(pevent));
+    db_field_log *pLog = db_create_event_log(pevent);
+    pLog = dbChannelRunPreChain(pevent->chan, pLog);
+    db_queue_event_log(pevent, pLog);
 
     dbScanUnlock (prec);
 }

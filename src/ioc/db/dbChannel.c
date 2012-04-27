@@ -346,6 +346,8 @@ dbChannel * dbChannelCreate(const char *name)
     chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
     chan->name = strdup(name);  /* FIXME: free-list */
     ellInit(&chan->filters);
+    ellInit(&chan->pre_chain);
+    ellInit(&chan->post_chain);
 
     paddr = &chan->addr;
     pflddes = dbEntry.pflddes;
@@ -413,89 +415,95 @@ finish:
     return chan;
 }
 
-static void setFinalType(void *pvt, long no_elements, short field_type, short element_size) {
-    dbChannel *chan = (dbChannel*) pvt;
+db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn) {
+    chFilter *filter;
+    ELLNODE *node;
+    db_field_log *pLog = pLogIn;
 
-    chan->final_no_elements  = no_elements;
-    chan->final_element_size = element_size;
-    chan->final_type         = field_type;
-    chan->dbr_final_type     = dbDBRnewToDBRold[mapDBFToDBR[field_type]];
+    for (node = ellFirst(&chan->pre_chain); node; node = ellNext(node)) {
+        filter = CONTAINER(node, chFilter, pre_node);
+        pLog = filter->pre_func(filter->pre_arg, chan, pLog);
+    }
+    return pLog;
+}
+
+db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn) {
+    chFilter *filter;
+    ELLNODE *node;
+    db_field_log *pLog = pLogIn;
+
+    for (node = ellFirst(&chan->post_chain); node; node = ellNext(node)) {
+        filter = CONTAINER(node, chFilter, post_node);
+        pLog = filter->post_func(filter->post_arg, chan, pLog);
+    }
+    return pLog;
 }
 
 long dbChannelOpen(dbChannel *chan)
 {
     chFilter *filter;
-    long status = 0;
-    chPostEventFunc *pre_pe_next = db_post_single_event_final;
-    void *pre_nextarg = NULL;
-    chPostEventFunc *pre_pe_this = NULL;
-    void *pre_thisarg = NULL;
-    chPostEventFunc *post_pe_next = NULL;
-    void *post_nextarg = NULL;
-    chPostEventFunc *post_pe_this = NULL;
-    void *post_thisarg = NULL;
-    chSetTypeFunc *st_next = setFinalType;
-    void *st_nextarg = chan;
-    chSetTypeFunc *st_this = NULL;
-    void *st_thisarg = NULL;
+    chPostEventFunc *func;
+    void *arg;
+    long status;
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        status = filter->plug->fif->channel_open(filter);
-        if (status) goto finish;
+        /*
+         * Call channel_open for all filters
+         */
+        status = 0;
+        if (filter->plug->fif->channel_open)
+            status = filter->plug->fif->channel_open(filter);
+        if (status) return status;
+
+        /*
+         * Build up the pre- and post-event-queue filter chains
+         */
+        func = NULL;
+        arg = NULL;
+        if (filter->plug->fif->channel_register_post) {
+            filter->plug->fif->channel_register_post(filter, &func, &arg);
+            if (func) {
+                ellAdd(&chan->post_chain, &filter->post_node);
+                filter->post_func = func;
+                filter->post_arg  = arg;
+            }
+        }
+        func = NULL;
+        arg = NULL;
+        if (filter->plug->fif->channel_register_pre) {
+            filter->plug->fif->channel_register_pre(filter, &func, &arg);
+            if (func) {
+                ellAdd(&chan->pre_chain, &filter->pre_node);
+                filter->pre_func = func;
+                filter->pre_arg  = arg;
+            }
+        }
+
         filter = (chFilter *) ellNext(&filter->node);
     }
 
-    /*
-     * Build up the post-event-queue and pre-event-queue filter chains.
-     * Must be done top-down and separate, since there is only one callback chain
-     * for type/size changes.
-     */
-    filter = (chFilter *) ellLast(&chan->filters);
-    while (filter && filter->plug->fif->channel_register_post_eventq) {
-        filter->plug->fif->channel_register_post_eventq(filter,
-                                                        post_pe_next,  post_nextarg,
-                                                        st_next,       st_nextarg,
-                                                        &post_pe_this, &post_thisarg,
-                                                        &st_this,      &st_thisarg);
-        if (post_pe_this) {
-            post_pe_next = post_pe_this;
-            post_nextarg = post_thisarg;
-        }
-        if (st_this) {
-            st_next    = st_this;
-            st_nextarg = st_thisarg;
-        }
-        filter = (chFilter *) ellPrevious(&filter->node);
-    }
-    chan->post_event_cb  = post_pe_next;
-    chan->post_event_arg = post_nextarg;
+    /* Set up type probe */
+    db_field_log probe;
+    db_field_log *pfl;
+    probe.type = dbfl_type_probe;
+    probe.field_type  = dbChannelFieldType(chan);
+    probe.no_elements = dbChannelElements(chan);
+    probe.element_size  = dbChannelElementSize(chan);
 
-    filter = (chFilter *) ellLast(&chan->filters);
-    while (filter && filter->plug->fif->channel_register_pre_eventq) {
-        filter->plug->fif->channel_register_pre_eventq(filter,
-                                                       pre_pe_next,  pre_nextarg,
-                                                       st_next,      st_nextarg,
-                                                       &pre_pe_this, &pre_thisarg,
-                                                       &st_this,     &st_thisarg);
-        if (pre_pe_this) {
-            pre_pe_next = pre_pe_this;
-            pre_nextarg = pre_thisarg;
-        }
-        if (st_this) {
-            st_next = st_this;
-            st_nextarg = st_thisarg;
-        }
-        filter = (chFilter *) ellPrevious(&filter->node);
-    }
-    chan->pre_event_cb  = pre_pe_next;
-    chan->pre_event_arg = pre_nextarg;
+    /* Call filter chains to determine data type/size changes */
+    pfl = dbChannelRunPreChain(chan, &probe);
+    if (pfl != &probe) return -1;
+    pfl = dbChannelRunPostChain(chan, &probe);
+    if (pfl != &probe) return -1;
 
-    /* Call filter chain to determine data type/size changes */
-    if (st_next) st_next(st_nextarg, chan->addr.no_elements, chan->addr.field_type, chan->addr.field_size);
+    /* Save probe results */
+    chan->final_no_elements  = probe.no_elements;
+    chan->final_element_size = probe.element_size;
+    chan->final_type         = probe.field_type;
+    chan->dbr_final_type     = dbDBRnewToDBRold[mapDBFToDBR[probe.field_type]];
 
-finish:
-    return status;
+    return 0;
 }
 
 /* FIXME: For performance we should make these one-liners into macros,

@@ -34,21 +34,21 @@
 /*
  * Data for a chfPlugin
  */
-typedef struct chfPluginCtx {
+typedef struct chfPlugin {
     const chfPluginArgDef *opts;
     size_t nopts;
     const chfPluginIf *pif;
-} chfPluginCtx;
+} chfPlugin;
 
 /*
  * Parser state data for a chfFilter (chfPlugin instance)
  */
-typedef struct chfFilterCtx {
-    const chfPluginCtx *plugin;
+typedef struct chfFilter {
+    const chfPlugin *plugin;
     epicsUInt32 *found;
     void *puser;
     epicsInt16 nextParam;
-} chfFilterCtx;
+} chfFilter;
 
 /* Data types we get from the parser */
 typedef enum chfPluginType {
@@ -299,10 +299,10 @@ store_string_value(const chfPluginArgDef *opt, void *user, const char *val, size
     return 0;
 }
 
-static void freeInstanceData(chfFilterCtx *fctx)
+static void freeInstanceData(chfFilter *f)
 {
-    free(fctx->found);  /* FIXME: Use a free-list */
-    free(fctx);         /* FIXME: Use a free-list */
+    free(f->found);  /* FIXME: Use a free-list */
+    free(f);         /* FIXME: Use a free-list */
 }
 
 /*
@@ -314,75 +314,75 @@ static void freeInstanceData(chfFilterCtx *fctx)
  */
 static parse_result parse_start(chFilter *filter)
 {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f;
 
     /* Filter context */
     /* FIXME: Use a free-list */
-    fctx = calloc(1, sizeof(chfFilterCtx));
-    if (!fctx) {
+    f = calloc(1, sizeof(chfFilter));
+    if (!f) {
         fprintf(stderr,"chfFilterCtx calloc failed\n");
         goto errfctx;
     }
-    fctx->nextParam = -1;
+    f->nextParam = -1;
 
     /* Bit array to find missing required keys */
     /* FIXME: Use a free-list */
-    fctx->found = calloc( (pctx->nopts/32)+1, sizeof(epicsUInt32) );
-    if (!fctx->found) {
+    f->found = calloc( (p->nopts/32)+1, sizeof(epicsUInt32) );
+    if (!f->found) {
         fprintf(stderr,"chfConfigParseStart: bit array calloc failed\n");
         goto errbitarray;
     }
 
     /* Call the plugin to allocate its structure, it returns NULL on error */
-    if (pctx->pif->allocPvt) {
-        if ((fctx->puser = pctx->pif->allocPvt()) == NULL)
+    if (p->pif->allocPvt) {
+        if ((f->puser = p->pif->allocPvt()) == NULL)
             goto errplugin;
     }
 
-    filter->puser = (void*) fctx;
+    filter->puser = (void*) f;
 
     return parse_continue;
 
     errplugin:
-    free(fctx->found);  /* FIXME: Use a free-list */
+    free(f->found);  /* FIXME: Use a free-list */
     errbitarray:
-    free(fctx);         /* FIXME: Use a free-list */
+    free(f);         /* FIXME: Use a free-list */
     errfctx:
     return parse_stop;
 }
 
 static void parse_abort(chFilter *filter) {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx = (chfFilterCtx*) filter->puser;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
 
     /* Call the plugin to tell it we're aborting */
-    if (pctx->pif->parse_error) pctx->pif->parse_error();
-    if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
-    freeInstanceData(fctx);
+    if (p->pif->parse_error) p->pif->parse_error();
+    if (p->pif->freePvt) p->pif->freePvt(f->puser);
+    freeInstanceData(f);
 }
 
 static parse_result parse_end(chFilter *filter)
 {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx = (chfFilterCtx*) filter->puser;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
     const chfPluginArgDef *cur;
     int i;
 
-    for(cur = pctx->opts, i = 0; cur && cur->name; cur++, i++) {
-        if ( !(fctx->found[i/32] & (1 << (i%32))) && cur->required ) {
-            if (pctx->pif->parse_error) pctx->pif->parse_error();
-            if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
-            freeInstanceData(fctx);
+    for(cur = p->opts, i = 0; cur && cur->name; cur++, i++) {
+        if ( !(f->found[i/32] & (1 << (i%32))) && cur->required ) {
+            if (p->pif->parse_error) p->pif->parse_error();
+            if (p->pif->freePvt) p->pif->freePvt(f->puser);
+            freeInstanceData(f);
             return parse_stop;
         }
     }
 
     /* Call the plugin to tell it we're done */
-    if (pctx->pif->parse_ok) {
-        if (pctx->pif->parse_ok(fctx->puser)) {
-            if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
-            freeInstanceData(fctx);
+    if (p->pif->parse_ok) {
+        if (p->pif->parse_ok(f->puser)) {
+            if (p->pif->freePvt) p->pif->freePvt(f->puser);
+            freeInstanceData(f);
             return parse_stop;
         }
     }
@@ -392,10 +392,10 @@ static parse_result parse_end(chFilter *filter)
 
 static parse_result parse_boolean(chFilter *filter, int boolVal)
 {
-    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
-    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
+    chfFilter *f =  (chfFilter*)filter->puser;
 
-    if (ctx->nextParam < 0 || store_boolean_value(&opts[ctx->nextParam], ctx->puser, boolVal)) {
+    if (f->nextParam < 0 || store_boolean_value(&opts[f->nextParam], f->puser, boolVal)) {
         return parse_stop;
     } else {
         return parse_continue;
@@ -404,10 +404,10 @@ static parse_result parse_boolean(chFilter *filter, int boolVal)
 
 static parse_result parse_integer(chFilter *filter, long integerVal)
 {
-    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
-    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
+    chfFilter *f =  (chfFilter*)filter->puser;
 
-    if (ctx->nextParam < 0 || store_integer_value(&opts[ctx->nextParam], ctx->puser, integerVal)) {
+    if (f->nextParam < 0 || store_integer_value(&opts[f->nextParam], f->puser, integerVal)) {
         return parse_stop;
     } else {
         return parse_continue;
@@ -416,10 +416,10 @@ static parse_result parse_integer(chFilter *filter, long integerVal)
 
 static parse_result parse_double(chFilter *filter, double doubleVal)
 {
-    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
-    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
+    chfFilter *f =  (chfFilter*)filter->puser;
 
-    if (ctx->nextParam < 0 || store_double_value(&opts[ctx->nextParam], ctx->puser, doubleVal)) {
+    if (f->nextParam < 0 || store_double_value(&opts[f->nextParam], f->puser, doubleVal)) {
         return parse_stop;
     } else {
         return parse_continue;
@@ -428,10 +428,10 @@ static parse_result parse_double(chFilter *filter, double doubleVal)
 
 static parse_result parse_string(chFilter *filter, const char *stringVal, size_t stringLen)
 {
-    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
-    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
+    chfFilter *f = (chfFilter*)filter->puser;
 
-    if (ctx->nextParam < 0 || store_string_value(&opts[ctx->nextParam], ctx->puser, stringVal, stringLen)) {
+    if (f->nextParam < 0 || store_string_value(&opts[f->nextParam], f->puser, stringVal, stringLen)) {
         return parse_stop;
     } else {
         return parse_continue;
@@ -446,22 +446,22 @@ static parse_result parse_start_map(chFilter *filter)
 static parse_result parse_map_key(chFilter *filter, const char *key, size_t stringLen)
 {
     const chfPluginArgDef *cur;
-    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
-    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
+    chfFilter *f =  (chfFilter*)filter->puser;
     int i;
 
-    ctx->nextParam = -1;
+    f->nextParam = -1;
     for(cur = opts, i = 0; cur && cur->name; cur++, i++) {
         if (strncmp(key, cur->name, stringLen) == 0) {
-            ctx->nextParam = i;
+            f->nextParam = i;
             break;
         }
     }
-    if (ctx->nextParam == -1) {
+    if (f->nextParam == -1) {
         return parse_stop;
     }
 
-    ctx->found[i/32] |= 1<<(i%32);
+    f->found[i/32] |= 1<<(i%32);
     return parse_continue;
 }
 
@@ -472,30 +472,30 @@ static parse_result parse_end_map(chFilter *filter)
 
 static long channel_open(chFilter *filter)
 {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
 
-    if (pctx->pif->channel_open) return pctx->pif->channel_open(filter->chan, fctx->puser);
+    if (p->pif->channel_open) return p->pif->channel_open(filter->chan, f->puser);
     else return 0;
 }
 
 static void channel_report(chFilter *filter, const char *intro, int level)
 {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
 
-    if (pctx->pif->channel_report) pctx->pif->channel_report(filter->chan, fctx->puser, intro, level);
+    if (p->pif->channel_report) p->pif->channel_report(filter->chan, f->puser, intro, level);
 }
 
 static void channel_close(chFilter *filter)
 {
-    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
-    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f =  (chfFilter*) filter->puser;
 
-    if (pctx->pif->channel_close) pctx->pif->channel_close(filter->chan, fctx->puser);
-    if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
-    free(fctx->found);  /* FIXME: Use a free-list */
-    free(fctx);         /* FIXME: Use a free-list */
+    if (p->pif->channel_close) p->pif->channel_close(filter->chan, f->puser);
+    if (p->pif->freePvt) p->pif->freePvt(f->puser);
+    free(f->found);  /* FIXME: Use a free-list */
+    free(f);         /* FIXME: Use a free-list */
 }
 
 /*
@@ -543,7 +543,7 @@ int
 epicsShareAPI
 chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts)
 {
-    chfPluginCtx *pctx;
+    chfPlugin *p;
     size_t i;
     const chfPluginArgDef *cur;
 
@@ -601,13 +601,13 @@ chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef
         }
     }
 
-    /* Plugin context */
-    pctx = dbCalloc(1, sizeof(chfPluginCtx));
-    pctx->pif = pif;
-    pctx->opts = opts;
-    pctx->nopts = i;
+    /* Plugin data */
+    p = dbCalloc(1, sizeof(chfPlugin));
+    p->pif = pif;
+    p->opts = opts;
+    p->nopts = i;
 
-    dbRegisterFilter(key, &wrapper_fif, pctx);
+    dbRegisterFilter(key, &wrapper_fif, p);
 
     return 0;
 }

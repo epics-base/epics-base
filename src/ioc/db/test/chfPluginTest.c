@@ -217,10 +217,10 @@ MAIN(chfPluginTest)
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
-    testOk(chfPluginRegister("buggy", &myPif, brokenOpts1), "not enough storage for integer");
-    testOk(chfPluginRegister("buggy", &myPif, brokenOpts2), "not enough storage for double");
-    testOk(chfPluginRegister("buggy", &myPif, brokenOpts3), "not enough storage for string");
-    testOk(chfPluginRegister("buggy", &myPif, brokenOpts4), "not enough storage for enum");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1), "not enough storage for integer");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts2), "not enough storage for double");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts3), "not enough storage for string");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts4), "not enough storage for enum");
 
     testOk(!chfPluginRegister("strict", &myPif, strictOpts), "register plugin strict");
     testOk(!chfPluginRegister("noconv", &myPif, noconvOpts), "register plugin noconv");

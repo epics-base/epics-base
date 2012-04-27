@@ -37,6 +37,7 @@
 typedef struct chfPlugin {
     const chfPluginArgDef *opts;
     size_t nopts;
+    epicsUInt32 *required;
     const chfPluginIf *pif;
 } chfPlugin;
 
@@ -369,8 +370,9 @@ static parse_result parse_end(chFilter *filter)
     const chfPluginArgDef *cur;
     int i;
 
-    for(cur = p->opts, i = 0; cur && cur->name; cur++, i++) {
-        if ( !(f->found[i/32] & (1 << (i%32))) && cur->required ) {
+    /* Check if all required arguments were supplied */
+    for(i = 0; i < (p->nopts/32)+1; i++) {
+        if ((f->found[i] & p->required[i]) != p->required[i]) {
             if (p->pif->parse_error) p->pif->parse_error();
             if (p->pif->freePvt) p->pif->freePvt(f->puser);
             freeInstanceData(f);
@@ -546,6 +548,7 @@ chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef
     chfPlugin *p;
     size_t i;
     const chfPluginArgDef *cur;
+    epicsUInt32 *reqd;
 
     /* Check and count options */
     for (i = 0, cur = opts; cur && cur->name; i++, cur++) {
@@ -601,11 +604,23 @@ chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef
         }
     }
 
+    /* Bit array used to find missing required keys */
+    reqd = dbCalloc((i/32)+1, sizeof(epicsUInt32));
+    if (!reqd) {
+        fprintf(stderr,"Plugin %s: bit array calloc failed\n", key);
+        return -1;
+    }
+
+    for (i = 0, cur = opts; cur && cur->name; i++, cur++) {
+        if (cur->required) reqd[i/32] |= 1 << (i%32);
+    }
+
     /* Plugin data */
     p = dbCalloc(1, sizeof(chfPlugin));
     p->pif = pif;
     p->opts = opts;
     p->nopts = i;
+    p->required = reqd;
 
     dbRegisterFilter(key, &wrapper_fif, p);
 

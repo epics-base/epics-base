@@ -57,11 +57,22 @@ extern "C" {
          *  state */
         yajl_gen_in_error_state,
         /** A complete JSON document has been generated */
-        yajl_gen_generation_complete                
+        yajl_gen_generation_complete,                
+        /** yajl_gen_double was passed an invalid floating point value
+         *  (infinity or NaN). */
+        yajl_gen_invalid_number,
+        /** A print callback was passed in, so there is no internal
+         * buffer to get from */
+        yajl_gen_no_buf
     } yajl_gen_status;
 
     /** an opaque handle to a generator */
     typedef struct yajl_gen_t * yajl_gen;
+
+    /** a callback used for "printing" the results. */
+    typedef void (*yajl_print_t)(void * ctx,
+                                 const char * str,
+                                 unsigned int len);
 
     /** configuration structure for the generator */
     typedef struct {
@@ -86,10 +97,35 @@ extern "C" {
     YAJL_API yajl_gen yajl_gen_alloc(const yajl_gen_config * config,
                                      const yajl_alloc_funcs * allocFuncs);
 
+    /** allocate a generator handle that will print to the specified
+     *  callback rather than storing the results in an internal buffer.
+     *  \param callback   a pointer to a printer function.  May be NULL
+     *                    in which case, the results will be store in an
+     *                    internal buffer.
+     *  \param config     a pointer to a structure containing parameters
+     *                    which configure the behavior of the json
+     *                    generator.
+     *  \param allocFuncs an optional pointer to a structure which allows
+     *                    the client to overide the memory allocation
+     *                    used by yajl.  May be NULL, in which case
+     *                    malloc/free/realloc will be used.
+     *  \param ctx        a context pointer that will be passed to the
+     *                    printer callback.
+     *
+     *  \returns an allocated handle on success, NULL on failure (bad params)
+     */
+    YAJL_API yajl_gen yajl_gen_alloc2(const yajl_print_t callback,
+                                      const yajl_gen_config * config,
+                                      const yajl_alloc_funcs * allocFuncs,
+                                      void * ctx);
+
     /** free a generator handle */    
     YAJL_API void yajl_gen_free(yajl_gen handle);
 
     YAJL_API yajl_gen_status yajl_gen_integer(yajl_gen hand, long int number);
+    /** generate a floating point number.  number may not be infinity or
+     *  NaN, as these have no representation in JSON.  In these cases the
+     *  generator will return 'yajl_gen_invalid_number' */
     YAJL_API yajl_gen_status yajl_gen_double(yajl_gen hand, double number);
     YAJL_API yajl_gen_status yajl_gen_number(yajl_gen hand,
                                              const char * num,

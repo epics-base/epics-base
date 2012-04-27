@@ -153,7 +153,7 @@ extern "C" {
      *
      *  \param hand - a handle to the json parser allocated with yajl_alloc
      */
-    yajl_status yajl_parse_complete(yajl_handle hand);
+    YAJL_API yajl_status yajl_parse_complete(yajl_handle hand);
     
     /** get an error string describing the state of the
      *  parse.
@@ -162,12 +162,26 @@ extern "C" {
      *  text where the error occured, along with an arrow pointing to
      *  the specific char.
      *
-     *  A dynamically allocated string will be returned which should
+     *  \returns A dynamically allocated string will be returned which should
      *  be freed with yajl_free_error 
      */
     YAJL_API unsigned char * yajl_get_error(yajl_handle hand, int verbose,
                                             const unsigned char * jsonText,
                                             unsigned int jsonTextLength);
+
+    /**
+     * get the amount of data consumed from the last chunk passed to YAJL.
+     *
+     * In the case of a successful parse this can help you understand if
+     * the entire buffer was consumed (which will allow you to handle
+     * "junk at end of input". 
+     * 
+     * In the event an error is encountered during parsing, this function
+     * affords the client a way to get the offset into the most recent
+     * chunk where the error occured.  0 will be returned if no error
+     * was encountered.
+     */
+    YAJL_API unsigned int yajl_get_bytes_consumed(yajl_handle hand);
 
     /** free an error returned from yajl_get_error */
     YAJL_API void yajl_free_error(yajl_handle hand, unsigned char * str);

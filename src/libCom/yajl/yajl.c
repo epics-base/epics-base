@@ -96,7 +96,7 @@ yajl_alloc(const yajl_callbacks * callbacks,
     hand->callbacks = callbacks;
     hand->ctx = ctx;
     hand->lexer = yajl_lex_alloc(&(hand->alloc), allowComments, validateUTF8);
-    hand->errorOffset = 0;
+    hand->bytesConsumed = 0;
     hand->decodeBuf = yajl_buf_alloc(&(hand->alloc));
     yajl_bs_init(hand->stateStack, &(hand->alloc));
 
@@ -118,9 +118,8 @@ yajl_status
 yajl_parse(yajl_handle hand, const unsigned char * jsonText,
            unsigned int jsonTextLen)
 {
-    unsigned int offset = 0;
     yajl_status status;
-    status = yajl_do_parse(hand, &offset, jsonText, jsonTextLen);
+    status = yajl_do_parse(hand, jsonText, jsonTextLen);
     return status;
 }
 
@@ -142,6 +141,14 @@ yajl_get_error(yajl_handle hand, int verbose,
 {
     return yajl_render_error_string(hand, jsonText, jsonTextLen, verbose);
 }
+
+unsigned int
+yajl_get_bytes_consumed(yajl_handle hand)
+{
+    if (!hand) return 0;
+    else return hand->bytesConsumed;
+}
+
 
 void
 yajl_free_error(yajl_handle hand, unsigned char * str)

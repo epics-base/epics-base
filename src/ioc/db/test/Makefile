@@ -35,6 +35,11 @@ arrShorthandTest_SRCS += arrShorthandTest.c
 OBJS_IOC_vxWorks += arrShorthandTest
 TESTS += arrShorthandTest
 
+TESTPROD_HOST += dbStateTest
+dbStateTest_SRCS += dbStateTest.c
+OBJS_IOC_vxWorks += dbStateTest
+TESTS += dbStateTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

@@ -39,6 +39,7 @@
 
 unsigned int e1, e2, c1, c2;
 unsigned int offset;
+int drop = -1;
 db_field_log *dtorpfl;
 
 #define e_any (e_alloc | e_free | e_error | e_ok | e_open \
@@ -215,14 +216,14 @@ static long channel_open(dbChannel *chan, void *user)
     return c_open_return;
 }
 
-static dbfl_free1(db_field_log *pfl) {
+static void dbfl_free1(db_field_log *pfl) {
     testOk(e1 & e_dtor, "dbfl_free (1) called");
     testOk(dtorpfl == pfl, "dbfl_free (1): db_field_log pointer correct");
     dtorpfl = NULL;
     c1 |= e_dtor;
 }
 
-static dbfl_free2(db_field_log *pfl) {
+static void dbfl_free2(db_field_log *pfl) {
     testOk(e2 & e_dtor, "dbfl_free (2) called");
     testOk(dtorpfl == pfl, "dbfl_free (2): db_field_log pointer correct");
     dtorpfl = NULL;
@@ -256,6 +257,11 @@ static db_field_log * pre(void *user, dbChannel *chan, db_field_log *pLog) {
         pLog->u.r.dtor = dtor;
         dtorpfl = pLog;
     }
+
+    if (my->offpre == drop) {
+        testDiag("pre (%c) is dropping the field log", inst(user));
+        return NULL;
+    }
     return pLog;
 }
 
@@ -285,6 +291,11 @@ static db_field_log * post(void *user, dbChannel *chan, db_field_log *pLog) {
     if (my->offpost == 0) {                 /* The first one registers a dtor and remembers pfl */
         pLog->u.r.dtor = dtor;
         dtorpfl = pLog;
+    }
+
+    if (my->offpost == drop) {
+        testDiag("post (%c) is dropping the field log", inst(user));
+        return NULL;
     }
     return pLog;
 }
@@ -429,7 +440,7 @@ MAIN(chfPluginTest)
     db_field_log *pfl;
     dbEventCtx evCtx = db_init_events();
 
-    testPlan(1481);
+    testPlan(0);
 
     /* Enum to string conversion */
     testHead("Enum to string conversion");
@@ -666,10 +677,10 @@ MAIN(chfPluginTest)
     if (pch) testOk(!!(pfl = db_create_read_log(pch)), "create db_field_log"); \
     pfl->type = dbfl_type_ref; \
     pfl->field_type = TYPE_START; \
-    if (pch) testOk(!!(pfl = dbChannelRunPreChain(pch, pfl)), "run pre eventq chain"); \
-    if (pch) testOk(!!(pfl = dbChannelRunPostChain(pch, pfl)), "run post eventq chain"); \
-    testOk(pfl->field_type == TYPE_START + DType, "final data type is correct"); \
-    db_delete_field_log(pfl); \
+    if (pch) testOk(!!(pfl = dbChannelRunPreChain(pch, pfl)) || (drop >=0 && drop <= 1), "run pre eventq chain"); \
+    if (pch && (drop < 0 || drop >= 2)) testOk(!!(pfl = dbChannelRunPostChain(pch, pfl)) || drop >=2, "run post eventq chain"); \
+    if (pfl) testOk(pfl->field_type == TYPE_START + DType, "final data type is correct"); \
+    if (pfl) db_delete_field_log(pfl); \
     if (!testOk(c1 == e1, "run filter chains (1): all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
     if (!testOk(c2 == e2, "run filter chains (2): all expected calls happened")) testDiag("expected %#x - called %#x", e2, c2); \
     e1 = e_report; c1 = 0; \
@@ -700,6 +711,21 @@ MAIN(chfPluginTest)
                e_reg_post, e_post, e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, 3);
     CHAINTEST2("1 both, 1 post", "{\"sloppy\":{},\"post\":{}}",                                                 /* Two, both then post */
                e_reg_pre | e_reg_post, e_pre | e_post | e_dtor, e_reg_post, e_post, 3);
+
+    /* Plugins dropping updates */
+    drop = 0;
+    CHAINTEST2("2 both (drop at 0)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 0 */
+               e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, 0, -1);
+    drop = 1;
+    CHAINTEST2("2 both (drop at 1)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 1 */
+               e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, e_pre, -1);
+    drop = 2;
+    CHAINTEST2("2 both (drop at 2)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 2 */
+               e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre, -1);
+    drop = 3;
+    CHAINTEST2("2 both (drop at 3)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 3 */
+               e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre | e_post, -1);
+    drop = -1;
 
     dbFreeBase(pdbbase);
 

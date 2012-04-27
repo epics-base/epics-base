@@ -428,7 +428,7 @@ db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn) {
     ELLNODE *node;
     db_field_log *pLog = pLogIn;
 
-    for (node = ellFirst(&chan->pre_chain); node; node = ellNext(node)) {
+    for (node = ellFirst(&chan->pre_chain); node && pLog; node = ellNext(node)) {
         filter = CONTAINER(node, chFilter, pre_node);
         pLog = filter->pre_func(filter->pre_arg, chan, pLog);
     }
@@ -440,7 +440,7 @@ db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn) {
     ELLNODE *node;
     db_field_log *pLog = pLogIn;
 
-    for (node = ellFirst(&chan->post_chain); node; node = ellNext(node)) {
+    for (node = ellFirst(&chan->post_chain); node && pLog; node = ellNext(node)) {
         filter = CONTAINER(node, chFilter, post_node);
         pLog = filter->post_func(filter->post_arg, chan, pLog);
     }

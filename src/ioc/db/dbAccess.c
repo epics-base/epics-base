@@ -46,6 +46,7 @@
 #include "dbAddr.h"
 #include "callback.h"
 #include "dbScan.h"
+#include "dbLink.h"
 #include "dbLock.h"
 #include "dbEvent.h"
 #include "dbConvert.h"
@@ -89,17 +90,6 @@ static short mapDBFToDBR[DBF_NTYPES] = {
 
 /* The following is to handle SPC_AS */
 static SPC_ASCALLBACK spcAsCallback = 0;
-
-static void inherit_severity(const struct pv_link *ppv_link,
-    dbCommon *pdest, epicsEnum16 stat, epicsEnum16 sevr)
-{
-    switch(ppv_link->pvlMask&pvlOptMsMode) {
-        case pvlOptNMS: break;
-        case pvlOptMSI: if (sevr < INVALID_ALARM) break;
-        case pvlOptMS:  recGblSetSevr(pdest,LINK_ALARM,sevr); break;
-        case pvlOptMSS: recGblSetSevr(pdest,stat,sevr); break;
-    }
-}
 
 void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 {
@@ -420,59 +410,15 @@ long epicsShareAPI dbPutAttribute(
 
 int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes)
 {
-    if(pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
-	return(TRUE);
+    if (pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
+        return TRUE;
     else
-	return(FALSE);
+        return FALSE;
 }
 
 int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr)
 {
     return paddr->pfldDes->indRecordType;
-}
-
-long epicsShareAPI dbGetNelements(const struct link *plink,long *nelements)
-{
-    switch(plink->type) {
-    case CONSTANT:
-	*nelements = 0;
-	return(0);
-    case DB_LINK: {
-	    DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
-	    *nelements = paddr->no_elements;
-	    return(0);
-	}
-    case CA_LINK:
-	return(dbCaGetNelements(plink,nelements));
-    default:
-	break;
-    }
-    return(S_db_badField);
-}
-
-int epicsShareAPI dbIsLinkConnected(const struct link *plink)
-{
-    switch(plink->type) {
-	case DB_LINK: return(TRUE);
-	case CA_LINK: return(dbCaIsLinkConnected(plink));
-	default: break;
-    }
-    return(FALSE);
-}
-
-int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
-{
-    switch(plink->type) {
-	case DB_LINK:
-	{
-	    DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
-
-	    return((int)paddr->field_type);
-	}
-	case CA_LINK: return(dbCaGetLinkDBFtype(plink));
-	default: break;
-    }
-    return(-1);
 }
 
 /*
@@ -482,48 +428,13 @@ int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
  */
 long epicsShareAPI dbScanPassive(dbCommon *pfrom, dbCommon *pto)
 {
-    long status;
-
     /* if not passive just return success */
-    if(pto->scan != 0) return(0);
+    if (pto->scan != 0)
+        return 0;
 
-    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
-    status = dbProcess(pto);
-    return(status);
-}
-
-/*KLUDGE: Following needed so that dbPutLink to PROC field works correctly*/
-long epicsShareAPI dbScanLink(dbCommon *pfrom, dbCommon *pto)
-{
-    long		status;
-    unsigned char	pact;
-
-    if(pfrom && pfrom->ppn) dbNotifyAdd(pfrom,pto);
-    pact = pfrom->pact;
-    pfrom->pact = TRUE;
-    status = dbProcess(pto);
-    pfrom->pact = pact;
-    return(status);
-}
-
-void epicsShareAPI dbScanFwdLink(struct link *plink)
-{
-    dbCommon		*precord;
-    struct pv_link      *pvlink;
-    short               fwdLinkValue;
-
-    if(plink->type!=DB_LINK && plink->type!=CA_LINK) return;
-    pvlink = &plink->value.pv_link;
-    precord = pvlink->precord;
-    if(plink->type==DB_LINK) {
-        dbAddr *paddr = (dbAddr *)plink->value.pv_link.pvt;
-        dbScanPassive(precord,paddr->precord);
-        return;
-    }
-    if(!(pvlink->pvlMask & pvlOptFWD)) return;
-    fwdLinkValue = 1;
-    dbCaPutLink(plink,DBR_SHORT,&fwdLinkValue,1);
-    return;
+    if (pfrom && pfrom->ppn)
+        dbNotifyAdd(pfrom,pto);
+    return dbProcess(pto);
 }
 
 /*
@@ -537,119 +448,125 @@ void epicsShareAPI dbScanFwdLink(struct link *plink)
  */
 long epicsShareAPI dbProcess(dbCommon *precord)
 {
-	struct rset	*prset = precord->rset;
-	dbRecordType	*pdbRecordType = precord->rdes;
-	unsigned char	tpro=precord->tpro;
-	long		status = 0;
-        int             *ptrace;
-	int		set_trace=FALSE;
-	dbFldDes	*pdbFldDes;
-        int             callNotifyCompletion = FALSE;
+    struct rset *prset = precord->rset;
+    dbRecordType *pdbRecordType = precord->rdes;
+    unsigned char tpro = precord->tpro;
+    long status = 0;
+    int *ptrace;
+    int	set_trace = FALSE;
+    dbFldDes *pdbFldDes;
+    int callNotifyCompletion = FALSE;
 
-        ptrace = dbLockSetAddrTrace(precord);
+    ptrace = dbLockSetAddrTrace(precord);
+    /*
+     *  Note that it is likely that if any changes are made
+     *   to dbProcess() corresponding changes will have to
+     *   be made in the breakpoint handler.
+     */
+
+    /* see if there are any stopped records or breakpoints */
+    if (lset_stack_count != 0) {
         /*
-         *  Note that it is likely that if any changes are made
-         *   to dbProcess() corresponding changes will have to
-         *   be made in the breakpoint handler.
+         *  Check to see if the record should be processed
+         *   and activate breakpoint accordingly.  If this
+         *   function call returns non-zero, skip record
+         *   support and fall out of dbProcess().  This is
+         *   done so that a dbContTask() can be spawned to
+         *   take over record processing for the lock set
+         *   containing a breakpoint.
          */
+        if (dbBkpt(precord))
+            goto all_done;
+    }
 
-        /* see if there are any stopped records or breakpoints */
-        if (lset_stack_count != 0) {
-           /*
-            *  Check to see if the record should be processed
-            *   and activate breakpoint accordingly.  If this
-            *   function call returns non-zero, skip record
-            *   support and fall out of dbProcess().  This is
-            *   done so that a dbContTask() can be spawned to
-            *   take over record processing for the lock set
-            *   containing a breakpoint.
-            */
-            if (dbBkpt(precord))
-                goto all_done;
+    /* check for trace processing*/
+    if (tpro) {
+        if(*ptrace==0) {
+            *ptrace = 1;
+            set_trace = TRUE;
         }
+    }
 
-	/* check for trace processing*/
-	if (tpro) {
-                if(*ptrace==0) {
-                        *ptrace = 1;
-			set_trace = TRUE;
-		}
-	}
+    /* If already active dont process */
+    if (precord->pact) {
+        unsigned short	monitor_mask;
 
-	/* If already active dont process */
-	if (precord->pact) {
-		unsigned short	monitor_mask;
+        if (*ptrace)
+            printf("%s: Active %s\n",
+                    epicsThreadGetNameSelf(), precord->name);
+        /* raise scan alarm after MAX_LOCK times */
+        if (precord->stat==SCAN_ALARM) goto all_done;
+        if (precord->lcnt++ !=MAX_LOCK) goto all_done;
+        if (precord->sevr>=INVALID_ALARM) goto all_done;
+        recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
+        monitor_mask = recGblResetAlarms(precord);
+        monitor_mask |= DBE_VALUE|DBE_LOG;
+        pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
+        db_post_events(precord,
+                (void *)(((char *)precord) + pdbFldDes->offset),
+                monitor_mask);
+        goto all_done;
+    }
+    else precord->lcnt = 0;
 
-		if (*ptrace) printf("%s: Active %s\n",
-                        epicsThreadGetNameSelf(), precord->name);
-		/* raise scan alarm after MAX_LOCK times */
-		if (precord->stat==SCAN_ALARM) goto all_done;
-		if (precord->lcnt++ !=MAX_LOCK) goto all_done;
-		if (precord->sevr>=INVALID_ALARM) goto all_done;
-		recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
-		monitor_mask = recGblResetAlarms(precord);
-		monitor_mask |= DBE_VALUE|DBE_LOG;
-		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
-		db_post_events(precord,
-			(void *)(((char *)precord) + pdbFldDes->offset),
-			monitor_mask);
-		goto all_done;
-	}
-        else precord->lcnt = 0;
+    /*
+     *  Check the record disable link.  A record will not be
+     *    processed if the value retrieved through this link
+     *    is equal to constant set in the record's disv field.
+     */
+    status = dbGetLink(&precord->sdis, DBR_SHORT, &precord->disa, 0, 0);
 
-       /*
-        *  Check the record disable link.  A record will not be
-        *    processed if the value retrieved through this link
-        *    is equal to constant set in the record's disv field.
-        */
-        status = dbGetLink(&(precord->sdis),DBR_SHORT,&(precord->disa),0,0);
+    /* if disabled check disable alarm severity and return success */
+    if (precord->disa == precord->disv) {
+        if(*ptrace)
+            printf("%s: Disabled %s\n",
+                    epicsThreadGetNameSelf(), precord->name);
 
-	/* if disabled check disable alarm severity and return success */
-	if (precord->disa == precord->disv) {
-		if(*ptrace) printf("%s: Disabled %s\n",
-                        epicsThreadGetNameSelf(), precord->name);
-		/*take care of caching and notifyCompletion*/
-		precord->rpro = FALSE;
-		precord->putf = FALSE;
-                callNotifyCompletion = TRUE;
-		/* raise disable alarm */
-		if (precord->stat==DISABLE_ALARM) goto all_done;
-		precord->sevr = precord->diss;
-		precord->stat = DISABLE_ALARM;
-		precord->nsev = 0;
-		precord->nsta = 0;
-		db_post_events(precord, &precord->stat, DBE_VALUE);
-		db_post_events(precord, &precord->sevr, DBE_VALUE);
-		pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
-		db_post_events(precord,
-			(void *)(((char *)precord) + pdbFldDes->offset),
-			DBE_VALUE|DBE_ALARM);
-		goto all_done;
-	}
+        /*take care of caching and notifyCompletion*/
+        precord->rpro = FALSE;
+        precord->putf = FALSE;
+        callNotifyCompletion = TRUE;
 
-	/* locate record processing routine */
-        /* put this in iocInit() !!! */
-	if (!(prset=precord->rset) || !(prset->process)) {
-                callNotifyCompletion = TRUE;
-		precord->pact=1;/*set pact TRUE so error is issued only once*/
-		recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
-		status = S_db_noRSET;
-		if (*ptrace) printf("%s: No RSET for %s\n",
-				epicsThreadGetNameSelf(), precord->name);
-		goto all_done;
-	}
-	if(*ptrace) printf("%s: Process %s\n",
-			epicsThreadGetNameSelf(), precord->name);
-	/* process record */
-	status = (*prset->process)(precord);
-        /* Print record's fields if PRINT_MASK set in breakpoint field */
-        if (lset_stack_count != 0) {
-                dbPrint(precord);
-        }
+        /* raise disable alarm */
+        if (precord->stat==DISABLE_ALARM) goto all_done;
+        precord->sevr = precord->diss;
+        precord->stat = DISABLE_ALARM;
+        precord->nsev = 0;
+        precord->nsta = 0;
+        db_post_events(precord, &precord->stat, DBE_VALUE);
+        db_post_events(precord, &precord->sevr, DBE_VALUE);
+        pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->indvalFlddes];
+        db_post_events(precord,
+                (void *)(((char *)precord) + pdbFldDes->offset),
+                DBE_VALUE|DBE_ALARM);
+        goto all_done;
+    }
+
+    /* locate record processing routine */
+    /* FIXME: put this in iocInit() !!! */
+    if (!(prset=precord->rset) || !(prset->process)) {
+        callNotifyCompletion = TRUE;
+        precord->pact=1;/*set pact TRUE so error is issued only once*/
+        recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
+        status = S_db_noRSET;
+        if (*ptrace)
+            printf("%s: No RSET for %s\n",
+                    epicsThreadGetNameSelf(), precord->name);
+        goto all_done;
+    }
+    if(*ptrace)
+        printf("%s: Process %s\n",
+                epicsThreadGetNameSelf(), precord->name);
+    /* process record */
+    status = (*prset->process)(precord);
+    /* Print record's fields if PRINT_MASK set in breakpoint field */
+    if (lset_stack_count != 0) {
+        dbPrint(precord);
+    }
 all_done:
-	if (set_trace) *ptrace = 0;
-	if(callNotifyCompletion && precord->ppn) dbNotifyCompletion(precord);
-	return(status);
+    if (set_trace) *ptrace = 0;
+    if(callNotifyCompletion && precord->ppn) dbNotifyCompletion(precord);
+    return(status);
 }
 
 /*
@@ -775,121 +692,6 @@ int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
     return dbReadDatabase(&pdbbase, file, 0, subs);
 }
 
-
-long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
-    void *pbuffer, long *poptions, long *pnRequest)
-{
-    long status = 0;
-
-    if (plink->type == CONSTANT) {
-        if (poptions) *poptions = 0;
-        if (pnRequest) *pnRequest = 0;
-    } else if (plink->type == DB_LINK) {
-        struct pv_link *ppv_link = &(plink->value.pv_link);
-        DBADDR         *paddr = ppv_link->pvt;
-        dbCommon       *precord = plink->value.pv_link.precord;
-
-        /* scan passive records with links that are process passive  */
-        if (ppv_link->pvlMask&pvlOptPP) {
-            dbCommon *pfrom = paddr->precord;
-            unsigned char pact;
-
-            pact = precord->pact;
-            precord->pact = TRUE;
-            status = dbScanPassive(precord,pfrom);
-            precord->pact = pact;
-            if (status) return status;
-        }
-        if(precord!= paddr->precord) {
-            inherit_severity(ppv_link,precord,paddr->precord->stat,paddr->precord->sevr);
-        }
-
-        if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
-            status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
-        } else {
-            unsigned short dbfType = paddr->field_type;
-            long       no_elements = paddr->no_elements;
-
-            if (dbrType < 0 || dbrType > DBR_ENUM ||
-                dbfType > DBF_DEVICE) {
-                status = S_db_badDbrtype;
-                recGblRecordError(status, precord, "GetLinkValue Failed");
-                recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-                return status;
-            }
-            /*  attempt to make a fast link */
-            if ((!poptions || *poptions == 0) &&
-                no_elements == 1 &&
-                (!pnRequest || *pnRequest == 1) &&
-                paddr->special != SPC_ATTRIBUTE) {
-                ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
-                status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
-            } else {
-                ppv_link->getCvt = 0;
-                status = dbGet(paddr, dbrType, pbuffer, poptions, pnRequest, NULL);
-            }
-        }
-        ppv_link->lastGetdbrType = dbrType;
-        if (status) {
-            recGblRecordError(status, precord, "dbGetLinkValue");
-            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-        }
-    } else if (plink->type == CA_LINK) {
-        struct dbCommon *precord = plink->value.pv_link.precord;
-        const struct pv_link *pcalink = &plink->value.pv_link;
-        epicsEnum16 sevr, stat;
-
-        status=dbCaGetLink(plink,dbrType,pbuffer,&stat,&sevr,pnRequest);
-        if (status) {
-            recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-        } else {
-            inherit_severity(pcalink,precord,stat,sevr);
-        }
-        if (poptions) *poptions = 0;
-    } else {
-        cantProceed("dbGetLinkValue: Illegal link type");
-    }
-    return status;
-}
-
-long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
-    const void *pbuffer, long nRequest)
-{
-    long status = 0;
-
-    if (plink->type == DB_LINK) {
-        struct dbCommon *psource = plink->value.pv_link.precord;
-        struct pv_link *ppv_link = &plink->value.pv_link;
-        DBADDR *paddr = (DBADDR *)ppv_link->pvt;
-        dbCommon *pdest = paddr->precord;
-
-        status = dbPut(paddr, dbrType, pbuffer, nRequest);
-        inherit_severity(ppv_link,pdest,psource->nsta,psource->nsev);
-        if (status) return status;
-
-        if (paddr->pfield == &pdest->proc ||
-            (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
-            /*if dbPutField caused asyn record to process */
-            /* ask for reprocessing*/
-            if (pdest->putf) {
-                pdest->rpro = TRUE;
-            } else { /* otherwise ask for the record to be processed*/
-                status = dbScanLink(psource, pdest);
-            }
-        }
-        if (status)
-            recGblSetSevr(psource, LINK_ALARM, INVALID_ALARM);
-    } else if (plink->type == CA_LINK) {
-        struct dbCommon *psource = plink->value.pv_link.precord;
-
-        status = dbCaPutLink(plink, dbrType, pbuffer, nRequest);
-        if (status < 0)
-            recGblSetSevr(psource, LINK_ALARM, INVALID_ALARM);
-    } else {
-        cantProceed("dbPutLinkValue: Illegal link type");
-    }
-    return status;
-}
 
 static long getLinkValue(DBADDR *paddr, short dbrType,
     char *pbuf, long *nRequest)
@@ -1076,10 +878,9 @@ static long dbPutFieldLink(DBADDR *paddr,
     dbCommon    *precord = paddr->precord;
     dbFldDes    *pfldDes = paddr->pfldDes;
     long        special = paddr->special;
-    DBLINK      *plink = (DBLINK *)paddr->pfield;
+    struct link *plink = (struct link *)paddr->pfield;
     const char  *pstring = (const char *)pbuffer;
     DBENTRY     dbEntry;
-    DBADDR      dbaddr;
     struct dsxt *old_dsxt = NULL;
     struct dset *new_dset = NULL;
     struct dsxt *new_dsxt = NULL;
@@ -1150,21 +951,8 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     switch (plink->type) { /* Old link type */
     case DB_LINK:
-        free(plink->value.pv_link.pvt);
-        plink->value.pv_link.pvt = 0;
-        plink->type = PV_LINK;
-        plink->value.pv_link.getCvt = 0;
-        plink->value.pv_link.pvlMask = 0;
-        plink->value.pv_link.lastGetdbrType = 0;
-        dbLockSetSplit(precord);
-        break;
-
     case CA_LINK:
-        dbCaRemoveLink(plink);
-        plink->type = PV_LINK;
-        plink->value.pv_link.getCvt = 0;
-        plink->value.pv_link.pvlMask = 0;
-        plink->value.pv_link.lastGetdbrType = 0;
+    	dbRemoveLink(plink);
         break;
 
     case CONSTANT:
@@ -1211,35 +999,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
-        if (plink == &precord->tsel)
-            recGblTSELwasModified(plink);
-        plink->value.pv_link.precord = precord;
-
-        if (!(plink->value.pv_link.pvlMask & (pvlOptCA|pvlOptCP|pvlOptCPP)) &&
-            (dbNameToAddr(plink->value.pv_link.pvname, &dbaddr) == 0)) {
-            /* It's a DB link */
-            DBADDR      *pdbAddr;
-
-            plink->type = DB_LINK;
-            pdbAddr = dbMalloc(sizeof(struct dbAddr));
-            *pdbAddr = dbaddr; /* NB: structure copy */;
-            plink->value.pv_link.pvt = pdbAddr;
-            dbLockSetRecordLock(pdbAddr->precord);
-            dbLockSetMerge(precord, pdbAddr->precord);
-        } else { /* Make it a CA link */
-            char        *pperiod;
-
-            plink->type = CA_LINK;
-            if (pfldDes->field_type == DBF_INLINK) {
-                plink->value.pv_link.pvlMask |= pvlOptInpNative;
-            }
-            dbCaAddLink(plink);
-            if (pfldDes->field_type == DBF_FWDLINK) {
-                pperiod = strrchr(plink->value.pv_link.pvname, '.');
-                if (pperiod && strstr(pperiod, "PROC"))
-                    plink->value.pv_link.pvlMask |= pvlOptFWD;
-            }
-        }
+        dbAddLink(precord, plink, pfldDes->field_type);
         break;
 
     case CONSTANT:
@@ -1267,7 +1027,7 @@ restoreScan:
     }
 postScanEvent:
     if (scan != precord->scan)
-        db_post_events(precord, &precord->scan, DBE_VALUE|DBE_LOG);
+        db_post_events(precord, &precord->scan, DBE_VALUE | DBE_LOG);
 unlock:
     dbLockSetGblUnlock();
 finish:
@@ -1424,139 +1184,3 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
     return status;
 }
 
-/* various utility routines */
-long epicsShareAPI dbGetControlLimits(
-    const struct link *plink,double *low, double *high)
-{
-    struct buffer {
-        DBRctrlDouble
-        double value;
-    } buffer;
-    DBADDR *paddr;
-    long options = DBR_CTRL_DOUBLE;
-    long number_elements = 0;
-    long status;
-
-    if(plink->type == CA_LINK) return(dbCaGetControlLimits(plink,low,high));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
-    if(status) return(status);
-    *low = buffer.lower_ctrl_limit;
-    *high = buffer.upper_ctrl_limit;
-    return(0);
-}
-
-long epicsShareAPI dbGetGraphicLimits(
-    const struct link *plink,double *low, double *high)
-{
-    struct buffer {
-        DBRgrDouble
-        double value;
-    } buffer;
-    DBADDR *paddr;
-    long options = DBR_GR_DOUBLE;
-    long number_elements = 0;
-    long status;
-
-    if(plink->type == CA_LINK) return(dbCaGetGraphicLimits(plink,low,high));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
-    if(status) return(status);
-    *low = buffer.lower_disp_limit;
-    *high = buffer.upper_disp_limit;
-    return(0);
-}
-
-long epicsShareAPI dbGetAlarmLimits(const struct link *plink,
-	double *lolo, double *low, double *high, double *hihi)
-{
-    struct buffer {
-        DBRalDouble
-        double value;
-    } buffer;
-    DBADDR *paddr;
-    long options = DBR_AL_DOUBLE;
-    long number_elements = 0;
-    long status;
-
-    if(plink->type == CA_LINK)
-        return(dbCaGetAlarmLimits(plink,lolo,low,high,hihi));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
-    if(status) return(status);
-    *lolo = buffer.lower_alarm_limit;
-    *low = buffer.lower_warning_limit;
-    *high = buffer.upper_warning_limit;
-    *hihi = buffer.upper_alarm_limit;
-    return(0);
-}
-
-long epicsShareAPI dbGetPrecision(const struct link *plink,short *precision)
-{
-    struct buffer {
-        DBRprecision
-        double value;
-    } buffer;
-    DBADDR *paddr;
-    long options = DBR_PRECISION;
-    long number_elements = 0;
-    long status;
-
-    if(plink->type == CA_LINK) return(dbCaGetPrecision(plink,precision));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
-    if(status) return(status);
-    *precision = buffer.precision.dp;
-    return(0);
-}
-
-long epicsShareAPI dbGetUnits(
-    const struct link *plink,char *units,int unitsSize)
-{
-    struct buffer {
-        DBRunits
-        double value;
-    } buffer;
-    DBADDR *paddr;
-    long options = DBR_UNITS;
-    long number_elements = 0;
-    long status;
-
-    if(plink->type == CA_LINK) return(dbCaGetUnits(plink,units,unitsSize));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    status = dbGet(paddr,DBR_DOUBLE,&buffer,&options,&number_elements,0);
-    if(status) return(status);
-    strncpy(units,buffer.units,unitsSize);
-    return(0);
-}
-
-long epicsShareAPI dbGetAlarm(const struct link *plink,
-    epicsEnum16 *status,epicsEnum16 *severity)
-{
-    DBADDR *paddr;
-
-    if(plink->type == CA_LINK) return(dbCaGetAlarm(plink,status,severity));
-    if(plink->type !=DB_LINK) return(S_db_notFound);
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    if (status) *status = paddr->precord->stat;
-    if (severity) *severity = paddr->precord->sevr;
-    return(0);
-}
-
-long epicsShareAPI dbGetTimeStamp(const struct link *plink,epicsTimeStamp *pstamp)
-{
-    DBADDR *paddr;
-
-    if (plink->type == CA_LINK)
-        return dbCaGetTimeStamp(plink,pstamp);
-    if (plink->type != DB_LINK)
-        return S_db_notFound;
-    paddr = (DBADDR *)plink->value.pv_link.pvt;
-    *pstamp = paddr->precord->time;
-    return 0;
-}

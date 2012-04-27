@@ -34,6 +34,7 @@
 #include "caeventmask.h"
 #define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
+#include "dbLink.h"
 #include "dbNotify.h"
 #include "dbCa.h"
 #include "dbEvent.h"

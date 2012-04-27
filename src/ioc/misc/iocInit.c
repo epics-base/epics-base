@@ -41,7 +41,6 @@
 #include "taskwd.h"
 #include "callback.h"
 #include "dbCommon.h"
-#include "dbLock.h"
 #include "devSup.h"
 #include "drvSup.h"
 #include "menuConvert.h"
@@ -426,48 +425,18 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
+    dbFldDes **papFldDes = pdbRecordType->papFldDes;
+    short *link_ind = pdbRecordType->link_ind;
     devSup *pdevSup;
     int j;
 
-    /* Convert all PV_LINKs to DB_LINKs or CA_LINKs */
     /* For all the links in the record type... */
     for (j = 0; j < pdbRecordType->no_links; j++) {
-        dbFldDes *pdbFldDes =
-            pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+        dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
-        if (plink->type == PV_LINK) {
-            DBADDR dbaddr;
-
-            if (plink == &precord->tsel) recGblTSELwasModified(plink);
-            if (!(plink->value.pv_link.pvlMask&(pvlOptCA|pvlOptCP|pvlOptCPP))
-                && (dbNameToAddr(plink->value.pv_link.pvname,&dbaddr)==0)) {
-                DBADDR  *pdbAddr;
-
-                plink->type = DB_LINK;
-                pdbAddr = dbCalloc(1,sizeof(struct dbAddr));
-                *pdbAddr = dbaddr; /*structure copy*/;
-                plink->value.pv_link.pvt = pdbAddr;
-            } else {/*It is a CA link*/
-
-                if (pdbFldDes->field_type == DBF_INLINK) {
-                    plink->value.pv_link.pvlMask |= pvlOptInpNative;
-                }
-                dbCaAddLink(plink);
-                if (pdbFldDes->field_type == DBF_FWDLINK) {
-                    char *pperiod =
-                        strrchr(plink->value.pv_link.pvname,'.');
-
-                    if (pperiod && strstr(pperiod,"PROC")) {
-                        plink->value.pv_link.pvlMask |= pvlOptFWD;
-                    } else {
-                        errlogPrintf("%s.FLNK is a Channel Access Link "
-                            " but does not link to a PROC field\n",
-                                precord->name);
-                    }
-                }
-            }
-        }
+        if (plink->type == PV_LINK)
+            dbInitLink(precord, plink, pdbFldDes->field_type);
     }
     pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
     if (pdevSup) {

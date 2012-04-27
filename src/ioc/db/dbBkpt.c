@@ -65,6 +65,7 @@
 #include "dbAddr.h"
 #include "dbAccessDefs.h"
 #include "dbScan.h"
+#include "dbLink.h"
 #include "dbLock.h"
 #include "recGbl.h"
 #include "dbTest.h"

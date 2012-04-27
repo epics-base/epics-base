@@ -127,8 +127,8 @@ int dbChannel_get(struct dbChannel *chan,
     int buffer_type, void *pbuffer, long no_elements, void *pfl)
 {
     long nRequest = no_elements;
-    int result = db_get_field_and_count(
-        paddr, buffer_type, pbuffer, &nRequest, pfl);
+    int result = dbChannel_get_count(
+        chan, buffer_type, pbuffer, &nRequest, pfl);
     if (nRequest < no_elements) {
         /* The database request returned fewer elements than requested, so
          * fill the remainder of the buffer with zeros.
@@ -145,10 +145,11 @@ int dbChannel_get(struct dbChannel *chan,
 /* Performs the work of the public db_get_field API, but also returns the number
  * of elements actually copied to the buffer.  The caller is responsible for
  * zeroing the remaining part of the buffer. */
-int epicsShareAPI db_get_field_and_count(
-    struct dbAddr *paddr, int buffer_type,
+int epicsShareAPI dbChannel_get_count(
+    struct dbChannel *chan, int buffer_type,
     void *pbuffer, long *nRequest, void *pfl)
 {
+    dbAddr *paddr=&chan->addr;
     long status;
     long options;
     long i;

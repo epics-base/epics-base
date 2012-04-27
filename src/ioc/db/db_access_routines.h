@@ -35,9 +35,8 @@ epicsShareFunc int dbChannel_get(struct dbChannel *chan,
     int buffer_type, void *pbuffer, long no_elements, void *pfl);
 epicsShareFunc int dbChannel_put(struct dbChannel *chan, int src_type,
     const void *psrc, long no_elements);
-epicsShareFunc int epicsShareAPI db_get_field_and_count(
-    struct dbAddr *paddr, int buffer_type,
-    void *pbuffer, long *nRequest, void *pfl);
+epicsShareFunc int epicsShareAPI dbChannel_get_count(struct dbChannel *chan,
+    int buffer_type, void *pbuffer, long *nRequest, void *pfl);
 
 
 #ifdef __cplusplus

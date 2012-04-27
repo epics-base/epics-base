@@ -77,7 +77,7 @@ parse_result p_double(chFilter *filter, double doubleVal)
 }
 parse_result p_string(chFilter *filter, const char *stringVal, size_t stringLen)
 {
-    testOk(e & e_string, "parse_string called, val = '%.*s'", stringLen,
+    testOk(e & e_string, "parse_string called, val = '%.*s'", (int) stringLen,
             stringVal);
     p_ret(e_string);
 }
@@ -89,7 +89,7 @@ parse_result p_start_map(chFilter *filter)
 }
 parse_result p_map_key(chFilter *filter, const char *key, size_t stringLen)
 {
-    testOk(e & e_map_key, "parse_map_key called, key = '%.*s'", stringLen, key);
+    testOk(e & e_map_key, "parse_map_key called, key = '%.*s'", (int) stringLen, key);
     p_ret(e_map_key);
 }
 parse_result p_end_map(chFilter *filter)
@@ -116,7 +116,7 @@ long c_open(chFilter *filter)
 }
 void c_report(chFilter *filter, const char *intro, int level)
 {
-    testOk(e & e_report, "%s  channel_report called, level = %d", level);
+    testOk(e & e_report, "channel_report called, level = %d", level);
 }
 void c_close(chFilter *filter)
 {

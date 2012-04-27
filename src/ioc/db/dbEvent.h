@@ -73,6 +73,8 @@ epicsShareFunc void epicsShareAPI db_post_single_event (dbEventSubscription es);
 epicsShareFunc void epicsShareAPI db_event_enable (dbEventSubscription es);
 epicsShareFunc void epicsShareAPI db_event_disable (dbEventSubscription es);
 
+epicsShareFunc struct db_field_log* epicsShareAPI db_create_event_log (struct evSubscrip *pevent);
+epicsShareFunc struct db_field_log* epicsShareAPI db_create_read_log (struct dbChannel *chan);
 epicsShareFunc void epicsShareAPI db_delete_field_log (struct db_field_log *pfl);
 
 #define DB_EVENT_OK 0

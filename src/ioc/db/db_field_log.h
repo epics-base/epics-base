@@ -56,6 +56,12 @@ typedef enum dbfl_type {
     dbfl_type_ref
 } dbfl_type;
 
+/* Context of db_field_log: event = subscription update, read = read reply */
+typedef enum dbfl_context {
+    dbfl_context_read = 0,
+    dbfl_context_event
+} dbfl_context;
+
 #define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
 
 struct dbfl_val {
@@ -69,7 +75,8 @@ struct dbfl_ref {
 };
 
 typedef struct db_field_log {
-    enum dbfl_type     type;  /* type (union) selector */
+    enum dbfl_type   type:2;  /* type (union) selector */
+    enum dbfl_context ctx:1;  /* context (operation type) */
     epicsTimeStamp     time;  /* Time stamp */
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */

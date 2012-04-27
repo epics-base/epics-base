@@ -626,13 +626,14 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
  *  NOTE: This assumes that the db scan lock is already applied
  *        (as it copies data from the record)
  */
-static db_field_log* db_create_event_log (struct evSubscrip *pevent)
+db_field_log* epicsShareAPI db_create_event_log (struct evSubscrip *pevent)
 {
     db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
     if (pLog) {
         struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
+        pLog->ctx = dbfl_context_event;
         if (pevent->useValque) {
             pLog->type = dbfl_type_val;
             pLog->stat = prec->stat;
@@ -651,6 +652,21 @@ static db_field_log* db_create_event_log (struct evSubscrip *pevent)
         } else {
             pLog->type = dbfl_type_rec;
         }
+    }
+    return pLog;
+}
+
+/*
+ *  DB_CREATE_READ_LOG()
+ *
+ */
+db_field_log* epicsShareAPI db_create_read_log (struct dbChannel *chan)
+{
+    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
+
+    if (pLog) {
+        pLog->ctx  = dbfl_context_read;
+        pLog->type = dbfl_type_rec;
     }
     return pLog;
 }

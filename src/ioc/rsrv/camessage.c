@@ -508,6 +508,7 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
     int status;
     int v41;
     int autosize;
+    int local_fl = 0;
     long item_count;
     ca_uint32_t payload_size;
     dbAddr *paddr=&dbch->addr;
@@ -565,8 +566,21 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
         return;
     }
 
+    /* If filters are involved in a read, create field log and run filters */
+    if (!pfl && (ellCount(&dbch->pre_chain) || ellCount(&dbch->post_chain))) {
+        pfl = db_create_read_log(dbch);
+        if (pfl) {
+            local_fl = 1;
+            pfl = dbChannelRunPreChain(dbch, pfl);
+            pfl = dbChannelRunPostChain(dbch, pfl);
+        }
+    }
+
     status = dbChannel_get_count ( dbch, pevext->msg.m_dataType,
                   pPayload, &item_count, pfl);
+
+    if (local_fl) db_delete_field_log(pfl);
+
     if ( status < 0 ) {
         /*
          * I cant wait to redesign this protocol from scratch!
@@ -647,6 +661,8 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
     void *pPayload;
     int status;
     int v41;
+    int local_fl = 0;
+    db_field_log *pfl = NULL;
 
     if ( ! pciu ) {
         logBadId ( pClient, mp, 0 );
@@ -689,8 +705,21 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
         return RSRV_OK;
     }
 
+    /* If filters are involved in a read, create field log and run filters */
+    if (ellCount(&pciu->dbch->pre_chain) || ellCount(&pciu->dbch->post_chain)) {
+        pfl = db_create_read_log(pciu->dbch);
+        if (pfl) {
+            local_fl = 1;
+            pfl = dbChannelRunPreChain(pciu->dbch, pfl);
+            pfl = dbChannelRunPostChain(pciu->dbch, pfl);
+        }
+    }
+
     status = dbChannel_get ( pciu->dbch, mp->m_dataType,
-                  pPayload, mp->m_count, 0 );
+                  pPayload, mp->m_count, pfl );
+
+    if (local_fl) db_delete_field_log(pfl);
+
     if ( status < 0 ) {
         send_err ( mp, ECA_GETFAIL, pClient, RECORD_NAME ( pciu->dbch ) );
         SEND_UNLOCK ( pClient );

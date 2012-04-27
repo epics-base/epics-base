@@ -56,6 +56,9 @@ static void freePvt(void *pvt)
 
 static int parse_ok(void *pvt)
 {
+    myStruct *my = (myStruct*) pvt;
+
+    if (my->incr <= 0) my->incr = 1;
     return 0;
 }
 

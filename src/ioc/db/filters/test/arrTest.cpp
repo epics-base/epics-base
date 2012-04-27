@@ -121,13 +121,25 @@ static void testHead (const char *title, const char *typ = "") {
     testDiag(line);
 }
 
+#define TEST1(Size, Offset, Incr, Text) \
+    testDiag("Offset: %d (%s)", Offset, Text); \
+    off = Offset; \
+    status = dbPutField(&offaddr, DBR_LONG, &off, 1); \
+    pfl = db_create_read_log(pch); \
+    testOk(pfl->type == dbfl_type_rec, "original field log has type rec"); \
+    pfl2 = dbChannelRunPostChain(pch, pfl); \
+    testOk(pfl2 == pfl, "call does not drop or replace field_log"); \
+    testOk(pfl->type == dbfl_type_ref, "filtered field log has type ref"); \
+    testOk(fl_equals_array(dbr_type, pfl2, ar##Size##_##Offset##_##Incr), "array data correct"); \
+    db_delete_field_log(pfl);
+
 static void check(short dbr_type) {
     dbChannel *pch;
     db_field_log *pfl, *pfl2;
     int status;
     dbAddr valaddr;
     dbAddr offaddr;
-    char *offname, *valname, *typname;
+    const char *offname = NULL, *valname = NULL, *typname = NULL;
     long ar[10] = {10,11,12,13,14,15,16,17,18,19};
     long *ar10_0_1 = ar;
     long ar10_4_1[10] = {14,15,16,17,18,19,10,11,12,13};
@@ -170,29 +182,42 @@ static void check(short dbr_type) {
     status = dbNameToAddr(valname, &valaddr);
     status = dbPutField(&valaddr, DBR_LONG, ar, 10);
 
-#define TEST1(Size, Offset, Incr, Text) \
-    testDiag("Offset: %d (%s)", Offset, Text); \
-    off = Offset; \
-    status = dbPutField(&offaddr, DBR_LONG, &off, 1); \
-    pfl = db_create_read_log(pch); \
-    testOk(pfl->type == dbfl_type_rec, "original field log has type rec"); \
-    pfl2 = dbChannelRunPostChain(pch, pfl); \
-    testOk(pfl2 == pfl, "call does not drop or replace field_log"); \
-    testOk(pfl->type == dbfl_type_ref, "filtered field log has type ref"); \
-    testOk(fl_equals_array(dbr_type, pfl2, ar##Size##_##Offset##_##Incr), "array data correct"); \
-    db_delete_field_log(pfl);
-
     /* Default: should not change anything */
 
     testHead("Ten %s elements from rec, increment 1, full size (default)", typname);
     createAndOpen(valname, "{\"arr\":{}}", "(default)", &pch, 1);
-
     testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
     testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
-
     TEST1(10, 0, 1, "no offset");
     TEST1(10, 4, 1, "wrapped");
+    dbChannelDelete(pch);
 
+    testHead("Ten %s elements from rec, increment 1, out-of-bound start parameter", typname);
+    createAndOpen(valname, "{\"arr\":{\"s\":-500}}", "out-of-bound start", &pch, 1);
+    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
+    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    TEST1(10, 4, 1, "wrapped");
+    dbChannelDelete(pch);
+
+    testHead("Ten %s elements from rec, increment 1, out-of-bound end parameter", typname);
+    createAndOpen(valname, "{\"arr\":{\"e\":500}}", "out-of-bound end", &pch, 1);
+    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
+    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    TEST1(10, 4, 1, "wrapped");
+    dbChannelDelete(pch);
+
+    testHead("Ten %s elements from rec, increment 1, zero increment parameter", typname);
+    createAndOpen(valname, "{\"arr\":{\"i\":0}}", "zero increment", &pch, 1);
+    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
+    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    TEST1(10, 4, 1, "wrapped");
+    dbChannelDelete(pch);
+
+    testHead("Ten %s elements from rec, increment 1, invalid increment parameter", typname);
+    createAndOpen(valname, "{\"arr\":{\"i\":-30}}", "invalid increment", &pch, 1);
+    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
+    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
 #define TEST5(Incr, Left, Right, Type) \
@@ -269,7 +294,7 @@ MAIN(arrTest)
     char arr[] = "arr";
     int status;
 
-    testPlan(1272);
+    testPlan(1404);
 
     /* Prepare the IOC */
 

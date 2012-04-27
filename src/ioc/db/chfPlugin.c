@@ -481,23 +481,23 @@ static long channel_open(chFilter *filter)
 }
 
 static void channel_register_pre(chFilter *filter,
-                                 chPostEventFunc **cb_out, void **arg_out)
+                                 chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
 
     if (p->pif->channelRegisterPre)
-        p->pif->channelRegisterPre(filter->chan, f->puser, cb_out, arg_out);
+        p->pif->channelRegisterPre(filter->chan, f->puser, cb_out, arg_out, probe);
 }
 
 static void channel_register_post(chFilter *filter,
-                                  chPostEventFunc **cb_out, void **arg_out)
+                                  chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
 
     if (p->pif->channelRegisterPost)
-        p->pif->channelRegisterPost(filter->chan, f->puser, cb_out, arg_out);
+        p->pif->channelRegisterPost(filter->chan, f->puser, cb_out, arg_out, probe);
 }
 
 static void channel_report(chFilter *filter, const char *intro, int level)

@@ -166,13 +166,13 @@ static long channel_open(dbChannel *chan, void *user)
 }
 
 static void channelRegisterPre(dbChannel *chan, void *user,
-                               chPostEventFunc **cb_out, void **arg_out)
+                               chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     myStruct *my = (myStruct*)user;
 }
 
 static void channelRegisterPost(dbChannel *chan, void *user,
-                                chPostEventFunc **cb_out, void **arg_out)
+                                chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     myStruct *my = (myStruct*)user;
 }

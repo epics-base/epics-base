@@ -52,12 +52,11 @@ typedef void (dbfl_freeFunc)(struct db_field_log *pfl);
 /* Types of db_field_log: rec = use record, val = val inside, ref = reference inside */
 typedef enum dbfl_type {
     dbfl_type_rec = 0,
-    dbfl_type_value,
-    dbfl_type_ref,
-    dbfl_type_probe
+    dbfl_type_val,
+    dbfl_type_ref
 } dbfl_type;
 
-#define dbflTypeStr(t) (t==dbfl_type_value?"val":t==dbfl_type_rec?"rec":t==dbfl_type_probe?"prb":"ref")
+#define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
 
 struct dbfl_val {
     union native_value field; /* Field value */

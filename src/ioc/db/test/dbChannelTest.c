@@ -116,11 +116,11 @@ long c_open(chFilter *filter)
     testOk(e & e_open, "channel_open called");
     return 0;
 }
-void c_reg_pre(chFilter *filter, chPostEventFunc **cb_out, void **arg_out)
+void c_reg_pre(chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     testOk(e & e_reg_pre, "channel_register_pre called");
 }
-void c_reg_post(chFilter *filter, chPostEventFunc **cb_out, void **arg_out)
+void c_reg_post(chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     testOk(e & e_reg_post, "channel_register_post called");
 }

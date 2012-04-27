@@ -97,8 +97,8 @@ typedef struct chFilterIf {
 
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
-    void (* channel_register_pre) (chFilter *filter, chPostEventFunc **cb_out, void **arg_out);
-    void (* channel_register_post)(chFilter *filter, chPostEventFunc **cb_out, void **arg_out);
+    void (* channel_register_pre) (chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe);
+    void (* channel_register_post)(chFilter *filter, chPostEventFunc **cb_out, void **arg_out, db_field_log *probe);
     void (* channel_report)(chFilter *filter, const char *intro, int level);
     /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);
@@ -114,7 +114,7 @@ typedef struct chFilterPlugin {
 
 /* A chFilter holds data for a single filter instance */
 struct chFilter {
-    ELLNODE node;
+    ELLNODE list_node;
     ELLNODE pre_node;
     ELLNODE post_node;
     dbChannel *chan;

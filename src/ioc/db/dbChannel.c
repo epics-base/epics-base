@@ -44,7 +44,7 @@ static void chf_value(parseContext *parser, parse_result *presult)
 
     parser->filter = NULL;
     if (filter->plug->fif->parse_end(filter) == parse_continue) {
-        ellAdd(&parser->chan->filters, &filter->node);
+        ellAdd(&parser->chan->filters, &filter->list_node);
     } else {
         free(filter); // FIXME: Use free-list
         *presult = parse_stop;
@@ -445,57 +445,57 @@ long dbChannelOpen(dbChannel *chan)
     chPostEventFunc *func;
     void *arg;
     long status;
+    ELLNODE *node;
 
-    filter = (chFilter *) ellFirst(&chan->filters);
-    while (filter) {
-        /*
-         * Call channel_open for all filters
-         */
+    for (node = ellFirst(&chan->filters); node; node = ellNext(node)) {
+        filter = CONTAINER(node, chFilter, list_node);
+         /* Call channel_open */
         status = 0;
         if (filter->plug->fif->channel_open)
             status = filter->plug->fif->channel_open(filter);
         if (status) return status;
-
-        /*
-         * Build up the pre- and post-event-queue filter chains
-         */
-        func = NULL;
-        arg = NULL;
-        if (filter->plug->fif->channel_register_post) {
-            filter->plug->fif->channel_register_post(filter, &func, &arg);
-            if (func) {
-                ellAdd(&chan->post_chain, &filter->post_node);
-                filter->post_func = func;
-                filter->post_arg  = arg;
-            }
-        }
-        func = NULL;
-        arg = NULL;
-        if (filter->plug->fif->channel_register_pre) {
-            filter->plug->fif->channel_register_pre(filter, &func, &arg);
-            if (func) {
-                ellAdd(&chan->pre_chain, &filter->pre_node);
-                filter->pre_func = func;
-                filter->pre_arg  = arg;
-            }
-        }
-
-        filter = (chFilter *) ellNext(&filter->node);
     }
 
     /* Set up type probe */
     db_field_log probe;
-    db_field_log *pfl;
-    probe.type = dbfl_type_probe;
+    db_field_log p;
     probe.field_type  = dbChannelFieldType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.element_size  = dbChannelElementSize(chan);
+    p = probe;
 
-    /* Call filter chains to determine data type/size changes */
-    pfl = dbChannelRunPreChain(chan, &probe);
-    if (pfl != &probe) return -1;
-    pfl = dbChannelRunPostChain(chan, &probe);
-    if (pfl != &probe) return -1;
+    /*
+     * Build up the pre- and post-event-queue filter chains
+     * Separate loops because the probe must reach the filters in the right order.
+     */
+    for (node = ellFirst(&chan->filters); node; node = ellNext(node)) {
+        filter = CONTAINER(node, chFilter, list_node);
+        func = NULL;
+        arg = NULL;
+        if (filter->plug->fif->channel_register_pre) {
+            filter->plug->fif->channel_register_pre(filter, &func, &arg, &p);
+            if (func) {
+                ellAdd(&chan->pre_chain, &filter->pre_node);
+                filter->pre_func = func;
+                filter->pre_arg  = arg;
+                probe = p;
+            }
+        }
+    }
+    for (node = ellFirst(&chan->filters); node; node = ellNext(node)) {
+        filter = CONTAINER(node, chFilter, list_node);
+        func = NULL;
+        arg = NULL;
+        if (filter->plug->fif->channel_register_post) {
+            filter->plug->fif->channel_register_post(filter, &func, &arg, &p);
+            if (func) {
+                ellAdd(&chan->post_chain, &filter->post_node);
+                filter->post_func = func;
+                filter->post_arg  = arg;
+                probe = p;
+            }
+        }
+    }
 
     /* Save probe results */
     chan->final_no_elements  = probe.no_elements;
@@ -634,7 +634,7 @@ void dbChannelFilterShow(dbChannel *chan, const char *intro, int level)
     chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
         filter->plug->fif->channel_report(filter, intro, level);
-        filter = (chFilter *) ellNext(&filter->node);
+        filter = (chFilter *) ellNext(&filter->list_node);
     }
 }
 

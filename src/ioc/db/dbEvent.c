@@ -634,7 +634,7 @@ static db_field_log* db_create_event_log (struct evSubscrip *pevent)
         struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
         if (pevent->useValque) {
-            pLog->type = dbfl_type_value;
+            pLog->type = dbfl_type_val;
             pLog->stat = prec->stat;
             pLog->sevr = prec->sevr;
             pLog->time = prec->time;

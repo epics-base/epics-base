@@ -141,6 +141,10 @@ typedef struct chfPluginIf {
      * to be called when a data update is sent from the database towards the
      * event queue.
      *
+     * The plugin may find out the type of data it will receive by looking at 'probe'.
+     * If the plugin will change the data type and/or size, it must update 'probe'
+     * accordingly.
+     *
      * @param chan dbChannel for which the connection is being made.
      * @param pvt Pointer to private structure.
      * @param cb_out Pointer to this plugin's post-event callback (NULL to bypass
@@ -149,7 +153,8 @@ typedef struct chfPluginIf {
      *        this plugin's post-event callback.
      */
     void (* channelRegisterPre) (dbChannel *chan, void *pvt,
-                                 chPostEventFunc **cb_out, void **arg_out);
+                                 chPostEventFunc **cb_out, void **arg_out,
+                                 db_field_log *probe);
 
     /** @brief Register callbacks for post-event-queue operation.
      *
@@ -163,9 +168,9 @@ typedef struct chfPluginIf {
      * to be called when a data update is sent from the event queue towards the
      * final user.
      *
-     * The plugin must call the supplied 'st_in' function (from within
-     * its own set-type callback) with 'arg_in' as first argument after changing
-     * the data type and/or array size of 'chan'.
+     * The plugin may find out the type of data it will receive by looking at 'probe'.
+     * If the plugin will change the data type and/or size, it must update 'probe'
+     * accordingly.
      *
      * @param chan dbChannel for which the connection is being made.
      * @param pvt Pointer to private structure.
@@ -175,7 +180,8 @@ typedef struct chfPluginIf {
      *        this plugin's post-event callback.
      */
     void (* channelRegisterPost) (dbChannel *chan, void *pvt,
-                                  chPostEventFunc **cb_out, void **arg_out);
+                                  chPostEventFunc **cb_out, void **arg_out,
+                                  db_field_log *probe);
 
     /** @brief Channel report request.
      *

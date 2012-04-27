@@ -404,7 +404,7 @@ dbEventSubscription epicsShareAPI db_add_event (
     epicsMutexUnlock ( evUser->lock );
 
     if ( ! ev_que ) {
-        freeListFree ( dbevEventBlockFreeList, pevent );
+        freeListFree ( dbevEventSubscriptionFreeList, pevent );
         return NULL;
     }
 

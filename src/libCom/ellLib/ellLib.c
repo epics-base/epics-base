@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* $Revision-Id$
  *
@@ -155,6 +155,21 @@ ELLNODE * ellGet (ELLLIST *pList)
 
     return pnode;
 }
+/****************************************************************************
+*
+* This function returns the last node in the specified list.  The node is
+* removed from the list.  If the list is empty, NULL will be returned.
+*
+*****************************************************************************/
+ELLNODE * ellPop (ELLLIST *pList)
+{
+   ELLNODE *pnode = pList->node.previous;
+
+   if (pnode != NULL)
+       ellDelete(pList, pnode);
+
+   return pnode;
+}
 /****************************************************************************
  *
  * This function inserts the specified node pNode after pPrev in the list
@@ -185,7 +200,7 @@ void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode)
 }
 /****************************************************************************
  *
- * This function returns the nodeNum'th element in pList.  If there is no 
+ * This function returns the nodeNum'th element in pList.  If there is no
  * nodeNum'th node in the list, NULL will be returned.
  *
  *****************************************************************************/

@@ -330,15 +330,64 @@ if (Func) { \
     if (result != parse_continue) goto failure; \
 }
 
-static void insertArrPlugin(dbChannel* chan, epicsInt32 start, epicsInt32 incr, epicsInt32 end) {
+static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppnext) {
+    epicsInt32 start = 0;
+    epicsInt32 end = -1;
+    epicsInt32 incr = 1;
+    epicsInt32 l;
+    char *pnext;
+    short exist;
     chFilter *filter;
     const chFilterPlugin *plug;
     parse_result result;
+    long status = 0;
+
+    /* If no number is present, strtol() returns 0 and sets pnext=pname,
+       else pnext points to the first char after the number */
+    pname++;
+    l = strtol(pname, &pnext, 0);
+    exist = pnext - pname;
+    if (exist) start = l;
+    pname = pnext;
+    if (*pname == ']' && exist) {
+        end = start;
+        goto insertplug;
+    }
+    if (*pname != ':') {
+        status = S_dbLib_fieldNotFound;
+        goto finish;
+    }
+    pname++;
+    l = strtol(pname, &pnext, 0);
+    exist = pnext - pname;
+    pname = pnext;
+    if (*pname == ']') {
+        if (exist) end = l;
+        goto insertplug;
+    }
+    if (exist) incr = l;
+    if (*pname != ':') {
+        status = S_dbLib_fieldNotFound;
+        goto finish;
+    }
+    pname++;
+    l = strtol(pname, &pnext, 0);
+    exist = pnext - pname;
+    if (exist) end = l;
+    pname = pnext;
+    if (*pname != ']') {
+        status = S_dbLib_fieldNotFound;
+        goto finish;
+    }
+
+    insertplug:
+    pname++;
+    *ppnext = pname;
 
     plug = dbFindFilter("arr", 3);
     if (!plug) {
-        printf("dbChannelCreate: Required channel filter 'arr' not found\n");
-        return;
+        status = S_dbLib_fieldNotFound;
+        goto finish;
     }
 
     /* FIXME: Use a free-list */
@@ -349,15 +398,15 @@ static void insertArrPlugin(dbChannel* chan, epicsInt32 start, epicsInt32 incr, 
 
     TRY(filter->plug->fif->parse_start, (filter));
     TRY(filter->plug->fif->parse_start_map, (filter));
-    if (start) {
+    if (start != 0) {
         TRY(filter->plug->fif->parse_map_key, (filter, "s", 1));
         TRY(filter->plug->fif->parse_integer, (filter, start));
     }
-    if (incr) {
+    if (incr != 1) {
         TRY(filter->plug->fif->parse_map_key, (filter, "i", 1));
         TRY(filter->plug->fif->parse_integer, (filter, incr));
     }
-    if (end) {
+    if (end != -1) {
         TRY(filter->plug->fif->parse_map_key, (filter, "e", 1));
         TRY(filter->plug->fif->parse_integer, (filter, end));
     }
@@ -365,10 +414,14 @@ static void insertArrPlugin(dbChannel* chan, epicsInt32 start, epicsInt32 incr, 
     TRY(filter->plug->fif->parse_end, (filter));
 
     ellAdd(&chan->filters, &filter->list_node);
-    return;
+    return 0;
 
     failure:
     free(filter); // FIXME: Use free-list
+    status = S_dbLib_fieldNotFound;
+
+    finish:
+    return status;
 }
 
 /* Stolen from dbAccess.c: */
@@ -450,51 +503,11 @@ dbChannel * dbChannelCreate(const char *name)
         }
 
         if (*pname == '[') {
-            /* Array subset modifier that calls the arr plugin */
-            epicsInt32 start = 0;
-            epicsInt32 end = 0;
-            epicsInt32 incr = 0;
-            char * pnext;
-            short exist;
-
-            pname++;
-            start = strtol(pname, &pnext, 0);
-            exist = pnext - pname;
-            pname = pnext;
-            if (*pname == ']' && exist) {
-                end = start + 1;
-                goto insertplug;
-            }
-            if (*pname != ':') {
-                status = S_dbLib_fieldNotFound;
-                goto finish;
-            }
-            pname++;
-            incr = strtol(pname, &pnext, 0);
-            pname = pnext;
-            if (*pname == ']') {
-                end = incr;
-                incr = 0;
-                goto insertplug;
-            }
-            if (*pname != ':') {
-                status = S_dbLib_fieldNotFound;
-                goto finish;
-            }
-            pname++;
-            end = strtol(pname, &pnext, 0);
-            pname = pnext;
-            if (*pname != ']') {
-                status = S_dbLib_fieldNotFound;
-                goto finish;
-            }
-            insertplug:
-            insertArrPlugin(chan, start, incr, end);
-
-            pname++;
+            status = parseArrayRange(chan, pname, &pname);
+            if (status) goto finish;
         }
 
-        /* JSON may follow a $ */
+        /* JSON may follow */
         if (*pname == '{') {
             status = chf_parse(chan, &pname);
             if (status) goto finish;

@@ -43,6 +43,7 @@ static void * allocPvt(void)
 {
     myStruct *my = (myStruct*) freeListCalloc(myStructFreeList);
     my->incr = 1;
+    my->end = -1;
     return (void *) my;
 }
 
@@ -75,11 +76,11 @@ static long wrapArrayIndices(long *start, const long increment, long *end, const
     if (*start < 0) *start = 0;
     if (*start > no_elements) *start = no_elements;
 
-    if (*end <= 0) *end = no_elements + *end;
-    if (*end <= 0) *end = 0;
-    if (*end > no_elements) *end = no_elements;
+    if (*end < 0) *end = no_elements + *end;
+    if (*end < 0) *end = 0;
+    if (*end >= no_elements) *end = no_elements - 1;
 
-    if (*end - *start >= 1) len = 1 + (*end - *start - 1 ) / increment;
+    if (*end - *start >= 0) len = 1 + (*end - *start) / increment;
     return len;
 }
 

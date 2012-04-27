@@ -44,13 +44,8 @@ static void * allocPvt(void)
 {
     my.start = 0;
     my.incr = 1;
-    my.end = 0;
+    my.end = -1;
     return &my;
-}
-
-static int parse_ok(void *user)
-{
-    return parse_continue;
 }
 
 static chfPluginIf myPif = {
@@ -58,7 +53,7 @@ static chfPluginIf myPif = {
     NULL, /* freePvt, */
 
     NULL, /* parse_error, */
-    parse_ok,
+    NULL, /* parse_ok, */
 
     NULL, /* channel_open, */
     NULL, /* channelRegisterPre, */
@@ -112,10 +107,10 @@ MAIN(chfPluginTest)
     TESTBAD("invalid char after 2nd arg [2:3x", "[2:3x");
     TESTBAD("invalid char after 3rd arg [2:3:4x", "[2:3:4x");
 
-    TESTGOOD("one element [index]",         "[2]",     2, 1, 3);
-    TESTGOOD("to end [s:]",                 "[2:]",    2, 1, 0);
-    TESTGOOD("to end [s::]",                "[2::]",   2, 1, 0);
-    TESTGOOD("to end with incr [s:i:]",     "[2:3:]",  2, 3, 0);
+    TESTGOOD("one element [index]",         "[2]",     2, 1, 2);
+    TESTGOOD("to end [s:]",                 "[2:]",    2, 1, -1);
+    TESTGOOD("to end [s::]",                "[2::]",   2, 1, -1);
+    TESTGOOD("to end with incr [s:i:]",     "[2:3:]",  2, 3, -1);
     TESTGOOD("from beginning [:e]",         "[:2]",    0, 1, 2);
     TESTGOOD("from beginning [::e]",        "[::2]",   0, 1, 2);
     TESTGOOD("from begin with incr [:i:e]", "[:3:2]",  0, 3, 2);

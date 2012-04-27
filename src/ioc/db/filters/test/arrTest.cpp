@@ -186,37 +186,47 @@ static void check(short dbr_type) {
 
     testHead("Ten %s elements from rec, increment 1, full size (default)", typname);
     createAndOpen(valname, "{\"arr\":{}}", "(default)", &pch, 1);
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
-    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    testOk(pch->final_type == valaddr.field_type,
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
+    testOk(pch->final_no_elements == valaddr.no_elements,
+           "final no_elements unchanged (%ld->%ld)", valaddr.no_elements, pch->final_no_elements);
     TEST1(10, 0, 1, "no offset");
     TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, out-of-bound start parameter", typname);
     createAndOpen(valname, "{\"arr\":{\"s\":-500}}", "out-of-bound start", &pch, 1);
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
-    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    testOk(pch->final_type == valaddr.field_type,
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
+    testOk(pch->final_no_elements == valaddr.no_elements,
+           "final no_elements unchanged (%ld->%ld)", valaddr.no_elements, pch->final_no_elements);
     TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, out-of-bound end parameter", typname);
     createAndOpen(valname, "{\"arr\":{\"e\":500}}", "out-of-bound end", &pch, 1);
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
-    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    testOk(pch->final_type == valaddr.field_type,
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
+    testOk(pch->final_no_elements == valaddr.no_elements,
+           "final no_elements unchanged (%ld->%ld)", valaddr.no_elements, pch->final_no_elements);
     TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, zero increment parameter", typname);
     createAndOpen(valname, "{\"arr\":{\"i\":0}}", "zero increment", &pch, 1);
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
-    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    testOk(pch->final_type == valaddr.field_type,
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
+    testOk(pch->final_no_elements == valaddr.no_elements,
+           "final no_elements unchanged (%ld->%ld)", valaddr.no_elements, pch->final_no_elements);
     TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
     testHead("Ten %s elements from rec, increment 1, invalid increment parameter", typname);
     createAndOpen(valname, "{\"arr\":{\"i\":-30}}", "invalid increment", &pch, 1);
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type);
-    testOk(pch->final_no_elements == valaddr.no_elements, "final no_elements unchanged (%ld)", valaddr.no_elements);
+    testOk(pch->final_type == valaddr.field_type,
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type);
+    testOk(pch->final_no_elements == valaddr.no_elements,
+           "final no_elements unchanged (%ld->%ld)", valaddr.no_elements, pch->final_no_elements);
     TEST1(10, 4, 1, "wrapped");
     dbChannelDelete(pch);
 
@@ -224,8 +234,10 @@ static void check(short dbr_type) {
     testHead("Five %s elements from rec, increment " #Incr ", " Type " addressing", typname); \
     createAndOpen(valname, "{\"arr\":{\"s\":" #Left ",\"e\":" #Right ",\"i\":" #Incr "}}", \
                   "(" #Left ":" #Incr ":" #Right ")", &pch, 1); \
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type); \
-    testOk(pch->final_no_elements == 4 / Incr + 1, "final no_elements correct (%d)", 4 / Incr + 1); \
+    testOk(pch->final_type == valaddr.field_type, \
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type); \
+    testOk(pch->final_no_elements == 4 / Incr + 1, \
+           "final no_elements correct (%ld->%ld)", valaddr.no_elements, pch->final_no_elements); \
     TEST1(5, 0, Incr, "no offset"); \
     TEST1(5, 3, Incr, "from upper block"); \
     TEST1(5, 5, Incr, "wrapped"); \
@@ -234,24 +246,24 @@ static void check(short dbr_type) {
 
     /* Contiguous block of 5 */
 
-    TEST5(1,  2,  7, "regular");
-    TEST5(1, -8,  7, "left side from-end");
-    TEST5(1,  2, -3, "right side from-end");
-    TEST5(1, -8, -3, "both sides from-end");
+    TEST5(1,  2,  6, "regular");
+    TEST5(1, -8,  6, "left side from-end");
+    TEST5(1,  2, -4, "right side from-end");
+    TEST5(1, -8, -4, "both sides from-end");
 
     /* 5 elements with increment 2 */
 
-    TEST5(2,  2,  7, "regular");
-    TEST5(2, -8,  7, "left side from-end");
-    TEST5(2,  2, -3, "right side from-end");
-    TEST5(2, -8, -3, "both sides from-end");
+    TEST5(2,  2,  6, "regular");
+    TEST5(2, -8,  6, "left side from-end");
+    TEST5(2,  2, -4, "right side from-end");
+    TEST5(2, -8, -4, "both sides from-end");
 
     /* 5 elements with increment 3 */
 
-    TEST5(3,  2,  7, "regular");
-    TEST5(3, -8,  7, "left side from-end");
-    TEST5(3,  2, -3, "right side from-end");
-    TEST5(3, -8, -3, "both sides from-end");
+    TEST5(3,  2,  6, "regular");
+    TEST5(3, -8,  6, "left side from-end");
+    TEST5(3,  2, -4, "right side from-end");
+    TEST5(3, -8, -4, "both sides from-end");
 
     /* From buffer (plugin chain) */
 
@@ -259,31 +271,33 @@ static void check(short dbr_type) {
     testHead("Five %s elements from buffer, increment " #Incr ", " Type " addressing", typname); \
     createAndOpen(valname, "{\"arr\":{},\"arr\":{\"s\":" #Left ",\"e\":" #Right ",\"i\":" #Incr "}}", \
                   "(" #Left ":" #Incr ":" #Right ")", &pch, 2); \
-    testOk(pch->final_type == valaddr.field_type, "final type unchanged (%d)", valaddr.field_type); \
-    testOk(pch->final_no_elements == 4 / Incr + 1, "final no_elements correct (%d)", 4 / Incr + 1); \
+    testOk(pch->final_type == valaddr.field_type, \
+           "final type unchanged (%d->%d)", valaddr.field_type, pch->final_type); \
+    testOk(pch->final_no_elements == 4 / Incr + 1, \
+           "final no_elements correct (%ld->%ld)", valaddr.no_elements, pch->final_no_elements); \
     TEST1(5, 0, Incr, "no offset"); \
     dbChannelDelete(pch);
 
     /* Contiguous block of 5 */
 
-    TEST5B(1,  2,  7, "regular");
-    TEST5B(1, -8,  7, "left side from-end");
-    TEST5B(1,  2, -3, "right side from-end");
-    TEST5B(1, -8, -3, "both sides from-end");
+    TEST5B(1,  2,  6, "regular");
+    TEST5B(1, -8,  6, "left side from-end");
+    TEST5B(1,  2, -4, "right side from-end");
+    TEST5B(1, -8, -4, "both sides from-end");
 
     /* 5 elements with increment 2 */
 
-    TEST5B(2,  2,  7, "regular");
-    TEST5B(2, -8,  7, "left side from-end");
-    TEST5B(2,  2, -3, "right side from-end");
-    TEST5B(2, -8, -3, "both sides from-end");
+    TEST5B(2,  2,  6, "regular");
+    TEST5B(2, -8,  6, "left side from-end");
+    TEST5B(2,  2, -4, "right side from-end");
+    TEST5B(2, -8, -4, "both sides from-end");
 
     /* 5 elements with increment 3 */
 
-    TEST5B(3,  2,  7, "regular");
-    TEST5B(3, -8,  7, "left side from-end");
-    TEST5B(3,  2, -3, "right side from-end");
-    TEST5B(3, -8, -3, "both sides from-end");
+    TEST5B(3,  2,  6, "regular");
+    TEST5B(3, -8,  6, "left side from-end");
+    TEST5B(3,  2, -4, "right side from-end");
+    TEST5B(3, -8, -4, "both sides from-end");
 }
 
 MAIN(arrTest)

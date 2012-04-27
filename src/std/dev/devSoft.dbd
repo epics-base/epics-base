@@ -44,3 +44,6 @@ device(longin,	INST_IO,devLiGeneralTime,"General Time")
 device(stringin,INST_IO,devSiGeneralTime,"General Time")
 
 device(stringout,INST_IO,devSoStdio,"stdio")
+
+device(bi, INST_IO, devBiDbState, "Db State")
+device(bo, INST_IO, devBoDbState, "Db State")

@@ -23,7 +23,6 @@
 
 #define S_db_notInit  (M_dbAccess|21) /*dbChannel not initialized*/
 
-
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     epicsUInt32 magic;
@@ -34,31 +33,44 @@ typedef struct dbChannel {
 typedef struct chFilter chFilter;
 
 /* Return values from chFilterIf->parse_* routines: */
-enum {parse_stop, parse_continue};
+typedef enum {
+    parse_stop, parse_continue
+} parse_result;
 
 /* These routines must be implemented by each filter plug-in */
 typedef struct chFilterIf {
-    /* Parsing event handlers */
-    int (* parse_start)(chFilter *filter);
+    /* Parsing event handlers: */
+    parse_result (* parse_start)(chFilter *filter);
+    /* If parse_start() returns parse_continue for a filter, one of
+     * parse_abort() or parse_end() will later be called for that same
+     * filter.
+     */
     void (* parse_abort)(chFilter *filter);
-    int (* parse_end)(chFilter *filter);
+    /* If parse_abort() is called it should release any memory allocated
+     * for this filter; no further parse_...() calls will be made;
+     */
+    parse_result (* parse_end)(chFilter *filter);
+    /* If parse_end() returns parse_stop it should have released any
+     * memory allocated for this filter; no further parse_...() calls will
+     * be made in this case.
+     */
 
-    int (* parse_null)(chFilter *filter);
-    int (* parse_boolean)(chFilter *filter, int boolVal);
-    int (* parse_integer)(chFilter *filter, long integerVal);
-    int (* parse_double)(chFilter *filter, double doubleVal);
-    int (* parse_string)(chFilter *filter, const char *stringVal,
+    parse_result (* parse_null)(chFilter *filter);
+    parse_result (* parse_boolean)(chFilter *filter, int boolVal);
+    parse_result (* parse_integer)(chFilter *filter, long integerVal);
+    parse_result (* parse_double)(chFilter *filter, double doubleVal);
+    parse_result (* parse_string)(chFilter *filter, const char *stringVal,
             size_t stringLen); /* NB: stringVal is not zero-terminated: */
 
-    int (* parse_start_map)(chFilter *filter);
-    int (* parse_map_key)(chFilter *filter, const char *key,
-            size_t stringLen);
-    int (* parse_end_map)(chFilter *filter);
+    parse_result (* parse_start_map)(chFilter *filter);
+    parse_result (* parse_map_key)(chFilter *filter, const char *key,
+            size_t stringLen); /* NB: key is not zero-terminated: */
+    parse_result (* parse_end_map)(chFilter *filter);
 
-    int (* parse_start_array)(chFilter *filter);
-    int (* parse_end_array)(chFilter *filter);
+    parse_result (* parse_start_array)(chFilter *filter);
+    parse_result (* parse_end_array)(chFilter *filter);
 
-    /* Channel operations */
+    /* Channel operations: */
     long (* channel_open)(chFilter *filter);
     void (* channel_report)(chFilter *filter, int level);
     /* FIXME: More routines here ... */

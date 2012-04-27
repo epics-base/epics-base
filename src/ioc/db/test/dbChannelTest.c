@@ -29,76 +29,84 @@
 #define e_report        0x00004000
 #define e_close         0x00008000
 
-unsigned int e;
+#define r_any (e_start | e_abort | e_end | \
+        e_null | e_boolean | e_integer | e_double | e_string | \
+        e_start_map | e_map_key | e_end_map | e_start_array | e_end_array)
+#define r_scalar (e_start | e_abort | e_end | \
+        e_null | e_boolean | e_integer | e_double | e_string)
 
-int p_start(chFilter *filter)
+unsigned int e, r;
+#define p_ret(x) return r & x ? parse_continue : parse_stop
+
+parse_result p_start(chFilter *filter)
 {
     testOk(e & e_start, "parse_start called");
-    return parse_continue;
+    p_ret(e_start);
 }
 
 void p_abort(chFilter *filter)
 {
     testOk(e & e_abort, "parse_abort called");
 }
-int p_end(chFilter *filter)
+
+parse_result p_end(chFilter *filter)
 {
     testOk(e & e_end, "parse_end called");
-    return parse_continue;
+    p_ret(e_end);
 }
 
-int p_null(chFilter *filter)
+parse_result p_null(chFilter *filter)
 {
     testOk(e & e_null, "parse_null called");
-    return parse_continue;
+    p_ret(e_null);
 }
-int p_boolean(chFilter *filter, int boolVal)
+parse_result p_boolean(chFilter *filter, int boolVal)
 {
     testOk(e & e_boolean, "parse_boolean called, val = %d", boolVal);
-    return parse_continue;
+    p_ret(e_boolean);
 }
-int p_integer(chFilter *filter, long integerVal)
+parse_result p_integer(chFilter *filter, long integerVal)
 {
     testOk(e & e_integer, "parse_integer called, val = %ld", integerVal);
-    return parse_continue;
+    p_ret(e_integer);
 }
-int p_double(chFilter *filter, double doubleVal)
+parse_result p_double(chFilter *filter, double doubleVal)
 {
     testOk(e & e_double, "parse_double called, val = %g", doubleVal);
-    return parse_continue;
+    p_ret(e_double);
 }
-int p_string(chFilter *filter, const char *stringVal, size_t stringLen)
+parse_result p_string(chFilter *filter, const char *stringVal, size_t stringLen)
 {
     testOk(e & e_string, "parse_string called, val = '%.*s'", stringLen,
             stringVal);
-    return parse_continue;
+    p_ret(e_string);
 }
 
-int p_start_map(chFilter *filter)
+parse_result p_start_map(chFilter *filter)
 {
     testOk(e & e_start_map, "parse_start_map called");
-    return parse_continue;
+    p_ret(e_start_map);
 }
-int p_map_key(chFilter *filter, const char *key, size_t stringLen)
+parse_result p_map_key(chFilter *filter, const char *key, size_t stringLen)
 {
     testOk(e & e_map_key, "parse_map_key called, key = '%.*s'", stringLen, key);
-    return parse_continue;
+    p_ret(e_map_key);
 }
-int p_end_map(chFilter *filter)
+parse_result p_end_map(chFilter *filter)
 {
     testOk(e & e_end_map, "parse_end_map called");
-    return parse_continue;
+    p_ret(e_end_map);
 }
 
-int p_start_array(chFilter *filter)
+parse_result p_start_array(chFilter *filter)
 {
     testOk(e & e_start_array, "parse_start_array called");
-    return parse_continue;
+    p_ret(e_start_array);
 }
-int p_end_array(chFilter *filter)
+parse_result p_end_array(chFilter *filter)
 {
     testOk(e & e_end_array, "parse_end_array called");
-    return parse_continue;
+    p_ret(e_end_array);
 }
 
 long c_open(chFilter *filter)
@@ -115,39 +123,49 @@ void c_close(chFilter *filter)
     testOk(e & e_close, "channel_close called");
 }
 
-chFilterIf anyIf =
+chFilterIf testIf =
     { p_start, p_abort, p_end, p_null, p_boolean, p_integer, p_double,
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
       c_open, c_report, c_close };
-
-chFilterIf scalarIf =
-    { p_start, p_abort, p_end, p_null, p_boolean, p_integer, p_double,
-      p_string, NULL, NULL, NULL, NULL, NULL, c_open,
-      c_report, c_close};
 
 MAIN(dbChannelTest)
 {
     dbChannel ch;
 
-    testPlan(45);
+    testPlan(59);
 
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
-    e = 0;
+    r = e = 0;
     testOk1(!dbChannelFind(&ch, "x.NAME$"));
-    testOk1(ch.addr.no_elements > 1);
+    testOk1(ch.addr.no_elements> 1);
 
     testOk1(!dbChannelFind(&ch, "x.{}"));
 
-    dbRegisterFilter("any", &anyIf);
+    testOk1(dbChannelFind(&ch, "y"));
+    testOk1(dbChannelFind(&ch, "x.{\"none\":null}"));
 
+    dbRegisterFilter("any", &testIf);
+
+    e = e_start;
+    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+
+    r = e_start;
+    e = e_start | e_null | e_abort;
+    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+
+    r = e_start | e_null;
+    e = e_start | e_null | e_end;
+    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+
+    r = r_any;
     e = e_start | e_null | e_end;
     testOk1(!dbChannelFind(&ch, "x.{\"any\":null}"));
     e = e_close;
     testOk1(!dbChannelClose(&ch));
 
-    dbRegisterFilter("scalar", &scalarIf);
+    dbRegisterFilter("scalar", &testIf);
 
     e = e_start | e_null | e_end;
     testOk1(!dbChannelFind(&ch, "x.{\"scalar\":null}"));
@@ -158,7 +176,8 @@ MAIN(dbChannelTest)
     e = e_close;
     testOk1(!dbChannelClose(&ch));
 
-    e = e_start | e_start_array | e_boolean | e_integer | e_end_array | e_end;
+    e = e_start | e_start_array | e_boolean | e_integer | e_end_array
+            | e_end;
     testOk1(!dbChannelFind(&ch, "x.{\"any\":[true,1]}"));
     e = e_close;
     testOk1(!dbChannelClose(&ch));
@@ -167,12 +186,13 @@ MAIN(dbChannelTest)
             | e_end;
     testOk1(!dbChannelFind(&ch, "x.{\"any\":{\"a\":2.7183,\"b\":\"c\"}}"));
 
-    e = e_close | e_start | e_abort;
+    r = r_scalar;
+    e = e_close | e_start | e_start_array | e_abort;
     testOk1(dbChannelFind(&ch, "x.{\"scalar\":[null]}"));
     e = 0;
     testOk1(!dbChannelClose(&ch));
 
-    e = e_start | e_abort;
+    e = e_start | e_start_map | e_abort;
     testOk1(dbChannelFind(&ch, "x.{\"scalar\":{}}"));
     e = 0;
     testOk1(!dbChannelClose(&ch));

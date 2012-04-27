@@ -21,7 +21,6 @@
 #include "special.h"
 #include "yajl_parse.h"
 
-
 typedef struct parseContext {
     dbChannel *chan;
     chFilter *filter;
@@ -34,31 +33,33 @@ typedef struct filterPlugin {
     const chFilterIf *fif;
 } filterPlugin;
 
+#define CALLIF(rtn) !rtn ? parse_stop : rtn
 
-#define CALLIF(rtn) rtn && rtn
-
-static void chf_value(parseContext *parser, int result)
+static void chf_value(parseContext *parser, parse_result *presult)
 {
     chFilter *filter = parser->filter;
 
-    if (!result || parser->depth > 0) return;
+    if (*presult == parse_stop || parser->depth > 0)
+        return;
 
     parser->filter = NULL;
-    if (filter->fif->parse_end(filter)) {
+    if (filter->fif->parse_end(filter) == parse_continue) {
         ellAdd(&parser->chan->filters, &filter->node);
+    } else {
+        free(filter); // FIXME: Use free-list
+        *presult = parse_stop;
     }
 }
-
 
 static int chf_null(void * ctx)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_null) (filter );
-    chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_null)(filter );
+    chf_value(parser, &result);
     return result;
 }
 
@@ -66,11 +67,11 @@ static int chf_boolean(void * ctx, int boolVal)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_boolean) (filter , boolVal);
-    chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_boolean)(filter , boolVal);
+    chf_value(parser, &result);
     return result;
 }
 
@@ -78,11 +79,11 @@ static int chf_integer(void * ctx, long integerVal)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_integer) (filter , integerVal);
-    chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_integer)(filter , integerVal);
+    chf_value(parser, &result);
     return result;
 }
 
@@ -90,11 +91,11 @@ static int chf_double(void * ctx, double doubleVal)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_double) (filter , doubleVal);
-    chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_double)(filter , doubleVal);
+    chf_value(parser, &result);
     return result;
 }
 
@@ -103,11 +104,11 @@ static int chf_string(void * ctx, const unsigned char * stringVal,
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_string) (filter , (const char *) stringVal, stringLen);
-    chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_string)(filter , (const char *) stringVal, stringLen);
+    chf_value(parser, &result);
     return result;
 }
 
@@ -118,11 +119,11 @@ static int chf_start_map(void * ctx)
 
     if (!filter) {
         assert(parser->depth == 0);
-        return 1; /* Opening '{' */
+        return parse_continue; /* Opening '{' */
     }
 
     ++parser->depth;
-    return CALLIF(filter->fif->parse_start_map) (filter );
+    return CALLIF(filter->fif->parse_start_map)(filter );
 }
 
 static int chf_map_key(void * ctx, const unsigned char * key,
@@ -131,10 +132,11 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
     const chFilterIf *fif;
-    int result;
+    parse_result result;
 
     if (filter) {
-        return CALLIF(filter->fif->parse_map_key) (filter , (const char *) key, stringLen);
+        assert(parser->depth > 0);
+        return CALLIF(filter->fif->parse_map_key)(filter , (const char *) key, stringLen);
     }
 
     assert(parser->depth == 0);
@@ -144,6 +146,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
         return parse_stop;
     }
 
+    /* FIXME: Use a free-list */
     filter = (chFilter *) callocMustSucceed(1, sizeof(*filter), "Creating dbChannel filter");
     filter->chan = parser->chan;
     filter->fif = fif;
@@ -153,7 +156,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     if (result == parse_continue) {
         parser->filter = filter;
     } else {
-        free(filter);
+        free(filter); // FIXME: Use free-list
     }
     return result;
 }
@@ -162,15 +165,19 @@ static int chf_end_map(void * ctx)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
+    parse_result result;
 
-    if (filter) {
-        int result = CALLIF(filter->fif->parse_end_map) (filter );
-
-        if (--parser->depth == 0) chf_value(parser, result);
-        return result;
+    if (!filter) {
+        assert(parser->depth == 0);
+        return parse_continue; /* Final closing '}' */
     }
-    assert(parser->depth == 0);
-    return parse_continue; /* Final closing '}' */
+
+    assert(parser->depth > 0);
+    result = CALLIF(filter->fif->parse_end_map)(filter );
+
+    --parser->depth;
+    chf_value(parser, &result);
+    return result;
 }
 
 static int chf_start_array(void * ctx)
@@ -180,18 +187,19 @@ static int chf_start_array(void * ctx)
 
     assert(filter);
     ++parser->depth;
-    return CALLIF(filter->fif->parse_start_array) (filter );
+    return CALLIF(filter->fif->parse_start_array)(filter );
 }
 
 static int chf_end_array(void * ctx)
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    int result;
+    parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_end_array) (filter );
-    if (--parser->depth == 0) chf_value(parser, result);
+    result = CALLIF(filter->fif->parse_end_array)(filter );
+    --parser->depth;
+    chf_value(parser, &result);
     return result;
 }
 
@@ -202,23 +210,23 @@ static const yajl_callbacks chf_callbacks =
 static const yajl_parser_config chf_config =
     { 0, 1 }; /* allowComments = NO , checkUTF8 = YES */
 
-
 static long chf_parse(dbChannel *chan, const char *json)
 {
     parseContext parser =
-        { chan, NULL, 0};
+        { chan, NULL, 0 };
     yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_config, NULL, &parser);
     size_t jlen = strlen(json);
     yajl_status ys;
     long status;
 
-    if (!yh) return S_db_noMemory;
+    if (!yh)
+        return S_db_noMemory;
 
     ys = yajl_parse(yh, (const unsigned char *) json, jlen);
     if (ys == yajl_status_insufficient_data)
         ys = yajl_parse_complete(yh);
 
-    switch(ys) {
+    switch (ys) {
     case yajl_status_ok:
         status = 0;
         break;
@@ -244,24 +252,24 @@ static long chf_parse(dbChannel *chan, const char *json)
 }
 
 /* Stolen from dbAccess.c: */
-static short mapDBFToDBR[DBF_NTYPES] = {
-    /* DBF_STRING   => */    DBR_STRING,
-    /* DBF_CHAR     => */    DBR_CHAR,
-    /* DBF_UCHAR    => */    DBR_UCHAR,
-    /* DBF_SHORT    => */    DBR_SHORT,
-    /* DBF_USHORT   => */    DBR_USHORT,
-    /* DBF_LONG     => */    DBR_LONG,
-    /* DBF_ULONG    => */    DBR_ULONG,
-    /* DBF_FLOAT    => */    DBR_FLOAT,
-    /* DBF_DOUBLE   => */    DBR_DOUBLE,
-    /* DBF_ENUM,    => */    DBR_ENUM,
-    /* DBF_MENU,    => */    DBR_ENUM,
-    /* DBF_DEVICE   => */    DBR_ENUM,
-    /* DBF_INLINK   => */    DBR_STRING,
-    /* DBF_OUTLINK  => */    DBR_STRING,
-    /* DBF_FWDLINK  => */    DBR_STRING,
-    /* DBF_NOACCESS => */    DBR_NOACCESS
-};
+static short mapDBFToDBR[DBF_NTYPES] =
+    {
+    /* DBF_STRING   => */DBR_STRING,
+    /* DBF_CHAR     => */DBR_CHAR,
+    /* DBF_UCHAR    => */DBR_UCHAR,
+    /* DBF_SHORT    => */DBR_SHORT,
+    /* DBF_USHORT   => */DBR_USHORT,
+    /* DBF_LONG     => */DBR_LONG,
+    /* DBF_ULONG    => */DBR_ULONG,
+    /* DBF_FLOAT    => */DBR_FLOAT,
+    /* DBF_DOUBLE   => */DBR_DOUBLE,
+    /* DBF_ENUM,    => */DBR_ENUM,
+    /* DBF_MENU,    => */DBR_ENUM,
+    /* DBF_DEVICE   => */DBR_ENUM,
+    /* DBF_INLINK   => */DBR_STRING,
+    /* DBF_OUTLINK  => */DBR_STRING,
+    /* DBF_FWDLINK  => */DBR_STRING,
+    /* DBF_NOACCESS => */DBR_NOACCESS };
 
 long dbChannelFind(dbChannel *chan, const char *pname)
 {
@@ -288,25 +296,28 @@ long dbChannelFind(dbChannel *chan, const char *pname)
 
     dbInitEntry(pdbbase, &dbEntry);
     status = dbFindRecordPart(&dbEntry, &pname);
-    if (status) goto finish;
+    if (status)
+        goto finish;
 
-    if (*pname == '.') ++pname;
+    if (*pname == '.')
+        ++pname;
     status = dbFindFieldPart(&dbEntry, &pname);
     if (status == S_dbLib_fieldNotFound)
         status = dbGetAttributePart(&dbEntry, &pname);
-    if (status) goto finish;
+    if (status)
+        goto finish;
 
-    paddr   = &chan->addr;
+    paddr = &chan->addr;
     pflddes = dbEntry.pflddes;
     dbfType = pflddes->field_type;
 
-    paddr->precord        = dbEntry.precnode->precord;
-    paddr->pfield         = dbEntry.pfield;
-    paddr->pfldDes        = pflddes;
-    paddr->no_elements    = 1;
-    paddr->field_type     = dbfType;
-    paddr->field_size     = pflddes->size;
-    paddr->special        = pflddes->special;
+    paddr->precord = dbEntry.precnode->precord;
+    paddr->pfield = dbEntry.pfield;
+    paddr->pfldDes = pflddes;
+    paddr->no_elements = 1;
+    paddr->field_type = dbfType;
+    paddr->field_size = pflddes->size;
+    paddr->special = pflddes->special;
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
     /* Handle field modifiers */
@@ -315,14 +326,14 @@ long dbChannelFind(dbChannel *chan, const char *pname)
         case '$':
             /* Some field types can be accessed as char arrays */
             if (dbfType == DBF_STRING) {
-                paddr->no_elements    = pflddes->size;
-                paddr->field_type     = DBF_CHAR;
-                paddr->field_size     = 1;
+                paddr->no_elements = pflddes->size;
+                paddr->field_type = DBF_CHAR;
+                paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
             } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
                 /* Clients see a char array, but keep original dbfType */
-                paddr->no_elements    = PVNAME_STRINGSZ + 12;
-                paddr->field_size     = 1;
+                paddr->no_elements = PVNAME_STRINGSZ + 12;
+                paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
             } else {
                 status = S_dbLib_fieldNotFound;
@@ -339,8 +350,7 @@ long dbChannelFind(dbChannel *chan, const char *pname)
         pname++;
     }
 
-finish:
-    dbFinishEntry(&dbEntry);
+    finish: dbFinishEntry(&dbEntry);
     return status;
 }
 
@@ -350,7 +360,8 @@ long dbChannelOpen(dbChannel *chan)
     chFilter *filter;
     long status = 0;
 
-    if (chan->magic != DBCHANNEL_MAGIC) return S_db_notInit;
+    if (chan->magic != DBCHANNEL_MAGIC)
+        return S_db_notInit;
 
     paddr = &chan->addr;
     if (paddr->special == SPC_DBADDR) {
@@ -359,14 +370,16 @@ long dbChannelOpen(dbChannel *chan)
         /* Let record type modify the dbAddr */
         if (prset && prset->cvt_dbaddr) {
             status = prset->cvt_dbaddr(paddr);
-            if (status) return status;
+            if (status)
+                return status;
         }
     }
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
         status = filter->fif->channel_open(filter);
-        if (status) break;
+        if (status)
+            break;
         filter = (chFilter *) ellNext(&filter->node);
     }
     return status;
@@ -376,7 +389,8 @@ void dbChannelReport(dbChannel *chan, int level)
 {
     chFilter *filter;
 
-    if (chan->magic != DBCHANNEL_MAGIC) return;
+    if (chan->magic != DBCHANNEL_MAGIC)
+        return;
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
@@ -389,7 +403,8 @@ long dbChannelClose(dbChannel *chan)
 {
     chFilter *filter;
 
-    if (chan->magic != DBCHANNEL_MAGIC) return S_db_notInit;
+    if (chan->magic != DBCHANNEL_MAGIC)
+        return S_db_notInit;
 
     while ((filter = (chFilter *) ellGet(&chan->filters))) {
         filter->fif->channel_close(filter);
@@ -412,16 +427,17 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif)
     }
 
     pgph = gphFind(pdbbase->pgpHash, name, &pdbbase->filterList);
-    if (pgph) return;
+    if (pgph)
+        return;
 
     pfilt = dbCalloc(1, sizeof(filterPlugin));
     pfilt->name = strdup(name);
-    pfilt->fif  = fif;
+    pfilt->fif = fif;
 
     ellAdd(&pdbbase->filterList, &pfilt->node);
     pgph = gphAdd(pdbbase->pgpHash, pfilt->name, &pdbbase->filterList);
     if (!pgph) {
-        free((void *)pfilt->name);
+        free((void *) pfilt->name);
         free(pfilt);
         printf("dbRegisterFilter: gphAdd failed\n");
         return;
@@ -431,10 +447,12 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif)
 
 const chFilterIf * dbFindFilter(const char *name, size_t len)
 {
-    GPHENTRY *pgph = gphFindParse(pdbbase->pgpHash, name, len, &pdbbase->filterList);
+    GPHENTRY *pgph = gphFindParse(pdbbase->pgpHash, name, len,
+            &pdbbase->filterList);
     filterPlugin *pfilt;
 
-    if (!pgph) return NULL;
-    pfilt = (filterPlugin *)pgph->userPvt;
+    if (!pgph)
+        return NULL;
+    pfilt = (filterPlugin *) pgph->userPvt;
     return pfilt->fif;
 }

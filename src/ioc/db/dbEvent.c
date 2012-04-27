@@ -74,7 +74,7 @@ struct event_que {
     /* lock writers to the ring buffer only */
     /* readers must never slow up writers */
     epicsMutexId            writelock;
-    db_field_log            valque[EVENTQUESIZE];
+    db_field_log            *valque[EVENTQUESIZE];
     struct evSubscrip       *evque[EVENTQUESIZE];
     struct event_que        *nextque;       /* in case que quota exceeded */
     struct event_user       *evUser;        /* event user parent struct */
@@ -123,6 +123,7 @@ struct event_user {
 static void *dbevEventUserFreeList;
 static void *dbevEventQueueFreeList;
 static void *dbevEventSubscriptionFreeList;
+static void *dbevFieldLogFreeList;
 
 static char *EVENT_PEND_NAME = "eventTask";
 
@@ -280,6 +281,10 @@ dbEventCtx epicsShareAPI db_init_events (void)
     if (!dbevEventSubscriptionFreeList) {
         freeListInitPvt(&dbevEventSubscriptionFreeList,
             sizeof(struct evSubscrip),256);
+    }
+    if (!dbevFieldLogFreeList) {
+        freeListInitPvt(&dbevFieldLogFreeList,
+            sizeof(struct db_field_log),2048);
     }
 
     evUser = (struct event_user *)
@@ -639,7 +644,7 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 static void db_post_single_event_private (struct evSubscrip *event)
 {
     struct event_que * const ev_que = event->ev_que;
-    db_field_log * pLog;
+    db_field_log        *pLog = NULL;
     int firstEventFlag;
     unsigned rngSpace;
 
@@ -691,7 +696,6 @@ static void db_post_single_event_private (struct evSubscrip *event)
      */
     else {
         assert ( ev_que->evque[ev_que->putix] == EVENTQEMPTY );
-        pLog = &ev_que->valque[ev_que->putix];
         ev_que->evque[ev_que->putix] = event;
         if (event->npend>0u) {
             ev_que->nDuplicates++;
@@ -710,23 +714,28 @@ static void db_post_single_event_private (struct evSubscrip *event)
         ev_que->putix = RNGINC ( ev_que->putix );
     }
 
-    if (pLog && event->useValque) {
-        struct dbChannel *chan = event->chan;
-        struct dbCommon *prec = dbChannelRecord(chan);
-        pLog->stat = prec->stat;
-        pLog->sevr = prec->sevr;
-        pLog->time = prec->time;
+    if (event->useValque) {
+        if (!pLog) {
+            pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
+        }
+        if (pLog) {
+            struct dbChannel *chan = event->chan;
+            struct dbCommon *prec = dbChannelRecord(chan);
+            pLog->stat = prec->stat;
+            pLog->sevr = prec->sevr;
+            pLog->time = prec->time;
 
-        /*
-         * use memcpy to avoid a bus error on
-         * union copy of char in the db at an odd
-         * address
-         */
-        memcpy(& pLog->field,
-                dbChannelField(chan),
-                dbChannelElementSize(chan));
+            /*
+             * use memcpy to avoid a bus error on
+             * union copy of char in the db at an odd
+             * address
+             */
+            memcpy(& pLog->field,
+                    dbChannelField(chan),
+                    dbChannelElementSize(chan));
 
-        event->pLastLog = pLog;
+            event->pLastLog = pLog;
+        }
     }
 
     UNLOCKEVQUE (ev_que)
@@ -821,7 +830,7 @@ static int event_read ( struct event_que *ev_que )
     }
 
     while ( ev_que->evque[ev_que->getix] != EVENTQEMPTY ) {
-        db_field_log fl = ev_que->valque[ev_que->getix];
+        pfl = ev_que->valque[ev_que->getix];
         struct evSubscrip *pevent = ev_que->evque[ev_que->getix];
 
         if ( pevent == &canceledEvent ) {
@@ -837,9 +846,7 @@ static int event_read ( struct event_que *ev_que )
          * communication. (for other types they get whatever happens
          * to be there upon wakeup)
          */
-        if ( pevent->useValque ) {
-            pfl = &fl;
-        } else {
+        if ( !pevent->useValque ) {
             pfl = NULL;
         }
 
@@ -894,6 +901,7 @@ static int event_read ( struct event_que *ev_que )
                 }
             }
         }
+        if (pfl) freeListFree (dbevFieldLogFreeList, pfl);
     }
 
     UNLOCKEVQUE (ev_que)

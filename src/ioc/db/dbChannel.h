@@ -96,6 +96,8 @@ epicsShareFunc short dbChannelExportType(dbChannel *chan);
 epicsShareFunc short dbChannelElementSize(dbChannel *chan);
 epicsShareFunc short dbChannelSpecial(dbChannel *chan);
 epicsShareFunc void * dbChannelField(dbChannel *chan);
+epicsShareFunc long dbChannelGet(dbChannel *chan, short type,
+        void *pbuffer, long *options, long *nRequest, void *pfl);
 epicsShareFunc long dbChannelGetField(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);
 epicsShareFunc long dbChannelPut(dbChannel *chan, short type,

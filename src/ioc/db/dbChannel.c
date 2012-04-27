@@ -14,6 +14,7 @@
 #include "dbBase.h"
 #include "link.h"
 #include "dbAccessDefs.h"
+#include "dbLock.h"
 #include "dbStaticLib.h"
 #include "epicsAssert.h"
 #include "errlog.h"
@@ -143,7 +144,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     assert(parser->depth == 0);
     fif = dbFindFilter((const char *) key, stringLen);
     if (!fif) {
-        printf("Channel filter '%.*s' not found\n", stringLen, key);
+        printf("dbChannelCreate: Channel filter '%.*s' not found\n", stringLen, key);
         return parse_stop;
     }
 
@@ -474,44 +475,60 @@ short dbChannelSpecial(dbChannel *chan)
 
 void * dbChannelField(dbChannel *chan)
 {
-    void * pdata = chan->addr.pfield;
-    /* FIXME: offer to filters?
-     * This is probably *not* a good idea, since there are several places
-     * (e.g. db_post_events()) where this pointer is compared with the
-     * address of a specific record field.
+    /* Channel filters do not get to interpose here since there are many
+     * places where the field pointer is compared with the address of a
+     * specific record field, so they can't modify the pointer value.
      */
-    return pdata;
+    return chan->addr.pfield;
 }
 
-long dbChannelGetField(dbChannel *chan, short type, void *pbuffer,
+/* Only use dbChannelGet() if the record is already locked. */
+long dbChannelGet(dbChannel *chan, short type, void *pbuffer,
         long *options, long *nRequest, void *pfl)
 {
-    /* FIXME: offer to filters? */
-    return dbGetField(&chan->addr, type, pbuffer, options, nRequest, pfl);
+    /* FIXME: Vector through chan->get() ? */
+    return dbGet(&chan->addr, type, pbuffer, options, nRequest, pfl);
 }
 
-/* Only use this when the record is already scan-locked */
+long dbChannelGetField(dbChannel *chan, short dbrType, void *pbuffer,
+        long *options, long *nRequest, void *pfl)
+{
+    dbCommon *precord = chan->addr.precord;
+    long status = 0;
+
+    dbScanLock(precord);
+    status = dbChannelGet(chan, dbrType, pbuffer, options, nRequest, pfl);
+    dbScanUnlock(precord);
+    return status;
+}
+
+/* Only use dbChannelPut() if the record is already locked.
+ * This routine doesn't work on link fields, ignores DISP, and
+ * doesn't trigger record processing on PROC or pp(TRUE).
+ */
 long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    /* FIXME: offer to filters? */
+    /* FIXME: Vector through chan->put() ? */
     return dbPut(&chan->addr, type, pbuffer, nRequest);
 }
 
 long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    /* FIXME: offer to filters? */
+    /* FIXME: Vector through chan->putField() ? */
     return dbPutField(&chan->addr, type, pbuffer, nRequest);
 }
 
 void dbChannelShow(dbChannel *chan, int level)
 {
-    printf("    dbChannel name: %s\n", chan->name);
-    /* FIXME: show field_type name */
-    printf("    field_type %d, %ld element(s), %d filter(s)\n",
-            chan->addr.field_type,
-            chan->addr.no_elements, ellCount(&chan->filters));
+    long elems = chan->addr.no_elements;
+    int count = ellCount(&chan->filters);
+    printf("dbChannel name: %s\n", chan->name);
+    /* FIXME: show field_type as text */
+    printf("    field_type = %d, %ld element%s, %d filter%s\n",
+            chan->addr.field_type, elems, elems == 1 ? "" : "s",
+            count, count == 1 ? "" : "s");
     if (level > 0)
         dbChannelFilterShow(chan, level - 1);
 }
@@ -529,7 +546,8 @@ void dbChannelDelete(dbChannel *chan)
 {
     chFilter *filter;
 
-    while ((filter = (chFilter *) ellGet(&chan->filters))) {
+    /* Close filters in reverse order */
+    while ((filter = (chFilter *) ellPop(&chan->filters))) {
         filter->fif->channel_close(filter);
         free(filter);
     }

@@ -351,7 +351,7 @@ static void channelRegisterPost(dbChannel *chan, void *user,
 static void channel_report(dbChannel *chan, void *user, const char *intro, int level)
 {
     testOk(user == puser1 || user == puser2, "channel_report: user pointer valid");
-    testOk(intro == R_INTRO, "channel_report: intro string correct");
+    testOk(!(strcmp(intro, R_INTRO)), "channel_report: intro string correct");
     testOk(level == R_LEVEL - 1, "channel_report: level correct");
     if (user == puser1) {
         testOk(e1 & e_report, "channel_report (1) called");
@@ -438,9 +438,10 @@ MAIN(chfPluginTest)
 {
     dbChannel *pch;
     db_field_log *pfl;
-    dbEventCtx evCtx = db_init_events();
 
-    testPlan(0);
+    testPlan(1783);
+
+    db_init_events();
 
     /* Enum to string conversion */
     testHead("Enum to string conversion");
@@ -714,16 +715,16 @@ MAIN(chfPluginTest)
 
     /* Plugins dropping updates */
     drop = 0;
-    CHAINTEST2("2 both (drop at 0)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 0 */
+    CHAINTEST2("2 both (drop at 0)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 0 */
                e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, 0, -1);
     drop = 1;
-    CHAINTEST2("2 both (drop at 1)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 1 */
+    CHAINTEST2("2 both (drop at 1)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 1 */
                e_reg_pre | e_reg_post, e_pre, e_reg_pre | e_reg_post, e_pre, -1);
     drop = 2;
-    CHAINTEST2("2 both (drop at 2)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 2 */
+    CHAINTEST2("2 both (drop at 2)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 2 */
                e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre, -1);
     drop = 3;
-    CHAINTEST2("2 both (drop at 3)", "{\"sloppy\":{},\"sloppy\":{}}",                          /* Two, both chains, drop at filter 3 */
+    CHAINTEST2("2 both (drop at 3)", "{\"sloppy\":{},\"sloppy\":{}}",                            /* Two, both chains, drop at filter 3 */
                e_reg_pre | e_reg_post, e_pre | e_post, e_reg_pre | e_reg_post, e_pre | e_post, -1);
     drop = -1;
 

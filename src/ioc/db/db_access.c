@@ -120,6 +120,12 @@ struct dbChannel * dbChannel_create(const char *pname)
     }
 
     chan->addr.dbr_field_type = dbDBRnewToDBRold[ftype];
+
+    if (dbChannelOpen(chan)) {
+        dbChannelDelete(chan);
+        return NULL;
+    }
+
     return chan;
 }
 

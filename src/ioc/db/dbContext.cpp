@@ -109,12 +109,6 @@ cacChannel & dbContext::createChannel ( // X aCC 361
         throw cacChannel::unsupportedByService ();
     }
 
-    long status = dbChannelOpen ( dbch );
-    if (status) {
-        dbChannelDelete ( dbch );
-        throw cacChannel::notConnected ();
-    }
-
     try {
         return * new ( this->dbChannelIOFreeList )
             dbChannelIO ( this->mutex, notifyIn, dbch, *this );

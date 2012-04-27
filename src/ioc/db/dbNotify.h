@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbNotify.h	*/
 
@@ -18,12 +18,12 @@
 #include "callback.h"
 
 #ifdef __cplusplus
-	/* for brain dead C++ compilers */
-	struct dbCommon;
-	struct putNotify;
     extern "C" {
 #endif
-
+
+struct dbCommon;
+struct putNotify;
+
 typedef struct ellCheckNode{
     ELLNODE node;
     int     isOnList;
@@ -40,7 +40,7 @@ typedef struct putNotify{
         ellCheckNode    restartNode;
         /*The following members MUST be set by user*/
         void            (*userCallback)(struct putNotify *);
-        struct dbAddr   *paddr;         /*dbAddr set by dbNameToAddr*/
+        struct dbChannel *chan;         /*dbChannel*/
         void            *pbuffer;       /*address of data*/
         long            nRequest;       /*number of elements to be written*/
         short           dbrType;        /*database request type*/
@@ -55,7 +55,7 @@ typedef struct putNotify{
 epicsShareFunc void epicsShareAPI dbPutNotify(putNotify *pputNotify);
 epicsShareFunc void epicsShareAPI dbNotifyCancel(putNotify *pputNotify);
 
-/*dbPutNotifyMapType convience function for old database access*/
+/*dbPutNotifyMapType convenience function for old database access*/
 epicsShareFunc int epicsShareAPI dbPutNotifyMapType (putNotify *ppn, short oldtype);
 
 /* dbPutNotifyInit called by iocInit */
@@ -70,9 +70,9 @@ epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 /* dbtpn is test routine for put notify */
 epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
 
-/* dbNotifyDump is an INVASIVE debug utility. Dont use this needlessly*/
+/* dbNotifyDump is an INVASIVE debug utility. Don't use this needlessly*/
 epicsShareFunc int epicsShareAPI dbNotifyDump(void);
-
+
 /* This module provides code to handle put notify. If a put causes a record to
  * be processed, then a user supplied callback is called when that record
  * and all records processed because of that record complete processing.
@@ -87,8 +87,8 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  *
  * After dbPutNotify is called it may not called for the same putNotify
  * until the putCallback is complete. The use can call dbNotifyCancel
- * to cancel the operation. 
- *    
+ * to cancel the operation.
+ *
  * The user callback is called when the operation is completed.
  *
  * The other global routines (dbNotifyAdd and dbNotifyCompletion) are called by:

@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbAccess.c */
 /* $Revision-Id$ */
@@ -15,7 +15,7 @@
  *      Date:            11-7-90
 */
 
-
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -89,7 +89,7 @@ static short mapDBFToDBR[DBF_NTYPES] = {
 
 /* The following is to handle SPC_AS */
 static SPC_ASCALLBACK spcAsCallback = 0;
-
+
 static void inherit_severity(const struct pv_link *ppv_link,
     dbCommon *pdest, epicsEnum16 stat, epicsEnum16 sevr)
 {
@@ -113,7 +113,7 @@ long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass)
     dbCommon 	*precord = paddr->precord;
     long	status=0;
     long	special=paddr->special;
-	
+
     prset = dbGetRset(paddr);
     if(special<100) { /*global processing*/
 	if((special==SPC_NOMOD) && (pass==0)) {
@@ -139,7 +139,7 @@ long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass)
     }
     return(0);
 }
-
+
 static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
@@ -199,7 +199,7 @@ choice_common:
 	*ppbuffer = ((char *)*ppbuffer) + dbr_enumStrs_size;
 	return;
 }
-
+
 static void get_graphics(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
@@ -239,7 +239,7 @@ static void get_graphics(DBADDR *paddr, char **ppbuffer,
 	}
 	return;
 }
-
+
 static void get_control(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
@@ -279,7 +279,7 @@ static void get_control(DBADDR *paddr, char **ppbuffer,
 	}
 	return;
 }
-
+
 static void get_alarm(DBADDR *paddr, char **ppbuffer,
 	struct rset *prset,long	*options)
 {
@@ -324,7 +324,7 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
 	}
 	return;
 }
-
+
 static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
@@ -352,7 +352,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	}
 	if( (*options) & DBR_UNITS ) {
 	    memset(pbuffer,'\0',dbr_units_size);
-	    if( prset && prset->get_units ){ 
+	    if( prset && prset->get_units ){
 		(*prset->get_units)(paddr, pbuffer);
 		pbuffer[DB_UNITS_SIZE-1] = '\0';
 	    } else {
@@ -363,7 +363,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	if( (*options) & DBR_PRECISION ) {
 	    memset(pbuffer, '\0', dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
-	    &&  prset && prset->get_precision ){ 
+	    &&  prset && prset->get_precision ){
 		(*prset->get_precision)(paddr,pbuffer);
 	    } else {
 		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
@@ -392,7 +392,7 @@ static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
 	    get_alarm(paddr, &pbuffer, prset, options);
 	*poriginal = pbuffer;
 }
-
+
 struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr)
 {
 	struct dbFldDes *pfldDes = paddr->pfldDes;
@@ -462,7 +462,7 @@ int epicsShareAPI dbIsLinkConnected(const struct link *plink)
 int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
 {
     switch(plink->type) {
-	case DB_LINK: 
+	case DB_LINK:
 	{
 	    DBADDR *paddr = (DBADDR *)plink->value.pv_link.pvt;
 
@@ -473,7 +473,7 @@ int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
     }
     return(-1);
 }
-
+
 /*
  *  Process a record if its scan field is passive.
  *     Will notify if processing is complete by callback.
@@ -482,7 +482,7 @@ int epicsShareAPI dbGetLinkDBFtype(const struct link *plink)
 long epicsShareAPI dbScanPassive(dbCommon *pfrom, dbCommon *pto)
 {
     long status;
-	
+
     /* if not passive just return success */
     if(pto->scan != 0) return(0);
 
@@ -524,7 +524,7 @@ void epicsShareAPI dbScanFwdLink(struct link *plink)
     dbCaPutLink(plink,DBR_SHORT,&fwdLinkValue,1);
     return;
 }
-
+
 /*
  *   Process the record.
  *     1.  Check for breakpoints.
@@ -551,7 +551,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
          *   to dbProcess() corresponding changes will have to
          *   be made in the breakpoint handler.
          */
- 
+
         /* see if there are any stopped records or breakpoints */
         if (lset_stack_count != 0) {
            /*
@@ -566,7 +566,7 @@ long epicsShareAPI dbProcess(dbCommon *precord)
             if (dbBkpt(precord))
                 goto all_done;
         }
-    
+
 	/* check for trace processing*/
 	if (tpro) {
                 if(*ptrace==0) {
@@ -650,7 +650,7 @@ all_done:
 	if(callNotifyCompletion && precord->ppn) dbNotifyCompletion(precord);
 	return(status);
 }
-
+
 /*
  *  Fill out a database structure (*paddr) for
  *    a record given by the name "pname."
@@ -726,59 +726,7 @@ finish:
     dbFinishEntry(&dbEntry);
     return status;
 }
-
-/* JOH 10-19-04 */
-static char * dbCopyInNameComponentOfPV (
-    char * pBuf, unsigned bufLen, const char * pComponent )
-{
-    unsigned compLen = strlen ( pComponent );
-    if ( compLen < bufLen ) {
-        strcpy ( pBuf, pComponent );
-        return pBuf + compLen;
-    }
-    else {
-        unsigned reducedSize = bufLen - 1u;
-        strncpy ( pBuf, pComponent, reducedSize );
-        pBuf[reducedSize] = '\0';
-        return pBuf + reducedSize;
-    }
-}
-/*
- *  Copies PV name into pBuf of length bufLen
- *
- *    Returns the number of bytes written to pBuf
- *      not including null termination.
- *  JOH 10-19-04 
- */
-unsigned dbNameOfPV (
-    const dbAddr * paddr, char * pBuf, unsigned bufLen )
-{
-    dbFldDes * pfldDes = paddr->pfldDes;
-    char * pBufTmp = pBuf;
-    if ( bufLen == 0u ) {
-        return 0u;
-    }
-    pBufTmp = dbCopyInNameComponentOfPV ( 
-        pBufTmp, bufLen, paddr->precord->name );
-    pBufTmp = dbCopyInNameComponentOfPV ( 
-        pBufTmp, bufLen - ( pBufTmp - pBuf ), "." );
-    pBufTmp = dbCopyInNameComponentOfPV ( 
-        pBufTmp, bufLen - ( pBufTmp - pBuf ), pfldDes->name );
-    return pBufTmp - pBuf;
-}
-/*
- *    Returns the number of bytes in the PV name
- *      not including null termination.
- *    JOH 10-19-04 
- */
-unsigned dbNameSizeOfPV ( const dbAddr * paddr )
-{
-    unsigned recNameLen = strlen ( paddr->precord->name );
-    dbFldDes * pfldDes = paddr->pfldDes;
-    unsigned fieldNameLen = strlen ( pfldDes->name );
-    return recNameLen + fieldNameLen + 1;
-}
-
+
 long epicsShareAPI dbValueSize(short dbr_type)
 {
     /* sizes for value associated with each DBR request type */
@@ -826,7 +774,7 @@ int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
     return dbReadDatabase(&pdbbase, file, 0, subs);
 }
 
-
+
 long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
     void *pbuffer, long *poptions, long *pnRequest)
 {
@@ -902,7 +850,7 @@ long epicsShareAPI dbGetLinkValue(struct link *plink, short dbrType,
     }
     return status;
 }
-
+
 long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
     const void *pbuffer, long nRequest)
 {
@@ -941,7 +889,7 @@ long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
     }
     return status;
 }
-
+
 long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
@@ -995,7 +943,7 @@ done:
     dbScanUnlock(precord);
     return status;
 }
-
+
 long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
@@ -1105,7 +1053,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     }
     return status;
 }
-
+
 devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
     return (devSup *)ellNth(&prdes->devList, dtyp+1);
 }
@@ -1366,7 +1314,7 @@ long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
     dbScanUnlock(precord);
     return status;
 }
-
+
 static long putAckt(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
     long no_elements, long offset)
 {
@@ -1395,7 +1343,7 @@ static long putAcks(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
     }
     return 0;
 }
-
+
 long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
     const void *pbuffer, long nRequest)
 {
@@ -1471,7 +1419,7 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
 
     return status;
 }
-
+
 /* various utility routines */
 long epicsShareAPI dbGetControlLimits(
     const struct link *plink,double *low, double *high)
@@ -1516,7 +1464,7 @@ long epicsShareAPI dbGetGraphicLimits(
     *high = buffer.upper_disp_limit;
     return(0);
 }
-
+
 long epicsShareAPI dbGetAlarmLimits(const struct link *plink,
 	double *lolo, double *low, double *high, double *hihi)
 {
@@ -1561,7 +1509,7 @@ long epicsShareAPI dbGetPrecision(const struct link *plink,short *precision)
     *precision = buffer.precision.dp;
     return(0);
 }
-
+
 long epicsShareAPI dbGetUnits(
     const struct link *plink,char *units,int unitsSize)
 {

@@ -5,12 +5,12 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* share/epicsH/dbAsLib.h	*/
 /*  $Revision-Id$ */
 /* Author:  Marty Kraimer Date:    02-23-94*/
-
+
 #ifndef INCdbAsLibh
 #define INCdbAsLibh
 
@@ -22,6 +22,8 @@ typedef struct {
     long	status;
 } ASDBCALLBACK;
 
+struct dbChannel;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,8 +32,8 @@ epicsShareFunc int epicsShareAPI asSetFilename(const char *acf);
 epicsShareFunc int epicsShareAPI asSetSubstitutions(const char *substitutions);
 epicsShareFunc int epicsShareAPI asInit(void);
 epicsShareFunc int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback);
-epicsShareFunc int epicsShareAPI asDbGetAsl( void *paddr);
-epicsShareFunc void *  epicsShareAPI asDbGetMemberPvt( void *paddr);
+epicsShareFunc int epicsShareAPI asDbGetAsl(struct dbChannel *chan);
+epicsShareFunc void * epicsShareAPI asDbGetMemberPvt(struct dbChannel *chan);
 epicsShareFunc int epicsShareAPI asdbdump(void);
 epicsShareFunc int epicsShareAPI asdbdumpFP(FILE *fp);
 epicsShareFunc int epicsShareAPI aspuag(const char *uagname);

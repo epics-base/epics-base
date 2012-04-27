@@ -6,7 +6,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    02-11-94*/
 
@@ -27,7 +27,7 @@
 #include "caeventmask.h"
 #include "callback.h"
 #include "dbStaticLib.h"
-#include "dbAddr.h"
+#include "dbChannel.h"
 #include "dbAccess.h"
 #include "db_field_log.h"
 #include "dbEvent.h"
@@ -40,7 +40,7 @@ static char	*pacf=NULL;
 static char	*psubstitutions=NULL;
 static epicsThreadId	asInitTheadId=0;
 static int	firstTime = TRUE;
-
+
 static long asDbAddRecords(void)
 {
     DBENTRY	dbentry;
@@ -98,7 +98,7 @@ int epicsShareAPI asSetSubstitutions(const char *substitutions)
     }
     return(0);
 }
-
+
 static void asSpcAsCallback(struct dbCommon *precord)
 {
     asChangeGroup(&precord->asp, precord->asg);
@@ -109,7 +109,7 @@ static void asInitCommonOnce(void *arg)
     int *firstTime = (int *)arg;
     *firstTime = FALSE;
 }
-    
+
 static long asInitCommon(void)
 {
     long	status;
@@ -117,7 +117,7 @@ static long asInitCommon(void)
     int		wasFirstTime = firstTime;
     static epicsThreadOnceId asInitCommonOnceFlag = EPICS_THREAD_ONCE_INIT;
 
-    
+
     epicsThreadOnce(&asInitCommonOnceFlag,asInitCommonOnce,(void *)&firstTime);
     if(wasFirstTime) {
         if(!pacf) return(0); /*access security will NEVER be turned on*/
@@ -148,7 +148,7 @@ int epicsShareAPI asInit(void)
 {
     return(asInitCommon());
 }
-
+
 static void wdCallback(void *arg)
 {
     ASDBCALLBACK *pcallback = (ASDBCALLBACK *)arg;
@@ -195,23 +195,15 @@ int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback)
     }
     return(0);
 }
-
-int epicsShareAPI asDbGetAsl(void *paddress)
-{
-    DBADDR	*paddr = paddress;
-    dbFldDes	*pflddes;
 
-    pflddes = paddr->pfldDes;
-    return((int)pflddes->as_level);
+int epicsShareAPI asDbGetAsl(struct dbChannel *chan)
+{
+    return dbChannelFldDes(chan)->as_level;
 }
 
-void * epicsShareAPI asDbGetMemberPvt(void *paddress)
+void * epicsShareAPI asDbGetMemberPvt(struct dbChannel *chan)
 {
-    DBADDR	*paddr = paddress;
-    dbCommon	*precord;
-
-    precord = paddr->precord;
-    return((void *)precord->asp);
+    return dbChannelRecord(chan)->asp;
 }
 
 static void astacCallback(ASCLIENTPVT clientPvt,asClientStatus status)
@@ -259,7 +251,7 @@ int epicsShareAPI astac(const char *pname,const char *user,const char *location)
     }
     return(0);
 }
-
+
 static void myMemberCallback(ASMEMBERPVT memPvt,FILE *fp)
 {
     dbCommon	*precord;

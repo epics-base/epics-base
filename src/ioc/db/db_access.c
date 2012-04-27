@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* $Revision-Id$ */
@@ -24,6 +24,7 @@
 
 #include "epicsConvert.h"
 #include "dbDefs.h"
+#include "dbChannel.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -41,10 +42,6 @@
 #include "dbAccessDefs.h"
 #include "dbEvent.h"
 #include "db_access_routines.h"
-
-#ifndef NULL
-#define NULL 0
-#endif
 
 
 #define oldDBF_STRING      0
@@ -108,46 +105,26 @@ extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 typedef char DBSTRING[MAX_STRING_SIZE];
 
 
-#ifndef MAX_STRING_SIZE
-#define MAX_STRING_SIZE	40
-#endif
-
-/*
- * DB_PROCESS
- *
- * process database records
- */
-void db_process(struct dbAddr *paddr)
+struct dbChannel * dbChannel_create(const char *pname)
 {
-    long status = dbProcess(paddr->precord);
-
-    if (status) errMessage(status, "db_process failed");
-}
-
-/*
- * DB_NAME_TO_ADDR
- */
-int epicsShareAPI db_name_to_addr(const char *pname, struct dbAddr *paddr)
-{
-    long status;
+    dbChannel *chan = dbChannelCreate(pname);
     short ftype;
 
-    status = dbNameToAddr(pname, paddr);
-    if (!status) {
-        ftype = paddr->dbr_field_type;
-        if (INVALID_DB_REQ(ftype)) {
-            errlogPrintf("%s dbNameToAddr failed\n", pname);
-            return -2;
-        }
-        paddr->dbr_field_type = dbDBRnewToDBRold[ftype];
-        return 0;
+    if (!chan)
+        return NULL;
+
+    ftype = chan->addr.dbr_field_type;
+    if (INVALID_DB_REQ(ftype)) {
+        dbChannelDelete(chan);
+        return NULL;
     }
-    else
-        return -1;
+
+    chan->addr.dbr_field_type = dbDBRnewToDBRold[ftype];
+    return chan;
 }
-
-int epicsShareAPI db_get_field(struct dbAddr *paddr,
-    int buffer_type, void *pbuffer, int no_elements, void *pfl)
+
+int dbChannel_get(struct dbChannel *chan,
+    int buffer_type, void *pbuffer, long no_elements, void *pfl)
 {
     long nRequest = no_elements;
     int result = db_get_field_and_count(
@@ -825,15 +802,14 @@ int epicsShareAPI db_get_field_and_count(
     if (status) return -1;
     return 0;
 }
-
-/* DB_PUT_FIELD put a field and convert it to the desired type */
 
-int epicsShareAPI db_put_field(struct dbAddr *paddr, int src_type,
-    const void *psrc, int no_elements)
+int dbChannel_put(struct dbChannel *chan, int src_type,
+    const void *psrc, long no_elements)
 {
+    dbAddr *paddr = & chan->addr;
     long status;
 
-    switch(src_type) {
+    switch (src_type) {
     case(oldDBR_STRING):
         status = dbPutField(paddr, DBR_STRING, psrc, no_elements);
         break;
@@ -993,7 +969,7 @@ int epicsShareAPI db_put_field(struct dbAddr *paddr, int src_type,
     return 0;
 }
 
-
+
 epicsShareFunc int epicsShareAPI dbPutNotifyMapType (putNotify *ppn, short oldtype)
 {
     switch(oldtype) {

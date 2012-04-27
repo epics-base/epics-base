@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -44,65 +44,64 @@
 
 class dbChannelIO : public cacChannel, public dbContextPrivateListOfIO {
 public:
-    dbChannelIO ( 
-        epicsMutex &, cacChannelNotify &, 
-        const dbAddr &, dbContext & );
-    void destructor ( 
+    dbChannelIO (
+        epicsMutex &, cacChannelNotify &,
+        dbChannel *, dbContext & );
+    void destructor (
         epicsGuard < epicsMutex > & );
     void destroy (
         epicsGuard < epicsMutex > & mutualExclusionGuard );
-    void callReadNotify ( 
-        epicsGuard < epicsMutex > &, 
-        unsigned type, unsigned long count, 
+    void callReadNotify (
+        epicsGuard < epicsMutex > &,
+        unsigned type, unsigned long count,
         cacReadNotify & notify );
-    void callStateNotify ( 
-        unsigned type, unsigned long count, 
+    void callStateNotify (
+        unsigned type, unsigned long count,
         const struct db_field_log * pfl, cacStateNotify & notify );
-    void show ( 
+    void show (
         epicsGuard < epicsMutex > &, unsigned level ) const;
     unsigned getName (
         epicsGuard < epicsMutex > &,
         char * pBuf, unsigned bufLen ) const throw ();
     const char * pName (
         epicsGuard < epicsMutex > & ) const throw ();
-    void * operator new ( size_t size, 
+    void * operator new ( size_t size,
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & );
-    epicsPlacementDeleteOperator (( void *, 
+    epicsPlacementDeleteOperator (( void *,
         tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & ))
 protected:
     ~dbChannelIO ();
 private:
     epicsMutex & mutex;
     dbContext & serviceIO;
-    dbAddr addr;
-    epics_auto_ptr < char, eapt_array > pNameStr;
+    dbChannel * dbch;
 
     void initiateConnect (
         epicsGuard < epicsMutex > & );
-    unsigned requestMessageBytesPending ( 
+    unsigned requestMessageBytesPending (
         epicsGuard < epicsMutex > & );
-    void flush ( 
+    void flush (
         epicsGuard < epicsMutex > & );
-    ioStatus read ( 
+    ioStatus read (
         epicsGuard < epicsMutex > &,
-        unsigned type, unsigned long count, 
+        unsigned type, unsigned long count,
         cacReadNotify &, ioid * );
-    void write ( 
+    void write (
         epicsGuard < epicsMutex > &,
-        unsigned type, unsigned long count, 
+        unsigned type, unsigned long count,
         const void * pvalue );
-    ioStatus write ( 
+    ioStatus write (
         epicsGuard < epicsMutex > &,
-        unsigned type, unsigned long count, 
+        unsigned type, unsigned long count,
         const void * pvalue, cacWriteNotify &, ioid * );
-    void subscribe ( 
+    void subscribe (
         epicsGuard < epicsMutex > &,
-        unsigned type, unsigned long count, 
+        unsigned type, unsigned long count,
         unsigned mask, cacStateNotify &notify, ioid * );
-    void ioCancel ( 
+    void ioCancel (
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
-    void ioShow ( 
+    void ioShow (
         epicsGuard < epicsMutex > &,
         const ioid &, unsigned level ) const;
     short nativeType (
@@ -115,18 +114,18 @@ private:
     void operator delete ( void * );
 };
 
-inline void dbChannelIO::callReadNotify ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count, 
+inline void dbChannelIO::callReadNotify (
+    epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count,
     cacReadNotify & notify )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.callReadNotify ( guard, this->addr, type, count, notify );
+    this->serviceIO.callReadNotify ( guard, this->dbch, type, count, notify );
 }
 
-inline void dbChannelIO::callStateNotify ( unsigned type, unsigned long count, 
+inline void dbChannelIO::callStateNotify ( unsigned type, unsigned long count,
         const struct db_field_log *pfl, cacStateNotify &notify )
 {
-    this->serviceIO.callStateNotify ( this->addr, type, count, pfl, notify );
+    this->serviceIO.callStateNotify ( this->dbch, type, count, pfl, notify );
 }
 
 

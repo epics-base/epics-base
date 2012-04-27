@@ -6,3 +6,6 @@
 ./include
 ./templates
 **/O.*
+./.cproject
+./.project
+./.settings

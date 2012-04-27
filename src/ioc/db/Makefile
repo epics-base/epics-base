@@ -32,6 +32,7 @@ INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
 INC += dbIocRegister.h
+INC += chfPlugin.h
 INC += db_access_routines.h
 INC += db_convert.h
 
@@ -78,4 +79,5 @@ dbCore_SRCS += dbPutNotifyBlocker.cpp
 dbCore_SRCS += dbContextReadNotifyCache.cpp
 dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
+dbCore_SRCS += chfPlugin.c
 

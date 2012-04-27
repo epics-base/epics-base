@@ -25,6 +25,11 @@ dbChannelTest_SRCS += dbChannelTest.c
 OBJS_IOC_vxWorks += dbChannelTest
 TESTS += dbChannelTest
 
+TESTPROD_HOST += chfPluginTest
+chfPluginTest_SRCS += chfPluginTest.c
+OBJS_IOC_vxWorks += chfPluginTest
+TESTS += chfPluginTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

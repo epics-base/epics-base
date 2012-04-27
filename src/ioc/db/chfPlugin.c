@@ -1,0 +1,613 @@
+/*************************************************************************\
+* Copyright (c) 2010 Brookhaven National Laboratory.
+* Copyright (c) 2010 Helmholtz-Zentrum Berlin
+*     fuer Materialien und Energie GmbH.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+
+/* Based on the linkoptions utility by Michael Davidsaver (BNL) */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <limits.h>
+#include <math.h>
+
+#include <dbDefs.h>
+#include <dbStaticLib.h>
+#include <epicsTypes.h>
+#include <epicsString.h>
+#include <errlog.h>
+
+#define epicsExportSharedSymbols
+#include "chfPlugin.h"
+
+#ifndef HUGE_VALF
+#  define HUGE_VALF HUGE_VAL
+#endif
+#ifndef HUGE_VALL
+#  define HUGE_VALL (-(HUGE_VAL))
+#endif
+
+/*
+ * Data for a chfPlugin
+ */
+typedef struct chfPluginCtx {
+    const chfPluginArgDef *opts;
+    size_t nopts;
+    const chfPluginIf *pif;
+} chfPluginCtx;
+
+/*
+ * Parser state data for a chfFilter (chfPlugin instance)
+ */
+typedef struct chfFilterCtx {
+    const chfPluginCtx *plugin;
+    epicsUInt32 *found;
+    void *puser;
+    epicsInt16 nextParam;
+} chfFilterCtx;
+
+/* Data types we get from the parser */
+typedef enum chfPluginType {
+    chfPluginTypeBool,
+    chfPluginTypeInt,
+    chfPluginTypeDouble,
+    chfPluginTypeString
+} chfPluginType;
+
+/*
+ * Convert the (long) integer value 'val' to the type named in 'opt->optType'
+ * and store the result at 'user + opt->offset'.
+ */
+static
+int
+store_integer_value(const chfPluginArgDef *opt, void *user, long val)
+{
+    long *ival;
+    int *eval;
+    const chfPluginEnumType *emap;
+    double *dval;
+    char *sval;
+    char buff[22];              /* 2^64 = 1.8e+19, so 20 digits plus sign max */
+
+/*    printf("Got an integer for %s (type %d): %ld\n", opt->name, opt->optType, val); */
+
+    if (!opt->convert && opt->optType != chfPluginArgInt32) {
+        return -1;
+    }
+
+    switch (opt->optType) {
+    case chfPluginArgInt32:
+        ival = (long*) ((char*)user + opt->offset);
+        *ival = val;
+        break;
+    case chfPluginArgBoolean:
+        eval = (int*) ((char*)user + opt->offset);
+        *eval = !!val;
+        break;
+    case chfPluginArgDouble:
+        dval = (double*) ((char*)user + opt->offset);
+        *dval = (double) val;
+        break;
+    case chfPluginArgString:
+        sval = ((char*)user + opt->offset);
+        sprintf(buff, "%ld", val);
+        if (strlen(buff) > opt->size-1) {
+            return -1;
+        }
+        strncpy(sval, buff, opt->size-1);
+        sval[opt->size-1]='\0';
+        break;
+    case chfPluginArgEnum:
+        eval = (int*) ((char*)user + opt->offset);
+        for (emap = opt->enums; emap && emap->name; emap++) {
+            if (val == emap->value) {
+                *eval = val;
+                break;
+            }
+        }
+        if (!emap || !emap->name) {
+            return -1;
+        }
+        break;
+    case chfPluginArgInvalid:
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Convert the (int) boolean value 'val' to the type named in 'opt->optType'
+ * and store the result at 'user + opt->offset'.
+ */
+static
+int
+store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
+{
+    long *ival;
+    int *eval;
+    double *dval;
+    char *sval;
+
+/*    printf("Got a boolean for %s (type %d): %d\n", opt->name, opt->optType, val); */
+
+    if (!opt->convert && opt->optType != chfPluginArgBoolean) {
+        return -1;
+    }
+
+    switch (opt->optType) {
+    case chfPluginArgInt32:
+        ival = (long*) ((char*)user + opt->offset);
+        *ival = val;
+        break;
+    case chfPluginArgBoolean:
+        eval = (int*) ((char*)user + opt->offset);
+        *eval = val;
+        break;
+    case chfPluginArgDouble:
+        dval = (double*) ((char*)user + opt->offset);
+        *dval = val ? 1. : 0.;
+        break;
+    case chfPluginArgString:
+        sval = ((char*)user + opt->offset);
+        if ((val ? 4 : 5) > opt->size-1) {
+            return -1;
+        }
+        strncpy(sval, (val ? "true" : "false"), opt->size-1);
+        sval[opt->size-1]='\0';
+        break;
+    case chfPluginArgEnum:
+    case chfPluginArgInvalid:
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Convert the double value 'val' to the type named in 'opt->optType'
+ * and store the result at 'user + opt->offset'.
+ */
+static
+int
+store_double_value(const chfPluginArgDef *opt, void *user, double val)
+{
+    long *ival;
+    int *eval;
+    double *dval;
+    char *sval;
+    int i;
+
+/*
+    printf("Got a double for %s (type %d, convert: %s): %g\n",
+           opt->name, opt->optType, opt->convert?"yes":"no", val);
+*/
+    if (!opt->convert && opt->optType != chfPluginArgDouble) {
+        return -1;
+    }
+
+    switch (opt->optType) {
+    case chfPluginArgInt32:
+        if (val < LONG_MIN || val > LONG_MAX) {
+            return -1;
+        }
+        ival = (long*) ((char*)user + opt->offset);
+        *ival = (long) val;
+        break;
+    case chfPluginArgBoolean:
+        eval = (int*) ((char*)user + opt->offset);
+        *eval = (val != 0.) ? 1 : 0;
+        break;
+    case chfPluginArgDouble:
+        dval = (double*) ((char*)user + opt->offset);
+        *dval = val;
+        break;
+    case chfPluginArgString:
+        sval = ((char*)user + opt->offset);
+        if (opt->size <= 8) {       /* Play it safe: 3 exp + 2 sign + 'e' + '.' */
+            return -1;
+        }
+        i = snprintf(sval, opt->size, "%.*g", opt->size - 7, val);
+        if (i >= opt->size) {
+            return -1;
+        }
+        break;
+    case chfPluginArgEnum:
+    case chfPluginArgInvalid:
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * Convert the (char*) string value 'val' to the type named in 'opt->optType'
+ * and store the result at 'user + opt->offset'.
+ */
+static
+int
+store_string_value(const chfPluginArgDef *opt, void *user, const char *val, size_t len)
+{
+    long *ival;
+    int *eval;
+    const chfPluginEnumType *emap;
+    double *dval;
+    char *sval;
+    char *end;
+    int i;
+
+/*    printf("Got a string for %s (type %d): %.*s\n", opt->name, opt->optType, len, val); */
+
+    if (!opt->convert && opt->optType != chfPluginArgString && opt->optType != chfPluginArgEnum) {
+        return -1;
+    }
+
+    switch (opt->optType) {
+    case chfPluginArgInt32:
+        ival = (long*) ((char*)user + opt->offset);
+        *ival = strtol(val, &end, 0);
+        /* test for the myriad error conditions which strtol may use */
+        if (*ival == LONG_MAX || *ival == LONG_MIN || end == val) {
+            return -1;
+        }
+        break;
+    case chfPluginArgBoolean:
+        eval = (int*) ((char*)user + opt->offset);
+        if (strncasecmp(val, "true", len) == 0) {
+            *eval = 1;
+        } else if (strncasecmp(val, "false", len) == 0) {
+            *eval = 0;
+        } else {
+            i = strtol(val, &end, 0);
+            if (i > INT_MAX || i < INT_MIN || end == val) {
+                return -1;
+            }
+            *eval = !!i;
+        }
+        break;
+    case chfPluginArgDouble:
+        dval = (double*) ((char*)user + opt->offset);
+        *dval = strtod(val, &end);
+        /* Indicates errors in the same manner as strtol */
+        if (*dval==HUGE_VALF||*dval==HUGE_VALL||end==val )
+        {
+            return -1;
+        }
+        break;
+    case chfPluginArgString:
+        i = opt->size-1 < len ? opt->size-1 : len;
+        sval = ((char*)user + opt->offset);
+        strncpy(sval, val, i);
+        sval[i] = '\0';
+        break;
+    case chfPluginArgEnum:
+        eval = (int*) ((char*)user + opt->offset);
+        for (emap = opt->enums; emap && emap->name; emap++) {
+            if (strncmp(emap->name, val, len) == 0) {
+                *eval = emap->value;
+                break;
+            }
+        }
+        if( !emap || !emap->name ) {
+            return -1;
+        }
+        break;
+    case chfPluginArgInvalid:
+        return -1;
+    }
+    return 0;
+}
+
+static void freeInstanceData(chfFilterCtx *fctx)
+{
+    free(fctx->found);  /* FIXME: Use a free-list */
+    free(fctx);         /* FIXME: Use a free-list */
+}
+
+/*
+ * chFilterIf callbacks
+ */
+
+/* First entry point when a new filter instance is created.
+ * All per-instance allocations happen here.
+ */
+static parse_result parse_start(chFilter *filter)
+{
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx;
+
+    /* Filter context */
+    /* FIXME: Use a free-list */
+    fctx = calloc(1, sizeof(chfFilterCtx));
+    if (!fctx) {
+        fprintf(stderr,"chfFilterCtx calloc failed\n");
+        goto errfctx;
+    }
+    fctx->nextParam = -1;
+
+    /* Bit array to find missing required keys */
+    /* FIXME: Use a free-list */
+    fctx->found = calloc( (pctx->nopts/32)+1, sizeof(epicsUInt32) );
+    if (!fctx->found) {
+        fprintf(stderr,"chfConfigParseStart: bit array calloc failed\n");
+        goto errbitarray;
+    }
+
+    /* Call the plugin to allocate its structure, it returns NULL on error */
+    if (pctx->pif->allocPvt) {
+        if ((fctx->puser = pctx->pif->allocPvt()) == NULL)
+            goto errplugin;
+    }
+
+    filter->puser = (void*) fctx;
+
+    return parse_continue;
+
+    errplugin:
+    free(fctx->found);  /* FIXME: Use a free-list */
+    errbitarray:
+    free(fctx);         /* FIXME: Use a free-list */
+    errfctx:
+    return parse_stop;
+}
+
+static void parse_abort(chFilter *filter) {
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx = (chfFilterCtx*) filter->puser;
+
+    /* Call the plugin to tell it we're aborting */
+    if (pctx->pif->parse_error) pctx->pif->parse_error();
+    if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
+    freeInstanceData(fctx);
+}
+
+static parse_result parse_end(chFilter *filter)
+{
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx = (chfFilterCtx*) filter->puser;
+    const chfPluginArgDef *cur;
+    int i;
+
+    for(cur = pctx->opts, i = 0; cur && cur->name; cur++, i++) {
+        if ( !(fctx->found[i/32] & (1 << (i%32))) && cur->required ) {
+            if (pctx->pif->parse_error) pctx->pif->parse_error();
+            if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
+            freeInstanceData(fctx);
+            return parse_stop;
+        }
+    }
+
+    /* Call the plugin to tell it we're done */
+    if (pctx->pif->parse_ok) {
+        if (pctx->pif->parse_ok(fctx->puser)) {
+            if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
+            freeInstanceData(fctx);
+            return parse_stop;
+        }
+    }
+
+    return parse_continue;
+}
+
+static parse_result parse_boolean(chFilter *filter, int boolVal)
+{
+    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
+    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+
+    if (ctx->nextParam < 0 || store_boolean_value(&opts[ctx->nextParam], ctx->puser, boolVal)) {
+        return parse_stop;
+    } else {
+        return parse_continue;
+    }
+}
+
+static parse_result parse_integer(chFilter *filter, long integerVal)
+{
+    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
+    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+
+    if (ctx->nextParam < 0 || store_integer_value(&opts[ctx->nextParam], ctx->puser, integerVal)) {
+        return parse_stop;
+    } else {
+        return parse_continue;
+    }
+}
+
+static parse_result parse_double(chFilter *filter, double doubleVal)
+{
+    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
+    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+
+    if (ctx->nextParam < 0 || store_double_value(&opts[ctx->nextParam], ctx->puser, doubleVal)) {
+        return parse_stop;
+    } else {
+        return parse_continue;
+    }
+}
+
+static parse_result parse_string(chFilter *filter, const char *stringVal, size_t stringLen)
+{
+    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
+    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+
+    if (ctx->nextParam < 0 || store_string_value(&opts[ctx->nextParam], ctx->puser, stringVal, stringLen)) {
+        return parse_stop;
+    } else {
+        return parse_continue;
+    }
+}
+
+static parse_result parse_start_map(chFilter *filter)
+{
+    return parse_continue;
+}
+
+static parse_result parse_map_key(chFilter *filter, const char *key, size_t stringLen)
+{
+    const chfPluginArgDef *cur;
+    const chfPluginArgDef *opts = ((chfPluginCtx*)filter->plug->puser)->opts;
+    chfFilterCtx *ctx =  (chfFilterCtx*)filter->puser;
+    int i;
+
+    ctx->nextParam = -1;
+    for(cur = opts, i = 0; cur && cur->name; cur++, i++) {
+        if (strncmp(key, cur->name, stringLen) == 0) {
+            ctx->nextParam = i;
+            break;
+        }
+    }
+    if (ctx->nextParam == -1) {
+        return parse_stop;
+    }
+
+    ctx->found[i/32] |= 1<<(i%32);
+    return parse_continue;
+}
+
+static parse_result parse_end_map(chFilter *filter)
+{
+    return parse_continue;
+}
+
+static long channel_open(chFilter *filter)
+{
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+
+    if (pctx->pif->channel_open) return pctx->pif->channel_open(filter->chan, fctx->puser);
+    else return 0;
+}
+
+static void channel_report(chFilter *filter, const char *intro, int level)
+{
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+
+    if (pctx->pif->channel_report) pctx->pif->channel_report(filter->chan, fctx->puser, intro, level);
+}
+
+static void channel_close(chFilter *filter)
+{
+    chfPluginCtx *pctx = (chfPluginCtx*) filter->plug->puser;
+    chfFilterCtx *fctx =  (chfFilterCtx*) filter->puser;
+
+    if (pctx->pif->channel_close) pctx->pif->channel_close(filter->chan, fctx->puser);
+    if (pctx->pif->freePvt) pctx->pif->freePvt(fctx->puser);
+    free(fctx->found);  /* FIXME: Use a free-list */
+    free(fctx);         /* FIXME: Use a free-list */
+}
+
+/*
+ * chFilterIf for the wrapper
+ * we just support a simple one-level map, and no arrays
+ */
+static chFilterIf wrapper_fif = {
+    parse_start,
+    parse_abort,
+    parse_end,
+
+    NULL, /* parse_null, */
+    parse_boolean,
+    parse_integer,
+    parse_double,
+    parse_string,
+
+    parse_start_map,
+    parse_map_key,
+    parse_end_map,
+
+    NULL, /* parse_start_array, */
+    NULL, /* parse_end_array, */
+
+    channel_open,
+    channel_report,
+    channel_close
+};
+
+epicsShareFunc
+const char*
+epicsShareAPI
+chfPluginEnumString(const chfPluginEnumType *emap, int i, const char* def)
+{
+    for(; emap && emap->name; emap++) {
+        if ( i == emap->value ) {
+            return emap->name;
+        }
+    }
+    return def;
+}
+
+epicsShareFunc
+int
+epicsShareAPI
+chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts)
+{
+    chfPluginCtx *pctx;
+    size_t i;
+    const chfPluginArgDef *cur;
+
+    /* Check and count options */
+    for (i = 0, cur = opts; cur && cur->name; i++, cur++) {
+        switch(cur->optType) {
+        case chfPluginArgInt32:
+            if (cur->size < sizeof(long)) {
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for long (%lu)\n",
+                             key, cur->size, cur->name,
+                             (unsigned long) sizeof(long));
+                return -1;
+            }
+            break;
+        case chfPluginArgBoolean:
+            if (cur->size < 1) {
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for boolean (%lu)\n",
+                             key, cur->size, cur->name,
+                             (unsigned long) sizeof(char));
+                return -1;
+            }
+            break;
+        case chfPluginArgDouble:
+            if (cur->size < sizeof(double)) {
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for double (%lu)\n",
+                             key, cur->size, cur->name,
+                             (unsigned long) sizeof(double));
+                return -1;
+            }
+            break;
+        case chfPluginArgString:
+            if (cur->size < sizeof(char*)) {
+                  /* Catch if someone has given us a char* instead of a char[]
+                   * Also means that char buffers must be >=4.
+                   */
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for string (>= %lu)\n",
+                             key, cur->size, cur->name,
+                             (unsigned long) sizeof(char*));
+                return -1;
+            }
+            break;
+        case chfPluginArgEnum:
+            if (cur->size < sizeof(int)) {
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for enum (%lu)\n",
+                             key, cur->size, cur->name,
+                             (unsigned long) sizeof(int));
+                return -1;
+            }
+            break;
+        case chfPluginArgInvalid:
+            errlogPrintf("Plugin %s: storage type for %s is not defined\n",
+                         key, cur->name);
+            return -1;
+            break;
+        }
+    }
+
+    /* Plugin context */
+    pctx = dbCalloc(1, sizeof(chfPluginCtx));
+    pctx->pif = pif;
+    pctx->opts = opts;
+    pctx->nopts = i;
+
+    dbRegisterFilter(key, &wrapper_fif, pctx);
+
+    return 0;
+}

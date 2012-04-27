@@ -114,9 +114,9 @@ long c_open(chFilter *filter)
     testOk(e & e_open, "channel_open called");
     return 0;
 }
-void c_report(chFilter *filter, int level)
+void c_report(chFilter *filter, const char *intro, int level)
 {
-    testOk(e & e_report, "channel_report called, level = %d", level);
+    testOk(e & e_report, "%s  channel_report called, level = %d", level);
 }
 void c_close(chFilter *filter)
 {
@@ -196,7 +196,7 @@ MAIN(dbChannelTest)
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelShow(pch, 1);
+    dbChannelShow(pch, "# ", 1);
 
     e = e_close;
     if (pch) dbChannelDelete(pch);

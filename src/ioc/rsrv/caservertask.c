@@ -349,22 +349,18 @@ static unsigned countChanListBytes (
 }
 
 static void showChanList (
-    struct client * client, ELLLIST * pList )
+    struct client * client, unsigned level, ELLLIST * pList )
 {
-    unsigned i = 0u;
     struct channel_in_use * pciu;
     epicsMutexMustLock ( client->chanListLock );
     pciu = (struct channel_in_use *) pList->node.next;
     while ( pciu ){
-        printf( "\t%s (%d%c%c)",
-            dbChannelName(pciu->dbch),
+        dbChannelShow ( pciu->dbch, "\t", level );
+        printf( "\t  # on eventq=%d, access=%c%c\n",
             ellCount ( &pciu->eventq ),
             asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
             rsrvCheckPut ( pciu ) ? 'w': '-' );
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
-        if(  ++i % 3u == 0u ) {
-            printf ( "\n" );
-        }
     }
     epicsMutexUnlock ( client->chanListLock );
 }
@@ -432,9 +428,8 @@ static void log_one_client (struct client *client, unsigned level)
         bytes_reserved += countChanListBytes (
                         client, & client->chanPendingUpdateARList );
         printf( "\t%d bytes allocated\n", bytes_reserved);
-        showChanList ( client, & client->chanList );
-        showChanList ( client, & client->chanPendingUpdateARList );
-        printf("\n");
+        showChanList ( client, level - 2u, & client->chanList );
+        showChanList ( client, level - 2u, & client->chanPendingUpdateARList );
     }
 
     if ( level >= 3u ) {

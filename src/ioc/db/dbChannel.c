@@ -520,24 +520,24 @@ long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
     return dbPutField(&chan->addr, type, pbuffer, nRequest);
 }
 
-void dbChannelShow(dbChannel *chan, int level)
+void dbChannelShow(dbChannel *chan, const char *intro, int level)
 {
     long elems = chan->addr.no_elements;
     int count = ellCount(&chan->filters);
-    printf("dbChannel name: %s\n", chan->name);
+    printf("%schannel name: %s\n", intro, chan->name);
     /* FIXME: show field_type as text */
-    printf("    field_type = %d, %ld element%s, %d filter%s\n",
-            chan->addr.field_type, elems, elems == 1 ? "" : "s",
+    printf("%s  field_type=%d, %ld element%s, %d filter%s\n",
+            intro, chan->addr.field_type, elems, elems == 1 ? "" : "s",
             count, count == 1 ? "" : "s");
     if (level > 0)
-        dbChannelFilterShow(chan, level - 1);
+        dbChannelFilterShow(chan, intro, level - 1);
 }
 
-void dbChannelFilterShow(dbChannel *chan, int level)
+void dbChannelFilterShow(dbChannel *chan, const char *intro, int level)
 {
     chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        filter->fif->channel_report(filter, level);
+        filter->fif->channel_report(filter, intro, level);
         filter = (chFilter *) ellNext(&filter->node);
     }
 }

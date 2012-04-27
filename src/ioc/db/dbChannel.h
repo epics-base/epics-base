@@ -68,7 +68,7 @@ typedef struct chFilterIf {
 
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
-    void (* channel_report)(chFilter *filter, int level);
+    void (* channel_report)(chFilter *filter, const char *intro, int level);
     /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);
 } chFilterIf;
@@ -104,8 +104,10 @@ epicsShareFunc long dbChannelPut(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
 epicsShareFunc long dbChannelPutField(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
-epicsShareFunc void dbChannelShow(dbChannel *chan, int level);
-epicsShareFunc void dbChannelFilterShow(dbChannel *chan, int level);
+epicsShareFunc void dbChannelShow(dbChannel *chan, const char *intro,
+        int level);
+epicsShareFunc void dbChannelFilterShow(dbChannel *chan, const char *intro,
+        int level);
 epicsShareFunc void dbChannelDelete(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);

@@ -160,7 +160,7 @@ void dbChannelIO::show (
             dbChannelElements ( this->dbch ),
             dbChannelField ( this->dbch ) );
         if ( level > 1u ) {
-            dbChannelFilterShow ( this->dbch, level - 2u );
+            dbChannelFilterShow ( this->dbch, "\t", level - 2u );
             this->serviceIO.show ( level - 2u );
             this->serviceIO.showAllIO ( *this, level - 2u );
         }

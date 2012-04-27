@@ -22,6 +22,7 @@
 typedef struct lset {
     long (*initLink)(struct link *plink, short dbfType);
     long (*addLink)(struct link *plink, short dbfType);
+    long (*loadLink)(struct link *plink, short dbrType, void *pbuffer);
     void (*removeLink)(struct link *plink);
     int (*isLinkConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);
@@ -58,8 +59,12 @@ typedef struct lset {
 #define dbGetSevr(PLINK, PSEVERITY) \
     dbGetAlarm((PLINK), NULL, (PSEVERITY));
 
-epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType);
-epicsShareFunc void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType);
+epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
+        short dbfType);
+epicsShareFunc void dbAddLink(struct dbCommon *precord, struct link *plink,
+        short dbfType);
+epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
+        void *pbuffer);
 epicsShareFunc void dbRemoveLink(struct link *plink);
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);

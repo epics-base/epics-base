@@ -76,6 +76,19 @@ static void inherit_severity(const struct pv_link *ppv_link, dbCommon *pdest,
 
 /***************************** Constant Links *****************************/
 
+static long dbConstLoadLink(struct link *plink, short dbrType, void *pbuffer)
+{
+    if (!plink->value.constantStr)
+        return S_db_badField;
+
+    /* Constant strings are always numeric */
+    if (dbrType== DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
+        dbrType = DBF_USHORT;
+
+    return dbFastPutConvertRoutine[DBR_STRING][dbrType]
+            (plink->value.constantStr, pbuffer, NULL);
+}
+
 static long dbConstGetNelements(const struct link *plink, long *nelements)
 {
     *nelements = 0;
@@ -358,7 +371,7 @@ static void dbDbScanFwdLink(struct link *plink)
     dbScanPassive(precord, paddr->precord);
 }
 
-lset dbDb_lset = { dbDbInitLink, dbDbAddLink, dbDbRemoveLink,
+lset dbDb_lset = { dbDbInitLink, dbDbAddLink, NULL, dbDbRemoveLink,
         dbDbIsLinkConnected, dbDbGetDBFtype, dbDbGetElements, dbDbGetValue,
         dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
         dbDbGetPrecision, dbDbGetUnits, dbDbGetAlarm, dbDbGetTimeStamp,
@@ -404,7 +417,7 @@ void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType)
         recGblTSELwasModified(plink);
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
-        /* Make it a DB link if possible */
+        /* Can we make it a DB link? */
         if (!dbDbAddLink(plink, dbfType))
             return;
     }
@@ -420,6 +433,15 @@ void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType)
         if (pperiod && strstr(pperiod, "PROC"))
             plink->value.pv_link.pvlMask |= pvlOptFWD;
     }
+}
+
+long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
+{
+    switch (plink->type) {
+    case CONSTANT:
+        return dbConstLoadLink(plink, dbrType, pbuffer);
+    }
+    return S_db_notFound;
 }
 
 void dbRemoveLink(struct link *plink)
@@ -497,7 +519,8 @@ long dbGetLinkValue(struct link *plink, short dbrType, void *pbuffer,
         status = dbCaGetLink(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
         break;
     default:
-        cantProceed("dbGetLinkValue: Illegal link type");
+        cantProceed("dbGetLinkValue: Illegal link type %d\n", plink->type);
+        status = -1;
     }
     if (status) {
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
@@ -599,7 +622,8 @@ long dbPutLinkValue(struct link *plink, short dbrType, const void *pbuffer,
         status = dbCaPutLink(plink, dbrType, pbuffer, nRequest);
         break;
     default:
-        cantProceed("dbPutLinkValue: Illegal link type %d", plink->type);
+        cantProceed("dbPutLinkValue: Illegal link type %d\n", plink->type);
+        status = -1;
     }
     if (status) {
         struct dbCommon *precord = plink->value.pv_link.precord;

@@ -137,6 +137,7 @@ struct chFilter {
 struct dbCommon;
 struct dbFldDes;
 
+epicsShareFunc void dbChannelInit (void);
 epicsShareFunc long dbChannelTest(const char *name);
 epicsShareFunc dbChannel * dbChannelCreate(const char *name);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
@@ -171,6 +172,7 @@ epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif, voi
 epicsShareFunc db_field_log* dbChannelRunPreChain(dbChannel *chan, db_field_log *pLogIn);
 epicsShareFunc db_field_log* dbChannelRunPostChain(dbChannel *chan, db_field_log *pLogIn);
 epicsShareFunc const chFilterPlugin * dbFindFilter(const char *key, size_t len);
+epicsShareFunc void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan);
 
 #ifdef __cplusplus
 }

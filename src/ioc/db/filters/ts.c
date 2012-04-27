@@ -11,43 +11,10 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <epicsExport.h>
-#include <freeList.h>
 #include <chfPlugin.h>
 #include <db_field_log.h>
-#include <dbAccessDefs.h>
-#include <dbCommon.h>
-
-static short mapDBFToDBR[DBF_NTYPES] = {
-    /* DBF_STRING   => */    DBR_STRING,
-    /* DBF_CHAR     => */    DBR_CHAR,
-    /* DBF_UCHAR    => */    DBR_UCHAR,
-    /* DBF_SHORT    => */    DBR_SHORT,
-    /* DBF_USHORT   => */    DBR_USHORT,
-    /* DBF_LONG     => */    DBR_LONG,
-    /* DBF_ULONG    => */    DBR_ULONG,
-    /* DBF_FLOAT    => */    DBR_FLOAT,
-    /* DBF_DOUBLE   => */    DBR_DOUBLE,
-    /* DBF_ENUM,    => */    DBR_ENUM,
-    /* DBF_MENU,    => */    DBR_ENUM,
-    /* DBF_DEVICE   => */    DBR_ENUM,
-    /* DBF_INLINK   => */    DBR_STRING,
-    /* DBF_OUTLINK  => */    DBR_STRING,
-    /* DBF_FWDLINK  => */    DBR_STRING,
-    /* DBF_NOACCESS => */    DBR_NOACCESS
-};
-
-static void *tsStringFreeList;
-
-void freeArray(db_field_log *pfl) {
-    if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
-        freeListFree(tsStringFreeList, pfl->u.r.field);
-    } else {
-        free(pfl->u.r.field);
-    }
-}
 
 static db_field_log* tsFilter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     epicsTimeStamp now;
@@ -55,23 +22,7 @@ static db_field_log* tsFilter(void* pvt, dbChannel *chan, db_field_log *pfl) {
 
     /* If string or array, must make a copy (to ensure coherence between time and data) */
     if (pfl->type == dbfl_type_rec) {
-        void *p;
-        struct dbCommon  *prec = dbChannelRecord(chan);
-        pfl->type = dbfl_type_ref;
-        pfl->stat = prec->stat;
-        pfl->sevr = prec->sevr;
-        pfl->field_type  = chan->addr.field_type;
-        pfl->no_elements = chan->addr.no_elements;
-        pfl->field_size  = chan->addr.field_size;
-        pfl->u.r.dtor = freeArray;
-        pfl->u.r.pvt = pvt;
-        if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
-            p = freeListCalloc(tsStringFreeList);
-        } else {
-            p = calloc(pfl->no_elements, pfl->field_size);
-        }
-        if (p) dbGet(&chan->addr, mapDBFToDBR[pfl->field_type], p, NULL, &pfl->no_elements, NULL);
-        pfl->u.r.field = p;
+        dbChannelMakeArrayCopy(pvt, pfl, chan);
     }
 
     pfl->time = now;
@@ -111,11 +62,6 @@ static void tsInitialize(void)
 
     if(!firstTime) return;
     firstTime = 0;
-
-    if (!tsStringFreeList) {
-        freeListInitPvt(&tsStringFreeList,
-            sizeof(epicsOldString), 64);
-    }
 
     chfPluginRegister("ts", &tsPif, NULL);
 }

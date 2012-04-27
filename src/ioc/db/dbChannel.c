@@ -22,6 +22,7 @@
 #include "dbBase.h"
 #include "dbEvent.h"
 #include "link.h"
+#include <freeList.h>
 #include "dbAccessDefs.h"
 #include "dbLock.h"
 #include "dbStaticLib.h"
@@ -42,6 +43,16 @@ typedef struct parseContext {
 } parseContext;
 
 #define CALLIF(rtn) !rtn ? parse_stop : rtn
+
+static void *dbchStringFreeList;
+
+void dbChannelInit (void)
+{
+    if (!dbchStringFreeList) {
+        freeListInitPvt(&dbchStringFreeList,
+            sizeof(epicsOldString), 128);
+    }
+}
 
 static void chf_value(parseContext *parser, parse_result *presult)
 {
@@ -676,6 +687,38 @@ void dbChannelDelete(dbChannel *chan)
     free(chan); // FIXME: Use free-list
 }
 
+static void freeArray(db_field_log *pfl) {
+    if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
+        freeListFree(dbchStringFreeList, pfl->u.r.field);
+    } else {
+        free(pfl->u.r.field);
+    }
+}
+
+void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan)
+{
+    void *p;
+
+    if (!pfl->type == dbfl_type_rec) return;
+
+    struct dbCommon *prec = dbChannelRecord(chan);
+    pfl->type = dbfl_type_ref;
+    pfl->stat = prec->stat;
+    pfl->sevr = prec->sevr;
+    pfl->time = prec->time;
+    pfl->field_type  = chan->addr.field_type;
+    pfl->no_elements = chan->addr.no_elements;
+    pfl->field_size  = chan->addr.field_size;
+    pfl->u.r.dtor = freeArray;
+    pfl->u.r.pvt = pvt;
+    if (pfl->field_type == DBF_STRING && pfl->no_elements == 1) {
+        p = freeListCalloc(dbchStringFreeList);
+    } else {
+        p = calloc(pfl->no_elements, pfl->field_size);
+    }
+    if (p) dbGet(&chan->addr, mapDBFToDBR[pfl->field_type], p, NULL, &pfl->no_elements, NULL);
+    pfl->u.r.field = p;
+}
 
 /* FIXME: Do these belong in a different file? */
 

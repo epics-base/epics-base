@@ -58,6 +58,7 @@
 #include "initHooks.h"
 #include "epicsExit.h"
 #include "epicsSignal.h"
+#include "dbChannel.h"
 
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"
@@ -460,6 +461,7 @@ static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,
 
 static void initDatabase(void)
 {
+    dbChannelInit();
     iterateRecords(doInitRecord0, NULL);
     iterateRecords(doResolveLinks, NULL);
     iterateRecords(doInitRecord1, NULL);

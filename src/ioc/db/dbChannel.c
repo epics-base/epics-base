@@ -29,12 +29,6 @@ typedef struct parseContext {
     int depth;
 } parseContext;
 
-typedef struct filterPlugin {
-    ELLNODE node;
-    const char *name;
-    const chFilterIf *fif;
-} filterPlugin;
-
 #define CALLIF(rtn) !rtn ? parse_stop : rtn
 
 static void chf_value(parseContext *parser, parse_result *presult)
@@ -45,7 +39,7 @@ static void chf_value(parseContext *parser, parse_result *presult)
         return;
 
     parser->filter = NULL;
-    if (filter->fif->parse_end(filter) == parse_continue) {
+    if (filter->plug->fif->parse_end(filter) == parse_continue) {
         ellAdd(&parser->chan->filters, &filter->node);
     } else {
         free(filter); // FIXME: Use free-list
@@ -60,7 +54,7 @@ static int chf_null(void * ctx)
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_null)(filter );
+    result = CALLIF(filter->plug->fif->parse_null)(filter );
     chf_value(parser, &result);
     return result;
 }
@@ -72,7 +66,7 @@ static int chf_boolean(void * ctx, int boolVal)
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_boolean)(filter , boolVal);
+    result = CALLIF(filter->plug->fif->parse_boolean)(filter , boolVal);
     chf_value(parser, &result);
     return result;
 }
@@ -84,7 +78,7 @@ static int chf_integer(void * ctx, long integerVal)
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_integer)(filter , integerVal);
+    result = CALLIF(filter->plug->fif->parse_integer)(filter , integerVal);
     chf_value(parser, &result);
     return result;
 }
@@ -96,7 +90,7 @@ static int chf_double(void * ctx, double doubleVal)
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_double)(filter , doubleVal);
+    result = CALLIF(filter->plug->fif->parse_double)(filter , doubleVal);
     chf_value(parser, &result);
     return result;
 }
@@ -109,7 +103,7 @@ static int chf_string(void * ctx, const unsigned char * stringVal,
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_string)(filter , (const char *) stringVal, stringLen);
+    result = CALLIF(filter->plug->fif->parse_string)(filter , (const char *) stringVal, stringLen);
     chf_value(parser, &result);
     return result;
 }
@@ -125,7 +119,7 @@ static int chf_start_map(void * ctx)
     }
 
     ++parser->depth;
-    return CALLIF(filter->fif->parse_start_map)(filter );
+    return CALLIF(filter->plug->fif->parse_start_map)(filter );
 }
 
 static int chf_map_key(void * ctx, const unsigned char * key,
@@ -133,17 +127,17 @@ static int chf_map_key(void * ctx, const unsigned char * key,
 {
     parseContext *parser = (parseContext *) ctx;
     chFilter *filter = parser->filter;
-    const chFilterIf *fif;
+    const chFilterPlugin *plug;
     parse_result result;
 
     if (filter) {
         assert(parser->depth > 0);
-        return CALLIF(filter->fif->parse_map_key)(filter , (const char *) key, stringLen);
+        return CALLIF(filter->plug->fif->parse_map_key)(filter , (const char *) key, stringLen);
     }
 
     assert(parser->depth == 0);
-    fif = dbFindFilter((const char *) key, stringLen);
-    if (!fif) {
+    plug = dbFindFilter((const char *) key, stringLen);
+    if (!plug) {
         printf("dbChannelCreate: Channel filter '%.*s' not found\n", stringLen, key);
         return parse_stop;
     }
@@ -151,10 +145,10 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     /* FIXME: Use a free-list */
     filter = (chFilter *) callocMustSucceed(1, sizeof(*filter), "Creating dbChannel filter");
     filter->chan = parser->chan;
-    filter->fif = fif;
+    filter->plug = plug;
     filter->puser = NULL;
 
-    result = fif->parse_start(filter);
+    result = plug->fif->parse_start(filter);
     if (result == parse_continue) {
         parser->filter = filter;
     } else {
@@ -175,7 +169,7 @@ static int chf_end_map(void * ctx)
     }
 
     assert(parser->depth > 0);
-    result = CALLIF(filter->fif->parse_end_map)(filter );
+    result = CALLIF(filter->plug->fif->parse_end_map)(filter );
 
     --parser->depth;
     chf_value(parser, &result);
@@ -189,7 +183,7 @@ static int chf_start_array(void * ctx)
 
     assert(filter);
     ++parser->depth;
-    return CALLIF(filter->fif->parse_start_array)(filter );
+    return CALLIF(filter->plug->fif->parse_start_array)(filter );
 }
 
 static int chf_end_array(void * ctx)
@@ -199,7 +193,7 @@ static int chf_end_array(void * ctx)
     parse_result result;
 
     assert(filter);
-    result = CALLIF(filter->fif->parse_end_array)(filter );
+    result = CALLIF(filter->plug->fif->parse_end_array)(filter );
     --parser->depth;
     chf_value(parser, &result);
     return result;
@@ -266,7 +260,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
 
     if (parser.filter) {
         assert(status);
-        parser.filter->fif->parse_abort(parser.filter);
+        parser.filter->plug->fif->parse_abort(parser.filter);
         free(parser.filter); /* FIXME: free-list */
     }
     yajl_free(yh);
@@ -422,7 +416,7 @@ long dbChannelOpen(dbChannel *chan)
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        status = filter->fif->channel_open(filter);
+        status = filter->plug->fif->channel_open(filter);
         if (status)
             break;
         filter = (chFilter *) ellNext(&filter->node);
@@ -537,7 +531,7 @@ void dbChannelFilterShow(dbChannel *chan, const char *intro, int level)
 {
     chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        filter->fif->channel_report(filter, intro, level);
+        filter->plug->fif->channel_report(filter, intro, level);
         filter = (chFilter *) ellNext(&filter->node);
     }
 }
@@ -548,7 +542,7 @@ void dbChannelDelete(dbChannel *chan)
 
     /* Close filters in reverse order */
     while ((filter = (chFilter *) ellPop(&chan->filters))) {
-        filter->fif->channel_close(filter);
+        filter->plug->fif->channel_close(filter);
         free(filter);
     }
     free((char *) chan->name);   // FIXME: Use free-list
@@ -558,10 +552,10 @@ void dbChannelDelete(dbChannel *chan)
 
 /* FIXME: Do these belong in a different file? */
 
-void dbRegisterFilter(const char *name, const chFilterIf *fif)
+void dbRegisterFilter(const char *name, const chFilterIf *fif, void *puser)
 {
     GPHENTRY *pgph;
-    filterPlugin *pfilt;
+    chFilterPlugin *pfilt;
 
     if (!pdbbase) {
         printf("dbRegisterFilter: pdbbase not set!\n");
@@ -572,9 +566,10 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif)
     if (pgph)
         return;
 
-    pfilt = dbCalloc(1, sizeof(filterPlugin));
+    pfilt = dbCalloc(1, sizeof(chFilterPlugin));
     pfilt->name = strdup(name);
     pfilt->fif = fif;
+    pfilt->puser = puser;
 
     ellAdd(&pdbbase->filterList, &pfilt->node);
     pgph = gphAdd(pdbbase->pgpHash, pfilt->name, &pdbbase->filterList);
@@ -587,14 +582,12 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif)
     pgph->userPvt = pfilt;
 }
 
-const chFilterIf * dbFindFilter(const char *name, size_t len)
+const chFilterPlugin * dbFindFilter(const char *name, size_t len)
 {
     GPHENTRY *pgph = gphFindParse(pdbbase->pgpHash, name, len,
             &pdbbase->filterList);
-    filterPlugin *pfilt;
 
     if (!pgph)
         return NULL;
-    pfilt = (filterPlugin *) pgph->userPvt;
-    return pfilt->fif;
+    return (chFilterPlugin *) pgph->userPvt;
 }

@@ -73,11 +73,19 @@ typedef struct chFilterIf {
     void (* channel_close)(chFilter *filter);
 } chFilterIf;
 
-/* A chFilter holds instance data for a single filter */
+/* A chFilterPlugin holds data for a filter plugin */
+typedef struct chFilterPlugin {
+    ELLNODE node;
+    const char *name;
+    const chFilterIf *fif;
+    void *puser;
+} chFilterPlugin;
+
+/* A chFilter holds data for a single filter instance */
 struct chFilter {
     ELLNODE node;
     dbChannel *chan;
-    const chFilterIf *fif;
+    const chFilterPlugin *plug;
     void *puser;
 };
 
@@ -110,8 +118,8 @@ epicsShareFunc void dbChannelFilterShow(dbChannel *chan, const char *intro,
         int level);
 epicsShareFunc void dbChannelDelete(dbChannel *chan);
 
-epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);
-epicsShareFunc const chFilterIf * dbFindFilter(const char *key, size_t len);
+epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif, void *puser);
+epicsShareFunc const chFilterPlugin * dbFindFilter(const char *key, size_t len);
 
 #ifdef __cplusplus
 }

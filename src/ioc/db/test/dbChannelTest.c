@@ -169,7 +169,7 @@ MAIN(dbChannelTest)
     testOk(!dbChannelCreate("x.{not-json}"), "Create, bad JSON");
     testOk(!dbChannelCreate("x.{\"none\":null}"), "Create, bad filter");
 
-    dbRegisterFilter("any", &testIf);
+    dbRegisterFilter("any", &testIf, NULL);
 
     /* Parser event rejection by filter */
     e = e_start;
@@ -190,7 +190,7 @@ MAIN(dbChannelTest)
     e = e_close;
     if (pch) dbChannelDelete(pch);
 
-    dbRegisterFilter("scalar", &testIf);
+    dbRegisterFilter("scalar", &testIf, NULL);
 
     e = e_start | e_null | e_end;
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));

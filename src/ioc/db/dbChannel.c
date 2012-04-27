@@ -10,6 +10,7 @@
 
 #include "cantProceed.h"
 #include "dbChannel.h"
+#include "dbCommon.h"
 #include "dbBase.h"
 #include "link.h"
 #include "dbAccessDefs.h"
@@ -292,21 +293,21 @@ static long pvNameLookup(DBENTRY *pdbe, const char **ppname)
     return status;
 }
 
-long dbChannelTest(const char *pname)
+long dbChannelTest(const char *name)
 {
     DBENTRY dbEntry;
     long status;
 
-    if (!pname || !*pname || !pdbbase)
+    if (!name || !*name || !pdbbase)
         return S_db_notFound;
 
-    status = pvNameLookup(&dbEntry, &pname);
+    status = pvNameLookup(&dbEntry, &name);
     if (status)
         goto finish;
 
     /* Test field modifiers */
-    while (*pname) {
-        switch (*pname) {
+    while (*name) {
+        switch (*name) {
         case '$':
             switch (dbEntry.pflddes->field_type) {
             case DBF_STRING:
@@ -320,13 +321,13 @@ long dbChannelTest(const char *pname)
             }
             break;
         case '{':
-            status = json_validate(pname);
+            status = json_validate(name);
             goto finish;
         default:
             status = S_dbLib_fieldNotFound;
             goto finish;
         }
-        pname++;
+        name++;
     }
 
     finish:
@@ -356,17 +357,16 @@ static short mapDBFToDBR[DBF_NTYPES] =
 
 dbChannel * dbChannelCreate(const char *name)
 {
+    const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
     DBADDR *paddr;
     dbFldDes *pflddes;
-    const char *pname;
     long status;
     short dbfType;
 
     if (!name || !*name || !pdbbase)
         return NULL;
-    pname = name;
 
     status = pvNameLookup(&dbEntry, &pname);
     if (status)
@@ -374,7 +374,6 @@ dbChannel * dbChannelCreate(const char *name)
 
     // FIXME: Use free-list
     chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
-    chan->magic = DBCHANNEL_MAGIC;
     chan->name = strdup(name);  // FIXME?
     ellInit(&chan->filters);
 
@@ -421,35 +420,29 @@ dbChannel * dbChannelCreate(const char *name)
         pname++;
     }
 
-finish:
-    dbFinishEntry(&dbEntry);
-    if (status && chan) {
-        dbChannelDelete(chan);
-        chan = NULL;
-    }
-    return chan;
-}
-
-long dbChannelOpen(dbChannel *chan)
-{
-    DBADDR *paddr;
-    chFilter *filter;
-    long status = 0;
-
-    if (chan->magic != DBCHANNEL_MAGIC)
-        return S_db_notInit;
-
-    paddr = &chan->addr;
     if (paddr->special == SPC_DBADDR) {
         struct rset *prset = dbGetRset(paddr);
 
         /* Let record type modify the dbAddr */
         if (prset && prset->cvt_dbaddr) {
             status = prset->cvt_dbaddr(paddr);
-            if (status)
-                return status;
+            if (status) goto finish;
         }
     }
+
+finish:
+    if (status && chan) {
+        dbChannelDelete(chan);
+        chan = NULL;
+    }
+    dbFinishEntry(&dbEntry);
+    return chan;
+}
+
+long dbChannelOpen(dbChannel *chan)
+{
+    chFilter *filter;
+    long status = 0;
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
@@ -461,19 +454,81 @@ long dbChannelOpen(dbChannel *chan)
     return status;
 }
 
-void dbChannelReport(dbChannel *chan, int level)
+const char * dbChannelName(dbChannel *chan)
 {
-    chFilter *filter;
+    return chan->name;
+}
 
-    if (chan->magic != DBCHANNEL_MAGIC)
-        return;
+struct dbCommon * dbChannelRecord(dbChannel *chan)
+{
+    return chan->addr.precord;
+}
 
-    printf("Channel '%s': %d filter(s)\n", chan->name,
-            ellCount(&chan->filters));
+struct dbFldDes * dbChannelFldDes(dbChannel *chan)
+{
+    return chan->addr.pfldDes;
+}
 
-    filter = (chFilter *) ellFirst(&chan->filters);
+long dbChannelElements(dbChannel *chan)
+{
+    return chan->addr.no_elements;
+}
+
+short dbChannelFieldType(dbChannel *chan)
+{
+    return chan->addr.field_type;
+}
+
+short dbChannelExportType(dbChannel *chan)
+{
+    return chan->addr.dbr_field_type;
+}
+
+short dbChannelElementSize(dbChannel *chan)
+{
+    return chan->addr.field_size;
+}
+
+short dbChannelSpecial(dbChannel *chan)
+{
+    return chan->addr.special;
+}
+
+void * dbChannelData(dbChannel *chan)
+{
+    void * pdata = chan->addr.pfield;
+    /* FIXME: offer to filters? */
+    return pdata;
+}
+
+long dbChannelPut(dbChannel *chan, short type, const void *pbuffer, long nRequest)
+{
+    /* FIXME: offer to filters? */
+    return dbPut(&chan->addr, type, pbuffer, nRequest);
+}
+
+long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer, long nRequest)
+{
+    /* FIXME: offer to filters? */
+    return dbPutField(&chan->addr, type, pbuffer, nRequest);
+}
+
+void dbChannelShow(dbChannel *chan, int level)
+{
+    printf("    dbChannel name: %s\n", chan->name);
+    /* FIXME: show field_type name */
+    printf("    field_type %d, %ld element(s), %d filter(s)",
+            chan->addr.field_type,
+            chan->addr.no_elements, ellCount(&chan->filters));
+    if (level > 0)
+        dbChannelFilterShow(chan, level - 1);
+}
+
+void dbChannelFilterShow(dbChannel *chan, int level)
+{
+    chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        filter->fif->channel_report(filter, level);
+        filter->fif->channel_report(filter, level - 1);
         filter = (chFilter *) ellNext(&filter->node);
     }
 }
@@ -482,19 +537,16 @@ long dbChannelDelete(dbChannel *chan)
 {
     chFilter *filter;
 
-    if (chan->magic != DBCHANNEL_MAGIC)
-        return S_db_notInit;
-
     while ((filter = (chFilter *) ellGet(&chan->filters))) {
         filter->fif->channel_close(filter);
         free(filter);
     }
-    free(chan->name);   // FIXME?
-    chan->magic = 0;
+    free((char *) chan->name);   // FIXME: Use free-list
     free(chan); // FIXME: Use free-list
 
     return 0;
 }
+
 
 /* FIXME: Do these belong in a different file? */
 

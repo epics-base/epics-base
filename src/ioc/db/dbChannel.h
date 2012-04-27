@@ -16,16 +16,11 @@
 #include "shareLib.h"
 
 #ifdef __cplusplus
-// extern "C" {
+extern "C" {
 #endif
-
-#define DBCHANNEL_MAGIC 0xdbc4a9e1
-
-#define S_db_notInit  (M_dbAccess|21) /*dbChannel not initialized*/
 
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
-    epicsUInt32 magic;
     const char *name;
     dbAddr addr;
     ELLLIST filters;
@@ -74,7 +69,7 @@ typedef struct chFilterIf {
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
     void (* channel_report)(chFilter *filter, int level);
-    /* FIXME: More routines here ... */
+    /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);
 } chFilterIf;
 
@@ -86,10 +81,27 @@ struct chFilter {
     void *puser;
 };
 
-epicsShareFunc long dbChannelTest(const char *pname);
-epicsShareFunc dbChannel * dbChannelCreate(const char *pname);
+struct dbCommon;
+struct dbFldDes;
+
+epicsShareFunc long dbChannelTest(const char *name);
+epicsShareFunc dbChannel * dbChannelCreate(const char *name);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
-epicsShareFunc void dbChannelReport(dbChannel *chan, int level);
+epicsShareFunc const char * dbChannelName(dbChannel *chan);
+epicsShareFunc struct dbCommon * dbChannelRecord(dbChannel *chan);
+epicsShareFunc struct dbFldDes * dbChannelFldDes(dbChannel *chan);
+epicsShareFunc long dbChannelElements(dbChannel *chan);
+epicsShareFunc short dbChannelFieldType(dbChannel *chan);
+epicsShareFunc short dbChannelExportType(dbChannel *chan);
+epicsShareFunc short dbChannelElementSize(dbChannel *chan);
+epicsShareFunc short dbChannelSpecial(dbChannel *chan);
+epicsShareFunc void * dbChannelData(dbChannel *chan);
+epicsShareFunc long dbChannelPut(dbChannel *chan, short type,
+        const void *pbuffer, long nRequest);
+epicsShareFunc long dbChannelPutField(dbChannel *chan, short type,
+        const void *pbuffer, long nRequest);
+epicsShareFunc void dbChannelShow(dbChannel *chan, int level);
+epicsShareFunc void dbChannelFilterShow(dbChannel *chan, int level);
 epicsShareFunc long dbChannelDelete(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);

@@ -185,7 +185,7 @@ MAIN(dbChannelTest)
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelReport(pch, 0);
+    dbChannelShow(pch, 0);
 
     e = e_close;
     testOk1(!dbChannelDelete(pch));

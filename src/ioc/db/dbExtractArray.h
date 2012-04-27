@@ -14,14 +14,18 @@
 #define INC_dbExtractArray_H
 
 #include "dbFldTypes.h"
+#include "dbAddr.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-epicsShareExtern void dbExtractArray(const DBADDR *paddr, void *pbuffer,
-                                long nRequest, long no_elements, long offset, long increment);
+epicsShareFunc void dbExtractArrayFromRec(const DBADDR *paddr, void *pto,
+                                          long nRequest, long no_elements, long offset, long increment);
+epicsShareFunc void dbExtractArrayFromBuf(const void *pfrom, void *pto,
+                                          short field_size, short field_type,
+                                          long nRequest, long no_elements, long offset, long increment);
 
 #ifdef __cplusplus
 }

@@ -35,6 +35,7 @@ include $(LIBCOM)/ring/Makefile
 include $(LIBCOM)/taskwd/Makefile
 include $(LIBCOM)/timer/Makefile
 include $(LIBCOM)/yacc/Makefile
+include $(LIBCOM)/yajl/Makefile
 
 # Library to build:
 LIBRARY=Com

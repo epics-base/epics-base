@@ -29,7 +29,7 @@ extern "C" {
  * will most likely change infrequently.
  * 
  */
-union native_value{
+union native_value {
       	short		dbf_int;
       	short		dbf_short;
       	float		dbf_float;
@@ -46,11 +46,27 @@ union native_value{
  *	structure to log the state of a data base field at the time
  *	an event is triggered.
  */
+struct dbfl_val {
+    unsigned short     stat;    /* Alarm Status */
+    unsigned short     sevr;    /* Alarm Severity */
+    epicsTimeStamp     time;    /* Time stamp */
+    union native_value field;   /* Field value */
+};
+
+struct dbfl_ref {
+    unsigned short    *stat;             /* Alarm Status */
+    unsigned short    *sevr;             /* Alarm Severity */
+    epicsTimeStamp    *time;             /* Time stamp */
+    void             (*freeFld)(void*);  /* Callback to free a filter-allocated field */
+    void              *field;            /* Field value */
+};
+
 typedef struct db_field_log {
-        unsigned short		stat;	/* Alarm Status         */
-        unsigned short		sevr;	/* Alarm Severity       */
-	epicsTimeStamp		time;	/* time stamp		*/
-	union native_value	field;	/* field value		*/
+    char               isValue; /* is a value (*not* string/array) */
+    union {
+        struct dbfl_val v;
+        struct dbfl_ref p;
+    } u;
 } db_field_log;
 
 #ifdef __cplusplus

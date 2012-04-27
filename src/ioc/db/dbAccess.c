@@ -331,11 +331,11 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	    unsigned short *pushort = (unsigned short *)pbuffer;
 
 	    if(pfl!=NULL) {
-		*pushort++ = pfl->stat;
-		*pushort++ = pfl->sevr;
+                *pushort++ = pfl->u.v.stat;
+                *pushort++ = pfl->u.v.sevr;
 	    } else {
-		*pushort++ = pcommon->stat;
-		*pushort++ = pcommon->sevr;
+                *pushort++ = pcommon->stat;
+                *pushort++ = pcommon->sevr;
 	    }
 	    *pushort++ = pcommon->acks;
 	    *pushort++ = pcommon->ackt;
@@ -365,8 +365,8 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	    epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
 
 	    if(pfl!=NULL) {
-		*ptime++ = pfl->time.secPastEpoch;
-		*ptime++ = pfl->time.nsec;
+                *ptime++ = pfl->u.v.time.secPastEpoch;
+                *ptime++ = pfl->u.v.time.nsec;
 	    } else {
 		*ptime++ = pcommon->time.secPastEpoch;
 		*ptime++ = pcommon->time.nsec;
@@ -818,7 +818,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         if (pfl != NULL) {
             DBADDR localAddr = *paddr; /* Structure copy */
 
-            localAddr.pfield = (char *)&pfl->field;
+            localAddr.pfield = (char *)&pfl->u.v.field;
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (localAddr.pfield, pbuffer, &localAddr);
         } else {
@@ -850,7 +850,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         } else if (pfl) {
             DBADDR localAddr = *paddr; /* Structure copy */
 
-            localAddr.pfield = (char *)&pfl->field;
+            localAddr.pfield = (char *)&pfl->u.v.field;
             status = convert(&localAddr, pbuffer, n, no_elements, offset);
         } else {
             status = convert(paddr, pbuffer, n, no_elements, offset);

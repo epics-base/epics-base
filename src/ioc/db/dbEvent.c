@@ -628,25 +628,31 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
  */
 db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
 {
-    db_field_log        *pLog = NULL;
+    db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);;
 
-    if (pevent->useValque) {
-        pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
-        if (pLog) {
-            struct dbChannel *chan = pevent->chan;
-            struct dbCommon *prec = dbChannelRecord(chan);
-            pLog->stat = prec->stat;
-            pLog->sevr = prec->sevr;
-            pLog->time = prec->time;
-
+    if (pLog) {
+        struct dbChannel *chan = pevent->chan;
+        struct dbCommon  *prec = dbChannelRecord(chan);
+        if (pevent->useValque) {
+            pLog->isValue = 1;
+            pLog->u.v.stat = prec->stat;
+            pLog->u.v.sevr = prec->sevr;
+            pLog->u.v.time = prec->time;
             /*
              * use memcpy to avoid a bus error on
              * union copy of char in the db at an odd
              * address
              */
-            memcpy(&pLog->field,
+            memcpy(&pLog->u.v.field,
                    dbChannelField(chan),
                    dbChannelElementSize(chan));
+        } else {
+            pLog->isValue = 0;
+            pLog->u.p.stat = &prec->stat;
+            pLog->u.p.sevr = &prec->sevr;
+            pLog->u.p.time = &prec->time;
+            pLog->u.p.field   = dbChannelField(chan);
+            pLog->u.p.freeFld = NULL;
         }
     }
     return pLog;
@@ -698,7 +704,7 @@ void db_post_single_event_final (void *pvt, evSubscrip *pevent, db_field_log *pL
          * replace last event if no space is left
          */
         if (*pevent->pLastLog) {
-            freeListFree(dbevFieldLogFreeList, *pevent->pLastLog);
+            db_delete_field_log(*pevent->pLastLog);
             *pevent->pLastLog = pLog;
         }
         pevent->nreplace++;
@@ -840,7 +846,7 @@ static int event_read ( struct event_que *ev_que )
         if ( pevent == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
             if (ev_que->valque[ev_que->getix]) {
-                freeListFree(dbevFieldLogFreeList, ev_que->valque[ev_que->getix]);
+                db_delete_field_log(ev_que->valque[ev_que->getix]);
                 ev_que->valque[ev_que->getix] = NULL;
             }
             ev_que->getix = RNGINC ( ev_que->getix );
@@ -909,7 +915,7 @@ static int event_read ( struct event_que *ev_que )
                 }
             }
         }
-        if (pfl) freeListFree (dbevFieldLogFreeList, pfl);
+        db_delete_field_log(pfl);
     }
 
     UNLOCKEVQUE (ev_que)
@@ -1078,4 +1084,17 @@ void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
 #ifdef DEBUG
     printf("fc off %lu\n", tickGet());
 #endif
+}
+
+/*
+ * db_delete_field_log()
+ */
+void epicsShareAPI db_delete_field_log (db_field_log *pfl)
+{
+    if (pfl) {
+        /* Free field if reference type field log and dtor is set */
+        if (!pfl->isValue && pfl->u.p.freeFld) pfl->u.p.freeFld(pfl->u.p.field);
+        /* Free the field log chunk */
+        freeListFree(dbevFieldLogFreeList, pfl);
+    }
 }

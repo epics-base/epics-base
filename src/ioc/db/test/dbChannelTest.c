@@ -130,72 +130,85 @@ chFilterIf testIf =
 
 MAIN(dbChannelTest)
 {
-    dbChannel ch;
+    dbChannel *pch;
 
-    testPlan(59);
+    testPlan(64);
 
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     r = e = 0;
-    testOk1(!dbChannelFind(&ch, "x.NAME$"));
-    testOk1(ch.addr.no_elements> 1);
+    /* Regular record and field names */
+    testOk1(!dbChannelTest("x"));
+    testOk1(!dbChannelTest("x.NAME"));
 
-    testOk1(!dbChannelFind(&ch, "x.{}"));
+    /* Long string field modifier */
+    testOk1(!dbChannelTest("x.NAME$"));
+    testOk1(!!(pch = dbChannelCreate("x.NAME$")));
+    testOk1(pch->addr.no_elements > 1);
+    testOk1(!dbChannelDelete(pch));
 
-    testOk1(dbChannelFind(&ch, "y"));
-    testOk1(dbChannelFind(&ch, "x.{\"none\":null}"));
+    /* JSON field modifier validation */
+    testOk1(!dbChannelTest("x.{\"json\":true}"));
+
+    /* Ensure bad PVs get rejected */
+    testOk(dbChannelTest("y"), "Test nonexistent record");
+    testOk(dbChannelCreate("y") == NULL, "Create nonexistent record");
+
+    testOk1(dbChannelTest("x.{not-json}"));
+    testOk1(!dbChannelCreate("x.{\"none\":null}"));
 
     dbRegisterFilter("any", &testIf);
 
+    /* Parser event rejection by filter */
     e = e_start;
-    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{\"any\":null}"));
 
     r = e_start;
     e = e_start | e_null | e_abort;
-    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{\"any\":null}"));
 
     r = e_start | e_null;
     e = e_start | e_null | e_end;
-    testOk1(dbChannelFind(&ch, "x.{\"any\":null}"));
+    testOk1(!dbChannelCreate("x.{\"any\":null}"));
 
+    /* Successful parsing... */
     r = r_any;
     e = e_start | e_null | e_end;
-    testOk1(!dbChannelFind(&ch, "x.{\"any\":null}"));
+    testOk1(!!(pch = dbChannelCreate("x.{\"any\":null}")));
     e = e_close;
-    testOk1(!dbChannelClose(&ch));
+    testOk1(!dbChannelDelete(pch));
 
     dbRegisterFilter("scalar", &testIf);
 
     e = e_start | e_null | e_end;
-    testOk1(!dbChannelFind(&ch, "x.{\"scalar\":null}"));
+    testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelReport(&ch, 0);
+    dbChannelReport(pch, 0);
 
     e = e_close;
-    testOk1(!dbChannelClose(&ch));
+    testOk1(!dbChannelDelete(pch));
 
     e = e_start | e_start_array | e_boolean | e_integer | e_end_array
             | e_end;
-    testOk1(!dbChannelFind(&ch, "x.{\"any\":[true,1]}"));
+    testOk1(!!(pch = dbChannelCreate("x.{\"any\":[true,1]}")));
     e = e_close;
-    testOk1(!dbChannelClose(&ch));
+    testOk1(!dbChannelDelete(pch));
 
     e = e_start | e_start_map | e_map_key | e_double | e_string | e_end_map
             | e_end;
-    testOk1(!dbChannelFind(&ch, "x.{\"any\":{\"a\":2.7183,\"b\":\"c\"}}"));
+    testOk1(!!(pch = dbChannelCreate("x.{\"any\":{\"a\":2.7183,\"b\":\"c\"}}")));
+    e = e_close;
+    testOk1(!dbChannelDelete(pch));
 
+    /* More event rejection */
     r = r_scalar;
-    e = e_close | e_start | e_start_array | e_abort;
-    testOk1(dbChannelFind(&ch, "x.{\"scalar\":[null]}"));
-    e = 0;
-    testOk1(!dbChannelClose(&ch));
+    e = e_start | e_start_array | e_abort;
+    testOk1(!dbChannelCreate("x.{\"scalar\":[null]}"));
 
     e = e_start | e_start_map | e_abort;
-    testOk1(dbChannelFind(&ch, "x.{\"scalar\":{}}"));
-    e = 0;
-    testOk1(!dbChannelClose(&ch));
+    testOk1(!dbChannelCreate("x.{\"scalar\":{}}"));
 
     dbFreeBase(pdbbase);
 

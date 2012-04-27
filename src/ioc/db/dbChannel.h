@@ -26,6 +26,7 @@
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     epicsUInt32 magic;
+    const char *name;
     dbAddr addr;
     ELLLIST filters;
 } dbChannel;
@@ -85,10 +86,11 @@ struct chFilter {
     void *puser;
 };
 
-epicsShareFunc long dbChannelFind(dbChannel *chan, const char *pname);
+epicsShareFunc long dbChannelTest(const char *pname);
+epicsShareFunc dbChannel * dbChannelCreate(const char *pname);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
 epicsShareFunc void dbChannelReport(dbChannel *chan, int level);
-epicsShareFunc long dbChannelClose(dbChannel *chan);
+epicsShareFunc long dbChannelDelete(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);
 epicsShareFunc const chFilterIf * dbFindFilter(const char *key, size_t len);

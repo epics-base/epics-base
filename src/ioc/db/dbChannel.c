@@ -210,6 +210,27 @@ static const yajl_callbacks chf_callbacks =
 static const yajl_parser_config chf_config =
     { 0, 1 }; /* allowComments = NO , checkUTF8 = YES */
 
+static long json_validate(const char *json)
+{
+    yajl_handle yh = yajl_alloc(NULL, &chf_config, NULL, NULL);
+    size_t jlen = strlen(json);
+    yajl_status ys;
+
+    if (!yh)
+        return S_db_noMemory;
+
+    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
+    if (ys == yajl_status_insufficient_data)
+        ys = yajl_parse_complete(yh);
+
+    yajl_free(yh);
+
+    if (ys == yajl_status_ok)
+        return 0;
+
+    return S_db_notFound;
+}
+
 static long chf_parse(dbChannel *chan, const char *json)
 {
     parseContext parser =
@@ -251,6 +272,68 @@ static long chf_parse(dbChannel *chan, const char *json)
     return status;
 }
 
+static long pvNameLookup(DBENTRY *pdbe, const char **ppname)
+{
+    long status;
+
+    dbInitEntry(pdbbase, pdbe);
+
+    status = dbFindRecordPart(pdbe, ppname);
+    if (status)
+        return status;
+
+    if (**ppname == '.')
+        ++*ppname;
+
+    status = dbFindFieldPart(pdbe, ppname);
+    if (status == S_dbLib_fieldNotFound)
+        status = dbGetAttributePart(pdbe, ppname);
+
+    return status;
+}
+
+long dbChannelTest(const char *pname)
+{
+    DBENTRY dbEntry;
+    long status;
+
+    if (!pname || !*pname || !pdbbase)
+        return S_db_notFound;
+
+    status = pvNameLookup(&dbEntry, &pname);
+    if (status)
+        goto finish;
+
+    /* Test field modifiers */
+    while (*pname) {
+        switch (*pname) {
+        case '$':
+            switch (dbEntry.pflddes->field_type) {
+            case DBF_STRING:
+            case DBF_INLINK:
+            case DBF_OUTLINK:
+            case DBF_FWDLINK:
+                break;
+            default:
+                status = S_dbLib_fieldNotFound;
+                goto finish;
+            }
+            break;
+        case '{':
+            status = json_validate(pname);
+            goto finish;
+        default:
+            status = S_dbLib_fieldNotFound;
+            goto finish;
+        }
+        pname++;
+    }
+
+    finish:
+        dbFinishEntry(&dbEntry);
+        return status;
+}
+
 /* Stolen from dbAccess.c: */
 static short mapDBFToDBR[DBF_NTYPES] =
     {
@@ -271,41 +354,29 @@ static short mapDBFToDBR[DBF_NTYPES] =
     /* DBF_FWDLINK  => */DBR_STRING,
     /* DBF_NOACCESS => */DBR_NOACCESS };
 
-long dbChannelFind(dbChannel *chan, const char *pname)
+dbChannel * dbChannelCreate(const char *name)
 {
-    DBADDR *paddr;
     DBENTRY dbEntry;
+    dbChannel *chan = NULL;
+    DBADDR *paddr;
     dbFldDes *pflddes;
+    const char *pname;
     long status;
     short dbfType;
 
-    if (!chan || !pname || !*pname || !pdbbase)
-        return S_db_notFound;
+    if (!name || !*name || !pdbbase)
+        return NULL;
+    pname = name;
 
-    if (chan->magic == DBCHANNEL_MAGIC) {
-        chFilter *filter;
-
-        while ((filter = (chFilter *) ellGet(&chan->filters))) {
-            filter->fif->channel_close(filter);
-            free(filter);
-        }
-    } else {
-        ellInit(&chan->filters);
-        chan->magic = DBCHANNEL_MAGIC;
-    }
-
-    dbInitEntry(pdbbase, &dbEntry);
-    status = dbFindRecordPart(&dbEntry, &pname);
+    status = pvNameLookup(&dbEntry, &pname);
     if (status)
         goto finish;
 
-    if (*pname == '.')
-        ++pname;
-    status = dbFindFieldPart(&dbEntry, &pname);
-    if (status == S_dbLib_fieldNotFound)
-        status = dbGetAttributePart(&dbEntry, &pname);
-    if (status)
-        goto finish;
+    // FIXME: Use free-list
+    chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
+    chan->magic = DBCHANNEL_MAGIC;
+    chan->name = strdup(name);  // FIXME?
+    ellInit(&chan->filters);
 
     paddr = &chan->addr;
     pflddes = dbEntry.pflddes;
@@ -350,8 +421,13 @@ long dbChannelFind(dbChannel *chan, const char *pname)
         pname++;
     }
 
-    finish: dbFinishEntry(&dbEntry);
-    return status;
+finish:
+    dbFinishEntry(&dbEntry);
+    if (status && chan) {
+        dbChannelDelete(chan);
+        chan = NULL;
+    }
+    return chan;
 }
 
 long dbChannelOpen(dbChannel *chan)
@@ -392,6 +468,9 @@ void dbChannelReport(dbChannel *chan, int level)
     if (chan->magic != DBCHANNEL_MAGIC)
         return;
 
+    printf("Channel '%s': %d filter(s)\n", chan->name,
+            ellCount(&chan->filters));
+
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
         filter->fif->channel_report(filter, level);
@@ -399,7 +478,7 @@ void dbChannelReport(dbChannel *chan, int level)
     }
 }
 
-long dbChannelClose(dbChannel *chan)
+long dbChannelDelete(dbChannel *chan)
 {
     chFilter *filter;
 
@@ -410,7 +489,10 @@ long dbChannelClose(dbChannel *chan)
         filter->fif->channel_close(filter);
         free(filter);
     }
+    free(chan->name);   // FIXME?
     chan->magic = 0;
+    free(chan); // FIXME: Use free-list
+
     return 0;
 }
 

@@ -9,6 +9,7 @@
 /*
  *  Author: Ralph Lange <Ralph.Lange@bessy.de>
  */
+
 #include <stdio.h>
 
 #include <epicsExport.h>
@@ -37,17 +38,17 @@ chfPluginArgDef opts[] = {
     chfPluginArgEnd
 };
 
-void * allocPvt(void)
+static void * allocPvt(void)
 {
     return freeListCalloc(myStructFreeList);
 }
 
-void freePvt(void *pvt)
+static void freePvt(void *pvt)
 {
     freeListFree(myStructFreeList, pvt);
 }
 
-int parse_ok(void *pvt)
+static int parse_ok(void *pvt)
 {
     myStruct *my = (myStruct*) pvt;
     my->hyst = my->cval;

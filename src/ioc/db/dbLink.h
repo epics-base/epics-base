@@ -18,6 +18,8 @@
 
 #include "link.h"
 #include "shareLib.h"
+#include "epicsTypes.h"
+#include "epicsTime.h"
 
 typedef struct lset {
     long (*initLink)(struct link *plink, short dbfType);

@@ -6,11 +6,11 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP=../../../..
+TOP=../../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbIoc miscIoc registryIoc ca Com
+PROD_LIBS += dbCore ca Com
 
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c

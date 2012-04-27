@@ -22,25 +22,25 @@ TESTSPEC_vxWorks = callbackTest.munch; callbackTest
 
 TESTPROD_HOST += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
-dbChannelTest_LIBS += dbIoc dbStaticHost
+dbChannelTest_LIBS += dbCore
 OBJS_IOC_vxWorks += dbChannelTest
 TESTS += dbChannelTest
 
 TESTPROD_HOST += chfPluginTest
 chfPluginTest_SRCS += chfPluginTest.c
-chfPluginTest_LIBS += dbIoc dbStaticHost
+chfPluginTest_LIBS += dbCore
 OBJS_IOC_vxWorks += chfPluginTest
 TESTS += chfPluginTest
 
 TESTPROD_HOST += arrShorthandTest
 arrShorthandTest_SRCS += arrShorthandTest.c
-arrShorthandTest_LIBS += dbIoc dbStaticHost
+arrShorthandTest_LIBS += dbCore
 OBJS_IOC_vxWorks += arrShorthandTest
 TESTS += arrShorthandTest
 
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
-dbStateTest_LIBS += dbIoc dbStaticHost
+dbStateTest_LIBS += dbCore
 OBJS_IOC_vxWorks += dbStateTest
 TESTS += dbStateTest
 

@@ -510,6 +510,7 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
     int autosize;
     long item_count;
     ca_uint32_t payload_size;
+    dbAddr *paddr=&dbch->addr;
 
     SEND_LOCK ( pClient );
 
@@ -546,7 +547,7 @@ static void read_reply ( void *pArg, struct dbChannel *dbch,
         send_err ( &pevext->msg, status, pClient,
             "server unable to load read (or subscription update) response "
             "into protocol buffer PV=\"%s\" max bytes=%u",
-            RECORD_NAME ( paddr ), rsrvSizeofLargeBufTCP );
+            RECORD_NAME ( dbch ), rsrvSizeofLargeBufTCP );
         if ( ! eventsRemaining )
             cas_send_bs_msg ( pClient, FALSE );
         SEND_UNLOCK ( pClient );
@@ -2322,7 +2323,6 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
 static int search_reply_tcp ( 
     caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
-    struct dbAddr   tmp_addr;
     char            *pName = (char *) pPayload;
     int             status;
     int             spaceAvailOnFreeList;
@@ -2340,8 +2340,7 @@ static int search_reply_tcp (
     pName[mp->m_postsize-1] = '\0';
 
     /* Exit quickly if channel not on this node */
-    status = db_name_to_addr (pName, &tmp_addr);
-    if (status) {
+    if (dbChannelTest(pName)) {
         DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pPayLoad ) );
         if (mp->m_dataType == DOREPLY)
             search_fail_reply ( mp, pPayload, client );

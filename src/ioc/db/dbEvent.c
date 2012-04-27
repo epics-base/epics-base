@@ -802,7 +802,7 @@ unsigned int    caEventMask
             (caEventMask & pevent->select)) {
             db_field_log *pLog = db_create_event_log(pevent);
             pLog = dbChannelRunPreChain(pevent->chan, pLog);
-            db_queue_event_log(pevent, pLog);
+            if (pLog) db_queue_event_log(pevent, pLog);
         }
     }
 

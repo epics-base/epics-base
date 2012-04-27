@@ -518,7 +518,7 @@ long dbChannelOpen(dbChannel *chan)
 
     /* Save probe results */
     chan->final_no_elements  = probe.no_elements;
-    chan->final_field_size = probe.field_size;
+    chan->final_field_size   = probe.field_size;
     chan->final_type         = probe.field_type;
     chan->dbr_final_type     = dbDBRnewToDBRold[mapDBFToDBR[probe.field_type]];
 

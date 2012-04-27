@@ -263,10 +263,7 @@ typedef struct chfPluginArgDef {
  * @param def String to be returned when 'i' isn't a valid Enum index.
  * @return The string associated with 'i'.
  */
-epicsShareFunc
-const char*
-epicsShareAPI
-chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
+epicsShareFunc const char* chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
 
 /** @brief Register a plugin.
  *
@@ -274,10 +271,7 @@ chfPluginEnumString(const chfPluginEnumType *Enums, int i, const char* def);
  * @param pif Pointer to the plugin's interface.
  * @param opts Pointer to the configuration argument description table.
  */
-epicsShareFunc
-int
-epicsShareAPI
-chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
+epicsShareFunc int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts);
 
 #ifdef __cplusplus
 }

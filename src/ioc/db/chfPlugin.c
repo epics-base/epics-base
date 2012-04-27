@@ -24,6 +24,7 @@
 #include <epicsTypes.h>
 #include <epicsString.h>
 #include <errlog.h>
+#include <shareLib.h>
 
 #define epicsExportSharedSymbols
 #include "chfPlugin.h"
@@ -67,9 +68,7 @@ typedef enum chfPluginType {
  * Convert the (long) integer value 'val' to the type named in 'opt->optType'
  * and store the result at 'user + opt->offset'.
  */
-static
-int
-store_integer_value(const chfPluginArgDef *opt, void *user, long val)
+static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
 {
     long *ival;
     int *eval;
@@ -128,9 +127,7 @@ store_integer_value(const chfPluginArgDef *opt, void *user, long val)
  * Convert the (int) boolean value 'val' to the type named in 'opt->optType'
  * and store the result at 'user + opt->offset'.
  */
-static
-int
-store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
+static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
 {
     long *ival;
     int *eval;
@@ -175,9 +172,7 @@ store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
  * Convert the double value 'val' to the type named in 'opt->optType'
  * and store the result at 'user + opt->offset'.
  */
-static
-int
-store_double_value(const chfPluginArgDef *opt, void *user, double val)
+static int store_double_value(const chfPluginArgDef *opt, void *user, double val)
 {
     long *ival;
     int *eval;
@@ -230,9 +225,7 @@ store_double_value(const chfPluginArgDef *opt, void *user, double val)
  * Convert the (char*) string value 'val' to the type named in 'opt->optType'
  * and store the result at 'user + opt->offset'.
  */
-static
-int
-store_string_value(const chfPluginArgDef *opt, void *user, const char *val, size_t len)
+static int store_string_value(const chfPluginArgDef *opt, void *user, const char *val, size_t len)
 {
     long *ival;
     int *eval;
@@ -553,10 +546,7 @@ static chFilterIf wrapper_fif = {
     channel_close
 };
 
-epicsShareFunc
-const char*
-epicsShareAPI
-chfPluginEnumString(const chfPluginEnumType *emap, int i, const char* def)
+const char* chfPluginEnumString(const chfPluginEnumType *emap, int i, const char* def)
 {
     for(; emap && emap->name; emap++) {
         if ( i == emap->value ) {
@@ -566,10 +556,7 @@ chfPluginEnumString(const chfPluginEnumType *emap, int i, const char* def)
     return def;
 }
 
-epicsShareFunc
-int
-epicsShareAPI
-chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts)
+int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginArgDef* opts)
 {
     chfPlugin *p;
     size_t i;

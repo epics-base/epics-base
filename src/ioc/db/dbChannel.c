@@ -642,13 +642,10 @@ void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
     int count = ellCount(&chan->filters);
     int pre   = ellCount(&chan->pre_chain);
     int post  = ellCount(&chan->post_chain);
-    int i;
 
-    for (i = 0; i < indent; i++) printf(" ");
-    printf("channel name: %s\n", chan->name);
-    for (i = 0; i < indent; i++) printf(" ");
+    printf("%*schannel name: %s\n", indent, "", chan->name);
     /* FIXME: show field_type as text */
-    printf("  field_type=%d (%dB), %ld element%s, %d filter%s",
+    printf("%*s  field_type=%d (%dB), %ld element%s, %d filter%s", indent, "",
            chan->addr.field_type, chan->addr.field_size, elems, elems == 1 ? "" : "s",
            count, count == 1 ? "" : "s");
     if (count)
@@ -658,9 +655,8 @@ void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
     if (level > 0)
         dbChannelFilterShow(chan, level - 1, indent + 2);
     if (count) {
-        for (i = 0; i < indent; i++) printf(" ");
         /* FIXME: show field_type as text */
-        printf("  final field_type=%d (%dB), %ld element%s\n",
+        printf("%*s  final field_type=%d (%dB), %ld element%s\n", indent, "",
                chan->final_type, chan->final_field_size, felems, felems == 1 ? "" : "s");
     }
 }

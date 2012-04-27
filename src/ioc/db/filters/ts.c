@@ -16,7 +16,7 @@
 #include <chfPlugin.h>
 #include <db_field_log.h>
 
-static db_field_log* tsFilter(void* pvt, dbChannel *chan, db_field_log *pfl) {
+static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     epicsTimeStamp now;
     epicsTimeGetCurrent(&now);
 
@@ -32,17 +32,15 @@ static db_field_log* tsFilter(void* pvt, dbChannel *chan, db_field_log *pfl) {
 static void channelRegisterPre(dbChannel *chan, void *pvt,
                                chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
-    *cb_out = tsFilter;
+    *cb_out = filter;
 }
 
-void channel_report(dbChannel *chan, void *user, int level, const unsigned short indent)
+static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
 {
-    int i;
-    for (i = 0; i < indent; i++) printf(" ");
-    printf("  plugin ts\n");
+    printf("%*s  plugin ts\n", indent, "");
 }
 
-static chfPluginIf tsPif = {
+static chfPluginIf pif = {
     NULL, /* allocPvt, */
     NULL, /* freePvt, */
 
@@ -63,7 +61,7 @@ static void tsInitialize(void)
     if(!firstTime) return;
     firstTime = 0;
 
-    chfPluginRegister("ts", &tsPif, NULL);
+    chfPluginRegister("ts", &pif, NULL);
 }
 
 epicsExportRegistrar(tsInitialize);

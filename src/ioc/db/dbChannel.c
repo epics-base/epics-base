@@ -331,7 +331,7 @@ dbChannel * dbChannelCreate(const char *name)
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
-    DBADDR *paddr;
+    dbAddr *paddr;
     dbFldDes *pflddes;
     long status;
     short dbfType;
@@ -429,6 +429,9 @@ long dbChannelOpen(dbChannel *chan)
     return status;
 }
 
+/* FIXME: For performance we should make these one-liners into macros,
+ * or try to make them inline if all our compilers can do that.
+ */
 const char * dbChannelName(dbChannel *chan)
 {
     return chan->name;
@@ -472,7 +475,11 @@ short dbChannelSpecial(dbChannel *chan)
 void * dbChannelField(dbChannel *chan)
 {
     void * pdata = chan->addr.pfield;
-    /* FIXME: offer to filters? */
+    /* FIXME: offer to filters?
+     * This is probably *not* a good idea, since there are several places
+     * (e.g. db_post_events()) where this pointer is compared with the
+     * address of a specific record field.
+     */
     return pdata;
 }
 
@@ -483,6 +490,7 @@ long dbChannelGetField(dbChannel *chan, short type, void *pbuffer,
     return dbGetField(&chan->addr, type, pbuffer, options, nRequest, pfl);
 }
 
+/* Only use this when the record is already scan-locked */
 long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
@@ -501,7 +509,7 @@ void dbChannelShow(dbChannel *chan, int level)
 {
     printf("    dbChannel name: %s\n", chan->name);
     /* FIXME: show field_type name */
-    printf("    field_type %d, %ld element(s), %d filter(s)",
+    printf("    field_type %d, %ld element(s), %d filter(s)\n",
             chan->addr.field_type,
             chan->addr.no_elements, ellCount(&chan->filters));
     if (level > 0)
@@ -512,7 +520,7 @@ void dbChannelFilterShow(dbChannel *chan, int level)
 {
     chFilter *filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
-        filter->fif->channel_report(filter, level - 1);
+        filter->fif->channel_report(filter, level);
         filter = (chFilter *) ellNext(&filter->node);
     }
 }
@@ -527,8 +535,6 @@ void dbChannelDelete(dbChannel *chan)
     }
     free((char *) chan->name);   // FIXME: Use free-list
     free(chan); // FIXME: Use free-list
-
-    return 0;
 }
 
 

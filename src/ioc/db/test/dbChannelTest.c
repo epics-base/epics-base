@@ -132,7 +132,7 @@ MAIN(dbChannelTest)
 {
     dbChannel *pch;
 
-    testPlan(67);
+    testPlan(68);
 
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
@@ -196,7 +196,7 @@ MAIN(dbChannelTest)
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelShow(pch, 0);
+    dbChannelShow(pch, 1);
 
     e = e_close;
     if (pch) dbChannelDelete(pch);

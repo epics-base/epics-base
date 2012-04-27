@@ -325,7 +325,8 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
 	return;
 }
 
-static void getOptions(DBADDR *paddr,char **poriginal,long *options,void *pflin)
+static void getOptions(DBADDR *paddr, char **poriginal, long *options,
+        void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
 	struct rset	*prset;
@@ -890,6 +891,51 @@ long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
     return status;
 }
 
+static long dbGetFieldLink(DBADDR *paddr,short dbrType,
+    void *pbuffer, long *options, long *nRequest, void *pflin)
+{
+    dbCommon *precord = paddr->precord;
+    dbFldDes *pfldDes = paddr->pfldDes;
+    char *pbuf = (char *)pbuffer;
+    int maxlen;
+    DBENTRY dbEntry;
+    long status;
+
+    if (options && (*options))
+        getOptions(paddr, &pbuf, options, pflin);
+    if (nRequest && *nRequest == 0)
+        return 0;
+
+    switch (dbrType) {
+    case DBR_STRING:
+        maxlen = MAX_STRING_SIZE - 1;
+        if (nRequest && *nRequest > 1) *nRequest = 1;
+        break;
+
+    case DBR_CHAR:
+    case DBR_UCHAR:
+            if (nRequest && *nRequest > 0) {
+            maxlen = *nRequest - 1;
+            break;
+        }
+        /* else fall through ... */
+    default:
+        return S_db_badDbrtype;
+    }
+
+    dbInitEntry(pdbbase, &dbEntry);
+    status = dbFindRecord(&dbEntry, precord->name);
+    if (!status) status = dbFindField(&dbEntry, pfldDes->name);
+    if (!status) {
+        char *rtnString = dbGetString(&dbEntry);
+
+        strncpy(pbuf, rtnString, --maxlen);
+        pbuf[maxlen] = 0;
+    }
+    dbFinishEntry(&dbEntry);
+    return status;
+}
+
 long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
@@ -899,47 +945,11 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
 
     dbScanLock(precord);
     if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
-        DBENTRY dbEntry;
-        dbFldDes *pfldDes = paddr->pfldDes;
-        char *rtnString;
-        char *pbuf = (char *)pbuffer;
-        int maxlen;
-
-        if (options && (*options))
-            getOptions(paddr, &pbuf, options, pflin);
-        if (nRequest && *nRequest == 0) goto done;
-
-        switch (dbrType) {
-        case DBR_STRING:
-            maxlen = MAX_STRING_SIZE - 1;
-            if (nRequest && *nRequest > 1) *nRequest = 1;
-            break;
-
-        case DBR_CHAR:
-        case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-                maxlen = *nRequest - 1;
-                break;
-            }
-            /* else fall through ... */
-        default:
-            status = S_db_badDbrtype;
-            goto done;
-        }
-
-        dbInitEntry(pdbbase, &dbEntry);
-        status = dbFindRecord(&dbEntry, precord->name);
-        if (!status) status = dbFindField(&dbEntry, pfldDes->name);
-        if (!status) {
-            rtnString = dbGetString(&dbEntry);
-            strncpy(pbuf, rtnString, maxlen);
-            pbuf[maxlen] = 0;
-        }
-        dbFinishEntry(&dbEntry);
+        status = dbGetFieldLink(paddr, dbrType, pbuffer, options, nRequest,
+                pflin);
     } else {
         status = dbGet(paddr, dbrType, pbuffer, options, nRequest, pflin);
     }
-done:
     dbScanUnlock(precord);
     return status;
 }
@@ -985,7 +995,7 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
             return S_db_badDbrtype;
         }
 
-        strncpy(pbuf, (char *)paddr->pfield, maxlen);
+        strncpy(pbuf, paddr->pfield, --maxlen);
         pbuf[maxlen] = 0;
         return 0;
     }
@@ -1351,7 +1361,6 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
     short field_type  = paddr->field_type;
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
-    long offset;
     long status = 0;
     dbFldDes *pfldDes;
     int isValueField;
@@ -1380,6 +1389,7 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
             paddr->pfield, paddr);
     } else {
         struct rset *prset = dbGetRset(paddr);
+        long offset = 0;
 
         if (paddr->special == SPC_DBADDR &&
             prset && prset->get_array_info) {
@@ -1387,8 +1397,6 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
 
             status = prset->get_array_info(paddr, &dummy, &offset);
         }
-        else
-            offset = 0;
         if (no_elements < nRequest) nRequest = no_elements;
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);

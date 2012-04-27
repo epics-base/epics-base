@@ -10,6 +10,9 @@ include "menuConvert.dbd"
 # Record types
 include "stdRecords.dbd"
 
+# Channel filters & plugins
+include "filters.dbd"
+
 # "Soft Channel", "Raw Soft Channel", and "Async Soft Channel" device support
 include "devSoft.dbd"
 

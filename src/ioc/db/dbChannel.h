@@ -48,10 +48,19 @@ typedef void (chPostEventFunc)(void *pvt, struct evSubscrip *event, db_field_log
 typedef struct dbChannel {
     const char *name;
     dbAddr addr;
+    long  final_no_elements;  /* final number of elements (arrays) */
+    short final_element_size; /* final size of element */
+    short final_type;         /* final type of database field */
+    short dbr_final_type;     /* final field type as seen by database request */
+    chPostEventFunc *pre_event_cb;
+    void *pre_event_arg;
     chPostEventFunc *post_event_cb;
     void *post_event_arg;
     ELLLIST filters;
 } dbChannel;
+
+/* Prototype for the set type function that is called recursively in filter stacks */
+typedef void (chSetTypeFunc)(void *pvt, long no_elements, short field_type, short element_size);
 
 /* Return values from chFilterIf->parse_* routines: */
 typedef enum {
@@ -93,7 +102,16 @@ typedef struct chFilterIf {
 
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
-    long (* channel_register_pre_eventq_cb)(chFilter *filter, chPostEventFunc *cb_in, void *arg_in, chPostEventFunc **cb_out, void**arg_out);
+    void (* channel_register_pre_eventq) (chFilter *filter,
+                                          chPostEventFunc *pe_in,   void *arg_pe_in,
+                                          chSetTypeFunc *st_in,     void *arg_st_in,
+                                          chPostEventFunc **pe_out, void **arg_pe_out,
+                                          chSetTypeFunc **st_out,   void **arg_st_out);
+    void (* channel_register_post_eventq)(chFilter *filter,
+                                          chPostEventFunc *pe_in,   void *arg_pe_in,
+                                          chSetTypeFunc *st_in,     void *arg_st_in,
+                                          chPostEventFunc **pe_out, void **arg_pe_out,
+                                          chSetTypeFunc **st_out,   void **arg_st_out);
     void (* channel_report)(chFilter *filter, const char *intro, int level);
     /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);
@@ -128,6 +146,10 @@ epicsShareFunc long dbChannelElements(dbChannel *chan);
 epicsShareFunc short dbChannelFieldType(dbChannel *chan);
 epicsShareFunc short dbChannelExportType(dbChannel *chan);
 epicsShareFunc short dbChannelElementSize(dbChannel *chan);
+epicsShareFunc long dbChannelFinalElements(dbChannel *chan);
+epicsShareFunc short dbChannelFinalFieldType(dbChannel *chan);
+epicsShareFunc short dbChannelFinalExportType(dbChannel *chan);
+epicsShareFunc short dbChannelFinalElementSize(dbChannel *chan);
 epicsShareFunc short dbChannelSpecial(dbChannel *chan);
 epicsShareFunc void * dbChannelField(dbChannel *chan);
 epicsShareFunc long dbChannelGet(dbChannel *chan, short type,

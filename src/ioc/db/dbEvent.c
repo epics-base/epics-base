@@ -784,7 +784,7 @@ unsigned int    caEventMask
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
             /* Call the head of the filter chain */
-            pevent->chan->post_event_cb(pevent->chan->post_event_arg,
+            pevent->chan->pre_event_cb(pevent->chan->pre_event_arg,
                                         pevent,
                                         db_post_single_event_first(pevent));
         }
@@ -806,7 +806,7 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
     dbScanLock (prec);
 
     /* Call the head of the filter chain */
-    pevent->chan->post_event_cb(pevent->chan->post_event_arg,
+    pevent->chan->pre_event_cb(pevent->chan->pre_event_arg,
                                 pevent,
                                 db_post_single_event_first(pevent));
 

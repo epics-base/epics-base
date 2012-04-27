@@ -480,14 +480,38 @@ static long channel_open(chFilter *filter)
     else return 0;
 }
 
-static long channel_register_pre_eventq_cb(chFilter *filter, chPostEventFunc* cb_in, void *arg_in,
-                                           chPostEventFunc **cb_out, void **arg_out)
+static void channel_register_pre_eventq(chFilter *filter,
+                                        chPostEventFunc *pe_in,   void *pe_arg_in,
+                                        chSetTypeFunc   *st_in,   void *st_arg_in,
+                                        chPostEventFunc **pe_out, void **pe_arg_out,
+                                        chSetTypeFunc   **st_out, void **st_arg_out)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
 
-    if (p->pif->channelRegisterPreEventQueCB) return p->pif->channelRegisterPreEventQueCB(filter->chan, f->puser, cb_in, arg_in, cb_out, arg_out);
-    else return -1;
+    if (p->pif->channelRegisterPreEventQue)
+        p->pif->channelRegisterPreEventQue(filter->chan, f->puser,
+                                           pe_in,  pe_arg_in,
+                                           st_in,  st_arg_in,
+                                           pe_out, pe_arg_out,
+                                           st_out, st_arg_out);
+}
+
+static void channel_register_post_eventq(chFilter *filter,
+                                         chPostEventFunc *pe_in,   void *pe_arg_in,
+                                         chSetTypeFunc   *st_in,   void *st_arg_in,
+                                         chPostEventFunc **pe_out, void **pe_arg_out,
+                                         chSetTypeFunc   **st_out, void **st_arg_out)
+{
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
+
+    if (p->pif->channelRegisterPostEventQue)
+        p->pif->channelRegisterPostEventQue(filter->chan, f->puser,
+                                            pe_in,  pe_arg_in,
+                                            st_in,  st_arg_in,
+                                            pe_out, pe_arg_out,
+                                            st_out, st_arg_out);
 }
 
 static void channel_report(chFilter *filter, const char *intro, int level)
@@ -532,7 +556,8 @@ static chFilterIf wrapper_fif = {
     NULL, /* parse_end_array, */
 
     channel_open,
-    channel_register_pre_eventq_cb,
+    channel_register_pre_eventq,
+    channel_register_post_eventq,
     channel_report,
     channel_close
 };

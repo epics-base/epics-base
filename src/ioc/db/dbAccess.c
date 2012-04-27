@@ -821,7 +821,8 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     }
 
     /* check for array */
-    if (paddr->special == SPC_DBADDR &&
+    if ((!pfl || pfl->type == dbfl_type_rec) &&
+        paddr->special == SPC_DBADDR &&
         no_elements > 1 &&
         (prset = dbGetRset(paddr)) &&
         prset->get_array_info) {
@@ -836,7 +837,9 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
                 (paddr->pfield, pbuffer, paddr);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
-
+            localAddr.field_type = pfl->field_type;
+            localAddr.field_size = pfl->field_size;
+            localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;
             else
@@ -870,7 +873,9 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
             status = convert(paddr, pbuffer, n, no_elements, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
-
+            localAddr.field_type = pfl->field_type;
+            localAddr.field_size = pfl->field_size;
+            localAddr.no_elements = pfl->no_elements;
             if (pfl->type == dbfl_type_val)
                 localAddr.pfield = (char *) &pfl->u.v.field;
             else

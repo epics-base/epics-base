@@ -19,6 +19,7 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "dbBase.h"
 
 #ifdef INCLdb_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

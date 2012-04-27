@@ -74,6 +74,7 @@ typedef struct db_field_log {
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
     short        field_type;  /* DBF type of data */
+    short        field_size;  /* Data size */
     long        no_elements;  /* No of array elements */
     union {
         struct dbfl_val v;

@@ -1200,7 +1200,7 @@ static void claim_ciu_reply ( struct channel_in_use * pciu )
         ca_uint32_t nElem;
         long dbElem;
         SEND_LOCK ( pciu->client );
-        dbElem = dbChannelElements(pciu->dbch);
+        dbElem = dbChannelFinalElements(pciu->dbch);
         if ( dbElem < 0 ) {
             nElem = 0;
         }
@@ -1219,7 +1219,7 @@ static void claim_ciu_reply ( struct channel_in_use * pciu )
         }
         status = cas_copy_in_header (
             pciu->client, CA_PROTO_CREATE_CHAN, 0u,
-            dbChannelExportType(pciu->dbch), nElem, pciu->cid,
+            dbChannelFinalExportType(pciu->dbch), nElem, pciu->cid,
             pciu->sid, NULL );
         if ( status == ECA_NORMAL ) {
             cas_commit_msg ( pciu->client, 0u );
@@ -2253,6 +2253,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
      *
      * New versions dont alloc the channel in response
      * to a search request.
+     * For these, allocation has been moved to claim_ciu_action().
      *
      * m_count, m_cid are already in host format...
      */
@@ -2282,16 +2283,16 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
             return RSRV_OK;
         }
         sid = pchannel->sid;
-        if ( dbChannelElements(dbch) < 0 ) {
+        if ( dbChannelFinalElements(dbch) < 0 ) {
             count = 0;
         }
-        else if ( dbChannelElements(dbch) > 0xffff ) {
+        else if ( dbChannelFinalElements(dbch) > 0xffff ) {
             count = 0xfffe;
         }
         else {
-            count = (ca_uint16_t) dbChannelElements(dbch);
+            count = (ca_uint16_t) dbChannelFinalElements(dbch);
         }
-        type = (ca_uint16_t) dbChannelExportType(dbch);
+        type = (ca_uint16_t) dbChannelFinalExportType(dbch);
     }
 
     SEND_LOCK ( client );

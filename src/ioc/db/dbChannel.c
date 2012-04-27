@@ -24,6 +24,9 @@
 #include "special.h"
 #include "yajl_parse.h"
 
+/* The following is defined in db_convert.h */
+extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
+
 typedef struct parseContext {
     dbChannel *chan;
     chFilter *filter;
@@ -410,14 +413,31 @@ finish:
     return chan;
 }
 
+static void setFinalType(void *pvt, long no_elements, short field_type, short element_size) {
+    dbChannel *chan = (dbChannel*) pvt;
+
+    chan->final_no_elements  = no_elements;
+    chan->final_element_size = element_size;
+    chan->final_type         = field_type;
+    chan->dbr_final_type     = dbDBRnewToDBRold[mapDBFToDBR[field_type]];
+}
+
 long dbChannelOpen(dbChannel *chan)
 {
     chFilter *filter;
     long status = 0;
-    chPostEventFunc *nextcb = db_post_single_event_final;
-    void *nextarg = NULL;
-    chPostEventFunc *thiscb = NULL;
-    void *thisarg = NULL;
+    chPostEventFunc *pre_pe_next = db_post_single_event_final;
+    void *pre_nextarg = NULL;
+    chPostEventFunc *pre_pe_this = NULL;
+    void *pre_thisarg = NULL;
+    chPostEventFunc *post_pe_next = NULL;
+    void *post_nextarg = NULL;
+    chPostEventFunc *post_pe_this = NULL;
+    void *post_thisarg = NULL;
+    chSetTypeFunc *st_next = setFinalType;
+    void *st_nextarg = chan;
+    chSetTypeFunc *st_this = NULL;
+    void *st_thisarg = NULL;
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
@@ -426,18 +446,53 @@ long dbChannelOpen(dbChannel *chan)
         filter = (chFilter *) ellNext(&filter->node);
     }
 
-    /* Build up the pre-event-queue chain */
+    /*
+     * Build up the post-event-queue and pre-event-queue filter chains.
+     * Must be done top-down and separate, since there is only one callback chain
+     * for type/size changes.
+     */
     filter = (chFilter *) ellLast(&chan->filters);
-    while (filter) {
-        long status = filter->plug->fif->channel_register_pre_eventq_cb(filter, nextcb, nextarg, &thiscb, &thisarg);
-        if (status == 0) {
-            nextcb  = thiscb;
-            nextarg = thisarg;
+    while (filter && filter->plug->fif->channel_register_post_eventq) {
+        filter->plug->fif->channel_register_post_eventq(filter,
+                                                        post_pe_next,  post_nextarg,
+                                                        st_next,       st_nextarg,
+                                                        &post_pe_this, &post_thisarg,
+                                                        &st_this,      &st_thisarg);
+        if (post_pe_this) {
+            post_pe_next = post_pe_this;
+            post_nextarg = post_thisarg;
+        }
+        if (st_this) {
+            st_next    = st_this;
+            st_nextarg = st_thisarg;
         }
         filter = (chFilter *) ellPrevious(&filter->node);
     }
-    chan->post_event_cb  = nextcb;
-    chan->post_event_arg = nextarg;
+    chan->post_event_cb  = post_pe_next;
+    chan->post_event_arg = post_nextarg;
+
+    filter = (chFilter *) ellLast(&chan->filters);
+    while (filter && filter->plug->fif->channel_register_pre_eventq) {
+        filter->plug->fif->channel_register_pre_eventq(filter,
+                                                       pre_pe_next,  pre_nextarg,
+                                                       st_next,      st_nextarg,
+                                                       &pre_pe_this, &pre_thisarg,
+                                                       &st_this,     &st_thisarg);
+        if (pre_pe_this) {
+            pre_pe_next = pre_pe_this;
+            pre_nextarg = pre_thisarg;
+        }
+        if (st_this) {
+            st_next = st_this;
+            st_nextarg = st_thisarg;
+        }
+        filter = (chFilter *) ellPrevious(&filter->node);
+    }
+    chan->pre_event_cb  = pre_pe_next;
+    chan->pre_event_arg = pre_nextarg;
+
+    /* Call filter chain to determine data type/size changes */
+    if (st_next) st_next(st_nextarg, chan->addr.no_elements, chan->addr.field_type, chan->addr.field_size);
 
 finish:
     return status;
@@ -479,6 +534,26 @@ short dbChannelExportType(dbChannel *chan)
 short dbChannelElementSize(dbChannel *chan)
 {
     return chan->addr.field_size;
+}
+
+long dbChannelFinalElements(dbChannel *chan)
+{
+    return chan->final_no_elements;
+}
+
+short dbChannelFinalFieldType(dbChannel *chan)
+{
+    return chan->final_type;
+}
+
+short dbChannelFinalExportType(dbChannel *chan)
+{
+    return chan->dbr_final_type;
+}
+
+short dbChannelFinalElementSize(dbChannel *chan)
+{
+    return chan->final_element_size;
 }
 
 short dbChannelSpecial(dbChannel *chan)

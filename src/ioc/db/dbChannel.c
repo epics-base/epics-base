@@ -211,32 +211,30 @@ static const yajl_callbacks chf_callbacks =
 static const yajl_parser_config chf_config =
     { 0, 1 }; /* allowComments = NO , checkUTF8 = YES */
 
-static long json_validate(const char *json)
+static void * chf_malloc(void *ctx, unsigned int sz)
 {
-    yajl_handle yh = yajl_alloc(NULL, &chf_config, NULL, NULL);
-    size_t jlen = strlen(json);
-    yajl_status ys;
-
-    if (!yh)
-        return S_db_noMemory;
-
-    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
-    if (ys == yajl_status_insufficient_data)
-        ys = yajl_parse_complete(yh);
-
-    yajl_free(yh);
-
-    if (ys == yajl_status_ok)
-        return 0;
-
-    return S_db_notFound;
+    return malloc(sz); /* FIXME: free-list */
 }
 
-static long chf_parse(dbChannel *chan, const char *json)
+static void * chf_realloc(void *ctx, void *ptr, unsigned int sz)
+{
+    return realloc(ptr, sz); /* FIXME: free-list */
+}
+
+static void chf_free(void *ctx, void *ptr)
+{
+    return free(ptr); /* FIXME: free-list */
+}
+
+static const yajl_alloc_funcs chf_alloc =
+    { chf_malloc, chf_realloc, chf_free };
+
+static long chf_parse(dbChannel *chan, const char **pjson)
 {
     parseContext parser =
         { chan, NULL, 0 };
-    yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_config, NULL, &parser);
+    yajl_handle yh = yajl_alloc(&chf_callbacks, &chf_config, &chf_alloc, &parser);
+    const char *json = *pjson;
     size_t jlen = strlen(json);
     yajl_status ys;
     long status;
@@ -251,13 +249,14 @@ static long chf_parse(dbChannel *chan, const char *json)
     switch (ys) {
     case yajl_status_ok:
         status = 0;
+        *pjson += yajl_get_bytes_consumed(yh);
         break;
 
     case yajl_status_error: {
         unsigned char *err;
 
         err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
-        printf("dbChannelFind: %s\n", err);
+        printf("dbChannelCreate: %s\n", err);
         yajl_free_error(yh, err);
     } /* fall through */
     default:
@@ -267,7 +266,7 @@ static long chf_parse(dbChannel *chan, const char *json)
     if (parser.filter) {
         assert(status);
         parser.filter->fif->parse_abort(parser.filter);
-        free(parser.filter);
+        free(parser.filter); /* FIXME: free-list */
     }
     yajl_free(yh);
     return status;
@@ -302,37 +301,9 @@ long dbChannelTest(const char *name)
         return S_db_notFound;
 
     status = pvNameLookup(&dbEntry, &name);
-    if (status)
-        goto finish;
 
-    /* Test field modifiers */
-    while (*name) {
-        switch (*name) {
-        case '$':
-            switch (dbEntry.pflddes->field_type) {
-            case DBF_STRING:
-            case DBF_INLINK:
-            case DBF_OUTLINK:
-            case DBF_FWDLINK:
-                break;
-            default:
-                status = S_dbLib_fieldNotFound;
-                goto finish;
-            }
-            break;
-        case '{':
-            status = json_validate(name);
-            goto finish;
-        default:
-            status = S_dbLib_fieldNotFound;
-            goto finish;
-        }
-        name++;
-    }
-
-    finish:
-        dbFinishEntry(&dbEntry);
-        return status;
+    dbFinishEntry(&dbEntry);
+    return status;
 }
 
 /* Stolen from dbAccess.c: */
@@ -372,9 +343,9 @@ dbChannel * dbChannelCreate(const char *name)
     if (status)
         goto finish;
 
-    // FIXME: Use free-list
+    /* FIXME: Use free-list */
     chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
-    chan->name = strdup(name);  // FIXME?
+    chan->name = strdup(name);  /* FIXME: free-list */
     ellInit(&chan->filters);
 
     paddr = &chan->addr;
@@ -391,9 +362,8 @@ dbChannel * dbChannelCreate(const char *name)
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
     /* Handle field modifiers */
-    while (*pname) {
-        switch (*pname) {
-        case '$':
+    if (*pname) {
+        if (*pname == '$') {
             /* Some field types can be accessed as char arrays */
             if (dbfType == DBF_STRING) {
                 paddr->no_elements = pflddes->size;
@@ -409,15 +379,20 @@ dbChannel * dbChannelCreate(const char *name)
                 status = S_dbLib_fieldNotFound;
                 goto finish;
             }
-            break;
-        case '{':
-            status = chf_parse(chan, pname);
-            goto finish;
-        default:
+            pname++;
+        }
+
+        /* JSON may follow a $ */
+        if (*pname == '{') {
+            status = chf_parse(chan, &pname);
+            if (status) goto finish;
+        }
+
+        /* Make sure there's nothing else */
+        if (*pname) {
             status = S_dbLib_fieldNotFound;
             goto finish;
         }
-        pname++;
     }
 
     if (paddr->special == SPC_DBADDR) {
@@ -533,7 +508,7 @@ void dbChannelFilterShow(dbChannel *chan, int level)
     }
 }
 
-long dbChannelDelete(dbChannel *chan)
+void dbChannelDelete(dbChannel *chan)
 {
     chFilter *filter;
 

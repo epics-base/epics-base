@@ -102,7 +102,7 @@ epicsShareFunc long dbChannelPutField(dbChannel *chan, short type,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbChannelShow(dbChannel *chan, int level);
 epicsShareFunc void dbChannelFilterShow(dbChannel *chan, int level);
-epicsShareFunc long dbChannelDelete(dbChannel *chan);
+epicsShareFunc void dbChannelDelete(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);
 epicsShareFunc const chFilterIf * dbFindFilter(const char *key, size_t len);

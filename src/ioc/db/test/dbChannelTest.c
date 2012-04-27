@@ -132,31 +132,42 @@ MAIN(dbChannelTest)
 {
     dbChannel *pch;
 
-    testPlan(64);
+    testPlan(67);
 
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     r = e = 0;
-    /* Regular record and field names */
-    testOk1(!dbChannelTest("x"));
+    /* dbChannelTest() checks record and field names */
     testOk1(!dbChannelTest("x.NAME"));
+    testOk1(!dbChannelTest("x.VAL"));
+    testOk1(!dbChannelTest("x."));
+    testOk1(!dbChannelTest("x"));
+    testOk(dbChannelTest("y"), "Test, nonexistent record");
+    testOk(dbChannelTest("x.NOFIELD"), "Test, nonexistent field");
 
-    /* Long string field modifier */
+    /* dbChannelTest() allows but ignores field modifiers */
     testOk1(!dbChannelTest("x.NAME$"));
+    testOk1(!dbChannelTest("x.{}"));
+    testOk1(!dbChannelTest("x.VAL{\"json\":true}"));
+
+    /* dbChannelCreate() accepts field modifiers */
+    testOk1(!!(pch = dbChannelCreate("x.{}")));
+    if (pch) dbChannelDelete(pch);
+    testOk1(!!(pch = dbChannelCreate("x.VAL{}")));
+    if (pch) dbChannelDelete(pch);
     testOk1(!!(pch = dbChannelCreate("x.NAME$")));
-    testOk1(pch->addr.no_elements > 1);
-    testOk1(!dbChannelDelete(pch));
+    testOk1(pch && pch->addr.no_elements > 1);
+    if (pch) dbChannelDelete(pch);
+    testOk1(!!(pch = dbChannelCreate("x.NAME${}")));
+    testOk1(pch && pch->addr.no_elements > 1);
+    if (pch) dbChannelDelete(pch);
 
-    /* JSON field modifier validation */
-    testOk1(!dbChannelTest("x.{\"json\":true}"));
-
-    /* Ensure bad PVs get rejected */
-    testOk(dbChannelTest("y"), "Test nonexistent record");
-    testOk(dbChannelCreate("y") == NULL, "Create nonexistent record");
-
-    testOk1(dbChannelTest("x.{not-json}"));
-    testOk1(!dbChannelCreate("x.{\"none\":null}"));
+    /* dbChannelCreate() rejects bad PVs */
+    testOk(!dbChannelCreate("y"), "Create, bad record");
+    testOk(!dbChannelCreate("x.NOFIELD"), "Create, bad field");
+    testOk(!dbChannelCreate("x.{not-json}"), "Create, bad JSON");
+    testOk(!dbChannelCreate("x.{\"none\":null}"), "Create, bad filter");
 
     dbRegisterFilter("any", &testIf);
 
@@ -177,7 +188,7 @@ MAIN(dbChannelTest)
     e = e_start | e_null | e_end;
     testOk1(!!(pch = dbChannelCreate("x.{\"any\":null}")));
     e = e_close;
-    testOk1(!dbChannelDelete(pch));
+    if (pch) dbChannelDelete(pch);
 
     dbRegisterFilter("scalar", &testIf);
 
@@ -188,19 +199,19 @@ MAIN(dbChannelTest)
     dbChannelShow(pch, 0);
 
     e = e_close;
-    testOk1(!dbChannelDelete(pch));
+    if (pch) dbChannelDelete(pch);
 
     e = e_start | e_start_array | e_boolean | e_integer | e_end_array
             | e_end;
     testOk1(!!(pch = dbChannelCreate("x.{\"any\":[true,1]}")));
     e = e_close;
-    testOk1(!dbChannelDelete(pch));
+    if (pch) dbChannelDelete(pch);
 
     e = e_start | e_start_map | e_map_key | e_double | e_string | e_end_map
             | e_end;
     testOk1(!!(pch = dbChannelCreate("x.{\"any\":{\"a\":2.7183,\"b\":\"c\"}}")));
     e = e_close;
-    testOk1(!dbChannelDelete(pch));
+    if (pch) dbChannelDelete(pch);
 
     /* More event rejection */
     r = r_scalar;

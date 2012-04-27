@@ -1,4 +1,7 @@
 /*************************************************************************\
+* Copyright (c) 2010 Brookhaven National Laboratory.
+* Copyright (c) 2010 Helmholtz-Zentrum Berlin
+*     fuer Materialien und Energie GmbH.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -8,8 +11,9 @@
 \*************************************************************************/
 
 /*
- *  Author: Jeffrey O. Hill
+ *  Author: Jeffrey O. Hill <johill@lanl.gov>
  *
+ *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
 #include <stddef.h>

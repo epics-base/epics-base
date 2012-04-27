@@ -1,16 +1,21 @@
 /*************************************************************************\
+* Copyright (c) 2010 Brookhaven National Laboratory.
+* Copyright (c) 2010 Helmholtz-Zentrum Berlin
+*     fuer Materialien und Energie GmbH.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
- * 	Author: 	Jeffrey O. Hill 
- *      Date:            4-1-89
+
+/*
+ *  Author: Jeffrey O. Hill <johill@lanl.gov>
+ *
+ *          Ralph Lange <Ralph.Lange@bessy.de>
  */
+
 #ifndef INCLdb_field_logh
 #define INCLdb_field_logh
 

@@ -1,15 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
+
+/*
  *
  *      Author: John Winans (ANL)
- *      Date:   07-02-92
+ *              Andrew Johnson <anj@aps.anl.gov>
  */
 #ifndef INC_ellLib_H
 #define INC_ellLib_H

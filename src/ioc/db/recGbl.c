@@ -6,12 +6,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recGbl.c */
-/* $Revision-Id$ */
 
 /*
  *      Author:          Marty Kraimer
- *      Date:            11-7-90
+ *                       Andrew Johnson <anj@aps.anl.gov>
  */
 
 #include <stddef.h>

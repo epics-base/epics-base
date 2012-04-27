@@ -6,6 +6,12 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+/*
+ *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ */
+
+/* Based on the linkoptions utility by Michael Davidsaver (BNL) */
+
 #ifndef CHFPLUGIN_H
 #define CHFPLUGIN_H
 
@@ -15,8 +21,6 @@
 #include <dbChannel.h>
 
 struct db_field_log;
-
-/* Based on the linkoptions utility by Michael Davidsaver (BNL) */
 
 /** @file chfPlugin.h
  * @brief Channel filter simplified plugins.

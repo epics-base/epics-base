@@ -6,6 +6,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+/*
+ *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ */
+
 /* Based on the linkoptions utility by Michael Davidsaver (BNL) */
 
 #include <stdio.h>

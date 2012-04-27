@@ -7,12 +7,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* Interface between old database access and new
  *
  *      Author:          Marty Kraimer
- *      Date:            6-1-90
+ *                       Andrew Johnson <anj@aps.anl.gov>
  */
 
 #include <stddef.h>

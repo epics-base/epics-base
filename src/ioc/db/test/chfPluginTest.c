@@ -6,6 +6,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+/*
+ *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ */
+
 #include <string.h>
 
 #include "chfPlugin.h"

@@ -60,6 +60,8 @@ dbStateId dbStateCreate(const char *name)
 
 void dbStateSet(dbStateId id)
 {
+    if (!id)
+        return;
     epicsMutexMustLock(id->lock);
     id->status = 1;
     epicsMutexUnlock(id->lock);
@@ -67,6 +69,8 @@ void dbStateSet(dbStateId id)
 
 void dbStateClear(dbStateId id)
 {
+    if (!id)
+        return;
     epicsMutexMustLock(id->lock);
     id->status = 0;
     epicsMutexUnlock(id->lock);
@@ -76,6 +80,8 @@ int dbStateGet(dbStateId id)
 {
     int status;
 
+    if (!id)
+        return 0;
     epicsMutexMustLock(id->lock);
     status = id->status;
     epicsMutexUnlock(id->lock);

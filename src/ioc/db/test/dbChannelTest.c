@@ -16,8 +16,12 @@
 #include "dbChannel.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "recSup.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
 
 /* Expected call bit definitions */
 #define e_start         0x00000001
@@ -152,7 +156,9 @@ MAIN(dbChannelTest)
 
     testPlan(68);
 
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     r = e = 0;
@@ -243,3 +249,9 @@ MAIN(dbChannelTest)
 
     return testDone();
 }
+
+#include <epicsExport.h>
+
+static
+rset xRSET;
+epicsExportAddress(rset,xRSET);

@@ -20,8 +20,11 @@ TESTS += callbackTest
 # When we add more test programs here, this must become a vxTestHarness
 TESTSPEC_vxWorks = callbackTest.munch; callbackTest
 
+DBDINC += xRecord
+
 TESTPROD_HOST += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
+dbChannelTest_SRCS += xRecord_registerRecordDeviceDriver.cpp
 dbChannelTest_LIBS += dbCore
 OBJS_IOC_vxWorks += dbChannelTest
 TESTS += dbChannelTest

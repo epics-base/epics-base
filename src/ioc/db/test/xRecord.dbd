@@ -10,4 +10,3 @@ recordtype(x) {
     prompt("Value")
   }
 }
-record(x, x) {}

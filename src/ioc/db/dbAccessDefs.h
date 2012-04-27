@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbAccessDefs.h	*/
 /* $Revision-Id$ */
@@ -47,7 +47,7 @@ epicsShareExtern volatile int interruptAccept;
 #define DBR_CTRL_DOUBLE 0x00000100
 #define DBR_AL_LONG     0x00000200
 #define DBR_AL_DOUBLE   0x00000400
-
+
 /**********************************************************************
  * The next page contains macros for defining requests.
  * As an example the following defines a buffer to accept an array
@@ -69,7 +69,7 @@ epicsShareExtern volatile int interruptAccept;
  * options = DBR_STATUS|DBR_TIME;
  * number_elements = 10;
  * rtnval=dbGetField(paddr,DBR_FLOAT,&buffer,&options,&number_elements);
- *	
+ *
  * When dbGetField returns:
  *	rtnval is error status (0 means success)
  *	options has a bit set for each option that was accepted
@@ -97,7 +97,7 @@ epicsShareExtern volatile int interruptAccept;
  * MYBUFFER *pbuf1;
  * MYBUFFER buf;
  *************************************************************************/
-
+
 /* Macros for defining each option */
 #define DBRstatus \
 	epicsUInt16	status;		/* alarm status */\
@@ -143,7 +143,7 @@ epicsShareExtern volatile int interruptAccept;
         epicsFloat64    upper_warning_limit;\
         epicsFloat64    lower_warning_limit;\
         epicsFloat64    lower_alarm_limit;
-
+
 /*  structures for each option type             */
 struct dbr_status       {DBRstatus};
 struct dbr_units        {DBRunits};
@@ -198,7 +198,7 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_cntSpwn    (M_dbAccess|63) /*Cannot spawn dbContTask*/
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
 #define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
-
+
 /* Global Database Access Routines*/
 #define dbGetLink(PLNK, DBRTYPE, PBUFFER, OPTIONS, NREQUEST) \
     ( ( ( (PLNK)->type == CONSTANT ) && \

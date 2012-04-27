@@ -20,6 +20,11 @@ TESTS += callbackTest
 # When we add more test programs here, this must become a vxTestHarness
 TESTSPEC_vxWorks = callbackTest.munch; callbackTest
 
+TESTPROD_HOST += dbChannelTest
+dbChannelTest_SRCS += dbChannelTest.c
+OBJS_IOC_vxWorks += dbChannelTest
+TESTS += dbChannelTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

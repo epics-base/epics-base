@@ -901,6 +901,11 @@ static int event_read ( struct event_que *ev_que )
              */
             pevent->callBackInProgress = TRUE;
             UNLOCKEVQUE (ev_que)
+            /* Run post-event-queue filter chain */
+            if (ellCount(&pevent->chan->post_chain)) {
+                dbChannelRunPostChain(pevent->chan, pfl);
+            }
+            /* Issue user callback */
             ( *user_sub ) ( pevent->user_arg, pevent->chan,
                 ev_que->evque[ev_que->getix] != EVENTQEMPTY, pfl );
             LOCKEVQUE (ev_que)

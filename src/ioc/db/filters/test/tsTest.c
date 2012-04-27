@@ -48,7 +48,7 @@ MAIN(tsTest)
     db_field_log fl1;
     db_field_log *pfl2;
 
-    testPlan(0);
+    testPlan(14);
 
     db_init_events();
 

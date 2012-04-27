@@ -102,7 +102,7 @@ MAIN(dbndTest)
     db_field_log *pfl, *pfl2;
     db_field_log fl1;
 
-    testPlan(0);
+    testPlan(61);
 
     db_init_events();
 

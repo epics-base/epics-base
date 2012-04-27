@@ -10,17 +10,28 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbIoc registryIoc dbStaticHost ca Com
+PROD_LIBS += dbIoc miscIoc registryIoc ca Com
 
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c
+tsTest_LIBS += dbStaticHost
 OBJS_IOC_vxWorks += tsTest
 TESTS += tsTest
 
 TESTPROD_HOST += dbndTest
 dbndTest_SRCS += dbndTest.c
+dbndTest_LIBS += dbStaticHost
 OBJS_IOC_vxWorks += dbndTest
 TESTS += dbndTest
+
+DBDINC += arrRecord
+TARGETS += $(COMMON_DIR)/arrTest.dbd
+arrTest_DBD += arrRecord.dbd
+TESTPROD_HOST += arrTest
+arrTest_SRCS += arrTest.cpp arrRecord.c arrRecord_registerRecordDeviceDriver.cpp
+arrTest_LIBS += dbStaticIoc
+OBJS_IOC_vxWorks += arrTest
+TESTS += arrTest
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

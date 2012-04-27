@@ -127,20 +127,20 @@ extern "C" {
      *  \param config     configuration parameters for the parse.
      *  \param ctx        a context pointer that will be passed to callbacks.
      */
-    yajl_handle YAJL_API yajl_alloc(const yajl_callbacks * callbacks,
+    YAJL_API yajl_handle yajl_alloc(const yajl_callbacks * callbacks,
                                     const yajl_parser_config * config,
                                     const yajl_alloc_funcs * allocFuncs,
                                     void * ctx);
 
     /** free a parser handle */    
-    void YAJL_API yajl_free(yajl_handle handle);
+    YAJL_API void yajl_free(yajl_handle handle);
 
     /** Parse some json!
      *  \param hand - a handle to the json parser allocated with yajl_alloc
      *  \param jsonText - a pointer to the UTF8 json text to be parsed
      *  \param jsonTextLength - the length, in bytes, of input text
      */
-    yajl_status YAJL_API yajl_parse(yajl_handle hand,
+    YAJL_API yajl_status yajl_parse(yajl_handle hand,
                                     const unsigned char * jsonText,
                                     unsigned int jsonTextLength);
 
@@ -170,7 +170,7 @@ extern "C" {
                                             unsigned int jsonTextLength);
 
     /** free an error returned from yajl_get_error */
-    void YAJL_API yajl_free_error(yajl_handle hand, unsigned char * str);
+    YAJL_API void yajl_free_error(yajl_handle hand, unsigned char * str);
 
 #ifdef __cplusplus
 }

@@ -83,7 +83,7 @@ MAIN(tsTest)
     testOk(pfl2 == &fl1, "ts filter does not drop or replace field_log");
     testOk(fl_equal_ex_ts(&fl1, pfl2), "ts filter does not change field_log data");
 
-    testOk(pfl2 = db_create_read_log(pch), "create field log from channel");
+    testOk(!!(pfl2 = db_create_read_log(pch)), "create field log from channel");
     epicsTimeStamp stamp = pfl2->time;
     pfl2 = dbChannelRunPreChain(pch, &fl1);
     epicsTimeStamp now; epicsTimeGetCurrent(&now);

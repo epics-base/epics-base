@@ -51,7 +51,7 @@ static void fl_setup(dbChannel *chan, db_field_log *pfl) {
            dbChannelFieldSize(chan));
 }
 
-static changeValue(db_field_log *pfl2, long val) {
+static void changeValue(db_field_log *pfl2, long val) {
     pfl2->u.v.field.dbf_long = val;
     testDiag("new value: %ld", val);
 }
@@ -99,7 +99,7 @@ MAIN(dbndTest)
     ELLNODE *node;
     chPostEventFunc *cb_out = NULL;
     void *arg_out = NULL;
-    db_field_log *pfl, *pfl2;
+    db_field_log *pfl2;
     db_field_log fl1;
 
     testPlan(61);

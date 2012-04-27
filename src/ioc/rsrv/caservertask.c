@@ -654,6 +654,7 @@ static void destroyAllChannels (
             errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
         }
 
+        dbChannelDelete(pciu->dbch);
         freeListFree ( rsrvChanFreeList, pciu );
     }
 }

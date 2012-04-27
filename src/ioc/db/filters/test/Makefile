@@ -33,6 +33,12 @@ arrTest_LIBS += dbStaticIoc
 OBJS_IOC_vxWorks += arrTest
 TESTS += arrTest
 
+TESTPROD_HOST += syncTest
+syncTest_SRCS += syncTest.c
+syncTest_LIBS += dbStaticHost
+OBJS_IOC_vxWorks += syncTest
+TESTS += syncTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

@@ -367,7 +367,6 @@ static parse_result parse_end(chFilter *filter)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
     chfFilter *f = (chfFilter*) filter->puser;
-    const chfPluginArgDef *cur;
     int i;
 
     /* Check if all required arguments were supplied */
@@ -481,6 +480,16 @@ static long channel_open(chFilter *filter)
     else return 0;
 }
 
+static long channel_register_pre_eventq_cb(chFilter *filter, chPostEventFunc* cb_in, void *arg_in,
+                                           chPostEventFunc **cb_out, void **arg_out)
+{
+    chfPlugin *p = (chfPlugin*) filter->plug->puser;
+    chfFilter *f = (chfFilter*) filter->puser;
+
+    if (p->pif->channelRegisterPreEventQueCB) return p->pif->channelRegisterPreEventQueCB(filter->chan, f->puser, cb_in, arg_in, cb_out, arg_out);
+    else return -1;
+}
+
 static void channel_report(chFilter *filter, const char *intro, int level)
 {
     chfPlugin *p = (chfPlugin*) filter->plug->puser;
@@ -523,6 +532,7 @@ static chFilterIf wrapper_fif = {
     NULL, /* parse_end_array, */
 
     channel_open,
+    channel_register_pre_eventq_cb,
     channel_report,
     channel_close
 };

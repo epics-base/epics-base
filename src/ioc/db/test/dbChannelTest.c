@@ -26,8 +26,9 @@
 #define e_start_array   0x00000800
 #define e_end_array     0x00001000
 #define e_open          0x00002000
-#define e_report        0x00004000
-#define e_close         0x00008000
+#define e_reg_pre_cb    0x00004000
+#define e_report        0x00008000
+#define e_close         0x00010000
 
 #define r_any (e_start | e_abort | e_end | \
         e_null | e_boolean | e_integer | e_double | e_string | \
@@ -114,6 +115,11 @@ long c_open(chFilter *filter)
     testOk(e & e_open, "channel_open called");
     return 0;
 }
+long c_reg_pre_cb(chFilter *filter, chPostEventFunc *cb_in, void *arg_in, chPostEventFunc **cb_out, void **arg_out)
+{
+    testOk(e & e_reg_pre_cb, "channel_register_pre_event_queue_callback called");
+    return 0;
+}
 void c_report(chFilter *filter, const char *intro, int level)
 {
     testOk(e & e_report, "channel_report called, level = %d", level);
@@ -126,7 +132,7 @@ void c_close(chFilter *filter)
 chFilterIf testIf =
     { p_start, p_abort, p_end, p_null, p_boolean, p_integer, p_double,
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
-      c_open, c_report, c_close };
+      c_open, c_reg_pre_cb, c_report, c_close };
 
 MAIN(dbChannelTest)
 {

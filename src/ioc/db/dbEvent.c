@@ -50,24 +50,6 @@
 #define EVENTQEMPTY     ((struct evSubscrip *)NULL)
 
 /*
- * event subscruiption
- */
-struct evSubscrip {
-    ELLNODE                 node;
-    struct dbChannel        *chan;
-    EVENTFUNC               *user_sub;
-    void                    *user_arg;
-    struct event_que        *ev_que;
-    db_field_log            *pLastLog;
-    unsigned long           npend;  /* n times this event is on the queue */
-    unsigned long           nreplace;  /* n times replacing event on the queue */
-    unsigned char           select;
-    char                    useValque;
-    char                    callBackInProgress;
-    char                    enabled;
-};
-
-/*
  * really a ring buffer
  */
 struct event_que {
@@ -487,6 +469,7 @@ void epicsShareAPI db_event_disable (dbEventSubscription event)
 /*
  * event_remove()
  * event queue lock _must_ be applied
+ * this nulls the entry in the queue, but doesn't delete the db_field_log chunk
  */
 static void event_remove ( struct event_que *ev_que,
     unsigned short index, struct evSubscrip *placeHolder )
@@ -494,6 +477,7 @@ static void event_remove ( struct event_que *ev_que,
     struct evSubscrip * const pevent = ev_que->evque[index];
 
     ev_que->evque[index] = placeHolder;
+    ev_que->valque[index] = NULL;
     if ( pevent->npend == 1u ) {
         pevent->pLastLog = NULL;
     }
@@ -637,17 +621,48 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
 }
 
 /*
- *  DB_POST_SINGLE_EVENT_PRIVATE()
+ *  DB_POST_SINGLE_EVENT_FIRST()
  *
  *  NOTE: This assumes that the db scan lock is already applied
+ *        (as it copies data from the record)
  */
-static void db_post_single_event_private (struct evSubscrip *event)
+db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
 {
-    struct event_que * const ev_que = event->ev_que;
     db_field_log        *pLog = NULL;
+
+    if (pevent->useValque) {
+        pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
+        if (pLog) {
+            struct dbChannel *chan = pevent->chan;
+            struct dbCommon *prec = dbChannelRecord(chan);
+            pLog->stat = prec->stat;
+            pLog->sevr = prec->sevr;
+            pLog->time = prec->time;
+
+            /*
+             * use memcpy to avoid a bus error on
+             * union copy of char in the db at an odd
+             * address
+             */
+            memcpy(&pLog->field,
+                   dbChannelField(chan),
+                   dbChannelElementSize(chan));
+        }
+    }
+    return pLog;
+}
+
+/*
+ *  DB_POST_SINGLE_EVENT_FINAL()
+ *
+ */
+void db_post_single_event_final (void *pvt, evSubscrip *pevent, db_field_log *pLog)
+{
+    struct event_que    *ev_que;
     int firstEventFlag;
     unsigned rngSpace;
 
+    ev_que = pevent->ev_que;
     /*
      * evUser ring buffer must be locked for the multiple
      * threads writing/reading it
@@ -662,7 +677,7 @@ static void db_post_single_event_private (struct evSubscrip *event)
      * events (saving them without the current valuye
      * serves no purpose)
      */
-    if (!event->useValque && event->npend>0u) {
+    if (!pevent->useValque && pevent->npend>0u) {
         UNLOCKEVQUE (ev_que)
         return;
     }
@@ -677,13 +692,16 @@ static void db_post_single_event_private (struct evSubscrip *event)
      * then replace the last event on the queue (for this monitor)
      */
     rngSpace = ringSpace ( ev_que );
-    if ( event->npend>0u &&
+    if ( pevent->npend>0u &&
         (ev_que->evUser->flowCtrlMode || rngSpace<=EVENTSPERQUE) ) {
         /*
          * replace last event if no space is left
          */
-        pLog = event->pLastLog;
-        event->nreplace++;
+        if (*pevent->pLastLog) {
+            freeListFree(dbevFieldLogFreeList, *pevent->pLastLog);
+            *pevent->pLastLog = pLog;
+        }
+        pevent->nreplace++;
         /*
          * the event task has already been notified about
          * this so we dont need to post the semaphore
@@ -691,16 +709,18 @@ static void db_post_single_event_private (struct evSubscrip *event)
         firstEventFlag = 0;
     }
     /*
- 	 * Otherwise, the current entry must be available.
+     * Otherwise, the current entry must be available.
      * Fill it in and advance the ring buffer.
      */
     else {
         assert ( ev_que->evque[ev_que->putix] == EVENTQEMPTY );
-        ev_que->evque[ev_que->putix] = event;
-        if (event->npend>0u) {
+        ev_que->evque[ev_que->putix] = pevent;
+        ev_que->valque[ev_que->putix] = pLog;
+        pevent->pLastLog = &ev_que->valque[ev_que->putix];
+        if (pevent->npend>0u) {
             ev_que->nDuplicates++;
         }
-        event->npend++;
+        pevent->npend++;
         /*
          * if the ring buffer was empty before
          * adding this event
@@ -712,30 +732,6 @@ static void db_post_single_event_private (struct evSubscrip *event)
             firstEventFlag = 0;
         }
         ev_que->putix = RNGINC ( ev_que->putix );
-    }
-
-    if (event->useValque) {
-        if (!pLog) {
-            pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
-        }
-        if (pLog) {
-            struct dbChannel *chan = event->chan;
-            struct dbCommon *prec = dbChannelRecord(chan);
-            pLog->stat = prec->stat;
-            pLog->sevr = prec->sevr;
-            pLog->time = prec->time;
-
-            /*
-             * use memcpy to avoid a bus error on
-             * union copy of char in the db at an odd
-             * address
-             */
-            memcpy(& pLog->field,
-                    dbChannelField(chan),
-                    dbChannelElementSize(chan));
-
-            event->pLastLog = pLog;
-        }
     }
 
     UNLOCKEVQUE (ev_que)
@@ -782,7 +778,10 @@ unsigned int    caEventMask
          */
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {
-            db_post_single_event_private (pevent);
+            /* Call the head of the filter chain */
+            pevent->chan->post_event_cb(pevent->chan->post_event_arg,
+                                        pevent,
+                                        db_post_single_event_first(pevent));
         }
     }
 
@@ -800,7 +799,12 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
     struct dbCommon * const prec = dbChannelRecord(pevent->chan);
 
     dbScanLock (prec);
-    db_post_single_event_private (pevent);
+
+    /* Call the head of the filter chain */
+    pevent->chan->post_event_cb(pevent->chan->post_event_arg,
+                                pevent,
+                                db_post_single_event_first(pevent));
+
     dbScanUnlock (prec);
 }
 
@@ -835,6 +839,10 @@ static int event_read ( struct event_que *ev_que )
 
         if ( pevent == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
+            if (ev_que->valque[ev_que->getix]) {
+                freeListFree(dbevFieldLogFreeList, ev_que->valque[ev_que->getix]);
+                ev_que->valque[ev_que->getix] = NULL;
+            }
             ev_que->getix = RNGINC ( ev_que->getix );
             assert ( ev_que->nCanceled > 0 );
             ev_que->nCanceled--;

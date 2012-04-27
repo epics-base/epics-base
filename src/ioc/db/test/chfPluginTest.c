@@ -43,6 +43,8 @@ typedef struct myStruct {
     int sent6;
     char        c;
     char        c1[2];
+    chPostEventFunc *callback;
+    void        *arg;
 } myStruct;
 
 static const
@@ -164,6 +166,15 @@ static long channel_open(dbChannel *chan, void *user)
     return c_open_return;
 }
 
+static long channelRegisterPreEventQueCB(dbChannel *chan, void *user, chPostEventFunc *cb_in, void* arg_in,
+                                         chPostEventFunc **cb_out, void **arg_out)
+{
+    myStruct *my = (myStruct*)user;
+    my->callback = cb_in;
+    my->arg = arg_in;
+    return 0;
+}
+
 static void channel_report(dbChannel *chan, void *user, const char *intro, int level)
 {
     testOk(e & e_report, "channel_report called");
@@ -186,6 +197,7 @@ static chfPluginIf myPif = {
     parse_ok,
 
     channel_open,
+    channelRegisterPreEventQueCB,
     channel_report,
     channel_close
 };

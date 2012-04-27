@@ -12,6 +12,7 @@
 #include "dbChannel.h"
 #include "dbCommon.h"
 #include "dbBase.h"
+#include "dbEvent.h"
 #include "link.h"
 #include "dbAccessDefs.h"
 #include "dbLock.h"
@@ -413,14 +414,32 @@ long dbChannelOpen(dbChannel *chan)
 {
     chFilter *filter;
     long status = 0;
+    chPostEventFunc *nextcb = db_post_single_event_final;
+    void *nextarg = NULL;
+    chPostEventFunc *thiscb = NULL;
+    void *thisarg = NULL;
 
     filter = (chFilter *) ellFirst(&chan->filters);
     while (filter) {
         status = filter->plug->fif->channel_open(filter);
-        if (status)
-            break;
+        if (status) goto finish;
         filter = (chFilter *) ellNext(&filter->node);
     }
+
+    /* Build up the pre-event-queue chain */
+    filter = (chFilter *) ellLast(&chan->filters);
+    while (filter) {
+        long status = filter->plug->fif->channel_register_pre_eventq_cb(filter, nextcb, nextarg, &thiscb, &thisarg);
+        if (status == 0) {
+            nextcb  = thiscb;
+            nextarg = thisarg;
+        }
+        filter = (chFilter *) ellPrevious(&filter->node);
+    }
+    chan->post_event_cb  = nextcb;
+    chan->post_event_arg = nextarg;
+
+finish:
     return status;
 }
 

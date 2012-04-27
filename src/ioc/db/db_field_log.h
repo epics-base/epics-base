@@ -14,6 +14,8 @@
 #ifndef INCLdb_field_logh
 #define INCLdb_field_logh
 
+#include "epicsTime.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,7 +51,7 @@ typedef struct db_field_log {
         unsigned short		sevr;	/* Alarm Severity       */
 	epicsTimeStamp		time;	/* time stamp		*/
 	union native_value	field;	/* field value		*/
-}db_field_log;
+} db_field_log;
 
 #ifdef __cplusplus
 }

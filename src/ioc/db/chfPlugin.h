@@ -14,6 +14,8 @@
 #include <epicsTypes.h>
 #include <dbChannel.h>
 
+struct db_field_log;
+
 /* Based on the linkoptions utility by Michael Davidsaver (BNL) */
 
 /** @file chfPlugin.h
@@ -121,15 +123,40 @@ typedef struct chfPluginIf {
     /** @brief Open channel.
      *
      * <em>Called as part of the channel connection setup.</em>
+     *
      * @param chan dbChannel for which the connection is being made.
      * @param pvt Pointer to private structure.
      * @return 0 for success, -1 if operation is to be aborted.
      */
     long (* channel_open) (dbChannel *chan, void *pvt);
 
+    /** @brief Register callback for pre-event-queue post_event operation.
+     *
+     * <em>Called as part of the channel connection setup.</em>
+     *
+     * This function is called to establish the stack of plugins that an event
+     * is passed through between the database and the event queue.
+     *
+     * The plugin must call the supplied 'cb_in' function (usually within
+     * its own event callback) with 'arg_in' as first argument to forward the
+     * data to the next plugin towards the event queue.
+     *
+     * @param chan dbChannel for which the connection is being made.
+     * @param pvt Pointer to private structure.
+     * @param cb_in Pointer to the next plugin's event callback
+     * @param arg_in Argument that must be supplied when this plugin calls
+     *        next plugin's callback
+     * @param cb_out Pointer to this plugin's event callback
+     * @param arg_out Argument that must be supplied when calling this plugin's callback
+     * @return 0 for success (cb_out and arg_out written), -1 if callback not required
+     */
+    long (* channelRegisterPreEventQueCB) (dbChannel *chan, void *pvt, chPostEventFunc* cb_in, void *arg_in,
+                                           chPostEventFunc **cb_out, void **arg_out );
+
     /** @brief Channel report request.
      *
      * <em>Called as part of show... routines.</em>
+     *
      * @param chan dbChannel for which the report is requested.
      * @param pvt Pointer to private structure.
      * @param intro Line header string to be printed at the beginning of each line.

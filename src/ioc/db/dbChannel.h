@@ -14,19 +14,44 @@
 #include "epicsTypes.h"
 #include "errMdef.h"
 #include "shareLib.h"
+#include "db_field_log.h"
+#include "dbEvent.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*
+ * event subscription
+ */
+typedef struct evSubscrip {
+    ELLNODE                 node;
+    struct dbChannel        *chan;
+    EVENTFUNC               *user_sub;
+    void                    *user_arg;
+    struct event_que        *ev_que;
+    db_field_log            **pLastLog;
+    unsigned long           npend;  /* n times this event is on the queue */
+    unsigned long           nreplace;  /* n times replacing event on the queue */
+    unsigned char           select;
+    char                    useValque;
+    char                    callBackInProgress;
+    char                    enabled;
+} evSubscrip;
+
+typedef struct chFilter chFilter;
+
+/* Prototype for the post event function that is called recursively in filter stacks */
+typedef void (chPostEventFunc)(void *pvt, struct evSubscrip *event, db_field_log *pLog);
+
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
     const char *name;
     dbAddr addr;
+    chPostEventFunc *post_event_cb;
+    void *post_event_arg;
     ELLLIST filters;
 } dbChannel;
-
-typedef struct chFilter chFilter;
 
 /* Return values from chFilterIf->parse_* routines: */
 typedef enum {
@@ -68,6 +93,7 @@ typedef struct chFilterIf {
 
     /* Channel operations: */
     long (* channel_open)(chFilter *filter);
+    long (* channel_register_pre_eventq_cb)(chFilter *filter, chPostEventFunc *cb_in, void *arg_in, chPostEventFunc **cb_out, void**arg_out);
     void (* channel_report)(chFilter *filter, const char *intro, int level);
     /* FIXME: More filter routines here ... */
     void (* channel_close)(chFilter *filter);

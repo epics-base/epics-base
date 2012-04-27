@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* $Revision-Id$
  *
@@ -19,7 +19,7 @@
 #include "dbFldTypes.h"
 #include "ellLib.h"
 #include "dbDefs.h"
-
+
 typedef struct dbMenu {
 	ELLNODE		node;
 	char		*name;
@@ -67,7 +67,7 @@ typedef struct brkTable { /* breakpoint table */
 	long		number;		/*number of brkInt in this table*/
 	struct brkInt	*paBrkInt;	/* ptr to array of brkInts */
 }brkTable;
-
+
 typedef struct dbFldDes{  /* field description */
 	char	*prompt; 	/*Prompt string for DCT*/
 	char	*name;		/*Field name*/
@@ -128,7 +128,7 @@ typedef struct dbVariableDef {
 	ELLNODE		node;
 	char		*name;
         char            *type;
-        
+
 }dbVariableDef;
 
 typedef struct dbRecordType {
@@ -164,6 +164,7 @@ typedef struct dbBase {
 	ELLLIST		functionList;
 	ELLLIST		variableList;
 	ELLLIST		bptList;
+	ELLLIST         filterList;
 	void		*pathPvt;
 	struct dbPvd	*ppvd;
 	struct gphPvt	*pgpHash;

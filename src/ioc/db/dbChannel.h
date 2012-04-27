@@ -11,28 +11,33 @@
 #include "dbDefs.h"
 #include "dbAddr.h"
 #include "ellLib.h"
+#include "epicsTypes.h"
+#include "errMdef.h"
 #include "shareLib.h"
-
-enum {parse_stop, parse_continue};
 
 #ifdef __cplusplus
 // extern "C" {
 #endif
 
+#define DBCHANNEL_MAGIC 0xdbc4a9e1
+
+#define S_db_notInit  (M_dbAccess|21) /*dbChannel not initialized*/
+
+
 /* A dbChannel points to a record field, and can have multiple filters */
 typedef struct dbChannel {
+    epicsUInt32 magic;
     dbAddr addr;
     ELLLIST filters;
 } dbChannel;
 
 typedef struct chFilter chFilter;
 
+/* Return values from chFilterIf->parse_* routines: */
+enum {parse_stop, parse_continue};
+
 /* These routines must be implemented by each filter plug-in */
 typedef struct chFilterIf {
-    /* Plug-in management */
-    void (* plugin_init)(void);
-    void (* plugin_exit)(void);
-
     /* Parsing event handlers */
     int (* parse_start)(chFilter *filter);
     void (* parse_abort)(chFilter *filter);
@@ -68,9 +73,9 @@ struct chFilter {
     void *puser;
 };
 
-epicsShareFunc void dbChannelInit(dbChannel *chan);
-epicsShareFunc long dbChannelFind(dbChannel *chan, const char *name);
+epicsShareFunc long dbChannelFind(dbChannel *chan, const char *pname);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
+epicsShareFunc void dbChannelReport(dbChannel *chan, int level);
 epicsShareFunc long dbChannelClose(dbChannel *chan);
 
 epicsShareFunc void dbRegisterFilter(const char *key, const chFilterIf *fif);

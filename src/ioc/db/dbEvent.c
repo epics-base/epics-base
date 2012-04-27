@@ -634,10 +634,12 @@ db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
         struct dbChannel *chan = pevent->chan;
         struct dbCommon  *prec = dbChannelRecord(chan);
         if (pevent->useValque) {
-            pLog->isValue = 1;
-            pLog->u.v.stat = prec->stat;
-            pLog->u.v.sevr = prec->sevr;
-            pLog->u.v.time = prec->time;
+            pLog->type = dbfl_type_val;
+            pLog->stat = prec->stat;
+            pLog->sevr = prec->sevr;
+            pLog->time = prec->time;
+            pLog->field_type  = dbChannelFieldType(chan);
+            pLog->no_elements = dbChannelElements(chan);
             /*
              * use memcpy to avoid a bus error on
              * union copy of char in the db at an odd
@@ -647,12 +649,7 @@ db_field_log* db_post_single_event_first (struct evSubscrip *pevent)
                    dbChannelField(chan),
                    dbChannelElementSize(chan));
         } else {
-            pLog->isValue = 0;
-            pLog->u.p.stat = &prec->stat;
-            pLog->u.p.sevr = &prec->sevr;
-            pLog->u.p.time = &prec->time;
-            pLog->u.p.field   = dbChannelField(chan);
-            pLog->u.p.freeFld = NULL;
+            pLog->type = dbfl_type_rec;
         }
     }
     return pLog;
@@ -677,13 +674,15 @@ void db_post_single_event_final (void *pvt, evSubscrip *pevent, db_field_log *pL
     LOCKEVQUE (ev_que)
 
     /*
-     * if we have an event on the queue and we are
-     * not saving the current value (because this is a
-     * string or an array) then ignore duplicate
-     * events (saving them without the current valuye
-     * serves no purpose)
+     * if we have an event on the queue and both the last
+     * event on the queue and the current event are emtpy
+     * (i.e. of type dbfl_type_rec), simply ignore duplicate
+     * events (saving empty events serves no purpose)
      */
-    if (!pevent->useValque && pevent->npend>0u) {
+    if (pevent->npend > 0u &&
+        (*pevent->pLastLog)->type == dbfl_type_rec &&
+        pLog->type == dbfl_type_rec) {
+        db_delete_field_log(pLog);
         UNLOCKEVQUE (ev_que)
         return;
     }
@@ -860,9 +859,6 @@ static int event_read ( struct event_que *ev_que )
          * communication. (for other types they get whatever happens
          * to be there upon wakeup)
          */
-        if ( !pevent->useValque ) {
-            pfl = NULL;
-        }
 
         event_remove ( ev_que, ev_que->getix, EVENTQEMPTY );
         ev_que->getix = RNGINC ( ev_que->getix );
@@ -1093,7 +1089,7 @@ void epicsShareAPI db_delete_field_log (db_field_log *pfl)
 {
     if (pfl) {
         /* Free field if reference type field log and dtor is set */
-        if (!pfl->isValue && pfl->u.p.freeFld) pfl->u.p.freeFld(pfl->u.p.field);
+        if (pfl->type == dbfl_type_ref && pfl->u.r.dtor) pfl->u.r.dtor(pfl);
         /* Free the field log chunk */
         freeListFree(dbevFieldLogFreeList, pfl);
     }

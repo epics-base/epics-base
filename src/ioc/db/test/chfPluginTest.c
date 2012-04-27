@@ -22,12 +22,13 @@
 #define e_error         0x00000004
 #define e_ok            0x00000008
 #define e_open          0x00000010
-#define e_report        0x00000020
-#define e_close         0x00000040
+#define e_reg_pre_cb    0x00000020
+#define e_report        0x00000040
+#define e_close         0x00000080
 
 unsigned int e, c;
 
-#define e_any (e_alloc | e_free | e_error | e_ok | e_open | e_report | e_close)
+#define e_any (e_alloc | e_free | e_error | e_ok | e_open | e_reg_pre_cb| e_report | e_close)
 
 typedef struct myStruct {
     int sent1;

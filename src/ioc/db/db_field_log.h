@@ -46,26 +46,38 @@ union native_value {
  *	structure to log the state of a data base field at the time
  *	an event is triggered.
  */
+struct db_field_log;
+typedef void (dbfl_freeFunc)(struct db_field_log *pfl);
+
+/* Types of db_field_log: rec = use record, val = val inside, ref = reference inside */
+typedef enum dbfl_type {
+    dbfl_type_rec = 0,
+    dbfl_type_val,
+    dbfl_type_ref
+} dbfl_type;
+
+#define dbflTypeStr(t) (t==dbfl_type_val?"val":t==dbfl_type_rec?"rec":"ref")
+
 struct dbfl_val {
-    unsigned short     stat;    /* Alarm Status */
-    unsigned short     sevr;    /* Alarm Severity */
-    epicsTimeStamp     time;    /* Time stamp */
-    union native_value field;   /* Field value */
+    union native_value field; /* Field value */
 };
 
 struct dbfl_ref {
-    unsigned short    *stat;             /* Alarm Status */
-    unsigned short    *sevr;             /* Alarm Severity */
-    epicsTimeStamp    *time;             /* Time stamp */
-    void             (*freeFld)(void*);  /* Callback to free a filter-allocated field */
-    void              *field;            /* Field value */
+    dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
+    void              *pvt;   /* Private pointer */
+    void              *field; /* Field value */
 };
 
 typedef struct db_field_log {
-    char               isValue; /* is a value (*not* string/array) */
+    enum dbfl_type     type;  /* type (union) selector */
+    epicsTimeStamp     time;  /* Time stamp */
+    unsigned short     stat;  /* Alarm Status */
+    unsigned short     sevr;  /* Alarm Severity */
+    short        field_type;  /* DBF type of data */
+    long        no_elements;  /* No of array elements */
     union {
         struct dbfl_val v;
-        struct dbfl_ref p;
+        struct dbfl_ref r;
     } u;
 } db_field_log;
 

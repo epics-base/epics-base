@@ -315,28 +315,36 @@ static void get_alarm(DBADDR *paddr, char **ppbuffer,
 	return;
 }
 
+/*
+ * This code relies on *poriginal being aligned and all increments done by the
+ * blocks only changing the buffer pointer in a way that does not break alignment.
+ */
 static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
 	struct rset	*prset;
-	short		field_type=paddr->field_type;
+        short		field_type;
 	dbCommon	*pcommon;
 	char		*pbuffer = *poriginal;
 
+        if (!pfl || pfl->type == dbfl_type_rec)
+            field_type = paddr->field_type;
+        else
+            field_type = pfl->field_type;
 	prset=dbGetRset(paddr);
 	/* Process options */
 	pcommon = paddr->precord;
 	if( (*options) & DBR_STATUS ) {
 	    unsigned short *pushort = (unsigned short *)pbuffer;
 
-	    if(pfl!=NULL) {
-                *pushort++ = pfl->u.v.stat;
-                *pushort++ = pfl->u.v.sevr;
-	    } else {
+            if (!pfl || pfl->type == dbfl_type_rec) {
                 *pushort++ = pcommon->stat;
                 *pushort++ = pcommon->sevr;
-	    }
+            } else {
+                *pushort++ = pfl->stat;
+                *pushort++ = pfl->sevr;
+            }
 	    *pushort++ = pcommon->acks;
 	    *pushort++ = pcommon->ackt;
 	    pbuffer = (char *)pushort;
@@ -364,12 +372,12 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	if( (*options) & DBR_TIME ) {
 	    epicsUInt32 *ptime = (epicsUInt32 *)pbuffer;
 
-	    if(pfl!=NULL) {
-                *ptime++ = pfl->u.v.time.secPastEpoch;
-                *ptime++ = pfl->u.v.time.nsec;
-	    } else {
-		*ptime++ = pcommon->time.secPastEpoch;
-		*ptime++ = pcommon->time.nsec;
+            if (!pfl || pfl->type == dbfl_type_rec) {
+                *ptime++ = pcommon->time.secPastEpoch;
+                *ptime++ = pcommon->time.nsec;
+            } else {
+                *ptime++ = pfl->time.secPastEpoch;
+                *ptime++ = pfl->time.nsec;
 	    }
 	    pbuffer = (char *)ptime;
 	}
@@ -778,8 +786,8 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
 {
     char *pbuf = pbuffer;
     db_field_log *pfl = (db_field_log *)pflin;
-    short field_type  = paddr->field_type;
-    long no_elements  = paddr->no_elements;
+    short field_type;
+    long no_elements;
     long offset;
     struct rset *prset;
     long status = 0;
@@ -788,6 +796,14 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         getOptions(paddr, &pbuf, options, pflin);
     if (nRequest && *nRequest == 0)
         return 0;
+
+    if (!pfl || pfl->type == dbfl_type_rec) {
+        field_type  = paddr->field_type;
+        no_elements = paddr->no_elements;
+    } else {
+        field_type  = pfl->field_type;
+        no_elements = pfl->no_elements;
+    }
 
     if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK)
         return getLinkValue(paddr, dbrType, pbuf, nRequest);
@@ -815,15 +831,18 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
 
     if (offset == 0 && (!nRequest || no_elements == 1)) {
         if (nRequest) *nRequest = 1;
-        if (pfl != NULL) {
-            DBADDR localAddr = *paddr; /* Structure copy */
-
-            localAddr.pfield = (char *)&pfl->u.v.field;
-            status = dbFastGetConvertRoutine[field_type][dbrType]
-                (localAddr.pfield, pbuffer, &localAddr);
-        } else {
+        if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuffer, paddr);
+        } else {
+            DBADDR localAddr = *paddr; /* Structure copy */
+
+            if (pfl->type == dbfl_type_val)
+                localAddr.pfield = (char *) &pfl->u.v.field;
+            else
+                localAddr.pfield = (char *)  pfl->u.r.field;
+            status = dbFastGetConvertRoutine[field_type][dbrType]
+                (localAddr.pfield, pbuffer, &localAddr);
         }
     } else {
         long n;
@@ -847,13 +866,16 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
         /* convert database field  and place it in the buffer */
         if (n <= 0) {
             ;/*do nothing*/
-        } else if (pfl) {
+        } else if (!pfl || pfl->type == dbfl_type_rec) {
+            status = convert(paddr, pbuffer, n, no_elements, offset);
+        } else {
             DBADDR localAddr = *paddr; /* Structure copy */
 
-            localAddr.pfield = (char *)&pfl->u.v.field;
+            if (pfl->type == dbfl_type_val)
+                localAddr.pfield = (char *) &pfl->u.v.field;
+            else
+                localAddr.pfield = (char *)  pfl->u.r.field;
             status = convert(&localAddr, pbuffer, n, no_elements, offset);
-        } else {
-            status = convert(paddr, pbuffer, n, no_elements, offset);
         }
     }
     return status;

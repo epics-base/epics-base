@@ -867,7 +867,7 @@ long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
         inherit_severity(ppv_link,pdest,psource->nsta,psource->nsev);
         if (status) return status;
 
-        if (paddr->pfield == (void *)&pdest->proc ||
+        if (paddr->pfield == &pdest->proc ||
             (ppv_link->pvlMask & pvlOptPP && pdest->scan == 0)) {
             /*if dbPutField caused asyn record to process */
             /* ask for reprocessing*/
@@ -891,20 +891,14 @@ long epicsShareAPI dbPutLinkValue(struct link *plink, short dbrType,
     return status;
 }
 
-static long dbGetFieldLink(DBADDR *paddr,short dbrType,
-    void *pbuffer, long *options, long *nRequest, void *pflin)
+static long getLinkValue(DBADDR *paddr, short dbrType,
+    char *pbuf, long *nRequest)
 {
     dbCommon *precord = paddr->precord;
     dbFldDes *pfldDes = paddr->pfldDes;
-    char *pbuf = (char *)pbuffer;
     int maxlen;
     DBENTRY dbEntry;
     long status;
-
-    if (options && (*options))
-        getOptions(paddr, &pbuf, options, pflin);
-    if (nRequest && *nRequest == 0)
-        return 0;
 
     switch (dbrType) {
     case DBR_STRING:
@@ -936,20 +930,43 @@ static long dbGetFieldLink(DBADDR *paddr,short dbrType,
     return status;
 }
 
+static long getAttrValue(DBADDR *paddr, short dbrType,
+        char *pbuf, long *nRequest)
+{
+    int maxlen;
+
+    if (!paddr->pfield) return S_db_badField;
+
+    switch (dbrType) {
+    case DBR_STRING:
+        maxlen = MAX_STRING_SIZE - 1;
+        if (nRequest && *nRequest > 1) *nRequest = 1;
+        break;
+
+    case DBR_CHAR:
+    case DBR_UCHAR:
+            if (nRequest && *nRequest > 0) {
+            maxlen = *nRequest - 1;
+            break;
+        }
+        /* else fall through ... */
+    default:
+        return S_db_badDbrtype;
+    }
+
+    strncpy(pbuf, paddr->pfield, --maxlen);
+    pbuf[maxlen] = 0;
+    return 0;
+}
+
 long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
-    short dbfType = paddr->field_type;
     dbCommon *precord = paddr->precord;
     long status = 0;
 
     dbScanLock(precord);
-    if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
-        status = dbGetFieldLink(paddr, dbrType, pbuffer, options, nRequest,
-                pflin);
-    } else {
-        status = dbGet(paddr, dbrType, pbuffer, options, nRequest, pflin);
-    }
+    status = dbGet(paddr, dbrType, pbuffer, options, nRequest, pflin);
     dbScanUnlock(precord);
     return status;
 }
@@ -957,6 +974,7 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
 long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
+    char *pbuf = pbuffer;
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type  = paddr->field_type;
     long no_elements  = paddr->no_elements;
@@ -964,41 +982,16 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     struct rset *prset;
     long status = 0;
 
-    if (options && *options) {
-        char *pbuf = pbuffer;
-
+    if (options && *options)
         getOptions(paddr, &pbuf, options, pflin);
-        pbuffer = pbuf;
-    }
-    if (nRequest && *nRequest == 0) return 0;
-
-    if (paddr->special == SPC_ATTRIBUTE) {
-        char *pbuf = pbuffer;
-        int maxlen;
-
-        if (!paddr->pfield) return S_db_badField;
-
-        switch (dbrType) {
-        case DBR_STRING:
-            maxlen = MAX_STRING_SIZE - 1;
-            if (nRequest && *nRequest > 1) *nRequest = 1;
-            break;
-
-        case DBR_CHAR:
-        case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-                maxlen = *nRequest - 1;
-                break;
-            }
-            /* else fall through ... */
-        default:
-            return S_db_badDbrtype;
-        }
-
-        strncpy(pbuf, paddr->pfield, --maxlen);
-        pbuf[maxlen] = 0;
+    if (nRequest && *nRequest == 0)
         return 0;
-    }
+
+    if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK)
+        return getLinkValue(paddr, dbrType, pbuf, nRequest);
+
+    if (paddr->special == SPC_ATTRIBUTE)
+        return getAttrValue(paddr, dbrType, pbuf, nRequest);
 
     /* Check for valid request */
     if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
@@ -1295,8 +1288,7 @@ long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
         return S_db_noMod;
 
     /*check for putField disabled*/
-    if (precord->disp &&
-        (void *)(&precord->disp) != paddr->pfield)
+    if (precord->disp && paddr->pfield != &precord->disp)
         return S_db_putDisabled;
 
     if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK)
@@ -1305,7 +1297,7 @@ long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
     dbScanLock(precord);
     status = dbPut(paddr, dbrType, pbuffer, nRequest);
     if (status == 0) {
-        if (paddr->pfield == (void *)&precord->proc ||
+        if (paddr->pfield == &precord->proc ||
             (pfldDes->process_passive &&
              precord->scan == 0 &&
              dbrType < DBR_PUT_ACKT)) {
@@ -1325,15 +1317,17 @@ long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
     return status;
 }
 
-static long putAckt(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
+static long putAckt(DBADDR *paddr, const void *pbuffer, long nRequest,
     long no_elements, long offset)
 {
     dbCommon *precord = paddr->precord;
+    const unsigned short *ptrans = pbuffer;
 
-    if (*pbuffer == precord->ackt) return 0;
-    precord->ackt = *pbuffer;
+    if (*ptrans == precord->ackt) return 0;
+    precord->ackt = *ptrans;
     db_post_events(precord, &precord->ackt, DBE_VALUE | DBE_ALARM);
-    if (!precord->ackt && precord->acks > precord->sevr) {
+    if (!precord->ackt &&
+        precord->acks > precord->sevr) {
         precord->acks = precord->sevr;
         db_post_events(precord, &precord->acks, DBE_VALUE | DBE_ALARM);
     }
@@ -1341,15 +1335,16 @@ static long putAckt(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
     return 0;
 }
 
-static long putAcks(DBADDR *paddr, const unsigned short *pbuffer, long nRequest,
+static long putAcks(DBADDR *paddr, const void *pbuffer, long nRequest,
     long no_elements, long offset)
 {
     dbCommon *precord = paddr->precord;
+    const unsigned short *psev = pbuffer;
 
-    if (*pbuffer >= precord->acks) {
+    if (*psev >= precord->acks) {
         precord->acks = 0;
-        db_post_events(precord, NULL, DBE_ALARM);
         db_post_events(precord, &precord->acks, DBE_VALUE | DBE_ALARM);
+        db_post_events(precord, NULL, DBE_ALARM);
     }
     return 0;
 }
@@ -1365,12 +1360,13 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
     dbFldDes *pfldDes;
     int isValueField;
 
-    if (special == SPC_ATTRIBUTE) return S_db_noMod;
+    if (special == SPC_ATTRIBUTE)
+        return S_db_noMod;
 
     if (dbrType == DBR_PUT_ACKT && field_type <= DBF_DEVICE) {
-        return putAckt(paddr, (unsigned short *)pbuffer, 1, 1, 0);
+        return putAckt(paddr, pbuffer, 1, 1, 0);
     } else if (dbrType == DBR_PUT_ACKS && field_type <= DBF_DEVICE) {
-        return putAcks(paddr, (unsigned short *)pbuffer, 1, 1, 0);
+        return putAcks(paddr, pbuffer, 1, 1, 0);
     } else if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
         char message[80];
 

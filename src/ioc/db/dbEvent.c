@@ -62,7 +62,7 @@ struct evSubscrip {
     unsigned long           npend;  /* n times this event is on the queue */
     unsigned long           nreplace;  /* n times replacing event on the queue */
     unsigned char           select;
-    char                    valque;
+    char                    useValque;
     char                    callBackInProgress;
     char                    enabled;
 };
@@ -115,21 +115,14 @@ struct event_user {
 #define RNGINC(OLD)\
 ( (unsigned short) ( (OLD) >= (EVENTQUESIZE-1) ? 0 : (OLD)+1 ) )
 
-#define LOCKEVQUE(EV_QUE)\
-epicsMutexMustLock((EV_QUE)->writelock);
-
-#define UNLOCKEVQUE(EV_QUE)\
-epicsMutexUnlock((EV_QUE)->writelock);
-
-#define LOCKREC(RECPTR)\
-epicsMutexMustLock((RECPTR)->mlok);
-
-#define UNLOCKREC(RECPTR)\
-epicsMutexUnlock((RECPTR)->mlok);
+#define LOCKEVQUE(EV_QUE)   epicsMutexMustLock((EV_QUE)->writelock)
+#define UNLOCKEVQUE(EV_QUE) {epicsMutexUnlock((EV_QUE)->writelock);}
+#define LOCKREC(RECPTR)     epicsMutexMustLock((RECPTR)->mlok)
+#define UNLOCKREC(RECPTR)   {epicsMutexUnlock((RECPTR)->mlok);}
 
 static void *dbevEventUserFreeList;
 static void *dbevEventQueueFreeList;
-static void *dbevEventBlockFreeList;
+static void *dbevEventSubscriptionFreeList;
 
 static char *EVENT_PEND_NAME = "eventTask";
 
@@ -164,7 +157,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
     DBADDR              addr;
     long                status;
     struct evSubscrip   *pevent;
-    dbFldDes 		    *pdbFldDes;
+    dbFldDes            *pdbFldDes;
 
     if ( ! pname ) return DB_EVENT_OK;
     status = dbNameToAddr ( pname, &addr );
@@ -173,13 +166,13 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
         return DB_EVENT_ERROR;
     }
 
-    LOCKREC ( addr.precord );
+    LOCKREC (addr.precord)
 
     pevent = (struct evSubscrip *) ellFirst ( &addr.precord->mlis );
 
     if ( ! pevent ) {
 	    printf ( "\"%s\": No PV event subscriptions ( monitors ).\n", pname );
-        UNLOCKREC (addr.precord);
+        UNLOCKREC (addr.precord)
         return DB_EVENT_OK;
     }
 
@@ -187,16 +180,16 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
         ellCount ( &addr.precord->mlis ) );
 
     while ( pevent ) {
-	    pdbFldDes = dbChannelFldDes(pevent->chan);
+        pdbFldDes = dbChannelFldDes(pevent->chan);
 
         if ( level > 0 ) {
 	        printf ( "%4.4s", pdbFldDes->name );
 
 	        printf ( " { " );
-	        if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
-	        if ( pevent->select & DBE_LOG ) printf( "LOG " );
-	        if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
-	        if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
+                if ( pevent->select & DBE_VALUE ) printf( "VALUE " );
+                if ( pevent->select & DBE_LOG ) printf( "LOG " );
+                if ( pevent->select & DBE_ALARM ) printf( "ALARM " );
+                if ( pevent->select & DBE_PROPERTY ) printf( "PROPERTY " );
 	        printf ( "}" );
 
             if ( pevent->npend ) {
@@ -230,7 +223,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
                 if ( pevent->nreplace ) {
                     printf (", discarded by replacement=%ld", pevent->nreplace);
                 }
-                if ( ! pevent->valque ) {
+                if ( ! pevent->useValque ) {
                     printf (", queueing disabled" );
                 }
                 LOCKEVQUE(pevent->ev_que);
@@ -255,10 +248,10 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
 	        printf( "\n" );
         }
 
-	    pevent = (struct evSubscrip *) ellNext ( &pevent->node );
+            pevent = (struct evSubscrip *) ellNext ( &pevent->node );
     }
 
-    UNLOCKREC ( addr.precord );
+    UNLOCKREC (addr.precord)
 
     return DB_EVENT_OK;
 }
@@ -284,8 +277,8 @@ dbEventCtx epicsShareAPI db_init_events (void)
         freeListInitPvt(&dbevEventQueueFreeList,
             sizeof(struct event_que),8);
     }
-    if (!dbevEventBlockFreeList) {
-        freeListInitPvt(&dbevEventBlockFreeList,
+    if (!dbevEventSubscriptionFreeList) {
+        freeListInitPvt(&dbevEventSubscriptionFreeList,
             sizeof(struct evSubscrip),256);
     }
 
@@ -390,7 +383,7 @@ dbEventSubscription epicsShareAPI db_add_event (
         return NULL;
     }
 
-    pevent = freeListCalloc ( dbevEventBlockFreeList );
+    pevent = freeListCalloc (dbevEventSubscriptionFreeList);
     if ( ! pevent ) {
         return NULL;
     }
@@ -445,10 +438,10 @@ dbEventSubscription epicsShareAPI db_add_event (
      */
     if( dbChannelElements(chan) == 1 &&
         dbChannelElementSize(chan) <= sizeof(union native_value)) {
-        pevent->valque = TRUE;
+        pevent->useValque = TRUE;
     }
     else {
-        pevent->valque = FALSE;
+        pevent->useValque = FALSE;
     }
 
     return pevent;
@@ -457,33 +450,33 @@ dbEventSubscription epicsShareAPI db_add_event (
 /*
  * db_event_enable()
  */
-void epicsShareAPI db_event_enable (dbEventSubscription es)
+void epicsShareAPI db_event_enable (dbEventSubscription event)
 {
-    struct evSubscrip * const pevent = (struct evSubscrip *) es;
+    struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const precord = dbChannelRecord(pevent->chan);
 
-    LOCKREC(precord);
+    LOCKREC (precord)
     if ( ! pevent->enabled ) {
         ellAdd (&precord->mlis, &pevent->node);
         pevent->enabled = TRUE;
     }
-    UNLOCKREC(precord);
+    UNLOCKREC (precord)
 }
 
 /*
  * db_event_disable()
  */
-void epicsShareAPI db_event_disable (dbEventSubscription es)
+void epicsShareAPI db_event_disable (dbEventSubscription event)
 {
-    struct evSubscrip * const pevent = (struct evSubscrip *) es;
+    struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const precord = dbChannelRecord(pevent->chan);
 
-    LOCKREC(precord);
+    LOCKREC (precord)
     if ( pevent->enabled ) {
         ellDelete(&precord->mlis, &pevent->node);
         pevent->enabled = FALSE;
     }
-    UNLOCKREC(precord);
+    UNLOCKREC (precord)
 }
 
 /*
@@ -493,18 +486,18 @@ void epicsShareAPI db_event_disable (dbEventSubscription es)
 static void event_remove ( struct event_que *ev_que,
     unsigned short index, struct evSubscrip *placeHolder )
 {
-    struct evSubscrip * const pEvent = ev_que->evque[index];
+    struct evSubscrip * const pevent = ev_que->evque[index];
 
     ev_que->evque[index] = placeHolder;
-    if ( pEvent->npend == 1u ) {
-        pEvent->pLastLog = NULL;
+    if ( pevent->npend == 1u ) {
+        pevent->pLastLog = NULL;
     }
     else {
-        assert ( pEvent->npend > 1u );
+        assert ( pevent->npend > 1u );
         assert ( ev_que->nDuplicates >= 1u );
         ev_que->nDuplicates--;
     }
-    pEvent->npend--;
+    pevent->npend--;
 }
 
 /*
@@ -514,12 +507,12 @@ static void event_remove ( struct event_que *ev_que,
  * the same block at the same time.
  *
  */
-void epicsShareAPI db_cancel_event (dbEventSubscription es)
+void epicsShareAPI db_cancel_event (dbEventSubscription event)
 {
-    struct evSubscrip * const pevent = ( struct evSubscrip * ) es;
+    struct evSubscrip * const pevent = (struct evSubscrip *) event;
     unsigned short getix;
 
-    db_event_disable ( es );
+    db_event_disable ( event );
 
     /*
      * flag the event as canceled by NULLing out the callback handler
@@ -527,7 +520,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
      * make certain that the event isnt being accessed while
      * its call back changes
      */
-    LOCKEVQUE ( pevent->ev_que )
+    LOCKEVQUE (pevent->ev_que)
 
     pevent->user_sub = NULL;
 
@@ -560,17 +553,17 @@ void epicsShareAPI db_cancel_event (dbEventSubscription es)
     }
     else {
         while ( pevent->callBackInProgress ) {
-            UNLOCKEVQUE ( pevent->ev_que )
+            UNLOCKEVQUE (pevent->ev_que)
             epicsEventMustWait ( pevent->ev_que->evUser->pflush_sem );
-            LOCKEVQUE ( pevent->ev_que )
+            LOCKEVQUE (pevent->ev_que)
         }
     }
 
     pevent->ev_que->quota -= EVENTENTRIES;
 
-    UNLOCKEVQUE ( pevent->ev_que )
+    UNLOCKEVQUE (pevent->ev_que)
 
-    freeListFree ( dbevEventBlockFreeList, pevent );
+    freeListFree ( dbevEventSubscriptionFreeList, pevent );
 
     return;
 }
@@ -584,7 +577,7 @@ void epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
 
-	epicsMutexMustLock ( evUser->lock );
+    epicsMutexMustLock ( evUser->lock );
     while ( evUser->extraLaborBusy ) {
         epicsMutexUnlock ( evUser->lock );
         epicsThreadSleep(0.1);
@@ -655,7 +648,7 @@ static void db_post_single_event_private (struct evSubscrip *event)
      * threads writing/reading it
      */
 
-    LOCKEVQUE(ev_que)
+    LOCKEVQUE (ev_que)
 
     /*
      * if we have an event on the queue and we are
@@ -664,8 +657,8 @@ static void db_post_single_event_private (struct evSubscrip *event)
      * events (saving them without the current valuye
      * serves no purpose)
      */
-    if (!event->valque && event->npend>0u) {
-        UNLOCKEVQUE(ev_que)
+    if (!event->useValque && event->npend>0u) {
+        UNLOCKEVQUE (ev_que)
         return;
     }
 
@@ -717,12 +710,12 @@ static void db_post_single_event_private (struct evSubscrip *event)
         ev_que->putix = RNGINC ( ev_que->putix );
     }
 
-    if (pLog && event->valque) {
+    if (pLog && event->useValque) {
         struct dbChannel *chan = event->chan;
-        struct dbCommon *precord = dbChannelRecord(chan);
-        pLog->stat = precord->stat;
-        pLog->sevr = precord->sevr;
-        pLog->time = precord->time;
+        struct dbCommon *prec = dbChannelRecord(chan);
+        pLog->stat = prec->stat;
+        pLog->sevr = prec->sevr;
+        pLog->time = prec->time;
 
         /*
          * use memcpy to avoid a bus error on
@@ -736,7 +729,7 @@ static void db_post_single_event_private (struct evSubscrip *event)
         event->pLastLog = pLog;
     }
 
-    UNLOCKEVQUE(ev_que)
+    UNLOCKEVQUE (ev_que)
 
     /*
      * its more efficent to notify the event handler
@@ -764,27 +757,27 @@ void            *pField,
 unsigned int    caEventMask
 )
 {
-    struct dbCommon * const pdbc = (struct dbCommon *)pRecord;
-    struct evSubscrip * event;
+    struct dbCommon   * const prec = (struct dbCommon *) pRecord;
+    struct evSubscrip *pevent;
 
-    if (pdbc->mlis.count == 0) return DB_EVENT_OK; /* no monitors set */
+    if (prec->mlis.count == 0) return DB_EVENT_OK;       /* no monitors set */
 
-    LOCKREC(pdbc);
+    LOCKREC (prec)
 
-    for (event = (struct evSubscrip *) pdbc->mlis.node.next;
-        event; event = (struct evSubscrip *) event->node.next){
+    for (pevent = (struct evSubscrip *) prec->mlis.node.next;
+        pevent; pevent = (struct evSubscrip *) pevent->node.next){
 
         /*
          * Only send event msg if they are waiting on the field which
          * changed or pval==NULL and waiting on alarms and alarms changed
          */
-        if ( (dbChannelField(event->chan) == (void *)pField || pField==NULL) &&
-            (caEventMask & event->select) ) {
-            db_post_single_event_private (event);
+        if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
+            (caEventMask & pevent->select)) {
+            db_post_single_event_private (pevent);
         }
     }
 
-    UNLOCKREC(pdbc);
+    UNLOCKREC (prec)
     return DB_EVENT_OK;
 
 }
@@ -792,14 +785,14 @@ unsigned int    caEventMask
 /*
  *  DB_POST_SINGLE_EVENT()
  */
-void epicsShareAPI db_post_single_event (dbEventSubscription es)
+void epicsShareAPI db_post_single_event (dbEventSubscription event)
 {
-    struct evSubscrip * const event = (struct evSubscrip *) es;
-    struct dbCommon * const precord = dbChannelRecord(event->chan);
+    struct evSubscrip * const pevent = (struct evSubscrip *) event;
+    struct dbCommon * const prec = dbChannelRecord(pevent->chan);
 
-    dbScanLock (precord);
-    db_post_single_event_private (event);
-    dbScanUnlock (precord);
+    dbScanLock (prec);
+    db_post_single_event_private (pevent);
+    dbScanUnlock (prec);
 }
 
 /*
@@ -815,7 +808,7 @@ static int event_read ( struct event_que *ev_que )
      * evUser ring buffer must be locked for the multiple
      * threads writing/reading it
      */
-    LOCKEVQUE ( ev_que )
+    LOCKEVQUE (ev_que)
 
     /*
      * if in flow control mode drain duplicates and then
@@ -823,15 +816,15 @@ static int event_read ( struct event_que *ev_que )
      * mode is over
      */
     if ( ev_que->evUser->flowCtrlMode && ev_que->nDuplicates == 0u ) {
-        UNLOCKEVQUE(ev_que);
+        UNLOCKEVQUE (ev_que)
         return DB_EVENT_OK;
     }
 
     while ( ev_que->evque[ev_que->getix] != EVENTQEMPTY ) {
         db_field_log fl = ev_que->valque[ev_que->getix];
-        struct evSubscrip *event = ev_que->evque[ev_que->getix];
+        struct evSubscrip *pevent = ev_que->evque[ev_que->getix];
 
-        if ( event == &canceledEvent ) {
+        if ( pevent == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
             ev_que->getix = RNGINC ( ev_que->getix );
             assert ( ev_que->nCanceled > 0 );
@@ -844,10 +837,9 @@ static int event_read ( struct event_que *ev_que )
          * communication. (for other types they get whatever happens
          * to be there upon wakeup)
          */
-        if ( event->valque ) {
+        if ( pevent->useValque ) {
             pfl = &fl;
-        }
-        else {
+        } else {
             pfl = NULL;
         }
 
@@ -858,7 +850,7 @@ static int event_read ( struct event_que *ev_que )
          * create a local copy of the call back parameters while
          * we still have the lock
          */
-        user_sub = event->user_sub;
+        user_sub = pevent->user_sub;
 
         /*
          * Next event pointer can be used by event tasks to determine
@@ -876,11 +868,11 @@ static int event_read ( struct event_que *ev_que )
              * despite the fact that the event queue does not point to
              * it.
              */
-            event->callBackInProgress = TRUE;
-            UNLOCKEVQUE ( ev_que )
-            ( *user_sub ) ( event->user_arg, event->chan,
+            pevent->callBackInProgress = TRUE;
+            UNLOCKEVQUE (ev_que)
+            ( *user_sub ) ( pevent->user_arg, pevent->chan,
                 ev_que->evque[ev_que->getix] != EVENTQEMPTY, pfl );
-            LOCKEVQUE ( ev_que )
+            LOCKEVQUE (ev_que)
 
             /*
              * check to see if this event has been canceled each
@@ -889,22 +881,22 @@ static int event_read ( struct event_que *ev_que )
              * complete sem if there are no longer any events on the
              * queue
              */
-            if ( ev_que->evUser->pSuicideEvent == event ) {
+            if ( ev_que->evUser->pSuicideEvent == pevent ) {
                 ev_que->evUser->pSuicideEvent = NULL;
             }
             else {
-                if ( event->user_sub==NULL && event->npend==0u ) {
-                    event->callBackInProgress = FALSE;
+                if ( pevent->user_sub==NULL && pevent->npend==0u ) {
+                    pevent->callBackInProgress = FALSE;
                     epicsEventSignal ( ev_que->evUser->pflush_sem );
                 }
                 else {
-                    event->callBackInProgress = FALSE;
+                    pevent->callBackInProgress = FALSE;
                 }
             }
         }
     }
 
-    UNLOCKEVQUE ( ev_que )
+    UNLOCKEVQUE (ev_que)
 
     return DB_EVENT_OK;
 }
@@ -924,7 +916,7 @@ static void event_task (void *pParm)
 
     taskwdInsert ( epicsThreadGetIdSelf(), NULL, NULL );
 
-    do{
+    do {
         void (*pExtraLaborSub) (void *);
         void *pExtraLaborArg;
         epicsEventMustWait(evUser->ppendsem);
@@ -959,7 +951,7 @@ static void event_task (void *pParm)
         }
         epicsMutexUnlock ( evUser->lock );
 
-    } while( ! evUser->pendexit );
+    } while ( ! evUser->pendexit );
 
     epicsMutexDestroy(evUser->firstque.writelock);
 
@@ -967,7 +959,7 @@ static void event_task (void *pParm)
         struct event_que    *nextque;
 
         ev_que = evUser->firstque.nextque;
-        while(ev_que){
+        while (ev_que) {
             nextque = ev_que->nextque;
             epicsMutexDestroy(ev_que->writelock);
             freeListFree(dbevEventQueueFreeList, ev_que);
@@ -1071,5 +1063,3 @@ void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
     printf("fc off %lu\n", tickGet());
 #endif
 }
-
-

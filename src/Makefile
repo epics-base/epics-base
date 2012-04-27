@@ -64,13 +64,14 @@ ioc_DEPEND_DIRS = libCom ca/client
 DIRS += ioc/db/test
 ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
 
-DIRS += ioc/db/filters/test
-ioc/db/filters/test_DEPEND_DIRS = ioc libCom/RTEMS
-
 # PDB Standard Record Definitions
 
 DIRS += std
 std_DEPEND_DIRS = ioc libCom/RTEMS
+
+#DIRS += ioc/db/filters/test
+#ioc/db/filters/test_DEPEND_DIRS = ioc std libCom/RTEMS
+
 
 
 include $(TOP)/configure/RULES_DIRS

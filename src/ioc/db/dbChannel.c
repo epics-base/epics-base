@@ -324,6 +324,53 @@ long dbChannelTest(const char *name)
     return status;
 }
 
+#define TRY(Func, Arg) \
+if (Func) { \
+    result = Func Arg; \
+    if (result != parse_continue) goto failure; \
+}
+
+static void insertArrPlugin(dbChannel* chan, epicsInt32 start, epicsInt32 incr, epicsInt32 end) {
+    chFilter *filter;
+    const chFilterPlugin *plug;
+    parse_result result;
+
+    plug = dbFindFilter("arr", 3);
+    if (!plug) {
+        printf("dbChannelCreate: Required channel filter 'arr' not found\n");
+        return;
+    }
+
+    /* FIXME: Use a free-list */
+    filter = (chFilter *) callocMustSucceed(1, sizeof(*filter), "Creating 'arr' dbChannel filter");
+    filter->chan = chan;
+    filter->plug = plug;
+    filter->puser = NULL;
+
+    TRY(filter->plug->fif->parse_start, (filter));
+    TRY(filter->plug->fif->parse_start_map, (filter));
+    if (start) {
+        TRY(filter->plug->fif->parse_map_key, (filter, "s", 1));
+        TRY(filter->plug->fif->parse_integer, (filter, start));
+    }
+    if (incr) {
+        TRY(filter->plug->fif->parse_map_key, (filter, "i", 1));
+        TRY(filter->plug->fif->parse_integer, (filter, incr));
+    }
+    if (end) {
+        TRY(filter->plug->fif->parse_map_key, (filter, "e", 1));
+        TRY(filter->plug->fif->parse_integer, (filter, end));
+    }
+    TRY(filter->plug->fif->parse_end_map, (filter));
+    TRY(filter->plug->fif->parse_end, (filter));
+
+    ellAdd(&chan->filters, &filter->list_node);
+    return;
+
+    failure:
+    free(filter); // FIXME: Use free-list
+}
+
 /* Stolen from dbAccess.c: */
 static short mapDBFToDBR[DBF_NTYPES] =
     {
@@ -399,6 +446,51 @@ dbChannel * dbChannelCreate(const char *name)
                 status = S_dbLib_fieldNotFound;
                 goto finish;
             }
+            pname++;
+        }
+
+        if (*pname == '[') {
+            /* Array subset modifier that calls the arr plugin */
+            epicsInt32 start = 0;
+            epicsInt32 end = 0;
+            epicsInt32 incr = 0;
+            char * pnext;
+            short exist;
+
+            pname++;
+            start = strtol(pname, &pnext, 0);
+            exist = pnext - pname;
+            pname = pnext;
+            if (*pname == ']' && exist) {
+                end = start + 1;
+                goto insertplug;
+            }
+            if (*pname != ':') {
+                status = S_dbLib_fieldNotFound;
+                goto finish;
+            }
+            pname++;
+            incr = strtol(pname, &pnext, 0);
+            pname = pnext;
+            if (*pname == ']') {
+                end = incr;
+                incr = 0;
+                goto insertplug;
+            }
+            if (*pname != ':') {
+                status = S_dbLib_fieldNotFound;
+                goto finish;
+            }
+            pname++;
+            end = strtol(pname, &pnext, 0);
+            pname = pnext;
+            if (*pname != ']') {
+                status = S_dbLib_fieldNotFound;
+                goto finish;
+            }
+            insertplug:
+            insertArrPlugin(chan, start, incr, end);
+
             pname++;
         }
 

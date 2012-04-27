@@ -30,6 +30,11 @@ chfPluginTest_SRCS += chfPluginTest.c
 OBJS_IOC_vxWorks += chfPluginTest
 TESTS += chfPluginTest
 
+TESTPROD_HOST += arrShorthandTest
+arrShorthandTest_SRCS += arrShorthandTest.c
+OBJS_IOC_vxWorks += arrShorthandTest
+TESTS += arrShorthandTest
+
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES

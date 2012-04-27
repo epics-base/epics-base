@@ -85,4 +85,5 @@ dbCore_SRCS += dbIocRegister.c
 dbCore_SRCS += chfPlugin.c
 
 LIB_SRCS += ts.c
+LIB_SRCS += dbnd.c
 

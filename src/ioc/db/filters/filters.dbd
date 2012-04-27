@@ -1,1 +1,2 @@
 registrar(tsInitialize)
+registrar(dbndInitialize)

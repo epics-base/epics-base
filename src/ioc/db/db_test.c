@@ -53,7 +53,7 @@ int gft(char *pname)
     printf("   Record Name: %s\n", precord->name);
     printf("Record Address: 0x%p\n", precord);
     printf("   Export Type: %d\n", type);
-    printf(" Field Address: 0x%p\n", dbChannelData(chan));
+    printf(" Field Address: 0x%p\n", dbChannelField(chan));
     printf("    Field Size: %d\n", dbChannelElementSize(chan));
     printf("   No Elements: %ld\n", elements);
 
@@ -107,7 +107,7 @@ int epicsShareAPI pft(char *pname, char *pvalue)
     printf("   Record Name: %s\n", precord->name);
     printf("Record Address: 0x%p\n", precord);
     printf("   Export Type: %d\n", type);
-    printf(" Field Address: 0x%p\n", dbChannelData(chan));
+    printf(" Field Address: 0x%p\n", dbChannelField(chan));
     printf("    Field Size: %d\n", dbChannelElementSize(chan));
     printf("   No Elements: %ld\n", elements);
 

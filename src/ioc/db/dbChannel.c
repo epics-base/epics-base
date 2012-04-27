@@ -469,20 +469,29 @@ short dbChannelSpecial(dbChannel *chan)
     return chan->addr.special;
 }
 
-void * dbChannelData(dbChannel *chan)
+void * dbChannelField(dbChannel *chan)
 {
     void * pdata = chan->addr.pfield;
     /* FIXME: offer to filters? */
     return pdata;
 }
 
-long dbChannelPut(dbChannel *chan, short type, const void *pbuffer, long nRequest)
+long dbChannelGetField(dbChannel *chan, short type, void *pbuffer,
+        long *options, long *nRequest, void *pfl)
+{
+    /* FIXME: offer to filters? */
+    return dbGetField(&chan->addr, type, pbuffer, options, nRequest, pfl);
+}
+
+long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
+        long nRequest)
 {
     /* FIXME: offer to filters? */
     return dbPut(&chan->addr, type, pbuffer, nRequest);
 }
 
-long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer, long nRequest)
+long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
+        long nRequest)
 {
     /* FIXME: offer to filters? */
     return dbPutField(&chan->addr, type, pbuffer, nRequest);

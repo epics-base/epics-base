@@ -730,8 +730,8 @@ static void db_post_single_event_private (struct evSubscrip *event)
          * address
          */
         memcpy(& pLog->field,
-            dbChannelData(chan),
-            dbChannelElementSize(chan));
+                dbChannelField(chan),
+                dbChannelElementSize(chan));
 
         event->pLastLog = pLog;
     }
@@ -778,7 +778,7 @@ unsigned int    caEventMask
          * Only send event msg if they are waiting on the field which
          * changed or pval==NULL and waiting on alarms and alarms changed
          */
-        if ( (dbChannelData(event->chan) == (void *)pField || pField==NULL) &&
+        if ( (dbChannelField(event->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & event->select) ) {
             db_post_single_event_private (event);
         }

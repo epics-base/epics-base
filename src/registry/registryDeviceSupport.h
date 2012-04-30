@@ -7,18 +7,18 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#ifndef INCregistryDeviceSupporth
-#define INCregistryDeviceSupporth
+#ifndef INC_registryDeviceSupport_H
+#define INC_registryDeviceSupport_H
 
-#include "shareLib.h"
 #include "devSup.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 epicsShareFunc int epicsShareAPI registryDeviceSupportAdd(
-    const char *name,const struct dset *pdset);
+    const char *name, const struct dset *pdset);
 epicsShareFunc struct dset * epicsShareAPI registryDeviceSupportFind(
     const char *name);
 
@@ -27,4 +27,4 @@ epicsShareFunc struct dset * epicsShareAPI registryDeviceSupportFind(
 #endif
 
 
-#endif /* INCregistryDeviceSupporth */
+#endif /* INC_registryDeviceSupport_H */

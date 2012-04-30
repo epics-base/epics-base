@@ -7,7 +7,8 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* registryCommon.h */
+#ifndef INC_registryCommon_H
+#define INC_registryCommon_H
 
 #include "dbStaticLib.h"
 #include "registryRecordType.h"
@@ -19,14 +20,16 @@ extern "C" {
 
 epicsShareFunc void epicsShareAPI registerRecordTypes(
     DBBASE *pbase, int nRecordTypes,
-    const char* const* recordTypeNames, const recordTypeLocation *rtl);
+    const char * const *recordTypeNames, const recordTypeLocation *rtl);
 epicsShareFunc void epicsShareAPI registerDevices(
     DBBASE *pbase, int nDevices,
-    const char* const* deviceSupportNames, const dset* const* devsl);
+    const char * const *deviceSupportNames, const dset * const *devsl);
 epicsShareFunc void epicsShareAPI registerDrivers(
     DBBASE *pbase, int nDrivers,
-    const char* const* driverSupportNames, struct drvet* const* drvsl);
+    const char * const *driverSupportNames, struct drvet * const *drvsl);
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* INC_registryCommon_H */

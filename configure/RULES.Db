@@ -121,7 +121,6 @@ MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
 ifndef T_A
 
-ECHO := $(if $(findstring s,$(MAKEFLAGS)),$(COMMENT),@echo)
 COMMON_DIR = .
 INSTALL_DBDS =
 INSTALL_DBS =

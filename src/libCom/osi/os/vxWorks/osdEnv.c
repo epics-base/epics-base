@@ -23,7 +23,7 @@
 #include <ctype.h>
 #include <envLib.h>
 
-#include <epicsStdioRedirect.h>
+#include "epicsStdio.h"
 #include <errlog.h>
 #include <cantProceed.h>
 

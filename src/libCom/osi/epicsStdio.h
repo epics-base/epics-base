@@ -17,18 +17,42 @@
 
 #include "shareLib.h"
 #include "compilerDependencies.h"
+#include "epicsTempFile.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+#ifndef epicsStdioStdStreams
+#  undef stdin
+#  define stdin epicsGetStdin()
+#  undef stdout
+#  define stdout epicsGetStdout()
+#  undef stderr
+#  define stderr epicsGetStderr()
+#endif
+
+/* Make printf, puts and putchar use *our* version of stdout */
+
+#ifdef printf
+#  undef printf
+#endif /* printf */
+#define printf epicsStdoutPrintf
+
+#ifdef puts
+#  undef puts
+#endif /* puts */
+#define puts epicsStdoutPuts
+
+#ifdef putchar
+#  undef putchar
+#endif /* putchar */
+#define putchar epicsStdoutPutchar
+
 epicsShareFunc int epicsShareAPI epicsSnprintf(
     char *str, size_t size, const char *format, ...) EPICS_PRINTF_STYLE(3,4);
 epicsShareFunc int epicsShareAPI epicsVsnprintf(
     char *str, size_t size, const char *format, va_list ap);
-epicsShareFunc void epicsShareAPI epicsTempName ( 
-    char * pNameBuf, size_t nameBufLength );
-epicsShareFunc FILE * epicsShareAPI epicsTempFile (void);
 
 /*
  * truncate to specified size (we dont use truncate()

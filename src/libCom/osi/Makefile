@@ -53,6 +53,7 @@ INC += epicsReadline.h
 INC += epicsMessageQueue.h
 INC += epicsStdio.h
 INC += epicsStdioRedirect.h
+INC += epicsTempFile.h
 INC += epicsGetopt.h
 
 INC += devLib.h

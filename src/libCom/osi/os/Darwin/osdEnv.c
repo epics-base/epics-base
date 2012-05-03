@@ -29,7 +29,7 @@
 # define environ (*_NSGetEnviron())
 
 #define epicsExportSharedSymbols
-#include <epicsStdioRedirect.h>
+#include "epicsStdio.h"
 #include <errlog.h>
 #include <cantProceed.h>
 #include <envDefs.h>

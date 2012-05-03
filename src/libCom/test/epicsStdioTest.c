@@ -21,7 +21,6 @@
 #include <errno.h>
 
 #include "epicsStdio.h"
-#include "epicsStdioRedirect.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 

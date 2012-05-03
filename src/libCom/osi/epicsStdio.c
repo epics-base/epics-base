@@ -19,6 +19,7 @@
 #include <errno.h>
 
 #define epicsExportSharedSymbols
+#define epicsStdioStdStreams
 #include "shareLib.h"
 #include "epicsThread.h"
 #include "epicsStdio.h"

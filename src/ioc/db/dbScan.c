@@ -21,7 +21,7 @@
 #include <limits.h>
 #include <math.h>
 
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "taskwd.h"

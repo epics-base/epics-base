@@ -36,7 +36,7 @@
 #include "dbAddr.h"
 #include "dbEvent.h"
 #include "dbCommon.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
 #include "rsrv.h"

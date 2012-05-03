@@ -47,7 +47,7 @@ since this will delay all other threads.
 #include <stdio.h>
 #include <string.h>
 
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "errMdef.h"

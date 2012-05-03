@@ -21,7 +21,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "cadef.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbNotify.h"

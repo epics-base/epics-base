@@ -42,7 +42,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsStdlib.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "errMdef.h"
 #include "errlog.h"
 #include "envDefs.h"

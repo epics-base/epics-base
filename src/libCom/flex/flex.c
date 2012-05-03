@@ -52,7 +52,7 @@ static char rcsid[] =
 */
 
 #define epicsExportSharedSymbols
-#include "epicsStdio.h"
+#include "epicsTempFile.h"
 #undef epicsExportSharedSymbols
 
 static char flex_version[] = "2.3";

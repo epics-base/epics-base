@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h4>epicsStdioRedirect.h merged into epicsStdio.h</h4>
+
+<p>The definitions from the header file epicsStdioRedirect.h have been moved
+into epicsStdio.h so all calls to printf(), puts() and putchar() in files that
+include that OSI header will now be subject to stdout redirection.  In past
+releases (3.14.7 and later) it was necessary to request the redirection support
+by including the epicsStdioRedirect.h header file.  The header file is still
+provided, but now it just includes epicsStdio.h.</p>
+
 <h4>Named Soft Events</h4>
 
 <p>Soft events can now be given meaningful names instead of just using the

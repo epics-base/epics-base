@@ -15,7 +15,7 @@
 
 #define epicsExportSharedSymbols
 #include "epicsEvent.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "cantProceed.h"
 
 // vxWorks 5.4 gcc fails during compile when I use std::exception

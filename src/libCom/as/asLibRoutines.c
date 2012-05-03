@@ -17,7 +17,7 @@
 #include <ctype.h>
 
 #define epicsExportSharedSymbols
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "epicsThread.h"
 #include "cantProceed.h"

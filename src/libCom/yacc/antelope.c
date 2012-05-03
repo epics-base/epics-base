@@ -9,7 +9,7 @@
 #include <signal.h>
 #include "defs.h"
 #define epicsExportSharedSymbols
-#include "epicsStdio.h"
+#include "epicsTempFile.h"
 #undef epicsExportSharedSymbols
 
 char dflag;

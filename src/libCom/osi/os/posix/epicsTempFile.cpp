@@ -11,7 +11,7 @@
 #include <string.h>
 
 #define epicsExportSharedSymbols
-#include "epicsStdio.h"
+#include "epicsTempFile.h"
 
 extern "C"
 epicsShareFunc void epicsShareAPI epicsTempName ( 

@@ -18,7 +18,7 @@
 #include "errlog.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "dbDefs.h"
 #include "taskwd.h"
 #include "asLib.h"

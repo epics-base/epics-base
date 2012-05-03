@@ -24,7 +24,7 @@
 #include "dbStaticLib.h"
 #include "link.h"
 #undef epicsExportSharedSymbols
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 /*definitions needed because of old vs new database access*/
 #undef DBR_SHORT
 #undef DBR_PUT_ACKT

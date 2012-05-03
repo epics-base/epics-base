@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 
 #define epicsExportSharedSymbols
-#include "epicsStdio.h"
+#include "epicsTempFile.h"
 
 //
 // epicsTempName

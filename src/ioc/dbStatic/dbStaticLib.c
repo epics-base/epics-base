@@ -30,7 +30,7 @@
 #include "osiFileName.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"

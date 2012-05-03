@@ -21,7 +21,6 @@
 #include "errlog.h"
 #include "ellLib.h"
 #include "epicsMutex.h"
-#include "epicsStdioRedirect.h"
 #include "ellLib.h"
 #include "epicsString.h"
 #define epicsExportSharedSymbols

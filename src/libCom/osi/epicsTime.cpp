@@ -27,7 +27,6 @@
 #include <string> // vxWorks 6.0 requires this include 
 
 #define epicsExportSharedSymbols
-#include "epicsStdioRedirect.h"
 #include "locationException.h"
 #include "epicsAssert.h"
 #include "epicsVersion.h"

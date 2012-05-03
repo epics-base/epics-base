@@ -23,7 +23,7 @@
 #include <rtems.h>
 #include <rtems/error.h>
 
-#include "epicsStdioRedirect.h"
+#include "epicsStdio.h"
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "errlog.h"

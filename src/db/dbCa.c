@@ -59,8 +59,8 @@ static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 static int removesOutstanding = 0;
 #define removesOutstandingWarning 10000
 
-static enum {
-    ctlRun, ctlPause, ctlExit
+static volatile enum {
+    ctlInit, ctlRun, ctlPause, ctlExit
 } dbCaCtl;
 static epicsEventId startStopEvent;
 

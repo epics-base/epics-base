@@ -69,8 +69,8 @@ static epicsMutexId fLock;
 static ELLLIST fList = ELLLIST_INIT;
 
 /* Watchdog task control */
-static enum {
-    twdctlRun, twdctlDisable, twdctlExit
+static volatile enum {
+    twdctlInit, twdctlRun, twdctlDisable, twdctlExit
 } twdCtl;
 static epicsEventId loopEvent;
 static epicsEventId exitEvent;

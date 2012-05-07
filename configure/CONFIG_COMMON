@@ -38,7 +38,7 @@ BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 #-------------------------------------------------------
 # Default for perl if it's on the PATH,
 # otherwise override this in os/CONFIG_SITE.<host_arch>.Common
-PERL=perl
+PERL = perl -CSD
 
 #-------------------------------------------------------
 # dbst based database optimization default

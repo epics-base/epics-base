@@ -5,18 +5,14 @@
 # Definitions for linux-xscale_be (big-endian) target builds.
 # This target has been tested with the MOXA UC-7408-LX Plus.
 
-# Sites may override these definitions in CONFIG_SITE.Common.linux-xscale_be
+# Site-specific overrides of these definitions should be made in the file
+#   CONFIG_SITE.Common.linux-xscale_be
 #-------------------------------------------------------
 
 # Include definitions common to all Linux targets
 include $(CONFIG)/os/CONFIG.Common.linuxCommon
 
 ARCH_CLASS = xscale
-
-#
-# The vendor's tool chain needs to be located here
-#
-GNU_DIR=/usr/local/xscale_be
 
 ifeq ($(BUILD_CLASS),CROSS)
     VALID_BUILDS = Ioc

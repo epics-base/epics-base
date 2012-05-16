@@ -173,7 +173,7 @@ initialize_local_filesystem(char **argv)
 #if __RTEMS_MAJOR__>4 || \
    (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__>9) || \
    (__RTEMS_MAJOR__==4 && __RTEMS_MINOR__==9 && __RTEMS_REVISION__==99)
-static int
+int
 nfsMount(char *uidhost, char *path, char *mntpoint)
 {
     int   devl = strlen(uidhost) + strlen(path) + 2;

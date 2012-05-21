@@ -4059,12 +4059,12 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
     DBENTRY	dbentry;
     DBENTRY	*pdbentry=&dbentry;
     long	status;
-    char	busName[40];
-    char	linkValue[40];
-    char	dtypValue[40];
+    char	linkValue[messagesize];
+    char	dtypValue[50];
     char	cvtValue[40];
     int		ilink,nlinks;
     struct link	*plink;
+    int         linkType;
     FILE        *stream = (report==0) ? stdout : report;
 
     if(!pdbbase) {
@@ -4081,8 +4081,8 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		status = dbGetLinkField(pdbentry,ilink);
 		if(status || dbGetLinkType(pdbentry)!=DCT_LINK_FORM) continue;
 		plink = pdbentry->pfield;
-		strcpy(busName,bus[plink->type]);
-		if(strlen(busName)==0) continue;
+		linkType = plink->type;
+		if(bus[linkType][0]==0) continue;
 		strcpy(linkValue,dbGetString(pdbentry));
 		status = dbFindField(pdbentry,"DTYP");
 		if(status) break;
@@ -4106,7 +4106,7 @@ void  epicsShareAPI dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		    }
 		}
 		fprintf(stream,"%-8s %-20s %-20s %-20s %-s\n",
-			busName,linkValue,dtypValue,
+			bus[linkType],linkValue,dtypValue,
 			dbGetRecordName(pdbentry),cvtValue);
 		break;
 	    }

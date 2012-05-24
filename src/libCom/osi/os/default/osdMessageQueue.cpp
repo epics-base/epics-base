@@ -187,10 +187,11 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
 
         epicsMutexUnlock(pmsg->mutex);
 
+        epicsEventStatus sts;
         if(haveTimeout)
-            epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
+            sts=epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
         else
-            epicsEventWait(threadNode.evp->event);
+            sts=epicsEventWait(threadNode.evp->event);
 
         epicsMutexMustLock(pmsg->mutex);
 
@@ -200,7 +201,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
 
         ellAdd(&pmsg->eventFreeList, &threadNode.evp->link);
 
-        if (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) {
+        if ((pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL)) || sts!=epicsEventOK) {
             epicsMutexUnlock(pmsg->mutex);
             return -1;
         }
@@ -331,10 +332,11 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait,
     ellAdd(&pmsg->receiveQueue, &threadNode.link);
     epicsMutexUnlock(pmsg->mutex);
 
+    epicsEventStatus sts;
     if(haveTimeout)
-        epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
+        sts=epicsEventWaitWithTimeout(threadNode.evp->event, timeout);
     else
-        epicsEventWait(threadNode.evp->event);
+        sts=epicsEventWait(threadNode.evp->event);
 
     epicsMutexMustLock(pmsg->mutex);
 
@@ -344,7 +346,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait,
 
     epicsMutexUnlock(pmsg->mutex);
 
-    if(threadNode.eventSent && (threadNode.size <= size))
+    if(threadNode.eventSent && (threadNode.size <= size) && sts==epicsEventOK)
         return threadNode.size;
     return -1;
 }

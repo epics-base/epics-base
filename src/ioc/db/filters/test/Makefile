@@ -14,13 +14,11 @@ PROD_LIBS += dbCore ca Com
 
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c
-tsTest_LIBS += dbStaticHost
 OBJS_IOC_vxWorks += tsTest
 TESTS += tsTest
 
 TESTPROD_HOST += dbndTest
 dbndTest_SRCS += dbndTest.c
-dbndTest_LIBS += dbStaticHost
 OBJS_IOC_vxWorks += dbndTest
 TESTS += dbndTest
 
@@ -29,13 +27,11 @@ TARGETS += $(COMMON_DIR)/arrTest.dbd
 arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
 arrTest_SRCS += arrTest.cpp arrRecord.c arrRecord_registerRecordDeviceDriver.cpp
-arrTest_LIBS += dbStaticIoc
 OBJS_IOC_vxWorks += arrTest
 TESTS += arrTest
 
 TESTPROD_HOST += syncTest
 syncTest_SRCS += syncTest.c
-syncTest_LIBS += dbStaticHost
 OBJS_IOC_vxWorks += syncTest
 TESTS += syncTest
 

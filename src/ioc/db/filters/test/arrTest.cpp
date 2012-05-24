@@ -35,7 +35,6 @@
 #include "iocInit.h"
 #include "iocsh.h"
 #include "dbChannel.h"
-#include "epicsInstallDir.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
@@ -44,16 +43,10 @@
 extern "C" int arrRecord_registerRecordDeviceDriver(struct dbBase *pdbbase);
 extern "C" void (*pvar_func_arrInitialize)(void);
 
-#define DBD_FILE EPICS_BASE "/src/db/filters/test/O.Common/arrTest.dbd"
-#define DB_FILE EPICS_BASE "/src/db/filters/test/arrTest.db"
-#define EXIT_FILE EPICS_BASE "/db/softIocExit.db"
 #define CA_SERVER_PORT "65535"
 
 #define PATTERN 0x55
 
-const char *base_dbd = DBD_FILE;
-const char *arr_db = DB_FILE;
-const char *exit_db = EXIT_FILE;
 const char *server_port = CA_SERVER_PORT;
 
 static void exitSubroutine(subRecord *precord) {
@@ -302,8 +295,6 @@ static void check(short dbr_type) {
 
 MAIN(arrTest)
 {
-    char *dbd_file = const_cast<char*>(base_dbd);
-    char *db_file = const_cast<char*>(arr_db);
     const chFilterPlugin *plug;
     char arr[] = "arr";
     int status;
@@ -314,14 +305,14 @@ MAIN(arrTest)
 
     epicsEnvSet("EPICS_CA_SERVER_PORT", server_port);
 
-    testOk1(!(status = dbLoadDatabase(dbd_file, NULL, NULL)));
+    testOk1(!(status=dbReadDatabase(&pdbbase, "arrRecord.dbd", ".:..:../../../../../../dbd", NULL)));
     if (status) epicsExit(EXIT_FAILURE);
 
     (*pvar_func_arrInitialize)();
     arrRecord_registerRecordDeviceDriver(pdbbase);
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 
-    testOk1(!(status = dbLoadRecords(db_file, NULL)));
+    testOk1(!(status=dbReadDatabase(&pdbbase, "arrTest.db", ".:..", NULL)));
     if (status) epicsExit(EXIT_FAILURE);
 
     /* Start the IOC */

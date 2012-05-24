@@ -398,12 +398,12 @@ IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
 	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $(DBDFLAGS) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
 	$(MV) $*.tmp $@
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
 	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $(DBDFLAGS) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
 	$(MV) $*.tmp $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp

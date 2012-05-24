@@ -72,7 +72,7 @@ typedef struct epicsThreadOSD {
     int                isFifoScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
-    char              *name;
+    char               name[1];
 } epicsThreadOSD;
 
 static pthread_key_t getpthreadInfo;
@@ -151,7 +151,8 @@ static epicsThreadOSD * create_threadInfo(const char *name)
 {
     epicsThreadOSD *pthreadInfo;
 
-    pthreadInfo = calloc(1,sizeof(*pthreadInfo) + strlen(name)+1);
+    /* sizeof(epicsThreadOSD) includes one byte for the '\0' */
+    pthreadInfo = calloc(1,sizeof(*pthreadInfo) + strlen(name));
     if(!pthreadInfo)
         return NULL;
     pthreadInfo->suspendEvent = epicsEventCreate(epicsEventEmpty);
@@ -159,7 +160,6 @@ static epicsThreadOSD * create_threadInfo(const char *name)
         free(pthreadInfo);
         return NULL;
     }
-    pthreadInfo->name = (char*)&pthreadInfo[1];
     strcpy(pthreadInfo->name, name);
     return pthreadInfo;
 }

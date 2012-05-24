@@ -33,7 +33,7 @@ typedef struct ringPvt {
     volatile int   nextPut;
     volatile int   nextGet;
     int            size;
-    volatile char *buffer;
+    volatile char buffer[1]; /* actually larger */
 }ringPvt;
 
 epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
@@ -42,7 +42,6 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
     if(!pring)
         return NULL;
     pring->size = size + SLOP;
-    pring->buffer = (char*)&pring[1];
     pring->nextGet = 0;
     pring->nextPut = 0;
     return((void *)pring);

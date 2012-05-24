@@ -135,15 +135,14 @@ getEventNode(epicsMessageQueueId pmsg)
 
     evp = reinterpret_cast < struct eventNode * > ( ellGet(&pmsg->eventFreeList) );
     if (evp == NULL) {
-        epicsEventId eid = epicsEventCreate(epicsEventEmpty);
         evp = (struct eventNode *) calloc(1, sizeof(*evp));
-        if(!evp || !eid) {
+        if(!evp)
+            return NULL;
+        evp->event = epicsEventCreate(epicsEventEmpty);
+        if(!evp->event) {
             free(evp);
-            if(eid)
-                epicsEventDestroy(eid);
             return NULL;
         }
-        evp->event = eid;
     }
     return evp;
 }

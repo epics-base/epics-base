@@ -181,6 +181,7 @@ void dbPvdFreeMem(dbBase *pdbbase)
             ellDelete(&pbucket->list, (ELLNODE *)ppvdNode);
             free(ppvdNode);
         }
+        epicsMutexUnlock(pbucket->lock);
         epicsMutexDestroy(pbucket->lock);
         free(pbucket);
     }

@@ -716,6 +716,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
     }
     status = pthread_mutex_unlock(&listLock);
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
+    if(status) return;
     if (!found)
         printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }

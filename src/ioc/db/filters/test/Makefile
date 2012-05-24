@@ -13,16 +13,15 @@ include $(TOP)/configure/CONFIG
 PROD_LIBS += dbCore ca Com
 
 TESTPROD_HOST += tsTest
-tsTest_SRCS += tsTest.c
+tsTest_SRCS += tsTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += tsTest
 TESTS += tsTest
 
 TESTPROD_HOST += dbndTest
-dbndTest_SRCS += dbndTest.c
+dbndTest_SRCS += dbndTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += dbndTest
 TESTS += dbndTest
 
-DBDINC += arrRecord
 TARGETS += $(COMMON_DIR)/arrTest.dbd
 arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
@@ -31,7 +30,7 @@ OBJS_IOC_vxWorks += arrTest
 TESTS += arrTest
 
 TESTPROD_HOST += syncTest
-syncTest_SRCS += syncTest.c
+syncTest_SRCS += syncTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += syncTest
 TESTS += syncTest
 
@@ -39,3 +38,10 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
+$(COMMON_DIR)/xRecord.dbd: ../../../test/xRecord.dbd
+	$(INSTALL) -d $< $(@D)
+
+tsTest$(OBJ): $(COMMON_DIR)/xRecord.h
+dbndTest$(OBJ): $(COMMON_DIR)/xRecord.h
+syncTest$(OBJ): $(COMMON_DIR)/xRecord.h
+arrTest$(OBJ): $(COMMON_DIR)/arrRecord.h

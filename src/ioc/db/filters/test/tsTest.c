@@ -36,6 +36,8 @@ static int fl_equal_ex_ts(const db_field_log *pfl1, const db_field_log *pfl2) {
     return fl_equal(&fl1, pfl2);
 }
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 MAIN(tsTest)
 {
     dbChannel *pch;
@@ -48,14 +50,17 @@ MAIN(tsTest)
     db_field_log fl1;
     db_field_log *pfl2;
 
-    testPlan(14);
+    testPlan(15);
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "filterTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     (*pvar_func_tsInitialize)();       /* manually initialize plugin */
+
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
 
@@ -95,3 +100,12 @@ MAIN(tsTest)
 
     return testDone();
 }
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
+#include <epicsExport.h>
+
+static rset xRSET;
+epicsExportAddress(rset,xRSET);

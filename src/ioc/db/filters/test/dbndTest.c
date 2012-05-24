@@ -90,6 +90,8 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 MAIN(dbndTest)
 {
     dbChannel *pch;
@@ -102,14 +104,17 @@ MAIN(dbndTest)
     db_field_log *pfl2;
     db_field_log fl1;
 
-    testPlan(61);
+    testPlan(62);
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "filterTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     (*pvar_func_dbndInitialize)();       /* manually initialize plugin */
+
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 
@@ -212,3 +217,12 @@ MAIN(dbndTest)
 
     return testDone();
 }
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
+#include <epicsExport.h>
+
+static rset xRSET;
+epicsExportAddress(rset,xRSET);

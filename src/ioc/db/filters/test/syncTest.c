@@ -16,6 +16,7 @@
 #include "dbAccessDefs.h"
 #include "db_field_log.h"
 #include "dbCommon.h"
+#include "dbChannel.h"
 #include "chfPlugin.h"
 #include "epicsUnitTest.h"
 #include "epicsTime.h"
@@ -125,8 +126,10 @@ static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
     checkCtxRead(pch, red);
 }
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 //MAIN(syncTest)
-main()
+int main()
 {
     dbChannel *pch;
     chFilter *filter;
@@ -143,10 +146,13 @@ main()
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "filterTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     (*pvar_func_syncInitialize)();       /* manually initialize plugin */
+
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");
@@ -354,3 +360,12 @@ main()
 
     return testDone();
 }
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
+#include <epicsExport.h>
+
+static rset xRSET;
+epicsExportAddress(rset,xRSET);

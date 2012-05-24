@@ -245,7 +245,7 @@ void epicsMutexOsdUnlock(struct epicsMutexOSD * pmutex)
         pmutex->owned = 0;
         pmutex->ownerTid = 0;
         status = pthread_cond_signal(&pmutex->waitToBeOwner);
-        checkStatus(status, "pthread_cond_signal epicsMutexOsdUnlock");
+        checkStatusQuit(status, "pthread_cond_signal epicsMutexOsdUnlock", "epicsMutexOsdUnlock");
     }
 
     status = pthread_mutex_unlock(&pmutex->lock);

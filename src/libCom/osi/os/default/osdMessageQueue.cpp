@@ -160,8 +160,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
     /*
      * See if message can be sent
      */
-    if(epicsMutexLock(pmsg->mutex)!=epicsMutexLockOK)
-        return -1;
+    epicsMutexMustLock(pmsg->mutex);
 
     if ((pmsg->numberOfSendersWaiting > 0)
      || (pmsg->full && (ellFirst(&pmsg->receiveQueue) == NULL))) {
@@ -194,10 +193,7 @@ mySend(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait, bo
         else
             epicsEventWait(threadNode.evp->event);
 
-        if(epicsMutexLock(pmsg->mutex)!=epicsMutexLockOK){
-            freeEventNode(threadNode.evp);
-            return -1;
-        }
+        epicsMutexMustLock(pmsg->mutex);
 
         if(!threadNode.eventSent)
             ellDelete(&pmsg->sendQueue, &threadNode.link);
@@ -270,8 +266,8 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait,
     /*
      * If there's a message on the queue, copy it
      */
-    if(epicsMutexLock(pmsg->mutex)!=epicsMutexLockOK)
-        return -1;
+    epicsMutexMustLock(pmsg->mutex);
+
 
     myOutPtr = (char *)pmsg->outPtr;
     if ((myOutPtr != pmsg->inPtr) || pmsg->full) {
@@ -341,10 +337,7 @@ myReceive(epicsMessageQueueId pmsg, void *message, unsigned int size, bool wait,
     else
         epicsEventWait(threadNode.evp->event);
 
-    if(epicsMutexLock(pmsg->mutex)!=epicsMutexLockOK){
-        freeEventNode(threadNode.evp);
-        return -1;
-    }
+    epicsMutexMustLock(pmsg->mutex);
 
     if(!threadNode.eventSent)
         ellDelete(&pmsg->receiveQueue, &threadNode.link);

@@ -199,17 +199,13 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
     int status;
 
     status = mutexLock(&listLock);
-    checkStatus(status,"pthread_mutex_lock free_threadInfo");
-    if(status)
-        return;
+    checkStatusQuit(status,"pthread_mutex_lock","free_threadInfo");
     if(pthreadInfo->isOnThreadList) ellDelete(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
-    checkStatus(status,"pthread_mutex_unlock free_threadInfo");
+    checkStatusQuit(status,"pthread_mutex_unlock","free_threadInfo");
     epicsEventDestroy(pthreadInfo->suspendEvent);
     status = pthread_attr_destroy(&pthreadInfo->attr);
-    checkStatus(status,"pthread_attr_destroy free_threadInfo");
-    if(status)
-        return;
+    checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
     free(pthreadInfo);
 }
 
@@ -437,8 +433,7 @@ static epicsThreadOSD *createImplicit(void)
     tid = pthread_self();
     sprintf(name, "non-EPICS_%d", (int)tid);
     pthreadInfo = create_threadInfo(name);
-    if(!pthreadInfo)
-        return NULL;
+    assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 

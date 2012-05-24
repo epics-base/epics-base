@@ -432,12 +432,14 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 MAIN(chfPluginTest)
 {
     dbChannel *pch;
     db_field_log *pfl;
 
-    testPlan(1754);
+    testPlan(1755);
 
     db_init_events();
 
@@ -449,7 +451,10 @@ MAIN(chfPluginTest)
     testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0, "Enum to string: invalid index");
 
     testHead("Set up database");
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     testHead("Try to register buggy plugins");
@@ -730,3 +735,12 @@ MAIN(chfPluginTest)
 
     return testDone();
 }
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
+#include <epicsExport.h>
+
+static rset xRSET;
+epicsExportAddress(rset,xRSET);

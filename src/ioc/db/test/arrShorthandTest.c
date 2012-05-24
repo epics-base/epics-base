@@ -75,16 +75,21 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 MAIN(chfPluginTest)
 {
     dbChannel *pch;
 
-    testPlan(28);
+    testPlan(29);
 
     db_init_events();
 
     testHead("Set up database");
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.dbx", ".:..", NULL));
+    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+
+    xRecord_registerRecordDeviceDriver(pdbbase);
+    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
 
     testHead("Register plugin");
@@ -123,3 +128,12 @@ MAIN(chfPluginTest)
     return testDone();
 }
 
+
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
+#include <epicsExport.h>
+
+static rset xRSET;
+epicsExportAddress(rset,xRSET);

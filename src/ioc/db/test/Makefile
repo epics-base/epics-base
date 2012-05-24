@@ -20,30 +20,23 @@ TESTS += callbackTest
 # When we add more test programs here, this must become a vxTestHarness
 TESTSPEC_vxWorks = callbackTest.munch; callbackTest
 
-DBDINC += xRecord
-
 TESTPROD_HOST += dbChannelTest
-dbChannelTest_SRCS += dbChannelTest.c
-dbChannelTest_SRCS += xRecord_registerRecordDeviceDriver.cpp
-dbChannelTest_LIBS += dbCore
+dbChannelTest_SRCS += dbChannelTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += dbChannelTest
 TESTS += dbChannelTest
 
 TESTPROD_HOST += chfPluginTest
-chfPluginTest_SRCS += chfPluginTest.c
-chfPluginTest_LIBS += dbCore
+chfPluginTest_SRCS += chfPluginTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += chfPluginTest
 TESTS += chfPluginTest
 
 TESTPROD_HOST += arrShorthandTest
-arrShorthandTest_SRCS += arrShorthandTest.c
-arrShorthandTest_LIBS += dbCore
+arrShorthandTest_SRCS += arrShorthandTest.c xRecord_registerRecordDeviceDriver.cpp
 OBJS_IOC_vxWorks += arrShorthandTest
 TESTS += arrShorthandTest
 
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
-dbStateTest_LIBS += dbCore
 OBJS_IOC_vxWorks += dbStateTest
 TESTS += dbStateTest
 
@@ -51,3 +44,7 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
+dbChannelTest$(OBJ): $(COMMON_DIR)/xRecord.h
+chfPluginTest$(OBJ): $(COMMON_DIR)/xRecord.h
+arrShorthandTest$(OBJ): $(COMMON_DIR)/xRecord.h
+dbStateTest$(OBJ): $(COMMON_DIR)/xRecord.h

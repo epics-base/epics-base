@@ -20,9 +20,6 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
 /* Expected call bit definitions */
 #define e_start         0x00000001
 #define e_abort         0x00000002
@@ -150,13 +147,16 @@ chFilterIf testIf =
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
       c_open, c_reg_pre, c_reg_post, c_report, c_close };
 
+void xRecord_registerRecordDeviceDriver(struct dbBase *);
+
 MAIN(dbChannelTest)
 {
     dbChannel *pch;
 
-    testPlan(68);
+    testPlan(69);
 
     testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+
     xRecord_registerRecordDeviceDriver(pdbbase);
     testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
     testOk(!!pdbbase, "pdbbase was set");
@@ -250,8 +250,11 @@ MAIN(dbChannelTest)
     return testDone();
 }
 
+#define GEN_SIZE_OFFSET
+#include "xRecord.h"
+
+#include <recSup.h>
 #include <epicsExport.h>
 
-static
-rset xRSET;
+static rset xRSET;
 epicsExportAddress(rset,xRSET);

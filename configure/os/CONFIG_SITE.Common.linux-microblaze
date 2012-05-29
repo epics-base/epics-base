@@ -1,0 +1,14 @@
+# CONFIG_SITE.Common.linux-microblaze
+#
+# Site specific definitions for linux-microblaze target builds.
+#-------------------------------------------------------
+
+# The gnu tools for cross compiling for MicroBlaze (little endian)
+# on Linux can be downloaded from the Xilinx git server:
+#   git clone git://git.xilinx.com/xldk/microblaze_v2.0_le.git
+#
+# The result contains a .tgz file with the tool-chain in it.
+# Set GNU_DIR to point to the un-tarred tool-chain:
+
+GNU_DIR = /usr/local/vw/microblaze-2.0/microblazeel-unknown-linux-gnu
+

@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "cantProceed.h"
 #include "dbDefs.h"
@@ -152,12 +153,12 @@ void callbackRequest(CALLBACK *pcallback)
     int lockKey;
 
     if (!pcallback) {
-        epicsPrintf("callbackRequest called with NULL pcallback\n");
+        epicsInterruptContextMessage("callbackRequest: pcallback was NULL\n");
         return;
     }
     priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
-        epicsPrintf("callbackRequest called with invalid priority\n");
+        epicsInterruptContextMessage("callbackRequest: Bad priority\n");
         return;
     }
     if (ringOverflow[priority]) return;
@@ -167,8 +168,11 @@ void callbackRequest(CALLBACK *pcallback)
     epicsInterruptUnlock(lockKey);
 
     if (!pushOK) {
-        errlogPrintf("callbackRequest: %s ring buffer full\n",
-            threadName[priority]);
+        char msg[48] = "callbackRequest: ";
+
+        strcat(msg, threadName[priority]);
+        strcat(msg, " ring buffer full\n");
+        epicsInterruptContextMessage(msg);
         ringOverflow[priority] = TRUE;
     }
     epicsEventSignal(callbackSem[priority]);

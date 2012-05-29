@@ -138,7 +138,7 @@ struct event_ext {
 };
 
 
-enum ctl {ctlRun, ctlPause, ctlExit};
+enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
 /*  NOTE: external used so they remember the state across loads */
 #ifdef  GLBLSOURCE

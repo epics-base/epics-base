@@ -1,0 +1,21 @@
+# CONFIG.Common.linux-microblaze
+#
+# This file is maintained by the build community.
+#
+# Definitions for Xilinx MicroBlaze FPGA Soft Core Processor target builds.
+# This target has been tested with the Xilinx Spartan 6 MicroBlaze.
+
+# Site-specific overrides of these definitions should be made in the file
+#   CONFIG_SITE.Common.linux-microblaze
+#-------------------------------------------------------
+
+# Include definitions common to all Linux targets
+include $(CONFIG)/os/CONFIG.Common.linuxCommon
+
+ARCH_CLASS = microblaze
+
+ifeq ($(BUILD_CLASS),CROSS)
+	VALID_BUILDS = Ioc
+	GNU_TARGET = microblazeel-unknown-linux-gnu
+	CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
+endif

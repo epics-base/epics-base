@@ -13,8 +13,6 @@
  * Date:    2004-03-19
  */
 
-#include "dbBase.h"
-#include "shareLib.h"
 #include "errlog.h"
 
 #define epicsExportSharedSymbols
@@ -24,16 +22,16 @@
 
 
 void epicsShareAPI registerRecordTypes(DBBASE *pbase, int nRecordTypes,
-    const char* const* recordTypeNames, const recordTypeLocation *rtl)
+    const char * const *recordTypeNames, const recordTypeLocation *rtl)
 {
     int i;
-    for(i=0; i< nRecordTypes; i++) {
+    for (i = 0; i < nRecordTypes; i++) {
         recordTypeLocation *precordTypeLocation;
         computeSizeOffset sizeOffset;
         DBENTRY dbEntry;
 
-        if(registryRecordTypeFind(recordTypeNames[i])) continue;
-        if(!registryRecordTypeAdd(recordTypeNames[i],&rtl[i])) {
+        if (registryRecordTypeFind(recordTypeNames[i])) continue;
+        if (!registryRecordTypeAdd(recordTypeNames[i], &rtl[i])) {
             errlogPrintf("registryRecordTypeAdd failed %s\n",
                 recordTypeNames[i]);
             continue;
@@ -41,7 +39,7 @@ void epicsShareAPI registerRecordTypes(DBBASE *pbase, int nRecordTypes,
         dbInitEntry(pbase,&dbEntry);
         precordTypeLocation = registryRecordTypeFind(recordTypeNames[i]);
         sizeOffset = precordTypeLocation->sizeOffset;
-        if(dbFindRecordType(&dbEntry,recordTypeNames[i])) {
+        if (dbFindRecordType(&dbEntry, recordTypeNames[i])) {
             errlogPrintf("registerRecordDeviceDriver failed %s\n",
                 recordTypeNames[i]);
         } else {
@@ -51,12 +49,12 @@ void epicsShareAPI registerRecordTypes(DBBASE *pbase, int nRecordTypes,
 }
 
 void epicsShareAPI registerDevices(DBBASE *pbase, int nDevices,
-    const char* const* deviceSupportNames, const dset* const* devsl)
+    const char * const *deviceSupportNames, const dset * const *devsl)
 {
     int i;
-    for(i=0; i< nDevices; i++) {
-        if(registryDeviceSupportFind(deviceSupportNames[i])) continue;
-        if(!registryDeviceSupportAdd(deviceSupportNames[i],devsl[i])) {
+    for (i = 0; i < nDevices; i++) {
+        if (registryDeviceSupportFind(deviceSupportNames[i])) continue;
+        if (!registryDeviceSupportAdd(deviceSupportNames[i], devsl[i])) {
             errlogPrintf("registryDeviceSupportAdd failed %s\n",
                 deviceSupportNames[i]);
             continue;
@@ -65,12 +63,12 @@ void epicsShareAPI registerDevices(DBBASE *pbase, int nDevices,
 }
 
 void epicsShareAPI registerDrivers(DBBASE *pbase, int nDrivers,
-    const char* const* driverSupportNames, struct drvet* const* drvsl)
+    const char * const * driverSupportNames, struct drvet * const *drvsl)
 {
     int i;
-    for(i=0; i< nDrivers; i++) {
-        if(registryDriverSupportFind(driverSupportNames[i])) continue;
-        if(!registryDriverSupportAdd(driverSupportNames[i], drvsl[i])) {
+    for (i = 0; i < nDrivers; i++) {
+        if (registryDriverSupportFind(driverSupportNames[i])) continue;
+        if (!registryDriverSupportAdd(driverSupportNames[i], drvsl[i])) {
             errlogPrintf("registryDriverSupportAdd failed %s\n",
                 driverSupportNames[i]);
             continue;

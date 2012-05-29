@@ -50,12 +50,12 @@
 
 
 /* Task Control */
-enum ctl {ctlRun, ctlPause, ctlExit};
+enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
 /* Task Startup/Shutdown Synchronization */
 static epicsEventId startStopEvent;
 
-volatile enum ctl scanCtl;
+static volatile enum ctl scanCtl;
 
 /* SCAN ONCE */
 

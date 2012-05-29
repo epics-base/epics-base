@@ -7,19 +7,18 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#ifndef INCregistryDriverSupporth
-#define INCregistryDriverSupporth
+#ifndef INC_registryDriverSupport_H
+#define INC_registryDriverSupport_H
 
-#include "shareLib.h"
 #include "drvSup.h"
+#include "shareLib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* c interface definitions */
 epicsShareFunc int epicsShareAPI registryDriverSupportAdd(
-    const char *name,struct drvet *pdrvet);
+    const char *name, struct drvet *pdrvet);
 epicsShareFunc struct drvet * epicsShareAPI registryDriverSupportFind(
     const char *name);
 
@@ -28,4 +27,4 @@ epicsShareFunc struct drvet * epicsShareAPI registryDriverSupportFind(
 #endif
 
 
-#endif /* INCregistryDriverSupporth */
+#endif /* INC_registryDriverSupport_H */

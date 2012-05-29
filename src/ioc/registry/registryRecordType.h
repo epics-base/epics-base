@@ -1,14 +1,14 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-#ifndef INCregistryRecordTypeh
-#define INCregistryRecordTypeh
+
+#ifndef INC_registryRecordType_H
+#define INC_registryRecordType_H
 
 #include "recSup.h"
 #include "shareLib.h"
@@ -27,10 +27,9 @@ typedef struct recordTypeLocation {
     struct rset *prset;
     computeSizeOffset sizeOffset;
 }recordTypeLocation;
-    
 
 epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
-    const char *name,const recordTypeLocation *prtl);
+    const char *name, const recordTypeLocation *prtl);
 epicsShareFunc recordTypeLocation * epicsShareAPI registryRecordTypeFind(
     const char *name);
 
@@ -41,4 +40,4 @@ int registerRecordDeviceDriver(struct dbBase *pdbbase);
 #endif
 
 
-#endif /* INCregistryRecordTypeh */
+#endif /* INC_registryRecordType_H */

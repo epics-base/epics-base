@@ -10,15 +10,22 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
+PROD_vxWorks += dbTestHarness
+PROD_RTEMS += dbTestHarness
+
 PROD_LIBS = dbCore ca Com
 
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
-PROD_vxWorks += callbackTest
+dbTestHarness_SRCS += callbackTest.c
 TESTS += callbackTest
 
-# When we add more test programs here, this must become a vxTestHarness
-TESTSPEC_vxWorks = callbackTest.munch; callbackTest
+
+dbTestHarness_SRCS += epicsRunDbTests.c
+dbTestHarness_SRCS_RTEMS = rtemsTestHarness.c
+
+TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
+TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

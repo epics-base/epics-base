@@ -24,7 +24,7 @@ accepted by the EPICS IOC's dbLoadTemplate command.</p>
 
 <h2>Command Syntax:</h2>
 
-<pre>msi -V -o<i>outfile</i> -I<i>dir</i> -M<i>subs</i> -S<i>subfile</i> <i>template</i></pre>
+<pre>msi -V -g -o<i>outfile</i> -I<i>dir</i> -M<i>subs</i> -S<i>subfile</i> <i>template</i></pre>
 
 <p>All parameters are optional. The -o, -I, -M, and -S switches may be
 separated from their associated value string by spaces if desired. Output will
@@ -34,18 +34,26 @@ be written to stdout unless the -o option is given.</p>
 
 <dl>
   <dt><tt>-V</tt></dt>
-    <dd>If this parameter is specified then any undefined macro discovered in
-    the template file which does not have an associated default value is
-    considered an error. An error message is generated and when msi terminates
-    it will do so with an exit status of 2.</dd>
+    <dd>Verbose warnings; if this parameter is specified then any undefined
+    macro discovered in the template file which does not have an associated
+    default value is considered an error. An error message is generated, and
+    when msi terminates it will do so with an exit status of 2.</dd>
+
+  <dt><tt>-g</tt></dt>
+    <dd>When this flag is given all macros defined in a substitution file will
+    have global scope and thus their values will persist until a new value is
+    given for this macro. This flag is provided for backwards compatibility as
+    this was the behavior of previous versions of msi, but it does not follow
+    common scoping rules and is discouraged.</dd>
 
   <dt><tt>-o</tt> <i>file</i></dt>
     <dd>Output will be written to the specifed file rather than to the standard
     output.</dd>
 
   <dt><tt>-I</tt> <i>dir</i></dt>
-    <dd>This parameter, which may be repeated, specifies a search path for
-    include commands. For example:
+    <dd>This parameter, which may be repeated or contain a colon-separated (or
+    semi-colon separated on Windows) list of directory paths, specifies a search
+    path for include commands. For example:
 
     <blockquote>
     <pre>msi -I /home/mrk/examples:. -I.. template</pre>

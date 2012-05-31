@@ -20,6 +20,7 @@
 #include <macLib.h>
 #include <ellLib.h>
 #include <epicsString.h>
+#include <osiFileName.h>
 
 #define MAX_BUFFER_SIZE 4096
 
@@ -62,7 +63,7 @@ int main(int argc,char **argv)
     char *substitutionName=0;
     char *templateName=0;
     int  i;
-    int  optScoped=1;
+    int  localScope = 1;
 
     inputConstruct(&inputPvt);
     macCreateHandle(&macPvt,0);
@@ -86,8 +87,8 @@ int main(int argc,char **argv)
             macSuppressWarning(macPvt,0);
             dontWarnUndef = 0;
             narg = 1; /* no argument for this option */
-        } else if(strncmp(argv[1],"-c",2)==0) {
-            optScoped = 0;
+        } else if(strncmp(argv[1],"-g",2)==0) {
+            localScope = 0;
             narg = 1; /* no argument for this option */
         } else {
             usageExit();
@@ -123,10 +124,10 @@ int main(int argc,char **argv)
                     usageExit();
                 }
                 while((pval = substituteGetReplacements(substitutePvt))){
-                    if (optScoped) macPushScope(macPvt);
+                    if (localScope) macPushScope(macPvt);
                     addMacroReplacements(macPvt,pval);
                     makeSubstitutions(inputPvt,macPvt,filename);
-                    if (optScoped) macPopScope(macPvt);
+                    if (localScope) macPopScope(macPvt);
                 }
             }
         } while (isGlobal || isFile);
@@ -144,13 +145,13 @@ void usageExit(void)
     fprintf(stderr,"usage: msi [options] [template]\n");
     fprintf(stderr,"stdin is used if neither template nor substitution file is given\n");
     fprintf(stderr,"options:\n");
-    fprintf(stderr,"  -V        don't suppress warnings\n");
-    fprintf(stderr,"  -o<FILE>  save output to <FILE>\n");
-    fprintf(stderr,"  -I<DIR>   add <DIR> to include file search path\n");
-    fprintf(stderr,"  -M<SUBST> add <SUBST> to (global) macro definitions\n");
-    fprintf(stderr,"            (<SUBST> is of the form VAR=VALUE,...)\n");
-    fprintf(stderr,"  -S<FILE>  expand a substitution file\n");
-    fprintf(stderr,"  -c        macro definitions are scoped (in substitution files)\n");
+    fprintf(stderr,"  -V        Verbose warnings\n");
+    fprintf(stderr,"  -g        All macros have global scope\n");
+    fprintf(stderr,"  -o<FILE>  Save output to <FILE>\n");
+    fprintf(stderr,"  -I<DIR>   Add <DIR> to include file search path\n");
+    fprintf(stderr,"  -M<SUBST> Add <SUBST> to (global) macro definitions\n");
+    fprintf(stderr,"            (<SUBST> takes the form VAR=VALUE,...)\n");
+    fprintf(stderr,"  -S<FILE>  Expand the substitutions in FILE\n");
     exit(1);
 }
 
@@ -310,16 +311,17 @@ static void inputAddPath(inputData *pinputData, char *path)
     const char  *pdir;
     int         len;
     int         emptyName;
+    const char  sep = *OSI_PATH_LIST_SEPARATOR;
 
     pdir = path;
     /*an empty name at beginning, middle, or end means current directory*/
     while(pdir && *pdir) {
-        emptyName = ((*pdir == ':') ? 1 : 0);
+        emptyName = ((*pdir == sep) ? 1 : 0);
         if(emptyName) ++pdir;
         ppathNode = (pathNode *)calloc(1,sizeof(pathNode));
         ellAdd(ppathList,&ppathNode->node);
         if(!emptyName) {
-            pcolon = strchr(pdir,':');
+            pcolon = strchr(pdir,sep);
             len = (pcolon ? (pcolon - pdir) : strlen(pdir));
             if(len>0)  {
                 ppathNode->directory = (char *)calloc(len+1,sizeof(char));

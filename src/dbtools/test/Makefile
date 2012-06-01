@@ -8,7 +8,8 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
-TESTPROD_HOST += dbltExpand
+TESTPROD_HOST_DEFAULT = dbltExpand
+TESTPROD_HOST_WIN32 = -nil-
 dbltExpand_SRCS += dbltExpand.c
 dbltExpand_LIBS += dbtoolsIoc dbStaticHost Com
 

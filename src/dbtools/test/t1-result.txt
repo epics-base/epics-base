@@ -1,0 +1,21 @@
+This is t1-template.txt
+
+With $(a,undefined) & $(b,undefined):
+This is t1-include.txt 
+  a = default value used when a is undefined
+  b = default value used when b is undefined
+End of t1-include.txt
+
+On defining a=aaa & b=bbb:
+This is t1-include.txt again
+  a = aaa
+  b = bbb
+End of t1-include.txt
+
+On setting a="aa":
+This is t1-include.txt again
+  a = "aa"
+  b = bbb
+End of t1-include.txt
+
+End of t1-template.txt

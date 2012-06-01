@@ -1,5 +1,5 @@
-This is include-file $(include-file-again=)
+This is t1-include.txt $(include-file-again=)
   a = $(a=default value used when a is undefined)
   b = $(b=default value used when b is undefined)
 substitute "include-file-again=again"
-End of include-file.
+End of t1-include.txt

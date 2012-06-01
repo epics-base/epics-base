@@ -12,11 +12,7 @@ TESTPROD_HOST += dbltExpand
 dbltExpand_SRCS += dbltExpand.c
 dbltExpand_LIBS += dbtoolsIoc dbStaticHost Com
 
-
-#TESTPROD_HOST += callbackTest
-#callbackTest_SRCS += callbackTest.c
-#TESTS += callbackTest
-
+TESTS += msi
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

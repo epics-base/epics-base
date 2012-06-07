@@ -217,6 +217,38 @@ void testCAS ()
 				"proper number of CAS test thread not set iterations" );
 }
 
+// template instances, needed for vxWorks 5.5.2
+
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
+template void incr < int > (void *);
+template void decr < int > (void *);
+template void incr < size_t > (void *);
+template void decr < size_t > (void *);
+template void add < int > (void *);
+template void sub < int > (void *);
+template void add < size_t > (void *);
+template void sub < size_t > (void *);
+template void cas < int > (void *);
+template void cas < size_t > (void *);
+template void cas < EpicsAtomicPtrT > (void *);
+
+template void testIncrDecr < int > (void);
+template void testIncrDecr < size_t > (void);
+template void testAddSub < int > (void);
+template void testAddSub < size_t > (void);
+template void testCAS < int > (void);
+template void testCAS < size_t > (void);
+template void testCAS < EpicsAtomicPtrT > (void);
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
+
+
 MAIN ( epicsAtomicTest )
 {
 

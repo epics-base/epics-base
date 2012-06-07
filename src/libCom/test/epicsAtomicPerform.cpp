@@ -481,6 +481,74 @@ void measure ()
     measurePerformance < typename Ten < T > :: Hundred > ();
 }
 
+
+// template instances, needed for vxWorks 5.5.2
+
+#ifdef _MSC_VER
+#   pragma warning ( push )
+#   pragma warning ( disable:4660 )
+#endif
+
+template class AtomicSet < int >;
+template class AtomicSet < size_t >;
+template class AtomicSet < EpicsAtomicPtrT >;
+template class OrdinaryIncr < int >;
+template class OrdinaryIncr < size_t >;
+template class AtomicIncr < int >;
+template class AtomicIncr < size_t >;
+template class AtomicCmpAndSwap < int >;
+template class AtomicCmpAndSwap < size_t >;
+template class AtomicCmpAndSwap < EpicsAtomicPtrT >;
+
+template class Ten<AtomicSet < int > >;
+template class Ten<AtomicSet < size_t > >;
+template class Ten<AtomicSet < EpicsAtomicPtrT > >;
+template class Ten<OrdinaryIncr < int > >;
+template class Ten<OrdinaryIncr < size_t > >;
+template class Ten<AtomicIncr < int > >;
+template class Ten<AtomicIncr < size_t > >;
+template class Ten<AtomicCmpAndSwap < int > >;
+template class Ten<AtomicCmpAndSwap < size_t > >;
+template class Ten<AtomicCmpAndSwap < EpicsAtomicPtrT > >;
+
+template class Ten<Ten<AtomicSet < int > > >;
+template class Ten<Ten<AtomicSet < size_t > > >;
+template class Ten<Ten<AtomicSet < EpicsAtomicPtrT > > >;
+template class Ten<Ten<OrdinaryIncr < int > > >;
+template class Ten<Ten<OrdinaryIncr < size_t > > >;
+template class Ten<Ten<AtomicIncr < int > > >;
+template class Ten<Ten<AtomicIncr < size_t > > >;
+template class Ten<Ten<AtomicCmpAndSwap < int > > >;
+template class Ten<Ten<AtomicCmpAndSwap < size_t > > >;
+template class Ten<Ten<AtomicCmpAndSwap < EpicsAtomicPtrT > > >;
+
+template void measurePerformance < Ten < Ten < AtomicSet < int > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicSet < size_t > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicSet < EpicsAtomicPtrT > > > >(void);
+template void measurePerformance < Ten < Ten < OrdinaryIncr < int > > > >(void);
+template void measurePerformance < Ten < Ten < OrdinaryIncr < size_t > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicIncr < int > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicIncr < size_t > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicCmpAndSwap < int > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicCmpAndSwap < size_t > > > >(void);
+template void measurePerformance < Ten < Ten < AtomicCmpAndSwap < EpicsAtomicPtrT > > > >(void);
+
+template void measure < AtomicSet < int > > (void);
+template void measure < AtomicSet < size_t > > (void);
+template void measure < AtomicSet < EpicsAtomicPtrT > > (void);
+template void measure < OrdinaryIncr < int > > (void);
+template void measure < OrdinaryIncr < size_t > > (void);
+template void measure < AtomicIncr < int > > (void);
+template void measure < AtomicIncr < size_t > > (void);
+template void measure < AtomicCmpAndSwap < int > > (void);
+template void measure < AtomicCmpAndSwap < size_t > > (void);
+template void measure < AtomicCmpAndSwap < EpicsAtomicPtrT > > (void);
+
+#ifdef _MSC_VER
+#   pragma warning ( pop )
+#endif
+
+
 MAIN ( epicsAtomicPerform )
 {
     testPlan ( 0 );

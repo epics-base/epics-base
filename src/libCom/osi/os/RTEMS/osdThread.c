@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <syslog.h>
+#include <limits.h>
 
 #include <rtems.h>
 #include <rtems/error.h>
@@ -364,16 +365,15 @@ epicsThreadSleep (double seconds)
 {
     rtems_status_code sc;
     rtems_interval delay;
-    extern double rtemsTicksPerTwoSeconds_double;
-    
-    if (seconds <= 0.0) {
-        delay = 0;
+    extern double rtemsTicksPerSecond_double;
+
+    if (seconds > 0.0) {
+        seconds *= rtemsTicksPerSecond_double;
+        seconds += 0.99999999;  /* 8 9s here is optimal */
+        delay = (seconds >= INT_MAX) ? INT_MAX : (int) seconds;
     }
-    else {
-        delay = seconds * rtemsTicksPerTwoSeconds_double;
-        delay = (delay + 1) / 2;
-        if (delay == 0)
-            delay++;
+    else {  /* seconds <= 0 or NAN */
+        delay = 0;
     }
     sc = rtems_task_wake_after (delay);
     if(sc != RTEMS_SUCCESSFUL)

@@ -3,11 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* epicsThread.c */
 
 /* Author:  Marty Kraimer Date:    18JAN2000 */
 
@@ -72,7 +70,7 @@ typedef struct epicsThreadOSD {
     int                isFifoScheduled;
     int                isOnThreadList;
     unsigned int       osiPriority;
-    char              *name;
+    char               name[1];     /* actually larger */
 } epicsThreadOSD;
 
 #ifdef _POSIX_THREAD_PRIORITY_SCHEDULING
@@ -158,7 +156,8 @@ static epicsThreadOSD * create_threadInfo(const char *name)
 {
     epicsThreadOSD *pthreadInfo;
 
-    pthreadInfo = calloc(1,sizeof(*pthreadInfo) + strlen(name)+1);
+    /* sizeof(epicsThreadOSD) includes one byte for the '\0' */
+    pthreadInfo = calloc(1,sizeof(*pthreadInfo) + strlen(name));
     if(!pthreadInfo)
         return NULL;
     pthreadInfo->suspendEvent = epicsEventCreate(epicsEventEmpty);
@@ -166,7 +165,6 @@ static epicsThreadOSD * create_threadInfo(const char *name)
         free(pthreadInfo);
         return NULL;
     }
-    pthreadInfo->name = (char*)&pthreadInfo[1];
     strcpy(pthreadInfo->name, name);
     return pthreadInfo;
 }
@@ -206,17 +204,13 @@ static void free_threadInfo(epicsThreadOSD *pthreadInfo)
     int status;
 
     status = mutexLock(&listLock);
-    checkStatus(status,"pthread_mutex_lock free_threadInfo");
-    if(status)
-        return;
+    checkStatusQuit(status,"pthread_mutex_lock","free_threadInfo");
     if(pthreadInfo->isOnThreadList) ellDelete(&pthreadList,&pthreadInfo->node);
     status = pthread_mutex_unlock(&listLock);
-    checkStatus(status,"pthread_mutex_unlock free_threadInfo");
+    checkStatusQuit(status,"pthread_mutex_unlock","free_threadInfo");
     epicsEventDestroy(pthreadInfo->suspendEvent);
     status = pthread_attr_destroy(&pthreadInfo->attr);
-    checkStatus(status,"pthread_attr_destroy free_threadInfo");
-    if(status)
-        return;
+    checkStatusQuit(status,"pthread_attr_destroy","free_threadInfo");
     free(pthreadInfo);
 }
 
@@ -539,8 +533,7 @@ static epicsThreadOSD *createImplicit(void)
     tid = pthread_self();
     sprintf(name, "non-EPICS_%ld", (long)tid);
     pthreadInfo = create_threadInfo(name);
-    if(!pthreadInfo)
-        return NULL;
+    assert(pthreadInfo);
     pthreadInfo->tid = tid;
     pthreadInfo->osiPriority = 0;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
@@ -823,6 +816,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
     }
     status = pthread_mutex_unlock(&listLock);
     checkStatus(status,"pthread_mutex_unlock epicsThreadShowAll");
+    if(status) return;
     if (!found)
         printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }

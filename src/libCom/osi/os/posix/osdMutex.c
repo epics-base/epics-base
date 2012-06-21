@@ -28,8 +28,16 @@
 #include "epicsAssert.h"
 
 #define checkStatus(status,message) \
-if((status)) { \
-    errlogPrintf("epicsMutex %s failed: error %s\n",(message),strerror((status)));}
+    if((status)) { \
+        errlogPrintf("epicsMutex %s failed: error %s\n", \
+            (message), strerror((status))); \
+    }
+#define checkStatusQuit(status,message,method) \
+    if(status) { \
+        errlogPrintf("epicsMutex %s failed: error %s\n", \
+            (message), strerror((status))); \
+        cantProceed((method)); \
+    }
 
 static int mutexLock(pthread_mutex_t *id)
 {

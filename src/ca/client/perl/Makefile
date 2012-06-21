@@ -13,7 +13,7 @@ include $(TOP)/configure/CONFIG
 # to generate header file dependancies for Darwin.
 # Darwin has multiple -arch compiler flags.
 ifeq ($(OS_CLASS),Darwin)
-HDEPENDS_METHOD = CMD
+HDEPENDS_METHOD = MKMF
 endif
 
 ifneq ($(findstring darwin,$(T_A)),)

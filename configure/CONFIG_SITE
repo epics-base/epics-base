@@ -126,10 +126,6 @@ SHARED_LIBRARIES=YES
 #  Must be either YES or NO.
 STATIC_BUILD=NO
 
-# Generate header dependancy files for each C/C++ object file.
-#  Must be either YES or NO.
-HDEPENDS=YES
-
 # Host build optimization.
 #  Must be either YES or NO.
 HOST_OPT=YES

@@ -321,29 +321,25 @@ PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(INCLUDES) $< > $@
 #--------------------------------------------------
 # Header dependency file generation
 
-HDEPENDS = YES
-HDEPENDS_METHOD = CMD
+HDEPENDS_METHOD = MKMF
 
 HDEPENDS_INCLUDES = $(subst -I,,$(INCLUDES))
 HDEPENDSFLAGS = -m $*$(DEP) $(HDEPENDS_INCLUDES) $@ $<
 
-HDEPENDS_CMD_NO = $(ECHO) ""
-HDEPENDS_CMD_YES = $(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
+HDEPENDS_MKMF = $(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDSFLAGS)
 
 HDEPENDSCFLAGS = -MM > $*$(DEP)
 HDEPSUFFIX = $(if $(filter .c,$(suffix $<)),.c,.cpp)
-HDEPENDS_CFLAGS_NO = $(ECHO) ""
-HDEPENDS_CFLAGS_YES = $(COMPILE$(HDEPSUFFIX)) $(HDEPENDSCFLAGS) $<
+HDEPENDS_CFLAGS = $(COMPILE$(HDEPSUFFIX)) $(HDEPENDSCFLAGS) $<
 
-HDEPENDS_CMD = $(HDEPENDS_$(HDEPENDS_METHOD)_$(HDEPENDS))
+HDEPENDS_CMD = $(HDEPENDS_$(HDEPENDS_METHOD))
 
 #--------------------------------------------------
 # depends definition
 
 TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(TESTLIBRARY) $(LIBRARY) $(LOADABLE_LIBRARY), $($(name)_SRCS))
 SRC_FILES = $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
-HDEPENDS_FILES_YES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
-HDEPENDS_FILES = $(HDEPENDS_FILES_$(HDEPENDS))
+HDEPENDS_FILES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 
 #---------------------------------------------------------------
 # Names of installed items

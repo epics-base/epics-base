@@ -35,7 +35,7 @@ CC = cl
 
 # Override CONFIG.gnuCommon for cross builds.
 GNU = NO
-HDEPENDS_METHOD = CMD
+HDEPENDS_METHOD = MKMF
 
 #
 # /W<N> use warning level N

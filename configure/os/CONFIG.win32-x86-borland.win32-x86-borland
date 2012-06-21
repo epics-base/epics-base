@@ -268,7 +268,7 @@ LINK.cpp += , $@ ,,$(LINKLIBS)  $(subst /,\\,$(PROD_LDLIBS))
 #--------------------------------------------------
 
 # override of CONFIG_COMMON
-HDEPENDS_INCLUDES_MKMF = $(filter-out $(BORLAND_INC),$(subst -I,,$(INCLUDES)))
+HDEPENDS_INCLUDES = $(filter-out $(BORLAND_INC),$(subst -I,,$(INCLUDES)))
 
 
 TDS = $(addsuffix .tds,$(basename $(PROD) $(TESTPROD) $(BUILD_LIBRARY) $(TESTBUILD_LIBRARY)))

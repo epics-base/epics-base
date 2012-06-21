@@ -1,0 +1,12 @@
+# This is a combined minimal DBD and DB file
+
+recordtype(x) {
+  field(NAME, DBF_STRING) {
+    prompt("Record Name")
+    special(SPC_NOMOD)
+    size(61)
+  }
+  field(VAL, DBF_LONG) {
+    prompt("Value")
+  }
+}

@@ -12,7 +12,6 @@
 
 /* Based on the linkoptions utility by Michael Davidsaver (BNL) */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -22,6 +21,7 @@
 #include <dbDefs.h>
 #include <dbStaticLib.h>
 #include <epicsTypes.h>
+#include <epicsStdio.h>
 #include <epicsString.h>
 #include <errlog.h>
 #include <shareLib.h>
@@ -70,7 +70,7 @@ typedef enum chfPluginType {
  */
 static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
 {
-    long *ival;
+    epicsInt32 *ival;
     int *eval;
     const chfPluginEnumType *emap;
     double *dval;
@@ -85,7 +85,7 @@ static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (long*) ((char*)user + opt->offset);
+        ival = (epicsInt32 *) ((char *)user + opt->offset);
         *ival = val;
         break;
     case chfPluginArgBoolean:
@@ -129,7 +129,7 @@ static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
  */
 static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
 {
-    long *ival;
+    epicsInt32 *ival;
     int *eval;
     double *dval;
     char *sval;
@@ -142,7 +142,7 @@ static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (long*) ((char*)user + opt->offset);
+        ival = (epicsInt32 *) ((char*)user + opt->offset);
         *ival = val;
         break;
     case chfPluginArgBoolean:
@@ -174,7 +174,7 @@ static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
  */
 static int store_double_value(const chfPluginArgDef *opt, void *user, double val)
 {
-    long *ival;
+    epicsInt32 *ival;
     int *eval;
     double *dval;
     char *sval;
@@ -190,11 +190,13 @@ static int store_double_value(const chfPluginArgDef *opt, void *user, double val
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        if (val < LONG_MIN || val > LONG_MAX) {
+#if (LONG_MAX > 0x7fffffff)
+        if (val < -0x80000000L || val > 0x7fffffff) {
             return -1;
         }
-        ival = (long*) ((char*)user + opt->offset);
-        *ival = (long) val;
+#endif
+        ival = (epicsInt32 *) ((char*)user + opt->offset);
+        *ival = val;
         break;
     case chfPluginArgBoolean:
         eval = (int*) ((char*)user + opt->offset);
@@ -209,7 +211,7 @@ static int store_double_value(const chfPluginArgDef *opt, void *user, double val
         if (opt->size <= 8) {       /* Play it safe: 3 exp + 2 sign + 'e' + '.' */
             return -1;
         }
-        i = snprintf(sval, opt->size, "%.*g", opt->size - 7, val);
+        i = epicsSnprintf(sval, opt->size, "%.*g", (int) opt->size - 7, val);
         if (i >= opt->size) {
             return -1;
         }
@@ -227,7 +229,8 @@ static int store_double_value(const chfPluginArgDef *opt, void *user, double val
  */
 static int store_string_value(const chfPluginArgDef *opt, void *user, const char *val, size_t len)
 {
-    long *ival;
+    epicsInt32 *ival;
+    long lval;
     int *eval;
     const chfPluginEnumType *emap;
     double *dval;
@@ -243,18 +246,23 @@ static int store_string_value(const chfPluginArgDef *opt, void *user, const char
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (long*) ((char*)user + opt->offset);
-        *ival = strtol(val, &end, 0);
+        lval = strtol(val, &end, 0);
         /* test for the myriad error conditions which strtol may use */
-        if (*ival == LONG_MAX || *ival == LONG_MIN || end == val) {
+        if (lval == LONG_MAX || lval == LONG_MIN
+#if (LONG_MAX > 0x7fffffff)
+            || lval < -0x80000000L || lval > 0x7fffffff
+#endif
+            || end == val) {
             return -1;
         }
+        ival = (epicsInt32 *) ((char*)user + opt->offset);
+        *ival = lval;
         break;
     case chfPluginArgBoolean:
         eval = (int*) ((char*)user + opt->offset);
-        if (strncasecmp(val, "true", len) == 0) {
+        if (epicsStrnCaseCmp(val, "true", len) == 0) {
             *eval = 1;
-        } else if (strncasecmp(val, "false", len) == 0) {
+        } else if (epicsStrnCaseCmp(val, "false", len) == 0) {
             *eval = 0;
         } else {
             i = strtol(val, &end, 0);
@@ -567,10 +575,10 @@ int chfPluginRegister(const char* key, const chfPluginIf *pif, const chfPluginAr
     for (i = 0, cur = opts; cur && cur->name; i++, cur++) {
         switch(cur->optType) {
         case chfPluginArgInt32:
-            if (cur->size < sizeof(long)) {
-                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for long (%lu)\n",
+            if (cur->size < sizeof(epicsInt32)) {
+                errlogPrintf("Plugin %s: provided storage (%d bytes) for %s is too small for epicsInt32 (%lu)\n",
                              key, cur->size, cur->name,
-                             (unsigned long) sizeof(long));
+                             (unsigned long) sizeof(epicsInt32));
                 return -1;
             }
             break;

@@ -6,11 +6,11 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
-TOP=../../../../..
+TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbCore ca Com
+PROD_LIBS += dbRecStd dbCore ca Com
 
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c xRecord_registerRecordDeviceDriver.cpp
@@ -38,10 +38,8 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
-$(COMMON_DIR)/xRecord.dbd: ../../../test/xRecord.dbd
-	$(INSTALL) -d $< $(@D)
-
-tsTest$(OBJ): $(COMMON_DIR)/xRecord.h
-dbndTest$(OBJ): $(COMMON_DIR)/xRecord.h
-syncTest$(OBJ): $(COMMON_DIR)/xRecord.h
-arrTest$(OBJ): $(COMMON_DIR)/arrRecord.h
+tsTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbndTest$(DEP): $(COMMON_DIR)/xRecord.h
+syncTest$(DEP): $(COMMON_DIR)/xRecord.h
+arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
+arrTest$(DEP): $(COMMON_DIR)/arrRecord.h

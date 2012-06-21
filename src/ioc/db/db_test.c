@@ -14,14 +14,16 @@
  *              Andrew Johnson <anj@aps.anl.gov>
  */
 #include <stddef.h>
-#include <epicsStdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "dbDefs.h"
 #include "errlog.h"
 #include "cadef.h"
+#include "epicsStdlib.h"
 #include "epicsStdioRedirect.h"
+#include "epicsString.h"
+
 #define epicsExportSharedSymbols
 #include "dbChannel.h"
 #include "db_access_routines.h"
@@ -223,7 +225,7 @@ int epicsShareAPI tpn(char *pname, char *pvalue)
         return 1;
     }
 
-    pbuffer = strdup(pvalue);
+    pbuffer = epicsStrDup(pvalue);
     ppn = calloc(1, sizeof(putNotify));
     if (!ppn) {
         printf("calloc failed\n");

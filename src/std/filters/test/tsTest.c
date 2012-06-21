@@ -49,18 +49,20 @@ MAIN(tsTest)
     void *arg_out = NULL;
     db_field_log fl1;
     db_field_log *pfl2;
+    epicsTimeStamp stamp, now;
 
-    testPlan(15);
+    testPlan(12);
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     (*pvar_func_tsInitialize)();       /* manually initialize plugin */
-
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
+
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
 
@@ -89,9 +91,9 @@ MAIN(tsTest)
     testOk(fl_equal_ex_ts(&fl1, pfl2), "ts filter does not change field_log data");
 
     testOk(!!(pfl2 = db_create_read_log(pch)), "create field log from channel");
-    epicsTimeStamp stamp = pfl2->time;
+    stamp = pfl2->time;
     pfl2 = dbChannelRunPreChain(pch, &fl1);
-    epicsTimeStamp now; epicsTimeGetCurrent(&now);
+    epicsTimeGetCurrent(&now);
     testOk(epicsTimeDiffInSeconds(&pfl2->time, &stamp) > 0. &&
            epicsTimeDiffInSeconds(&now, &pfl2->time) > 0., "ts filter sets time stamp to \"now\"");
 

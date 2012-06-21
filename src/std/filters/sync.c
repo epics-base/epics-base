@@ -73,12 +73,14 @@ static int parse_ok(void *pvt)
 }
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
+    db_field_log *passfl = NULL;
+    myStruct *my = (myStruct*) pvt;
+    int actstate;
+
     if (pfl->ctx == dbfl_context_read)
         return pfl;
 
-    db_field_log *passfl = NULL;
-    myStruct *my = (myStruct*) pvt;
-    int actstate = dbStateGet(my->id);
+    actstate = dbStateGet(my->id);
 
     switch (my->mode) {
     case syncModeBefore:

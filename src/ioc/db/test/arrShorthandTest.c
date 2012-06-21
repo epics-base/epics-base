@@ -81,16 +81,16 @@ MAIN(chfPluginTest)
 {
     dbChannel *pch;
 
-    testPlan(29);
+    testPlan(26);
 
     db_init_events();
 
-    testHead("Set up database");
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     testHead("Register plugin");
     testOk(!chfPluginRegister("arr", &myPif, opts), "register fake arr plugin");

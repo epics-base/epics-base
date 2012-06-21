@@ -57,9 +57,11 @@ static void changeValue(db_field_log *pfl2, long val) {
 }
 
 static void mustPassOnce(dbChannel *pch, db_field_log *pfl2, char* m, double d, long val) {
+    db_field_log *pfl;
+
     changeValue(pfl2, val);
     testDiag("mode=%s delta=%g filter must pass once", m, d);
-    db_field_log *pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl = dbChannelRunPreChain(pch, pfl2);
     testOk(pfl2 == pfl, "call 1 does not drop or replace field_log");
     testOk(fl_equal(pfl, pfl2), "call 1 does not change field_log data");
     pfl = dbChannelRunPreChain(pch, pfl2);
@@ -67,16 +69,20 @@ static void mustPassOnce(dbChannel *pch, db_field_log *pfl2, char* m, double d, 
 }
 
 static void mustDrop(dbChannel *pch, db_field_log *pfl2, char* m, double d, long val) {
+    db_field_log *pfl;
+
     changeValue(pfl2, val);
     testDiag("mode=%s delta=%g filter must drop", m, d);
-    db_field_log *pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl = dbChannelRunPreChain(pch, pfl2);
     testOk(NULL == pfl, "call 1 drops field_log");
 }
 
 static void mustPassTwice(dbChannel *pch, db_field_log *pfl2, char* m, double d, long val) {
+    db_field_log *pfl;
+
     changeValue(pfl2, val);
     testDiag("mode=%s delta=%g filter must pass twice", m, d);
-    db_field_log *pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl = dbChannelRunPreChain(pch, pfl2);
     testOk(pfl2 == pfl, "call 1 does not drop or replace field_log");
     testOk(fl_equal(pfl, pfl2), "call 1 does not change field_log data");
     pfl = dbChannelRunPreChain(pch, pfl2);
@@ -104,17 +110,18 @@ MAIN(dbndTest)
     db_field_log *pfl2;
     db_field_log fl1;
 
-    testPlan(62);
+    testPlan(59);
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     (*pvar_func_dbndInitialize)();       /* manually initialize plugin */
-
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
+
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 

@@ -27,6 +27,7 @@
 #include "dbLock.h"
 #include "dbStaticLib.h"
 #include "epicsAssert.h"
+#include "epicsString.h"
 #include "errlog.h"
 #include "gpHash.h"
 #include "recSup.h"
@@ -65,7 +66,7 @@ static void chf_value(parseContext *parser, parse_result *presult)
     if (filter->plug->fif->parse_end(filter) == parse_continue) {
         ellAdd(&parser->chan->filters, &filter->list_node);
     } else {
-        free(filter); // FIXME: Use free-list
+        free(filter); /* FIXME: Use free-list */
         *presult = parse_stop;
     }
 }
@@ -161,7 +162,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     assert(parser->depth == 0);
     plug = dbFindFilter((const char *) key, stringLen);
     if (!plug) {
-        printf("dbChannelCreate: Channel filter '%.*s' not found\n", stringLen, key);
+        printf("dbChannelCreate: Channel filter '%.*s' not found\n", (int) stringLen, key);
         return parse_stop;
     }
 
@@ -175,7 +176,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     if (result == parse_continue) {
         parser->filter = filter;
     } else {
-        free(filter); // FIXME: Use free-list
+        free(filter); /* FIXME: Use free-list */
     }
     return result;
 }
@@ -417,7 +418,7 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     return 0;
 
     failure:
-    free(filter); // FIXME: Use free-list
+    free(filter); /* FIXME: Use free-list */
     status = S_dbLib_fieldNotFound;
 
     finish:
@@ -463,7 +464,7 @@ dbChannel * dbChannelCreate(const char *name)
 
     /* FIXME: Use free-list */
     chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
-    chan->name = strdup(name);  /* FIXME: free-list */
+    chan->name = epicsStrDup(name);  /* FIXME: free-list */
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);
@@ -570,6 +571,8 @@ long dbChannelOpen(dbChannel *chan)
     void *arg;
     long status;
     ELLNODE *node;
+    db_field_log probe;
+    db_field_log p;
 
     for (node = ellFirst(&chan->filters); node; node = ellNext(node)) {
         filter = CONTAINER(node, chFilter, list_node);
@@ -581,8 +584,6 @@ long dbChannelOpen(dbChannel *chan)
     }
 
     /* Set up type probe */
-    db_field_log probe;
-    db_field_log p;
     probe.field_type  = dbChannelFieldType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);
@@ -784,8 +785,8 @@ void dbChannelDelete(dbChannel *chan)
         filter->plug->fif->channel_close(filter);
         free(filter);
     }
-    free((char *) chan->name);   // FIXME: Use free-list
-    free(chan); // FIXME: Use free-list
+    free((char *) chan->name);   /* FIXME: Use free-list */
+    free(chan); /* FIXME: Use free-list */
 }
 
 static void freeArray(db_field_log *pfl) {
@@ -799,10 +800,10 @@ static void freeArray(db_field_log *pfl) {
 void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan)
 {
     void *p;
+    struct dbCommon *prec = dbChannelRecord(chan);
 
     if (!pfl->type == dbfl_type_rec) return;
 
-    struct dbCommon *prec = dbChannelRecord(chan);
     pfl->type = dbfl_type_ref;
     pfl->stat = prec->stat;
     pfl->sevr = prec->sevr;
@@ -838,7 +839,7 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif, void *puser)
         return;
 
     pfilt = dbCalloc(1, sizeof(chFilterPlugin));
-    pfilt->name = strdup(name);
+    pfilt->name = epicsStrDup(name);
     pfilt->fif = fif;
     pfilt->puser = puser;
 

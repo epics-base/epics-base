@@ -133,22 +133,22 @@ static void check(short dbr_type) {
     dbAddr valaddr;
     dbAddr offaddr;
     const char *offname = NULL, *valname = NULL, *typname = NULL;
-    long ar[10] = {10,11,12,13,14,15,16,17,18,19};
-    long *ar10_0_1 = ar;
-    long ar10_4_1[10] = {14,15,16,17,18,19,10,11,12,13};
-    long ar5_0_1[10] = {12,13,14,15,16};
-    long ar5_3_1[10] = {15,16,17,18,19};
-    long ar5_5_1[10] = {17,18,19,10,11};
-    long ar5_9_1[10] = {11,12,13,14,15};
-    long ar5_0_2[10] = {12,14,16};
-    long ar5_3_2[10] = {15,17,19};
-    long ar5_5_2[10] = {17,19,11};
-    long ar5_9_2[10] = {11,13,15};
-    long ar5_0_3[10] = {12,15};
-    long ar5_3_3[10] = {15,18};
-    long ar5_5_3[10] = {17,10};
-    long ar5_9_3[10] = {11,14};
-    long off = 0;
+    epicsInt32 ar[10] = {10,11,12,13,14,15,16,17,18,19};
+    epicsInt32 *ar10_0_1 = ar;
+    epicsInt32 ar10_4_1[10] = {14,15,16,17,18,19,10,11,12,13};
+    epicsInt32 ar5_0_1[10] = {12,13,14,15,16};
+    epicsInt32 ar5_3_1[10] = {15,16,17,18,19};
+    epicsInt32 ar5_5_1[10] = {17,18,19,10,11};
+    epicsInt32 ar5_9_1[10] = {11,12,13,14,15};
+    epicsInt32 ar5_0_2[10] = {12,14,16};
+    epicsInt32 ar5_3_2[10] = {15,17,19};
+    epicsInt32 ar5_5_2[10] = {17,19,11};
+    epicsInt32 ar5_9_2[10] = {11,13,15};
+    epicsInt32 ar5_0_3[10] = {12,15};
+    epicsInt32 ar5_3_3[10] = {15,18};
+    epicsInt32 ar5_5_3[10] = {17,10};
+    epicsInt32 ar5_9_3[10] = {11,14};
+    epicsInt32 off = 0;
 
     switch (dbr_type) {
     case DBR_LONG:
@@ -297,23 +297,23 @@ MAIN(arrTest)
 {
     const chFilterPlugin *plug;
     char arr[] = "arr";
-    int status;
 
-    testPlan(1404);
+    testPlan(1402);
 
     /* Prepare the IOC */
 
     epicsEnvSet("EPICS_CA_SERVER_PORT", server_port);
 
-    testOk1(!(status=dbReadDatabase(&pdbbase, "arrRecord.dbd", ".:..:../../../../../../dbd", NULL)));
-    if (status) epicsExit(EXIT_FAILURE);
+    if (dbReadDatabase(&pdbbase, "arrRecord.dbd",
+        "..:../../../../../dbd", NULL))
+        testAbort("Database description not loaded");
 
     (*pvar_func_arrInitialize)();
     arrRecord_registerRecordDeviceDriver(pdbbase);
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 
-    testOk1(!(status=dbReadDatabase(&pdbbase, "arrTest.db", ".:..", NULL)));
-    if (status) epicsExit(EXIT_FAILURE);
+    if (dbReadDatabase(&pdbbase, "arrTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     /* Start the IOC */
 

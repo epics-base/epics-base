@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "iocsh.h"
+#include "epicsString.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
 #include "dbStaticLib.h"
@@ -51,7 +52,7 @@ dbStateId dbStateCreate(const char *name)
         return id;
 
     id = callocMustSucceed(1, sizeof(dbState), "createDbState");
-    id->name = strdup(name);
+    id->name = epicsStrDup(name);
     id->lock = epicsMutexMustCreate();
     ellAdd(&states, &id->node);
 
@@ -91,7 +92,7 @@ int dbStateGet(dbStateId id)
 void dbStateShow(dbStateId id, unsigned int level)
 {
     if (level >=1)
-        printf("id %#x '%s' : ", (unsigned int) id, id->name);
+        printf("id %p '%s' : ", id, id->name);
     printf("%s\n", dbStateGet(id) ? "TRUE" : "FALSE");
 }
 

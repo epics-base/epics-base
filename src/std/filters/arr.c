@@ -116,9 +116,10 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             pfl->field_size = chan->addr.field_size;
             pfl->no_elements = nTarget;
             if (nTarget) {
+                void *pdst = freeListCalloc(my->arrayFreeList);
+
                 pfl->u.r.dtor = freeArray;
                 pfl->u.r.pvt = my->arrayFreeList;
-                void *pdst = freeListCalloc(my->arrayFreeList);
                 offset = (offset + start) % chan->addr.no_elements;
                 dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
                 pfl->u.r.field = pdst;
@@ -127,11 +128,12 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
 
     /* Extract from buffer */
     } else if (pfl->type == dbfl_type_ref) {
+        void *psrc = pfl->u.r.field;
+        void *pdst = NULL;
+
         nSource = pfl->no_elements;
         nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
         pfl->no_elements = nTarget;
-        void *psrc = pfl->u.r.field;
-        void *pdst = NULL;
         if (nTarget) {                                        /* Copy the data out */
             pdst = freeListCalloc(my->arrayFreeList);
             offset = start;

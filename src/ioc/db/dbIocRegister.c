@@ -299,8 +299,8 @@ static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
 }
 
 /* dbStateCreate */
-static const iocshArg dbStateCreateArg0 = { "name", iocshArgString };
-static const iocshArg * const dbStateCreateArgs[] = { &dbStateCreateArg0 };
+static const iocshArg dbStateArgName = { "name", iocshArgString };
+static const iocshArg * const dbStateCreateArgs[] = { &dbStateArgName };
 static const iocshFuncDef dbStateCreateFuncDef = { "dbStateCreate", 1, dbStateCreateArgs };
 static void dbStateCreateCallFunc (const iocshArgBuf *args)
 {
@@ -308,31 +308,37 @@ static void dbStateCreateCallFunc (const iocshArgBuf *args)
 }
 
 /* dbStateSet */
-static const iocshArg dbStateSetArg0 = { "id", iocshArgInt };
-static const iocshArg * const dbStateSetArgs[] = { &dbStateSetArg0 };
+static const iocshArg * const dbStateSetArgs[] = { &dbStateArgName };
 static const iocshFuncDef dbStateSetFuncDef = { "dbStateSet", 1, dbStateSetArgs };
 static void dbStateSetCallFunc (const iocshArgBuf *args)
 {
-    dbStateSet((dbStateId) args[0].ival);
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateSet(sid);
 }
 
 /* dbStateClear */
-static const iocshArg dbStateClearArg0 = { "id", iocshArgInt };
-static const iocshArg * const dbStateClearArgs[] = { &dbStateClearArg0 };
+static const iocshArg * const dbStateClearArgs[] = { &dbStateArgName };
 static const iocshFuncDef dbStateClearFuncDef = { "dbStateClear", 1, dbStateClearArgs };
 static void dbStateClearCallFunc (const iocshArgBuf *args)
 {
-    dbStateClear((dbStateId) args[0].ival);
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateClear(sid);
 }
 
 /* dbStateShow */
-static const iocshArg dbStateShowArg0 = { "id", iocshArgInt };
 static const iocshArg dbStateShowArg1 = { "level", iocshArgInt };
-static const iocshArg * const dbStateShowArgs[] = { &dbStateShowArg0, &dbStateShowArg1 };
+static const iocshArg * const dbStateShowArgs[] = { &dbStateArgName, &dbStateShowArg1 };
 static const iocshFuncDef dbStateShowFuncDef = { "dbStateShow", 2, dbStateShowArgs };
 static void dbStateShowCallFunc (const iocshArgBuf *args)
 {
-    dbStateShow((dbStateId) args[0].ival, args[1].ival);
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateShow(sid, args[1].ival);
 }
 
 /* dbStateShowAll */

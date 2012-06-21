@@ -55,10 +55,6 @@ static void fl_setup(dbChannel *chan, db_field_log *pfl, long val) {
     pfl->u.v.field.dbf_long = val;
 }
 
-static void changeValue(db_field_log *pfl2, long val) {
-    pfl2->u.v.field.dbf_long = val;
-}
-
 static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
     testDiag(title);
@@ -71,8 +67,10 @@ static void mustDrop(dbChannel *pch, db_field_log *pfl2, char* m) {
 }
 
 static void mustPassTwice(dbChannel *pch, db_field_log *pfl2, char* m) {
+    db_field_log *pfl;
+
     testDiag("%s: filter must pass twice", m);
-    db_field_log *pfl = dbChannelRunPreChain(pch, pfl2);
+    pfl = dbChannelRunPreChain(pch, pfl2);
     testOk(pfl2 == pfl, "call 1 does not drop or replace field_log");
     pfl = dbChannelRunPreChain(pch, pfl2);
     testOk(pfl2 == pfl, "call 2 does not drop or replace field_log");
@@ -80,11 +78,13 @@ static void mustPassTwice(dbChannel *pch, db_field_log *pfl2, char* m) {
 
 static void mustPassOld(dbChannel *pch, db_field_log *old, db_field_log *cur, char* m) {
     db_field_log *pfl = dbChannelRunPreChain(pch, cur);
+
     testOk(old == pfl, "filter passes previous field log (%s)", m);
 }
 
 static void mustPass(dbChannel *pch, db_field_log *cur, char* m) {
     db_field_log *pfl = dbChannelRunPreChain(pch, cur);
+
     testOk(cur == pfl, "filter passes field_log (%s)", m);
 }
 
@@ -104,12 +104,13 @@ static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
     chFilter *filter;
     chPostEventFunc *cb_out = NULL;
     void *arg_out = NULL;
+    db_field_log fl1;
 
     testDiag("Test filter structure and open channel");
 
     testOk((ellCount(&pch->filters) == 1), "channel has one plugin");
 
-    db_field_log fl1 = fl;
+    fl1 = fl;
     node = ellFirst(&pch->filters);
     filter = CONTAINER(node, chFilter, list_node);
     plug->fif->channel_register_pre(filter, &cb_out, &arg_out, &fl1);
@@ -128,31 +129,26 @@ static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
 
 void xRecord_registerRecordDeviceDriver(struct dbBase *);
 
-//MAIN(syncTest)
-int main()
+MAIN(syncTest)
 {
     dbChannel *pch;
-    chFilter *filter;
     const chFilterPlugin *plug;
     char myname[] = "sync";
-    ELLNODE *node;
-    chPostEventFunc *cb_out = NULL;
-    void *arg_out = NULL;
     db_field_log *pfl[10];
-    db_field_log fl1;
     int i;
 
     testPlan(0);
 
     db_init_events();
 
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:../../../test", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     (*pvar_func_syncInitialize)();       /* manually initialize plugin */
-
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:../../../test", NULL));
+
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");

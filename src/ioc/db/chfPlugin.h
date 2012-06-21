@@ -229,8 +229,8 @@ typedef struct chfPluginEnumType {
 typedef struct chfPluginArgDef {
     const char * name;
     chfPluginArg optType;
-    int required:1;
-    int convert:1;
+    unsigned int required:1;
+    unsigned int convert:1;
     epicsUInt32 offset;
     epicsUInt32 size;
     const chfPluginEnumType *enums;

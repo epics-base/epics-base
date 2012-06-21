@@ -26,6 +26,7 @@
 #include "epicsAssert.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
+#include "epicsString.h"
 #include "epicsThread.h"
 #include "errlog.h"
 #include "errMdef.h"
@@ -498,7 +499,7 @@ long epicsShareAPI dbtpn(char *pname, char *pvalue)
     putNotify *ppn;
     char *pbuffer;
 
-    pbuffer = strdup(pvalue);
+    pbuffer = epicsStrDup(pvalue);
     chan = dbChannelCreate(pname);
     if (!chan) {
         printf("dbtpn: No such channel");

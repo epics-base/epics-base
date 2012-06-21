@@ -153,7 +153,6 @@ int epicsShareAPI dbChannel_get_count(
     struct dbChannel *chan, int buffer_type,
     void *pbuffer, long *nRequest, void *pfl)
 {
-    dbAddr *paddr=&chan->addr;
     long status;
     long options;
     long i;

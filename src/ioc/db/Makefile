@@ -55,8 +55,6 @@ menuGlobal_DBD += menuSimm.dbd
 DBDINC += $(basename $(menuGlobal_DBD))
 DBDINC += dbCommon
 
-DBD_INSTALLS += ../db/filters/filters.dbd
-
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c
@@ -87,11 +85,4 @@ dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
 dbCore_SRCS += chfPlugin.c
 dbCore_SRCS += dbState.c
-
-SRC_DIRS += $(IOCDIR)/db/filters
-
-dbCore_SRCS += ts.c
-dbCore_SRCS += dbnd.c
-dbCore_SRCS += arr.c
-dbCore_SRCS += sync.c
 

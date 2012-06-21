@@ -69,8 +69,8 @@ ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
 DIRS += std
 std_DEPEND_DIRS = ioc libCom/RTEMS
 
-DIRS += ioc/db/filters/test
-ioc/db/filters/test_DEPEND_DIRS = ioc std libCom/RTEMS
+DIRS += std/filters/test
+std/filters/test_DEPEND_DIRS = std
 
 
 

@@ -818,10 +818,11 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const prec = dbChannelRecord(pevent->chan);
+    db_field_log *pLog;
 
     dbScanLock (prec);
 
-    db_field_log *pLog = db_create_event_log(pevent);
+    pLog = db_create_event_log(pevent);
     pLog = dbChannelRunPreChain(pevent->chan, pLog);
     db_queue_event_log(pevent, pLog);
 
@@ -854,9 +855,9 @@ static int event_read ( struct event_que *ev_que )
     }
 
     while ( ev_que->evque[ev_que->getix] != EVENTQEMPTY ) {
-        pfl = ev_que->valque[ev_que->getix];
         struct evSubscrip *pevent = ev_que->evque[ev_que->getix];
 
+        pfl = ev_que->valque[ev_que->getix];
         if ( pevent == &canceledEvent ) {
             ev_que->evque[ev_que->getix] = EVENTQEMPTY;
             if (ev_que->valque[ev_que->getix]) {

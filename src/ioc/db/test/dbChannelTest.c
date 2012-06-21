@@ -149,17 +149,18 @@ chFilterIf testIf =
 
 void xRecord_registerRecordDeviceDriver(struct dbBase *);
 
-MAIN(dbChannelTest)
+MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 {
     dbChannel *pch;
 
-    testPlan(69);
+    testPlan(66);
 
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     r = e = 0;
     /* dbChannelTest() checks record and field names */

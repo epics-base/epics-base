@@ -129,7 +129,8 @@ static void clearStruct(void *p) {
 
     if (!my) return;
     memset(my, 0, sizeof(myStruct));
-    my->sent1 = my->sent2 = my->sent3 = my->sent4 = my->sent5 = my->sent6 = PATTERN;
+    my->sent1 = my->sent2 = my->sent3 = my->sent4 =
+        my->sent5 = my->sent6 = PATTERN;
     my->ival = 12;
     my->flag = 1;
     my->dval = 1.234e5;
@@ -160,7 +161,6 @@ static void * allocPvt(void)
 
 static void freePvt(void *user)
 {
-    testOk(user == puser1 || user == puser2, "freePvt: user pointer valid");
     if (user == puser1) {
         testOk(e1 & e_free, "freePvt (1) called");
         c1 |= e_free;
@@ -171,46 +171,46 @@ static void freePvt(void *user)
         c2 |= e_free;
         free(user);
         puser2 = NULL;
-    }
+    } else
+        testFail("freePvt: user pointer invalid");
 }
 
 static void parse_error(void *user)
 {
-    testOk(user == puser1 || user == puser2, "parse_error: user pointer valid");
     if (user == puser1) {
         testOk(e1 & e_error, "parse_error (1) called");
         c1 |= e_error;
     } else if (user == puser2) {
         testOk(e2 & e_error, "parse_error (2) called");
         c2 |= e_error;
-    }
+    } else
+        testFail("parse_error: user pointer invalid");
 }
 
 static int parse_ok(void *user)
 {
-    testOk(user == puser1 || user == puser2, "parse_ok: user pointer valid");
     if (user == puser1) {
         testOk(e1 & e_ok, "parse_ok (1) called");
         c1 |= e_ok;
     } else if (user == puser2) {
         testOk(e2 & e_ok, "parse_ok (2) called");
         c2 |= e_ok;
-
-    }
+    } else
+        testFail("parse_ok: user pointer invalid");
 
     return p_ok_return;
 }
 
 static long channel_open(dbChannel *chan, void *user)
 {
-    testOk(user == puser1 || user == puser2, "channel_open: user pointer valid");
     if (user == puser1) {
         testOk(e1 & e_open, "channel_open (1) called");
         c1 |= e_open;
     } else if (user == puser2) {
         testOk(e2 & e_open, "channel_open (2) called");
         c2 |= e_open;
-    }
+    } else
+        testFail("channel_open: user pointer invalid");
 
     return c_open_return;
 }
@@ -233,26 +233,34 @@ static db_field_log * pre(void *user, dbChannel *chan, db_field_log *pLog) {
     myStruct *my = (myStruct*)user;
     dbfl_freeFunc *dtor = NULL;
 
-    testOk(user == puser1 || user == puser2, "pre: user pointer valid");
     if (my == puser1) {
         testOk(e1 & e_pre, "pre (1) called");
-        testOk(!(c2 & e_pre), "pre (2) has not been called before pre (1)");
+        testOk(!(c2 & e_pre),
+            "pre (2) was not called before pre (1)");
         c1 |= e_pre;
         dtor = dbfl_free1;
     } else if (my == puser2) {
         testOk(e2 & e_pre, "pre (2) called");
-        testOk(!(e1 & e_pre) || c1 & e_pre, "pre (1) has been called before pre (2)");
+        testOk(!(e1 & e_pre) || c1 & e_pre,
+            "pre (1) was called before pre (2)");
         c2 |= e_pre;
         dtor = dbfl_free2;
+    } else {
+        testFail("pre: user pointer invalid");
+        testSkip(1, "Can't check order of pre(1)/pre(2)");
     }
-    testOk(!(c1 & e_post), "post (1) has not been called before pre (%c)", inst(user));
-    testOk(!(c2 & e_post), "post (2) has not been called before pre (%c)", inst(user));
+    testOk(!(c1 & e_post),
+        "post (1) was not called before pre (%c)", inst(user));
+    testOk(!(c2 & e_post),
+        "post (2) was not called before pre (%c)", inst(user));
 
-    if (!testOk(pLog->field_type == TYPE_START + my->offpre, "pre (%c) got field log of expected type", inst(user)))
-        testDiag("expected: %d, got %d", TYPE_START + my->offpre, pLog->field_type);
+    if (!testOk(pLog->field_type == TYPE_START + my->offpre,
+            "pre (%c) got field log of expected type", inst(user)))
+        testDiag("expected: %d, got %d",
+            TYPE_START + my->offpre, pLog->field_type);
     pLog->field_type++;
 
-    if (my->offpre == 0) {                 /* The first one registers a dtor and saves pfl */
+    if (my->offpre == 0) {  /* The first one registers a dtor and saves pfl */
         pLog->u.r.dtor = dtor;
         dtorpfl = pLog;
     }
@@ -268,26 +276,34 @@ static db_field_log * post(void *user, dbChannel *chan, db_field_log *pLog) {
     myStruct *my = (myStruct*)user;
     dbfl_freeFunc *dtor = NULL;
 
-    testOk(user == puser1 || user == puser2, "post: user pointer valid");
     if (my == puser1) {
         testOk(e1 & e_post, "post (1) called");
-        testOk(!(c2 & e_post), "post (2) has not been called before post (1)");
+        testOk(!(c2 & e_post),
+            "post (2) was not called before post (1)");
         c1 |= e_post;
         dtor = dbfl_free1;
     } else if (my == puser2) {
         testOk(e2 & e_post, "post (2) called");
-        testOk(!(e1 & e_post) || c1 & e_post, "post (1) has been called before post (2)");
+        testOk(!(e1 & e_post) || c1 & e_post,
+            "post (1) was called before post (2)");
         c2 |= e_post;
         dtor = dbfl_free2;
+    } else {
+        testFail("post: user pointer invalid");
+        testSkip(1, "Can't check order of post(1)/post(2)");
     }
-    testOk(!(e1 & e_pre) || c1 & e_pre, "pre (1) has been called before post (%c)", inst(user));
-    testOk(!(e2 & e_pre) || c2 & e_pre, "pre (2) has been called before post (%c)", inst(user));
+    testOk(!(e1 & e_pre) || c1 & e_pre,
+        "pre (1) was called before post (%c)", inst(user));
+    testOk(!(e2 & e_pre) || c2 & e_pre,
+        "pre (2) was called before post (%c)", inst(user));
 
-    if (!testOk(pLog->field_type == TYPE_START + my->offpost, "post (%c) got field log of expected type", inst(user)))
-        testDiag("expected: %d, got %d", TYPE_START + my->offpost, pLog->field_type);
+    if (!testOk(pLog->field_type == TYPE_START + my->offpost,
+            "post (%c) got field log of expected type", inst(user)))
+        testDiag("expected: %d, got %d",
+            TYPE_START + my->offpost, pLog->field_type);
     pLog->field_type++;
 
-    if (my->offpost == 0) {                 /* The first one registers a dtor and remembers pfl */
+    if (my->offpost == 0) { /* The first one registers a dtor and saves pfl */
         pLog->u.r.dtor = dtor;
         dtorpfl = pLog;
     }
@@ -300,22 +316,28 @@ static db_field_log * post(void *user, dbChannel *chan, db_field_log *pLog) {
 }
 
 static void channelRegisterPre(dbChannel *chan, void *user,
-                               chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
+    chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     myStruct *my = (myStruct*)user;
 
-    testOk(user == puser1 || user == puser2, "register_pre: user pointer valid");
     if (my == puser1) {
         testOk(e1 & e_reg_pre, "register_pre (1) called");
-        testOk(!(c2 & e_reg_pre), "register_pre (2) has not been called before register_pre (1)");
+        testOk(!(c2 & e_reg_pre),
+            "register_pre (2) was not called before register_pre (1)");
         c1 |= e_reg_pre;
     } else if (my == puser2) {
         testOk(e2 & e_reg_pre, "register_pre (2) called");
-        testOk(!(e1 & e_reg_pre) || c1 & e_reg_pre, "register_pre (1) has been called before register_pre (2)");
+        testOk(!(e1 & e_reg_pre) || c1 & e_reg_pre,
+            "register_pre (1) was called before register_pre (2)");
         c2 |= e_reg_pre;
+    } else {
+        testFail("register_pre: user pointer invalid");
+        testSkip(1, "Can't check order of register_pre(1)/register_pre(2)");
     }
-    testOk(!(c1 & e_reg_post), "register_post (1) has not been called before register_pre (%c)", inst(user));
-    testOk(!(c2 & e_reg_post), "register_post (2) has not been called before register_pre (%c)", inst(user));
+    testOk(!(c1 & e_reg_post),
+        "register_post (1) was not called before register_pre (%c)", inst(user));
+    testOk(!(c2 & e_reg_post),
+        "register_post (2) was not called before register_pre (%c)", inst(user));
 
     my->offpre = offset++;
     probe->field_type++;
@@ -324,22 +346,28 @@ static void channelRegisterPre(dbChannel *chan, void *user,
 }
 
 static void channelRegisterPost(dbChannel *chan, void *user,
-                                chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
+    chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     myStruct *my = (myStruct*)user;
 
-    testOk(user == puser1 || user == puser2, "register_post: user pointer valid");
     if (my == puser1) {
         testOk(e1 & e_reg_post, "register_post (1) called");
-        testOk(!(c2 & e_reg_post), "register_post (2) has not been called before register_post (1)");
+        testOk(!(c2 & e_reg_post),
+            "register_post (2) was not called before register_post (1)");
         c1 |= e_reg_post;
     } else if (my == puser2) {
         testOk(e2 & e_reg_post, "register_post (2) called");
-        testOk(!(e1 & e_reg_post) || c1 & e_reg_post, "register_post (1) has been called before register_post (2)");
+        testOk(!(e1 & e_reg_post) || c1 & e_reg_post,
+            "register_post (1) was called before register_post (2)");
         c2 |= e_reg_post;
+    } else {
+        testFail("register_post: user pointer invalid");
+        testSkip(1, "Can't check order of register_post(1)/register_post(2)");
     }
-    testOk(!(e1 & e_reg_pre) || c1 & e_reg_pre, "register_pre (1) has been called before register_post (%c)", inst(user));
-    testOk(!(e2 & e_reg_pre) || c2 & e_reg_pre, "register_pre (2) has been called before register_post (%c)", inst(user));
+    testOk(!(e1 & e_reg_pre) || c1 & e_reg_pre,
+        "register_pre (1) was called before register_post (%c)", inst(user));
+    testOk(!(e2 & e_reg_pre) || c2 & e_reg_pre,
+        "register_pre (2) was called before register_post (%c)", inst(user));
 
     my->offpost = offset++;
     probe->field_type++;
@@ -347,9 +375,9 @@ static void channelRegisterPost(dbChannel *chan, void *user,
     *arg_out = user;
 }
 
-static void channel_report(dbChannel *chan, void *user, int level, const unsigned short indent)
+static void channel_report(dbChannel *chan, void *user, int level,
+    const unsigned short indent)
 {
-    testOk(user == puser1 || user == puser2, "channel_report: user pointer valid");
     testOk(level == R_LEVEL - 1, "channel_report: level correct");
     if (user == puser1) {
         testOk(e1 & e_report, "channel_report (1) called");
@@ -357,19 +385,20 @@ static void channel_report(dbChannel *chan, void *user, int level, const unsigne
     } else if (user == puser2) {
         testOk(e2 & e_report, "channel_report (2) called");
         c2 |= e_report;
-    }
+    } else
+        testFail("channel_report: user pointer invalid");
 }
 
 static void channel_close(dbChannel *chan, void *user)
 {
-    testOk(user == puser1 || user == puser2, "channel_close: user pointer valid");
     if (user == puser1) {
         testOk(e1 & e_close, "channel_close (1) called");
         c1 |= e_close;
     } else if (user == puser2) {
         testOk(e2 & e_close, "channel_close (2) called");
         c2 |= e_close;
-    }
+    } else
+        testFail("channel_close: user pointer invalid");
 }
 
 static chfPluginIf myPif = {
@@ -414,7 +443,8 @@ static chfPluginIf postPif = {
     channel_close
 };
 
-static int checkValues(myStruct *my, epicsUInt32 i, int f, double d, char *s, int c) {
+static int checkValues(myStruct *my,
+    epicsUInt32 i, int f, double d, char *s, int c) {
     if (!my) return 0;
     if (my->sent1 == PATTERN && my->sent2 == PATTERN && my->sent3 == PATTERN
         && my->sent4 == PATTERN && my->sent5 == PATTERN && my->sent6 == PATTERN
@@ -439,36 +469,49 @@ MAIN(chfPluginTest)
     dbChannel *pch;
     db_field_log *pfl;
 
-    testPlan(1755);
+    testPlan(1351);
 
     db_init_events();
 
     /* Enum to string conversion */
     testHead("Enum to string conversion");
-    testOk(strcmp(chfPluginEnumString(colorEnum, 1, "-"), "R") == 0, "Enum to string: R");
-    testOk(strcmp(chfPluginEnumString(colorEnum, 2, "-"), "G") == 0, "Enum to string: G");
-    testOk(strcmp(chfPluginEnumString(colorEnum, 4, "-"), "B") == 0, "Enum to string: B");
-    testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0, "Enum to string: invalid index");
+    testOk(strcmp(chfPluginEnumString(colorEnum, 1, "-"), "R") == 0,
+        "Enum to string: R");
+    testOk(strcmp(chfPluginEnumString(colorEnum, 2, "-"), "G") == 0,
+        "Enum to string: G");
+    testOk(strcmp(chfPluginEnumString(colorEnum, 4, "-"), "B") == 0,
+        "Enum to string: B");
+    testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0,
+        "Enum to string: invalid index");
 
-    testHead("Set up database");
-    testOk1(!dbReadDatabase(&pdbbase, "xRecord.dbd", ".:..", NULL));
+    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+        testAbort("Database description not loaded");
 
     xRecord_registerRecordDeviceDriver(pdbbase);
-    testOk1(!dbReadDatabase(&pdbbase, "dbChannelTest.db", ".:..", NULL));
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+        testAbort("Test database not loaded");
 
     testHead("Try to register buggy plugins");
-    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1), "not enough storage for integer");
-    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts2), "not enough storage for double");
-    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts3), "not enough storage for string");
-    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts4), "not enough storage for enum");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1),
+        "not enough storage for integer");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts2),
+        "not enough storage for double");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts3),
+        "not enough storage for string");
+    testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts4),
+        "not enough storage for enum");
 
     testHead("Register plugins");
-    testOk(!chfPluginRegister("strict", &myPif, strictOpts), "register plugin strict");
-    testOk(!chfPluginRegister("noconv", &myPif, noconvOpts), "register plugin noconv");
-    testOk(!chfPluginRegister("sloppy", &myPif, sloppyOpts), "register plugin sloppy");
-    testOk(!chfPluginRegister("pre",   &prePif, sloppyOpts), "register plugin pre");
-    testOk(!chfPluginRegister("post", &postPif, sloppyOpts), "register plugin post");
+    testOk(!chfPluginRegister("strict", &myPif, strictOpts),
+        "register plugin strict");
+    testOk(!chfPluginRegister("noconv", &myPif, noconvOpts),
+        "register plugin noconv");
+    testOk(!chfPluginRegister("sloppy", &myPif, sloppyOpts),
+        "register plugin sloppy");
+    testOk(!chfPluginRegister("pre",   &prePif, sloppyOpts),
+        "register plugin pre");
+    testOk(!chfPluginRegister("post", &postPif, sloppyOpts),
+        "register plugin post");
 
     /* STRICT parsing: mandatory, no conversion */
 
@@ -476,72 +519,109 @@ MAIN(chfPluginTest)
     testHead("STRICT parsing: all ok");
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")), "strict parsing: JSON correct");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 1), "guards intact, values correct");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 1),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_close | e_free; c1 = 0;
     if (pch) dbChannelDelete(pch);
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
 
     /* Any one missing must fail */
     testHead("STRICT parsing: any missing parameter must fail");
     e1 = e_alloc | e_error | e_free; c1 = 0;
-    testOk(!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")), "strict parsing: c missing");
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
+        "strict parsing: c missing");
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
-    testOk(!(pch = dbChannelCreate("x.{\"strict\":{\"f\":false,\"i\":1,\"d\":1.2e15,\"c\":\"R\"}}")), "strict parsing: s missing");
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict\":{\"f\":false,\"i\":1,\"d\":1.2e15,\"c\":\"R\"}}")),
+        "strict parsing: s missing");
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
-    testOk(!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"c\":\"R\",\"f\":false,\"s\":\"bar\"}}")), "strict parsing: d missing");
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict\":{\"i\":1,\"c\":\"R\",\"f\":false,\"s\":\"bar\"}}")),
+        "strict parsing: d missing");
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
-    testOk(!(pch = dbChannelCreate("x.{\"strict\":{\"d\":1.2e15,\"c\":\"R\",\"i\":1,\"s\":\"bar\"}}")), "strict parsing: f missing");
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict\":{\"d\":1.2e15,\"c\":\"R\",\"i\":1,\"s\":\"bar\"}}")),
+        "strict parsing: f missing");
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
-    testOk(!(pch = dbChannelCreate("x.{\"strict\":{\"c\":\"R\",\"s\":\"bar\",\"f\":false,\"d\":1.2e15}}")), "strict parsing: i missing");
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict\":{\"c\":\"R\",\"s\":\"bar\",\"f\":false,\"d\":1.2e15}}")),
+        "strict parsing: i missing");
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
 
     /* NOCONV parsing: optional, no conversion */
 
     /* Any one missing must leave the default intact */
-    testHead("NOCONV parsing: any missing parameter must fall back to default value");
+    testHead("NOCONV parsing: missing parameters get default value");
     e1 = e_alloc | e_ok; c1 = 0;
-    testOk(!!(pch = dbChannelCreate("x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")), "noconv parsing: c missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 4), "guards intact, values correct");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
+        "noconv parsing: c missing");
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_close | e_free; c1 = 0;
     if (pch) dbChannelDelete(pch);
     testOk(!puser1, "user part cleaned up");
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
 
     e1 = e_any;
-    testOk(!!(pch = dbChannelCreate("x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"c\":\"R\"}}")), "noconv parsing: s missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "hello", 1), "guards intact, values correct");
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"c\":\"R\"}}")),
+        "noconv parsing: s missing");
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "hello", 1),
+        "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
-    testOk(!!(pch = dbChannelCreate("x.{\"noconv\":{\"i\":1,\"f\":false,\"s\":\"bar\",\"c\":\"R\"}}")), "noconv parsing: d missing");
-    testOk(checkValues(puser1, 1, 0, 1.234e5, "bar", 1), "guards intact, values correct");
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"noconv\":{\"i\":1,\"f\":false,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "noconv parsing: d missing");
+    testOk(checkValues(puser1, 1, 0, 1.234e5, "bar", 1),
+        "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
-    testOk(!!(pch = dbChannelCreate("x.{\"noconv\":{\"i\":1,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")), "noconv parsing: f missing");
-    testOk(checkValues(puser1, 1, 1, 1.2e15, "bar", 1), "guards intact, values correct");
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"noconv\":{\"i\":1,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "noconv parsing: f missing");
+    testOk(checkValues(puser1, 1, 1, 1.2e15, "bar", 1),
+        "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
-    testOk(!!(pch = dbChannelCreate("x.{\"noconv\":{\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")), "noconv parsing: i missing");
-    testOk(checkValues(puser1, 12, 0, 1.2e15, "bar", 1), "guards intact, values correct");
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"noconv\":{\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+        "noconv parsing: i missing");
+    testOk(checkValues(puser1, 12, 0, 1.2e15, "bar", 1),
+        "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     /* Reject wrong types */
 #define WRONGTYPETEST(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
-    testOk(!(pch = dbChannelCreate("x.{\"noconv\":{\""#Var"\":"#Val"}}")), "noconv parsing: wrong type "#Typ" for "#Var); \
+    testOk(!(pch = dbChannelCreate("x.{\"noconv\":{\""#Var"\":"#Val"}}")), \
+        "noconv parsing: wrong type "#Typ" for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
-    if (!testOk(c1 == e1, "all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "all expected calls happened")) \
+        testDiag("expected %#x - called %#x", e1, c1);
 
     testHead("NOCONV parsing: rejection of wrong parameter types");
 
@@ -565,19 +645,25 @@ MAIN(chfPluginTest)
 
 #define CONVTESTGOOD(Var, Val, Typ, Ival, Fval, Dval, Sval, Cval) \
     e1 = e_alloc | e_ok; c1 = 0; \
-    testOk(!!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), "sloppy parsing: "#Typ" (good) for "#Var); \
-    testOk(checkValues(puser1, Ival, Fval, Dval, Sval, Cval), "guards intact, values correct"); \
-    if (!testOk(c1 == e1, "create channel: all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1); \
+    testOk(!!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
+        "sloppy parsing: "#Typ" (good) for "#Var); \
+    testOk(checkValues(puser1, Ival, Fval, Dval, Sval, Cval), \
+        "guards intact, values correct"); \
+    if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
+        testDiag("expected %#x - called %#x", e1, c1); \
     e1 = e_close | e_free; c1 = 0; \
     if (pch) dbChannelDelete(pch); \
     testOk(!puser1, "user part cleaned up"); \
-    if (!testOk(c1 == e1, "delete channel: all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "delete channel: all expected calls happened")) \
+        testDiag("expected %#x - called %#x", e1, c1);
 
 #define CONVTESTBAD(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
-    testOk(!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), "sloppy parsing: "#Typ" (bad) for "#Var); \
+    testOk(!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
+        "sloppy parsing: "#Typ" (bad) for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
-    if (!testOk(c1 == e1, "create channel: all expected calls happened")) testDiag("expected %#x - called %#x", e1, c1);
+    if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
+        testDiag("expected %#x - called %#x", e1, c1);
 
     /* To integer */
     testHead("SLOPPY parsing: conversion to integer");
@@ -594,7 +680,7 @@ MAIN(chfPluginTest)
     CONVTESTGOOD(f, "false", valid string, 12, 0, 1.234e5, "hello", 4);
     CONVTESTGOOD(f, "False", capital valid string, 12, 0, 1.234e5, "hello", 4);
     CONVTESTGOOD(f, "0", 0 string, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, "15", 15 string, 12, 1, 1.234e5, "hello", 4);    /* Any one missing must leave the default intact */
+    CONVTESTGOOD(f, "15", 15 string, 12, 1, 1.234e5, "hello", 4);
     CONVTESTBAD(f, ".4", invalid .4 string);
     CONVTESTBAD(f, "Flase", misspelled invalid string);
     CONVTESTGOOD(f, 0, zero integer, 12, 0, 1.234e5, "hello", 4);

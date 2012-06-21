@@ -6,5 +6,5 @@
 # Site override definitions for cygwin-x86 host builds
 #-------------------------------------------------------
  
-CROSS_COMPILER_TARGET_ARCHS =
+#CROSS_COMPILER_TARGET_ARCHS =
 

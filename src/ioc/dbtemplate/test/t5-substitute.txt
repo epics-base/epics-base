@@ -1,0 +1,9 @@
+global {c=xx}
+{a=111,b="222"}
+{ 	a 	= 	aaa   ,   b=bbb , c = ccc}
+{a=AA,b='BB'}
+global { c = yy }
+{
+    a=	 aaa
+    b=	 bbb
+}

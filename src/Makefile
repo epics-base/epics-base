@@ -64,6 +64,9 @@ ioc_DEPEND_DIRS = libCom ca/client
 DIRS += ioc/db/test
 ioc/db/test_DEPEND_DIRS = ioc libCom/RTEMS
 
+DIRS += ioc/dbtemplate/test
+ioc/dbtemplate/test_DEPEND_DIRS = ioc
+
 # PDB Standard Record Definitions
 
 DIRS += std

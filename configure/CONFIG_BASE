@@ -109,7 +109,7 @@ DBST = dbst
 endif
 
 ifndef MSI
-MSI = msi
+MSI = $(EPICS_BASE_HOST_BIN)/msi
 endif
 
 

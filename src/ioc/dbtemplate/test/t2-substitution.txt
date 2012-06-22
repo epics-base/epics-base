@@ -1,0 +1,11 @@
+file t2-template.txt {
+    {a=va1-a}
+    {a=va2-a, b=va2-b}
+    {a=va3-a, b=va3-b, c=va3-c}
+    {a=va4-a, b=va4-b}
+    {a=va5-a}
+}
+file t2-template.txt {
+    pattern {a, b, c}
+    {pt3-a, pt3-b, pt3-c}
+}

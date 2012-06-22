@@ -11,12 +11,17 @@
 
 SRC_DIRS += $(IOCDIR)/dbtemplate
 
+PROD_HOST += msi
+
+msi_SRCS = msi.c
+msi_LIBS += Com
+HTMLS += msi.html
+
 INC += dbLoadTemplate.h
 INC += dbtoolsIocRegister.h
 
 dbCore_SRCS += dbLoadTemplate.c
 dbCore_SRCS += dbtoolsIocRegister.c
 
-HTMLS += dbtemplate/dbLoadTemplate.html
-
 CLEANS += dbLoadTemplate_lex.c dbLoadTemplate.c
+

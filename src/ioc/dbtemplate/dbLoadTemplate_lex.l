@@ -18,39 +18,40 @@ bareword    [a-zA-Z0-9_\-+:./\\\[\]<>;]
 
 %%
 
-"pattern" { return(PATTERN);	}
-"file"    { return(DBFILE);	}
+"pattern" { return(PATTERN);    }
+"file"    { return(DBFILE);     }
+"global"  { return(GLOBAL);     }
 
 {doublequote}({dstringchar}|{escape})*{doublequote} |
 {singlequote}({sstringchar}|{escape})*{singlequote} {
-	yylval.Str = dbmfStrdup(yytext+1);
-	yylval.Str[strlen(yylval.Str)-1] = '\0';
-	return(QUOTE);
-    }
+    yylval.Str = dbmfStrdup(yytext+1);
+    yylval.Str[strlen(yylval.Str)-1] = '\0';
+    return(QUOTE);
+}
 
 {bareword}+ {
-	yylval.Str = dbmfStrdup(yytext);
-	return(WORD);
-    }
+    yylval.Str = dbmfStrdup(yytext);
+    return(WORD);
+}
 
-"="	{ return(EQUALS);	}
-","	{ return(COMMA);	}
-"{"	{ return(O_BRACE);	}
-"}"	{ return(C_BRACE);	}
+"="     { return(EQUALS);       }
+","     { return(COMMA);        }
+"{"     { return(O_BRACE);      }
+"}"     { return(C_BRACE);      }
 
-{comment}.*	;
-{whitespace}	;
-{newline}	{ line_num++;	}
+{comment}.*     ;
+{whitespace}    ;
+{newline}       { line_num++;   }
 
 . {
-	char message[40];
+    char message[40];
 
-	sprintf(message,"invalid character '%c'", yytext[0]);
-	yyerror(message);
+    sprintf(message, "invalid character '%c'", yytext[0]);
+    yyerror(message);
 
-	/* Suppress compiler warning messages */
-	if (0) yyunput('c',NULL);
-	if (0) yy_switch_to_buffer(NULL);
-    }
+    /* Suppress compiler warning messages */
+    if (0) yyunput('c',NULL);
+    if (0) yy_switch_to_buffer(NULL);
+}
 
 %%

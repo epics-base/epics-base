@@ -28,6 +28,7 @@ int epicsMathTest(void);
 int epicsMessageQueueTest(void);
 int epicsMutexTest(void);
 int epicsStdioTest(void);
+int epicsStdlibTest(void);
 int epicsStringTest(void);
 int epicsThreadOnceTest(void);
 int epicsThreadPriorityTest(void);
@@ -75,6 +76,8 @@ void epicsRunLibComTests(void)
     runTest(epicsMutexTest);
 
     runTest(epicsStdioTest);
+
+    runTest(epicsStdlibTest);
 
     runTest(epicsStringTest);
 

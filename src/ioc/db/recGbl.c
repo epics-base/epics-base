@@ -6,12 +6,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* recGbl.c */
-/* $Revision-Id$ */
 
 /*
  *      Author:          Marty Kraimer
- *      Date:            11-7-90
+ *                       Andrew Johnson <anj@aps.anl.gov>
  */
 
 #include <stddef.h>
@@ -34,6 +32,7 @@
 #include "caeventmask.h"
 #define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
+#include "dbLink.h"
 #include "dbNotify.h"
 #include "dbCa.h"
 #include "dbEvent.h"
@@ -166,60 +165,17 @@ void epicsShareAPI recGblGetControlDouble(
 
     return;
 }
-
+
 int  epicsShareAPI recGblInitConstantLink(
     struct link *plink,short dbftype,void *pdest)
 {
-    if(plink->type != CONSTANT) return(FALSE);
-    if(!plink->value.constantStr) return(FALSE);
-    switch(dbftype) {
-    case DBF_STRING:
-	strcpy((char *)pdest,plink->value.constantStr);
-	break;
-    case DBF_CHAR : {
-	epicsInt16 value;
-	epicsInt8 *pvalue = (epicsInt8 *)pdest;
+    long status = dbLoadLink(plink, dbftype, pdest);
 
-	sscanf(plink->value.constantStr,"%hi",&value);
-	*pvalue = value;
-	}
-	break;
-    case DBF_UCHAR : {
-	epicsUInt16 value;
-	epicsUInt8 *pvalue = (epicsUInt8 *)pdest;
-
-	sscanf(plink->value.constantStr,"%hu",&value);
-	*pvalue = value;
-	}
-	break;
-    case DBF_SHORT : 
-	sscanf(plink->value.constantStr,"%hi",(epicsInt16 *)pdest);
-	break;
-    case DBF_USHORT : 
-    case DBF_ENUM : 
-    case DBF_MENU : 
-    case DBF_DEVICE : 
-	sscanf(plink->value.constantStr,"%hu",(epicsUInt16 *)pdest);
-	break;
-    case DBF_LONG : 
-	*(epicsInt32 *)pdest = strtol(plink->value.constantStr, NULL, 0);
-	break;
-    case DBF_ULONG : 
-	*(epicsUInt32 *)pdest = strtoul(plink->value.constantStr, NULL, 10);
-	break;
-    case DBF_FLOAT : 
-	epicsScanFloat(plink->value.constantStr, (epicsFloat32 *)pdest);
-	break;
-    case DBF_DOUBLE : 
-	epicsScanDouble(plink->value.constantStr, (epicsFloat64 *)pdest);
-	break;
-    default:
-	epicsPrintf("Error in recGblInitConstantLink: Illegal DBF type\n");
-	return(FALSE);
-    }
-    return(TRUE);
+    if (status)
+        return FALSE;
+    return TRUE;
 }
-
+
 unsigned short epicsShareAPI recGblResetAlarms(void *precord)
 {
     dbCommon *pdbc = precord;

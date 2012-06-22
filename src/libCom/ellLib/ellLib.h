@@ -1,15 +1,16 @@
 /*************************************************************************\
-* Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
+
+/*
  *
  *      Author: John Winans (ANL)
- *      Date:   07-02-92
+ *              Andrew Johnson <anj@aps.anl.gov>
  */
 #ifndef INC_ellLib_H
 #define INC_ellLib_H
@@ -52,6 +53,7 @@ epicsShareFunc void ellConcat (ELLLIST *pDstList, ELLLIST *pAddList);
 epicsShareFunc void ellDelete (ELLLIST *pList, ELLNODE *pNode);
 epicsShareFunc void ellExtract (ELLLIST *pSrcList, ELLNODE *pStartNode, ELLNODE *pEndNode, ELLLIST *pDstList);
 epicsShareFunc ELLNODE * ellGet (ELLLIST *pList);
+epicsShareFunc ELLNODE * ellPop (ELLLIST *pList);
 epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
 epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);

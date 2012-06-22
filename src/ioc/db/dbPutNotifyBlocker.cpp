@@ -5,21 +5,21 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *  $Revision-Id$
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
- *  Author: 
+ *
+ *
+ *  Author:
  *  Jeffrey O. Hill
  *  johill@lanl.gov
  *  505 665 1831
@@ -47,7 +47,7 @@
 #include "dbPutNotifyBlocker.h"
 
 dbPutNotifyBlocker::dbPutNotifyBlocker ( epicsMutex & mutexIn ) :
-    mutex ( mutexIn ), pNotify ( 0 ), 
+    mutex ( mutexIn ), pNotify ( 0 ),
     maxValueSize ( sizeof ( this->dbrScalarValue ) )
 {
     memset ( & this->pn, '\0', sizeof ( this->pn ) );
@@ -55,7 +55,7 @@ dbPutNotifyBlocker::dbPutNotifyBlocker ( epicsMutex & mutexIn ) :
     this->pn.pbuffer = & this->dbrScalarValue;
 }
 
-dbPutNotifyBlocker::~dbPutNotifyBlocker () 
+dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
 }
 
@@ -70,7 +70,7 @@ void dbPutNotifyBlocker::destructor ( epicsGuard < epicsMutex > & guard )
     this->~dbPutNotifyBlocker ();
 }
 
-void dbPutNotifyBlocker::cancel ( 
+void dbPutNotifyBlocker::cancel (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -82,7 +82,7 @@ void dbPutNotifyBlocker::cancel (
     this->block.signal ();
 }
 
-void dbPutNotifyBlocker::expandValueBuf ( 
+void dbPutNotifyBlocker::expandValueBuf (
     epicsGuard < epicsMutex > & guard, unsigned long newSize )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -127,9 +127,9 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
     }
 }
 
-void dbPutNotifyBlocker::initiatePutNotify ( 
-    epicsGuard < epicsMutex > & guard, cacWriteNotify & notify, 
-    struct dbAddr & addr, unsigned type, unsigned long count, 
+void dbPutNotifyBlocker::initiatePutNotify (
+    epicsGuard < epicsMutex > & guard, cacWriteNotify & notify,
+    struct dbChannel * dbch, unsigned type, unsigned long count,
     const void * pValue )
 {
     guard. assertIdenticalMutex ( this->mutex );
@@ -163,7 +163,7 @@ void dbPutNotifyBlocker::initiatePutNotify (
         throw cacChannel::badType();
     }
 
-    int status = dbPutNotifyMapType ( 
+    int status = dbPutNotifyMapType (
                 &this->pn, static_cast <short> ( type ) );
     if ( status ) {
         this->pNotify = 0;
@@ -171,7 +171,7 @@ void dbPutNotifyBlocker::initiatePutNotify (
     }
 
     this->pn.nRequest = static_cast < unsigned > ( count );
-    this->pn.paddr = &addr;
+    this->pn.chan = dbch;
     this->pn.userCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
 
@@ -191,29 +191,29 @@ void dbPutNotifyBlocker::show ( unsigned level ) const
     this->show ( guard, level );
 }
 
-void dbPutNotifyBlocker::show ( 
+void dbPutNotifyBlocker::show (
     epicsGuard < epicsMutex > &, unsigned level ) const
 {
-    printf ( "put notify blocker at %p\n", 
+    printf ( "put notify blocker at %p\n",
         static_cast <const void *> ( this ) );
     if ( level > 0u ) {
         this->block.show ( level - 1u );
     }
 }
 
-dbSubscriptionIO * dbPutNotifyBlocker::isSubscription () 
+dbSubscriptionIO * dbPutNotifyBlocker::isSubscription ()
 {
     return 0;
 }
 
-void * dbPutNotifyBlocker::operator new ( size_t size, 
+void * dbPutNotifyBlocker::operator new ( size_t size,
     tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-void dbPutNotifyBlocker::operator delete ( void *pCadaver, 
+void dbPutNotifyBlocker::operator delete ( void *pCadaver,
     tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & freeList )
 {
     freeList.release ( pCadaver );

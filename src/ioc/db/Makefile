@@ -17,9 +17,12 @@ INC += dbAccessDefs.h
 INC += dbCa.h
 INC += dbAddr.h
 INC += dbBkpt.h
+INC += dbChannel.h
 INC += dbConvert.h
 INC += dbConvertFast.h
+INC += dbExtractArray.h
 INC += dbEvent.h
+INC += dbLink.h
 INC += dbLock.h
 INC += dbNotify.h
 INC += dbScan.h
@@ -30,6 +33,8 @@ INC += db_field_log.h
 INC += initHooks.h
 INC += recGbl.h
 INC += dbIocRegister.h
+INC += chfPlugin.h
+INC += dbState.h
 INC += db_access_routines.h
 INC += db_convert.h
 
@@ -50,11 +55,15 @@ menuGlobal_DBD += menuSimm.dbd
 DBDINC += $(basename $(menuGlobal_DBD))
 DBDINC += dbCommon
 
+
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c
 dbCore_SRCS += dbBkpt.c
+dbCore_SRCS += dbChannel.c
 dbCore_SRCS += dbConvert.c
 dbCore_SRCS += dbFastLinkConv.c
+dbCore_SRCS += dbExtractArray.c
+dbCore_SRCS += dbLink.c
 dbCore_SRCS += dbNotify.c
 dbCore_SRCS += dbScan.c
 dbCore_SRCS += dbEvent.c
@@ -74,4 +83,6 @@ dbCore_SRCS += dbPutNotifyBlocker.cpp
 dbCore_SRCS += dbContextReadNotifyCache.cpp
 dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
+dbCore_SRCS += chfPlugin.c
+dbCore_SRCS += dbState.c
 

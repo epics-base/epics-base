@@ -4,15 +4,13 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-
-/* $Revision-Id$ */
 
 /* Interface between old database access and new
  *
  *      Author:          Marty Kraimer
- *      Date:            6-1-90
+ *                       Andrew Johnson <anj@aps.anl.gov>
  */
 
 #include <stddef.h>
@@ -24,6 +22,7 @@
 
 #include "epicsConvert.h"
 #include "dbDefs.h"
+#include "dbChannel.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -41,10 +40,6 @@
 #include "dbAccessDefs.h"
 #include "dbEvent.h"
 #include "db_access_routines.h"
-
-#ifndef NULL
-#define NULL 0
-#endif
 
 
 #define oldDBF_STRING      0
@@ -108,50 +103,36 @@ extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];
 typedef char DBSTRING[MAX_STRING_SIZE];
 
 
-#ifndef MAX_STRING_SIZE
-#define MAX_STRING_SIZE	40
-#endif
-
-/*
- * DB_PROCESS
- *
- * process database records
- */
-void db_process(struct dbAddr *paddr)
+struct dbChannel * dbChannel_create(const char *pname)
 {
-    long status = dbProcess(paddr->precord);
-
-    if (status) errMessage(status, "db_process failed");
-}
-
-/*
- * DB_NAME_TO_ADDR
- */
-int epicsShareAPI db_name_to_addr(const char *pname, struct dbAddr *paddr)
-{
-    long status;
+    dbChannel *chan = dbChannelCreate(pname);
     short ftype;
 
-    status = dbNameToAddr(pname, paddr);
-    if (!status) {
-        ftype = paddr->dbr_field_type;
-        if (INVALID_DB_REQ(ftype)) {
-            errlogPrintf("%s dbNameToAddr failed\n", pname);
-            return -2;
-        }
-        paddr->dbr_field_type = dbDBRnewToDBRold[ftype];
-        return 0;
+    if (!chan)
+        return NULL;
+
+    ftype = chan->addr.dbr_field_type;
+    if (INVALID_DB_REQ(ftype)) {
+        dbChannelDelete(chan);
+        return NULL;
     }
-    else
-        return -1;
+
+    chan->addr.dbr_field_type = dbDBRnewToDBRold[ftype];
+
+    if (dbChannelOpen(chan)) {
+        dbChannelDelete(chan);
+        return NULL;
+    }
+
+    return chan;
 }
-
-int epicsShareAPI db_get_field(struct dbAddr *paddr,
-    int buffer_type, void *pbuffer, int no_elements, void *pfl)
+
+int dbChannel_get(struct dbChannel *chan,
+    int buffer_type, void *pbuffer, long no_elements, void *pfl)
 {
     long nRequest = no_elements;
-    int result = db_get_field_and_count(
-        paddr, buffer_type, pbuffer, &nRequest, pfl);
+    int result = dbChannel_get_count(
+        chan, buffer_type, pbuffer, &nRequest, pfl);
     if (nRequest < no_elements) {
         /* The database request returned fewer elements than requested, so
          * fill the remainder of the buffer with zeros.
@@ -168,8 +149,8 @@ int epicsShareAPI db_get_field(struct dbAddr *paddr,
 /* Performs the work of the public db_get_field API, but also returns the number
  * of elements actually copied to the buffer.  The caller is responsible for
  * zeroing the remaining part of the buffer. */
-int epicsShareAPI db_get_field_and_count(
-    struct dbAddr *paddr, int buffer_type,
+int epicsShareAPI dbChannel_get_count(
+    struct dbChannel *chan, int buffer_type,
     void *pbuffer, long *nRequest, void *pfl)
 {
     long status;
@@ -184,26 +165,26 @@ int epicsShareAPI db_get_field_and_count(
 
     switch(buffer_type) {
     case(oldDBR_STRING):
-        status = dbGetField(paddr, DBR_STRING, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_STRING, pbuffer, &zero, nRequest, pfl);
         break;
 /*  case(oldDBR_INT): */
     case(oldDBR_SHORT):
-        status = dbGetField(paddr, DBR_SHORT, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_SHORT, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_FLOAT):
-        status = dbGetField(paddr, DBR_FLOAT, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_FLOAT, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_ENUM):
-        status = dbGetField(paddr, DBR_ENUM, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_ENUM, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_CHAR):
-        status = dbGetField(paddr, DBR_CHAR, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_CHAR, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_LONG):
-        status = dbGetField(paddr, DBR_LONG, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_LONG, pbuffer, &zero, nRequest, pfl);
         break;
     case(oldDBR_DOUBLE):
-        status = dbGetField(paddr, DBR_DOUBLE, pbuffer, &zero, nRequest, pfl);
+        status = dbChannelGetField(chan, DBR_DOUBLE, pbuffer, &zero, nRequest, pfl);
         break;
 
     case(oldDBR_STS_STRING):
@@ -216,10 +197,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_STRING, pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_STRING, pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -232,10 +213,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_SHORT, &pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_SHORT, &pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -247,10 +228,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_FLOAT, &pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -262,10 +243,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_ENUM, &pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_ENUM, &pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -277,10 +258,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_UCHAR, &pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_UCHAR, &pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -292,10 +273,10 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            status = dbGetField(paddr, DBR_LONG, &pold->value, &zero,
+            status = dbChannelGetField(chan, DBR_LONG, &pold->value, &zero,
                 nRequest, pfl);
         }
         break;
@@ -307,11 +288,11 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             options = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_DOUBLE, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -325,12 +306,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_STRING, pold->value, &options,
+            status = dbChannelGetField(chan, DBR_STRING, pold->value, &options,
                     nRequest, pfl);
         }
         break;
@@ -344,12 +325,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_SHORT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -362,12 +343,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_FLOAT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -380,12 +361,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_ENUM, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_ENUM, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -398,12 +379,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_CHAR, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_CHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_CHAR, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_CHAR, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -416,12 +397,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_LONG, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -434,12 +415,12 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_TIME;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->stamp = newSt.time;         /* structure copy */
             options = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_DOUBLE, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -457,7 +438,7 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -469,7 +450,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_SHORT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -486,7 +467,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_AL_DOUBLE;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -499,7 +480,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_warning_limit = epicsConvertDoubleToFloat(newSt.upper_warning_limit);
             pold->lower_warning_limit = epicsConvertDoubleToFloat(newSt.lower_warning_limit);
             options = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_FLOAT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -515,7 +496,7 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -527,7 +508,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_UCHAR, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_UCHAR, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -542,7 +523,7 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -554,7 +535,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_LONG, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -571,7 +552,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_AL_DOUBLE;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -584,7 +565,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->lower_warning_limit = newSt.lower_warning_limit;
             pold->lower_alarm_limit = newSt.lower_alarm_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_DOUBLE, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -603,7 +584,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_SHORT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_SHORT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -617,7 +598,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_SHORT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_SHORT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -635,7 +616,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_CTRL_DOUBLE | DBR_AL_DOUBLE;
-            status = dbGetField(paddr, DBR_FLOAT, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -650,7 +631,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_ctrl_limit = epicsConvertDoubleToFloat(newSt.upper_ctrl_limit);
             pold->lower_ctrl_limit = epicsConvertDoubleToFloat(newSt.lower_ctrl_limit);
             options = 0;
-            status = dbGetField(paddr, DBR_FLOAT, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_FLOAT, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -667,7 +648,7 @@ int epicsShareAPI db_get_field_and_count(
             memset(pold, '\0', sizeof(struct dbr_ctrl_enum));
             /* first get status and severity */
             options = DBR_STATUS | DBR_ENUM_STRS;
-            status = dbGetField(paddr, DBR_ENUM, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_ENUM, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             no_str = newSt.no_str;
@@ -677,7 +658,7 @@ int epicsShareAPI db_get_field_and_count(
                 strncpy(pold->strs[i], newSt.strs[i], sizeof(pold->strs[i]));
             /*now get values*/
             options = 0;
-            status = dbGetField(paddr, DBR_ENUM, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_ENUM, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -694,7 +675,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_UCHAR, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_UCHAR, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -708,7 +689,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_UCHAR, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_UCHAR, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -725,7 +706,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_GR_LONG | DBR_CTRL_LONG |
                 DBR_AL_LONG;
-            status = dbGetField(paddr, DBR_LONG, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_LONG, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
@@ -739,7 +720,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_LONG, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_LONG, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -757,7 +738,7 @@ int epicsShareAPI db_get_field_and_count(
 
             options = DBR_STATUS | DBR_UNITS | DBR_PRECISION | DBR_GR_DOUBLE |
                 DBR_CTRL_DOUBLE | DBR_AL_DOUBLE;
-            status = dbGetField(paddr, DBR_DOUBLE, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->precision = newSt.precision.dp;
@@ -772,7 +753,7 @@ int epicsShareAPI db_get_field_and_count(
             pold->upper_ctrl_limit = newSt.upper_ctrl_limit;
             pold->lower_ctrl_limit = newSt.lower_ctrl_limit;
             options = 0;
-            status = dbGetField(paddr, DBR_DOUBLE, &pold->value, &options,
+            status = dbChannelGetField(chan, DBR_DOUBLE, &pold->value, &options,
                 nRequest, pfl);
         }
         break;
@@ -785,13 +766,13 @@ int epicsShareAPI db_get_field_and_count(
             } newSt;
 
             options = DBR_STATUS;
-            status = dbGetField(paddr, DBR_STRING, &newSt, &options, &zero, pfl);
+            status = dbChannelGetField(chan, DBR_STRING, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
             pold->ackt = newSt.ackt;
             pold->acks = newSt.acks;
             options = 0;
-            status = dbGetField(paddr, DBR_STRING, pold->value,
+            status = dbChannelGetField(chan, DBR_STRING, pold->value,
                 &options, nRequest, pfl);
         }
         break;
@@ -807,7 +788,7 @@ int epicsShareAPI db_get_field_and_count(
                 break;
             }
             dbInitEntry(pdbbase, &dbEntry);
-            status = dbFindRecord(&dbEntry, paddr->precord->name);
+            status = dbFindRecord(&dbEntry, dbChannelRecord(chan)->name);
             if (!status) name = dbGetRecordTypeName(&dbEntry);
             dbFinishEntry(&dbEntry);
             if (status) break;
@@ -825,165 +806,163 @@ int epicsShareAPI db_get_field_and_count(
     if (status) return -1;
     return 0;
 }
-
-/* DB_PUT_FIELD put a field and convert it to the desired type */
 
-int epicsShareAPI db_put_field(struct dbAddr *paddr, int src_type,
-    const void *psrc, int no_elements)
+int dbChannel_put(struct dbChannel *chan, int src_type,
+    const void *psrc, long no_elements)
 {
     long status;
 
-    switch(src_type) {
+    switch (src_type) {
     case(oldDBR_STRING):
-        status = dbPutField(paddr, DBR_STRING, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_STRING, psrc, no_elements);
         break;
 /*  case(oldDBR_INT): */
     case(oldDBR_SHORT):
-        status = dbPutField(paddr, DBR_SHORT, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_SHORT, psrc, no_elements);
         break;
     case(oldDBR_FLOAT):
-        status = dbPutField(paddr, DBR_FLOAT, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_FLOAT, psrc, no_elements);
         break;
     case(oldDBR_ENUM):
-        status = dbPutField(paddr, DBR_ENUM, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_ENUM, psrc, no_elements);
         break;
     case(oldDBR_CHAR):
-        status = dbPutField(paddr, DBR_UCHAR, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_UCHAR, psrc, no_elements);
         break;
     case(oldDBR_LONG):
-        status = dbPutField(paddr, DBR_LONG, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_LONG, psrc, no_elements);
         break;
     case(oldDBR_DOUBLE):
-        status = dbPutField(paddr, DBR_DOUBLE, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_DOUBLE, psrc, no_elements);
         break;
 
     case(oldDBR_STS_STRING):
-        status = dbPutField(paddr, DBR_STRING,
+        status = dbChannelPutField(chan, DBR_STRING,
             ((const struct dbr_sts_string *)psrc)->value, no_elements);
         break;
 /*  case(oldDBR_STS_INT): */
     case(oldDBR_STS_SHORT):
-        status = dbPutField(paddr, DBR_SHORT,
+        status = dbChannelPutField(chan, DBR_SHORT,
             &((const struct dbr_sts_short *)psrc)->value, no_elements);
         break;
     case(oldDBR_STS_FLOAT):
-        status = dbPutField(paddr, DBR_FLOAT,
+        status = dbChannelPutField(chan, DBR_FLOAT,
             &((const struct dbr_sts_float *)psrc)->value, no_elements);
         break;
     case(oldDBR_STS_ENUM):
-        status = dbPutField(paddr, DBR_ENUM,
+        status = dbChannelPutField(chan, DBR_ENUM,
             &((const struct dbr_sts_enum *)psrc)->value, no_elements);
         break;
     case(oldDBR_STS_CHAR):
-        status = dbPutField(paddr, DBR_UCHAR,
+        status = dbChannelPutField(chan, DBR_UCHAR,
             &((const struct dbr_sts_char *)psrc)->value, no_elements);
         break;
     case(oldDBR_STS_LONG):
-        status = dbPutField(paddr, DBR_LONG,
+        status = dbChannelPutField(chan, DBR_LONG,
             &((const struct dbr_sts_long *)psrc)->value, no_elements);
         break;
     case(oldDBR_STS_DOUBLE):
-        status = dbPutField(paddr, DBR_DOUBLE,
+        status = dbChannelPutField(chan, DBR_DOUBLE,
             &((const struct dbr_sts_double *)psrc)->value, no_elements);
         break;
 
     case(oldDBR_TIME_STRING):
-        status = dbPutField(paddr, DBR_TIME,
+        status = dbChannelPutField(chan, DBR_TIME,
             ((const struct dbr_time_string *)psrc)->value, no_elements);
         break;
 /*  case(oldDBR_TIME_INT): */
     case(oldDBR_TIME_SHORT):
-        status = dbPutField(paddr, DBR_SHORT,
+        status = dbChannelPutField(chan, DBR_SHORT,
             &((const struct dbr_time_short *)psrc)->value, no_elements);
         break;
     case(oldDBR_TIME_FLOAT):
-        status = dbPutField(paddr, DBR_FLOAT,
+        status = dbChannelPutField(chan, DBR_FLOAT,
             &((const struct dbr_time_float *)psrc)->value, no_elements);
         break;
     case(oldDBR_TIME_ENUM):
-        status = dbPutField(paddr, DBR_ENUM,
+        status = dbChannelPutField(chan, DBR_ENUM,
             &((const struct dbr_time_enum *)psrc)->value, no_elements);
         break;
     case(oldDBR_TIME_CHAR):
-        status = dbPutField(paddr, DBR_UCHAR,
+        status = dbChannelPutField(chan, DBR_UCHAR,
             &((const struct dbr_time_char *)psrc)->value, no_elements);
         break;
     case(oldDBR_TIME_LONG):
-        status = dbPutField(paddr, DBR_LONG,
+        status = dbChannelPutField(chan, DBR_LONG,
             &((const struct dbr_time_long *)psrc)->value, no_elements);
         break;
     case(oldDBR_TIME_DOUBLE):
-        status = dbPutField(paddr, DBR_DOUBLE,
+        status = dbChannelPutField(chan, DBR_DOUBLE,
             &((const struct dbr_time_double *)psrc)->value, no_elements);
         break;
 
     case(oldDBR_GR_STRING):
         /* no struct dbr_gr_string - use dbr_sts_string instead */
-        status = dbPutField(paddr, DBR_STRING,
+        status = dbChannelPutField(chan, DBR_STRING,
             ((const struct dbr_sts_string *)psrc)->value, no_elements);
         break;
 /*  case(oldDBR_GR_INT): */
     case(oldDBR_GR_SHORT):
-        status = dbPutField(paddr, DBR_SHORT,
+        status = dbChannelPutField(chan, DBR_SHORT,
             &((const struct dbr_gr_short *)psrc)->value, no_elements);
         break;
     case(oldDBR_GR_FLOAT):
-        status = dbPutField(paddr, DBR_FLOAT,
+        status = dbChannelPutField(chan, DBR_FLOAT,
             &((const struct dbr_gr_float *)psrc)->value, no_elements);
         break;
     case(oldDBR_GR_ENUM):
-        status = dbPutField(paddr, DBR_ENUM,
+        status = dbChannelPutField(chan, DBR_ENUM,
             &((const struct dbr_gr_enum *)psrc)->value, no_elements);
         break;
     case(oldDBR_GR_CHAR):
-        status = dbPutField(paddr, DBR_UCHAR,
+        status = dbChannelPutField(chan, DBR_UCHAR,
             &((const struct dbr_gr_char *)psrc)->value, no_elements);
         break;
     case(oldDBR_GR_LONG):
-        status = dbPutField(paddr, DBR_LONG,
+        status = dbChannelPutField(chan, DBR_LONG,
             &((const struct dbr_gr_long *)psrc)->value, no_elements);
         break;
     case(oldDBR_GR_DOUBLE):
-        status = dbPutField(paddr, DBR_DOUBLE,
+        status = dbChannelPutField(chan, DBR_DOUBLE,
             &((const struct dbr_gr_double *)psrc)->value, no_elements);
         break;
 
     case(oldDBR_CTRL_STRING):
         /* no struct dbr_ctrl_string - use dbr_sts_string instead */
-        status = dbPutField(paddr, DBR_STRING,
+        status = dbChannelPutField(chan, DBR_STRING,
             ((const struct dbr_sts_string *)psrc)->value, no_elements);
         break;
 /*  case(oldDBR_CTRL_INT): */
     case(oldDBR_CTRL_SHORT):
-        status = dbPutField(paddr, DBR_SHORT,
+        status = dbChannelPutField(chan, DBR_SHORT,
             &((const struct dbr_ctrl_short *)psrc)->value, no_elements);
         break;
     case(oldDBR_CTRL_FLOAT):
-        status = dbPutField(paddr, DBR_FLOAT,
+        status = dbChannelPutField(chan, DBR_FLOAT,
             &((const struct dbr_ctrl_float *)psrc)->value, no_elements);
         break;
     case(oldDBR_CTRL_ENUM):
-        status = dbPutField(paddr, DBR_ENUM,
+        status = dbChannelPutField(chan, DBR_ENUM,
             &((const struct dbr_ctrl_enum *)psrc)->value, no_elements);
         break;
     case(oldDBR_CTRL_CHAR):
-        status = dbPutField(paddr, DBR_UCHAR,
+        status = dbChannelPutField(chan, DBR_UCHAR,
             &((const struct dbr_ctrl_char *)psrc)->value, no_elements);
         break;
     case(oldDBR_CTRL_LONG):
-        status = dbPutField(paddr, DBR_LONG,
+        status = dbChannelPutField(chan, DBR_LONG,
             &((const struct dbr_ctrl_long *)psrc)->value, no_elements);
         break;
     case(oldDBR_CTRL_DOUBLE):
-        status = dbPutField(paddr, DBR_DOUBLE,
+        status = dbChannelPutField(chan, DBR_DOUBLE,
             &((const struct dbr_ctrl_double *)psrc)->value, no_elements);
         break;
 
     case(oldDBR_PUT_ACKT):
-        status = dbPutField(paddr, DBR_PUT_ACKT, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_PUT_ACKT, psrc, no_elements);
         break;
     case(oldDBR_PUT_ACKS):
-        status = dbPutField(paddr, DBR_PUT_ACKS, psrc, no_elements);
+        status = dbChannelPutField(chan, DBR_PUT_ACKS, psrc, no_elements);
         break;
 
     default:
@@ -993,7 +972,7 @@ int epicsShareAPI db_put_field(struct dbAddr *paddr, int src_type,
     return 0;
 }
 
-
+
 epicsShareFunc int epicsShareAPI dbPutNotifyMapType (putNotify *ppn, short oldtype)
 {
     switch(oldtype) {

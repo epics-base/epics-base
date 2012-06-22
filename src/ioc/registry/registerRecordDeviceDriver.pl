@@ -18,12 +18,18 @@ use DBD;
 use DBD::Parser;
 use EPICS::Readfile;
 use EPICS::Path;
+use EPICS::Getopts;
 use Text::Wrap;
+
+getopts('I@') or
+    die "Usage: registerRecordDeviceDriver [-I dir] in.dbd subroutinename [TOP]";
+
+my @path = map { split /[:;]/ } @EPICS::Getopts::opt_I; # FIXME: Broken on Win32?
 
 my ($file, $subname, $bldTop) = @ARGV;
 
 my $dbd = DBD->new();
-&ParseDBD($dbd, &Readfile($file));
+&ParseDBD($dbd, &Readfile($file, "", \@path));
 
 $Text::Wrap::columns = 75;
 

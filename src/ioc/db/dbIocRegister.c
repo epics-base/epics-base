@@ -21,6 +21,7 @@
 #include "dbNotify.h"
 #include "callback.h"
 #include "dbIocRegister.h"
+#include "dbState.h"
 
 /* dbLoadDatabase */
 static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};
@@ -297,6 +298,57 @@ static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
     callbackSetQueueSize(args[0].ival);
 }
 
+/* dbStateCreate */
+static const iocshArg dbStateArgName = { "name", iocshArgString };
+static const iocshArg * const dbStateCreateArgs[] = { &dbStateArgName };
+static const iocshFuncDef dbStateCreateFuncDef = { "dbStateCreate", 1, dbStateCreateArgs };
+static void dbStateCreateCallFunc (const iocshArgBuf *args)
+{
+    dbStateCreate(args[0].sval);
+}
+
+/* dbStateSet */
+static const iocshArg * const dbStateSetArgs[] = { &dbStateArgName };
+static const iocshFuncDef dbStateSetFuncDef = { "dbStateSet", 1, dbStateSetArgs };
+static void dbStateSetCallFunc (const iocshArgBuf *args)
+{
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateSet(sid);
+}
+
+/* dbStateClear */
+static const iocshArg * const dbStateClearArgs[] = { &dbStateArgName };
+static const iocshFuncDef dbStateClearFuncDef = { "dbStateClear", 1, dbStateClearArgs };
+static void dbStateClearCallFunc (const iocshArgBuf *args)
+{
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateClear(sid);
+}
+
+/* dbStateShow */
+static const iocshArg dbStateShowArg1 = { "level", iocshArgInt };
+static const iocshArg * const dbStateShowArgs[] = { &dbStateArgName, &dbStateShowArg1 };
+static const iocshFuncDef dbStateShowFuncDef = { "dbStateShow", 2, dbStateShowArgs };
+static void dbStateShowCallFunc (const iocshArgBuf *args)
+{
+    dbStateId sid = dbStateFind(args[0].sval);
+
+    if (sid)
+        dbStateShow(sid, args[1].ival);
+}
+
+/* dbStateShowAll */
+static const iocshArg dbStateShowAllArg0 = { "level", iocshArgInt };
+static const iocshArg * const dbStateShowAllArgs[] = { &dbStateShowAllArg0 };
+static const iocshFuncDef dbStateShowAllFuncDef = { "dbStateShowAll", 1, dbStateShowAllArgs };
+static void dbStateShowAllCallFunc (const iocshArgBuf *args)
+{
+    dbStateShowAll(args[0].ival);
+}
 
 void epicsShareAPI dbIocRegister(void)
 {
@@ -342,4 +394,10 @@ void epicsShareAPI dbIocRegister(void)
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
+
+    iocshRegister(&dbStateCreateFuncDef, dbStateCreateCallFunc);
+    iocshRegister(&dbStateSetFuncDef, dbStateSetCallFunc);
+    iocshRegister(&dbStateClearFuncDef, dbStateClearCallFunc);
+    iocshRegister(&dbStateShowFuncDef, dbStateShowCallFunc);
+    iocshRegister(&dbStateShowAllFuncDef, dbStateShowAllCallFunc);
 }

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -25,7 +25,7 @@
 #include "epicsEvent.h"
 #include "bucketLib.h"
 #include "asLib.h"
-#include "dbAddr.h"
+#include "dbChannel.h"
 #include "dbNotify.h"
 #define CA_MINOR_PROTOCOL_REVISION 13
 #include "caProto.h"
@@ -64,7 +64,7 @@ struct message_buffer {
   char                      *buf;
   unsigned                  stk;
   unsigned                  maxstk;
-  unsigned                  cnt;    
+  unsigned                  cnt;
   enum messageBufferType    type;
 };
 
@@ -98,16 +98,16 @@ typedef struct client {
   char                  disconnect; /* disconnect detected */
 } client;
 
-enum rsrvChanState { 
+enum rsrvChanState {
     rsrvCS_invalid,
     rsrvCS_pendConnectResp,
     rsrvCS_inService,
     rsrvCS_pendConnectRespUpdatePendAR,
-    rsrvCS_inServiceUpdatePendAR 
+    rsrvCS_inServiceUpdatePendAR
 };
 
 /*
- * per channel structure 
+ * per channel structure
  * (stored in chanList or chanPendingUpdateARList off of a client block)
  */
 struct channel_in_use {
@@ -118,7 +118,7 @@ struct channel_in_use {
     const unsigned cid;    /* client id */
     const unsigned sid;    /* server id */
     epicsTimeStamp time_at_creation;   /* for UDP timeout */
-    struct dbAddr addr;
+    struct dbChannel *dbch;
     ASCLIENTPVT asClientPVT;
     enum rsrvChanState state;
 };
@@ -156,7 +156,7 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 #   define DLOG(LEVEL,ARGSINPAREN) \
     if (CASDEBUG > LEVEL) errlogPrintf ARGSINPAREN
 #else
-#   define DLOG(LEVEL,ARGSINPAREN) 
+#   define DLOG(LEVEL,ARGSINPAREN)
 #endif
 
 GLBLTYPE int                CASDEBUG;
@@ -168,13 +168,13 @@ GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE struct client      *prsrv_cast_client;
 GLBLTYPE BUCKET             *pCaBucket;
-GLBLTYPE void               *rsrvClientFreeList; 
+GLBLTYPE void               *rsrvClientFreeList;
 GLBLTYPE void               *rsrvChanFreeList;
 GLBLTYPE void               *rsrvEventFreeList;
-GLBLTYPE void               *rsrvSmallBufFreeListTCP; 
-GLBLTYPE void               *rsrvLargeBufFreeListTCP; 
+GLBLTYPE void               *rsrvSmallBufFreeListTCP;
+GLBLTYPE void               *rsrvLargeBufFreeListTCP;
 GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
-GLBLTYPE void               *rsrvPutNotifyFreeList; 
+GLBLTYPE void               *rsrvPutNotifyFreeList;
 GLBLTYPE unsigned           rsrvChannelCount;
 
 GLBLTYPE epicsEventId       casudp_startStopEvent;
@@ -207,7 +207,7 @@ int camessage ( struct client *client );
 void rsrv_extra_labor ( void * pArg );
 int rsrvCheckPut ( const struct channel_in_use *pciu );
 int rsrv_version_reply ( struct client *client );
-void rsrvFreePutNotify ( struct client *pClient, 
+void rsrvFreePutNotify ( struct client *pClient,
                         struct rsrv_put_notify *pNotify );
 void initializePutNotifyFreeList (void);
 unsigned rsrvSizeOfPutNotify ( struct rsrv_put_notify *pNotify );
@@ -221,9 +221,9 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size );
  * outgoing protocol maintenance
  */
 void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size );
-int cas_copy_in_header ( 
+int cas_copy_in_header (
     struct client *pClient, ca_uint16_t response, ca_uint32_t payloadSize,
-    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid, 
+    ca_uint16_t dataType, ca_uint32_t nElem, ca_uint32_t cid,
     ca_uint32_t responseSpecific, void **pPayload );
 void cas_set_header_cid ( struct client *pClient, ca_uint32_t );
 void cas_set_header_count (struct client *pClient, ca_uint32_t count);

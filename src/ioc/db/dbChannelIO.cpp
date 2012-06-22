@@ -4,20 +4,20 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *  $Revision-Id$
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
+ *
+ *
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  *	505 665 1831
@@ -40,15 +40,12 @@
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 
-dbChannelIO::dbChannelIO ( 
-    epicsMutex & mutexIn, cacChannelNotify & notify, 
-    const dbAddr & addrIn, dbContext & serviceIO ) :
-    cacChannel ( notify ), mutex ( mutexIn ), serviceIO ( serviceIO ), 
-    addr ( addrIn )
+dbChannelIO::dbChannelIO (
+    epicsMutex & mutexIn, cacChannelNotify & notify,
+    dbChannel * dbchIn, dbContext & serviceIO ) :
+    cacChannel ( notify ), mutex ( mutexIn ), serviceIO ( serviceIO ),
+    dbch ( dbchIn )
 {
-    unsigned bufLen = dbNameSizeOfPV ( & this->addr ) + 1;
-    this->pNameStr.reset ( new char [ bufLen ] );
-    dbNameOfPV ( & this->addr, this->pNameStr.get (), bufLen );
 }
 
 void dbChannelIO::initiateConnect ( epicsGuard < epicsMutex > & guard )
@@ -57,7 +54,7 @@ void dbChannelIO::initiateConnect ( epicsGuard < epicsMutex > & guard )
     this->notify().connectNotify ( guard );
 }
 
-dbChannelIO::~dbChannelIO () 
+dbChannelIO::~dbChannelIO ()
 {
 }
 
@@ -65,48 +62,49 @@ void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->serviceIO.destroyAllIO ( guard, *this );
+    dbChannelDelete ( this->dbch );
     this->~dbChannelIO ();
 }
 
-void dbChannelIO::destroy ( 
+void dbChannelIO::destroy (
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->serviceIO.destroyChannel ( guard, *this );
-    // dont access this pointer after above call because
-    // object nolonger exists
+    // don't access this pointer after above call because
+    // object no longer exists
 }
 
-cacChannel::ioStatus dbChannelIO::read ( 
-     epicsGuard < epicsMutex > & guard, unsigned type, 
-     unsigned long count, cacReadNotify & notify, ioid * ) 
+cacChannel::ioStatus dbChannelIO::read (
+     epicsGuard < epicsMutex > & guard, unsigned type,
+     unsigned long count, cacReadNotify & notify, ioid * )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.callReadNotify ( guard, this->addr, 
+    this->serviceIO.callReadNotify ( guard, this->dbch,
         type, count, notify );
     return iosSynch;
 }
 
-void dbChannelIO::write ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, 
+void dbChannelIO::write (
+    epicsGuard < epicsMutex > & guard, unsigned type,
     unsigned long count, const void *pValue )
 {
     epicsGuardRelease < epicsMutex > unguard ( guard );
     if ( count > LONG_MAX ) {
         throw outOfBounds();
     }
-    int status = db_put_field ( &this->addr, type, pValue, 
+    int status = dbChannel_put ( this->dbch, type, pValue,
         static_cast <long> (count) );
     if ( status ) {
-        throw std::logic_error ( 
+        throw std::logic_error (
            "db_put_field() completed unsuccessfully" );
     }
 }
 
-cacChannel::ioStatus dbChannelIO::write ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, 
-    unsigned long count, const void * pValue, 
-    cacWriteNotify & notify, ioid * pId ) 
+cacChannel::ioStatus dbChannelIO::write (
+    epicsGuard < epicsMutex > & guard, unsigned type,
+    unsigned long count, const void * pValue,
+    cacWriteNotify & notify, ioid * pId )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
@@ -114,24 +112,24 @@ cacChannel::ioStatus dbChannelIO::write (
         throw outOfBounds();
     }
 
-    this->serviceIO.initiatePutNotify ( 
-        guard, *this, this->addr, 
+    this->serviceIO.initiatePutNotify (
+        guard, *this, this->dbch,
         type, count, pValue, notify, pId );
 
     return iosAsynch;
 }
 
-void dbChannelIO::subscribe ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count, 
-    unsigned mask, cacStateNotify & notify, ioid * pId ) 
-{   
+void dbChannelIO::subscribe (
+    epicsGuard < epicsMutex > & guard, unsigned type, unsigned long count,
+    unsigned mask, cacStateNotify & notify, ioid * pId )
+{
     guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.subscribe ( 
-        guard, this->addr, *this,
+    this->serviceIO.subscribe (
+        guard, this->dbch, *this,
         type, count, mask, notify, pId );
 }
 
-void dbChannelIO::ioCancel ( 
+void dbChannelIO::ioCancel (
     epicsGuard < epicsMutex > & mutualExclusionGuard,
     const ioid & id )
 {
@@ -139,7 +137,7 @@ void dbChannelIO::ioCancel (
     this->serviceIO.ioCancel ( mutualExclusionGuard, *this, id );
 }
 
-void dbChannelIO::ioShow ( 
+void dbChannelIO::ioShow (
     epicsGuard < epicsMutex > & guard,
     const ioid & id, unsigned level ) const
 {
@@ -147,31 +145,35 @@ void dbChannelIO::ioShow (
     this->serviceIO.ioShow ( guard, id, level );
 }
 
-void dbChannelIO::show ( 
+void dbChannelIO::show (
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
 
-    printf ("channel at %p attached to local database record %s\n", 
-        static_cast <const void *> ( this ), this->addr.precord->name );
+    printf ("channel at %p attached to local database record %s\n",
+        static_cast <const void *> ( this ),
+        dbChannelRecord ( this->dbch ) -> name );
 
     if ( level > 0u ) {
-        printf ( "\ttype %s, element count %li, field at %p\n",
-            dbf_type_to_text ( this->addr.dbr_field_type ), this->addr.no_elements,
-            this->addr.pfield );
-    }
-    if ( level > 1u ) {
-        this->serviceIO.show ( level - 2u );
-        this->serviceIO.showAllIO ( *this, level - 2u );
+        printf ( "        type %s, element count %li, field at %p\n",
+            dbf_type_to_text ( dbChannelExportType ( this->dbch ) ),
+            dbChannelElements ( this->dbch ),
+            dbChannelField ( this->dbch ) );
+        if ( level > 1u ) {
+            dbChannelFilterShow ( this->dbch, level - 2u, 8 );
+            this->serviceIO.show ( level - 2u );
+            this->serviceIO.showAllIO ( *this, level - 2u );
+        }
     }
 }
 
 unsigned long dbChannelIO::nativeElementCount (
-    epicsGuard < epicsMutex > & guard ) const 
+    epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
-    if ( this->addr.no_elements >= 0u ) {
-        return static_cast < unsigned long > ( this->addr.no_elements );
+    long elements = dbChannelElements ( this->dbch );
+    if ( elements >= 0u ) {
+        return static_cast < unsigned long > ( elements );
     }
     return 0u;
 }
@@ -181,31 +183,37 @@ const char * dbChannelIO::pName (
     epicsGuard < epicsMutex > & guard ) const throw ()
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return this->pNameStr.get ();
+    return dbChannelName ( this->dbch );
 }
 
 unsigned dbChannelIO::getName (
     epicsGuard < epicsMutex > &,
     char * pBuf, unsigned bufLen ) const throw ()
 {
-    return dbNameOfPV ( & this->addr, pBuf, bufLen );
+    const char *name = dbChannelName ( this->dbch );
+    size_t len = strlen ( name );
+    strncpy ( pBuf, name, bufLen );
+    if (len < bufLen)
+        return len;
+    pBuf[--bufLen] = '\0';
+    return bufLen;
 }
 
 short dbChannelIO::nativeType (
-    epicsGuard < epicsMutex > & guard ) const 
+    epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return this->addr.dbr_field_type;
+    return dbChannelExportType( this->dbch );
 }
 
-void * dbChannelIO::operator new ( size_t size, 
+void * dbChannelIO::operator new ( size_t size,
     tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #ifdef CXX_PLACEMENT_DELETE
-void dbChannelIO::operator delete ( void *pCadaver, 
+void dbChannelIO::operator delete ( void *pCadaver,
     tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )
 {
     freeList.release ( pCadaver );

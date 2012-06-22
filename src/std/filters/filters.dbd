@@ -1,0 +1,4 @@
+registrar(tsInitialize)
+registrar(dbndInitialize)
+registrar(arrInitialize)
+registrar(syncInitialize)

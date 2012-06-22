@@ -72,6 +72,10 @@ ioc/dbtemplate/test_DEPEND_DIRS = ioc
 DIRS += std
 std_DEPEND_DIRS = ioc libCom/RTEMS
 
+DIRS += std/filters/test
+std/filters/test_DEPEND_DIRS = std
+
+
 
 include $(TOP)/configure/RULES_DIRS
 

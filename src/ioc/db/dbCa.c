@@ -411,6 +411,13 @@ int dbCaIsLinkConnected(const struct link *plink)
     return pca->isConnected;
 }
 
+void dbCaScanFwdLink(struct link *plink) {
+    short fwdLinkValue = 1;
+
+    if (plink->value.pv_link.pvlMask & pvlOptFWD)
+        dbCaPutLink(plink, DBR_SHORT, &fwdLinkValue, 1);
+}
+
 #define pcaGetCheck \
     assert(plink); \
     if (plink->type != CA_LINK) return -1; \
@@ -639,7 +646,7 @@ done:
 static void eventCallback(struct event_handler_args arg)
 {
     caLink *pca = (caLink *)arg.usr;
-    DBLINK *plink;
+    struct link *plink;
     size_t size;
     dbCommon *precord = 0;
     struct dbr_time_double *pdbr_time_double;

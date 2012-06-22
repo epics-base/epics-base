@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -33,7 +33,6 @@
 #include "freeList.h"
 #include "errlog.h"
 #include "db_field_log.h"
-#include "dbAddr.h"
 #include "dbEvent.h"
 #include "dbCommon.h"
 #include "epicsStdio.h"
@@ -73,22 +72,22 @@ static void req_server (void *pParm)
     epicsSignalInstallSigPipeIgnore ();
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
-    
+
     rsrvCurrentClient = epicsThreadPrivateCreate ();
 
     if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
-        ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT,
             (unsigned short) CA_SERVER_PORT );
     }
     else {
-        ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, 
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
             (unsigned short) CA_SERVER_PORT );
     }
 
     if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET) {
         epicsSocketDestroy ( IOC_sock );
     }
-    
+
     /*
      * Open the socket. Use ARPA Internet address format and stream
      * sockets. Format described in <sys/socket.h>.
@@ -103,7 +102,7 @@ static void req_server (void *pParm)
     /* Zero the sock_addr structure */
     memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl (INADDR_ANY); 
+    serverAddr.sin_addr.s_addr = htonl (INADDR_ANY);
     serverAddr.sin_port = htons ( ca_server_port );
 
     /* get server's Internet address */
@@ -116,12 +115,12 @@ static void req_server (void *pParm)
 			 * work correctly)
 			 */
 			serverAddr.sin_port = ntohs (0);
-			status = bind ( IOC_sock, 
+			status = bind ( IOC_sock,
                 (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
 		}
 		if ( status < 0 ) {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
                 sockErrBuf );
@@ -134,13 +133,13 @@ static void req_server (void *pParm)
     }
 
 	addrSize = ( osiSocklen_t ) sizeof ( serverAddr );
-	status = getsockname ( IOC_sock, 
+	status = getsockname ( IOC_sock,
 			(struct sockaddr *)&serverAddr, &addrSize);
 	if ( status ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
+        epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-		errlogPrintf ( "CAS: getsockname() error %s\n", 
+		errlogPrintf ( "CAS: getsockname() error %s\n",
 			sockErrBuf );
         epicsThreadSuspendSelf ();
 	}
@@ -149,7 +148,7 @@ static void req_server (void *pParm)
 
     if ( portChange ) {
         errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
-        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n", 
+        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n",
             ca_server_port );
         errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
         errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
@@ -192,13 +191,13 @@ static void req_server (void *pParm)
         clientSock = epicsSocketAccept ( IOC_sock, &sockAddr, &addLen );
         if ( clientSock == INVALID_SOCKET ) {
             char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
+            epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf("CAS: Client accept error was \"%s\"\n",
                 sockErrBuf );
             epicsThreadSleep(15.0);
             continue;
-        } 
+        }
         else {
             epicsThreadId id;
             struct client *pClient;
@@ -282,14 +281,14 @@ int rsrv_init (void)
     castcp_ctl = ctlPause;
 
     /*
-     * go down two levels so that we are below 
+     * go down two levels so that we are below
      * the TCP and event threads started on behalf
      * of individual clients
      */
-    tbs  = epicsThreadHighestPriorityLevelBelow ( 
+    tbs  = epicsThreadHighestPriorityLevelBelow (
         epicsThreadPriorityCAServerLow, &priorityOfConnectDaemon );
     if ( tbs == epicsThreadBooleanStatusSuccess ) {
-        tbs  = epicsThreadHighestPriorityLevelBelow ( 
+        tbs  = epicsThreadHighestPriorityLevelBelow (
             priorityOfConnectDaemon, &priorityOfConnectDaemon );
         if ( tbs != epicsThreadBooleanStatusSuccess ) {
             priorityOfConnectDaemon = epicsThreadPriorityCAServerLow;
@@ -330,7 +329,7 @@ int rsrv_pause (void)
     return RSRV_OK;
 }
 
-static unsigned countChanListBytes ( 
+static unsigned countChanListBytes (
     struct client *client, ELLLIST * pList )
 {
     struct channel_in_use   * pciu;
@@ -349,23 +348,19 @@ static unsigned countChanListBytes (
     return bytes_reserved;
 }
 
-static void showChanList ( 
-    struct client * client, ELLLIST * pList )
+static void showChanList (
+    struct client * client, unsigned level, ELLLIST * pList )
 {
-    unsigned i = 0u;
     struct channel_in_use * pciu;
     epicsMutexMustLock ( client->chanListLock );
     pciu = (struct channel_in_use *) pList->node.next;
     while ( pciu ){
-        printf( "\t%s(%d%c%c)", 
-            pciu->addr.precord->name,
+        dbChannelShow ( pciu->dbch, level, 8 );
+        printf( "          # on eventq=%d, access=%c%c\n",
             ellCount ( &pciu->eventq ),
             asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
             rsrvCheckPut ( pciu ) ? 'w': '-' );
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
-        if(  ++i % 3u == 0u ) {
-            printf ( "\n" );
-        }
     }
     epicsMutexUnlock ( client->chanListLock );
 }
@@ -398,28 +393,28 @@ static void log_one_client (struct client *client, unsigned level)
     send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
     recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
-    printf ( "%s %s(%s): User=\"%s\", V%u.%u, %d Channels, Priority=%u\n", 
+    printf ( "%s %s(%s): User=\"%s\", V%u.%u, %d Channels, Priority=%u\n",
         pproto,
         clientHostName,
         client->pHostName ? client->pHostName : "",
         client->pUserName ? client->pUserName : "",
         CA_MAJOR_PROTOCOL_REVISION,
         client->minor_version_number,
-        ellCount(&client->chanList) + 
+        ellCount(&client->chanList) +
             ellCount(&client->chanPendingUpdateARList),
         client->priority );
     if ( level >= 1 ) {
-        printf ("\tTask Id=%p, Socket FD=%d\n", 
-            (void *) client->tid, client->sock); 
-        printf( 
-        "\tSecs since last send %6.2f, Secs since last receive %6.2f\n", 
+        printf ("\tTask Id=%p, Socket FD=%d\n",
+            (void *) client->tid, client->sock);
+        printf(
+        "\tSecs since last send %6.2f, Secs since last receive %6.2f\n",
             send_delay, recv_delay);
-        printf( 
-        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u\n", 
+        printf(
+        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u\n",
             client->recv.cnt - client->recv.stk,
             client->send.stk ); 
-        printf( 
-        "\tState=%s%s%s\n", 
+        printf(
+        "\tState=%s%s%s\n",
             state[client->disconnect?1:0],
             client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
             client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
@@ -428,14 +423,13 @@ static void log_one_client (struct client *client, unsigned level)
     if ( level >= 2u ) {
         unsigned bytes_reserved = 0;
         bytes_reserved += sizeof(struct client);
-        bytes_reserved += countChanListBytes ( 
+        bytes_reserved += countChanListBytes (
                             client, & client->chanList );
-        bytes_reserved += countChanListBytes ( 
+        bytes_reserved += countChanListBytes (
                         client, & client->chanPendingUpdateARList );
         printf( "\t%d bytes allocated\n", bytes_reserved);
-        showChanList ( client, & client->chanList );
-        showChanList ( client, & client->chanPendingUpdateARList );
-        printf("\n");
+        showChanList ( client, level - 2u, & client->chanList );
+        showChanList ( client, level - 2u, & client->chanPendingUpdateARList );
     }
 
     if ( level >= 3u ) {
@@ -485,20 +479,20 @@ void epicsShareAPI casr (unsigned level)
         printf( "UDP Server:\n" );
         log_one_client(prsrv_cast_client, level);
     }
-    
+
     if (level>=2u) {
         bytes_reserved = 0u;
-        bytes_reserved += sizeof (struct client) * 
+        bytes_reserved += sizeof (struct client) *
                     freeListItemsAvail (rsrvClientFreeList);
         bytes_reserved += sizeof (struct channel_in_use) *
                     freeListItemsAvail (rsrvChanFreeList);
         bytes_reserved += sizeof(struct event_ext) *
                     freeListItemsAvail (rsrvEventFreeList);
-        bytes_reserved += MAX_TCP * 
+        bytes_reserved += MAX_TCP *
                     freeListItemsAvail ( rsrvSmallBufFreeListTCP );
-        bytes_reserved += rsrvSizeofLargeBufTCP * 
+        bytes_reserved += rsrvSizeofLargeBufTCP *
                     freeListItemsAvail ( rsrvLargeBufFreeListTCP );
-        bytes_reserved += rsrvSizeOfPutNotify ( 0 ) * 
+        bytes_reserved += rsrvSizeOfPutNotify ( 0 ) *
                     freeListItemsAvail ( rsrvPutNotifyFreeList );
         printf( "There are currently %u bytes on the server's free list\n",
             (unsigned int) bytes_reserved);
@@ -525,7 +519,7 @@ void epicsShareAPI casr (unsigned level)
     }
 }
 
-/* 
+/*
  * destroy_client ()
  */
 void destroy_client ( struct client *client )
@@ -533,7 +527,7 @@ void destroy_client ( struct client *client )
     if ( ! client ) {
         return;
     }
-    
+
     if ( client->tid != 0 ) {
         taskwdRemove ( client->tid );
     }
@@ -603,12 +597,12 @@ void destroy_client ( struct client *client )
 
     if ( client->pHostName ) {
         free ( client->pHostName );
-    } 
+    }
 
     freeListFree ( rsrvClientFreeList, client );
 }
 
-static void destroyAllChannels ( 
+static void destroyAllChannels (
     struct client * client, ELLLIST * pList )
 {
     if ( !client->chanListLock || !client->eventqLock ) {
@@ -651,7 +645,7 @@ static void destroyAllChannels (
         rsrvChannelCount--;
         UNLOCK_CLIENTQ;
         if ( status != S_bucket_success ) {
-            errPrintf ( status, __FILE__, __LINE__, 
+            errPrintf ( status, __FILE__, __LINE__,
                 "Bad id=%d at close", pciu->sid);
         }
         status = asRemoveClient(&pciu->asClientPVT);
@@ -660,6 +654,7 @@ static void destroyAllChannels (
             errPrintf ( status, __FILE__, __LINE__, "asRemoveClient" );
         }
 
+        dbChannelDelete(pciu->dbch);
         freeListFree ( rsrvChanFreeList, pciu );
     }
 }
@@ -691,7 +686,7 @@ void destroy_tcp_client ( struct client *client )
     if ( client->evuser ) {
         db_close_events (client->evuser);
     }
-    
+
     destroy_client ( client );
 }
 
@@ -710,7 +705,7 @@ struct client * create_client ( SOCKET sock, int proto )
     spaceAvailOnFreeList =     freeListItemsAvail ( rsrvClientFreeList ) > 0
                             && freeListItemsAvail ( rsrvSmallBufFreeListTCP ) > 0;
     spaceNeeded = sizeof (struct client) + MAX_TCP;
-    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) { 
+    if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) {
         epicsSocketDestroy ( sock );
         epicsPrintf ("CAS: no space in pool for a new client (below max block thresh)\n");
         return NULL;
@@ -721,7 +716,7 @@ struct client * create_client ( SOCKET sock, int proto )
         epicsSocketDestroy ( sock );
         epicsPrintf ("CAS: no space in pool for a new client (alloc failed)\n");
         return NULL;
-    }    
+    }
 
     client->sock = sock;
     client->proto = proto;
@@ -737,8 +732,8 @@ struct client * create_client ( SOCKET sock, int proto )
         return NULL;
     }
 
-    client->pUserName = NULL; 
-    client->pHostName = NULL;     
+    client->pUserName = NULL;
+    client->pHostName = NULL;
     ellInit ( & client->chanList );
     ellInit ( & client->chanPendingUpdateARList );
     ellInit ( & client->putNotifyQue );
@@ -776,7 +771,7 @@ struct client * create_client ( SOCKET sock, int proto )
     epicsTimeGetCurrent ( &client->time_at_last_recv );
     client->minor_version_number = CA_UKN_MINOR_VERSION;
     client->recvBytesToDrain = 0u;
-        
+
     return client;
 }
 
@@ -791,10 +786,10 @@ void casAttachThreadToClient ( struct client *pClient )
 
 void casExpandSendBuffer ( struct client *pClient, ca_uint32_t size )
 {
-    if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP 
+    if ( pClient->send.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
             && size <= rsrvSizeofLargeBufTCP ) {
         int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) { 
+        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) {
             char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
             if ( pNewBuf ) {
                 memcpy ( pNewBuf, pClient->send.buf, pClient->send.stk );
@@ -812,7 +807,7 @@ void casExpandRecvBuffer ( struct client *pClient, ca_uint32_t size )
     if ( pClient->recv.type == mbtSmallTCP && rsrvSizeofLargeBufTCP > MAX_TCP
             && size <= rsrvSizeofLargeBufTCP) {
         int spaceAvailOnFreeList = freeListItemsAvail ( rsrvLargeBufFreeListTCP ) > 0;
-        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) { 
+        if ( osiSufficentSpaceInPool(rsrvSizeofLargeBufTCP) || spaceAvailOnFreeList ) {
             char *pNewBuf = ( char * ) freeListCalloc ( rsrvLargeBufFreeListTCP );
             if ( pNewBuf ) {
                 assert ( pClient->recv.cnt >= pClient->recv.stk );
@@ -849,26 +844,26 @@ struct client *create_tcp_client ( SOCKET sock )
      * see TCP(4P) this seems to make unsolicited single events much
      * faster. I take care of queue up as load increases.
      */
-    status = setsockopt ( sock, IPPROTO_TCP, TCP_NODELAY, 
+    status = setsockopt ( sock, IPPROTO_TCP, TCP_NODELAY,
                 (char *) &intTrue, sizeof (intTrue) );
     if (status < 0) {
         errlogPrintf ( "CAS: TCP_NODELAY option set failed\n" );
         destroy_client ( client );
         return NULL;
     }
-    
-    /* 
+
+    /*
      * turn on KEEPALIVE so if the client crashes
      * this task will find out and exit
      */
-    status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE, 
+    status = setsockopt ( sock, SOL_SOCKET, SO_KEEPALIVE,
                     (char *) &intTrue, sizeof (intTrue) );
     if ( status < 0 ) {
         errlogPrintf ( "CAS: SO_KEEPALIVE option set failed\n" );
         destroy_client ( client );
         return NULL;
     }
-    
+
     /*
      * some concern that vxWorks will run out of mBuf's
      * if this change is made
@@ -876,8 +871,8 @@ struct client *create_tcp_client ( SOCKET sock )
      * joh 11-10-98
      */
 #if 0
-    /* 
-     * set TCP buffer sizes to be synergistic 
+    /*
+     * set TCP buffer sizes to be synergistic
      * with CA internal buffering
      */
     i = MAX_MSG_SIZE;
@@ -895,7 +890,7 @@ struct client *create_tcp_client ( SOCKET sock )
         return NULL;
     }
 #endif
-   
+
     addrSize = sizeof ( client->addr );
     status = getpeername ( sock, (struct sockaddr *)&client->addr,
                     &addrSize );
@@ -928,8 +923,8 @@ struct client *create_tcp_client ( SOCKET sock )
         }
     }
 
-    status = db_start_events ( client->evuser, "CAS-event", 
-                NULL, NULL, priorityOfEvents ); 
+    status = db_start_events ( client->evuser, "CAS-event",
+                NULL, NULL, priorityOfEvents );
     if ( status != DB_EVENT_OK ) {
         errlogPrintf ( "CAS: unable to start the event facility\n" );
         destroy_tcp_client ( client );

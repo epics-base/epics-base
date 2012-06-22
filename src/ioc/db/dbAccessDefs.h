@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbAccessDefs.h	*/
 /* $Revision-Id$ */
@@ -20,6 +19,8 @@
 
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "dbBase.h"
+#include "dbAddr.h"
 
 #ifdef INCLdb_accessh_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols
@@ -47,7 +48,7 @@ epicsShareExtern volatile int interruptAccept;
 #define DBR_CTRL_DOUBLE 0x00000100
 #define DBR_AL_LONG     0x00000200
 #define DBR_AL_DOUBLE   0x00000400
-
+
 /**********************************************************************
  * The next page contains macros for defining requests.
  * As an example the following defines a buffer to accept an array
@@ -69,7 +70,7 @@ epicsShareExtern volatile int interruptAccept;
  * options = DBR_STATUS|DBR_TIME;
  * number_elements = 10;
  * rtnval=dbGetField(paddr,DBR_FLOAT,&buffer,&options,&number_elements);
- *	
+ *
  * When dbGetField returns:
  *	rtnval is error status (0 means success)
  *	options has a bit set for each option that was accepted
@@ -97,7 +98,7 @@ epicsShareExtern volatile int interruptAccept;
  * MYBUFFER *pbuf1;
  * MYBUFFER buf;
  *************************************************************************/
-
+
 /* Macros for defining each option */
 #define DBRstatus \
 	epicsUInt16	status;		/* alarm status */\
@@ -143,7 +144,7 @@ epicsShareExtern volatile int interruptAccept;
         epicsFloat64    upper_warning_limit;\
         epicsFloat64    lower_warning_limit;\
         epicsFloat64    lower_alarm_limit;
-
+
 /*  structures for each option type             */
 struct dbr_status       {DBRstatus};
 struct dbr_units        {DBRunits};
@@ -198,25 +199,6 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_cntSpwn    (M_dbAccess|63) /*Cannot spawn dbContTask*/
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
 #define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
-
-/* Global Database Access Routines*/
-#define dbGetLink(PLNK, DBRTYPE, PBUFFER, OPTIONS, NREQUEST) \
-    ( ( ( (PLNK)->type == CONSTANT ) && \
-        ( (NREQUEST) == 0) &&\
-        ( (OPTIONS) == 0) ) \
-      ? 0 \
-      : dbGetLinkValue((PLNK),(DBRTYPE), \
-        (void *)(PBUFFER), (OPTIONS), (NREQUEST) ) )
-#define dbPutLink(PLNK, DBRTYPE, PBUFFER, NREQUEST) \
-    ( ( (PLNK)->type == CONSTANT) \
-      ? 0 \
-      : dbPutLinkValue( (PLNK), (DBRTYPE), (void *)(PBUFFER), (NREQUEST) ) )
-#define dbGetPdbAddrFromLink(PLNK) \
-    ( ( (PLNK)->type != DB_LINK ) \
-      ? 0 \
-      : ( ( (struct dbAddr *)( (PLNK)->value.pv_link.pvt) ) ) )
-#define dbGetSevr(PLINK,PSEVERITY) \
-    dbGetAlarm((PLINK),NULL,(PSEVERITY))
 
 epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
 epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);
@@ -224,50 +206,23 @@ epicsShareFunc long epicsShareAPI dbPutAttribute(
     const char *recordTypename,const char *name,const char*value);
 epicsShareFunc int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes);
 epicsShareFunc int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr);
-epicsShareFunc long epicsShareAPI dbGetNelements(
-    const struct link *plink,long *nelements);
-epicsShareFunc int epicsShareAPI dbIsLinkConnected(const struct link *plink);
-epicsShareFunc int epicsShareAPI dbGetLinkDBFtype(const struct link *plink);
-epicsShareFunc long epicsShareAPI dbScanLink(
-    struct dbCommon *pfrom, struct dbCommon *pto);
 epicsShareFunc long epicsShareAPI dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
-epicsShareFunc void epicsShareAPI dbScanFwdLink(struct link *plink);
 epicsShareFunc long epicsShareAPI dbProcess(struct dbCommon *precord);
 epicsShareFunc long epicsShareAPI dbNameToAddr(
     const char *pname,struct dbAddr *);
 epicsShareFunc devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
 epicsShareFunc devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
-epicsShareFunc long epicsShareAPI dbGetLinkValue(
-    struct link *,short dbrType,void *pbuffer,long *options,long *nRequest);
 epicsShareFunc long epicsShareAPI dbGetField(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
 epicsShareFunc long epicsShareAPI dbGet(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
-epicsShareFunc long epicsShareAPI dbPutLinkValue(
-    struct link *,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 epicsShareFunc long epicsShareAPI dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-
-/* various utility routines */
-epicsShareFunc long epicsShareAPI dbGetControlLimits(
-    const struct link *plink,double *low, double *high);
-epicsShareFunc long epicsShareAPI dbGetGraphicLimits(
-    const struct link *plink,double *low, double *high);
-epicsShareFunc long epicsShareAPI dbGetAlarmLimits(
-    const struct link *plink,double *lolo, double *low, double *high, double *hihi);
-epicsShareFunc long epicsShareAPI dbGetPrecision(
-    const struct link *plink,short *precision);
-epicsShareFunc long epicsShareAPI dbGetUnits(
-    const struct link *plink,char *units,int unitsSize);
-epicsShareFunc long epicsShareAPI dbGetAlarm(
-    const struct link *plink, epicsEnum16 *status,epicsEnum16 *severity);
-epicsShareFunc long epicsShareAPI dbGetTimeStamp(
-    const struct link *plink,epicsTimeStamp *pstamp);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */

@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef dbAddrh
@@ -26,8 +26,5 @@ typedef struct dbAddr {
 } dbAddr;
 
 typedef dbAddr DBADDR;
-
-unsigned dbNameOfPV (const dbAddr * paddr, char * pBuf, unsigned bufLen);
-unsigned dbNameSizeOfPV (const dbAddr * paddr);
 
 #endif /* dbAddrh */

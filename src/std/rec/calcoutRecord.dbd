@@ -513,3 +513,6 @@ recordtype(calcout) {
 		extra("char	orpc[INFIX_TO_POSTFIX_SIZE(80)]")
 	}
 }
+
+variable(calcoutODLYprecision, int)
+variable(calcoutODLYlimit, double)

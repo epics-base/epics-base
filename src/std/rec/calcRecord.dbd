@@ -153,6 +153,16 @@ recordtype(calc) {
 		interest(1)
 		menu(menuAlarmSevr)
 	}
+        field(AFTC, DBF_DOUBLE) {
+                prompt("Alarm Filter Time Constant")
+                promptgroup(GUI_ALARMS)
+                interest(1)
+        }
+        field(AFVL, DBF_DOUBLE) {
+                prompt("Alarm Filter Value")
+                special(SPC_NOMOD)
+                interest(3)
+        }
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
 		promptgroup(GUI_ALARMS)

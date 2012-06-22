@@ -52,7 +52,7 @@ static long special(DBADDR *, int);
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 #define  put_array_info NULL
-#define get_units NULL
+static long get_units(DBADDR *, char *);
 static long get_precision(DBADDR *paddr,long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
@@ -82,6 +82,9 @@ rset histogramRSET={
      get_alarm_double
 };
 epicsExportAddress(rset,histogramRSET);
+
+int histogramSDELprecision = 2;
+epicsExportAddress(int, histogramSDELprecision);
 
 struct histogramdset { /* histogram input dset */
      long          number;
@@ -386,42 +389,71 @@ static long readValue(histogramRecord *prec)
         return(status);
 }
 
+#define indexof(field) histogramRecord##field
+
+static long get_units(DBADDR *paddr, char *units)
+{
+    if (dbGetFieldIndex(paddr) == indexof(SDEL)) {
+        strcpy(units,"s");
+    }
+    /* We should have EGU for other DOUBLE values or probably get it from input link SVL */
+    return(0);
+}
+
 static long get_precision(DBADDR *paddr,long *precision)
 {
     histogramRecord *prec=(histogramRecord *)paddr->precord;
-    int     fieldIndex = dbGetFieldIndex(paddr);
 
-    *precision = prec->prec;
-    if(fieldIndex == histogramRecordULIM
-    || fieldIndex == histogramRecordLLIM
-    || fieldIndex == histogramRecordSDEL
-    || fieldIndex == histogramRecordSGNL
-    || fieldIndex == histogramRecordSVAL
-    || fieldIndex == histogramRecordWDTH) {
-       *precision = prec->prec;
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(ULIM):
+        case indexof(LLIM):
+        case indexof(SGNL):
+        case indexof(SVAL):
+        case indexof(WDTH):
+            *precision = prec->prec;
+            break;
+        case indexof(SDEL):
+            *precision = histogramSDELprecision;
+            break;
+        default:
+            recGblGetPrec(paddr,precision);
     }
-    recGblGetPrec(paddr,precision);
     return(0);
 }
+
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     histogramRecord *prec=(histogramRecord *)paddr->precord;
-    int     fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == histogramRecordBPTR){
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(BPTR):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        case indexof(WDTH):
+            pgd->upper_disp_limit = prec->ulim-prec->llim;
+            pgd->lower_disp_limit = 0.0;
+            break;
+        default:
+            recGblGetGraphicDouble(paddr,pgd);
+    }
     return(0);
 }
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
     histogramRecord *prec=(histogramRecord *)paddr->precord;
-    int     fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == histogramRecordBPTR){
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(BPTR):
+            pcd->upper_ctrl_limit = prec->hopr;
+            pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        case indexof(WDTH):
+            pcd->upper_ctrl_limit = prec->ulim-prec->llim;
+            pcd->lower_ctrl_limit = 0.0;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
+    }
     return(0);
 }

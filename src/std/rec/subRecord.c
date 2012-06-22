@@ -191,54 +191,79 @@ static long special(DBADDR *paddr, int after)
     return S_db_BadSub;
 }
 
+#define indexof(field) subRecord##field
+
+static long get_linkNumber(int fieldIndex) {
+    if (fieldIndex >= indexof(A) && fieldIndex <= indexof(L))
+        return fieldIndex - indexof(A);
+    if (fieldIndex >= indexof(LA) && fieldIndex <= indexof(LL))
+        return fieldIndex - indexof(LA);
+    return -1;
+}
+
 static long get_units(DBADDR *paddr, char *units)
 {
     subRecord *prec = (subRecord *)paddr->precord;
+    int linkNumber;
 
-    strncpy(units, prec->egu, DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        linkNumber = get_linkNumber(dbGetFieldIndex(paddr));
+        if (linkNumber >= 0)
+            dbGetUnits(&prec->inpa + linkNumber, units, DB_UNITS_SIZE);
+        else
+            strncpy(units,prec->egu,DB_UNITS_SIZE);
+    }
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *precision)
+static long get_precision(DBADDR *paddr, long *pprecision)
 {
     subRecord *prec = (subRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
-    *precision = prec->prec;
-    if (fieldIndex != subRecordVAL)
-        recGblGetPrec(paddr, precision);
-
+    *pprecision = prec->prec;
+    if (fieldIndex == indexof(VAL)) {
+	return 0;
+    }
+    linkNumber = get_linkNumber(fieldIndex);
+    if (linkNumber >= 0) {
+        short precision;
+        if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
+            *pprecision = precision;
+        else
+            *pprecision = 15;
+    } else
+        recGblGetPrec(paddr, pprecision);
     return 0;
 }
 
-
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
     subRecord *prec = (subRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
-
+    int linkNumber;
+    
     switch (fieldIndex) {
-    case subRecordVAL:
-    case subRecordHIHI:     case subRecordHIGH:
-    case subRecordLOW:      case subRecordLOLO:
-    case subRecordA:        case subRecordB:
-    case subRecordC:        case subRecordD:
-    case subRecordE:        case subRecordF:
-    case subRecordG:        case subRecordH:
-    case subRecordI:        case subRecordJ:
-    case subRecordK:        case subRecordL:
-    case subRecordLA:       case subRecordLB:
-    case subRecordLC:       case subRecordLD:
-    case subRecordLE:       case subRecordLF:
-    case subRecordLG:       case subRecordLH:
-    case subRecordLI:       case subRecordLJ:
-    case subRecordLK:       case subRecordLL:
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-        break;
-
-    default:
-        recGblGetGraphicDouble(paddr, pgd);
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+            pgd->lower_disp_limit = prec->lopr;
+            pgd->upper_disp_limit = prec->hopr;
+            break;
+        default:
+            linkNumber = get_linkNumber(fieldIndex);
+            if (linkNumber >= 0) {
+                dbGetGraphicLimits(&prec->inpa + linkNumber,
+                    &pgd->lower_disp_limit,
+                    &pgd->upper_disp_limit);
+            } else
+                recGblGetGraphicDouble(paddr,pgd);
     }
     return 0;
 }
@@ -246,24 +271,21 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     subRecord *prec = (subRecord *)paddr->precord;
-    int fieldIndex = dbGetFieldIndex(paddr);
-
-    switch (fieldIndex) {
-    case subRecordVAL:
-    case subRecordHIHI:     case subRecordHIGH:
-    case subRecordLOW:      case subRecordLOLO:
-    case subRecordA:        case subRecordB:
-    case subRecordC:        case subRecordD:
-    case subRecordE:        case subRecordF:
-    case subRecordG:        case subRecordH:
-    case subRecordI:        case subRecordJ:
-    case subRecordK:        case subRecordL:
-        pcd->upper_ctrl_limit = prec->hopr;
-        pcd->lower_ctrl_limit = prec->lopr;
-        break;
-
-    default:
-        recGblGetControlDouble(paddr, pcd);
+    
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+            pcd->lower_ctrl_limit = prec->lopr;
+            pcd->upper_ctrl_limit = prec->hopr;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
     }
     return 0;
 }
@@ -272,6 +294,7 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
     subRecord *prec = (subRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
+    int linkNumber;
 
     if (fieldIndex == subRecordVAL) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
@@ -279,7 +302,15 @@ static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
         pad->lower_alarm_limit = prec->llsv ? prec->lolo : epicsNAN;
     } else {
-        recGblGetAlarmDouble(paddr, pad);
+        linkNumber = get_linkNumber(fieldIndex);
+        if (linkNumber >= 0) {
+            dbGetAlarmLimits(&prec->inpa + linkNumber,
+                &pad->lower_alarm_limit,
+                &pad->lower_warning_limit,
+                &pad->upper_warning_limit,
+                &pad->upper_alarm_limit);
+        } else
+	    recGblGetAlarmDouble(paddr, pad);
     }
     return 0;
 }

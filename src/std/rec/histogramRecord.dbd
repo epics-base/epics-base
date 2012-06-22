@@ -135,3 +135,5 @@ recordtype(histogram) {
 		interest(1)
 	}
 }
+
+variable(histogramSDELprecision, int)

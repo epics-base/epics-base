@@ -41,6 +41,9 @@
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
+/* Hysterisis for alarm filtering: 1-1/e */
+#define THRESHOLD 0.6321
+
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -94,12 +97,7 @@ typedef struct aidset { /* analog input dset */
 }aidset;
 
 
-/*Following from timing system		*/
-/*
-extern unsigned int     gts_trigger_counter;
-*/
-
-static void checkAlarms(aiRecord *prec);
+static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime);
 static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);
 static long readValue(aiRecord *prec);
@@ -158,12 +156,15 @@ static long process(void *precord)
 	aidset		*pdset = (aidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
+        epicsTimeStamp	 timeLast;
 
 	if( (pdset==NULL) || (pdset->read_ai==NULL) ) {
 		prec->pact=TRUE;
 		recGblRecordError(S_dev_missingSup,(void *)prec,"read_ai");
 		return(S_dev_missingSup);
 	}
+        timeLast = prec->time;
+
 	status=readValue(prec); /* read the new value */
 	/* check if device support set pact */
 	if ( !pact && prec->pact ) return(0);
@@ -174,7 +175,7 @@ static long process(void *precord)
 	else if (status==2) status=0;
 
 	/* check for alarms */
-	checkAlarms(prec);
+	checkAlarms(prec,&timeLast);
 	/* check event list */
 	monitor(prec);
 	/* process the forward scan link record */
@@ -217,11 +218,22 @@ static long special(DBADDR *paddr,int after)
     }
 }
 
+#define indexof(field) aiRecord##field
+
 static long get_units(DBADDR *paddr, char *units)
 {
     aiRecord	*prec=(aiRecord *)paddr->precord;
 
-    strncpy(units,prec->egu,DB_UNITS_SIZE);
+    if(paddr->pfldDes->field_type == DBF_DOUBLE) {
+        switch (dbGetFieldIndex(paddr)) {
+            case indexof(ASLO):
+            case indexof(AOFF):
+            case indexof(SMOO):
+                break;
+            default:
+                strncpy(units,prec->egu,DB_UNITS_SIZE);
+        }
+    }
     return(0);
 }
 
@@ -230,7 +242,7 @@ static long get_precision(DBADDR *paddr, long *precision)
     aiRecord	*prec=(aiRecord *)paddr->precord;
 
     *precision = prec->prec;
-    if(paddr->pfield == (void *)&prec->val) return(0);
+    if (dbGetFieldIndex(paddr) == indexof(VAL)) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -238,43 +250,54 @@ static long get_precision(DBADDR *paddr, long *precision)
 static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
 {
     aiRecord	*prec=(aiRecord *)paddr->precord;
-    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == aiRecordVAL
-    || fieldIndex == aiRecordHIHI
-    || fieldIndex == aiRecordHIGH
-    || fieldIndex == aiRecordLOW
-    || fieldIndex == aiRecordLOLO
-    || fieldIndex == aiRecordHOPR
-    || fieldIndex == aiRecordLOPR) {
-        pgd->upper_disp_limit = prec->hopr;
-        pgd->lower_disp_limit = prec->lopr;
-    } else recGblGetGraphicDouble(paddr,pgd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+        case indexof(SVAL):
+            pgd->upper_disp_limit = prec->hopr;
+            pgd->lower_disp_limit = prec->lopr;
+            break;
+        default:
+            recGblGetGraphicDouble(paddr,pgd);
+    }
     return(0);
 }
 
 static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
 {
     aiRecord	*prec=(aiRecord *)paddr->precord;
-    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == aiRecordVAL
-    || fieldIndex == aiRecordHIHI
-    || fieldIndex == aiRecordHIGH
-    || fieldIndex == aiRecordLOW
-    || fieldIndex == aiRecordLOLO) {
-	pcd->upper_ctrl_limit = prec->hopr;
-	pcd->lower_ctrl_limit = prec->lopr;
-    } else recGblGetControlDouble(paddr,pcd);
+    switch (dbGetFieldIndex(paddr)) {
+        case indexof(VAL):
+        case indexof(HIHI):
+        case indexof(HIGH):
+        case indexof(LOW):
+        case indexof(LOLO):
+        case indexof(LALM):
+        case indexof(ALST):
+        case indexof(MLST):
+        case indexof(SVAL):
+	    pcd->upper_ctrl_limit = prec->hopr;
+	    pcd->lower_ctrl_limit = prec->lopr;
+            break;
+        default:
+            recGblGetControlDouble(paddr,pcd);
+    }
     return(0);
 }
 
 static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
 {
     aiRecord	*prec=(aiRecord *)paddr->precord;
-    int		fieldIndex = dbGetFieldIndex(paddr);
 
-    if(fieldIndex == aiRecordVAL) {
+    if (dbGetFieldIndex(paddr) == indexof(VAL)) {
         pad->upper_alarm_limit = prec->hhsv ? prec->hihi : epicsNAN;
         pad->upper_warning_limit = prec->hsv ? prec->high : epicsNAN;
         pad->lower_warning_limit = prec->lsv ? prec->low : epicsNAN;
@@ -283,60 +306,114 @@ static long get_alarm_double(DBADDR *paddr,struct dbr_alDouble *pad)
     return(0);
 }
 
-static void checkAlarms(aiRecord *prec)
+static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime)
 {
-    double val, hyst, lalm;
-    double alev;
+    enum {
+        range_Lolo = 1,
+        range_Low,
+        range_Normal,
+        range_High,
+        range_Hihi
+    } alarmRange;
+    static const epicsEnum16 range_stat[] = {
+        SOFT_ALARM, LOLO_ALARM, LOW_ALARM,
+        NO_ALARM, HIGH_ALARM, HIHI_ALARM
+    };
+    double val, hyst, lalm, alev, aftc, afvl;
     epicsEnum16 asev;
 
     if (prec->udf) {
         recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        prec->afvl = 0;
         return;
     }
 
-    val = prec->val;
+    val  = prec->val;
     hyst = prec->hyst;
     lalm = prec->lalm;
 
-    /* alarm condition hihi */
-    asev = prec->hhsv;
-    alev = prec->hihi;
-    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
-        if (recGblSetSevr(prec, HIHI_ALARM, asev))
-            prec->lalm = alev;
-        return;
+    /* check VAL against alarm limits */
+    if ((asev = prec->hhsv) &&
+        (val >= (alev = prec->hihi) ||
+         ((lalm == alev) && (val >= alev - hyst))))
+        alarmRange = range_Hihi;
+    else
+    if ((asev = prec->llsv) &&
+        (val <= (alev = prec->lolo) ||
+         ((lalm == alev) && (val <= alev + hyst))))
+        alarmRange = range_Lolo;
+    else
+    if ((asev = prec->hsv) &&
+        (val >= (alev = prec->high) ||
+         ((lalm == alev) && (val >= alev - hyst))))
+        alarmRange = range_High;
+    else
+    if ((asev = prec->lsv) &&
+        (val <= (alev = prec->low) ||
+         ((lalm == alev) && (val <= alev + hyst))))
+        alarmRange = range_Low;
+    else {
+        alev = val;
+        asev = NO_ALARM;
+        alarmRange = range_Normal;
     }
 
-    /* alarm condition lolo */
-    asev = prec->llsv;
-    alev = prec->lolo;
-    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
-        if (recGblSetSevr(prec, LOLO_ALARM, asev))
-            prec->lalm = alev;
-        return;
-    }
+    aftc = prec->aftc;
+    afvl = 0;
 
-    /* alarm condition high */
-    asev = prec->hsv;
-    alev = prec->high;
-    if (asev && (val >= alev || ((lalm == alev) && (val >= alev - hyst)))) {
-        if (recGblSetSevr(prec, HIGH_ALARM, asev))
-            prec->lalm = alev;
-        return;
-    }
+    if (aftc > 0) {
+        /* Apply level filtering */
+        afvl = prec->afvl;
+        if (afvl == 0) {
+            afvl = (double)alarmRange;
+        } else {
+            double t = epicsTimeDiffInSeconds(&prec->time, lastTime);
+            double alpha = aftc / (t + aftc);
 
-    /* alarm condition low */
-    asev = prec->lsv;
-    alev = prec->low;
-    if (asev && (val <= alev || ((lalm == alev) && (val <= alev + hyst)))) {
-        if (recGblSetSevr(prec, LOW_ALARM, asev))
-            prec->lalm = alev;
-        return;
-    }
+            /* The sign of afvl indicates whether the result should be
+             * rounded up or down.  This gives the filter hysteresis.
+             * If afvl > 0 the floor() function rounds to a lower alarm
+             * level, otherwise to a higher.
+             */
+            afvl = alpha * afvl +
+                   ((afvl > 0) ? (1 - alpha) : (alpha - 1)) * alarmRange;
+            if (afvl - floor(afvl) > THRESHOLD)
+                afvl = -afvl; /* reverse rounding */
 
-    /* we get here only if val is out of alarm by at least hyst */
-    prec->lalm = val;
-    return;
+            alarmRange = abs((int)floor(afvl));
+            switch (alarmRange) {
+            case range_Hihi:
+                asev = prec->hhsv;
+                alev = prec->hihi;
+                break;
+            case range_High:
+                asev = prec->hsv;
+                alev = prec->high;
+                break;
+            case range_Normal:
+                asev = NO_ALARM;
+                break;
+            case range_Low:
+                asev = prec->lsv;
+                alev = prec->low;
+                break;
+            case range_Lolo:
+                asev = prec->llsv;
+                alev = prec->lolo;
+                break;
+            }
+        }
+    }
+    prec->afvl = afvl;
+
+    if (asev) {
+        /* Report alarm condition, store LALM for future HYST calculations */
+        if (recGblSetSevr(prec, range_stat[alarmRange], asev))
+            prec->lalm = alev;
+    } else {
+        /* No alarm condition, reset LALM */
+        prec->lalm = val;
+    }
 }
 
 static void convert(aiRecord *prec)

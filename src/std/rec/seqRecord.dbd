@@ -231,3 +231,6 @@ recordtype(seq) {
 		interest(1)
 	}
 }
+
+variable(seqDLYprecision, int)
+variable(seqDLYlimit, double)

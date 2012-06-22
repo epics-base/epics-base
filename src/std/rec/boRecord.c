@@ -51,13 +51,13 @@ static long process(boRecord *);
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
-#define get_units NULL
+static long get_units(DBADDR *, char *);
 static long get_precision(DBADDR *, long *);
 static long get_enum_str(DBADDR *, char *);
 static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
 static long put_enum_str(DBADDR *, char *);
 #define get_graphic_double NULL
-#define get_control_double NULL
+static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
 
 rset boRSET={
@@ -81,6 +81,11 @@ rset boRSET={
 	get_alarm_double
 };
 epicsExportAddress(rset,boRSET);
+
+int boHIGHprecision = 2;
+epicsExportAddress(int, boHIGHprecision);
+double boHIGHlimit = 100000;
+epicsExportAddress(double, boHIGHlimit);
 
 struct bodset { /* binary output dset */
 	long		number;
@@ -268,12 +273,31 @@ static long process(boRecord *prec)
 	return(status);
 }
 
+#define indexof(field) boRecord##field
+
+static long get_units(DBADDR *paddr, char *units)
+{
+    if(dbGetFieldIndex(paddr) == indexof(HIGH))
+        strcpy(units, "s");
+    return(0);
+}
+
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    boRecord	*prec=(boRecord *)paddr->precord;
+    if(dbGetFieldIndex(paddr) == indexof(HIGH))
+        *precision = boHIGHprecision;
+    else
+        recGblGetPrec(paddr,precision);
+    return(0);
+}
 
-    if(paddr->pfield == (void *)&prec->high) *precision=2;
-    else recGblGetPrec(paddr,precision);
+static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+{
+    if(dbGetFieldIndex(paddr) == indexof(HIGH)) {
+        pcd->lower_ctrl_limit = 0.0;
+        pcd->upper_ctrl_limit = boHIGHlimit;
+    } else
+        recGblGetControlDouble(paddr,pcd);
     return(0);
 }
 
@@ -285,7 +309,7 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
 
 
     index = dbGetFieldIndex(paddr);
-    if(index!=boRecordVAL) {
+    if(index!=indexof(VAL)) {
 	strcpy(pstring,"Illegal_Value");
     } else if(*pfield==0) {
 	strncpy(pstring,prec->znam,sizeof(prec->znam));

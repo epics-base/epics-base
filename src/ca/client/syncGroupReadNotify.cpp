@@ -58,7 +58,7 @@ syncGroupReadNotify * syncGroupReadNotify::factory (
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList, 
     struct CASG & sg, chid chan, void * pValueIn )
 {
-    return new ( freeList ) // X aCC 930
+    return new ( freeList )
         syncGroupReadNotify ( sg, chan, pValueIn );
 }
 
@@ -120,13 +120,6 @@ void syncGroupReadNotify::show (
         ::printf ( "pending sg op: magic=%u sg=%p\n",
             this->magic, static_cast < void * > ( & this->sg ) );
     }
-}
-
-void * syncGroupReadNotify::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void syncGroupReadNotify::operator delete ( void * )

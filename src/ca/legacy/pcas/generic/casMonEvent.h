@@ -49,7 +49,6 @@ public:
 private:
     class casMonitor & monitor;
 	smartConstGDDPointer pValue;
-    void * operator new ( size_t );
     void operator delete ( void * );
 	caStatus cbFunc ( 
         casCoreClient &, 

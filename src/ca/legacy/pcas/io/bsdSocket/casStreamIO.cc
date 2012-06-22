@@ -168,7 +168,7 @@ outBufClient::flushCondition casStreamIO::osdSend ( const char *pInBuf, bufSizeT
 
 // casStreamIO::osdRecv()
 inBufClient::fillCondition
-casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes, // X aCC 361
+casStreamIO::osdRecv ( char * pInBuf, bufSizeT nBytes,
                       bufSizeT & nBytesActual )
 {
     int nchars;
@@ -250,7 +250,7 @@ void casStreamIO::xSetNonBlocking()
 	int status;
 	osiSockIoctl_t yes = true;
 
-	status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
+	status = socket_ioctl(this->sock, FIONBIO, &yes);
 	if (status>=0) {
 		this->blockingFlag = xIsntBlocking;
 	}

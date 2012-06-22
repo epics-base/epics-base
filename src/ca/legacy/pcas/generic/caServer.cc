@@ -65,7 +65,7 @@ pvAttachReturn caServer::pvAttach ( const casCtx &ctx, const char *pAliasName )
 	return this->createPV ( ctx, pAliasName );
 }
 
-casEventMask caServer::registerEvent (const char *pName) // X aCC 361
+casEventMask caServer::registerEvent (const char *pName)
 {
 	if (this->pCAS) {
 		return this->pCAS->registerEvent(pName);
@@ -97,7 +97,7 @@ void caServer::setDebugLevel (unsigned level)
 	}
 }
 
-unsigned caServer::getDebugLevel () const // X aCC 361
+unsigned caServer::getDebugLevel () const
 {
     if (pCAS) {
         return this->pCAS->getDebugLevel();
@@ -108,7 +108,7 @@ unsigned caServer::getDebugLevel () const // X aCC 361
     }
 }
 
-casEventMask caServer::valueEventMask () const // X aCC 361
+casEventMask caServer::valueEventMask () const
 {
     if (pCAS) {
         return this->pCAS->valueEventMask();
@@ -119,7 +119,7 @@ casEventMask caServer::valueEventMask () const // X aCC 361
     }
 }
 
-casEventMask caServer::logEventMask () const // X aCC 361
+casEventMask caServer::logEventMask () const
 {
     if (pCAS) {
         return this->pCAS->logEventMask();
@@ -130,7 +130,7 @@ casEventMask caServer::logEventMask () const // X aCC 361
     }
 }
 
-casEventMask caServer::alarmEventMask () const // X aCC 361
+casEventMask caServer::alarmEventMask () const
 {
     if ( pCAS ) {
         return this->pCAS->alarmEventMask ();
@@ -146,7 +146,7 @@ class epicsTimer & caServer::createTimer ()
     return fileDescriptorManager.createTimer ();
 }
 
-unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
+unsigned caServer::subscriptionEventsProcessed () const
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsProcessed ();
@@ -156,7 +156,7 @@ unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
     }
 }
 
-unsigned caServer::subscriptionEventsPosted () const // X aCC 361
+unsigned caServer::subscriptionEventsPosted () const
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsPosted ();

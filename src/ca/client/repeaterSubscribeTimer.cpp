@@ -64,7 +64,7 @@ void repeaterSubscribeTimer::shutdown (
 }
 
 epicsTimerNotify::expireStatus repeaterSubscribeTimer::
-    expire ( const epicsTime & /* currentTime */ )  // X aCC 361
+    expire ( const epicsTime & /* currentTime */ )
 {
     static const unsigned nTriesToMsg = 50;
     if ( this->attempts > nTriesToMsg && ! this->once ) {

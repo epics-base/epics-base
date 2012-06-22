@@ -221,13 +221,6 @@ void timer::show ( unsigned int level ) const
     }
 }
 
-void * timer::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
-
 void timer::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
@@ -237,13 +230,6 @@ void timer::operator delete ( void * )
     // no undefined symbols.
     errlogPrintf ( "%s:%d this compiler is confused about placement delete - memory was probably leaked",
         __FILE__, __LINE__ );
-}
-
-void * epicsTimerForC::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void epicsTimerForC::operator delete ( void * )

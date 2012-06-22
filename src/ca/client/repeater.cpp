@@ -178,7 +178,7 @@ bool repeaterClient::connect ()
     return true;
 }
 
-bool repeaterClient::sendConfirm () // X aCC 361
+bool repeaterClient::sendConfirm ()
 {
     int status;
 
@@ -204,7 +204,7 @@ bool repeaterClient::sendConfirm () // X aCC 361
     }
 }
 
-bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize ) // X aCC 361
+bool repeaterClient::sendMessage ( const void *pBuf, unsigned bufSize )
 {
     int status;
 
@@ -243,13 +243,6 @@ repeaterClient::~repeaterClient ()
     epicsUInt16 port = ntohs ( this->from.ia.sin_port );
     debugPrintf ( ( "Deleted client %u\n", port ) );
 #endif
-}
-
-void * repeaterClient::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void repeaterClient::operator delete ( void * )
@@ -304,7 +297,7 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
     return false;
 }
 
-bool repeaterClient::verify ()  // X aCC 361
+bool repeaterClient::verify ()
 {
     SOCKET tmpSock;
     bool success = makeSocket ( this->port (), false, & tmpSock );

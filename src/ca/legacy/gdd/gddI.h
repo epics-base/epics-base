@@ -79,12 +79,12 @@ inline int gdd::isLocalDataFormat(void) const { return !(flags&GDD_NET_MASK); }
 inline int gdd::isNetworkDataFormat(void) const
 	{ return !isLocalDataFormat() || aitLocalNetworkDataFormatSame; }
 
-inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; } // X aCC 818
-inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; } // X aCC 818
-inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; } // X aCC 818
-inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; } // X aCC 818
-inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; } // X aCC 818
-inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; } // X aCC 818
+inline void gdd::markConstant(void)		{ flags|=GDD_CONSTANT_MASK; }
+inline void gdd::markFlat(void)			{ flags|=GDD_FLAT_MASK; }
+inline void gdd::markManaged(void)		{ flags|=GDD_MANAGED_MASK; }
+inline void gdd::markUnmanaged(void)	{ flags&=~GDD_MANAGED_MASK; }
+inline void gdd::markLocalDataFormat(void)		{ flags&=~GDD_NET_MASK; }
+inline void gdd::markNotLocalDataFormat(void)	{ flags|=GDD_NET_MASK; }
 
 inline void gdd::getTimeStamp(struct timespec* const ts) const { time_stamp.get(*ts); }
 inline void gdd::setTimeStamp(const struct timespec* const ts) { time_stamp=*ts; }
@@ -132,7 +132,7 @@ inline gddStatus gdd::noReferencing(void)
 		gddAutoPrint("gdd::noReferencing()",gddErrorNotAllowed);
 		rc=gddErrorNotAllowed;
 	}
-	else			flags|=GDD_NOREF_MASK; // X aCC 818
+	else			flags|=GDD_NOREF_MASK;
 	return rc;
 }
 inline gddStatus gdd::reference(void) const
@@ -148,7 +148,7 @@ inline gddStatus gdd::reference(void) const
         rc = gddErrorNotAllowed;
     }
     else if ( this->ref_cnt < 0xffffffff ) {
-        this->ref_cnt++; // X aCC 818
+        this->ref_cnt++;
     }
     else {
         fprintf(stderr,"gdd reference count overflow!!\n");
@@ -399,10 +399,10 @@ inline void gdd::get(aitInt8* d) const
 	if(primitiveType()==aitEnumString && dim==0)
 	{
 		aitString* str = (aitString*)dataAddress();
-		strcpy((char*)d,str->string()); // X aCC 392
+		strcpy((char*)d,str->string());
 	}
 	else if(primitiveType()==aitEnumFixedString && dim==0)
-		strcpy((char*)d,data.FString->fixed_string); // X aCC 392
+		strcpy((char*)d,data.FString->fixed_string);
 	else
 		aitConvert(aitEnumInt8,d,primitiveType(),dataPointer(),
 			getDataSizeElements());

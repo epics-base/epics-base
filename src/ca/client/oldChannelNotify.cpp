@@ -159,13 +159,6 @@ void oldChannelNotify::writeException (
         __FILE__, __LINE__, *this, type, count, CA_OP_PUT );
 }
 
-void * oldChannelNotify::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
-
 void oldChannelNotify::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if
@@ -638,7 +631,7 @@ arrayElementCount epicsShareAPI ca_element_count ( chid pChan )
 /*
  * ca_state ()
  */
-enum channel_state epicsShareAPI ca_state ( chid pChan ) // X aCC 361
+enum channel_state epicsShareAPI ca_state ( chid pChan )
 {
     epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
     if ( pChan->io.connected ( guard ) ) {

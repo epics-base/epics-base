@@ -1629,7 +1629,7 @@ caStatus casStrmClient::createChanResponse (
     if ( ! pvar.getPV()->pPVI ) {
         // @#$!* Tornado 2 Cygnus GNU compiler bugs
 #       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-            pvar.getPV()->pPVI = new ( std::nothrow ) // X aCC 930
+            pvar.getPV()->pPVI = new ( std::nothrow )
                         casPVI ( *pvar.getPV() );
 #       else
             try {
@@ -1678,7 +1678,7 @@ caStatus casStrmClient::createChanResponse (
     if ( ! pChan->pChanI ) {
         // @#$!* Tornado 2 Cygnus GNU compiler bugs
 #       if ! defined (__GNUC__) || __GNUC__ > 2 || ( __GNUC__ == 2 && __GNUC_MINOR__ >= 92 )
-            pChan->pChanI = new ( std::nothrow ) // X aCC 930
+            pChan->pChanI = new ( std::nothrow )
                 casChannelI ( * this, *pChan, 
                     * pvar.getPV()->pPVI, hdr.m_cid );
 #       else
@@ -1848,7 +1848,7 @@ caStatus casStrmClient::privateCreateChanResponse (
     assert ( hdr.m_cid == chan.getCID() );
     status = this->out.copyInHeader ( CA_PROTO_CREATE_CHAN, 0,
         static_cast <ca_uint16_t> ( nativeTypeDBR ), 
-        static_cast <ca_uint32_t> ( nativeCount ), // X aCC 392
+        static_cast <ca_uint32_t> ( nativeCount ),
         chan.getCID(), chan.getSID(), 0 );
     if ( status != S_cas_success ) {
         this->out.popCtx ( outctx );
@@ -2150,7 +2150,7 @@ void casStrmClient::casChannelDestroyFromInterfaceNotify (
     }
 
     class channelDestroyEvent * pEvent = 
-        new ( std::nothrow ) class channelDestroyEvent ( // X aCC 930
+        new ( std::nothrow ) class channelDestroyEvent (
             immediateUninstallNeeded ? & chan : 0,
             chan.getSID() );
     if ( pEvent ) {

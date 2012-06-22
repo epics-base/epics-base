@@ -44,7 +44,7 @@ public:
     virtual void release ( void * ) = 0; 
 };
 
-class wireSendAdapter { // X aCC 655
+class wireSendAdapter {
 public:
     virtual unsigned sendBytes ( const void * pBuf, 
         unsigned nBytesInBuf, 
@@ -65,7 +65,7 @@ struct statusWireIO {
     swioCircuitState circuitState;
 };
 
-class wireRecvAdapter { // X aCC 655
+class wireRecvAdapter {
 public:
     virtual void recvBytes ( void * pBuf, 
         unsigned nBytesInBuf, statusWireIO & ) = 0;
@@ -114,7 +114,6 @@ private:
     unsigned nextWriteIndex;
     unsigned nextReadIndex;
     epicsUInt8 buf [ comBufSize ];
-    void * operator new ( size_t size );
     void operator delete ( void * );
     template < class T >
     bool push ( const T * ); // disabled

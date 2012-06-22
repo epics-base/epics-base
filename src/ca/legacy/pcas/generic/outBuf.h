@@ -45,7 +45,7 @@ private:
 	bufSizeT stack;
 };
 
-class outBufClient {            // X aCC 655
+class outBufClient {
 public:
     enum flushCondition { 
         flushNone = 0, 

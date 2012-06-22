@@ -44,7 +44,6 @@ private:
     unsigned ipAddr;
 	ipIgnoreEntry ( const ipIgnoreEntry & );
 	ipIgnoreEntry & operator = ( const ipIgnoreEntry & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

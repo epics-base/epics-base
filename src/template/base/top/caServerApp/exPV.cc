@@ -107,7 +107,7 @@ caStatus exPV::update ( const gdd & valueIn )
 // exScanTimer::expire ()
 //
 epicsTimerNotify::expireStatus
-exPV::expire ( const epicsTime & /*currentTime*/ ) // X aCC 361
+exPV::expire ( const epicsTime & /*currentTime*/ )
 {
     this->scan();
     if ( this->scanOn && this->getScanPeriod() > 0.0 ) {

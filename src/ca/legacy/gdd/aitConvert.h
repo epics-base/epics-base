@@ -114,15 +114,15 @@ inline void aitFromNetOrder32(aitUint32* dest,aitUint32* src)
 inline void aitToNetOrder64(aitUint64* dest, aitUint64* src)
 {
 	aitUint32 ait_temp_var_;
-	ait_temp_var_=(aitUint32)htonl(src[1]); // X aCC 392
-	dest[1]=(aitUint32)htonl(src[0]); // X aCC 392
+	ait_temp_var_=(aitUint32)htonl(src[1]);
+	dest[1]=(aitUint32)htonl(src[0]);
 	dest[0]=ait_temp_var_;
 }
 inline void aitFromNetOrder64(aitUint64* dest, aitUint64* src)
 {
 	aitUint32 ait_temp_var_;
-	ait_temp_var_=(aitUint32)ntohl(src[1]); // X aCC 392
-	dest[1]=(aitUint32)ntohl(src[0]); // X aCC 392
+	ait_temp_var_=(aitUint32)ntohl(src[1]);
+	dest[1]=(aitUint32)ntohl(src[0]);
 	dest[0]=ait_temp_var_;
 }
 

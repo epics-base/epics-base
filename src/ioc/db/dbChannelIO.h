@@ -111,7 +111,6 @@ private:
         epicsGuard < epicsMutex > & ) const;
 	dbChannelIO ( const dbChannelIO & );
 	dbChannelIO & operator = ( const dbChannelIO & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

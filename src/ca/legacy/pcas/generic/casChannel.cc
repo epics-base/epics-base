@@ -37,7 +37,7 @@ void casChannel::destroyRequest ()
     this->destroy ();
 }
 
-casPV * casChannel::getPV () // X aCC 361
+casPV * casChannel::getPV ()
 {
     if ( this->pChanI ) {
 	    casPVI & pvi = this->pChanI->getPVI ();

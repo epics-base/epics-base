@@ -296,7 +296,7 @@ inline unsigned resTable<T,ID>::resTableBitMask ( const unsigned nBits )
 // remove a res from the resTable
 //
 template <class T, class ID>
-T * resTable<T,ID>::remove ( const ID & idIn ) // X aCC 361
+T * resTable<T,ID>::remove ( const ID & idIn )
 {
     if ( this->pTable ) {
         // search list for idIn and remove the first match
@@ -341,7 +341,7 @@ void resTable<T,ID>::removeAll ( tsSLList<T> & destination )
 // resTable::lookup ()
 //
 template <class T, class ID>
-inline T * resTable<T,ID>::lookup ( const ID & idIn ) const // X aCC 361
+inline T * resTable<T,ID>::lookup ( const ID & idIn ) const
 {
     if ( this->pTable ) {
         tsSLList<T> & list = this->pTable [ this->hash ( idIn ) ];
@@ -514,7 +514,7 @@ inline unsigned resTable<T,ID>::numEntriesInstalled () const
 }
 
 template <class T, class ID>
-inline unsigned resTable<T,ID>::tableSize () const // X aCC 361
+inline unsigned resTable<T,ID>::tableSize () const
 {
     if ( this->pTable ) {
         return ( this->hashIxMask + 1 ) + this->nextSplitIndex;
@@ -1010,7 +1010,7 @@ intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::intId (const T &idIn)
 // intId::operator == ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == // X aCC 361
+inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator ==
         (const intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH> &idIn) const
 {
     return this->id == idIn.id;
@@ -1020,7 +1020,7 @@ inline bool intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::operator == // X aCC 361
 // intId::getId ()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const // X aCC 361
+inline const T intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::getId () const
 {
     return this->id;
 }
@@ -1067,7 +1067,7 @@ inline resTableIndex integerHash ( unsigned MIN_INDEX_WIDTH,
 // intId::hash()
 //
 template <class T, unsigned MIN_INDEX_WIDTH, unsigned MAX_ID_WIDTH>
-inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const // X aCC 361
+inline resTableIndex intId<T, MIN_INDEX_WIDTH, MAX_ID_WIDTH>::hash () const
 {
     return integerHash ( MIN_INDEX_WIDTH, MAX_ID_WIDTH, this->id );
 }

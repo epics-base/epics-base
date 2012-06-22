@@ -568,7 +568,7 @@ bool cac::findOrCreateVirtCircuit (
 }
 
 void cac::transferChanToVirtCircuit ( 
-    unsigned cid, unsigned sid, // X aCC 431
+    unsigned cid, unsigned sid,
     ca_uint16_t typeCode, arrayElementCount count, 
     unsigned minorVersionNumber, const osiSockAddr & addr,
     const epicsTime & currentTime )
@@ -787,7 +787,7 @@ void cac::recycleSubscription (
 netSubscription & cac::subscriptionRequest ( 
     epicsGuard < epicsMutex > & guard, 
     nciu & chan, privateInterfaceForIO & privChan,
-    unsigned type, // X aCC 361
+    unsigned type,
     arrayElementCount nElem, unsigned mask, 
     cacStateNotify & notifyIn,
     bool chanIsInstalled )
@@ -1021,7 +1021,7 @@ bool cac::readExcep ( callbackManager &, tcpiiu &,
 }
 
 bool cac::writeExcep ( 
-    callbackManager & mgr, // X aCC 431
+    callbackManager & mgr,
     tcpiiu &, const caHdrLargeArray & hdr, 
     const char * pCtx, unsigned status )
 {
@@ -1093,7 +1093,7 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
 }
 
 bool cac::accessRightsRespAction (
-    callbackManager & mgr, tcpiiu &, // X aCC 431
+    callbackManager & mgr, tcpiiu &,
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBody */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1110,7 +1110,7 @@ bool cac::accessRightsRespAction (
 }
 
 bool cac::createChannelRespAction (
-    callbackManager & mgr, tcpiiu & iiu, // X aCC 431
+    callbackManager & mgr, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBody */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -1157,7 +1157,7 @@ bool cac::verifyAndDisconnectChan (
 }
 
 void cac::disconnectChannel (
-        epicsGuard < epicsMutex > & cbGuard, // X aCC 431
+        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );

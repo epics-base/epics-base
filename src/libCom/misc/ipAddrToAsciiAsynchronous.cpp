@@ -61,7 +61,6 @@ private:
     bool pending;
     void ipAddrToAscii ( const osiSockAddr &, ipAddrToAsciiCallBack & );
     void release (); 
-    void * operator new ( size_t ); 
     void operator delete ( void * );
     friend class ipAddrToAsciiEnginePrivate;
     ipAddrToAsciiTransactionPrivate & operator = ( const ipAddrToAsciiTransactionPrivate & );
@@ -271,13 +270,6 @@ inline void ipAddrToAsciiTransactionPrivate::operator delete ( void * pTrans, ts
     freeList.release ( pTrans );
 }
 #endif
-
-void * ipAddrToAsciiTransactionPrivate::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
 
 void ipAddrToAsciiTransactionPrivate::operator delete ( void * )
 {

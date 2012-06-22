@@ -297,7 +297,7 @@ void casDGIntfIO::xSetNonBlocking()
 {
     osiSockIoctl_t yes = true;
     
-    int status = socket_ioctl ( this->sock, FIONBIO, &yes ); // X aCC 392
+    int status = socket_ioctl ( this->sock, FIONBIO, &yes );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
@@ -307,7 +307,7 @@ void casDGIntfIO::xSetNonBlocking()
 
     if ( this->bcastRecvSock != INVALID_SOCKET ) {
         yes = true;
-        int status = socket_ioctl ( this->bcastRecvSock, // X aCC 392
+        int status = socket_ioctl ( this->bcastRecvSock,
                                     FIONBIO, &yes );
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -319,7 +319,7 @@ void casDGIntfIO::xSetNonBlocking()
 }
 
 inBufClient::fillCondition
-casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
+casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size,
     fillParameter parm, bufSizeT & actualSize, caNetAddr & fromOut )
 {
     int status;
@@ -366,7 +366,7 @@ casDGIntfIO::osdRecv ( char * pBufIn, bufSizeT size, // X aCC 361
 }
 
 outBufClient::flushCondition
-casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size, // X aCC 361
+casDGIntfIO::osdSend ( const char * pBufIn, bufSizeT size,
                       const caNetAddr & to )
 {
     int	status;

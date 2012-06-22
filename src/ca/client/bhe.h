@@ -87,7 +87,6 @@ private:
                      const epicsTime & currentTime );
 	bhe ( const bhe & );
 	bhe & operator = ( const bhe & );
-    void * operator new ( size_t size );
     epicsShareFunc void operator delete ( void * );
 };
 

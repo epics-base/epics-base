@@ -94,13 +94,6 @@ void dbSubscriptionIO::channelDeleteException (
         this->chan.pName(guard), this->type, this->count );
 }
 
-void * dbSubscriptionIO::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
-}
-
 void dbSubscriptionIO::operator delete ( void * )
 {
     // Visual C++ .net appears to require operator delete if

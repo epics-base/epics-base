@@ -198,7 +198,7 @@ void casIntfIO::setNonBlocking()
     int status;
     osiSockIoctl_t yes = true;
  
-    status = socket_ioctl(this->sock, FIONBIO, &yes); // X aCC 392
+    status = socket_ioctl(this->sock, FIONBIO, &yes);
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );

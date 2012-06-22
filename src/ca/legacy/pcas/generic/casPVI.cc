@@ -317,7 +317,7 @@ casMonitor * casPVI::removeMonitor (
     return pMon;
 }
 
-caServer *casPVI::getExtServer () const // X aCC 361
+caServer *casPVI::getExtServer () const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 	if ( this->pCAS ) {
@@ -415,7 +415,7 @@ void casPVI::uninstallIO (
 	this->ioBlockedList::signal();
 }
 
-caStatus  casPVI::bestDBRType ( unsigned & dbrType ) // X aCC 361
+caStatus  casPVI::bestDBRType ( unsigned & dbrType )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 	aitEnum bestAIT = this->bestExternalType ();

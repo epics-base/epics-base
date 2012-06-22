@@ -82,7 +82,6 @@ private:
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
 	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
     virtual ~dbPutNotifyBlocker ();
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

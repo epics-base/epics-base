@@ -448,7 +448,7 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn,
 //
 // casDGClient::xRecv ()
 //
-inBufClient::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv, // X aCC 361
+inBufClient::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRecv,
         fillParameter parm, bufSizeT &nByesRecv)
 {
     const char *pAfter = pBufIn + nBytesToRecv;

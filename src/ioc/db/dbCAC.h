@@ -62,7 +62,7 @@ class dbChannelIO;
 class dbPutNotifyBlocker;
 class dbSubscriptionIO;
 
-class dbBaseIO                  //  X aCC 655
+class dbBaseIO
     : public chronIntIdRes < dbBaseIO > {
 public:
     virtual dbSubscriptionIO * isSubscription () = 0;
@@ -110,7 +110,6 @@ private:
     dbSubscriptionIO ( const dbSubscriptionIO & );
     dbSubscriptionIO & operator = ( const dbSubscriptionIO & );
     virtual ~dbSubscriptionIO ();
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

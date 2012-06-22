@@ -43,7 +43,7 @@
 class epicsMutex;
 class cacContextNotify;
 
-class repeaterTimerNotify { // X aCC 655
+class repeaterTimerNotify {
 public:
     virtual ~repeaterTimerNotify () = 0;
     virtual void repeaterRegistrationMessage ( 

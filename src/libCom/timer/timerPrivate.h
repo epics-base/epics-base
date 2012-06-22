@@ -60,7 +60,6 @@ private:
     // because if I declare placement new and delete, but
     // comment out the placement delete definition there are
     // no undefined symbols.
-    void * operator new ( size_t size ); 
     void operator delete ( void * ); 
     friend class timerQueue;
 };
@@ -83,7 +82,6 @@ private:
     // because if I declare placement new and delete, but
     // comment out the placement delete definition there are
     // no undefined symbols.
-    void * operator new ( size_t size ); 
     void operator delete ( void * ); 
     friend class timerQueue;
 };
@@ -118,7 +116,7 @@ private:
     friend struct epicsTimerForC;
 };
 
-class timerQueueActiveMgrPrivate { // X aCC 655
+class timerQueueActiveMgrPrivate {
 public:
     timerQueueActiveMgrPrivate ();
 protected:

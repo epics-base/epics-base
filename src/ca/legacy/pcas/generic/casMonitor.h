@@ -39,7 +39,7 @@
 class casMonitor;
 class casClientMutex;
 
-class casMonitorCallbackInterface { // X aCC 655
+class casMonitorCallbackInterface {
 public:
 	virtual caStatus casMonitorCallBack ( 
         epicsGuard < casClientMutex > &, casMonitor &,
@@ -87,7 +87,6 @@ private:
 	unsigned char nPend;
     bool destroyPending;
 	bool ovf;
-    void * operator new ( size_t );
     void operator delete ( void * );
 	casMonitor ( const casMonitor & );
 	casMonitor & operator = ( const casMonitor & );

@@ -368,7 +368,7 @@ void comQueSend::insertRequestWithPayLoad (
         // the above checks verify that the total size
         // is lest that 0xffffffff
         size = static_cast < ca_uint32_t > 
-            ( dbr_size_n ( dataType, nElem ) ); // X aCC 392
+            ( dbr_size_n ( dataType, nElem ) );
         payloadSize = CA_MESSAGE_ALIGN ( size );
         this->insertRequestHeader ( request, payloadSize, 
             static_cast <ca_uint16_t> ( dataType ), 

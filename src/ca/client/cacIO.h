@@ -69,7 +69,7 @@ typedef unsigned long arrayElementCount;
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacWriteNotify { // X aCC 655
+class epicsShareClass cacWriteNotify {
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion ( epicsGuard < epicsMutex > & ) = 0;
@@ -82,7 +82,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacReadNotify { // X aCC 655
+class epicsShareClass cacReadNotify {
 public:
     virtual ~cacReadNotify () = 0;
     virtual void completion ( 
@@ -97,7 +97,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacStateNotify { // X aCC 655
+class epicsShareClass cacStateNotify {
 public:
     virtual ~cacStateNotify () = 0;
     virtual void current ( 
@@ -131,7 +131,7 @@ private:
     bool f_operatorConfirmationRequest:1;
 };
 
-class epicsShareClass cacChannelNotify { // X aCC 655
+class epicsShareClass cacChannelNotify {
 public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
@@ -258,7 +258,7 @@ private:
 	cacChannel & operator = ( const cacChannel & );
 };
 
-class epicsShareClass cacContext { // X aCC 655
+class epicsShareClass cacContext {
 public:
     virtual ~cacContext ();
     virtual cacChannel & createChannel ( 
@@ -277,7 +277,7 @@ public:
         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
 };
 
-class epicsShareClass cacContextNotify { // X aCC 655
+class epicsShareClass cacContextNotify {
 public:
     virtual ~cacContextNotify () = 0;
     virtual cacContext & createNetworkContext ( 
@@ -297,7 +297,7 @@ public:
 // **** Lock Hierarchy ****
 // callbackControl must be taken before mutualExclusion if both are held at
 // the same time
-class epicsShareClass cacService { // X aCC 655
+class epicsShareClass cacService {
 public:
     virtual ~cacService () = 0;
     virtual cacContext & contextCreate ( 

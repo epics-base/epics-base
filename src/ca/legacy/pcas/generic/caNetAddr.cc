@@ -71,7 +71,7 @@ bool caNetAddr::isValid () const
     return this->type != casnaUDF;
 }
 
-bool caNetAddr::operator == (const caNetAddr &rhs) const // X aCC 361
+bool caNetAddr::operator == (const caNetAddr &rhs) const
 {
     if ( this->type != rhs.type ) {
         return false;

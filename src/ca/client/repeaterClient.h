@@ -64,7 +64,6 @@ private:
     osiSockAddr from;
     SOCKET sock;
     unsigned short port () const;
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

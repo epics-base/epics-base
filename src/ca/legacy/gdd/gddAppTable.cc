@@ -61,21 +61,6 @@ gddApplicationTypeTable::gddApplicationTypeTable(aitUint32 tot)
 	GenerateTypes();
 }
 
-#if 0
-void* operator new(size_t x)
-{
-	void* v = (void*)malloc(x);
-	fprintf(stderr,"%8.8x In operator new %d\n",v,(int)x);
-	return v;
-}
-
-void operator delete(void* x)
-{
-	fprintf(stderr,"%8.8x In operator delete\n",x);
-	free((char*)x);
-}
-#endif
-
 gddApplicationTypeTable::~gddApplicationTypeTable(void)
 {
 	unsigned i,j;

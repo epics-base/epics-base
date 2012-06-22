@@ -106,7 +106,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 
     {
         osiSockIoctl_t yes = true;
-        int status = socket_ioctl ( this->sock, // X aCC 392
+        int status = socket_ioctl ( this->sock,
                                     FIONBIO, & yes);
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -126,7 +126,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         memset ( (char *)&addr, 0 , sizeof ( addr ) );
         addr.ia.sin_family = AF_INET;
         addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        addr.ia.sin_port = htons ( PORT_ANY ); // X aCC 818
+        addr.ia.sin_port = htons ( PORT_ANY );
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -277,7 +277,7 @@ int ca_client_context :: printFormated (
 }
 
 int ca_client_context :: varArgsPrintFormated ( 
-    const char *pformat, va_list args ) const // X aCC 361
+    const char *pformat, va_list args ) const
 {
     caPrintfFunc * pFunc;
     {

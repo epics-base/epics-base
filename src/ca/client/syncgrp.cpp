@@ -23,7 +23,7 @@
 /*
  * ca_sg_create()
  */
-extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
+extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid )
 {
     ca_client_context * pcac;
     int caStatus;
@@ -143,7 +143,7 @@ extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 /*
  * ca_sg_test
  */
-extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
+extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );

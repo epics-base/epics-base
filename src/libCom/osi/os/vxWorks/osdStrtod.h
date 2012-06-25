@@ -9,7 +9,15 @@
  * This header fragment is intended to be included as part of epicsString.h
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * epicsStrtod() for systems with broken strtod() routine
  */
 epicsShareFunc double epicsStrtod(const char *str, char **endp); 
+
+#ifdef __cplusplus
+}
+#endif

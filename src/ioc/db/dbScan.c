@@ -600,7 +600,7 @@ static void initPeriodic(void)
 
         ppsl->scan_list.lock = epicsMutexMustCreate();
         ellInit(&ppsl->scan_list.list);
-        epicsScanDouble(pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC],
+        (void) epicsScanDouble(pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC],
                         &ppsl->period);
         ppsl->scanCtl = ctlPause;
         ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);

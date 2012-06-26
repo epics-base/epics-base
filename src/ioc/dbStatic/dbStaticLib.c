@@ -229,7 +229,6 @@ static void finishOutstream(FILE *stream)
 static long setLinkType(DBENTRY *pdbentry)
 {
     DBENTRY	dbEntry;
-    dbFldDes	*pflddes;
     dbRecordType *precordType;
     devSup	*pdevSup;
     DBLINK	*plink;
@@ -273,7 +272,6 @@ static long setLinkType(DBENTRY *pdbentry)
 	link_type = pdevSup->link_type;
     }
 
-    pflddes = pdbentry->pflddes;
     plink = (DBLINK *)pdbentry->pfield;
     if (plink->type == link_type) goto done;
 
@@ -1397,7 +1395,6 @@ long epicsShareAPI dbNextField(DBENTRY *pdbentry,int dctonly)
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes  		*pflddes;
     short		indfield = pdbentry->indfield;
-    long		status;
 
     if(!precordType) return(S_dbLib_recordTypeNotFound);
     indfield++;
@@ -1417,7 +1414,7 @@ long epicsShareAPI dbNextField(DBENTRY *pdbentry,int dctonly)
 		pdbentry->pflddes = pflddes;
 		pdbentry->indfield = indfield;
 		if(precnode) {
-		    status = dbGetFieldAddress(pdbentry);
+		    dbGetFieldAddress(pdbentry);
 		}else {
 		    pdbentry->pfield = NULL;
 		}
@@ -1889,7 +1886,6 @@ long epicsShareAPI dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
     dbRecordType *precordType = pdbentry->precordType;
     dbRecordNode *precnode = pdbentry->precnode;
     const char   *pname = *ppname;
-    char         *precord;
     short        top, bottom, test;
     char         **papsortFldName;
     short        *sortFldInd;
@@ -1898,7 +1894,6 @@ long epicsShareAPI dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
 
     if (!precordType) return S_dbLib_recordTypeNotFound;
     if (!precnode) return S_dbLib_recNotFound;
-    precord = precnode->precord;
     papsortFldName = precordType->papsortFldName;
     sortFldInd = precordType->sortFldInd;
 
@@ -1974,12 +1969,10 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
     char	*message;
-    unsigned char cvttype;
     DBLINK 	*plink;
 
     message = getpMessage(pdbentry);
     if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
-    cvttype = pflddes->base;
     switch (pflddes->field_type) {
     case DBF_STRING:
 	if(!pfield) {strcpy(message,"Field not found"); return(message);}

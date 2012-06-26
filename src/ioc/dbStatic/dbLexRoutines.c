@@ -862,11 +862,11 @@ static void dbBreakBody(void)
 	char	*str;
 	
 	str = (char *)popFirstTemp();
-	epicsScanDouble(str, &paBrkInt[i].raw);
+	(void) epicsScanDouble(str, &paBrkInt[i].raw);
 	free(str);
 	
 	str = (char *)popFirstTemp();
-	epicsScanDouble(str, &paBrkInt[i].eng);
+	(void) epicsScanDouble(str, &paBrkInt[i].eng);
 	free(str);
     }
     /* Compute slopes */

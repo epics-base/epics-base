@@ -911,9 +911,6 @@ static const short int yy_chk[1612] =
       390
     } ;
 
-static yy_state_type yy_last_accepting_state;
-static YY_CHAR *yy_last_accepting_cpos;
-
 static yy_state_type yy_state_buf[YY_BUF_SIZE + 2], *yy_state_ptr;
 static YY_CHAR *yy_full_match;
 static int yy_lp;
@@ -961,12 +958,6 @@ void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
 
 #define yy_new_buffer yy_create_buffer
 
-#ifdef __cplusplus
-static int yyinput ( void );
-#else
-static int input ( void );
-#endif
-
 YY_DECL
     {
     yy_state_type yy_current_state;
@@ -975,7 +966,7 @@ YY_DECL
 
 
     static int bracelevel, didadef;
-    int i, indented_code, checking_used, new_xlation;
+    int i, indented_code = false, checking_used = false, new_xlation = false;
     int doing_codeblock = false;
     Char nmdef[MAXLINE], myesc();
 
@@ -2120,74 +2111,6 @@ static void yyunput( YY_CHAR c, YY_CHAR *yy_bp )
      *       macro to now work correctly
      */
     YY_DO_BEFORE_ACTION; /* set up yytext again */
-    }
-
-
-#ifdef __cplusplus
-static int yyinput()
-#else
-static int input(void)
-#endif
-
-    {
-    int c;
-    YY_CHAR *yy_cp = yy_c_buf_p;
-
-    *yy_cp = yy_hold_char;
-
-    if ( *yy_c_buf_p == YY_END_OF_BUFFER_CHAR )
-	{
-	/* yy_c_buf_p now points to the character we want to return.
-	 * If this occurs *before* the EOB characters, then it's a
-	 * valid NUL; if not, then we've hit the end of the buffer.
-	 */
-	if ( yy_c_buf_p < &yy_current_buffer->yy_ch_buf[yy_n_chars] )
-	    /* this was really a NUL */
-	    *yy_c_buf_p = '\0';
-
-	else
-	    { /* need more input */
-	    yytext = yy_c_buf_p;
-	    ++yy_c_buf_p;
-
-	    switch ( yy_get_next_buffer() )
-		{
-		case EOB_ACT_END_OF_FILE:
-		    {
-		    if ( yywrap() )
-			{
-			yy_c_buf_p = yytext + YY_MORE_ADJ;
-			return ( EOF );
-			}
-
-		    YY_NEW_FILE;
-
-#ifdef __cplusplus
-		    return ( yyinput() );
-#else
-		    return ( input() );
-#endif
-		    }
-		    break;
-
-		case EOB_ACT_CONTINUE_SCAN:
-		    yy_c_buf_p = yytext + YY_MORE_ADJ;
-		    break;
-
-		case EOB_ACT_LAST_MATCH:
-#ifdef __cplusplus
-		    YY_FATAL_ERROR( "unexpected last match in yyinput()" );
-#else
-		    YY_FATAL_ERROR( "unexpected last match in input()" );
-#endif
-		}
-	    }
-	}
-
-    c = *yy_c_buf_p;
-    yy_hold_char = *++yy_c_buf_p;
-
-    return ( c );
     }
 
 

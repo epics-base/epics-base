@@ -134,14 +134,12 @@ extern "C" void messageQueueTest(void *parm)
     char cbuf[80];
     int len;
     int pass;
-    int used;
     int want;
 
     epicsMessageQueue *q1 = new epicsMessageQueue(4, 20);
 
     testDiag("Simple single-thread tests:");
     i = 0;
-    used = 0;
     testOk1(q1->pending() == 0);
     while (q1->trySend((void *)msg1, i ) == 0) {
         i++;
@@ -182,7 +180,6 @@ extern "C" void messageQueueTest(void *parm)
 
     testDiag("Test sender timeout:");
     i = 0;
-    used = 0;
     testOk1(q1->pending() == 0);
     while (q1->send((void *)msg1, i, 1.0 ) == 0) {
         i++;

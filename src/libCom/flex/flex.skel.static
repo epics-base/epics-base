@@ -223,10 +223,12 @@ static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file );
 
 #define yy_new_buffer yy_create_buffer
 
+#ifdef yyneed_input
 #ifdef __cplusplus
 static int yyinput ( void );
 #else
 static int input ( void );
+#endif
 #endif
 
 YY_DECL
@@ -565,6 +567,7 @@ static void yyunput( YY_CHAR c, register YY_CHAR *yy_bp )
     }
 
 
+#ifdef yyneed_input
 #ifdef __cplusplus
 static int yyinput( void )
 #else
@@ -631,6 +634,7 @@ static int input( void )
 
     return ( c );
     }
+#endif /* yyneed_input */
 
 
 /* jbk added static in front of func */

@@ -75,7 +75,7 @@ ESCSEQ		\\([^\r\n]|[0-9]{1,3}|x[0-9a-f]{1,2})
 
 %%
     static int bracelevel, didadef;
-    int i, indented_code, checking_used, new_xlation;
+    int i, indented_code = false, checking_used = false, new_xlation = false;
     int doing_codeblock = false;
     Char nmdef[MAXLINE], myesc();
 

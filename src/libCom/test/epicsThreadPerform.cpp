@@ -174,17 +174,16 @@ static epicsThreadPrivate < bool > priv;
 
 static inline void callItTenTimes ()
 {
-    bool *pFlag;
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
-    pFlag = priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
+    (void) priv.get ();
 }
 
 static inline void callItTenTimesSquared ()

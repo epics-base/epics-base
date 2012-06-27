@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -9,19 +9,19 @@
 /* dbScan.c */
 /* tasks and subroutines to scan the database */
 /*
- *      Original Author:        Bob Dalesio
- *      Current Author:         Marty Kraimer
- *      Date:                   07/18/91
+ *      Original Authors: Bob Dalesio & Marty Kraimer
  */
 
-#include <epicsStdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+#include <ctype.h>
 
+#include "epicsStdlib.h"
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "taskwd.h"
@@ -583,25 +583,55 @@ static void periodicTask(void *arg)
 
 static void initPeriodic(void)
 {
-    dbMenu *pmenu;
-    periodic_scan_list *ppsl;
+    dbMenu *pmenu = dbFindMenu(pdbbase, "menuScan");
+    double quantum = epicsThreadSleepQuantum();
     int i;
 
-    pmenu = dbFindMenu(pdbbase, "menuScan");
     if (!pmenu) {
-        epicsPrintf("initPeriodic: menuScan not present\n");
+        errlogPrintf("initPeriodic: menuScan not present\n");
         return;
     }
     nPeriodic = pmenu->nChoice - SCAN_1ST_PERIODIC;
     papPeriodic = dbCalloc(nPeriodic, sizeof(periodic_scan_list*));
     periodicTaskId = dbCalloc(nPeriodic, sizeof(void *));
     for (i = 0; i < nPeriodic; i++) {
-        ppsl = dbCalloc(1, sizeof(periodic_scan_list));
+        periodic_scan_list *ppsl = dbCalloc(1, sizeof(periodic_scan_list));
+        const char *choice = pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC];
+        double number;
+        char *end;
+        int c = 0;
 
         ppsl->scan_list.lock = epicsMutexMustCreate();
         ellInit(&ppsl->scan_list.list);
-        (void) epicsScanDouble(pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC],
-                        &ppsl->period);
+        number = epicsStrtod(choice, &end);
+        while ((c = *end) && isspace(c))
+            ++end;
+        if (number &&
+            (!c || !strcmp(end, "second") || !strcmp(end, "seconds"))) {
+            ppsl->period = number;
+        }
+        else if (number &&
+            (!strcmp(end, "minute") || !strcmp(end, "minutes"))) {
+            ppsl->period = number * 60;
+        }
+        else if (number &&
+            (!strcmp(end, "hour") || !strcmp(end, "hours"))) {
+            ppsl->period = number * 60 * 60;
+        }
+        else if (number &&
+            (!strcmp(end, "Hz") || !strcmp(end, "Hertz"))) {
+            ppsl->period = 1 / number;
+        }
+        else {
+            errlogPrintf("initPeriodic: Bad scan string '%s'\n", choice);
+            ppsl->period = i;
+        }
+        number = ppsl->period / quantum;
+        if ((ppsl->period < 2 * quantum) ||
+            (number / floor(number) > 1.1)) {
+            errlogPrintf("initPeriodic: Scan rate '%s' is not achievable.\n",
+                choice);
+        }
         ppsl->scanCtl = ctlPause;
         ppsl->loopEvent = epicsEventMustCreate(epicsEventEmpty);
 
@@ -615,7 +645,7 @@ static void spawnPeriodic(int ind)
     char taskName[20];
 
     ppsl = papPeriodic[ind];
-    sprintf(taskName, "scan%g", ppsl->period);
+    sprintf(taskName, "scan-%g", ppsl->period);
     periodicTaskId[ind] = epicsThreadCreate(
         taskName, epicsThreadPriorityScanLow + ind,
         epicsThreadGetStackSize(epicsThreadStackBig),

@@ -15,6 +15,35 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New scan rate units</h3>
+
+<p>Scan rates defined in the menuScan.dbd file may now be specified in seconds,
+minutes, hours or Hertz, and plural time units will also be accepted (seconds
+are used if no unit is mentioned in the choice string). At <tt>iocInit</tt> each
+scan rate is compared with the OS's clock tick and a warning printed if the
+rate is too fast or likely to be more than 10% different to the requested rate.
+For example the rates given below are all valid, although non-standard (the
+default menuScan choices that come with Base have not been changed):</p>
+
+<blockquote>
+<pre>menu(menuScan) {
+    choice(menuScanPassive,     "Passive")
+    choice(menuScanEvent,       "Event")
+    choice(menuScanI_O_Intr,    "I/O Intr")
+    choice(menuScan1_hour,      "1 hour")
+    choice(menuScan0_5_hours, "0.5 hours")
+    choice(menuScan15_minutes, "15 minutes")
+    choice(menuScan5_minutes,   "5 minutes")
+    choice(menuScan1_minute,    "1 minute")
+    choice(menuScan10_seconds, "10 seconds")
+    choice(menuScan5_seconds,   "5 seconds")
+    choice(menuScan2_seconds,   "2 seconds")
+    choice(menuScan1_second,    "1 second")
+    choice(menuScan2_Hertz,     "2 Hertz")
+    choice(menuScan5_Hertz,     "5 Hertz")
+    choice(menuScan10_Hertz,   "10 Hz")
+}</pre></blockquote>
+
 <h3>Alarm filtering added to input record types</h3>
 
 <p>The record types ai, calc, longin and mbbi have a new alarm filter added to

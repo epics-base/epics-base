@@ -42,14 +42,12 @@ sub popContext {
 
 sub dieContext {
     my ($msg) = join "\n\t", @_;
-    print "$msg\n" if $msg;
-    die "Context: ", join(' in ', @context), "\n";
+    die "$msg\nContext: ", join(' in ', @context), "\n";
 }
 
 sub warnContext {
     my ($msg) = join "\n\t", @_;
-    print "$msg\n" if $msg;
-    print "Context: ", join(' in ', @context), "\n";
+    print STDERR "$msg\nContext: ", join(' in ', @context), "\n";
 }
 
 

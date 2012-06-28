@@ -89,8 +89,8 @@ static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
         *ival = val;
         break;
     case chfPluginArgBoolean:
-        eval = (int*) ((char*)user + opt->offset);
-        *eval = !!val;
+        sval = (char*) ((char*)user + opt->offset);
+        *sval = !!val;
         break;
     case chfPluginArgDouble:
         dval = (double*) ((char*)user + opt->offset);
@@ -130,7 +130,6 @@ static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
 static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
 {
     epicsInt32 *ival;
-    int *eval;
     double *dval;
     char *sval;
 
@@ -146,8 +145,8 @@ static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
         *ival = val;
         break;
     case chfPluginArgBoolean:
-        eval = (int*) ((char*)user + opt->offset);
-        *eval = val;
+        sval = (char*) ((char*)user + opt->offset);
+        *sval = val;
         break;
     case chfPluginArgDouble:
         dval = (double*) ((char*)user + opt->offset);
@@ -175,7 +174,6 @@ static int store_boolean_value(const chfPluginArgDef *opt, void *user, int val)
 static int store_double_value(const chfPluginArgDef *opt, void *user, double val)
 {
     epicsInt32 *ival;
-    int *eval;
     double *dval;
     char *sval;
     int i;
@@ -199,8 +197,8 @@ static int store_double_value(const chfPluginArgDef *opt, void *user, double val
         *ival = val;
         break;
     case chfPluginArgBoolean:
-        eval = (int*) ((char*)user + opt->offset);
-        *eval = (val != 0.) ? 1 : 0;
+        sval = (char*) ((char*)user + opt->offset);
+        *sval = (val != 0.) ? 1 : 0;
         break;
     case chfPluginArgDouble:
         dval = (double*) ((char*)user + opt->offset);
@@ -259,17 +257,17 @@ static int store_string_value(const chfPluginArgDef *opt, void *user, const char
         *ival = lval;
         break;
     case chfPluginArgBoolean:
-        eval = (int*) ((char*)user + opt->offset);
+        sval = (char*) ((char*)user + opt->offset);
         if (epicsStrnCaseCmp(val, "true", len) == 0) {
-            *eval = 1;
+            *sval = 1;
         } else if (epicsStrnCaseCmp(val, "false", len) == 0) {
-            *eval = 0;
+            *sval = 0;
         } else {
             i = strtol(val, &end, 0);
             if (i > INT_MAX || i < INT_MIN || end == val) {
                 return -1;
             }
-            *eval = !!i;
+            *sval = !!i;
         }
         break;
     case chfPluginArgDouble:

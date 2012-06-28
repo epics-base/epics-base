@@ -65,10 +65,10 @@ typedef enum chfPluginType {
 } chfPluginType;
 
 /*
- * Convert the (long) integer value 'val' to the type named in 'opt->optType'
+ * Convert the (epicsInt32) integer value 'val' to the type named in 'opt->optType'
  * and store the result at 'user + opt->offset'.
  */
-static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
+static int store_integer_value(const chfPluginArgDef *opt, void *user, epicsInt32 val)
 {
     epicsInt32 *ival;
     int *eval;
@@ -98,7 +98,7 @@ static int store_integer_value(const chfPluginArgDef *opt, void *user, long val)
         break;
     case chfPluginArgString:
         sval = ((char*)user + opt->offset);
-        sprintf(buff, "%ld", val);
+        sprintf(buff, "%ld", (long)val);
         if (strlen(buff) > opt->size-1) {
             return -1;
         }
@@ -188,13 +188,11 @@ static int store_double_value(const chfPluginArgDef *opt, void *user, double val
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-#if (LONG_MAX > 0x7fffffff)
-        if (val < -0x80000000L || val > 0x7fffffff) {
+        if (val < INT_MIN || val > INT_MAX) {
             return -1;
         }
-#endif
         ival = (epicsInt32 *) ((char*)user + opt->offset);
-        *ival = val;
+        *ival = (epicsInt32) val;
         break;
     case chfPluginArgBoolean:
         sval = (char*) ((char*)user + opt->offset);
@@ -244,17 +242,14 @@ static int store_string_value(const chfPluginArgDef *opt, void *user, const char
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        lval = strtol(val, &end, 0);
-        /* test for the myriad error conditions which strtol may use */
-        if (lval == LONG_MAX || lval == LONG_MIN
-#if (LONG_MAX > 0x7fffffff)
-            || lval < -0x80000000L || lval > 0x7fffffff
-#endif
-            || end == val) {
-            return -1;
-        }
         ival = (epicsInt32 *) ((char*)user + opt->offset);
+        lval = strtol(val, &end, 0);
         *ival = lval;
+        /* test for the myriad error conditions which strtol may use */
+        if (lval == LONG_MAX || lval == LONG_MIN || end == val) {
+            return -1;
+        } else if(*ival != lval)
+            return -1;
         break;
     case chfPluginArgBoolean:
         sval = (char*) ((char*)user + opt->offset);
@@ -273,7 +268,7 @@ static int store_string_value(const chfPluginArgDef *opt, void *user, const char
     case chfPluginArgDouble:
         dval = (double*) ((char*)user + opt->offset);
         *dval = strtod(val, &end);
-        /* Indicates errors in the same manner as strtol */
+        /* Indicates errors in the same manner as strtod */
         if (*dval==HUGE_VALF||*dval==HUGE_VALL||end==val )
         {
             return -1;
@@ -411,6 +406,11 @@ static parse_result parse_integer(chFilter *filter, long integerVal)
     const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
     chfFilter *f =  (chfFilter*)filter->puser;
 
+    if(sizeof(long)>sizeof(epicsInt32)) {
+        epicsInt32 temp=integerVal;
+        if(integerVal !=temp)
+            return parse_stop;
+    }
     if (f->nextParam < 0 || store_integer_value(&opts[f->nextParam], f->puser, integerVal)) {
         return parse_stop;
     } else {

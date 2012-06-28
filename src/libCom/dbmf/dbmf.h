@@ -16,6 +16,7 @@
 #ifndef DBMF_H
 #define DBMF_H
 
+#include <stdlib.h>
 #include "shareLib.h"
 
 #ifdef __cplusplus

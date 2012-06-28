@@ -81,6 +81,7 @@ epicsShareFunc void epicsShareAPI registryFree(void)
 {
     if(!gphPvt) return;
     gphFreeMem(gphPvt);
+    gphPvt = 0;
 }
 
 epicsShareFunc int epicsShareAPI registryDump(void)

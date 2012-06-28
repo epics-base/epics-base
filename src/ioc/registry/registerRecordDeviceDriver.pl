@@ -186,8 +186,7 @@ print << 'END';
     }
 
     if (executed) {
-        printf("Registration already done.\n");
-        return 0;
+        printf("Warning: Registration already done.\n");
     }
     executed = 1;
 

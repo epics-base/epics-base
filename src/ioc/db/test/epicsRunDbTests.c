@@ -14,6 +14,7 @@
 
 #include "epicsUnitTest.h"
 #include "epicsExit.h"
+#include "dbmf.h"
 
 int callbackTest(void);
 
@@ -22,6 +23,8 @@ void epicsRunDbTests(void)
     testHarness();
 
     runTest(callbackTest);
+
+    dbmfFreeChunks();
 
     epicsExit(0);   /* Trigger test harness */
 }

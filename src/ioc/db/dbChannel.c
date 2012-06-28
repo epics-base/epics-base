@@ -838,7 +838,7 @@ void dbRegisterFilter(const char *name, const chFilterIf *fif, void *puser)
     if (pgph)
         return;
 
-    pfilt = dbCalloc(1, sizeof(chFilterPlugin)); /* leaked */
+    pfilt = dbCalloc(1, sizeof(chFilterPlugin));
     pfilt->name = epicsStrDup(name);
     pfilt->fif = fif;
     pfilt->puser = puser;

@@ -44,11 +44,12 @@ struct db_field_log;
  *
  * typedef struct myStruct {
  *   ... other stuff
- *   epicsUInt32 ival;
+ *   epicsInt32 ival;
  *   double      dval;
- *   epicsUInt32 ival2;
+ *   epicsInt32 ival2;
  *   int         enumval;
  *   char       strval[20];
+ *   char       boolval;
  * } myStruct;
  *
  * static const
@@ -61,6 +62,7 @@ struct db_field_log;
  *   chfDouble(myStruct, dval,    "Double"  , 1, 0),
  *   chfString(myStruct, strval , "String"  , 1, 0),
  *   chfEnum  (myStruct, enumval, "Color"   , 1, 0, colorEnum),
+ *   chfBoolean(myStruct, boolval, "Bool"   , 1, 0),
  *   chfPluginEnd
  * };
  *

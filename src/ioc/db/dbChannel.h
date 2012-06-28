@@ -72,6 +72,10 @@ typedef enum {
 
 /* These routines must be implemented by each filter plug-in */
 typedef struct chFilterIf {
+    /* cleanup pointer passed to dbRegisterFilter().
+     * Called during DB shutdown
+     */
+    void (* priv_free)(void *puser);
     /* Parsing event handlers: */
     parse_result (* parse_start)(chFilter *filter);
     /* If parse_start() returns parse_continue for a filter, one of

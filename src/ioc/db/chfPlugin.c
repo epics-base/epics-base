@@ -523,11 +523,20 @@ static void channel_close(chFilter *filter)
     free(f);         /* FIXME: Use a free-list */
 }
 
+static void plugin_free(void* puser)
+{
+    chfPlugin *p=puser;
+    free(p->required);
+    free(p);
+}
+
 /*
  * chFilterIf for the wrapper
  * we just support a simple one-level map, and no arrays
  */
 static chFilterIf wrapper_fif = {
+    plugin_free,
+
     parse_start,
     parse_abort,
     parse_end,

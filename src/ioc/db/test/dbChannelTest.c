@@ -16,6 +16,7 @@
 #include "dbChannel.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "registry.h"
 #include "recSup.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
@@ -147,20 +148,18 @@ chFilterIf testIf =
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
       c_open, c_reg_pre, c_reg_post, c_report, c_close };
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+int loadTestDB(DBBASE **ppbase);
 
 MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 {
     dbChannel *pch;
 
-    testPlan(66);
+    testPlan(68);
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
-        testAbort("Database description not loaded");
+    if(loadTestDB(&pdbbase))
+        return testDone();
 
-    xRecord_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
-        testAbort("Test database not loaded");
+    testOk(!!pdbbase, "pdbbase was set");
 
     r = e = 0;
     /* dbChannelTest() checks record and field names */
@@ -247,15 +246,8 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk1(!dbChannelCreate("x.{\"scalar\":{}}"));
 
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
 
     return testDone();
 }
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

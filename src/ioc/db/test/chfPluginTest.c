@@ -15,6 +15,7 @@
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
@@ -462,14 +463,14 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+int loadTestDB(DBBASE **ppbase);
 
 MAIN(chfPluginTest)
 {
     dbChannel *pch;
     db_field_log *pfl;
 
-    testPlan(1351);
+    testPlan(1353);
 
     db_init_events();
 
@@ -484,12 +485,10 @@ MAIN(chfPluginTest)
     testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0,
         "Enum to string: invalid index");
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
-        testAbort("Database description not loaded");
-
-    xRecord_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
-        testAbort("Test database not loaded");
+    testHead("Set up database");
+    if(loadTestDB(&pdbbase))
+        return testDone();
+    testOk(!!pdbbase, "pdbbase was set");
 
     testHead("Try to register buggy plugins");
     testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1),
@@ -818,15 +817,8 @@ MAIN(chfPluginTest)
     drop = -1;
 
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
 
     return testDone();
 }
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

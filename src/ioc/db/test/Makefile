@@ -28,30 +28,31 @@ TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
 TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
 TESTPROD_HOST += dbChannelTest
-dbChannelTest_SRCS += dbChannelTest.c xRecord_registerRecordDeviceDriver.cpp
+dbChannelTest_SRCS += dbChannelTest.c xRecord.c
+dbTestHarness_SRCS += dbChannelTest.c
 OBJS_IOC_vxWorks += dbChannelTest
 TESTS += dbChannelTest
 
 TESTPROD_HOST += chfPluginTest
-chfPluginTest_SRCS += chfPluginTest.c xRecord_registerRecordDeviceDriver.cpp
+chfPluginTest_SRCS += chfPluginTest.c xRecord.c
+dbTestHarness_SRCS += chfPluginTest.c
 OBJS_IOC_vxWorks += chfPluginTest
 TESTS += chfPluginTest
 
 TESTPROD_HOST += arrShorthandTest
-arrShorthandTest_SRCS += arrShorthandTest.c xRecord_registerRecordDeviceDriver.cpp
+arrShorthandTest_SRCS += arrShorthandTest.c xRecord.c
+dbTestHarness_SRCS += arrShorthandTest.c
 OBJS_IOC_vxWorks += arrShorthandTest
 TESTS += arrShorthandTest
 
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
+dbTestHarness_SRCS += dbStateTest.c
 OBJS_IOC_vxWorks += dbStateTest
 TESTS += dbStateTest
+
+dbTestHarness_SRCS += xRecord.c
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
-
-dbChannelTest$(DEP): $(COMMON_DIR)/xRecord.h
-chfPluginTest$(DEP): $(COMMON_DIR)/xRecord.h
-arrShorthandTest$(DEP): $(COMMON_DIR)/xRecord.h
-dbStateTest$(DEP): $(COMMON_DIR)/xRecord.h

@@ -17,12 +17,20 @@
 #include "dbmf.h"
 
 int callbackTest(void);
+int dbStateTest(void);
+int testDbChannel(void);
+int chfPluginTest(void);
+int arrShorthandTest(void);
 
 void epicsRunDbTests(void)
 {
     testHarness();
 
     runTest(callbackTest);
+    runTest(dbStateTest);
+    runTest(testDbChannel);
+    runTest(chfPluginTest);
+    runTest(arrShorthandTest);
 
     dbmfFreeChunks();
 

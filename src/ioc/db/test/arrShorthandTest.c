@@ -21,6 +21,7 @@
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
@@ -75,22 +76,21 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+int loadTestDB(DBBASE **ppbase);
 
-MAIN(chfPluginTest)
+MAIN(arrShorthandTest)
 {
     dbChannel *pch;
 
-    testPlan(26);
+    testPlan(28);
 
     db_init_events();
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
-        testAbort("Database description not loaded");
+    testHead("Set up database");
+    if(loadTestDB(&pdbbase))
+        return testDone();
 
-    xRecord_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
-        testAbort("Test database not loaded");
+    testOk(!!pdbbase, "pdbbase was set");
 
     testHead("Register plugin");
     testOk(!chfPluginRegister("arr", &myPif, opts), "register fake arr plugin");
@@ -124,16 +124,8 @@ MAIN(chfPluginTest)
     TESTGOOD("range with incr [s:i:e]",     "[2:3:4]", 2, 3, 4);
 
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
 
     return testDone();
 }
-
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

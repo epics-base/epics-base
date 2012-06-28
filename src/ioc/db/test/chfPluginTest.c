@@ -446,15 +446,22 @@ static chfPluginIf postPif = {
 
 static int checkValues(myStruct *my,
     epicsUInt32 i, int f, double d, char *s, int c) {
+    int ret = 1;
     if (!my) return 0;
-    if (my->sent1 == PATTERN && my->sent2 == PATTERN && my->sent3 == PATTERN
-        && my->sent4 == PATTERN && my->sent5 == PATTERN && my->sent6 == PATTERN
-        && my->ival == i && my->flag == f && my->dval == d && my->enumval == c
-        && (strcmp(s, my->str) == 0)) {
-        return 1;
-    } else {
-        return 0;
-    }
+#define CHK(A,B,FMT) if((A)!=(B)) {testDiag("Fail: " #A " (" FMT ") != " #B " (" FMT")", A, B); ret=0;}
+    CHK(my->sent1, PATTERN, "%08x")
+    CHK(my->sent2, PATTERN, "%08x")
+    CHK(my->sent3, PATTERN, "%08x")
+    CHK(my->sent4, PATTERN, "%08x")
+    CHK(my->sent5, PATTERN, "%08x")
+    CHK(my->sent6, PATTERN, "%08x")
+    CHK(my->ival, i, "%08x")
+    CHK(my->flag, f, "%02x")
+    CHK(my->dval, d, "%f")
+    CHK(my->enumval, c, "%d")
+#undef CHK
+    if(strcmp(s, my->str) != 0) {testDiag("Fail: my->str (%s) != s (%s)", my->str, s); ret=0;}
+    return ret;
 }
 
 static void testHead (char* title) {

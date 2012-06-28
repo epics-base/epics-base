@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 #ifndef osdThreadh
 #define osdThreadh
@@ -23,6 +23,7 @@ extern "C" {
 typedef struct epicsThreadOSD {
     ELLNODE            node;
     pthread_t          tid;
+    pid_t              lwpId;
     pthread_attr_t     attr;
     struct sched_param schedParam;
     EPICSTHREADFUNC    createFunc;

@@ -88,6 +88,7 @@ static void epicsThreadInit(void)
     static int lock = 0;
 
     while(!vxTas(&lock)) taskDelay(1);
+    epicsThreadHooksInit();
     if(epicsThreadOnceMutex==0) {
         epicsThreadOnceMutex = semMCreate(
                 SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
@@ -157,7 +158,9 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     taskVarAdd(tid,(int *)(char *)&papTSD);
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
+    epicsThreadRunStartHooks(pthreadInfo);
     (*func)(parm);
+    epicsThreadRunExitHooks(pthreadInfo);
     epicsExitCallAtThreadExits ();
     free(papTSD);
     taskVarDelete(tid,(int *)(char *)&papTSD);

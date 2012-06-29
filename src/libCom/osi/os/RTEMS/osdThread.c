@@ -164,7 +164,9 @@ threadWrapper (rtems_task_argument arg)
 {
     struct taskVar *v = (struct taskVar *)arg;
 
+    epicsThreadRunStartHooks(pthreadInfo);
     (*v->funptr)(v->parm);
+    epicsThreadRunExitHooks(pthreadInfo);
     epicsExitCallAtThreadExits ();
     taskVarLock ();
     if (v->back)
@@ -235,6 +237,7 @@ epicsThreadInit (void)
         taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
+        epicsThreadHooksInit();
         initialized = 1;
         epicsThreadCreate ("ImsgDaemon", 99,
                 epicsThreadGetStackSize (epicsThreadStackSmall),

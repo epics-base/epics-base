@@ -69,9 +69,11 @@ epicsShareFunc void epicsShareAPI epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTI
 
 epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void)
 {
-    hookLock = epicsMutexMustCreate();
-    if (epicsThreadDefaultStartHook) epicsThreadAddStartHook(epicsThreadDefaultStartHook);
-    if (epicsThreadDefaultExitHook) epicsThreadAddExitHook(epicsThreadDefaultExitHook);
+    if (!hookLock) {
+        hookLock = epicsMutexMustCreate();
+        if (epicsThreadDefaultStartHook) epicsThreadAddStartHook(epicsThreadDefaultStartHook);
+        if (epicsThreadDefaultExitHook) epicsThreadAddExitHook(epicsThreadDefaultExitHook);
+    }
 }
 
 epicsShareFunc void epicsShareAPI epicsThreadRunStartHooks(epicsThreadId id)

@@ -16,9 +16,11 @@
 #include "dbAccessDefs.h"
 #include "db_field_log.h"
 #include "dbCommon.h"
+#include "registry.h"
 #include "chfPlugin.h"
 #include "epicsUnitTest.h"
 #include "epicsTime.h"
+#include "dbmf.h"
 #include "testMain.h"
 
 #define PATTERN 0x55
@@ -109,10 +111,11 @@ MAIN(dbndTest)
     void *arg_out = NULL;
     db_field_log *pfl2;
     db_field_log fl1;
+    dbEventCtx evtctx;
 
     testPlan(59);
 
-    db_init_events();
+    evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
         testAbort("Database description not loaded");
@@ -160,9 +163,13 @@ MAIN(dbndTest)
     fl_setup(pch, pfl2);
 
     mustPassOnce(pch, pfl2, "abs", 0., 0);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustPassOnce(pch, pfl2, "abs", 0., 1);
 
-    db_delete_field_log(pfl2);
     dbChannelDelete(pch);
 
     /* Delta = -1: pass any update */
@@ -192,11 +199,25 @@ MAIN(dbndTest)
     fl_setup(pch, pfl2);
 
     mustPassOnce(pch, pfl2, "abs", 3., 1);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustDrop(pch, pfl2, "abs", 3., 3);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustDrop(pch, pfl2, "abs", 3., 4);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustPassOnce(pch, pfl2, "abs", 3., 5);
 
-    db_delete_field_log(pfl2);
     dbChannelDelete(pch);
 
     /* Delta = relative */
@@ -211,16 +232,51 @@ MAIN(dbndTest)
     fl_setup(pch, pfl2);
 
     mustPassOnce(pch, pfl2, "rel", 50., 1);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustPassOnce(pch, pfl2, "rel", 50., 2);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustDrop(pch, pfl2, "rel", 50., 3);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustPassOnce(pch, pfl2, "rel", 50., 4);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustDrop(pch, pfl2, "rel", 50., 5);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustDrop(pch, pfl2, "rel", 50., 6);
+
+    pfl2 = db_create_read_log(pch);
+    testDiag("new field_log from record");
+    fl_setup(pch, pfl2);
+
     mustPassOnce(pch, pfl2, "rel", 50., 7);
 
-    db_delete_field_log(pfl2);
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
 
     return testDone();
 }

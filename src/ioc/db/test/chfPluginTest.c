@@ -18,6 +18,7 @@
 #include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 #define PATTERN 0x55555555
 #define TYPE_START 0xAAA
@@ -470,14 +471,14 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-int loadTestDB(DBBASE **ppbase);
+void chfPluginTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(chfPluginTest)
 {
     dbChannel *pch;
     db_field_log *pfl;
 
-    testPlan(1353);
+    testPlan(1351);
 
     db_init_events();
 
@@ -492,10 +493,14 @@ MAIN(chfPluginTest)
     testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0,
         "Enum to string: invalid index");
 
-    testHead("Set up database");
-    if(loadTestDB(&pdbbase))
-        return testDone();
-    testOk(!!pdbbase, "pdbbase was set");
+    if (dbReadDatabase(&pdbbase, "chfPluginTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
+        testAbort("Database description not loaded");
+
+    chfPluginTest_registerRecordDeviceDriver(pdbbase);
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
+        testAbort("Test database not loaded");
 
     testHead("Try to register buggy plugins");
     testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1),
@@ -825,7 +830,7 @@ MAIN(chfPluginTest)
 
     dbFreeBase(pdbbase);
     registryFree();
-    pdbbase=0;
+    pdbbase = NULL;
 
     return testDone();
 }

@@ -10,8 +10,8 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_vxWorks += dbTestHarness
-PROD_RTEMS += dbTestHarness
+PROD_vxWorks += dbTestHarness chfPluginTest
+PROD_RTEMS += dbTestHarness chfPluginTest
 
 PROD_LIBS = dbCore ca Com
 
@@ -20,6 +20,36 @@ callbackTest_SRCS += callbackTest.c
 dbTestHarness_SRCS += callbackTest.c
 TESTS += callbackTest
 
+TESTPROD_HOST += dbStateTest
+dbStateTest_SRCS += dbStateTest.c
+dbTestHarness_SRCS += dbStateTest.c
+TESTS += dbStateTest
+
+TESTPROD_HOST += dbChannelTest
+dbChannelTest_SRCS += xRecord.c
+dbChannelTest_SRCS += dbChannelTest.c
+dbChannelTest_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+dbTestHarness_SRCS += xRecord.c
+dbTestHarness_SRCS += dbChannelTest.c
+dbTestHarness_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+TESTS += dbChannelTest
+
+TESTPROD_HOST += chfPluginTest
+chfPluginTest_SRCS += xRecord.c
+chfPluginTest_SRCS += chfPluginTest.c
+chfPluginTest_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+dbTestHarness_SRCS += chfPluginTest.c
+dbTestHarness_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+TESTS += chfPluginTest
+
+TESTPROD_HOST += arrShorthandTest
+arrShorthandTest_SRCS += xRecord.c
+arrShorthandTest_SRCS += arrShorthandTest.c
+arrShorthandTest_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+dbTestHarness_SRCS += arrShorthandTest.c
+dbTestHarness_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+TESTS += arrShorthandTest
+
 
 dbTestHarness_SRCS += epicsRunDbTests.c
 dbTestHarness_SRCS_RTEMS = rtemsTestHarness.c
@@ -27,32 +57,9 @@ dbTestHarness_SRCS_RTEMS = rtemsTestHarness.c
 TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
 TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
-TESTPROD_HOST += dbChannelTest
-dbChannelTest_SRCS += dbChannelTest.c xRecord.c
-dbTestHarness_SRCS += dbChannelTest.c
-OBJS_IOC_vxWorks += dbChannelTest
-TESTS += dbChannelTest
-
-TESTPROD_HOST += chfPluginTest
-chfPluginTest_SRCS += chfPluginTest.c xRecord.c
-dbTestHarness_SRCS += chfPluginTest.c
-OBJS_IOC_vxWorks += chfPluginTest
-TESTS += chfPluginTest
-
-TESTPROD_HOST += arrShorthandTest
-arrShorthandTest_SRCS += arrShorthandTest.c xRecord.c
-dbTestHarness_SRCS += arrShorthandTest.c
-OBJS_IOC_vxWorks += arrShorthandTest
-TESTS += arrShorthandTest
-
-TESTPROD_HOST += dbStateTest
-dbStateTest_SRCS += dbStateTest.c
-dbTestHarness_SRCS += dbStateTest.c
-OBJS_IOC_vxWorks += dbStateTest
-TESTS += dbStateTest
-
-dbTestHarness_SRCS += xRecord.c
-
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
+
+# xRecord$(OBJ): $(COMMON_DIR)/xRecord.h
+xRecord$(DEP): $(COMMON_DIR)/xRecord.h

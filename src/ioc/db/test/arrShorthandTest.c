@@ -24,6 +24,7 @@
 #include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 typedef struct myStruct {
     epicsInt32 start;
@@ -76,21 +77,24 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-int loadTestDB(DBBASE **ppbase);
+void arrShorthandTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(arrShorthandTest)
 {
     dbChannel *pch;
 
-    testPlan(28);
+    testPlan(26);
 
     db_init_events();
 
-    testHead("Set up database");
-    if(loadTestDB(&pdbbase))
-        return testDone();
+    if (dbReadDatabase(&pdbbase, "arrShorthandTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
+        testAbort("Database description not loaded");
 
-    testOk(!!pdbbase, "pdbbase was set");
+    arrShorthandTest_registerRecordDeviceDriver(pdbbase);
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
+        testAbort("Test database not loaded");
 
     testHead("Register plugin");
     testOk(!chfPluginRegister("arr", &myPif, opts), "register fake arr plugin");
@@ -125,7 +129,7 @@ MAIN(arrShorthandTest)
 
     dbFreeBase(pdbbase);
     registryFree();
-    pdbbase=0;
+    pdbbase = NULL;
 
     return testDone();
 }

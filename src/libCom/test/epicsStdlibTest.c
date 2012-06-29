@@ -23,34 +23,34 @@
  * so we can tell the user if our epicsStrtod() wrapper is unnecessary.
  */
 int
-parseStrtod(const char *str, double *to)
+parseStrtod(const char *str, double *to, char **units)
 {
     int c;
     char *endp;
-    double dtmp;
+    double value;
 
     while ((c = *str) && isspace(c))
         ++str;
 
     errno = 0;
-    dtmp = strtod(str, &endp);
+    value = strtod(str, &endp);
+
     if (endp == str)
         return S_stdlib_noConversion;
+    if (errno == ERANGE)
+        return (value == 0) ? S_stdlib_underflow : S_stdlib_overflow;
 
     while ((c = *endp) && isspace(c))
         ++endp;
-    if (c)
+    if (c && !units)
         return S_stdlib_extraneous;
 
-    if (dtmp == 0 && errno == ERANGE)
-        return S_stdlib_underflow;
-    if (fabs(dtmp) == HUGE_VAL && errno == ERANGE)
-        return S_stdlib_overflow;
-
-    *to = dtmp;
+    *to = value;
+    if (units)
+        *units = endp;
     return 0;
 }
-#define scanStrtod(str, to) !parseStrtod(str, to)
+#define scanStrtod(str, to) !parseStrtod(str, to, NULL)
 
 
 MAIN(epicsStdlibTest)
@@ -59,6 +59,7 @@ MAIN(epicsStdlibTest)
     long l;
     double d;
     float f;
+    char *endp;
     epicsInt8 i8;
     epicsUInt8 u8;
     epicsInt16 i16;
@@ -66,33 +67,33 @@ MAIN(epicsStdlibTest)
     epicsInt32 i32;
     epicsUInt32 u32;
 
-    testPlan(135);
+    testPlan(143);
 
-    testOk(epicsParseLong("", &l, 0) == S_stdlib_noConversion,
+    testOk(epicsParseLong("", &l, 0, NULL) == S_stdlib_noConversion,
         "Long '' => noConversion");
-    testOk(epicsParseULong("", &u, 0) == S_stdlib_noConversion,
+    testOk(epicsParseULong("", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '' => noConversion");
-    testOk(epicsParseFloat("", &f) == S_stdlib_noConversion,
+    testOk(epicsParseFloat("", &f, NULL) == S_stdlib_noConversion,
         "Float '' => noConversion");
-    testOk(epicsParseDouble("", &d) == S_stdlib_noConversion,
+    testOk(epicsParseDouble("", &d, NULL) == S_stdlib_noConversion,
         "Double '' => noConversion");
 
-    testOk(epicsParseLong("\t \n", &l, 0) == S_stdlib_noConversion,
+    testOk(epicsParseLong("\t \n", &l, 0, NULL) == S_stdlib_noConversion,
         "Long '\\t 1\\n' => noConversion");
-    testOk(epicsParseULong("\t \n", &u, 0) == S_stdlib_noConversion,
+    testOk(epicsParseULong("\t \n", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '\\t 1\\n' => noConversion");
-    testOk(epicsParseFloat("\t \n", &f) == S_stdlib_noConversion,
+    testOk(epicsParseFloat("\t \n", &f, NULL) == S_stdlib_noConversion,
         "Float '\\t 1\\n' => noConversion");
-    testOk(epicsParseDouble("\t \n", &d) == S_stdlib_noConversion,
+    testOk(epicsParseDouble("\t \n", &d, NULL) == S_stdlib_noConversion,
         "Double '\\t 1\\n' => noConversion");
 
-    testOk(epicsParseLong("!", &l, 0) == S_stdlib_noConversion,
+    testOk(epicsParseLong("!", &l, 0, NULL) == S_stdlib_noConversion,
         "Long '!' => noConversion");
-    testOk(epicsParseULong("!", &u, 0) == S_stdlib_noConversion,
+    testOk(epicsParseULong("!", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '!' => noConversion");
-    testOk(epicsParseFloat("!", &f) == S_stdlib_noConversion,
+    testOk(epicsParseFloat("!", &f, NULL) == S_stdlib_noConversion,
         "Float '!' => noConversion");
-    testOk(epicsParseDouble("!", &d) == S_stdlib_noConversion,
+    testOk(epicsParseDouble("!", &d, NULL) == S_stdlib_noConversion,
         "Double '!' => noConversion");
 
     testOk(epicsScanLong("0", &l, 0) && l == 0, "Long '0'");
@@ -105,23 +106,41 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanFloat("\t 1\n", &f) && f == 1, "Float '\\t 1\\n'");
     testOk(epicsScanDouble("\t 1\n", &d) && d == 1, "Double '\\t 1\\n'");
 
-    testOk(epicsParseLong("2!", &l, 0) == S_stdlib_extraneous,
+    testOk(epicsParseLong("2!", &l, 0, NULL) == S_stdlib_extraneous,
         "Long '2!' => extraneous");
-    testOk(epicsParseULong("2!", &u, 0) == S_stdlib_extraneous,
+    testOk(epicsParseULong("2!", &u, 0, NULL) == S_stdlib_extraneous,
         "ULong '2!' => extraneous");
-    testOk(epicsParseFloat("2!", &f) == S_stdlib_extraneous,
+    testOk(epicsParseFloat("2!", &f, NULL) == S_stdlib_extraneous,
         "Float '2!' => extraneous");
-    testOk(epicsParseDouble("2!", &d) == S_stdlib_extraneous,
+    testOk(epicsParseDouble("2!", &d, NULL) == S_stdlib_extraneous,
         "Double '2!' => extraneous");
 
-    testOk(epicsParseLong("3 !", &l, 0) == S_stdlib_extraneous,
-        "Long '3 !' => extraneous");
-    testOk(epicsParseULong("3 !", &u, 0) == S_stdlib_extraneous,
-        "ULong '3 !' => extraneous");
-    testOk(epicsParseFloat("3 !", &f) == S_stdlib_extraneous,
-        "Float '3 !' => extraneous");
-    testOk(epicsParseDouble("3 !", &d) == S_stdlib_extraneous,
-        "Double '3 !' => extraneous");
+    testOk(epicsParseLong("3 \n\t!", &l, 0, NULL) == S_stdlib_extraneous,
+        "Long '3 \\n\\t!' => extraneous");
+    testOk(epicsParseULong("3 \n\t!", &u, 0, NULL) == S_stdlib_extraneous,
+        "ULong '3 \\n\\t!' => extraneous");
+    testOk(epicsParseFloat("3 \n\t!", &f, NULL) == S_stdlib_extraneous,
+        "Float '3 \\n\\t!' => extraneous");
+    testOk(epicsParseDouble("3 \n\t!", &d, NULL) == S_stdlib_extraneous,
+        "Double '3 \\n\\t!' => extraneous");
+
+    testOk(!epicsParseLong("2!", &l, 0, &endp) && *endp == '!',
+        "Long '2!' => units='!'");
+    testOk(!epicsParseULong("2!", &u, 0, &endp) && *endp == '!',
+        "ULong '2!' => units='!'");
+    testOk(!epicsParseFloat("2!", &f, &endp) && *endp == '!',
+        "Float '2!' => units='!'");
+    testOk(!epicsParseDouble("2!", &d, &endp) && *endp == '!',
+        "Double '2!' => units='!'");
+
+    testOk(!epicsParseLong("3 \n\t!", &l, 0, &endp) && *endp == '!',
+        "Long '3 \\n\\t!' => units='!'");
+    testOk(!epicsParseULong("3 \n\t!", &u, 0, &endp) && *endp == '!',
+        "ULong '3 \\n\\t!' => units='!'");
+    testOk(!epicsParseFloat("3 \n\t!", &f, &endp) && *endp == '!',
+        "Float '3 \\n\\t!' => units='!'");
+    testOk(!epicsParseDouble("3 \n\t!", &d, &endp) && *endp == '!',
+        "Double '3 \\n\\t!' => units='!'");
 
     testOk(epicsScanLong("0x0", &l, 0) && l == 0, "Long '0x0'");
     testOk(epicsScanULong("0x0", &u, 0) && u == 0, "ULong '0x0'");
@@ -153,9 +172,9 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanFloat("0XF", &f) && f == 15, "Float '0XF'");
     testOk(epicsScanDouble("0XF", &d) && d == 15, "Double '0XF'");
 
-    testOk(epicsParseLong("0x0", &l, 10) == S_stdlib_extraneous,
+    testOk(epicsParseLong("0x0", &l, 10, NULL) == S_stdlib_extraneous,
         "Long '0x0' in base 10 => extraneous");
-    testOk(epicsParseULong("0x0", &u, 10) == S_stdlib_extraneous,
+    testOk(epicsParseULong("0x0", &u, 10, NULL) == S_stdlib_extraneous,
         "ULong '0x0' in base 10 => extraneous");
     testOk(epicsScanLong("0x10", &l, 0) && l == 0x10,
         "Long '0x10' in base 0");
@@ -188,43 +207,43 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanDouble("-0x7fffffff", &d) && d == -0x7fffffff,
         "Double '-0x7fffffff'");
 
-    testOk(!epicsParseInt8("0x7f", &i8, 0) && i8 == 0x7f,
+    testOk(!epicsParseInt8("0x7f", &i8, 0, NULL) && i8 == 0x7f,
         "Int8 '0x7f'");
-    testOk(!epicsParseInt8("-0x80", &i8, 0) && i8 == -0x80,
+    testOk(!epicsParseInt8("-0x80", &i8, 0, NULL) && i8 == -0x80,
         "Int8 '-0x80'");
-    testOk(!epicsParseUInt8("0xff", &u8, 0) && u8 == 0xff,
+    testOk(!epicsParseUInt8("0xff", &u8, 0, NULL) && u8 == 0xff,
         "UInt8 '0xff'");
-    testOk(epicsParseInt8("0x80", &i8, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt8("0x80", &i8, 0, NULL) == S_stdlib_overflow,
         "Int8 '0x80' => overflow");
-    testOk(epicsParseInt8("-0x81", &i8, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt8("-0x81", &i8, 0, NULL) == S_stdlib_overflow,
         "Int8 '-0x81' => overflow");
-    testOk(epicsParseUInt8("0x100", &u8, 0) == S_stdlib_overflow,
+    testOk(epicsParseUInt8("0x100", &u8, 0, NULL) == S_stdlib_overflow,
         "UInt8 '0x100' => overflow");
 
-    testOk(!epicsParseInt16("0x7fff", &i16, 0) && i16 == 0x7fff,
+    testOk(!epicsParseInt16("0x7fff", &i16, 0, NULL) && i16 == 0x7fff,
         "Int16 '0x7fff'");
-    testOk(!epicsParseInt16("-0x8000", &i16, 0) && i16 == -0x8000,
+    testOk(!epicsParseInt16("-0x8000", &i16, 0, NULL) && i16 == -0x8000,
         "Int16 '-0x8000'");
-    testOk(!epicsParseUInt16("0xffff", &u16, 0) && u16 == 0xffff,
+    testOk(!epicsParseUInt16("0xffff", &u16, 0, NULL) && u16 == 0xffff,
         "UInt16 '0xffff'");
-    testOk(epicsParseInt16("0x8000", &i16, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt16("0x8000", &i16, 0, NULL) == S_stdlib_overflow,
         "Int16 '0x8000' => overflow");
-    testOk(epicsParseInt16("-0x8001", &i16, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt16("-0x8001", &i16, 0, NULL) == S_stdlib_overflow,
         "Int16 '-0x8001' => overflow");
-    testOk(epicsParseUInt16("0x10000", &u16, 0) == S_stdlib_overflow,
+    testOk(epicsParseUInt16("0x10000", &u16, 0, NULL) == S_stdlib_overflow,
         "UInt16 '0x10000' => overflow");
 
-    testOk(!epicsParseInt32("0x7fffffff", &i32, 0) && i32 == 0x7fffffff,
+    testOk(!epicsParseInt32("0x7fffffff", &i32, 0, NULL) && i32 == 0x7fffffff,
         "Int32 '0x7fffffff'");
-    testOk(!epicsParseInt32("-0x80000000", &i32, 0) && i32 == -0x80000000L,
+    testOk(!epicsParseInt32("-0x80000000", &i32, 0, NULL) && i32 == -0x80000000L,
         "Int32 '-0x80000000'");
-    testOk(!epicsParseUInt32("0xffffffff", &u32, 0) && u32 == 0xffffffff,
+    testOk(!epicsParseUInt32("0xffffffff", &u32, 0, NULL) && u32 == 0xffffffff,
         "UInt32 '0xffffffff'");
-    testOk(epicsParseInt32("0x80000000", &i32, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt32("0x80000000", &i32, 0, NULL) == S_stdlib_overflow,
         "Int32 '0x80000000' => overflow");
-    testOk(epicsParseInt32("-0x80000001", &i32, 0) == S_stdlib_overflow,
+    testOk(epicsParseInt32("-0x80000001", &i32, 0, NULL) == S_stdlib_overflow,
         "Int32 '-0x80000001' => overflow");
-    testOk(epicsParseUInt32("0x100000000", &u32, 0) == S_stdlib_overflow,
+    testOk(epicsParseUInt32("0x100000000", &u32, 0, NULL) == S_stdlib_overflow,
         "UInt32 '0x100000000' => overflow");
 
     testOk(epicsScanFloat(".1", &f) && fabs(f - 0.1) < 1e-7,
@@ -262,9 +281,9 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanDouble("1e-300", &d) && fabs(d - 1e-300) < 1e-306,
         "Double '1e-300'");
 
-    testOk(epicsParseFloat("1e-40", &f) == S_stdlib_underflow,
+    testOk(epicsParseFloat("1e-40", &f, NULL) == S_stdlib_underflow,
         "Float '1e-40' => underflow");
-    testOk(epicsParseDouble("1e-330", &d) == S_stdlib_underflow,
+    testOk(epicsParseDouble("1e-330", &d, NULL) == S_stdlib_underflow,
         "Double '1e-330' => underflow");
 
     testOk(epicsScanFloat("1e30", &f) && fabs(f - 1e30) < 1e24,
@@ -272,9 +291,9 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanDouble("1e300", &d) && d == 1e300,
         "Double '1e300'");
 
-    testOk(epicsParseFloat("1e40", &f) == S_stdlib_overflow,
+    testOk(epicsParseFloat("1e40", &f, NULL) == S_stdlib_overflow,
         "Float '1e40' => overflow");
-    testOk(epicsParseDouble("1e310", &d) == S_stdlib_overflow,
+    testOk(epicsParseDouble("1e310", &d, NULL) == S_stdlib_overflow,
         "Double '1e330' => overflow");
 
     testOk(epicsScanLong("2147483647", &l, 0) && l == 2147483647,
@@ -352,20 +371,24 @@ MAIN(epicsStdlibTest)
 
         testDiag("Checking the native strtod(), only failures shown:");
 
-        CHECK(parseStrtod("", &d) == S_stdlib_noConversion,
+        CHECK(parseStrtod("", &d, NULL) == S_stdlib_noConversion,
             "   not ok - strtod('') => noConversion");
-        CHECK(parseStrtod("\t \n", &d) == S_stdlib_noConversion,
+        CHECK(parseStrtod("\t \n", &d, NULL) == S_stdlib_noConversion,
             "   not ok - strtod('\\t 1\\n') => noConversion");
-        CHECK(parseStrtod("!", &d) == S_stdlib_noConversion,
+        CHECK(parseStrtod("!", &d, NULL) == S_stdlib_noConversion,
             "   not ok - strtod('!') => noConversion");
         CHECK(scanStrtod("0", &d) && d == 0,
             "   not ok - strtod('0')");
         CHECK(scanStrtod("\t 1\n", &d) && d == 1,
             "   not ok - strtod('\\t 1\\n')");
-        CHECK(parseStrtod("2!", &d) == S_stdlib_extraneous,
+        CHECK(parseStrtod("2!", &d, NULL) == S_stdlib_extraneous,
             "   not ok - strtod('2!') => extraneous");
-        CHECK(parseStrtod("3 !", &d) == S_stdlib_extraneous,
+        CHECK(parseStrtod("3 !", &d, NULL) == S_stdlib_extraneous,
             "   not ok - strtod('3 !') => extraneous");
+        CHECK(!parseStrtod("2!", &d, &endp) && *endp == '!',
+            "   not ok - strtod('2!') => units='!'");
+        CHECK(!parseStrtod("3 \n\t!", &d, &endp) && *endp == '!',
+            "   not ok - strtod('3 \\n\\t!') => units='!'");
         CHECK(scanStrtod("0x0", &d) && d == 0,
             "   not ok - strtod('0x0')");
         CHECK(scanStrtod("0x1", &d) && d == 1,
@@ -396,7 +419,7 @@ MAIN(epicsStdlibTest)
             "   not ok - strtod('-1e-1')");
         CHECK(scanStrtod("1e-300", &d) && fabs(d - 1e-300) < 1e-306,
             "   not ok - strtod('1e-300')");
-        CHECK(parseStrtod("1e-400", &d) == S_stdlib_underflow,
+        CHECK(parseStrtod("1e-400", &d, NULL) == S_stdlib_underflow,
             "   not ok - strtod('1e-400') => underflow");
         CHECK(scanStrtod("4294967294", &d) && d == 4294967294.0,
             "   not ok - strtod('4294967294')");

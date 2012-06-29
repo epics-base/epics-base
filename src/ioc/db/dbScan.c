@@ -161,8 +161,8 @@ long scanInit(void)
     startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     scanCtl = ctlPause;
 
-    initOnce();
     initPeriodic();
+    initOnce();
     initEvent();
     buildScanLists();
     for (i = 0; i < nPeriodic; i++)
@@ -551,7 +551,8 @@ static void initOnce(void)
         cantProceed("initOnce: Ring buffer create failed\n");
     }
     onceSem = epicsEventMustCreate(epicsEventEmpty);
-    onceTaskId = epicsThreadCreate("scanOnce", epicsThreadPriorityScanHigh,
+    onceTaskId = epicsThreadCreate("scanOnce",
+        epicsThreadPriorityScanLow + nPeriodic,
         epicsThreadGetStackSize(epicsThreadStackBig), onceTask, 0);
 
     epicsEventWait(startStopEvent);
@@ -598,32 +599,29 @@ static void initPeriodic(void)
         periodic_scan_list *ppsl = dbCalloc(1, sizeof(periodic_scan_list));
         const char *choice = pmenu->papChoiceValue[i + SCAN_1ST_PERIODIC];
         double number;
-        char *end;
-        int c = 0;
+        char *unit;
+        int status = epicsParseDouble(choice, &number, &unit);
 
         ppsl->scan_list.lock = epicsMutexMustCreate();
         ellInit(&ppsl->scan_list.list);
-        number = epicsStrtod(choice, &end);
-        while ((c = *end) && isspace(c))
-            ++end;
-        if (number &&
-            (!c || !strcmp(end, "second") || !strcmp(end, "seconds"))) {
+        if (status || number == 0) {
+            errlogPrintf("initPeriodic: Bad menuScan choice '%s'\n", choice);
+            ppsl->period = i;
+        }
+        else if (!*unit || !strcmp(unit, "second") || !strcmp(unit, "seconds")) {
             ppsl->period = number;
         }
-        else if (number &&
-            (!strcmp(end, "minute") || !strcmp(end, "minutes"))) {
+        else if (!strcmp(unit, "minute") || !strcmp(unit, "minutes")) {
             ppsl->period = number * 60;
         }
-        else if (number &&
-            (!strcmp(end, "hour") || !strcmp(end, "hours"))) {
+        else if (!strcmp(unit, "hour") || !strcmp(unit, "hours")) {
             ppsl->period = number * 60 * 60;
         }
-        else if (number &&
-            (!strcmp(end, "Hz") || !strcmp(end, "Hertz"))) {
+        else if (!strcmp(unit, "Hz") || !strcmp(unit, "Hertz")) {
             ppsl->period = 1 / number;
         }
         else {
-            errlogPrintf("initPeriodic: Bad scan string '%s'\n", choice);
+            errlogPrintf("initPeriodic: Bad menuScan choice '%s'\n", choice);
             ppsl->period = i;
         }
         number = ppsl->period / quantum;

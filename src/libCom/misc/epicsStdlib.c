@@ -24,7 +24,7 @@
 /* These are the conversion primitives */
 
 epicsShareFunc int
-epicsParseLong(const char *str, long *to, int base)
+epicsParseLong(const char *str, long *to, int base, char **units)
 {
     int c;
     char *endp;
@@ -40,21 +40,22 @@ epicsParseLong(const char *str, long *to, int base)
         return S_stdlib_noConversion;
     if (errno == EINVAL)    /* Not universally supported */
         return S_stdlib_badBase;
-
-    while ((c = *endp) && isspace(c))
-        ++endp;
-    if (c)
-        return S_stdlib_extraneous;
-
     if (errno == ERANGE)
         return S_stdlib_overflow;
 
+    while ((c = *endp) && isspace(c))
+        ++endp;
+    if (c && !units)
+        return S_stdlib_extraneous;
+
     *to = value;
+    if (units)
+        *units = endp;
     return 0;
 }
 
 epicsShareFunc int
-epicsParseULong(const char *str, unsigned long *to, int base)
+epicsParseULong(const char *str, unsigned long *to, int base, char **units)
 {
     int c;
     char *endp;
@@ -70,21 +71,22 @@ epicsParseULong(const char *str, unsigned long *to, int base)
         return S_stdlib_noConversion;
     if (errno == EINVAL)    /* Not universally supported */
         return S_stdlib_badBase;
-
-    while ((c = *endp) && isspace(c))
-        ++endp;
-    if (c)
-        return S_stdlib_extraneous;
-
     if (errno == ERANGE)
         return S_stdlib_overflow;
 
+    while ((c = *endp) && isspace(c))
+        ++endp;
+    if (c && !units)
+        return S_stdlib_extraneous;
+
     *to = value;
+    if (units)
+        *units = endp;
     return 0;
 }
 
 epicsShareFunc int
-epicsParseDouble(const char *str, double *to)
+epicsParseDouble(const char *str, double *to, char **units)
 {
     int c;
     char *endp;
@@ -95,18 +97,20 @@ epicsParseDouble(const char *str, double *to)
 
     errno = 0;
     value = epicsStrtod(str, &endp);
+
     if (endp == str)
         return S_stdlib_noConversion;
-
-    while ((c = *endp) && isspace(c))
-        ++endp;
-    if (c)
-        return S_stdlib_extraneous;
-
     if (errno == ERANGE)
         return (value == 0) ? S_stdlib_underflow : S_stdlib_overflow;
 
+    while ((c = *endp) && isspace(c))
+        ++endp;
+    if (c && !units)
+        return S_stdlib_extraneous;
+
     *to = value;
+    if (units)
+        *units = endp;
     return 0;
 }
 
@@ -114,10 +118,10 @@ epicsParseDouble(const char *str, double *to)
 /* These call the primitives */
 
 epicsShareFunc int
-epicsParseInt8(const char *str, epicsInt8 *to, int base)
+epicsParseInt8(const char *str, epicsInt8 *to, int base, char **units)
 {
     long value;
-    int status = epicsParseLong(str, &value, base);
+    int status = epicsParseLong(str, &value, base, units);
 
     if (status)
         return status;
@@ -130,10 +134,10 @@ epicsParseInt8(const char *str, epicsInt8 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseUInt8(const char *str, epicsUInt8 *to, int base)
+epicsParseUInt8(const char *str, epicsUInt8 *to, int base, char **units)
 {
     unsigned long value;
-    int status = epicsParseULong(str, &value, base);
+    int status = epicsParseULong(str, &value, base, units);
 
     if (status)
         return status;
@@ -146,10 +150,10 @@ epicsParseUInt8(const char *str, epicsUInt8 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseInt16(const char *str, epicsInt16 *to, int base)
+epicsParseInt16(const char *str, epicsInt16 *to, int base, char **units)
 {
     long value;
-    int status = epicsParseLong(str, &value, base);
+    int status = epicsParseLong(str, &value, base, units);
 
     if (status)
         return status;
@@ -162,10 +166,10 @@ epicsParseInt16(const char *str, epicsInt16 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseUInt16(const char *str, epicsUInt16 *to, int base)
+epicsParseUInt16(const char *str, epicsUInt16 *to, int base, char **units)
 {
     unsigned long value;
-    int status = epicsParseULong(str, &value, base);
+    int status = epicsParseULong(str, &value, base, units);
 
     if (status)
         return status;
@@ -178,10 +182,10 @@ epicsParseUInt16(const char *str, epicsUInt16 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseInt32(const char *str, epicsInt32 *to, int base)
+epicsParseInt32(const char *str, epicsInt32 *to, int base, char **units)
 {
     long value;
-    int status = epicsParseLong(str, &value, base);
+    int status = epicsParseLong(str, &value, base, units);
 
     if (status)
         return status;
@@ -196,16 +200,16 @@ epicsParseInt32(const char *str, epicsInt32 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseUInt32(const char *str, epicsUInt32 *to, int base)
+epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units)
 {
     unsigned long value;
-    int status = epicsParseULong(str, &value, base);
+    int status = epicsParseULong(str, &value, base, units);
 
     if (status)
         return status;
 
 #if (ULONG_MAX > 0xffffffff)
-    if (value > 0xffffffffL)
+    if (value > 0xffffffffUL)
         return S_stdlib_overflow;
 #endif
 
@@ -214,10 +218,10 @@ epicsParseUInt32(const char *str, epicsUInt32 *to, int base)
 }
 
 epicsShareFunc int
-epicsParseFloat(const char *str, float *to)
+epicsParseFloat(const char *str, float *to, char **units)
 {
     double value, abs;
-    int status = epicsParseDouble(str, &value);
+    int status = epicsParseDouble(str, &value, units);
 
     if (status)
         return status;

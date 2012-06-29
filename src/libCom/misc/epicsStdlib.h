@@ -29,39 +29,39 @@ extern "C" {
 
 
 epicsShareFunc int
-    epicsParseLong(const char *str, long *to, int base);
+    epicsParseLong(const char *str, long *to, int base, char **units);
 epicsShareFunc int
-    epicsParseULong(const char *str, unsigned long *to, int base);
+    epicsParseULong(const char *str, unsigned long *to, int base, char **units);
 epicsShareFunc int
-    epicsParseDouble(const char *str, double *to);
+    epicsParseDouble(const char *str, double *to, char **units);
 
 epicsShareFunc int
-    epicsParseFloat(const char *str, float *to);
+    epicsParseFloat(const char *str, float *to, char **units);
 
 epicsShareFunc int
-    epicsParseInt8(const char *str, epicsInt8 *to, int base);
+    epicsParseInt8(const char *str, epicsInt8 *to, int base, char **units);
 epicsShareFunc int
-    epicsParseUInt8(const char *str, epicsUInt8 *to, int base);
+    epicsParseUInt8(const char *str, epicsUInt8 *to, int base, char **units);
 epicsShareFunc int
-    epicsParseInt16(const char *str, epicsInt16 *to, int base);
+    epicsParseInt16(const char *str, epicsInt16 *to, int base, char **units);
 epicsShareFunc int
-    epicsParseUInt16(const char *str, epicsUInt16 *to, int base);
+    epicsParseUInt16(const char *str, epicsUInt16 *to, int base, char **units);
 
 epicsShareFunc int
-    epicsParseInt32(const char *str, epicsInt32 *to, int base);
+    epicsParseInt32(const char *str, epicsInt32 *to, int base, char **units);
 epicsShareFunc int
-    epicsParseUInt32(const char *str, epicsUInt32 *to, int base);
+    epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units);
 
-#define epicsParseFloat32(str, to) epicsParseFloat(str, to)
-#define epicsParseFloat64(str, to) epicsParseDouble(str, to)
+#define epicsParseFloat32(str, to, units) epicsParseFloat(str, to, units)
+#define epicsParseFloat64(str, to, units) epicsParseDouble(str, to, units)
 
 /* These macros return 1 if successful, 0 on failure.
  * This is analagous to the return value from sscanf()
  */
-#define epicsScanLong(str, to, base) !epicsParseLong(str, to, base)
-#define epicsScanULong(str, to, base) !epicsParseULong(str, to, base)
-#define epicsScanFloat(str, to) !epicsParseFloat(str, to)
-#define epicsScanDouble(str, to) !epicsParseDouble(str, to)
+#define epicsScanLong(str, to, base) !epicsParseLong(str, to, base, NULL)
+#define epicsScanULong(str, to, base) !epicsParseULong(str, to, base, NULL)
+#define epicsScanFloat(str, to) !epicsParseFloat(str, to, NULL)
+#define epicsScanDouble(str, to) !epicsParseDouble(str, to, NULL)
 
 #ifdef __cplusplus
 }

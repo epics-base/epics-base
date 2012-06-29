@@ -93,8 +93,10 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             }
         }
     }
-    if (drop) return NULL;
-    else return pfl;
+    if (drop) {
+        db_delete_field_log(pfl);
+        return NULL;
+    } else return pfl;
 }
 
 static void channelRegisterPre(dbChannel *chan, void *pvt,

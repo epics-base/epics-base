@@ -101,6 +101,16 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level);
 epicsShareFunc void epicsShareAPI epicsThreadShow(
     epicsThreadId id,unsigned int level);
 
+/* Hooks being called when a thread starts or exits */
+typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
+epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void);
+epicsShareFunc void epicsShareAPI epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc void epicsShareAPI epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc void epicsShareAPI epicsThreadRunStartHooks(epicsThreadId id);
+epicsShareFunc void epicsShareAPI epicsThreadRunExitHooks(epicsThreadId id);
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;
+
 typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void);
 epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete(epicsThreadPrivateId id);

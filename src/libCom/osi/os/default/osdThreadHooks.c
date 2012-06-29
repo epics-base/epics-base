@@ -30,8 +30,8 @@ typedef struct epicsThreadHook {
     EPICS_THREAD_HOOK_ROUTINE func;
 } epicsThreadHook;
 
-static ELLLIST startHooks;
-static ELLLIST exitHooks;
+static ELLLIST startHooks = ELLLIST_INIT;
+static ELLLIST exitHooks = ELLLIST_INIT;
 static epicsMutexId hookLock;
 
 static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func)
@@ -46,13 +46,13 @@ static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func)
     epicsMutexUnlock(hookLock);
 }
 
-static void runHooks (ELLLIST *list, epicsThreadOSD *pthreadInfo) {
+static void runHooks (ELLLIST *list, epicsThreadId id) {
     epicsThreadHook *pHook;
 
     /* As we're only ever inserting hooks at the head of the list, forward traversing is safe */
     pHook = (epicsThreadHook *) ellFirst(list);
     while (pHook) {
-        pHook->func(pthreadInfo);
+        pHook->func(id);
         pHook = (epicsThreadHook *) ellNext(&pHook->node);
     }
 }
@@ -67,21 +67,19 @@ void epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE func)
     addHook(&exitHooks, func);
 }
 
-void epicsThreadHooksInit()
+void epicsThreadHooksInit(void)
 {
     hookLock = epicsMutexMustCreate();
-    ellInit(&startHooks);
-    ellInit(&exitHooks);
     if (epicsThreadDefaultStartHook) epicsThreadAddStartHook(epicsThreadDefaultStartHook);
     if (epicsThreadDefaultExitHook) epicsThreadAddExitHook(epicsThreadDefaultExitHook);
 }
 
-void epicsThreadRunStartHooks(epicsThreadOSD *pthreadInfo)
+void epicsThreadRunStartHooks(epicsThreadId id)
 {
-    runHooks(&startHooks, pthreadInfo);
+    runHooks(&startHooks, id);
 }
 
-void epicsThreadRunExitHooks(epicsThreadOSD *pthreadInfo)
+void epicsThreadRunExitHooks(epicsThreadId id)
 {
-    runHooks(&exitHooks, pthreadInfo);
+    runHooks(&exitHooks, id);
 }

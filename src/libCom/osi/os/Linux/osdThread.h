@@ -37,16 +37,6 @@ typedef struct epicsThreadOSD {
     char               name[1];     /* actually larger */
 } epicsThreadOSD;
 
-/* Hooks being called when a thread starts or exits */
-typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadOSD *pthreadInfo);
-epicsShareFunc void epicsThreadHooksInit();
-epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook);
-epicsShareFunc void epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook);
-epicsShareFunc void epicsThreadRunStartHooks(epicsThreadOSD *pthreadInfo);
-epicsShareFunc void epicsThreadRunExitHooks(epicsThreadOSD *pthreadInfo);
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;
-
 epicsShareFunc pthread_t epicsShareAPI epicsThreadGetPosixThreadId(epicsThreadId id);
 
 epicsShareFunc void epicsShowThreadInfo(epicsThreadOSD *pthreadInfo, unsigned int level);

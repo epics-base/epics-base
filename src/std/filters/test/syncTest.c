@@ -17,7 +17,9 @@
 #include "db_field_log.h"
 #include "dbCommon.h"
 #include "dbChannel.h"
+#include "registry.h"
 #include "chfPlugin.h"
+#include "dbmf.h"
 #include "epicsUnitTest.h"
 #include "epicsTime.h"
 #include "dbState.h"
@@ -136,10 +138,11 @@ MAIN(syncTest)
     char myname[] = "sync";
     db_field_log *pfl[10];
     int i;
+    dbEventCtx evtctx;
 
     testPlan(0);
 
-    db_init_events();
+    evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
         testAbort("Database description not loaded");
@@ -194,6 +197,8 @@ MAIN(syncTest)
     for (i = 0; i < 10; i++)
         db_delete_field_log(pfl[i]);
 
+    dbChannelDelete(pch);
+
     /* mode UNLESS */
 
     testHead("Mode UNLESS  (m='unless', s='red')");
@@ -225,6 +230,8 @@ MAIN(syncTest)
     for (i = 0; i < 10; i++)
         db_delete_field_log(pfl[i]);
 
+    dbChannelDelete(pch);
+
     /* mode BEFORE */
 
     testHead("Mode BEFORE  (m='before', s='red')");
@@ -254,8 +261,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[8], "state=FALSE, log8");
     mustDrop(pch, pfl[9], "state=FALSE, log9");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[2]);
+
+    dbChannelDelete(pch);
 
     /* mode FIRST */
 
@@ -285,8 +293,10 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[3]);
+    db_delete_field_log(pfl[9]);
+
+    dbChannelDelete(pch);
 
     /* mode LAST */
 
@@ -317,8 +327,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[8], "state=FALSE, log8");
     mustDrop(pch, pfl[9], "state=FALSE, log9");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[5]);
+
+    dbChannelDelete(pch);
 
     /* mode AFTER */
 
@@ -348,11 +359,17 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[6]);
+    db_delete_field_log(pfl[9]);
 
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
 
     return testDone();
 }

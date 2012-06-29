@@ -59,6 +59,8 @@ static void * allocPvt(void)
 
 static void freePvt(void *pvt)
 {
+    myStruct *my = (myStruct*) pvt;
+    db_delete_field_log(my->lastfl);
     freeListFree(myStructFreeList, pvt);
 }
 

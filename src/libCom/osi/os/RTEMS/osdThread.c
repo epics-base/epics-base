@@ -677,6 +677,23 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     fprintf(epicsGetStdout(),"*** Thread %x does not exist.\n", (unsigned int)id);
 }
 
+void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+{
+    struct taskVar *v;
+
+    taskVarLock ();
+    /*
+     * Map tasks in the order of creation (backwards through list)
+     */
+    for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
+        continue;
+    while (v) {
+        func (v, arg);
+        v = v->back;
+    }
+    taskVarUnlock ();
+}
+
 void epicsThreadShowAll (unsigned int level)
 {
     struct taskVar *v;

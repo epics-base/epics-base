@@ -734,6 +734,25 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName(epicsThreadId pthreadInfo, 
     name[size-1] = '\0';
 }
 
+epicsShareFunc void epicsShareAPI epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+{
+    epicsThreadOSD *pthreadInfo;
+    int status;
+
+    epicsThreadInit();
+    status = mutexLock(&listLock);
+    checkStatus(status, "pthread_mutex_lock epicsThreadMap");
+    if (status)
+        return;
+    pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
+    while (pthreadInfo) {
+        func(pthreadInfo);
+        pthreadInfo = (epicsThreadOSD *)ellNext(&pthreadInfo->node);
+    }
+    status = pthread_mutex_unlock(&listLock);
+    checkStatus(status, "pthread_mutex_unlock epicsThreadMap");
+}
+
 epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level)
 {
     epicsThreadOSD *pthreadInfo;
@@ -784,7 +803,6 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
     if (!found)
         printf("Thread %#lx (%lu) not found.\n", (unsigned long)showThread, (unsigned long)showThread);
 }
-
 
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void)
 {

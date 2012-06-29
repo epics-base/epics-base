@@ -111,6 +111,9 @@ epicsShareFunc void epicsShareAPI epicsThreadRunExitHooks(epicsThreadId id);
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;
 
+/* Map func to all threads */
+epicsShareFunc void epicsShareAPI epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
+
 typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void);
 epicsShareFunc void epicsShareAPI epicsThreadPrivateDelete(epicsThreadPrivateId id);

@@ -42,6 +42,10 @@
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
+/* FIXME: this is the beta implementation of epicsThreadMap for vxWorks. See below. */
+#define ID_LIST_SIZE 2048
+static int taskIdList[ID_LIST_SIZE];
+
 /*The following forces atReboot to be loaded*/
 extern int atRebootExtern;
 static struct pext {
@@ -313,6 +317,23 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     int tid = (int)id;
     strncpy(name,taskName(tid),size-1);
     name[size-1] = '\0';
+}
+
+epicsShareFunc void epicsShareAPI epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+{
+/* FIXME: add better vxWorks implementation that uses a dynamic taskIdList */
+/* Andrew says:
+ * use the vxWorks routine taskIdListGet();
+ * that seems better, although there's no API to tell you how many tasks exist
+ * (I guess you could keep a count yourself if you register
+ * taskCreateHook and taskDeleteHook routines). */
+    int noTasks;
+    int i;
+
+    noTasks = taskIdListGet(taskIdList, ID_LIST_SIZE);
+    for (i = 0; i < noTasks; i++) {
+        func (i);
+    }
 }
 
 void epicsThreadShowAll(unsigned int level)

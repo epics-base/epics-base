@@ -16,6 +16,13 @@
  *
  */
 
+/* FIXME:
+ * The Windows implementation for thread hooks is still missing.
+ * epicsThreadHooksInit();                    as part of the initialization
+ * epicsThreadRunStartHooks(pthreadInfo);     from thread context before the user func runs
+ * epicsThreadRunExitHooks(pthreadInfo);      from thread context after the user func exits
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -975,6 +982,28 @@ static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
 }
 
 /*
+ * epicsThreadMap ()
+ */
+epicsShareFunc void epicsShareAPI epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+{
+    win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
+    win32ThreadParam * pParm;
+
+    if ( ! pGbl ) {
+        return;
+    }
+
+    EnterCriticalSection ( & pGbl->mutex );
+
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
+            pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
+        func ( ( epicsThreadId ) pParm );
+    }
+
+    LeaveCriticalSection ( & pGbl->mutex );
+}
+
+/*
  * epicsThreadShowAll ()
  */
 epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
@@ -987,9 +1016,9 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
     }
 
     EnterCriticalSection ( & pGbl->mutex );
-    
+
     epicsThreadShowPrivate ( 0, level );
-    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList ); 
+    for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
         epicsThreadShowPrivate ( ( epicsThreadId ) pParm, level );
     }

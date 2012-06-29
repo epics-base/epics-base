@@ -11,7 +11,7 @@ TOP=../../../..
 include $(TOP)/configure/CONFIG
 
 PROD_vxWorks += dbTestHarness chfPluginTest
-PROD_RTEMS += dbTestHarness chfPluginTest
+PROD_RTEMS += dbTestHarness
 
 PROD_LIBS = dbCore ca Com
 
@@ -52,7 +52,7 @@ TESTS += arrShorthandTest
 
 
 dbTestHarness_SRCS += epicsRunDbTests.c
-dbTestHarness_SRCS_RTEMS = rtemsTestHarness.c
+dbTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
 TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
 TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests

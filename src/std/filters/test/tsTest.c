@@ -16,6 +16,8 @@
 #include "dbAccessDefs.h"
 #include "chfPlugin.h"
 #include "epicsUnitTest.h"
+#include "registry.h"
+#include "dbmf.h"
 #include "epicsTime.h"
 #include "testMain.h"
 
@@ -50,10 +52,11 @@ MAIN(tsTest)
     db_field_log fl1;
     db_field_log *pfl2;
     epicsTimeStamp stamp, now;
+    dbEventCtx evtctx;
 
     testPlan(12);
 
-    db_init_events();
+    evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
         testAbort("Database description not loaded");
@@ -92,6 +95,8 @@ MAIN(tsTest)
 
     testOk(!!(pfl2 = db_create_read_log(pch)), "create field log from channel");
     stamp = pfl2->time;
+    db_delete_field_log(pfl2);
+
     pfl2 = dbChannelRunPreChain(pch, &fl1);
     epicsTimeGetCurrent(&now);
     testOk(epicsTimeDiffInSeconds(&pfl2->time, &stamp) > 0. &&
@@ -99,6 +104,12 @@ MAIN(tsTest)
 
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
 
     return testDone();
 }

@@ -824,7 +824,7 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
 
     pLog = db_create_event_log(pevent);
     pLog = dbChannelRunPreChain(pevent->chan, pLog);
-    db_queue_event_log(pevent, pLog);
+    if(pLog) db_queue_event_log(pevent, pLog);
 
     dbScanUnlock (prec);
 }

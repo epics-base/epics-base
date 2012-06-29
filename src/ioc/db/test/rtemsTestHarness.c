@@ -12,6 +12,7 @@
 #include <envDefs.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #endif /* __rtems__ */
 
@@ -29,6 +30,13 @@ int main(int argc, char **argv)
         printf("Stat /tmp: %o %u,%u\n", s.st_mode, s.st_uid, s.st_gid);
     }
     epicsEnvSet("TMPDIR","/tmp");
+    {
+        char name[40];
+        if(getcwd(name,40))
+            printf("Running from %s\n", name);
+        else
+            printf("Can't determine PWD");
+    }
 #endif
 
     epicsRunDbTests();  /* calls epicsExit(0) */

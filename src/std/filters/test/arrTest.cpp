@@ -28,6 +28,8 @@
 #include "epicsStdio.h"
 #include "envDefs.h"
 #include "dbStaticLib.h"
+#include "dbmf.h"
+#include "registry.h"
 #include "subRecord.h"
 #include "dbAddr.h"
 #include "dbAccess.h"
@@ -293,6 +295,19 @@ static void check(short dbr_type) {
     TEST5B(3, -8, -4, "both sides from-end");
 }
 
+static dbEventCtx evtctx;
+
+static void arrTestCleanup(void* junk)
+{
+    dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
+}
+
 MAIN(arrTest)
 {
     const chFilterPlugin *plug;
@@ -315,10 +330,12 @@ MAIN(arrTest)
     if (dbReadDatabase(&pdbbase, "arrTest.db", "..", NULL))
         testAbort("Test database not loaded");
 
+    epicsAtExit(&arrTestCleanup,NULL);
+
     /* Start the IOC */
 
     iocInit();
-    db_init_events();
+    evtctx = db_init_events();
     epicsThreadSleep(0.2);
 
     testOk(!!(plug = dbFindFilter(arr, strlen(arr))), "plugin arr registered correctly");
@@ -327,11 +344,5 @@ MAIN(arrTest)
     check(DBR_DOUBLE);
     check(DBR_STRING);
 
-    dbFreeBase(pdbbase);
-
     return testDone();
-
-    epicsExit(EXIT_SUCCESS);
-    /*Note that the following statement will never be executed*/
-    return 0;
 }

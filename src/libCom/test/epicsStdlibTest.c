@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <limits.h>
 
+#include "epicsTypes.h"
 #include "epicsStdlib.h"
 #include "epicsMath.h"
 #include "epicsUnitTest.h"
@@ -67,7 +68,7 @@ MAIN(epicsStdlibTest)
     epicsInt32 i32;
     epicsUInt32 u32;
 
-    testPlan(143);
+    testPlan(153);
 
     testOk(epicsParseLong("", &l, 0, NULL) == S_stdlib_noConversion,
         "Long '' => noConversion");
@@ -105,6 +106,11 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanULong("\t 1\n", &u, 0) && u == 1, "ULong '\\t 1\\n'");
     testOk(epicsScanFloat("\t 1\n", &f) && f == 1, "Float '\\t 1\\n'");
     testOk(epicsScanDouble("\t 1\n", &d) && d == 1, "Double '\\t 1\\n'");
+
+    testOk(epicsScanLong("-1", &l, 0) && l == -1, "Long '-1'");
+    testOk(epicsScanULong("-1", &u, 0) && u + 1 == 0, "ULong '-1'");
+    testOk(epicsScanFloat("-1", &f) && f == -1, "Float '-1'");
+    testOk(epicsScanDouble("-1", &d) && d == -1, "Double '-1'");
 
     testOk(epicsParseLong("2!", &l, 0, NULL) == S_stdlib_extraneous,
         "Long '2!' => extraneous");
@@ -209,16 +215,20 @@ MAIN(epicsStdlibTest)
 
     testOk(!epicsParseInt8("0x7f", &i8, 0, NULL) && i8 == 0x7f,
         "Int8 '0x7f'");
-    testOk(!epicsParseInt8("-0x80", &i8, 0, NULL) && i8 == -0x80,
+    testOk(!epicsParseInt8("-0x80", &i8, 0, NULL) && ((i8 + 0x80) & 0xff) == 0,
         "Int8 '-0x80'");
     testOk(!epicsParseUInt8("0xff", &u8, 0, NULL) && u8 == 0xff,
         "UInt8 '0xff'");
+    testOk(!epicsParseUInt8("-1", &u8, 0, NULL) && u8 == 0xff,
+        "UInt8 '-1'");
     testOk(epicsParseInt8("0x80", &i8, 0, NULL) == S_stdlib_overflow,
         "Int8 '0x80' => overflow");
     testOk(epicsParseInt8("-0x81", &i8, 0, NULL) == S_stdlib_overflow,
         "Int8 '-0x81' => overflow");
     testOk(epicsParseUInt8("0x100", &u8, 0, NULL) == S_stdlib_overflow,
         "UInt8 '0x100' => overflow");
+    testOk(epicsParseUInt8("-0x100", &u8, 0, NULL) == S_stdlib_overflow,
+        "UInt8 '-0x100' => overflow");
 
     testOk(!epicsParseInt16("0x7fff", &i16, 0, NULL) && i16 == 0x7fff,
         "Int16 '0x7fff'");
@@ -226,12 +236,16 @@ MAIN(epicsStdlibTest)
         "Int16 '-0x8000'");
     testOk(!epicsParseUInt16("0xffff", &u16, 0, NULL) && u16 == 0xffff,
         "UInt16 '0xffff'");
+    testOk(!epicsParseUInt16("-1", &u16, 0, NULL) && u16 == 0xffff,
+        "UInt16 '-1'");
     testOk(epicsParseInt16("0x8000", &i16, 0, NULL) == S_stdlib_overflow,
         "Int16 '0x8000' => overflow");
     testOk(epicsParseInt16("-0x8001", &i16, 0, NULL) == S_stdlib_overflow,
         "Int16 '-0x8001' => overflow");
     testOk(epicsParseUInt16("0x10000", &u16, 0, NULL) == S_stdlib_overflow,
         "UInt16 '0x10000' => overflow");
+    testOk(epicsParseUInt16("-0x10000", &u16, 0, NULL) == S_stdlib_overflow,
+        "UInt16 '-0x10000' => overflow");
 
     testOk(!epicsParseInt32("0x7fffffff", &i32, 0, NULL) && i32 == 0x7fffffff,
         "Int32 '0x7fffffff'");
@@ -239,12 +253,16 @@ MAIN(epicsStdlibTest)
         "Int32 '-0x80000000'");
     testOk(!epicsParseUInt32("0xffffffff", &u32, 0, NULL) && u32 == 0xffffffff,
         "UInt32 '0xffffffff'");
+    testOk(!epicsParseUInt32("-1", &u32, 0, NULL) && u32 == 0xffffffffU,
+        "UInt32 '-1'");
     testOk(epicsParseInt32("0x80000000", &i32, 0, NULL) == S_stdlib_overflow,
         "Int32 '0x80000000' => overflow");
     testOk(epicsParseInt32("-0x80000001", &i32, 0, NULL) == S_stdlib_overflow,
         "Int32 '-0x80000001' => overflow");
     testOk(epicsParseUInt32("0x100000000", &u32, 0, NULL) == S_stdlib_overflow,
         "UInt32 '0x100000000' => overflow");
+    testOk(epicsParseUInt32("-0x100000000", &u32, 0, NULL) == S_stdlib_overflow,
+        "UInt32 '-0x100000000' => overflow");
 
     testOk(epicsScanFloat(".1", &f) && fabs(f - 0.1) < 1e-7,
         "Float '.1'");
@@ -288,7 +306,7 @@ MAIN(epicsStdlibTest)
 
     testOk(epicsScanFloat("1e30", &f) && fabs(f - 1e30) < 1e24,
         "Float '1e30'");
-    testOk(epicsScanDouble("1e300", &d) && d == 1e300,
+    testOk(epicsScanDouble("1e300", &d) && fabs(d - 1e300) < 1e285,
         "Double '1e300'");
 
     testOk(epicsParseFloat("1e40", &f, NULL) == S_stdlib_overflow,

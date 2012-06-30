@@ -142,7 +142,7 @@ epicsParseUInt8(const char *str, epicsUInt8 *to, int base, char **units)
     if (status)
         return status;
 
-    if (value > 0xff)
+    if (value > 0xff && value <= ~0xffUL)
         return S_stdlib_overflow;
 
     *to = value;
@@ -174,7 +174,7 @@ epicsParseUInt16(const char *str, epicsUInt16 *to, int base, char **units)
     if (status)
         return status;
 
-    if (value > 0xffff)
+    if (value > 0xffff && value <= ~0xffffUL)
         return S_stdlib_overflow;
 
     *to = value;
@@ -209,7 +209,7 @@ epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units)
         return status;
 
 #if (ULONG_MAX > 0xffffffff)
-    if (value > 0xffffffffUL)
+    if (value > 0xffffffffUL && value <= ~0xffffffffUL)
         return S_stdlib_overflow;
 #endif
 

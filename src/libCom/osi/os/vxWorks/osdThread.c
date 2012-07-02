@@ -43,9 +43,11 @@
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
 
-/* FIXME: this is the beta implementation of epicsThreadMap for vxWorks. See below. */
-#define ID_LIST_SIZE 2048
-static int taskIdList[ID_LIST_SIZE];
+/* Table and lock for epicsThreadMap() */
+#define ID_LIST_CHUNK 512
+static int *taskIdList = 0;
+int taskIdListSize = 0;
+static SEM_ID epicsThreadListMutex = 0;
 
 /*The following forces atReboot to be loaded*/
 extern int atRebootExtern;
@@ -88,17 +90,25 @@ static int getOssPriorityValue(unsigned int osiPriority)
     }
 }
 
+static void mutexInit(SEM_ID lock)
+{
+    if (lock == 0) {
+        lock = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+        assert(lock);
+    }
+}
+
 static void epicsThreadInit(void)
 {
     static int lock = 0;
 
     while(!vxTas(&lock)) taskDelay(1);
     epicsThreadHooksInit();
-    if(epicsThreadOnceMutex==0) {
-        epicsThreadOnceMutex = semMCreate(
-                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-        assert(epicsThreadOnceMutex);
-    }
+    mutexInit(epicsThreadOnceMutex);
+    mutexInit(epicsThreadListMutex);
+    taskIdList = calloc(ID_LIST_CHUNK, sizeof(int));
+    assert(taskIdList);
+    taskIdListSize = ID_LIST_CHUNK;
     lock = 0;
 }
 
@@ -322,19 +332,26 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
 
 epicsShareFunc void epicsShareAPI epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
-/* FIXME: add better vxWorks implementation that uses a dynamic taskIdList */
-/* Andrew says:
- * use the vxWorks routine taskIdListGet();
- * that seems better, although there's no API to tell you how many tasks exist
- * (I guess you could keep a count yourself if you register
- * taskCreateHook and taskDeleteHook routines). */
-    int noTasks;
+    int noTasks = 0;
     int i;
+    int result;
 
-    noTasks = taskIdListGet(taskIdList, ID_LIST_SIZE);
+    result = semTake(epicsThreadListMutex, WAIT_FOREVER);
+    assert(result == OK);
+    noTasks = taskIdListGet(taskIdList, taskIdListSize);
+    while (noTasks == 0) {
+        noTasks = taskIdListGet(taskIdList, taskIdListSize);
+        if (noTasks == taskIdListSize) {
+            taskIdList = realloc(taskIdList, (taskIdListSize+ID_LIST_CHUNK)*sizeof(int));
+            assert(taskIdList);
+            taskIdListSize += ID_LIST_CHUNK;
+            noTasks = 0;
+        }
+    }
     for (i = 0; i < noTasks; i++) {
         func (i);
     }
+    semGive(epicsThreadListMutex);
 }
 
 void epicsThreadShowAll(unsigned int level)

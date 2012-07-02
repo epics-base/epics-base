@@ -154,19 +154,54 @@ epicsShareFunc void dbChannelInit (void);
 epicsShareFunc long dbChannelTest(const char *name);
 epicsShareFunc dbChannel * dbChannelCreate(const char *name);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
-epicsShareFunc const char * dbChannelName(dbChannel *chan);
-epicsShareFunc struct dbCommon * dbChannelRecord(dbChannel *chan);
-epicsShareFunc struct dbFldDes * dbChannelFldDes(dbChannel *chan);
-epicsShareFunc long dbChannelElements(dbChannel *chan);
-epicsShareFunc short dbChannelFieldType(dbChannel *chan);
-epicsShareFunc short dbChannelExportType(dbChannel *chan);
-epicsShareFunc short dbChannelFieldSize(dbChannel *chan);
-epicsShareFunc long dbChannelFinalElements(dbChannel *chan);
-epicsShareFunc short dbChannelFinalFieldType(dbChannel *chan);
-epicsShareFunc short dbChannelFinalExportType(dbChannel *chan);
-epicsShareFunc short dbChannelFinalElementSize(dbChannel *chan);
-epicsShareFunc short dbChannelSpecial(dbChannel *chan);
-epicsShareFunc void * dbChannelField(dbChannel *chan);
+
+
+/* In the following macros pChan is dbChannel* */
+
+/* evaluates to const char* */
+#define dbChannelName(pChan) ((pChan)->name)
+
+/* evaluates to struct dbCommon* */
+#define dbChannelRecord(pChan) ((pChan)->addr.precord)
+
+/* evaluates to struct dbFldDes* */
+#define dbChannelFldDes(pChan) ((pChan)->addr.pfldDes)
+
+/* evaluates to long */
+#define dbChannelElements(pChan) ((pChan)->addr.no_elements)
+
+/* evaluates to short */
+#define dbChannelFieldType(pChan) ((pChan)->addr.field_type)
+
+/* evaluates to short */
+#define dbChannelExportType(pChan) ((pChan)->addr.dbr_field_type)
+
+/* evaluates to short */
+#define dbChannelFieldSize(pChan) ((pChan)->addr.field_size)
+
+/* evaluates to long */
+#define dbChannelFinalElements(pChan) ((pChan)->final_no_elements)
+
+/* evaluates to short */
+#define dbChannelFinalFieldType(pChan) ((pChan)->final_type)
+
+/* evaluates to short */
+#define dbChannelFinalExportType(pChan) ((pChan)->dbr_final_type)
+
+/* evaluates to short */
+#define dbChannelFinalFieldSize(pChan) ((pChan)->final_field_size)
+
+/* evaluates to short */
+#define dbChannelSpecial(pChan) ((pChan)->addr.special)
+
+/* Channel filters do not get to interpose here since there are many
+ * places where the field pointer is compared with the address of a
+ * specific record field, so they can't modify the pointer value.
+ */
+/* evaluates to void* */
+#define dbChannelField(pChan) ((pChan)->addr.pfield)
+
+
 epicsShareFunc long dbChannelGet(dbChannel *chan, short type,
         void *pbuffer, long *options, long *nRequest, void *pfl);
 epicsShareFunc long dbChannelGetField(dbChannel *chan, short type,

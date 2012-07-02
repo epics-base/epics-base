@@ -62,7 +62,16 @@ typedef struct dbChannel {
     ELLLIST post_chain;       /* list of filters to be called post-event-queue */
 } dbChannel;
 
-/* Prototype for the post event function that is called in filter stacks */
+/* Prototype for the channel event function that is called in filter stacks
+ *
+ * When invoked the scan lock for the record associated with 'chan' _may_ be locked.
+ * If pLog->type==dbfl_type_rec then dbScanLock() must be called before copying
+ * data out of the associated record.
+ *
+ * This function has ownership of the field log pLog, if it wishes to discard
+ * this update it should free the field log with db_delete_field_log() and
+ * then return NULL.
+ */
 typedef db_field_log* (chPostEventFunc)(void *pvt, dbChannel *chan, db_field_log *pLog);
 
 /* Return values from chFilterIf->parse_* routines: */

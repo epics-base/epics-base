@@ -89,6 +89,11 @@ epicsThreadPrivateTest_SRCS += epicsThreadPrivateTest.cpp
 testHarness_SRCS += epicsThreadPrivateTest.cpp
 TESTS += epicsThreadPrivateTest
 
+TESTPROD_HOST += epicsThreadHooksTest
+epicsThreadHooksTest_SRCS += epicsThreadHooksTest.c
+testHarness_SRCS += epicsThreadHooksTest.c
+TESTS += epicsThreadHooksTest
+
 TESTPROD_HOST += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
 testHarness_SRCS += epicsExitTest.c

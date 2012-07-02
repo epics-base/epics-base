@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -10,29 +10,61 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS += dbRecStd dbCore ca Com
+PROD_LIBS = dbRecStd dbCore ca Com
 
+TARGETS += $(COMMON_DIR)/tsTest.dbd
+tsTest_DBD += xRecord.dbd
 TESTPROD_HOST += tsTest
-tsTest_SRCS += tsTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += tsTest
+tsTest_SRCS += xRecord.c
+tsTest_SRCS += tsTest.c
+tsTest_SRCS += tsTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += tsTest.c
+testHarness_SRCS += tsTest_registerRecordDeviceDriver.cpp
 TESTS += tsTest
 
+TARGETS += $(COMMON_DIR)/dbndTest.dbd
+dbndTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbndTest
-dbndTest_SRCS += dbndTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += dbndTest
+dbndTest_SRCS += xRecord.c
+dbndTest_SRCS += dbndTest.c
+dbndTest_SRCS += dbndTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbndTest.c
+testHarness_SRCS += dbndTest_registerRecordDeviceDriver.cpp
 TESTS += dbndTest
 
 TARGETS += $(COMMON_DIR)/arrTest.dbd
 arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
-arrTest_SRCS += arrTest.cpp arrRecord.c arrRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += arrTest
+arrTest_SRCS += arrRecord.c
+arrTest_SRCS += arrTest.cpp
+arrTest_SRCS += arrTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += arrRecord.c
+testHarness_SRCS += arrTest.cpp
+testHarness_SRCS += arrTest_registerRecordDeviceDriver.cpp
 TESTS += arrTest
 
+TARGETS += $(COMMON_DIR)/syncTest.dbd
+syncTest_DBD += xRecord.dbd
 TESTPROD_HOST += syncTest
-syncTest_SRCS += syncTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += syncTest
+syncTest_SRCS += xRecord.c
+syncTest_SRCS += syncTest.c
+syncTest_SRCS += syncTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += syncTest.c
+testHarness_SRCS += syncTest_registerRecordDeviceDriver.cpp
 TESTS += syncTest
+
+# epicsRunFilterTests runs all the test programs in a known working order.
+testHarness_SRCS += epicsRunFilterTests.c
+testHarness_SRCS += xRecord.c
+
+filterTestHarness_SRCS += $(testHarness_SRCS)
+filterTestHarness_SRCS_RTEMS += rtemsTestHarness.c
+
+PROD_vxWorks = filterTestHarness
+PROD_RTEMS = filterTestHarness
+
+TESTSPEC_vxWorks = filterTestHarness.munch; epicsRunFilterTests
+TESTSPEC_RTEMS = filterTestHarness.boot; epicsRunFilterTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

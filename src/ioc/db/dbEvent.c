@@ -74,6 +74,7 @@ struct event_user {
     epicsMutexId        lock;
     epicsEventId        ppendsem;       /* Wait while empty */
     epicsEventId        pflush_sem;     /* wait for flush */
+    epicsEventId        pexitsem;       /* wait for event task to join */
 
     EXTRALABORFUNC      *extralabor_sub;/* off load to event task */
     void                *extralabor_arg;/* parameter to above */
@@ -276,35 +277,44 @@ dbEventCtx epicsShareAPI db_init_events (void)
         return NULL;
     }
 
+    /* Flag will be cleared when event task starts */
+    evUser->pendexit = TRUE;
+
     evUser->firstque.evUser = evUser;
     evUser->firstque.writelock = epicsMutexCreate();
-    if (!evUser->firstque.writelock) {
-        return NULL;
-    }
+    if (!evUser->firstque.writelock)
+        goto fail;
 
     evUser->ppendsem = epicsEventCreate(epicsEventEmpty);
-    if (!evUser->ppendsem) {
-        epicsMutexDestroy (evUser->firstque.writelock);
-        return NULL;
-    }
+    if (!evUser->ppendsem)
+        goto fail;
     evUser->pflush_sem = epicsEventCreate(epicsEventEmpty);
-    if (!evUser->pflush_sem) {
-        epicsMutexDestroy (evUser->firstque.writelock);
-        epicsEventDestroy (evUser->ppendsem);
-        return NULL;
-    }
+    if (!evUser->pflush_sem)
+        goto fail;
     evUser->lock = epicsMutexCreate();
-    if (!evUser->lock) {
-        epicsMutexDestroy (evUser->firstque.writelock);
-        epicsEventDestroy (evUser->pflush_sem);
-        epicsEventDestroy (evUser->ppendsem);
-        return NULL;
-    }
+    if (!evUser->lock)
+        goto fail;
+    evUser->pexitsem = epicsEventCreate(epicsEventEmpty);
+    if (!evUser->pexitsem)
+        goto fail;
 
     evUser->flowCtrlMode = FALSE;
     evUser->extraLaborBusy = FALSE;
     evUser->pSuicideEvent = NULL;
     return (dbEventCtx) evUser;
+fail:
+    if(evUser->lock)
+        epicsMutexDestroy (evUser->lock);
+    if(evUser->firstque.writelock)
+        epicsMutexDestroy (evUser->firstque.writelock);
+    if(evUser->ppendsem)
+        epicsEventDestroy (evUser->ppendsem);
+    if(evUser->pflush_sem)
+        epicsEventDestroy (evUser->pflush_sem);
+    if(evUser->pexitsem)
+        epicsEventDestroy (evUser->pexitsem);
+    freeListFree(dbevEventUserFreeList,evUser);
+    return NULL;
 }
 
 /*
@@ -328,10 +338,26 @@ void epicsShareAPI db_close_events (dbEventCtx ctx)
      * hazardous to the system's health.
      */
     epicsMutexMustLock ( evUser->lock );
-    evUser->pendexit = TRUE;
+    if(!evUser->pendexit) { /* event task running */
+        evUser->pendexit = TRUE;
+        epicsMutexUnlock ( evUser->lock );
+
+        /* notify the waiting task */
+        epicsEventSignal(evUser->ppendsem);
+        /* wait for task to exit */
+        epicsEventMustWait(evUser->pexitsem);
+
+        epicsMutexMustLock ( evUser->lock );
+    }
+
     epicsMutexUnlock ( evUser->lock );
-    /* notify the waiting task */
-    epicsEventSignal(evUser->ppendsem);
+
+    epicsEventDestroy(evUser->pexitsem);
+    epicsEventDestroy(evUser->ppendsem);
+    epicsEventDestroy(evUser->pflush_sem);
+    epicsMutexDestroy(evUser->lock);
+
+    freeListFree(dbevEventUserFreeList, evUser);
 }
 
 /*
@@ -824,7 +850,7 @@ void epicsShareAPI db_post_single_event (dbEventSubscription event)
 
     pLog = db_create_event_log(pevent);
     pLog = dbChannelRunPreChain(pevent->chan, pLog);
-    db_queue_event_log(pevent, pLog);
+    if(pLog) db_queue_event_log(pevent, pLog);
 
     dbScanUnlock (prec);
 }
@@ -1006,13 +1032,9 @@ static void event_task (void *pParm)
         }
     }
 
-    epicsEventDestroy(evUser->ppendsem);
-    epicsEventDestroy(evUser->pflush_sem);
-    epicsMutexDestroy(evUser->lock);
-
-    freeListFree(dbevEventUserFreeList, evUser);
-
     taskwdRemove(epicsThreadGetIdSelf());
+
+    epicsEventSignal(evUser->pexitsem);
 
     return;
 }
@@ -1037,7 +1059,6 @@ int epicsShareAPI db_start_events (
          return DB_EVENT_OK;
      }
 
-     evUser->pendexit = FALSE;
      evUser->init_func = init_func;
      evUser->init_func_arg = init_func_arg;
      if (!taskname) {
@@ -1051,6 +1072,7 @@ int epicsShareAPI db_start_events (
          epicsMutexUnlock ( evUser->lock );
          return DB_EVENT_ERROR;
      }
+     evUser->pendexit = FALSE;
      epicsMutexUnlock ( evUser->lock );
      return DB_EVENT_OK;
 }

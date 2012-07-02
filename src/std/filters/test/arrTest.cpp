@@ -28,6 +28,8 @@
 #include "epicsStdio.h"
 #include "envDefs.h"
 #include "dbStaticLib.h"
+#include "dbmf.h"
+#include "registry.h"
 #include "subRecord.h"
 #include "dbAddr.h"
 #include "dbAccess.h"
@@ -37,10 +39,11 @@
 #include "dbChannel.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 #include "arrRecord.h"
 
-extern "C" int arrRecord_registerRecordDeviceDriver(struct dbBase *pdbbase);
+extern "C" int arrTest_registerRecordDeviceDriver(struct dbBase *pdbbase);
 extern "C" void (*pvar_func_arrInitialize)(void);
 
 #define CA_SERVER_PORT "65535"
@@ -293,6 +296,19 @@ static void check(short dbr_type) {
     TEST5B(3, -8, -4, "both sides from-end");
 }
 
+static dbEventCtx evtctx;
+
+static void arrTestCleanup(void* junk)
+{
+    dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
+}
+
 MAIN(arrTest)
 {
     const chFilterPlugin *plug;
@@ -304,21 +320,25 @@ MAIN(arrTest)
 
     epicsEnvSet("EPICS_CA_SERVER_PORT", server_port);
 
-    if (dbReadDatabase(&pdbbase, "arrRecord.dbd",
-        "..:../../../../../dbd", NULL))
+    if (dbReadDatabase(&pdbbase, "arrTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+            "../O.Common", NULL))
         testAbort("Database description not loaded");
 
     (*pvar_func_arrInitialize)();
-    arrRecord_registerRecordDeviceDriver(pdbbase);
+    arrTest_registerRecordDeviceDriver(pdbbase);
     registryFunctionAdd("exit", (REGISTRYFUNCTION) exitSubroutine);
 
-    if (dbReadDatabase(&pdbbase, "arrTest.db", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "arrTest.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database not loaded");
+
+    epicsAtExit(&arrTestCleanup,NULL);
 
     /* Start the IOC */
 
     iocInit();
-    db_init_events();
+    evtctx = db_init_events();
     epicsThreadSleep(0.2);
 
     testOk(!!(plug = dbFindFilter(arr, strlen(arr))), "plugin arr registered correctly");
@@ -327,11 +347,5 @@ MAIN(arrTest)
     check(DBR_DOUBLE);
     check(DBR_STRING);
 
-    dbFreeBase(pdbbase);
-
     return testDone();
-
-    epicsExit(EXIT_SUCCESS);
-    /*Note that the following statement will never be executed*/
-    return 0;
 }

@@ -17,11 +17,14 @@
 #include "db_field_log.h"
 #include "dbCommon.h"
 #include "dbChannel.h"
+#include "registry.h"
 #include "chfPlugin.h"
+#include "dbmf.h"
 #include "epicsUnitTest.h"
 #include "epicsTime.h"
 #include "dbState.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 #define PATTERN 0x55
 
@@ -127,7 +130,7 @@ static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
     checkCtxRead(pch, red);
 }
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+void syncTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(syncTest)
 {
@@ -136,18 +139,22 @@ MAIN(syncTest)
     char myname[] = "sync";
     db_field_log *pfl[10];
     int i;
+    dbEventCtx evtctx;
 
     testPlan(0);
 
-    db_init_events();
+    evtctx = db_init_events();
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "syncTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+            "../O.Common", NULL))
         testAbort("Database description not loaded");
 
     (*pvar_func_syncInitialize)();       /* manually initialize plugin */
-    xRecord_registerRecordDeviceDriver(pdbbase);
+    syncTest_registerRecordDeviceDriver(pdbbase);
 
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database not loaded");
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
@@ -194,6 +201,8 @@ MAIN(syncTest)
     for (i = 0; i < 10; i++)
         db_delete_field_log(pfl[i]);
 
+    dbChannelDelete(pch);
+
     /* mode UNLESS */
 
     testHead("Mode UNLESS  (m='unless', s='red')");
@@ -225,6 +234,8 @@ MAIN(syncTest)
     for (i = 0; i < 10; i++)
         db_delete_field_log(pfl[i]);
 
+    dbChannelDelete(pch);
+
     /* mode BEFORE */
 
     testHead("Mode BEFORE  (m='before', s='red')");
@@ -254,8 +265,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[8], "state=FALSE, log8");
     mustDrop(pch, pfl[9], "state=FALSE, log9");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[2]);
+
+    dbChannelDelete(pch);
 
     /* mode FIRST */
 
@@ -285,8 +297,10 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[3]);
+    db_delete_field_log(pfl[9]);
+
+    dbChannelDelete(pch);
 
     /* mode LAST */
 
@@ -317,8 +331,9 @@ MAIN(syncTest)
     mustDrop(pch, pfl[8], "state=FALSE, log8");
     mustDrop(pch, pfl[9], "state=FALSE, log9");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[5]);
+
+    dbChannelDelete(pch);
 
     /* mode AFTER */
 
@@ -348,20 +363,17 @@ MAIN(syncTest)
     mustDrop(pch, pfl[7], "state=FALSE, log7");
     mustDrop(pch, pfl[8], "state=FALSE, log8");
 
-    for (i = 0; i < 10; i++)
-        db_delete_field_log(pfl[i]);
+    db_delete_field_log(pfl[6]);
+    db_delete_field_log(pfl[9]);
 
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
 
     return testDone();
 }
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

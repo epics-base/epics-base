@@ -21,8 +21,10 @@
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 typedef struct myStruct {
     epicsInt32 start;
@@ -75,9 +77,9 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+void arrShorthandTest_registerRecordDeviceDriver(struct dbBase *);
 
-MAIN(chfPluginTest)
+MAIN(arrShorthandTest)
 {
     dbChannel *pch;
 
@@ -85,11 +87,14 @@ MAIN(chfPluginTest)
 
     db_init_events();
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "arrShorthandTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+            "../O.Common", NULL))
         testAbort("Database description not loaded");
 
-    xRecord_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+    arrShorthandTest_registerRecordDeviceDriver(pdbbase);
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database not loaded");
 
     testHead("Register plugin");
@@ -124,16 +129,8 @@ MAIN(chfPluginTest)
     TESTGOOD("range with incr [s:i:e]",     "[2:3:4]", 2, 3, 4);
 
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase = NULL;
 
     return testDone();
 }
-
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

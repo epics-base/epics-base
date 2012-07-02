@@ -31,6 +31,7 @@
 #include "epicsStdlib.h"
 #include "epicsString.h"
 #include "epicsStdio.h"
+#include "dbChannel.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"
@@ -592,6 +593,8 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
     drvSup		*pdrvSupNext;
     brkTable		*pbrkTable;
     brkTable		*pbrkTableNext;
+    chFilterPlugin      *pfilt;
+    chFilterPlugin      *pfiltNext;
     int			i;
     DBENTRY		dbentry;
 
@@ -651,6 +654,7 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
 	    ellDelete(&pdbRecordType->attributeList,&pAttribute->node);
 	    free((void *)pAttribute->name);
 	    free((void *)pAttribute->pdbFldDes);
+	    free(pAttribute);
 	    pAttribute = pAttributeNext;
 	}
 	pdbRecordTypeNext = (dbRecordType *)ellNext(&pdbRecordType->node);
@@ -721,6 +725,15 @@ void epicsShareAPI dbFreeBase(dbBase *pdbbase)
 	free((void *)pbrkTable->paBrkInt);
 	free((void *)pbrkTable);
 	pbrkTable = pbrkTableNext;
+    }
+    pfilt = (chFilterPlugin *)ellFirst(&pdbbase->filterList);
+    while(pfilt) {
+        pfiltNext = (chFilterPlugin *)ellNext(&pfilt->node);
+        free((char*)pfilt->name);
+        if(pfilt->fif->priv_free)
+            (*pfilt->fif->priv_free)(pfilt->puser);
+        free(pfilt);
+        pfilt = pfiltNext;
     }
     gphFreeMem(pdbbase->pgpHash);
     dbPvdFreeMem(pdbbase);

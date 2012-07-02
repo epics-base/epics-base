@@ -16,9 +16,11 @@
 #include "dbChannel.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "registry.h"
 #include "recSup.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 /* Expected call bit definitions */
 #define e_start         0x00000001
@@ -143,11 +145,11 @@ void c_close(chFilter *filter)
 }
 
 chFilterIf testIf =
-    { p_start, p_abort, p_end, p_null, p_boolean, p_integer, p_double,
+    { NULL, p_start, p_abort, p_end, p_null, p_boolean, p_integer, p_double,
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
       c_open, c_reg_pre, c_reg_post, c_report, c_close };
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+void dbChannelTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 {
@@ -155,11 +157,14 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 
     testPlan(66);
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "dbChannelTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+            "../O.Common", NULL))
         testAbort("Database description not loaded");
 
-    xRecord_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+    dbChannelTest_registerRecordDeviceDriver(pdbbase);
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database not loaded");
 
     r = e = 0;
@@ -247,15 +252,8 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk1(!dbChannelCreate("x.{\"scalar\":{}}"));
 
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase = NULL;
 
     return testDone();
 }
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

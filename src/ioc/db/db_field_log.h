@@ -73,6 +73,13 @@ struct dbfl_val {
     union native_value field; /* Field value */
 };
 
+/* External data reference.
+ * If dtor is provided then it should be called when the referenced
+ * data is no longer needed.  This is done automatically by
+ * db_delete_field_log().  Any code which changes a dbfl_type_ref
+ * field log to another type, or to reference different data,
+ * must explicitly call the dtor function.
+ */
 struct dbfl_ref {
     dbfl_freeFunc     *dtor;  /* Callback to free filter-allocated resources */
     void              *pvt;   /* Private pointer */
@@ -81,7 +88,9 @@ struct dbfl_ref {
 
 typedef struct db_field_log {
     enum dbfl_type   type:2;  /* type (union) selector */
+    /* ctx is used for all types */
     enum dbfl_context ctx:1;  /* context (operation type) */
+    /* the following are used for value and reference types */
     epicsTimeStamp     time;  /* Time stamp */
     unsigned short     stat;  /* Alarm Status */
     unsigned short     sevr;  /* Alarm Severity */
@@ -93,6 +102,29 @@ typedef struct db_field_log {
         struct dbfl_ref r;
     } u;
 } db_field_log;
+
+/*
+ * A db_field_log will in one of three types:
+ *
+ * dbfl_type_rec - Reference to record
+ *  The field log stores no data itself.  Data must instead be taken
+ *  via the dbChannel* which must always be provided when along
+ *  with the field log.
+ *  For this type only the 'type' and 'ctx' members are used.
+ *
+ * dbfl_type_ref - Reference to outside value
+ *  Used for variable size (array) data types.  Meta-data
+ *  is stored in the field log, but value data is stored externally
+ *  (see struct dbfl_ref).
+ *  For this type all meta-data members are used.  The dbfl_ref side of the
+ *  data union is used.
+ *
+ * dbfl_type_val - Internal value
+ *  Used to store small scalar data.  Meta-data and value are
+ *  present in this structure and no external references are used.
+ *  For this type all meta-data members are used.  The dbfl_val side of the
+ *  data union is used.
+ */
 
 #ifdef __cplusplus
 }

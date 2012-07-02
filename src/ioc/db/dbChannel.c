@@ -584,6 +584,8 @@ long dbChannelOpen(dbChannel *chan)
     }
 
     /* Set up type probe */
+    probe.type = dbfl_type_val;
+    probe.ctx = dbfl_context_read;
     probe.field_type  = dbChannelFieldType(chan);
     probe.no_elements = dbChannelElements(chan);
     probe.field_size  = dbChannelFieldSize(chan);

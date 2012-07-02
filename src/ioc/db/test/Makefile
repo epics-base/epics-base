@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -10,48 +10,63 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_vxWorks += dbTestHarness
-PROD_RTEMS += dbTestHarness
-
 PROD_LIBS = dbCore ca Com
 
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
-dbTestHarness_SRCS += callbackTest.c
+testHarness_SRCS += callbackTest.c
 TESTS += callbackTest
-
-
-dbTestHarness_SRCS += epicsRunDbTests.c
-dbTestHarness_SRCS_RTEMS = rtemsTestHarness.c
-
-TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
-TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
-
-TESTPROD_HOST += dbChannelTest
-dbChannelTest_SRCS += dbChannelTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += dbChannelTest
-TESTS += dbChannelTest
-
-TESTPROD_HOST += chfPluginTest
-chfPluginTest_SRCS += chfPluginTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += chfPluginTest
-TESTS += chfPluginTest
-
-TESTPROD_HOST += arrShorthandTest
-arrShorthandTest_SRCS += arrShorthandTest.c xRecord_registerRecordDeviceDriver.cpp
-OBJS_IOC_vxWorks += arrShorthandTest
-TESTS += arrShorthandTest
 
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
-OBJS_IOC_vxWorks += dbStateTest
+testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
+
+TARGETS += $(COMMON_DIR)/dbChannelTest.dbd
+dbChannelTest_DBD += xRecord.dbd
+TESTPROD_HOST += dbChannelTest
+dbChannelTest_SRCS += xRecord.c
+dbChannelTest_SRCS += dbChannelTest.c
+dbChannelTest_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbChannelTest.c
+testHarness_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+TESTS += dbChannelTest
+
+TARGETS += $(COMMON_DIR)/chfPluginTest.dbd
+chfPluginTest_DBD += xRecord.dbd
+TESTPROD_HOST += chfPluginTest
+chfPluginTest_SRCS += xRecord.c
+chfPluginTest_SRCS += chfPluginTest.c
+chfPluginTest_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += chfPluginTest.c
+testHarness_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+TESTS += chfPluginTest
+
+TARGETS += $(COMMON_DIR)/arrShorthandTest.dbd
+arrShorthandTest_DBD += xRecord.dbd
+TESTPROD_HOST += arrShorthandTest
+arrShorthandTest_SRCS += xRecord.c
+arrShorthandTest_SRCS += arrShorthandTest.c
+arrShorthandTest_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += arrShorthandTest.c
+testHarness_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+TESTS += arrShorthandTest
+
+# The testHarness runs all the test programs in a known working order.
+testHarness_SRCS += epicsRunDbTests.c
+testHarness_SRCS += xRecord.c
+
+dbTestHarness_SRCS += $(testHarness_SRCS)
+dbTestHarness_SRCS_RTEMS += rtemsTestHarness.c
+
+PROD_vxWorks = dbTestHarness
+PROD_RTEMS = dbTestHarness
+
+TESTSPEC_vxWorks = dbTestHarness.munch; epicsRunDbTests
+TESTSPEC_RTEMS = dbTestHarness.boot; epicsRunDbTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
-dbChannelTest$(DEP): $(COMMON_DIR)/xRecord.h
-chfPluginTest$(DEP): $(COMMON_DIR)/xRecord.h
-arrShorthandTest$(DEP): $(COMMON_DIR)/xRecord.h
-dbStateTest$(DEP): $(COMMON_DIR)/xRecord.h
+xRecord$(DEP): $(COMMON_DIR)/xRecord.h

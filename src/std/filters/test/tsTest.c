@@ -16,8 +16,11 @@
 #include "dbAccessDefs.h"
 #include "chfPlugin.h"
 #include "epicsUnitTest.h"
+#include "registry.h"
+#include "dbmf.h"
 #include "epicsTime.h"
 #include "testMain.h"
+#include "osiFileName.h"
 
 #define PATTERN 0x55
 
@@ -36,7 +39,7 @@ static int fl_equal_ex_ts(const db_field_log *pfl1, const db_field_log *pfl2) {
     return fl_equal(&fl1, pfl2);
 }
 
-void xRecord_registerRecordDeviceDriver(struct dbBase *);
+void tsTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(tsTest)
 {
@@ -50,18 +53,22 @@ MAIN(tsTest)
     db_field_log fl1;
     db_field_log *pfl2;
     epicsTimeStamp stamp, now;
+    dbEventCtx evtctx;
 
     testPlan(12);
 
-    db_init_events();
+    evtctx = db_init_events();
 
-    if (dbReadDatabase(&pdbbase, "xRecord.dbd", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "tsTest.dbd",
+            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
+            "../O.Common", NULL))
         testAbort("Database description not loaded");
 
     (*pvar_func_tsInitialize)();       /* manually initialize plugin */
-    xRecord_registerRecordDeviceDriver(pdbbase);
+    tsTest_registerRecordDeviceDriver(pdbbase);
 
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.db", "..", NULL))
+    if (dbReadDatabase(&pdbbase, "xRecord.db",
+            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database not loaded");
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
@@ -92,6 +99,8 @@ MAIN(tsTest)
 
     testOk(!!(pfl2 = db_create_read_log(pch)), "create field log from channel");
     stamp = pfl2->time;
+    db_delete_field_log(pfl2);
+
     pfl2 = dbChannelRunPreChain(pch, &fl1);
     epicsTimeGetCurrent(&now);
     testOk(epicsTimeDiffInSeconds(&pfl2->time, &stamp) > 0. &&
@@ -99,15 +108,12 @@ MAIN(tsTest)
 
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);
+    registryFree();
+    pdbbase=0;
+
+    db_close_events(evtctx);
+
+    dbmfFreeChunks();
 
     return testDone();
 }
-
-#define GEN_SIZE_OFFSET
-#include "xRecord.h"
-
-#include <recSup.h>
-#include <epicsExport.h>
-
-static rset xRSET;
-epicsExportAddress(rset,xRSET);

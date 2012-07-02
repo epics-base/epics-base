@@ -166,8 +166,8 @@ threadWrapper (rtems_task_argument arg)
 
     epicsThreadRunStartHooks(pthreadInfo);
     (*v->funptr)(v->parm);
-    epicsThreadRunExitHooks(pthreadInfo);
     epicsExitCallAtThreadExits ();
+    epicsThreadRunExitHooks(pthreadInfo);
     taskVarLock ();
     if (v->back)
         v->back->forw = v->forw;

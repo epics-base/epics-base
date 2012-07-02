@@ -165,8 +165,8 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     papTSD = 0;
     epicsThreadRunStartHooks(pthreadInfo);
     (*func)(parm);
-    epicsThreadRunExitHooks(pthreadInfo);
     epicsExitCallAtThreadExits ();
+    epicsThreadRunExitHooks(pthreadInfo);
     free(papTSD);
     taskVarDelete(tid,(int *)(char *)&papTSD);
 }

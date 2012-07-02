@@ -378,8 +378,8 @@ static void * start_routine(void *arg)
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
-    epicsThreadRunExitHooks(pthreadInfo);
     epicsExitCallAtThreadExits ();
+    epicsThreadRunExitHooks(pthreadInfo);
 
     free_threadInfo(pthreadInfo);
     return(0);

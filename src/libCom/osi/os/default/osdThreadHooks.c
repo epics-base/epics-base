@@ -32,9 +32,11 @@ typedef struct epicsThreadHook {
 
 static ELLLIST startHooks = ELLLIST_INIT;
 static ELLLIST exitHooks = ELLLIST_INIT;
+
+/* Locking could probably be avoided, if elllist implementation was using atomic ops */
 static epicsMutexId hookLock;
 
-static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func)
+static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func, int atHead)
 {
     epicsThreadHook *pHook;
 
@@ -42,29 +44,33 @@ static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func)
     if (!pHook) checkStatusOnceReturn(errno,"calloc","epicsThreadAddStartHook");
     pHook->func = func;
     epicsMutexLock(hookLock);
-    ellInsert(list, NULL, &pHook->node);
+    if (atHead)
+        ellInsert(list, NULL, &pHook->node);
+    else
+        ellAdd(list, &pHook->node);
     epicsMutexUnlock(hookLock);
 }
 
 static void runHooks (ELLLIST *list, epicsThreadId id) {
     epicsThreadHook *pHook;
 
-    /* As we're only ever inserting hooks at the head of the list, forward traversing is safe */
+    epicsMutexLock(hookLock);
     pHook = (epicsThreadHook *) ellFirst(list);
     while (pHook) {
         pHook->func(id);
         pHook = (epicsThreadHook *) ellNext(&pHook->node);
     }
+    epicsMutexUnlock(hookLock);
 }
 
 epicsShareFunc void epicsShareAPI epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
 {
-    addHook(&startHooks, hook);
+    addHook(&startHooks, hook, 0);
 }
 
 epicsShareFunc void epicsShareAPI epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook)
 {
-    addHook(&exitHooks, hook);
+    addHook(&exitHooks, hook, 1);
 }
 
 epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void)

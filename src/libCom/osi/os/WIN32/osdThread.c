@@ -16,13 +16,6 @@
  *
  */
 
-/* FIXME:
- * The Windows implementation for thread hooks is still missing.
- * epicsThreadHooksInit();                    as part of the initialization
- * epicsThreadRunStartHooks(pthreadInfo);     from thread context before the user func runs
- * epicsThreadRunExitHooks(pthreadInfo);      from thread context after the user func exits
- */
-
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -233,6 +226,7 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
         pWin32ThreadGlobal = 0;
         return 0;
     }
+    epicsThreadHooksInit();
 
     InterlockedExchange ( & initCompleted, 1 );
 
@@ -503,6 +497,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
         success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
+            epicsThreadRunStartHooks(pParm);
             /* printf ( "starting thread %d\n", pParm->id ); */
             ( *pParm->funptr ) ( pParm->parm );
             /* printf ( "terminating thread %d\n", pParm->id ); */
@@ -517,6 +512,8 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     }
 
     epicsExitCallAtThreadExits ();
+
+    epicsThreadRunExitHooks(pParm);
 
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!

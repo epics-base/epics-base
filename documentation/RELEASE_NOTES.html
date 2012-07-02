@@ -15,6 +15,17 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New API to hook into thread creation and deletion</h3>
+
+<p>A hook API has been added allowing user-supplied functions to be called
+whenever a thread starts or exits. The calls are made from the thread's
+context, and can be used to control additional thread properties not handled
+inside EPICS base, e.g. setting the scheduling policy or CPU affinity (on SMP
+systems).</p>
+
+<p>The API also supports a mapping operation, calling a user-supplied function
+for every thread that is currently running.</p>
+
 <h3>New scan rate units</h3>
 
 <p>Scan rates defined in the menuScan.dbd file may now be specified in seconds,

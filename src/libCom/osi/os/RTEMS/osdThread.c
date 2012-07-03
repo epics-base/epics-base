@@ -643,19 +643,17 @@ showInternalTaskInfo (rtems_id tid)
 }
 
 static void
-epicsThreadShowHeader (void)
-{
-    fprintf(epicsGetStdout(),"            PRIORITY\n");
-    fprintf(epicsGetStdout(),"    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
-    fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
-}
-
-static void
 epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
+    if (!v) {
+        fprintf(epicsGetStdout(),"            PRIORITY\n");
+        fprintf(epicsGetStdout(),"    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
+        fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
+    } else {
         fprintf(epicsGetStdout(),"%9.8x", (int)v->id);
         showInternalTaskInfo (v->id);
         fprintf(epicsGetStdout()," %s\n", v->name);
+    }
 }
 
 void epicsThreadShow (epicsThreadId id, unsigned int level)
@@ -663,7 +661,7 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     struct taskVar *v;
 
     if (!id) {
-        epicsThreadShowHeader ();
+        epicsThreadShowInfo (NULL, level);
         return;
     }
     taskVarLock ();

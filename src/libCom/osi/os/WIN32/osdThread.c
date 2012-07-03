@@ -951,9 +951,9 @@ static const char * epics_GetThreadPriorityAsString ( HANDLE thr )
 }
 
 /*
- * epicsThreadShowPrivate ()
+ * epicsThreadShowInfo ()
  */
-static void epicsThreadShowPrivate ( epicsThreadId id, unsigned level )
+static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 {
     win32ThreadParam * pParm = ( win32ThreadParam * ) id;
 
@@ -1014,10 +1014,10 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
 
     EnterCriticalSection ( & pGbl->mutex );
 
-    epicsThreadShowPrivate ( 0, level );
+    epicsThreadShowInfo ( 0, level );
     for ( pParm = ( win32ThreadParam * ) ellFirst ( & pGbl->threadList );
             pParm; pParm = ( win32ThreadParam * ) ellNext ( & pParm->node ) ) {
-        epicsThreadShowPrivate ( ( epicsThreadId ) pParm, level );
+        epicsThreadShowInfo ( ( epicsThreadId ) pParm, level );
     }
 
     LeaveCriticalSection ( & pGbl->mutex );
@@ -1028,8 +1028,8 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll ( unsigned level )
  */
 epicsShareFunc void epicsShareAPI epicsThreadShow ( epicsThreadId id, unsigned level )
 {
-    epicsThreadShowPrivate ( 0, level );
-    epicsThreadShowPrivate ( id, level );
+    epicsThreadShowInfo ( 0, level );
+    epicsThreadShowInfo ( id, level );
 }
 
 /*

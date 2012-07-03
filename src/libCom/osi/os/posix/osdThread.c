@@ -35,6 +35,8 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
+
 static int mutexLock(pthread_mutex_t *id)
 {
     int status;
@@ -767,7 +769,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShowAll(unsigned int level)
         return;
     pthreadInfo=(epicsThreadOSD *)ellFirst(&pthreadList);
     while(pthreadInfo) {
-        epicsShowThreadInfo(pthreadInfo,level);
+        epicsThreadShowInfo(pthreadInfo,level);
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }
     status = pthread_mutex_unlock(&listLock);
@@ -782,7 +784,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
 
     epicsThreadInit();
     if(!showThread) {
-        epicsShowThreadInfo(0,level);
+        epicsThreadShowInfo(0,level);
         return;
     }
     status = mutexLock(&listLock);
@@ -794,7 +796,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(epicsThreadId showThread, unsi
         if (((epicsThreadId)pthreadInfo == showThread)
          || ((epicsThreadId)pthreadInfo->tid == showThread)) {
             found = 1;
-            epicsShowThreadInfo(pthreadInfo,level);
+            epicsThreadShowInfo(pthreadInfo,level);
         }
         pthreadInfo=(epicsThreadOSD *)ellNext(&pthreadInfo->node);
     }

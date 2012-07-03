@@ -39,8 +39,6 @@ typedef struct epicsThreadOSD {
 
 epicsShareFunc pthread_t epicsShareAPI epicsThreadGetPosixThreadId(epicsThreadId id);
 
-epicsShareFunc void epicsShowThreadInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
-
 #ifdef __cplusplus
 }
 #endif

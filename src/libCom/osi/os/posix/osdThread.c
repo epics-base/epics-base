@@ -36,6 +36,7 @@
 #include "epicsExit.h"
 
 epicsShareFunc void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
 
 static int mutexLock(pthread_mutex_t *id)
 {
@@ -381,8 +382,6 @@ static void * start_routine(void *arg)
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 
     epicsExitCallAtThreadExits ();
-    epicsThreadRunExitHooks(pthreadInfo);
-
     free_threadInfo(pthreadInfo);
     return(0);
 }

@@ -27,6 +27,8 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {
     if(!pthreadInfo) {
@@ -60,4 +62,3 @@ static void thread_hook(epicsThreadOSD *pthreadInfo)
 }
 
 EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook = thread_hook;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;

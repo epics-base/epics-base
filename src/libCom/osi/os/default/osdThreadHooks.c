@@ -19,6 +19,9 @@
 #include "epicsMutex.h"
 #include "epicsThread.h"
 
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+
 #define checkStatusOnceReturn(status, message, method) \
 if((status)) { \
     fprintf(stderr,"%s error %s\n",(message),strerror((status))); \
@@ -31,46 +34,20 @@ typedef struct epicsThreadHook {
 } epicsThreadHook;
 
 static ELLLIST startHooks = ELLLIST_INIT;
-static ELLLIST exitHooks = ELLLIST_INIT;
 
 /* Locking could probably be avoided, if elllist implementation was using atomic ops */
 static epicsMutexId hookLock;
 
-static void addHook (ELLLIST *list, EPICS_THREAD_HOOK_ROUTINE func, int atHead)
+epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     epicsThreadHook *pHook;
 
     pHook = calloc(1, sizeof(epicsThreadHook));
     if (!pHook) checkStatusOnceReturn(errno,"calloc","epicsThreadAddStartHook");
-    pHook->func = func;
+    pHook->func = hook;
     epicsMutexLock(hookLock);
-    if (atHead)
-        ellInsert(list, NULL, &pHook->node);
-    else
-        ellAdd(list, &pHook->node);
+    ellAdd(&startHooks, &pHook->node);
     epicsMutexUnlock(hookLock);
-}
-
-static void runHooks (ELLLIST *list, epicsThreadId id) {
-    epicsThreadHook *pHook;
-
-    epicsMutexLock(hookLock);
-    pHook = (epicsThreadHook *) ellFirst(list);
-    while (pHook) {
-        pHook->func(id);
-        pHook = (epicsThreadHook *) ellNext(&pHook->node);
-    }
-    epicsMutexUnlock(hookLock);
-}
-
-epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
-{
-    addHook(&startHooks, hook, 0);
-}
-
-epicsShareFunc void epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook)
-{
-    addHook(&exitHooks, hook, 1);
 }
 
 epicsShareFunc void epicsThreadHooksInit(void)
@@ -78,16 +55,18 @@ epicsShareFunc void epicsThreadHooksInit(void)
     if (!hookLock) {
         hookLock = epicsMutexMustCreate();
         if (epicsThreadDefaultStartHook) epicsThreadAddStartHook(epicsThreadDefaultStartHook);
-        if (epicsThreadDefaultExitHook) epicsThreadAddExitHook(epicsThreadDefaultExitHook);
     }
 }
 
 epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id)
 {
-    runHooks(&startHooks, id);
-}
+    epicsThreadHook *pHook;
 
-epicsShareFunc void epicsThreadRunExitHooks(epicsThreadId id)
-{
-    runHooks(&exitHooks, id);
+    epicsMutexLock(hookLock);
+    pHook = (epicsThreadHook *) ellFirst(&startHooks);
+    while (pHook) {
+        pHook->func(id);
+        pHook = (epicsThreadHook *) ellNext(&pHook->node);
+    }
+    epicsMutexUnlock(hookLock);
 }

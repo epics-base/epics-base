@@ -38,6 +38,8 @@
 #include "ellLib.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
+
 void setThreadName ( DWORD dwThreadID, LPCSTR szThreadName );
 static void threadCleanupWIN32 ( void );
 
@@ -226,7 +228,7 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
         pWin32ThreadGlobal = 0;
         return 0;
     }
-    epicsThreadHooksInit();
+    epicsThreadHooksInit ();
 
     InterlockedExchange ( & initCompleted, 1 );
 
@@ -497,7 +499,7 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
 
         success = TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, pParm );
         if ( success ) {
-            epicsThreadRunStartHooks(pParm);
+            epicsThreadRunStartHooks ( ( epicsThreadId ) pParm );
             /* printf ( "starting thread %d\n", pParm->id ); */
             ( *pParm->funptr ) ( pParm->parm );
             /* printf ( "terminating thread %d\n", pParm->id ); */
@@ -512,9 +514,6 @@ static unsigned WINAPI epicsWin32ThreadEntry ( LPVOID lpParameter )
     }
 
     epicsExitCallAtThreadExits ();
-
-    epicsThreadRunExitHooks(pParm);
-
     /*
      * CAUTION: !!!! the thread id might continue to be used after this thread exits !!!!
      */

@@ -9,5 +9,9 @@
 
 /* Null default thread hooks for all platforms that do not do anything special */
 
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+
 EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;

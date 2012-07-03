@@ -39,6 +39,8 @@
 #include "osdInterrupt.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
+
 /*
  * Per-task variables
  */
@@ -164,10 +166,9 @@ threadWrapper (rtems_task_argument arg)
 {
     struct taskVar *v = (struct taskVar *)arg;
 
-    epicsThreadRunStartHooks(pthreadInfo);
+    epicsThreadRunStartHooks(v->id);
     (*v->funptr)(v->parm);
     epicsExitCallAtThreadExits ();
-    epicsThreadRunExitHooks(pthreadInfo);
     taskVarLock ();
     if (v->back)
         v->back->forw = v->forw;
@@ -686,7 +687,7 @@ void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
     for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
         continue;
     while (v) {
-        func (v, arg);
+        func ((epicsThreadId)v->id);
         v = v->back;
     }
     taskVarUnlock ();

@@ -33,6 +33,8 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
+
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
 #elif CPU_FAMILY == SPARC
@@ -173,10 +175,9 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     taskVarAdd(tid,(int *)(char *)&papTSD);
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
-    epicsThreadRunStartHooks(pthreadInfo);
+    epicsThreadRunStartHooks((epicsThreadId)tid);
     (*func)(parm);
     epicsExitCallAtThreadExits ();
-    epicsThreadRunExitHooks(pthreadInfo);
     free(papTSD);
     taskVarDelete(tid,(int *)(char *)&papTSD);
 }
@@ -338,7 +339,6 @@ epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 
     result = semTake(epicsThreadListMutex, WAIT_FOREVER);
     assert(result == OK);
-    noTasks = taskIdListGet(taskIdList, taskIdListSize);
     while (noTasks == 0) {
         noTasks = taskIdListGet(taskIdList, taskIdListSize);
         if (noTasks == taskIdListSize) {
@@ -349,7 +349,7 @@ epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
         }
     }
     for (i = 0; i < noTasks; i++) {
-        func (i);
+        func ((epicsThreadId)taskIdList[i]);
     }
     semGive(epicsThreadListMutex);
 }

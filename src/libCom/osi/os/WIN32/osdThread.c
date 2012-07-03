@@ -228,7 +228,7 @@ static win32ThreadGlobal * fetchWin32ThreadGlobal ( void )
         pWin32ThreadGlobal = 0;
         return 0;
     }
-    epicsThreadHooksInit ();
+    epicsThreadHooksInit (NULL);
 
     InterlockedExchange ( & initCompleted, 1 );
 

@@ -21,6 +21,7 @@
 
 epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadMainStartHook;
 
 #define checkStatusOnceReturn(status, message, method) \
 if((status)) { \
@@ -50,12 +51,13 @@ epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
     epicsMutexUnlock(hookLock);
 }
 
-epicsShareFunc void epicsThreadHooksInit(void)
+epicsShareFunc void epicsThreadHooksInit(epicsThreadId id)
 {
     if (!hookLock) {
         hookLock = epicsMutexMustCreate();
         if (epicsThreadDefaultStartHook) epicsThreadAddStartHook(epicsThreadDefaultStartHook);
     }
+    if (id && epicsThreadMainStartHook) epicsThreadMainStartHook(id);
 }
 
 epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id)

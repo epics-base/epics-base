@@ -105,7 +105,7 @@ static void epicsThreadInit(void)
     static int lock = 0;
 
     while(!vxTas(&lock)) taskDelay(1);
-    epicsThreadHooksInit();
+    epicsThreadHooksInit(NULL);
     mutexInit(epicsThreadOnceMutex);
     mutexInit(epicsThreadListMutex);
     taskIdList = calloc(ID_LIST_CHUNK, sizeof(int));

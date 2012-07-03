@@ -238,7 +238,7 @@ epicsThreadInit (void)
         taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
-        epicsThreadHooksInit();
+        epicsThreadHooksInit(tid);
         initialized = 1;
         epicsThreadCreate ("ImsgDaemon", 99,
                 epicsThreadGetStackSize (epicsThreadStackSmall),

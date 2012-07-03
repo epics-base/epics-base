@@ -103,7 +103,7 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(
 
 /* Hooks called when a thread starts, map function called once for every thread */
 typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
-epicsShareFunc void epicsThreadHooksInit(void);
+epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
 epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook);
 epicsShareFunc void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
 

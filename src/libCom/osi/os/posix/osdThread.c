@@ -354,7 +354,7 @@ static void once(void)
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
     status = atexit(epicsExitCallAtExits);
     checkStatusOnce(status,"atexit");
-    epicsThreadHooksInit();
+    epicsThreadHooksInit(pthreadInfo);
     epicsThreadOnceCalled = 1;
 }
 

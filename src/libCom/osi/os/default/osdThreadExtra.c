@@ -13,5 +13,7 @@
 #include "shareLib.h"
 
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadMainStartHook;
 
 EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
+EPICS_THREAD_HOOK_ROUTINE epicsThreadMainStartHook;

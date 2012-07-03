@@ -63,17 +63,17 @@ static void runHooks (ELLLIST *list, epicsThreadId id) {
     epicsMutexUnlock(hookLock);
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
+epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     addHook(&startHooks, hook, 0);
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook)
+epicsShareFunc void epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook)
 {
     addHook(&exitHooks, hook, 1);
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void)
+epicsShareFunc void epicsThreadHooksInit(void)
 {
     if (!hookLock) {
         hookLock = epicsMutexMustCreate();
@@ -82,12 +82,12 @@ epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void)
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadRunStartHooks(epicsThreadId id)
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id)
 {
     runHooks(&startHooks, id);
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadRunExitHooks(epicsThreadId id)
+epicsShareFunc void epicsThreadRunExitHooks(epicsThreadId id)
 {
     runHooks(&exitHooks, id);
 }

@@ -737,7 +737,7 @@ epicsShareFunc void epicsShareAPI epicsThreadGetName(epicsThreadId pthreadInfo, 
     name[size-1] = '\0';
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+epicsShareFunc void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
 {
     epicsThreadOSD *pthreadInfo;
     int status;

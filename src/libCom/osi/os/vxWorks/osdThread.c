@@ -330,7 +330,7 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     name[size-1] = '\0';
 }
 
-epicsShareFunc void epicsShareAPI epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
     int noTasks = 0;
     int i;

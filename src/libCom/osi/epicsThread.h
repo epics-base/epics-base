@@ -103,16 +103,16 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(
 
 /* Hooks being called when a thread starts or exits */
 typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
-epicsShareFunc void epicsShareAPI epicsThreadHooksInit(void);
-epicsShareFunc void epicsShareAPI epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook);
-epicsShareFunc void epicsShareAPI epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook);
-epicsShareFunc void epicsShareAPI epicsThreadRunStartHooks(epicsThreadId id);
-epicsShareFunc void epicsShareAPI epicsThreadRunExitHooks(epicsThreadId id);
+epicsShareFunc void epicsThreadHooksInit(void);
+epicsShareFunc void epicsThreadAddStartHook(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc void epicsThreadAddExitHook(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc void epicsThreadRunStartHooks(epicsThreadId id);
+epicsShareFunc void epicsThreadRunExitHooks(epicsThreadId id);
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultStartHook;
 epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadDefaultExitHook;
 
 /* Map func to all threads */
-epicsShareFunc void epicsShareAPI epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
+epicsShareFunc void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
 
 typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;
 epicsShareFunc epicsThreadPrivateId epicsShareAPI epicsThreadPrivateCreate(void);

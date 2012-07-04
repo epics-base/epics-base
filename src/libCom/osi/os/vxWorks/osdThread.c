@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2012 ITER Organization
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -32,6 +33,9 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
+epicsShareFunc void epicsThreadHooksRun(epicsThreadId id);
+
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
 #elif CPU_FAMILY == SPARC
@@ -41,6 +45,12 @@
 #endif
 static const unsigned stackSizeTable[epicsThreadStackBig+1] = 
    {4000*ARCH_STACK_FACTOR, 6000*ARCH_STACK_FACTOR, 11000*ARCH_STACK_FACTOR};
+
+/* Table and lock for epicsThreadMap() */
+#define ID_LIST_CHUNK 512
+static int *taskIdList = 0;
+int taskIdListSize = 0;
+static SEM_ID epicsThreadListMutex = 0;
 
 /*The following forces atReboot to be loaded*/
 extern int atRebootExtern;
@@ -86,12 +96,23 @@ static int getOssPriorityValue(unsigned int osiPriority)
 static void epicsThreadInit(void)
 {
     static int lock = 0;
+    static int done = 0;
 
-    while(!vxTas(&lock)) taskDelay(1);
-    if(epicsThreadOnceMutex==0) {
-        epicsThreadOnceMutex = semMCreate(
-                SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-        assert(epicsThreadOnceMutex);
+    if (done) return;
+
+    while(!vxTas(&lock))
+        taskDelay(1);
+
+    if (!done) {
+        epicsThreadHooksInit(NULL);
+        epicsThreadOnceMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	assert(epicsThreadOnceMutex);
+        epicsThreadListMutex semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+	assert(epicsThreadListMutex);
+        taskIdList = calloc(ID_LIST_CHUNK, sizeof(int));
+        assert(taskIdList);
+        taskIdListSize = ID_LIST_CHUNK;
+        done = 1;
     }
     lock = 0;
 }
@@ -157,6 +178,7 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     taskVarAdd(tid,(int *)(char *)&papTSD);
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
+    epicsThreadHooksRun((epicsThreadId)tid);
     (*func)(parm);
     epicsExitCallAtThreadExits ();
     free(papTSD);
@@ -310,6 +332,29 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     int tid = (int)id;
     strncpy(name,taskName(tid),size-1);
     name[size-1] = '\0';
+}
+
+epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+{
+    int noTasks = 0;
+    int i;
+    int result;
+
+    result = semTake(epicsThreadListMutex, WAIT_FOREVER);
+    assert(result == OK);
+    while (noTasks == 0) {
+        noTasks = taskIdListGet(taskIdList, taskIdListSize);
+        if (noTasks == taskIdListSize) {
+            taskIdList = realloc(taskIdList, (taskIdListSize+ID_LIST_CHUNK)*sizeof(int));
+            assert(taskIdList);
+            taskIdListSize += ID_LIST_CHUNK;
+            noTasks = 0;
+        }
+    }
+    for (i = 0; i < noTasks; i++) {
+        func ((epicsThreadId)taskIdList[i]);
+    }
+    semGive(epicsThreadListMutex);
 }
 
 void epicsThreadShowAll(unsigned int level)

@@ -39,6 +39,9 @@
 #include "osdInterrupt.h"
 #include "epicsExit.h"
 
+epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
+epicsShareFunc void epicsThreadHooksRun(epicsThreadId id);
+
 /*
  * Per-task variables
  */
@@ -164,6 +167,7 @@ threadWrapper (rtems_task_argument arg)
 {
     struct taskVar *v = (struct taskVar *)arg;
 
+    epicsThreadHooksRun(v->id);
     (*v->funptr)(v->parm);
     epicsExitCallAtThreadExits ();
     taskVarLock ();
@@ -235,6 +239,7 @@ epicsThreadInit (void)
         taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
+        epicsThreadHooksInit(tid);
         initialized = 1;
         epicsThreadCreate ("ImsgDaemon", 99,
                 epicsThreadGetStackSize (epicsThreadStackSmall),
@@ -640,19 +645,17 @@ showInternalTaskInfo (rtems_id tid)
 }
 
 static void
-epicsThreadShowHeader (void)
-{
-    fprintf(epicsGetStdout(),"            PRIORITY\n");
-    fprintf(epicsGetStdout(),"    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
-    fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
-}
-
-static void
 epicsThreadShowInfo (struct taskVar *v, unsigned int level)
 {
+    if (!v) {
+        fprintf(epicsGetStdout(),"            PRIORITY\n");
+        fprintf(epicsGetStdout(),"    ID    EPICS RTEMS   STATE    WAIT         NAME\n");
+        fprintf(epicsGetStdout(),"+--------+-----------+--------+--------+---------------------+\n");
+    } else {
         fprintf(epicsGetStdout(),"%9.8x", (int)v->id);
         showInternalTaskInfo (v->id);
         fprintf(epicsGetStdout()," %s\n", v->name);
+    }
 }
 
 void epicsThreadShow (epicsThreadId id, unsigned int level)
@@ -660,7 +663,7 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     struct taskVar *v;
 
     if (!id) {
-        epicsThreadShowHeader ();
+        epicsThreadShowInfo (NULL, level);
         return;
     }
     taskVarLock ();
@@ -672,6 +675,23 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     }
     taskVarUnlock ();
     fprintf(epicsGetStdout(),"*** Thread %x does not exist.\n", (unsigned int)id);
+}
+
+void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func)
+{
+    struct taskVar *v;
+
+    taskVarLock ();
+    /*
+     * Map tasks in the order of creation (backwards through list)
+     */
+    for (v = taskVarHead ; v != NULL && v->forw != NULL ; v = v->forw)
+        continue;
+    while (v) {
+        func ((epicsThreadId)v->id);
+        v = v->back;
+    }
+    taskVarUnlock ();
 }
 
 void epicsThreadShowAll (unsigned int level)

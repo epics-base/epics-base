@@ -3,12 +3,11 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-#ifndef osdThreadh
-#define osdThreadh
+#ifndef INC_osdThread_H
+#define INC_osdThread_H
 
 #include <pthread.h>
 
@@ -23,6 +22,7 @@ extern "C" {
 typedef struct epicsThreadOSD {
     ELLNODE            node;
     pthread_t          tid;
+    pid_t              lwpId;
     pthread_attr_t     attr;
     struct sched_param schedParam;
     EPICSTHREADFUNC    createFunc;
@@ -42,4 +42,4 @@ epicsShareFunc pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
 }
 #endif
 
-#endif /* osdThreadh */
+#endif /* INC_osdThread_H */

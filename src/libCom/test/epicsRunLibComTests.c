@@ -33,6 +33,7 @@ int epicsStringTest(void);
 int epicsThreadOnceTest(void);
 int epicsThreadPriorityTest(void);
 int epicsThreadPrivateTest(void);
+int epicsThreadHooksTest(void);
 int epicsTimeTest(void);
 int epicsTypesTest(void);
 int macLibTest(void);
@@ -86,6 +87,8 @@ void epicsRunLibComTests(void)
     runTest(epicsThreadPriorityTest);
 
     runTest(epicsThreadPrivateTest);
+
+    runTest(epicsThreadHooksTest);
 
     runTest(epicsTimeTest);
 

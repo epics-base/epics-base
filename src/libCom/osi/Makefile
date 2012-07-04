@@ -104,6 +104,8 @@ THREAD_CPPFLAGS_NO += -DDONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING
 osdThread_CPPFLAGS += $(THREAD_CPPFLAGS_$(USE_POSIX_THREAD_PRIORITY_SCHEDULING))
 
 Com_SRCS += osdThread.c
+Com_SRCS += osdThreadExtra.c
+Com_SRCS += osdThreadHooks.c
 Com_SRCS += osdMutex.c
 Com_SRCS += osdEvent.c
 Com_SRCS += osdTime.cpp

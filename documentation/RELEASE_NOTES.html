@@ -15,6 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Additional RTEMS/vxWorks Test Harness</h3>
+
+<p>A second test harness dbTestHarness is built for RTEMS and vxWorks targets.
+This includes tests in src/iocs/db/test.</p>
+
+<p>Running this test requires additional files to be loaded during runtime.
+These files "src/iocs/db/test/*.db*" must be present in the current directory
+when dbTestHarness is run.</p>
+
+<p>For RTEMS users the current directory is determined in a BSP specific way.
+See rtems_init.c and setBootConfigFromNVRAM.c in src/libCom/RTEMS.</p>
+
 <h3>New scan rate units</h3>
 
 <p>Scan rates defined in the menuScan.dbd file may now be specified in seconds,

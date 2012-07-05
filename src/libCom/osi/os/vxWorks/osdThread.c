@@ -107,7 +107,7 @@ static void epicsThreadInit(void)
         epicsThreadHooksInit(NULL);
         epicsThreadOnceMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	assert(epicsThreadOnceMutex);
-        epicsThreadListMutex semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
+        epicsThreadListMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	assert(epicsThreadListMutex);
         taskIdList = calloc(ID_LIST_CHUNK, sizeof(int));
         assert(taskIdList);

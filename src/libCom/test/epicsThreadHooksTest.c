@@ -8,7 +8,6 @@
 /* epicsThreadHooksTest.c */
 
 #include <stdio.h>
-#include <stdint.h>
 
 #include "epicsThread.h"
 #include "epicsExit.h"

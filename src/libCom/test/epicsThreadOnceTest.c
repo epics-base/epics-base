@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "errlog.h"
 #include "epicsEvent.h"
 #include "epicsExit.h"
 #include "epicsMutex.h"
@@ -102,7 +103,7 @@ MAIN(epicsThreadOnceTest)
     testOk(doneCount == NUM_ONCE_THREADS, "doneCount = %d", doneCount);
     testDiag("init was run by %s", initBy);
 
-    testDiag("Expecting thread recurse to suspend:");
+    eltc(0);
     tid = epicsThreadCreate("recurse", epicsThreadPriorityMedium,
             epicsThreadGetStackSize(epicsThreadStackSmall),
             recurseThread, 0);
@@ -111,5 +112,6 @@ MAIN(epicsThreadOnceTest)
     } while (!epicsThreadIsSuspended(tid));
     testPass("Recursive epicsThreadOnce() detected");
 
+    eltc(1);
     return testDone();
 }

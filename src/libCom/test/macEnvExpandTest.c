@@ -21,14 +21,10 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-int warn;
-
 static void check(const char *str, const char *expect)
 {
     char *got = macEnvExpand(str);
     int pass = -1;
-
-    if (expect == NULL) ++warn;
 
     if (expect && !got) {
         testDiag("Got NULL, expected \"%s\".\n", expect);
@@ -47,7 +43,7 @@ static void check(const char *str, const char *expect)
 
 MAIN(macEnvExpandTest)
 {
-    warn = 0;
+    eltc(0);
     testPlan(71);
 
     check("FOO", "FOO");
@@ -158,6 +154,6 @@ MAIN(macEnvExpandTest)
     check("${FOO=$(BAR),BAR=$(FOO)}", NULL);
     
     errlogFlush();
-    testDiag("%d warning messages from macLib were expected above.\n", warn);
+    eltc(1);
     return testDone();
 }

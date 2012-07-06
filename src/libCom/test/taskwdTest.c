@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include "taskwd.h"
+#include "errlog.h"
 #include "epicsThread.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
@@ -66,6 +67,7 @@ void testTask2(void *arg)
 
 MAIN(taskwdTest)
 {
+    eltc(0);
     testPlan(8);
 
     taskwdInit();
@@ -87,6 +89,7 @@ MAIN(taskwdTest)
     taskwdMonitorDel(&monFuncs, NULL);
     taskwdAnyRemove(NULL);
 
+    eltc(1);
     return testDone();
 }
 

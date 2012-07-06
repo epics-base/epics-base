@@ -65,7 +65,6 @@ void testPlan(int plan) {
     planned = plan;
     tested = passed = failed = skipped = bonus = 0;
     todo = NULL;
-    eltc(0);    /* Silence errlog output */
     if (plan) printf("1..%d\n", plan);
     epicsMutexUnlock(testLock);
 }

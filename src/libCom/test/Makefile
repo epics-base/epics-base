@@ -166,15 +166,14 @@ TESTS += epicsMessageQueueTest
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c
 
-PROD_vxWorks = vxTestHarness
-vxTestHarness_SRCS += $(testHarness_SRCS)
-vxTestHarness_OBJS += $(INSTALL_BIN)/vxComLibrary
-TESTSPEC_vxWorks = vxTestHarness.munch; epicsRunLibComTests
+libComTestHarness_SRCS += $(testHarness_SRCS)
+libComTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
-PROD_RTEMS += rtemsTestHarness
-rtemsTestHarness_SRCS += rtemsTestHarness.c
-rtemsTestHarness_SRCS += $(testHarness_SRCS)
-TESTSPEC_RTEMS = rtemsTestHarness.boot; epicsRunLibComTests
+PROD_vxWorks = libComTestHarness
+PROD_RTEMS += libComTestHarness
+
+TESTSPEC_vxWorks = libComTestHarness.munch; epicsRunLibComTests
+TESTSPEC_RTEMS = libComTestHarness.boot; epicsRunLibComTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

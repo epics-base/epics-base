@@ -20,7 +20,6 @@ dbRecStd_RCS += dbRecStd.rc
 include $(STDDIR)/rec/Makefile
 include $(STDDIR)/dev/Makefile
 include $(STDDIR)/filters/Makefile
-include $(STDDIR)/test/Makefile
 include $(STDDIR)/softIoc/Makefile
 
 include $(TOP)/configure/RULES

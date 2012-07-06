@@ -232,17 +232,17 @@ static const yajl_parser_config chf_config =
 
 static void * chf_malloc(void *ctx, unsigned int sz)
 {
-    return malloc(sz); /* FIXME: free-list */
+    return malloc(sz);
 }
 
 static void * chf_realloc(void *ctx, void *ptr, unsigned int sz)
 {
-    return realloc(ptr, sz); /* FIXME: free-list */
+    return realloc(ptr, sz);
 }
 
 static void chf_free(void *ctx, void *ptr)
 {
-    return free(ptr); /* FIXME: free-list */
+    return free(ptr);
 }
 
 static const yajl_alloc_funcs chf_alloc =
@@ -464,7 +464,7 @@ dbChannel * dbChannelCreate(const char *name)
 
     /* FIXME: Use free-list */
     chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
-    chan->name = epicsStrDup(name);  /* FIXME: free-list */
+    chan->name = epicsStrDup(name);
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);
@@ -715,7 +715,7 @@ void dbChannelDelete(dbChannel *chan)
         filter->plug->fif->channel_close(filter);
         free(filter);
     }
-    free((char *) chan->name);   /* FIXME: Use free-list */
+    free((char *) chan->name);
     free(chan); /* FIXME: Use free-list */
 }
 

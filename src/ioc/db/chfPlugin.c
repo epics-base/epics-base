@@ -300,7 +300,7 @@ static int store_string_value(const chfPluginArgDef *opt, void *user, const char
 
 static void freeInstanceData(chfFilter *f)
 {
-    free(f->found);  /* FIXME: Use a free-list */
+    free(f->found);
     free(f);         /* FIXME: Use a free-list */
 }
 
@@ -326,7 +326,6 @@ static parse_result parse_start(chFilter *filter)
     f->nextParam = -1;
 
     /* Bit array to find missing required keys */
-    /* FIXME: Use a free-list */
     f->found = calloc( (p->nopts/32)+1, sizeof(epicsUInt32) );
     if (!f->found) {
         fprintf(stderr,"chfConfigParseStart: bit array calloc failed\n");
@@ -344,7 +343,7 @@ static parse_result parse_start(chFilter *filter)
     return parse_continue;
 
     errplugin:
-    free(f->found);  /* FIXME: Use a free-list */
+    free(f->found);
     errbitarray:
     free(f);         /* FIXME: Use a free-list */
     errfctx:
@@ -519,7 +518,7 @@ static void channel_close(chFilter *filter)
 
     if (p->pif->channel_close) p->pif->channel_close(filter->chan, f->puser);
     if (p->pif->freePvt) p->pif->freePvt(f->puser);
-    free(f->found);  /* FIXME: Use a free-list */
+    free(f->found);
     free(f);         /* FIXME: Use a free-list */
 }
 

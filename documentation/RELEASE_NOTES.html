@@ -15,6 +15,21 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>RTEMS and VxWorks Test Harnesses</h3>
+
+<p>The original libCom test harness has been renamed <tt>libComTestHarness</tt>,
+and two additional test harnesses have been created <tt>dbTestHarness</tt> and
+<tt>filterTestHarness</tt> which are all built for RTEMS and vxWorks targets.
+The new ones include tests in src/ioc/db/test and src/std/filters/test.</p>
+
+<p>Running the new tests requires additional .db and .dbd files to be loaded at
+runtime, which can be found in the relevant source directory or its O.Common
+subdirectory. If the target can access the Base source tree directly it may be
+simplest to cd to the relevant source directory before running the test.</p>
+
+<p>For RTEMS users the current directory is determined in a BSP specific way.
+See rtems_init.c and setBootConfigFromNVRAM.c in src/libCom/RTEMS.</p>
+
 <h3>New API to hook into thread creation</h3>
 
 <p>A hook API has been added allowing user-supplied functions to be called

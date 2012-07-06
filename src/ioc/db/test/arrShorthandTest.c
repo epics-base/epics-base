@@ -89,13 +89,13 @@ MAIN(arrShorthandTest)
 
     if (dbReadDatabase(&pdbbase, "arrShorthandTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common", NULL))
-        testAbort("Database description not loaded");
+            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
+        testAbort("Database description 'arrShorthandTest.dbd' not found");
 
     arrShorthandTest_registerRecordDeviceDriver(pdbbase);
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+        testAbort("Test database 'xRecord.db' not found");
 
     testHead("Register plugin");
     testOk(!chfPluginRegister("arr", &myPif, opts), "register fake arr plugin");

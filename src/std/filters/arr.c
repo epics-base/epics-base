@@ -17,6 +17,7 @@
 #include <dbAccess.h>
 #include <dbExtractArray.h>
 #include <db_field_log.h>
+#include <dbLock.h>
 #include <recSup.h>
 #include <special.h>
 #include <chfPlugin.h>
@@ -105,9 +106,10 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             nSource > 1 &&
             (prset = dbGetRset(&chan->addr)) &&
             prset->get_array_info) {
+            prec = dbChannelRecord(chan);
+            dbScanLock(prec);
             status = prset->get_array_info(&chan->addr, &nSource, &offset);
             nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
-            prec = dbChannelRecord(chan);
             pfl->type = dbfl_type_ref;
             pfl->stat = prec->stat;
             pfl->sevr = prec->sevr;
@@ -124,6 +126,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
                 dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
                 pfl->u.r.field = pdst;
             }
+            dbScanUnlock(prec);
         }
 
     /* Extract from buffer */

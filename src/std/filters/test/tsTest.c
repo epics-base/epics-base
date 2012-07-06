@@ -61,15 +61,15 @@ MAIN(tsTest)
 
     if (dbReadDatabase(&pdbbase, "tsTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common", NULL))
-        testAbort("Database description not loaded");
+            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
+        testAbort("Database description 'tsTest.dbd' not found");
 
     (*pvar_func_tsInitialize)();       /* manually initialize plugin */
     tsTest_registerRecordDeviceDriver(pdbbase);
 
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(ts, strlen(ts))), "plugin ts registered correctly");
 

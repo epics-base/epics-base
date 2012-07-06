@@ -202,8 +202,6 @@ typedef struct chfPluginIf {
      */
     void (* channel_report) (dbChannel *chan, void *pvt, int level, const unsigned short indent);
 
-    /* FIXME: More filter routines here ... */
-
     /** @brief Channel close request.
      *
      * <em>Called as part of connection shutdown.</em>

@@ -147,15 +147,15 @@ MAIN(syncTest)
 
     if (dbReadDatabase(&pdbbase, "syncTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common", NULL))
-        testAbort("Database description not loaded");
+            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
+        testAbort("Database description 'syncTest.dbd' not found");
 
     (*pvar_func_syncInitialize)();       /* manually initialize plugin */
     syncTest_registerRecordDeviceDriver(pdbbase);
 
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(myname, strlen(myname))), "plugin %s registered correctly", myname);
     testOk(!!(red = dbStateCreate("red")), "state 'red' created successfully");

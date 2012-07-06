@@ -17,6 +17,7 @@
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "dbState.h"
+#include "epicsAssert.h"
 
 #define STATE_NAME_LENGTH 20
 
@@ -125,6 +126,9 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
         db_delete_field_log(my->lastfl);
     my->lastfl = pfl;
     my->laststate = actstate;
+
+    /* since no copy is made we can't keep a reference to the returned fl */
+    assert(my->lastfl != passfl);
 
     no_shift:
     return passfl;

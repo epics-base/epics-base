@@ -120,15 +120,15 @@ MAIN(dbndTest)
 
     if (dbReadDatabase(&pdbbase, "dbndTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common", NULL))
-        testAbort("Database description not loaded");
+            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
+        testAbort("Database description 'dbndTest.dbd' not found");
 
     (*pvar_func_dbndInitialize)();       /* manually initialize plugin */
     dbndTest_registerRecordDeviceDriver(pdbbase);
 
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database not loaded");
+        testAbort("Test database 'xRecord.db' not found");
 
     testOk(!!(plug = dbFindFilter(dbnd, strlen(dbnd))), "plugin dbnd registered correctly");
 

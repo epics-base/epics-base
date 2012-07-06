@@ -103,7 +103,9 @@ epicsShareFunc void epicsShareAPI epicsThreadShow(
 
 /* Hooks called when a thread starts, map function called once for every thread */
 typedef void (*EPICS_THREAD_HOOK_ROUTINE)(epicsThreadId id);
-epicsShareFunc void epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc int epicsThreadHookAdd(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc int epicsThreadHookDelete(EPICS_THREAD_HOOK_ROUTINE hook);
+epicsShareFunc void epicsThreadHooksShow(void);
 epicsShareFunc void epicsThreadMap(EPICS_THREAD_HOOK_ROUTINE func);
 
 typedef struct epicsThreadPrivateOSD * epicsThreadPrivateId;

@@ -36,8 +36,8 @@
 #include "epicsExit.h"
 
 epicsShareFunc void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
-epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
-epicsShareFunc void epicsThreadHooksRun(epicsThreadId id);
+epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
 
 static int mutexLock(pthread_mutex_t *id)
 {
@@ -355,7 +355,7 @@ static void once(void)
     checkStatusQuit(status,"pthread_mutex_unlock","epicsThreadInit");
     status = atexit(epicsExitCallAtExits);
     checkStatusOnce(status,"atexit");
-    epicsThreadHooksInit(pthreadInfo);
+    osdThreadHooksRunMain(pthreadInfo);
     epicsThreadOnceCalled = 1;
 }
 
@@ -378,7 +378,7 @@ static void * start_routine(void *arg)
     pthreadInfo->isOnThreadList = 1;
     status = pthread_mutex_unlock(&listLock);
     checkStatusQuit(status,"pthread_mutex_unlock","start_routine");
-    epicsThreadHooksRun(pthreadInfo);
+    osdThreadHooksRun(pthreadInfo);
 
     (*pthreadInfo->createFunc)(pthreadInfo->createArg);
 

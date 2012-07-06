@@ -39,8 +39,8 @@
 #include "osdInterrupt.h"
 #include "epicsExit.h"
 
-epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
-epicsShareFunc void epicsThreadHooksRun(epicsThreadId id);
+epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
+epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
 
 /*
  * Per-task variables
@@ -167,7 +167,7 @@ threadWrapper (rtems_task_argument arg)
 {
     struct taskVar *v = (struct taskVar *)arg;
 
-    epicsThreadHooksRun(v->id);
+    osdThreadHooksRun((epicsThreadId)v->id);
     (*v->funptr)(v->parm);
     epicsExitCallAtThreadExits ();
     taskVarLock ();
@@ -239,7 +239,7 @@ epicsThreadInit (void)
         taskVarMutex = epicsMutexMustCreate ();
         rtems_task_ident (RTEMS_SELF, 0, &tid);
         setThreadInfo (tid, "_main_", NULL, NULL);
-        epicsThreadHooksInit(tid);
+        osdThreadHooksRunMain((epicsThreadId)tid);
         initialized = 1;
         epicsThreadCreate ("ImsgDaemon", 99,
                 epicsThreadGetStackSize (epicsThreadStackSmall),
@@ -698,7 +698,7 @@ void epicsThreadShowAll (unsigned int level)
 {
     struct taskVar *v;
 
-    epicsThreadShowHeader ();
+    epicsThreadShowInfo (NULL, level);
     taskVarLock ();
     /*
      * Show tasks in the order of creation (backwards through list)

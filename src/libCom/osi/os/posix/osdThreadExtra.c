@@ -17,11 +17,8 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
-
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {

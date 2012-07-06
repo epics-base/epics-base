@@ -27,9 +27,6 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault;
-epicsShareExtern EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
-
 void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
 {
     if (!pthreadInfo) {
@@ -65,5 +62,5 @@ static void thread_hook(epicsThreadId pthreadInfo)
     pthreadInfo->lwpId = syscall(SYS_gettid);
 }
 
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
-EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookDefault = thread_hook;
+epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain = thread_hook;

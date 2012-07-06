@@ -33,8 +33,7 @@
 #include "vxLib.h"
 #include "epicsExit.h"
 
-epicsShareFunc void epicsThreadHooksInit(epicsThreadId id);
-epicsShareFunc void epicsThreadHooksRun(epicsThreadId id);
+epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 
 #if CPU_FAMILY == MC680X0
 #define ARCH_STACK_FACTOR 1
@@ -104,7 +103,6 @@ static void epicsThreadInit(void)
         taskDelay(1);
 
     if (!done) {
-        epicsThreadHooksInit(NULL);
         epicsThreadOnceMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
 	assert(epicsThreadOnceMutex);
         epicsThreadListMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
@@ -178,7 +176,7 @@ static void createFunction(EPICSTHREADFUNC func, void *parm)
     taskVarAdd(tid,(int *)(char *)&papTSD);
     /*Make sure that papTSD is still 0 after that call to taskVarAdd*/
     papTSD = 0;
-    epicsThreadHooksRun((epicsThreadId)tid);
+    osdThreadHooksRun((epicsThreadId)tid);
     (*func)(parm);
     epicsExitCallAtThreadExits ();
     free(papTSD);
@@ -195,7 +193,8 @@ epicsThreadId epicsThreadCreate(const char *name,
     EPICSTHREADFUNC funptr,void *parm)
 {
     int tid;
-    if(epicsThreadOnceMutex==0) epicsThreadInit();
+
+    epicsThreadInit();
     if(stackSize<100) {
         errlogPrintf("epicsThreadCreate %s illegal stackSize %d\n",name,stackSize);
         return(0);

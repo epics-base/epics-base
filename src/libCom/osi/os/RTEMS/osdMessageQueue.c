@@ -24,6 +24,7 @@
 #define epicsExportSharedSymbols
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <rtems.h>
 #include <rtems/error.h>

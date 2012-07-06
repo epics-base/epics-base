@@ -291,7 +291,7 @@ MAIN(epicsMessageQueueTest)
         epicsThreadGetStackSize(epicsThreadStackMedium),
         messageQueueTest, NULL);
 
-    epicsEventWait(finished);
+    (void) epicsEventWait(finished);
 
     return testDone();
 }

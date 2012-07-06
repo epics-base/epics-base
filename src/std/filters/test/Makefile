@@ -70,6 +70,7 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
+xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 tsTest$(DEP): $(COMMON_DIR)/xRecord.h
 dbndTest$(DEP): $(COMMON_DIR)/xRecord.h
 syncTest$(DEP): $(COMMON_DIR)/xRecord.h

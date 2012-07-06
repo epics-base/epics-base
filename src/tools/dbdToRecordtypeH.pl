@@ -85,8 +85,6 @@ if ($opt_D) {   # Output dependencies only, to stdout
         print OUTFILE $menu->toDeclaration;
         if ($menu_used{$name}) {
             delete $menu_used{$name}
-        } else {
-            warn "Menu '$name' defined but not used\n";
         }
     }
     our @menus_external = keys %menu_used;

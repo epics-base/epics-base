@@ -49,19 +49,13 @@ epicsExportAddress(dset,devMbboSoft);
 
 static long init_record(mbboRecord *prec)
 {
- 
-    long status=0;
- 
     /*dont convert*/
-    status=2;
-    return status;
+    return 2;
  
 } /* end init_record() */
 
 static long write_mbbo(mbboRecord *prec)
 {
-    long status;
-
-    status = dbPutLink(&prec->out,DBR_USHORT, &prec->val,1);
-    return(0);
+    dbPutLink(&prec->out,DBR_USHORT, &prec->val,1);
+    return 0;
 }

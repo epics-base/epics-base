@@ -48,13 +48,11 @@ epicsExportAddress(dset,devLoSoft);
 
 static long init_record(longoutRecord *prec)
 {
-    return(0);
+    return 0;
 } /* end init_record() */
 
 static long write_longout(longoutRecord	*prec)
 {
-    long status;
-
-    status = dbPutLink(&prec->out,DBR_LONG, &prec->val,1);
-    return(0);
+    dbPutLink(&prec->out,DBR_LONG, &prec->val,1);
+    return 0;
 }

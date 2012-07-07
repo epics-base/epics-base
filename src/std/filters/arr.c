@@ -93,7 +93,6 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     long end = my->end;
     long nTarget = 0;
     long offset = 0;
-    long status;
     long nSource = chan->addr.no_elements;
 
     /* Only array data */
@@ -108,7 +107,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             prset->get_array_info) {
             prec = dbChannelRecord(chan);
             dbScanLock(prec);
-            status = prset->get_array_info(&chan->addr, &nSource, &offset);
+            prset->get_array_info(&chan->addr, &nSource, &offset);
             nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
             pfl->type = dbfl_type_ref;
             pfl->stat = prec->stat;

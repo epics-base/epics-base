@@ -60,9 +60,9 @@ void Test :: execute ()
     
     for ( unsigned i = 0; i < 3; i++ ) {
         double mVal = rand ();
-        mVal /= (RAND_MAX + 1);
+        mVal /= ((double) RAND_MAX + 1);
         double fEVal = rand ();
-        fEVal /= (RAND_MAX + 1);
+        fEVal /= ((double) RAND_MAX + 1);
         fEVal *= DBL_MAX_EXP - DBL_MIN_EXP;
         fEVal += DBL_MIN_EXP;
         int eVal = static_cast < int > ( fEVal + 0.5 );
@@ -72,7 +72,7 @@ void Test :: execute ()
             _measure ();
         }
         _srcVal = rand ();
-        _srcVal /= (RAND_MAX + 1);
+        _srcVal /= ((double) RAND_MAX + 1);
         _srcVal *= 10.0;
         _srcVal -= 5.0;
         for ( _prec = lowPrecision; 

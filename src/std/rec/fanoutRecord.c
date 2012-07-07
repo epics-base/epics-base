@@ -88,7 +88,6 @@ static long process(fanoutRecord *prec)
     struct link    *plink;
     unsigned short state;
     short          i;
-    unsigned short monitor_mask;
 
     prec->pact = TRUE;
 
@@ -134,7 +133,7 @@ static long process(fanoutRecord *prec)
     recGblGetTimeStamp(prec);
     /* check monitors*/
     /* get previous stat and sevr  and new stat and sevr*/
-    monitor_mask = recGblResetAlarms(prec);
+    recGblResetAlarms(prec);
     /* process the forward scan link record */
     recGblFwdLink(prec);
     prec->pact=FALSE;

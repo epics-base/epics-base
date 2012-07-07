@@ -62,10 +62,9 @@ static long init_record(mbboDirectRecord *prec)
 
 static long write_mbbo(mbboDirectRecord	*prec)
 {
-    long status;
     unsigned long data;
 
     data = prec->rval & prec->mask;
-    status = dbPutLink(&prec->out,DBR_LONG, &data,1);
-    return(0);
+    dbPutLink(&prec->out,DBR_LONG, &data,1);
+    return 0;
 }

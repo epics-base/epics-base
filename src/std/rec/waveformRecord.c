@@ -133,7 +133,6 @@ static long init_record(waveformRecord *prec, int pass)
 static long process(waveformRecord *prec)
 {
     struct wfdset *pdset = (struct wfdset *)(prec->dset);
-    long           status;
     unsigned char  pact=prec->pact;
 
     if ((pdset==NULL) || (pdset->read_wf==NULL)) {
@@ -144,7 +143,7 @@ static long process(waveformRecord *prec)
 
     if (pact && prec->busy) return 0;
 
-    status=readValue(prec); /* read the new value */
+    readValue(prec); /* read the new value */
     if (!pact && prec->pact) return 0;
 
     prec->pact = TRUE;

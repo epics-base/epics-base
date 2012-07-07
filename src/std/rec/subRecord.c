@@ -91,7 +91,6 @@ static void monitor(subRecord *);
 static long init_record(subRecord *prec, int pass)
 {
     SUBFUNCPTR psubroutine;
-    long status = 0;
     struct link *plink;
     int i;
     double *pvalue;
@@ -114,7 +113,7 @@ static long init_record(subRecord *prec, int pass)
             return S_db_BadSub;
         }
         /* invoke the initialization subroutine */
-        status = (*psubroutine)(prec);
+        (*psubroutine)(prec);
     }
 
     if (prec->snam[0] == 0) {

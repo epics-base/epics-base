@@ -71,9 +71,8 @@ static long read_event(eventRecord *prec)
     long status;
     char newEvent[MAX_STRING_SIZE];
 
-    if (prec->inp.type != CONSTANT)
-    {
-        status = dbGetLinkValue(&prec->inp, DBR_STRING, newEvent, 0, 0);
+    if (prec->inp.type != CONSTANT) {
+        status = dbGetLink(&prec->inp, DBR_STRING, newEvent, 0, 0);
         if (status) return status;
         if (strcmp(newEvent, prec->val) != 0) {
             strcpy(prec->val, newEvent);

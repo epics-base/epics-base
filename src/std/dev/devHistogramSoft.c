@@ -52,8 +52,6 @@ epicsExportAddress(dset,devHistogramSoft);
 
 static long init_record(histogramRecord	*prec)
 {
-    long status = 0;
-
     /* histogram.svl must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
     switch (prec->svl.type) {
     case (CONSTANT) :
@@ -69,13 +67,11 @@ static long init_record(histogramRecord	*prec)
 		"devHistogramSoft (init_record) Illegal SVL field");
 	return(S_db_badField);
     }
-    return(status);
+    return 0;
 }
 
 static long read_histogram(histogramRecord *prec)
 {
-    long status;
-
-    status = dbGetLink(&prec->svl,DBR_DOUBLE, &prec->sgnl,0,0);
-    return(0); /*add count*/
+    dbGetLink(&prec->svl, DBR_DOUBLE, &prec->sgnl, 0, 0);
+    return 0; /*add count*/
 }

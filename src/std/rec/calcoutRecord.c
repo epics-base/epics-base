@@ -576,8 +576,6 @@ static void checkAlarms(calcoutRecord *prec)
 
 static void execOutput(calcoutRecord *prec)
 {
-    long status;
-
     /* Determine output data */
     switch(prec->dopt) {
     case calcoutDOPT_Use_VAL:
@@ -598,12 +596,12 @@ static void execOutput(calcoutRecord *prec)
     /* Check to see what to do if INVALID */
     if (prec->nsev < INVALID_ALARM ) {
         /* Output the value */
-        status = writeValue(prec);
+        writeValue(prec);
         /* post output event if set */
         if (prec->epvt) postEvent(prec->epvt);
     } else switch (prec->ivoa) {
         case menuIvoaContinue_normally:
-            status = writeValue(prec);
+            writeValue(prec);
             /* post output event if set */
             if (prec->epvt) postEvent(prec->epvt);
             break;
@@ -611,12 +609,11 @@ static void execOutput(calcoutRecord *prec)
             break;
         case menuIvoaSet_output_to_IVOV:
             prec->oval = prec->ivov;
-            status = writeValue(prec);
+            writeValue(prec);
             /* post output event if set */
             if (prec->epvt) postEvent(prec->epvt);
             break;
         default:
-            status = -1;
             recGblRecordError(S_db_badField, (void *)prec,
                               "calcout:process Illegal IVOA field");
     }

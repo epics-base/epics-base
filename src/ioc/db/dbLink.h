@@ -45,19 +45,6 @@ typedef struct lset {
     void (*scanFwdLink)(struct link *plink);
 } lset;
 
-#define dbGetLink(PLNK, DBRTYPE, PBUFFER, OPTIONS, NREQUEST) \
-    ( ( ( (PLNK)->type == CONSTANT ) && \
-        ( (NREQUEST) == 0) && \
-        ( (OPTIONS) == 0) ) \
-      ? 0 \
-      : dbGetLinkValue((PLNK),(DBRTYPE), \
-        (void *)(PBUFFER), (OPTIONS), (NREQUEST) ) )
-
-#define dbPutLink(PLNK, DBRTYPE, PBUFFER, NREQUEST) \
-    ( ( (PLNK)->type == CONSTANT) \
-      ? 0 \
-      : dbPutLinkValue( (PLNK), (DBRTYPE), (void *)(PBUFFER), (NREQUEST) ) )
-
 #define dbGetSevr(PLINK, PSEVERITY) \
     dbGetAlarm((PLINK), NULL, (PSEVERITY));
 
@@ -71,7 +58,7 @@ epicsShareFunc void dbRemoveLink(struct link *plink);
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
-epicsShareFunc long dbGetLinkValue(struct link *, short dbrType, void *pbuffer,
+epicsShareFunc long dbGetLink(struct link *, short dbrType, void *pbuffer,
         long *options, long *nRequest);
 epicsShareFunc long dbGetControlLimits(const struct link *plink, double *low,
         double *high);
@@ -86,7 +73,7 @@ epicsShareFunc long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity);
 epicsShareFunc long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
-epicsShareFunc long dbPutLinkValue(struct link *, short dbrType,
+epicsShareFunc long dbPutLink(struct link *, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
 

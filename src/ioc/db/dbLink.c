@@ -496,7 +496,7 @@ long dbGetNelements(const struct link *plink, long *nelements)
     return S_db_badField;
 }
 
-long dbGetLinkValue(struct link *plink, short dbrType, void *pbuffer,
+long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
     struct dbCommon *precord = plink->value.pv_link.precord;
@@ -610,12 +610,15 @@ long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
     return S_db_notFound;
 }
 
-long dbPutLinkValue(struct link *plink, short dbrType, const void *pbuffer,
+long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
         long nRequest)
 {
     long status;
 
     switch (plink->type) {
+    case CONSTANT:
+        status = 0;
+        break;
     case DB_LINK:
         status = dbDbPutValue(plink, dbrType, pbuffer, nRequest);
         break;

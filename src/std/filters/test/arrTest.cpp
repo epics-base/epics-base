@@ -89,7 +89,6 @@ static int fl_equals_array(short type, const db_field_log *pfl1, void *p2) {
 
 static void createAndOpen(const char *chan, const char *json, const char *type, dbChannel**pch, short no) {
     ELLNODE *node;
-    chFilter *filter;
     char name[80];
 
     strncpy(name, chan, sizeof(name)-1);
@@ -101,11 +100,11 @@ static void createAndOpen(const char *chan, const char *json, const char *type, 
     testOk(!(dbChannelOpen(*pch)), "dbChannel with plugin arr opened");
 
     node = ellFirst(&(*pch)->pre_chain);
-    filter = CONTAINER(node, chFilter, pre_node);
+    (void) CONTAINER(node, chFilter, pre_node);
     testOk((ellCount(&(*pch)->pre_chain) == 0), "arr has no filter in pre chain");
 
     node = ellFirst(&(*pch)->post_chain);
-    filter = CONTAINER(node, chFilter, post_node);
+    (void) CONTAINER(node, chFilter, post_node);
     testOk((ellCount(&(*pch)->post_chain) == no),
            "arr has %d filter(s) in post chain", no);
 }
@@ -120,7 +119,7 @@ static void testHead (const char *title, const char *typ = "") {
 #define TEST1(Size, Offset, Incr, Text) \
     testDiag("Offset: %d (%s)", Offset, Text); \
     off = Offset; \
-    status = dbPutField(&offaddr, DBR_LONG, &off, 1); \
+    (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
     pfl = db_create_read_log(pch); \
     testOk(pfl->type == dbfl_type_rec, "original field log has type rec"); \
     pfl2 = dbChannelRunPostChain(pch, pfl); \
@@ -132,7 +131,6 @@ static void testHead (const char *title, const char *typ = "") {
 static void check(short dbr_type) {
     dbChannel *pch;
     db_field_log *pfl, *pfl2;
-    int status;
     dbAddr valaddr;
     dbAddr offaddr;
     const char *offname = NULL, *valname = NULL, *typname = NULL;
@@ -173,10 +171,10 @@ static void check(short dbr_type) {
         testDiag("Invalid data type %d", dbr_type);
     }
 
-    status = dbNameToAddr(offname, &offaddr);
+    (void) dbNameToAddr(offname, &offaddr);
 
-    status = dbNameToAddr(valname, &valaddr);
-    status = dbPutField(&valaddr, DBR_LONG, ar, 10);
+    (void) dbNameToAddr(valname, &valaddr);
+    (void) dbPutField(&valaddr, DBR_LONG, ar, 10);
 
     /* Default: should not change anything */
 

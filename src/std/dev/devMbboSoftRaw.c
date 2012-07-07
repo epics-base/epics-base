@@ -48,24 +48,19 @@ epicsExportAddress(dset,devMbboSoftRaw);
 
 static long init_record(mbboRecord *prec)
 {
- 
-    long status;
- 
     /*to preserve old functionality*/
-    if(prec->nobt == 0) prec->mask = 0xffffffff;
+    if (prec->nobt == 0) prec->mask = 0xffffffff;
     prec->mask <<= prec->shft;
     /*dont convert*/
-    status = 2;
-    return status;
+    return 2;
  
 } /* end init_record() */
 
 static long write_mbbo(mbboRecord *prec)
 {
-    long status;
     unsigned long data;
 
     data = prec->rval & prec->mask;
-    status = dbPutLink(&prec->out,DBR_LONG, &data,1);
-    return(0);
+    dbPutLink(&prec->out,DBR_LONG, &data,1);
+    return 0;
 }

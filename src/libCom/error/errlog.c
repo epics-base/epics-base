@@ -266,10 +266,8 @@ epicsShareFunc int errlogSevVprintf(
 epicsShareFunc char * epicsShareAPI errlogGetSevEnumString(
     const errlogSevEnum severity)
 {
-    static char unknown[] = "unknown";
-
     errlogInit(0);
-    if (severity < 0 || severity > 3) return unknown;
+    if (severity > 3) return "unknown";
     return errlogSevEnumString[severity];
 }
 

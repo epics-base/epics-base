@@ -70,7 +70,7 @@ int dbLoadRecords(const char *file, const char *macros)
     }
 
     macExpandString(macHandle, input_buffer, output_buffer, BUFFER_SIZE-1);
-    printf(output_buffer);
+    printf("%s", output_buffer);
 
     if (macHandle) macDeleteHandle(macHandle);
 

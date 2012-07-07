@@ -73,7 +73,7 @@ static int checkValues(epicsUInt32 s, epicsUInt32 i, epicsUInt32 e) {
 
 static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
-    testDiag(title);
+    testDiag("%s", title);
     testDiag("--------------------------------------------------------");
 }
 

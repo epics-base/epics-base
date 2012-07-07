@@ -112,9 +112,9 @@ static void createAndOpen(const char *chan, const char *json, const char *type, 
 
 static void testHead (const char *title, const char *typ = "") {
     const char *line = "------------------------------------------------------------------------------";
-    testDiag(line);
+    testDiag("%s", line);
     testDiag(title, typ);
-    testDiag(line);
+    testDiag("%s", line);
 }
 
 #define TEST1(Size, Offset, Incr, Text) \

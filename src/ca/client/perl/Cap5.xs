@@ -446,7 +446,7 @@ SV * CA_new(const char *class, const char *name, ...) {
     SvREADONLY_on(ca_obj);
 
     pch->chan_ref = ca_ref;
-    SvREFCNT_inc(ca_ref);
+    (void) SvREFCNT_inc(ca_ref);
 
     if (items > 2
         && SvOK(ST(2))) {
@@ -943,7 +943,7 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
 
     sv_setiv(mon_obj, (IV)event);
     SvREADONLY_on(mon_obj);
-    SvREFCNT_inc(mon_ref);
+    (void) SvREFCNT_inc(mon_ref);
 
     return mon_ref;
 

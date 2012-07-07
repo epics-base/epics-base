@@ -60,7 +60,7 @@ static void fl_setup(dbChannel *chan, db_field_log *pfl, long val) {
 
 static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
-    testDiag(title);
+    testDiag("%s", title);
     testDiag("--------------------------------------------------------");
 }
 

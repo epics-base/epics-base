@@ -467,7 +467,7 @@ static int checkValues(myStruct *my,
 
 static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
-    testDiag(title);
+    testDiag("%s", title);
     testDiag("--------------------------------------------------------");
 }
 

@@ -607,7 +607,7 @@ int epicsShareAPI asDumpFP(
 			fprintf(fp," %s",asLevelName[pasgclient->level]);
 		else
 			fprintf(fp," Illegal Level %d",pasgclient->level);
-		if(pasgclient->access>=0 && pasgclient->access<=2)
+		if(pasgclient->access<=2)
 			fprintf(fp," %s %s",
                             asAccessName[pasgclient->access],
                             asTrapOption[pasgclient->trapMask]);
@@ -812,7 +812,7 @@ int epicsShareAPI asDumpMemFP(FILE *fp,const char *asgname,
 		    fprintf(fp," %s",asLevelName[pasgclient->level]);
 		else
 		    fprintf(fp," Illegal Level %d",pasgclient->level);
-		if(pasgclient->access>=0 && pasgclient->access<=2)
+		if(pasgclient->access<=2)
 		    fprintf(fp," %s %s",
                         asAccessName[pasgclient->access],
                         asTrapOption[pasgclient->trapMask]);

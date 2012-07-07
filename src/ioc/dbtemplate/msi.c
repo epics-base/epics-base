@@ -826,7 +826,8 @@ static void catMacroReplacements(subInfo *psubInfo,const char *value)
             newsize = psubInfo->curLength + len + 1;
         newbuf = calloc(1,newsize);
         if(!newbuf) {
-            fprintf(stderr,"calloc failed for size %Zu\n",newsize);
+            fprintf(stderr,"calloc failed for size %lu\n",
+	        (unsigned long) newsize);
             exit(1);
         }
         if(psubInfo->macroReplacements) {

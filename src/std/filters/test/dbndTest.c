@@ -95,7 +95,7 @@ static void mustPassTwice(dbChannel *pch, db_field_log *pfl2, char* m, double d,
 
 static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
-    testDiag(title);
+    testDiag("%s", title);
     testDiag("--------------------------------------------------------");
 }
 

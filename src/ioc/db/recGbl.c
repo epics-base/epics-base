@@ -213,6 +213,17 @@ unsigned short epicsShareAPI recGblResetAlarms(void *precord)
     }
     return val_mask;
 }
+
+int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
+{
+    struct dbCommon *prec = precord;
+    if (prec->nsev < new_sevr) {
+        prec->nsta = new_stat;
+	prec->nsev = new_sevr;
+	return TRUE;
+    }
+    return FALSE;
+}
 
 void epicsShareAPI recGblFwdLink(void *precord)
 {

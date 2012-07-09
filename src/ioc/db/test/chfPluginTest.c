@@ -15,6 +15,7 @@
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
+#include "errlog.h"
 #include "registry.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
@@ -504,6 +505,7 @@ MAIN(chfPluginTest)
         testAbort("Test database 'xRecord.db' not found");
 
     testHead("Try to register buggy plugins");
+    eltc(0);
     testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts1),
         "not enough storage for integer");
     testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts2),
@@ -512,6 +514,8 @@ MAIN(chfPluginTest)
         "not enough storage for string");
     testOk(!!chfPluginRegister("buggy", &myPif, brokenOpts4),
         "not enough storage for enum");
+    errlogFlush();
+    eltc(1);
 
     testHead("Register plugins");
     testOk(!chfPluginRegister("strict", &myPif, strictOpts),

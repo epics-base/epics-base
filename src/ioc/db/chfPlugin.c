@@ -172,8 +172,9 @@ static int store_boolean_value(const chfPluginArgDef *opt, char *user, int val)
  * and store the result at 'user + opt->offset'.
  */
 static int
-store_double_value(const chfPluginArgDef *opt, void *user, double val)
+store_double_value(const chfPluginArgDef *opt, void *vuser, double val)
 {
+    char *user = vuser;
     epicsInt32 *ival;
     double *dval;
     char *sval;

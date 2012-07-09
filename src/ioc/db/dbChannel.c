@@ -242,7 +242,7 @@ static void * chf_realloc(void *ctx, void *ptr, unsigned int sz)
 
 static void chf_free(void *ctx, void *ptr)
 {
-    return free(ptr);
+    free(ptr);
 }
 
 static const yajl_alloc_funcs chf_alloc =

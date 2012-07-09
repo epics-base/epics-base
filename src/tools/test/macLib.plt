@@ -3,7 +3,7 @@
 use FindBin qw($Bin);
 use lib "$Bin/../../../../lib/perl";
 
-use Test::More tests => 34;
+use Test::More tests => 35;
 
 use EPICS::macLib;
 
@@ -12,7 +12,15 @@ use Data::Dumper;
 my $m = EPICS::macLib->new;
 isa_ok $m, 'EPICS::macLib';
 is $m->expandString(''), '', 'Empty string';
-is $m->expandString('$(undef)'), undef, 'Warning $(undef)';
+
+{
+    local *STDERR;
+    my $output;
+    open STDERR, '>', \$output;
+    is $m->expandString('$(undef)'), undef, 'Warning $(undef)';
+    chomp $output;
+    is $output, q/macLib: macro 'undef' is undefined (expanding string '$(undef)')/, 'macLib error message';
+}
 
 $m->suppressWarning(1);
 is $m->expandString('$(undef)'), '$(undef)', 'Suppressed $(undef)';

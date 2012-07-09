@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2009, Lloyd Hilaiel.
+ * Copyright 2010, Lloyd Hilaiel.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -38,7 +38,7 @@
 #ifndef __YAJL_PARSE_H__
 #define __YAJL_PARSE_H__
 
-#include "yajl_common.h"
+#include <yajl_common.h>
 
 #ifdef __cplusplus
 extern "C" {

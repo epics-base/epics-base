@@ -171,16 +171,16 @@
 		extra("struct asgMember    *asp")
 	}
 	field(PPN,DBF_NOACCESS) {
-		prompt("addr of PUTNOTIFY")
+		prompt("pprocessNotify")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct putNotify    *ppn")
+		extra("struct processNotify *ppn")
 	}
 	field(PPNR,DBF_NOACCESS) {
-		prompt("pputNotifyRecord")
+		prompt("pprocessNotifyRecord")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct putNotifyRecord *ppnr")
+		extra("struct processNotifyRecord *ppnr")
 	}
 	field(SPVT,DBF_NOACCESS) {
 		prompt("Scan Private")

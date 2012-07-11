@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
@@ -180,33 +179,39 @@ int epicsShareAPI pft(char *pname, char *pvalue)
 
 typedef struct tpnInfo {
     epicsEventId callbackDone;
-    putNotify *ppn;
-    struct dbChannel *chan;
+    processNotify *ppn;
+    char buffer[80];
 } tpnInfo;
 
-static void tpnCallback(putNotify *ppn)
+
+static int putCallback(processNotify *ppn,notifyPutType type) {
+    tpnInfo *ptpnInfo = (tpnInfo *)ppn->usrPvt;
+
+    return db_put_process(ppn, type, DBR_STRING, ptpnInfo->buffer, 1);
+}
+
+static void doneCallback(processNotify *ppn)
 {
     tpnInfo *ptpnInfo = (tpnInfo *) ppn->usrPvt;
-    putNotifyStatus status = ppn->status;
+    notifyStatus status = ppn->status;
     const char *pname = dbChannelRecord(ppn->chan)->name;
 
     if (status == 0)
-        printf("tpnCallback: success record=%s\n", pname);
+        printf("tpnCallback '%s': Success\n", pname);
     else
-        printf("%s tpnCallback status = %d\n", pname, status);
+        printf("tpnCallback '%s': Notify status %d\n", pname, (int)status);
     epicsEventSignal(ptpnInfo->callbackDone);
 }
 
 static void tpnThread(void *pvt)
 {
     tpnInfo *ptpnInfo = (tpnInfo *) pvt;
-    putNotify *ppn = (putNotify *) ptpnInfo->ppn;
+    processNotify *ppn = (processNotify *) ptpnInfo->ppn;
 
-    dbPutNotify(ppn);
+    dbProcessNotify(ppn);
     epicsEventWait(ptpnInfo->callbackDone);
     dbNotifyCancel(ppn);
     epicsEventDestroy(ptpnInfo->callbackDone);
-    free(ppn->pbuffer);
     dbChannelDelete(ppn->chan);
     free(ppn);
     free(ptpnInfo);
@@ -216,8 +221,7 @@ int epicsShareAPI tpn(char *pname, char *pvalue)
 {
     struct dbChannel *chan;
     tpnInfo *ptpnInfo;
-    putNotify *ppn;
-    char *pbuffer;
+    processNotify *ppn = NULL;
 
     chan = dbChannel_create(pname);
     if (!chan) {
@@ -225,21 +229,16 @@ int epicsShareAPI tpn(char *pname, char *pvalue)
         return 1;
     }
 
-    pbuffer = epicsStrDup(pvalue);
-    ppn = calloc(1, sizeof(putNotify));
+    ppn = calloc(1, sizeof(processNotify));
     if (!ppn) {
         printf("calloc failed\n");
         return -1;
     }
+    ppn->requestType = putProcessRequest;
     ppn->chan = chan;
-    ppn->pbuffer = pbuffer;
-    ppn->nRequest = 1;
-    if (dbPutNotifyMapType(ppn, DBR_STRING)) {
-        printf("dbPutNotifyMapType failed\n");
-        printf("calloc failed\n");
-        return -1;
-    }
-    ppn->userCallback = tpnCallback;
+    ppn->putCallback = putCallback;
+    ppn->doneCallback = doneCallback;
+
     ptpnInfo = calloc(1, sizeof(tpnInfo));
     if (!ptpnInfo) {
         printf("calloc failed\n");
@@ -247,8 +246,12 @@ int epicsShareAPI tpn(char *pname, char *pvalue)
     }
     ptpnInfo->ppn = ppn;
     ptpnInfo->callbackDone = epicsEventCreate(epicsEventEmpty);
+    strncpy(ptpnInfo->buffer, pvalue, 80);
+    ptpnInfo->buffer[79] = 0;
+
     ppn->usrPvt = ptpnInfo;
     epicsThreadCreate("tpn", epicsThreadPriorityHigh,
-    epicsThreadGetStackSize(epicsThreadStackMedium), tpnThread, ptpnInfo);
+        epicsThreadGetStackSize(epicsThreadStackMedium), tpnThread, ptpnInfo);
     return 0;
 }
+

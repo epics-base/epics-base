@@ -55,7 +55,8 @@
 #include "db_convert.h"
 #include "resourceLib.h"
 
-extern "C" void putNotifyCompletion ( putNotify *ppn );
+extern "C" int putNotifyPut ( processNotify *ppn, notifyPutType notifyPutType );
+extern "C" void putNotifyCompletion ( processNotify *ppn );
 
 class dbContext;
 class dbChannelIO;

@@ -54,7 +54,7 @@ public:
     epicsPlacementDeleteOperator (( void *,
         tsFreeList < dbPutNotifyBlocker, 64, epicsMutexNOOP > & ))
 private:
-    putNotify pn;
+    processNotify pn;
     //
     // Include a union of all scalar types
     // including fixed length strings so
@@ -75,10 +75,16 @@ private:
     epicsMutex & mutex;
     cacWriteNotify * pNotify;
     unsigned long maxValueSize;
+    // arguments for db_put_field
+    void *pbuffer;
+    long nRequest;
+    short dbrType;
+    // end arguments for db_put_field
     dbSubscriptionIO * isSubscription ();
     void expandValueBuf (
         epicsGuard < epicsMutex > &, unsigned long newSize );
-    friend void putNotifyCompletion ( putNotify * ppn );
+    friend void putNotifyCompletion ( processNotify * ppn );
+    friend int  putNotifyPut ( processNotify *ppn, notifyPutType type );
 	dbPutNotifyBlocker ( const dbPutNotifyBlocker & );
 	dbPutNotifyBlocker & operator = ( const dbPutNotifyBlocker & );
     virtual ~dbPutNotifyBlocker ();

@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbNotify.h	*/
@@ -22,44 +21,61 @@
 #endif
 
 struct dbCommon;
-struct putNotify;
+struct processNotify;
 
 typedef struct ellCheckNode{
     ELLNODE node;
     int     isOnList;
-}ellCheckNode;
+} ellCheckNode;
 
 typedef enum {
-    putNotifyOK,
-    putNotifyCanceled,
-    putNotifyError,
-    putNotifyPutDisabled
-}putNotifyStatus;
+    processRequest,
+    putProcessRequest,
+    processGetRequest,
+    putProcessGetRequest
+} notifyRequestType;
 
-typedef struct putNotify{
-        ellCheckNode    restartNode;
-        /*The following members MUST be set by user*/
-        void            (*userCallback)(struct putNotify *);
-        struct dbChannel *chan;         /*dbChannel*/
-        void            *pbuffer;       /*address of data*/
-        long            nRequest;       /*number of elements to be written*/
-        short           dbrType;        /*database request type*/
-        void            *usrPvt;        /*for private use of user*/
-        /*The following is status of request. Set by dbNotify */
-        putNotifyStatus status;
-        void            *pputNotifyPvt;  /*for private use of putNotify*/
-}putNotify;
+typedef enum {
+    putDisabledType,
+    putFieldType,
+    putType
+} notifyPutType;
 
-/* dbPutNotify and dbNotifyCancel are the routines called by user*/
-/* The user is normally channel access client or server               */
-epicsShareFunc void epicsShareAPI dbPutNotify(putNotify *pputNotify);
-epicsShareFunc void epicsShareAPI dbNotifyCancel(putNotify *pputNotify);
+typedef enum {
+    getFieldType,
+    getType     /* FIXME: Never used? */
+} notifyGetType;
 
-/*dbPutNotifyMapType convenience function for old database access*/
-epicsShareFunc int epicsShareAPI dbPutNotifyMapType (putNotify *ppn, short oldtype);
+typedef enum {
+    notifyOK,
+    notifyCanceled,
+    notifyError,
+    notifyPutDisabled
+} notifyStatus;
 
-/* dbPutNotifyInit called by iocInit */
-epicsShareFunc void epicsShareAPI dbPutNotifyInit(void);
+typedef struct processNotify {
+    /* following fields are for private use by dbNotify implementation */
+    ellCheckNode    restartNode;
+    void            *pnotifyPvt;
+    /* The following fields are set by dbNotify. */
+    notifyStatus status;
+    int              wasProcessed; /* (0,1) => (no,yes) */
+    /*The following members are set by user*/
+    notifyRequestType requestType;
+    struct dbChannel *chan;         /*dbChannel*/
+    int              (*putCallback)(struct processNotify *,notifyPutType type);
+    void             (*getCallback)(struct processNotify *,notifyGetType type);
+    void             (*doneCallback)(struct processNotify *);
+    void             *usrPvt;        /*for private use of user*/
+} processNotify;
+
+
+/* dbProcessNotify and dbNotifyCancel are called by user*/
+epicsShareFunc void epicsShareAPI dbProcessNotify(processNotify *pprocessNotify);
+epicsShareFunc void epicsShareAPI dbNotifyCancel(processNotify *pprocessNotify);
+
+/* dbProcessNotifyInit called by iocInit */
+epicsShareFunc void epicsShareAPI dbProcessNotifyInit(void);
 
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
 epicsShareFunc void epicsShareAPI dbNotifyAdd(
@@ -67,29 +83,60 @@ epicsShareFunc void epicsShareAPI dbNotifyAdd(
 /*dbNotifyCompletion called by recGblFwdLink  or dbAccess*/
 epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
 
-/* dbtpn is test routine for put notify */
+/* db_put_process defined here since it requires dbNotify.
+ * src_type is the old DBR type
+ * This is called by a dbNotify putCallback that uses oldDbr types
+ */
+epicsShareFunc int epicsShareAPI db_put_process(
+    processNotify *processNotify,notifyPutType type,
+    int src_type,const void *psrc, int no_elements);
+ 
+/* dbtpn is test routine for dbNotify putProcessRequest */
 epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
 
 /* dbNotifyDump is an INVASIVE debug utility. Don't use this needlessly*/
 epicsShareFunc int epicsShareAPI dbNotifyDump(void);
 
-/* This module provides code to handle put notify. If a put causes a record to
- * be processed, then a user supplied callback is called when that record
- * and all records processed because of that record complete processing.
- * For asynchronous records completion means completion of the asyn phase.
+/* This module provides code to handle process notify.
+ * client code semantics are:
+ * 1) The client code allocates storage for a processNotify structure. 
+ *    This structure can be used for multiple calls to dbProcessNotify.
+ *    The client is responsible for setting the following fields :
+ *    requestType - The type of request.
+ *    chan - This is typically set via a call to dbChannelCreate.
+ *    putCallback - If requestType is putProcessRequest or putProcessGetRequest
+ *    getCallback - If request is processGetRequest or putProcessGetRequest
+ *    doneCallback - Must be set
+ *    usrPvt - For exclusive use of client. dbNotify does not access this field
+ * 2) The client calls dbProcessNotify. 
+ * 3) putCallback is called after dbNotify has claimed the record instance
+ *    but before a potential process is requested.
+ *    The putCallback MUST issue the correct put request
+ *    specified by notifyPutType
+ * 4) getCallback is called after a possible process is complete
+ *    (including asynchronous completion) but before dbNotify has
+ *    released the record.
+ *    The getCallback MUST issue the correct get request
+ *    specified by notifyGetType
+ * 5) doneCallback is called when dbNotify has released the record.
+ *    The client can issue a new dbProcessNotify request from
+ *    doneCallback or anytime after doneCallback returns.
+ * 6) The client can call dbNotifyCancel at any time.
+ *    If a dbProcessNotify is active, dbNotifyCancel will not return until
+ *    the dbNotifyRequest is actually canceled. The client must be prepared
+ *    for a callback to be called while dbNotifyCancel is active.
  *
- * User code calls putNotifyInit, putNotifyCleanup,
- * dbPutNotify, and dbNotifyCancel.
+ * dbProcessNotify handles the semantics of record locking and deciding
+ * if a process request is issued and also calls the client callbacks.
  *
- * The use must allocate storage for "struct putNotify"
- * The user MUST set pputNotifyPvt=0 before the first call to dbPutNotify
- * and should never modify it again.
+ * A process request is issued if any of the following is true.
+ * 1) The requester has issued a processs request and record is passive.
+ * 2) The requester is doing a put, the record is passive, and either
+ *     a) The field description is process passive.
+ *     b) The field is PROC.
+ * 3) The requester has requested processGet and the record is passive.
  *
- * After dbPutNotify is called it may not called for the same putNotify
- * until the putCallback is complete. The use can call dbNotifyCancel
- * to cancel the operation.
- *
- * The user callback is called when the operation is completed.
+ * iocInit calls processNotifyInit.
  *
  * The other global routines (dbNotifyAdd and dbNotifyCompletion) are called by:
  *
@@ -101,22 +148,20 @@ epicsShareFunc int epicsShareAPI dbNotifyDump(void);
  *              Unless pact is already true.
  *	recGbl
  *		recGblFwdLink calls dbNotifyCompletion
- */
-
-/* Two fields in dbCommon are used for put notify.
- *	ppn     pointer to putNotify
- *		If a record is part of a put notify group,
- *		This field is the address of the associated putNotify.
- *		As soon as a record completes processing the field is set NULL
- *	ppnr    pointer to putNotifyRecord
- *		Address of a putNotifyRecord for 1) list node for records
- *		put notify is waiting to complete, and 2) a list of records
- *              to restart.
  *
- * See the Application Developer's Guide for implementation rules
+ * Two fields in dbCommon are used for put notify.
+ *	ppn     pointer to processNotify
+ *		If a record is part of a put notify group,
+ *		This field is the address of the associated processNotify.
+ *		As soon as a record completes processing the field is set NULL
+ *	ppnr    pointer to processNotifyRecord, which is a private structure
+ *              owned by dbNotify.
+ *		dbNotify is reponsible for this structure.
+ *
  */
 #ifdef __cplusplus
 }
 #endif
 
 #endif /*INCdbNotifyh*/
+

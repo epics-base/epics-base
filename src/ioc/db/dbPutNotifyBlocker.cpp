@@ -1,10 +1,9 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
@@ -52,7 +51,7 @@ dbPutNotifyBlocker::dbPutNotifyBlocker ( epicsMutex & mutexIn ) :
 {
     memset ( & this->pn, '\0', sizeof ( this->pn ) );
     memset ( & this->dbrScalarValue, '\0', sizeof ( this->dbrScalarValue ) );
-    this->pn.pbuffer = & this->dbrScalarValue;
+    this->pbuffer = & this->dbrScalarValue;
 }
 
 dbPutNotifyBlocker::~dbPutNotifyBlocker ()
@@ -64,7 +63,7 @@ void dbPutNotifyBlocker::destructor ( epicsGuard < epicsMutex > & guard )
     guard.assertIdenticalMutex ( this->mutex );
     this->cancel ( guard );
     if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
-        char * pBuf = static_cast < char * > ( this->pn.pbuffer );
+        char * pBuf = static_cast < char * > ( this->pbuffer );
         delete [] pBuf;
     }
     this->~dbPutNotifyBlocker ();
@@ -88,17 +87,29 @@ void dbPutNotifyBlocker::expandValueBuf (
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->maxValueSize < newSize ) {
         if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
-            char * pBuf = static_cast < char * > ( this->pn.pbuffer );
+            char * pBuf = static_cast < char * > ( this->pbuffer );
             delete [] pBuf;
             this->maxValueSize = sizeof ( this->dbrScalarValue );
-            this->pn.pbuffer = & this->dbrScalarValue;
+            this->pbuffer = & this->dbrScalarValue;
         }
-        this->pn.pbuffer = new char [newSize];
+        this->pbuffer = new char [newSize];
         this->maxValueSize = newSize;
     }
 }
 
-extern "C" void putNotifyCompletion ( putNotify *ppn )
+extern "C" int putNotifyPut ( processNotify *ppn, notifyPutType type )
+{
+    if(ppn->status==notifyCanceled) return 0;
+/*
+ * No locking in this method because only a dbNotifyCancel could interrupt
+ * and it does not return until cancel is done.
+ */
+    dbPutNotifyBlocker * pBlocker = static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
+    return db_put_process(ppn,type,
+        pBlocker->dbrType,pBlocker->pbuffer,pBlocker->nRequest);
+}
+
+extern "C" void putNotifyCompletion ( processNotify *ppn )
 {
     dbPutNotifyBlocker * const pBlocker = 
             static_cast < dbPutNotifyBlocker * > ( ppn->usrPvt );
@@ -112,11 +123,11 @@ extern "C" void putNotifyCompletion ( putNotify *ppn )
         // unavoidable because its possible that the use callback 
         // might destroy this object.
         pBlocker->block.signal ();
-        if ( pBlocker->pn.status != putNotifyOK ) {
+        if ( pBlocker->pn.status != notifyOK ) {
             pNtfy->exception ( 
                 guard, ECA_PUTFAIL,  "put notify unsuccessful",
-                static_cast < unsigned > (pBlocker->pn.dbrType), 
-                static_cast < unsigned > (pBlocker->pn.nRequest) );
+                static_cast < unsigned > (pBlocker->dbrType), 
+                static_cast < unsigned > (pBlocker->nRequest) );
         }
         else {
             pNtfy->completion ( guard );
@@ -163,25 +174,21 @@ void dbPutNotifyBlocker::initiatePutNotify (
         throw cacChannel::badType();
     }
 
-    int status = dbPutNotifyMapType (
-                &this->pn, static_cast <short> ( type ) );
-    if ( status ) {
-        this->pNotify = 0;
-        throw cacChannel::badType();
-    }
-
-    this->pn.nRequest = static_cast < unsigned > ( count );
+    this->dbrType = type;
+    this->nRequest = static_cast < unsigned > ( count );
+    this->pn.requestType = putProcessRequest;
     this->pn.chan = dbch;
-    this->pn.userCallback = putNotifyCompletion;
+    this->pn.putCallback = putNotifyPut;
+    this->pn.doneCallback = putNotifyCompletion;
     this->pn.usrPvt = this;
 
     unsigned long size = dbr_size_n ( type, count );
     this->expandValueBuf ( guard, size );
-    memcpy ( this->pn.pbuffer, pValue, size );
+    memcpy ( this->pbuffer, pValue, size );
 
     {
         epicsGuardRelease < epicsMutex > autoRelease ( guard );
-        ::dbPutNotify ( &this->pn );
+        ::dbProcessNotify ( &this->pn );
     }
 }
 

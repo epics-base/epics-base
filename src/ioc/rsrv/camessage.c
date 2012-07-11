@@ -61,7 +61,7 @@ logBadIdWithFileAndLineno(CLIENT, MP, PPL, __FILE__, __LINE__)
  */
 typedef struct rsrv_put_notify {
     ELLNODE         node;
-    putNotify       dbPutNotify;
+    processNotify       dbPutNotify;
     caHdrLargeArray msg;
     /*
      * Include a union of all scalar types
@@ -81,8 +81,13 @@ typedef struct rsrv_put_notify {
         dbr_long_t longval;
         dbr_double_t doubleval;
     } dbrScalarValue;
+    /* arguments for db_put_field */
+    void *pbuffer;
+    long nRequest;
+    short dbrType;
+    /* end arguments for db_put_field */
     void            * asWritePvt;
-    unsigned        valueSize; /* size of block pointed to by dbPutNotify */
+    unsigned        valueSize; /* size of block pointed to by pbuffer */
     char            busy; /* put notify in progress */
     char            onExtraLaborQueue;
 } RSRVPUTNOTIFY;
@@ -1427,11 +1432,33 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
 }
 
 /*
- * write_notify_call_back()
- *
- * (called by the db call back thread)
- */
-static void write_notify_call_back(putNotify *ppn)
+  * write_notify_put_callback()
+  *
+  * (called by the db call back thread)
+  */
+ LOCAL int write_notify_put_callback(processNotify *ppn,notifyPutType type)
+ {
+     struct channel_in_use * pciu = (struct channel_in_use *) ppn->usrPvt;
+     struct rsrv_put_notify *pNotify;
+ 
+     if(ppn->status==notifyCanceled) return 0;
+ /*
+  * No locking in this method because only a dbNotifyCancel could interrupt
+  * and it does not return until cancel is done.
+  */
+     assert(pciu);
+     assert(pciu->pPutNotify);
+     pNotify = pciu->pPutNotify;
+     return db_put_process(ppn,type,
+         pNotify->dbrType,pNotify->pbuffer,pNotify->nRequest);
+ }
+ 
+ /*
+  * write_notify_done_callback()
+  *
+  * (called by the db call back thread)
+  */
+ LOCAL void write_notify_done_callback(processNotify *ppn)
 {
     struct channel_in_use * pciu = (struct channel_in_use *) ppn->usrPvt;
     struct client * pClient;
@@ -1497,7 +1524,7 @@ static void write_notify_reply ( struct client * pClient )
              * Map from DB status to CA status
              *
              */
-            if ( ppnb->dbPutNotify.status != putNotifyOK ) {
+            if ( ppnb->dbPutNotify.status != notifyOK ) {
                 status = ECA_PUTFAIL;
             }
             else{
@@ -1630,14 +1657,16 @@ static struct rsrv_put_notify *
         pNotify = (RSRVPUTNOTIFY *)
             freeListCalloc ( rsrvPutNotifyFreeList );
         if ( pNotify ) {
-            pNotify->dbPutNotify.pbuffer =
-                    &pNotify->dbrScalarValue;
+            pNotify->pbuffer = &pNotify->dbrScalarValue;
             pNotify->valueSize =
                     sizeof (pNotify->dbrScalarValue);
             pNotify->dbPutNotify.usrPvt = pciu;
             pNotify->dbPutNotify.chan = pciu->dbch;
-            pNotify->dbPutNotify.userCallback =
-                    write_notify_call_back;
+            pNotify->dbPutNotify.putCallback =
+                    write_notify_put_callback;
+            pNotify->dbPutNotify.doneCallback =
+                    write_notify_done_callback;
+            pNotify->dbPutNotify.requestType = putProcessRequest;
         }
     }
     else {
@@ -1659,10 +1688,10 @@ static int rsrvExpandPutNotify (
          */
         if ( pNotify->valueSize >
             sizeof (pNotify->dbrScalarValue) ) {
-            free ( pNotify->dbPutNotify.pbuffer );
+            free ( pNotify->pbuffer );
         }
-        pNotify->dbPutNotify.pbuffer = casCalloc(1,sizeNeeded);
-        if ( pNotify->dbPutNotify.pbuffer ) {
+        pNotify->pbuffer = casCalloc(1,sizeNeeded);
+        if ( pNotify->pbuffer ) {
             pNotify->valueSize = sizeNeeded;
             booleanStatus = TRUE;
         }
@@ -1670,7 +1699,7 @@ static int rsrvExpandPutNotify (
             /*
              * revert back to the embedded union
              */
-            pNotify->dbPutNotify.pbuffer =
+            pNotify->pbuffer =
                 &pNotify->dbrScalarValue;
             pNotify->valueSize =
                     sizeof (pNotify->dbrScalarValue);
@@ -1731,7 +1760,7 @@ void rsrvFreePutNotify ( client *pClient,
 
         if ( pNotify->valueSize >
                 sizeof(pNotify->dbrScalarValue) ) {
-            free ( pNotify->dbPutNotify.pbuffer );
+            free ( pNotify->pbuffer );
         }
         freeListFree ( rsrvPutNotifyFreeList, pNotify );
      }
@@ -1805,7 +1834,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
 
                 if ( busyTmp ) {
                     log_header("put call back time out", client,
-                        &pciu->pPutNotify->msg, pciu->pPutNotify->dbPutNotify.pbuffer, 0);
+                        &pciu->pPutNotify->msg, pciu->pPutNotify->pbuffer, 0);
                     asTrapWriteAfter ( asWritePvtTmp );
                     putNotifyErrorReply (client, &pciu->pPutNotify->msg, ECA_PUTCBINPROG);
                 }
@@ -1838,10 +1867,10 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
     pciu->pPutNotify->busy = TRUE;
     pciu->pPutNotify->onExtraLaborQueue = FALSE;
     pciu->pPutNotify->msg = *mp;
-    pciu->pPutNotify->dbPutNotify.nRequest = mp->m_count;
+    pciu->pPutNotify->nRequest = mp->m_count;
 
     status = caNetConvert (
-        mp->m_dataType, pPayload, pciu->pPutNotify->dbPutNotify.pbuffer,
+        mp->m_dataType, pPayload, pciu->pPutNotify->pbuffer,
         FALSE /* net -> host format */, mp->m_count );
 	if ( status != ECA_NORMAL ) {
         log_header ("invalid data type", client, mp, pPayload, 0);
@@ -1849,12 +1878,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_ERROR;
     }
 
-    status = dbPutNotifyMapType(&pciu->pPutNotify->dbPutNotify, mp->m_dataType);
-    if(status){
-        putNotifyErrorReply (client, mp, ECA_PUTFAIL);
-        pciu->pPutNotify->busy = FALSE;
-        return RSRV_OK;
-    }
+    pciu->pPutNotify->dbrType = mp->m_dataType;
 
     pciu->pPutNotify->asWritePvt = asTrapWriteBefore (
         pciu->asClientPVT,
@@ -1862,7 +1886,7 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         pciu->client->pHostName ? pciu->client->pHostName : "",
         pciu->dbch );
 
-    dbPutNotify(&pciu->pPutNotify->dbPutNotify);
+    dbProcessNotify(&pciu->pPutNotify->dbPutNotify);
 
     return RSRV_OK;
 }

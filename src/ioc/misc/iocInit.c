@@ -140,7 +140,7 @@ int iocBuild(void)
         errlogPrintf("iocBuild: asInit Failed.\n");
         return -1;
     }
-    dbPutNotifyInit();
+    dbProcessNotifyInit();
     epicsThreadSleep(.5);
     initHookAnnounce(initHookAfterScanInit);
 
@@ -428,7 +428,6 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 {
     dbFldDes **papFldDes = pdbRecordType->papFldDes;
     short *link_ind = pdbRecordType->link_ind;
-    devSup *pdevSup;
     int j;
 
     /* For all the links in the record type... */
@@ -436,15 +435,20 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
+        if (ellCount(&precord->rdes->devList) > 0 &&
+            (strcmp(pdbFldDes->name, "INP") == 0 || strcmp(pdbFldDes->name, "OUT") == 0)) {
+            devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
+
+            if (pdevSup) {
+                struct dsxt *pdsxt = pdevSup->pdsxt;
+                if (pdsxt && pdsxt->add_record) {
+                    pdsxt->add_record(precord);
+                }
+            }
+        }
+
         if (plink->type == PV_LINK)
             dbInitLink(precord, plink, pdbFldDes->field_type);
-    }
-    pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
-    if (pdevSup) {
-        struct dsxt *pdsxt = pdevSup->pdsxt;
-        if (pdsxt && pdsxt->add_record) {
-            pdsxt->add_record(precord);
-        }
     }
 }
 

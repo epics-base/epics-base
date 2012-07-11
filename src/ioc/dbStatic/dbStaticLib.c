@@ -60,6 +60,7 @@ epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"GPIB_IO",GPIB_IO},
 	{"BITBUS_IO",BITBUS_IO},
 	{"MACRO_LINK",MACRO_LINK},
+        {"PN_LINK",PN_LINK},
 	{"DB_LINK",DB_LINK},
 	{"CA_LINK",CA_LINK},
 	{"INST_IO",INST_IO},
@@ -290,7 +291,8 @@ static long setLinkType(DBENTRY *pdbentry)
     }
 
     type = plink->type;
-    if ((type == CONSTANT || type == PV_LINK || type == DB_LINK || type == CA_LINK) &&
+    if ((type == CONSTANT || type == PV_LINK ||
+         type == PN_LINK || type == DB_LINK || type == CA_LINK) &&
 	(link_type == CONSTANT || link_type == PV_LINK)) goto done;
 
     dbFreeLinkContents(plink);
@@ -2022,6 +2024,14 @@ char * epicsShareAPI dbGetString(DBENTRY *pdbentry)
 		    strcpy(message,"");
 		}
 		break;
+            case PN_LINK:
+		if(plink->value.pv_link.pvname)
+		    strcpy(message,plink->value.pv_link.pvname);
+		else
+		    strcpy(message,"");
+		strcat(message," ");
+		strcat(message,msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+		break;
 	    case PV_LINK:
 	    case CA_LINK:
 	    case DB_LINK: {
@@ -3709,6 +3719,7 @@ int  epicsShareAPI dbGetLinkType(DBENTRY *pdbentry)
 	case CONSTANT:
 	    return(DCT_LINK_CONSTANT);
 	case PV_LINK:
+        case PN_LINK:
 	case DB_LINK:
 	case CA_LINK:
 	    return(DCT_LINK_PV);

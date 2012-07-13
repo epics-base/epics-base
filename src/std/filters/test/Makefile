@@ -20,6 +20,7 @@ tsTest_SRCS += tsTest.c
 tsTest_SRCS += tsTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += tsTest.c
 testHarness_SRCS += tsTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/tsTest.dbd ../xRecord.db
 TESTS += tsTest
 
 TARGETS += $(COMMON_DIR)/dbndTest.dbd
@@ -30,6 +31,7 @@ dbndTest_SRCS += dbndTest.c
 dbndTest_SRCS += dbndTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbndTest.c
 testHarness_SRCS += dbndTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/dbndTest.dbd
 TESTS += dbndTest
 
 TARGETS += $(COMMON_DIR)/arrTest.dbd
@@ -41,6 +43,7 @@ arrTest_SRCS += arrTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrRecord.c
 testHarness_SRCS += arrTest.cpp
 testHarness_SRCS += arrTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/arrTest.dbd
 TESTS += arrTest
 
 TARGETS += $(COMMON_DIR)/syncTest.dbd
@@ -51,6 +54,7 @@ syncTest_SRCS += syncTest.c
 syncTest_SRCS += syncTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += syncTest.c
 testHarness_SRCS += syncTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/syncTest.dbd
 TESTS += syncTest
 
 # epicsRunFilterTests runs all the test programs in a known working order.

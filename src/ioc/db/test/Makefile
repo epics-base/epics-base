@@ -30,6 +30,7 @@ dbChannelTest_SRCS += dbChannelTest.c
 dbChannelTest_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChannelTest.c
 testHarness_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/dbChannelTest.dbd ../xRecord.db
 TESTS += dbChannelTest
 
 TARGETS += $(COMMON_DIR)/chfPluginTest.dbd
@@ -40,6 +41,7 @@ chfPluginTest_SRCS += chfPluginTest.c
 chfPluginTest_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += chfPluginTest.c
 testHarness_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/chfPluginTest.dbd
 TESTS += chfPluginTest
 
 TARGETS += $(COMMON_DIR)/arrShorthandTest.dbd
@@ -50,6 +52,7 @@ arrShorthandTest_SRCS += arrShorthandTest.c
 arrShorthandTest_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrShorthandTest.c
 testHarness_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/arrShorthandTest.dbd
 TESTS += arrShorthandTest
 
 # The testHarness runs all the test programs in a known working order.

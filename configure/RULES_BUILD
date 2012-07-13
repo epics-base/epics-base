@@ -325,6 +325,7 @@ testspec: $(TESTSCRIPTS_$(BUILD_CLASS))
 	@echo OS-class: $(OS_CLASS) > $@
 	@echo Target-arch: $(T_A) >> $@
 	$(if $^, @echo Tests: $^ >> $@)
+	$(if $(TESTFILES), @echo Files: $(TESTFILES) >> $@)
 	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
 
 # If there's a perl test script (.plt) available, use it

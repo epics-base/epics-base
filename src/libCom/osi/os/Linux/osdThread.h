@@ -10,6 +10,7 @@
 #define INC_osdThread_H
 
 #include <pthread.h>
+#include <sys/types.h>
 
 #include "shareLib.h"
 #include "ellLib.h"

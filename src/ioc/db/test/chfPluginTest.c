@@ -481,6 +481,7 @@ MAIN(chfPluginTest)
 
     testPlan(1351);
 
+    dbChannelInit();
     db_init_events();
 
     /* Enum to string conversion */

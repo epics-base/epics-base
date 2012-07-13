@@ -22,7 +22,7 @@
 #include "dbBase.h"
 #include "dbEvent.h"
 #include "link.h"
-#include <freeList.h>
+#include "freeList.h"
 #include "dbAccessDefs.h"
 #include "dbLock.h"
 #include "dbStaticLib.h"
@@ -45,13 +45,19 @@ typedef struct parseContext {
 
 #define CALLIF(rtn) !rtn ? parse_stop : rtn
 
+static void *dbChannelFreeList;
+static void *chFilterFreeList;
 static void *dbchStringFreeList;
 
 void dbChannelInit (void)
 {
-    if (!dbchStringFreeList) {
-        freeListInitPvt(&dbchStringFreeList,
-            sizeof(epicsOldString), 128);
+    static int done = 0;
+
+    if (!done) {
+        done = 1;
+        freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
+        freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
+        freeListInitPvt(&dbchStringFreeList, sizeof(epicsOldString), 128);
     }
 }
 
@@ -66,7 +72,7 @@ static void chf_value(parseContext *parser, parse_result *presult)
     if (filter->plug->fif->parse_end(filter) == parse_continue) {
         ellAdd(&parser->chan->filters, &filter->list_node);
     } else {
-        free(filter); /* FIXME: Use free-list */
+        freeListFree(chFilterFreeList, filter);
         *presult = parse_stop;
     }
 }
@@ -162,12 +168,16 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     assert(parser->depth == 0);
     plug = dbFindFilter((const char *) key, stringLen);
     if (!plug) {
-        printf("dbChannelCreate: Channel filter '%.*s' not found\n", (int) stringLen, key);
+        errlogPrintf("dbChannelCreate: Channel filter '%.*s' not found\n",
+            (int) stringLen, key);
         return parse_stop;
     }
 
-    /* FIXME: Use a free-list */
-    filter = (chFilter *) callocMustSucceed(1, sizeof(*filter), "Creating dbChannel filter");
+    filter = freeListCalloc(chFilterFreeList);
+    if (!filter) {
+        errlogPrintf("dbChannelCreate: Out of memory\n");
+        return parse_stop;
+    }
     filter->chan = parser->chan;
     filter->plug = plug;
     filter->puser = NULL;
@@ -176,7 +186,7 @@ static int chf_map_key(void * ctx, const unsigned char * key,
     if (result == parse_continue) {
         parser->filter = filter;
     } else {
-        free(filter); /* FIXME: Use free-list */
+        freeListFree(chFilterFreeList, filter);
     }
     return result;
 }
@@ -285,7 +295,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
     if (parser.filter) {
         assert(status);
         parser.filter->plug->fif->parse_abort(parser.filter);
-        free(parser.filter); /* FIXME: free-list */
+        freeListFree(chFilterFreeList, parser.filter);
     }
     yajl_free(yh);
     return status;
@@ -391,8 +401,11 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
         goto finish;
     }
 
-    /* FIXME: Use a free-list */
-    filter = (chFilter *) callocMustSucceed(1, sizeof(*filter), "Creating 'arr' dbChannel filter");
+    filter = freeListCalloc(chFilterFreeList);
+    if (!filter) {
+        status = S_db_noMemory;
+        goto finish;
+    }
     filter->chan = chan;
     filter->plug = plug;
     filter->puser = NULL;
@@ -418,7 +431,7 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     return 0;
 
     failure:
-    free(filter); /* FIXME: Use free-list */
+    freeListFree(chFilterFreeList, filter);
     status = S_dbLib_fieldNotFound;
 
     finish:
@@ -462,8 +475,7 @@ dbChannel * dbChannelCreate(const char *name)
     if (status)
         goto finish;
 
-    /* FIXME: Use free-list */
-    chan = (dbChannel *) callocMustSucceed(1, sizeof(*chan), "dbChannelCreate");
+    chan = freeListCalloc(dbChannelFreeList);
     chan->name = epicsStrDup(name);
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
@@ -637,7 +649,6 @@ long dbChannelOpen(dbChannel *chan)
 long dbChannelGet(dbChannel *chan, short type, void *pbuffer,
         long *options, long *nRequest, void *pfl)
 {
-    /* FIXME: Vector through chan->get() ? */
     return dbGet(&chan->addr, type, pbuffer, options, nRequest, pfl);
 }
 
@@ -660,14 +671,12 @@ long dbChannelGetField(dbChannel *chan, short dbrType, void *pbuffer,
 long dbChannelPut(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    /* FIXME: Vector through chan->put() ? */
     return dbPut(&chan->addr, type, pbuffer, nRequest);
 }
 
 long dbChannelPutField(dbChannel *chan, short type, const void *pbuffer,
         long nRequest)
 {
-    /* FIXME: Vector through chan->putField() ? */
     return dbPutField(&chan->addr, type, pbuffer, nRequest);
 }
 
@@ -713,10 +722,10 @@ void dbChannelDelete(dbChannel *chan)
     /* Close filters in reverse order */
     while ((filter = (chFilter *) ellPop(&chan->filters))) {
         filter->plug->fif->channel_close(filter);
-        free(filter);
+        freeListFree(chFilterFreeList, filter);
     }
     free((char *) chan->name);
-    free(chan); /* FIXME: Use free-list */
+    freeListFree(dbChannelFreeList, chan);
 }
 
 static void freeArray(db_field_log *pfl) {

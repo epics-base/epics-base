@@ -86,6 +86,7 @@ MAIN(arrShorthandTest)
     testPlan(26);
 
     db_init_events();
+    dbChannelInit();
 
     if (dbReadDatabase(&pdbbase, "arrShorthandTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR

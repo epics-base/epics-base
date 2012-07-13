@@ -167,6 +167,8 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database 'xRecord.db' not found");
 
+    dbChannelInit();
+
     r = e = 0;
     /* dbChannelTest() checks record and field names */
     testOk1(!dbChannelTest("x.NAME"));

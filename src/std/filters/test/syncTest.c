@@ -143,6 +143,7 @@ MAIN(syncTest)
 
     testPlan(0);
 
+    dbChannelInit();
     evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "syncTest.dbd",

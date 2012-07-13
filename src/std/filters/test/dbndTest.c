@@ -116,6 +116,7 @@ MAIN(dbndTest)
 
     testPlan(59);
 
+    dbChannelInit();
     evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "dbndTest.dbd",

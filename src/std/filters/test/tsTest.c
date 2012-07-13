@@ -57,6 +57,7 @@ MAIN(tsTest)
 
     testPlan(12);
 
+    dbChannelInit();
     evtctx = db_init_events();
 
     if (dbReadDatabase(&pdbbase, "tsTest.dbd",

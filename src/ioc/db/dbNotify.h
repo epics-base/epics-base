@@ -71,31 +71,31 @@ typedef struct processNotify {
 
 
 /* dbProcessNotify and dbNotifyCancel are called by user*/
-epicsShareFunc void epicsShareAPI dbProcessNotify(processNotify *pprocessNotify);
-epicsShareFunc void epicsShareAPI dbNotifyCancel(processNotify *pprocessNotify);
+epicsShareFunc void dbProcessNotify(processNotify *pprocessNotify);
+epicsShareFunc void dbNotifyCancel(processNotify *pprocessNotify);
 
 /* dbProcessNotifyInit called by iocInit */
-epicsShareFunc void epicsShareAPI dbProcessNotifyInit(void);
+epicsShareFunc void dbProcessNotifyInit(void);
 
 /*dbNotifyAdd called by dbScanPassive and dbScanLink*/
-epicsShareFunc void epicsShareAPI dbNotifyAdd(
+epicsShareFunc void dbNotifyAdd(
     struct dbCommon *pfrom,struct dbCommon *pto);
 /*dbNotifyCompletion called by recGblFwdLink  or dbAccess*/
-epicsShareFunc void epicsShareAPI dbNotifyCompletion(struct dbCommon *precord);
+epicsShareFunc void dbNotifyCompletion(struct dbCommon *precord);
 
 /* db_put_process defined here since it requires dbNotify.
  * src_type is the old DBR type
  * This is called by a dbNotify putCallback that uses oldDbr types
  */
-epicsShareFunc int epicsShareAPI db_put_process(
+epicsShareFunc int db_put_process(
     processNotify *processNotify,notifyPutType type,
     int src_type,const void *psrc, int no_elements);
  
 /* dbtpn is test routine for dbNotify putProcessRequest */
-epicsShareFunc long epicsShareAPI dbtpn(char *recordname,char *value);
+epicsShareFunc long dbtpn(char *recordname,char *value);
 
 /* dbNotifyDump is an INVASIVE debug utility. Don't use this needlessly*/
-epicsShareFunc int epicsShareAPI dbNotifyDump(void);
+epicsShareFunc int dbNotifyDump(void);
 
 /* This module provides code to handle process notify.
  * client code semantics are:

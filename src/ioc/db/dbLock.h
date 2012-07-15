@@ -22,29 +22,29 @@ extern "C" {
 struct dbCommon;
 struct dbBase;
 
-epicsShareFunc void epicsShareAPI dbScanLock(struct dbCommon *precord);
-epicsShareFunc void epicsShareAPI dbScanUnlock(struct dbCommon *precord);
-epicsShareFunc unsigned long epicsShareAPI dbLockGetLockId(
+epicsShareFunc void dbScanLock(struct dbCommon *precord);
+epicsShareFunc void dbScanUnlock(struct dbCommon *precord);
+epicsShareFunc unsigned long dbLockGetLockId(
     struct dbCommon *precord);
 
-epicsShareFunc void epicsShareAPI dbLockInitRecords(struct dbBase *pdbbase);
-epicsShareFunc void epicsShareAPI dbLockSetMerge(
+epicsShareFunc void dbLockInitRecords(struct dbBase *pdbbase);
+epicsShareFunc void dbLockSetMerge(
     struct dbCommon *pfirst,struct dbCommon *psecond);
-epicsShareFunc void epicsShareAPI dbLockSetSplit(struct dbCommon *psource);
+epicsShareFunc void dbLockSetSplit(struct dbCommon *psource);
 /*The following are for code that modifies  lock sets*/
-epicsShareFunc void epicsShareAPI dbLockSetGblLock(void);
-epicsShareFunc void epicsShareAPI dbLockSetGblUnlock(void);
-epicsShareFunc void epicsShareAPI dbLockSetRecordLock(struct dbCommon *precord);
+epicsShareFunc void dbLockSetGblLock(void);
+epicsShareFunc void dbLockSetGblUnlock(void);
+epicsShareFunc void dbLockSetRecordLock(struct dbCommon *precord);
 
 /* Lock Set Report */
-epicsShareFunc long epicsShareAPI dblsr(char *recordname,int level);
+epicsShareFunc long dblsr(char *recordname,int level);
 /* If recordname NULL then all records*/
 /* level = (0,1,2) (lock set state, + recordname, +DB links) */
 
-epicsShareFunc long epicsShareAPI dbLockShowLocked(int level);
+epicsShareFunc long dbLockShowLocked(int level);
 
 /*KLUDGE to support field TPRO*/
-epicsShareFunc int * epicsShareAPI dbLockSetAddrTrace(struct dbCommon *precord);
+epicsShareFunc int * dbLockSetAddrTrace(struct dbCommon *precord);
 
 #ifdef __cplusplus
 }

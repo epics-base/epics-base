@@ -17,9 +17,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI registryDriverSupportAdd(
+epicsShareFunc int registryDriverSupportAdd(
     const char *name, struct drvet *pdrvet);
-epicsShareFunc struct drvet * epicsShareAPI registryDriverSupportFind(
+epicsShareFunc struct drvet * registryDriverSupportFind(
     const char *name);
 
 #ifdef __cplusplus

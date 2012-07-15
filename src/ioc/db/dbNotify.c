@@ -298,7 +298,7 @@ static void notifyCallback(CALLBACK *pcallback)
     callDone(precord, ppn);
 }
 
-void epicsShareAPI dbProcessNotifyInit(void)
+void dbProcessNotifyInit(void)
 {
     if (pnotifyGlobal)
         return;
@@ -307,7 +307,7 @@ void epicsShareAPI dbProcessNotifyInit(void)
     ellInit(&pnotifyGlobal->freeList);
 }
 
-void epicsShareAPI dbProcessNotify(processNotify *ppn)
+void dbProcessNotify(processNotify *ppn)
 {
     struct dbChannel *chan = ppn->chan;
     dbCommon *precord = dbChannelRecord(chan);
@@ -368,7 +368,7 @@ void epicsShareAPI dbProcessNotify(processNotify *ppn)
     processNotifyCommon(ppn, precord);
 }
 
-void epicsShareAPI dbNotifyCancel(processNotify *ppn)
+void dbNotifyCancel(processNotify *ppn)
 {
     dbCommon *precord = dbChannelRecord(ppn->chan);
     notifyState state;
@@ -428,7 +428,7 @@ void epicsShareAPI dbNotifyCancel(processNotify *ppn)
     dbScanUnlock(precord);
 }
 
-void epicsShareAPI dbNotifyCompletion(dbCommon *precord)
+void dbNotifyCompletion(dbCommon *precord)
 {
     processNotify *ppn = precord->ppn;
     notifyPvt *pnotifyPvt;
@@ -460,7 +460,7 @@ void epicsShareAPI dbNotifyCompletion(dbCommon *precord)
     epicsMutexUnlock(pnotifyGlobal->lock);
 }
 
-void epicsShareAPI dbNotifyAdd(dbCommon *pfrom, dbCommon *pto)
+void dbNotifyAdd(dbCommon *pfrom, dbCommon *pto)
 {
     processNotify *ppn = pfrom->ppn;
     notifyPvt *pnotifyPvt;
@@ -573,7 +573,7 @@ static void tpnThread(void *pvt)
     free(ptpnInfo);
 }
 
-long epicsShareAPI dbtpn(char *pname, char *pvalue)
+long dbtpn(char *pname, char *pvalue)
 {
     struct dbChannel *chan;
     tpnInfo *ptpnInfo;
@@ -604,7 +604,7 @@ long epicsShareAPI dbtpn(char *pname, char *pvalue)
     return 0;
 }
 
-int epicsShareAPI dbNotifyDump(void)
+int dbNotifyDump(void)
 {
     epicsMutexLockStatus lockStatus;
     dbRecordType *pdbRecordType;

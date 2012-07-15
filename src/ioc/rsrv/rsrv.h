@@ -25,10 +25,10 @@ epicsShareFunc int rsrv_init(void);
 epicsShareFunc int rsrv_run(void);
 epicsShareFunc int rsrv_pause(void);
 
-epicsShareFunc void epicsShareAPI casr (unsigned level);
-epicsShareFunc void epicsShareAPI casHostNameInitiatingCurrentThread (
+epicsShareFunc void casr (unsigned level);
+epicsShareFunc void casHostNameInitiatingCurrentThread (
                         char * pBuf, unsigned bufSize );
-epicsShareFunc void epicsShareAPI casUserNameInitiatingCurrentThread (
+epicsShareFunc void casUserNameInitiatingCurrentThread (
                         char * pBuf, unsigned bufSize );
 epicsShareFunc void casStatsFetch (
                         unsigned *pChanCount, unsigned *pConnCount );

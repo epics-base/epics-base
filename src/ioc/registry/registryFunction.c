@@ -19,13 +19,13 @@
 static void * const registryID = "function";
 
 
-epicsShareFunc int epicsShareAPI registryFunctionAdd(
+epicsShareFunc int registryFunctionAdd(
     const char *name, REGISTRYFUNCTION func)
 {
     return registryAdd(registryID, name, func);
 }
 
-epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
+epicsShareFunc REGISTRYFUNCTION registryFunctionFind(
     const char *name)
 {
     REGISTRYFUNCTION func = registryFind(registryID, name);
@@ -37,7 +37,7 @@ epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
     return func;
 }
 
-epicsShareFunc int epicsShareAPI registryFunctionRefAdd(
+epicsShareFunc int registryFunctionRefAdd(
    registryFunctionRef ref[], int nfunctions)
 {
     int i;

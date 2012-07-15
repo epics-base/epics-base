@@ -82,18 +82,18 @@ struct LS_LIST {
 
 #define MAX_EP_COUNT         99999
 
-epicsShareFunc void epicsShareAPI dbBkptInit(void);
-epicsShareFunc long epicsShareAPI dbb(const char *recordname);
-epicsShareFunc long epicsShareAPI dbd(const char *recordname);
-epicsShareFunc long epicsShareAPI dbc(const char *recordname);
-epicsShareFunc long epicsShareAPI dbs(const char *recordname);
-epicsShareFunc long epicsShareAPI dbstat(void);
-epicsShareFunc long epicsShareAPI dbp(
+epicsShareFunc void dbBkptInit(void);
+epicsShareFunc long dbb(const char *recordname);
+epicsShareFunc long dbd(const char *recordname);
+epicsShareFunc long dbc(const char *recordname);
+epicsShareFunc long dbs(const char *recordname);
+epicsShareFunc long dbstat(void);
+epicsShareFunc long dbp(
     const char *record_name, int interest_level);
-epicsShareFunc long epicsShareAPI dbap(const char *record_name);
-epicsShareFunc int  epicsShareAPI dbBkpt(struct dbCommon *precord);
-epicsShareFunc void epicsShareAPI dbPrint(struct dbCommon *precord);
-epicsShareFunc long epicsShareAPI dbprc(char *record_name);
+epicsShareFunc long dbap(const char *record_name);
+epicsShareFunc int  dbBkpt(struct dbCommon *precord);
+epicsShareFunc void dbPrint(struct dbCommon *precord);
+epicsShareFunc long dbprc(char *record_name);
 
 extern long lset_stack_count;
 

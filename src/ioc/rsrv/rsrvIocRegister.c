@@ -22,7 +22,7 @@ static void casrCallFunc(const iocshArgBuf *args)
 }
 
 
-void epicsShareAPI rsrvIocRegister(void)
+void rsrvIocRegister(void)
 {
     iocshRegister(&casrFuncDef,casrCallFunc);
 }

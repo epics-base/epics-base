@@ -82,7 +82,7 @@ int gft(char *pname)
  * TPF
  * Test put field
  */
-int epicsShareAPI pft(char *pname, char *pvalue)
+int pft(char *pname, char *pvalue)
 {
     struct dbChannel *chan;
     struct dbCommon *precord;
@@ -217,7 +217,7 @@ static void tpnThread(void *pvt)
     free(ptpnInfo);
 }
 
-int epicsShareAPI tpn(char *pname, char *pvalue)
+int tpn(char *pname, char *pvalue)
 {
     struct dbChannel *chan;
     tpnInfo *ptpnInfo;

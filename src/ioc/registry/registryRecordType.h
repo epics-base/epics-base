@@ -28,9 +28,9 @@ typedef struct recordTypeLocation {
     computeSizeOffset sizeOffset;
 }recordTypeLocation;
 
-epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
+epicsShareFunc int registryRecordTypeAdd(
     const char *name, const recordTypeLocation *prtl);
-epicsShareFunc recordTypeLocation * epicsShareAPI registryRecordTypeFind(
+epicsShareFunc recordTypeLocation * registryRecordTypeFind(
     const char *name);
 
 int registerRecordDeviceDriver(struct dbBase *pdbbase);

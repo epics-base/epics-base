@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /* register many useful commands */
-epicsShareFunc void epicsShareAPI iocshRegisterCommon(void);
+epicsShareFunc void iocshRegisterCommon(void);
 
 #ifdef __cplusplus
 }

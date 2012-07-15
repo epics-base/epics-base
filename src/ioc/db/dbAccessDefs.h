@@ -200,41 +200,41 @@ struct dbr_alDouble     {DBRalDouble};
 #define S_db_cntCont    (M_dbAccess|65) /*Cannot resume dbContTask*/
 #define S_db_noMemory   (M_dbAccess|66) /*unable to allocate data structure from pool*/
 
-epicsShareFunc long epicsShareAPI dbPutSpecial(struct dbAddr *paddr,int pass);
-epicsShareFunc struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr);
-epicsShareFunc long epicsShareAPI dbPutAttribute(
+epicsShareFunc long dbPutSpecial(struct dbAddr *paddr,int pass);
+epicsShareFunc struct rset * dbGetRset(const struct dbAddr *paddr);
+epicsShareFunc long dbPutAttribute(
     const char *recordTypename,const char *name,const char*value);
-epicsShareFunc int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes);
-epicsShareFunc int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr);
-epicsShareFunc long epicsShareAPI dbScanPassive(
+epicsShareFunc int dbIsValueField(const struct dbFldDes *pdbFldDes);
+epicsShareFunc int dbGetFieldIndex(const struct dbAddr *paddr);
+epicsShareFunc long dbScanPassive(
     struct dbCommon *pfrom,struct dbCommon *pto);
-epicsShareFunc long epicsShareAPI dbProcess(struct dbCommon *precord);
-epicsShareFunc long epicsShareAPI dbNameToAddr(
+epicsShareFunc long dbProcess(struct dbCommon *precord);
+epicsShareFunc long dbNameToAddr(
     const char *pname,struct dbAddr *);
-epicsShareFunc devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
-epicsShareFunc devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
-epicsShareFunc long epicsShareAPI dbGetField(
+epicsShareFunc devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp);
+epicsShareFunc devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset);
+epicsShareFunc long dbGetField(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
-epicsShareFunc long epicsShareAPI dbGet(
+epicsShareFunc long dbGet(
     struct dbAddr *,short dbrType,void *pbuffer,long *options,
     long *nRequest,void *pfl);
-epicsShareFunc long epicsShareAPI dbPutField(
+epicsShareFunc long dbPutField(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
-epicsShareFunc long epicsShareAPI dbPut(
+epicsShareFunc long dbPut(
     struct dbAddr *,short dbrType,const void *pbuffer,long nRequest);
 
 typedef void(*SPC_ASCALLBACK)(struct dbCommon *);
 /*dbSpcAsRegisterCallback called by access security */
-epicsShareFunc void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
-epicsShareFunc long epicsShareAPI dbBufferSize(
+epicsShareFunc void dbSpcAsRegisterCallback(SPC_ASCALLBACK func);
+epicsShareFunc long dbBufferSize(
     short dbrType,long options,long nRequest);
-epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
+epicsShareFunc long dbValueSize(short dbrType);
 
-epicsShareFunc int epicsShareAPI  dbLoadDatabase(
+epicsShareFunc int  dbLoadDatabase(
     const char *filename, const char *path, const char *substitutions);
 
-epicsShareFunc int epicsShareAPI dbLoadRecords(
+epicsShareFunc int dbLoadRecords(
     const char* filename, const char* substitutions);
 
 #ifdef __cplusplus

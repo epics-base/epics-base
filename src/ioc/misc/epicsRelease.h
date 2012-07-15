@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #include "shareLib.h"
-epicsShareFunc int epicsShareAPI coreRelease(void);
+epicsShareFunc int coreRelease(void);
 
 #ifdef __cplusplus
 }

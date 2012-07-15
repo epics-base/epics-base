@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI dbIocRegister(void);
+epicsShareFunc void dbIocRegister(void);
 
 #ifdef __cplusplus
 }

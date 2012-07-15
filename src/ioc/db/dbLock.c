@@ -149,7 +149,7 @@ static lockSet * allocLockSet(
     return(plockSet);
 }
 
-unsigned long epicsShareAPI dbLockGetLockId(dbCommon *precord)
+unsigned long dbLockGetLockId(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -163,13 +163,13 @@ unsigned long epicsShareAPI dbLockGetLockId(dbCommon *precord)
     return(id);
 }
 
-void epicsShareAPI dbLockSetGblLock(void)
+void dbLockSetGblLock(void)
 {
     assert(dbLockIsInitialized);
     epicsMutexMustLock(globalLock);
 }
 
-void epicsShareAPI dbLockSetGblUnlock(void)
+void dbLockSetGblUnlock(void)
 {
     lockSet *plockSet;
     lockSet *pnext;
@@ -192,7 +192,7 @@ void epicsShareAPI dbLockSetGblUnlock(void)
     return;
 }
 
-void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
+void dbLockSetRecordLock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -228,7 +228,7 @@ void epicsShareAPI dbLockSetRecordLock(dbCommon *precord)
     epicsMutexUnlock(lockSetModifyLock);
 }
 
-void epicsShareAPI dbScanLock(dbCommon *precord)
+void dbScanLock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -293,7 +293,7 @@ getGlobalLock:
     }
 }
 
-void epicsShareAPI dbScanUnlock(dbCommon *precord)
+void dbScanUnlock(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet;
@@ -316,7 +316,7 @@ void epicsShareAPI dbScanUnlock(dbCommon *precord)
     return;
 }
 
-void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
+void dbLockInitRecords(dbBase *pdbbase)
 {
     int			link;
     dbRecordType		*pdbRecordType;
@@ -378,7 +378,7 @@ void epicsShareAPI dbLockInitRecords(dbBase *pdbbase)
     }
 }
 
-void epicsShareAPI dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
+void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 {
     lockRecord	*p1lockRecord = pfirst->lset;
     lockRecord	*p2lockRecord = psecond->lset;
@@ -421,7 +421,7 @@ all_done:
     return;
 }
 
-void epicsShareAPI dbLockSetSplit(dbCommon *psource)
+void dbLockSetSplit(dbCommon *psource)
 {
     lockSet	*plockSet;
     lockRecord	*plockRecord;
@@ -483,7 +483,7 @@ void epicsShareAPI dbLockSetSplit(dbCommon *psource)
     free(paplockRecord);
 }
 
-long epicsShareAPI dblsr(char *recordname,int level)
+long dblsr(char *recordname,int level)
 {
     int			link;
     DBENTRY		dbentry;
@@ -561,7 +561,7 @@ long epicsShareAPI dblsr(char *recordname,int level)
     return(0);
 }
 
-long epicsShareAPI dbLockShowLocked(int level)
+long dbLockShowLocked(int level)
 {
     int     indListType;
     lockSet *plockSet;
@@ -617,7 +617,7 @@ long epicsShareAPI dbLockShowLocked(int level)
     return(0);
 }
 
-int * epicsShareAPI dbLockSetAddrTrace(dbCommon *precord)
+int * dbLockSetAddrTrace(dbCommon *precord)
 {
     lockRecord	*plockRecord = precord->lset;
     lockSet	*plockSet = plockRecord->plockSet;

@@ -17,13 +17,13 @@
 static void *registryID = "driver support";
 
 
-epicsShareFunc int epicsShareAPI registryDriverSupportAdd(
+epicsShareFunc int registryDriverSupportAdd(
     const char *name, struct drvet *pdrvet)
 {
     return registryAdd(registryID, name, pdrvet);
 }
 
-epicsShareFunc struct drvet * epicsShareAPI registryDriverSupportFind(
+epicsShareFunc struct drvet * registryDriverSupportFind(
     const char *name)
 {
     return registryFind(registryID, name);

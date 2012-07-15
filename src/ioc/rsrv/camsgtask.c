@@ -165,7 +165,7 @@ void camsgtask ( void *pParm )
 }
 
 
-void epicsShareAPI casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
+void casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
 {
     if ( bufSize ) {
         const char * pHostName = "";
@@ -181,7 +181,7 @@ void epicsShareAPI casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bu
     }
 }
 
-void epicsShareAPI casUserNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
+void casUserNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
 {
     if ( bufSize ) {
         const char * pUserName = "";

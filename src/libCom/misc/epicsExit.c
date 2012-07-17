@@ -32,8 +32,6 @@
 #include "cantProceed.h"
 #include "epicsExit.h"
 
-typedef void (*epicsExitFunc)(void *arg);
-
 typedef struct exitNode {
     ELLNODE         node;
     epicsExitFunc   func;
@@ -49,13 +47,13 @@ static exitPvt * pExitPvtPerProcess = 0;
 static epicsMutexId exitPvtLock = 0;
 static epicsThreadPrivateId exitPvtPerThread = 0;
 
-static void destroyExitPvt ( exitPvt * pep )
+static void destroyExitPvt(exitPvt * pep)
 {
     ellFree ( &pep->list );
     free ( pep );
 }
 
-static exitPvt * createExitPvt (void)
+static exitPvt * createExitPvt(void)
 {
     exitPvt * pep = calloc ( 1, sizeof ( * pep ) );
     if ( pep ) {
@@ -64,7 +62,7 @@ static exitPvt * createExitPvt (void)
     return pep;
 }
 
-static void exitPvtOnceFunc ( void * pParm )
+static void exitPvtOnceFunc(void *pParm)
 {
     exitPvtPerThread = epicsThreadPrivateCreate ();
     assert ( exitPvtPerThread );
@@ -73,7 +71,7 @@ static void exitPvtOnceFunc ( void * pParm )
     exitPvtLock = epicsMutexMustCreate ();
 }
 
-static void epicsExitCallAtExitsPvt ( exitPvt * pep )
+static void epicsExitCallAtExitsPvt(exitPvt *pep)
 {
     exitNode *pexitNode;
     while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
@@ -83,7 +81,7 @@ static void epicsExitCallAtExitsPvt ( exitPvt * pep )
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtExits ( void )
+epicsShareFunc void epicsExitCallAtExits(void)
 {
     exitPvt * pep = 0;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -99,7 +97,7 @@ epicsShareFunc void epicsShareAPI epicsExitCallAtExits ( void )
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits ( void )
+epicsShareFunc void epicsExitCallAtThreadExits(void)
 {
     exitPvt * pep;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -111,8 +109,7 @@ epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits ( void )
     }
 }
 
-static int epicsAtExitPvt (
-    exitPvt * pep, epicsExitFunc func, void *arg )
+static int epicsAtExitPvt(exitPvt *pep, epicsExitFunc func, void *arg)
 {
     int status = -1;
     exitNode * pExitNode
@@ -126,8 +123,7 @@ static int epicsAtExitPvt (
     return status;
 }
 
-epicsShareFunc int epicsShareAPI epicsAtThreadExit (
-    epicsExitFunc func, void *arg )
+epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg)
 {
     exitPvt * pep;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -142,8 +138,7 @@ epicsShareFunc int epicsShareAPI epicsAtThreadExit (
     return epicsAtExitPvt ( pep, func, arg );
 }
 
-epicsShareFunc int epicsShareAPI epicsAtExit( 
-    epicsExitFunc func, void *arg )
+epicsShareFunc int epicsAtExit(epicsExitFunc func, void *arg)
 {
     int status = -1;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -155,7 +150,7 @@ epicsShareFunc int epicsShareAPI epicsAtExit(
     return status;
 }
 
-epicsShareFunc void epicsShareAPI epicsExit(int status)
+epicsShareFunc void epicsExit(int status)
 {
     epicsExitCallAtExits();
     epicsThreadSleep(1.0);

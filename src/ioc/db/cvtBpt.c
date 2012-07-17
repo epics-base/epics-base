@@ -16,11 +16,11 @@
  *	This is adaptation of old bldCvtTable 
  */
 
-#include "dbBase.h"
-#include "dbStaticLib.h"
 #include "epicsPrint.h"
 
 #define epicsExportSharedSymbols
+#include "dbBase.h"
+#include "dbStaticLib.h"
 #include "dbAccess.h"
 #include "cvtTable.h"
 

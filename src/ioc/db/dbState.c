@@ -17,9 +17,10 @@
 #include "epicsString.h"
 #include "epicsMutex.h"
 #include "ellLib.h"
+
+#define epicsExportSharedSymbols
 #include "dbStaticLib.h"
 #include "dbDefs.h"
-
 #include "dbState.h"
 
 static ELLLIST states = ELLLIST_INIT;

@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 
-#include <epicsExport.h>
 #include <freeList.h>
 #include <dbAccess.h>
 #include <dbExtractArray.h>
@@ -21,6 +20,7 @@
 #include <recSup.h>
 #include <special.h>
 #include <chfPlugin.h>
+#include <epicsExport.h>
 
 typedef struct myStruct {
     epicsInt32 start;

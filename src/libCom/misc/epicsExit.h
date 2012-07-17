@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*epicsExit.h*/
 #ifndef epicsExith
@@ -16,14 +15,14 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI epicsExit(int status);
-epicsShareFunc void epicsShareAPI epicsExitCallAtExits(void);
-epicsShareFunc int epicsShareAPI epicsAtExit(
-                 void (*epicsExitFunc)(void *arg),void *arg);
+typedef void (*epicsExitFunc)(void *arg);
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits(void);
-epicsShareFunc int epicsShareAPI epicsAtThreadExit(
-                 void (*epicsExitFunc)(void *arg),void *arg);
+epicsShareFunc void epicsExit(int status);
+epicsShareFunc void epicsExitCallAtExits(void);
+epicsShareFunc int epicsAtExit(epicsExitFunc func, void *arg);
+
+epicsShareFunc void epicsExitCallAtThreadExits(void);
+epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg);
 
 
 #ifdef __cplusplus

@@ -12,12 +12,12 @@
 
 #include <stdio.h>
 
-#include "epicsExport.h"
 #include "freeList.h"
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "dbState.h"
 #include "epicsAssert.h"
+#include "epicsExport.h"
 
 #define STATE_NAME_LENGTH 20
 

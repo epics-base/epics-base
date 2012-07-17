@@ -41,14 +41,11 @@ const nothrow_t  nothrow ;
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max () - 100;
 #   endif
     // passing a size_t to printf() needs "%zu" on some platforms
-#   define Z_MODIFIER ""
 #elif defined(vxWorks)
     // Neither vxWorks 5 or 6 supply true ANSI C++
     static const size_t unsuccessfulNewSize = UINT_MAX - 15u;
-#   define Z_MODIFIER ""
 #else
     static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
-#   define Z_MODIFIER "z"
 #endif
 
 class exThread : public epicsThreadRunable {
@@ -66,10 +63,12 @@ static void epicsExceptionTestPrivate ()
 {
     try {
         char * p = new char [unsuccessfulNewSize];
-        testFail("new char[%" Z_MODIFIER "u] returned %p", unsuccessfulNewSize, p);
+        testFail("new char[%lu] returned %p",
+            (unsigned long) unsuccessfulNewSize, p);
     }
     catch ( const bad_alloc & ) {
-        testPass("new char[%" Z_MODIFIER "u] threw", unsuccessfulNewSize);
+        testPass("new char[%lu] threw",
+            (unsigned long) unsuccessfulNewSize);
     }
     catch ( ... ) {
         testFail("new: threw wrong type");

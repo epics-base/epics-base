@@ -192,7 +192,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
 
         p = input; 
         /*skip whitespace at beginning of line*/
-        while(*p && (isspace(*p))) ++p;
+        while(*p && (isspace((int) *p))) ++p;
         /*Look for i or s */
         if(*p && (*p=='i' || *p=='s')) command = p;
         if(command) {
@@ -210,7 +210,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             if(cmdind<0) goto endif;
             p = command + strlen(cmdNames[cmdind]);
             /*skip whitespace after command*/
-            while(*p && (isspace(*p))) ++p;
+            while(*p && (isspace((int) *p))) ++p;
             /*Next character must be quote*/
             if((*p==0) || (*p!='"')) goto endif;
             pstart = ++p;
@@ -765,7 +765,7 @@ static tokenType subGetNextToken(subFile *psubFile)
         if(!p) { psubFile->token = tokenEOF; return(tokenEOF);}
         else { psubFile->token = tokenSeparater; return(tokenSeparater);}
     }
-    while(isspace(*p)) p++;
+    while(isspace((int) *p)) p++;
     if(*p=='{') {
         psubFile->token = tokenLBrace;
         psubFile->pnextChar = ++p;
@@ -776,8 +776,8 @@ static tokenType subGetNextToken(subFile *psubFile)
         psubFile->pnextChar = ++p;
         return(tokenRBrace);
     }
-    if(*p==0 || isspace(*p) || *p==',') {
-        while(isspace(*p) || *p==',') p++;
+    if(*p==0 || isspace((int) *p) || *p==',') {
+        while (isspace((int) *p) || *p==',') p++;
         psubFile->token = tokenSeparater;
         psubFile->pnextChar = p;
         return(tokenSeparater);
@@ -807,7 +807,7 @@ static tokenType subGetNextToken(subFile *psubFile)
     }
     /*Now take anything up to next non String token and not space*/
     pto = &psubFile->string[0];
-    while(!isspace(*p) && (strspn(p,"\",{}")==0)) *pto++ = *p++; 
+    while(!isspace((int) *p) && (strspn(p,"\",{}")==0)) *pto++ = *p++; 
     *pto = 0;
     psubFile->pnextChar = p;
     psubFile->token = tokenString;

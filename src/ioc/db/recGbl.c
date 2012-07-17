@@ -50,7 +50,7 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
 
 
 
-void epicsShareAPI recGblDbaddrError(long status, const struct dbAddr *paddr,
+void recGblDbaddrError(long status, const struct dbAddr *paddr,
     const char *pmessage)
 {
     dbCommon *precord = 0;
@@ -69,7 +69,7 @@ void epicsShareAPI recGblDbaddrError(long status, const struct dbAddr *paddr,
     return;
 }
 
-void epicsShareAPI recGblRecordError(long status, void *pdbc,
+void recGblRecordError(long status, void *pdbc,
     const char *pmessage)
 {
     dbCommon	*precord = pdbc;
@@ -81,7 +81,7 @@ void epicsShareAPI recGblRecordError(long status, void *pdbc,
     return;
 }
 
-void epicsShareAPI recGblRecSupError(long status, const struct dbAddr *paddr,
+void recGblRecSupError(long status, const struct dbAddr *paddr,
     const char *pmessage, const char *psupport_name)
 {
     dbCommon *precord = 0;
@@ -106,7 +106,7 @@ void epicsShareAPI recGblRecSupError(long status, const struct dbAddr *paddr,
     return;
 }
 
-void epicsShareAPI recGblGetPrec(const struct dbAddr *paddr,long *precision)
+void recGblGetPrec(const struct dbAddr *paddr,long *precision)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
@@ -133,7 +133,7 @@ void epicsShareAPI recGblGetPrec(const struct dbAddr *paddr,long *precision)
     return;
 }
 
-void epicsShareAPI recGblGetGraphicDouble(
+void recGblGetGraphicDouble(
     const struct dbAddr *paddr,struct dbr_grDouble *pgd)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
@@ -144,7 +144,7 @@ void epicsShareAPI recGblGetGraphicDouble(
     return;
 }
 
-void epicsShareAPI recGblGetAlarmDouble(
+void recGblGetAlarmDouble(
     const struct dbAddr *paddr,struct dbr_alDouble *pad)
 {
     pad->upper_alarm_limit = 0;
@@ -155,7 +155,7 @@ void epicsShareAPI recGblGetAlarmDouble(
     return;
 }
 
-void epicsShareAPI recGblGetControlDouble(
+void recGblGetControlDouble(
     const struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
 {
     dbFldDes *pdbFldDes=paddr->pfldDes;
@@ -166,7 +166,7 @@ void epicsShareAPI recGblGetControlDouble(
     return;
 }
 
-int  epicsShareAPI recGblInitConstantLink(
+int  recGblInitConstantLink(
     struct link *plink,short dbftype,void *pdest)
 {
     long status = dbLoadLink(plink, dbftype, pdest);
@@ -176,7 +176,7 @@ int  epicsShareAPI recGblInitConstantLink(
     return TRUE;
 }
 
-unsigned short epicsShareAPI recGblResetAlarms(void *precord)
+unsigned short recGblResetAlarms(void *precord)
 {
     dbCommon *pdbc = precord;
     epicsEnum16 prev_stat = pdbc->stat;
@@ -225,7 +225,7 @@ int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
     return FALSE;
 }
 
-void epicsShareAPI recGblFwdLink(void *precord)
+void recGblFwdLink(void *precord)
 {
     dbCommon *pdbc = precord;
 
@@ -241,7 +241,7 @@ void epicsShareAPI recGblFwdLink(void *precord)
     pdbc->putf = FALSE;
 }
 
-void epicsShareAPI recGblGetTimeStamp(void *pvoid)
+void recGblGetTimeStamp(void *pvoid)
 {
     dbCommon* prec = (dbCommon*)pvoid;
     struct link *plink = &prec->tsel;
@@ -264,7 +264,7 @@ void epicsShareAPI recGblGetTimeStamp(void *pvoid)
     }
 }
 
-void epicsShareAPI recGblTSELwasModified(struct link *plink)
+void recGblTSELwasModified(struct link *plink)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
     char *pfieldname;

@@ -201,7 +201,7 @@ LINK.cpp += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS)
 #--------------------------------------------------
 # Definitions for compile of *_ctdt.c file
 CFLAGS_ctdt = $(filter-out -pedantic,$(CFLAGS)) -fdollars-in-identifiers
-COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(call PATH_FILTER,$(INCLUDES)) $(SOURCE_FLAG)
+COMPILE.ctdt = $(CC) -c $(CPPFLAGS) $(CFLAGS_ctdt) $(INCLUDES) $(SOURCE_FLAG)
 
 #--------------------------------------------------
 # C preprocessor command

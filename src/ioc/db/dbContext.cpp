@@ -33,11 +33,11 @@
 #include "epicsEvent.h"
 #include "epicsThread.h"
 #include "errlog.h"
-#include "dbChannel.h"
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
 #include "dbCAC.h"
+#include "dbChannel.h"
 #include "dbChannelIO.h"
 #include "dbPutNotifyBlocker.h"
 

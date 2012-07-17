@@ -14,11 +14,10 @@
 
 #include "osiUnistd.h"
 #include "macLib.h"
-#include "dbAccess.h"
 #include "dbmf.h"
-#include "epicsVersion.h"
 
 #define epicsExportSharedSymbols
+#include "dbAccess.h"
 #include "dbLoadTemplate.h"
 
 static int line_num;

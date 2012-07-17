@@ -12,12 +12,12 @@
 
 #include <stdio.h>
 
-#include <epicsExport.h>
 #include <epicsMath.h>
 #include <freeList.h>
 #include <dbConvertFast.h>
 #include <chfPlugin.h>
 #include <db_field_log.h>
+#include <epicsExport.h>
 
 typedef struct myStruct {
     int    mode;

@@ -10,7 +10,11 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS = dbCore ca Com
+TESTLIBRARY = xRec
+
+xRec_SRCS = xRecord.c
+
+PROD_LIBS = xRec dbCore ca Com
 
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
@@ -25,7 +29,6 @@ TESTS += dbStateTest
 TARGETS += $(COMMON_DIR)/dbChannelTest.dbd
 dbChannelTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbChannelTest
-dbChannelTest_SRCS += xRecord.c
 dbChannelTest_SRCS += dbChannelTest.c
 dbChannelTest_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChannelTest.c
@@ -36,7 +39,6 @@ TESTS += dbChannelTest
 TARGETS += $(COMMON_DIR)/chfPluginTest.dbd
 chfPluginTest_DBD += xRecord.dbd
 TESTPROD_HOST += chfPluginTest
-chfPluginTest_SRCS += xRecord.c
 chfPluginTest_SRCS += chfPluginTest.c
 chfPluginTest_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += chfPluginTest.c
@@ -47,7 +49,6 @@ TESTS += chfPluginTest
 TARGETS += $(COMMON_DIR)/arrShorthandTest.dbd
 arrShorthandTest_DBD += xRecord.dbd
 TESTPROD_HOST += arrShorthandTest
-arrShorthandTest_SRCS += xRecord.c
 arrShorthandTest_SRCS += arrShorthandTest.c
 arrShorthandTest_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrShorthandTest.c
@@ -57,7 +58,6 @@ TESTS += arrShorthandTest
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunDbTests.c
-testHarness_SRCS += xRecord.c
 
 dbTestHarness_SRCS += $(testHarness_SRCS)
 dbTestHarness_SRCS_RTEMS += rtemsTestHarness.c

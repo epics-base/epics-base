@@ -10,6 +10,9 @@
 #Include definitions common to unix hosts
 include $(CONFIG)/os/CONFIG.UnixCommon.Common
 
+# convert UNIX path to native path
+PATH_FILTER = $(subst /,\\,$(1))
+
 CP = $(PERL) -MExtUtils::Command -e cp
 MV = $(PERL) -MExtUtils::Command -e mv
 RM = $(PERL) -MExtUtils::Command -e rm_f

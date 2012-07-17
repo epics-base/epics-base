@@ -979,7 +979,7 @@ static void epicsThreadShowInfo ( epicsThreadId id, unsigned level )
 /*
  * epicsThreadMap ()
  */
-epicsShareFunc void epicsShareAPI epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
+epicsShareFunc void epicsThreadMap ( EPICS_THREAD_HOOK_ROUTINE func )
 {
     win32ThreadGlobal * pGbl = fetchWin32ThreadGlobal ();
     win32ThreadParam * pParm;

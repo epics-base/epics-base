@@ -12,10 +12,10 @@
 
 #include <stdio.h>
 
-#include <epicsExport.h>
 #include <chfPlugin.h>
 #include <dbLock.h>
 #include <db_field_log.h>
+#include <epicsExport.h>
 
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     epicsTimeStamp now;

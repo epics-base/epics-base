@@ -24,6 +24,7 @@
 
 #define PATTERN 0x55
 
+void tsTest_registerRecordDeviceDriver(struct dbBase *);
 epicsShareExtern void (*pvar_func_tsInitialize)(void);
 
 static db_field_log fl;
@@ -38,8 +39,6 @@ static int fl_equal_ex_ts(const db_field_log *pfl1, const db_field_log *pfl2) {
     fl1.time = pfl2->time;
     return fl_equal(&fl1, pfl2);
 }
-
-void tsTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(tsTest)
 {

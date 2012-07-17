@@ -16,9 +16,9 @@
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI gft(char *pname);
-epicsShareFunc int epicsShareAPI pft(char *pname,char *pvalue);
-epicsShareFunc int epicsShareAPI tpn(char     *pname,char *pvalue);
+epicsShareFunc int gft(char *pname);
+epicsShareFunc int pft(char *pname,char *pvalue);
+epicsShareFunc int tpn(char     *pname,char *pvalue);
 #ifdef __cplusplus
 }
 #endif

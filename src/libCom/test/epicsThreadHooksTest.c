@@ -39,7 +39,7 @@ static int newThreadIndex(epicsThreadId id)
     if (epicsMutexLock(tidLock))
         testAbort("newThreadIndex: Locking problem");
 
-    while (tid[i] != 0 && i < MAX_THREADS)
+    while (i < MAX_THREADS && tid[i] != 0)
         i++;
     if (i < MAX_THREADS)
         tid[i] = id;
@@ -54,7 +54,7 @@ static int findThreadIndex(epicsThreadId id)
 {
     int i = 0;
 
-    while (tid[i] !=  id && i < MAX_THREADS)
+    while (i < MAX_THREADS && tid[i] != id)
         i++;
     return i;
 }

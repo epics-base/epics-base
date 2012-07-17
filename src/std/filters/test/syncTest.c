@@ -28,6 +28,7 @@
 
 #define PATTERN 0x55
 
+void syncTest_registerRecordDeviceDriver(struct dbBase *);
 epicsShareExtern void (*pvar_func_syncInitialize)(void);
 
 static db_field_log fl;
@@ -129,8 +130,6 @@ static void checkAndOpenChannel(dbChannel *pch, const chFilterPlugin *plug) {
 
     checkCtxRead(pch, red);
 }
-
-void syncTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(syncTest)
 {

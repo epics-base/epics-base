@@ -17,22 +17,24 @@
 #include <string.h>
 
 #include "cantProceed.h"
-#include "dbChannel.h"
-#include "dbCommon.h"
-#include "dbBase.h"
-#include "dbEvent.h"
-#include "link.h"
-#include "freeList.h"
-#include "dbAccessDefs.h"
-#include "dbLock.h"
-#include "dbStaticLib.h"
 #include "epicsAssert.h"
 #include "epicsString.h"
 #include "errlog.h"
+#include "freeList.h"
 #include "gpHash.h"
+#include "yajl_parse.h"
+
+#define epicsExportSharedSymbols
+#include "dbBase.h"
+#include "dbStaticLib.h"
+#include "link.h"
 #include "recSup.h"
 #include "special.h"
-#include "yajl_parse.h"
+#include "dbChannel.h"
+#include "dbCommon.h"
+#include "dbEvent.h"
+#include "dbAccessDefs.h"
+#include "dbLock.h"
 
 /* The following is defined in db_convert.h */
 extern unsigned short dbDBRnewToDBRold[DBR_ENUM+1];

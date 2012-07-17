@@ -26,6 +26,7 @@
 
 #define PATTERN 0x55
 
+void dbndTest_registerRecordDeviceDriver(struct dbBase *);
 epicsShareExtern void (*pvar_func_dbndInitialize)(void);
 
 static db_field_log fl;
@@ -98,8 +99,6 @@ static void testHead (char* title) {
     testDiag("%s", title);
     testDiag("--------------------------------------------------------");
 }
-
-void dbndTest_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbndTest)
 {

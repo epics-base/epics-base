@@ -216,15 +216,15 @@ $(OBJLIBNAME):%$(OBJ):
 
 %$(OBJ): %.c
 	@$(RM) $@
-	$(COMPILE.c) $(call PATH_FILTER,$<) $(COMPILE_FILTER.c)
+	$(COMPILE.c) $<
 
 %$(OBJ): %.cc
 	@$(RM) $@
-	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
+	$(COMPILE.cpp) $<
 
 %$(OBJ): %.cpp
 	@$(RM) $@
-	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
+	$(COMPILE.cpp) $<
 
 # WIN95/NT resource compiler
 %$(RES): %.rc

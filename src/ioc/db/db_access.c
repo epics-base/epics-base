@@ -22,7 +22,6 @@
 
 #include "epicsConvert.h"
 #include "dbDefs.h"
-#include "dbChannel.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "epicsTime.h"
@@ -31,9 +30,11 @@
 #define db_accessHFORdb_accessC
 #include "db_access.h"
 #undef db_accessHFORdb_accessC
+
 #define epicsExportSharedSymbols
 #include "dbStaticLib.h"
 #include "dbBase.h"
+#include "dbChannel.h"
 #include "dbCommon.h"
 #include "recSup.h"
 #include "dbNotify.h"

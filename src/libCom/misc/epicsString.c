@@ -171,8 +171,8 @@ size_t epicsStrnEscapedFromRawSize(const char *inbuf, size_t inlen)
 int epicsStrCaseCmp(const char *s1, const char *s2)
 {
     while (1) {
-        int ch1 = toupper(*s1);
-        int ch2 = toupper(*s2);
+        int ch1 = toupper((int) *s1);
+        int ch2 = toupper((int) *s2);
 
         if (ch1 == 0) return (ch2 != 0);
         if (ch2 == 0) return -1;
@@ -188,8 +188,8 @@ int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len)
     size_t i = 0;
 
     while (i++ < len) {
-        int ch1 = toupper(*s1);
-        int ch2 = toupper(*s2);
+        int ch1 = toupper((int) *s1);
+        int ch2 = toupper((int) *s2);
 
         if (ch1 == 0) return (ch2 != 0);
         if (ch2 == 0) return -1;

@@ -26,18 +26,19 @@
 #include "epicsSignal.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
+#include "epicsStdio.h"
 #include "epicsTime.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "addrList.h"
 #include "freeList.h"
 #include "errlog.h"
-#include "db_field_log.h"
-#include "dbEvent.h"
-#include "dbCommon.h"
-#include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
+#include "db_field_log.h"
+#include "dbEvent.h"
+#include "dbChannel.h"
+#include "dbCommon.h"
 #include "rsrv.h"
 #define GLBLSOURCE
 #include "server.h"

@@ -10,12 +10,17 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS = dbRecStd dbCore ca Com
+TESTLIBRARY = Recs
+
+Recs_SRCS += xRecord.c
+Recs_SRCS += arrRecord.c
+Recs_LIBS += dbCore Com
+
+PROD_LIBS = Recs dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/tsTest.dbd
 tsTest_DBD += xRecord.dbd
 TESTPROD_HOST += tsTest
-tsTest_SRCS += xRecord.c
 tsTest_SRCS += tsTest.c
 tsTest_SRCS += tsTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += tsTest.c
@@ -26,7 +31,6 @@ TESTS += tsTest
 TARGETS += $(COMMON_DIR)/dbndTest.dbd
 dbndTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbndTest
-dbndTest_SRCS += xRecord.c
 dbndTest_SRCS += dbndTest.c
 dbndTest_SRCS += dbndTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbndTest.c
@@ -37,10 +41,8 @@ TESTS += dbndTest
 TARGETS += $(COMMON_DIR)/arrTest.dbd
 arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
-arrTest_SRCS += arrRecord.c
 arrTest_SRCS += arrTest.cpp
 arrTest_SRCS += arrTest_registerRecordDeviceDriver.cpp
-testHarness_SRCS += arrRecord.c
 testHarness_SRCS += arrTest.cpp
 testHarness_SRCS += arrTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/arrTest.dbd
@@ -49,7 +51,6 @@ TESTS += arrTest
 TARGETS += $(COMMON_DIR)/syncTest.dbd
 syncTest_DBD += xRecord.dbd
 TESTPROD_HOST += syncTest
-syncTest_SRCS += xRecord.c
 syncTest_SRCS += syncTest.c
 syncTest_SRCS += syncTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += syncTest.c
@@ -59,7 +60,6 @@ TESTS += syncTest
 
 # epicsRunFilterTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunFilterTests.c
-testHarness_SRCS += xRecord.c
 
 filterTestHarness_SRCS += $(testHarness_SRCS)
 filterTestHarness_SRCS_RTEMS += rtemsTestHarness.c

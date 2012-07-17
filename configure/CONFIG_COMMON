@@ -311,8 +311,8 @@ LEXOPT += -I
 # Build compile line here
 
 PATH_FILTER = $(1)
-COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(call PATH_FILTER,$(INCLUDES))
-COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(call PATH_FILTER,$(INCLUDES))
+COMPILE.c = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(INCLUDES)
+COMPILE.cpp = $(CCC) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES)
 
 #--------------------------------------------------
 # C preprocessor command

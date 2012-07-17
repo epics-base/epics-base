@@ -13,9 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <errlog.h>
-
 #define epicsExportSharedSymbols
+#include "errlog.h"
 #include "epicsString.h"
 #include "macLib.h"
 

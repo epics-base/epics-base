@@ -47,7 +47,7 @@ static void registryFunctionFindCallFunc(const iocshArgBuf *args) {
     printf("%p\n", (void*) registryFunctionFind(args[0].sval));
 }
 
-void epicsShareAPI registryIocRegister(void)
+void registryIocRegister(void)
 {
     iocshRegister(&registryRecordTypeFindFuncDef,registryRecordTypeFindCallFunc);
     iocshRegister(&registryDeviceSupportFindFuncDef,registryDeviceSupportFindCallFunc);

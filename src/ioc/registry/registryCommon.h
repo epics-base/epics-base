@@ -18,13 +18,13 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI registerRecordTypes(
+epicsShareFunc void registerRecordTypes(
     DBBASE *pbase, int nRecordTypes,
     const char * const *recordTypeNames, const recordTypeLocation *rtl);
-epicsShareFunc void epicsShareAPI registerDevices(
+epicsShareFunc void registerDevices(
     DBBASE *pbase, int nDevices,
     const char * const *deviceSupportNames, const dset * const *devsl);
-epicsShareFunc void epicsShareAPI registerDrivers(
+epicsShareFunc void registerDrivers(
     DBBASE *pbase, int nDrivers,
     const char * const *driverSupportNames, struct drvet * const *drvsl);
 

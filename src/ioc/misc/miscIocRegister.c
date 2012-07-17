@@ -54,7 +54,7 @@ static void coreReleaseCallFunc(const iocshArgBuf *args)
 }
 
 
-void epicsShareAPI miscIocRegister(void)
+void miscIocRegister(void)
 {
     iocshRegister(&iocInitFuncDef,iocInitCallFunc);
     iocshRegister(&iocBuildFuncDef,iocBuildCallFunc);

@@ -293,11 +293,11 @@ cleanup:
     return(status);
 }
 
-long epicsShareAPI dbReadDatabase(DBBASE **ppdbbase,const char *filename,
+long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 	const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,filename,0,path,substitutions));}
 
-long epicsShareAPI dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
+long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
 	const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
 

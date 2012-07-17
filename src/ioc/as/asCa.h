@@ -17,11 +17,11 @@
 extern "C" {
 #endif
 
-epicsShareFunc void epicsShareAPI asCaStart(void);
-epicsShareFunc void epicsShareAPI asCaStop(void);
-epicsShareFunc int epicsShareAPI ascar(int level);
-epicsShareFunc int epicsShareAPI ascarFP(FILE *fp, int level);
-epicsShareFunc void epicsShareAPI ascaStats(int *pchans, int *pdiscon);
+epicsShareFunc void asCaStart(void);
+epicsShareFunc void asCaStop(void);
+epicsShareFunc int ascar(int level);
+epicsShareFunc int ascarFP(FILE *fp, int level);
+epicsShareFunc void ascaStats(int *pchans, int *pdiscon);
 
 #ifdef __cplusplus
 }

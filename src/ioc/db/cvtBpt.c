@@ -42,7 +42,7 @@ static brkTable *findBrkTable(short linr)
 }
 
 /* Used by both ao and ai record types */
-long epicsShareAPI cvtRawToEngBpt(double *pval, short linr, short init,
+long cvtRawToEngBpt(double *pval, short linr, short init,
 	void **ppbrk, short *plbrk)
 {
     double	val = *pval;
@@ -122,7 +122,7 @@ long epicsShareAPI cvtRawToEngBpt(double *pval, short linr, short init,
 }
 
 /* Used by the ao record type */
-long epicsShareAPI cvtEngToRawBpt(double *pval, short linr, short init,
+long cvtEngToRawBpt(double *pval, short linr, short init,
 	void **ppbrk, short *plbrk)
 {
     double	val = *pval;

@@ -12,7 +12,7 @@
 #define INCdbLoadTemplateh
 
 #include "shareLib.h"
-epicsShareFunc int epicsShareAPI dbLoadTemplate(
+epicsShareFunc int dbLoadTemplate(
     const char *sub_file, const char *cmd_collect);
 
 #endif /*INCdbLoadTemplateh*/

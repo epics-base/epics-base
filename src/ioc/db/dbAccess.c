@@ -92,12 +92,12 @@ static short mapDBFToDBR[DBF_NTYPES] = {
 /* The following is to handle SPC_AS */
 static SPC_ASCALLBACK spcAsCallback = 0;
 
-void epicsShareAPI dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
+void dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 {
     spcAsCallback = func;
 }
 
-long epicsShareAPI dbPutSpecial(DBADDR *paddr,int pass)
+long dbPutSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
     struct rset	*prset;
@@ -393,7 +393,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	*poriginal = pbuffer;
 }
 
-struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr)
+struct rset * dbGetRset(const struct dbAddr *paddr)
 {
 	struct dbFldDes *pfldDes = paddr->pfldDes;
 
@@ -401,7 +401,7 @@ struct rset * epicsShareAPI dbGetRset(const struct dbAddr *paddr)
 	return(pfldDes->pdbRecordType->prset);
 }
 
-long epicsShareAPI dbPutAttribute(
+long dbPutAttribute(
     const char *recordTypename,const char *name,const char*value)
 {
 	DBENTRY		dbEntry;
@@ -417,7 +417,7 @@ long epicsShareAPI dbPutAttribute(
 	return(status);
 }
 
-int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes)
+int dbIsValueField(const struct dbFldDes *pdbFldDes)
 {
     if (pdbFldDes->pdbRecordType->indvalFlddes == pdbFldDes->indRecordType)
         return TRUE;
@@ -425,7 +425,7 @@ int epicsShareAPI dbIsValueField(const struct dbFldDes *pdbFldDes)
         return FALSE;
 }
 
-int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr)
+int dbGetFieldIndex(const struct dbAddr *paddr)
 {
     return paddr->pfldDes->indRecordType;
 }
@@ -435,7 +435,7 @@ int epicsShareAPI dbGetFieldIndex(const struct dbAddr *paddr)
  *     Will notify if processing is complete by callback.
  *       (only if you are interested in completion)
  */
-long epicsShareAPI dbScanPassive(dbCommon *pfrom, dbCommon *pto)
+long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
 {
     /* if not passive just return success */
     if (pto->scan != 0)
@@ -455,7 +455,7 @@ long epicsShareAPI dbScanPassive(dbCommon *pfrom, dbCommon *pto)
  *     5.  Run the process routine specific to the record type.
  *     6.  Check to see if record contents should be automatically printed.
  */
-long epicsShareAPI dbProcess(dbCommon *precord)
+long dbProcess(dbCommon *precord)
 {
     struct rset *prset = precord->rset;
     dbRecordType *pdbRecordType = precord->rdes;
@@ -585,7 +585,7 @@ all_done:
  *    Returns error codes from StaticLib module, not
  *        from dbAccess.
  */
-long epicsShareAPI dbNameToAddr(const char *pname, DBADDR *paddr)
+long dbNameToAddr(const char *pname, DBADDR *paddr)
 {
     DBENTRY dbEntry;
     dbFldDes *pflddes;
@@ -654,7 +654,7 @@ finish:
     return status;
 }
 
-long epicsShareAPI dbValueSize(short dbr_type)
+long dbValueSize(short dbr_type)
 {
     /* sizes for value associated with each DBR request type */
     static long size[] = {
@@ -673,7 +673,7 @@ long epicsShareAPI dbValueSize(short dbr_type)
 }
 
 
-long epicsShareAPI dbBufferSize(short dbr_type, long options, long no_elements)
+long dbBufferSize(short dbr_type, long options, long no_elements)
 {
     long nbytes=0;
 
@@ -691,12 +691,12 @@ long epicsShareAPI dbBufferSize(short dbr_type, long options, long no_elements)
     if (options & DBR_AL_DOUBLE)   nbytes += dbr_alDouble_size;
     return(nbytes);
 }
-int epicsShareAPI dbLoadDatabase(const char *file, const char *path, const char *subs)
+int dbLoadDatabase(const char *file, const char *path, const char *subs)
 {
     return dbReadDatabase(&pdbbase, file, path, subs);
 }
 
-int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
+int dbLoadRecords(const char* file, const char* subs)
 {
     return dbReadDatabase(&pdbbase, file, 0, subs);
 }
@@ -770,7 +770,7 @@ static long getAttrValue(DBADDR *paddr, short dbrType,
     return 0;
 }
 
-long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
+long dbGetField(DBADDR *paddr,short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
     dbCommon *precord = paddr->precord;
@@ -782,7 +782,7 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
     return status;
 }
 
-long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
+long dbGet(DBADDR *paddr, short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
     char *pbuf = pbuffer;
@@ -887,11 +887,11 @@ long epicsShareAPI dbGet(DBADDR *paddr, short dbrType,
     return status;
 }
 
-devSup* epicsShareAPI dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
+devSup* dbDTYPtoDevSup(dbRecordType *prdes, int dtyp) {
     return (devSup *)ellNth(&prdes->devList, dtyp+1);
 }
 
-devSup* epicsShareAPI dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
+devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
     devSup *pdevSup = (devSup *)ellFirst(&prdes->devList);
     while (pdevSup) {
         if (pdset == pdevSup->pdset) return pdevSup;
@@ -1063,7 +1063,7 @@ finish:
     return status;
 }
 
-long epicsShareAPI dbPutField(DBADDR *paddr, short dbrType,
+long dbPutField(DBADDR *paddr, short dbrType,
     const void *pbuffer, long nRequest)
 {
     long	status = 0;
@@ -1137,7 +1137,7 @@ static long putAcks(DBADDR *paddr, const void *pbuffer, long nRequest,
     return 0;
 }
 
-long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
+long dbPut(DBADDR *paddr, short dbrType,
     const void *pbuffer, long nRequest)
 {
     dbCommon *precord = paddr->precord;

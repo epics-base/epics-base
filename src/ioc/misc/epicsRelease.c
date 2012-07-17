@@ -20,7 +20,7 @@
 
 static const char id[] = "@(#) " EPICS_VERSION_STRING ", Misc. Utilities Library" __DATE__;
 
-epicsShareFunc int epicsShareAPI coreRelease(void)
+epicsShareFunc int coreRelease(void)
 {
     printf ( "############################################################################\n" );
     printf ( "## %s\n", epicsReleaseVersion );

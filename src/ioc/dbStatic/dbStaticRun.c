@@ -329,7 +329,7 @@ char *dbRecordName(DBENTRY *pdbentry)
 
 int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
-epicsShareFunc int epicsShareAPI dbIsDefaultValue(DBENTRY *pdbentry)
+epicsShareFunc int dbIsDefaultValue(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void        *pfield = pdbentry->pfield;
@@ -646,7 +646,7 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
     return(status);
 }
 
-epicsShareFunc int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
+epicsShareFunc int dbGetMenuIndex(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
@@ -663,7 +663,7 @@ epicsShareFunc int epicsShareAPI dbGetMenuIndex(DBENTRY *pdbentry)
     return(-1);
 }
 
-epicsShareFunc long epicsShareAPI dbPutMenuIndex(DBENTRY *pdbentry,int index)
+epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry,int index)
 {
     dbFldDes  		*pflddes = pdbentry->pflddes;
     unsigned short	*pfield = pdbentry->pfield;

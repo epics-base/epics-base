@@ -112,7 +112,7 @@ static void asDumpHashCallFunc(const iocshArgBuf *args)
     asDumpHash();
 }
 
-void epicsShareAPI asIocRegister(void)
+void asIocRegister(void)
 {
     iocshRegister(&asSetFilenameFuncDef,asSetFilenameCallFunc);
     iocshRegister(&asSetSubstitutionsFuncDef,asSetSubstitutionsCallFunc);

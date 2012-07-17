@@ -129,7 +129,7 @@ static unsigned short ringSpace ( const struct event_que *pevq )
 /*
  *  db_event_list ()
  */
-int epicsShareAPI db_event_list ( const char *pname, unsigned level )
+int db_event_list ( const char *pname, unsigned level )
 {
     return dbel ( pname, level );
 }
@@ -137,7 +137,7 @@ int epicsShareAPI db_event_list ( const char *pname, unsigned level )
 /*
  * dbel ()
  */
-int epicsShareAPI dbel ( const char *pname, unsigned level )
+int dbel ( const char *pname, unsigned level )
 {
     DBADDR              addr;
     long                status;
@@ -250,7 +250,7 @@ int epicsShareAPI dbel ( const char *pname, unsigned level )
  *
  * returns: ptr to event user block or NULL if memory can't be allocated
  */
-dbEventCtx epicsShareAPI db_init_events (void)
+dbEventCtx db_init_events (void)
 {
     struct event_user * evUser;
 
@@ -325,7 +325,7 @@ fail:
  *  itself
  *
  */
-void epicsShareAPI db_close_events (dbEventCtx ctx)
+void db_close_events (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
 
@@ -382,7 +382,7 @@ static struct event_que * create_ev_que ( struct event_user * const evUser )
 /*
  * DB_ADD_EVENT()
  */
-dbEventSubscription epicsShareAPI db_add_event (
+dbEventSubscription db_add_event (
     dbEventCtx ctx, struct dbChannel *chan,
     EVENTFUNC *user_sub, void *user_arg, unsigned select)
 {
@@ -464,7 +464,7 @@ dbEventSubscription epicsShareAPI db_add_event (
 /*
  * db_event_enable()
  */
-void epicsShareAPI db_event_enable (dbEventSubscription event)
+void db_event_enable (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const precord = dbChannelRecord(pevent->chan);
@@ -480,7 +480,7 @@ void epicsShareAPI db_event_enable (dbEventSubscription event)
 /*
  * db_event_disable()
  */
-void epicsShareAPI db_event_disable (dbEventSubscription event)
+void db_event_disable (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const precord = dbChannelRecord(pevent->chan);
@@ -523,7 +523,7 @@ static void event_remove ( struct event_que *ev_que,
  * the same block at the same time.
  *
  */
-void epicsShareAPI db_cancel_event (dbEventSubscription event)
+void db_cancel_event (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
     unsigned short getix;
@@ -589,7 +589,7 @@ void epicsShareAPI db_cancel_event (dbEventSubscription event)
  *
  * waits for extra labor in progress to finish
  */
-void epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
+void db_flush_extra_labor_event (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
 
@@ -609,7 +609,7 @@ void epicsShareAPI db_flush_extra_labor_event (dbEventCtx ctx)
  * when labor is offloaded to the
  * event task
  */
-int epicsShareAPI db_add_extra_labor_event (
+int db_add_extra_labor_event (
     dbEventCtx ctx, EXTRALABORFUNC *func, void *arg)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
@@ -625,7 +625,7 @@ int epicsShareAPI db_add_extra_labor_event (
 /*
  *  DB_POST_EXTRA_LABOR()
  */
-int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
+int db_post_extra_labor (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
     int doit;
@@ -653,7 +653,7 @@ int epicsShareAPI db_post_extra_labor (dbEventCtx ctx)
  *  NOTE: This assumes that the db scan lock is already applied
  *        (as it copies data from the record)
  */
-db_field_log* epicsShareAPI db_create_event_log (struct evSubscrip *pevent)
+db_field_log* db_create_event_log (struct evSubscrip *pevent)
 {
     db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
@@ -687,7 +687,7 @@ db_field_log* epicsShareAPI db_create_event_log (struct evSubscrip *pevent)
  *  DB_CREATE_READ_LOG()
  *
  */
-db_field_log* epicsShareAPI db_create_read_log (struct dbChannel *chan)
+db_field_log* db_create_read_log (struct dbChannel *chan)
 {
     db_field_log *pLog = (db_field_log *) freeListCalloc(dbevFieldLogFreeList);
 
@@ -804,7 +804,7 @@ static void db_queue_event_log (evSubscrip *pevent, db_field_log *pLog)
  *  NOTE: This assumes that the db scan lock is already applied
  *
  */
-int epicsShareAPI db_post_events(
+int db_post_events(
 void            *pRecord,
 void            *pField,
 unsigned int    caEventMask
@@ -840,7 +840,7 @@ unsigned int    caEventMask
 /*
  *  DB_POST_SINGLE_EVENT()
  */
-void epicsShareAPI db_post_single_event (dbEventSubscription event)
+void db_post_single_event (dbEventSubscription event)
 {
     struct evSubscrip * const pevent = (struct evSubscrip *) event;
     struct dbCommon * const prec = dbChannelRecord(pevent->chan);
@@ -1044,7 +1044,7 @@ static void event_task (void *pParm)
 /*
  * DB_START_EVENTS()
  */
-int epicsShareAPI db_start_events (
+int db_start_events (
     dbEventCtx ctx,const char *taskname, void (*init_func)(void *),
     void *init_func_arg, unsigned osiPriority )
 {
@@ -1082,7 +1082,7 @@ int epicsShareAPI db_start_events (
 /*
  * db_event_change_priority()
  */
-void epicsShareAPI db_event_change_priority ( dbEventCtx ctx, 
+void db_event_change_priority ( dbEventCtx ctx, 
                                         unsigned epicsPriority )
 {
     struct event_user * const evUser = ( struct event_user * ) ctx;
@@ -1092,7 +1092,7 @@ void epicsShareAPI db_event_change_priority ( dbEventCtx ctx,
 /*
  * db_event_flow_ctrl_mode_on()
  */
-void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx)
+void db_event_flow_ctrl_mode_on (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
 
@@ -1111,7 +1111,7 @@ void epicsShareAPI db_event_flow_ctrl_mode_on (dbEventCtx ctx)
 /*
  * db_event_flow_ctrl_mode_off()
  */
-void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
+void db_event_flow_ctrl_mode_off (dbEventCtx ctx)
 {
     struct event_user * const evUser = (struct event_user *) ctx;
 
@@ -1130,7 +1130,7 @@ void epicsShareAPI db_event_flow_ctrl_mode_off (dbEventCtx ctx)
 /*
  * db_delete_field_log()
  */
-void epicsShareAPI db_delete_field_log (db_field_log *pfl)
+void db_delete_field_log (db_field_log *pfl)
 {
     if (pfl) {
         /* Free field if reference type field log and dtor is set */

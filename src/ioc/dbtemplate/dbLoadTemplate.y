@@ -307,7 +307,7 @@ static int yyerror(char* str)
 
 static int is_not_inited = 1;
 
-int epicsShareAPI dbLoadTemplate(const char *sub_file, const char *cmd_collect)
+int dbLoadTemplate(const char *sub_file, const char *cmd_collect)
 {
     FILE *fp;
     int i;

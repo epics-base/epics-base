@@ -28,24 +28,24 @@ struct dbChannel;
 extern "C" {
 #endif
 
-epicsShareFunc int epicsShareAPI asSetFilename(const char *acf);
-epicsShareFunc int epicsShareAPI asSetSubstitutions(const char *substitutions);
-epicsShareFunc int epicsShareAPI asInit(void);
-epicsShareFunc int epicsShareAPI asInitAsyn(ASDBCALLBACK *pcallback);
-epicsShareFunc int epicsShareAPI asDbGetAsl(struct dbChannel *chan);
-epicsShareFunc void * epicsShareAPI asDbGetMemberPvt(struct dbChannel *chan);
-epicsShareFunc int epicsShareAPI asdbdump(void);
-epicsShareFunc int epicsShareAPI asdbdumpFP(FILE *fp);
-epicsShareFunc int epicsShareAPI aspuag(const char *uagname);
-epicsShareFunc int epicsShareAPI aspuagFP(FILE *fp,const char *uagname);
-epicsShareFunc int epicsShareAPI asphag(const char *hagname);
-epicsShareFunc int epicsShareAPI asphagFP(FILE *fp,const char *hagname);
-epicsShareFunc int epicsShareAPI asprules(const char *asgname);
-epicsShareFunc int epicsShareAPI asprulesFP(FILE *fp,const char *asgname);
-epicsShareFunc int epicsShareAPI aspmem(const char *asgname,int clients);
-epicsShareFunc int epicsShareAPI aspmemFP(
+epicsShareFunc int asSetFilename(const char *acf);
+epicsShareFunc int asSetSubstitutions(const char *substitutions);
+epicsShareFunc int asInit(void);
+epicsShareFunc int asInitAsyn(ASDBCALLBACK *pcallback);
+epicsShareFunc int asDbGetAsl(struct dbChannel *chan);
+epicsShareFunc void * asDbGetMemberPvt(struct dbChannel *chan);
+epicsShareFunc int asdbdump(void);
+epicsShareFunc int asdbdumpFP(FILE *fp);
+epicsShareFunc int aspuag(const char *uagname);
+epicsShareFunc int aspuagFP(FILE *fp,const char *uagname);
+epicsShareFunc int asphag(const char *hagname);
+epicsShareFunc int asphagFP(FILE *fp,const char *hagname);
+epicsShareFunc int asprules(const char *asgname);
+epicsShareFunc int asprulesFP(FILE *fp,const char *asgname);
+epicsShareFunc int aspmem(const char *asgname,int clients);
+epicsShareFunc int aspmemFP(
     FILE *fp,const char *asgname,int clients);
-epicsShareFunc int epicsShareAPI astac(
+epicsShareFunc int astac(
     const char *recordname,const char *user,const char *location);
 
 #ifdef __cplusplus

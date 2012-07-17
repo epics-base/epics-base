@@ -24,10 +24,10 @@ extern "C" {
 #endif
 
 /* Global Routines*/
-epicsShareFunc long epicsShareAPI cvtEngToRawBpt(
+epicsShareFunc long cvtEngToRawBpt(
     double *pval,short linr,short init,void **ppbrk,short *plbrk);
 
-epicsShareFunc long epicsShareAPI cvtRawToEngBpt(
+epicsShareFunc long cvtRawToEngBpt(
     double *pval,short linr,short init,void **ppbrk, short *plbrk);
 
 #ifdef __cplusplus

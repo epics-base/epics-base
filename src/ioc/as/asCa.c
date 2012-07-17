@@ -225,7 +225,7 @@ static void asCaTask(void)
     }
 }
     
-void epicsShareAPI asCaStart(void)
+void asCaStart(void)
 {
     if(asCaDebug) printf("asCaStart called\n");
     if(firstTime) {
@@ -249,7 +249,7 @@ void epicsShareAPI asCaStart(void)
     epicsMutexUnlock(asCaTaskLock);
 }
 
-void epicsShareAPI asCaStop(void)
+void asCaStop(void)
 {
     if(threadid==0) return;
     if(asCaDebug) printf("asCaStop called\n");
@@ -260,9 +260,9 @@ void epicsShareAPI asCaStop(void)
     epicsMutexUnlock(asCaTaskLock);
 }
 
-int epicsShareAPI ascar(int level) { return ascarFP(stdout,level);}
+int ascar(int level) { return ascarFP(stdout,level);}
 
-int epicsShareAPI ascarFP(FILE *fp,int level)
+int ascarFP(FILE *fp,int level)
 {
     ASG                *pasg;
     int  n=0,nbad=0;
@@ -303,7 +303,7 @@ int epicsShareAPI ascarFP(FILE *fp,int level)
     return(0);
 }
 
-void epicsShareAPI ascaStats(int *pchans, int *pdiscon)
+void ascaStats(int *pchans, int *pdiscon)
 {
     ASG *pasg;
     int n = 0;

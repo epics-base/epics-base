@@ -350,7 +350,7 @@ static void dbStateShowAllCallFunc (const iocshArgBuf *args)
     dbStateShowAll(args[0].ival);
 }
 
-void epicsShareAPI dbIocRegister(void)
+void dbIocRegister(void)
 {
     iocshRegister(&dbbFuncDef,dbbCallFunc);
     iocshRegister(&dbdFuncDef,dbdCallFunc);

@@ -150,7 +150,7 @@ int dbChannel_get(struct dbChannel *chan,
 /* Performs the work of the public db_get_field API, but also returns the number
  * of elements actually copied to the buffer.  The caller is responsible for
  * zeroing the remaining part of the buffer. */
-int epicsShareAPI dbChannel_get_count(
+int dbChannel_get_count(
     struct dbChannel *chan, int buffer_type,
     void *pbuffer, long *nRequest, void *pfl)
 {
@@ -1013,7 +1013,7 @@ static int mapOldType (short oldtype)
     return dbrType;
 }
 
-int epicsShareAPI db_put_process(processNotify *ppn, notifyPutType type,
+int db_put_process(processNotify *ppn, notifyPutType type,
     int src_type, const void *psrc, int no_elements)
 {
     int status = 0;

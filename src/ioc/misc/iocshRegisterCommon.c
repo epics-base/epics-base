@@ -21,7 +21,7 @@
 #include "miscIocRegister.h"
 #include "iocshRegisterCommon.h"
 
-void epicsShareAPI iocshRegisterCommon(void)
+void iocshRegisterCommon(void)
 {
     iocshPpdbbase = &pdbbase;
 

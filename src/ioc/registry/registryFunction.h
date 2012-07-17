@@ -24,11 +24,11 @@ typedef struct registryFunctionRef {
 } registryFunctionRef;
 
 
-epicsShareFunc int epicsShareAPI registryFunctionAdd(
+epicsShareFunc int registryFunctionAdd(
     const char *name, REGISTRYFUNCTION func);
-epicsShareFunc REGISTRYFUNCTION epicsShareAPI registryFunctionFind(
+epicsShareFunc REGISTRYFUNCTION registryFunctionFind(
     const char *name);
-epicsShareFunc int epicsShareAPI registryFunctionRefAdd(
+epicsShareFunc int registryFunctionRefAdd(
    registryFunctionRef ref[], int nfunctions);
 
 #ifdef __cplusplus

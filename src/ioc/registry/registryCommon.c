@@ -21,7 +21,7 @@
 #include "registryCommon.h"
 
 
-void epicsShareAPI registerRecordTypes(DBBASE *pbase, int nRecordTypes,
+void registerRecordTypes(DBBASE *pbase, int nRecordTypes,
     const char * const *recordTypeNames, const recordTypeLocation *rtl)
 {
     int i;
@@ -48,7 +48,7 @@ void epicsShareAPI registerRecordTypes(DBBASE *pbase, int nRecordTypes,
     }
 }
 
-void epicsShareAPI registerDevices(DBBASE *pbase, int nDevices,
+void registerDevices(DBBASE *pbase, int nDevices,
     const char * const *deviceSupportNames, const dset * const *devsl)
 {
     int i;
@@ -62,7 +62,7 @@ void epicsShareAPI registerDevices(DBBASE *pbase, int nDevices,
     }
 }
 
-void epicsShareAPI registerDrivers(DBBASE *pbase, int nDrivers,
+void registerDrivers(DBBASE *pbase, int nDrivers,
     const char * const * driverSupportNames, struct drvet * const *drvsl)
 {
     int i;

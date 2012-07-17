@@ -17,33 +17,33 @@ extern "C" {
 #endif
 
 /*dbAddr info */
-epicsShareFunc long epicsShareAPI dba(const char *pname);
+epicsShareFunc long dba(const char *pname);
 /*list records*/
-epicsShareFunc long epicsShareAPI dbl(
+epicsShareFunc long dbl(
     const char *precordTypename,const char *fields);
 /*list number of records of each type*/
-epicsShareFunc long epicsShareAPI dbnr(int verbose);
+epicsShareFunc long dbnr(int verbose);
 /* list aliases */
-epicsShareFunc long epicsShareAPI dbla(const char *pmask);
+epicsShareFunc long dbla(const char *pmask);
 /*list records with mask*/
-epicsShareFunc long epicsShareAPI dbgrep(const char *pmask);
+epicsShareFunc long dbgrep(const char *pmask);
 /*get field value*/
-epicsShareFunc long epicsShareAPI dbgf(const char *pname);
+epicsShareFunc long dbgf(const char *pname);
 /*put field value*/
-epicsShareFunc long epicsShareAPI dbpf(const char *pname,const char *pvalue);
+epicsShareFunc long dbpf(const char *pname,const char *pvalue);
 /*print record*/
-epicsShareFunc long epicsShareAPI dbpr(const char *pname,int interest_level);
+epicsShareFunc long dbpr(const char *pname,int interest_level);
 /*test record*/
-epicsShareFunc long epicsShareAPI dbtr(const char *pname);
+epicsShareFunc long dbtr(const char *pname);
 /*test get field*/
-epicsShareFunc long epicsShareAPI dbtgf(const char *pname);
+epicsShareFunc long dbtgf(const char *pname);
 /*test put field*/
-epicsShareFunc long epicsShareAPI dbtpf(const char *pname,const char *pvalue);
+epicsShareFunc long dbtpf(const char *pname,const char *pvalue);
 /*I/O report */
-epicsShareFunc long epicsShareAPI dbior(
+epicsShareFunc long dbior(
     const char *pdrvName,int interest_level);
 /*Hardware Configuration Report*/
-epicsShareFunc int epicsShareAPI dbhcr(void);
+epicsShareFunc int dbhcr(void);
 
 #ifdef __cplusplus
 }

@@ -151,7 +151,7 @@ static void dbReportDeviceConfigCallFunc(const iocshArgBuf *args)
     dbReportDeviceConfig(*iocshPpdbbase,stdout);
 }
 
-void epicsShareAPI dbStaticIocRegister(void)
+void dbStaticIocRegister(void)
 {
     iocshRegister(&dbDumpPathFuncDef, dbDumpPathCallFunc);
     iocshRegister(&dbDumpRecordFuncDef, dbDumpRecordCallFunc);

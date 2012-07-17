@@ -450,7 +450,7 @@ static void log_one_client (struct client *client, unsigned level)
 /*
  *  casr()
  */
-void epicsShareAPI casr (unsigned level)
+void casr (unsigned level)
 {
     size_t bytes_reserved;
     struct client *client;

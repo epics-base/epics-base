@@ -17,13 +17,13 @@
 static void * const registryID = "record type";
 
 
-epicsShareFunc int epicsShareAPI registryRecordTypeAdd(
+epicsShareFunc int registryRecordTypeAdd(
     const char *name, const recordTypeLocation *prtl)
 {
     return registryAdd(registryID, name, (void *)prtl);
 }
 
-epicsShareFunc recordTypeLocation * epicsShareAPI registryRecordTypeFind(
+epicsShareFunc recordTypeLocation * registryRecordTypeFind(
     const char *name)
 {
     return registryFind(registryID, name);

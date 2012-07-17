@@ -26,7 +26,7 @@ static void dbLoadTemplateCallFunc(const iocshArgBuf *args)
 }
 
 
-void epicsShareAPI dbtoolsIocRegister(void)
+void dbtoolsIocRegister(void)
 {
     iocshRegister(&dbLoadTemplateFuncDef, dbLoadTemplateCallFunc);
 }

@@ -17,10 +17,10 @@
 #include "alarm.h"
 #include "devSup.h"
 #include "recGbl.h"
-#include "epicsExport.h"
 
 #include "aiRecord.h"
 #include "stringinRecord.h"
+#include "epicsExport.h"
 
 
 /* Extended device support to allow INP field changes */

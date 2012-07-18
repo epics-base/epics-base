@@ -15,8 +15,8 @@
 #include "devSup.h"
 #include "recGbl.h"
 #include "dbAccessDefs.h"
-#include "epicsExport.h"
 #include "boRecord.h"
+#include "epicsExport.h"
 
 #define DEVSUPNAME "devBoDbState"
 

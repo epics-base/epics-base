@@ -32,12 +32,11 @@
 #include "devSup.h"
 #include "special.h"
 #include "registryFunction.h"
-#include "epicsExport.h"
 #include "recGbl.h"
-
 #define GEN_SIZE_OFFSET
 #include "aSubRecord.h"
 #undef  GEN_SIZE_OFFSET
+#include "epicsExport.h"
 
 
 typedef long (*GENFUNCPTR)(struct aSubRecord *);

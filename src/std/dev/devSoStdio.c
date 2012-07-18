@@ -15,9 +15,8 @@
 #include "errlog.h"
 #include "recGbl.h"
 #include "recSup.h"
-#include "epicsExport.h"
-
 #include "stringoutRecord.h"
+#include "epicsExport.h"
 
 typedef int (*PRINTFFUNC)(const char *fmt, ...);
 

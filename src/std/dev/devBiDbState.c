@@ -16,8 +16,8 @@
 #include "recGbl.h"
 #include "dbLink.h"
 #include "dbAccessDefs.h"
-#include "epicsExport.h"
 #include "biRecord.h"
+#include "epicsExport.h"
 
 #define DEVSUPNAME "devBiDbState"
 

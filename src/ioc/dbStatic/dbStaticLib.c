@@ -31,10 +31,10 @@
 #include "epicsStdlib.h"
 #include "epicsString.h"
 #include "epicsStdio.h"
-#include "dbChannel.h"
 
 #define epicsExportSharedSymbols
 #include "link.h"
+#include "dbChannel.h"
 #include "dbFldTypes.h"
 #include "devSup.h"
 #include "drvSup.h"

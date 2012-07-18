@@ -26,7 +26,7 @@ EPICS_BASE_IOC_LIBS += dbRecStd dbCore ca Com
 #---------------------------------------------------------------
 # Epics base Host libraries 
 
-EPICS_BASE_HOST_LIBS += cas gdd dbStaticHost
+EPICS_BASE_HOST_LIBS += cas gdd
 EPICS_BASE_HOST_LIBS += ca Com
 
 #---------------------------------------------------------------

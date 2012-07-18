@@ -9,6 +9,3 @@
 # to add command-line editing and history support
 COMMANDLINE_LIBRARY = READLINE
 
-# On later versions of Cygwin you may need to uncomment this:
-#LDLIBS_READLINE = -lreadline
-

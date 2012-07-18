@@ -29,12 +29,9 @@
  * int epicsShareAPI myExtFunc ( int arg );   
  * int epicsShareAPI myExtFunc ( int arg ) {}
  *
- * ** NOTE **  epicsShareAPI is deprecated for new routines, don't use it!
- *             In a future major release (R3.15) we will remove this keyword
- *             from most EPICS APIs, although CA may continue to use it.
- *             This is a major release though, since it affects the order
- *             that arguments are pushed onto the stack on Windows and we
- *             don't want a replacement DLL to silent cause mayhem...
+ * ** NOTE **  epicsShareAPI is deprecated for new routines and has been removed
+ *             from all IOC-specific APIs, although most libCom APIs are still
+ *             declared to use it.
  *
  * 2) epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL) 
  * export/import related information in the source code. On windows these keywords 
@@ -44,7 +41,11 @@
  * names. These keywords are only necessary if the address of a function or data 
  * internal to a shareable library (DLL) needs to be visible outside of this shareable 
  * library (DLL). All compilers targeting windows accept the __declspec(dllexport)
- * and __declspec(dllimport) keywords.
+ * and __declspec(dllimport) keywords. For GCC version 4 and above the first three
+ * keywords specify a visibility attribute of "default", which marks the symbol as
+ * exported even when gcc is given the option -fvisibility=hidden. Doing this can
+ * significantly reduce the number of symbols exported to a shared library. See the
+ * URL below for more information.
  *
  * In header files declare references to externally visible variables, classes and 
  * functions like this:
@@ -139,6 +140,26 @@
 #   define epicsShareDef 
 #   define epicsShareAPI __stdcall /* function removes arguments */
 #   define READONLY const
+
+#elif __GNUC__ >= 4
+/*
+ * See http://gcc.gnu.org/wiki/Visibility
+ * For these to have any effect, the compiler and linker must be given the flag
+ *     -fvisibility=hidden
+ */
+
+#   define epicsShareExtern __attribute__ ((visibility("default"))) extern
+#   define epicsShareClass __attribute__ ((visibility("default")))
+#   define epicsShareFunc __attribute__ ((visibility("default")))
+
+#   define epicsShareDef
+#   define epicsShareAPI
+#   if defined(__STDC__) || defined (__cplusplus)
+#       define READONLY const
+#   else
+#       define READONLY
+#   endif
+
 /*
  * if its the old VAX C Compiler (not DEC C)
  */

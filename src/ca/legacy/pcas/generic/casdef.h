@@ -150,7 +150,7 @@ private:
 //
 // caServer - Channel Access Server API Class
 //
-class caServer {
+class epicsShareClass caServer {
     friend class casPVI;
 public:
     epicsShareFunc caServer ();
@@ -312,7 +312,7 @@ private:
 // then it may decide to provide a "destroy()" implementation in the
 // derived class which is a noop.
 //
-class casPV {
+class epicsShareClass casPV {
 public:
     epicsShareFunc casPV ();
     
@@ -566,7 +566,7 @@ public:
 // occurring when both the server library and the server tool attempt 
 // to destroy the same casChannel derived object at the same instant.
 //
-class casChannel {
+class epicsShareClass casChannel {
 public:
     epicsShareFunc casChannel ( const casCtx & ctx );
     epicsShareFunc virtual ~casChannel ();
@@ -724,7 +724,7 @@ private:
 // in the destructor, for the class deriving from 
 // casAsyncReadIO.
 // **
-class casAsyncReadIO {
+class epicsShareClass casAsyncReadIO {
 public:
 
     //
@@ -784,7 +784,7 @@ private:
 // casAsyncWriteIO.
 // **
 //
-class casAsyncWriteIO {
+class epicsShareClass casAsyncWriteIO {
 public:
     //
     // casAsyncWriteIO()
@@ -830,7 +830,7 @@ private:
 // casAsyncPVExistIO 
 // - for use with caServer::pvExistTest()
 //
-class casAsyncPVExistIO {
+class epicsShareClass casAsyncPVExistIO {
 public:
 
     //
@@ -879,7 +879,7 @@ private:
 // casAsyncPVAttachIO 
 // - for use with caServer::pvAttach()
 //
-class casAsyncPVAttachIO {
+class epicsShareClass casAsyncPVAttachIO {
 public:
     //
     // casAsyncPVAttachIO()
@@ -926,7 +926,7 @@ private:
 // casAsyncPVCreateIO (deprecated)
 // (this class will be deleted in a future release)
 //
-class casAsyncPVCreateIO : private casAsyncPVAttachIO {
+class epicsShareClass casAsyncPVCreateIO : private casAsyncPVAttachIO {
 public:
     epicsShareFunc casAsyncPVCreateIO ( const casCtx & ctx );
     epicsShareFunc virtual ~casAsyncPVCreateIO ();

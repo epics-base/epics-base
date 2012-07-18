@@ -56,7 +56,6 @@ typedef struct{
     void         *pfield;
     char         *message;
     short        indfield;
-    void         *formpvt;
 } DBENTRY;
 
 /*dbDumpFldDes is obsolete. It is only provided for compatibility*/
@@ -204,14 +203,6 @@ epicsShareFunc int dbGetMenuIndexFromString(DBENTRY *pdbentry,
 
 epicsShareFunc drvSup * dbFindDriver(dbBase *pdbbase,
     const char *name);
-
-epicsShareFunc int  dbAllocForm(DBENTRY *pdbentry);
-epicsShareFunc long dbFreeForm(DBENTRY *pdbentry);
-epicsShareFunc char ** dbGetFormPrompt(DBENTRY *pdbentry);
-epicsShareFunc char ** dbGetFormValue(DBENTRY *pdbentry);
-epicsShareFunc long dbPutForm(DBENTRY *pdbentry, char **value);
-epicsShareFunc char ** dbVerifyForm(DBENTRY *pdbentry,
-    char **value);
 epicsShareFunc char * dbGetRelatedField(DBENTRY *pdbentry);
 
 epicsShareFunc int  dbGetNLinks(DBENTRY *pdbentry);
@@ -262,7 +253,6 @@ extern int dbStaticDebug;
 #define S_dbLib_noRecSup (M_dbLib|19)          /* Record support not found */
 #define S_dbLib_strLen (M_dbLib|21)            /* String is too long */
 #define S_dbLib_noSizeOffset (M_dbLib|23)      /* Missing SizeOffset Routine - No record support? */
-#define S_dbLib_noForm (M_dbLib|25)            /* dbAllocForm was not called */
 #define S_dbLib_outMem (M_dbLib|27)            /* Out of memory */
 #define S_dbLib_infoNotFound (M_dbLib|29)      /* Info item Not Found */
 

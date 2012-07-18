@@ -23,19 +23,10 @@ INC += drvSup.h
 INC += recSup.h
 INC += dbStaticIocRegister.h
 
-STATIC_SRCS += dbStaticLib.c
-STATIC_SRCS += dbYacc.c
-STATIC_SRCS += dbPvdLib.c
-
-dbCore_SRCS += $(STATIC_SRCS)
+dbCore_SRCS += dbStaticLib.c
+dbCore_SRCS += dbYacc.c
+dbCore_SRCS += dbPvdLib.c
 dbCore_SRCS += dbStaticRun.c
 dbCore_SRCS += dbStaticIocRegister.c
-
-dbStaticHost_SRCS += $(STATIC_SRCS)
-dbStaticHost_SRCS += dbStaticNoRun.c
-
-LIBRARY_HOST += dbStaticHost
-
-dbStaticHost_LIBS = Com
 
 CLEANS += dbLex.c dbYacc.c

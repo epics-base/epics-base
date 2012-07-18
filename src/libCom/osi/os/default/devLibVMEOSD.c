@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 
+#define epicsExportSharedSymbols
 #include "devLibVME.h"
 
 /* This file must contain no definitions other than the following: */

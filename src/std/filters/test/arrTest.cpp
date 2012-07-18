@@ -43,9 +43,10 @@
 
 #include "arrRecord.h"
 
-extern "C" int arrTest_registerRecordDeviceDriver(struct dbBase *pdbbase);
-epicsShareExtern void (*pvar_func_arrInitialize)(void);
-
+extern "C" {
+    int arrTest_registerRecordDeviceDriver(struct dbBase *pdbbase);
+    epicsShareExtern void (*pvar_func_arrInitialize)(void);
+}
 
 #define CA_SERVER_PORT "65535"
 

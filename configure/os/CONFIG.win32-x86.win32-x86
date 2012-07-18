@@ -203,8 +203,7 @@ DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
 #	x.exp: what you need to build the dll (in no variable)
 #
 LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -implib:$*.lib -out:$*.dll \
-    $(DLL_DEF_FLAG)
-LINK.shrlib += $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
+    $(DLL_DEF_FLAG) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 MUNCH_CMD =  $(CCC) -Fo $@ $^
 
 

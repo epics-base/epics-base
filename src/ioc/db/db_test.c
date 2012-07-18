@@ -32,7 +32,7 @@
 
 #define		MAX_ELEMS	10
 
-int gft(char *pname)
+int gft(const char *pname)
 {
     char tgf_buffer[MAX_ELEMS*MAX_STRING_SIZE + sizeof(struct dbr_ctrl_double)];
     struct dbChannel *chan;
@@ -82,7 +82,7 @@ int gft(char *pname)
  * TPF
  * Test put field
  */
-int pft(char *pname, char *pvalue)
+int pft(const char *pname, const char *pvalue)
 {
     struct dbChannel *chan;
     struct dbCommon *precord;
@@ -217,7 +217,7 @@ static void tpnThread(void *pvt)
     free(ptpnInfo);
 }
 
-int tpn(char *pname, char *pvalue)
+int tpn(const char *pname, const char *pvalue)
 {
     struct dbChannel *chan;
     tpnInfo *ptpnInfo;

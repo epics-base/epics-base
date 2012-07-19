@@ -153,8 +153,8 @@ private:
 class epicsShareClass caServer {
     friend class casPVI;
 public:
-    epicsShareFunc caServer ();
-    epicsShareFunc virtual ~caServer() = 0;
+    caServer ();
+    virtual ~caServer() = 0;
 
     //
     // pvExistTest()
@@ -179,7 +179,7 @@ public:
     // The client library will retry the request at some time
     // in the future.
     //
-    epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+    virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
         const caNetAddr & clientAddress, const char * pPVAliasName );
 
     //
@@ -229,30 +229,30 @@ public:
     // subset of named process variables at its privately specified date by 
     // attaching to additional client private process variables.
     //
-    epicsShareFunc virtual pvAttachReturn pvAttach ( const casCtx &ctx,
+    virtual pvAttachReturn pvAttach ( const casCtx &ctx,
         const char *pPVAliasName );
 
     //
     // obtain an event mask for a named event type
     // to be used with casPV::postEvent()
     //
-    epicsShareFunc casEventMask registerEvent ( const char *pName );
+    casEventMask registerEvent ( const char *pName );
 
     //
     // common event masks 
     // (what is currently used by the CA clients)
     //
-    epicsShareFunc casEventMask valueEventMask () const; // DBE_VALUE 
-    epicsShareFunc casEventMask logEventMask () const;  // DBE_LOG 
-    epicsShareFunc casEventMask alarmEventMask () const; // DBE_ALARM 
+    casEventMask valueEventMask () const; // DBE_VALUE 
+    casEventMask logEventMask () const;  // DBE_LOG 
+    casEventMask alarmEventMask () const; // DBE_ALARM 
 
-    epicsShareFunc void setDebugLevel ( unsigned level );
-    epicsShareFunc unsigned getDebugLevel () const;
+    void setDebugLevel ( unsigned level );
+    unsigned getDebugLevel () const;
 
     //
     // dump internal state of server to standard out
     //
-    epicsShareFunc virtual void show ( unsigned level ) const;
+    virtual void show ( unsigned level ) const;
 
     //
     // server diagnostic counters (allowed to roll over)
@@ -262,12 +262,12 @@ public:
     // subscriptionEventsProcessed() 
     //      - number of events removed by server library from the event queue
     //
-    epicsShareFunc unsigned subscriptionEventsPosted () const;
-    epicsShareFunc unsigned subscriptionEventsProcessed () const;
+    unsigned subscriptionEventsPosted () const;
+    unsigned subscriptionEventsProcessed () const;
 
-    epicsShareFunc class epicsTimer & createTimer ();
+    class epicsTimer & createTimer ();
 
-    epicsShareFunc void generateBeaconAnomaly ();
+    void generateBeaconAnomaly ();
 
     // caStatus enableClients ();
     // caStatus disableClients ();
@@ -276,9 +276,9 @@ private:
     class caServerI * pCAS;
 
     // deprecated interfaces (will be deleted in a future release)
-    epicsShareFunc virtual class pvCreateReturn createPV ( const casCtx & ctx,
+    virtual class pvCreateReturn createPV ( const casCtx & ctx,
         const char * pPVAliasName );
-    epicsShareFunc virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
+    virtual pvExistReturn pvExistTest ( const casCtx & ctx, 
         const char * pPVAliasName );
 };
 
@@ -314,30 +314,30 @@ private:
 //
 class epicsShareClass casPV {
 public:
-    epicsShareFunc casPV ();
+    casPV ();
     
-    epicsShareFunc virtual ~casPV ();
+    virtual ~casPV ();
     
     //
     // This is called for each PV in the server if
     // caServer::show() is called and the level is high 
     // enough
     //
-    epicsShareFunc virtual void show ( unsigned level ) const;
+    virtual void show ( unsigned level ) const;
     
     //
     // called by the server libary each time that it wishes to
     // subscribe for PV change notification from the server 
     // tool via postEvent() below
     //
-    epicsShareFunc virtual caStatus interestRegister ();
+    virtual caStatus interestRegister ();
     
     //
     // called by the server library each time that it wishes to
     // remove its subscription for PV value change events
     // from the server tool via postEvent() below
     //
-    epicsShareFunc virtual void interestDelete ();
+    virtual void interestDelete ();
     
     //
     // called by the server library immediately before initiating
@@ -347,14 +347,14 @@ public:
     // NOTE: there may be many read/write operations performed within
     // a single transaction if a large array is being transferred
     //
-    epicsShareFunc virtual caStatus beginTransaction ();
+    virtual caStatus beginTransaction ();
     
     //
     // called by the server library immediately after completing
     // a tranaction (PV state modification may resume after the
     // transaction completes)
     //
-    epicsShareFunc virtual void endTransaction ();
+    virtual void endTransaction ();
     
     //
     // read
@@ -379,7 +379,7 @@ public:
     // for the server side tool. Conversion libraries in the CA server
     // will convert as necessary to the client's primitive data type.
     //
-    epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
+    virtual caStatus read (const casCtx &ctx, gdd &prototype);
     
     //
     // write 
@@ -415,8 +415,8 @@ public:
     // with the original interface which included a virtual write
     // method but not a virtual writeNotify method.
     //
-    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
-    epicsShareFunc virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
+    virtual caStatus write (const casCtx &ctx, const gdd &value);
+    virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
 
     //
     // chCreate() is called each time that a PV is attached to
@@ -426,14 +426,14 @@ public:
     // implements this function then it must create a casChannel object
     // (or a derived class) each time that this routine is called
     //
-    epicsShareFunc virtual casChannel * createChannel ( const casCtx &ctx,
+    virtual casChannel * createChannel ( const casCtx &ctx,
         const char * const pUserName, const char * const pHostName );
     
     //
     // tbe best type for clients to use when accessing the
     // value of the PV
     //
-    epicsShareFunc virtual aitEnum bestExternalType () const;
+    virtual aitEnum bestExternalType () const;
     
     //
     // Returns the maximum bounding box for all present and
@@ -477,8 +477,8 @@ public:
     // set to one then the bound on the second dimension
     // are being fetched...
     //
-    epicsShareFunc virtual unsigned maxDimension () const; // return zero if scalar
-    epicsShareFunc virtual aitIndex maxBound ( unsigned dimension ) const;
+    virtual unsigned maxDimension () const; // return zero if scalar
+    virtual aitIndex maxBound ( unsigned dimension ) const;
     
     //
     // destroy() is called 
@@ -489,12 +489,12 @@ public:
     //
     // the default (base) "destroy()" executes "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
 
     //
     // Server tool calls this function to post a PV event.
     //
-    epicsShareFunc void postEvent ( const casEventMask & select, const gdd & event );
+    void postEvent ( const casEventMask & select, const gdd & event );
     
     //
     // peek at the pv name
@@ -509,7 +509,7 @@ public:
 //
 // !! not thread safe !!
 //
-    epicsShareFunc virtual const char * getName () const = 0;
+    virtual const char * getName () const = 0;
     
     //
     // Find the server associated with this PV
@@ -521,7 +521,7 @@ public:
     // before the server
     // ***************
     //
-    epicsShareFunc caServer * getCAS () const;
+    caServer * getCAS () const;
 
     // not to be called by the user
     void destroyRequest ();
@@ -536,7 +536,7 @@ public:
     // This constructor has been deprecated, and is preserved for 
     // backwards compatibility only. Please do not use it.
     //
-    epicsShareFunc casPV ( caServer & );
+    casPV ( caServer & );
 };
 
 //
@@ -568,37 +568,37 @@ public:
 //
 class epicsShareClass casChannel {
 public:
-    epicsShareFunc casChannel ( const casCtx & ctx );
-    epicsShareFunc virtual ~casChannel ();
+    casChannel ( const casCtx & ctx );
+    virtual ~casChannel ();
 
     //
     // Called when the user name and the host name are changed
     // for a live connection.
     //
-    epicsShareFunc virtual void setOwner ( const char * const pUserName, 
+    virtual void setOwner ( const char * const pUserName, 
         const char * const pHostName );
 
     //
     // the following are encouraged to change during an channel's
     // lifetime
     //
-    epicsShareFunc virtual bool readAccess () const;
-    epicsShareFunc virtual bool writeAccess () const;
+    virtual bool readAccess () const;
+    virtual bool writeAccess () const;
     // return true to hint that the opi should ask the operator
     // for confirmation prior writing to this PV
-    epicsShareFunc virtual bool confirmationRequested () const;
+    virtual bool confirmationRequested () const;
 
     //
     // If this function is not provided in the derived class then casPV::beginTransaction()
     // is called - see casPV::beginTransaction() for additional comments.
     //
-    epicsShareFunc virtual caStatus beginTransaction ();
+    virtual caStatus beginTransaction ();
     
     //
     // If this function is not provided in the derived class then casPV::endTransaction()
     // is called - see casPV::endTransaction() for additional comments.
     //
-    epicsShareFunc virtual void endTransaction ();
+    virtual void endTransaction ();
 
     //
     // read
@@ -606,7 +606,7 @@ public:
     // If this function is not provided in the derived class then casPV::read()
     // is called - see casPV::read() for additional comments.
     //
-    epicsShareFunc virtual caStatus read (const casCtx &ctx, gdd &prototype);
+    virtual caStatus read (const casCtx &ctx, gdd &prototype);
     
     //
     // write 
@@ -614,7 +614,7 @@ public:
     // If this function is not provided in the derived class then casPV::write()
     // is called - see casPV::write() for additional comments.
     //
-    epicsShareFunc virtual caStatus write (const casCtx &ctx, const gdd &value);
+    virtual caStatus write (const casCtx &ctx, const gdd &value);
 
     //
     // writeNotify 
@@ -622,14 +622,14 @@ public:
     // If this function is not provided in the derived class then casPV::writeNotify()
     // is called - see casPV::writeNotify() for additional comments.
     //
-    epicsShareFunc virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
+    virtual caStatus writeNotify (const casCtx &ctx, const gdd &value);
 
     //
     // This is called for each channel in the server if
     // caServer::show() is called and the level is high 
     // enough
     //
-    epicsShareFunc virtual void show ( unsigned level ) const;
+    virtual void show ( unsigned level ) const;
 
     //
     // destroy() is called when 
@@ -638,13 +638,13 @@ public:
     //
     // the casChannel::destroy() executes a "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
 
     //
     // server tool calls this to indicate change in access
     // rights has occurred
     //
-    epicsShareFunc void postAccessRightsEvent ();
+    void postAccessRightsEvent ();
 
     //
     // Find the PV associated with this channel 
@@ -655,7 +655,7 @@ public:
     // for virtual casChannel::destroy() 
     // ***************
     //
-    epicsShareFunc casPV * getPV ();
+    casPV * getPV ();
 
     // not to be called by the user
     void destroyRequest ();
@@ -730,8 +730,8 @@ public:
     //
     // casAsyncReadIO()
     //
-    epicsShareFunc casAsyncReadIO ( const casCtx & ctx );
-    epicsShareFunc virtual ~casAsyncReadIO (); 
+    casAsyncReadIO ( const casCtx & ctx );
+    virtual ~casAsyncReadIO (); 
 
     //
     // place notification of IO completion on the event queue
@@ -739,7 +739,7 @@ public:
     //
     // only the first call to this function has any effect
     //
-    epicsShareFunc caStatus postIOCompletion ( 
+    caStatus postIOCompletion ( 
         caStatus completionStatusIn, const gdd & valueRead );
 
     //
@@ -749,7 +749,7 @@ public:
     // into a server
     // ***************
     //
-    epicsShareFunc caServer * getCAS () const;
+    caServer * getCAS () const;
 
 private:
     class casAsyncReadIOI * pAsyncReadIOI;
@@ -760,7 +760,7 @@ private:
     //
     // default destroy executes a "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
 
     casAsyncReadIO ( const casAsyncReadIO & );
     casAsyncReadIO & operator = ( const casAsyncReadIO & );
@@ -789,15 +789,15 @@ public:
     //
     // casAsyncWriteIO()
     //
-    epicsShareFunc casAsyncWriteIO ( const casCtx & ctx );
-    epicsShareFunc virtual ~casAsyncWriteIO (); 
+    casAsyncWriteIO ( const casCtx & ctx );
+    virtual ~casAsyncWriteIO (); 
 
     //
     // place notification of IO completion on the event queue
     // (this function does not delete the casAsyncWriteIO object). 
     // Only the first call to this function has any effect.
     //
-    epicsShareFunc caStatus postIOCompletion ( caStatus completionStatusIn );
+    caStatus postIOCompletion ( caStatus completionStatusIn );
 
     //
     // Find the server associated with this async IO 
@@ -806,7 +806,7 @@ public:
     // into a server
     // ***************
     //
-    epicsShareFunc caServer * getCAS () const;
+    caServer * getCAS () const;
 
 private:
     class casAsyncWriteIOI * pAsyncWriteIOI;
@@ -817,7 +817,7 @@ private:
     //
     // default destroy executes a "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
 
     casAsyncWriteIO ( const casAsyncWriteIO & );
     casAsyncWriteIO & operator = ( const casAsyncWriteIO & );
@@ -836,8 +836,8 @@ public:
     //
     // casAsyncPVExistIO()
     //
-    epicsShareFunc casAsyncPVExistIO ( const casCtx & ctx );
-    epicsShareFunc virtual ~casAsyncPVExistIO (); 
+    casAsyncPVExistIO ( const casCtx & ctx );
+    virtual ~casAsyncPVExistIO (); 
 
     //
     // place notification of IO completion on the event queue
@@ -845,7 +845,7 @@ public:
     //
     // only the first call to this function has any effect.
     //
-    epicsShareFunc caStatus postIOCompletion ( const pvExistReturn & retValIn );
+    caStatus postIOCompletion ( const pvExistReturn & retValIn );
 
     //
     // Find the server associated with this async IO 
@@ -854,7 +854,7 @@ public:
     // into a server
     // ***************
     //
-    epicsShareFunc caServer * getCAS () const;
+    caServer * getCAS () const;
 
 private:
     class casAsyncPVExistIOI * pAsyncPVExistIOI;
@@ -866,7 +866,7 @@ private:
     //
     // default destroy executes a "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
  
     casAsyncPVExistIO ( const casAsyncPVExistIO & );
     casAsyncPVExistIO & operator = ( const casAsyncPVExistIO & );
@@ -884,15 +884,15 @@ public:
     //
     // casAsyncPVAttachIO()
     //
-    epicsShareFunc casAsyncPVAttachIO ( const casCtx & ctx );
-    epicsShareFunc virtual ~casAsyncPVAttachIO (); 
+    casAsyncPVAttachIO ( const casCtx & ctx );
+    virtual ~casAsyncPVAttachIO (); 
 
     //
     // place notification of IO completion on the event queue
     // (this function does not delete the casAsyncPVAttachIO object). 
     // Only the first call to this function has any effect.
     //
-    epicsShareFunc caStatus postIOCompletion ( const pvAttachReturn & retValIn );
+    caStatus postIOCompletion ( const pvAttachReturn & retValIn );
 
     //
     // Find the server associated with this async IO 
@@ -901,7 +901,7 @@ public:
     // into a server
     // ***************
     //
-    epicsShareFunc caServer * getCAS () const;
+    caServer * getCAS () const;
 
 private:
     class casAsyncPVAttachIOI * pAsyncPVAttachIOI;
@@ -913,7 +913,7 @@ private:
     //
     // default destroy executes a "delete this"
     //
-    epicsShareFunc virtual void destroy ();
+    virtual void destroy ();
 
     casAsyncPVAttachIO ( const casAsyncPVAttachIO & );
     casAsyncPVAttachIO & operator = ( const casAsyncPVAttachIO & );
@@ -928,8 +928,8 @@ private:
 //
 class epicsShareClass casAsyncPVCreateIO : private casAsyncPVAttachIO {
 public:
-    epicsShareFunc casAsyncPVCreateIO ( const casCtx & ctx );
-    epicsShareFunc virtual ~casAsyncPVCreateIO ();
+    casAsyncPVCreateIO ( const casCtx & ctx );
+    virtual ~casAsyncPVCreateIO ();
 private:
     casAsyncPVCreateIO ( const casAsyncPVCreateIO & );
     casAsyncPVCreateIO & operator = ( const casAsyncPVCreateIO & );

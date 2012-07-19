@@ -219,7 +219,7 @@ epicsShareFunc void fdManager::process (double delay)
 // fdReg::destroy()
 // (default destroy method)
 //
-epicsShareFunc void fdReg::destroy()
+void fdReg::destroy()
 {
     delete this;
 }
@@ -227,7 +227,7 @@ epicsShareFunc void fdReg::destroy()
 //
 // fdReg::~fdReg()
 //
-epicsShareFunc fdReg::~fdReg()
+fdReg::~fdReg()
 {
     this->manager.removeReg(*this);
 }
@@ -235,7 +235,7 @@ epicsShareFunc fdReg::~fdReg()
 //
 // fdReg::show()
 //
-epicsShareFunc void fdReg::show(unsigned level) const
+void fdReg::show(unsigned level) const
 {
     printf ("fdReg at %p\n", (void *) this);
     if (level>1u) {

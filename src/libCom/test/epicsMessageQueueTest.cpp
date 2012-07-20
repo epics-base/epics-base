@@ -89,7 +89,7 @@ receiver(void *arg)
         expectmsg[sender-1] = 1;
     while (!testExit) {
         cbuf[0] = '\0';
-        len = q->receive(cbuf, sizeof cbuf, 2.0);
+        len = q->receive(cbuf, sizeof cbuf, 5.0);
         if (len < 0 && !testExit) {
             testDiag("receiver() received unexpected timeout");
             ++errors;
@@ -108,7 +108,8 @@ receiver(void *arg)
         if (expectmsg[sender-1] > 1)
             testDiag("Sender %d -- %d messages", sender, expectmsg[sender-1]-1);
     }
-    testOk1(errors == 0);
+    if (!testOk1(errors == 0))
+        testDiag("error count was %d", errors);
     epicsEventSignal(finished);
 }
 

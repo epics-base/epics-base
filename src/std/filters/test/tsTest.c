@@ -103,8 +103,9 @@ MAIN(tsTest)
 
     pfl2 = dbChannelRunPreChain(pch, &fl1);
     epicsTimeGetCurrent(&now);
-    testOk(epicsTimeDiffInSeconds(&pfl2->time, &stamp) > 0. &&
-           epicsTimeDiffInSeconds(&now, &pfl2->time) > 0., "ts filter sets time stamp to \"now\"");
+    testOk(epicsTimeDiffInSeconds(&pfl2->time, &stamp) >= 0 &&
+        epicsTimeDiffInSeconds(&now, &pfl2->time) >= 0,
+        "ts filter sets time stamp to \"now\"");
 
     dbChannelDelete(pch);
     dbFreeBase(pdbbase);

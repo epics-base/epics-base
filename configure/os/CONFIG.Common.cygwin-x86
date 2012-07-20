@@ -13,7 +13,11 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 OS_CLASS = cygwin32
 ARCH_CLASS = x86
 
-#  Definitions used when COMMANDLINE_LIBRARY is READLINE
+# Link libraries controlled by COMMANDLINE_LIBRARY
+# The Cygwin version 1.7.15 needs readline and ncursesw,
+# older ones may need readline and curses.
+LDLIBS_READLINE_NCURSESW = -lreadline -lncursesw
+LDLIBS_READLINE_CURSES = -lreadline -lcurses
 LDLIBS_READLINE = -lreadline
 
 POSIX_CPPFLAGS = -D_POSIX_THREADS -D_POSIX_TIMERS

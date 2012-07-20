@@ -5,7 +5,22 @@
 # Site Specific definitions for cygwin-x86 target
 # Only the local epics system manager should modify this file
 
-# If readline is installed uncomment the following line
-# to add command-line editing and history support
-COMMANDLINE_LIBRARY = READLINE
+# Currently the Cygwin build only works without shared libraries.
+SHARED_LIBRARIES = NO
+STATIC_BUILD = YES
+
+# Depending on your version of Cygwin you'll want one of the following
+# lines to enable command-line editing and history in iocsh.  If you're
+# not sure which, start with the top one and work downwards until the
+# build doesn't fail to link the readline library.  If none of them work,
+# comment them all out to build without readline support.
+
+# Needs -lncursesw (Cygwin 1.7):
+COMMANDLINE_LIBRARY = READLINE_NCURSESW
+
+# Needs -lcurses (older versions)
+#COMMANDLINE_LIBRARY = READLINE_CURSES
+
+# No other libraries needed
+#COMMANDLINE_LIBRARY = READLINE
 

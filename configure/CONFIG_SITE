@@ -16,8 +16,6 @@
 #       <operating system>-<architecture>[-<toolset>]
 #
 #  Currently Supporting:
-#	aix-ppc                (IBM compiler used for host builds)
-#	aix-ppc-gnu            (GNU compiler used for host builds)
 #	cygwin-x86             (cygwin compiler used for host builds)
 #	darwin-ppc             (PowerPC based Apple running OSX)
 #	darwin-ppcx86          (Universal binaries for both CPUs)
@@ -28,7 +26,6 @@
 #	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
 #	linux-x86_64           (GNU compiler used for host builds)
-#	linux-x86-borland      (Borland C++ compiler used for host builds)
 #	solaris-sparc          (Sun compiler used for host builds)
 #	solaris-sparc-gnu      (GNU compiler used for host builds)
 #	solaris-sparc64        (Sun compiler used for host builds)
@@ -42,7 +39,7 @@
 #	win32-x86-mingw        (MinGW compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
 
-#  Debugging builds 
+#  Debugging builds:
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)

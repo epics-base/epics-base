@@ -48,24 +48,15 @@
 
 static int osdTimeGetCurrent ( epicsTimeStamp *pDest );
 
-// GNU seems to require that 64 bit constants have LL on
-// them. The borland compiler fails to compile constants
-// with the LL suffix. MS compiler doesnt care.
-#ifdef __GNUC__
-#define LL_CONSTANT(VAL) VAL ## LL
-#else
-#define LL_CONSTANT(VAL) VAL
-#endif
-
 // for mingw
 #if !defined ( MAXLONGLONG )
-#define MAXLONGLONG LL_CONSTANT(0x7fffffffffffffff)
+#define MAXLONGLONG 0x7fffffffffffffffLL
 #endif
 #if !defined ( MINLONGLONG )
-#define MINLONGLONG LL_CONSTANT(~0x7fffffffffffffff)
+#define MINLONGLONG (~0x7fffffffffffffffLL)
 #endif
 
-static const LONGLONG epicsEpochInFileTime = LL_CONSTANT(0x01b41e2a18d64000);
+static const LONGLONG epicsEpochInFileTime = 0x01b41e2a18d64000LL;
 
 class currentTime : public epicsTimerNotify {
 public:
@@ -123,7 +114,7 @@ static int osdTimeGetCurrent ( epicsTimeStamp *pDest )
 
 inline void UnixTimeToFileTime ( const time_t * pAnsiTime, LPFILETIME pft )
 {
-     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + LL_CONSTANT(116444736000000000);
+     LONGLONG ll = Int32x32To64 ( *pAnsiTime, 10000000 ) + 116444736000000000LL;
      pft->dwLowDateTime = static_cast < DWORD > ( ll );
      pft->dwHighDateTime = static_cast < DWORD > ( ll >>32 );
 }

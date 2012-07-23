@@ -45,7 +45,7 @@ arrTest_SRCS += arrTest.cpp
 arrTest_SRCS += arrTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrTest.cpp
 testHarness_SRCS += arrTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/arrTest.dbd
+TESTFILES += $(COMMON_DIR)/arrTest.dbd ../arrTest.db
 TESTS += arrTest
 
 TARGETS += $(COMMON_DIR)/syncTest.dbd

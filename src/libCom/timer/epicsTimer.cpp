@@ -18,9 +18,8 @@
 #include <string>
 #include <stdexcept>
 
-#include "epicsMath.h"
-
 #define epicsExportSharedSymbols
+#include "epicsMath.h"
 #include "epicsTimer.h"
 #include "epicsGuard.h"
 #include "timerPrivate.h"

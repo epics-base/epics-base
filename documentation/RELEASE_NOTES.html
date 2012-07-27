@@ -15,6 +15,12 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Architecture win32-x86-cygwin Removed</h3>
+
+<p>The ability to compile non-cygwin binaries using the Cygwin build tools is no
+longer supported by current versions of Cygwin, so this architecture has been
+removed. Use the MinWG tools and the win32-x86-mingw architecture instead.</p>
+
 <h3>RTEMS and VxWorks Test Harnesses</h3>
 
 <p>The original libCom test harness has been renamed <tt>libComTestHarness</tt>,
@@ -25,7 +31,9 @@ The new ones include tests in src/ioc/db/test and src/std/filters/test.</p>
 <p>Running the new tests requires additional .db and .dbd files to be loaded at
 runtime, which can be found in the relevant source directory or its O.Common
 subdirectory. If the target can access the Base source tree directly it may be
-simplest to cd to the relevant source directory before running the test.</p>
+simplest to cd to the relevant source directory before running the test. If not,
+the files needed are listed in the generated 'testspec' file found in the
+associated build (O.<i>arch</i>) directory.</p>
 
 <p>For RTEMS users the current directory is determined in a BSP specific way.
 See rtems_init.c and setBootConfigFromNVRAM.c in src/libCom/RTEMS.</p>

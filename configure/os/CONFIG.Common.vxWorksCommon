@@ -19,7 +19,7 @@ OS_CLASS = vxWorks
 # Prefix and suffix definitions
 EXE =
 OBJ = .o
-LIB_PREFIX =lib
+LIB_PREFIX = lib
 LIB_SUFFIX = .a
 MUNCH_SUFFIX = .munch
 
@@ -56,24 +56,6 @@ CTDT_SRCS = $(PRODNAME:%$(EXE)=%_ctdt.c)
 CTDT_OBJS = $(PRODNAME:%$(EXE)=%_ctdt$(OBJ))
 NMS = $(PRODNAME:%$(EXE)=%.nm)
 MUNCH_DEPENDS = %_ctdt$(OBJ)
-
-#-------------------------------------------------------
-# R3.13 compatability object library definitions
-# Does not allow $*_SRCS or $*_OBJS. Allows only OBJLIB_SRCS and OBJLIB_OBJS.
-OBJLIB += $(OBJLIB_$(OS_CLASS))
-OBJLIB_SUFFIX = Library.o
-OBJLIBNAME = $(addsuffix $(OBJLIB_SUFFIX),$(basename $(OBJLIB)))
-OBJLIB_LD_OBJS += $(addsuffix $(OBJ),$(basename $(OBJLIB_SRCS) $(OBJLIB_OBJS)))
-PRODTARGETS += $(OBJLIBNAME)
-INSTALL_PROD = $(OBJLIBNAME:%=$(INSTALL_BIN)/%)
-OBJLIB_MUNCHNAME += $(OBJLIBNAME:%$(OBJ)=%$(MUNCH_SUFFIX))
-INSTALL_MUNCHS += $(OBJLIB_MUNCHNAME:%=$(INSTALL_BIN)/%)
-PRODTARGETS += $(OBJLIB_MUNCHNAME)
-CTDT_SRCS += $(OBJLIBNAME:%$(OBJ)=%_ctdt.c)
-CTDT_OBJS += $(OBJLIBNAME:%$(OBJ)=%_ctdt$(OBJ))
-NMS += $(OBJLIBNAME:%$(OBJ)=%.nm)
-OBJLIB_LINK.cpp = $(LD) -o $@ $(OBJLIB_LD_OBJS)
-SRC_FILES += $(OBJLIB_SRCS)
 
 #--------------------------------------------------
 # vxWorks version numbers
@@ -187,6 +169,10 @@ CODE_CXXFLAGS = $(CODE_CXXFLAGS_$(VXWORKS_MAJOR_VERSION))
 # no shared libs for vxWorks
 SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS =
+
+#--------------------------------------------------
+# Earlier versions of gcc don't understand -MF
+HDEPENDS_COMPFLAGS = -MM > $@
 
 #--------------------------------------------------
 # osithead use default stack, YES or NO override

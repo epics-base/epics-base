@@ -1,0 +1,25 @@
+# CONFIG.linux-x86.win32-x86-mingw
+#
+# Definitions for linux-x86 host win32-x86-mingw target builds
+# Override these definitions in CONFIG_SITE.linux-x86.win32-x86-mingw
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+RES = .coff
+RCCMD = $(GNU_BIN)/$(CMPLR_PREFIX)windres$(CMPLR_SUFFIX) $(INCLUDES) $< $@
+
+# No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
+SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS = -shared \
+    -Wl,--out-implib,$(DLLSTUB_PREFIX)$*$(DLLSTUB_SUFFIX)
+LOADABLE_SHRLIB_LDFLAGS = -shared \
+    -Wl,--out-implib,$(DLLSTUB_PREFIX)$*$(DLLSTUB_SUFFIX)
+
+# Override linking with gcc library from CONFIG.gnuCommon
+GNU_LDLIBS_YES =
+
+# Link with winsock2
+OP_SYS_LDLIBS = -lws2_32
+

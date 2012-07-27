@@ -57,7 +57,7 @@ OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 
 # Header dependency file generation command
 HDEPENDS_METHOD = COMP
-HDEPENDS_COMPFLAGS = -xM1 -xMF $@
+HDEPENDS_COMPFLAGS = -xM1 > $@
 
 #--------------------------------------------------
 # Allow site overrides

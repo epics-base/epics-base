@@ -35,7 +35,6 @@
 #	solaris-x86_64         (Sun compiler used for host builds)
 #	solaris-x86_64-gnu     (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
-#	win32-x86-cygwin       (WIN32 API with cygwin GNU compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
 

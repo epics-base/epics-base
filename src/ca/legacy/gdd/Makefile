@@ -37,27 +37,27 @@ HTMLS += gdd.html
 HTMLS += gddref.html
 HTMLS += gddref2.html
 
-AITGENSRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
-	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
-	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
+GDDSRCS = gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
+    gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc  \
+    gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
     gddEnumStringTable.cc
 
-gdd_SRCS := gdd.cc gddTest.cc gddAppTable.cc gddNewDel.cc \
-	gddAppDefs.cc aitTypes.c aitConvert.cc aitHelpers.cc dbMapper.cc \
-	gddArray.cc gddContainer.cc gddErrorCodes.cc gddUtils.cc \
-	gddEnumStringTable.cc
-
 LIBRARY = gdd
+
+gdd_SRCS = dbMapper $(GDDSRCS)
 
 gdd_LIBS = Com
 
 gdd_RCS = gdd.rc
 
-PROD_HOST = aitGen genApps
-genApps_SRCS = genApps.cc $(AITGENSRCS)
-aitGen_SRCS = aitTypes.c aitGen.c
-PROD_LIBS = Com
+PROD_HOST += genApps
+genApps_SRCS = genApps.cc $(GDDSRCS)
 genApps_SYS_LIBS_WIN32 = ws2_32
+
+PROD_LIBS = Com
+
+PROD_HOST += aitGen
+aitGen_SRCS = aitTypes.c aitGen.c
 
 # aitGen.c doesn't compile for linux-arm at -O3 when using gcc-3.4.5
 aitGen_CFLAGS_linux-arm = -O2
@@ -66,22 +66,17 @@ CLEANS += $(COMMON_DIR)/aitConvertGenerated.cc
 
 include $(TOP)/configure/RULES
 
-# cannot generate these dependencies automatically
+# Manual dependencies
 #
-# Problem: Some dependencies are include files that may
-#	not have been installed if we are building for
-#	the first time
-#	-> use explicit reference to the uninstalled files in '..'
-
 aitConvert$(OBJ): $(COMMON_DIR)/aitConvertGenerated.cc
 
 dbMapper$(OBJ):	$(COMMON_DIR)/gddApps.h 
 
 # Rules for generated files
-
+#
 $(COMMON_DIR)/aitConvertGenerated.cc: $(TOOLS)/aitGen$(HOSTEXE)
-	$(TOOLS)/aitGen$(HOSTEXE) $@
+	$(call PATH_FILTER, $(TOOLS)/aitGen$(HOSTEXE)) $@
 
 $(COMMON_DIR)/gddApps.h : $(TOOLS)/genApps$(HOSTEXE)
-	$(TOOLS)/genApps$(HOSTEXE) $@
+	$(call PATH_FILTER, $(TOOLS)/genApps$(HOSTEXE)) $@
 

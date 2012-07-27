@@ -94,7 +94,7 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 # Use compiler when ARCH_CLASS is a single arch value
 # otherwise use perl script command
 SINGLE_ARCH=$(filter 1,$(words $(ARCH_CLASS)))
-HDEPENDS_METHOD = $(if $(SINGLE_ARCH),CFLAGS,MKMF)
+HDEPENDS_METHOD = $(if $(SINGLE_ARCH),COMP,MKMF)
 
 #--------------------------------------------------
 # Allow site overrides

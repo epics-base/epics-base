@@ -1,17 +1,13 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
  * Compiler specific key words to set up external symbols and entry points
- *
- * Currently this is only necessary for WIN32 DLLs and for VAXC on VMS but
- * other systems with similar requirements could be supported.
  *
  * USAGE:
  * There are two distinct classes of keywords in this file:
@@ -26,12 +22,12 @@
  * keyword because __stdcall (pascal) calling convention cannot support variable
  * length ed argument lists.
  *
- * int epicsShareAPI myExtFunc ( int arg );   
+ * int epicsShareAPI myExtFunc ( int arg );
  * int epicsShareAPI myExtFunc ( int arg ) {}
  *
- * ** NOTE **  epicsShareAPI is deprecated for new routines and has been removed
- *             from all IOC-specific APIs, although most libCom APIs are still
- *             declared to use it.
+ * ** NOTE **  The epicsShareAPI attribute is deprecated and has been removed
+ *             from all IOC-specific APIs.  Most libCom APIs still use it, but
+ *             it may get removed from these at some point in the future.
  *
  * 2) epicsShare{Func,Class,Extern,Def} - specifies shareable library (DLL) 
  * export/import related information in the source code. On windows these keywords 
@@ -51,8 +47,8 @@
  * functions like this:
  *
  * #include "shareLib.h"
- * epicsShareFunc int myExtFunc ( int arg );   
- * epicsShareExtern int myExtVar; 
+ * epicsShareFunc int myExtFunc ( int arg );
+ * epicsShareExtern int myExtVar;
  * class epicsShareClass myClass { int func ( void ); };
  *
  * In the implementation file, however, you write:
@@ -61,8 +57,8 @@
  * #define epicsExportSharedSymbols
  * #include <interfaces_implemented_in_this_shareable_library.h>
  *
- * epicsShareDef int myExtVar = 4;       
- * int myExtFunc ( int arg ) {} 
+ * epicsShareDef int myExtVar = 4;
+ * int myExtFunc ( int arg ) {}
  * int myClass::func ( void ) {}
  *
  * By default shareLib.h sets the DLL import / export keywords to import from
@@ -94,8 +90,8 @@
  * #   include "shareLib.h"
  * #endif
  *
- * epicsShareFunc int myExtFunc ( int arg );   
- * epicsShareExtern int myExtVar; 
+ * epicsShareFunc int myExtFunc ( int arg );
+ * epicsShareExtern int myExtVar;
  * class epicsShareClass myClass {};
  *
  * Fortunately, the above is only the concern of library authors and will have no 
@@ -109,28 +105,27 @@
 #undef epicsShareAPI
 #undef READONLY
 
-/*
- *
- * Also check for "EPICS_DLL_NO" not defined so that we will not use these
- * keywords if it is an object library build of base under WIN32.
- */
 #if defined(_WIN32) || defined(__CYGWIN32__)
+/*
+ * Check if EPICS_BUILD_DLL or EPICS_CALL_DLL defined and use the dllimport/
+ * dllexport keywords if this is a shared library build of base under WIN32.
+ */
 
 #   if defined(epicsExportSharedSymbols)
-#       if defined(EPICS_DLL_NO) /* this indicates that we are not building a DLL */
-#           define epicsShareExtern extern 
-#           define epicsShareClass 
-#           define epicsShareFunc
+#       if defined(EPICS_BUILD_DLL)
+#           define epicsShareExtern __declspec(dllexport) extern
+#           define epicsShareClass  __declspec(dllexport)
+#           define epicsShareFunc   __declspec(dllexport)
 #       else
-#           define epicsShareExtern __declspec(dllexport) extern 
-#           define epicsShareClass  __declspec(dllexport) 
-#           define epicsShareFunc  __declspec(dllexport)
+#           define epicsShareExtern extern
+#           define epicsShareClass
+#           define epicsShareFunc
 #       endif
 #   else
-#       if defined(_DLL) /* this indicates that we are being compiled to call DLLs */
-#           define epicsShareExtern __declspec(dllimport) extern 
-#           define epicsShareClass  __declspec(dllimport) 
-#           define epicsShareFunc  __declspec(dllimport)
+#       if defined(EPICS_CALL_DLL)
+#           define epicsShareExtern __declspec(dllimport) extern
+#           define epicsShareClass  __declspec(dllimport)
+#           define epicsShareFunc   __declspec(dllimport)
 #       else
 #           define epicsShareExtern extern
 #           define epicsShareClass

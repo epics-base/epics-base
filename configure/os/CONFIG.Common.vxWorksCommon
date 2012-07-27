@@ -37,15 +37,14 @@ TESTLIBNAME = $(TESTBUILD_LIBRARY:%=$(LIB_PREFIX)%$(LIB_SUFFIX))
 #--------------------------------------------------
 # Prod: DEPLIBS, LDFLAGS, and LDLIBS definitions
 
-PROD_DEPLIBS=$(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
-    $(firstword $(wildcard $(addsuffix /$(LIB_PREFIX)$(lib).*, \
-    $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
-    $(firstword $($(lib)_DIR) $(INSTALL_LIB)))))
+PROD_DEPLIBS = $(foreach lib,$(PROD_LIBS) $(USR_LIBS), \
+  $(firstword $(wildcard \
+      $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
+        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
+    $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), $(INSTALL_LIB))))
 
-
-PROD_LDLIBS = $(addprefix -l,$($*_LDLIBS) $(PROD_LIBS) $(USR_LIBS)\
- $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
+PROD_LDLIBS = $(addprefix -l,$($*_LDLIBS) $(PROD_LIBS) $(USR_LIBS) \
+    $($*_SYS_LIBS) $(PROD_SYS_LIBS) $(USR_SYS_LIBS))
 
 PROD_DEPLIB_DIRS = $(dir $($*_DEPLIBS)) $(dir $(PROD_DEPLIBS))
 PRODDIR_LDFLAGS += $(sort $(PROD_DEPLIB_DIRS:%=-L%))

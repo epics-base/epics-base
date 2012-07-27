@@ -106,7 +106,7 @@ endif
 
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) $(TESTLIBNAME) \
   $(SHRLIBNAME) $(INSTALL_SHRLIBS) $(TESTSHRLIBNAME) \
-  $(DLL_LINK_LIBNAME) $(INSTALL_DLL_LINK_LIBS) $(TESTDLL_LINK_LIBNAME) \
+  $(DLLSTUB_LIBNAME) $(INSTALL_DLLSTUB_LIBS) $(TESTDLLSTUB_LIBNAME) \
   $(LOADABLE_SHRLIBNAME) $(INSTALL_LOADABLE_SHRLIBS)
 
 
@@ -145,7 +145,7 @@ build_clean:
 	$(ECHO) "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) \
 	$(LIBNAME) $(TESTLIBNAME) $(SHRLIBNAME) $(TESTSHRLIBNAME) \
-	$(DLL_LINK_LIBNAME) $(TESTDLL_LINK_LIBNAME) \
+	$(DLLSTUB_LIBNAME) $(TESTDLLSTUB_LIBNAME) \
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
@@ -204,27 +204,27 @@ $(OBJLIBNAME):%$(OBJ):
 
 %$(DEP):%.c
 	@$(RM) $@
-	@$(HDEPENDS_CMD)
+	$(HDEPENDS.c) $<
 
 %$(DEP):%.cc
 	@$(RM) $@
-	@$(HDEPENDS_CMD)
+	$(HDEPENDS.cpp) $<
 
 %$(DEP):%.cpp
 	@$(RM) $@
-	@$(HDEPENDS_CMD)
+	$(HDEPENDS.cpp) $<
 
 %$(OBJ): %.c
 	@$(RM) $@
-	$(COMPILE.c) $<
+	$(COMPILE.c) -c $<
 
 %$(OBJ): %.cc
 	@$(RM) $@
-	$(COMPILE.cpp) $<
+	$(COMPILE.cpp) -c $<
 
 %$(OBJ): %.cpp
 	@$(RM) $@
-	$(COMPILE.cpp) $<
+	$(COMPILE.cpp) -c $<
 
 # WIN95/NT resource compiler
 %$(RES): %.rc
@@ -269,53 +269,58 @@ $(LIB_BAF): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
 
 endif
 
+#---------------------------------------------------------------
+# Libraries, shared/DLL and stubs
+
 $(LIBNAME) $(TESTLIBNAME): $(LIBRARY_OBJS)
 
-$(DLL_LINK_LIBNAME) $(TESTDLL_LINK_LIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS) 
-
-$(LIBNAME) $(TESTLIBNAME) $(DLL_LINK_LIBNAME) $(TESTDLL_LINK_LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX):
+$(LIBNAME) $(TESTLIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX):
 	@$(RM) $@
 	$(ARCMD)
 ifneq ($(strip $(RANLIB)),)
 	$(RANLIB) $@
 endif # RANLIB
 
-$(SHRLIBNAME) $(TESTSHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
+$(SHRLIBNAME) $(DLLSTUB_LIBNAME) $(TESTSHRLIBNAME) $(TESTDLLSTUB_LIBNAME): \
+    $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
-$(SHRLIBNAME) $(TESTSHRLIBNAME):$(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
-	@$(RM) $@
+$(SHRLIBNAME) $(TESTSHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
+	$(RM) $@
 	$(LINK.shrlib)
-ifeq ($(SHRLIB_SUFFIX),.dll)
 	$(MT_DLL_COMMAND)
-endif
 
 $(LOADABLE_SHRLIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
-$(LOADABLE_SHRLIBNAME):$(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
+$(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
+#---------------------------------------------------------------
 # C++ munching for VxWorks
-%.nm : %$(EXE)
+
+%.nm: %$(EXE)
 	@$(RM) $@
 	$(NM) $<  > $@
 
-%.nm : %$(OBJ)
+%.nm: %$(OBJ)
 	@$(RM) $@
 	$(NM) $<  > $@
 
-%_ctdt.c : %.nm
+%_ctdt.c: %.nm
 	@$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
-$(MUNCHNAME):%$(MUNCH_SUFFIX) : $(MUNCH_DEPENDS) %$(EXE)
+$(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@
 	$(MUNCH_CMD)
 
-$(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
+$(OBJLIB_MUNCHNAME): %.munch: %_ctdt$(OBJ) %$(OBJ)
 	@$(RM) $@
 	$(MUNCH_CMD)
+
+#---------------------------------------------------------------
+# Automated testing
 
 runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
@@ -340,7 +345,8 @@ testspec: $(TESTSCRIPTS_$(BUILD_CLASS))
 	@$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
-## Install rules for BIN_INSTALLS and LIB_INSTALLS
+# Install rules for BIN_INSTALLS and LIB_INSTALLS
+
 define  BIN_INSTALLS_template
 $$(INSTALL_BIN)/$$(notdir $(1)) : $(1)
 	$(ECHO) "Installing $$(<F)"
@@ -362,19 +368,19 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: %
-	$(ECHO) "Installing created file $@"
+	$(ECHO) "Installing created executable $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
 $(INSTALL_BIN)/%: ../%
 	$(ECHO) "Installing script $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
-$(INSTALL_LIB)/%.a: %.a
+$(INSTALL_LIB)/%$(LIB_SUFFIX): %$(LIB_SUFFIX)
 	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
-$(INSTALL_LIB)/%.lib: %.lib
-	$(ECHO) "Installing library $@"
+$(INSTALL_LIB)/%$(DLLSTUB_SUFFIX): %$(DLLSTUB_SUFFIX)
+	$(ECHO) "Installing DLL stub library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
 $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %

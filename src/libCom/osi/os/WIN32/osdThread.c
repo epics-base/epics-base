@@ -97,7 +97,7 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
     6  /* allowed on >= W2k, but no #define supplied */
 };
 
-#if !defined(EPICS_DLL_NO)
+#if defined(EPICS_BUILD_DLL)
 BOOL WINAPI DllMain (
     HANDLE hModule, DWORD dwReason, LPVOID lpReserved )
 {

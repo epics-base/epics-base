@@ -56,8 +56,8 @@ LOADABLE_SHRLIB_LDFLAGS = -G -h $@ -z text
 OP_SYS_LDFLAGS += -z ignore -z combreloc -z lazyload
 
 # Header dependency file generation command
-HDEPENDS_METHOD = CFLAGS
-HDEPENDSCFLAGS = -xM1 > $*$(DEP)
+HDEPENDS_METHOD = COMP
+HDEPENDS_COMPFLAGS = -xM1 -xMF $@
 
 #--------------------------------------------------
 # Allow site overrides

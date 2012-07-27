@@ -20,8 +20,10 @@ RCCMD = windres $(INCLUDES) $< $@
 
 # No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
 SHRLIB_CFLAGS =
-SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
-LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
+SHRLIB_LDFLAGS = -shared \
+    -Wl,--out-implib,$(DLLSTUB_PREFIX)$*$(DLLSTUB_SUFFIX)
+LOADABLE_SHRLIB_LDFLAGS = -shared \
+    -Wl,--out-implib,$(DLLSTUB_PREFIX)$*$(DLLSTUB_SUFFIX)
 
 # Override linking with gcc library from CONFIG.gnuCommon
 GNU_LDLIBS_YES =

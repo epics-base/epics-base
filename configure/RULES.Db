@@ -21,11 +21,11 @@ vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbdflags
 
-# dbExpand
-INSTALL_DBDFLAGS += -I $(INSTALL_DBD)
-INSTALL_DBFLAGS += -I $(INSTALL_DB)
-DBDFLAGS = $(USR_DBDFLAGS) -I. -I.. -I$(COMMON_DIR) $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. -I$(COMMON_DIR) $(INSTALL_DBFLAGS) $(RELEASE_DBFLAGS)
+DBD_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DBD) $(RELEASE_DBD_DIRS)
+DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
+
+DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
 
 #####################################################
 # To allow os specific dbd files AND have the -j option work properly,
@@ -100,7 +100,7 @@ ACF_CPPFLAGS = $(ACF_CPPFLAGS_$(GNU))
 
 ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
                 $(SRC_INCLUDES) -I$(INSTALL_DB)
-ACFDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(subst -I,,$(ACF_INCLUDES)) $@ $<
+ACFDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(ACF_INCLUDES) $@ $<
 ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
@@ -112,10 +112,8 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBDS)))
 
-DBDDEPENDS_FLAGS = $(subst -I,,$(filter-out -S%,$(DBDFLAGS)))
+DBDDEPENDS_FLAGS = $(filter-out -S%,$(DBDFLAGS))
 DBDDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
-
-MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
 ##################################################### 
 
@@ -308,7 +306,7 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $< $(TEMPLATE_FILENAME) >> $(notdir $@)$(DEP)
+	@$(MKMF) -m$(notdir $@)$(DEP) $(DBFLAGS) $@ $< $(TEMPLATE_FILENAME)
 	echo "$@ : $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@ $*.tmp
@@ -317,7 +315,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	@$(RM) $(notdir $@)$(DEP)
-	@$(MAKEDBDEPENDS) $@ $^  >> $(notdir $@)$(DEP)
+	@$(MKMF) -m$(notdir $@)$(DEP) $(DBFLAGS) $@ $< $(TEMPLATE_FILENAME)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) $< > $*.tmp

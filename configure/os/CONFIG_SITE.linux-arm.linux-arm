@@ -1,0 +1,7 @@
+#  CONFIG_SITE.linux-arm.linux-arm
+#
+# $Revision-Id$
+#
+# Site specific definitions for native linux-arm builds
+#-------------------------------------------------------
+

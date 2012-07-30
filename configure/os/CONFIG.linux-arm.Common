@@ -1,0 +1,10 @@
+# CONFIG.linux-arm.Common
+#
+# $Revision-Id$
+#
+# Definitions for linux-arm host builds
+# Sites may override these definitions in CONFIG_SITE.linux-arm.Common
+#-------------------------------------------------------
+
+#Include definitions common to unix hosts
+include $(CONFIG)/os/CONFIG.UnixCommon.Common

@@ -17,7 +17,7 @@ ifeq ($(BUILD_CLASS),CROSS)
 
     # prefix of compiler tools
     CMPLR_SUFFIX =
-    CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
+    CMPLR_PREFIX = $(GNU_TARGET)-
 
     # Provide a link-time path for shared libraries
     SHRLIBDIR_RPATH_LDFLAGS_YES += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)

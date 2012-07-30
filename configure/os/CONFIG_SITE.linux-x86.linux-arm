@@ -5,8 +5,10 @@
 # Site specific definitions for linux-x86 host - linux-arm target builds
 #-------------------------------------------------------
 
-# Diamond:
+# Tools install path
 #GNU_DIR = /home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3
 
-# anj@aps:
-#GNU_DIR = /local/anj/cross-arm/gcc-3.4.5-glibc-2.3.6/arm-linux
+GNU_DIR = /net/phoebus/vw/zynq-2011.09
+
+# GNU crosscompiler target name
+GNU_TARGET = arm-xilinx-linux-gnueabi

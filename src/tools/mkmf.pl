@@ -42,7 +42,7 @@ getopts( 'dm:I@' ) || die "\aSyntax: $0 [-d] [-m dependsFile] [-I incdir [-I inc
 my $debug = $opt_d;
 my $depFile = $opt_m;
 my @incdirs = @opt_I;
-my $objFile = shift;
+my $objFile = shift or die "No target file argument";
 my @srcFiles=@ARGV;
 
 if( $debug ) {

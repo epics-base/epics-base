@@ -21,10 +21,10 @@ $app_top  = cwd();
 
 $bad_ident_chars = '[^0-9A-Za-z_]';
 
-&GetUser;		# Ensure we know who's in charge
 &readReleaseFiles("configure/RELEASE", \%release, \@apps);
 &expandRelease(\%release);
 &get_commandline_opts;	# Check command-line options
+&GetUser;		# Ensure we know who's in charge
 
 #
 # Declare two default callback routines for file copy plus two
@@ -164,7 +164,7 @@ exit 0;				# END OF SCRIPT
 # Get commandline options and check for validity
 #
 sub get_commandline_opts { #no args
-    getopts("a:b:dhilp:T:t:") or Cleanup(1);
+    getopts("a:b:dhilp:T:t:u:") or Cleanup(1);
     
     # Options help
     Cleanup(0) if $opt_h;
@@ -395,7 +395,7 @@ EOF
  -d       Enable debug messages
  -i       Specifies that ioc boot directories will be generated
  -l       List valid application types for this installation
-	  If this is specified the other options are not used
+          If this is specified the other options are not used
  -p app   Set the application name for use with -i
           If not specified, you will be prompted
  -T top   Set the template top directory (where the application templates are)
@@ -405,6 +405,7 @@ EOF
  -t type  Set the application type (-l for a list of valid types)
           If not specified, type is taken from environment
           If not found in environment, \"default\" is used
+ -u user  Set username; overrides OS defaults
 
 Environment:
 EPICS_MBA_DEF_APP_TYPE  Application type you want to use as default
@@ -419,10 +420,7 @@ EOF
 }
 
 sub GetUser {
-    # add to this list if new possibilities arise,
-    # currently it's UNIX and WIN32:
-    $user = $ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
-    $user =~ s/\s+//g;   # Bl**dy Windows stupidity...
+    $user = $opt_u || $ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
 
     unless ($user) {
 	print "Strange, I cannot figure out your user name!\n";
@@ -430,5 +428,6 @@ sub GetUser {
 	$user = <STDIN>;
 	chomp $user;
     }
+    $user =~ tr/-a-zA-Z0-9_:;[]<>//cd;  # Sanitize; these are the legal chars
     die "No user name" unless $user;
 }

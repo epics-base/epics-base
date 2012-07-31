@@ -19,33 +19,30 @@ vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.acf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 
-##################################################### dbdflags
+##################################################### dbflags dbdflags
 
-# dbExpand
-INSTALL_DBDFLAGS += -I $(INSTALL_DBD)
-INSTALL_DBFLAGS += -I $(INSTALL_DB)
-DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,. .. $(COMMON_DIR) $(SRC_DIRS)) $(INSTALL_DBDFLAGS) $(RELEASE_DBDFLAGS)
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) -I. -I.. -I$(COMMON_DIR) $(INSTALL_DBFLAGS) $(RELEASE_DBFLAGS)
+DBD_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DBD) $(RELEASE_DBD_DIRS)
+DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
 
-#####################################################
+DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
+
+##################################################### Targets
+
+# ---------------------------------------------------
 # To allow os specific dbd files AND have the -j option work properly,
-# add the following lines to your ioc application Makefile
-#
-# # These lines may be committed to RULES.Db for a future base release.
-# CROSS_TARGET_OS_TYPES = $(sort $(foreach target,  \
-#     $(CROSS_COMPILER_TARGET_ARCHS),$(firstword $(subst -, ,$(target)))))
-# DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
-#
-# and then add something like the following os specific lines
+
+CROSS_TARGET_OS_TYPES = $(sort $(foreach target,  \
+    $(EPICS_HOST_ARCH) $(CROSS_COMPILER_TARGET_ARCHS),$(firstword $(subst -, ,$(target)))))
+DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
+
+# Users add os specific dbd files to a Makefile as follows
 #
 # DBD_vxWorks += abcVx.dbd
 # DBD_RTEMS += abcRTEMS.dbd
 # DBD_solaris += abcSolaris.dbd
 #
-#####################################################  Targets
-
-# Following line added for backward compatibilty
-DBD += $(DBDNAME)
+# ---------------------------------------------------
 
 DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.dbd,%,$(DBDINC)))
 DBD += $(addsuffix .dbd,$(DBDINC_NAME))
@@ -102,7 +99,7 @@ ACF_CPPFLAGS = $(ACF_CPPFLAGS_$(GNU))
 
 ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
                 $(SRC_INCLUDES) -I$(INSTALL_DB)
-ACFDEPENDS_CMD = $(MKMF) -m $@ $(subst -I,,$(ACF_INCLUDES)) $(COMMONDEP_TARGET) $<
+ACFDEPENDS_CMD = $(MKMF) -m $@ $(ACF_INCLUDES) $(COMMONDEP_TARGET) $<
 ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
 #####################################################  dependancies
@@ -114,8 +111,6 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%,$(COMMON_DBS)) \
                     $(patsubst $(COMMON_DIR)/%,%, \
                     $(filter-out $(COMMON_DIR)/bpt%.dbd,$(COMMON_DBDS))))
-
-MAKEDBDEPENDS = $(PERL) $(TOOLS)/makeDbDepends.pl
 
 ##################################################### 
 
@@ -215,12 +210,13 @@ menu%.h$(DEP): menu%.dbd
 
 %.db$(RAW)$(DEP): %.substitutions
 	@$(RM) $@
-	$(MAKEDBDEPENDS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME) > $@
+	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME)
 	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
+	@echo "$@: $(TEMPLATE_FILENAME)" >> $@
 
 %.db$(RAW)$(DEP): %.template
 	@$(RM) $@
-	@$(MAKEDBDEPENDS) $(COMMONDEP_TARGET) $< > $@
+	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $<
 
 %.acf$(DEP): %.acs
 	@$(RM) $@

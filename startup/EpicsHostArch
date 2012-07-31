@@ -24,21 +24,24 @@ case $sysname in
     Linux )
         os=linux
         cpu=`uname -m`
-        case $cpu in i386 | i486 | i586 | i686 )
-            cpu=x86
-            ;;
+        case $cpu in
+            i386 | i486 | i586 | i686 )
+                cpu=x86 ;;
+            x86_64 )
+                ;; # $cpu is correct
+            armv6l | armv7l )
+                cpu=arm ;;
         esac
-        if [ ${cpu} = "x86_64" ]; then
-            cpu=x86_64
-        fi
         echo ${os}-${cpu}${suffix}
         ;;
     Darwin )
         os=darwin
         cpu=`uname -m`
         case $cpu in
-            "Power Macintosh") cpu=ppc ;;
-            i386 | x86_64 ) cpu=x86 ;;
+            "Power Macintosh")
+                cpu=ppc ;;
+            i386 | x86_64 )
+                cpu=x86 ;;
         esac
         echo ${os}-${cpu}${suffix}
         ;;

@@ -907,43 +907,52 @@ static void dbBreakBody(void)
     pgphentry->userPvt = pnewbrkTable;
 }
 
-static void dbRecordHead(char *recordType,char *name, int visible)
+static void dbRecordHead(char *recordType, char *name, int visible)
 {
-    DBENTRY		*pdbentry;
-    long		status;
+    char *badch;
+    DBENTRY *pdbentry;
+    long status;
 
+    badch = strpbrk(name, " \"'.$");
+    if (badch) {
+        epicsPrintf("Bad character '%c' in record name \"%s\"\n",
+            *badch, name);
+    }
     pdbentry = dbAllocEntry(pdbbase);
-    if(ellCount(&tempList))
-	yyerrorAbort("dbRecordHead: tempList not empty");
+    if (ellCount(&tempList))
+        yyerrorAbort("dbRecordHead: tempList not empty");
     allocTemp(pdbentry);
-    status = dbFindRecordType(pdbentry,recordType);
-    if(status) {
-	epicsPrintf("Record \"%s\" is of unknown type \"%s\" - ",
+    status = dbFindRecordType(pdbentry, recordType);
+    if (status) {
+        epicsPrintf("Record \"%s\" is of unknown type \"%s\" - ",
                     name, recordType);
-	yyerrorAbort(NULL);
-	return;
+        yyerrorAbort(NULL);
+        return;
     }
     /*Duplicate records ok if the same type */
     status = dbCreateRecord(pdbentry,name);
-    if(status==S_dbLib_recExists) {
-	if(strcmp(recordType,dbGetRecordTypeName(pdbentry))!=0) {
-	    epicsPrintf("Record %s already defined with different type %s\n",
-                        name, dbGetRecordTypeName(pdbentry));
+    if (status==S_dbLib_recExists) {
+        if (strcmp(recordType, dbGetRecordTypeName(pdbentry))!=0) {
+            epicsPrintf("Record \"%s\" already defined with different type "
+                "\"%s\"\n", name, dbGetRecordTypeName(pdbentry));
             yyerror(NULL);
-	    duplicate = TRUE;
-	    return;
-	} else if (dbRecordsOnceOnly) {
-	    epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is set)\n",
-                        name);
-	    yyerror(NULL);
-	    duplicate = TRUE;
-	}
-    } else if(status) {
-	epicsPrintf("Can't create record \"%s\" of type \"%s\"\n",
-                     name, recordType);
-	yyerrorAbort(NULL);
+            duplicate = TRUE;
+            return;
+        }
+        else if (dbRecordsOnceOnly) {
+            epicsPrintf("Record \"%s\" already defined (dbRecordsOnceOnly is "
+                "set)\n", name);
+            yyerror(NULL);
+            duplicate = TRUE;
+        }
     }
-    if(visible) dbVisibleRecord(pdbentry);
+    else if (status) {
+        epicsPrintf("Can't create record \"%s\" of type \"%s\"\n",
+                     name, recordType);
+        yyerrorAbort(NULL);
+    }
+    if (visible)
+        dbVisibleRecord(pdbentry);
 }
 
 static void dbRecordField(char *name,char *value)

@@ -675,9 +675,15 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep(double seconds)
     struct timespec remainingTime;
     double nanoseconds;
 
-    delayTime.tv_sec = (time_t)seconds;
-    nanoseconds = (seconds - (double)delayTime.tv_sec) *1e9;
-    delayTime.tv_nsec = (long)nanoseconds;
+    if (seconds > 0) {
+        delayTime.tv_sec = seconds;
+        nanoseconds = (seconds - delayTime.tv_sec) *1e9;
+        delayTime.tv_nsec = nanoseconds;
+    }
+    else {
+        delayTime.tv_sec = 0;
+        delayTime.tv_nsec = 0;
+    }
     while (nanosleep(&delayTime, &remainingTime) == -1 &&
            errno == EINTR)
         delayTime = remainingTime;

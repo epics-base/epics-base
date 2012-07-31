@@ -25,39 +25,39 @@
 #
 #-----------------------------------------------------------------------
 
-use Getopt::Std;
+use strict;
+
+use FindBin;
+use lib "$FindBin::Bin/../../lib/perl";
+
+use EPICS::Getopts;
 
 my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
 my $endline = $/;
 my %output;
 my @includes;
 
-use vars qw( $opt_d $opt_m );
-getopts( 'dm:' ) || die "\aSyntax: $0 [-d] [-m dependsFile] includeDirs objFile srcFile\n";
+our ( $opt_d, $opt_m, @opt_I);
+getopts( 'dm:I@' ) || die "\aSyntax: $0 [-d] [-m dependsFile] [-I incdir [-I incdir]...] objFile srcFile [srcfile]... \n";
 my $debug = $opt_d;
 my $depFile = $opt_m;
-
-print "$0 $version\n" if $debug;
-
-# directory list 
-my @dirs;
-my $i;
-foreach $i (0 .. $#ARGV-2) {
-    push @dirs, $ARGV[$i];
-}
-
-my $objFile = $ARGV[$#ARGV-1];
-my $srcFile = $ARGV[$#ARGV];
+my @incdirs = @opt_I;
+my $objFile = shift or die "No target file argument";
+my @srcFiles=@ARGV;
 
 if( $debug ) {
-   print "DEBUG: dirs= @dirs\n";
-   print "DEBUG: source= $srcFile\n";
-   print "DEBUG: object= $objFile\n";
+   print "$0 $version\n";
+   print "DEBUG: incdirs= @incdirs\n";
+   print "DEBUG: objFile= $objFile\n";
+   print "DEBUG: srcFiles= @srcFiles\n";
 }
 
 print "Generating dependencies for $objFile\n" if $debug;
-scanFile($srcFile);
-scanIncludesList();
+
+foreach my $srcFile (@srcFiles) {
+   scanFile($srcFile);
+   scanIncludesList();
+}
 
 $depFile = 'depends' unless $depFile;
 
@@ -118,7 +118,7 @@ sub scanIncludesList {
 }
 
 #-----------------------------------------
-# find filename on #include line
+# find filename on #include and file lines
 sub findNextIncName {
    my $line = shift;
    my $is_subst = shift;
@@ -130,6 +130,7 @@ sub findNextIncName {
    if ($is_subst) {
       return 0 if not $line =~ /^\s*file\s*([^\s{]*)/;
       $incname = $1;
+      $incname = substr $incname, 1, length($incname)-2 if $incname =~ /^".+?"$/;
    } else {
       return 0 if not $line =~ /^#?\s*include\s*('.*?'|<.*?>|".*?")/;
       $incname = substr $1, 1, length($1)-2;
@@ -139,7 +140,7 @@ sub findNextIncName {
    return $incname if -f $incname;
    return 0 if ( $incname =~ /^\// || $incname =~ /^\\/ );
 
-   foreach $dir ( @dirs ) {
+   foreach $dir ( @incdirs ) {
       chomp($dir);
       $incfile = "$dir/$incname";
       print "DEBUG: checking for $incname in $dir\n" if $debug;

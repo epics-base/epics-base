@@ -15,8 +15,8 @@ define  RELEASE_FLAGS_template
   RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include/compiler/$$(CMPLR_CLASS)))
   RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include/os/$$(OS_CLASS)))
   RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include))
-  RELEASE_DBDFLAGS += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/dbd))
-  RELEASE_DBFLAGS += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/db))
+  RELEASE_DBD_DIRS += $$(wildcard $$(strip $$($(1)))/dbd)
+  RELEASE_DB_DIRS += $$(wildcard $$(strip $$($(1)))/db)
   RELEASE_PERL_MODULE_DIRS += $$(wildcard $$($(1)_LIB)/perl)
 endef
 $(foreach top, $(RELEASE_TOPS), $(eval $(call RELEASE_FLAGS_template,$(top)) ))

@@ -11,8 +11,6 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-# $(filter-out $(STATIC_SRCS),$(dbCore_SRCS)) : $(COMMON_DIR)/dbCommon.h
-
 dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D -I ../db -o $(COMMONDEP_TARGET) $< > $@

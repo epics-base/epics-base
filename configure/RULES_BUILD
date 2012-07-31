@@ -379,9 +379,11 @@ $(INSTALL_LIB)/%$(LIB_SUFFIX): %$(LIB_SUFFIX)
 	$(ECHO) "Installing library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
 
+ifneq ($(LIB_SUFFIX),$(DLLSTUB_SUFFIX))
 $(INSTALL_LIB)/%$(DLLSTUB_SUFFIX): %$(DLLSTUB_SUFFIX)
 	$(ECHO) "Installing DLL stub library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_LIB)
+endif # SUFFIX
 
 $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing shared library $@"

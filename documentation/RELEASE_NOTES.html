@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.14.x and 3.15.0.x</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Cross-builds targeting win32-x86-mingw</h3>
+
+<p>Some Linux distributions now package the MinGW cross-compiler which makes it
+possible to cross-build the win32-x86-mingw target from a linux-x86 host. Build
+configuration files for this combination are now included; adjust the settings
+in configure/os/CONFIG_SITE.linux-x86.win32-x86-mingw and add win32-x86-mingw to
+the CROSS_COMPILER_TARGET_ARCHS variable in configure/CONFIG_SITE or in
+configure/os/CONFIG_SITE.linux-x86.Common.</p>
+
 <h3>Architecture win32-x86-cygwin Removed</h3>
 
 <p>The ability to compile non-cygwin binaries using the Cygwin build tools is no

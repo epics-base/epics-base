@@ -1,27 +1,27 @@
 #!/usr/bin/perl
 #*************************************************************************
 # Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #-----------------------------------------------------------------------
-# mkmf.pl: Perl script to create #include file dependancies
+# mkmf.pl: Perl script to create #include file dependencies
 #
 # Limitations:
 #
 # 1) Only handles the #include preprocessor command. Does not understand
 #    the preproceeor commands #define, #if, #ifdef, #ifndef, ...
 # 2) Does not know a compilers internal macro definitions e.g.
-#    __cplusplus, __STDC__
+#    __cplusplus, __STDC__, __GNUC__
 # 3) Does not keep track of the macros defined in #include files so can't
 #    do #ifdefs #ifndef ...
 # 4) Does not know where system include files are located
-# 5) Uses only #include lines with single or double quoted file names
+# 5) Accepts #include lines with single, double or angle-quoted file names
+# 6) Accepts -Mxxx options for compatibility with msi, but ignores them
 #
 #-----------------------------------------------------------------------
 
@@ -32,13 +32,14 @@ use lib "$FindBin::Bin/../../lib/perl";
 
 use EPICS::Getopts;
 
-my $version = 'mkmf.pl,v 1.5 2002/03/25 21:33:24 jba Exp $ ';
+my $tool = 'mkmf.pl';
 my $endline = $/;
 my %output;
 my @includes;
 
-our ( $opt_d, $opt_m, @opt_I);
-getopts( 'dm:I@' ) || die "\aSyntax: $0 [-d] [-m dependsFile] [-I incdir [-I incdir]...] objFile srcFile [srcfile]... \n";
+our ( $opt_d, $opt_m, @opt_I, @opt_M);
+getopts( 'dm:I@M@' ) ||
+    die "\aSyntax: $0 [-d] [-m dependsFile] [-I incdir] objFile srcFile [srcfile]... \n";
 my $debug = $opt_d;
 my $depFile = $opt_m;
 my @incdirs = @opt_I;
@@ -46,7 +47,7 @@ my $objFile = shift or die "No target file argument";
 my @srcFiles=@ARGV;
 
 if( $debug ) {
-   print "$0 $version\n";
+   print "$0 $tool\n";
    print "DEBUG: incdirs= @incdirs\n";
    print "DEBUG: objFile= $objFile\n";
    print "DEBUG: srcFiles= @srcFiles\n";
@@ -80,7 +81,7 @@ sub printList{
 
    my $old_handle = select(DEPENDS);
 
-   print "# DO NOT EDIT: This file created by $version\n\n";
+   print "# DO NOT EDIT: This file created by $tool\n\n";
 
    foreach $file (@includes) {
        print "$objFile : $file\n";

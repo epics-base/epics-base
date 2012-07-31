@@ -308,6 +308,7 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	@$(RM) $(notdir $@)$(DEP)
 	@$(MKMF) -m$(notdir $@)$(DEP) $(DBFLAGS) $@ $< $(TEMPLATE_FILENAME)
 	echo "$@ : $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
+	echo "$(notdir $@)$(DEP): $(TEMPLATE_FILENAME)" >> $(notdir $@)$(DEP)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp

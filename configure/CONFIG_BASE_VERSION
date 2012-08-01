@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2011 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -17,7 +17,8 @@
 # EPICS_SITE_VERSION is defined in CONFIG_SITE for sites that want a local
 # version number to be included in the reported version string.
 
-BASE_3_14=YES
+BASE_3_14 = YES
+BASE_3_15 = YES
 
 # EPICS_VERSION must be a number >0 and <256
 EPICS_VERSION = 3
@@ -30,10 +31,10 @@ EPICS_MODIFICATION = 0
 
 # EPICS_PATCH_LEVEL must be a number  (win32 resource file requirement)
 # Not included if zero
-EPICS_PATCH_LEVEL = 0
+EPICS_PATCH_LEVEL = 1
 
 # This will end in -DEV between official releases
-EPICS_DEV_SNAPSHOT=-DEV
+#EPICS_DEV_SNAPSHOT=-DEV
 #EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2
@@ -42,7 +43,7 @@ EPICS_DEV_SNAPSHOT=-DEV
 #EPICS_DEV_SNAPSHOT=-rc1-DEV
 #EPICS_DEV_SNAPSHOT=-rc2
 #EPICS_DEV_SNAPSHOT=-rc2-DEV
-#EPICS_DEV_SNAPSHOT=
+EPICS_DEV_SNAPSHOT=
 
 # No changes should be needed below here
 
@@ -59,8 +60,3 @@ EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_DEV_SNAPSHOT)$(EPICS_SITE_VST
 EPICS_VERSION_STRING="EPICS Version $(EPICS_VERSION_NUMBER)"
 
 COMMIT_DATE="\$$Date$$"
-
-# Provide these in case anyone is still using the old names
-EPICS_CVS_SNAPSHOT=$(EPICS_DEV_SNAPSHOT)
-CVS_DATE=$(COMMIT_DATE)
-CVS_TAG="-no-tags-"

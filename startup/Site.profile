@@ -86,33 +86,3 @@ PATH="${PATH}:${EPICS_EXTENSIONS}/bin/${EPICS_HOST_ARCH}"
 # End of set R3.14 environment variables
 
 #---------------------------------------------------------------
-#
-## Start of set pre R3.14 environment variables
-#
-## Time service:
-## EPICS_TS_MIN_WEST the local time difference from GMT.
-#EPICS_TS_MIN_WEST=360
-#export EPICS_TS_MIN_WEST
-#
-#HOST_ARCH=`"${MY_EPICS_BASE}"/startup/HostArch`
-#export HOST_ARCH
-#
-## Allow private versions of base
-#if [ -n "${EPICS_BASE_PVT}" ] ; then
-#	if [ -d "${EPICS_BASE_PVT}/bin/${HOST_ARCH}" ]; then
-#		PATH="${PATH}:${EPICS_BASE_PVT}/bin/${HOST_ARCH}"
-#	fi
-#fi
-#
-## Allow private versions of extensions
-#if [ -n "${EPICS_EXTENSIONS_PVT}" ] ; then
-#	if [ -d "${EPICS_EXTENSIONS_PVT}/bin/${HOST_ARCH}" ]; then
-#		PATH="${PATH}:${EPICS_EXTENSIONS_PVT}/bin/${HOST_ARCH}"
-#	fi
-#fi
-#
-#PATH="${PATH}:${EPICS_EXTENSIONS}/lib/${HOST_ARCH}"
-#
-# End of set pre R3.14 environment variables
-
-#---------------------------------------------------------------

@@ -198,7 +198,6 @@
          RULES_DIRS            Definitions and rules for building subdirectories
          RULES_EXPAND
          RULES_FILE_TYPE
-         RULES_JAVA            Definitions and rules for java jars and classes
          RULES_TARGET
          RULES_TOP             Rules specific to a <top> dir (uninstall and tar)
          Sample.Makefile       Sample makefile with comments

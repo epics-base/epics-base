@@ -74,8 +74,6 @@ all:	install
 
 -include $(CONFIG)/RULES.Db
 
--include $(CONFIG)/RULES_JAVA
-
 ifneq (,$(strip $(HDEPENDS_FILES)))
 $(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
 -include $(HDEPENDS_FILES)

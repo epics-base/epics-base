@@ -74,7 +74,6 @@ INSTALL_TEMPLATES           = $(INSTALL_LOCATION)/templates
 INSTALL_DBD                 = $(INSTALL_LOCATION)/dbd
 INSTALL_DB                  = $(INSTALL_LOCATION)/db
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
-INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
 #Directory for OS independant build created files
 COMMON_DIR = ../O.Common
@@ -162,9 +161,6 @@ TESTPRODNAME = $(addsuffix $(EXE),$(basename $(TESTPROD)))
 
 SHRLIBNAME = $(SHRLIBNAME_$(SHARED_LIBRARIES))
 TESTSHRLIBNAME = $(TESTSHRLIBNAME_$(SHARED_LIBRARIES))
-
-JAVA =
-JAR =
 
 #--------------------------------------------------
 # obj files

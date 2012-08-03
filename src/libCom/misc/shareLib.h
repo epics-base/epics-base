@@ -139,8 +139,10 @@
 #elif __GNUC__ >= 4
 /*
  * See http://gcc.gnu.org/wiki/Visibility
- * For these to have any effect, the compiler and linker must be given the flag
+ * For these to work, gcc must be given the flag
  *     -fvisibility=hidden
+ * and g++ the flags
+ *     -fvisibility=hidden -fvisibility-inlines-hidden
  */
 
 #   define epicsShareExtern __attribute__ ((visibility("default"))) extern

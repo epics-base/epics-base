@@ -41,7 +41,7 @@
 void camsgtask ( void *pParm )
 {
     struct client *client = (struct client *) pParm;
-    int nchars;
+    osiSockIoctl_t nchars;
     int status;
 
     casAttachThreadToClient ( client );

@@ -1222,6 +1222,13 @@ PROTOTYPES: DISABLE
 
 BOOT:
     p5_ctx = Perl_get_context();
+    /* Ensure that the generated boot_Cap5 function is visible
+     * outside of the libCap5.so shared library when compiling
+     * with GCC4+ and -fvisibility=hidden is used.
+     */
+    #if __GNUC__ >= 4
+    #pragma GCC visibility push(default)
+    #endif
 
 
 SV *

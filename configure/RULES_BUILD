@@ -320,10 +320,10 @@ $(OBJLIB_MUNCHNAME): %.munch: %_ctdt$(OBJ) %$(OBJ)
 #---------------------------------------------------------------
 # Automated testing
 
-runtests: $(TESTSCRIPTS_$(BUILD_CLASS))
+runtests: $(TESTSCRIPTS)
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 
-testspec: $(TESTSCRIPTS_$(BUILD_CLASS))
+testspec: $(TESTSCRIPTS)
 	@$(RM) $@
 	@echo OS-class: $(OS_CLASS) > $@
 	@echo Target-arch: $(T_A) >> $@

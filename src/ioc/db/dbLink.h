@@ -21,6 +21,10 @@
 #include "epicsTypes.h"
 #include "epicsTime.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct lset {
     long (*initLink)(struct link *plink, short dbfType);
     long (*addLink)(struct link *plink, short dbfType);
@@ -77,5 +81,8 @@ epicsShareFunc long dbPutLink(struct link *, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* INC_dbLink_H */

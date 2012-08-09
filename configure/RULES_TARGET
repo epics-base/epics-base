@@ -119,6 +119,7 @@ $(foreach target, $(LIBRARY), \
 #-----------------------------------------------------------------------
 
 define LIBRARY3_template
+$(1)_DIR = .
 TESTBUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
 endef
 

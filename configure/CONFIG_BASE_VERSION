@@ -17,7 +17,9 @@
 # EPICS_SITE_VERSION is defined in CONFIG_SITE for sites that want a local
 # version number to be included in the reported version string.
 
-BASE_3_14 = YES
+# In 3.15 we still define BASE_3_14 so "ifdef BASE_3_14" means
+# 3.14 or later, but "ifeq ($(BASE_3_14),YES)" means 3.14 only.
+BASE_3_14 = NO
 BASE_3_15 = YES
 
 # EPICS_VERSION must be a number >0 and <256

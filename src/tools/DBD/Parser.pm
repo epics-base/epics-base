@@ -16,12 +16,6 @@ use DBD::Registrar;
 use DBD::Function;
 use DBD::Variable;
 
-my $RXnam = qr/[a-zA-Z0-9_\-:.<>;]+/o;
-my $RXnum = qr/-? (?: \d+ ) | (?: \d* \. \d+ ) (?: [eE] [-+]? \d+ )?/ox;
-my $RXdqs = qr/" (?: [^"] | \\" )* "/ox;
-my $RXsqs = qr/' (?: [^'] | \\' )* '/ox;
-my $string = qr/ ( $RXnam | $RXnum | $RXdqs | $RXsqs ) /ox;
-
 our $debug=0;
 
 sub ParseDBD {
@@ -29,40 +23,40 @@ sub ParseDBD {
     $_ = shift;
     while (1) {
         parseCommon();
-        if (m/\G menu \s* \( \s* $string \s* \) \s* \{/oxgc) {
+        if (m/\G menu \s* \( \s* $RXstr \s* \) \s* \{/oxgc) {
             print "Menu: $1\n" if $debug;
             parse_menu($dbd, $1);
         }
-        elsif (m/\G driver \s* \( \s* $string \s* \)/oxgc) {
+        elsif (m/\G driver \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Driver: $1\n" if $debug;
             $dbd->add(DBD::Driver->new($1));
         }
-        elsif (m/\G registrar \s* \( \s* $string \s* \)/oxgc) {
+        elsif (m/\G registrar \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Registrar: $1\n" if $debug;
             $dbd->add(DBD::Registrar->new($1));
         }
-        elsif (m/\G function \s* \( \s* $string \s* \)/oxgc) {
+        elsif (m/\G function \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Function: $1\n" if $debug;
             $dbd->add(DBD::Function->new($1));
         }
-        elsif (m/\G breaktable \s* \( \s* $string \s* \) \s* \{/oxgc) {
+        elsif (m/\G breaktable \s* \( \s* $RXstr \s* \) \s* \{/oxgc) {
             print "Breaktable: $1\n" if $debug;
             parse_breaktable($dbd, $1);
         }
-        elsif (m/\G recordtype \s* \( \s* $string \s* \) \s* \{/oxgc) {
+        elsif (m/\G recordtype \s* \( \s* $RXstr \s* \) \s* \{/oxgc) {
             print "Recordtype: $1\n" if $debug;
             parse_recordtype($dbd, $1);
         }
-        elsif (m/\G variable \s* \( \s* $string \s* \)/oxgc) {
+        elsif (m/\G variable \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Variable: $1\n" if $debug;
             $dbd->add(DBD::Variable->new($1, 'int'));
         }
-        elsif (m/\G variable \s* \( \s* $string \s* , \s* $string \s* \)/oxgc) {
+        elsif (m/\G variable \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print "Variable: $1, $2\n" if $debug;
             $dbd->add(DBD::Variable->new($1, $2));
         }
-        elsif (m/\G device \s* \( \s* $string \s* , \s* $string \s* ,
-                          \s* $string \s* , \s*$string \s* \)/oxgc) {
+        elsif (m/\G device \s* \( \s* $RXstr \s* , \s* $RXstr \s* ,
+                          \s* $RXstr \s* , \s*$RXstr \s* \)/oxgc) {
             print "Device: $1, $2, $3, $4\n" if $debug;
             my $rtyp = $dbd->recordtype($1);
             dieContext("Unknown record type '$1'") unless defined $rtyp;
@@ -104,7 +98,7 @@ sub parse_menu {
     my $menu = DBD::Menu->new($name);
     while(1) {
         parseCommon();
-        if (m/\G choice \s* \( \s* $string \s* , \s* $string \s* \)/oxgc) {
+        if (m/\G choice \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Menu-Choice: $1, $2\n" if $debug;
             $menu->add_choice($1, $2);
         }
@@ -126,11 +120,11 @@ sub parse_breaktable {
     my $bt = DBD::Breaktable->new($name);
     while(1) {
         parseCommon();
-        if (m/\G point\s* \(\s* $string \s* , \s* $string \s* \)/oxgc) {
+        if (m/\G point\s* \(\s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Breaktable-Point: $1, $2\n" if $debug;
             $bt->add_point($1, $2);
         }
-        elsif (m/\G $string \s* (?: , \s*)? $string (?: \s* ,)?/oxgc) {
+        elsif (m/\G $RXstr \s* (?: , \s*)? $RXstr (?: \s* ,)?/oxgc) {
             print " Breaktable-Data: $1, $2\n" if $debug;
             $bt->add_point($1, $2);
         }
@@ -152,7 +146,7 @@ sub parse_recordtype {
     my $rtyp = DBD::Recordtype->new($name);
     while(1) {
         parseCommon();
-        if (m/\G field \s* \( \s* $string \s* , \s* $string \s* \) \s* \{/oxgc) {
+        if (m/\G field \s* \( \s* $RXstr \s* , \s* $RXstr \s* \) \s* \{/oxgc) {
             print " Recordtype-Field: $1, $2\n" if $debug;
             parse_field($rtyp, $1, $2);
         }
@@ -178,7 +172,7 @@ sub parse_field {
     pushContext("field($name, $field_type)");
     while(1) {
         parseCommon();
-        if (m/\G (\w+) \s* \( \s* $string \s* \)/oxgc) {
+        if (m/\G (\w+) \s* \( \s* $RXstr \s* \)/oxgc) {
             print "  Field-Attribute: $1, $2\n" if $debug;
             $fld->add_attribute($1, $2);
         }

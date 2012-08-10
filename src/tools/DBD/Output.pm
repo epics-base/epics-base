@@ -48,7 +48,7 @@ sub OutputRecordtypes {
             printf $out "    field(%s, %s) {\n",
                 $field->name, $field->dbf_type;
             while (my ($attr, $val) = each %{$field->attributes}) {
-                $val = "\"$val\"" if $val !~ m/^[a-zA-Z0-9_\-+:.\[\]<>;]*$/;
+                $val = "\"$val\"" if $val !~ m/^$RXname$/ox;
                 printf $out "        %s(%s)\n", $attr, $val;
             }
             print $out "    }\n";

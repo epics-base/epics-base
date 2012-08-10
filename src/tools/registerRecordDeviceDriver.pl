@@ -21,15 +21,25 @@ use EPICS::Path;
 use EPICS::Getopts;
 use Text::Wrap;
 
-getopts('I@') or
-    die "Usage: registerRecordDeviceDriver [-I dir] in.dbd subroutinename [TOP]";
+our ($opt_D, @opt_I, $opt_o);
 
-my @path = map { split /[:;]/ } @EPICS::Getopts::opt_I; # FIXME: Broken on Win32?
+getopts('Do:I@') or
+    die "Usage: registerRecordDeviceDriver [-D] [-o out.c] [-I dir] in.dbd subname [TOP]";
+
+my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 
 my ($file, $subname, $bldTop) = @ARGV;
 
 my $dbd = DBD->new();
 &ParseDBD($dbd, &Readfile($file, "", \@path));
+
+if ($opt_D) {   # Output dependencies only
+    my %filecount;
+    my @uniqfiles = grep { not $filecount{$_}++ } @inputfiles;
+    print "$opt_o: ", join(" \\\n    ", @uniqfiles), "\n\n";
+    print map { "$_:\n" } @uniqfiles;
+    exit 0;
+}
 
 $Text::Wrap::columns = 75;
 
@@ -41,10 +51,15 @@ $subname =~ s/$c_bad_ident_chars/_/g;
 $bldTop = LocalPath(UnixPath($bldTop));
 $bldTop =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
 
+# Create output file
+my $out;
+if ($opt_o) {
+    open $out, '>', $opt_o or die "Can't create $opt_o: $!\n";
+} else {
+    $out = *STDOUT;
+}
 
-# Start of generated file
-
-print << "END" ;
+print $out (<< "END");
 /* THIS IS A GENERATED FILE. DO NOT EDIT! */
 /* Generated from $file */
 
@@ -65,25 +80,25 @@ if (%rectypes) {
     my @rtypnames = sort keys %rectypes;
 
     # Declare the record support entry tables
-    print wrap('epicsShareExtern rset ', '    ',
+    print $out wrap('epicsShareExtern rset ', '    ',
         join(', ', map {"*pvar_rset_${_}RSET"} @rtypnames)), ";\n\n";
 
     # Declare the RecordSizeOffset functions
-    print "typedef int (*rso_func)(dbRecordType *pdbRecordType);\n";
-    print wrap('epicsShareExtern rso_func ', '    ',
+    print $out "typedef int (*rso_func)(dbRecordType *pdbRecordType);\n";
+    print $out wrap('epicsShareExtern rso_func ', '    ',
         join(', ', map {"pvar_func_${_}RecordSizeOffset"} @rtypnames)), ";\n\n";
 
     # List of record type names
-    print "static const char * const recordTypeNames[] = {\n";
-    print wrap('    ', '    ', join(', ', map {"\"$_\""} @rtypnames));
-    print "\n};\n\n";
+    print $out "static const char * const recordTypeNames[] = {\n";
+    print $out wrap('    ', '    ', join(', ', map {"\"$_\""} @rtypnames));
+    print $out "\n};\n\n";
 
     # List of pointers to each RSET and RecordSizeOffset function
-    print "static const recordTypeLocation rtl[] = {\n";
-    print join(",\n", map {
+    print $out "static const recordTypeLocation rtl[] = {\n";
+    print $out join(",\n", map {
             "    {pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
         } @rtypnames);
-    print "\n};\n\n";
+    print $out "\n};\n\n";
 
     for my $rtype (@rtypnames) {
         my @devices = $rectypes{$rtype}->devices;
@@ -95,18 +110,18 @@ if (%rectypes) {
 
     if (@dsets) {
         # Declare the device support entry tables
-        print wrap('epicsShareExtern dset ', '    ',
+        print $out wrap('epicsShareExtern dset ', '    ',
             join(', ', map {"*pvar_dset_$_"} @dsets)), ";\n\n";
 
         # List of dset names
-        print "static const char * const deviceSupportNames[] = {\n";
-        print wrap('    ', '    ', join(', ', map {"\"$_\""} @dsets));
-        print "\n};\n\n";
+        print $out "static const char * const deviceSupportNames[] = {\n";
+        print $out wrap('    ', '    ', join(', ', map {"\"$_\""} @dsets));
+        print $out "\n};\n\n";
 
         # List of pointers to each dset
-        print "static const dset * const devsl[] = {\n";
-        print wrap('    ', '    ', join(", ", map {"pvar_dset_$_"} @dsets));
-        print "\n};\n\n";
+        print $out "static const dset * const devsl[] = {\n";
+        print $out wrap('    ', '    ', join(", ", map {"pvar_dset_$_"} @dsets));
+        print $out "\n};\n\n";
     }
 }
 
@@ -115,18 +130,18 @@ if (%drivers) {
     my @drivers = sort keys %drivers;
 
     # Declare the driver entry tables
-    print wrap('epicsShareExtern drvet ', '    ',
+    print $out wrap('epicsShareExtern drvet ', '    ',
         join(', ', map {"*pvar_drvet_$_"} @drivers)), ";\n\n";
 
     # List of drvet names
-    print "static const char *driverSupportNames[] = {\n";
-    print wrap('    ', '    ', join(', ', map {"\"$_\""} @drivers));
-    print "};\n\n";
+    print $out "static const char *driverSupportNames[] = {\n";
+    print $out wrap('    ', '    ', join(', ', map {"\"$_\""} @drivers));
+    print $out "};\n\n";
 
     # List of pointers to each drvet
-    print "static struct drvet *drvsl[] = {\n";
-    print join(",\n", map {"    pvar_drvet_$_"} @drivers);
-    print "};\n\n";
+    print $out "static struct drvet *drvsl[] = {\n";
+    print $out join(",\n", map {"    pvar_drvet_$_"} @drivers);
+    print $out "};\n\n";
 }
 
 my @registrars = sort keys %{$dbd->registrars};
@@ -134,8 +149,8 @@ my @functions = sort keys %{$dbd->functions};
 push @registrars, map {"register_func_$_"} @functions;
 if (@registrars) {
     # Declare the registrar functions
-    print "typedef void (*reg_func)(void);\n";
-    print wrap('epicsShareExtern reg_func ', '    ',
+    print $out "typedef void (*reg_func)(void);\n";
+    print $out wrap('epicsShareExtern reg_func ', '    ',
         join(', ', map {"pvar_func_$_"} @registrars)), ";\n\n";
 }
 
@@ -146,28 +161,28 @@ if (%variables) {
     # Declare the variables
     for my $var (@varnames) {
         my $vtype = $variables{$var}->var_type;
-        print "epicsShareExtern $vtype * const pvar_${vtype}_$var;\n";
+        print $out "epicsShareExtern $vtype * const pvar_${vtype}_$var;\n";
     }
 
     # Generate the structure for registering variables with iocsh
-    print "\nstatic struct iocshVarDef vardefs[] = {\n";
+    print $out "\nstatic struct iocshVarDef vardefs[] = {\n";
     for my $var (@varnames) {
         my $vtype = $variables{$var}->var_type;
         my $itype = $variables{$var}->iocshArg_type;
-        print "    {\"$var\", $itype, pvar_${vtype}_$var},\n";
+        print $out "    {\"$var\", $itype, pvar_${vtype}_$var},\n";
     }
-    print "    {NULL, iocshArgInt, NULL}\n};\n\n";
+    print $out "    {NULL, iocshArgInt, NULL}\n};\n\n";
 }
 
 # Now for actual registration routine
 
-print << "END";
+print $out (<< "END");
 int $subname(DBBASE *pbase)
 {
     static int executed = 0;
 END
 
-print << "END" if $bldTop ne '';
+print $out (<< "END") if $bldTop ne '';
     const char *bldTop = "$bldTop";
     const char *envTop = getenv("TOP");
 
@@ -179,7 +194,7 @@ print << "END" if $bldTop ne '';
 
 END
 
-print << 'END';
+print $out (<< 'END');
     if (!pbase) {
         printf("pdbbase is NULL; you must load a DBD file first.\n");
         return -1;
@@ -192,27 +207,27 @@ print << 'END';
 
 END
 
-print << 'END' if %rectypes;
+print $out (<< 'END') if %rectypes;
     registerRecordTypes(pbase, NELEMENTS(rtl), recordTypeNames, rtl);
 END
 
-print << 'END' if @dsets;
+print $out (<< 'END') if @dsets;
     registerDevices(pbase, NELEMENTS(devsl), deviceSupportNames, devsl);
 END
 
-print << 'END' if %drivers;
+print $out (<< 'END') if %drivers;
     registerDrivers(pbase, NELEMENTS(drvsl), driverSupportNames, drvsl);
 END
 
-print << "END" for @registrars;
+print $out (<< "END") for @registrars;
     pvar_func_$_();
 END
 
-print << 'END' if %variables;
+print $out (<< 'END') if %variables;
     iocshRegisterVariable(vardefs);
 END
 
-print << "END";
+print $out (<< "END");
     return 0;
 }
 
@@ -239,3 +254,8 @@ static int Registration() {
 
 static int done = Registration();
 END
+
+if ($opt_o) {
+    close $out or die "Closing $opt_o failed: $!\n";
+}
+exit 0;

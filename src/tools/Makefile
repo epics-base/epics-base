@@ -50,6 +50,7 @@ PERL_SCRIPTS += dbdToMenuH.pl
 PERL_SCRIPTS += dbdToRecordtypeH.pl
 PERL_SCRIPTS += dbdExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
+PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
 include $(TOP)/configure/RULES
  

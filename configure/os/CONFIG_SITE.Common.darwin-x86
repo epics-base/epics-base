@@ -10,14 +10,14 @@
 #   i386
 #   x86_64  - Needs MacOS 10.4 with the Universal SDK, or 10.5 and later
 
-ARCH_CLASS = i386
-#ARCH_CLASS = x86_64
+#ARCH_CLASS = i386
+ARCH_CLASS = x86_64
 #ARCH_CLASS = i386 x86_64
 
 #
-# Uncomment the followings lines to build with CLANG instead of GCC.
+# Comment out the followings 3 lines to build with GCC instead of CLANG.
 #
-#CC             = clang
-#CCC            = clang++
-#GNU_LDLIBS_YES =
+CC  = clang
+CCC = clang++
+GNU = NO
 

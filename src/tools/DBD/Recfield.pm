@@ -3,6 +3,7 @@ use DBD::Base;
 @ISA = qw(DBD::Base);
 
 # The hash value is a regexp that matches all legal values of this field
+# NB: The regexps are not currently used, and are wrong for some types.
 our %field_types = (
     DBF_STRING   => qr/.{0,40}/,
     DBF_CHAR     => $RXintx,
@@ -49,7 +50,7 @@ sub new {
 sub init {
     my ($this, $name, $type) = @_;
     unquote $type;
-    $this->SUPER::init($name, "record field name");
+    $this->SUPER::init($name, "record field");
     dieContext("Illegal field type '$type', valid field types are:",
         sort keys %field_types) unless exists $field_types{$type};
     $this->{DBF_TYPE} = $type;
@@ -89,6 +90,10 @@ sub attributes {
 sub attribute {
     my ($this, $attr) = @_;
     return $this->attributes->{$attr};
+}
+
+sub equals {
+    dieContext("Record field objects are not comparable");
 }
 
 sub check_valid {

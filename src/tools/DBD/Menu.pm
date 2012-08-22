@@ -4,7 +4,7 @@ use DBD::Base;
 
 sub init {
     my ($this, $name) = @_;
-    $this->SUPER::init($name, "menu name");
+    $this->SUPER::init($name, "menu");
     $this->{CHOICE_LIST} = [];
     $this->{CHOICE_INDEX} = {};
     return $this;
@@ -37,6 +37,13 @@ sub legal_choice {
     my ($this, $value) = @_;
     unquote $value;
     return exists $this->{CHOICE_INDEX}->{$value};
+}
+
+sub equals {
+    my ($a, $b) = @_;
+    return $a->SUPER::equals($b)
+        && join(',', map "$_->[0]:$_->[1]", @{$a->{CHOICE_LIST}})
+        eq join(',', map "$_->[0]:$_->[1]", @{$b->{CHOICE_LIST}});
 }
 
 sub toDeclaration {

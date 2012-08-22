@@ -34,19 +34,19 @@ sub pushContext {
 
 sub popContext {
     my ($ctxt) = @_;
-    my ($pop) = shift @context;
+    my $pop = shift @context;
     ($ctxt ne $pop) and
-        dieContext("Exiting context \"$ctxt\", found \"$pop\" instead.",
-            "\tBraces must close in the same file they were opened.");
+        dieContext("Leaving context \"$ctxt\", found \"$pop\" instead.",
+            "\tBraces must be closed in the same file they open in.");
 }
 
 sub dieContext {
-    my ($msg) = join "\n\t", @_;
+    my $msg = join "\n\t", @_;
     die "$msg\nContext: ", join(' in ', @context), "\n";
 }
 
 sub warnContext {
-    my ($msg) = join "\n\t", @_;
+    my $msg = join "\n\t", @_;
     print STDERR "$msg\nContext: ", join(' in ', @context), "\n";
 }
 
@@ -77,7 +77,8 @@ sub is_reserved {
 sub identifier {
     my ($id, $what) = @_;
     unquote $id;
-    confess "$what undefined!" unless defined $id;
+    confess "DBD::Base::identifier: $what undefined!"
+        unless defined $id;
     $id =~ m/^$RXident$/o or dieContext("Illegal $what '$id'",
         "Identifiers are used in C code so must start with a letter, followed",
         "by letters, digits and/or underscore characters only.");
@@ -114,12 +115,23 @@ sub new {
 
 sub init {
     my ($this, $name, $what) = @_;
-    $this->{NAME} = identifier($name, $what);
+    $this->{NAME} = identifier($name, "$what name");
+    $this->{WHAT} = $what;
     return $this;
 }
 
 sub name {
     return shift->{NAME};
+}
+
+sub what {
+    return shift->{WHAT};
+}
+
+sub equals {
+    my ($a, $b) = @_;
+    return $a->{NAME} eq $b->{NAME}
+        && $a->{WHAT} eq $b->{WHAT};
 }
 
 1;

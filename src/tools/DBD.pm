@@ -29,21 +29,26 @@ sub new {
 
 sub add {
     my ($this, $obj) = @_;
-    my $obj_class;
-    foreach (keys %{$this}) {
-        next unless m/^DBD::/;
-        $obj_class = $_ and last if $obj->isa($_);
-    }
-    confess "Unknown object type"
-        unless defined $obj_class;
+    my $obj_class = ref $obj;
+    confess "DBD::add: Unknown DBD object type '$obj_class'"
+        unless $obj_class =~ m/^DBD::/
+        and exists $this->{$obj_class};
     my $obj_name = $obj->name;
-    dieContext("Duplicate name '$obj_name'")
-        if exists $this->{$obj_class}->{$obj_name};
-    $this->{$obj_class}->{$obj_name} = $obj;
+    if (exists $this->{$obj_class}->{$obj_name}) {
+        return if $obj->equals($this->{$obj_class}->{$obj_name});
+        dieContext("A different $obj->{WHAT} named '$obj_name' already exists");
+    }
+    else {
+        $this->{$obj_class}->{$obj_name} = $obj;
+    }
 }
 
 sub breaktables {
     return shift->{'DBD::Breaktable'};
+}
+sub breaktable {
+    my ($this, $name) = @_;
+    return $this->{'DBD::Breaktable'}->{$name};
 }
 
 sub drivers {

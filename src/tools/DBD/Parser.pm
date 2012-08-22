@@ -49,7 +49,7 @@ sub ParseDBD {
         }
         elsif (m/\G variable \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Variable: $1\n" if $debug;
-            $dbd->add(DBD::Variable->new($1, 'int'));
+            $dbd->add(DBD::Variable->new($1));
         }
         elsif (m/\G variable \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print "Variable: $1, $2\n" if $debug;
@@ -59,7 +59,8 @@ sub ParseDBD {
                           \s* $RXstr \s* , \s*$RXstr \s* \)/oxgc) {
             print "Device: $1, $2, $3, $4\n" if $debug;
             my $rtyp = $dbd->recordtype($1);
-            dieContext("Unknown record type '$1'") unless defined $rtyp;
+            dieContext("Unknown record type '$1'")
+                unless defined $rtyp;
             $rtyp->add_device(DBD::Device->new($2, $3, $4));
         } else {
             last unless m/\G (.*) $/moxgc;

@@ -13,7 +13,10 @@
 
 use strict;
 
-use lib '../../../lib/perl';
+# This program is never installed, so it can't use FindBin to get
+# the path to the lib/perl directory.  However it can load the
+# EPICS:: modules directly from the src/tools directory instead:
+use lib '../../tools';
 
 use Getopt::Std;
 use File::Basename;

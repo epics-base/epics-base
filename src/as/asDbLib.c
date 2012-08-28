@@ -1,11 +1,9 @@
-/* share/src/as/asDbLib.c */
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* Author:  Marty Kraimer Date:    02-11-94*/
@@ -69,18 +67,23 @@ static long asDbAddRecords(void)
 
 int epicsShareAPI asSetFilename(const char *acf)
 {
-    if(pacf) free ((void *)pacf);
-    if(acf) {
-	pacf = calloc(1,strlen(acf)+1);
-	if(!pacf) {
-	    errMessage(0,"asSetFilename calloc failure");
-	} else {
-	    strcpy(pacf,acf);
-	}
+    if (pacf)
+        free (pacf);
+    if (acf) {
+        pacf = calloc(1, strlen(acf)+1);
+        if (!pacf) {
+            errMessage(0, "asSetFilename calloc failure");
+        } else {
+            strcpy(pacf, acf);
+            if (*pacf != '/' && !strchr(pacf, ':')) {
+                printf("asSetFilename: Warning - relative paths won't usually "
+                    "work\n");
+            }
+        }
     } else {
-	pacf = NULL;
+        pacf = NULL;
     }
-    return(0);
+    return 0;
 }
 
 int epicsShareAPI asSetSubstitutions(const char *substitutions)

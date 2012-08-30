@@ -18,6 +18,9 @@ recordtype(waveform) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type See FTVL
+		#=read Yes
+		#=write Yes
 	}
 	field(RARM,DBF_SHORT) {
 		prompt("Rearm the waveform")

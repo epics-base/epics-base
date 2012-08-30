@@ -16,6 +16,11 @@ menu(compressALG) {
 	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
 recordtype(compress) {
+	#=head1 Compress Record (compress)
+	#
+	#=fields VAL
+	#
+	#=cut
 	include "dbCommon.dbd" 
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -23,6 +28,9 @@ recordtype(compress) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type DOUBLE[]
+		#=read Yes
+		#=write Yes
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")

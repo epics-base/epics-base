@@ -197,6 +197,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *a")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTA
 	}
 	field(B,DBF_NOACCESS) {
 		prompt("Input value B")
@@ -204,6 +207,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *b")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTB
 	}
 	field(C,DBF_NOACCESS) {
 		prompt("Input value C")
@@ -211,6 +217,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *c")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTC
 	}
 	field(D,DBF_NOACCESS) {
 		prompt("Input value D")
@@ -218,6 +227,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *d")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTD
 	}
 	field(E,DBF_NOACCESS) {
 		prompt("Input value E")
@@ -225,6 +237,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *e")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTE
 	}
 	field(F,DBF_NOACCESS) {
 		prompt("Input value F")
@@ -232,6 +247,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *f")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTF
 	}
 	field(G,DBF_NOACCESS) {
 		prompt("Input value G")
@@ -239,6 +257,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *g")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTG
 	}
 	field(H,DBF_NOACCESS) {
 		prompt("Input value H")
@@ -246,6 +267,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *h")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTH
 	}
 	field(I,DBF_NOACCESS) {
 		prompt("Input value I")
@@ -253,6 +277,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *i")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTI
 	}
 	field(J,DBF_NOACCESS) {
 		prompt("Input value J")
@@ -260,6 +287,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *j")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTJ
 	}
 	field(K,DBF_NOACCESS) {
 		prompt("Input value K")
@@ -267,6 +297,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *k")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTK
 	}
 	field(L,DBF_NOACCESS) {
 		prompt("Input value L")
@@ -274,6 +307,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *l")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTL
 	}
 	field(M,DBF_NOACCESS) {
 		prompt("Input value M")
@@ -281,6 +317,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *m")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTM
 	}
 	field(N,DBF_NOACCESS) {
 		prompt("Input value N")
@@ -288,6 +327,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *n")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTN
 	}
 	field(O,DBF_NOACCESS) {
 		prompt("Input value O")
@@ -295,6 +337,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *o")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTO
 	}
 	field(P,DBF_NOACCESS) {
 		prompt("Input value P")
@@ -302,6 +347,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *p")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTP
 	}
 	field(Q,DBF_NOACCESS) {
 		prompt("Input value Q")
@@ -309,6 +357,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *q")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTQ
 	}
 	field(R,DBF_NOACCESS) {
 		prompt("Input value R")
@@ -316,6 +367,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *r")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTR
 	}
 	field(S,DBF_NOACCESS) {
 		prompt("Input value S")
@@ -323,6 +377,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *s")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTS
 	}
 	field(T,DBF_NOACCESS) {
 		prompt("Input value T")
@@ -330,6 +387,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *t")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTT
 	}
 	field(U,DBF_NOACCESS) {
 		prompt("Input value U")
@@ -337,6 +397,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *u")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTU
 	}
 	field(FTA,DBF_MENU) {
 		prompt("Type of A")
@@ -911,6 +974,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vala")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVA
 	}
 	field(VALB,DBF_NOACCESS) {
 		prompt("Output value B")
@@ -918,6 +984,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valb")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVB
 	}
 	field(VALC,DBF_NOACCESS) {
 		prompt("Output value C")
@@ -925,6 +994,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valc")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVC
 	}
 	field(VALD,DBF_NOACCESS) {
 		prompt("Output value D")
@@ -932,6 +1004,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vald")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVD
 	}
 	field(VALE,DBF_NOACCESS) {
 		prompt("Output value E")
@@ -939,6 +1014,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vale")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVE
 	}
 	field(VALF,DBF_NOACCESS) {
 		prompt("Output value F")
@@ -946,6 +1024,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valf")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVF
 	}
 	field(VALG,DBF_NOACCESS) {
 		prompt("Output value G")
@@ -953,6 +1034,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valg")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVG
 	}
 	field(VALH,DBF_NOACCESS) {
 		prompt("Output value H")
@@ -960,6 +1044,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valh")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVH
 	}
 	field(VALI,DBF_NOACCESS) {
 		prompt("Output value I")
@@ -967,6 +1054,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vali")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVI
 	}
 	field(VALJ,DBF_NOACCESS) {
 		prompt("Output value J")
@@ -974,6 +1064,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valj")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVJ
 	}
 	field(VALK,DBF_NOACCESS) {
 		prompt("Output value K")
@@ -981,6 +1074,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valk")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVK
 	}
 	field(VALL,DBF_NOACCESS) {
 		prompt("Output value L")
@@ -988,6 +1084,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vall")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVL
 	}
 	field(VALM,DBF_NOACCESS) {
 		prompt("Output value M")
@@ -995,6 +1094,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valm")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVM
 	}
 	field(VALN,DBF_NOACCESS) {
 		prompt("Output value N")
@@ -1002,6 +1104,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valn")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVN
 	}
 	field(VALO,DBF_NOACCESS) {
 		prompt("Output value O")
@@ -1009,6 +1114,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valo")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVO
 	}
 	field(VALP,DBF_NOACCESS) {
 		prompt("Output value P")
@@ -1016,6 +1124,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valp")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVP
 	}
 	field(VALQ,DBF_NOACCESS) {
 		prompt("Output value Q")
@@ -1023,6 +1134,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valq")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVQ
 	}
 	field(VALR,DBF_NOACCESS) {
 		prompt("Output value R")
@@ -1030,6 +1144,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valr")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVR
 	}
 	field(VALS,DBF_NOACCESS) {
 		prompt("Output value S")
@@ -1037,6 +1154,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *vals")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVS
 	}
 	field(VALT,DBF_NOACCESS) {
 		prompt("Output value T")
@@ -1044,6 +1164,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valt")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVT
 	}
 	field(VALU,DBF_NOACCESS) {
 		prompt("Output value U")
@@ -1051,6 +1174,9 @@ recordtype(aSub) {
 		special(SPC_DBADDR)
 		interest(2)
 		extra("void *valu")
+		#=read Yes
+		#=write Yes
+		#=type Set by FTVU
 	}
 	field(OVLA,DBF_NOACCESS) {
 		prompt("Old Output A")

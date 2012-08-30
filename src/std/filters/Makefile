@@ -16,3 +16,5 @@ dbRecStd_SRCS += dbnd.c
 dbRecStd_SRCS += arr.c
 dbRecStd_SRCS += sync.c
 
+HTMLS += filters.html
+

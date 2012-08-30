@@ -11,6 +11,7 @@ TOP=../..
 include $(TOP)/configure/CONFIG
 
 STDDIR=$(TOP)/src/std
+HTMLS_DIR = std
 
 LIBRARY_IOC += dbRecStd
 dbRecStd_LIBS = dbCore ca Com

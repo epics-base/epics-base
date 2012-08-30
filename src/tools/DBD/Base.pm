@@ -128,6 +128,11 @@ sub what {
     return shift->{WHAT};
 }
 
+sub add_comment {
+    my ($this, $comment) = @_;
+    # Ignore
+}
+
 sub equals {
     my ($a, $b) = @_;
     return $a->{NAME} eq $b->{NAME}

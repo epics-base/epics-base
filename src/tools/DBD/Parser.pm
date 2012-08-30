@@ -19,10 +19,9 @@ use DBD::Variable;
 our $debug=0;
 
 sub ParseDBD {
-    my $dbd = shift;
-    $_ = shift;
+    (my $dbd, $_) = @_;
     while (1) {
-        parseCommon();
+        parseCommon($dbd);
         if (m/\G menu \s* \( \s* $RXstr \s* \) \s* \{/oxgc) {
             print "Menu: $1\n" if $debug;
             parse_menu($dbd, $1);
@@ -70,6 +69,7 @@ sub ParseDBD {
 }
 
 sub parseCommon {
+    my ($obj) = @_;
     while (1) {
         # Skip leading whitespace
         m/\G \s* /oxgc;
@@ -85,6 +85,7 @@ sub parseCommon {
             }
             else {
                 m/\G (.*) \n/oxgc;
+		$obj->add_comment($1);
                 print "Comment: $1\n" if $debug;
             }
         } else {
@@ -98,7 +99,7 @@ sub parse_menu {
     pushContext("menu($name)");
     my $menu = DBD::Menu->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($menu);
         if (m/\G choice \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Menu-Choice: $1, $2\n" if $debug;
             $menu->add_choice($1, $2);
@@ -120,7 +121,7 @@ sub parse_breaktable {
     pushContext("breaktable($name)");
     my $bt = DBD::Breaktable->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($bt);
         if (m/\G point\s* \(\s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Breaktable-Point: $1, $2\n" if $debug;
             $bt->add_point($1, $2);
@@ -146,7 +147,7 @@ sub parse_recordtype {
     pushContext("recordtype($name)");
     my $rtyp = DBD::Recordtype->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($rtyp);
         if (m/\G field \s* \( \s* $RXstr \s* , \s* $RXstr \s* \) \s* \{/oxgc) {
             print " Recordtype-Field: $1, $2\n" if $debug;
             parse_field($rtyp, $1, $2);
@@ -172,7 +173,7 @@ sub parse_field {
     my $fld = DBD::Recfield->new($name, $field_type);
     pushContext("field($name, $field_type)");
     while(1) {
-        parseCommon();
+        parseCommon($fld);
         if (m/\G (\w+) \s* \( \s* $RXstr \s* \)/oxgc) {
             print "  Field-Attribute: $1, $2\n" if $debug;
             $fld->add_attribute($1, $2);

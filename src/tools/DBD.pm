@@ -21,7 +21,8 @@ sub new {
         'DBD::Menu'       => {},
         'DBD::Recordtype' => {},
         'DBD::Registrar'  => {},
-        'DBD::Variable'   => {}
+        'DBD::Variable'   => {},
+        'COMMENTS'        => []
     };
     bless $this, $class;
     return $this;
@@ -41,6 +42,15 @@ sub add {
     else {
         $this->{$obj_class}->{$obj_name} = $obj;
     }
+}
+
+sub add_comment {
+    my ($this, $comment) = @_;
+    push @{$this->{COMMENTS}}, $comment;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
 }
 
 sub breaktables {

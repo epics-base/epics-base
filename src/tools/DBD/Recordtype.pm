@@ -12,6 +12,7 @@ sub init {
     $this->{DEVICE_LIST} = [];
     $this->{DEVICE_INDEX} = {};
     $this->{CDEFS} = [];
+    $this->{COMMENTS} = [];
     return $this;
 }
 
@@ -67,6 +68,15 @@ sub devices {
 sub device {
     my ($this, $choice) = @_;
     return $this->{DEVICE_INDEX}->{$choice};
+}
+
+sub add_comment {
+    my ($this, $comment) = @_;
+    push @{$this->{COMMENTS}}, $comment;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
 }
 
 sub add_cdef {

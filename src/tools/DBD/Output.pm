@@ -42,8 +42,6 @@ sub OutputRecordtypes {
     my ($out, $recordtypes) = @_;
     while (my ($name, $recordtype) = each %{$recordtypes}) {
         printf $out "recordtype(%s) {\n", $name;
-        print $out "    %$_\n"
-            foreach $recordtype->cdefs;
         foreach $field ($recordtype->fields) {
             printf $out "    field(%s, %s) {\n",
                 $field->name, $field->dbf_type;

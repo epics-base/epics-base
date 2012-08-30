@@ -56,6 +56,7 @@ sub init {
         sort keys %field_types) unless exists $field_types{$type};
     $this->{DBF_TYPE} = $type;
     $this->{ATTR_INDEX} = {};
+    $this->{COMMENTS} = [];
     return $this;
 }
 
@@ -108,6 +109,16 @@ sub check_valid {
     dieContext("Default value '$default' is invalid for field '$name'")
         if (defined($default) and !$this->legal_value($default));
 }
+
+sub add_comment {
+    my ($this, $comment) = @_;
+    push @{$this->{COMMENTS}}, $comment;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
+}
+
 
 # The C structure member name is usually the field name converted to
 # lower-case.  However if that is a reserved word, use the original.

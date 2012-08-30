@@ -474,6 +474,10 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	$(ECHO) "Installing html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing html $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)

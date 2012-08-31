@@ -11,6 +11,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifndef _MSC_VER
+/* Older versions of MinGW omitted this prototype from stdio.h */
+_CRTIMP int __cdecl __MINGW_NOTHROW _vscprintf (const char*, va_list);
+#endif
+
 #define epicsExportSharedSymbols
 #include "epicsStdio.h"
 
@@ -18,26 +23,12 @@ int epicsShareAPI epicsVsnprintf(char *str, size_t len,
     const char *fmt, va_list ap)
 {
     int retval = _vsnprintf(str, len, fmt, ap);
-
-#ifdef _MSC_VER
     int needed = _vscprintf(fmt, ap);
 
     if ((int) len < needed + 1) {
         str[len - 1] = 0;
         return needed;
     }
-#else
-    /* Unfortunately MINGW doesn't provide _vscprintf and their
-     * _vsnprintf follows MS' broken return value semantics.
-     */
-    if (retval == -1) {
-        if (len)
-            str[len - 1] = 0;
-        return len;
-    } else if (retval == (int) len) {
-        str[--retval] = 0;
-    }
-#endif
 
     return retval;
 }

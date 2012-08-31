@@ -3,4 +3,6 @@
 include $(CONFIG)/RULES
 include $(TOP)/configure/RULES_PYTHON
 include $(TOP)/configure/RULES_IDL
+ifdef BASE_3_15
 include $(TOP)/configure/RULES_JAVA
+endif

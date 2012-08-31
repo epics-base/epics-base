@@ -189,8 +189,12 @@ epicsReadlineEnd (void *context)
 #include <ledLib.h>
 #define LEDLIB_LINESIZE 1000
 
+#ifndef _WRS_VXWORKS_MAJOR
+typedef int LED_ID;
+#endif
+
 struct readlineContext {
-    int     ledId;
+    LED_ID  ledId;
     char    line[LEDLIB_LINESIZE];
     FILE    *in;
 };
@@ -205,7 +209,7 @@ epicsReadlineBegin(FILE *in)
 
     readlineContext = malloc(sizeof *readlineContext);
     if (readlineContext != NULL) {
-        readlineContext->ledId = ERROR;
+        readlineContext->ledId = (LED_ID) ERROR;
         readlineContext->in = in;
         if (in == NULL) {
             long i = 50;
@@ -213,7 +217,7 @@ epicsReadlineBegin(FILE *in)
             envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
             if (i < 1) i = 1;
             readlineContext->ledId = ledOpen(fileno(stdin), fileno(stdout), i);
-            if (readlineContext->ledId == ERROR) {
+            if (readlineContext->ledId == (LED_ID) ERROR) {
                 readlineContext->in = stdin;
                 printf("Warning -- Unabled to allocate space for command-line history.\n");
                 printf("Warning -- Command-line editting disabled.\n");
@@ -236,7 +240,7 @@ epicsReadline (const char *prompt, void *context)
         fputs(prompt, stdout);
         fflush(stdout);
     }
-    if (readlineContext->ledId != ERROR) {
+    if (readlineContext->ledId != (LED_ID) ERROR) {
         i = ledRead(readlineContext->ledId, readlineContext->line, LEDLIB_LINESIZE-1); 
         if (i < 0)
             return NULL;
@@ -262,7 +266,7 @@ epicsReadlineEnd (void *context)
     struct readlineContext *readlineContext = context;
     
     if (readlineContext) {
-        if (readlineContext->ledId != ERROR)
+        if (readlineContext->ledId != (LED_ID) ERROR)
             ledClose(readlineContext->ledId);
         free(readlineContext);
     }

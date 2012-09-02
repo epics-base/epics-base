@@ -20,9 +20,8 @@ use Pod::Simple::HTML;
 
 my $tool = 'dbdToHtml';
 getopts('DI@o:') or
-    die "Usage: $tool [-D] [-I dir] [-o xRecord.html] xRecord.dbd\n";
+    die "Usage: $tool [-D] [-I dir] [-o file.html] file.dbd\n";
 
-my @path = map { split /[:;]/ } @opt_I;
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;
@@ -47,34 +46,45 @@ if ($opt_D) {   # Output dependencies only
 
 open my $out, '>', $opt_o or die "Can't create $opt_o: $!\n";
 
+# Grab the comments from the root DBD object
+# Strip a single leading space off all comment lines
 my @pod = map { s/^ //; $_ } $dbd->comments;
 
 my $rtypes = $dbd->recordtypes;
 
+# Process the comments from any record types defined
 while (my ($rn, $rtyp) = each %{$rtypes}) {
     foreach my $_ ($rtyp->comments) {
+        # Strip a single leading space
         s/^ //;
-	if (m/^=fields (.*)/) {
-	    my @names = split /,\s*/, $1;
-	    my @fields = map {
-	            my $field = $rtyp->field($_);
-		    print STDERR "Unknown field name '$_' in $infile POD\n" unless $field;
-		    $field;
-	        } @names;
-	    my $html;
-	    foreach $field (@fields) {
-	        $html .= $field->htmlTableRow if $field;
-	    }
-	    push @pod, podTable($html);
-	}
-	else {
-	    push @pod, $_;
-	}
+        # Handle our 'fields' Pod directive
+        if (m/^=fields (.*)/) {
+            my @names = split /\s*,\s*/, $1;
+	    # Look up every named field
+            my @fields = map {
+                    my $field = $rtyp->field($_);
+                    print STDERR "Unknown field name '$_' in $infile POD\n" unless $field;
+                    $field;
+                } @names;
+            my $html;
+	    # Generate a HTML table row for each field
+            foreach $field (@fields) {
+                $html .= $field->htmlTableRow if $field;
+            }
+	    # Add the complete table
+            push @pod, podTable($html);
+        }
+        else {
+	    # Add other comments
+            push @pod, $_;
+        }
     }
 }
 
 my $podHtml = Pod::Simple::HTML->new();
 $podHtml->html_css('style.css');
+$podHtml->perldoc_url_prefix('');
+$podHtml->perldoc_url_postfix('.html');
 $podHtml->set_source(\@pod);
 # $podHtml->index(1);
 $podHtml->output_string(\my $html);
@@ -90,7 +100,7 @@ sub podTable {
         "<th>Field</th><th>Summary</th><th>Type</th><th>DCT</th>",
         "<th>Default</th><th>Read</th><th>Write</th><th>CA PP</th></tr>\n",
         $content, "</table></blockquote>\n",
-	"\n", "=end html\n");
+        "\n", "=end html\n");
 }
 
 sub DBD::Recfield::htmlTableRow {

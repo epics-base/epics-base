@@ -6,13 +6,13 @@
 #
 #=over 4
 #
-#=item * L<TimeStamp|/"TimeStamp Filter (ts)">
+#=item * L<TimeStamp|/"TimeStamp Filter "ts"">
 #
-#=item * Deadband
+#=item * L<Deadband|/"Deadband Filter "dbnd"">
 #
-#=item * Array
+#=item * L<Array|/"Array Filter "arr"">
 #
-#=item * Synchronized
+#=item * L<Synchronize|/"Synchronize Filter "sync"">
 #
 #=back
 #
@@ -32,8 +32,9 @@
 # Each filter is given as a name/value pair. The filter name (given in parentheses
 # in the titles below) is a string, and must be enclosed inside double-quotes C<">
 # characters as per the JSON specification.
-# Paramters to that filter are provided as the value part of the name/value pair,
-# and will normally appear as a child JSON object inside another pair of braces C< {} >.
+# Parameters to that filter are provided as the value part of the name/value pair,
+# and will normally appear as a child JSON object consisting of name/value pairs
+# inside a nested pair of braces C< {} >.
 #
 #=head4 Example Filter
 #
@@ -44,12 +45,16 @@
 #  test:channel.{"f":{"lo":0,"hi":10}}
 #
 # Note that due to the required presence of the double-quote characters in the JSON
-# strings in the channel name it will usually be necessary to enclose a filtered name
-# within single-quotes C<'...'> when typing it as an argument to a Unix shell command.
+# strings in the name string, it will usually be necessary to enclose a filtered name
+# within single-quotes C<< ' E<hellip> ' >> when typing it as an argument to a Unix
+# shell command.
 #
 #=head2 Filter Reference
 #
-#=head3 TimeStamp Filter (C<ts>)
+
+registrar(tsInitialize)
+
+#=head3 TimeStamp Filter C<"ts">
 #
 # This filter is used to set the timestamp of the (first) value fetched through the
 # channel to the connection time, rather than the time the record last processed
@@ -67,8 +72,66 @@
 #  Hal$ caget -a 'test:channel'
 #  test:channel             <undefined> 0 UDF INVALID
 #
-#=cut
-registrar(tsInitialize)
+
 registrar(dbndInitialize)
+
+#=head3 Deadband Filter C<"dbnd">
+#
+# This filter implements a channel-specific monitor deadband, which is applied
+# after any deadbands implemented by the record itself (it can only drop updates
+# that the unfiltered channel generates, never add additional updates).
+#
+# The deadband can be specified as an absolute value change, or as a relative
+# percentage.
+#
+#=head4 Parameters
+#
+#=over 4
+#
+#=item Deadband C<"d">
+#
+# The size of the deadband to use.
+# Relative deadband values are given as a numeric percentage, but without any
+# trailing percent character.
+#
+#=item Mode C<"m"> (optional)
+#
+# A string (enclosed in double-quotes C<">), which should contain either
+# C<abs> or C<rel>.
+# The default mode is absolute if no mode parameter is included.
+#
+#=back
+#
+#=head4 Example
+#
+#  Hal$ camonitor 'test:channel'
+#  test:channel                    2012-09-01 22:10:19.600595 1 LOLO MAJOR
+#  test:channel                    2012-09-01 22:10:20.600661 2 LOLO MAJOR
+#  test:channel                    2012-09-01 22:10:21.600819 3 LOW MINOR
+#  test:channel                    2012-09-01 22:10:22.600905 4 LOW MINOR
+#  test:channel                    2012-09-01 22:10:23.601023 5  
+#  test:channel                    2012-09-01 22:10:24.601136 6 HIGH MINOR
+#  ^C
+#  Hal$ camonitor 'test:channel.{"dbnd":{"d":1.5}}'
+#  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:49.613341 1 LOLO MAJOR
+#  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:51.613615 3 LOW MINOR
+#  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:53.613804 5  
+#  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:55.614074 7 HIGH MINOR
+#  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:57.614305 9 HIHI MAJOR
+#  ^C
+#
+
 registrar(arrInitialize)
+
+#=head3 Array Filter C<"arr">
+#
+# ...
+#
+
 registrar(syncInitialize)
+
+#=head3 Synchronize Filter C<"sync">
+#
+# ...
+#
+

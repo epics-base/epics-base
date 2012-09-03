@@ -492,12 +492,12 @@ int main (int argc, char *argv[])
         if (charArrAsStr) {
             count = len;
             dbrType = DBR_CHAR;
-            ebuf = calloc(strlen(cbuf), sizeof(char));
+            ebuf = calloc(strlen(cbuf)+1, sizeof(char));
             if(!ebuf) {
                 fprintf(stderr, "Memory allocation failed\n");
                 return 1;
             }
-            epicsStrnRawFromEscaped(ebuf, strlen(cbuf), cbuf, strlen(cbuf));
+            epicsStrnRawFromEscaped(ebuf, strlen(cbuf)+1, cbuf, strlen(cbuf));
         } else {
             for (i = 0; i < count; ++i) {
                 epicsStrnRawFromEscaped(sbuf[i], sizeof(EpicsStr), *(argv+optind+i), sizeof(EpicsStr));

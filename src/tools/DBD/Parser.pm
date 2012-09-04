@@ -74,22 +74,44 @@ sub parseCommon {
         # Skip leading whitespace
         m/\G \s* /oxgc;
 
-        if (m/\G \# /oxgc) {
-            if (m/\G \#!BEGIN\{ ( [^}]* ) \}!\#\# \n/oxgc) {
+        # Extract POD
+        if (m/\G ( = [a-zA-Z] .* ) \n/oxgc) {
+            $obj->add_pod($1, &parsePod);
+        }
+        elsif (m/\G \# /oxgc) {
+            if (m/\G \# ! BEGIN \{ ( [^}]* ) \} ! \# \# \n/oxgc) {
                 print "File-Begin: $1\n" if $debug;
                 pushContext("file '$1'");
             }
-            elsif (m/\G \#!END\{ ( [^}]* ) \}!\#\# \n?/oxgc) {
+            elsif (m/\G \# ! END \{ ( [^}]* ) \} ! \# \# \n?/oxgc) {
                 print "File-End: $1\n" if $debug;
                 popContext("file '$1'");
             }
             else {
                 m/\G (.*) \n/oxgc;
-		$obj->add_comment($1);
+                $obj->add_comment($1);
                 print "Comment: $1\n" if $debug;
             }
         } else {
             return;
+        }
+    }
+}
+
+sub parsePod {
+    pushContext("Pod markup");
+    my @pod;
+    while (1) {
+        if (m/\G ( =cut .* ) \n?/oxgc) {
+            push @pod, $1;
+            popContext("Pod markup");
+            return @pod;
+        }
+        elsif (m/\G ( .* ) $/oxgc) {
+            dieContext("Unexpected end of input file, Pod block not closed");
+        }
+        elsif (m/\G ( .* ) \n/oxgc) {
+            push @pod, $1
         }
     }
 }

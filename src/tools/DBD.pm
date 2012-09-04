@@ -22,7 +22,8 @@ sub new {
         'DBD::Recordtype' => {},
         'DBD::Registrar'  => {},
         'DBD::Variable'   => {},
-        'COMMENTS'        => []
+        'COMMENTS'        => [],
+        'POD'             => []
     };
     bless $this, $class;
     return $this;
@@ -45,12 +46,21 @@ sub add {
 }
 
 sub add_comment {
-    my ($this, $comment) = @_;
-    push @{$this->{COMMENTS}}, $comment;
+    my $this = shift;
+    push @{$this->{COMMENTS}}, @_;
 }
 
 sub comments {
     return @{shift->{COMMENTS}};
+}
+
+sub add_pod {
+    my $this = shift;
+    push @{$this->{POD}}, @_;
+}
+
+sub pod {
+    return @{shift->{POD}};
 }
 
 sub breaktables {

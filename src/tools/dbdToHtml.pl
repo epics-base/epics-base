@@ -46,36 +46,33 @@ if ($opt_D) {   # Output dependencies only
 
 open my $out, '>', $opt_o or die "Can't create $opt_o: $!\n";
 
-# Grab the comments from the root DBD object
-# Strip a single leading space off all comment lines
-my @pod = map { s/^ //; $_ } $dbd->comments;
+# Grab the Pod text from the root DBD object
+my @pod = $dbd->pod;
 
 my $rtypes = $dbd->recordtypes;
 
-# Process the comments from any record types defined
+# Append the processed Pod text from any record types defined
 while (my ($rn, $rtyp) = each %{$rtypes}) {
-    foreach my $_ ($rtyp->comments) {
-        # Strip a single leading space
-        s/^ //;
+    foreach my $_ ($rtyp->pod) {
         # Handle our 'fields' Pod directive
         if (m/^=fields (.*)/) {
             my @names = split /\s*,\s*/, $1;
-	    # Look up every named field
+            # Look up every named field
             my @fields = map {
                     my $field = $rtyp->field($_);
                     print STDERR "Unknown field name '$_' in $infile POD\n" unless $field;
                     $field;
                 } @names;
             my $html;
-	    # Generate a HTML table row for each field
+            # Generate a HTML table row for each field
             foreach $field (@fields) {
                 $html .= $field->htmlTableRow if $field;
             }
-	    # Add the complete table
+            # Add the complete table
             push @pod, podTable($html);
         }
         else {
-	    # Add other comments
+            # Add other Pod text
             push @pod, $_;
         }
     }

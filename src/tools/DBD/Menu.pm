@@ -41,8 +41,8 @@ sub legal_choice {
 }
 
 sub add_comment {
-    my ($this, $comment) = @_;
-    push @{$this->{COMMENTS}}, $comment;
+    my $this = shift;
+    push @{$this->{COMMENTS}}, @_;
 }
 
 sub comments {

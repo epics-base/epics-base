@@ -104,7 +104,7 @@ sub escapeCstring {
 }
 
 
-# Base class routines for the DBD component objects
+# Base methods for the DBD component objects
 
 sub new {
     my $class = shift;
@@ -129,8 +129,14 @@ sub what {
 }
 
 sub add_comment {
-    my ($this, $comment) = @_;
-    # Ignore
+    my $this = shift;
+    confess "add_comment() not supported by $this->{WHAT} ($this)\n",
+        "Context: ", join(' in ', @context), "\n";
+}
+
+sub add_pod {
+    my $this = shift;
+    warnContext "Warning: Pod text inside $this->{WHAT} will be ignored";
 }
 
 sub equals {

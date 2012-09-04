@@ -13,6 +13,7 @@ sub init {
     $this->{DEVICE_INDEX} = {};
     $this->{CDEFS} = [];
     $this->{COMMENTS} = [];
+    $this->{POD} = [];
     return $this;
 }
 
@@ -90,6 +91,15 @@ sub cdefs {
 
 sub toCdefs {
     return join("\n", shift->cdefs) . "\n\n";
+}
+
+sub add_pod {
+    my $this = shift;
+    push @{$this->{POD}}, @_;
+}
+
+sub pod {
+    return @{shift->{POD}};
 }
 
 sub equals {

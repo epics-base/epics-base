@@ -7,149 +7,151 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 recordtype(ai) {
-	#=head1 Analog Input (ai)
-	#
-	# This record type is normally used to obtain an analog value from
-	# a hardware input and convert it to engineering units. The record
-	# supports linear and break-point conversion to engineering units,
-	# smoothing, alarm limits, alarm filtering, and graphics and control
-	# limits.
-	#
-	#=head2 Parameter Fields
-	#
-	# The record fields are described below grouped by functionality.
-	#
-	#=head3 Input Specification
-	#
-	# These fields control where (if anywhere) the record reads data from
-	# when it is processed:
-	#
-	#=fields INP, DTYP
-	#
-	# I<Description?>
-	#
-	#=head3 Units Conversion
-	#
-	# These fields control how the raw input value gets converted into
-	# engineering units:
-	#
-	#=fields RVAL, ROFF, ASLO, AOFF, LINR, ESLO, EOFF, EGUL, EGUF
-	#
-	# These fields are not used if the device support layer reads its
-	# value in engineering units and puts it directly into the VAL field.
-	#
-	# If the device support sets the RVAL field, the LINR field controls
-	# how this gets converted into engineering units and placed in the
-	# VAL field as follows:
-	#
-	#=over 4
-	#
-	#=item 1. RVAL is converted to a double and ROFF is added to it
-	#
-	#=item 2. If ASLO is non-zero the value is multiplied by ASLO
-	#
-	#=item 3. AOFF is added
-	#
-	#=item 4. If LINR is C<NO CONVERSION> the units conversion is finished
-	# after the above steps
-	#
-	#=item 5. If LINR is C<LINEAR> or C<SLOPE>, the value from step 3
-	# above is multiplied by ESLO and EOFF is added to complete the units
-	# conversion process
-	#
-	#=item 6. Any other value for LINR selects a particular breakpoint
-	# table to be used on the value from step 3 above
-	#
-	#=back
-	#
-	# The distinction between the C<LINEAR> and C<SLOPE> settings for the
-	# LINR field are in how the conversion parameters are calculated:
-	#
-	#=over 4
-	#
-	#=item *
-	# With C<LINEAR> conversion the user must set EGUL and EGUF to the
-	# lowest and highest possible engineering units values respectively
-	# that can be converted by the hardware. The device support knows
-	# the range of the raw data and calculates ESLO and EOFF from them.
-	#
-	#=item *
-	# C<SLOPE> conversion requires the user to calculate the appropriate
-	# scaling and offset factors and put them directly in ESLO and EOFF.
-	#
-	#=back
-	#
-	#=head3 Smoothing Filter
-	#
-	# This filter is usually only used if the device support sets the RVAL
-	# field and the Units Conversion process is used. Device support that
-	# directly sets the VAL field may implement the filter if desired.
-	#
-	# The filter is controlled with a single parameter field:
-	#
-	#=fields SMOO
-	#
-	# The SMOO field should be set to a number between 0 and 1. If set to
-	# zero the filter is not used (no smoothing), while if set to one the
-	# result is infinite smoothing (the VAL field will never change). The
-	# calculation performed is:
-	#
-	#     VAL = VAL * SMOO + (1 - SMOO) * New Data
-	#
-	# where C<New Data> was the result from the Units Conversion above.
-	# This implements a first-order infinite impulse response (IIR)
-	# digital filter with z-plane pole at SMOO. The equivalent
-	# continuous-time filter time constant E<tau> is given by
-	#
-	#=over 4
-	#
-	# E<tau> = E<minus>T / ln(SMOO)
-	#
-	#=back
-	#
-	# where T is the time between record processing.
-	#
-	#=head3 Undefined Check
-	#
-	# If after applying the smoothing filter the VAL field contains a NaN
-	# (Not-a-Number) value, the UDF field is set to indicate that the
-	# record value is undefined, which triggers a C<UDF_ALARM> with
-	# severity C<INVALID_ALARM>.
-	#
-	#=fields UDF
-	#
-	#=head3 Operator Display Parameters
-	#
-	# These parameters are used to present meaningful data to the operator.
-	#
-	#=over 4
-	#
-	#=item *
-	# DESC is a string that is usually used to briefly describe the record.
-	#
-	#=item *
-	# EGU is a string of up to 16 characters giving the units that the
-	# analog input measures.
-	#
-	#=item *
-	# The HOPR and LOPR fields set the upper and lower display limits for
-	# the VAL, HIHI, HIGH, LOW, and LOLO fields.
-	#
-	#=item *
-	# The PREC field determines the floating point precision with which
-	# to display VAL.
-	#
-	#=back
-	#
-	#=fields DESC, EGU, HOPR, LOPR, PREC
-	#
-	#=head3 Alarm Parameters
-	#
-	# ...
-	#
-	#=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC
-	#
-	#=cut
+
+=head1 Analog Input (ai)
+
+This record type is normally used to obtain an analog value from
+a hardware input and convert it to engineering units. The record
+supports linear and break-point conversion to engineering units,
+smoothing, alarm limits, alarm filtering, and graphics and control
+limits.
+
+=head2 Parameter Fields
+
+The record fields are described below grouped by functionality.
+
+=head3 Input Specification
+
+These fields control where (if anywhere) the record reads data from
+when it is processed:
+
+=fields INP, DTYP
+
+I<Description?>
+
+=head3 Units Conversion
+
+These fields control how the raw input value gets converted into
+engineering units:
+
+=fields RVAL, ROFF, ASLO, AOFF, LINR, ESLO, EOFF, EGUL, EGUF
+
+These fields are not used if the device support layer reads its
+value in engineering units and puts it directly into the VAL field.
+
+If the device support sets the RVAL field, the LINR field controls
+how this gets converted into engineering units and placed in the
+VAL field as follows:
+
+=over 4
+
+=item 1. RVAL is converted to a double and ROFF is added to it
+
+=item 2. If ASLO is non-zero the value is multiplied by ASLO
+
+=item 3. AOFF is added
+
+=item 4. If LINR is C<NO CONVERSION> the units conversion is finished
+after the above steps
+
+=item 5. If LINR is C<LINEAR> or C<SLOPE>, the value from step 3
+above is multiplied by ESLO and EOFF is added to complete the units
+conversion process
+
+=item 6. Any other value for LINR selects a particular breakpoint
+table to be used on the value from step 3 above
+
+=back
+
+The distinction between the C<LINEAR> and C<SLOPE> settings for the
+LINR field are in how the conversion parameters are calculated:
+
+=over 4
+
+=item *
+With C<LINEAR> conversion the user must set EGUL and EGUF to the
+lowest and highest possible engineering units values respectively
+that can be converted by the hardware. The device support knows
+the range of the raw data and calculates ESLO and EOFF from them.
+
+=item *
+C<SLOPE> conversion requires the user to calculate the appropriate
+scaling and offset factors and put them directly in ESLO and EOFF.
+
+=back
+
+=head3 Smoothing Filter
+
+This filter is usually only used if the device support sets the RVAL
+field and the Units Conversion process is used. Device support that
+directly sets the VAL field may implement the filter if desired.
+
+The filter is controlled with a single parameter field:
+
+=fields SMOO
+
+The SMOO field should be set to a number between 0 and 1. If set to
+zero the filter is not used (no smoothing), while if set to one the
+result is infinite smoothing (the VAL field will never change). The
+calculation performed is:
+
+ VAL = VAL * SMOO + (1 - SMOO) * New Data
+
+where C<New Data> was the result from the Units Conversion above.
+This implements a first-order infinite impulse response (IIR)
+digital filter with z-plane pole at SMOO. The equivalent
+continuous-time filter time constant E<tau> is given by
+
+=over 4
+
+E<tau> = E<minus>T / ln(SMOO)
+
+=back
+
+where T is the time between record processing.
+
+=head3 Undefined Check
+
+If after applying the smoothing filter the VAL field contains a NaN
+(Not-a-Number) value, the UDF field is set to indicate that the
+record value is undefined, which triggers a C<UDF_ALARM> with
+severity C<INVALID_ALARM>.
+
+=fields UDF
+
+=head3 Operator Display Parameters
+
+These parameters are used to present meaningful data to the operator.
+
+=over 4
+
+=item *
+DESC is a string that is usually used to briefly describe the record.
+
+=item *
+EGU is a string of up to 16 characters giving the units that the
+analog input measures.
+
+=item *
+The HOPR and LOPR fields set the upper and lower display limits for
+the VAL, HIHI, HIGH, LOW, and LOLO fields.
+
+=item *
+The PREC field determines the floating point precision with which
+to display VAL.
+
+=back
+
+=fields DESC, EGU, HOPR, LOPR, PREC
+
+=head3 Alarm Parameters
+
+...
+
+=fields HIHI, HIGH, LOW, LOLO, HHSV, HSV, LSV, LLSV, HYST, AFTC
+
+=cut
+
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Current EGU Value")

@@ -3,8 +3,7 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 menu(compressALG) {
@@ -16,11 +15,13 @@ menu(compressALG) {
 	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
 recordtype(compress) {
-	#=head1 Compress Record (compress)
-	#
-	#=fields VAL
-	#
-	#=cut
+
+=head1 Compress Record (compress)
+
+=fields VAL
+
+=cut
+
 	include "dbCommon.dbd" 
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")

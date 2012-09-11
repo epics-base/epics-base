@@ -445,10 +445,13 @@ char *dbr2str (const void *value, unsigned type)
                                                                         \
     if (charArrAsStr && dbr_type_is_CHAR(TYPE_ENUM) && (reqElems || pv->nElems > 1)) { \
         dbr_char_t *s = (dbr_char_t*) dbr_value_ptr(pv->value, pv->dbrType); \
-        int dlen = epicsStrnEscapedFromRawSize((char*)s, strlen((char*)s)); \
+        size_t len = strlen((char*)s);                                  \
+        unsigned long elems = reqElems && (reqElems < pv->nElems) ? reqElems : pv->nElems; \
+        if (len < elems) elems = len;                                   \
+        int dlen = epicsStrnEscapedFromRawSize((char*)s, elems);        \
         char *d = calloc(dlen+1, sizeof(char));                         \
         if(d) {                                                         \
-            epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, strlen((char*)s));\
+            epicsStrnEscapedFromRaw(d, dlen+1, (char*)s, elems);        \
             printf("%c%s", fieldSeparator, d);                          \
             free(d);                                                    \
         } else {                                                        \

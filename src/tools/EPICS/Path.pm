@@ -123,6 +123,7 @@ sub AbsPath {
 
     # Now calculate the absolute path
     my $abs = File::Spec->rel2abs($path, abs_path($cwd));
+    $abs = abs_path($abs) if -e $abs;
 
     return LocalPath($abs);
 }

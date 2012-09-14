@@ -15,6 +15,47 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fanout record enhancements</h3>
+
+<p>The fanout record type now has 16 output links LNK0-LNK9 and LNKA-LNKF, plus
+two additional fields which make the result backwards compatible with 3.14
+databases, but also allow the link selection to be shifted without having to
+process the SELN value through a calc or calcout record first.</p>
+
+<p>Previously there was no LNK0 field, so when SELM is <q>Mask</q> bit 0 of SELN
+controls whether the LNK1 link field was activated; bit 1 controls LNK2 and so
+on. When SELM is <q>Specified</q> and SELN is zero no output link would be
+activated at all; LNK1 gets activated when SELN is 1 and so on. Only 6 links
+were provided, LNK1 through LNK6. The updated record type maintains the original
+behavior when the new fields are not configured.</p>
+
+<p>The update involved adding a LNK0 field, as well as fields LNK7 through LNK9
+and LNKA through LNKF. To add flexibility and maintain backwards compatibility,
+two additional fields have been added:</p>
+
+<dl>
+<dt><b>OFFS</b></dt>
+
+<dd>This field holds a signed offset which is added to SELN to select which link
+to activate when SELM is <q>Specified</q>. If the resulting value is outside the
+range 0 .. 15 the record will go into a SOFT/INVALID alarm state. The default
+value of OFFS is zero, so if it is not explicitly set and SELN is 1 the LNK1
+link will be activated.</dd>
+
+<dt><b>SHFT</b></dt>
+
+<dd>When SELM is <q>Mask</q> the signed field SHFT is used to shift the SELN
+value by SHFT bits (positive means right-wards, values outside the range -15 ..
+15 will result in a SOFT/INVALID alarm), before using the resulting bit-pattern
+to control which links to activate. The default value is -1, so if SHFT is not
+explicitly set bit 0 of SELN will be used to control whether LNK1 gets
+activated.</dd>
+
+</dl>
+
+<p>The record also now posts monitors on the SELN field if it changes as a
+result of record processing (i.e. when read through the SELL link).</p>
+
 <h3>Deleted Java build rules</h3>
 
 <p>Java has its own build systems now, so we've deleted the rules and associated

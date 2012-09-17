@@ -477,7 +477,7 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
     if(pthreadInfo==0) return 0;
     pthreadInfo->isEpicsThread = 1;
     setSchedulingPolicy(pthreadInfo,SCHED_FIFO);
-    pthreadInfo->isFifoScheduled = 1;
+    pthreadInfo->isRealTimeScheduled = 1;
     status = pthread_create(&pthreadInfo->tid,&pthreadInfo->attr,
                 start_routine,pthreadInfo);
     if(status==EPERM){
@@ -608,7 +608,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
         return;
     }
     pthreadInfo->osiPriority = priority;
-    if(!pthreadInfo->isFifoScheduled) return;
+    if(!pthreadInfo->isRealTimeScheduled) return;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
     status = pthread_attr_setschedparam(

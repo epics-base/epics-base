@@ -129,6 +129,7 @@ static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
     pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+    pthreadInfo->schedPolicy = policy;
     status = pthread_attr_setschedpolicy(
         &pthreadInfo->attr,policy);
     checkStatusOnce(status,"pthread_attr_setschedpolicy");
@@ -615,7 +616,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(errVerbose) checkStatus(status,"pthread_attr_setschedparam");
     status = pthread_setschedparam(
-        pthreadInfo->tid,pcommonAttr->schedPolicy,&pthreadInfo->schedParam);
+        pthreadInfo->tid, pthreadInfo->schedPolicy, &pthreadInfo->schedParam);
     if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }

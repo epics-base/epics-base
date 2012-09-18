@@ -25,6 +25,7 @@ typedef struct epicsThreadOSD {
     pthread_t          tid;
     pthread_attr_t     attr;
     struct sched_param schedParam;
+    int                schedPolicy;
     EPICSTHREADFUNC    createFunc;
     void              *createArg;
     epicsEventId       suspendEvent;

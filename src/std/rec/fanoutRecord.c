@@ -91,7 +91,7 @@ static long init_record(fanoutRecord *prec, int pass)
 static long process(fanoutRecord *prec)
 {
     struct link *plink;
-    epicsUInt16 seln, monitor_mask;
+    epicsUInt16 seln, events;
     int         i;
     epicsUInt16 oldn = prec->seln;
 
@@ -144,9 +144,11 @@ static long process(fanoutRecord *prec)
     recGblGetTimeStamp(prec);
 
     /* post monitors */
-    monitor_mask = recGblResetAlarms(prec);
+    events = recGblResetAlarms(prec);
+    if (events)
+        db_post_events(prec, &prec->val, events);
     if (prec->seln != oldn)
-        db_post_events(prec, &prec->seln, monitor_mask | DBE_VALUE | DBE_LOG);
+        db_post_events(prec, &prec->seln, events | DBE_VALUE | DBE_LOG);
 
     /* finish off */
     recGblFwdLink(prec);

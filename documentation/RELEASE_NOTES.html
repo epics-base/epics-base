@@ -15,6 +15,19 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Sequence record enhancements</h3>
+
+<p>The sequence record type now has 16 link groups numbered 0 through 9 and A
+through F, instead of the previous 10 groups numbered 1 through 9 and A. The
+changes to this record are directly equivalent to those described below for the
+fanout record. The fields OFFS and SHFT have been added and operate on the SELN
+value exactly the same way. The result is backwards compatible with the 3.14
+version of the sequence record as long as none of the new fields are modified
+and the application does not rely on the SOFT/INVALID alarm that was generated
+when the selection number exceeded 10. The record also now posts monitors on the
+SELN field at the end of the sequence if its value changed when read through the
+SELL link.
+
 <h3>Fanout record enhancements</h3>
 
 <p>The fanout record type now has 16 output links LNK0-LNK9 and LNKA-LNKF, plus
@@ -27,7 +40,8 @@ controls whether the LNK1 link field was activated; bit 1 controls LNK2 and so
 on. When SELM is <q>Specified</q> and SELN is zero no output link would be
 activated at all; LNK1 gets activated when SELN is 1 and so on. Only 6 links
 were provided, LNK1 through LNK6. The updated record type maintains the original
-behavior when the new fields are not configured.</p>
+behavior when the new fields are not configured, except that the SOFT/INVALID
+alarm is not generated when SELN is 7 through 15.</p>
 
 <p>The update involved adding a LNK0 field, as well as fields LNK7 through LNK9
 and LNKA through LNKF. To add flexibility and maintain backwards compatibility,

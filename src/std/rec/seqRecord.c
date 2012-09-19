@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -15,31 +15,23 @@
  */
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
-#include "dbDefs.h"
-#include "epicsPrint.h"
 #include "alarm.h"
+#include "callback.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
-#include "dbFldTypes.h"
-#include "devSup.h"
-#include "errMdef.h"
+#include "epicsTypes.h"
+#include "link.h"
 #include "recSup.h"
 #include "recGbl.h"
-#include "special.h"
-#include "callback.h"
 
 #define GEN_SIZE_OFFSET
 #include "seqRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
-int	seqRecDebug = 0;
-
-static int processNextLink(seqRecord *prec);
+static void processNextLink(seqRecord *prec);
 static long asyncFinish(seqRecord *prec);
 static void processCallback(CALLBACK *arg);
 
@@ -62,379 +54,241 @@ static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 static long get_alarm_double(DBADDR *, struct dbr_alDouble *);
 
-rset seqRSET={
-	RSETNUMBER,
-	report,			/* report */
-	initialize,		/* initialize */
-	init_record,		/* init_record */
-	process,		/* process */
-	special,		/* special */
-	get_value,		/* get_value */
-	cvt_dbaddr,		/* cvt_dbaddr */
-	get_array_info,		/* get_array_info */
-	put_array_info,		/* put_array_info */
-	get_units,		/* get_units */
-	get_precision,		/* get_precision */
-	get_enum_str,		/* get_enum_str */
-	get_enum_strs,		/* get_enum_strs */
-	put_enum_str,		/* put_enum_str */
-	get_graphic_double,	/* get_graphic_double */
-	get_control_double,	/* get_control_double */
-	get_alarm_double 	/* get_alarm_double */
+rset seqRSET = {
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
-epicsExportAddress(rset,seqRSET);
+epicsExportAddress(rset, seqRSET);
 
 int seqDLYprecision = 2;
 epicsExportAddress(int, seqDLYprecision);
+
 double seqDLYlimit = 100000;
 epicsExportAddress(double, seqDLYlimit);
 
-/* Total number of link-groups in a sequence record */
-#define NUM_LINKS	10
-#define SELN_BIT_MASK	~(0xffff << NUM_LINKS)
 
-/* This is what a link-group looks like in a sequence record */
-typedef struct	linkDesc {
-  double          dly;	/* Delay value (in seconds) */
-  struct link     dol;	/* Where to fetch the input value from */
-  double          dov;	/* If dol is CONSTANT, this is the CONSTANT value */
-  struct link     lnk;	/* Where to put the value from dol */
-}linkDesc;
+/* Total number of link-groups */
+#define NUM_LINKS 16
 
-/* Callback structure used by the watchdog function to queue link processing */
-typedef struct callbackSeq {
-  CALLBACK	callback;	/* used for the callback task */
-  seqRecord     *pseqRecord;
-  linkDesc 	*plinks[NUM_LINKS+1]; /* Pointers to links to process */
-  int		index;
-}callbackSeq;
+/* Each link-group looks like this */
+typedef struct linkGrp {
+    double dly; /* Delay in seconds */
+    DBLINK dol; /* Input link */
+    double dov; /* Value storage */
+    DBLINK lnk; /* Output link */
+} linkGrp;
+
+/* The list of link-groups for processing */
+typedef struct seqRecPvt {
+    CALLBACK callback;
+    seqRecord *prec;
+    linkGrp *grps[NUM_LINKS + 1];   /* List of link-groups */
+    int index;                      /* Where we are now */
+} seqRecPvt;
 
 
-/*****************************************************************************
- *
- * Initialize a sequence record.
- *
- * Allocate the callback request structure (tacked on dpvt.)
- * Initialize watch-dog ID
- * Initialize SELN based on the link-type of SELL
- * If SELL is a CA_LINK, inform CA about it
- * For each constant input link, fill in the DOV field
- *
- ******************************************************************************/
 static long init_record(seqRecord *prec, int pass)
 {
-    int		index;
-    linkDesc      *plink;
-    callbackSeq *pcallbackSeq;
+    int index;
+    linkGrp *grp;
+    seqRecPvt *pseqRecPvt;
 
-    if (pass==0) return(0);
+    if (pass == 0)
+        return 0;
 
-    if (seqRecDebug > 5)
-      printf("init_record(%s) entered\n", prec->name);
+    pseqRecPvt = (seqRecPvt *)calloc(1, sizeof(seqRecPvt));
+    pseqRecPvt->prec = prec;
+    callbackSetCallback(processCallback, &pseqRecPvt->callback);
+    callbackSetUser(pseqRecPvt, &pseqRecPvt->callback);
+    prec->dpvt = pseqRecPvt;
 
-    /* Allocate a callback structure for use in processing */
-    pcallbackSeq  = (callbackSeq *)calloc(1,sizeof(callbackSeq));
-    pcallbackSeq->pseqRecord = prec;
-    callbackSetCallback(processCallback,&pcallbackSeq->callback);
-    callbackSetUser(pcallbackSeq,&pcallbackSeq->callback);
-    callbackSetPriority(prec->prio,&pcallbackSeq->callback);
-    prec->dpvt = (void *)pcallbackSeq;
+    if (prec->sell.type == CONSTANT)
+        recGblInitConstantLink(&prec->sell, DBF_USHORT, &prec->seln);
 
-    /* Get link selection if sell is a constant and nonzero */
-    if (prec->sell.type==CONSTANT)
-    {
-      if (seqRecDebug > 5)
-        printf("init_record(%s) SELL is a constant\n", prec->name);
-      recGblInitConstantLink(&prec->sell,DBF_USHORT,&prec->seln);
+    grp = (linkGrp *) &prec->dly0;
+    for (index = 0; index < NUM_LINKS; index++, grp++) {
+        if (grp->dol.type == CONSTANT)
+            recGblInitConstantLink(&grp->dol, DBF_DOUBLE, &grp->dov);
     }
 
-  /* Copy over ALL the input link constants here */
-  plink = (linkDesc *)(&(prec->dly1));
+    prec->oldn = prec->seln;
 
-  index = 0;
-  while (index < NUM_LINKS)
-  {
-
-    if (plink->dol.type == CONSTANT)
-	recGblInitConstantLink(&plink->dol,DBF_DOUBLE,&plink->dov);
-
-    index++;
-
-    plink++;
-  }
-
-  return(0);
+    return 0;
 }
 
-/*****************************************************************************
- *
- * Process a sequence record.
- *
- * If is async completion phase
- *   call asyncFinish() to finish things up
- * else
- *   figure out selection mechanism
- *   build the correct mask value using the mode and the selection value
- *   build a list of pointers to the selected link-group structures
- *   If there are no links to process
- *     call asyncFinish() to finish things up
- *   else
- *     call processNextLink() to schecule a delay for the first link-group
- *
- *
- * NOTE:
- *   dbScanLock is already held for prec before this function is called.
- *
- *   We do NOT call processNextLink() if there is nothing to do, this prevents
- *   us from calling dbProcess() recursively.
- *
- ******************************************************************************/
 static long process(seqRecord *prec)
 {
-  callbackSeq	*pcb = (callbackSeq *) (prec->dpvt);
-  linkDesc	*plink;
-  unsigned short	lmask;
-  int			tmp;
+    seqRecPvt *pcb = (seqRecPvt *) prec->dpvt;
+    linkGrp *pgrp;
+    epicsUInt16 lmask;
+    int i;
 
-  if(seqRecDebug > 10)
-    printf("seqRecord: process(%s) pact = %d\n", prec->name, prec->pact);
+    if (prec->pact)
+        return asyncFinish(prec);
+    prec->pact = TRUE;
 
-  if (prec->pact)
-  { /* In async completion phase */
-    asyncFinish(prec);
-    return(0);
-  }
-  prec->pact = TRUE;
+    /* Set callback from PRIO */
+    callbackSetPriority(prec->prio, &pcb->callback);
 
-  /* Reset the PRIO in case it was changed */
-  callbackSetPriority(prec->prio,&pcb->callback);
+    if (prec->selm == seqSELM_All)
+        lmask = (1 << NUM_LINKS) - 1;
+    else {
+        /* Get SELN value */
+        if (prec->sell.type != CONSTANT)
+            dbGetLink(&prec->sell, DBR_USHORT, &prec->seln, 0, 0);
 
-  /*
-   * We should not bother supporting seqSELM_All or seqSELM_Specified
-   * they can both be supported by simply providing seqSELM_Mask.
-   * build the proper mask using these other silly modes if necessary.
-   */
+        if (prec->selm == seqSELM_Specified) {
+            int grpn = prec->seln + prec->offs;
+            if (grpn < 0 || grpn >= NUM_LINKS) {
+                recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+                return asyncFinish(prec);
+            }
+            if (grpn == 0)
+                return asyncFinish(prec);
 
-  if (prec->selm == seqSELM_All)
-  {
-    lmask = (unsigned short) SELN_BIT_MASK;
-  }
-  else
-  { 
-    /* Fill in the SELN field */
-    if (prec->sell.type != CONSTANT)
-    {
-      dbGetLink(&(prec->sell), DBR_USHORT, &(prec->seln), 0,0);
+            lmask = 1 << grpn;
+        }
+        else if (prec->selm == seqSELM_Mask) {
+            int shft = prec->shft;
+            if (shft < -15 || shft > 15) {
+                /* Shifting by more than the number of bits in the
+                 * value produces undefined behavior in C */
+                recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+                return asyncFinish(prec);
+            }
+            lmask = (shft >= 0) ? prec->seln >> shft : prec->seln << -shft;
+        }
+        else {
+            recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+            return asyncFinish(prec);
+        }
     }
-    if  (prec->selm == seqSELM_Specified)
-    {
-      if(prec->seln>10)
-      { /* Invalid selection number */
-        recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-        return(asyncFinish(prec));
-      }
-      if (prec->seln == 0)
-        return(asyncFinish(prec));	/* Nothing selected */
 
-      lmask = 1;
-      lmask <<= prec->seln - 1;
+    /* Figure out which groups are to be processed */
+    pcb->index = 0;
+    pgrp = (linkGrp *) &prec->dly0;
+    for (i = 0; lmask; lmask >>= 1) {
+        if ((lmask & 1) &&
+            (pgrp->lnk.type != CONSTANT || pgrp->dol.type != CONSTANT)) {
+            pcb->grps[i++] = pgrp;
+        }
+        pgrp++;
     }
-    else if (prec->selm == seqSELM_Mask)
-    {
-      lmask = (prec->seln) & SELN_BIT_MASK;
-    }
-    else
-    { /* Invalid selection option */
-      recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-      return(asyncFinish(prec));
-    }
-  }
-  /* Figure out which links are going to be processed */
-  pcb->index = 0;
-  plink = (linkDesc *)(&(prec->dly1));
-  tmp = 1;
-  while (lmask)
-  {
-    if (seqRecDebug > 4)
-      printf("seqRec-process Checking link %d - lnk %d dol %d\n", tmp,
-      plink->lnk.type, plink->dol.type);
+    pcb->grps[i] = NULL;   /* mark the end of the list */
 
-    if ((lmask & 1) && ((plink->lnk.type != CONSTANT)||(plink->dol.type != CONSTANT)))
-    {
-      if (seqRecDebug > 4)
-	printf("  seqRec-process Adding link %d at index %d\n", tmp, pcb->index);
+    if (!i)
+        return asyncFinish(prec);
 
-      pcb->plinks[pcb->index] = plink;
-      pcb->index++;
-    }
-    lmask >>= 1;
-    plink++;
-    tmp++;
-  }
-  pcb->plinks[pcb->index] = NULL;	/* mark the bottom of the list */
+    /* Start processing link groups (we have at least one) */
+    processNextLink(prec);
 
-  if (!pcb->index)
-  { /* There was nothing to do, finish record processing here */
-    return(asyncFinish(prec));
-  }
-
-  pcb->index = 0;
-  /* Start doing the first forward link (We have at least one for sure) */
-  processNextLink(prec);
-
-  return(0);
+    return 0;
 }
 
-/*****************************************************************************
- *
- * Find the next link-group that needs processing.
- *
- * If there are no link-groups left to process
- *   call bdProcess() to complete the async record processing.
- * else
- *   if the delay is > 0 seconds
- *     schedule the watch dog task to wake us up later
- *   else
- *     invoke the watch-dog wakeup routine now
- *
- *
- * NOTE:
- *   dbScanLock is already held for prec before this function is called.
- *
- ******************************************************************************/
-static int processNextLink(seqRecord *prec)
+static void processNextLink(seqRecord *prec)
 {
-  callbackSeq   *pcb = (callbackSeq *) (prec->dpvt);
+    seqRecPvt *pcb = (seqRecPvt *) prec->dpvt;
+    linkGrp *pgrp = pcb->grps[pcb->index];
 
-  if (seqRecDebug > 5)
-    printf("processNextLink(%s) looking for work to do, index = %d\n", prec->name, pcb->index);
-
-  if (pcb->plinks[pcb->index] == NULL)
-  {
-    /* None left, finish up. */
-    (*(struct rset *)(prec->rset)).process(prec);
-  }
-  else
-  {
-    if (pcb->plinks[pcb->index]->dly > 0.0)
-    {
-      callbackRequestDelayed( &pcb->callback,pcb->plinks[pcb->index]->dly);
+    if (pgrp == NULL) {
+        /* None left, finish up. */
+        prec->rset->process(prec);
+        return;
     }
+
+    /* Always use the callback task to avoid recursion */
+    if (pgrp->dly > 0.0)
+        callbackRequestDelayed(&pcb->callback, pgrp->dly);
     else
-    {
-      /* No delay, do it now.  Avoid recursion by using the callback task */
-      callbackRequest(&pcb->callback);
-    }
-  }
-  return(0);
+        callbackRequest(&pcb->callback);
 }
 
-/*****************************************************************************
- *
- * Finish record processing by posting any events and processing forward links.
- *
- * NOTE:
- *   dbScanLock is already held for prec before this function is called.
- *
- ******************************************************************************/
 static long asyncFinish(seqRecord *prec)
 {
-  unsigned short MonitorMask;
+    epicsUInt16 events;
 
-  if (seqRecDebug > 5)
-    printf("asyncFinish(%s) completing processing\n", prec->name);
-  prec->udf = FALSE;
+    prec->udf = FALSE;
+    recGblGetTimeStamp(prec);
 
-  recGblGetTimeStamp(prec);
+    /* post monitors */
+    events = recGblResetAlarms(prec);
+    if (events)
+        db_post_events(prec, &prec->val, events);
+    if (prec->seln != prec->oldn) {
+        db_post_events(prec, &prec->seln, events | DBE_VALUE | DBE_LOG);
+        prec->oldn = prec->seln;
+    }
 
-  MonitorMask = recGblResetAlarms(prec);
+    /* process the forward scan link record */
+    recGblFwdLink(prec);
 
-  if (MonitorMask)
-    db_post_events(prec, &prec->val, MonitorMask);
-
-  /* process the forward scan link record */
-  recGblFwdLink(prec);
-
-  prec->pact = FALSE;
-
-  return(0);
+    prec->pact = FALSE;
+    return 0;
 }
 
-/*****************************************************************************
- *
- * Link-group processing function.
- *
- * if the input link is not a constant
- *   call dbGetLink() to get the link value
- * else
- *   get the value from the DOV field
- * call dbPutLink() to forward the value to destination location
- * call processNextLink() to schedule the processing of the next link-group
- *
- * NOTE:
- *   dbScanLock is NOT held for prec when this function is called!!
- *
- ******************************************************************************/
+
 static void processCallback(CALLBACK *arg)
 {
-  callbackSeq *pcb;
-  seqRecord *prec;
-  double	myDouble;
+    seqRecPvt *pcb;
+    seqRecord *prec;
+    linkGrp *pgrp;
+    double odov;
 
-  callbackGetUser(pcb,arg);
-  prec = pcb->pseqRecord;
-  dbScanLock((struct dbCommon *)prec);
+    callbackGetUser(pcb, arg);
+    prec = pcb->prec;
+    dbScanLock((struct dbCommon *)prec);
 
-  if (seqRecDebug > 5)
-    printf("processCallback(%s) processing field index %d\n", prec->name, pcb->index+1);
+    pgrp = pcb->grps[pcb->index];
 
-  /* Save the old value */
-  myDouble = pcb->plinks[pcb->index]->dov;
+    /* Save the old value */
+    odov = pgrp->dov;
 
-  dbGetLink(&(pcb->plinks[pcb->index]->dol), DBR_DOUBLE,
-	&(pcb->plinks[pcb->index]->dov),0,0);
+    dbGetLink(&pgrp->dol, DBR_DOUBLE, &pgrp->dov, 0, 0);
 
-  recGblGetTimeStamp(prec);
+    recGblGetTimeStamp(prec);
 
-  /* Dump the value to the destination field */
-  dbPutLink(&(pcb->plinks[pcb->index]->lnk), DBR_DOUBLE,
-	&(pcb->plinks[pcb->index]->dov),1);
+    /* Dump the value to the destination field */
+    dbPutLink(&pgrp->lnk, DBR_DOUBLE, &pgrp->dov, 1);
 
-  if (myDouble != pcb->plinks[pcb->index]->dov)
-  {
-    if (seqRecDebug > 0)
-      printf("link %d changed from %f to %f\n", pcb->index, myDouble, pcb->plinks[pcb->index]->dov);
-    db_post_events(prec, &pcb->plinks[pcb->index]->dov, DBE_VALUE|DBE_LOG);
-  }
-  else
-  {
-    if (seqRecDebug > 0)
-      printf("link %d not changed... %f\n", pcb->index, pcb->plinks[pcb->index]->dov);
-  }
+    if (odov != pgrp->dov) {
+        db_post_events(prec, &pgrp->dov, DBE_VALUE | DBE_LOG);
+    }
 
-  /* Find the 'next' link-seq that is ready for processing. */
-  pcb->index++;
-  processNextLink(prec);
+    /* Start the next link-group */
+    pcb->index++;
+    processNextLink(prec);
 
-  dbScanUnlock((struct dbCommon *)prec);
-  return;
+    dbScanUnlock((struct dbCommon *)prec);
 }
 
-/*****************************************************************************
- *
- * Return the precision value from PREC
- *
- *****************************************************************************/
+
 #define indexof(field) seqRecord##field
 #define get_dol(prec, fieldOffset) \
-    &((linkDesc*)&prec->dly1)[fieldOffset>>2].dol
+    &((linkGrp *) &prec->dly0)[fieldOffset >> 2].dol
 
 static long get_units(DBADDR *paddr, char *units)
 {
-    seqRecord	*prec = (seqRecord *) paddr->precord;
+    seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
 
-    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+    if (fieldOffset >= 0)
+        switch (fieldOffset & 2) {
         case 0: /* DLYn */
             strcpy(units, "s");
             break;
@@ -442,26 +296,26 @@ static long get_units(DBADDR *paddr, char *units)
             dbGetUnits(get_dol(prec, fieldOffset),
                 units, DB_UNITS_SIZE);
     }
-    return(0);
+    return 0;
 }
 
 static long get_precision(dbAddr *paddr, long *pprecision)
 {
-    seqRecord	*prec = (seqRecord *) paddr->precord;
+    seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
     short precision;
 
-    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+    if (fieldOffset >= 0)
+        switch (fieldOffset & 2) {
         case 0: /* DLYn */
             *pprecision = seqDLYprecision;
             return 0;
         case 2: /* DOn */
-            if (dbGetPrecision(get_dol(prec, fieldOffset),
-                &precision) == 0) {
+            if (dbGetPrecision(get_dol(prec, fieldOffset), &precision) == 0) {
                 *pprecision = precision;
                 return 0;
             }
-    }
+        }
     *pprecision = prec->prec;
     recGblGetPrec(paddr, pprecision);
     return 0;
@@ -469,10 +323,11 @@ static long get_precision(dbAddr *paddr, long *pprecision)
 
 static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    seqRecord	*prec = (seqRecord *) paddr->precord;
+    seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
     
-    if (fieldOffset >= 0) switch (fieldOffset & 2) {
+    if (fieldOffset >= 0)
+        switch (fieldOffset & 2) {
         case 0: /* DLYn */
             pgd->lower_disp_limit = 0.0;
             pgd->lower_disp_limit = 10.0;
@@ -482,36 +337,34 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
                 &pgd->lower_disp_limit,
                 &pgd->upper_disp_limit);
             return 0;
-    }
-    recGblGetGraphicDouble(paddr,pgd);
+        }
+    recGblGetGraphicDouble(paddr, pgd);
     return 0;
-}    
-    
-static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
+}
+
+static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
 
     if (fieldOffset >= 0 && (fieldOffset & 2) == 0) { /* DLYn */
         pcd->lower_ctrl_limit = 0.0;
         pcd->upper_ctrl_limit = seqDLYlimit;
-    } else
-        recGblGetControlDouble(paddr,pcd);
-    return(0);
+    }
+    else
+        recGblGetControlDouble(paddr, pcd);
+    return 0;
 }
 
 static long get_alarm_double(DBADDR *paddr, struct dbr_alDouble *pad)
 {
-    seqRecord	*prec = (seqRecord *) paddr->precord;
+    seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);
 
     if (fieldOffset >= 0 && (fieldOffset & 2) == 2)  /* DOn */
         dbGetAlarmLimits(get_dol(prec, fieldOffset),
-            &pad->lower_alarm_limit,
-            &pad->lower_warning_limit,
-            &pad->upper_warning_limit,
-            &pad->upper_alarm_limit);
+            &pad->lower_alarm_limit,   &pad->lower_warning_limit,
+            &pad->upper_warning_limit, &pad->upper_alarm_limit);
     else
         recGblGetAlarmDouble(paddr, pad);
     return 0;
 }
-

@@ -106,9 +106,9 @@ if(status) { \
 }
 
 
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
-static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
+epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId pthreadInfo)
 {
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
     double maxPriority,minPriority,slope,oss;
 
     if(pcommonAttr->maxPriority==pcommonAttr->minPriority)
@@ -118,8 +118,11 @@ static int getOssPriorityValue(epicsThreadOSD *pthreadInfo)
     slope = (maxPriority - minPriority)/100.0;
     oss = (double)pthreadInfo->osiPriority * slope + minPriority;
     return((int)oss);
-}
+#else
+    return 0;
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
+}
+
 static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
 {
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
@@ -128,7 +131,8 @@ static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     checkStatusOnce(status,"pthread_attr_getschedparam");
-    pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
+    pthreadInfo->schedPolicy = policy;
     status = pthread_attr_setschedpolicy(
         &pthreadInfo->attr,policy);
     checkStatusOnce(status,"pthread_attr_setschedpolicy");
@@ -610,12 +614,12 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
     pthreadInfo->osiPriority = priority;
     if(!pthreadInfo->isRealTimeScheduled) return;
 #if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) 
-    pthreadInfo->schedParam.sched_priority = getOssPriorityValue(pthreadInfo);
+    pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
     if(errVerbose) checkStatus(status,"pthread_attr_setschedparam");
     status = pthread_setschedparam(
-        pthreadInfo->tid,pcommonAttr->schedPolicy,&pthreadInfo->schedParam);
+        pthreadInfo->tid, pthreadInfo->schedPolicy, &pthreadInfo->schedParam);
     if(errVerbose) checkStatus(status,"pthread_setschedparam");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */
 }

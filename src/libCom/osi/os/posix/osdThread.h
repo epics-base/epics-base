@@ -38,6 +38,7 @@ typedef struct epicsThreadOSD {
 } epicsThreadOSD;
 
 epicsShareFunc pthread_t epicsThreadGetPosixThreadId(epicsThreadId id);
+epicsShareFunc int epicsThreadGetPosixPriority(epicsThreadId id);
 
 #ifdef __cplusplus
 }

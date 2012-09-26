@@ -496,12 +496,24 @@ dbChannel * dbChannelCreate(const char *name)
     paddr->special = pflddes->special;
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
+    if (paddr->special == SPC_DBADDR) {
+        struct rset *prset = dbGetRset(paddr);
+
+        /* Let record type modify paddr */
+        if (prset && prset->cvt_dbaddr) {
+            status = prset->cvt_dbaddr(paddr);
+            if (status)
+                goto finish;
+            dbfType = paddr->field_type;
+        }
+    }
+
     /* Handle field modifiers */
     if (*pname) {
         if (*pname == '$') {
             /* Some field types can be accessed as char arrays */
             if (dbfType == DBF_STRING) {
-                paddr->no_elements = pflddes->size;
+                paddr->no_elements = paddr->field_size;
                 paddr->field_type = DBF_CHAR;
                 paddr->field_size = 1;
                 paddr->dbr_field_type = DBR_CHAR;
@@ -532,16 +544,6 @@ dbChannel * dbChannelCreate(const char *name)
         if (*pname) {
             status = S_dbLib_fieldNotFound;
             goto finish;
-        }
-    }
-
-    if (paddr->special == SPC_DBADDR) {
-        struct rset *prset = dbGetRset(paddr);
-
-        /* Let record type modify the dbAddr */
-        if (prset && prset->cvt_dbaddr) {
-            status = prset->cvt_dbaddr(paddr);
-            if (status) goto finish;
         }
     }
 

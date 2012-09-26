@@ -74,6 +74,8 @@ void usage (void)
     "  -a: Put array\n"
     "      Value format: number of requested values, then list of values\n"
     "  -S: Put string as an array of char (long string)\n"
+    "Alternate output field separator:\n"
+    "  -F <ofs>: Use <ofs> as an alternate output field separator\n"
     "\nExample: caput my_channel 1.2\n"
     "  (puts 1.2 to my_channel)\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);

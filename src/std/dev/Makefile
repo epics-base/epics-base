@@ -38,6 +38,7 @@ dbRecStd_SRCS += devMbboDirectSoft.c
 dbRecStd_SRCS += devMbboDirectSoftRaw.c
 dbRecStd_SRCS += devMbboSoft.c
 dbRecStd_SRCS += devMbboSoftRaw.c
+dbRecStd_SRCS += devPrintfSoft.c
 dbRecStd_SRCS += devSASoft.c
 dbRecStd_SRCS += devSiSoft.c
 dbRecStd_SRCS += devSoSoft.c
@@ -57,9 +58,11 @@ dbRecStd_SRCS += devCalcoutSoftCallback.c
 dbRecStd_SRCS += devLoSoftCallback.c
 dbRecStd_SRCS += devMbboSoftCallback.c
 dbRecStd_SRCS += devMbboDirectSoftCallback.c
+dbRecStd_SRCS += devPrintfSoftCallback.c
 dbRecStd_SRCS += devSoSoftCallback.c
 
 dbRecStd_SRCS += devTimestamp.c
+dbRecStd_SRCS += devPrintfStdio.c
 dbRecStd_SRCS += devSoStdio.c
 
 dbRecStd_SRCS += asSubRecordFunctions.c

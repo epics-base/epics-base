@@ -103,7 +103,6 @@ sub parsePod {
     my @pod;
     while (1) {
         if (m/\G ( =cut .* ) \n?/oxgc) {
-            push @pod, $1;
             popContext("Pod markup");
             return @pod;
         }

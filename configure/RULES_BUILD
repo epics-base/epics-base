@@ -68,6 +68,8 @@ else
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
 
+HTMLS_DIR ?= .
+
 #---------------------------------------------------------------
 #	First target
 

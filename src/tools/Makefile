@@ -51,7 +51,6 @@ PERL_SCRIPTS += dbdExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
-HTMLS_DIR = std
 HTMLS = style.css
 
 include $(TOP)/configure/RULES

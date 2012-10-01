@@ -15,7 +15,7 @@ recordtype(subArray) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
-		#=type See FTVL
+		#=type Set by FTVL
 		#=read Yes
 		#=write Yes
 	}

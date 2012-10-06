@@ -78,6 +78,26 @@ for a while in case anyone still needs them.</p>
 
 <h2 align="center">Changes between 3.14.x and 3.15.0.1</h2>
 
+<h3>Application clean rules</h3>
+
+<p>The <tt>clean</tt> Makefile target has changed between a single-colon rule
+and a double-colon rule more than once in the life of the EPICS build rules, and
+it just changed back to a single-colon rule, but now we recommend that
+applications that wish to provide a Makefile that is backwards compatible with
+the 3.14 build rules use the construct shown below.  The 3.15 rules now support
+a variable called <tt>CLEANS</tt> to which a Makefile can add a list of files to
+be deleted when the user does a <tt>make clean</tt> like this:</p>
+
+<blockquote><pre>CLEANS += &lt;list of files to be cleaned&gt;
+
+ifndef BASE_3_15
+clean::
+	$(RM) $(CLEANS)
+endif</pre></blockquote>
+
+<p>The conditional rule provides compatibility for use with the 3.14 build
+system.</p>
+
 <h3>MSI included with Base</h3>
 
 <p>An enhanced version of the Macro Substitution and Include program <q>msi</q>

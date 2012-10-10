@@ -94,6 +94,7 @@ epicsShareExtern devLibVME *pdevLibVME;
 
 #ifndef NO_DEVLIB_COMPAT
 #  define pdevLibVirtualOS pdevLibVME
+typedef devLibVME devLibVirtualOS;
 #endif
 
 

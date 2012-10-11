@@ -173,7 +173,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
 	}
     else if ( status != S_casApp_asyncCompletion && 
                 status != S_casApp_postponeAsyncIO ) {
-        errMessage ( status, 
+        errPrintf ( status, __FILE__, __LINE__,
             "- unable to read application type \"enums\" "
             " (string conversion table) from enumerated native type PV \"%s\"", 
             this->getName() );

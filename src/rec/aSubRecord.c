@@ -85,13 +85,12 @@ rset aSubRSET = {
 epicsExportAddress(rset, aSubRSET);
 
 static long initFields(epicsEnum16 *pft, epicsUInt32 *pno, epicsUInt32 *pne,
-    const char **fldnames, void **pval, void **povl);
+    epicsUInt32 *pon, const char **fldnames, void **pval, void **povl);
 static long fetch_values(aSubRecord *prec);
 static void monitor(aSubRecord *);
 static long do_sub(aSubRecord *);
 
 #define NUM_ARGS        21
-#define MAX_ARRAY_SIZE 10000000
 
 /* These are the names of the Input fields */
 static const char *Ifldnames[] = {
@@ -117,10 +116,10 @@ static long init_record(aSubRecord *prec, int pass)
     status = 0;
     if (pass == 0) {
         /* Allocate memory for arrays */
-        initFields(&prec->fta,  &prec->noa,  &prec->nea,  Ifldnames,
-            &prec->a,    NULL);
-        initFields(&prec->ftva, &prec->nova, &prec->neva, Ofldnames,
-            &prec->vala, &prec->ovla);
+        initFields(&prec->fta,  &prec->noa,  &prec->nea,  NULL,
+            Ifldnames, &prec->a,    NULL);
+        initFields(&prec->ftva, &prec->nova, &prec->neva, &prec->onva,
+            Ofldnames, &prec->vala, &prec->ovla);
         return 0;
     }
 
@@ -146,12 +145,8 @@ static long init_record(aSubRecord *prec, int pass)
         struct link *plink = &(&prec->inpa)[i];
         switch (plink->type) {
         case CONSTANT:
-            if ((&prec->noa)[i] < 2) {
-                if (recGblInitConstantLink(plink, (&prec->fta)[i], (&prec->a)[i])) {
-                    prec->udf = FALSE;
-                } else
-                    prec->udf = TRUE;
-            }
+            if ((&prec->noa)[i] < 2)
+                recGblInitConstantLink(plink, (&prec->fta)[i], (&prec->a)[i]);
             break;
 
         case PV_LINK:
@@ -218,7 +213,7 @@ static long init_record(aSubRecord *prec, int pass)
 
 
 static long initFields(epicsEnum16 *pft, epicsUInt32 *pno, epicsUInt32 *pne,
-    const char **fldnames, void **pval, void **povl)
+    epicsUInt32 *pon, const char **fldnames, void **pval, void **povl)
 {
     int i;
     long status = 0;
@@ -235,22 +230,16 @@ static long initFields(epicsEnum16 *pft, epicsUInt32 *pno, epicsUInt32 *pne,
 
         flen = dbValueSize(*pft);
         num = *pno * flen;
-
-        if (num > MAX_ARRAY_SIZE) {
-            epicsPrintf("Link %s - Array too large! %d Bytes\n", fldnames[i], num);
-            *pno = num = 0;
-            status = S_db_errArg;
-        } else
-            *pval = (char *)callocMustSucceed(*pno, flen,
-                "aSubRecord::init_record");
+        *pval = callocMustSucceed(*pno, flen, "aSubRecord::init_record");
 
         *pne = *pno;
 
         if (povl) {
             if (num)
-                *povl = (char *)callocMustSucceed(*pno, flen,
+                *povl = callocMustSucceed(*pno, flen,
                     "aSubRecord::init_record");
             povl++;
+            *pon++ = *pne;
         }
     }
     return status;
@@ -281,6 +270,7 @@ static long process(aSubRecord *prec)
     /* Push the output link values */
     if (!status) {
         int i;
+
         for (i = 0; i < NUM_ARGS; i++)
             dbPutLink(&(&prec->outa)[i], (&prec->ftva)[i], (&prec->vala)[i],
                 (&prec->neva)[i]);
@@ -359,18 +349,29 @@ static void monitor(aSubRecord *prec)
         break;
     case aSubEFLG_ON_CHANGE:
         for (i = 0; i < NUM_ARGS; i++) {
-            epicsUInt32 alen = dbValueSize((&prec->ftva)[i]) * (&prec->neva)[i];
             void *povl = (&prec->ovla)[i];
             void *pval = (&prec->vala)[i];
-            if (memcmp(povl, pval, alen)) {
+            epicsUInt32 *ponv = &(&prec->onva)[i];
+            epicsUInt32 *pnev = &(&prec->neva)[i];
+            epicsUInt32 onv = *ponv;    /* Num Elements in OVLx */
+            epicsUInt32 nev = *pnev;    /* Num Elements in VALx */
+            epicsUInt32 alen = dbValueSize((&prec->ftva)[i]) * nev;
+
+            if (nev != onv || memcmp(povl, pval, alen)) {
                 memcpy(povl, pval, alen);
                 db_post_events(prec, pval, monitor_mask);
+                if (nev != onv) {
+                    *ponv = nev;
+                    db_post_events(prec, pnev, monitor_mask);
+                }
             }
         }
         break;
     case aSubEFLG_ALWAYS:
-        for (i = 0; i < NUM_ARGS; i++)
+        for (i = 0; i < NUM_ARGS; i++) {
             db_post_events(prec, (&prec->vala)[i], monitor_mask);
+            db_post_events(prec, &(&prec->neva)[i], monitor_mask);
+        }
         break;
     }
     return;

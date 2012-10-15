@@ -60,6 +60,12 @@ recordtype(aSub) {
 		interest(2)
 		extra("long (*sadr)(struct aSubRecord *)")
 	}
+	field(CADR,DBF_NOACCESS) {
+		prompt("Subroutine Cleanup Address")
+		special(SPC_NOMOD)
+		interest(2)
+		extra("void (*cadr)(struct aSubRecord *)")
+	}
 	field(BRSV,DBF_MENU) {
 		prompt("Bad Return Severity")
 		promptgroup(GUI_SUB)

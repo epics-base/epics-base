@@ -311,6 +311,11 @@ static long fetch_values(aSubRecord *prec)
             if (!pfunc)
                 return S_db_BadSub;
 
+            if (prec->sadr!=pfunc && prec->cadr) {
+                prec->cadr(prec);
+                prec->cadr = NULL;
+            }
+
             prec->sadr = pfunc;
             strcpy(prec->onam, prec->snam);
         }
@@ -578,17 +583,27 @@ static long put_array_info(DBADDR *paddr, long nNew)
 static long special(DBADDR *paddr, int after)
 {
     aSubRecord *prec = (aSubRecord *)paddr->precord;
+    long status = 0;
 
     if (after &&
         prec->lflg == aSubLFLG_IGNORE) {
+        GENFUNCPTR pfunc;
         if (prec->snam[0] == 0)
-            return 0;
-
-        prec->sadr = (GENFUNCPTR)registryFunctionFind(prec->snam);
-        if (!prec->sadr) {
-            recGblRecordError(S_db_BadSub, (void *)prec, prec->snam);
-            return S_db_BadSub;
+            pfunc = 0;
+        else {
+            pfunc = (GENFUNCPTR)registryFunctionFind(prec->snam);
+            if (!pfunc) {
+                status = S_db_BadSub;
+                recGblRecordError(status, (void *)prec, prec->snam);
+            }
         }
+
+        if (prec->sadr != pfunc && prec->cadr) {
+            prec->cadr(prec);
+            prec->cadr = NULL;
+        }
+
+        prec->sadr = pfunc;
     }
-    return 0;
+    return status;
 }

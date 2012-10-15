@@ -15,6 +15,39 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Add cleanup subroutine to aSub record</h3>
+
+<p>An aSub routine may set the CADR field with a function pointer which will be
+run before a new routine in the event that a change to the SNAM field changes
+the record's process subroutine.</p>
+
+<p>This can be used to free any resources the routine needs to allocate. It can
+also be used to determine if this is the first time this routine has been called
+by this record instance. The CADR field is set to NULL immediately after the
+routine it points to is called.</p>
+
+<p>Example:</p>
+
+<blockquote><pre>void cleanup(aSubRecord* prec) {
+    free(prec-&gt;dpvt);
+    prec-&gt;dpvt = NULL;
+}
+
+long myAsubRoutine(aSubRecord* prec) {
+    if (!prec-&gt;cadr) {
+        /* check types of inputs and outputs */
+        if (prec-&gt;ftva != menuFtypeDOUBLE)
+            return 1; /* oops */
+
+        dpvt = malloc(42);
+        prec-&gt;cadr = &amp;cleanup;
+    }
+
+    /* normal processing */
+}
+epicsRegisterFunction(myAsubRoutine);
+</pre></blockquote>
+
 <h3>Sequence record enhancements</h3>
 
 <p>The sequence record type now has 16 link groups numbered 0 through 9 and A

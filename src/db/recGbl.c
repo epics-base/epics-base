@@ -21,6 +21,7 @@
 #include <limits.h>
 
 #include "dbDefs.h"
+#include "epicsMath.h"
 #include "epicsTime.h"
 #include "epicsPrint.h"
 #include "dbBase.h"
@@ -107,64 +108,56 @@ void epicsShareAPI recGblRecSupError(long status, const struct dbAddr *paddr,
     return;
 }
 
-void epicsShareAPI recGblGetPrec(const struct dbAddr *paddr,long *precision)
+void epicsShareAPI recGblGetPrec(const struct dbAddr *paddr, long *precision)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
-    switch(pdbFldDes->field_type){
-    case(DBF_SHORT):
-         *precision = 0;
-         break;
-    case(DBF_USHORT):
-         *precision = 0;
-         break;
-    case(DBF_LONG):
-         *precision = 0;
-         break;
-    case(DBF_ULONG):
-         *precision = 0;
-         break;
-    case(DBF_FLOAT):
-    case(DBF_DOUBLE):
-	 if(*precision<0 || *precision>15) *precision=15;
-         break;
+    switch (pdbFldDes->field_type) {
+    case DBF_CHAR:
+    case DBF_UCHAR:
+    case DBF_SHORT:
+    case DBF_USHORT:
+    case DBF_LONG:
+    case DBF_ULONG:
+        *precision = 0;
+        break;
+
+    case DBF_FLOAT:
+    case DBF_DOUBLE:
+        if (*precision < 0 || *precision > 15)
+            *precision = 15;
+        break;
+
     default:
          break;
     }
-    return;
 }
 
-void epicsShareAPI recGblGetGraphicDouble(
-    const struct dbAddr *paddr,struct dbr_grDouble *pgd)
+void epicsShareAPI recGblGetGraphicDouble(const struct dbAddr *paddr,
+    struct dbr_grDouble *pgd)
 {
     dbFldDes *pdbFldDes = paddr->pfldDes;
 
-    getMaxRangeValues(pdbFldDes->field_type,&pgd->upper_disp_limit,
-	&pgd->lower_disp_limit);
-
-    return;
+    getMaxRangeValues(pdbFldDes->field_type,
+        &pgd->upper_disp_limit, &pgd->lower_disp_limit);
 }
 
-void epicsShareAPI recGblGetAlarmDouble(
-    const struct dbAddr *paddr,struct dbr_alDouble *pad)
+void epicsShareAPI recGblGetAlarmDouble(const struct dbAddr *paddr,
+    struct dbr_alDouble *pad)
 {
-    pad->upper_alarm_limit = 0;
-    pad->upper_warning_limit = 0;
-    pad->lower_warning_limit = 0;
-    pad->lower_alarm_limit = 0;
-
-    return;
+    pad->upper_alarm_limit   = epicsNAN;
+    pad->upper_warning_limit = epicsNAN;
+    pad->lower_warning_limit = epicsNAN;
+    pad->lower_alarm_limit   = epicsNAN;
 }
 
-void epicsShareAPI recGblGetControlDouble(
-    const struct dbAddr *paddr,struct dbr_ctrlDouble *pcd)
+void epicsShareAPI recGblGetControlDouble(const struct dbAddr *paddr,
+    struct dbr_ctrlDouble *pcd)
 {
-    dbFldDes *pdbFldDes=paddr->pfldDes;
+    dbFldDes *pdbFldDes = paddr->pfldDes;
 
-    getMaxRangeValues(pdbFldDes->field_type,&pcd->upper_ctrl_limit,
-	&pcd->lower_ctrl_limit);
-
-    return;
+    getMaxRangeValues(pdbFldDes->field_type,
+        &pcd->upper_ctrl_limit, &pcd->lower_ctrl_limit);
 }
 
 int  epicsShareAPI recGblInitConstantLink(
@@ -319,40 +312,39 @@ static void getMaxRangeValues(short field_type, double *pupper_limit,
     double *plower_limit)
 {
     switch(field_type){
-    case(DBF_CHAR):
-         *pupper_limit = -128.0;
-         *plower_limit = 127.0;
-         break;
-    case(DBF_UCHAR):
-         *pupper_limit = 255.0;
-         *plower_limit = 0.0;
-         break;
-    case(DBF_SHORT):
-         *pupper_limit = (double)SHRT_MAX;
-         *plower_limit = (double)SHRT_MIN;
-         break;
-    case(DBF_ENUM):
-    case(DBF_USHORT):
-         *pupper_limit = (double)USHRT_MAX;
-         *plower_limit = (double)0;
-         break;
-    case(DBF_LONG):
-	/* long did not work using cast to double */
-         *pupper_limit = 2147483647.;
-         *plower_limit = -2147483648.;
-         break;
-    case(DBF_ULONG):
-         *pupper_limit = (double)ULONG_MAX;
-         *plower_limit = (double)0;
-         break;
-    case(DBF_FLOAT):
-         *pupper_limit = (double)1e+30;
-         *plower_limit = (double)-1e30;
-         break;
-    case(DBF_DOUBLE):
-         *pupper_limit = (double)1e+30;
-         *plower_limit = (double)-1e30;
-         break;
+    case DBF_CHAR:
+        *pupper_limit = -128.0;
+        *plower_limit = 127.0;
+        break;
+    case DBF_UCHAR:
+        *pupper_limit = 255.0;
+        *plower_limit = 0.0;
+        break;
+    case DBF_SHORT:
+        *pupper_limit = (double) SHRT_MAX;
+        *plower_limit = (double) SHRT_MIN;
+        break;
+    case DBF_ENUM:
+    case DBF_USHORT:
+        *pupper_limit = (double) USHRT_MAX;
+        *plower_limit = 0.0;
+        break;
+    case DBF_LONG:
+        *pupper_limit = 2147483647.0;
+        *plower_limit = -2147483648.0;
+        break;
+    case DBF_ULONG:
+        *pupper_limit = (double) 0xffffffffU;
+        *plower_limit = 0.0;
+        break;
+    case DBF_FLOAT:
+        *pupper_limit = 1e30;
+        *plower_limit = -1e30;
+        break;
+    case DBF_DOUBLE:
+        *pupper_limit = 1e300;
+        *plower_limit = -1e300;
+        break;
     }
     return;
 }

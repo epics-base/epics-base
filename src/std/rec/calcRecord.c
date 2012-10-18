@@ -403,20 +403,20 @@ static void monitor(calcRecord *prec)
     /* check for value change */
     delta = prec->mlst - prec->val;
     if (delta < 0.0) delta = -delta;
-    if (delta > prec->mdel) {
-        /* post events for value change */
-        monitor_mask |= DBE_VALUE;
-        /* update last value monitored */
-        prec->mlst = prec->val;
+    if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
+	/* post events for value change */
+	monitor_mask |= DBE_VALUE;
+	/* update last value monitored */
+	prec->mlst = prec->val;
     }
     /* check for archive change */
     delta = prec->alst - prec->val;
     if (delta < 0.0) delta = -delta;
-    if (delta > prec->adel) {
-        /* post events on value field for archive change */
-        monitor_mask |= DBE_LOG;
-        /* update last archive value monitored */
-        prec->alst = prec->val;
+    if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
+	/* post events on value field for archive change */
+	monitor_mask |= DBE_LOG;
+	/* update last archive value monitored */
+	prec->alst = prec->val;
     }
 
     /* send out monitors connected to the value field */

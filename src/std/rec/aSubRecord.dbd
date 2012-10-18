@@ -1055,127 +1055,148 @@ recordtype(aSub) {
 		prompt("Old Output A")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovla")
+		interest(4)
+		extra("void *ovla")
 	}
 	field(OVLB,DBF_NOACCESS) {
 		prompt("Old Output B")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlb")
+		interest(4)
+		extra("void *ovlb")
 	}
 	field(OVLC,DBF_NOACCESS) {
 		prompt("Old Output C")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlc")
+		interest(4)
+		extra("void *ovlc")
 	}
 	field(OVLD,DBF_NOACCESS) {
 		prompt("Old Output D")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovld")
+		interest(4)
+		extra("void *ovld")
 	}
 	field(OVLE,DBF_NOACCESS) {
 		prompt("Old Output E")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovle")
+		interest(4)
+		extra("void *ovle")
 	}
 	field(OVLF,DBF_NOACCESS) {
 		prompt("Old Output F")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlf")
+		interest(4)
+		extra("void *ovlf")
 	}
 	field(OVLG,DBF_NOACCESS) {
 		prompt("Old Output G")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlg")
+		interest(4)
+		extra("void *ovlg")
 	}
 	field(OVLH,DBF_NOACCESS) {
 		prompt("Old Output H")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlh")
+		interest(4)
+		extra("void *ovlh")
 	}
 	field(OVLI,DBF_NOACCESS) {
 		prompt("Old Output I")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovli")
+		interest(4)
+		extra("void *ovli")
 	}
 	field(OVLJ,DBF_NOACCESS) {
 		prompt("Old Output J")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlj")
+		interest(4)
+		extra("void *ovlj")
 	}
 	field(OVLK,DBF_NOACCESS) {
 		prompt("Old Output K")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlk")
+		interest(4)
+		extra("void *ovlk")
 	}
 	field(OVLL,DBF_NOACCESS) {
 		prompt("Old Output L")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovll")
+		interest(4)
+		extra("void *ovll")
 	}
 	field(OVLM,DBF_NOACCESS) {
 		prompt("Old Output M")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlm")
+		interest(4)
+		extra("void *ovlm")
 	}
 	field(OVLN,DBF_NOACCESS) {
 		prompt("Old Output N")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovln")
+		interest(4)
+		extra("void *ovln")
 	}
 	field(OVLO,DBF_NOACCESS) {
 		prompt("Old Output O")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlo")
+		interest(4)
+		extra("void *ovlo")
 	}
 	field(OVLP,DBF_NOACCESS) {
 		prompt("Old Output P")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlp")
+		interest(4)
+		extra("void *ovlp")
 	}
 	field(OVLQ,DBF_NOACCESS) {
 		prompt("Old Output Q")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlq")
+		interest(4)
+		extra("void *ovlq")
 	}
 	field(OVLR,DBF_NOACCESS) {
 		prompt("Old Output R")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlr")
+		interest(4)
+		extra("void *ovlr")
 	}
 	field(OVLS,DBF_NOACCESS) {
 		prompt("Old Output S")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovls")
+		interest(4)
+		extra("void *ovls")
 	}
 	field(OVLT,DBF_NOACCESS) {
 		prompt("Old Output T")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlt")
+		interest(4)
+		extra("void *ovlt")
 	}
 	field(OVLU,DBF_NOACCESS) {
 		prompt("Old Output U")
 		asl(ASL0)
 		special(SPC_NOMOD)
-		interest(4)		extra("void *ovlu")
+		interest(4)
+		extra("void *ovlu")
 	}
 	field(FTVA,DBF_MENU) {
 		prompt("Type of VALA")
@@ -1494,149 +1515,254 @@ recordtype(aSub) {
 	}
 	field(NEVA,DBF_ULONG) {
 		prompt("Num. elements in VALA")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVB,DBF_ULONG) {
 		prompt("Num. elements in VALB")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVC,DBF_ULONG) {
 		prompt("Num. elements in VALC")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVD,DBF_ULONG) {
 		prompt("Num. elements in VALD")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVE,DBF_ULONG) {
 		prompt("Num. elements in VALE")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVF,DBF_ULONG) {
 		prompt("Num. elements in VALF")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVG,DBF_ULONG) {
 		prompt("Num. elements in VALG")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVH,DBF_ULONG) {
 		prompt("Num. elements in VAlH")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVI,DBF_ULONG) {
 		prompt("Num. elements in VALI")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVJ,DBF_ULONG) {
 		prompt("Num. elements in VALJ")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVK,DBF_ULONG) {
 		prompt("Num. elements in VALK")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVL,DBF_ULONG) {
 		prompt("Num. elements in VALL")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVM,DBF_ULONG) {
 		prompt("Num. elements in VALM")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVN,DBF_ULONG) {
 		prompt("Num. elements in VALN")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVO,DBF_ULONG) {
 		prompt("Num. elements in VALO")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVP,DBF_ULONG) {
 		prompt("Num. elements in VALP")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVQ,DBF_ULONG) {
 		prompt("Num. elements in VALQ")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVR,DBF_ULONG) {
 		prompt("Num. elements in VALR")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVS,DBF_ULONG) {
 		prompt("Num. elements in VALS")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVT,DBF_ULONG) {
 		prompt("Num. elements in VALT")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
 		initial("1")
 	}
 	field(NEVU,DBF_ULONG) {
 		prompt("Num. elements in VALU")
-		promptgroup(GUI_WAVE)
 		special(SPC_NOMOD)
 		interest(3)
+		initial("1")
+	}
+	field(ONVA,DBF_ULONG) {
+		prompt("Num. elements in OVLA")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVB,DBF_ULONG) {
+		prompt("Num. elements in OVLB")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVC,DBF_ULONG) {
+		prompt("Num. elements in OVLC")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVD,DBF_ULONG) {
+		prompt("Num. elements in OVLD")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVE,DBF_ULONG) {
+		prompt("Num. elements in OVLE")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVF,DBF_ULONG) {
+		prompt("Num. elements in OVLF")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVG,DBF_ULONG) {
+		prompt("Num. elements in OVLG")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVH,DBF_ULONG) {
+		prompt("Num. elements in VAlH")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVI,DBF_ULONG) {
+		prompt("Num. elements in OVLI")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVJ,DBF_ULONG) {
+		prompt("Num. elements in OVLJ")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVK,DBF_ULONG) {
+		prompt("Num. elements in OVLK")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVL,DBF_ULONG) {
+		prompt("Num. elements in OVLL")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVM,DBF_ULONG) {
+		prompt("Num. elements in OVLM")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVN,DBF_ULONG) {
+		prompt("Num. elements in OVLN")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVO,DBF_ULONG) {
+		prompt("Num. elements in OVLO")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVP,DBF_ULONG) {
+		prompt("Num. elements in OVLP")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVQ,DBF_ULONG) {
+		prompt("Num. elements in OVLQ")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVR,DBF_ULONG) {
+		prompt("Num. elements in OVLR")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVS,DBF_ULONG) {
+		prompt("Num. elements in OVLS")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVT,DBF_ULONG) {
+		prompt("Num. elements in OVLT")
+		special(SPC_NOMOD)
+		interest(4)
+		initial("1")
+	}
+	field(ONVU,DBF_ULONG) {
+		prompt("Num. elements in OVLU")
+		special(SPC_NOMOD)
+		interest(4)
 		initial("1")
 	}
 }

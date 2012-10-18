@@ -28,6 +28,7 @@
 #include "errlog.h"
 #include "cantProceed.h"
 #include "cvtFast.h"
+#include "epicsMath.h"
 #include "epicsTime.h"
 #include "alarm.h"
 #include "ellLib.h"
@@ -272,48 +273,41 @@ static void get_control(DBADDR *paddr, char **ppbuffer,
 }
 
 static void get_alarm(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    struct rset *prset, long *options)
 {
-	struct			dbr_alDouble ald;
-	int			got_data=FALSE;
+    char *pbuffer = *ppbuffer;
+    struct dbr_alDouble ald = {epicsNAN, epicsNAN, epicsNAN, epicsNAN};
+    long no_data = TRUE;
 
-        ald.upper_alarm_limit = ald.upper_warning_limit = 0.0;
-        ald.lower_warning_limit = ald.lower_alarm_limit = 0.0;
-	if( prset && prset->get_alarm_double ) {
-		(*prset->get_alarm_double)(paddr,&ald);
-		got_data=TRUE;
-	}
-	if( (*options) & (DBR_AL_LONG) ) {
-		char	*pbuffer=*ppbuffer;
+    if (prset && prset->get_alarm_double)
+        no_data = prset->get_alarm_double(paddr, &ald);
 
-		if(got_data) {
-		    struct dbr_alLong *pal=(struct dbr_alLong*)pbuffer;
-		    pal->upper_alarm_limit = (epicsInt32)ald.upper_alarm_limit;
-		    pal->upper_warning_limit = (epicsInt32)ald.upper_warning_limit;
-		    pal->lower_warning_limit = (epicsInt32)ald.lower_warning_limit;
-		    pal->lower_alarm_limit = (epicsInt32)ald.lower_alarm_limit;
-		} else {
-		    memset(pbuffer,'\0',dbr_alLong_size);
-		    *options = (*options) ^ DBR_AL_LONG; /*Turn off option*/
-		}
-		*ppbuffer = ((char *)*ppbuffer) + dbr_alLong_size;
-	}
-	if( (*options) & (DBR_AL_DOUBLE) ) {
-		char	*pbuffer=*ppbuffer;
+    if (*options & DBR_AL_LONG) {
+        struct dbr_alLong *pal = (struct dbr_alLong*) pbuffer;
 
-		if(got_data) {
-		    struct dbr_alDouble *pal=(struct dbr_alDouble*)pbuffer;
-		    pal->upper_alarm_limit = ald.upper_alarm_limit;
-		    pal->upper_warning_limit = ald.upper_warning_limit;
-		    pal->lower_warning_limit = ald.lower_warning_limit;
-		    pal->lower_alarm_limit = ald.lower_alarm_limit;
-		} else {
-		    memset(pbuffer,'\0',dbr_alDouble_size);
-		    *options = (*options) ^ DBR_AL_DOUBLE; /*Turn off option*/
-		}
-		*ppbuffer = ((char *)*ppbuffer) + dbr_alDouble_size;
-	}
-	return;
+        pal->upper_alarm_limit   = (epicsInt32) ald.upper_alarm_limit;
+        pal->upper_warning_limit = (epicsInt32) ald.upper_warning_limit;
+        pal->lower_warning_limit = (epicsInt32) ald.lower_warning_limit;
+        pal->lower_alarm_limit   = (epicsInt32) ald.lower_alarm_limit;
+
+        if (no_data)
+            *options ^= DBR_AL_LONG; /*Turn off option*/
+
+        *ppbuffer += dbr_alLong_size;
+    }
+    if (*options & DBR_AL_DOUBLE) {
+        struct dbr_alDouble *pal = (struct dbr_alDouble*) pbuffer;
+
+        pal->upper_alarm_limit   = ald.upper_alarm_limit;
+        pal->upper_warning_limit = ald.upper_warning_limit;
+        pal->lower_warning_limit = ald.lower_warning_limit;
+        pal->lower_alarm_limit   = ald.lower_alarm_limit;
+
+        if (no_data)
+            *options ^= DBR_AL_DOUBLE; /*Turn off option*/
+
+        *ppbuffer += dbr_alDouble_size;
+    }
 }
 
 /*
@@ -1182,8 +1176,9 @@ long dbPut(DBADDR *paddr, short dbrType,
             status = prset->get_array_info(paddr, &dummy, &offset);
         }
         if (no_elements < nRequest) nRequest = no_elements;
-        status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
-            nRequest, no_elements, offset);
+        if (!status)
+            status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
+                nRequest, no_elements, offset);
 
         /* update array info */
         if (!status &&

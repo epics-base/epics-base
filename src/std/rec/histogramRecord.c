@@ -426,7 +426,7 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
     histogramRecord *prec=(histogramRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(BPTR):
+        case indexof(VAL):
             pgd->upper_disp_limit = prec->hopr;
             pgd->lower_disp_limit = prec->lopr;
             break;
@@ -444,7 +444,7 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     histogramRecord *prec=(histogramRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(BPTR):
+        case indexof(VAL):
             pcd->upper_ctrl_limit = prec->hopr;
             pcd->lower_ctrl_limit = prec->lopr;
             break;

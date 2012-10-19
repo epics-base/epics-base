@@ -418,7 +418,7 @@ static long get_precision(DBADDR *paddr, long *precision)
     compressRecord	*prec=(compressRecord *)paddr->precord;
 
     *precision = prec->prec;
-    if(dbGetFieldIndex(paddr) == indexof(BPTR)) return(0);
+    if(dbGetFieldIndex(paddr) == indexof(VAL)) return(0);
     recGblGetPrec(paddr,precision);
     return(0);
 }
@@ -428,7 +428,7 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
     compressRecord *prec=(compressRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(BPTR):
+        case indexof(VAL):
         case indexof(IHIL):
         case indexof(ILIL):
             pgd->upper_disp_limit = prec->hopr;
@@ -445,7 +445,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     compressRecord *prec=(compressRecord *)paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(BPTR):
+        case indexof(VAL):
         case indexof(IHIL):
         case indexof(ILIL):
             pcd->upper_ctrl_limit = prec->hopr;

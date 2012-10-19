@@ -12,7 +12,7 @@
  *      Original Author: Bob Dalesio
  *      Date:            7-14-89 
  */
-
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -36,6 +36,8 @@
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
 
+#define indexof(field) compressRecord##field
+
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
@@ -55,28 +57,29 @@ static long get_graphic_double(DBADDR *, struct dbr_grDouble *);
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
 
-rset compressRSET={
-	RSETNUMBER,
-	report,
-	initialize,
-	init_record,
-	process,
-	special,
-	get_value,
-	cvt_dbaddr,
-	get_array_info,
-	put_array_info,
-	get_units,
-	get_precision,
-	get_enum_str,
-	get_enum_strs,
-	put_enum_str,
-	get_graphic_double,
-	get_control_double,
-	get_alarm_double
+rset compressRSET = {
+    RSETNUMBER,
+    report,
+    initialize,
+    init_record,
+    process,
+    special,
+    get_value,
+    cvt_dbaddr,
+    get_array_info,
+    put_array_info,
+    get_units,
+    get_precision,
+    get_enum_str,
+    get_enum_strs,
+    put_enum_str,
+    get_graphic_double,
+    get_control_double,
+    get_alarm_double
 };
 epicsExportAddress(rset,compressRSET);
-
+
+
 static void reset(compressRecord *prec)
 {
     prec->nuse = 0;
@@ -86,7 +89,7 @@ static void reset(compressRecord *prec)
     prec->res = 0;
     /* allocate memory for the summing buffer for conversions requiring it */
     if (prec->alg == compressALG_Average && prec->sptr == 0){
-        prec->sptr = (double *)calloc(prec->nsam,sizeof(double));
+        prec->sptr = calloc(prec->nsam, sizeof(double));
     }
 }
 
@@ -102,29 +105,29 @@ static void monitor(compressRecord *prec)
     db_post_events(prec, prec->bptr, monitor_mask);
 }
 
-static void put_value(compressRecord *prec,double *psource, epicsInt32 n)
+static void put_value(compressRecord *prec, double *psource, int n)
 {
-/* treat bptr as pointer to a circular buffer*/
-	double *pdest;
-	epicsInt32 offset=prec->off;
-	epicsInt32 nuse=prec->nuse;
-	epicsInt32 nsam=prec->nsam;
-	epicsInt32 i;
+    epicsInt32 offset = prec->off;
+    epicsInt32 nuse = prec->nuse;
+    epicsInt32 nsam = prec->nsam;
+    double *pdest = prec->bptr + offset;
+    int i;
 
-	pdest = prec->bptr + offset;
-	for(i=0; i<n; i++, psource++) {
-		*pdest=*psource;
-		offset++;
-		if(offset>=nsam) {
-			pdest=prec->bptr;
-			offset=0;
-		} else pdest++;
-	}
-	nuse = nuse+n;
-	if(nuse>nsam) nuse=nsam;
-	prec->off = offset;
-	prec->nuse = nuse;
-	return;
+    for (i = 0; i < n; i++) {
+        *pdest = *psource++;
+        if (++offset >= nsam) {
+            pdest = prec->bptr;
+            offset = 0;
+        }
+        else
+            pdest++;
+    }
+    nuse += n;
+    if (nuse > nsam)
+        nuse = nsam;
+    prec->off = offset;
+    prec->nuse = nuse;
+    return;
 }
 
 /* qsort comparison function (for median calculation) */
@@ -139,7 +142,7 @@ static int compare(const void *arg1, const void *arg2)
 }
 
 static int compress_array(compressRecord *prec,
-	double *psource,epicsInt32 no_elements)
+    double *psource, int no_elements)
 {
 	epicsInt32	i,j;
 	epicsInt32	nnew;
@@ -295,137 +298,145 @@ static int compress_scalar(struct compressRecord *prec,double *psource)
 /*Beginning of record support routines*/
 static long init_record(compressRecord *prec, int pass)
 {
-    if (pass==0){
-	if(prec->nsam<1) prec->nsam = 1;
-	prec->bptr = (double *)calloc(prec->nsam,sizeof(double));
+    if (pass == 0) {
+        if (prec->nsam < 1)
+            prec->nsam = 1;
+        prec->bptr = calloc(prec->nsam, sizeof(double));
         reset(prec);
     }
-    return(0);
+    return 0;
 }
 
 static long process(compressRecord *prec)
 {
-    long	status=0;
-    long	nelements = 0;
-    int		alg = prec->alg;
+    long status = 0;
+    long nelements = 0;
+    int alg = prec->alg;
 
     prec->pact = TRUE;
-    if(!dbIsLinkConnected(&prec->inp)
-    || dbGetNelements(&prec->inp,&nelements)
-    || nelements<=0) {
-	recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
-    } else {
-	if(!prec->wptr || nelements!=prec->inpn) {
-            if(prec->wptr) {
+    if (!dbIsLinkConnected(&prec->inp) ||
+        dbGetNelements(&prec->inp, &nelements) ||
+        nelements <= 0) {
+        recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
+    }
+    else {
+        if (!prec->wptr || nelements != prec->inpn) {
+            if (prec->wptr) {
                 free(prec->wptr);
                 reset(prec);
             }
-	    prec->wptr = (double *)dbCalloc(nelements,sizeof(double));
-	    prec->inpn = nelements;
-	}
-	status = dbGetLink(&prec->inp,DBF_DOUBLE,prec->wptr,0,&nelements);
-	if(status || nelements<=0) {
-            recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
-	    status = 0;
-	} else {
-	    if(alg==compressALG_Average) {
-		status = array_average(prec,prec->wptr,nelements);
-	    } else if(alg==compressALG_Circular_Buffer) {
-		(void)put_value(prec,prec->wptr,nelements);
-		status = 0;
-	    } else if(nelements>1) {
-		status = compress_array(prec,prec->wptr,nelements);
-	    }else if(nelements==1){
-		status = compress_scalar(prec,prec->wptr);
-	    }else status=1;
-	}
+            prec->wptr = dbCalloc(nelements, sizeof(double));
+            prec->inpn = nelements;
+        }
+        status = dbGetLink(&prec->inp, DBF_DOUBLE, prec->wptr, 0, &nelements);
+        if (status || nelements <= 0) {
+            recGblSetSevr(prec, LINK_ALARM, INVALID_ALARM);
+            status = 0;
+        }
+        else if (alg == compressALG_Average) {
+            status = array_average(prec, prec->wptr, nelements);
+        }
+        else if (alg == compressALG_Circular_Buffer) {
+            put_value(prec, prec->wptr, nelements);
+            status = 0;
+        }
+        else if (nelements > 1) {
+            status = compress_array(prec, prec->wptr, nelements);
+        }
+        else if (nelements == 1){
+            status = compress_scalar(prec, prec->wptr);
+        }
+        else
+            status = 1;
     }
     /* check event list */
-    if(status!=1) {
-		prec->udf=FALSE;
-		recGblGetTimeStamp(prec);
-		monitor(prec);
-		/* process the forward scan link record */
-		recGblFwdLink(prec);
+    if (status != 1) {
+        prec->udf = FALSE;
+        recGblGetTimeStamp(prec);
+        monitor(prec);
+        /* process the forward scan link record */
+        recGblFwdLink(prec);
     }
-    prec->pact=FALSE;
-    return(0);
+    prec->pact = FALSE;
+    return 0;
 }
 
 static long special(DBADDR *paddr, int after)
 {
-    compressRecord   *prec = (compressRecord *)(paddr->precord);
-    int                 special_type = paddr->special;
+    compressRecord *prec = (compressRecord *) paddr->precord;
+    int special_type = paddr->special;
 
-    if(!after) return(0);
-    switch(special_type) {
-    case(SPC_RESET):
-	reset(prec);
-        return(0);
-    default:
-        recGblDbaddrError(S_db_badChoice,paddr,"compress: special");
-        return(S_db_badChoice);
+    if (!after)
+        return 0;
+
+    if (special_type == SPC_RESET) {
+        reset(prec);
+        return 0;
     }
+
+    recGblDbaddrError(S_db_badChoice, paddr, "compress: special");
+    return S_db_badChoice;
 }
 
 static long cvt_dbaddr(DBADDR *paddr)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
-    paddr->pfield = (void *)(prec->bptr);
+    paddr->pfield = prec->bptr;
     paddr->no_elements = prec->nsam;
     paddr->field_type = DBF_DOUBLE;
     paddr->field_size = sizeof(double);
     paddr->dbr_field_type = DBF_DOUBLE;
-    return(0);
+    return 0;
 }
 
-static long get_array_info(DBADDR *paddr,long *no_elements, long *offset)
+static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
-    *no_elements =  prec->nuse;
-    if(prec->nuse==prec->nsam) *offset = prec->off;
-    else *offset = 0;
-    return(0);
+    *no_elements = prec->nuse;
+    if (prec->nuse == prec->nsam)
+        *offset = prec->off;
+    else
+        *offset = 0;
+    return 0;
 }
 
 static long put_array_info(DBADDR *paddr, long nNew)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
-    prec->off = (prec->off + nNew) % (prec->nsam);
-    prec->nuse = (prec->nuse + nNew);
-    if(prec->nuse > prec->nsam) prec->nuse = prec->nsam;
-    return(0);
+    prec->off = (prec->off + nNew) % prec->nsam;
+    prec->nuse += nNew;
+    if (prec->nuse > prec->nsam)
+        prec->nuse = prec->nsam;
+    return 0;
 }
-
-#define indexof(field) compressRecord##field
 
-static long get_units(DBADDR *paddr,char *units)
+static long get_units(DBADDR *paddr, char *units)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
-    if(paddr->pfldDes->field_type == DBF_DOUBLE
-    || dbGetFieldIndex(paddr) == indexof(VAL)) {
-        strncpy(units,prec->egu,DB_UNITS_SIZE);
+    if (paddr->pfldDes->field_type == DBF_DOUBLE ||
+        dbGetFieldIndex(paddr) == indexof(VAL)) {
+        strncpy(units, prec->egu, DB_UNITS_SIZE);
     }
-    return(0);
+    return 0;
 }
 
 static long get_precision(DBADDR *paddr, long *precision)
 {
-    compressRecord	*prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
     *precision = prec->prec;
-    if(dbGetFieldIndex(paddr) == indexof(VAL)) return(0);
-    recGblGetPrec(paddr,precision);
-    return(0);
+    if (dbGetFieldIndex(paddr) != indexof(VAL))
+        recGblGetPrec(paddr,precision);
+    return 0;
 }
 
-static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
+static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -437,12 +448,12 @@ static long get_graphic_double(DBADDR *paddr,struct dbr_grDouble *pgd)
         default:
             recGblGetGraphicDouble(paddr,pgd);
     }
-    return(0);
+    return 0;
 }
 
 static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
 {
-    compressRecord *prec=(compressRecord *)paddr->precord;
+    compressRecord *prec = (compressRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
         case indexof(VAL):
@@ -452,7 +463,7 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
             pcd->lower_ctrl_limit = prec->lopr;
             break;
         default:
-            recGblGetControlDouble(paddr,pcd);
+            recGblGetControlDouble(paddr, pcd);
     }
-    return(0);
+    return 0;
 }

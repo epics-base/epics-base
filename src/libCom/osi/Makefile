@@ -20,6 +20,7 @@ INC += osdInterrupt.h
 
 INC += epicsMutex.h
 INC += osdMutex.h
+INC += epicsSpin.h
 INC += epicsEvent.h
 INC += osdEvent.h
 INC += epicsMath.h
@@ -107,6 +108,7 @@ Com_SRCS += osdThread.c
 Com_SRCS += osdThreadExtra.c
 Com_SRCS += osdThreadHooks.c
 Com_SRCS += osdMutex.c
+Com_SRCS += osdSpin.c
 Com_SRCS += osdEvent.c
 Com_SRCS += osdTime.cpp
 Com_SRCS += osdProcess.c

@@ -829,9 +829,10 @@ long dbGet(DBADDR *paddr, short dbrType,
         if (nRequest) *nRequest = 1;
         if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
-                (paddr->pfield, pbuffer, paddr);
+                (paddr->pfield, pbuf, paddr);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
+
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;
             localAddr.no_elements = pfl->no_elements;
@@ -840,7 +841,7 @@ long dbGet(DBADDR *paddr, short dbrType,
             else
                 localAddr.pfield = (char *)  pfl->u.r.field;
             status = dbFastGetConvertRoutine[field_type][dbrType]
-                (localAddr.pfield, pbuffer, &localAddr);
+                (localAddr.pfield, pbuf, &localAddr);
         }
     } else {
         long n;
@@ -865,9 +866,10 @@ long dbGet(DBADDR *paddr, short dbrType,
         if (n <= 0) {
             ;/*do nothing*/
         } else if (!pfl || pfl->type == dbfl_type_rec) {
-            status = convert(paddr, pbuffer, n, no_elements, offset);
+            status = convert(paddr, pbuf, n, no_elements, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
+
             localAddr.field_type = pfl->field_type;
             localAddr.field_size = pfl->field_size;
             localAddr.no_elements = pfl->no_elements;
@@ -875,7 +877,7 @@ long dbGet(DBADDR *paddr, short dbrType,
                 localAddr.pfield = (char *) &pfl->u.v.field;
             else
                 localAddr.pfield = (char *)  pfl->u.r.field;
-            status = convert(&localAddr, pbuffer, n, no_elements, offset);
+            status = convert(&localAddr, pbuf, n, no_elements, offset);
         }
     }
     return status;

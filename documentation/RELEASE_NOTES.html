@@ -15,6 +15,21 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Redirection of the errlog console stream</h3>
+
+<p>A new routine has been added to the errlog facility which allows the console
+error message stream to be redirected from stderr to some other already open
+file stream:</p>
+
+<blockquote><pre>int errlogSetConsole(FILE *stream);
+</pre></blockquote>
+
+<p>The stream argument must be a FILE* pointer as returned by fopen() that is
+open for output. If NULL is passed in, the errlog thread's stderr output stream
+will be used instead. Note that messages to the console can be disabled and
+re-enabled using the eltc routine which is also an iocsh command, but there is
+no iocsh command currently provided for calling errlogSetConsole.</p>
+
 <h3>Add cleanup subroutine to aSub record</h3>
 
 <p>An aSub routine may set the CADR field with a function pointer which will be

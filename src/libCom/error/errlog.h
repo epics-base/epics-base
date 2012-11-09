@@ -11,6 +11,7 @@
 #define INCerrlogh
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "shareLib.h"
 #include "compilerDependencies.h"
@@ -46,7 +47,7 @@ epicsShareFunc int errlogSevPrintf(
 epicsShareFunc int errlogSevVprintf(
     const errlogSevEnum severity,const char *pformat,va_list pvar);
 epicsShareFunc int epicsShareAPI errlogMessage(
-	const char *message);
+    const char *message);
 
 epicsShareFunc char * epicsShareAPI errlogGetSevEnumString(
     const errlogSevEnum severity);
@@ -60,6 +61,8 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
     errlogListener listener);
 
 epicsShareFunc int epicsShareAPI eltc(int yesno);
+epicsShareFunc int errlogSetConsole(FILE *stream);
+
 epicsShareFunc int epicsShareAPI errlogInit(int bufsize);
 epicsShareFunc int epicsShareAPI errlogInit2(int bufsize, int maxMsgSize);
 epicsShareFunc void epicsShareAPI errlogFlush(void);

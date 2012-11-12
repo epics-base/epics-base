@@ -16,10 +16,11 @@
 #include "printfRecord.h"
 #include "epicsExport.h"
 
-static long write_string(printfRecord *prec, size_t len)
+static long write_string(printfRecord *prec)
 {
     struct link *plink = &prec->out;
     int dtyp = dbGetLinkDBFtype(plink);
+    long len = prec->len;
     long status;
 
     if (prec->pact || dtyp < 0)

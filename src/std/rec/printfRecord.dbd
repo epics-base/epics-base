@@ -33,6 +33,10 @@ recordtype(printf) {
         interest(1)
         initial("41")
     }
+    field(LEN,DBF_ULONG) {
+        prompt("Length of VAL")
+        special(SPC_NOMOD)
+    }
     field(OUT,DBF_OUTLINK) {
         prompt("Output Specification")
         promptgroup(GUI_OUTPUT)

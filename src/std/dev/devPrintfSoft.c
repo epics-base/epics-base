@@ -14,7 +14,7 @@
 #include "printfRecord.h"
 #include "epicsExport.h"
 
-static long write_string(printfRecord *prec, size_t len)
+static long write_string(printfRecord *prec)
 {
     struct link *plink = &prec->out;
     int dtyp = dbGetLinkDBFtype(plink);
@@ -23,7 +23,7 @@ static long write_string(printfRecord *prec, size_t len)
         return 0;   /* Not connected */
 
     if (dtyp == DBR_CHAR || dtyp == DBF_UCHAR)
-        return dbPutLink(plink, dtyp, prec->val, len);
+        return dbPutLink(plink, dtyp, prec->val, prec->len);
 
     return dbPutLink(plink, DBR_STRING, prec->val, 1);
 }

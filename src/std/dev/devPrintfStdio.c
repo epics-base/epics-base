@@ -90,7 +90,7 @@ static long init(int pass)
     return 0;
 }
 
-static long write_string(printfRecord *prec, size_t len)
+static long write_string(printfRecord *prec)
 {
     struct outStream *pstream = (struct outStream *)prec->dpvt;
     if (pstream)

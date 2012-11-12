@@ -55,7 +55,7 @@
     else \
         flags |= F_BADLNK
 
-static size_t doPrintf(printfRecord *prec)
+static void doPrintf(printfRecord *prec)
 {
     const char *pfmt = prec->fmt;
     DBLINK *plink = &prec->inp0;
@@ -288,7 +288,7 @@ static size_t doPrintf(printfRecord *prec)
         }
     }
     *pval++ = 0;  /* Terminate the VAL string */
-    return pval - prec->val;
+    prec->len = pval - prec->val;
 }
 
 
@@ -327,13 +327,12 @@ static long init_record(printfRecord *prec, int pass)
 static long process(printfRecord *prec)
 {
     int pact = prec->pact;
-    size_t len = 0;
     printfdset *pdset;
     long status = 0;
     epicsUInt16 events;
 
     if (!pact) {
-        len = doPrintf(prec);
+        doPrintf(prec);
 
         prec->udf = FALSE;
         recGblGetTimeStamp(prec);
@@ -344,7 +343,7 @@ static long process(printfRecord *prec)
     if (pdset &&
         pdset->number >= 5 &&
         pdset->write_string) {
-        status = pdset->write_string(prec, len);
+        status = pdset->write_string(prec);
 
         /* Asynchronous if device support set pact */
         if (!pact && prec->pact)
@@ -356,6 +355,7 @@ static long process(printfRecord *prec)
     /* Post monitor */
     events = recGblResetAlarms(prec);
     db_post_events(prec, prec->val, events | DBE_VALUE | DBE_LOG);
+    db_post_events(prec, &prec->len, events | DBE_VALUE | DBE_LOG);
 
     /* Wrap up */
     recGblFwdLink(prec);
@@ -381,6 +381,15 @@ static long cvt_dbaddr(DBADDR *paddr)
     return 0;
 }
 
+static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
+{
+    printfRecord *prec = (printfRecord *) paddr->precord;
+
+    *no_elements = prec->len;
+    *offset = 0;
+    return 0;
+}
+
 
 /* Create Record Support Entry Table */
 
@@ -391,7 +400,7 @@ static long cvt_dbaddr(DBADDR *paddr)
 #define special NULL
 #define get_value NULL
 /* cvt_dbaddr */
-#define get_array_info NULL
+/* get_array_info */
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL

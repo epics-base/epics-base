@@ -113,7 +113,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 //
 inline void epicsTime::addNanoSec (long nSecAdj)
 {
-    // After qptimizing this function we now have a larger
+    // After optimizing this function we now have a larger
     // code which uses only unsigned integer arithmetic.
     // This is for the benefit of embedded cpu's lacking
     // a hardware floating point coprocessor at the

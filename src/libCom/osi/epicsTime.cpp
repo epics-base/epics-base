@@ -111,7 +111,7 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 //
 // many of the UNIX timestamp formats have nano sec stored as a long
 //
-inline void epicsTime::addNanoSec (long nSecAdj)
+void epicsTime::addNanoSec (long nSecAdj)
 {
     // After optimizing this function we now have a larger
     // code which uses only unsigned integer arithmetic.

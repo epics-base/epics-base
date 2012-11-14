@@ -113,8 +113,48 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 //
 inline void epicsTime::addNanoSec (long nSecAdj)
 {
-    double secAdj = static_cast <double> (nSecAdj) / nSecPerSec;
-    *this += secAdj;
+    // After qptimizing this function we now have a larger
+    // code which uses only unsigned integer arithmetic.
+    // This is for the benefit of embedded cpu's lacking
+    // a hardware floating point coprocessor at the
+    // expense of some additional code to maintain.
+    // joh 14-11-2012
+    if ( nSecAdj >= 0 ) {
+        unsigned long nSecOffsetLong =
+              static_cast < unsigned long > ( nSecAdj );
+        while ( nSecOffsetLong >= nSecPerSec ) {
+            this->secPastEpoch++; // overflow expected
+            nSecOffsetLong -= nSecPerSec;
+        }
+        const epicsUInt32 nSecOffset =
+            static_cast < epicsUInt32 > ( nSecOffsetLong );
+        epicsUInt32 nSecPerSecRemaining = nSecPerSec - nSecOffset;
+        if ( this->nSec >= nSecPerSecRemaining ) {
+            this->secPastEpoch++; // overflow expected
+            this->nSec -= nSecPerSecRemaining;
+        }
+        else {
+            this->nSec += nSecOffset;
+        }
+    }
+    else {
+        unsigned long nSecOffsetLong =
+            static_cast <unsigned long> ( -nSecAdj );
+        while ( nSecOffsetLong >= nSecPerSec ) {
+            this->secPastEpoch--; // underflow expected
+            nSecOffsetLong -= nSecPerSec;
+        }
+        const epicsUInt32 nSecOffset =
+            static_cast < epicsUInt32 > ( nSecOffsetLong );
+        if ( this->nSec >= nSecOffset ) {
+            this->nSec -= nSecOffset;
+        }
+        else {
+            // borrow
+            this->secPastEpoch--; // underflow expected
+            this->nSec += nSecPerSec - nSecOffset;
+        }
+    }
 }
 
 //

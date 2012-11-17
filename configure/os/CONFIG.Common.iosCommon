@@ -53,13 +53,15 @@ OPT_CXXFLAGS_YES += -g
 
 CC_GNU  = gcc
 CCC_GNU = g++
-CC_LLVM  = llvm-gcc
-CCC_LLVM = llvm-g++
+
+CC_LLVM_GNU  = llvm-gcc
+CCC_LLVM_GNU = llvm-g++
+
 CC_CLANG  = clang
 CCC_CLANG = clang++
 
-CC = $(firstword $(wildcard $(GNU_BIN)/$(CC_$(COMPILER))) $(CC_$(COMPILER)))
-CCC = $(firstword $(wildcard $(GNU_BIN)/$(CCC_$(COMPILER))) $(CCC_$(COMPILER)))
+# Convert the iOS platform to lowercase for passing to xcrun's sdk parameter
+XCRUN_SDK_BASE = $(shell echo $(IOS_PLATFORM) | tr A-Z a-z)
 
 #-------------------------------------------------------
 # Linker flags
@@ -70,7 +72,7 @@ OP_SYS_LDFLAGS += -dynamic -Z -L$(SDK_DIR)/usr/lib -L$(SDK_DIR)/usr/lib/system
 # Shared libraries
 SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
 SHRLIB_LDFLAGS = -dynamiclib -flat_namespace -undefined suppress \
-       -install_name $(shell perl $(TOOLS)/fullPathName.pl $(INSTALL_LIB))/$@ \
+       -install_name $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LIB))/$@ \
        -compatibility_version $(EPICS_VERSION).$(EPICS_REVISION) \
        -current_version $(SHRLIB_VERSION)
 SHRLIB_SUFFIX_BASE = .dylib
@@ -93,13 +95,14 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 #--------------------------------------------------
 # Header dependency file generation
 #
-# Use compiler when ARCH_CLASS is a single arch value
-# otherwise use perl script command
-SINGLE_ARCH=$(filter 1,$(words $(ARCH_CLASS)))
-HDEPENDS_CFLAGS = $(if $(SINGLE_ARCH),$(HDEPENDS_CFLAGS_$(HDEPENDS)))
-HDEPENDS_METHOD = $(if $(SINGLE_ARCH),CFLAGS,CMD)
+HDEPENDS_METHOD = CMD
 
 #--------------------------------------------------
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.Common.iosCommon
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).iosCommon
+
+#--------------------------------------------------
+# Find the Xcode compilers for the specified SDK just once
+CC := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find $(CC_$(COMPILER)))
+CCC := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find $(CCC_$(COMPILER)))

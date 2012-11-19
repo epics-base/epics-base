@@ -13,6 +13,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>Array Subroutine (aSub) record type fixes</h4>
+
+<ul>
+  <li>Changing the number of valid elements in a VALx field now triggers
+    monitors</li>
+  <li>The NEVx fields now post monitors, following the EFLG setting</li>
+  <li>The artificial limit of 10,000,000 array elements has been removed</li>
+</ul>
+
 <h4>Problem with NAN values in MLST/ALST fields</h4>
 
 <p>The ai, ao, calc, calcout, dfanout, sel and sub record types could stop
@@ -41,12 +50,32 @@ itself have now been added. Both the Shell and Perl versions of the startup
 EpicsHostArch scripts now recognize both arm6l and arm7l CPUs and return the
 generic linux-arm host architecture name for them.</p>
 
+<h4>New Microblaze Target Architecture</h4>
+
+<p>A new cross-compiled target architecture is included for the Xilinx
+Microblaze FPGA soft-core CPU architecture running Linux.</p>
+
+<h4>Win32 Numeric string to enum/menu/device conversions</h4>
+
+<p>Microsoft's C run-time library has a bug in the sscanf() function such that
+the "%n" format specifier does not always work. The string to enum, menu and
+device conversion functions have been modified to avoid this problem, but a
+numeric string will no longer be converted properly on any architecture if it
+has trailing whitespace characters.</p>
+
 <h4>Launchpad Bugs Resolved</h4>
 
 <p>The following are links to bugs in the Launchpad bug tracker that have been
 fixed in this release:</p>
 
 <ul>
+<li>999167
+  <a href="https://launchpad.net/bugs/999167">
+    Missing epicsShareFunc for casStatsFetch</a></li>
+<li>950555
+  <a href="https://launchpad.net/bugs/950555">
+    String substitution removes part of path when linking versioned shared
+    libraries</a></li>
 <li>907761
   <a href="https://launchpad.net/bugs/907761">
     reading only 1st char of link in "long string" ($) syntax fails in read
@@ -54,6 +83,7 @@ fixed in this release:</p>
 <li>903448
   <a href="https://launchpad.net/bugs/903448">
     RHEL5 nss ldap update cause stack size related failure</a></li>
+
 </ul>
 
 <h4>Calcout and Seq record timestamps</h4>

@@ -41,6 +41,7 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 #--------------------------------------------------
 # Operating system flags
 OP_SYS_CFLAGS += -isysroot $(SDK_DIR) -D__IPHONE_OS_VERSION_MIN_REQUIRED=30200
+OP_SYS_LDFLAGS += -isysroot $(SDK_DIR)
 
 #--------------------------------------------------
 # Always compile in debugging symbol table information

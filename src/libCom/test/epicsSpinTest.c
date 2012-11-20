@@ -49,13 +49,13 @@ void spinThread(void *arg)
     return;
 }
 
-inline void lockPair(struct epicsSpin *spin)
+static void lockPair(struct epicsSpin *spin)
 {
     epicsSpinLock(spin);
     epicsSpinUnlock(spin);
 }
 
-inline void tenLockPairs(struct epicsSpin *spin)
+static void tenLockPairs(struct epicsSpin *spin)
 {
     lockPair(spin);
     lockPair(spin);
@@ -69,7 +69,7 @@ inline void tenLockPairs(struct epicsSpin *spin)
     lockPair(spin);
 }
 
-inline void tenLockPairsSquared(struct epicsSpin *spin)
+static void tenLockPairsSquared(struct epicsSpin *spin)
 {
     tenLockPairs(spin);
     tenLockPairs(spin);
@@ -85,24 +85,26 @@ inline void tenLockPairsSquared(struct epicsSpin *spin)
 
 void epicsSpinPerformance ()
 {
+    static const unsigned N = 10000;
     unsigned i;
     epicsSpinId spin;
     epicsTimeStamp begin;
     epicsTimeStamp end;
+    double delay;
 
     /* Initialize spinlock */
     spin = epicsSpinCreate();
 
     /* test a single lock pair */
     epicsTimeGetCurrent(&begin);
-    static const unsigned N = 10000;
     for ( i = 0; i < N; i++ ) {
         tenLockPairsSquared(spin);
     }
     epicsTimeGetCurrent(&end);
-    double delay = epicsTimeDiffInSeconds(&end, &begin);
-    delay /= N * 100u; // convert to delay per lock pair
-    delay *= 1e6; // convert to micro seconds
+
+    delay = epicsTimeDiffInSeconds(&end, &begin);
+    delay /= N * 100u;  /* convert to delay per lock pair */
+    delay *= 1e6;       /* convert to micro seconds */
     testDiag("lock()*1/unlock()*1 takes %f microseconds", delay);
 }
 
@@ -111,7 +113,7 @@ struct verifyTryLock {
     epicsEventId done;
 };
 
-void verifyTryLockThread(void *pArg)
+static void verifyTryLockThread(void *pArg)
 {
     struct verifyTryLock *pVerify =
         (struct verifyTryLock *) pArg;
@@ -120,7 +122,7 @@ void verifyTryLockThread(void *pArg)
     epicsEventSignal(pVerify->done);
 }
 
-void verifyTryLock()
+static void verifyTryLock()
 {
     struct verifyTryLock verify;
 

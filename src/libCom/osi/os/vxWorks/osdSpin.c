@@ -16,12 +16,12 @@
  * vxWorks (single CPU): LOCK INTERRUPT
  *
  * CAVEAT:
- * This implementation will break on vxWorks SMP architectures.
- * These architectures provide spinlocks, which will have to be used.
+ * This implementation will not compile on vxWorks SMP architectures.
+ * These architectures provide spinlocks, which must be used instead.
  *
  */
 
-#include <vxWorks.h>
+#include <stdlib.h>
 #include <intLib.h>
 
 #include "epicsSpin.h"
@@ -31,7 +31,7 @@ typedef struct epicsSpin {
 } epicsSpin;
 
 epicsSpinId epicsSpinCreate() {
-    return calloc(1, sizeof(*spin));
+    return calloc(1, sizeof(epicsSpin));
 }
 
 void epicsSpinDestroy(epicsSpinId spin) {

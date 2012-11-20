@@ -10,6 +10,9 @@
  * Author:  Ralph Lange <Ralph.Lange@gmx.de>
  */
 
+#include <stdlib.h>
+
+#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsSpin.h"

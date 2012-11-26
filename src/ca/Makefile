@@ -91,14 +91,19 @@ PROD_LIBS = ca Com
 # needed when its an object library build
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
 
-PROD_HOST += caRepeater catime acctst caConnTest casw caEventRate
-OBJS_IOC += catime acctst caConnTest casw caEventRate acctstRegister
+PROD_DEFAULT += caRepeater catime acctst caConnTest casw caEventRate
+PROD_vxWorks = -nil-
+PROD_RTEMS = -nil-
+PROD_iOS = -nil-
+
+OBJS_vxWorks = catime acctst caConnTest casw caEventRate acctstRegister
+
 caRepeater_SRCS = caRepeater.cpp
-catime_SRCS = catimeMain.c catime.c 
-acctst_SRCS = acctstMain.c acctst.c 
+catime_SRCS = catimeMain.c catime.c
+acctst_SRCS = acctstMain.c acctst.c
 caEventRate_SRCS = caEventRateMain.cpp caEventRate.cpp
 casw_SRCS = casw.cpp
-caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp 
+caConnTest_SRCS = caConnTestMain.cpp caConnTest.cpp
 
 casw_SYS_LIBS_solaris = socket
 

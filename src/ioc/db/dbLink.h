@@ -80,6 +80,10 @@ epicsShareFunc long dbGetTimeStamp(const struct link *plink,
 epicsShareFunc long dbPutLink(struct link *, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
+epicsShareFunc long dbGetLinkLS(struct link *plink, char *pbuffer,
+        epicsUInt32 buffer_size, epicsUInt32 *plen);
+epicsShareFunc long dbPutLinkLS(struct link *plink, char *pbuffer,
+        epicsUInt32 len);
 
 #ifdef __cplusplus
 }

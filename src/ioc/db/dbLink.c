@@ -649,3 +649,48 @@ void dbScanFwdLink(struct link *plink)
     }
 }
 
+/* Helper functions for long string support */
+
+long dbGetLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
+    epicsUInt32 *plen)
+{
+    int dtyp = dbGetLinkDBFtype(plink);
+    long len = size;
+    long status;
+
+    if (dtyp < 0)   /* Not connected */
+        return 0;
+
+    if (dtyp == DBR_CHAR || dtyp == DBF_UCHAR) {
+        status = dbGetLink(plink, dtyp, pbuffer, 0, &len);
+    }
+    else if (size >= MAX_STRING_SIZE)
+        status = dbGetLink(plink, DBR_STRING, pbuffer, 0, 0);
+    else {
+        /* pbuffer is too small to fetch using DBR_STRING */
+        char tmp[MAX_STRING_SIZE];
+
+        status = dbGetLink(plink, DBR_STRING, tmp, 0, 0);
+        if (!status)
+            strncpy(pbuffer, tmp, len - 1);
+    }
+    if (!status) {
+        pbuffer[--len] = 0;
+        *plen = strlen(pbuffer) + 1;
+    }
+    return status;
+}
+
+long dbPutLinkLS(struct link *plink, char *pbuffer, epicsUInt32 len)
+{
+    int dtyp = dbGetLinkDBFtype(plink);
+
+    if (dtyp < 0)
+        return 0;   /* Not connected */
+
+    if (dtyp == DBR_CHAR || dtyp == DBF_UCHAR)
+        return dbPutLink(plink, dtyp, pbuffer, len);
+
+    return dbPutLink(plink, DBR_STRING, pbuffer, 1);
+}
+

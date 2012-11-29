@@ -47,6 +47,7 @@ menuGlobal_DBD += menuFtype.dbd
 menuGlobal_DBD += menuIvoa.dbd
 menuGlobal_DBD += menuOmsl.dbd
 menuGlobal_DBD += menuPini.dbd
+menuGlobal_DBD += menuPost.dbd
 menuGlobal_DBD += menuPriority.dbd
 menuGlobal_DBD += menuScan.dbd
 menuGlobal_DBD += menuYesNo.dbd

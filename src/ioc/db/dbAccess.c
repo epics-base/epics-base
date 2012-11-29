@@ -589,10 +589,8 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
 {
     DBENTRY dbEntry;
     dbFldDes *pflddes;
-    struct rset *prset;
     long status = 0;
-    long no_elements = 1;
-    short dbfType, dbrType, field_size;
+    short dbfType;
 
     if (!pname || !*pname || !pdbbase)
         return S_db_notFound;
@@ -607,47 +605,48 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
         status = dbGetAttributePart(&dbEntry, &pname);
     if (status) goto finish;
 
+    pflddes = dbEntry.pflddes;
+    dbfType = pflddes->field_type;
+
     paddr->precord = dbEntry.precnode->precord;
     paddr->pfield = dbEntry.pfield;
-    pflddes = dbEntry.pflddes;
+    paddr->pfldDes = pflddes;
+    paddr->no_elements = 1;
+    paddr->field_type  = dbfType;
+    paddr->field_size  = pflddes->size;
+    paddr->special     = pflddes->special;
+    paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
-    dbfType = pflddes->field_type;
-    dbrType = mapDBFToDBR[dbfType];
-    field_size = pflddes->size;
+    if (paddr->special == SPC_DBADDR) {
+        struct rset *prset = dbGetRset(paddr);
 
+        /* Let record type modify paddr */
+        if (prset && prset->cvt_dbaddr) {
+            status = prset->cvt_dbaddr(paddr);
+            if (status)
+                goto finish;
+            dbfType = paddr->field_type;
+        }
+    }
+
+    /* Handle field modifiers */
     if (*pname++ == '$') {
         /* Some field types can be accessed as char arrays */
         if (dbfType == DBF_STRING) {
-            dbfType     = DBF_CHAR;
-            dbrType     = DBR_CHAR;
-            no_elements = field_size;
-            field_size  = 1;
+            paddr->no_elements = paddr->field_size;
+            paddr->field_type = DBF_CHAR;
+            paddr->field_size = 1;
+            paddr->dbr_field_type = DBR_CHAR;
         } else if (dbfType >= DBF_INLINK && dbfType <= DBF_FWDLINK) {
             /* Clients see a char array, but keep original dbfType */
-            dbrType     = DBR_CHAR;
-            no_elements = PVNAME_STRINGSZ + 12;
-            field_size = 1;
+            paddr->no_elements = PVNAME_STRINGSZ + 12;
+            paddr->field_size = 1;
+            paddr->dbr_field_type = DBR_CHAR;
         } else {
             status = S_dbLib_fieldNotFound;
             goto finish;
         }
     }
-
-    paddr->pfldDes     = pflddes;
-    paddr->field_type  = dbfType;
-    paddr->dbr_field_type = dbrType;
-    paddr->field_size  = field_size;
-    paddr->special     = pflddes->special;
-    paddr->no_elements = no_elements;
-
-    if ((paddr->special == SPC_DBADDR) &&
-        (prset = dbGetRset(paddr)) &&
-        prset->cvt_dbaddr)
-        /* cvt_dbaddr routine may change any of these elements of paddr:
-         *     pfield, no_elements, element_offset, field_type,
-         *     dbr_field_type, field_size, and/or special.
-         */
-        status = prset->cvt_dbaddr(paddr);
 
 finish:
     dbFinishEntry(&dbEntry);
@@ -823,7 +822,7 @@ long dbGet(DBADDR *paddr, short dbrType,
 
     /* check for array */
     if ((!pfl || pfl->type == dbfl_type_rec) &&
-        paddr->special == SPC_DBADDR &&
+        paddr->pfldDes->special == SPC_DBADDR &&
         no_elements > 1 &&
         (prset = dbGetRset(paddr)) &&
         prset->get_array_info) {
@@ -1175,7 +1174,7 @@ long dbPut(DBADDR *paddr, short dbrType,
         struct rset *prset = dbGetRset(paddr);
         long offset = 0;
 
-        if (paddr->special == SPC_DBADDR &&
+        if (paddr->pfldDes->special == SPC_DBADDR &&
             prset && prset->get_array_info) {
             long dummy;
 
@@ -1187,7 +1186,7 @@ long dbPut(DBADDR *paddr, short dbrType,
 
         /* update array info */
         if (!status &&
-            paddr->special == SPC_DBADDR &&
+            paddr->pfldDes->special == SPC_DBADDR &&
             prset && prset->put_array_info) {
             status = prset->put_array_info(paddr, nRequest);
         }

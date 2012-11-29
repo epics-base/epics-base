@@ -16,16 +16,7 @@
 
 static long write_string(printfRecord *prec)
 {
-    struct link *plink = &prec->out;
-    int dtyp = dbGetLinkDBFtype(plink);
-
-    if (dtyp < 0)
-        return 0;   /* Not connected */
-
-    if (dtyp == DBR_CHAR || dtyp == DBF_UCHAR)
-        return dbPutLink(plink, dtyp, prec->val, prec->len);
-
-    return dbPutLink(plink, DBR_STRING, prec->val, 1);
+    return dbPutLinkLS(&prec->out, prec->val, prec->len);
 }
 
 printfdset devPrintfSoft = {

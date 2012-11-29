@@ -299,10 +299,13 @@ static long init_record(printfRecord *prec, int pass)
     if (pass == 0) {
         size_t sizv = prec->sizv;
 
-        if (sizv < 16)
+        if (sizv < 16) {
             sizv = 16;  /* Enforce a minimum size for the VAL field */
+            prec->sizv = sizv;
+        }
 
         prec->val = callocMustSucceed(1, sizv, "printf::init_record");
+        prec->len = 0;
         return 0;
     }
 

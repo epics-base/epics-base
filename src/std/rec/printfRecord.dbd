@@ -27,7 +27,7 @@ recordtype(printf) {
         extra("char *val")
     }
     field(SIZV,DBF_USHORT) {
-        prompt("Size of VAL")
+        prompt("Size of VAL buffer")
         promptgroup(GUI_OUTPUT)
         special(SPC_NOMOD)
         interest(1)

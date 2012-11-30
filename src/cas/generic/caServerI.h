@@ -44,23 +44,24 @@ caStatus convertContainerMemberToAtomic ( class gdd & dd,
          aitUint32 appType, aitUint32 elemCount );
 
 class caServerI : 
-	public caServerIO, 
-	public ioBlockedList, 
-	public casEventRegistry {
+    public caServerIO, 
+    public ioBlockedList, 
+    public casEventRegistry {
 public:
-	caServerI ( caServer &tool );
-	~caServerI ();
-	bool roomForNewChannel() const;
-	unsigned getDebugLevel() const { return debugLevel; }
-	inline void setDebugLevel ( unsigned debugLevelIn );
-	void show ( unsigned level ) const;
+    caServerI ( caServer &tool );
+    ~caServerI ();
+    bool roomForNewChannel() const;
+    unsigned getDebugLevel() const { return debugLevel; }
+    inline void setDebugLevel ( unsigned debugLevelIn );
+    void show ( unsigned level ) const;
     void destroyMonitor ( casMonitor & );
-	caServer * getAdapter ();
-	caServer * operator -> ();
-	void connectCB ( casIntfOS & );
-	casEventMask valueEventMask () const; // DBE_VALUE registerEvent("value")
-	casEventMask logEventMask () const; 	// DBE_LOG registerEvent("log") 
-	casEventMask alarmEventMask () const; // DBE_ALARM registerEvent("alarm") 
+    caServer * getAdapter ();
+    caServer * operator -> ();
+    void connectCB ( casIntfOS & );
+    casEventMask valueEventMask () const; // DBE_VALUE registerEvent("value")
+    casEventMask logEventMask () const;     // DBE_LOG registerEvent("log") 
+    casEventMask alarmEventMask () const; // DBE_ALARM registerEvent("alarm") 
+    casEventMask propertyEventMask () const; // DBE_PROPERTY registerEvent("property") 
     unsigned subscriptionEventsProcessed () const;
     void incrEventsProcessedCounter ();
     unsigned subscriptionEventsPosted () const;
@@ -82,29 +83,30 @@ public:
 private:
     clientBufMemoryManager clientBufMemMgr;
     tsFreeList < casMonitor, 1024 > casMonitorFreeList;
-	tsDLList < casStrmClient > clientList;
+    tsDLList < casStrmClient > clientList;
     tsDLList < casIntfOS > intfList;
-	mutable epicsMutex mutex;
-	mutable epicsMutex diagnosticCountersMutex;
-	caServer & adapter;
+    mutable epicsMutex mutex;
+    mutable epicsMutex diagnosticCountersMutex;
+    caServer & adapter;
     beaconTimer & beaconTmr;
     beaconAnomalyGovernor & beaconAnomalyGov;
-	unsigned debugLevel;
+    unsigned debugLevel;
     unsigned nEventsProcessed; 
     unsigned nEventsPosted; 
     unsigned ioInProgressCount;
 
     casEventMask valueEvent; // DBE_VALUE registerEvent("value")
-	casEventMask logEvent; 	// DBE_LOG registerEvent("log") 
-	casEventMask alarmEvent; // DBE_ALARM registerEvent("alarm")
+    casEventMask logEvent;  // DBE_LOG registerEvent("log")
+    casEventMask alarmEvent; // DBE_ALARM registerEvent("alarm")
+    casEventMask propertyEvent;  // DBE_PROPERTY registerEvent("property")
 
-	caStatus attachInterface ( const caNetAddr & addr, bool autoBeaconAddr,
-			bool addConfigAddr );
+    caStatus attachInterface ( const caNetAddr & addr, bool autoBeaconAddr,
+            bool addConfigAddr );
 
     void sendBeacon ( ca_uint32_t beaconNo );
 
-	caServerI ( const caServerI & );
-	caServerI & operator = ( const caServerI & );
+    caServerI ( const caServerI & );
+    caServerI & operator = ( const caServerI & );
 
     friend class beaconAnomalyGovernor;
     friend class beaconTimer;
@@ -113,17 +115,17 @@ private:
 
 inline caServer * caServerI::getAdapter()
 {
-	return & this->adapter;
+    return & this->adapter;
 }
 
 inline caServer * caServerI::operator -> ()
 {
-	return this->getAdapter();
+    return this->getAdapter();
 }
 
 inline void caServerI::setDebugLevel(unsigned debugLevelIn)
 {
-	this->debugLevel = debugLevelIn;
+    this->debugLevel = debugLevelIn;
 }
 
 inline casEventMask caServerI::valueEventMask() const
@@ -139,6 +141,11 @@ inline casEventMask caServerI::logEventMask() const
 inline casEventMask caServerI::alarmEventMask() const
 {
     return this->alarmEvent;
+}
+
+inline casEventMask caServerI::propertyEventMask() const
+{
+    return this->propertyEvent;
 }
 
 inline bool caServerI :: ioIsPending () const

@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*
  *      $Revision-Id$
@@ -15,8 +14,8 @@
  *              505 665 1831
  */
 
-#include "dbMapper.h"		// ait to dbr types 
-#include "gddAppTable.h"	// EPICS application type table
+#include "dbMapper.h"       // ait to dbr types 
+#include "gddAppTable.h"    // EPICS application type table
 #include "fdManager.h"
 
 #define epicsExportSharedSymbols
@@ -37,67 +36,67 @@ caServer::caServer ()
 
 caServer::~caServer()
 {
-	if (this->pCAS) {
-		delete this->pCAS;
+    if (this->pCAS) {
+        delete this->pCAS;
         this->pCAS = NULL;
-	}
+    }
 }
 
 pvExistReturn caServer::pvExistTest ( const casCtx & ctx, 
-	const caNetAddr & /* clientAddress */, const char * pPVAliasName )
+    const caNetAddr & /* clientAddress */, const char * pPVAliasName )
 {
     return this->pvExistTest ( ctx, pPVAliasName );
 }
 
 pvExistReturn caServer::pvExistTest ( const casCtx &, const char * )
 {
-	return pverDoesNotExistHere;
+    return pverDoesNotExistHere;
 }
 
 pvCreateReturn caServer::createPV ( const casCtx &, const char * )
 {
-	return S_casApp_pvNotFound;
+    return S_casApp_pvNotFound;
 }
 
 pvAttachReturn caServer::pvAttach ( const casCtx &ctx, const char *pAliasName )
 {
-	// remain backwards compatible (call deprecated routine)
-	return this->createPV ( ctx, pAliasName );
+    // remain backwards compatible (call deprecated routine)
+    return this->createPV ( ctx, pAliasName );
 }
 
-casEventMask caServer::registerEvent (const char *pName) // X aCC 361
+casEventMask caServer::registerEvent (const char *pName)
 {
-	if (this->pCAS) {
-		return this->pCAS->registerEvent(pName);
-	}
-	else {
-		casEventMask emptyMask;
-		printf("caServer:: no server internals attached\n");
-		return emptyMask;
-	}
+    if (this->pCAS) {
+        return this->pCAS->registerEvent(pName);
+    }
+    else {
+        casEventMask emptyMask;
+        printf("caServer:: no server internals attached\n");
+        return emptyMask;
+    }
 }
 
 void caServer::show(unsigned level) const
 {
-	if (this->pCAS) {
-		this->pCAS->show(level);
-	}
-	else {
-		printf("caServer:: no server internals attached\n");
-	}
+    if (this->pCAS) {
+        this->pCAS->show(level);
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+    }
 }
 
 void caServer::setDebugLevel (unsigned level)
 {
-	if (pCAS) {
-		this->pCAS->setDebugLevel(level);
-	}
-	else {
-		printf("caServer:: no server internals attached\n");
-	}
+    if (pCAS) {
+        this->pCAS->setDebugLevel(level);
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+    }
 }
 
-unsigned caServer::getDebugLevel () const // X aCC 361
+unsigned caServer::getDebugLevel () const
 {
     if (pCAS) {
         return this->pCAS->getDebugLevel();
@@ -108,7 +107,7 @@ unsigned caServer::getDebugLevel () const // X aCC 361
     }
 }
 
-casEventMask caServer::valueEventMask () const // X aCC 361
+casEventMask caServer::valueEventMask () const
 {
     if (pCAS) {
         return this->pCAS->valueEventMask();
@@ -119,7 +118,7 @@ casEventMask caServer::valueEventMask () const // X aCC 361
     }
 }
 
-casEventMask caServer::logEventMask () const // X aCC 361
+casEventMask caServer::logEventMask () const
 {
     if (pCAS) {
         return this->pCAS->logEventMask();
@@ -130,7 +129,7 @@ casEventMask caServer::logEventMask () const // X aCC 361
     }
 }
 
-casEventMask caServer::alarmEventMask () const // X aCC 361
+casEventMask caServer::alarmEventMask () const
 {
     if ( pCAS ) {
         return this->pCAS->alarmEventMask ();
@@ -141,12 +140,23 @@ casEventMask caServer::alarmEventMask () const // X aCC 361
     }
 }
 
+casEventMask caServer::propertyEventMask () const
+{
+    if (pCAS) {
+        return this->pCAS->propertyEventMask();
+    }
+    else {
+        printf("caServer:: no server internals attached\n");
+        return casEventMask();
+    }
+}
+
 class epicsTimer & caServer::createTimer ()
 {
     return fileDescriptorManager.createTimer ();
 }
 
-unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
+unsigned caServer::subscriptionEventsProcessed () const
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsProcessed ();
@@ -156,7 +166,7 @@ unsigned caServer::subscriptionEventsProcessed () const // X aCC 361
     }
 }
 
-unsigned caServer::subscriptionEventsPosted () const // X aCC 361
+unsigned caServer::subscriptionEventsPosted () const
 {
     if ( pCAS ) {
         return this->pCAS->subscriptionEventsPosted ();

@@ -245,6 +245,7 @@ public:
     epicsShareFunc casEventMask valueEventMask () const; // DBE_VALUE 
     epicsShareFunc casEventMask logEventMask () const;  // DBE_LOG 
     epicsShareFunc casEventMask alarmEventMask () const; // DBE_ALARM 
+    epicsShareFunc casEventMask propertyEventMask () const; // DBE_PROPERTY
 
     epicsShareFunc void setDebugLevel ( unsigned level );
     epicsShareFunc unsigned getDebugLevel () const;

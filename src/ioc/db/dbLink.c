@@ -651,6 +651,20 @@ void dbScanFwdLink(struct link *plink)
 
 /* Helper functions for long string support */
 
+long dbLoadLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
+    epicsUInt32 *plen)
+{
+    if (plink->type == CONSTANT &&
+        plink->value.constantStr) {
+        strncpy(pbuffer, plink->value.constantStr, --size);
+        pbuffer[size] = 0;
+        *plen = strlen(pbuffer) + 1;
+        return 0;
+    }
+
+    return S_db_notFound;
+}
+
 long dbGetLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     epicsUInt32 *plen)
 {

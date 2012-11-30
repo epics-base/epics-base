@@ -2,7 +2,7 @@
 * Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* Long String Input record type */
@@ -36,7 +36,6 @@
 static void monitor(lsiRecord *);
 static long readValue(lsiRecord *);
 
-
 static long init_record(lsiRecord *prec, int pass)
 {
     lsidset *pdset;
@@ -56,9 +55,7 @@ static long init_record(lsiRecord *prec, int pass)
         return 0;
     }
 
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-    }
+    dbLoadLink(&prec->siml, DBF_USHORT, &prec->simm);
 
     pdset = (lsidset *) prec->dset;
     if (!pdset) {
@@ -67,7 +64,7 @@ static long init_record(lsiRecord *prec, int pass)
     }
 
     /* must have a read_string function */
-    if ((pdset->number < 5) || (pdset->read_string == NULL) ) {
+    if (pdset->number < 5 || !pdset->read_string) {
         recGblRecordError(S_dev_missingSup, prec, "lsi: init_record");
         return S_dev_missingSup;
     }
@@ -76,7 +73,13 @@ static long init_record(lsiRecord *prec, int pass)
         long status = pdset->init_record(prec);
 
         if (status)
-            return(status);
+            return status;
+    }
+
+    if (prec->len) {
+        strcpy(prec->oval, prec->val);
+        prec->olen = prec->len;
+        prec->udf = FALSE;
     }
 
     return 0;
@@ -88,7 +91,7 @@ static long process(lsiRecord *prec)
     lsidset *pdset = (lsidset *) prec->dset;
     long status = 0;
 
-    if ((pdset == NULL) || (pdset->read_string == NULL)) {
+    if (!pdset || !pdset->read_string) {
         prec->pact = TRUE;
         recGblRecordError(S_dev_missingSup, prec, "lsi: read_string");
         return S_dev_missingSup;
@@ -156,8 +159,8 @@ static long put_array_info(DBADDR *paddr, long nNew)
     lsiRecord *prec = (lsiRecord *) paddr->precord;
 
     if (nNew == prec->sizv)
-        --nNew;     /* truncated string */
-    prec->val[nNew] = 0;
+        --nNew;             /* truncated string */
+    prec->val[nNew] = 0;    /* ensure data is terminated */
 
     return 0;
 }
@@ -169,6 +172,10 @@ static long special(DBADDR *paddr, int after)
     if (!after)
         return 0;
 
+    /* We set prec->len here and not in put_array_info()
+     * because that does not get called if the put was
+     * done using a DBR_STRING type.
+     */
     prec->len = strlen(prec->val) + 1;
     db_post_events(prec, &prec->len, DBE_VALUE | DBE_LOG);
 
@@ -212,14 +219,14 @@ static long readValue(lsiRecord *prec)
         return status;
 
     switch (prec->simm) {
-    case menuYesNoYES:
-        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
-        status = dbGetLinkLS(&prec->siol, prec->val, prec->sizv, &prec->len);
-        break;
-
     case menuYesNoNO:
 read:
         status = pdset->read_string(prec);
+        break;
+
+    case menuYesNoYES:
+        recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        status = dbGetLinkLS(&prec->siol, prec->val, prec->sizv, &prec->len);
         break;
 
     default:

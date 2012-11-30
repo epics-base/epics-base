@@ -9,7 +9,7 @@
 
 # This is a Makefile fragment, see src/std/Makefile.
 
-$(COMMON_DIR)/stdRecords.dbd:
+$(COMMON_DIR)/stdRecords.dbd: ../rec/Makefile
 	$(RM) $@
 	$(PERL) $(TOOLS)/makeIncludeDbd.pl $(stdRecords_DBD) $@
 

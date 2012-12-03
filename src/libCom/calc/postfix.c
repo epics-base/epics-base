@@ -71,6 +71,7 @@ static const ELEMENT operands[] = {
 {"-",		7, 8,	0,	UNARY_OPERATOR,	UNARY_NEG},
 {".",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"0",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
+{"0X",		0, 0,	1,	LITERAL_OPERAND,LITERAL_INT},
 {"1",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"2",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
 {"3",		0, 0,	1,	LITERAL_OPERAND,LITERAL_DOUBLE},
@@ -237,29 +238,42 @@ epicsShareFunc long
 	    operand_needed = FALSE;
 	    break;
 
-	case LITERAL_OPERAND:
-	    runtime_depth += pel->runtime_effect;
+        case LITERAL_OPERAND:
+            runtime_depth += pel->runtime_effect;
 
-	    psrc -= strlen(pel->name);
-	    lit_d = epicsStrtod(psrc, &pnext);
-	    if (pnext == psrc) {
-		*perror = CALC_ERR_BAD_LITERAL;
-		goto bad;
-	    }
-	    psrc = pnext;
-	    lit_i = lit_d;
-	    if (lit_d != (double) lit_i) {
-		*pout++ = pel->code;
-		memcpy(pout, (void *)&lit_d, sizeof(double));
-		pout += sizeof(double);
-	    } else {
-		*pout++ = LITERAL_INT;
-		memcpy(pout, (void *)&lit_i, sizeof(int));
-		pout += sizeof(int);
-	    }
+            psrc -= strlen(pel->name);
+            if (pel->code == LITERAL_DOUBLE) {
+                lit_d = epicsStrtod(psrc, &pnext);
+                if (pnext == psrc) {
+                    *perror = CALC_ERR_BAD_LITERAL;
+                    goto bad;
+                }
+                psrc = pnext;
+                lit_i = lit_d;
+                if (lit_d != (double) lit_i) {
+                    *pout++ = pel->code;
+                    memcpy(pout, (void *)&lit_d, sizeof(double));
+                    pout += sizeof(double);
+                } else {
+                    *pout++ = LITERAL_INT;
+                    memcpy(pout, (void *)&lit_i, sizeof(int));
+                    pout += sizeof(int);
+                }
+            }
+            else {
+                lit_i = strtoul(psrc, &pnext, 0);
+                if (pnext == psrc) {
+                    *perror = CALC_ERR_BAD_LITERAL;
+                    goto bad;
+                }
+                psrc = pnext;
+                *pout++ = LITERAL_INT;
+                memcpy(pout, (void *)&lit_i, sizeof(int));
+                pout += sizeof(int);
+            }
 
-	    operand_needed = FALSE;
-	    break;
+            operand_needed = FALSE;
+            break;
 
 	case STORE_OPERATOR:
 	    if (pout == ppostfix || pstacktop > stack ||

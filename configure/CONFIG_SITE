@@ -72,6 +72,7 @@
 #       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v32          (Axis GNU crosscompiler on linux-x86 host)
+#       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486
 #       vxWorks-68040
@@ -119,9 +120,9 @@ CROSS_COMPILER_HOST_ARCHS=
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and
 #     os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files may override
 #
-#     NOTE WIN32: YES results in a DLL.  Valid settings are
-#                   SHARED_LIBRARIES=YES and STATIC_BUILD=NO
-#                   SHARED_LIBRARIES=NO  and STATIC_BUILD=YES
+#     NOTE Windows: YES results in a DLL.  Valid settings are
+#        SHARED_LIBRARIES=YES  and  STATIC_BUILD=NO
+#        SHARED_LIBRARIES=NO   and  STATIC_BUILD=YES
 #
 SHARED_LIBRARIES=YES
 

@@ -228,7 +228,7 @@ $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
 $(COMMON_DIR)/%Record.h: %Record.dbd
 	@$(RM) $(notdir $@)$(DEP)
 	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	echo "$@ : ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) $(DBDFLAGS) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
@@ -244,7 +244,7 @@ $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
 $(COMMON_DIR)/menu%.h: menu%.dbd
 	@$(RM) $(notdir $@)$(DEP)
 	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	echo "$@ : ../Makefile" >> $(notdir $@)$(DEP)
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
@@ -269,7 +269,7 @@ $(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
 $(COMMON_DIR)/%.dbd: %Include.dbd 
 	@$(RM) $(notdir $@)$(DEP)
 	@$(DBDDEPENDS_CMD)
-	echo "$< : ../Makefile" >> $(notdir $@)$(DEP)
+	echo "$@ : ../Makefile" >> $(notdir $@)$(DEP)
 	$(ECHO) "Expanding dbd"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<

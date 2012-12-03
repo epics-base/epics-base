@@ -3,15 +3,36 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12.3-pre1 Release Notes</title>
+  <title>EPICS Base R3.14.12.3-rc1 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.12.3-pre1</h1>
+<h1 align="center">EPICS Base Release 3.14.12.3-rc1</h1>
 
 <h2 align="center">Changes between 3.14.12.2 and 3.14.12.3</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h4>Hex literals in CALC expressions</h4>
+
+<p>In previous releases, CALC expressions could contain hexadecimal literal
+integers on a target if the OS implementation of strtod() allows them (the
+vxWorks implementation does not). Now hex literal integers can be used in CALC
+expressions on all architectures. Hexadecimal floating point literals may have
+worked on some architectures in the past, but will no longer be accepted.</p>
+
+<h4>CAS: Added propertyEventMask support</h4>
+
+<p>Server tools should now be able to detect subscriptions to and send updates
+for DBE_PROPERTY events, using a casEventMask value returned by the new
+caServer::propertyEventMask() method.</p>
+
+<h4>caRepeater now built by default</h4>
+
+<p>Previously caRepeater was only built for host architectures, so builds for
+cross-compiled but workstation-type targets like linux-arm did not build it.
+Explicit exceptions prevent it being built on architectures like vxWorks, RTEMS
+and iOS which do not support normal executable programs.</p>
 
 <h4>Array Subroutine (aSub) record type fixes</h4>
 

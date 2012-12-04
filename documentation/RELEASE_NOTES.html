@@ -103,7 +103,19 @@ fixed in this release:</p>
     error</a></li>
 <li>903448
   <a href="https://launchpad.net/bugs/903448">
-    RHEL5 nss ldap update cause stack size related failure</a></li>
+    RHEL5 nss ldap update cause stack size related failure</a>
+  <p>
+    This bug fix changed the stack sizes for both Posix and Windows targets as
+    follows:</p>
+  <table>
+    <tr><th>epicsThreadStackSizeClass</th><th>New Stack Size</th></tr>
+    <tr><td>epicsThreadStackSmall</td>
+      <td>0x10000 &times; sizeof (void *)</td></tr>
+    <tr><td>epicsThreadStackMedium</td>
+      <td>0x20000 &times; sizeof (void *)</td></tr>
+    <tr><td>epicsThreadStackBig</td>
+      <td>0x40000 &times; sizeof (void *)</td></tr>
+  </table></li>
 
 </ul>
 

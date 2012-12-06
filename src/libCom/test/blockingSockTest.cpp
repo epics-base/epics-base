@@ -61,7 +61,7 @@ private:
 
 class server {
 public:
-    server ( const address & );
+    server ( address & );
     void start ();
     void daemon ();
 protected:
@@ -165,19 +165,21 @@ extern "C" void serverDaemon ( void * pParam ) {
     pSrv->daemon ();
 }
 
-server::server ( const address & addrIn ) :
+server::server ( address & addrIn ) :
     sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
     id ( 0 ), exit ( false )
 {
     verify ( this->sock != INVALID_SOCKET );
 
     // setup server side
-    address tmpAddr = addrIn;
     int status = bind ( this->sock, 
-        & tmpAddr.sa, sizeof ( tmpAddr ) );
+        & addrIn.sa, sizeof ( addrIn ) );
     if ( status ) {
         testDiag ( "bind to server socket failed, status = %d", status );
-        testAbort ( "Stop all CA servers before running this test." );
+    }
+    osiSocklen_t slen = sizeof ( addrIn );
+    if ( getsockname(this->sock, &addrIn.sa, &slen) != 0 ) {
+        testAbort ( "Failed to read socket address" );
     }
     status = listen ( this->sock, 10 );
     verify ( status == 0 );
@@ -249,7 +251,7 @@ MAIN(blockingSockTest)
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
-    addr.ia.sin_port = htons ( 5064 ); // CA
+    addr.ia.sin_port = 0;
 
     server srv ( addr );
     srv.start ();

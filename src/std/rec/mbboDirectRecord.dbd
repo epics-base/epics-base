@@ -3,223 +3,217 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 recordtype(mbboDirect) {
-	include "dbCommon.dbd" 
-	field(VAL,DBF_USHORT) {
-		prompt("Word")
-                promptgroup(GUI_OUTPUT)
-		asl(ASL0)
-		pp(TRUE)
-	}
-	field(OMSL,DBF_MENU) {
-		prompt("Output Mode Select")
-		promptgroup(GUI_MBB)
-		special(SPC_RESET)
-		pp(TRUE)
-		interest(1)
-		menu(menuOmsl)
-	}
-	field(NOBT,DBF_SHORT) {
-		prompt("Number of Bits")
-		promptgroup(GUI_MBB)
-		special(SPC_NOMOD)
-		interest(1)
-	}
-	field(DOL,DBF_INLINK) {
-		prompt("Desired Output Loc")
-		promptgroup(GUI_MBB)
-		interest(1)
-	}
-	field(OUT,DBF_OUTLINK) {
-		prompt("Output Specification")
-		promptgroup(GUI_MBB)
-		interest(1)
-	}
-	field(B0,DBF_UCHAR) {
-		prompt("Bit 0")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B1,DBF_UCHAR) {
-		prompt("Bit 1")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B2,DBF_UCHAR) {
-		prompt("Bit 2")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B3,DBF_UCHAR) {
-		prompt("Bit 3")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B4,DBF_UCHAR) {
-		prompt("Bit 4")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B5,DBF_UCHAR) {
-		prompt("Bit 5")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B6,DBF_UCHAR) {
-		prompt("Bit 6")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B7,DBF_UCHAR) {
-		prompt("Bit 7")
-		promptgroup(GUI_BITS1)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B8,DBF_UCHAR) {
-		prompt("Bit 8")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(B9,DBF_UCHAR) {
-		prompt("Bit 9")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BA,DBF_UCHAR) {
-		prompt("Bit 10")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BB,DBF_UCHAR) {
-		prompt("Bit 11")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BC,DBF_UCHAR) {
-		prompt("Bit 12")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BD,DBF_UCHAR) {
-		prompt("Bit 13")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BE,DBF_UCHAR) {
-		prompt("Bit 14")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(BF,DBF_UCHAR) {
-		prompt("Bit 15")
-		promptgroup(GUI_BITS2)
-		special(SPC_MOD)
-		pp(TRUE)
-		interest(1)
-	}
-	field(RVAL,DBF_ULONG) {
-		prompt("Raw Value")
-		special(SPC_NOMOD)
-		pp(TRUE)
-	}
-	field(ORAW,DBF_ULONG) {
-		prompt("Prev Raw Value")
-		special(SPC_NOMOD)
-		interest(3)
-	}
-	field(RBV,DBF_ULONG) {
-		prompt("Readback Value")
-		special(SPC_NOMOD)
-	}
-	field(ORBV,DBF_ULONG) {
-		prompt("Prev Readback Value")
-		special(SPC_NOMOD)
-		interest(3)
-	}
-	field(MASK,DBF_ULONG) {
-		prompt("Hardware Mask")
-		special(SPC_NOMOD)
-		interest(1)
-	}
-	field(MLST,DBF_ULONG) {
-		prompt("Last Value Monitored")
-		special(SPC_NOMOD)
-		interest(3)
-	}
-	field(LALM,DBF_ULONG) {
-		prompt("Last Value Alarmed")
-		special(SPC_NOMOD)
-		interest(3)
-	}
-	field(SHFT,DBF_ULONG) {
-		prompt("Shift")
-		promptgroup(GUI_MBB)
-		interest(1)
-	}
-	field(SIOL,DBF_OUTLINK) {
-		prompt("Sim Output Specifctn")
-		promptgroup(GUI_MBB)
-		interest(1)
-	}
-	field(SIML,DBF_INLINK) {
-		prompt("Sim Mode Location")
-		promptgroup(GUI_MBB)
-		interest(1)
-	}
-	field(SIMM,DBF_MENU) {
-		prompt("Simulation Mode")
-		interest(1)
-		menu(menuYesNo)
-	}
-	field(SIMS,DBF_MENU) {
-		prompt("Sim mode Alarm Svrty")
-		promptgroup(GUI_MBB)
-		interest(2)
-		menu(menuAlarmSevr)
-	}
-	field(IVOA,DBF_MENU) {
-		prompt("INVALID outpt action")
-		promptgroup(GUI_MBB)
-		interest(2)
-		menu(menuIvoa)
-	}
-	field(IVOV,DBF_USHORT) {
-		prompt("INVALID output value")
-		promptgroup(GUI_MBB)
-		interest(2)
-	}
+    include "dbCommon.dbd" 
+    field(VAL,DBF_USHORT) {
+        prompt("Word")
+        promptgroup(GUI_OUTPUT)
+        asl(ASL0)
+        pp(TRUE)
+    }
+    field(OMSL,DBF_MENU) {
+        prompt("Output Mode Select")
+        promptgroup(GUI_MBB)
+        special(SPC_RESET)
+        pp(TRUE)
+        interest(1)
+        menu(menuOmsl)
+    }
+    field(NOBT,DBF_SHORT) {
+        prompt("Number of Bits")
+        promptgroup(GUI_MBB)
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(DOL,DBF_INLINK) {
+        prompt("Desired Output Loc")
+        promptgroup(GUI_MBB)
+        interest(1)
+    }
+    field(OUT,DBF_OUTLINK) {
+        prompt("Output Specification")
+        promptgroup(GUI_MBB)
+        interest(1)
+    }
+    field(B0,DBF_UCHAR) {
+        prompt("Bit 0")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B1,DBF_UCHAR) {
+        prompt("Bit 1")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B2,DBF_UCHAR) {
+        prompt("Bit 2")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B3,DBF_UCHAR) {
+        prompt("Bit 3")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B4,DBF_UCHAR) {
+        prompt("Bit 4")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B5,DBF_UCHAR) {
+        prompt("Bit 5")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B6,DBF_UCHAR) {
+        prompt("Bit 6")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B7,DBF_UCHAR) {
+        prompt("Bit 7")
+        promptgroup(GUI_BITS1)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B8,DBF_UCHAR) {
+        prompt("Bit 8")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(B9,DBF_UCHAR) {
+        prompt("Bit 9")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BA,DBF_UCHAR) {
+        prompt("Bit 10")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BB,DBF_UCHAR) {
+        prompt("Bit 11")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BC,DBF_UCHAR) {
+        prompt("Bit 12")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BD,DBF_UCHAR) {
+        prompt("Bit 13")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BE,DBF_UCHAR) {
+        prompt("Bit 14")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(BF,DBF_UCHAR) {
+        prompt("Bit 15")
+        promptgroup(GUI_BITS2)
+        special(SPC_MOD)
+        pp(TRUE)
+        interest(1)
+    }
+    field(RVAL,DBF_ULONG) {
+        prompt("Raw Value")
+        special(SPC_NOMOD)
+        pp(TRUE)
+    }
+    field(ORAW,DBF_ULONG) {
+        prompt("Prev Raw Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(RBV,DBF_ULONG) {
+        prompt("Readback Value")
+        special(SPC_NOMOD)
+    }
+    field(ORBV,DBF_ULONG) {
+        prompt("Prev Readback Value")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(MASK,DBF_ULONG) {
+        prompt("Hardware Mask")
+        special(SPC_NOMOD)
+        interest(1)
+    }
+    field(MLST,DBF_ULONG) {
+        prompt("Last Value Monitored")
+        special(SPC_NOMOD)
+        interest(3)
+    }
+    field(SHFT,DBF_ULONG) {
+        prompt("Shift")
+        promptgroup(GUI_MBB)
+        interest(1)
+    }
+    field(SIOL,DBF_OUTLINK) {
+        prompt("Sim Output Specifctn")
+        promptgroup(GUI_MBB)
+        interest(1)
+    }
+    field(SIML,DBF_INLINK) {
+        prompt("Sim Mode Location")
+        promptgroup(GUI_MBB)
+        interest(1)
+    }
+    field(SIMM,DBF_MENU) {
+        prompt("Simulation Mode")
+        interest(1)
+        menu(menuYesNo)
+    }
+    field(SIMS,DBF_MENU) {
+        prompt("Sim mode Alarm Svrty")
+        promptgroup(GUI_MBB)
+        interest(2)
+        menu(menuAlarmSevr)
+    }
+    field(IVOA,DBF_MENU) {
+        prompt("INVALID outpt action")
+        promptgroup(GUI_MBB)
+        interest(2)
+        menu(menuIvoa)
+    }
+    field(IVOV,DBF_USHORT) {
+        prompt("INVALID output value")
+        promptgroup(GUI_MBB)
+        interest(2)
+    }
 }

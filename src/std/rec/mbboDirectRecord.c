@@ -142,7 +142,6 @@ static long init_record(mbboDirectRecord *prec, int pass)
 	} else if (status == 2) status = 0;
     }
     prec->mlst = prec->val;
-    prec->lalm = prec->val;
     prec->oraw = prec->rval;
     prec->orbv = prec->rbv;
     return(status);

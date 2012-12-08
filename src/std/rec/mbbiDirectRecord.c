@@ -159,7 +159,6 @@ static long init_record(mbbiDirectRecord *prec, int pass)
         refresh_bits(prec, 0);
     }
     prec->mlst = prec->val;
-    prec->lalm = prec->val;
     prec->oraw = prec->rval;
     return(0);
 }

@@ -26,6 +26,7 @@ DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
 
 DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
 DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
+REGRDDFLAGS = $(DBDFLAGS) $($*_REGRDDFLAGS) $(USR_REGRDDFLAGS)
 
 ##################################################### Targets
 
@@ -393,11 +394,11 @@ IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $(DBDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
 
 %_registerRecordDeviceDriver.cpp: %.dbd
 	@$(RM) $@
-	$(REGISTERRECORDDEVICEDRIVER) $(DBDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
 

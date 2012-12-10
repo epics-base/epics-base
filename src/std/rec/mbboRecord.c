@@ -219,7 +219,7 @@ static long process(mbboRecord *prec)
             }
         }
         if (prec->udf==TRUE) {
-            recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+            recGblSetSevr(prec, UDF_ALARM, prec->udfs);
             goto CONTINUE;
         }
         /* convert val to rval */

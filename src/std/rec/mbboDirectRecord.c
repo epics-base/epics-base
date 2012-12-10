@@ -175,7 +175,7 @@ static long process(mbboDirectRecord *prec)
 	    }
 	}
 	if(prec->udf) {
-	    recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
+	    recGblSetSevr(prec,UDF_ALARM,prec->udfs);
 	    goto CONTINUE;
 	}
 	if(prec->nsev < INVALID_ALARM

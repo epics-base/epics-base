@@ -152,7 +152,7 @@ static long process(subArrayRecord *prec)
 
     prec->udf = !!status; /* 0 or 1 */
     if (status)
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
 
     monitor(prec);
 

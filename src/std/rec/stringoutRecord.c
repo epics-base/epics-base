@@ -146,7 +146,7 @@ static long process(stringoutRecord *prec)
 	}
 
         if(prec->udf == TRUE ){
-                recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
+                recGblSetSevr(prec,UDF_ALARM,prec->udfs);
         }
 
         if (prec->nsev < INVALID_ALARM )

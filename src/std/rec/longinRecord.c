@@ -255,7 +255,7 @@ static void checkAlarms(longinRecord *prec, epicsTimeStamp *timeLast)
     epicsEnum16 asev;
 
     if (prec->udf) {
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         prec->afvl = 0;
         return;
     }

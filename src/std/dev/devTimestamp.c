@@ -62,7 +62,7 @@ static long read_stringin (stringinRecord *prec)
                               prec->inp.value.instio.string, &prec->time);
     if (len >= sizeof prec->val) {
         prec->udf = TRUE;
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         return -1;
     }
     prec->udf = FALSE;

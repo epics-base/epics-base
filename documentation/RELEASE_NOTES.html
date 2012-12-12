@@ -15,6 +15,38 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>mbboDirect and mbbiDirect records</h3>
+
+<p>These record types have undergone some significant rework, and will behave
+slightly differently than they did in their 3.14 versions. The externally
+visible changes are as follows:</p>
+
+<h5>mbbiDirect</h5>
+
+<ul>
+  <li>If the MASK field is set in a database file, it will not be over-written
+    when the record is initialized. This allows non-contiguous masks to be set,
+    although only the device support actually uses the MASK field.</li>
+  <li>If process() finds the UDF field to be set, the record will raise a
+    UDF/INVALID alarm.</li>
+</ul>
+
+<h5>mbboDirect</h5>
+
+<ul>
+  <li>If the MASK field is set in a database file, it will not be over-written
+    when the record is initialized. This allows non-contiguous masks to be set,
+    although only the device support actually uses the MASK field.</li>
+  <li>After the device support's init_record() routine returns during record
+    initialization, if OMSL is <q>supervisory</q> and UDF is clear the fields
+    B0-BF will be set from the current VAL field.</li>
+  <li>When a put to the OMSL field sets it to <q>supervisory</q>, the fields
+    B0-BF will be set from the current VAL field. This did not used to happen,
+    the individual bit fields were previously never modified by the record.
+    Note that this change may require some databases to be modified, if they
+    were designed to take advantage of the previous behavior.</li>
+</ul>
+
 <h3>Redirection of the errlog console stream</h3>
 
 <p>A new routine has been added to the errlog facility which allows the console

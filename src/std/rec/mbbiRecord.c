@@ -94,7 +94,7 @@ struct mbbidset { /* multi bit binary input dset */
 static void checkAlarms(mbbiRecord *, epicsTimeStamp *);
 static void monitor(mbbiRecord *);
 static long readValue(mbbiRecord *);
-
+
 static void init_common(mbbiRecord *prec)
 {
     epicsUInt32 *pstate_values = &prec->zrvl;
@@ -113,47 +113,44 @@ static void init_common(mbbiRecord *prec)
 
 static long init_record(mbbiRecord *prec, int pass)
 {
-    struct mbbidset *pdset;
-    long status;
+    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    long status = 0;
 
     if (pass == 0)
         return 0;
-
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-    }
-    if (prec->siol.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
-    }
 
     pdset = (struct mbbidset *) prec->dset;
     if (!pdset) {
         recGblRecordError(S_dev_noDSET, prec, "mbbi: init_record");
         return S_dev_noDSET;
     }
-    /* must have read_mbbi function defined */
+
     if ((pdset->number < 5) || (pdset->read_mbbi == NULL)) {
         recGblRecordError(S_dev_missingSup, prec, "mbbi: init_record");
         return S_dev_missingSup;
     }
 
-    /* initialize mask if the user didn't */
+    if (prec->siml.type == CONSTANT)
+        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+
+    if (prec->siol.type == CONSTANT)
+        recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
+
+    /* Initialize MASK if the user didn't */
     if (prec->mask == 0)
         prec->mask = (1 << prec->nobt) - 1;
 
-    if (pdset->init_record) {
+    if (pdset->init_record)
         status = pdset->init_record(prec);
-    }
-    else
-        status = 0;
 
     init_common(prec);
+
     prec->mlst = prec->val;
     prec->lalm = prec->val;
     prec->oraw = prec->rval;
     return status;
 }
-
+
 static long process(mbbiRecord *prec)
 {
     struct mbbidset *pdset = (struct mbbidset *) prec->dset;
@@ -169,14 +166,17 @@ static long process(mbbiRecord *prec)
 
     timeLast = prec->time;
 
-    status = readValue(prec); /* read the new value */
-    /* check if device support set pact */
+    status = readValue(prec);
+
+    /* Done if device support set PACT */
     if (!pact && prec->pact)
         return 0;
-    prec->pact = TRUE;
 
+    prec->pact = TRUE;
     recGblGetTimeStamp(prec);
-    if (status == 0) { /* convert the value */
+
+    if (status == 0) {
+        /* Convert RVAL to VAL */
         epicsUInt32 *pstate_values;
         short i;
         epicsUInt32 rval = prec->rval;
@@ -184,9 +184,10 @@ static long process(mbbiRecord *prec)
         prec->udf = FALSE;
         if (prec->shft > 0)
             rval >>= prec->shft;
+
         if (prec->sdef) {
             pstate_values = &(prec->zrvl);
-            prec->val = 65535;         /* initalize to unknown state*/
+            prec->val = 65535;         /* Initalize to unknown state*/
             for (i = 0; i < 16; i++) {
                 if (*pstate_values == rval) {
                     prec->val = i;
@@ -195,39 +196,30 @@ static long process(mbbiRecord *prec)
                 pstate_values++;
             }
         }
-        else {
-            /* the raw value is the desired value */
+        else /* No states defined, set VAL = RVAL */
             prec->val = rval;
-        }
     }
-    else {
-        if (status == 2) {
-            status = 0;
-        }
-    }
+    else if (status == 2)
+        status = 0;
 
-    /* check for alarms */
     checkAlarms(prec, &timeLast);
-
-    /* check event list */
     monitor(prec);
 
-    /* process the forward scan link record */
+    /* Wrap up */
     recGblFwdLink(prec);
-
     prec->pact=FALSE;
     return status;
 }
 
-
 static long special(DBADDR *paddr, int after)
 {
     mbbiRecord *prec = (mbbiRecord *) paddr->precord;
-    int special_type = paddr->special;
     int fieldIndex = dbGetFieldIndex(paddr);
 
-    if (!after) return 0;
-    switch (special_type) {
+    if (!after)
+        return 0;
+
+    switch (paddr->special) {
     case SPC_MOD:
         init_common(prec);
         if (fieldIndex >= mbbiRecordZRST && fieldIndex <= mbbiRecordFFST) {
@@ -309,14 +301,14 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
     epicsEnum16 asev;
     epicsEnum16 val = prec->val;
 
-    /* check for udf alarm */
+    /* Check for UDF alarm */
     if (prec->udf) {
         recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
         prec->afvl = 0;
         return;
     }
 
-    /* check for state alarm */
+    /* Check for STATE alarm */
     if (val > 15) {
         /* Unknown state */
         alarm = prec->unsv;
@@ -352,76 +344,71 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
     asev = alarm;
     recGblSetSevr(prec, STATE_ALARM, asev);
 
-    /* check for cos alarm */
-    if (val == prec->lalm)
+    /* Check for COS alarm */
+    if (val == prec->lalm ||
+        recGblSetSevr(prec, COS_ALARM, prec->cosv))
         return;
 
-    recGblSetSevr(prec, COS_ALARM, prec->cosv);
     prec->lalm = val;
 }
-
+
 static void monitor(mbbiRecord *prec)
 {
-    unsigned short monitor_mask;
+    epicsUInt16 events = recGblResetAlarms(prec);
 
-    monitor_mask = recGblResetAlarms(prec);
-    /* check for value change */
     if (prec->mlst != prec->val) {
-        /* post events for value change and archive change */
-        monitor_mask |= (DBE_VALUE | DBE_LOG);
-        /* update last value monitored */
+        events |= DBE_VALUE | DBE_LOG;
         prec->mlst = prec->val;
     }
-    /* send out monitors connected to the value field */
-    if (monitor_mask) {
-        db_post_events(prec, &prec->val, monitor_mask);
-    }
+
+    if (events)
+        db_post_events(prec, &prec->val, events);
+
     if (prec->oraw != prec->rval) {
-        db_post_events(prec, &prec->rval, monitor_mask | DBE_VALUE);
+        db_post_events(prec, &prec->rval, events | DBE_VALUE | DBE_LOG);
         prec->oraw = prec->rval;
     }
 }
-
+
 static long readValue(mbbiRecord *prec)
 {
     struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status;
 
-    if (prec->pact) {
-        status = pdset->read_mbbi(prec);
-        return status;
-    }
+    if (prec->pact)
+        return pdset->read_mbbi(prec);
 
-    status = dbGetLink(&prec->siml, DBR_USHORT, &prec->simm, 0, 0);
+    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
     if (status)
         return status;
 
-    if (prec->simm == menuSimmNO) {
-        status = pdset->read_mbbi(prec);
-        return status;
-    }
-    if (prec->simm == menuSimmYES) {
-        status=dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
+    switch (prec->simm) {
+    case menuSimmNO:
+        return pdset->read_mbbi(prec);
+
+    case menuSimmYES:
+        status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
         if (status == 0) {
             prec->val = prec->sval;
             prec->udf = FALSE;
         }
-        status = 2; /* dont convert */
-    }
-    else if (prec->simm == menuSimmRAW) {
+        status = 2;   /* Don't convert */
+        break;
+
+    case menuSimmRAW:
         status = dbGetLink(&prec->siol, DBR_ULONG, &prec->sval, 0, 0);
         if (status == 0) {
             prec->rval = prec->sval;
-            prec->udf = FALSE;
+            prec->udf  = FALSE;
         }
-        status = 0; /* convert since we've written RVAL */
-    }
-    else {
-        status = -1;
-        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
-        return status;
-    }
-    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
+        status = 0;   /* Convert RVAL */
+        break;
 
+    default:
+        recGblSetSevr(prec, SOFT_ALARM, INVALID_ALARM);
+        return -1;
+    }
+
+    recGblSetSevr(prec, SIMM_ALARM, prec->sims);
     return status;
 }

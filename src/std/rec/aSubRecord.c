@@ -360,22 +360,25 @@ static long get_precision(DBADDR *paddr, long *pprecision)
     aSubRecord *prec = (aSubRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
-    short precision;
 
     *pprecision = prec->prec;
     linkNumber = get_inlinkNumber(fieldIndex);
     if (linkNumber >= 0) {
+        short precision;
+
         if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
             *pprecision = precision;
         return 0;
-    } 
+    }
+
     linkNumber = get_outlinkNumber(fieldIndex);
     if (linkNumber >= 0) {
+        short precision;
+
         if (dbGetPrecision(&prec->outa + linkNumber, &precision) == 0)
             *pprecision = precision;
-        return 0;
-    } 
-    recGblGetPrec(paddr, pprecision);
+    } else
+        recGblGetPrec(paddr, pprecision);
     return 0;
 }
 

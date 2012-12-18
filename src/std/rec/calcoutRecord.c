@@ -414,21 +414,21 @@ static long get_precision(DBADDR *paddr, long *pprecision)
     int fieldIndex = dbGetFieldIndex(paddr);
     int linkNumber;
 
-    if(fieldIndex == indexof(ODLY)) {
+    if (fieldIndex == indexof(ODLY)) {
         *pprecision = calcoutODLYprecision;
         return 0;
     }
+
     *pprecision = prec->prec;
-    if (fieldIndex == indexof(VAL)) {
+    if (fieldIndex == indexof(VAL))
         return 0;
-    }
+
     linkNumber = get_linkNumber(fieldIndex);
     if (linkNumber >= 0) {
         short precision;
+
         if (dbGetPrecision(&prec->inpa + linkNumber, &precision) == 0)
             *pprecision = precision;
-        else
-            *pprecision = 15;
     } else
         recGblGetPrec(paddr, pprecision);
     return 0;

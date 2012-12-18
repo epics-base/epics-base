@@ -30,6 +30,7 @@ sub GetEpicsHostArch { # no args
     } elsif ($arch =~ m/x86_64-linux/)  { return "linux-x86_64";
     } elsif ($arch =~ m/arm-linux/)     { return "linux-arm";
     } elsif ($arch =~ m/MSWin32-x86/)   { return "win32-x86";
+    } elsif ($arch =~ m/MSWin32-x64/)   { return "windows-x64";
     } elsif ($arch =~ m/cygwin/)        { return "cygwin-x86";
     } elsif ($arch =~ m/darwin/)        {
             my($kernel, $hostname, $release, $version, $cpu) = POSIX::uname();

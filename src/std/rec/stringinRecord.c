@@ -156,20 +156,20 @@ static long process(stringinRecord *prec)
 
 static void monitor(stringinRecord *prec)
 {
-    unsigned short  monitor_mask;
+    int monitor_mask = recGblResetAlarms(prec);
 
-    monitor_mask = recGblResetAlarms(prec);
-    if(strcmp(prec->oval,prec->val)) {
-	monitor_mask |= DBE_VALUE|DBE_LOG;
-	strcpy(prec->oval,prec->val);
+    if (strncmp(prec->oval, prec->val, sizeof(prec->val))) {
+        monitor_mask |= DBE_VALUE | DBE_LOG;
+        strncpy(prec->oval, prec->val, sizeof(prec->val));
     }
+
     if (prec->mpst == stringinPOST_Always)
-	monitor_mask |= DBE_VALUE;
+        monitor_mask |= DBE_VALUE;
     if (prec->apst == stringinPOST_Always)
-	monitor_mask |= DBE_LOG;
-    if(monitor_mask)
-	db_post_events(prec,&(prec->val[0]),monitor_mask);
-    return;
+        monitor_mask |= DBE_LOG;
+
+    if (monitor_mask)
+        db_post_events(prec, prec->val, monitor_mask);
 }
 
 static long readValue(stringinRecord *prec)

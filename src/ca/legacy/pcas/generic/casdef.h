@@ -245,6 +245,7 @@ public:
     casEventMask valueEventMask () const; // DBE_VALUE 
     casEventMask logEventMask () const;  // DBE_LOG 
     casEventMask alarmEventMask () const; // DBE_ALARM 
+    casEventMask propertyEventMask () const; // DBE_PROPERTY
 
     void setDebugLevel ( unsigned level );
     unsigned getDebugLevel () const;

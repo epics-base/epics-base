@@ -68,6 +68,7 @@
 #       linux-cris              (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v10          (Axis GNU crosscompiler on linux-x86 host)
 #       linux-cris_v32          (Axis GNU crosscompiler on linux-x86 host)
+#       linux-microblaze
 #       linux-xscale_be
 #       vxWorks-486
 #       vxWorks-68040

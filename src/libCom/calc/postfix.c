@@ -240,6 +240,7 @@ epicsShareFunc long
 
         case LITERAL_OPERAND:
             runtime_depth += pel->runtime_effect;
+
             psrc -= strlen(pel->name);
             if (pel->code == LITERAL_DOUBLE) {
                 double lit_d;

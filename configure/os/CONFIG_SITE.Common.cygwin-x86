@@ -3,11 +3,6 @@
 # $Revision-Id$
 #
 # Site Specific definitions for cygwin-x86 target
-# Only the local epics system manager should modify this file
-
-# Currently the Cygwin build only works without shared libraries.
-SHARED_LIBRARIES = NO
-STATIC_BUILD = YES
 
 # Depending on your version of Cygwin you'll want one of the following
 # lines to enable command-line editing and history in iocsh.  If you're
@@ -23,4 +18,3 @@ COMMANDLINE_LIBRARY = READLINE_NCURSESW
 
 # No other libraries needed
 #COMMANDLINE_LIBRARY = READLINE
-

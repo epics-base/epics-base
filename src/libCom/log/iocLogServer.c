@@ -289,7 +289,7 @@ static int seekLatestLine (struct ioc_log_server *pserver)
             }
         }
         else {
-            char c = fgetc (pserver->poutfile);
+            int c = fgetc (pserver->poutfile);
  
             /*
              * bypass the line if it does not match the expected format

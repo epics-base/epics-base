@@ -47,22 +47,23 @@ caServerI::caServerI ( caServer & tool ) :
     nEventsPosted ( 0u ),
     ioInProgressCount ( 0u )
 {
-	assert ( & adapter != NULL );
+    assert ( & adapter != NULL );
 
     // create predefined event types
     this->valueEvent = registerEvent ( "value" );
-	this->logEvent = registerEvent ( "log" );
-	this->alarmEvent = registerEvent ( "alarm" );
+    this->logEvent = registerEvent ( "log" );
+    this->alarmEvent = registerEvent ( "alarm" );
+    this->propertyEvent = registerEvent ( "property" );
 
     this->locateInterfaces ();
 
-	if (this->intfList.count()==0u) {
-		errMessage (S_cas_noInterface, 
+    if (this->intfList.count()==0u) {
+        errMessage (S_cas_noInterface, 
             "- CA server internals init unable to continue");
         throw S_cas_noInterface;
-	}
+    }
 
-	return;
+    return;
 }
 
 caServerI::~caServerI()
@@ -70,22 +71,22 @@ caServerI::~caServerI()
     delete & this->beaconAnomalyGov;
     delete & this->beaconTmr;
 
-	// delete all clients
+    // delete all clients
     while ( casStrmClient * pClient = this->clientList.get() ) {
-		delete pClient;
-	}
+        delete pClient;
+    }
 
-	casIntfOS *pIF;
-	while ( ( pIF = this->intfList.get() ) ) {
-		delete pIF;
-	}
+    casIntfOS *pIF;
+    while ( ( pIF = this->intfList.get() ) ) {
+        delete pIF;
+    }
 }
 
 void caServerI::destroyClient ( casStrmClient & client )
 {
     {
         epicsGuard < epicsMutex > locker ( this->mutex );
-	    this->clientList.remove ( client );
+        this->clientList.remove ( client );
     }
     delete & client;
 }
@@ -143,11 +144,11 @@ caStatus caServerI::attachInterface ( const caNetAddr & addrIn,
 void caServerI::sendBeacon ( ca_uint32_t beaconNo )
 {
     epicsGuard < epicsMutex > locker ( this->mutex );
-	tsDLIter < casIntfOS > iter = this->intfList.firstIter ();
-	while ( iter.valid () ) {
-		iter->sendBeacon ( beaconNo );
-		iter++;
-	}
+    tsDLIter < casIntfOS > iter = this->intfList.firstIter ();
+    while ( iter.valid () ) {
+        iter->sendBeacon ( beaconNo );
+        iter++;
+    }
 }
 
 void caServerI::generateBeaconAnomaly ()
@@ -259,11 +260,11 @@ void caServerI::casMonitorDestroy ( casMonitor & cm )
 }
 
 //
-//	caServerI::dumpMsg()
+//  caServerI::dumpMsg()
 //
-//	Debug aid - print the header part of a message.
+//  Debug aid - print the header part of a message.
 //
-//	dp arg allowed to be null
+//  dp arg allowed to be null
 //
 //
 void caServerI::dumpMsg ( const char * pHostName, const char * pUserName,

@@ -1,7 +1,6 @@
 # CONFIG_SITE.Common.iosCommon
 #
 # $Revision-Id$
-# This file is maintained by the build community.
 #
 # Site-specific settings for Apple iOS builds
 #-------------------------------------------------------
@@ -12,16 +11,18 @@
 #IOS_VERSION = 4.1
 #IOS_VERSION = 4.2
 #IOS_VERSION = 4.3
-IOS_VERSION = 5.0
+#IOS_VERSION = 5.0
+#IOS_VERSION = 5.1
+IOS_VERSION = 6.0
 
 
 # Which compiler to use:
 #   CLANG is preferred for recent versions of Xcode
-#   LLVM uses the llvm-gcc and llvm-g++ compilers
+#   LLVM_GNU uses the llvm-gcc and llvm-g++ compilers
 #   GNU is needed for older versions of Xcode
 
 COMPILER = CLANG
-#COMPILER = LLVM
+#COMPILER = LLVM_GNU
 #COMPILER = GNU
 
 

@@ -30,9 +30,7 @@ static size_t osdMaxBlockSize = 0;
 
 static void osdSufficentSpaceInPoolQuery ()
 {
-    int temp = memFindMax ();
-
-    osdMaxBlockSize = ( temp > 0 ) ? (size_t) temp : 0;
+    osdMaxBlockSize = (size_t) memFindMax ();
 }
 
 static void osdSufficentSpaceInPoolPoll ( void *pArgIn )

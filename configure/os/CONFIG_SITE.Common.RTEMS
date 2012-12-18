@@ -5,21 +5,22 @@
 
 # Where to find RTEMS
 #
-RTEMS_VERSION=4.9.2
-RTEMS_BASE=/usr/local/rtems/rtems-$(RTEMS_VERSION)
+RTEMS_VERSION = 4.10.2
+RTEMS_BASE = /usr/local/rtems/rtems-$(RTEMS_VERSION)
 
 # Cross-compile toolchain in $(RTEMS_TOOLS)/bin
 #
-RTEMS_TOOLS=$(RTEMS_BASE)
+RTEMS_TOOLS = $(RTEMS_BASE)
 
 
 # If you're using neither BOOTP/DHCP nor FLASH to pick up your IOC
-# network configuration you must uncomment and specify your Internet 
+# network configuration you must uncomment and specify your Internet
 # Domain Name here
 #
 #OP_SYS_CFLAGS += -DRTEMS_NETWORK_CONFIG_DNS_DOMAINNAME=<domainname>
 
-#
-# Specify your desired command-line-input library
+# Select the command-line-input library to use
 #
 COMMANDLINE_LIBRARY = EPICS
+#COMMANDLINE_LIBRARY = LIBTECLA
+#COMMANDLINE_LIBRARY = READLINE

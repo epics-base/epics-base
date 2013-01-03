@@ -29,8 +29,8 @@ static int mine[MAX_THREADS];
 static int mapped[MAX_THREADS];
 static epicsThreadId tid[MAX_THREADS];
 
-epicsMutexId tidLock;
-epicsEventId shutdown[TEST_THREADS];
+static epicsMutexId tidLock;
+static epicsEventId shutdown[TEST_THREADS];
 
 static int newThreadIndex(epicsThreadId id)
 {

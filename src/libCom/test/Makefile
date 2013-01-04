@@ -59,6 +59,11 @@ epicsStdlibTest_SRCS += epicsStdlibTest.c
 testHarness_SRCS += epicsStdlibTest.c
 TESTS += epicsStdlibTest
 
+TESTPROD_HOST += epicsSockResolveTest
+epicsSockResolveTest_SRCS += epicsSockResolveTest.c
+testHarness_SRCS += epicsSockResolveTest.c
+TESTS += epicsSockResolveTest
+
 TESTPROD_HOST += epicsStringTest
 epicsStringTest_SRCS += epicsStringTest.c
 testHarness_SRCS += epicsStringTest.c

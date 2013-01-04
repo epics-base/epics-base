@@ -27,7 +27,7 @@
 
 int osiSockAttach()
 {
-	return 1;
+    return 1;
 }
 
 void osiSockRelease()
@@ -112,27 +112,25 @@ epicsShareFunc unsigned epicsShareAPI ipAddrToHostName
 /*
  * hostToIPAddr ()
  */
-epicsShareFunc int epicsShareAPI hostToIPAddr 
-				(const char *pHostName, struct in_addr *pIPA)
+epicsShareFunc int epicsShareAPI
+hostToIPAddr(const char *pHostName, struct in_addr *pIPA)
 {
-	int addr;
+    int addr;
 
-	addr = hostGetByName ((char *)pHostName);
-	if (addr==ERROR) {
-        addr = inet_addr ((char *)pHostName);
-        if (addr==ERROR) {
-            /*
-             * return indicating an error
-             */
-            return -1;
-        }
+    addr = hostGetByName((char *)pHostName);
+    if (addr != ERROR) {
+        pIPA->s_addr = (unsigned long) addr;
+    }
+    else if (inet_aton((char *)pHostName, pIPA) == ERROR) {
+        /*
+         * return indicating an error
+         */
+        return -1;
     }
 
-	pIPA->s_addr = (unsigned long) addr;
-
-	/*
-	 * success
-	 */
-	return 0;
+    /*
+     * success
+     */
+    return 0;
 }
 

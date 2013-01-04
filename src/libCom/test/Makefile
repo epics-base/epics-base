@@ -61,6 +61,8 @@ TESTS += epicsStdlibTest
 
 TESTPROD_HOST += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
+epicsSockResolveTest_SYS_LIBS_solaris = socket
+epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsSockResolveTest.c
 TESTS += epicsSockResolveTest
 

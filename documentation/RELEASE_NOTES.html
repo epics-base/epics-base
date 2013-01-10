@@ -9,9 +9,25 @@
 <body lang="en">
 <h1 align="center">EPICS Base Release 3.14.12.3</h1>
 
-<h2 align="center">Changes between 3.14.12.2 and 3.14.12.3</h2>
+<h2 align="center">Changes between 3.14.12.3 and 3.14.12.4</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h4>Time drift in periodic scans</h4>
+
+<p>The implementation of the periodic scan code has been modified to remove
+long-term drift associated with OS thread sheduling. The new code keeps scan
+times much more closely tied to the system clock tick, only allowing the scan
+period to drift if the record processing time takes longer to execute than the
+interval between scans.  If this happens a 0.1 second penalty is given to the
+scan thread (to allow lower priority threads time to process on preemptive
+priority scheduled OSs).  After 10 repeated over-runs a warning will be logged,
+with an increasing delay between messages up to hourly.</p>
+
+<p>This fixes <a href="https://bugs.launchpad.net/bugs/597054">launchpad bug
+597054</a>.</p>
+
+<h2 align="center">Changes between 3.14.12.2 and 3.14.12.3</h2>
 
 <h4>Hex literals in CALC expressions</h4>
 

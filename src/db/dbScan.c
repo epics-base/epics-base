@@ -85,6 +85,7 @@ typedef struct scan_element{
 typedef struct periodic_scan_list {
     scan_list           scan_list;
     double              period;
+    unsigned long       overruns;
     volatile enum ctl   scanCtl;
     epicsEventId        loopEvent;
 } periodic_scan_list;
@@ -366,7 +367,8 @@ int scanppl(double period)      /* print periodic list */
         ppsl = papPeriodic[i];
         if (ppsl == NULL) continue;
         if (period > 0.0 && (fabs(period - ppsl->period) >.05)) continue;
-        sprintf(message, "Scan Period = %g seconds ", ppsl->period);
+        sprintf(message, "Scan Period = %g seconds (%lu over-runs)",
+            ppsl->period, ppsl->overruns);
         printList(&ppsl->scan_list, message);
     }
     return 0;
@@ -541,19 +543,47 @@ static void initOnce(void)
 static void periodicTask(void *arg)
 {
     periodic_scan_list *ppsl = (periodic_scan_list *)arg;
-
-    epicsTimeStamp start_time, end_time;
-    double delay;
+    epicsTimeStamp next, reported;
+    unsigned int overruns = 0;
+    double report_delay = 10.0;
 
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
+    epicsTimeGetCurrent(&next);
+    reported = next;
+
     while (ppsl->scanCtl != ctlExit) {
-        epicsTimeGetCurrent(&start_time);
-        if (ppsl->scanCtl == ctlRun) scanList(&ppsl->scan_list);
-        epicsTimeGetCurrent(&end_time);
-        delay = ppsl->period - epicsTimeDiffInSeconds(&end_time, &start_time);
-        if (delay <= 0.0) delay = 0.1;
+        double delay;
+        epicsTimeStamp now;
+
+        if (ppsl->scanCtl == ctlRun)
+            scanList(&ppsl->scan_list);
+
+        epicsTimeAddSeconds(&next, ppsl->period);
+        epicsTimeGetCurrent(&now);
+        delay = epicsTimeDiffInSeconds(&next, &now);
+        if (delay <= 0.0) {
+            delay = 0.1;
+            ppsl->overruns++;
+            next = now;
+            if (++overruns >= 10 &&
+                epicsTimeDiffInSeconds(&now, &reported) > report_delay) {
+                errlogPrintf("dbScan warning: %g second scan over-ran %u times\n",
+                    ppsl->period, overruns);
+
+                reported = now;
+                if (report_delay < 1800.0)
+                    report_delay *= 2;
+                else
+                    report_delay = 3600.0;  /* At most hourly */
+            }
+        }
+        else {
+            overruns = 0;
+            report_delay = 10.0;
+        }
+
         epicsEventWaitWithTimeout(ppsl->loopEvent, delay);
     }
 

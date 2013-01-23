@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #*************************************************************************
 # Copyright (c) 2009 Helmholtz-Zentrum Berlin fuer Materialien und Energie.
 # Copyright (c) 2002 The University of Chicago, as Operator of Argonne

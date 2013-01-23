@@ -1,5 +1,4 @@
-eval 'exec perl -S -w  $0 ${1+"$@"}'  # -*- Mode: perl -*-
-    if 0;
+#!/usr/bin/env perl
 #*************************************************************************
 # Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.

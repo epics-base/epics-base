@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Tool to expand @VAR@ variables while copying a file.
 # The file will *not* be copied if it already exists.

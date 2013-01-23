@@ -780,6 +780,7 @@ long dbGet(DBADDR *paddr, short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
     char *pbuf = pbuffer;
+    void *pfieldsave;
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type;
     long no_elements;
@@ -814,6 +815,13 @@ long dbGet(DBADDR *paddr, short dbrType,
         recGblDbaddrError(S_db_badDbrtype, paddr, message);
         return S_db_badDbrtype;
     }
+
+    /* For array field, the rset function
+     * get_array_info() is allowed to modify
+     * paddr->pfield.  So we store the original
+     * value and restore it later.
+     */
+    pfieldsave = paddr->pfield;
 
     /* check for array */
     if ((!pfl || pfl->type == dbfl_type_rec) &&
@@ -860,7 +868,8 @@ long dbGet(DBADDR *paddr, short dbrType,
             sprintf(message, "dbGet: Missing conversion for [%d][%d]\n",
                     field_type, dbrType);
             recGblDbaddrError(S_db_badDbrtype, paddr, message);
-            return S_db_badDbrtype;
+            status = S_db_badDbrtype;
+            goto done;
         }
         /* convert database field  and place it in the buffer */
         if (n <= 0) {
@@ -880,6 +889,8 @@ long dbGet(DBADDR *paddr, short dbrType,
             status = convert(&localAddr, pbuf, n, no_elements, offset);
         }
     }
+done:
+    paddr->pfield = pfieldsave;
     return status;
 }
 

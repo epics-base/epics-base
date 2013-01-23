@@ -183,7 +183,6 @@ static long cvt_dbaddr(DBADDR *paddr)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
-    paddr->pfield         = prec->bptr;
     paddr->no_elements    = prec->nelm;
     paddr->field_type     = prec->ftvl;
     paddr->field_size     = dbValueSize(prec->ftvl);
@@ -195,6 +194,7 @@ static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     aaoRecord *prec = (aaoRecord *)paddr->precord;
 
+    paddr->pfield = prec->bptr;
     *no_elements =  prec->nord;
     *offset = 0;
     return 0;
@@ -308,7 +308,7 @@ static void monitor(aaoRecord *prec)
     }
 
     if (monitor_mask)
-        db_post_events(prec, prec->bptr, monitor_mask);
+        db_post_events(prec, (void*)&prec->val, monitor_mask);
 }
 
 static long writeValue(aaoRecord *prec)

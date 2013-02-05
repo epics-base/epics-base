@@ -189,13 +189,6 @@ $(TESTPRODNAME) $(PRODNAME):%$(EXE):
 	$(DEBUGCMD) $(LINK.cpp)
 	$(MT_EXE_COMMAND)
 
-# object libs for R3.13 vxWorks compatibility only
-$(OBJLIBNAME): $(OBJLIB_LD_OBJS)
-
-$(OBJLIBNAME):%$(OBJ):
-	@$(RM) $@
-	$(OBJLIB_LINK.cpp)
-
 %_ctdt$(OBJ) : %_ctdt.c
 	@$(RM) $@
 	$(COMPILE.ctdt) $<

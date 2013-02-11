@@ -15,9 +15,6 @@ CMPLR_CLASS = msvc
 
 #-------------------------------------------------------
 
-#
-# "\ " forces gnu make to keep this as one token
-#
 WINLINK = link
 
 RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
@@ -81,8 +78,6 @@ STATIC_CFLAGS_NO= -MD$(VISC_CFLAGS_DEBUG) $(BUILD_DLL_CFLAGS) -DEPICS_CALL_DLL
 
 # OS vendor c preprocessor
 CPP = cl -C -E
-#GNU c preprocessor
-#CPP = gcc -x c -E
 
 # Configure OS vendor C++ compiler
 #
@@ -97,7 +92,7 @@ CPP = cl -C -E
 # -EHsc - generate code for exceptions
 # -GR - generate code for run time type identification
 #
-CCC = cl -nologo -EHsc -GR
+CCC = cl -EHsc -GR
 CODE_CPPFLAGS += -nologo -D__STDC__=0
 CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 
@@ -177,16 +172,13 @@ COMPILER_CXXFLAGS = -TP
 OP_SYS_CFLAGS =
 OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 
+#
 #	Files and flags needed to link DLLs (used in RULES_BUILD)
 #
-#	Strange but seems to work without: WIN32_DLLFLAGS should contain
-#	an entry point:
-#		'-entry:_DllMainCRTStartup$(DLLENTRY)'
-DLLENTRY = @12
 
-WIN32_DLLFLAGS = -subsystem:windows -dll $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
+WIN32_DLLFLAGS = -subsystem:windows -dll \
+    $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
-#
 # specify dll .def file only if it exists
 #
 DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
@@ -197,9 +189,9 @@ DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
 #	x.lib: what you link to progs that use the dll (DLLSTUB_LIBNAME)
 #	x.exp: what you need to build the dll (in no variable)
 #
-LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -implib:$*.lib -out:$*.dll \
+LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -out:$@ \
+    -implib:$(@:%$(SHRLIB_SUFFIX)=%$(LIB_SUFFIX)) \
     $(DLL_DEF_FLAG) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
-#MUNCH_CMD =  $(CCC) -Fo $@ $^
 
 
 #	adjust names of libraries to build
@@ -235,13 +227,13 @@ INSTALL_SHRLIB = $(INSTALL_BIN)
 
 PROD_DEPLIBS = $(foreach lib, $(PROD_LIBS) $(USR_LIBS), \
   $(firstword $(wildcard \
-      $(addsuffix /$(SHRLIB_PREFIX)$(lib)*$(SHRLIB_SUFFIX_BASE)*, \
-        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(DLLSTUB_PREFIX)$(lib)$(DLLSTUB_SUFFIX), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
+      $(addsuffix /$(SHRLIB_PREFIX)$(lib)*$(SHRLIB_SUFFIX_BASE)*, \
+        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
-        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-    $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
+        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
+    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
 
 PROD_LDLIBS += $($*_DEPLIBS) $(PROD_DEPLIBS)
 PROD_LDLIBS += $(addsuffix .lib, \
@@ -261,13 +253,13 @@ PROD_LDLIBS += $(STATIC_LDLIBS) \
 
 SHRLIB_DEPLIBS = $(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
   $(firstword $(wildcard \
-      $(addsuffix /$(SHRLIB_PREFIX)$(lib)*$(SHRLIB_SUFFIX_BASE)*, \
-        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(DLLSTUB_PREFIX)$(lib)$(DLLSTUB_SUFFIX), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
+      $(addsuffix /$(SHRLIB_PREFIX)$(lib)*$(SHRLIB_SUFFIX_BASE)*, \
+        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
-        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS))) \
-    $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
+        $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
+    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
 
 
 SHRLIB_LDLIBS += $($*_DLL_DEPLIBS) $($*_DEPLIBS) $(SHRLIB_DEPLIBS)

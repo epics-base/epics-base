@@ -276,7 +276,7 @@ $(SHRLIBNAME) $(DLLSTUB_LIBNAME) $(TESTSHRLIBNAME) $(TESTDLLSTUB_LIBNAME): \
     $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
 $(SHRLIBNAME) $(TESTSHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
-	$(RM) $@
+	@$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
@@ -327,13 +327,13 @@ testspec: $(TESTSCRIPTS)
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
 	@$(RM) $@
-	@$(CP) $< $@
+	$(CP) $< $@
 
 # Some versions of Test::Harness expect test programs in perl only.
 # Generate a perl program to exec the real test binary.
 %.t: %$(EXE)
 	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
+	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
 # Install rules for BIN_INSTALLS and LIB_INSTALLS
@@ -402,7 +402,7 @@ $(INSTALL_TCLLIB)/$(TCLINDEX): $(INSTALL_TCLLIBS)
 
 $(INSTALL_LOADABLE_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing loadable shared library $@"
-	@$(INSTALL_LIBRARY) -d -m 555 $< $(INSTALL_SHRLIB)
+	@$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
 ifneq ($(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(LOADABLE_SHRLIB_VERSION)))
 	@$(RM) $(subst $(LOADABLE_SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)

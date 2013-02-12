@@ -131,6 +131,11 @@ epicsMutexTest_SRCS += epicsMutexTest.cpp
 testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
+TESTPROD_HOST += epicsSpinTest
+epicsSpinTest_SRCS += epicsSpinTest.c
+testHarness_SRCS += epicsSpinTest.c
+TESTS += epicsSpinTest
+
 TESTPROD_HOST += epicsAtomicTest
 epicsAtomicTest_SRCS += epicsAtomicTest.cpp
 testHarness_SRCS += epicsAtomicTest.cpp

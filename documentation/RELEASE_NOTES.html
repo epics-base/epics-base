@@ -15,6 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Spin-locks API added</h3>
+
+<p>The new header file epicsSpin.h adds a portable spin-locks API which is
+intended for locking very short sections of code (typically one or two lines of
+C or C++) to provide a critical section that protects against race conditions.
+On Posix platforms this uses the pthread_spinlock_t type if it's available but
+falls back to a pthread_mutex_t if not; on the UP VxWorks and RTEMS platforms
+the implementations lock out the CPU interrupts; the default implementation
+(used where no better implementation is available for the platform) uses an
+epicsMutex. Spin-locks may not be taken recursively, and the code inside the
+critical section should always be short and deterministic.</p>
+
 <h3>Improvements to aToIPAddr()</h3>
 
 <p>The libCom routine aToIPAddr() and the vxWorks implementation of the

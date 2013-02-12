@@ -88,18 +88,23 @@ $(1)_DLL_DEPLIBS=$$(foreach lib, $$($(1)_DLL_LIBS), \
     ) $$(addsuffix /$(BUILDLIB_PREFIX)$$(lib)$(BUILDLIB_SUFFIX), \
       $$(firstword $$($$(lib)_DIR) $$(SHRLIB_SEARCH_DIRS)))))
 
-$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
-$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_DEPLIBS)
+ifeq ($$(SHARED_LIBRARIES),YES)
+
+ifdef SHRLIB_SUFFIX
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
 
 # Needed for -j parallel builds option
-ifeq ($$(SHARED_LIBRARIES),YES)
-ifdef SHRLIB_SUFFIX
-$$(INSTALL_LIB)/$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):  \
- $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
+$$(INSTALL_LIB)/$$(DLLSTUB_PREFIX)$(1)$$(DLLSTUB_SUFFIX): \
+    $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
 endif
+
+else # SHARED_LIBRARIES is NO
+
+$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
+$$(LIB_PREFIX)$(1)$$(LIB_SUFFIX):$$($(1)_DEPLIBS)
+
 endif
 
 endef

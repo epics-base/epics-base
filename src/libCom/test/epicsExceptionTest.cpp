@@ -27,12 +27,6 @@
 
 using namespace std;
 
-#if defined(__BORLANDC__) && defined(__linux__)
-namespace  std  {
-const nothrow_t  nothrow ;
-}
-#endif
-
 #if defined ( _MSC_VER )
     // some interesting bugs found in the MS implementation of new
 #   if _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */

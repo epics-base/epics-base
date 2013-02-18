@@ -16,6 +16,7 @@
 #include <string.h>
 #include <pthread.h>
 
+#define epicsExportSharedSymbols
 #include "errlog.h"
 #include "epicsSpin.h"
 

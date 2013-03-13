@@ -24,7 +24,7 @@
 
     #define TIME_INIT ClockTime_Init(CLOCKTIME_NOSYNC)
 #else
-    /* Some posix systems like Darwin don't have CLOCK_REALTIME */
+    /* Some posix systems may not have CLOCK_REALTIME */
 
     #define TIME_INIT generalTimeCurrentTpRegister("GetTimeOfDay", \
         LAST_RESORT_PRIORITY, osdTimeGetCurrent)

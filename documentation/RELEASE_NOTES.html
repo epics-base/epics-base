@@ -13,6 +13,16 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>High-Resolution Time Provider on MacOS</h4>
+
+<p>MacOS does not provide the clock_gettime() API with CLOCK_REALTIME that other
+Posix systems implement, so we previously used gettimeofday() to fetch the
+current date & time from the OS. That older routine only provides the time with
+a resolution of 1 microsecond though, whereas clock_gettime() gives results with
+a nanosecond resolution.  This release uses a new MachTime time provider on
+MacOS which uses the Mach Kernel's CALENDAR_CLOCK service to fetch the time, and
+provides nanosecond resolution.</p>
+
 <h4>Time drift in periodic scans</h4>
 
 <p>The implementation of the periodic scan code has been modified to remove

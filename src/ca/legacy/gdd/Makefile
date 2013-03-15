@@ -64,6 +64,9 @@ aitGen_CFLAGS_linux-arm = -O2
 
 CLEANS += $(COMMON_DIR)/aitConvertGenerated.cc
 
+USR_CXXFLAGS_Linux = -fno-strict-aliasing
+USR_CXXFLAGS_RTEMS = -fno-strict-aliasing
+
 include $(TOP)/configure/RULES
 
 # Manual dependencies

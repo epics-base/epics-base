@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*epicsRingPointer.cpp*/
 /* Author:  Marty Kraimer Date:    13OCT2000 */
@@ -63,7 +62,7 @@ epicsShareFunc int epicsShareAPI epicsRingPointerGetUsed(epicsRingPointerId id)
     return(pvoidPointer->getUsed());
 }
 
-epicsShareFunc int epicsShareAPI epicsRingPointerSize(epicsRingPointerId id)
+epicsShareFunc int epicsShareAPI epicsRingPointerGetSize(epicsRingPointerId id)
 {
     voidPointer *pvoidPointer = reinterpret_cast<voidPointer*>(id);
     return(pvoidPointer->getSize());

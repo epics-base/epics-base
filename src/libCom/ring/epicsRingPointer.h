@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*epicsRingPointer.h */
 
@@ -66,6 +65,9 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerGetUsed(epicsRingPointerId id)
 epicsShareFunc int  epicsShareAPI epicsRingPointerGetSize(epicsRingPointerId id);
 epicsShareFunc int  epicsShareAPI epicsRingPointerIsEmpty(epicsRingPointerId id);
 epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
+
+/* This routine was incorrectly named in previous releases */
+#define epicsRingPointerSize epicsRingPointerGetSize
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,13 @@ static int yyAbort = 0;
 
 %%
 
-database:	database database_item | database_item;
+database:	/* empty */
+	|	database_item_list
+	;
+
+database_item_list:	database_item_list database_item
+	|	database_item
+	;
 
 database_item:	include
 	|	path

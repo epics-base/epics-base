@@ -13,6 +13,13 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>Allow empty database files</h4>
+
+<p>The IOC used to report an error if dbLoadRecords or dbLoadDatabase was asked
+to load an empty file or one containing just whitespace and/or comments. Such
+files are now permitted, simplifying the task of automated database generation
+programs which might discover they have nothing to output.</p>
+
 <h4>High-Resolution Time Provider on MacOS</h4>
 
 <p>MacOS does not provide the clock_gettime() API with CLOCK_REALTIME that other

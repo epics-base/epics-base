@@ -30,7 +30,7 @@
 void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
 {
     if (!pthreadInfo) {
-        fprintf(epicsGetStdout(), "            NAME     EPICS ID   "
+        fprintf(epicsGetStdout(), "            NAME       EPICS ID   "
             "LWP ID   OSIPRI  OSSPRI  STATE\n");
     } else {
         struct sched_param param;
@@ -44,7 +44,7 @@ void epicsThreadShowInfo(epicsThreadId pthreadInfo, unsigned int level)
             if (!status)
                 priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %12p %8lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %8lu    %3d%8d %8.8s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->lwpId,
              pthreadInfo->osiPriority,priority,

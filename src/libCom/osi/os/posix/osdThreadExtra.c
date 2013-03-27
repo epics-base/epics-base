@@ -23,7 +23,7 @@ epicsShareDef EPICS_THREAD_HOOK_ROUTINE epicsThreadHookMain;
 void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
 {
     if(!pthreadInfo) {
-        fprintf(epicsGetStdout(),"            NAME     EPICS ID   "
+        fprintf(epicsGetStdout(),"            NAME       EPICS ID   "
             "PTHREAD ID   OSIPRI  OSSPRI  STATE\n");
     } else {
         struct sched_param param;
@@ -35,7 +35,7 @@ void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level)
             status = pthread_getschedparam(pthreadInfo->tid,&policy,&param);
             if(!status) priority = param.sched_priority;
         }
-        fprintf(epicsGetStdout(),"%16.16s %12p %12lu    %3d%8d %8.8s\n",
+        fprintf(epicsGetStdout(),"%16.16s %14p %12lu    %3d%8d %8.8s\n",
              pthreadInfo->name,(void *)
              pthreadInfo,(unsigned long)pthreadInfo->tid,
              pthreadInfo->osiPriority,priority,

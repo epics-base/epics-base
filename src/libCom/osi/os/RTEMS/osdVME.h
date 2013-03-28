@@ -19,3 +19,5 @@
 #endif
 #endif
 #endif
+
+void bcopyLongs(char *source, char *destination, int nlongs);

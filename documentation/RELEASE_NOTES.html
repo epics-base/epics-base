@@ -13,6 +13,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>devLibVME.h</h4>
+
+<p>Moved the declaration of bcopyLongs() from this header into RTEMS/osdVME.h.
+Its original location broke the build for vxWorks 6.9 (the int nlongs argument
+becomes size_t in 6.9, thus conflicting with this declaration). The only local
+implementation of this routine is found in RTEMS/devLibVMEOSD.c, but it is not
+used anywhere in Base.</p>
+
 <h4>Allow empty database files</h4>
 
 <p>The IOC used to report an error if dbLoadRecords or dbLoadDatabase was asked

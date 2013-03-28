@@ -300,11 +300,6 @@ epicsShareFunc long locationProbe (epicsAddressType addrType, char *pLocation);
 
 #endif /* NO_DEVLIB_OLD_INTERFACE */
 
-/*
- * Some vxWorks convenience routines
- */
-void bcopyLongs(char *source, char *destination, int nlongs);
-
 #ifdef __cplusplus
 }
 #endif

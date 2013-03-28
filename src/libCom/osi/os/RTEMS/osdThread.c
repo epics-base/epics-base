@@ -718,3 +718,12 @@ double epicsThreadSleepQuantum ( void )
 
     return 1.0 / rtemsTicksPerSecond_double;
 }
+
+epicsShareFunc int epicsThreadGetCPUs(void)
+{
+#if defined(RTEMS_SMP)
+    return rtems_smp_get_number_of_processors();
+#else
+    return 1;
+#endif
+}

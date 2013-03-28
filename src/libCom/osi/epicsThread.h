@@ -3,7 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* Copyright (c) 2012 ITER Organization
+* Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -85,6 +85,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSleep(double seconds);
 epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum(void);
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetIdSelf(void);
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadGetId(const char *name);
+epicsShareFunc int epicsThreadGetCPUs(void);
 
 epicsShareFunc const char * epicsShareAPI epicsThreadGetNameSelf(void);
 

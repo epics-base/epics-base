@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -79,11 +80,34 @@ static void finalCallback(CALLBACK *pCallback)
     epicsEventSignal(finished);
 }
 
+static void updateStats(double *stats, double val)
+{
+    if (stats[0] > val) stats[0] = val;
+    if (stats[1] < val) stats[1] = val;
+    stats[2] += val;
+    stats[3] += pow(val, 2.0);
+    stats[4] += 1.;
+}
+
+static void printStats(double *stats, const char* tag) {
+    testDiag("Priority %4s  min/avg/max/sigma = %f / %f / %f / %f",
+            tag, stats[0], stats[2]/stats[4], stats[1],
+            sqrt(stats[4]*stats[3]-pow(stats[2], 2.0))/stats[4]);
+}
+
 MAIN(callbackTest)
 {
     myPvt *pcbt[NCALLBACKS];
     epicsTimeStamp start;
-    int i;
+    int i, j;
+    /* Statistics: min/max/sum/sum^2/n for each priority */
+    double setupError[NUM_CALLBACK_PRIORITIES][5];
+    double timeError[NUM_CALLBACK_PRIORITIES][5];
+    double defaultError[5] = {1,-1,0,0,0};
+
+    for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++)
+        for (j = 0; j < 5; j++)
+            setupError[i][j] = timeError[i][j] = defaultError[j];
 
     testPlan(NCALLBACKS * 2 + 1);
 
@@ -128,8 +152,8 @@ MAIN(callbackTest)
             double delta = epicsTimeDiffInSeconds(&pcbt[i]->pass1Time, &start);
             testOk(fabs(delta) < 0.05, "callback %.02f setup time |%f| < 0.05",
                     pcbt[i]->delay, delta);
+            updateStats(setupError[i%NUM_CALLBACK_PRIORITIES], delta);
         }
-        
     }
 
     for (i = 0; i < NCALLBACKS ; i++) {
@@ -140,7 +164,18 @@ MAIN(callbackTest)
         error = delta - pcbt[i]->delay;
         testOk(fabs(error) < 0.05, "delay %.02f seconds, callback time error |%.04f| < 0.05",
                 pcbt[i]->delay, error);
+        updateStats(timeError[i%NUM_CALLBACK_PRIORITIES], error);
     }
+
+    testDiag("Setup time statistics");
+    printStats(setupError[0], "LOW");
+    printStats(setupError[1], "MID");
+    printStats(setupError[2], "HIGH");
+
+    testDiag("Delay time statistics");
+    printStats(timeError[0], "LOW");
+    printStats(timeError[1], "MID");
+    printStats(timeError[2], "HIGH");
 
     return testDone();
 }

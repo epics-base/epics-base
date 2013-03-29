@@ -12,3 +12,5 @@ variable(asCaDebug,int)
 variable(dbRecordsOnceOnly,int)
 variable(dbBptNotMonotonic,int)
 
+# Default number of parallel callback threads
+variable(callbackParallelThreadsDefault,int)

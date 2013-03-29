@@ -3,8 +3,9 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* callback.c */
 
@@ -25,6 +26,7 @@
 #include "epicsThread.h"
 #include "epicsExit.h"
 #include "epicsInterrupt.h"
+#include "epicsString.h"
 #include "epicsTimer.h"
 #include "epicsRingPointer.h"
 #include "errlog.h"
@@ -36,6 +38,7 @@
 #include "taskwd.h"
 #include "errMdef.h"
 #include "dbCommon.h"
+#include "epicsExport.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbAccessDefs.h"
@@ -49,6 +52,12 @@ static epicsEventId callbackSem[NUM_CALLBACK_PRIORITIES];
 static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
 static volatile int ringOverflow[NUM_CALLBACK_PRIORITIES];
 
+/* Parallel callback threads (configured and actual counts) */
+static int callbackThreadCount[NUM_CALLBACK_PRIORITIES] = { 1, 1, 1 };
+static int callbackThreadsRunning[NUM_CALLBACK_PRIORITIES];
+int callbackParallelThreadsDefault = 2;
+epicsExportAddress(int,callbackParallelThreadsDefault);
+
 /* Timer for Delayed Requests */
 static epicsTimerQueueId timerQueue;
 
@@ -57,7 +66,7 @@ static epicsEventId startStopEvent;
 static void *exitCallback;
 
 /* Static data */
-static char *threadName[NUM_CALLBACK_PRIORITIES] = {
+static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
 };
 static unsigned int threadPriority[NUM_CALLBACK_PRIORITIES] = {
@@ -75,6 +84,54 @@ int callbackSetQueueSize(int size)
         return -1;
     }
     callbackQueueSize = size;
+    return 0;
+}
+
+int callbackParallelThreads(int count, const char *prio)
+{
+    int i;
+    dbMenu	*pdbMenu;
+    int		gotMatch;
+
+    if (callbackOnceFlag != EPICS_THREAD_ONCE_INIT) {
+        errlogPrintf("Callback system already initialized\n");
+        return -1;
+    }
+
+    if (count < 0)
+        count = epicsThreadGetCPUs() + count;
+    else if (count == 0)
+        count = callbackParallelThreadsDefault;
+
+    if (!prio || strcmp(prio, "") == 0 || strcmp(prio, "*") == 0) {
+        for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
+            callbackThreadCount[i] = count;
+        }
+    } else {
+        if (!pdbbase) {
+            errlogPrintf("pdbbase not specified\n");
+            return -1;
+        }
+        /* Find prio in menuPriority */
+        pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
+        while (pdbMenu) {
+            gotMatch = (strcmp("menuPriority", pdbMenu->name)==0) ? TRUE : FALSE;
+            if (gotMatch) {
+                for (i = 0; i < pdbMenu->nChoice; i++) {
+                    gotMatch = (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i])==0) ? TRUE : FALSE;
+                    if (gotMatch) break;
+                }
+                if (gotMatch) {
+                    callbackThreadCount[i] = count;
+                    break;
+                } else {
+                    errlogPrintf("Unknown priority \"%s\"\n", prio);
+                    return -1;
+                }
+            }
+            pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
+        }
+    }
     return 0;
 }
 
@@ -106,36 +163,48 @@ static void callbackShutdown(void *arg)
     int i;
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
-        int lockKey = epicsInterruptLock();
-        int ok = epicsRingPointerPush(callbackQ[i], &exitCallback);
-        epicsInterruptUnlock(lockKey);
-        epicsEventSignal(callbackSem[i]);
-        if (ok) epicsEventWait(startStopEvent);
+        while (callbackThreadsRunning[i]--) {
+            int ok = epicsRingPointerPush(callbackQ[i], &exitCallback);
+            epicsEventSignal(callbackSem[i]);
+            if (ok) epicsEventWait(startStopEvent);
+        }
     }
 }
 
 static void callbackInitOnce(void *arg)
 {
     int i;
+    int j;
+    char threadName[32];
 
     startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     timerQueue = epicsTimerQueueAllocate(0,epicsThreadPriorityScanHigh);
+
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         epicsThreadId tid;
 
         callbackSem[i] = epicsEventMustCreate(epicsEventEmpty);
-        callbackQ[i] = epicsRingPointerCreate(callbackQueueSize);
+        callbackQ[i] = epicsRingPointerLockedCreate(callbackQueueSize);
         if (callbackQ[i] == 0)
-            cantProceed("epicsRingPointerCreate failed for %s\n",
-                threadName[i]);
+            cantProceed("epicsRingPointerLockedCreate failed for %s\n",
+                threadNamePrefix[i]);
         ringOverflow[i] = FALSE;
-        tid = epicsThreadCreate(threadName[i], threadPriority[i],
-            epicsThreadGetStackSize(epicsThreadStackBig),
-            (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
-        if (tid == 0)
-            cantProceed("Failed to spawn callback task %s\n", threadName[i]);
-        else
-            epicsEventWait(startStopEvent);
+
+        for (j = 0; j < callbackThreadCount[i]; j++) {
+            if (callbackThreadCount[i] > 1 )
+                sprintf(threadName, "%s-%d", threadNamePrefix[i], j);
+            else
+                strcpy(threadName, threadNamePrefix[i]);
+            tid = epicsThreadCreate(threadName, threadPriority[i],
+                epicsThreadGetStackSize(epicsThreadStackBig),
+                (EPICSTHREADFUNC)callbackTask, &priorityValue[i]);
+            if (tid == 0) {
+                cantProceed("Failed to spawn callback thread %s\n", threadName);
+            } else {
+                epicsEventWait(startStopEvent);
+                callbackThreadsRunning[i]++;
+            }
+        }
     }
     epicsAtExit(callbackShutdown, NULL);
 }
@@ -150,7 +219,6 @@ void callbackRequest(CALLBACK *pcallback)
 {
     int priority;
     int pushOK;
-    int lockKey;
 
     if (!pcallback) {
         epicsInterruptContextMessage("callbackRequest: pcallback was NULL\n");
@@ -163,14 +231,12 @@ void callbackRequest(CALLBACK *pcallback)
     }
     if (ringOverflow[priority]) return;
 
-    lockKey = epicsInterruptLock();
     pushOK = epicsRingPointerPush(callbackQ[priority], pcallback);
-    epicsInterruptUnlock(lockKey);
 
     if (!pushOK) {
         char msg[48] = "callbackRequest: ";
 
-        strcat(msg, threadName[priority]);
+        strcat(msg, threadNamePrefix[priority]);
         strcat(msg, " ring buffer full\n");
         epicsInterruptContextMessage(msg);
         ringOverflow[priority] = TRUE;

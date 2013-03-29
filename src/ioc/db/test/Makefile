@@ -21,6 +21,11 @@ callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c
 TESTS += callbackTest
 
+TESTPROD_HOST += callbackParallelTest
+callbackParallelTest_SRCS += callbackParallelTest.c
+testHarness_SRCS += callbackParallelTest.c
+TESTS += callbackParallelTest
+
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c

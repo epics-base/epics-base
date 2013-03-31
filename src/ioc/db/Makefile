@@ -57,7 +57,7 @@ menuGlobal_DBD += menuSimm.dbd
 DBDINC += $(basename $(menuGlobal_DBD))
 DBDINC += dbCommon
 
-HTMLS += $(patsubst %.dbd,%.html,$(menuGlobal_DBD))
+HTMLS += $(patsubst %.dbd.pod,%.html,$(notdir $(wildcard ../db/menu*.dbd.pod)))
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c

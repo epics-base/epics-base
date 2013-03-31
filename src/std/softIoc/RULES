@@ -7,9 +7,9 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-base.dbd$(DEP): $(COMMON_DIR)/stdRecords.dbd
+base.dbd$(DEP): $(COMMON_DIR)/stdRecords.dbd $(COMMON_DIR)/filters.dbd
 softIoc.dbd$(DEP): $(COMMON_DIR)/base.dbd
-$(COMMON_DIR)/base.dbd: $(COMMON_DIR)/stdRecords.dbd
+$(COMMON_DIR)/base.dbd: $(COMMON_DIR)/stdRecords.dbd $(COMMON_DIR)/filters.dbd
 $(COMMON_DIR)/softIoc.dbd: $(COMMON_DIR)/base.dbd
 
 softMain$(DEP): epicsInstallDir.h

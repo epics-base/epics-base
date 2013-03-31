@@ -24,18 +24,18 @@ my $tool = 'dbdToHtml';
 
 use vars qw($opt_D @opt_I $opt_o);
 getopts('DI@o:') or
-    die "Usage: $tool [-D] [-I dir] [-o file.html] file.dbd\n";
+    die "Usage: $tool [-D] [-I dir] [-o file.html] file.dbd.pod\n";
 
 my $dbd = DBD->new();
 
 my $infile = shift @ARGV;
-$infile =~ m/\.dbd$/ or
-    die "$tool: Input file '$infile' must have '.dbd' extension\n";
+$infile =~ m/\.dbd.pod$/ or
+    die "$tool: Input file '$infile' must have '.dbd.pod' extension\n";
 
 &ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
 
 if (!$opt_o) {
-    ($opt_o = $infile) =~ s/\.dbd$/.html/;
+    ($opt_o = $infile) =~ s/\.dbd.pod$/.html/;
     $opt_o =~ s/^.*\///;
     $opt_o =~ s/dbCommonRecord/dbCommon/;
 }

@@ -10,7 +10,8 @@
 =head1 Menu menuAlarmSevr
 
 This menu defines the four possible alarm severities that EPICS records can
-exhibit.
+exhibit.  Note that it is not possible to add or remove severities just by
+changing the choices defined here.
 
 =menu menuAlarmSevr
 

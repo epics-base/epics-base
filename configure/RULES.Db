@@ -13,6 +13,7 @@ SUBST_SUFFIX ?= .substitutions
 
 #####################################################  vpath
 
+vpath %.pod $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
 vpath %.vdb $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
@@ -216,7 +217,11 @@ menu%.h$(DEP): menu%.dbd
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-menu%.h$(DEP): ../menu%.dbd
+%.dbd$(DEP): %.dbd.pod
+	@$(RM) $@
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
@@ -351,9 +356,9 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
+$(COMMON_DIR)/%.dbd: %.dbd.pod
 	@$(RM) $(notdir $@)
-	$(MAKEBPT) $< $(notdir $@)
+	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd
@@ -397,7 +402,7 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
 ##################################################### HTML files
 
-$(COMMON_DIR)/%.html: %.dbd $(TOOLS)/dbdToHtml.pl
+$(COMMON_DIR)/%.html: %.dbd.pod $(TOOLS)/dbdToHtml.pl
 	@$(RM) $(notdir $@)
 	$(PERL) $(TOOLS)/dbdToHtml.pl $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@

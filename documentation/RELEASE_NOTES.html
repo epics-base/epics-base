@@ -15,6 +15,22 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Array field memory mangement</h3>
+
+<p>This allows array data to be moved, without copying, into and out of the
+value (aka BPTR) field of the waveform, aai, and aao types.</p>
+
+<p>Making use of this feature involves replacing the pointer stored in the BPTR
+field with another (user allocated) pointer. The basic rules are:</p>
+
+<ol>
+    <li>BPTR, and the memory it is currently pointing to, can only be accessed
+      while the record is locked.</li>
+    <li>NELM may not be changed.</li>
+    <li>BPTR must always point to a piece of memory large enough to accommodate
+      the maximum number of elements (as given by the NELM field).</li>
+</ol>
+
 <h3>mbboDirect and mbbiDirect records</h3>
 
 <p>These record types have undergone some significant rework, and will behave

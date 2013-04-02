@@ -15,6 +15,22 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Array field double-buffering</h3>
+
+<p>Array data can now be moved, without copying, into and out of the VAL field
+of the waveform, aai, and aao record types by replacing the pointer in BPTR.
+The basic rules which device support must follow are:</p>
+
+<ol>
+    <li>BPTR, and the memory it is currently pointing to, can only be accessed
+      while the record is locked.</li>
+    <li>NELM may not be changed; NORD should be updated whenever the number of
+      valid data elements changes.</li>
+    <li>When BPTR is replaced it must always point to a block of memory large
+      enough to hold the maximum number of elements, as given by the NELM and
+      FTVL fields.</li>
+</ol>
+
 <h3>Spin-locks API added</h3>
 
 <p>The new header file epicsSpin.h adds a portable spin-locks API which is

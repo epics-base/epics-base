@@ -308,7 +308,7 @@ static void monitor(aaiRecord *prec)
     }
 
     if (monitor_mask)
-        db_post_events(prec, (void*)&prec->val, monitor_mask);
+        db_post_events(prec, &prec->val, monitor_mask);
 }
 
 static long readValue(aaiRecord *prec)

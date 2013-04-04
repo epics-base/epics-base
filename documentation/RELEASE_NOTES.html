@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New build target <q>tapfiles</q></h3>
+
+<p>This new make target runs the same tests as the <q>runtests</q> target, but
+instead of summarizing or displaying the output for each test script it creates
+a <q>.tap</q> file inside the architecture build directory which contains the
+detailed test output. The output file can be parsed by continuous integration
+packages such as <a href="http://www.jenkins-ci.org/">Jenkins</a> to show the
+test results.</p>
+
 <h3>Array field double-buffering</h3>
 
 <p>Array data can now be moved, without copying, into and out of the VAL field

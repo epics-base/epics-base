@@ -98,6 +98,8 @@ ifneq (,$(strip $(TESTS)))
 TARGETS += testspec
 endif
 
+TAPFILES += $(TESTSCRIPTS:.t=.tap)
+
 #---------------------------------------------------------------
 #   Libraries 
 #
@@ -147,7 +149,8 @@ build_clean:
 	$(LOADABLE_SHRLIBNAME) \
 	$(INC) $(TARGETS) $(TDS) $(CLEANS) \
 	*.out MakefileInclude *.manifest *.exp \
-	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
+	$(TESTSCRIPTS) $(TAPFILES)
 ifdef RES
 	@$(RM) *$(RES)
 endif
@@ -324,12 +327,18 @@ testspec: $(TESTSCRIPTS)
 	$(if $(TESTFILES), @echo Files: $(TESTFILES) >> $@)
 	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
 
+tapfiles: $(TESTSCRIPTS) $(TAPFILES)
+
+# A .tap file is the output from running the associated test script
+%.tap: %.t
+	-HARNESS_ACTIVE=1 $(PERL) $< > $@
+
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
 	@$(RM) $@
 	$(CP) $< $@
 
-# Some versions of Test::Harness expect test programs in perl only.
+# Test programs (.t files) must be written in Perl.
 # Generate a perl program to exec the real test binary.
 %.t: %$(EXE)
 	@$(RM) $@
@@ -464,7 +473,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests checkRelease warnRelease noCheckRelease
+.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

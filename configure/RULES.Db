@@ -129,7 +129,7 @@ ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += browse
-ACTIONS += runtests
+ACTIONS += runtests tapfiles
 
 actionArchTargets = $(foreach x, $(ACTIONS),\ $(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
 
@@ -144,10 +144,10 @@ buildInstall : build
 
 rebuild: clean install
 
-.PHONY: all inc build install clean rebuild buildInstall
+.PHONY: all $(ACTIONS)
 
-$(actionArchTargets) $(BUILD_ARCHS):install
-$(cleanArchTargets):clean
+$(actionArchTargets) $(BUILD_ARCHS): install
+$(cleanArchTargets): clean
 
 .PHONY: $(BUILD_ARCHS) $(actionArchTargets) $(cleanArchTargets)
 

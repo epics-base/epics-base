@@ -17,7 +17,7 @@ ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += browse
-ACTIONS += runtests
+ACTIONS += runtests tapfiles
 #ACTIONS += rebuild
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))

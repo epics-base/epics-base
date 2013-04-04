@@ -585,6 +585,7 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             dbScanLock(precord);
             locked = 1;
         }
+        scanDelete(precord);    /* Being consistent... */
         pdsxt->del_record(precord);
     }
     if (locked) {

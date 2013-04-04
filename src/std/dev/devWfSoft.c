@@ -76,8 +76,6 @@ static long read_wf(waveformRecord *prec)
         if (prec->tsel.type == CONSTANT &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
-	db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
     }
-
     return 0;
 }

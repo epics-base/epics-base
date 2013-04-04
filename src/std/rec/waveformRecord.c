@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -318,16 +318,22 @@ static long readValue(waveformRecord *prec)
         return status;
 
     if (prec->simm == menuYesNoNO){
-        return (*pdset->read_wf)(prec);
+        epicsUInt32 nord = prec->nord;
+
+        status = (*pdset->read_wf)(prec);
+        if (nord != prec->nord)
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+        return status;
     }
 
     if (prec->simm == menuYesNoYES){
         long nRequest = prec->nelm;
+
         status = dbGetLink(&(prec->siol), prec->ftvl, prec->bptr, 0, &nRequest);
         /* nord set only for db links: needed for old db_access */
         if (prec->siol.type != CONSTANT) {
             prec->nord = nRequest;
-	    db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
+            db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
             if (status == 0)
                 prec->udf=FALSE;
         }

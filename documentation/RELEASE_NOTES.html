@@ -322,10 +322,10 @@ that number of seconds.</p>
 
 <h3>Post events on Waveform record's NORD field</h3>
 
-<p>When the record type or soft device support modify the NORD field of a
-waveform record they now also post a DBE_VALUE and DBE_LOG event, signalling the
-array length change to any clients monitoring the NORD field.  Input device
-support routines should be modified to do this as well.</p>
+<p>When the record type or device support modify the NORD field of a waveform
+record, the record support code now posts DBE_VALUE and DBE_LOG events for that
+field, signalling the array length change to any client monitoring the NORD
+field.</p>
 
 <h3>Attributes of Non-VAL Fields</h3>
 

@@ -13,6 +13,7 @@ SUBST_SUFFIX ?= .substitutions
 
 #####################################################  vpath
 
+vpath %.pm $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.pod $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
@@ -405,6 +406,16 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 $(COMMON_DIR)/%.html: %.dbd.pod $(TOOLS)/dbdToHtml.pl
 	@$(RM) $(notdir $@)
 	$(PERL) $(TOOLS)/dbdToHtml.pl $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.html: %.pod $(TOOLS)/podToHtml.pl
+	@$(RM) $(notdir $@)
+	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
+	@$(RM) $(notdir $@)
+	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 .PRECIOUS: $(COMMON_DIR)/%.html

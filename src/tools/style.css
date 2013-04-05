@@ -80,6 +80,7 @@ DIV {
 
 DT {
   margin-top: 1em;
+  font-weight: bold;
 }
 
 .credits TD {

@@ -76,8 +76,11 @@ INSTALL_DB                  = $(INSTALL_LOCATION)/db
 INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 INSTALL_JAVA                = $(INSTALL_LOCATION)/javalib
 
-#Directory for OS independant build created files
+# Directory for OS independant build created files
 COMMON_DIR = ../O.Common
+
+# The IOC's path to $(TOP), may be overridden inside the application
+IOCS_APPL_TOP               = $(INSTALL_LOCATION)
 
 #-------------------------------------------------------
 # Make echo output - suppress echoing if make's '-s' flag is set

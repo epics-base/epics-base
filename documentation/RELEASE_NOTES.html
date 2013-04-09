@@ -13,6 +13,16 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>IOCS_APPL_TOP and INSTALL_LOCATION</h4>
+
+<p>An IOC application that sets INSTALL_LOCATION in its configure/CONFIG_SITE
+file no longer has to set IOCS_APPL_TOP there as well, unless the IOC uses a
+different path than the build host to reach the application's top directory in
+its filesystem. The IOCS_APPL_TOP variable now defaults to the value of
+INSTALL_LOCATION, so setting the latter automatically sets the former. This
+change fixes <a href="https://bugs.launchpad.net/bugs/1165257">Launchpad bug
+1165257</a>.</p>
+
 <h4>devLibVME.h</h4>
 
 <p>Moved the declaration of bcopyLongs() from this header into RTEMS/osdVME.h.

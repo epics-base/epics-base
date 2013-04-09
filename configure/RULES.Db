@@ -368,8 +368,7 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 
 ##################################################### register record,device,driver support
 
-IOC_INST_TOP := $(firstword $(IOCS_APPL_TOP) \
-        $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION) ) )
+IOC_INST_TOP := $(shell $(PERL) $(TOOLS)/fullPathName.pl $(IOCS_APPL_TOP) )
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
 	@$(RM) $@ $*.tmp

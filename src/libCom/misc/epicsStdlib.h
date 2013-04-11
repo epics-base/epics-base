@@ -3,12 +3,14 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*epicsStdlib.h*/
 /*Author: Eric Norum */
+
+#ifndef INC_epicsStdlib_H
+#define INC_epicsStdlib_H
 
 #include <shareLib.h>
 
@@ -26,3 +28,4 @@ epicsShareFunc int epicsScanFloat(const char *str, float *dest);
 }
 #endif
 
+#endif /* INC_epicsStdlib_H */

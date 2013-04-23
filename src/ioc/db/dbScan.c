@@ -638,16 +638,21 @@ static void initPeriodic(void)
             errlogPrintf("initPeriodic: Bad menuScan choice '%s'\n", choice);
             ppsl->period = i;
         }
-        else if (!*unit || !strcmp(unit, "second") || !strcmp(unit, "seconds")) {
+        else if (!*unit ||
+                 !epicsStrCaseCmp(unit, "second") ||
+                 !epicsStrCaseCmp(unit, "seconds")) {
             ppsl->period = number;
         }
-        else if (!strcmp(unit, "minute") || !strcmp(unit, "minutes")) {
+        else if (!epicsStrCaseCmp(unit, "minute") ||
+                 !epicsStrCaseCmp(unit, "minutes")) {
             ppsl->period = number * 60;
         }
-        else if (!strcmp(unit, "hour") || !strcmp(unit, "hours")) {
+        else if (!epicsStrCaseCmp(unit, "hour") ||
+                 !epicsStrCaseCmp(unit, "hours")) {
             ppsl->period = number * 60 * 60;
         }
-        else if (!strcmp(unit, "Hz") || !strcmp(unit, "Hertz")) {
+        else if (!epicsStrCaseCmp(unit, "Hz") ||
+                 !epicsStrCaseCmp(unit, "Hertz")) {
             ppsl->period = 1 / number;
         }
         else {

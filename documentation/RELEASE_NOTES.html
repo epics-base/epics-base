@@ -13,6 +13,13 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>VxWorks sysAtReboot Registration</h4>
+
+<p>The increasing intelligence of the GNU compiler and linker broke the method
+that was being used by the VxWorks code to register a reboot hook that can close
+down TCP connections nicely before the network stack gets disabled. This has
+been fixed and no longer uses a C++ static contructor to execute that code.</p>
+
 <h4>IOCS_APPL_TOP and INSTALL_LOCATION</h4>
 
 <p>An IOC application that sets INSTALL_LOCATION in its configure/CONFIG_SITE

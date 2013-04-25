@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #*************************************************************************
-# Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -24,6 +24,9 @@ $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 # Is exception handler frame info required?
 my $need_eh_frame = 0;
 
+# Is module destructor needed?
+my $need_mod_dtor = 0;
+
 # Constructor and destructor names:
 #   Array contains names from input file.
 #   Hash is used to skip duplicate names.
@@ -34,6 +37,7 @@ while (<>)
 {
     chomp;
     $need_eh_frame++ if m/__? gxx_personality_v [0-9]/x;
+    $need_mod_dtor++ if m/__? cxa_atexit $/x;
     next if m/__? GLOBAL_. (F | I._GLOBAL_.D) .+/x;
     if (m/__? GLOBAL_ . D .+/x) {
         my ($addr, $type, $name) = split ' ', $_, 3;
@@ -55,8 +59,11 @@ push my @out,
     '',
     '/* Declarations */',
     (map {cDecl($_)} @ctors, @dtors),
+    '',
+    'char __dso_handle = 0;',
     '';
 
+moduleDestructor() if $need_mod_dtor;
 exceptionHandlerFrame() if $need_eh_frame;
 
 push @out,
@@ -81,6 +88,19 @@ if ($opt_o) {
     print join "\n", @out;
 }
 
+# Outputs the C code for registering a module destructor
+sub moduleDestructor {
+    my $mod_dtor = 'mod_dtor';
+    push @dtors, $mod_dtor;
+    push @out,
+        '/* Module destructor */',
+        "static void $mod_dtor(void) {",
+        '    extern void __cxa_finalize(void *);',
+        '',
+        '    __cxa_finalize(&__dso_handle);',
+        '}',
+        '';
+}
 
 # Outputs the C code for registering exception handler frame info
 sub exceptionHandlerFrame {
@@ -97,7 +117,11 @@ sub exceptionHandlerFrame {
         '',
         "static void $eh_ctor(void) {",
         '    extern void __register_frame_info (const void *, void *);',
-        '    static struct { unsigned pad[8]; } object;',
+        '    static struct {',
+        '        void *a, *b, *c, *d;',
+        '        unsigned long e;',
+        '        void *f, *g;',
+        '    } object;',
         '',
         '    __register_frame_info(__EH_FRAME_BEGIN__, &object);',
         '}',
@@ -108,7 +132,6 @@ sub exceptionHandlerFrame {
         '    __deregister_frame_info(__EH_FRAME_BEGIN__);',
         '}',
         '';
-    return;
 }
 
 sub cName {

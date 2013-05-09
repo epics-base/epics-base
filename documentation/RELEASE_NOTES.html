@@ -13,6 +13,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h4>More dbStatic commands accept "" or "*" to mean 'all'</h4>
+
+<p>The IOC commands dbDumpRecordType, dbDumpMenu and dbDumpRecord will now
+accept either an empty string or any string beginning with an asterisk '*' to
+mean all record types or menus.  Previously the 'all' option for these commands
+required passing in a NULL value, which could be done from the vxWorks shell but
+was not possible from iocsh.</p>
+
 <h4>VxWorks sysAtReboot Registration</h4>
 
 <p>The increasing intelligence of the GNU compiler and linker broke the method

@@ -51,7 +51,7 @@ static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
 static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
 
 /*Global variables */
-static int dontWarnUndef = 1;
+static int opt_V = 0;
 
 
 int main(int argc,char **argv)
@@ -67,7 +67,6 @@ int main(int argc,char **argv)
 
     inputConstruct(&inputPvt);
     macCreateHandle(&macPvt,0);
-    macSuppressWarning(macPvt,1);
     while((argc>1) && (argv[1][0] == '-')) {
         narg = (strlen(argv[1])==2) ? 2 : 1;
         pval = (narg==1) ? (argv[1]+2) : argv[2];
@@ -84,8 +83,7 @@ int main(int argc,char **argv)
         } else if(strncmp(argv[1],"-S",2)==0) {
             substitutionName = epicsStrDup(pval);
         } else if(strncmp(argv[1],"-V",2)==0) {
-            macSuppressWarning(macPvt,0);
-            dontWarnUndef = 0;
+            opt_V = 1;
             narg = 1; /* no argument for this option */
         } else if(strncmp(argv[1],"-g",2)==0) {
             localScope = 0;
@@ -96,6 +94,8 @@ int main(int argc,char **argv)
         argc -= narg;
         for(i=1; i<argc; i++) argv[i] = argv[i + narg];
     }
+    if (!opt_V)
+        macSuppressWarning(macPvt,1);
     if(argc>2) {
         fprintf(stderr,"msi: Too many arguments\n");
         usageExit();
@@ -137,7 +137,7 @@ int main(int argc,char **argv)
     inputDestruct(inputPvt);
     free(templateName);
     free(substitutionName);
-    return 0;
+    return opt_V & 2;
 }
 
 void usageExit(void)
@@ -145,7 +145,7 @@ void usageExit(void)
     fprintf(stderr,"usage: msi [options] [template]\n");
     fprintf(stderr,"stdin is used if neither template nor substitution file is given\n");
     fprintf(stderr,"options:\n");
-    fprintf(stderr,"  -V        Verbose warnings\n");
+    fprintf(stderr,"  -V        Undefined macros generate an error\n");
     fprintf(stderr,"  -g        All macros have global scope\n");
     fprintf(stderr,"  -o<FILE>  Save output to <FILE>\n");
     fprintf(stderr,"  -I<DIR>   Add <DIR> to include file search path\n");
@@ -250,9 +250,9 @@ endif:
         if (expand) {
             n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
             fputs(buffer,stdout);
-            if (!dontWarnUndef && n<0) {
-                fprintf(stderr,"msi: Warning, undefined macros present\n");
-                dontWarnUndef++;
+            if (opt_V == 1 && n < 0) {
+                fprintf(stderr,"msi: Error - undefined macros present\n");
+                opt_V++;
             }
         }
     }

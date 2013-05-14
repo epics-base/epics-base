@@ -13,6 +13,7 @@
  * Authors:
  * Jeff Hill
  * Murali Shankar - initial versions of verifyMultithreadSubscr
+ * Michael Abbott - multiSubscrDestroyLateNoCallbackTest
  * 
  */
 
@@ -1327,6 +1328,85 @@ void test_sync_groups ( chid chan, unsigned interestLevel  )
 
     showProgressEnd ( interestLevel );
 }
+
+#define multiSubscrDestroyLateNoCallbackEventCount 100000
+
+struct MultiSubscrDestroyLateNoCallbackEventData {
+    evid m_id;
+    int m_callbackIsOk;
+    struct MultiSubscrDestroyLateNoCallbackTestData * m_pTestData;
+};
+
+struct MultiSubscrDestroyLateNoCallbackTestData {
+    chid m_chan;
+    epicsMutexId m_mutex;
+    struct MultiSubscrDestroyLateNoCallbackEventData
+        m_eventData [multiSubscrDestroyLateNoCallbackEventCount];
+};
+
+static void noLateCallbackDetect ( struct event_handler_args args )
+{
+    const struct MultiSubscrDestroyLateNoCallbackEventData * pEventData = args.usr;
+    epicsMutexLockStatus lockStatus = epicsMutexLock ( pEventData->m_pTestData->m_mutex );
+    verify ( lockStatus == epicsMutexLockOK );
+    verify ( pEventData->m_callbackIsOk );
+    epicsMutexUnlock ( pEventData->m_pTestData->m_mutex );
+}
+
+/*
+ * verify that a subscription callback never comes after the subscription is destroyed
+ */
+static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned interestLevel )
+{
+    unsigned i;
+    int status;
+
+    showProgressBegin ( "multiSubscrDestroyLateNoCallbackTest", interestLevel );
+
+    struct MultiSubscrDestroyLateNoCallbackTestData * pTestData =
+        calloc ( 1u, sizeof ( struct MultiSubscrDestroyLateNoCallbackTestData ) );
+    verify ( pTestData );
+
+    pTestData->m_mutex =  epicsMutexCreate ();
+    verify ( pTestData->m_mutex );
+
+    status = ca_create_channel ( pName, 0, 0,
+        CA_PRIORITY_DEFAULT, &pTestData->m_chan );
+    status = ca_pend_io ( timeoutToPendIO );
+    SEVCHK ( status, "multiSubscrDestroyLateNoCallbackTest: channel connect failed" );
+    verify ( status == ECA_NORMAL );
+
+
+    for ( i=0; i < multiSubscrDestroyLateNoCallbackEventCount; i++ ) {
+        epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+        verify ( lockStatus == epicsMutexLockOK );
+        pTestData->m_eventData[i].m_callbackIsOk = TRUE;
+        pTestData->m_eventData[i].m_pTestData = pTestData;
+        epicsMutexUnlock ( pTestData->m_mutex );
+        SEVCHK ( ca_add_event ( DBR_GR_FLOAT, pTestData->m_chan, noLateCallbackDetect,
+                    &pTestData->m_eventData, &pTestData->m_eventData[i].m_id ) , NULL );
+    }
+
+    for ( i=0; i < multiSubscrDestroyLateNoCallbackEventCount; i++ ) {
+        epicsMutexLockStatus lockStatus;
+        SEVCHK ( ca_clear_event ( pTestData->m_eventData[i].m_id ) , NULL );
+        lockStatus = epicsMutexLock ( pTestData->m_mutex );
+        verify ( lockStatus == epicsMutexLockOK );
+        pTestData->m_eventData[i].m_callbackIsOk = FALSE;
+        epicsMutexUnlock ( pTestData->m_mutex );
+    }
+
+    SEVCHK ( ca_clear_channel ( pTestData->m_chan ), NULL );
+
+    ca_context_destroy ();
+
+    epicsMutexDestroy ( pTestData->m_mutex );
+
+    free ( pTestData );
+
+    showProgressEnd ( interestLevel );
+}
+
 
 /*
  * multiSubscriptionDeleteTest
@@ -3262,6 +3342,8 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
         sprintf ( tmpString, "%u", maxArrayBytes );
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
+
+    multiSubscrDestroyLateNoCallbackTest ( pName, interestLevel );
 
     status = ca_context_create ( select );
     SEVCHK ( status, NULL );

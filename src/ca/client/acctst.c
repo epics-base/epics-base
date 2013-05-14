@@ -13,7 +13,7 @@
  * Authors:
  * Jeff Hill
  * Murali Shankar - initial versions of verifyMultithreadSubscr
- * Michael Abbott - multiSubscrDestroyLateNoCallbackTest
+ * Michael Abbott - initial versions of multiSubscrDestroyLateNoCallbackTest
  * 
  */
 

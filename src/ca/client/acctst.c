@@ -13,7 +13,7 @@
  * Authors:
  * Jeff Hill
  * Murali Shankar - initial versions of verifyMultithreadSubscr
- * Michael Abbott - initial versions of multiSubscrDestroyLateNoCallbackTest
+ * Michael Abbott - initial versions of multiSubscrDestroyNoLateCallbackTest
  * 
  */
 
@@ -1329,26 +1329,26 @@ void test_sync_groups ( chid chan, unsigned interestLevel  )
     showProgressEnd ( interestLevel );
 }
 
-#define multiSubscrDestroyLateNoCallbackEventCount 500
+#define multiSubscrDestroyNoLateCallbackEventCount 500
 
-struct MultiSubscrDestroyLateNoCallbackEventData {
+struct MultiSubscrDestroyNoLateCallbackEventData {
     evid m_id;
     size_t m_nCallback;
     int m_callbackIsOk;
-    struct MultiSubscrDestroyLateNoCallbackTestData * m_pTestData;
+    struct MultiSubscrDestroyNoLateCallbackTestData * m_pTestData;
 };
 
-struct MultiSubscrDestroyLateNoCallbackTestData {
+struct MultiSubscrDestroyNoLateCallbackTestData {
     chid m_chan;
     epicsMutexId m_mutex;
-    struct MultiSubscrDestroyLateNoCallbackEventData
-        m_eventData [multiSubscrDestroyLateNoCallbackEventCount];
+    struct MultiSubscrDestroyNoLateCallbackEventData
+        m_eventData [multiSubscrDestroyNoLateCallbackEventCount];
 };
 
 static void noLateCallbackDetect ( struct event_handler_args args )
 {
     int callbackIsOk;
-    struct MultiSubscrDestroyLateNoCallbackEventData * const pEventData = args.usr;
+    struct MultiSubscrDestroyNoLateCallbackEventData * const pEventData = args.usr;
     epicsMutexLockStatus lockStatus = epicsMutexLock ( pEventData->m_pTestData->m_mutex );
     callbackIsOk = pEventData->m_callbackIsOk;
     pEventData->m_nCallback++;
@@ -1360,15 +1360,15 @@ static void noLateCallbackDetect ( struct event_handler_args args )
 /*
  * verify that a subscription callback never comes after the subscription is destroyed
  */
-static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned interestLevel )
+static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned interestLevel )
 {
     unsigned i, j;
     int status;
 
     showProgressBegin ( "multiSubscrDestroyLateNoCallbackTest", interestLevel );
 
-    struct MultiSubscrDestroyLateNoCallbackTestData * pTestData =
-        calloc ( 1u, sizeof ( struct MultiSubscrDestroyLateNoCallbackTestData ) );
+    struct MultiSubscrDestroyNoLateCallbackTestData * pTestData =
+        calloc ( 1u, sizeof ( struct MultiSubscrDestroyNoLateCallbackTestData ) );
     verify ( pTestData );
 
     pTestData->m_mutex =  epicsMutexCreate ();
@@ -1383,7 +1383,7 @@ static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned i
     verify ( status == ECA_NORMAL );
 
     for ( i=0; i < 1000; i++ ) {
-      for ( j=0; j < multiSubscrDestroyLateNoCallbackEventCount; j++ ) {
+      for ( j=0; j < multiSubscrDestroyNoLateCallbackEventCount; j++ ) {
           epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
           verify ( lockStatus == epicsMutexLockOK );
           pTestData->m_eventData[j].m_nCallback = 0;
@@ -1405,7 +1405,7 @@ static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned i
           }
           epicsMutexUnlock ( pTestData->m_mutex );
       }
-      for ( j=0; j < multiSubscrDestroyLateNoCallbackEventCount; j++ ) {
+      for ( j=0; j < multiSubscrDestroyNoLateCallbackEventCount; j++ ) {
           SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
           epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
           verify ( lockStatus == epicsMutexLockOK );
@@ -3364,7 +3364,10 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
 
-    multiSubscrDestroyLateNoCallbackTest ( pName, interestLevel );
+    /*
+     * this test creates, and then destroys, a private CA context
+     */
+    multiSubscrDestroyNoLateCallbackTest ( pName, interestLevel );
 
     status = ca_context_create ( select );
     SEVCHK ( status, NULL );

@@ -1451,7 +1451,7 @@ static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned i
 {
     struct MultiSubscrDestroyNoLateCallbackTestData * pTestData;
 
-    showProgressBegin ( "multiSubscrDestroyLateNoCallbackTest", interestLevel );
+    showProgressBegin ( "multiSubscrDestroyNoLateCallbackTest", interestLevel );
 
     pTestData = calloc ( 1u, sizeof ( struct MultiSubscrDestroyNoLateCallbackTestData ) );
     verify ( pTestData );

@@ -1406,9 +1406,9 @@ static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned i
           epicsMutexUnlock ( pTestData->m_mutex );
       }
       for ( j=0; j < multiSubscrDestroyLateNoCallbackEventCount; j++ ) {
+          SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
           epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
           verify ( lockStatus == epicsMutexLockOK );
-          SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
           pTestData->m_eventData[j].m_callbackIsOk = FALSE;
           epicsMutexUnlock ( pTestData->m_mutex );
       }

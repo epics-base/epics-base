@@ -1329,10 +1329,11 @@ void test_sync_groups ( chid chan, unsigned interestLevel  )
     showProgressEnd ( interestLevel );
 }
 
-#define multiSubscrDestroyLateNoCallbackEventCount 100000
+#define multiSubscrDestroyLateNoCallbackEventCount 500
 
 struct MultiSubscrDestroyLateNoCallbackEventData {
     evid m_id;
+    size_t m_nCallback;
     int m_callbackIsOk;
     struct MultiSubscrDestroyLateNoCallbackTestData * m_pTestData;
 };
@@ -1346,11 +1347,14 @@ struct MultiSubscrDestroyLateNoCallbackTestData {
 
 static void noLateCallbackDetect ( struct event_handler_args args )
 {
-    const struct MultiSubscrDestroyLateNoCallbackEventData * pEventData = args.usr;
+    int callbackIsOk;
+    struct MultiSubscrDestroyLateNoCallbackEventData * const pEventData = args.usr;
     epicsMutexLockStatus lockStatus = epicsMutexLock ( pEventData->m_pTestData->m_mutex );
-    verify ( lockStatus == epicsMutexLockOK );
-    verify ( pEventData->m_callbackIsOk );
+    callbackIsOk = pEventData->m_callbackIsOk;
+    pEventData->m_nCallback++;
     epicsMutexUnlock ( pEventData->m_pTestData->m_mutex );
+    verify ( lockStatus == epicsMutexLockOK );
+    verify ( callbackIsOk );
 }
 
 /*
@@ -1358,7 +1362,7 @@ static void noLateCallbackDetect ( struct event_handler_args args )
  */
 static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned interestLevel )
 {
-    unsigned i;
+    unsigned i, j;
     int status;
 
     showProgressBegin ( "multiSubscrDestroyLateNoCallbackTest", interestLevel );
@@ -1370,30 +1374,47 @@ static void multiSubscrDestroyLateNoCallbackTest ( const char *pName, unsigned i
     pTestData->m_mutex =  epicsMutexCreate ();
     verify ( pTestData->m_mutex );
 
-    status = ca_create_channel ( pName, 0, 0,
-        CA_PRIORITY_DEFAULT, &pTestData->m_chan );
+    status = ca_context_create ( ca_enable_preemptive_callback );
+    verify ( status == ECA_NORMAL );
+
+    status = ca_create_channel ( pName, 0, 0, CA_PRIORITY_DEFAULT, &pTestData->m_chan );
     status = ca_pend_io ( timeoutToPendIO );
     SEVCHK ( status, "multiSubscrDestroyLateNoCallbackTest: channel connect failed" );
     verify ( status == ECA_NORMAL );
 
-
-    for ( i=0; i < multiSubscrDestroyLateNoCallbackEventCount; i++ ) {
-        epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
-        verify ( lockStatus == epicsMutexLockOK );
-        pTestData->m_eventData[i].m_callbackIsOk = TRUE;
-        pTestData->m_eventData[i].m_pTestData = pTestData;
-        epicsMutexUnlock ( pTestData->m_mutex );
-        SEVCHK ( ca_add_event ( DBR_GR_FLOAT, pTestData->m_chan, noLateCallbackDetect,
-                    &pTestData->m_eventData, &pTestData->m_eventData[i].m_id ) , NULL );
-    }
-
-    for ( i=0; i < multiSubscrDestroyLateNoCallbackEventCount; i++ ) {
-        epicsMutexLockStatus lockStatus;
-        SEVCHK ( ca_clear_event ( pTestData->m_eventData[i].m_id ) , NULL );
-        lockStatus = epicsMutexLock ( pTestData->m_mutex );
-        verify ( lockStatus == epicsMutexLockOK );
-        pTestData->m_eventData[i].m_callbackIsOk = FALSE;
-        epicsMutexUnlock ( pTestData->m_mutex );
+    for ( i=0; i < 1000; i++ ) {
+      for ( j=0; j < multiSubscrDestroyLateNoCallbackEventCount; j++ ) {
+          epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+          verify ( lockStatus == epicsMutexLockOK );
+          pTestData->m_eventData[j].m_nCallback = 0;
+          pTestData->m_eventData[j].m_callbackIsOk = TRUE;
+          pTestData->m_eventData[j].m_pTestData = pTestData;
+          epicsMutexUnlock ( pTestData->m_mutex );
+          SEVCHK ( ca_add_event ( DBR_GR_FLOAT, pTestData->m_chan, noLateCallbackDetect,
+                      &pTestData->m_eventData[j], &pTestData->m_eventData[j].m_id ) , NULL );
+      }
+      SEVCHK ( ca_flush_io(), NULL ); 
+      {
+          epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+          verify ( lockStatus == epicsMutexLockOK );
+          while ( pTestData->m_eventData[0].m_nCallback == 0 ) {
+              epicsMutexUnlock ( pTestData->m_mutex );
+              epicsThreadSleep ( 100e-6 );
+              lockStatus = epicsMutexLock ( pTestData->m_mutex );
+              verify ( lockStatus == epicsMutexLockOK );
+          }
+          epicsMutexUnlock ( pTestData->m_mutex );
+      }
+      for ( j=0; j < multiSubscrDestroyLateNoCallbackEventCount; j++ ) {
+          epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+          verify ( lockStatus == epicsMutexLockOK );
+          SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
+          pTestData->m_eventData[j].m_callbackIsOk = FALSE;
+          epicsMutexUnlock ( pTestData->m_mutex );
+      }
+      if ( i % 100 == 0 ) {
+          showProgress ( interestLevel );
+      }
     }
 
     SEVCHK ( ca_clear_channel ( pTestData->m_chan ), NULL );

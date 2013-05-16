@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -26,45 +26,50 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, chid pChan ) :
-    chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
-        id ( 0u ), idIsValid ( false ), ioComplete ( false )
+syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, 
+                      PRecycleFunc pRecycleFuncIn, chid pChan ) :
+    chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ),
+    sg ( sgIn ), magic ( CASG_MAGIC ),
+    id ( 0u ), idIsValid ( false ), ioComplete ( false )
 {
 }
 
-void syncGroupWriteNotify::begin ( 
-    epicsGuard < epicsMutex > & guard, unsigned type, 
+void syncGroupWriteNotify::begin (
+    epicsGuard < epicsMutex > & guard, unsigned type,
     arrayElementCount count, const void * pValueIn )
 {
     this->chan->eliminateExcessiveSendBacklog ( guard );
     this->ioComplete = false;
     boolFlagManager mgr ( this->idIsValid );
-    this->chan->write ( guard, type, count, 
+    this->chan->write ( guard, type, count,
         pValueIn, *this, &this->id );
     mgr.release ();
 }
 
-void syncGroupWriteNotify::cancel ( 
-    epicsGuard < epicsMutex > & guard )
+void syncGroupWriteNotify::cancel (
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExcusionGuard )
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( guard, this->id );
+        this->chan->ioCancel ( callbackGuard, mutualExcusionGuard, this->id );
         this->idIsValid = false;
     }
 }
 
-syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
-    tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList, 
-    struct CASG & sg, chid chan )
+syncGroupWriteNotify * syncGroupWriteNotify::factory (
+    tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList,
+    struct CASG & sg, PRecycleFunc pRecycleFunc, chid chan )
 {
-    return new ( freeList ) syncGroupWriteNotify ( sg, chan );
+    return new ( freeList ) syncGroupWriteNotify ( sg, pRecycleFunc, chan );
 }
 
-void syncGroupWriteNotify::destroy ( 
-    epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
+void syncGroupWriteNotify::destroy (
+    CallbackGuard &,
+    epicsGuard < epicsMutex > & guard )
 {
+    CASG & sgRef ( this->sg );
     this->~syncGroupWriteNotify ();
-    recycle.recycleSyncGroupWriteNotify ( guard, *this );
+    ( sgRef.*pRecycleFunc ) ( guard, *this );
 }
 
 syncGroupWriteNotify::~syncGroupWriteNotify ()
@@ -72,7 +77,7 @@ syncGroupWriteNotify::~syncGroupWriteNotify ()
     assert ( ! this->idIsValid );
 }
 
-void syncGroupWriteNotify::completion ( 
+void syncGroupWriteNotify::completion (
     epicsGuard < epicsMutex > & guard )
 {
     if ( this->magic != CASG_MAGIC ) {
@@ -85,14 +90,14 @@ void syncGroupWriteNotify::completion (
 }
 
 void syncGroupWriteNotify::exception (
-    epicsGuard < epicsMutex > & guard, 
+    epicsGuard < epicsMutex > & guard,
     int status, const char *pContext, unsigned type, arrayElementCount count )
 {
     if ( this->magic != CASG_MAGIC ) {
         this->sg.printFormated ( "cac: sync group io_complete(): bad sync grp op magic number?\n" );
         return;
     }
-    this->sg.exception ( guard, status, pContext, 
+    this->sg.exception ( guard, status, pContext,
             __FILE__, __LINE__, *this->chan, type, count, CA_OP_PUT );
     this->idIsValid = false;
     //
@@ -102,7 +107,7 @@ void syncGroupWriteNotify::exception (
     //
 }
 
-void syncGroupWriteNotify::show ( 
+void syncGroupWriteNotify::show (
     epicsGuard < epicsMutex > &, unsigned level ) const
 {
     ::printf ( "pending write sg op\n" );
@@ -123,15 +128,15 @@ void syncGroupWriteNotify::operator delete ( void * )
         __FILE__, __LINE__ );
 }
 
-void * syncGroupWriteNotify::operator new ( size_t size, 
+void * syncGroupWriteNotify::operator new ( size_t size,
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
 }
 
 #if defined ( CXX_PLACEMENT_DELETE )
-void syncGroupWriteNotify::operator delete ( void *pCadaver, 
-    tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList ) 
+void syncGroupWriteNotify::operator delete ( void *pCadaver,
+    tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList )
 {
     freeList.release ( pCadaver );
 }

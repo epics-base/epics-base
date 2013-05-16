@@ -5,18 +5,18 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
+ *
+ *
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  *	505 665 1831
@@ -74,9 +74,9 @@ public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion ( epicsGuard < epicsMutex > & ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( 
+    virtual void exception (
         epicsGuard < epicsMutex > &,
-        int status, const char * pContext, 
+        int status, const char * pContext,
         unsigned type, arrayElementCount count ) = 0;
 };
 
@@ -85,13 +85,13 @@ public:
 class epicsShareClass cacReadNotify {
 public:
     virtual ~cacReadNotify () = 0;
-    virtual void completion ( 
-        epicsGuard < epicsMutex > &, unsigned type, 
+    virtual void completion (
+        epicsGuard < epicsMutex > &, unsigned type,
         arrayElementCount count, const void * pData ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( 
-        epicsGuard < epicsMutex > &, int status, 
-        const char * pContext, unsigned type, 
+    virtual void exception (
+        epicsGuard < epicsMutex > &, int status,
+        const char * pContext, unsigned type,
         arrayElementCount count ) = 0;
 };
 
@@ -100,21 +100,21 @@ public:
 class epicsShareClass cacStateNotify {
 public:
     virtual ~cacStateNotify () = 0;
-    virtual void current ( 
-        epicsGuard < epicsMutex > &, unsigned type, 
+    virtual void current (
+        epicsGuard < epicsMutex > &, unsigned type,
         arrayElementCount count, const void * pData ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( 
-        epicsGuard < epicsMutex > &, int status, 
-        const char *pContext, unsigned type, 
+    virtual void exception (
+        epicsGuard < epicsMutex > &, int status,
+        const char *pContext, unsigned type,
         arrayElementCount count ) = 0;
 };
 
 class caAccessRights {
 public:
-    caAccessRights ( 
-        bool readPermit = false, 
-        bool writePermit = false, 
+    caAccessRights (
+        bool readPermit = false,
+        bool writePermit = false,
         bool operatorConfirmationRequest = false);
     void setReadPermit ();
     void setWritePermit ();
@@ -138,18 +138,28 @@ public:
     virtual void disconnectNotify ( epicsGuard < epicsMutex > & ) = 0;
     virtual void serviceShutdownNotify (
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
-    virtual void accessRightsNotify ( 
+    virtual void accessRightsNotify (
         epicsGuard < epicsMutex > &, const caAccessRights & ) = 0;
-    virtual void exception ( 
+    virtual void exception (
         epicsGuard < epicsMutex > &, int status, const char *pContext ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void readException ( 
+    virtual void readException (
         epicsGuard < epicsMutex > &, int status, const char *pContext,
         unsigned type, arrayElementCount count, void *pValue ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void writeException ( 
+    virtual void writeException (
         epicsGuard < epicsMutex > &, int status, const char * pContext,
         unsigned type, arrayElementCount count ) = 0;
+};
+
+class CallbackGuard :
+    public epicsGuard < epicsMutex > {
+public:
+    CallbackGuard ( epicsMutex & mutex ) :
+        epicsGuard < epicsMutex > ( mutex ) {}
+private:
+    CallbackGuard ( const CallbackGuard & );
+    CallbackGuard & operator = ( const CallbackGuard & );
 };
 
 //
@@ -174,43 +184,52 @@ public:
 
     cacChannel ( cacChannelNotify & );
     virtual void destroy (
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     cacChannelNotify & notify () const; // required ?????
     virtual unsigned getName (
-        epicsGuard < epicsMutex > &, 
+        epicsGuard < epicsMutex > &,
         char * pBuf, unsigned bufLen ) const throw () = 0;
     // !! deprecated, avoid use  !!
     virtual const char * pName (
         epicsGuard < epicsMutex > & guard ) const throw () = 0;
-    virtual void show ( 
+    virtual void show (
         epicsGuard < epicsMutex > &,
         unsigned level ) const = 0;
     virtual void initiateConnect (
         epicsGuard < epicsMutex > & ) = 0;
-    virtual unsigned requestMessageBytesPending ( 
+    virtual unsigned requestMessageBytesPending (
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
-    virtual void flush ( 
+    virtual void flush (
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
-    virtual ioStatus read ( 
+    virtual ioStatus read (
         epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, 
+        unsigned type, arrayElementCount count,
         cacReadNotify &, ioid * = 0 ) = 0;
-    virtual void write ( 
+    virtual void write (
         epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, 
+        unsigned type, arrayElementCount count,
         const void *pValue ) = 0;
-    virtual ioStatus write ( 
+    virtual ioStatus write (
         epicsGuard < epicsMutex > &,
-        unsigned type, arrayElementCount count, 
+        unsigned type, arrayElementCount count,
         const void *pValue, cacWriteNotify &, ioid * = 0 ) = 0;
-    virtual void subscribe ( 
-        epicsGuard < epicsMutex > &, unsigned type, 
-        arrayElementCount count, unsigned mask, cacStateNotify &, 
+    virtual void subscribe (
+        epicsGuard < epicsMutex > &, unsigned type,
+        arrayElementCount count, unsigned mask, cacStateNotify &,
         ioid * = 0 ) = 0;
-    virtual void ioCancel ( 
+    // The primary mutex must be released when calling the user's
+    // callback, and therefore a finite interval exists when we are
+    // moving forward with the intent to call the users callback
+    // but the users IO could be deleted during this interval.
+    // To prevent the user's callback from being called after
+    // destroying his IO we must past a guard for the callback
+    // mutex here.
+    virtual void ioCancel (
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & ) = 0;
-    virtual void ioShow ( 
+    virtual void ioShow (
         epicsGuard < epicsMutex > &,
         const ioid &, unsigned level ) const = 0;
     virtual short nativeType (
@@ -226,9 +245,9 @@ public:
     virtual double receiveWatchdogDelay (
         epicsGuard < epicsMutex > & ) const; // negative DBL_MAX if UKN
     virtual bool ca_v42_ok (
-        epicsGuard < epicsMutex > & ) const; 
+        epicsGuard < epicsMutex > & ) const;
     virtual bool connected (
-        epicsGuard < epicsMutex > & ) const; 
+        epicsGuard < epicsMutex > & ) const;
     virtual unsigned getHostName (
         epicsGuard < epicsMutex > &,
         char * pBuf, unsigned bufLength ) const throw ();
@@ -261,11 +280,11 @@ private:
 class epicsShareClass cacContext {
 public:
     virtual ~cacContext ();
-    virtual cacChannel & createChannel ( 
+    virtual cacChannel & createChannel (
         epicsGuard < epicsMutex > &,
-        const char * pChannelName, cacChannelNotify &, 
+        const char * pChannelName, cacChannelNotify &,
         cacChannel::priLev = cacChannel::priorityDefault ) = 0;
-    virtual void flush ( 
+    virtual void flush (
         epicsGuard < epicsMutex > & ) = 0;
     virtual unsigned circuitCount (
         epicsGuard < epicsMutex > & ) const = 0;
@@ -273,18 +292,18 @@ public:
         epicsGuard < epicsMutex > & ) const = 0;
     virtual unsigned beaconAnomaliesSinceProgramStart (
         epicsGuard < epicsMutex > & ) const = 0;
-    virtual void show ( 
+    virtual void show (
         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
 };
 
 class epicsShareClass cacContextNotify {
 public:
     virtual ~cacContextNotify () = 0;
-    virtual cacContext & createNetworkContext ( 
+    virtual cacContext & createNetworkContext (
         epicsMutex & mutualExclusion, epicsMutex & callbackControl ) = 0;
 // we should probably have a different vf for each type of exception ????
-    virtual void exception ( 
-        epicsGuard < epicsMutex > &, int status, const char * pContext, 
+    virtual void exception (
+        epicsGuard < epicsMutex > &, int status, const char * pContext,
         const char * pFileName, unsigned lineNo ) = 0;
 // perhaps this should be phased out in deference to the exception mechanism
     virtual int varArgsPrintFormated ( const char * pformat, va_list args ) const = 0;
@@ -300,9 +319,9 @@ public:
 class epicsShareClass cacService {
 public:
     virtual ~cacService () = 0;
-    virtual cacContext & contextCreate ( 
-        epicsMutex & mutualExclusion, 
-        epicsMutex & callbackControl, 
+    virtual cacContext & contextCreate (
+        epicsMutex & mutualExclusion,
+        epicsMutex & callbackControl,
         cacContextNotify & ) = 0;
 };
 
@@ -320,9 +339,9 @@ inline cacChannelNotify & cacChannel::notify () const
     return this->callback;
 }
 
-inline caAccessRights::caAccessRights ( 
+inline caAccessRights::caAccessRights (
     bool readPermit, bool writePermit, bool operatorConfirmationRequest) :
-    f_readPermit ( readPermit ), f_writePermit ( writePermit ), 
+    f_readPermit ( readPermit ), f_writePermit ( writePermit ),
         f_operatorConfirmationRequest ( operatorConfirmationRequest ) {}
 
 inline void caAccessRights::setReadPermit ()

@@ -4,19 +4,19 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/*  
+/*
  *
- *                              
+ *
  *                    L O S  A L A M O S
  *              Los Alamos National Laboratory
  *               Los Alamos, New Mexico 87545
- *                                  
+ *
  *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
+ *
+ *
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  *	505 665 1831
@@ -27,7 +27,7 @@
 #endif
 
 #include <stdexcept>
-#include <string> // vxWorks 6.0 requires this include 
+#include <string> // vxWorks 6.0 requires this include
 #include <stdio.h>
 
 #include "epicsExit.h"
@@ -67,11 +67,11 @@ cacService * ca_client_context::pDefaultService = 0;
 epicsMutex * ca_client_context::pDefaultServiceInstallMutex;
 
 ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
-    createdByThread ( epicsThreadGetIdSelf () ), 
-    ca_exception_func ( 0 ), ca_exception_arg ( 0 ), 
+    createdByThread ( epicsThreadGetIdSelf () ),
+    ca_exception_func ( 0 ), ca_exception_arg ( 0 ),
     pVPrintfFunc ( errlogVprintf ), fdRegFunc ( 0 ), fdRegArg ( 0 ),
-    pndRecvCnt ( 0u ), ioSeqNo ( 0u ), callbackThreadsPending ( 0u ), 
-    localPort ( 0 ), fdRegFuncNeedsToBeCalled ( false ), 
+    pndRecvCnt ( 0u ), ioSeqNo ( 0u ), callbackThreadsPending ( 0u ),
+    localPort ( 0 ), fdRegFuncNeedsToBeCalled ( false ),
     noWakeupSincePend ( true )
 {
     static const unsigned short PORT_ANY = 0u;
@@ -85,7 +85,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         epicsGuard < epicsMutex > guard ( *ca_client_context::pDefaultServiceInstallMutex );
         if ( ca_client_context::pDefaultService ) {
             this->pServiceContext.reset (
-                & ca_client_context::pDefaultService->contextCreate ( 
+                & ca_client_context::pDefaultService->contextCreate (
                     this->mutex, this->cbMutex, *this ) );
         }
         else {
@@ -125,7 +125,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         osiSockAddr addr;
         memset ( (char *)&addr, 0 , sizeof ( addr ) );
         addr.ia.sin_family = AF_INET;
-        addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
+        addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
         addr.ia.sin_port = htons ( PORT_ANY );
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
@@ -139,7 +139,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
             throwWithLocation ( noSocket () );
         }
     }
-    
+
     {
         osiSockAddr tmpAddr;
         osiSocklen_t saddr_length = sizeof ( tmpAddr );
@@ -159,9 +159,9 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         this->localPort = htons ( tmpAddr.ia.sin_port );
     }
 
-    epics_auto_ptr < epicsGuard < epicsMutex > > pCBGuard;
+    epics_auto_ptr < CallbackGuard > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
-        pCBGuard.reset ( new epicsGuard < epicsMutex > ( this->cbMutex ) );
+        pCBGuard.reset ( new CallbackGuard ( this->cbMutex ) );
     }
 
     // multiple steps ensure exception safety
@@ -171,7 +171,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 ca_client_context::~ca_client_context ()
 {
     if ( this->fdRegFunc ) {
-        ( *this->fdRegFunc ) 
+        ( *this->fdRegFunc )
             ( this->fdRegArg, this->sock, false );
     }
     epicsSocketDestroy ( this->sock );
@@ -179,9 +179,9 @@ ca_client_context::~ca_client_context ()
     osiSockRelease ();
 
     // force a logical shutdown order
-    // so that the cac class does not hang its 
+    // so that the cac class does not hang its
     // receive threads during their shutdown sequence
-    // and so that classes using this classes mutex 
+    // and so that classes using this classes mutex
     // are destroyed before the mutex is destroyed
     if ( this->pCallbackGuard.get() ) {
         epicsGuardRelease < epicsMutex > unguard ( *this->pCallbackGuard );
@@ -192,7 +192,7 @@ ca_client_context::~ca_client_context ()
     }
 }
 
-void ca_client_context::destroyGetCopy ( 
+void ca_client_context::destroyGetCopy (
     epicsGuard < epicsMutex > & guard, getCopy & gc )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -200,7 +200,7 @@ void ca_client_context::destroyGetCopy (
     this->getCopyFreeList.release ( & gc );
 }
 
-void ca_client_context::destroyGetCallback ( 
+void ca_client_context::destroyGetCallback (
     epicsGuard < epicsMutex > & guard, getCallback & gcb )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -208,7 +208,7 @@ void ca_client_context::destroyGetCallback (
     this->getCallbackFreeList.release ( & gcb );
 }
 
-void ca_client_context::destroyPutCallback ( 
+void ca_client_context::destroyPutCallback (
     epicsGuard < epicsMutex > & guard, putCallback & pcb )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -216,7 +216,7 @@ void ca_client_context::destroyPutCallback (
     this->putCallbackFreeList.release ( & pcb );
 }
 
-void ca_client_context::destroySubscription ( 
+void ca_client_context::destroySubscription (
     epicsGuard < epicsMutex > & guard, oldSubscription & os )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -224,7 +224,7 @@ void ca_client_context::destroySubscription (
     this->subscriptionFreeList.release ( & os );
 }
 
-void ca_client_context::changeExceptionEvent ( 
+void ca_client_context::changeExceptionEvent (
     caExceptionHandler * pfunc, void * arg )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -233,7 +233,7 @@ void ca_client_context::changeExceptionEvent (
 // should block here until releated callback in progress completes
 }
 
-void ca_client_context::replaceErrLogHandler ( 
+void ca_client_context::replaceErrLogHandler (
     caPrintfFunc * ca_printf_func )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -246,7 +246,7 @@ void ca_client_context::replaceErrLogHandler (
 // should block here until releated callback in progress completes
 }
 
-void ca_client_context::registerForFileDescriptorCallBack ( 
+void ca_client_context::registerForFileDescriptorCallBack (
     CAFDHANDLER *pFunc, void *pArg )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -261,22 +261,22 @@ void ca_client_context::registerForFileDescriptorCallBack (
 // should block here until releated callback in progress completes
 }
 
-int ca_client_context :: printFormated ( 
+int ca_client_context :: printFormated (
     const char *pformat, ... ) const
 {
     va_list theArgs;
     int status;
 
     va_start ( theArgs, pformat );
-    
+
     status = this->ca_client_context :: varArgsPrintFormated ( pformat, theArgs );
-    
+
     va_end ( theArgs );
-    
+
     return status;
 }
 
-int ca_client_context :: varArgsPrintFormated ( 
+int ca_client_context :: varArgsPrintFormated (
     const char *pformat, va_list args ) const
 {
     caPrintfFunc * pFunc;
@@ -292,8 +292,8 @@ int ca_client_context :: varArgsPrintFormated (
     }
 }
 
-void ca_client_context::exception ( 
-    epicsGuard < epicsMutex > & guard, int stat, const char * pCtx, 
+void ca_client_context::exception (
+    epicsGuard < epicsMutex > & guard, int stat, const char * pCtx,
         const char * pFile, unsigned lineNo )
 {
     struct exception_handler_args args;
@@ -321,9 +321,9 @@ void ca_client_context::exception (
     }
 }
 
-void ca_client_context::exception ( 
+void ca_client_context::exception (
     epicsGuard < epicsMutex > & guard, int status, const char * pContext,
-    const char * pFileName, unsigned lineNo, oldChannelNotify & chan, 
+    const char * pFileName, unsigned lineNo, oldChannelNotify & chan,
     unsigned type, arrayElementCount count, unsigned op )
 {
     struct exception_handler_args args;
@@ -346,29 +346,29 @@ void ca_client_context::exception (
             ( *pFunc ) ( args );
         }
         else {
-            this->signal ( status, pFileName, lineNo, 
-                "op=%u, channel=%s, type=%s, count=%lu, ctx=\"%s\"", 
-                op, ca_name ( &chan ), 
-                dbr_type_to_text ( static_cast <int> ( type ) ), 
+            this->signal ( status, pFileName, lineNo,
+                "op=%u, channel=%s, type=%s, count=%lu, ctx=\"%s\"",
+                op, ca_name ( &chan ),
+                dbr_type_to_text ( static_cast <int> ( type ) ),
                 count, pContext );
         }
     }
 }
 
-void ca_client_context::signal ( int ca_status, const char * pfilenm, 
+void ca_client_context::signal ( int ca_status, const char * pfilenm,
                      int lineno, const char * pFormat, ... )
 {
     va_list theArgs;
-    va_start ( theArgs, pFormat );  
+    va_start ( theArgs, pFormat );
     this->vSignal ( ca_status, pfilenm, lineno, pFormat, theArgs);
     va_end ( theArgs );
 }
 
-void ca_client_context :: vSignal ( 
-    int ca_status, const char *pfilenm, 
+void ca_client_context :: vSignal (
+    int ca_status, const char *pfilenm,
         int lineno, const char *pFormat, va_list args )
 {
-    static const char *severity[] = 
+    static const char *severity[] =
     {
         "Warning",
         "Success",
@@ -379,11 +379,11 @@ void ca_client_context :: vSignal (
         "Fatal",
         "Fatal"
     };
-    
+
     this->printFormated ( "CA.Client.Exception...............................................\n" );
-    
-    this->printFormated ( "    %s: \"%s\"\n", 
-        severity[ CA_EXTRACT_SEVERITY ( ca_status ) ], 
+
+    this->printFormated ( "    %s: \"%s\"\n",
+        severity[ CA_EXTRACT_SEVERITY ( ca_status ) ],
         ca_message ( ca_status ) );
 
     if  ( pFormat ) {
@@ -391,26 +391,26 @@ void ca_client_context :: vSignal (
         this->varArgsPrintFormated ( pFormat, args );
         this->printFormated ( "\"\n" );
     }
-        
+
     if ( pfilenm ) {
         this->printFormated ( "    Source File: %s line %d\n",
-            pfilenm, lineno );    
-    } 
+            pfilenm, lineno );
+    }
 
     epicsTime current = epicsTime::getCurrent ();
     char date[64];
     current.strftime ( date, sizeof ( date ), "%a %b %d %Y %H:%M:%S.%f");
     this->printFormated ( "    Current Time: %s\n", date );
-    
+
     /*
      *  Terminate execution if unsuccessful
      */
-    if( ! ( ca_status & CA_M_SUCCESS ) && 
+    if( ! ( ca_status & CA_M_SUCCESS ) &&
         CA_EXTRACT_SEVERITY ( ca_status ) != CA_K_WARNING ){
         errlogFlush ();
         abort ();
     }
-    
+
     this->printFormated ( "..................................................................\n" );
 }
 
@@ -418,7 +418,7 @@ void ca_client_context::show ( unsigned level ) const
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
 
-    ::printf ( "ca_client_context at %p pndRecvCnt=%u ioSeqNo=%u\n", 
+    ::printf ( "ca_client_context at %p pndRecvCnt=%u ioSeqNo=%u\n",
         static_cast <const void *> ( this ),
         this->pndRecvCnt, this->ioSeqNo );
 
@@ -443,7 +443,7 @@ void ca_client_context::attachToClientCtx ()
     epicsThreadPrivateSet ( caClientContextId, this );
 }
 
-void ca_client_context::incrementOutstandingIO ( 
+void ca_client_context::incrementOutstandingIO (
     epicsGuard < epicsMutex > & guard, unsigned ioSeqNoIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -453,7 +453,7 @@ void ca_client_context::incrementOutstandingIO (
     }
 }
 
-void ca_client_context::decrementOutstandingIO ( 
+void ca_client_context::decrementOutstandingIO (
     epicsGuard < epicsMutex > & guard, unsigned ioSeqNoIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -466,16 +466,16 @@ void ca_client_context::decrementOutstandingIO (
     }
 }
 
-// !!!! This routine is only visible in the old interface - or in a new ST interface. 
-// !!!! In the old interface we restrict thread attach so that calls from threads 
-// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! This routine is only visible in the old interface - or in a new ST interface.
+// !!!! In the old interface we restrict thread attach so that calls from threads
+// !!!! other than the initializing thread are not allowed if preemptive callback
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
 int ca_client_context::pendIO ( const double & timeout )
 {
-    // prevent recursion nightmares by disabling calls to 
-    // pendIO () from within a CA callback. 
+    // prevent recursion nightmares by disabling calls to
+    // pendIO () from within a CA callback.
     if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
         return ECA_EVDISALLOW;
     }
@@ -487,7 +487,7 @@ int ca_client_context::pendIO ( const double & timeout )
     epicsGuard < epicsMutex > guard ( this->mutex );
 
     this->flush ( guard );
-   
+
     while ( this->pndRecvCnt > 0 ) {
         if ( remaining < CAC_SIGNIFICANT_DELAY ) {
             status = ECA_TIMEOUT;
@@ -514,16 +514,16 @@ int ca_client_context::pendIO ( const double & timeout )
     return status;
 }
 
-// !!!! This routine is only visible in the old interface - or in a new ST interface. 
-// !!!! In the old interface we restrict thread attach so that calls from threads 
-// !!!! other than the initializing thread are not allowed if preemptive callback 
+// !!!! This routine is only visible in the old interface - or in a new ST interface.
+// !!!! In the old interface we restrict thread attach so that calls from threads
+// !!!! other than the initializing thread are not allowed if preemptive callback
 // !!!! is disabled. This prevents the preemptive callback lock from being released
 // !!!! by other threads than the one that locked it.
 //
 int ca_client_context::pendEvent ( const double & timeout )
 {
-    // prevent recursion nightmares by disabling calls to 
-    // pendIO () from within a CA callback. 
+    // prevent recursion nightmares by disabling calls to
+    // pendIO () from within a CA callback.
     if ( epicsThreadPrivateGet ( caClientCallbackThreadId ) ) {
         return ECA_EVDISALLOW;
     }
@@ -541,17 +541,17 @@ int ca_client_context::pendEvent ( const double & timeout )
         epicsGuard < epicsMutex > guard ( this->mutex );
 
         //
-        // This is needed because in non-preemptive callback mode 
-        // legacy applications that use file descriptor managers 
+        // This is needed because in non-preemptive callback mode
+        // legacy applications that use file descriptor managers
         // will register for ca receive thread activity and keep
         // calling ca_pend_event until all of the socket data has
-        // been read. We must guarantee that other threads get a 
+        // been read. We must guarantee that other threads get a
         // chance to run if there is data in any of the sockets.
         //
         if ( this->fdRegFunc ) {
             epicsGuardRelease < epicsMutex > unguard ( guard );
 
-            // remove short udp message sent to wake 
+            // remove short udp message sent to wake
             // up a file descriptor manager
             osiSockAddr tmpAddr;
             osiSocklen_t addrSize = sizeof ( tmpAddr.sa );
@@ -592,7 +592,7 @@ int ca_client_context::pendEvent ( const double & timeout )
     return ECA_TIMEOUT;
 }
 
-void ca_client_context::blockForEventAndEnableCallbacks ( 
+void ca_client_context::blockForEventAndEnableCallbacks (
     epicsEvent & event, const double & timeout )
 {
     if ( this->pCallbackGuard.get() ) {
@@ -659,12 +659,12 @@ void ca_client_context::callbackProcessingCompleteNotify ()
     }
 }
 
-cacChannel & ca_client_context::createChannel ( 
-    epicsGuard < epicsMutex > & guard, const char * pChannelName, 
+cacChannel & ca_client_context::createChannel (
+    epicsGuard < epicsMutex > & guard, const char * pChannelName,
     cacChannelNotify & chan, cacChannel::priLev pri )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return this->pServiceContext->createChannel ( 
+    return this->pServiceContext->createChannel (
         guard, pChannelName, chan, pri );
 }
 
@@ -685,21 +685,21 @@ unsigned ca_client_context::beaconAnomaliesSinceProgramStart () const
     return this->pServiceContext->beaconAnomaliesSinceProgramStart ( guard );
 }
 
-void ca_client_context::installCASG ( 
+void ca_client_context::installCASG (
     epicsGuard < epicsMutex > & guard, CASG & sg )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->sgTable.idAssignAdd ( sg );
 }
 
-void ca_client_context::uninstallCASG ( 
+void ca_client_context::uninstallCASG (
     epicsGuard < epicsMutex > & guard, CASG & sg )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->sgTable.remove ( sg );
 }
 
-CASG * ca_client_context::lookupCASG ( 
+CASG * ca_client_context::lookupCASG (
     epicsGuard < epicsMutex > & guard, unsigned idIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -724,7 +724,7 @@ epicsMutex & ca_client_context::mutexRef () const
     return this->mutex;
 }
 
-cacContext & ca_client_context::createNetworkContext ( 
+cacContext & ca_client_context::createNetworkContext (
     epicsMutex & mutexIn, epicsMutex & cbMutexIn )
 {
     return * new cac ( mutexIn, cbMutexIn, *this );
@@ -751,34 +751,54 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
-    epicsGuard < epicsMutex > guard ( cac.mutex );
-    try {
-        // if this stalls out on a live circuit then an exception 
-        // can be forthcoming which we must ignore as the clear
-        // request must always be successful
-        chan.eliminateExcessiveSendBacklog ( guard );
+    // !!!! the order in which we take the mutex here prevents deadlocks
+    {
+      epicsGuard < epicsMutex > guard ( cac.mutex );
+      try {
+          // if this stalls out on a live circuit then an exception
+          // can be forthcoming which we must ignore as the clear
+          // request must always be successful
+          chan.eliminateExcessiveSendBacklog ( guard );
+      }
+      catch ( cacChannel::notConnected & ) {
+          // intentionally ignored
+      }
     }
-    catch ( cacChannel::notConnected & ) {
-        // intentionally ignored
+    if ( cac.pCallbackGuard.get() &&
+        cac.createdByThread == epicsThreadGetIdSelf () ) {
+      epicsGuard < epicsMutex > guard ( cac.mutex );
+      pMon->cancel ( *cac.pCallbackGuard.get(), guard );
     }
-    pMon->cancel ( guard );
+    else {
+      //
+      // we will definately stall out here if all of the
+      // following are true
+      //
+      // o user creates non-preemtive mode client library context
+      // o user doesnt periodically call a ca function
+      // o user calls this function from an auxiillary thread
+      //
+      CallbackGuard cbGuard ( cac.cbMutex );
+      epicsGuard < epicsMutex > guard ( cac.mutex );
+      pMon->cancel ( cbGuard, guard );
+    }
     return ECA_NORMAL;
 }
 
-void ca_client_context :: eliminateExcessiveSendBacklog ( 
+void ca_client_context :: eliminateExcessiveSendBacklog (
     epicsGuard < epicsMutex > & guard, cacChannel & chan )
 {
-    if ( chan.requestMessageBytesPending ( guard ) > 
+    if ( chan.requestMessageBytesPending ( guard ) >
             ca_client_context :: flushBlockThreshold ) {
-        if ( this->pCallbackGuard.get() && 
+        if ( this->pCallbackGuard.get() &&
             this->createdByThread == epicsThreadGetIdSelf () ) {
-            // we need to be very careful about lock hierarchy 
+            // we need to be very careful about lock hierarchy
             // inversion in this situation
             epicsGuardRelease < epicsMutex > unguard ( guard );
             {
                 epicsGuardRelease < epicsMutex > cbunguard (
                     * this->pCallbackGuard.get() );
-                { 
+                {
                     epicsGuard < epicsMutex > nestedGuard ( this->mutex );
                     chan.flush ( nestedGuard );
                 }

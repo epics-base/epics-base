@@ -42,11 +42,11 @@
 class dbPutNotifyBlocker : public dbBaseIO {
 public:
     dbPutNotifyBlocker ( epicsMutex & );
-    void destructor ( epicsGuard < epicsMutex > & );
+    void destructor ( CallbackGuard &, epicsGuard < epicsMutex > & );
     void initiatePutNotify ( epicsGuard < epicsMutex > &,
             cacWriteNotify &, struct dbChannel *,
             unsigned type, unsigned long count, const void * pValue );
-    void cancel ( epicsGuard < epicsMutex > & );
+    void cancel ( CallbackGuard &, epicsGuard < epicsMutex > & );
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size,

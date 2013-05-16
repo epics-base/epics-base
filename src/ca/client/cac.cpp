@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -22,7 +22,7 @@
 
 #include <new>
 #include <stdexcept>
-#include <string> // vxWorks 6.0 requires this include 
+#include <string> // vxWorks 6.0 requires this include
 
 #include "dbDefs.h"
 #include "epicsGuard.h"
@@ -50,12 +50,12 @@
 #include "autoPtrFreeList.h"
 #include "noopiiu.h"
 
-static const char pVersionCAC[] = 
-    "@(#) " EPICS_VERSION_STRING 
+static const char pVersionCAC[] =
+    "@(#) " EPICS_VERSION_STRING
     ", CA Client Library " __DATE__;
 
 // TCP response dispatch table
-const cac::pProtoStubTCP cac::tcpJumpTableCAC [] = 
+const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
 {
     &cac::versionAction,
     &cac::eventRespAction,
@@ -68,7 +68,7 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
     &cac::badTCPRespAction,
     &cac::badTCPRespAction,
     // legacy CA_PROTO_READ_SYNC used as an echo with legacy server
-    &cac::echoRespAction, 
+    &cac::echoRespAction,
     &cac::exceptionRespAction,
     &cac::clearChannelRespAction,
     &cac::badTCPRespAction,
@@ -89,7 +89,7 @@ const cac::pProtoStubTCP cac::tcpJumpTableCAC [] =
 };
 
 // TCP exception dispatch table
-const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] = 
+const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
 {
     &cac::defaultExcep,     // CA_PROTO_VERSION
     &cac::eventAddExcep,    // CA_PROTO_EVENT_ADD
@@ -109,7 +109,7 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
     &cac::readNotifyExcep,  // CA_PROTO_READ_NOTIFY
     &cac::defaultExcep,     // CA_PROTO_READ_BUILD
     &cac::defaultExcep,     // REPEATER_CONFIRM
-    &cac::defaultExcep,     // CA_PROTO_CREATE_CHAN 
+    &cac::defaultExcep,     // CA_PROTO_CREATE_CHAN
     &cac::writeNotifyExcep, // CA_PROTO_WRITE_NOTIFY
     &cac::defaultExcep,     // CA_PROTO_CLIENT_NAME
     &cac::defaultExcep,     // CA_PROTO_HOST_NAME
@@ -124,9 +124,9 @@ const cac::pExcepProtoStubTCP cac::tcpExcepJumpTableCAC [] =
 //
 // cac::cac ()
 //
-cac::cac ( 
-    epicsMutex & mutualExclusionIn, 
-    epicsMutex & callbackControlIn, 
+cac::cac (
+    epicsMutex & mutualExclusionIn,
+    epicsMutex & callbackControlIn,
     cacContextNotify & notifyIn ) :
     _refLocalHostName ( localHostNameCache.getReference () ),
     programBeginTime ( epicsTime::getCurrent() ),
@@ -134,7 +134,7 @@ cac::cac (
     mutex ( mutualExclusionIn ),
     cbMutex ( callbackControlIn ),
     ipToAEngine ( ipAddrToAsciiEngine::allocate () ),
-    timerQueue ( epicsTimerQueueActive::allocate ( false, 
+    timerQueue ( epicsTimerQueueActive::allocate ( false,
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
     pUserName ( 0 ),
     pudpiiu ( 0 ),
@@ -157,8 +157,8 @@ cac::cac (
 	    long status;
 
         /*
-         * Certain os, such as HPUX, do not unblock a socket system call 
-         * when another thread asynchronously calls both shutdown() and 
+         * Certain os, such as HPUX, do not unblock a socket system call
+         * when another thread asynchronously calls both shutdown() and
          * close(). To solve this problem we need to employ OS specific
          * mechanisms.
          */
@@ -179,7 +179,7 @@ cac::cac (
             strncpy ( this->pUserName, tmp, len );
         }
 
-        this->_serverPort = 
+        this->_serverPort =
             envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
                                         static_cast <unsigned short> (CA_SERVER_PORT) );
 
@@ -224,7 +224,7 @@ cac::cac (
         }
         unsigned bufsPerArray = this->maxRecvBytesTCP / comBuf::capacityBytes ();
         if ( bufsPerArray > 1u ) {
-            maxContigFrames = bufsPerArray * 
+            maxContigFrames = bufsPerArray *
                 contiguousMsgCountWhichTriggersFlowControl;
         }
     }
@@ -275,8 +275,8 @@ cac::~cac ()
     // this blocks until the UDP thread exits so that
     // it will not sneak in any new clients
     //
-    // lock intentionally not held here so that we dont deadlock 
-    // waiting for the UDP thread to exit while it is waiting to 
+    // lock intentionally not held here so that we dont deadlock
+    // waiting for the UDP thread to exit while it is waiting to
     // get the lock.
     {
         epicsGuard < epicsMutex > cbGuard ( this->cbMutex );
@@ -298,11 +298,11 @@ cac::~cac ()
             }
         }
     }
-    
+
     //
     // wait for all tcp threads to exit
     //
-    // this will block for oustanding sends to go out so dont 
+    // this will block for oustanding sends to go out so dont
     // hold a lock while waiting
     //
     {
@@ -323,7 +323,7 @@ cac::~cac ()
     delete [] this->pUserName;
 
     tsSLList < bhe > tmpBeaconList;
-    this->beaconTable.removeAll ( tmpBeaconList ); 
+    this->beaconTable.removeAll ( tmpBeaconList );
     while ( bhe * pBHE = tmpBeaconList.get() ) {
         pBHE->~bhe ();
         this->bheFreeList.release ( pBHE );
@@ -338,7 +338,7 @@ cac::~cac ()
     osiSockRelease ();
 
     // its ok for channels and subscriptions to still
-    // exist at this point. The user created them and 
+    // exist at this point. The user created them and
     // its his responsibility to clean them up.
 }
 
@@ -346,7 +346,7 @@ unsigned cac::lowestPriorityLevelAbove ( unsigned priority )
 {
     unsigned abovePriority;
     epicsThreadBooleanStatus tbs;
-    tbs = epicsThreadLowestPriorityLevelAbove ( 
+    tbs = epicsThreadLowestPriorityLevelAbove (
         priority, & abovePriority );
     if ( tbs != epicsThreadBooleanStatusSuccess ) {
         abovePriority = priority;
@@ -358,7 +358,7 @@ unsigned cac::highestPriorityLevelBelow ( unsigned priority )
 {
     unsigned belowPriority;
     epicsThreadBooleanStatus tbs;
-    tbs = epicsThreadHighestPriorityLevelBelow ( 
+    tbs = epicsThreadHighestPriorityLevelBelow (
         priority, & belowPriority );
     if ( tbs != epicsThreadBooleanStatusSuccess ) {
         belowPriority = priority;
@@ -379,21 +379,21 @@ void cac::flush ( epicsGuard < epicsMutex > & guard )
     }
 }
 
-unsigned cac::circuitCount ( 
+unsigned cac::circuitCount (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
     return this->circuitList.count ();
 }
 
-void cac::show ( 
+void cac::show (
     epicsGuard < epicsMutex > & guard, unsigned level ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
 
-    ::printf ( "Channel Access Client Context at %p for user %s\n", 
+    ::printf ( "Channel Access Client Context at %p for user %s\n",
         static_cast <const void *> ( this ), this->pUserName );
-    // this also supresses the "defined, but not used" 
+    // this also supresses the "defined, but not used"
     // warning message
     ::printf ( "\trevision \"%s\"\n", pVersionCAC );
 
@@ -451,7 +451,7 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         /*
          * return if the beacon period has not changed significantly
          */
-        if ( ! pBHE->updatePeriod ( guard, this->programBeginTime, 
+        if ( ! pBHE->updatePeriod ( guard, this->programBeginTime,
                 currentTime, beaconNumber, protocolRevision ) ) {
             return;
         }
@@ -488,8 +488,8 @@ void cac::beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
 #   endif
 }
 
-cacChannel & cac::createChannel ( 
-    epicsGuard < epicsMutex > & guard, const char * pName, 
+cacChannel & cac::createChannel (
+    epicsGuard < epicsMutex > & guard, const char * pName,
     cacChannelNotify & chan, cacChannel::priLev pri )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -503,19 +503,19 @@ cacChannel & cac::createChannel (
     }
 
     if ( ! this->pudpiiu ) {
-        this->pudpiiu = new udpiiu ( 
-            guard, this->timerQueue, this->cbMutex, 
+        this->pudpiiu = new udpiiu (
+            guard, this->timerQueue, this->cbMutex,
             this->mutex, this->notify, *this, this->_serverPort,
             this->searchDestList );
     }
 
-    nciu * pNetChan = new ( this->channelFreeList ) 
+    nciu * pNetChan = new ( this->channelFreeList )
             nciu ( *this, noopIIU, chan, pName, pri );
     this->chanTable.idAssignAdd ( *pNetChan );
     return *pNetChan;
 }
 
-bool cac::findOrCreateVirtCircuit ( 
+bool cac::findOrCreateVirtCircuit (
     epicsGuard < epicsMutex > & guard, const osiSockAddr & addr,
     unsigned priority, tcpiiu *& piiu, unsigned minorVersionNumber,
     SearchDestTCP * pSearchDest )
@@ -532,14 +532,14 @@ bool cac::findOrCreateVirtCircuit (
         try {
             autoPtrFreeList < tcpiiu, 32, epicsMutexNOOP > pnewiiu (
                     this->freeListVirtualCircuit,
-                    new ( this->freeListVirtualCircuit ) tcpiiu ( 
-                        *this, this->mutex, this->cbMutex, this->notify, this->connTMO, 
-                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber, 
+                    new ( this->freeListVirtualCircuit ) tcpiiu (
+                        *this, this->mutex, this->cbMutex, this->notify, this->connTMO,
+                        this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber,
                         this->ipToAEngine, priority, pSearchDest ) );
 
             bhe * pBHE = this->beaconTable.lookup ( addr.ia );
             if ( ! pBHE ) {
-                pBHE = new ( this->bheFreeList ) 
+                pBHE = new ( this->bheFreeList )
                                     bhe ( this->mutex, epicsTime (), 0u, addr.ia );
                 if ( this->beaconTable.add ( *pBHE ) < 0 ) {
                     return newIIU;
@@ -553,13 +553,13 @@ bool cac::findOrCreateVirtCircuit (
             newIIU = true;
         }
         catch ( std :: exception & except ) {
-            errlogPrintf ( 
+            errlogPrintf (
                 "CAC: exception during virtual circuit creation \"%s\"\n",
                 except.what () );
             return newIIU;
         }
         catch ( ... ) {
-            errlogPrintf ( 
+            errlogPrintf (
                 "CAC: Nonstandard exception during virtual circuit creation\n" );
             return newIIU;
         }
@@ -567,9 +567,9 @@ bool cac::findOrCreateVirtCircuit (
     return newIIU;
 }
 
-void cac::transferChanToVirtCircuit ( 
+void cac::transferChanToVirtCircuit (
     unsigned cid, unsigned sid,
-    ca_uint16_t typeCode, arrayElementCount count, 
+    ca_uint16_t typeCode, arrayElementCount count,
     unsigned minorVersionNumber, const osiSockAddr & addr,
     const epicsTime & currentTime )
 {
@@ -604,12 +604,12 @@ void cac::transferChanToVirtCircuit (
             char acc[64];
             pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                msgForMultiplyDefinedPV ( this->ipToAEngine, 
+                msgForMultiplyDefinedPV ( this->ipToAEngine,
                     *this, pChan->pName ( guard ), acc );
             // It is possible for the ioInitiate call below to
             // call the callback directly if queue quota is exceeded.
             // This callback takes the callback lock and therefore we
-            // must release the primary mutex here to avoid a lock 
+            // must release the primary mutex here to avoid a lock
             // hierarchy inversion.
             epicsGuardRelease < epicsMutex > unguard ( guard );
             pMsg->ioInitiate ( addr );
@@ -625,9 +625,9 @@ void cac::transferChanToVirtCircuit (
         pChan->getPriority(guard), piiu, minorVersionNumber );
 
     // must occur before moving to new iiu
-    pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse ( 
+    pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse (
         guard, *pChan, currentTime );
-    piiu->installChannel ( 
+    piiu->installChannel (
         guard, *pChan, sid, typeCode, count );
 
     if ( newIIU ) {
@@ -635,14 +635,14 @@ void cac::transferChanToVirtCircuit (
     }
 }
 
-void cac::destroyChannel ( 
+void cac::destroyChannel (
     epicsGuard < epicsMutex > & guard,
-    nciu & chan ) 
+    nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
     // uninstall channel so that recv threads
-    // will not start a new callback for this channel's IO. 
+    // will not start a new callback for this channel's IO.
     if ( this->chanTable.remove ( chan ) != & chan ) {
         throw std::logic_error ( "Invalid channel identifier" );
     }
@@ -650,9 +650,9 @@ void cac::destroyChannel (
     this->channelFreeList.release ( & chan );
 }
 
-void cac::disconnectAllIO ( 
+void cac::disconnectAllIO (
     epicsGuard < epicsMutex > & cbGuard,
-    epicsGuard < epicsMutex > & guard, 
+    epicsGuard < epicsMutex > & guard,
     nciu & chan, tsDLList < baseNMIU > & ioList )
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
@@ -672,8 +672,8 @@ void cac::disconnectAllIO (
     }
 }
 
-int cac :: printFormated ( 
-    epicsGuard < epicsMutex > & callbackControl, 
+int cac :: printFormated (
+    epicsGuard < epicsMutex > & callbackControl,
         const char * pformat, ... ) const
 {
     va_list theArgs;
@@ -683,26 +683,26 @@ int cac :: printFormated (
     return status;
 }
 
-netWriteNotifyIO & cac::writeNotifyRequest ( 
+netWriteNotifyIO & cac::writeNotifyRequest (
     epicsGuard < epicsMutex > & guard, nciu & chan, privateInterfaceForIO & icni,
     unsigned type, arrayElementCount nElem, const void * pValue, cacWriteNotify & notifyIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    autoPtrRecycle  < netWriteNotifyIO > pIO ( 
-        guard, this->ioTable, *this, 
+    autoPtrRecycle  < netWriteNotifyIO > pIO (
+        guard, this->ioTable, *this,
         netWriteNotifyIO::factory ( this->freeListWriteNotifyIO, icni, notifyIn ) );
     this->ioTable.idAssignAdd ( *pIO );
-    chan.getPIIU(guard)->writeNotifyRequest ( 
+    chan.getPIIU(guard)->writeNotifyRequest (
         guard, chan, *pIO, type, nElem, pValue );
     return *pIO.release();
 }
 
-netReadNotifyIO & cac::readNotifyRequest ( 
+netReadNotifyIO & cac::readNotifyRequest (
     epicsGuard < epicsMutex > & guard, nciu & chan, privateInterfaceForIO & icni,
     unsigned type, arrayElementCount nElem, cacReadNotify & notifyIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    autoPtrRecycle  < netReadNotifyIO > pIO ( 
+    autoPtrRecycle  < netReadNotifyIO > pIO (
         guard, this->ioTable, *this,
         netReadNotifyIO::factory ( this->freeListReadNotifyIO, icni, notifyIn ) );
     this->ioTable.idAssignAdd ( *pIO );
@@ -711,7 +711,8 @@ netReadNotifyIO & cac::readNotifyRequest (
 }
 
 bool cac::destroyIO (
-    epicsGuard < epicsMutex > & guard, 
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & guard,
     const cacChannel::ioid & idIn, nciu & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -720,18 +721,18 @@ bool cac::destroyIO (
     if ( pIO ) {
         class netSubscription * pSubscr = pIO->isSubscription ();
         if ( pSubscr ) {
-            pSubscr->unsubscribeIfRequired ( guard, chan );  
+            pSubscr->unsubscribeIfRequired ( guard, chan );
         }
 
         // this uninstalls from the list and destroys the IO
         pIO->exception ( guard, *this,
             ECA_CHANDESTROY, chan.pName ( guard ) );
         return true;
-    }       
+    }
     return false;
 }
 
-void cac::ioShow ( 
+void cac::ioShow (
     epicsGuard < epicsMutex > & guard,
     const cacChannel::ioid & idIn, unsigned level ) const
 {
@@ -741,8 +742,8 @@ void cac::ioShow (
     }
 }
 
-void cac::ioExceptionNotify ( 
-    unsigned idIn, int status, const char * pContext, 
+void cac::ioExceptionNotify (
+    unsigned idIn, int status, const char * pContext,
     unsigned type, arrayElementCount count )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -752,8 +753,8 @@ void cac::ioExceptionNotify (
     }
 }
 
-void cac::ioExceptionNotifyAndUninstall ( 
-    unsigned idIn, int status, const char * pContext, 
+void cac::ioExceptionNotifyAndUninstall (
+    unsigned idIn, int status, const char * pContext,
     unsigned type, arrayElementCount count )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -763,38 +764,38 @@ void cac::ioExceptionNotifyAndUninstall (
     }
 }
 
-void cac::recycleReadNotifyIO ( 
+void cac::recycleReadNotifyIO (
     epicsGuard < epicsMutex > & guard, netReadNotifyIO & io )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->freeListReadNotifyIO.release ( & io );
 }
 
-void cac::recycleWriteNotifyIO ( 
+void cac::recycleWriteNotifyIO (
     epicsGuard < epicsMutex > & guard, netWriteNotifyIO & io )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->freeListWriteNotifyIO.release ( & io );
 }
 
-void cac::recycleSubscription ( 
+void cac::recycleSubscription (
     epicsGuard < epicsMutex > & guard, netSubscription & io )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->freeListSubscription.release ( & io );
 }
 
-netSubscription & cac::subscriptionRequest ( 
-    epicsGuard < epicsMutex > & guard, 
+netSubscription & cac::subscriptionRequest (
+    epicsGuard < epicsMutex > & guard,
     nciu & chan, privateInterfaceForIO & privChan,
     unsigned type,
-    arrayElementCount nElem, unsigned mask, 
+    arrayElementCount nElem, unsigned mask,
     cacStateNotify & notifyIn,
     bool chanIsInstalled )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    autoPtrRecycle  < netSubscription > pIO ( 
-        guard, this->ioTable, *this, 
+    autoPtrRecycle  < netSubscription > pIO (
+        guard, this->ioTable, *this,
         netSubscription::factory ( this->freeListSubscription,
                                    privChan, type, nElem, mask, notifyIn ) );
     this->ioTable.idAssignAdd ( *pIO );
@@ -804,23 +805,23 @@ netSubscription & cac::subscriptionRequest (
     return *pIO.release ();
 }
 
-bool cac::versionAction ( callbackManager &, tcpiiu & iiu, 
+bool cac::versionAction ( callbackManager &, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & msg, void * )
 {
     iiu.versionRespNotify ( msg );
     return true;
 }
- 
-bool cac::echoRespAction ( 
-    callbackManager & mgr, tcpiiu & iiu, 
+
+bool cac::echoRespAction (
+    callbackManager & mgr, tcpiiu & iiu,
     const epicsTime & /* current */, const caHdrLargeArray &, void * )
 {
     iiu.probeResponseNotify ( mgr.cbGuard );
     return true;
 }
 
-bool cac::writeNotifyRespAction ( 
-    callbackManager &, tcpiiu &, 
+bool cac::writeNotifyRespAction (
+    callbackManager &, tcpiiu &,
     const epicsTime &, const caHdrLargeArray & hdr, void * )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -837,7 +838,7 @@ bool cac::writeNotifyRespAction (
     return true;
 }
 
-bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu, 
+bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -856,13 +857,13 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
 
     baseNMIU * pmiu = this->ioTable.remove ( hdr.m_available );
     //
-    // The IO destroy routines take the call back mutex 
-    // when uninstalling and deleting the baseNMIU so there is 
+    // The IO destroy routines take the call back mutex
+    // when uninstalling and deleting the baseNMIU so there is
     // no need to worry here about the baseNMIU being deleted while
     // it is in use here.
     //
     if ( pmiu ) {
-        // if its a circuit-becomes-responsive subscription update 
+        // if its a circuit-becomes-responsive subscription update
         // then we need to reinstall the IO into the table
         netSubscription * pSubscr = pmiu->isSubscription ();
         if ( pSubscr ) {
@@ -874,7 +875,7 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
              * convert the data buffer from net
              * format to host format
              */
-            caStatus = caNetConvert ( 
+            caStatus = caNetConvert (
                 hdr.m_dataType, pMsgBdy, pMsgBdy, false, hdr.m_count );
         }
         if ( caStatus == ECA_NORMAL ) {
@@ -882,7 +883,7 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
                 hdr.m_dataType, hdr.m_count, pMsgBdy );
         }
         else {
-            pmiu->exception ( guard, *this, 
+            pmiu->exception ( guard, *this,
                 caStatus, "read failed",
                 hdr.m_dataType, hdr.m_count );
         }
@@ -890,8 +891,8 @@ bool cac::readNotifyRespAction ( callbackManager &, tcpiiu & iiu,
     return true;
 }
 
-bool cac::searchRespAction ( callbackManager &, tcpiiu & iiu, 
-    const epicsTime & currentTime, const caHdrLargeArray & msg, 
+bool cac::searchRespAction ( callbackManager &, tcpiiu & iiu,
+    const epicsTime & currentTime, const caHdrLargeArray & msg,
         void * /* pMsgBdy */ )
 {
     assert ( this->pudpiiu );
@@ -899,13 +900,13 @@ bool cac::searchRespAction ( callbackManager &, tcpiiu & iiu,
     return true;
 }
 
-bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu, 
+bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
-{   
+{
     int caStatus;
 
     /*
-     * m_postsize = 0 used to be a subscription cancel confirmation, 
+     * m_postsize = 0 used to be a subscription cancel confirmation,
      * but is now a noop because the IO block is immediately deleted
      */
     if ( ! hdr.m_postsize ) {
@@ -926,8 +927,8 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     }
 
     //
-    // The IO destroy routines take the call back mutex 
-    // when uninstalling and deleting the baseNMIU so there is 
+    // The IO destroy routines take the call back mutex
+    // when uninstalling and deleting the baseNMIU so there is
     // no need to worry here about the baseNMIU being deleted while
     // it is in use here.
     //
@@ -937,7 +938,7 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
          * convert the data buffer from net format to host format
          */
         if ( caStatus == ECA_NORMAL ) {
-            caStatus = caNetConvert ( 
+            caStatus = caNetConvert (
                 hdr.m_dataType, pMsgBdy, pMsgBdy, false, hdr.m_count );
         }
         if ( caStatus == ECA_NORMAL ) {
@@ -945,7 +946,7 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
                 hdr.m_dataType, hdr.m_count, pMsgBdy );
         }
         else {
-            pmiu->exception ( guard, *this, caStatus, 
+            pmiu->exception ( guard, *this, caStatus,
                 "subscription update read failed",
                 hdr.m_dataType, hdr.m_count );
         }
@@ -953,14 +954,14 @@ bool cac::eventRespAction ( callbackManager &, tcpiiu &iiu,
     return true;
 }
 
-bool cac::readRespAction ( callbackManager &, tcpiiu &, 
+bool cac::readRespAction ( callbackManager &, tcpiiu &,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     baseNMIU * pmiu = this->ioTable.remove ( hdr.m_available );
     //
-    // The IO destroy routines take the call back mutex 
-    // when uninstalling and deleting the baseNMIU so there is 
+    // The IO destroy routines take the call back mutex
+    // when uninstalling and deleting the baseNMIU so there is
     // no need to worry here about the baseNMIU being deleted while
     // it is in use here.
     //
@@ -971,14 +972,14 @@ bool cac::readRespAction ( callbackManager &, tcpiiu &,
     return true;
 }
 
-bool cac::clearChannelRespAction ( callbackManager &, tcpiiu &, 
+bool cac::clearChannelRespAction ( callbackManager &, tcpiiu &,
     const epicsTime &, const caHdrLargeArray &, void * /* pMsgBody */ )
 {
     return true; // currently a noop
 }
 
-bool cac::defaultExcep ( 
-    callbackManager &, tcpiiu & iiu, 
+bool cac::defaultExcep (
+    callbackManager &, tcpiiu & iiu,
     const caHdrLargeArray &, const char * pCtx, unsigned status )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -990,69 +991,69 @@ bool cac::defaultExcep (
     return true;
 }
 
-void cac::exception ( 
-    epicsGuard < epicsMutex > & cbGuard, 
-    epicsGuard < epicsMutex > & guard, int status, 
+void cac::exception (
+    epicsGuard < epicsMutex > & cbGuard,
+    epicsGuard < epicsMutex > & guard, int status,
     const char * pContext, const char * pFileName, unsigned lineNo )
 {
     cbGuard.assertIdenticalMutex ( this->cbMutex );
     guard.assertIdenticalMutex ( this->mutex );
-    this->notify.exception ( guard, status, pContext, 
+    this->notify.exception ( guard, status, pContext,
         pFileName, lineNo );
 }
 
-bool cac::eventAddExcep ( 
-    callbackManager &, tcpiiu &, 
-    const caHdrLargeArray &hdr, 
+bool cac::eventAddExcep (
+    callbackManager &, tcpiiu &,
+    const caHdrLargeArray &hdr,
     const char *pCtx, unsigned status )
 {
-    this->ioExceptionNotify ( hdr.m_available, status, pCtx, 
+    this->ioExceptionNotify ( hdr.m_available, status, pCtx,
         hdr.m_dataType, hdr.m_count );
     return true;
 }
 
-bool cac::readExcep ( callbackManager &, tcpiiu &, 
-                     const caHdrLargeArray & hdr, 
+bool cac::readExcep ( callbackManager &, tcpiiu &,
+                     const caHdrLargeArray & hdr,
                      const char * pCtx, unsigned status )
 {
-    this->ioExceptionNotifyAndUninstall ( hdr.m_available, 
+    this->ioExceptionNotifyAndUninstall ( hdr.m_available,
         status, pCtx, hdr.m_dataType, hdr.m_count );
     return true;
 }
 
-bool cac::writeExcep ( 
+bool cac::writeExcep (
     callbackManager & mgr,
-    tcpiiu &, const caHdrLargeArray & hdr, 
+    tcpiiu &, const caHdrLargeArray & hdr,
     const char * pCtx, unsigned status )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     nciu * pChan = this->chanTable.lookup ( hdr.m_available );
     if ( pChan ) {
-        pChan->writeException ( mgr.cbGuard, guard, status, pCtx, 
+        pChan->writeException ( mgr.cbGuard, guard, status, pCtx,
             hdr.m_dataType, hdr.m_count );
     }
     return true;
 }
 
-bool cac::readNotifyExcep ( callbackManager &, tcpiiu &, 
-                           const caHdrLargeArray &hdr, 
+bool cac::readNotifyExcep ( callbackManager &, tcpiiu &,
+                           const caHdrLargeArray &hdr,
                            const char *pCtx, unsigned status )
 {
-    this->ioExceptionNotifyAndUninstall ( hdr.m_available, 
+    this->ioExceptionNotifyAndUninstall ( hdr.m_available,
         status, pCtx, hdr.m_dataType, hdr.m_count );
     return true;
 }
 
-bool cac::writeNotifyExcep ( callbackManager &, tcpiiu &, 
-                            const caHdrLargeArray &hdr, 
+bool cac::writeNotifyExcep ( callbackManager &, tcpiiu &,
+                            const caHdrLargeArray &hdr,
                             const char *pCtx, unsigned status )
 {
-    this->ioExceptionNotifyAndUninstall ( hdr.m_available, 
+    this->ioExceptionNotifyAndUninstall ( hdr.m_available,
         status, pCtx, hdr.m_dataType, hdr.m_count );
     return true;
 }
 
-bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu, 
+bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * pMsgBdy )
 {
     const caHdr * pReq = reinterpret_cast < const caHdr * > ( pMsgBdy );
@@ -1069,7 +1070,7 @@ bool cac::exceptionRespAction ( callbackManager & cbMutexIn, tcpiiu & iiu,
     req.m_available = AlignedWireRef < const epicsUInt32 > ( pReq->m_available );
     const ca_uint32_t * pLW = reinterpret_cast < const ca_uint32_t * > ( pReq + 1 );
     if ( req.m_postsize == 0xffff ) {
-        static const unsigned annexSize = 
+        static const unsigned annexSize =
             sizeof ( req.m_postsize ) + sizeof ( req.m_count );
         bytesSoFar += annexSize;
         if ( hdr.m_postsize < bytesSoFar ) {
@@ -1100,9 +1101,9 @@ bool cac::accessRightsRespAction (
     nciu * pChan = this->chanTable.lookup ( hdr.m_cid );
     if ( pChan ) {
         unsigned ar = hdr.m_available;
-        caAccessRights accessRights ( 
-            ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? true : false, 
-            ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? true : false); 
+        caAccessRights accessRights (
+            ( ar & CA_PROTO_ACCESS_RIGHT_READ ) ? true : false,
+            ( ar & CA_PROTO_ACCESS_RIGHT_WRITE ) ? true : false);
         pChan->accessRightsStateChange ( accessRights, mgr.cbGuard, guard );
     }
 
@@ -1125,11 +1126,11 @@ bool cac::createChannelRespAction (
         }
         bool wasExpected = iiu.connectNotify ( guard, *pChan );
         if ( wasExpected ) {
-            pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp, 
+            pChan->connect ( hdr.m_dataType, hdr.m_count, sidTmp,
                 mgr.cbGuard, guard );
         }
         else {
-            errlogPrintf ( 
+            errlogPrintf (
                 "CA Client Library: Ignored duplicate create channel "
                 "response from CA server?\n" );
         }
@@ -1140,10 +1141,10 @@ bool cac::createChannelRespAction (
         iiu.clearChannelRequest ( guard, hdr.m_available, hdr.m_cid );
     }
 
-    return true; 
+    return true;
 }
 
-bool cac::verifyAndDisconnectChan ( 
+bool cac::verifyAndDisconnectChan (
     callbackManager & mgr, tcpiiu &,
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBody */ )
 {
@@ -1168,18 +1169,18 @@ void cac::disconnectChannel (
     chan.unresponsiveCircuitNotify ( cbGuard, guard );
 }
 
-bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu, 
+bool cac::badTCPRespAction ( callbackManager &, tcpiiu & iiu,
     const epicsTime &, const caHdrLargeArray & hdr, void * /* pMsgBody */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     char hostName[64];
     iiu.getHostName ( guard, hostName, sizeof ( hostName ) );
-    errlogPrintf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n", 
+    errlogPrintf ( "CAC: Undecipherable TCP message ( bad response type %u ) from %s\n",
         hdr.m_cmmd, hostName );
     return false;
 }
 
-bool cac::executeResponse ( callbackManager & mgr, tcpiiu & iiu, 
+bool cac::executeResponse ( callbackManager & mgr, tcpiiu & iiu,
     const epicsTime & currentTime, caHdrLargeArray & hdr, char * pMshBody )
 {
     // execute the response message
@@ -1193,7 +1194,7 @@ bool cac::executeResponse ( callbackManager & mgr, tcpiiu & iiu,
     return ( this->*pStub ) ( mgr, iiu, currentTime, hdr, pMshBody );
 }
 
-void cac::selfTest ( 
+void cac::selfTest (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -1221,7 +1222,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
                 pBHE->unregisterIIU ( guard, iiu );
             }
         }
-       
+
         assert ( this->pudpiiu );
         iiu.disconnectAllChannels ( mgr.cbGuard, guard, *this->pudpiiu );
 
@@ -1233,7 +1234,7 @@ void cac::destroyIIU ( tcpiiu & iiu )
     // so we must not hold the primary mutex here
     //
     // this waits for send/recv threads to exit
-    // this also uses the cac free lists so cac must wait 
+    // this also uses the cac free lists so cac must wait
     // for this to finish before it shuts down
 
     iiu.~tcpiiu ();
@@ -1248,8 +1249,8 @@ void cac::destroyIIU ( tcpiiu & iiu )
     // do not touch "this" after lock is released above
 }
 
-double cac::beaconPeriod ( 
-    epicsGuard < epicsMutex > & guard, 
+double cac::beaconPeriod (
+    epicsGuard < epicsMutex > & guard,
     const nciu & chan ) const
 {
     const netiiu * pIIU = chan.getConstPIIU ( guard );
@@ -1266,8 +1267,8 @@ double cac::beaconPeriod (
     return - DBL_MAX;
 }
 
-void cac::initiateConnect ( 
-    epicsGuard < epicsMutex > & guard, 
+void cac::initiateConnect (
+    epicsGuard < epicsMutex > & guard,
     nciu & chan, netiiu * & piiu )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -1285,7 +1286,7 @@ void cacComBufMemoryManager::release ( void * pCadaver )
     this->freeList.release ( pCadaver );
 }
 
-void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv, 
+void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
     const char * pChannelName, const char * pAcc, const char * pRej )
 {
     char buf[256];

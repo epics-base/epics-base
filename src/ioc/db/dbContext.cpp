@@ -120,18 +120,20 @@ cacChannel & dbContext::createChannel (
 }
 
 void dbContext::destroyChannel (
-    epicsGuard < epicsMutex > & guard, dbChannelIO & chan )
+                  CallbackGuard & cbGuard,
+                  epicsGuard < epicsMutex > & guard, 
+                  dbChannelIO & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
 
     if ( chan.dbContextPrivateListOfIO::pBlocker ) {
         this->ioTable.remove ( *chan.dbContextPrivateListOfIO::pBlocker );
-        chan.dbContextPrivateListOfIO::pBlocker->destructor ( guard );
+        chan.dbContextPrivateListOfIO::pBlocker->destructor ( cbGuard, guard );
         this->dbPutNotifyBlockerFreeList.release ( chan.dbContextPrivateListOfIO::pBlocker );
         chan.dbContextPrivateListOfIO::pBlocker = 0;
     }
 
-    chan.destructor ( guard );
+    chan.destructor ( cbGuard, guard );
     this->dbChannelIOFreeList.release ( & chan );
 }
 
@@ -270,7 +272,9 @@ void dbContext::initiatePutNotify (
 }
 
 void dbContext::destroyAllIO (
-    epicsGuard < epicsMutex > & guard, dbChannelIO & chan )
+                  CallbackGuard & cbGuard,
+                  epicsGuard < epicsMutex > & guard, 
+                  dbChannelIO & chan )
 {
     guard.assertIdenticalMutex ( this->mutex );
     dbSubscriptionIO * pIO;
@@ -287,24 +291,24 @@ void dbContext::destroyAllIO (
     while ( ( pIO = tmp.get() ) ) {
         // This prevents a db event callback from coming
         // through after the notify IO is deleted
-        pIO->unsubscribe ( guard );
+        pIO->unsubscribe ( cbGuard, guard );
         // If they call ioCancel() here it will be ignored
         // because the IO has been unregistered above.
-        pIO->channelDeleteException ( guard );
-        pIO->destructor ( guard );
+        pIO->channelDeleteException ( cbGuard, guard );
+        pIO->destructor ( cbGuard, guard );
         this->dbSubscriptionIOFreeList.release ( pIO );
     }
 
     if ( chan.dbContextPrivateListOfIO::pBlocker ) {
-        chan.dbContextPrivateListOfIO::pBlocker->destructor ( guard );
+        chan.dbContextPrivateListOfIO::pBlocker->destructor ( cbGuard, guard );
         this->dbPutNotifyBlockerFreeList.release ( chan.dbContextPrivateListOfIO::pBlocker );
         chan.dbContextPrivateListOfIO::pBlocker = 0;
     }
 }
 
 void dbContext::ioCancel (
-    epicsGuard < epicsMutex > & guard, dbChannelIO & chan,
-    const cacChannel::ioid &id )
+    CallbackGuard & cbGuard, epicsGuard < epicsMutex > & guard, 
+    dbChannelIO & chan, const cacChannel::ioid &id )
 {
     guard.assertIdenticalMutex ( this->mutex );
     dbBaseIO * pIO = this->ioTable.remove ( id );
@@ -312,13 +316,13 @@ void dbContext::ioCancel (
         dbSubscriptionIO *pSIO = pIO->isSubscription ();
         if ( pSIO ) {
             chan.dbContextPrivateListOfIO::eventq.remove ( *pSIO );
-            pSIO->unsubscribe ( guard );
-            pSIO->channelDeleteException ( guard );
-            pSIO->destructor ( guard );
+            pSIO->unsubscribe ( cbGuard, guard );
+            pSIO->channelDeleteException ( cbGuard, guard );
+            pSIO->destructor ( cbGuard, guard );
             this->dbSubscriptionIOFreeList.release ( pSIO );
         }
         else if ( pIO == chan.dbContextPrivateListOfIO::pBlocker ) {
-            chan.dbContextPrivateListOfIO::pBlocker->cancel ( guard );
+            chan.dbContextPrivateListOfIO::pBlocker->cancel ( cbGuard, guard );
         }
         else {
             errlogPrintf ( "dbContext::ioCancel() unrecognized IO was probably leaked or not canceled\n" );

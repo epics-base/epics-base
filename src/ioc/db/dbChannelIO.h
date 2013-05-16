@@ -48,8 +48,10 @@ public:
         epicsMutex &, cacChannelNotify &,
         dbChannel *, dbContext & );
     void destructor (
+        CallbackGuard &,
         epicsGuard < epicsMutex > & );
     void destroy (
+        CallbackGuard &,
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void callReadNotify (
         epicsGuard < epicsMutex > &,
@@ -99,7 +101,8 @@ private:
         unsigned type, unsigned long count,
         unsigned mask, cacStateNotify &notify, ioid * );
     void ioCancel (
-        epicsGuard < epicsMutex > & mutualExclusionGuard,
+        CallbackGuard &,
+        epicsGuard < epicsMutex > &,
         const ioid & );
     void ioShow (
         epicsGuard < epicsMutex > &,
@@ -108,8 +111,8 @@ private:
         epicsGuard < epicsMutex > & ) const;
     unsigned long nativeElementCount (
         epicsGuard < epicsMutex > & ) const;
-	dbChannelIO ( const dbChannelIO & );
-	dbChannelIO & operator = ( const dbChannelIO & );
+	  dbChannelIO ( const dbChannelIO & );
+	  dbChannelIO & operator = ( const dbChannelIO & );
     void operator delete ( void * );
 };
 

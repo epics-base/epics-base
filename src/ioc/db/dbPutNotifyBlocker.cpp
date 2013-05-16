@@ -58,10 +58,11 @@ dbPutNotifyBlocker::~dbPutNotifyBlocker ()
 {
 }
 
-void dbPutNotifyBlocker::destructor ( epicsGuard < epicsMutex > & guard )
+void dbPutNotifyBlocker::destructor ( CallbackGuard & cbGuard, 
+                                  epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->cancel ( guard );
+    this->cancel ( cbGuard, guard );
     if ( this->maxValueSize > sizeof ( this->dbrScalarValue ) ) {
         char * pBuf = static_cast < char * > ( this->pbuffer );
         delete [] pBuf;
@@ -70,6 +71,7 @@ void dbPutNotifyBlocker::destructor ( epicsGuard < epicsMutex > & guard )
 }
 
 void dbPutNotifyBlocker::cancel (
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );

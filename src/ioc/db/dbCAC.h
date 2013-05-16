@@ -87,9 +87,9 @@ public:
         epicsGuard < epicsMutex > &, epicsMutex &,
         dbContext &, dbChannelIO &, struct dbChannel *, cacStateNotify &,
         unsigned type, unsigned long count, unsigned mask, dbEventCtx );
-    void destructor ( epicsGuard < epicsMutex > & );
-    void unsubscribe ( epicsGuard < epicsMutex > & );
-    void channelDeleteException ( epicsGuard < epicsMutex > & );
+    void destructor ( CallbackGuard &, epicsGuard < epicsMutex > & );
+    void unsubscribe ( CallbackGuard &, epicsGuard < epicsMutex > & );
+    void channelDeleteException ( CallbackGuard &, epicsGuard < epicsMutex > & );
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
     void show ( unsigned level ) const;
     void * operator new ( size_t size,
@@ -165,7 +165,7 @@ public:
     dbContext ( epicsMutex & cbMutex, epicsMutex & mutex,
         cacContextNotify & notify );
     virtual ~dbContext ();
-    void destroyChannel ( epicsGuard < epicsMutex > &, dbChannelIO & );
+    void destroyChannel ( CallbackGuard &,epicsGuard < epicsMutex > &, dbChannelIO & );
     void callReadNotify ( epicsGuard < epicsMutex > &,
             struct dbChannel * dbch, unsigned type, unsigned long count,
             cacReadNotify & notify );
@@ -182,9 +182,9 @@ public:
             cacWriteNotify & notify, cacChannel::ioid * pId );
     void show ( unsigned level ) const;
     void showAllIO ( const dbChannelIO & chan, unsigned level ) const;
-    void destroyAllIO (
-        epicsGuard < epicsMutex > &, dbChannelIO & chan );
-    void ioCancel ( epicsGuard < epicsMutex > &,
+    void destroyAllIO ( CallbackGuard & cbGuard,
+              epicsGuard < epicsMutex > &, dbChannelIO & chan );
+    void ioCancel ( CallbackGuard &, epicsGuard < epicsMutex > &,
         dbChannelIO & chan, const cacChannel::ioid &id );
     void ioShow ( epicsGuard < epicsMutex > &,
         const cacChannel::ioid & id, unsigned level ) const;

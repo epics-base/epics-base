@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -57,11 +57,11 @@ class netSubscription;
 // is applied
 class cacRecycle {
 public:
-    virtual void recycleReadNotifyIO ( 
+    virtual void recycleReadNotifyIO (
         epicsGuard < epicsMutex > &, netReadNotifyIO &io ) = 0;
-    virtual void recycleWriteNotifyIO ( 
+    virtual void recycleWriteNotifyIO (
         epicsGuard < epicsMutex > &, netWriteNotifyIO &io ) = 0;
-    virtual void recycleSubscription ( 
+    virtual void recycleSubscription (
         epicsGuard < epicsMutex > &, netSubscription &io ) = 0;
 protected:
     virtual ~cacRecycle() {}
@@ -96,85 +96,81 @@ private:
 
 class callbackManager : public notifyGuard {
 public:
-    callbackManager ( 
-        cacContextNotify &, 
+    callbackManager (
+        cacContextNotify &,
         epicsMutex & callbackControl );
     epicsGuard < epicsMutex > cbGuard;
 };
 
-class cac : 
+class cac :
     public cacContext,
-    private cacRecycle, 
+    private cacRecycle,
     private callbackForMultiplyDefinedPV
 {
 public:
-    cac ( 
-        epicsMutex & mutualExclusion, 
-        epicsMutex & callbackControl, 
+    cac (
+        epicsMutex & mutualExclusion,
+        epicsMutex & callbackControl,
         cacContextNotify & );
     virtual ~cac ();
 
     // beacon management
-    void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime, 
+    void beaconNotify ( const inetAddrID & addr, const epicsTime & currentTime,
         ca_uint32_t beaconNumber, unsigned protocolRevision );
     unsigned beaconAnomaliesSinceProgramStart (
         epicsGuard < epicsMutex > & ) const;
 
     // IO management
     void flush ( epicsGuard < epicsMutex > & guard );
-    bool executeResponse ( callbackManager &, tcpiiu &, 
+    bool executeResponse ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, caHdrLargeArray &, char *pMsgBody );
 
     // channel routines
-    void transferChanToVirtCircuit ( 
-        unsigned cid, unsigned sid, 
-        ca_uint16_t typeCode, arrayElementCount count, 
+    void transferChanToVirtCircuit (
+        unsigned cid, unsigned sid,
+        ca_uint16_t typeCode, arrayElementCount count,
         unsigned minorVersionNumber, const osiSockAddr &,
         const epicsTime & currentTime );
-    cacChannel & createChannel ( 
-        epicsGuard < epicsMutex > & guard, const char * pChannelName, 
+    cacChannel & createChannel (
+        epicsGuard < epicsMutex > & guard, const char * pChannelName,
         cacChannelNotify &, cacChannel::priLev );
-    void destroyChannel ( 
+    void destroyChannel (
         epicsGuard < epicsMutex > &, nciu & );
-    void initiateConnect ( 
+    void initiateConnect (
         epicsGuard < epicsMutex > &, nciu &, netiiu * & );
     nciu * lookupChannel (
         epicsGuard < epicsMutex > &, const cacChannel::ioid & );
 
     // IO requests
-    netWriteNotifyIO & writeNotifyRequest ( 
+    netWriteNotifyIO & writeNotifyRequest (
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
-        unsigned type, arrayElementCount nElem, const void * pValue, 
+        unsigned type, arrayElementCount nElem, const void * pValue,
         cacWriteNotify & );
-    netReadNotifyIO & readNotifyRequest ( 
+    netReadNotifyIO & readNotifyRequest (
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
-        unsigned type, arrayElementCount nElem, 
+        unsigned type, arrayElementCount nElem,
         cacReadNotify & );
-    netSubscription & subscriptionRequest ( 
+    netSubscription & subscriptionRequest (
         epicsGuard < epicsMutex > &, nciu &, privateInterfaceForIO &,
-        unsigned type, arrayElementCount nElem, unsigned mask, 
+        unsigned type, arrayElementCount nElem, unsigned mask,
         cacStateNotify &, bool channelIsInstalled );
     bool destroyIO (
-        epicsGuard < epicsMutex > & guard, 
-        const cacChannel::ioid & idIn, 
+        CallbackGuard & callbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard,
+        const cacChannel::ioid & idIn,
         nciu & chan );
-    void disconnectAllIO ( 
+    void disconnectAllIO (
         epicsGuard < epicsMutex > & cbGuard,
-        epicsGuard < epicsMutex > & guard, 
+        epicsGuard < epicsMutex > & guard,
         nciu &, tsDLList < baseNMIU > & ioList );
 
-    void ioShow ( 
+    void ioShow (
         epicsGuard < epicsMutex > & guard,
         const cacChannel::ioid &id, unsigned level ) const;
 
-    // sync group routines
-    CASG * lookupCASG ( epicsGuard < epicsMutex > &, unsigned id );
-    void installCASG ( epicsGuard < epicsMutex > &, CASG & );
-    void uninstallCASG ( epicsGuard < epicsMutex > &, CASG & );
-
     // exception generation
-    void exception ( 
-        epicsGuard < epicsMutex > & cbGuard, 
+    void exception (
+        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard,
         int status, const char * pContext,
         const char * pFileName, unsigned lineNo );
@@ -189,11 +185,11 @@ public:
     // diagnostics
     unsigned circuitCount ( epicsGuard < epicsMutex > & ) const;
     void show ( epicsGuard < epicsMutex > &, unsigned level ) const;
-    int printFormated ( 
-        epicsGuard < epicsMutex > & callbackControl, 
+    int printFormated (
+        epicsGuard < epicsMutex > & callbackControl,
         const char *pformat, ... ) const;
-    int varArgsPrintFormated ( 
-        epicsGuard < epicsMutex > & callbackControl, 
+    int varArgsPrintFormated (
+        epicsGuard < epicsMutex > & callbackControl,
         const char *pformat, va_list args ) const;
     double connectionTimeout ( epicsGuard < epicsMutex > & );
 
@@ -210,17 +206,17 @@ public:
     unsigned getInitializingThreadsPriority () const;
     epicsMutex & mutexRef ();
     void attachToClientCtx ();
-    void selfTest ( 
+    void selfTest (
         epicsGuard < epicsMutex > & ) const;
-    double beaconPeriod ( 
+    double beaconPeriod (
         epicsGuard < epicsMutex > &,
         const nciu & chan ) const;
     static unsigned lowestPriorityLevelAbove ( unsigned priority );
     static unsigned highestPriorityLevelBelow ( unsigned priority );
-    void destroyIIU ( tcpiiu & iiu ); 
+    void destroyIIU ( tcpiiu & iiu );
 
     const char * pLocalHostName ();
-    
+
 private:
     epicsSingleton < localHostName > :: reference _refLocalHostName;
     chronIntIdResTable < nciu > chanTable;
@@ -229,11 +225,11 @@ private:
     // !!!! to maintain one IO table for all types of
     // !!!! IO. It would probably be better to maintain
     // !!!! an independent table for each IO type. The
-    // !!!! new adaptive sized hash table will not 
-    // !!!! waste memory. Making this change will 
-    // !!!! avoid virtual function overhead when 
+    // !!!! new adaptive sized hash table will not
+    // !!!! waste memory. Making this change will
+    // !!!! avoid virtual function overhead when
     // !!!! accessing the different types of IO. This
-    // !!!! approach would also probably be safer in 
+    // !!!! approach would also probably be safer in
     // !!!! terms of detecting damaged protocol.
     //
     chronIntIdResTable < baseNMIU > ioTable;
@@ -241,23 +237,23 @@ private:
     resTable < tcpiiu, caServerID > serverTable;
     tsDLList < tcpiiu > circuitList;
     tsDLList < SearchDest > searchDestList;
-    tsFreeList 
-        < class tcpiiu, 32, epicsMutexNOOP > 
+    tsFreeList
+        < class tcpiiu, 32, epicsMutexNOOP >
             freeListVirtualCircuit;
-    tsFreeList 
-        < class netReadNotifyIO, 1024, epicsMutexNOOP > 
+    tsFreeList
+        < class netReadNotifyIO, 1024, epicsMutexNOOP >
             freeListReadNotifyIO;
-    tsFreeList 
-        < class netWriteNotifyIO, 1024, epicsMutexNOOP > 
+    tsFreeList
+        < class netWriteNotifyIO, 1024, epicsMutexNOOP >
             freeListWriteNotifyIO;
-    tsFreeList 
-        < class netSubscription, 1024, epicsMutexNOOP > 
+    tsFreeList
+        < class netSubscription, 1024, epicsMutexNOOP >
             freeListSubscription;
-    tsFreeList 
-        < class nciu, 1024, epicsMutexNOOP > 
+    tsFreeList
+        < class nciu, 1024, epicsMutexNOOP >
             channelFreeList;
-    tsFreeList 
-        < class msgForMultiplyDefinedPV, 16 > 
+    tsFreeList
+        < class msgForMultiplyDefinedPV, 16 >
             mdpvFreeList;
     cacComBufMemoryManager comBufMemMgr;
     bheFreeStore bheFreeList;
@@ -285,74 +281,74 @@ private:
     unsigned iiuExistenceCount;
     bool cacShutdownInProgress;
 
-    void recycleReadNotifyIO ( 
+    void recycleReadNotifyIO (
         epicsGuard < epicsMutex > &, netReadNotifyIO &io );
-    void recycleWriteNotifyIO ( 
+    void recycleWriteNotifyIO (
         epicsGuard < epicsMutex > &, netWriteNotifyIO &io );
-    void recycleSubscription ( 
+    void recycleSubscription (
         epicsGuard < epicsMutex > &, netSubscription &io );
 
-    void disconnectChannel ( 
-        epicsGuard < epicsMutex > & cbGuard, 
+    void disconnectChannel (
+        epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard, nciu & chan );
 
-    void ioExceptionNotify ( unsigned id, int status, 
+    void ioExceptionNotify ( unsigned id, int status,
         const char * pContext, unsigned type, arrayElementCount count );
-    void ioExceptionNotifyAndUninstall ( unsigned id, int status, 
+    void ioExceptionNotifyAndUninstall ( unsigned id, int status,
         const char * pContext, unsigned type, arrayElementCount count );
 
-    void pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv, 
+    void pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
         const char * pChannelName, const char * pAcc, const char * pRej );
 
     // recv protocol stubs
-    bool versionAction ( callbackManager &, tcpiiu &, 
+    bool versionAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool echoRespAction ( callbackManager &, tcpiiu &, 
+    bool echoRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool writeNotifyRespAction ( callbackManager &, tcpiiu &, 
+    bool writeNotifyRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool searchRespAction ( callbackManager &, tcpiiu &, 
+    bool searchRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool readNotifyRespAction ( callbackManager &, tcpiiu &, 
+    bool readNotifyRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool eventRespAction ( callbackManager &, tcpiiu &, 
+    bool eventRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool readRespAction ( callbackManager &, tcpiiu &, 
+    bool readRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool clearChannelRespAction ( callbackManager &, tcpiiu &, 
+    bool clearChannelRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool exceptionRespAction ( callbackManager &, tcpiiu &, 
+    bool exceptionRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool accessRightsRespAction ( callbackManager &, tcpiiu &, 
+    bool accessRightsRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool createChannelRespAction ( callbackManager &, tcpiiu &, 
+    bool createChannelRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool verifyAndDisconnectChan ( callbackManager &, tcpiiu &, 
+    bool verifyAndDisconnectChan ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
-    bool badTCPRespAction ( callbackManager &, tcpiiu &, 
+    bool badTCPRespAction ( callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
 
-    typedef bool ( cac::*pProtoStubTCP ) ( 
-        callbackManager &, tcpiiu &, 
+    typedef bool ( cac::*pProtoStubTCP ) (
+        callbackManager &, tcpiiu &,
         const epicsTime & currentTime, const caHdrLargeArray &, void *pMsgBdy );
     static const pProtoStubTCP tcpJumpTableCAC [];
 
-    bool defaultExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool defaultExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool eventAddExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool eventAddExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool readExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool readExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool writeExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool writeExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool clearChanExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool clearChanExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool readNotifyExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool readNotifyExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    bool writeNotifyExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    bool writeNotifyExcep ( callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
-    typedef bool ( cac::*pExcepProtoStubTCP ) ( 
-                    callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr, 
+    typedef bool ( cac::*pExcepProtoStubTCP ) (
+                    callbackManager &, tcpiiu &iiu, const caHdrLargeArray &hdr,
                     const char *pCtx, unsigned status );
     static const pExcepProtoStubTCP tcpExcepJumpTableCAC [];
 
@@ -375,8 +371,8 @@ inline epicsMutex & cac::mutexRef ()
     return this->mutex;
 }
 
-inline int cac :: varArgsPrintFormated ( 
-    epicsGuard < epicsMutex > & callbackControl, 
+inline int cac :: varArgsPrintFormated (
+    epicsGuard < epicsMutex > & callbackControl,
     const char *pformat, va_list args ) const
 {
     callbackControl.assertIdenticalMutex ( this->cbMutex );
@@ -435,14 +431,14 @@ inline notifyGuard::~notifyGuard ()
     this->notify.callbackProcessingCompleteNotify ();
 }
 
-inline callbackManager::callbackManager ( 
+inline callbackManager::callbackManager (
     cacContextNotify & notify, epicsMutex & callbackControl ) :
     notifyGuard ( notify ), cbGuard ( callbackControl )
 {
 }
 
 inline nciu * cac::lookupChannel (
-    epicsGuard < epicsMutex > & guard, 
+    epicsGuard < epicsMutex > & guard,
     const cacChannel::ioid & idIn )
 {
     guard.assertIdenticalMutex ( this->mutex );
@@ -458,11 +454,11 @@ inline unsigned cac ::
     maxContiguousFrames ( epicsGuard < epicsMutex > & ) const
 {
     return maxContigFrames;
-}    
+}
 
 inline double cac ::
     connectionTimeout ( epicsGuard < epicsMutex > & guard )
-{    
+{
     guard.assertIdenticalMutex ( this->mutex );
     return this->connTMO;
 }

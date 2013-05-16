@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -30,7 +30,7 @@
 
 
 /*
- * allocate error message string array 
+ * allocate error message string array
  * here so I can use sizeof
  */
 #define CA_ERROR_GLBLSOURCE
@@ -182,7 +182,7 @@ int epicsShareAPI ca_task_initialize ( void )
 }
 
 // extern "C"
-int epicsShareAPI ca_context_create ( 
+int epicsShareAPI ca_context_create (
             ca_preemptive_callback_select premptiveCallbackSelect )
 {
     ca_client_context *pcac;
@@ -202,7 +202,7 @@ int epicsShareAPI ca_context_create (
 		    return ECA_NORMAL;
 	    }
 
-        pcac = new ca_client_context ( 
+        pcac = new ca_client_context (
             premptiveCallbackSelect == ca_enable_preemptive_callback );
 	    if ( ! pcac ) {
 		    return ECA_ALLOCMEM;
@@ -275,7 +275,7 @@ int epicsShareAPI ca_task_exit ()
  */
 // extern "C"
 int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
-            arrayElementCount get_count, chid * chan, void *pvalue, 
+            arrayElementCount get_count, chid * chan, void *pvalue,
             caCh *conn_func, void *puser )
 {
     if ( get_type != TYPENOTCONN && pvalue != 0 && get_count != 0 ) {
@@ -286,14 +286,14 @@ int epicsShareAPI ca_build_and_connect ( const char *name_str, chtype get_type,
 }
 
 /*
- *  ca_search_and_connect() 
+ *  ca_search_and_connect()
  */
 // extern "C"
 int epicsShareAPI ca_search_and_connect (
     const char * name_str, chid * chanptr,
     caCh * conn_func, void * puser )
 {
-    return ca_create_channel ( name_str, conn_func, 
+    return ca_create_channel ( name_str, conn_func,
         puser, CA_PRIORITY_DEFAULT, chanptr );
 }
 
@@ -312,7 +312,7 @@ int epicsShareAPI ca_create_channel (
         CAFDHANDLER * pFunc = 0;
         void * pArg = 0;
         {
-            epicsGuard < epicsMutex > 
+            epicsGuard < epicsMutex >
                 guard ( pcac->mutex );
             if ( pcac->fdRegFuncNeedsToBeCalled ) {
                 pFunc = pcac->fdRegFunc;
@@ -327,9 +327,9 @@ int epicsShareAPI ca_create_channel (
 
     try {
         epicsGuard < epicsMutex > guard ( pcac->mutex );
-        oldChannelNotify * pChanNotify = 
-            new ( pcac->oldChannelNotifyFreeList ) 
-                oldChannelNotify ( guard, *pcac, name_str, 
+        oldChannelNotify * pChanNotify =
+            new ( pcac->oldChannelNotifyFreeList )
+                oldChannelNotify ( guard, *pcac, name_str,
                     conn_func, puser, priority );
         // make sure that their chan pointer is set prior to
         // calling connection call backs
@@ -352,9 +352,9 @@ int epicsShareAPI ca_create_channel (
         return ECA_UNAVAILINSERV;
     }
     catch ( std :: exception & except ) {
-        pcac->printFormated ( 
+        pcac->printFormated (
             "ca_create_channel: "
-            "unexpected exception was \"%s\"", 
+            "unexpected exception was \"%s\"",
             except.what () );
         return ECA_INTERNAL;
     }
@@ -369,22 +369,42 @@ int epicsShareAPI ca_create_channel (
  *  ca_clear_channel ()
  *
  * a known defect here is that there will be a
- * crash if they destroy the channel after destroying 
+ * crash if they destroy the channel after destroying
  * its context
  */
 // extern "C"
 int epicsShareAPI ca_clear_channel ( chid pChan )
 {
     ca_client_context & cac = pChan->getClientCtx ();
-    epicsGuard < epicsMutex > guard ( cac.mutex );
-    try {
-        pChan->eliminateExcessiveSendBacklog ( guard );
+    {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        try {
+            pChan->eliminateExcessiveSendBacklog ( guard );
+        }
+        catch ( cacChannel::notConnected & ) {
+            // intentionally ignored
+        }
     }
-    catch ( cacChannel::notConnected & ) {
-        // intentionally ignored
+    if ( cac.pCallbackGuard.get() &&
+            cac.createdByThread == epicsThreadGetIdSelf () ) {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pChan->destructor ( *cac.pCallbackGuard.get(), guard );
+        cac.oldChannelNotifyFreeList.release ( pChan );
     }
-    pChan->destructor ( guard );
-    cac.oldChannelNotifyFreeList.release ( pChan );
+    else {
+        //
+        // we will definately stall out here if all of the
+        // following are true
+        //
+        // o user creates non-preemtive mode client library context
+        // o user doesnt periodically call a ca function
+        // o user calls this function from an auxiillary thread
+        //
+        CallbackGuard cbGuard ( cac.cbMutex );
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pChan->destructor ( *cac.pCallbackGuard.get(), guard );
+        cac.oldChannelNotifyFreeList.release ( pChan );
+    }
     return ECA_NORMAL;
 }
 
@@ -399,7 +419,7 @@ int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg 
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
-    
+
     pcac->changeExceptionEvent ( pfunc, arg );
 
     return ECA_NORMAL;
@@ -408,10 +428,10 @@ int epicsShareAPI ca_add_exception_event ( caExceptionHandler *pfunc, void *arg 
 /*
  *  ca_add_masked_array_event
  */
-int epicsShareAPI ca_add_masked_array_event ( 
-        chtype type, arrayElementCount count, chid pChan, 
-        caEventCallBackFunc *pCallBack, void *pCallBackArg, 
-        ca_real, ca_real, ca_real, 
+int epicsShareAPI ca_add_masked_array_event (
+        chtype type, arrayElementCount count, chid pChan,
+        caEventCallBackFunc *pCallBack, void *pCallBackArg,
+        ca_real, ca_real, ca_real,
         evid *monixptr, long mask )
 {
     return ca_create_subscription ( type, count, pChan, mask,
@@ -429,7 +449,7 @@ int epicsShareAPI ca_clear_event ( evid pMon )
 // extern "C"
 chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 {
-    return & pMon->channel (); 
+    return & pMon->channel ();
 }
 
 // extern "C"
@@ -498,7 +518,7 @@ int epicsShareAPI ca_pend_io ( ca_real timeout )
 
 /*
  *  ca_flush_io ()
- */ 
+ */
 int epicsShareAPI ca_flush_io ()
 {
     ca_client_context * pcac;
@@ -545,7 +565,7 @@ void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * ca_message (long ca_status)
  *
  * - if it is an unknown error code then it possible
- * that the error string generated below 
+ * that the error string generated below
  * will be overwritten before (or while) the caller
  * of this routine is calling this routine
  * (if they call this routine again).
@@ -567,7 +587,7 @@ const char * epicsShareAPI ca_message ( long ca_status )
  * ca_signal_with_file_and_lineno()
  */
 // extern "C"
-void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status, 
+void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status,
             const char *message, const char *pfilenm, int lineno )
 {
     ca_signal_formated ( ca_status, pfilenm, lineno, message );
@@ -577,7 +597,7 @@ void epicsShareAPI ca_signal_with_file_and_lineno ( long ca_status,
  * ca_signal_formated()
  */
 // extern "C"
-void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm, 
+void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
                                        int lineno, const char *pFormat, ... )
 {
     ca_client_context *pcac;
@@ -590,12 +610,12 @@ void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
     }
 
     va_list theArgs;
-    va_start ( theArgs, pFormat );  
+    va_start ( theArgs, pFormat );
     if ( pcac ) {
         pcac->vSignal ( ca_status, pfilenm, lineno, pFormat, theArgs );
     }
     else {
-        fprintf ( stderr, "CA exception in thread w/o CA ctx: status=%s file=%s line=%d: \n", 
+        fprintf ( stderr, "CA exception in thread w/o CA ctx: status=%s file=%s line=%d: \n",
             ca_message ( ca_status ), pfilenm, lineno );
         if ( pFormat ) {
             vfprintf ( stderr, pFormat, theArgs );
@@ -607,7 +627,7 @@ void epicsShareAPI ca_signal_formated ( long ca_status, const char *pfilenm,
 /*
  *  CA_ADD_FD_REGISTRATION
  *
- *  call their function with their argument whenever 
+ *  call their function with their argument whenever
  *  a new fd is added or removed
  *  (for a manager of the select system call under UNIX)
  *
@@ -631,7 +651,7 @@ int epicsShareAPI ca_add_fd_registration ( CAFDHANDLER * func, void * arg )
  * function that returns the CA version string
  */
 // extern "C"
-const char * epicsShareAPI ca_version () 
+const char * epicsShareAPI ca_version ()
 {
     return CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION );
 }
@@ -660,7 +680,7 @@ int epicsShareAPI ca_replace_printf_handler ( caPrintfFunc *ca_printf_func )
  * (for testing purposes only)
  */
 // extern "C"
-unsigned epicsShareAPI ca_get_ioc_connection_count () 
+unsigned epicsShareAPI ca_get_ioc_connection_count ()
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( & pcac );
@@ -720,7 +740,7 @@ struct ca_client_context * epicsShareAPI ca_current_context ()
 {
     struct ca_client_context *pCtx;
     if ( caClientContextId ) {
-        pCtx = ( struct ca_client_context * ) 
+        pCtx = ( struct ca_client_context * )
             epicsThreadPrivateGet ( caClientContextId );
     }
     else {
@@ -749,7 +769,7 @@ int epicsShareAPI ca_attach_context ( struct ca_client_context * pCtx )
     return ECA_NORMAL;
 }
 
-void epicsShareAPI ca_detach_context () 
+void epicsShareAPI ca_detach_context ()
 {
     if ( caClientContextId ) {
         epicsThreadPrivateSet ( caClientContextId, 0 );
@@ -794,43 +814,43 @@ epicsShareDef const int epicsTypeToDBR_XXXX [lastEpicsType+1] = {
 // extern "C"
 epicsShareDef const epicsType DBR_XXXXToEpicsType [LAST_BUFFER_TYPE+1] = {
 	epicsOldStringT,
-	epicsInt16T,	
-	epicsFloat32T,	
-	epicsEnum16T,	
-	epicsUInt8T,	
-	epicsInt32T,	
+	epicsInt16T,
+	epicsFloat32T,
+	epicsEnum16T,
+	epicsUInt8T,
+	epicsInt32T,
 	epicsFloat64T,
 
 	epicsOldStringT,
-	epicsInt16T,	
-	epicsFloat32T,	
-	epicsEnum16T,	
-	epicsUInt8T,	
-	epicsInt32T,	
+	epicsInt16T,
+	epicsFloat32T,
+	epicsEnum16T,
+	epicsUInt8T,
+	epicsInt32T,
 	epicsFloat64T,
 
 	epicsOldStringT,
-	epicsInt16T,	
-	epicsFloat32T,	
-	epicsEnum16T,	
-	epicsUInt8T,	
-	epicsInt32T,	
+	epicsInt16T,
+	epicsFloat32T,
+	epicsEnum16T,
+	epicsUInt8T,
+	epicsInt32T,
 	epicsFloat64T,
 
 	epicsOldStringT,
-	epicsInt16T,	
-	epicsFloat32T,	
-	epicsEnum16T,	
-	epicsUInt8T,	
-	epicsInt32T,	
+	epicsInt16T,
+	epicsFloat32T,
+	epicsEnum16T,
+	epicsUInt8T,
+	epicsInt32T,
 	epicsFloat64T,
 
 	epicsOldStringT,
-	epicsInt16T,	
-	epicsFloat32T,	
-	epicsEnum16T,	
-	epicsUInt8T,	
-	epicsInt32T,	
+	epicsInt16T,
+	epicsFloat32T,
+	epicsEnum16T,
+	epicsUInt8T,
+	epicsInt32T,
 	epicsFloat64T,
 
 	epicsUInt16T,
@@ -939,7 +959,7 @@ epicsShareDef const unsigned short dbr_value_size[LAST_BUFFER_TYPE+1] = {
 	sizeof(dbr_string_t),	/* string max size		*/
 };
 
-//extern "C" 
+//extern "C"
 epicsShareDef const enum dbr_value_class dbr_value_class[LAST_BUFFER_TYPE+1] = {
 	dbr_class_string,	/* string max size		*/
 	dbr_class_int,		/* short			*/

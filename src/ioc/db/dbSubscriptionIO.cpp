@@ -66,14 +66,15 @@ dbSubscriptionIO::~dbSubscriptionIO ()
 {
 }
 
-void dbSubscriptionIO::destructor ( epicsGuard < epicsMutex > & guard )
+void dbSubscriptionIO::destructor ( CallbackGuard & cbGuard, 
+                              epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     this->~dbSubscriptionIO ();
 }
 
-void dbSubscriptionIO::unsubscribe (
-    epicsGuard < epicsMutex > & guard )
+void dbSubscriptionIO::unsubscribe ( CallbackGuard & cbGuard, 
+                                epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->es ) {
@@ -87,6 +88,7 @@ void dbSubscriptionIO::unsubscribe (
 }
 
 void dbSubscriptionIO::channelDeleteException (
+    CallbackGuard &,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );

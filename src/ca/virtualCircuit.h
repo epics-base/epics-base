@@ -335,7 +335,6 @@ private:
 
 	tcpiiu ( const tcpiiu & );
 	tcpiiu & operator = ( const tcpiiu & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -372,7 +371,7 @@ inline bool tcpiiu::ca_v49_ok (
 }
 
 inline bool tcpiiu::alive (
-    epicsGuard < epicsMutex > & ) const // X aCC 361
+    epicsGuard < epicsMutex > & ) const
 {
     return ( this->state == iiucs_connecting || 
         this->state == iiucs_connected );

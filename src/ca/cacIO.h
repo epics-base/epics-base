@@ -69,7 +69,7 @@ typedef unsigned long arrayElementCount;
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacWriteNotify { // X aCC 655
+class epicsShareClass cacWriteNotify {
 public:
     virtual ~cacWriteNotify () = 0;
     virtual void completion ( epicsGuard < epicsMutex > & ) = 0;
@@ -82,7 +82,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacReadNotify { // X aCC 655
+class epicsShareClass cacReadNotify {
 public:
     virtual ~cacReadNotify () = 0;
     virtual void completion ( 
@@ -97,7 +97,7 @@ public:
 
 // 1) this should not be passing caerr.h status to the exception callback
 // 2) needless-to-say the data should be passed here using the new data access API
-class epicsShareClass cacStateNotify { // X aCC 655
+class epicsShareClass cacStateNotify {
 public:
     virtual ~cacStateNotify () = 0;
     virtual void current ( 
@@ -131,7 +131,7 @@ private:
     bool f_operatorConfirmationRequest:1;
 };
 
-class epicsShareClass cacChannelNotify { // X aCC 655
+class epicsShareClass cacChannelNotify {
 public:
     virtual ~cacChannelNotify () = 0;
     virtual void connectNotify ( epicsGuard < epicsMutex > & ) = 0;
@@ -150,6 +150,16 @@ public:
     virtual void writeException ( 
         epicsGuard < epicsMutex > &, int status, const char * pContext,
         unsigned type, arrayElementCount count ) = 0;
+};
+
+class CallbackGuard :
+    public epicsGuard < epicsMutex > {
+public:
+    CallbackGuard ( epicsMutex & mutex ) :
+        epicsGuard < epicsMutex > ( mutex ) {}
+private:
+    CallbackGuard ( const CallbackGuard & );
+    CallbackGuard & operator = ( const CallbackGuard & );
 };
 
 //
@@ -174,6 +184,7 @@ public:
 
     cacChannel ( cacChannelNotify & );
     virtual void destroy (
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard ) = 0;
     cacChannelNotify & notify () const; // required ?????
     virtual unsigned getName (
@@ -207,7 +218,15 @@ public:
         epicsGuard < epicsMutex > &, unsigned type, 
         arrayElementCount count, unsigned mask, cacStateNotify &, 
         ioid * = 0 ) = 0;
+    // The primary mutex must be released when calling the user's
+    // callback, and therefore a finite interval exists when we are
+    // moving forward with the intent to call the users callback
+    // but the users IO could be deleted during this interval.
+    // To prevent the user's callback from being called after
+    // destroying his IO we must past a guard for the callback
+    // mutex here.
     virtual void ioCancel ( 
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & ) = 0;
     virtual void ioShow ( 
@@ -258,7 +277,7 @@ private:
 	cacChannel & operator = ( const cacChannel & );
 };
 
-class epicsShareClass cacContext { // X aCC 655
+class epicsShareClass cacContext {
 public:
     virtual ~cacContext ();
     virtual cacChannel & createChannel ( 
@@ -277,7 +296,7 @@ public:
         epicsGuard < epicsMutex > &, unsigned level ) const = 0;
 };
 
-class epicsShareClass cacContextNotify { // X aCC 655
+class epicsShareClass cacContextNotify {
 public:
     virtual ~cacContextNotify () = 0;
     virtual cacContext & createNetworkContext ( 
@@ -297,7 +316,7 @@ public:
 // **** Lock Hierarchy ****
 // callbackControl must be taken before mutualExclusion if both are held at
 // the same time
-class epicsShareClass cacService { // X aCC 655
+class epicsShareClass cacService {
 public:
     virtual ~cacService () = 0;
     virtual cacContext & contextCreate ( 

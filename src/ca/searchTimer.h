@@ -43,7 +43,7 @@
 #include "caProto.h"
 #include "netiiu.h"
 
-class searchTimerNotify { // X aCC 655
+class searchTimerNotify {
 public:
     virtual ~searchTimerNotify () = 0;
     virtual void boostChannel ( 

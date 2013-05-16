@@ -133,7 +133,7 @@ extern "C" void epicsShareAPI removeDuplicateAddresses
 
         if ( pNode->addr.sa.sa_family == AF_INET ) {
 
-            pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);    // X aCC 749
+            pTmpNode = (osiSockAddrNode *) ellFirst (pDestList);
             while ( pTmpNode ) {
                 if (pTmpNode->addr.sa.sa_family == AF_INET) {
                     if ( pNode->addr.ia.sin_addr.s_addr == pTmpNode->addr.ia.sin_addr.s_addr && 
@@ -149,7 +149,7 @@ extern "C" void epicsShareAPI removeDuplicateAddresses
                         break;
                     }
                 }
-                pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node); // X aCC 749
+                pTmpNode = (osiSockAddrNode *) ellNext (&pTmpNode->node);
             }
             if (pNode) {
                 ellAdd (pDestList, &pNode->node);
@@ -168,12 +168,12 @@ static void  forcePort ( ELLLIST *pList, unsigned short port )
 {
     osiSockAddrNode *pNode;
 
-    pNode  = ( osiSockAddrNode * ) ellFirst ( pList );          // X aCC 749
+    pNode  = ( osiSockAddrNode * ) ellFirst ( pList );
     while ( pNode ) {
         if ( pNode->addr.sa.sa_family == AF_INET ) {
             pNode->addr.ia.sin_port = htons ( port );
         }
-        pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node ); // X aCC 749
+        pNode = ( osiSockAddrNode * ) ellNext ( &pNode->node );
     }
 }
 
@@ -192,9 +192,9 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     /*
      * dont load the list twice
      */
-    assert ( ellCount (pList) == 0 ); // X aCC 392
+    assert ( ellCount (pList) == 0 );
 
-    ellInit ( &tmpList );             // X aCC 392
+    ellInit ( &tmpList );
 
     /*
      * Check to see if the user has disabled
@@ -217,12 +217,12 @@ extern "C" void epicsShareAPI configureChannelAccessAddressList
     if (yes) {
 		ELLLIST bcastList;
         osiSockAddr addr;
-		ellInit ( &bcastList ); // X aCC 392
+		ellInit ( &bcastList );
         addr.ia.sin_family = AF_UNSPEC;
         osiSockDiscoverBroadcastAddresses ( &bcastList, sock, &addr );
         forcePort ( &bcastList, port );
 		removeDuplicateAddresses ( &tmpList, &bcastList, 1 );
-        if ( ellCount ( &tmpList ) == 0 ) { // X aCC 392
+        if ( ellCount ( &tmpList ) == 0 ) {
             osiSockAddrNode *pNewNode;
             pNewNode = (osiSockAddrNode *) calloc ( 1, sizeof (*pNewNode) );
             if ( pNewNode ) {
@@ -254,11 +254,11 @@ extern "C" void epicsShareAPI printChannelAccessAddressList ( const ELLLIST *pLi
     osiSockAddrNode *pNode;
 
     ::printf ( "Channel Access Address List\n" );
-    pNode = (osiSockAddrNode *) ellFirst ( pList );           // X aCC 749
+    pNode = (osiSockAddrNode *) ellFirst ( pList );
     while (pNode) {
         char buf[64];
         ipAddrToA ( &pNode->addr.ia, buf, sizeof ( buf ) );
         ::printf ( "%s\n", buf );
-        pNode = (osiSockAddrNode *) ellNext ( &pNode->node ); // X aCC 749
+        pNode = (osiSockAddrNode *) ellNext ( &pNode->node );
     }
 }

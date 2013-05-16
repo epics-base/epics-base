@@ -106,7 +106,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
 
     {
         osiSockIoctl_t yes = true;
-        int status = socket_ioctl ( this->sock, // X aCC 392
+        int status = socket_ioctl ( this->sock,
                                     FIONBIO, & yes);
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -126,7 +126,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         memset ( (char *)&addr, 0 , sizeof ( addr ) );
         addr.ia.sin_family = AF_INET;
         addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY ); 
-        addr.ia.sin_port = htons ( PORT_ANY ); // X aCC 818
+        addr.ia.sin_port = htons ( PORT_ANY );
         int status = bind (this->sock, &addr.sa, sizeof (addr) );
         if ( status < 0 ) {
             char sockErrBuf[64];
@@ -159,9 +159,9 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
         this->localPort = htons ( tmpAddr.ia.sin_port );
     }
 
-    epics_auto_ptr < epicsGuard < epicsMutex > > pCBGuard;
+    epics_auto_ptr < CallbackGuard > pCBGuard;
     if ( ! enablePreemptiveCallback ) {
-        pCBGuard.reset ( new epicsGuard < epicsMutex > ( this->cbMutex ) );
+        pCBGuard.reset ( new CallbackGuard ( this->cbMutex ) );
     }
 
     // multiple steps ensure exception safety
@@ -277,7 +277,7 @@ int ca_client_context :: printFormated (
 }
 
 int ca_client_context :: varArgsPrintFormated ( 
-    const char *pformat, va_list args ) const // X aCC 361
+    const char *pformat, va_list args ) const
 {
     caPrintfFunc * pFunc;
     {
@@ -751,6 +751,8 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
 {
     oldChannelNotify & chan = pMon->channel ();
     ca_client_context & cac = chan.getClientCtx ();
+    // !!!! the order in which we take the mutex here prevents deadlocks
+    {
     epicsGuard < epicsMutex > guard ( cac.mutex );
     try {
         // if this stalls out on a live circuit then an exception 
@@ -761,7 +763,25 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
     catch ( cacChannel::notConnected & ) {
         // intentionally ignored
     }
-    pMon->cancel ( guard );
+    }
+    if ( cac.pCallbackGuard.get() &&
+        cac.createdByThread == epicsThreadGetIdSelf () ) {
+      epicsGuard < epicsMutex > guard ( cac.mutex );
+      pMon->cancel ( *cac.pCallbackGuard.get(), guard );
+    }
+    else {
+      //
+      // we will definately stall out here if all of the
+      // following are true
+      //
+      // o user creates non-preemtive mode client library context
+      // o user doesnt periodically call a ca function
+      // o user calls this function from an auxiillary thread
+      //
+      CallbackGuard cbGuard ( cac.cbMutex );
+      epicsGuard < epicsMutex > guard ( cac.mutex );
+      pMon->cancel ( cbGuard, guard );
+    }
     return ECA_NORMAL;
 }
 

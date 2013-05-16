@@ -27,8 +27,10 @@
 #include "oldAccess.h"
 
 syncGroupReadNotify::syncGroupReadNotify ( 
-    CASG & sgIn, chid pChan, void * pValueIn ) :
-    chan ( pChan ), sg ( sgIn ), pValue ( pValueIn ), 
+    CASG & sgIn, PRecycleFunc pRecycleFuncIn,
+    chid pChan, void * pValueIn ) :
+    chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ), 
+    sg ( sgIn ), pValue ( pValueIn ),
     magic ( CASG_MAGIC ), id ( 0u ), 
     idIsValid ( false ), ioComplete ( false )
 {
@@ -46,27 +48,30 @@ void syncGroupReadNotify::begin (
 }
 
 void syncGroupReadNotify::cancel ( 
-    epicsGuard < epicsMutex > & guard )
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExcusionGuard )
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( guard, this->id );
+        this->chan->ioCancel ( callbackGuard, mutualExcusionGuard, this->id );
         this->idIsValid = false;
     }
 }
 
 syncGroupReadNotify * syncGroupReadNotify::factory ( 
     tsFreeList < class syncGroupReadNotify, 128, epicsMutexNOOP > & freeList, 
-    struct CASG & sg, chid chan, void * pValueIn )
+    struct CASG & sg, PRecycleFunc pRecycleFunc, chid chan, void * pValueIn )
 {
-    return new ( freeList ) // X aCC 930
-        syncGroupReadNotify ( sg, chan, pValueIn );
+    return new ( freeList )
+        syncGroupReadNotify ( sg, pRecycleFunc, chan, pValueIn );
 }
 
 void syncGroupReadNotify::destroy ( 
-    epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
+    CallbackGuard &,
+    epicsGuard < epicsMutex > & guard )
 {
+    CASG & sgRef ( this->sg );
     this->~syncGroupReadNotify ();
-    recycle.recycleSyncGroupReadNotify ( guard, *this );
+    ( sgRef.*pRecycleFunc ) ( guard, *this );
 }
 
 syncGroupReadNotify::~syncGroupReadNotify ()
@@ -120,13 +125,6 @@ void syncGroupReadNotify::show (
         ::printf ( "pending sg op: magic=%u sg=%p\n",
             this->magic, static_cast < void * > ( & this->sg ) );
     }
-}
-
-void * syncGroupReadNotify::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void syncGroupReadNotify::operator delete ( void * )

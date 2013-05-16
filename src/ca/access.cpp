@@ -376,15 +376,35 @@ int epicsShareAPI ca_create_channel (
 int epicsShareAPI ca_clear_channel ( chid pChan )
 {
     ca_client_context & cac = pChan->getClientCtx ();
-    epicsGuard < epicsMutex > guard ( cac.mutex );
-    try {
-        pChan->eliminateExcessiveSendBacklog ( guard );
+    {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        try {
+            pChan->eliminateExcessiveSendBacklog ( guard );
+        }
+        catch ( cacChannel::notConnected & ) {
+            // intentionally ignored
+        }
     }
-    catch ( cacChannel::notConnected & ) {
-        // intentionally ignored
-    }
-    pChan->destructor ( guard );
+    if ( cac.pCallbackGuard.get() &&
+            cac.createdByThread == epicsThreadGetIdSelf () ) {
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pChan->destructor ( *cac.pCallbackGuard.get(), guard );
     cac.oldChannelNotifyFreeList.release ( pChan );
+    }
+    else {
+        //
+        // we will definately stall out here if all of the
+        // following are true
+        //
+        // o user creates non-preemtive mode client library context
+        // o user doesnt periodically call a ca function
+        // o user calls this function from an auxiillary thread
+        //
+        CallbackGuard cbGuard ( cac.cbMutex );
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        pChan->destructor ( *cac.pCallbackGuard.get(), guard );
+        cac.oldChannelNotifyFreeList.release ( pChan );
+    }
     return ECA_NORMAL;
 }
 
@@ -433,7 +453,7 @@ chid epicsShareAPI ca_evid_to_chid ( evid pMon )
 }
 
 // extern "C"
-int epicsShareAPI ca_pend ( ca_real timeout, int early ) // X aCC 361
+int epicsShareAPI ca_pend ( ca_real timeout, int early )
 {
     if ( early ) {
         return ca_pend_io ( timeout );
@@ -516,7 +536,7 @@ int epicsShareAPI ca_flush_io ()
 /*
  *  CA_TEST_IO ()
  */
-int epicsShareAPI ca_test_io () // X aCC 361
+int epicsShareAPI ca_test_io ()
 {
     ca_client_context *pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -551,7 +571,7 @@ void epicsShareAPI ca_signal ( long ca_status, const char *message )
  * (if they call this routine again).
  */
 // extern "C"
-const char * epicsShareAPI ca_message ( long ca_status ) // X aCC 361
+const char * epicsShareAPI ca_message ( long ca_status )
 {
     unsigned msgNo = CA_EXTRACT_MSG_NO ( ca_status );
 

@@ -76,29 +76,24 @@ nciu::~nciu ()
 // channels are created by the user, and only destroyed by the user
 // using this routine
 void nciu::destroy (
-    epicsGuard < epicsMutex > & guard )
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExcusionGuard )
 {    
     while ( baseNMIU * pNetIO = this->eventq.first () ) {
-        bool success = this->cacCtx.destroyIO ( guard, pNetIO->getId (), *this );
+        bool success = this->cacCtx.destroyIO ( callbackGuard, mutualExcusionGuard,
+                                                    pNetIO->getId (), *this );
         assert ( success );
     }
     
     // if the claim reply has not returned yet then we will issue
     // the clear channel request to the server when the claim reply
     // arrives and there is no matching nciu in the client
-    if ( this->channelNode::isInstalledInServer ( guard ) ) {
-        this->getPIIU(guard)->clearChannelRequest ( 
-            guard, this->sid, this->id );
+    if ( this->channelNode::isInstalledInServer ( mutualExcusionGuard ) ) {
+        this->getPIIU(mutualExcusionGuard)->clearChannelRequest (
+                        mutualExcusionGuard, this->sid, this->id );
     }
-    this->piiu->uninstallChan ( guard, *this );
-    this->cacCtx.destroyChannel ( guard, *this );
-}
-
-void * nciu::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
+    this->piiu->uninstallChan ( mutualExcusionGuard, *this );
+    this->cacCtx.destroyChannel ( mutualExcusionGuard, *this );
 }
 
 void nciu::operator delete ( void * )
@@ -387,9 +382,12 @@ void nciu::subscribe (
 }
 
 void nciu::ioCancel ( 
-    epicsGuard < epicsMutex > & guard, const ioid & idIn )
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard,
+    const ioid & idIn )
 {
-    this->cacCtx.destroyIO ( guard, idIn, *this );
+    this->cacCtx.destroyIO ( callbackGuard,
+          mutualExclusionGuard, idIn, *this );
 }
 
 void nciu::ioShow ( 

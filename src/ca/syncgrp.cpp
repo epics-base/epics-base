@@ -23,7 +23,7 @@
 /*
  * ca_sg_create()
  */
-extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
+extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid )
 {
     ca_client_context * pcac;
     int caStatus;
@@ -48,6 +48,22 @@ extern "C" int epicsShareAPI ca_sg_create ( CA_SYNC_GID * pgid ) // X aCC 361
     }
 }
 
+int ca_sync_group_destroy ( CallbackGuard & cbGuard, epicsGuard < epicsMutex > & guard,
+                                ca_client_context & cac, const CA_SYNC_GID gid )
+{
+    int caStatus;
+    CASG * pcasg = cac.lookupCASG ( guard, gid );
+    if ( pcasg ) {
+        pcasg->destructor ( cbGuard, guard );
+        cac.casgFreeList.release ( pcasg );
+        caStatus = ECA_NORMAL;
+    }
+    else {
+        caStatus = ECA_BADSYNCGRP;
+    }
+    return caStatus;
+}
+
 /*
  * ca_sg_delete()
  */
@@ -56,17 +72,49 @@ extern "C" int epicsShareAPI ca_sg_delete ( const CA_SYNC_GID gid )
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( & pcac );
     if ( caStatus == ECA_NORMAL ) {
-        epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
-        CASG * pcasg = pcac->lookupCASG ( guard, gid );
-        if ( pcasg ) {
-            pcasg->destructor ( guard );
-            pcac->casgFreeList.release ( pcasg );
+        if ( pcac->pCallbackGuard.get() &&
+            pcac->createdByThread == epicsThreadGetIdSelf () ) {
+          epicsGuard < epicsMutex > guard ( pcac->mutex );
+          caStatus = ca_sync_group_destroy ( *pcac->pCallbackGuard.get(),
+                                          guard, *pcac, gid );
         }
         else {
-            caStatus = ECA_BADSYNCGRP;
+          //
+          // we will definately stall out here if all of the
+          // following are true
+          //
+          // o user creates non-preemtive mode client library context
+          // o user doesnt periodically call a ca function
+          // o user calls this function from an auxiillary thread
+          //
+          CallbackGuard cbGuard ( pcac->cbMutex );
+          epicsGuard < epicsMutex > guard ( pcac->mutex );
+          caStatus = ca_sync_group_destroy ( cbGuard, guard, *pcac, gid );
         }
     }
     return caStatus;
+}
+
+void sync_group_reset ( ca_client_context & client, CASG & sg )
+{
+    if ( client.pCallbackGuard.get() &&
+        client.createdByThread == epicsThreadGetIdSelf () ) {
+        epicsGuard < epicsMutex > guard ( client.mutex );
+        sg.reset ( *client.pCallbackGuard.get(), guard );
+    }
+    else {  
+        //
+        // we will definately stall out here if all of the
+        // following are true
+        //
+        // o user creates non-preemtive mode client library context
+        // o user doesnt periodically call a ca function
+        // o user calls this function from an auxiillary thread
+        //
+        CallbackGuard cbGuard ( client.cbMutex );
+        epicsGuard < epicsMutex > guard ( client.mutex );
+        sg.reset ( cbGuard, guard );
+    }
 }
 
 //
@@ -84,14 +132,20 @@ extern "C" int epicsShareAPI ca_sg_block (
     ca_client_context *pcac;
     int status = fetchClientContext ( &pcac );
     if ( status == ECA_NORMAL ) {
+        CASG * pcasg;
+        {
         epicsGuard < epicsMutex > guard ( pcac->mutex );
-        CASG * pcasg = pcac->lookupCASG ( guard, gid );
-        if ( ! pcasg ) {
-            status = ECA_BADSYNCGRP;
-        }
-        else {
+          pcasg = pcac->lookupCASG ( guard, gid );
+          if ( pcasg ) {
             status = pcasg->block ( 
                 pcac->pCallbackGuard.get (), guard, timeout );
+          }
+          else {
+              status = ECA_BADSYNCGRP;
+          }
+        }
+        if ( pcasg ) {
+            sync_group_reset ( *pcac, *pcasg );
         }
     }
     return status;
@@ -105,10 +159,14 @@ extern "C" int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid )
     ca_client_context *pcac;
     int caStatus = fetchClientContext (&pcac);
     if ( caStatus == ECA_NORMAL ) {
+        CASG * pcasg;
+        {
         epicsGuard < epicsMutex > guard ( pcac->mutex );
-        CASG * pcasg = pcac->lookupCASG ( guard, gid );
+            pcasg = pcac->lookupCASG ( guard, gid );
+        }
         if ( pcasg ) {
-            pcasg->reset ( guard );
+            sync_group_reset ( *pcac, *pcasg );
+            caStatus = ECA_NORMAL;
         }
         else {
             caStatus = ECA_BADSYNCGRP;
@@ -143,7 +201,7 @@ extern "C" int epicsShareAPI ca_sg_stat ( const CA_SYNC_GID gid )
 /*
  * ca_sg_test
  */
-extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
+extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid )
 {
     ca_client_context * pcac;
     int caStatus = fetchClientContext ( &pcac );
@@ -151,7 +209,26 @@ extern "C" int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid ) // X aCC 361
         epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
         CASG * pcasg = pcac->lookupCASG ( guard, gid );
         if ( pcasg ) {
-            if ( pcasg->ioComplete ( guard ) ) {
+            bool isComplete;
+            if ( pcac->pCallbackGuard.get() &&
+                pcac->createdByThread == epicsThreadGetIdSelf () ) {
+              epicsGuard < epicsMutex > guard ( pcac->mutex );
+              isComplete = pcasg->ioComplete ( *pcac->pCallbackGuard.get(), guard );
+            }
+            else {
+              //
+              // we will definately stall out here if all of the
+              // following are true
+              //
+              // o user creates non-preemtive mode client library context
+              // o user doesnt periodically call a ca function
+              // o user calls this function from an auxiillary thread
+              //
+              CallbackGuard cbGuard ( pcac->cbMutex );
+              epicsGuard < epicsMutex > guard ( pcac->mutex );
+              isComplete = pcasg->ioComplete ( cbGuard, guard );
+            }
+            if ( isComplete ) {
                 caStatus = ECA_IODONE;
             }
             else{
@@ -172,17 +249,14 @@ extern "C" int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid, chtype typ
     arrayElementCount count, chid pChan, const void *pValue )
 {
     ca_client_context *pcac;
-    CASG *pcasg;
-    int caStatus;
     
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
     epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
-
-    pcasg = pcac->lookupCASG ( guard, gid );
+    CASG * const pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }
@@ -237,17 +311,14 @@ extern "C" int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid, chtype typ
     arrayElementCount count, chid pChan, void *pValue )
 {
     ca_client_context *pcac;
-    CASG *pcasg;
-    int caStatus;
 
-    caStatus = fetchClientContext ( &pcac );
+    int caStatus = fetchClientContext ( &pcac );
     if ( caStatus != ECA_NORMAL ) {
         return caStatus;
     }
 
     epicsGuard < epicsMutex > guard ( pcac->mutexRef() );
-
-    pcasg = pcac->lookupCASG ( guard, gid );
+    CASG * const pcasg = pcac->lookupCASG ( guard, gid );
     if ( ! pcasg ) {
         return ECA_BADSYNCGRP;
     }

@@ -121,7 +121,7 @@ private:
     friend class disconnectGovernorTimer;
 };
 
-class privateInterfaceForIO { // X aCC 655
+class privateInterfaceForIO {
 public:
     virtual void ioCompletionNotify ( 
         epicsGuard < epicsMutex > &, class baseNMIU & ) = 0;
@@ -220,6 +220,7 @@ private:
     ca_uint16_t typeCode;
     ca_uint8_t priority; 
     virtual void destroy (
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard );
     void initiateConnect (
         epicsGuard < epicsMutex > & );
@@ -243,7 +244,15 @@ private:
         epicsGuard < epicsMutex > & guard, 
         unsigned type, arrayElementCount nElem, 
         unsigned mask, cacStateNotify &notify, ioid * );
+    // The primary mutex must be released when calling the user's
+    // callback, and therefore a finite interval exists when we are
+    // moving forward with the intent to call the users callback
+    // but the users IO could be deleted during this interval.
+    // To prevent the user's callback from being called after
+    // destroying his IO we must past a guard for the callback
+    // mutex here.
     virtual void ioCancel ( 
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard,
         const ioid & );
     void ioShow ( 
@@ -270,7 +279,6 @@ private:
         epicsGuard < epicsMutex > & guard ) const throw ();
 	nciu ( const nciu & );
 	nciu & operator = ( const nciu & );
-    void * operator new ( size_t );
     void operator delete ( void * );
 };
 

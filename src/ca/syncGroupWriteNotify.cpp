@@ -26,8 +26,10 @@
 #include "syncGroup.h"
 #include "oldAccess.h"
 
-syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, chid pChan ) :
-    chan ( pChan ), sg ( sgIn ), magic ( CASG_MAGIC ), 
+syncGroupWriteNotify::syncGroupWriteNotify ( CASG & sgIn, 
+                      PRecycleFunc pRecycleFuncIn, chid pChan ) :
+    chan ( pChan ), pRecycleFunc ( pRecycleFuncIn ),
+    sg ( sgIn ), magic ( CASG_MAGIC ),
         id ( 0u ), idIsValid ( false ), ioComplete ( false )
 {
 }
@@ -45,26 +47,29 @@ void syncGroupWriteNotify::begin (
 }
 
 void syncGroupWriteNotify::cancel ( 
-    epicsGuard < epicsMutex > & guard )
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExcusionGuard )
 {
     if ( this->idIsValid ) {
-        this->chan->ioCancel ( guard, this->id );
+        this->chan->ioCancel ( callbackGuard, mutualExcusionGuard, this->id );
         this->idIsValid = false;
     }
 }
 
 syncGroupWriteNotify * syncGroupWriteNotify::factory ( 
     tsFreeList < class syncGroupWriteNotify, 128, epicsMutexNOOP > &freeList, 
-    struct CASG & sg, chid chan )
+    struct CASG & sg, PRecycleFunc pRecycleFunc, chid chan )
 {
-    return new ( freeList ) syncGroupWriteNotify ( sg, chan );
+    return new ( freeList ) syncGroupWriteNotify ( sg, pRecycleFunc, chan );
 }
 
 void syncGroupWriteNotify::destroy ( 
-    epicsGuard < epicsMutex > & guard, casgRecycle & recycle )
+    CallbackGuard &,
+    epicsGuard < epicsMutex > & guard )
 {
+    CASG & sgRef ( this->sg );
     this->~syncGroupWriteNotify ();
-    recycle.recycleSyncGroupWriteNotify ( guard, *this );
+    ( sgRef.*pRecycleFunc ) ( guard, *this );
 }
 
 syncGroupWriteNotify::~syncGroupWriteNotify ()
@@ -110,13 +115,6 @@ void syncGroupWriteNotify::show (
         ::printf ( "pending sg op: magic=%u sg=%p\n",
             this->magic, static_cast < void * > ( &this->sg ) );
     }
-}
-
-void * syncGroupWriteNotify::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void syncGroupWriteNotify::operator delete ( void * )

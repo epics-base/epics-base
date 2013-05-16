@@ -131,7 +131,7 @@ int main ( int argc, char ** argv )
     }
 
     osiSockIoctl_t yes = true;
-    status = socket_ioctl ( sock, FIONBIO, &yes ); // X aCC 392
+    status = socket_ioctl ( sock, FIONBIO, &yes );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -166,7 +166,7 @@ int main ( int argc, char ** argv )
     }
 
     osiSockIoctl_t no = false;
-    status = socket_ioctl ( sock, FIONBIO, &no ); // X aCC 392
+    status = socket_ioctl ( sock, FIONBIO, &no );
     if ( status < 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 

@@ -39,7 +39,7 @@
 #   define epicsExportSharedSymbols
 #endif
 
-class callbackForMultiplyDefinedPV { // X aCC 655
+class callbackForMultiplyDefinedPV {
 public:
     virtual ~callbackForMultiplyDefinedPV () = 0;
     virtual void pvMultiplyDefinedNotify ( 
@@ -64,7 +64,6 @@ private:
     void transactionComplete ( const char * pHostName );
 	msgForMultiplyDefinedPV ( const msgForMultiplyDefinedPV & );
 	msgForMultiplyDefinedPV & operator = ( const msgForMultiplyDefinedPV & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 

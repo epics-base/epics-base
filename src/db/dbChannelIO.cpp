@@ -61,19 +61,21 @@ dbChannelIO::~dbChannelIO ()
 {
 }
 
-void dbChannelIO::destructor ( epicsGuard < epicsMutex > & guard )
+void dbChannelIO::destructor ( CallbackGuard & cbGuard, 
+                              epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.destroyAllIO ( guard, *this );
+    this->serviceIO.destroyAllIO ( cbGuard, guard, *this );
     this->~dbChannelIO ();
 }
 
 void dbChannelIO::destroy ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.destroyChannel ( guard, *this );
-    // dont access this pointer after above call because
+    this->serviceIO.destroyChannel ( cbGuard, guard, *this );
+    // don't access this pointer after above call because
     // object nolonger exists
 }
 
@@ -132,11 +134,12 @@ void dbChannelIO::subscribe (
 }
 
 void dbChannelIO::ioCancel ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & mutualExclusionGuard,
     const ioid & id )
 {
     mutualExclusionGuard.assertIdenticalMutex ( this->mutex );
-    this->serviceIO.ioCancel ( mutualExclusionGuard, *this, id );
+    this->serviceIO.ioCancel ( cbGuard, mutualExclusionGuard, *this, id );
 }
 
 void dbChannelIO::ioShow ( 
@@ -202,13 +205,6 @@ void * dbChannelIO::operator new ( size_t size,
     tsFreeList < dbChannelIO, 256, epicsMutexNOOP > & freeList )
 {
     return freeList.allocate ( size );
-}
-
-void * dbChannelIO::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 #ifdef CXX_PLACEMENT_DELETE

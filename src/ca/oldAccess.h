@@ -53,7 +53,8 @@ public:
         const char * pName, caCh * pConnCallBackIn, 
         void * pPrivateIn, capri priority );
     void destructor ( 
-        epicsGuard < epicsMutex > & guard );
+        CallbackGuard & cbGuard,
+        epicsGuard < epicsMutex > & mutexGuard );
 
     // legacy C API
     friend unsigned epicsShareAPI ca_get_host_name ( 
@@ -122,6 +123,7 @@ public:
         unsigned type, arrayElementCount count, const void *pValue, 
         cacWriteNotify &, cacChannel::ioid *pId = 0 );
     void ioCancel ( 
+        CallbackGuard & callbackGuard,
         epicsGuard < epicsMutex > & mutualExclusionGuard, 
         const cacChannel::ioid & );
     void ioShow ( 
@@ -162,7 +164,6 @@ private:
         unsigned type, arrayElementCount count );
 	oldChannelNotify ( const oldChannelNotify & );
 	oldChannelNotify & operator = ( const oldChannelNotify & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -195,7 +196,6 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
 	getCopy ( const getCopy & );
 	getCopy & operator = ( const getCopy & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -221,7 +221,6 @@ private:
         const char * pContext, unsigned type, arrayElementCount count );
 	getCallback ( const getCallback & );
 	getCallback & operator = ( const getCallback & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -245,7 +244,6 @@ private:
         unsigned type, arrayElementCount count );
 	putCallback ( const putCallback & );
 	putCallback & operator = ( const putCallback & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -259,8 +257,16 @@ public:
         evid * );
     ~oldSubscription ();
     oldChannelNotify & channel () const;
+    // The primary mutex must be released when calling the user's
+    // callback, and therefore a finite interval exists when we are
+    // moving forward with the intent to call the users callback
+    // but the users IO could be deleted during this interval.
+    // To prevent the user's callback from being called after
+    // destroying his IO we must past a guard for the callback
+    // mutex here.
     void cancel ( 
-        epicsGuard < epicsMutex > & guard );
+        CallbackGuard & callbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard );
     void * operator new ( size_t size, 
         tsFreeList < struct oldSubscription, 1024, epicsMutexNOOP > & );
     epicsPlacementDeleteOperator (( void *, 
@@ -278,7 +284,6 @@ private:
         const char *pContext, unsigned type, arrayElementCount count );
 	oldSubscription ( const oldSubscription & );
 	oldSubscription & operator = ( const oldSubscription & );
-    void * operator new ( size_t size );
     void operator delete ( void * );
 };
 
@@ -341,6 +346,8 @@ public:
     void destroySubscription ( epicsGuard < epicsMutex > &, oldSubscription & );
     epicsMutex & mutexRef () const;
 
+    template < class T >
+    void whenThereIsAnExceptionDestroySyncGroupIO ( epicsGuard < epicsMutex > &, T & );
 
     // legacy C API    
     friend int epicsShareAPI ca_create_channel (
@@ -368,6 +375,17 @@ public:
     friend int epicsShareAPI ca_sg_block ( const CA_SYNC_GID gid, ca_real timeout );
     friend int epicsShareAPI ca_sg_reset ( const CA_SYNC_GID gid );
     friend int epicsShareAPI ca_sg_test ( const CA_SYNC_GID gid );
+    friend int epicsShareAPI ca_sg_array_get ( const CA_SYNC_GID gid,
+                              chtype type, arrayElementCount count,
+                              chid pChan, void *pValue );
+    friend int epicsShareAPI ca_sg_array_put ( const CA_SYNC_GID gid,
+                              chtype type, arrayElementCount count,
+                              chid pChan, const void *pValue );
+    friend int ca_sync_group_destroy ( CallbackGuard & cbGuard,
+                                 epicsGuard < epicsMutex > & guard,
+                                ca_client_context & cac, const CA_SYNC_GID gid );
+    friend void sync_group_reset ( ca_client_context & client, 
+                                                  CASG & sg );
 
     // exceptions
     class noSocket {};
@@ -384,7 +402,7 @@ private:
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
     epicsThreadId createdByThread;
-    epics_auto_ptr < epicsGuard < epicsMutex > > pCallbackGuard;
+    epics_auto_ptr < CallbackGuard > pCallbackGuard;
     epics_auto_ptr < cacContext > pServiceContext;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
@@ -444,10 +462,11 @@ inline void oldChannelNotify::initiateConnect (
 }
 
 inline void oldChannelNotify::ioCancel (    
-    epicsGuard < epicsMutex > & guard, 
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard,
     const cacChannel::ioid & id )
 {
-    this->io.ioCancel ( guard, id );
+    this->io.ioCancel ( callbackGuard, mutualExclusionGuard, id );
 }
 
 inline void oldChannelNotify::ioShow ( 
@@ -492,9 +511,10 @@ inline void oldSubscription::operator delete ( void *pCadaver,
 #endif
 
 inline void oldSubscription::cancel ( 
-    epicsGuard < epicsMutex > & guard ) 
+    CallbackGuard & callbackGuard,
+    epicsGuard < epicsMutex > & mutualExclusionGuard )
 {
-    this->chan.ioCancel ( guard, this->id );
+    this->chan.ioCancel ( callbackGuard, mutualExclusionGuard, this->id );
 }
 
 inline oldChannelNotify & oldSubscription::channel () const
@@ -559,6 +579,33 @@ inline unsigned ca_client_context::sequenceNumberOfOutstandingIO (
 {
     // perhaps on SMP systems THERE should be lock/unlock around this
     return this->ioSeqNo;
+}
+
+template < class T >
+void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO ( 
+                            epicsGuard < epicsMutex > & guard, T & io )
+{
+    if ( this->pCallbackGuard.get() &&
+        this->createdByThread == epicsThreadGetIdSelf () ) {
+        io.destroy ( *this->pCallbackGuard.get(), guard );
+    }
+    else {
+        // dont reverse the lock hierarchy
+        epicsGuardRelease < epicsMutex > guardRelease ();
+        {
+            //
+            // we will definately stall out here if all of the
+            // following are true
+            //
+            // o user creates non-preemtive mode client library context
+            // o user doesnt periodically call a ca function
+            // o user calls this function from an auxiillary thread
+            //
+            CallbackGuard cbGuard ( this->cbMutex );
+            epicsGuard < epicsMutex > guard ( this->mutex );
+            io.destroy ( cbGuard, guard );
+        }
+    }
 }
         
 #endif // ifndef oldAccessh

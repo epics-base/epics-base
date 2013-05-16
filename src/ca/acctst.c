@@ -13,6 +13,7 @@
  * Authors:
  * Jeff Hill
  * Murali Shankar - initial versions of verifyMultithreadSubscr
+ * Michael Abbott - initial versions of multiSubscrDestroyNoLateCallbackTest
  * 
  */
 
@@ -1324,6 +1325,158 @@ void test_sync_groups ( chid chan, unsigned interestLevel  )
     SEVCHK ( status, NULL );
     status = ca_sg_delete ( gid2 );
     SEVCHK ( status, NULL );
+
+    showProgressEnd ( interestLevel );
+}
+
+#define multiSubscrDestroyNoLateCallbackEventCount 500
+
+struct MultiSubscrDestroyNoLateCallbackEventData {
+    evid m_id;
+    size_t m_nCallback;
+    int m_callbackIsOk;
+    struct MultiSubscrDestroyNoLateCallbackTestData * m_pTestData;
+};
+
+struct MultiSubscrDestroyNoLateCallbackTestData {
+    const char * m_pChanName;
+    chid m_chan;
+    epicsMutexId m_mutex;
+    epicsEventId m_testDoneEvent;
+    unsigned m_interestLevel;
+    struct MultiSubscrDestroyNoLateCallbackEventData
+        m_eventData [multiSubscrDestroyNoLateCallbackEventCount];
+};
+
+static void noLateCallbackDetect ( struct event_handler_args args )
+{
+    int callbackIsOk;
+    struct MultiSubscrDestroyNoLateCallbackEventData * const pEventData = args.usr;
+    epicsMutexLockStatus lockStatus = epicsMutexLock ( pEventData->m_pTestData->m_mutex );
+    callbackIsOk = pEventData->m_callbackIsOk;
+    pEventData->m_nCallback++;
+    epicsMutexUnlock ( pEventData->m_pTestData->m_mutex );
+    verify ( lockStatus == epicsMutexLockOK );
+    verify ( callbackIsOk );
+}
+
+static void multiSubscrDestroyNoLateCallbackThread ( void * pParm ) 
+{
+    struct MultiSubscrDestroyNoLateCallbackTestData * const pTestData = 
+              ( struct MultiSubscrDestroyNoLateCallbackTestData * ) pParm;
+    unsigned i, j;
+    int status;
+
+    status = ca_context_create ( ca_enable_preemptive_callback );
+    verify ( status == ECA_NORMAL );
+
+    status = ca_create_channel ( pTestData->m_pChanName, 0, 0,
+                           CA_PRIORITY_DEFAULT, &pTestData->m_chan );
+    status = ca_pend_io ( timeoutToPendIO );
+    SEVCHK ( status, "multiSubscrDestroyLateNoCallbackTest: channel connect failed" );
+    verify ( status == ECA_NORMAL );
+
+    /*
+     * create a set of subscriptions
+     */
+    for ( i=0; i < 10000; i++ ) {
+        unsigned int priorityOfTestThread;
+        for ( j=0; j < multiSubscrDestroyNoLateCallbackEventCount; j++ ) {
+            epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+            verify ( lockStatus == epicsMutexLockOK );
+            pTestData->m_eventData[j].m_nCallback = 0;
+            pTestData->m_eventData[j].m_callbackIsOk = TRUE;
+            pTestData->m_eventData[j].m_pTestData = pTestData;
+            epicsMutexUnlock ( pTestData->m_mutex );
+            SEVCHK ( ca_add_event ( DBR_GR_FLOAT, pTestData->m_chan, noLateCallbackDetect,
+                        &pTestData->m_eventData[j], &pTestData->m_eventData[j].m_id ) , NULL );
+        }
+        SEVCHK ( ca_flush_io(), NULL ); 
+
+        /*
+         * raise the priority of the current thread hoping to improve our 
+         * likelyhood of detecting a bug
+         */
+        priorityOfTestThread = epicsThreadGetPrioritySelf ();
+        epicsThreadSetPriority ( epicsThreadGetIdSelf(), epicsThreadPriorityHigh );
+
+
+        /*
+         * wait for the first subscription update to arrive
+         */
+        {
+            epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+            verify ( lockStatus == epicsMutexLockOK );
+            while ( pTestData->m_eventData[0].m_nCallback == 0 ) {
+                epicsMutexUnlock ( pTestData->m_mutex );
+                epicsThreadSleep ( 50e-6 );
+                lockStatus = epicsMutexLock ( pTestData->m_mutex );
+                verify ( lockStatus == epicsMutexLockOK );
+            }
+            epicsMutexUnlock ( pTestData->m_mutex );
+        }
+        /*
+         * try to destroy all of the subscriptions at precisely the same time that
+         * their first callbacks are running
+         */
+        for ( j=0; j < multiSubscrDestroyNoLateCallbackEventCount; j++ ) {
+            SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
+            epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+            verify ( lockStatus == epicsMutexLockOK );
+            pTestData->m_eventData[j].m_callbackIsOk = FALSE;
+            epicsMutexUnlock ( pTestData->m_mutex );
+        }
+        /*
+         * return to the original priority
+         */
+        epicsThreadSetPriority ( epicsThreadGetIdSelf(), priorityOfTestThread );
+
+        if ( i % 1000 == 0 ) {
+            showProgress ( pTestData->m_interestLevel );
+        }
+    }
+
+    SEVCHK ( ca_clear_channel ( pTestData->m_chan ), NULL );
+
+    ca_context_destroy ();
+
+    epicsEventSignal ( pTestData->m_testDoneEvent );
+}
+
+/*
+ * verify that, in a preemtive callback mode client, a subscription callback never 
+ * comes after the subscription is destroyed
+ */
+static void multiSubscrDestroyNoLateCallbackTest ( const char *pName, unsigned interestLevel )
+{
+    struct MultiSubscrDestroyNoLateCallbackTestData * pTestData;
+
+    showProgressBegin ( "multiSubscrDestroyNoLateCallbackTest", interestLevel );
+
+    pTestData = calloc ( 1u, sizeof ( struct MultiSubscrDestroyNoLateCallbackTestData ) );
+    verify ( pTestData );
+    pTestData->m_mutex = epicsMutexMustCreate (); 
+    pTestData->m_testDoneEvent = epicsEventMustCreate ( epicsEventEmpty );
+    pTestData->m_pChanName = pName;
+    pTestData->m_interestLevel = interestLevel;
+    epicsThreadMustCreate (
+                      "multiSubscrDestroyNoLateCallbackTest",
+                      epicsThreadPriorityLow, 
+                      epicsThreadGetStackSize ( epicsThreadStackMedium ),
+                      multiSubscrDestroyNoLateCallbackThread,
+                      pTestData );
+
+    /*
+     * wait for test to complete
+     */
+    epicsEventMustWait ( pTestData->m_testDoneEvent );
+
+    /*
+     * cleanup
+     */
+    epicsMutexDestroy ( pTestData->m_mutex );
+    epicsEventDestroy ( pTestData->m_testDoneEvent );
+    free ( pTestData );
 
     showProgressEnd ( interestLevel );
 }
@@ -3262,6 +3415,11 @@ int acctst ( const char * pName, unsigned interestLevel, unsigned channelCount,
         sprintf ( tmpString, "%u", maxArrayBytes );
         epicsEnvSet ( "EPICS_CA_MAX_ARRAY_BYTES", tmpString ); 
     }
+
+    /*
+     * this test creates, and then destroys, a private CA context
+     */
+    multiSubscrDestroyNoLateCallbackTest ( pName, interestLevel );
 
     status = ca_context_create ( select );
     SEVCHK ( status, NULL );

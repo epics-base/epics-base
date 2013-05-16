@@ -45,7 +45,7 @@ tcpRecvWatchdog::~tcpRecvWatchdog ()
 }
 
 epicsTimerNotify::expireStatus
-tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ ) // X aCC 361
+tcpRecvWatchdog::expire ( const epicsTime & /* currentTime */ )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
     if ( this->shuttingDown ) {

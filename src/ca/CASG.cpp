@@ -25,8 +25,6 @@
 #include "cac.h"
 #include "sgAutoPtr.h"
 
-casgRecycle::~casgRecycle () {}
-
 CASG::CASG ( epicsGuard < epicsMutex > & guard, ca_client_context & cacIn ) :
     client ( cacIn ), magic ( CASG_MAGIC )
 {
@@ -38,12 +36,13 @@ CASG::~CASG ()
 }
 
 void CASG::destructor ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
 
     if ( this->verify ( guard ) ) {
-        this->reset ( guard );
+        this->reset ( cbGuard, guard );
         this->client.uninstallCASG ( guard, *this );
         this->magic = 0;
     }
@@ -127,36 +126,37 @@ int CASG::block (
         delay = cur_time - beg_time;
     }
 
-    this->reset ( guard );
-
     return status;
 }
 
 void CASG::reset ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
-    this->destroyCompletedIO ( guard );
-    this->destroyPendingIO ( guard );
+    this->destroyCompletedIO ( cbGuard, guard );
+    this->destroyPendingIO ( cbGuard, guard );
 }
 
 // lock must be applied
 void CASG::destroyCompletedIO ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     syncGroupNotify * pNotify;
     while ( ( pNotify = this->ioCompletedList.get () ) ) {
-        pNotify->destroy ( guard, * this );
+        pNotify->destroy ( cbGuard, guard );
     }
 }
 
 void CASG::destroyPendingIO ( 
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     while ( syncGroupNotify * pNotify = this->ioPendingList.first () ) {
-        pNotify->cancel ( guard );
+        pNotify->cancel ( cbGuard, guard );
         // cancel must release the guard while 
         // canceling put callbacks so we
         // must double check list membership
@@ -166,7 +166,7 @@ void CASG::destroyPendingIO (
         else {
             this->ioCompletedList.remove ( *pNotify );
         }
-        pNotify->destroy ( guard, *this );
+        pNotify->destroy ( cbGuard, guard );
     }
 }
 
@@ -201,10 +201,11 @@ void CASG::show (
 }
 
 bool CASG::ioComplete (
+    CallbackGuard & cbGuard,
     epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
-    this->destroyCompletedIO ( guard );
+    this->destroyCompletedIO ( cbGuard, guard );
     return this->ioPendingList.count () == 0u;
 }
 
@@ -212,9 +213,9 @@ void CASG::put ( epicsGuard < epicsMutex > & guard, chid pChan,
     unsigned type, arrayElementCount count, const void * pValue )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
-    sgAutoPtr < syncGroupWriteNotify > pNotify ( guard, *this, this->ioPendingList );
+    sgAutoPtr < syncGroupWriteNotify > pNotify ( guard, *this );
     pNotify = syncGroupWriteNotify::factory ( 
-        this->freeListWriteOP, *this, pChan );
+        this->freeListWriteOP, *this, & CASG :: recycleWriteNotifyIO, pChan );
     pNotify->begin ( guard, type, count, pValue );
     pNotify.release ();
 }
@@ -223,9 +224,9 @@ void CASG::get ( epicsGuard < epicsMutex > & guard, chid pChan,
                 unsigned type, arrayElementCount count, void *pValue )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
-    sgAutoPtr < syncGroupReadNotify > pNotify ( guard, *this, this->ioPendingList );
+    sgAutoPtr < syncGroupReadNotify > pNotify ( guard, *this );
     pNotify = syncGroupReadNotify::factory ( 
-        this->freeListReadOP, *this, pChan, pValue );
+        this->freeListReadOP, *this, & CASG :: recycleReadNotifyIO, pChan, pValue );
     pNotify->begin ( guard, type, count );
     pNotify.release ();
 }
@@ -241,18 +242,18 @@ void CASG::completionNotify (
     }
 }
 
-void CASG::recycleSyncGroupWriteNotify ( 
-    epicsGuard < epicsMutex > & guard, syncGroupWriteNotify & io )
-{
-    guard.assertIdenticalMutex ( this->client.mutexRef() );
-    this->freeListWriteOP.release ( & io );
-}
-
-void CASG::recycleSyncGroupReadNotify ( 
-    epicsGuard < epicsMutex > & guard, syncGroupReadNotify & io )
+void CASG :: recycleReadNotifyIO ( epicsGuard < epicsMutex > & guard, 
+                            syncGroupReadNotify & io )
 {
     guard.assertIdenticalMutex ( this->client.mutexRef() );
     this->freeListReadOP.release ( & io );
+}
+
+void CASG :: recycleWriteNotifyIO ( epicsGuard < epicsMutex > & guard, 
+                            syncGroupWriteNotify & io )
+{
+    guard.assertIdenticalMutex ( this->client.mutexRef() );
+    this->freeListWriteOP.release ( & io );
 }
 
 int CASG :: printFormated ( const char *pformat, ... )
@@ -293,13 +294,6 @@ void CASG::exception (
             guard, status, pContext, pFileName, 
             lineNo, chan, type, count, op );
     }
-}
-
-void * CASG::operator new ( size_t ) // X aCC 361
-{
-    // The HPUX compiler seems to require this even though no code
-    // calls it directly
-    throw std::logic_error ( "why is the compiler calling private operator new" );
 }
 
 void CASG::operator delete ( void * )

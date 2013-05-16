@@ -55,7 +55,7 @@ class netSubscription;
 // used to control access to cac's recycle routines which
 // should only be indirectly invoked by CAC when its lock
 // is applied
-class cacRecycle {              // X aCC 655
+class cacRecycle {
 public:
     virtual void recycleReadNotifyIO ( 
         epicsGuard < epicsMutex > &, netReadNotifyIO &io ) = 0;
@@ -155,7 +155,8 @@ public:
         unsigned type, arrayElementCount nElem, unsigned mask, 
         cacStateNotify &, bool channelIsInstalled );
     bool destroyIO (
-        epicsGuard < epicsMutex > & guard, 
+        CallbackGuard & callbackGuard,
+        epicsGuard < epicsMutex > & mutualExclusionGuard,
         const cacChannel::ioid & idIn, 
         nciu & chan );
     void disconnectAllIO ( 
@@ -166,11 +167,6 @@ public:
     void ioShow ( 
         epicsGuard < epicsMutex > & guard,
         const cacChannel::ioid &id, unsigned level ) const;
-
-    // sync group routines
-    CASG * lookupCASG ( epicsGuard < epicsMutex > &, unsigned id );
-    void installCASG ( epicsGuard < epicsMutex > &, CASG & );
-    void uninstallCASG ( epicsGuard < epicsMutex > &, CASG & );
 
     // exception generation
     void exception ( 

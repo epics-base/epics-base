@@ -1938,8 +1938,8 @@ Termination Appear to be Ignored</a></h3>
 <p>Short lived CA client applications that issue a CA put request and then
 immediately exit the process (return from <code>main</code> or call
 <code>exit</code>) may find that there request isn't executed. To guarantee
-that the request is sent call <code>ca_flush</code> followed by
-<code>ca_context_destroy</code> prior to terminating the process.</p>
+that the request is sent call <code>ca_flush_io()</code> followed by
+<code>ca_context_destroy()</code> prior to terminating the process.</p>
 
 <h3><a name="Problems">ENOBUFS Messages</a></h3>
 
@@ -2648,7 +2648,7 @@ get called in the correct order.</p>
 resources used by the client library such as sockets and allocated memory are
 automatically released by the system when the process exits and
 ca_context_destroy() hasn't been called, but on light weight systems such as
-vxWorks or RTEMS no cleanup occurs unless the application call
+vxWorks or RTEMS no cleanup occurs unless the application calls
 ca_context_destroy().</p>
 
 <h4>Returns</h4>
@@ -2661,16 +2661,10 @@ ca_context_destroy().</p>
 
 <h3><code><a name="ca_create_channel">ca_create_channel()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-typedef void ( *pCallBack ) (
-         struct connection_handler_args );
-int ca_create_channel
-(
-        const char     *PROCESS_VARIABLE_NAME, 
-        caCh           *USERFUNC, 
-        void           *PUSER,
-        capri          priority,
-        chid           *PCHID
-);</pre>
+typedef void ( caCh ) (struct connection_handler_args);
+int ca_create_channel (const char *PVNAME,
+        caCh *USERFUNC, void *PUSER,
+        capri PRIORITY, chid *PCHID );</pre>
 
 <h4>Description</h4>
 
@@ -2719,7 +2713,7 @@ time.</p>
 
 <h4>Arguments</h4>
 <dl>
-  <dt><code>PROCESS_VARIABLE_NAME</code></dt>
+  <dt><code>PVNAME</code></dt>
     <dd>A nil terminated process variable name string. EPICS process control
       function block database variable names are of the form "&lt;record
       name&gt;.&lt;field name&gt;". If the field name and the period separator
@@ -2818,17 +2812,15 @@ subscriptions (monitors) registered with the channel.</p>
 <pre>#include &lt;cadef.h&gt;
 int ca_put ( chtype TYPE, 
         chid CHID, void *PVALUE ); 
-int ca_array_put ( chtype TYPE, 
-        unsigned long COUNT, 
+int ca_array_put ( chtype TYPE, unsigned long COUNT, 
         chid CHID, const void *PVALUE);
-typedef void ( *pCallBack ) (struct event_handler_args );
+typedef void ( caEventCallBackFunc ) (struct event_handler_args);
 int ca_put_callback ( chtype TYPE, 
         chid CHID, const void *PVALUE, 
-        pCallBack PFUNC, void *USERARG ); 
-int ca_array_put_callback ( chtype TYPE, 
-        unsigned long COUNT, 
+        caEventCallBackFunc PFUNC, void *USERARG ); 
+int ca_array_put_callback ( chtype TYPE, unsigned long COUNT, 
         chid CHID, const void *PVALUE, 
-        pCallBack PFUNC, void *USERARG );</pre>
+        caEventCallBackFunc PFUNC, void *USERARG );</pre>
 
 <h4>Description</h4>
 
@@ -2948,12 +2940,13 @@ int ca_get ( chtype TYPE,
         chid CHID, void *PVALUE );
 int ca_array_get ( chtype TYPE, unsigned long COUNT,
         chid CHID, void *PVALUE );
-typedef void ( *pCallBack ) (struct event_handler_args );
+typedef void ( caEventCallBackFunc ) (struct event_handler_args);
 int ca_get_callback ( chtype TYPE,
-        chid CHID, pCallBack USERFUNC, void *USERARG);
+        chid CHID,
+        caEventCallBackFunc USERFUNC, void *USERARG);
 int ca_array_get_callback ( chtype TYPE, unsigned long COUNT,
         chid CHID,
-        pCallBack USERFUNC, void *USERARG );</pre>
+        caEventCallBackFunc USERFUNC, void *USERARG);</pre>
 
 <h4>Description</h4>
 
@@ -3051,11 +3044,10 @@ when a CA get request is initiated.</p>
 
 <h3><code><a name="ca_add_event">ca_create_subscription()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-typedef void ( *pCallBack ) (
-        struct event_handler_args );
-int ca_create_subscription ( chtype TYPE, 
-        unsigned long COUNT, chid CHID, 
-        unsigned long MASK, pCallBack USERFUNC, void *USERARG, 
+typedef void ( caEventCallBackFunc ) (struct event_handler_args);
+int ca_create_subscription ( chtype TYPE, unsigned long COUNT,
+        chid CHID, unsigned long MASK,
+        caEventCallBackFunc USERFUNC, void *USERARG, 
         evid *PEVID );</pre>
 
 <h4>Description</h4>
@@ -3540,7 +3532,7 @@ get the lowest latency response to the arrival of CA messages.</p>
 <h3><code><a name="ca_replace_printf_handler">ca_replace_printf_handler
 ()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-typedef int caPrintfFunc ( const char *pFromat, va_list args );
+typedef int caPrintfFunc ( const char *pFormat, va_list args );
 int ca_replace_printf_handler ( caPrintfFunc *PFUNC );</pre>
 
 <h4>Description</h4>
@@ -3571,8 +3563,9 @@ SEVCHK ( status, "failed to install my printf handler" );</pre>
 
 <h3><code><a name="ca_replace">ca_replace_access_rights_event()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-typedef void ( *pCallBack )( struct access_rights_handler_args );
-int ca_replace_access_rights_event ( chid CHAN, pCallBack PFUNC );</pre>
+typedef void ( caEventCallBackFunc )(struct access_rights_handler_args);
+int ca_replace_access_rights_event ( chid CHAN,
+        caEventCallBackFunc PFUNC );</pre>
 
 <h4>Description</h4>
 
@@ -4029,7 +4022,7 @@ SEVCHK ( status, Sync group delete failed );</pre>
 
 <h3><code><a name="ca_sg_block">ca_sg_block()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
-int ca_sg_block ( CA_SYNC_GID GID, double timeout );</pre>
+int ca_sg_block ( CA_SYNC_GID GID, double TIMEOUT );</pre>
 
 <h4>Description</h4>
 
@@ -4050,13 +4043,16 @@ access background activity while it is waiting.</p>
 
 <h4>Arguments</h4>
 <dl>
-  <dt>GID</dt>
+  <dt><code>GID</code></dt>
     <dd>Identifier of the synchronous group.</dd>
+  <dt><code>TIMEOUT</code></dt>
+    <dd>The duration to block in this routine in seconds. A timeout of zero
+      seconds blocks forever.</dd>
 </dl>
 
 <h4>Examples</h4>
 <pre>CA_SYNC_GID gid;
-status = ca_sg_block(gid);
+status = ca_sg_block(gid, 0.0);
 SEVCHK(status, Sync group block failed);</pre>
 
 <h4>Returns</h4>
@@ -4267,8 +4263,8 @@ reissued.</p>
 
 <h3><code><a name="ca_client_status">ca_client_status()</a></code></h3>
 <pre>int ca_client_status ( unsigned level );
-int ca_context_status ( struct ca_client_context *, 
-       unsigned level );</pre>
+int ca_context_status ( struct ca_client_context *CONTEXT, 
+       unsigned LEVEL );</pre>
 
 <h4>Description</h4>
 
@@ -4279,7 +4275,7 @@ ca_client_status() prints information about the calling threads CA context.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>CONTEXT</code></dt>
-    <dd>A pointer to the CA context to join with.</dd>
+    <dd>A pointer to the CA context to examine.</dd>
   <dt><code>LEVEL</code></dt>
     <dd>The interest level. Increasing level produces increasing detail.</dd>
 </dl>

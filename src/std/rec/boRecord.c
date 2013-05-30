@@ -353,7 +353,7 @@ static void checkAlarms(boRecord *prec)
 
         /* check for udf alarm */
         if(prec->udf == TRUE ){
-			recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
+			recGblSetSevr(prec,UDF_ALARM,prec->udfs);
         }
 
         /* check for  state alarm */

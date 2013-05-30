@@ -197,7 +197,7 @@ static long process(mbboDirectRecord *prec)
             prec->val = val;
         }
         else if (prec->udf) {
-            recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+            recGblSetSevr(prec, UDF_ALARM, prec->udfs);
             goto CONTINUE;
         }
 

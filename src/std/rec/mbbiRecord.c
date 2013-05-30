@@ -303,7 +303,7 @@ static void checkAlarms(mbbiRecord *prec, epicsTimeStamp *timeLast)
 
     /* Check for UDF alarm */
     if (prec->udf) {
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         prec->afvl = 0;
         return;
     }

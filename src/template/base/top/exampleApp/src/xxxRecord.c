@@ -203,7 +203,7 @@ static void checkAlarms(xxxRecord *prec)
 	unsigned short	hhsv, llsv, hsv, lsv;
 
 	if(prec->udf == TRUE ){
-		recGblSetSevr(prec,UDF_ALARM,INVALID_ALARM);
+		recGblSetSevr(prec,UDF_ALARM,prec->udfs);
 		return;
 	}
 	hihi = prec->hihi; lolo = prec->lolo; high = prec->high; low = prec->low;

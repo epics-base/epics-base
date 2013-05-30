@@ -323,7 +323,7 @@ static void checkAlarms(aiRecord *prec, epicsTimeStamp *lastTime)
     epicsEnum16 asev;
 
     if (prec->udf) {
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         prec->afvl = 0;
         return;
     }

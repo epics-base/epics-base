@@ -526,7 +526,7 @@ static void checkAlarms(calcoutRecord *prec)
     epicsEnum16 asev;
 
     if (prec->udf) {
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         return;
     }
 
@@ -591,7 +591,7 @@ static void execOutput(calcoutRecord *prec)
         break;
     }
     if (prec->udf){
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
     }
 
     /* Check to see what to do if INVALID */

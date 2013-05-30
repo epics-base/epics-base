@@ -33,6 +33,7 @@
 #include "caeventmask.h"
 
 #define epicsExportSharedSymbols
+#include "alarm.h"
 #include "dbBase.h"
 #include "dbFldTypes.h"
 #include "link.h"
@@ -414,6 +415,10 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
 
     /* Reset the process active field */
     precord->pact = FALSE;
+
+    /* Initial UDF severity */
+    if (precord->udf && precord->stat == UDF_ALARM)
+    	precord->sevr = precord->udfs;
 
     /* Init DSET NOTE that result may be NULL */
     pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);

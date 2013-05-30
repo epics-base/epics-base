@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New Undefined Severity field UDFS</h3>
+
+<p>A new field has been added to dbCommon which configures the alarm severity
+associated with the record being undefined (when UDF=TRUE). The default value is
+INVALID so old databases will not be affected, but now individual records can be
+configured to have a lower severity or even no alarm when undefined. Be careful
+when changing this on applications where the IVOA field of output records is
+used, IVOA still requires an INVALID severity to trigger value replacement.</p>
+
 <h3>New build target <q>tapfiles</q></h3>
 
 <p>This new make target runs the same tests as the <q>runtests</q> target, but

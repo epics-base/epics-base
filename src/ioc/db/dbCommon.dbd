@@ -110,7 +110,6 @@
 		prompt("Alarm Severity")
 		special(SPC_NOMOD)
 		menu(menuAlarmSevr)
-		initial("INVALID")
 	}
 	field(NSTA,DBF_MENU) {
 		prompt("New Alarm Status")
@@ -240,6 +239,13 @@
 		pp(TRUE)
 		interest(1)
 		initial("1")
+	}
+	field(UDFS,DBF_MENU) {
+		prompt("Undefined Alarm Sevrty")
+		promptgroup(GUI_COMMON)
+		interest(1)
+		menu(menuAlarmSevr)
+		initial("INVALID")
 	}
 	%#include "epicsTime.h"
 	field(TIME,DBF_NOACCESS) {

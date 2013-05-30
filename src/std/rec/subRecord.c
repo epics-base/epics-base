@@ -320,7 +320,7 @@ static void checkAlarms(subRecord *prec)
     epicsEnum16 asev;
 
     if (prec->udf) {
-        recGblSetSevr(prec, UDF_ALARM, INVALID_ALARM);
+        recGblSetSevr(prec, UDF_ALARM, prec->udfs);
         return;
     }
 

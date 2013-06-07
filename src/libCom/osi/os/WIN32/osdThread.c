@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -248,10 +247,7 @@ static void epicsParmCleanupWIN32 ( win32ThreadParam * pParm )
         ellDelete ( & pGbl->threadList, & pParm->node );
         LeaveCriticalSection ( & pGbl->mutex );
 
-        /* close the handle if its an implicit thread id */
-        if ( ! pParm->funptr ) {
-            CloseHandle ( pParm->handle );
-        }
+        CloseHandle ( pParm->handle );
         free ( pParm );
         TlsSetValue ( pGbl->tlsIndexThreadLibraryEPICS, 0 );
     }

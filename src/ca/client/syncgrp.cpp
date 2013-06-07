@@ -134,15 +134,15 @@ extern "C" int epicsShareAPI ca_sg_block (
     if ( status == ECA_NORMAL ) {
         CASG * pcasg;
         {
-          epicsGuard < epicsMutex > guard ( pcac->mutex );
-          pcasg = pcac->lookupCASG ( guard, gid );
-          if ( pcasg ) {
-              status = pcasg->block (
-                  pcac->pCallbackGuard.get (), guard, timeout );
-          }
-          else {
-              status = ECA_BADSYNCGRP;
-          }
+            epicsGuard < epicsMutex > guard ( pcac->mutex );
+            pcasg = pcac->lookupCASG ( guard, gid );
+            if ( pcasg ) {
+                status = pcasg->block (
+                    pcac->pCallbackGuard.get (), guard, timeout );
+            }
+            else {
+                status = ECA_BADSYNCGRP;
+            }
         }
         if ( pcasg ) {
             sync_group_reset ( *pcac, *pcasg );

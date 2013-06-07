@@ -74,7 +74,7 @@ void dbSubscriptionIO::destructor ( CallbackGuard & cbGuard,
 }
 
 void dbSubscriptionIO::unsubscribe ( CallbackGuard & cbGuard, 
-                                epicsGuard < epicsMutex > & guard )
+    epicsGuard < epicsMutex > & guard )
 {
     guard.assertIdenticalMutex ( this->mutex );
     if ( this->es ) {

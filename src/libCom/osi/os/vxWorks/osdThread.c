@@ -52,12 +52,8 @@ static int *taskIdList = 0;
 int taskIdListSize = 0;
 static SEM_ID epicsThreadListMutex = 0;
 
-/*The following forces atReboot to be loaded*/
-extern int atRebootExtern;
-static struct pext {
-    int *pExtern;
-    struct pext *pext;
-} pext = {&atRebootExtern, &pext};
+/* This routine is found in atReboot.cpp */
+extern void atRebootRegister(void);
 
 /* definitions for implementation of epicsThreadPrivate */
 static void **papTSD = 0;
@@ -93,6 +89,7 @@ static int getOssPriorityValue(unsigned int osiPriority)
     }
 }
 
+#define THREAD_SEM_FLAGS (SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY)
 static void epicsThreadInit(void)
 {
     static int lock = 0;
@@ -104,13 +101,14 @@ static void epicsThreadInit(void)
         taskDelay(1);
 
     if (!done) {
-        epicsThreadOnceMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-	assert(epicsThreadOnceMutex);
-        epicsThreadListMutex = semMCreate(SEM_DELETE_SAFE|SEM_INVERSION_SAFE|SEM_Q_PRIORITY);
-	assert(epicsThreadListMutex);
+        epicsThreadOnceMutex = semMCreate(THREAD_SEM_FLAGS);
+        assert(epicsThreadOnceMutex);
+        epicsThreadListMutex = semMCreate(THREAD_SEM_FLAGS);
+        assert(epicsThreadListMutex);
         taskIdList = calloc(ID_LIST_CHUNK, sizeof(int));
         assert(taskIdList);
         taskIdListSize = ID_LIST_CHUNK;
+        atRebootRegister();
         done = 1;
     }
     lock = 0;

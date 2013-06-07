@@ -183,7 +183,7 @@ public:
     void show ( unsigned level ) const;
     void showAllIO ( const dbChannelIO & chan, unsigned level ) const;
     void destroyAllIO ( CallbackGuard & cbGuard,
-              epicsGuard < epicsMutex > &, dbChannelIO & chan );
+            epicsGuard < epicsMutex > &, dbChannelIO & chan );
     void ioCancel ( CallbackGuard &, epicsGuard < epicsMutex > &,
         dbChannelIO & chan, const cacChannel::ioid &id );
     void ioShow ( epicsGuard < epicsMutex > &,

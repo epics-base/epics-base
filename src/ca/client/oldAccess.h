@@ -348,7 +348,7 @@ public:
 
     template < class T >
     void whenThereIsAnExceptionDestroySyncGroupIO ( epicsGuard < epicsMutex > &, T & );
-   
+
     // legacy C API
     friend int epicsShareAPI ca_create_channel (
         const char * name_str, caCh * conn_func, void * puser,

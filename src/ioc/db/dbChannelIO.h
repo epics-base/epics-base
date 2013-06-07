@@ -111,8 +111,8 @@ private:
         epicsGuard < epicsMutex > & ) const;
     unsigned long nativeElementCount (
         epicsGuard < epicsMutex > & ) const;
-	  dbChannelIO ( const dbChannelIO & );
-	  dbChannelIO & operator = ( const dbChannelIO & );
+    dbChannelIO ( const dbChannelIO & );
+    dbChannelIO & operator = ( const dbChannelIO & );
     void operator delete ( void * );
 };
 

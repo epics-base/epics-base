@@ -753,16 +753,16 @@ epicsShareFunc int epicsShareAPI ca_clear_subscription ( evid pMon )
     ca_client_context & cac = chan.getClientCtx ();
     // !!!! the order in which we take the mutex here prevents deadlocks
     {
-      epicsGuard < epicsMutex > guard ( cac.mutex );
-      try {
-          // if this stalls out on a live circuit then an exception
-          // can be forthcoming which we must ignore as the clear
-          // request must always be successful
-          chan.eliminateExcessiveSendBacklog ( guard );
-      }
-      catch ( cacChannel::notConnected & ) {
-          // intentionally ignored
-      }
+        epicsGuard < epicsMutex > guard ( cac.mutex );
+        try {
+            // if this stalls out on a live circuit then an exception
+            // can be forthcoming which we must ignore as the clear
+            // request must always be successful
+            chan.eliminateExcessiveSendBacklog ( guard );
+        }
+        catch ( cacChannel::notConnected & ) {
+            // intentionally ignored
+        }
     }
     if ( cac.pCallbackGuard.get() &&
         cac.createdByThread == epicsThreadGetIdSelf () ) {

@@ -755,6 +755,11 @@ long dbWriteRecordFP(
 
     dctonly = ((level>1) ? FALSE : TRUE);
     dbInitEntry(pdbbase,pdbentry);
+    if (precordTypename) {
+        if (*precordTypename == 0 || *precordTypename == '*')
+            precordTypename = 0;
+    }
+
     if(!precordTypename) {
 	status = dbFirstRecordType(pdbentry);
 	if(status) {
@@ -851,6 +856,10 @@ long dbWriteMenuFP(DBBASE *pdbbase,FILE *fp,const char *menuName)
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
+    if (menuName) {
+        if (*menuName == 0 || *menuName == '*')
+            menuName = 0;
+    }
     pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
     while(pdbMenu) {
 	if(menuName) {
@@ -896,6 +905,11 @@ long dbWriteRecordTypeFP(
 	fprintf(stderr,"pdbbase not specified\n");
 	return(-1);
     }
+    if (recordTypeName) {
+        if (*recordTypeName == 0 || *recordTypeName == '*')
+            recordTypeName = 0;
+    }
+
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType; pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
 	if(recordTypeName) {
@@ -3172,8 +3186,9 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
     devSup	*pdevSup;
     int		gotMatch;
 
-    if(recordTypeName) {
-        if(recordTypeName[0]==0 || recordTypeName[0] == '*') recordTypeName = 0;
+    if (recordTypeName) {
+        if (*recordTypeName == 0 || *recordTypeName == '*')
+            recordTypeName = 0;
     }
     if(!pdbbase) {
 	fprintf(stderr,"pdbbase not specified\n");

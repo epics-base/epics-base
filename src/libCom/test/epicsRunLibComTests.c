@@ -38,6 +38,7 @@ int macEnvExpandTest(void);
 int ringPointerTest(void);
 int ringBytesTest(void);
 int blockingSockTest(void);
+int epicsSockResolveTest(void);
 int taskwdTest(void);
 int epicsExitTest(void);
 
@@ -94,6 +95,8 @@ void epicsRunLibComTests(void)
     runTest(ringBytesTest);
 
     runTest(blockingSockTest);
+    
+    runTest(epicsSockResolveTest);
 
     runTest(taskwdTest);
 

@@ -13,6 +13,13 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Improvements to aToIPAddr()</h3>
+
+<p>The libCom routine aToIPAddr() and the vxWorks implementation of the
+associated hostToIPAddr() function have been modified to be able to look up
+hostnames that begin with one or more digits. The epicsSockResolveTest program
+was added to check this functionality.</p>
+
 <h4>Added osdFindSymbol for Windows</h4>
 
 <p>Dirk Zimoch implemented the epicsLoadLibrary(), epicsLoadError() and

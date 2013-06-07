@@ -48,17 +48,23 @@ MAIN(epicsTimeTest)
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(16 + nTimes * 18);
+    testPlan(12 + nTimes * 18);
 
-    {
+    try {
         const epicsTimeStamp epochTS = {0, 0};
         epicsTime epochET = epochTS;
         struct gm_tm_nano_sec epicsEpoch = epochET;
-        testOk1(epicsEpoch.ansi_tm.tm_sec == 0);
-        testOk1(epicsEpoch.ansi_tm.tm_min == 0);
-        testOk1(epicsEpoch.ansi_tm.tm_hour == 0);
-        testOk1(epicsEpoch.ansi_tm.tm_yday == 0);
-        testOk1(epicsEpoch.ansi_tm.tm_year == 90);
+
+        testOk(epicsEpoch.ansi_tm.tm_sec == 0 &&
+               epicsEpoch.ansi_tm.tm_min == 0 &&
+               epicsEpoch.ansi_tm.tm_hour == 0 &&
+               epicsEpoch.ansi_tm.tm_yday == 0 &&
+               epicsEpoch.ansi_tm.tm_year == 90,
+               "epicsTime_gmtime() for EPICS epoch");
+    }
+    catch ( ... ) {
+        testFail("epicsTime_gmtime() failed");
+        testAbort("Can't continue, check your OS!");
     }
 
     {   // badNanosecTest

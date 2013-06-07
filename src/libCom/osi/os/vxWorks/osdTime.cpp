@@ -67,14 +67,18 @@ void osdNTPReport(void)
 }
 
 
-// vxWorks localtime_r interface does not match POSIX standards
+// vxWorks localtime_r returns different things in different versions.
+// It can't fail though, so we just ignore the return value.
 int epicsTime_localtime(const time_t *clock, struct tm *result)
 {
-    return localtime_r(clock, result) == OK ? epicsTimeOK : epicsTimeERROR;
+    localtime_r(clock, result);
+    return epicsTimeOK;
 }
 
-// vxWorks gmtime_r interface does not match POSIX standards
+// vxWorks gmtime_r returns different things in different versions.
+// It can't fail though, so we just ignore the return value.
 int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
 {
-    return gmtime_r(pAnsiTime, pTM) == OK ? epicsTimeOK : epicsTimeERROR;
+    gmtime_r(pAnsiTime, pTM);
+    return epicsTimeOK;
 }

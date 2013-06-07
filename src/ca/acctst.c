@@ -1420,8 +1420,9 @@ static void multiSubscrDestroyNoLateCallbackThread ( void * pParm )
          * their first callbacks are running
          */
         for ( j=0; j < multiSubscrDestroyNoLateCallbackEventCount; j++ ) {
+            epicsMutexLockStatus lockStatus;
             SEVCHK ( ca_clear_event ( pTestData->m_eventData[j].m_id ) , NULL );
-            epicsMutexLockStatus lockStatus = epicsMutexLock ( pTestData->m_mutex );
+            lockStatus = epicsMutexLock ( pTestData->m_mutex );
             verify ( lockStatus == epicsMutexLockOK );
             pTestData->m_eventData[j].m_callbackIsOk = FALSE;
             epicsMutexUnlock ( pTestData->m_mutex );

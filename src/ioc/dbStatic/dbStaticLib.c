@@ -3210,7 +3210,30 @@ void  dbDumpDevice(DBBASE *pdbbase,const char *recordTypeName)
 	    printf("\tchoice:    %s\n",pdevSup->choice);
 	    printf("\tlink_type: %d\n",pdevSup->link_type);
 	    printf("\tpdset:     %p\n",(void *)pdevSup->pdset);
+            if (pdevSup->pdset) {
+                static const char *names[] = {
+                    " - report()",
+                    " - init()",
+                    " - init_record()",
+                    " - get_ioint_info()"
+                };
+                int i, n = pdevSup->pdset->number;
+                DEVSUPFUN *pfunc = &pdevSup->pdset->report;
+
+                printf("\t    number: %d\n", n);
+                for (i = 0; i < n; ++i, ++pfunc) {
+                    const char *name = (i < NELEMENTS(names)) ? names[i] : "";
+
+                    printf("\t    func %d: %p%s\n", i, (void *)*pfunc, name);
+                }
+            }
 	    printf("\tpdsxt:     %p\n",(void *)pdevSup->pdsxt);
+            if (pdevSup->pdsxt) {
+                printf("\t    add_record: %p\n",
+                    (void *)pdevSup->pdsxt->add_record);
+                printf("\t    del_record: %p\n",
+                    (void *)pdevSup->pdsxt->del_record);
+            }
 	}
 	if(recordTypeName) break;
     }

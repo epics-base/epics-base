@@ -15,6 +15,16 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Simplified generation of .dbd files</h3>
+
+<p>The Perl script <tt>makeIncludeDbd.pl</tt> has been removed and the rules
+that created an intermediate <tt><i>xxx</i>Include.dbd</tt> file from the
+Makefile variable <tt>xxx_DBD</tt> have been modified to generate the target
+<tt><i>xxx</i>.dbd</tt> file directly. This should simplify applications that
+might have had to provide dependency rules for the intermediate files in 3.15.
+Applications which provide their own <tt><i>xxx</i>Include.dbd</tt> source file
+will continue to have it expanded as before.</p>
+
 <h3>New Undefined Severity field UDFS</h3>
 
 <p>A new field has been added to dbCommon which configures the alarm severity

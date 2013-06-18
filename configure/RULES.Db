@@ -199,14 +199,14 @@ menu%.h$(DEP): menu%.dbd
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.dbd$(DEP): $(COMMON_DIR)/%Include.dbd 
+%.dbd$(DEP): %Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.dbd$(DEP): %Include.dbd
+%.dbd$(DEP):
 	@$(RM) $@
-	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $($*_DBD) > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
 %.db$(RAW)$(DEP): %.substitutions
@@ -292,21 +292,16 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.dbd: $(COMMON_DIR)/%Include.dbd
-	$(ECHO) "Expanding created dbd file $(notdir $<)"
-	@$(RM) $(notdir $@)
-	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
-	@$(MV) $(notdir $@) $@
-
-$(COMMON_DIR)/%.dbd: %Include.dbd 
+$(COMMON_DIR)/%.dbd: %Include.dbd
 	$(ECHO) "Expanding dbd file $<"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%Include.dbd:
+$(COMMON_DIR)/%.dbd:
+	$(ECHO) "Creating dbd file $(notdir $<)"
 	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/makeIncludeDbd.pl $($*_DBD) $(notdir $@)
+	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $($*_DBD)
 	@$(MV) $(notdir $@) $@
 
 $(INSTALL_DBD)/%: $(COMMON_DIR)/%

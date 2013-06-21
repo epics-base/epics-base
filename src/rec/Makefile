@@ -81,3 +81,5 @@ endif
 
 include $(TOP)/configure/RULES
 
+# Parallel builds need these dependencies
+$(foreach rec, $(DBDINC), $(eval $(rec)$(OBJ): $(COMMON_DIR)/$(rec).h))

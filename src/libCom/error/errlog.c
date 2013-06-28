@@ -331,11 +331,12 @@ epicsShareFunc void epicsShareAPI errlogAddListener(
     ellAdd(&pvtData.listenerList,&plistenerNode->node);
     epicsMutexUnlock(pvtData.listenerLock);
 }
-    
-epicsShareFunc void epicsShareAPI errlogRemoveListener(
-    errlogListener listener)
+
+epicsShareFunc int epicsShareAPI errlogRemoveListeners(
+    errlogListener listener, void *pPrivate)
 {
     listenerNode *plistenerNode;
+    int count = 0;
 
     errlogInit(0);
     if (!pvtData.atExit)
@@ -343,21 +344,25 @@ epicsShareFunc void epicsShareAPI errlogRemoveListener(
 
     plistenerNode = (listenerNode *)ellFirst(&pvtData.listenerList);
     while (plistenerNode) {
-        if (plistenerNode->listener==listener) {
+        listenerNode *pnext = (listenerNode *)ellNext(&plistenerNode->node);
+
+        if (plistenerNode->listener == listener &&
+            plistenerNode->pPrivate == pPrivate) {
             ellDelete(&pvtData.listenerList, &plistenerNode->node);
-            free((void *)plistenerNode);
-            break;
+            free(plistenerNode);
+            ++count;
         }
-        plistenerNode = (listenerNode *)ellNext(&plistenerNode->node);
+        plistenerNode = pnext;
     }
 
     if (!pvtData.atExit)
         epicsMutexUnlock(pvtData.listenerLock);
 
-    if (!plistenerNode) {
+    if (count == 0) {
         fprintf(pvtData.console,
-            "errlogRemoveListener did not find listener\n");
+            "errlogRemoveListeners: No listeners found\n");
     }
+    return count;
 }
 
 epicsShareFunc int epicsShareAPI eltc(int yesno)

@@ -57,8 +57,8 @@ epicsShareFunc errlogSevEnum epicsShareAPI errlogGetSevToLog(void);
 
 epicsShareFunc void epicsShareAPI errlogAddListener(
     errlogListener listener, void *pPrivate);
-epicsShareFunc void epicsShareAPI errlogRemoveListener(
-    errlogListener listener);
+epicsShareFunc int epicsShareAPI errlogRemoveListeners(
+    errlogListener listener, void *pPrivate);
 
 epicsShareFunc int epicsShareAPI eltc(int yesno);
 epicsShareFunc int errlogSetConsole(FILE *stream);

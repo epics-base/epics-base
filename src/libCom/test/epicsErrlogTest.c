@@ -142,7 +142,7 @@ MAIN(epicsErrlogTest)
     char msg[256];
     clientPvt pvt, pvt2;
 
-    testPlan(29);
+    testPlan(32);
 
     strcpy(msg, truncmsg);
 
@@ -186,8 +186,9 @@ MAIN(epicsErrlogTest)
     testOk1(pvt.count == 2);
     testOk1(pvt2.count == 1);
 
-    /* Removes the first listener, but the second remains */
-    errlogRemoveListener(&logClient);
+    /* Removes the first listener */
+    testOk(1 == errlogRemoveListeners(&logClient, &pvt),
+        "Removed 1 listener");
 
     pvt2.expect = "Testing3";
     pvt2.checkLen = strlen(pvt2.expect);
@@ -198,8 +199,10 @@ MAIN(epicsErrlogTest)
     testOk1(pvt.count == 2);
     testOk1(pvt2.count == 2);
 
-    /* Remove the second listener */
-    errlogRemoveListener(&logClient);
+    /* Add the second listener again, then remove both instances */
+    errlogAddListener(&logClient, &pvt2);
+    testOk(2 == errlogRemoveListeners(&logClient, &pvt2),
+        "Removed 2 listeners");
 
     errlogPrintfNoConsole("Something different");
     errlogFlush();
@@ -314,7 +317,8 @@ MAIN(epicsErrlogTest)
     testOk1(pvt.count == N+1);
 
     /* Clean up */
-    errlogRemoveListener(&logClient);
+    testOk(1 == errlogRemoveListeners(&logClient, &pvt),
+        "Removed 1 listener");
 
     testLogPrefix();
 

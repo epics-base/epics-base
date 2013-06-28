@@ -15,6 +15,16 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>errlogRemoveListener() routine changed</h3>
+
+<p>Code that calls <tt>errlogRemoveListener(myfunc)</tt> must be modified to use
+the new, safer routine <tt>errlogRemoveListeners(myfunc, &amp;pvt)</tt> instead.
+The replacement routine takes a second argument which must be the same private
+pointer that was passed to <tt>errlogAddListener()</tt> when adding that
+listener. It also deletes all matching listeners (hence the new plural name) and
+returns how many were actually deleted, whereas the previous routine only
+removed the first listener that matched.</p>
+
 <h3>Simplified generation of .dbd files</h3>
 
 <p>The Perl script <tt>makeIncludeDbd.pl</tt> has been removed and the rules

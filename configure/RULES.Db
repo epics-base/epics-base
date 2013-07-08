@@ -10,14 +10,14 @@
 
 #####################################################  vpath
 
-vpath %.dbd $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DBD))
-vpath %.db $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB))
-vpath %.vdb $(USR_VPATH) $(GENERIC_SRC_DIRS) $(dir $(DB))
-vpath %.substitutions $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
-vpath %.template $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
-vpath bpt%.data $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
-vpath %.acf $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
-vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
+vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
+vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
+vpath %.vdb $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
+vpath %.substitutions $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath %.template $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath bpt%.data $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath %.acf $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath %.acs $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 
 ##################################################### dbflags dbdflags
 
@@ -189,6 +189,11 @@ realclean: clean
 	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
+%Record.h$(DEP): ../%Record.dbd
+	@$(RM) $@
+	@$(DBTORECORDTYPEH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
 menu%.h$(DEP): $(COMMON_DIR)/menu%.dbd
 	@$(RM) $@
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
@@ -199,7 +204,17 @@ menu%.h$(DEP): menu%.dbd
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
+menu%.h$(DEP): ../menu%.dbd
+	@$(RM) $@
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
 %.dbd$(DEP): %Include.dbd
+	@$(RM) $@
+	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
+%.dbd$(DEP): ../%Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
@@ -215,11 +230,25 @@ menu%.h$(DEP): menu%.dbd
 	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
 	@echo "$@: $(TEMPLATE_FILENAME)" >> $@
 
+%.db$(RAW)$(DEP): ../%.substitutions
+	@$(RM) $@
+	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME)
+	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
+	@echo "$@: $(TEMPLATE_FILENAME)" >> $@
+
 %.db$(RAW)$(DEP): %.template
 	@$(RM) $@
 	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $<
 
+%.db$(RAW)$(DEP): ../%.template
+	@$(RM) $@
+	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $<
+
 %.acf$(DEP): %.acs
+	@$(RM) $@
+	@$(ACFDEPENDS_CMD)
+
+%.acf$(DEP): ../%.acs
 	@$(RM) $@
 	@$(ACFDEPENDS_CMD)
 
@@ -245,6 +274,10 @@ $(INSTALL_DB)/%.substitutions: %.substitutions
 	$(ECHO) "Installing db file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
+$(INSTALL_DB)/%.substitutions: ../%.substitutions
+	$(ECHO) "Installing db file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
 .PRECIOUS: $(COMMON_DIR)/%.substitutions
 
 ##################################################### Template files
@@ -256,6 +289,10 @@ $(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
 	@$(RM) $@.VAR
 
 $(INSTALL_DB)/%.template: %.template
+	$(ECHO) "Installing db file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(INSTALL_DB)/%.template: ../%.template
 	$(ECHO) "Installing db file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
@@ -273,12 +310,22 @@ $(COMMON_DIR)/%Record.h: %Record.dbd
 	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
+$(COMMON_DIR)/%Record.h: ../%Record.dbd
+	@$(RM) $(notdir $@)
+	$(DBTORECORDTYPEH) $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
 $(COMMON_DIR)/menu%.h: $(COMMON_DIR)/menu%.dbd
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/menu%.h: menu%.dbd
+	@$(RM) $(notdir $@)
+	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/menu%.h: ../menu%.dbd
 	@$(RM) $(notdir $@)
 	$(DBTOMENUH) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
@@ -292,7 +339,18 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
 
+$(COMMON_DIR)/bpt%.dbd: ../bpt%.data 
+	@$(RM) $(notdir $@)
+	$(MAKEBPT) $< $(notdir $@)
+	@$(MV) $(notdir $@) $@
+
 $(COMMON_DIR)/%.dbd: %Include.dbd
+	$(ECHO) "Expanding dbd file $<"
+	@$(RM) $(notdir $@)
+	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.dbd: ../%Include.dbd
 	$(ECHO) "Expanding dbd file $<"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
@@ -309,6 +367,10 @@ $(INSTALL_DBD)/%: $(COMMON_DIR)/%
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DBD)/%: %
+	$(ECHO) "Installing dbd file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(INSTALL_DBD)/%: ../%
 	$(ECHO) "Installing dbd file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
@@ -334,13 +396,30 @@ $(COMMON_DIR)/%.db$(RAW): %.substitutions
 	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
 	$(MV) $*.tmp $@
 
+$(COMMON_DIR)/%.db$(RAW): ../%.substitutions
+	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
+	@$(RM) $@ $*.tmp
+	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
+	$(MV) $*.tmp $@
+
 $(COMMON_DIR)/%.db$(RAW): %.template
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $@ $*.tmp
 	$(MSI) $(DBFLAGS) $< > $*.tmp
 	$(MV) $*.tmp $@
 
+$(COMMON_DIR)/%.db$(RAW): ../%.template
+	$(ECHO) "Inflating database from $<"
+	@$(RM) $@ $*.tmp
+	$(MSI) $(DBFLAGS) $< > $*.tmp
+	$(MV) $*.tmp $@
+
 $(COMMON_DIR)/%.acf: %.acs
+	$(ECHO) "Creating acf file $@"
+	@$(RM) $@
+	$(ACF_CMD)
+
+$(COMMON_DIR)/%.acf: ../%.acs
 	$(ECHO) "Creating acf file $@"
 	@$(RM) $@
 	$(ACF_CMD)
@@ -364,6 +443,10 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 else
 
 $(INSTALL_DB)/%: %
+	$(ECHO) "Installing db file $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(INSTALL_DB)/%: ../%
 	$(ECHO) "Installing db file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 endif
@@ -391,6 +474,10 @@ IOC_INST_TOP := $(shell $(PERL) $(TOOLS)/fullPathName.pl $(IOCS_APPL_TOP) )
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
 
 %_registerRecordDeviceDriver.cpp: %.dbd
+	@$(RM) $@
+	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
+
+%_registerRecordDeviceDriver.cpp: ../%.dbd
 	@$(RM) $@
 	$(REGISTERRECORDDEVICEDRIVER) $(REGRDDFLAGS) -o $@ $< $(basename $@) $(IOC_INST_TOP)
 

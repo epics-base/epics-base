@@ -368,16 +368,14 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 
 ##################################################### register record,device,driver support
 
-IOC_INST_TOP := $(shell $(PERL) $(TOOLS)/fullPathName.pl $(IOCS_APPL_TOP) )
-
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd 
 	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOCS_APPL_TOP) > $*.tmp
 	$(MV) $*.tmp $@
 
 %_registerRecordDeviceDriver.cpp: %.dbd 
 	@$(RM) $@ $*.tmp
-	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOC_INST_TOP) > $*.tmp
+	$(REGISTERRECORDDEVICEDRIVER) $< $(basename $@) $(IOCS_APPL_TOP) > $*.tmp
 	$(MV) $*.tmp $@
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp

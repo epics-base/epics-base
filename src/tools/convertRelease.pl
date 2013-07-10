@@ -52,9 +52,14 @@ if ($opt_T) {
 if ($opt_t) {
     $iocroot = $opt_t;
     $root = $top;
-    while (substr($iocroot, -1, 1) eq substr($root, -1, 1)) {
-        chop $iocroot;
-        chop $root;
+    if ($iocroot eq $root) {
+        # Identical paths, -t not needed
+        undef $opt_t;
+    } else {
+        while (substr($iocroot, -1, 1) eq substr($root, -1, 1)) {
+            chop $iocroot;
+            chop $root;
+        }
     }
 }
 

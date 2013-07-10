@@ -2826,13 +2826,13 @@ int ca_array_put_callback ( chtype TYPE, unsigned long COUNT,
 
 <p>Write a scalar or array value to a process variable.</p>
 
-<p>When ca_array_put  or ca_put are invoked the client will receive no response
+<p>When ca_put or ca_array_put are invoked the client will receive no response
 unless the request can not be fulfilled in the server. If unsuccessful an
 exception handler is run on the client side.</p>
 
-<p>When ca_array_put_callback are invoked the user supplied asynchronous call
-back is called only after the initiated write operation, and all actions
-resulting from the initiating write operation, complete.</p>
+<p>When ca_put_callback or ca_array_put_callback are invoked the user supplied
+asynchronous call back is called only after the initiated write operation, and
+all actions resulting from the initiating write operation, complete.</p>
 
 <p>If unsuccessful the call back function is invoked indicating failure status.
 </p>
@@ -2952,7 +2952,7 @@ int ca_array_get_callback ( chtype TYPE, unsigned long COUNT,
 
 <p>Read a scalar or array value from a process variable.</p>
 
-<p>When ca_get or ca_array_get are invoked the returned channel value cant be
+<p>When ca_get or ca_array_get are invoked the returned channel value can't be
 assumed to be stable in the application supplied buffer until after ECA_NORMAL
 is returned from ca_pend_io. If a connection is lost outstanding ca get
 requests are not automatically reissued following reconnect.</p>

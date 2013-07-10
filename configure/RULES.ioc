@@ -26,7 +26,7 @@ endif
 
 cdCommands envPaths dllPath.bat: $(wildcard $(TOP)/configure/RELEASE*) \
     $(wildcard $(TOP)/configure/CONFIG_SITE*) $(INSTALL_BIN)
-	$(PERL) $(TOOLS)/convertRelease.pl -a $(ARCH) -t $(IOCS_APPL_TOP) $@
+	$(CONVERTRELEASE) -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 
 realclean:
 	$(RM) cdCommands envPaths dllPath.bat

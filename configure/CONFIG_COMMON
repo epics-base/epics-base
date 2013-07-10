@@ -78,8 +78,8 @@ INSTALL_CONFIG              = $(INSTALL_LOCATION)/configure
 # Directory for OS independant build created files
 COMMON_DIR = ../O.Common
 
-# The IOC's path to $(TOP), may be overridden inside the application
-IOCS_APPL_TOP               = $(INSTALL_LOCATION)
+# IOC's absolute path to $(TOP), may be overridden inside the application
+IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 
 #-------------------------------------------------------
 # Make echo output - suppress echoing if make's '-s' flag is set

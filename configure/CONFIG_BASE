@@ -62,6 +62,7 @@ DBTORECORDTYPEH            = $(PERL) $(TOOLS)/dbdToRecordtypeH.pl
 DBTOMENUH                  = $(PERL) $(TOOLS)/dbdToMenuH.pl
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
 CONVERTRELEASE             = $(PERL) $(TOOLS)/convertRelease.pl
+FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products

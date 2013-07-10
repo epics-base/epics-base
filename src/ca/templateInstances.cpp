@@ -78,6 +78,10 @@ template comBuf :: popStatus comBuf :: pop ( unsigned char & returnVal );
 template void WireSet ( float const &, unsigned char * );
 template void WireSet ( int const &, unsigned char * );
 template void WireSet ( short const &, unsigned char * );
+template void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO
+    (epicsGuard < epicsMutex > &, syncGroupWriteNotify & );
+template void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO
+    ( epicsGuard < epicsMutex > &, syncGroupReadNotify & );
 
 
 #ifdef _MSC_VER

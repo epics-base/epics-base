@@ -63,7 +63,8 @@ DBEXPAND                   = $(call PATH_FILTER, $(TOOLS)/dbExpand$(HOSTEXE))
 DBTORECORDTYPEH            = $(call PATH_FILTER, $(TOOLS)/dbToRecordtypeH$(HOSTEXE))
 DBTOMENUH                  = $(call PATH_FILTER, $(TOOLS)/dbToMenuH$(HOSTEXE))
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
-CONVERTRELEASE=$(PERL) $(TOOLS)/convertRelease.pl
+CONVERTRELEASE             = $(PERL) $(TOOLS)/convertRelease.pl
+FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
 
 #-------------------------------------------------------
 # tools for installing libraries and products

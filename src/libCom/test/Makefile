@@ -50,6 +50,7 @@ TESTS += epicsStdioTest
 TESTPROD_HOST += epicsSockResolveTest
 epicsSockResolveTest_SRCS += epicsSockResolveTest.c
 testHarness_SRCS += epicsSockResolveTest.c
+epicsSockResolveTest_SYS_LIBS_WIN32 = ws2_32
 TESTS += epicsSockResolveTest
 
 TESTPROD_HOST += epicsStringTest

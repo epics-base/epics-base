@@ -46,3 +46,4 @@ COMMANDLINE_LIBRARY = READLINE
 # This does cost disk space, but not memory as debug symbols are not
 # loaded into RAM when the binary is loaded.
 OPT_CFLAGS_YES += -g
+OPT_CXXFLAGS_YES += -g

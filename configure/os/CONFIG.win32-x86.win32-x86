@@ -200,12 +200,13 @@ SHRLIB_SUFFIX_BASE = .dll
 SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE)
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
-TESTSHRLIBNAME_YES = $(TESTBUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
+TESTSHRLIBNAME_YES = $(TESTBUILD_LIBRARY:%=%$(SHRLIB_SUFFIX_BASE))
 
 #
 # When SHARED_LIBRARIES is YES we are building a DLL link library 
 # and when SHARED_LIBRARIES is NO we are building an object library
 #
+DLLSTUB_SUFFIX = .lib
 DLLSTUB_LIBNAME_YES = $(BUILD_LIBRARY:%=%.lib)
 DLLSTUB_LIBNAME = $(DLLSTUB_LIBNAME_$(SHARED_LIBRARIES))
 TESTDLLSTUB_LIBNAME_YES = $(TESTBUILD_LIBRARY:%=%.lib)
@@ -233,7 +234,9 @@ PROD_DEPLIBS = $(foreach lib, $(PROD_LIBS) $(USR_LIBS), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
-    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
+    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), \
+    $(if $(filter $(lib),$(TESTLIBRARY)),.,$(INSTALL_LIB)))))
+
 
 PROD_LDLIBS += $($*_DEPLIBS) $(PROD_DEPLIBS)
 PROD_LDLIBS += $(addsuffix .lib, \
@@ -259,7 +262,8 @@ SHRLIB_DEPLIBS = $(foreach lib, $(LIB_LIBS) $(USR_LIBS), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
       $(addsuffix /$(LIB_PREFIX)$(lib)$(LIB_SUFFIX), \
         $($(lib)_DIR) $(SHRLIB_SEARCH_DIRS)) \
-    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), $(INSTALL_LIB))))
+    ) $(addsuffix /$(BUILDLIB_PREFIX)$(lib)$(BUILDLIB_SUFFIX), \
+    $(if $(filter $(lib),$(TESTLIBRARY)),.,$(INSTALL_LIB)))))
 
 
 SHRLIB_LDLIBS += $($*_DLL_DEPLIBS) $($*_DEPLIBS) $(SHRLIB_DEPLIBS)

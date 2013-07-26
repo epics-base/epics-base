@@ -97,10 +97,6 @@ ifdef SHRLIB_SUFFIX
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_OBJSNAME) $$($(1)_RESS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DEPLIBS)
 $$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX):$$($(1)_DLL_DEPLIBS)
-
-# Needed for -j parallel builds option
-$$(INSTALL_LIB)/$$(DLLSTUB_PREFIX)$(1)$$(DLLSTUB_SUFFIX): \
-    $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
 endif
 
 endif
@@ -114,6 +110,14 @@ $(foreach target, $(LIBRARY) $(TESTLIBRARY), \
 
 define LIBRARY2_template
 BUILD_LIBRARY += $$(if $$(strip $$($(1)_OBJSNAME) $$(LIBRARY_OBJS)),$(1),)
+
+# Needed for -j parallel builds option
+ifeq ($$(SHARED_LIBRARIES),YES)
+ifdef SHRLIB_SUFFIX
+$$(INSTALL_LIB)/$$(DLLSTUB_PREFIX)$(1)$$(DLLSTUB_SUFFIX): \
+    $$(INSTALL_SHRLIB)/$$(SHRLIB_PREFIX)$(1)$$(SHRLIB_SUFFIX)
+endif
+endif
 endef
 
 $(foreach target, $(LIBRARY), \

@@ -2320,7 +2320,7 @@ int main ( int argc, char ** argv )
 
 <p>Certain CA client initiated requests asynchronously execute an application
 supplied call back in the client process when a response arrives. The functions
-ca_put_callback, ca_get_callback, and ca_add_event all request notification of
+ca_put_callback, ca_get_callback, and ca_create_subscription all request notification of
 asynchronous completion via this mechanism. The <code>event_handler_args
 </code>structure is passed <em>by value</em> to the application supplied
 callback. In this structure the <code>dbr</code> field is a void pointer to any
@@ -2679,7 +2679,7 @@ on a channel.</p>
 
 <p>The circuit may be initially connected or disconnected depending on the
 state of the network and the location of the channel. A channel will only enter
-a connected state after server's address is determined, and only if channel
+a connected state after the server's address is determined, and only if channel
 access successfully establishes a virtual circuit through the network to the
 server. Channel access routines that send a request to a server will return
 ECA_DISCONNCHID if the channel is currently disconnected.</p>
@@ -2728,7 +2728,7 @@ time.</p>
       set this field to nil or 0 if they do not need to have a call back
       function run in response to each connection state change event.
       <p>The following structure is passed <em>by value </em>to the user's
-      connection connection callback function. The <code>op</code> field will
+      connection callback function. The <code>op</code> field will
       be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
       channel connects, and to <code>CA_OP_CONN_DOWN</code> when the channel
       disconnects. See <code><a href="#ca_puser">ca_puser</a></code> if the
@@ -3056,10 +3056,10 @@ int ca_create_subscription ( chtype TYPE, unsigned long COUNT,
 invoked whenever the process variable undergoes significant state changes. A
 significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
-deadband field determines the magnitude of a significant change for for the
+deadband field determines the magnitude of a significant change for the
 process variable's value. Each call to this function consumes resources in the
 client library and potentially a CA server until one of ca_clear_channel or
-ca_clear_event is called.</p>
+ca_clear_subscription is called.</p>
 
 <p>Subscriptions may be installed or canceled against both connected and
 disconnected channels. The specified USERFUNC is called once immediately after
@@ -3067,7 +3067,7 @@ the subscription is installed with the process variable's current state if the
 process variable is connected. Otherwise, the specified USERFUNC is called
 immediately after establishing a connection (or reconnection) with the process
 variable. The specified USERFUNC is called immediately with the process
-variable's current state from within ca_add_event() if the client and the
+variable's current state from within ca_create_subscription() if the client and the
 process variable share the same address space.</p>
 
 <p>If a subscription is installed on a channel in a disconnected state then the
@@ -3125,7 +3125,7 @@ indicating the current state of the channel.</p>
   <dt><code>PEVID</code></dt>
     <dd>This is a pointer to user supplied event id which is overwritten if
       successful. This event id can later be used to clear a specific
-      event. This option may may be omitted by passing a nil pointer.</dd>
+      event. This option may be omitted by passing a nil pointer.</dd>
 </dl>
 <dl>
   <dt><code>MASK</code></dt>
@@ -3173,7 +3173,7 @@ int ca_clear_subscription ( evid EVID );</pre>
 
 <p>Cancel a subscription.</p>
 
-<p>All ca_clear_event() requests such as the above are accumulated (buffered)
+<p>All cancel-subscription requests such as the above are accumulated (buffered)
 and not forwarded to the server until one of ca_flush_io, ca_pend_io,
 ca_pend_event, or ca_sg_pend are called. This allows several requests to be
 efficiently sent together in one message.</p>
@@ -3181,7 +3181,7 @@ efficiently sent together in one message.</p>
 <h4>Arguments</h4>
 <dl>
   <dt>EVID</dt>
-    <dd>event id returned by ca_add_event()</dd>
+    <dd>event id returned by ca_create_subscription()</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3297,7 +3297,7 @@ activity is processed for TIMEOUT seconds.</p>
 background activity is processed.</p>
 
 <p>The ca_pend_event function will <em>not</em> return before the specified
-time-out expires and all unfinished channel access labor has been processed,
+timeout expires and all unfinished channel access labor has been processed,
 and unlike <code><a href="#ca_pend_io">ca_pend_io</a></code> returning from the
 function does <em>not </em>indicate anything about the status of pending IO
 requests.</p>
@@ -3934,12 +3934,12 @@ prints diagnostics to standard out.</p>
 
 <h4>Examples</h4>
 <pre>void ca_test_event (); 
-status = ca_add_event ( type, chid, ca_test_event, NULL, NULL ); 
+status = ca_create_subscription ( type, chid, ca_test_event, NULL, NULL ); 
 SEVCHK ( status, .... );</pre>
 
 <h4>See Also</h4>
 
-<p><a href="#ca_add_event">ca_add_event</a>()</p>
+<p><a href="#ca_add_event">ca_create_subscription</a>()</p>
 
 <h3><code><a name="ca_sg_create">ca_sg_create()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;

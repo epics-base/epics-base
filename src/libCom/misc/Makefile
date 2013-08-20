@@ -31,6 +31,7 @@ INC += testMain.h
 # epicsVersion.h is created by this Makefile
 INC += epicsVersion.h
 
+Com_SRCS += alarmString.c
 Com_SRCS += aToIPAddr.c
 Com_SRCS += adjustment.c
 Com_SRCS += cantProceed.c

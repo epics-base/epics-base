@@ -39,7 +39,7 @@
 #  define nat_iowrite16 be_iowrite16
 #  define nat_iowrite32 be_iowrite32
 
-#elif defined(i386) ||defined(__i386__) || defined(__i386)
+#elif defined(i386) || defined(__i386__) || defined(__i386) || defined(__m68k__)
 
 /* X86 does not need special handling for read/write width.
  *

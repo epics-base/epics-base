@@ -101,7 +101,7 @@ vpath %.m $(USR_VPATH) $(ALL_SRC_DIRS)
 #--------------------------------------------------
 # Header dependency file generation
 #
-HDEPENDS_METHOD = CMD
+HDEPENDS_METHOD = MKMF
 
 #--------------------------------------------------
 # Allow site overrides

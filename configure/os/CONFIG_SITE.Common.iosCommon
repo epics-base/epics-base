@@ -13,7 +13,8 @@
 #IOS_VERSION = 4.3
 #IOS_VERSION = 5.0
 #IOS_VERSION = 5.1
-IOS_VERSION = 6.0
+#IOS_VERSION = 6.0
+IOS_VERSION = 6.1
 
 
 # Which compiler to use:

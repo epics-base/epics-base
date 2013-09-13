@@ -13,6 +13,47 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Reading TSEL field</h3>
+
+<p>The TSEL link field has two complementary uses; it is read to fetch a
+time-stamp event number for the TSE field, or if pointed to the .TIME field of
+another record the record's timestamp is copied directly from the target record.
+However with the latter usage if the TSEL link is itself read back instead of
+pointing to the .TIME field the link appears to have changed to point to the VAL
+field. This is due to an internal detail, and makes it impossible to save the
+TSEL field's value using autosave. This has been fixed, and now the TSEL field
+should always read back the same PV that it was pointed to.</p>
+
+<h3>dbLoadTemplate variable limits adjustable</h3>
+
+<p>The <tt>dbLoadTemplate</tt> command used to allocate a fixed amount of memory
+for the template macro values that it used to 5000 bytes, and also limited the
+number of variables that could defined to 100. These limits can now be changed
+at runtime using the variable <tt>dbTemplateMaxVars</tt> which sets the maximum
+number of macro variables that can be used; the amount of memory allocated for
+value storage is 50 times this number. This variable is registered as an iocsh
+variable in the base.dbd file, and can be adjusted as necessary before each
+individual call to <tt>dbLoadTemplate</tt>.</p>
+
+<p>The code now checks for and prevents any attempt to define more than the set
+number of variables, but it does not check for overruns of the storage buffer.
+This means that template files which define many long macro value strings could
+still cause a buffer overflow and crash the IOC at startup, but increasing the
+variable is all that is needed to allow that template file to be loaded.</p>
+
+<h3>Improvements to dbpf</h3>
+
+<p>It is now possible to use the <tt>dbpf</tt> command to put a long string
+value into a UCHAR array field, previously only CHAR arrays were supported by
+this command even though through Channel Access could put a long string to
+either type. The error message printed by <tt>dbpf</tt> when a value conversion
+fails has also been significantly improved.</p>
+
+<h3>Support for VxWorks 6.9</h3>
+
+<p>Various changes have been made that were needed to allow Base to build and
+run properly on VxWorks 6.9.</p>
+
 <h3>Improvements to aToIPAddr()</h3>
 
 <p>The libCom routine aToIPAddr() and the vxWorks implementation of the

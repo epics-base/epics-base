@@ -17,20 +17,26 @@
 #include "dbAccess.h"
 #include "dbmf.h"
 #include "epicsVersion.h"
-
-#define epicsExportSharedSymbols
+#include "epicsExport.h"
 #include "dbLoadTemplate.h"
 
 static int line_num;
-static int yyerror();
-
-#define VAR_MAX_VAR_STRING 5000
-#define VAR_MAX_VARS 100
+static int yyerror(char *str);
 
 static char *sub_collect = NULL;
-static char** vars = NULL;
-static char* db_file_name = NULL;
+static char **vars = NULL;
+static char *db_file_name = NULL;
 static int var_count,sub_count;
+
+/* We allocate MAX_VAR_FACTOR chars in the sub_collect string for each
+ * "variable=value," segment, and will accept at most dbTemplateMaxVars
+ * template variables.  The user can adjust that variable to increase
+ * the number of variables or the length allocated for the buffer.
+ */
+#define MAX_VAR_FACTOR 50
+
+int dbTemplateMaxVars = 100;
+epicsExportAddress(int, dbTemplateMaxVars);
 
 %}
 
@@ -111,10 +117,18 @@ vars: vars var
 
 var: WORD
 	{
-	    vars[var_count] = dbmfMalloc(strlen($1)+1);
-	    strcpy(vars[var_count],$1);
-	    var_count++;
-	    dbmfFree($1);
+            if (var_count >= dbTemplateMaxVars) {
+                fprintf(stderr,
+                    "More than dbTemplateMaxVars = %d macro variables used\n",
+                    dbTemplateMaxVars);
+                yyerror(NULL);
+            }
+            else {
+                vars[var_count] = dbmfMalloc(strlen($1)+1);
+                strcpy(vars[var_count],$1);
+                var_count++;
+                dbmfFree($1);
+            }
 	}
 	;
 
@@ -269,14 +283,21 @@ int epicsShareAPI dbLoadTemplate(char* sub_file)
 		return -1;
 	}
 
+        if (dbTemplateMaxVars < 1)
+        {
+                fprintf(stderr,"Error: dbTemplateMaxVars = %d, must be +ve\n",
+                        dbTemplateMaxVars);
+                return -1;
+        }
+
 	if( !(fp=fopen(sub_file,"r")) )
 	{
 		fprintf(stderr,"dbLoadTemplate: error opening sub file %s\n",sub_file);
 		return -1;
 	}
 
-	vars = (char**)malloc(VAR_MAX_VARS * sizeof(char*));
-	sub_collect = malloc(VAR_MAX_VAR_STRING);
+	vars = malloc(dbTemplateMaxVars * sizeof(char*));
+	sub_collect = malloc(dbTemplateMaxVars * MAX_VAR_FACTOR);
 	if (!vars || !sub_collect)
 	{
 		free(vars);

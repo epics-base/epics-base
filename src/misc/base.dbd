@@ -48,3 +48,5 @@ variable(asCaDebug,int)
 variable(dbRecordsOnceOnly,int)
 variable(dbBptNotMonotonic,int)
 
+# dbLoadTemplate settings
+variable(dbTemplateMaxVars,int)

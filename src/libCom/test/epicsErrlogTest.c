@@ -106,7 +106,8 @@ static
 void logClient(void* raw, const char* msg)
 {
     clientPvt *pvt = raw;
-    size_t L;
+    size_t len;
+    char show[46];
 
     /* Simulate thread priority on non-realtime
      * OSs like Linux.  This will cause the logging
@@ -121,17 +122,37 @@ void logClient(void* raw, const char* msg)
             epicsEventMustWait(pvt->jammer);
     }
 
-    L = strlen(msg);
+    len = strlen(msg);
+    if (len > 45) {
+        /* Only show start and end of long messages */
+        strncpy(show, msg, 20);
+        show[20] = 0;
+        strcat(show + 20, " ... ");
+        strcat(show + 25, msg + len - 20);
+    }
+    else {
+        strcpy(show, msg);
+    }
 
     if (pvt->checkLen)
-        if (!testOk(pvt->checkLen == L, "Received %d chars", (int) L)) {
+        if (!testOk(pvt->checkLen == len, "Received %d chars", (int) len)) {
             testDiag("Expected %d", (int) pvt->checkLen);
             if (!pvt->expect)
-                testDiag("Message was \"%s\"", msg);
+                testDiag("Message is \"%s\"", show);
         }
-    if (pvt->expect)
-        if (!testOk(strcmp(pvt->expect, msg) == 0, "msg is \"%s\"", msg))
-            testDiag("Expected \"%s\"", pvt->expect);
+
+    if (pvt->expect) {
+        if (!testOk(strcmp(pvt->expect, msg) == 0, "Message is \"%s\"", show)) {
+            len = strlen(pvt->expect);
+            if (len > 45) {
+                testDiag("Expected \"%.20s ... %s\"",
+                    pvt->expect, pvt->expect + len - 20);
+            }
+            else {
+                testDiag("Expected \"%s\"", pvt->expect);
+            }
+        }
+    }
 
     pvt->count++;
 }

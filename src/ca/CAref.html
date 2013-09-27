@@ -4318,12 +4318,11 @@ preemptively from more than one thread.</p>
 
 <h4>Returns</h4>
 
-<p>ECA_ISATTACHED - already attached to a CA context</p>
+<p>ECA_NORMAL - Normal successful completion</p>
 
-<p>ECA_NOTTHREADED - the specified context is non-preemptive and therefore does
-not allow other threads to join</p>
+<p>ECA_NOTTHREADED - Context is not preemptive so cannot be joined</p>
 
-<p>ECA_ISATTACHED - the current thread is already attached to a CA context</p>
+<p>ECA_ISATTACHED - Thread already attached to a CA context</p>
 
 <h4>See Also</h4>
 

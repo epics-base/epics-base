@@ -1,3 +1,42 @@
+#*************************************************************************
+# Copyright (c) 2012 The University of Chicago, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution. 
+#*************************************************************************
+
+=title Array Subroutine Record (aSub)
+
+...
+
+=head2 Record-specific Menus
+
+=head3 Menu aSubLFLG
+
+The LFLG field uses this menu to ...
+
+=menu aSubLFLG
+
+=head3 Menu aSubEFLG
+
+The EFLG field uses this menu to ...
+
+=menu aSubEFLG
+
+...
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype aSub
+
+...
+
+=cut
+
 menu(aSubLFLG) {
 	choice(aSubLFLG_IGNORE,"IGNORE")
 	choice(aSubLFLG_READ,"READ")
@@ -191,6 +230,15 @@ recordtype(aSub) {
 		promptgroup(GUI_INPUTS)
 		interest(1)
 	}
+
+=head3 Input Fields
+
+...
+
+=fields A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U
+
+=cut
+
 	field(A,DBF_NOACCESS) {
 		prompt("Input value A")
 		asl(ASL0)
@@ -968,6 +1016,15 @@ recordtype(aSub) {
 		promptgroup(GUI_OUTPUT)
 		interest(1)
 	}
+
+=head3 Value Fields
+
+...
+
+=fields VALA, VALB, VALC, VALD, VALE, VALF, VALG, VALH, VALI, VALJ, VALK, VALL, VALM, VALN, VALO, VALP, VALQ, VALR, VALS, VALT, VALU
+
+=cut
+
 	field(VALA,DBF_NOACCESS) {
 		prompt("Output value A")
 		asl(ASL0)

@@ -1,5 +1,5 @@
 #*************************************************************************
-# Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
@@ -7,7 +7,7 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-=head1 Analog Input Record (ai)
+=title Analog Input Record (ai)
 
 This record type is normally used to obtain an analog value from a hardware
 input and convert it to engineering units.
@@ -63,32 +63,26 @@ fairly common for GPIB and similar high-level device interfaces.
 If the device support sets the RVAL field, the LINR field controls how this gets
 converted into engineering units and placed in the VAL field as follows:
 
-=over 4
+=over
 
 =item 1.
-
 RVAL is converted to a double and ROFF is added to it.
 
 =item 2.
-
 If ASLO is non-zero the value is multiplied by ASLO.
 
 =item 3.
-
 AOFF is added.
 
 =item 4.
-
 If LINR is C<NO CONVERSION> the units conversion is finished after the above
 steps.
 
 =item 5.
-
 If LINR is C<LINEAR> or C<SLOPE>, the value from step 3 above is multiplied by
 ESLO and EOFF is added to complete the units conversion process.
 
 =item 6.
-
 Any other value for LINR selects a particular breakpoint table to be used on the
 value from step 3 above.
 
@@ -97,7 +91,7 @@ value from step 3 above.
 The distinction between the C<LINEAR> and C<SLOPE> settings for the LINR field
 are in how the conversion parameters are calculated:
 
-=over 4
+=over
 
 =item *
 With C<LINEAR> conversion the user must set EGUL and EGUF to the lowest and
@@ -128,7 +122,7 @@ If set to zero the filter is not used (no smoothing), while if set to one the
 result is infinite smoothing (the VAL field will never change).
 The calculation performed is:
 
-=over 4
+=over
 
 VAL = VAL * SMOO + (1 - SMOO) * New Data
 
@@ -139,7 +133,7 @@ This implements a first-order infinite impulse response (IIR) digital filter
 with z-plane pole at SMOO.
 The equivalent continuous-time filter time constant E<tau> is given by
 
-=over 4
+=over
 
 E<tau> = E<minus>T / ln(SMOO)
 
@@ -161,18 +155,18 @@ C<INVALID_ALARM>.
 These parameters are used to present meaningful data to the operator.
 They do not affect the functioning of the record at all.
 
-=over 4
+=over
 
 =item *
 DESC is a string that is usually used to briefly describe the record.
 
 =item *
-EGU is a string of up to 16 characters naming the engineering units that the
-VAL field represents.
+EGU is a string of up to 16 characters naming the engineering units that the VAL
+field represents.
 
 =item *
-The HOPR and LOPR fields set the upper and lower display limits for
-the VAL, HIHI, HIGH, LOW, and LOLO fields.
+The HOPR and LOPR fields set the upper and lower display limits for the VAL,
+HIHI, HIGH, LOW, and LOLO fields.
 
 =item *
 The PREC field determines the floating point precision (i.e. the number of
@@ -188,9 +182,11 @@ DOUBLE fields.
 The user configures limit alarms by putting numerical values into the HIHI,
 HIGH, LOW and LOLO fields, and by setting the associated alarm severity in the
 corresponding HHSV, HSV, LSV and LLSV menu fields.
+
 The HYST field controls hysteresis to prevent alarm chattering from an input
 signal that is close to one of the limits and suffers from significant readout
 noise.
+
 The AFTC field sets the time constant on a low-pass filter that delays the
 reporting of limit alarms until the signal has been within the alarm range for
 that number of seconds (the default AFTC value of zero retains the previous
@@ -207,6 +203,7 @@ by the appropriate deadband.
 If these fields are set to zero, a monitor will be triggered every time the
 value changes; if set to -1, a monitor will be sent every time the record is
 processed.
+
 The ADEL field sets the deadband for archive monitors (C<DBE_LOG> events), while
 the MDEL field controls value monitors (C<DBE_VALUE> events).
 
@@ -444,7 +441,7 @@ The record provides several fields to support simulation of absent hardware.
 If the SIML field is set it is used to read a value into the SIMM field, which
 controls whether simulation is used or not:
 
-=over 4
+=over
 
 =item *
 SIMM must be zero (C<NO>) for the record to request a value from the device
@@ -518,6 +515,7 @@ Most device supports also provide an C<init_record()> routine to configure the
 record instance and connect it to the hardware or driver support layer, and if
 using the record's L</Units Conversion> features they set C<special_linconv()>
 as well.
+
 The individual routines are described below.
 
 =head3 Device Support Routines
@@ -576,8 +574,9 @@ value to its caller.
 In most cases the device support will create the I/O Interrupt Scan lists that
 it returns for itself, by calling C<void scanIoInit(IOSCANPVT *piosl)> once for
 each separate interrupt source.
-That API allocates memory and inializes the list, then passes back a pointer to
-the new list in the location at C<*piosl>.
+That routine allocates memory and inializes the list, then passes back a pointer
+to the new list in the location at C<*piosl>.
+
 When the device support receives notification that the interrupt has occurred,
 it announces that to the IOC by calling C<void scanIoRequest(IOSCANPVT iosl)>
 which will arrange for the appropriate records to be processed in a suitable
@@ -587,9 +586,10 @@ on embedded architectures (vxWorks and RTEMS).
 
 =head4 long read_ai(aiRecord *prec)
 
-This essential routine is called whenever the record is processed, and is
-responsible for performing (or at least initiating) a read operation for the
-addressed device and (eventually) returning its value to the record.
+This essential routine is called when the record wants a new value from the
+addressed device.
+It is responsible for performing (or at least initiating) a read operation, and
+(eventually) returning its value to the record.
 
 ... PACT and asynchronous processing ...
 
@@ -609,9 +609,10 @@ These calculations can be expressed in terms of the minimum and maximum raw
 values that the C<read_ai()> routine can put in the RVAL field.
 When RVAL is set to I<RVAL_max> the VAL field will be set to EGUF, and when RVAL
 is set to I<RVAL_min> the VAL field will become EGUL.
+
 The fomulae to use are:
 
-=over 4
+=over
 
 EOFF = (I<RVAL_max> * EGUL E<minus> I<RVAL_min> * EGUF) /
 (I<RVAL_max> E<minus> I<RVAL_min>)
@@ -621,7 +622,7 @@ ESLO = (EGUF E<minus> EGUL) / (I<RVAL_max> E<minus> I<RVAL_min>)
 =back
 
 Note that the record support sets EOFF to EGUL before calling this routine,
-which is a very common case (I<RVAL_min> is zero).
+which is a very common case (when I<RVAL_min> is zero).
 
 =head3 Extended Device Support
 

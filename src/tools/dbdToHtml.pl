@@ -18,7 +18,14 @@ use DBD::Parser;
 use EPICS::Getopts;
 use EPICS::macLib;
 use EPICS::Readfile;
-use Pod::Simple::HTML;
+use HTML::Entities;
+
+BEGIN {
+    $::XHTML = eval "require Pod::Simple::XHTML; 1";
+    if (!$::XHTML) {
+        require Pod::Simple::HTML;
+    }
+}
 
 my $tool = 'dbdToHtml';
 
@@ -35,7 +42,7 @@ $infile =~ m/\.dbd.pod$/ or
 &ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
 
 if (!$opt_o) {
-    ($opt_o = $infile) =~ s/\.dbd.pod$/.html/;
+    ($opt_o = $infile) =~ s/\.dbd\.pod$/.html/;
     $opt_o =~ s/^.*\///;
     $opt_o =~ s/dbCommonRecord/dbCommon/;
 }
@@ -48,66 +55,79 @@ if ($opt_D) {   # Output dependencies only
     exit 0;
 }
 
+(my $title = $opt_o) =~ s/\.html$//;
+
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
 # Parse the Pod text from the root DBD object
-my @pod = map {
-    # Handle a 'recordtype' Pod directive
-    if (m/^ =recordtype \s+ (.*)/x) {
-        my $rn = $1;
-        my $rtyp = $dbd->recordtype($rn);
-        die "Unknown recordtype '$rn' in $infile POD directive\n"
-            unless $rtyp;
-        rtypeToPod($rtyp, $dbd);
-    }
-    # Handle a 'menu' Pod directive
-    elsif (m/^ =menu \s+ (.*)/x) {
-        my $mn = $1;
-        my $menu = $dbd->menu($mn);
-        die "Unknown menu '$mn' in $infile POD directive\n"
-            unless $menu;
-        menuToPod($menu);
-    }
-    else {
-        $_;
-    }
-} $dbd->pod;
+my $pod = join "\n", '=for html <div class="pod">', '',
+    map {
+        # Handle a 'recordtype' Pod directive
+        if (m/^ =recordtype \s+ (.*)/x) {
+            my $rn = $1;
+            my $rtyp = $dbd->recordtype($rn);
+            die "Unknown recordtype '$rn' in $infile POD directive\n"
+                unless $rtyp;
+            rtypeToPod($rtyp, $dbd);
+        }
+        # Handle a 'menu' Pod directive
+        elsif (m/^ =menu \s+ (.*)/x) {
+            my $mn = $1;
+            my $menu = $dbd->menu($mn);
+            die "Unknown menu '$mn' in $infile POD directive\n"
+                unless $menu;
+            menuToPod($menu);
+        }
+        elsif (m/^ =title \s+ (.*)/x) {
+            $title = $1;
+            "=head1 $title";
+        }
+        else {
+            $_;
+        }
+    } $dbd->pod,
+    '=for html </div>', '';
 
-my $podHtml = Pod::Simple::HTML->new();
+my $podHtml;
+
+if ($::XHTML) {
+    $podHtml = Pod::Simple::XHTML->new();
+    $podHtml->html_doctype(<< '__END_DOCTYPE');
+<?xml version='1.0' encoding='iso-8859-1'?>
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
+     'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+__END_DOCTYPE
+} else { # Fall back to HTML
+    $podHtml = Pod::Simple::HTML->new();
+}
+
 $podHtml->html_css('style.css');
+$podHtml->force_title(encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');
-$podHtml->set_source(\@pod);
-# $podHtml->index(1);
-$podHtml->output_string(\my $html);
-$podHtml->run;
-print $out $html;
+$podHtml->output_fh($out);
+$podHtml->parse_string_document($pod);
 close $out;
 
 
 sub menuToPod {
     my ($menu) = @_;
     my $index = 0;
-    return "=begin html\n", "\n",
-        "<blockquote><table border =\"1\"><tr>\n",
-        "<th>Index</th><th>Identifier</th><th>Choice String</th>\n",
-        "</tr>\n",
+    return '=begin html', '', '<blockquote><table border="1"><tr>',
+        '<th>Index</th><th>Identifier</th><th>Choice String</th></tr>',
         map({choiceTableRow($_, $index++)} $menu->choices),
-        "</table></blockquote>\n",
-        "\n", "=end html\n";
+        '</table></blockquote>', '', '=end html';
 }
 
 sub choiceTableRow {
     my ($ch, $index) = @_;
     my ($id, $name) = @{$ch};
-    return '<tr><td class="cell">',
-        $index,
-        '</td><td class="cell">',
-        $id,
-        '</td><td class="cell">',
-        $name,
-        "</td></tr>\n";
+    return '<tr>',
+        "<td class='cell DBD_Menu index'>$index</td>",
+        "<td class='cell DBD_Menu identifier'>$id</td>",
+        "<td class='cell DBD_Menu choice'>$name</td>",
+        '</tr>';
 }
 
 sub rtypeToPod {
@@ -124,14 +144,12 @@ sub rtypeToPod {
                     $field;
                 } @names;
             # Generate Pod for the table
-            "=begin html\n", "\n",
-            "<blockquote><table border =\"1\"><tr>\n",
-            "<th>Field</th><th>Summary</th><th>Type</th><th>DCT</th>",
-            "<th>Default</th><th>Read</th><th>Write</th><th>CA PP</th>",
-            "</tr>\n",
+            '=begin html', '', '<blockquote><table border="1"><tr>',
+            '<th>Field</th><th>Summary</th><th>Type</th><th>DCT</th>',
+            '<th>Default</th><th>Read</th><th>Write</th><th>CA PP</th>',
+            '</tr>',
             map({fieldTableRow($_, $dbd)} @fields),
-            "</table></blockquote>\n",
-            "\n", "=end html\n";
+            '</table></blockquote>', '', '=end html';
         }
         # Handle a 'menu' Pod directive
         elsif (m/^ =menu \s+ (.*)/x) {
@@ -174,7 +192,7 @@ sub fieldTableRow {
     $html .= '</td><td class="cell">';
     $html .= $fld->writable;
     $html .= '</td><td class="cell">';
-    $html .= $fld->attribute('pp') eq "TRUE" ? 'Yes' : 'No';
+    $html .= $fld->attribute('pp') eq 'TRUE' ? 'Yes' : 'No';
     $html .= "</td></tr>\n";
     return $html;
 }

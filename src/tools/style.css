@@ -80,7 +80,6 @@ DIV {
 
 DT {
   margin-top: 1em;
-  font-weight: bold;
 }
 
 .credits TD {
@@ -187,6 +186,15 @@ TH A:link, TH A:visited {
 .cell {
   padding: 0.2ex 1ex;
   text-align: left;
+}
+
+.DBD_Menu.index {
+  padding: 0.2ex 2ex;
+  text-align: right;
+}
+
+.DBD_Menu.choice {
+  font: 1.0em monospace;
 }
 
 .label {
@@ -307,7 +315,7 @@ table.dlsip     {
 .pod H1      {
   background: transparent;
   color: #006699;
-  font-size: large;
+  font-size: 1.4em;
 }
 
 .pod H1 A { text-decoration: none; }
@@ -318,20 +326,20 @@ table.dlsip     {
 .pod H2      {
   background: transparent;
   color: #006699;
-  font-size: medium;
+  font-size: 1.2em;
 }
 
 .pod H3      {
   background: transparent;
   color: #006699;
-  font-size: medium;
+  font-size: 1em;
   font-style: italic;
 }
 
 .pod H4      {
   background: transparent;
   color: #006699;
-  font-size: medium;
+  font-size: 1em;
   font-weight: normal;
 }
 

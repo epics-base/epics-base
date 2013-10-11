@@ -160,7 +160,7 @@ static void doPrintf(printfRecord *prec)
                 precision = 0;
 
             if (ch == '%') {
-                added = epicsSnprintf(pval, vspace + 1, format);
+                added = epicsSnprintf(pval, vspace + 1, "%s", format);
             }
             else if (linkn++ >= PRINTF_NLINKS) {
                 /* No more LNKn fields */

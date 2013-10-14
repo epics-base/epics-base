@@ -15,6 +15,14 @@ PROD_IOC_iOS = -nil-
 DBD += base.dbd
 DBD += softIoc.dbd
 
+base_DBD += menuGlobal.dbd
+base_DBD += menuConvert.dbd
+base_DBD += stdRecords.dbd
+base_DBD += filters.dbd
+base_DBD += devSoft.dbd
+base_DBD += asSub.dbd
+base_DBD += dbCore.dbd
+
 softIoc_DBD += base.dbd
 softIoc_DBD += dlload.dbd
 softIoc_DBD += system.dbd

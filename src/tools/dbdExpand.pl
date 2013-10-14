@@ -26,8 +26,25 @@ my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 
+# Calculate filename for the dependency warning message below
+my $dep = $opt_o;
+if ($opt_D) {
+    $dep =~ s{\.\./O\.Common/(.*)}{\1\$\(DEP\)};
+} else {
+    $dep = "\$(COMMON_DIR)/$dep";
+}
+
 while (@ARGV) {
-    &ParseDBD($dbd, &Readfile(shift @ARGV, $macros, \@opt_I));
+    my $file = shift @ARGV;
+    eval {
+        &ParseDBD($dbd, &Readfile($file, $macros, \@opt_I));
+    };
+    if ($@) {
+        warn "dbdExpand: $@";
+        warn "  Your Makefile may need this dependency rule:\n" .
+            "    $dep: \$(COMMON_DIR)/$file\n"
+            if $@ =~ m/Can't find file/;
+    }
 }
 
 if ($opt_D) {   # Output dependencies only

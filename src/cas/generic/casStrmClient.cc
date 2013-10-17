@@ -884,7 +884,7 @@ caStatus casStrmClient::monitorResponse (
             }
             else {
                 ecaStatus = ECA_GETFAIL;
-            }                
+            }               
             return monitorFailureResponse ( guard, msg, ecaStatus );
         }
         else {
@@ -926,6 +926,7 @@ caStatus casStrmClient::monitorResponse (
     int cacStatus = caNetConvert ( 
         msg.m_dataType, pPayload, pPayload, true, msg.m_count );
     if ( cacStatus != ECA_NORMAL ) {
+        pDBRDD->unreference ();
         return this->sendErrWithEpicsStatus ( 
             guard, & msg, chan.getCID(), S_cas_internal, cacStatus );
     }

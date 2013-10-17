@@ -13,6 +13,11 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>CAS: GDD Reference Count Underflow</h3>
+
+<p>Thanks to Bruce Hill a source of an underflow in a GDD reference count in the
+CAS code has been fixed.</p>
+
 <h3>Support for Apple Xcode 5.0</h3>
 
 <p>This adds the ability to build for iOS 7.0 and the ARMv8 64-bit CPU on the
@@ -127,9 +132,10 @@ provides nanosecond resolution.</p>
 long-term drift associated with OS thread sheduling. The new code keeps scan
 times much more closely tied to the system clock tick, only allowing the scan
 period to drift if the record processing time takes longer to execute than the
-interval between scans.  If this happens a 0.1 second penalty is given to the
-scan thread (to allow lower priority threads time to process on preemptive
-priority scheduled OSs).  After 10 repeated over-runs a warning will be logged,
+interval between scans. If this happens the scan thread is made to wait for an
+additional half-period but at most 1 second before the records are scanned
+again, to allow lower priority threads some time to process on a preemptive
+priority scheduled OS. After 10 repeated over-runs a warning will be logged,
 with an increasing delay between messages up to hourly.</p>
 
 <p>This fixes <a href="https://bugs.launchpad.net/bugs/597054">launchpad bug

@@ -580,6 +580,13 @@ static void dbRecordtypeFieldItem(char *name,char *value)
             yyerrorAbort("menu not found");
         return;
     }
+    if(strcmp(name,"prop")==0) {
+        if(strcmp(value, "YES")==0)
+            pdbFldDes->prop = 1;
+        else
+            pdbFldDes->prop = 0;
+        return;
+    }
 }
 
 static void dbRecordtypeCdef(char *text) {

@@ -76,7 +76,8 @@ typedef struct dbFldDes{  /* field description */
     short	indRecordType;	/*within dbRecordType.papFldDes */
     short	special;	/*Special processing requirements	*/
     dbfType	field_type;	/*Field type as defined in dbFldTypes.h */
-    short    process_passive;/*should dbPutField process passive	*/
+    unsigned int    process_passive:1;/*should dbPutField process passive	*/
+    unsigned int    prop:1;/*field is a metadata, post DBE_PROPERTY on change*/
     ctType	base;		/*base for integer to string conversions*/
     short	promptgroup;	/*prompt, i.e. gui group		*/
     short   interest;	/*interest level			*/

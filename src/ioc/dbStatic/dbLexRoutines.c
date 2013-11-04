@@ -498,87 +498,87 @@ static void dbRecordtypeFieldItem(char *name,char *value)
     if(duplicate) return;
     pdbFldDes = (dbFldDes *)getLastTemp();
     if(strcmp(name,"asl")==0) {
-	if(strcmp(value,"ASL0")==0) {
-	    pdbFldDes->as_level = ASL0;
-	} else if(strcmp(value,"ASL1")==0) {
-	    pdbFldDes->as_level = ASL1;
-	} else {
-	    yyerror("Illegal Access Security value: Must be ASL0 or ASL1");
-	}
-	return;
+        if(strcmp(value,"ASL0")==0) {
+            pdbFldDes->as_level = ASL0;
+        } else if(strcmp(value,"ASL1")==0) {
+            pdbFldDes->as_level = ASL1;
+        } else {
+            yyerror("Illegal Access Security value: Must be ASL0 or ASL1");
+        }
+        return;
     }
     if(strcmp(name,"initial")==0) {
-	pdbFldDes->initial = epicsStrDup(value);
-	return;
+        pdbFldDes->initial = epicsStrDup(value);
+        return;
     }
     if(strcmp(name,"promptgroup")==0) {
-	int	i;
-	for(i=0; i<GUI_NTYPES; i++) {
-	    if(strcmp(value,pamapguiGroup[i].strvalue)==0) {
-		pdbFldDes->promptgroup = pamapguiGroup[i].value;
-		return;
-	    }
-	}
-	yyerror("Illegal promptgroup. See guigroup.h for legal values");
-	return;
+        int	i;
+        for(i=0; i<GUI_NTYPES; i++) {
+            if(strcmp(value,pamapguiGroup[i].strvalue)==0) {
+                pdbFldDes->promptgroup = pamapguiGroup[i].value;
+                return;
+            }
+        }
+        yyerror("Illegal promptgroup. See guigroup.h for legal values");
+        return;
     }
     if(strcmp(name,"prompt")==0) {
-	pdbFldDes->prompt = epicsStrDup(value);
-	return;
+        pdbFldDes->prompt = epicsStrDup(value);
+        return;
     }
     if(strcmp(name,"special")==0) {
-	int	i;
-	for(i=0; i<SPC_NTYPES; i++) {
-	    if(strcmp(value,pamapspcType[i].strvalue)==0) {
-		pdbFldDes->special = pamapspcType[i].value;
-		return;
-	    }
-	}
-	if(sscanf(value,"%hd",&pdbFldDes->special)==1) {
-	    return;
-	}
-	yyerror("Illegal special value.");
-	return;
+        int	i;
+        for(i=0; i<SPC_NTYPES; i++) {
+            if(strcmp(value,pamapspcType[i].strvalue)==0) {
+                pdbFldDes->special = pamapspcType[i].value;
+                return;
+            }
+        }
+        if(sscanf(value,"%hd",&pdbFldDes->special)==1) {
+            return;
+        }
+        yyerror("Illegal special value.");
+        return;
     }
     if(strcmp(name,"pp")==0) {
-	if((strcmp(value,"YES")==0) || (strcmp(value,"TRUE")==0)) {
-	    pdbFldDes->process_passive = TRUE;
-	} else if((strcmp(value,"NO")==0) || (strcmp(value,"FALSE")==0)) {
-	    pdbFldDes->process_passive = FALSE;
-	} else {
-	    yyerror("Illegal value. Must be NO or YES");
-	}
-	return;
+        if((strcmp(value,"YES")==0) || (strcmp(value,"TRUE")==0)) {
+            pdbFldDes->process_passive = TRUE;
+        } else if((strcmp(value,"NO")==0) || (strcmp(value,"FALSE")==0)) {
+            pdbFldDes->process_passive = FALSE;
+        } else {
+            yyerror("Illegal value. Must be NO or YES");
+        }
+        return;
     }
     if(strcmp(name,"interest")==0) {
-	if(sscanf(value,"%hd",&pdbFldDes->interest)!=1) 
-	    yyerror("Illegal value. Must be integer");
-	return;
+        if(sscanf(value,"%hd",&pdbFldDes->interest)!=1)
+            yyerror("Illegal value. Must be integer");
+        return;
     }
     if(strcmp(name,"base")==0) {
-	if(strcmp(value,"DECIMAL")==0) {
-	    pdbFldDes->base = CT_DECIMAL;
-	} else if(strcmp(value,"HEX")==0) {
-	    pdbFldDes->base = CT_HEX;
-	} else {
-	    yyerror("Illegal value. Must be CT_DECIMAL or CT_HEX");
-	}
-	return;
+        if(strcmp(value,"DECIMAL")==0) {
+            pdbFldDes->base = CT_DECIMAL;
+        } else if(strcmp(value,"HEX")==0) {
+            pdbFldDes->base = CT_HEX;
+        } else {
+            yyerror("Illegal value. Must be CT_DECIMAL or CT_HEX");
+        }
+        return;
     }
     if(strcmp(name,"size")==0) {
-	if(sscanf(value,"%hd",&pdbFldDes->size)!=1) 
-	    yyerror("Illegal value. Must be integer");
-	return;
+        if(sscanf(value,"%hd",&pdbFldDes->size)!=1)
+            yyerror("Illegal value. Must be integer");
+        return;
     }
     if(strcmp(name,"extra")==0) {
-	pdbFldDes->extra = epicsStrDup(value);
-	return;
+        pdbFldDes->extra = epicsStrDup(value);
+        return;
     }
     if(strcmp(name,"menu")==0) {
-	pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(pdbbase,value);
-	if(!pdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
-	    yyerrorAbort("menu not found");
-	return;
+        pdbFldDes->ftPvt = (dbMenu *)dbFindMenu(pdbbase,value);
+        if(!pdbbase->ignoreMissingMenus && !pdbFldDes->ftPvt)
+            yyerrorAbort("menu not found");
+        return;
     }
 }
 

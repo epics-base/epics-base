@@ -53,6 +53,7 @@ recordtype(ao) {
 		prompt("Display Precision")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(LINR,DBF_MENU) {
 		prompt("Linearization")
@@ -81,6 +82,7 @@ recordtype(ao) {
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 		size(16)
+		prop(YES)
 	}
 	field(ROFF,DBF_LONG) {
 		prompt("Raw Offset, obsolete")
@@ -105,22 +107,26 @@ recordtype(ao) {
 		promptgroup(GUI_OUTPUT)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(DRVL,DBF_DOUBLE) {
 		prompt("Drive Low Limit")
 		promptgroup(GUI_OUTPUT)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(AOFF,DBF_DOUBLE) {
 		prompt("Adjustment Offset")
@@ -139,24 +145,28 @@ recordtype(ao) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")

@@ -77,6 +77,7 @@ recordtype(aSub) {
 		prompt("Display Precision")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(EFLG,DBF_MENU) {
 		prompt("Output Event Flag")

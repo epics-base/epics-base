@@ -338,6 +338,7 @@ recordtype(calcout) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -345,6 +346,7 @@ recordtype(calcout) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -352,6 +354,7 @@ recordtype(calcout) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -359,6 +362,7 @@ recordtype(calcout) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_DOUBLE) {

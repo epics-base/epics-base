@@ -971,6 +971,7 @@ long dbWriteRecordTypeFP(
 		    pdbFldDes->size);
 	    }
 	    if(pdbFldDes->process_passive) fprintf(fp,"\t\tpp(TRUE)\n");
+	    if(pdbFldDes->prop) fprintf(fp,"\t\tprop(YES)\n");
 	    if(pdbFldDes->base) fprintf(fp,"\t\tbase(HEX)\n");
 	    if(pdbFldDes->interest)
 		fprintf(fp,"\t\tinterest(%d)\n",pdbFldDes->interest);
@@ -3140,6 +3141,7 @@ void  dbDumpField(
 	    else
 		printf("\t     field_type: %s\n", pamapdbfType[j].strvalue);
 	    printf("\tprocess_passive: %hd\n",pdbFldDes->process_passive);
+	    printf("\t       property: %hd\n",pdbFldDes->prop);
 	    printf("\t           base: %d\n",pdbFldDes->base);
 	    if(!pdbFldDes->promptgroup) {
 		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);

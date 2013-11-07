@@ -12,7 +12,11 @@
 #ifndef epicsTimehInclude
 #define epicsTimehInclude
 
-#include <time.h>
+#ifdef __cplusplus
+#   include <ctime>
+#else
+#   include <time.h>
+#endif
 
 #include "shareLib.h"
 #include "epicsTypes.h"
@@ -42,7 +46,7 @@ struct l_fp; /* NTP timestamp */
  * and a struct tm that is adjusted for the local timezone
  */
 struct local_tm_nano_sec {
-    struct tm ansi_tm; /* ANSI C time details */
+    std :: tm ansi_tm; /* ANSI C time details */
     unsigned long nSec; /* nano seconds extension */
 };
 
@@ -51,7 +55,7 @@ struct local_tm_nano_sec {
  * and a struct tm that is adjusted for GMT (UTC)
  */
 struct gm_tm_nano_sec {
-    struct tm ansi_tm; /* ANSI C time details */
+    std :: tm ansi_tm; /* ANSI C time details */
     unsigned long nSec; /* nano seconds extension */
 };
 
@@ -61,7 +65,7 @@ struct gm_tm_nano_sec {
  * conversions to occur
  */
 struct time_t_wrapper {
-    time_t ts;
+    std :: time_t ts;
 };
 
 class epicsShareClass epicsTimeEvent
@@ -244,8 +248,10 @@ epicsShareFunc void epicsShareAPI epicsTimeShow (
 
 /* OS dependent reentrant versions of the ANSI C interface because */
 /* vxWorks gmtime_r interface does not match POSIX standards */
-epicsShareFunc int epicsShareAPI epicsTime_localtime ( const time_t * clock, struct tm * result );
-epicsShareFunc int epicsShareAPI epicsTime_gmtime ( const time_t * clock, struct tm * result );
+epicsShareFunc int epicsShareAPI 
+    epicsTime_localtime ( const time_t * clock, struct tm * result );
+epicsShareFunc int epicsShareAPI 
+    epicsTime_gmtime ( const time_t * clock, struct tm * result );
 
 #ifdef __cplusplus
 }

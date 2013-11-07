@@ -30,28 +30,6 @@ class "T" (the type stored in the hash table) must derive
 from class "ID" (the hash table key type) and also derive from
 tsSLNode<T>.
 
-So far, the only confusion I have run into with templates has been:
 
-1) strange compiler messages - unrelated to cause of course -
-when I get the class declaration order wrong (so that the 
-compiler has trouble instantiating the template).
-
-2) sun pro/dec/att compilers use a template database and 
-gnu/msvc++ compilers use explicit template instantiation.
-Therefore blocks of code of this sort are required:
-
-#include "resourceLib.h" // template def
-#include "resourceLib.cc" // template functions (that are not inline)
-#if defined (EXPL_TEMPL)
-        //
-        // From Stroustrups's "The C++ Programming Language"
-        // Appendix A: r.14.9
-        //
-        // This explicitly instantiates the template class's member
-        // functions into "templInst.o"
-        //
-        template class resTable<fred,uintId>;
-        template class resTable<jane,stringId>;
-#endif
 
 

@@ -104,8 +104,8 @@ private:
     fdReg * pCBReg; 
     void reschedule ();
     double quantum ();
-    epicsShareFunc void installReg (fdReg &reg);
-    epicsShareFunc void removeReg (fdReg &reg);
+    void installReg (fdReg &reg);
+    void removeReg (fdReg &reg);
     void lazyInitTimerQueue ();
     fdManager ( const fdManager & );
     fdManager & operator = ( const fdManager & );

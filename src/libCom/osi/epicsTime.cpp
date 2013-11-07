@@ -1,8 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
-*     National Laboratory.
+* Copyright (c) 2011 LANS LLC, as Operator of
+*     Los Alamos National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2007 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -58,8 +60,12 @@ static const unsigned long NTP_TIME_AT_EPICS_EPOCH =
 //
 // epicsTime (const unsigned long secIn, const unsigned long nSecIn)
 //
-inline epicsTime::epicsTime (const unsigned long secIn, const unsigned long nSecIn) :
-    secPastEpoch ( nSecIn / nSecPerSec + secIn ), nSec ( nSecIn % nSecPerSec ) {}
+inline epicsTime::epicsTime (const unsigned long secIn, 
+                             const unsigned long nSecIn) :
+    secPastEpoch ( nSecIn / nSecPerSec + secIn ), 
+    nSec ( nSecIn % nSecPerSec ) 
+{
+}
 
 //
 // epicsTimeLoadTimeInit
@@ -109,51 +115,45 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 //
 // epicsTime::addNanoSec ()
 //
-// many of the UNIX timestamp formats have nano sec stored as a long
+// The nano-second field of several of the the UNIX time stamp formats 
+// field is stored in the C type "long".
 //
-void epicsTime::addNanoSec (long nSecAdj)
+void epicsTime :: addNanoSec ( long nSecAdj )
 {
-    // After optimizing this function we now have a larger
-    // code which uses only unsigned integer arithmetic.
-    // This is for the benefit of embedded cpu's lacking
-    // a hardware floating point coprocessor at the
-    // expense of some additional code to maintain.
-    // joh 14-11-2012
+    //
+    // After optimizing this function we now have a larger code which 
+    // uses only unsigned integer, and not floating point, arithmetic.
+    // This change benefits embedded CPU's lacking a floating point 
+    // co-processor at the expense of some additional code to maintain.
+    //
+    // We hope that all CPU's we run on provide at least an integer 
+    // divide instruction which should enable this implementation
+    // to be more efficient than implementations based on branching; 
+    // this is presuming that we will run on pipelined architectures.
+    //
+    // Overflow and underflow is expected; in the future we might
+    // operate close to, the modulo of, the EPICS epic.
+    //
+    // We are depending on the normalize operation in the private 
+    // constructor used below.
+    //
+    // joh 11-04-2012
+    //
     if ( nSecAdj >= 0 ) {
-        unsigned long nSecOffsetLong =
-              static_cast < unsigned long > ( nSecAdj );
-        while ( nSecOffsetLong >= nSecPerSec ) {
-            this->secPastEpoch++; // overflow expected
-            nSecOffsetLong -= nSecPerSec;
-        }
-        const epicsUInt32 nSecOffset =
-            static_cast < epicsUInt32 > ( nSecOffsetLong );
-        epicsUInt32 nSecPerSecRemaining = nSecPerSec - nSecOffset;
-        if ( this->nSec >= nSecPerSecRemaining ) {
-            this->secPastEpoch++; // overflow expected
-            this->nSec -= nSecPerSecRemaining;
-        }
-        else {
-            this->nSec += nSecOffset;
-        }
+        const unsigned long nSecPlus = 
+                static_cast <unsigned long> ( nSecAdj );
+        const unsigned long nSecPlusAdj = nSecPlus % nSecPerSec;
+        const unsigned long secPlusAdj = nSecPlus / nSecPerSec;
+        *this = epicsTime ( this->secPastEpoch+secPlusAdj, 
+                                this->nSec+nSecPlusAdj );
     }
     else {
-        unsigned long nSecOffsetLong =
-            static_cast <unsigned long> ( -nSecAdj );
-        while ( nSecOffsetLong >= nSecPerSec ) {
-            this->secPastEpoch--; // underflow expected
-            nSecOffsetLong -= nSecPerSec;
-        }
-        const epicsUInt32 nSecOffset =
-            static_cast < epicsUInt32 > ( nSecOffsetLong );
-        if ( this->nSec >= nSecOffset ) {
-            this->nSec -= nSecOffset;
-        }
-        else {
-            // borrow
-            this->secPastEpoch--; // underflow expected
-            this->nSec += nSecPerSec - nSecOffset;
-        }
+        const unsigned long nSecMinus = 
+                static_cast <unsigned long> ( -nSecAdj );
+        const unsigned long nSecMinusAdj = nSecMinus % nSecPerSec;
+        const unsigned long secMinusAdj = nSecMinus / nSecPerSec;
+        *this = epicsTime ( this->secPastEpoch - secMinusAdj - 1u, 
+                            this->nSec + nSecPerSec - nSecMinusAdj );
     }
 }
 
@@ -368,8 +368,8 @@ epicsTime::operator struct timeval () const
     time_t_wrapper ansiTimeTicks;
 
     ansiTimeTicks = *this;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be 
-    // a direct assignement. On other systems I dont know that we can
+    // On Posix systems timeval :: tv_sec is a time_t so this can be
+    // a direct assignment. On other systems I dont know that we can
     // guarantee that time_t and timeval :: tv_sec will have the
     // same epoch or have the same scaling factor to discrete seconds.
     // For example, on windows time_t changed recently to a 64 bit 
@@ -387,8 +387,8 @@ epicsTime::operator struct timeval () const
 epicsTime::epicsTime (const struct timeval &ts)
 {
     time_t_wrapper ansiTimeTicks;
-    // On Posix systems timeval :: tv_sec is a time_t so this can be 
-    // a direct assignement. On other systems I dont know that we can
+    // On Posix systems timeval :: tv_sec is a time_t so this can be
+    // a direct assignment. On other systems I dont know that we can
     // guarantee that time_t and timeval :: tv_sec will have the
     // same epoch or have the same scaling factor to discrete seconds.
     // For example, on windows time_t changed recently to a 64 bit 
@@ -438,11 +438,11 @@ epicsTime::operator epicsTimeStamp () const
     }
     epicsTimeStamp ts;
     //
-    // trucation by design
+    // truncation by design
     // -------------------
-    // epicsTime::secPastEpoch is based on ulong and has much greater range 
-    // on 64 bit hosts than the orginal epicsTimeStamp::secPastEpoch. The 
-    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will 
+    // epicsTime::secPastEpoch is based on ulong and has much greater range
+    // on 64 bit hosts than the original epicsTimeStamp::secPastEpoch. The
+    // epicsTimeStamp::secPastEpoch is based on epicsUInt32 so that it will
     // match the original network protocol. Of course one can anticipate
     // that eventually, a epicsUInt64 based network time stamp will be 
     // introduced when 64 bit architectures are more ubiquitous.
@@ -653,7 +653,7 @@ void epicsTime::show ( unsigned level ) const
     }
 
     if ( level > 1 ) {
-        // this also supresses the "defined, but not used" 
+        // this also suppresses the "defined, but not used"
         // warning message
         printf ( "epicsTime: revision \"%s\"\n", 
             pEpicsTimeVersion );

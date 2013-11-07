@@ -144,7 +144,7 @@ static ITEM **bucketStringCompare (ITEM **ppi, const void *pId)
  */
 static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 {
-	const unsigned	*pUId = pId;	
+	const unsigned	*pUId = (const unsigned *) pId;	
 	unsigned 	src;
 	BUCKETID	hashid;
 
@@ -194,7 +194,7 @@ static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
  */
 static BUCKETID bucketStringHash (BUCKET *pb, const void *pId)
 {
-	const char	*pStr = pId;	
+	const char	*pStr = (const char *) pId;	
 	BUCKETID	hashid;
 	unsigned	i;
 

@@ -10,7 +10,12 @@
 #ifndef epicsThreadh
 #define epicsThreadh
 
+#ifdef __cplusplus
+#include <cstddef>
+using std :: size_t;
+#else
 #include <stddef.h>
+#endif
 
 #include "shareLib.h"
 
@@ -38,7 +43,9 @@ typedef void (*EPICSTHREADFUNC)(void *parm);
 
 /* stack sizes for each stackSizeClass are implementation and CPU dependent */
 typedef enum {
-    epicsThreadStackSmall, epicsThreadStackMedium, epicsThreadStackBig
+    epicsThreadStackSmall,
+    epicsThreadStackMedium, 
+    epicsThreadStackBig
 } epicsThreadStackSizeClass;
 
 typedef enum {

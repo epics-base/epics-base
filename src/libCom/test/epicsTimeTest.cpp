@@ -9,11 +9,6 @@
 /*
  * Authors: Jeff Hill, Marty Kraimer and Andrew Johnson
  */
- 
-#ifdef __SUNPRO_CC
-using namespace std;
-#endif
-
 #include <cstddef>
 #include <cstdio>
 #include <ctime>
@@ -45,7 +40,7 @@ static const double precisionEPICS = 1.0 / nSecPerSec;
 
 MAIN(epicsTimeTest)
 {
-    const int wasteTime = 100000;
+    const int wasteTime = 100000u;
     const int nTimes = 10;
 
     testPlan(12 + nTimes * 18);

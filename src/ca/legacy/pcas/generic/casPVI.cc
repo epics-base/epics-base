@@ -211,9 +211,10 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
             }
         }
         else {
-            errMessage ( S_cas_badType, 
+            errPrintf ( S_cas_badType, __FILE__, __LINE__,
                 "application type \"enums\" string conversion"
-                " table for enumerated PV isnt a string type?" );
+                " table for enumerated PV \"%s\" isnt a string type?",
+                getName() );
         }
     }
     else if ( resp.dimension() == 1 ) {

@@ -40,7 +40,7 @@ static const double precisionEPICS = 1.0 / nSecPerSec;
 
 MAIN(epicsTimeTest)
 {
-    const int wasteTime = 100000u;
+    const int wasteTime = 100000;
     const int nTimes = 10;
 
     testPlan(12 + nTimes * 18);

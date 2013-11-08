@@ -55,14 +55,14 @@ extern "C" {
  * in all version four gcc invarient of target. The gnu doc 
  * seems to say that when not supported by architecture a call
  * to an external function is generated but in practice
- * this isnt the case for some of the atomic intrinsics, and 
+ * this isn`t the case for some of the atomic intrinsics, and 
  * so there is an undefined symbol. So far we have not seen 
  * that with __sync_synchronize, but we can only guess based
  * on experimental evidence.
  *
  * For example we know that when generating object code for
- * 386 most of the atomic instrinsics are not present and
- * we see undefined symbols with mingw, but we dont have
+ * 386 most of the atomic intrinsics are not present and
+ * we see undefined symbols with mingw, but we don`t have
  * troubles with __sync_synchronize.
  */
 #if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
@@ -81,6 +81,28 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 {
     __sync_synchronize ();
 }
+#endif
+
+#else
+
+#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
+#ifdef GCC_ATOMIC_INTRINSICS_MIN_X86
+#define EPICS_ATOMIC_READ_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
+{
+    asm("mfence;");
+}
+#endif
+#endif
+
+#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+#ifdef GCC_ATOMIC_INTRINSICS_MIN_X86
+#define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
+{
+    asm("mfence;");
+}
+#endif
 #endif
 
 #endif /* if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER */

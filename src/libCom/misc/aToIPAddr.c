@@ -54,11 +54,13 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
     if ( port > 0xffff ) {
         return -1;
     }
-    uint16_t port_16 = (uint16_t) port;
-    memset (pIP, '\0', sizeof(*pIP));
-    pIP->sin_family = AF_INET;
-    pIP->sin_port = htons(port_16);
-    pIP->sin_addr = ipAddr;
+    {
+        uint16_t port_16 = (uint16_t) port;
+        memset (pIP, '\0', sizeof(*pIP));
+        pIP->sin_family = AF_INET;
+        pIP->sin_port = htons(port_16);
+        pIP->sin_addr = ipAddr;
+    }
     return 0;
 }
 

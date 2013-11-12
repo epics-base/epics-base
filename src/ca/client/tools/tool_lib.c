@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include <alarm.h>
-#include <alarmString.h>
 #include <epicsTime.h>
 #include <epicsString.h>
 #include <cadef.h>

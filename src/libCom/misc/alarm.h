@@ -95,9 +95,15 @@ typedef enum {
 #define WRITE_ACCESS_ALARM  epicsAlarmWriteAccess
 #define lastEpicsAlarmCond  epicsAlarmWriteAccess
 
+
+/* Name string arrays */
+
+epicsShareExtern const char *epicsAlarmSeverityStrings [ALARM_NSEV];
+epicsShareExtern const char *epicsAlarmConditionStrings [ALARM_NSTATUS];
+
+
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* INC_alarm_H */

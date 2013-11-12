@@ -12,7 +12,6 @@
 
 #define epicsExportSharedSymbols
 #include "alarm.h"
-#include "alarmString.h"
 
 /* ALARM SEVERITIES - must match menuAlarmSevr.dbd and alarm.h */
 

@@ -11,7 +11,6 @@
 #include "cadef.h"
 #include "db_access.h"
 #include "alarm.h"
-#include "alarmString.h"
 
 typedef union {
     dbr_long_t iv;

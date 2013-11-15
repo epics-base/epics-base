@@ -66,7 +66,7 @@ epicsShareFunc int epicsShareAPI epicsVsnprintf(
  * TF_ERROR if the file could not be truncated.
  */
 enum TF_RETURN {TF_OK=0, TF_ERROR=1};
-epicsShareFunc enum TF_RETURN truncateFile ( const char *pFileName, unsigned size );
+epicsShareFunc enum TF_RETURN truncateFile ( const char *pFileName, unsigned long size );
 
 /* The following are for redirecting stdin,stdout,stderr */
 epicsShareFunc FILE * epicsShareAPI epicsGetStdin(void);

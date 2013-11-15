@@ -25,7 +25,7 @@
  * truncate to specified size (we dont use truncate()
  * because it is not portable)
  */
-epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned size)
+epicsShareFunc enum TF_RETURN  truncateFile (const char *pFileName, unsigned long size)
 {
 	char tmpName[256>L_tmpnam?256:L_tmpnam];
 	long filePos;

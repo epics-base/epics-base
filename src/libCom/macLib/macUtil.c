@@ -225,8 +225,8 @@ epicsShareAPI macParseDefns(
     }
 
     /* free workspace */
-    free( ptr );
-    free( end );
+    free( ( void * ) ptr );
+    free( ( void * ) end );
     free( ( char * ) del );
 
     /* debug output */
@@ -239,8 +239,8 @@ epicsShareAPI macParseDefns(
     /* error exit */
 error:
     errlogPrintf( "macParseDefns: failed to allocate memory\n" );
-    if ( ptr != NULL ) free( ptr );
-    if ( end != NULL ) free( end );
+    if ( ptr != NULL ) free( ( void * ) ptr );
+    if ( end != NULL ) free( ( void * ) end );
     if ( del != NULL ) free( ( char * ) del );
     *pairs = NULL;
     return -1;

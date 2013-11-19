@@ -205,7 +205,7 @@ static int
  * convert an infix expression to a postfix expression
  */
 epicsShareFunc long
-    postfix(const char *psrc, char * const ppostfix, short *perror)
+    postfix(const char *psrc, char *pout, short *perror)
 {
     ELEMENT stack[80];
     ELEMENT *pstacktop = stack;
@@ -213,7 +213,7 @@ epicsShareFunc long
     int operand_needed = TRUE;
     int runtime_depth = 0;
     int cond_count = 0;
-    char *pout = ppostfix;
+    char * const pdest = pout;
     char *pnext;
     double lit_d;
     int lit_i;
@@ -249,7 +249,7 @@ epicsShareFunc long
                     goto bad;
                 }
                 psrc = pnext;
-                lit_i = lit_d;
+                lit_i = (int) lit_d;
                 if (lit_d != (double) lit_i) {
                     *pout++ = pel->code;
                     memcpy(pout, (void *)&lit_d, sizeof(double));
@@ -276,7 +276,7 @@ epicsShareFunc long
             break;
 
 	case STORE_OPERATOR:
-	    if (pout == ppostfix || pstacktop > stack ||
+	    if (pout == pdest || pstacktop > stack ||
 		*--pout < FETCH_A || *pout > FETCH_L) {
 		*perror = CALC_ERR_BAD_ASSIGNMENT;
 		goto bad;
@@ -477,7 +477,7 @@ epicsShareFunc long
     return 0;
 
 bad:
-    *ppostfix = END_EXPRESSION;
+    *pdest = END_EXPRESSION;
     return -1;
 }
 

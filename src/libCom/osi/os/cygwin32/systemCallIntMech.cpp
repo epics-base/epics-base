@@ -21,8 +21,8 @@
 enum epicsSocketSystemCallInterruptMechanismQueryInfo 
         epicsSocketSystemCallInterruptMechanismQuery ()
 {
-#if (CYGWIN_VERSION_DLL_MAJOR >= 1007)
-    // Behaviour changed in Cygwin 1.7 release.
+#if 0
+    // Some broken versions of cygwin needed this:
     return esscimqi_socketCloseRequired;
 #else
     return esscimqi_socketBothShutdownRequired;

@@ -747,10 +747,10 @@ is_reserved(char *name)
 	    strcmp(name, "$end") == 0)
 	return (1);
 
-    if (name[0] == '$' && name[1] == '$' && isdigit(name[2]))
+    if (name[0] == '$' && name[1] == '$' && isdigit((int) name[2]))
     {
 	s = name + 3;
-	while (isdigit(*s)) ++s;
+	while (isdigit((int) *s)) ++s;
 	if (*s == NUL) return (1);
     }
 
@@ -1254,7 +1254,7 @@ loop:
 		FREE(d_line);
 		goto loop;
 	    }
-	    else if (c == '-' && isdigit(cptr[1]))
+	    else if (c == '-' && isdigit((int) cptr[1]))
 	    {
 		++cptr;
 		i = -get_number() - n;
@@ -1278,7 +1278,7 @@ loop:
 	    cptr += 2;
 	    goto loop;
 	}
-	else if (isdigit(cptr[1]))
+	else if (isdigit((int) cptr[1]))
 	{
 	    ++cptr;
 	    i = get_number();

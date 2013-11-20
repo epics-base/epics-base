@@ -105,7 +105,7 @@ int all_lower(Char *str)
 {
     while ( *str )
 	{
-	if ( ! isascii( *str ) || ! islower( *str ) )
+	if ( ! isascii( (int) *str ) || ! islower( (int) *str ) )
 	    return ( 0 );
 	++str;
 	}
@@ -126,7 +126,7 @@ int all_upper(Char *str)
 {
     while ( *str )
 	{
-	if ( ! isascii( *str ) || ! isupper( (char) *str ) )
+	if ( ! isascii( (int) *str ) || ! isupper( (int) *str ) )
 	    return ( 0 );
 	++str;
 	}

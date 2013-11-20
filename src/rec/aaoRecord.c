@@ -41,6 +41,7 @@
 #include "recGbl.h"
 #include "cantProceed.h"
 #include "menuYesNo.h"
+
 #define GEN_SIZE_OFFSET
 #include "aaoRecord.h"
 #undef  GEN_SIZE_OFFSET

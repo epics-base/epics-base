@@ -37,10 +37,11 @@
 #include "menuConvert.h"
 #include "menuOmsl.h"
 #include "menuYesNo.h"
+#include "menuIvoa.h"
+
 #define GEN_SIZE_OFFSET
 #include "aoRecord.h"
 #undef  GEN_SIZE_OFFSET
-#include "menuIvoa.h"
 #include "epicsExport.h"
 
 /* Create RSET - Record Support Entry Table*/

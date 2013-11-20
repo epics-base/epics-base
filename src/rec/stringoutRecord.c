@@ -32,14 +32,15 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "recGbl.h"
-#define GEN_SIZE_OFFSET
-#include "stringoutRecord.h"
-#undef  GEN_SIZE_OFFSET
 #include "menuOmsl.h"
 #include "menuIvoa.h"
 #include "menuYesNo.h"
+
+#define GEN_SIZE_OFFSET
+#include "stringoutRecord.h"
+#undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
-
+
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL

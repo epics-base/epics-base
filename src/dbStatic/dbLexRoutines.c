@@ -31,7 +31,6 @@
 #include "epicsString.h"
 #include "epicsExport.h"
 
-#define epicsExportSharedSymbols
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbStaticLib.h"

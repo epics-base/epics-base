@@ -34,6 +34,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "special.h"
+
 #define GEN_SIZE_OFFSET
 #include "mbbiDirectRecord.h"
 #undef  GEN_SIZE_OFFSET

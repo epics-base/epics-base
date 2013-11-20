@@ -20,6 +20,7 @@
 #include "callback.h"
 #include "devSup.h"
 #include "dbCommon.h"
+
 #include "epicsExport.h"
 
 static long addRec(struct dbCommon *prec)

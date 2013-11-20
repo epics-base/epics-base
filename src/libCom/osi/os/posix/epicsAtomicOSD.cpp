@@ -29,11 +29,11 @@
 
 /*
  * Slow, but probably correct on all systems.
- * Useful only if something more efficent isnt 
+ * Useful only if something more efficient isn`t 
  * provided based on knowledge of the compiler 
  * or OS 
  *
- * A statically initialized pthread mutex doesnt 
+ * A statically initialized pthread mutex doesn`t 
  * need to be destroyed 
  * 
  * !!!!!
@@ -42,7 +42,7 @@
  * !!!!! Do not use this implementation on systems where
  * !!!!! code runs at interrupt context. If so, then 
  * !!!!! an implementation must be provided that is based
- * !!!!! on a compiler intrinsic or an interrpt lock and or
+ * !!!!! on a compiler intrinsic or an interrupt lock and or
  * !!!!! a spin lock primitive
  * !!!!!
  */
@@ -73,7 +73,7 @@ void epicsAtomicUnlock ( EpicsAtomicLockKey * )
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 // Slow, but probably correct on all systems.
-// Useful only if something more efficent isnt 
+// Useful only if something more efficient isn`t 
 // provided based on knowledge of the compiler 
 // or OS 
 void epicsAtomicReadMemoryBarrier ()
@@ -86,7 +86,7 @@ void epicsAtomicReadMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 // Slow, but probably correct on all systems.
-// Useful only if something more efficent isnt 
+// Useful only if something more efficient isn`t 
 // provided based on knowledge of the compiler 
 // or OS 
 void epicsAtomicWriteMemoryBarrier ()

@@ -52,7 +52,7 @@ extern "C" {
 
 /* 
  * We are optimistic that __sync_synchronize is implemented
- * in all version four gcc invarient of target. The gnu doc 
+ * in all version four gcc invariant of target. The gnu doc 
  * seems to say that when not supported by architecture a call
  * to an external function is generated but in practice
  * this isn`t the case for some of the atomic intrinsics, and 

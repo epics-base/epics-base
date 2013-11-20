@@ -94,12 +94,12 @@ epicsShareFunc EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
 #endif
 
 /*
- * options for inline compiler instrinsic or os specific 
+ * options for in-line compiler intrinsic or OS specific 
  * implementations of the above function prototypes
  *
  * for some of the compilers we must define the
- * inline functions before they get used in the c++ 
- * inine functions below
+ * in-line functions before they get used in the c++ 
+ * in-line functions below
  */
 #include "epicsAtomicCD.h"
 
@@ -228,8 +228,8 @@ inline EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
     return epicsAtomicCmpAndSwapPtrT ( & v, oldVal, newVal );
 }
 
-} /* end of namespace atomic */
-} /* end of namespace epics */ 
+} /* end of name space atomic */
+} /* end of name space epics */ 
 
 #endif /* ifdef __cplusplus */
 

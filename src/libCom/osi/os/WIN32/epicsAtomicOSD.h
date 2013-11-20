@@ -16,9 +16,27 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-#define VC_EXTRALEAN
-#define STRICT
+#ifdef VC_EXTRALEAN
+#   define VC_EXTRALEAN_DETECTED_epicsAtomicOSD_h
+#else
+#   define VC_EXTRALEAN
+#endif
+
+#ifdef STRICT
+#   define STRICT_DETECTED_epicsAtomicOSD_h
+#else
+#   define STRICT
+#endif
+
 #include "windows.h"
+
+#ifndef VC_EXTRALEAN_DETECTED_epicsAtomicOSD_h
+#   undef VC_EXTRALEAN
+#endif
+
+#ifndef STRICT_DETECTED_epicsAtomicOSD_h
+#   undef STRICT
+#endif
 
 #if defined ( _WIN64 )
 #    define MS_ATOMIC_64

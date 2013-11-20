@@ -1,0 +1,10 @@
+# CONFIG.cygwin-x86_64.Common
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for cygwin-x86_64 host archs
+# Sites may override these definitions in CONFIG_SITE.cygwin-x86_64.Common
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.cygwin-x86.Common

@@ -1,0 +1,9 @@
+# CONFIG_SITE.windows-x64-mingw.windows-x64-mingw
+#
+# $Revision-Id$
+#
+# Site Specific definitions for windows-x64-mingw target
+# Only the local epics system manager should modify this file
+
+# Prefix for mingw compiler from cygwin
+#CMPLR_PREFIX = x86_64-w64-mingw32-

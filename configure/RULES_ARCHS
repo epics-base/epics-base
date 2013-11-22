@@ -11,6 +11,7 @@
 #
 
 all: install
+host: install$(DIVIDER)$(EPICS_HOST_ARCH)
 
 ACTIONS = inc
 ACTIONS += build
@@ -94,4 +95,4 @@ realclean :
 .PHONY : $(actionArchTargets)
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS) rebuild arch_common_clean
-.PHONY : $(ACTIONS) clean realclean archclean all
+.PHONY : $(ACTIONS) clean realclean archclean host all

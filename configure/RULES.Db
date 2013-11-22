@@ -137,6 +137,12 @@ cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 -include $(TOP)/configure/CONFIG_APP_INCLUDE
 
 all: install
+ifeq ($(EPICS_HOST_ARCH),$T_A)
+host: install
+else
+# Do nothing
+host:
+endif
 
 install: buildInstall
 
@@ -144,7 +150,7 @@ buildInstall : build
 
 rebuild: clean install
 
-.PHONY: all $(ACTIONS)
+.PHONY: all host $(ACTIONS)
 
 $(actionArchTargets) $(BUILD_ARCHS): install
 $(cleanArchTargets): clean

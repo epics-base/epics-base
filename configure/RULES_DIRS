@@ -34,7 +34,8 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
                     $(foreach arch, $(ARCHS), \
                     $(action)$(DIVIDER)$(arch)))
 
-all : install
+all: install
+host: install$(DIVIDER)$(EPICS_HOST_ARCH)
 
 # Allows rebuild to work with parallel builds option, -j.
 ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
@@ -73,7 +74,7 @@ $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
 	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
-.PHONY : $(DIRS) all rebuild
+.PHONY : $(DIRS) all host rebuild
 .PHONY : $(ARCHS) $(ACTIONS)
 .PHONY : $(dirActionTargets) $(dirArchTargets)
 .PHONY : $(dirActionArchTargets)

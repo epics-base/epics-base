@@ -71,7 +71,13 @@ endif
 #---------------------------------------------------------------
 #	First target
 
-all:	install
+all: install
+ifeq ($(EPICS_HOST_ARCH),$T_A)
+host: install
+else
+# Do nothing
+host:
+endif
 
 -include $(CONFIG)/RULES.Db
 
@@ -478,7 +484,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: %.i %.o %.c %.nm %.cpp %.cc
 .PRECIOUS: $(COMMON_INC)
 
-.PHONY: all inc build install clean rebuild buildInstall build_clean
+.PHONY: all host inc build install clean rebuild buildInstall build_clean
 .PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease
 
 endif # BASE_RULES_BUILD

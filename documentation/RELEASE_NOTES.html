@@ -15,6 +15,13 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Post DBE_PROPERTY events automatically</h3>
+
+<p>A new record field attribute "prop(YES)" is added to identify fields
+holding CA meta-data.  Changes to fields so marked will cause a event
+to be sent to all subscriptions to that record for DBE_PROPERTY.
+Meta-data fields are marked for all Base recordtypes.</p>
+
 <h3>errlogRemoveListener() routine changed</h3>
 
 <p>Code that calls <tt>errlogRemoveListener(myfunc)</tt> must be modified to use

@@ -60,6 +60,12 @@ epicsShareFunc double epicsStrtod(const char *str, char **endp)
         cp++;
     }
 
+    if (epicsStrnCaseCmp("0x", cp, 2) == 0) {
+        if (negative)
+            return strtol(str, endp, 16);
+        else
+            return strtoul(str, endp, 16);
+    }
     if (!isalpha((int)*cp))
         return strtod(str, endp);
 

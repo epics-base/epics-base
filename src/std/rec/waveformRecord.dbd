@@ -29,6 +29,7 @@ recordtype(waveform) {
 		prompt("Display Precision")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
@@ -40,16 +41,19 @@ recordtype(waveform) {
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 		size(16)
+		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(NELM,DBF_ULONG) {
 		prompt("Number of Elements")

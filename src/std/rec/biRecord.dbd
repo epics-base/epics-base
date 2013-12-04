@@ -47,6 +47,7 @@ recordtype(bi) {
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(ONAM,DBF_STRING) {
 		prompt("One Name")
@@ -54,6 +55,7 @@ recordtype(bi) {
 		pp(TRUE)
 		interest(1)
 		size(26)
+		prop(YES)
 	}
 	field(RVAL,DBF_ULONG) {
 		prompt("Raw Value")

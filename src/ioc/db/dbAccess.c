@@ -1208,13 +1208,19 @@ long dbPut(DBADDR *paddr, short dbrType,
     }
 
     /* Propagate monitor events for this field, */
-    /* unless the field field is VAL and PP is true. */
+    /* unless the field is VAL and PP is true. */
     pfldDes = paddr->pfldDes;
     isValueField = dbIsValueField(pfldDes);
     if (isValueField) precord->udf = FALSE;
     if (precord->mlis.count &&
         !(isValueField && pfldDes->process_passive))
         db_post_events(precord, paddr->pfield, DBE_VALUE | DBE_LOG);
+    /* If this field is a property (metadata) field,
+     * then post a property change event (even if the field
+     * didn't change).
+     */
+    if (precord->mlis.count && pfldDes->prop)
+        db_post_events(precord, NULL, DBE_PROPERTY);
 
     return status;
 }

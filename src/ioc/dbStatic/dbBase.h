@@ -69,25 +69,26 @@ typedef struct brkTable { /* breakpoint table */
 }brkTable;
 
 typedef struct dbFldDes{  /* field description */
-	char	*prompt; 	/*Prompt string for DCT*/
-	char	*name;		/*Field name*/
-	char	*extra;		/*C def for DBF_NOACCESS*/
-	struct dbRecordType *pdbRecordType;
-	short	indRecordType;	/*within dbRecordType.papFldDes */
-	short	special;	/*Special processing requirements	*/
-	dbfType	field_type;	/*Field type as defined in dbFldTypes.h */
-	short	process_passive;/*should dbPutField process passive	*/
-	ctType	base;		/*base for integer to string conversions*/
-	short	promptgroup;	/*prompt, i.e. gui group		*/
-	short   interest;	/*interest level			*/
-	asLevel	as_level;	/*access security level			*/
-	char	*initial;	/*initial value				*/
-	/*If (DBF_MENU,DBF_DEVICE) ftPvt is (pdbMenu,pdbDeviceMenu)	*/
-	void	*ftPvt;
-	/*On no runtime following only set for STRING			*/
-	short	size;		/*length in bytes of a field element	*/
-	/*The following are only available on run time system*/
-	short	offset;		/*Offset in bytes from beginning of record*/
+    char	*prompt; 	/*Prompt string for DCT*/
+    char	*name;		/*Field name*/
+    char	*extra;		/*C def for DBF_NOACCESS*/
+    struct dbRecordType *pdbRecordType;
+    short	indRecordType;	/*within dbRecordType.papFldDes */
+    short	special;	/*Special processing requirements	*/
+    dbfType	field_type;	/*Field type as defined in dbFldTypes.h */
+    unsigned int    process_passive:1;/*should dbPutField process passive	*/
+    unsigned int    prop:1;/*field is a metadata, post DBE_PROPERTY on change*/
+    ctType	base;		/*base for integer to string conversions*/
+    short	promptgroup;	/*prompt, i.e. gui group		*/
+    short   interest;	/*interest level			*/
+    asLevel	as_level;	/*access security level			*/
+    char	*initial;	/*initial value				*/
+    /*If (DBF_MENU,DBF_DEVICE) ftPvt is (pdbMenu,pdbDeviceMenu)	*/
+    void	*ftPvt;
+    /*On no runtime following only set for STRING			*/
+    short	size;		/*length in bytes of a field element	*/
+    /*The following are only available on run time system*/
+    short	offset;		/*Offset in bytes from beginning of record*/
 }dbFldDes;
 
 typedef struct dbInfoNode {	/*non-field per-record information*/

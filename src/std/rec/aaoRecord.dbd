@@ -24,6 +24,7 @@ recordtype(aao) {
 		prompt("Display Precision")
 		promptgroup(GUI_ALARMS)
 		interest(1)
+		prop(YES)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
@@ -35,16 +36,19 @@ recordtype(aao) {
 		promptgroup(GUI_BITS2)
 		interest(1)
 		size(16)
+		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
 		promptgroup(GUI_CALC)
 		interest(1)
+		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_CLOCK)
 		interest(1)
+		prop(YES)
 	}
 	field(NELM,DBF_ULONG) {
 		prompt("Number of Elements")

@@ -85,51 +85,60 @@ recordtype(calc) {
 		promptgroup(GUI_DISPLAY)
 		interest(1)
 		size(16)
+		prop(YES)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
 		promptgroup(GUI_DISPLAY)
 		interest(1)
+		prop(YES)
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
@@ -137,6 +146,7 @@ recordtype(calc) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
@@ -144,6 +154,7 @@ recordtype(calc) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
@@ -151,6 +162,7 @@ recordtype(calc) {
 		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
+		prop(YES)
 		menu(menuAlarmSevr)
 	}
         field(AFTC, DBF_DOUBLE) {

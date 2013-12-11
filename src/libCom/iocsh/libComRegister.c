@@ -9,10 +9,10 @@
 \*************************************************************************/
 
 #include <stdlib.h>
-#include <stdio.h>
 
 #define epicsExportSharedSymbols
 #include "iocsh.h"
+#include "epicsStdioRedirect.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -60,7 +60,7 @@ static void chdirCallFunc(const iocshArgBuf *args)
     int status;
     status = chdir(args[0].sval);
     if (status) {
-        printf ("Invalid directory path ignored\n");
+        fprintf(stderr, "Invalid directory path, ignored\n");
     }
 }
 
@@ -86,11 +86,11 @@ static void epicsEnvSetCallFunc(const iocshArgBuf *args)
     char *value = args[1].sval;
 
     if (name == NULL) {
-        printf ("Missing environment variable name argument.\n");
+        fprintf(stderr, "Missing environment variable name argument.\n");
         return;
     }
     if (value == NULL) {
-        printf ("Missing environment variable value argument.\n");
+        fprintf(stderr, "Missing environment variable value argument.\n");
         return;
     }
     epicsEnvSet (name, value);
@@ -231,7 +231,7 @@ static void threadCallFunc(const iocshArgBuf *args)
         if (*endp) {
             tid = epicsThreadGetId (cp);
             if (!tid) {
-                printf ("\t'%s' is not a known thread name\n", cp);
+                fprintf(stderr, "\t'%s' is not a known thread name\n", cp);
                 continue;
             }
         }
@@ -299,7 +299,7 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
         if (*endp) {
             tid = epicsThreadGetId(cp);
             if (!tid) {
-                printf("*** argument %d (%s) is not a valid thread name ***\n", i, cp);
+                fprintf(stderr, "'%s' is not a valid thread name\n", cp);
                 continue;
             }
         }
@@ -307,13 +307,13 @@ static void epicsThreadResumeCallFunc(const iocshArgBuf *args)
             tid =(epicsThreadId)ltmp;
             epicsThreadGetName(tid, nameBuf, sizeof nameBuf);
             if (nameBuf[0] == '\0') {
-                printf("*** argument %d (%s) is not a valid thread id ***\n", i, cp);
+                fprintf(stderr, "'%s' is not a valid thread id\n", cp);
                 continue;
             }
 
         }
         if (!epicsThreadIsSuspended(tid)) {
-            printf("*** Thread %s is not suspended ***\n", cp);
+            fprintf(stderr, "Thread %s is not suspended\n", cp);
             continue;
         }
         epicsThreadResume(tid);

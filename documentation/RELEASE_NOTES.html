@@ -14,6 +14,18 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fixed iocsh stream redirection for several commands</h3>
+
+<p>A number of iocsh commands did not respond correctly to redirection of their
+output using the iocsh '>file' or '2>error-file' syntax, and redirecting an
+empty command could create files with garbage names. There may still be a few
+commands that do not properly redirect their output, please notify the core
+developers if you discover any. Thanks to Eric Norum for the iocsh changes.</p>
+
+<p>For externally developed commands, the simplest way to support redirection in
+your C/C++ code is to <tt>#include "epicsStdioRedirect.h"</tt> instead of
+<tt>stdio.h</tt>.</p>
+
 <h3>Fixed crash loading record instance of unknown type</h3>
 
 <p>Fixed segfault when dbLoadRecords tried to load a record of a type that was

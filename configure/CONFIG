@@ -1,17 +1,13 @@
 #*************************************************************************
-# Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #  $Revision-Id$
-#
-#  The developer may edit this file.
-# assume T_A is the host arch if not specified
 
 #
 #  Common build definitions
@@ -89,8 +85,6 @@ endif
 -include $(CONFIG)/os/CONFIG_SITE.Common.$(T_A)
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
 
-endif
-
 # Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
 #
 ifneq ($(CONFIG),$(TOP)/configure)
@@ -103,12 +97,12 @@ endif
 
 # Include $(INSTALL_CFG)/CONFIG* definitions
 #
-ifndef T_A
 TOP_CFG_CONFIGS = $(wildcard $(INSTALL_CFG)/CONFIG*)
 ifneq ($(TOP_CFG_CONFIGS),)
 include $(TOP_CFG_CONFIGS)
 endif
-endif
+
+endif # ifdef T_A
 
 #  User specific definitions
 #
@@ -118,23 +112,4 @@ ifdef T_A
 -include $(HOME)/configure/CONFIG_USER.Common.$(T_A)
 -include $(HOME)/configure/CONFIG_USER.$(EPICS_HOST_ARCH).$(T_A)
 endif
-
-#  All options
-#   may be overridden here.
-#
-# EXAMPLES
-# --------
-#  Build client objects statically ?  must be either YES or NO
-#STATIC_BUILD=NO
-#  Host build optimization,   must be either YES or NO
-#HOST_OPT=YES
-#  Cross build optimization,  must be either YES or NO
-#CROSS_OPT=YES
-#  Generate Verbose Compiler Warnings for host build,  must be either YES or NO
-#HOST_WARN=YES
-#  Generate Verbose Compiler Warnings for cross compile builds,  must be either YES or NO
-#CROSS_WARN=YES
-#etc.
-
-#CROSS_COMPILER_TARGET_ARCHS=vxWorks-68040
 

@@ -1,10 +1,10 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 # $Revision-Id$
 #
@@ -12,7 +12,7 @@
 #
 
 # --------------------------------------------------------------
-# Module developers can now define a new type of file, e.g. ABC, 
+# Module developers can now define a new type of file, e.g. ABC,
 # so that files of type ABC will be installed into a directory
 # defined by INSTALL_ABC. This is done by creating a new CONFIG<name>
 # file, e.g. CONFIG_ABC, with the following lines:
@@ -24,8 +24,14 @@
 # $(INSTALL_LOCATION). The file type ABC should be target
 # architecture independent (alh files, medm files, edm files).
 #
-# Optional rules necessary for files of type ABC should be put in
-# a RULES_ABC file.
+# Files of type ABC are then installed into the INSTALL_ABC
+# directory by adding a line like the following to a Makefile.
+#
+#       ABC += <filename1> <filename2> <filename3>
+#
+# Rules necessary to create files of type ABC should be put in
+# a RULES_ABC file. Variables used by those rules should appear
+# in a CONFIG_ABC file.
 #
 # The module developer installs new CONFIG* or RULES* files
 # into the directory $(INSTALL_LOCATION)/cfg by including the 
@@ -33,16 +39,11 @@
 #
 #       CFG += CONFIG_ABC RULES_ABC
 # 
-# Files of type ABC are installed into INSTALL_ABC directory
-# by adding a line like the following to a Makefile.
-#
-#       ABC += <filename1> <filename2> <filename3>
-#
-# Files in $(INSTALL_LOCATION)/cfg directory are now included by
-# the base config files so the definitions and rules are available
-# for use by later src directory Makefiles in the same module or
-# by other modules with a RELEASE line pointing to the TOP of 
-# the module with RULES_ABC.
+# CONFIG and RULES files in the $(INSTALL_LOCATION)/cfg directory
+# are included by the Base config files so their definitions and
+# rules are available for use by later src directory Makefiles in
+# the same module, or by other modules with a RELEASE line that
+# points to the TOP of the module providing these files.
 
 FILE_TYPE += ADL
 INSTALL_ADL = $(INSTALL_LOCATION)/adl
@@ -59,6 +60,6 @@ INSTALL_EDL = $(INSTALL_LOCATION)/edl
 FILE_TYPE += PERL_MODULES
 INSTALL_PERL_MODULES = $(INSTALL_LOCATION_LIB)/perl
 
-INSTALLS_CFG= $(CFG:%= $(INSTALL_CFG)/%)
+INSTALLS_CFG = $(CFG:%= $(INSTALL_CFG)/%)
 DIRECTORY_TARGETS += $(foreach type, $(FILE_TYPE),$(INSTALL_$(type)))
 

@@ -14,6 +14,19 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Inclusion of &lt;top&gt;/cfg/* files refined</h3>
+
+<p>The way the build system includes files installed in the &lt;top&gt;/cfg/*
+directory has been cleaned up. Files whose names begin with CONFIG will now get
+included by the CONFIG step, and files whose names begin with RULES will get
+included in the RULES step. These files are only ever included when GNUMake is
+working in an application build (O.) directory and T_A is defined, so they
+cannot be used to create generic build targets at other levels.</p>
+
+<p>Files whose names don't start with either CONFIG or RULES are no longer
+included automatically, but such files can still be installed into
+&lt;top&gt;/cfg by naming them in the CFG variable.</p>
+
 <h3>Fixed iocsh stream redirection for several commands</h3>
 
 <p>A number of iocsh commands did not respond correctly to redirection of their
@@ -26,7 +39,7 @@ developers if you discover any. Thanks to Eric Norum for the iocsh changes.</p>
 your C/C++ code is to <tt>#include "epicsStdioRedirect.h"</tt> instead of
 <tt>stdio.h</tt>.</p>
 
-<h3>Fixed crash loading record instance of unknown type</h3>
+<h3>Fixed crash on loading record instance of unknown type</h3>
 
 <p>Fixed segfault when dbLoadRecords tried to load a record of a type that was
 not defined in its DBD files.</p>

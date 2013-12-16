@@ -83,7 +83,7 @@ static void epicsExitCallAtExitsPvt ( exitPvt * pep )
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtExits ( void )
+epicsShareFunc void epicsExitCallAtExits ( void )
 {
     exitPvt * pep = 0;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -99,7 +99,7 @@ epicsShareFunc void epicsShareAPI epicsExitCallAtExits ( void )
     }
 }
 
-epicsShareFunc void epicsShareAPI epicsExitCallAtThreadExits ( void )
+epicsShareFunc void epicsExitCallAtThreadExits ( void )
 {
     exitPvt * pep;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
@@ -126,7 +126,7 @@ static int epicsAtExitPvt (
     return status;
 }
 
-epicsShareFunc int epicsShareAPI epicsAtThreadExit (
+epicsShareFunc int epicsAtThreadExit (
     epicsExitFunc func, void *arg )
 {
     exitPvt * pep;
@@ -142,7 +142,7 @@ epicsShareFunc int epicsShareAPI epicsAtThreadExit (
     return epicsAtExitPvt ( pep, func, arg );
 }
 
-epicsShareFunc int epicsShareAPI epicsAtExit( 
+epicsShareFunc int epicsAtExit( 
     epicsExitFunc func, void *arg )
 {
     int status = -1;
@@ -155,7 +155,7 @@ epicsShareFunc int epicsShareAPI epicsAtExit(
     return status;
 }
 
-epicsShareFunc void epicsShareAPI epicsExit(int status)
+epicsShareFunc void epicsExit(int status)
 {
     epicsExitCallAtExits();
     epicsThreadSleep(1.0);

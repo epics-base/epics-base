@@ -1,5 +1,4 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-
     "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -13,6 +12,14 @@
 <h2 align="center">Changes between 3.14.12.3 and 3.14.12.4</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h3>New test for environment variables</h3>
+
+<p>A new test program epicsEnvTest has been added to the libCom tests which
+checks environment variable APIs. It was written to confirm that threads see
+environment variable values that have been set in their parent thread. VxWorks
+6.x boot images must be configured with ENV_VAR_USE_HOOKS set to FALSE for the
+correct behaviour to occur (a test failure on VxWorks explains this).</p>
 
 <h3>Inclusion of &lt;top&gt;/cfg/* files refined</h3>
 

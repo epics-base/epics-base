@@ -479,6 +479,10 @@ MAIN(chfPluginTest)
     dbChannel *pch;
     db_field_log *pfl;
 
+#ifdef WIN32
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+
     testPlan(1351);
 
     dbChannelInit();

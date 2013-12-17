@@ -270,7 +270,7 @@ void recGblTSELwasModified(struct link *plink)
     /*Note that the VAL value will not be used*/
     pfieldname = strstr(ppv_link->pvname, ".TIME");
     if (pfieldname) {
-        strcpy(pfieldname, ".VAL");
+        *pfieldname = 0;
         ppv_link->pvlMask |= pvlOptTSELisTime;
     }
 }

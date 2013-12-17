@@ -59,8 +59,10 @@ COMMANDLINE_LIBRARY=READLINE
 
 GNU_DIR = /usr
 
-CC = $(GNU_BIN)/cc
-CCC = $(GNU_BIN)/c++
+# Apple soft-links these compilers to clang/clang++
+CC = cc
+CCC = c++
+GNU = NO
 
 #
 # Darwin shared libraries

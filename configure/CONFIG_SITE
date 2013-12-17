@@ -17,6 +17,7 @@
 #
 #  Currently Supporting:
 #	cygwin-x86             (cygwin compiler used for host builds)
+#	cygwin-x86_64          (cygwin compiler used for host builds)
 #	darwin-ppc             (PowerPC based Apple running OSX)
 #	darwin-ppcx86          (Universal binaries for both CPUs)
 #	darwin-x86             (Intel based Apple running OSX)
@@ -37,6 +38,7 @@
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
+#	windows-x64-mingw      (MinGW compiler used for host builds)
 
 #  Debugging builds:
 #	linux-x86-debug        (GNU compiler with -g option for host builds)

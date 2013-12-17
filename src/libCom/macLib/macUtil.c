@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Revision-Id$
@@ -51,11 +50,11 @@ epicsShareAPI macParseDefns(
     int quote;
     int escape;
     size_t nbytes;
-    const unsigned char **ptr;
-    const unsigned char **end;
+    const char **ptr;
+    const char **end;
     int *del;
     char *memCp, **memCpp;
-    const unsigned char *c;
+    const char *c;
     char *s, *d, **p;
     enum { preName, inName, preValue, inValue } state;
 
@@ -68,8 +67,8 @@ epicsShareAPI macParseDefns(
     numMax = strlen( defns );
     if ( numMax < altNumMax )
         numMax = altNumMax;
-    ptr = (const unsigned char **) calloc( numMax, sizeof( char * ) );
-    end = (const unsigned char **) calloc( numMax, sizeof( char * ) );
+    ptr = (const char **) calloc( numMax, sizeof( char * ) );
+    end = (const char **) calloc( numMax, sizeof( char * ) );
     del = (int *) calloc( numMax, sizeof( int ) );
     if ( ptr == NULL || end == NULL  || del == NULL ) goto error;
 
@@ -80,7 +79,7 @@ epicsShareAPI macParseDefns(
     del[0] = FALSE;
     quote  = 0;
     state  = preName;
-    for ( c = (const unsigned char *) defns; *c != '\0'; c++ ) {
+    for ( c = (const char *) defns; *c != '\0'; c++ ) {
 
 	/* handle quotes */
 	if ( quote )
@@ -226,8 +225,8 @@ epicsShareAPI macParseDefns(
     }
 
     /* free workspace */
-    free( ptr );
-    free( end );
+    free( ( void * ) ptr );
+    free( ( void * ) end );
     free( ( char * ) del );
 
     /* debug output */
@@ -240,8 +239,8 @@ epicsShareAPI macParseDefns(
     /* error exit */
 error:
     errlogPrintf( "macParseDefns: failed to allocate memory\n" );
-    if ( ptr != NULL ) free( ptr );
-    if ( end != NULL ) free( end );
+    if ( ptr != NULL ) free( ( void * ) ptr );
+    if ( end != NULL ) free( ( void * ) end );
     if ( del != NULL ) free( ( char * ) del );
     *pairs = NULL;
     return -1;

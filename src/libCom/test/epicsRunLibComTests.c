@@ -20,6 +20,7 @@ int epicsThreadTest(void);
 int epicsTimerTest(void);
 int epicsAlgorithm(void);
 int epicsEllTest(void);
+int epicsEnvTest(void);
 int epicsErrlogTest(void);
 int epicsCalcTest(void);
 int epicsEventTest(void);
@@ -62,6 +63,8 @@ void epicsRunLibComTests(void)
     runTest(epicsAlgorithm);
 
     runTest(epicsEllTest);
+
+    runTest(epicsEnvTest);
 
     runTest(epicsErrlogTest);
 

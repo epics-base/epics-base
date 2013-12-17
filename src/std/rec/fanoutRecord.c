@@ -30,6 +30,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "dbCommon.h"
+
 #define GEN_SIZE_OFFSET
 #include "fanoutRecord.h"
 #undef  GEN_SIZE_OFFSET

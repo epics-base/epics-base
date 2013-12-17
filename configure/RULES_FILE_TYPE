@@ -1,10 +1,10 @@
 #*************************************************************************
-# Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+# Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 # $Revision-Id$
 #
@@ -36,13 +36,11 @@ endif
 endif
 
 #---------------------------------------------
-# Include existing and new $(INSTALL_CFG)/* definitions
+# Include our own $(INSTALL_CFG)/RULES* definitions
 #
-TOP_CFG_FILES = $(sort $(wildcard $(INSTALL_CFG)/RULES*) \
-                       $(wildcard $(INSTALL_CFG)/CONFIG*) \
-                       $(addprefix $(INSTALL_CFG)/,$(CFG)))
-ifneq ($(TOP_CFG_FILES),)
-  include $(TOP_CFG_FILES)
+TOP_CFG_RULES = $(wildcard $(INSTALL_CFG)/RULES*)
+ifneq ($(TOP_CFG_RULES),)
+  include $(TOP_CFG_RULES)
 endif
 
 #---------------------------------------------------------------

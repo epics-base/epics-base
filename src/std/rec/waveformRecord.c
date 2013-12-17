@@ -23,6 +23,7 @@
 
 #include "dbDefs.h"
 #include "epicsPrint.h"
+#include "epicsString.h"
 #include "alarm.h"
 #include "dbAccess.h"
 #include "dbEvent.h"
@@ -34,11 +35,11 @@
 #include "recGbl.h"
 #include "cantProceed.h"
 #include "menuYesNo.h"
+
 #define GEN_SIZE_OFFSET
 #include "waveformRecord.h"
 #undef  GEN_SIZE_OFFSET
 #include "epicsExport.h"
-#include "epicsString.h"
 
 /* Create RSET - Record Support Entry Table*/
 #define report NULL

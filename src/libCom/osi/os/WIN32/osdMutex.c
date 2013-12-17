@@ -38,8 +38,9 @@
  * It appears that the only entry point used here that causes
  * portability problems with W95\W98\WME is TryEnterCriticalSection.
  */
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0400 
+#ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0400 
+#endif
 #include <windows.h>
 
 #define epicsExportSharedSymbols

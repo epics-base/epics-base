@@ -10,7 +10,6 @@
 
 /* Author:  Marty Kraimer Date:    04-07-94 */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -18,6 +17,7 @@
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
 #include "epicsMutex.h"
+#include "epicsStdioRedirect.h"
 #include "epicsString.h"
 #include "dbDefs.h"
 #include "ellLib.h"
@@ -35,12 +35,13 @@ typedef struct gphPvt {
 #define DEFAULT_SIZE 512
 #define MAX_SIZE 65536
 
+
 void epicsShareAPI gphInitPvt(gphPvt **ppvt, int size)
 {
     gphPvt *pgphPvt;
 
     if (size & (size - 1)) {
-        printf("gphInitPvt: %d is not a power of 2\n", size);
+        fprintf(stderr, "gphInitPvt: %d is not a power of 2\n", size);
         size = DEFAULT_SIZE;
     }
 
@@ -215,9 +216,10 @@ void epicsShareAPI gphDumpFP(FILE *fp, gphPvt *pgphPvt)
     ELLLIST **paplist;
     int h;
 
-    if (pgphPvt == NULL) return;
+    if (pgphPvt == NULL)
+        return;
 
-    printf("Hash table has %d buckets", pgphPvt->size);
+    fprintf(fp, "Hash table has %d buckets", pgphPvt->size);
 
     paplist = pgphPvt->paplist;
     for (h = 0; h < pgphPvt->size; h++) {

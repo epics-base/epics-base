@@ -31,7 +31,6 @@
 #include "epicsString.h"
 #include "epicsExport.h"
 
-#define epicsExportSharedSymbols
 #include "dbFldTypes.h"
 #include "link.h"
 #include "dbStaticLib.h"
@@ -113,8 +112,6 @@ static void yyerrorAbort(char *str)
 {
     yyerror(str);
     yyAbort = TRUE;
-    while (ellCount(&tempList))
-        popFirstTemp();
 }
 
 static void allocTemp(void *pvoid)
@@ -257,6 +254,11 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     my_buffer_ptr = my_buffer;
     ellAdd(&inputFileList,&pinputFile->node);
     status = pvt_yy_parse();
+
+    if (yyAbort)
+        while (ellCount(&tempList))
+            popFirstTemp();
+
     dbFreePath(pdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */
 	DBENTRY	dbEntry;
@@ -931,7 +933,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     allocTemp(pdbentry);
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
-        epicsPrintf("Record \"%s\" is of unknown type \"%s\" - ",
+        epicsPrintf("Record \"%s\" is of unknown type \"%s\"\n",
                     name, recordType);
         yyerrorAbort(NULL);
         return;
@@ -940,8 +942,8 @@ static void dbRecordHead(char *recordType, char *name, int visible)
     status = dbCreateRecord(pdbentry,name);
     if (status==S_dbLib_recExists) {
         if (strcmp(recordType, dbGetRecordTypeName(pdbentry))!=0) {
-            epicsPrintf("Record \"%s\" already defined with different type "
-                "\"%s\"\n", name, dbGetRecordTypeName(pdbentry));
+            epicsPrintf("Record \"%s\" of type \"%s\" redefined with new type "
+                "\"%s\"\n", name, dbGetRecordTypeName(pdbentry), recordType);
             yyerror(NULL);
             duplicate = TRUE;
             return;

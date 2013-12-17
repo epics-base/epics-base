@@ -167,16 +167,16 @@ static BUCKETID bucketUnsignedHash (BUCKET *pb, const void *pId)
 static BUCKETID bucketPointerHash (BUCKET *pb, const void *pId)
 {
 	void * const	*ppId = (void * const *) pId;	
-	unsigned long	src;
+	size_t	src;
 	BUCKETID	hashid;
 
 	/*
-	 * This makes the assumption that
-	 * a pointer will fit inside of a long
+	 * This makes the assumption that size_t
+	 * can be used to hold a pointer value
 	 * (this assumption may not port to all
 	 * CPU architectures)
 	 */
-	src = (unsigned long) *ppId; 
+	src = (size_t) *ppId; 
 	hashid = src;
 	src = src >> pb->hashIdNBits;
 	while(src){

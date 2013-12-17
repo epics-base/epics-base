@@ -22,12 +22,12 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 
 #include "envDefs.h"
 #include "epicsAssert.h"
+#include "epicsStdioRedirect.h"
 #include "errlog.h"
 #include "osiWireFormat.h"
 

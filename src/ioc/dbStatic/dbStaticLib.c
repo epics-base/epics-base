@@ -1899,9 +1899,11 @@ char * dbGetString(DBENTRY *pdbentry)
 		else if(pvlMask&pvlOptCP) ppind=3;
 		else if(pvlMask&pvlOptCPP) ppind=4;
 		else ppind=0;
-		if(plink->value.pv_link.pvname)
-		    strcpy(message,plink->value.pv_link.pvname);
-		else
+		if (plink->value.pv_link.pvname) {
+		    strcpy(message, plink->value.pv_link.pvname);
+		    if (pvlMask & pvlOptTSELisTime)
+			strcat(message, ".TIME");
+		} else
 		    strcpy(message,"");
 		strcat(message," ");
 		strcat(message,ppstring[ppind]);

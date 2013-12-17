@@ -165,7 +165,8 @@ $Date$</span></small></p>
   <li><a href="#ca_pend_io">block for certain requests to complete</a></li>
   <li><a href="#ca_test_io">test to see if certain requests have
   completed</a></li>
-  <li><a href="#ca_pend_event">process CA client library background activities</a></li>
+  <li><a href="#ca_pend_event">process CA client library background
+    activities</a></li>
   <li><a href="#ca_flush_io">flush outstanding requests to the server</a></li>
   <li><a href="#ca_add_exception_event">replace the default exception
     handler</a></li>
@@ -454,26 +455,20 @@ Environment</a> below.</p>
 
 <h3><a name="firewall">Firewalls</a></h3>
 
-<p>If you want channel access clients on a machine to be able to see
-beacons and replies to broadcast PV search requests, you need to permit
-inbound UDP packets with source port EPICS_CA_SERVER_PORT (default is 5064)
-or destination port EPICS_CA_REPEATER_PORT (default is 5065). On systems
-using iptables this can be accomplished by rules like</p>
-
-<pre>
-     -A INPUT -s 192.168.0.0/22 -p udp --sport 5064 -j ACCEPT
-     -A INPUT -s 192.168.0.0/22 -p udp --dport 5065 -j ACCEPT
-</pre>
+<p>If you want channel access clients on a machine to be able to see beacons
+and replies to broadcast PV search requests, you need to permit inbound UDP
+packets with source port EPICS_CA_SERVER_PORT (default is 5064) or destination
+port EPICS_CA_REPEATER_PORT (default is 5065). On systems using iptables this
+can be accomplished by rules like</p>
+<pre>     -A INPUT -s 192.168.0.0/22 -p udp --sport 5064 -j ACCEPT
+     -A INPUT -s 192.168.0.0/22 -p udp --dport 5065 -j ACCEPT</pre>
 
 <p>If you want channel access servers (e.g. "soft IOCs") on a machine to be
 able to be seen by clients, you need to permit inbound TCP or UDP packets with
-destination port EPICS_CA_SERVER_PORT (default is 5064).
-On systems using iptables this can be accomplished by rules like</p>
-
-<pre>
-     -A INPUT -s 192.168.0.0/22 -p udp --dport 5064 -j ACCEPT
-     -A INPUT -s 192.168.0.0/22 -p tcp --dport 5064 -j ACCEPT
-</pre>
+destination port EPICS_CA_SERVER_PORT (default is 5064). On systems using
+iptables this can be accomplished by rules like</p>
+<pre>     -A INPUT -s 192.168.0.0/22 -p udp --dport 5064 -j ACCEPT
+     -A INPUT -s 192.168.0.0/22 -p tcp --dport 5064 -j ACCEPT</pre>
 
 <p>In all cases the "-s 192.168.0.0/22" specifies the range of addresses from
 which you wish to accept packets.</p>
@@ -498,9 +493,8 @@ broadcast address of that subnet is added to the list. For each point to point
 interface found, the destination address of that link is added to the list.
 This automatic server address list initialization can be disabled if the EPICS
 environment variable EPICS_CA_AUTO_ADDR_LIST exists and its value is either
-of "no" or "NO". The typical default is to enable network interface
-introspection driven initialization with EPICS_CA_AUTO_ADDR_LIST set to "YES"
-or "yes".</p>
+"no" or "NO". The typical default is to enable network interface introspection
+driven initialization with EPICS_CA_AUTO_ADDR_LIST set to "YES" or "yes".</p>
 
 <p>Following network interface introspection, any IP addresses specified in the
 EPICS environment variable EPICS_CA_ADDR_LIST are added to the list of
@@ -511,8 +505,8 @@ CA servers unless a CA proxy (gateway) is installed. The addresses in
 EPICS_CA_ADDR_LIST may be dotted IP addresses or host names if the local OS has
 support for host name to IP address translation. When multiple names are added
 to EPICS_CA_ADDR_LIST they must be separated by white space. There is no
-requirement that the addresses specified in the EPICS_CA_ADDR_LIST be
-broadcast addresses, but this will often be the most convenient choice.</p>
+requirement that the addresses specified in the EPICS_CA_ADDR_LIST be broadcast
+addresses, but this will often be the most convenient choice.</p>
 
 <p>For any IP addresses specified in the EPICS environment variable
 EPICS_CA_NAME_SERVERS, TCP connections are opened and used for CA client name
@@ -560,7 +554,7 @@ default to EPICS_CA_SERVER_PORT.</p>
 <p>Frequently vxWorks systems boot by default with routes limiting access only
 to the local subnet. If a EPICS system is operating in a WAN environment it may
 be necessary to configure routes into the vxWorks system which enable a vxWorks
-based CA server to respond to requests originating outside it's subnet. These
+based CA server to respond to requests originating outside its subnet. These
 routing restrictions can also apply to vxWorks base CA clients communicating
 with off subnet servers. An EPICS system manager can implement an rudimentary,
 but robust, form of access control for a particular host by not providing
@@ -865,8 +859,8 @@ the contents of EPICS_CA_ADDR_LIST is used to augment the list. Otherwise, the
 list is not augmented.</p>
 
 <p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for
-server beacons. The only exception to this occurs when  ports are specified
-in EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
+server beacons. The only exception to this occurs when ports are specified in
+EPICS_CAS_BEACON_ADDR_LIST or possibly in EPICS_CA_ADDR_LIST. If
 EPICS_CAS_BEACON_PORT is not specified then beacons are sent to the port
 specified in EPICS_CA_REPEATER_PORT.</p>
 
@@ -874,7 +868,7 @@ specified in EPICS_CA_REPEATER_PORT.</p>
 
 <p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself to,
 and therefore accept messages only over, a limited set of the local host's
-network interfaces (each specified by it's IP address). On UNIX systems type
+network interfaces (each specified by its IP address). On UNIX systems type
 "netstat -i" (type "ipconfig" on windows) to see a list of the local host's
 network interfaces. Specifically, UDP search messages addressed to both the IP
 addresses in EPICS_CAS_INTF_ADDR_LIST and also to the broadcast addresses of
@@ -1885,7 +1879,7 @@ order to connect to this new beacon-out-of-range server. The typical situation
 where a client would not see the server's beacon might be when the client isnt
 on the same IP subnet as the server, and the client's EPICS_CA_ADDR_LIST was
 modified to include a destination address for the server, but the server's
-beacon address list was not modified so that it's beacons are received by the
+beacon address list was not modified so that its beacons are received by the
 client.</p>
 
 <h4><a name="Server1">A Server's IP Address Was Changed</a></h4>
@@ -2017,8 +2011,8 @@ OS and even between different versions of the same OS.</p>
 <p>If the subscription update producer in the server produces subscription
 updates faster than the subscription update consumer in the client consumes
 them, then events have to be discarded if the buffering in the server
-isn't allowed to grow to an infinite size. This is a law of nature
-- based on queuing theory of course.</p>
+isn't allowed to grow to an infinite size. This is a law of nature &ndash;
+based on queuing theory of course.</p>
 
 <p>What is done depends on the version of the CA server. All server versions
 place quotas on the maximum number of subscription updates allowed on the
@@ -2040,10 +2034,10 @@ server to resume with subscription updates. This prevents slow clients from
 getting time warped, but also guarantees that intervening events are discarded
 until the slow client catches up.</p>
 
-<p>There is currently no message on the IOC's console when a
-particular client is slow on the uptake. A message of this type used to exist
-many years ago, but it was a source of confusion (and what we will call
-message noise) so it was removed. </p>
+<p>There is currently no message on the IOC's console when a particular client
+is slow on the uptake. A message of this type used to exist many years ago, but
+it was a source of confusion (and what we will call message noise) so it was
+removed.</p>
 
 <p>There is unfortunately no field in the protocol allowing the server to
 indicate that an intervening subscription update was discarded. We should
@@ -2320,7 +2314,7 @@ int main ( int argc, char ** argv )
 
 <p>Certain CA client initiated requests asynchronously execute an application
 supplied call back in the client process when a response arrives. The functions
-ca_put_callback, ca_get_callback, and ca_add_event all request notification of
+ca_put_callback, ca_get_callback, and ca_create_subscription all request notification of
 asynchronous completion via this mechanism. The <code>event_handler_args
 </code>structure is passed <em>by value</em> to the application supplied
 callback. In this structure the <code>dbr</code> field is a void pointer to any
@@ -2355,8 +2349,8 @@ void myCallback ( struct event_handler_args args )
 <h3><a name="Channel1">Channel Access Exceptions</a></h3>
 
 <p>When the server detects a failure, and there is no client call back function
-attached to the request, an exception handler is executed in the client.
-The default exception handler prints a message on the console and exits if the
+attached to the request, an exception handler is executed in the client. The
+default exception handler prints a message on the console and exits if the
 exception condition is severe. Certain internal exceptions within the CA client
 library, and failures detected by the SEVCHK macro may also cause the exception
 handler to be invoked. To modify this behavior see <a
@@ -2423,12 +2417,12 @@ same process).</p>
 all OS (in past releases the library was thread safe only on vxWorks). When the
 client library is initialized the programmer may specify if preemptive callback
 is to be enabled. Preemptive callback is disabled by default. If preemptive
-callback is enabled, then the user's callback functions might be called by
-CA's auxiliary threads when the main initiating channel access thread is not
-inside of a function in the channel access client library. Otherwise, the
-user's callback functions will be called only when the main initiating channel
-access thread is executing inside of the CA client library. When the CA client
-library invokes a user's callback function, it will always wait for the current
+callback is enabled, then the user's callback functions might be called by CA's
+auxiliary threads when the main initiating channel access thread is not inside
+of a function in the channel access client library. Otherwise, the user's
+callback functions will be called only when the main initiating channel access
+thread is executing inside of the CA client library. When the CA client library
+invokes a user's callback function, it will always wait for the current
 callback to complete prior to executing another callback function. Programmers
 enabling preemptive callback should be familiar with using mutex locks to
 create a reliable multi-threaded program.</p>
@@ -2457,10 +2451,10 @@ address space (process) to be independent of each other. For example, the
 database CA links and the sequencer are designed to not use the same CA client
 library threads, network circuits, and data structures. Each thread that calls
 <a href="#ca_context_create">ca_context_create()</a> for the first time either
-directly or implicitly when calling any CA library function for the first
-time, creates a CA client library context. A CA client library context contains
-all of the threads, network circuits, and data structures required to connect
-and communicate with the channels that a CA client application has created. The
+directly or implicitly when calling any CA library function for the first time,
+creates a CA client library context. A CA client library context contains all
+of the threads, network circuits, and data structures required to connect and
+communicate with the channels that a CA client application has created. The
 priority of auxiliary threads spawned by the CA client library are at fixed
 offsets from the priority of the thread that called <a
 href="#ca_context_create">ca_context_create()</a>. An application specific
@@ -2530,9 +2524,9 @@ questionable practice for the following reasons.</p>
 <ul>
   <li>The vxWorks shell thread runs at the very highest priority in the system
     and therefore socket calls are made at a priority that is above the
-    priority of tNetTask - a practice that has caused the WRS IP kernel
-    to get sick in the past. That symptom was observed some time ago, but we
-    don't know if WRS has fixed the problem.</li>
+    priority of tNetTask. This has caused problems with the WRS IP kernel in
+    the past. That symptom was observed some time ago, but we don't know if
+    WRS has fixed the problem.</li>
 </ul>
 <ul>
   <li>The vxWorks shell thread runs at the very highest priority in the system
@@ -2679,7 +2673,7 @@ on a channel.</p>
 
 <p>The circuit may be initially connected or disconnected depending on the
 state of the network and the location of the channel. A channel will only enter
-a connected state after server's address is determined, and only if channel
+a connected state after the server's address is determined, and only if channel
 access successfully establishes a virtual circuit through the network to the
 server. Channel access routines that send a request to a server will return
 ECA_DISCONNCHID if the channel is currently disconnected.</p>
@@ -2689,7 +2683,7 @@ a connected state.</p>
 <ul>
   <li>The first and simplest method requires that you call ca_pend_io(), and
     wait for successful completion, prior to using a channel that was created
-    specifying a nil connection call back function pointer.</li>
+    specifying a nill connection call back function pointer.</li>
   <li>The second method requires that you register a connection handler by
     supplying a valid connection callback function pointer. This connection
     handler is called whenever the connection state of the channel changes. If
@@ -2725,10 +2719,10 @@ time.</p>
   <dt><code>USERFUNC</code></dt>
     <dd>Optional address of the user's call back function to be run when the
       connection state changes. Casual users of channel access may decide to
-      set this field to nil or 0 if they do not need to have a call back
+      set this field to nill or 0 if they do not need to have a call back
       function run in response to each connection state change event.
       <p>The following structure is passed <em>by value </em>to the user's
-      connection connection callback function. The <code>op</code> field will
+      connection callback function. The <code>op</code> field will
       be set by the CA client library to <code>CA_OP_CONN_UP</code> when the
       channel connects, and to <code>CA_OP_CONN_DOWN</code> when the channel
       disconnects. See <code><a href="#ca_puser">ca_puser</a></code> if the
@@ -2745,7 +2739,7 @@ time.</p>
     <dd>The value of this void pointer argument is retained in
       storage associated with the specified channel. See the MACROS manual page
       for reading and writing this field. Casual users of channel access may
-      wish to set this field to nil or 0.</dd>
+      wish to set this field to nill or 0.</dd>
 </dl>
 <dl>
   <dt><code>PRIORITY</code></dt>
@@ -2853,7 +2847,7 @@ This allows several requests to be efficiently combined into one message.</p>
 <h4>Description (IOC Database Specific)</h4>
 
 <p>A CA put request causes the record to process if the record's SCAN field is
-set to passive, and the field being written has it's process passive attribute
+set to passive, and the field being written has its process passive attribute
 set to true. If such a record is already processing when a put request is
 initiated the specified field is written immediately, and the record is
 scheduled to process again as soon as it finishes processing. Earlier instances
@@ -2861,20 +2855,19 @@ of multiple put requests initiated while the record is being processing may be
 discarded, but the last put request initiated is always written and
 processed.</p>
 
-<p>A CA put <span style="font-style: italic;">callback</span> request causes
-the record to process if the record's SCAN field is set to passive, and the
-field being written has it's process passive attribute set to true. For such a
-record, the user's put callback function is not called until after the record,
-and any records that the record links to, finish processing. If such a record
-is already processing when a put <span
-style="font-style: italic;">callback</span> request is initiated the put <span
-style="font-style: italic;">callback</span> request is postponed until the
-record, and any records it links to, finish processing.</p>
+<p>A CA put <em>callback</em> request causes the record to process if the
+record's SCAN field is set to passive, and the field being written has its
+process passive attribute set to true. For such a record, the user's put
+callback function is not called until after the record, and any records that
+the record links to, finish processing. If such a record is already processing
+when a put <em>callback</em> request is initiated the put <em>callback</em>
+request is postponed until the record, and any records it links to, finish
+processing.</p>
 
 <p>If the record's SCAN field is not set to passive, or the field being written
-has it's process passive attribute set to false then the CA put or CA put
-callback request cause the specified field to be immediately written, but they
-do not cause the record to be processed.</p>
+has its process passive attribute set to false then the CA put or CA put
+<em>callback</em> request cause the specified field to be immediately written,
+but they do not cause the record to be processed.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3056,10 +3049,10 @@ int ca_create_subscription ( chtype TYPE, unsigned long COUNT,
 invoked whenever the process variable undergoes significant state changes. A
 significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
-deadband field determines the magnitude of a significant change for for the
+deadband field determines the magnitude of a significant change for the
 process variable's value. Each call to this function consumes resources in the
 client library and potentially a CA server until one of ca_clear_channel or
-ca_clear_event is called.</p>
+ca_clear_subscription is called.</p>
 
 <p>Subscriptions may be installed or canceled against both connected and
 disconnected channels. The specified USERFUNC is called once immediately after
@@ -3067,7 +3060,7 @@ the subscription is installed with the process variable's current state if the
 process variable is connected. Otherwise, the specified USERFUNC is called
 immediately after establishing a connection (or reconnection) with the process
 variable. The specified USERFUNC is called immediately with the process
-variable's current state from within ca_add_event() if the client and the
+variable's current state from within ca_create_subscription() if the client and the
 process variable share the same address space.</p>
 
 <p>If a subscription is installed on a channel in a disconnected state then the
@@ -3124,8 +3117,8 @@ indicating the current state of the channel.</p>
 <dl>
   <dt><code>PEVID</code></dt>
     <dd>This is a pointer to user supplied event id which is overwritten if
-      successful. This event id can later be used to clear a specific
-      event. This option may may be omitted by passing a nil pointer.</dd>
+      successful. This event id can later be used to clear a specific event.
+      This option may be omitted by passing a nill pointer.</dd>
 </dl>
 <dl>
   <dt><code>MASK</code></dt>
@@ -3173,7 +3166,7 @@ int ca_clear_subscription ( evid EVID );</pre>
 
 <p>Cancel a subscription.</p>
 
-<p>All ca_clear_event() requests such as the above are accumulated (buffered)
+<p>All cancel-subscription requests such as the above are accumulated (buffered)
 and not forwarded to the server until one of ca_flush_io, ca_pend_io,
 ca_pend_event, or ca_sg_pend are called. This allows several requests to be
 efficiently sent together in one message.</p>
@@ -3181,7 +3174,7 @@ efficiently sent together in one message.</p>
 <h4>Arguments</h4>
 <dl>
   <dt>EVID</dt>
-    <dd>event id returned by ca_add_event()</dd>
+    <dd>event id returned by ca_create_subscription()</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3232,9 +3225,9 @@ activities</em>.</p>
 network delays such as Ethernet collision exponential back off until
 retransmission delays which can be quite long on overloaded networks.</p>
 
-<p>Unlike <code><a href="#ca_pend_event">ca_pend_event</a></code>, this routine will
-not process CA's background activities if none of the selected IO requests are
-pending.</p>
+<p>Unlike <code><a href="#ca_pend_event">ca_pend_event</a></code>, this routine
+will not process CA's background activities if none of the selected IO requests
+are pending.</p>
 
 <h4>Arguments</h4>
 <dl>
@@ -3297,7 +3290,7 @@ activity is processed for TIMEOUT seconds.</p>
 background activity is processed.</p>
 
 <p>The ca_pend_event function will <em>not</em> return before the specified
-time-out expires and all unfinished channel access labor has been processed,
+timeout expires and all unfinished channel access labor has been processed,
 and unlike <code><a href="#ca_pend_io">ca_pend_io</a></code> returning from the
 function does <em>not </em>indicate anything about the status of pending IO
 requests.</p>
@@ -3409,7 +3402,7 @@ field should not be used.</p>
 <dl>
   <dt><code>USERFUNC</code></dt>
     <dd>Address of user callback function to be executed when an exceptions
-      occur. Passing a nil value causes the default exception handler to be
+      occur. Passing a nill value causes the default exception handler to be
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op</code> field can be one of
       <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
@@ -3544,7 +3537,7 @@ default handler uses fprintf to send messages to 'stderr'.</p>
 <dl>
   <dt><code>PFUNC</code></dt>
     <dd>The address of a user supplied call back handler to be invoked when CA
-      prints diagnostic messages. Installing a nil pointer will cause the
+      prints diagnostic messages. Installing a nill pointer will cause the
       default call back handler to be reinstalled.</dd>
 </dl>
 
@@ -3591,7 +3584,7 @@ specified channel.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>Address of user supplied call back function. A nil pointer uninstalls
+    <dd>Address of user supplied call back function. A nill pointer uninstalls
       the current handler. The following arguments are passed <em>by value</em>
       to the supplied callback handler. 
       <pre>typedef struct ca_access_rights {
@@ -3934,12 +3927,12 @@ prints diagnostics to standard out.</p>
 
 <h4>Examples</h4>
 <pre>void ca_test_event (); 
-status = ca_add_event ( type, chid, ca_test_event, NULL, NULL ); 
+status = ca_create_subscription ( type, chid, ca_test_event, NULL, NULL ); 
 SEVCHK ( status, .... );</pre>
 
 <h4>See Also</h4>
 
-<p><a href="#ca_add_event">ca_add_event</a>()</p>
+<p><a href="#ca_add_event">ca_create_subscription</a>()</p>
 
 <h3><code><a name="ca_sg_create">ca_sg_create()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
@@ -4285,7 +4278,7 @@ ca_client_status() prints information about the calling threads CA context.</p>
 
 <h4>Description</h4>
 
-<p>Returns a pointer to the current thread's CA context. If none then nil is
+<p>Returns a pointer to the current thread's CA context. If none then nill is
 returned.</p>
 
 <h4>See Also</h4>
@@ -4318,12 +4311,11 @@ preemptively from more than one thread.</p>
 
 <h4>Returns</h4>
 
-<p>ECA_ISATTACHED - already attached to a CA context</p>
+<p>ECA_NORMAL - Normal successful completion</p>
 
-<p>ECA_NOTTHREADED - the specified context is non-preemptive and therefore does
-not allow other threads to join</p>
+<p>ECA_NOTTHREADED - Context is not preemptive so cannot be joined</p>
 
-<p>ECA_ISATTACHED - the current thread is already attached to a CA context</p>
+<p>ECA_ISATTACHED - Thread already attached to a CA context</p>
 
 <h4>See Also</h4>
 

@@ -36,6 +36,7 @@
 #include "recGbl.h"
 #include "special.h"
 #include "menuConvert.h"
+
 #define GEN_SIZE_OFFSET
 #include "aiRecord.h"
 #undef  GEN_SIZE_OFFSET

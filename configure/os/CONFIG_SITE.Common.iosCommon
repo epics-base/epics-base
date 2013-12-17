@@ -14,11 +14,12 @@
 #IOS_VERSION = 5.0
 #IOS_VERSION = 5.1
 #IOS_VERSION = 6.0
-IOS_VERSION = 6.1
+#IOS_VERSION = 6.1
+IOS_VERSION = 7.0
 
 
 # Which compiler to use:
-#   CLANG is preferred for recent versions of Xcode
+#   CLANG is required for Xcode 5.0 and later
 #   LLVM_GNU uses the llvm-gcc and llvm-g++ compilers
 #   GNU is needed for older versions of Xcode
 

@@ -9,7 +9,6 @@
 
 /* Original Authors: David H. Thompson & Sheng Peng (ORNL) */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -19,6 +18,7 @@
 #include "epicsMutex.h"
 #include "epicsMessageQueue.h"
 #include "epicsString.h"
+#include "epicsStdioRedirect.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "epicsTimer.h"

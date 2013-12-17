@@ -22,7 +22,7 @@
 #include "dbDefs.h"
 #include "epicsEvent.h"
 #include "epicsExit.h"
-#include "epicsStdio.h"
+#include "epicsStdioRedirect.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"

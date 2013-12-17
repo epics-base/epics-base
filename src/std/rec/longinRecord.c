@@ -33,6 +33,7 @@
 #include "recSup.h"
 #include "recGbl.h"
 #include "menuYesNo.h"
+
 #define GEN_SIZE_OFFSET
 #include "longinRecord.h"
 #undef  GEN_SIZE_OFFSET

@@ -594,7 +594,7 @@ size_t gdd::describedDataSizeBytes(void) const
 size_t gdd::getTotalSizeBytes(void) const
 {
 	size_t sz;
-	unsigned long tsize;
+	size_t tsize;
 	const gdd* pdd;
 
 	// add up size of bounds + size of this DD
@@ -924,8 +924,8 @@ int gdd::flattenDDs(gddContainer* dd, void* buf, size_t size)
 gddStatus gdd::convertOffsetsToAddress(void)
 {
 	aitUint8* pdd = (aitUint8*)this;
-	unsigned long bnds = (unsigned long)(bounds);
-	unsigned long dp = (unsigned long)(dataPointer());
+	size_t bnds = (size_t)(bounds);
+	size_t dp = (size_t)(dataPointer());
 	gdd* tdd;
 	gddContainer* cdd;
 	gddCursor cur;
@@ -943,7 +943,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 
 		for(tdd=cur.first();tdd;tdd=cur.next())
 		{
-			if(tdd->next()) tdd->setNext((gdd*)(pdd+(unsigned long)tdd->next()));
+			if(tdd->next()) tdd->setNext((gdd*)(pdd+(size_t)tdd->next()));
 			tdd->convertOffsetsToAddress();
 		}
 	}
@@ -962,7 +962,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 					if(str[i].string())
 					{
 						cstr=str[i].string();
-						str[i].installBuf((char *)(pdd+(unsigned long)cstr), 
+						str[i].installBuf((char *)(pdd+(size_t)cstr), 
 							str[i].length(), str[i].length()+1);
 					}
 					else
@@ -982,7 +982,7 @@ gddStatus gdd::convertOffsetsToAddress(void)
 				if(str->string())
 				{
 					cstr=str->string();
-					str->installBuf((char *)(pdd+(unsigned long)cstr), 
+					str->installBuf((char *)(pdd+(size_t)cstr), 
 						str->length(), str->length()+1u);
 				}
 				else

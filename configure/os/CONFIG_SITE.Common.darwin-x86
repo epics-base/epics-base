@@ -14,20 +14,21 @@ ARCH_CLASS = x86_64
 #ARCH_CLASS = i386 x86_64
 
 #
-# Comment out the following lines to build with Apple's GCC instead of CLANG.
+# Uncomment the following 3 lines to build with Apple's GCC instead of CLANG.
 #
-CMPLR_CLASS = clang
-CC  = clang
-CCC = clang++
-GNU = NO
+#CMPLR_CLASS = gcc
+#CC  = gcc
+#CCC = g++
+#GNU = YES
 
 
-# To use MacPorts GCC, comment out ALL the settings above this line,
-# then uncomment (and modify if necessary) the following instead:
+# To use MacPorts GCC uncomment (and modify if necessary) the following:
 
 #GNU_DIR = /opt/local
+#CMPLR_CLASS = gcc
 #CC = $(GNU_BIN)/gcc -m64
 #CCC = $(GNU_BIN)/g++ -m64
+#GNU = YES
 
 # If you see this or similar errors while building in the src/cap5 directory
 #   gcc: error: unrecognized option '-no-cpp-precomp'

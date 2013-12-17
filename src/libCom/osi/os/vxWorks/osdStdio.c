@@ -1,28 +1,27 @@
 /* osdStdio.c */
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#include <string.h>
+#include <fioLib.h>
 #include "epicsStdio.h"
-#include "fioLib.h"
-#include "string.h"
 #include "dbDefs.h"
 
 struct outStr_s {
     char *str;
-    int free;
+    size_t free;
 };
 
-static STATUS outRoutine(char *buffer, int nchars, int outarg) {
+static STATUS outRoutine(char *buffer, size_t nchars, int outarg) {
     struct outStr_s *poutStr = (struct outStr_s *) outarg;
-    int free = poutStr->free;
-    int len;
+    size_t free = poutStr->free;
+    size_t len;
     
     if (free < 1) { /*let fioFormatV continue to count length*/
         return OK;
@@ -47,7 +46,7 @@ int epicsVsnprintf(char *str, size_t size, const char *format, va_list ap) {
 
 int epicsSnprintf(char *str, size_t size, const char *format, ...)
 {
-    int nchars;
+    size_t nchars;
     va_list pvar;
 
     va_start(pvar,format);

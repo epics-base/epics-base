@@ -60,6 +60,7 @@ COMMANDLINE_LIBRARY=READLINE
 GNU_DIR = /usr
 
 # Apple soft-links these compilers to clang/clang++
+CMPLR_CLASS = clang
 CC = cc
 CCC = c++
 GNU = NO

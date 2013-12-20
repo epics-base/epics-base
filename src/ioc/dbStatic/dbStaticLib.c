@@ -3142,8 +3142,8 @@ void  dbDumpField(
 		printf("\t     field_type: %d\n", pdbFldDes->field_type);
 	    else
 		printf("\t     field_type: %s\n", pamapdbfType[j].strvalue);
-	    printf("\tprocess_passive: %hd\n",pdbFldDes->process_passive);
-	    printf("\t       property: %hd\n",pdbFldDes->prop);
+	    printf("\tprocess_passive: %u\n",pdbFldDes->process_passive);
+	    printf("\t       property: %u\n",pdbFldDes->prop);
 	    printf("\t           base: %d\n",pdbFldDes->base);
 	    if(!pdbFldDes->promptgroup) {
 		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);

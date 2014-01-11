@@ -51,7 +51,7 @@ MAIN(epicsStringTest)
     char *s;
     int status;
 
-    testPlan(299);
+    testPlan(303);
 
     testChars();
 
@@ -85,6 +85,11 @@ MAIN(epicsStringTest)
     testOk1(epicsStrHash(abcd, 0) != epicsStrHash("bacd", 0));
     testOk1(epicsStrHash(abcd, 0) == epicsMemHash(abcde, 4, 0));
     testOk1(epicsStrHash(abcd, 0) != epicsMemHash("abcd\0", 5, 0));
+
+    testOk1(epicsStrnLen("abcd", 5)==4);
+    testOk1(epicsStrnLen("abcd", 4)==4);
+    testOk1(epicsStrnLen("abcd", 3)==3);
+    testOk1(epicsStrnLen("abcd", 0)==0);
 
     memset(result, 'x', sizeof(result));
     status = epicsStrnEscapedFromRaw(result, 4, ABCD, 3);

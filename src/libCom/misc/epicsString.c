@@ -239,6 +239,18 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
    return nout;
 }
 
+/* Until Base requires POSIX 2008 we must provide our own implementation */
+size_t epicsStrnLen(const char *s, size_t maxlen)
+{
+    size_t i;
+
+    for (i=0; i<maxlen; i++) {
+        if(s[i]=='\0')
+            return i;
+    }
+    return i;
+}
+
 int epicsStrGlobMatch(const char *str, const char *pattern)
 {
     const char *cp = NULL, *mp = NULL;

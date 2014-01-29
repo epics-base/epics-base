@@ -554,9 +554,11 @@ size_t epicsTime::strftime (
                         static_cast < unsigned long > ( 1e1 ),
                         static_cast < unsigned long > ( 1e0 )
                     };
-                    // round and convert nanosecs to integer of correct range
+                    // round without overflowing into whole seconds
                     unsigned long frac = tmns.nSec + div[fracWid] / 2;
-                    frac %= static_cast < unsigned long > ( 1e9 );
+                    if (frac >= nSecPerSec)
+                        frac = nSecPerSec - 1;
+                    // convert nanosecs to integer of correct range
                     frac /= div[fracWid];
                     char fracFormat[32];
                     sprintf ( fracFormat, "%%0%lulu", fracWid );

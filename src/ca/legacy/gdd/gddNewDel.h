@@ -64,7 +64,7 @@ void gddGlobalCleanupAdd ( void * pBuf );
         char** x = (char**)pfld; return *x; } \
     void newdel_setNext(char* n) { char* pfld = (char *)&fld; \
         char** x=(char**)pfld; *x=n; } \
-    static void gddNewDelInit (void) { pNewdel_lock = new epicsMutex; } 
+    static void gddNewDelInit (void) { pNewdel_lock = newEpicsMutex; }
 
 
 // declaration of the static variable for the free list

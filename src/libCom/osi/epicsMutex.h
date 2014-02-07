@@ -23,11 +23,14 @@ typedef enum {
 
 #include "compilerDependencies.h"
 
+#define newEpicsMutex new epicsMutex(__FILE__,__LINE__)
+
 class epicsShareClass epicsMutex {
 public:
     class mutexCreateFailed; /* exception payload */
     class invalidMutex; /* exception payload */
     epicsMutex ();
+    epicsMutex ( const char *pFileName, int lineno );
     ~epicsMutex ();
     void show ( unsigned level ) const;
     void lock (); /* blocks until success */

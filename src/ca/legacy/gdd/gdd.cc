@@ -79,7 +79,7 @@ class gddAitStringDestructor: public gddDestructor {
 extern "C" void gddStaticInit ( void * p )
 {
     epicsMutex * * pMutex = static_cast < epicsMutex * * > ( p );
-    *pMutex = new epicsMutex ();
+    *pMutex = newEpicsMutex;
 }
 
 gdd::gdd(int app, aitEnum prim, int dimen)

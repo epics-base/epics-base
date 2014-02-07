@@ -57,7 +57,7 @@ extern "C" void cacOnceFunc ( void * )
 {
     caClientCallbackThreadId = epicsThreadPrivateCreate ();
     assert ( caClientCallbackThreadId );
-    ca_client_context::pDefaultServiceInstallMutex = new epicsMutex;
+    ca_client_context::pDefaultServiceInstallMutex = newEpicsMutex;
     epicsAtExit ( cacExitHandler,0 );
 }
 

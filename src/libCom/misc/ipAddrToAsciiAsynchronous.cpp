@@ -155,7 +155,7 @@ static void ipAddrToAsciiEngineShutdownRequest ( void * )
 
 static void ipAddrToAsciiEngineGlobalMutexConstruct ( void * )
 {
-    ipAddrToAsciiEnginePrivate :: pGlobalMutex = new epicsMutex ();
+    ipAddrToAsciiEnginePrivate :: pGlobalMutex = newEpicsMutex;
     epicsAtExit ( ipAddrToAsciiEngineShutdownRequest, 0 );
 }
 

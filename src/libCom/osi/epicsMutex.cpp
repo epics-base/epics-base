@@ -226,6 +226,14 @@ epicsMutex :: epicsMutex () :
     }
 }
 
+epicsMutex :: epicsMutex ( const char *pFileName, int lineno ) :
+    id ( epicsMutexOsiCreate (pFileName, lineno) )
+{
+    if ( this->id == 0 ) {
+        throw mutexCreateFailed ();
+    }
+}
+
 epicsMutex ::~epicsMutex () 
 {
     epicsMutexDestroy ( this->id );

@@ -35,7 +35,7 @@ extern "C" void SingletonMutexOnce ( void * /* pParm */ )
     // This class exists for the purpose of avoiding file scope
     // object chicken and egg problems. Therefore, pEPICSSigletonMutex 
     // is never destroyed.
-    pEPICSSigletonMutex = new epicsMutex;
+    pEPICSSigletonMutex = newEpicsMutex;
 }
 
 void SingletonUntyped :: incrRefCount ( PBuild pBuild )

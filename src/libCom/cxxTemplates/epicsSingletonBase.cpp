@@ -33,7 +33,7 @@ static void epicsSingletonCleanup (void *)
 
 static void epicsSingletonOnce ( void * )
 {
-    pSingletonBaseMutexEPICS = new epicsMutex;
+    pSingletonBaseMutexEPICS = newEpicsMutex;
     epicsAtExit ( epicsSingletonCleanup,0 );
 }
 

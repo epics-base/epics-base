@@ -2113,7 +2113,9 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    return status;
 		}
                 /* store link text in case DTYP changes later */
-                plink->text = epicsStrDup(pstring);
+                plink->text = malloc(strlen(pstring) + 1);
+                if (plink->text)
+                    strcpy(plink->text, pstring);
 	    }
 	    if (strlen(pstring) >= sizeof(string)) {
 	        status = S_dbLib_badField;

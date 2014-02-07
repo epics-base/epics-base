@@ -465,6 +465,7 @@ dbChannel * dbChannelCreate(const char *name)
     const char *pname = name;
     DBENTRY dbEntry;
     dbChannel *chan = NULL;
+    char *cname;
     dbAddr *paddr;
     dbFldDes *pflddes;
     long status;
@@ -478,7 +479,14 @@ dbChannel * dbChannelCreate(const char *name)
         goto finish;
 
     chan = freeListCalloc(dbChannelFreeList);
-    chan->name = epicsStrDup(name);
+    if (!chan)
+        goto finish;
+    cname = malloc(strlen(name) + 1);
+    if (!cname)
+        goto finish;
+
+    strcpy(cname, name);
+    chan->name = cname;
     ellInit(&chan->filters);
     ellInit(&chan->pre_chain);
     ellInit(&chan->post_chain);

@@ -15,6 +15,14 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added newEpicsMutex macro</h3>
+
+<p>Internal C++ uses of <tt>new epicsMutex()</tt> have been replaced with a new
+macro which calls a new constructor, passing it the file name and line number of
+the mutex creation code. C code that creates mutexes has been using a similar
+macro for a long time, but there was no equivalent constructor for the C++
+wrapper class, so identifying a specific mutex was much harder to do.</p>
+
 <h3>Post DBE_PROPERTY events automatically</h3>
 
 <p>A new record field attribute "prop(YES)" has been added to identify fields

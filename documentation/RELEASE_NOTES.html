@@ -15,6 +15,14 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>NTP Time Provider adjusts to OS tick rate changes</h3>
+
+<p>Dirk Zimoch provided code that allows the NTP Time provider (used on VxWorks
+and RTEMS only) to adapt to changes in the OS clock tick rate after the provider
+has been initialized. Note that changing the tick rate after iocInit() is not
+advisable, and that other software might still misbehave if initialized before
+an OS tick rate change.</p>
+
 <h3>Added newEpicsMutex macro</h3>
 
 <p>Internal C++ uses of <tt>new epicsMutex()</tt> have been replaced with a new

@@ -505,7 +505,7 @@ bufSizeT casDGIntfIO ::
     osSendBufferSize () const 
 {
     /* fetch the TCP send buffer size */
-    int size = MAX_UDP_SEND;
+    unsigned int size = MAX_UDP_SEND;
     osiSocklen_t n = sizeof ( size );
     int status = getsockopt( this->sock, SOL_SOCKET, SO_SNDBUF,
                     reinterpret_cast < char * > ( & size ), & n );

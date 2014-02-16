@@ -97,7 +97,7 @@ casStreamIO::casStreamIO ( caServerI & cas, clientBufMemoryManager & bufMgr,
 #endif
     
 	/* cache the TCP send buffer size */
-	int size = MAX_TCP;
+	unsigned int size = MAX_TCP;
 	osiSocklen_t n = sizeof ( size ) ;
 	status = getsockopt ( this->sock, SOL_SOCKET,
 			SO_SNDBUF, reinterpret_cast < char * > ( & size ), & n );

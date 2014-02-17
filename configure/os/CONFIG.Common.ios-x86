@@ -10,6 +10,9 @@
 
 IOS_PLATFORM = iPhoneSimulator
 
+OP_SYS_CFLAGS += -mios-simulator-version-min=$(IOS_DEPLOYMENT_TARGET)
+OP_SYS_LDFLAGS += -mios-simulator-version-min=$(IOS_DEPLOYMENT_TARGET)
+
 #
 # Architecture-specific information
 #

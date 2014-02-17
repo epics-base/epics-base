@@ -40,7 +40,7 @@ ARCH_DEP_LDFLAGS += $(ARCH_DEP_FLAGS)
 
 #--------------------------------------------------
 # Operating system flags
-OP_SYS_CFLAGS += -isysroot $(SDK_DIR) -D__IPHONE_OS_VERSION_MIN_REQUIRED=30200
+OP_SYS_CFLAGS += -isysroot $(SDK_DIR)
 OP_SYS_LDFLAGS += -isysroot $(SDK_DIR)
 
 #--------------------------------------------------
@@ -104,6 +104,9 @@ HDEPENDS_METHOD = CMD
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).iosCommon
 
 #--------------------------------------------------
-# Find the Xcode compilers for the specified SDK just once
+# Find the Xcode programs for the selected SDK
 CC := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find $(CC_$(COMPILER)))
 CCC := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find $(CCC_$(COMPILER)))
+AR := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find ar) -rc
+LD := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find ld) -r
+RANLIB := $(shell xcrun -sdk $(XCRUN_SDK_BASE) -find ranlib)

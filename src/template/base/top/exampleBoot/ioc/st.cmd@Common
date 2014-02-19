@@ -5,7 +5,7 @@
 
 < envPaths
 
-cd ${TOP}
+cd "${TOP}"
 
 ## Register all support components
 dbLoadDatabase "dbd/_APPNAME_.dbd"
@@ -21,7 +21,7 @@ dbLoadRecords "db/dbSubExample.db", "user=_USER_Host"
 ## Run this to trace the stages of iocInit
 #traceIocInit
 
-cd ${TOP}/iocBoot/${IOC}
+cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
 ## Start any sequence programs

@@ -30,7 +30,6 @@ TEMPLATES += top/exampleApp/Db/dbExample1.db
 TEMPLATES += top/exampleApp/Db/dbExample2.db
 TEMPLATES += top/exampleApp/Db/dbSubExample.db
 TEMPLATES += top/exampleApp/Db/user.substitutions
-TEMPLATES += top/exampleApp/Db/userHost.substitutions
 TEMPLATES += top/exampleApp/src/Makefile
 TEMPLATES += top/exampleApp/src/xxxRecord.dbd
 TEMPLATES += top/exampleApp/src/xxxRecord.c

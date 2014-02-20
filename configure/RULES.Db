@@ -8,6 +8,9 @@
 #*************************************************************************
 #RULES.Db
 
+# Set db substitutions file suffix
+SUBST_SUFFIX ?= .substitutions
+
 #####################################################  vpath
 
 vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
@@ -44,8 +47,6 @@ DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 # DBD_solaris += abcSolaris.dbd
 #
 # ---------------------------------------------------
-
-SUBST_SUFFIX ?= .substitutions
 
 DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.dbd,%,$(DBDINC)))
 DBD += $(addsuffix .dbd,$(DBDINC_NAME))

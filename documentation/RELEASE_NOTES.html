@@ -15,9 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added macro EPICS_UNUSED to compilerDependencies.h</h3>
+
+<p>To prevent the compiler from warning about a known-unused variable, mark it
+with the macro EPICS_UNUSED. On gcc and clang this will expand to
+<tt>__attribute__((unused))</tt> to prevent the warning.</p>
+
 <h3>User specified db substitution file suffix</h3>
 
-<p>Per Dirk Zimoch's suggestion, a user specified db substitution file suffix is now allowed by setting the variable SUBST_SUFFIX in a configuration directory CONFIG_SITE file or in a Makefile before the include $(TOP)/configure/RULES line. The default is SUBST_SUFFIX=.substitutions.</p>
+<p>Per Dirk Zimoch's suggestion, a user specified db substitution file suffix is
+now allowed by setting the variable SUBST_SUFFIX in a configuration directory
+CONFIG_SITE file or in a Makefile before the include $(TOP)/configure/RULES
+line. The default for SUBST_SUFFIX is <tt>.substitutions</tt></p>
 
 <h3>NTP Time Provider adjusts to OS tick rate changes</h3>
 

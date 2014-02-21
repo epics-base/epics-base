@@ -58,5 +58,8 @@
 #define EPICS_DEPRECATED
 #endif
 
+#ifndef EPICS_UNUSED
+#   define EPICS_UNUSED
+#endif
 
 #endif  /* ifndef compilerDependencies_h */

@@ -60,5 +60,9 @@
 #   define EPICS_DEPRECATED __attribute__((deprecated))
 #endif
 
+/*
+ * Unused marker
+ */
+#define EPICS_UNUSED __attribute__((unused))
 
 #endif  /* ifndef compilerSpecific_h */

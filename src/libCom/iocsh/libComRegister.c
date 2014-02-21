@@ -13,6 +13,7 @@
 #define epicsExportSharedSymbols
 #include "iocsh.h"
 #include "epicsStdioRedirect.h"
+#include "epicsString.h"
 #include "epicsTime.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
@@ -50,6 +51,17 @@ static void dateCallFunc (const iocshArgBuf *args)
     date(args[0].sval);
 }
 
+/* echo */
+static const iocshArg echoArg0 = { "string",iocshArgString};
+static const iocshArg * const echoArgs[1] = {&echoArg0};
+static const iocshFuncDef echoFuncDef = {"echo",1,echoArgs};
+static void echoCallFunc(const iocshArgBuf *args)
+{
+    char *str = args[0].sval;
+
+    dbTranslateEscape(str, str); /* in-place is safe */
+    printf("%s\n", str);
+}
 
 /* chdir */
 static const iocshArg chdirArg0 = { "directory name",iocshArgString};
@@ -348,6 +360,7 @@ static void installLastResortEventProviderCallFunc(const iocshArgBuf *args)
 void epicsShareAPI libComRegister(void)
 {
     iocshRegister(&dateFuncDef, dateCallFunc);
+    iocshRegister(&echoFuncDef, echoCallFunc);
     iocshRegister(&chdirFuncDef, chdirCallFunc);
     iocshRegister(&pwdFuncDef, pwdCallFunc);
 

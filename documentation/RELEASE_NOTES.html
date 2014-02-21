@@ -15,6 +15,13 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added echo command to iocsh</h3>
+
+<p>The single argument string may contain escaped characters, which will be
+translated to their raw form before being printed (enclose the string in quotes
+to avoid double-translation). A newline is always appended to the output, and
+output stream redirection is supported.</p>
+
 <h3>Added macro EPICS_UNUSED to compilerDependencies.h</h3>
 
 <p>To prevent the compiler from warning about a known-unused variable, mark it

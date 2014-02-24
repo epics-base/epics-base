@@ -119,6 +119,9 @@ DBDDEPENDS_CMD = -$(MKMF) -m $(notdir $@)$(DEP) $(DBDDEPENDS_FLAGS) $@ $<
 
 ifndef T_A
 
+DEP = .d
+TEMPLATE3+=$(addsuffix .template, $(TEMPLATE2))
+
 COMMON_DIR = .
 INSTALL_DBDS =
 INSTALL_DBS =

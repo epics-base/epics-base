@@ -47,6 +47,7 @@ MAIN(epicsSockResolveTest)
     int i;
 
     testPlan(3*NELEMENTS(okdata) + NELEMENTS(baddata));
+    osiSockAttach();
 
     {
         struct in_addr addr;
@@ -88,5 +89,6 @@ MAIN(epicsSockResolveTest)
         }
     }
 
+    osiSockRelease();
     return testDone();
 }

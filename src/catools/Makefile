@@ -12,22 +12,18 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-SHARED_LIBRARIES = NO
-
-# Build but don't install catools as a static library
-LIBRARY += catools
-INSTALL_LIBS =
-
-catools_SRCS += tool_lib.c
-catools_LIBS += ca Com
-
-# Build and link programs against the catools library
 PROD_DEFAULT += caget camonitor cainfo caput
 PROD_vxWorks = -nil-
 PROD_RTEMS = -nil-
 PROD_iOS = -nil-
 
-PROD_LIBS += catools ca Com
-catools_DIR = .
+PROD_SRCS = tool_lib.c
+
+caget_SRCS = caget.c
+caput_SRCS = caput.c
+camonitor_SRCS = camonitor.c
+cainfo_SRCS = cainfo.c
+
+PROD_LIBS = ca Com
 
 include $(TOP)/configure/RULES

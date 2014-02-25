@@ -126,7 +126,7 @@
 #           define epicsShareFunc  __declspec(dllexport)
 #       endif
 #   else
-#       if defined(_DLL) /* this indicates that we are being compiled to call DLLs */
+#       if !defined(EPICS_DLL_NO) /* this indicates that we are being compiled to call DLLs */
 #           define epicsShareExtern __declspec(dllimport) extern 
 #           define epicsShareClass  __declspec(dllimport) 
 #           define epicsShareFunc  __declspec(dllimport)

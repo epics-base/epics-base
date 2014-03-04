@@ -9,5 +9,6 @@
 
 include $(CONFIG)/os/CONFIG.windows-x64.windows-x64
 
+BUILD_CLASS = HOST
 SHARED_LIBRARIES = NO
 STATIC_BUILD = YES

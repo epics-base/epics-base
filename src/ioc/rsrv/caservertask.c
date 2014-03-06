@@ -63,8 +63,9 @@ static void req_server (void *pParm)
     unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
     unsigned priorityOfBeacons;
     epicsThreadBooleanStatus tbs;
+    osiSockAddrNode *pNode;
     struct sockaddr_in serverAddr;  /* server's address */
-    osiSocklen_t addrSize;
+    osiSocklen_t addrSize = (osiSocklen_t) sizeof(struct sockaddr_in);
     int status;
     SOCKET clientSock;
     epicsThreadId tid;
@@ -85,6 +86,24 @@ static void req_server (void *pParm)
             (unsigned short) CA_SERVER_PORT );
     }
 
+    addAddrToChannelAccessAddressList ( &casIntfAddrList,
+        &EPICS_CAS_INTF_ADDR_LIST, ca_server_port, 0 );
+    if (ellCount(&casIntfAddrList) == 0) {
+        pNode = (osiSockAddrNode *) calloc ( 1, sizeof(*pNode) );
+        pNode->addr.ia.sin_family = AF_INET;
+        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        pNode->addr.ia.sin_port = htons ( ca_server_port );
+        ellAdd ( &casIntfAddrList, &pNode->node );
+    }
+    else {
+        if (ellCount ( &casIntfAddrList ) > 1)
+            epicsPrintf ("CAS: Multiple entries in EPICS_CAS_INTF_ADDR_LIST, "
+                "only the first will be used.\n");
+        pNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
+    }
+
+    memcpy ( &serverAddr, &pNode->addr.ia, addrSize );
+
     if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET) {
         epicsSocketDestroy ( IOC_sock );
     }
@@ -100,50 +119,43 @@ static void req_server (void *pParm)
 
     epicsSocketEnableAddressReuseDuringTimeWaitState ( IOC_sock );
 
-    /* Zero the sock_addr structure */
-    memset ( (void *) &serverAddr, 0, sizeof ( serverAddr ) );
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl (INADDR_ANY);
-    serverAddr.sin_port = htons ( ca_server_port );
-
     /* get server's Internet address */
-    status = bind ( IOC_sock, (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
-	if ( status < 0 ) {
-		if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-			/*
-			 * enable assignment of a default port
-			 * (so the getsockname() call below will
-			 * work correctly)
-			 */
-			serverAddr.sin_port = ntohs (0);
-			status = bind ( IOC_sock,
-                (struct sockaddr *) &serverAddr, sizeof ( serverAddr ) );
-		}
-		if ( status < 0 ) {
+
+    status = bind(IOC_sock, (struct sockaddr *) &serverAddr, addrSize);
+    if ( status < 0 ) {
+        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+            /*
+             * enable assignment of a default port
+             * (so the getsockname() call below will
+             * work correctly)
+             */
+            serverAddr.sin_port = ntohs (0);
+            status = bind(IOC_sock, (struct sockaddr *) &serverAddr, addrSize);
+        }
+        if ( status < 0 ) {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString (
                 sockErrBuf, sizeof ( sockErrBuf ) );
             errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
                 sockErrBuf );
             epicsThreadSuspendSelf ();
-		}
+        }
         portChange = 1;
-	}
+    }
     else {
         portChange = 0;
     }
 
-	addrSize = ( osiSocklen_t ) sizeof ( serverAddr );
-	status = getsockname ( IOC_sock,
-			(struct sockaddr *)&serverAddr, &addrSize);
-	if ( status ) {
+    status = getsockname ( IOC_sock,
+            (struct sockaddr *)&serverAddr, &addrSize);
+    if ( status ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString (
             sockErrBuf, sizeof ( sockErrBuf ) );
-		errlogPrintf ( "CAS: getsockname() error %s\n",
-			sockErrBuf );
+        errlogPrintf ( "CAS: getsockname() error %s\n",
+            sockErrBuf );
         epicsThreadSuspendSelf ();
-	}
+    }
 
     ca_server_port = ntohs (serverAddr.sin_port);
 
@@ -274,6 +286,7 @@ int rsrv_init (void)
         }
     }
     freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
+    ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
     prsrv_cast_client = NULL;
     pCaBucket = NULL;
@@ -948,16 +961,16 @@ struct client *create_tcp_client ( SOCKET sock )
 
 void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
 {
-	LOCK_CLIENTQ;
+    LOCK_CLIENTQ;
     {
         int circuitCount = ellCount ( &clientQ );
         if ( circuitCount < 0 ) {
-	        *pCircuitCount = 0;
+            *pCircuitCount = 0;
         }
         else {
-	        *pCircuitCount = (unsigned) circuitCount;
+            *pCircuitCount = (unsigned) circuitCount;
         }
         *pChanCount = rsrvChannelCount;
     }
-	UNLOCK_CLIENTQ;
+    UNLOCK_CLIENTQ;
 }

@@ -796,7 +796,7 @@ been done to address this issue so far).</em></p>
     </tr>
     <tr>
       <td>EPICS_CAS_BEACON_ADDR_LIST</td>
-      <td>{N.N.N.NN.N.N.N:P...}</td>
+      <td>{N.N.N.N N.N.N.N:P ...}</td>
       <td>EPICS_CA_ADDR_LIST<sup>1</sup></td>
     </tr>
     <tr>
@@ -811,12 +811,12 @@ been done to address this issue so far).</em></p>
     </tr>
     <tr>
       <td>EPICS_CAS_INTF_ADDR_LIST</td>
-      <td>{N.N.N.NN.N.N.N:P...}</td>
+      <td>{N.N.N.N N.N.N.N:P ...}</td>
       <td>&lt;none&gt;</td>
     </tr>
     <tr>
       <td>EPICS_CAS_IGNORE_ADDR_LIST</td>
-      <td>{N.N.N.NN.N.N.N:P...}</td>
+      <td>{N.N.N.N N.N.N.N:P ...}</td>
       <td>&lt;none&gt;</td>
     </tr>
   </tbody>
@@ -874,8 +874,13 @@ network interfaces. Specifically, UDP search messages addressed to both the IP
 addresses in EPICS_CAS_INTF_ADDR_LIST and also to the broadcast addresses of
 the corresponding LAN interfaces will be accepted by the server. By default,
 the CA server is accessible from all network interfaces configured into its
-host. <em>In R3.14 and previous releases the CA server employed by iocCore does
-not implement this feature</em>.</p>
+host.</p>
+
+<p>In R3.14 and previous releases the CA server employed by iocCore did not
+implement the EPICS_CAS_INTF_ADDR_LIST feature. In this release the iocCore
+server will read the first IP address from the parameter variable and use that
+to select which interface to bind to. Any additional IP addresses will be
+ignored and a warning message displayed during IOC initialization.</p>
 
 <h4>Ignoring Process Variable Name Resolution Requests From Certain Hosts</h4>
 

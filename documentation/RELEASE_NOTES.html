@@ -15,6 +15,13 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Implement EPICS_CAS_INTF_ADDR_LIST in rsrv</h3>
+
+<p>The IOC server can now bind to a single IP address (and optional port number)
+read from the standard environment parameter EPICS_CAS_INTF_ADDR_LIST.
+Additional addresses included in that parameter after the first will be ignored
+and a warning message displayed at iocInit time.</p>
+
 <h3>Added echo command to iocsh</h3>
 
 <p>The single argument string may contain escaped characters, which will be

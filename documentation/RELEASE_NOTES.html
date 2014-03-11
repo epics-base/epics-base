@@ -13,6 +13,25 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>epicsString.h comparison functions fixed</h3>
+
+<p>The case-independent string comparison functions epicsStrCaseCmp() and
+epicsStrnCaseCmp() were returning incorrect results when the strings did not
+match; if the left-hand string is a shorter sub-set of the right-hand one the
+result should be -1. These functions now match their BSD equivalents.</p>
+
+<h3>Windows -static targets included</h3>
+
+<p>The win32-x86 and windows-x64 host target architectures can now cross-build
+the associated -static target, i.e. win32-x86-static or windows-x64-static
+(these targets can also be used as regular host architectures). Users could
+always have added configuration files themselves to build these, but we needed
+them for continuous integration testing of static builds.</p>
+
+<h3>iOS Build Rules fixed</h3>
+
+<p>The problem building for the ios-x86 simulator target architecture has been
+resolved.</p>
 
 <h2 align="center">Changes between 3.14.12.3 and 3.14.12.4</h2>
 

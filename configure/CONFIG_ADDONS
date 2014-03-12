@@ -377,17 +377,6 @@ endif
 endif
 
 #
-#	concat specific include files
-#
-ifneq ($(strip $(INC_$(OS_CLASS))),)
-INC += $(subst -nil-,,$(INC_$(OS_CLASS)))
-else
-ifdef INC_DEFAULT
-INC+=$(INC_DEFAULT)
-endif
-endif
-
-#
 #	concat specific library contents (if defined) to SYS_PROD_LIBS
 #
 # SYS_PROD_LIBS deprecated

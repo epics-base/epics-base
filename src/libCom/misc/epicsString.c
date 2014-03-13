@@ -174,8 +174,8 @@ int epicsStrCaseCmp(const char *s1, const char *s2)
         int ch1 = toupper((int) *s1);
         int ch2 = toupper((int) *s2);
 
-        if (ch1 == 0) return (ch2 != 0);
-        if (ch2 == 0) return -1;
+        if (ch2 == 0) return (ch1 != 0);
+        if (ch1 == 0) return -1;
         if (ch1 < ch2) return -1;
         if (ch1 > ch2) return 1;
         s1++;
@@ -191,8 +191,8 @@ int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len)
         int ch1 = toupper((int) *s1);
         int ch2 = toupper((int) *s2);
 
-        if (ch1 == 0) return (ch2 != 0);
-        if (ch2 == 0) return -1;
+        if (ch2 == 0) return (ch1 != 0);
+        if (ch1 == 0) return -1;
         if (ch1 < ch2) return -1;
         if (ch1 > ch2) return 1;
         s1++;

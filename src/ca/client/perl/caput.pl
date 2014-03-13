@@ -151,11 +151,11 @@ sub display {
 }
 
 sub HELP_MESSAGE {
-    print STDERR "\nUsage: caput [options] <PV name> <PV value> ...\n",
+    print STDERR "\nUsage: caput.pl [options] <PV name> <PV value> ...\n",
         "\n",
         "  -h: Help: Print this message\n",
         "Channel Access options:\n",
-        "  -w <sec>:  Wait time, specifies longer CA timeout, default is $opt_w second\n",
+        "  -w <sec>:  Wait time, specifies CA timeout, default is $opt_w second\n",
         "  -c: Use put_callback to wait for completion\n",
         "Format options:\n",
         "  -t: Terse mode - print only sucessfully written value, without name\n",
@@ -180,7 +180,8 @@ sub HELP_MESSAGE {
         "Examples:\n",
         "    caput my_channel 1.2\n",
         "    caput my_waveform 1.2 2.4 3.6 4.8 6.0\n",
-        "\n";
+        "\n",
+        "Base version: ", CA->version, "\n";
     exit 1;
 }
 

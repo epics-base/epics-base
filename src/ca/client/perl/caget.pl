@@ -148,11 +148,11 @@ sub display {
 }
 
 sub HELP_MESSAGE {
-    print STDERR "\nUsage: caget [options] <PV name> ...\n",
+    print STDERR "\nUsage: caget.pl [options] <PV name> ...\n",
         "\n",
         "  -h: Help: Print this message\n",
         "Channel Access options:\n",
-        "  -w <sec>:  Wait time, specifies longer CA timeout, default is $opt_w second\n",
+        "  -w <sec>:  Wait time, specifies CA timeout, default is $opt_w second\n",
         "Format options:\n",
         "  -t: Terse mode - print only value, without name\n",
         "  -a: Wide mode \"name timestamp value stat sevr\" (read PVs as DBR_TIME_xxx)\n",
@@ -182,6 +182,7 @@ sub HELP_MESSAGE {
         "  -0b: Print as binary number\n",
         "Set output field separator:\n",
         "  -F <ofs>: Use <ofs> to separate fields on output\n",
-        "\n";
+        "\n",
+        "Base version: ", CA->version, "\n";
     exit 1;
 }

@@ -5,17 +5,24 @@
 # Site-specific settings for Apple iOS builds
 #-------------------------------------------------------
 
-# iOS Version number
+# iOS SDK Version number (not the XCode version).
+# We haven't tested our current build rules on the older
+# versions of either XCode or the iOS SDK, be warned!
 
-#IOS_VERSION = 3.2
-#IOS_VERSION = 4.1
-#IOS_VERSION = 4.2
-#IOS_VERSION = 4.3
 #IOS_VERSION = 5.0
 #IOS_VERSION = 5.1
 #IOS_VERSION = 6.0
 #IOS_VERSION = 6.1
 IOS_VERSION = 7.0
+
+# Minimum version of iOS the executables must run on.
+# Earlier versions may work, if XCode supports them.
+
+#IOS_DEPLOYMENT_TARGET = 5.0
+#IOS_DEPLOYMENT_TARGET = 5.1
+#IOS_DEPLOYMENT_TARGET = 6.0
+#IOS_DEPLOYMENT_TARGET = 6.1
+IOS_DEPLOYMENT_TARGET = 7.0
 
 
 # Which compiler to use:

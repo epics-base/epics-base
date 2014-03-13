@@ -120,6 +120,9 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
 
 ifndef T_A
 
+DEP = .d
+TEMPLATE3+=$(addsuffix .template, $(TEMPLATE2))
+
 COMMON_DIR = .
 INSTALL_DBDS =
 INSTALL_DBS =

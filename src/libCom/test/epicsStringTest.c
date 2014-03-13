@@ -92,8 +92,8 @@ MAIN(epicsStringTest)
 
     testOk1(epicsStrnCaseCmp(empty, "", 0) == 0);
     testOk1(epicsStrnCaseCmp(empty, "", 1) == 0);
-    testOk1(epicsStrnCaseCmp(space, empty, 1) < 0);
-    testOk1(epicsStrnCaseCmp(empty, space, 1) > 0);
+    testOk1(epicsStrnCaseCmp(space, empty, 1) > 0);
+    testOk1(epicsStrnCaseCmp(empty, space, 1) < 0);
     testOk1(epicsStrnCaseCmp(a, A, 1) == 0);
     testOk1(epicsStrnCaseCmp(a, A, 2) == 0);
     testOk1(epicsStrnCaseCmp(abcd, ABCD, 2) == 0);
@@ -101,17 +101,17 @@ MAIN(epicsStringTest)
     testOk1(epicsStrnCaseCmp(abcd, ABCD, 1000) == 0);
     testOk1(epicsStrnCaseCmp(abcd, ABCDE, 2) == 0);
     testOk1(epicsStrnCaseCmp(abcd, ABCDE, 4) == 0);
-    testOk1(epicsStrnCaseCmp(abcd, ABCDE, 1000)> 0);
+    testOk1(epicsStrnCaseCmp(abcd, ABCDE, 1000) < 0);
     testOk1(epicsStrnCaseCmp(abcde, ABCD, 2) == 0);
     testOk1(epicsStrnCaseCmp(abcde, ABCD, 4) == 0);
-    testOk1(epicsStrnCaseCmp(abcde, ABCD, 1000) < 0);
+    testOk1(epicsStrnCaseCmp(abcde, ABCD, 1000) > 0);
 
     testOk1(epicsStrCaseCmp(empty, "") == 0);
     testOk1(epicsStrCaseCmp(a, A) == 0);
     testOk1(epicsStrCaseCmp(abcd, ABCD) == 0);
-    testOk1(epicsStrCaseCmp(abcd, ABCDE) != 0);
-    testOk1(epicsStrCaseCmp(abcde, ABCD) != 0);
-    testOk1(epicsStrCaseCmp(abcde, "ABCDF") != 0);
+    testOk1(epicsStrCaseCmp(abcd, ABCDE) < 0);
+    testOk1(epicsStrCaseCmp(abcde, ABCD) > 0);
+    testOk1(epicsStrCaseCmp(abcde, "ABCDF") < 0);
 
     s = epicsStrDup(abcd);
     testOk(strcmp(s, abcd) == 0 && s != abcd, "epicsStrDup");

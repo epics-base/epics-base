@@ -10,6 +10,7 @@
 
 #include "cadef.h"
 #include "db_access.h"
+#include "epicsVersion.h"
 #include "alarm.h"
 #include "alarmString.h"
 
@@ -1010,6 +1011,12 @@ void CA_flush_io(const char *class) {
 }
 
 
+/* CA::version($class) */
+
+const char * CA_version(const char *class) {
+    return EPICS_VERSION_STRING;
+}
+
 /* CA::add_exception_event($class, \&sub) */
 
 static
@@ -1390,6 +1397,10 @@ CA_poll (class)
 
 void
 CA_flush_io (class)
+	const char *	class
+
+const char *
+CA_version (class)
 	const char *	class
 
 void

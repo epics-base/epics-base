@@ -11,6 +11,8 @@
 IOS_PLATFORM = iPhoneOS
 
 OP_SYS_CFLAGS += -fno-inline-functions
+OP_SYS_CFLAGS += -miphoneos-version-min=$(IOS_DEPLOYMENT_TARGET)
+OP_SYS_LDFLAGS += -miphoneos-version-min=$(IOS_DEPLOYMENT_TARGET)
 
 # iOS optimization flags for arm architecture
 OPT_CFLAGS_YES = -O2

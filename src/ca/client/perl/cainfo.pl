@@ -52,13 +52,14 @@ sub display {
 }
 
 sub HELP_MESSAGE {
-    print STDERR "\nUsage: cainfo [options] <PV name> ...\n",
+    print STDERR "\nUsage: cainfo.pl [options] <PV name> ...\n",
         "\n",
         "  -h: Help: Print this message\n",
         "Channel Access options:\n",
         "  -w <sec>:   Wait time, specifies CA timeout, default is $opt_w second\n",
         "\n",
         "Example: cainfo my_channel another_channel\n",
-        "\n";
+        "\n",
+        "Base version: ", CA->version, "\n";
     exit 1;
 }

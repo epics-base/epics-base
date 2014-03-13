@@ -8,7 +8,6 @@
 \*************************************************************************/
 
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 
 #include "osiSock.h"
@@ -17,9 +16,6 @@
 #include "epicsSignal.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
-
-#define verify(exp) ((exp) ? (void)0 : \
-    epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
 union address {
     struct sockaddr_in ia;
@@ -31,7 +27,6 @@ public:
     circuit ( SOCKET );
     void recvTest ();
     void shutdown ();
-    void signal ();
     void close ();
     bool recvWakeupDetected () const;
     bool sendWakeupDetected () const;
@@ -64,6 +59,7 @@ public:
     server ( address & );
     void start ();
     void daemon ();
+    void stop ();
 protected:
     SOCKET sock;
     epicsThreadId id;
@@ -76,7 +72,7 @@ circuit::circuit ( SOCKET sockIn ) :
     recvWakeup ( false ), 
     sendWakeup ( false )
 {
-    verify ( this->sock != INVALID_SOCKET );
+    testOk ( this->sock != INVALID_SOCKET, "Socket valid" );
 }
 
 bool circuit::recvWakeupDetected () const
@@ -92,12 +88,7 @@ bool circuit::sendWakeupDetected () const
 void circuit::shutdown ()
 {
     int status = ::shutdown ( this->sock, SHUT_RDWR );
-    verify ( status == 0 );
-}
-
-void circuit::signal ()
-{
-    epicsSignalRaiseSigAlarm ( this->id );
+    testOk ( status == 0, "Shutdown() returned Ok" );
 }
 
 void circuit::close ()
@@ -107,7 +98,6 @@ void circuit::close ()
 
 void circuit::recvTest ()
 {
-    epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
     while ( true ) {
         int status = recv ( this->sock, 
@@ -118,13 +108,13 @@ void circuit::recvTest ()
             break;
         }
         else if ( status > 0 ) {
-            testDiag ( "client received %i characters", status );
+            testDiag ( "%s received %i characters", this->pName (), status );
         }
         else {
             char sockErrBuf[64];
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            testDiag ( "%s socket recv() error was \"%s\"\n",
+            testDiag ( "%s socket recv() error was \"%s\"",
                 this->pName (), sockErrBuf );
             this->recvWakeup = true;
             break;
@@ -144,14 +134,14 @@ clientCircuit::clientCircuit ( const address & addrIn ) :
     address tmpAddr = addrIn;
     int status = ::connect ( 
         this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
-    verify ( status == 0 );
+    testOk ( status == 0, "Client end connected" );
 
     circuit * pCir = this;
     this->id = epicsThreadCreate ( 
         "client circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    verify ( this->id );
+    testOk ( this->id != 0, "Client thread created" );
 }
 
 
@@ -169,7 +159,7 @@ server::server ( address & addrIn ) :
     sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
     id ( 0 ), exit ( false )
 {
-    verify ( this->sock != INVALID_SOCKET );
+    testOk ( this->sock != INVALID_SOCKET, "Server socket valid" );
 
     // setup server side
     int status = bind ( this->sock, 
@@ -182,7 +172,7 @@ server::server ( address & addrIn ) :
         testAbort ( "Failed to read socket address" );
     }
     status = listen ( this->sock, 10 );
-    verify ( status == 0 );
+    testOk ( status == 0, "Server socket listening" );
 }
 
 void server::start ()
@@ -191,7 +181,7 @@ void server::start ()
         "server daemon", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         serverDaemon, this );
-    verify ( this->id );
+    testOk ( this->id != 0, "Server thread created" );
 }
 
 void server::daemon () 
@@ -202,10 +192,18 @@ void server::daemon ()
         osiSocklen_t addressSize = sizeof ( addr );
         SOCKET ns = accept ( this->sock, 
             & addr.sa, & addressSize );
-        verify ( ns != INVALID_SOCKET );
+        if ( this->exit )
+            break;
+        testOk ( ns != INVALID_SOCKET, "Accepted socket valid" );
         circuit * pCir = new serverCircuit ( ns );
-        verify ( pCir );
+        testOk ( pCir != 0, "Server circuit created" );
     }
+}
+
+void server::stop ()
+{
+    this->exit = true;
+    epicsSocketDestroy ( this->sock );
 }
 
 serverCircuit::serverCircuit ( SOCKET sockIn ) :
@@ -216,7 +214,7 @@ serverCircuit::serverCircuit ( SOCKET sockIn ) :
         "server circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    verify ( threadId );
+    testOk ( threadId != 0, "Server circuit thread created" );
 }
 
 const char * serverCircuit::pName ()
@@ -245,7 +243,8 @@ static const char *mechName(int mech)
 
 MAIN(blockingSockTest)
 {
-    testPlan(1);
+    testPlan(13);
+    osiSockAttach();
 
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
@@ -258,35 +257,36 @@ MAIN(blockingSockTest)
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );
-    verify ( ! client.recvWakeupDetected () );
+    testOk ( ! client.recvWakeupDetected (), "Client is asleep" );
 
+    testDiag("Trying Shutdown mechanism");
     client.shutdown ();
     epicsThreadSleep ( 1.0 );
     int mech = -1;
     if ( client.recvWakeupDetected () ) {
         mech = esscimqi_socketBothShutdownRequired;
+        testDiag("Shutdown succeeded");
     }
     else {
-        client.signal ();
+        testDiag("Trying Close mechanism");
+        client.close ();
         epicsThreadSleep ( 1.0 );
         if ( client.recvWakeupDetected () ) {
-            mech = esscimqi_socketSigAlarmRequired;
-        }
-        else {
-            client.close ();
-            epicsThreadSleep ( 1.0 );
-            if ( client.recvWakeupDetected () ) {
-                mech = esscimqi_socketCloseRequired;
-            }
+            mech = esscimqi_socketCloseRequired;
+            testDiag("Close succeeded");
         }
     }
     testDiag("This OS behaves like \"%s\".", mechName(mech));
 
     int query = epicsSocketSystemCallInterruptMechanismQuery ();
-    if (! testOk(mech == query, "Socket shutdown mechanism") )
+    if (! testOk(mech == query, "Declared mechanism works") )
         testDiag("epicsSocketSystemCallInterruptMechanismQuery returned \"%s\"",
             mechName(query));
 
+    srv.stop ();
+    epicsThreadSleep ( 1.0 );
+
+    osiSockRelease();
     return testDone();
 }
 

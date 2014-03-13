@@ -109,11 +109,11 @@ sub display {
 }
 
 sub HELP_MESSAGE {
-    print STDERR "\nUsage: camonitor [options] <PV name> ...\n",
+    print STDERR "\nUsage: camonitor.pl [options] <PV name> ...\n",
         "\n",
         "  -h: Help: Print this message\n",
         "Channel Access options:\n",
-        "  -w <sec>:  Wait time, specifies longer CA timeout, default is $opt_w second\n",
+        "  -w <sec>:  Wait time, specifies CA timeout, default is $opt_w second\n",
         "  -m <mask>: Specify CA event mask to use, with <mask> being any combination of\n",
         "             'v' (value), 'a' (alarm), 'l' (log/archive), 'p' (property)",
         "             Default: '$opt_m'\n",
@@ -144,6 +144,7 @@ sub HELP_MESSAGE {
         "\n",
         "Example: camonitor -f8 my_channel another_channel\n",
         "  (doubles are printed as %f with 8 decimal digits)\n",
-        "\n";
+        "\n",
+        "Base version: ", CA->version, "\n";
     exit 1;
 }

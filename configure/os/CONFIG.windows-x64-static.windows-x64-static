@@ -1,0 +1,13 @@
+# CONFIG.windows-x64-static.windows-x64-static
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for windows-x64-static target archs when host arch is windows-x64-static
+# Sites may override these definitions in CONFIG_SITE.windows-x64-static.windows-x64-static
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.windows-x64.windows-x64
+
+SHARED_LIBRARIES = NO
+STATIC_BUILD= YES

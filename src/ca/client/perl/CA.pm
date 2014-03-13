@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-my $version = '0.4';
+my $version = '0.5';
 
 
 package CA;
@@ -506,6 +506,11 @@ The following functions are not channel methods, and should be called using the
 class method syntax, e.g. C<< CA->pend_io(10) >>.
 
 =over 4
+
+=item version
+
+Returns the EPICS_VERSION_STRING from the version of EPICS Base this software
+was built using.
 
 =item flush_io
 

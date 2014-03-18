@@ -1221,6 +1221,15 @@ int CA_write_access(SV *ca_ref) {
 
 /******************************************************************************/
 
+/* Ensure that the generated boot_Cap5 function is visible
+ * outside of the libCap5.so shared library when compiling
+ * with GCC4+ and -fvisibility=hidden is used.
+ */
+#if __GNUC__ >= 4
+XS(boot_Cap5) __attribute__ ((visibility ("default")));
+#endif
+
+
 MODULE = Cap5	PACKAGE = Cap5
 
 MODULE = Cap5	PACKAGE = CA	PREFIX = CA_
@@ -1229,13 +1238,6 @@ PROTOTYPES: DISABLE
 
 BOOT:
     p5_ctx = Perl_get_context();
-    /* Ensure that the generated boot_Cap5 function is visible
-     * outside of the libCap5.so shared library when compiling
-     * with GCC4+ and -fvisibility=hidden is used.
-     */
-    #if __GNUC__ >= 4
-    #pragma GCC visibility push(default)
-    #endif
 
 
 SV *

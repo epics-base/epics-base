@@ -64,8 +64,8 @@ static int mutexLock(pthread_mutex_t *id)
 
 #if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500
 typedef struct epicsMutexOSD {
-    pthread_mutexattr_t mutexAttr;
     pthread_mutex_t     lock;
+    pthread_mutexattr_t mutexAttr;
 } epicsMutexOSD;
 
 epicsMutexOSD * epicsMutexOsdCreate(void) {
@@ -158,8 +158,8 @@ void epicsMutexOsdShow(struct epicsMutexOSD * pmutex, unsigned int level)
 #else /*defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE)>=500 */
 
 typedef struct epicsMutexOSD {
-    pthread_mutexattr_t mutexAttr;
     pthread_mutex_t	lock;
+    pthread_mutexattr_t mutexAttr;
     pthread_cond_t	waitToBeOwner;
 #if defined _POSIX_THREAD_PROCESS_SHARED
     pthread_condattr_t  condAttr;

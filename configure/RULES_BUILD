@@ -195,17 +195,17 @@ $(OBJLIBNAME):%$(OBJ):
 	@$(RM) $@
 	$(COMPILE.ctdt) $<
 
-%$(OBJ): %.c
+%$(OBJ): %.c inc
 	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.c) $(call PATH_FILTER,$<) $(COMPILE_FILTER.c)
 
-%$(OBJ): %.cc
+%$(OBJ): %.cc inc
 	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)
 
-%$(OBJ): %.cpp
+%$(OBJ): %.cpp inc
 	@$(HDEPENDS_CMD)
 	@$(RM) $@
 	$(COMPILE.cpp) $(call PATH_FILTER,$<) $(COMPILE_FILTER.cpp)

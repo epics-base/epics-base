@@ -30,8 +30,10 @@ INC += dbMapper.h
 INC += gddAppTable.h
 INC += gddAppFuncTable.h
 INC += smartGDDPointer.h
-INC += gddApps.h
 INC += gddEnumStringTable.h
+
+# Can't put this in INC, it causes a circular build dependency
+TARGETS += $(INSTALL_INCLUDE)/gddApps.h
 
 HTMLS += gdd.html
 HTMLS += gddref.html

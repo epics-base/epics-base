@@ -195,6 +195,12 @@ $(OBJLIBNAME):%$(OBJ):
 	@$(RM) $@
 	$(COMPILE.ctdt) $<
 
+# Cancel GNUMake's built-in rules, which don't have our _INC
+# dependencies so could get used in some circumstances (gdd)
+%.o : %.c
+%.o : %.cc
+%.o : %.cpp
+
 %$(OBJ): %.c $(COMMON_INC) $(INSTALL_INC)
 	@$(HDEPENDS_CMD)
 	@$(RM) $@

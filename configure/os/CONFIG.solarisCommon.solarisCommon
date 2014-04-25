@@ -7,8 +7,9 @@
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
 #-------------------------------------------------------
 
-SPARCWORKS = /opt/SUNWspro
 GNU = NO
+
+# SPARCWORKS path is set in a CONFIG_SITE file
 
 CC = $(SPARCWORKS)/bin/cc
 CCC = $(SPARCWORKS)/bin/CC

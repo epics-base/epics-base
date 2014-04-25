@@ -17,4 +17,5 @@ STLPORT_LDLIBS_NO =
 OP_SYS_LDLIBS_8 = -ldl -lc
 OP_SYS_LDLIBS_9 = -ldl -lc
 OP_SYS_LDLIBS_10 = -lc
+OP_SYS_LDLIBS_11 = -lc
 

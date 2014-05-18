@@ -875,5 +875,16 @@ epicsShareFunc double epicsShareAPI epicsThreadSleepQuantum ()
 
 epicsShareFunc int epicsThreadGetCPUs(void)
 {
-    return sysconf(_SC_NPROCESSORS_ONLN);
+    long ret;
+#ifdef _SC_NPROCESSORS_ONLN
+    ret = sysconf(_SC_NPROCESSORS_ONLN);
+    if (ret > 0)
+        return ret;
+#endif
+#ifdef _SC_NPROCESSORS_CONF
+    ret = sysconf(_SC_NPROCESSORS_CONF);
+    if (ret > 0)
+        return ret;
+#endif
+    return 1;
 }

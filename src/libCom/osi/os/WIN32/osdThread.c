@@ -1110,7 +1110,11 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId
  */
 epicsShareFunc int epicsThreadGetCPUs ( void )
 {
-    return atoi(getenv("NUMBER_OF_PROCESSORS"));
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    if (sysinfo.dwNumberOfProcessors > 0)
+        return sysinfo.dwNumberOfProcessors;
+    return 1;
 }
 
 #ifdef TEST_CODES

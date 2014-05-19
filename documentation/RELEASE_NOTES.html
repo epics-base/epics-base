@@ -483,7 +483,7 @@ Code that will not work with a version of Base before 3.15.0 can now be
 written like this to prevent it from compiling:</p>
 
 <pre style="margin: 0 2em;">
-#if defined(VERSION_INT) && EPICS_VERSION_INT < VERSION_INT(3,15,0,0)
+#if defined(VERSION_INT) &amp;&amp; EPICS_VERSION_INT &lt; VERSION_INT(3,15,0,0)
 #  error EPICS Base R3.15.0 or later is required
 #endif
 </pre>

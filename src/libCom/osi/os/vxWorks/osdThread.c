@@ -447,3 +447,8 @@ double epicsThreadSleepQuantum ()
     double HZ = sysClkRateGet ();
     return 1.0 / HZ;
 }
+
+epicsShareFunc int epicsThreadGetCPUs(void)
+{
+    return 1;
+}

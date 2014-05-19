@@ -6,3 +6,4 @@
 ./include
 ./templates
 **/O.*
+./QtC-*

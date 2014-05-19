@@ -1101,6 +1101,18 @@ epicsShareFunc void * epicsShareAPI epicsThreadPrivateGet ( epicsThreadPrivateId
     return ( void * ) TlsGetValue ( pPvt->key );
 }
 
+/*
+ * epicsThreadGetCPUs ()
+ */
+epicsShareFunc int epicsThreadGetCPUs ( void )
+{
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    if (sysinfo.dwNumberOfProcessors > 0)
+        return sysinfo.dwNumberOfProcessors;
+    return 1;
+}
+
 #ifdef TEST_CODES
 void testPriorityMapping ()
 {

@@ -124,8 +124,8 @@ sub oldtables {
                 "sizeof(prec->" . $_->C_name . ");"
             } $rtyp->fields) . "\n" .
         join("\n", map {
-                "    prt->papFldDes[${rn}Record" . $_->name . "]->offset = " .
-                "(char *)&prec->" . $_->C_name . " - (char *)prec;"
+                "    prt->papFldDes[${rn}Record" . $_->name . "]->offset = (unsigned short)(" .
+                "(char *)&prec->" . $_->C_name . " - (char *)prec);"
             } $rtyp->fields) . "\n" .
         "    prt->rec_size = sizeof(*prec);\n" .
         "    return 0;\n" .

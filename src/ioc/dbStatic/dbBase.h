@@ -88,7 +88,7 @@ typedef struct dbFldDes{  /* field description */
     /*On no runtime following only set for STRING			*/
     short	size;		/*length in bytes of a field element	*/
     /*The following are only available on run time system*/
-    short	offset;		/*Offset in bytes from beginning of record*/
+    unsigned short	offset;		/*Offset in bytes from beginning of record*/
 }dbFldDes;
 
 typedef struct dbInfoNode {	/*non-field per-record information*/

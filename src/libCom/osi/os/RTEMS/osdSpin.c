@@ -4,6 +4,8 @@
 * Copyright (c) 2012 ITER Organization.
 * Copyright (c) 2013 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
+* Copyright (c) 2013 Brookhaven Science Assoc. as Operator of Brookhaven
+*     National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
@@ -11,29 +13,43 @@
 /*
  * Authors:  Ralph Lange <Ralph.Lange@gmx.de>
  *           Andrew Johnson <anj@aps.anl.gov>
+ *           Michael Davidsaver <mdavidsaver@bnl.gov>
  *
- * Based on epicsInterrupt.c (RTEMS implementation) by Eric Norum
+ * Inspired by Linux UP spinlocks implemention
+ *   include/linux/spinlock_api_up.h
  */
 
 /*
  * RTEMS (single CPU): LOCK INTERRUPT
  *
  * CAVEAT:
- * This implementation is for UP architectures only.
- *
+ * This implementation is intended for UP architectures only.
  */
+
+#define __RTEMS_VIOLATE_KERNEL_VISIBILITY__ 1
 
 #include <stdlib.h>
 #include <rtems.h>
+
+#include <epicsAssert.h>
 
 #include "epicsSpin.h"
 
 typedef struct epicsSpin {
     rtems_interrupt_level level;
+    unsigned int locked;
 } epicsSpin;
 
-epicsSpinId epicsSpinCreate() {
+epicsSpinId epicsSpinCreate(void) {
     return calloc(1, sizeof(epicsSpin));
+}
+
+epicsSpinId epicsSpinMustCreate(void)
+{
+    epicsSpinId ret = epicsSpinCreate();
+    if(!ret)
+        cantProceed("epicsSpinMustCreate fails");
+    return ret;
 }
 
 void epicsSpinDestroy(epicsSpinId spin) {
@@ -41,7 +57,12 @@ void epicsSpinDestroy(epicsSpinId spin) {
 }
 
 void epicsSpinLock(epicsSpinId spin) {
-    rtems_interrupt_disable(spin->level);
+    rtems_interrupt_level level;
+    rtems_interrupt_disable (level);
+    _Thread_Disable_dispatch();
+    spin->level = level;
+    assert(!spin->locked);
+    spin->locked = 1;
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
@@ -50,5 +71,9 @@ int epicsSpinTryLock(epicsSpinId spin) {
 }
 
 void epicsSpinUnlock(epicsSpinId spin) {
-    rtems_interrupt_enable(spin->level);
+    rtems_interrupt_level level = spin->level;
+    assert(spin->locked);
+    spin->level = spin->locked = 0;
+    rtems_interrupt_enable (level);
+    _Thread_Enable_dispatch();
 }

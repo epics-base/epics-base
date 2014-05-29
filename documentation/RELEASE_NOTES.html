@@ -15,6 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added optional dbServer API to database</h3>
+
+<p>A server layer that sits on top of the IOC database may now register itself
+as such by calling <tt>dbRegisterServer()</tt> and providing optional routines
+that other components can use. The initial purpose of this API allows the Trace
+Processing implementation in <tt>dbProcess()</tt> to identify a client that
+causes a record to process when TPRO is set.</p>
+
+<p>To support the client idenfication, the server provides a routine that
+returns that identity string when called by one of its own processing
+threads.</p>
+
 <h3>Added echo command to iocsh</h3>
 
 <p>The single argument string may contain escaped characters, which will be

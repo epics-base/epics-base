@@ -26,6 +26,7 @@ INC += dbLink.h
 INC += dbLock.h
 INC += dbNotify.h
 INC += dbScan.h
+INC += dbServer.h
 INC += dbTest.h
 INC += dbCaTest.h
 INC += db_test.h
@@ -86,4 +87,5 @@ dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
 dbCore_SRCS += chfPlugin.c
 dbCore_SRCS += dbState.c
+dbCore_SRCS += dbServer.c
 

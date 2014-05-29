@@ -19,21 +19,28 @@
 #ifndef rsrvh
 #define rsrvh
 
+#include <stddef.h>
 #include "shareLib.h"
+
+#define RSRV_OK 0
+#define RSRV_ERROR (-1)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 epicsShareFunc int rsrv_init(void);
 epicsShareFunc int rsrv_run(void);
 epicsShareFunc int rsrv_pause(void);
 
 epicsShareFunc void casr (unsigned level);
-epicsShareFunc void casHostNameInitiatingCurrentThread (
-                        char * pBuf, unsigned bufSize );
-epicsShareFunc void casUserNameInitiatingCurrentThread (
-                        char * pBuf, unsigned bufSize );
+epicsShareFunc int casClientInitiatingCurrentThread (
+                        char * pBuf, size_t bufSize );
 epicsShareFunc void casStatsFetch (
                         unsigned *pChanCount, unsigned *pConnCount );
 
-#define RSRV_OK 0
-#define RSRV_ERROR (-1)
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*rsrvh */

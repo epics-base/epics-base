@@ -39,12 +39,14 @@
 #include "dbEvent.h"
 #include "dbChannel.h"
 #include "dbCommon.h"
+#include "dbServer.h"
 #include "rsrv.h"
 #define GLBLSOURCE
 #include "server.h"
 
-#define DELETE_TASK(NAME)\
-if(threadNameToId(NAME)!=0)threadDestroy(threadNameToId(NAME));
+#define DELETE_TASK(NAME) \
+    if (threadNameToId(NAME)!=0) \
+        threadDestroy(threadNameToId(NAME));
 
 epicsThreadPrivateId rsrvCurrentClient;
 
@@ -230,6 +232,14 @@ static void req_server (void *pParm)
     }
 }
 
+static dbServer rsrv_server = {
+    ELLNODE_INIT,
+    "rsrv",
+    casr,
+    casStatsFetch,
+    casClientInitiatingCurrentThread
+};
+
 /*
  * rsrv_init ()
  */
@@ -249,6 +259,8 @@ int rsrv_init (void)
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );
     freeListInitPvt ( &rsrvSmallBufFreeListTCP, MAX_TCP, 16 );
     initializePutNotifyFreeList ();
+
+    dbRegisterServer(&rsrv_server);
 
     status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
     if ( status || maxBytesAsALong < 0 ) {
@@ -948,16 +960,16 @@ struct client *create_tcp_client ( SOCKET sock )
 
 void casStatsFetch ( unsigned *pChanCount, unsigned *pCircuitCount )
 {
-	LOCK_CLIENTQ;
+    LOCK_CLIENTQ;
     {
         int circuitCount = ellCount ( &clientQ );
         if ( circuitCount < 0 ) {
-	        *pCircuitCount = 0;
+            *pCircuitCount = 0;
         }
         else {
-	        *pCircuitCount = (unsigned) circuitCount;
+            *pCircuitCount = (unsigned) circuitCount;
         }
         *pChanCount = rsrvChannelCount;
     }
-	UNLOCK_CLIENTQ;
+    UNLOCK_CLIENTQ;
 }

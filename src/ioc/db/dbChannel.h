@@ -56,7 +56,7 @@ typedef struct dbChannel {
     long  final_no_elements;  /* final number of elements (arrays) */
     short final_field_size;   /* final size of element */
     short final_type;         /* final type of database field */
-    short dbr_final_type;     /* final field type as seen by database request */
+    short final_dbr_type;     /* final field type as seen by database request */
     ELLLIST filters;          /* list of filters as created from JSON */
     ELLLIST pre_chain;        /* list of filters to be called pre-event-queue */
     ELLLIST post_chain;       /* list of filters to be called post-event-queue */
@@ -185,7 +185,7 @@ epicsShareFunc long dbChannelOpen(dbChannel *chan);
 #define dbChannelFinalFieldType(pChan) ((pChan)->final_type)
 
 /* evaluates to short */
-#define dbChannelFinalExportType(pChan) ((pChan)->dbr_final_type)
+#define dbChannelFinalExportType(pChan) ((pChan)->final_dbr_type)
 
 /* evaluates to short */
 #define dbChannelFinalFieldSize(pChan) ((pChan)->final_field_size)

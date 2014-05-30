@@ -20,8 +20,6 @@
  * .01  06-14-93    joh needs devAllocInterruptVector() routine
  */
 
-static const char sccsID[] = "@(#) $Revision-Id$";
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -34,8 +34,6 @@ const nothrow_t  nothrow ;
 }
 #endif
 
-static const caHdr nill_msg = { 0u, 0u, 0u, 0u, 0u, 0u };
-
 casStrmClient::pCASMsgHandler const casStrmClient::msgHandlers[] =
 {
     & casStrmClient::versionAction,

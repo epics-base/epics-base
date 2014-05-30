@@ -44,8 +44,10 @@
 
 using namespace std;
 
+#if 0
 const unsigned mSecPerSec = 1000u;
 const unsigned uSecPerSec = 1000u * mSecPerSec;
+#endif
 
 tcpSendThread::tcpSendThread ( 
         class tcpiiu & iiuIn, const char * pName, 

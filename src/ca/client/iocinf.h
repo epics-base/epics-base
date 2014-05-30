@@ -63,9 +63,7 @@ static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
 
 class caErrorCode { 
 public:
-    caErrorCode ( int status ) : code ( status ) {};
-private:
-    int code;
+    caErrorCode ( int ) {};
 };
 
 /*

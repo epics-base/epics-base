@@ -591,7 +591,7 @@ void ca_client_context :: whenThereIsAnExceptionDestroySyncGroupIO (
     }
     else {
         // dont reverse the lock hierarchy
-        epicsGuardRelease < epicsMutex > guardRelease ();
+        epicsGuardRelease < epicsMutex > guardRelease ( guard );
         {
             //
             // we will definately stall out here if all of the

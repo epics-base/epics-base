@@ -1793,9 +1793,9 @@ long dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
     bottom = 0;
     test = (top + bottom) / 2;
     while (1) {
-        size_t compare = strncmp(papsortFldName[test], pname, nameLen);
+        int compare = strncmp(papsortFldName[test], pname, nameLen);
         if (compare == 0)
-            compare = strlen(papsortFldName[test]) - nameLen;
+            compare = (int) (strlen(papsortFldName[test]) - nameLen);
         if (compare == 0) {
             dbFldDes *pflddes = precordType->papFldDes[sortFldInd[test]];
 

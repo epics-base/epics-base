@@ -78,7 +78,7 @@ void dbPvdInitPvt(dbBase *pdbbase)
     return;
 }
 
-PVDENTRY *dbPvdFind(dbBase *pdbbase, const char *name, int lenName)
+PVDENTRY *dbPvdFind(dbBase *pdbbase, const char *name, size_t lenName)
 {
     dbPvd *ppvd = pdbbase->ppvd;
     dbPvdBucket *pbucket;

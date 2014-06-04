@@ -63,7 +63,8 @@ static int precision[2] = {6, 14};
 static void realToString(double value, char *preturn, int isdouble)
 {
     double	absvalue;
-    int		logval,prec,end;
+    int		logval,prec;
+    size_t  end;
     char	tstr[30];
     char	*ptstr = &tstr[0];
     int		round;
@@ -583,9 +584,9 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 	    value = strtol(pstring,&endp,0);
 	    if(*endp!=0) status = S_dbLib_badField;
 	    switch (pflddes->field_type) {
-	    case DBF_CHAR : *(char *)pfield = value; break;
-	    case DBF_SHORT : *(short *)pfield = value; break;
-	    case DBF_LONG : *(epicsInt32 *)pfield = value; break;
+        case DBF_CHAR : *(char *)pfield = (char)value; break;
+        case DBF_SHORT : *(short *)pfield = (short)value; break;
+        case DBF_LONG : *(epicsInt32 *)pfield = (epicsInt32)value; break;
 	    default: epicsPrintf("Logic error in dbPutStringNum\n");
 	    }
 	}
@@ -600,10 +601,10 @@ long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
 	    value = strtoul(pstring,&endp,0);
 	    if(*endp!=0) status = S_dbLib_badField;
 	    switch (pflddes->field_type) {
-	    case DBF_UCHAR : *(unsigned char *)pfield = value; break;
+        case DBF_UCHAR : *(unsigned char *)pfield = (unsigned char)value; break;
 	    case DBF_USHORT:
-	    case DBF_ENUM: *(unsigned short *)pfield=value; break;
-	    case DBF_ULONG : *(epicsUInt32 *)pfield = value; break;
+        case DBF_ENUM: *(unsigned short *)pfield = (unsigned short)value; break;
+        case DBF_ULONG : *(epicsUInt32 *)pfield = (epicsUInt32)value; break;
 	    default: epicsPrintf("Logic error in dbPutStringNum\n");
 	    }
 	}

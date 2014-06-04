@@ -14,6 +14,7 @@
  */
 
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "cantProceed.h"
@@ -273,7 +274,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
     if (!yh)
         return S_db_noMemory;
 
-    ys = yajl_parse(yh, (const unsigned char *) json, jlen);
+    ys = yajl_parse(yh, (const unsigned char *) json, (unsigned int) jlen);
     if (ys == yajl_status_insufficient_data)
         ys = yajl_parse_complete(yh);
 
@@ -286,7 +287,7 @@ static long chf_parse(dbChannel *chan, const char **pjson)
     case yajl_status_error: {
         unsigned char *err;
 
-        err = yajl_get_error(yh, 1, (const unsigned char *) json, jlen);
+        err = yajl_get_error(yh, 1, (const unsigned char *) json, (unsigned int) jlen);
         printf("dbChannelCreate: %s\n", err);
         yajl_free_error(yh, err);
     } /* fall through */
@@ -349,7 +350,7 @@ static long parseArrayRange(dbChannel* chan, const char *pname, const char **ppn
     epicsInt32 incr = 1;
     epicsInt32 l;
     char *pnext;
-    short exist;
+    ptrdiff_t exist;
     chFilter *filter;
     const chFilterPlugin *plug;
     parse_result result;

@@ -52,7 +52,7 @@ typedef struct{
 epicsShareFunc int dbPvdTableSize(int size);
 extern int dbStaticDebug;
 void	dbPvdInitPvt(DBBASE *pdbbase);
-PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,int lenname);
+PVDENTRY *dbPvdFind(DBBASE *pdbbase,const char *name,size_t lenname);
 PVDENTRY *dbPvdAdd(DBBASE *pdbbase,dbRecordType *precordType,dbRecordNode *precnode);
 void dbPvdDelete(DBBASE *pdbbase,dbRecordNode *precnode);
 void dbPvdFreeMem(DBBASE *pdbbase);

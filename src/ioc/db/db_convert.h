@@ -31,8 +31,10 @@ epicsShareExtern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
 epicsShareExtern long (*dbPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
     (struct dbAddr *paddr, const void *pbuffer,long nRequest,
         long no_elements, long offset);
-epicsShareExtern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])();
-epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])();
+epicsShareExtern long (*dbFastGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
+    (const void *from, void *to, dbAddr *paddr);
+epicsShareExtern long (*dbFastPutConvertRoutine[newDBR_ENUM+1][newDBF_DEVICE+1])
+    (const void *from, void *to, dbAddr *paddr);
 
 /*Conversion between old and new DBR types*/
 epicsShareExtern unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1];

@@ -9,6 +9,7 @@
 /* $Revision-Id$ */
 
 #include <stdio.h>
+#include <stddef.h>
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
@@ -395,10 +396,10 @@ void dbCatString(char **string,int *stringLength,char *src,char *separator)
     }
     if(*stringLength>0) {
 	strcat(*string,separator);
-	*stringLength += strlen(separator);
+    *stringLength += (int) strlen(separator);
     }
     strcat(*string,src);
-    *stringLength += strlen(src);
+    *stringLength += (int) strlen(src);
 }
 
 dbBase * dbAllocBase(void)
@@ -698,7 +699,7 @@ long dbAddPath(DBBASE *pdbbase,const char *path)
 	 * 2) isnt a path separator
 	 */
 	len = (plast - path) + 1;
-	if (dbAddOnePath (pdbbase, path, len)) return (-1);
+    if (dbAddOnePath (pdbbase, path, (unsigned) len)) return (-1);
 	path += len;
 	if (pcolon) {
 	    path += strlen(OSI_PATH_LIST_SEPARATOR);
@@ -1232,7 +1233,7 @@ long dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
     if (!precordType) return S_dbLib_recordTypeNotFound;
     pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
     while (pattribute) {
-        int nameLen = strlen(pattribute->name);
+        size_t nameLen = strlen(pattribute->name);
         int compare = strncmp(pattribute->name, pname, nameLen);
         int ch = pname[nameLen];
         if (compare == 0 && !(ch == '_' || isalnum(ch))) {
@@ -1491,13 +1492,13 @@ long dbFindRecordPart(DBENTRY *pdbentry, const char **ppname)
     dbBase      *pdbbase = pdbentry->pdbbase;
     const char  *pname = *ppname;
     const char  *pfn;
-    int         lenName;
+    size_t      lenName;
     PVDENTRY    *ppvdNode;
 
     zeroDbentry(pdbentry);
     pfn = strchr(pname, '.');
     if (pfn) {
-        lenName = pfn - pname;
+        lenName = (size_t) (pfn - pname);
     } else {
         lenName = strlen(pname);
     }
@@ -1760,7 +1761,7 @@ long dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
     char         **papsortFldName;
     short        *sortFldInd;
     int          ch;
-    int          nameLen;
+    size_t       nameLen;
 
     if (!precordType) return S_dbLib_recordTypeNotFound;
     if (!precnode) return S_dbLib_recNotFound;
@@ -1792,7 +1793,7 @@ long dbFindFieldPart(DBENTRY *pdbentry,const char **ppname)
     bottom = 0;
     test = (top + bottom) / 2;
     while (1) {
-        int compare = strncmp(papsortFldName[test], pname, nameLen);
+        size_t compare = strncmp(papsortFldName[test], pname, nameLen);
         if (compare == 0)
             compare = strlen(papsortFldName[test]) - nameLen;
         if (compare == 0) {
@@ -2092,7 +2093,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 	    DBLINK	*plink;
 	    char	string[80];
 	    char	*pstr = string;
-	    int		ind;
+        size_t  ind;
 
 	    if (!pfield)
 	        return S_dbLib_fieldNotFound;
@@ -2363,7 +2364,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 		    if(!(end = strchr(pstr,'G'))) return (S_dbLib_badField);
 		    pstr = end + 1;
                     cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bbgpibio.gpibaddr=tmp_val;
+            plink->value.bbgpibio.gpibaddr=(unsigned char)tmp_val;
 		    status = putParmString(&plink->value.bbgpibio.parm,pstr);
 		}
 		break;

@@ -288,7 +288,7 @@ static long dbDbGetPrecision(const struct link *plink, short *precision)
     if (status)
         return status;
 
-    *precision = buffer.precision.dp;
+    *precision = (short) buffer.precision.dp;
     return 0;
 }
 
@@ -658,7 +658,7 @@ long dbLoadLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
         plink->value.constantStr) {
         strncpy(pbuffer, plink->value.constantStr, --size);
         pbuffer[size] = 0;
-        *plen = strlen(pbuffer) + 1;
+        *plen = (epicsUInt32) strlen(pbuffer) + 1;
         return 0;
     }
 
@@ -690,7 +690,7 @@ long dbGetLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
     }
     if (!status) {
         pbuffer[--len] = 0;
-        *plen = strlen(pbuffer) + 1;
+        *plen = (epicsUInt32) strlen(pbuffer) + 1;
     }
     return status;
 }

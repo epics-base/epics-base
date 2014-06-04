@@ -69,7 +69,7 @@ static int dbpr_report(const char *pname, DBADDR *paddr, int interest_level,
     TAB_BUFFER *pMsgBuff, int tab_size);
 static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size);
 static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size);
-static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size);
+static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,size_t len,int tab_size);
 static void dbpr_msg_flush(TAB_BUFFER *pMsgBuff,int tab_size);
 
 static char *dbf[DBF_NTYPES] = {
@@ -337,7 +337,7 @@ long dbpf(const char *pname,const char *pvalue)
     long status;
     epicsUInt16 value;
     short dbrType;
-    long n = 1;
+    size_t n = 1;
 
     if (!pname || !*pname || !pvalue) {
         printf("Usage: dbpf \"pv name\", \"value\"\n");
@@ -365,7 +365,7 @@ long dbpf(const char *pname,const char *pvalue)
         dbrType = DBR_STRING;
     }
 
-    status = dbPutField(&addr, dbrType, pvalue, n);
+    status = dbPutField(&addr, dbrType, pvalue, (long) n);
     if (status) {
         if (status == -1)
             printf("dbpf: Value conversion from %s to %s failed\n",
@@ -579,13 +579,13 @@ long dbtpf(const char *pname, const char *pvalue)
             break;
         case DBR_SHORT:
             if ((valid = validLong)) {
-                epicsInt16 val_i16 = val_long;
+                epicsInt16 val_i16 = (epicsInt16) val_long;
                 status = dbPutField(&addr, put_type, &val_i16,1L);
             }
             break;
         case DBR_USHORT:
             if ((valid = validULong)) {
-                epicsUInt16 val_u16 = val_ulong;
+                epicsUInt16 val_u16 = (epicsUInt16) val_ulong;
                 status = dbPutField(&addr, put_type, &val_u16, 1L);
             }
             break;
@@ -611,7 +611,7 @@ long dbtpf(const char *pname, const char *pvalue)
             break;
         case DBR_ENUM:
             if ((valid = validULong)) {
-                epicsEnum16 val_e16 = val_ulong;
+                epicsEnum16 val_e16 = (epicsEnum16) val_ulong;
                 status = dbPutField(&addr, put_type, &val_e16, 1L);
             }
             break;
@@ -755,7 +755,7 @@ static void printBuffer(
     epicsInt32 val_i32;
     epicsUInt32 val_u32;
     char *pmsg = pMsgBuff->message;
-    int i, len;
+    size_t i, len;
 
     if (reqOptions & DBR_STATUS) {
         if (retOptions & DBR_STATUS) {
@@ -1252,7 +1252,7 @@ static int dbpr_report(
 
 static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size)
 {
-    int        len;
+    size_t     len;
     int        err = 0;
     char       *pmsg = pMsgBuff->message;
     static int last_tabsize;
@@ -1298,11 +1298,11 @@ static void dbpr_init_msg(TAB_BUFFER *pMsgBuff,int tab_size)
     pMsgBuff->pNexTab = pMsgBuff->out_buff + tab_size;
 }
 
-static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,int len,int tab_size)
+static void dbpr_insert_msg(TAB_BUFFER *pMsgBuff,size_t len,int tab_size)
 {
-    int             current_len;
-    int             n;
-    int             tot_line;
+    size_t          current_len;
+    size_t          n;
+    size_t          tot_line;
     char           *pmsg = pMsgBuff->message;
     current_len = strlen(pMsgBuff->out_buff);
     tot_line = current_len + len;

@@ -70,6 +70,7 @@ store_integer_value(const chfPluginArgDef *opt, char *user, epicsInt32 val)
     const chfPluginEnumType *emap;
     double *dval;
     char *sval;
+    int ret;
     char buff[22];              /* 2^64 = 1.8e+19, so 20 digits plus sign max */
 
 #ifdef DEBUG_CHF
@@ -96,7 +97,8 @@ store_integer_value(const chfPluginArgDef *opt, char *user, epicsInt32 val)
         break;
     case chfPluginArgString:
         sval = user + opt->offset;
-        if (sprintf(buff, "%ld", (long)val) > opt->size - 1) {
+        ret = sprintf(buff, "%ld", (long)val);
+        if (ret < 0 || (unsigned) ret > opt->size - 1) {
             return -1;
         }
         strncpy(sval, buff, opt->size-1);
@@ -154,7 +156,7 @@ static int store_boolean_value(const chfPluginArgDef *opt, char *user, int val)
         break;
     case chfPluginArgString:
         sval = user + opt->offset;
-        if ((val ? 4 : 5) > opt->size - 1) {
+        if ((unsigned) (val ? 4 : 5) > opt->size - 1) {
             return -1;
         }
         strncpy(sval, val ? "true" : "false", opt->size - 1);
@@ -178,7 +180,7 @@ store_double_value(const chfPluginArgDef *opt, void *vuser, double val)
     epicsInt32 *ival;
     double *dval;
     char *sval;
-    int i;
+    unsigned int i;
 
 #ifdef DEBUG_CHF
     printf("Got a double for %s (type %d, convert: %s): %g\n",
@@ -236,7 +238,7 @@ store_string_value(const chfPluginArgDef *opt, char *user, const char *val,
     double *dval;
     char *sval;
     char *end;
-    int i;
+    size_t i;
 
 #ifdef DEBUG_CHF
     printf("Got a string for %s (type %d): %.*s\n",

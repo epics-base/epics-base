@@ -197,7 +197,7 @@ unsigned dbChannelIO::getName (
     size_t len = strlen ( name );
     strncpy ( pBuf, name, bufLen );
     if (len < bufLen)
-        return len;
+        return (unsigned) len;
     pBuf[--bufLen] = '\0';
     return bufLen;
 }

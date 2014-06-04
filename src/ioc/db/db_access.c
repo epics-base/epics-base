@@ -471,7 +471,7 @@ int dbChannel_get_count(
             status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            pold->precision = newSt.precision.dp;
+            pold->precision = (dbr_short_t) newSt.precision.dp;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
             pold->units[MAX_UNITS_SIZE-1] = '\0';
             pold->upper_disp_limit = epicsConvertDoubleToFloat(newSt.upper_disp_limit);
@@ -556,7 +556,7 @@ int dbChannel_get_count(
             status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            pold->precision = newSt.precision.dp;
+            pold->precision = (dbr_short_t) newSt.precision.dp;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
             pold->units[MAX_UNITS_SIZE-1] = '\0';
             pold->upper_disp_limit = newSt.upper_disp_limit;
@@ -620,7 +620,7 @@ int dbChannel_get_count(
             status = dbChannelGetField(chan, DBR_FLOAT, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            pold->precision = newSt.precision.dp;
+            pold->precision = (dbr_short_t) newSt.precision.dp;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
             pold->units[MAX_UNITS_SIZE-1] = '\0';
             pold->upper_disp_limit = epicsConvertDoubleToFloat(newSt.upper_disp_limit);
@@ -742,7 +742,7 @@ int dbChannel_get_count(
             status = dbChannelGetField(chan, DBR_DOUBLE, &newSt, &options, &zero, pfl);
             pold->status = newSt.status;
             pold->severity = newSt.severity;
-            pold->precision = newSt.precision.dp;
+            pold->precision = (dbr_short_t) newSt.precision.dp;
             strncpy(pold->units, newSt.units, MAX_UNITS_SIZE);
             pold->units[MAX_UNITS_SIZE-1] = '\0';
             pold->upper_disp_limit = newSt.upper_disp_limit;

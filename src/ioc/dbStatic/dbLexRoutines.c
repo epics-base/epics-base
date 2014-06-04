@@ -305,7 +305,7 @@ long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
 
 static int db_yyinput(char *buf, int max_size)
 {
-    int		l,n;
+    size_t  l,n;
     char	*fgetsRtn;
     
     if(yyAbort) return(0);

@@ -143,7 +143,7 @@ static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
 	unsigned long	no_str;
 	char		*ptemp;
 	struct dbr_enumStrs *pdbr_enumStrs=(struct dbr_enumStrs*)(*ppbuffer);
-	int			i;
+    unsigned int i;
 
 	memset(pdbr_enumStrs,'\0',dbr_enumStrs_size);
 	switch(field_type) {

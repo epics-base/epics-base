@@ -447,8 +447,11 @@ static chfPluginIf postPif = {
 };
 
 static int checkValues(myStruct *my,
-    epicsUInt32 i, int f, double d, char *s, int c) {
+    epicsUInt32 i, int f, double d, char *s1, char *s2, int c) {
     int ret = 1;
+    int s1fail, s2fail;
+    int s2valid = (s2 && s2[0] != '\0');
+
     if (!my) return 0;
 #define CHK(A,B,FMT) if((A)!=(B)) {testDiag("Fail: " #A " (" FMT ") != " #B " (" FMT")", A, B); ret=0;}
     CHK(my->sent1, PATTERN, "%08x")
@@ -462,7 +465,13 @@ static int checkValues(myStruct *my,
     CHK(my->dval, d, "%f")
     CHK(my->enumval, c, "%d")
 #undef CHK
-    if(strcmp(s, my->str) != 0) {testDiag("Fail: my->str (%s) != s (%s)", my->str, s); ret=0;}
+    s2fail = s1fail = strcmp(s1, my->str);
+    if (s2valid) s2fail = strcmp(s2, my->str);
+    if (s1fail && s2fail) {
+        if (s1fail)            testDiag("Fail: my->str (%s) != s (%s)", my->str, s1);
+        if (s2valid && s2fail) testDiag("Fail: my->str (%s) != s (%s)", my->str, s2);
+        ret = 0;
+    }
     return ret;
 }
 
@@ -540,7 +549,7 @@ MAIN(chfPluginTest)
     testHead("STRICT parsing: all ok");
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")), "strict parsing: JSON correct");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 1),
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
@@ -596,7 +605,7 @@ MAIN(chfPluginTest)
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
         "noconv parsing: c missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 4),
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
@@ -610,28 +619,28 @@ MAIN(chfPluginTest)
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"c\":\"R\"}}")),
         "noconv parsing: s missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "hello", 1),
+    testOk(checkValues(puser1, 1, 0, 1.2e15, "hello", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"s\":\"bar\",\"c\":\"R\"}}")),
         "noconv parsing: d missing");
-    testOk(checkValues(puser1, 1, 0, 1.234e5, "bar", 1),
+    testOk(checkValues(puser1, 1, 0, 1.234e5, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
         "noconv parsing: f missing");
-    testOk(checkValues(puser1, 1, 1, 1.2e15, "bar", 1),
+    testOk(checkValues(puser1, 1, 1, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
         "noconv parsing: i missing");
-    testOk(checkValues(puser1, 12, 0, 1.2e15, "bar", 1),
+    testOk(checkValues(puser1, 12, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
@@ -664,11 +673,12 @@ MAIN(chfPluginTest)
 
     /* SLOPPY parsing: optional, with conversion */
 
-#define CONVTESTGOOD(Var, Val, Typ, Ival, Fval, Dval, Sval, Cval) \
+#define CONVTESTGOOD(Var, Val, Typ, Ival, Fval, Dval, Sval1, Sval2, Cval) \
     e1 = e_alloc | e_ok; c1 = 0; \
+    testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
     testOk(!!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
         "sloppy parsing: "#Typ" (good) for "#Var); \
-    testOk(checkValues(puser1, Ival, Fval, Dval, Sval, Cval), \
+    testOk(checkValues(puser1, Ival, Fval, Dval, Sval1, Sval2, Cval), \
         "guards intact, values correct"); \
     if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
         testDiag("expected %#x - called %#x", e1, c1); \
@@ -680,6 +690,7 @@ MAIN(chfPluginTest)
 
 #define CONVTESTBAD(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
+    testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
     testOk(!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
         "sloppy parsing: "#Typ" (bad) for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
@@ -688,59 +699,59 @@ MAIN(chfPluginTest)
 
     /* To integer */
     testHead("SLOPPY parsing: conversion to integer");
-    CONVTESTGOOD(i, "123e4", positive string, 123, 1, 1.234e5, "hello", 4);
-    CONVTESTGOOD(i, "-12345", negative string, -12345, 1, 1.234e5, "hello", 4);
+    CONVTESTGOOD(i, "123e4", positive string, 123, 1, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(i, "-12345", negative string, -12345, 1, 1.234e5, "hello", 0, 4);
     CONVTESTBAD(i, "9234567890", out-of-range string);
     CONVTESTBAD(i, ".4", invalid string);
-    CONVTESTGOOD(i, false, valid boolean, 0, 1, 1.234e5, "hello", 4);
-    CONVTESTGOOD(i, 3456.789, valid double, 3456, 1, 1.234e5, "hello", 4);
+    CONVTESTGOOD(i, false, valid boolean, 0, 1, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(i, 3456.789, valid double, 3456, 1, 1.234e5, "hello", 0, 4);
     CONVTESTBAD(i, 34.7e14, out-of-range double);
 
     /* To boolean */
     testHead("SLOPPY parsing: conversion to boolean");
-    CONVTESTGOOD(f, "false", valid string, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, "False", capital valid string, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, "0", 0 string, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, "15", 15 string, 12, 1, 1.234e5, "hello", 4);
+    CONVTESTGOOD(f, "false", valid string, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, "False", capital valid string, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, "0", 0 string, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, "15", 15 string, 12, 1, 1.234e5, "hello", 0, 4);
     CONVTESTBAD(f, ".4", invalid .4 string);
     CONVTESTBAD(f, "Flase", misspelled invalid string);
-    CONVTESTGOOD(f, 0, zero integer, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, 12, positive integer, 12, 1, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, -1234, negative integer, 12, 1, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, 0.4, positive non-zero double, 12, 1, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, 0.0, zero double, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, -0.0, minus-zero double, 12, 0, 1.234e5, "hello", 4);
-    CONVTESTGOOD(f, -1.24e14, negative double, 12, 1, 1.234e5, "hello", 4);
+    CONVTESTGOOD(f, 0, zero integer, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, 12, positive integer, 12, 1, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, -1234, negative integer, 12, 1, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, 0.4, positive non-zero double, 12, 1, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, 0.0, zero double, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, -0.0, minus-zero double, 12, 0, 1.234e5, "hello", 0, 4);
+    CONVTESTGOOD(f, -1.24e14, negative double, 12, 1, 1.234e5, "hello", 0, 4);
 
     /* To double */
     testHead("SLOPPY parsing: conversion to double");
-    CONVTESTGOOD(d, "123e4", positive double string, 12, 1, 1.23e6, "hello", 4);
-    CONVTESTGOOD(d, "-7.89e-14", negative double string, 12, 1, -7.89e-14, "hello", 4);
-    CONVTESTGOOD(d, "123", positive integer string, 12, 1, 123.0, "hello", 4);
-    CONVTESTGOOD(d, "-1234567", negative integer string, 12, 1, -1.234567e6, "hello", 4);
+    CONVTESTGOOD(d, "123e4", positive double string, 12, 1, 1.23e6, "hello", 0, 4);
+    CONVTESTGOOD(d, "-7.89e-14", negative double string, 12, 1, -7.89e-14, "hello", 0, 4);
+    CONVTESTGOOD(d, "123", positive integer string, 12, 1, 123.0, "hello", 0, 4);
+    CONVTESTGOOD(d, "-1234567", negative integer string, 12, 1, -1.234567e6, "hello", 0, 4);
     CONVTESTBAD(d, "1.67e407", out-of-range double string);
     CONVTESTBAD(d, "blubb", invalid blubb string);
-    CONVTESTGOOD(d, 123, positive integer, 12, 1, 123.0, "hello", 4);
-    CONVTESTGOOD(d, -12345, negative integer, 12, 1, -1.2345e4, "hello", 4);
-    CONVTESTGOOD(d, true, true boolean, 12, 1, 1.0, "hello", 4);
-    CONVTESTGOOD(d, false, false boolean, 12, 1, 0.0, "hello", 4);
+    CONVTESTGOOD(d, 123, positive integer, 12, 1, 123.0, "hello", 0, 4);
+    CONVTESTGOOD(d, -12345, negative integer, 12, 1, -1.2345e4, "hello", 0, 4);
+    CONVTESTGOOD(d, true, true boolean, 12, 1, 1.0, "hello", 0, 4);
+    CONVTESTGOOD(d, false, false boolean, 12, 1, 0.0, "hello", 0, 4);
 
     /* To string */
     testHead("SLOPPY parsing: conversion to string");
-    CONVTESTGOOD(s, 12345, positive integer, 12, 1, 1.234e5, "12345", 4);
-    CONVTESTGOOD(s, -1234567891, negative integer, 12, 1, 1.234e5, "-1234567891", 4);
-    CONVTESTGOOD(s, true, true boolean, 12, 1, 1.234e5, "true", 4);
-    CONVTESTGOOD(s, false, false boolean, 12, 1, 1.234e5, "false", 4);
-    CONVTESTGOOD(s, 123e4, small positive double, 12, 1, 1.234e5, "1230000", 4);
-    CONVTESTGOOD(s, -123e24, negative double, 12, 1, 1.234e5, "-1.23e+26", 4);
-    CONVTESTGOOD(s, -1.23456789123456789e26, large rounded negative double, 12, 1, 1.234e5, "-1.234567891235e+26", 4);
+    CONVTESTGOOD(s, 12345, positive integer, 12, 1, 1.234e5, "12345", 0, 4);
+    CONVTESTGOOD(s, -1234567891, negative integer, 12, 1, 1.234e5, "-1234567891", 0, 4);
+    CONVTESTGOOD(s, true, true boolean, 12, 1, 1.234e5, "true", 0, 4);
+    CONVTESTGOOD(s, false, false boolean, 12, 1, 1.234e5, "false", 0, 4);
+    CONVTESTGOOD(s, 123e4, small positive double, 12, 1, 1.234e5, "1230000", 0, 4);
+    CONVTESTGOOD(s, -123e24, negative double, 12, 1, 1.234e5, "-1.23e+26", "-1.23e+026", 4);
+    CONVTESTGOOD(s, -1.23456789123e26, large negative double, 12, 1, 1.234e5, "-1.23456789123e+26", "-1.23456789123e+026", 4);
 
     /* To Enum */
     testHead("SLOPPY parsing: conversion to enum");
-    CONVTESTGOOD(c, 2, valid integer choice, 12, 1, 1.234e5, "hello", 2);
+    CONVTESTGOOD(c, 2, valid integer choice, 12, 1, 1.234e5, "hello", 0, 2);
     CONVTESTBAD(c, 3, invalid integer choice);
     CONVTESTBAD(c, 3.2, double);
-    CONVTESTGOOD(c, "R", valid string choice, 12, 1, 1.234e5, "hello", 1);
+    CONVTESTGOOD(c, "R", valid string choice, 12, 1, 1.234e5, "hello", 0, 1);
     CONVTESTBAD(c, "blubb", invalid string choice);
 
     /* Registering and running filter callbacks */

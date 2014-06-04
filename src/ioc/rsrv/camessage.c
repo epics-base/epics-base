@@ -886,7 +886,7 @@ static int write_action ( caHdrLargeArray *mp,
 static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
-    unsigned                size;
+    size_t                  size;
     char                    *pName;
     char                    *pMalloc;
     int                     chanCount;
@@ -965,7 +965,7 @@ static int host_name_action ( caHdrLargeArray *mp, void *pPayload,
 static int client_name_action ( caHdrLargeArray *mp, void *pPayload,
     struct client *client )
 {
-    unsigned                size;
+    size_t                  size;
     char                    *pName;
     char                    *pMalloc;
     int                     chanCount;

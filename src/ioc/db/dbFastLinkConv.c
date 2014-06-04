@@ -509,14 +509,14 @@ static long cvt_s_c(
      epicsInt16 *from,
      epicsInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt8)*from; return(0); }
 
 /* Convert Short to Unsigned Char */
 static long cvt_s_uc(
      epicsInt16 *from,
      epicsUInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt8)*from; return(0); }
 
 /* Convert Short to Short */
 static long cvt_s_s(
@@ -579,14 +579,14 @@ static long cvt_us_c(
      epicsUInt16 *from,
      epicsInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt8)*from; return(0); }
 
 /* Convert Unsigned Short to Unsigned Char */
 static long cvt_us_uc(
      epicsUInt16 *from,
      epicsUInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt8)*from; return(0); }
 
 /* Convert Unsigned Short to Short */
 static long cvt_us_s(
@@ -691,7 +691,7 @@ static long cvt_l_f(
      epicsInt32 *from,
      epicsFloat32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsFloat32)*from; return(0); }
 
 /* Convert Long to Double */
 static long cvt_l_d(
@@ -761,7 +761,7 @@ static long cvt_ul_f(
      epicsUInt32 *from,
      epicsFloat32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsFloat32)*from; return(0); }
 
 /* Convert Unsigned Long to Double */
 static long cvt_ul_d(
@@ -791,7 +791,7 @@ static long cvt_f_st(
  
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
-   cvtFloatToString(*from, to, precision);
+   cvtFloatToString(*from, to, (unsigned short)precision);
    return(status);
  }
 
@@ -800,42 +800,42 @@ static long cvt_f_c(
      epicsFloat32 *from,
      epicsInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt8)*from; return(0); }
 
 /* Convert Float to Unsigned Char */
 static long cvt_f_uc(
      epicsFloat32 *from,
      epicsUInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt8)*from; return(0); }
 
 /* Convert Float to Short */
 static long cvt_f_s(
      epicsFloat32 *from,
      epicsInt16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt16)*from; return(0); }
 
 /* Convert Float to Unsigned Short */
 static long cvt_f_us(
      epicsFloat32 *from,
      epicsUInt16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt16)*from; return(0); }
 
 /* Convert Float to Long */
 static long cvt_f_l(
      epicsFloat32 *from,
      epicsInt32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt32)*from; return(0); }
 
 /* Convert Float to Unsigned Long */
 static long cvt_f_ul(
      epicsFloat32 *from,
      epicsUInt32 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt32)*from; return(0); }
 
 /* Convert Float to Float */
 static long cvt_f_f(
@@ -856,7 +856,7 @@ static long cvt_f_e(
      epicsFloat32 *from,
      epicsEnum16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsEnum16)*from; return(0); }
 
 /* Convert Double to String */
 static long cvt_d_st(
@@ -872,7 +872,7 @@ static long cvt_d_st(
  
    if (prset && prset->get_precision)
      status = (*prset->get_precision)(paddr, &precision);
-   cvtDoubleToString(*from, to, precision);
+   cvtDoubleToString(*from, to, (unsigned short)precision);
    return(status);
  }
 
@@ -881,28 +881,28 @@ static long cvt_d_c(
      epicsFloat64 *from,
      epicsInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt8)*from; return(0); }
 
 /* Convert Double to Unsigned Char */
 static long cvt_d_uc(
      epicsFloat64 *from,
      epicsUInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt8)*from; return(0); }
 
 /* Convert Double to Short */
 static long cvt_d_s(
      epicsFloat64 *from,
      epicsInt16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt16)*from; return(0); }
 
 /* Convert Double to Unsigned Short */
 static long cvt_d_us(
      epicsFloat64 *from,
      epicsUInt16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt16)*from; return(0); }
 
 /* Convert Double to Long */
 static long cvt_d_l(
@@ -937,21 +937,21 @@ static long cvt_d_e(
      epicsFloat64 *from,
      epicsEnum16 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsEnum16)*from; return(0); }
 
 /* Convert Enumerated to Char */
 static long cvt_e_c(
      epicsEnum16 *from,
      epicsInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsInt8)*from; return(0); }
 
 /* Convert Enumerated to Unsigned Char */
 static long cvt_e_uc(
      epicsEnum16 *from,
      epicsUInt8 *to,
      const dbAddr *paddr)
- { *to=*from; return(0); }
+ { *to=(epicsUInt8)*from; return(0); }
 
 /* Convert Enumerated to Short */
 static long cvt_e_s(

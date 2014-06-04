@@ -1286,7 +1286,7 @@ static void dbpr_msgOut(TAB_BUFFER *pMsgBuff,int tab_size)
     if (err == 1) {
         len = strlen(pmsg);
         sprintf(pmsg, "dbpr_msgOut: ERROR - msg length=%d limit=%d ",
-            len, MAXLINE);
+            (int)len, MAXLINE);
         dbpr_insert_msg(pMsgBuff, len, tab_size);
     }
 }

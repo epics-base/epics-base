@@ -818,7 +818,7 @@ void dbPrint(dbCommon *precord )
 long dbp(const char *record_name, int interest_level)
 {
   struct LS_LIST *pnode;
-  struct dbCommon *precord;
+  struct dbCommon *precord = NULL;
   int status;
 
   epicsMutexMustLock(bkpt_stack_sem);

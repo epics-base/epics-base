@@ -87,7 +87,8 @@ int main(int argc, char **argv)
     dataList	*pnext;
     double	*pdata;
     long	ndata;
-    int		nBreak,len,n;
+    int		nBreak,n;
+    size_t  len;
     char	*outFilename;
     char	*pext;
     FILE	*outFile;

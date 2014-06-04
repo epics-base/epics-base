@@ -839,12 +839,12 @@ static long getShortChar(
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (char)*psrc++;
 	if(++offset==no_elements) psrc=(short *)paddr->pfield;
 	nRequest--;
     }
@@ -859,12 +859,12 @@ static long getShortUchar(
     short *psrc=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned char)*psrc++;
 	if(++offset==no_elements) psrc=(short *)paddr->pfield;
 	nRequest--;
     }
@@ -1042,12 +1042,12 @@ static long getUshortChar(
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (char)*psrc++;
 	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
 	nRequest--;
     }
@@ -1062,12 +1062,12 @@ static long getUshortUchar(
     unsigned short *psrc=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned char)*psrc++;
 	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
 	nRequest--;
     }
@@ -1365,12 +1365,12 @@ static long getLongFloat(
     epicsInt32 *psrc=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (float)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (float)*psrc++;
 	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
@@ -1569,12 +1569,12 @@ static long getUlongFloat(
     epicsUInt32 *psrc=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (float)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (float)*psrc++;
 	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
@@ -1659,12 +1659,12 @@ static long getFloatChar(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (char)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1679,12 +1679,12 @@ static long getFloatUchar(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned char)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1699,12 +1699,12 @@ static long getFloatShort(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (short)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (short)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1719,12 +1719,12 @@ static long getFloatUshort(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned short)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned short)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1739,12 +1739,12 @@ static long getFloatLong(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (epicsInt32)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (epicsInt32)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1759,12 +1759,12 @@ static long getFloatUlong(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (epicsUInt32)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (epicsUInt32)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1819,12 +1819,12 @@ static long getFloatEnum(
     float *psrc=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (epicsEnum16)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (epicsEnum16)*psrc++;
 	if(++offset==no_elements) psrc=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -1869,12 +1869,12 @@ static long getDoubleChar(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (char)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -1889,12 +1889,12 @@ static long getDoubleUchar(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned char)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -1909,12 +1909,12 @@ static long getDoubleShort(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (short)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (short)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -1929,12 +1929,12 @@ static long getDoubleUshort(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned short)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned short)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -2030,12 +2030,12 @@ static long getDoubleEnum(
     double *psrc=(double *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (epicsEnum16)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (epicsEnum16)*psrc++;
 	if(++offset==no_elements) psrc=(double *)paddr->pfield;
 	nRequest--;
     }
@@ -2065,12 +2065,12 @@ static long getEnumChar(
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (char)*psrc++;
 	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
@@ -2085,12 +2085,12 @@ static long getEnumUchar(
     epicsEnum16 *psrc=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pbuffer = *psrc;
+    *pbuffer = (unsigned char)*psrc;
 	return(0);
     }
     psrc += offset;
     while (nRequest) {
-	*pbuffer++ = *psrc++;
+    *pbuffer++ = (unsigned char)*psrc++;
 	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
@@ -3143,12 +3143,12 @@ static long putShortChar(
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (char)*pbuffer++;
 	if(++offset==no_elements) pdest=(char *)paddr->pfield;
 	nRequest--;
     }
@@ -3163,12 +3163,12 @@ static long putShortUchar(
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned char)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
 	nRequest--;
     }
@@ -3349,12 +3349,12 @@ static long putUshortChar(
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (char)*pbuffer++;
 	if(++offset==no_elements) pdest=(char *)paddr->pfield;
 	nRequest--;
     }
@@ -3369,12 +3369,12 @@ static long putUshortUchar(
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned char)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
 	nRequest--;
     }
@@ -3675,12 +3675,12 @@ static long putLongFloat(
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (float)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (float)*pbuffer++;
 	if(++offset==no_elements) pdest=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -3881,12 +3881,12 @@ static long putUlongFloat(
     float  *pdest=(float *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (float)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (float)*pbuffer++;
 	if(++offset==no_elements) pdest=(float *)paddr->pfield;
 	nRequest--;
     }
@@ -3972,12 +3972,12 @@ static long putFloatChar(
     char   *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (char)*pbuffer++;
 	if(++offset==no_elements) pdest=(char *)paddr->pfield;
 	nRequest--;
     }
@@ -3992,12 +3992,12 @@ static long putFloatUchar(
     unsigned char   *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned char)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
 	nRequest--;
     }
@@ -4012,12 +4012,12 @@ static long putFloatShort(
     short  *pdest=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (short)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (short)*pbuffer++;
 	if(++offset==no_elements) pdest=(short *)paddr->pfield;
 	nRequest--;
     }
@@ -4032,12 +4032,12 @@ static long putFloatUshort(
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned short)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned short)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
 	nRequest--;
     }
@@ -4052,12 +4052,12 @@ static long putFloatLong(
     epicsInt32  *pdest=(epicsInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (epicsInt32)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (epicsInt32)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
 	nRequest--;
     }
@@ -4072,12 +4072,12 @@ static long putFloatUlong(
     epicsUInt32  *pdest=(epicsUInt32 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (epicsUInt32)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (epicsUInt32)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
 	nRequest--;
     }
@@ -4132,12 +4132,12 @@ static long putFloatEnum(
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (epicsEnum16)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (epicsEnum16)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
@@ -4183,12 +4183,12 @@ static long putDoubleChar(
     char   *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (char)*pbuffer++;
 	if(++offset==no_elements) pdest=(char *)paddr->pfield;
 	nRequest--;
     }
@@ -4203,12 +4203,12 @@ static long putDoubleUchar(
     unsigned char   *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned char)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
 	nRequest--;
     }
@@ -4223,12 +4223,12 @@ static long putDoubleShort(
     short  *pdest=(short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (short)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (short)*pbuffer++;
 	if(++offset==no_elements) pdest=(short *)paddr->pfield;
 	nRequest--;
     }
@@ -4243,12 +4243,12 @@ static long putDoubleUshort(
     unsigned short  *pdest=(unsigned short *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned short)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned short)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
 	nRequest--;
     }
@@ -4344,12 +4344,12 @@ static long putDoubleEnum(
     epicsEnum16  *pdest=(epicsEnum16 *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (epicsEnum16)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (epicsEnum16)*pbuffer++;
 	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
 	nRequest--;
     }
@@ -4390,12 +4390,12 @@ static long putEnumChar(
     char  *pdest=(char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (char)*pbuffer++;
 	if(++offset==no_elements) pdest=(char *)paddr->pfield;
 	nRequest--;
     }
@@ -4410,12 +4410,12 @@ static long putEnumUchar(
     unsigned char  *pdest=(unsigned char *)(paddr->pfield);
 
     if(nRequest==1 && offset==0) {
-	*pdest = *pbuffer;
+    *pdest = (unsigned char)*pbuffer;
 	return(0);
     }
     pdest += offset;
     while (nRequest) {
-	*pdest++ = *pbuffer++;
+    *pdest++ = (unsigned char)*pbuffer++;
 	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
 	nRequest--;
     }

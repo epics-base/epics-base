@@ -311,7 +311,7 @@ static void inputAddPath(inputData *pinputData, char *path)
     pathNode    *ppathNode;
     const char  *pcolon;
     const char  *pdir;
-    int         len;
+    size_t      len;
     int         emptyName;
     const char  sep = *OSI_PATH_LIST_SEPARATOR;
 

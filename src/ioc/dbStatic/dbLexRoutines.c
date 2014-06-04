@@ -344,7 +344,7 @@ static int db_yyinput(char *buf, int max_size)
     n = (l<=max_size ? l : max_size);
     memcpy(buf,my_buffer_ptr,n);
     my_buffer_ptr += n;
-    return(n);
+    return (int)n;
 }
 
 static void dbIncludePrint(void)

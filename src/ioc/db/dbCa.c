@@ -300,7 +300,7 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         assert(pca->pgetNative);
         status = fConvert(pca->pgetNative, pdest, 0);
     } else {
-        unsigned long ntoget = *nelements;
+        long ntoget = *nelements;
         struct dbAddr dbAddr;
         long (*aConvert)(struct dbAddr *paddr, void *to, long nreq, long nto, long off);
 

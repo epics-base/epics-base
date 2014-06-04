@@ -87,9 +87,9 @@ struct dbfl_ref {
 };
 
 typedef struct db_field_log {
-    enum dbfl_type   type:2;  /* type (union) selector */
+    unsigned int     type:2;  /* type (union) selector */
     /* ctx is used for all types */
-    enum dbfl_context ctx:1;  /* context (operation type) */
+    unsigned int      ctx:1;  /* context (operation type) */
     /* the following are used for value and reference types */
     epicsTimeStamp     time;  /* Time stamp */
     unsigned short     stat;  /* Alarm Status */

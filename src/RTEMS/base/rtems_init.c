@@ -284,6 +284,38 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
             mount_point[l] = '\0';
             argv[1] = rtems_bsdnet_bootp_cmdline;
+            /*
+             * Its probably common to embed the mount point in the server 
+             * name so, when this is occurring, dont clobber the mount point
+             * by appending the first node from the command path. This allows
+             * the mount point to be a different path then the server's mount 
+             * path.
+             *
+             * This allows for example a line similar to as follows the DHCP 
+             * configuration file.
+             * server-name "300.300@192.168.0.123:/vol/vol0/bootRTEMS";
+             */
+            const size_t allocSize = 
+                      strlen ( rtems_bsdnet_bootp_server_name ) + 2;
+            char * const pServerName = mustMalloc( allocSize, 
+                                                    "NFS mount paths");
+            char * const pServerPath = mustMalloc ( allocSize, 
+                                                    "NFS mount paths");
+            const int scanfStatus = sscanf ( 
+                                      rtems_bsdnet_bootp_server_name, 
+                                      "%[^:] : / %s",  
+                                      pServerName, 
+                                      pServerPath + 1 );
+            if ( scanfStatus ==  2 ) {
+                pServerPath[0]= '/';
+                server_name = pServerName;
+                server_path = pServerPath;
+            }
+            else {
+                server_name = rtems_bsdnet_bootp_server_name;
+                free ( pServerName );
+                free ( pServerPath );
+            }
         }
         else {
             char *abspath = mustMalloc(strlen(rtems_bsdnet_bootp_cmdline)+2,"Absolute command path");
@@ -295,8 +327,8 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             strcpy(abspath, "/");
             strcat(abspath, rtems_bsdnet_bootp_cmdline);
             argv[1] = abspath;
+            server_name = rtems_bsdnet_bootp_server_name;
         }
-        server_name = rtems_bsdnet_bootp_server_name;
     }
     nfsMount(server_name, server_path, mount_point);
 #endif

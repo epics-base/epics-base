@@ -63,7 +63,7 @@ rtems_task Init (rtems_task_argument argument);
  * appropriate conditionals to use.
  * The new general time support makes including the RTC driverr less important.
  */
-#if !defined(mpc604) && !defined(__mc68040__) && !defined(__mcf5200__) && !defined(mpc7455) && !defined(__arm__)  /* don't have RTC code */
+#if !defined(mpc604) && !defined(__mc68040__) && !defined(__mcf5200__) && !defined(mpc7455) && !defined(__arm__)  && !defined(__nios2__)/* don't have RTC code */
 #define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
 #endif
 

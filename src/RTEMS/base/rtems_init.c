@@ -279,6 +279,7 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             LogFatal("\"%s\" is not a valid command pathname.\n", rtems_bsdnet_bootp_cmdline);
         cp = mustMalloc(l + 20, "NFS mount paths");
         server_path = cp;
+        server_name = rtems_bsdnet_bootp_server_name;
         if (rtems_bsdnet_bootp_cmdline[0] == '/') {
             mount_point = server_path;
             strncpy(mount_point, rtems_bsdnet_bootp_cmdline, l);
@@ -293,28 +294,29 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
              *
              * This allows for example a line similar to as follows the DHCP 
              * configuration file.
-             * server-name "300.300@192.168.0.123:/vol/vol0/bootRTEMS";
+             *
+             * server-name "159.233@192.168.0.123:/vol/vol0/bootRTEMS";
              */
-            const size_t allocSize = 
-                      strlen ( rtems_bsdnet_bootp_server_name ) + 2;
-            char * const pServerName = mustMalloc( allocSize, 
-                                                    "NFS mount paths");
-            char * const pServerPath = mustMalloc ( allocSize, 
-                                                    "NFS mount paths");
-            const int scanfStatus = sscanf ( 
-                                      rtems_bsdnet_bootp_server_name, 
-                                      "%[^:] : / %s",  
-                                      pServerName, 
-                                      pServerPath + 1 );
-            if ( scanfStatus ==  2 ) {
-                pServerPath[0]= '/';
-                server_name = pServerName;
-                server_path = pServerPath;
-            }
-            else {
-                server_name = rtems_bsdnet_bootp_server_name;
-                free ( pServerName );
-                free ( pServerPath );
+            if ( server_name ) {
+                const size_t allocSize = strlen ( server_name ) + 2;
+                char * const pServerName = mustMalloc( allocSize, 
+                                                        "NFS mount paths");
+                char * const pServerPath = mustMalloc ( allocSize, 
+                                                        "NFS mount paths");
+                const int scanfStatus = sscanf ( 
+                                          server_name, 
+                                          "%[^:] : / %s",  
+                                          pServerName, 
+                                          pServerPath + 1u );
+                if ( scanfStatus ==  2 ) {
+                    pServerPath[0u]= '/';
+                    server_name = pServerName;
+                    server_path = pServerPath;
+                }
+                else {
+                    free ( pServerName );
+                    free ( pServerPath );
+                }
             }
         }
         else {
@@ -327,7 +329,6 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             strcpy(abspath, "/");
             strcat(abspath, rtems_bsdnet_bootp_cmdline);
             argv[1] = abspath;
-            server_name = rtems_bsdnet_bootp_server_name;
         }
     }
     nfsMount(server_name, server_path, mount_point);

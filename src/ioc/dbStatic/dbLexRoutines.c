@@ -927,10 +927,26 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         epicsPrintf("Bad character '%c' in record name \"%s\"\n",
             *badch, name);
     }
+
     pdbentry = dbAllocEntry(pdbbase);
     if (ellCount(&tempList))
         yyerrorAbort("dbRecordHead: tempList not empty");
     allocTemp(pdbentry);
+
+    if (recordType[0] == '*' && recordType[1] == 0) {
+        if (dbRecordsOnceOnly)
+            epicsPrintf("Record-type \"*\" not valid with dbRecordsOnceOnly\n");
+        else {
+            status = dbFindRecord(pdbentry, name);
+            if (status == 0)
+                return; /* done */
+            epicsPrintf("Record \"%s\" not found\n", name);
+        }
+        yyerror(NULL);
+        duplicate = TRUE;
+        return;
+    }
+
     status = dbFindRecordType(pdbentry, recordType);
     if (status) {
         epicsPrintf("Record \"%s\" is of unknown type \"%s\"\n",
@@ -938,10 +954,12 @@ static void dbRecordHead(char *recordType, char *name, int visible)
         yyerrorAbort(NULL);
         return;
     }
-    /*Duplicate records ok if the same type */
+
+    /*Duplicate records are ok if the same type */
+
     status = dbCreateRecord(pdbentry,name);
-    if (status==S_dbLib_recExists) {
-        if (strcmp(recordType, dbGetRecordTypeName(pdbentry))!=0) {
+    if (status == S_dbLib_recExists) {
+        if (strcmp(recordType, dbGetRecordTypeName(pdbentry)) != 0) {
             epicsPrintf("Record \"%s\" of type \"%s\" redefined with new type "
                 "\"%s\"\n", name, dbGetRecordTypeName(pdbentry), recordType);
             yyerror(NULL);
@@ -960,6 +978,7 @@ static void dbRecordHead(char *recordType, char *name, int visible)
                      name, recordType);
         yyerrorAbort(NULL);
     }
+
     if (visible)
         dbVisibleRecord(pdbentry);
 }

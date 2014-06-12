@@ -15,6 +15,25 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Database field setting updates</h3>
+
+<p>A database (.db) file loaded by an IOC does not have to repeat the record
+type of a record that has already been loaded. It may replace the first
+parameter of the <tt>record(type, name)</tt> statement with an asterisk
+character inside double-quotes, <tt>"*"</tt> instead. Thus the following is a
+legal database file:</p>
+
+<blockquote><pre>record(ao, "ao1") {}
+record("*", "ao1") {
+    field(VAL, 10)
+}</pre></blockquote>
+
+<p>Note that database configuration tools will not be expected to have to
+understand this syntax, which is provided for scripted and hand-coded database
+and template instantiation only. Setting the IOC's <tt>dbRecordsOnceOnly</tt>
+flag also makes this syntax illegal, since its purpose is to prevent
+multiply-defined records from being collapsed into a single instance.</p>
+
 <h3>Added echo command to iocsh</h3>
 
 <p>The single argument string may contain escaped characters, which will be

@@ -61,6 +61,9 @@ testHarness_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/arrShorthandTest.dbd
 TESTS += arrShorthandTest
 
+TESTPROD_HOST += benchdbConvert
+benchdbConvert_SRCS += benchdbConvert.c
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunDbTests.c
 

@@ -51,11 +51,11 @@ static void copyNoConvert(const void *pfrom,
     if(offset>0 && offset < no_bytes && offset+nRequest > no_bytes) {
         const size_t N = no_bytes - offset;
         /* copy with wrap */
-        memcpy(pto,     pfrom + offset, N);
-        memcpy(pto + N, pfrom,          nRequest - N);
+        memmove(pto,     pfrom + offset, N);
+        memmove(pto + N, pfrom,          nRequest - N);
     } else {
         /* no wrap, just copy */
-        memcpy(pto, pfrom + offset, nRequest);
+        memmove(pto, pfrom + offset, nRequest);
     }
 }
 #define COPYNOCONVERT(N, FROM, TO, NREQ, NO_ELEM, OFFSET) \

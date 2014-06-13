@@ -16,6 +16,11 @@ xRec_SRCS = xRecord.c
 
 PROD_LIBS = xRec dbCore ca Com
 
+TESTPROD_HOST += testdbConvert
+testdbConvert_SRCS += testdbConvert.c
+testHarness_SRCS += testdbConvert.c
+TESTS += testdbConvert
+
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c

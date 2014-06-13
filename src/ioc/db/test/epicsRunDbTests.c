@@ -16,6 +16,7 @@
 #include "epicsExit.h"
 #include "dbmf.h"
 
+int testdbConvert(void);
 int callbackTest(void);
 int dbStateTest(void);
 int testDbChannel(void);
@@ -26,6 +27,7 @@ void epicsRunDbTests(void)
 {
     testHarness();
 
+    runTest(testdbConvert);
     runTest(callbackTest);
     runTest(dbStateTest);
     runTest(testDbChannel);

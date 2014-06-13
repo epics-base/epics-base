@@ -38,6 +38,29 @@
 #include "recGbl.h"
 #include "dbConvert.h"
 
+/* Helper for copy as bytes with no type conversion.
+ * Assumes nRequest <= no_bytes
+ * nRequest, no_bytes, and offset should be given in bytes.
+ */
+static void copyNoConvert(const void *pfrom,
+                          void *pto,
+                          long nRequest,
+                          long no_bytes,
+                          long offset)
+{
+    if(offset>0 && offset < no_bytes && offset+nRequest > no_bytes) {
+        const size_t N = no_bytes - offset;
+        /* copy with wrap */
+        memmove(pto,     pfrom + offset, N);
+        memmove(pto + N, pfrom,          nRequest - N);
+    } else {
+        /* no wrap, just copy */
+        memmove(pto, pfrom + offset, nRequest);
+    }
+}
+#define COPYNOCONVERT(N, FROM, TO, NREQ, NO_ELEM, OFFSET) \
+    copyNoConvert(FROM, TO, (N)*(NREQ), (N)*(NO_ELEM), (N)*(OFFSET))
+
 /* DATABASE ACCESS GET CONVERSION SUPPORT */
 
 static long getStringString (
@@ -427,12 +450,7 @@ static long getCharChar(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(char), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -454,12 +472,7 @@ static long getCharUchar(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(char), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -638,12 +651,7 @@ static long getUcharChar(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned char), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -658,12 +666,7 @@ static long getUcharUchar(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned char), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -870,6 +873,7 @@ static long getShortUchar(
     }
     return(0);
 }
+
 static long getShortShort(
     const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
@@ -881,12 +885,7 @@ static long getShortShort(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(short), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -901,12 +900,7 @@ static long getShortUshort(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(short), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1084,12 +1078,7 @@ static long getUshortShort(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned short), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1104,12 +1093,7 @@ static long getUshortUshort(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(unsigned short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned short), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1328,12 +1312,7 @@ static long getLongLong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(long), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1348,12 +1327,7 @@ static long getLongUlong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(epicsInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(long), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1532,12 +1506,7 @@ static long getUlongLong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned long), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1552,12 +1521,7 @@ static long getUlongUlong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(epicsUInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned long), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1782,12 +1746,7 @@ static long getFloatFloat(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(float *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(float), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
  
@@ -2013,12 +1972,7 @@ static long getDoubleDouble(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(double *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(double), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -2228,12 +2182,7 @@ static long getEnumEnum(
 	*pbuffer = *psrc;
 	return(0);
     }
-    psrc += offset;
-    while (nRequest) {
-	*pbuffer++ = *psrc++;
-	if(++offset==no_elements) psrc=(epicsEnum16 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsEnum16), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -2734,12 +2683,7 @@ static long putCharChar(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(char), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -2754,12 +2698,7 @@ static long putCharUchar(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned char), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -2940,12 +2879,7 @@ static long putUcharChar(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned char), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -2960,12 +2894,7 @@ static long putUcharUchar(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned char *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned char), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3186,12 +3115,7 @@ static long putShortShort(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(short), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3206,12 +3130,7 @@ static long putShortUshort(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(short), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3392,12 +3311,7 @@ static long putUshortShort(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned short), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3412,12 +3326,7 @@ static long putUshortUshort(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(unsigned short *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(unsigned short), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3638,12 +3547,7 @@ static long putLongLong(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3658,12 +3562,7 @@ static long putLongUlong(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3844,12 +3743,7 @@ static long putUlongLong(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(epicsInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsUInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -3864,12 +3758,7 @@ static long putUlongUlong(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(epicsUInt32 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsUInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -4095,12 +3984,7 @@ static long putFloatFloat(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(float *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(float), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
  
@@ -4327,12 +4211,7 @@ static long putDoubleDouble(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(double *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(double), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -4553,12 +4432,7 @@ static long putEnumEnum(
 	*pdest = *pbuffer;
 	return(0);
     }
-    pdest += offset;
-    while (nRequest) {
-	*pdest++ = *pbuffer++;
-	if(++offset==no_elements) pdest=(epicsEnum16 *)paddr->pfield;
-	nRequest--;
-    }
+    COPYNOCONVERT(sizeof(epicsEnum16), pfrom, paddr->pfield, nRequest, no_elements, offset);
     return(0);
 }
 

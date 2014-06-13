@@ -12,6 +12,7 @@
 #define INCdbConverth
 
 #include "dbFldTypes.h"
+#include "dbAddr.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus

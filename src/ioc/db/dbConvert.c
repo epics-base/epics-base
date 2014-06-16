@@ -43,19 +43,20 @@
  * nRequest, no_bytes, and offset should be given in bytes.
  */
 static void copyNoConvert(const void *pfrom,
-                          void *pto,
-                          long nRequest,
-                          long no_bytes,
-                          long offset)
+    void *pto, long nRequest, long no_bytes, long offset)
 {
-    if(offset>0 && offset < no_bytes && offset+nRequest > no_bytes) {
+    const void *pfrom_offset = (const char *) pfrom + offset;
+
+    if (offset > 0 && offset < no_bytes && offset + nRequest > no_bytes) {
         const size_t N = no_bytes - offset;
+        void *pto_N = (char *) pto + N;
+
         /* copy with wrap */
-        memmove(pto,     pfrom + offset, N);
-        memmove(pto + N, pfrom,          nRequest - N);
+        memmove(pto,   pfrom_offset, N);
+        memmove(pto_N, pfrom,        nRequest - N);
     } else {
         /* no wrap, just copy */
-        memmove(pto, pfrom + offset, nRequest);
+        memmove(pto, pfrom_offset, nRequest);
     }
 }
 #define COPYNOCONVERT(N, FROM, TO, NREQ, NO_ELEM, OFFSET) \

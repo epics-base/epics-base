@@ -322,7 +322,7 @@ MAIN(arrTest)
 
     if (dbReadDatabase(&pdbbase, "arrTest.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common", NULL))
+            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
         testAbort("Database description not loaded");
 
     (*pvar_func_arrInitialize)();

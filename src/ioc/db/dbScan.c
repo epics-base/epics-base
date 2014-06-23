@@ -3,6 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2013 Helmholtz-Zentrum Berlin
+*     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -132,6 +134,7 @@ static void onceTask(void *);
 static void initOnce(void);
 static void periodicTask(void *arg);
 static void initPeriodic(void);
+static void deletePeriodic(void);
 static void spawnPeriodic(int ind);
 static void initEvent(void);
 static void eventCallback(CALLBACK *pcallback);
@@ -142,9 +145,12 @@ static void buildScanLists(void);
 static void addToList(struct dbCommon *precord, scan_list *psl);
 static void deleteFromList(struct dbCommon *precord, scan_list *psl);
 
-static void scanShutdown(void *arg)
+void scanShutdown(void)
 {
     int i;
+
+    if (scanCtl == ctlExit) return;
+    scanCtl = ctlExit;
 
     interruptAccept = FALSE;
 
@@ -156,6 +162,18 @@ static void scanShutdown(void *arg)
 
     scanOnce((dbCommon *)&exitOnce);
     epicsEventWait(startStopEvent);
+
+    deletePeriodic();
+
+    epicsRingPointerDelete(onceQ);
+
+    epicsEventDestroy(startStopEvent);
+    epicsEventDestroy(onceSem);
+    onceSem = startStopEvent = NULL;
+
+    free(periodicTaskId);
+    papPeriodic = NULL;
+    periodicTaskId = NULL;
 }
 
 long scanInit(void)
@@ -172,7 +190,6 @@ long scanInit(void)
     for (i = 0; i < nPeriodic; i++)
         spawnPeriodic(i);
 
-    epicsAtExit(scanShutdown, NULL);
     return 0;
 }
 
@@ -696,6 +713,22 @@ static void initPeriodic(void)
     }
 }
 
+static void deletePeriodic(void)
+{
+    int i;
+
+    for (i = 0; i < nPeriodic; i++) {
+        periodic_scan_list *ppsl = papPeriodic[i];
+        ellFree(&ppsl->scan_list.list);
+        epicsEventDestroy(ppsl->loopEvent);
+        epicsMutexDestroy(ppsl->scan_list.lock);
+        free(ppsl);
+    }
+
+    free(papPeriodic);
+    papPeriodic = NULL;
+}
+
 static void spawnPeriodic(int ind)
 {
     periodic_scan_list *ppsl;
@@ -802,23 +835,25 @@ static void buildScanLists(void)
 {
     dbRecordType *pdbRecordType;
 
-    /*Look for first record*/
     for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
          pdbRecordType;
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
         dbRecordNode *pdbRecordNode;
+
         for (pdbRecordNode = (dbRecordNode *)ellFirst(&pdbRecordType->recList);
              pdbRecordNode;
              pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
             dbCommon *precord = pdbRecordNode->precord;
+
             if (!precord->name[0] ||
                 pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
                 continue;
+
             scanAdd(precord);
         }
     }
 }
-
+
 static void addToList(struct dbCommon *precord, scan_list *psl)
 {
     scan_element *pse, *ptemp;

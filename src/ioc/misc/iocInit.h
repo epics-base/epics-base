@@ -19,8 +19,10 @@ extern "C" {
 
 epicsShareFunc int iocInit(void);
 epicsShareFunc int iocBuild(void);
+epicsShareFunc int iocBuildNoCA(void);
 epicsShareFunc int iocRun(void);
 epicsShareFunc int iocPause(void);
+epicsShareFunc int iocShutdown(void);
 
 #ifdef __cplusplus
 }

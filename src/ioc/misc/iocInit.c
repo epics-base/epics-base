@@ -659,6 +659,7 @@ int iocShutdown(void)
     callbackShutdown();
     iterateRecords(doFreeRecord, NULL);
     asShutdown();
+    iocshFree();
     iocState = iocStopped;
     return 0;
 }

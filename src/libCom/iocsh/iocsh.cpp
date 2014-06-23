@@ -203,20 +203,22 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
  */
 void epicsShareAPI iocshFree(void) 
 {
-    struct iocshCommand *pc, *nc;
-    struct iocshVariable *pv, *nv;
+    struct iocshCommand *pc;
+    struct iocshVariable *pv;
 
     iocshTableLock ();
     for (pc = iocshCommandHead ; pc != NULL ; ) {
-        nc = pc->next;
+        struct iocshCommand * nc = pc->next;
         free (pc);
         pc = nc;
     }
     for (pv = iocshVariableHead ; pv != NULL ; ) {
-        nv = pv->next;
+        struct iocshVariable *nv = pv->next;
         free (pv);
         pv = nv;
     }
+    iocshCommandHead = NULL;
+    iocshVariableHead = NULL;
     iocshTableUnlock ();
 }
 

@@ -23,7 +23,9 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 #define epicsExportSharedSymbols
 #include "ellLib.h"
@@ -36,11 +38,14 @@ typedef struct exitNode {
     ELLNODE         node;
     epicsExitFunc   func;
     void            *arg;
+    char            name[1];
 }exitNode;
 
 typedef struct exitPvt {
     ELLLIST         list;
 } exitPvt;
+
+int atExitDebug = 0;
 
 static epicsThreadOnceId exitPvtOnce = EPICS_THREAD_ONCE_INIT;
 static exitPvt * pExitPvtPerProcess = 0;
@@ -75,6 +80,10 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
 {
     exitNode *pexitNode;
     while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
+        if (atExitDebug && pexitNode->name[0])
+            fprintf(stderr, "atExit %s(%p)\n", pexitNode->name, pexitNode->arg);
+        else if(atExitDebug)
+            fprintf(stderr, "atExit %p(%p)\n", pexitNode->func, pexitNode->arg);
         pexitNode->func ( pexitNode->arg );
         ellDelete ( & pep->list, & pexitNode->node );
         free ( pexitNode );
@@ -109,14 +118,16 @@ epicsShareFunc void epicsExitCallAtThreadExits(void)
     }
 }
 
-static int epicsAtExitPvt(exitPvt *pep, epicsExitFunc func, void *arg)
+static int epicsAtExitPvt(exitPvt *pep, epicsExitFunc func, void *arg, const char *name)
 {
     int status = -1;
-    exitNode * pExitNode
+    exitNode * pExitNode = calloc ( 1, sizeof( *pExitNode ) + (name?strlen(name):0) );
         = calloc ( 1, sizeof( *pExitNode ) );
     if ( pExitNode ) {
         pExitNode->func = func;
         pExitNode->arg = arg;
+        if(name)
+            strcpy(pExitNode->name, name);
         ellAdd ( & pep->list, & pExitNode->node );
         status = 0;
     }
@@ -135,16 +146,16 @@ epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg)
         }
         epicsThreadPrivateSet ( exitPvtPerThread, pep );
     }
-    return epicsAtExitPvt ( pep, func, arg );
+    return epicsAtExitPvt ( pep, func, arg, NULL );
 }
 
-epicsShareFunc int epicsAtExit(epicsExitFunc func, void *arg)
+epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name)
 {
     int status = -1;
     epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
     epicsMutexMustLock ( exitPvtLock );
     if ( pExitPvtPerProcess ) {
-        status = epicsAtExitPvt ( pExitPvtPerProcess, func, arg );
+        status = epicsAtExitPvt ( pExitPvtPerProcess, func, arg, name );
     }
     epicsMutexUnlock ( exitPvtLock );
     return status;
@@ -156,3 +167,7 @@ epicsShareFunc void epicsExit(int status)
     epicsThreadSleep(1.0);
     exit(status);
 }
+
+#include "epicsExport.h"
+
+epicsExportAddress(int,atExitDebug);

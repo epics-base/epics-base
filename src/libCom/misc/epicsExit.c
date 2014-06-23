@@ -71,14 +71,18 @@ static void exitPvtOnceFunc(void *pParm)
 {
     exitPvtPerThread = epicsThreadPrivateCreate ();
     assert ( exitPvtPerThread );
-    pExitPvtPerProcess = createExitPvt ();
-    assert ( pExitPvtPerProcess );
     exitPvtLock = epicsMutexMustCreate ();
+}
+
+static void epicsExitInit(void)
+{
+    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
 }
 
 static void epicsExitCallAtExitsPvt(exitPvt *pep)
 {
     exitNode *pexitNode;
+
     while ( ( pexitNode = (exitNode *) ellLast ( & pep->list ) ) ) {
         if (atExitDebug && pexitNode->name[0])
             fprintf(stderr, "atExit %s(%p)\n", pexitNode->name, pexitNode->arg);
@@ -93,7 +97,8 @@ static void epicsExitCallAtExitsPvt(exitPvt *pep)
 epicsShareFunc void epicsExitCallAtExits(void)
 {
     exitPvt * pep = 0;
-    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+
+    epicsExitInit ();
     epicsMutexMustLock ( exitPvtLock );
     if ( pExitPvtPerProcess ) {
         pep = pExitPvtPerProcess;
@@ -109,7 +114,8 @@ epicsShareFunc void epicsExitCallAtExits(void)
 epicsShareFunc void epicsExitCallAtThreadExits(void)
 {
     exitPvt * pep;
-    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+
+    epicsExitInit ();
     pep = epicsThreadPrivateGet ( exitPvtPerThread );
     if ( pep ) {
         epicsExitCallAtExitsPvt ( pep );
@@ -122,7 +128,7 @@ static int epicsAtExitPvt(exitPvt *pep, epicsExitFunc func, void *arg, const cha
 {
     int status = -1;
     exitNode * pExitNode = calloc ( 1, sizeof( *pExitNode ) + (name?strlen(name):0) );
-        = calloc ( 1, sizeof( *pExitNode ) );
+
     if ( pExitNode ) {
         pExitNode->func = func;
         pExitNode->arg = arg;
@@ -137,7 +143,8 @@ static int epicsAtExitPvt(exitPvt *pep, epicsExitFunc func, void *arg, const cha
 epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg)
 {
     exitPvt * pep;
-    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+
+    epicsExitInit ();
     pep = epicsThreadPrivateGet ( exitPvtPerThread );
     if ( ! pep ) {
         pep = createExitPvt ();
@@ -152,8 +159,12 @@ epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg)
 epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name)
 {
     int status = -1;
-    epicsThreadOnce ( & exitPvtOnce, exitPvtOnceFunc, 0 );
+
+    epicsExitInit ();
     epicsMutexMustLock ( exitPvtLock );
+    if ( !pExitPvtPerProcess ) {
+        pExitPvtPerProcess = createExitPvt ();
+    }
     if ( pExitPvtPerProcess ) {
         status = epicsAtExitPvt ( pExitPvtPerProcess, func, arg, name );
     }
@@ -164,7 +175,7 @@ epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name)
 epicsShareFunc void epicsExit(int status)
 {
     epicsExitCallAtExits();
-    epicsThreadSleep(1.0);
+    epicsThreadSleep(0.1);
     exit(status);
 }
 

@@ -16,6 +16,15 @@ xRec_SRCS = xRecord.c
 
 PROD_LIBS = xRec dbCore ca Com
 
+TESTPROD_HOST += dbShutdownTest
+TARGETS += $(COMMON_DIR)/dbShutdownTest.dbd
+dbShutdownTest_SRCS += dbShutdownTest.c
+dbShutdownTest_SRCS += dbShutdownTest_registerRecordDeviceDriver.cpp
+dbShutdownTest_LIBS += $(EPICS_BASE_IOC_LIBS)
+dbShutdownTest_DBD += base.dbd
+TESTFILES += $(COMMON_DIR)/dbShutdownTest.dbd ../sRecord.db
+TESTS += dbShutdownTest
+
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c

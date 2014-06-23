@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "epicsThread.h"
 #include "iocInit.h"
 #include "dbBase.h"
@@ -64,27 +64,23 @@ void checkCommonThreads (void) {
 
 static
 void cycle(void) {
-    if (dbReadDatabase(&pdbbase, "dbShutdownTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'dbShutdownTest.dbd' not found");
+
+    testdbPrepare();
+
+    testdbReadDatabase("dbShutdownTest.dbd", NULL, NULL);
 
     dbShutdownTest_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "sRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'sRecord.db' not found");
 
-    testOk1(!(iocBuildNoCA() || iocRun()));
+    testdbReadDatabase("sRecord.db", NULL, NULL);
+
+    testOk1(!testiocInit());
 
     epicsThreadMap(findCommonThread);
     checkCommonThreads();
 
-    testOk1(iocShutdown()==0);
+    testOk1(testiocShutdown()==0);
 
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase = NULL;
-    dbmfFreeChunks();
+    testdbCleanup();
 }
 
 MAIN(dbShutdownTest)

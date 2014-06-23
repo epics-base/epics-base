@@ -37,6 +37,7 @@ INC += chfPlugin.h
 INC += dbState.h
 INC += db_access_routines.h
 INC += db_convert.h
+INC += dbUnitTest.h
 
 # Generate menuGlobal.dbd automatically
 DBD += menuGlobal.dbd
@@ -86,4 +87,4 @@ dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
 dbCore_SRCS += chfPlugin.c
 dbCore_SRCS += dbState.c
-
+dbCore_SRCS += dbUnitTest.c

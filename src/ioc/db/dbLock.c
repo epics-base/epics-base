@@ -54,6 +54,7 @@ since this will delay all other threads.
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsAssert.h"
+#include "epicsExit.h"
 #include "cantProceed.h"
 #include "ellLib.h"
 #define epicsExportSharedSymbols
@@ -107,7 +108,16 @@ typedef struct lockRecord {
     lockSet	*plockSet;
     dbCommon	*precord;
 } lockRecord;
-
+
+static void dbLockExit(void *junk)
+{
+    epicsMutexDestroy(globalLock);
+    epicsMutexDestroy(lockSetModifyLock);
+    globalLock = NULL;
+    lockSetModifyLock = NULL;
+    dbLockIsInitialized = FALSE;
+}
+
 /*private routines */
 static void dbLockInitialize(void)
 {
@@ -118,6 +128,7 @@ static void dbLockInitialize(void)
     globalLock = epicsMutexMustCreate();
     lockSetModifyLock = epicsMutexMustCreate();
     dbLockIsInitialized = TRUE;
+    epicsAtExit(dbLockExit,NULL);
 }
 
 static lockSet * allocLockSet(

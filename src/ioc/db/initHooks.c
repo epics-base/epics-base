@@ -93,6 +93,14 @@ void initHookAnnounce(initHookState state)
     }
 }
 
+void initHookFree(void)
+{
+    initHookInit();
+    epicsMutexMustLock(listLock);
+    ellFree(&functionList);
+    epicsMutexUnlock(listLock);
+}
+
 /*
  * Call any time you want to print out a state name.
  */

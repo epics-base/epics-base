@@ -94,6 +94,7 @@ int iocBuild(void)
         errlogPrintf("iocBuild: IOC can only be initialized once\n");
         return -1;
     }
+    errlogInit(0);
     initHookAnnounce(initHookAtIocBuild);
 
     if (!epicsThreadIsOkToBlock()) {

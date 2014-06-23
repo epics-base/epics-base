@@ -26,6 +26,7 @@ epicsShareFunc void dbCaCallbackProcess(void *usrPvt);
 epicsShareFunc void dbCaLinkInit(void);
 epicsShareFunc void dbCaRun(void);
 epicsShareFunc void dbCaPause(void);
+epicsShareFunc void dbCaShutdown(void);
 
 epicsShareFunc void dbCaAddLinkCallback(struct link *plink,
     dbCaCallback connect, dbCaCallback monitor, void *userPvt);

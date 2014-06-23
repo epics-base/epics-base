@@ -173,13 +173,20 @@ void dbCaCallbackProcess(void *usrPvt)
     dbScanUnlock(pdbCommon);
 }
 
-static void dbCaShutdown(void *arg)
+void dbCaShutdown(void)
 {
-    if (dbCaCtl == ctlRun) {
+    if (dbCaCtl == ctlRun || dbCaCtl == ctlPause) {
         dbCaCtl = ctlExit;
         epicsEventSignal(workListEvent);
         epicsEventMustWait(startStopEvent);
+        epicsEventDestroy(startStopEvent);
+        epicsEventDestroy(workListEvent);
     }
+}
+
+static void dbCaExit(void *arg)
+{
+    dbCaShutdown();
 }
 
 void dbCaLinkInit(void)
@@ -194,19 +201,23 @@ void dbCaLinkInit(void)
         epicsThreadGetStackSize(epicsThreadStackBig),
         dbCaTask, NULL);
     epicsEventMustWait(startStopEvent);
-    epicsAtExit(dbCaShutdown, NULL);
+    epicsAtExit(dbCaExit, NULL);
 }
 
 void dbCaRun(void)
 {
-    dbCaCtl = ctlRun;
-    epicsEventSignal(workListEvent);
+    if (dbCaCtl == ctlPause) {
+        dbCaCtl = ctlRun;
+        epicsEventSignal(workListEvent);
+    }
 }
 
 void dbCaPause(void)
 {
-    dbCaCtl = ctlPause;
-    epicsEventSignal(workListEvent);
+    if (dbCaCtl == ctlRun) {
+        dbCaCtl = ctlPause;
+        epicsEventSignal(workListEvent);
+    }
 }
 
 void dbCaAddLinkCallback(struct link *plink,

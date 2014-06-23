@@ -658,6 +658,7 @@ int iocShutdown(void)
     scanShutdown();
     callbackShutdown();
     iterateRecords(doFreeRecord, NULL);
+    asShutdown();
     iocState = iocStopped;
     return 0;
 }

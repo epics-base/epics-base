@@ -44,6 +44,7 @@
 #include "recGbl.h"
 #include "dbNotify.h"
 #include "epicsTime.h"
+#include "epicsExit.h"
 #include "cantProceed.h"
 
 /*notify state values */
@@ -298,6 +299,14 @@ static void notifyCallback(CALLBACK *pcallback)
     callDone(precord, ppn);
 }
 
+static void dbProcessNotifyExit(void* junk)
+{
+    assert(ellCount(&pnotifyGlobal->freeList)==0);
+    epicsMutexDestroy(pnotifyGlobal->lock);
+    free(pnotifyGlobal);
+    pnotifyGlobal = NULL;
+}
+
 void dbProcessNotifyInit(void)
 {
     if (pnotifyGlobal)
@@ -305,6 +314,7 @@ void dbProcessNotifyInit(void)
     pnotifyGlobal = dbCalloc(1,sizeof(notifyGlobal));
     pnotifyGlobal->lock = epicsMutexMustCreate();
     ellInit(&pnotifyGlobal->freeList);
+    epicsAtExit(dbProcessNotifyExit, NULL);
 }
 
 void dbProcessNotify(processNotify *ppn)

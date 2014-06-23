@@ -20,6 +20,7 @@
 #include "cantProceed.h"
 #include "epicsAssert.h"
 #include "epicsString.h"
+#include "epicsExit.h"
 #include "errlog.h"
 #include "freeList.h"
 #include "gpHash.h"
@@ -52,16 +53,23 @@ static void *dbChannelFreeList;
 static void *chFilterFreeList;
 static void *dbchStringFreeList;
 
+static void dbChannelExit(void* junk)
+{
+    freeListCleanup(dbChannelFreeList);
+    freeListCleanup(chFilterFreeList);
+    freeListCleanup(dbchStringFreeList);
+    dbChannelFreeList = chFilterFreeList = dbchStringFreeList = NULL;
+}
+
 void dbChannelInit (void)
 {
-    static int done = 0;
+    if(dbChannelFreeList)
+        return;
 
-    if (!done) {
-        done = 1;
-        freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
-        freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
-        freeListInitPvt(&dbchStringFreeList, sizeof(epicsOldString), 128);
-    }
+    freeListInitPvt(&dbChannelFreeList,  sizeof(dbChannel), 128);
+    freeListInitPvt(&chFilterFreeList,  sizeof(chFilter), 64);
+    freeListInitPvt(&dbchStringFreeList, sizeof(epicsOldString), 128);
+    epicsAtExit(dbChannelExit, NULL);
 }
 
 static void chf_value(parseContext *parser, parse_result *presult)

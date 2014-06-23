@@ -656,6 +656,7 @@ int iocShutdown(void)
     if (iocState == iocVirgin || iocState == iocStopped) return 0;
     iterateRecords(doCloseLinks, NULL);
     scanShutdown();
+    callbackShutdown();
     iterateRecords(doFreeRecord, NULL);
     iocState = iocStopped;
     return 0;

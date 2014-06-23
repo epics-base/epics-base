@@ -28,6 +28,7 @@ epicsShareFunc unsigned long dbLockGetLockId(
     struct dbCommon *precord);
 
 epicsShareFunc void dbLockInitRecords(struct dbBase *pdbbase);
+epicsShareFunc void dbLockCleanupRecords(struct dbBase *pdbbase);
 epicsShareFunc void dbLockSetMerge(
     struct dbCommon *pfirst,struct dbCommon *psecond);
 epicsShareFunc void dbLockSetSplit(struct dbCommon *psource);

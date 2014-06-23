@@ -658,6 +658,7 @@ int iocShutdown(void)
     scanShutdown();
     callbackShutdown();
     iterateRecords(doFreeRecord, NULL);
+    dbLockCleanupRecords(pdbbase);
     asShutdown();
     iocshFree();
     iocState = iocStopped;

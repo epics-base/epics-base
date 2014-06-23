@@ -388,7 +388,23 @@ void dbLockInitRecords(dbBase *pdbbase)
         }
     }
 }
-
+
+void dbLockCleanupRecords(dbBase *pdbbase)
+{
+    DBENTRY ent;
+    long status;
+
+    dbInitEntry(pdbbase, &ent);
+    for(status=dbFirstRecordType(&ent); !status; status=dbNextRecordType(&ent)) {
+        for(status=dbFirstRecord(&ent); !status; status=dbNextRecord(&ent)) {
+            dbCommon *prec = ent.precnode->precord;
+            free(prec->lset);
+        }
+    }
+
+    dbFinishEntry(&ent);
+}
+
 void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 {
     lockRecord	*p1lockRecord = pfirst->lset;

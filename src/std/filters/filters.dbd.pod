@@ -4,7 +4,7 @@ Channel Filters can be applied to Channel Access channels by a client, using
 a JSON Field Modifier to select the filter and any parameters.
 The following filters are available in this release:
 
-=over 4
+=over
 
 =item * L<TimeStamp|/"TimeStamp Filter "ts"">
 
@@ -88,7 +88,7 @@ percentage.
 
 =head4 Parameters
 
-=over 4
+=over
 
 =item Deadband C<"d">
 
@@ -136,6 +136,54 @@ registrar(syncInitialize)
 
 =head3 Synchronize Filter C<"sync">
 
-...
+This filter is used to dynamically enable or disable monitors according
+to a condition and a state variable declared by the IOC.
+
+State variables have a boolean value and can be set by a binary output
+record, an iocsh command or by other software running in the IOC calling
+C<dbStateSet()>.
+
+=head4 Parameters
+
+=over
+
+=item Mode C<"m">
+
+A single word from the list below, enclosed in double quotes C<">.
+This controls how the state value should affect the monitor stream. 
+
+=over
+
+=item C<"before"> E<mdash> only the last value received before the state
+changes from false to true is forwarded to the client.
+
+=item C<"first"> E<mdash> only the first value received after the state
+changes from true to false is forwarded to the client.
+
+=item C<"while"> E<mdash> values are forwarded to the client as long as
+the state is true.
+
+=item C<"last"> E<mdash> only the last value received before the state
+changes from true to false is forwarded to the client.
+
+=item C<"after"> E<mdash> only the first value received after the state
+changes from true to false is forwarded to the client.
+
+=item C<"unless"> E<mdash> values are forwarded to the client as long
+as the state is false.
+
+=back
+
+=item State C<"s">
+
+The name of a state variable, enclosed in double quotes C<">.
+
+=back
+
+=head4 Example
+
+ Woz$ camonitor 'test:channel'
+ ...
 
 =cut
+

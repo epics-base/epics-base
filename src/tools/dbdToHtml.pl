@@ -102,7 +102,7 @@ __END_DOCTYPE
     $podHtml = Pod::Simple::HTML->new();
 }
 
-$podHtml->html_css('style.css');
+$podHtml->html_css('<link rel="stylesheet" href="style.css" type="text/css" />');
 $podHtml->force_title(encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');

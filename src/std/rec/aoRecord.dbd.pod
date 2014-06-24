@@ -878,7 +878,7 @@ When VAL is EGUF the RVAL field will be set to I<RVAL_max>, and when VAL is
 EGUL the RVAL field will become I<RVAL_min>.
 The fomulae to use are:
 
-=over 4
+=over
 
 EOFF = (I<RVAL_max> * EGUL E<minus> I<RVAL_min> * EGUF) /
 (I<RVAL_max> E<minus> I<RVAL_min>)

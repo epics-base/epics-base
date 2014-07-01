@@ -5,7 +5,7 @@
 
 < envPaths
 
-cd ${TOP}
+cd "${TOP}"
 
 ## Register all support components
 dbLoadDatabase "dbd/_APPNAME_.dbd"
@@ -14,7 +14,7 @@ _CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 ## Load record instances
 #dbLoadRecords("db/xxx.db","user=_USER_Host")
 
-cd ${TOP}/iocBoot/${IOC}
+cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
 ## Start any sequence programs

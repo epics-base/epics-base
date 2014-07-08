@@ -13,7 +13,7 @@
 #include "testMain.h"
 
 static const short s_input[] = {-1,0,1,2,3,4,5};
-static const size_t s_input_len = NELEMENTS(s_input);
+static const long s_input_len = NELEMENTS(s_input);
 
 static void testBasicGet(void)
 {
@@ -27,7 +27,7 @@ static void testBasicGet(void)
 
     memset(&addr, 0, sizeof(addr));
     addr.field_type = DBF_SHORT;
-    addr.field_size = s_input_len*sizeof(*scratch);
+    addr.field_size = (short)(s_input_len*sizeof(*scratch));
     addr.no_elements = s_input_len;
     addr.pfield = (void*)s_input;
 
@@ -143,6 +143,7 @@ static void testBasicPut(void)
         memset(scratch, 0x42, sizeof(s_input));
     }
 
+    free(scratch);
 }
 
 MAIN(testdbConvert)

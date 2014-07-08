@@ -102,18 +102,6 @@ static void testBasicGet(void)
         memset(scratch, 0x42, sizeof(s_input));
     }
 
-    {
-        testDiag("Crazy copy from out of bounds offset");
-
-        addr.pfield = (short*)(2*sizeof(short));
-
-        getter(&addr, scratch, s_input_len, s_input_len, (long)(s_input-2)/sizeof(short));
-
-        testOk1(memcmp(scratch, s_input, sizeof(s_input))==0);
-
-        memset(scratch, 0x42, sizeof(s_input));
-    }
-
     free(scratch);
 }
 
@@ -159,7 +147,7 @@ static void testBasicPut(void)
 
 MAIN(testdbConvert)
 {
-    testPlan(16);
+    testPlan(15);
     testBasicGet();
     testBasicPut();
     return testDone();

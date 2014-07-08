@@ -1313,7 +1313,7 @@ static long getLongLong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    COPYNOCONVERT(sizeof(long), paddr->pfield, pto, nRequest, no_elements, offset);
+    COPYNOCONVERT(sizeof(epicsInt32), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1328,7 +1328,7 @@ static long getLongUlong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    COPYNOCONVERT(sizeof(long), paddr->pfield, pto, nRequest, no_elements, offset);
+    COPYNOCONVERT(sizeof(epicsInt32), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1507,7 +1507,7 @@ static long getUlongLong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    COPYNOCONVERT(sizeof(unsigned long), paddr->pfield, pto, nRequest, no_elements, offset);
+    COPYNOCONVERT(sizeof(epicsUInt32), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 
@@ -1522,7 +1522,7 @@ static long getUlongUlong(
 	*pbuffer = *psrc;
 	return(0);
     }
-    COPYNOCONVERT(sizeof(unsigned long), paddr->pfield, pto, nRequest, no_elements, offset);
+    COPYNOCONVERT(sizeof(epicsUInt32), paddr->pfield, pto, nRequest, no_elements, offset);
     return(0);
 }
 

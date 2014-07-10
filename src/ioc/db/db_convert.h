@@ -23,8 +23,8 @@ epicsShareExtern struct dbBase *pdbbase;
 epicsShareExtern volatile int interruptAccept;
 
 /*Definitions that allow old database access to use new conversion routines*/
-#define newDBF_DEVICE 11
-#define newDBR_ENUM    9
+#define newDBF_DEVICE 13
+#define newDBR_ENUM    11
 epicsShareExtern long (*dbGetConvertRoutine[newDBF_DEVICE+1][newDBR_ENUM+1])
     (struct dbAddr *paddr, void *pbuffer,long nRequest,
         long no_elements, long offset);
@@ -43,11 +43,11 @@ epicsShareExtern unsigned short dbDBRnewToDBRold[newDBR_ENUM+1];
 epicsShareDef unsigned short dbDBRoldToDBFnew[DBR_DOUBLE+1] = {
 	0, /*DBR_STRING to DBF_STRING*/
 	3, /*DBR_INT to DBF_SHORT*/
-	7, /*DBR_FLOAT to DBF_FLOAT*/
-	9, /*DBR_ENUM to DBF_ENUM*/
+	9, /*DBR_FLOAT to DBF_FLOAT*/
+	11, /*DBR_ENUM to DBF_ENUM*/
 	1, /*DBR_CHAR to DBF_CHAR*/
 	5, /*DBR_LONG to DBF_LONG*/
-	8  /*DBR_DOUBLE to DBF_DOUBLE*/
+	10  /*DBR_DOUBLE to DBF_DOUBLE*/
 };
 epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
 	0, /*DBR_STRING to DBR_STRING*/
@@ -57,6 +57,8 @@ epicsShareDef unsigned short dbDBRnewToDBRold[newDBR_ENUM+1] = {
 	5, /*DBR_USHORT to DBR_LONG*/
 	5, /*DBR_LONG to DBR_LONG*/
 	6, /*DBR_ULONG to DBR_DOUBLE*/
+	6, /*DBR_INT64 to DBR_DOUBLE*/
+	6, /*DBR_UINT64 to DBR_DOUBLE*/
 	2, /*DBR_FLOAT to DBR_FLOAT*/
 	6, /*DBR_DOUBLE to DBR_DOUBLE*/
 	3, /*DBR_ENUM to DBR_ENUM*/

@@ -1,22 +1,18 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2012 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbConvert.c */
 /*
  *      Original Author: Bob Dalesio
- *      Current Author:  Marty Kraimer
  *      Date:            11-7-90
 */
 
 #include <stddef.h>
-#include <epicsStdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -25,6 +21,7 @@
 #include "cvtFast.h"
 #include "dbDefs.h"
 #include "epicsConvert.h"
+#include "epicsStdlib.h"
 #include "errlog.h"
 #include "errMdef.h"
 
@@ -63,2202 +60,808 @@ static void copyNoConvert(const void *pfrom,
 #define COPYNOCONVERT(N, FROM, TO, NREQ, NO_ELEM, OFFSET) \
     copyNoConvert(FROM, TO, (N)*(NREQ), (N)*(NO_ELEM), (N)*(OFFSET))
 
-/* DATABASE ACCESS GET CONVERSION SUPPORT */
+#define GET(typea, typeb) (const dbAddr *paddr, \
+    void *pto, long nRequest, long no_elements, long offset) \
+{ \
+    typea *psrc = (typea *) paddr->pfield; \
+    typeb *pdst = (typeb *) pto; \
+    \
+    if (nRequest==1 && offset==0) { \
+        *pdst = (typeb) *psrc; \
+        return 0; \
+    } \
+    psrc += offset; \
+    while (nRequest--) { \
+        *pdst++ = (typeb) *psrc++; \
+        if (++offset == no_elements) \
+            psrc = (typea *) paddr->pfield; \
+    } \
+    return 0; \
+}
+
+#define GET_NOCONVERT(typea, typeb) (const dbAddr *paddr, \
+    void *pto, long nRequest, long no_elements, long offset) \
+{ \
+    if (nRequest==1 && offset==0) { \
+        typea *psrc = (typea *) paddr->pfield; \
+        typeb *pdst = (typeb *) pto; \
+        \
+        *pdst = (typeb) *psrc; \
+        return 0; \
+    } \
+    COPYNOCONVERT(sizeof(typeb), paddr->pfield, pto, nRequest, no_elements, offset); \
+    return 0; \
+}
+
+#define PUT(typea, typeb) (dbAddr *paddr, \
+    const void *pfrom, long nRequest, long no_elements, long offset) \
+{ \
+    const typea *psrc = (const typea *) pfrom; \
+    typeb *pdst = (typeb *) paddr->pfield; \
+    \
+    if (nRequest==1 && offset==0) { \
+        *pdst = (typeb) *psrc; \
+        return 0; \
+    } \
+    pdst += offset; \
+    while (nRequest--) { \
+        *pdst++ = (typeb) *psrc++; \
+        if (++offset == no_elements) \
+            pdst = (typeb *) paddr->pfield; \
+    } \
+    return 0; \
+}
+
+#define PUT_NOCONVERT(typea, typeb) (dbAddr *paddr, \
+    const void *pfrom, long nRequest, long no_elements, long offset) \
+{ \
+    if (nRequest==1 && offset==0) { \
+        const typea *psrc = (const typea *) pfrom; \
+        typeb *pdst = (typeb *) paddr->pfield; \
+        \
+        *pdst = (typeb) *psrc; \
+        return 0; \
+    } \
+    COPYNOCONVERT(sizeof(typeb), pfrom, paddr->pfield, nRequest, no_elements, offset); \
+    return 0; \
+}
+
 
-static long getStringString (
-    const dbAddr *paddr,
+/* dbAccess Get conversion support routines */
+
+static long getStringString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    char *pbuffer = (char *) pto;
     char *psrc = paddr->pfield;
+    char *pdst = (char *) pto;
     short size = paddr->field_size;
     short sizeto;
 
     /* always force result string to be null terminated*/
     sizeto = size;
-    if (sizeto>=MAX_STRING_SIZE) sizeto = MAX_STRING_SIZE-1;
+    if (sizeto >= MAX_STRING_SIZE)
+        sizeto = MAX_STRING_SIZE - 1;
 
     if (nRequest==1 && offset==0) {
-        strncpy(pbuffer,psrc,sizeto);
-        pbuffer[sizeto] = 0;
+        strncpy(pdst, psrc, sizeto);
+        pdst[sizeto] = 0;
         return 0;
     }
-    psrc+= (size*offset);
-    while (nRequest) {
-        strncpy(pbuffer,psrc,sizeto);
-        pbuffer[sizeto] = 0;
-        pbuffer += MAX_STRING_SIZE;
+    psrc += size * offset;
+    while (nRequest--) {
+        strncpy(pdst, psrc, sizeto);
+        pdst[sizeto] = 0;
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = paddr->pfield;
+            psrc = paddr->pfield;
         else
-                psrc  += size;
-        nRequest--;
+            psrc += size;
     }
     return 0;
 }
 
-static long getStringChar(
-    const dbAddr *paddr,
+static long getStringChar(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    char *pbuffer = (char *) pto;
-    char *psrc = (char *) paddr->pfield;
-    short value;
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsInt8 *pdst = pto;
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(psrc,"%hd",&value) == 1) {
-                *pbuffer = (char)value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseInt8(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
         }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (sscanf(psrc,"%hd",&value) == 1) {
-            *pbuffer = (char)value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
         if (++offset == no_elements)
             psrc = paddr->pfield;
         else
             psrc += MAX_STRING_SIZE;
-        nRequest--;
     }
     return 0;
 }
+
+static long getStringUchar(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsUInt8 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseUInt8(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringShort(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsInt16 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseInt16(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringUshort(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsUInt16 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseUInt16(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringLong(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsInt32 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseInt32(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringUlong(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsUInt32 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseUInt32(psrc, pdst, 10, &end);
+
+            if (status == S_stdlib_noConversion ||
+                (!status && (*end == '.' || *end == 'e' || *end == 'E'))) {
+                /*
+                 * Convert via double so numbers like 1.0e3 convert properly.
+                 * db_access pretends unsigned long is double.
+                 */
+                epicsFloat64 dval;
+
+                status = epicsParseFloat64(psrc, &dval, &end);
+                if (!status && 0 <= dval && dval <= ULONG_MAX)
+                    *pdst = dval;
+            }
+            if (status)
+                return status;
+            pdst++;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringInt64(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsInt64 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseInt64(psrc, pdst++, 10, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringUInt64(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsUInt64 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseUInt64(psrc, pdst++, 0, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringFloat(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsFloat32 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseFloat32(psrc, pdst++, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
+static long getStringDouble(const dbAddr *paddr,
+    void *pto, long nRequest, long no_elements, long offset)
+{
+    char *psrc = (char *) paddr->pfield + MAX_STRING_SIZE * offset;
+    epicsFloat64 *pdst = pto;
+
+    while (nRequest--) {
+        if (*psrc == 0)
+            *pdst++ = 0;
+        else {
+            char *end;
+            long status = epicsParseFloat64(psrc, pdst++, &end);
+
+            if (status)
+                return status;
+        }
+        if (++offset == no_elements)
+            psrc = paddr->pfield;
+        else
+            psrc += MAX_STRING_SIZE;
+    }
+    return 0;
+}
+
 
-static long getStringUchar(
-    const dbAddr *paddr,
+static long getCharString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
     char *psrc = (char *) paddr->pfield;
-    unsigned short value;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        if (sscanf(psrc,"%hu",&value) == 1) {
-                *pbuffer = (epicsUInt8)value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (sscanf(psrc,"%hu",&value) == 1) {
-            *pbuffer = (epicsUInt8)value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    char *psrc = (char *) paddr->pfield;
-    short value;
-
-    if (nRequest==1 && offset==0) {
-        if (sscanf(psrc,"%hd",&value) == 1) {
-                *pbuffer = value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (sscanf(psrc,"%hd",&value) == 1) {
-            *pbuffer = value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    char *psrc = (char *) paddr->pfield;
-    unsigned short value;
-
-    if (nRequest==1 && offset==0) {
-        if (sscanf(psrc,"%hu",&value) == 1) {
-                *pbuffer = value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (sscanf(psrc,"%hu",&value) == 1) {
-            *pbuffer = value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    char *psrc = (char *) paddr->pfield;
-    epicsInt32 value;
-
-    if (nRequest==1 && offset==0) {
-        if (sscanf(psrc,"%d",&value) == 1) {
-                *pbuffer = value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (sscanf(psrc,"%d",&value) == 1) {
-            *pbuffer = value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    char *psrc = (char *) paddr->pfield;
-    double value;
-
-    /*Convert to double first so that numbers like 1.0e3 convert properly*/
-    /*Problem was old database access said to get unsigned long as double*/
-    if (nRequest==1 && offset==0) {
-        if (epicsScanDouble(psrc, &value) == 1) {
-                *pbuffer = (epicsUInt32)value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (epicsScanDouble(psrc, &value) == 1) {
-            *pbuffer = (epicsUInt32)value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    char *psrc = (char *) paddr->pfield;
-    float value;
-
-    if (nRequest==1 && offset==0) {
-        if (epicsScanFloat(psrc, &value) == 1) {
-                *pbuffer = value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (epicsScanFloat(psrc, &value) == 1) {
-            *pbuffer = value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    char *psrc = (char *) paddr->pfield;
-    double value;
-
-    if (nRequest==1 && offset==0) {
-        if (epicsScanDouble(psrc, &value) == 1) {
-                *pbuffer = value;
-                return 0;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0.0;
-                return 0;
-        } else {
-                return(-1);
-        }
-    }
-    psrc += MAX_STRING_SIZE*offset;
-    while (nRequest) {
-        if (epicsScanDouble(psrc, &value) == 1) {
-            *pbuffer = value;
-        } else if (strlen(psrc) == 0) {
-                *pbuffer = 0.0;
-        } else {
-                return(-1);
-        }
-        pbuffer++;
-        if (++offset == no_elements)
-            psrc = paddr->pfield;
-        else
-            psrc += MAX_STRING_SIZE;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getStringEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    return(getStringUshort(paddr,pto,nRequest,no_elements,offset));
-}
-
-static long getCharString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        cvtCharToString(*psrc,pbuffer);
+        cvtCharToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtCharToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtCharToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
             psrc = (char *) paddr->pfield;
         else
             psrc++;
-        nRequest--;
     }
     return 0;
 }
 
-static long getCharChar(
-    const dbAddr *paddr,
+static long getCharChar(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    char *pbuffer = (char *) pto;
     char *psrc = (char *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (paddr->pfldDes && paddr->pfldDes->field_type == DBF_STRING) {
         /* This is a DBF_STRING field being read as a long string.
          * The buffer we return must be zero-terminated.
          */
-        pbuffer[--nRequest] = 0;
-        if (nRequest == 0) return 0;
+        pdst[--nRequest] = 0;
+        if (nRequest == 0)
+            return 0;
     }
     if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(char), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getCharUchar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (paddr->pfldDes && paddr->pfldDes->field_type == DBF_STRING) {
-        /* This is a DBF_STRING field being read as a long string.
-         * The buffer we return must be zero-terminated.
-         */
-        pbuffer[--nRequest] = 0;
-        if (nRequest == 0) return 0;
-    }
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
+        *pdst = *psrc;
         return 0;
     }
     COPYNOCONVERT(sizeof(char), paddr->pfield, pto, nRequest, no_elements, offset);
     return 0;
 }
 
-static long getCharShort(
-    const dbAddr *paddr,
+static long getCharUchar(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
     char *psrc = (char *) paddr->pfield;
+    epicsUInt8 *pdst = (epicsUInt8 *) pto;
 
+    if (paddr->pfldDes && paddr->pfldDes->field_type == DBF_STRING) {
+        /* This is a DBF_STRING field being read as a long string.
+         * The buffer we return must be zero-terminated.
+         */
+        pdst[--nRequest] = 0;
+        if (nRequest == 0)
+            return 0;
+    }
     if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
+        *pdst = *psrc;
         return 0;
     }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
+    COPYNOCONVERT(sizeof(char), paddr->pfield, pto, nRequest, no_elements, offset);
     return 0;
 }
+
+static long getCharShort GET(char, epicsInt16)
+static long getCharUshort GET(char, epicsUInt16)
+static long getCharLong GET(char, epicsInt32)
+static long getCharUlong GET(char, epicsUInt32)
+static long getCharInt64 GET(char, epicsInt64)
+static long getCharUInt64 GET(char, epicsUInt64)
+static long getCharFloat GET(char, epicsFloat32)
+static long getCharDouble GET(char, epicsFloat64)
+static long getCharEnum GET(char, epicsEnum16)
 
-static long getCharUshort(
-    const dbAddr *paddr,
+static long getUcharString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getCharLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getCharUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getCharFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getCharDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getCharEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    char *psrc = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
     epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        cvtUcharToString(*psrc,pbuffer);
+        cvtUcharToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtUcharToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtUcharToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (epicsUInt8 *) paddr->pfield;
+            psrc = (epicsUInt8 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return 0;
 }
 
-static long getUcharChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        char *pbuffer = (char *) pto;
-        epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt8), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
+static long getUcharChar GET_NOCONVERT(epicsUInt8, char)
+static long getUcharUchar GET_NOCONVERT(epicsUInt8, epicsUInt8)
+static long getUcharShort GET(epicsUInt8, epicsInt16)
+static long getUcharUshort GET(epicsUInt8, epicsUInt16)
+static long getUcharLong GET(epicsUInt8, epicsInt32)
+static long getUcharUlong GET(epicsUInt8, epicsUInt32)
+static long getUcharInt64 GET(epicsUInt8, epicsInt64)
+static long getUcharUInt64 GET(epicsUInt8, epicsUInt64)
+static long getUcharFloat GET(epicsUInt8, epicsFloat32)
+static long getUcharDouble GET(epicsUInt8, epicsFloat64)
+static long getUcharEnum GET(epicsUInt8, epicsEnum16)
 
-static long getUcharUchar(
-    const dbAddr *paddr,
+static long getShortString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    if (nRequest==1 && offset==0) {
-        epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-        epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt8), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getUcharShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getUcharDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUcharEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    epicsUInt8 *psrc = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getShortString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
     epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        cvtShortToString(*psrc,pbuffer);
+        cvtShortToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtShortToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtShortToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (epicsInt16 *) paddr->pfield;
+            psrc = (epicsInt16 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return 0;
 }
 
-static long getShortChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (char)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (char)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getShortChar GET(epicsInt16, char)
+static long getShortUchar GET(epicsInt16, epicsUInt8)
+static long getShortShort GET_NOCONVERT(epicsInt16, epicsInt16)
+static long getShortUshort GET_NOCONVERT(epicsInt16, epicsUInt16)
+static long getShortLong GET(epicsInt16, epicsInt32)
+static long getShortUlong GET(epicsInt16, epicsUInt32)
+static long getShortInt64 GET(epicsInt16, epicsInt64)
+static long getShortUInt64 GET(epicsInt16, epicsUInt64)
+static long getShortFloat GET(epicsInt16, epicsFloat32)
+static long getShortDouble GET(epicsInt16, epicsFloat64)
+static long getShortEnum GET(epicsInt16, epicsEnum16)
 
-static long getShortUchar(
-    const dbAddr *paddr,
+static long getUshortString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt8)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt8)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getShortShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsInt16 *pbuffer = (epicsInt16 *) pto;
-        epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt16), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getShortUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-        epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt16), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getShortLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getShortUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getShortFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getShortDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getShortEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    epicsInt16 *psrc = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUshortString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
     epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        cvtUshortToString(*psrc,pbuffer);
+        cvtUshortToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtUshortToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtUshortToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (epicsUInt16 *) paddr->pfield;
+            psrc = (epicsUInt16 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return 0;
 }
 
-static long getUshortChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (char)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (char)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getUshortChar GET(epicsUInt16, char)
+static long getUshortUchar GET(epicsUInt16, epicsUInt8)
+static long getUshortShort GET_NOCONVERT(epicsUInt16, epicsInt16)
+static long getUshortUshort GET_NOCONVERT(epicsUInt16, epicsUInt16)
+static long getUshortLong GET(epicsUInt16, epicsInt32)
+static long getUshortUlong GET(epicsUInt16, epicsUInt32)
+static long getUshortInt64 GET(epicsUInt16, epicsInt64)
+static long getUshortUInt64 GET(epicsUInt16, epicsUInt64)
+static long getUshortFloat GET(epicsUInt16, epicsFloat32)
+static long getUshortDouble GET(epicsUInt16, epicsFloat64)
+static long getUshortEnum GET(epicsUInt16, epicsEnum16)
 
-static long getUshortUchar(
-    const dbAddr *paddr,
+static long getLongString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt8)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt8)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-static long getUshortShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsInt16 *pbuffer = (epicsInt16 *) pto;
-        epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt16), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getUshortUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-        epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt16), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getUshortLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUshortUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUshortFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getUshortDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUshortEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    epicsUInt16 *psrc = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getLongString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
     epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        cvtLongToString(*psrc,pbuffer);
+        cvtLongToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtLongToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtLongToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (epicsInt32 *) paddr->pfield;
+            psrc = (epicsInt32 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return 0;
 }
 
-static long getLongChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getLongChar GET(epicsInt32, char)
+static long getLongUchar GET(epicsInt32, epicsUInt8)
+static long getLongShort GET(epicsInt32, epicsInt16)
+static long getLongUshort GET(epicsInt32, epicsUInt16)
+static long getLongLong GET_NOCONVERT(epicsInt32, epicsInt32)
+static long getLongUlong GET_NOCONVERT(epicsInt32, epicsUInt32)
+static long getLongInt64 GET(epicsInt32, epicsInt64)
+static long getLongUInt64 GET(epicsInt32, epicsUInt64)
+static long getLongFloat GET(epicsInt32, epicsFloat32)
+static long getLongDouble GET(epicsInt32, epicsFloat64)
+static long getLongEnum GET(epicsInt32, epicsEnum16)
 
-static long getLongUchar(
-    const dbAddr *paddr,
+static long getUlongString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getLongShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getLongUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getLongLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsInt32 *pbuffer = (epicsInt32 *) pto;
-        epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt32), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getLongUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-        epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt32), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getLongFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (float)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (float)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getLongDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getLongEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    epicsInt32 *psrc = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUlongString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
     epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        cvtUlongToString(*psrc,pbuffer);
+        cvtUlongToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        cvtUlongToString(*psrc,pbuffer);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtUlongToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (epicsUInt32 *) paddr->pfield;
+            psrc = (epicsUInt32 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return 0;
 }
 
-static long getUlongChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getUlongChar GET(epicsUInt32, char)
+static long getUlongUchar GET(epicsUInt32, epicsUInt8)
+static long getUlongShort GET(epicsUInt32, epicsInt16)
+static long getUlongUshort GET(epicsUInt32, epicsUInt16)
+static long getUlongLong GET_NOCONVERT(epicsUInt32, epicsInt32)
+static long getUlongUlong GET_NOCONVERT(epicsUInt32, epicsUInt32)
+static long getUlongInt64 GET(epicsUInt32, epicsInt64)
+static long getUlongUInt64 GET(epicsUInt32, epicsUInt64)
+static long getUlongFloat GET(epicsUInt32, epicsFloat32)
+static long getUlongDouble GET(epicsUInt32, epicsFloat64)
+static long getUlongEnum GET(epicsUInt32, epicsEnum16)
 
-static long getUlongUchar(
-    const dbAddr *paddr,
+static long getInt64String(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
+    epicsInt64 *psrc = (epicsInt64 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
+        cvtInt64ToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
+    while (nRequest--) {
+        cvtInt64ToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
+            psrc = (epicsInt64 *) paddr->pfield;
+        else
+            psrc++;
     }
     return 0;
 }
 
-static long getUlongShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getInt64Char GET(epicsInt64, char)
+static long getInt64Uchar GET(epicsInt64, epicsUInt8)
+static long getInt64Short GET(epicsInt64, epicsInt16)
+static long getInt64Ushort GET(epicsInt64, epicsUInt16)
+static long getInt64Long GET(epicsInt64, epicsInt32)
+static long getInt64Ulong GET(epicsInt64, epicsUInt32)
+static long getInt64Int64 GET_NOCONVERT(epicsInt64, epicsInt64)
+static long getInt64UInt64 GET_NOCONVERT(epicsInt64, epicsUInt64)
+static long getInt64Float GET(epicsInt64, epicsFloat32)
+static long getInt64Double GET(epicsInt64, epicsFloat64)
+static long getInt64Enum GET(epicsInt64, epicsEnum16)
 
-static long getUlongUshort(
-    const dbAddr *paddr,
+static long getUInt64String(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
+    epicsUInt64 *psrc = (epicsUInt64 *) paddr->pfield;
+    char *pdst = (char *) pto;
 
     if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
+        cvtUInt64ToString(*psrc, pdst);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
+    while (nRequest--) {
+        cvtUInt64ToString(*psrc, pdst);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
+            psrc = (epicsUInt64 *) paddr->pfield;
+        else
+            psrc++;
     }
     return 0;
 }
 
-static long getUlongLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsInt32 *pbuffer = (epicsInt32 *) pto;
-        epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt32), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
+static long getUInt64Char GET(epicsUInt64, char)
+static long getUInt64Uchar GET(epicsUInt64, epicsUInt8)
+static long getUInt64Short GET(epicsUInt64, epicsInt16)
+static long getUInt64Ushort GET(epicsUInt64, epicsUInt16)
+static long getUInt64Long GET(epicsUInt64, epicsInt32)
+static long getUInt64Ulong GET(epicsUInt64, epicsUInt32)
+static long getUInt64Int64 GET_NOCONVERT(epicsUInt64, epicsInt64)
+static long getUInt64UInt64 GET_NOCONVERT(epicsUInt64, epicsUInt64)
+static long getUInt64Float GET(epicsUInt64, epicsFloat32)
+static long getUInt64Double GET(epicsUInt64, epicsFloat64)
+static long getUInt64Enum GET(epicsUInt64, epicsEnum16)
 
-static long getUlongUlong(
-    const dbAddr *paddr,
+static long getFloatString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    if (nRequest==1 && offset==0) {
-        epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-        epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt32), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getUlongFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (float)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (float)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getUlongDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getUlongEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    epicsUInt32 *psrc = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    float *psrc = (float *) paddr->pfield;
+    epicsFloat32 *psrc = (epicsFloat32 *) paddr->pfield;
+    char *pdst = (char *) pto;
     long status = 0;
-    int precision = 6;
+    long precision = 6;
     struct rset *prset = 0;
 
-    if (paddr) prset = dbGetRset(paddr);
-    if (prset && (prset->get_precision))
-        status = (*prset->get_precision)(paddr,&precision);
+    if (paddr)
+        prset = dbGetRset(paddr);
+    if (prset && prset->get_precision)
+        status = prset->get_precision(paddr, &precision);
     if (nRequest==1 && offset==0) {
-        cvtFloatToString(*psrc,pbuffer,precision);
+        cvtFloatToString(*psrc, pdst, precision);
         return(status);
     }
     psrc += offset;
-    while (nRequest) {
-        cvtFloatToString(*psrc,pbuffer,precision);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtFloatToString(*psrc, pdst, precision);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (float *) paddr->pfield;
+            psrc = (epicsFloat32 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return(status);
 }
 
-static long getFloatChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (char)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (char)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getFloatChar GET(epicsFloat32, char)
+static long getFloatUchar GET(epicsFloat32, epicsUInt8)
+static long getFloatShort GET(epicsFloat32, epicsInt16)
+static long getFloatUshort GET(epicsFloat32, epicsUInt16)
+static long getFloatLong GET(epicsFloat32, epicsInt32)
+static long getFloatUlong GET(epicsFloat32, epicsUInt32)
+static long getFloatInt64 GET(epicsFloat32, epicsInt64)
+static long getFloatUInt64 GET(epicsFloat32, epicsUInt64)
+static long getFloatFloat GET_NOCONVERT(epicsFloat32, epicsFloat32)
+static long getFloatDouble GET(epicsFloat32, epicsFloat64)
+static long getFloatEnum GET(epicsFloat32, epicsEnum16)
 
-static long getFloatUchar(
-    const dbAddr *paddr,
+static long getDoubleString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt8)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt8)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsInt16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsInt16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsInt32)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsInt32)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt32)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt32)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        float *pbuffer = (float *) pto;
-        float *psrc = (float *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(float), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
- 
-static long getFloatDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getFloatEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    float *psrc = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsEnum16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsEnum16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    double *psrc = (double *) paddr->pfield;
+    epicsFloat64 *psrc = (epicsFloat64 *) paddr->pfield;
+    char *pdst = (char *) pto;
     long        status = 0;
-    int         precision = 6;
+    long        precision = 6;
     struct rset *prset = 0;
 
-    if (paddr) prset = dbGetRset(paddr);
-    if (prset && (prset->get_precision))
-        status = (*prset->get_precision)(paddr,&precision);
+    if (paddr)
+        prset = dbGetRset(paddr);
+    if (prset && prset->get_precision)
+        status = prset->get_precision(paddr, &precision);
     if (nRequest==1 && offset==0) {
-        cvtDoubleToString(*psrc,pbuffer,precision);
+        cvtDoubleToString(*psrc, pdst, precision);
         return(status);
     }
     psrc += offset;
-    while (nRequest) {
-        cvtDoubleToString(*psrc,pbuffer,precision);
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        cvtDoubleToString(*psrc, pdst, precision);
+        pdst += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                psrc = (double *) paddr->pfield;
+            psrc = (epicsFloat64 *) paddr->pfield;
         else
-                psrc++;
-        nRequest--;
+            psrc++;
     }
     return(status);
 }
 
-static long getDoubleChar(
-    const dbAddr *paddr,
+static long getDoubleChar GET(epicsFloat64, char)
+static long getDoubleUchar GET(epicsFloat64, epicsUInt8)
+static long getDoubleShort GET(epicsFloat64, epicsInt16)
+static long getDoubleUshort GET(epicsFloat64, epicsUInt16)
+static long getDoubleLong GET(epicsFloat64, epicsInt32)
+static long getDoubleUlong GET(epicsFloat64, epicsUInt32)
+static long getDoubleInt64 GET(epicsFloat64, epicsInt64)
+static long getDoubleUInt64 GET(epicsFloat64, epicsUInt64)
+
+static long getDoubleFloat(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    char *pbuffer = (char *) pto;
-    double *psrc = (double *) paddr->pfield;
+    epicsFloat64 *psrc = (epicsFloat64 *) paddr->pfield;
+    epicsFloat32 *pdst = (epicsFloat32 *) pto;
 
     if (nRequest==1 && offset==0) {
-        *pbuffer = (char)*psrc;
+        *pdst = epicsConvertDoubleToFloat(*psrc);
         return 0;
     }
     psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (char)*psrc++;
+    while (nRequest--) {
+        *pdst = epicsConvertDoubleToFloat(*psrc);
+        ++psrc; ++pdst;
         if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
+            psrc = (epicsFloat64 *) paddr->pfield;
     }
     return 0;
 }
+
+static long getDoubleDouble GET_NOCONVERT(epicsFloat64, epicsFloat64)
+static long getDoubleEnum GET(epicsFloat64, epicsEnum16)
 
-static long getDoubleUchar(
-    const dbAddr *paddr,
+static long getEnumString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt8)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt8)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsInt16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsInt16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsInt32)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsInt32)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt32)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt32)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getDoubleFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = epicsConvertDoubleToFloat(*psrc);
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer = epicsConvertDoubleToFloat(*psrc);
-        ++psrc; ++pbuffer;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getDoubleDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        double *pbuffer = (double *) pto;
-        double *psrc = (double *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(double), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getDoubleEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-    double *psrc = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsEnum16)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsEnum16)*psrc++;
-        if (++offset == no_elements)
-            psrc = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
+    char *pdst = (char *) pto;
     struct rset *prset;
     long        status;
 
-    if ((prset=dbGetRset(paddr)) && (prset->get_enum_str))
-        return( (*prset->get_enum_str)(paddr,pbuffer) );
-    status=S_db_noRSET;
-    recGblRecSupError(status,paddr,"dbGet","get_enum_str");
-    return(S_db_badDbrtype);
+    prset = dbGetRset(paddr);
+    if (prset && prset->get_enum_str)
+        return prset->get_enum_str(paddr, pdst);
+
+    status = S_db_noRSET;
+    recGblRecSupError(status, paddr, "dbGet", "get_enum_str");
+    return S_db_badDbrtype;
 }
 
-static long getEnumChar(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char *pbuffer = (char *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (char)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (char)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long getEnumChar GET(epicsEnum16, char)
+static long getEnumUchar GET(epicsEnum16, epicsUInt8)
+static long getEnumShort GET(epicsEnum16, epicsInt16)
+static long getEnumUshort GET(epicsEnum16, epicsUInt16)
+static long getEnumLong GET(epicsEnum16, epicsInt32)
+static long getEnumUlong GET(epicsEnum16, epicsUInt32)
+static long getEnumInt64 GET(epicsEnum16, epicsInt64)
+static long getEnumUInt64 GET(epicsEnum16, epicsUInt64)
+static long getEnumFloat GET(epicsEnum16, epicsFloat32)
+static long getEnumDouble GET(epicsEnum16, epicsFloat64)
+static long getEnumEnum GET_NOCONVERT(epicsEnum16, epicsEnum16)
 
-static long getEnumUchar(
-    const dbAddr *paddr,
+static long getMenuString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    epicsUInt8 *pbuffer = (epicsUInt8 *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = (epicsUInt8)*psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = (epicsUInt8)*psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumShort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt16 *pbuffer = (epicsInt16 *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumUshort(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt16 *pbuffer = (epicsUInt16 *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumLong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsInt32 *pbuffer = (epicsInt32 *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumUlong(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    epicsUInt32 *pbuffer = (epicsUInt32 *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumFloat(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    float *pbuffer = (float *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long getEnumDouble(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    double *pbuffer = (double *) pto;
-    epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pbuffer = *psrc;
-        return 0;
-    }
-    psrc += offset;
-    while (nRequest) {
-        *pbuffer++ = *psrc++;
-        if (++offset == no_elements)
-            psrc = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long getEnumEnum(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        epicsEnum16 *pbuffer = (epicsEnum16 *) pto;
-        epicsEnum16 *psrc = (epicsEnum16 *) paddr->pfield;
-
-        *pbuffer = *psrc;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsEnum16), paddr->pfield, pto, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long getMenuString(
-    const dbAddr *paddr,
-    void *pto, long nRequest, long no_elements, long offset)
-{
-    char                *pbuffer = (char *) pto;
+    char                *pdst = (char *) pto;
     dbFldDes            *pdbFldDes = paddr->pfldDes;
     dbMenu              *pdbMenu;
     char                **papChoiceValue;
@@ -2266,26 +869,25 @@ static long getMenuString(
     epicsEnum16 choice_ind= *((epicsEnum16*) paddr->pfield);
 
     if (no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getMenuString)");
+        recGblDbaddrError(S_db_onlyOne, paddr, "dbGet(getMenuString)");
         return(S_db_onlyOne);
     }
     if (!pdbFldDes
-    || !(pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
+    || !(pdbMenu = (dbMenu *) pdbFldDes->ftPvt)
     || (choice_ind>=pdbMenu->nChoice)
     || !(papChoiceValue = pdbMenu->papChoiceValue)
     || !(pchoice=papChoiceValue[choice_ind])) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getMenuString)");
+        recGblDbaddrError(S_db_badChoice, paddr, "dbGet(getMenuString)");
         return(S_db_badChoice);
     }
-    strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
+    strncpy(pdst, pchoice, MAX_STRING_SIZE);
     return 0;
 }
 
-static long getDeviceString(
-    const dbAddr *paddr,
+static long getDeviceString(const dbAddr *paddr,
     void *pto, long nRequest, long no_elements, long offset)
 {
-    char                *pbuffer = (char *) pto;
+    char                *pdst = (char *) pto;
     dbFldDes            *pdbFldDes = paddr->pfldDes;
     dbDeviceMenu        *pdbDeviceMenu;
     char                **papChoice;
@@ -2293,2280 +895,804 @@ static long getDeviceString(
     epicsEnum16 choice_ind= *((epicsEnum16*) paddr->pfield);
 
     if (no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbGet(getDeviceString)");
+        recGblDbaddrError(S_db_onlyOne, paddr, "dbGet(getDeviceString)");
         return(S_db_onlyOne);
     }
     if (!pdbFldDes
-    || !(pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
+    || !(pdbDeviceMenu = (dbDeviceMenu *) pdbFldDes->ftPvt)
     || (choice_ind>=pdbDeviceMenu->nChoice )
     || !(papChoice = pdbDeviceMenu->papChoice)
     || !(pchoice=papChoice[choice_ind])) {
-        recGblDbaddrError(S_db_badChoice,paddr,"dbGet(getDeviceString)");
+        recGblDbaddrError(S_db_badChoice, paddr, "dbGet(getDeviceString)");
         return(S_db_badChoice);
     }
-    strncpy(pbuffer,pchoice,MAX_STRING_SIZE);
+    strncpy(pdst, pchoice, MAX_STRING_SIZE);
     return 0;
 }
-
-/* DATABASE ACCESS PUT CONVERSION SUPPORT */
 
-static long putStringString(
-    dbAddr *paddr,
+
+/* dbAccess put conversion support routines */
+
+static long putStringString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    char *pdest = paddr->pfield;
+    const char *psrc = (const char *) pfrom;
+    char *pdst = paddr->pfield;
     short size = paddr->field_size;
 
     if (nRequest==1 && offset==0) {
-        strncpy(pdest,pbuffer,size);
-        *(pdest+size-1) = 0;
+        strncpy(pdst, psrc, size);
+        *(pdst+size-1) = 0;
         return 0;
     }
-    pdest+= (size*offset);
-    while (nRequest) {
-        strncpy(pdest,pbuffer,size);
-        *(pdest+size-1) = 0;
-        pbuffer += MAX_STRING_SIZE;
+    pdst+= (size*offset);
+    while (nRequest--) {
+        strncpy(pdst, psrc, size);
+        pdst[size-1] = 0;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-                pdest = paddr->pfield;
+            pdst = paddr->pfield;
         else
-                pdest  += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putStringChar(
-    dbAddr *paddr,
+static long putStringChar(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-    short  value;
+    const char *psrc = pfrom;
+    epicsInt8 *pdst = (epicsInt8 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(pbuffer,"%hd",&value) == 1) {
-                *pdest = (char)value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (sscanf(pbuffer,"%hd",&value) == 1) {
-            *pdest = (char)value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
-        if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putStringUchar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-    unsigned short  value;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseInt8(psrc, pdst++, 10, &end);
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(pbuffer,"%hu",&value) == 1) {
-                *pdest = (epicsUInt8)value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (sscanf(pbuffer,"%hu",&value) == 1) {
-            *pdest = (epicsUInt8)value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
 
-static long putStringShort(
-    dbAddr *paddr,
+static long putStringUchar(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-    short  value;
+    const char *psrc = pfrom;
+    epicsUInt8 *pdst = (epicsUInt8 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(pbuffer,"%hd",&value) == 1) {
-                *pdest = value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (sscanf(pbuffer,"%hd",&value) == 1) {
-            *pdest = value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseUInt8(psrc, pdst++, 10, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
 
-static long putStringUshort(
-    dbAddr *paddr,
+static long putStringShort(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-    unsigned short  value;
+    const char *psrc = pfrom;
+    epicsInt16 *pdst = (epicsInt16 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(pbuffer,"%hu",&value) == 1) {
-                *pdest = value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (sscanf(pbuffer,"%hu",&value) == 1) {
-            *pdest = value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseInt16(psrc, pdst++, 10, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
 
-static long putStringLong(
-    dbAddr *paddr,
+static long putStringUshort(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-    long  value;
+    const char *psrc = pfrom;
+    epicsUInt16 *pdst = (epicsUInt16 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (sscanf(pbuffer,"%ld",&value) == 1) {
-                *pdest = value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (sscanf(pbuffer,"%ld",&value) == 1) {
-            *pdest = value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseUInt16(psrc, pdst++, 10, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
 
-static long putStringUlong(
-    dbAddr *paddr,
+static long putStringLong(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-    double      value;
+    const char *psrc = pfrom;
+    epicsInt32 *pdst = (epicsInt32 *) paddr->pfield + offset;
 
-    /*Convert to double first so that numbers like 1.0e3 convert properly*/
-    /*Problem was old database access said to get unsigned long as double*/
-    if (nRequest==1 && offset==0) {
-        if (epicsScanDouble(pbuffer, &value) == 1) {
-                *pdest = (epicsUInt32)value;
-                return 0;
-        }
-        else return(-1);
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (epicsScanDouble(pbuffer, &value) == 1) {
-            *pdest = (epicsUInt32)value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseInt32(psrc, pdst++, 10, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
 
-static long putStringFloat(
-    dbAddr *paddr,
+static long putStringUlong(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-    float  value;
+    const char *psrc = pfrom;
+    epicsUInt32 *pdst = (epicsUInt32 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (epicsScanFloat(pbuffer, &value) == 1) {
-                *pdest = value;
-                return 0;
-        } else {
-            return(-1);
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseUInt32(psrc, pdst, 10, &end);
+
+        if (status == S_stdlib_noConversion ||
+            (!status && (*end == '.' || *end == 'e' || *end == 'E'))) {
+            /*
+             * Convert via double so numbers like 1.0e3 convert properly.
+             * db_access pretends unsigned long is double.
+             */
+            epicsFloat64 dval;
+
+            status = epicsParseFloat64(psrc, &dval, &end);
+            if (!status && 0 <= dval && dval <= ULONG_MAX)
+                *pdst = dval;
         }
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (epicsScanFloat(pbuffer, &value) == 1) {
-            *pdest = value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
+            pdst = paddr->pfield;
         else
-            pdest++;
-        nRequest--;
+            pdst++;
     }
     return 0;
 }
 
-static long putStringDouble(
-    dbAddr *paddr,
+static long putStringInt64(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-    double  value;
+    const char *psrc = pfrom;
+    epicsInt64 *pdst = (epicsInt64 *) paddr->pfield + offset;
 
-    if (nRequest==1 && offset==0) {
-        if (epicsScanDouble(pbuffer, &value) == 1) {
-                *pdest = value;
-                return 0;
-        } else {
-            return(-1);
-        }
-    }
-    pdest += offset;
-    while (nRequest) {
-        if (epicsScanDouble(pbuffer, &value) == 1) {
-            *pdest = value;
-        } else {
-            return(-1);
-        }
-        pbuffer += MAX_STRING_SIZE;
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseInt64(psrc, pdst++, 10, &end);
+
+        if (status)
+            return status;
+
+        psrc += MAX_STRING_SIZE;
         if (++offset == no_elements)
-            pdest = paddr->pfield;
-        else
-            pdest++;
-        nRequest--;
+            pdst = paddr->pfield;
     }
     return 0;
 }
-
-static long putStringEnum(
-    dbAddr *paddr,
+
+static long putStringUInt64(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    struct rset         *prset;
-    epicsEnum16 *pfield = (epicsEnum16*) paddr->pfield;
-    long                status;
-    unsigned int        nchoices,ind;
-    int                 nargs,nchars;
+    const char *psrc = pfrom;
+    epicsUInt64 *pdst = (epicsUInt64 *) paddr->pfield + offset;
+
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseUInt64(psrc, pdst, 0, &end);
+
+        if (status)
+            return status;
+
+        psrc += MAX_STRING_SIZE;
+        if (++offset == no_elements)
+            pdst = paddr->pfield;
+        else
+            pdst++;
+    }
+    return 0;
+}
+
+static long putStringFloat(dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
+{
+    const char *psrc = pfrom;
+    epicsFloat32 *pdst = (epicsFloat32 *) paddr->pfield + offset;
+
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseFloat32(psrc, pdst++, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
+        if (++offset == no_elements)
+            pdst = paddr->pfield;
+    }
+    return 0;
+}
+
+static long putStringDouble(dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
+{
+    const char *psrc = pfrom;
+    epicsFloat64 *pdst = (epicsFloat64 *) paddr->pfield + offset;
+
+    while (nRequest--) {
+        char *end;
+        long status = epicsParseFloat64(psrc, pdst++, &end);
+
+        if (status)
+            return status;
+        psrc += MAX_STRING_SIZE;
+        if (++offset == no_elements)
+            pdst = paddr->pfield;
+    }
+    return 0;
+}
+
+static long putStringEnum(dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
+{
+    epicsEnum16 *pfield = paddr->pfield;
+    struct rset *prset = dbGetRset(paddr);
+    long status = S_db_noRSET;
     struct dbr_enumStrs enumStrs;
 
-    if ((prset=dbGetRset(paddr))
-    && (prset->put_enum_str)) {
-        status = (*prset->put_enum_str)(paddr,pbuffer);
-        if (!status) return 0;
-        if (prset->get_enum_strs) {
-            status = (*prset->get_enum_strs)(paddr,&enumStrs);
-            if (!status) {
-                nchoices = enumStrs.no_str;
-                nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
-                if (nargs==1 && nchars==strlen(pbuffer) && ind<nchoices) {
-                    *pfield = ind;
-                    return 0;
-                }
-                status = S_db_badChoice;
-            }
-        }else {
-            status=S_db_noRSET;
+    if (no_elements != 1) {
+        recGblDbaddrError(S_db_onlyOne, paddr, "dbPut(putStringEnum)");
+        return S_db_onlyOne;
+    }
+
+    if (!prset || !prset->put_enum_str) {
+        recGblRecSupError(status, paddr, "dbPut(putStringEnum)", "put_enum_str");
+        return status;
+    }
+
+    status = prset->put_enum_str(paddr, pfrom);
+    if (!status)
+        return status;
+
+    if (!prset->get_enum_strs) {
+        recGblRecSupError(status, paddr, "dbPut(putStringEnum)", "get_enum_strs");
+        return status;
+    }
+
+    status = prset->get_enum_strs(paddr, &enumStrs);
+    if (!status) {
+        epicsEnum16 val;
+        char *end;
+
+        status = epicsParseUInt16(pfrom, &val, 10, &end);
+        if (!status && val < enumStrs.no_str) {
+            *pfield = val;
+            return 0;
         }
-    } else {
-        status=S_db_noRSET;
+        status = S_db_badChoice;
     }
-    if (status == S_db_noRSET) {
-        recGblRecSupError(status,paddr,"dbPutField","put_enum_str");
-    } else {
-        recGblRecordError(status,(void *) paddr->precord,pbuffer);
-    }
-    return(status);
+
+    recGblRecordError(status, paddr->precord, pfrom);
+    return status;
 }
-
-static long putStringMenu(
-    dbAddr *paddr,
+
+static long putStringMenu(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    dbFldDes            *pdbFldDes = paddr->pfldDes;
-    dbMenu              *pdbMenu;
-    char                **papChoiceValue;
-    char                *pchoice;
-    epicsEnum16 *pfield = (epicsEnum16*) paddr->pfield;
-    unsigned int        nChoice,ind;
-    int                 nargs,nchars;
+    dbFldDes *pdbFldDes = paddr->pfldDes;
+    epicsEnum16 *pfield = paddr->pfield;
+    dbMenu *pdbMenu;
+    char **pchoices, *pchoice;
 
-    if (no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringMenu)");
-        return(S_db_onlyOne);
+    if (no_elements != 1) {
+        recGblDbaddrError(S_db_onlyOne, paddr, "dbPut(putStringMenu)");
+        return S_db_onlyOne;
     }
-    if (pdbFldDes
-    && (pdbMenu = (dbMenu *)pdbFldDes->ftPvt)
-    && (papChoiceValue = pdbMenu->papChoiceValue)) {
-        nChoice = pdbMenu->nChoice;
-        for(ind=0; ind<nChoice; ind++) {
-            if (!(pchoice=papChoiceValue[ind])) continue;
-            if (strcmp(pchoice,pbuffer)==0) {
-                *pfield = ind;
+
+    if (pdbFldDes &&
+        (pdbMenu = pdbFldDes->ftPvt) &&
+        (pchoices = pdbMenu->papChoiceValue)) {
+        int i, nChoice = pdbMenu->nChoice;
+        epicsEnum16 val;
+
+        for (i = 0; i < nChoice; i++) {
+            pchoice = pchoices[i];
+            if (!pchoice)
+                continue;
+            if (strcmp(pchoice, pfrom) == 0) {
+                *pfield = i;
                 return 0;
             }
         }
-        nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
-        if (nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
-            *pfield = ind;
+
+        if (!epicsParseUInt16(pfrom, &val, 10, NULL)
+            && val < nChoice) {
+            *pfield = val;
             return 0;
         }
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringMenu)");
-    return(S_db_badChoice);
+    recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringMenu)");
+    return S_db_badChoice;
 }
-
-static long putStringDevice(
-    dbAddr *paddr,
+
+static long putStringDevice(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    dbFldDes            *pdbFldDes = paddr->pfldDes;
-    dbDeviceMenu        *pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt;
-    char                **papChoice;
-    char                *pchoice;
-    epicsEnum16 *pfield = (epicsEnum16*) paddr->pfield;
-    unsigned int        nChoice,ind;
-    int                 nargs,nchars;
+    dbFldDes *pdbFldDes = paddr->pfldDes;
+    dbDeviceMenu *pdbDeviceMenu = pdbFldDes->ftPvt;
+    epicsEnum16 *pfield = paddr->pfield;
+    char **pchoices, *pchoice;
 
-    if (no_elements!=1){
-        recGblDbaddrError(S_db_onlyOne,paddr,"dbPut(putStringDevice)");
-        return(S_db_onlyOne);
+    if (no_elements != 1) {
+        recGblDbaddrError(S_db_onlyOne, paddr, "dbPut(putStringDevice)");
+        return S_db_onlyOne;
     }
-    if (pdbFldDes
-    && (pdbDeviceMenu = (dbDeviceMenu *)pdbFldDes->ftPvt)
-    && (papChoice = pdbDeviceMenu->papChoice)) {
-        nChoice = pdbDeviceMenu->nChoice;
-        for(ind=0; ind<nChoice; ind++) {
-            if (!(pchoice=papChoice[ind])) continue;
-            if (strcmp(pchoice,pbuffer)==0) {
-                *pfield = ind;
+
+    if (pdbFldDes &&
+        (pdbDeviceMenu = pdbFldDes->ftPvt) &&
+        (pchoices = pdbDeviceMenu->papChoice)) {
+        int i, nChoice = pdbDeviceMenu->nChoice;
+        epicsEnum16 val;
+
+        for (i = 0; i < nChoice; i++) {
+            pchoice = pchoices[i];
+            if (!pchoice)
+                continue;
+            if (strcmp(pchoice, pfrom) == 0) {
+                *pfield = i;
                 return 0;
             }
         }
-        nargs = sscanf(pbuffer,"%u%n",&ind,&nchars);
-        if (nargs==1 && nchars==strlen(pbuffer) && ind<nChoice) {
-            *pfield = ind;
+
+        if (!epicsParseUInt16(pfrom, &val, 10, NULL) && val < nChoice) {
+            *pfield = val;
             return 0;
         }
     }
-    recGblDbaddrError(S_db_badChoice,paddr,"dbPut(putStringDevice)");
-    return(S_db_badChoice);
+    recGblDbaddrError(S_db_badChoice, paddr, "dbPut(putStringDevice)");
+    return S_db_badChoice;
 }
+
 
-static long putCharString(
-    dbAddr *paddr,
+static long putCharString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const char *pbuffer = (const char *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const char *psrc = (const char *) pfrom;
+    char *pdst = (char *) paddr->pfield;
+    short size = paddr->field_size;
+
+    if (nRequest==1 && offset==0) {
+        cvtCharToString(*psrc, pdst);
+        return 0;
+    }
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtCharToString(*psrc, pdst);
+        psrc++;
+        if (++offset == no_elements)
+            pdst = paddr->pfield;
+        else
+            pdst += size;
+    }
+    return 0;
+}
+
+static long putCharChar PUT_NOCONVERT(char, char)
+static long putCharUchar PUT_NOCONVERT(char, epicsUInt8)
+static long putCharShort PUT(char, epicsInt16)
+static long putCharUshort PUT(char, epicsUInt16)
+static long putCharLong PUT(char, epicsInt32)
+static long putCharUlong PUT(char, epicsUInt32)
+static long putCharInt64 PUT(char, epicsInt64)
+static long putCharUInt64 PUT(char, epicsUInt64)
+static long putCharFloat PUT(char, epicsFloat32)
+static long putCharDouble PUT(char, epicsFloat64)
+static long putCharEnum PUT(char, epicsEnum16)
+
+static long putUcharString(dbAddr *paddr,
+    const void *pfrom, long nRequest, long no_elements, long offset)
+{
+    const epicsUInt8 *psrc = (const epicsUInt8 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtCharToString(*pbuffer,pdest);
+        cvtUcharToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtCharToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtUcharToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = paddr->pfield;
+            pdst = paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putCharChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const char *pbuffer = (const char *) pfrom;
-        char *pdest = (char *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(char), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
+static long putUcharChar PUT_NOCONVERT(epicsUInt8, char)
+static long putUcharUchar PUT_NOCONVERT(epicsUInt8, epicsUInt8)
+static long putUcharShort PUT(epicsUInt8, epicsInt16)
+static long putUcharUshort PUT(epicsUInt8, epicsUInt16)
+static long putUcharLong PUT(epicsUInt8, epicsInt32)
+static long putUcharUlong PUT(epicsUInt8, epicsUInt32)
+static long putUcharInt64 PUT(epicsUInt8, epicsInt64)
+static long putUcharUInt64 PUT(epicsUInt8, epicsUInt64)
+static long putUcharFloat PUT(epicsUInt8, epicsFloat32)
+static long putUcharDouble PUT(epicsUInt8, epicsFloat64)
+static long putUcharEnum PUT(epicsUInt8, epicsEnum16)
 
-static long putCharUchar(
-    dbAddr *paddr,
+static long putShortString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    if (nRequest==1 && offset==0) {
-        const char *pbuffer = (const char *) pfrom;
-        epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt8), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putCharShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putCharUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putCharLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putCharUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putCharFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putCharDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putCharEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const char *pbuffer = (const char *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsInt16 *psrc = (const epicsInt16 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtUcharToString(*pbuffer,pdest);
+        cvtShortToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtUcharToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtShortToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putUcharChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-        char *pdest = (char *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt8), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
+static long putShortChar PUT(epicsInt16, char)
+static long putShortUchar PUT(epicsInt16, epicsUInt8)
+static long putShortShort PUT_NOCONVERT(epicsInt16, epicsInt16)
+static long putShortUshort PUT_NOCONVERT(epicsInt16, epicsUInt16)
+static long putShortLong PUT(epicsInt16, epicsInt32)
+static long putShortUlong PUT(epicsInt16, epicsUInt32)
+static long putShortInt64 PUT(epicsInt16, epicsInt64)
+static long putShortUInt64 PUT(epicsInt16, epicsUInt64)
+static long putShortFloat PUT(epicsInt16, epicsFloat32)
+static long putShortDouble PUT(epicsInt16, epicsFloat64)
+static long putShortEnum PUT(epicsInt16, epicsEnum16)
 
-static long putUcharUchar(
-    dbAddr *paddr,
+static long putUshortString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    if (nRequest==1 && offset==0) {
-        const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-        epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt8), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putUcharShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putUcharDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUcharEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt8 *pbuffer = (const epicsUInt8 *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putShortString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsUInt16 *psrc = (const epicsUInt16 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtShortToString(*pbuffer,pdest);
+        cvtUshortToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtShortToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtUshortToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putShortChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (char) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (char) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putUshortChar PUT(epicsUInt16, char)
+static long putUshortUchar PUT(epicsUInt16, epicsUInt8)
+static long putUshortShort PUT_NOCONVERT(epicsUInt16, epicsInt16)
+static long putUshortUshort PUT_NOCONVERT(epicsUInt16, epicsUInt16)
+static long putUshortLong PUT(epicsUInt16, epicsInt32)
+static long putUshortUlong PUT(epicsUInt16, epicsUInt32)
+static long putUshortInt64 PUT(epicsUInt16, epicsInt64)
+static long putUshortUInt64 PUT(epicsUInt16, epicsUInt64)
+static long putUshortFloat PUT(epicsUInt16, epicsFloat32)
+static long putUshortDouble PUT(epicsUInt16, epicsFloat64)
+static long putUshortEnum PUT(epicsUInt16, epicsEnum16)
 
-static long putShortUchar(
-    dbAddr *paddr,
+static long putLongString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt8) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt8) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putShortShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-        epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt16), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putShortUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-        epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt16), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putShortLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putShortUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putShortFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putShortDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putShortEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt16 *pbuffer = (const epicsInt16 *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUshortString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsInt32 *psrc = (const epicsInt32 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtUshortToString(*pbuffer,pdest);
+        cvtLongToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtUshortToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtLongToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putUshortChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (char) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (char) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putLongChar PUT(epicsInt32, char)
+static long putLongUchar PUT(epicsInt32, epicsUInt8)
+static long putLongShort PUT(epicsInt32, epicsInt16)
+static long putLongUshort PUT(epicsInt32, epicsUInt16)
+static long putLongLong PUT_NOCONVERT(epicsInt32, epicsInt32)
+static long putLongUlong PUT_NOCONVERT(epicsInt32, epicsUInt32)
+static long putLongInt64 PUT(epicsInt32, epicsInt64)
+static long putLongUInt64 PUT(epicsInt32, epicsUInt64)
+static long putLongFloat PUT(epicsInt32, epicsFloat32)
+static long putLongDouble PUT(epicsInt32, epicsFloat64)
+static long putLongEnum PUT(epicsInt32, epicsEnum16)
 
-static long putUshortUchar(
-    dbAddr *paddr,
+static long putUlongString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt8) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt8) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUshortShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-        epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt16), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putUshortUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-        epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt16), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putUshortLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUshortUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUshortFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putUshortDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUshortEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt16 *pbuffer = (const epicsUInt16 *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putLongString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsUInt32 *psrc = (const epicsUInt32 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtLongToString(*pbuffer,pdest);
+        cvtUlongToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtLongToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtUlongToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putLongChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putUlongChar PUT(epicsUInt32, char)
+static long putUlongUchar PUT(epicsUInt32, epicsUInt8)
+static long putUlongShort PUT(epicsUInt32, epicsInt16)
+static long putUlongUshort PUT(epicsUInt32, epicsUInt16)
+static long putUlongLong PUT_NOCONVERT(epicsUInt32, epicsInt32)
+static long putUlongUlong PUT_NOCONVERT(epicsUInt32, epicsUInt32)
+static long putUlongInt64 PUT(epicsUInt32, epicsInt64)
+static long putUlongUInt64 PUT(epicsUInt32, epicsUInt64)
+static long putUlongFloat PUT(epicsUInt32, epicsFloat32)
+static long putUlongDouble PUT(epicsUInt32, epicsFloat64)
+static long putUlongEnum PUT(epicsUInt32, epicsEnum16)
 
-static long putLongUchar(
-    dbAddr *paddr,
+static long putInt64String(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
+    const epicsInt64 *psrc = (const epicsInt64 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
+    short size=paddr->field_size;
+
 
     if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
+        cvtInt64ToString(*psrc, pdst);
         return 0;
     }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtInt64ToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putLongShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putLongUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putLongLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-        epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putLongUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-        epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putLongFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (float) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (float) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putLongDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putLongEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsInt32 *pbuffer = (const epicsInt32 *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUlongString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-    short size = paddr->field_size;
-
-
-    if (nRequest==1 && offset==0) {
-        cvtUlongToString(*pbuffer,pdest);
-        return 0;
-    }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtUlongToString(*pbuffer,pdest);
-        pbuffer++;
-        if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putUlongChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putInt64Char PUT(epicsInt64, char)
+static long putInt64Uchar PUT(epicsInt64, epicsUInt8)
+static long putInt64Short PUT(epicsInt64, epicsInt16)
+static long putInt64Ushort PUT(epicsInt64, epicsUInt16)
+static long putInt64Long PUT(epicsInt64, epicsInt32)
+static long putInt64Ulong PUT(epicsInt64, epicsUInt32)
+static long putInt64Int64 PUT_NOCONVERT(epicsInt64, epicsInt64)
+static long putInt64UInt64 PUT_NOCONVERT(epicsInt64, epicsUInt64)
+static long putInt64Float PUT(epicsInt64, epicsFloat32)
+static long putInt64Double PUT(epicsInt64, epicsFloat64)
+static long putInt64Enum PUT(epicsInt64, epicsEnum16)
 
-static long putUlongUchar(
-    dbAddr *paddr,
+static long putUInt64String(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
+    const epicsUInt64 *psrc = (const epicsUInt64 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
+    short size=paddr->field_size;
+
 
     if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
+        cvtUlongToString(*psrc, pdst);
         return 0;
     }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtUlongToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
+            pdst = (char *) paddr->pfield;
+        else
+            pdst += size;
     }
     return 0;
 }
 
-static long putUlongShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putUInt64Char PUT(epicsUInt64, char)
+static long putUInt64Uchar PUT(epicsUInt64, epicsUInt8)
+static long putUInt64Short PUT(epicsUInt64, epicsInt16)
+static long putUInt64Ushort PUT(epicsUInt64, epicsUInt16)
+static long putUInt64Long PUT(epicsUInt64, epicsInt32)
+static long putUInt64Ulong PUT(epicsUInt64, epicsUInt32)
+static long putUInt64Int64 PUT_NOCONVERT(epicsUInt64, epicsInt64)
+static long putUInt64UInt64 PUT_NOCONVERT(epicsUInt64, epicsUInt64)
+static long putUInt64Float PUT(epicsUInt64, epicsFloat32)
+static long putUInt64Double PUT(epicsUInt64, epicsFloat64)
+static long putUInt64Enum PUT(epicsUInt64, epicsEnum16)
 
-static long putUlongUshort(
-    dbAddr *paddr,
+static long putFloatString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUlongLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-        epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putUlongUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-        epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsUInt32), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putUlongFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (float) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (float) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putUlongDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putUlongEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsUInt32 *pbuffer = (const epicsUInt32 *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    char        *pdest = (char *) paddr->pfield;
+    const epicsFloat32 *psrc = (const epicsFloat32 *) pfrom;
+    char        *pdst = (char *) paddr->pfield;
     long        status = 0;
-    int         precision = 6;
-    struct rset *prset = dbGetRset(paddr);
+    long        precision = 6;
+    struct rset *prset = 0;
     short size = paddr->field_size;
 
-    if (prset && (prset->get_precision))
-        status = (*prset->get_precision)(paddr,&precision);
+    if (paddr)
+        prset = dbGetRset(paddr);
+    if (prset && prset->get_precision)
+        status = prset->get_precision(paddr, &precision);
     if (nRequest==1 && offset==0) {
-        cvtFloatToString(*pbuffer,pdest,precision);
+        cvtFloatToString(*psrc, pdst, precision);
         return(status);
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtFloatToString(*pbuffer,pdest,precision);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtFloatToString(*psrc, pdst, precision);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return(status);
 }
 
-static long putFloatChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    char  *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (char) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (char) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
+static long putFloatChar PUT(epicsFloat32, char)
+static long putFloatUchar PUT(epicsFloat32, epicsUInt8)
+static long putFloatShort PUT(epicsFloat32, epicsInt16)
+static long putFloatUshort PUT(epicsFloat32, epicsUInt16)
+static long putFloatLong PUT(epicsFloat32, epicsInt32)
+static long putFloatUlong PUT(epicsFloat32, epicsUInt32)
+static long putFloatInt64 PUT(epicsFloat32, epicsInt64)
+static long putFloatUInt64 PUT(epicsFloat32, epicsUInt64)
+static long putFloatFloat PUT_NOCONVERT(epicsFloat32, epicsFloat32)
+static long putFloatDouble PUT(epicsFloat32, epicsFloat64)
+static long putFloatEnum PUT(epicsFloat32, epicsEnum16)
 
-static long putFloatUchar(
-    dbAddr *paddr,
+static long putDoubleString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const float *pbuffer = (const float *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt8) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt8) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsInt16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsInt16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsInt32) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsInt32) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt32) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt32) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const float *pbuffer = (const float *) pfrom;
-        float *pdest = (float *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(float), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
- 
-static long putFloatDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putFloatEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const float *pbuffer = (const float *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsEnum16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsEnum16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    char        *pdest = (char *) paddr->pfield;
+    const epicsFloat64 *psrc = (const epicsFloat64 *) pfrom;
+    char        *pdst = (char *) paddr->pfield;
     long        status = 0;
-    int         precision = 6;
-    struct rset *prset = dbGetRset(paddr);
+    long        precision = 6;
+    struct rset *prset = 0;
     short size = paddr->field_size;
 
-    if (prset && (prset->get_precision))
-        status = (*prset->get_precision)(paddr,&precision);
+    if (paddr)
+        prset = dbGetRset(paddr);
+    if (prset && prset->get_precision)
+        status = prset->get_precision(paddr, &precision);
     if (nRequest==1 && offset==0) {
-        cvtDoubleToString(*pbuffer,pdest,precision);
-        return(status);
+        cvtDoubleToString(*psrc, pdst, precision);
+        return status;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtDoubleToString(*pbuffer,pdest,precision);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtDoubleToString(*psrc, pdst, precision);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
-    return(status);
+    return status;
 }
 
-static long putDoubleChar(
-    dbAddr *paddr,
+static long putDoubleChar PUT(epicsFloat64, char)
+static long putDoubleUchar PUT(epicsFloat64, epicsUInt8)
+static long putDoubleShort PUT(epicsFloat64, epicsInt16)
+static long putDoubleUshort PUT(epicsFloat64, epicsUInt16)
+static long putDoubleLong PUT(epicsFloat64, epicsInt32)
+static long putDoubleUlong PUT(epicsFloat64, epicsUInt32)
+static long putDoubleInt64 PUT(epicsFloat64, epicsInt64)
+static long putDoubleUInt64 PUT(epicsFloat64, epicsUInt64)
+
+static long putDoubleFloat(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const double *pbuffer = (const double *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsFloat64 *psrc = (const epicsFloat64 *) pfrom;
+    epicsFloat32 *pdst = (epicsFloat32 *) paddr->pfield;
 
     if (nRequest==1 && offset==0) {
-        *pdest = (char) *pbuffer;
+        *pdst = epicsConvertDoubleToFloat(*psrc);
         return 0;
     }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (char) *pbuffer++;
+    pdst += offset;
+    while (nRequest--) {
+        *pdst++ = epicsConvertDoubleToFloat(*psrc++);
         if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
+            pdst = (epicsFloat32 *) paddr->pfield;
     }
     return 0;
 }
+
+static long putDoubleDouble PUT_NOCONVERT(epicsFloat64, epicsFloat64)
+static long putDoubleEnum PUT(epicsFloat64, epicsEnum16)
 
-static long putDoubleUchar(
-    dbAddr *paddr,
+static long putEnumString(dbAddr *paddr,
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
-    const double *pbuffer = (const double *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt8) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt8) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsInt16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsInt16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsInt32) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsInt32) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt32) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt32) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putDoubleFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = epicsConvertDoubleToFloat(*pbuffer);
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest = epicsConvertDoubleToFloat(*pbuffer);
-        ++pbuffer; ++pdest;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putDoubleDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const double *pbuffer = (const double *) pfrom;
-        double *pdest = (double *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(double), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
-
-static long putDoubleEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const double *pbuffer = (const double *) pfrom;
-    epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsEnum16) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsEnum16) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsEnum16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumString(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
+    const epicsEnum16 *psrc = (const epicsEnum16 *) pfrom;
+    char *pdst = (char *) paddr->pfield;
     short size = paddr->field_size;
 
 
     if (nRequest==1 && offset==0) {
-        cvtUshortToString(*pbuffer,pdest);
+        cvtUshortToString(*psrc, pdst);
         return 0;
     }
-    pdest += (size*offset);
-    while (nRequest) {
-        cvtUshortToString(*pbuffer,pdest);
-        pbuffer++;
+    pdst += (size*offset);
+    while (nRequest--) {
+        cvtUshortToString(*psrc, pdst);
+        psrc++;
         if (++offset == no_elements)
-                pdest = (char *) paddr->pfield;
+            pdst = (char *) paddr->pfield;
         else
-                pdest += size;
-        nRequest--;
+            pdst += size;
     }
     return 0;
 }
 
-static long putEnumChar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    char *pdest = (char *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (char) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (char) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (char *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumUchar(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    epicsUInt8 *pdest = (epicsUInt8 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = (epicsUInt8) *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = (epicsUInt8) *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt8 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumShort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    epicsInt16 *pdest = (epicsInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumUshort(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    epicsUInt16 *pdest = (epicsUInt16 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt16 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumLong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    epicsInt32 *pdest = (epicsInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumUlong(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    epicsUInt32 *pdest = (epicsUInt32 *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (epicsUInt32 *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumFloat(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    float *pdest = (float *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (float *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
- 
-static long putEnumDouble(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-    double *pdest = (double *) paddr->pfield;
-
-    if (nRequest==1 && offset==0) {
-        *pdest = *pbuffer;
-        return 0;
-    }
-    pdest += offset;
-    while (nRequest) {
-        *pdest++ = *pbuffer++;
-        if (++offset == no_elements)
-            pdest = (double *) paddr->pfield;
-        nRequest--;
-    }
-    return 0;
-}
-
-static long putEnumEnum(
-    dbAddr *paddr,
-    const void *pfrom, long nRequest, long no_elements, long offset)
-{
-    if (nRequest==1 && offset==0) {
-        const epicsEnum16 *pbuffer = (const epicsEnum16 *) pfrom;
-        epicsEnum16 *pdest = (epicsEnum16 *) paddr->pfield;
-
-        *pdest = *pbuffer;
-        return 0;
-    }
-    COPYNOCONVERT(sizeof(epicsEnum16), pfrom, paddr->pfield, nRequest, no_elements, offset);
-    return 0;
-}
+static long putEnumChar PUT(epicsEnum16, char)
+static long putEnumUchar PUT(epicsEnum16, epicsUInt8)
+static long putEnumShort PUT(epicsEnum16, epicsInt16)
+static long putEnumUshort PUT(epicsEnum16, epicsUInt16)
+static long putEnumLong PUT(epicsEnum16, epicsInt32)
+static long putEnumUlong PUT(epicsEnum16, epicsUInt32)
+static long putEnumInt64 PUT(epicsEnum16, epicsInt64)
+static long putEnumUInt64 PUT(epicsEnum16, epicsUInt64)
+static long putEnumFloat PUT(epicsEnum16, epicsFloat32)
+static long putEnumDouble PUT(epicsEnum16, epicsFloat64)
+static long putEnumEnum PUT_NOCONVERT(epicsEnum16, epicsEnum16)
 
 /* This is the table of routines for converting database fields */
 /* the rows represent the field type of the database field */
@@ -4574,47 +1700,68 @@ static long putEnumEnum(
 
 /* buffer types are********************************************************
  DBR_STRING,      DBR_CHR,         DBR_UCHAR,       DBR_SHORT,       DBR_USHORT,
- DBR_LONG,        DBR_ULONG,       DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
+ DBR_LONG,        DBR_ULONG,       DBR_INT64,       DBR_UINT64,
+ DBR_FLOAT,       DBR_DOUBLE,      DBR_ENUM
  ***************************************************************************/
 
 epicsShareDef GETCONVERTFUNC dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
 
 /* source is a DBF_STRING               */
 {getStringString, getStringChar,   getStringUchar,  getStringShort,  getStringUshort,
- getStringLong,   getStringUlong,  getStringFloat,  getStringDouble, getStringEnum},
+ getStringLong,   getStringUlong,  getStringInt64,  getStringUInt64,
+ getStringFloat,  getStringDouble, getStringUshort},
 /* source is a DBF_CHAR                 */
 {getCharString,   getCharChar,     getCharUchar,    getCharShort,    getCharUshort,
- getCharLong,     getCharUlong,    getCharFloat,    getCharDouble,   getCharEnum},
+ getCharLong,     getCharUlong,    getCharInt64,    getCharUInt64,
+ getCharFloat,    getCharDouble,   getCharEnum},
 /* source is a DBF_UCHAR                */
 {getUcharString,  getUcharChar,    getUcharUchar,   getUcharShort,   getUcharUshort,
- getUcharLong,    getUcharUlong,   getUcharFloat,   getUcharDouble,  getUcharEnum},
+ getUcharLong,    getUcharUlong,   getUcharInt64,   getUcharUInt64,
+ getUcharFloat,   getUcharDouble,  getUcharEnum},
 /* source is a DBF_SHORT                */
 {getShortString,  getShortChar,    getShortUchar,   getShortShort,   getShortUshort,
- getShortLong,    getShortUlong,   getShortFloat,   getShortDouble,  getShortEnum},
+ getShortLong,    getShortUlong,   getShortInt64,   getShortUInt64,
+ getShortFloat,   getShortDouble,  getShortEnum},
 /* source is a DBF_USHORT               */
 {getUshortString, getUshortChar,   getUshortUchar,  getUshortShort,  getUshortUshort,
- getUshortLong,   getUshortUlong,  getUshortFloat,  getUshortDouble, getUshortEnum},
-/* source is a DBF_LONG         */
+ getUshortLong,   getUshortUlong,  getUshortInt64,  getUshortUInt64,
+ getUshortFloat,  getUshortDouble, getUshortEnum},
+/* source is a DBF_LONG                 */
 {getLongString,   getLongChar,     getLongUchar,    getLongShort,    getLongUshort,
- getLongLong,     getLongUlong,    getLongFloat,    getLongDouble,   getLongEnum},
+ getLongLong,     getLongUlong,    getLongInt64,    getLongUInt64,
+ getLongFloat,    getLongDouble,   getLongEnum},
 /* source is a DBF_ULONG                */
 {getUlongString,  getUlongChar,    getUlongUchar,   getUlongShort,   getUlongUshort,
- getUlongLong,    getUlongUlong,   getUlongFloat,   getUlongDouble,  getUlongEnum},
+ getUlongLong,    getUlongUlong,   getUlongInt64,   getUlongUInt64,
+ getUlongFloat,   getUlongDouble,  getUlongEnum},
+/* source is a DBF_INT64                */
+{getInt64String,  getInt64Char,    getInt64Uchar,   getInt64Short,   getInt64Ushort,
+ getInt64Long,    getInt64Ulong,   getInt64Int64,   getInt64UInt64,
+ getInt64Float,   getInt64Double,  getInt64Enum},
+/* source is a DBF_UINT64               */
+{getUInt64String, getUInt64Char,   getUInt64Uchar,  getUInt64Short,  getUInt64Ushort,
+ getUInt64Long,   getUInt64Ulong,  getUInt64Int64,  getUInt64UInt64,
+ getUInt64Float,  getUInt64Double, getUInt64Enum},
 /* source is a DBF_FLOAT                */
 {getFloatString,  getFloatChar,    getFloatUchar,   getFloatShort,   getFloatUshort,
- getFloatLong,    getFloatUlong,   getFloatFloat,   getFloatDouble,  getFloatEnum},
+ getFloatLong,    getFloatUlong,   getFloatInt64,   getFloatUInt64,
+ getFloatFloat,   getFloatDouble,  getFloatEnum},
 /* source is a DBF_DOUBLE               */
 {getDoubleString, getDoubleChar,   getDoubleUchar,  getDoubleShort,  getDoubleUshort,
- getDoubleLong,   getDoubleUlong,  getDoubleFloat,  getDoubleDouble, getDoubleEnum},
-/* source is a DBF_ENUM         */
+ getDoubleLong,   getDoubleUlong,  getDoubleInt64,  getDoubleUInt64,
+ getDoubleFloat,  getDoubleDouble, getDoubleEnum},
+/* source is a DBF_ENUM                 */
 {getEnumString,   getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
- getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
-/* source is a DBF_MENU */
+ getEnumLong,     getEnumUlong,    getEnumInt64,    getEnumUInt64,
+ getEnumFloat,    getEnumDouble,   getEnumEnum},
+/* source is a DBF_MENU                 */
 {getMenuString,   getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
- getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
-/* source is a DBF_DEVICE       */
-{getDeviceString,getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
- getEnumLong,     getEnumUlong,    getEnumFloat,    getEnumDouble,   getEnumEnum},
+ getEnumLong,     getEnumUlong,    getEnumInt64,    getEnumUInt64,
+ getEnumFloat,    getEnumDouble,   getEnumEnum},
+/* source is a DBF_DEVICE               */
+{getDeviceString, getEnumChar,     getEnumUchar,    getEnumShort,    getEnumUshort,
+ getEnumLong,     getEnumUlong,    getEnumInt64,    getEnumUInt64,
+ getEnumFloat,    getEnumDouble,   getEnumEnum},
 };
 
 /* This is the table of routines for converting database fields */
@@ -4623,49 +1770,70 @@ epicsShareDef GETCONVERTFUNC dbGetConvertRoutine[DBF_DEVICE+1][DBR_ENUM+1] = {
 
 /* field types are********************************************************
  DBF_STRING,      DBF_CHAR,        DBF_UCHAR,       DBF_SHORT,       DBF_USHORT,
- DBF_LONG,        DBF_ULONG,       DBF_FLOAT,       DBF_DOUBLE,      DBF_ENUM
+ DBF_LONG,        DBF_ULONG,       DBF_INT64,       DBF_UINT64,
+ DBF_FLOAT,       DBF_DOUBLE,      DBF_ENUM
  DBF_MENU,        DBF_DEVICE
  ***************************************************************************/
 
 epicsShareDef PUTCONVERTFUNC dbPutConvertRoutine[DBR_ENUM+1][DBF_DEVICE+1] = {
 /* source is a DBR_STRING               */
 {putStringString, putStringChar,   putStringUchar,  putStringShort,  putStringUshort,
- putStringLong,   putStringUlong,  putStringFloat,  putStringDouble, putStringEnum,
- putStringMenu,putStringDevice},
-/* source is a DBR_CHAR         */
+ putStringLong,   putStringUlong,  putStringInt64,  putStringUInt64,
+ putStringFloat,  putStringDouble, putStringEnum,
+ putStringMenu,   putStringDevice},
+/* source is a DBR_CHAR                 */
 {putCharString,   putCharChar,     putCharUchar,    putCharShort,    putCharUshort,
- putCharLong,     putCharUlong,    putCharFloat,    putCharDouble,   putCharEnum,
+ putCharLong,     putCharUlong,    putCharInt64,    putCharUInt64,
+ putCharFloat,    putCharDouble,   putCharEnum,
  putCharEnum,     putCharEnum},
 /* source is a DBR_UCHAR                */
 {putUcharString,  putUcharChar,    putUcharUchar,   putUcharShort,   putUcharUshort,
- putUcharLong,    putUcharUlong,   putUcharFloat,   putUcharDouble,  putUcharEnum,
+ putUcharLong,    putUcharUlong,   putUcharInt64,   putUcharUInt64,
+ putUcharFloat,   putUcharDouble,  putUcharEnum,
  putUcharEnum,    putUcharEnum},
 /* source is a DBR_SHORT                */
 {putShortString,  putShortChar,    putShortUchar,   putShortShort,   putShortUshort,
- putShortLong,    putShortUlong,   putShortFloat,   putShortDouble,  putShortEnum,
+ putShortLong,    putShortUlong,   putShortInt64,   putShortUInt64,
+ putShortFloat,   putShortDouble,  putShortEnum,
  putShortEnum,    putShortEnum},
 /* source is a DBR_USHORT               */
 {putUshortString, putUshortChar,   putUshortUchar,  putUshortShort,  putUshortUshort,
- putUshortLong,   putUshortUlong,  putUshortFloat,  putUshortDouble, putUshortEnum,
+ putUshortLong,   putUshortUlong,  putUshortInt64,  putUshortUInt64,
+ putUshortFloat,  putUshortDouble, putUshortEnum,
  putUshortEnum,   putUshortEnum},
-/* source is a DBR_LONG         */
+/* source is a DBR_LONG                 */
 {putLongString,   putLongChar,     putLongUchar,    putLongShort,    putLongUshort,
- putLongLong,     putLongUlong,    putLongFloat,    putLongDouble,   putLongEnum,
+ putLongLong,     putLongUlong,    putLongInt64,    putLongUInt64,
+ putLongFloat,    putLongDouble,   putLongEnum,
  putLongEnum,     putLongEnum},
 /* source is a DBR_ULONG                */
 {putUlongString,  putUlongChar,    putUlongUchar,   putUlongShort,   putUlongUshort,
- putUlongLong,    putUlongUlong,   putUlongFloat,   putUlongDouble,  putUlongEnum,
+ putUlongLong,    putUlongUlong,   putUlongInt64,   putUlongUInt64,
+ putUlongFloat,   putUlongDouble,  putUlongEnum,
  putUlongEnum,    putUlongEnum},
+/* source is a DBR_INT64                */
+{putInt64String,  putInt64Char,    putInt64Uchar,   putInt64Short,   putInt64Ushort,
+ putInt64Long,    putInt64Ulong,   putInt64Int64,   putInt64UInt64,
+ putInt64Float,   putInt64Double,  putInt64Enum,
+ putInt64Enum,    putInt64Enum},
+/* source is a DBR_UINT64               */
+{putUInt64String, putUInt64Char,   putUInt64Uchar,  putUInt64Short,  putUInt64Ushort,
+ putUInt64Long,   putUInt64Ulong,  putUInt64Int64,  putUInt64UInt64,
+ putUInt64Float,  putUInt64Double, putUInt64Enum,
+ putUInt64Enum,   putUInt64Enum},
 /* source is a DBR_FLOAT                */
 {putFloatString,  putFloatChar,    putFloatUchar,   putFloatShort,   putFloatUshort,
- putFloatLong,    putFloatUlong,   putFloatFloat,   putFloatDouble,  putFloatEnum,
+ putFloatLong,    putFloatUlong,   putFloatInt64,   putFloatUInt64,
+ putFloatFloat,   putFloatDouble,  putFloatEnum,
  putFloatEnum,    putFloatEnum},
 /* source is a DBR_DOUBLE               */
 {putDoubleString, putDoubleChar,   putDoubleUchar,  putDoubleShort,  putDoubleUshort,
- putDoubleLong,   putDoubleUlong,  putDoubleFloat,  putDoubleDouble, putDoubleEnum,
+ putDoubleLong,   putDoubleUlong,  putDoubleInt64,  putDoubleUInt64,
+ putDoubleFloat,  putDoubleDouble, putDoubleEnum,
  putDoubleEnum,   putDoubleEnum},
-/* source is a DBR_ENUM         */
+/* source is a DBR_ENUM                 */
 {putEnumString,   putEnumChar,     putEnumUchar,    putEnumShort,    putEnumUshort,
- putEnumLong,     putEnumUlong,    putEnumFloat,    putEnumDouble,   putEnumEnum,
+ putEnumLong,     putEnumUlong,    putEnumInt64,    putEnumUInt64,
+ putEnumFloat,    putEnumDouble,   putEnumEnum,
  putEnumEnum,     putEnumEnum}
 };

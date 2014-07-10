@@ -12,6 +12,8 @@ our %field_types = (
     DBF_USHORT   => $RXuintx,
     DBF_LONG     => $RXintx,
     DBF_ULONG    => $RXuintx,
+    DBF_INT64    => $RXintx,
+    DBF_UINT64   => $RXuintx,
     DBF_FLOAT    => $RXnum,
     DBF_DOUBLE   => $RXnum,
     DBF_ENUM     => qr/.*/,
@@ -314,6 +316,43 @@ sub legal_value {
 
 sub toDeclaration {
     return shift->SUPER::toDeclaration("epicsUInt32");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_INT64;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXint $/x);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsInt64");
+}
+
+
+################################################################################
+
+package DBD::Recfield::DBF_UINT64;
+
+use DBD::Base;
+@ISA = qw(DBD::Recfield);
+
+sub legal_value {
+    my ($this, $value) = @_;
+    $value =~ s/^ ( $RXhex | $RXoct ) $/ oct($1) /xe;
+    return ($value =~ m/^ $RXuint $/x and
+            $value >= 0);
+}
+
+sub toDeclaration {
+    return shift->SUPER::toDeclaration("epicsUInt64");
 }
 
 

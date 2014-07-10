@@ -119,6 +119,8 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 	case DBF_USHORT:
 	case DBF_LONG:
 	case DBF_ULONG:
+	case DBF_INT64:
+	case DBF_UINT64:
 	case DBF_FLOAT:
 	case DBF_DOUBLE:
 	case DBF_ENUM:
@@ -204,277 +206,291 @@ int dbIsMacroOk(DBENTRY *pdbentry) { return(FALSE); }
 
 epicsShareFunc int dbIsDefaultValue(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void        *pfield = pdbentry->pfield;
+    dbFldDes *pflddes = pdbentry->pflddes;
+    void *pfield = pdbentry->pfield;
 
-    if(!pflddes) return(FALSE);
-    if(!pfield) return(FALSE);
+    if (!pflddes || !pfield)
+        return FALSE;
+
     switch (pflddes->field_type) {
-	case (DBF_STRING) : {
-	    char *p = (char *)pfield;
-	
-	    if(!pflddes->initial) return((strlen(p)==0) ? TRUE : FALSE);
-	    return((strcmp(pflddes->initial,p)==0) ? TRUE : FALSE);
-	}
-	case DBF_CHAR: {
-	    char	field = *(char *)pfield;
-	    long	ltemp;
-	    if(pflddes->initial)  {
-		ltemp = strtol(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_UCHAR: {
-	    unsigned char	field = *(unsigned char *)pfield;
-	    unsigned long	ltemp;
+        case DBF_STRING: {
+            char *p = (char *)pfield;
 
-	    if(pflddes->initial)  {
-		ltemp = strtoul(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_SHORT: {
-	    short	field = *(short *)pfield;
-	    long	ltemp;
+            return pflddes->initial ? ! strcmp(pflddes->initial, p)
+                : ! strlen(p);
+        }
+        case DBF_CHAR: {
+            epicsInt8 field = *(epicsInt8 *)pfield;
+            epicsInt8 def;
 
-	    if(pflddes->initial)  {
-		ltemp = strtol(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_USHORT: {
-	    unsigned short	field = *(unsigned short *)pfield;
-	    unsigned long	ltemp;
+            if (!pflddes->initial)
+                return field == 0;
 
-	    if(pflddes->initial)  {
-		ltemp = strtoul(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_LONG: {
-	    long	field = *(long *)pfield;
-	    long	ltemp;
+            return ! epicsParseInt8(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_UCHAR: {
+            epicsUInt8 field = *(epicsUInt8 *)pfield;
+            epicsUInt8 def;
 
-	    if(pflddes->initial)  {
-		ltemp = strtol(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_ULONG: {
-	    unsigned long	field = *(unsigned long *)pfield;
-	    unsigned long	ltemp;
+            if (!pflddes->initial)
+                return field == 0;
 
-	    if(pflddes->initial)  {
-		ltemp = strtoul(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_FLOAT: {
-	    float	field = *(float *)pfield;
-	    double	dtemp;
+            return ! epicsParseUInt8(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_SHORT: {
+            epicsInt16 field = *(epicsInt16 *)pfield;
+            epicsInt16 def;
 
-	    if(pflddes->initial)  {
-		dtemp = epicsStrtod(pflddes->initial,NULL);
-		return((field==dtemp));
-	    }
-	    return((field==0.0));
-	}
-	case DBF_DOUBLE: {
-	    double	field = *(double *)pfield;
-	    double	dtemp;
+            if (!pflddes->initial)
+                return field == 0;
 
-	    if(pflddes->initial)  {
-		dtemp = epicsStrtod(pflddes->initial,NULL);
-		return((field==dtemp));
-	    }
-	    return((field==0.0));
-	}
-	case DBF_ENUM: {
-	    unsigned short	field = *(unsigned short *)pfield;
-	    unsigned long	ltemp;
+            return ! epicsParseInt16(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_ENUM:
+        case DBF_USHORT: {
+            epicsUInt16 field = *(epicsUInt16 *)pfield;
+            epicsUInt16 def;
 
-	    if(pflddes->initial)  {
-		ltemp = strtoul(pflddes->initial,NULL,0);
-		return((field==ltemp));
-	    }
-	    return((field==0));
-	}
-	case DBF_MENU: {
-	    unsigned short	field = *(unsigned short *)pfield;
-	    long 		value;
-	    char 		*endp;
+            if (!pflddes->initial)
+                return field == 0;
 
-	    if(pflddes->initial) {
-		value = dbGetMenuIndexFromString(pdbentry,pflddes->initial);
-		if(value==-1) {
-		    value = strtol(pflddes->initial,&endp,0);
-		    if(*endp!='\0') return(FALSE);
-		}
-	    } else {
-		value = 0;
-	    }
-	    if((unsigned short)value == field) return(TRUE);
-	    return(FALSE);
-	}
-	case DBF_DEVICE: {
-		dbRecordType	*precordType = pdbentry->precordType;
+            return ! epicsParseUInt16(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_LONG: {
+            epicsInt32 field = *(epicsInt32 *)pfield;
+            epicsInt32 def;
 
-		if(!precordType) {
-		    epicsPrintf("dbIsDefaultValue: pdbRecordType is NULL??\n");
-		    return(FALSE);
-		}
-		if(ellCount(&precordType->devList)==0) return(TRUE);
-		return(FALSE);
-	}
-	case DBF_INLINK:
-	case DBF_OUTLINK:
-	case DBF_FWDLINK: {
-	    struct link *plink = (struct link *)pfield;
+            if (!pflddes->initial)
+                return field == 0;
 
-	    if(!plink) return(FALSE);
-	    if(plink->type!=CONSTANT) return(FALSE);
-	    if(plink->value.constantStr == 0) return(TRUE);
-	    if(!pflddes->initial) return(FALSE);
-	    if(strcmp(plink->value.constantStr,pflddes->initial)==0)
-		return(TRUE);
-	    return(FALSE);
-	}
-	default:
-	    return(TRUE);
+            return ! epicsParseInt32(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_ULONG: {
+            epicsUInt32 field = *(epicsUInt32 *)pfield;
+            epicsUInt32 def;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            return ! epicsParseUInt32(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_INT64: {
+            epicsInt64 field = *(epicsInt64 *)pfield;
+            epicsInt64 def;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            return ! epicsParseInt64(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_UINT64: {
+            epicsUInt64 field = *(epicsUInt64 *)pfield;
+            epicsUInt64 def;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            return ! epicsParseUInt64(pflddes->initial, &def, 0, NULL)
+                && field == def;
+        }
+        case DBF_FLOAT: {
+            epicsFloat32 field = *(epicsFloat32 *)pfield;
+            epicsFloat32 def;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            return ! epicsParseFloat32(pflddes->initial, &def, NULL)
+                && field == def;
+        }
+        case DBF_DOUBLE: {
+            epicsFloat64 field = *(epicsFloat64 *)pfield;
+            epicsFloat64 def;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            return ! epicsParseFloat64(pflddes->initial, &def, NULL)
+                && field == def;
+        }
+        case DBF_MENU: {
+            epicsEnum16 field = *(epicsEnum16 *)pfield;
+            epicsEnum16 def;
+            int index;
+
+            if (!pflddes->initial)
+                return field == 0;
+
+            index = dbGetMenuIndexFromString(pdbentry, pflddes->initial);
+            if (index < 0) {
+                if (epicsParseUInt16(pflddes->initial, &def, 0, NULL))
+                    return FALSE;
+            }
+            else
+                def = index;
+            return field == def;
+        }
+        case DBF_DEVICE: {
+            dbRecordType *precordType = pdbentry->precordType;
+
+            if (!precordType) {
+                epicsPrintf("dbIsDefaultValue: pdbRecordType is NULL??\n");
+                return FALSE;
+            }
+            return ellCount(&precordType->devList) == 0;
+        }
+        case DBF_INLINK:
+        case DBF_OUTLINK:
+        case DBF_FWDLINK: {
+            struct link *plink = (struct link *)pfield;
+
+            if (!plink || plink->type != CONSTANT)
+                return FALSE;
+
+            /* These conditions don't make a lot of sense... */
+            if (!plink->value.constantStr)
+                return TRUE;
+
+            if (!pflddes->initial)  /* Default value for a link field? */
+                return FALSE;
+
+            return !strcmp(plink->value.constantStr, pflddes->initial);
+        }
+        default:
+            return TRUE;
     }
-    return(FALSE);
 }
 
-long dbPutStringNum(DBENTRY *pdbentry,const char *pstring)
+long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
-    long	status=0;
+    dbFldDes *pflddes = pdbentry->pflddes;
+    void *pfield = pdbentry->pfield;
 
-    if(!pfield) return(S_dbLib_fieldNotFound);
+    if (!pfield)
+        return S_dbLib_fieldNotFound;
+
     switch (pflddes->field_type) {
-    case DBF_CHAR :
-    case DBF_SHORT :
-    case DBF_LONG:{
-	    long  value;
-	    char  *endp;
+    case DBF_CHAR:
+        return epicsParseInt8(pstring, pfield, 0, NULL);
 
-	    value = strtol(pstring,&endp,0);
-	    if(*endp!=0) status = S_dbLib_badField;
-	    switch (pflddes->field_type) {
-        case DBF_CHAR : *(char *)pfield = (char)value; break;
-        case DBF_SHORT : *(short *)pfield = (short)value; break;
-        case DBF_LONG : *(epicsInt32 *)pfield = (epicsInt32)value; break;
-	    default: epicsPrintf("Logic error in dbPutStringNum\n");
-	    }
-	}
-	break;
     case DBF_UCHAR:
+        return epicsParseUInt8(pstring, pfield, 0, NULL);
+
+    case DBF_SHORT:
+        return epicsParseInt16(pstring, pfield, 0, NULL);
+
     case DBF_USHORT:
+    case DBF_ENUM:
+        return epicsParseUInt16(pstring, pfield, 0, NULL);
+
+    case DBF_LONG:
+        return epicsParseInt32(pstring, pfield, 0, NULL);
+
     case DBF_ULONG:
-    case DBF_ENUM:{
-	    unsigned long  value;
-	    char  *endp;
+        return epicsParseUInt32(pstring, pfield, 0, NULL);
 
-	    value = strtoul(pstring,&endp,0);
-	    if(*endp!=0) status = S_dbLib_badField;
-	    switch (pflddes->field_type) {
-        case DBF_UCHAR : *(unsigned char *)pfield = (unsigned char)value; break;
-	    case DBF_USHORT:
-        case DBF_ENUM: *(unsigned short *)pfield = (unsigned short)value; break;
-        case DBF_ULONG : *(epicsUInt32 *)pfield = (epicsUInt32)value; break;
-	    default: epicsPrintf("Logic error in dbPutStringNum\n");
-	    }
-	}
-	break;
+    case DBF_INT64:
+        return epicsParseInt64(pstring, pfield, 0, NULL);
+
+    case DBF_UINT64:
+        return epicsParseUInt64(pstring, pfield, 0, NULL);
+
     case DBF_FLOAT:
-    case DBF_DOUBLE: {	
-	    double value;
-	    char  *endp;
+        return epicsParseFloat32(pstring, pfield, NULL);
 
-	    value = epicsStrtod(pstring,&endp);
-	    if(*endp!=0) status = S_dbLib_badField;
-	    if(pflddes->field_type == DBF_FLOAT)
-	        *(float *)pfield = (float)value;
-	    else
-		*(double *)pfield = value;
-	}
-	break;
+    case DBF_DOUBLE:
+        return epicsParseFloat64(pstring, pfield, NULL);
+
     case DBF_MENU:
-    case DBF_DEVICE: {/*Must allow value that is choice or index*/
-	    unsigned short	*field= (unsigned short*)pfield;
-	    int			ind;
-	    long		value;
-	    char		*endp;
+    case DBF_DEVICE: {
+            epicsEnum16 *field = (epicsEnum16 *) pfield;
+            int index = dbGetMenuIndexFromString(pdbentry, pstring);
 
-	    ind = dbGetMenuIndexFromString(pdbentry,pstring);
-	    if(ind==-1) {
-		value = strtol(pstring,&endp,0);
-		if(*endp!='\0') return(S_dbLib_badField);
-		ind = value;
-		/*Check that ind is withing range*/
-		if(!dbGetMenuStringFromIndex(pdbentry,ind))
-		    return(S_dbLib_badField);
-	    }
-	    *field = (unsigned short)ind;
-    	}
-	return (0);
+            if (index < 0) {
+                epicsEnum16 value;
+                long status = epicsParseUInt16(pstring, &value, 0, NULL);
+
+                if (status)
+                    return status;
+
+                index = dbGetNMenuChoices(pdbentry);
+                if (value > index && index > 0)
+                    return S_dbLib_badField;
+
+                *field = value;
+            }
+            else
+                *field = index;
+            return 0;
+        }
+
     default:
-	return (S_dbLib_badField);
+        return S_dbLib_badField;
     }
-    return(status);
 }
-
+
 epicsShareFunc int dbGetMenuIndex(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    void	*pfield = pdbentry->pfield;
+    dbFldDes *pflddes = pdbentry->pflddes;
+    void *pfield = pdbentry->pfield;
 
-    if(!pflddes) return(-1);
-    if(!pfield) return(-1);
+    if (!pflddes || !pfield)
+        return -1;
+
     switch (pflddes->field_type) {
-	case (DBF_MENU):
-	case (DBF_DEVICE):
-    	    return((int)(*(unsigned short *)pfield));
-	default:
-	    errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
+    case DBF_MENU:
+    case DBF_DEVICE:
+        return * (epicsEnum16 *) pfield;
+    default:
+        epicsPrintf("dbGetMenuIndex: Called for field type %d\n",
+            pflddes->field_type);
     }
-    return(-1);
+    return -1;
 }
-
-epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry,int index)
-{
-    dbFldDes  		*pflddes = pdbentry->pflddes;
-    unsigned short	*pfield = pdbentry->pfield;
 
-    if(!pflddes) return(S_dbLib_flddesNotFound);
-    if(!pfield) return(S_dbLib_fieldNotFound);
+epicsShareFunc long dbPutMenuIndex(DBENTRY *pdbentry, int index)
+{
+    dbFldDes *pflddes = pdbentry->pflddes;
+    epicsEnum16 *pfield = pdbentry->pfield;
+
+    if (!pflddes)
+        return S_dbLib_flddesNotFound;
+    if (!pfield)
+        return S_dbLib_fieldNotFound;
+
     switch (pflddes->field_type) {
     case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+        dbMenu *pdbMenu = (dbMenu *) pflddes->ftPvt;
 
-	    if(!pdbMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 || index>=pdbMenu->nChoice) return(S_dbLib_badField);
-	    *pfield = (unsigned short)index;
-	    return(0);
-	}
-    case DBF_DEVICE: {
-	    dbDeviceMenu *pdbDeviceMenu;
+        if (!pdbMenu)
+            return S_dbLib_menuNotFound;
+        if (index < 0 || index >= pdbMenu->nChoice)
+            return S_dbLib_badField;
 
-	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-	    if(!pdbDeviceMenu) return(S_dbLib_menuNotFound);
-	    if(index<0 || index>=pdbDeviceMenu->nChoice)
-		return(S_dbLib_badField);
-	    return(dbPutString(pdbentry,pdbDeviceMenu->papChoice[index]));
-	}
-    default:
-	break;
+        *pfield = index;
+        return 0;
     }
-    return (S_dbLib_badField);
+
+    case DBF_DEVICE: {
+        dbDeviceMenu *pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+
+        if (!pdbDeviceMenu)
+            return S_dbLib_menuNotFound;
+        if (index < 0 || index >= pdbDeviceMenu->nChoice)
+            return S_dbLib_badField;
+
+        return dbPutString(pdbentry, pdbDeviceMenu->papChoice[index]);
+    }
+
+    default:
+        break;
+    }
+    return S_dbLib_badField;
 }

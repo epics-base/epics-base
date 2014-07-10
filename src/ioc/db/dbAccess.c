@@ -78,6 +78,8 @@ static short mapDBFToDBR[DBF_NTYPES] = {
     /* DBF_USHORT   => */    DBR_USHORT,
     /* DBF_LONG     => */    DBR_LONG,
     /* DBF_ULONG    => */    DBR_ULONG,
+    /* DBF_INT64    => */    DBR_INT64,
+    /* DBF_UINT64   => */    DBR_UINT64,
     /* DBF_FLOAT    => */    DBR_FLOAT,
     /* DBF_DOUBLE   => */    DBR_DOUBLE,
     /* DBF_ENUM,    => */    DBR_ENUM,
@@ -693,6 +695,8 @@ long dbValueSize(short dbr_type)
         sizeof(epicsUInt16),         /* USHORT       */
         sizeof(epicsInt32),          /* LONG         */
         sizeof(epicsUInt32),         /* ULONG        */
+        sizeof(epicsInt64),          /* INT64        */
+        sizeof(epicsUInt64),         /* UINT64       */
         sizeof(epicsFloat32),        /* FLOAT        */
         sizeof(epicsFloat64),        /* DOUBLE       */
         sizeof(epicsEnum16)};        /* ENUM         */

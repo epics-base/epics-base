@@ -1,11 +1,11 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- * This header is included as part of epicsString.h and epicsStdlib.h
+ * This header is included by epicsString.h and epicsStdlib.h
  */
 
 #ifdef __cplusplus
@@ -15,7 +15,7 @@ extern "C" {
 /*
  * epicsStrtod() for systems with broken strtod() routine
  */
-epicsShareFunc double epicsStrtod(const char *str, char **endp); 
+double epicsStrtod(const char *str, char **endp);
 
 /*
  * VxWorks doesn't provide these routines, so for now we do

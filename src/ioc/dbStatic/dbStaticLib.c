@@ -227,7 +227,7 @@ void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
     va_end(args);
 }
 
-static void ulongToHexString(epicsUInt32 source,char *pdest)
+static void ulongToHexString(epicsUInt32 source, char *pdest)
 {
     static const char hex_digit_to_ascii[16] = "0123456789abcdef";
     epicsUInt32 val,temp;
@@ -1854,6 +1854,8 @@ char * dbGetString(DBENTRY *pdbentry)
     case DBF_ENUM:
     case DBF_LONG:
     case DBF_ULONG:
+    case DBF_INT64:
+    case DBF_UINT64:
     case DBF_FLOAT:
     case DBF_DOUBLE:
     case DBF_MENU:
@@ -2011,60 +2013,72 @@ char *dbGetStringNum(DBENTRY *pdbentry)
     cvttype = pflddes->base;
     switch (pflddes->field_type) {
     case DBF_CHAR:
-        if (cvttype==CT_DECIMAL)
-            cvtCharToString(*(char*)pfield, message);
+        if (cvttype == CT_DECIMAL)
+            cvtCharToString(*(char *) pfield, message);
         else
-            ulongToHexString((epicsUInt32)(*(char*)pfield),message);
+            ulongToHexString(*(char *) pfield, message);
         break;
     case DBF_UCHAR:
         if (cvttype==CT_DECIMAL)
-            cvtUcharToString(*(unsigned char*)pfield, message);
+            cvtUcharToString(*(epicsUInt8 *) pfield, message);
         else
-            ulongToHexString((epicsUInt32)(*(unsigned char*)pfield),message);
+            ulongToHexString(*(epicsUInt8 *) pfield, message);
         break;
     case DBF_SHORT:
         if (cvttype==CT_DECIMAL)
-            cvtShortToString(*(short*)pfield, message);
+            cvtShortToString(*(epicsInt16 *) pfield, message);
         else
-            ulongToHexString((epicsUInt32)(*(short*)pfield),message);
+            ulongToHexString(*(epicsInt16 *) pfield, message);
         break;
     case DBF_USHORT:
     case DBF_ENUM:
         if (cvttype==CT_DECIMAL)
-            cvtUshortToString(*(unsigned short*)pfield, message);
+            cvtUshortToString(*(epicsUInt16 *) pfield, message);
         else
-            ulongToHexString((epicsUInt32)(*(unsigned short*)pfield),message);
+            ulongToHexString(*(epicsUInt16 *) pfield, message);
         break;
     case DBF_LONG:
         if (cvttype==CT_DECIMAL)
-            cvtLongToString(*(epicsInt32*)pfield, message);
+            cvtLongToString(*(epicsInt32 *) pfield, message);
         else
-            ulongToHexString((epicsUInt32)(*(epicsInt32*)pfield), message);
+            ulongToHexString(*(epicsInt32 *) pfield, message);
         break;
     case DBF_ULONG:
         if (cvttype==CT_DECIMAL)
-            cvtUlongToString(*(epicsUInt32 *)pfield, message);
+            cvtUlongToString(*(epicsUInt32 *) pfield, message);
         else
-            ulongToHexString(*(epicsUInt32*)pfield, message);
+            ulongToHexString(*(epicsUInt32 *) pfield, message);
+        break;
+    case DBF_INT64:
+        if (cvttype==CT_DECIMAL)
+            cvtInt64ToString(*(epicsInt64 *) pfield, message);
+        else
+            cvtInt64ToHexString(*(epicsInt64 *) pfield, message);
+        break;
+    case DBF_UINT64:
+        if (cvttype==CT_DECIMAL)
+            cvtUInt64ToString(*(epicsUInt32 *) pfield, message);
+        else
+            cvtUInt64ToHexString(*(epicsUInt32 *) pfield, message);
         break;
     case DBF_FLOAT:
-        floatToString(*(float *)pfield,message);
+        floatToString(*(epicsFloat32 *) pfield, message);
         break;
     case DBF_DOUBLE:
-        doubleToString(*(double *)pfield,message);
+        doubleToString(*(epicsFloat64 *) pfield, message);
         break;
     case DBF_MENU:
         {
-            dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
-            short	choice_ind;
-            char	*pchoice;
+            dbMenu *pdbMenu = (dbMenu *)pflddes->ftPvt;
+            epicsEnum16 choice_ind;
+            char *pchoice;
 
             if (!pfield) {
                 dbMsgCpy(pdbentry, "Field not found");
                 return message;
             }
-            choice_ind = *((short *) pdbentry->pfield);
-            if (!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
+            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
+            if (!pdbMenu || choice_ind < 0 || choice_ind >= pdbMenu->nChoice)
                 return NULL;
             pchoice = pdbMenu->papChoiceValue[choice_ind];
             dbMsgCpy(pdbentry, pchoice);
@@ -2072,9 +2086,9 @@ char *dbGetStringNum(DBENTRY *pdbentry)
         break;
     case DBF_DEVICE:
         {
-            dbDeviceMenu	*pdbDeviceMenu;
-            char		*pchoice;
-            short		choice_ind;
+            dbDeviceMenu *pdbDeviceMenu;
+            epicsEnum16 choice_ind;
+            char *pchoice;
 
             if (!pfield) {
                 dbMsgCpy(pdbentry, "Field not found");
@@ -2083,7 +2097,7 @@ char *dbGetStringNum(DBENTRY *pdbentry)
             pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
             if (!pdbDeviceMenu)
                 return NULL;
-            choice_ind = *((short *) pdbentry->pfield);
+            choice_ind = *((epicsEnum16 *) pdbentry->pfield);
             if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
                 return NULL;
             pchoice = pdbDeviceMenu->papChoice[choice_ind];
@@ -2483,9 +2497,11 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_CHAR:
     case DBF_SHORT:
     case DBF_LONG:
+    case DBF_INT64:
     case DBF_UCHAR:
     case DBF_USHORT:
     case DBF_ULONG:
+    case DBF_UINT64:
     case DBF_ENUM:
     case DBF_FLOAT:
     case DBF_DOUBLE:
@@ -2534,189 +2550,6 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 	dbFinishEntry(&dbentry);
     }
     return(status);
-}
-
-char * dbVerify(DBENTRY *pdbentry,const char *pstring)
-{
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    char	*message;
-    int		stringHasMacro=FALSE;
-
-    stringHasMacro = strstr(pstring,"$(") || strstr(pstring,"${");
-    message = getpMessage(pdbentry);
-    if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
-    if(strstr(pstring,"$(") || strstr(pstring,"${")) return(NULL);
-    switch (pflddes->field_type) {
-    case DBF_STRING: {
-	    size_t length;
-
-	    length=strlen(pstring);
-	    if(length>=pflddes->size) {
-		sprintf(message,"string to big. max=%hd",pflddes->size);
-		return(message);
-	    }
-	    if((pflddes->special == SPC_CALC) && !stringHasMacro) {
-		char  rpcl[RPCL_LEN];
-		short err;
-		long  status;
-
-		status = postfix(pstring,rpcl,&err);
-		if(status)  {
-		    sprintf(message,"%s in CALC expression '%s'",
-			    calcErrorStr(err), pstring);
-		    return(message);
-		}
-	    }
-	}
-	return(NULL);
-    case DBF_CHAR :
-    case DBF_SHORT :
-    case DBF_LONG:{
-	    long  value;
-	    char  *endp;
-
-	    value = strtol(pstring,&endp,0);
-	    if(*endp!=0) {
-		strcpy(message,"not an integer number");
-		return(message);
-	    }
-	    switch (pflddes->field_type) {
-	    case DBF_CHAR :
-		if(value<-128 || value>127) {
-		    strcpy(message,"must have -128<=value<=127");
-		    return(message);
-		}
-		return(NULL);
-	    case DBF_SHORT :
-		if(value<-32768 || value>32767) {
-		    strcpy(message,"must have -32768<=value<=32767");
-		    return(message);
-		}
-		return(NULL);
-	    case DBF_LONG : return(NULL);
-	    default:
-		errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-		return(NULL);
-	    }
-	}
-    case DBF_UCHAR:
-    case DBF_USHORT:
-    case DBF_ULONG:
-    case DBF_ENUM:{
-	    unsigned long  value;
-	    char  *endp;
-
-	    if(strchr(pstring,'-')) {
-		strcpy(message,"not an unsigned number");
-		return(message);
-	    }
-	    value = strtoul(pstring,&endp,0);
-	    if(*endp!=0) {
-		strcpy(message,"not an integer number");
-		return(message);
-	    }
-	    switch (pflddes->field_type) {
-	    case DBF_UCHAR :
-		if(value>255) {
-		    strcpy(message,"must have 0<=value<=255");
-		    return(message);
-		}
-		return(NULL);
-	    case DBF_ENUM:
-	    case DBF_USHORT :
-		if(value>65535) {
-		    strcpy(message,"must have 0<=value<=65535");
-		    return(message);
-		}
-		return(NULL);
-	    case DBF_ULONG : return(NULL);
-	    default:
-		errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-		return(NULL);
-	    }
-	}
-    case DBF_FLOAT:
-    case DBF_DOUBLE: {
-	    char  *endp;
-
-	    (void) epicsStrtod(pstring,&endp);
-	    if(*endp!=0) {
-		strcpy(message,"not a number");
-		return(message);
-	    }
-	    return(NULL);
-	}
-    case DBF_MENU: {
-	    dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
-	    char	*pchoice;
-	    int		i;
-
-	    if(!pdbMenu) return(NULL);
-	    for (i = 0; i < pdbMenu->nChoice; i++) {
-		if(!(pchoice = pdbMenu->papChoiceValue[i])) continue;
-		if(strcmp(pchoice, pstring) == 0) {
-		    return(NULL);
-		}
-	    }
-	}
-	strcpy(message,"Not a valid menu choice");
-	return (message);
-    case DBF_DEVICE: {
-	    dbDeviceMenu	*pdbDeviceMenu;
-	    char		*pchoice;
-	    int			i;
-
-	    pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-	    if(!pdbDeviceMenu) return(NULL);
-	    if(pdbDeviceMenu->nChoice == 0) return(NULL);
-	    for (i = 0; i < pdbDeviceMenu->nChoice; i++) {
-		if (!(pchoice = pdbDeviceMenu->papChoice[i]))
-		    continue;
-		if (strcmp(pchoice, pstring) == 0) {
-		    return(NULL);
-		}
-	    }
-	}
-	strcpy(message,"Not a valid menu choice");
-	return (message);
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	return(NULL);
-    default: break;
-    }
-    strcpy(message,"Not a valid field type");
-    return (message);
-}
-
-char *dbGetRange(DBENTRY *pdbentry)
-{
-    dbFldDes  	*pflddes = pdbentry->pflddes;
-    char		*message;
-
-    message = getpMessage(pdbentry);
-    if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
-    switch (pflddes->field_type) {
-    case DBF_STRING: {strcpy(message,"STRING"); return(message);}
-    case DBF_CHAR : {strcpy(message,"CHAR"); return(message);}
-    case DBF_SHORT : {strcpy(message,"SHORT");return(message);}
-    case DBF_LONG: {strcpy(message,"LONG"); return(message);}
-    case DBF_UCHAR: {strcpy(message,"UCHAR");return(message);}
-    case DBF_USHORT:{strcpy(message,"USHORT");return(message);}
-    case DBF_ULONG:{strcpy(message,"ULONG:");return(message);}
-    case DBF_ENUM: {strcpy(message,"ENUM");return(message);}
-    case DBF_FLOAT: {strcpy(message,"FLOAT");return(message);}
-    case DBF_DOUBLE: {strcpy(message,"DOUBLE");return(message);}
-    case DBF_MENU: {strcpy(message,"MENU");return(message);}
-    case DBF_DEVICE: {strcpy(message,"DEVICE");return(message);}
-    case DBF_INLINK: {strcpy(message,"INLINK");return(message);}
-    case DBF_OUTLINK: {strcpy(message,"OUTLINK");return(message);}
-    case DBF_FWDLINK: {strcpy(message,"FWDLINK");return(message);}
-    default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-    }
-    strcpy(message,"Not a valid field type");
-    return (message);
 }
 
 long dbFirstInfo(DBENTRY *pdbentry)

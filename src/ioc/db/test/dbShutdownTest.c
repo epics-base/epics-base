@@ -10,8 +10,7 @@
  *          Ralph Lange <Ralph.Lange@gmx.de>
  */
 
-#include <string.h>
-
+#include "epicsString.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
 #include "iocInit.h"
@@ -24,7 +23,7 @@
 
 #include "testMain.h"
 
-void dbShutdownTest_registerRecordDeviceDriver(struct dbBase *);
+void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static struct threadItem {
     char *name;
@@ -46,7 +45,7 @@ void findCommonThread (epicsThreadId id) {
     epicsThreadGetName(id, name, 32);
 
     for (thr = commonThreads; thr->name; thr++) {
-        if (strcasecmp(thr->name, name) == 0) {
+        if (epicsStrCaseCmp(thr->name, name) == 0) {
             thr->found = 1;
         }
     }
@@ -67,11 +66,11 @@ void cycle(void) {
 
     testdbPrepare();
 
-    testdbReadDatabase("dbShutdownTest.dbd", NULL, NULL);
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
 
-    dbShutdownTest_registerRecordDeviceDriver(pdbbase);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
 
-    testdbReadDatabase("sRecord.db", NULL, NULL);
+    testdbReadDatabase("xRecord.db", NULL, NULL);
 
     testOk1(!testiocInit());
 

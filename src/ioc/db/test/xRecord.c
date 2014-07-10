@@ -14,12 +14,24 @@
  */
 
 #include "dbAccessDefs.h"
-#include <recSup.h>
+#include "recSup.h"
+#include "recGbl.h"
 
 #define GEN_SIZE_OFFSET
 #include "xRecord.h"
 
 #include <epicsExport.h>
 
-static rset xRSET;
+static long process(xRecord *prec)
+{
+    prec->pact = TRUE;
+    recGblGetTimeStamp(prec);
+    recGblFwdLink(prec);
+    prec->pact = FALSE;
+    return 0;
+}
+
+static rset xRSET = {
+    RSETNUMBER, NULL, NULL, NULL, process
+};
 epicsExportAddress(rset,xRSET);

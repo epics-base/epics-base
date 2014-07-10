@@ -42,12 +42,12 @@ void testdbReadDatabase(const char* file,
                   file, path, substitutions);
 }
 
-int testiocInit(void)
+int testIocInitOk(void)
 {
-    return iocBuildNoCA() || iocRun();
+    return iocBuildIsolated() || iocRun();
 }
 
-int testiocShutdown(void)
+int testIocShutdownOk(void)
 {
     return iocShutdown();
 }
@@ -66,7 +66,7 @@ long testdbPutField(const char* pv, short dbrType, ...)
     long ret;
     va_list ap;
     va_start(ap, dbrType);
-    ret = testVdbPutField(pv, dbrType, ap);
+    ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
     return ret;
 }
@@ -76,7 +76,7 @@ union anybuf {
     char bytes[sizeof(epicsAny)];
 };
 
-long testVdbPutField(const char* pv, short dbrType, va_list ap)
+long testdbVPutField(const char* pv, short dbrType, va_list ap)
 {
     DBADDR addr;
     union anybuf pod;
@@ -112,12 +112,12 @@ long testVdbPutField(const char* pv, short dbrType, va_list ap)
     return dbPutField(&addr, dbrType, pod.bytes, 1);
 }
 
-dbCommon* testGetRecord(const char* pv)
+dbCommon* testdbRecordPtr(const char* pv)
 {
     DBADDR addr;
 
     if(dbNameToAddr(pv, &addr))
-        testAbort("Missing PV %s", pv);
+        testAbort("Missing record %s", pv);
 
     return addr.precord;
 }

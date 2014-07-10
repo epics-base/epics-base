@@ -185,7 +185,7 @@ int iocBuild(void)
     return status;
 }
 
-int iocBuildNoCA(void)
+int iocBuildIsolated(void)
 {
     int status;
 

@@ -29,13 +29,13 @@ epicsShareFunc void testdbPrepare(void);
 epicsShareFunc void testdbReadDatabase(const char* file,
                                        const char* path,
                                        const char* substitutions);
-epicsShareFunc int testiocInit(void);
-epicsShareFunc int testiocShutdown(void);
+epicsShareFunc int testIocInitOk(void);
+epicsShareFunc int testIocShutdownOk(void);
 epicsShareFunc void testdbCleanup(void);
 
 /* Scalar only version.
  *
- * Remember to use the correct argument type!s
+ * Remember to use the correct argument types!
  *
  * int for DBR_UCHAR, DBR_CHAR, DBR_USHORT, DBR_SHORT, DBR_LONG
  * unsigned int for DBR_ULONG
@@ -43,9 +43,9 @@ epicsShareFunc void testdbCleanup(void);
  * const char* for DBR_STRING
  */
 epicsShareFunc long testdbPutField(const char* pv, short dbrType, ...);
-epicsShareFunc long testVdbPutField(const char* pv, short dbrType, va_list ap);
+epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
 
-epicsShareFunc dbCommon* testGetRecord(const char* pv);
+epicsShareFunc dbCommon* testdbRecordPtr(const char* pv);
 
 #ifdef __cplusplus
 }

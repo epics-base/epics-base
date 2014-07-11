@@ -63,16 +63,6 @@ void testdbCleanup(void)
     dbmfFreeChunks();
 }
 
-long testdbPutField(const char* pv, short dbrType, ...)
-{
-    long ret;
-    va_list ap;
-    va_start(ap, dbrType);
-    ret = testdbVPutField(pv, dbrType, ap);
-    va_end(ap);
-    return ret;
-}
-
 union anybuf {
     epicsAny val;
     char bytes[sizeof(epicsAny)];
@@ -95,6 +85,10 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
         return dbPutField(&addr, dbrType, buffer, 1);
     }
 
+    /* The Type parameter takes into consideration
+     * the C language rules for promotion of argument types
+     * in variadic functions.
+     */
 #define OP(DBR,Type,mem) case DBR: {pod.val.mem = va_arg(ap,Type); break;}
     OP(DBR_CHAR, int, int8);
     OP(DBR_UCHAR, int, uInt8);
@@ -112,6 +106,33 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     }
 
     return dbPutField(&addr, dbrType, pod.bytes, 1);
+}
+
+void testdbPutFieldOk(const char* pv, short dbrType, ...)
+{
+    long ret;
+    va_list ap;
+
+    va_start(ap, dbrType);
+    ret = testdbVPutField(pv, dbrType, ap);
+    va_end(ap);
+
+    testOk(ret==0, "dbPutField(%s, %d, ...) == %ld", pv, dbrType, ret);
+}
+
+void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
+{
+    long ret;
+    va_list ap;
+
+    va_start(ap, dbrType);
+    ret = testdbVPutField(pv, dbrType, ap);
+    va_end(ap);
+
+    if(ret==status)
+        testPass("dbPutField(%s, %d, ...) == %ld", pv, dbrType, status);
+    else
+        testFail("dbPutField(%s, %d, ...) != %ld (%ld)", pv, dbrType, status, ret);
 }
 
 dbCommon* testdbRecordPtr(const char* pv)

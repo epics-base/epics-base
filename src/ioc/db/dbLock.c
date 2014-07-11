@@ -394,7 +394,9 @@ void dbLockCleanupRecords(dbBase *pdbbase)
     DBENTRY ent;
     dbCommon *prec;
     long status;
+    ELLNODE *cur;
 
+    /* free lockRecord */
     dbInitEntry(pdbbase, &ent);
     status=dbFirstRecordType(&ent);
     if(status)
@@ -405,6 +407,25 @@ void dbLockCleanupRecords(dbBase *pdbbase)
     prec = ent.precnode->precord;
     free(prec->lset);
     dbFinishEntry(&ent);
+
+    /* free lockSets */
+    /* ensure no lockSets are locked for re-compute */
+    assert(ellCount(&lockSetList[listTypeRecordLock])==0);
+    /* move allocated locks back to the free list */
+    while((cur=ellGet(&lockSetList[listTypeScanLock]))!=NULL)
+    {
+        lockSet *pset = CONTAINER(cur, lockSet, node);
+        assert(pset->state == lockSetStateFree); /* lock not held */
+        pset->type = listTypeFree;
+        ellAdd(&lockSetList[listTypeFree],&pset->node);
+    }
+    /* clean up free list */
+    while((cur=ellGet(&lockSetList[listTypeFree]))!=NULL)
+    {
+        lockSet *pset = CONTAINER(cur, lockSet, node);
+        epicsMutexDestroy(pset->lock);
+        free(pset);
+    }
 }
 
 void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)

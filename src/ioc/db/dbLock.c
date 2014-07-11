@@ -399,7 +399,7 @@ void dbLockCleanupRecords(dbBase *pdbbase)
     status=dbFirstRecordType(&ent);
     if(status)
         return;
-    status=dbNextRecordType(&ent);
+    status=dbFirstRecord(&ent);
     if(status)
         return;
     prec = ent.precnode->precord;

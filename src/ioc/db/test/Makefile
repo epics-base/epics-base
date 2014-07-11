@@ -30,6 +30,12 @@ dbShutdownTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbShutdownTest.c
 TESTS += dbShutdownTest
 
+TESTPROD_HOST += dbPutLinkTest
+dbPutLinkTest_SRCS += dbPutLinkTest.c
+dbPutLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbPutLinkTest.c
+TESTS += dbPutLinkTest
+
 TESTPROD_HOST += callbackTest
 callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c

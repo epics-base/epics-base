@@ -101,7 +101,7 @@ static void testSet(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(0);
+    testPlan(40);
     testSet();
     return testDone();
 }

@@ -33,9 +33,7 @@ epicsShareFunc void testIocInitOk(void);
 epicsShareFunc void testIocShutdownOk(void);
 epicsShareFunc void testdbCleanup(void);
 
-/* Scalar only version.
- *
- * Correct argument types must be used with this var-arg function!
+/* Correct argument types must be used with this var-arg function!
  * Doing otherwise will result in corruption of argument values!
  *
  * int for DBR_UCHAR, DBR_CHAR, DBR_USHORT, DBR_SHORT, DBR_LONG
@@ -49,10 +47,13 @@ epicsShareFunc void testdbCleanup(void);
  * testdbPutFieldOk("pvname", DBF_STRING, "hello world");
  */
 epicsShareFunc void testdbPutFieldOk(const char* pv, short dbrType, ...);
-/* the inverse of testdbPutFieldOk().  Tests for put failure */
+/* Tests for put failure */
 epicsShareFunc void testdbPutFieldFail(long status, const char* pv, short dbrType, ...);
 
 epicsShareFunc long testdbVPutField(const char* pv, short dbrType, va_list ap);
+
+epicsShareFunc void testdbGetFieldEqual(const char* pv, short dbrType, ...);
+epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap);
 
 epicsShareFunc dbCommon* testdbRecordPtr(const char* pv);
 

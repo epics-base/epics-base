@@ -42,14 +42,16 @@ void testdbReadDatabase(const char* file,
                   file, path, substitutions);
 }
 
-int testIocInitOk(void)
+void testIocInitOk(void)
 {
-    return iocBuildIsolated() || iocRun();
+    if(iocBuildIsolated() || iocRun())
+        testAbort("Failed to start up test database");
 }
 
-int testIocShutdownOk(void)
+void testIocShutdownOk(void)
 {
-    return iocShutdown();
+    if(iocShutdown())
+        testAbort("Failed to shutdown test database");
 }
 
 void testdbCleanup(void)

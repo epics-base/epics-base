@@ -72,19 +72,19 @@ void cycle(void) {
 
     testdbReadDatabase("xRecord.db", NULL, NULL);
 
-    testOk1(!testIocInitOk());
+    testIocInitOk();
 
     epicsThreadMap(findCommonThread);
     checkCommonThreads();
 
-    testOk1(testIocShutdownOk()==0);
+    testIocShutdownOk();
 
     testdbCleanup();
 }
 
 MAIN(dbShutdownTest)
 {
-    testPlan(14);
+    testPlan(10);
 
     cycle();
     cycle();

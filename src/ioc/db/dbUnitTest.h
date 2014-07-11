@@ -29,8 +29,8 @@ epicsShareFunc void testdbPrepare(void);
 epicsShareFunc void testdbReadDatabase(const char* file,
                                        const char* path,
                                        const char* substitutions);
-epicsShareFunc int testIocInitOk(void);
-epicsShareFunc int testIocShutdownOk(void);
+epicsShareFunc void testIocInitOk(void);
+epicsShareFunc void testIocShutdownOk(void);
 epicsShareFunc void testdbCleanup(void);
 
 /* Scalar only version.

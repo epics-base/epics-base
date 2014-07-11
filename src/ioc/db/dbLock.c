@@ -392,16 +392,18 @@ void dbLockInitRecords(dbBase *pdbbase)
 void dbLockCleanupRecords(dbBase *pdbbase)
 {
     DBENTRY ent;
+    dbCommon *prec;
     long status;
 
     dbInitEntry(pdbbase, &ent);
-    for(status=dbFirstRecordType(&ent); !status; status=dbNextRecordType(&ent)) {
-        for(status=dbFirstRecord(&ent); !status; status=dbNextRecord(&ent)) {
-            dbCommon *prec = ent.precnode->precord;
-            free(prec->lset);
-        }
-    }
-
+    status=dbFirstRecordType(&ent);
+    if(status)
+        return;
+    status=dbNextRecordType(&ent);
+    if(status)
+        return;
+    prec = ent.precnode->precord;
+    free(prec->lset);
     dbFinishEntry(&ent);
 }
 

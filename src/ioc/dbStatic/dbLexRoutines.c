@@ -315,9 +315,9 @@ static int db_yyinput(char *buf, int max_size)
 		fgetsRtn = fgets(mac_input_buffer,MY_BUFFER_SIZE,
 			pinputFileNow->fp);
 		if(fgetsRtn) {
-		    n = macExpandString(macHandle,mac_input_buffer,
+		    int exp = macExpandString(macHandle,mac_input_buffer,
 			my_buffer,MY_BUFFER_SIZE);
-		    if(n<0) {
+		    if(exp < 0) {
 			errPrintf(0,__FILE__, __LINE__,
 			"macExpandString failed for file %s",
 			pinputFileNow->filename);

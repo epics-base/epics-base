@@ -2093,7 +2093,6 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 	    DBLINK	*plink;
 	    char	string[80];
 	    char	*pstr = string;
-        size_t  ind;
 
 	    if (!pfield)
 	        return S_dbLib_fieldNotFound;
@@ -2128,11 +2127,14 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 	    /* Strip leading blanks and tabs */
 	    while (*pstr && (*pstr == ' ' || *pstr == '\t')) pstr++;
 	    /* Strip trailing blanks and tabs */
-	    if (pstr)
-	        for (ind = strlen(pstr) - 1; ind >= 0; ind--) {
+	    if (pstr) {
+		int ind;
+
+	        for (ind = (int) strlen(pstr) - 1; ind >= 0; ind--) {
 		    if (pstr[ind] != ' ' && pstr[ind] != '\t') break;
 		    pstr[ind] = '\0';
 		}
+	    }
 	    if (!pstr || !*pstr) {
 		if (plink->type == PV_LINK) dbCvtLinkToConstant(pdbentry);
 		if (plink->type != CONSTANT) return S_dbLib_badField;

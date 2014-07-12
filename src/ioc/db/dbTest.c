@@ -958,7 +958,7 @@ static void printBuffer(
 
         case DBR_SHORT:
             for (i = 0; i < no_elements; i++) {
-                epicsInt32 val = *(epicsInt16 *) pbuffer;
+                epicsInt16 val = *(epicsInt16 *) pbuffer;
 
                 sprintf(pmsg, "%hd = 0x%hx", val, val);
                 dbpr_msgOut(pMsgBuff, tab_size);
@@ -968,7 +968,7 @@ static void printBuffer(
 
         case DBR_USHORT:
             for (i = 0; i < no_elements; i++) {
-                epicsUInt32 val = *(epicsUInt16 *) pbuffer;
+                epicsUInt16 val = *(epicsUInt16 *) pbuffer;
 
                 sprintf(pmsg, "%hu = 0x%hx", val, val);
                 dbpr_msgOut(pMsgBuff, tab_size);

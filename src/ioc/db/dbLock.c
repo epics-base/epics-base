@@ -393,9 +393,6 @@ void dbLockInitRecords(dbBase *pdbbase)
 
 void dbLockCleanupRecords(dbBase *pdbbase)
 {
-    DBENTRY ent;
-    dbCommon *prec;
-    long status;
     ELLNODE *cur;
 
     free(lockRecordAlloc);

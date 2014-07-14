@@ -326,7 +326,9 @@ void dbScanUnlock(dbCommon *precord)
     epicsMutexUnlock(lockSetModifyLock);
     return;
 }
-
+
+static lockRecord *lockRecordAlloc;
+
 void dbLockInitRecords(dbBase *pdbbase)
 {
     int			link;
@@ -347,7 +349,7 @@ void dbLockInitRecords(dbBase *pdbbase)
                     - pdbRecordType->no_aliases;
     }
     /*Allocate all of them at once */
-    plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
+    lockRecordAlloc = plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
@@ -396,17 +398,8 @@ void dbLockCleanupRecords(dbBase *pdbbase)
     long status;
     ELLNODE *cur;
 
-    /* free lockRecord */
-    dbInitEntry(pdbbase, &ent);
-    status=dbFirstRecordType(&ent);
-    if(status)
-        return;
-    status=dbFirstRecord(&ent);
-    if(status)
-        return;
-    prec = ent.precnode->precord;
-    free(prec->lset);
-    dbFinishEntry(&ent);
+    free(lockRecordAlloc);
+    lockRecordAlloc = NULL;
 
     /* free lockSets */
     /* ensure no lockSets are locked for re-compute */

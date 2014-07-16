@@ -15,6 +15,10 @@
  * Author: Michael Davidsaver <mdavidsaver@bnl.gov>
  */
 
+#ifdef __m68k__
+#include "epicsMMIODef.h"
+#else
+
 #ifndef EPICSMMIO_H
 #define EPICSMMIO_H
 
@@ -125,3 +129,4 @@ void        sysOut32   (volatile void*, epicsUInt32);    /* Synchronous 32 bit w
 #define rwbarr() VX_MEM_BARRIER_RW()
 
 #endif /* EPICSMMIO_H */
+#endif /* m68k */

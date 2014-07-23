@@ -21,6 +21,7 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
+#include "errlog.h"
 
 /* Expected call bit definitions */
 #define e_start         0x00000001
@@ -199,7 +200,9 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk(!dbChannelCreate("y"), "Create, bad record");
     testOk(!dbChannelCreate("x.NOFIELD"), "Create, bad field");
     testOk(!dbChannelCreate("x.{not-json}"), "Create, bad JSON");
+    eltc(0);
     testOk(!dbChannelCreate("x.{\"none\":null}"), "Create, bad filter");
+    eltc(1);
 
     dbRegisterFilter("any", &testIf, NULL);
 

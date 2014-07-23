@@ -20,6 +20,7 @@
 #include "dbStaticLib.h"
 #include "osiFileName.h"
 #include "dbmf.h"
+#include "errlog.h"
 
 #include "testMain.h"
 
@@ -72,7 +73,9 @@ void cycle(void) {
 
     testdbReadDatabase("xRecord.db", NULL, NULL);
 
+    eltc(0);
     testIocInitOk();
+    eltc(1);
 
     epicsThreadMap(findCommonThread);
     checkCommonThreads();

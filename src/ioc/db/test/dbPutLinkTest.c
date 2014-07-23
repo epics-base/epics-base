@@ -22,6 +22,7 @@
 #include "dbStaticLib.h"
 #include "osiFileName.h"
 #include "dbmf.h"
+#include "errlog.h"
 
 #include "xRecord.h"
 
@@ -62,7 +63,9 @@ static void testSet(void)
 
     testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
 
+    eltc(0);
     testIocInitOk();
+    eltc(1);
 
     prec = (xRecord*)testdbRecordPtr("x1");
     plink = &prec->lnk;

@@ -368,6 +368,7 @@ epicsShareFunc int epicsShareAPI errlogRemoveListeners(
 epicsShareFunc int epicsShareAPI eltc(int yesno)
 {
     errlogInit(0);
+    errlogFlush();
     pvtData.toConsole = yesno;
     return 0;
 }

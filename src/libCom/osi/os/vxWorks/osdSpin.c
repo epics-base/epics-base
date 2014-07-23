@@ -56,7 +56,16 @@ void epicsSpinLock(epicsSpinId spin) {
     int key = intLock();
     if(!intContext())
         taskLock();
-    assert(!spin->locked);
+    if(spin->locked) {
+        intUnlock(key);
+        if(!intContext()) {
+            taskUnlock();
+            cantProceed("Deadlock in epicsSpinLock().  Either recursive lock, missing unlock, or locked by sleeping thread.");
+        } else {
+            epicsInterruptContextMessage("epicsSpinLock() failure in ISR.  Either recursive lock, missing unlock, or locked by sleeping thread.\n");
+        }
+        return;
+    }
     spin->key = key;
     spin->locked = 1;
 }
@@ -68,7 +77,9 @@ int epicsSpinTryLock(epicsSpinId spin) {
 
 void epicsSpinUnlock(epicsSpinId spin) {
     int key = spin->key;
-    assert(spin->locked);
+    if(!spin->locked) {
+        epicsInterruptContextMessage("epicsSpinUnlock() failure.  lock not taken\n");
+    }
     spin->key = spin->locked = 0;
     intUnlock(key);
     if(!intContext())

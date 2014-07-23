@@ -30,8 +30,7 @@
 
 #include <stdlib.h>
 #include <rtems.h>
-
-#include <epicsAssert.h>
+#include <cantProceed.h>
 
 #include "epicsSpin.h"
 
@@ -61,7 +60,17 @@ void epicsSpinLock(epicsSpinId spin) {
     rtems_interrupt_disable (level);
     _Thread_Disable_dispatch();
     spin->level = level;
-    assert(!spin->locked);
+    if(spin->locked) {
+        rtems_interrupt_enable (level);
+        _Thread_Enable_dispatch();
+        if(!rtems_interrupt_is_in_progress()) {
+            printk("Deadlock in epicsSpinLock(%p).  Either recursive lock, missing unlock, or locked by sleeping thread.", spin);
+            cantProceed(NULL);
+        } else {
+            printk("epicsSpinLock(%p) failure in ISR.  Either recursive lock, missing unlock, or locked by sleeping thread.\n", spin);
+        }
+        return;
+    }
     spin->locked = 1;
 }
 
@@ -72,7 +81,10 @@ int epicsSpinTryLock(epicsSpinId spin) {
 
 void epicsSpinUnlock(epicsSpinId spin) {
     rtems_interrupt_level level = spin->level;
-    assert(spin->locked);
+    if(!spin->locked) {
+        printk("epicsSpinUnlock(%p) failure.  lock not taken\n", spin);
+        return;
+    }
     spin->level = spin->locked = 0;
     rtems_interrupt_enable (level);
     _Thread_Enable_dispatch();

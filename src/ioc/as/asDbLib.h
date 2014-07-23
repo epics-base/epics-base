@@ -32,6 +32,7 @@ epicsShareFunc int asSetFilename(const char *acf);
 epicsShareFunc int asSetSubstitutions(const char *substitutions);
 epicsShareFunc int asInit(void);
 epicsShareFunc int asInitAsyn(ASDBCALLBACK *pcallback);
+epicsShareFunc int asShutdown(void);
 epicsShareFunc int asDbGetAsl(struct dbChannel *chan);
 epicsShareFunc void * asDbGetMemberPvt(struct dbChannel *chan);
 epicsShareFunc int asdbdump(void);

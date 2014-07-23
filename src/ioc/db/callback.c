@@ -43,7 +43,6 @@
 #include "callback.h"
 
 
-static epicsThreadOnceId callbackOnceFlag = EPICS_THREAD_ONCE_INIT;
 static int callbackQueueSize = 2000;
 static epicsEventId callbackSem[NUM_CALLBACK_PRIORITIES];
 static epicsRingPointerId callbackQ[NUM_CALLBACK_PRIORITIES];
@@ -53,6 +52,8 @@ static volatile int ringOverflow[NUM_CALLBACK_PRIORITIES];
 static epicsTimerQueueId timerQueue;
 
 /* Shutdown handling */
+enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
+static volatile enum ctl cbCtl;
 static epicsEventId startStopEvent;
 static void *exitCallback;
 
@@ -70,7 +71,7 @@ static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0, 1, 2};
 
 int callbackSetQueueSize(int size)
 {
-    if (callbackOnceFlag != EPICS_THREAD_ONCE_INIT) {
+    if (startStopEvent) {
         errlogPrintf("Callback system already initialized\n");
         return -1;
     }
@@ -101,9 +102,12 @@ shutdown:
     epicsEventSignal(startStopEvent);
 }
 
-static void callbackShutdown(void *arg)
+void callbackShutdown(void)
 {
     int i;
+
+    if (cbCtl == ctlExit) return;
+    cbCtl = ctlExit;
 
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         int lockKey = epicsInterruptLock();
@@ -111,14 +115,23 @@ static void callbackShutdown(void *arg)
         epicsInterruptUnlock(lockKey);
         epicsEventSignal(callbackSem[i]);
         if (ok) epicsEventWait(startStopEvent);
+        epicsEventDestroy(callbackSem[i]);
+        epicsRingPointerDelete(callbackQ[i]);
     }
+    epicsTimerQueueRelease(timerQueue);
+    epicsEventDestroy(startStopEvent);
+    startStopEvent = NULL;
 }
 
-static void callbackInitOnce(void *arg)
+void callbackInit(void)
 {
     int i;
 
+    if(startStopEvent)
+        return;
+
     startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    cbCtl = ctlRun;
     timerQueue = epicsTimerQueueAllocate(0,epicsThreadPriorityScanHigh);
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
         epicsThreadId tid;
@@ -137,12 +150,6 @@ static void callbackInitOnce(void *arg)
         else
             epicsEventWait(startStopEvent);
     }
-    epicsAtExit(callbackShutdown, NULL);
-}
-
-void callbackInit(void)
-{
-    epicsThreadOnce(&callbackOnceFlag, callbackInitOnce, NULL);
 }
 
 /* This routine can be called from interrupt context */

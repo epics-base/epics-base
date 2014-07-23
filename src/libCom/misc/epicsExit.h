@@ -19,7 +19,8 @@ typedef void (*epicsExitFunc)(void *arg);
 
 epicsShareFunc void epicsExit(int status);
 epicsShareFunc void epicsExitCallAtExits(void);
-epicsShareFunc int epicsAtExit(epicsExitFunc func, void *arg);
+epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name);
+#define epicsAtExit(F,A) epicsAtExit3(F,A,#F)
 
 epicsShareFunc void epicsExitCallAtThreadExits(void);
 epicsShareFunc int epicsAtThreadExit(epicsExitFunc func, void *arg);

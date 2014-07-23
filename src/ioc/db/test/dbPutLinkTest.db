@@ -1,0 +1,4 @@
+record(x, "x1") {}
+record(x, "x2") {}
+record(x, "x3") {}
+record(x, "x4") {}

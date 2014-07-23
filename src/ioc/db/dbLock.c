@@ -54,6 +54,7 @@ since this will delay all other threads.
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsAssert.h"
+#include "epicsExit.h"
 #include "cantProceed.h"
 #include "ellLib.h"
 #define epicsExportSharedSymbols
@@ -107,7 +108,16 @@ typedef struct lockRecord {
     lockSet	*plockSet;
     dbCommon	*precord;
 } lockRecord;
-
+
+static void dbLockExit(void *junk)
+{
+    epicsMutexDestroy(globalLock);
+    epicsMutexDestroy(lockSetModifyLock);
+    globalLock = NULL;
+    lockSetModifyLock = NULL;
+    dbLockIsInitialized = FALSE;
+}
+
 /*private routines */
 static void dbLockInitialize(void)
 {
@@ -118,6 +128,7 @@ static void dbLockInitialize(void)
     globalLock = epicsMutexMustCreate();
     lockSetModifyLock = epicsMutexMustCreate();
     dbLockIsInitialized = TRUE;
+    epicsAtExit(dbLockExit,NULL);
 }
 
 static lockSet * allocLockSet(
@@ -315,7 +326,9 @@ void dbScanUnlock(dbCommon *precord)
     epicsMutexUnlock(lockSetModifyLock);
     return;
 }
-
+
+static lockRecord *lockRecordAlloc;
+
 void dbLockInitRecords(dbBase *pdbbase)
 {
     int			link;
@@ -336,7 +349,7 @@ void dbLockInitRecords(dbBase *pdbbase)
                     - pdbRecordType->no_aliases;
     }
     /*Allocate all of them at once */
-    plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
+    lockRecordAlloc = plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
     for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
     pdbRecordType;
     pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
@@ -377,7 +390,34 @@ void dbLockInitRecords(dbBase *pdbbase)
         }
     }
 }
-
+
+void dbLockCleanupRecords(dbBase *pdbbase)
+{
+    ELLNODE *cur;
+
+    free(lockRecordAlloc);
+    lockRecordAlloc = NULL;
+
+    /* free lockSets */
+    /* ensure no lockSets are locked for re-compute */
+    assert(ellCount(&lockSetList[listTypeRecordLock])==0);
+    /* move allocated locks back to the free list */
+    while((cur=ellGet(&lockSetList[listTypeScanLock]))!=NULL)
+    {
+        lockSet *pset = CONTAINER(cur, lockSet, node);
+        assert(pset->state == lockSetStateFree); /* lock not held */
+        pset->type = listTypeFree;
+        ellAdd(&lockSetList[listTypeFree],&pset->node);
+    }
+    /* clean up free list */
+    while((cur=ellGet(&lockSetList[listTypeFree]))!=NULL)
+    {
+        lockSet *pset = CONTAINER(cur, lockSet, node);
+        epicsMutexDestroy(pset->lock);
+        free(pset);
+    }
+}
+
 void dbLockSetMerge(dbCommon *pfirst,dbCommon *psecond)
 {
     lockRecord	*p1lockRecord = pfirst->lset;

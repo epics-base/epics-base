@@ -481,7 +481,7 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-void chfPluginTest_registerRecordDeviceDriver(struct dbBase *);
+void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(chfPluginTest)
 {
@@ -508,12 +508,12 @@ MAIN(chfPluginTest)
     testOk(strcmp(chfPluginEnumString(colorEnum, 3, "-"), "-") == 0,
         "Enum to string: invalid index");
 
-    if (dbReadDatabase(&pdbbase, "chfPluginTest.dbd",
+    if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
             "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'chfPluginTest.dbd' not found");
+        testAbort("Database description 'dbTestIoc.dbd' not found");
 
-    chfPluginTest_registerRecordDeviceDriver(pdbbase);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database 'xRecord.db' not found");

@@ -77,7 +77,7 @@ static void testHead (char* title) {
     testDiag("--------------------------------------------------------");
 }
 
-void arrShorthandTest_registerRecordDeviceDriver(struct dbBase *);
+void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(arrShorthandTest)
 {
@@ -88,12 +88,12 @@ MAIN(arrShorthandTest)
     db_init_events();
     dbChannelInit();
 
-    if (dbReadDatabase(&pdbbase, "arrShorthandTest.dbd",
+    if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
             "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'arrShorthandTest.dbd' not found");
+        testAbort("Database description 'dbTestIoc.dbd' not found");
 
-    arrShorthandTest_registerRecordDeviceDriver(pdbbase);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database 'xRecord.db' not found");

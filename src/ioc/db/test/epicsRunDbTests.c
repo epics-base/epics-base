@@ -19,6 +19,8 @@
 int testdbConvert(void);
 int callbackTest(void);
 int dbStateTest(void);
+int dbShutdownTest(void);
+int dbPutLinkTest(void);
 int testDbChannel(void);
 int chfPluginTest(void);
 int arrShorthandTest(void);
@@ -30,9 +32,11 @@ void epicsRunDbTests(void)
     runTest(testdbConvert);
     runTest(callbackTest);
     runTest(dbStateTest);
+    runTest(dbShutdownTest);
+    runTest(dbPutLinkTest);
     runTest(testDbChannel);
-    runTest(chfPluginTest);
     runTest(arrShorthandTest);
+    runTest(chfPluginTest);
 
     dbmfFreeChunks();
 

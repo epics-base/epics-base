@@ -41,7 +41,7 @@
 /*Declare storage for errVerbose */
 epicsShareDef int errVerbose = 0;
 
-static void exitHandler(void *);
+static void errlogExitHandler(void *);
 static void errlogThread(void);
 
 static char *msgbufGetFree(int noConsoleMessage);
@@ -70,8 +70,8 @@ static struct {
     epicsEventId waitForFlush; /*errlogFlush waits for this*/
     epicsEventId flush; /*errlogFlush sets errlogThread does a Try*/
     epicsMutexId flushLock;
-    epicsEventId waitForExit; /*exitHandler waits for this*/
-    int          atExit;      /*TRUE when exitHandler is active*/
+    epicsEventId waitForExit; /*errlogExitHandler waits for this*/
+    int          atExit;      /*TRUE when errlogExitHandler is active*/
     ELLLIST      listenerList;
     ELLLIST      msgQueue;
     msgNode      *pnextSend;
@@ -368,6 +368,7 @@ epicsShareFunc int epicsShareAPI errlogRemoveListeners(
 epicsShareFunc int epicsShareAPI eltc(int yesno)
 {
     errlogInit(0);
+    errlogFlush();
     pvtData.toConsole = yesno;
     return 0;
 }
@@ -447,7 +448,7 @@ epicsShareFunc void errPrintf(long status, const char *pFileName,
 }
 
 
-static void exitHandler(void *pvt)
+static void errlogExitHandler(void *pvt)
 {
     pvtData.atExit = 1;
     epicsEventSignal(pvtData.waitForWork);
@@ -561,7 +562,7 @@ static void errlogThread(void)
     int noConsoleMessage;
     char *pmessage;
 
-    epicsAtExit(exitHandler,0);
+    epicsAtExit(errlogExitHandler,0);
     while (TRUE) {
         epicsEventMustWait(pvtData.waitForWork);
         while ((pmessage = msgbufGetSend(&noConsoleMessage))) {

@@ -57,6 +57,7 @@ typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 
 epicsShareFunc void callbackInit(void);
 epicsShareFunc void callbackRequest(CALLBACK *pCallback);
+epicsShareFunc void callbackShutdown(void);
 epicsShareFunc void callbackSetProcess(
     CALLBACK *pcallback, int Priority, void *pRec);
 epicsShareFunc void callbackRequestProcessCallback(

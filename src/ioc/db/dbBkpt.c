@@ -61,6 +61,7 @@
 #include "errMdef.h"
 #include "recSup.h"
 #include "special.h"
+#include "epicsExit.h"
 #define epicsExportSharedSymbols
 #include "dbAddr.h"
 #include "dbAccessDefs.h"
@@ -250,7 +251,11 @@ static long FIND_CONT_NODE(
   return(0);
 }
 
-
+static void dbBkptExit(void *junk) {
+    epicsMutexDestroy(bkpt_stack_sem);
+    bkpt_stack_sem = NULL;
+}
+
 /*
  *  Initialise the breakpoint stack
  */
@@ -259,6 +264,7 @@ void dbBkptInit(void)
     if (! bkpt_stack_sem) {
         bkpt_stack_sem = epicsMutexMustCreate();
         lset_stack_count = 0;
+        epicsAtExit(dbBkptExit, NULL);
     }
 }
 

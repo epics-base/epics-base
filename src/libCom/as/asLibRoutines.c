@@ -51,7 +51,6 @@ static long asAddMemberPvt(ASMEMBERPVT *pasMemberPvt,const char *asgName);
 static long asComputeAllAsgPvt(void);
 static long asComputeAsgPvt(ASG *pasg);
 static long asComputePvt(ASCLIENTPVT asClientPvt);
-static void asFreeAll(ASBASE *pasbase);
 static UAG *asUagAdd(const char *uagName);
 static long asUagAddUser(UAG *puag,const char *user);
 static HAG *asHagAdd(const char *hagName);
@@ -1015,7 +1014,7 @@ next_rule:
     return(0);
 }
 
-static void asFreeAll(ASBASE *pasbase)
+void asFreeAll(ASBASE *pasbase)
 {
     UAG		*puag;
     UAGNAME	*puagname;

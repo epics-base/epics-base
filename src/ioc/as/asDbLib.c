@@ -152,6 +152,15 @@ int asInit(void)
     return(asInitCommon());
 }
 
+int asShutdown(void) {
+    volatile ASBASE *pbase = pasbase;
+    pasbase = NULL;
+    firstTime = TRUE;
+    if(pbase)
+        asFreeAll((ASBASE*)pbase);
+    return 0;
+}
+
 static void wdCallback(void *arg)
 {
     ASDBCALLBACK *pcallback = (ASDBCALLBACK *)arg;

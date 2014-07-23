@@ -10,11 +10,31 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-TESTLIBRARY = xRec
+TESTLIBRARY = dbTestIoc
 
-xRec_SRCS = xRecord.c
+dbTestIoc_SRCS = xRecord.c
 
-PROD_LIBS = xRec dbCore ca Com
+TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
+dbTestIoc_DBD += menuGlobal.dbd
+dbTestIoc_DBD += menuConvert.dbd
+dbTestIoc_DBD += xRecord.dbd
+TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
+
+testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+
+PROD_LIBS = dbTestIoc dbCore ca Com
+
+TESTPROD_HOST += dbShutdownTest
+dbShutdownTest_SRCS += dbShutdownTest.c
+dbShutdownTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbShutdownTest.c
+TESTS += dbShutdownTest
+
+TESTPROD_HOST += dbPutLinkTest
+dbPutLinkTest_SRCS += dbPutLinkTest.c
+dbPutLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbPutLinkTest.c
+TESTS += dbPutLinkTest
 
 TESTPROD_HOST += testdbConvert
 testdbConvert_SRCS += testdbConvert.c
@@ -31,34 +51,22 @@ dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
 
-TARGETS += $(COMMON_DIR)/dbChannelTest.dbd
-dbChannelTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
-dbChannelTest_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
+dbChannelTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbChannelTest.c
-testHarness_SRCS += dbChannelTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/dbChannelTest.dbd ../xRecord.db
 TESTS += dbChannelTest
 
-TARGETS += $(COMMON_DIR)/chfPluginTest.dbd
-chfPluginTest_DBD += xRecord.dbd
 TESTPROD_HOST += chfPluginTest
 chfPluginTest_SRCS += chfPluginTest.c
-chfPluginTest_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
+chfPluginTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += chfPluginTest.c
-testHarness_SRCS += chfPluginTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/chfPluginTest.dbd
 TESTS += chfPluginTest
 
-TARGETS += $(COMMON_DIR)/arrShorthandTest.dbd
-arrShorthandTest_DBD += xRecord.dbd
 TESTPROD_HOST += arrShorthandTest
 arrShorthandTest_SRCS += arrShorthandTest.c
-arrShorthandTest_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
+arrShorthandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += arrShorthandTest.c
-testHarness_SRCS += arrShorthandTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/arrShorthandTest.dbd
 TESTS += arrShorthandTest
 
 TESTPROD_HOST += benchdbConvert

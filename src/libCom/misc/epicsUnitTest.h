@@ -9,6 +9,9 @@
  * Author: Andrew Johnson
  */
 
+#ifndef INC_epicsUnitTest_H
+#define INC_epicsUnitTest_H
+
 #include <stdarg.h>
 
 #include "compilerDependencies.h"
@@ -47,3 +50,5 @@ epicsShareFunc void runTestFunc(const char *name, TESTFUNC func);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* INC_epicsUnitTest_H */

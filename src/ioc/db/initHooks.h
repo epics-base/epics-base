@@ -60,6 +60,7 @@ typedef void (*initHookFunction)(initHookState state);
 epicsShareFunc int initHookRegister(initHookFunction func);
 epicsShareFunc void initHookAnnounce(initHookState state);
 epicsShareFunc const char *initHookName(int state);
+epicsShareFunc void initHookFree(void);
 
 #ifdef __cplusplus
 }

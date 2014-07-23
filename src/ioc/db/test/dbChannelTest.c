@@ -21,6 +21,7 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
+#include "errlog.h"
 
 /* Expected call bit definitions */
 #define e_start         0x00000001
@@ -149,7 +150,7 @@ chFilterIf testIf =
       p_string, p_start_map, p_map_key, p_end_map, p_start_array, p_end_array,
       c_open, c_reg_pre, c_reg_post, c_report, c_close };
 
-void dbChannelTest_registerRecordDeviceDriver(struct dbBase *);
+void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 {
@@ -157,12 +158,12 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 
     testPlan(66);
 
-    if (dbReadDatabase(&pdbbase, "dbChannelTest.dbd",
+    if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
             "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'dbChannelTest.dbd' not found");
+        testAbort("Database description 'dbTestIoc.dbd' not found");
 
-    dbChannelTest_registerRecordDeviceDriver(pdbbase);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
     if (dbReadDatabase(&pdbbase, "xRecord.db",
             "." OSI_PATH_LIST_SEPARATOR "..", NULL))
         testAbort("Test database 'xRecord.db' not found");
@@ -199,7 +200,9 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk(!dbChannelCreate("y"), "Create, bad record");
     testOk(!dbChannelCreate("x.NOFIELD"), "Create, bad field");
     testOk(!dbChannelCreate("x.{not-json}"), "Create, bad JSON");
+    eltc(0);
     testOk(!dbChannelCreate("x.{\"none\":null}"), "Create, bad filter");
+    eltc(1);
 
     dbRegisterFilter("any", &testIf, NULL);
 

@@ -3,6 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2013 Helmholtz-Zentrum Berlin
+*     für Materialien und Energie GmbH.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -31,6 +33,7 @@
 #include "errMdef.h"
 #include "taskwd.h"
 #include "caeventmask.h"
+#include "iocsh.h"
 
 #define epicsExportSharedSymbols
 #include "alarm.h"
@@ -88,12 +91,13 @@ int iocInit(void)
     return iocBuild() || iocRun();
 }
 
-int iocBuild(void)
+static int iocBuild_1(void)
 {
-    if (iocState != iocVirgin) {
-        errlogPrintf("iocBuild: IOC can only be initialized once\n");
+    if (iocState != iocVirgin && iocState != iocStopped) {
+        errlogPrintf("iocBuild: IOC can only be initialized from uninitialized or stopped state\n");
         return -1;
     }
+    errlogInit(0);
     initHookAnnounce(initHookAtIocBuild);
 
     if (!epicsThreadIsOkToBlock()) {
@@ -109,14 +113,17 @@ int iocBuild(void)
     initHookAnnounce(initHookAtBeginning);
 
     coreRelease();
-    /* After this point, further calls to iocInit() are disallowed.  */
     iocState = iocBuilding;
 
     taskwdInit();
     callbackInit();
     initHookAnnounce(initHookAfterCallbackInit);
 
-    dbCaLinkInit();
+    return 0;
+}
+
+static int iocBuild_2(void)
+{
     initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
@@ -147,14 +154,49 @@ int iocBuild(void)
 
     initialProcess();
     initHookAnnounce(initHookAfterInitialProcess);
+    return 0;
+}
 
-    /* Start CA server threads */
-    rsrv_init();
+static int iocBuild_3(void)
+{
     initHookAnnounce(initHookAfterCaServerInit);
 
     iocState = iocBuilt;
     initHookAnnounce(initHookAfterIocBuilt);
     return 0;
+}
+
+int iocBuild(void)
+{
+    int status;
+
+    status = iocBuild_1();
+    if (status) return status;
+
+    dbCaLinkInit();
+
+    status = iocBuild_2();
+    if (status) return status;
+
+    /* Start CA server threads */
+    rsrv_init();
+
+    status = iocBuild_3();
+    return status;
+}
+
+int iocBuildIsolated(void)
+{
+    int status;
+
+    status = iocBuild_1();
+    if (status) return status;
+
+    status = iocBuild_2();
+    if (status) return status;
+
+    status = iocBuild_3();
+    return status;
 }
 
 int iocRun(void)
@@ -599,8 +641,31 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     }
 }
 
+static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
+    void *user)
+{
+    struct rset *prset = pdbRecordType->prset;
+
+    if (!prset) return;         /* unlikely */
+
+    epicsMutexDestroy(precord->mlok);
+}
+
+int iocShutdown(void)
+{
+    if (iocState == iocVirgin || iocState == iocStopped) return 0;
+    iterateRecords(doCloseLinks, NULL);
+    scanShutdown();
+    callbackShutdown();
+    iterateRecords(doFreeRecord, NULL);
+    dbLockCleanupRecords(pdbbase);
+    asShutdown();
+    iocshFree();
+    iocState = iocStopped;
+    return 0;
+}
+
 static void exitDatabase(void *dummy)
 {
-    iterateRecords(doCloseLinks, NULL);
-    iocState = iocStopped;
+    iocShutdown();
 }

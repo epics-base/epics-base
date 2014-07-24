@@ -128,8 +128,9 @@ epicsShareFunc int epicsJobQueue(epicsJob*);
 
 /* Remove a job from the run queue if it is queued.
  * Safe to call from a running job function.
- * returns 0 if job already ran, is running, or was not queued before,
- *         1 if job was queued and now is not.
+ * returns 0 if job was queued and now is not.
+ *         1 if job already ran, is running, or was not queued before,
+ *         Other non-zero on error
  */
 epicsShareFunc int epicsJobUnqueue(epicsJob*);
 

@@ -309,11 +309,11 @@ done:
 
 int epicsJobUnqueue(epicsJob* job)
 {
-    int ret=0;
+    int ret=1;
     epicsThreadPool *pool=job->pool;
 
     if(!pool)
-        return 0;
+        return EINVAL;
 
     epicsMutexMustLock(pool->guard);
 
@@ -325,7 +325,7 @@ int epicsJobUnqueue(epicsJob* job)
             ellAdd(&pool->owned, &job->jobnode);
         }
         job->queued=0;
-        ret=1;
+        ret=0;
     }
 
     epicsMutexUnlock(pool->guard);

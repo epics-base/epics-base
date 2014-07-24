@@ -323,10 +323,13 @@ epicsShareFunc epicsThreadPool* epicsThreadPoolGetShared(epicsThreadPoolConfig *
 {
     ELLNODE *node;
     epicsThreadPool *cur;
+    epicsThreadPoolConfig defopts;
     size_t N=epicsThreadGetCPUs();
 
-    if(!opts)
-        return NULL;
+    if(!opts) {
+        epicsThreadPoolConfigDefaults(&defopts);
+        opts = &defopts;
+    }
     /* shared pools must have a minimum allowed number of workers.
      * Use the number of CPU cores
      */

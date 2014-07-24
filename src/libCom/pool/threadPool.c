@@ -77,9 +77,8 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
         createPoolThread(pool);
     }
 
-    epicsMutexUnlock(pool->guard);
-
     if(pool->threadsRunning==0 && pool->conf.initialThreads!=0) {
+        epicsMutexUnlock(pool->guard);
         errlogPrintf("Error: Unable to create any threads for thread pool\n");
         goto cleanup;
 
@@ -88,6 +87,8 @@ epicsThreadPool* epicsThreadPoolCreate(epicsThreadPoolConfig *opts)
                      (unsigned long)pool->threadsRunning,
                      (unsigned long)pool->conf.initialThreads);
     }
+
+    epicsMutexUnlock(pool->guard);
 
     return pool;
 
@@ -131,9 +132,11 @@ void _epicsThreadPoolControl(epicsThreadPool* pool, epicsThreadPoolOption opt, u
                 }
             }
             while(jobs-- && pool->threadsRunning < pool->conf.maxThreads) {
-                pool->threadsWaking++;
-                epicsEventSignal(pool->workerWakeup);
-                createPoolThread(pool);
+                if(createPoolThread(pool)==0) {
+                    pool->threadsWaking++;
+                    epicsEventSignal(pool->workerWakeup);
+                } else
+                    break; /* oops, couldn't create worker */
             }
             CHECKCOUNT(pool);
         }

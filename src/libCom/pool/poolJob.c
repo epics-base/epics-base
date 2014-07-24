@@ -123,7 +123,7 @@ void workerMain(void* arg)
     return;
 }
 
-void createPoolThread(epicsThreadPool *pool)
+int createPoolThread(epicsThreadPool *pool)
 {
     epicsThreadId tid;
 
@@ -133,10 +133,11 @@ void createPoolThread(epicsThreadPool *pool)
                             &workerMain,
                             pool);
     if(!tid)
-        return;
+        return 1;
 
     pool->threadsRunning++;
     pool->threadsSleeping++;
+    return 0;
 }
 
 epicsJob* epicsJobCreate(epicsThreadPool* pool,
@@ -277,10 +278,27 @@ int epicsJobQueue(epicsJob* job)
         /* could create more workers so
          * will either create a new worker, or wakeup an existing worker
          */
-        pool->threadsWaking++;
-        epicsEventSignal(pool->workerWakeup);
-        if(pool->threadsWaking > pool->threadsSleeping)
-            createPoolThread(pool);
+
+        if(pool->threadsWaking >= pool->threadsSleeping) {
+            /* all sleeping workers have already been woken.
+             * start a new worker for this job
+             */
+            if(createPoolThread(pool) && pool->threadsRunning==0) {
+                /* oops, we couldn't lazy create our first worker
+                 * so this job would never run!
+                 */
+                ret = EAGAIN;
+                job->queued = 0;
+                /* if threadsRunning==0 then no jobs can be running */
+                assert(!job->running);
+                ellDelete(&pool->jobs, &job->jobnode);
+                ellAdd(&pool->owned, &job->jobnode);
+            }
+        }
+        if(ret==0) {
+            pool->threadsWaking++;
+            epicsEventSignal(pool->workerWakeup);
+        }
         CHECKCOUNT(pool);
     }
 

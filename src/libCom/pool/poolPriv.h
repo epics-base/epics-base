@@ -92,6 +92,6 @@ struct epicsJob {
     unsigned int dead:1; /* flag to catch use of freed objects */
 };
 
-void createPoolThread(epicsThreadPool *pool);
+int createPoolThread(epicsThreadPool *pool);
 
 #endif // POOLPRIV_H

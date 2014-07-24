@@ -12,6 +12,10 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
 
+TESTPROD_HOST += epicsThreadPoolTest
+epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
+TESTS += epicsThreadPoolTest
+
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
 # Not much point running this on vxWorks or RTEMS...

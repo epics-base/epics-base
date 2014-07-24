@@ -13,6 +13,7 @@ include $(TOP)/configure/CONFIG
 TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS = xRecord.c
+dbTestIoc_LIBS = dbCore
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
 dbTestIoc_DBD += menuGlobal.dbd

@@ -94,6 +94,8 @@ void epicsSpinPerformance ()
 
     /* Initialize spinlock */
     spin = epicsSpinCreate();
+    if (!spin)
+        testAbort("epicsSpinCreate() returned NULL");
 
     /* test a single lock pair */
     epicsTimeGetCurrent(&begin);
@@ -126,7 +128,7 @@ static void verifyTryLock()
 {
     struct verifyTryLock verify;
 
-    verify.spin = epicsSpinCreate();
+    verify.spin = epicsSpinMustCreate();
     verify.done = epicsEventMustCreate(epicsEventEmpty);
 
     testOk1(epicsSpinTryLock(verify.spin) == 0);
@@ -159,6 +161,8 @@ MAIN(epicsSpinTest)
     verifyTryLock();
 
     spin = epicsSpinCreate();
+    if (!spin)
+        testAbort("epicsSpinCreate() returned NULL");
 
     id = (epicsThreadId *) calloc(nthreads, sizeof(epicsThreadId));
     name = (char **) calloc(nthreads, sizeof(char *));

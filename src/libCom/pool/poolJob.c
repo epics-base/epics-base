@@ -235,7 +235,10 @@ int epicsJobQueue(epicsJob* job)
 
     assert(!job->dead);
 
-    if(pool->pauseadd || job->freewhendone) {
+    if(pool->pauseadd) {
+        ret=EPERM;
+        goto done;
+    } else if(job->freewhendone) {
         ret=EINVAL;
         goto done;
     } else if(job->queued) {

@@ -83,7 +83,7 @@ void epicsSpinLock(epicsSpinId spin) {
     status = pthread_spin_lock(&spin->lock);
     checkStatus(status, "pthread_spin_lock");
     if (status)
-        cantProceed("epicsSpinLock pspin");
+        cantProceed(NULL);
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
@@ -148,7 +148,7 @@ void epicsSpinLock(epicsSpinId spin) {
     status = pthread_mutex_lock(&spin->lock);
     checkStatus(status, "pthread_mutex_lock");
     if (status)
-        cantProceed("epicsSpinLock pmutex");
+        cantProceed(NULL);
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {

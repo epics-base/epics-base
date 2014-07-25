@@ -16,7 +16,7 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
-struct EpicsAtomicLockKey {};
+typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
 
 #ifdef __cplusplus
 extern "C" {

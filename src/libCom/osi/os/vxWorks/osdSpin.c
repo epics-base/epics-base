@@ -71,7 +71,17 @@ void epicsSpinLock(epicsSpinId spin) {
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
-    epicsSpinLock(spin);
+    int key = intLock();
+    if(!intContext())
+        taskLock();
+    if(spin->locked) {
+        intUnlock(key);
+        if(!intContext())
+            taskUnlock();
+        return 1;
+    }
+    spin->key = key;
+    spin->locked = 1;
     return 0;
 }
 

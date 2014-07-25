@@ -59,7 +59,6 @@ void epicsSpinLock(epicsSpinId spin) {
     rtems_interrupt_level level;
     rtems_interrupt_disable (level);
     _Thread_Disable_dispatch();
-    spin->level = level;
     if(spin->locked) {
         rtems_interrupt_enable (level);
         _Thread_Enable_dispatch();
@@ -71,11 +70,21 @@ void epicsSpinLock(epicsSpinId spin) {
         }
         return;
     }
+    spin->level = level;
     spin->locked = 1;
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
-    epicsSpinLock(spin);
+    rtems_interrupt_level level;
+    rtems_interrupt_disable (level);
+    _Thread_Disable_dispatch();
+    if(spin->locked) {
+        rtems_interrupt_enable (level);
+        _Thread_Enable_dispatch();
+        return 1;
+    }
+    spin->level = level;
+    spin->locked = 1;
     return 0;
 }
 

@@ -113,6 +113,7 @@ void epicsSpinPerformance ()
     delay /= N * 100u;  /* convert to delay per lock pair */
     delay *= 1e6;       /* convert to micro seconds */
     testDiag("lock()*1/unlock()*1 takes %f microseconds", delay);
+    epicsSpinDestroy(spin);
 }
 
 struct verifyTryLock;
@@ -230,6 +231,7 @@ MAIN(epicsSpinTest)
         epicsEventMustWait(pinfo[i]->done);
         epicsEventDestroy(pinfo[i]->done);
         free(name[i]);
+        free(pinfo[i]);
     }
     testOk(counter == nthreads * nrounds, "Loops run = %d (expecting %d)",
         counter, nthreads * nrounds);

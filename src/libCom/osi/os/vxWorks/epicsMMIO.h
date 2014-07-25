@@ -57,10 +57,10 @@
 extern "C" {
 #endif
 
-epicsUInt16 sysIn16    (volatile void*);                 /* Synchronous 16 bit read               */
-epicsUInt32 sysIn32    (volatile void*);                 /* Synchronous 32 bit read               */
-void        sysOut16   (volatile void*, epicsUInt16);    /* Synchronous 16 bit write              */
-void        sysOut32   (volatile void*, epicsUInt32);    /* Synchronous 32 bit write              */
+epicsUInt16 sysInWord    (volatile void*);                 /* Synchronous 16 bit read               */
+epicsUInt32 sysInLong    (volatile void*);                 /* Synchronous 32 bit read               */
+void        sysOutWord   (volatile void*, epicsUInt16);    /* Synchronous 16 bit write              */
+void        sysOutLong   (volatile void*, epicsUInt32);    /* Synchronous 32 bit write              */
 
 
 #ifdef __cplusplus
@@ -96,23 +96,23 @@ void        sysOut32   (volatile void*, epicsUInt32);    /* Synchronous 32 bit w
 #define ioread8(address)           sysInByte   ((epicsUInt32)(address))
 #define iowrite8(address,data)     sysOutByte  ((epicsUInt32)(address), (epicsUInt8)(data))
 
-#define nat_ioread16(address)      sysIn16 ((address))
-#define nat_ioread32(address)      sysIn32 ((address))
+#define nat_ioread16(address)      sysInWord ((address))
+#define nat_ioread32(address)      sysInLong ((address))
 
-#define nat_iowrite16(address,data) sysOut16(address,data)
-#define nat_iowrite32(address,data) sysOut32(address,data)
+#define nat_iowrite16(address,data) sysOutWord(address,data)
+#define nat_iowrite32(address,data) sysOutLong(address,data)
 
-#define be_ioread16(address)       be16_to_cpu (sysIn16 ((address)))
-#define be_ioread32(address)       be32_to_cpu (sysIn32 ((address)))
+#define be_ioread16(address)       be16_to_cpu (sysInWord ((address)))
+#define be_ioread32(address)       be32_to_cpu (sysInLong ((address)))
 
-#define be_iowrite16(address,data) sysOut16    ((address), be16_to_cpu((epicsUInt16)(data)))
-#define be_iowrite32(address,data) sysOut32    ((address), be32_to_cpu((epicsUInt32)(data)))
+#define be_iowrite16(address,data) sysOutWord    ((address), be16_to_cpu((epicsUInt16)(data)))
+#define be_iowrite32(address,data) sysOutLong    ((address), be32_to_cpu((epicsUInt32)(data)))
 
-#define le_ioread16(address)       le16_to_cpu (sysIn16 ((address)))
-#define le_ioread32(address)       le32_to_cpu (sysIn32 ((address)))
+#define le_ioread16(address)       le16_to_cpu (sysInWord ((address)))
+#define le_ioread32(address)       le32_to_cpu (sysInLong ((address)))
 
-#define le_iowrite16(address,data) sysOut16    ((address), le16_to_cpu((epicsUInt16)(data)))
-#define le_iowrite32(address,data) sysOut32    ((address), le32_to_cpu((epicsUInt32)(data)))
+#define le_iowrite16(address,data) sysOutWord    ((address), le16_to_cpu((epicsUInt16)(data)))
+#define le_iowrite32(address,data) sysOutLong    ((address), le32_to_cpu((epicsUInt32)(data)))
 
 #ifndef VX_MEM_BARRIER_R
 #  define VX_MEM_BARRIER_R() do{}while(0)

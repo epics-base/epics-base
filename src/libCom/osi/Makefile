@@ -120,8 +120,6 @@ Com_SRCS += osdMessageQueue.c
 Com_SRCS += devLibVME.c
 Com_SRCS += devLibVMEOSD.c
 
-Com_SRCS_vxWorks += epicsMMIO.c
-
 Com_SRCS_vxWorks += atReboot.cpp
 
 # For old vxWorks applications

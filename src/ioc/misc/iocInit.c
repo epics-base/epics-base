@@ -135,8 +135,8 @@ static int iocBuild_2(void)
     initDevSup();
     initHookAnnounce(initHookAfterInitDevSup);
 
-    initDatabase();
     dbLockInitRecords(pdbbase);
+    initDatabase();
     dbBkptInit();
     initHookAnnounce(initHookAfterInitDatabase);
 

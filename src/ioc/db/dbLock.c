@@ -331,62 +331,59 @@ static lockRecord *lockRecordAlloc;
 
 void dbLockInitRecords(dbBase *pdbbase)
 {
-    int			link;
-    dbRecordType		*pdbRecordType;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode 	*pdbRecordNode;
-    dbCommon		*precord;
-    DBLINK		*plink;
-    int			nrecords=0;
-    lockRecord		*plockRecord;
-    
+    dbRecordType *pdbRecordType;
+    int nrecords = 0;
+    lockRecord *plockRecord;
+
     dbLockInitialize();
     /*Allocate and initialize a lockRecord for each record instance*/
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+
         nrecords += ellCount(&pdbRecordType->recList)
                     - pdbRecordType->no_aliases;
     }
+
     /*Allocate all of them at once */
     lockRecordAlloc = plockRecord = dbCalloc(nrecords,sizeof(lockRecord));
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        dbRecordNode *pdbRecordNode;
+
         for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-        pdbRecordNode;
-        pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-            precord = pdbRecordNode->precord;
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            dbCommon *precord = pdbRecordNode->precord;
+
             if (!precord->name[0] ||
                 pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
                 continue;
+
             plockRecord->precord = precord;
             precord->lset = plockRecord;
             plockRecord++;
         }
     }
-    for(pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
-    pdbRecordType;
-    pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+
+    for (pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
+         pdbRecordType;
+         pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
+        dbRecordNode *pdbRecordNode;
+
         for (pdbRecordNode=(dbRecordNode *)ellFirst(&pdbRecordType->recList);
-        pdbRecordNode;
-        pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
-            precord = pdbRecordNode->precord;
+             pdbRecordNode;
+             pdbRecordNode = (dbRecordNode *)ellNext(&pdbRecordNode->node)) {
+            dbCommon *precord = pdbRecordNode->precord;
+
             if (!precord->name[0] ||
                 pdbRecordNode->flags & DBRN_FLAGS_ISALIAS)
                 continue;
+
             plockRecord = precord->lset;
-            if(!plockRecord->plockSet) 
-                allocLockSet(plockRecord,listTypeScanLock,lockSetStateFree,0);
-            for(link=0; link<pdbRecordType->no_links; link++) {
-                DBADDR	*pdbAddr;
-        
-                pdbFldDes = pdbRecordType->papFldDes[pdbRecordType->link_ind[link]];
-                plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-                if(plink->type != DB_LINK) continue;
-                pdbAddr = (DBADDR *)(plink->value.pv_link.pvt);
-                dbLockSetMerge(precord,pdbAddr->precord);
-            }
+            if (!plockRecord->plockSet)
+                allocLockSet(plockRecord, listTypeScanLock, lockSetStateFree, 0);
         }
     }
 }

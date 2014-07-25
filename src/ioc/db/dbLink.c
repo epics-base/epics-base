@@ -119,21 +119,28 @@ static long dbDbInitLink(struct link *plink, short dbfType)
     pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
     *pdbAddr = dbaddr; /* structure copy */
     plink->value.pv_link.pvt = pdbAddr;
+    dbLockSetMerge(plink->value.pv_link.precord, pdbAddr->precord);
     return 0;
 }
 
 static long dbDbAddLink(struct link *plink, short dbfType)
 {
-    long status = dbDbInitLink(plink, dbfType);
+    DBADDR dbaddr;
+    long status;
+    DBADDR *pdbAddr;
 
-    if (!status) {
-        DBADDR *pdbAddr = (DBADDR *) plink->value.pv_link.pvt;
-        dbCommon *precord = plink->value.pv_link.precord;
+    status = dbNameToAddr(plink->value.pv_link.pvname, &dbaddr);
+    if (status)
+        return status;
 
-        dbLockSetRecordLock(pdbAddr->precord);
-        dbLockSetMerge(precord, pdbAddr->precord);
-    }
-    return status;
+    plink->type = DB_LINK;
+    pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
+    *pdbAddr = dbaddr; /* structure copy */
+    plink->value.pv_link.pvt = pdbAddr;
+
+    dbLockSetRecordLock(pdbAddr->precord);
+    dbLockSetMerge(plink->value.pv_link.precord, pdbAddr->precord);
+    return 0;
 }
 
 static void dbDbRemoveLink(struct link *plink)

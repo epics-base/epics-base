@@ -152,17 +152,11 @@ epicsJob* epicsJobCreate(epicsThreadPool* pool,
     if(arg==&_epicsJobArgSelf)
         arg=job;
 
-    job->pool=pool;
+    job->pool=NULL;
     job->func=func;
     job->arg=arg;
 
-    if(pool) {
-        epicsMutexMustLock(pool->guard);
-
-        ellAdd(&pool->owned, &job->jobnode);
-
-        epicsMutexUnlock(pool->guard);
-    }
+    epicsJobMove(job, pool);
 
     return job;
 }

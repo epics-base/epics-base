@@ -100,6 +100,7 @@ epicsShareExtern void* _epicsJobArgSelf;
 /* creates, but does not add, a new job.
  * If pool in NULL then the job is not associated with any pool and
  * epicsJobMove() must be called before epicsJobQueue()
+ * Safe to call from a running job function.
  * returns a new job pointer, or NULL on error
  */
 epicsShareFunc epicsJob* epicsJobCreate(epicsThreadPool* pool,

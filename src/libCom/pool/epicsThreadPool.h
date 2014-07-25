@@ -81,8 +81,8 @@ epicsShareFunc void epicsThreadPoolControl(epicsThreadPool* pool,
 /* Block until job queue is emptied and no jobs are running.
  * Useful after calling epicsThreadPoolControl() with option epicsThreadPoolQueueAdd=0
  *
- * timeout<0 waits forever, timeout==0 polls, timeout>0 waits for a fixed time
- * Returns 1 for timeout, 0 for success, >1 on errors
+ * timeout<0 waits forever, timeout==0 polls, timeout>0 waits at most one timeout period
+ * Returns 0 for success or non-zero on error (timeout is ETIMEOUT)
  */
 epicsShareFunc int epicsThreadPoolWait(epicsThreadPool* pool, double timeout);
 

@@ -170,7 +170,7 @@ int epicsThreadPoolWait(epicsThreadPool* pool, double timeout)
                 cantProceed("epicsThreadPoolWait: failed to wait for Event");
                 break;
             case epicsEventWaitTimeout:
-                ret=EWOULDBLOCK;
+                ret=ETIMEDOUT;
                 break;
             case epicsEventWaitOK:
                 ret=0;

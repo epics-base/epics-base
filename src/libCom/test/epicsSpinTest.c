@@ -22,6 +22,7 @@
 
 #include "epicsTime.h"
 #include "epicsThread.h"
+#include "epicsAtomic.h"
 #include "epicsSpin.h"
 #include "epicsEvent.h"
 #include "errlog.h"
@@ -110,38 +111,78 @@ void epicsSpinPerformance ()
     testDiag("lock()*1/unlock()*1 takes %f microseconds", delay);
 }
 
+struct verifyTryLock;
+
+struct verifyTryLockEnt {
+    epicsEventId done;
+    struct verifyTryLock *main;
+};
+
 struct verifyTryLock {
     epicsSpinId  spin;
-    epicsEventId done;
+    int flag;
+    struct verifyTryLockEnt *ents;
 };
 
 static void verifyTryLockThread(void *pArg)
 {
-    struct verifyTryLock *pVerify =
-        (struct verifyTryLock *) pArg;
+    struct verifyTryLockEnt *pVerify =
+        (struct verifyTryLockEnt *) pArg;
 
-    testOk1(epicsSpinTryLock(pVerify->spin));
+    while(epicsAtomicGetIntT(&pVerify->main->flag)==0) {
+        int ret = epicsSpinTryLock(pVerify->main->spin);
+        if(ret!=0) {
+            epicsAtomicCmpAndSwapIntT(&pVerify->main->flag, 0, ret);
+            break;
+        } else
+            epicsSpinUnlock(pVerify->main->spin);
+    }
+
     epicsEventSignal(pVerify->done);
 }
 
+/* Start one thread per CPU which will all try lock
+ * the same spinlock.  They break as soon as one
+ * fails to take the lock.
+ */
 static void verifyTryLock()
 {
+    int N, i;
     struct verifyTryLock verify;
 
+    N = epicsThreadGetCPUs();
+    if(N==1) {
+        testSkip(1, "verifyTryLock() only for SMP systems");
+        return;
+    }
+
+    verify.flag = 0;
     verify.spin = epicsSpinMustCreate();
-    verify.done = epicsEventMustCreate(epicsEventEmpty);
 
-    testOk1(epicsSpinTryLock(verify.spin) == 0);
+    testDiag("Starting %d spinners", N);
 
-    epicsThreadCreate("verifyTryLockThread", 40,
-        epicsThreadGetStackSize(epicsThreadStackSmall),
-        verifyTryLockThread, &verify);
+    verify.ents = calloc(N, sizeof(*verify.ents));
+    for(i=0; i<N; i++) {
+        verify.ents[i].main = &verify;
+        verify.ents[i].done = epicsEventMustCreate(epicsEventEmpty);
+        epicsThreadMustCreate("verifyTryLockThread", 40,
+            epicsThreadGetStackSize(epicsThreadStackSmall),
+                              verifyTryLockThread, &verify.ents[i]);
+    }
 
-    testOk1(epicsEventWait(verify.done) == epicsEventWaitOK);
+    testDiag("All started");
 
-    epicsSpinUnlock(verify.spin);
+    for(i=0; i<N; i++) {
+        epicsEventMustWait(verify.ents[i].done);
+        epicsEventDestroy(verify.ents[i].done);
+    }
+
+    testDiag("All done");
+
+    testOk(verify.flag==1, "epicsTryLock returns %d (expect 1)", verify.flag);
+
     epicsSpinDestroy(verify.spin);
-    epicsEventDestroy(verify.done);
+    free(verify.ents);
 }
 
 MAIN(epicsSpinTest)
@@ -156,7 +197,7 @@ MAIN(epicsSpinTest)
     info **pinfo;
     epicsSpinId spin;
 
-    testPlan(3 + nthreads * nrounds);
+    testPlan(1 + nthreads * nrounds);
 
     verifyTryLock();
 

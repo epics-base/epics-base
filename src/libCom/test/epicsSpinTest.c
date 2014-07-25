@@ -32,22 +32,26 @@
 typedef struct info {
     int         threadnum;
     epicsSpinId spin;
-    int         quit;
+    int         *counter;
+    int         rounds;
+    epicsEventId done;
 } info;
+
+#define spinDelay 0.016667
 
 void spinThread(void *arg)
 {
     info *pinfo = (info *) arg;
     testDiag("spinThread %d starting", pinfo->threadnum);
-    while (pinfo->quit--) {
+    epicsThreadSleep(0.1);  /* Try to align threads */
+    while (pinfo->rounds--) {
+        epicsThreadSleep(spinDelay);
         epicsSpinLock(pinfo->spin);
-        testPass("spinThread %d epicsSpinLock taken", pinfo->threadnum);
-        epicsThreadSleep(.1);
+        pinfo->counter[0]++;
         epicsSpinUnlock(pinfo->spin);
-        epicsThreadSleep(.9);
     }
     testDiag("spinThread %d exiting", pinfo->threadnum);
-    return;
+    epicsEventSignal(pinfo->done);
 }
 
 static void lockPair(struct epicsSpin *spin)
@@ -188,16 +192,15 @@ static void verifyTryLock()
 MAIN(epicsSpinTest)
 {
     const int nthreads = 3;
-    const int nrounds = 5;
+    const int nrounds = 500;
     unsigned int stackSize;
     epicsThreadId *id;
-    int i;
+    int i, counter;
     char **name;
-    void **arg;
     info **pinfo;
     epicsSpinId spin;
 
-    testPlan(1 + nthreads * nrounds);
+    testPlan(2);
 
     verifyTryLock();
 
@@ -207,22 +210,34 @@ MAIN(epicsSpinTest)
 
     id = (epicsThreadId *) calloc(nthreads, sizeof(epicsThreadId));
     name = (char **) calloc(nthreads, sizeof(char *));
-    arg = (void **) calloc(nthreads, sizeof(void *));
     pinfo = (info **) calloc(nthreads, sizeof(info *));
     stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
+    counter = 0;
     for (i = 0; i < nthreads; i++) {
         name[i] = (char *) calloc(10, sizeof(char));
         sprintf(name[i],"task%d",i);
         pinfo[i] = (info *) calloc(1, sizeof(info));
         pinfo[i]->threadnum = i;
         pinfo[i]->spin = spin;
-        pinfo[i]->quit = nrounds;
-        arg[i] = pinfo[i];
+        pinfo[i]->counter = &counter;
+        pinfo[i]->rounds = nrounds;
+        pinfo[i]->done = epicsEventMustCreate(epicsEventEmpty);
         id[i] = epicsThreadCreate(name[i], 40, stackSize,
                                   spinThread,
-                                  arg[i]);
+                                  pinfo[i]);
     }
-    epicsThreadSleep(2.0 + nrounds);
+    for (i = 0; i < nthreads; i++) {
+        epicsEventMustWait(pinfo[i]->done);
+        epicsEventDestroy(pinfo[i]->done);
+        free(name[i]);
+    }
+    testOk(counter == nthreads * nrounds, "Loops run = %d (expecting %d)",
+        counter, nthreads * nrounds);
+
+    free(pinfo);
+    free(name);
+    free(id);
+    epicsSpinDestroy(spin);
 
     epicsSpinPerformance();
 

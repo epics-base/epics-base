@@ -645,7 +645,8 @@ static void dbRecordtypeBody(void)
 	    fprintf(stderr,"recordtype(%s).%s extra not specified\n",
 		pdbRecordType->name,pdbFldDes->name);
     }
-    if(ellCount(&tempList)) yyerrorAbort("dbMenuBody: tempList not empty");
+    if (ellCount(&tempList))
+        yyerrorAbort("dbRecordtypeBody: tempList not empty");
     pdbRecordType->no_prompt = no_prompt;
     pdbRecordType->no_links = no_links;
     pdbRecordType->link_ind = dbCalloc(no_links,sizeof(short));

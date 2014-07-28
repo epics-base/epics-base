@@ -110,7 +110,7 @@ static long init_record(subRecord *prec, int pass)
         /* convert the initialization subroutine name  */
         psubroutine = (SUBFUNCPTR)registryFunctionFind(prec->inam);
         if (psubroutine == 0) {
-            recGblRecordError(S_db_BadSub, (void *)prec, "recSub(init_record)");
+            recGblRecordError(S_db_BadSub, (void *)prec, "Init subroutine (INAM)");
             return S_db_BadSub;
         }
         /* invoke the initialization subroutine */
@@ -124,7 +124,7 @@ static long init_record(subRecord *prec, int pass)
     }
     prec->sadr = (SUBFUNCPTR)registryFunctionFind(prec->snam);
     if (prec->sadr == NULL) {
-        recGblRecordError(S_db_BadSub, (void *)prec, "recSub(init_record)");
+        recGblRecordError(S_db_BadSub, (void *)prec, "Proc subroutine (SNAM)");
         return S_db_BadSub;
     }
     prec->mlst = prec->val;

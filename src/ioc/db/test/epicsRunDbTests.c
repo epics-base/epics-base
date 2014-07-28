@@ -20,6 +20,7 @@ int testdbConvert(void);
 int callbackTest(void);
 int dbStateTest(void);
 int dbShutdownTest(void);
+int dbLockTest(void);
 int dbPutLinkTest(void);
 int testDbChannel(void);
 int chfPluginTest(void);
@@ -33,6 +34,7 @@ void epicsRunDbTests(void)
     runTest(callbackTest);
     runTest(dbStateTest);
     runTest(dbShutdownTest);
+    runTest(dbLockTest);
     runTest(dbPutLinkTest);
     runTest(testDbChannel);
     runTest(arrShorthandTest);

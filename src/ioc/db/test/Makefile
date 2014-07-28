@@ -37,6 +37,12 @@ dbPutLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbPutLinkTest.c
 TESTS += dbPutLinkTest
 
+TESTPROD_HOST += dbLockTest
+dbLockTest_SRCS += dbLockTest.c
+dbLockTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbLockTest.c
+TESTS += dbLockTest
+
 TESTPROD_HOST += testdbConvert
 testdbConvert_SRCS += testdbConvert.c
 testHarness_SRCS += testdbConvert.c

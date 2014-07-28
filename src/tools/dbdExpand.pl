@@ -44,6 +44,7 @@ while (@ARGV) {
         warn "  Your Makefile may need this dependency rule:\n" .
             "    $dep: \$(COMMON_DIR)/$file\n"
             if $@ =~ m/Can't find file/;
+        exit 1 unless $opt_D;
     }
 }
 

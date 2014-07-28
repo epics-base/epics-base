@@ -62,6 +62,7 @@ static void dbMenuChoice(char *name,char *value);
 static void dbMenuBody(void);
 
 static void dbRecordtypeHead(char *name);
+static void dbRecordtypeEmpty(void);
 static void dbRecordtypeBody(void);
 static void dbRecordtypeFieldHead(char *name,char *type);
 static void dbRecordtypeFieldItem(char *name,char *value);
@@ -607,6 +608,23 @@ static void dbRecordtypeCdef(char *text) {
     return;
 }
 
+static void dbRecordtypeEmpty(void)
+{
+    tempListNode *ptempListNode;
+    dbRecordType *pdbRecordType;
+
+    if (duplicate) {
+        duplicate = FALSE;
+	return;
+    }
+
+    ptempListNode = (tempListNode *)ellFirst(&tempList);
+    pdbRecordType = ptempListNode->item;
+    epicsPrintf("Declaration of recordtype(%s) preceeded full definition.\n",
+        pdbRecordType->name);
+    yyerrorAbort(NULL);
+}
+
 static void dbRecordtypeBody(void)
 {
     dbRecordType		*pdbRecordType;

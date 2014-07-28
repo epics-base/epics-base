@@ -100,7 +100,12 @@ recordtype_head: '(' tokenSTRING ')'
 	dbRecordtypeHead($2); dbmfFree($2);
 };
 
-recordtype_body: '{' recordtype_field_list '}'
+recordtype_body: '{' '}'
+{
+	if(dbStaticDebug>2) printf("empty recordtype_body\n");
+	dbRecordtypeEmpty();
+}
+	| '{' recordtype_field_list '}'
 {
 	if(dbStaticDebug>2) printf("recordtype_body\n");
 	dbRecordtypeBody();
@@ -215,14 +220,14 @@ record_head: '(' tokenSTRING ',' tokenSTRING ')'
 	dbRecordHead($2,$4,0); dbmfFree($2); dbmfFree($4);
 };
 
-record_body: /*Null*/
+record_body: /* empty */
 {
 	if(dbStaticDebug>2) printf("null record_body\n");
 	dbRecordBody();
 }
 	| '{' '}'
 {
-	if(dbStaticDebug>2) printf("record_body - no fields\n");
+	if(dbStaticDebug>2) printf("empty record_body\n");
 	dbRecordBody();
 }
         | '{' record_field_list '}'

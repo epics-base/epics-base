@@ -2,17 +2,16 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 #----------------------------------------
-#  ADD MACRO DEFINITIONS AFTER THIS LINE
-
-#=============================
-# Build the IOC support library
-
-LIBRARY_IOC += _APPNAME_Support
+#  ADD MACRO DEFINITIONS BELOW HERE
 
 # xxxRecord.h will be created from xxxRecord.dbd
 DBDINC += xxxRecord
-# Install devXxxSoft.dbd into <top>/dbd
+
+# Install xxxSupport.dbd into <top>/dbd
 DBD += xxxSupport.dbd
+
+# Build an IOC support library
+LIBRARY_IOC += _APPNAME_Support
 
 # Compile and add the code to the support library
 _APPNAME_Support_SRCS += xxxRecord.c
@@ -20,20 +19,20 @@ _APPNAME_Support_SRCS += devXxxSoft.c
 
 # Link locally-provided code into the support library,
 # rather than directly into the IOC application.
+# This is required for Windows DLL builds.
 _APPNAME_Support_SRCS += dbSubExample.c
 _APPNAME_Support_SRCS += _APPNAME_Hello.c
 _APPNAME_Support_SRCS += initTrace.c
 
 _APPNAME_Support_LIBS += $(EPICS_BASE_IOC_LIBS)
 
-#=============================
 # Build the IOC application
-
 PROD_IOC = _APPNAME_
+
 # _APPNAME_.dbd will be created and installed
 DBD += _APPNAME_.dbd
 
-# _APPNAME_.dbd will be made up from these files:
+# _APPNAME_.dbd will include these files:
 _APPNAME__DBD += base.dbd
 _APPNAME__DBD += xxxSupport.dbd
 _APPNAME__DBD += dbSubExample.dbd
@@ -43,19 +42,18 @@ _APPNAME__DBD += initTrace.dbd
 # _APPNAME__registerRecordDeviceDriver.cpp derives from _APPNAME_.dbd
 _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
 
-# Build the main IOC entry point on workstation OSs.
+# Build the main IOC entry point where needed
 _APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
 _APPNAME__SRCS_vxWorks += -nil-
 
 # Add support from base/src/vxWorks if needed
 #_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
 
-# Link in the code from the support library
+# Link in the code from our support library
 _APPNAME__LIBS += _APPNAME_Support
 
-# NOTE: To build SNL programs, SNCSEQ must be defined
+# To build SNL programs, SNCSEQ must be defined
 # in the <top>/configure/RELEASE file
-
 ifneq ($(SNCSEQ),)
     # Build sncExample into _APPNAME_Support
     sncExample_SNCFLAGS += +r
@@ -72,12 +70,10 @@ ifneq ($(SNCSEQ),)
     sncProgram_LIBS += $(EPICS_BASE_HOST_LIBS)
 endif
 
-# Finally link to the EPICS Base libraries
+# Finally link IOC to the EPICS Base libraries
 _APPNAME__LIBS += $(EPICS_BASE_IOC_LIBS)
-
-#=============================
 
 include $(TOP)/configure/RULES
 #----------------------------------------
-#  ADD RULES AFTER THIS LINE
+#  ADD EXTRA GNUMAKE RULES BELOW HERE
 

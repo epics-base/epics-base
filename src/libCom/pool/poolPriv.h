@@ -28,16 +28,16 @@ struct epicsThreadPool {
      */
 
     /* # of running workers which are not waiting for a wakeup event */
-    size_t threadsAreAwake;
+    unsigned int threadsAreAwake;
     /* # of sleeping workers which need to be awakened */
-    size_t threadsWaking;
+    unsigned int threadsWaking;
     /* # of workers waiting on the workerWakeup event */
-    size_t threadsSleeping;
+    unsigned int threadsSleeping;
     /* # of threads started and not stopped */
-    size_t threadsRunning;
+    unsigned int threadsRunning;
 
     /* # of observers waiting on pool events */
-    size_t observerCount;
+    unsigned int observerCount;
 
     epicsEventId workerWakeup;
     epicsEventId shutdownEvent;

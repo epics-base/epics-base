@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 typedef struct {
-    size_t initialThreads;
-    size_t maxThreads;
+    unsigned int initialThreads;
+    unsigned int maxThreads;
     unsigned int workerStack;
     unsigned int workerPriority;
 } epicsThreadPoolConfig;
@@ -141,7 +141,7 @@ epicsShareFunc int epicsJobUnqueue(epicsJob*);
 epicsShareFunc void epicsThreadPoolReport(epicsThreadPool *pool, FILE *fd);
 
 /* Current number of active workers.  May be less than the maximum */
-epicsShareFunc size_t epicsThreadPoolNThreads(epicsThreadPool *);
+epicsShareFunc unsigned int epicsThreadPoolNThreads(epicsThreadPool *);
 
 #ifdef __cplusplus
 }

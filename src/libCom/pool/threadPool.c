@@ -264,12 +264,12 @@ void epicsThreadPoolReport(epicsThreadPool *pool, FILE *fd)
     ELLNODE *cur;
     epicsMutexMustLock(pool->guard);
 
-    fprintf(fd, "Thread Pool with %lu/%lu threads\n"
-            " running %d jobs with %lu threads\n",
-            (unsigned long)pool->threadsRunning,
-            (unsigned long)pool->conf.maxThreads,
+    fprintf(fd, "Thread Pool with %u/%u threads\n"
+            " running %d jobs with %u threads\n",
+            pool->threadsRunning,
+            pool->conf.maxThreads,
             ellCount(&pool->jobs),
-            (unsigned long)pool->threadsAreAwake);
+            pool->threadsAreAwake);
     if(pool->pauseadd)
         fprintf(fd, "  Inhibit queueing\n");
     if(pool->pauserun)
@@ -280,9 +280,9 @@ void epicsThreadPoolReport(epicsThreadPool *pool, FILE *fd)
     for(cur=ellFirst(&pool->jobs); cur; cur=ellNext(cur))
     {
         epicsJob *job=CONTAINER(cur, epicsJob, jobnode);
-        fprintf(fd, "  job 0x%lu func: 0x%lu, arg: 0x%lu ",
-                (unsigned long)job, (unsigned long)job->func,
-                (unsigned long)job->arg);
+        fprintf(fd, "  job %p func: %p, arg: %p ",
+                job, job->func,
+                job->arg);
         if(job->queued)
             fprintf(fd, "Queued ");
         if(job->running)
@@ -295,9 +295,9 @@ void epicsThreadPoolReport(epicsThreadPool *pool, FILE *fd)
     epicsMutexUnlock(pool->guard);
 }
 
-size_t epicsThreadPoolNThreads(epicsThreadPool *pool)
+unsigned int epicsThreadPoolNThreads(epicsThreadPool *pool)
 {
-    size_t ret;
+    unsigned int ret;
 
     epicsMutexMustLock(pool->guard);
     ret=pool->threadsRunning;

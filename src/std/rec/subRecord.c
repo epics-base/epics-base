@@ -380,28 +380,46 @@ static void monitor(subRecord *prec)
 
     /* get alarm mask */
     monitor_mask = recGblResetAlarms(prec);
+
     /* check for value change */
-    delta = prec->val - prec->mlst;
-    if (delta < 0.0) delta = -delta;
-    if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
+    delta = 0;
+    if (isnan(prec->val) != isnan(prec->mlst) || isinf(prec->val) != isinf(prec->mlst)) {
+        delta = epicsINF;
+    } else if (!isinf(prec->val) && !isnan(prec->val)) {
+        delta = prec->mlst - prec->val;
+        if (delta < 0.0) delta = -delta;
+    } else if (signbit(prec->val) != signbit(prec->mlst)) {
+        delta = epicsINF;
+    }
+    if (delta > prec->mdel) {
         /* post events for value change */
         monitor_mask |= DBE_VALUE;
         /* update last value monitored */
         prec->mlst = prec->val;
     }
+
     /* check for archive change */
-    delta = prec->val - prec->alst;
-    if (delta < 0.0) delta = -delta;
-    if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
+    delta = 0;
+    if (isnan(prec->val) != isnan(prec->alst) || isinf(prec->val) != isinf(prec->alst)) {
+        delta = epicsINF;
+    } else if (!isinf(prec->val) && !isnan(prec->val)) {
+        delta = prec->alst - prec->val;
+        if (delta < 0.0) delta = -delta;
+    } else if (signbit(prec->val) != signbit(prec->alst)) {
+        delta = epicsINF;
+    }
+    if (delta > prec->adel) {
         /* post events on value field for archive change */
         monitor_mask |= DBE_LOG;
         /* update last archive value monitored */
         prec->alst = prec->val;
     }
+
     /* send out monitors connected to the value field */
     if (monitor_mask) {
         db_post_events(prec, &prec->val, monitor_mask);
     }
+
     /* check all input fields for changes */
     for (i = 0, pnew = &prec->a, pold = &prec->la;
          i < INP_ARG_MAX; i++, pnew++, pold++) {

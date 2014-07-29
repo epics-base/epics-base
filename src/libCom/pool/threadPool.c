@@ -102,7 +102,7 @@ cleanup:
 }
 
 static
-void _epicsThreadPoolControl(epicsThreadPool* pool, epicsThreadPoolOption opt, unsigned int val)
+void epicsThreadPoolControlImpl(epicsThreadPool* pool, epicsThreadPoolOption opt, unsigned int val)
 {
     if(pool->freezeopt)
         return;
@@ -147,7 +147,7 @@ void _epicsThreadPoolControl(epicsThreadPool* pool, epicsThreadPoolOption opt, u
 void epicsThreadPoolControl(epicsThreadPool* pool, epicsThreadPoolOption opt, unsigned int val)
 {
     epicsMutexMustLock(pool->guard);
-    _epicsThreadPoolControl(pool, opt, val);
+    epicsThreadPoolControlImpl(pool, opt, val);
     epicsMutexUnlock(pool->guard);
 }
 
@@ -206,8 +206,8 @@ void epicsThreadPoolDestroy(epicsThreadPool *pool)
     epicsMutexMustLock(pool->guard);
 
     /* run remaining queued jobs */
-    _epicsThreadPoolControl(pool, epicsThreadPoolQueueAdd, 0);
-    _epicsThreadPoolControl(pool, epicsThreadPoolQueueRun, 1);
+    epicsThreadPoolControlImpl(pool, epicsThreadPoolQueueAdd, 0);
+    epicsThreadPoolControlImpl(pool, epicsThreadPoolQueueRun, 1);
     nThr=pool->threadsRunning;
     pool->freezeopt = 1;
 

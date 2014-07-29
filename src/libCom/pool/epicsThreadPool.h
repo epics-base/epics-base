@@ -94,8 +94,8 @@ epicsShareFunc int epicsThreadPoolWait(epicsThreadPool* pool, double timeout);
  * the argument passed to the job callback
  * will be the epicsJob*
  */
-#define EPICSJOB_SELF _epicsJobArgSelf
-epicsShareExtern void* _epicsJobArgSelf;
+#define EPICSJOB_SELF epicsJobArgSelfMagic
+epicsShareExtern void* epicsJobArgSelfMagic;
 
 /* creates, but does not add, a new job.
  * If pool in NULL then the job is not associated with any pool and

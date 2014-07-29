@@ -22,7 +22,7 @@
 #include "epicsThreadPool.h"
 #include "poolPriv.h"
 
-void* _epicsJobArgSelf = &_epicsJobArgSelf;
+void* epicsJobArgSelfMagic = &epicsJobArgSelfMagic;
 
 static
 void workerMain(void* arg)
@@ -148,7 +148,7 @@ epicsJob* epicsJobCreate(epicsThreadPool* pool,
     if(!job)
         return NULL;
 
-    if(arg==&_epicsJobArgSelf)
+    if(arg==&epicsJobArgSelfMagic)
         arg=job;
 
     job->pool=NULL;

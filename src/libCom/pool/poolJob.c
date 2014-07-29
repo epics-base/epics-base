@@ -18,7 +18,6 @@
 #include "epicsMutex.h"
 #include "epicsEvent.h"
 #include "epicsInterrupt.h"
-#include "errCommon.h"
 
 #include "epicsThreadPool.h"
 #include "poolPriv.h"

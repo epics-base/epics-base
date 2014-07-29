@@ -343,9 +343,11 @@ HDEPENDS.c = $(HDEPENDS_$(HDEPENDS_METHOD).c)
 HDEPENDS.cpp = $(HDEPENDS_$(HDEPENDS_METHOD).cpp)
 
 #--------------------------------------------------
-# depends definition
+# Dependency files
 
-TARGET_SRCS = $(foreach name, $(TESTPROD) $(PROD) $(TESTLIBRARY) $(LIBRARY) $(LOADABLE_LIBRARY), $($(name)_SRCS))
+TARGET_SRCS = $(foreach name, \
+    $(TESTPROD) $(PROD) $(TESTLIBRARY) $(LIBRARY) $(LOADABLE_LIBRARY), \
+    $($(name)_SRCS))
 SRC_FILES = $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
 HDEPENDS_FILES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
 

@@ -81,17 +81,20 @@ endif
 
 -include $(CONFIG)/RULES.Db
 
-ifneq (,$(strip $(HDEPENDS_FILES)))
-$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
--include $(HDEPENDS_FILES)
-endif
-
 #---------------------------------------------------------------
-# Included defines and rules for prod,testprod, and library targets
+# Include defines and rules for prod, library and test* targets
 
 #ifneq (,$(strip $(PROD) $(TESTPROD) $(LIBRARY) $(TESTLIBRARY) $(LOADABLE_LIBRARY) ))
 include $(CONFIG)/RULES_TARGET
 #endif
+
+#---------------------------------------------------------------
+# Read dependency files
+
+ifneq (,$(strip $(HDEPENDS_FILES)))
+$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
+-include $(HDEPENDS_FILES)
+endif
 
 #---------------------------------------------------------------
 #   Products and Object libraries

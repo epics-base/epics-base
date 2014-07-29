@@ -31,6 +31,7 @@ include $(LIBCOM)/log/Makefile
 include $(LIBCOM)/macLib/Makefile
 include $(LIBCOM)/misc/Makefile
 include $(LIBCOM)/osi/Makefile
+include $(LIBCOM)/pool/Makefile
 include $(LIBCOM)/ring/Makefile
 include $(LIBCOM)/taskwd/Makefile
 include $(LIBCOM)/timer/Makefile

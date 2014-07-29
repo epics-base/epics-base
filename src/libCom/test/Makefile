@@ -106,6 +106,11 @@ epicsThreadHooksTest_SRCS += epicsThreadHooksTest.c
 testHarness_SRCS += epicsThreadHooksTest.c
 TESTS += epicsThreadHooksTest
 
+TESTPROD_HOST += epicsThreadPoolTest
+epicsThreadPoolTest_SRCS += epicsThreadPoolTest.c
+testHarness_SRCS += epicsThreadPoolTest.c
+TESTS += epicsThreadPoolTest
+
 TESTPROD_HOST += epicsExitTest
 epicsExitTest_SRCS += epicsExitTest.c
 testHarness_SRCS += epicsExitTest.c

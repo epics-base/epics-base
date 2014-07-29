@@ -366,16 +366,8 @@ long dbpf(const char *pname,const char *pvalue)
     }
 
     status = dbPutField(&addr, dbrType, pvalue, (long) n);
-    if (status) {
-        if (status == -1)
-            printf("dbpf: Value conversion from %s to %s failed\n",
-                dbr[dbrType], dbf[addr.field_type]);
-        else
-            errMessage(status,"- dbPutField error\n");
-        return status;
-    }
-
-    return dbgf(pname);
+    dbgf(pname);
+    return status;
 }
 
 long dbpr(const char *pname,int interest_level)

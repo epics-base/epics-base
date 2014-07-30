@@ -16,6 +16,7 @@
 #include <freeList.h>
 #include <dbConvertFast.h>
 #include <chfPlugin.h>
+#include <recGbl.h>
 #include <db_field_log.h>
 #include <epicsExport.h>
 
@@ -56,17 +57,11 @@ static int parse_ok(void *pvt)
     return 0;
 }
 
-static void shiftval (myStruct *my, double val) {
-    my->last = val;
-    if (my->mode == 1)
-        my->hyst = val * my->cval/100.;
-}
-
 static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     myStruct *my = (myStruct*) pvt;
     long status;
-    double val, delta;
-    short drop = 0;
+    double val;
+    unsigned send = 1;
 
     /*
      * Only scalar values supported - strings, arrays, and conversion errors
@@ -81,19 +76,14 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
         status = dbFastGetConvertRoutine[pfl->field_type][DBR_DOUBLE]
                  (localAddr.pfield, (void*) &val, &localAddr);
         if (!status) {
-            if (isnan(my->last)) {
-                shiftval(my, val);
-            } else {
-                delta = fabs(my->last - val);
-                if (delta <= my->hyst) {
-                    drop = 1;
-                } else {
-                    shiftval(my, val);
-                }
+            send = 0;
+            recGblCheckDeadband(&my->last, val, my->hyst, &send, 1);
+            if (send && my->mode == 1) {
+                my->hyst = val * my->cval/100.;
             }
         }
     }
-    if (drop) {
+    if (!send) {
         db_delete_field_log(pfl);
         return NULL;
     } else return pfl;

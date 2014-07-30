@@ -62,6 +62,8 @@ epicsShareFunc int recGblSetSevr(void *precord, epicsEnum16 new_stat,
 epicsShareFunc void recGblFwdLink(void *precord);
 epicsShareFunc void recGblGetTimeStamp(void *precord);
 epicsShareFunc void recGblTSELwasModified(struct link *plink);
+epicsShareFunc void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
+    const epicsFloat64 deadband, unsigned *monitor_mask, const unsigned add_mask);
 
 #ifdef __cplusplus
 }

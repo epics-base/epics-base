@@ -274,7 +274,31 @@ void recGblTSELwasModified(struct link *plink)
         ppv_link->pvlMask |= pvlOptTSELisTime;
     }
 }
-
+
+void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
+    const epicsFloat64 deadband, unsigned *monitor_mask, const unsigned add_mask)
+{
+    double delta = 0;
+
+    if (isnan(newval) != isnan(*poldval) || isinf(newval) != isinf(*poldval)) {
+        /* one is NaN or +-inf, the other finite -> send update */
+        delta = epicsINF;
+    } else if (!isinf(newval) && !isnan(newval)) {
+        /* both are finite -> compare delta with deadband */
+        delta = *poldval - newval;
+        if (delta < 0.0) delta = -delta;
+    } else if (signbit(newval) != signbit(*poldval)) {
+        /* one is +inf, the other -inf -> send update */
+        delta = epicsINF;
+    }
+    if (delta > deadband) {
+        /* add bits to monitor mask */
+        *monitor_mask |= add_mask;
+        /* update last value monitored */
+        *poldval = newval;
+    }
+}
+
 static void getMaxRangeValues(short field_type, double *pupper_limit,
     double *plower_limit)
 {

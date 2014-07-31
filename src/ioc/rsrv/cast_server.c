@@ -115,22 +115,13 @@ static void clean_addrq(void)
  */
 void cast_server(void *pParm)
 {
-    struct sockaddr_in  sin;    
+    osiSockAddrNode     *paddrNode;
+    struct sockaddr_in  sin;
     int                 status;
     int                 count=0;
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
-    unsigned short      port;
     osiSockIoctl_t      nchars;
-
-    if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
-        port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT, 
-            (unsigned short) CA_SERVER_PORT );
-    }
-    else {
-        port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT, 
-            (unsigned short) CA_SERVER_PORT );
-    }
 
     recv_addr_size = sizeof(new_recv_addr);
 
@@ -174,13 +165,11 @@ void cast_server(void *pParm)
 #endif
 
     epicsSocketEnableAddressUseForDatagramFanout ( IOC_cast_sock );
-    
-    /*  Zero the sock_addr structure */
-    memset((char *)&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    sin.sin_port = htons(port);
-    
+
+    paddrNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
+
+    memcpy(&sin, &paddrNode->addr.ia, sizeof (sin));
+
     /* get server's Internet address */
     if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         char sockErrBuf[64];
@@ -245,7 +234,8 @@ void cast_server(void *pParm)
              * see if the next message is for this same client.
              */
             if (prsrv_cast_client->send.stk>sizeof(caHdr)) {
-                status = memcmp( (void *)&prsrv_cast_client->addr, (void *)&new_recv_addr, recv_addr_size);
+                status = memcmp(&prsrv_cast_client->addr, 
+                    &new_recv_addr, recv_addr_size);
                 if(status){     
                     /* 
                      * if the address is different 

@@ -165,6 +165,7 @@ GLBLTYPE SOCKET             IOC_cast_sock;
 GLBLTYPE unsigned short     ca_server_port;
 GLBLTYPE ELLLIST            clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST            beaconAddrList;
+GLBLTYPE ELLLIST            casIntfAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE struct client      *prsrv_cast_client;
 GLBLTYPE BUCKET             *pCaBucket;

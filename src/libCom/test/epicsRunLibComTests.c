@@ -18,6 +18,7 @@
 
 int epicsThreadTest(void);
 int epicsTimerTest(void);
+int epicsSpinTest(void);
 int epicsAlgorithm(void);
 int epicsEllTest(void);
 int epicsEnvTest(void);
@@ -60,6 +61,8 @@ void epicsRunLibComTests(void)
      * Timer tests get confused if run after some of the other tests
      */
     runTest(epicsTimerTest);
+
+    runTest(epicsSpinTest);
 
     runTest(epicsAlgorithm);
 

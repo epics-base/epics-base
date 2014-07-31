@@ -18,7 +18,19 @@
 
 #define epicsExportSharedSymbols
 #include "errlog.h"
+#include "cantProceed.h"
 #include "epicsSpin.h"
+
+/* POSIX spinlocks may be subject to priority inversion
+ * and so can't be guaranteed safe in situations where
+ * threads have different priorities, and thread
+ * preemption can't be disabled.
+ */
+#if defined(DONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 1)
+#  define USE_PSPIN
+#endif
+#endif
 
 #define checkStatus(status,message) \
     if ((status)) { \
@@ -26,7 +38,7 @@
             (message), strerror((status))); \
     }
 
-#if defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 1)
+#ifdef USE_PSPIN
 
 /*
  *  POSIX SPIN LOCKS IMPLEMENTATION
@@ -36,7 +48,7 @@ typedef struct epicsSpin {
     pthread_spinlock_t lock;
 } epicsSpin;
 
-epicsSpinId epicsSpinCreate() {
+epicsSpinId epicsSpinCreate(void) {
     epicsSpin *spin;
     int status;
 
@@ -70,6 +82,8 @@ void epicsSpinLock(epicsSpinId spin) {
 
     status = pthread_spin_lock(&spin->lock);
     checkStatus(status, "pthread_spin_lock");
+    if (status)
+        cantProceed(NULL);
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
@@ -79,7 +93,7 @@ int epicsSpinTryLock(epicsSpinId spin) {
     if (status == EBUSY)
         return 1;
     checkStatus(status, "pthread_spin_trylock");
-    return 0;
+    return status;
 }
 
 void epicsSpinUnlock(epicsSpinId spin) {
@@ -89,7 +103,7 @@ void epicsSpinUnlock(epicsSpinId spin) {
     checkStatus(status, "pthread_spin_unlock");
 }
 
-#else /* defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 1) */
+#else /* USE_PSPIN */
 
 /*
  *  POSIX MUTEX IMPLEMENTATION
@@ -99,7 +113,7 @@ typedef struct epicsSpin {
     pthread_mutex_t lock;
 } epicsSpin;
 
-epicsSpinId epicsSpinCreate() {
+epicsSpinId epicsSpinCreate(void) {
     epicsSpin *spin;
     int status;
 
@@ -133,6 +147,8 @@ void epicsSpinLock(epicsSpinId spin) {
 
     status = pthread_mutex_lock(&spin->lock);
     checkStatus(status, "pthread_mutex_lock");
+    if (status)
+        cantProceed(NULL);
 }
 
 int epicsSpinTryLock(epicsSpinId spin) {
@@ -142,7 +158,7 @@ int epicsSpinTryLock(epicsSpinId spin) {
     if (status == EBUSY)
         return 1;
     checkStatus(status, "pthread_mutex_trylock");
-    return 0;
+    return status;
 }
 
 void epicsSpinUnlock(epicsSpinId spin) {
@@ -152,4 +168,13 @@ void epicsSpinUnlock(epicsSpinId spin) {
     checkStatus(status, "pthread_mutex_unlock");
 }
 
-#endif /* defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 1) */
+#endif /* USE_PSPIN */
+
+
+epicsSpinId epicsSpinMustCreate(void)
+{
+    epicsSpinId ret = epicsSpinCreate();
+    if(!ret)
+        cantProceed("epicsSpinMustCreate fails");
+    return ret;
+}

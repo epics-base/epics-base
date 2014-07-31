@@ -34,9 +34,11 @@ extern "C" {
 #ifndef EPICS_ATOMIC_INCR_INTT
 EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 {
-    EpicsAtomicLockKey key; 
+    EpicsAtomicLockKey key;
+    int result;
+
     epicsAtomicLock ( & key );
-    const int result = ++(*pTarget);
+    result = ++(*pTarget);
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -46,8 +48,10 @@ EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget )
 EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 {
     EpicsAtomicLockKey key;
+    size_t result;
+
     epicsAtomicLock ( & key );
-    const size_t result = ++(*pTarget);
+    result = ++(*pTarget);
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -60,8 +64,10 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget )
 EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
 {
     EpicsAtomicLockKey key;
+    int result;
+
     epicsAtomicLock ( & key );
-    const int result = --(*pTarget);
+    result = --(*pTarget);
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -71,8 +77,10 @@ EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget )
 EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 {
     EpicsAtomicLockKey key;
+    size_t result;
+
     epicsAtomicLock ( & key );
-    const size_t result = --(*pTarget);
+    result = --(*pTarget);
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -85,8 +93,10 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget )
 EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 {
     EpicsAtomicLockKey key;
+    int result;
+
     epicsAtomicLock ( & key );
-    const int result = *pTarget += delta;
+    result = *pTarget += delta;
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -96,8 +106,10 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta )
 {
     EpicsAtomicLockKey key;
+    size_t result;
+
     epicsAtomicLock ( & key );
-    const size_t result = *pTarget += delta;
+    result = *pTarget += delta;
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -107,8 +119,10 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta 
 EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta )
 {
     EpicsAtomicLockKey key;
+    size_t result;
+
     epicsAtomicLock ( & key );
-    const size_t result = *pTarget -= delta;
+    result = *pTarget -= delta;
     epicsAtomicUnlock ( & key );
     return result;
 }
@@ -176,9 +190,11 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT
 #ifndef EPICS_ATOMIC_CAS_INTT
 EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, int oldval, int newval )
 {
-    EpicsAtomicLockKey key; 
+    EpicsAtomicLockKey key;
+    int cur;
+
     epicsAtomicLock ( & key );
-    const int cur = *pTarget;
+    cur = *pTarget;
     if ( cur == oldval ) {
         *pTarget = newval;
     }
@@ -191,9 +207,11 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, int oldval, i
 EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget, 
 				size_t oldval, size_t newval )
 {
-    EpicsAtomicLockKey key; 
+    EpicsAtomicLockKey key;
+    size_t cur;
+
     epicsAtomicLock ( & key );
-    const size_t cur = *pTarget;
+    cur = *pTarget;
     if ( cur == oldval ) {
         *pTarget = newval;
     }
@@ -208,8 +226,10 @@ EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
                             EpicsAtomicPtrT oldval, EpicsAtomicPtrT newval )
 {
     EpicsAtomicLockKey key;
+    EpicsAtomicPtrT cur;
+
     epicsAtomicLock ( & key );
-    const EpicsAtomicPtrT cur = *pTarget;
+    cur = *pTarget;
     if ( cur == oldval ) {
         *pTarget = newval;
     }

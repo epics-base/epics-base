@@ -17,7 +17,8 @@ extern "C" {
 
 typedef struct epicsSpin *epicsSpinId;
 
-epicsShareFunc epicsSpinId epicsSpinCreate();
+epicsShareFunc epicsSpinId epicsSpinCreate(void);
+epicsShareFunc epicsSpinId epicsSpinMustCreate(void);
 epicsShareFunc void epicsSpinDestroy(epicsSpinId);
 
 epicsShareFunc void epicsSpinLock(epicsSpinId);

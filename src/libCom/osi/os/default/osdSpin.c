@@ -25,7 +25,7 @@ typedef struct epicsSpin {
     epicsMutexId lock;
 } epicsSpin;
 
-epicsSpinId epicsSpinCreate() {
+epicsSpinId epicsSpinCreate(void) {
     epicsSpin *spin;
 
     spin = calloc(1, sizeof(*spin));
@@ -41,6 +41,14 @@ epicsSpinId epicsSpinCreate() {
 fail:
     free(spin);
     return NULL;
+}
+
+epicsSpinId epicsSpinMustCreate(void)
+{
+    epicsSpinId ret = epicsSpinCreate();
+    if(!ret)
+        cantProceed("epicsSpinMustCreate fails");
+    return ret;
 }
 
 void epicsSpinDestroy(epicsSpinId spin) {

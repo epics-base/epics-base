@@ -39,6 +39,7 @@ static const struct testDataT {
     {"", CONSTANT, 0},
     {"0", CONSTANT, 0},
     {"42", CONSTANT, 0},
+
     {"x1", DB_LINK, 0, "x1 NPP NMS"},
     {"x1.VAL", DB_LINK, 0, "x1.VAL NPP NMS"},
     {"x1.TIME", DB_LINK, 0, "x1.TIME NPP NMS"},
@@ -46,7 +47,12 @@ static const struct testDataT {
     {"x1 PP MSS", DB_LINK, pvlOptPP|pvlOptMSS, "x1 PP MSS"},
     {"x1 PPMSS", DB_LINK, pvlOptPP|pvlOptMSS, "x1 PP MSS"},
     {"x1 PPMSI", DB_LINK, pvlOptPP|pvlOptMSI, "x1 PP MSI"},
-    /*TODO: testing doesn't support CA_LINK yet */
+
+    {"qq", CA_LINK, pvlOptInpNative, "qq NPP NMS"},
+    {"qq MSI", CA_LINK, pvlOptInpNative|pvlOptMSI, "qq NPP MSI"},
+    {"qq MSICA", CA_LINK, pvlOptInpNative|pvlOptCA|pvlOptMSI, "qq CA MSI"},
+
+    {"x1 CA", CA_LINK, pvlOptInpNative|pvlOptCA, "x1 CA NMS"},
     {NULL}
 };
 
@@ -71,6 +77,7 @@ static void testSet(void)
     plink = &prec->lnk;
 
     for(;td->linkstring;td++) {
+        testDiag("x1.LNK <- \"%s\"", td->linkstring);
 
         testdbPutFieldOk("x1.LNK", DBF_STRING, td->linkstring);
         if(td->linkback)
@@ -91,7 +98,9 @@ static void testSet(void)
                 break;
 
             case DB_LINK:
-                testOk1(plink->value.pv_link.pvlMask==td->pvlMask);
+            case CA_LINK:
+                testOk(plink->value.pv_link.pvlMask==td->pvlMask,
+                       "pvlMask %x == %x", plink->value.pv_link.pvlMask, td->pvlMask);
                 break;
             }
         }
@@ -104,7 +113,7 @@ static void testSet(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(40);
+    testPlan(56);
     testSet();
     return testDone();
 }

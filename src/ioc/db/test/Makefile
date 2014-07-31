@@ -12,13 +12,15 @@ include $(TOP)/configure/CONFIG
 
 TESTLIBRARY = dbTestIoc
 
-dbTestIoc_SRCS = xRecord.c
+dbTestIoc_SRCS += xRecord.c
+dbTestIoc_SRCS += dbLinkdset.c
 dbTestIoc_LIBS = dbCore
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
 dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += xRecord.dbd
+dbTestIoc_DBD += dbLinkdset.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
 testHarness_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp

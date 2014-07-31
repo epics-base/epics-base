@@ -8,4 +8,7 @@ recordtype(x) {
   field(LNK, DBF_INLINK) {
     prompt("Link")
   }
+  field(INP, DBF_INLINK) {
+    prompt("Input Link")
+  }
 }

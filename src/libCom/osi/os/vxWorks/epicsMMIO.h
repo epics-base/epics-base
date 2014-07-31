@@ -1,8 +1,8 @@
 /*************************************************************************\
-* Copyright (c) 2010 Brookhaven Science Associates, as Operator of
+* Copyright (c) 2014 Brookhaven Science Associates, as Operator of
 *     Brookhaven National Laboratory.
-* Copyright (c) 2006 The University of Chicago,
-*     as Operator of Argonne National Laboratory.
+* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
+*     National Laboratory.
 * Copyright (c) 2006 The Regents of the University of California,
 *     as Operator of Los Alamos National Laboratory.
 * Copyright (c) 2006 The Board of Trustees of the Leland Stanford Junior
@@ -15,12 +15,12 @@
  * Author: Michael Davidsaver <mdavidsaver@bnl.gov>
  */
 
-#ifdef __m68k__
-#include "epicsMMIODef.h"
-#else
-
 #ifndef EPICSMMIO_H
 #define EPICSMMIO_H
+
+#if CPU_FAMILY == MC680X0
+#  include "epicsMMIODef.h"
+#else
 
 /**************************************************************************************************/
 /*  Required Header Files                                                                         */
@@ -47,24 +47,6 @@
 #  include  <vxAtomicLib.h>
 #elif _WRS_VXWORKS_MAJOR == 6 && _WRS_VXWORKS_MINOR >= 6
 #  include  <vxAtomicLib.h>
-#endif
-
-/**************************************************************************************************/
-/*  Function Prototypes for Routines Not Defined in sysLib.h                                      */
-/**************************************************************************************************/
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-epicsUInt16 sysInWord    (volatile void*);                 /* Synchronous 16 bit read               */
-epicsUInt32 sysInLong    (volatile void*);                 /* Synchronous 32 bit read               */
-void        sysOutWord   (volatile void*, epicsUInt16);    /* Synchronous 16 bit write              */
-void        sysOutLong   (volatile void*, epicsUInt32);    /* Synchronous 32 bit write              */
-
-
-#ifdef __cplusplus
-}
 #endif
 
 #define bswap16(value) ((epicsUInt16) (  \
@@ -96,23 +78,23 @@ void        sysOutLong   (volatile void*, epicsUInt32);    /* Synchronous 32 bit
 #define ioread8(address)           sysInByte   ((epicsUInt32)(address))
 #define iowrite8(address,data)     sysOutByte  ((epicsUInt32)(address), (epicsUInt8)(data))
 
-#define nat_ioread16(address)      sysInWord ((address))
-#define nat_ioread32(address)      sysInLong ((address))
+#define nat_ioread16(address)      sysInWord ((epicsUInt32)(address))
+#define nat_ioread32(address)      sysInLong ((epicsUInt32)(address))
 
-#define nat_iowrite16(address,data) sysOutWord(address,data)
-#define nat_iowrite32(address,data) sysOutLong(address,data)
+#define nat_iowrite16(address,data) sysOutWord((epicsUInt32)(address),(data))
+#define nat_iowrite32(address,data) sysOutLong((epicsUInt32)(address),(data))
 
-#define be_ioread16(address)       be16_to_cpu (sysInWord ((address)))
-#define be_ioread32(address)       be32_to_cpu (sysInLong ((address)))
+#define be_ioread16(address)       be16_to_cpu (sysInWord ((epicsUInt32)(address)))
+#define be_ioread32(address)       be32_to_cpu (sysInLong ((epicsUInt32)(address)))
 
-#define be_iowrite16(address,data) sysOutWord    ((address), be16_to_cpu((epicsUInt16)(data)))
-#define be_iowrite32(address,data) sysOutLong    ((address), be32_to_cpu((epicsUInt32)(data)))
+#define be_iowrite16(address,data) sysOutWord    ((epicsUInt32)(address), be16_to_cpu((epicsUInt16)(data)))
+#define be_iowrite32(address,data) sysOutLong    ((epicsUInt32)(address), be32_to_cpu((epicsUInt32)(data)))
 
-#define le_ioread16(address)       le16_to_cpu (sysInWord ((address)))
-#define le_ioread32(address)       le32_to_cpu (sysInLong ((address)))
+#define le_ioread16(address)       le16_to_cpu (sysInWord ((epicsUInt32)(address)))
+#define le_ioread32(address)       le32_to_cpu (sysInLong ((epicsUInt32)(address)))
 
-#define le_iowrite16(address,data) sysOutWord    ((address), le16_to_cpu((epicsUInt16)(data)))
-#define le_iowrite32(address,data) sysOutLong    ((address), le32_to_cpu((epicsUInt32)(data)))
+#define le_iowrite16(address,data) sysOutWord    ((epicsUInt32)(address), le16_to_cpu((epicsUInt16)(data)))
+#define le_iowrite32(address,data) sysOutLong    ((epicsUInt32)(address), le32_to_cpu((epicsUInt32)(data)))
 
 #ifndef VX_MEM_BARRIER_R
 #  define VX_MEM_BARRIER_R() do{}while(0)
@@ -128,5 +110,5 @@ void        sysOutLong   (volatile void*, epicsUInt32);    /* Synchronous 32 bit
 #define wbarr()  VX_MEM_BARRIER_W()
 #define rwbarr() VX_MEM_BARRIER_RW()
 
+#endif /* !MC680X0 */
 #endif /* EPICSMMIO_H */
-#endif /* m68k */

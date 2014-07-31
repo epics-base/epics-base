@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>alarmString.h deprecated again</h3>
+
+<p>The string arrays that provide string versions of the alarm status and
+severity values have been moved into libCom and the header file that used to
+instanciate them is no longer required, although a copy is still provided for
+backwards compatibility reasons. Only the alarm.h header needs to be included
+now to declare the epicsAlarmSeverityStrings and epicsAlarmConditionStrings
+arrays.</p>
+
 <h3>
 General purpose thread pool</h3>
 

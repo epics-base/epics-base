@@ -25,9 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define epicsAlarmGLOBAL
 #include <alarm.h>
-#undef epicsAlarmGLOBAL
 #include <epicsTime.h>
 #include <epicsString.h>
 #include <cadef.h>

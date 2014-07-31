@@ -8,59 +8,26 @@
 \*************************************************************************/
 /* $Revision-Id$ */
 
-/* String names for alarms */
+/*
+ * This file is deprecated, use alarm.h instead.
+ *
+ * Old string names for alarm status and severity values
+ */
 
 #ifndef INC_alarmString_H
 #define INC_alarmString_H
+
+#include "alarm.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Compatibility with original alarmString.h names */
+/* Old versions of alarmString.h defined these names: */
 
 #define alarmSeverityString epicsAlarmSeverityStrings
 #define alarmStatusString epicsAlarmConditionStrings
 
-
-/* Name strings */
-
-/* ALARM SEVERITIES - must match menuAlarmSevr.dbd and alarm.h */
-
-const char * epicsAlarmSeverityStrings[] = {
-    "NO_ALARM",
-    "MINOR",
-    "MAJOR",
-    "INVALID"
-};
-
-
-/* ALARM STATUS - must match menuAlarmStat.dbd and alarm.h */
-
-const char * epicsAlarmConditionStrings[] = {
-    "NO_ALARM",
-    "READ",
-    "WRITE",
-    "HIHI",
-    "HIGH",
-    "LOLO",
-    "LOW",
-    "STATE",
-    "COS",
-    "COMM",
-    "TIMEOUT",
-    "HWLIMIT",
-    "CALC",
-    "SCAN",
-    "LINK",
-    "SOFT",
-    "BAD_SUB",
-    "UDF",
-    "DISABLE",
-    "SIMM",
-    "READ_ACCESS",
-    "WRITE_ACCESS"
-};
 
 #ifdef __cplusplus
 }

@@ -226,6 +226,7 @@ void dbFreeLinkContents(struct link *plink)
 	case BITBUS_IO: parm = plink->value.bitbusio.parm;break;
 	case INST_IO: parm = plink->value.instio.string; break;
 	case BBGPIB_IO: parm = plink->value.bbgpibio.parm;break;
+	case RF_IO: break;
 	case VXI_IO: parm = plink->value.vxiio.parm; break;
 	default:
 	     epicsPrintf("dbFreeLink called but link type unknown\n");

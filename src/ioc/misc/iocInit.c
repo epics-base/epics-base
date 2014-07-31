@@ -192,6 +192,8 @@ int iocBuildIsolated(void)
     status = iocBuild_1();
     if (status) return status;
 
+    dbCaLinkInitIsolated();
+
     status = iocBuild_2();
     if (status) return status;
 

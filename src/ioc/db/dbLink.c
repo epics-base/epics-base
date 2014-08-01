@@ -123,26 +123,6 @@ static long dbDbInitLink(struct link *plink, short dbfType)
     return 0;
 }
 
-static long dbDbAddLink(struct link *plink, short dbfType)
-{
-    DBADDR dbaddr;
-    long status;
-    DBADDR *pdbAddr;
-
-    status = dbNameToAddr(plink->value.pv_link.pvname, &dbaddr);
-    if (status)
-        return status;
-
-    plink->type = DB_LINK;
-    pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
-    *pdbAddr = dbaddr; /* structure copy */
-    plink->value.pv_link.pvt = pdbAddr;
-
-    dbLockSetRecordLock(pdbAddr->precord);
-    dbLockSetMerge(plink->value.pv_link.precord, pdbAddr->precord);
-    return 0;
-}
-
 static void dbDbRemoveLink(struct link *plink)
 {
     free(plink->value.pv_link.pvt);
@@ -411,17 +391,23 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
     }
 }
 
-void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType)
+void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType, DBADDR *ptargetaddr)
 {
     plink->value.pv_link.precord = precord;
 
     if (plink == &precord->tsel)
         recGblTSELwasModified(plink);
 
-    if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
-        /* Can we make it a DB link? */
-        if (!dbDbAddLink(plink, dbfType))
-            return;
+    if (ptargetaddr) {
+        /* make a DB link */
+
+        plink->type = DB_LINK;
+        plink->value.pv_link.pvt = ptargetaddr;
+
+        /* target record is already locked in dbPutFieldLink() */
+        dbLockSetMerge(plink->value.pv_link.precord, ptargetaddr->precord);
+
+        return;
     }
 
     /* Make it a CA link */

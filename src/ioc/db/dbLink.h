@@ -20,6 +20,7 @@
 #include "shareLib.h"
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "dbAddr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ extern "C" {
 epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
         short dbfType);
 epicsShareFunc void dbAddLink(struct dbCommon *precord, struct link *plink,
-        short dbfType);
+        short dbfType, DBADDR *ptargetaddr);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
 epicsShareFunc void dbRemoveLink(struct link *plink);

@@ -2297,7 +2297,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
             struct dbCommon *prec = pdbentry->precnode->precord;
             devSup *devsup = (devSup *)ellNth(&pdbentry->precordType->devList, prec->dtyp+1);
             status = dbCanSetLink(plink, &link_info, devsup);
-            if(status)
+            if(status==0)
                 status = dbSetLink(plink, &link_info, devsup);
         }
 

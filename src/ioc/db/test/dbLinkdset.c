@@ -12,9 +12,10 @@ long link_test_extend(struct dbCommon *junk)
 static dsxt xrecextend = {&link_test_extend, &link_test_extend};
 
 static
-long link_test_init(int junk)
+long link_test_init(int pass)
 {
-    devExtend(&xrecextend);
+    if(pass==0)
+        devExtend(&xrecextend);
     return 0;
 }
 

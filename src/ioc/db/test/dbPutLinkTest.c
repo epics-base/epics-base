@@ -445,7 +445,7 @@ static void testLinkInitFail(void)
     testOk1(plink->type==VME_IO);
     testOk1(plink->value.vmeio.parm!=NULL);
 
-    testdbGetFieldEqual("eVME_IO2.INP", DBR_STRING, "#C200 S0 @");
+    testdbGetFieldEqual("eVME_IO2.INP", DBR_STRING, "#C0 S0 @");
 
     prec = (xRecord*)testdbRecordPtr("eVME_IO2");
     plink = &prec->inp;

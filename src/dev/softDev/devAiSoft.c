@@ -20,6 +20,7 @@
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "epicsMath.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "aiRecord.h"
@@ -78,7 +79,7 @@ static long read_ai(aiRecord *prec)
     if (!dbGetLink(&prec->inp, DBR_DOUBLE, &val, 0, 0)) {
 
         /* Apply smoothing algorithm */
-        if (prec->smoo != 0.0 && prec->dpvt)
+        if (prec->smoo != 0.0 && prec->dpvt && finite(prec->val))
             prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
         else
             prec->val = val;

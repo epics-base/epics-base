@@ -35,6 +35,7 @@
 #include "errMdef.h"
 #define epicsExportSharedSymbols
 #include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "dbBase.h"
 #include "link.h"
 #include "dbFldTypes.h"
@@ -909,15 +910,17 @@ devSup* dbDSETtoDevSup(dbRecordType *prdes, struct dset *pdset) {
 static long dbPutFieldLink(DBADDR *paddr,
     short dbrType, const void *pbuffer, long nRequest)
 {
+    dbLinkInfo  link_info;
+    DBADDR      *pdbaddr = NULL;
     dbCommon    *precord = paddr->precord;
     dbFldDes    *pfldDes = paddr->pfldDes;
     long        special = paddr->special;
     struct link *plink = (struct link *)paddr->pfield;
     const char  *pstring = (const char *)pbuffer;
-    DBENTRY     dbEntry;
     struct dsxt *old_dsxt = NULL;
     struct dset *new_dset = NULL;
     struct dsxt *new_dsxt = NULL;
+    devSup      *new_devsup = NULL;
     long        status;
     int         isDevLink;
     short       scan;
@@ -936,16 +939,30 @@ static long dbPutFieldLink(DBADDR *paddr,
         return S_db_badDbrtype;
     }
 
-    dbInitEntry(pdbbase, &dbEntry);
-    status = dbFindRecord(&dbEntry, precord->name);
-    if (!status) status = dbFindField(&dbEntry, pfldDes->name);
-    if (status) goto finish;
+    status = dbParseLink(pstring, pfldDes->field_type, &link_info);
+    if (status)
+        return status;
+
+    if (link_info.ltype==PV_LINK && !(link_info.modifiers&(pvlOptCA|pvlOptCP|pvlOptCPP))) {
+        DBADDR tempaddr;
+        if(dbNameToAddr(link_info.target, &tempaddr)==0) {
+            /* we will create a DB link. */
+            pdbaddr = malloc(sizeof(*pdbaddr));
+            if(!pdbaddr) {
+                status = S_db_noMemory;
+                goto cleanup;
+            }
+            *pdbaddr = tempaddr; /* struct copy */
+        }
+    }
 
     isDevLink = ellCount(&precord->rdes->devList) > 0 &&
                 pfldDes->isDevLink;
 
     dbLockSetGblLock();
     dbLockSetRecordLock(precord);
+    if(pdbaddr)
+        dbLockSetRecordLock(pdbaddr->precord);
 
     scan = precord->scan;
 
@@ -954,10 +971,19 @@ static long dbPutFieldLink(DBADDR *paddr,
         if (pdevSup) {
             new_dset = pdevSup->pdset;
             new_dsxt = pdevSup->pdsxt;
+            new_devsup = pdevSup;
         }
+    }
 
+    if (dbCanSetLink(plink, &link_info, new_devsup)) {
+        /* link type mis-match prevents assignment */
+        status = S_dbLib_badField;
+        goto unlock;
+    }
+
+    if (isDevLink) {
         if (precord->dset) {
-            pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset);
+            devSup *pdevSup = dbDSETtoDevSup(precord->rdes, precord->dset);
             if (pdevSup)
                 old_dsxt = pdevSup->pdsxt;
         }
@@ -1005,7 +1031,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     if (special) status = dbPutSpecial(paddr, 0);
 
-    if (!status) status = dbPutString(&dbEntry, pstring);
+    if (!status) status = dbSetLink(plink, &link_info, new_devsup);
 
     if (!status && special) status = dbPutSpecial(paddr, 1);
 
@@ -1032,7 +1058,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
-        dbAddLink(precord, plink, pfldDes->field_type);
+        dbAddLink(precord, plink, pfldDes->field_type, pdbaddr);
         break;
 
     case CONSTANT:
@@ -1063,8 +1089,8 @@ postScanEvent:
         db_post_events(precord, &precord->scan, DBE_VALUE | DBE_LOG);
 unlock:
     dbLockSetGblUnlock();
-finish:
-    dbFinishEntry(&dbEntry);
+cleanup:
+    free(link_info.target);
     return status;
 }
 

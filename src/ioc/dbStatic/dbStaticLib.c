@@ -2092,9 +2092,6 @@ long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
     case PV_LINK:
         if(link_type==CONSTANT || link_type==PV_LINK)
             return 0;
-        else if(link_type==INST_IO && pinfo->target[0]!='\0')
-            /* for compatibility.  Invalid non-empty INST_IO is treated as empty string */
-            return 0;
     default:
         free(pinfo->target);
         pinfo->target = NULL;
@@ -2221,14 +2218,6 @@ long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
         }
 
     } else if(link_type==pinfo->ltype) {
-        dbFreeLinkContents(plink);
-        dbSetLinkHW(plink, pinfo);
-
-    } else if(link_type==INST_IO && (pinfo->ltype==CONSTANT || pinfo->ltype==PV_LINK) && pinfo->target[0]!='\0') {
-        /* for compatibility.  Invalid non-empty INST_IO is treated as empty string */
-        pinfo->target[0] = '\0';
-        pinfo->ltype = INST_IO;
-
         dbFreeLinkContents(plink);
         dbSetLinkHW(plink, pinfo);
 

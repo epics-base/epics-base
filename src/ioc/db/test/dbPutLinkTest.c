@@ -482,9 +482,8 @@ static void testLinkFail(void)
     /* INST_IO doesn't accept empty string */
     testdbPutFieldFail(S_dbLib_badField, "rINST_IO.INP", DBR_STRING, "");
 
-    /* INST_IO accepts invalid input as empty string */
-    testdbPutFieldOk("rINST_IO.INP", DBR_STRING, "abc");
-    testdbGetFieldEqual("rINST_IO.INP", DBR_STRING, "@");
+    /* INST_IO doesn't accept empty string */
+    testdbPutFieldFail(S_dbLib_badField, "rINST_IO.INP", DBR_STRING, "abc");
 
     /* syntax errors */
     testdbPutFieldFail(S_dbLib_badField, "rVME_IO.INP", DBR_STRING, "#S201 C200 @another VME_IO");
@@ -505,7 +504,7 @@ static void testLinkFail(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(245);
+    testPlan(244);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

@@ -26,9 +26,127 @@
 
 #include "xRecord.h"
 
+#include "dbStaticPvt.h"
+
 #include "testMain.h"
 
+static
+int testStrcmp(int expect, const char *A, const char *B) {
+    static const char op[] = "<=>";
+    int ret = strcmp(A,B);
+    testOk(ret==expect, "\"%s\" %c= \"%s\"",
+           A, op[expect+1], B);
+    return ret==expect;
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
+
+#define TEST_CONSTANT(SET, EXPECT) {SET, {CONSTANT, EXPECT}}
+#define TEST_PV_LINK(SET, PV, MOD) {SET, {PV_LINK, PV, MOD}}
+#define TEST_HW(SET, TYPE, ID, PARM, ...) {SET, {TYPE, PARM, 0, ID, {__VA_ARGS__}}}
+
+static const struct testParseDataT {
+    const char * const str;
+    dbLinkInfo info;
+} testParseData[] = {
+    TEST_CONSTANT("", ""),
+    TEST_CONSTANT("0.1", "0.1"),
+    TEST_CONSTANT("  0.2\t ", "0.2"),
+
+    TEST_PV_LINK("0.1a", "0.1a", 0),
+    TEST_PV_LINK(" hello ", "hello", 0),
+    TEST_PV_LINK(" hellox MSI", "hellox", pvlOptMSI),
+    TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
+
+    TEST_HW("#C14 S145 @testing", VME_IO, "CS", "testing", 14, 145),
+    TEST_HW("#B11 C12 N13 A14 F15 @cparam", CAMAC_IO, "BCNAF", "cparam", 11, 12, 13, 14, 15),
+    TEST_HW("@hello world", INST_IO, "", "hello world"),
+    {NULL}
+};
+
+static void testLinkParse(void)
+{
+    const struct testParseDataT *td = testParseData;
+    dbLinkInfo info;
+    testDiag("link parsing");
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    for(;td->str; td++) {
+        int i, N;
+        testDiag("Parse \"%s\"", td->str);
+        testOk1(dbParseLink(td->str, DBF_INLINK, &info)==0);
+        testOk1(info.ltype==td->info.ltype);
+        if(td->info.target)
+            testStrcmp(0, info.target, td->info.target);
+        if(info.ltype==td->info.ltype) {
+            switch(info.ltype) {
+            case PV_LINK:
+                testOk1(info.modifiers==td->info.modifiers);
+                break;
+            case VME_IO:
+                testStrcmp(0, info.hwid, td->info.hwid);
+                N = strlen(td->info.hwid);
+                for(i=0; i<N; i++)
+                    testOk(info.hwnums[i]==td->info.hwnums[i], "%d == %d",
+                           info.hwnums[i], td->info.hwnums[i]);
+            }
+        }
+        free(info.target);
+    }
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
+static const char *testParseFailData[] = {
+    "#",
+    "#S",
+    "#ABC",
+    "#A0 B",
+    "#A0 B @",
+    "#A0 B C @",
+    "#R1 M2 D3 E4 @oops", /* RF_IO has no parm */
+    "#C1 S2", /* VME_IO needs parm */
+    NULL
+};
+
+static void testLinkFailParse(void)
+{
+    const char * const *td = testParseFailData;
+    dbLinkInfo info;
+    testDiag("link parsing of invalid input");
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    for(;*td; td++) {
+        testDiag("Expect failure \"%s\"", *td);
+        testOk1(dbParseLink(*td, DBF_INLINK, &info)==S_dbLib_badField);
+    }
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
 
 static const struct testDataT {
     const char * const linkstring;
@@ -387,7 +505,9 @@ static void testLinkFail(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(200);
+    testPlan(245);
+    testLinkParse();
+    testLinkFailParse();
     testCADBSet();
     testHWInitSet();
     testHWMod();

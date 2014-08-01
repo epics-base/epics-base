@@ -36,6 +36,37 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 
+typedef struct dbLinkInfo {
+    short ltype;
+
+    /* full link string for CONSTANT and PV_LINK,
+     * parm string for HW links*/
+    char *target;
+
+    /* for PV_LINK */
+    short modifiers;
+
+    /* HW links */
+    char hwid[6]; /* one extra element for a nil */
+    int  hwnums[5];
+} dbLinkInfo;
+
+/* Parse link string.  no record locks needed.
+ * on success caller must free pinfo->target
+ */
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo);
+/* Check if link type allow the parsed link value pinfo
+ * to be assigned to the given link.
+ * Record containing plink must be locked.
+ * Frees pinfo->target on failure.
+ */
+long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup);
+/* Set link field.  source record must be locked (target record too
+ * when a DB_LINK is created)
+ * Unconditionally takes ownership of pinfo->target
+ */
+long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *dset);
+
 /* The following is for path */
 typedef struct dbPathNode {
 	ELLNODE		node;

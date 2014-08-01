@@ -2024,6 +2024,301 @@ static void cvtDecimalOrHexToShort(char *from,short *value)
     }
 }
 
+long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
+{
+    char *pstr, *pend;
+    size_t len, i;
+
+    /* Strip leading blanks and tabs */
+    while (*str && (*str == ' ' || *str == '\t')) str++;
+
+    memset(pinfo, 0, sizeof(*pinfo));
+
+    len = strlen(str);
+    pinfo->target = pstr = malloc(len+1);
+    if(!pstr)
+        return S_dbLib_outMem;
+    strcpy(pstr, str);
+
+    /* Strip trailing blanks and tabs */
+    for(i=len; i>0 && (pstr[i-1]==' ' || pstr[i-1]=='\t'); i--) {}
+    pstr[i]='\0';
+
+    /* check for HW link types */
+    if(pstr[0]=='@') {
+        pinfo->ltype = INST_IO; /* can only be INST_IO */
+
+        /* move string up by one to overwrite '@'
+         * so it can be re-used later in struct instio
+         */
+        ssize_t N = strlen(pstr)-1;
+        memmove(pstr, pstr+1, N);
+        pstr[N] = '\0';
+
+        return 0;
+
+    } else if(pstr[0]=='#') { /* some other HW link type */
+        int ret;
+        char junk = 0;
+        char *patstr = strchr(pstr, '@'); /* find start of parm string */
+
+        if(patstr)
+            *patstr++ = '\0'; /* isolate the parm string for later processing */
+
+        /* generalized extraction of ID charactor and integer pairs (eg. "#C15 S14") */
+        ret = sscanf(pinfo->target, "# %c%d %c%d %c%d %c%d %c%d %c",
+                     &pinfo->hwid[0], &pinfo->hwnums[0],
+                     &pinfo->hwid[1], &pinfo->hwnums[1],
+                     &pinfo->hwid[2], &pinfo->hwnums[2],
+                     &pinfo->hwid[3], &pinfo->hwnums[3],
+                     &pinfo->hwid[4], &pinfo->hwnums[4],
+                     &junk);
+
+        /* ret<0 when pattern not matched
+         * ret==11 when extra non-space before '@'.
+         * ret is odd when a number is missing
+         */
+        if(ret<0 || ret>10 || ret%2==1) goto fail;
+
+        if(strcmp(pinfo->hwid,      "CS")==0)   pinfo->ltype = VME_IO;
+        else if(strcmp(pinfo->hwid, "BCNAF")==0)pinfo->ltype = CAMAC_IO;
+        else if(strcmp(pinfo->hwid, "RMDE")==0) pinfo->ltype = RF_IO;
+        else if(strcmp(pinfo->hwid, "LACS")==0) pinfo->ltype = AB_IO;
+        else if(strcmp(pinfo->hwid, "LA")==0)   pinfo->ltype = GPIB_IO;
+        else if(strcmp(pinfo->hwid, "LNPS")==0) pinfo->ltype = BITBUS_IO;
+        else if(strcmp(pinfo->hwid, "LBG")==0)  pinfo->ltype = BBGPIB_IO;
+        else if(strcmp(pinfo->hwid, "VCS")==0)  pinfo->ltype = VXI_IO;
+        else if(strcmp(pinfo->hwid, "VS")==0)   pinfo->ltype = VXI_IO;
+        else goto fail;
+
+        if(patstr && pinfo->ltype!=RF_IO) {
+            /* move the parm string forward.
+             * pinfo->target will be re-used as ->parm
+             */
+            memmove(pinfo->target, patstr, strlen(patstr)+1);
+        } else if(!patstr && pinfo->ltype==RF_IO) {
+            /* RF_IO only.  the string isn't needed anymore */
+            free(pinfo->target);
+            pinfo->target = NULL;
+        } else {
+            /* missing parm when required, or found parm when not expected */
+            free(pinfo->target);
+            pinfo->target = NULL;
+            return S_dbLib_badField;
+        }
+
+        return 0;
+    }
+
+    /* A string is a constant if epicsStrtod or strtol consumes entire string */
+    (void)epicsStrtod(pstr, &pend);
+    if(*pend!='\0')
+        (void)strtol(pstr, &pend, 0);
+    if(*pend=='\0') {
+        pinfo->ltype = CONSTANT;
+        return 0; /* This is a CONSTANT link */
+    }
+
+    pinfo->ltype = PV_LINK;
+    pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be seperated by tabs) */
+    if(pstr) {
+        *pstr++ = '\0'; /* isolate modifiers. pinfo->target is PV name only for re-use in struct pv_link */
+
+        /* Space seperation of modifiers isn't required, and other chars are ignored.
+         * Order of comparisons resolves ambiguity by checking for
+         * longer matches first.
+         * eg. "QQCPPXMSITT" is pvlOptCPP|pvlOptMS
+         */
+
+        if (strstr(pstr, "NPP")) pinfo->modifiers = 0;
+        else if (strstr(pstr, "CPP")) pinfo->modifiers = pvlOptCPP;
+        else if (strstr(pstr, "PP")) pinfo->modifiers = pvlOptPP;
+        else if (strstr(pstr, "CA")) pinfo->modifiers = pvlOptCA;
+        else if (strstr(pstr, "CP")) pinfo->modifiers = pvlOptCP;
+
+        if (strstr(pstr, "NMS")) pinfo->modifiers |= pvlOptNMS;
+        else if (strstr(pstr, "MSI")) pinfo->modifiers |= pvlOptMSI;
+        else if (strstr(pstr, "MSS")) pinfo->modifiers |= pvlOptMSS;
+        else if (strstr(pstr, "MS")) pinfo->modifiers |= pvlOptMS;
+
+        /* filter modifiers based on link type */
+        switch(ftype) {
+        case DBF_INLINK: /* accept all */ break;
+        case DBF_OUTLINK: pinfo->modifiers &= ~pvlOptCPP; break;
+        case DBF_FWDLINK: pinfo->modifiers &= pvlOptCA; break;
+        }
+    }
+
+    return 0;
+fail:
+    free(pinfo->target);
+    return S_dbLib_badField;
+}
+
+long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
+{
+    /* consume allocated string pinfo->target on failure */
+
+    int link_type = CONSTANT;
+    if(devsup)
+        link_type = devsup->link_type;
+    if(link_type==pinfo->ltype)
+        return 0;
+    switch(pinfo->ltype) {
+    case CONSTANT:
+    case PV_LINK:
+        if(link_type==CONSTANT || link_type==PV_LINK)
+            return 0;
+        else if(link_type==INST_IO && pinfo->target[0]!='\0')
+            /* for compatibility.  Invalid non-empty INST_IO is treated as empty string */
+            return 0;
+    default:
+        free(pinfo->target);
+        pinfo->target = NULL;
+        return 1;
+    }
+}
+
+static
+void dbSetLinkConst(DBLINK *plink, dbLinkInfo *pinfo)
+{
+    plink->type = CONSTANT;
+    plink->value.constantStr = pinfo->target;
+
+    pinfo->target = NULL;
+}
+
+static
+void dbSetLinkPV(DBLINK *plink, dbLinkInfo *pinfo)
+{
+    plink->type = PV_LINK;
+    plink->value.pv_link.pvname = pinfo->target;
+    plink->value.pv_link.pvlMask = pinfo->modifiers;
+
+    pinfo->target = NULL;
+}
+
+static
+void dbSetLinkHW(DBLINK *plink, dbLinkInfo *pinfo)
+{
+
+    switch(pinfo->ltype) {
+    case INST_IO:
+        plink->value.instio.string = pinfo->target;
+        break;
+    case VME_IO:
+        plink->value.vmeio.card = pinfo->hwnums[0];
+        plink->value.vmeio.signal = pinfo->hwnums[1];
+        plink->value.vmeio.parm = pinfo->target;
+        break;
+    case CAMAC_IO:
+        plink->value.camacio.b = pinfo->hwnums[0];
+        plink->value.camacio.c = pinfo->hwnums[1];
+        plink->value.camacio.n = pinfo->hwnums[2];
+        plink->value.camacio.a = pinfo->hwnums[3];
+        plink->value.camacio.f = pinfo->hwnums[4];
+        plink->value.camacio.parm = pinfo->target;
+        break;
+    case RF_IO:
+        plink->value.rfio.cryo = pinfo->hwnums[0];
+        plink->value.rfio.micro = pinfo->hwnums[1];
+        plink->value.rfio.dataset = pinfo->hwnums[2];
+        plink->value.rfio.element = pinfo->hwnums[3];
+        break;
+    case AB_IO:
+        plink->value.abio.link = pinfo->hwnums[0];
+        plink->value.abio.adapter = pinfo->hwnums[1];
+        plink->value.abio.card = pinfo->hwnums[2];
+        plink->value.abio.signal = pinfo->hwnums[3];
+        plink->value.abio.parm = pinfo->target;
+        break;
+    case GPIB_IO:
+        plink->value.gpibio.link = pinfo->hwnums[0];
+        plink->value.gpibio.addr = pinfo->hwnums[1];
+        plink->value.gpibio.parm = pinfo->target;
+        break;
+    case BITBUS_IO:
+        plink->value.bitbusio.link = pinfo->hwnums[0];
+        plink->value.bitbusio.node = pinfo->hwnums[1];
+        plink->value.bitbusio.port = pinfo->hwnums[2];
+        plink->value.bitbusio.signal = pinfo->hwnums[3];
+        plink->value.bitbusio.parm = pinfo->target;
+        break;
+    case BBGPIB_IO:
+        plink->value.bbgpibio.link = pinfo->hwnums[0];
+        plink->value.bbgpibio.bbaddr = pinfo->hwnums[1];
+        plink->value.bbgpibio.gpibaddr = pinfo->hwnums[2];
+        plink->value.bbgpibio.parm = pinfo->target;
+        break;
+    case VXI_IO:
+        if(strcmp(pinfo->hwid, "VCS")==0) {
+            plink->value.vxiio.flag=VXIDYNAMIC;
+            plink->value.vxiio.frame = pinfo->hwnums[0];
+            plink->value.vxiio.slot = pinfo->hwnums[1];
+            plink->value.vxiio.signal = pinfo->hwnums[2];
+        } else if(strcmp(pinfo->hwid, "VS")==0) {
+            plink->value.vxiio.flag=VXISTATIC;
+            plink->value.vxiio.la = pinfo->hwnums[0];
+            plink->value.vxiio.signal = pinfo->hwnums[1];
+        } else {
+            cantProceed("dbSetLinkHW: logic error, unknown VXI_IO variant");
+        }
+        plink->value.vxiio.parm = pinfo->target;
+        break;
+
+    default:
+        cantProceed("dbSetLinkHW: logic error, unhandled link type");
+        return;
+    }
+
+    plink->type = pinfo->ltype;
+
+    pinfo->target = NULL; /* now owned by link field */
+}
+
+long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
+{
+    int ret = 0;
+    int link_type = CONSTANT;
+
+    if(devsup)
+        link_type = devsup->link_type;
+
+    if(link_type==CONSTANT || link_type==PV_LINK) {
+        switch(pinfo->ltype) {
+        case CONSTANT:
+            dbFreeLinkContents(plink);
+            dbSetLinkConst(plink, pinfo); break;
+        case PV_LINK:
+            dbFreeLinkContents(plink);
+            dbSetLinkPV(plink, pinfo); break;
+        default:
+            errlogMessage("Warning: dbSetLink: forgot to test with dbCanSetLink() or logic error");
+            goto fail; /* can't assign HW link */
+        }
+
+    } else if(link_type==pinfo->ltype) {
+        dbFreeLinkContents(plink);
+        dbSetLinkHW(plink, pinfo);
+
+    } else if(link_type==INST_IO && (pinfo->ltype==CONSTANT || pinfo->ltype==PV_LINK) && pinfo->target[0]!='\0') {
+        /* for compatibility.  Invalid non-empty INST_IO is treated as empty string */
+        pinfo->target[0] = '\0';
+        pinfo->ltype = INST_IO;
+
+        dbFreeLinkContents(plink);
+        dbSetLinkHW(plink, pinfo);
+
+    } else
+        goto fail;
+
+    return ret;
+fail:
+    free(pinfo->target);
+    pinfo->target = NULL;
+    return S_dbLib_badField;
+}
+
 long dbPutString(DBENTRY *pdbentry,const char *pstring)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;

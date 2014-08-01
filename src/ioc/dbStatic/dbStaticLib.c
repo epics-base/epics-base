@@ -44,6 +44,8 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 
+#include "dbCommon.h"
+
 int dbStaticDebug = 0;
 static char *pNullString = "";
 #define messagesize	100
@@ -84,12 +86,9 @@ static int mapDBFtoDCT[DBF_NOACCESS+1] = {
 /*forward references for private routines*/
 static FILE *openOutstream(const char *filename);
 static void finishOutstream(FILE *stream);
-static long setLinkType(DBENTRY *pdbentry);
-static long putParmString(char **pparm,const char *pstring);
 static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
 static void zeroDbentry(DBENTRY *pdbentry);
 static char *getpMessage(DBENTRY *pdbentry);
-static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -112,103 +111,6 @@ static void finishOutstream(FILE *stream)
     } else {
         if(fclose(stream)) fprintf(stderr,"fclose error %s\n",strerror(errno));
     }
-}
-
-static long setLinkType(DBENTRY *pdbentry)
-{
-    DBENTRY	dbEntry;
-    dbRecordType *precordType;
-    devSup	*pdevSup;
-    DBLINK	*plink;
-    long	status=0;
-    int		link_type,ind,type;
-
-    dbCopyEntryContents(pdbentry, &dbEntry);
-    status = dbFindField(&dbEntry, "DTYP");
-    if (status) {
-	epicsPrintf("field DTYP does not exist for recordtype %s\n",
-		dbGetRecordTypeName(&dbEntry));
-	status = S_dbLib_fieldNotFound;
-	goto done;
-    }
-
-    precordType = dbEntry.precordType;
-    if (!precordType) {
-	status = S_dbLib_badField;
-	goto done;
-    }
-
-    if (ellCount(&precordType->devList) == 0) goto done;
-
-    ind = dbGetMenuIndex(&dbEntry);
-    if (ind == -1) {
-	char *pstring;
-
-	pstring = dbGetString(&dbEntry);
-	if (strstr(pstring, "$(") || strstr(pstring, "${")) {
-	    link_type = MACRO_LINK;
-	} else {
-	    status = S_dbLib_badField;
-	    goto done;
-	}
-    } else {
-	pdevSup = (devSup *)ellNth(&precordType->devList, ind + 1);
-	if (!pdevSup) {
-	    status = S_dbLib_badField;
-	    goto done;
-	}
-	link_type = pdevSup->link_type;
-    }
-
-    plink = (DBLINK *)pdbentry->pfield;
-    if (plink->type == link_type) goto done;
-
-    if (plink->text)
-    {
-        /* re-parse link text when DTYP has changed */
-        char * link_text;
-        link_text = plink->text;
-        plink->text = NULL;
-        dbFreeLinkContents(plink);
-        plink->type = link_type;
-        dbPutString(pdbentry, link_text);
-        free(link_text);
-        goto done;
-    }
-
-    type = plink->type;
-    if ((type == CONSTANT || type == PV_LINK ||
-         type == PN_LINK || type == DB_LINK || type == CA_LINK) &&
-	(link_type == CONSTANT || link_type == PV_LINK)) goto done;
-
-    dbFreeLinkContents(plink);
-    plink->type = link_type;
-    switch (plink->type) {
-        case VME_IO: plink->value.vmeio.parm = pNullString; break;
-        case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
-	case AB_IO: plink->value.abio.parm = pNullString; break;
-	case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
-	case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
-	case INST_IO: plink->value.instio.string = pNullString; break;
-	case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
-	case VXI_IO: plink->value.vxiio.parm = pNullString; break;
-    }
-done:
-    dbFinishEntry(&dbEntry);
-    return(status);
-}
-
-static long putParmString(char **pparm,const char *pstring)
-{
-    if (*pparm && *pparm != pNullString) {
-        free(*pparm);
-        *pparm = pNullString;
-    }
-    if (!pstring) return 0;
-    pstring = strchr(pstring, '@');
-    if (!pstring || !*++pstring) return 0;
-    *pparm = epicsStrDup(pstring);
-    return 0;
 }
 
 void dbFreeLinkContents(struct link *plink)
@@ -306,35 +208,6 @@ static char *getpMessage(DBENTRY *pdbentry)
     }
     *msg = 0;
     return msg;
-}
-
-static long putPvLink(DBENTRY *pdbentry,short pvlMask,const char *pvname)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-    char	*pname;
-
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    switch (pflddes->field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	if(plink->type != PV_LINK) return(S_dbLib_badLink);
-	pname = plink->value.pv_link.pvname;
-	if(pname) free((void *)pname);
-	pname = dbCalloc(strlen(pvname)+1,sizeof(char));
-	plink->value.pv_link.pvname = pname;
-	strcpy(pname,pvname);
-	plink->value.pv_link.pvlMask = pvlMask;
-	return(0);
-    default:
-	errPrintf(-1,__FILE__, __LINE__,"Logic Error\n");
-    }
-    return(S_dbLib_badLink);
 }
 
 /*Public only for dbStaticNoRun*/
@@ -2015,15 +1888,6 @@ char * dbGetString(DBENTRY *pdbentry)
     return (message);
 }
 
-static void cvtDecimalOrHexToShort(char *from,short *value)
-{
-    if(strspn(from,"0x")==2 || strspn(from,"0X")==2) {
-        sscanf(from,"%hi",value);
-    } else {
-        sscanf(from,"%hd",value);
-    }
-}
-
 long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 {
     char *pstr, *pend;
@@ -2362,350 +2226,39 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_FLOAT:
     case DBF_DOUBLE:
     case DBF_MENU:
+    case DBF_DEVICE:
         status = dbPutStringNum(pdbentry,pstring);
         break;
-
-    case DBF_DEVICE:  {
-	    DBENTRY	dbEntry;
-	    char	*name;
-
-	    status = dbPutStringNum(pdbentry, pstring);
-	    if (status) return status;
-
-	    name = dbGetRelatedField(pdbentry);
-	    if (!name) return 0;
-
-	    dbCopyEntryContents(pdbentry, &dbEntry);
-	    status = dbFindField(&dbEntry, name);
-	    if (!status)
-		status = setLinkType(&dbEntry);
-	    dbFinishEntry(&dbEntry);
-	    return status;
-	}
 
     case DBF_INLINK:
     case DBF_OUTLINK:
     case DBF_FWDLINK: {
-	    DBLINK	*plink;
-	    char	string[80];
-	    char	*pstr = string;
+        dbLinkInfo link_info;
+        DBLINK *plink = (DBLINK *)pfield;
 
-	    if (!pfield)
-	        return S_dbLib_fieldNotFound;
+        status = dbParseLink(pstring, pflddes->field_type, &link_info);
 
-	    plink = (DBLINK *)pfield;
-	    dbFreeLinkContents(plink);
-	    if (stringHasMacro) {
-		plink->type = MACRO_LINK;
-		plink->value.macro_link.macroStr = epicsStrDup(pstring);
-		goto done;
-	    }
+        if(status==0 && plink->type==CONSTANT && plink->value.constantStr==NULL) {
+            /* links not yet initialized by dbInitRecordLinks() */
+            free(plink->text);
+            plink->text = epicsStrDup(pstring);
+            free(link_info.target);
 
-	    if (pflddes->isDevLink) {
-		status = setLinkType(pdbentry); /* This uses DTYP to look up and set plink->type, necessary for default DTYP */
-		if (status) {
-		    errMessage(status,"in dbPutString from setLinkType");
-		    return status;
-		}
-                /* store link text in case DTYP changes later */
-                plink->text = malloc(strlen(pstring) + 1);
-                if (plink->text)
-                    strcpy(plink->text, pstring);
-	    }
-	    if (strlen(pstring) >= sizeof(string)) {
-	        status = S_dbLib_badField;
-	        errMessage(status,
-			"dbPutString received a string that is too long");
-	        return status;
-            }
-	    strcpy(pstr, pstring);
-	    /* Strip leading blanks and tabs */
-	    while (*pstr && (*pstr == ' ' || *pstr == '\t')) pstr++;
-	    /* Strip trailing blanks and tabs */
-	    if (pstr) {
-		int ind;
+        } else if(status==0) {
+            /* assignment after init (eg. autosave restore) */
+            struct dbCommon *prec = pdbentry->precnode->precord;
+            devSup *devsup = (devSup *)ellNth(&pdbentry->precordType->devList, prec->dtyp+1);
+            status = dbCanSetLink(plink, &link_info, devsup);
+            if(status)
+                status = dbSetLink(plink, &link_info, devsup);
+        }
 
-	        for (ind = (int) strlen(pstr) - 1; ind >= 0; ind--) {
-		    if (pstr[ind] != ' ' && pstr[ind] != '\t') break;
-		    pstr[ind] = '\0';
-		}
-	    }
-	    if (!pstr || !*pstr) {
-		if (plink->type == PV_LINK) dbCvtLinkToConstant(pdbentry);
-		if (plink->type != CONSTANT) return S_dbLib_badField;
-		free((void *)plink->value.constantStr);
-		plink->value.constantStr = NULL;
-		goto done;
-	    }
-	    switch (plink->type) {
-	    case CONSTANT:
-	    case PV_LINK: {
-	    	    short	ppOpt = 0;
-		    short	msOpt = 0;
-	    	    char	*end;
-	    	    char	*enddouble;
-	    	    char	*endlong;
-
-		    /* Check first to see if string is a constant*/
-		    /*It is a string if epicsStrtod or strtol eats entire string*/
-		    /*leading and trailing blanks have already been stripped*/
-		    (void) epicsStrtod(pstr, &enddouble);
-		    (void) strtol(pstr, &endlong, 0);
-
-		    if (*enddouble == 0 || *endlong == 0) {
-			if (plink->type == PV_LINK) dbCvtLinkToConstant(pdbentry);
-			if (!plink->value.constantStr ||
-			    strlen(plink->value.constantStr) < strlen(pstr)) {
-			    free(plink->value.constantStr);
-			    plink->value.constantStr =
-				dbCalloc(strlen(pstr) + 1, sizeof(char));
-			}
-			strcpy(plink->value.constantStr, pstr);
-			goto done;
-		    }
-
-		    if (plink->type==CONSTANT) dbCvtLinkToPvlink(pdbentry);
-	    	    end = strchr(pstr,' ');
-		    if (end) {
-			switch (pflddes->field_type) {
-			case DBF_INLINK: {
-			    if (strstr(end, "NPP")) ppOpt = 0;
-			    else if (strstr(end, "CPP")) ppOpt = pvlOptCPP;
-			    else if (strstr(end, "PP")) ppOpt = pvlOptPP;
-			    else if (strstr(end, "CA")) ppOpt = pvlOptCA;
-			    else if (strstr(end, "CP")) ppOpt = pvlOptCP;
-			    else ppOpt = 0;
-		            if (strstr(end, "NMS")) msOpt = pvlOptNMS;
-		            else if (strstr(end, "MSI")) msOpt = pvlOptMSI;
-		            else if (strstr(end, "MSS")) msOpt = pvlOptMSS;
-/*must be the last one:*/   else if (strstr(end, "MS")) msOpt = pvlOptMS;
-			    else msOpt = 0;
-		            *end = 0;
-			}
-			break;
-
-			case DBF_OUTLINK: {
-			    if (strstr(end, "NPP")) ppOpt = 0;
-			    else if(strstr(end, "PP")) ppOpt = pvlOptPP;
-			    else if(strstr(end, "CA")) ppOpt = pvlOptCA;
-			    else ppOpt = 0;
-		            if (strstr(end, "NMS")) msOpt = pvlOptNMS;
-		            else if(strstr(end, "MSI")) msOpt = pvlOptMSI;
-		            else if(strstr(end, "MSS")) msOpt = pvlOptMSS;
-/*must be the last one:*/   else if(strstr(end, "MS")) msOpt = pvlOptMS;
-			    else msOpt = 0;
-		            *end = 0;
-			}
-			break;
-
-			case DBF_FWDLINK: {
-			    if (strstr(end, "NPP")) ppOpt = 0;
-			    else if (strstr(end, "CA")) ppOpt = pvlOptCA;
-			    else ppOpt = 0;
-			    msOpt = 0;
-		            *end = 0;
-			}
-			break;
-
-			default:
-			epicsPrintf("dbPutString: Logic Error\n");
-			}
-		    }
-		    status = putPvLink(pdbentry,ppOpt|msOpt,pstr);
-		    goto done;
-		}
-		/*break; is unnecessary*/
-	    case VME_IO: {
-	    	    char	*end;
-
-		    if (!(end = strchr(pstr,'#'))) return S_dbLib_badField;
-		    pstr = end + 1;
-		    if (!(end = strchr(pstr,'C'))) return S_dbLib_badField;
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.vmeio.card);
-		    if (!(end = strchr(pstr,'S'))) return S_dbLib_badField;
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr, &plink->value.vmeio.signal);
-		    status = putParmString(&plink->value.vmeio.parm, pstr);
-		}
-		break;
-
-	    case CAMAC_IO: {
-	    	    char	*end;
-
-		    if (!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if (!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.b);
-		    if (!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.c);
-		    if (!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.camacio.n);
- 		    if (!(end = strchr(pstr,'A')))  {
- 			plink->value.camacio.a = 0;
- 		    } else {
- 		        pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.camacio.a);
- 		    }
- 		    if (!(end = strchr(pstr,'F'))) {
- 			plink->value.camacio.f = 0;
- 		    } else {
- 		        pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.camacio.f);
- 		    }
-		    status = putParmString(&plink->value.camacio.parm,pstr);
-		}
-		break;
-
-	    case RF_IO: {
-	    	    char	*end;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if(!(end = strchr(pstr,'R'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.cryo);
-		    if(!(end = strchr(pstr,'M'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.micro);
-		    if(!(end = strchr(pstr,'D'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.dataset);
-		    if(!(end = strchr(pstr,'E'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.rfio.element);
-		}
-		break;
-	    case AB_IO: {
-	    	    char	*end;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.link);
-		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.adapter);
-		    if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.card);
-                    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
-                    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.abio.signal);
-                    status = putParmString(&plink->value.abio.parm,pstr);
-		}
-                break;
-            case GPIB_IO: {
-                    char *end;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.gpibio.link);
-		    if(!(end = strchr(pstr,'A'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&plink->value.gpibio.addr);
-		    status = putParmString(&plink->value.gpibio.parm,pstr);
-		}
-		break;
-	    case BITBUS_IO: {
-		    /* jbk - the bbgpib struct uses unsigned char's instead
-		    of short, so read values into short and then convert */
-
-	    	    char	*end;
-		    short	tmp_val;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bitbusio.link=(unsigned char)tmp_val;
-		    if(!(end = strchr(pstr,'N'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bitbusio.node=(unsigned char)tmp_val;
-		    if(!(end = strchr(pstr,'P'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bitbusio.port=(unsigned char)tmp_val;
-		    if(!(end = strchr(pstr,'S'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bitbusio.signal=(unsigned char)tmp_val;
-		    status = putParmString(&plink->value.bitbusio.parm,pstr);
-		}
-		break;
-	    case BBGPIB_IO: {
-		    /* jbk - the bbgpib struct uses unsigned char's instead
-		    of short, so read values into short and then convert */
-
-	    	    char	*end;
-		    short	tmp_val;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    if(!(end = strchr(pstr,'L'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bbgpibio.link=(unsigned char)tmp_val;
-		    if(!(end = strchr(pstr,'B'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-		    plink->value.bbgpibio.bbaddr=(unsigned char)tmp_val;
-		    if(!(end = strchr(pstr,'G'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-                    cvtDecimalOrHexToShort(pstr,&tmp_val);
-            plink->value.bbgpibio.gpibaddr=(unsigned char)tmp_val;
-		    status = putParmString(&plink->value.bbgpibio.parm,pstr);
-		}
-		break;
-	    case VXI_IO: {
-	    	    char	*end;
-
-		    if(!(end = strchr(pstr,'#'))) return (S_dbLib_badField);
-		    pstr = end + 1;
-		    memset((char *)&plink->value.vxiio,0,sizeof(struct  vxiio));
-		    plink->value.vxiio.parm = pNullString;
-		    if(!((end = strchr(pstr,'C'))&&(end < strchr(pstr,'@')) )) {
-			plink->value.vxiio.flag = VXISTATIC;
-		        if(!(end = strchr(pstr,'V'))) return (S_dbLib_badField);
-		        pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.la);
-		    } else {
-			plink->value.vxiio.flag = VXIDYNAMIC;
-		        if(!(end = strchr(pstr,'V'))) return (S_dbLib_badField);
-		        pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.frame);
-		        if(!(end = strchr(pstr,'C'))) return (S_dbLib_badField);
-		        pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.slot);
-		    }
-		    if((end = strchr(pstr,'S'))) {
-			pstr = end + 1;
-                        cvtDecimalOrHexToShort(pstr,&plink->value.vxiio.signal);
-		    } else {
-			plink->value.vxiio.signal = 0;
-		    }
-		    status = putParmString(&plink->value.vxiio.parm,pstr);
-		}
-		break;
-	    case INST_IO: {
-		    status = putParmString(&plink->value.instio.string, pstr);
-		}
-		break;
-	    }
-	}
+    }
 	break;
     default:
 	return S_dbLib_badField;
     }
-done:
+
     if (!status && strcmp(pflddes->name, "VAL") == 0) {
 	DBENTRY	dbentry;
 

@@ -942,8 +942,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     if (status) goto finish;
 
     isDevLink = ellCount(&precord->rdes->devList) > 0 &&
-                (strcmp(pfldDes->name, "INP") == 0 ||
-                 strcmp(pfldDes->name, "OUT") == 0);
+                pfldDes->isDevLink;
 
     dbLockSetGblLock();
     dbLockSetRecordLock(precord);

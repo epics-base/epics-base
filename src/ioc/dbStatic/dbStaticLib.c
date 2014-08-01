@@ -2106,8 +2106,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
 		goto done;
 	    }
 
-	    if (strcmp(pflddes->name, "INP") == 0 ||
-		strcmp(pflddes->name, "OUT") == 0) {
+	    if (pflddes->isDevLink) {
 		status = setLinkType(pdbentry); /* This uses DTYP to look up and set plink->type, necessary for default DTYP */
 		if (status) {
 		    errMessage(status,"in dbPutString from setLinkType");

@@ -484,8 +484,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
-        if (ellCount(&precord->rdes->devList) > 0 &&
-            (strcmp(pdbFldDes->name, "INP") == 0 || strcmp(pdbFldDes->name, "OUT") == 0)) {
+        if (ellCount(&precord->rdes->devList) > 0 && pdbFldDes->isDevLink) {
             devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
 
             if (pdevSup) {

@@ -81,6 +81,7 @@ typedef struct dbFldDes{  /* field description */
     ctType	base;		/*base for integer to string conversions*/
     short	promptgroup;	/*prompt, i.e. gui group		*/
     short   interest;	/*interest level			*/
+    short   isDevLink;  /* true for INP/OUT fields */
     asLevel	as_level;	/*access security level			*/
     char	*initial;	/*initial value				*/
     /*If (DBF_MENU,DBF_DEVICE) ftPvt is (pdbMenu,pdbDeviceMenu)	*/

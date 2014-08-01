@@ -51,6 +51,8 @@ typedef struct dbLinkInfo {
     int  hwnums[5];
 } dbLinkInfo;
 
+long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);
+
 /* Parse link string.  no record locks needed.
  * on success caller must free pinfo->target
  */

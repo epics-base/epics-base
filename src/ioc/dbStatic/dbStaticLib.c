@@ -1888,6 +1888,65 @@ char * dbGetString(DBENTRY *pdbentry)
     return (message);
 }
 
+long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
+{
+    short i;
+
+    for (i=0; i<rtyp->no_links; i++) {
+        dbLinkInfo link_info;
+        dbFldDes *pflddes = rtyp->papFldDes[rtyp->link_ind[i]];
+        DBLINK *plink = (DBLINK *)(((char *)prec) + pflddes->offset);
+        devSup *devsup = NULL;
+
+        /* link fields are zero'd on allocation.
+         * so are effectively CONSTANT, but with constantStr==NULL.
+         * Here we initialize them to have the correct link type,
+         * with zero values and empty (but non-NULL) strings.
+         */
+
+        if(pflddes->isDevLink) {
+            devsup = (devSup *)ellNth(&rtyp->devList, prec->dtyp+1);
+        }
+        if(devsup)
+            plink->type = devsup->link_type;
+        else
+            plink->type = CONSTANT;
+
+        switch (plink->type) {
+        case CONSTANT: plink->value.constantStr = callocMustSucceed(1, 1, "init CONSTANT link"); break;
+        case PV_LINK:  plink->value.pv_link.pvname = callocMustSucceed(1, 1, "init PV_LINK"); break;
+        case VME_IO: plink->value.vmeio.parm = pNullString; break;
+        case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
+        case AB_IO: plink->value.abio.parm = pNullString; break;
+        case GPIB_IO: plink->value.gpibio.parm = pNullString; break;
+        case BITBUS_IO: plink->value.bitbusio.parm = pNullString; break;
+        case INST_IO: plink->value.instio.string = pNullString; break;
+        case BBGPIB_IO: plink->value.bbgpibio.parm = pNullString; break;
+        case VXI_IO: plink->value.vxiio.parm = pNullString; break;
+        }
+
+        if(!plink->text)
+            continue;
+
+        if(dbParseLink(plink->text, pflddes->field_type, &link_info)!=0) {
+            /* This was already parsed once when ->text was set.
+             * Any syntax error messages were printed at that time.
+             */
+
+        } else if(dbCanSetLink(plink, &link_info, devsup)!=0) {
+            errlogPrintf("Error: %s.%s: can't initialize link type %d with \"%s\" (type %d)\n",
+                         prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
+
+        } else if(dbSetLink(plink, &link_info, devsup)) {
+            errlogPrintf("Error: %s.%s: failed to initialize link type %d with \"%s\" (type %d)\n",
+                         prec->name, pflddes->name, plink->type, plink->text, link_info.ltype);
+        }
+        free(plink->text);
+        plink->text = NULL;
+    }
+    return 0;
+}
+
 long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 {
     char *pstr, *pend;

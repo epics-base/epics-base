@@ -56,6 +56,8 @@
 #include "dbCommon.h"
 #include "dbLock.h"
 #include "dbAccess.h"
+#include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "recGbl.h"
 #include "dbNotify.h"
 #include "dbCa.h"
@@ -82,7 +84,14 @@ static void initDatabase(void);
 static void initialProcess(void);
 static void exitDatabase(void *dummy);
 
-
+/*
+ * Iterate through all record instances (but not aliases),
+ * calling a function for each one.
+ */
+typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
+
+static void iterateRecords(recIterFunc func, void *user);
+
 /*
  *  Initialize EPICS on the IOC.
  */
@@ -122,8 +131,14 @@ static int iocBuild_1(void)
     return 0;
 }
 
+static void prepareLinks(dbRecordType *rtyp, dbCommon *prec, void *junk)
+{
+    dbInitRecordLinks(rtyp, prec);
+}
+
 static int iocBuild_2(void)
 {
+    iterateRecords(prepareLinks, NULL);
     initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
@@ -413,12 +428,6 @@ static void finishDevSup(void)
         }
     }
 }
-
-/*
- * Iterate through all record instances (but not aliases),
- * calling a function for each one.
- */
-typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
 
 static void iterateRecords(recIterFunc func, void *user)
 {

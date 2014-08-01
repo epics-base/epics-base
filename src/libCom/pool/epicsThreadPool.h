@@ -14,6 +14,14 @@
 #include <stdio.h>
 
 #include "shareLib.h"
+#include "errMdef.h"
+
+#define S_pool_jobBusy   (M_pool| 1) /*Job already queued or running*/
+#define S_pool_jobIdle   (M_pool| 2) /*Job was not queued or running*/
+#define S_pool_noPool    (M_pool| 3) /*Job not associated with a pool*/
+#define S_pool_paused    (M_pool| 4) /*Pool not currently accepting jobs*/
+#define S_pool_noThreads (M_pool| 5) /*Can't create worker thread*/
+#define S_pool_timeout   (M_pool| 6) /*Pool still busy after timeout*/
 
 #ifdef __cplusplus
 extern "C" {

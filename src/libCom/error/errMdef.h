@@ -49,6 +49,7 @@ extern "C" {
 #define M_bucket	(525 <<16) /*Bucket Hash*/
 #define M_gddFuncTbl	(526 <<16) /*gdd jump table*/
 #define M_stdlib        (527 <<16) /*EPICS Standard library*/
+#define M_pool          (528 <<16) /*Thread pool*/
 
 epicsShareFunc void epicsShareAPI errSymLookup(long status, char *pBuf, unsigned bufLength);
 epicsShareFunc void epicsShareAPI errSymTest(unsigned short modnum, unsigned short begErrNum, unsigned short endErrNum);

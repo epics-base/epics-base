@@ -191,7 +191,7 @@ static void cleanupjob2(void* arg, epicsJobMode mode)
     if(mode==epicsJobModeCleanup)
         epicsJobDestroy(job); /* delete when threadpool is destroyed */
     else if(mode==epicsJobModeRun)
-        testOk1(epicsJobUnqueue(job)==1);
+        testOk1(epicsJobUnqueue(job)==S_pool_jobIdle);
 }
 static epicsJobFunction cleanupjobs[3] = {&cleanupjob0,&cleanupjob1,&cleanupjob2};
 
@@ -341,23 +341,23 @@ void testcancel(void)
     /* freeze */
     epicsThreadPoolControl(pool, epicsThreadPoolQueueRun, 0);
 
-    testOk1(epicsJobUnqueue(job[0])==1); /* not queued yet */
+    testOk1(epicsJobUnqueue(job[0])==S_pool_jobIdle); /* not queued yet */
 
     epicsJobQueue(job[0]);
     testOk1(epicsJobUnqueue(job[0])==0);
-    testOk1(epicsJobUnqueue(job[0])==1);
+    testOk1(epicsJobUnqueue(job[0])==S_pool_jobIdle);
 
     epicsThreadSleep(0.01);
     epicsJobQueue(job[0]);
     testOk1(epicsJobUnqueue(job[0])==0);
-    testOk1(epicsJobUnqueue(job[0])==1);
+    testOk1(epicsJobUnqueue(job[0])==S_pool_jobIdle);
 
     epicsThreadPoolControl(pool, epicsThreadPoolQueueRun, 1);
 
     epicsJobQueue(job[1]); /* actually let it run this time */
 
     epicsEventMustWait(cancel[0]);
-    testOk1(epicsJobUnqueue(job[0])==1);
+    testOk1(epicsJobUnqueue(job[0])==S_pool_jobIdle);
     epicsEventSignal(cancel[1]);
 
     epicsThreadPoolDestroy(pool);

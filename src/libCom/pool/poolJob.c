@@ -125,7 +125,7 @@ int createPoolThread(epicsThreadPool *pool)
                             &workerMain,
                             pool);
     if (!tid)
-        return 1;
+        return S_pool_noThreads;
 
     pool->threadsRunning++;
     pool->threadsSleeping++;
@@ -190,7 +190,7 @@ int epicsJobMove(epicsJob *job, epicsThreadPool *newpool)
 
         if (job->queued || job->running) {
             epicsMutexUnlock(pool->guard);
-            return EINVAL;
+            return S_pool_jobBusy;
         }
 
         ellDelete(&pool->owned, &job->jobnode);
@@ -218,18 +218,18 @@ int epicsJobQueue(epicsJob *job)
     epicsThreadPool *pool = job->pool;
 
     if (!pool)
-        return EINVAL;
+        return S_pool_noPool;
 
     epicsMutexMustLock(pool->guard);
 
     assert(!job->dead);
 
     if (pool->pauseadd) {
-        ret = EPERM;
+        ret = S_pool_paused;
         goto done;
     }
     else if (job->freewhendone) {
-        ret = EINVAL;
+        ret = S_pool_jobBusy;
         goto done;
     }
     else if (job->queued) {
@@ -279,7 +279,7 @@ int epicsJobQueue(epicsJob *job)
                 /* oops, we couldn't lazy create our first worker
                  * so this job would never run!
                  */
-                ret = EAGAIN;
+                ret = S_pool_noThreads;
                 job->queued = 0;
                 /* if threadsRunning==0 then no jobs can be running */
                 assert(!job->running);
@@ -301,11 +301,11 @@ done:
 
 int epicsJobUnqueue(epicsJob *job)
 {
-    int ret = 1;
+    int ret = S_pool_jobIdle;
     epicsThreadPool *pool = job->pool;
 
     if (!pool)
-        return EINVAL;
+        return S_pool_noPool;
 
     epicsMutexMustLock(pool->guard);
 

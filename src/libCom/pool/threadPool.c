@@ -102,7 +102,7 @@ cleanup:
         epicsMutexDestroy(pool->guard);
 
     free(pool);
-    return 0;
+    return NULL;
 }
 
 static
@@ -175,7 +175,7 @@ int epicsThreadPoolWait(epicsThreadPool *pool, double timeout)
                 cantProceed("epicsThreadPoolWait: failed to wait for Event");
                 break;
             case epicsEventWaitTimeout:
-                ret = ETIMEDOUT;
+                ret = S_pool_timeout;
                 break;
             case epicsEventWaitOK:
                 ret = 0;

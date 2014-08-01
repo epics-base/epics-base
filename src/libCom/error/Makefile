@@ -24,6 +24,7 @@ Com_SRCS += errSymTbl.c
 ERR_S_FILES += $(LIBCOM)/osi/devLib.h
 ERR_S_FILES += $(LIBCOM)/as/asLib.h
 ERR_S_FILES += $(LIBCOM)/misc/epicsStdlib.h
+ERR_S_FILES += $(LIBCOM)/pool/epicsThreadPool.h
 ERR_S_FILES += $(SRC)/ioc/db/dbAccessDefs.h
 ERR_S_FILES += $(SRC)/ioc/dbStatic/devSup.h
 ERR_S_FILES += $(SRC)/ioc/dbStatic/drvSup.h

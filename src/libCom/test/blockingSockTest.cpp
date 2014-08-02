@@ -22,8 +22,8 @@
     epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
 union address {
-    struct sockaddr_in m_ia;
-    struct sockaddr m_sa;
+    struct sockaddr_in ia;
+    struct sockaddr sa;
 };
 
 class circuit {
@@ -37,10 +37,10 @@ public:
     bool sendWakeupDetected () const;
     virtual const char * pName () = 0;
 protected:
-    SOCKET m_sock;
-    epicsThreadId m_id;
-    bool m_recvWakeup;
-    bool m_sendWakeup;
+    SOCKET sock;
+    epicsThreadId id;
+    bool recvWakeup;
+    bool sendWakeup;
 protected:
     virtual ~circuit() {}
 };
@@ -66,45 +66,45 @@ public:
     void daemon ();
     address addr () const;
 protected:
-    address m_addr;
-    SOCKET m_sock;
-    epicsThreadId m_id;
-    bool m_exit;
+    address srvaddr;
+    SOCKET sock;
+    epicsThreadId id;
+    bool exit;
 };
 
 circuit::circuit ( SOCKET sockIn ) :
-    m_sock ( sockIn ), 
-    m_id ( 0 ),
-    m_recvWakeup ( false ), 
-    m_sendWakeup ( false )
+    sock ( sockIn ), 
+    id ( 0 ),
+    recvWakeup ( false ), 
+    sendWakeup ( false )
 {
-    verify ( m_sock != INVALID_SOCKET );
+    verify ( this->sock != INVALID_SOCKET );
 }
 
 bool circuit::recvWakeupDetected () const
 {
-    return m_recvWakeup;
+    return this->recvWakeup;
 }
 
 bool circuit::sendWakeupDetected () const
 {
-    return m_sendWakeup;
+    return this->sendWakeup;
 }
 
 void circuit::shutdown ()
 {
-    int status = ::shutdown ( m_sock, SHUT_RDWR );
+    int status = ::shutdown ( this->sock, SHUT_RDWR );
     verify ( status == 0 );
 }
 
 void circuit::signal ()
 {
-    epicsSignalRaiseSigAlarm ( m_id );
+    epicsSignalRaiseSigAlarm ( this->id );
 }
 
 void circuit::close ()
 {
-    epicsSocketDestroy ( m_sock );
+    epicsSocketDestroy ( this->sock );
 }
 
 void circuit::recvTest ()
@@ -112,11 +112,11 @@ void circuit::recvTest ()
     epicsSignalInstallSigAlarmIgnore ();
     char buf [1];
     while ( true ) {
-        int status = recv ( m_sock, 
+        int status = recv ( this->sock, 
             buf, (int) sizeof ( buf ), 0 );
         if ( status == 0 ) {
             testDiag ( "%s was disconnected", this->pName () );
-            m_recvWakeup = true;
+            this->recvWakeup = true;
             break;
         }
         else if ( status > 0 ) {
@@ -128,7 +128,7 @@ void circuit::recvTest ()
                 sockErrBuf, sizeof ( sockErrBuf ) );
             testDiag ( "%s socket recv() error was \"%s\"\n",
                 this->pName (), sockErrBuf );
-            m_recvWakeup = true;
+            this->recvWakeup = true;
             break;
         }
     }
@@ -145,15 +145,15 @@ clientCircuit::clientCircuit ( const address & addrIn ) :
 {
     address tmpAddr = addrIn;
     int status = ::connect ( 
-        m_sock, & tmpAddr.m_sa, sizeof ( tmpAddr ) );
+        this->sock, & tmpAddr.sa, sizeof ( tmpAddr ) );
     verify ( status == 0 );
 
     circuit * pCir = this;
-    m_id = epicsThreadCreate ( 
+    this->id = epicsThreadCreate ( 
         "client circuit", epicsThreadPriorityMedium, 
         epicsThreadGetStackSize(epicsThreadStackMedium), 
         socketRecvTest, pCir );
-    verify ( m_id );
+    verify ( this->id );
 }
 
 
@@ -168,43 +168,42 @@ extern "C" void serverDaemon ( void * pParam ) {
 }
 
 server::server ( const address & addrIn ) :
-    m_addr ( addrIn ),
-    m_sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
-    m_id ( 0 ), m_exit ( false )
+    srvaddr ( addrIn ),
+    sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
+    id ( 0 ), exit ( false )
 {
-    verify ( m_sock != INVALID_SOCKET );
+    verify ( this->sock != INVALID_SOCKET );
 
     // setup server side
-    int status = bind ( m_sock,
-        & m_addr.m_sa, sizeof ( m_addr ) );
+    osiSocklen_t slen = sizeof ( this->srvaddr );
+    int status = bind ( this->sock, & this->srvaddr.sa, slen );
     if ( status ) {
         testDiag ( "bind to server socket failed, status = %d", status );
     }
-    osiSocklen_t slen = sizeof ( m_addr );
-    if ( getsockname(m_sock, &m_addr.m_sa, &slen) != 0 ) {
+    if ( getsockname(this->sock, & this->srvaddr.sa, & slen) != 0 ) {
         testAbort ( "Failed to read socket address" );
     }
-    status = listen ( m_sock, 10 );
+    status = listen ( this->sock, 10 );
     verify ( status == 0 );
 }
 
 void server::start ()
 {
-    m_id = epicsThreadCreate (
-        "server daemon", epicsThreadPriorityMedium,
-        epicsThreadGetStackSize(epicsThreadStackMedium),
+    this->id = epicsThreadCreate ( 
+        "server daemon", epicsThreadPriorityMedium, 
+        epicsThreadGetStackSize(epicsThreadStackMedium), 
         serverDaemon, this );
-    verify ( m_id );
+    verify ( this->id );
 }
 
 void server::daemon ()
 {
-    while ( ! m_exit ) {
+    while ( ! this->exit ) {
         // accept client side
         address addr;
         osiSocklen_t addressSize = sizeof ( addr );
-        SOCKET ns = accept ( m_sock,
-            & m_addr.m_sa, & addressSize );
+        SOCKET ns = accept ( this->sock, 
+            & addr.sa, & addressSize );
         verify ( ns != INVALID_SOCKET );
         circuit * pCir = new serverCircuit ( ns );
         verify ( pCir );
@@ -213,7 +212,7 @@ void server::daemon ()
 
 address server::addr () const
 {
-    return m_addr;
+    return this->srvaddr;
 }
 
 serverCircuit::serverCircuit ( SOCKET sockIn ) :
@@ -257,9 +256,9 @@ MAIN(blockingSockTest)
 
     address addr;
     memset ( (char *) & addr, 0, sizeof ( addr ) );
-    addr.m_ia.sin_family = AF_INET;
-    addr.m_ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
-    addr.m_ia.sin_port = 0;
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
+    addr.ia.sin_port = 0;
 
     server srv ( addr );
     srv.start ();

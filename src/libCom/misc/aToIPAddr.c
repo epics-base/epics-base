@@ -13,9 +13,9 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 #define epicsExportSharedSymbols
+#include "epicsTypes.h"
 #include "osiSock.h"
 
 #ifndef NELEMENTS
@@ -29,14 +29,14 @@ static int addrArrayToUL ( const unsigned *pAddr,
                           unsigned nElements, struct in_addr *pIpAddr )
 {
     unsigned i;
-    uint32_t addr = 0ul;
+    epicsUInt32 addr = 0ul;
 
     for ( i=0u; i < nElements; i++ ) {
         if ( pAddr[i] > 0xff ) {
             return -1;
         }
         addr <<= 8;
-        addr |= ( uint32_t ) pAddr[i];
+        addr |= ( epicsUInt32 ) pAddr[i];
     }
     pIpAddr->s_addr = htonl ( addr );
         
@@ -55,7 +55,7 @@ static int initIPAddr ( struct in_addr ipAddr, unsigned port,
         return -1;
     }
     {
-        uint16_t port_16 = (uint16_t) port;
+        epicsUInt16 port_16 = (epicsUInt16) port;
         memset (pIP, '\0', sizeof(*pIP));
         pIP->sin_family = AF_INET;
         pIP->sin_port = htons(port_16);
@@ -131,7 +131,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
         }
         port = defaultPort;
         {
-            uint32_t rawAddr_32 = ( uint32_t ) rawAddr;
+            epicsUInt32 rawAddr_32 = ( epicsUInt32 ) rawAddr;
             ina.s_addr = htonl ( rawAddr_32 );
             return initIPAddr ( ina, port, pIP );
         }
@@ -152,7 +152,7 @@ aToIPAddr( const char *pAddrString, unsigned short defaultPort,
             return -1;
         }
         {
-            uint32_t rawAddr_32 = ( uint32_t ) rawAddr;
+            epicsUInt32 rawAddr_32 = ( epicsUInt32 ) rawAddr;
             ina.s_addr = htonl ( rawAddr_32 );
             return initIPAddr ( ina, port, pIP );
         }

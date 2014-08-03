@@ -175,6 +175,6 @@ epicsSpinId epicsSpinMustCreate(void)
 {
     epicsSpinId ret = epicsSpinCreate();
     if(!ret)
-        cantProceed("epicsSpinMustCreate fails");
+        cantProceed("epicsSpinMustCreate: epicsSpinCreate failed.");
     return ret;
 }

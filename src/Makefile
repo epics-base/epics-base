@@ -76,7 +76,7 @@ DIRS += std/filters/test
 std/filters/test_DEPEND_DIRS = std
 
 DIRS += std/rec/test
-std/filters/test_DEPEND_DIRS = std
+std/rec/test_DEPEND_DIRS = std
 
 
 include $(TOP)/configure/RULES_DIRS

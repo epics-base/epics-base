@@ -42,7 +42,7 @@ static const char t_Record[NO_OF_RECORD_TYPES][10] = {
     {"ai"}, {"ao"}, {"calc"}, {"calcout"}, {"dfanout"}, {"sel"}, {"sub"},
 };
 /* Deadband types to test */
-static const char t_DbndType[2][5] = { {".MDEL"}, {".ADEL"} };
+static const char t_DbndType[2][6] = { {".MDEL"}, {".ADEL"} };
 /* Different deadbands to test with */
 static double t_Deadband[NO_OF_DEADBANDS] = { -1, 0, 1.5 };
 /* Value sequences for each of the 16 tests */
@@ -206,6 +206,7 @@ MAIN(analogMonitorTest)
 
             /* Loop over all tested deadband values */
             for (idbnd = 0; idbnd < NO_OF_DEADBANDS; idbnd++) {
+                testDiag("Test %s%s = %g", t_Record[irec], t_DbndType[ityp], t_Deadband[idbnd]);
                 dbPutField(&daddr, DBR_DOUBLE, (void*) &t_Deadband[idbnd], 1);
                 memset(t_ReceivedUpdates, 0, sizeof(t_ReceivedUpdates));
 

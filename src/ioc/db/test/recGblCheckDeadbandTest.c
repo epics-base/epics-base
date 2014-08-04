@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "recGbl.h"
+#include "dbBase.h"
 #include "epicsMath.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
@@ -23,7 +24,7 @@
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 /* Indices for deadband value, test number, val in sequence */
-static int idbnd, itest, iseq;
+static int idbnd, itest;
 
 /* Different deadbands to test with */
 static double t_Deadband[NO_OF_DEADBANDS] = { -1, 0, 1.5 };

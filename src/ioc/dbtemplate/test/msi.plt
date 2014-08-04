@@ -8,8 +8,6 @@
 
 # Script to run tests on the msi program
 
-use FindBin qw($Bin);   # To find the msi executable
-
 use strict;
 use Test;
 
@@ -41,8 +39,7 @@ sub slurp {
 
 sub msi {
     my ($args) = @_;
-    my $arch = $ENV{EPICS_HOST_ARCH};
     my $exe = ($^O eq 'MSWin32') || ($^O eq 'cygwin') ? '.exe' : '';
-    my $msi = "$Bin/../../../O.$arch/msi$exe";
+    my $msi = "./msi-copy$exe";
     return `$msi $args`;
 }

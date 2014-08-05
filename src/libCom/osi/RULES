@@ -8,8 +8,8 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 # Ensure epicsVersion.h gets built first
-osdAssert$(OBJ): $(COMMON_DIR)/epicsVersion.h
-epicsTime$(OBJ): $(COMMON_DIR)/epicsVersion.h
-osdNetIntf$(OBJ): $(COMMON_DIR)/epicsVersion.h
-osdSock$(OBJ): $(COMMON_DIR)/epicsVersion.h
+osdAssert$(DEP): $(COMMON_DIR)/epicsVersion.h
+epicsTime$(DEP): $(COMMON_DIR)/epicsVersion.h
+osdNetIntf$(DEP): $(COMMON_DIR)/epicsVersion.h
+osdSock$(DEP): $(COMMON_DIR)/epicsVersion.h
 

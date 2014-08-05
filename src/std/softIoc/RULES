@@ -12,7 +12,7 @@ softIoc.dbd$(DEP): $(COMMON_DIR)/base.dbd
 $(COMMON_DIR)/base.dbd: $(COMMON_DIR)/stdRecords.dbd
 $(COMMON_DIR)/softIoc.dbd: $(COMMON_DIR)/base.dbd
 
-softMain$(OBJ): epicsInstallDir.h
+softMain$(DEP): epicsInstallDir.h
 
 epicsInstallDir.h:
 	$(ECHO) "FINAL_LOCATION=$(FINAL_LOCATION)"

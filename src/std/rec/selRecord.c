@@ -307,31 +307,18 @@ static void checkAlarms(selRecord *prec)
 
 static void monitor(selRecord *prec)
 {
-    unsigned short	monitor_mask;
-    double		delta;
+    unsigned    monitor_mask;
     double		*pnew;
     double		*pprev;
     int			i;
 
     monitor_mask = recGblResetAlarms(prec);
+
     /* check for value change */
-    delta = prec->mlst - prec->val;
-    if(delta<0.0) delta = -delta;
-    if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
-        /* post events for value change */
-        monitor_mask |= DBE_VALUE;
-        /* update last value monitored */
-        prec->mlst = prec->val;
-    }
+    recGblCheckDeadband(&prec->mlst, prec->val, prec->mdel, &monitor_mask, DBE_VALUE);
+
     /* check for archive change */
-    delta = prec->alst - prec->val;
-    if(delta<0.0) delta = -delta;
-    if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
-        /* post events on value field for archive change */
-        monitor_mask |= DBE_LOG;
-        /* update last archive value monitored */
-        prec->alst = prec->val;
-    }
+    recGblCheckDeadband(&prec->alst, prec->val, prec->adel, &monitor_mask, DBE_ARCHIVE);
 
     /* send out monitors connected to the value field */
     if (monitor_mask)
@@ -367,62 +354,57 @@ static void do_sel(selRecord *prec)
     pvalue = &prec->a;
     switch (prec->selm){
     case (selSELM_Specified):
-	if (prec->seln >= SEL_MAX) {
-	    recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
-	    return;
-	}
-	val = *(pvalue+prec->seln);
-	break;
+        if (prec->seln >= SEL_MAX) {
+            recGblSetSevr(prec,SOFT_ALARM,INVALID_ALARM);
+            return;
+        }
+        val = *(pvalue+prec->seln);
+        break;
     case (selSELM_High_Signal):
-	val = -epicsINF;
-	for (i = 0; i < SEL_MAX; i++,pvalue++){
-	    if (!isnan(*pvalue) && val < *pvalue) {
-		val = *pvalue;
-		prec->seln = i;
-	    }
-	}
-	break;
+        val = -epicsINF;
+        for (i = 0; i < SEL_MAX; i++,pvalue++){
+            if (!isnan(*pvalue) && val < *pvalue) {
+                val = *pvalue;
+                prec->seln = i;
+            }
+        }
+        break;
     case (selSELM_Low_Signal):
-	val = epicsINF;
-	for (i = 0; i < SEL_MAX; i++,pvalue++){
-	    if (!isnan(*pvalue) && val > *pvalue) {
-		val = *pvalue;
-		prec->seln = i;
-	    }
-	}
-	break;
+        val = epicsINF;
+        for (i = 0; i < SEL_MAX; i++,pvalue++){
+            if (!isnan(*pvalue) && val > *pvalue) {
+                val = *pvalue;
+                prec->seln = i;
+            }
+        }
+        break;
     case (selSELM_Median_Signal):
-	count = 0;
-	order[0] = epicsNAN;
-	for (i = 0; i < SEL_MAX; i++,pvalue++){
-	    if (!isnan(*pvalue)){
-		/* Insertion sort */
-		j = count;
-		while ((j > 0) && (order[j-1] > *pvalue)){
-		    order[j] = order[j-1];
-		    j--;
-		}
-		order[j] = *pvalue;
-		count++;
-	    }
-	}
-	prec->seln = count;
-	val = order[count / 2];
-	break;
+        count = 0;
+        order[0] = epicsNAN;
+        for (i = 0; i < SEL_MAX; i++,pvalue++){
+            if (!isnan(*pvalue)){
+                /* Insertion sort */
+                j = count;
+                while ((j > 0) && (order[j-1] > *pvalue)){
+                    order[j] = order[j-1];
+                    j--;
+                }
+                order[j] = *pvalue;
+                count++;
+            }
+        }
+        prec->seln = count;
+        val = order[count / 2];
+        break;
     default:
-	recGblSetSevr(prec,CALC_ALARM,INVALID_ALARM);
-	return;
+        recGblSetSevr(prec,CALC_ALARM,INVALID_ALARM);
+        return;
     }
-    if (!isinf(val)){
-	prec->val=val;
-	prec->udf=isnan(prec->val);
-    }  else {
-	recGblSetSevr(prec,UDF_ALARM,MAJOR_ALARM);
-	/* If UDF is TRUE this alarm will be overwritten by checkAlarms*/
-    }
+    prec->val = val;
+    prec->udf = isnan(prec->val);
     return;
 }
-
+
 /*
  * FETCH_VALUES
  *

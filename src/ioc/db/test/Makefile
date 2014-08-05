@@ -81,6 +81,12 @@ TESTS += arrShorthandTest
 TESTPROD_HOST += benchdbConvert
 benchdbConvert_SRCS += benchdbConvert.c
 
+TESTPROD_HOST += recGblCheckDeadbandTest
+recGblCheckDeadbandTest_SRCS += recGblCheckDeadbandTest.c
+recGblCheckDeadbandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += recGblCheckDeadbandTest.c
+TESTS += recGblCheckDeadbandTest
+
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunDbTests.c
 

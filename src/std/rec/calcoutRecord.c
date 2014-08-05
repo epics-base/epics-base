@@ -622,50 +622,38 @@ static void execOutput(calcoutRecord *prec)
 
 static void monitor(calcoutRecord *prec)
 {
-        unsigned        monitor_mask;
-        double          delta;
-        double          *pnew;
-        double          *pprev;
-        int             i;
+    unsigned        monitor_mask;
+    double          *pnew;
+    double          *pprev;
+    int             i;
 
-        monitor_mask = recGblResetAlarms(prec);
-        /* check for value change */
-        delta = prec->mlst - prec->val;
-        if (delta<0.0) delta = -delta;
-        if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
-                /* post events for value change */
-                monitor_mask |= DBE_VALUE;
-                /* update last value monitored */
-                prec->mlst = prec->val;
-        }
-        /* check for archive change */
-        delta = prec->alst - prec->val;
-        if (delta<0.0) delta = -delta;
-        if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
-                /* post events on value field for archive change */
-                monitor_mask |= DBE_LOG;
-                /* update last archive value monitored */
-                prec->alst = prec->val;
-        }
+    monitor_mask = recGblResetAlarms(prec);
 
-        /* send out monitors connected to the value field */
-        if (monitor_mask){
-                db_post_events(prec, &prec->val, monitor_mask);
+    /* check for value change */
+    recGblCheckDeadband(&prec->mlst, prec->val, prec->mdel, &monitor_mask, DBE_VALUE);
+
+    /* check for archive change */
+    recGblCheckDeadband(&prec->alst, prec->val, prec->adel, &monitor_mask, DBE_ARCHIVE);
+
+    /* send out monitors connected to the value field */
+    if (monitor_mask){
+        db_post_events(prec, &prec->val, monitor_mask);
+    }
+
+    /* check all input fields for changes*/
+    for (i = 0, pnew = &prec->a, pprev = &prec->la; i<CALCPERFORM_NARGS;
+         i++, pnew++, pprev++) {
+        if ((*pnew != *pprev) || (monitor_mask&DBE_ALARM)) {
+            db_post_events(prec, pnew, monitor_mask|DBE_VALUE|DBE_LOG);
+            *pprev = *pnew;
         }
-        /* check all input fields for changes*/
-        for (i = 0, pnew = &prec->a, pprev = &prec->la; i<CALCPERFORM_NARGS;
-            i++, pnew++, pprev++) {
-             if ((*pnew != *pprev) || (monitor_mask&DBE_ALARM)) {
-                  db_post_events(prec, pnew, monitor_mask|DBE_VALUE|DBE_LOG);
-                  *pprev = *pnew;
-             }
-        }
-        /* Check OVAL field */
-        if (prec->povl != prec->oval) {
-            db_post_events(prec, &prec->oval, monitor_mask|DBE_VALUE|DBE_LOG);
-            prec->povl = prec->oval;
-        }
-        return;
+    }
+    /* Check OVAL field */
+    if (prec->povl != prec->oval) {
+        db_post_events(prec, &prec->oval, monitor_mask|DBE_VALUE|DBE_LOG);
+        prec->povl = prec->oval;
+    }
+    return;
 }
 
 static int fetch_values(calcoutRecord *prec)

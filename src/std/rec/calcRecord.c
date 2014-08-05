@@ -395,34 +395,23 @@ static void checkAlarms(calcRecord *prec, epicsTimeStamp *timeLast)
 
 static void monitor(calcRecord *prec)
 {
-    unsigned short monitor_mask;
-    double delta, *pnew, *pprev;
+    unsigned monitor_mask;
+    double *pnew, *pprev;
     int i;
 
     monitor_mask = recGblResetAlarms(prec);
+
     /* check for value change */
-    delta = prec->mlst - prec->val;
-    if (delta < 0.0) delta = -delta;
-    if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
-	/* post events for value change */
-	monitor_mask |= DBE_VALUE;
-	/* update last value monitored */
-	prec->mlst = prec->val;
-    }
+    recGblCheckDeadband(&prec->mlst, prec->val, prec->mdel, &monitor_mask, DBE_VALUE);
+
     /* check for archive change */
-    delta = prec->alst - prec->val;
-    if (delta < 0.0) delta = -delta;
-    if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
-	/* post events on value field for archive change */
-	monitor_mask |= DBE_LOG;
-	/* update last archive value monitored */
-	prec->alst = prec->val;
-    }
+    recGblCheckDeadband(&prec->alst, prec->val, prec->adel, &monitor_mask, DBE_ARCHIVE);
 
     /* send out monitors connected to the value field */
     if (monitor_mask){
         db_post_events(prec, &prec->val, monitor_mask);
     }
+
     /* check all input fields for changes*/
     pnew = &prec->a;
     pprev = &prec->la;

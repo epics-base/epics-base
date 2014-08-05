@@ -259,37 +259,22 @@ static void checkAlarms(dfanoutRecord *prec)
 
 static void monitor(dfanoutRecord *prec)
 {
-	unsigned short	monitor_mask;
+    unsigned monitor_mask = recGblResetAlarms(prec);
 
-	double		delta;
+    /* check for value change */
+    recGblCheckDeadband(&prec->mlst, prec->val, prec->mdel, &monitor_mask, DBE_VALUE);
 
-        monitor_mask = recGblResetAlarms(prec);
-        /* check for value change */
-        delta = prec->mlst - prec->val;
-        if(delta<0) delta = -delta;
-        if (!(delta <= prec->mdel)) { /* Handles MDEL == NAN */
-                /* post events for value change */
-                monitor_mask |= DBE_VALUE;
-                /* update last value monitored */
-                prec->mlst = prec->val;
-        }
-        /* check for archive change */
-        delta = prec->alst - prec->val;
-        if(delta<0) delta = -delta;
-        if (!(delta <= prec->adel)) { /* Handles ADEL == NAN */
-                /* post events on value field for archive change */
-                monitor_mask |= DBE_LOG;
-                /* update last archive value monitored */
-                prec->alst = prec->val;
-        }
+    /* check for archive change */
+    recGblCheckDeadband(&prec->alst, prec->val, prec->adel, &monitor_mask, DBE_ARCHIVE);
 
-        /* send out monitors connected to the value field */
-        if (monitor_mask){
-                db_post_events(prec,&prec->val,monitor_mask);
-	}
-	return;
+    /* send out monitors connected to the value field */
+    if (monitor_mask){
+        db_post_events(prec,&prec->val,monitor_mask);
+    }
+
+    return;
 }
-
+
 static void push_values(dfanoutRecord *prec)
 {
     struct link     *plink; /* structure of the link field  */

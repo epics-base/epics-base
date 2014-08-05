@@ -75,7 +75,6 @@ static int t_ReceivedUpdates[NO_OF_PATTERNS][NO_OF_VALUES_PER_SEQUENCE];
 static long myTestSub(void *p) {
     return 0;
 }
-epicsRegisterFunction(myTestSub);
 
 
 /* Minimal pre-chain plugin to divert all monitors back into the test (before they hit the queue) */
@@ -151,6 +150,8 @@ MAIN(analogMonitorTest)
     t_SetValues[13][0] = -epicsINF; t_SetValues[13][1] = epicsNAN;
     t_SetValues[14][0] = -epicsINF; t_SetValues[14][1] = epicsINF;
     t_SetValues[15][0] = -epicsINF; t_SetValues[15][1] = -epicsINF;
+
+    registryFunctionAdd("myTestSub", (REGISTRYFUNCTION) myTestSub);
 
     testPlan(1793);
 

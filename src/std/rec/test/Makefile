@@ -14,7 +14,6 @@ PROD_LIBS = dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
 analogMonitorTest_DBD += base.dbd
-analogMonitorTest_DBD += myTestSub.dbd
 TESTPROD_HOST += analogMonitorTest
 analogMonitorTest_SRCS += analogMonitorTest.c
 analogMonitorTest_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp

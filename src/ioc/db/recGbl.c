@@ -287,7 +287,7 @@ void recGblCheckDeadband(epicsFloat64 *poldval, const epicsFloat64 newval,
     } else if (!!isnan(newval) != !!isnan(*poldval) || !!isinf(newval) != !!isinf(*poldval)) {
         /* one is NaN or +-inf, the other not -> send update */
         delta = epicsINF;
-    } else if (signbit(newval) != signbit(*poldval)) {
+    } else if (isinf(newval) && newval != *poldval) {
         /* one is +inf, the other -inf -> send update */
         delta = epicsINF;
     }

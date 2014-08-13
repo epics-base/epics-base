@@ -170,7 +170,11 @@ static void req_server (void *pParm)
 
     /* listen and accept new connections */
     if ( listen ( IOC_sock, 20 ) < 0 ) {
-        errlogPrintf ("CAS: Listen error\n");
+        char sockErrBuf[64];
+        epicsSocketConvertErrnoToString (
+            sockErrBuf, sizeof ( sockErrBuf ) );
+        errlogPrintf ( "CAS: Listen error %s\n",
+            sockErrBuf );
         epicsSocketDestroy (IOC_sock);
         epicsThreadSuspendSelf ();
     }

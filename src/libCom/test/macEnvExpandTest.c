@@ -23,7 +23,7 @@
 
 static void check(const char *str, const char *expect)
 {
-    char *got = macEnvExpand(str);
+    char *got = macEnvExpand(str, NULL);
     int pass = -1;
 
     if (expect && !got) {
@@ -152,7 +152,7 @@ MAIN(macEnvExpandTest)
     check("${FOO,FOO=$(FOO)}", NULL);
     check("${FOO=$(FOO)}", NULL);
     check("${FOO=$(BAR),BAR=$(FOO)}", NULL);
-    
+
     errlogFlush();
     eltc(1);
     return testDone();

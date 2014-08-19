@@ -1,0 +1,22 @@
+# non-standard variables
+top=@FINAL_LOCATION@
+arch=@ARCH@
+os_class=@OS_CLASS@
+cmplr_class=@CMPLR_CLASS@
+
+includedir_osi=${top}/include
+includedir_osd=${top}/include/os/@OS_CLASS@
+includedir_comp=${top}/include/os/@CMPLR_CLASS@
+
+includedirs=${includedir_osi} ${includedir_osd} ${includedir_comp}
+
+# standard variables
+prefix=@FINAL_LOCATION@
+exec_prefix=@FINAL_LOCATION@
+bindir=${top}/bin/@ARCH@
+libdir=${top}/lib/@ARCH@
+
+Name: epics-base
+Version: @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_MODIFICATION@
+Description: EPICS Base for the host arch
+Requires: epics-base-@ARCH@ = @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_MODIFICATION@

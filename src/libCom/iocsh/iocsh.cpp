@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* iocsh.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -201,7 +201,7 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 /*
  * Free storage created by iocshRegister/iocshRegisterVariable
  */
-void epicsShareAPI iocshFree(void) 
+void epicsShareAPI iocshFree(void)
 {
     struct iocshCommand *pc;
     struct iocshVariable *pv;
@@ -475,7 +475,7 @@ static void helpCallFunc(const iocshArgBuf *args)
  * The body of the command interpreter
  */
 static int
-iocshBody (const char *pathname, const char *commandLine)
+iocshBody (const char *pathname, const char *commandLine, const char* macros)
 {
     FILE *fp = NULL;
     const char *filename = NULL;
@@ -498,7 +498,7 @@ iocshBody (const char *pathname, const char *commandLine)
     struct iocshCommand *found;
     void *readlineContext = NULL;
     int wasOkToBlock;
-    
+
     /*
      * See if command interpreter is interactive
      */
@@ -585,7 +585,7 @@ iocshBody (const char *pathname, const char *commandLine)
          * Expand macros
          */
         free(line);
-        if ((line = macEnvExpand(raw)) == NULL)
+        if ((line = macEnvExpand(raw, macros)) == NULL)
             continue;
 
         /*
@@ -744,7 +744,7 @@ iocshBody (const char *pathname, const char *commandLine)
             if (openRedirect(filename, lineno, redirects) < 0)
                 continue;
             startRedirect(filename, lineno, redirects);
-            iocshBody(commandFile, NULL);
+            iocshBody(commandFile, NULL, macros);
             stopRedirect(filename, lineno, redirects);
             continue;
         }
@@ -835,15 +835,15 @@ iocsh (const char *pathname)
 {
     if (pathname)
         epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
-    return iocshBody(pathname, NULL);
+    return iocshBody(pathname, NULL, NULL);
 }
 
 int epicsShareAPI
-iocshCmd (const char *cmd)
+iocshCmd (const char *cmd, const char* macros)
 {
     if (cmd == NULL)
         return 0;
-    return iocshBody(NULL, cmd);
+    return iocshBody(NULL, cmd, macros);
 }
 
 /*
@@ -919,11 +919,12 @@ static void varCallFunc(const iocshArgBuf *args)
 
 /* iocshCmd */
 static const iocshArg iocshCmdArg0 = { "command",iocshArgString};
-static const iocshArg *iocshCmdArgs[1] = {&iocshCmdArg0};
-static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs};
+static const iocshArg iocshCmdArg1 = { "macros", iocshArgString};
+static const iocshArg *iocshCmdArgs[2] = {&iocshCmdArg0, &iocshCmdArg1};
+static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",2,iocshCmdArgs};
 static void iocshCmdCallFunc(const iocshArgBuf *args)
 {
-    iocshCmd(args[0].sval);
+    iocshCmd(args[0].sval, args[1].sval);
 }
 
 /*

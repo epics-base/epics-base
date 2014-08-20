@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 * Operator of Los Alamos National Laboratory.
 * EPICS Base is distributed subject to a Software License Agreement found
-* in the file LICENSE that is included with this distribution. 
+* in the file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* msi - macro substitutions and include */
@@ -54,7 +54,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
 /*Global variables */
 static int opt_V = 0;
 
-
+
 int main(int argc,char **argv)
 {
     inputData *inputPvt;
@@ -141,7 +141,7 @@ int main(int argc,char **argv)
     free(substitutionName);
     return opt_V & 2;
 }
-
+
 void usageExit(void)
 {
     fprintf(stderr,"usage: msi [options] [template]\n");
@@ -192,7 +192,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
         char    *p;
         char    *command = 0;
 
-        p = input; 
+        p = input;
         /*skip whitespace at beginning of line*/
         while(*p && (isspace((int) *p))) ++p;
         /*Look for i or s */
@@ -203,7 +203,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             char *copy;
             int  cmdind=-1;
             int  i;
-            
+
             for(i=0; i< NELEMENTS(cmdNames); i++) {
                 if(strstr(command,cmdNames[i])) {
                     cmdind = i;
@@ -259,7 +259,7 @@ endif:
         }
     }
 }
-
+
 typedef struct inputFile{
     ELLNODE     node;
     char        *filename;
@@ -304,7 +304,7 @@ static void inputDestruct(inputData *pinputData)
     }
     free(pinputData);
 }
-
+
 static void inputAddPath(inputData *pinputData, char *path)
 {
     ELLLIST     *ppathList = &pinputData->pathList;
@@ -342,7 +342,7 @@ static void inputAddPath(inputData *pinputData, char *path)
     }
     return;
 }
-
+
 static void inputBegin(inputData *pinputData, char *fileName)
 {
     inputCloseAllFiles(pinputData);
@@ -392,7 +392,7 @@ static void inputErrPrint(inputData *pinputData)
     }
     fprintf(stderr,"\n");
 }
-
+
 static void inputOpenFile(inputData *pinputData,char *filename)
 {
     ELLLIST     *ppathList = &pinputData->pathList;
@@ -443,7 +443,7 @@ static void inputCloseFile(inputData *pinputData)
     pinputFile = (inputFile *)ellFirst(&pinputData->inputFileList);
     if(!pinputFile) return;
     ellDelete(&pinputData->inputFileList,&pinputFile->node);
-    if(fclose(pinputFile->fp)) 
+    if(fclose(pinputFile->fp))
         fprintf(stderr,"msi: Can't close input file '%s'\n",pinputFile->filename);
     free(pinputFile->filename);
     free(pinputFile);
@@ -457,7 +457,7 @@ static void inputCloseAllFiles(inputData *pinputData)
         inputCloseFile(pinputData);
     }
 }
-
+
 /*start of code that handles substitution file*/
 typedef enum {
     tokenLBrace,tokenRBrace,tokenSeparater,tokenString,tokenEOF
@@ -518,7 +518,7 @@ void freePattern(subInfo *psubInfo)
     }
     psubInfo->isPattern = 0;
 }
-
+
 static void substituteDestruct(subInfo *psubInfo)
 {
     freeSubFile(psubInfo);
@@ -582,10 +582,10 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         free(psubInfo->filename);
         if(psubFile->string[0]=='"'&&psubFile->string[strlen(psubFile->string)-1]=='"') {
             psubFile->string[strlen(psubFile->string)-1]='\0';
-            psubInfo->filename = macEnvExpand(psubFile->string+1);
+            psubInfo->filename = macEnvExpand(psubFile->string+1, NULL);
         }
         else {
-            psubInfo->filename = macEnvExpand(psubFile->string);
+            psubInfo->filename = macEnvExpand(psubFile->string, NULL);
         }
         while(subGetNextToken(psubFile)==tokenSeparater);
         if(psubFile->token!=tokenLBrace) {
@@ -624,7 +624,7 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
     subGetNextToken(psubFile);
     return(1);
 }
-
+
 static char *substituteGetGlobalReplacements(subInfo *psubInfo)
 {
     subFile     *psubFile = psubInfo->psubFile;
@@ -727,7 +727,7 @@ static char *substituteGetReplacements(subInfo *psubInfo)
         }
     }
 }
-
+
 static char *subGetNextLine(subFile *psubFile)
 {
     char *pline;
@@ -754,7 +754,7 @@ static void subFileErrPrint(subFile *psubFile,char * message)
         psubFile->lineNum,psubFile->inputBuffer);
 }
 
-
+
 static tokenType subGetNextToken(subFile *psubFile)
 {
     char        *p;
@@ -809,7 +809,7 @@ static tokenType subGetNextToken(subFile *psubFile)
     }
     /*Now take anything up to next non String token and not space*/
     pto = &psubFile->string[0];
-    while(!isspace((int) *p) && (strspn(p,"\",{}")==0)) *pto++ = *p++; 
+    while(!isspace((int) *p) && (strspn(p,"\",{}")==0)) *pto++ = *p++;
     *pto = 0;
     psubFile->pnextChar = p;
     psubFile->token = tokenString;

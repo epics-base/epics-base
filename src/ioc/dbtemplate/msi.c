@@ -342,7 +342,7 @@ static void inputAddPath(inputData *pinputData, char *path)
     }
     return;
 }
-
+
 static void inputBegin(inputData *pinputData, char *fileName)
 {
     inputCloseAllFiles(pinputData);
@@ -392,7 +392,7 @@ static void inputErrPrint(inputData *pinputData)
     }
     fprintf(stderr,"\n");
 }
-
+
 static void inputOpenFile(inputData *pinputData,char *filename)
 {
     ELLLIST     *ppathList = &pinputData->pathList;

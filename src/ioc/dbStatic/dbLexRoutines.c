@@ -641,7 +641,7 @@ static void dbRecordtypeBody(void)
 	if((field_type==DBF_STRING) && (pdbFldDes->size==0))
 	    fprintf(stderr,"recordtype(%s).%s size not specified\n",
 		pdbRecordType->name,pdbFldDes->name);
-	if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0))
+	if((field_type==DBF_NOACCESS) && (pdbFldDes->extra==0)) 
 	    fprintf(stderr,"recordtype(%s).%s extra not specified\n",
 		pdbRecordType->name,pdbFldDes->name);
     }
@@ -693,7 +693,7 @@ static void dbRecordtypeBody(void)
     }
     ellAdd(&pdbbase->recordTypeList,&pdbRecordType->node);
 }
-
+
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring)
 {
@@ -738,7 +738,7 @@ static void dbDevice(char *recordtype,char *linktype,
     }
     ellAdd(&pdbRecordType->devList,&pdevSup->node);
 }
-
+
 static void dbDriver(char *name)
 {
     drvSup	*pdrvSup;
@@ -841,7 +841,7 @@ static void dbBreakItem(char *value)
     }
     allocTemp(epicsStrDup(value));
 }
-
+
 static void dbBreakBody(void)
 {
     brkTable		*pnewbrkTable;

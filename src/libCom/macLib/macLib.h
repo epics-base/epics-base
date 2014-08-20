@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Revision-Id$
  *
@@ -149,7 +149,7 @@ epicsShareAPI macInstallMacros(
 epicsShareFunc char *           /* expanded string; NULL if any undefined macros */
 epicsShareAPI macEnvExpand(
     const char *str,            /* string to be expanded */
-	const char *macros          /* macro definitions in "a=xxx, b=yyy" */
+    const char *macros          /* macro definitions in "a=xxx, b=yyy" */
 );
 
 #ifdef __cplusplus

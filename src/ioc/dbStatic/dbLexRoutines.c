@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Revision-Id$ */
 
@@ -36,7 +36,7 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 
-
+
 
 /*global declarations*/
 epicsShareDef char *makeDbdDepends=0;
@@ -107,7 +107,7 @@ typedef struct tempListNode {
 static ELLLIST tempList = ELLLIST_INIT;
 static void *freeListPvt = NULL;
 static int duplicate = FALSE;
-
+
 static void yyerrorAbort(char *str)
 {
     yyerror(str);
@@ -142,7 +142,7 @@ static void *getLastTemp(void)
     ptempListNode = (tempListNode *)ellLast(&tempList);
     return(ptempListNode->item);
 }
-
+
 static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
 {
     ELLLIST	*ppathList = (ELLLIST *)pdbbase->pathPvt;
@@ -160,7 +160,7 @@ static char *dbOpenFile(DBBASE *pdbbase,const char *filename,FILE **fp)
     }
     pdbPathNode = (dbPathNode *)ellFirst(ppathList);
     while (pdbPathNode) {
-        fullfilename = dbMalloc(strlen(pdbPathNode->directory) +
+        fullfilename = dbMalloc(strlen(pdbPathNode->directory) + 
             strlen(filename) + 2);
         strcpy(fullfilename, pdbPathNode->directory);
         strcat(fullfilename, "/");
@@ -181,7 +181,7 @@ static void freeInputFileList(void)
     inputFile *pinputFileNow;
 
     while((pinputFileNow=(inputFile *)ellFirst(&inputFileList))) {
-	if(fclose(pinputFileNow->fp))
+	if(fclose(pinputFileNow->fp)) 
 	    errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);
 	free((void *)pinputFileNow->filename);
@@ -189,7 +189,7 @@ static void freeInputFileList(void)
 	free((void *)pinputFileNow);
     }
 }
-
+
 static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	const char *path,const char *substitutions)
 {
@@ -197,7 +197,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     inputFile	*pinputFile = NULL;
     char	*penv;
     char	**macPairs;
-
+    
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
     if(path && strlen(path)>0) {
@@ -302,12 +302,12 @@ long dbReadDatabase(DBBASE **ppdbbase,const char *filename,
 long dbReadDatabaseFP(DBBASE **ppdbbase,FILE *fp,
 	const char *path,const char *substitutions)
 {return (dbReadCOM(ppdbbase,0,fp,path,substitutions));}
-
+
 static int db_yyinput(char *buf, int max_size)
 {
     size_t  l,n;
     char	*fgetsRtn;
-
+    
     if(yyAbort) return(0);
     if(*my_buffer_ptr==0) {
 	while(TRUE) { /*until we get some input*/
@@ -327,7 +327,7 @@ static int db_yyinput(char *buf, int max_size)
 		fgetsRtn = fgets(my_buffer,MY_BUFFER_SIZE,pinputFileNow->fp);
 	    }
 	    if(fgetsRtn) break;
-	    if(fclose(pinputFileNow->fp))
+	    if(fclose(pinputFileNow->fp)) 
 		errPrintf(0,__FILE__, __LINE__,
 			"Closing file %s",pinputFileNow->filename);
 	    free((void *)pinputFileNow->filename);
@@ -395,7 +395,7 @@ static void dbIncludeNew(char *filename)
     ellAdd(&inputFileList,&pinputFile->node);
     pinputFileNow = pinputFile;
 }
-
+
 static void dbMenuHead(char *name)
 {
     dbMenu		*pdbMenu;
@@ -455,7 +455,7 @@ static void dbMenuBody(void)
 	pgphentry->userPvt = pnewMenu;
     }
 }
-
+
 static void dbRecordtypeHead(char *name)
 {
     dbRecordType		*pdbRecordType;
@@ -478,7 +478,7 @@ static void dbRecordtypeFieldHead(char *name,char *type)
 {
     dbFldDes		*pdbFldDes;
     int			i;
-
+    
     if(duplicate) return;
     pdbFldDes = dbCalloc(1,sizeof(dbFldDes));
     allocTemp(pdbFldDes);
@@ -492,11 +492,11 @@ static void dbRecordtypeFieldHead(char *name,char *type)
     }
     yyerrorAbort("Illegal Field Type");
 }
-
+
 static void dbRecordtypeFieldItem(char *name,char *value)
 {
     dbFldDes		*pdbFldDes;
-
+    
     if(duplicate) return;
     pdbFldDes = (dbFldDes *)getLastTemp();
     if(strcmp(name,"asl")==0) {
@@ -590,23 +590,23 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         return;
     }
 }
-
+
 static void dbRecordtypeCdef(char *text) {
     dbText		*pdbCdef;
     tempListNode	*ptempListNode;
     dbRecordType	*pdbRecordType;
-
+    
     if (!pdbbase->loadCdefs || duplicate) return;
     ptempListNode = (tempListNode *)ellFirst(&tempList);
     pdbRecordType = ptempListNode->item;
-
+    
     pdbCdef = dbCalloc(1,sizeof(dbText));
     if (text[0] == ' ') text++;	/* strip leading space if present */
     pdbCdef->text = epicsStrDup(text);
     ellAdd(&pdbRecordType->cdefList, &pdbCdef->node);
     return;
 }
-
+
 static void dbRecordtypeBody(void)
 {
     dbRecordType		*pdbRecordType;
@@ -753,7 +753,7 @@ static void dbDriver(char *name)
     pgphentry = gphAdd(pdbbase->pgpHash,pdrvSup->name,&pdbbase->drvList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    }
+    } 
     pgphentry->userPvt = pdrvSup;
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
@@ -772,7 +772,7 @@ static void dbRegistrar(char *name)
     pgphentry = gphAdd(pdbbase->pgpHash,ptext->text,&pdbbase->registrarList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    }
+    } 
     pgphentry->userPvt = ptext;
     ellAdd(&pdbbase->registrarList,&ptext->node);
 }
@@ -811,7 +811,7 @@ static void dbVariable(char *name, char *type)
     pgphentry = gphAdd(pdbbase->pgpHash,pvar->name,&pdbbase->variableList);
     if(!pgphentry) {
 	yyerrorAbort("gphAdd failed");
-    }
+    } 
     pgphentry->userPvt = pvar;
     ellAdd(&pdbbase->variableList,&pvar->node);
 }
@@ -870,11 +870,11 @@ static void dbBreakBody(void)
     pnewbrkTable->paBrkInt = paBrkInt = dbCalloc(number, sizeof(brkInt));
     for (i=0; i<number; i++) {
 	char	*str;
-
+	
 	str = (char *)popFirstTemp();
 	(void) epicsScanDouble(str, &paBrkInt[i].raw);
 	free(str);
-
+	
 	str = (char *)popFirstTemp();
 	(void) epicsScanDouble(str, &paBrkInt[i].eng);
 	free(str);
@@ -916,7 +916,7 @@ static void dbBreakBody(void)
     }
     pgphentry->userPvt = pnewbrkTable;
 }
-
+
 static void dbRecordHead(char *recordType, char *name, int visible)
 {
     char *badch;
@@ -995,7 +995,7 @@ static void dbRecordField(char *name,char *value)
     pdbentry = ptempListNode->item;
     status = dbFindField(pdbentry,name);
     if(status) {
-	epicsPrintf("Record \"%s\" does not have a field \"%s\"\n",
+	epicsPrintf("Record \"%s\" does not have a field \"%s\"\n", 
                     dbGetRecordName(pdbentry), name);
 	yyerror(NULL);
 	return;

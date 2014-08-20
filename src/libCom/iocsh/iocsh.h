@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocsh.h  ioc: call registered function*/
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -68,7 +68,7 @@ epicsShareFunc void epicsShareAPI iocshRegisterVariable (
 /* This should only be called when iocsh is no longer needed*/
 epicsShareFunc void epicsShareAPI iocshFree(void);
 
-epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
+epicsShareFunc int epicsShareAPI iocsh(const char *pathname, const char* macros);
 epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd, const char* macros);
 
 /* 'weak' link to pdbbase */

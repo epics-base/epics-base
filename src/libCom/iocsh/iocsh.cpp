@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocsh.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -201,7 +201,7 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 /*
  * Free storage created by iocshRegister/iocshRegisterVariable
  */
-void epicsShareAPI iocshFree(void)
+void epicsShareAPI iocshFree(void) 
 {
     struct iocshCommand *pc;
     struct iocshVariable *pv;
@@ -498,7 +498,7 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
     struct iocshCommand *found;
     void *readlineContext = NULL;
     int wasOkToBlock;
-
+    
     /*
      * See if command interpreter is interactive
      */
@@ -585,7 +585,7 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
          * Expand macros
          */
         free(line);
-        if ((line = macEnvExpand(raw, macros)) == NULL)
+        if ((line = macEnvExpand(raw)) == NULL)
             continue;
 
         /*
@@ -831,11 +831,11 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
  * External access to the command interpreter
  */
 int epicsShareAPI
-iocsh (const char *pathname)
+iocsh (const char *pathname, const char* macros)
 {
     if (pathname)
         epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
-    return iocshBody(pathname, NULL, NULL);
+    return iocshBody(pathname, NULL, macros);
 }
 
 int epicsShareAPI

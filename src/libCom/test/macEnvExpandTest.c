@@ -152,7 +152,7 @@ MAIN(macEnvExpandTest)
     check("${FOO,FOO=$(FOO)}", NULL);
     check("${FOO=$(FOO)}", NULL);
     check("${FOO=$(BAR),BAR=$(FOO)}", NULL);
-
+    
     errlogFlush();
     eltc(1);
     return testDone();

@@ -582,10 +582,10 @@ static int substituteGetNextSet(subInfo *psubInfo,char **filename)
         free(psubInfo->filename);
         if(psubFile->string[0]=='"'&&psubFile->string[strlen(psubFile->string)-1]=='"') {
             psubFile->string[strlen(psubFile->string)-1]='\0';
-            psubInfo->filename = macEnvExpand(psubFile->string+1, NULL);
+            psubInfo->filename = macEnvExpand(psubFile->string+1);
         }
         else {
-            psubInfo->filename = macEnvExpand(psubFile->string, NULL);
+            psubInfo->filename = macEnvExpand(psubFile->string);
         }
         while(subGetNextToken(psubFile)==tokenSeparater);
         if(psubFile->token!=tokenLBrace) {

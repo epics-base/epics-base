@@ -230,7 +230,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     }
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
-	pinputFile->filename = macEnvExpand(filename, NULL);
+	pinputFile->filename = macEnvExpand(filename);
     }
     if(!fp) {
 	FILE	*fp1;
@@ -382,7 +382,7 @@ static void dbIncludeNew(char *filename)
     FILE	*fp;
 
     pinputFile = dbCalloc(1,sizeof(inputFile));
-    pinputFile->filename = macEnvExpand(filename, NULL);
+    pinputFile->filename = macEnvExpand(filename);
     pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp);
     if (!fp) {
         epicsPrintf("Can't open include file \"%s\"\n", filename);

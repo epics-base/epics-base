@@ -23,7 +23,7 @@
 
 static void check(const char *str, const char *expect)
 {
-    char *got = macEnvExpand(str, NULL);
+    char *got = macEnvExpand(str);
     int pass = -1;
 
     if (expect && !got) {

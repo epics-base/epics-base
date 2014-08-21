@@ -585,7 +585,7 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
          * Expand macros
          */
         free(line);
-        if ((line = macEnvExpand(raw, macros)) == NULL)
+        if ((line = macDefExpand(raw, macros)) == NULL)
             continue;
 
         /*

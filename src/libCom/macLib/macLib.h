@@ -148,7 +148,7 @@ epicsShareAPI macInstallMacros(
 
 epicsShareFunc char *           /* expanded string; NULL if any undefined macros */
 epicsShareAPI macEnvExpand(
-    const char *str            /* string to be expanded */
+    const char *str             /* string to be expanded */
 );
 
 epicsShareFunc char *           /* expanded string; NULL if any undefined macros */

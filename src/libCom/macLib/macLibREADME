@@ -164,7 +164,14 @@ d) char *macEnvExpand( char *src );
    pointer to this null-terminated string. It returns NULL if the source
    string contains any undefined references.
 
-e) long macReportMacros( MAC_HANDLE *handle );
+e) char *macDefExpand( char *src, char *macros );
+
+   This operates in the same manner as macEnvExpand, but takes an 
+   additonal string argument that contains a set of macro definitions in 
+   the current macParseDefns format. These macros are appended to the set
+   of macros from environment variables. 
+
+f) long macReportMacros( MAC_HANDLE *handle );
 
    This reports details of current definitions to standard output, and is
    intended purely for debugging purposes.

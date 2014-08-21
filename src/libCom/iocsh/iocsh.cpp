@@ -585,7 +585,7 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
          * Expand macros
          */
         free(line);
-        if ((line = macEnvExpand(raw)) == NULL)
+        if ((line = macEnvExpand(raw, macros)) == NULL)
             continue;
 
         /*
@@ -831,19 +831,25 @@ iocshBody (const char *pathname, const char *commandLine, const char* macros)
  * External access to the command interpreter
  */
 int epicsShareAPI
-iocsh (const char *pathname, const char* macros)
+iocsh (const char *pathname)
 {
     if (pathname)
         epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
-    return iocshBody(pathname, NULL, macros);
+    return iocshBody(pathname, NULL, NULL);
 }
 
 int epicsShareAPI
-iocshCmd (const char *cmd, const char* macros)
+iocshCmd (const char *cmd)
 {
     if (cmd == NULL)
         return 0;
-    return iocshBody(NULL, cmd, macros);
+    return iocshBody(NULL, cmd, NULL);
+}
+
+int epicsShareAPI
+iocshLoadFile(const char *pathname, const char *macros)
+{
+    return iocshBody(pathname, NULL, macros);
 }
 
 /*
@@ -919,12 +925,21 @@ static void varCallFunc(const iocshArgBuf *args)
 
 /* iocshCmd */
 static const iocshArg iocshCmdArg0 = { "command",iocshArgString};
-static const iocshArg iocshCmdArg1 = { "macros", iocshArgString};
-static const iocshArg *iocshCmdArgs[2] = {&iocshCmdArg0, &iocshCmdArg1};
-static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",2,iocshCmdArgs};
+static const iocshArg *iocshCmdArgs[1] = {&iocshCmdArg0};
+static const iocshFuncDef iocshCmdFuncDef = {"iocshCmd",1,iocshCmdArgs};
 static void iocshCmdCallFunc(const iocshArgBuf *args)
 {
-    iocshCmd(args[0].sval, args[1].sval);
+    iocshCmd(args[0].sval);
+}
+
+/* iocshLoadFile */
+static const iocshArg iocshLoadArg0 = { "pathname",iocshArgString};
+static const iocshArg iocshLoadArg1 = { "macros", iocshArgString};
+static const iocshArg *iocshLoadArgs[2] = {&iocshLoadArg0, &iocshLoadArg1};
+static const iocshFuncDef iocshLoadFuncDef = {"iocshLoadFile",2,iocshLoadArgs};
+static void iocshLoadCallFunc(const iocshArgBuf *args)
+{
+    iocshLoadFile(args[0].sval, args[1].sval);
 }
 
 /*
@@ -954,6 +969,7 @@ static void localRegister (void)
     iocshRegister(&exitFuncDef,exitCallFunc);
     iocshRegister(&helpFuncDef,helpCallFunc);
     iocshRegister(&iocshCmdFuncDef,iocshCmdCallFunc);
+    iocshRegister(&iocshLoadFuncDef,iocshLoadCallFunc);
 }
 
 } /* extern "C" */

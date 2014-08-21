@@ -68,8 +68,9 @@ epicsShareFunc void epicsShareAPI iocshRegisterVariable (
 /* This should only be called when iocsh is no longer needed*/
 epicsShareFunc void epicsShareAPI iocshFree(void);
 
-epicsShareFunc int epicsShareAPI iocsh(const char *pathname, const char* macros);
-epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd, const char* macros);
+epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
+epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd);
+epicsShareFunc int epicsShareAPI iocshLoadFile(const char *pathname, const char* macros);
 
 /* 'weak' link to pdbbase */
 epicsShareExtern struct dbBase **iocshPpdbbase;

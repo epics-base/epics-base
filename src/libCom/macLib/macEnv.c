@@ -19,7 +19,13 @@
 #include "macLib.h"
 
 char * epicsShareAPI
-macEnvExpand(const char *str, const char* macros)
+macEnvExpand(const char *str)
+{
+    return macDefExpand(str, NULL);
+}
+
+char * epicsShareAPI
+macDefExpand(const char *str, const char *macros)
 {
     MAC_HANDLE *handle;
     static char *pairs[] = { "", "environ", NULL, NULL };
@@ -29,13 +35,13 @@ macEnvExpand(const char *str, const char* macros)
     int n;
 
     if (macCreateHandle(&handle, pairs)){
-        errlogMessage("macEnvExpand: macCreateHandle failed.");
+        errlogMessage("macDefExpand: macCreateHandle failed.");
         return NULL;
     }
 
     if (macros) {
         if (macParseDefns(handle, macros, &defines) < 0) {
-		    cantProceed("macEnvExpand: invalid macro string");
+		    cantProceed("macDefExpand: invalid macro string");
         }
         else {
             macInstallMacros(handle, defines);
@@ -68,6 +74,6 @@ macEnvExpand(const char *str, const char* macros)
 
 done:
     if (macDeleteHandle(handle))
-        errlogMessage("macEnvExpand: macDeleteHandle failed.");
+        errlogMessage("macDefExpand: macDeleteHandle failed.");
     return dest;
 }

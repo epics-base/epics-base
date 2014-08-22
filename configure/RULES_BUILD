@@ -360,6 +360,19 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
+# Generate header with version number from VCS
+
+ifneq ($(VERHEADER),)
+GENVERSIONHEADER ?= $(PERL) $(TOOLS)/genVersionHeader.pl
+MODVERSION ?= undefined
+MODMACRO ?= MODULEVERSION
+
+$(VERHEADER)::
+	$(GENVERSIONHEADER) -t $(TOP) -V $(MODVERSION) -N $(MODMACRO) $@
+
+endif
+
+#---------------------------------------------------------------
 # Install rules for BIN_INSTALLS and LIB_INSTALLS
 
 define  BIN_INSTALLS_template

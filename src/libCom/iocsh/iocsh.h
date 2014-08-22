@@ -70,7 +70,8 @@ epicsShareFunc void epicsShareAPI iocshFree(void);
 
 epicsShareFunc int epicsShareAPI iocsh(const char *pathname);
 epicsShareFunc int epicsShareAPI iocshCmd(const char *cmd);
-epicsShareFunc int epicsShareAPI iocshLoadFile(const char *pathname, const char* macros);
+epicsShareFunc int epicsShareAPI iocshLoad(const char *pathname, const char* macros);
+epicsShareFunc int epicsShareAPI iocshRun(const char *cmd, const char* macros);
 
 /* 'weak' link to pdbbase */
 epicsShareExtern struct dbBase **iocshPpdbbase;

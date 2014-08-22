@@ -849,6 +849,8 @@ iocshCmd (const char *cmd)
 int epicsShareAPI
 iocshLoad(const char *pathname, const char *macros)
 {
+    if (pathname)
+        epicsEnvSet("IOCSH_STARTUP_SCRIPT", pathname);
     return iocshBody(pathname, NULL, macros);
 }
 

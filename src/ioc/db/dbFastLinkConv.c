@@ -201,7 +201,6 @@ static long cvt_st_q(
     const dbAddr *paddr)
 {
     char *end;
-printf("cvt_st_q('%s')\n", from);
 
     if (*from == 0) {
          *to = 0;
@@ -922,7 +921,6 @@ static long cvt_q_q(
      epicsInt64 *to,
      const dbAddr *paddr)
  {
-printf("cvt_q_q(%lld)\n", *from);
 
   *to=*from; return(0); }
 
@@ -932,7 +930,6 @@ static long cvt_q_uq(
      epicsUInt64 *to,
      const dbAddr *paddr)
  {
-printf("cvt_q_qq(%lld)\n", *from);
 
   *to=*from; return(0); }
 

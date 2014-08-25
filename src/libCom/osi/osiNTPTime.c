@@ -18,6 +18,7 @@
 #include <time.h>
 #include <errno.h>
 
+#define epicsExportSharedSymbols
 #include "epicsEvent.h"
 #include "epicsExit.h"
 #include "epicsTypes.h"

@@ -9,11 +9,6 @@
 /*
  * Authors: Jeff Hill, Marty Kraimer and Andrew Johnson
  */
- 
-#ifdef __SUNPRO_CC
-using namespace std;
-#endif
-
 #include <cstddef>
 #include <cstdio>
 #include <ctime>

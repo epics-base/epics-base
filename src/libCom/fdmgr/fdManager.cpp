@@ -21,19 +21,16 @@
 // 1) This library is not thread safe
 //
 
-//
-// ANSI C
-//
-#include <errno.h>
-#include <string.h>
+#include <algorithm>
 
 #define instantiateRecourceLib
 #define epicsExportSharedSymbols
 #include "epicsAssert.h"
 #include "epicsThread.h"
-#include "tsMinMax.h"
 #include "fdManager.h"
 #include "locationException.h"
+
+using std :: max;
 
 epicsShareDef fdManager fileDescriptorManager;
 
@@ -261,9 +258,9 @@ void fdRegId::show ( unsigned level ) const
 //
 // fdManager::installReg ()
 //
-epicsShareFunc void fdManager::installReg (fdReg &reg)
+void fdManager::installReg (fdReg &reg)
 {
-    this->maxFD = tsMax ( this->maxFD, reg.getFD()+1 );
+    this->maxFD = max ( this->maxFD, reg.getFD()+1 );
     // Most applications will find that its important to push here to 
     // the front of the list so that transient writes get executed
     // first allowing incoming read protocol to find that outgoing

@@ -3,13 +3,16 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* Copyright (c) 2012 ITER Organization.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* epicsRingBytes.cd */
 
-/* Author:  Eric Norum & Marty Kraimer Date:    15JUL99 */
+/*
+ * Author:  Marty Kraimer Date:    15JUL99
+ *          Eric Norum
+ *          Ralph Lange <Ralph.Lange@gmx.de>
+ */
 
 #include <stddef.h>
 #include <string.h>
@@ -18,6 +21,7 @@
 #include <stdio.h>
 
 #define epicsExportSharedSymbols
+#include "epicsSpin.h"
 #include "dbDefs.h"
 #include "epicsRingBytes.h"
 
@@ -30,6 +34,7 @@
 #define SLOP    16
 
 typedef struct ringPvt {
+    epicsSpinId    lock;
     volatile int   nextPut;
     volatile int   nextGet;
     int            size;
@@ -44,12 +49,23 @@ epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesCreate(int size)
     pring->size = size + SLOP;
     pring->nextGet = 0;
     pring->nextPut = 0;
+    pring->lock    = 0;
+    return((void *)pring);
+}
+
+epicsShareFunc epicsRingBytesId  epicsShareAPI epicsRingBytesLockedCreate(int size)
+{
+    ringPvt *pring = (ringPvt *)epicsRingBytesCreate(size);
+    if(!pring)
+        return NULL;
+    pring->lock = epicsSpinCreate();
     return((void *)pring);
 }
 
 epicsShareFunc void epicsShareAPI epicsRingBytesDelete(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
+    if (pring->lock) epicsSpinDestroy(pring->lock);
     free((void *)pring);
 }
 
@@ -57,10 +73,13 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
-    int nextGet = pring->nextGet;
-    int nextPut = pring->nextPut;
-    int size = pring->size;
+    int nextGet, nextPut, size;
     int count;
+
+    if (pring->lock) epicsSpinLock(pring->lock);
+    nextGet = pring->nextGet;
+    nextPut = pring->nextPut;
+    size = pring->size;
 
     if (nextGet <= nextPut) {
         count = nextPut - nextGet;
@@ -89,6 +108,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesGet(
         }
     }
     pring->nextGet = nextGet;
+
+    if (pring->lock) epicsSpinUnlock(pring->lock);
     return nbytes;
 }
 
@@ -96,23 +117,30 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
     epicsRingBytesId id, char *value,int nbytes)
 {
     ringPvt *pring = (ringPvt *)id;
-    int nextGet = pring->nextGet;
-    int nextPut = pring->nextPut;
-    int size = pring->size;
+    int nextGet, nextPut, size;
     int freeCount, copyCount, topCount;
+
+    if (pring->lock) epicsSpinLock(pring->lock);
+    nextGet = pring->nextGet;
+    nextPut = pring->nextPut;
+    size = pring->size;
 
     if (nextPut < nextGet) {
         freeCount = nextGet - nextPut - SLOP;
-        if (nbytes > freeCount)
+        if (nbytes > freeCount) {
+            if (pring->lock) epicsSpinUnlock(pring->lock);
             return 0;
+        }
         if (nbytes)
             memcpy ((void *)&pring->buffer[nextPut], value, nbytes);
         nextPut += nbytes;
     }
     else {
         freeCount = size - nextPut + nextGet - SLOP;
-        if (nbytes > freeCount)
+        if (nbytes > freeCount) {
+            if (pring->lock) epicsSpinUnlock(pring->lock);
             return 0;
+        }
         topCount = size - nextPut;
         copyCount = (nbytes > topCount) ?  topCount : nbytes;
         if (copyCount)
@@ -126,6 +154,8 @@ epicsShareFunc int epicsShareAPI epicsRingBytesPut(
         }
     }
     pring->nextPut = nextPut;
+
+    if (pring->lock) epicsSpinUnlock(pring->lock);
     return nbytes;
 }
 
@@ -133,14 +163,20 @@ epicsShareFunc void epicsShareAPI epicsRingBytesFlush(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
 
+    if (pring->lock) epicsSpinLock(pring->lock);
     pring->nextGet = pring->nextPut;
+    if (pring->lock) epicsSpinUnlock(pring->lock);
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
-    int nextGet = pring->nextGet;
-    int nextPut = pring->nextPut;
+    int nextGet, nextPut;
+
+    if (pring->lock) epicsSpinLock(pring->lock);
+    nextGet = pring->nextGet;
+    nextPut = pring->nextPut;
+    if (pring->lock) epicsSpinUnlock(pring->lock);
 
     if (nextPut < nextGet)
         return nextGet - nextPut - SLOP;
@@ -151,8 +187,18 @@ epicsShareFunc int epicsShareAPI epicsRingBytesFreeBytes(epicsRingBytesId id)
 epicsShareFunc int epicsShareAPI epicsRingBytesUsedBytes(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
+    int nextGet, nextPut;
+    int used;
 
-    return pring->size - epicsRingBytesFreeBytes(id) - SLOP;
+    if (pring->lock) epicsSpinLock(pring->lock);
+    nextGet = pring->nextGet;
+    nextPut = pring->nextPut;
+    if (pring->lock) epicsSpinUnlock(pring->lock);
+
+    used = nextPut - nextGet;
+    if (used < 0) used += pring->size;
+
+    return used;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesSize(epicsRingBytesId id)
@@ -165,8 +211,13 @@ epicsShareFunc int epicsShareAPI epicsRingBytesSize(epicsRingBytesId id)
 epicsShareFunc int epicsShareAPI epicsRingBytesIsEmpty(epicsRingBytesId id)
 {
     ringPvt *pring = (ringPvt *)id;
+    int isEmpty;
 
-    return (pring->nextPut == pring->nextGet);
+    if (pring->lock) epicsSpinLock(pring->lock);
+    isEmpty = (pring->nextPut == pring->nextGet);
+    if (pring->lock) epicsSpinUnlock(pring->lock);
+
+    return isEmpty;
 }
 
 epicsShareFunc int epicsShareAPI epicsRingBytesIsFull(epicsRingBytesId id)

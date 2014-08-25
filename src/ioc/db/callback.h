@@ -3,6 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2013 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
@@ -68,6 +69,7 @@ epicsShareFunc void callbackCancelDelayed(CALLBACK *pcallback);
 epicsShareFunc void callbackRequestProcessCallbackDelayed(
     CALLBACK *pCallback, int Priority, void *pRec, double seconds);
 epicsShareFunc int callbackSetQueueSize(int size);
+epicsShareFunc int callbackParallelThreads(int count, const char *prio);
 
 #ifdef __cplusplus
 }

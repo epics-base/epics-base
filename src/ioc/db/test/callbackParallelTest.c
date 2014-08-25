@@ -54,13 +54,12 @@ typedef struct myPvt {
 
 epicsEventId finished;
 
-
 static void myCallback(CALLBACK *pCallback)
 {
     myPvt *pmyPvt;
 
     callbackGetUser(pmyPvt, pCallback);
-    
+
     pmyPvt->pass++;
 
     if (pmyPvt->pass == 1) {
@@ -95,10 +94,11 @@ static void printStats(double *stats, const char* tag) {
             sqrt(stats[4]*stats[3]-pow(stats[2], 2.0))/stats[4]);
 }
 
-MAIN(callbackTest)
+MAIN(callbackParallelTest)
 {
     myPvt *pcbt[NCALLBACKS];
     epicsTimeStamp start;
+    int noCpus = epicsThreadGetCPUs();
     int i, j;
     /* Statistics: min/max/sum/sum^2/n for each priority */
     double setupError[NUM_CALLBACK_PRIORITIES][5];
@@ -111,6 +111,9 @@ MAIN(callbackTest)
 
     testPlan(NCALLBACKS * 2 + 1);
 
+    testDiag("Starting %d parallel callback threads", noCpus);
+
+    callbackParallelThreads(noCpus, "");
     callbackInit();
     epicsThreadSleep(1.0);
 

@@ -35,6 +35,7 @@ void epicsRunDbTests(void)
     runTest(callbackTest);
     runTest(dbStateTest);
     runTest(dbShutdownTest);
+    runTest(scanIoTest);
     runTest(dbLockTest);
     runTest(dbPutLinkTest);
     runTest(testDbChannel);

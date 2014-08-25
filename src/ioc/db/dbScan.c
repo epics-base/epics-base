@@ -122,6 +122,8 @@ typedef struct io_scan_list {
     CALLBACK            callback;
     scan_list           scan_list;
     struct io_scan_list *next;
+    io_scan_complete    cb;
+    void *              arg;
 } io_scan_list;
 
 static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES] = {
@@ -507,19 +509,31 @@ void scanIoInit(IOSCANPVT *ppioscanpvt)
     }
 }
 
-
-void scanIoRequest(IOSCANPVT pioscanpvt)
+/* return a bit mask indicating each prioity level
+ * in which a callback request was queued.
+ */
+unsigned int scanIoRequest(IOSCANPVT pioscanpvt)
 {
     int prio;
+    unsigned int queued = 0;
 
-    if (scanCtl != ctlRun) return;
+    if (scanCtl != ctlRun) return 0;
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
         io_scan_list *piosl = &pioscanpvt[prio];
         if (ellCount(&piosl->scan_list.list) > 0)
-            callbackRequest(&piosl->callback);
+            if(!callbackRequest(&piosl->callback))
+                queued |= 1<<prio;
     }
+    return queued;
 }
-
+
+/* May not be called while a scan request is queued or running */
+void scanIoSetComplete(IOSCANPVT pioscanpvt, io_scan_complete cb, void* arg)
+{
+    pioscanpvt->cb = cb;
+    pioscanpvt->arg = arg;
+}
+
 void scanOnce(struct dbCommon *precord)
 {
     static int newOverflow = TRUE;
@@ -747,9 +761,15 @@ static void spawnPeriodic(int ind)
 static void ioeventCallback(CALLBACK *pcallback)
 {
     io_scan_list *piosl;
+    io_scan_list *pioslLow;
 
     callbackGetUser(piosl, pcallback);
     scanList(&piosl->scan_list);
+    pioslLow = piosl - pcallback->priority;
+    if(pioslLow->cb)
+        (*pioslLow->cb)(pioslLow->arg,
+                     pioslLow,
+                     pcallback->priority);
 }
 
 static void printList(scan_list *psl, char *message)

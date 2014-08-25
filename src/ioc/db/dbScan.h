@@ -39,6 +39,8 @@ struct io_scan_list;
 typedef struct io_scan_list *IOSCANPVT;
 typedef struct event_list *EVENTPVT;
 
+typedef void (*io_scan_complete)(void *, IOSCANPVT, int);
+
 struct dbCommon;
 
 epicsShareFunc long scanInit(void);
@@ -65,7 +67,8 @@ epicsShareFunc int scanpel(const char *event_name);
 epicsShareFunc int scanpiol(void);
 
 epicsShareFunc void scanIoInit(IOSCANPVT *);
-epicsShareFunc void scanIoRequest(IOSCANPVT);
+epicsShareFunc unsigned int scanIoRequest(IOSCANPVT);
+epicsShareFunc void scanIoSetComplete(IOSCANPVT, io_scan_complete, void*);
 
 #ifdef __cplusplus
 }

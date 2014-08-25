@@ -1,0 +1,4 @@
+record(y, g$(GROUP)m$(MEMBER)) {
+  field(SCAN, "I/O Intr")
+  field(PRIO, "$(PRIO)")
+}

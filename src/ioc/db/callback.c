@@ -146,7 +146,12 @@ static void callbackTask(void *arg)
     while(TRUE) {
         void *ptr;
         epicsEventMustWait(callbackSem[priority]);
-        while((ptr = epicsRingPointerPop(callbackQ[priority]))) {
+        while ((ptr = epicsRingPointerPop(callbackQ[priority]))) {
+            /* Retrigger if there are more threads and more work */
+            if (callbackThreadsRunning[priority] > 1
+                    && !epicsRingPointerIsEmpty(callbackQ[priority])) {
+                epicsEventTrigger(callbackSem[priority]);
+            }
             CALLBACK *pcallback = (CALLBACK *)ptr;
             if (ptr == &exitCallback) goto shutdown;
             ringOverflow[priority] = FALSE;
@@ -220,21 +225,21 @@ void callbackInit(void)
 }
 
 /* This routine can be called from interrupt context */
-void callbackRequest(CALLBACK *pcallback)
+int callbackRequest(CALLBACK *pcallback)
 {
     int priority;
     int pushOK;
 
     if (!pcallback) {
         epicsInterruptContextMessage("callbackRequest: pcallback was NULL\n");
-        return;
+        return S_db_notInit;
     }
     priority = pcallback->priority;
     if (priority < 0 || priority >= NUM_CALLBACK_PRIORITIES) {
         epicsInterruptContextMessage("callbackRequest: Bad priority\n");
-        return;
+        return S_db_badChoice;
     }
-    if (ringOverflow[priority]) return;
+    if (ringOverflow[priority]) return S_db_bufFull;
 
     pushOK = epicsRingPointerPush(callbackQ[priority], pcallback);
 
@@ -245,8 +250,10 @@ void callbackRequest(CALLBACK *pcallback)
         strcat(msg, " ring buffer full\n");
         epicsInterruptContextMessage(msg);
         ringOverflow[priority] = TRUE;
+        return S_db_bufFull;
     }
     epicsEventSignal(callbackSem[priority]);
+    return 0;
 }
 
 static void ProcessCallback(CALLBACK *pcallback)
@@ -267,11 +274,11 @@ void callbackSetProcess(CALLBACK *pcallback, int Priority, void *pRec)
     callbackSetUser(pRec, pcallback);
 }
 
-void callbackRequestProcessCallback(CALLBACK *pcallback,
+int  callbackRequestProcessCallback(CALLBACK *pcallback,
     int Priority, void *pRec)
 {
     callbackSetProcess(pcallback, Priority, pRec);
-    callbackRequest(pcallback);
+    return callbackRequest(pcallback);
 }
 
 static void notify(void *pPrivate)

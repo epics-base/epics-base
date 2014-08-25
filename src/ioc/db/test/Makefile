@@ -65,6 +65,18 @@ dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
 
+TARGETS += $(COMMON_DIR)/scanIoTest.dbd
+scanIoTest_DBD += menuGlobal.dbd
+scanIoTest_DBD += menuConvert.dbd
+scanIoTest_DBD += yRecord.dbd
+TESTPROD_HOST += scanIoTest
+scanIoTest_SRCS += scanIoTest.c
+scanIoTest_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += scanIoTest.c
+testHarness_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/scanIoTest.dbd ../scanIoTest.db
+TESTS += scanIoTest
+
 TESTPROD_HOST += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
 dbChannelTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
@@ -109,3 +121,4 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
+scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h

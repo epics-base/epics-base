@@ -262,7 +262,7 @@ int callbackRequest(CALLBACK *pcallback)
     }
     /* Wake up another sleeping thread, if threads are sleeping
      * and there are more jobs in the queue than busy threads */
-    threadsBusy = epicsAtomicGetIntT(mySet->threadsBusy);
+    threadsBusy = epicsAtomicGetIntT(&mySet->threadsBusy);
     if (threadsBusy < mySet->threadsRunning
             && epicsRingPointerGetUsed(mySet->queue) > threadsBusy) {
         epicsEventSignal(mySet->semWakeUp);

@@ -60,6 +60,7 @@ typedef struct cbQueueSet {
 
 static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
 
+int callbackThreadsDefault = 1;
 int callbackParallelThreadsDefault = 2;
 epicsExportAddress(int,callbackParallelThreadsDefault);
 
@@ -210,6 +211,8 @@ void callbackInit(void)
             cantProceed("epicsRingPointerLockedCreate failed for %s\n",
                 threadNamePrefix[i]);
         callbackQueue[i].queueOverflow = FALSE;
+        if (callbackQueue[i].threadsConfigured == 0)
+            callbackQueue[i].threadsConfigured = callbackThreadsDefault;
 
         for (j = 0; j < callbackQueue[i].threadsConfigured; j++) {
             if (callbackQueue[i].threadsConfigured > 1 )

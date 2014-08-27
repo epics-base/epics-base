@@ -56,6 +56,7 @@ INC += epicsStdio.h
 INC += epicsStdioRedirect.h
 INC += epicsTempFile.h
 INC += epicsGetopt.h
+INC += epicsStacktrace.h
 
 INC += devLib.h
 INC += devLibVME.h
@@ -140,3 +141,11 @@ Com_SRCS_WIN32 += epicsGetopt.c
 Com_SRCS_WIN32 += setThreadName.cpp
 #Com_SRCS_WIN32 += dllmain.cpp
 Com_SRCS_WIN32 += forceBadAllocException.cpp
+
+#Stacktrace support
+Com_SRCS += osdStacktrace.c
+Com_SRCS_Linux  += execinfoStacktrace.c
+Com_SRCS_Darwin += execinfoStacktrace.c
+#we could use execinfoStacktrace.c on freebsd, too, but AFAIK
+#you need libexecinfo.a and execinfo.h. I don't know if that
+#is routinely available so we don't use it for now.

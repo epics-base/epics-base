@@ -20,6 +20,7 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "cantProceed.h"
+#include "epicsStacktrace.h"
 
 
 void epicsAssert (const char *pFile, const unsigned line,
@@ -31,6 +32,12 @@ void epicsAssert (const char *pFile, const unsigned line,
         "A call to 'assert(%s)'\n"
         "    by thread '%s' failed in %s line %u.\n",
         pExp, epicsThreadGetNameSelf(), pFile, line);
+
+	errlogPrintf("\n"
+		"I'll try to dump a stack trace:\n");
+	epicsStacktrace();
+	errlogPrintf("\n");
+
     errlogPrintf("EPICS Release %s.\n", epicsReleaseVersion);
 
     if (epicsTimeGetCurrent(&current) == 0) {

@@ -15,6 +15,29 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>On POSIX systems, attempt to lock all memory on startup if running with a FIFO scheduler</h3>
+
+<p>
+On POSIX systems, an IOC application's ability to meet timing deadlines is often
+dependent on its ability to lock  part  or  all  of  the process's virtual
+address space into RAM, preventing that memory from being paged to the swap
+area.  This change will attempt to lock the process's virtual address space into
+RAM if the process has the ability to run threads with different priorities. If
+unsuccessful, it prints an message to stderr and continues.  
+  
+In Linux, one can grant a process the ability to run threads with different
+priorities by using a command like <code>ulimit -r unlimited</code>. To use the FIFO
+scheduler, use a command like so - <code>chrt -f 1 softIoc -d test.db</code>
+  
+In Linux, one can grant a process the ability to lock memory by using a command
+like <code>ulimit -l unlimited</code>. Alternatively, these limits can be configured on a per
+user/per group basis by changing /etc/security/limits.conf or its equivalent.
+  
+In Linux, a child process created via fork inherits its parent's resource
+limits.  Thus, it is probably a good idea to start the caRepeater before
+starting the IOC.
+</p>
+
 <h3>Implement EPICS_CAS_INTF_ADDR_LIST in rsrv</h3>
 
 <p>The IOC server can now bind to a single IP address (and optional port number)

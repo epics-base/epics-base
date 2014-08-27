@@ -23,7 +23,13 @@
 
 static void check(const char *str, const char *macros, const char *expect)
 {
-    char *got = macDefExpand(str, macros);
+    MAC_HANDLE *handle;
+    char **defines;
+    
+    macParseDefns(NULL, macros, &defines);
+    macCreateHandle(&handle, defines);
+    
+    char *got = macDefExpand(str, handle);
     int pass = -1;
 
     if (expect && !got) {
@@ -39,6 +45,8 @@ static void check(const char *str, const char *macros, const char *expect)
         pass = 0;
     }
     testOk(pass, "%s", str);
+    
+    macDeleteHandle(handle);
 }
 
 MAIN(macEnvExpandTest)

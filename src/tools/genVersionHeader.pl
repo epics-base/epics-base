@@ -58,13 +58,13 @@ if(open($DST, '+<', $outfile)) {
     print "== have\n$actual" if $opt_v;
 
     if($actual eq $output) {
-        print "keep existing $outfile\n";
+        print "Keeping existing VCS version header $outfile\n";
         exit(0)
     }
-    print "updating $outfile\n";
+    print "Updating VCS version header $outfile\n";
 } else {
-    print "create $outfile\n";
-    open($DST, '>', $outfile) or die "Unable to open or create $outfile";
+    print "Creating VCS version header $outfile\n";
+    open($DST, '>', $outfile) or die "Unable to open or create VCS version header $outfile";
 }
 
 seek($DST,0,0);

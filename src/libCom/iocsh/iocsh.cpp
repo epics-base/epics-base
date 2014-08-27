@@ -509,7 +509,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     struct iocshCommand *found;
     void *readlineContext = NULL;
     int wasOkToBlock;
-    static char *pairs[] = {NULL, NULL};
+    static char *pairs[] = {"", "environ", NULL, NULL};
     MAC_HANDLE *handle;
     char ** defines = NULL;
     

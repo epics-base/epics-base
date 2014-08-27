@@ -154,7 +154,8 @@ epicsShareAPI macEnvExpand(
 epicsShareFunc char *           /* expanded string; NULL if any undefined macros */
 epicsShareAPI macDefExpand(
     const char *str,            /* string to be expanded */
-    const char *macros          /* macro definitions in "a=xxx, b=yyy" */
+    MAC_HANDLE *macros          /* opaque handle; can be NULL if default */
+                                /* special characters are to be used */
 );
 
 #ifdef __cplusplus

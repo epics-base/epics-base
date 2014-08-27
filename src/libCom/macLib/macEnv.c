@@ -25,29 +25,23 @@ macEnvExpand(const char *str)
 }
 
 char * epicsShareAPI
-macDefExpand(const char *str, const char *macros)
+macDefExpand(const char *str, MAC_HANDLE *macros)
 {
     MAC_HANDLE *handle;
     static char *pairs[] = { "", "environ", NULL, NULL };
-    char** defines;
     long destCapacity = 128;
     char *dest = NULL;
     int n;
-
-    if (macCreateHandle(&handle, pairs)){
-        errlogMessage("macDefExpand: macCreateHandle failed.");
-        return NULL;
-    }
-
+    
     if (macros) {
-        if (macParseDefns(handle, macros, &defines) < 0) {
-		    cantProceed("macDefExpand: invalid macro string");
-        }
-        else {
-            macInstallMacros(handle, defines);
+        handle = macros;
+    } else {
+        if (macCreateHandle(&handle, pairs)){
+            errlogMessage("macDefExpand: macCreateHandle failed.");
+            return NULL;
         }
     }
-
+    
     do {
         destCapacity *= 2;
         /*
@@ -73,7 +67,10 @@ macDefExpand(const char *str, const char *macros)
     }
 
 done:
-    if (macDeleteHandle(handle))
-        errlogMessage("macDefExpand: macDeleteHandle failed.");
+    if (macros == NULL) {
+        if (macDeleteHandle(handle)) {
+            errlogMessage("macDefExpand: macDeleteHandle failed.");
+        }
+    }
     return dest;
 }

@@ -22,6 +22,22 @@ getopts("vt:N:V:") or
 
 my ($outfile) = @ARGV;
 
+if(-d "$opt_t/_darcs") { # Darcs
+    # v1-4-dirty
+    # is tag 'v1' plus 4 patches
+    # with uncommited modifications
+    $result = `cd "$opt_t" && echo "\$(darcs show tags | head -1)-\$((\$(darcs changes --count --from-tag .)-1))"`;
+    chomp($result);
+    if(length($result)>1) {
+        $opt_V = $result;
+        $foundvcs = 1;
+    }
+    # see if working copy has modifications, additions, removals, or missing files
+    my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
+    if(!$?) {
+        $opt_V = "$opt_V-dirty";
+    }
+}
 if(-d "$opt_t/.hg") { # Mercurial
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef

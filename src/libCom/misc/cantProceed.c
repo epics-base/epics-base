@@ -19,7 +19,7 @@
 #include "errlog.h"
 #include "cantProceed.h"
 #include "epicsThread.h"
-#include "epicsStacktrace.h"
+#include "epicsStackTrace.h"
 
 epicsShareFunc void * callocMustSucceed(size_t count, size_t size, const char *msg)
 {
@@ -65,7 +65,7 @@ epicsShareFunc void cantProceed(const char *msg, ...)
             epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
 
 	errlogPrintf("Dumping a stack trace:\n");
-	epicsStacktrace();
+	epicsStackTrace();
 	errlogPrintf("\n");
 
     errlogFlush();

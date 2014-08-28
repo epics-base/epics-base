@@ -22,9 +22,9 @@
 #define STATE_NAME_LENGTH 20
 
 static const
-chfPluginEnumType modeEnum[] = { {"before", 0}, {"first", 1},
-                                 {"last", 2}, {"after", 3},
-                                 {"while", 4}, {"unless", 5},
+chfPluginEnumType modeEnum[] = { {"before", 0}, {"first",  1},
+                                 {"last",   2}, {"after",  3},
+                                 {"while",  4}, {"unless", 5},
                                  {NULL,0} };
 typedef enum syncMode {
     syncModeBefore=0,
@@ -47,8 +47,14 @@ static void *myStructFreeList;
 
 static const
 chfPluginArgDef opts[] = {
-    chfEnum   (myStruct, mode,  "m", 1, 1, modeEnum),
-    chfString (myStruct, state, "s", 1, 0),
+    chfEnum      (myStruct, mode,  "m", 1, 1, modeEnum),
+    chfString    (myStruct, state, "s", 1, 0),
+    chfTagString (myStruct, state, "before", mode, 0, 1, 0),
+    chfTagString (myStruct, state, "first",  mode, 1, 1, 0),
+    chfTagString (myStruct, state, "last",   mode, 2, 1, 0),
+    chfTagString (myStruct, state, "after",  mode, 3, 1, 0),
+    chfTagString (myStruct, state, "while",  mode, 4, 1, 0),
+    chfTagString (myStruct, state, "unless", mode, 5, 1, 0),
     chfPluginArgEnd
 };
 

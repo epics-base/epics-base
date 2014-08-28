@@ -8,9 +8,13 @@
  */ 
 
 #include "epicsStackTrace.h"
+#include "errlog.h"
 
 epicsShareFunc void epicsStackTrace(void)
 {
+	errlogFlush();
+	errlogPrintf("StackTrace not supported on this platform, sorry\n");
+	errlogFlush();
 }
 
 epicsShareFunc int epicsStackTraceGetFeatures(void)

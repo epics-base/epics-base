@@ -302,7 +302,7 @@ table.dlsip     {
   border: 0.4ex solid #dddddd;
 }
 
-.pod, .manifest { margin-right: 20ex; }
+.pod, .manifest { margin-right: 0; }
 
 .pod PRE     {
   background: #eeeeee;

@@ -1,0 +1,5 @@
+record(stringin, "$(user):version") {
+    field(DTYP, "My Version")
+    field(DESC, "Module version")
+    field(PINI, "YES")
+}

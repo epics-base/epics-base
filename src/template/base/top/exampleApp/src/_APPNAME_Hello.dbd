@@ -1,1 +1,2 @@
 registrar(helloRegister)
+device(stringin,INST_IO,devSiMyModVersion,"My Version")

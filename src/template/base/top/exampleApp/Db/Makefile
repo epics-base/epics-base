@@ -12,6 +12,7 @@ include $(TOP)/configure/CONFIG
 # databases, templates, substitutions like this
 DB += dbExample1.db
 DB += dbExample2.db
+DB += dbVersionExample.db
 DB += dbSubExample.db
 DB += user.substitutions
 

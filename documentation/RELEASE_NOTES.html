@@ -15,6 +15,22 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Support routines for 64-bit integers</h3>
+
+<p>The libCom library now provides support for 64-bit integer types on all
+supported architectures. The epicsTypes.h header file defines epicsInt64 and
+epicsUInt64 type definitions for both C and C++ code. The epicsStdlib.h header
+also declares the following functions for parsing strings into the relevent
+sized integer variables: epicsParseLLong(), epicsParseULLong(), epicsParseInt64()
+and epicsParseUInt64(). Use the first two for long long and unsigned long long
+integer types, and the second two for the epicsInt64 and epicsUInt64 types (the
+latter can map to the more common long and unsigned long types on some 64-bit
+architectures such as linux-x86_64).</p>
+
+<p>This version does not provide the ability to define 64-bit record fields, the
+use of the 64-bit types in the IOC database will come in a later release of
+EPICS Base.</p>
+
 <h3>Implement EPICS_CAS_INTF_ADDR_LIST in rsrv</h3>
 
 <p>The IOC server can now bind to a single IP address (and optional port number)

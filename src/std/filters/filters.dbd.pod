@@ -57,8 +57,9 @@ registrar(tsInitialize)
 
 =head3 TimeStamp Filter C<"ts">
 
-This filter is used to set the timestamp of the (first) value fetched through
-the channel to the connection time, rather than the time the record last
+This filter is used to set the timestamp of the value fetched through
+the channel to the time the value was fetched (or an update was sent),
+rather than the time the record last
 processed which could have been days or even weeks ago for some records, or set
 to the EPICS epoch if the record has never processed.
 
@@ -102,6 +103,12 @@ A string (enclosed in double-quotes C<">), which should contain either
 C<abs> or C<rel>.
 The default mode is absolute if no mode parameter is included.
 
+=item Mode+Deadband C<"abs">/C<"rel"> (shorthand)
+
+As a shorthand, mode and deadband can be specified in one definition. In this case,
+the desired mode is given as parameter name (C<"abs"> or C<"rel">), with the numeric
+size of the deadband (absolute value or numeric percentage) as value.
+
 =back
 
 =head4 Example
@@ -114,7 +121,7 @@ The default mode is absolute if no mode parameter is included.
  test:channel                    2012-09-01 22:10:23.601023 5  
  test:channel                    2012-09-01 22:10:24.601136 6 HIGH MINOR
  ^C
- Hal$ camonitor 'test:channel.{"dbnd":{"d":1.5}}'
+ Hal$ camonitor 'test:channel.{"dbnd":{"abs":1.5}}'
  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:49.613341 1 LOLO MAJOR
  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:51.613615 3 LOW MINOR
  test:channel.{"dbnd":{"d":1.5}} 2012-09-01 22:11:53.613804 5  
@@ -128,7 +135,47 @@ registrar(arrInitialize)
 
 =head3 Array Filter C<"arr">
 
-...
+This filter is used to retrieve parts of an array (subarrays and strided
+subarrays).
+
+=head4 Parameters
+
+Note: Negative index numbers address from the end of the array, with C<-1> being the last element.
+
+=over
+
+=item Start index C<"s">
+
+Index of the first original array element to retrieve.
+
+=item Increment C<"i">
+
+Increment between retrieved elements of the original array.
+
+=item End index C<"e">
+
+Index of the last original array element to retrieve.
+
+=item Shorthand notation C<[s:i:e]>
+
+As a shorthand, the C<[s:i:e]> notation with square brackets can be used.
+
+=back
+
+Negative index numbers address from the end of the array,
+with C<-1> being the last element.
+
+Defaults (when parameters are omitted) are:
+C<s=0> (first element), C<i=1> (fetch all elements), C<e=-1>
+(last element)
+
+=head4 Example
+
+ Hal$ caget test:channel 'test:channel.{"arr":{"s":2,"i":2,"e":8}}' test:channel.[3:5] test:channel.[3:2:-3]
+ test:channel 10 0 1 2 3 4 5 6 7 8 9
+ test:channel.{"arr":{"s":2,"i":2,"e":8}} 4 2 4 6 8
+ test:channel.[3:5] 3 3 4 5
+ test:channel.[3:2:-3] 3 3 5 7
 
 =cut
 
@@ -178,12 +225,22 @@ as the state is false.
 
 The name of a state variable, enclosed in double quotes C<">.
 
+=item Mode+State (shorthand)
+
+As a shorthand, mode and state can be specified in one definition. In this case,
+the desired mode is given as parameter name (C<"before"> / C<"first"> /
+C<"while"> / C<"last"> / C<"after"> / C<"unless">), with the state name (enclosed
+in double quotes C<">) as value.
+
 =back
 
 =head4 Example
 
- Woz$ camonitor 'test:channel'
+Assuming there is a system state called "blue", that is being set true or false
+by some other facility, e.g. the timing system support, updates could be restricted
+to the "blue" periods using
+
+ Hal$ camonitor 'test:channel' 'test:channel.{"while":"blue"}'
  ...
 
 =cut
-

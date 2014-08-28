@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#undef TEST_DEBUG
+#undef  TEST_DEBUG
 
 #define TST_BUFSZ 10000
 

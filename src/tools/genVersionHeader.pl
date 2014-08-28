@@ -22,44 +22,44 @@ getopts("vt:N:V:") or
 
 my ($outfile) = @ARGV;
 
-if(-d "$opt_t/_darcs") { # Darcs
+if(!$foundvcs && -d "$opt_t/_darcs") { # Darcs
     # v1-4-dirty
     # is tag 'v1' plus 4 patches
     # with uncommited modifications
     $result = `cd "$opt_t" && echo "\$(darcs show tags | head -1)-\$((\$(darcs changes --count --from-tag .)-1))"`;
     chomp($result);
-    if(length($result)>1) {
+    if(!$? && length($result)>1) {
         $opt_V = $result;
         $foundvcs = 1;
-    }
-    # see if working copy has modifications, additions, removals, or missing files
-    my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
-    if(!$?) {
-        $opt_V = "$opt_V-dirty";
+        # see if working copy has modifications, additions, removals, or missing files
+        my $hasmod = `darcs whatsnew --repodir="$opt_t" -l`;
+        if(!$?) {
+            $opt_V = "$opt_V-dirty";
+        }
     }
 }
-if(-d "$opt_t/.hg") { # Mercurial
+if(!$foundvcs && -d "$opt_t/.hg") { # Mercurial
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef
     # with uncommited modifications
     $result = `cd "$opt_t" && hg tip --template '{latesttag}-{latesttagdistance}-{node|short}\n'`;
     chomp($result);
-    if(length($result)>1) {
+    if(!$? && length($result)>1) {
         $opt_V = $result;
         $foundvcs = 1;
-    }
-    # see if working copy has modifications, additions, removals, or missing files
-    my $hasmod = `cd "$opt_t" && hg status -m -a -r -d`;
-    chomp($hasmod);
-    if(length($hasmod)>0) {
-        $opt_V = "$opt_V-dirty";
+        # see if working copy has modifications, additions, removals, or missing files
+        my $hasmod = `cd "$opt_t" && hg status -m -a -r -d`;
+        chomp($hasmod);
+        if(length($hasmod)>0) {
+            $opt_V = "$opt_V-dirty";
+        }
     }
 }
 if(!$foundvcs && -d "$opt_t/.git") {
     # same format as Mercurial
     $result = `git --git-dir="$opt_t/.git" describe --tags --dirty`;
     chomp($result);
-    if(length($result)>1) {
+    if(!$? && length($result)>1) {
         $opt_V = $result;
         $foundvcs = 1;
     }

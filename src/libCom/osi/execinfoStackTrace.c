@@ -20,6 +20,8 @@
 
 #define MAXDEPTH 100
 
+#define STACKTRACE_DEBUG 0
+
 /* Darwin and GNU have dladdr() but Darwin's backtrace_symbols()
  * already prints local symbols, too, whereas linux' does not.
  * Hence, on linux we want to use dladdr() and lookup static
@@ -93,9 +95,10 @@ typedef union Sym_ {
  */
 typedef struct MMap_ {
 	void    *addr;
-	off_t    off;                        /* offset into the map where 'real' data start */
+	off_t    off;                        /* offset into the map where 'real' data start            */
 	size_t   len;
-	void     (*freeMap)(struct MMap_*);  /* 'method' to destroy the mapping             */
+	size_t   max;                        /* max offset: legal data from addr+off .. addr+off+max-1 */
+	void     (*freeMap)(struct MMap_*);  /* 'method' to destroy the mapping                        */
 } *MMap;
 
 /* Structure describing symbol information
@@ -196,6 +199,7 @@ size_t   pgsz  = sysconf(_SC_PAGESIZE);
 
 	rval->off = FLD(c,(*shdr_p),sh_offset)   & (pgsz-1);
 	rval->len = (n + rval->off + (pgsz - 1)) & ~(pgsz - 1);
+	rval->max = rval->len - rval->off;
 
 	if ( MAP_FAILED == (rval->addr = mmap(0, rval->len, PROT_READ, MAP_SHARED, fd, FLD(c,(*shdr_p),sh_offset) & ~(pgsz-1))) ) {
 		errlogPrintf("elfRead - getscn() -- mapping section contents: %s\n", strerror(errno));
@@ -244,6 +248,7 @@ MMap     rval = 0;
 
 	rval->off = 0;
 	rval->len = n;
+	rval->max = rval->len - rval->off;
 
 	/* seek to symbol table contents */
 	if ( (off_t)-1 == lseek(fd, FLD(c,(*shdr_p),sh_offset), SEEK_SET) ) {
@@ -290,6 +295,8 @@ Ehdr        ehdr;
 Shdr        shdr;
 uint8_t     c;
 ESyms       es;
+ssize_t     idx;
+const char *cp;
 
 	if ( !(es = malloc(sizeof(*es))) ) {
 		/* no memory -- give up */
@@ -397,6 +404,14 @@ ESyms       es;
 		goto bail;
 	}
 
+	/* Make sure there is a terminating NUL - unfortunately, memrchr is not portable */
+	cp = es->strMap->addr + es->strMap->off;
+	for ( idx = es->strMap->max - 1; i >= 0; i-- ) {
+		if ( !cp[i] )
+			break;
+	}
+	es->strMap->max = idx + 1;
+
 	switch ( FLD(c,ehdr,e_type) ) {
 		case ET_EXEC:
 			/* Symbols in an executable already has absolute addresses   */
@@ -470,6 +485,7 @@ Sym        sym;
 Sym        nearest;
 const char *strtab;
 uint8_t    c;
+size_t     idx;
 
 	if ( ! dladdr(addr, &inf) || (!inf.dli_fname && !inf.dli_sname) ) {
 		/* unable to lookup   */
@@ -515,7 +531,9 @@ uint8_t    c;
 		 * very often then it would be worthwhile constructing a sorted list of
 		 * symbol addresses but for the stack trace we don't care...
 		 */
-		//printf("Looking for %p\n", addr);
+#if (STACKTRACE_DEBUG & 1)
+		printf("Looking for %p\n", addr);
+#endif
 
 		if ( ELFCLASS32 == c ) {
 			for ( i=0; i<es->nsyms; i++ ) {
@@ -524,7 +542,9 @@ uint8_t    c;
 				/* don't bother about undefined symbols */
 				if ( 0 == sym.e32[i].st_shndx )
 					continue;
-				//printf("Trying: %s (0x%x)\n", elf_strptr(es->elf, es->idx, es->syms[i].st_name), es->syms[i].st_value + es->addr);
+#if (STACKTRACE_DEBUG & 1)
+				printf("Trying: %s (0x%lx)\n", strtab + sym.e32[i].st_name, (unsigned long)(sym.e32[i].st_value + es->addr));
+#endif
 				if ( (uintptr_t)addr >= (uintptr_t)sym.e32[i].st_value + es->addr ) {
 					off = (uintptr_t)addr - ((uintptr_t)sym.e32[i].st_value + es->addr);
 					if ( off < minoff ) {
@@ -540,7 +560,9 @@ uint8_t    c;
 				/* don't bother about undefined symbols */
 				if ( 0 == sym.e64[i].st_shndx )
 					continue;
-				//printf("Trying: %s (0x%x)\n", elf_strptr(es->elf, es->idx, es->syms[i].st_name), es->syms[i].st_value + es->addr);
+#if (STACKTRACE_DEBUG & 1)
+				printf("Trying: %s (0x%llx)\n", strtab + sym.e64[i].st_name, (unsigned long long)(sym.e64[i].st_value + es->addr));
+#endif
 				if ( (uintptr_t)addr >= (uintptr_t)sym.e64[i].st_value + es->addr ) {
 					off = (uintptr_t)addr - ((uintptr_t)sym.e64[i].st_value + es->addr);
 					if ( off < minoff ) {
@@ -552,8 +574,8 @@ uint8_t    c;
 		}
 	}
 
-	if ( nearest.raw ) {
-		errlogPrintf("%s(%s+0x%"PRIxPTR"): [%p]\n", es->fname, strtab + ARR(c,nearest,0,st_name), minoff, addr);
+	if ( nearest.raw && ( (idx = ARR(c,nearest,0,st_name)) < es->strMap->max ) ) {
+		errlogPrintf("%s(%s+0x%"PRIxPTR"): [%p]\n", es->fname, strtab + idx, minoff, addr);
 	} else {
 		errlogPrintf("%s[%p]\n", es->fname, addr);
 	}
@@ -567,6 +589,8 @@ void **buf;
 char **bts;
 #endif
 int    i,n;
+
+	errlogFlush();
 
 	if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH)) ) {
 		errlogPrintf("epicsStackTrace(): not enough memory for backtrace\n");
@@ -599,6 +623,8 @@ int    i,n;
 		}
 	}
 #endif
+
+	errlogFlush();
 
 	free(buf);
 }

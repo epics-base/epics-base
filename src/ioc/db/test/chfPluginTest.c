@@ -1,13 +1,14 @@
 /*************************************************************************\
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
-*     fuer Materialien und Energie GmbH.
+*     für Materialien und Energie GmbH.
+* Copyright (c) 2014 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ *  Author: Ralph Lange <Ralph.Lange@gmx.de>
  */
 
 #include <string.h>
@@ -59,6 +60,8 @@ typedef struct myStruct {
     int sent5;
     char        str[20];
     int sent6;
+    char        tval;
+    int sent7;
     char        c;
     char        c1[2];
     int         offpre;
@@ -67,6 +70,16 @@ typedef struct myStruct {
 
 static const
 chfPluginEnumType colorEnum[] = { {"R", 1}, {"G", 2}, {"B", 4}, {NULL,0} };
+
+static const
+chfPluginArgDef taggedOpts[] = {
+    chfTagInt32  (myStruct, ival,    "i" , tval, 1, 0, 0),
+    chfTagBoolean(myStruct, flag,    "f" , tval, 2, 0, 0),
+    chfTagDouble (myStruct, dval,    "d" , tval, 3, 0, 0),
+    chfTagString (myStruct, str,     "s" , tval, 4, 0, 0),
+    chfTagEnum   (myStruct, enumval, "c" , tval, 5, 0, 0, colorEnum),
+    chfPluginArgEnd
+};
 
 static const
 chfPluginArgDef strictOpts[] = {
@@ -133,8 +146,9 @@ static void clearStruct(void *p) {
     if (!my) return;
     memset(my, 0, sizeof(myStruct));
     my->sent1 = my->sent2 = my->sent3 = my->sent4 =
-        my->sent5 = my->sent6 = PATTERN;
+        my->sent5 = my->sent6 = my->sent7 = PATTERN;
     my->ival = 12;
+    my->tval = 99;
     my->flag = 1;
     my->dval = 1.234e5;
     strcpy(my->str, "hello");
@@ -447,7 +461,7 @@ static chfPluginIf postPif = {
 };
 
 static int checkValues(myStruct *my,
-    epicsUInt32 i, int f, double d, char *s1, char *s2, int c) {
+    char t, epicsUInt32 i, int f, double d, char *s1, char *s2, int c) {
     int ret = 1;
     int s1fail, s2fail;
     int s2valid = (s2 && s2[0] != '\0');
@@ -460,6 +474,8 @@ static int checkValues(myStruct *my,
     CHK(my->sent4, PATTERN, "%08x")
     CHK(my->sent5, PATTERN, "%08x")
     CHK(my->sent6, PATTERN, "%08x")
+    CHK(my->sent7, PATTERN, "%08x")
+    CHK(my->tval, t, "%08x")
     CHK(my->ival, i, "%08x")
     CHK(my->flag, f, "%02x")
     CHK(my->dval, d, "%f")
@@ -492,7 +508,7 @@ MAIN(chfPluginTest)
     _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
-    testPlan(1351);
+    testPlan(1397);
 
     dbChannelInit();
     db_init_events();
@@ -532,6 +548,8 @@ MAIN(chfPluginTest)
     eltc(1);
 
     testHead("Register plugins");
+    testOk(!chfPluginRegister("tagged", &myPif, taggedOpts),
+        "register plugin tagged");
     testOk(!chfPluginRegister("strict", &myPif, strictOpts),
         "register plugin strict");
     testOk(!chfPluginRegister("noconv", &myPif, noconvOpts),
@@ -543,13 +561,84 @@ MAIN(chfPluginTest)
     testOk(!chfPluginRegister("post", &postPif, sloppyOpts),
         "register plugin post");
 
+    /* TAGGED parsing: shorthand for integer plus other parameter */
+
+    testHead("TAGGED parsing: all ok");
+
+    /* tag i */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"tagged\":{\"i\":1}}")), "create channel for tagged parsing: i");
+    testOk(checkValues(puser1, 1, 1, 1, 1.234e5, "hello", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag f */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"tagged\":{\"f\":false}}")), "create channel for tagged parsing: f");
+    testOk(checkValues(puser1, 2, 12, 0, 1.234e5, "hello", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag d */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"tagged\":{\"d\":1.2e15}}")), "create channel for tagged parsing: d");
+    testOk(checkValues(puser1, 3, 12, 1, 1.2e15, "hello", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag s */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"tagged\":{\"s\":\"bar\"}}")), "create channel for tagged parsing: s");
+    testOk(checkValues(puser1, 4, 12, 1, 1.234e5, "bar", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag c */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"tagged\":{\"c\":\"R\"}}")), "create channel for tagged parsing: c");
+    testOk(checkValues(puser1, 5, 12, 1, 1.234e5, "hello", 0, 1),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+
     /* STRICT parsing: mandatory, no conversion */
 
     /* All perfect */
     testHead("STRICT parsing: all ok");
     e1 = e_alloc | e_ok; c1 = 0;
-    testOk(!!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")), "strict parsing: JSON correct");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 0, 1),
+    testOk(!!(pch = dbChannelCreate("x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
+           "create channel for strict parsing: JSON correct");
+    testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
@@ -564,35 +653,35 @@ MAIN(chfPluginTest)
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
         "x.{\"strict\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
-        "strict parsing: c missing");
+        "create channel for strict parsing: c missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
         "x.{\"strict\":{\"f\":false,\"i\":1,\"d\":1.2e15,\"c\":\"R\"}}")),
-        "strict parsing: s missing");
+        "create channel for strict parsing: s missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
         "x.{\"strict\":{\"i\":1,\"c\":\"R\",\"f\":false,\"s\":\"bar\"}}")),
-        "strict parsing: d missing");
+        "create channel for strict parsing: d missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
         "x.{\"strict\":{\"d\":1.2e15,\"c\":\"R\",\"i\":1,\"s\":\"bar\"}}")),
-        "strict parsing: f missing");
+        "create channel for strict parsing: f missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
     e1 = e_alloc | e_error | e_free; c1 = 0;
     testOk(!(pch = dbChannelCreate(
         "x.{\"strict\":{\"c\":\"R\",\"s\":\"bar\",\"f\":false,\"d\":1.2e15}}")),
-        "strict parsing: i missing");
+        "create channel for strict parsing: i missing");
     testOk(!puser1, "user part cleaned up");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
@@ -604,8 +693,8 @@ MAIN(chfPluginTest)
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"s\":\"bar\"}}")),
-        "noconv parsing: c missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "bar", 0, 4),
+        "create channel for noconv parsing: c missing");
+    testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "bar", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
         testDiag("expected %#x - called %#x", e1, c1);
@@ -618,29 +707,29 @@ MAIN(chfPluginTest)
     e1 = e_any;
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"d\":1.2e15,\"c\":\"R\"}}")),
-        "noconv parsing: s missing");
-    testOk(checkValues(puser1, 1, 0, 1.2e15, "hello", 0, 1),
+        "create channel for noconv parsing: s missing");
+    testOk(checkValues(puser1, 99, 1, 0, 1.2e15, "hello", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"f\":false,\"s\":\"bar\",\"c\":\"R\"}}")),
-        "noconv parsing: d missing");
-    testOk(checkValues(puser1, 1, 0, 1.234e5, "bar", 0, 1),
+        "create channel for noconv parsing: d missing");
+    testOk(checkValues(puser1, 99, 1, 0, 1.234e5, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"i\":1,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
-        "noconv parsing: f missing");
-    testOk(checkValues(puser1, 1, 1, 1.2e15, "bar", 0, 1),
+        "create channel for noconv parsing: f missing");
+    testOk(checkValues(puser1, 99, 1, 1, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
     testOk(!!(pch = dbChannelCreate(
         "x.{\"noconv\":{\"f\":false,\"d\":1.2e15,\"s\":\"bar\",\"c\":\"R\"}}")),
-        "noconv parsing: i missing");
-    testOk(checkValues(puser1, 12, 0, 1.2e15, "bar", 0, 1),
+        "create channel for noconv parsing: i missing");
+    testOk(checkValues(puser1, 99, 12, 0, 1.2e15, "bar", 0, 1),
         "guards intact, values correct");
     if (pch) dbChannelDelete(pch);
 
@@ -648,7 +737,7 @@ MAIN(chfPluginTest)
 #define WRONGTYPETEST(Var, Val, Typ) \
     e1 = e_alloc | e_error | e_free; c1 = 0; \
     testOk(!(pch = dbChannelCreate("x.{\"noconv\":{\""#Var"\":"#Val"}}")), \
-        "noconv parsing: wrong type "#Typ" for "#Var); \
+        "create channel for noconv parsing: wrong type "#Typ" for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
     if (!testOk(c1 == e1, "all expected calls happened")) \
         testDiag("expected %#x - called %#x", e1, c1);
@@ -677,8 +766,8 @@ MAIN(chfPluginTest)
     e1 = e_alloc | e_ok; c1 = 0; \
     testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
     testOk(!!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
-        "sloppy parsing: "#Typ" (good) for "#Var); \
-    testOk(checkValues(puser1, Ival, Fval, Dval, Sval1, Sval2, Cval), \
+        "create channel for sloppy parsing: "#Typ" (good) for "#Var); \
+    testOk(checkValues(puser1, 99, Ival, Fval, Dval, Sval1, Sval2, Cval), \
         "guards intact, values correct"); \
     if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
         testDiag("expected %#x - called %#x", e1, c1); \
@@ -692,7 +781,7 @@ MAIN(chfPluginTest)
     e1 = e_alloc | e_error | e_free; c1 = 0; \
     testDiag("Calling dbChannelCreate x.{\"sloppy\":{\""#Var"\":"#Val"}}"); \
     testOk(!(pch = dbChannelCreate("x.{\"sloppy\":{\""#Var"\":"#Val"}}")), \
-        "sloppy parsing: "#Typ" (bad) for "#Var); \
+        "create channel for sloppy parsing: "#Typ" (bad) for "#Var); \
     testOk(!puser1, "user part cleaned up"); \
     if (!testOk(c1 == e1, "create channel: all expected calls happened")) \
         testDiag("expected %#x - called %#x", e1, c1);

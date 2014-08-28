@@ -130,6 +130,8 @@ INC_vxWorks += task_params.h
 Com_SRCS_vxWorks += epicsDynLink.c
 Com_SRCS_vxWorks += veclist.c
 Com_SRCS_vxWorks += logMsgToErrlog.cpp
+Com_SRCS_vxWorks += strtoll.c
+Com_SRCS_vxWorks += strtoull.c
 
 #This forces the vxWorks compatibility stuff to be loaded
 OBJS_vxWorks = vxComLibrary

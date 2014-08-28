@@ -1,13 +1,14 @@
 /*************************************************************************\
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
-*     fuer Materialien und Energie GmbH.
+*     für Materialien und Energie GmbH.
+* Copyright (c) 2014 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ *  Author: Ralph Lange <Ralph.Lange@gmx.de>
  */
 
 /* Based on the linkoptions utility by Michael Davidsaver (BNL) */
@@ -84,19 +85,19 @@ store_integer_value(const chfPluginArgDef *opt, char *user, epicsInt32 val)
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (epicsInt32 *) ((char *)user + opt->offset);
+        ival = (epicsInt32 *) ((char *)user + opt->dataOffset);
         *ival = val;
         break;
     case chfPluginArgBoolean:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         *sval = !!val;
         break;
     case chfPluginArgDouble:
-        dval = (double*) (user + opt->offset);
+        dval = (double*) (user + opt->dataOffset);
         *dval = val;
         break;
     case chfPluginArgString:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         ret = sprintf(buff, "%ld", (long)val);
         if (ret < 0 || (unsigned) ret > opt->size - 1) {
             return -1;
@@ -105,7 +106,7 @@ store_integer_value(const chfPluginArgDef *opt, char *user, epicsInt32 val)
         sval[opt->size-1]='\0';
         break;
     case chfPluginArgEnum:
-        eval = (int*) (user + opt->offset);
+        eval = (int*) (user + opt->dataOffset);
         for (emap = opt->enums; emap && emap->name; emap++) {
             if (val == emap->value) {
                 *eval = val;
@@ -143,19 +144,19 @@ static int store_boolean_value(const chfPluginArgDef *opt, char *user, int val)
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (epicsInt32 *) (user + opt->offset);
+        ival = (epicsInt32 *) (user + opt->dataOffset);
         *ival = val;
         break;
     case chfPluginArgBoolean:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         *sval = val;
         break;
     case chfPluginArgDouble:
-        dval = (double*) (user + opt->offset);
+        dval = (double*) (user + opt->dataOffset);
         *dval = !!val;
         break;
     case chfPluginArgString:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         if ((unsigned) (val ? 4 : 5) > opt->size - 1) {
             return -1;
         }
@@ -196,24 +197,24 @@ store_double_value(const chfPluginArgDef *opt, void *vuser, double val)
         if (val < INT_MIN || val > INT_MAX) {
             return -1;
         }
-        ival = (epicsInt32 *) (user + opt->offset);
+        ival = (epicsInt32 *) (user + opt->dataOffset);
         *ival = (epicsInt32) val;
         break;
     case chfPluginArgBoolean:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         *sval = !!val;
         break;
     case chfPluginArgDouble:
-        dval = (double*) (user + opt->offset);
+        dval = (double*) (user + opt->dataOffset);
         *dval = val;
         break;
     case chfPluginArgString:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         if (opt->size <= 8) { /* Play it safe: 3 exp + 2 sign + 'e' + '.' */
             return -1;
         }
         i = epicsSnprintf(sval, opt->size, "%.*g", (int) opt->size - 7, val);
-        if (i >= opt->size) {
+        if (i < 0 || (unsigned) i >= opt->size) {
             return -1;
         }
         break;
@@ -252,11 +253,11 @@ store_string_value(const chfPluginArgDef *opt, char *user, const char *val,
 
     switch (opt->optType) {
     case chfPluginArgInt32:
-        ival = (epicsInt32 *) (user + opt->offset);
+        ival = (epicsInt32 *) (user + opt->dataOffset);
         return epicsParseInt32(val, ival, 0, &end);
 
     case chfPluginArgBoolean:
-        sval = user + opt->offset;
+        sval = user + opt->dataOffset;
         if (epicsStrnCaseCmp(val, "true", len) == 0) {
             *sval = 1;
         } else if (epicsStrnCaseCmp(val, "false", len) == 0) {
@@ -270,17 +271,17 @@ store_string_value(const chfPluginArgDef *opt, char *user, const char *val,
         }
         break;
     case chfPluginArgDouble:
-        dval = (double*) (user + opt->offset);
+        dval = (double*) (user + opt->dataOffset);
         return epicsParseDouble(val, dval, &end);
 
     case chfPluginArgString:
-        i = opt->size-1 < len ? opt->size-1 : len;
-        sval = user + opt->offset;
+        i = opt->size-1 < len ? opt->size-1 : (int) len;
+        sval = user + opt->dataOffset;
         strncpy(sval, val, i);
         sval[i] = '\0';
         break;
     case chfPluginArgEnum:
-        eval = (int*) (user + opt->offset);
+        eval = (int*) (user + opt->dataOffset);
         for (emap = opt->enums; emap && emap->name; emap++) {
             if (strncmp(emap->name, val, len) == 0) {
                 *eval = emap->value;
@@ -455,8 +456,10 @@ parse_map_key(chFilter *filter, const char *key, size_t stringLen)
 {
     const chfPluginArgDef *cur;
     const chfPluginArgDef *opts = ((chfPlugin*)filter->plug->puser)->opts;
-    chfFilter *f =  (chfFilter*)filter->puser;
+    chfFilter *f = (chfFilter*)filter->puser;
+    int *tag;
     int i;
+    int j;
 
     f->nextParam = -1;
     for(cur = opts, i = 0; cur && cur->name; cur++, i++) {
@@ -470,6 +473,17 @@ parse_map_key(chFilter *filter, const char *key, size_t stringLen)
     }
 
     f->found[i/32] |= 1<<(i%32);
+    /* For tagged parameters:
+     * set tag to this choice, and mark all other choices as found */
+    if (opts[i].tagged) {
+        tag = (int*) ((char*) f->puser + opts[i].tagOffset);
+        *tag = opts[i].choice;
+        for (cur = opts, j = 0; cur && cur->name; cur++, j++) {
+            if (cur->tagged && cur->tagOffset == opts[i].tagOffset) {
+                f->found[j/32] |= 1<<(j%32);
+            }
+        }
+    }
     return parse_continue;
 }
 

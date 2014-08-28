@@ -61,6 +61,8 @@ typedef struct cbQueueSet {
 static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
 
 int callbackThreadsDefault = 1;
+/* Don't know what a reasonable default is (yet).
+ * For the time being: parallel means 2 if not explicitly specified */
 int callbackParallelThreadsDefault = 2;
 epicsExportAddress(int,callbackParallelThreadsDefault);
 
@@ -110,6 +112,7 @@ int callbackParallelThreads(int count, const char *prio)
         count = epicsThreadGetCPUs() + count;
     else if (count == 0)
         count = callbackParallelThreadsDefault;
+    if (count < 1) count = 1;
 
     if (!prio || strcmp(prio, "") == 0 || strcmp(prio, "*") == 0) {
         for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {

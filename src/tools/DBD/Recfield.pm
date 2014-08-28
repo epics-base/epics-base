@@ -76,11 +76,15 @@ sub add_attribute {
     my ($this, $attr, $value) = @_;
     unquote $value;
     my $match = $field_attrs{$attr};
-    dieContext("Unknown field attribute '$1', valid attributes are:",
-           sort keys %field_attrs)
-        unless defined $match;
-    dieContext("Bad value '$value' for field '$attr' attribute")
-        unless $value =~ m/$match/;
+    if (defined $match) {
+        dieContext("Bad value '$value' for field attribute '$attr'")
+            unless $value =~ m/$match/;
+    }
+    else {
+        warnContext("Unknown field attribute '$attr' with value '$value'; " .
+            "known attributes are:",
+            join(", ", sort keys %field_attrs));
+    }
     $this->{ATTR_INDEX}->{$attr} = $value;
 }
 

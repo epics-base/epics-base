@@ -41,6 +41,10 @@ menu(compressALG) {
 	choice(compressALG_Circular_Buffer,"Circular Buffer")
 	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
+menu(bufferingALG) {
+	choice(bufferingALG_FIFO, "FIFO Buffer")
+	choice(bufferingALG_LIFO, "LIFO Buffer")
+}
 recordtype(compress) {
 
 =fields VAL
@@ -75,6 +79,13 @@ recordtype(compress) {
 		special(SPC_RESET)
 		interest(1)
 		menu(compressALG)
+	}
+ 	field(BALG,DBF_MENU) {
+		prompt("Buffering Algorithm")
+		promptgroup(GUI_ALARMS)
+		special(SPC_RESET)
+		interest(1)
+		menu(bufferingALG)
 	}
 	field(NSAM,DBF_ULONG) {
 		prompt("Number of Values")

@@ -106,7 +106,7 @@ static void monitor(compressRecord *prec)
     db_post_events(prec, prec->bptr, monitor_mask);
 }
 
-static void put_value(compressRecord *prec, double *psource, int n)
+static void put_value_FIFO(compressRecord *prec, double *psource, int n)
 {
     epicsInt32 offset = prec->off;
     epicsInt32 nuse = prec->nuse;
@@ -130,6 +130,42 @@ static void put_value(compressRecord *prec, double *psource, int n)
     prec->nuse = nuse;
     return;
 }
+
+static void put_value_LIFO(compressRecord *prec, double *psource, int n)
+{
+    epicsInt32 offset = prec->off;
+    epicsInt32 nuse = prec->nuse;
+    epicsInt32 nsam = prec->nsam; 
+    epicsInt32 start = offset - nuse;
+    double *pdest;
+    int i;
+    if(start<0) start += nsam;
+
+    for(i = 0; i < n; i++) {
+        if(--start < 0) start += nsam;
+        pdest = prec->bptr + start;
+        *pdest = *psource++;
+    }
+    nuse += n;
+    if(nuse > nsam) nuse = nsam;
+    offset = start + nuse;
+    if(offset>=nsam) offset -= nsam;
+
+    prec->off = offset;
+    prec->nuse = nuse;
+
+    return;
+}
+
+static void put_value(compressRecord *prec, double *psource, int n)
+{
+    switch(prec->balg) {
+       case bufferingALG_FIFO: put_value_FIFO(prec, psource, n); break;
+       case bufferingALG_LIFO: put_value_LIFO(prec, psource, n); break;
+    }
+    return;
+}
+
 
 /* qsort comparison function (for median calculation) */
 static int compare(const void *arg1, const void *arg2)
@@ -305,6 +341,7 @@ static long init_record(compressRecord *prec, int pass)
         prec->bptr = calloc(prec->nsam, sizeof(double));
         reset(prec);
     }
+
     return 0;
 }
 
@@ -388,18 +425,21 @@ static long cvt_dbaddr(DBADDR *paddr)
     paddr->field_type = DBF_DOUBLE;
     paddr->field_size = sizeof(double);
     paddr->dbr_field_type = DBF_DOUBLE;
+
+    if(prec->balg == bufferingALG_LIFO) paddr->special = SPC_NOMOD;
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
+    epicsInt32 start = prec->off - prec->nuse;
+    if(start<0) start += prec->nsam;
+    if(prec->balg == bufferingALG_FIFO)
+         *no_elements = prec->nuse;
+    else *no_elements = prec->nsam;
+    *offset = start;
 
-    *no_elements = prec->nuse;
-    if (prec->nuse == prec->nsam)
-        *offset = prec->off;
-    else
-        *offset = 0;
     return 0;
 }
 

@@ -11,7 +11,7 @@
  *
  * The presence of this file prevents the build
  * system from using the no-op implementation of
- * epicsStacktrace() in default/osdStacktrace.c.
+ * epicsStackTrace() in default/osdStackTrace.c.
  *
  * This OS uses a generic implementation which
  * may be used by various OSes. The source file

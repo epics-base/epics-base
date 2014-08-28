@@ -20,7 +20,7 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "cantProceed.h"
-#include "epicsStacktrace.h"
+#include "epicsStackTrace.h"
 
 
 void epicsAssert (const char *pFile, const unsigned line,
@@ -35,7 +35,7 @@ void epicsAssert (const char *pFile, const unsigned line,
 
 	errlogPrintf("\n"
 		"I'll try to dump a stack trace:\n");
-	epicsStacktrace();
+	epicsStackTrace();
 	errlogPrintf("\n");
 
     errlogPrintf("EPICS Release %s.\n", epicsReleaseVersion);

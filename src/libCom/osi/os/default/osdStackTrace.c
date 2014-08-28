@@ -7,8 +7,14 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011
  */ 
 
-#include "epicsStacktrace.h"
+#include "epicsStackTrace.h"
 
-epicsShareFunc void epicsStacktrace(void)
+epicsShareFunc void epicsStackTrace(void)
 {
 }
+
+epicsShareFunc int epicsStackTraceGetFeatures(void)
+{
+	return 0;
+}
+

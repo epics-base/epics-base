@@ -16,4 +16,4 @@ osdSock$(DEP): $(COMMON_DIR)/epicsVersion.h
 execinfoConfig.h:
 	touch $@
 
-execinfoStacktrace$(OBJ): execinfoConfig.h
+execinfoStackTrace$(OBJ): execinfoConfig.h

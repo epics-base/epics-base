@@ -4,10 +4,10 @@
  * EPICS BASE is distributed subject to a Software License Agreement found
  * in file LICENSE that is included with this distribution. 
  *
- * Author: Till Straumann <strauman@slac.stanford.edu>, 2011
+ * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
  */ 
 
-#include "epicsStacktrace.h"
+#include "epicsStackTrace.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include <execinfo.h>
@@ -560,7 +560,7 @@ uint8_t    c;
 }
 #endif
 
-epicsShareFunc void epicsStacktrace(void)
+epicsShareFunc void epicsStackTrace(void)
 {
 void **buf;
 #ifndef USE_ELF
@@ -569,7 +569,7 @@ char **bts;
 int    i,n;
 
 	if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH)) ) {
-		errlogPrintf("epicsStacktrace(): not enough memory for backtrace\n");
+		errlogPrintf("epicsStackTrace(): not enough memory for backtrace\n");
 		return;
 	}
 
@@ -601,4 +601,21 @@ int    i,n;
 #endif
 
 	free(buf);
+}
+
+
+epicsShareFunc int epicsStackTraceGetFeatures(void)
+{
+#ifdef USE_ELF
+	return  EPICS_STACKTRACE_LCL_SYMBOLS
+	      | EPICS_STACKTRACE_GBL_SYMBOLS
+	      | EPICS_STACKTRACE_ADDRESSES;
+#elif defined(__linux__) || defined(linux)
+	return  EPICS_STACKTRACE_GBL_SYMBOLS
+	        EPICS_STACKTRACE_ADDRESSES;
+#else
+	return  EPICS_STACKTRACE_LCL_SYMBOLS
+	      | EPICS_STACKTRACE_GBL_SYMBOLS
+	      | EPICS_STACKTRACE_ADDRESSES;
+#endif
 }

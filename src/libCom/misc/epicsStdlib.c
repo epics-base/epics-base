@@ -86,6 +86,68 @@ epicsParseULong(const char *str, unsigned long *to, int base, char **units)
 }
 
 epicsShareFunc int
+epicsParseLLong(const char *str, long long *to, int base, char **units)
+{
+    int c;
+    char *endp;
+    long long value;
+
+    while ((c = *str) && isspace(c))
+        ++str;
+
+    errno = 0;
+    value = strtoll(str, &endp, base);
+
+    if (endp == str)
+        return S_stdlib_noConversion;
+    if (errno == EINVAL)    /* Not universally supported */
+        return S_stdlib_badBase;
+    if (errno == ERANGE)
+        return S_stdlib_overflow;
+
+    while ((c = *endp) && isspace(c))
+        ++endp;
+    if (c && !units)
+        return S_stdlib_extraneous;
+
+    *to = value;
+    if (units)
+        *units = endp;
+    return 0;
+}
+
+epicsShareFunc int
+epicsParseULLong(const char *str, unsigned long long *to, int base, char **units)
+{
+    int c;
+    char *endp;
+    unsigned long long value;
+
+    while ((c = *str) && isspace(c))
+        ++str;
+
+    errno = 0;
+    value = strtoull(str, &endp, base);
+
+    if (endp == str)
+        return S_stdlib_noConversion;
+    if (errno == EINVAL)    /* Not universally supported */
+        return S_stdlib_badBase;
+    if (errno == ERANGE)
+        return S_stdlib_overflow;
+
+    while ((c = *endp) && isspace(c))
+        ++endp;
+    if (c && !units)
+        return S_stdlib_extraneous;
+
+    *to = value;
+    if (units)
+        *units = endp;
+    return 0;
+}
+
+epicsShareFunc int
 epicsParseDouble(const char *str, double *to, char **units)
 {
     int c;
@@ -216,6 +278,43 @@ epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units)
     *to = value;
     return 0;
 }
+
+epicsShareFunc int
+epicsParseInt64(const char *str, epicsInt64 *to, int base, char **units)
+{
+#if (LONG_MAX == 0x7fffffffffffffff)
+    long value;
+    int status = epicsParseLong(str, &value, base, units);
+#else
+    long long value;
+    int status = epicsParseLLong(str, &value, base, units);
+#endif
+
+    if (status)
+        return status;
+
+    *to = value;
+    return 0;
+}
+
+epicsShareFunc int
+epicsParseUInt64(const char *str, epicsUInt64 *to, int base, char **units)
+{
+#if (ULONG_MAX == 0xffffffffffffffff)
+    unsigned long value;
+    int status = epicsParseULong(str, &value, base, units);
+#else
+    unsigned long long value;
+    int status = epicsParseULLong(str, &value, base, units);
+#endif
+
+    if (status)
+        return status;
+
+    *to = value;
+    return 0;
+}
+
 
 epicsShareFunc int
 epicsParseFloat(const char *str, float *to, char **units)

@@ -364,11 +364,11 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 ifneq ($(VERHEADER),)
 GENVERSIONHEADER ?= $(PERL) $(TOOLS)/genVersionHeader.pl
-MODVERSION ?= undefined
+#MODVERSION = defaultversionnumber
 MODMACRO ?= MODULEVERSION
 
 $(VERHEADER)::
-	$(GENVERSIONHEADER) -t $(TOP) -V $(MODVERSION) -N $(MODMACRO) $@
+	$(GENVERSIONHEADER) -t "$(TOP)" -V "$(MODVERSION)" -N "$(MODMACRO)" $@
 
 endif
 

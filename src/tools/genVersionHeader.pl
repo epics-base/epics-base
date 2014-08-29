@@ -6,13 +6,13 @@
 #
 
 use EPICS::Getopts;
+use POSIX qw(strftime);
 
 use strict;
 
 our($opt_v,$opt_t,$opt_N,$opt_V);
 
 $opt_N = "MODVERSION";
-$opt_V = "undefined";
 $opt_t = ".";
 my $foundvcs = 0;
 my $result;
@@ -21,6 +21,12 @@ getopts("vt:N:V:") or
     die "Usage: genVersionHeader.pl [-t top] [-N NAME] [-V VERSION] output.h";
 
 my ($outfile) = @ARGV;
+
+chomp($opt_V);
+if(!$opt_V) {
+    # RFC 8601 date+time w/ zone (eg "2014-08-29T09:42:47-0700")
+    $opt_V = strftime "%Y-%m-%dT%H:%M:%S%z", localtime;
+}
 
 if(!$foundvcs && -d "$opt_t/_darcs") { # Darcs
     # v1-4-dirty

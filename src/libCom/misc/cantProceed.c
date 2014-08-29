@@ -64,9 +64,7 @@ epicsShareFunc void cantProceed(const char *msg, ...)
     errlogPrintf("Thread %s (%p) can't proceed, suspending.\n",
             epicsThreadGetNameSelf(), (void *)epicsThreadGetIdSelf());
 
-	errlogPrintf("Dumping a stack trace:\n");
 	epicsStackTrace();
-	errlogPrintf("\n");
 
     errlogFlush();
     

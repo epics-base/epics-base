@@ -761,14 +761,16 @@ static void spawnPeriodic(int ind)
 static void ioeventCallback(CALLBACK *pcallback)
 {
     io_scan_list *piosl;
-    io_scan_list *pioslLow;
 
     callbackGetUser(piosl, pcallback);
     scanList(&piosl->scan_list);
-    pioslLow = piosl - pcallback->priority;
-    if(pioslLow->cb)
-        (*pioslLow->cb)(pioslLow->arg,
-                     pioslLow,
+    /* the callback function and argument are only stored in the
+     * first element of the array.  So skip back to the beginning.
+     */
+    piosl -= pcallback->priority;
+    if(piosl->cb)
+        (*piosl->cb)(piosl->arg,
+                     piosl,
                      pcallback->priority);
 }
 

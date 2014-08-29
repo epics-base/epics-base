@@ -590,6 +590,8 @@ char **bts;
 #endif
 int    i,n;
 
+	errlogPrintf("Dumping a stack trace:\n");
+
 	errlogFlush();
 
 	if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH)) ) {
@@ -623,6 +625,8 @@ int    i,n;
 		}
 	}
 #endif
+
+	errlogPrintf("\n");
 
 	errlogFlush();
 

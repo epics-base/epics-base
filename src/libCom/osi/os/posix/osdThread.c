@@ -35,6 +35,13 @@
 #include "epicsAssert.h"
 #include "epicsExit.h"
 
+#if defined(linux) 
+#if _POSIX_MEMLOCK > 0
+#include <sys/mman.h>
+#endif
+#endif
+
+
 epicsShareFunc void epicsThreadShowInfo(epicsThreadOSD *pthreadInfo, unsigned int level);
 epicsShareFunc void osdThreadHooksRun(epicsThreadId id);
 epicsShareFunc void osdThreadHooksRunMain(epicsThreadId id);
@@ -344,6 +351,23 @@ static void once(void)
         fprintf(stderr,"sched_get_priority_min failed set to %d\n",
             pcommonAttr->maxPriority);
     }
+
+#if _POSIX_MEMLOCK > 0
+    if(errVerbose)  { 
+        fprintf(stderr, "LRT: min priority: %d max priority %d\n", 
+            pcommonAttr->minPriority, pcommonAttr->maxPriority);
+    }
+    if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
+        status = mlockall(MCL_CURRENT | MCL_FUTURE);
+        if(status) { 
+            fprintf(stderr, "Unable to lock the virtual address space using mlockall\n");
+        } else { 
+            fprintf(stderr,"Successfully locked memory using mlockAll\n");
+        }
+    }
+#endif
+
+
 #else
     if(errVerbose) fprintf(stderr,"task priorities are not implemented\n");
 #endif /* _POSIX_THREAD_PRIORITY_SCHEDULING */

@@ -15,6 +15,16 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Generate Version Header</h3>
+
+<p>A Perl script and Makefile rules are added to allow modules
+to generate a C header file with a macro defined with an automatically updated identifier.
+This is a VCS revision ID (Darcs, Git, and Mercurial supported) or
+the time of the build if not VCS system is in use.</p>
+
+<p>The example template is updated with a demonstration which makes this
+identifier visible with a stringin record.</p>
+
 <h3>Implement EPICS_CAS_INTF_ADDR_LIST in rsrv</h3>
 
 <p>The IOC server can now bind to a single IP address (and optional port number)

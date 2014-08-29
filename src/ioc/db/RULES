@@ -11,23 +11,12 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-dbCommon.h$(DEP): ../db/dbCommonRecord.dbd ../db/RULES
+dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D -I ../db -o $(COMMONDEP_TARGET) $< > $@
-	@echo "$(COMMONDEP_TARGET):" >> $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-$(COMMON_DIR)/dbCommon.h: ../db/dbCommonRecord.dbd
+$(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) -I ../db -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
-
-menuGlobal.dbd$(DEP): ../db/RULES
-	@$(RM) $@
-	@echo "$(COMMONDEP_TARGET):" > $@
-
-$(COMMON_DIR)/menuGlobal.dbd: ../db/Makefile
-	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/makeIncludeDbd.pl $(menuGlobal_DBD) $(notdir $@)
-	@$(MV) $(notdir $@) $@
-
-

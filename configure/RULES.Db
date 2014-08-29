@@ -223,10 +223,6 @@ menu%.h$(DEP): menu%.dbd
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-	@$(RM) $@
-	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
-
 %.dbd$(DEP): %Include.dbd
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
@@ -352,7 +348,7 @@ $(COMMON_DIR)/menu%.h: ../menu%.dbd
 
 ##################################################### DBD files
 
-$(COMMON_DIR)/bpt%.dbd: bpt%.data 
+$(COMMON_DIR)/bpt%.dbd: bpt%.data
 	@$(RM) $(notdir $@)
 	$(MAKEBPT) $< $(notdir $@)
 	@$(MV) $(notdir $@) $@
@@ -414,6 +410,11 @@ $(COMMON_DIR)/%.html: %.pod $(TOOLS)/podToHtml.pl
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
+	@$(RM) $(notdir $@)
+	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/%.html: ../%.pm $(TOOLS)/podToHtml.pl
 	@$(RM) $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@

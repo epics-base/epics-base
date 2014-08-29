@@ -13,7 +13,3 @@ epicsTime$(DEP): $(COMMON_DIR)/epicsVersion.h
 osdNetIntf$(DEP): $(COMMON_DIR)/epicsVersion.h
 osdSock$(DEP): $(COMMON_DIR)/epicsVersion.h
 
-execinfoConfig.h:
-	touch $@
-
-execinfoStackTrace$(OBJ): execinfoConfig.h

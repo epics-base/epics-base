@@ -14,25 +14,20 @@
 
 #include "mymodversion.h"
 
-
-static long init_record(stringinRecord *prec)
-{
-    return 0; /* no initialization needed */
-}
+/* must be last include */
+#include "epicsExport.h"
 
 static long read_si(stringinRecord *prec)
 {
-    size_t N = strlen(MYMODVERSION);
-    if(N<MAX_STRING_SIZE-1) {
-        strcpy(prec->val, MYMODVERSION);
+    size_t N = strlen(MODULEVERSION);
+    if(N<sizeof(prec->val)) {
+        strcpy(prec->val, MODULEVERSION);
     } else {
-        /* Not enough space, set an alarm */
+        /* Not enough space, so signal an alarm */
         (void)recGblSetSevr(prec, READ_ALARM, INVALID_ALARM);
     }
     return 0;
 }
-
-#include "epicsExport.h"
 
 static struct {
 	long		number;
@@ -45,7 +40,7 @@ static struct {
 	5,
 	NULL,
 	NULL,
-	init_record,
+	NULL,
 	NULL,
 	read_si,
 };

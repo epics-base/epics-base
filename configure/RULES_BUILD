@@ -362,13 +362,15 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 #---------------------------------------------------------------
 # Generate header with version number from VCS
 
-ifneq ($(VERHEADER),)
-GENVERSIONHEADER ?= $(PERL) $(TOOLS)/genVersionHeader.pl
-#MODVERSION = defaultversionnumber
-MODMACRO ?= MODULEVERSION
+ifneq ($(GENVERSION),)
+GENERATEVERSIONHEADERCMD ?= $(PERL) $(TOOLS)/genVersionHeader.pl
+# C macro name
+GENVERSIONMACRO ?= MODULEVERSION
+# C macro default (empty uses date+time)
+#GENVERSIONDEFAULT = defaultversionnumber
 
-$(VERHEADER)::
-	$(GENVERSIONHEADER) -t "$(TOP)" -V "$(MODVERSION)" -N "$(MODMACRO)" $@
+$(GENVERSION)::
+	$(GENERATEVERSIONHEADERCMD) -t "$(TOP)" -V "$(GENVERSIONDEFAULT)" -N "$(GENVERSIONMACRO)" $@
 
 endif
 

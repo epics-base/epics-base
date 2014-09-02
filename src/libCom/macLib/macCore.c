@@ -253,7 +253,11 @@ epicsShareAPI macPutValue(
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
     if ( value == NULL ) {
-        /* FIXME: shouldn't be able to delete entries from lower scopes */
+        /* 
+         * FIXME: shouldn't be able to delete entries from lower scopes
+         * NOTE: when this is changed, this functionality of removing
+         * a macro from all scopes will still be needed by iocshEnvClear
+         */
         while ( ( entry = lookup( handle, name, FALSE ) ) != NULL ) {
             delete( handle, entry );
             

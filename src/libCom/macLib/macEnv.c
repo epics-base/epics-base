@@ -41,7 +41,7 @@ macDefExpand(const char *str, MAC_HANDLE *macros)
             return NULL;
         }
     }
-    
+
     do {
         destCapacity *= 2;
         /*

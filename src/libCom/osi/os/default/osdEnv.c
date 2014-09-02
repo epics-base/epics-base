@@ -44,7 +44,7 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
 	strcpy (cp, name);
 	strcat (cp, "=");
-	strcat (cp, value);   
+	strcat (cp, value);
 	if (putenv (cp) < 0) {
 		errPrintf(
                 -1L,

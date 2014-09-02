@@ -254,8 +254,13 @@ epicsShareAPI macPutValue(
        several entries at different scoping levels) */
     if ( value == NULL ) {
         /* FIXME: shouldn't be able to delete entries from lower scopes */
-        while ( ( entry = lookup( handle, name, FALSE ) ) != NULL )
+        while ( ( entry = lookup( handle, name, FALSE ) ) != NULL ) {
             delete( handle, entry );
+            
+            if (strcmp(entry->type, "environment variable") == 0)
+                break;
+        }
+        
         return 0;
     }
 

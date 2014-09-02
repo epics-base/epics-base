@@ -28,7 +28,7 @@
 #include <envDefs.h>
 #include <osiUnistd.h>
 #include "epicsFindSymbol.h"
-
+#include <iocsh.h>
 
 /*
  * Set the value of an environment variable
@@ -39,6 +39,8 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 {
     char *cp;
 
+    iocshEnvClear(name);
+    
 	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
 	strcpy (cp, name);
 	strcat (cp, "=");

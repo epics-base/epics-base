@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2006 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.

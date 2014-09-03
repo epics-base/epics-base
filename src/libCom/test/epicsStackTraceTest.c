@@ -18,8 +18,7 @@
 #include "inttypes.h"
 
 #include <string.h>
-
-#undef  TEST_DEBUG
+#include <stdlib.h>
 
 #define TST_BUFSZ 10000
 
@@ -28,9 +27,11 @@
 /* estimated size of (compiled) epicsStackTraceRecurseGbl */
 #define WINDOW_SZ  400
 
+static int test_debug = 0;
+
 typedef struct TestDataRec_ {
-	char buf[TST_BUFSZ];
-	int  pos;
+    char buf[TST_BUFSZ];
+    int  pos;
 } TestDataRec, *TestData;
 
 typedef void (*RecFn)(int);
@@ -61,28 +62,28 @@ RecFn volatile nop = nopFn;
 static void
 epicsStackTraceRecurseLcl(int lvl)
 {
-	if ( lvl )
-		gfp(lvl-1);
-	else
-		epicsStackTrace();
+    if ( lvl )
+        gfp(lvl-1);
+    else
+        epicsStackTrace();
 
-	/* call something so that the call through gfp() doesn't
+    /* call something so that the call through gfp() doesn't
      * get optimized into a jump (tail-call optimization)
-	 */
-	nop(0);
+     */
+    nop(0);
 }
 
 void epicsStackTraceRecurseGbl(int lvl)
 {
-	if ( lvl )
-		lfp(lvl-1);
-	else
-		epicsStackTrace();
+    if ( lvl )
+        lfp(lvl-1);
+    else
+        epicsStackTrace();
 
-	/* call something so that the call through gfp() doesn't
+    /* call something so that the call through gfp() doesn't
      * get optimized into a jump (tail-call optimization)
-	 */
-	nop(0);
+     */
+    nop(0);
 }
 
 static void logClient(void *ptr, const char *msg)
@@ -91,10 +92,10 @@ TestData td = ptr;
 size_t        sz = strlen(msg);
 size_t        mx = sizeof(td->buf) - td->pos - 1;
 
-	if ( sz > mx )
-		sz = mx;
-	strncpy( td->buf+td->pos, msg, sz );
-	td->pos += sz;
+    if ( sz > mx )
+        sz = mx;
+    strncpy( td->buf+td->pos, msg, sz );
+    td->pos += sz;
 }
 
 static int
@@ -103,14 +104,13 @@ findStringOcc(const char *buf, const char *what)
 int         rval;
 size_t      l = strlen(what);
 
-	for ( rval=0; (buf=strstr(buf, what)); buf+=l )
-		rval++;
+    for ( rval=0; (buf=strstr(buf, what)); buf+=l )
+        rval++;
 
-#ifdef TEST_DEBUG
-	printf("found %i x %s\n", rval, what);
-#endif
+    if ( test_debug )
+        printf("found %i x %s\n", rval, what);
 
-	return rval;
+    return rval;
 }
 
 static int
@@ -121,30 +121,29 @@ int       n_ptrs = 0;
 int       i,j;
 int       rval   = 0;
 
-	while ( n_ptrs < sizeof(ptrs)/sizeof(*ptrs[0]) && (buf=strchr(buf,'[')) ) {
-		if ( 1 == sscanf(buf+1,"%p", &ptrs[n_ptrs]) )
-			n_ptrs++;
-		buf++;
-	}
-	/* We should find an address close to epicsStackTraceRecurseGbl twice */
-	for (i=0; i<n_ptrs-1; i++) {
-		/* I got a (unjustified) index-out-of-bound warning 
-		 * when setting j=i+1 here. Thus the weird j!= i check...
-		 */
-		j = i;
-		while ( j < n_ptrs ) {
-			if ( j != i && ptrs[j] == ptrs[i] ) {
-				if ( ptrs[i] >= (void*)epicsStackTraceRecurseGbl && ptrs[i] < (void*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
-					rval ++;	
-#ifdef TEST_DEBUG
-					printf("found address %p again\n", ptrs[i]);
-#endif
-				}
-			}
-			j++;
-		}
-	}
-	return rval;
+    while ( n_ptrs < sizeof(ptrs)/sizeof(*ptrs[0]) && (buf=strchr(buf,'[')) ) {
+        if ( 1 == sscanf(buf+1,"%p", &ptrs[n_ptrs]) )
+            n_ptrs++;
+        buf++;
+    }
+    /* We should find an address close to epicsStackTraceRecurseGbl twice */
+    for (i=0; i<n_ptrs-1; i++) {
+        /* I got a (unjustified) index-out-of-bound warning 
+         * when setting j=i+1 here. Thus the weird j!= i check...
+         */
+        j = i;
+        while ( j < n_ptrs ) {
+            if ( j != i && ptrs[j] == ptrs[i] ) {
+                if ( ptrs[i] >= (void*)epicsStackTraceRecurseGbl && ptrs[i] < (void*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
+                    rval ++;    
+                    if ( test_debug )
+                        printf("found address %p again\n", ptrs[i]);
+                }
+            }
+            j++;
+        }
+    }
+    return rval;
 }
 
 MAIN(epicsStackTraceTest)
@@ -153,63 +152,65 @@ int         features, all_features;
 TestDataRec testData;
 int         gblFound, lclFound, numFound;
 
-	testData.pos = 0;
+    if ( getenv("EPICS_STACK_TRACE_TEST_DEBUG") )
+        test_debug = 1;
 
-	testPlan(4);
+    testData.pos = 0;
 
-	features = epicsStackTraceGetFeatures(); 
+    testPlan(4);
 
-	all_features =   EPICS_STACKTRACE_LCL_SYMBOLS
-	               | EPICS_STACKTRACE_GBL_SYMBOLS
-	               | EPICS_STACKTRACE_ADDRESSES;
-		
-	if ( ! testOk( (features & ~all_features) == 0,
-	          "epicsStackTraceGetFeatures() obtains features") )
-		testAbort("epicsStackTraceGetFeatures() not working as expected");
+    features = epicsStackTraceGetFeatures(); 
 
-	testData.pos = 0;
+    all_features =   EPICS_STACKTRACE_LCL_SYMBOLS
+                   | EPICS_STACKTRACE_GBL_SYMBOLS
+                   | EPICS_STACKTRACE_ADDRESSES;
+        
+    if ( ! testOk( (features & ~all_features) == 0,
+              "epicsStackTraceGetFeatures() obtains features") )
+        testAbort("epicsStackTraceGetFeatures() not working as expected");
 
-	testDiag("calling a few nested routines and eventually dump a stack trace");
+    testData.pos = 0;
 
-	eltc(0);
-	errlogAddListener( logClient, &testData );
-	epicsStackTraceRecurseGbl(3);
-	errlogRemoveListeners( logClient, &testData );
-	eltc(1);
+    testDiag("calling a few nested routines and eventually dump a stack trace");
 
-	/* ensure there's a terminating NUL -- we have reserved space for it */
-	testData.buf[testData.pos] = 0;
+    eltc(0);
+    errlogAddListener( logClient, &testData );
+    epicsStackTraceRecurseGbl(3);
+    errlogRemoveListeners( logClient, &testData );
+    eltc(1);
 
-	testDiag("now scan the result for what we expect");
+    /* ensure there's a terminating NUL -- we have reserved space for it */
+    testData.buf[testData.pos] = 0;
 
-	gblFound = findStringOcc( testData.buf, "epicsStackTraceRecurseGbl" );
-	lclFound = findStringOcc( testData.buf, "epicsStackTraceRecurseLcl" );
-	numFound = findNumOcc   ( testData.buf );
-	
-	if ( (features & EPICS_STACKTRACE_GBL_SYMBOLS) ) {
-		testOk( gblFound == 2, "dumping global symbols" );
-	} else {
-		testOk( 1            , "no support for dumping global symbols on this platform");
-	}
+    testDiag("now scan the result for what we expect");
 
-	if ( (features & EPICS_STACKTRACE_LCL_SYMBOLS) ) {
-		testOk( lclFound == 2, "dumping local symbols" );
-	} else {
-		testOk( 1            , "no support for dumping local symbols on this platform");
-	}
+    gblFound = findStringOcc( testData.buf, "epicsStackTraceRecurseGbl" );
+    lclFound = findStringOcc( testData.buf, "epicsStackTraceRecurseLcl" );
+    numFound = findNumOcc   ( testData.buf );
+    
+    if ( (features & EPICS_STACKTRACE_GBL_SYMBOLS) ) {
+        testOk( gblFound == 2, "dumping global symbols" );
+    } else {
+        testOk( 1            , "no support for dumping global symbols on this platform");
+    }
 
-	if ( (features & EPICS_STACKTRACE_ADDRESSES) ) {
-		testOk(  numFound > 0, "dumping addresses" );
-	} else {
-		testOk( 1            , "no support for dumping addresses on this platform");
-	}
+    if ( (features & EPICS_STACKTRACE_LCL_SYMBOLS) ) {
+        testOk( lclFound == 2, "dumping local symbols" );
+    } else {
+        testOk( 1            , "no support for dumping local symbols on this platform");
+    }
+
+    if ( (features & EPICS_STACKTRACE_ADDRESSES) ) {
+        testOk(  numFound > 0, "dumping addresses" );
+    } else {
+        testOk( 1            , "no support for dumping addresses on this platform");
+    }
 
 
-#ifdef TEST_DEBUG
-	fputs(testData.buf, stdout);
-#endif
+    if ( test_debug )
+        fputs(testData.buf, stdout);
 
-	testDone();
+    testDone();
 
-	return 0;
+    return 0;
 }

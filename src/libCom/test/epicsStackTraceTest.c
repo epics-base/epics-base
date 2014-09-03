@@ -15,10 +15,10 @@
 #include "errlog.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
-#include "inttypes.h"
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define TST_BUFSZ 10000
 
@@ -103,12 +103,20 @@ findStringOcc(const char *buf, const char *what)
 {
 int         rval;
 size_t      l = strlen(what);
+int         ch;
 
-    for ( rval=0; (buf=strstr(buf, what)); buf+=l )
-        rval++;
+    rval = 0;
+    while ( (buf = strstr(buf, what)) ) {
+        /* Is it just a prefix? */
+        ch = buf[l];
+        if ( ! isalnum(ch) && '_' != ch ) {
+            rval++;
+        }
+        buf += l;
+    }
 
     if ( test_debug )
-        printf("found %i x %s\n", rval, what);
+        testDiag("found %i x %s\n", rval, what);
 
     return rval;
 }
@@ -137,7 +145,7 @@ int       rval   = 0;
                 if ( ptrs[i] >= (void*)epicsStackTraceRecurseGbl && ptrs[i] < (void*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
                     rval ++;    
                     if ( test_debug )
-                        printf("found address %p again\n", ptrs[i]);
+                        testDiag("found address %p again\n", ptrs[i]);
                 }
             }
             j++;
@@ -150,19 +158,21 @@ MAIN(epicsStackTraceTest)
 {
 int         features, all_features;
 TestDataRec testData;
-int         gblFound, lclFound, numFound;
+int         gblFound, lclFound, numFound, dynFound;
+char        *nl, *p;
 
     if ( getenv("EPICS_STACK_TRACE_TEST_DEBUG") )
         test_debug = 1;
 
     testData.pos = 0;
 
-    testPlan(4);
+    testPlan(5);
 
     features = epicsStackTraceGetFeatures(); 
 
     all_features =   EPICS_STACKTRACE_LCL_SYMBOLS
                    | EPICS_STACKTRACE_GBL_SYMBOLS
+                   | EPICS_STACKTRACE_DYN_SYMBOLS
                    | EPICS_STACKTRACE_ADDRESSES;
         
     if ( ! testOk( (features & ~all_features) == 0,
@@ -184,9 +194,17 @@ int         gblFound, lclFound, numFound;
 
     testDiag("now scan the result for what we expect");
 
+    dynFound = findStringOcc( testData.buf, "epicsStackTrace" );
     gblFound = findStringOcc( testData.buf, "epicsStackTraceRecurseGbl" );
     lclFound = findStringOcc( testData.buf, "epicsStackTraceRecurseLcl" );
     numFound = findNumOcc   ( testData.buf );
+
+    if ( (features & EPICS_STACKTRACE_DYN_SYMBOLS) ) {
+        testOk( dynFound == 1, "dumping symbol from library" );
+    } else {
+        testOk( 1            , "no support for dumping library symbols on this platform");
+    }
+
     
     if ( (features & EPICS_STACKTRACE_GBL_SYMBOLS) ) {
         testOk( gblFound == 2, "dumping global symbols" );
@@ -207,8 +225,16 @@ int         gblFound, lclFound, numFound;
     }
 
 
-    if ( test_debug )
-        fputs(testData.buf, stdout);
+    if ( test_debug ) {
+        p = testData.buf;
+        while ( (nl = strchr(p,'\n')) ) {
+            *nl = 0;
+            testDiag("%s",p);
+            *nl = '\n';
+            p   = nl+1;
+        }
+        testDiag("%s", p);
+    }
 
     testDone();
 

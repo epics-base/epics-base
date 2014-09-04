@@ -104,3 +104,5 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
+dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+

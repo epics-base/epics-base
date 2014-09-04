@@ -17,8 +17,6 @@
 #include "dbAccess.h"
 #include "errlog.h"
 
-#include "xRecord.h"
-
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static

@@ -129,7 +129,7 @@ epicsParseInt8(const char *str, epicsInt8 *to, int base, char **units)
     if (value < -0x80 || value > 0x7f)
         return S_stdlib_overflow;
 
-    *to = value;
+    *to = (epicsInt8) value;
     return 0;
 }
 
@@ -145,7 +145,7 @@ epicsParseUInt8(const char *str, epicsUInt8 *to, int base, char **units)
     if (value > 0xff && value <= ~0xffUL)
         return S_stdlib_overflow;
 
-    *to = value;
+    *to = (epicsUInt8) value;
     return 0;
 }
 
@@ -161,7 +161,7 @@ epicsParseInt16(const char *str, epicsInt16 *to, int base, char **units)
     if (value < -0x8000 || value > 0x7fff)
         return S_stdlib_overflow;
 
-    *to = value;
+    *to = (epicsInt16) value;
     return 0;
 }
 
@@ -177,7 +177,7 @@ epicsParseUInt16(const char *str, epicsUInt16 *to, int base, char **units)
     if (value > 0xffff && value <= ~0xffffUL)
         return S_stdlib_overflow;
 
-    *to = value;
+    *to = (epicsUInt16) value;
     return 0;
 }
 
@@ -232,12 +232,12 @@ epicsParseFloat(const char *str, float *to, char **units)
     if (finite(value) && abs >= FLT_MAX)
         return S_stdlib_overflow;
 
-    *to = value;
+    *to = (float) value;
     return 0;
 }
 
 
-/* If strtod() works properly, osdStrtod.h defines this macro:
+/* If strtod() works properly, the OS-specific osdStrtod.h does:
  *   #define epicsStrtod strtod
  *
  * If strtod() is broken, osdStrtod.h defines this prototype:

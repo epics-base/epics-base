@@ -41,7 +41,7 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from,
     const char *pfrom  = from;
     char       *pto = to;
     char        c;
-    int         nto = 0, nfrom = 0;
+    size_t      nto = 0, nfrom = 0;
 
     while ((c = *pfrom++) && nto < outsize && nfrom < inlen) {
         nfrom++;

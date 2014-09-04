@@ -21,16 +21,19 @@ epicsShareFunc void epicsStackTrace(void);
 
 /* Inquire about functionality implemented on your system */
 
-/* StackTrace is able to lookup local symbols  */
-#define EPICS_STACKTRACE_LCL_SYMBOLS (1<<0)
+/* StackTrace provides numerical addresses      */
+#define EPICS_STACKTRACE_ADDRESSES   (1<<0)
 
-/* StackTrace is able to lookup global symbols */
-#define EPICS_STACKTRACE_GBL_SYMBOLS (1<<1)
+/* StackTrace is able to lookup dynamic symbols */
+#define EPICS_STACKTRACE_DYN_SYMBOLS (1<<1)
 
-/* StackTrace provides numerical addresses     */
-#define EPICS_STACKTRACE_ADDRESSES   (1<<2)
+/* StackTrace is able to lookup global symbols  */
+#define EPICS_STACKTRACE_GBL_SYMBOLS (1<<2)
 
-/* returns ORed bitset of supported features   */
+/* StackTrace is able to lookup local symbols   */
+#define EPICS_STACKTRACE_LCL_SYMBOLS (1<<3)
+
+/* returns ORed bitset of supported features    */
 epicsShareFunc int epicsStackTraceGetFeatures(void);
 
 #ifdef __cplusplus

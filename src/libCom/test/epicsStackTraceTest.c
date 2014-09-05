@@ -185,7 +185,7 @@ char        *nl, *p;
 
     eltc(0);
     errlogAddListener( logClient, &testData );
-    epicsStackTraceRecurseGbl(3);
+    gfp(3);
     errlogRemoveListeners( logClient, &testData );
     eltc(1);
 

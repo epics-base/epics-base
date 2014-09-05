@@ -7,7 +7,11 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
  */ 
 
+/* Make sure dladdr() is visible on linux/freebsd/darwin */
 #define _GNU_SOURCE
+/* Some freebsd versions seem to export dladdr() only if __BSD_VISIBLE */
+#define _BSD_VISIBLE
+#define _DARWIN_C_SOURCE
 
 #include "epicsStackTrace.h"
 #include "epicsThread.h"
@@ -19,27 +23,21 @@
 #include <string.h>
 #include <unistd.h>
 
+/* How many stack frames to capture               */
 #define MAXDEPTH 100
+/* How many chars to reserve for a line of output */
+#define MAXSYMLEN 500
+
 
 #define STACKTRACE_DEBUG 0
 
-/* Darwin and GNU have dladdr() but Darwin's backtrace_symbols()
- * already prints local symbols, too, whereas linux' does not.
+/* Darwin and GNU have dladdr() and Darwin's already finds local
+ * symbols, too, whereas linux' does not.
  * Hence, on linux we want to use dladdr() and lookup static
  * symbols in the ELF symbol table.
  */
 
-#ifdef   freebsd
-/* Some freebsd versions seem to export dladdr() only if __BSD_VISIBLE */
-#define  __BSD_VISIBLE  1
-#endif
-
 #include <dlfcn.h>
-
-/* Check if we actually have the gnu/darwin extensions           */
-#ifdef RTLD_DEFAULT
-
-#define USE_DLADDR
 
 #if defined(__linux__) || defined(linux)
 #define USE_ELF
@@ -54,18 +52,11 @@
 #include <errno.h>
 #include <inttypes.h>
 
-/* How many chars to reserve (on avg) for a line of output */
-#define MAXSYMLEN 500
-
 #ifdef  USE_MMAP
 #include <sys/mman.h>
 #endif /* USE_MMAP     */
 
 #endif /* USE_ELF      */
-
-#else  /* RTLD_DEFAULT */
-#undef  USE_ELF
-#endif /* RTLD_DEFAULT */
 
 /* Forward Declaration */
 #define NO_OFF ((unsigned long)-1L)
@@ -505,8 +496,6 @@ ESyms es;
 }
 #endif /* USE_ELF */
 
-#ifdef USE_DLADDR
-
 static ssize_t
 elfLookupAddr(void *addr, char *buf, size_t buf_sz)
 {
@@ -640,8 +629,6 @@ size_t     idx;
     return rval;
 }
 
-#endif /* USE_DLADDR */
-
 static epicsThreadOnceId stackTraceInitId = EPICS_THREAD_ONCE_INIT;
 static epicsMutexId      stackTraceMtx;
 
@@ -706,12 +693,7 @@ size_t rval = 0;
 
 epicsShareFunc void epicsStackTrace(void)
 {
-void **buf;
-#ifndef USE_DLADDR
-char **bts;
-ssize_t pos, siz;
-char   *ptr;
-#endif
+void   **buf;
 char   *btsl  = 0;
 size_t btsl_sz = sizeof(*btsl)*MAXSYMLEN;
 int    i,n;
@@ -732,11 +714,6 @@ int    i,n;
 
     errlogFlush();
 
-    /* backtrace_symbols() only works for global symbols on linux.
-     * If we have dladdr() and then we can actually lookup local
-     * symbols, too.
-     */
-#ifdef USE_DLADDR
     for ( i=0; i<n; i++ ) {
         /* Somehow errlog doesn't like small, broken-up pieces of lines which is
          * why we assemble into the 'btsl' buffer and use a single errlogPrintf...
@@ -746,36 +723,6 @@ int    i,n;
     }
 #ifdef USE_ELF
     elfSymsFlush();
-#endif
-#else
-    if ( (bts = backtrace_symbols(buf, n)) ) {
-        for ( i=0; i<n; i++ ) {
-            /* We'd like to use a similar layout (prepending the address) */
-            siz = btsl_sz;
-            pos = symDump(btsl, siz, buf[i], 0, 0, 0);
-            /* Kill '\n' */
-            if ( pos > 0 )
-                btsl[--pos] = 0;
-            siz -= pos;
-            if ( siz >= 3 ) {
-                strcat(btsl, ": ");
-                pos += 2;
-                siz -= 2;
-            }
-            strncat(btsl + pos, bts[i], siz);
-            /* wipe out the trailing address */
-            if ( (ptr = strrchr(btsl, '[')) )
-                *ptr = 0;
-            errlogPrintf("%s\n", btsl);
-        }
-        free(bts);
-    } else {
-        /* failed to create symbolic information; just print addresses */
-        for ( i=0; i<n; i++ ) {
-            symDump(btsl, btsl_sz, buf[i], 0, 0, 0);
-            errlogPrintf("%s", btsl);
-        }
-    }
 #endif
 
     free(btsl);
@@ -806,19 +753,13 @@ epicsShareFunc int epicsStackTraceGetFeatures(void)
 #else
     errlogPrintf("no");
 #endif
-    errlogPrintf(", dladdr: ");
-#ifdef USE_DLADDR
-    errlogPrintf("yes");
-#else
-    errlogPrintf("no");
-#endif
     errlogPrintf("\n");
 #endif
 
     /* We are a bit conservative here. The actual
      * situation depends on how we are linked (something
      * we don't have under control at compilation time)
-     * Linux' dladdr and backtrace_symbols find global symbols 
+     * Linux' dladdr finds global symbols 
      * (not from dynamic libraries) when statically linked but
      * not when dynamically linked.
      * OTOH: for a stripped executable it is unlikely that

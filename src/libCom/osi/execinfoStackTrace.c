@@ -29,7 +29,7 @@
 #define MAXSYMLEN 500
 
 
-#define STACKTRACE_DEBUG 0
+#define STACKTRACE_DEBUG 2
 
 /* Darwin and GNU have dladdr() and Darwin's already finds local
  * symbols, too, whereas linux' does not.
@@ -41,10 +41,8 @@
 
 #if defined(__linux__) || defined(linux)
 #define USE_ELF
-#define USE_MMAP
 #elif defined(freebsd)
 #define USE_ELF
-#define USE_MMAP
 #endif
 
 #ifdef  USE_ELF
@@ -52,9 +50,9 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#ifdef  USE_MMAP
+#ifdef _POSIX_MAPPED_FILES
 #include <sys/mman.h>
-#endif /* USE_MMAP     */
+#endif
 
 #endif /* USE_ELF      */
 
@@ -119,6 +117,37 @@ typedef struct ESyms_ {
     size_t         nsyms;
     uint8_t        class;
 } *ESyms;
+
+/* Elf file access -- can either be with mmap or by sequential read */
+
+#ifdef _POSIX_MAPPED_FILES
+static MMap
+getscn_mmap(int fd, uint8_t c, Shdr *shdr_p);
+#endif
+
+static MMap
+getscn_read(int fd, uint8_t c, Shdr *shdr_p);
+
+static MMap (*getscn)(int fd, uint8_t c, Shdr *shdr_p) =
+#ifdef _POSIX_MAPPED_FILES
+	getscn_mmap
+#else
+	getscn_read
+#endif
+	;
+
+int
+epicsElfConfigAccess(int use_mmap)
+{
+#ifndef _POSIX_MAPPED_FILES
+	if ( use_mmap )
+		return -1; /* not supported on this system */
+	/* else no need to change default */
+#else
+	getscn = use_mmap ? getscn_mmap : getscn_read;
+#endif
+	return 0;
+}
 
 /* LOCKING NOTE: if the ELF symbol facility is ever expanded to be truly used
  * in a multithreaded way then proper multiple-readers, single-writer locking
@@ -194,8 +223,7 @@ void   *ptr=buf;
     return ptr-buf;
 }
 
-#ifdef USE_MMAP
-
+#ifdef _POSIX_MAPPED_FILES
 /* Destructor for data that is mmap()ed */
 static void
 freeMapMmap(MMap m)
@@ -206,7 +234,7 @@ freeMapMmap(MMap m)
 
 /* Obtain section data with mmap()      */
 static MMap
-getscn(int fd, uint8_t c, Shdr *shdr_p)
+getscn_mmap(int fd, uint8_t c, Shdr *shdr_p)
 {
 size_t   n;
 MMap     rval = 0;
@@ -239,8 +267,7 @@ bail:
     freeMap(rval);
     return 0;
 }
-
-#else /* USE_MMAP */
+#endif
 
 /* Destructor for data that is read into a malloc()ed buffer */
 static void
@@ -251,7 +278,7 @@ freeMapMalloc(MMap m)
 
 /* Read section data into a malloc()ed buffer                */
 static MMap
-getscn(int fd, uint8_t c, Shdr *shdr_p)
+getscn_read(int fd, uint8_t c, Shdr *shdr_p)
 {
 size_t   n;
 MMap     rval = 0;
@@ -294,7 +321,6 @@ bail:
     freeMap(rval);
     return 0;
 }
-#endif /* USE_MMAP */
 
 /* Release resources but keep filename so that
  * a file w/o symbol table is not read over and over again.
@@ -748,7 +774,7 @@ epicsShareFunc int epicsStackTraceGetFeatures(void)
     errlogPrintf("no");
 #endif
     errlogPrintf(", MMAP: ");
-#ifdef USE_MMAP
+#ifdef _POSIX_MAPPED_FILES
     errlogPrintf("yes");
 #else
     errlogPrintf("no");

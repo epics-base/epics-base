@@ -959,53 +959,55 @@ base&gt;/lib/&lt;architechture&gt;".</p>
 <h3><a name="Compiler" id="Compiler">Compiler and System Specific Build
 Options</a></h3>
 
-<p>If you do not use the EPICS build environemnt (layered make files) then it
+<p>If you do not use the EPICS build environment (layered make files) then it
 may be helpful to run one of the EPICS make files and watch the compile/link
 lines. This may be the simplest way to capture the latest system and compiler
-specific options required by your build environment. I have included some
-snapshots of typical build lines below, but expect some risk of this
-information becoming dated.</p>
+specific options required by your build environment. Some snapshots of typical
+build lines are shown below, but this information may be out of date.</p>
 
 <h4>Typical Linux Build Options</h4>
 
-<p><code>/usr/bin/gcc -c -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS
--D_XOPEN_SOURCE=500 -DOSITHREAD_USE_DEFAULT_STACK -D_X86_ -DUNIX -D_BSD_SOURCE
--Dlinux -D_REENTRANT -ansi -O3 -Wall -I. -I.. -I../../../include/os/Linux
--I../../../include ../acctst.c</code></p>
+<p><code>gcc -D_GNU_SOURCE -DOSITHREAD_USE_DEFAULT_STACK -D_X86_ -DUNIX -Dlinux
+-O3 -g -Wall -I. -I.. -I../../../../include/compiler/gcc
+-I../../../../include/os/Linux -I../../../../include -c ../acctst.c</code></p>
 
-<p><code>/usr/bin/g++ -o acctst
--L/home/user/epicsR3.14/epics/base/lib/linux-x86/
--Wl,-rpath,/mnt/bogart_home/hill/epicsR3.14/epics/base/lib/linux-x86
+<p><code>g++ -o acctst -L/home/user/epics/base-3.15/lib/linux-x86
+-Wl,-rpath,/home/user/epics/base-3.15/lib/linux-x86
 acctstMain.o acctst.o -lca -lCom</code></p>
 
 <h4>Typical Solaris Build Options</h4>
 
 <p><code>/opt/SUNWspro/bin/cc -c -D_POSIX_C_SOURCE=199506L -D_XOPEN_SOURCE=500
 -DOSITHREAD_USE_DEFAULT_STACK -DUNIX -DSOLARIS=9 -mt -D__EXTENSIONS__ -Xc -v
--xO4 -I. -I.. -I./../../../include/os/solaris -I./../../../include
-../acctst.c</code></p>
+-xO4 -I. -I.. -I../../../../include/compiler/solStudio
+-I../../../../include/os/solaris -I../../../../include ../acctst.c</code></p>
 
 <p><code>/opt/SUNWspro/bin/CC -o acctst
--L/home/phoebus1/JHILL/epics/base/lib/solaris-sparc/ -mt -z ignore -z combreloc
--z lazyload -R/home/disk1/user/epics/base/lib/solaris-sparc acctstMain.o
+-L/home/user/epics/base-3.15/lib/solaris-sparc/ -mt -z ignore -z combreloc
+-z lazyload -R/home/user/epics/base-3.15/lib/solaris-sparc acctstMain.o
 acctst.o -lca -lCom</code></p>
 
 <h4>Typical Windows Build Options</h4>
 
 <p><code>cl -c /nologo /D__STDC__=0 /Ox /GL /W3 /w44355 /MD -I. -I..
--I..\\..\\..\\include\\os\\WIN32 -I..\\..\\..\\include ..\\acctst.c</code></p>
+-I..\\..\\..\\..\\include\\compiler\\msvc -I..\\..\\..\\..\\include\\os\\WIN32
+-I..\\..\\..\\..\\include ..\\acctst.c</code></p>
 
-<p><code>link -nologo /LTCG /incremental:no /opt:ref /release /version:3.14
+<p><code>link -nologo /LTCG /incremental:no /opt:ref /release /version:3.15
 -out:acctst.exe acctstMain.obj acctst.obj
-d:/user/R3.14.clean/epics/base/lib/WIN32-x86/ca.lib
-d:/user/R3.14.clean/epics/base/lib/WIN32-x86/</code></p>
+d:/user/epics/base-3.15/lib/win32-x86/ca.lib
+d:/user/epics/base-3.15/lib/win32-x86/Com.lib</code></p>
 
 <h4>Typical vxWorks Build Options</h4>
 
-<p><code>/usr/local/xcomp/ppc/bin/ccppc -c -D_POSIX_SOURCE -DCPU=PPC603
--DvxWorks -include /home/vx/tornado20/target/h/vxWorks.h -ansi -O3 -Wall
--mcpu=603 -mstrict-align -fno-builtin -I. -I.. -I../../../include/os/vxWorks
--I../../../include -I/home/vx/tornado20/target/h ../acctst.c</code></p>
+<p><code>/usr/local/vxWorks-6.9/gnu/4.3.3-vxworks-6.9/x86-linux2/bin/ccppc
+-DCPU=PPC32 -DvxWorks=vxWorks -O2 -Wall -mstrict-align -mlongcall -fno-builtin
+-include /usr/local/vxWorks-6.9/vxworks-6.9/target/h/vxWorks.h
+-I. -I../O.Common -I.. -I../../../../include/compiler/gcc
+-I../../../../include/os/vxWorks -I../../../../include
+-I/usr/local/vxWorks-6.9/vxworks-6.9/target/h
+-I/usr/local/vxWorks-6.9/vxworks-6.9/target/h/wrn/coreip
+-c ../acctst.c</code></p>
 
 <h4>Other Systems and Compilers</h4>
 

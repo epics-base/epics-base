@@ -9,17 +9,6 @@
 
 /*
  * Linux specific socket include
- *
- * Under Linux if we dont define _POSIX_C_SOURCE or _XOPEN_SOURCE
- * then none of the POSIX stuff (such as signals) can be used
- * with cc -v. However if one of _POSIX_C_SOURCE or _XOPEN_SOURCE
- * are defined then we cant use the socket library. Therefore I 
- * have been adding the following in order to use POSIX signals 
- * and also sockets on Linux with cc -v. What a pain....
- *
- * #ifdef linux
- * #define __EXTENSIONS__ 
- * #endif
  */
 
 #ifndef osdSockH

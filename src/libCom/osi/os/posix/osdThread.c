@@ -528,17 +528,6 @@ epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate(const char *name,
 }
 
 /*
- * Cleanup routine for threads not created by epicsThreadCreate().
- */
-/* static void nonEPICSthreadCleanup(void *arg)
-{
-    epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
-
-    free(pthreadInfo->name);
-    free(pthreadInfo);
-} */
-
-/*
  * Create dummy context for threads not created by epicsThreadCreate().
  */
 static epicsThreadOSD *createImplicit(void)
@@ -570,7 +559,6 @@ static epicsThreadOSD *createImplicit(void)
         free_threadInfo(pthreadInfo);
         return NULL;
     }
-/*    pthread_cleanup_push(nonEPICSthreadCleanup, pthreadInfo); */
     return pthreadInfo;
 }
 

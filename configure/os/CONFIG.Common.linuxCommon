@@ -12,17 +12,14 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 OS_CLASS = Linux
 
-CODE_CPPFLAGS = -D_REENTRANT
-
-POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=200112L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
+# Define _GNU_SOURCE and _DEFAULT_SOURCE for maximum portability
+POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
 POSIX_LDLIBS = -lpthread
 
-# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS += -lrt -ldl
 
-# Added here for cross-target builds which include this file
+# Linker flags for static & shared-library builds
 STATIC_LDFLAGS_YES= -Wl,-Bstatic
 STATIC_LDFLAGS_NO=
 STATIC_LDLIBS_YES= -Wl,-Bdynamic

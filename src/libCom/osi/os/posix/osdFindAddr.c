@@ -9,8 +9,10 @@
 
 /* Make sure dladdr() is visible on linux/solaris */
 #define _GNU_SOURCE
-/* For dladdr under solaris */
+/* get dladdr under solaris */
+#ifndef __EXTENSIONS__
 #define __EXTENSIONS__
+#endif
 
 #include <unistd.h>
 #include <dlfcn.h>
@@ -159,7 +161,7 @@ static size_t
 do_read(int fd, void *buf, size_t sz)
 {
 size_t got;
-void   *ptr=buf;
+char  *ptr=buf;
     while ( sz > 0 ) {
         if ( (got=read(fd,ptr,sz)) <= 0 ) {
             return got;
@@ -167,7 +169,7 @@ void   *ptr=buf;
         ptr+=got;
         sz -=got;
     }
-    return ptr-buf;
+    return ptr-(char*)buf;
 }
 
 /* Elf file access -- can either be with mmap or by sequential read */
@@ -446,7 +448,7 @@ const char *cp;
     }
 
     /* Make sure there is a terminating NUL - unfortunately, memrchr is not portable */
-    cp = es->strMap->addr + es->strMap->off;
+    cp = (char*)es->strMap->addr + es->strMap->off;
     for ( idx = es->strMap->max - 1; i >= 0; i-- ) {
         if ( !cp[i] )
             break;
@@ -575,8 +577,8 @@ size_t     idx;
 
     if ( es->nsyms ) {
         c       = es->class;
-        sym.raw = es->symMap->addr + es->symMap->off;
-        strtab  = es->strMap->addr + es->strMap->off;
+        sym.raw = (char*)es->symMap->addr + es->symMap->off;
+        strtab  = (char*)es->strMap->addr + es->strMap->off;
 
         /* Do a brute-force search through the symbol table; if this is executed 
          * very often then it would be worthwhile constructing a sorted list of
@@ -627,7 +629,7 @@ size_t     idx;
 
     if ( nearest.raw && ( (idx = ARR(c,nearest,0,st_name)) < es->strMap->max ) ) {
 		sym_p->s_nam = strtab + idx;
-		sym_p->s_val = (void*) ARR(c, nearest, 0, st_value) + es->addr;
+		sym_p->s_val = (char*) ARR(c, nearest, 0, st_value) + es->addr;
     }
 
     elfsUnlockRead();

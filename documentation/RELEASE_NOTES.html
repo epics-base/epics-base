@@ -15,28 +15,39 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
-<h3>On POSIX, attempt to lock all memory when running with FIFO scheduler</h3>
+<h3>Posix: Drop SCHED_FIFO before exec() in child process</h3>
 
-<p>On POSIX systems, an IOC application's ability to meet timing deadlines is often
-dependent on its ability to lock part or all of the process's virtual address space
-into RAM, preventing that memory from being paged to the swap area. This change will
-attempt to lock the process's virtual address space into RAM if the process has the
-ability to run threads with different priorities. If unsuccessful, it prints an
-message to stderr and continues.</p>
- 
+<p>If Base is compiled with <tt>USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES</tt>
+in configure/CONFIG_SITE or related files, the Posix implementation of the
+libCom <tt>osiSpawnDetachedProcess()</tt> routine will switch the child process
+to use the normal SCHED_OTHER (non real-time) scheduler before executing the
+named executable program. If it needs to use the real-time scheduler the new
+program can request that for itself.</p>
+
+<h3>Posix: Lock all memory when running with FIFO scheduler</h3>
+
+<p>On Posix systems, an IOC application's ability to meet timing deadlines is
+often dependent on its ability to lock part or all of the process's virtual
+address space into RAM, preventing that memory from being paged to the swap
+area. This change will attempt to lock the process's virtual address space into
+RAM if the process has the ability to run threads with different priorities. If
+unsuccessful, it prints an message to stderr and continues.</p>
+
 <p>On Linux, one can grant a process the ability to run threads with different
-priorities by using the command <code>ulimit -r unlimited</code>. To use the FIFO
-scheduler for an IOC, use a command like this:</p>
+priorities by using the command <code>ulimit -r unlimited</code>. To use the
+FIFO scheduler for an IOC, use a command like this:</p>
 
 <blockquote><pre>chrt -f 1 softIoc -d test.db</pre></blockquote>
- 
-<p>On Linux, one can grant a process the ability to lock memory using the command
-<code>ulimit -l unlimited</code>. These limits can also be configured on a per
-user/per group basis by changing /etc/security/limits.conf or its equivalent.</p>
- 
-<p>In Linux, a child process created via fork inherits its parent's resource
-limits. Thus, it is probably a good idea to start the caRepeater before
-starting the IOC.</p>
+
+<p>On Linux, one can grant a process the ability to lock itself into memory
+using the command <code>ulimit -l unlimited</code>. These limits can also be
+configured on a per user/per group basis by changing /etc/security/limits.conf
+or its equivalent.</p>
+
+<p>A child process created via fork() normally inherits its parent's resource
+limits, so a child of a real-time soft-IOC will get its parent's real-time
+priority and memlock limits. The memory locks themselves however are not
+inherited by child processes.</p>
 
 <h3>Implement EPICS_CAS_INTF_ADDR_LIST in rsrv</h3>
 

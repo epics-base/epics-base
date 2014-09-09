@@ -57,7 +57,7 @@ void nopFn(int lvl)
 
 RecFn volatile lfp = epicsStackTraceRecurseLcl;
 RecFn volatile gfp = epicsStackTraceRecurseGbl;
-RecFn volatile nop = nopFn;
+RecFn volatile nfp = nopFn;
 
 static void
 epicsStackTraceRecurseLcl(int lvl)
@@ -70,7 +70,7 @@ epicsStackTraceRecurseLcl(int lvl)
     /* call something so that the call through gfp() doesn't
      * get optimized into a jump (tail-call optimization)
      */
-    nop(0);
+    nfp(0);
 }
 
 void epicsStackTraceRecurseGbl(int lvl)
@@ -83,7 +83,7 @@ void epicsStackTraceRecurseGbl(int lvl)
     /* call something so that the call through gfp() doesn't
      * get optimized into a jump (tail-call optimization)
      */
-    nop(0);
+    nfp(0);
 }
 
 static void logClient(void *ptr, const char *msg)

@@ -7,15 +7,11 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011
  */ 
 
-#include "epicsStackTrace.h"
-#include "errlog.h"
+#include <execinfo.h>
 
-epicsShareFunc void epicsStackTrace(void)
+#include "epicsStackTracePvt.h"
+
+epicsShareFunc int epicsBackTrace(void **buf, int buf_sz)
 {
+	return backtrace(buf, buf_sz);
 }
-
-epicsShareFunc int epicsStackTraceGetFeatures(void)
-{
-	return 0;
-}
-

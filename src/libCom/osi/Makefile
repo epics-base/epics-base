@@ -143,9 +143,6 @@ Com_SRCS_WIN32 += setThreadName.cpp
 Com_SRCS_WIN32 += forceBadAllocException.cpp
 
 #Stack trace support
-Com_SRCS += osdStackTrace.c
-Com_SRCS_Linux  += execinfoStackTrace.c
-Com_SRCS_Darwin += execinfoStackTrace.c
-#we could use execinfoStackTrace.c on freebsd, too, but AFAIK
-#you need libexecinfo.a and execinfo.h. I don't know if that
-#is routinely available so we don't use it for now.
+Com_SRCS += epicsStackTrace.c
+Com_SRCS += osdBackTrace.c
+Com_SRCS += osdFindAddr.c

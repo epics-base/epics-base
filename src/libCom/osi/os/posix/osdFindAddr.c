@@ -7,45 +7,16 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
  */ 
 
-/* Make sure dladdr() is visible on linux/freebsd/darwin */
+/* Make sure dladdr() is visible on linux/solaris */
 #define _GNU_SOURCE
-/* Some freebsd versions seem to export dladdr() only if __BSD_VISIBLE */
-#define _BSD_VISIBLE
-#define _DARWIN_C_SOURCE
+/* For dladdr under solaris */
+#define __EXTENSIONS__
 
-#include "epicsStackTrace.h"
-#include "epicsThread.h"
-#include "epicsMutex.h"
-#include <execinfo.h>
-#include <errlog.h>
+#include <unistd.h>
+#include <dlfcn.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
-
-/* How many stack frames to capture               */
-#define MAXDEPTH 100
-/* How many chars to reserve for a line of output */
-#define MAXSYMLEN 500
-
-
-#define STACKTRACE_DEBUG 2
-
-/* Darwin and GNU have dladdr() and Darwin's already finds local
- * symbols, too, whereas linux' does not.
- * Hence, on linux we want to use dladdr() and lookup static
- * symbols in the ELF symbol table.
- */
-
-#include <dlfcn.h>
-
-#if defined(__linux__) || defined(linux)
-#define USE_ELF
-#elif defined(freebsd)
-#define USE_ELF
-#endif
-
-#ifdef  USE_ELF
 #include <elf.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -54,15 +25,20 @@
 #include <sys/mman.h>
 #endif
 
-#endif /* USE_ELF      */
+#include "epicsStackTrace.h"
+#include "epicsStackTracePvt.h"
 
-/* Forward Declaration */
-#define NO_OFF ((unsigned long)-1L)
+#include "epicsThread.h"
+#include "epicsMutex.h"
+#include <errlog.h>
 
-static ssize_t
-symDump(char *buf, size_t buf_sz, void *addr, const char *fnam, const char *snam, unsigned long off);
+#define FIND_ADDR_DEBUG 0
 
-#ifdef USE_ELF
+/* Darwin and GNU have dladdr() and Darwin's already finds local
+ * symbols, too, whereas linux' does not.
+ * Hence, on linux we want to use dladdr() and lookup static
+ * symbols in the ELF symbol table.
+ */
 
 /* Macros to handle elf32 vs. elf64 access to unions etc. */
 
@@ -117,37 +93,6 @@ typedef struct ESyms_ {
     size_t         nsyms;
     uint8_t        class;
 } *ESyms;
-
-/* Elf file access -- can either be with mmap or by sequential read */
-
-#ifdef _POSIX_MAPPED_FILES
-static MMap
-getscn_mmap(int fd, uint8_t c, Shdr *shdr_p);
-#endif
-
-static MMap
-getscn_read(int fd, uint8_t c, Shdr *shdr_p);
-
-static MMap (*getscn)(int fd, uint8_t c, Shdr *shdr_p) =
-#ifdef _POSIX_MAPPED_FILES
-	getscn_mmap
-#else
-	getscn_read
-#endif
-	;
-
-int
-epicsElfConfigAccess(int use_mmap)
-{
-#ifndef _POSIX_MAPPED_FILES
-	if ( use_mmap )
-		return -1; /* not supported on this system */
-	/* else no need to change default */
-#else
-	getscn = use_mmap ? getscn_mmap : getscn_read;
-#endif
-	return 0;
-}
 
 /* LOCKING NOTE: if the ELF symbol facility is ever expanded to be truly used
  * in a multithreaded way then proper multiple-readers, single-writer locking
@@ -214,7 +159,7 @@ do_read(int fd, void *buf, size_t sz)
 size_t got;
 void   *ptr=buf;
     while ( sz > 0 ) {
-        if ( (got=read(fd,ptr,sz)) < 0 ) {
+        if ( (got=read(fd,ptr,sz)) <= 0 ) {
             return got;
         }
         ptr+=got;
@@ -222,6 +167,8 @@ void   *ptr=buf;
     }
     return ptr-buf;
 }
+
+/* Elf file access -- can either be with mmap or by sequential read */
 
 #ifdef _POSIX_MAPPED_FILES
 /* Destructor for data that is mmap()ed */
@@ -322,6 +269,27 @@ bail:
     return 0;
 }
 
+static MMap (*getscn)(int fd, uint8_t c, Shdr *shdr_p) =
+#ifdef _POSIX_MAPPED_FILES
+	getscn_mmap
+#else
+	getscn_read
+#endif
+	;
+
+int
+epicsElfConfigAccess(int use_mmap)
+{
+#ifndef _POSIX_MAPPED_FILES
+	if ( use_mmap )
+		return -1; /* not supported on this system */
+	/* else no need to change default */
+#else
+	getscn = use_mmap ? getscn_mmap : getscn_read;
+#endif
+	return 0;
+}
+
 /* Release resources but keep filename so that
  * a file w/o symbol table is not read over and over again.
  */
@@ -420,6 +388,24 @@ const char *cp;
             break;
     }
 
+	if ( i>=FLD(c,ehdr,e_shnum) ) {
+		/* no SYMTAB -- try dynamic symbols */
+
+		if ( (off_t)-1 == lseek(es->fd, FLD(c,ehdr,e_shoff), SEEK_SET) ) {
+			errlogPrintf("elfRead() -- unable to seek to shoff: %s\n", strerror(errno));
+			goto bail;
+		}
+
+		for ( i = 0; i<FLD(c,ehdr,e_shnum); i++ ) {
+			if ( n != do_read(es->fd, &shdr, n) ) {
+				errlogPrintf("elfRead() -- unable to read section header: %s\n", strerror(errno));
+				goto bail;
+			}
+			if ( SHT_DYNSYM == FLD(c,shdr,sh_type) )
+				break;
+		}
+    }
+
     if ( i>=FLD(c,ehdr,e_shnum) ) {
         errlogPrintf("elfRead() -- no symbol table found\n");
         goto bail;
@@ -475,7 +461,7 @@ const char *cp;
             es->addr  = fbase;
             break;
         default:
-            errlogPrintf("elfLookupAddr(): Unexpected ELF object file type %u\n", FLD(c,ehdr,e_type));
+            errlogPrintf("dlLookupAddr(): Unexpected ELF object file type %u\n", FLD(c,ehdr,e_type));
             goto bail;
     }
         
@@ -497,8 +483,8 @@ elfSymsDestroy(ESyms es)
 }
 
 /* Destroy all cached ELF symbol tables */
-static void
-elfSymsFlush()
+void
+epicsSymTblFlush()
 {
 ESyms es;
 
@@ -520,15 +506,11 @@ ESyms es;
         /* nothing else to do */; 
     return es;
 }
-#endif /* USE_ELF */
 
-static ssize_t
-elfLookupAddr(void *addr, char *buf, size_t buf_sz)
+int
+epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 Dl_info    inf;
-ssize_t    rval;
-
-#ifdef USE_ELF
 ESyms      es,nes;
 uintptr_t  minoff,off;
 int        i;
@@ -537,23 +519,24 @@ Sym        nearest;
 const char *strtab;
 uint8_t    c;
 size_t     idx;
-#endif
 
     if ( ! dladdr(addr, &inf) || (!inf.dli_fname && !inf.dli_sname) ) {
+		sym_p->f_nam = 0;
+		sym_p->s_nam = 0;
         /* unable to lookup   */
-        return symDump(buf, buf_sz, addr, 0, 0, NO_OFF);
+        return 0;
     }
 
-    if ( inf.dli_sname ) {
+	sym_p->f_nam = inf.dli_fname;
+
+	/* If the symbol is in the main executable then solaris' dladdr returns bogus info */
+#ifndef __sun
+    if ( (sym_p->s_nam = inf.dli_sname) ) {
+		sym_p->s_val = inf.dli_saddr;
         /* Have a symbol name - just use it and be done */
-        return symDump(buf, buf_sz, addr, inf.dli_fname, inf.dli_sname, (unsigned long)(addr - inf.dli_saddr));
+		return 0;
     }
-
-#ifndef USE_ELF
-
-    rval = symDump(buf, buf_sz, addr, inf.dli_fname, 0, NO_OFF);
-
-#else
+#endif
 
     /* No symbol info; try to access ELF file and ready symbol table from there */
 
@@ -567,8 +550,6 @@ size_t     idx;
 
         if ( ! (nes = elfRead(inf.dli_fname, (uintptr_t)inf.dli_fbase)) )  {
             /* this path can only be taken if there is no memory for '*nes' */
-            if ( buf && buf_sz > 0 )
-                *buf = 0;
             return 0;
         }
 
@@ -599,7 +580,7 @@ size_t     idx;
          * very often then it would be worthwhile constructing a sorted list of
          * symbol addresses but for the stack trace we don't care...
          */
-#if (STACKTRACE_DEBUG & 1)
+#if (FIND_ADDR_DEBUG & 1)
         printf("Looking for %p\n", addr);
 #endif
 
@@ -610,7 +591,7 @@ size_t     idx;
                 /* don't bother about undefined symbols */
                 if ( 0 == sym.e32[i].st_shndx )
                     continue;
-#if (STACKTRACE_DEBUG & 1)
+#if (FIND_ADDR_DEBUG & 1)
                 printf("Trying: %s (0x%lx)\n", strtab + sym.e32[i].st_name, (unsigned long)(sym.e32[i].st_value + es->addr));
 #endif
                 if ( (uintptr_t)addr >= (uintptr_t)sym.e32[i].st_value + es->addr ) {
@@ -628,7 +609,7 @@ size_t     idx;
                 /* don't bother about undefined symbols */
                 if ( 0 == sym.e64[i].st_shndx )
                     continue;
-#if (STACKTRACE_DEBUG & 1)
+#if (FIND_ADDR_DEBUG & 1)
                 printf("Trying: %s (0x%llx)\n", strtab + sym.e64[i].st_name, (unsigned long long)(sym.e64[i].st_value + es->addr));
 #endif
                 if ( (uintptr_t)addr >= (uintptr_t)sym.e64[i].st_value + es->addr ) {
@@ -643,145 +624,17 @@ size_t     idx;
     }
 
     if ( nearest.raw && ( (idx = ARR(c,nearest,0,st_name)) < es->strMap->max ) ) {
-        rval = symDump(buf, buf_sz, addr, es->fname, strtab + idx, (unsigned long)minoff);
-    } else {
-        rval = symDump(buf, buf_sz, addr, es->fname, 0, NO_OFF);
+		sym_p->s_nam = strtab + idx;
+		sym_p->s_val = (void*) ARR(c, nearest, 0, st_value) + es->addr;
     }
 
     elfsUnlockRead();
 
-#endif /* USE_ELF */
-
-    return rval;
+    return 0;
 }
-
-static epicsThreadOnceId stackTraceInitId = EPICS_THREAD_ONCE_INIT;
-static epicsMutexId      stackTraceMtx;
-
-static void stackTraceInit(void *unused)
-{
-    stackTraceMtx = epicsMutexMustCreate();
-}
-
-static void stackTraceLock(void)
-{
-    epicsThreadOnce( &stackTraceInitId, stackTraceInit, 0 );
-    epicsMutexLock( stackTraceMtx );
-}
-
-static void stackTraceUnlock(void)
-{
-    epicsMutexUnlock( stackTraceMtx );
-}
-
-static ssize_t
-dump(char **buf, size_t *buf_sz, size_t *good, const char *fmt, ...)
-{
-va_list ap;
-ssize_t rval, put;
-    va_start(ap, fmt);
-        if ( *buf ) {
-            put = rval = vsnprintf(*buf, *buf_sz, fmt, ap);
-            if ( put > *buf_sz )
-                put = *buf_sz;
-            *buf    += put;
-            *buf_sz -= put;
-        } else {
-            rval = errlogVprintf(fmt, ap);
-        }
-    va_end(ap);
-    if ( rval > 0 )
-        *good += rval;
-    return rval;
-}
-
-
-static ssize_t
-symDump(char *buf, size_t buf_sz, void *addr, const char *fnam, const char *snam, unsigned long off)
-{
-size_t rval = 0;
-
-    dump( &buf, &buf_sz, &rval, "[%*p]", sizeof(addr)*2 + 2, addr);
-    if ( fnam ) {
-        dump( &buf, &buf_sz, &rval, ": %s", fnam );
-    }
-    if ( snam ) {
-        dump( &buf, &buf_sz, &rval, "(%s", snam );
-        if ( NO_OFF != off ) {
-            dump( &buf, &buf_sz, &rval, "+0x%lx", off);
-        }
-        dump( &buf, &buf_sz, &rval, ")" );
-    }
-    dump( &buf, &buf_sz, &rval, "\n");
-
-    return rval;
-}
-
-epicsShareFunc void epicsStackTrace(void)
-{
-void   **buf;
-char   *btsl  = 0;
-size_t btsl_sz = sizeof(*btsl)*MAXSYMLEN;
-int    i,n;
-
-    if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH))
-         || ! (btsl = malloc(btsl_sz))
-       ) {
-        free(buf);
-        errlogPrintf("epicsStackTrace(): not enough memory for backtrace\n");
-        return;
-    }
-
-    n = backtrace(buf, MAXDEPTH);
-
-    stackTraceLock();
-
-    errlogPrintf("Dumping a stack trace of thread '%s':\n", epicsThreadGetNameSelf());
-
-    errlogFlush();
-
-    for ( i=0; i<n; i++ ) {
-        /* Somehow errlog doesn't like small, broken-up pieces of lines which is
-         * why we assemble into the 'btsl' buffer and use a single errlogPrintf...
-         */
-        elfLookupAddr(buf[i], btsl, btsl_sz);
-        errlogPrintf("%s", btsl);
-    }
-#ifdef USE_ELF
-    elfSymsFlush();
-#endif
-
-    free(btsl);
-    btsl = 0;
-
-    errlogPrintf("\n");
-
-    errlogFlush();
-
-    stackTraceUnlock();
-
-    free(buf);
-}
-
 
 epicsShareFunc int epicsStackTraceGetFeatures(void)
 {
-#if (STACKTRACE_DEBUG & 2)
-    errlogPrintf("Configuration -- ELF: ");
-#ifdef USE_ELF
-    errlogPrintf("yes");
-#else
-    errlogPrintf("no");
-#endif
-    errlogPrintf(", MMAP: ");
-#ifdef _POSIX_MAPPED_FILES
-    errlogPrintf("yes");
-#else
-    errlogPrintf("no");
-#endif
-    errlogPrintf("\n");
-#endif
-
     /* We are a bit conservative here. The actual
      * situation depends on how we are linked (something
      * we don't have under control at compilation time)
@@ -792,18 +645,8 @@ epicsShareFunc int epicsStackTraceGetFeatures(void)
      * even the ELF reader is able to help much...
      */
 
-#ifdef USE_ELF
     return  EPICS_STACKTRACE_LCL_SYMBOLS
           | EPICS_STACKTRACE_GBL_SYMBOLS
           | EPICS_STACKTRACE_DYN_SYMBOLS
           | EPICS_STACKTRACE_ADDRESSES;
-#elif defined(__linux__) || defined(linux)
-    return  EPICS_STACKTRACE_DYN_SYMBOLS
-          | EPICS_STACKTRACE_ADDRESSES;
-#else
-    return  EPICS_STACKTRACE_LCL_SYMBOLS
-          | EPICS_STACKTRACE_GBL_SYMBOLS
-          | EPICS_STACKTRACE_DYN_SYMBOLS
-          | EPICS_STACKTRACE_ADDRESSES;
-#endif
 }

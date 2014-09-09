@@ -7,9 +7,10 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011
  */ 
 
+#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 
-epicsShareFunc int epicsBackTrace(void **buf, int buf_sz)
+int epicsBackTrace(void **buf, int buf_sz)
 {
 	return -1;
 }

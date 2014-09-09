@@ -12,13 +12,13 @@
 
 #include <dlfcn.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStackTrace.h"
 #include "epicsStackTracePvt.h"
 
-
 /* Darwin's finds local symbols, too :-) */
 
-epicsShareFunc int epicsFindAddr(void *addr, epicsSymbol *sym_p)
+int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 Dl_info    inf;
 

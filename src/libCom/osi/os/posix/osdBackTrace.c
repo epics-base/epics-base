@@ -9,9 +9,10 @@
 
 #include <execinfo.h>
 
+#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 
-epicsShareFunc int epicsBackTrace(void **buf, int buf_sz)
+int epicsBackTrace(void **buf, int buf_sz)
 {
 	return backtrace(buf, buf_sz);
 }

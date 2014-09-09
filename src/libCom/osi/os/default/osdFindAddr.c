@@ -7,15 +7,16 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011
  */ 
 
+#define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"
 #include "epicsStackTrace.h"
 
-epicsShareFunc int epicsFindAddr(void *addr, epicsSymbol *sym_p)
+int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 	return -1;
 }
 
-epicsShareFunc int epicsStackTraceGetFeatures(void)
+int epicsStackTraceGetFeatures(void)
 {
 	return 0;
 }

@@ -25,12 +25,14 @@
 #include <sys/mman.h>
 #endif
 
-#include "epicsStackTrace.h"
-#include "epicsStackTracePvt.h"
 
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include <errlog.h>
+
+#define epicsExportSharedSymbols
+#include "epicsStackTrace.h"
+#include "epicsStackTracePvt.h"
 
 #define FIND_ADDR_DEBUG 0
 
@@ -633,7 +635,7 @@ size_t     idx;
     return 0;
 }
 
-epicsShareFunc int epicsStackTraceGetFeatures(void)
+int epicsStackTraceGetFeatures(void)
 {
     /* We are a bit conservative here. The actual
      * situation depends on how we are linked (something

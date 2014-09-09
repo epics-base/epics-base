@@ -129,7 +129,7 @@ int       n_ptrs = 0;
 int       i,j;
 int       rval   = 0;
 
-    while ( n_ptrs < sizeof(ptrs)/sizeof(*ptrs[0]) && (buf=strchr(buf,'[')) ) {
+    while ( n_ptrs < sizeof(ptrs)/sizeof(ptrs[0]) && (buf=strchr(buf,'[')) ) {
         if ( 1 == sscanf(buf+1,"%p", &ptrs[n_ptrs]) )
             n_ptrs++;
         buf++;
@@ -142,7 +142,7 @@ int       rval   = 0;
         j = i;
         while ( j < n_ptrs ) {
             if ( j != i && ptrs[j] == ptrs[i] ) {
-                if ( ptrs[i] >= (void*)epicsStackTraceRecurseGbl && ptrs[i] < (void*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
+                if ( (char*)ptrs[i] >= (char*)epicsStackTraceRecurseGbl && (char*)ptrs[i] < (char*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
                     rval ++;    
                     if ( test_debug )
                         testDiag("found address %p again\n", ptrs[i]);

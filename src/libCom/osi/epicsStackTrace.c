@@ -10,22 +10,16 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "epicsStackTrace.h"
 #include "epicsStackTracePvt.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
 
+#define epicsExportSharedSymbols
+#include "epicsStackTrace.h"
+
 /* How many stack frames to capture               */
 #define MAXDEPTH 100
-
-/* Max. formatted line length                     */
-#define MAXLINEL 300
-
-#define NO_OFF ((unsigned long)-1L)
-
-static ssize_t
-symDump(char *buf, size_t buf_sz, void *addr, epicsSymbol *sym_p);
 
 static epicsThreadOnceId stackTraceInitId = EPICS_THREAD_ONCE_INIT;
 static epicsMutexId      stackTraceMtx;
@@ -46,11 +40,11 @@ static void stackTraceUnlock(void)
     epicsMutexUnlock( stackTraceMtx );
 }
 
-static ssize_t
-dump(char **buf, size_t *buf_sz, size_t *good, const char *fmt, ...)
+static int
+dump(char **buf, int *buf_sz, int *good, const char *fmt, ...)
 {
 va_list ap;
-ssize_t rval, put;
+int rval, put;
     va_start(ap, fmt);
         if ( *buf ) {
             put = rval = vsnprintf(*buf, *buf_sz, fmt, ap);
@@ -67,10 +61,10 @@ ssize_t rval, put;
     return rval;
 }
 
-static ssize_t
-symDump(char *buf, size_t buf_sz, void *addr, epicsSymbol *sym_p)
+static int
+symDump(char *buf, int buf_sz, void *addr, epicsSymbol *sym_p)
 {
-size_t rval = 0;
+int rval = 0;
 
     dump( &buf, &buf_sz, &rval, "[%*p]", sizeof(addr)*2 + 2, addr);
 	if ( sym_p ) {
@@ -78,7 +72,8 @@ size_t rval = 0;
 			dump( &buf, &buf_sz, &rval, ": %s", sym_p->f_nam );
 		}
 		if ( sym_p->s_nam ) {
-			dump( &buf, &buf_sz, &rval, "(%s+0x%lx)", sym_p->s_nam, (unsigned long)(addr - sym_p->s_val));
+			/* windows didn't grok the void* pointer arithmetic */
+			dump( &buf, &buf_sz, &rval, "(%s+0x%lx)", sym_p->s_nam, (unsigned long)((char*)addr - (char*)sym_p->s_val));
 		}
 	}
 	dump( &buf, &buf_sz, &rval, "\n");
@@ -88,11 +83,9 @@ size_t rval = 0;
     return rval;
 }
 
-epicsShareFunc void epicsStackTrace(void)
+void epicsStackTrace(void)
 {
 void        **buf;
-char        *btsl  = 0;
-size_t      btsl_sz = sizeof(*btsl)*MAXLINEL;
 int         i,n;
 epicsSymbol sym;
 
@@ -101,9 +94,7 @@ epicsSymbol sym;
 		return;
 	}
 
-    if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH))
-         || ! (btsl = malloc(btsl_sz))
-       ) {
+    if ( ! (buf = malloc(sizeof(*buf) * MAXDEPTH))) {
         free(buf);
         errlogPrintf("epicsStackTrace(): not enough memory for backtrace\n");
         return;
@@ -132,6 +123,5 @@ epicsSymbol sym;
 
 	}
 
-	free(btsl);
     free(buf);
 }

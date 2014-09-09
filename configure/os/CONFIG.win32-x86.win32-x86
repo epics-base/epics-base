@@ -43,7 +43,7 @@ WARN_CFLAGS_NO =  -W1
 # -MD use MSVCRT (run-time as DLL, multi-thread support)
 # -GL whole program optimization
 # -Zi generate program database for debugging information
-OPT_CFLAGS_YES = -Ox -GL
+OPT_CFLAGS_YES = -Ox -GL -Oy-
 
 #
 # -Zi generate program database for debugging information
@@ -107,7 +107,7 @@ WARN_CXXFLAGS_NO =  -W1
 # -Ox maximum optimizations
 # -GL whole program optimization
 # -Zi generate program database for debugging information
-OPT_CXXFLAGS_YES = -Ox -GL
+OPT_CXXFLAGS_YES = -Ox -GL -Oy-
 
 #
 # -Zi generate program database for debugging information

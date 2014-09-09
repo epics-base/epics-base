@@ -13,6 +13,7 @@ MV = mv
 RM = rm -f
 MKDIR = mkdir
 RMDIR = rm -rf
+CAT = cat
 
 # Allow site overrides
 -include $(CONFIG)/os/CONFIG_SITE.UnixCommon.Common

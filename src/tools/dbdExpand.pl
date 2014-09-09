@@ -34,6 +34,8 @@ if ($opt_D) {
     $dep = "\$(COMMON_DIR)/$dep";
 }
 
+exit 0 if (!@ARGV);
+
 while (@ARGV) {
     my $file = shift @ARGV;
     eval {

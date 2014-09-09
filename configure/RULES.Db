@@ -47,6 +47,17 @@ DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 # DBD_solaris += abcSolaris.dbd
 #
 # ---------------------------------------------------
+# DBD concatination files
+
+COMMON_DBDCATS += $(addprefix $(COMMON_DIR)/,$(DBDCAT))
+DBDCAT_SOURCES += $(foreach file, $($*_DBD), $(DBDCAT_SOURCE) )
+DBDCAT_SOURCE = $(firstword $(wildcard $(file) $(foreach dir,  \
+    $(GENERIC_SRC_DIRS),$(addsuffix /$(file),$(dir)))) \
+    $(COMMON_DIR)/$(file))
+
+INSTALL_DBDS += $(addprefix $(INSTALL_DBD)/,$(DBDCAT))
+
+# ---------------------------------------------------
 
 DBDINC_NAME = $(patsubst %.h,%,$(patsubst %.dbd,%,$(DBDINC)))
 DBD += $(addsuffix .dbd,$(DBDINC_NAME))
@@ -173,7 +184,7 @@ endif
 
 inc : $(COMMON_INC) $(INSTALL_INC)
 
-build : $(COMMON_DBDS) $(COMMON_DBS) \
+build : $(COMMON_DBDS) $(COMMON_DBS) $(COMMON_DBDCATS) \
 	$(INSTALL_DBDS) $(INSTALL_DBS) \
 	$(DBDDEPENDS_FILES) $(TARGETS) \
 	$(INSTALL_DB_INSTALLS) $(INSTALL_DBD_INSTALLS)
@@ -368,8 +379,21 @@ $(COMMON_DIR)/%.dbd: ../%Include.dbd
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
+# Make DBDCAT file x depend on x_DBD source files
+define  DBDCAT_template
+$$(COMMON_DIR)/$(1).dbd : ../Makefile $$(foreach file, $$($(1)_DBD),$$(DBDCAT_SOURCE) )
+endef
+$(foreach name,$(subst .dbd,,$(DBDCAT)), $(eval $(call DBDCAT_template,$(name))))
+
+$(COMMON_DBDCATS):$(COMMON_DIR)/%.dbd:
+	$(ECHO) "Creating dbd file $(notdir $@)"
+	@$(RM) $(notdir $@)
+	$(CAT) $(DBDCAT_SOURCES) > $(notdir $@)
+	#@$(CAT) $^ > $(notdir $@)
+	@$(MV) $(notdir $@) $@
+
 $(COMMON_DIR)/%.dbd:
-	$(ECHO) "Creating dbd file $(notdir $<)"
+	$(ECHO) "Creating dbd file $(notdir $@)"
 	@$(RM) $(notdir $@)
 	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $($*_DBD)
 	@$(MV) $(notdir $@) $@

@@ -15,6 +15,24 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Concatenated database definition files</h3>
+
+<p>Database definition (dbd) files can now be concatenated during the EPICS build 
+into a created dbd file with the created dbd file then installed into 
+$(INSTALL_LOCATION)/dbd. The following lines in a Makefile will create a name.dbd 
+file containing a copy of lines from file1.dbd followed by lines from file2.dbd
+then file3.dbd and then install name.dbd into $(INSTALL_LOCATION)/dbd. NO dbd file 
+expansions will be done. 
+
+<blockquote> <pre>
+	DBDCAT += name.dbd
+	name_DBD += file1.dbd file2.dbd file3.dbd
+</pre></blockquote>
+
+The files file1.dbd, file2.dbd, and file3.dbd will be found if they exist in the 
+current directory, are created by the current Makefile, have fullpath name ,or 
+exist in a directory of the currently defined SRC_DIRS list.</p>
+
 <h3>On POSIX, attempt to lock all memory when running with FIFO scheduler</h3>
 
 <p>On POSIX systems, an IOC application's ability to meet timing deadlines is often

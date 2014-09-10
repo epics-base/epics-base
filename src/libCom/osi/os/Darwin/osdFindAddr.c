@@ -22,24 +22,22 @@ int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 Dl_info    inf;
 
-    if ( ! dladdr(addr, &inf) || (!inf.dli_fname && !inf.dli_sname) ) {
+    if ( ! dladdr(addr, &inf) ) {
 		sym_p->f_nam = 0;
 		sym_p->s_nam = 0;
-        /* unable to lookup   */
-        return 0;
-    }
-
-	sym_p->f_nam = inf.dli_fname;
-	sym_p->s_nam = inf.dli_sname;
-	sym_p->s_val = inf.dli_saddr;
+		sym_p->s_val = 0;
+	} else {
+		sym_p->f_nam = inf.dli_fname;
+		sym_p->s_nam = inf.dli_sname;
+		sym_p->s_val = inf.dli_saddr;
+	}
 
 	return 0;
 }
 
-epicsShareFunc int epicsStackTraceGetFeatures(void)
+int epicsFindAddrGetFeatures(void)
 {
     return  EPICS_STACKTRACE_LCL_SYMBOLS
           | EPICS_STACKTRACE_GBL_SYMBOLS
-          | EPICS_STACKTRACE_DYN_SYMBOLS
-          | EPICS_STACKTRACE_ADDRESSES;
+          | EPICS_STACKTRACE_DYN_SYMBOLS;
 }

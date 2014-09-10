@@ -27,9 +27,8 @@
 #include <sys/mman.h>
 #endif
 
-
-#include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsThread.h"
 #include <errlog.h>
 
 #define epicsExportSharedSymbols
@@ -38,10 +37,12 @@
 
 #define FIND_ADDR_DEBUG 0
 
-/* Darwin and GNU have dladdr() and Darwin's already finds local
- * symbols, too, whereas linux' does not.
- * Hence, on linux we want to use dladdr() and lookup static
- * symbols in the ELF symbol table.
+/* 
+ * On some systems (linux, solaris) dladdr doesn't find local symbols
+ * or symbols in the main executable.
+ * Hence, we want to use dladdr() to find the file name
+ * where a symbol is defined and if not more information is available
+ * then proceed to lookup symbols in the ELF symbol tables.
  */
 
 /* Macros to handle elf32 vs. elf64 access to unions etc. */
@@ -100,49 +101,31 @@ typedef struct ESyms_ {
 
 /* LOCKING NOTE: if the ELF symbol facility is ever expanded to be truly used
  * in a multithreaded way then proper multiple-readers, single-writer locking
- * should be implemented:
- *    - elfsLockWrite() must block until all readers have left
- *    - elfsLockRead()  must block until writer has left.
- *    - elfsLockConvertWriteRead() atomically converts writer holding the
- *      writer's lock into a reader.
- * Right now we just use a single, global lock (for the stack trace) since we
- * only need to guard against multiple threads dumping stacks simultaneously and
- * we do not lock the symbol table(s) at all.
+ * should be implemented.
  */
 
 /* Linked list where we keep all our ESyms */
 static ESyms             elfs       = 0;
 
+static epicsMutexId      listMtx;
+static epicsThreadOnceId listMtxInitId = EPICS_THREAD_ONCE_INIT;
+
+static void listMtxInit(void *unused)
+{
+    listMtx = epicsMutexMustCreate();
+}
+
 static void
 elfsLockWrite()
 {
-    /* Only a single writer can hold this while no readers are active */
+    epicsThreadOnce(&listMtxInitId, listMtxInit, 0);
+    epicsMutexMustLock(listMtx);
 }
 
 static void
 elfsUnlockWrite()
 {
-    /* Must wake up readers blocking in elfsLockRead()                */
-}
-
-static void
-elfsLockConvertWriteRead()
-{
-    /* Must atomically convert a writer into a reader, i.e., unlock
-     * the writer's lock and atomically acquire the reader's lock
-     */
-}
-
-static void
-elfsLockRead()
-{
-    /* Multiple readers can hold this while the writer is not active  */
-}
-
-static void
-elfsUnlockRead()
-{
-    /* Must wake up a (single) writer blocking in elfsLockWrite       */
+    epicsMutexUnlock(listMtx);
 }
 
 static void
@@ -218,6 +201,11 @@ bail:
     freeMap(rval);
     return 0;
 }
+#else
+static MMap getscn_mmap(int fd, uint8_t c, Shrd *shdr_p)
+{
+	return 0;
+}
 #endif
 
 /* Destructor for data that is read into a malloc()ed buffer */
@@ -273,25 +261,15 @@ bail:
     return 0;
 }
 
-static MMap (*getscn)(int fd, uint8_t c, Shdr *shdr_p) =
-#ifdef _POSIX_MAPPED_FILES
-	getscn_mmap
-#else
-	getscn_read
-#endif
-	;
-
-int
-epicsElfConfigAccess(int use_mmap)
+static MMap
+getscn(int fd, uint8_t c, Shdr *shdr_p)
 {
-#ifndef _POSIX_MAPPED_FILES
-	if ( use_mmap )
-		return -1; /* not supported on this system */
-	/* else no need to change default */
-#else
-	getscn = use_mmap ? getscn_mmap : getscn_read;
-#endif
-	return 0;
+MMap rval = getscn_mmap(fd, c, shdr_p);
+
+	if ( ! rval )
+		rval = getscn_read(fd, c, shdr_p);
+	
+	return rval;
 }
 
 /* Release resources but keep filename so that
@@ -486,22 +464,35 @@ elfSymsDestroy(ESyms es)
     }
 }
 
-/* Destroy all cached ELF symbol tables */
+/* Destroy all cached ELF symbol tables
+ *
+ * However - w/o proper locking for read access
+ * this must not be used. Otherwise, readers
+ * will hold stale pointers...
+ *
+ * We leave the commented code here to show
+ * how the tables can be torn down.
+
 void
-epicsSymTblFlush()
+elfSymTblFlush()
 {
 ESyms es;
 
     elfsLockWrite();
     while ( (es = elfs) ) {
         elfs = es->next; 
-        es->next = 0; /* paranoia */
+        es->next = 0;
+    	elfsUnlockWrite();
         elfSymsDestroy(es);
+    	elfsLockWrite();
     }
-    elfsUnlockWrite();
-
+   	elfsUnlockWrite();
 }
 
+*/
+
+
+/* This routine must be called with the write-lock held */
 static ESyms
 elfSymsFind(const char *fname)
 {
@@ -515,7 +506,7 @@ int
 epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
 Dl_info    inf;
-ESyms      es,nes;
+ESyms      es,nes = 0;
 uintptr_t  minoff,off;
 int        i;
 Sym        sym;
@@ -544,13 +535,14 @@ size_t     idx;
 
     /* No symbol info; try to access ELF file and ready symbol table from there */
 
-    elfsLockRead();
+    elfsLockWrite();
 
     /* See if we have loaded this file already */
     es = elfSymsFind(inf.dli_fname);
 
     if ( !es ) {
-        elfsUnlockRead();
+
+    	elfsUnlockWrite();
 
         if ( ! (nes = elfRead(inf.dli_fname, (uintptr_t)inf.dli_fbase)) )  {
             /* this path can only be taken if there is no memory for '*nes' */
@@ -563,14 +555,19 @@ size_t     idx;
         es = elfSymsFind(inf.dli_fname);
 
         if ( es ) {
-            /* undo our work in the unlikely event... */
-            elfSymsDestroy( nes );
+            /* will undo our work in the unlikely event... */
         } else {
             nes->next = elfs;
-            es = elfs = nes;
+            es  = elfs = nes;
+			nes = 0;
         }
-        elfsLockConvertWriteRead();
     }
+
+    elfsUnlockWrite();
+
+	/* Undo our work in the unlikely event that it was redundant */
+	if ( nes )
+		elfSymsDestroy( nes );
 
     nearest.raw = 0;
     minoff      = (uintptr_t)-1LL;
@@ -632,25 +629,18 @@ size_t     idx;
 		sym_p->s_val = (char*) ARR(c, nearest, 0, st_value) + es->addr;
     }
 
-    elfsUnlockRead();
-
     return 0;
 }
 
-int epicsStackTraceGetFeatures(void)
+int epicsFindAddrGetFeatures(void)
 {
-    /* We are a bit conservative here. The actual
-     * situation depends on how we are linked (something
-     * we don't have under control at compilation time)
-     * Linux' dladdr finds global symbols 
-     * (not from dynamic libraries) when statically linked but
-     * not when dynamically linked.
-     * OTOH: for a stripped executable it is unlikely that
-     * even the ELF reader is able to help much...
-     */
-
+	/* The static information given here may not be correct;
+	 * it also depends on
+	 *  - compilation (frame pointer optimization)
+	 *  - linkage (static vs. dynamic)
+	 *  - stripping
+	 */
     return  EPICS_STACKTRACE_LCL_SYMBOLS
           | EPICS_STACKTRACE_GBL_SYMBOLS
-          | EPICS_STACKTRACE_DYN_SYMBOLS
-          | EPICS_STACKTRACE_ADDRESSES;
+          | EPICS_STACKTRACE_DYN_SYMBOLS;
 }

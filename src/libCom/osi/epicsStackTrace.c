@@ -7,7 +7,6 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
  */ 
 
-#include <stdarg.h>
 #include <stdlib.h>
 
 #include "epicsStackTracePvt.h"
@@ -41,44 +40,23 @@ static void stackTraceUnlock(void)
 }
 
 static int
-dump(char **buf, int *buf_sz, int *good, const char *fmt, ...)
-{
-va_list ap;
-int rval, put;
-    va_start(ap, fmt);
-        if ( *buf ) {
-            put = rval = vsnprintf(*buf, *buf_sz, fmt, ap);
-            if ( put > *buf_sz )
-                put = *buf_sz;
-            *buf    += put;
-            *buf_sz -= put;
-        } else {
-            rval = errlogVprintf(fmt, ap);
-        }
-    va_end(ap);
-    if ( rval > 0 )
-        *good += rval;
-    return rval;
-}
-
-static int
-symDump(char *buf, int buf_sz, void *addr, epicsSymbol *sym_p)
+dumpInfo(void *addr, epicsSymbol *sym_p)
 {
 int rval = 0;
 
-    dump( &buf, &buf_sz, &rval, "[%*p]", sizeof(addr)*2 + 2, addr);
+	rval += errlogPrintf("[%*p]", (int)(sizeof(addr)*2 + 2), addr);
 	if ( sym_p ) {
 		if ( sym_p->f_nam ) {
-			dump( &buf, &buf_sz, &rval, ": %s", sym_p->f_nam );
+			rval += errlogPrintf(": %s", sym_p->f_nam);
 		}
 		if ( sym_p->s_nam ) {
-			/* windows didn't grok the void* pointer arithmetic */
-			dump( &buf, &buf_sz, &rval, "(%s+0x%lx)", sym_p->s_nam, (unsigned long)((char*)addr - (char*)sym_p->s_val));
+			rval += errlogPrintf("(%s+0x%lx)", sym_p->s_nam, (unsigned long)((char*)addr - (char*)sym_p->s_val));
+		} else {
+			rval += errlogPrintf("(<no symbol information>)");
 		}
 	}
-	dump( &buf, &buf_sz, &rval, "\n");
-	if ( ! buf )
-		errlogFlush();
+	rval += errlogPrintf("\n");
+	errlogFlush();
 
     return rval;
 }
@@ -112,9 +90,9 @@ epicsSymbol sym;
 
 		for ( i=0; i<n; i++ ) {
 			if ( 0 == epicsFindAddr(buf[i], &sym) )
-				symDump(0, 0, buf[i], &sym);
+				dumpInfo(buf[i], &sym);
 			else
-				symDump(0, 0, buf[i], 0);
+				dumpInfo(buf[i], 0);
 		}
 
 		errlogFlush();
@@ -124,4 +102,23 @@ epicsSymbol sym;
 	}
 
     free(buf);
+}
+
+int epicsStackTraceGetFeatures()
+{
+void *test[2];
+
+static int initflag = 10; /* init to a value larger than the test snapshot */
+
+	/* don't bother about epicsOnce -- if there should be a race and
+	 * the detection code is executed multiple times that is no big deal.
+	 */
+	if ( 10 == initflag ) {
+		initflag = epicsBackTrace(test, sizeof(test)/sizeof(test[0]));
+	}
+
+	if ( initflag <= 0 )
+		return 0; /* backtrace doesn't work or is not supported */
+
+	return ( EPICS_STACKTRACE_ADDRESSES | epicsFindAddrGetFeatures() );
 }

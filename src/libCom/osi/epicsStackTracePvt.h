@@ -35,24 +35,11 @@ epicsShareFunc int epicsBackTrace(void **buf, int buf_sz);
  *
  * RETURNS: 0 on success, nonzero on failure (not finding an address
  *          is not considered an error).
- *
- * NOTE:    epicsSymbolTableLock() must be held while the string
- *          pointers returned by epicsFindAddr are in use.
- *
- * I.e., 
- *
- *   epicsSymTblLock();
- *
- *     epicsFindAddr( addr, &sym );
- *
- *     do_something( &sym );
- *
- *   epicsSymTblUnlock();
- *
- * epicsSymTblLock() may be implemented by the OSD code such that
- * multiple readers may hold the lock.
  */
 epicsShareFunc int epicsFindAddr(void *addr, epicsSymbol *sym_p);
+
+/* report supported features (as reported by epicsStackTraceGetFeatures) */
+epicsShareFunc int epicsFindAddrGetFeatures();
 
 #ifdef __cplusplus
 }

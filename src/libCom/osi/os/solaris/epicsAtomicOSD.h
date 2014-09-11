@@ -159,7 +159,10 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
 
 #endif /* ifdef __SunOS_5_10 */
 
-typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
+typedef struct EpicsAtomicLockKey {
+    char dummy;
+} EpicsAtomicLockKey;
+
 
 #ifdef __cplusplus
 extern "C" {

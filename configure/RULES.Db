@@ -52,8 +52,12 @@ DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 COMMON_DBDCATS += $(addprefix $(COMMON_DIR)/,$(DBDCAT))
 DBDCAT_SOURCES += $(foreach file, $($*_DBD), $(DBDCAT_SOURCE) )
 DBDCAT_SOURCE = $(firstword $(wildcard $(file) $(foreach dir,  \
-    $(GENERIC_SRC_DIRS),$(addsuffix /$(file),$(dir)))) \
+    $(DBD_SEARCH_DIRS),$(addsuffix /$(file),$(dir)))) \
     $(COMMON_DIR)/$(file))
+
+DBDCAT_COMMAND = $(if $(DBDCAT_SOURCES),\
+    $(CAT) $(DBDCAT_SOURCES) > $(notdir $@),\
+    @echo "No input files for $(notdir $@)")
 
 INSTALL_DBDS += $(addprefix $(INSTALL_DBD)/,$(DBDCAT))
 
@@ -388,8 +392,7 @@ $(foreach name,$(subst .dbd,,$(DBDCAT)), $(eval $(call DBDCAT_template,$(name)))
 $(COMMON_DBDCATS):$(COMMON_DIR)/%.dbd:
 	$(ECHO) "Creating dbd file $(notdir $@)"
 	@$(RM) $(notdir $@)
-	$(CAT) $(DBDCAT_SOURCES) > $(notdir $@)
-	#@$(CAT) $^ > $(notdir $@)
+	$(DBDCAT_COMMAND)
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.dbd:

@@ -34,7 +34,7 @@ if ($opt_D) {
     $dep = "\$(COMMON_DIR)/$dep";
 }
 
-exit 0 if (!@ARGV);
+die "No input files for $opt_o" if (!@ARGV);
 
 while (@ARGV) {
     my $file = shift @ARGV;

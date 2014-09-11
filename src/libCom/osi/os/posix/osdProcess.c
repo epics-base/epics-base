@@ -96,7 +96,7 @@ epicsShareFunc osiSpawnDetachedProcessReturn epicsShareAPI osiSpawnDetachedProce
         }
     }
 
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     /*
      * Drop real-time SCHED_FIFO priority
      */

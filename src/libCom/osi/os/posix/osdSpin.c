@@ -27,7 +27,7 @@
  * preemption can't be disabled.
  */
 #if defined(DONT_USE_POSIX_THREAD_PRIORITY_SCHEDULING)
-#if defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 1)
+#if defined(_POSIX_SPIN_LOCKS) && (_POSIX_SPIN_LOCKS > 0)
 #  define USE_PSPIN
 #endif
 #endif

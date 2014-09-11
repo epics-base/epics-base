@@ -80,7 +80,7 @@ epicsMutexOSD * epicsMutexOsdCreate(void) {
     if (status)
         goto fail;
 
-#if defined _POSIX_THREAD_PRIO_INHERIT
+#if defined(_POSIX_THREAD_PRIO_INHERIT) && _POSIX_THREAD_PRIO_INHERIT > 0
     status = pthread_mutexattr_setprotocol(&pmutex->mutexAttr,
         PTHREAD_PRIO_INHERIT);
     if (errVerbose) checkStatus(status, "pthread_mutexattr_setprotocal");
@@ -161,7 +161,7 @@ typedef struct epicsMutexOSD {
     pthread_mutex_t	lock;
     pthread_mutexattr_t mutexAttr;
     pthread_cond_t	waitToBeOwner;
-#if defined _POSIX_THREAD_PROCESS_SHARED
+#if defined(_POSIX_THREAD_PROCESS_SHARED) && _POSIX_THREAD_PROCESS_SHARED > 0
     pthread_condattr_t  condAttr;
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
     int			count;
@@ -181,7 +181,7 @@ epicsMutexOSD * epicsMutexOsdCreate(void) {
     if(status)
         goto fail;
 
-#if defined _POSIX_THREAD_PRIO_INHERIT
+#if defined(_POSIX_THREAD_PRIO_INHERIT) && _POSIX_THREAD_PRIO_INHERIT > 0
     status = pthread_mutexattr_setprotocol(
         &pmutex->mutexAttr,PTHREAD_PRIO_INHERIT);
     if (errVerbose) checkStatus(status, "pthread_mutexattr_setprotocal");
@@ -191,7 +191,7 @@ epicsMutexOSD * epicsMutexOsdCreate(void) {
     if(status)
         goto dattr;
 
-#if defined _POSIX_THREAD_PROCESS_SHARED
+#if defined(_POSIX_THREAD_PROCESS_SHARED) && _POSIX_THREAD_PROCESS_SHARED > 0
     status = pthread_condattr_init(&pmutex->condAttr);
     checkStatus(status, "pthread_condattr_init");
     status = pthread_condattr_setpshared(&pmutex->condAttr,
@@ -221,7 +221,7 @@ void epicsMutexOsdDestroy(struct epicsMutexOSD * pmutex)
 
     status = pthread_cond_destroy(&pmutex->waitToBeOwner);
     checkStatus(status, "pthread_cond_destroy");
-#if defined _POSIX_THREAD_PROCESS_SHARED
+#if defined(_POSIX_THREAD_PROCESS_SHARED) && _POSIX_THREAD_PROCESS_SHARED > 0
     status = pthread_condattr_destroy(&pmutex->condAttr);
 #endif /*_POSIX_THREAD_PROCESS_SHARED*/
     status = pthread_mutex_destroy(&pmutex->lock);

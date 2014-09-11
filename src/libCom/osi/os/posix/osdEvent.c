@@ -24,10 +24,6 @@
 #include "epicsTime.h"
 #include "errlog.h"
 
-/* Until these can be demonstrated to work leave them undefined*/
-#undef _POSIX_THREAD_PROCESS_SHARED
-#undef _POSIX_THREAD_PRIO_INHERIT
-
 struct epicsEventOSD {
     pthread_mutex_t mutex;
     pthread_cond_t  cond;

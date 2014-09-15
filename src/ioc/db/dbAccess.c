@@ -1150,6 +1150,7 @@ long dbPut(DBADDR *paddr, short dbrType,
     short field_type  = paddr->field_type;
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
+    void *pfieldsave  = paddr->pfield;
     long status = 0;
     dbFldDes *pfldDes;
     int isValueField;
@@ -1186,6 +1187,7 @@ long dbPut(DBADDR *paddr, short dbrType,
             long dummy;
 
             status = prset->get_array_info(paddr, &dummy, &offset);
+            /* paddr->pfield may be modified */
         }
         if (no_elements < nRequest) nRequest = no_elements;
         if (!status)
@@ -1199,12 +1201,12 @@ long dbPut(DBADDR *paddr, short dbrType,
             status = prset->put_array_info(paddr, nRequest);
         }
     }
-    if (status) return status;
+    if (status) goto done;
 
     /* check if special processing is required */
     if (special) {
         status = dbPutSpecial(paddr,1);
-        if (status) return status;
+        if (status) goto done;
     }
 
     /* Propagate monitor events for this field, */
@@ -1214,14 +1216,15 @@ long dbPut(DBADDR *paddr, short dbrType,
     if (isValueField) precord->udf = FALSE;
     if (precord->mlis.count &&
         !(isValueField && pfldDes->process_passive))
-        db_post_events(precord, paddr->pfield, DBE_VALUE | DBE_LOG);
+        db_post_events(precord, pfieldsave, DBE_VALUE | DBE_LOG);
     /* If this field is a property (metadata) field,
      * then post a property change event (even if the field
      * didn't change).
      */
     if (precord->mlis.count && pfldDes->prop)
         db_post_events(precord, NULL, DBE_PROPERTY);
-
+done:
+    paddr->pfield = pfieldsave;
     return status;
 }
 

@@ -12,6 +12,19 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS = dbRecStd dbCore ca Com
 
+TARGETS += $(COMMON_DIR)/recTestIoc.dbd
+recTestIoc_DBD = base.dbd
+TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
+
+testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+
+TESTPROD_HOST += arrayOpTest
+arrayOpTest_SRCS += arrayOpTest.c
+arrayOpTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += arrayOpTest.c
+TESTFILES += ../arrayOpTest.db
+TESTS += arrayOpTest
+
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
 analogMonitorTest_DBD += base.dbd
 TESTPROD_HOST += analogMonitorTest

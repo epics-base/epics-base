@@ -13,12 +13,15 @@
 #include "epicsExit.h"
 
 int analogMonitorTest(void);
+int arrayOpTest(void);
 
 void epicsRunTests(void)
 {
     testHarness();
 
     runTest(analogMonitorTest);
+
+    runTest(arrayOpTest);
 
     epicsExit(0);   /* Trigger test harness */
 }

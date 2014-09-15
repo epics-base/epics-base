@@ -54,48 +54,48 @@ MAIN(macEnvExpandTest)
     eltc(0);
     testPlan(71);
 
-    check("FOO", NULL, "FOO");
+    check("FOO", "", "FOO");
 
-    check("${FOO}", NULL, NULL);
-    check("${FOO,BAR}", NULL, NULL);
-    check("${FOO,BAR=baz}", NULL, NULL);
-    check("${FOO,BAR=$(FOO)}", NULL, NULL);
-    check("${FOO,FOO}", NULL, NULL);
-    check("${FOO,FOO=$(FOO)}", NULL, NULL);
-    check("${FOO,BAR=baz,FUM}", NULL, NULL);
+    check("${FOO}", "", NULL);
+    check("${FOO,BAR}", "", NULL);
+    check("${FOO,BAR=baz}", "", NULL);
+    check("${FOO,BAR=$(FOO)}", "", NULL);
+    check("${FOO,FOO}", "", NULL);
+    check("${FOO,FOO=$(FOO)}", "", NULL);
+    check("${FOO,BAR=baz,FUM}", "", NULL);
 
-    check("${=}", NULL, "");
-    check("x${=}y", NULL, "xy");
+    check("${=}", "", "");
+    check("x${=}y", "", "xy");
 
-    check("${,=}", NULL, "");
-    check("x${,=}y", NULL, "xy");
+    check("${,=}", "", "");
+    check("x${,=}y", "", "xy");
 
-    check("${FOO=}", NULL, "");
-    check("x${FOO=}y", NULL, "xy");
+    check("${FOO=}", "", "");
+    check("x${FOO=}y", "", "xy");
 
-    check("${FOO=,}", NULL, "");
-    check("x${FOO=,}y", NULL, "xy");
+    check("${FOO=,}", "", "");
+    check("x${FOO=,}y", "", "xy");
 
-    check("${FOO,FOO=}", NULL, "");
-    check("x${FOO,FOO=}y", NULL, "xy");
+    check("${FOO,FOO=}", "", "");
+    check("x${FOO,FOO=}y", "", "xy");
 
-    check("${FOO=,BAR}", NULL, "");
-    check("x${FOO=,BAR}y", NULL, "xy");
+    check("${FOO=,BAR}", "", "");
+    check("x${FOO=,BAR}y", "", "xy");
 
-    check("${FOO=$(BAR=)}", NULL, "");
-    check("x${FOO=$(BAR=)}y", NULL, "xy");
+    check("${FOO=$(BAR=)}", "", "");
+    check("x${FOO=$(BAR=)}y", "", "xy");
 
-    check("${FOO=,BAR=baz}", NULL, "");
-    check("x${FOO=,BAR=baz}y", NULL, "xy");
+    check("${FOO=,BAR=baz}", "", "");
+    check("x${FOO=,BAR=baz}y", "", "xy");
 
-    check("${FOO=$(BAR),BAR=}", NULL, "");
-    check("x${FOO=$(BAR),BAR=}y", NULL, "xy");
+    check("${FOO=$(BAR),BAR=}", "", "");
+    check("x${FOO=$(BAR),BAR=}y", "", "xy");
 
-    check("${=BAR}", NULL, "BAR");
-    check("x${=BAR}y", NULL, "xBARy");
+    check("${=BAR}", "", "BAR");
+    check("x${=BAR}y", "", "xBARy");
 
-    check("${FOO=BAR}", NULL, "BAR");
-    check("x${FOO=BAR}y", NULL, "xBARy");
+    check("${FOO=BAR}", "", "BAR");
+    check("x${FOO=BAR}y", "", "xBARy");
 
     check("${FOO}", "FOO=BLETCH", "BLETCH");
     check("${FOO,FOO}", "FOO=BLETCH", "BLETCH");

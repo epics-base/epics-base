@@ -177,5 +177,11 @@ MAIN(callbackTest)
     printStats(timeError[1], "MID");
     printStats(timeError[2], "HIGH");
 
+    for (i = 0; i < NCALLBACKS ; i++) {
+        free(pcbt[i]);
+    }
+
+    callbackShutdown();
+
     return testDone();
 }

@@ -169,6 +169,7 @@ static void callbackTask(void *arg)
     }
 
 shutdown:
+    mySet->threadsRunning--;
     taskwdRemove(0);
     epicsEventSignal(startStopEvent);
 }
@@ -180,16 +181,24 @@ void callbackShutdown(void)
     if (cbCtl == ctlExit) return;
     cbCtl = ctlExit;
 
+    /* sequential shutdown of workers */
     for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
-        while (callbackQueue[i].threadsRunning--) {
-            int ok = epicsRingPointerPush(callbackQueue[i].queue, &exitCallback);
-            epicsEventSignal(callbackQueue[i].semWakeUp);
-            if (ok) epicsEventWait(startStopEvent);
+        while (callbackQueue[i].threadsRunning) {
+            if(epicsRingPointerPush(callbackQueue[i].queue, &exitCallback)) {
+                epicsEventSignal(callbackQueue[i].semWakeUp);
+                epicsEventWait(startStopEvent);
+            } else {
+                epicsThreadSleep(0.05);
+            }
         }
+        assert(callbackQueue[i].threadsRunning==0);
+        epicsEventDestroy(callbackQueue[i].semWakeUp);
+        epicsRingPointerDelete(callbackQueue[i].queue);
     }
     epicsTimerQueueRelease(timerQueue);
     epicsEventDestroy(startStopEvent);
     startStopEvent = NULL;
+    memset(callbackQueue, 0, sizeof(callbackQueue));
 }
 
 void callbackInit(void)

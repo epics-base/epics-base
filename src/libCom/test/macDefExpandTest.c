@@ -21,6 +21,101 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+
+static void checkMac(MAC_HANDLE *handle, const char *name, const char *value)
+{
+    char buf[20];
+
+    buf[19]='\0';
+    if(macGetValue(handle, name, buf, 19)<0) {
+        if(value)
+            testFail("Macro %s undefined, expected %s", name, value);
+        else
+            testPass("Macro %s undefined", name);
+    } else {
+        if(!value)
+            testFail("Macro %s is %s, expected undefined", name, buf);
+        else if(strcmp(value, buf)==0)
+            testPass("Macro %s is %s", name, value);
+        else
+            testFail("Macro %s is %s, expected %s", name, buf, value);
+    }
+}
+
+static void macEnvScope(void)
+{
+    MAC_HANDLE *handle;
+    char **defines;
+    static char *pairs[] = { "", "environ", NULL, NULL };
+
+    epicsEnvSet("C","3");
+    epicsEnvSet("D","4");
+    epicsEnvSet("E","5");
+
+    macCreateHandle(&handle, pairs);
+    macParseDefns(NULL, "A=1,B=2,E=15", &defines);
+    macInstallMacros(handle, defines);
+
+    checkMac(handle, "A", "1");
+    checkMac(handle, "B", "2");
+    checkMac(handle, "C", "3");
+    checkMac(handle, "D", "4");
+    checkMac(handle, "E", "15");
+    checkMac(handle, "F", NULL);
+
+    {
+        macPushScope(handle);
+
+        macParseDefns(NULL, "A=11,C=13,D=14,G=7", &defines);
+        macInstallMacros(handle, defines);
+
+        checkMac(handle, "A", "11");
+        checkMac(handle, "B", "2");
+        checkMac(handle, "C", "13");
+        checkMac(handle, "D", "14");
+        checkMac(handle, "E", "15");
+        checkMac(handle, "F", NULL);
+        checkMac(handle, "G", "7");
+
+        epicsEnvSet("D", "24");
+        macPutValue(handle, "D", NULL); /* implicit when called through in iocshBody */
+        epicsEnvSet("F", "6");
+        macPutValue(handle, "F", NULL); /* implicit */
+        epicsEnvSet("G", "17");
+        macPutValue(handle, "G", NULL); /* implicit */
+
+        checkMac(handle, "D", "24");
+        checkMac(handle, "F", "6");
+        checkMac(handle, "G", "17");
+
+        macPopScope(handle);
+    }
+
+    checkMac(handle, "A", "1");
+    checkMac(handle, "B", "2");
+    checkMac(handle, "C", "3");
+    checkMac(handle, "D", "24");
+    checkMac(handle, "E", "15");
+    checkMac(handle, "F", "6");
+    checkMac(handle, "G", "17");
+
+    {
+        macPushScope(handle);
+
+        macParseDefns(NULL, "D=34,G=27", &defines);
+        macInstallMacros(handle, defines);
+
+        checkMac(handle, "D", "34");
+        checkMac(handle, "G", "27");
+
+        macPopScope(handle);
+    }
+
+    checkMac(handle, "D", "24");
+
+    macDeleteHandle(handle);
+}
+
 static void check(const char *str, const char *macros, const char *expect)
 {
     MAC_HANDLE *handle;
@@ -49,7 +144,7 @@ static void check(const char *str, const char *macros, const char *expect)
     macDeleteHandle(handle);
 }
 
-MAIN(macEnvExpandTest)
+MAIN(macDefExpandTest)
 {
     eltc(0);
     testPlan(71);
@@ -97,57 +192,61 @@ MAIN(macEnvExpandTest)
     check("${FOO=BAR}", "", "BAR");
     check("x${FOO=BAR}y", "", "xBARy");
 
-    check("${FOO}", "FOO=BLETCH", "BLETCH");
-    check("${FOO,FOO}", "FOO=BLETCH", "BLETCH");
-    check("x${FOO}y", "FOO=BLETCH", "xBLETCHy");
-    check("x${FOO}y${FOO}z", "FOO=BLETCH", "xBLETCHyBLETCHz");
-    check("${FOO=BAR}", "FOO=BLETCH", "BLETCH");
-    check("x${FOO=BAR}y", "FOO=BLETCH", "xBLETCHy");
-    check("${FOO=${BAZ}}", "FOO=BLETCH", "BLETCH");
-    check("${FOO=${BAZ},BAR=$(BAZ)}", "FOO=BLETCH", "BLETCH");
-    check("x${FOO=${BAZ}}y", "FOO=BLETCH", "xBLETCHy");
-    check("x${FOO=${BAZ},BAR=$(BAZ)}y", "FOO=BLETCH", "xBLETCHy");
-    check("${BAR=${FOO}}", "FOO=BLETCH", "BLETCH");
-    check("x${BAR=${FOO}}y", "FOO=BLETCH", "xBLETCHy");
-    check("w${BAR=x${FOO}y}z", "FOO=BLETCH", "wxBLETCHyz");
+    epicsEnvSet("FOO","BLETCH");
+    check("${FOO}", "", "BLETCH");
+    check("${FOO,FOO}", "", "BLETCH");
+    check("x${FOO}y", "", "xBLETCHy");
+    check("x${FOO}y${FOO}z", "", "xBLETCHyBLETCHz");
+    check("${FOO=BAR}", "", "BLETCH");
+    check("x${FOO=BAR}y", "", "xBLETCHy");
+    check("${FOO=${BAZ}}", "", "BLETCH");
+    check("${FOO=${BAZ},BAR=$(BAZ)}", "", "BLETCH");
+    check("x${FOO=${BAZ}}y", "", "xBLETCHy");
+    check("x${FOO=${BAZ},BAR=$(BAZ)}y", "", "xBLETCHy");
+    check("${BAR=${FOO}}", "", "BLETCH");
+    check("x${BAR=${FOO}}y", "", "xBLETCHy");
+    check("w${BAR=x${FOO}y}z", "", "wxBLETCHyz");
 
-    check("${FOO,FOO=BAR}", "FOO=BLETCH", "BAR");
-    check("x${FOO,FOO=BAR}y", "FOO=BLETCH", "xBARy");
-    check("${BAR,BAR=$(FOO)}", "FOO=BLETCH", "BLETCH");
-    check("x${BAR,BAR=$(FOO)}y", "FOO=BLETCH", "xBLETCHy");
-    check("${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}", "FOO=BLETCH", "GRIBBLE");
-    check("x${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}y", "FOO=BLETCH", "xGRIBBLEy");
-    check("${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}", "FOO=BLETCH", "GRIBBLE");
-    check("x${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}y", "FOO=BLETCH", "xGRIBBLEy");
+    check("${FOO,FOO=BAR}", "", "BAR");
+    check("x${FOO,FOO=BAR}y", "", "xBARy");
+    check("${BAR,BAR=$(FOO)}", "", "BLETCH");
+    check("x${BAR,BAR=$(FOO)}y", "", "xBLETCHy");
+    check("${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}", "", "GRIBBLE");
+    check("x${BAR,BAR=$($(FOO)),BLETCH=GRIBBLE}y", "", "xGRIBBLEy");
+    check("${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}", "", "GRIBBLE");
+    check("x${$(BAR,BAR=$(FOO)),BLETCH=GRIBBLE}y", "", "xGRIBBLEy");
 
-    check("${FOO}/${BAR}", "BAR=GLEEP,FOO=BLETCH", "BLETCH/GLEEP");
-    check("x${FOO}/${BAR}y", "BAR=GLEEP,FOO=BLETCH", "xBLETCH/GLEEPy");
-    check("${FOO,BAR}/${BAR}", "BAR=GLEEP,FOO=BLETCH", "BLETCH/GLEEP");
-    check("${FOO,BAR=x}/${BAR}", "BAR=GLEEP,FOO=BLETCH", "BLETCH/GLEEP");
-    check("${BAZ=BLETCH,BAR}/${BAR}", "BAR=GLEEP,FOO=BLETCH", "BLETCH/GLEEP");
-    check("${BAZ=BLETCH,BAR=x}/${BAR}", "BAR=GLEEP,FOO=BLETCH", "BLETCH/GLEEP");
+    check("${FOO}/${BAR}", "BAR=GLEEP", "BLETCH/GLEEP");
+    check("x${FOO}/${BAR}y", "BAR=GLEEP", "xBLETCH/GLEEPy");
+    check("${FOO,BAR}/${BAR}", "BAR=GLEEP", "BLETCH/GLEEP");
+    check("${FOO,BAR=x}/${BAR}", "BAR=GLEEP", "BLETCH/GLEEP");
+    check("${BAZ=BLETCH,BAR}/${BAR}", "BAR=GLEEP", "BLETCH/GLEEP");
+    check("${BAZ=BLETCH,BAR=x}/${BAR}", "BAR=GLEEP", "BLETCH/GLEEP");
     
-    check("${${FOO}}", "BAR=GLEEP,FOO=BLETCH,BLETCH=BAR", "BAR");
-    check("x${${FOO}}y", "BAR=GLEEP,FOO=BLETCH,BLETCH=BAR", "xBARy");
-    check("${${FOO}=GRIBBLE}", "BAR=GLEEP,FOO=BLETCH,BLETCH=BAR", "BAR");
-    check("x${${FOO}=GRIBBLE}y", "BAR=GLEEP,FOO=BLETCH,BLETCH=BAR", "xBARy");
+    check("${${FOO}}", "BAR=GLEEP,BLETCH=BAR", "BAR");
+    check("x${${FOO}}y", "BAR=GLEEP,BLETCH=BAR", "xBARy");
+    check("${${FOO}=GRIBBLE}", "BAR=GLEEP,BLETCH=BAR", "BAR");
+    check("x${${FOO}=GRIBBLE}y", "BAR=GLEEP,BLETCH=BAR", "xBARy");
 
-    check("${${FOO}}", "BAR=GLEEP,FOO=BLETCH,BLETCH=${BAR}", "GLEEP");
+    check("${${FOO}}", "BAR=GLEEP,BLETCH=${BAR}", "GLEEP");
 
-    check("${FOO}", "BAR=GLEEP,FOO=${BAR},BLETCH=${BAR}" ,"GLEEP");
+    epicsEnvSet("FOO","${BAR}");
+    check("${FOO}", "BAR=GLEEP,BLETCH=${BAR}" ,"GLEEP");
 
-    check("${FOO}", "BAR=${BAZ},FOO=${BAR},BLETCH=${BAR}", NULL);
+    check("${FOO}", "BAR=${BAZ},BLETCH=${BAR}", NULL);
 
-    check("${FOO}", "BAR=${BAZ=GRIBBLE},FOO=${BAR},BLETCH=${BAR}", "GRIBBLE");
+    check("${FOO}", "BAR=${BAZ=GRIBBLE},BLETCH=${BAR}", "GRIBBLE");
 
-    check("${FOO}", "BAR=${STR1},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", "VAL1");
+    check("${FOO}", "BAR=${STR1},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", "VAL1");
 
-    check("${FOO}", "BAR=${STR2},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", "VAL2");
+    check("${FOO}", "BAR=${STR2},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", "VAL2");
 
-    check("${FOO}", "BAR=${FOO},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
-    check("${FOO,FOO=$(FOO)}", "BAR=${FOO},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
-    check("${FOO=$(FOO)}", "BAR=${FOO},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
-    check("${FOO=$(BAR),BAR=$(FOO)}", "BAR=${FOO},FOO=${BAR},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
+    check("${FOO}", "BAR=${FOO},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
+    check("${FOO,FOO=$(FOO)}", "BAR=${FOO},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
+    check("${FOO=$(FOO)}", "BAR=${FOO},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
+    check("${FOO=$(BAR),BAR=$(FOO)}", "BAR=${FOO},BLETCH=${BAR},STR1=VAL1,STR2=VAL2", NULL);
+
+    macEnvScope();
     
     errlogFlush();
     eltc(1);

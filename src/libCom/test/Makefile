@@ -156,10 +156,10 @@ epicsExceptionTest_SRCS += epicsExceptionTest.cpp
 testHarness_SRCS += epicsExceptionTest.cpp
 TESTS += epicsExceptionTest
 
-TESTPROD_HOST += macEnvExpandTest
-macEnvExpandTest_SRCS += macEnvExpandTest.c
-testHarness_SRCS += macEnvExpandTest.c
-TESTS += macEnvExpandTest
+#TESTPROD_HOST += macEnvExpandTest
+#macEnvExpandTest_SRCS += macEnvExpandTest.c
+#testHarness_SRCS += macEnvExpandTest.c
+#TESTS += macEnvExpandTest
 
 TESTPROD_HOST += macDefExpandTest
 macDefExpandTest_SRCS += macDefExpandTest.c

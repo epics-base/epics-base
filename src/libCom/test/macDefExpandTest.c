@@ -120,9 +120,11 @@ static void check(const char *str, const char *macros, const char *expect)
 {
     MAC_HANDLE *handle;
     char **defines;
+    static char *pairs[] = { "", "environ", NULL, NULL };
     
+    macCreateHandle(&handle, pairs);
     macParseDefns(NULL, macros, &defines);
-    macCreateHandle(&handle, defines);
+    macInstallMacros(handle, defines);
     
     char *got = macDefExpand(str, handle);
     int pass = -1;
@@ -147,7 +149,7 @@ static void check(const char *str, const char *macros, const char *expect)
 MAIN(macDefExpandTest)
 {
     eltc(0);
-    testPlan(71);
+    testPlan(97);
 
     check("FOO", "", "FOO");
 

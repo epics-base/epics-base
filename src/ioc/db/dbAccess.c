@@ -455,7 +455,7 @@ long dbProcess(dbCommon *precord)
     struct rset *prset = precord->rset;
     dbRecordType *pdbRecordType = precord->rdes;
     unsigned char tpro = precord->tpro;
-    char context[20] = "";
+    char context[40] = "";
     long status = 0;
     int *ptrace;
     int	set_trace = FALSE;

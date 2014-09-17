@@ -343,6 +343,9 @@ int epicsShareAPI ca_array_get_callback ( chtype type,
         if ( type < 0 ) {
             return ECA_BADTYPE;
         }
+        if ( pfunc == NULL ) {
+            return ECA_BADFUNCPTR;
+        }
         unsigned tmpType = static_cast < unsigned > ( type );
 
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
@@ -415,6 +418,9 @@ int epicsShareAPI ca_array_put_callback ( chtype type, arrayElementCount count,
     try {
         if ( type < 0 ) {
             return ECA_BADTYPE;
+        }
+        if ( pfunc == NULL ) {
+            return ECA_BADFUNCPTR;
         }
         epicsGuard < epicsMutex > guard ( pChan->cacCtx.mutexRef () );
         pChan->eliminateExcessiveSendBacklog ( guard );

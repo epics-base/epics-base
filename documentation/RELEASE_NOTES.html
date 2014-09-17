@@ -13,6 +13,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Reject NULL callback functions in ca_array_*_callback</h3>
+
+<p>The two CA routines ca_array_get_callback() and ca_array_put_callback() were
+not checking the pfunc callback function argument for NULL. Passing in a NULL
+would cause the client library to segfault when the callback was called. Doing
+this will now result in the error status ECA_BADFUNCPTR being returned. This
+chage fixes <a href="https://bugs.launchpad.net/bugs/1369626">Launchpad bug
+1369626</a>.</p>
+
 <h3>Support for Solaris 11</h3>
 
 <p>The build rules have been updated to support Solaris 11. Note that APS staff

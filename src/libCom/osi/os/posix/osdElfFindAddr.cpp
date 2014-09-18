@@ -8,7 +8,9 @@
  */ 
 
 /* Make sure dladdr() is visible on linux/solaris */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 /* get dladdr under solaris */
 #ifndef __EXTENSIONS__
 #define __EXTENSIONS__
@@ -96,7 +98,7 @@ typedef struct ESyms_ {
     MMap           symMap;
     MMap           strMap;
     size_t         nsyms;
-    uint8_t        class;
+    uint8_t        eclss;
 } *ESyms;
 
 /* LOCKING NOTE: if the ELF symbol facility is ever expanded to be truly used
@@ -140,11 +142,11 @@ freeMap(MMap m)
 /* Helper to read exactly 'sz' bytes into 'buf'
  * RETURNS: # chars read or negative value on error.
  */
-static size_t
-do_read(int fd, void *buf, size_t sz)
+static ssize_t
+do_read(int fd, void *buf, ssize_t sz)
 {
-size_t got;
-char  *ptr=buf;
+ssize_t got;
+char   *ptr=(char*)buf;
     while ( sz > 0 ) {
         if ( (got=read(fd,ptr,sz)) <= 0 ) {
             return got;
@@ -179,7 +181,7 @@ size_t   pgsz  = sysconf(_SC_PAGESIZE);
         goto bail;
     }
 
-    if ( ! (rval = malloc(sizeof(*rval))) ) {
+    if ( ! (rval = (MMap) malloc(sizeof(*rval))) ) {
         errlogPrintf("elfRead - getscn() -- no memory for section map\n");
         goto bail;
     }
@@ -219,7 +221,7 @@ freeMapMalloc(MMap m)
 static MMap
 getscn_read(int fd, uint8_t c, Shdr *shdr_p)
 {
-size_t   n;
+ssize_t  n;
 MMap     rval = 0;
 
     if ( 0 == (n=FLD(c,(*shdr_p),sh_size)) ) {
@@ -227,7 +229,7 @@ MMap     rval = 0;
         goto bail;
     }
 
-    if ( ! (rval = malloc(sizeof(*rval))) ) {
+    if ( ! (rval = (MMap) malloc(sizeof(*rval))) ) {
         errlogPrintf("elfRead - getscn() -- no memory for section map\n");
         goto bail;
     }
@@ -293,15 +295,16 @@ elfSymsRelease(ESyms es)
 static ESyms
 elfRead(const char *fname, uintptr_t fbase)
 {
-int         i,n;
+int         i;
 Ehdr        ehdr;
 Shdr        shdr;
 uint8_t     c;
 ESyms       es;
-ssize_t     idx;
+ssize_t     idx,n;
 const char *cp;
+struct stat stat_b;
 
-    if ( !(es = malloc(sizeof(*es))) ) {
+    if ( !(es = (ESyms) malloc(sizeof(*es))) ) {
         /* no memory -- give up */
         return 0;
     }
@@ -333,7 +336,7 @@ const char *cp;
         goto bail;
     }
 
-    switch ( (es->class = c = ehdr.e32.e_ident[EI_CLASS]) ) {
+    switch ( (es->eclss = c = ehdr.e32.e_ident[EI_CLASS]) ) {
         default:
             errlogPrintf("bad ELF class\n");
         goto bail;
@@ -508,7 +511,7 @@ epicsFindAddr(void *addr, epicsSymbol *sym_p)
 Dl_info    inf;
 ESyms      es,nes = 0;
 uintptr_t  minoff,off;
-int        i;
+size_t     i;
 Sym        sym;
 Sym        nearest;
 const char *strtab;
@@ -573,7 +576,7 @@ size_t     idx;
     minoff      = (uintptr_t)-1LL;
 
     if ( es->nsyms ) {
-        c       = es->class;
+        c       = es->eclss;
         sym.raw = (char*)es->symMap->addr + es->symMap->off;
         strtab  = (char*)es->strMap->addr + es->strMap->off;
 

@@ -127,9 +127,13 @@ struct timespec ts;
 
 static time_t            prog_start_time = getStartTime();
 
+extern "C" {
+
 static void listMtxInit(void *unused)
 {
     listMtx = epicsMutexMustCreate();
+}
+
 }
 
 static void
@@ -187,11 +191,11 @@ freeMapMmap(MMap m)
 static MMap
 getscn_mmap(int fd, uint8_t c, Shdr *shdr_p)
 {
-size_t   n;
+off_t    n;
 MMap     rval = 0;
 size_t   pgsz  = sysconf(_SC_PAGESIZE);
 
-    if ( 0 == (n=FLD(c,(*shdr_p),sh_size)) ) {
+    if ( 0 == (n = (off_t)FLD(c,(*shdr_p),sh_size)) ) {
         errlogPrintf("elfRead - getscn() -- no section data\n");
         goto bail;
     }
@@ -203,11 +207,11 @@ size_t   pgsz  = sysconf(_SC_PAGESIZE);
 
     rval->freeMap = freeMapMmap;
 
-    rval->off = FLD(c,(*shdr_p),sh_offset)   & (pgsz-1);
+    rval->off = (off_t) (FLD(c,(*shdr_p),sh_offset)   & (pgsz-1));
     rval->len = (n + rval->off + (pgsz - 1)) & ~(pgsz - 1);
     rval->max = rval->len - rval->off;
 
-    if ( MAP_FAILED == (rval->addr = mmap(0, rval->len, PROT_READ, MAP_SHARED, fd, FLD(c,(*shdr_p),sh_offset) & ~(pgsz-1))) ) {
+    if ( MAP_FAILED == (rval->addr = mmap(0, rval->len, PROT_READ, MAP_SHARED, fd, (off_t) (FLD(c,(*shdr_p),sh_offset) & ~(pgsz-1)))) ) {
         errlogPrintf("elfRead - getscn() -- mapping section contents: %s\n", strerror(errno));
         goto bail;
     }
@@ -239,7 +243,7 @@ getscn_read(int fd, uint8_t c, Shdr *shdr_p)
 ssize_t  n;
 MMap     rval = 0;
 
-    if ( 0 == (n=FLD(c,(*shdr_p),sh_size)) ) {
+    if ( 0 == (n = (ssize_t) FLD(c,(*shdr_p),sh_size)) ) {
         errlogPrintf("elfRead - getscn() -- no section data\n");
         goto bail;
     }
@@ -261,7 +265,7 @@ MMap     rval = 0;
     rval->max = rval->len - rval->off;
 
     /* seek to symbol table contents */
-    if ( (off_t)-1 == lseek(fd, FLD(c,(*shdr_p),sh_offset), SEEK_SET) ) {
+    if ( (off_t)-1 == lseek(fd, (off_t) FLD(c,(*shdr_p),sh_offset), SEEK_SET) ) {
         errlogPrintf("elfRead - getscn() -- seeking to sh_offset: %s\n", strerror(errno));
         goto bail;
     }
@@ -378,7 +382,7 @@ struct stat stat_b;
     }
 
     /* seek to section header table */
-    if ( (off_t)-1 == lseek(es->fd, FLD(c,ehdr,e_shoff), SEEK_SET) ) {
+    if ( (off_t)-1 == lseek(es->fd, (off_t) FLD(c,ehdr,e_shoff), SEEK_SET) ) {
         errlogPrintf("elfRead() -- unable to seek to shoff: %s\n", strerror(errno));
         goto bail;
     }
@@ -397,7 +401,7 @@ struct stat stat_b;
 	if ( i>=FLD(c,ehdr,e_shnum) ) {
 		/* no SYMTAB -- try dynamic symbols */
 
-		if ( (off_t)-1 == lseek(es->fd, FLD(c,ehdr,e_shoff), SEEK_SET) ) {
+		if ( (off_t)-1 == lseek(es->fd, (off_t) FLD(c,ehdr,e_shoff), SEEK_SET) ) {
 			errlogPrintf("elfRead() -- unable to seek to shoff: %s\n", strerror(errno));
 			goto bail;
 		}
@@ -417,7 +421,7 @@ struct stat stat_b;
         goto bail;
     }
 
-    if ( 0 == (n=FLD(c,shdr,sh_size)) ) {
+    if ( 0 == (n = (ssize_t) FLD(c,shdr,sh_size)) ) {
         errlogPrintf("elfRead() -- no symbol table data\n");
         goto bail;
     }
@@ -434,7 +438,7 @@ struct stat stat_b;
     n = ELFCLASS32 == c ? sizeof(shdr.e32) : sizeof(shdr.e64);
 
     /* seek to section header table */
-    if ( (off_t)-1 == lseek(es->fd, FLD(c,ehdr,e_shoff) + n * FLD(c,shdr,sh_link), SEEK_SET) ) {
+    if ( (off_t)-1 == lseek(es->fd, (off_t) (FLD(c,ehdr,e_shoff) + n * FLD(c,shdr,sh_link)), SEEK_SET) ) {
         errlogPrintf("elfRead() -- unable to lseek to ELF e_shoff: %s\n", strerror(errno));
         goto bail;
     }

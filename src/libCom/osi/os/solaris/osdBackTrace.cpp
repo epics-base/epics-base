@@ -19,13 +19,17 @@ struct wlk {
 };
 
 
+extern "C" {
+
 static int
 walker(uintptr_t addr, int sig, void *arg)
 {
-struct wlk *w_p = arg;
+struct wlk *w_p = (struct wlk *)arg;
 	if ( w_p->cur < w_p->max )
 		w_p->buf[w_p->cur++] = (void*)addr;
 	return 0;
+}
+
 }
 
 int epicsBackTrace(void **buf, int buf_sz)

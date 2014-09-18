@@ -24,6 +24,9 @@
 #include <elf.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
 
 #ifdef _POSIX_MAPPED_FILES
 #include <sys/mman.h>
@@ -111,6 +114,18 @@ static ESyms             elfs       = 0;
 
 static epicsMutexId      listMtx;
 static epicsThreadOnceId listMtxInitId = EPICS_THREAD_ONCE_INIT;
+
+static time_t getStartTime()
+{
+struct timespec ts;
+
+	if ( clock_gettime(CLOCK_REALTIME, &ts) )
+		return (time_t)0;
+	
+	return ts.tv_sec;
+}
+
+static time_t            prog_start_time = getStartTime();
 
 static void listMtxInit(void *unused)
 {
@@ -349,6 +364,12 @@ struct stat stat_b;
         break;
     }
     n -= EI_NIDENT;
+
+	if ( 0 == fstat(es->fd, &stat_b) ) {
+		if ( stat_b.st_mtime > prog_start_time ) {
+			errlogPrintf("elfRead() -- WARNING: '%s' was modified after program start -- symbol information may be inaccurate or invalid\n", fname);
+		}
+	}
 
     /* read rest */
     if ( n != do_read(es->fd, ehdr.e32.e_ident + EI_NIDENT, n) ) {

@@ -106,8 +106,6 @@ void epicsRunLibComTests(void)
     runTest(epicsTypesTest);
 
     runTest(macLibTest);
-
-    runTest(macEnvExpandTest);
     
     runTest(macDefExpandTest);
 

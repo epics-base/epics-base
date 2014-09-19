@@ -124,23 +124,19 @@ int callbackParallelThreads(int count, const char *prio)
             return -1;
         }
         /* Find prio in menuPriority */
-        pdbMenu = (dbMenu *)ellFirst(&pdbbase->menuList);
-        while (pdbMenu) {
-            gotMatch = (strcmp("menuPriority", pdbMenu->name)==0) ? TRUE : FALSE;
-            if (gotMatch) {
-                for (i = 0; i < pdbMenu->nChoice; i++) {
-                    gotMatch = (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i])==0) ? TRUE : FALSE;
-                    if (gotMatch) break;
-                }
-                if (gotMatch) {
-                    callbackQueue[i].threadsConfigured = count;
-                    break;
-                } else {
-                    errlogPrintf("Unknown priority \"%s\"\n", prio);
-                    return -1;
-                }
+        pdbMenu = dbFindMenu(&pdbbase, "menuPriority");
+        if (pdbMenu) {
+            for (i = 0; i < pdbMenu->nChoice; i++) {
+                gotMatch = (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i])==0) ? TRUE : FALSE;
+                if (gotMatch) break;
             }
-            pdbMenu = (dbMenu *)ellNext(&pdbMenu->node);
+            if (gotMatch) {
+                callbackQueue[i].threadsConfigured = count;
+                return 0;
+            } else {
+                errlogPrintf("Unknown priority \"%s\"\n", prio);
+                return -1;
+            }
         }
     }
     return 0;

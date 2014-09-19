@@ -2,6 +2,8 @@
 
 ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
 
+vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
+
 # Default settings
 EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
 
@@ -12,7 +14,7 @@ EXPANDED = $(EXPAND:%@=%)
 
 buildInstall: $(EXPANDED)
 
-$(EXPANDED): %: ../%@
+$(EXPANDED): %: %@
 	$(ECHO) "Expanding $< to $@"
 	@$(RM) $@
 	@$(EXPAND_TOOL) $(EXPANDFLAGS) $($@_EXPANDFLAGS) $< $@

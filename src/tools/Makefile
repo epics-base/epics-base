@@ -51,5 +51,24 @@ PERL_SCRIPTS += dbdExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
+# Build Package Config Files
+
+FINAL_LOCATION ?= $(shell $(PERL) $(TOOLS)/fullPathName.pl $(INSTALL_LOCATION))
+C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CPPFLAGS))))
+C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CFLAGS))))
+PKGVARS += FINAL_LOCATION OS_CLASS CMPLR_CLASS C_CFLAGS LDFLAGS LDLIBS
+PKGVARS += EPICS_VERSION EPICS_REVISION EPICS_MODIFICATION EPICS_PATCH_LEVEL
+
+EXPANDFLAGS += $(foreach var,$(PKGVARS),-D$(var)="$(strip $($(var)))")
+PKGCONFIG += epics-base.pc
+PKGCONFIG += epics-base-$(T_A).pc
+
+EXPAND += $(PKGCONFIG:%=%@)
+CLEANS += epics-base-$(T_A).pc@
+
 include $(TOP)/configure/RULES
  
+epics-base-$(T_A).pc@: ../epics-base-arch.pc@
+	@$(RM) $@
+	@$(CP) $< $@
+

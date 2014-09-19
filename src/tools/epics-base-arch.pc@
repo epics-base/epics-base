@@ -17,7 +17,7 @@ bindir=${top}/bin/@ARCH@
 libdir=${top}/lib/@ARCH@
 
 Name: epics-base-@ARCH@
-Version: @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_MODIFICATION@
+Version: @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_PATCH_LEVEL@
 Description: EPICS Base for @ARCH@
 Cflags: -I${includedir_osi} -I${includedir_osd} -I${includedir_comp} @C_CFLAGS@
 Libs: -L${libdir} @LDFLAGS@

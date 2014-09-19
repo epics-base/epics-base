@@ -115,17 +115,7 @@ static ESyms             elfs       = 0;
 static epicsMutexId      listMtx;
 static epicsThreadOnceId listMtxInitId = EPICS_THREAD_ONCE_INIT;
 
-static time_t getStartTime()
-{
-struct timespec ts;
-
-	if ( clock_gettime(CLOCK_REALTIME, &ts) )
-		return (time_t)0;
-	
-	return ts.tv_sec;
-}
-
-static time_t            prog_start_time = getStartTime();
+static time_t            prog_start_time = time(0);
 
 extern "C" {
 
@@ -370,7 +360,7 @@ struct stat stat_b;
     n -= EI_NIDENT;
 
 	if ( 0 == fstat(es->fd, &stat_b) ) {
-		if ( stat_b.st_mtime > prog_start_time ) {
+		if ( stat_b.st_mtime >= prog_start_time ) {
 			errlogPrintf("elfRead() -- WARNING: '%s' was modified after program start -- symbol information may be inaccurate or invalid\n", fname);
 		}
 	}

@@ -34,6 +34,8 @@ if ($opt_D) {
     $dep = "\$(COMMON_DIR)/$dep";
 }
 
+die "dbdExpand.pl: No input files for $opt_o\n" if !@ARGV;
+
 while (@ARGV) {
     my $file = shift @ARGV;
     eval {

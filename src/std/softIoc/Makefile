@@ -13,6 +13,7 @@ PROD_IOC_DEFAULT = softIoc
 PROD_IOC_iOS = -nil-
 
 DBD += base.dbd
+DBD += asSub.dbd
 DBD += softIoc.dbd
 
 softIoc_DBD += base.dbd

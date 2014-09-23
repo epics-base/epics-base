@@ -24,5 +24,6 @@ include $(STDDIR)/softIoc/Makefile
 
 include $(TOP)/configure/RULES
 
+include $(STDDIR)/rec/RULES
 include $(STDDIR)/softIoc/RULES
 

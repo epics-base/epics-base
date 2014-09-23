@@ -52,7 +52,7 @@ MAIN(epicsSockResolveTest)
     {
         struct in_addr addr;
 
-        if (hostToIPAddr("obviously.invalid.host", &addr) == 0) {
+        if (hostToIPAddr("obviously-invalid-host", &addr) == 0) {
             testAbort("hostToIPAddr() is broken, testing not possible");
         }
     }

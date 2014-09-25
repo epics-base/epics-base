@@ -1,7 +1,5 @@
 # <top>/configure/RULES_EXPAND
 
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-
 vpath %@ $(USR_VPATH) $(ALL_SRC_DIRS)
 
 # Default settings
@@ -25,5 +23,3 @@ expand_clean:
 	@$(RM) $(EXPANDED)
 
 .PHONY : expand_clean
-
-endif

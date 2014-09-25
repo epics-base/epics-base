@@ -281,39 +281,45 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 
     for ( pifreq = ifconf.ifc_req; pifreq <= pIfreqListEnd; pifreq = pnextifreq ) {
         osiSockAddr addrCpy;
+        uint32_t  current_ifreqsize;
 
         /*
          * find the next if req
          */
         pnextifreq = ifreqNext ( pifreq );
 
-        if ( pifreq->ifr_addr.sa_family != AF_INET ) {
-            ifDepenDebugPrintf ( ("osiLocalAddr(): interface %s was not AF_INET\n", pifreq->ifr_name) );
+        /* determine ifreq size */
+        current_ifreqsize = ifreqSize ( pifreq );
+        /* copy current ifreq to aligned bufferspace (to start of pIfreqList buffer) */
+        memmove(pIfreqList, pifreq, current_ifreqsize);
+
+        if ( pIfreqList->ifr_addr.sa_family != AF_INET ) {
+            ifDepenDebugPrintf ( ("osiLocalAddr(): interface %s was not AF_INET\n", pIfreqList->ifr_name) );
             continue;
         }
 
-        addrCpy.sa = pifreq->ifr_addr;
+        addrCpy.sa = pIfreqList->ifr_addr;
 
-        status = socket_ioctl ( socket, SIOCGIFFLAGS, pifreq );
+        status = socket_ioctl ( socket, SIOCGIFFLAGS, pIfreqList );
         if ( status < 0 ) {
-            errlogPrintf ( "osiLocalAddr(): net intf flags fetch for %s failed\n", pifreq->ifr_name );
+            errlogPrintf ( "osiLocalAddr(): net intf flags fetch for %s failed\n", pIfreqList->ifr_name );
             continue;
         }
 
-        if ( ! ( pifreq->ifr_flags & IFF_UP ) ) {
-            ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s was down\n", pifreq->ifr_name) );
+        if ( ! ( pIfreqList->ifr_flags & IFF_UP ) ) {
+            ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s was down\n", pIfreqList->ifr_name) );
             continue;
         }
 
         /*
          * dont use the loop back interface
          */
-        if ( pifreq->ifr_flags & IFF_LOOPBACK ) {
-            ifDepenDebugPrintf ( ("osiLocalAddr(): ignoring loopback interface: %s\n", pifreq->ifr_name) );
+        if ( pIfreqList->ifr_flags & IFF_LOOPBACK ) {
+            ifDepenDebugPrintf ( ("osiLocalAddr(): ignoring loopback interface: %s\n", pIfreqList->ifr_name) );
             continue;
         }
 
-        ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s found\n", pifreq->ifr_name) );
+        ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s found\n", pIfreqList->ifr_name) );
 
         init = 1;
         addr = addrCpy;

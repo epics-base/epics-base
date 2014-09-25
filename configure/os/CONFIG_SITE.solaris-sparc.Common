@@ -4,7 +4,4 @@
 #
 # Site specific override definitions for solaris-sparc host builds
 # Only the local epics system manager should modify this file
- 
-#INSTALL_LOCATION = /home/phoebus/JBA/testBaseNew
 
-#CROSS_COMPILER_TARGET_ARCHS += vxWorks-ppc604 vxWorks-ppc603 vxWorks-68040

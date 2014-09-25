@@ -631,7 +631,7 @@ standard out for each CA client beacon anomaly detect event.</p>
 <p>See also <a href="#Client1">When a Client Does not See the Server's
 Beacon</a>.</p>
 
-<h3><a name="Configurin3" id="Configurin3">Configuring the Maximum Search
+<h3><a name="Configurin3">Configuring the Maximum Search
 Period</a></h3>
 
 <p>The rate at which name resolution (search) requests are sent exponentially
@@ -896,9 +896,9 @@ feature.</em></p>
 <p>See also <a href="#Routing">Routing Restrictions on vxWorks Systems</a>.</p>
 <hr>
 
-<h2><a name="Building" id="Building">Building an Application</a></h2>
+<h2><a name="Building">Building an Application</a></h2>
 
-<h3><a name="Required1" id="Required1">Required Header (.h) Files</a></h3>
+<h3><a name="Required1">Required Header (.h) Files</a></h3>
 
 <p>An application that uses the CA client library functions described in this
 document will need to include the cadef.h header files as follows.</p>
@@ -910,7 +910,7 @@ many other header files (operating system specific and otherwise), and
 therefore the application must also specify "&lt;EPICS
 base&gt;/include/os/&lt;arch&gt;" in its header file search path.</p>
 
-<h3><a name="Required" id="Required">Required Libraries</a></h3>
+<h3><a name="Required">Required Libraries</a></h3>
 
 <p>An application that uses the Channel Access Client Library functions
 described in this document will need to link with the EPICS CA Client Library
@@ -956,7 +956,7 @@ and Windows systems.</p>
 <p>The above libraries are located in "&lt;EPICS
 base&gt;/lib/&lt;architechture&gt;".</p>
 
-<h3><a name="Compiler" id="Compiler">Compiler and System Specific Build
+<h3><a name="Compiler">Compiler and System Specific Build
 Options</a></h3>
 
 <p>If you do not use the EPICS build environment (layered make files) then it
@@ -1641,7 +1641,7 @@ etc.</p>
   </tbody>
 </table>
 
-<h3><a name="excas" id="excas">excas</a></h3>
+<h3><a name="excas">excas</a></h3>
 
 <p>excas [options]</p>
 
@@ -1933,7 +1933,7 @@ made to build a new circuit. This behavior could result in undesirable resource
 consumption resulting from periodic circuit setup and teardown overhead
 (thrashing) during periods of CPU / network / IP kernel buffer congestion.</p>
 
-<h3><a name="Requests" id="Requests">Put Requests Just Prior to Process
+<h3><a name="Requests">Put Requests Just Prior to Process
 Termination Appear to be Ignored</a></h3>
 
 <p>Short lived CA client applications that issue a CA put request and then
@@ -2555,7 +2555,7 @@ questionable practice for the following reasons.</p>
     is the same behavior as on all other OS.</li>
 </ul>
 
-<h3><a name="Calling1" id="Calling1">Calling CA Functions from POSIX signal
+<h3><a name="Calling1">Calling CA Functions from POSIX signal
 handlers</a></h3>
 
 <p>As you might expect, it isnt safe to call the CA client library from a POSIX

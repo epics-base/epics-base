@@ -638,7 +638,7 @@ not follow this pattern, but are still printable strings.
 
 =item [1] R3.14 Channel Access Reference Manual by Jeffrey O. Hill
 
-L<http://www.aps.anl.gov/epics/base/R3-14/11-docs/CAref.html>
+L<http://www.aps.anl.gov/epics/base/R3-14/12-docs/CAref.html>
 
 =back
 
@@ -649,7 +649,7 @@ Andrew Johnson, E<lt>anj@aps.anl.govE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 UChicago Argonne LLC, as Operator of Argonne National
+Copyright (C) 2008-2014 UChicago Argonne LLC, as Operator of Argonne National
 Laboratory.
 
 This software is distributed under the terms of the EPICS Open License.

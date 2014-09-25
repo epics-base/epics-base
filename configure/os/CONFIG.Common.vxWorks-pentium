@@ -11,12 +11,14 @@
 include $(CONFIG)/os/CONFIG.Common.vxWorksCommon
 
 # Vx GNU cross compiler suffix
-CMPLR_SUFFIX = 386
- 
-ARCH_CLASS = pcPentium
+CMPLR_SUFFIX = pentium
 
-ARCH_DEP_CPPFLAGS = -DCPU=PENTIUM -D_X86_ 
-ARCH_DEP_CFLAGS = -mpentium
-ARCH_DEP_CXXFLAGS += -x 'c++' 
-ARCH_DEP_CFLAGS += -fno-defer-pop
+ARCH_CLASS = x86
+
+ARCH_DEP_CPPFLAGS = -DCPU=PENTIUM -D_X86_
+ARCH_DEP_CFLAGS = -mtune=pentium -march=pentium
+ARCH_DEP_CFLAGS += -fno-zero-initialized-in-bss -fno-defer-pop
+
+# Allow site overrides
+-include $(CONFIG)/os/CONFIG_SITE.Common.vxWorks-pentium
 

@@ -311,7 +311,7 @@ MAIN(epicsCalcTest)
     testExpr(exp(1.));
     testExpr(floor(1.5));
 
-    testExpr(finite(0));
+    testExpr(finite(0.));
     testExpr(finite(Inf));
     testExpr(finite(-Inf));
     testExpr(finite(NaN));
@@ -325,11 +325,11 @@ MAIN(epicsCalcTest)
     testCalc("finite(0,1,-Inf)", 0);
     testCalc("finite(0,-Inf,2)", 0);
     testCalc("finite(-Inf,1,2)", 0);
-    testExpr(isinf(0));
+    testExpr(isinf(0.));
     testExpr(isinf(Inf));
     testExpr(!!isinf(-Inf));    // Some GCCs return -1/0/+1 rather than 0/+1
     testExpr(isinf(NaN));
-    testExpr(isnan(0));
+    testExpr(isnan(0.));
     testExpr(isnan(Inf));
     testExpr(isnan(-Inf));
     testExpr(isnan(NaN));

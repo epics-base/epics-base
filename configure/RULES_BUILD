@@ -197,7 +197,7 @@ endif
 
 $(TESTPRODNAME) $(PRODNAME): $(PRODUCT_OBJS) $(PROD_RESS) $(PROD_DEPLIBS)
 
-$(TESTPRODNAME) $(PRODNAME):%$(EXE):
+$(TESTPRODNAME) $(PRODNAME): %$(EXE):
 	@$(RM) $@
 	$(DEBUGCMD) $(LINK.cpp)
 	$(MT_EXE_COMMAND)
@@ -218,15 +218,21 @@ $(TESTPRODNAME) $(PRODNAME):%$(EXE):
 	@$(RM) $@
 	$(HDEPENDS.cpp) $<
 
-%$(OBJ): %.c
+# Cancel GNUMake's built-in rules, which don't have our _INC
+# dependencies so could get used in some circumstances (gdd)
+%.o : %.c
+%.o : %.cc
+%.o : %.cpp
+
+%$(OBJ): %.c $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.c) -c $<
 
-%$(OBJ): %.cc
+%$(OBJ): %.cc $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 
-%$(OBJ): %.cpp
+%$(OBJ): %.cpp $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 

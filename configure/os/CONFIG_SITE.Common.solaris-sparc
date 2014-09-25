@@ -5,11 +5,12 @@
 # Site Specific definitions for solaris-sparc target
 # Only the local epics system manager should modify this file
 
-# If readline is installed uncomment the following macro definition
-# to include command-line editing and history support
-#
+# location of the Solaris Studio (was SunPro) compilers
+SPARCWORKS = /opt/SUNWspro
+#SPARCWORKS = /opt/solarisstudio12.3
 
-# Readline library provides command-line editing and history in IOC shell
+# If readline is installed, uncomment the following macro definition
+# to use it for command-line editing and history support
 #COMMANDLINE_LIBRARY = READLINE
 
 # Use stLport library instead of default Cstd library

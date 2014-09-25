@@ -57,9 +57,9 @@ void getCallback::completion (
     // fetch client context and destroy prior to releasing
     // the lock and calling cb in case they destroy channel there
     this->chan.getClientCtx().destroyGetCallback ( guard, *this );
-    {
+    if ( pFuncTmp ) {
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        ( *pFuncTmp ) ( args );
+        pFuncTmp ( args );
     }
 }
 

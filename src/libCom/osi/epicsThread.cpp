@@ -38,7 +38,7 @@ void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
 
 class epicsThread :: unableToCreateThread : 
-    public exception {
+    public std :: exception {
 public:
     const char * what () const throw ();
 };
@@ -90,7 +90,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     }
     catch ( const epicsThread::exitException & ) {
     }
-    catch ( std::exception & except ) {
+    catch ( std :: exception & except ) {
         if ( ! waitRelease ) {
             pThread->printLastChanceExceptionMessage ( 
                 typeid ( except ).name (), except.what () );

@@ -444,7 +444,7 @@ static void convert(aiRecord *prec)
 	}
 
 	/* apply smoothing algorithm */
-	if (prec->smoo != 0.0){
+    if (prec->smoo != 0.0 && finite(prec->val)){
 	    if (prec->init) prec->val = val;	/* initial condition */
 	    prec->val = val * (1.00 - prec->smoo) + (prec->val * prec->smoo);
 	}else{

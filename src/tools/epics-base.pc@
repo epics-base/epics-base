@@ -1,20 +1,27 @@
-# non-standard variables
-top=@FINAL_LOCATION@
-arch=@ARCH@
-os_class=@OS_CLASS@
-cmplr_class=@CMPLR_CLASS@
+# standard variables
+prefix=@FINAL_LOCATION@
+exec_prefix=${prefix}
+bindir=${prefix}/bin/@ARCH@
+libdir=${prefix}/lib/@ARCH@
 
-includedir_osi=${top}/include
-includedir_osd=${top}/include/os/@OS_CLASS@
-includedir_comp=${top}/include/os/@CMPLR_CLASS@
+# non-standard variables
+
+# EPICS Base install location
+FINAL_LOCATION=${prefix}
+ARCH=@ARCH@
+OS_CLASS=@OS_CLASS@
+CMPLR_CLASS=@CMPLR_CLASS@
+
+# Directories
+
+includedir_osi=${prefix}/include
+includedir_osd=${prefix}/include/os/@OS_CLASS@
+includedir_comp=${prefix}/include/compiler/@CMPLR_CLASS@
 
 includedirs=${includedir_osi} ${includedir_osd} ${includedir_comp}
 
-# standard variables
-prefix=@FINAL_LOCATION@
-exec_prefix=@FINAL_LOCATION@
-bindir=${top}/bin/@ARCH@
-libdir=${top}/lib/@ARCH@
+dbddir=${prefix}/dbd
+dbdir=${prefix}/db
 
 Name: epics-base
 Version: @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_PATCH_LEVEL@

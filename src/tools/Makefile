@@ -58,6 +58,8 @@ C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CPPFLAGS))))
 C_CFLAGS += $(filter-out -g,$(filter-out -O%,$(filter-out -W%,$(CFLAGS))))
 PKGVARS += FINAL_LOCATION OS_CLASS CMPLR_CLASS C_CFLAGS LDFLAGS LDLIBS
 PKGVARS += EPICS_VERSION EPICS_REVISION EPICS_MODIFICATION EPICS_PATCH_LEVEL
+PKGVARS += CC CCC CPP AR LD
+PKGVARS += EPICS_BASE_IOC_LIBS
 
 EXPANDFLAGS += $(foreach var,$(PKGVARS),-D$(var)="$(strip $($(var)))")
 PKGCONFIG += epics-base-$(T_A).pc

@@ -60,8 +60,10 @@ PKGVARS += FINAL_LOCATION OS_CLASS CMPLR_CLASS C_CFLAGS LDFLAGS LDLIBS
 PKGVARS += EPICS_VERSION EPICS_REVISION EPICS_MODIFICATION EPICS_PATCH_LEVEL
 
 EXPANDFLAGS += $(foreach var,$(PKGVARS),-D$(var)="$(strip $($(var)))")
-PKGCONFIG += epics-base.pc
 PKGCONFIG += epics-base-$(T_A).pc
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
+PKGCONFIG += epics-base.pc
+endif
 
 EXPAND += $(PKGCONFIG:%=%@)
 CLEANS += epics-base-$(T_A).pc@

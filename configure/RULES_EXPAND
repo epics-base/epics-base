@@ -8,6 +8,7 @@ EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
 EXPANDFLAGS += -t $(INSTALL_LOCATION) -a $(T_A)
 EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS))
 
+# The names of files to be expanded must end with '@'
 EXPANDED = $(EXPAND:%@=%)
 
 buildInstall: $(EXPANDED)

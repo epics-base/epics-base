@@ -49,7 +49,7 @@ expandRelease(\%vars);
 $vars{'ARCH'} = $opt_a if $opt_a;
 
 while ($_ = shift @opt_D) {
-    my ($var, $val) = split /=/;
+    my ($var, $val) = split(/=/, $_, 2);
     $vars{$var} = $val;
     print "$var = $val\n" if $opt_d;
 }

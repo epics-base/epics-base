@@ -40,19 +40,13 @@ WARN_CFLAGS_NO =  -W1
 
 #
 # -Ox maximum optimizations
-# -MD use MSVCRT (run-time as DLL, multi-thread support)
 # -GL whole program optimization
-# -Zi generate program database for debugging information
-OPT_CFLAGS_YES = -Ox -GL
+# -Oy- re-enable creation of frame pointers
+OPT_CFLAGS_YES = -Ox -GL -Oy-
 
 #
 # -Zi generate program database for debugging information
-# -Z7 include debugging info in object files
-# -Fr create source browser file
-# -GZ catch bugs occurring only in optimized code
-# -D_CRTDBG_MAP_ALLOC
 # -RTCsu catch bugs occuring only inoptimized code
-# -DEPICS_FREELIST_DEBUG good for detecting mem mrg bugs
 OPT_CFLAGS_NO = -Zi -RTCsu
 
 # specify object file name and location
@@ -81,14 +75,11 @@ CPP = cl -C -E
 
 # Configure OS vendor C++ compiler
 #
-# __STDC__=0 is a real great idea of Jeff that gives us both:
+# __STDC__=0 gives us both:
 # 1) define STDC for code (pretend ANSI conformance)
 # 2) set it to 0 to use MS C "extensions" (open for _open etc.)
 # because MS uses:   if __STDC__ ... disable many nice things
 #
-# Use of -Za would dissable DLL import/export keywords which
-# include/excludes using architecture neutral macros
-# 
 # -EHsc - generate code for exceptions
 # -GR - generate code for run time type identification
 #
@@ -106,16 +97,12 @@ WARN_CXXFLAGS_NO =  -W1
 #
 # -Ox maximum optimizations
 # -GL whole program optimization
-# -Zi generate program database for debugging information
-OPT_CXXFLAGS_YES = -Ox -GL
+# -Oy- re-enable creation of frame pointers
+OPT_CXXFLAGS_YES = -Ox -GL -Oy-
 
 #
 # -Zi generate program database for debugging information
-# -Z7 include debugging info in object files
-# -Fr create source browser file
-# -D_CRTDBG_MAP_ALLOC
 # -RTCsu catch bugs occurring only in optimized code
-# -DEPICS_FREELIST_DEBUG good for detecting mem mrg bugs
 OPT_CXXFLAGS_NO = -RTCsu -Zi
 
 # specify object file name and location
@@ -138,10 +125,12 @@ STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
 RANLIB=
 
+#
 # add -profile here to run the ms profiler
-# -LTCG - whole program optimization
-# -fixed:no good for programs such as purify and quantify
-# -debug good for programs such as purify and quantify
+# -LTCG whole program optimization
+# -incremental:no full linking
+# -fixed:no generate relocatable code
+# -debug generate debugging info
 LINK_OPT_FLAGS_YES = -LTCG -incremental:no -opt:ref \
     -release $(PROD_VERSION:%=-version:%)
 LINK_OPT_FLAGS_NO = -debug -incremental:no -fixed:no

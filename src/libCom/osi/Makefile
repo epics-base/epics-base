@@ -56,6 +56,7 @@ INC += epicsStdio.h
 INC += epicsStdioRedirect.h
 INC += epicsTempFile.h
 INC += epicsGetopt.h
+INC += epicsStackTrace.h
 
 INC += devLib.h
 INC += devLibVME.h
@@ -140,3 +141,8 @@ Com_SRCS_WIN32 += epicsGetopt.c
 Com_SRCS_WIN32 += setThreadName.cpp
 #Com_SRCS_WIN32 += dllmain.cpp
 Com_SRCS_WIN32 += forceBadAllocException.cpp
+
+#Stack trace support
+Com_SRCS += epicsStackTrace.c
+Com_SRCS += osdBackTrace.cpp
+Com_SRCS += osdFindAddr.cpp

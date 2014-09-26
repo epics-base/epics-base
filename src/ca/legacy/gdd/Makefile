@@ -74,6 +74,7 @@ include $(TOP)/configure/RULES
 # Manual dependencies
 #
 aitConvert$(DEP): $(COMMON_DIR)/aitConvertGenerated.cc
+aitConvert$(OBJ): $(COMMON_DIR)/aitConvertGenerated.cc
 dbMapper$(DEP): $(COMMON_DIR)/gddApps.h
 
 # Rules for generated files

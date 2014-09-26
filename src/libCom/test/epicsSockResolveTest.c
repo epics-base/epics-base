@@ -31,10 +31,14 @@ static testData okdata[] = {
 };
 
 static const char * baddata[] = {
-    "127.0.0.hi",
-    "127.0.0.hi:42",
-    "16invalidhostname",
-    "16invalidhostname:42",
+    "127.0.0.1:NaN",
+    "127.0.0.test",
+    "127.0.0.test:42",
+    "16name.invalid",
+    "16name.invalid:42",
+    "1.2.3.4.5",
+    "1.2.3.4.5:6",
+    "1.2.3.4:5.6",
     "256.255.255.255",
     "255.256.255.255",
     "255.255.256.255",
@@ -52,7 +56,8 @@ MAIN(epicsSockResolveTest)
     {
         struct in_addr addr;
 
-        if (hostToIPAddr("obviously-invalid-host", &addr) == 0) {
+        /* See RFCs 2606 and 6761 */
+        if (hostToIPAddr("guaranteed.invalid.", &addr) == 0) {
             testAbort("hostToIPAddr() is broken, testing not possible");
         }
     }

@@ -39,6 +39,8 @@ TESTS += epicsMathTest
 
 TESTPROD_HOST += epicsMMIOTest
 epicsMMIOTest_SRCS += epicsMMIOTest.c
+epicsMMIOTest_SYS_LIBS_solaris = socket
+epicsMMIOTest_SYS_LIBS_WIN32 = ws2_32 user32
 testHarness_SRCS += epicsMMIOTest.c
 TESTS += epicsMMIOTest
 

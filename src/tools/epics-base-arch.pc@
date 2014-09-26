@@ -1,0 +1,41 @@
+# standard variables
+prefix=@FINAL_LOCATION@
+exec_prefix=${prefix}
+bindir=${prefix}/bin/@ARCH@
+libdir=${prefix}/lib/@ARCH@
+
+# non-standard variables
+
+# EPICS Base install location
+FINAL_LOCATION=${prefix}
+ARCH=@ARCH@
+OS_CLASS=@OS_CLASS@
+CMPLR_CLASS=@CMPLR_CLASS@
+
+EPICS_BASE_IOC_LIBS=@EPICS_BASE_IOC_LIBS@
+
+# Directories
+
+includedir_osi=${prefix}/include
+includedir_osd=${prefix}/include/os/@OS_CLASS@
+includedir_comp=${prefix}/include/compiler/@CMPLR_CLASS@
+
+includedirs=${includedir_osi} ${includedir_osd} ${includedir_comp}
+
+dbddir=${prefix}/dbd
+dbdir=${prefix}/db
+
+# Tool chain
+
+CC=@CC@
+CXX=@CCC@
+CPP=@CPP@
+AR=@AR@
+LD=@LD@
+
+Name: epics-base-@ARCH@
+Version: @EPICS_VERSION@.@EPICS_REVISION@.@EPICS_MODIFICATION@.@EPICS_PATCH_LEVEL@
+Description: EPICS Base for @ARCH@
+Cflags: -I${includedir_osi} -I${includedir_osd} -I${includedir_comp} @C_CFLAGS@
+Libs: -L${libdir} @LDFLAGS@
+Libs.private: @LDLIBS@

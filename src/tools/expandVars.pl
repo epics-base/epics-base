@@ -49,9 +49,9 @@ expandRelease(\%vars);
 $vars{'ARCH'} = $opt_a if $opt_a;
 
 while ($_ = shift @opt_D) {
-    my ($var, $val) = split /=/;
-    $vars{$var} = $val;
-    print "$var = $val\n" if $opt_d;
+    m/^ (\w+) \s* = \s* (.*) $/x;
+    $vars{$1} = $2;
+    print "$1 = $2\n" if $opt_d;
 }
 
 # Do it!

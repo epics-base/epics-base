@@ -62,6 +62,8 @@ INC += devLib.h
 INC += devLibVME.h
 INC += devLibVMEImpl.h
 INC += osdVME.h
+INC += epicsMMIO.h
+INC += epicsMMIODef.h
 
 Com_SRCS += epicsThread.cpp
 Com_SRCS += epicsMutex.cpp

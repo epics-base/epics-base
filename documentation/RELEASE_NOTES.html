@@ -15,6 +15,15 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Merge MMIO API from devLib2</h3>
+
+<p>Added calls to handle 8, 16, and 32 bit Memory Mapped I/O reads and writes.
+The calls added include <tt><i>X</i>_iowrite<i>Y</i>()</tt> and
+<tt><i>X</i>_ioread<i>Y</i>()</tt>
+where <tt><i>X</i></tt> is <tt>nat</tt> (native), <tt>be</tt> or <tt>le</tt>,
+and <tt><i>Y</i></tt> is <tt>16</tt> or <tt>32</tt>.
+Also added are <tt>ioread8()</tt> and <tt>iowrite8()</tt>.</p>
+
 <h3>Added optional dbServer API to database</h3>
 
 <p>A server layer that sits on top of the IOC database may now register itself

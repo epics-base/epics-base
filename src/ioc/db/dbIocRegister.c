@@ -18,6 +18,7 @@
 #include "db_test.h"
 #include "dbLock.h"
 #include "dbScan.h"
+#include "dbServer.h"
 #include "dbNotify.h"
 #include "callback.h"
 #include "dbIocRegister.h"
@@ -89,6 +90,12 @@ static const iocshArg dbapArg0 = { "record name",iocshArgString};
 static const iocshArg * const dbapArgs[1] = {&dbapArg0};
 static const iocshFuncDef dbapFuncDef = {"dbap",1,dbapArgs};
 static void dbapCallFunc(const iocshArgBuf *args) { dbap(args[0].sval);}
+
+/* dbsr */
+static const iocshArg dbsrArg0 = { "interest level",iocshArgInt};
+static const iocshArg * const dbsrArgs[1] = {&dbsrArg0};
+static const iocshFuncDef dbsrFuncDef = {"dbsr",1,dbsrArgs};
+static void dbsrCallFunc(const iocshArgBuf *args) { dbsr(args[0].ival);}
 
 /* dbcar */
 static const iocshArg dbcarArg0 = { "record name",iocshArgString};
@@ -360,6 +367,7 @@ void dbIocRegister(void)
     iocshRegister(&dbpFuncDef,dbpCallFunc);
     iocshRegister(&dbapFuncDef,dbapCallFunc);
 
+    iocshRegister(&dbsrFuncDef,dbsrCallFunc);
     iocshRegister(&dbcarFuncDef,dbcarCallFunc);
     iocshRegister(&dbelFuncDef,dbelCallFunc);
 

@@ -17,13 +17,13 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
 #include "dbDefs.h"
 #include "osiSock.h"
 #include "epicsTime.h"
+#include "epicsStdio.h"
 #include "errlog.h"
 #include "taskwd.h"
 #include "db_access.h"
@@ -165,35 +165,18 @@ void camsgtask ( void *pParm )
 }
 
 
-void casHostNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
+int casClientInitiatingCurrentThread ( char * pBuf, size_t bufSize )
 {
-    if ( bufSize ) {
-        const char * pHostName = "";
-        {
-            struct client * pClient = ( struct client * ) 
-                epicsThreadPrivateGet ( rsrvCurrentClient );
-            if ( pClient ) {
-                pHostName = pClient->pHostName;
-            }
-        }
-        strncpy ( pBuf, pHostName, bufSize );
-        pBuf [ bufSize - 1u ] = '\0';
-    }
-}
+    struct client * pClient = ( struct client * )
+        epicsThreadPrivateGet ( rsrvCurrentClient );
 
-void casUserNameInitiatingCurrentThread ( char * pBuf, unsigned bufSize )
-{
-    if ( bufSize ) {
-        const char * pUserName = "";
-        {
-            struct client * pClient = ( struct client * ) 
-                epicsThreadPrivateGet ( rsrvCurrentClient );
-            if ( pClient ) {
-                pUserName = pClient->pUserName;
-            }
-        }
-        strncpy ( pBuf, pUserName, bufSize );
-        pBuf [ bufSize - 1u ] = '\0';
+    if ( ! pClient )
+        return RSRV_ERROR;
+
+    if ( pBuf && bufSize ) {
+        epicsSnprintf(pBuf, bufSize, "ca:%s@%s",
+            pClient->pUserName, pClient->pHostName);
     }
+    return RSRV_OK;
 }
 

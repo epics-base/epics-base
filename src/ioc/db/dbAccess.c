@@ -59,6 +59,7 @@
 #include "dbNotify.h"
 #include "dbAccessDefs.h"
 #include "recGbl.h"
+#include "dbServer.h"
 
 epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
@@ -454,6 +455,7 @@ long dbProcess(dbCommon *precord)
     struct rset *prset = precord->rset;
     dbRecordType *pdbRecordType = precord->rdes;
     unsigned char tpro = precord->tpro;
+    char context[40] = "";
     long status = 0;
     int *ptrace;
     int	set_trace = FALSE;
@@ -484,23 +486,33 @@ long dbProcess(dbCommon *precord)
 
     /* check for trace processing*/
     if (tpro) {
-        if(*ptrace==0) {
+        if (!*ptrace) {
             *ptrace = 1;
             set_trace = TRUE;
         }
     }
 
+    if (*ptrace) {
+        /* Identify this thread's client from server layer */
+        if (dbServerClient(context, sizeof(context))) {
+            /* No client, use thread name */
+            strncpy(context, epicsThreadGetNameSelf(), sizeof(context));
+            context[sizeof(context) - 1] = 0;
+        }
+    }
+
     /* If already active dont process */
     if (precord->pact) {
-        unsigned short	monitor_mask;
+        unsigned short monitor_mask;
 
         if (*ptrace)
-            printf("%s: Active %s\n",
-                    epicsThreadGetNameSelf(), precord->name);
+            printf("%s: Active %s\n", context, precord->name);
+
         /* raise scan alarm after MAX_LOCK times */
-        if (precord->stat==SCAN_ALARM) goto all_done;
-        if (precord->lcnt++ !=MAX_LOCK) goto all_done;
-        if (precord->sevr>=INVALID_ALARM) goto all_done;
+        if ((precord->stat == SCAN_ALARM) ||
+            (precord->lcnt++ < MAX_LOCK) ||
+            (precord->sevr >= INVALID_ALARM)) goto all_done;
+
         recGblSetSevr(precord, SCAN_ALARM, INVALID_ALARM);
         monitor_mask = recGblResetAlarms(precord);
         monitor_mask |= DBE_VALUE|DBE_LOG;
@@ -510,7 +522,8 @@ long dbProcess(dbCommon *precord)
                 monitor_mask);
         goto all_done;
     }
-    else precord->lcnt = 0;
+    else
+        precord->lcnt = 0;
 
     /*
      *  Check the record disable link.  A record will not be
@@ -521,9 +534,8 @@ long dbProcess(dbCommon *precord)
 
     /* if disabled check disable alarm severity and return success */
     if (precord->disa == precord->disv) {
-        if(*ptrace)
-            printf("%s: Disabled %s\n",
-                    epicsThreadGetNameSelf(), precord->name);
+        if (*ptrace)
+            printf("%s: Disabled %s\n", context, precord->name);
 
         /*take care of caching and notifyCompletion*/
         precord->rpro = FALSE;
@@ -531,7 +543,9 @@ long dbProcess(dbCommon *precord)
         callNotifyCompletion = TRUE;
 
         /* raise disable alarm */
-        if (precord->stat==DISABLE_ALARM) goto all_done;
+        if (precord->stat == DISABLE_ALARM)
+            goto all_done;
+
         precord->sevr = precord->diss;
         precord->stat = DISABLE_ALARM;
         precord->nsev = 0;
@@ -547,29 +561,34 @@ long dbProcess(dbCommon *precord)
 
     /* locate record processing routine */
     /* FIXME: put this in iocInit() !!! */
-    if (!(prset=precord->rset) || !(prset->process)) {
+    if (!prset || !prset->process) {
         callNotifyCompletion = TRUE;
-        precord->pact=1;/*set pact TRUE so error is issued only once*/
+        precord->pact = 1;/*set pact so error is issued only once*/
         recGblRecordError(S_db_noRSET, (void *)precord, "dbProcess");
         status = S_db_noRSET;
         if (*ptrace)
-            printf("%s: No RSET for %s\n",
-                    epicsThreadGetNameSelf(), precord->name);
+            printf("%s: No RSET for %s\n", context, precord->name);
         goto all_done;
     }
-    if(*ptrace)
-        printf("%s: Process %s\n",
-                epicsThreadGetNameSelf(), precord->name);
+
+    if (*ptrace)
+        printf("%s: Process %s\n", context, precord->name);
+
     /* process record */
-    status = (*prset->process)(precord);
+    status = prset->process(precord);
+
     /* Print record's fields if PRINT_MASK set in breakpoint field */
     if (lset_stack_count != 0) {
         dbPrint(precord);
     }
+
 all_done:
-    if (set_trace) *ptrace = 0;
-    if(callNotifyCompletion && precord->ppn) dbNotifyCompletion(precord);
-    return(status);
+    if (set_trace)
+        *ptrace = 0;
+    if (callNotifyCompletion && precord->ppn)
+        dbNotifyCompletion(precord);
+
+    return status;
 }
 
 /*

@@ -9,12 +9,11 @@
 
 #include <stdlib.h>
 
-#include "epicsStackTracePvt.h"
+#define epicsExportSharedSymbols
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "errlog.h"
-
-#define epicsExportSharedSymbols
+#include "epicsStackTracePvt.h"
 #include "epicsStackTrace.h"
 
 /* How many stack frames to capture               */

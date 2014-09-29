@@ -7,7 +7,7 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2014
  */ 
 
-#include <Windows.h>
+#include <windows.h>
 
 #define epicsExportSharedSymbols
 #include "epicsStackTracePvt.h"

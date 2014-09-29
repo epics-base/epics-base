@@ -1,24 +1,27 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$
- **/
+/*
+ * $Revision-Id$
+ */
 
-#include    <stdlib.h>
-#include    <stdio.h>
-#include    "epicsVersion.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "compilerDependencies.h"
+#include "epicsVersion.h"
 #include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
-#include    "epicsRelease.h"
+#include "epicsRelease.h"
 
-static const char id[] = "@(#) " EPICS_VERSION_STRING ", Misc. Utilities Library" __DATE__;
+static const char id[] EPICS_UNUSED =
+    "@(#) " EPICS_VERSION_STRING ", Misc. Utilities Library" __DATE__;
 
 epicsShareFunc int coreRelease(void)
 {

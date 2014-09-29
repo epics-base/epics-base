@@ -271,11 +271,9 @@ int callbackRequest(CALLBACK *pcallback)
         mySet->queueOverflow = TRUE;
         return S_db_bufFull;
     }
-    /* Wake up another sleeping thread, if threads are sleeping
-     * and there are more jobs in the queue than busy threads */
+    /* Wake up another sleeping thread, if threads are sleeping */
     threadsBusy = epicsAtomicGetIntT(&mySet->threadsBusy);
-    if (threadsBusy < mySet->threadsRunning
-            && epicsRingPointerGetUsed(mySet->queue) > threadsBusy) {
+    if (threadsBusy < mySet->threadsRunning) {
         epicsEventSignal(mySet->semWakeUp);
     }
     return 0;

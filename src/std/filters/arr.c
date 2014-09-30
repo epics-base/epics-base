@@ -43,6 +43,8 @@ chfPluginArgDef opts[] = {
 static void * allocPvt(void)
 {
     myStruct *my = (myStruct*) freeListCalloc(myStructFreeList);
+    if (!my) return NULL;
+
     my->incr = 1;
     my->end = -1;
     return (void *) my;
@@ -120,12 +122,13 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             pfl->no_elements = nTarget;
             if (nTarget) {
                 void *pdst = freeListCalloc(my->arrayFreeList);
-
-                pfl->u.r.dtor = freeArray;
-                pfl->u.r.pvt = my->arrayFreeList;
-                offset = (offset + start) % chan->addr.no_elements;
-                dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
-                pfl->u.r.field = pdst;
+                if (pdst) {
+                    pfl->u.r.dtor = freeArray;
+                    pfl->u.r.pvt = my->arrayFreeList;
+                    offset = (offset + start) % chan->addr.no_elements;
+                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
+                    pfl->u.r.field = pdst;
+                }
             }
             dbScanUnlock(prec);
             chan->addr.pfield = pfieldsave;
@@ -141,6 +144,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
         pfl->no_elements = nTarget;
         if (nTarget) {                                        /* Copy the data out */
             pdst = freeListCalloc(my->arrayFreeList);
+            if (!pdst) return pfl;
             offset = start;
             dbExtractArrayFromBuf(psrc, pdst, pfl->field_size, pfl->field_type, nTarget, nSource, offset, my->incr);
         }

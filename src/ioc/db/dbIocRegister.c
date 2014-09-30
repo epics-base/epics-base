@@ -23,7 +23,7 @@
 #include "dbIocRegister.h"
 #include "dbState.h"
 
-epicsShareDef int callbackParallelThreadsDefault;
+epicsShareExtern int callbackParallelThreadsDefault;
 
 /* dbLoadDatabase */
 static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};

@@ -114,22 +114,24 @@ typedef struct event_list {
     char                event_name[MAX_STRING_SIZE];
 } event_list;
 static event_list * volatile pevent_list[256];
-
+static epicsMutexId event_lock;
 
 /* IO_EVENT*/
 
 typedef struct io_scan_list {
-    CALLBACK            callback;
-    scan_list           scan_list;
-    struct io_scan_list *next;
-    io_scan_complete    cb;
-    void *              arg;
+    CALLBACK callback;
+    scan_list scan_list;
 } io_scan_list;
 
-static io_scan_list *iosl_head[NUM_CALLBACK_PRIORITIES] = {
-    NULL, NULL, NULL
-};
+typedef struct ioscan_head {
+    struct ioscan_head *next;
+    struct io_scan_list iosl[NUM_CALLBACK_PRIORITIES];
+    io_scan_complete cb;
+    void *arg;
+} ioscan_head;
 
+static ioscan_head *pioscan_list = NULL;
+static epicsMutexId ioscan_lock;
 
 /* Private routines */
 static void onceTask(void *);
@@ -138,9 +140,10 @@ static void periodicTask(void *arg);
 static void initPeriodic(void);
 static void deletePeriodic(void);
 static void spawnPeriodic(int ind);
-static void initEvent(void);
 static void eventCallback(CALLBACK *pcallback);
-static void ioeventCallback(CALLBACK *pcallback);
+static void ioscanInit(void);
+static void ioscanCallback(CALLBACK *pcallback);
+static void ioscanDestroy(void);
 static void printList(scan_list *psl, char *message);
 static void scanList(scan_list *psl);
 static void buildScanLists(void);
@@ -166,6 +169,7 @@ void scanShutdown(void)
     epicsEventWait(startStopEvent);
 
     deletePeriodic();
+    ioscanDestroy();
 
     epicsRingPointerDelete(onceQ);
 
@@ -187,7 +191,6 @@ long scanInit(void)
 
     initPeriodic();
     initOnce();
-    initEvent();
     buildScanLists();
     for (i = 0; i < nPeriodic; i++)
         spawnPeriodic(i);
@@ -247,7 +250,7 @@ void scanAdd(struct dbCommon *precord)
         pel = eventNameToHandle(eventname);
         if (pel) addToList(precord, &pel->scan_list[prio]);
     } else if (scan == menuScanI_O_Intr) {
-        io_scan_list *piosl = NULL;
+        ioscan_head *piosh = NULL;
         int prio;
         DEVSUPFUN get_ioint_info;
 
@@ -264,11 +267,11 @@ void scanAdd(struct dbCommon *precord)
             precord->scan = menuScanPassive;
             return;
         }
-        if (get_ioint_info(0, precord, &piosl)) {
+        if (get_ioint_info(0, precord, &piosh)) {
             precord->scan = menuScanPassive;
             return;
         }
-        if (piosl == NULL) {
+        if (piosh == NULL) {
             recGblRecordError(-1, (void *)precord,
                 "scanAdd: I/O Intr not valid");
             precord->scan = menuScanPassive;
@@ -281,8 +284,7 @@ void scanAdd(struct dbCommon *precord)
             precord->scan = menuScanPassive;
             return;
         }
-        piosl += prio; /* get piosl for correct priority*/
-        addToList(precord, &piosl->scan_list);
+        addToList(precord, &piosh->iosl[prio].scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
         addToList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
     }
@@ -321,7 +323,7 @@ void scanDelete(struct dbCommon *precord)
         if (pel && (psl = &pel->scan_list[prio]))
             deleteFromList(precord, psl);
     } else if (scan == menuScanI_O_Intr) {
-        io_scan_list *piosl=NULL;
+        ioscan_head *piosh = NULL;
         int prio;
         DEVSUPFUN get_ioint_info;
 
@@ -336,8 +338,8 @@ void scanDelete(struct dbCommon *precord)
                 "scanDelete: I/O Intr not valid (no get_ioint_info)");
             return;
         }
-        if (get_ioint_info(1, precord, &piosl)) return;
-        if (piosl == NULL) {
+        if (get_ioint_info(1, precord, &piosh)) return;
+        if (piosh == NULL) {
             recGblRecordError(-1, (void *)precord,
                 "scanDelete: I/O Intr not valid");
             return;
@@ -348,8 +350,7 @@ void scanDelete(struct dbCommon *precord)
                 "scanDelete: get_ioint_info returned illegal priority");
             return;
         }
-        piosl += prio; /*get piosl for correct priority*/
-        deleteFromList(precord, &piosl->scan_list);
+        deleteFromList(precord, &piosh->iosl[prio].scan_list);
     } else if (scan >= SCAN_1ST_PERIODIC) {
         deleteFromList(precord, &papPeriodic[scan - SCAN_1ST_PERIODIC]->scan_list);
     }
@@ -401,21 +402,28 @@ int scanpel(const char* eventname)   /* print event list */
     return 0;
 }
 
-int scanpiol(void)                  /* print io_event list */
+int scanpiol(void)                  /* print pioscan_list */
 {
-    io_scan_list *piosl;
-    int prio;
-    char message[80];
+    ioscan_head *piosh;
 
-    for(prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-        piosl = iosl_head[prio];
-        if (piosl == NULL) continue;
-        sprintf(message, "IO Event: Priority %s", priorityName[prio]);
-        while(piosl != NULL) {
+    ioscanInit();
+    epicsMutexMustLock(ioscan_lock);
+    piosh = pioscan_list;
+
+    while (piosh) {
+        int prio;
+
+        for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            io_scan_list *piosl = &piosh->iosl[prio];
+            char message[80];
+
+            sprintf(message, "IO Event %p: Priority %s",
+                piosh, priorityName[prio]);
             printList(&piosl->scan_list, message);
-            piosl = piosl->next;
         }
+        piosh = piosh->next;
     }
+    epicsMutexUnlock(ioscan_lock);
     return 0;
 }
 
@@ -427,19 +435,22 @@ static void eventCallback(CALLBACK *pcallback)
     scanList(psl);
 }
 
-static void initEvent(void)
+static void eventOnce(void *arg)
 {
+    event_lock = epicsMutexMustCreate();
 }
 
 event_list *eventNameToHandle(const char *eventname)
 {
     int prio;
     event_list *pel;
-    static epicsMutexId lock = NULL;
+    static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
-    if (!lock) lock = epicsMutexMustCreate();
-    if (!eventname || eventname[0] == 0) return NULL;
-    epicsMutexMustLock(lock);
+    if (!eventname || eventname[0] == 0)
+        return NULL;
+
+    epicsThreadOnce(&onceId, eventOnce, NULL);
+    epicsMutexMustLock(event_lock);
     for (pel = pevent_list[0]; pel; pel=pel->next) {
         if (strcmp(pel->event_name, eventname) == 0) break;
     }
@@ -462,7 +473,7 @@ event_list *eventNameToHandle(const char *eventname)
                 pevent_list[e] = pel;
         }
     }
-    epicsMutexUnlock(lock);
+    epicsMutexUnlock(event_lock);
     return pel;
 }
 
@@ -490,48 +501,89 @@ void post_event(int event)
     postEvent(pel);
 }
 
-void scanIoInit(IOSCANPVT *ppioscanpvt)
+static void ioscanOnce(void *arg)
 {
-    int prio;
+    ioscan_lock = epicsMutexMustCreate();
+}
 
-    /* Allocate an array of io_scan_lists, one for each priority. */
-    /* IOSCANPVT will hold the address of this array of structures */
-    *ppioscanpvt = dbCalloc(NUM_CALLBACK_PRIORITIES, sizeof(io_scan_list));
-    for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-        io_scan_list *piosl = &(*ppioscanpvt)[prio];
-        callbackSetCallback(ioeventCallback, &piosl->callback);
-        callbackSetPriority(prio, &piosl->callback);
-        callbackSetUser(piosl, &piosl->callback);
-        ellInit(&piosl->scan_list.list);
-        piosl->scan_list.lock = epicsMutexMustCreate();
-        piosl->next = iosl_head[prio];
-        iosl_head[prio] = piosl;
+static void ioscanInit(void)
+{
+    static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
+
+    epicsThreadOnce(&onceId, ioscanOnce, NULL);
+}
+
+static void ioscanDestroy(void)
+{
+    ioscan_head *piosh;
+
+    ioscanInit();
+    epicsMutexMustLock(ioscan_lock);
+    piosh = pioscan_list;
+    pioscan_list = NULL;
+    epicsMutexUnlock(ioscan_lock);
+    while (piosh) {
+        ioscan_head *pnext = piosh->next;
+        int prio;
+
+        for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+            epicsMutexDestroy(piosh->iosl[prio].scan_list.lock);
+            ellFree(&piosh->iosl[prio].scan_list.list);
+        }
+        free(piosh);
+        piosh = pnext;
     }
 }
 
-/* return a bit mask indicating each prioity level
- * in which a callback request was queued.
+void scanIoInit(IOSCANPVT *pioscanpvt)
+{
+    ioscan_head *piosh = dbCalloc(1, sizeof(ioscan_head));
+    int prio;
+
+    ioscanInit();
+    for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
+        io_scan_list *piosl = &piosh->iosl[prio];
+
+        callbackSetCallback(ioscanCallback, &piosl->callback);
+        callbackSetPriority(prio, &piosl->callback);
+        callbackSetUser(piosh, &piosl->callback);
+        ellInit(&piosl->scan_list.list);
+        piosl->scan_list.lock = epicsMutexMustCreate();
+    }
+    epicsMutexMustLock(ioscan_lock);
+    piosh->next = pioscan_list;
+    pioscan_list = piosh;
+    epicsMutexUnlock(ioscan_lock);
+    *pioscanpvt = piosh;
+}
+
+/* Return a bit mask indicating each priority level
+ * in which a callback request was successfully queued.
  */
-unsigned int scanIoRequest(IOSCANPVT pioscanpvt)
+unsigned int scanIoRequest(IOSCANPVT piosh)
 {
     int prio;
     unsigned int queued = 0;
 
-    if (scanCtl != ctlRun) return 0;
+    if (scanCtl != ctlRun)
+        return 0;
+
     for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
-        io_scan_list *piosl = &pioscanpvt[prio];
+        io_scan_list *piosl = &piosh->iosl[prio];
+
         if (ellCount(&piosl->scan_list.list) > 0)
-            if(!callbackRequest(&piosl->callback))
-                queued |= 1<<prio;
+            if (!callbackRequest(&piosl->callback))
+                queued |= 1 << prio;
     }
+
     return queued;
 }
 
 /* May not be called while a scan request is queued or running */
-void scanIoSetComplete(IOSCANPVT pioscanpvt, io_scan_complete cb, void* arg)
+void scanIoSetComplete(IOSCANPVT piosh, io_scan_complete cb, void *arg)
 {
-    pioscanpvt->cb = cb;
-    pioscanpvt->arg = arg;
+    piosh->cb = cb;
+    piosh->arg = arg;
 }
 
 void scanOnce(struct dbCommon *precord)
@@ -758,20 +810,14 @@ static void spawnPeriodic(int ind)
     epicsEventWait(startStopEvent);
 }
 
-static void ioeventCallback(CALLBACK *pcallback)
+static void ioscanCallback(CALLBACK *pcallback)
 {
-    io_scan_list *piosl;
+    ioscan_head *piosh = (ioscan_head *) pcallback->user;
+    int prio = pcallback->priority;
 
-    callbackGetUser(piosl, pcallback);
-    scanList(&piosl->scan_list);
-    /* the callback function and argument are only stored in the
-     * first element of the array.  So skip back to the beginning.
-     */
-    piosl -= pcallback->priority;
-    if(piosl->cb)
-        (*piosl->cb)(piosl->arg,
-                     piosl,
-                     pcallback->priority);
+    scanList(&piosh->iosl[prio].scan_list);
+    if (piosh->cb)
+        piosh->cb(piosh->arg, piosh, prio);
 }
 
 static void printList(scan_list *psl, char *message)
@@ -781,14 +827,17 @@ static void printList(scan_list *psl, char *message)
     epicsMutexMustLock(psl->lock);
     pse = (scan_element *)ellFirst(&psl->list);
     epicsMutexUnlock(psl->lock);
-    if (pse == NULL) return;
+
+    if (!pse)
+        return;
+
     printf("%s\n", message);
-    while (pse != NULL) {
+    while (pse) {
         printf("    %-28s\n", pse->precord->name);
         epicsMutexMustLock(psl->lock);
         if (pse->pscan_list != psl) {
             epicsMutexUnlock(psl->lock);
-            printf("Scan list changed while processing.");
+            printf("    Scan list changed while printing, try again.\n");
             return;
         }
         pse = (scan_element *)ellNext(&pse->node);

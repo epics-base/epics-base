@@ -34,12 +34,12 @@ extern "C" {
 #define MIN_PHASE           SHRT_MIN
 
 /*definitions for I/O Interrupt Scanning */
-struct io_scan_list;
+struct ioscan_head;
 
-typedef struct io_scan_list *IOSCANPVT;
+typedef struct ioscan_head *IOSCANPVT;
 typedef struct event_list *EVENTPVT;
 
-typedef void (*io_scan_complete)(void *, IOSCANPVT, int);
+typedef void (*io_scan_complete)(void *usr, IOSCANPVT, int prio);
 
 struct dbCommon;
 
@@ -66,9 +66,9 @@ epicsShareFunc int scanpel(const char *event_name);
 /*print io_event list*/
 epicsShareFunc int scanpiol(void);
 
-epicsShareFunc void scanIoInit(IOSCANPVT *);
-epicsShareFunc unsigned int scanIoRequest(IOSCANPVT);
-epicsShareFunc void scanIoSetComplete(IOSCANPVT, io_scan_complete, void*);
+epicsShareFunc void scanIoInit(IOSCANPVT *ppios);
+epicsShareFunc unsigned int scanIoRequest(IOSCANPVT pios);
+epicsShareFunc void scanIoSetComplete(IOSCANPVT, io_scan_complete, void *usr);
 
 #ifdef __cplusplus
 }

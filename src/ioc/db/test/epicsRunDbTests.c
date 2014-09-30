@@ -20,6 +20,7 @@ int testdbConvert(void);
 int callbackTest(void);
 int dbStateTest(void);
 int dbShutdownTest(void);
+int scanIoTest(void);
 int dbLockTest(void);
 int dbPutLinkTest(void);
 int testDbChannel(void);

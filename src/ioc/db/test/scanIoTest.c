@@ -96,9 +96,9 @@ static int noDoubleCallback = 1;
 void scanIoTest_registerRecordDeviceDriver(struct dbBase *);
 
 long count_bits(long n) {
-  unsigned int c; // c accumulates the total bits set in v
+  unsigned int c; /* c accumulates the total bits set in v */
   for (c = 0; n; c++)
-    n &= n - 1; // clear the least significant bit set
+    n &= n - 1; /* clear the least significant bit set */
   return c;
 }
 
@@ -155,7 +155,7 @@ static long process(yRecord *prec)
     struct pvtY *pvt = (struct pvtY *)(prec->dpvt);
 
     if (testNo == 0) {
-        // Single callback thread
+        /* Single callback thread */
         if (executionOrder != pvt->member) {
             orderFail = 1;
         }
@@ -174,8 +174,8 @@ static long process(yRecord *prec)
 
 rset yRSET={
     4,
-    NULL, //report,
-    NULL, //initialize,
+    NULL, /* report */
+    NULL, /* initialize */
     init_record,
     process
 };

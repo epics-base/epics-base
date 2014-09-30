@@ -91,6 +91,12 @@ percentage.
 
 =over
 
+=item Mode+Deadband C<"abs">/C<"rel"> (shorthand)
+
+Mode and deadband can be specified in one definition (shorthand).
+The desired mode is given as parameter name (C<"abs"> or C<"rel">), with the numeric
+size of the deadband (absolute value or numeric percentage) as value.
+
 =item Deadband C<"d">
 
 The size of the deadband to use.
@@ -101,13 +107,7 @@ trailing percent character.
 
 A string (enclosed in double-quotes C<">), which should contain either
 C<abs> or C<rel>.
-The default mode is absolute if no mode parameter is included.
-
-=item Mode+Deadband C<"abs">/C<"rel"> (shorthand)
-
-As a shorthand, mode and deadband can be specified in one definition. In this case,
-the desired mode is given as parameter name (C<"abs"> or C<"rel">), with the numeric
-size of the deadband (absolute value or numeric percentage) as value.
+The default mode is C<abs> if no mode parameter is included.
 
 =back
 
@@ -144,6 +144,10 @@ Note: Negative index numbers address from the end of the array, with C<-1> being
 
 =over
 
+=item Square bracket notation C<[s:i:e]> (shorthand)
+
+The familiar C<[s:i:e]> notation with square brackets can be used (shorthand).
+
 =item Start index C<"s">
 
 Index of the first original array element to retrieve.
@@ -155,10 +159,6 @@ Increment between retrieved elements of the original array.
 =item End index C<"e">
 
 Index of the last original array element to retrieve.
-
-=item Shorthand notation C<[s:i:e]>
-
-As a shorthand, the C<[s:i:e]> notation with square brackets can be used.
 
 =back
 
@@ -194,6 +194,13 @@ C<dbStateSet()>.
 
 =over
 
+=item Mode+State
+
+Mode and state can be specified in one definition (shorthand).
+The desired mode is given as parameter name (C<"before"> / C<"first"> /
+C<"while"> / C<"last"> / C<"after"> / C<"unless">), with the state name (enclosed
+in double quotes C<">) as value.
+
 =item Mode C<"m">
 
 A single word from the list below, enclosed in double quotes C<">.
@@ -224,13 +231,6 @@ as the state is false.
 =item State C<"s">
 
 The name of a state variable, enclosed in double quotes C<">.
-
-=item Mode+State (shorthand)
-
-As a shorthand, mode and state can be specified in one definition. In this case,
-the desired mode is given as parameter name (C<"before"> / C<"first"> /
-C<"while"> / C<"last"> / C<"after"> / C<"unless">), with the state name (enclosed
-in double quotes C<">) as value.
 
 =back
 

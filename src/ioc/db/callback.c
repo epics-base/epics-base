@@ -99,10 +99,6 @@ int callbackSetQueueSize(int size)
 
 int callbackParallelThreads(int count, const char *prio)
 {
-    int i;
-    dbMenu	*pdbMenu;
-    int		gotMatch;
-
     if (startStopEvent) {
         errlogPrintf("Callback system already initialized\n");
         return -1;
@@ -115,25 +111,34 @@ int callbackParallelThreads(int count, const char *prio)
     if (count < 1) count = 1;
 
     if (!prio || strcmp(prio, "") == 0 || strcmp(prio, "*") == 0) {
+        int i;
+
         for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
             callbackQueue[i].threadsConfigured = count;
         }
-    } else {
+    }
+    else {
+        dbMenu *pdbMenu;
+
         if (!pdbbase) {
-            errlogPrintf("pdbbase not specified\n");
+            errlogPrintf("callbackParallelThreads: pdbbase not set\n");
             return -1;
         }
         /* Find prio in menuPriority */
-        pdbMenu = dbFindMenu(&pdbbase, "menuPriority");
+        pdbMenu = dbFindMenu(pdbbase, "menuPriority");
         if (pdbMenu) {
+            int i, gotMatch = 0;
+
             for (i = 0; i < pdbMenu->nChoice; i++) {
                 gotMatch = (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i])==0) ? TRUE : FALSE;
-                if (gotMatch) break;
+                if (gotMatch)
+                    break;
             }
             if (gotMatch) {
                 callbackQueue[i].threadsConfigured = count;
                 return 0;
-            } else {
+            }
+            else {
                 errlogPrintf("Unknown priority \"%s\"\n", prio);
                 return -1;
             }

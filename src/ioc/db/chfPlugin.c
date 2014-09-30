@@ -462,7 +462,7 @@ parse_map_key(chFilter *filter, const char *key, size_t stringLen)
     int j;
 
     f->nextParam = -1;
-    for(cur = opts, i = 0; cur && cur->name; cur++, i++) {
+    for (cur = opts, i = 0; cur && cur->name; cur++, i++) {
         if (strncmp(key, cur->name, stringLen) == 0) {
             f->nextParam = i;
             break;
@@ -472,18 +472,19 @@ parse_map_key(chFilter *filter, const char *key, size_t stringLen)
         return parse_stop;
     }
 
-    f->found[i/32] |= 1<<(i%32);
-    /* For tagged parameters:
-     * set tag to this choice, and mark all other choices as found */
     if (opts[i].tagged) {
         tag = (int*) ((char*) f->puser + opts[i].tagOffset);
         *tag = opts[i].choice;
-        for (cur = opts, j = 0; cur && cur->name; cur++, j++) {
-            if (cur->tagged && cur->tagOffset == opts[i].tagOffset) {
-                f->found[j/32] |= 1<<(j%32);
-            }
-        }
     }
+
+    f->found[i/32] |= 1<<(i%32);
+    /* Mark tag and all other options pointing to the same data as found */
+    for (cur = opts, j = 0; cur && cur->name; cur++, j++) {
+        if ((opts[i].tagged && cur->dataOffset == opts[i].tagOffset)
+             || cur->dataOffset == opts[i].dataOffset)
+            f->found[j/32] |= 1<<(j%32);
+    }
+
     return parse_continue;
 }
 

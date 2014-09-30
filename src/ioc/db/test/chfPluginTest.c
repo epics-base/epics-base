@@ -60,7 +60,7 @@ typedef struct myStruct {
     int sent5;
     char        str[20];
     int sent6;
-    char        tval;
+    epicsUInt32 tval;
     int sent7;
     char        c;
     char        c1[2];
@@ -72,12 +72,25 @@ static const
 chfPluginEnumType colorEnum[] = { {"R", 1}, {"G", 2}, {"B", 4}, {NULL,0} };
 
 static const
-chfPluginArgDef taggedOpts[] = {
-    chfTagInt32  (myStruct, ival,    "i" , tval, 1, 0, 0),
-    chfTagBoolean(myStruct, flag,    "f" , tval, 2, 0, 0),
-    chfTagDouble (myStruct, dval,    "d" , tval, 3, 0, 0),
-    chfTagString (myStruct, str,     "s" , tval, 4, 0, 0),
-    chfTagEnum   (myStruct, enumval, "c" , tval, 5, 0, 0, colorEnum),
+chfPluginArgDef sloppyTaggedOpts[] = {
+    chfInt32     (myStruct, tval,    "t" , 0, 0),
+    chfTagInt32  (myStruct, ival,    "I" , tval, 1, 0, 0),
+    chfTagBoolean(myStruct, flag,    "F" , tval, 2, 0, 0),
+    chfTagDouble (myStruct, dval,    "D" , tval, 3, 0, 0),
+    chfTagString (myStruct, str,     "S" , tval, 4, 0, 0),
+    chfTagEnum   (myStruct, enumval, "C" , tval, 5, 0, 0, colorEnum),
+    chfPluginArgEnd
+};
+
+static const
+chfPluginArgDef strictTaggedOpts[] = {
+    chfInt32     (myStruct, tval,    "t" , 1, 0),
+    chfBoolean   (myStruct, flag,    "f" , 1, 0),
+    chfTagInt32  (myStruct, ival,    "I" , tval, 1, 0, 0),
+    chfTagBoolean(myStruct, flag,    "F" , tval, 2, 0, 0),
+    chfTagDouble (myStruct, dval,    "D" , tval, 3, 1, 0),
+    chfTagDouble (myStruct, dval,    "D2", tval, 4, 1, 0),
+    chfTagEnum   (myStruct, enumval, "C" , tval, 5, 0, 0, colorEnum),
     chfPluginArgEnd
 };
 
@@ -508,7 +521,7 @@ MAIN(chfPluginTest)
     _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
-    testPlan(1397);
+    testPlan(1428);
 
     dbChannelInit();
     db_init_events();
@@ -548,8 +561,10 @@ MAIN(chfPluginTest)
     eltc(1);
 
     testHead("Register plugins");
-    testOk(!chfPluginRegister("tagged", &myPif, taggedOpts),
-        "register plugin tagged");
+    testOk(!chfPluginRegister("sloppy-tagged", &myPif, sloppyTaggedOpts),
+        "register plugin sloppy-tagged");
+    testOk(!chfPluginRegister("strict-tagged", &myPif, strictTaggedOpts),
+        "register plugin strict-tagged");
     testOk(!chfPluginRegister("strict", &myPif, strictOpts),
         "register plugin strict");
     testOk(!chfPluginRegister("noconv", &myPif, noconvOpts),
@@ -563,12 +578,64 @@ MAIN(chfPluginTest)
 
     /* TAGGED parsing: shorthand for integer plus other parameter */
 
-    testHead("TAGGED parsing: all ok");
+    /* STRICT TAGGED parsing: mandatory, no conversions */
+
+    /* All perfect */
+    testHead("STRICT TAGGED parsing: all ok");
+    /* tag D (t and d) and f */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"strict-tagged\":{\"D\":1.2e15,\"f\":false}}")),
+        "create channel for strict-tagged parsing: D (t and d) and f");
+    testOk(checkValues(puser1, 3, 12, 0, 1.2e15, "hello", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag D2 (t and d) and f */
+    e1 = e_alloc | e_ok; c1 = 0;
+    testOk(!!(pch = dbChannelCreate(
+        "x.{\"strict-tagged\":{\"D2\":1.2e15,\"f\":false}}")),
+        "create channel for strict-tagged parsing: D2 (t and d) and f");
+    testOk(checkValues(puser1, 4, 12, 0, 1.2e15, "hello", 0, 4),
+        "guards intact, values correct");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    e1 = e_close | e_free; c1 = 0;
+    if (pch) dbChannelDelete(pch);
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag F: (t and f), d missing) */
+    e1 = e_alloc | e_error | e_free; c1 = 0;
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict-tagged\":{\"F\":false}}")),
+        "create channel for strict-tagged parsing: F (t and f), d missing");
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+    /* tag I: (t and i) and f, d missing) */
+    e1 = e_alloc | e_error | e_free; c1 = 0;
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"strict-tagged\":{\"I\":1,\"f\":false}}")),
+        "create channel for strict-tagged parsing: I (t and i) and f, d missing");
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
+
+    /* SLOPPY TAGGED parsing: optional, all others have defaults */
+
+    testHead("SLOPPY TAGGED parsing: all ok");
 
     /* tag i */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"tagged\":{\"i\":1}}")), "create channel for tagged parsing: i");
+        "x.{\"sloppy-tagged\":{\"I\":1}}")),
+        "create channel for sloppy-tagged parsing: I");
     testOk(checkValues(puser1, 1, 1, 1, 1.234e5, "hello", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -581,7 +648,8 @@ MAIN(chfPluginTest)
     /* tag f */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"tagged\":{\"f\":false}}")), "create channel for tagged parsing: f");
+        "x.{\"sloppy-tagged\":{\"F\":false}}")),
+        "create channel for sloppy-tagged parsing: F");
     testOk(checkValues(puser1, 2, 12, 0, 1.234e5, "hello", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -594,7 +662,8 @@ MAIN(chfPluginTest)
     /* tag d */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"tagged\":{\"d\":1.2e15}}")), "create channel for tagged parsing: d");
+        "x.{\"sloppy-tagged\":{\"D\":1.2e15}}")),
+        "create channel for sloppy-tagged parsing: D");
     testOk(checkValues(puser1, 3, 12, 1, 1.2e15, "hello", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -607,7 +676,8 @@ MAIN(chfPluginTest)
     /* tag s */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"tagged\":{\"s\":\"bar\"}}")), "create channel for tagged parsing: s");
+        "x.{\"sloppy-tagged\":{\"S\":\"bar\"}}")),
+        "create channel for sloppy-tagged parsing: S");
     testOk(checkValues(puser1, 4, 12, 1, 1.234e5, "bar", 0, 4),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))
@@ -620,7 +690,8 @@ MAIN(chfPluginTest)
     /* tag c */
     e1 = e_alloc | e_ok; c1 = 0;
     testOk(!!(pch = dbChannelCreate(
-        "x.{\"tagged\":{\"c\":\"R\"}}")), "create channel for tagged parsing: c");
+        "x.{\"sloppy-tagged\":{\"C\":\"R\"}}")),
+        "create channel for sloppy-tagged parsing: C");
     testOk(checkValues(puser1, 5, 12, 1, 1.234e5, "hello", 0, 1),
         "guards intact, values correct");
     if (!testOk(c1 == e1, "all expected calls happened"))

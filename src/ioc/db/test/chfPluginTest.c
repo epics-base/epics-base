@@ -189,6 +189,15 @@ static void * allocPvt(void)
     return my;
 }
 
+static void * allocPvtFail(void)
+{
+    if (!puser1) {
+        testOk(e1 & e_alloc, "allocPvt (1) called");
+        c1 |= e_alloc;
+    }
+    return NULL;
+}
+
 static void freePvt(void *user)
 {
     if (user == puser1) {
@@ -473,6 +482,20 @@ static chfPluginIf postPif = {
     channel_close
 };
 
+static chfPluginIf allocFailPif = {
+    allocPvtFail,
+    freePvt,
+
+    parse_error,
+    parse_ok,
+
+    channel_open,
+    channelRegisterPre,
+    channelRegisterPost,
+    channel_report,
+    channel_close
+};
+
 static int checkValues(myStruct *my,
     char t, epicsUInt32 i, int f, double d, char *s1, char *s2, int c) {
     int ret = 1;
@@ -521,7 +544,7 @@ MAIN(chfPluginTest)
     _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
-    testPlan(1428);
+    testPlan(1429);
 
     dbChannelInit();
     db_init_events();
@@ -575,6 +598,20 @@ MAIN(chfPluginTest)
         "register plugin pre");
     testOk(!chfPluginRegister("post", &postPif, sloppyOpts),
         "register plugin post");
+    testOk(!chfPluginRegister("alloc-fail", &allocFailPif, sloppyOpts),
+        "register plugin alloc-fail");
+
+    /* Check failing allocation of plugin private structures */
+
+    testHead("Failing allocation of plugin private structures");
+    /* tag i */
+    e1 = e_alloc; c1 = 0;
+    testOk(!(pch = dbChannelCreate(
+        "x.{\"alloc-fail\":{\"i\":1}}")),
+        "create channel for alloc-fail: allocPvt returning NULL");
+    testOk(!puser1, "user part cleaned up");
+    if (!testOk(c1 == e1, "all expected calls happened"))
+        testDiag("expected %#x - called %#x", e1, c1);
 
     /* TAGGED parsing: shorthand for integer plus other parameter */
 

@@ -334,8 +334,10 @@ static parse_result parse_start(chFilter *filter)
 
     /* Call the plugin to allocate its structure, it returns NULL on error */
     if (p->pif->allocPvt) {
-        if ((f->puser = p->pif->allocPvt()) == NULL)
+        if ((f->puser = p->pif->allocPvt()) == NULL) {
+            errlogPrintf("chfConfigParseStart: plugin pvt alloc failed\n");
             goto errplugin;
+        }
     }
 
     filter->puser = (void*) f;

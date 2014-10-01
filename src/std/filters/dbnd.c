@@ -1,13 +1,14 @@
 /*************************************************************************\
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
-*     fuer Materialien und Energie GmbH.
+*     für Materialien und Energie GmbH.
+* Copyright (c) 2014 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ *  Author: Ralph Lange <Ralph.Lange@gmx.de>
  */
 
 #include <stdio.h>
@@ -34,8 +35,10 @@ chfPluginEnumType modeEnum[] = { {"abs", 0}, {"rel", 1}, {NULL,0} };
 
 static const
 chfPluginArgDef opts[] = {
-    chfDouble (myStruct, cval, "d", 0, 1),
-    chfEnum   (myStruct, mode, "m", 0, 1, modeEnum),
+    chfDouble    (myStruct, cval, "d", 0, 1),
+    chfEnum      (myStruct, mode, "m", 0, 1, modeEnum),
+    chfTagDouble (myStruct, cval, "abs", mode, 0, 0, 1),
+    chfTagDouble (myStruct, cval, "rel", mode, 1, 0, 1),
     chfPluginArgEnd
 };
 

@@ -1,13 +1,14 @@
 /*************************************************************************\
 * Copyright (c) 2010 Brookhaven National Laboratory.
 * Copyright (c) 2010 Helmholtz-Zentrum Berlin
-*     fuer Materialien und Energie GmbH.
+*     für Materialien und Energie GmbH.
+* Copyright (c) 2014 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *  Author: Ralph Lange <Ralph.Lange@bessy.de>
+ *  Author: Ralph Lange <Ralph.Lange@gmx.de>
  */
 
 /* Based on the linkoptions utility by Michael Davidsaver (BNL) */
@@ -44,10 +45,11 @@ struct db_field_log;
  *
  * typedef struct myStruct {
  *   ... other stuff
+ *   char       mode;
  *   epicsInt32 ival;
- *   double      dval;
+ *   double     dval;
  *   epicsInt32 ival2;
- *   int         enumval;
+ *   int        enumval;
  *   char       strval[20];
  *   char       boolval;
  * } myStruct;
@@ -57,18 +59,22 @@ struct db_field_log;
  *
  * static const
  * chfPluginDef myStructDef[] = {
- *   chfInt32 (myStruct, ival,    "Integer" , 0, 0),
- *   chfInt32 (myStruct, ival2,   "Second"  , 1, 0),
- *   chfDouble(myStruct, dval,    "Double"  , 1, 0),
- *   chfString(myStruct, strval , "String"  , 1, 0),
- *   chfEnum  (myStruct, enumval, "Color"   , 1, 0, colorEnum),
- *   chfBoolean(myStruct, boolval, "Bool"   , 1, 0),
+ *   chfTagInt32(myStruct, ival,    "Integer" , ival2, 3, 0, 0),
+ *   chfInt32   (myStruct, ival2,   "Second"  , 1, 0),
+ *   chfDouble  (myStruct, dval,    "Double"  , 1, 0),
+ *   chfString  (myStruct, strval , "String"  , 1, 0),
+ *   chfEnum    (myStruct, enumval, "Color"   , 1, 0, colorEnum),
+ *   chfBoolean (myStruct, boolval, "Bool"    , 1, 0),
  *   chfPluginEnd
  * };
  *
  * Note: The 4th argument specifies the parameter to be required (1) or optional (0),
  *       the 5th whether converting to the required type is allowed (1), or
  *       type mismatches are an error (0).
+ * Note: The "Tag" version has two additional arguments. the 4th arg specifies the tag
+ *       field (integer type) inside the structure to be set, the 5th arg specifies the
+ *       value to set the tag field to. Arguments 6 and 7 specify "required" and
+ *       "conversion" as described above.
  *
  */
 
@@ -231,25 +237,57 @@ typedef struct chfPluginArgDef {
     chfPluginArg optType;
     unsigned int required:1;
     unsigned int convert:1;
-    epicsUInt32 offset;
-    epicsUInt32 size;
+    unsigned int tagged:1;
+    epicsUInt32  tagOffset;
+    epicsUInt32  choice;
+    epicsUInt32  dataOffset;
+    epicsUInt32  size;
     const chfPluginEnumType *enums;
 } chfPluginArgDef;
 
+/* Simple arguments */
+
 #define chfInt32(Struct, Member, Name, Req, Conv) \
-{Name, chfPluginArgInt32, Req, Conv, OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+    {Name, chfPluginArgInt32, Req, Conv, 0, 0, 0, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
 
 #define chfBoolean(Struct, Member, Name, Req, Conv) \
-{Name, chfPluginArgBoolean, Req, Conv, OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+    {Name, chfPluginArgBoolean, Req, Conv, 0, 0, 0, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
 
 #define chfDouble(Struct, Member, Name, Req, Conv) \
-{Name, chfPluginArgDouble, Req, Conv, OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+    {Name, chfPluginArgDouble, Req, Conv, 0, 0, 0, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
 
 #define chfString(Struct, Member, Name, Req, Conv) \
-{Name, chfPluginArgString, Req, Conv, OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+    {Name, chfPluginArgString, Req, Conv, 0, 0, 0, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
 
 #define chfEnum(Struct, Member, Name, Req, Conv, Enums) \
-{Name, chfPluginArgEnum, Req, Conv, OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), Enums}
+    {Name, chfPluginArgEnum, Req, Conv, 0, 0, 0, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), Enums}
+
+/* Tagged arguments */
+
+#define chfTagInt32(Struct, Member, Name, Tag, Choice, Req, Conv) \
+    {Name, chfPluginArgInt32, Req, Conv, 1, OFFSET(Struct, Tag), Choice, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+
+#define chfTagBoolean(Struct, Member, Name, Tag, Choice, Req, Conv) \
+    {Name, chfPluginArgBoolean, Req, Conv, 1, OFFSET(Struct, Tag), Choice, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+
+#define chfTagDouble(Struct, Member, Name, Tag, Choice, Req, Conv) \
+    {Name, chfPluginArgDouble, Req, Conv, 1, OFFSET(Struct, Tag), Choice, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+
+#define chfTagString(Struct, Member, Name, Tag, Choice, Req, Conv) \
+    {Name, chfPluginArgString, Req, Conv, 1, OFFSET(Struct, Tag), Choice, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), NULL}
+
+#define chfTagEnum(Struct, Member, Name, Tag, Choice, Req, Conv, Enums) \
+    {Name, chfPluginArgEnum, Req, Conv, 1, OFFSET(Struct, Tag), Choice, \
+    OFFSET(Struct, Member), sizeof( ((Struct*)0)->Member ), Enums}
 
 #define chfPluginArgEnd {0}
 

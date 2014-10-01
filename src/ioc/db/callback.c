@@ -55,7 +55,6 @@ typedef struct cbQueueSet {
     int queueOverflow;
     int threadsConfigured;
     int threadsRunning;
-    int threadsBusy;
 } cbQueueSet;
 
 static cbQueueSet callbackQueue[NUM_CALLBACK_PRIORITIES];
@@ -154,13 +153,11 @@ static void callbackTask(void *arg)
     taskwdInsert(0, NULL, NULL);
     epicsEventSignal(startStopEvent);
 
-    epicsAtomicIncrIntT(&mySet->threadsBusy);
     while(TRUE) {
         void *ptr;
-        epicsAtomicDecrIntT(&mySet->threadsBusy);
         if (epicsRingPointerIsEmpty(mySet->queue))
             epicsEventMustWait(mySet->semWakeUp);
-        epicsAtomicIncrIntT(&mySet->threadsBusy);
+
         while ((ptr = epicsRingPointerPop(mySet->queue))) {
             CALLBACK *pcallback = (CALLBACK *)ptr;
             if (ptr == &exitCallback) goto shutdown;
@@ -250,7 +247,6 @@ int callbackRequest(CALLBACK *pcallback)
 {
     int priority;
     int pushOK;
-    int threadsBusy;
     cbQueueSet *mySet;
 
     if (!pcallback) {
@@ -276,11 +272,7 @@ int callbackRequest(CALLBACK *pcallback)
         mySet->queueOverflow = TRUE;
         return S_db_bufFull;
     }
-    /* Wake up another sleeping thread, if threads are sleeping */
-    threadsBusy = epicsAtomicGetIntT(&mySet->threadsBusy);
-    if (threadsBusy < mySet->threadsRunning) {
-        epicsEventSignal(mySet->semWakeUp);
-    }
+    epicsEventSignal(mySet->semWakeUp);
     return 0;
 }
 

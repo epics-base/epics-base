@@ -160,6 +160,8 @@ static void callbackTask(void *arg)
 
         while ((ptr = epicsRingPointerPop(mySet->queue))) {
             CALLBACK *pcallback = (CALLBACK *)ptr;
+            if(!epicsRingPointerIsEmpty(mySet->queue))
+                epicsEventMustTrigger(mySet->semWakeUp);
             if (ptr == &exitCallback) goto shutdown;
             mySet->queueOverflow = FALSE;
             (*pcallback->callback)(pcallback);

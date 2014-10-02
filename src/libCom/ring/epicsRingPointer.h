@@ -3,12 +3,15 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
+* Copyright (c) 2012 ITER Organization.
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*epicsRingPointer.h */
 
-/* Author:  Marty Kraimer Date:    15JUL99 */
+/*
+ * Author:  Marty Kraimer Date:    15JUL99
+ *          Ralph Lange <Ralph.Lange@gmx.de>
+ */
 
 #ifndef INCepicsRingPointerh
 #define INCepicsRingPointerh
@@ -16,15 +19,18 @@
 /* NOTES
  *   If there is only one writer it is not necessary to lock push
  *   If there is a single reader it is not necessary to lock pop
+ *
+ *   epicsRingPointerLocked uses a spinlock.
  */
 
+#include "epicsSpin.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
 template <class T>
 class epicsRingPointer {
 public: /* Functions */
-    epicsRingPointer(int size);
+    epicsRingPointer(int size, bool locked);
     ~epicsRingPointer();
     bool push(T *p);
     T* pop();
@@ -42,6 +48,7 @@ private: /* Prevent compiler-generated member functions */
     epicsRingPointer& operator=(const epicsRingPointer &);
 
 private: /* Data */
+    epicsSpinId lock;
     volatile int nextPush;
     volatile int nextPop;
     int size;
@@ -54,6 +61,8 @@ extern "C" {
 typedef void *epicsRingPointerId;
 
 epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerCreate(int size);
+/* Same, but secured by a spinlock */
+epicsShareFunc epicsRingPointerId  epicsShareAPI epicsRingPointerLockedCreate(int size);
 epicsShareFunc void epicsShareAPI epicsRingPointerDelete(epicsRingPointerId id);
 /*ringPointerPush returns (0,1) if p (was not, was) put on ring*/
 epicsShareFunc int  epicsShareAPI epicsRingPointerPush(epicsRingPointerId id,void *p);
@@ -85,72 +94,105 @@ epicsShareFunc int  epicsShareAPI epicsRingPointerIsFull(epicsRingPointerId id);
 #ifdef __cplusplus
 
 template <class T>
-inline epicsRingPointer<T>::epicsRingPointer(int sz) :
-    nextPush(0), nextPop(0), size(sz+1), buffer(new T* [sz+1]) {}
+inline epicsRingPointer<T>::epicsRingPointer(int sz, bool locked) :
+    lock(0), nextPush(0), nextPop(0), size(sz+1), buffer(new T* [sz+1])
+{
+    if (locked)
+        lock = epicsSpinCreate();
+}
 
 template <class T>
 inline epicsRingPointer<T>::~epicsRingPointer()
-{   delete [] buffer;}
+{
+    if (lock) epicsSpinDestroy(lock);
+    delete [] buffer;
+}
 
 template <class T>
 inline bool epicsRingPointer<T>::push(T *p)
 {
+    if (lock) epicsSpinLock(lock);
     int next = nextPush;
     int newNext = next + 1;
     if(newNext>=size) newNext=0;
-    if(newNext==nextPop) return(false);
+    if (newNext == nextPop) {
+        if (lock) epicsSpinUnlock(lock);
+        return(false);
+    }
     buffer[next] = p;
     nextPush = newNext;
+    if (lock) epicsSpinUnlock(lock);
     return(true);
 }
 
 template <class T>
 inline T* epicsRingPointer<T>::pop()
 {
+    if (lock) epicsSpinLock(lock);
     int next = nextPop;
-    if(next == nextPush) return(0);
+    if (next == nextPush) {
+        if (lock) epicsSpinUnlock(lock);
+        return(0);
+    }
     T*p  = buffer[next];
     ++next;
     if(next >=size) next = 0;
     nextPop = next;
+    if (lock) epicsSpinUnlock(lock);
     return(p);
 }
 
 template <class T>
 inline void epicsRingPointer<T>::flush()
 {
+    if (lock) epicsSpinLock(lock);
     nextPop = 0;
     nextPush = 0;
+    if (lock) epicsSpinUnlock(lock);
 }
 
 template <class T>
 inline int epicsRingPointer<T>::getFree() const
 {
+    if (lock) epicsSpinLock(lock);
     int n = nextPop - nextPush - 1;
     if (n < 0) n += size;
+    if (lock) epicsSpinUnlock(lock);
     return n;
 }
 
 template <class T>
 inline int epicsRingPointer<T>::getUsed() const
 {
+    if (lock) epicsSpinLock(lock);
     int n = nextPush - nextPop;
     if (n < 0) n += size;
+    if (lock) epicsSpinUnlock(lock);
     return n;
 }
 
 template <class T>
 inline int epicsRingPointer<T>::getSize() const
-{   return(size-1);}
+{
+    return(size-1);
+}
 
 template <class T>
 inline bool epicsRingPointer<T>::isEmpty() const
-{   return(nextPush==nextPop);}
+{
+    bool isEmpty;
+    if (lock) epicsSpinLock(lock);
+    isEmpty = (nextPush == nextPop);
+    if (lock) epicsSpinUnlock(lock);
+    return isEmpty;
+}
 
 template <class T>
 inline bool epicsRingPointer<T>::isFull() const
 {
+    if (lock) epicsSpinLock(lock);
     int count = nextPush - nextPop +1;
+    if (lock) epicsSpinUnlock(lock);
     return((count == 0) || (count == size));
 }
 

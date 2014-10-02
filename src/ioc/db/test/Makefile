@@ -55,10 +55,27 @@ callbackTest_SRCS += callbackTest.c
 testHarness_SRCS += callbackTest.c
 TESTS += callbackTest
 
+TESTPROD_HOST += callbackParallelTest
+callbackParallelTest_SRCS += callbackParallelTest.c
+testHarness_SRCS += callbackParallelTest.c
+TESTS += callbackParallelTest
+
 TESTPROD_HOST += dbStateTest
 dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
+
+TARGETS += $(COMMON_DIR)/scanIoTest.dbd
+scanIoTest_DBD += menuGlobal.dbd
+scanIoTest_DBD += menuConvert.dbd
+scanIoTest_DBD += yRecord.dbd
+TESTPROD_HOST += scanIoTest
+scanIoTest_SRCS += scanIoTest.c
+scanIoTest_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += scanIoTest.c
+testHarness_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/scanIoTest.dbd ../scanIoTest.db
+TESTS += scanIoTest
 
 TESTPROD_HOST += dbChannelTest
 dbChannelTest_SRCS += dbChannelTest.c
@@ -105,4 +122,5 @@ include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
 

@@ -17,3 +17,5 @@ variable(dbBptNotMonotonic,int)
 
 # dbLoadTemplate settings
 variable(dbTemplateMaxVars,int)
+# Default number of parallel callback threads
+variable(callbackParallelThreadsDefault,int)

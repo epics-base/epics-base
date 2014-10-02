@@ -24,6 +24,8 @@
 #include "dbIocRegister.h"
 #include "dbState.h"
 
+epicsShareExtern int callbackParallelThreadsDefault;
+
 /* dbLoadDatabase */
 static const iocshArg dbLoadDatabaseArg0 = { "file name",iocshArgString};
 static const iocshArg dbLoadDatabaseArg1 = { "path",iocshArgString};
@@ -305,6 +307,18 @@ static void callbackSetQueueSizeCallFunc(const iocshArgBuf *args)
     callbackSetQueueSize(args[0].ival);
 }
 
+/* callbackParallelThreads */
+static const iocshArg callbackParallelThreadsArg0 = { "no of threads", iocshArgInt};
+static const iocshArg callbackParallelThreadsArg1 = { "priority", iocshArgString};
+static const iocshArg * const callbackParallelThreadsArgs[2] =
+    {&callbackParallelThreadsArg0,&callbackParallelThreadsArg1};
+static const iocshFuncDef callbackParallelThreadsFuncDef =
+    {"callbackParallelThreads",2,callbackParallelThreadsArgs};
+static void callbackParallelThreadsCallFunc(const iocshArgBuf *args)
+{
+    callbackParallelThreads(args[0].ival, args[1].sval);
+}
+
 /* dbStateCreate */
 static const iocshArg dbStateArgName = { "name", iocshArgString };
 static const iocshArg * const dbStateCreateArgs[] = { &dbStateArgName };
@@ -402,6 +416,10 @@ void dbIocRegister(void)
     iocshRegister(&scanpiolFuncDef,scanpiolCallFunc);
 
     iocshRegister(&callbackSetQueueSizeFuncDef,callbackSetQueueSizeCallFunc);
+    iocshRegister(&callbackParallelThreadsFuncDef,callbackParallelThreadsCallFunc);
+
+    /* Needed before callback system is initialized */
+    callbackParallelThreadsDefault = epicsThreadGetCPUs();
 
     iocshRegister(&dbStateCreateFuncDef, dbStateCreateCallFunc);
     iocshRegister(&dbStateSetFuncDef, dbStateSetCallFunc);

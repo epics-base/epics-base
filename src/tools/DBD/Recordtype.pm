@@ -83,7 +83,9 @@ sub toCdefs {
 }
 
 sub equals {
-    my ($a, $b) = @_;
+    my ($new, $known) = @_;
+    return 0 if ! $known->fields;
+    return 1 if ! $new->fields;
     dieContext("Duplicate definition of record type '$a->{NAME}'");
 }
 

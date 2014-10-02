@@ -59,9 +59,12 @@ sub ParseDBD {
                           \s* $RXstr \s* , \s*$RXstr \s* \)/oxgc) {
             print "Device: $1, $2, $3, $4\n" if $debug;
             my $rtyp = $dbd->recordtype($1);
-            dieContext("Unknown record type '$1'")
-                unless defined $rtyp;
-            $rtyp->add_device(DBD::Device->new($2, $3, $4));
+	    if (!defined $rtyp) {
+	        $rtyp = DBD::Recordtype->new($1);
+		warn "Device using undefined record type '$1', place-holder created\n";
+		$dbd->add($rtyp);
+            }
+	    $rtyp->add_device(DBD::Device->new($2, $3, $4));
         } else {
             last unless m/\G (.*) $/moxgc;
             dieContext("Syntax error in '$1'");

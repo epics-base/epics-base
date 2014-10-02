@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* osi/os/vxWorks/osiFindSymbol */
+/* osi/os/vxWorks/osdFindSymbol */
 
 /* This is needed for vxWorks 6.8 to prevent an obnoxious compiler warning */
 #define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>

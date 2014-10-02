@@ -3,7 +3,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* osi/os/WIN32/epicsFindSymbol.c */
+/* osi/os/WIN32/osdFindSymbol.c */
 
 
 #include <windows.h>

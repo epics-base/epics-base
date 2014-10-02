@@ -15,6 +15,26 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Full support for loadable support modules</h3>
+
+<p>Apparently later versions of Base 3.14 permitted support modules to be loaded
+from a shared library at runtime without the IOC having been linked against that
+shared library; the registerRecordDeviceDriver.pl program would accept a partial
+DBD file containing just the entries needed for the library and generate the
+appropriate registration code. In 3.15 however the registerRecordDeviceDriver.pl
+program was replaced by one using the new DBD file parser, and in this a device
+support entry would only be accepted after first loading the record type that it
+depended on.</p>
+
+<p>The parser has been modified to accept device entries without having seen the
+record type first, although a warning is given when that happens. To remove the
+warning the DBD file can provide a record type declaration instead (no fields
+can be defined, so the braces must be empty), before the device() entry. The
+result will generate the correct registration code for the device entry without
+including anything for any merely declared record types. The generated code can
+be linked into a shared library and loaded by an IOC at runtime using dlload.
+</p>
+
 <h3>Parallel callback threads</h3>
 
 <p>The general purpose callback facility can run multiple parallel callback

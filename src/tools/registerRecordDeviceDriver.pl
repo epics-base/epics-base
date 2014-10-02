@@ -20,10 +20,10 @@ use EPICS::Path;
 use EPICS::Getopts;
 use Text::Wrap;
 
-our ($opt_D, @opt_I, $opt_o);
+our ($opt_D, @opt_I, $opt_o, $opt_l);
 
-getopts('Do:I@') or
-    die "Usage: registerRecordDeviceDriver [-D] [-o out.c] [-I dir] in.dbd subname [TOP]";
+getopts('Dlo:I@') or
+    die "Usage: registerRecordDeviceDriver [-D] [-l] [-o out.c] [-I dir] in.dbd subname [TOP]";
 
 my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 
@@ -69,37 +69,52 @@ print $out (<< "END");
 #include "iocshRegisterCommon.h"
 #include "registryCommon.h"
 
+END
+
+print $out (<< "END") if $opt_l;
+#define epicsExportSharedSymbols
+#include "shareLib.h"
+
+END
+
+print $out (<< "END");
 extern "C" {
 
 END
 
 my %rectypes = %{$dbd->recordtypes};
+my @rtypnames;
 my @dsets;
 if (%rectypes) {
-    my @rtypnames = sort keys %rectypes;
+    my @allrtypnames = sort keys %rectypes;
+    # Record types with no fields defined are declarations,
+    # for building shared libraries containing device support.
+    @rtypnames = grep { scalar $rectypes{$_}->fields } @allrtypnames;
 
-    # Declare the record support entry tables
-    print $out wrap('epicsShareExtern rset ', '    ',
-        join(', ', map {"*pvar_rset_${_}RSET"} @rtypnames)), ";\n\n";
+    if (@rtypnames) {
+        # Declare the record support entry tables
+        print $out wrap('epicsShareExtern rset ', '    ',
+            join(', ', map {"*pvar_rset_${_}RSET"} @rtypnames)), ";\n\n";
 
-    # Declare the RecordSizeOffset functions
-    print $out "typedef int (*rso_func)(dbRecordType *pdbRecordType);\n";
-    print $out wrap('epicsShareExtern rso_func ', '    ',
-        join(', ', map {"pvar_func_${_}RecordSizeOffset"} @rtypnames)), ";\n\n";
+        # Declare the RecordSizeOffset functions
+        print $out "typedef int (*rso_func)(dbRecordType *pdbRecordType);\n";
+        print $out wrap('epicsShareExtern rso_func ', '    ',
+            join(', ', map {"pvar_func_${_}RecordSizeOffset"} @rtypnames)), ";\n\n";
 
-    # List of record type names
-    print $out "static const char * const recordTypeNames[] = {\n";
-    print $out wrap('    ', '    ', join(', ', map {"\"$_\""} @rtypnames));
-    print $out "\n};\n\n";
+        # List of record type names
+        print $out "static const char * const recordTypeNames[] = {\n";
+        print $out wrap('    ', '    ', join(', ', map {"\"$_\""} @rtypnames));
+        print $out "\n};\n\n";
 
-    # List of pointers to each RSET and RecordSizeOffset function
-    print $out "static const recordTypeLocation rtl[] = {\n";
-    print $out join(",\n", map {
-            "    {pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
-        } @rtypnames);
-    print $out "\n};\n\n";
+        # List of pointers to each RSET and RecordSizeOffset function
+        print $out "static const recordTypeLocation rtl[] = {\n";
+        print $out join(",\n", map {
+                "    {pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
+            } @rtypnames);
+        print $out "\n};\n\n";
+    }
 
-    for my $rtype (@rtypnames) {
+    for my $rtype (@allrtypnames) {
         my @devices = $rectypes{$rtype}->devices;
         for my $dtype (@devices) {
             my $dset = $dtype->name;
@@ -206,7 +221,7 @@ print $out (<< 'END');
 
 END
 
-print $out (<< 'END') if %rectypes;
+print $out (<< 'END') if %rectypes && @rtypnames;
     registerRecordTypes(pbase, NELEMENTS(rtl), recordTypeNames, rtl);
 END
 

@@ -18,12 +18,28 @@ use DBD::Parser;
 use EPICS::Getopts;
 use EPICS::macLib;
 use EPICS::Readfile;
-use HTML::Entities;
 
 BEGIN {
     $::XHTML = eval "require Pod::Simple::XHTML; 1";
+    $::ENTITIES = eval "require HTML::Entities; 1";
     if (!$::XHTML) {
         require Pod::Simple::HTML;
+    }
+    if (!$::ENTITIES) {
+        my %entities = (
+            q{>} => 'gt',
+            q{<} => 'lt',
+            q{'} => '#39',
+            q{"} => 'quot',
+            q{&} => 'amp',
+        );
+
+        sub encode_entities {
+            my $str = shift;
+            my $ents = join '', keys %entities;
+            $str =~ s/([ $ents ])/'&' . ($entities{$1} || sprintf '#x%X', ord $1) . ';'/xge;
+            return $str;
+        }
     }
 }
 
@@ -102,7 +118,8 @@ __END_DOCTYPE
     $podHtml = Pod::Simple::HTML->new();
 }
 
-$podHtml->html_css('style.css');
+$podHtml->html_header_tags($podHtml->html_header_tags .
+    "\n<link rel='stylesheet' href='style.css' type='text/css'>");
 $podHtml->force_title(encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');

@@ -7,6 +7,7 @@ sub init {
     $this->SUPER::init($name, "menu");
     $this->{CHOICE_LIST} = [];
     $this->{CHOICE_INDEX} = {};
+    $this->{COMMENTS} = [];
     return $this;
 }
 
@@ -37,6 +38,15 @@ sub legal_choice {
     my ($this, $value) = @_;
     unquote $value;
     return exists $this->{CHOICE_INDEX}->{$value};
+}
+
+sub add_comment {
+    my $this = shift;
+    push @{$this->{COMMENTS}}, @_;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
 }
 
 sub equals {

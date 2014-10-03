@@ -8,6 +8,7 @@ sub init {
     my ($this, $name) = @_;
     $this->SUPER::init($name, "breakpoint table");
     $this->{POINT_LIST} = [];
+    $this->{COMMENTS} = [];
     return $this;
 }
 
@@ -29,6 +30,15 @@ sub points {
 sub point {
     my ($this, $idx) = @_;
     return $this->{POINT_LIST}[$idx];
+}
+
+sub add_comment {
+    my $this = shift;
+    push @{$this->{COMMENTS}}, @_;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
 }
 
 sub equals {

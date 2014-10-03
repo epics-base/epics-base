@@ -11,7 +11,7 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd
+dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D -I ../db -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@

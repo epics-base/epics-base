@@ -3,10 +3,36 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=title Compress Record (compress)
+
+...
+
+=head2 Record-specific Menus
+
+=head3 Menu compressALG
+
+The ALG field which uses this menu controls the compression algorithm used.
+
+...
+
+=menu compressALG
+
+...
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype compress
+
+...
+
+=cut
+
 menu(compressALG) {
 	choice(compressALG_N_to_1_Low_Value,"N to 1 Low Value")
 	choice(compressALG_N_to_1_High_Value,"N to 1 High Value")
@@ -16,6 +42,11 @@ menu(compressALG) {
 	choice(compressALG_N_to_1_Median,"N to 1 Median")
 }
 recordtype(compress) {
+
+=fields VAL
+
+=cut
+
 	include "dbCommon.dbd" 
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -23,6 +54,9 @@ recordtype(compress) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type DOUBLE[]
+		#=read Yes
+		#=write Yes
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")

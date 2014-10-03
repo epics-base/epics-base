@@ -19,6 +19,9 @@ recordtype(aai) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type DOUBLE[]
+		#=read Yes
+		#=write Yes
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")

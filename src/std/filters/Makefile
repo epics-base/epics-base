@@ -9,10 +9,12 @@
 
 SRC_DIRS += $(STDDIR)/filters
 
-DBD_INSTALLS += filters.dbd
+DBD += filters.dbd
 
 dbRecStd_SRCS += ts.c
 dbRecStd_SRCS += dbnd.c
 dbRecStd_SRCS += arr.c
 dbRecStd_SRCS += sync.c
+
+HTMLS += filters.html
 

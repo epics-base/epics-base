@@ -51,3 +51,4 @@ stdRecords_DBD = $(patsubst %,%.dbd,$(stdRecords))
 
 dbRecStd_SRCS += $(patsubst %,%.c,$(stdRecords))
 
+HTMLS += $(patsubst %.dbd.pod,%.html,$(notdir $(wildcard ../rec/*Record.dbd.pod)))

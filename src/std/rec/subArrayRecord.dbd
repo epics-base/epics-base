@@ -15,6 +15,9 @@ recordtype(subArray) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type Set by FTVL
+		#=read Yes
+		#=write Yes
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")

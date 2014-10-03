@@ -49,7 +49,10 @@ PERL_SCRIPTS += dbdToMenuH.pl
 PERL_SCRIPTS += dbdToRecordtypeH.pl
 PERL_SCRIPTS += dbdExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
+PERL_SCRIPTS += podToHtml.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
+
+HTMLS = style.css
 
 # Build Package Config Files
 

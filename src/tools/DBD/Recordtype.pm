@@ -12,6 +12,8 @@ sub init {
     $this->{DEVICE_LIST} = [];
     $this->{DEVICE_INDEX} = {};
     $this->{CDEFS} = [];
+    $this->{COMMENTS} = [];
+    $this->{POD} = [];
     return $this;
 }
 
@@ -69,6 +71,15 @@ sub device {
     return $this->{DEVICE_INDEX}->{$choice};
 }
 
+sub add_comment {
+    my ($this, $comment) = @_;
+    push @{$this->{COMMENTS}}, $comment;
+}
+
+sub comments {
+    return @{shift->{COMMENTS}};
+}
+
 sub add_cdef {
     my ($this, $cdef) = @_;
     push @{$this->{CDEFS}}, $cdef;
@@ -80,6 +91,15 @@ sub cdefs {
 
 sub toCdefs {
     return join("\n", shift->cdefs) . "\n\n";
+}
+
+sub add_pod {
+    my $this = shift;
+    push @{$this->{POD}}, @_;
+}
+
+sub pod {
+    return @{shift->{POD}};
 }
 
 sub equals {

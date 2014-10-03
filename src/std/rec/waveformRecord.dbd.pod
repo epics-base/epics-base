@@ -6,11 +6,43 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
+
+=title Waveform Record (waveform)
+
+...
+
+=head2 Record-specific Menus
+
+=head3 Menu waveformPOST
+
+The MPST and APST fields use this menu to determine when to post new value
+and archive monitors respectively.
+
+=menu waveformPOST
+
+...
+
+=head2 Parameter Fields
+
+The record-specific fields are described below.
+
+=recordtype waveform
+
+...
+
+=cut
+
 menu(waveformPOST) {
-        choice(waveformPOST_Always,"Always")
-        choice(waveformPOST_OnChange,"On Change")
+    choice(waveformPOST_Always,"Always")
+    choice(waveformPOST_OnChange,"On Change")
 }
+
 recordtype(waveform) {
+
+=fields VAL, FTVL, MPST, APST
+
+=cut
+
 	include "dbCommon.dbd" 
 	field(VAL,DBF_NOACCESS) {
 		prompt("Value")
@@ -18,6 +50,9 @@ recordtype(waveform) {
 		special(SPC_DBADDR)
 		pp(TRUE)
 		extra("void *		val")
+		#=type Set by FTVL
+		#=read Yes
+		#=write Yes
 	}
 	field(RARM,DBF_SHORT) {
 		prompt("Rearm the waveform")

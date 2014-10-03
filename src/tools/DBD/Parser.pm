@@ -19,10 +19,9 @@ use DBD::Variable;
 our $debug=0;
 
 sub ParseDBD {
-    my $dbd = shift;
-    $_ = shift;
+    (my $dbd, $_) = @_;
     while (1) {
-        parseCommon();
+        parseCommon($dbd);
         if (m/\G menu \s* \( \s* $RXstr \s* \) \s* \{/oxgc) {
             print "Menu: $1\n" if $debug;
             parse_menu($dbd, $1);
@@ -59,12 +58,12 @@ sub ParseDBD {
                           \s* $RXstr \s* , \s*$RXstr \s* \)/oxgc) {
             print "Device: $1, $2, $3, $4\n" if $debug;
             my $rtyp = $dbd->recordtype($1);
-	    if (!defined $rtyp) {
-	        $rtyp = DBD::Recordtype->new($1);
-		warn "Device using undefined record type '$1', place-holder created\n";
-		$dbd->add($rtyp);
+            if (!defined $rtyp) {
+                $rtyp = DBD::Recordtype->new($1);
+                warn "Device using undefined record type '$1', place-holder created\n";
+                $dbd->add($rtyp);
             }
-	    $rtyp->add_device(DBD::Device->new($2, $3, $4));
+            $rtyp->add_device(DBD::Device->new($2, $3, $4));
         } else {
             last unless m/\G (.*) $/moxgc;
             dieContext("Syntax error in '$1'");
@@ -73,25 +72,48 @@ sub ParseDBD {
 }
 
 sub parseCommon {
+    my ($obj) = @_;
     while (1) {
         # Skip leading whitespace
         m/\G \s* /oxgc;
 
-        if (m/\G \# /oxgc) {
-            if (m/\G \#!BEGIN\{ ( [^}]* ) \}!\#\# \n/oxgc) {
+        # Extract POD
+        if (m/\G ( = [a-zA-Z] .* ) \n/oxgc) {
+            $obj->add_pod($1, &parsePod);
+        }
+        elsif (m/\G \# /oxgc) {
+            if (m/\G \# ! BEGIN \{ ( [^}]* ) \} ! \# \# \n/oxgc) {
                 print "File-Begin: $1\n" if $debug;
                 pushContext("file '$1'");
             }
-            elsif (m/\G \#!END\{ ( [^}]* ) \}!\#\# \n?/oxgc) {
+            elsif (m/\G \# ! END \{ ( [^}]* ) \} ! \# \# \n?/oxgc) {
                 print "File-End: $1\n" if $debug;
                 popContext("file '$1'");
             }
             else {
                 m/\G (.*) \n/oxgc;
+                $obj->add_comment($1);
                 print "Comment: $1\n" if $debug;
             }
         } else {
             return;
+        }
+    }
+}
+
+sub parsePod {
+    pushContext("Pod markup");
+    my @pod;
+    while (1) {
+        if (m/\G ( =cut .* ) \n?/oxgc) {
+            popContext("Pod markup");
+            return @pod;
+        }
+        elsif (m/\G ( .* ) $/oxgc) {
+            dieContext("Unexpected end of input file, Pod block not closed");
+        }
+        elsif (m/\G ( .* ) \n/oxgc) {
+            push @pod, $1
         }
     }
 }
@@ -101,7 +123,7 @@ sub parse_menu {
     pushContext("menu($name)");
     my $menu = DBD::Menu->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($menu);
         if (m/\G choice \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Menu-Choice: $1, $2\n" if $debug;
             $menu->add_choice($1, $2);
@@ -123,7 +145,7 @@ sub parse_breaktable {
     pushContext("breaktable($name)");
     my $bt = DBD::Breaktable->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($bt);
         if (m/\G point\s* \(\s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Breaktable-Point: $1, $2\n" if $debug;
             $bt->add_point($1, $2);
@@ -149,7 +171,7 @@ sub parse_recordtype {
     pushContext("recordtype($name)");
     my $rtyp = DBD::Recordtype->new($name);
     while(1) {
-        parseCommon();
+        parseCommon($rtyp);
         if (m/\G field \s* \( \s* $RXstr \s* , \s* $RXstr \s* \) \s* \{/oxgc) {
             print " Recordtype-Field: $1, $2\n" if $debug;
             parse_field($rtyp, $1, $2);
@@ -175,7 +197,7 @@ sub parse_field {
     my $fld = DBD::Recfield->new($name, $field_type);
     pushContext("field($name, $field_type)");
     while(1) {
-        parseCommon();
+        parseCommon($fld);
         if (m/\G (\w+) \s* \( \s* $RXstr \s* \)/oxgc) {
             print "  Field-Attribute: $1, $2\n" if $debug;
             $fld->add_attribute($1, $2);

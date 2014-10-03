@@ -61,10 +61,6 @@ ifdef T_A
 	$(RM) $@ $@_new
 	$(PERL) $(EXTUTILS)/xsubpp -typemap $(EXTUTILS)/typemap $< > $@_new && $(MV) $@_new $@
 
-  %.html: ../%.pm
-	$(RM) $@
-	podchecker $< && pod2html --infile=$< --outfile=$@
-
   $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)/%: %
 	$(ECHO) "Installing loadable shared library $@"
 	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $< $(INSTALL_PERL_MODULES)/$(PERL_ARCHPATH)

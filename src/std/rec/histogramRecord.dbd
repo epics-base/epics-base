@@ -20,6 +20,9 @@ recordtype(histogram) {
 		asl(ASL0)
 		special(SPC_DBADDR)
 		extra("void *	val")
+		#=type ULONG[]
+		#=read Yes
+		#=write Yes
 	}
 	field(NELM,DBF_USHORT) {
 		prompt("Num of Array Elements")

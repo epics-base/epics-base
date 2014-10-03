@@ -68,6 +68,8 @@ else
 INSTALL_TEMPLATES_SUBDIR = $(INSTALL_TEMPLATES)
 endif
 
+HTMLS_DIR ?= .
+
 #---------------------------------------------------------------
 #	First target
 
@@ -478,6 +480,10 @@ $(INSTALL_HTML)/$(HTMLS_DIR)/%: %
 
 $(INSTALL_HTML)/$(HTMLS_DIR)/%: ../%
 	$(ECHO) "Installing html $@"
+	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
+
+$(INSTALL_HTML)/$(HTMLS_DIR)/%: $(COMMON_DIR)/%
+	$(ECHO) "Installing generated html $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_TEMPLATES_SUBDIR)/%: ../%

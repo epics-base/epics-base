@@ -21,11 +21,6 @@
 
 #define STATE_NAME_LENGTH 20
 
-static const
-chfPluginEnumType modeEnum[] = { {"before", 0}, {"first",  1},
-                                 {"last",   2}, {"after",  3},
-                                 {"while",  4}, {"unless", 5},
-                                 {NULL,0} };
 typedef enum syncMode {
     syncModeBefore=0,
     syncModeFirst=1,
@@ -34,6 +29,17 @@ typedef enum syncMode {
     syncModeWhile=4,
     syncModeUnless=5
 } syncMode;
+
+static const
+chfPluginEnumType modeEnum[] = {
+    {"before", syncModeBefore},
+    {"first", syncModeFirst},
+    {"last", syncModeLast},
+    {"after", syncModeAfter},
+    {"while", syncModeWhile},
+    {"unless", syncModeUnless},
+    {NULL, 0}
+};
 
 typedef struct myStruct {
     syncMode mode;

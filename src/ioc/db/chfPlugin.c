@@ -180,7 +180,7 @@ store_double_value(const chfPluginArgDef *opt, void *vuser, double val)
     epicsInt32 *ival;
     double *dval;
     char *sval;
-    unsigned int i;
+    int i;
 
 #ifdef DEBUG_CHF
     printf("Got a double for %s (type %d, convert: %s): %g\n",

@@ -20,27 +20,28 @@
 #include <math.h>
 #include <float.h>
 
-#include "epicsConvert.h"
-#include "dbDefs.h"
-#include "errlog.h"
-#include "ellLib.h"
-#include "epicsTime.h"
-#include "errMdef.h"
 #include "alarm.h"
+#include "dbDefs.h"
+#include "ellLib.h"
+#include "epicsConvert.h"
+#include "epicsTime.h"
+#include "errlog.h"
+#include "errMdef.h"
+
+#define epicsExportSharedSymbols
 #define db_accessHFORdb_accessC
 #include "db_access.h"
 #undef db_accessHFORdb_accessC
 
-#define epicsExportSharedSymbols
-#include "dbStaticLib.h"
+#include "dbAccessDefs.h"
+#include "db_access_routines.h"
 #include "dbBase.h"
 #include "dbChannel.h"
 #include "dbCommon.h"
-#include "recSup.h"
-#include "dbNotify.h"
-#include "dbAccessDefs.h"
 #include "dbEvent.h"
-#include "db_access_routines.h"
+#include "dbNotify.h"
+#include "dbStaticLib.h"
+#include "recSup.h"
 
 
 #define oldDBF_STRING      0

@@ -14,31 +14,31 @@
  *      Date:              12-9-93
  */
 #include <stddef.h>
-#include <epicsStdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
 
-#include "epicsConvert.h"
-#include "dbDefs.h"
-#include "errlog.h"
-#include "cvtFast.h"
 #include "alarm.h"
+#include "cvtFast.h"
+#include "dbDefs.h"
+#include "epicsConvert.h"
+#include "epicsStdlib.h"
+#include "errlog.h"
+#include "errMdef.h"
+
+#define epicsExportSharedSymbols
+#include "dbAccessDefs.h"
+#include "dbAddr.h"
 #include "dbBase.h"
-#include "link.h"
+#include "dbCommon.h"
+#include "dbConvertFast.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"
-#include "dbCommon.h"
-#include "dbFldTypes.h"
-#include "errMdef.h"
+#include "link.h"
+#include "recGbl.h"
 #include "recSup.h"
 #include "special.h"
-#define epicsExportSharedSymbols
-#include "dbAddr.h"
-#include "dbAccessDefs.h"
-#include "recGbl.h"
-#include "dbConvertFast.h"
  
 
 /*

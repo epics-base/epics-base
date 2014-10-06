@@ -11,6 +11,7 @@
 #define INC_registryCommon_H
 
 #include "dbStaticLib.h"
+#include "devSup.h"
 #include "registryRecordType.h"
 #include "shareLib.h"
 

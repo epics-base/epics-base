@@ -10,19 +10,19 @@
 #include "iocsh.h"
 
 #define epicsExportSharedSymbols
-#include "dbBkpt.h"
+#include "callback.h"
 #include "dbAccess.h"
+#include "dbBkpt.h"
 #include "dbCaTest.h"
 #include "dbEvent.h"
-#include "dbTest.h"
-#include "db_test.h"
+#include "dbIocRegister.h"
 #include "dbLock.h"
+#include "dbNotify.h"
 #include "dbScan.h"
 #include "dbServer.h"
-#include "dbNotify.h"
-#include "callback.h"
-#include "dbIocRegister.h"
 #include "dbState.h"
+#include "db_test.h"
+#include "dbTest.h"
 
 epicsShareExtern int callbackParallelThreadsDefault;
 

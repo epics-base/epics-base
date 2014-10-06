@@ -14,34 +14,33 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "epicsStdlib.h"
-#include "epicsStdio.h"
-#include "epicsString.h"
 #include "dbDefs.h"
-#include "errlog.h"
 #include "ellLib.h"
 #include "epicsMutex.h"
-#include "ellLib.h"
+#include "epicsStdio.h"
+#include "epicsStdlib.h"
 #include "epicsString.h"
+#include "errlog.h"
+
 #define epicsExportSharedSymbols
+#include "callback.h"
+#include "dbAccessDefs.h"
+#include "dbAddr.h"
 #include "dbBase.h"
-#include "dbStaticLib.h"
-#include "link.h"
+#include "dbCommon.h"
+#include "dbEvent.h"
+#include "db_field_log.h"
 #include "dbFldTypes.h"
-#include "recSup.h"
+#include "dbLock.h"
+#include "dbStaticLib.h"
+#include "dbTest.h"
 #include "devSup.h"
 #include "drvSup.h"
-#include "dbCommon.h"
-#include "special.h"
-#include "db_field_log.h"
-#include "dbAddr.h"
-#include "dbLock.h"
-#include "dbAccessDefs.h"
+#include "link.h"
 #include "recGbl.h"
-#include "dbEvent.h"
-#include "callback.h"
-#include "dbTest.h"
-
+#include "recSup.h"
+#include "special.h"
+
 #define MAXLINE 80
 struct msgBuff {    /* line output structure */
     char            out_buff[MAXLINE + 1];

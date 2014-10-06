@@ -14,8 +14,8 @@
 #include <stdio.h>
 
 #include "compilerDependencies.h"
-#include "epicsVersion.h"
 #include "epicsStdio.h"
+#include "epicsVersion.h"
 
 #define epicsExportSharedSymbols
 #include "epicsRelease.h"

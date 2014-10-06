@@ -10,11 +10,11 @@
 #include "iocsh.h"
 
 #define epicsExportSharedSymbols
-#include "registryRecordType.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
 #include "registryFunction.h"
 #include "registryIocRegister.h"
+#include "registryRecordType.h"
 
 static const iocshArg registryXxxFindArg0 = { "name",iocshArgString};
 static const iocshArg * const registryXxxFindArgs[1] = {&registryXxxFindArg0};

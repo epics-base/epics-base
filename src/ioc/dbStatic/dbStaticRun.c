@@ -15,13 +15,13 @@
 #include <string.h>
 #include <math.h>
 
-#include "dbDefs.h"
-#include "errMdef.h"
-#include "epicsPrint.h"
-#include "ellLib.h"
 #include "cvtFast.h"
-#include "epicsTypes.h"
+#include "dbDefs.h"
+#include "ellLib.h"
+#include "epicsPrint.h"
 #include "epicsStdlib.h"
+#include "epicsTypes.h"
+#include "errMdef.h"
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"

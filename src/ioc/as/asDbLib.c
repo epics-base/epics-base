@@ -13,26 +13,28 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "errlog.h"
-#include "cantProceed.h"
-#include "epicsThread.h"
-#include "epicsStdio.h"
-#include "dbDefs.h"
-#include "taskwd.h"
-#include "asLib.h"
-#define epicsExportSharedSymbols
 #include "alarm.h"
+#include "asLib.h"
+#include "cantProceed.h"
+#include "dbDefs.h"
+#include "epicsStdio.h"
+#include "epicsThread.h"
+#include "errlog.h"
+#include "taskwd.h"
+
 #include "caeventmask.h"
-#include "callback.h"
-#include "dbStaticLib.h"
-#include "dbChannel.h"
-#include "dbAccess.h"
-#include "db_field_log.h"
-#include "dbEvent.h"
-#include "dbCommon.h"
-#include "recSup.h"
+
+#define epicsExportSharedSymbols
 #include "asCa.h"
 #include "asDbLib.h"
+#include "callback.h"
+#include "dbAccess.h"
+#include "dbChannel.h"
+#include "dbCommon.h"
+#include "dbEvent.h"
+#include "db_field_log.h"
+#include "dbStaticLib.h"
+#include "recSup.h"
 
 static char	*pacf=NULL;
 static char	*psubstitutions=NULL;

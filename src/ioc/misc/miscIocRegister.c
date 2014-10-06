@@ -11,10 +11,10 @@
 
 #include "iocsh.h"
 #include "errlog.h"
-#include "epicsExport.h"
 
 #define epicsExportSharedSymbols
 #include "iocInit.h"
+#include "epicsExport.h"
 #include "epicsRelease.h"
 #include "miscIocRegister.h"
 

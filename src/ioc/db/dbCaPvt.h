@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbCaPvt.h */
 /****************************************************************
@@ -16,8 +15,14 @@
 *
 ****************************************************************/
 
-#ifndef INCdbCaPvth
-#define INCdbCaPvth 1
+#ifndef INC_dbCaPvt_H
+#define INC_dbCaPvt_H
+
+#include "dbCa.h"
+#include "ellLib.h"
+#include "epicsMutex.h"
+#include "epicsTypes.h"
+#include "link.h"
 
 /* link_action mask */
 #define	CA_CLEAR_CHANNEL		0x1
@@ -85,4 +90,4 @@ typedef struct caLink
 	unsigned long	nNoWrite; /*only modified by dbCaPutLink*/
 }caLink;
 
-#endif /*INCdbCaPvth*/
+#endif /* INC_dbCaPvt_H */

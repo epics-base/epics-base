@@ -11,15 +11,15 @@
 #include "libComRegister.h"
 
 #define epicsExportSharedSymbols
-#include "dbAccess.h"
-#include "dbStaticIocRegister.h"
-#include "registryIocRegister.h"
 #include "asIocRegister.h"
+#include "dbAccess.h"
 #include "dbIocRegister.h"
+#include "dbStaticIocRegister.h"
 #include "dbtoolsIocRegister.h"
-#include "rsrvIocRegister.h"
-#include "miscIocRegister.h"
 #include "iocshRegisterCommon.h"
+#include "miscIocRegister.h"
+#include "registryIocRegister.h"
+#include "rsrvIocRegister.h"
 
 void iocshRegisterCommon(void)
 {

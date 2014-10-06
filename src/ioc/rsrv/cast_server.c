@@ -36,18 +36,18 @@
 #include <string.h>
 #include <errno.h>
 
-#include "osiSock.h"
-#include "epicsMutex.h"
 #include "dbDefs.h"
-#include "errlog.h"
-#include "taskwd.h"
-#include "epicsTime.h"
 #include "envDefs.h"
+#include "epicsMutex.h"
+#include "epicsTime.h"
+#include "errlog.h"
 #include "freeList.h"
+#include "osiSock.h"
+#include "taskwd.h"
 
 #define epicsExportSharedSymbols
-#include "server.h"
 #include "rsrv.h"
+#include "server.h"
     
 #define TIMEOUT 60.0 /* sec */
 

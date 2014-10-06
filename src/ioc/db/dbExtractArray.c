@@ -20,8 +20,9 @@
 #include <string.h>
 
 #include "epicsTypes.h"
-#include "dbAddr.h"
+
 #define epicsExportSharedSymbols
+#include "dbAddr.h"
 #include "dbExtractArray.h"
 
 void dbExtractArrayFromRec(const dbAddr *paddr, void *pto,

@@ -25,14 +25,11 @@
 #include <string.h>
 #include <errno.h>
 
-/*
- *  EPICS includes
- */
-#include "dbDefs.h"
-#include "osiSock.h"
-#include "errlog.h"
-#include "envDefs.h"
 #include "addrList.h"
+#include "dbDefs.h"
+#include "envDefs.h"
+#include "errlog.h"
+#include "osiSock.h"
 #include "taskwd.h"
 
 #define epicsExportSharedSymbols

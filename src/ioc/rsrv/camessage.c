@@ -23,32 +23,32 @@
 #include <stdarg.h>
 #include <limits.h>
 
-#include "osiSock.h"
-#include "osiPoolStatus.h"
 #include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "epicsStdio.h"
 #include "epicsThread.h"
-#include "epicsMutex.h"
 #include "epicsTime.h"
 #include "errlog.h"
 #include "freeList.h"
+#include "osiPoolStatus.h"
+#include "osiSock.h"
+
 #include "caerr.h"
 #include "net_convert.h"
 
 #define epicsExportSharedSymbols
-#include "db_access_routines.h"
+#include "asDbLib.h"
+#include "callback.h"
 #include "db_access.h"
-#include "special.h"
-#include "db_field_log.h"
-#include "dbEvent.h"
+#include "db_access_routines.h"
 #include "dbChannel.h"
 #include "dbCommon.h"
-#include "dbNotify.h"
+#include "dbEvent.h"
 #include "db_field_log.h"
-#include "callback.h"
-#include "asDbLib.h"
+#include "dbNotify.h"
 #include "rsrv.h"
 #include "server.h"
+#include "special.h"
 
 #define RECORD_NAME(CHAN) (dbChannelRecord(CHAN)->name)
 

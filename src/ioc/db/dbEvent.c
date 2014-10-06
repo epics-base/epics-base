@@ -23,27 +23,29 @@
 #include <errno.h>
 #include <limits.h>
 
-#include "epicsAssert.h"
 #include "cantProceed.h"
 #include "dbDefs.h"
-#include "epicsMutex.h"
+#include "epicsAssert.h"
 #include "epicsEvent.h"
+#include "epicsMutex.h"
 #include "epicsThread.h"
 #include "errlog.h"
-#include "taskwd.h"
 #include "freeList.h"
-#include "dbBase.h"
-#include "dbFldTypes.h"
-#include "link.h"
-#include "dbCommon.h"
+#include "taskwd.h"
+
 #include "caeventmask.h"
-#include "db_field_log.h"
+
 #define epicsExportSharedSymbols
-#include "dbAddr.h"
-#include "dbChannel.h"
-#include "dbLock.h"
 #include "dbAccessDefs.h"
+#include "dbAddr.h"
+#include "dbBase.h"
+#include "dbChannel.h"
+#include "dbCommon.h"
 #include "dbEvent.h"
+#include "db_field_log.h"
+#include "dbFldTypes.h"
+#include "dbLock.h"
+#include "link.h"
 
 #define EVENTSPERQUE    32
 #define EVENTENTRIES    4      /* the number of que entries for each event */

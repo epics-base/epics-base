@@ -20,34 +20,35 @@
 #include <string.h>
 #include <errno.h>
 
+#include "alarm.h"
+#include "cantProceed.h"
 #include "dbDefs.h"
-#include "epicsMutex.h"
+#include "epicsAssert.h"
 #include "epicsEvent.h"
+#include "epicsExit.h"
+#include "epicsMutex.h"
+#include "epicsPrint.h"
+#include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
-#include "epicsString.h"
 #include "errlog.h"
-#include "taskwd.h"
-#include "alarm.h"
-#include "link.h"
 #include "errMdef.h"
-#include "epicsPrint.h"
-#include "dbCommon.h"
+#include "taskwd.h"
+
 #include "cadef.h"
-#include "epicsAssert.h"
-#include "epicsExit.h"
-#include "cantProceed.h"
 
 /* We can't include dbStaticLib.h here */
 #define dbCalloc(nobj,size) callocMustSucceed(nobj,size,"dbCalloc")
 
 #define epicsExportSharedSymbols
 #include "db_access_routines.h"
-#include "db_convert.h"
-#include "dbScan.h"
-#include "dbLock.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"
+#include "dbCommon.h"
+#include "db_convert.h"
+#include "dbLock.h"
+#include "dbScan.h"
+#include "link.h"
 #include "recSup.h"
 
 extern void dbServiceIOInit();

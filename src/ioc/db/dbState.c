@@ -13,15 +13,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "iocsh.h"
-#include "epicsString.h"
-#include "epicsMutex.h"
 #include "ellLib.h"
+#include "epicsMutex.h"
+#include "epicsString.h"
+#include "iocsh.h"
 
 #define epicsExportSharedSymbols
-#include "dbStaticLib.h"
 #include "dbDefs.h"
 #include "dbState.h"
+#include "dbStaticLib.h"
 
 static ELLLIST states = ELLLIST_INIT;
 

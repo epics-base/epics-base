@@ -19,8 +19,9 @@
 
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsThread.h"
+
 #define epicsExportSharedSymbols
 #include "initHooks.h"
 

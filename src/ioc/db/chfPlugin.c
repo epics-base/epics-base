@@ -19,17 +19,16 @@
 #include <limits.h>
 #include <math.h>
 
-#include <dbDefs.h>
-#include <dbStaticLib.h>
-#include <epicsTypes.h>
-#include <epicsStdio.h>
-#include <epicsStdlib.h>
-#include <epicsString.h>
-#include <errlog.h>
-#include <shareLib.h>
+#include "dbDefs.h"
+#include "epicsStdio.h"
+#include "epicsStdlib.h"
+#include "epicsString.h"
+#include "epicsTypes.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "chfPlugin.h"
+#include "dbStaticLib.h"
 
 /*
  * Data for a chfPlugin

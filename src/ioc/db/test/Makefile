@@ -71,6 +71,7 @@ scanIoTest_DBD += menuConvert.dbd
 scanIoTest_DBD += yRecord.dbd
 TESTPROD_HOST += scanIoTest
 scanIoTest_SRCS += scanIoTest.c
+scanIoTest_REGRDDFLAGS = -l
 scanIoTest_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanIoTest.c
 testHarness_SRCS += scanIoTest_registerRecordDeviceDriver.cpp

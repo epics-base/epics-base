@@ -17,24 +17,25 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "dbmf.h"
-
 #include "dbDefs.h"
-#include "epicsPrint.h"
-#include "errMdef.h"
+#include "dbmf.h"
 #include "ellLib.h"
-#include "gpHash.h"
-#include "freeList.h"
-#include "guigroup.h"
-#include "special.h"
-#include "macLib.h"
+#include "epicsPrint.h"
 #include "epicsString.h"
-#include "epicsExport.h"
+#include "errMdef.h"
+#include "freeList.h"
+#include "gpHash.h"
+#include "macLib.h"
 
+#define epicsExportSharedSymbols
+#include "dbBase.h"
 #include "dbFldTypes.h"
-#include "link.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+#include "epicsExport.h"
+#include "guigroup.h"
+#include "link.h"
+#include "special.h"
 
 
 

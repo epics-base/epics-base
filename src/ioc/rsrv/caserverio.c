@@ -22,12 +22,12 @@
 #include <limits.h>
 
 #include "dbDefs.h"
-#include "osiSock.h"
-#include "epicsTime.h"
 #include "epicsSignal.h"
+#include "epicsTime.h"
 #include "errlog.h"
-#include "caerr.h"
+#include "osiSock.h"
 
+#include "caerr.h"
 #include "net_convert.h"
 
 #define epicsExportSharedSymbols

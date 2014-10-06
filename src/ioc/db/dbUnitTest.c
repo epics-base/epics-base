@@ -12,18 +12,18 @@
 
 #include <string.h>
 
+#include "dbmf.h"
 #include "epicsUnitTest.h"
 #include "osiFileName.h"
-#include "dbmf.h"
 #include "registry.h"
-#define epicsExportSharedSymbols
-#include "iocInit.h"
-#include "initHooks.h"
-#include "dbBase.h"
-#include "dbAccess.h"
-#include "dbStaticLib.h"
 
+#define epicsExportSharedSymbols
+#include "dbAccess.h"
+#include "dbBase.h"
+#include "dbStaticLib.h"
 #include "dbUnitTest.h"
+#include "initHooks.h"
+#include "iocInit.h"
 
 void testdbPrepare(void)
 {

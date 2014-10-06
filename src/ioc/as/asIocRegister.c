@@ -7,11 +7,12 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-#include "iocsh.h"
 #include "asLib.h"
+#include "iocsh.h"
+
 #define epicsExportSharedSymbols
-#include "asDbLib.h"
 #include "asCa.h"
+#include "asDbLib.h"
 #include "asIocRegister.h"
 
 /* asSetFilename */

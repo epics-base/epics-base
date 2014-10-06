@@ -22,21 +22,22 @@
 #include <math.h>
 #include <float.h>
 
-#include "epicsConvert.h"
-#include "dbDefs.h"
-#include "errlog.h"
 #include "cvtFast.h"
+#include "dbDefs.h"
+#include "epicsConvert.h"
+#include "errlog.h"
+#include "errMdef.h"
+
+#define epicsExportSharedSymbols
+#include "dbAccessDefs.h"
+#include "dbAddr.h"
 #include "dbBase.h"
-#include "link.h"
+#include "dbConvert.h"
 #include "dbFldTypes.h"
 #include "dbStaticLib.h"
-#include "errMdef.h"
-#include "recSup.h"
-#define epicsExportSharedSymbols
-#include "dbAddr.h"
-#include "dbAccessDefs.h"
+#include "link.h"
 #include "recGbl.h"
-#include "dbConvert.h"
+#include "recSup.h"
 
 /* Helper for copy as bytes with no type conversion.
  * Assumes nRequest <= no_bytes

@@ -21,32 +21,28 @@
 #include <limits.h>
 #include <errno.h>
 
-#include "osiSock.h"
-#include "osiPoolStatus.h"
-#include "epicsSignal.h"
+#include "addrList.h"
 #include "epicsEvent.h"
 #include "epicsMutex.h"
+#include "epicsSignal.h"
 #include "epicsStdio.h"
 #include "epicsTime.h"
 #include "errlog.h"
-#include "taskwd.h"
-#include "addrList.h"
 #include "freeList.h"
-#include "errlog.h"
+#include "osiPoolStatus.h"
+#include "osiSock.h"
+#include "taskwd.h"
 
 #define epicsExportSharedSymbols
-#include "db_field_log.h"
-#include "dbEvent.h"
 #include "dbChannel.h"
 #include "dbCommon.h"
+#include "dbEvent.h"
+#include "db_field_log.h"
 #include "dbServer.h"
 #include "rsrv.h"
+
 #define GLBLSOURCE
 #include "server.h"
-
-#define DELETE_TASK(NAME) \
-    if (threadNameToId(NAME)!=0) \
-        threadDestroy(threadNameToId(NAME));
 
 epicsThreadPrivateId rsrvCurrentClient;
 

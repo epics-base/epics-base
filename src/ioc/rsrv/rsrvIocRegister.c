@@ -8,6 +8,7 @@
 \*************************************************************************/
 
 #include "iocsh.h"
+
 #define epicsExportSharedSymbols
 #include "rsrv.h"
 #include "rsrvIocRegister.h"

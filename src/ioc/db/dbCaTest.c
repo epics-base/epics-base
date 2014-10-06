@@ -20,11 +20,14 @@
 #include <string.h>
 #include <errno.h>
 
+#include "dbDefs.h"
+#include "epicsEvent.h"
+#include "epicsPrint.h"
+#include "epicsStdio.h"
+
 #define epicsExportSharedSymbols
 #include "dbStaticLib.h"
-#include "link.h"
 #undef epicsExportSharedSymbols
-#include "epicsStdio.h"
 /*definitions needed because of old vs new database access*/
 #undef DBR_SHORT
 #undef DBR_PUT_ACKT
@@ -32,23 +35,22 @@
 #undef VALID_DB_REQ
 #undef INVALID_DB_REQ
 /*end of conflicting definitions*/
+
 #include "cadef.h"
-#include "db_access.h"
-#include "dbDefs.h"
-#include "epicsPrint.h"
-#include "dbCommon.h"
-#include "epicsEvent.h"
 
 /*define DB_CONVERT_GBLSOURCE because db_access.c does not include db_access.h*/
 #define DB_CONVERT_GBLSOURCE
 
 #define epicsExportSharedSymbols
-#include "dbLock.h"
+#include "db_access.h"
 #include "db_access_routines.h"
-#include "db_convert.h"
 #include "dbCa.h"
 #include "dbCaPvt.h"
 #include "dbCaTest.h"
+#include "dbCommon.h"
+#include "db_convert.h"
+#include "dbLock.h"
+#include "link.h"
 
 
 long dbcar(char *precordname, int level)

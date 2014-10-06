@@ -16,9 +16,9 @@
 #include "errlog.h"
 
 #define epicsExportSharedSymbols
+#include "registryCommon.h"
 #include "registryDeviceSupport.h"
 #include "registryDriverSupport.h"
-#include "registryCommon.h"
 
 
 void registerRecordTypes(DBBASE *pbase, int nRecordTypes,

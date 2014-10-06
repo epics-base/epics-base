@@ -21,15 +21,16 @@
 #include <errno.h>
 
 #include "dbDefs.h"
-#include "osiSock.h"
-#include "epicsTime.h"
 #include "epicsStdio.h"
+#include "epicsTime.h"
 #include "errlog.h"
+#include "osiSock.h"
 #include "taskwd.h"
-#include "db_access.h"
+
 #include "caerr.h"
 
 #define epicsExportSharedSymbols
+#include "db_access.h"
 #include "rsrv.h"
 #include "server.h"
 

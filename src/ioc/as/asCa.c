@@ -15,26 +15,28 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "alarm.h"
+#include "asLib.h"
+#include "cantProceed.h"
+#include "db_access.h"
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "epicsThread.h"
-#include "epicsMutex.h"
 #include "epicsEvent.h"
-#include "cantProceed.h"
+#include "epicsMutex.h"
+#include "epicsStdio.h"
+#include "epicsThread.h"
 #include "errlog.h"
 #include "taskwd.h"
-#include "callback.h"
-#include "db_access.h"
+
 #include "cadef.h"
 #include "caerr.h"
 #include "caeventmask.h"
-#include "alarm.h"
-#include "epicsStdio.h"
 
-#include "asLib.h"
-#include "epicsExport.h"
-#include "asDbLib.h"
+#define epicsExportSharedSymbols
 #include "asCa.h"
+#include "asDbLib.h"
+#include "callback.h"
+#include "epicsExport.h"
 
 int asCaDebug = 0;
 epicsExportAddress(int,asCaDebug);

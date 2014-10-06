@@ -19,10 +19,10 @@
 #include "epicsPrint.h"
 
 #define epicsExportSharedSymbols
+#include "cvtTable.h"
+#include "dbAccess.h"
 #include "dbBase.h"
 #include "dbStaticLib.h"
-#include "dbAccess.h"
-#include "cvtTable.h"
 
 static brkTable *findBrkTable(short linr)
 { 

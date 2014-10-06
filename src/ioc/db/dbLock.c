@@ -47,25 +47,26 @@ since this will delay all other threads.
 #include <stdio.h>
 #include <string.h>
 
-#include "epicsStdio.h"
+#include "cantProceed.h"
 #include "dbDefs.h"
-#include "epicsPrint.h"
-#include "errMdef.h"
-#include "epicsMutex.h"
-#include "epicsThread.h"
+#include "ellLib.h"
 #include "epicsAssert.h"
 #include "epicsExit.h"
-#include "cantProceed.h"
-#include "ellLib.h"
+#include "epicsMutex.h"
+#include "epicsPrint.h"
+#include "epicsStdio.h"
+#include "epicsThread.h"
+#include "errMdef.h"
+
 #define epicsExportSharedSymbols
-#include "dbBase.h"
-#include "dbStaticLib.h"
-#include "dbFldTypes.h"
-#include "link.h"
-#include "dbCommon.h"
-#include "dbAddr.h"
 #include "dbAccessDefs.h"
+#include "dbAddr.h"
+#include "dbBase.h"
+#include "dbCommon.h"
+#include "dbFldTypes.h"
 #include "dbLock.h"
+#include "dbStaticLib.h"
+#include "link.h"
 
 
 static int dbLockIsInitialized = FALSE;

@@ -16,19 +16,19 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "dbDefs.h"
-#include "errlog.h"
 #include "cadef.h"
+#include "dbDefs.h"
 #include "epicsStdio.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
+#include "errlog.h"
 
 #define epicsExportSharedSymbols
-#include "dbChannel.h"
 #include "db_access_routines.h"
+#include "dbChannel.h"
+#include "dbCommon.h"
 #include "dbNotify.h"
 #include "db_test.h"
-#include "dbCommon.h"
 
 #define		MAX_ELEMS	10
 

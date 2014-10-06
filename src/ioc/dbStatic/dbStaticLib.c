@@ -17,32 +17,33 @@
 #include <ctype.h>
 
 #include "cantProceed.h"
+#include "cvtFast.h"
+#include "dbDefs.h"
+#include "dbmf.h"
+#include "ellLib.h"
+#include "epicsPrint.h"
+#include "epicsStdio.h"
+#include "epicsStdlib.h"
+#include "epicsString.h"
+#include "errlog.h"
+#include "gpHash.h"
+#include "osiFileName.h"
+#include "postfix.h"
+
 #define DBFLDTYPES_GBLSOURCE
 #define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
-#include "dbDefs.h"
-#include "epicsPrint.h"
-#include "errlog.h"
-#include "ellLib.h"
-#include "cvtFast.h"
-#include "gpHash.h"
-#include "dbmf.h"
-#include "postfix.h"
-#include "osiFileName.h"
-#include "epicsStdlib.h"
-#include "epicsString.h"
-#include "epicsStdio.h"
 
 #define epicsExportSharedSymbols
-#include "link.h"
 #include "dbChannel.h"
 #include "dbFldTypes.h"
-#include "devSup.h"
-#include "drvSup.h"
-#include "special.h"
-#include "guigroup.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
+#include "devSup.h"
+#include "drvSup.h"
+#include "guigroup.h"
+#include "link.h"
+#include "special.h"
 
 int dbStaticDebug = 0;
 static char *pNullString = "";

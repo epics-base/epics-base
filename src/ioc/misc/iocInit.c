@@ -53,6 +53,7 @@
 #include "dbNotify.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
+#include "dbStaticPvt.h"
 #include "devSup.h"
 #include "drvSup.h"
 #include "epicsRelease.h"
@@ -191,6 +192,8 @@ int iocBuildIsolated(void)
 
     status = iocBuild_1();
     if (status) return status;
+
+    dbCaLinkInitIsolated();
 
     status = iocBuild_2();
     if (status) return status;
@@ -621,6 +624,11 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             }
             dbCaRemoveLink(plink);
             plink->type = CONSTANT;
+
+        } else if (plink->type == DB_LINK) {
+            /* free link, but don't split lockset like dbDbRemoveLink() */
+            free(plink->value.pv_link.pvt);
+            plink->type = CONSTANT;
         }
     }
 
@@ -644,11 +652,20 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
+    int j;
     struct rset *prset = pdbRecordType->prset;
 
     if (!prset) return;         /* unlikely */
 
     epicsMutexDestroy(precord->mlok);
+
+    for (j = 0; j < pdbRecordType->no_links; j++) {
+        dbFldDes *pdbFldDes =
+            pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+        DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+
+        dbFreeLinkContents(plink);
+    }
 }
 
 int iocShutdown(void)

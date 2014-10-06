@@ -147,4 +147,4 @@ Com_SRCS_WIN32 += forceBadAllocException.cpp
 #Stack trace support
 Com_SRCS += epicsStackTrace.c
 Com_SRCS += osdBackTrace.cpp
-Com_SRCS += osdFindAddr.cpp
+Com_SRCS += osdFindAddr.c

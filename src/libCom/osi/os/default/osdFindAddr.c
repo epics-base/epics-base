@@ -13,13 +13,13 @@
 
 int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
-	sym_p->f_nam = 0;
-	sym_p->s_nam = 0;
-	sym_p->s_val = 0;
-	return -1;
+    sym_p->f_nam = 0;
+    sym_p->s_nam = 0;
+    sym_p->s_val = 0;
+    return -1;
 }
 
 int epicsFindAddrGetFeatures(void)
 {
-	return 0;
+    return 0;
 }

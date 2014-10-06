@@ -20,19 +20,19 @@
 
 int epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
-Dl_info    inf;
+    Dl_info    inf;
 
     if ( ! dladdr(addr, &inf) ) {
-		sym_p->f_nam = 0;
-		sym_p->s_nam = 0;
-		sym_p->s_val = 0;
-	} else {
-		sym_p->f_nam = inf.dli_fname;
-		sym_p->s_nam = inf.dli_sname;
-		sym_p->s_val = inf.dli_saddr;
-	}
+        sym_p->f_nam = 0;
+        sym_p->s_nam = 0;
+        sym_p->s_val = 0;
+    } else {
+        sym_p->f_nam = inf.dli_fname;
+        sym_p->s_nam = inf.dli_sname;
+        sym_p->s_val = inf.dli_saddr;
+    }
 
-	return 0;
+    return 0;
 }
 
 int epicsFindAddrGetFeatures(void)

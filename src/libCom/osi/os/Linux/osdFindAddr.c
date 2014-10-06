@@ -7,4 +7,4 @@
  * Author: Till Straumann <strauman@slac.stanford.edu>, 2011, 2014
  */ 
 
-#include "osdElfFindAddr.cpp"
+#include "osdElfFindAddr.c"

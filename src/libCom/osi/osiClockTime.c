@@ -30,6 +30,7 @@ static struct {
     int             synchronize;
     int             synchronized;
     epicsEventId    loopEvent;
+    epicsTimeStamp  startTime;
     epicsTimeStamp  syncTime;
     int             syncFromPriority;
     epicsMutexId    lock;
@@ -81,6 +82,9 @@ static void ClockTime_InitOnce(void *psync)
             epicsThreadGetStackSize(epicsThreadStackSmall),
             ClockTimeSync, NULL);
     }
+    else {
+        ClockTimeGetCurrent(&ClockTimePvt.startTime);
+    }
 
     epicsAtExit(ClockTime_Shutdown, NULL);
 
@@ -106,6 +110,11 @@ void ClockTime_Shutdown(void *dummy)
 {
     ClockTimePvt.synchronize = 0;
     epicsEventSignal(ClockTimePvt.loopEvent);
+}
+
+void ClockTime_GetProgramStart(epicsTimeStamp *pDest)
+{
+    *pDest = ClockTimePvt.startTime;
 }
 
 
@@ -134,7 +143,10 @@ static void ClockTimeSync(void *dummy)
             }
 
             epicsMutexMustLock(ClockTimePvt.lock);
-            ClockTimePvt.synchronized     = 1;
+            if (!ClockTimePvt.synchronized) {
+                ClockTimePvt.startTime = timeNow;
+                ClockTimePvt.synchronized     = 1;
+            }
             ClockTimePvt.syncFromPriority = priority;
             ClockTimePvt.syncTime         = timeNow;
             epicsMutexUnlock(ClockTimePvt.lock);
@@ -171,8 +183,8 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
     return 0;
 }
 
-
 #endif /* CLOCK_REALTIME */
+
 /* Allow the following report routine to be compiled anyway
  * to avoid getting a build warning from ranlib.
  */
@@ -181,18 +193,28 @@ static int ClockTimeGetCurrent(epicsTimeStamp *pDest)
 
 int ClockTime_Report(int level)
 {
+    char timebuf[32];
+
     if (onceId == EPICS_THREAD_ONCE_INIT) {
-        printf("OS Clock driver not initialized.\n");
+        printf("OS Clock driver not %s.\n",
+#ifdef CLOCK_REALTIME
+            "initialized"
+#else
+            "included"
+#endif /* CLOCK_REALTIME */
+            );
     } else if (ClockTimePvt.synchronize) {
         epicsMutexMustLock(ClockTimePvt.lock);
         if (ClockTimePvt.synchronized) {
             printf("OS Clock driver has synchronized to a priority=%d provider\n",
                 ClockTimePvt.syncFromPriority);
             if (level) {
-                char lastSync[32];
-                epicsTimeToStrftime(lastSync, sizeof(lastSync),
+                epicsTimeToStrftime(timebuf, sizeof(timebuf),
+                    "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.startTime);
+                printf("Initial sync was at %s\n", timebuf);
+                epicsTimeToStrftime(timebuf, sizeof(timebuf),
                     "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.syncTime);
-                printf("Last successful sync was at %s\n", lastSync);
+                printf("Last successful sync was at %s\n", timebuf);
             }
             printf("Syncronization interval = %.0f seconds\n",
                 ClockTimeSyncInterval);
@@ -201,6 +223,9 @@ int ClockTime_Report(int level)
 
         epicsMutexUnlock(ClockTimePvt.lock);
     } else {
+        epicsTimeToStrftime(timebuf, sizeof(timebuf),
+            "%Y-%m-%d %H:%M:%S.%06f", &ClockTimePvt.startTime);
+        printf("Program started at %s\n", timebuf);
         printf("OS Clock synchronization thread not running.\n");
     }
     return 0;

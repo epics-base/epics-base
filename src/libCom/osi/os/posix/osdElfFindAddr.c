@@ -23,13 +23,16 @@
 #include <sys/mman.h>
 #endif
 
+#define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "epicsThread.h"
-#include <errlog.h>
-
-#define epicsExportSharedSymbols
+#include "epicsTime.h"
+#include "errlog.h"
 #include "epicsStackTrace.h"
 #include "epicsStackTracePvt.h"
+
+/* This routine is provided by osiClockTime.c */
+epicsShareExtern void ClockTime_GetProgramStart(epicsTimeStamp *pDest);
 
 #define FIND_ADDR_DEBUG 0
 
@@ -106,15 +109,9 @@ static ESyms             elfs       = 0;
 static epicsMutexId      listMtx;
 static epicsThreadOnceId listMtxInitId = EPICS_THREAD_ONCE_INIT;
 
-static time_t            prog_start_time = time(0);
-
-extern "C" {
-
 static void listMtxInit(void *unused)
 {
     listMtx = epicsMutexMustCreate();
-}
-
 }
 
 static void
@@ -145,8 +142,9 @@ freeMap(MMap m)
 static ssize_t
 do_read(int fd, void *buf, ssize_t sz)
 {
-ssize_t got;
-char   *ptr=(char*)buf;
+    ssize_t got;
+    char   *ptr=(char*)buf;
+
     while ( sz > 0 ) {
         if ( (got=read(fd,ptr,sz)) <= 0 ) {
             return got;
@@ -172,9 +170,9 @@ freeMapMmap(MMap m)
 static MMap
 getscn_mmap(int fd, uint8_t c, Shdr *shdr_p)
 {
-off_t    n;
-MMap     rval = 0;
-size_t   pgsz  = sysconf(_SC_PAGESIZE);
+    off_t    n;
+    MMap     rval = 0;
+    size_t   pgsz  = sysconf(_SC_PAGESIZE);
 
     if ( 0 == (n = (off_t)FLD(c,(*shdr_p),sh_size)) ) {
         errlogPrintf("elfRead - getscn() -- no section data\n");
@@ -221,8 +219,8 @@ freeMapMalloc(MMap m)
 static MMap
 getscn_read(int fd, uint8_t c, Shdr *shdr_p)
 {
-ssize_t  n;
-MMap     rval = 0;
+    ssize_t  n;
+    MMap     rval = 0;
 
     if ( 0 == (n = (ssize_t) FLD(c,(*shdr_p),sh_size)) ) {
         errlogPrintf("elfRead - getscn() -- no section data\n");
@@ -266,12 +264,12 @@ bail:
 static MMap
 getscn(int fd, uint8_t c, Shdr *shdr_p)
 {
-MMap rval = getscn_mmap(fd, c, shdr_p);
+    MMap rval = getscn_mmap(fd, c, shdr_p);
 
-	if ( ! rval )
-		rval = getscn_read(fd, c, shdr_p);
-	
-	return rval;
+    if ( ! rval )
+        rval = getscn_read(fd, c, shdr_p);
+
+    return rval;
 }
 
 /* Release resources but keep filename so that
@@ -295,14 +293,14 @@ elfSymsRelease(ESyms es)
 static ESyms
 elfRead(const char *fname, uintptr_t fbase)
 {
-int         i;
-Ehdr        ehdr;
-Shdr        shdr;
-uint8_t     c;
-ESyms       es;
-ssize_t     idx,n;
-const char *cp;
-struct stat stat_b;
+    int         i;
+    Ehdr        ehdr;
+    Shdr        shdr;
+    uint8_t     c;
+    ESyms       es;
+    ssize_t     idx,n;
+    const char *cp;
+    struct stat stat_b;
 
     if ( !(es = (ESyms) malloc(sizeof(*es))) ) {
         /* no memory -- give up */
@@ -350,11 +348,16 @@ struct stat stat_b;
     }
     n -= EI_NIDENT;
 
-	if ( 0 == fstat(es->fd, &stat_b) ) {
-		if ( stat_b.st_mtime >= prog_start_time ) {
-			errlogPrintf("elfRead() -- WARNING: '%s' was modified after program start -- symbol information may be inaccurate or invalid\n", fname);
-		}
-	}
+    if ( 0 == fstat(es->fd, &stat_b) ) {
+        epicsTimeStamp progStartStamp;
+        time_t progStartTime;
+
+        ClockTime_GetProgramStart(&progStartStamp);
+        epicsTimeToTime_t(&progStartTime, &progStartStamp);
+        if ( stat_b.st_mtime >= progStartTime ) {
+            errlogPrintf("elfRead() -- WARNING: '%s' was modified after program start -- symbol information may be inaccurate or invalid\n", fname);
+        }
+    }
 
     /* read rest */
     if ( n != do_read(es->fd, ehdr.e32.e_ident + EI_NIDENT, n) ) {
@@ -379,22 +382,22 @@ struct stat stat_b;
             break;
     }
 
-	if ( i>=FLD(c,ehdr,e_shnum) ) {
-		/* no SYMTAB -- try dynamic symbols */
+    if ( i>=FLD(c,ehdr,e_shnum) ) {
+        /* no SYMTAB -- try dynamic symbols */
 
-		if ( (off_t)-1 == lseek(es->fd, (off_t) FLD(c,ehdr,e_shoff), SEEK_SET) ) {
-			errlogPrintf("elfRead() -- unable to seek to shoff: %s\n", strerror(errno));
-			goto bail;
-		}
+        if ( (off_t)-1 == lseek(es->fd, (off_t) FLD(c,ehdr,e_shoff), SEEK_SET) ) {
+            errlogPrintf("elfRead() -- unable to seek to shoff: %s\n", strerror(errno));
+            goto bail;
+        }
 
-		for ( i = 0; i<FLD(c,ehdr,e_shnum); i++ ) {
-			if ( n != do_read(es->fd, &shdr, n) ) {
-				errlogPrintf("elfRead() -- unable to read section header: %s\n", strerror(errno));
-				goto bail;
-			}
-			if ( SHT_DYNSYM == FLD(c,shdr,sh_type) )
-				break;
-		}
+        for ( i = 0; i<FLD(c,ehdr,e_shnum); i++ ) {
+            if ( n != do_read(es->fd, &shdr, n) ) {
+                errlogPrintf("elfRead() -- unable to read section header: %s\n", strerror(errno));
+                goto bail;
+            }
+            if ( SHT_DYNSYM == FLD(c,shdr,sh_type) )
+                break;
+        }
     }
 
     if ( i>=FLD(c,ehdr,e_shnum) ) {
@@ -505,7 +508,8 @@ ESyms es;
 static ESyms
 elfSymsFind(const char *fname)
 {
-ESyms es;
+    ESyms es;
+
     for ( es=elfs; es && strcmp(fname, es->fname); es = es->next )
         /* nothing else to do */; 
     return es;
@@ -514,31 +518,31 @@ ESyms es;
 int
 epicsFindAddr(void *addr, epicsSymbol *sym_p)
 {
-Dl_info    inf;
-ESyms      es,nes = 0;
-uintptr_t  minoff,off;
-size_t     i;
-Sym        sym;
-Sym        nearest;
-const char *strtab;
-uint8_t    c;
-size_t     idx;
+    Dl_info    inf;
+    ESyms      es,nes = 0;
+    uintptr_t  minoff,off;
+    size_t     i;
+    Sym        sym;
+    Sym        nearest;
+    const char *strtab;
+    uint8_t    c;
+    size_t     idx;
 
     if ( ! dladdr(addr, &inf) || (!inf.dli_fname && !inf.dli_sname) ) {
-		sym_p->f_nam = 0;
-		sym_p->s_nam = 0;
+        sym_p->f_nam = 0;
+        sym_p->s_nam = 0;
         /* unable to lookup   */
         return 0;
     }
 
-	sym_p->f_nam = inf.dli_fname;
+    sym_p->f_nam = inf.dli_fname;
 
-	/* If the symbol is in the main executable then solaris' dladdr returns bogus info */
+    /* If the symbol is in the main executable then solaris' dladdr returns bogus info */
 #ifndef __sun
     if ( (sym_p->s_nam = inf.dli_sname) ) {
-		sym_p->s_val = inf.dli_saddr;
+        sym_p->s_val = inf.dli_saddr;
         /* Have a symbol name - just use it and be done */
-		return 0;
+        return 0;
     }
 #endif
 
@@ -551,7 +555,7 @@ size_t     idx;
 
     if ( !es ) {
 
-    	elfsUnlockWrite();
+        elfsUnlockWrite();
 
         if ( ! (nes = elfRead(inf.dli_fname, (uintptr_t)inf.dli_fbase)) )  {
             /* this path can only be taken if there is no memory for '*nes' */
@@ -568,15 +572,15 @@ size_t     idx;
         } else {
             nes->next = elfs;
             es  = elfs = nes;
-			nes = 0;
+            nes = 0;
         }
     }
 
     elfsUnlockWrite();
 
-	/* Undo our work in the unlikely event that it was redundant */
-	if ( nes )
-		elfSymsDestroy( nes );
+    /* Undo our work in the unlikely event that it was redundant */
+    if ( nes )
+        elfSymsDestroy( nes );
 
     nearest.raw = 0;
     minoff      = (uintptr_t)-1LL;
@@ -634,8 +638,8 @@ size_t     idx;
     }
 
     if ( nearest.raw && ( (idx = ARR(c,nearest,0,st_name)) < es->strMap->max ) ) {
-		sym_p->s_nam = strtab + idx;
-		sym_p->s_val = (char*) ARR(c, nearest, 0, st_value) + es->addr;
+        sym_p->s_nam = strtab + idx;
+        sym_p->s_val = (char*) ARR(c, nearest, 0, st_value) + es->addr;
     }
 
     return 0;
@@ -643,12 +647,12 @@ size_t     idx;
 
 int epicsFindAddrGetFeatures(void)
 {
-	/* The static information given here may not be correct;
-	 * it also depends on
-	 *  - compilation (frame pointer optimization)
-	 *  - linkage (static vs. dynamic)
-	 *  - stripping
-	 */
+    /* The static information given here may not be correct;
+     * it also depends on
+     *  - compilation (frame pointer optimization)
+     *  - linkage (static vs. dynamic)
+     *  - stripping
+     */
     return  EPICS_STACKTRACE_LCL_SYMBOLS
           | EPICS_STACKTRACE_GBL_SYMBOLS
           | EPICS_STACKTRACE_DYN_SYMBOLS;

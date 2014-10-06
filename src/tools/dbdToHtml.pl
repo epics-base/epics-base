@@ -114,12 +114,13 @@ if ($::XHTML) {
 <!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
      'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
 __END_DOCTYPE
+    $podHtml->html_header_tags($podHtml->html_header_tags .
+        "\n<link rel='stylesheet' href='style.css' type='text/css'>");
 } else { # Fall back to HTML
     $podHtml = Pod::Simple::HTML->new();
+    $podHtml->html_css('style.css');
 }
 
-$podHtml->html_header_tags($podHtml->html_header_tags .
-    "\n<link rel='stylesheet' href='style.css' type='text/css'>");
 $podHtml->force_title(encode_entities($title));
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');

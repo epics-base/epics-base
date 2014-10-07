@@ -23,12 +23,12 @@
 #include <ctype.h>
 #include <envLib.h>
 
-#include "epicsStdio.h"
-#include <errlog.h>
-#include <cantProceed.h>
-
 #define epicsExportSharedSymbols
+#include "cantProceed.h"
 #include "epicsFindSymbol.h"
+#include "epicsStdio.h"
+#include "errlog.h"
+#include "iocsh.h"
 
 /*
  * Set the value of an environment variable
@@ -39,21 +39,18 @@ epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *val
 {
     char *cp;
 
-	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-	strcpy (cp, name);
-	strcat (cp, "=");
-	strcat (cp, value);
-	if (putenv (cp) < 0) {
-		errPrintf(
-                -1L,
-                __FILE__,
-                __LINE__,
-                "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
-                name,
-                value,
-                strerror (errno));
+    iocshEnvClear(name);
+    
+    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
+    strcpy (cp, name);
+    strcat (cp, "=");
+    strcat (cp, value);
+    if (putenv (cp) < 0) {
+        errPrintf(-1L, __FILE__, __LINE__,
+            "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
+            name, value, strerror (errno));
         free (cp);
-	}
+    }
 }
 
 /*

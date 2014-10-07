@@ -44,7 +44,7 @@ int epicsThreadTest(void);
 int epicsTimerTest(void);
 int epicsTimeTest(void);
 int epicsTypesTest(void);
-int macEnvExpandTest(void);
+int macDefExpandTest(void);
 int macLibTest(void);
 int ringBytesTest(void);
 int ringPointerTest(void);
@@ -92,7 +92,7 @@ void epicsRunLibComTests(void)
     runTest(epicsThreadPrivateTest);
     runTest(epicsTimeTest);
     runTest(epicsTypesTest);
-    runTest(macEnvExpandTest);
+    runTest(macDefExpandTest);
     runTest(macLibTest);
     runTest(ringBytesTest);
     runTest(ringPointerTest);

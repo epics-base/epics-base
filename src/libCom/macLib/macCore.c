@@ -103,7 +103,7 @@ epicsShareAPI macCreateHandle(
     MAC_HANDLE  **pHandle,      /* address of variable to receive pointer */
                                 /* to new macro substitution context */
 
-    char        *pairs[] )      /* pointer to NULL-terminated array of */
+    const char * pairs[] )      /* pointer to NULL-terminated array of */
                                 /* {name,value} pair strings; a NULL */
                                 /* value implies undefined; a NULL */
                                 /* argument implies no macros */
@@ -253,9 +253,18 @@ epicsShareAPI macPutValue(
     /* handle NULL value case: if name was found, delete entry (may be
        several entries at different scoping levels) */
     if ( value == NULL ) {
-        /* FIXME: shouldn't be able to delete entries from lower scopes */
-        while ( ( entry = lookup( handle, name, FALSE ) ) != NULL )
+        /* 
+         * FIXME: shouldn't be able to delete entries from lower scopes
+         * NOTE: when this is changed, this functionality of removing
+         * a macro from all scopes will still be needed by iocshEnvClear
+         */
+        while ( ( entry = lookup( handle, name, FALSE ) ) != NULL ) {
             delete( handle, entry );
+            
+            if (strcmp(entry->type, "environment variable") == 0)
+                break;
+        }
+        
         return 0;
     }
 

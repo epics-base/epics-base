@@ -1,7 +1,6 @@
 /*************************************************************************\
 * Copyright (c) 2002 The University of Saskatchewan
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* osdEnv.c */
@@ -30,13 +29,15 @@
 
 #define epicsExportSharedSymbols
 #include "epicsStdio.h"
-#include <envDefs.h>
+#include "envDefs.h"
+#include "iocsh.h"
 
 /*
  * Set the value of an environment variable
  */
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
 {
+    iocshEnvClear(name);
     setenv(name, value, 1);
 }
 

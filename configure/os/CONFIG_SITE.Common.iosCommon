@@ -13,7 +13,8 @@
 #IOS_VERSION = 5.1
 #IOS_VERSION = 6.0
 #IOS_VERSION = 6.1
-IOS_VERSION = 7.0
+#IOS_VERSION = 7.0
+IOS_VERSION = 8.0
 
 # Minimum version of iOS the executables must run on.
 # Earlier versions may work, if XCode supports them.
@@ -23,6 +24,7 @@ IOS_VERSION = 7.0
 #IOS_DEPLOYMENT_TARGET = 6.0
 #IOS_DEPLOYMENT_TARGET = 6.1
 IOS_DEPLOYMENT_TARGET = 7.0
+#IOS_DEPLOYMENT_TARGET = 8.0
 
 
 # Which compiler to use:

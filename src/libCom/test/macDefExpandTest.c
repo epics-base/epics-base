@@ -121,13 +121,14 @@ static void check(const char *str, const char *macros, const char *expect)
     MAC_HANDLE *handle;
     char **defines;
     static const char *pairs[] = { "", "environ", NULL, NULL };
+    char *got;
+    int pass = 1;
     
     macCreateHandle(&handle, pairs);
     macParseDefns(NULL, macros, &defines);
     macInstallMacros(handle, defines);
     
-    char *got = macDefExpand(str, handle);
-    int pass = -1;
+    got = macDefExpand(str, handle);
 
     if (expect && !got) {
         testDiag("Got NULL, expected \"%s\".\n", expect);

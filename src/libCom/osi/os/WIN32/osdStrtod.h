@@ -18,6 +18,14 @@ extern "C" {
  */
 epicsShareFunc double epicsStrtod(const char *str, char **endp); 
 
+/*
+ * Microsoft apparently added strto[u]ll() in VS2013
+ * Older compilers have these equivalents though
+ */
+
+#define strtoll _strtoi64
+#define strtoull _strtoui64
+
 #ifdef __cplusplus
 }
 #endif

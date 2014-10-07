@@ -15,6 +15,18 @@ EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New iocshLoad command</h3>
+
+<p>A new command <tt>iocshLoad</tt> has been added to iocsh which executes a
+named iocsh script and can also set one or more shell macro variables at the
+same time, the values of which will be forgotten immediately after the named
+script finishes executing. The following example shows the syntax:</p>
+
+<blockquote><pre>
+iocshLoad "serial.cmd", "DEV=/dev/ttyS0,PORT=com1,TYPE=RS485"
+iocshLoad "radmon.cmd", "PORT=com1,ADDR=0"
+</pre></blockquote>
+
 <h3>Support routines for 64-bit integers</h3>
 
 <p>The libCom library now provides support for 64-bit integer types on all

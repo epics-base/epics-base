@@ -36,6 +36,10 @@ epicsShareFunc int
 epicsShareFunc int
     epicsParseULong(const char *str, unsigned long *to, int base, char **units);
 epicsShareFunc int
+    epicsParseLLong(const char *str, long long *to, int base, char **units);
+epicsShareFunc int
+    epicsParseULLong(const char *str, unsigned long long *to, int base, char **units);
+epicsShareFunc int
     epicsParseDouble(const char *str, double *to, char **units);
 
 epicsShareFunc int
@@ -55,6 +59,11 @@ epicsShareFunc int
 epicsShareFunc int
     epicsParseUInt32(const char *str, epicsUInt32 *to, int base, char **units);
 
+epicsShareFunc int
+    epicsParseInt64(const char *str, epicsInt64 *to, int base, char **units);
+epicsShareFunc int
+    epicsParseUInt64(const char *str, epicsUInt64 *to, int base, char **units);
+
 #define epicsParseFloat32(str, to, units) epicsParseFloat(str, to, units)
 #define epicsParseFloat64(str, to, units) epicsParseDouble(str, to, units)
 
@@ -63,6 +72,8 @@ epicsShareFunc int
  */
 #define epicsScanLong(str, to, base) !epicsParseLong(str, to, base, NULL)
 #define epicsScanULong(str, to, base) !epicsParseULong(str, to, base, NULL)
+#define epicsScanLLong(str, to, base) !epicsParseLLong(str, to, base, NULL)
+#define epicsScanULLong(str, to, base) !epicsParseULLong(str, to, base, NULL)
 #define epicsScanFloat(str, to) !epicsParseFloat(str, to, NULL)
 #define epicsScanDouble(str, to) !epicsParseDouble(str, to, NULL)
 

@@ -58,6 +58,8 @@ MAIN(epicsStdlibTest)
 {
     unsigned long u;
     long l;
+    unsigned long long ull;
+    long long ll;
     double d;
     float f;
     char *endp;
@@ -67,13 +69,19 @@ MAIN(epicsStdlibTest)
     epicsUInt16 u16;
     epicsInt32 i32;
     epicsUInt32 u32;
+    epicsInt64 i64;
+    epicsUInt64 u64;
 
-    testPlan(153);
+    testPlan(199);
 
     testOk(epicsParseLong("", &l, 0, NULL) == S_stdlib_noConversion,
         "Long '' => noConversion");
     testOk(epicsParseULong("", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '' => noConversion");
+    testOk(epicsParseLLong("", &ll, 0, NULL) == S_stdlib_noConversion,
+        "LLong '' => noConversion");
+    testOk(epicsParseULLong("", &ull, 0, NULL) == S_stdlib_noConversion,
+        "ULLong '' => noConversion");
     testOk(epicsParseFloat("", &f, NULL) == S_stdlib_noConversion,
         "Float '' => noConversion");
     testOk(epicsParseDouble("", &d, NULL) == S_stdlib_noConversion,
@@ -83,6 +91,10 @@ MAIN(epicsStdlibTest)
         "Long '\\t 1\\n' => noConversion");
     testOk(epicsParseULong("\t \n", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '\\t 1\\n' => noConversion");
+    testOk(epicsParseLLong("\t \n", &ll, 0, NULL) == S_stdlib_noConversion,
+        "LLong '\\t 1\\n' => noConversion");
+    testOk(epicsParseULLong("\t \n", &ull, 0, NULL) == S_stdlib_noConversion,
+        "ULLong '\\t 1\\n' => noConversion");
     testOk(epicsParseFloat("\t \n", &f, NULL) == S_stdlib_noConversion,
         "Float '\\t 1\\n' => noConversion");
     testOk(epicsParseDouble("\t \n", &d, NULL) == S_stdlib_noConversion,
@@ -92,6 +104,10 @@ MAIN(epicsStdlibTest)
         "Long '!' => noConversion");
     testOk(epicsParseULong("!", &u, 0, NULL) == S_stdlib_noConversion,
         "ULong '!' => noConversion");
+    testOk(epicsParseLLong("!", &ll, 0, NULL) == S_stdlib_noConversion,
+        "LLong '!' => noConversion");
+    testOk(epicsParseULLong("!", &ull, 0, NULL) == S_stdlib_noConversion,
+        "ULLong '!' => noConversion");
     testOk(epicsParseFloat("!", &f, NULL) == S_stdlib_noConversion,
         "Float '!' => noConversion");
     testOk(epicsParseDouble("!", &d, NULL) == S_stdlib_noConversion,
@@ -99,16 +115,22 @@ MAIN(epicsStdlibTest)
 
     testOk(epicsScanLong("0", &l, 0) && l == 0, "Long '0'");
     testOk(epicsScanULong("0", &u, 0) && u == 0, "ULong '0'");
+    testOk(epicsScanLLong("0", &ll, 0) && ll == 0, "LLong '0'");
+    testOk(epicsScanULLong("0", &ull, 0) && ull == 0, "ULLong '0'");
     testOk(epicsScanFloat("0", &f) && f == 0, "Float '0'");
     testOk(epicsScanDouble("0", &d) && d == 0, "Double '0'");
 
     testOk(epicsScanLong("\t 1\n", &l, 0) && l == 1, "Long '\\t 1\\n'");
     testOk(epicsScanULong("\t 1\n", &u, 0) && u == 1, "ULong '\\t 1\\n'");
+    testOk(epicsScanLLong("\t 1\n", &ll, 0) && ll == 1, "LLong '\\t 1\\n'");
+    testOk(epicsScanULLong("\t 1\n", &ull, 0) && ull == 1, "ULLong '\\t 1\\n'");
     testOk(epicsScanFloat("\t 1\n", &f) && f == 1, "Float '\\t 1\\n'");
     testOk(epicsScanDouble("\t 1\n", &d) && d == 1, "Double '\\t 1\\n'");
 
     testOk(epicsScanLong("-1", &l, 0) && l == -1, "Long '-1'");
     testOk(epicsScanULong("-1", &u, 0) && u + 1 == 0, "ULong '-1'");
+    testOk(epicsScanLLong("-1", &ll, 0) && ll == -1, "LLong '-1'");
+    testOk(epicsScanULLong("-1", &ull, 0) && ull + 1 == 0, "ULLong '-1'");
     testOk(epicsScanFloat("-1", &f) && f == -1, "Float '-1'");
     testOk(epicsScanDouble("-1", &d) && d == -1, "Double '-1'");
 
@@ -116,6 +138,10 @@ MAIN(epicsStdlibTest)
         "Long '2!' => extraneous");
     testOk(epicsParseULong("2!", &u, 0, NULL) == S_stdlib_extraneous,
         "ULong '2!' => extraneous");
+    testOk(epicsParseLLong("2!", &ll, 0, NULL) == S_stdlib_extraneous,
+        "LLong '2!' => extraneous");
+    testOk(epicsParseULLong("2!", &ull, 0, NULL) == S_stdlib_extraneous,
+        "ULLong '2!' => extraneous");
     testOk(epicsParseFloat("2!", &f, NULL) == S_stdlib_extraneous,
         "Float '2!' => extraneous");
     testOk(epicsParseDouble("2!", &d, NULL) == S_stdlib_extraneous,
@@ -125,6 +151,10 @@ MAIN(epicsStdlibTest)
         "Long '3 \\n\\t!' => extraneous");
     testOk(epicsParseULong("3 \n\t!", &u, 0, NULL) == S_stdlib_extraneous,
         "ULong '3 \\n\\t!' => extraneous");
+    testOk(epicsParseLLong("3 \n\t!", &ll, 0, NULL) == S_stdlib_extraneous,
+        "LLong '3 \\n\\t!' => extraneous");
+    testOk(epicsParseULLong("3 \n\t!", &ull, 0, NULL) == S_stdlib_extraneous,
+        "ULLong '3 \\n\\t!' => extraneous");
     testOk(epicsParseFloat("3 \n\t!", &f, NULL) == S_stdlib_extraneous,
         "Float '3 \\n\\t!' => extraneous");
     testOk(epicsParseDouble("3 \n\t!", &d, NULL) == S_stdlib_extraneous,
@@ -134,6 +164,10 @@ MAIN(epicsStdlibTest)
         "Long '2!' => units='!'");
     testOk(!epicsParseULong("2!", &u, 0, &endp) && *endp == '!',
         "ULong '2!' => units='!'");
+    testOk(!epicsParseLLong("2!", &ll, 0, &endp) && *endp == '!',
+        "LLong '2!' => units='!'");
+    testOk(!epicsParseULLong("2!", &ull, 0, &endp) && *endp == '!',
+        "ULLong '2!' => units='!'");
     testOk(!epicsParseFloat("2!", &f, &endp) && *endp == '!',
         "Float '2!' => units='!'");
     testOk(!epicsParseDouble("2!", &d, &endp) && *endp == '!',
@@ -143,6 +177,10 @@ MAIN(epicsStdlibTest)
         "Long '3 \\n\\t!' => units='!'");
     testOk(!epicsParseULong("3 \n\t!", &u, 0, &endp) && *endp == '!',
         "ULong '3 \\n\\t!' => units='!'");
+    testOk(!epicsParseLLong("3 \n\t!", &ll, 0, &endp) && *endp == '!',
+        "LLong '3 \\n\\t!' => units='!'");
+    testOk(!epicsParseULLong("3 \n\t!", &ull, 0, &endp) && *endp == '!',
+        "ULLong '3 \\n\\t!' => units='!'");
     testOk(!epicsParseFloat("3 \n\t!", &f, &endp) && *endp == '!',
         "Float '3 \\n\\t!' => units='!'");
     testOk(!epicsParseDouble("3 \n\t!", &d, &endp) && *endp == '!',
@@ -150,31 +188,43 @@ MAIN(epicsStdlibTest)
 
     testOk(epicsScanLong("0x0", &l, 0) && l == 0, "Long '0x0'");
     testOk(epicsScanULong("0x0", &u, 0) && u == 0, "ULong '0x0'");
+    testOk(epicsScanLLong("0x0", &ll, 0) && ll == 0, "LLong '0x0'");
+    testOk(epicsScanULLong("0x0", &ull, 0) && ull == 0, "ULLong '0x0'");
     testOk(epicsScanFloat("0x0", &f) && f == 0, "Float '0x0'");
     testOk(epicsScanDouble("0x0", &d) && d == 0, "Double '0x0'");
 
     testOk(epicsScanLong("0x1", &l, 0) && l == 1, "Long '0x1'");
     testOk(epicsScanULong("0x1", &u, 0) && u == 1, "ULong '0x1'");
+    testOk(epicsScanLLong("0x1", &ll, 0) && ll == 1, "LLong '0x1'");
+    testOk(epicsScanULLong("0x1", &ull, 0) && ull == 1, "ULLong '0x1'");
     testOk(epicsScanFloat("0x1", &f) && f == 1, "Float '0x1'");
     testOk(epicsScanDouble("0x1", &d) && d == 1, "Double '0x1'");
 
     testOk(epicsScanLong("+0x1", &l, 0) && l == 1, "Long '+0x1'");
     testOk(epicsScanULong("+0x1", &u, 0) && u == 1, "ULong '+0x1'");
+    testOk(epicsScanLLong("+0x1", &ll, 0) && ll == 1, "LLong '+0x1'");
+    testOk(epicsScanULLong("+0x1", &ull, 0) && ull == 1, "ULLong '+0x1'");
     testOk(epicsScanFloat("+0x1", &f) && f == 1, "Float '+0x1'");
     testOk(epicsScanDouble("+0x1", &d) && d == 1, "Double '+0x1'");
 
     testOk(epicsScanLong("-0x1", &l, 0) && l == -1, "Long '-0x1'");
     testOk(epicsScanULong("-0x1", &u, 0) && u == -1, "ULong '-0x1'");
+    testOk(epicsScanLLong("-0x1", &ll, 0) && ll == -1, "LLong '-0x1'");
+    testOk(epicsScanULLong("-0x1", &ull, 0) && ull == -1, "ULLong '-0x1'");
     testOk(epicsScanFloat("-0x1", &f) && f == -1, "Float '-0x1'");
     testOk(epicsScanDouble("-0x1", &d) && d == -1, "Double '-0x1'");
 
     testOk(epicsScanLong("0xf", &l, 0) && l == 15, "Long '0xf'");
     testOk(epicsScanULong("0xf", &u, 0) && u == 15, "ULong '0xf'");
+    testOk(epicsScanLLong("0xf", &ll, 0) && ll == 15, "LLong '0xf'");
+    testOk(epicsScanULLong("0xf", &ull, 0) && ull == 15, "ULLong '0xf'");
     testOk(epicsScanFloat("0xf", &f) && f == 15, "Float '0xf'");
     testOk(epicsScanDouble("0xf", &d) && d == 15, "Double '0xf'");
 
     testOk(epicsScanLong("0XF", &l, 0) && l == 15, "Long '0XF'");
     testOk(epicsScanULong("0XF", &u, 0) && u == 15, "ULong '0XF'");
+    testOk(epicsScanLLong("0XF", &ll, 0) && ll == 15, "LLong '0XF'");
+    testOk(epicsScanULLong("0XF", &ull, 0) && ull == 15, "ULLong '0XF'");
     testOk(epicsScanFloat("0XF", &f) && f == 15, "Float '0XF'");
     testOk(epicsScanDouble("0XF", &d) && d == 15, "Double '0XF'");
 
@@ -182,6 +232,11 @@ MAIN(epicsStdlibTest)
         "Long '0x0' in base 10 => extraneous");
     testOk(epicsParseULong("0x0", &u, 10, NULL) == S_stdlib_extraneous,
         "ULong '0x0' in base 10 => extraneous");
+    testOk(epicsParseLLong("0x0", &ll, 10, NULL) == S_stdlib_extraneous,
+        "LLong '0x0' in base 10 => extraneous");
+    testOk(epicsParseULLong("0x0", &ull, 10, NULL) == S_stdlib_extraneous,
+        "ULLong '0x0' in base 10 => extraneous");
+
     testOk(epicsScanLong("0x10", &l, 0) && l == 0x10,
         "Long '0x10' in base 0");
     testOk(epicsScanULong("0x10", &u, 0) && u == 0x10,
@@ -199,6 +254,10 @@ MAIN(epicsStdlibTest)
         "Long '0x7fffffff'");
     testOk(epicsScanULong("0xffffffff", &u, 0) && u == 0xffffffff,
         "ULong '0xffffffff'");
+    testOk(epicsScanLLong("0x7fffffffffffffff", &ll, 0) &&
+        ll == 0x7fffffffffffffff, "LLong '0x7fffffffffffffff'");
+    testOk(epicsScanULLong("0xffffffffffffffff", &ull, 0) &&
+        ull == 0xffffffffffffffff, "ULLong '0xffffffffffffffff'");
     testOk(epicsScanFloat("0xffffff", &f) && f == 0xffffff,
         "Float '0xffffff'");
     testOk(epicsScanDouble("0xffffffff", &d) && d == 0xffffffff,
@@ -208,6 +267,10 @@ MAIN(epicsStdlibTest)
         "Long '-0x7fffffff'");
     testOk(epicsScanULong("-0x7fffffff", &u, 0) && u == -0x7fffffff,
         "ULong '-0x7fffffff'");
+    testOk(epicsScanLLong("-0x7fffffffffffffff", &ll, 0)
+        && ll == -0x7fffffffffffffff, "LLong '-0x7fffffffffffffff'");
+    testOk(epicsScanULLong("-0x7fffffffffffffff", &ull, 0) &&
+        ull == -0x7fffffffffffffff, "ULLong '-0x7fffffffffffffff'");
     testOk(epicsScanFloat("-0xffffff", &f) && f == -0xffffff,
         "Float '-0xffffff'");
     testOk(epicsScanDouble("-0x7fffffff", &d) && d == -0x7fffffff,
@@ -263,6 +326,23 @@ MAIN(epicsStdlibTest)
         "UInt32 '0x100000000' => overflow");
     testOk(epicsParseUInt32("-0x100000000", &u32, 0, NULL) == S_stdlib_overflow,
         "UInt32 '-0x100000000' => overflow");
+
+    testOk(!epicsParseInt64("0x7fffffffffffffff", &i64, 0, NULL) &&
+        i64 == 0x7fffffffffffffff, "Int64 '0x7fffffffffffffff'");
+    testOk(!epicsParseInt64("-0x8000000000000000", &i64, 0, NULL) &&
+        i64 == -0x8000000000000000L, "Int64 '-0x8000000000000000'");
+    testOk(!epicsParseUInt64("0xffffffffffffffff", &u64, 0, NULL) &&
+        u64 == 0xffffffffffffffff, "UInt64 '0xffffffffffffffff'");
+    testOk(!epicsParseUInt64("-1", &u64, 0, NULL) && u64 == 0xffffffffffffffffU,
+        "UInt64 '-1'");
+    testOk(epicsParseInt64("0x8000000000000000", &i64, 0, NULL) == S_stdlib_overflow,
+        "Int64 '0x8000000000000000' => overflow");
+    testOk(epicsParseInt64("-0x8000000000000001", &i64, 0, NULL) == S_stdlib_overflow,
+        "Int64 '-0x8000000000000001' => overflow");
+    testOk(epicsParseUInt64("0x10000000000000000", &u64, 0, NULL) == S_stdlib_overflow,
+        "UInt64 '0x10000000000000000' => overflow");
+    testOk(epicsParseUInt64("-0x10000000000000000", &u64, 0, NULL) == S_stdlib_overflow,
+        "UInt64 '-0x10000000000000000' => overflow");
 
     testOk(epicsScanFloat(".1", &f) && fabs(f - 0.1) < 1e-7,
         "Float '.1'");

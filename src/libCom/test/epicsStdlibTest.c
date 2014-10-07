@@ -255,9 +255,9 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanULong("0xffffffff", &u, 0) && u == 0xffffffff,
         "ULong '0xffffffff'");
     testOk(epicsScanLLong("0x7fffffffffffffff", &ll, 0) &&
-        ll == 0x7fffffffffffffff, "LLong '0x7fffffffffffffff'");
+        ll == 0x7fffffffffffffffLL, "LLong '0x7fffffffffffffff'");
     testOk(epicsScanULLong("0xffffffffffffffff", &ull, 0) &&
-        ull == 0xffffffffffffffff, "ULLong '0xffffffffffffffff'");
+        ull == 0xffffffffffffffffULL, "ULLong '0xffffffffffffffff'");
     testOk(epicsScanFloat("0xffffff", &f) && f == 0xffffff,
         "Float '0xffffff'");
     testOk(epicsScanDouble("0xffffffff", &d) && d == 0xffffffff,
@@ -268,9 +268,9 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanULong("-0x7fffffff", &u, 0) && u == -0x7fffffff,
         "ULong '-0x7fffffff'");
     testOk(epicsScanLLong("-0x7fffffffffffffff", &ll, 0)
-        && ll == -0x7fffffffffffffff, "LLong '-0x7fffffffffffffff'");
+        && ll == -0x7fffffffffffffffLL, "LLong '-0x7fffffffffffffff'");
     testOk(epicsScanULLong("-0x7fffffffffffffff", &ull, 0) &&
-        ull == -0x7fffffffffffffff, "ULLong '-0x7fffffffffffffff'");
+        ull == -0x7fffffffffffffffULL, "ULLong '-0x7fffffffffffffff'");
     testOk(epicsScanFloat("-0xffffff", &f) && f == -0xffffff,
         "Float '-0xffffff'");
     testOk(epicsScanDouble("-0x7fffffff", &d) && d == -0x7fffffff,
@@ -328,12 +328,12 @@ MAIN(epicsStdlibTest)
         "UInt32 '-0x100000000' => overflow");
 
     testOk(!epicsParseInt64("0x7fffffffffffffff", &i64, 0, NULL) &&
-        i64 == 0x7fffffffffffffff, "Int64 '0x7fffffffffffffff'");
+        i64 == 0x7fffffffffffffffLL, "Int64 '0x7fffffffffffffff'");
     testOk(!epicsParseInt64("-0x8000000000000000", &i64, 0, NULL) &&
-        i64 == -0x8000000000000000L, "Int64 '-0x8000000000000000'");
+        i64 == -0x8000000000000000LL, "Int64 '-0x8000000000000000'");
     testOk(!epicsParseUInt64("0xffffffffffffffff", &u64, 0, NULL) &&
-        u64 == 0xffffffffffffffff, "UInt64 '0xffffffffffffffff'");
-    testOk(!epicsParseUInt64("-1", &u64, 0, NULL) && u64 == 0xffffffffffffffffU,
+        u64 == 0xffffffffffffffffULL, "UInt64 '0xffffffffffffffff'");
+    testOk(!epicsParseUInt64("-1", &u64, 0, NULL) && u64 == 0xffffffffffffffffULL,
         "UInt64 '-1'");
     testOk(epicsParseInt64("0x8000000000000000", &i64, 0, NULL) == S_stdlib_overflow,
         "Int64 '0x8000000000000000' => overflow");

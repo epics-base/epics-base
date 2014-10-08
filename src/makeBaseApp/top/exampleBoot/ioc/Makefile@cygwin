@@ -1,0 +1,5 @@
+TOP = ../..
+include $(TOP)/configure/CONFIG
+ARCH = _ARCH_
+TARGETS = envPaths relPaths.sh
+include $(TOP)/configure/RULES.ioc

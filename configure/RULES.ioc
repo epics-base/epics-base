@@ -18,16 +18,17 @@ ifeq ($(filter $(ARCH),$(BUILD_ARCHS)),$(ARCH))
     buildInstall$(DIVIDER)$(ARCH) buildInstall: $(TARGETS)
 
     clean$(DIVIDER)$(ARCH) clean:
-	$(RM) cdCommands envPaths dllPath.bat
+	$(RM) cdCommands envPaths dllPath.bat relPaths.sh
 else
     buildInstall$(DIVIDER)$(ARCH) buildInstall:
     clean$(DIVIDER)$(ARCH) clean:
 endif
 
-cdCommands envPaths dllPath.bat: $(wildcard $(TOP)/configure/RELEASE*) \
+cdCommands envPaths dllPath.bat relPaths.sh: \
+    $(wildcard $(TOP)/configure/RELEASE*) \
     $(wildcard $(TOP)/configure/CONFIG_SITE*) $(INSTALL_BIN)
 	$(CONVERTRELEASE) -a $(ARCH) -t $(IOCS_APPL_TOP) $@
 
 realclean:
-	$(RM) cdCommands envPaths dllPath.bat
+	$(RM) cdCommands envPaths dllPath.bat relPaths.sh
 

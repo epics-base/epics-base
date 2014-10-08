@@ -13,6 +13,20 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Better Cygwin IOC Application Support</h3>
+
+<p>IOC applications built for Cygwin with shared libraries need to have PATH
+configured to include all of the bin directories for support modules listed in
+the RELEASE file. For applications run from the Windows cmd.exe shell the
+Makefile in the application's iocBoot/ioc directory can be set to build a file
+dllPath.bat which performs the appropriate changes to PATH, but this file uses
+syntax which is unique to the cmd.exe shell. Cygwin applications can now add a
+target relPaths.sh to this Makefile, which will generate a file appropriate for
+sourcing in the Bash shell instead.</p>
+
+<p>The makeBaseApp.pl templates now include this file in the list of targets to
+be built in the iocBoot/ioc/Makefile for Cygwin architectures.</p>
+
 <h3>Reject NULL callback functions in ca_array_*_callback</h3>
 
 <p>The two CA routines ca_array_get_callback() and ca_array_put_callback() were

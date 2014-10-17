@@ -915,16 +915,18 @@ SV * CA_create_subscription(SV *ca_ref, const char *mask_str, SV *sub, ...) {
 
             dbr_text_to_type(treq, type);
             if (type < 0) {
-                croak_msg = "Unknown data type";
+                croak_msg = "Unknown CA data type";
                 goto exit_croak;
             }
             if (type == DBR_PUT_ACKT ||
                 type == DBR_PUT_ACKS) {
                 croak_msg = "DBR_PUT_ACK types are write-only";
                 goto exit_croak;
-            } else if (type == DBR_CLASS_NAME ||
+            } else if (type == DBR_GR_ENUM ||
+                type == DBR_CTRL_ENUM ||
+                type == DBR_CLASS_NAME ||
                 type == DBR_STSACK_STRING)
-                /* These break the dbr_type_is macros */ ;
+                /* These above types are supported */ ;
             else if (dbr_type_is_SHORT(type))
                 type += (DBR_LONG - DBR_SHORT);
             else if (dbr_type_is_FLOAT(type))

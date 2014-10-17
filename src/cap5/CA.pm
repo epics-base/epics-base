@@ -95,8 +95,8 @@ CA - Perl 5 interface to EPICS Channel Access
         } else {
             printf "    Value:         %g\n", $data->{value};
             printf "    Severity:      %s\n", $data->{severity};
-            printf "    Timestamp:     %d.%09d\n",
-                $data->{stamp}, $data->{stamp_fraction};
+            printf "    Timestamp:     %.6f\n",
+                $data->{stamp} + $data->{stamp_fraction};
         }
     }
 

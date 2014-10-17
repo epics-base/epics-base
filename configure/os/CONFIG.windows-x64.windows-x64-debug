@@ -1,0 +1,12 @@
+# CONFIG.windows-x64.windows-x64-debug
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for windows-x64 compiler host - windows-x64 debug compiler target builds
+# Sites may override these definitions in CONFIG_SITE.windows-x64.windows-x64-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.windows-x64.windows-x64
+
+HOST_OPT=NO

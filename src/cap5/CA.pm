@@ -235,7 +235,7 @@ C<die> with an exception object in the callback and catch that using C<eval> in
 the main thread are not likely to succeed and will probably result in a crash. 
 Callbacks should not perform any operations that would block for more than a
 fraction of a second as this will hold up network communications with the
-relevent server and could cause the Perl program and/or the Channel Access
+relevant server and could cause the Perl program and/or the Channel Access
 server to crash.  Calling C<< CA->pend_event >> from within a callback is not
 permitted by the underlying Channel Access library.
 
@@ -291,7 +291,7 @@ apply to the callback subroutine as described in C<get_callback> above.
 
 =item put_acks( I<SEVR>, I<SUB> )
 
-Applications that need to ackowledge alarms by doing a C<ca_put()> with type
+Applications that need to acknowledge alarms by doing a C<ca_put()> with type
 C<DBR_PUT_ACKS> can do so using the C<put_acks> method.  The severity argument
 may be provided as an integer from zero through three or as a string containing
 one of the corresponding EPICS severity names C<NO_ALARM>, C<MINOR>, C<MAJOR> or
@@ -325,11 +325,12 @@ The data provided to a callback function registered with either C<get_callback>
 or C<create_subscription> can be a scalar value or a reference to an array or a
 hash, depending on the data type that was used for the data transfer.  If the
 request was for a single item of one of the basic data types, the data argument
-will be a perl scalar that holds the value directly.  If the request was for
+will be a Perl scalar that holds the value directly.  If the request was for
 multiple items of one of the basic types, the data argument will be a reference
 to an array holding the data.  There is one exception though; if the data type
 requested was for an array of C<DBF_CHAR> values that array will be represented
-as a single Perl string contining all the characters before the first zero byte.
+as a single Perl string containing all the characters before the first zero
+byte.
 
 If the request was for one of the compound data types, the data argument will be
 a reference to a hash with keys as described below.  Keys that are not classed
@@ -355,7 +356,7 @@ widened from the original type used to request or subscribe for the data.
 The number of elements in the data returned by the server.  If the data type is
 C<DBF_CHAR> the value given for C<COUNT> is the number of bytes (including any
 trailing zeros) returned by the server, although the value field is given as a
-Perl string contining all the characters before the first zero byte.
+Perl string containing all the characters before the first zero byte.
 
 =back
 
@@ -417,7 +418,7 @@ Present only when I<TYPE> is C<DBR_GR_ENUM> or C<DBR_CTRL_ENUM>.
 =item stamp
 
 The process variable timestamp, converted to a local C<time_t>.  This value is
-suitable for passing to the perl C<localtime> or C<gmtime> functions.
+suitable for passing to the Perl C<localtime> or C<gmtime> functions.
 
 Present only when I<TYPE> is C<DBR_TIME_yyy>.
 
@@ -620,15 +621,15 @@ passing C<undef> as the subroutine reference.
 
 Errors in using the library will be indicated by the module throwing an
 exception, i.e. calling C<croak()> with an appropriate error message.  These
-exceptions can be caught using the standard Parl C<eval {}> statement and
+exceptions can be caught using the standard Perl C<eval {}> statement and
 testing the C<$@> variable afterwards; if not caught, they will cause the
 running program to C<die> with an appropriate error message pointing to the
 program line that called the C<CA> library.
 
-Errors messages reported by the underlying CA client library all start with the
+Error messages reported by the underlying CA client library all start with the
 string C<ECA_> and the remainder of the symbol for the associated CA error
 number, and are followed after a space-hyphen-space by a human-readable message
-describing the error.  Errors that are detected by the perl interface layer do
+describing the error.  Errors that are detected by the Perl interface layer do
 not follow this pattern, but are still printable strings.
 
 

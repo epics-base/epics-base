@@ -259,9 +259,10 @@ epicsShareAPI macPutValue(
          * a macro from all scopes will still be needed by iocshEnvClear
          */
         while ( ( entry = lookup( handle, name, FALSE ) ) != NULL ) {
+            int done = strcmp(entry->type, "environment variable") == 0;
             delete( handle, entry );
             
-            if (strcmp(entry->type, "environment variable") == 0)
+            if (done)
                 break;
         }
         

@@ -26,6 +26,11 @@
 #   endif
 #endif
 
+typedef enum {
+    epicsFalse = 0,
+    epicsTrue  = 1
+} epicsBoolean;
+
 /*
  * Architecture Independent Data Types
  * These are sufficient for all our current archs

@@ -17,6 +17,7 @@
 #define INC_epicsTypes_H
 
 #include "shareLib.h"
+#include "compilerDependencies.h"
 
 #ifndef stringOf
 #   if defined (__STDC__ ) || defined (__cplusplus)
@@ -29,7 +30,7 @@
 typedef enum {
     epicsFalse = 0,
     epicsTrue  = 1
-} epicsBoolean;
+} epicsBoolean EPICS_DEPRECATED;
 
 /*
  * Architecture Independent Data Types

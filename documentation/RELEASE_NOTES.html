@@ -3,17 +3,66 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.15.0.1 Release Notes</title>
+  <title>EPICS Base R3.15.1 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.15.0.2</h1>
+<h1 align="center">EPICS Base Release 3.15.1</h1>
 
-<p>
-EPICS Base 3.15.0.x releases are not intended for use in production systems.</p>
+<p style="color:red">This version of EPICS Base has not been released yet.</p>
+
+<h2 align="center">Changes between 3.15.0.2 and 3.15.1</h2>
+<!-- Insert new items immediately below here ... -->
+
+<h3>Hooking into dbLoadRecords</h3>
+
+<p>A function pointer hook has been added to the dbLoadRecords() routine, to
+allow external modules such as autosave to be notified when new records have
+been loaded during IOC initialization. The hook is called dbLoadRecordsHook and
+follows the model of the recGblAlarmHook pointer in that modules that wish to
+use it must save the current value of the pointer before installing their own
+function pointer, and must call the original function from their own
+routine.</p>
+
+<p>The hook is activiated from the dbLoadRecords() routine and gets called only
+after a database instance file has been read in without error. Note that the
+dbLoadTemplates() routine directly calls dbLoadRecords() so this hook also
+provides information about instantiated database templates. It is still possible
+to load record instances using dbLoadDatabase() though, and doing this will not
+result in the hook routines being called.</p>
+
+<p>Code to use this hook should look something like this:</p>
+
+<blockquote><pre>
+#include "dbAccessDefs.h"
+
+static DB_LOAD_RECORDS_HOOK_ROUTINE previousHook;
+
+static void myRoutine(const char* file, const char* subs) {
+    if (previousHook)
+        previousHook(file, subs);
+
+    /* Do whatever ... */
+}
+
+void myInit(void) {
+    static int done = 0;
+
+    if (!done) {
+        previousHook = dbLoadRecordsHook;
+        dbLoadRecordsHook = myRoutine;
+        done = 1;
+    }
+}
+</pre></blockquote>
+
+<p>As with many other parts of the static database access library there is no
+mutex to protect the function pointer. Initialization is expected to take place
+in the context of the IOC's main thread, from either a static C++ constructor or
+an EPICS registrar routine.</p>
+
 
 <h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
-<!-- Insert new items immediately below here ... -->
 
 <h3>New iocshLoad command</h3>
 

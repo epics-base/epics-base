@@ -45,7 +45,7 @@
 
 /* Hook Routines */
 
-RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook = NULL;
+epicsShareDef RECGBL_ALARM_HOOK_ROUTINE recGblAlarmHook = NULL;
 
 /* local routines */
 static void getMaxRangeValues(short field_type, double *pupper_limit,

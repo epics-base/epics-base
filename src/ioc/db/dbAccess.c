@@ -65,6 +65,10 @@
 epicsShareDef struct dbBase *pdbbase = 0;
 epicsShareDef volatile int interruptAccept=FALSE;
 
+/* Hook Routines */
+
+epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
+
 static short mapDBFToDBR[DBF_NTYPES] = {
     /* DBF_STRING   => */    DBR_STRING,
     /* DBF_CHAR     => */    DBR_CHAR,
@@ -711,7 +715,11 @@ int dbLoadDatabase(const char *file, const char *path, const char *subs)
 
 int dbLoadRecords(const char* file, const char* subs)
 {
-    return dbReadDatabase(&pdbbase, file, 0, subs);
+    int status = dbReadDatabase(&pdbbase, file, 0, subs);
+
+    if (!status && dbLoadRecordsHook)
+        dbLoadRecordsHook(file, subs);
+    return status;
 }
 
 

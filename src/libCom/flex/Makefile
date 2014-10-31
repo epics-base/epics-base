@@ -13,7 +13,7 @@ SRC_DIRS += $(LIBCOM)/flex
 
 parse_YACCOPT = -l -d
 
-SKELETON_FILE = include/flex.skel.static
+SKELETON_FILE = flex.skel.static
 
 parse_CPPFLAGS = -DDEFAULT_SKELETON_FILE=$(SKELETON_FILE)
 

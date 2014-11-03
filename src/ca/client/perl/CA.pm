@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-my $version = '0.5';
+my $version = '0.6';
 
 
 package CA;
@@ -315,6 +315,19 @@ This method replaces, adds or cancels the connection handler subroutine for the
 channel; see the C<new> constructor for details.  If I<SUB> is C<undef> any
 existing handler is removed, otherwise the new subroutine will be used for all
 future connection events on this channel.
+
+
+=item change_access_rights_event( I<SUB> )
+
+This method replaces, adds or cancels an access rights handler subroutine for
+the channel, which will be called if the client's right to read from or write
+to the channel changes. If I<SUB> is C<undef> any existing handler is removed,
+otherwise the new subroutine will be used for all future rights change events
+on this channel.
+
+The arguments passed to I<SUB> are the channel object and a pair of scalar
+values for read and write permissions respectively, that are true when the
+access is permitted, false when it is not.
 
 =back
 
@@ -636,9 +649,9 @@ not follow this pattern, but are still printable strings.
 
 =over
 
-=item [1] R3.14 Channel Access Reference Manual by Jeffrey O. Hill
+=item [1] R3.15 Channel Access Reference Manual by Jeffrey O. Hill
 
-L<http://www.aps.anl.gov/epics/base/R3-14/12-docs/CAref.html>
+L<http://www.aps.anl.gov/epics/base/R3-15/0-docs/CAref.html>
 
 =back
 

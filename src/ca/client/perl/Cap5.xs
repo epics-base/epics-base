@@ -519,6 +519,46 @@ void CA_change_connection_event(SV *ca_ref, SV *sub) {
     }
 }
 
+/* CA::replace_access_rights_event($ca_ref, \$sub) */
+
+static
+void rights_handler(struct access_rights_handler_args arha) {
+    CA_channel *pch = ca_puser(arha.chid);
+
+    PERL_SET_CONTEXT(p5_ctx);
+    {
+        dSP;
+
+        SvSetSV(ERRSV, &PL_sv_undef);
+
+        PUSHMARK(SP);
+        XPUSHs(pch->chan_ref);
+        XPUSHs(arha.ar.read_access ? &PL_sv_yes : &PL_sv_no);
+        XPUSHs(arha.ar.write_access ? &PL_sv_yes : &PL_sv_no);
+        PUTBACK;
+
+        call_sv(pch->rights_sub, G_EVAL | G_VOID | G_DISCARD | G_KEEPERR);
+
+        if (SvTRUE(ERRSV))
+            croak(NULL);
+    }
+}
+
+void CA_replace_access_rights_event(SV *ca_ref, SV *sub) {
+    CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
+    caCh *handler = &rights_handler;
+    int status;
+
+    if (! replace_handler(sub, &pch->rights_sub, (long *)&handler))
+        return;
+
+    status = ca_change_connection_event(pch->chan, handler);
+
+    if (status != ECA_NORMAL) {
+        croak("%s", get_error_msg(status));
+    }
+}
+
 
 /* CA::put($ca_ref, @values) */
 
@@ -1262,6 +1302,11 @@ CA_context_destroy (class)
 
 void
 CA_change_connection_event (ca_ref, sub)
+	SV *	ca_ref
+	SV *	sub
+
+void
+CA_replace_access_rights_event (ca_ref, sub)
 	SV *	ca_ref
 	SV *	sub
 

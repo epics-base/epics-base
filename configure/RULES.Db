@@ -233,6 +233,11 @@ menu%.h$(DEP): menu%.dbd
 	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
+menu%.h$(DEP): ../menu%.dbd
+	@$(RM) $@
+	@$(DBTOMENUH) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+
 %.dbd$(DEP): %.dbd.pod
 	@$(RM) $@
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@

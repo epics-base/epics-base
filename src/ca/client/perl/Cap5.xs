@@ -546,13 +546,13 @@ void rights_handler(struct access_rights_handler_args arha) {
 
 void CA_replace_access_rights_event(SV *ca_ref, SV *sub) {
     CA_channel *pch = (CA_channel *)SvIV(SvRV(ca_ref));
-    caCh *handler = &rights_handler;
+    caArh *handler = &rights_handler;
     int status;
 
     if (! replace_handler(sub, &pch->rights_sub, (long *)&handler))
         return;
 
-    status = ca_change_connection_event(pch->chan, handler);
+    status = ca_replace_access_rights_event(pch->chan, handler);
 
     if (status != ECA_NORMAL) {
         croak("%s", get_error_msg(status));

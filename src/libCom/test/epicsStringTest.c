@@ -48,9 +48,11 @@ MAIN(epicsStringTest)
     const char * const a     = "a";
     const char * const abcd  = "abcd";
     const char * const abcde = "abcde";
+    char result[8];
     char *s;
+    int status;
 
-    testPlan(281);
+    testPlan(299);
 
     testChars();
 
@@ -84,6 +86,42 @@ MAIN(epicsStringTest)
     testOk1(epicsStrHash(abcd, 0) != epicsStrHash("bacd", 0));
     testOk1(epicsStrHash(abcd, 0) == epicsMemHash(abcde, 4, 0));
     testOk1(epicsStrHash(abcd, 0) != epicsMemHash("abcd\0", 5, 0));
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnEscapedFromRaw(result, 4, ABCD, 3);
+    testOk(status == 3, "epicsStrnEscapedFromRaw returned %d (exp. 3)", status);
+    testOk(result[4] == 'x', "epicsStrnEscapedFromRaw no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnEscapedFromRaw 0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnEscapedFromRaw(result, 4, ABCD, 4);
+    testOk(status == 4, "epicsStrnEscapedFromRaw returned %d (exp. 4)", status);
+    testOk(result[4] == 'x', "epicsStrnEscapedFromRaw no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnEscapedFromRaw 0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnEscapedFromRaw(result, 4, ABCDE, 5);
+    testOk(status == 5, "epicsStrnEscapedFromRaw returned %d (exp. 5)", status);
+    testOk(result[4] == 'x', "epicsStrnEscapedFromRaw no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnEscapedFromRaw 0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnRawFromEscaped(result, 4, ABCD, 3);
+    testOk(status == 3, "epicsStrnRawFromEscaped returned %d (exp. 3)", status);
+    testOk(result[4] == 'x', "epicsStrnRawFromEscaped no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnRawFromEscaped 0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnRawFromEscaped(result, 4, ABCD, 4);
+    testOk(status == 4, "epicsStrnRawFromEscaped returned %d (exp. 4)", status);
+    testOk(result[4] == 'x', "epicsStrnRawFromEscaped no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnRawFromEscaped 0-terminated");
+
+    memset(result, 'x', sizeof(result));
+    status = epicsStrnRawFromEscaped(result, 4, ABCDE, 5);
+    testOk(status == 4, "epicsStrnRawFromEscaped returned %d (exp. 4)", status);
+    testOk(result[4] == 'x', "epicsStrnRawFromEscaped no buffer overrun");
+    testOk(result[3] == 0, "epicsStrnRawFromEscaped 0-terminated");
 
     return testDone();
 }

@@ -367,8 +367,12 @@ epicsStrtod(const char *str, char **endp)
         else
             return strtoul(str, endp, 16);
     }
-    if (!isalpha((int)*cp))
-        return strtod(str, endp);
+    if (!isalpha((int)*cp)) {
+        res = strtod(str, endp);
+        if (isinf(res))
+            errno = ERANGE;
+        return res;
+    }
 
     if (epicsStrnCaseCmp("NAN", cp, 3) == 0) {
         res = epicsNAN;

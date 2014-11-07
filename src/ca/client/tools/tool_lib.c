@@ -160,11 +160,21 @@ char *val2str (const void *v, unsigned type, int index)
     case DBR_ENUM:
         {
             dbr_enum_t *val = (dbr_enum_t *)val_ptr;
-            if (dbr_type_is_GR(type) && !enumAsNr)
-                sprintf(str, "%s", ((struct dbr_gr_enum *)v)->strs[val[index]]);
-            else if (dbr_type_is_CTRL(type) && !enumAsNr)
-                sprintf(str, "%s", ((struct dbr_ctrl_enum *)v)->strs[val[index]]);
-            else
+            if (dbr_type_is_GR(type) && !enumAsNr) {
+                if (val[index] >= MAX_ENUM_STATES)
+                    sprintf(str, "Illegal Value (%d)", val[index]);
+                else if (val[index] >= ((struct dbr_gr_enum *)v)->no_str)
+                    sprintf(str, "Enum Index Overflow (%d)", val[index]);
+                else
+                    sprintf(str, "%s", ((struct dbr_gr_enum *)v)->strs[val[index]]);
+            } else if (dbr_type_is_CTRL(type) && !enumAsNr) {
+                if (val[index] >= MAX_ENUM_STATES)
+                    sprintf(str, "Illegal Value (%d)", val[index]);
+                else if (val[index] >= ((struct dbr_ctrl_enum *)v)->no_str)
+                    sprintf(str, "Enum Index Overflow (%d)", val[index]);
+                else
+                    sprintf(str, "%s", ((struct dbr_ctrl_enum *)v)->strs[val[index]]);
+            } else
                 sprintf(str, "%d", val[index]);
         }
     }

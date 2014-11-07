@@ -43,6 +43,9 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from,
     char        c;
     size_t      nto = 0, nfrom = 0;
 
+    if (outsize == 0)
+        return 0;
+
     while ((c = *pfrom++) && nto < outsize && nfrom < inlen) {
         nfrom++;
         if (c == '\\') {
@@ -100,7 +103,9 @@ int epicsStrnRawFromEscaped(char *to, size_t outsize, const char *from,
             *pto++ = c; nto++;
         }
     }
-    *pto = '\0'; /* NOTE that nto does not have to be incremented */
+    if (nto == outsize)
+        pto--;
+    *pto = '\0';
     return nto;
 }
 

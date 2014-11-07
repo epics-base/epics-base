@@ -109,7 +109,7 @@ $Date$</span></small></p>
 <ul>
   <li><a href="#When">When Clients Do Not Connect to Their Server</a>
     <ul>
-      <li><a href="#Broadcast">Client and Server Broadcast Addresses Dont
+      <li><a href="#Broadcast">Client and Server Broadcast Addresses Don't
         Match</a></li>
       <li><a href="#Client">Client Isnt Configured to Use the Server's
       Port</a></li>
@@ -370,7 +370,7 @@ to operate over a wide area network (WAN).</p>
 
 <h3><a name="Network">IP Network Administration Background Information</a></h3>
 
-<p>Channel Access is implemented using internet protocols (IP). IP addresses
+<p>Channel Access is implemented using Internet protocols (IP). IP addresses
 are divided into host and network portions. The boundary between each portion
 is determined by the IP netmask. Portions of the IP address corresponding to
 zeros in the netmask specify the hosts address within an IP subnet. Portions of
@@ -380,7 +380,7 @@ limited to one IP subnet. Addresses with the host address portion set to all
 zeros or all ones are special. Modern IP kernel implementations reserve
 destination addresses with the host portion set to all ones for the purpose of
 addressing broadcasts to a particular subnet. In theory we can issue a
-broadcast frame on any broadcast capable LAN within the interconnected internet
+broadcast frame on any broadcast capable LAN within the interconnected Internet
 by specifying the proper subnet address combined with a host portion set to all
 ones. In practice these "directed broadcasts" are frequently limited by the
 default router configuration. The proper directed broadcast address required to
@@ -586,7 +586,7 @@ restarted or because the IP kernel's internal TCP circuit inactivity keep alive
 timer has expired after a typically long duration (as is appropriate for IP
 based systems that need to avoid thrashing during periods of excessive load).
 The net result is less search and TCP circuit setup and shutdown activity
-suring periods of excessive load.</p>
+during periods of excessive load.</p>
 
 <h3><a name="Dynamic">Dynamic Changes in the CA Client Library Search
 Interval</a></h3>
@@ -613,7 +613,7 @@ doubles the delay between name resolution attempts and reduces the number of
 requests per interval. The maximum delay between attempts is limited by
 EPICS_CA_MAX_SEARCH_PERIOD (see <a href="#Configurin3">Configuring the Maximum
 Search Period</a>). Note however that prior to R3.14.7, if the client library
-did not receive any responses over a long interval it stoped sending name
+did not receive any responses over a long interval it stopped sending name
 resolution attempts altogether until a beacon anomaly was detected (see
 below).</p>
 
@@ -688,7 +688,7 @@ the correct time zone. Nevertheless, several programs commonly used with EPICS
 still use the original "tssubr" library and therefore they still rely on proper
 configuration of EPICS_TS_MIN_WEST.</em></p>
 
-<p>While the CA client library does not translate inbetween the local time and
+<p>While the CA client library does not translate between the local time and
 the time zone independent internal storage of EPICS time stamps, many EPICS
 client side applications call core EPICS libraries which provide these
 services. To set the correct time zone users must compute the number of
@@ -949,12 +949,12 @@ and Windows systems.</p>
 <p></p>
 
 <p>The above libraries are located in "&lt;EPICS
-base&gt;/lib/&lt;architechture&gt;".</p>
+base&gt;/lib/&lt;architecture&gt;".</p>
 
 <h3><a name="Compiler">Compiler and System Specific Build
 Options</a></h3>
 
-<p>If you do not use the EPICS build environemnt (layered make files) then it
+<p>If you do not use the EPICS build environment (layered make files) then it
 may be helpful to run one of the EPICS make files and watch the compile/link
 lines. This may be the simplest way to capture the latest system and compiler
 specific options required by your build environment. I have included some
@@ -1549,7 +1549,7 @@ command line is used.</p>
     </tr>
     <tr>
       <td>-t</td>
-      <td>Terse mode - print only sucessfully written value, without name</td>
+      <td>Terse mode - print only successfully written value, without name</td>
     </tr>
     <tr>
       <td></td>
@@ -1639,7 +1639,7 @@ etc.</p>
 <p>excas [options]</p>
 
 <p>This is an example CA server that is sometimes used for testing purposes. An
-example server can be created with the makeBaseApp perl script, as descibed in
+example server can be created with the makeBaseApp Perl script, as described in
 the application Developer's Guide.</p>
 
 <table border="1">
@@ -1823,7 +1823,7 @@ the application Developer's Guide.</p>
 
 <h3><a name="When">When Clients Do Not Connect to Their Server</a></h3>
 
-<h4><a name="Broadcast">Client and Server Broadcast Addresses Dont
+<h4><a name="Broadcast">Client and Server Broadcast Addresses Don't
 Match</a></h4>
 
 <p>Verify that the broadcast addresses are identical on the server's host and
@@ -1873,10 +1873,10 @@ EPICS_CA_MAX_SEARCH_PERIOD to find that newly introduced server.</em> Also,
 starting with EPICS R3.14.7 the client library does <em>not</em> suspend
 searching for a channel after 100 unsuccessful attempts until a beacon anomaly
 is seen. Therefore, if the client library is from before version R3.14.7 of
-EPICS and it timed out attempting to find a server whoose beacon cant be seen
+EPICS and it timed out attempting to find a server whose beacon can't be seen
 by the client library then the client application might need to be restarted in
 order to connect to this new beacon-out-of-range server. The typical situation
-where a client would not see the server's beacon might be when the client isnt
+where a client would not see the server's beacon might be when the client isn't
 on the same IP subnet as the server, and the client's EPICS_CA_ADDR_LIST was
 modified to include a destination address for the server, but the server's
 beacon address list was not modified so that its beacons are received by the
@@ -1891,7 +1891,7 @@ disconnected until TCP/IP's internal, typically long duration, keep alive timer
 expires. The disconnected channels remain attached to the beleaguered circuit
 and no attempt is made to search for, or to reestablish, a new circuit. If, at
 some time in the future, the circuit becomes responsive again, then the
-attached channels enter a connected state again and reconnect call back
+attached channels enter a connected state again and reconnect callback
 handlers are called. Any monitor subscriptions that received an update message
 while the channel was disconnected are also refreshed. If at any time the
 library receives an indication from the operating system that a beleaguered
@@ -2287,7 +2287,7 @@ int main ( int argc, char ** argv )
     SEVCHK ( status, "ca_array_get()" );
     status = ca_pend_io ( 15.0 );
     if ( status != ECA_NORMAL ) {
-        fprintf ( stderr, "\"%s\" didnt return a value.\n", argv[1] );
+        fprintf ( stderr, "\"%s\" didn't return a value.\n", argv[1] );
         return -1;
     }
 
@@ -2313,7 +2313,7 @@ int main ( int argc, char ** argv )
 <h3><a name="User">User Supplied Callback Functions</a></h3>
 
 <p>Certain CA client initiated requests asynchronously execute an application
-supplied call back in the client process when a response arrives. The functions
+supplied callback in the client process when a response arrives. The functions
 ca_put_callback, ca_get_callback, and ca_create_subscription all request notification of
 asynchronous completion via this mechanism. The <code>event_handler_args
 </code>structure is passed <em>by value</em> to the application supplied
@@ -2321,8 +2321,8 @@ callback. In this structure the <code>dbr</code> field is a void pointer to any
 data that might be returned. The <code>status</code> field will be
 set to one of the CA error codes in caerr.h and will indicate the status of the
 operation performed in the IOC. If the status field isn't set to ECA_NORMAL or
-data isn't normally returned from the operation (i.e. put call back) then you
-should expect that the <code>dbr</code> field will be set to a nill pointer
+data isn't normally returned from the operation (i.e. put callback) then you
+should expect that the <code>dbr</code> field will be set to a null pointer
 (zero). The fields <code>usr</code>, <code>chid</code>, and <code>type</code>
 are set to the values specified when the request was made by the application.
 The "dbr" pointer, and any data that it points to, are valid only when
@@ -2348,7 +2348,7 @@ void myCallback ( struct event_handler_args args )
 
 <h3><a name="Channel1">Channel Access Exceptions</a></h3>
 
-<p>When the server detects a failure, and there is no client call back function
+<p>When the server detects a failure, and there is no client callback function
 attached to the request, an exception handler is executed in the client. The
 default exception handler prints a message on the console and exits if the
 exception condition is severe. Certain internal exceptions within the CA client
@@ -2405,7 +2405,7 @@ method is best suited to toolkit components with long runtime duration. Use of
 <code><a href="#ca_state">ca_state</a></code> is appropriate only in programs
 that prefer to poll for connection state changes instead of opting for
 asynchronous notification. The <code>ca_pend_io</code> function blocks only for
-channels created specifying a nill connection handler callback function. The
+channels created specifying a null connection handler callback function. The
 user's connection state change function will be run immediately from within
 <code><a href="#ca_create_channel">ca_create_channel</a></code> if the CA
 client and CA server are both hosted within the same address space (within the
@@ -2481,11 +2481,11 @@ both part of the same context.</p>
 <h3><a name="Polling">Polling the CA Client Library From Single Threaded
 Applications</a></h3>
 
-<p>If preemptive call back is not enabled, then for proper operation CA must
+<p>If preemptive callback is not enabled, then for proper operation CA must
 periodically be polled to take care of background activity. This requires that
 your application must either wait in one of ca_pend_event(), ca_pend_io(), or
 ca_sg_block() or alternatively it must call ca_poll() at least every 100
-milli-seconds. In single threaded applications a file descriptor manager like
+milliseconds. In single threaded applications a file descriptor manager like
 Xt or the interface described in fdManager.h can be used to monitor both mouse
 clicks and also CA's file descriptors so that ca_poll() can be called
 immediately when CA server messages arrives over the network.</p>
@@ -2551,8 +2551,8 @@ questionable practice for the following reasons.</p>
 <h3><a name="Calling1">Calling CA Functions from POSIX signal
 handlers</a></h3>
 
-<p>As you might expect, it isnt safe to call the CA client library from a POSIX
-signal handler. Likewise, it isnt safe to call the CA client library from
+<p>As you might expect, it isn't safe to call the CA client library from a POSIX
+signal handler. Likewise, it isn't safe to call the CA client library from
 interrupt context.</p>
 <hr>
 
@@ -2683,7 +2683,7 @@ a connected state.</p>
 <ul>
   <li>The first and simplest method requires that you call ca_pend_io(), and
     wait for successful completion, prior to using a channel that was created
-    specifying a nill connection call back function pointer.</li>
+    specifying a null connection callback function pointer.</li>
   <li>The second method requires that you register a connection handler by
     supplying a valid connection callback function pointer. This connection
     handler is called whenever the connection state of the channel changes. If
@@ -2696,7 +2696,7 @@ channel. Valid connections may be isolated from invalid ones with this function
 if ca_pend_io() times out.</p>
 
 <p>Due to the inherently transient nature of network connections the order of
-connection call backs relative to the order that ca_create_channel() calls are
+connection callbacks relative to the order that ca_create_channel() calls are
 made by the application can't be guaranteed, and application programs may need
 to be prepared for a connected channel to enter a disconnected state at any
 time.</p>
@@ -2717,9 +2717,9 @@ time.</p>
 </dl>
 <dl>
   <dt><code>USERFUNC</code></dt>
-    <dd>Optional address of the user's call back function to be run when the
+    <dd>Optional address of the user's callback function to be run when the
       connection state changes. Casual users of channel access may decide to
-      set this field to nill or 0 if they do not need to have a call back
+      set this field to null or 0 if they do not need to have a callback
       function run in response to each connection state change event.
       <p>The following structure is passed <em>by value </em>to the user's
       connection callback function. The <code>op</code> field will
@@ -2739,7 +2739,7 @@ time.</p>
     <dd>The value of this void pointer argument is retained in
       storage associated with the specified channel. See the MACROS manual page
       for reading and writing this field. Casual users of channel access may
-      wish to set this field to nill or 0.</dd>
+      wish to set this field to null or 0.</dd>
 </dl>
 <dl>
   <dt><code>PRIORITY</code></dt>
@@ -2825,14 +2825,14 @@ unless the request can not be fulfilled in the server. If unsuccessful an
 exception handler is run on the client side.</p>
 
 <p>When ca_put_callback or ca_array_put_callback are invoked the user supplied
-asynchronous call back is called only after the initiated write operation, and
+asynchronous callback is called only after the initiated write operation, and
 all actions resulting from the initiating write operation, complete.</p>
 
-<p>If unsuccessful the call back function is invoked indicating failure status.
+<p>If unsuccessful the callback function is invoked indicating failure status.
 </p>
 
 <p>If the channel disconnects before a put callback request can be completed,
-then the client's call back function is called with failure status, but this
+then the client's callback function is called with failure status, but this
 does not guarantee that the server did not receive and process the request
 before the disconnect. If a connection is lost and then resumed outstanding ca
 put requests are not automatically reissued following reconnect.</p>
@@ -2954,7 +2954,7 @@ requests are not automatically reissued following reconnect.</p>
 from the channel and then the user's callback is invoked with a pointer to the
 retrieved value. Note that ca_pend_io will not block for the delivery of values
 requested by ca_get_callback. If the channel disconnects before a ca get
-callback request can be completed, then the clients call back function is
+callback request can be completed, then the clients callback function is
 called with failure status.</p>
 
 <p>All of these functions return ECA_DISCONN if the channel is currently
@@ -3006,7 +3006,7 @@ when a CA get request is initiated.</p>
 <dl>
   <dt><code>USERARG</code></dt>
     <dd>Pointer sized variable retained and then passed back to user supplied
-      call back function above.</dd>
+      callback function above.</dd>
 </dl>
 
 <h4>Returns</h4>
@@ -3045,7 +3045,7 @@ int ca_create_subscription ( chtype TYPE, unsigned long COUNT,
 
 <h4>Description</h4>
 
-<p>Register a state change subscription and specify a call back function to be
+<p>Register a state change subscription and specify a callback function to be
 invoked whenever the process variable undergoes significant state changes. A
 significant change can be a change in the process variable's value, alarm
 status, or alarm severity. In the process control function block database the
@@ -3073,7 +3073,7 @@ or ca_sg_pend are called. This allows several requests to be efficiently sent
 over the network in one message.</p>
 
 <p>If at any time after subscribing, read access to the specified process
-variable is lost, then the call back will be invoked immediately indicating
+variable is lost, then the callback will be invoked immediately indicating
 that read access was lost via the status argument. When read access is restored
 normal event processing will resume starting always with at least one update
 indicating the current state of the channel.</p>
@@ -3087,7 +3087,7 @@ indicating the current state of the channel.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>TYPE</code></dt>
-    <dd>The type of value presented to the call back funstion. Conversion will
+    <dd>The type of value presented to the callback function. Conversion will
       occur if it does not match native type. Specify one from the set of
       DBR_XXXX in db_access.h</dd>
 </dl>
@@ -3118,7 +3118,7 @@ indicating the current state of the channel.</p>
   <dt><code>PEVID</code></dt>
     <dd>This is a pointer to user supplied event id which is overwritten if
       successful. This event id can later be used to clear a specific event.
-      This option may be omitted by passing a nill pointer.</dd>
+      This option may be omitted by passing a null pointer.</dd>
 </dl>
 <dl>
   <dt><code>MASK</code></dt>
@@ -3195,12 +3195,12 @@ int ca_pend_io ( double TIMEOUT );</pre>
 
 <p>This function flushes the send buffer and then blocks until outstanding <a
 href="#ca_get">ca_get</a> requests complete, and until channels created
-specifying nill connection handler function pointers connect for the first
+specifying null connection handler function pointers connect for the first
 time.</p>
 <ul>
   <li>If ECA_NORMAL is returned then it can be safely assumed that all
     outstanding <a href="#ca_get">ca_get</a> requests have completed
-    successfully and channels created specifying nill connection handler
+    successfully and channels created specifying null connection handler
     function pointers have connected for the first time.</li>
   <li>If ECA_TIMEOUT is returned then it must be assumed for all previous <a
     href="#ca_get">ca_get</a> requests and properly qualified first time
@@ -3210,7 +3210,7 @@ time.</p>
 <p>If ECA_TIMEOUT is returned then get requests may be reissued followed by a
 subsequent call to ca_pend_io(). Specifically, the function will block only for
 outstanding <a href="#ca_get">ca_get</a> requests issued, and also any channels
-created specifying a nill connection handler function pointer, after the last
+created specifying a null connection handler function pointer, after the last
 call to ca_pend_io() or ca client context creation whichever is later. Note
 that <a href="#ca_create_channel">ca_create_channel</a> requests generally
 should not be reissued for the same process variable unless <a
@@ -3240,7 +3240,7 @@ are pending.</p>
 
 <p>ECA_NORMAL - Normal successful completion</p>
 
-<p>ECA_TIMEOUT - Selected IO requests didnt complete before specified
+<p>ECA_TIMEOUT - Selected IO requests didn't complete before specified
 timeout</p>
 
 <p>ECA_EVDISALLOW - Function inappropriate for use within an event handler</p>
@@ -3260,10 +3260,10 @@ int ca_test_io();</pre>
 <h4>Description</h4>
 
 <p>This function tests to see if all <a href="#ca_get">ca_get</a> requests are
-complete and channels created specifying a nill connection callback function
+complete and channels created specifying a null connection callback function
 pointer are connected. It will report the status of outstanding <a
 href="#ca_get">ca_get</a> requests issued, and channels created specifying a
-nill connection callback function pointer, after the last call to ca_pend_io()
+null connection callback function pointer, after the last call to ca_pend_io()
 or CA context initialization whichever is later.</p>
 
 <h4>Returns</h4>
@@ -3313,7 +3313,7 @@ Code</a>.</p>
 
 <p>ECA_TIMEOUT - The operation timed out</p>
 
-<p>ECA_EVDISALLOW - Function inappropriate for use within a call back
+<p>ECA_EVDISALLOW - Function inappropriate for use within a callback
 handler</p>
 
 <h3><code><a name="ca_flush_io">ca_flush_io()</a></code></h3>
@@ -3382,8 +3382,7 @@ int ca_add_exception_event ( pCallback  USERFUNC, void *USERARG );</pre>
 
 <h4>Description</h4>
 
-<p>Replace the currently installed CA context global exception handler call
-back.</p>
+<p>Replace the currently installed CA context global exception handler callback.</p>
 
 <p>When an error occurs in the server asynchronous to the clients thread then
 information about this type of error is passed from the server to the client in
@@ -3402,14 +3401,14 @@ field should not be used.</p>
 <dl>
   <dt><code>USERFUNC</code></dt>
     <dd>Address of user callback function to be executed when an exceptions
-      occur. Passing a nill value causes the default exception handler to be
+      occur. Passing a null value causes the default exception handler to be
       reinstalled. The following structure is passed by value to the user's
       callback function. Currently, the <code>op</code> field can be one of
       <code>CA_OP_GET, CA_OP_PUT, CA_OP_CREATE_CHANNEL, CA_OP_ADD_EVENT,
       CA_OP_CLEAR_EVENT, or CA_OP_OTHER.</code>
       <pre>struct exception_handler_args {
     void            *usr;   /* user argument supplied when installed */
-    chanId          chid;   /* channel id (may be nill) */
+    chanId          chid;   /* channel id (may be null) */
     long            type;   /* type requested */
     long            count;  /* count requested */
     void            *addr;  /* user's address to write results of CA_OP_GET */
@@ -3536,9 +3535,9 @@ default handler uses fprintf to send messages to 'stderr'.</p>
 <h4>Arguments</h4>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>The address of a user supplied call back handler to be invoked when CA
-      prints diagnostic messages. Installing a nill pointer will cause the
-      default call back handler to be reinstalled.</dd>
+    <dd>The address of a user supplied callback handler to be invoked when CA
+      prints diagnostic messages. Installing a null pointer will cause the
+      default callback handler to be reinstalled.</dd>
 </dl>
 
 <h4>Examples</h4>
@@ -3570,7 +3569,7 @@ specified channel.</p>
   <li>whenever CA connects the channel immediately before the channel's
     connection handler is called</li>
   <li>whenever CA disconnects the channel immediately after the channel's
-    disconnect call back is called</li>
+    disconnect callback is called</li>
   <li>once immediately after installation if the channel is connected.</li>
   <li>whenever the access rights state of a connected channel changes</li>
 </ul>
@@ -3584,7 +3583,7 @@ specified channel.</p>
 </dl>
 <dl>
   <dt><code>PFUNC</code></dt>
-    <dd>Address of user supplied call back function. A nill pointer uninstalls
+    <dd>Address of user supplied callback function. A null pointer uninstalls
       the current handler. The following arguments are passed <em>by value</em>
       to the supplied callback handler. 
       <pre>typedef struct ca_access_rights {
@@ -3922,7 +3921,7 @@ type.</p>
 <h4>Description</h4>
 <pre>void ca_test_event ( struct event_handler_args );</pre>
 
-<p>A built-in subscription update call back handler for debugging purposes that
+<p>A built-in subscription update callback handler for debugging purposes that
 prints diagnostics to standard out.</p>
 
 <h4>Examples</h4>
@@ -4278,7 +4277,7 @@ ca_client_status() prints information about the calling threads CA context.</p>
 
 <h4>Description</h4>
 
-<p>Returns a pointer to the current thread's CA context. If none then nill is
+<p>Returns a pointer to the current thread's CA context. If none then null is
 returned.</p>
 
 <h4>See Also</h4>

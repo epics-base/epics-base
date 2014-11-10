@@ -44,21 +44,21 @@ INC += dbUnitTest.h
 DBD += menuGlobal.dbd
 menuGlobal_DBD += menuAlarmSevr.dbd
 menuGlobal_DBD += menuAlarmStat.dbd
-menuGlobal_DBD += menuCompress.dbd
 menuGlobal_DBD += menuFtype.dbd
 menuGlobal_DBD += menuIvoa.dbd
 menuGlobal_DBD += menuOmsl.dbd
 menuGlobal_DBD += menuPini.dbd
 menuGlobal_DBD += menuPost.dbd
 menuGlobal_DBD += menuPriority.dbd
-menuGlobal_DBD += menuScan.dbd
 menuGlobal_DBD += menuYesNo.dbd
 menuGlobal_DBD += menuSimm.dbd
 
 DBDINC += $(basename $(menuGlobal_DBD))
+DBDINC += menuScan.dbd
 DBDINC += dbCommon
 
-HTMLS += $(patsubst %.dbd.pod,%.html,$(notdir $(wildcard ../db/menu*.dbd.pod)))
+dbMenusPod = $(notdir $(wildcard ../db/menu*.dbd.pod))
+HTMLS += $(patsubst %.dbd.pod,%.html,$(menusPod))
 
 dbCore_SRCS += dbLock.c
 dbCore_SRCS += dbAccess.c

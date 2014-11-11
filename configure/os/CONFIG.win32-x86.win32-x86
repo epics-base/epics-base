@@ -130,6 +130,7 @@ RANLIB=
 # -LTCG whole program optimization
 # -incremental:no full linking
 # -fixed:no generate relocatable code
+# -version:<major>.<minor> - only 2 components allowed, 0-65535 each
 # -debug generate debugging info
 LINK_OPT_FLAGS_YES = -LTCG -incremental:no -opt:ref \
     -release $(PROD_VERSION:%=-version:%)

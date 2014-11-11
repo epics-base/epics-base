@@ -14,8 +14,8 @@
 EPICS_BASE_HOST_BIN = $(EPICS_BASE)/bin/$(EPICS_HOST_ARCH)
 EPICS_BASE_HOST_LIB = $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
 ifdef T_A
-EPICS_BASE_LIB      = $(EPICS_BASE)/lib/$(T_A)
-EPICS_BASE_BIN      = $(EPICS_BASE)/bin/$(T_A)
+  EPICS_BASE_LIB    = $(EPICS_BASE)/lib/$(T_A)
+  EPICS_BASE_BIN    = $(EPICS_BASE)/bin/$(T_A)
 endif
 
 #---------------------------------------------------------------
@@ -33,8 +33,10 @@ EPICS_BASE_HOST_LIBS += ca Com
 # Version number for base shared libraries (and win32 products)
 
 ifdef BASE_TOP
-SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
-PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
+  # Unix lib.so.<v.r.m>  Darwin lib.<v.r.m>.dylib
+  SHRLIB_VERSION = $(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)
+  # Windows only allows 2 levels of version numbering
+  PROD_VERSION = $(EPICS_VERSION).$(EPICS_REVISION)
 endif # BASE_TOP
 
 #---------------------------------------------------------------
@@ -85,11 +87,14 @@ YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 #---------------------------------------------------------------
+# msi used to be an external tool
+
+MSI  ?= $(EPICS_BASE_HOST_BIN)/msi
+
+#---------------------------------------------------------------
 # External tools and tool flags - must be in path or defined in application
 
-ifndef ADL2DL
-ADL2DL = adl2dl
-endif
+ADL2DL ?= adl2dl
 
 # sch2edif compiler and flags
 SCH2EDIF = sch2edif
@@ -99,18 +104,11 @@ SCH2EDIF_FLAGS =
  
 # e2db and flags
 #    - again there is an assumption where edb.def is installed.
-ifndef E2DB
-E2DB = e2db
-endif
+E2DB ?= e2db
 E2DB_SYSFLAGS = -ate -d $(CAPFAST_TEMPLATES)/edb.def
 E2DB_FLAGS =
 
-ifndef DBST
-DBST = dbst
-endif
+DBST ?= dbst
 
-ifndef MSI
-MSI = $(EPICS_BASE_HOST_BIN)/msi
-endif
 
 

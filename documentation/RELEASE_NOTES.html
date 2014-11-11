@@ -14,6 +14,15 @@
 <h2 align="center">Changes between 3.15.0.2 and 3.15.1</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Shared Library Versions</h3>
+
+<p>On architectures that can support it, the shared library version number for
+libraries provided with Base has had the third component of the EPICS version
+number added to it, thus libCom.so.3.15.1 instead of libCom.so.3.15. Windows
+can only support two components to its internal product version number, and the
+Darwin bug that external shared libraries were being built using the EPICS
+version number has been fixed.</p>
+
 <h3>Hooking into dbLoadRecords</h3>
 
 <p>A function pointer hook has been added to the dbLoadRecords() routine, to

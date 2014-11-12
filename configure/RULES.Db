@@ -151,7 +151,6 @@ ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
-ACTIONS += browse
 ACTIONS += runtests tapfiles
 
 actionArchTargets = $(foreach x, $(ACTIONS),\ $(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))

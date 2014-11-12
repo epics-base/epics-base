@@ -177,7 +177,7 @@ LIBRARY_OBJS = $(addsuffix $(OBJ),$(basename $(SRCS) $(USR_SRCS) $(LIB_SRCS) $(L
 LIBRARY_LD_OBJS = $(USR_OBJLIBS) $(LIB_OBJLIBS) $(TARGET_OBJS) $(LIBRARY_OBJS)
 
 #--------------------------------------------------
-# WIN95/NT resource files
+# Windows resource files
 
 TARGET_RESS = $(if $(RES),$(addsuffix $(RES),$(basename $($*_RCS))),)
 
@@ -186,11 +186,6 @@ PROD_LD_RESS = $(TARGET_RESS) $(PROD_RESS)
 
 LIBRARY_RESS = $(if $(RES),$(addsuffix $(RES),$(basename $(RCS) $(LIB_RCS) $(LIBRARY_RCS))),)
 LIBRARY_LD_RESS = $(TARGET_RESS) $(LIBRARY_RESS)
-
-#--------------------------------------------------
-# WIN95/NT source browser
-PROD_BAF = $(addsuffix $(BAF), $(basename $(PROD)))
-LIB_BAF=$(addsuffix $(BAF),$(basename $(LIBRARY)))
 
 #--------------------------------------------------
 # C preprocessor, compiler, and linker flag defaults

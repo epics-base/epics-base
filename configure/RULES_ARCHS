@@ -17,48 +17,39 @@ ACTIONS = inc
 ACTIONS += build
 ACTIONS += install
 ACTIONS += buildInstall
-ACTIONS += browse
 ACTIONS += runtests tapfiles
-#ACTIONS += rebuild
 
 actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 
-actionArchTargets = $(foreach x, $(ACTIONS),\
-		$(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
+actionArchTargets = $(foreach action, $(ACTIONS), \
+    $(addprefix $(action)$(DIVIDER), $(BUILD_ARCHS)))
 
-cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
+cleanArchTargets = $(addprefix clean$(DIVIDER), $(BUILD_ARCHS))
 
-buildDirs = $(addprefix O.,$(BUILD_ARCHS))
+buildDirs = $(addprefix O., $(BUILD_ARCHS))
 
 #*************************************************************************
-# Create epics_host_arch dependancies for GNU make -j option
-# Only works with GNU make 3.81 or later (uses eval function)
-# Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
+# Create EPICS_HOST_ARCH dependancies for GNU make -j option
+# Needed in dirs where EPICS_HOST_ARCH builds a tool used by
 # cross arch builds
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
 define DEP_template
-$(2): $$(EPICS_HOST_ARCH)
-$(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH) O.$(2)
+  $(2) : $(EPICS_HOST_ARCH)
+  $(1)$(DIVIDER)$(2) : $(1)$(DIVIDER)$(EPICS_HOST_ARCH) O.$(2)
 endef
 
-ifeq ($(MAKE_VERSION),3.81)
-   $(foreach action, $(ACTIONS), $(foreach arch,\
-      $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
-else
-ifeq ($(findstring j,$(MAKEFLAGS)),j)
-   $(foreach action, $(ACTIONS), $(foreach arch,\
-      $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
-endif
-endif
+$(foreach action, $(ACTIONS), $(foreach arch, $(CROSS_ARCHS), \
+    $(eval $(call DEP_template,$(action),$(arch)))))
+
 #*************************************************************************
 
 # Allows rebuild to work with parallel builds option, -j.
 ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
-$(buildDirs) O.Common : clean
-rebuild: install
+  $(buildDirs) O.Common : clean
+  rebuild : install
 endif
 
 $(actionArchTargets) : $(buildDirs) O.Common
@@ -67,7 +58,7 @@ $(actionArchTargets) : $(buildDirs) O.Common
 $(BUILD_ARCHS) : % : O.% O.Common
 	$(MAKE) -C O.$@ -f ../Makefile TOP=$(TOP)/.. T_A=$@
 
-$(ACTIONS):%: $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
+$(ACTIONS) : % : $(foreach arch, $(BUILD_ARCHS), %$(DIVIDER)$(arch))
 
 $(buildDirs):
 	$(PERL) $(TOOLS)/makeMakefile.pl $@ $(TOP)/..
@@ -78,21 +69,21 @@ O.Common:
 #
 # special clean rule
 #
-clean : archs_common_clean
+clean: archsCommonClean
 
-archs_common_clean :
-	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common
+archsCommonClean:
+	$(RMDIR) $(buildDirs) O.Common
 
-archclean :
-	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS))
+archclean:
+	$(RMDIR) $(buildDirs)
 
-$(cleanArchTargets) :
+$(cleanArchTargets):
 	$(RMDIR) O.$(archPart)
 
-realclean :
+realclean:
 	$(RMDIR) O.*
 
 .PHONY : $(actionArchTargets)
 .PHONY : $(cleanArchTargets)
-.PHONY : $(BUILD_ARCHS) rebuild arch_common_clean
+.PHONY : $(BUILD_ARCHS) rebuild archsCommonClean
 .PHONY : $(ACTIONS) clean realclean archclean host all

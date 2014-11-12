@@ -166,17 +166,6 @@ build_clean:
 ifdef RES
 	@$(RM) *$(RES)
 endif
-ifdef BAF
-	@$(RM) $(PROD_BAF) $(LIB_BAF)
-endif
-ifdef BOF
-	@$(RM) *$(BOF)
-endif
-
-# WIN95/NT source browser
-#ifdef BAF
-browse: $(LIB_BAF) $(PROD_BAF)
-#endif
 
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
@@ -238,16 +227,10 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE):
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 
-# WIN95/NT resource compiler
+# Windows resource compiler
 %$(RES): %.rc
 	@$(RM) $@
 	$(RCCMD)
-
-# WIN95/NT source browser
-%.bsc: %.sbr
-	$(ECHO) "building source browser archive $@"
-	@$(RM) $@
-	$(BAFCMD) $<
 
 YACCOPT ?= $($*_YACCOPT)
 #
@@ -270,16 +253,6 @@ YACCOPT ?= $($*_YACCOPT)
 	$(LEX) $(LEXOPT) -t $< > $*.yy.c
 	@$(RM) $@
 	$(MV) $*.yy.c $@
-
-# WIN95/NT source browser
-ifdef BAF
-
-$(LIB_BAF): $(addsuffix $(BOF),$(basename $(LIBRARY_LD_OBJS)))
-	$(ECHO) "Building source browser archive $@"
-	@$(RM) $@
-	$(BAFCMD) $^
-
-endif
 
 #---------------------------------------------------------------
 # Libraries, shared/DLL and stubs

@@ -54,7 +54,7 @@ menuGlobal_DBD += menuYesNo.dbd
 menuGlobal_DBD += menuSimm.dbd
 
 DBDINC += $(basename $(menuGlobal_DBD))
-DBDINC += menuScan.dbd
+DBDINC += menuScan
 DBDINC += dbCommon
 
 dbMenusPod = $(notdir $(wildcard ../db/menu*.dbd.pod))

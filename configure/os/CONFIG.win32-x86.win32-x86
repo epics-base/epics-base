@@ -21,8 +21,6 @@ RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
 
 ARCMD = lib -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 
-BAFCMD = bscmake -nologo -o $@
-
 #
 # Configure OS vendor C compiler
 CC = cl
@@ -151,8 +149,6 @@ WIN32=1
 EXE=.exe
 OBJ=.obj
 RES=.res
-BAF=.bsc
-BOF=.sbr
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
 #       so we do C++ compiles using the global flag -TP 

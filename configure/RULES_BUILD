@@ -305,10 +305,6 @@ $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 	@$(RM) $@
 	$(MUNCH_CMD)
 
-$(OBJLIB_MUNCHNAME): %.munch: %_ctdt$(OBJ) %$(OBJ)
-	@$(RM) $@
-	$(MUNCH_CMD)
-
 #---------------------------------------------------------------
 # Automated testing
 

@@ -72,6 +72,9 @@
 static enum {
     iocVirgin, iocBuilding, iocBuilt, iocRunning, iocPaused, iocStopped
 } iocState = iocVirgin;
+static enum {
+    buildRSRV, buildIsolated
+} iocBuildMode;
 
 /* define forward references*/
 static int checkDatabase(dbBase *pdbbase);
@@ -183,6 +186,7 @@ int iocBuild(void)
     rsrv_init();
 
     status = iocBuild_3();
+    if (!status) iocBuildMode = buildRSRV;
     return status;
 }
 
@@ -199,6 +203,7 @@ int iocBuildIsolated(void)
     if (status) return status;
 
     status = iocBuild_3();
+    if (!status) iocBuildMode = buildIsolated;
     return status;
 }
 
@@ -672,13 +677,16 @@ int iocShutdown(void)
 {
     if (iocState == iocVirgin || iocState == iocStopped) return 0;
     iterateRecords(doCloseLinks, NULL);
-    scanShutdown();
-    callbackShutdown();
-    iterateRecords(doFreeRecord, NULL);
-    dbLockCleanupRecords(pdbbase);
-    asShutdown();
-    iocshFree();
+    if (iocBuildMode==buildIsolated) {
+        scanShutdown();
+        callbackShutdown();
+        iterateRecords(doFreeRecord, NULL);
+        dbLockCleanupRecords(pdbbase);
+        asShutdown();
+        iocshFree();
+    }
     iocState = iocStopped;
+    iocBuildMode = buildRSRV;
     return 0;
 }
 

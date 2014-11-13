@@ -83,7 +83,7 @@ const char *exit_db = EXIT_FILE;
 
 
 static void exitSubroutine(subRecord *precord) {
-    epicsExit((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
+    epicsExitLater((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static void usage(int status) {

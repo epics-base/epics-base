@@ -29,6 +29,7 @@
 
 #define epicsExportSharedSymbols
 #include "ellLib.h"
+#include "errlog.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
 #include "cantProceed.h"
@@ -48,9 +49,12 @@ typedef struct exitPvt {
 int atExitDebug = 0;
 
 static epicsThreadOnceId exitPvtOnce = EPICS_THREAD_ONCE_INIT;
+static epicsThreadOnceId exitLaterOnce = EPICS_THREAD_ONCE_INIT;
 static exitPvt * pExitPvtPerProcess = 0;
 static epicsMutexId exitPvtLock = 0;
 static epicsThreadPrivateId exitPvtPerThread = 0;
+
+static int exitLaterStatus;
 
 static void destroyExitPvt(exitPvt * pep)
 {
@@ -177,6 +181,26 @@ epicsShareFunc void epicsExit(int status)
     epicsExitCallAtExits();
     epicsThreadSleep(0.1);
     exit(status);
+}
+
+static void exitNow(void *junk)
+{
+    epicsExit(exitLaterStatus);
+}
+
+static void exitLaterOnceFunc(void *raw)
+{
+    int *status = raw;
+    exitLaterStatus = *status;
+    epicsThreadMustCreate("exitLater",
+                      epicsThreadPriorityLow,
+                      epicsThreadGetStackSize(epicsThreadStackSmall),
+                      &exitNow, NULL);
+}
+
+epicsShareFunc void epicsExitLater(int status)
+{
+    epicsThreadOnce(&exitLaterOnce, &exitLaterOnceFunc, &status);
 }
 
 #include "epicsExport.h"

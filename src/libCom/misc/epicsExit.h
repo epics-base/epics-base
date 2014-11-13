@@ -18,6 +18,7 @@ extern "C" {
 typedef void (*epicsExitFunc)(void *arg);
 
 epicsShareFunc void epicsExit(int status);
+epicsShareFunc void epicsExitLater(int status);
 epicsShareFunc void epicsExitCallAtExits(void);
 epicsShareFunc int epicsAtExit3(epicsExitFunc func, void *arg, const char* name);
 #define epicsAtExit(F,A) epicsAtExit3(F,A,#F)

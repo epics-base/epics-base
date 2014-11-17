@@ -26,13 +26,36 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
+static
+void *int2ptr(size_t i)
+{
+    char *zero = 0;
+    i = i|(i<<16);
+    return zero+i;
+}
+
+static int foundCorruption;
+
+static
+size_t ptr2int(void *p)
+{
+    char *zero = 0, *p2 = p;
+    size_t i = p2-zero;
+    if((i&0xffff)!=((i>>16)&0xffff)) {
+        testDiag("Pointer value corruption %p", p);
+        foundCorruption = 1;
+    }
+    return i&0xffff;
+}
+
 static void testSingle(void)
 {
-    void *i;
+    int i;
     const int rsize = 100;
-    void * const zero = 0; /* avoid warnings about int<->pointer casting */
     void *addr = 0;
     epicsRingPointerId ring = epicsRingPointerCreate(rsize);
+
+    foundCorruption = 0;
 
     testDiag("Testing operations w/o threading");
 
@@ -44,7 +67,7 @@ static void testSingle(void)
 
     testOk1(epicsRingPointerPop(ring)==NULL);
 
-    addr = zero+1;
+    addr = int2ptr(1);
     testOk1(epicsRingPointerPush(ring, addr)==1);
 
     testOk1(!epicsRingPointerIsEmpty(ring));
@@ -54,15 +77,16 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetUsed(ring)==1);
 
     testDiag("Fill it up");
-    for(i=zero+2; i<zero+2*rsize; i++) {
-        addr = i;
-        int ret = epicsRingPointerPush(ring, addr);
+    for(i=2; i<2*rsize; i++) {
+        int ret;
+        addr = int2ptr(i);
+        ret = epicsRingPointerPush(ring, addr);
         if(!ret)
             break;
     }
 
     /* Note: +1 because we started with 1 */
-    testOk(i==zero+rsize+1, "%p == %p", i, zero+rsize+1);
+    testOk(i==rsize+1, "%d == %d", i, rsize+1);
     testOk1(!epicsRingPointerIsEmpty(ring));
     testOk1(epicsRingPointerIsFull(ring));
     testOk1(epicsRingPointerGetFree(ring)==0);
@@ -70,13 +94,15 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetUsed(ring)==rsize);
 
     testDiag("Drain it out");
-    for(i=zero+1; i<zero+2*rsize; i++) {
+    for(i=1; i<2*rsize; i++) {
         addr = epicsRingPointerPop(ring);
-        if(addr==NULL || addr!=i)
+        if(addr==NULL || ptr2int(addr)!=i)
             break;
     }
 
-    testOk(i==zero+rsize+1, "%p == %p", i, zero+rsize+1);
+    testOk1(!foundCorruption);
+
+    testOk(i==rsize+1, "%d == %d", i, rsize+1);
     testOk1(epicsRingPointerIsEmpty(ring));
     testOk1(!epicsRingPointerIsFull(ring));
     testOk1(epicsRingPointerGetFree(ring)==rsize);
@@ -84,9 +110,10 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetUsed(ring)==0);
 
     testDiag("Fill it up again");
-    for(i=zero+2; i<zero+2*rsize; i++) {
-        addr = i;
-        int ret = epicsRingPointerPush(ring, addr);
+    for(i=2; i<2*rsize; i++) {
+        int ret;
+        addr = int2ptr(i);
+        ret = epicsRingPointerPush(ring, addr);
         if(!ret)
             break;
     }
@@ -102,28 +129,6 @@ static void testSingle(void)
     testOk1(epicsRingPointerGetUsed(ring)==0);
 
     epicsRingPointerDelete(ring);
-}
-
-static
-void *int2ptr(size_t i)
-{
-    void *zero = 0;
-    i = i|(i<<16);
-    return zero+i;
-}
-
-static int foundCorruption;
-
-static
-size_t ptr2int(void *p)
-{
-    void *zero = 0;
-    size_t i = p-zero;
-    if((i&0xffff)!=((i>>16)&0xffff)) {
-        testDiag("Pointer value corruption %p", p);
-        foundCorruption = 1;
-    }
-    return i&0xffff;
 }
 
 typedef struct {
@@ -229,7 +234,7 @@ static void testPair(int locked)
 
 MAIN(ringPointerTest)
 {
-    testPlan(36);
+    testPlan(37);
     testSingle();
     testPair(0);
     testPair(1);

@@ -26,179 +26,212 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-#define ringSize 10
-#define consumerCount 4
-#define producerCount 4
-
-static volatile int testExit = 0;
-int value[ringSize*2];
-
-typedef struct info {
-    epicsEventId consumerEvent;
-    epicsRingPointerId	ring;
-    int checkOrder;
-    int value[ringSize*2];
-}info;
-
-static void consumer(void *arg)
+static void testSingle(void)
 {
-    info *pinfo = (info *)arg;
-    static int expectedValue=0;
-    int *newvalue;
-    char myname[20];
+    void *i;
+    const int rsize = 100;
+    void * const zero = 0; /* avoid warnings about int<->pointer casting */
+    void *addr = 0;
+    epicsRingPointerId ring = epicsRingPointerCreate(rsize);
 
-    epicsThreadGetName(epicsThreadGetIdSelf(), myname, sizeof(myname));
-    testDiag("%s starting", myname);
-    while(1) {
-        epicsEventMustWait(pinfo->consumerEvent);
-        if (testExit) return;
-        while ((newvalue = (int *)epicsRingPointerPop(pinfo->ring))) {
-            if (pinfo->checkOrder) {
-                testOk(expectedValue == *newvalue,
-                    "%s: (got) %d == %d (expected)", myname, *newvalue, expectedValue);
-                expectedValue = *newvalue + 1;
-            } else {
-                testOk(pinfo->value[*newvalue] <= producerCount, "%s: got a %d (%d times seen before)",
-                        myname, *newvalue, pinfo->value[*newvalue]);
-            }
-            /* This must be atomic... */
-            pinfo->value[*newvalue]++;
-            epicsThreadSleep(0.05);
-        }
+    testDiag("Testing operations w/o threading");
+
+    testOk1(epicsRingPointerIsEmpty(ring));
+    testOk1(!epicsRingPointerIsFull(ring));
+    testOk1(epicsRingPointerGetFree(ring)==rsize);
+    testOk1(epicsRingPointerGetSize(ring)==rsize);
+    testOk1(epicsRingPointerGetUsed(ring)==0);
+
+    testOk1(epicsRingPointerPop(ring)==NULL);
+
+    addr = zero+1;
+    testOk1(epicsRingPointerPush(ring, addr)==1);
+
+    testOk1(!epicsRingPointerIsEmpty(ring));
+    testOk1(!epicsRingPointerIsFull(ring));
+    testOk1(epicsRingPointerGetFree(ring)==rsize-1);
+    testOk1(epicsRingPointerGetSize(ring)==rsize);
+    testOk1(epicsRingPointerGetUsed(ring)==1);
+
+    testDiag("Fill it up");
+    for(i=zero+2; i<zero+2*rsize; i++) {
+        addr = i;
+        int ret = epicsRingPointerPush(ring, addr);
+        if(!ret)
+            break;
     }
+
+    /* Note: +1 because we started with 1 */
+    testOk(i==zero+rsize+1, "%p == %p", i, zero+rsize+1);
+    testOk1(!epicsRingPointerIsEmpty(ring));
+    testOk1(epicsRingPointerIsFull(ring));
+    testOk1(epicsRingPointerGetFree(ring)==0);
+    testOk1(epicsRingPointerGetSize(ring)==rsize);
+    testOk1(epicsRingPointerGetUsed(ring)==rsize);
+
+    testDiag("Drain it out");
+    for(i=zero+1; i<zero+2*rsize; i++) {
+        addr = epicsRingPointerPop(ring);
+        if(addr==NULL || addr!=i)
+            break;
+    }
+
+    testOk(i==zero+rsize+1, "%p == %p", i, zero+rsize+1);
+    testOk1(epicsRingPointerIsEmpty(ring));
+    testOk1(!epicsRingPointerIsFull(ring));
+    testOk1(epicsRingPointerGetFree(ring)==rsize);
+    testOk1(epicsRingPointerGetSize(ring)==rsize);
+    testOk1(epicsRingPointerGetUsed(ring)==0);
+
+    testDiag("Fill it up again");
+    for(i=zero+2; i<zero+2*rsize; i++) {
+        addr = i;
+        int ret = epicsRingPointerPush(ring, addr);
+        if(!ret)
+            break;
+    }
+
+    testDiag("flush");
+    testOk1(epicsRingPointerIsFull(ring));
+    epicsRingPointerFlush(ring);
+
+    testOk1(epicsRingPointerIsEmpty(ring));
+    testOk1(!epicsRingPointerIsFull(ring));
+    testOk1(epicsRingPointerGetFree(ring)==rsize);
+    testOk1(epicsRingPointerGetSize(ring)==rsize);
+    testOk1(epicsRingPointerGetUsed(ring)==0);
+
+    epicsRingPointerDelete(ring);
 }
 
-static void producer(void *arg)
+static
+void *int2ptr(size_t i)
 {
-    info *pinfo = (info *)arg;
-    char myname[20];
-    int i;
+    void *zero = 0;
+    i = i|(i<<16);
+    return zero+i;
+}
 
-    epicsThreadGetName(epicsThreadGetIdSelf(), myname, sizeof(myname));
-    testDiag("%s starting", myname);
-    for (i=0; i<ringSize*2; i++) {
-        while (epicsRingPointerIsFull(pinfo->ring)) {
-            epicsThreadSleep(0.2);
-            if (testExit) return;
-        }
-        testOk(epicsRingPointerPush(pinfo->ring, (void *)&value[i]),
-               "%s: Pushing %d, ring not full", myname, i);
-        epicsEventSignal(pinfo->consumerEvent);
-        if (testExit) return;
+static int foundCorruption;
+
+static
+size_t ptr2int(void *p)
+{
+    void *zero = 0;
+    size_t i = p-zero;
+    if((i&0xffff)!=((i>>16)&0xffff)) {
+        testDiag("Pointer value corruption %p", p);
+        foundCorruption = 1;
     }
+    return i&0xffff;
+}
+
+typedef struct {
+    epicsRingPointerId ring;
+    epicsEventId sync, wait;
+    int stop;
+    void *lastaddr;
+} pairPvt;
+
+static void pairConsumer(void *raw)
+{
+    pairPvt *pvt = raw;
+    void *prev = pvt->lastaddr;
+
+    epicsEventMustTrigger(pvt->sync);
+
+    while(1) {
+        size_t c,p;
+
+        epicsEventMustWait(pvt->wait);
+        if(pvt->stop)
+            break;
+
+        pvt->lastaddr = epicsRingPointerPop(pvt->ring);
+        c = ptr2int(pvt->lastaddr);
+        p = ptr2int(prev);
+        if(p+1!=c) {
+            testFail("consumer skip %p %p", prev, pvt->lastaddr);
+            break;
+        }
+        prev = pvt->lastaddr;
+    }
+
+    pvt->stop = 1;
+    epicsEventMustTrigger(pvt->sync);
+}
+
+static void testPair(int locked)
+{
+    unsigned int myprio = epicsThreadGetPrioritySelf(), consumerprio;
+    pairPvt pvt;
+    const int rsize = 100;
+    int i, expect;
+    epicsRingPointerId ring;
+    if(locked)
+        ring = epicsRingPointerLockedCreate(rsize);
+    else
+        ring = epicsRingPointerCreate(rsize);
+
+    pvt.ring = ring;
+    pvt.sync = epicsEventCreate(epicsEventEmpty);
+    pvt.wait = epicsEventCreate(epicsEventEmpty);
+    pvt.stop = 0;
+    pvt.lastaddr = 0;
+
+    foundCorruption = 0;
+
+    testDiag("single producer, single consumer with%s locking", locked?"":"out");
+
+    /* give the consumer thread a slightly higher priority so that
+     * it can preempt us on RTOS targets.  On non-RTOS targets
+     * we expect to be preempt'ed at some random time
+     */
+    if(!epicsThreadLowestPriorityLevelAbove(myprio, &consumerprio))
+        testAbort("Can't run test from thread with highest priority");
+
+    epicsThreadMustCreate("pair", consumerprio,
+                          epicsThreadGetStackSize(epicsThreadStackSmall),
+                          &pairConsumer, &pvt);
+    /* wait for worker to start */
+    epicsEventMustWait(pvt.sync);
+
+    i=1;
+    while(i<rsize*10 && !pvt.stop) {
+        int full = epicsRingPointerPush(ring, int2ptr(i));
+        if(full || i%32==31)
+            epicsEventMustTrigger(pvt.wait);
+        if(full) {
+            i++;
+        }
+    }
+
+    testDiag("Everything enqueued, Stopping consumer");
+    pvt.stop = 1;
+    epicsEventMustTrigger(pvt.wait);
+    epicsEventMustWait(pvt.sync);
+
+    i = epicsRingPointerGetUsed(ring);
+    testDiag("Pushed %d, have %d remaining unconsumed", rsize*10, i);
+    expect = rsize*10-i;
+    testDiag("Expect %d consumed", expect);
+
+    testOk(pvt.lastaddr==int2ptr(expect-1), "%p == %p", pvt.lastaddr, int2ptr(expect-1));
+    if(pvt.lastaddr==int2ptr(expect-1))
+        testPass("Consumer consumed all");
+
+    testOk1(!foundCorruption);
+
+    epicsEventDestroy(pvt.sync);
+    epicsEventDestroy(pvt.wait);
+    epicsRingPointerDelete(ring);
 }
 
 MAIN(ringPointerTest)
 {
-    int i;
-    info *pinfo;
-    epicsEventId consumerEvent;
-    int *pgetValue;
-    epicsRingPointerId ring;
-    epicsThreadId tid;
-    char threadName[20];
-
-    testPlan(256);
-
-    for (i=0; i<ringSize*2; i++) value[i] = i;
-
-    pinfo = calloc(1,sizeof(info));
-    if(!pinfo) testAbort("calloc failed");
-
-    pinfo->consumerEvent = consumerEvent = epicsEventMustCreate(epicsEventEmpty);
-    if (!consumerEvent) {
-        testAbort("epicsEventMustCreate failed");
-    }
-
-    testDiag("******************************************************");
-    testDiag("** Test 1: local ring pointer, check size and order **");
-    testDiag("******************************************************");
-
-    pinfo->ring = ring = epicsRingPointerCreate(ringSize);
-    if (!ring) {
-        testAbort("epicsRingPointerCreate failed");
-    }
-    testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
-
-    for (i=0; epicsRingPointerPush(ring,(void *)&value[i]); ++i) {}
-    testOk(i==ringSize, "ring filled, %d values", i);
-
-    for (i=0; (pgetValue = (int *)epicsRingPointerPop(ring)); ++i) {
-        testOk(i==*pgetValue, "Pop test: %d == %d", i, *pgetValue);
-    }
-    testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
-
-    testDiag("**************************************************************");
-    testDiag("** Test 2: unlocked ring pointer, one consumer, check order **");
-    testDiag("**************************************************************");
-
-    pinfo->checkOrder = 1;
-    tid=epicsThreadCreate("consumer", 50, 
-        epicsThreadGetStackSize(epicsThreadStackSmall), consumer, pinfo);
-    if(!tid) testAbort("epicsThreadCreate failed");
-    epicsThreadSleep(0.2);
-
-    for (i=0; i<ringSize*2; i++) {
-        if (epicsRingPointerIsFull(ring)) {
-            epicsThreadSleep(0.2);
-        }
-        testOk(epicsRingPointerPush(ring, (void *)&value[i]), "Pushing %d, ring not full", i);
-        epicsEventSignal(consumerEvent);
-    }
-    epicsThreadSleep(1.0);
-    testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
-
-    for (i=0; i<ringSize*2; i++) {
-        testOk(pinfo->value[i] == 1, "Value test: %d was processed", i);
-    }
-
-    testExit = 1;
-    epicsEventSignal(consumerEvent);
-    epicsThreadSleep(1.0);
-
-    epicsRingPointerDelete(pinfo->ring);
-
-    testDiag("*************************************************************************************");
-    testDiag("** Test 3: locked ring pointer, many consumers, many producers, check no of copies **");
-    testDiag("*************************************************************************************");
-
-    pinfo->ring = ring = epicsRingPointerLockedCreate(ringSize);
-    if (!ring) {
-        testAbort("epicsRingPointerLockedCreate failed");
-    }
-    testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
-
-    for (i=0; i<ringSize*2; i++) pinfo->value[i] = 0;
-    testExit = 0;
-    pinfo->checkOrder = 0;
-    for (i=0; i<consumerCount; i++) {
-        sprintf(threadName, "consumer%d", i);
-        tid=epicsThreadCreate(threadName, 50,
-                              epicsThreadGetStackSize(epicsThreadStackSmall), consumer, pinfo);
-        if(!tid) testAbort("epicsThreadCreate failed");
-    }
-    epicsThreadSleep(0.2);
-
-    for (i=0; i<producerCount; i++) {
-        sprintf(threadName, "producer%d", i);
-        tid=epicsThreadCreate(threadName, 50,
-                              epicsThreadGetStackSize(epicsThreadStackSmall), producer, pinfo);
-        if(!tid) testAbort("epicsThreadCreate failed");
-    }
-
-    epicsThreadSleep(0.5);
-    epicsEventSignal(consumerEvent);
-    epicsThreadSleep(1.0);
-
-    testOk(epicsRingPointerIsEmpty(ring), "Ring empty");
-
-    for (i=0; i<ringSize*2; i++) {
-        testOk(pinfo->value[i] == producerCount, "Value test: %d was processed %d times", i, producerCount);
-    }
-
-    testExit = 1;
-    epicsEventSignal(consumerEvent);
-    epicsThreadSleep(1.0);
-
+    testPlan(36);
+    testSingle();
+    testPair(0);
+    testPair(1);
     return testDone();
 }

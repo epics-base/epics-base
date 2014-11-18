@@ -684,6 +684,7 @@ int iocShutdown(void)
         dbLockCleanupRecords(pdbbase);
         asShutdown();
         dbChannelExit();
+        dbProcessNotifyExit();
         iocshFree();
     }
     iocState = iocStopped;

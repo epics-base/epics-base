@@ -150,6 +150,7 @@ struct dbCommon;
 struct dbFldDes;
 
 epicsShareFunc void dbChannelInit (void);
+epicsShareFunc void dbChannelExit(void);
 epicsShareFunc long dbChannelTest(const char *name);
 epicsShareFunc dbChannel * dbChannelCreate(const char *name);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);

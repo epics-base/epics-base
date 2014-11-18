@@ -164,10 +164,9 @@ struct sockaddr caNetAddr::getSock() const
         throw std::logic_error ( "caNetAddr::getSock (): address wasnt IP" );
     }
 
-    struct sockaddr sa;
-    struct sockaddr_in *psain = reinterpret_cast <struct sockaddr_in*> ( & sa );
-    *psain = this->addr.ip;
-    return sa;
+    osiSockAddr addr;
+    addr.ia = this->addr.ip;
+    return addr.sa;
 }
 
 caNetAddr::operator sockaddr_in () const

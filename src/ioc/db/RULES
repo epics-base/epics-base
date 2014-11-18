@@ -11,9 +11,6 @@
 
 # This is a Makefile fragment, see src/ioc/Makefile.
 
-# Ensure menu.dbd files have been generated from .dbd.pod files
-menuGlobal.dbd$(DEP): $(patsubst %.pod,$(COMMON_DIR)/%,$(dbMenusPod))
-
 dbCommon.h$(DEP): $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
 	@$(RM) $@
 	@$(DBTORECORDTYPEH) -D -I ../db -o $(COMMONDEP_TARGET) $< > $@
@@ -22,3 +19,9 @@ $(COMMON_DIR)/dbCommon.h: $(IOCDIR)/db/dbCommonRecord.dbd $(IOCDIR)/db/RULES
 	@$(RM) $(notdir $@)
 	$(DBTORECORDTYPEH) -I ../db -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
+
+$(COMMON_DIR)/menuGlobal.dbd: $(IOCDIR)/db/Makefile $(IOCDIR)/db/RULES
+
+# This is a target-specific variable
+$(COMMON_DIR)/menuGlobal.dbd: DBDCAT_COMMAND = \
+    $(PERL) $(TOOLS)/makeIncludeDbd.pl $(menuGlobal_DBD) $(@F)

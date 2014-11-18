@@ -40,8 +40,8 @@ INC += db_access_routines.h
 INC += db_convert.h
 INC += dbUnitTest.h
 
-# Generate menuGlobal.dbd automatically
-DBD += menuGlobal.dbd
+# Generate menuGlobal.dbd, not really by concatenation, see RULES
+DBDCAT += menuGlobal.dbd
 menuGlobal_DBD += menuAlarmSevr.dbd
 menuGlobal_DBD += menuAlarmStat.dbd
 menuGlobal_DBD += menuFtype.dbd

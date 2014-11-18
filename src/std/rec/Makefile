@@ -45,8 +45,9 @@ stdRecords += subArrayRecord
 stdRecords += waveformRecord
 
 DBDINC += $(stdRecords)
-DBD += stdRecords.dbd
 
+# Generate stdRecords.dbd, not really by concatenation, see RULES
+DBDCAT += stdRecords.dbd
 stdRecords_DBD = $(patsubst %,%.dbd,$(stdRecords))
 
 dbRecStd_SRCS += $(patsubst %,%.c,$(stdRecords))

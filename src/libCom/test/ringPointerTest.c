@@ -190,7 +190,7 @@ static void testPair(int locked)
 
     /* give the consumer thread a slightly higher priority so that
      * it can preempt us on RTOS targets.  On non-RTOS targets
-     * we expect to be preempt'ed at some random time
+     * we expect to be preempted at some random time
      */
     if(!epicsThreadLowestPriorityLevelAbove(myprio, &consumerprio))
         testAbort("Can't run test from thread with highest priority");
@@ -234,9 +234,13 @@ static void testPair(int locked)
 
 MAIN(ringPointerTest)
 {
+    int prio = epicsThreadGetPrioritySelf();
+
     testPlan(37);
     testSingle();
+    epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityScanLow);
     testPair(0);
     testPair(1);
+    epicsThreadSetPriority(epicsThreadGetIdSelf(), prio);
     return testDone();
 }

@@ -761,7 +761,7 @@ void dbChannelMakeArrayCopy(void *pvt, db_field_log *pfl, dbChannel *chan)
     void *p;
     struct dbCommon *prec = dbChannelRecord(chan);
 
-    if (!pfl->type == dbfl_type_rec) return;
+    if (pfl->type != dbfl_type_rec) return;
 
     pfl->type = dbfl_type_ref;
     pfl->stat = prec->stat;

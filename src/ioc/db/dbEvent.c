@@ -46,6 +46,7 @@
 #include "dbFldTypes.h"
 #include "dbLock.h"
 #include "link.h"
+#include "special.h"
 
 #define EVENTSPERQUE    32
 #define EVENTENTRIES    4      /* the number of que entries for each event */
@@ -452,7 +453,8 @@ dbEventSubscription db_add_event (
      * communication (for other types they get whatever happens to be
      * there upon wakeup)
      */
-    if( dbChannelElements(chan) == 1 &&
+    if (dbChannelElements(chan) == 1 &&
+        dbChannelSpecial(chan) != SPC_DBADDR &&
         dbChannelFieldSize(chan) <= sizeof(union native_value)) {
         pevent->useValque = TRUE;
     }
@@ -824,7 +826,7 @@ unsigned int    caEventMask
 
         /*
          * Only send event msg if they are waiting on the field which
-         * changed or pval==NULL and waiting on alarms and alarms changed
+         * changed or pval==NULL, and are waiting on matching event
          */
         if ( (dbChannelField(pevent->chan) == (void *)pField || pField==NULL) &&
             (caEventMask & pevent->select)) {

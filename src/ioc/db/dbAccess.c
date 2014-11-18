@@ -843,17 +843,15 @@ long dbGet(DBADDR *paddr, short dbrType,
         return S_db_badDbrtype;
     }
 
-    /* For array field, the rset function
+    /* For SPC_DBADDR fields, the rset function
      * get_array_info() is allowed to modify
      * paddr->pfield.  So we store the original
      * value and restore it later.
      */
     pfieldsave = paddr->pfield;
 
-    /* check for array */
-    if ((!pfl || pfl->type == dbfl_type_rec) &&
-        paddr->pfldDes->special == SPC_DBADDR &&
-        no_elements > 1 &&
+    /* Update field info */
+    if (paddr->pfldDes->special == SPC_DBADDR &&
         (prset = dbGetRset(paddr)) &&
         prset->get_array_info) {
         status = prset->get_array_info(paddr, &no_elements, &offset);
@@ -1179,7 +1177,9 @@ long dbPut(DBADDR *paddr, short dbrType,
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
     void *pfieldsave  = paddr->pfield;
+    struct rset *prset = dbGetRset(paddr);
     long status = 0;
+    long offset;
     dbFldDes *pfldDes;
     int isValueField;
 
@@ -1203,31 +1203,32 @@ long dbPut(DBADDR *paddr, short dbrType,
         if (status) return status;
     }
 
+    if (paddr->pfldDes->special == SPC_DBADDR &&
+        prset && prset->get_array_info) {
+        long dummy;
+
+        status = prset->get_array_info(paddr, &dummy, &offset);
+        /* paddr->pfield may be modified */
+        if (status) goto done;
+    } else
+        offset = 0;
+
     if (no_elements <= 1) {
         status = dbFastPutConvertRoutine[dbrType][field_type](pbuffer,
             paddr->pfield, paddr);
+        nRequest = 1;
     } else {
-        struct rset *prset = dbGetRset(paddr);
-        long offset = 0;
+        if (no_elements < nRequest)
+            nRequest = no_elements;
+        status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
+            nRequest, no_elements, offset);
+    }
+    if (status) goto done;
 
-        if (paddr->pfldDes->special == SPC_DBADDR &&
-            prset && prset->get_array_info) {
-            long dummy;
-
-            status = prset->get_array_info(paddr, &dummy, &offset);
-            /* paddr->pfield may be modified */
-        }
-        if (no_elements < nRequest) nRequest = no_elements;
-        if (!status)
-            status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
-                nRequest, no_elements, offset);
-
-        /* update array info */
-        if (!status &&
-            paddr->pfldDes->special == SPC_DBADDR &&
-            prset && prset->put_array_info) {
-            status = prset->put_array_info(paddr, nRequest);
-        }
+    /* update array info */
+    if (paddr->pfldDes->special == SPC_DBADDR &&
+        prset && prset->put_array_info) {
+        status = prset->put_array_info(paddr, nRequest);
     }
     if (status) goto done;
 

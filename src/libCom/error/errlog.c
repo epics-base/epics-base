@@ -453,15 +453,6 @@ static void errlogExitHandler(void *pvt)
     pvtData.atExit = 1;
     epicsEventSignal(pvtData.waitForWork);
     epicsEventMustWait(pvtData.waitForExit);
-
-    free(pvtData.pbuffer);
-    epicsMutexDestroy(pvtData.flushLock);
-    epicsEventDestroy(pvtData.flush);
-    epicsEventDestroy(pvtData.waitForFlush);
-    epicsMutexDestroy(pvtData.listenerLock);
-    epicsMutexDestroy(pvtData.msgQueueLock);
-    epicsEventDestroy(pvtData.waitForWork);
-    epicsEventDestroy(pvtData.waitForExit);
 }
 
 struct initArgs {

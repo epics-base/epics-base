@@ -10,19 +10,9 @@
 -include $(CONFIG)/os/CONFIG.Common.win32-x86
 -include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
 
-ARCH_DEP_CPPFLAGS += /favor:blend
-#ARCH_DEP_CPPFLAGS += /Wp64
-
-#	/favor:blend	both AMD64 and INTEL64
-#	/favor:AMD64
-#	/favor:INTEL64 (new value)
-#	/favor:EN64T   (old value)
-
 OPT_LDFLAGS += /MACHINE:X64
 
 #	/MACHINE:X64
 #	/MACHINE:IA64  (Itanium)
 #	/MACHINE:X86
 
-#The following option does not work
-#ARCH_DEP_CPPFLAGS += /env x64

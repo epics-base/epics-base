@@ -1,0 +1,11 @@
+# CONFIG_SITE.Common.windows-x64-static
+#
+# $Revision-Id$
+#
+# Site Specific definitions for windows-x64-static target
+# Only the local epics system manager should modify this file
+
+# 64-bit Visual Studio 2010 builds fail when built optimized.
+# If you are using a newer version you can try removing this:
+HOST_OPT = NO
+

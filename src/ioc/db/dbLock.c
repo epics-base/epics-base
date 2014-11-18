@@ -110,15 +110,6 @@ typedef struct lockRecord {
     dbCommon	*precord;
 } lockRecord;
 
-static void dbLockExit(void *junk)
-{
-    epicsMutexDestroy(globalLock);
-    epicsMutexDestroy(lockSetModifyLock);
-    globalLock = NULL;
-    lockSetModifyLock = NULL;
-    dbLockIsInitialized = FALSE;
-}
-
 /*private routines */
 static void dbLockInitialize(void)
 {
@@ -129,7 +120,6 @@ static void dbLockInitialize(void)
     globalLock = epicsMutexMustCreate();
     lockSetModifyLock = epicsMutexMustCreate();
     dbLockIsInitialized = TRUE;
-    epicsAtExit(dbLockExit,NULL);
 }
 
 static lockSet * allocLockSet(

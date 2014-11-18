@@ -24,6 +24,8 @@
 #define epicsExportSharedSymbols
 #include "dbDefs.h"
 #include "epicsEvent.h"
+#include "iocLog.h"
+#include "errlog.h"
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -151,6 +153,8 @@ static void logClientDestroy (logClientId id)
             pClient->name, LOG_SERVER_SHUTDOWN_TIMEOUT );
         return;
     }
+
+    errlogRemoveListeners ( logClientSendMessage, (void *) pClient );
 
     logClientClose ( pClient );
 
@@ -545,6 +549,8 @@ logClientId epicsShareAPI logClientCreate (
             pClient->name, LOG_SERVER_CREATE_CONNECT_SYNC_TIMEOUT );
     }
         
+    errlogAddListener ( logClientSendMessage, (void *) pClient );
+
     return (void *) pClient;
 }
 
@@ -570,6 +576,16 @@ void epicsShareAPI logClientShow (logClientId id, unsigned level)
 
     if (logClientPrefix) {
         printf ("log client: prefix is \"%s\"\n", logClientPrefix);
+    }
+}
+
+/*
+ * logClientSendMessage (); deprecated
+ */
+void logClientSendMessage ( logClientId id, const char * message )
+{
+    if ( !iocLogDisable ) {
+        logClientSend (id, message);
     }
 }
 

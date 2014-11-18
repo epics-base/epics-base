@@ -1,11 +1,10 @@
 /*************************************************************************\
-* Copyright (c) 2002 The University of Chicago, as Operator of Argonne
+* Copyright (c) 2014 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
@@ -16,32 +15,22 @@
 #ifndef epicsDynLinkh
 #define epicsDynLinkh
 
-#ifdef symFindByName
-#undef symFindByName
-#endif
-
 #include "vxWorks.h"
 #include "symLib.h"
 #include "sysSymTbl.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
- 
-STATUS symFindByNameEPICS( 
-	SYMTAB_ID symTblId,
-	char      *name,
-	char      **pvalue,
-	SYM_TYPE  *pType);
+/* Use epicsFindSymbol() instead of these */
 
-STATUS symFindByNameAndTypeEPICS( 
-	SYMTAB_ID symTblId,
-	char      *name,
-	char      **pvalue,
-	SYM_TYPE  *pType,
-	SYM_TYPE  sType,
-	SYM_TYPE  mask);
+STATUS symFindByNameEPICS(SYMTAB_ID symTblId, char *name, char **pvalue,
+    SYM_TYPE *pType) EPICS_DEPRECATED;
+
+STATUS symFindByNameAndTypeEPICS(SYMTAB_ID symTblId, char *name, char **pvalue,
+    SYM_TYPE *pType, SYM_TYPE sType, SYM_TYPE mask) EPICS_DEPRECATED;
 
 #ifdef __cplusplus
 }

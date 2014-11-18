@@ -56,7 +56,9 @@ epicsShareFunc void * epicsLoadLibrary(const char *name)
 
 epicsShareFunc const char *epicsLoadError(void)
 {
-    if (oldmsg) free(oldmsg);
+    if (oldmsg)
+        free(oldmsg);
+
     oldmsg = errmsg;
     errmsg = NULL;
     return oldmsg;
@@ -65,22 +67,49 @@ epicsShareFunc const char *epicsLoadError(void)
 void *epicsFindSymbol(const char *name)
 {
     STATUS status;
-    SYM_TYPE type;
+
+#if _WRS_VXWORKS_MAJOR < 6 || _WRS_VXWORKS_MINOR < 9
     char *pvalue;
-    
-    status = symFindByName( sysSymTbl, (char *)name, &pvalue, &type );
-    if(status) {
-        if(name[0] == '_' ) {
-            status = symFindByName(sysSymTbl, (char *)(name+1), &pvalue, &type);
-        } else {
-            char *pname;
-            pname = dbmfMalloc(strlen(name) + 2);
-            strcpy(pname,"_");
-            strcat(pname,name);
-            status = symFindByName(sysSymTbl,pname, &pvalue, &type);
-            dbmfFree(pname);
-        }
+    SYM_TYPE type;
+
+    status = symFindByName(sysSymTbl, (char *)name, &pvalue, &type);
+    if (!status)
+        return pvalue;
+
+    if (name[0] == '_' ) {
+        status = symFindByName(sysSymTbl, (char *)(name+1), &pvalue, &type);
     }
-    if(status) return(0);
-    return((void *)pvalue);
+#if CPU_FAMILY == MC680X0
+    else {
+        char *pname = dbmfMalloc(strlen(name) + 2);
+
+        pname[0] = '_';
+        strcpy(pname + 1, name);
+        status = symFindByName(sysSymTbl, pname, &pvalue, &type);
+        dbmfFree(pname);
+    }
+#endif
+    if (!status)
+        return pvalue;
+
+#else
+
+    SYMBOL_DESC symDesc;
+
+    memset(&symDesc, 0, sizeof(SYMBOL_DESC));
+    symDesc.mask = SYM_FIND_BY_NAME;
+    symDesc.name = (char *) name;
+    status = symFind(sysSymTbl, &symDesc);
+    if (!status)
+        return symDesc.value;
+
+    if (name[0] == '_') {
+        symDesc.name++;
+        status = symFind(sysSymTbl, &symDesc);
+        if (!status)
+            return symDesc.value;
+    }
+    /* No need to prepend an '_'; 68K-only, no longer supported */
+#endif
+    return 0;
 }

@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#include "epicsDynLink.h"
+#include "epicsFindSymbol.h"
 #include "epicsExit.h"
 
 extern "C" {
@@ -21,15 +21,12 @@ typedef int (*sysAtReboot_t)(void(func)(void));
 
 void atRebootRegister(void)
 {
-    STATUS status;
-    sysAtReboot_t sysAtReboot;
-    SYM_TYPE type;
+    sysAtReboot_t sysAtReboot = (sysAtReboot_t) epicsFindSymbol("_sysAtReboot");
 
-    status = symFindByNameEPICS(sysSymTbl, "_sysAtReboot",
-                                (char **)&sysAtReboot, &type);
-    if (status == OK) {
-        status = sysAtReboot(epicsExitCallAtExits);
-        if (status != OK) {
+    if (sysAtReboot) {
+        STATUS status = sysAtReboot(epicsExitCallAtExits);
+
+        if (status) {
             printf("atReboot: sysAtReboot returned error %d\n", status);
         }
     } else {

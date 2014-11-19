@@ -68,6 +68,13 @@ dbStateTest_SRCS += dbStateTest.c
 testHarness_SRCS += dbStateTest.c
 TESTS += dbStateTest
 
+TESTPROD_HOST += dbCaStatsTest
+dbCaStatsTest_SRCS += dbCaStatsTest.c
+dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbCaStatsTest.c
+TESTS += dbCaStatsTest
+TESTFILES += ../dbCaStatsTest.db
+
 TARGETS += $(COMMON_DIR)/scanIoTest.dbd
 scanIoTest_DBD += menuGlobal.dbd
 scanIoTest_DBD += menuConvert.dbd

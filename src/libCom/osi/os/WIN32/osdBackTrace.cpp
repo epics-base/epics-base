@@ -14,10 +14,15 @@
 
 int epicsBackTrace(void **buf, int buf_sz)
 {
-	/* Docs say that (for some windows versions) the sum of
-	 * skipped + captured frames must be less than 63
-	 */
-	if ( buf_sz >= 63 )
-		buf_sz = 62;
-	return CaptureStackBackTrace(0, buf_sz, buf, 0);
+#ifdef CaptureStackBackTrace
+    /* Docs say that (for some windows versions) the sum of
+     * skipped + captured frames must be less than 63
+     */
+    if ( buf_sz >= 63 )
+        buf_sz = 62;
+    return CaptureStackBackTrace(0, buf_sz, buf, 0);
+#else
+    /* Older versions of MinGW */
+    return -1;
+#endif
 }

@@ -55,7 +55,7 @@
 #   define MS_InterlockedDecrement64 InterlockedDecrement64 
 #   define MS_InterlockedExchange64 InterlockedExchange64 
 #   define MS_InterlockedExchangeAdd64 InterlockedExchangeAdd64 
-#   define MS_InterlockedCompareExchange InterlockedCompareExchange64
+#   define MS_InterlockedCompareExchange64 InterlockedCompareExchange64
 #endif
 
 #include "epicsAtomicMS.h"

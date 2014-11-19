@@ -12,6 +12,7 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include "chfPlugin.h"
 #include "dbStaticLib.h"
@@ -540,7 +541,7 @@ MAIN(chfPluginTest)
     dbChannel *pch;
     db_field_log *pfl;
 
-#ifdef WIN32
+#if defined(WIN32) && (!defined(_MINGW) || __MSVCRT_VERSION__ >= 0x0800)
     _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 

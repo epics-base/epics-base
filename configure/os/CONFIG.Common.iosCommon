@@ -25,7 +25,7 @@ OS_CLASS = iOS
 #--------------------------------------------------
 # GNU and SDK directories
 GNU_DIR = $(PLATFORM_DIR)/Developer/usr
-SDK_DIR = $(PLATFORM_DIR)/Developer/SDKs/$(IOS_PLATFORM)$(IOS_VERSION).sdk
+SDK_DIR = $(PLATFORM_DIR)/Developer/SDKs/$(IOS_PLATFORM).sdk
 
 #-------------------------------------------------------
 # Build architecture flags
@@ -64,7 +64,7 @@ CC_CLANG  = clang
 CCC_CLANG = clang++
 CMPLR_CLASS_CLANG = clang
 
-CMPLR_CLASS = $(CMPLR_CLASS_$(COMPLER))
+CMPLR_CLASS = $(CMPLR_CLASS_$(COMPILER))
 
 # Convert the iOS platform to lowercase for passing to xcrun's sdk parameter
 XCRUN_SDK_BASE = $(shell echo $(IOS_PLATFORM) | tr A-Z a-z)

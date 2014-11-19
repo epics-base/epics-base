@@ -2,3 +2,7 @@ record(waveform, "wfrec") {
     field(NELM, "10")
     field(FTVL, "LONG")
 }
+record(waveform, "wfrec1") {
+    field(NELM, "1")
+    field(FTVL, "LONG")
+}

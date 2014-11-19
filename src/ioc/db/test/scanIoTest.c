@@ -315,7 +315,7 @@ MAIN(scanIoTest)
         }
     }
 
-    epicsThreadSleep(0.1);
+    epicsThreadSleep(1.0);
 
     testOk((orderFail==0), "No out-of-order processing");
 

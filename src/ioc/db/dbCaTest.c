@@ -192,7 +192,7 @@ void dbcaStats(int *pchans, int *pdiscon)
                         caLink *pca = (caLink *)plink->value.pv_link.pvt;
 
                         ncalinks++;
-                        if (pca && ca_state(pca->chid) == cs_conn) {
+                        if (pca && pca->chid && ca_state(pca->chid) == cs_conn) {
                             nconnected++;
                         }
                     }

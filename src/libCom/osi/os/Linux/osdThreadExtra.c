@@ -17,6 +17,7 @@
 
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/prctl.h>
@@ -57,8 +58,10 @@ static void thread_hook(epicsThreadId pthreadInfo)
     /* Set the name of the thread's process. Limited to 16 characters. */
     char comm[16];
 
-    snprintf(comm, sizeof(comm), "%s", pthreadInfo->name);
-    prctl(PR_SET_NAME, comm, 0l, 0l, 0l);
+    if (strcmp(pthreadInfo->name, "_main_")) {
+        snprintf(comm, sizeof(comm), "%s", pthreadInfo->name);
+        prctl(PR_SET_NAME, comm, 0l, 0l, 0l);
+    }
     pthreadInfo->lwpId = syscall(SYS_gettid);
 }
 

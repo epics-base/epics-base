@@ -164,7 +164,7 @@ int epicsShareAPI epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
     SYSTEMTIME st;
     BOOL status = FileTimeToSystemTime ( &ft, &st );
     if ( ! status ) {
-        return epicsTimeERROR;
+        return S_time_conversion;
     }
 
     pTM->tm_sec = st.wSecond; // seconds after the minute - [0,59]
@@ -193,7 +193,7 @@ int epicsShareAPI epicsTime_localtime (
     TIME_ZONE_INFORMATION tzInfo;
     DWORD tzStatus = GetTimeZoneInformation ( & tzInfo );
     if ( tzStatus == TIME_ZONE_ID_INVALID ) {
-        return epicsTimeERROR;
+        return S_time_timezone;
     }
 
     //
@@ -204,13 +204,13 @@ int epicsShareAPI epicsTime_localtime (
     SYSTEMTIME st;
     BOOL success = FileTimeToSystemTime ( & ft, & st );
     if ( ! success ) {
-        return epicsTimeERROR;
+        return S_time_conversion;
     }
     SYSTEMTIME lst;
     success = SystemTimeToTzSpecificLocalTime (
         & tzInfo, & st, & lst );
     if ( ! success ) {
-        return epicsTimeERROR;
+        return S_time_conversion;
     }
 
     //
@@ -220,7 +220,7 @@ int epicsShareAPI epicsTime_localtime (
     FILETIME lft;
     success = SystemTimeToFileTime ( & lst, & lft );
     if ( ! success ) {
-        return epicsTimeERROR;
+        return S_time_conversion;
     }
 
     int is_dst = -1; // unknown state of dst
@@ -234,14 +234,14 @@ int epicsShareAPI epicsTime_localtime (
         success = SystemTimeToFileTime (
             & tzInfo.StandardDate, & StandardDateFT );
         if ( ! success ) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         tzInfo.DaylightDate.wYear = st.wYear;
         FILETIME DaylightDateFT;
         success = SystemTimeToFileTime (
             & tzInfo.DaylightDate, & DaylightDateFT );
         if ( ! success ) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         if ( CompareFileTime ( & lft, & DaylightDateFT ) >= 0
                 && CompareFileTime ( & lft, & StandardDateFT ) < 0 ) {

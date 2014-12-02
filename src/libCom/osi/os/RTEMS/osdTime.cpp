@@ -91,7 +91,7 @@ int epicsTime_gmtime ( const time_t *pAnsiTime, struct tm *pTM )
         return epicsTimeOK;
     }
     else {
-        return epicsTimeERROR;
+        return errno;
     }
 }
 
@@ -102,7 +102,7 @@ int epicsTime_localtime ( const time_t *clock, struct tm *result )
         return epicsTimeOK;
     }
     else {
-        return epicsTimeERROR;
+        return errno;
     }
 }
 

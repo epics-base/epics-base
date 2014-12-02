@@ -22,6 +22,7 @@ Com_SRCS += errSymTbl.c
 # For bldErrSymTbl
 #
 ERR_S_FILES += $(LIBCOM)/osi/devLib.h
+ERR_S_FILES += $(LIBCOM)/osi/epicsTime.h
 ERR_S_FILES += $(LIBCOM)/as/asLib.h
 ERR_S_FILES += $(LIBCOM)/misc/epicsStdlib.h
 ERR_S_FILES += $(LIBCOM)/pool/epicsThreadPool.h

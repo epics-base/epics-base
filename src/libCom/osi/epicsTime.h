@@ -17,6 +17,7 @@
 #include "shareLib.h"
 #include "epicsTypes.h"
 #include "osdTime.h"
+#include "errMdef.h"
 
 /* The EPICS Epoch is 00:00:00 Jan 1, 1990 UTC */
 #define POSIX_TIME_AT_EPICS_EPOCH 631152000u
@@ -170,9 +171,15 @@ private:
 extern "C" {
 #endif /* __cplusplus */
 
-/* All epicsTime routines return (-1,0) for (failure,success) */
+/* epicsTime routines return S_time_ error status values */
 #define epicsTimeOK 0
-#define epicsTimeERROR (-1)
+#define S_time_noProvider       (M_time| 1) /*No time provider*/
+#define S_time_badEvent         (M_time| 2) /*Bad event number*/
+#define S_time_badArgs          (M_time| 3) /*Invalid arguments*/
+#define S_time_noMemory         (M_time| 4) /*Out of memory*/
+#define S_time_unsynchronized   (M_time| 5) /*Provider not synchronized*/
+#define S_time_timezone         (M_time| 6) /*Invalid timeone*/
+#define S_time_conversion       (M_time| 7) /*Time conversion error*/
 
 /*Some special values for eventNumber*/
 #define epicsTimeEventCurrentTime 0

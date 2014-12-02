@@ -20,6 +20,15 @@
 
 -->
 
+<h3>epicsTime API return status</h3>
+
+<p>The epicsTime routines that used to return epicsTimeERROR now return a specific
+S_time_ status value, allowing the caller to discover the reason for any failure.
+The identifier <tt>epicsTimeERROR</tt> is no longer defined, so any references to
+it in source code will no longer compile. The identifier epicsTimeOK still exists
+and has the value 0 as before, so most code that uses these APIs can be changed in
+a way that is backwards-compatible with the previous return status.</p>
+
 <h3>Callback subsystem API</h3>
 
 <p>Added a new macro <tt>callbackGetPriority(prio, callback)</tt> to the

@@ -86,7 +86,7 @@ void generalTime_Init(void)
 int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
 {
     gtProvider *ptp;
-    int status = epicsTimeERROR;
+    int status = S_time_noProvider;
 
     generalTime_Init();
 
@@ -107,6 +107,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
                     *pPrio = ptp->priority;
             } else {
                 int key;
+
                 *pDest = gtPvt.lastProvidedTime;
                 if (pPrio)
                     *pPrio = gtPvt.lastTimeProvider->priority;
@@ -117,8 +118,7 @@ int generalTimeGetExceptPriority(epicsTimeStamp *pDest, int *pPrio, int ignore)
             break;
         }
     }
-    if (status == epicsTimeERROR &&
-        ignore == 0)
+    if (status && ignore == 0)
         gtPvt.lastTimeProvider = NULL;
     epicsMutexUnlock(gtPvt.timeListLock);
 
@@ -135,7 +135,8 @@ int epicsTimeGetCurrentInt(epicsTimeStamp *pDest)
     gtProvider *ptp = gtPvt.lastTimeProvider;
 
     if (ptp == NULL ||
-        ptp->getInt.Time == NULL) return epicsTimeERROR;
+        ptp->getInt.Time == NULL)
+	return S_time_noProvider;
 
     return ptp->getInt.Time(pDest);
 }
@@ -145,20 +146,20 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
     int *pPrio)
 {
     gtProvider *ptp;
-    int status = epicsTimeERROR;
+    int status = S_time_noProvider;
 
     generalTime_Init();
 
     if ((eventNumber < 0 || eventNumber >= NUM_TIME_EVENTS) &&
         (eventNumber != epicsTimeEventBestTime))
-        return status;
+        return S_time_badEvent;
 
     epicsMutexMustLock(gtPvt.eventListLock);
     for (ptp = (gtProvider *)ellFirst(&gtPvt.eventProviders);
          ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
 
         status = ptp->get.Event(pDest, eventNumber);
-        if (status != epicsTimeERROR) {
+        if (status == epicsTimeOK) {
             gtPvt.lastEventProvider = ptp;
             if (pPrio)
                 *pPrio = ptp->priority;
@@ -169,6 +170,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
                     gtPvt.lastProvidedBestTime = *pDest;
                 } else {
                     int key;
+
                     *pDest = gtPvt.lastProvidedBestTime;
                     key = epicsInterruptLock();
                     gtPvt.ErrorCounts++;
@@ -180,6 +182,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
                     gtPvt.eventTime[eventNumber] = *pDest;
                 } else {
                     int key;
+
                     *pDest = gtPvt.eventTime[eventNumber];
                     key = epicsInterruptLock();
                     gtPvt.ErrorCounts++;
@@ -189,7 +192,7 @@ static int generalTimeGetEventPriority(epicsTimeStamp *pDest, int eventNumber,
             break;
         }
     }
-    if (status == epicsTimeERROR)
+    if (status)
         gtPvt.lastEventProvider = NULL;
     epicsMutexUnlock(gtPvt.eventListLock);
 
@@ -213,7 +216,8 @@ int epicsTimeGetEventInt(epicsTimeStamp *pDest, int eventNumber)
         gtProvider *ptp = gtPvt.lastEventProvider;
 
         if (ptp == NULL ||
-            ptp->getInt.Event == NULL) return epicsTimeERROR;
+            ptp->getInt.Event == NULL)
+	    return S_time_noProvider;
 
         return ptp->getInt.Event(pDest, eventNumber);
     }
@@ -271,11 +275,11 @@ int generalTimeRegisterEventProvider(const char *name, int priority,
     generalTime_Init();
 
     if (name == NULL || getEvent == NULL)
-        return epicsTimeERROR;
+        return S_time_badArgs;
 
     ptp = (gtProvider *)malloc(sizeof(gtProvider));
     if (ptp == NULL)
-        return epicsTimeERROR;
+        return S_time_noMemory;
 
     ptp->name         = epicsStrDup(name);
     ptp->priority     = priority;
@@ -293,7 +297,7 @@ int generalTimeAddIntEventProvider(const char *name, int priority,
     gtProvider *ptp = findProvider(&gtPvt.eventProviders, gtPvt.eventListLock,
         name, priority);
     if (ptp == NULL)
-        return epicsTimeERROR;
+        return S_time_noProvider;
 
     ptp->getInt.Event = getEvent;
 
@@ -308,11 +312,11 @@ int generalTimeRegisterCurrentProvider(const char *name, int priority,
     generalTime_Init();
 
     if (name == NULL || getTime == NULL)
-        return epicsTimeERROR;
+        return S_time_badArgs;
 
     ptp = (gtProvider *)malloc(sizeof(gtProvider));
     if (ptp == NULL)
-        return epicsTimeERROR;
+        return S_time_noMemory;
 
     ptp->name        = epicsStrDup(name);
     ptp->priority    = priority;
@@ -330,7 +334,7 @@ int generalTimeAddIntCurrentProvider(const char *name, int priority,
     gtProvider *ptp = findProvider(&gtPvt.timeProviders, gtPvt.timeListLock,
         name, priority);
     if (ptp == NULL)
-        return epicsTimeERROR;
+        return S_time_noProvider;
 
     ptp->getInt.Time = getTime;
 
@@ -388,7 +392,7 @@ long generalTimeReport(int level)
         if (!message) {
             epicsMutexUnlock(gtPvt.timeListLock);
             printf("Out of memory\n");
-            return epicsTimeERROR;
+            return S_time_noMemory;
         }
 
         pout = message;
@@ -399,7 +403,7 @@ long generalTimeReport(int level)
                 ptp->name, ptp->priority);
             if (level) {
                 epicsTimeStamp tempTS;
-                if (ptp->get.Time(&tempTS) != epicsTimeERROR) {
+                if (ptp->get.Time(&tempTS) == epicsTimeOK) {
                     char tempTSText[40];
                     epicsTimeToStrftime(tempTSText, sizeof(tempTSText),
                         "%Y-%m-%d %H:%M:%S.%06f", &tempTS);
@@ -430,7 +434,7 @@ long generalTimeReport(int level)
         if (!message) {
             epicsMutexUnlock(gtPvt.eventListLock);
             printf("Out of memory\n");
-            return epicsTimeERROR;
+            return S_time_noMemory;
         }
 
         pout = message;

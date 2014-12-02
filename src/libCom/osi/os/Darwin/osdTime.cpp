@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <mach/mach.h>
 #include <mach/clock.h>
 
@@ -52,13 +53,13 @@ static int done = timeRegister();
 int epicsTime_gmtime(const time_t *pAnsiTime, struct tm *pTM)
 {
     return gmtime_r(pAnsiTime, pTM) ?
-        epicsTimeOK : epicsTimeERROR;
+        epicsTimeOK : errno;
 }
 
 int epicsTime_localtime(const time_t *clock, struct tm *result)
 {
     return localtime_r(clock, result) ?
-        epicsTimeOK : epicsTimeERROR;
+        epicsTimeOK : errno;
 }
 
 extern "C" epicsShareFunc void

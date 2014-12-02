@@ -813,9 +813,11 @@ static void spawnPeriodic(int ind)
 
 static void ioscanCallback(CALLBACK *pcallback)
 {
-    ioscan_head *piosh = (ioscan_head *) pcallback->user;
-    int prio = pcallback->priority;
+    ioscan_head *piosh;
+    int prio;
 
+    callbackGetUser(piosh, pcallback);
+    callbackGetPriority(prio, pcallback);
     scanList(&piosh->iosl[prio].scan_list);
     if (piosh->cb)
         piosh->cb(piosh->arg, piosh, prio);

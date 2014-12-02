@@ -47,14 +47,16 @@ typedef struct callbackPvt {
 
 typedef void    (*CALLBACKFUNC)(struct callbackPvt*);
 
-#define callbackSetCallback(PFUN,PCALLBACK)\
-( (PCALLBACK)->callback = (PFUN) )
-#define callbackSetPriority(PRIORITY,PCALLBACK)\
-( (PCALLBACK)->priority = (PRIORITY) )
-#define callbackSetUser(USER,PCALLBACK)\
-( (PCALLBACK)->user = (void *)(USER) )
-#define callbackGetUser(USER,PCALLBACK)\
-( (USER) = (void *)((CALLBACK *)(PCALLBACK))->user )
+#define callbackSetCallback(PFUN, PCALLBACK) \
+    ( (PCALLBACK)->callback = (PFUN) )
+#define callbackSetPriority(PRIORITY, PCALLBACK) \
+    ( (PCALLBACK)->priority = (PRIORITY) )
+#define callbackGetPriority(PRIORITY, PCALLBACK) \
+    ( (PRIORITY) = (PCALLBACK)->priority )
+#define callbackSetUser(USER, PCALLBACK) \
+    ( (PCALLBACK)->user = (void *) (USER) )
+#define callbackGetUser(USER, PCALLBACK) \
+    ( (USER) = (PCALLBACK)->user )
 
 epicsShareFunc void callbackInit(void);
 epicsShareFunc void callbackShutdown(void);

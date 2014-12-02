@@ -54,7 +54,8 @@ include $(TOP)/configure/RULES
 
 ifdef T_A
   EXTUTILS = $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils
-  XSUBPP = $(firstword $(wildcard /usr/bin/xsubpp $(EXTUTILS)/xsubpp))
+  PERLBIN = $(shell $(PERL) ../perlConfig.pl bin)
+  XSUBPP = $(firstword $(wildcard $(PERLBIN)/xsubpp $(EXTUTILS)/xsubpp))
 
   %.c: ../%.xs
 	$(RM) $@ $@_new

@@ -7,9 +7,6 @@
 # Sites may override these definitions in CONFIG_SITE.win32-x86.Common
 #-------------------------------------------------------
 
-# convert UNIX path to native path
-PATH_FILTER = $(subst /,\\,$(1))
-
 CP = $(PERL) -MExtUtils::Command -e cp
 MV = $(PERL) -MExtUtils::Command -e mv
 RM = $(PERL) -MExtUtils::Command -e rm_f

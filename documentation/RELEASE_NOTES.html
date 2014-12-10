@@ -14,6 +14,16 @@
 <h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Use of PATH_FILTER in Makefiles deprecated</h3>
+
+<p>The PATH_FILTER variable was being called to convert forward shashes
+<tt><b>/</b></tt> in file paths into pairs of backward slashes
+<tt><b>\\</b></tt> on Windows architectures. This has never been strictly
+necessary, and was added about 10 years ago to get around some short-comings in
+Windows tools at the time. All uses of PATH_FILTER in Base have now been
+removed; the definition is still present, but will result in a warning being
+printed if it is ever used.</p>
+
 <h3>Using msi for dependencies</h3>
 
 <p>To reduce confusion the msi program has been modified to allow the generation

@@ -52,8 +52,9 @@ BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 
 #---------------------------------------------------------------
 # Where to find the installed build tools
+#   Windows does not like commands with relative paths starting ../
 
-TOOLS = $(EPICS_BASE_HOST_BIN)
+TOOLS = $(abspath $(EPICS_BASE_HOST_BIN))
 
 #---------------------------------------------------------------
 # Epics base build tools and tool flags

@@ -11,23 +11,40 @@
 use strict;
 use Test;
 
-BEGIN {plan tests => 7}
+BEGIN {plan tests => 9}
 
+# Check include/substitute command model
 ok(msi('-I .. ../t1-template.txt'),             slurp('../t1-result.txt'));
-ok(msi('-I.. -S ../t2-substitution.txt'),       slurp('../t2-result.txt'));
-ok(msi('-I. -I.. -S ../t3-substitution.txt'),   slurp('../t3-result.txt'));
-ok(msi('-g -I.. -S ../t4-substitution.txt'),    slurp('../t4-result.txt'));
-ok(msi('-S ../t5-substitute.txt ../t5-template.txt'), slurp('../t5-result.txt'));
-ok(msi('-S ../t6-substitute.txt ../t6-template.txt'), slurp('../t6-result.txt'));
 
-# Check -o works
+# Substitution file, dbLoadTemplate format
+ok(msi('-I.. -S ../t2-substitution.txt'),       slurp('../t2-result.txt'));
+
+# Macro scoping
+ok(msi('-I. -I.. -S ../t3-substitution.txt'),   slurp('../t3-result.txt'));
+
+# Global scope (backwards compatibility check)
+ok(msi('-g -I.. -S ../t4-substitution.txt'),    slurp('../t4-result.txt'));
+
+# Substitution file, regular format
+ok(msi('-S ../t5-substitute.txt ../t5-template.txt'), slurp('../t5-result.txt'));
+
+# Substitution file, pattern format
+ok(msi('-S../t6-substitute.txt ../t6-template.txt'), slurp('../t6-result.txt'));
+
+# Output option -o
 my $out = 't7-output.txt';
 unlink $out;
 msi("-I.. -o $out ../t1-template.txt");
 ok(slurp($out), slurp('../t1-result.txt'));
 
+# Dependency generation, include/substitute model
+ok(msi('-I.. -D -o t8.txt ../t1-template.txt'), slurp('../t8-result.txt'));
 
-# Support routines
+# Dependency generation, dbLoadTemplate format
+ok(msi('-I.. -D -ot9.txt -S ../t2-substitution.txt'), slurp('../t9-result.txt'));
+
+
+# Test support routines
 
 sub slurp {
     my ($file) = @_;

@@ -14,6 +14,17 @@
 <h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Using msi for dependencies</h3>
+
+<p>To reduce confusion the msi program has been modified to allow the generation
+of dependency rules by adding support for a <tt>-D</tt> option, and changing the
+commands in RULES.Db to use this option instead of the mkmf.pl script. The new
+build rules will not work with old versions of the msi program, so the command
+variable name used in the rules has been changed from MSI to MSI3_15. Sites that
+use a modified version of msi must provide support for both the <tt>-D</tt> and
+<tt>-o&nbsp;outfile</tt> options, and should then point the MSI3_15 variable in
+their applications' CONFIG_SITE files to that updated executable.</p>
+
 <h2 align="center">Changes between 3.15.0.2 and 3.15.1</h2>
 
 <h3>epicsStrnEscapedFromRaw() and epicsStrnRawFromEscaped()</h3>

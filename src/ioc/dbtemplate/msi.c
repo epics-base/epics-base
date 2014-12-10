@@ -24,6 +24,7 @@
 #include <osiFileName.h>
 
 #define MAX_BUFFER_SIZE 4096
+#define MAX_DEPS 1024
 
 /* Module to read the template files */
 typedef struct inputData inputData;
@@ -47,12 +48,16 @@ static char *substituteGetReplacements(subInfo *pvt);
 static char *substituteGetGlobalReplacements(subInfo *pvt);
 
 /* Forward references to local routines */
-static void usageExit(void);
+static void usageExit(int status);
 static void addMacroReplacements(MAC_HANDLE *macPvt, char *pval);
 static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *templateName);
 
 /*Global variables */
 static int opt_V = 0;
+static int opt_D = 0;
+
+static char *outFile = 0;
+static int numDeps = 0, depHashes[MAX_DEPS];
 
 
 int main(int argc,char **argv)
@@ -73,24 +78,26 @@ int main(int argc,char **argv)
         pval = (narg==1) ? (argv[1]+2) : argv[2];
         if(strncmp(argv[1],"-I",2)==0) {
             inputAddPath(inputPvt,pval);
+        } else if (strcmp(argv[1], "-D") == 0) {
+            opt_D = 1;
+            narg = 1; /* no argument for this option */
         } else if(strncmp(argv[1],"-o",2)==0) {
-            if(freopen(pval,"w",stdout)==NULL) {
-                fprintf(stderr,"msi: Can't open %s for writing: %s\n",
-                    pval, strerror(errno));
-                exit(1);
-            }
+            outFile = epicsStrDup(pval);
         } else if(strncmp(argv[1],"-M",2)==0) {
             addMacroReplacements(macPvt,pval);
         } else if(strncmp(argv[1],"-S",2)==0) {
             substitutionName = epicsStrDup(pval);
-        } else if(strncmp(argv[1],"-V",2)==0) {
+        } else if (strcmp(argv[1], "-V") == 0) {
             opt_V = 1;
             narg = 1; /* no argument for this option */
-        } else if(strncmp(argv[1],"-g",2)==0) {
+        } else if (strcmp(argv[1], "-g") == 0) {
             localScope = 0;
             narg = 1; /* no argument for this option */
+        } else if (strcmp(argv[1], "-h") == 0) {
+            usageExit(0);
         } else {
-            usageExit();
+            fprintf(stderr, "msi: Bad argument \"%s\"\n", argv[1]);
+            usageExit(1);
         }
         argc -= narg;
         for(i=1; i<argc; i++) argv[i] = argv[i + narg];
@@ -99,7 +106,19 @@ int main(int argc,char **argv)
         macSuppressWarning(macPvt,1);
     if(argc>2) {
         fprintf(stderr,"msi: Too many arguments\n");
-        usageExit();
+        usageExit(1);
+    }
+    if (opt_D) {
+        if (!outFile) {
+            fprintf(stderr, "msi: Option -D requires -o for Makefile target\n");
+            exit(1);
+        }
+        printf("%s:", outFile);
+    }
+    else if (outFile && freopen(outFile, "w", stdout) == NULL) {
+        fprintf(stderr, "msi: Can't open %s for writing: %s\n",
+            outFile, strerror(errno));
+        exit(1);
     }
     if(argc==2) {
         templateName = epicsStrDup(argv[1]);
@@ -122,7 +141,7 @@ int main(int argc,char **argv)
                 if(templateName) filename = templateName;
                 if(!filename) {
                     fprintf(stderr,"msi: No template file\n");
-                    usageExit();
+                    usageExit(1);
                 }
                 while((pval = substituteGetReplacements(substitutePvt))){
                     if (localScope) macPushScope(macPvt);
@@ -137,24 +156,30 @@ int main(int argc,char **argv)
     errlogFlush();
     macDeleteHandle(macPvt);
     inputDestruct(inputPvt);
+    if (opt_D) {
+        printf("\n");
+    }
     free(templateName);
     free(substitutionName);
     return opt_V & 2;
 }
 
-void usageExit(void)
+void usageExit(int status)
 {
-    fprintf(stderr,"usage: msi [options] [template]\n");
-    fprintf(stderr,"stdin is used if neither template nor substitution file is given\n");
-    fprintf(stderr,"options:\n");
-    fprintf(stderr,"  -V        Undefined macros generate an error\n");
-    fprintf(stderr,"  -g        All macros have global scope\n");
-    fprintf(stderr,"  -o<FILE>  Save output to <FILE>\n");
-    fprintf(stderr,"  -I<DIR>   Add <DIR> to include file search path\n");
-    fprintf(stderr,"  -M<SUBST> Add <SUBST> to (global) macro definitions\n");
-    fprintf(stderr,"            (<SUBST> takes the form VAR=VALUE,...)\n");
-    fprintf(stderr,"  -S<FILE>  Expand the substitutions in FILE\n");
-    exit(1);
+    fprintf(stderr,
+        "Usage: msi [options] [template]\n"
+        "  stdin is used if neither template nor substitution file is given\n"
+        "  options:\n"
+        "    -h        Print this help message\n"
+        "    -D        Output file dependencies, not substitutions\n"
+        "    -V        Undefined macros generate an error\n"
+        "    -g        All macros have global scope\n"
+        "    -o<FILE>  Send output to <FILE>\n"
+        "    -I<DIR>   Add <DIR> to include file search path\n"
+        "    -M<SUBST> Add <SUBST> to (global) macro definitions\n"
+        "              (<SUBST> takes the form VAR=VALUE,...)\n"
+        "    -S<FILE>  Expand the substitutions in FILE\n");
+    exit(status);
 }
 
 static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
@@ -165,13 +190,13 @@ static void addMacroReplacements(MAC_HANDLE *macPvt,char *pval)
     status = macParseDefns(macPvt,pval,&pairs);
     if(status==-1) {
         fprintf(stderr,"msi: Error from macParseDefns\n");
-        usageExit();
+        usageExit(1);
     }
     if(status) {
         status = macInstallMacros(macPvt,pairs);
         if(!status) {
             fprintf(stderr,"Error from macInstallMacros\n");
-            usageExit();
+            usageExit(1);
         }
         free(pairs);
     }
@@ -249,7 +274,7 @@ static void makeSubstitutions(inputData *inputPvt, MAC_HANDLE *macPvt, char *tem
             expand = 0;
         }
 endif:
-        if (expand) {
+        if (expand && !opt_D) {
             n = macExpandString(macPvt,input,buffer,MAX_BUFFER_SIZE-1);
             fputs(buffer,stdout);
             if (opt_V == 1 && n < 0) {
@@ -432,6 +457,32 @@ static void inputOpenFile(inputData *pinputData,char *filename)
     } else {
         pinputFile->filename = epicsStrDup("stdin");
     }
+
+    if (opt_D) {
+        int hash = epicsStrHash(pinputFile->filename, 12345);
+        int i = 0;
+        int match = 0;
+
+        while (i < numDeps) {
+            if (hash == depHashes[i++]) {
+                match = 1;
+                break;
+            }
+        }
+        if (!match) {
+            const char *wrap = numDeps ? " \\\n" : "";
+
+            printf("%s %s", wrap, pinputFile->filename);
+            if (numDeps < MAX_DEPS) {
+                depHashes[numDeps++] = hash;
+            }
+            else {
+                fprintf(stderr, "msi: More than %d dependencies!\n", MAX_DEPS);
+                depHashes[0] = hash;
+            }
+        }
+    }
+
     pinputFile->fp = fp;
     ellInsert(&pinputData->inputFileList,0,&pinputFile->node);
 }

@@ -259,23 +259,19 @@ menu%.h$(DEP): ../menu%.dbd
 
 %.db$(RAW)$(DEP): %$(SUBST_SUFFIX)
 	@$(RM) $@
-	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME)
-	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
-	@echo "$@: $(TEMPLATE_FILENAME)" >> $@
+	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) -S$< $(TEMPLATE_FILENAME) > $@
 
 %.db$(RAW)$(DEP): ../%$(SUBST_SUFFIX)
 	@$(RM) $@
-	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $< $(TEMPLATE_FILENAME)
-	@echo "$(COMMONDEP_TARGET): $(TEMPLATE_FILENAME)" >> $@
-	@echo "$@: $(TEMPLATE_FILENAME)" >> $@
+	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) -S$< $(TEMPLATE_FILENAME) > $@
 
 %.db$(RAW)$(DEP): %.template
 	@$(RM) $@
-	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $<
+	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 
 %.db$(RAW)$(DEP): ../%.template
 	@$(RM) $@
-	$(MKMF) -m$@ $(DBFLAGS) $(COMMONDEP_TARGET) $<
+	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 
 %.acf$(DEP): %.acs
 	@$(RM) $@
@@ -461,27 +457,27 @@ $(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf
 
 $(COMMON_DIR)/%.db$(RAW): %$(SUBST_SUFFIX)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
-	@$(RM) $@ $*.tmp
-	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $(notdir $@)
+	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) -S$< $(TEMPLATE_FILENAME)
+	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.db$(RAW): ../%$(SUBST_SUFFIX)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
-	@$(RM) $@ $*.tmp
-	$(MSI) $(DBFLAGS) -S$< $(TEMPLATE_FILENAME) > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $(notdir $@)
+	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) -S$< $(TEMPLATE_FILENAME)
+	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.db$(RAW): %.template
 	$(ECHO) "Inflating database from $<"
-	@$(RM) $@ $*.tmp
-	$(MSI) $(DBFLAGS) $< > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $(notdir $@)
+	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.db$(RAW): ../%.template
 	$(ECHO) "Inflating database from $<"
-	@$(RM) $@ $*.tmp
-	$(MSI) $(DBFLAGS) $< > $*.tmp
-	$(MV) $*.tmp $@
+	@$(RM) $(notdir $@)
+	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) $<
+	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.acf: %.acs
 	$(ECHO) "Creating acf file $@"

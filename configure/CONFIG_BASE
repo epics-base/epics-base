@@ -87,9 +87,9 @@ YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 #---------------------------------------------------------------
-# msi used to be an external tool
+# Our use of msi is incompatible with older versions
 
-MSI  ?= $(EPICS_BASE_HOST_BIN)/msi
+MSI3_15 = $(EPICS_BASE_HOST_BIN)/msi
 
 #---------------------------------------------------------------
 # External tools and tool flags - must be in path or defined in application

@@ -50,7 +50,7 @@ typedef struct lset {
 } lset;
 
 #define dbGetSevr(PLINK, PSEVERITY) \
-    dbGetAlarm((PLINK), NULL, (PSEVERITY));
+    dbGetAlarm((PLINK), NULL, (PSEVERITY))
 
 epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
         short dbfType);

@@ -314,7 +314,6 @@ LEXOPT += -I
 #--------------------------------------------------
 # Build compile line here
 
-PATH_FILTER = $(1)
 COMPILE.c   = $(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES)
 COMPILE.cpp = $(CCC) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES)
 
@@ -345,6 +344,11 @@ TARGET_SRCS = $(foreach name, \
     $($(name)_SRCS))
 SRC_FILES = $(LIB_SRCS) $(LIBSRCS) $(SRCS) $(USR_SRCS) $(PROD_SRCS) $(TARGET_SRCS)
 HDEPENDS_FILES = $(addsuffix $(DEP),$(notdir $(basename $(SRC_FILES))))
+
+#--------------------------------------------------
+# Deprecated and no longer used in Base
+
+PATH_FILTER = $(1)$(warning PATH_FILTER is deprecated; used for $(1))
 
 #---------------------------------------------------------------
 # Names of installed items

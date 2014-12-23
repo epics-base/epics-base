@@ -76,6 +76,25 @@ static void inherit_severity(const struct pv_link *ppv_link, dbCommon *pdest,
     }
 }
 
+/* How to identify links in error messages */
+static const char * link_field_name(const struct link *plink)
+{
+    const struct dbCommon *precord = plink->value.pv_link.precord;
+    const dbRecordType *pdbRecordType = precord->rdes;
+    dbFldDes * const *papFldDes = pdbRecordType->papFldDes;
+    const short *link_ind = pdbRecordType->link_ind;
+    int i;
+
+    for (i = 0; i < pdbRecordType->no_links; i++) {
+        const dbFldDes *pdbFldDes = papFldDes[link_ind[i]];
+
+        if (plink == (DBLINK *)((char *)precord + pdbFldDes->offset))
+            return pdbFldDes->name;
+    }
+    return "????";
+}
+
+
 /***************************** Constant Links *****************************/
 
 static long dbConstLoadLink(struct link *plink, short dbrType, void *pbuffer)
@@ -412,9 +431,13 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
 
         if (pperiod && strstr(pperiod, "PROC")) {
             plink->value.pv_link.pvlMask |= pvlOptFWD;
-        } else {
-            errlogPrintf("%s.FLNK is a Channel Access Link "
-                " but does not link to a PROC field\n", precord->name);
+        }
+        else {
+            errlogPrintf("Forward-link uses Channel Access "
+                "without pointing to PROC field\n"
+                "    %s.%s => %s\n",
+                precord->name, link_field_name(plink),
+                plink->value.pv_link.pvname);
         }
     }
 }

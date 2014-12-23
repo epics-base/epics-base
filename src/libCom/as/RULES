@@ -16,6 +16,6 @@ asLib$(DEP): asLib_lex.c
 asLib.c: asLib_lex.c
 
 # Ensure that lexer and parser are built before they are needed
-asLib.c: $(TOOLS)/antelope$(HOSTEXE)
-asLib_lex.c: $(TOOLS)/e_flex$(HOSTEXE)
+asLib.c: $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)
+asLib_lex.c: $(EPICS_BASE_HOST_BIN)/e_flex$(HOSTEXE)
 asLib_lex.c: $(INSTALL_INCLUDE)/flex.skel.static

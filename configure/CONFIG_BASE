@@ -52,13 +52,14 @@ BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 
 #---------------------------------------------------------------
 # Where to find the installed build tools
+#   Windows does not like commands with relative paths starting ../
 
-TOOLS = $(EPICS_BASE_HOST_BIN)
+TOOLS = $(abspath $(EPICS_BASE_HOST_BIN))
 
 #---------------------------------------------------------------
 # Epics base build tools and tool flags
 
-MAKEBPT                    = $(call PATH_FILTER, $(TOOLS)/makeBpt$(HOSTEXE))
+MAKEBPT                    = $(TOOLS)/makeBpt$(HOSTEXE)
 DBEXPAND                   = $(PERL) $(TOOLS)/dbdExpand.pl
 DBTORECORDTYPEH            = $(PERL) $(TOOLS)/dbdToRecordtypeH.pl
 DBTOMENUH                  = $(PERL) $(TOOLS)/dbdToMenuH.pl
@@ -80,16 +81,16 @@ REPLACEVAR                 = $(PERL) $(TOOLS)/replaceVAR.pl
 
 #---------------------------------------------------------------
 # private versions of lex/yacc from EPICS
-EYACC = $(call PATH_FILTER, $(TOOLS)/antelope$(HOSTEXE))
-ELEX = $(call PATH_FILTER, $(TOOLS)/e_flex$(HOSTEXE)) -S$(EPICS_BASE)/include/flex.skel.static
+EYACC = $(TOOLS)/antelope$(HOSTEXE)
+ELEX = $(TOOLS)/e_flex$(HOSTEXE) -S$(EPICS_BASE)/include/flex.skel.static
 
 YACC  = $(EYACC)
 LEX   = $(ELEX)
 
 #---------------------------------------------------------------
-# msi used to be an external tool
+# Our use of msi is incompatible with older versions
 
-MSI  ?= $(EPICS_BASE_HOST_BIN)/msi
+MSI3_15 = $(EPICS_BASE_HOST_BIN)/msi
 
 #---------------------------------------------------------------
 # External tools and tool flags - must be in path or defined in application

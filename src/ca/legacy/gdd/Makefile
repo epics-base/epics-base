@@ -79,9 +79,9 @@ dbMapper$(DEP): $(COMMON_DIR)/gddApps.h
 
 # Rules for generated files
 #
-$(COMMON_DIR)/aitConvertGenerated.cc: $(TOOLS)/aitGen$(HOSTEXE)
-	$(call PATH_FILTER, $(TOOLS)/aitGen$(HOSTEXE)) $@
+$(COMMON_DIR)/aitConvertGenerated.cc: $(EPICS_BASE_HOST_BIN)/aitGen$(HOSTEXE)
+	$(TOOLS)/aitGen$(HOSTEXE) $@
 
-$(COMMON_DIR)/gddApps.h : $(TOOLS)/genApps$(HOSTEXE)
-	$(call PATH_FILTER, $(TOOLS)/genApps$(HOSTEXE)) $@
+$(COMMON_DIR)/gddApps.h : $(EPICS_BASE_HOST_BIN)/genApps$(HOSTEXE)
+	$(TOOLS)/genApps$(HOSTEXE) $@
 

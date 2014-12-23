@@ -22,6 +22,6 @@ TARGETS += $(TARGETS_$(BUILD_CLASS))
 
 include $(TOP)/configure/RULES
 
-msi-copy$(EXE): $(INSTALL_BIN)/msi$(EXE) ../Makefile
+msi-copy$(EXE): $(INSTALL_BIN)/msi$(EXE)
 	@$(RM) $@
 	$(CP) $< $@

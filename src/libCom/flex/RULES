@@ -10,4 +10,4 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 # Ensure that the lexer is built before it is needed
-parse.c: $(TOOLS)/antelope$(HOSTEXE)
+parse.c: $(EPICS_BASE_HOST_BIN)/antelope$(HOSTEXE)

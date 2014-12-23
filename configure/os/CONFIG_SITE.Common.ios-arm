@@ -16,11 +16,12 @@
 #
 #   Xcode 4.5 dropped support for the ARMv6.
 #
-#   ARMv8 (arm64) devices: iPhone 5S
-#   ARMv7s devices: iPhone 5 and 5C, iPad Gen 4
-#   ARMv7 devices: iPhone 3GS, 4 and 4S, iPod Touch Gen 3 to 5
-#                  iPad Gen 1 to 3, iPad Mini, Apple TV Gen 2 and 3
-#   ARMv6 devices: iPhone 1 and 3G, iPod Touch Gen 1 and 2
+#   arm64 devices:  iPhone 5S, 6 and 6 Plus, iPad Air Gen 1 and 2,
+#                   iPad Mini Gen 2 and 3
+#   armv7s devices: iPhone 5 and 5C, iPad Gen 4
+#   armv7 devices:  iPhone 3GS, 4 and 4S, iPod Touch Gen 3 to 5
+#                   iPad Gen 1 to 3, iPad Mini, Apple TV Gen 2 and 3
+#   armv6 devices:  iPhone 1 and 3G, iPod Touch Gen 1 and 2
 
 #ARCH_CLASS = arm64
 #ARCH_CLASS = armv7s arm64

@@ -461,9 +461,11 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                     if (pperiod && strstr(pperiod,"PROC")) {
                         plink->value.pv_link.pvlMask |= pvlOptFWD;
                     } else {
-                        errlogPrintf("%s.FLNK is a Channel Access Link "
-                            " but does not link to a PROC field\n",
-                                precord->name);
+                        errlogPrintf("Forward-link uses Channel Access "
+                            "without pointing to PROC field\n"
+                            "    %s.%s = %s\n",
+                            precord->name, pdbFldDes->name,
+                            plink->value.pv_link.pvname);
                     }
                 }
             }

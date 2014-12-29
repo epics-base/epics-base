@@ -359,6 +359,12 @@ static void dbDbScanFwdLink(struct link *plink)
     dbScanPassive(precord, paddr->precord);
 }
 
+lset dbDb_lset = { dbDbRemoveLink,
+        dbDbIsLinkConnected, dbDbGetDBFtype, dbDbGetElements, dbDbGetValue,
+        dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
+        dbDbGetPrecision, dbDbGetUnits, dbDbGetAlarm, dbDbGetTimeStamp,
+        dbDbPutValue, dbDbScanFwdLink };
+
 /***************************** Generic Link API *****************************/
 
 void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)

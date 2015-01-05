@@ -67,7 +67,7 @@ void testCaStats(void) {
 
 MAIN(dbCaStatsTest)
 {
-    testPlan(0);
+    testPlan(5);
     testCaStats();
     return testDone();
 }

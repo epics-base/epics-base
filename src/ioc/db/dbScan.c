@@ -455,7 +455,9 @@ event_list *eventNameToHandle(const char *eventname)
         if (strcmp(pel->event_name, eventname) == 0) break;
     }
     if (pel == NULL) {
-        pel = dbCalloc(1, sizeof(event_list));
+        pel = calloc(1, sizeof(event_list));
+        if (!pel)
+            goto done;
         strcpy(pel->event_name, eventname);
         for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             callbackSetUser(&pel->scan_list[prio], &pel->callback[prio]);
@@ -473,6 +475,7 @@ event_list *eventNameToHandle(const char *eventname)
                 pevent_list[e] = pel;
         }
     }
+done:
     epicsMutexUnlock(event_lock);
     return pel;
 }

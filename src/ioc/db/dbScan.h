@@ -68,6 +68,7 @@ epicsShareFunc int scanpiol(void);
 
 epicsShareFunc void scanIoInit(IOSCANPVT *ppios);
 epicsShareFunc unsigned int scanIoRequest(IOSCANPVT pios);
+epicsShareFunc unsigned int scanIoImmediate(IOSCANPVT pios, int prio);
 epicsShareFunc void scanIoSetComplete(IOSCANPVT, io_scan_complete, void *usr);
 
 #ifdef __cplusplus

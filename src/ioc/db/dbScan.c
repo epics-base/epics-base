@@ -580,6 +580,28 @@ unsigned int scanIoRequest(IOSCANPVT piosh)
     return queued;
 }
 
+unsigned int scanIoImmediate(IOSCANPVT piosh, int prio)
+{
+    io_scan_list *piosl;
+
+    if (prio<0 || prio>=NUM_CALLBACK_PRIORITIES)
+        return S_db_errArg;
+    else if (scanCtl != ctlRun)
+        return 0;
+
+    piosl = &piosh->iosl[prio];
+
+    if (ellCount(&piosl->scan_list.list) == 0)
+        return 0;
+
+    scanList(&piosl->scan_list);
+
+    if (piosh->cb)
+        piosh->cb(piosh->arg, piosh, prio);
+
+    return 1 << prio;
+}
+
 /* May not be called while a scan request is queued or running */
 void scanIoSetComplete(IOSCANPVT piosh, io_scan_complete cb, void *arg)
 {

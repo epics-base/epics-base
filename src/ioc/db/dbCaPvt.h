@@ -85,6 +85,7 @@ typedef struct caLink
     char		gotOutString;
     char		newOutNative;
     char		newOutString;
+    unsigned char scanningOnce;
     /* The following are for dbcar*/
     unsigned long	nDisconnect;
     unsigned long	nNoWrite; /*only modified by dbCaPutLink*/

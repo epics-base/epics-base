@@ -39,9 +39,10 @@ struct ioscan_head;
 typedef struct ioscan_head *IOSCANPVT;
 typedef struct event_list *EVENTPVT;
 
-typedef void (*io_scan_complete)(void *usr, IOSCANPVT, int prio);
-
 struct dbCommon;
+
+typedef void (*io_scan_complete)(void *usr, IOSCANPVT, int prio);
+typedef void (*once_complete)(void *usr, struct dbCommon*);
 
 epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
@@ -54,7 +55,8 @@ epicsShareFunc void post_event(int event) EPICS_DEPRECATED;
 epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);
-epicsShareFunc void scanOnce(struct dbCommon *);
+epicsShareFunc int scanOnce(struct dbCommon *);
+epicsShareFunc int scanOnce3(struct dbCommon *, once_complete cb, void *usr);
 epicsShareFunc int scanOnceSetQueueSize(int size);
 
 /*print periodic lists*/

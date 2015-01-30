@@ -12,13 +12,10 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 OS_CLASS = Linux
 
-CODE_CPPFLAGS = -D_REENTRANT
-
-POSIX_CPPFLAGS = -D_POSIX_C_SOURCE=199506L -D_POSIX_THREADS -D_XOPEN_SOURCE=500
+# Define _GNU_SOURCE and _DEFAULT_SOURCE for maximum portability
+POSIX_CPPFLAGS = -D_GNU_SOURCE -D_DEFAULT_SOURCE
 POSIX_LDLIBS = -lpthread
 
-# -D_BSD_SOURCE for gethostname() in unistd.h as needed by cacChannelIO.cpp.
-OP_SYS_CPPFLAGS += -D_BSD_SOURCE
 OP_SYS_CPPFLAGS += -Dlinux
 OP_SYS_LDLIBS += -lrt -ldl
 

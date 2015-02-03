@@ -20,15 +20,13 @@
 #include "shareLib.h"
 #include "epicsTypes.h"
 #include "epicsTime.h"
+#include "dbAddr.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct lset {
-    long (*initLink)(struct link *plink, short dbfType);
-    long (*addLink)(struct link *plink, short dbfType);
-    long (*loadLink)(struct link *plink, short dbrType, void *pbuffer);
     void (*removeLink)(struct link *plink);
     int (*isLinkConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);
@@ -55,7 +53,7 @@ typedef struct lset {
 epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
         short dbfType);
 epicsShareFunc void dbAddLink(struct dbCommon *precord, struct link *plink,
-        short dbfType);
+        short dbfType, DBADDR *ptargetaddr);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
 epicsShareFunc void dbRemoveLink(struct link *plink);

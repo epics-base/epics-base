@@ -486,6 +486,8 @@ static void dbRecordtypeFieldHead(char *name,char *type)
     allocTemp(pdbFldDes);
     pdbFldDes->name = epicsStrDup(name);
     pdbFldDes->as_level = ASL1;
+    pdbFldDes->isDevLink = strcmp(pdbFldDes->name, "INP")==0 ||
+            strcmp(pdbFldDes->name, "OUT")==0;
     for(i=0; i<DBF_NTYPES; i++) {
 	if(strcmp(type,pamapdbfType[i].strvalue)==0) {
 	    pdbFldDes->field_type = pamapdbfType[i].value;

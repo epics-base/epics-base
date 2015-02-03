@@ -86,7 +86,14 @@ static void initDatabase(void);
 static void initialProcess(void);
 static void exitDatabase(void *dummy);
 
-
+/*
+ * Iterate through all record instances (but not aliases),
+ * calling a function for each one.
+ */
+typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
+
+static void iterateRecords(recIterFunc func, void *user);
+
 /*
  *  Initialize EPICS on the IOC.
  */
@@ -126,8 +133,14 @@ static int iocBuild_1(void)
     return 0;
 }
 
+static void prepareLinks(dbRecordType *rtyp, dbCommon *prec, void *junk)
+{
+    dbInitRecordLinks(rtyp, prec);
+}
+
 static int iocBuild_2(void)
 {
+    iterateRecords(prepareLinks, NULL);
     initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
@@ -419,12 +432,6 @@ static void finishDevSup(void)
         }
     }
 }
-
-/*
- * Iterate through all record instances (but not aliases),
- * calling a function for each one.
- */
-typedef void (*recIterFunc)(dbRecordType *rtyp, dbCommon *prec, void *user);
 
 static void iterateRecords(recIterFunc func, void *user)
 {
@@ -490,8 +497,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
-        if (ellCount(&precord->rdes->devList) > 0 &&
-            (strcmp(pdbFldDes->name, "INP") == 0 || strcmp(pdbFldDes->name, "OUT") == 0)) {
+        if (ellCount(&precord->rdes->devList) > 0 && pdbFldDes->isDevLink) {
             devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
 
             if (pdevSup) {

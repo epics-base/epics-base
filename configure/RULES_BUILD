@@ -299,7 +299,7 @@ $(LOADABLE_SHRLIBNAME): $(LOADABLE_SHRLIB_PREFIX)%$(LOADABLE_SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(NM) $<  > $@
 
-%_ctdt.c: %.nm
+%_ctdt.c: %.nm $(TOOLS)/munch.pl
 	@$(RM) $@
 	$(PERL) $(TOOLS)/munch.pl -o $@ $<
 
@@ -334,7 +334,7 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # Test programs (.t files) must be written in Perl.
 # Generate a perl program to exec the real test binary.
-%.t: %$(EXE)
+%.t: %$(EXE) $(TOOLS)/makeTestfile.pl
 	@$(RM) $@
 	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 

@@ -12,6 +12,8 @@
 # because some versions of the Perl test harness can only run test scripts
 # that are actually written in Perl.  The script we generate execs the
 # real test program which must be in the same directory as the .t file.
+# If the script is given an argument -tap it sets HARNESS_ACTIVE in the
+# environment to make the epicsUnitTest code generate strict TAP output.
 
 # Usage: makeTestfile.pl target.t executable
 #     target.t is the name of the Perl script to generate
@@ -25,6 +27,7 @@ open(my $OUT, '>', $target) or die "Can't create $target: $!\n";
 
 print $OUT <<EOF;
 #!/usr/bin/perl
+\$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
 exec './$exe' or die 'exec failed';
 EOF
 

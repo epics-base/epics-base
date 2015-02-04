@@ -325,7 +325,7 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
-	-HARNESS_ACTIVE=1 $(PERL) $< > $@
+	-$(PERL) $< -tap > $@
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt

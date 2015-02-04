@@ -215,15 +215,16 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE):
 %.o : %.cc
 %.o : %.cpp
 
-%$(OBJ): %.c $(COMMON_INC) $(INSTALL_INC)
+# Include files are order-only prerequisites for compilation:
+%$(OBJ): %.c | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.c) -c $<
 
-%$(OBJ): %.cc $(COMMON_INC) $(INSTALL_INC)
+%$(OBJ): %.cc | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 
-%$(OBJ): %.cpp $(COMMON_INC) $(INSTALL_INC)
+%$(OBJ): %.cpp | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 

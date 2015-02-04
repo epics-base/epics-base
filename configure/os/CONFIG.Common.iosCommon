@@ -25,7 +25,7 @@ OS_CLASS = iOS
 #--------------------------------------------------
 # GNU and SDK directories
 GNU_DIR = $(PLATFORM_DIR)/Developer/usr
-SDK_DIR = $(PLATFORM_DIR)/Developer/SDKs/$(IOS_PLATFORM)$(IOS_VERSION).sdk
+SDK_DIR = $(PLATFORM_DIR)/Developer/SDKs/$(IOS_PLATFORM).sdk
 
 #-------------------------------------------------------
 # Build architecture flags

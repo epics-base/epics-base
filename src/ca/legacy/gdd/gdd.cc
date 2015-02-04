@@ -1353,7 +1353,7 @@ gddStatus gdd::put ( const gdd * dd )
         // clip to upper limit of source
         aitUint32 srcCopySize;
         const aitUint32 unusedSrcBelow = srcCopyFirst - srcFirst;
-        if ( srcElemCount <= unusedSrcBelow ) {
+        if ( srcElemCount && srcElemCount <= unusedSrcBelow ) {
             return gddErrorOutOfBounds;
         }
 

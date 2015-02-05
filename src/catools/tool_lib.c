@@ -68,17 +68,21 @@ void sprint_long (char *ret, long val, IntFormatT outType)
     case hex: sprintf(ret, "0x%lX", val); break;
     case oct: sprintf(ret, "0o%lo", val); break;
     case bin:
-        for (i=31; i>=0 ; i--)
-        {
-            bit = (val>>i) & 0x1L;
-            if (skip<0 && bit)
+        if (val == 0) {
+            sprintf(ret, "0");
+        } else {
+            for (i=31; i>=0 ; i--)
             {
-                skip = 31 - i;          /* skip leading 0's */
-                ret[i+1] = '\0';
-            }
-            if (skip >= 0)
-            {
-                ret[31-i-skip] = (bit) ? '1' : '0';
+                bit = (val>>i) & 0x1L;
+                if (skip<0 && bit)
+                {
+                    skip = 31 - i;          /* skip leading 0's */
+                    ret[i+1] = '\0';
+                }
+                if (skip >= 0)
+                {
+                    ret[31-i-skip] = (bit) ? '1' : '0';
+                }
             }
         }
         break;

@@ -94,7 +94,7 @@ include $(CONFIG)/RULES_TARGET
 # Read dependency files
 
 ifneq (,$(strip $(HDEPENDS_FILES)))
-$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
+$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
 endif
 

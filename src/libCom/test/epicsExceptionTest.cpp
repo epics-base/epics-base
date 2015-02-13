@@ -77,7 +77,7 @@ static void epicsExceptionTestPrivate ()
     try {
         char * p = new ( nothrow ) 
             char [unsuccessfulNewSize];
-        testOk(p == 0, "new (nothrow)");
+        testOk(p == 0, "new (nothrow) returned %p", p);
     }
     catch( ... ) {
         testFail("new (nothrow): threw");

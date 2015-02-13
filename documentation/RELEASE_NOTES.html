@@ -13,6 +13,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Back-ported the <q>tapfiles</q> build target from 3.15</h3>
+
+<p>This GNUmake target runs the same tests as the <q>runtests</q> target, but
+instead of summarizing or displaying the output for each test script it creates
+a <q>.tap</q> file inside the architecture build directory which contains the
+detailed test output. The output file can be parsed by continuous integration
+packages such as <a href="http://www.jenkins-ci.org/">Jenkins</a> to show the
+test results.</p>
+
 <h3>Fix buffer overflow in epicsStrnRawFromEscaped()</h3>
 
 <p>Launchpad <a href="https://bugs.launchpad.net/bugs/1388313">bug

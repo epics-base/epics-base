@@ -12,7 +12,8 @@
 
 
 ARCHS += $(BUILD_ARCHS)
-ACTIONS += inc build install buildInstall clean realclean archclean runtests
+ACTIONS += inc build install buildInstall clean realclean archclean
+ACTIONS += runtests tapfiles
 
 dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
 

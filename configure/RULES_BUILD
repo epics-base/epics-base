@@ -96,6 +96,8 @@ ifneq (,$(strip $(TESTS)))
 TARGETS += testspec
 endif
 
+TAPFILES += $(TESTSCRIPTS:.t=.tap)
+
 #---------------------------------------------------------------
 #   Libraries 
 #
@@ -142,7 +144,8 @@ clean::
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
 	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
-	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) $(TESTSCRIPTS)
+	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
+	$(TESTSCRIPTS) $(TAPFILES)
 ifdef RES
 	@$(RM) *$(RES)
 endif
@@ -338,16 +341,22 @@ testspec: $(TESTSCRIPTS)
 	$(if $^, @echo Tests: $^ >> $@)
 	$(if $(TESTSPEC_$(OS_CLASS)), @echo "Harness: $(TESTSPEC_$(OS_CLASS))" >> $@)
 
+tapfiles: $(TESTSCRIPTS) $(TAPFILES)
+
+# A .tap file is the output from running the associated test script
+%.tap: %.t
+	-$(PERL) $< -tap > $@
+
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt
 	@$(RM) $@
-	@$(CP) $< $@
+	$(CP) $< $@
 
-# Some versions of Test::Harness expect test programs in perl only.
+# Test programs (.t files) must be written in Perl.
 # Generate a perl program to exec the real test binary.
-%.t: %$(EXE)
+%.t: %$(EXE) $(TOOLS)/makeTestfile.pl
 	@$(RM) $@
-	@$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
+	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
 ## Install rules for BIN_INSTALLS and LIB_INSTALLS

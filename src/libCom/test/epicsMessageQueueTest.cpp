@@ -10,8 +10,6 @@
  *      $Revision-Id$
  *
  *      Author  W. Eric Norum
- *              norume@aps.anl.gov
- *              630 252 4793
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,6 +107,7 @@ receiver(void *arg)
             testDiag("Sender %d -- %d messages", sender, expectmsg[sender-1]-1);
     }
     testOk1(errors == 0);
+    testDiag("Receiver finished");
     epicsEventSignal(finished);
 }
 
@@ -126,6 +125,7 @@ sender(void *arg)
             epicsThreadSleep(0.005 * (randBelow(5)));
         epicsThreadSleep(0.005 * (randBelow(20)));
     }
+    testDiag("%s exiting, sent %d messages", epicsThreadGetNameSelf(), i-1);
 }
 
 extern "C" void messageQueueTest(void *parm)
@@ -273,13 +273,13 @@ extern "C" void messageQueueTest(void *parm)
      * Single receiver, multiple sender tests
      */
     testDiag("Single receiver, multiple sender tests:");
-    testDiag("This test takes 5 minutes...");
+    testDiag("This test lasts 60 seconds...");
     epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 4", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
 
-    epicsThreadSleep(300.0);
+    epicsThreadSleep(60.0);
 
     testExit = 1;
 }
@@ -295,6 +295,7 @@ MAIN(epicsMessageQueueTest)
         messageQueueTest, NULL);
 
     epicsEventWait(finished);
+    epicsThreadSleep(1.0);
 
     return testDone();
 }

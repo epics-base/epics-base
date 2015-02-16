@@ -814,10 +814,10 @@ static int write_action ( caHdrLargeArray *mp,
         return RSRV_ERROR;
     }
 
-    asWritePvt = asTrapWriteBefore ( pciu->asClientPVT,
+    asWritePvt = asTrapWriteWithData ( pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
-        (void *) &pciu->addr );
+        (void *) &pciu->addr, mp->m_dataType, mp->m_count, pPayload );
 
     dbStatus = db_put_field(
                   &pciu->addr,
@@ -1819,11 +1819,12 @@ static int write_notify_action ( caHdrLargeArray *mp, void *pPayload,
         return RSRV_OK;
     }
 
-    pciu->pPutNotify->asWritePvt = asTrapWriteBefore ( 
+    pciu->pPutNotify->asWritePvt = asTrapWriteWithData ( 
         pciu->asClientPVT,
         pciu->client->pUserName ? pciu->client->pUserName : "",
         pciu->client->pHostName ? pciu->client->pHostName : "",
-        (void *) &pciu->addr );
+        (void *) &pciu->addr, mp->m_dataType, mp->m_count,
+        pciu->pPutNotify->dbPutNotify.pbuffer );
 
     dbPutNotify(&pciu->pPutNotify->dbPutNotify);
 

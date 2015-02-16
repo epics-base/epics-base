@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /*asTrapWrite.h*/
 /* Author:  Marty Kraimer Date:    07NOV2000 */
@@ -24,6 +23,9 @@ typedef struct asTrapWriteMessage {
     const char *hostid;
     void *serverSpecific;
     void *userPvt;
+    int dbrType;    /* Data type from ca/db_access.h, NOT dbFldTypes.h */
+    int no_elements;
+    void *data;     /* Might be NULL if no data is available */
 } asTrapWriteMessage;
 
 

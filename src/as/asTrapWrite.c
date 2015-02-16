@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*asTrapWrite.c */
@@ -100,47 +99,53 @@ void epicsShareAPI asTrapWriteUnregisterListener(asTrapWriteId id)
                  = (listenerPvt *)ellNext(&plistenerPvt->node);
             if(plistenerPvt->plistener == plistener) {
                 ellDelete(&pwriteMessage->listenerPvtList,&plistenerPvt->node);
-                freeListFree(pasTrapWritePvt->freeListListenerPvt,(void *)plistenerPvt);
+                freeListFree(pasTrapWritePvt->freeListListenerPvt, plistenerPvt);
             }
             plistenerPvt = pnext;
         }
         pwriteMessage = (writeMessage *)ellNext(&pwriteMessage->node);
     }
     ellDelete(&pasTrapWritePvt->listenerList,&plistener->node);
-    free((void *)plistener);
+    free(plistener);
     epicsMutexUnlock(pasTrapWritePvt->lock);
 }
 
-void * epicsShareAPI asTrapWriteBeforeWrite(
-    const char *userid,const char *hostid,void *addr)
+void * epicsShareAPI asTrapWriteBeforeWithData(
+    const char *userid, const char *hostid, void *addr,
+    int dbrType, int no_elements, void *data)
 {
     writeMessage *pwriteMessage;
     listener *plistener;
-    listenerPvt *plistenerPvt;
 
-    if(pasTrapWritePvt==0) return(0);
-    if(ellCount(&pasTrapWritePvt->listenerList)<=0) return 0;
+    if (pasTrapWritePvt == 0 ||
+        ellCount(&pasTrapWritePvt->listenerList) <= 0) return 0;
+
     pwriteMessage = (writeMessage *)freeListCalloc(
         pasTrapWritePvt->freeListWriteMessage);
     pwriteMessage->message.userid = userid;
     pwriteMessage->message.hostid = hostid;
     pwriteMessage->message.serverSpecific = addr;
+    pwriteMessage->message.dbrType = dbrType;
+    pwriteMessage->message.no_elements = no_elements;
+    pwriteMessage->message.data = data;
     ellInit(&pwriteMessage->listenerPvtList);
+
     epicsMutexMustLock(pasTrapWritePvt->lock);
-    ellAdd(&pasTrapWritePvt->writeMessageList,&pwriteMessage->node);
+    ellAdd(&pasTrapWritePvt->writeMessageList, &pwriteMessage->node);
     plistener = (listener *)ellFirst(&pasTrapWritePvt->listenerList);
-    while(plistener) {
-        plistenerPvt = (listenerPvt *)freeListCalloc(
+    while (plistener) {
+        listenerPvt *plistenerPvt = (listenerPvt *)freeListCalloc(
             pasTrapWritePvt->freeListListenerPvt);
+
         plistenerPvt->plistener = plistener;
         pwriteMessage->message.userPvt = 0;
-        (*plistener->func)(&pwriteMessage->message,0);
+        plistener->func(&pwriteMessage->message, 0);
         plistenerPvt->userPvt = pwriteMessage->message.userPvt;
-        ellAdd(&pwriteMessage->listenerPvtList,&plistenerPvt->node);
+        ellAdd(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
         plistener = (listener *)ellNext(&plistener->node);
     }
     epicsMutexUnlock(pasTrapWritePvt->lock);
-    return((void *)pwriteMessage);
+    return pwriteMessage;
 }
 
 void epicsShareAPI asTrapWriteAfterWrite(void *pvt)
@@ -148,20 +153,22 @@ void epicsShareAPI asTrapWriteAfterWrite(void *pvt)
     writeMessage *pwriteMessage = (writeMessage *)pvt;
     listenerPvt *plistenerPvt;
 
-    if(pwriteMessage==0 || pasTrapWritePvt==0) return;
+    if (pwriteMessage == 0 ||
+        pasTrapWritePvt == 0) return;
+
     epicsMutexMustLock(pasTrapWritePvt->lock);
     plistenerPvt = (listenerPvt *)ellFirst(&pwriteMessage->listenerPvtList);
-    while(plistenerPvt) {
+    while (plistenerPvt) {
         listenerPvt *pnext = (listenerPvt *)ellNext(&plistenerPvt->node);
-        listener *plistener;
-        plistener = plistenerPvt->plistener;
+        listener *plistener = plistenerPvt->plistener;
+
         pwriteMessage->message.userPvt = plistenerPvt->userPvt;
-        (*plistener->func)(&pwriteMessage->message,1);
-        ellDelete(&pwriteMessage->listenerPvtList,&plistenerPvt->node);
-        freeListFree(pasTrapWritePvt->freeListListenerPvt,(void *)plistenerPvt);
+        plistener->func(&pwriteMessage->message, 1);
+        ellDelete(&pwriteMessage->listenerPvtList, &plistenerPvt->node);
+        freeListFree(pasTrapWritePvt->freeListListenerPvt, plistenerPvt);
         plistenerPvt = pnext;
     }
-    ellDelete(&pasTrapWritePvt->writeMessageList,&pwriteMessage->node);
-    freeListFree(pasTrapWritePvt->freeListWriteMessage,(void *)pwriteMessage);
+    ellDelete(&pasTrapWritePvt->writeMessageList, &pwriteMessage->node);
+    freeListFree(pasTrapWritePvt->freeListWriteMessage, pwriteMessage);
     epicsMutexUnlock(pasTrapWritePvt->lock);
 }

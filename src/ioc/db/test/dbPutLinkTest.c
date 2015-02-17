@@ -42,7 +42,8 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 #define TEST_CONSTANT(SET, EXPECT) {SET, {CONSTANT, EXPECT}}
 #define TEST_PV_LINK(SET, PV, MOD) {SET, {PV_LINK, PV, MOD}}
-#define TEST_HW(SET, TYPE, ID, PARM, ...) {SET, {TYPE, PARM, 0, ID, {__VA_ARGS__}}}
+#define TEST_HW_(...) __VA_ARGS__
+#define TEST_HW(SET, TYPE, ID, PARM, ...) {SET, {TYPE, PARM, 0, ID, {TEST_HW_(__VA_ARGS__)}}}
 
 static const struct testParseDataT {
     const char * const str;

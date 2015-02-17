@@ -56,7 +56,7 @@ epicsShareFunc void scanAdd(struct dbCommon *);
 epicsShareFunc void scanDelete(struct dbCommon *);
 epicsShareFunc double scanPeriod(int scan);
 epicsShareFunc int scanOnce(struct dbCommon *);
-epicsShareFunc int scanOnce3(struct dbCommon *, once_complete cb, void *usr);
+epicsShareFunc int scanOnceCallback(struct dbCommon *, once_complete cb, void *usr);
 epicsShareFunc int scanOnceSetQueueSize(int size);
 
 /*print periodic lists*/

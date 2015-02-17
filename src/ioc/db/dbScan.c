@@ -612,7 +612,7 @@ void scanIoSetComplete(IOSCANPVT piosh, io_scan_complete cb, void *arg)
 }
 
 int scanOnce(struct dbCommon *precord) {
-    return scanOnce3(precord, NULL, NULL);
+    return scanOnceCallback(precord, NULL, NULL);
 }
 
 typedef struct {
@@ -621,7 +621,7 @@ typedef struct {
     void *usr;
 } onceEntry;
 
-int scanOnce3(struct dbCommon *precord, once_complete cb, void *usr)
+int scanOnceCallback(struct dbCommon *precord, once_complete cb, void *usr)
 {
     static int newOverflow = TRUE;
     onceEntry ent;

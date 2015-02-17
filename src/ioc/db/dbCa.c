@@ -637,7 +637,7 @@ static void scanComplete(void *raw, dbCommon *prec)
         errlogPrintf("dbCa.c complete callback w/ scanningOnce==0\n");
     else if(--pca->scanningOnce){
         /* another scan is queued */
-        if(scanOnce3(prec, scanComplete, raw)) {
+        if(scanOnceCallback(prec, scanComplete, raw)) {
             errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
         }
     }
@@ -646,7 +646,7 @@ static void scanComplete(void *raw, dbCommon *prec)
 
 /* must be called with pca->lock held */
 static void scanLinkOnce(dbCommon *prec, caLink *pca) {
-    if(pca->scanningOnce==0 && scanOnce3(prec, scanComplete, pca)) {
+    if(pca->scanningOnce==0 && scanOnceCallback(prec, scanComplete, pca)) {
         errlogPrintf("dbCa.c failed to queue scanOnce\n");
     }
     if(pca->scanningOnce<5)

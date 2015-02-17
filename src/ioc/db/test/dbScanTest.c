@@ -36,7 +36,7 @@ static void onceComp(void *junk, dbCommon *prec)
 
 static void testOnce(void)
 {
-    testDiag("check scanOnce3() callback");
+    testDiag("check scanOnceCallback() callback");
     waiter = epicsEventMustCreate(epicsEventError);
 
     testdbPrepare();
@@ -52,7 +52,7 @@ static void testOnce(void)
     prec = testdbRecordPtr("reca");
 
     testDiag("scanOnce %s", prec->name);
-    scanOnce3(prec, onceComp, &waiter);
+    scanOnceCallback(prec, onceComp, &waiter);
     testDiag("Waiting");
     epicsEventMustWait(waiter);
     testOk1(called==1);

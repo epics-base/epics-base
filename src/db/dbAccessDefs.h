@@ -276,9 +276,14 @@ epicsShareFunc long epicsShareAPI dbBufferSize(
     short dbrType,long options,long nRequest);
 epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
 
+/* Hook Routine */
+
+typedef void (*DB_LOAD_RECORDS_HOOK_ROUTINE)(const char* filename,
+    const char* substitutions);
+epicsShareExtern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
+
 epicsShareFunc int epicsShareAPI  dbLoadDatabase(
     const char *filename, const char *path, const char *substitutions);
-
 epicsShareFunc int epicsShareAPI dbLoadRecords(
     const char* filename, const char* substitutions);
 

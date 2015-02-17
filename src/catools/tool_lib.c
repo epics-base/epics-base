@@ -120,6 +120,7 @@ char *val2str (const void *v, unsigned type, int index)
         strcpy (str, "*** invalid type");
         return str;
     }
+    strcpy (str, "!!!");
 
     base_type = type % (LAST_TYPE+1);
 

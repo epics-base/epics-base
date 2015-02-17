@@ -90,7 +90,8 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
             }
 
             if ( anerrno == SOCK_ENOBUFS ) {
-                errlogPrintf ( "rsrv: system low on network buffers - send retry in 15 seconds\n" );
+                errlogPrintf (
+                    "CAS: Out of network buffers, retrying send in 15 seconds\n" );
                 epicsThreadSleep ( 15.0 );
                 continue;
             }
@@ -108,8 +109,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( 
                     sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf (
-    "CAS: TCP send to \"%s\" failed because \"%s\"\n",
+                errlogPrintf ( "CAS: TCP send to %s failed - %s\n",
                     buf, sockErrBuf);
             }
             pclient->disconnect = TRUE;
@@ -135,7 +135,7 @@ void cas_send_bs_msg ( struct client *pclient, int lock_needed )
                             char sockErrBuf[64];
                             epicsSocketConvertErrnoToString ( 
                                 sockErrBuf, sizeof ( sockErrBuf ) );
-                            errlogPrintf ("rsrv: socket shutdown error was %s\n", 
+                            errlogPrintf ("CAS: Socket shutdown error - %s\n", 
                                 sockErrBuf );
                         }
                     }
@@ -204,7 +204,7 @@ void cas_send_dg_msg ( struct client * pclient )
         }
         else {
             errlogPrintf ( 
-                "cas: system failed to send entire udp frame?\n" );
+                "CAS: System failed to send entire udp frame?\n" );
         }
     }
     else {
@@ -213,11 +213,8 @@ void cas_send_dg_msg ( struct client * pclient )
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         ipAddrToDottedIP ( &pclient->addr, buf, sizeof(buf) );
-        errlogPrintf(
-                    "CAS: UDP send to \"%s\" "
-                    "failed because \"%s\"\n",
-                    buf,
-                    sockErrBuf);
+        errlogPrintf( "CAS: UDP send to %s failed - %s\n",
+            buf, sockErrBuf);
     }
 
     pclient->send.stk = 0u;

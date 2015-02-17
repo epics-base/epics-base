@@ -67,9 +67,10 @@ void camsgtask ( void *pParm )
         status = socket_ioctl (client->sock, FIONREAD, &nchars);
         if (status < 0) {
             char sockErrBuf[64];
+
             epicsSocketConvertErrnoToString ( 
                 sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf("CAS: io ctl err - %s\n",
+            errlogPrintf("CAS: ioctl error - %s\n",
                 sockErrBuf);
             cas_send_bs_msg(client, TRUE);
         }
@@ -98,9 +99,8 @@ void camsgtask ( void *pParm )
             }
 
             if ( anerrno == SOCK_ENOBUFS ) {
-                errlogPrintf ( 
-                    "rsrv: system low on network buffers "
-                    "- receive retry in 15 seconds\n" );
+                errlogPrintf (
+                    "CAS: Out of network buffers, retring receive in 15 seconds\n" );
                 epicsThreadSleep ( 15.0 );
                 continue;
             }
@@ -109,10 +109,15 @@ void camsgtask ( void *pParm )
              * normal conn lost conditions
              */
             if (    ( anerrno != SOCK_ECONNABORTED &&
-                    anerrno != SOCK_ECONNRESET &&
-                    anerrno != SOCK_ETIMEDOUT ) ||
-                    CASDEBUG > 2 ) {
-                    errlogPrintf ( "CAS: client disconnect(errno=%d)\n", anerrno );
+                anerrno != SOCK_ECONNRESET &&
+                anerrno != SOCK_ETIMEDOUT ) ||
+                CASDEBUG > 2 ) {
+                char sockErrBuf[64];
+
+                epicsSocketConvertErrorToString(
+                    sockErrBuf, sizeof ( sockErrBuf ), anerrno);
+                errlogPrintf ( "CAS: Client disconnected - %s\n",
+                    sockErrBuf );
             }
             break;
         }

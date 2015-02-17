@@ -26,10 +26,9 @@
 #include "ellLib.h"
 #include "epicsEvent.h"
 #include "epicsExit.h"
-#include "epicsInterrupt.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
-#include "epicsRingPointer.h"
+#include "epicsRingBytes.h"
 #include "epicsStdio.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
@@ -64,7 +63,7 @@ static volatile enum ctl scanCtl;
 
 static int onceQueueSize = 1000;
 static epicsEventId onceSem;
-static epicsRingPointerId onceQ;
+static epicsRingBytesId onceQ;
 static epicsThreadId onceTaskId;
 static void *exitOnce;
 
@@ -172,7 +171,7 @@ void scanShutdown(void)
     deletePeriodic();
     ioscanDestroy();
 
-    epicsRingPointerDelete(onceQ);
+    epicsRingBytesDelete(onceQ);
 
     epicsEventDestroy(startStopEvent);
     epicsEventDestroy(onceSem);
@@ -456,7 +455,9 @@ event_list *eventNameToHandle(const char *eventname)
         if (strcmp(pel->event_name, eventname) == 0) break;
     }
     if (pel == NULL) {
-        pel = dbCalloc(1, sizeof(event_list));
+        pel = calloc(1, sizeof(event_list));
+        if (!pel)
+            goto done;
         strcpy(pel->event_name, eventname);
         for (prio = 0; prio < NUM_CALLBACK_PRIORITIES; prio++) {
             callbackSetUser(&pel->scan_list[prio], &pel->callback[prio]);
@@ -474,6 +475,7 @@ event_list *eventNameToHandle(const char *eventname)
                 pevent_list[e] = pel;
         }
     }
+done:
     epicsMutexUnlock(event_lock);
     return pel;
 }
@@ -580,6 +582,28 @@ unsigned int scanIoRequest(IOSCANPVT piosh)
     return queued;
 }
 
+unsigned int scanIoImmediate(IOSCANPVT piosh, int prio)
+{
+    io_scan_list *piosl;
+
+    if (prio<0 || prio>=NUM_CALLBACK_PRIORITIES)
+        return S_db_errArg;
+    else if (scanCtl != ctlRun)
+        return 0;
+
+    piosl = &piosh->iosl[prio];
+
+    if (ellCount(&piosl->scan_list.list) == 0)
+        return 0;
+
+    scanList(&piosl->scan_list);
+
+    if (piosh->cb)
+        piosh->cb(piosh->arg, piosh, prio);
+
+    return 1 << prio;
+}
+
 /* May not be called while a scan request is queued or running */
 void scanIoSetComplete(IOSCANPVT piosh, io_scan_complete cb, void *arg)
 {
@@ -587,15 +611,27 @@ void scanIoSetComplete(IOSCANPVT piosh, io_scan_complete cb, void *arg)
     piosh->arg = arg;
 }
 
-void scanOnce(struct dbCommon *precord)
+int scanOnce(struct dbCommon *precord) {
+    return scanOnceCallback(precord, NULL, NULL);
+}
+
+typedef struct {
+    struct dbCommon *prec;
+    once_complete cb;
+    void *usr;
+} onceEntry;
+
+int scanOnceCallback(struct dbCommon *precord, once_complete cb, void *usr)
 {
     static int newOverflow = TRUE;
-    int lockKey;
+    onceEntry ent;
     int pushOK;
 
-    lockKey = epicsInterruptLock();
-    pushOK = epicsRingPointerPush(onceQ, precord);
-    epicsInterruptUnlock(lockKey);
+    ent.prec = precord;
+    ent.cb = cb;
+    ent.usr = usr;
+
+    pushOK = epicsRingBytesPut(onceQ, (void*)&ent, sizeof(ent));
 
     if (!pushOK) {
         if (newOverflow) errlogPrintf("scanOnce: Ring buffer overflow\n");
@@ -604,6 +640,8 @@ void scanOnce(struct dbCommon *precord)
         newOverflow = TRUE;
     }
     epicsEventSignal(onceSem);
+
+    return !pushOK;
 }
 
 static void onceTask(void *arg)
@@ -612,14 +650,24 @@ static void onceTask(void *arg)
     epicsEventSignal(startStopEvent);
 
     while (TRUE) {
-        void *precord;
 
         epicsEventMustWait(onceSem);
-        while ((precord = epicsRingPointerPop(onceQ))) {
-            if (precord == &exitOnce) goto shutdown;
-            dbScanLock(precord);
-            dbProcess(precord);
-            dbScanUnlock(precord);
+        while(1) {
+            onceEntry ent;
+            int bytes = epicsRingBytesGet(onceQ, (void*)&ent, sizeof(ent));
+            if(bytes==0)
+                break;
+            if(bytes!=sizeof(ent)) {
+                errlogPrintf("onceTask: received incomplete %d of %u\n",
+                             bytes, (unsigned)sizeof(ent));
+                continue; /* what to do? */
+            } else if (ent.prec == (void*)&exitOnce) goto shutdown;
+
+            dbScanLock(ent.prec);
+            dbProcess(ent.prec);
+            dbScanUnlock(ent.prec);
+            if(ent.cb)
+                ent.cb(ent.usr, ent.prec);
         }
     }
 
@@ -636,7 +684,7 @@ int scanOnceSetQueueSize(int size)
 
 static void initOnce(void)
 {
-    if ((onceQ = epicsRingPointerCreate(onceQueueSize)) == NULL) {
+    if ((onceQ = epicsRingBytesLockedCreate(sizeof(onceEntry)*onceQueueSize)) == NULL) {
         cantProceed("initOnce: Ring buffer create failed\n");
     }
     onceSem = epicsEventMustCreate(epicsEventEmpty);

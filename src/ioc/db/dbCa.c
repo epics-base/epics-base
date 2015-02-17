@@ -629,6 +629,31 @@ long dbCaGetUnits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
+static void scanComplete(void *raw, dbCommon *prec)
+{
+    caLink *pca = raw;
+    epicsMutexMustLock(pca->lock);
+    if(pca->scanningOnce==0)
+        errlogPrintf("dbCa.c complete callback w/ scanningOnce==0\n");
+    else if(--pca->scanningOnce){
+        /* another scan is queued */
+        if(scanOnceCallback(prec, scanComplete, raw)) {
+            errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
+        }
+    }
+    epicsMutexUnlock(pca->lock);
+}
+
+/* must be called with pca->lock held */
+static void scanLinkOnce(dbCommon *prec, caLink *pca) {
+    if(pca->scanningOnce==0 && scanOnceCallback(prec, scanComplete, pca)) {
+        errlogPrintf("dbCa.c failed to queue scanOnce\n");
+    }
+    if(pca->scanningOnce<5)
+        pca->scanningOnce++;
+    /* else too many scans queued */
+}
+
 static void connectionCallback(struct connection_handler_args arg)
 {
     caLink *pca;
@@ -649,7 +674,7 @@ static void connectionCallback(struct connection_handler_args arg)
         if (precord &&
             ((ppv_link->pvlMask & pvlOptCP) ||
              ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-            scanOnce(precord);
+            scanLinkOnce(precord, pca);
         goto done;
     }
     pca->hasReadAccess = ca_read_access(arg.chid);
@@ -762,7 +787,7 @@ static void eventCallback(struct event_handler_args arg)
 
         if ((ppv_link->pvlMask & pvlOptCP) ||
             ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0))
-        scanOnce(precord);
+        scanLinkOnce(precord, pca);
     }
 done:
     epicsMutexUnlock(pca->lock);
@@ -835,7 +860,7 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
     if (precord &&
         ((ppv_link->pvlMask & pvlOptCP) ||
          ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
-        scanOnce(precord);
+        scanLinkOnce(precord, pca);
 done:
     epicsMutexUnlock(pca->lock);
 }

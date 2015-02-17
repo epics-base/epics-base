@@ -86,5 +86,6 @@ int main(int argc,char **argv)
     dbReportDeviceConfig(pdbbase,stdout);
 */
     dbFreeBase(pdbbase);
+    errlogFlush();
     return(0);
 }

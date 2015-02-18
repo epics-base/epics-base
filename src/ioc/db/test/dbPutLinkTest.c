@@ -42,8 +42,6 @@ void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 #define TEST_CONSTANT(SET, EXPECT) {SET, {CONSTANT, EXPECT}}
 #define TEST_PV_LINK(SET, PV, MOD) {SET, {PV_LINK, PV, MOD}}
-#define TEST_HW_(...) __VA_ARGS__
-#define TEST_HW(SET, TYPE, ID, PARM, ...) {SET, {TYPE, PARM, 0, ID, {TEST_HW_(__VA_ARGS__)}}}
 
 static const struct testParseDataT {
     const char * const str;
@@ -58,10 +56,10 @@ static const struct testParseDataT {
     TEST_PV_LINK(" hellox MSI", "hellox", pvlOptMSI),
     TEST_PV_LINK(" world MSICP", "world", pvlOptMSI|pvlOptCP),
 
-    TEST_HW("#C14 S145 @testing", VME_IO, "CS", "testing", 14, 145),
-    TEST_HW("#B11 C12 N13 A14 F15 @cparam", CAMAC_IO, "BCNAF", "cparam", 11, 12, 13, 14, 15),
-    TEST_HW(" #B111 C112 N113 @cparam", CAMAC_IO, "BCN", "cparam", 111, 112, 113),
-    TEST_HW(" @hello world ", INST_IO, "", "hello world"),
+    {"#C14 S145 @testing", {VME_IO, "testing", 0, "CS", {14, 145}}},
+    {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
+    {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
+    {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
     {NULL}
 };
 

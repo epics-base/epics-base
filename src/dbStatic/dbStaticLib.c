@@ -45,7 +45,7 @@
 int dbStaticDebug = 0;
 static char *pNullString = "";
 #define messagesize	100
-#define RPCL_LEN 184
+#define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
 static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
 static char *msstring[4]={"NMS","MS","MSI","MSS"};

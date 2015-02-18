@@ -100,7 +100,7 @@
      later.
 
      GNU readline or Tecla library
-     GNU readline and Tecla librararies can be used by the IOC shell to
+     GNU readline and Tecla libraries can be used by the IOC shell to
      provide command line editing and command line history recall and edit.
      GNU readline (or Tecla library) must be installed on your target system
      when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
@@ -124,7 +124,7 @@
      EPICS documentation is available through the [3]EPICS website at
      Argonne.
 
-     Release specific documenataion can also be found in the
+     Release specific documentation can also be found in the
      base/documentation directory of the distribution.
 
   Directory Structure
@@ -137,7 +137,7 @@
          base/configure               Operating system independent build config files
          base/configure/os            Operating system dependent build config files
          base/configure/tools         Perl and shell scripts used in the build
-         base/documentation           Distributation documentation
+         base/documentation           Distribution documentation
          base/src                     All epics base source code in subdirectories
          base/src/RTEMS               Code to configure RTEMS for EPICS
          base/src/as                  Access security
@@ -170,7 +170,7 @@
          base/src/libCom/macLib       Macro substitution handler
          base/src/libCom/misc         Miscellaneous utilities
          base/src/libCom/osi          Operating system independent API
-         base/src/libCom/osi/os       Operating system dependant code in subdirectories
+         base/src/libCom/osi/os       Operating system dependent code in subdirectories
          base/src/libCom/ring         Methods for creating and using ring buffers
          base/src/libCom/taskwd       Task watchdog
          base/src/libCom/test         Test tools (timer, semBinary, semMutex,fdmgr, ...)
@@ -206,14 +206,14 @@
 
   Build related components
 
-    base/documentation/README* files
+    base/documentation directory - contains setup, build, and install documents
 
          README.1st           Instructions for setup and building epics base
          README.html          html version of README.1st
-         README.WIN32         Microsoft WIN32 specific instructions
-         README.cxxTemplates  Information about C++ templates in EPICS base
+         README.MS_Windows    Microsoft Windows specific instructions
+         README.cris          Axis CRIS specific instructions
+         README.darwin.html   Installation notes for OS X (Darwin)
          README.niCpu030      NI cpu030 specific instructions
-         README.darwin        Installation notes for Mac OS X (Darwin)
          RELEASE_NOTES.html   Notes on release changes
          KnownProblems.html   List of known problems and workarounds
          Converting*To*.html  Release specific conversion instructions
@@ -240,7 +240,7 @@
          CONFIG_BASE_VERSION   Definitions for EPICS base version number
          CONFIG_COMMON         Definitions common to all builds
          CONFIG_ENV            Definitions of EPICS environment variables
-         CONFIG_SITE           Site specific make defintions
+         CONFIG_SITE           Site specific make definitions
          CONFIG_SITE_ENV       Site defaults for EPICS environment variables
          MAKEFILE              Installs CONFIG* RULES* creates
          CONFIG_APP_INCLUDE
@@ -271,7 +271,7 @@
     base/src/tools directory - contains Perl scripts used for the build
 
          Makefile                Makefile for installing the scripts into cfg dir
-         convertRelease.pl       Performs consistancy checks on RELEASE files
+         convertRelease.pl       Performs consistency checks on RELEASE files
          cvsclean.pl             Remove all .#* files in directory tree
          dos2unix.pl             Converts text file from DOS CR/LF to unix ISO
          expandvars.pl           Tool to expand @VAR@ variables while copying a file

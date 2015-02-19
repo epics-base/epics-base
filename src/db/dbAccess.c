@@ -969,6 +969,11 @@ long epicsShareAPI dbGetField(DBADDR *paddr,short dbrType,
             if (nRequest && *nRequest > 1) *nRequest = 1;
             break;
 
+        case DBR_DOUBLE:    /* Needed for dbCa links */
+            if (nRequest && *nRequest) *nRequest = 1;
+            *(double *)pbuffer = epicsNAN;
+            goto done;
+
         case DBR_CHAR:
         case DBR_UCHAR:
             if (nRequest && *nRequest > 0) {

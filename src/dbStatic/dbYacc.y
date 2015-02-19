@@ -266,12 +266,14 @@ alias: tokenALIAS '(' tokenSTRING ',' tokenSTRING ')'
 static int yyerror(char *str)
 {
     if (str)
-        epicsPrintf("Error: %s\n   ", str);
+        epicsPrintf("Error: %s\n", str);
     else
         epicsPrintf("Error");
-    epicsPrintf(" at or before \"%s\"", yytext);
-    dbIncludePrint();
-    yyFailed = TRUE;
+    if (!yyFailed) {    /* Only print this stuff once */
+        epicsPrintf(" at or before \"%s\"", yytext);
+        dbIncludePrint();
+        yyFailed = TRUE;
+    }
     return(0);
 }
 static long pvt_yy_parse(void)

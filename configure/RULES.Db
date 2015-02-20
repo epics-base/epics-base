@@ -24,8 +24,8 @@ vpath %.acs $(USR_VPATH) $(GENERIC_SRC_DIRS) $(COMMON_DIR)
 DBD_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DBD) $(RELEASE_DBD_DIRS)
 DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
 
-DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
+DBDFLAGS = $(USR_DBDFLAGS) $(CMD_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(CMD_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
 
 #####################################################
 # To allow os specific dbd files AND have the -j option work properly,

@@ -189,7 +189,8 @@ OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY = @12
 
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
+WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) \
+ $(USR_LDFLAGS) $(CMD_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
 #
 # specify dll .def file only if it exists

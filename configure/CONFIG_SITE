@@ -176,7 +176,7 @@ COMPAT_313=NO
 #INSTALL_LOCATION=<fullpathname>
 
 # Use POSIX thread priority scheduling (YES or NO)
-USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
+USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES
 
 #  Site version number, if set will append '-' and this string to the
 #  EPICS version number string that is reported by many tools

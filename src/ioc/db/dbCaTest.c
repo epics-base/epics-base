@@ -189,10 +189,8 @@ void dbcaStats(int *pchans, int *pdiscon)
                     dbFldDes *pdbFldDes = pdbRecordType->papFldDes[i];
                     plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                     if (plink->type == CA_LINK) {
-                        caLink *pca = (caLink *)plink->value.pv_link.pvt;
-
                         ncalinks++;
-                        if (pca && pca->chid && ca_state(pca->chid) == cs_conn) {
+                        if (dbCaIsLinkConnected(plink)) {
                             nconnected++;
                         }
                     }

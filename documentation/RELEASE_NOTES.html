@@ -13,6 +13,29 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Added Make variables for command-line use</h3>
+
+<p>The following variables are now used during the build process, reserved for
+setting on the command-line only (Makefiles should continue to use the
+<code>USR_</code> equivalents):</p>
+
+<ul>
+<li>CMD_INCLUDES</li>
+<li>CMD_CPPFLAGS</li>
+<li>CMD_CFLAGS</li>
+<li>CMD_CXXFLAGS</li>
+<li>CMD_LDFLAGS</li>
+<li>CMD_DBFLAGS</li>
+<li>CMD_DBDFLAGS</li>
+<li>CMD_ARFLAGS</li>
+</ul>
+
+<p>For example:</p>
+
+<blockquote><pre>
+make CMD_INCLUDES=/opt/local/include CMD_LDFLAGS=-L/opt/local/lib
+</pre></blockquote>
+
 <h3>Back-ported dbLoadRecordsHook from the 3.15 branch</h3>
 
 <p>See the Release Notes from the Base 3.15.1 release for details.</p>

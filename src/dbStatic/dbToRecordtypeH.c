@@ -228,12 +228,14 @@ int main(int argc,char **argv)
 	fprintf(outFile,"#ifdef __cplusplus\n");
 	fprintf(outFile,"extern \"C\" {\n");
 	fprintf(outFile,"#endif\n");
+        fprintf(outFile,"#include <epicsAssert.h>\n");
         fprintf(outFile,"#include <epicsExport.h>\n");
 	pdbRecordType = (dbRecordType *)ellFirst(&pdbbase->recordTypeList);
 	while(pdbRecordType) {
 		fprintf(outFile,"static int %sRecordSizeOffset(dbRecordType *pdbRecordType)\n{\n",
 		pdbRecordType->name);
 	    fprintf(outFile,"    %sRecord *prec = 0;\n",pdbRecordType->name);
+	    fprintf(outFile,"  assert(pdbRecordType->no_fields==%u);\n", pdbRecordType->no_fields);
 	    for(i=0; i<pdbRecordType->no_fields; i++) {
 		char	name[256];
 		int		j;

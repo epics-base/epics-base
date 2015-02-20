@@ -60,7 +60,9 @@ public:
     void start ();
     void daemon ();
     void stop ();
+    address addr () const;
 protected:
+    address srvaddr;
     SOCKET sock;
     epicsThreadId id;
     bool exit;
@@ -156,18 +158,20 @@ extern "C" void serverDaemon ( void * pParam ) {
 }
 
 server::server ( const address & addrIn ) :
+    srvaddr ( addrIn ),
     sock ( epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ),
     id ( 0 ), exit ( false )
 {
     testOk ( this->sock != INVALID_SOCKET, "Server socket valid" );
 
     // setup server side
-    address tmpAddr = addrIn;
-    int status = bind ( this->sock, 
-        & tmpAddr.sa, sizeof ( tmpAddr ) );
+    osiSocklen_t slen = sizeof ( this->srvaddr );
+    int status = bind ( this->sock, & this->srvaddr.sa, slen );
     if ( status ) {
         testDiag ( "bind to server socket failed, status = %d", status );
-        testAbort ( "Stop all CA servers before running this test." );
+    }
+    if ( getsockname(this->sock, & this->srvaddr.sa, & slen) != 0 ) {
+        testAbort ( "Failed to read socket address" );
     }
     status = listen ( this->sock, 10 );
     testOk ( status == 0, "Server socket listening" );
@@ -182,7 +186,7 @@ void server::start ()
     testOk ( this->id != 0, "Server thread created" );
 }
 
-void server::daemon () 
+void server::daemon ()
 {
     while ( ! this->exit ) {
         // accept client side
@@ -204,13 +208,18 @@ void server::stop ()
     epicsSocketDestroy ( this->sock );
 }
 
+address server::addr () const
+{
+    return this->srvaddr;
+}
+
 serverCircuit::serverCircuit ( SOCKET sockIn ) :
     circuit ( sockIn )
 {
     circuit * pCir = this;
-    epicsThreadId threadId = epicsThreadCreate ( 
-        "server circuit", epicsThreadPriorityMedium, 
-        epicsThreadGetStackSize(epicsThreadStackMedium), 
+    epicsThreadId threadId = epicsThreadCreate (
+        "server circuit", epicsThreadPriorityMedium,
+        epicsThreadGetStackSize(epicsThreadStackMedium),
         socketRecvTest, pCir );
     testOk ( threadId != 0, "Server circuit thread created" );
 }
@@ -231,7 +240,7 @@ static const char *mechName(int mech)
         {esscimqi_socketBothShutdownRequired, "esscimqi_socketBothShutdownRequired" },
         {esscimqi_socketSigAlarmRequired, "esscimqi_socketSigAlarmRequired" }
     };
-    
+
     for (unsigned i=0; i < (sizeof(mechs) / sizeof(mechs[0])); ++i) {
         if (mech == mechs[i].mech)
             return mechs[i].name;
@@ -248,10 +257,11 @@ MAIN(blockingSockTest)
     memset ( (char *) & addr, 0, sizeof ( addr ) );
     addr.ia.sin_family = AF_INET;
     addr.ia.sin_addr.s_addr = htonl ( INADDR_LOOPBACK ); 
-    addr.ia.sin_port = htons ( 5064 ); // CA
+    addr.ia.sin_port = 0;
 
     server srv ( addr );
     srv.start ();
+    addr = srv.addr ();
     clientCircuit client ( addr );
 
     epicsThreadSleep ( 1.0 );

@@ -331,6 +331,12 @@ $(OBJLIB_MUNCHNAME):%.munch : %_ctdt$(OBJ) %$(OBJ)
 	@$(RM) $@
 	$(MUNCH_CMD)
 
+# GeSys modules for RTEMS
+$(MODNAME): %$(MODEXT): %$(EXE)
+	@echo "Building module $@"
+	@$(RM) $@
+	$(LINK.mod)
+
 runtests: $(TESTSCRIPTS)
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 

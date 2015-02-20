@@ -83,6 +83,8 @@ OPT_CXXFLAGS_YES = $(CFLAGS_OPTIMIZE_V)
 OPT_CFLAGS_NO    = $(CFLAGS_DEBUG_V)
 OPT_CXXFLAGS_NO  = $(CFLAGS_DEBUG_V)
 
+MODEXT=.obj
+
 #--------------------------------------------------
 # operating system class (include/os/<os_class>)
 OS_CLASS = RTEMS
@@ -96,6 +98,42 @@ OP_SYS_LDFLAGS += $(CPU_CFLAGS) -u Init \
                  $(PROJECT_RELEASE)/lib/no-part.rel \
                  $(PROJECT_RELEASE)/lib/no-signal.rel \
                  $(PROJECT_RELEASE)/lib/no-rtmon.rel
+
+MOD_SYS_LDFLAGS += $(CPU_CFLAGS) -Wl,-r -nostdlib
+
+# Do not link against libraries which are part of the Generic Image
+GESYS_LIBS += -lgcc
+GESYS_LIBS += -lc -lm -lrtemscpu -lrtemsbsp -lrtems++ -lbspExt
+GESYS_LIBS += -lcexp -ltecla_r -lspencer_regexp -lpmelf -lpmbfd
+GESYS_LIBS += -lnfs -ltelnetd -lrtems-gdb-stub
+
+# While not part of the Generic Image it provides symbols which
+# would conflict.
+GESYS_LIBS += -lrtemsCom
+
+#--------------------------------------------------
+# Options for building GeSys loadable objects
+
+MODNAME_YES = $(PRODNAME:%$(EXE)=%$(MODEXT))
+MODNAME += $(MODNAME_$(USE_GESYS))
+PRODTARGETS += $(MODNAME)
+BIN_INSTALLS += $(MODNAME)
+
+# changes to LDFLAGS in CONFIG_COMMON and LINK.cpp in CONFIG.Common.UnixCommon
+# should be reflected here with the following exceptions
+#
+# replace OP_SYS_LDFLAGS with MOD_SYS_LDFLAGS
+# replace PROD_LDLIBS with MOD_LDLIBS
+# remove STATIC_LDFLAGS
+
+MOD_LDLIBS = $(filter-out $(GESYS_LIBS),$(PROD_LDLIBS))
+
+MOD_LDFLAGS = $(OPT_LDFLAGS) $(TARGET_LDFLAGS) $(USR_LDFLAGS) $(POSIX_LDFLAGS) \
+ $(ARCH_DEP_LDFLAGS) $(DEBUG_LDFLAGS) $(MOD_SYS_LDFLAGS) $($(BUILD_CLASS)_LDFLAGS)\
+ $(RUNTIME_LDFLAGS) $(CODE_LDFLAGS)
+
+LINK.mod = $(CCC) -o $@ $(PRODDIR_LDFLAGS) $(MOD_LDFLAGS)
+LINK.mod += $(PROD_LDFLAGS) $(PROD_LD_OBJS) $(PROD_LD_RESS) $(MOD_LDLIBS)
 
 #--------------------------------------------------
 # RTEMS has neither shared libraries nor dynamic loading

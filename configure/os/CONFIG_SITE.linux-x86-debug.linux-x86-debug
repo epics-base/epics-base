@@ -1,3 +1,9 @@
+# CONFIG_SITE.linux-x86-debug.linux-x86-debug
+#
+# $Revision-Id$
+#
+# Site specific overrides for linux-x86-debug host and target builds
+#-------------------------------------------------------
 
 #Prepares the object code to collect data for profiling with prof. 
 #PROFILE=YES

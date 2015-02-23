@@ -1,0 +1,15 @@
+# CONFIG.linux-arm.linux-arm-debug
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-arm host - linux-arm-debug target build
+# Override these settings in CONFIG_SITE.linux-arm.linux-arm-debug
+#-------------------------------------------------------
+
+-include $(CONFIG)/os/CONFIG.linux-arm.linux-arm
+-include $(CONFIG)/os/CONFIG_SITE.Common.linux-arm
+-include $(CONFIG)/os/CONFIG_SITE.linux-arm.linux-arm
+
+BUILD_CLASS=HOST
+HOST_OPT=NO

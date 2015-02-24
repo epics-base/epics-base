@@ -1,0 +1,23 @@
+# CONFIG_SITE.linux-x86.win32-x86-mingw
+#
+# Configuration for linux-x86 host win32-x86-mingw target builds
+#-------------------------------------------------------
+
+# Early versions of the MinGW cross-build tools can only build
+# static (non-DLL) libraries. Fedora's cross-build of gcc 4.4.6
+# needs these uncommented, other distributions have not been
+# tested with this release of Base:
+SHARED_LIBRARIES = NO
+STATIC_BUILD = YES
+
+# The cross-build tools are in $(GNU_DIR)/bin
+# Default is /usr
+#GNU_DIR = /usr/local
+
+# Different distribution cross-build packages use different prefixes:
+# Ubuntu:
+#CMPLR_PREFIX = i686-w64-mingw32-
+# RHEL:
+CMPLR_PREFIX = i686-pc-mingw32-
+# Debian?
+#CMPLR_PREFIX = i586-mingw32msvc-

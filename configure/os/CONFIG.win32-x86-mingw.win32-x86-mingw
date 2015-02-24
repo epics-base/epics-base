@@ -9,22 +9,27 @@
 # Include common gnu compiler definitions
 include $(CONFIG)/CONFIG.gnuCommon
 
+# Undo various things set by CONFIG.gnuCommon
+
 CMPLR_PREFIX =
 
+# Remove $(GNU_BIN)/ path
 CC  = $(CMPLR_PREFIX)gcc
 CCC = $(CMPLR_PREFIX)g++
 AR  = $(CMPLR_PREFIX)ar -rc
 LD  = $(CMPLR_PREFIX)ld -r
 RANLIB = $(CMPLR_PREFIX)ranlib
-RES = .coff
+
+# Add resource compiler
 RCCMD = $(CMPLR_PREFIX)windres $(INCLUDES) $< $@
 
-# No -fPIC avoids "-fPIC ignored for target (all code is position independent)"
+# Remove -fPIC flags, add out-implib
 SHRLIB_CFLAGS =
 SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 
-# Override linking with gcc library from CONFIG.gnuCommon
+# Don't link with gcc library
 GNU_LDLIBS_YES =
 
+# Link with winsock2
 OP_SYS_LDLIBS = -lws2_32

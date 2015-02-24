@@ -1,0 +1,22 @@
+# CONFIG.linux-x86.win32-x86-mingw
+#
+# Definitions for linux-x86 host win32-x86-mingw target builds
+# Override these definitions in CONFIG_SITE.linux-x86.win32-x86-mingw
+#-------------------------------------------------------
+
+# Include common gnu compiler definitions
+include $(CONFIG)/CONFIG.gnuCommon
+
+# Add resource compiler
+RCCMD = $(CMPLR_PREFIX)windres$(CMPLR_SUFFIX) $(INCLUDES) $< $@
+
+# Remove -fPIC flags, add out-implib
+SHRLIB_CFLAGS =
+SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
+LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
+
+# Don't link with gcc library
+GNU_LDLIBS_YES =
+
+# Link with winsock2
+OP_SYS_LDLIBS = -lws2_32

@@ -34,7 +34,8 @@ ARCH_DEP_LDFLAGS += -m32
 # Override for -DUNIX from CONFIG.Common.UnixCommon
 OP_SYS_CPPFLAGS = -D_MINGW
 
-EXE=.exe
+EXE = .exe
+RES = .coff
 
 VISC_DLL_NO = -DEPICS_DLL_NO
 VISC_DLL_YES =

@@ -25,9 +25,8 @@ PERL_VERSION = $(shell $(PERL) ../perlConfig.pl version)
 PERL_ARCHNAME = $(shell $(PERL) ../perlConfig.pl archname)
 PERL_ARCHPATH = $(PERL_VERSION)/$(PERL_ARCHNAME)
 
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),)
-  # Doesn't build on WIN32
+ifeq ($(T_A),$(EPICS_HOST_ARCH))                 # No cross-builds (wrong Perl!)
+ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
   LOADABLE_LIBRARY_HOST = Cap5
 
   PERL_SCRIPTS += cainfo.pl

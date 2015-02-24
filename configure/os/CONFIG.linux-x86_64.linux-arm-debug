@@ -1,0 +1,8 @@
+# CONFIG.linux-x86_64.linux-arm-debug
+#
+# Definitions for linux-x86_64 host - linux-arm-debug target builds
+# Override these settings in CONFIG_SITE.linux-x86_64.linux-arm-debug
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.linux-x86.linux-arm
+

@@ -30,11 +30,11 @@ EPICS_MODIFICATION = 12
 
 # EPICS_PATCH_LEVEL must be a number  (win32 resource file requirement)
 # Not included if zero
-EPICS_PATCH_LEVEL = 4
+EPICS_PATCH_LEVEL = 5
 
 # This will end in -DEV between official releases
-EPICS_DEV_SNAPSHOT=-DEV
-#EPICS_DEV_SNAPSHOT=-pre1
+#EPICS_DEV_SNAPSHOT=-DEV
+EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2
 #EPICS_DEV_SNAPSHOT=-pre2-DEV

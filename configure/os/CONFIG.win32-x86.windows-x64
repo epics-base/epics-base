@@ -13,7 +13,7 @@
 ARCH_DEP_CPPFLAGS += /favor:blend
 #ARCH_DEP_CPPFLAGS += /Wp64
 
-#	/favor:blend	both AMD64 and INTEL64
+#	/favor:blend	both AMD64 and INTEL64  This is the default
 #	/favor:AMD64
 #	/favor:INTEL64 (new value)
 #	/favor:EN64T   (old value)

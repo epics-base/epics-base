@@ -4,7 +4,7 @@
 # This file is maintained by the build community.
 #
 # Definitions for cygwin-x86 target builds
-# Sites may override these definitions in CONFIG_SITE.Common.cygwin-x86
+# Sites may override these definitions in CONFIG_SITE.Common.win32-x86-cygwin
 #-------------------------------------------------------
 
 # Include definitions common to all Unix targets

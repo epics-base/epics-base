@@ -26,7 +26,6 @@
 #    USR_CFLAGS    C flags
 #    USR_CXXFLAGS  C++ flags
 #    USR_CPPFLAGS  c preprocesser flags
-#    INC           include-files to install
 #    SRCS          source files for building libraries and prods
 #    USR_SRCS      source files for building libraries and prods
 #    PROD_SRCS     source files for building prods

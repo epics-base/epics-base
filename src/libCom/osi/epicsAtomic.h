@@ -19,7 +19,7 @@
 
 #include "compilerSpecific.h"
 
-#define EPICS_ATOMIC_INLINE EPICS_FUNC_INLINE
+#define EPICS_ATOMIC_INLINE static EPICS_ALWAYS_INLINE
 
 #ifdef __cplusplus
 extern "C" {

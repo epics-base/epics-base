@@ -23,6 +23,12 @@
 #ifdef __clang__
 #   error compiler/gcc/compilerSpecific.h is not for use with the clang compiler
 #endif
+
+#if __GNUC__ > 2
+#  define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
+#else
+#  define EPICS_ALWAYS_INLINE __inline__
+#endif
  
 #ifdef __cplusplus
 

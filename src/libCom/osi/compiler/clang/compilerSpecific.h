@@ -20,6 +20,12 @@
 #   error compiler/clang/compilerSpecific.h is only for use with the clang compiler
 #endif
 
+#if __has_attribute(always_inline)
+#define EPICS_ALWAYS_INLINE __inline__ __attribute__((always_inline))
+#else
+#define EPICS_ALWAYS_INLINE __inline__
+#endif
+
 #ifdef __cplusplus
 
 /*

@@ -26,16 +26,10 @@
 
 #include <intrin.h>
 
-#if _MSC_VER >= 1200
-#   define EPICS_ATOMIC_INLINE __forceinline
-#else
-#   define EPICS_ATOMIC_INLINE __inline
-#endif
-
 #if defined ( _M_IX86 )
 #   pragma warning( push )
 #   pragma warning( disable : 4793 )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier ()
+    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
     {
         long fence;
         __asm { xchg fence, eax }
@@ -44,14 +38,14 @@
 #elif defined ( _M_X64 )
 #   define MS_ATOMIC_64
 #   pragma intrinsic ( __faststorefence )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier () 
+    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
     { 
         __faststorefence ();
     }
 #elif defined ( _M_IA64 )
 #   define MS_ATOMIC_64
 #   pragma intrinsic ( __mf )
-    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier () 
+    EPICS_ATOMIC_INLINE void epicsAtomicMemoryBarrier (void)
     { 
         __mf (); 
     }
@@ -88,13 +82,13 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
     epicsAtomicMemoryBarrier ();
 }
 
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     epicsAtomicMemoryBarrier ();
 }
@@ -107,10 +101,6 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 #include "epicsAtomicDefault.h"
 
 #else /* ifdef _MSC_EXTENSIONS */
-
-#if defined ( __cplusplus )
-#   define EPICS_ATOMIC_INLINE inline
-#endif
 
 /* 
  * if unavailable as an intrinsic we will try

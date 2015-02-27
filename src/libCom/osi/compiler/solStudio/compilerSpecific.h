@@ -16,11 +16,12 @@
 #ifndef compilerSpecific_h
 #define compilerSpecific_h
 
-#ifndef __SUNPRO_C
+#if !defined(__SUNPRO_C) && !defined (__SUNPRO_CC)
 #  error Not Solaris Studio
 #endif
 
-#if __SUNPRO_C<0x590
+#if (defined(__SUNPRO_C) && __SUNPRO_C < 0x590) || \
+    (defined(__SUNPRO_CC) && __SUNPRO_CC < 0x590)
 #  define EPICS_ALWAYS_INLINE inline
 #else
 #  define EPICS_ALWAYS_INLINE inline __attribute__((always_inline))

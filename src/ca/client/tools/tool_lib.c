@@ -59,28 +59,33 @@ capri caPriority = DEFAULT_CA_PRIORITY;  /* CA Priority */
 
 
 
-void sprint_long (char *ret, long val, IntFormatT outType)
+static void sprint_long (char *ret, dbr_long_t val, IntFormatT outType)
 {
-    long i, bit, skip=-1L;   /* used only for printing bits */
-    switch (outType) {
-    case hex: sprintf(ret, "0x%lX", val); break;
-    case oct: sprintf(ret, "0o%lo", val); break;
-    case bin:
-        for (i=31; i>=0 ; i--)
-        {
-            bit = (val>>i) & 0x1L;
-            if (skip<0 && bit)
-            {
+    if (outType == bin && val != 0) {
+        /* sprintf doesn't do binary; this code doesn't handle 0 */
+        int i, skip = -1;
+
+        for (i = 31; i >= 0; i--) {
+            int bit = (val >> i) & 1;
+
+            if (skip < 0 && bit) {
                 skip = 31 - i;          /* skip leading 0's */
                 ret[i+1] = '\0';
             }
-            if (skip >= 0)
-            {
-                ret[31-i-skip] = (bit) ? '1' : '0';
+            if (skip >= 0) {
+                ret[31-i-skip] = '0' + bit;
             }
         }
-        break;
-    default:  sprintf(ret, "%ld", val); /* decimal */
+    }
+    else {
+        const char *fmt[4] = { /* Order must match the enum IntFormatT */
+            "%ld"   /* dec */,
+            "0"     /* bin, val is 0 */,
+            "0o%lo" /* oct */,
+            "0x%lX" /* hex */
+        };
+
+        sprintf(ret, fmt[outType], val);
     }
 }
 

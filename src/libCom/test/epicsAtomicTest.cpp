@@ -256,7 +256,7 @@ static void testClassify()
 #else
     testDiag("Compiler dependent impl name undefined");
 #endif
-#ifdef EPICS_ATOMIC_CMPLR_NAME
+#ifdef EPICS_ATOMIC_OS_NAME
     testDiag("OS dependent impl name %s", EPICS_ATOMIC_OS_NAME);
 #else
     testDiag("OS dependent impl name undefined");

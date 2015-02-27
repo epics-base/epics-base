@@ -24,6 +24,8 @@
 
 #ifdef _MSC_EXTENSIONS
 
+#define EPICS_ATOMIC_CMPLR_NAME "MSVC-INTRINSIC"
+
 #include <intrin.h>
 
 #if defined ( _M_IX86 )
@@ -101,6 +103,8 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 #include "epicsAtomicDefault.h"
 
 #else /* ifdef _MSC_EXTENSIONS */
+
+#define EPICS_ATOMIC_CMPLR_NAME "MSVC-DIRECT"
 
 /* 
  * if unavailable as an intrinsic we will try

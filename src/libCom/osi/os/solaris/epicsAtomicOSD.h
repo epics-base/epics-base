@@ -18,6 +18,8 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
+#define EPICS_ATOMIC_OS_NAME "Solaris"
+
 #if defined ( __SunOS_5_10 )
 
 /* 

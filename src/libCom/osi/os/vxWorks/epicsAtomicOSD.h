@@ -32,6 +32,8 @@
 #include <limits.h>
 #include <vxAtomicLib.h>
 
+#define EPICS_ATOMIC_OS_NAME "VX-ATOMICLIB"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -205,6 +207,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 
 #include "vxLib.h"
 #include "intLib.h"
+
+#define EPICS_ATOMIC_OS_NAME "VX-INTLIB"
 
 #ifdef __cplusplus
 extern "C" {

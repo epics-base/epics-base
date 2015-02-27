@@ -18,6 +18,8 @@
 
 #include <shareLib.h>
 
+#define EPICS_ATOMIC_OS_NAME "POSIX"
+
 typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
 
 #ifdef __cplusplus

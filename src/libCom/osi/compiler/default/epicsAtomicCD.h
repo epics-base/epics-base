@@ -16,6 +16,8 @@
 #ifndef epicsAtomicCD_h
 #define epicsAtomicCD_h
 
+#define EPICS_ATOMIC_CMPLR_NAME "DEFAULT"
+
 #include "epicsAtomicOSD.h"
 
 #endif /* epicsAtomicCD_h */

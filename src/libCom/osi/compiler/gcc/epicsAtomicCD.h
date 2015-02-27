@@ -20,6 +20,8 @@
 #   error this header is only for use with the gnu compiler
 #endif
 
+#define EPICS_ATOMIC_CMPLR_NAME "GCC"
+
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)
 #define GCC_ATOMIC_CONCATR( A, B ) ( A ## B )
 

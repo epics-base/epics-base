@@ -588,6 +588,7 @@ void dbFreeBase(dbBase *pdbbase)
     dbPvdFreeMem(pdbbase);
     dbFreePath(pdbbase);
     free((void *)pdbbase);
+    pdbbase = NULL;
     return;
 }
 

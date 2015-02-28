@@ -30,25 +30,38 @@ typedef enum{
 } asClientStatus;
 
 typedef void (*ASCLIENTCALLBACK) (ASCLIENTPVT,asClientStatus);
+
 /* The following  routines are macros with the following syntax
 long asCheckGet(ASCLIENTPVT asClientPvt);
 long asCheckPut(ASCLIENTPVT asClientPvt);
 */
-#define asCheckGet(asClientPvt)\
-	(asActive \
-	? ((asClientPvt)->access>=asREAD ? TRUE : FALSE)\
-	: TRUE)
-#define asCheckPut(asClientPvt)\
-	(asActive \
-	? ((asClientPvt)->access>=asWRITE ? TRUE : FALSE)\
-	: TRUE)
-#define asTrapWriteBefore(asClientPvt,user,host,addr) \
-    (((asActive) && (asClientPvt)->trapMask) \
-    ? asTrapWriteBeforeWrite((user),(host),(addr)) \
-    : 0)
+#define asCheckGet(asClientPvt) \
+    (!asActive || ((asClientPvt)->access >= asREAD))
+#define asCheckPut(asClientPvt) \
+    (!asActive || ((asClientPvt)->access >= asWRITE))
 
-#define asTrapWriteAfter(pvt) if((pvt)) asTrapWriteAfterWrite((pvt))
-
+/* More convenience macros
+void *asTrapWriteWithData(ASCLIENTPVT asClientPvt,
+     const char *userid, const char *hostid, void *addr,
+     int dbrType, int no_elements, void *data);
+void asTrapWriteAfter(ASCLIENTPVT asClientPvt);
+*/
+#define asTrapWriteWithData(asClientPvt, user, host, addr, type, count, data) \
+    ((asActive && (asClientPvt)->trapMask) \
+    ? asTrapWriteBeforeWithData((user), (host), (addr), (type), (count), (data)) \
+    : 0)
+#define asTrapWriteAfter(pvt) \
+    if (pvt) asTrapWriteAfterWrite(pvt)
+
+/* This macro is for backwards compatibility, upgrade any code
+   calling it to use asTrapWriteWithData() instead ASAP:
+void *asTrapWriteBefore(ASCLIENTPVT asClientPvt,
+     const char *userid, const char *hostid, void *addr);
+*/
+#define asTrapWriteBefore(asClientPvt, user, host, addr) \
+    asTrapWriteWithData(asClientPvt, user, host, addr, 0, 0, NULL)
+
+
 epicsShareFunc long epicsShareAPI asInitialize(ASINPUTFUNCPTR inputfunction);
 epicsShareFunc long epicsShareAPI asInitFile(
     const char *filename,const char *substitutions);
@@ -100,8 +113,9 @@ epicsShareFunc int epicsShareAPI asDumpMemFP(FILE *fp,const char *asgname,
 epicsShareFunc int epicsShareAPI asDumpHash(void);
 epicsShareFunc int epicsShareAPI asDumpHashFP(FILE *fp);
 
-epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWrite(
-    const char *userid,const char *hostid,void *addr);
+epicsShareFunc void * epicsShareAPI asTrapWriteBeforeWithData(
+    const char *userid, const char *hostid, void *addr,
+    int dbrType, int no_elements, void *data);
 
 epicsShareFunc void epicsShareAPI asTrapWriteAfterWrite(void *pvt);
 

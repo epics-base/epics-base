@@ -14,6 +14,31 @@
 <h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Enhanced API for asTrapWrite listeners</h3>
+
+<p>External software such as the CA Put Logging module that registers a listener
+with the asTrapWrite subsystem was not previously given access to the actual
+data being sent by the CA client. In most cases this was not a problem as the
+listener can look at the field being modified both before and after the
+operation, but if the put processes the record which immediately overwrites the
+new value, the client's value cannot be observed.</p>
+
+<p>This release adds three fields to the asTrapWriteMessage structure that is
+passed to the listener routines. These new fields provide the CA data type, the
+number of array elements, and a pointer to the source data buffer. This change
+is completely backwards compatible with listener code written against the
+original API. The new API can be detected at compile-time as follows:</p>
+
+<blockquote><pre>
+#include "asLib.h"
+
+/* ... */
+
+#ifdef asTrapWriteWithData
+    /* Enhanced API */
+#endif
+</pre></blockquote>
+
 <h3>Use of PATH_FILTER in Makefiles deprecated</h3>
 
 <p>The PATH_FILTER variable was being called to convert forward shashes

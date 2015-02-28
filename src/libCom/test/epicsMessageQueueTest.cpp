@@ -10,8 +10,6 @@
  *      $Revision-Id$
  *
  *      Author  W. Eric Norum
- *              norume@aps.anl.gov
- *              630 252 4793
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,7 +107,7 @@ receiver(void *arg)
             testDiag("Sender %d -- %d messages", sender, expectmsg[sender-1]-1);
     }
     if (!testOk1(errors == 0))
-        testDiag("error count was %d", errors);
+        testDiag("Receiver finished, error count was %d", errors);
     epicsEventSignal(finished);
 }
 
@@ -127,6 +125,7 @@ sender(void *arg)
             epicsThreadSleep(0.005 * (randBelow(5)));
         epicsThreadSleep(0.005 * (randBelow(20)));
     }
+    testDiag("%s exiting, sent %d messages", epicsThreadGetNameSelf(), i-1);
 }
 
 extern "C" void messageQueueTest(void *parm)
@@ -293,6 +292,7 @@ MAIN(epicsMessageQueueTest)
         messageQueueTest, NULL);
 
     (void) epicsEventWait(finished);
+    epicsThreadSleep(1.0);
 
     return testDone();
 }

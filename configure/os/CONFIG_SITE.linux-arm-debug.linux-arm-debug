@@ -1,8 +1,8 @@
-# CONFIG_SITE.linux-x86_64-debug.linux-x86_64-debug
+# CONFIG_SITE.linux-arm-debug.linux-arm-debug
 #
 # $Revision-Id$
 #
-# Site specific overrides for linux-x86_64 host and target builds
+# Site specific overrides for linux-arm-debug host and target builds
 #-------------------------------------------------------
 
 #Prepares the object code to collect data for profiling with prof. 

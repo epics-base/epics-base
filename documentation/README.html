@@ -107,7 +107,7 @@
  For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or later.</P>
 
 <P><B>GNU readline or Tecla library</B><BR>
- GNU readline and Tecla librararies can be used by the IOC shell to
+ GNU readline and Tecla libraries can be used by the IOC shell to
  provide command line editing and command line history recall and edit.
  GNU readline (or Tecla library) must be installed on your target system
  when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
@@ -130,7 +130,7 @@
 <H3><A NAME="0_0_8"> Documentation</A></H3>
 <BLOCKQUOTE>EPICS documentation is available through the
  <a href="http://www.aps.anl.gov/epics/">EPICS website</a> at Argonne.
- <P>Release specific documenataion can also be found in the base/documentation
+ <P>Release specific documentation can also be found in the base/documentation
  directory of the distribution.</BLOCKQUOTE>
 
 <H3><A NAME="0_0_10"> Directory Structure</A></H3>
@@ -140,7 +140,7 @@
         base                    Root directory of the base distribution
         base/configure          Operating system independent build config files
         base/configure/os       Operating system dependent build config files
-        base/documentation      Distributation documentation
+        base/documentation      Distribution documentation
         base/src                Source code in various subdirectories
         base/startup            Scripts for setting up path and environment
 </PRE>
@@ -165,7 +165,8 @@
 <H3><A NAME="0_0_11"> Build related components</A></H3>
 <BLOCKQUOTE>
 
-<H4>base/documentation/README* files</H4>
+<H4>base/documentation directory - contains setup, build, and install
+ documents</H4>
  <PRE>
         README.1st           Instructions for setup and building epics base
         README.html          html version of README.1st
@@ -196,7 +197,7 @@
         CONFIG_COMMON         Definitions common to all builds
         CONFIG_ENV            Definitions of EPICS environment variables
         CONFIG_FILE_TYPE      
-        CONFIG_SITE           Site specific make defintions
+        CONFIG_SITE           Site specific make definitions
         CONFIG_SITE_ENV       Site defaults for EPICS environment variables
         MAKEFILE              Installs CONFIG* RULES* creates
         RELEASE               Location of external products

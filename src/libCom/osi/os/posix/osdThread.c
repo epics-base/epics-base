@@ -64,12 +64,14 @@ typedef struct commonAttr{
     int                maxPriority;
     int                minPriority;
     int                schedPolicy;
+    int                usePolicy;
 } commonAttr;
 
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
 typedef struct {
     int min_pri, max_pri;
     int policy;
+    int ok;
 } priAvailable;
 #endif
 
@@ -131,6 +133,8 @@ static void setSchedulingPolicy(epicsThreadOSD *pthreadInfo,int policy)
 {
 #if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     int status;
+
+    if(!pcommonAttr->usePolicy) return;
 
     status = pthread_attr_getschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);
@@ -281,6 +285,7 @@ int           low, try;
 
     prm->min_pri = min;
     prm->max_pri = try_pri(max, prm->policy) ? max-1 : max;
+    prm->ok = 1;
 
     return 0;
 }
@@ -293,6 +298,7 @@ void         *dummy;
 int          status;
 
     arg.policy = a_p->schedPolicy;
+    arg.ok = 0;
 
     status = pthread_create(&id, 0, find_pri_range, &arg);
     checkStatusQuit(status, "pthread_create","epicsThreadInit");
@@ -302,6 +308,7 @@ int          status;
 
     a_p->minPriority = arg.min_pri;
     a_p->maxPriority = arg.max_pri;
+    a_p->usePolicy = arg.ok;
 }
 #endif
 
@@ -627,7 +634,8 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
     pthreadInfo->osiPriority = priority;
     if(!pthreadInfo->isRealTimeScheduled) return;
 
-#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
+    if(!pcommonAttr->usePolicy) return;
     pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
     status = pthread_attr_setschedparam(
         &pthreadInfo->attr,&pthreadInfo->schedParam);

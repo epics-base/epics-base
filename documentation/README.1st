@@ -1,6 +1,6 @@
                            Installation Instructions
 
-                          EPICS Base Release 3.15.1
+                           EPICS Base Release 3.15.1
 
    --------------------------------------------------------------------------
 
@@ -102,13 +102,13 @@
      later.
 
      GNU readline or Tecla library
-     GNU readline and Tecla librararies can be used by the IOC shell to
-     provide command line editing and command line history recall and edit.
-     GNU readline (or Tecla library) must be installed on your target system
-     when COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target.
-     EPICS (EPICS shell) is the default specified in CONFIG_COMMON. A
-     READLINE override is defined for linux-x86 in the EPICS distribution.
-     Comment out COMMANDLINE_LIBRARY=READLINE in
+     GNU readline and Tecla libraries can be used by the IOC shell to provide
+     command line editing and command line history recall and edit. GNU
+     readline (or Tecla library) must be installed on your target system when
+     COMMANDLINE_LIBRARY is set to READLINE (or TECLA) for that target. EPICS
+     (EPICS shell) is the default specified in CONFIG_COMMON. A READLINE
+     override is defined for linux-x86 in the EPICS distribution. Comment out
+     COMMANDLINE_LIBRARY=READLINE in
      configure/os/CONFIG_SITE.Common.linux-x86 if readline is not installed
      on linux-x86. Command-line editing and history will then be those
      supplied by the os. On vxWorks the ledLib command-line input library is
@@ -125,7 +125,7 @@
 
      EPICS documentation is available through the EPICS website at Argonne.
 
-     Release specific documenataion can also be found in the
+     Release specific documentation can also be found in the
      base/documentation directory of the distribution.
 
   Directory Structure
@@ -135,7 +135,7 @@
          base                    Root directory of the base distribution
          base/configure          Operating system independent build config files
          base/configure/os       Operating system dependent build config files
-         base/documentation      Distributation documentation
+         base/documentation      Distribution documentation
          base/src                Source code in various subdirectories
          base/startup            Scripts for setting up path and environment
 
@@ -156,7 +156,7 @@
 
   Build related components
 
-    base/documentation/README* files
+    base/documentation directory - contains setup, build, and install documents
 
          README.1st           Instructions for setup and building epics base
          README.html          html version of README.1st
@@ -185,7 +185,7 @@
          CONFIG_COMMON         Definitions common to all builds
          CONFIG_ENV            Definitions of EPICS environment variables
          CONFIG_FILE_TYPE
-         CONFIG_SITE           Site specific make defintions
+         CONFIG_SITE           Site specific make definitions
          CONFIG_SITE_ENV       Site defaults for EPICS environment variables
          MAKEFILE              Installs CONFIG* RULES* creates
          RELEASE               Location of external products

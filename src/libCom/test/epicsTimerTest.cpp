@@ -29,6 +29,41 @@
 #define verify(exp) ((exp) ? (void)0 : \
     epicsAssert(__FILE__, __LINE__, #exp, epicsAssertAuthor))
 
+class notified : public epicsTimerNotify
+{
+public:
+    bool done;
+    notified() : epicsTimerNotify(), done(false) {}
+
+    expireStatus expire(const epicsTime &currentTime)
+    {done=true; return expireStatus(noRestart);}
+};
+
+void testRefCount()
+{
+    notified action;
+
+    epicsTimerQueueActive *Q1, *Q2;
+    epicsTimer *T1, *T2;
+
+    Q1 = &epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
+
+    T1 = &Q1->createTimer();
+    //timer->start(action, 0.0);
+
+    Q2 = &epicsTimerQueueActive::allocate ( true, epicsThreadPriorityMin );
+
+    testOk1(Q1==Q2);
+
+    T2 = &Q2->createTimer();
+
+    T2->destroy();
+    Q2->release();
+
+    T1->destroy();
+    Q1->release();
+}
+
 static const double delayVerifyOffset = 1.0; // sec 
 
 class delayVerify : public epicsTimerNotify {
@@ -419,7 +454,8 @@ void testPeriodic ()
 
 MAIN(epicsTimerTest)
 {
-    testPlan(40);
+    testPlan(41);
+    testRefCount();
     testAccuracy ();
     testCancel ();
     testExpireDestroy ();

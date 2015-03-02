@@ -22,4 +22,6 @@ define MUNCH_CMD
 	$(RTEMS_TOOLS)/bin/$(OBJCOPY_FOR_TARGET) -O binary $< $@
 endef
 
+OP_SYS_LDLIBS += -lbspExt
+
 include $(CONFIG)/os/CONFIG.Common.RTEMS

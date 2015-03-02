@@ -14,6 +14,36 @@
 <h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Build rules for RTEMS GESYS modules</h3>
+
+<p>RTEMS target builds can now be configured to make GESYS modules by changing
+the <CODE>USE_GESYS=NO</code> setting in the file
+configure/os/CONFIG_SITE.Common.RTEMS to <code>YES</code>.</p>
+
+<h3>Added Make variables for command-line use</h3>
+
+<p>The following variables are now used during the build process, reserved for
+setting on the command-line only (Makefiles should continue to use the
+<code>USR_</code> equivalents):</p>
+
+<ul>
+<li>CMD_INCLUDES</li>
+<li>CMD_CPPFLAGS</li>
+<li>CMD_CFLAGS</li>
+<li>CMD_CXXFLAGS</li>
+<li>CMD_LDFLAGS</li>
+<li>CMD_DBFLAGS</li>
+<li>CMD_DBDFLAGS</li>
+<li>CMD_REGRDDFLAGS</li>
+<li>CMD_ARFLAGS</li>
+</ul>
+
+<p>For example:</p>
+
+<blockquote><pre>
+make CMD_INCLUDES=/opt/local/include CMD_LDFLAGS=-L/opt/local/lib
+</pre></blockquote>
+
 <h3>Enhanced API for asTrapWrite listeners</h3>
 
 <p>External software such as the CA Put Logging module that registers a listener

@@ -161,10 +161,10 @@ OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 #
 #	Files and flags needed to link DLLs (used in RULES_BUILD)
 #
+WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) \
+ $(USR_LDFLAGS) $(CMD_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
-WIN32_DLLFLAGS = -subsystem:windows -dll \
-    $(OPT_LDFLAGS) $(USR_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
-
+#
 # specify dll .def file only if it exists
 #
 DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))

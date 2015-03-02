@@ -634,7 +634,7 @@ epicsShareFunc void epicsShareAPI epicsThreadSetPriority(epicsThreadId pthreadIn
     pthreadInfo->osiPriority = priority;
     if(!pthreadInfo->isRealTimeScheduled) return;
 
-#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING)
+#if defined (_POSIX_THREAD_PRIORITY_SCHEDULING) && _POSIX_THREAD_PRIORITY_SCHEDULING > 0
     if(!pcommonAttr->usePolicy) return;
     pthreadInfo->schedParam.sched_priority = epicsThreadGetPosixPriority(pthreadInfo);
     status = pthread_attr_setschedparam(

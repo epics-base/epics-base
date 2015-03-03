@@ -16,7 +16,7 @@ define  RELEASE_FLAGS_template
   RELEASE_INCLUDES += $$(addprefix -I,$$(wildcard $$(strip $$($(1)))/include))
   RELEASE_DBD_DIRS += $$(wildcard $$(strip $$($(1)))/dbd)
   RELEASE_DB_DIRS += $$(wildcard $$(strip $$($(1)))/db)
-  RELEASE_PERL_MODULE_DIRS += $$(wildcard $$($(1)_LIB)/perl)
+  RELEASE_PERL_MODULE_DIRS += $$(wildcard $$(strip $$($(1)))/lib/perl)
 endef
 $(foreach top, $(RELEASE_TOPS), $(eval $(call RELEASE_FLAGS_template,$(top)) ))
 

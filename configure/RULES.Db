@@ -199,7 +199,7 @@ $(COMMON_DIR)/%.substitutions:
 endif
 
 $(INSTALL_DB)/%.substitutions: %.substitutions
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing substitution file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%.substitutions
@@ -213,7 +213,7 @@ $(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
 	@$(RM) $@.VAR
 
 $(INSTALL_DB)/%.template: %.template
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing template file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%.template
@@ -351,7 +351,7 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 else
 
 $(INSTALL_DB)/%: %
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 endif
 

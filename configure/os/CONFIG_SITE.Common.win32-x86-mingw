@@ -4,7 +4,6 @@
 #
 # Site Specific definitions for win32-x86-mingw target
 
-# If readline is not installed comment the following line
-# to omit command-line editing and history support
+# If readline is available uncomment the following line
+# to enable command-line editing and history support
 #COMMANDLINE_LIBRARY = READLINE
-

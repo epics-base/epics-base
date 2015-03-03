@@ -3,8 +3,8 @@
 # $Revision-Id$
 # This file is maintained by the build community.
 #
-# Definitions for solaris-sparc host - solaris-sparc target build
-# Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc
+# Definitions for solaris host - solaris target build
+# Sites may override these definitions in CONFIG_SITE.solarisCommon.solarisCommon
 #-------------------------------------------------------
 
 CMPLR_CLASS = solStudio

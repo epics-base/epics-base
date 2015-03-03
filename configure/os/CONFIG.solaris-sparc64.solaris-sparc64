@@ -3,7 +3,7 @@
 # $Revision-Id$
 # This file is maintained by the build community.
 #
-# Definitions for solaris-sparc Sun compiler host - solaris-sparc Sun compiler target builds
+# Definitions for solaris-sparc64 compiler host - solaris-sparc64 compiler target builds
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc64.solaris-sparc64
 #-------------------------------------------------------
 

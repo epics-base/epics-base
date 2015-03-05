@@ -35,8 +35,8 @@ testHarness_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/analogMonitorTest.dbd ../analogMonitorTest.db
 TESTS += analogMonitorTest
 
-# epicsRunTests runs all the test programs in a known working order.
-testHarness_SRCS += epicsRunTests.c
+# epicsRunRecordTests runs all the test programs in a known working order.
+testHarness_SRCS += epicsRunRecordTests.c
 
 recordTestHarness_SRCS += $(testHarness_SRCS)
 recordTestHarness_SRCS_RTEMS += rtemsTestHarness.c
@@ -44,8 +44,8 @@ recordTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 PROD_vxWorks = recordTestHarness
 PROD_RTEMS = recordTestHarness
 
-TESTSPEC_vxWorks = recordTestHarness.munch; epicsRunTests
-TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunTests
+TESTSPEC_vxWorks = recordTestHarness.munch; epicsRunRecordTests
+TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunRecordTests
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 

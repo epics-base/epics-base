@@ -36,6 +36,15 @@ actionArchTargets = $(foreach action, $(ACTIONS),\
 
 all : install
 
+# Include <top>/cfg/DIR_RULES* files from tops defined in RELEASE* files
+# Do this here so they can add ACTIONS
+#
+RELEASE_CFG_DIR_RULES = $(foreach top, $(RELEASE_TOPS), \
+    $(wildcard $($(top))/cfg/DIR_RULES*))
+ifneq ($(RELEASE_CFG_DIR_RULES),)
+  include $(RELEASE_CFG_DIR_RULES)
+endif
+
 # Allows rebuild to work with parallel builds option, -j.
 ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
 $(foreach dir, $(DIRS), $(dir)$(DIVIDER)install): \
@@ -79,3 +88,7 @@ $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
 .PHONY : $(dirActionArchTargets)
 .PHONY : $(actionArchTargets)
 
+
+#  User specific rules
+#
+-include $(HOME)/configure/RULES_USER

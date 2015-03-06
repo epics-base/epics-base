@@ -13,6 +13,31 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Changes to &lt;top&gt;/cfg/* files</h3>
+
+<p>The order in which cfg/CONFIG* and cfg/RULES* files are included from support
+applications listed in the configure/RELEASE* files has been changed. Previously
+these files were included in the order in which the top areas are listed in the
+RELEASE file, but it makes more sense to load them in reverse order since later
+entries override earlier ones in Makefiles but the release file order is
+supposed to allow earlier entries to take precedence over later ones. The same
+change has been made to the inclusion of the &lt;top&gt;/configure/RULES_BUILD
+files.</p>
+
+<p>Two new file types can also be provided in a module's cfg directory. Files
+named TOP_RULES* will be included by the top-level Makefile of other modules
+that refer to this module; files name DIR_RULES* will be included by all
+Makefiles that merely descend into lower-level directories. The cfg/RULES* files
+are only included when make is building code inside the O.&lt;arch&gt;
+directories.</p>
+
+<p>The new cfg/DIR_RULES* file inclusion was designed to permit new recursive
+make actions to be implemented by appending the name of the new action to the
+ACTIONS variable. There must be a matching rule in one of the cfg/RULES* files
+when doing this. Similar rules may also be defined in the cfg/TOP_RULES* and/or
+cfg/DIR_RULES* files, but these should only state prerequisites and not directly
+provide commands to be executed.</p>
+
 <h3>MinGW Cross-builds from Linux</h3>
 
 <p>Build configuration files have been back-ported from the 3.15 branch that

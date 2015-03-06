@@ -1,7 +1,4 @@
 export TOP
-export IOCAPPS
-
-RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
 
 ifneq ($(RELEASE_TOPS),)
 

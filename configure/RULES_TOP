@@ -82,3 +82,10 @@ help:
 .PHONY: cleandirs distclean cvsclean realuninstall archuninstall uninstallDirs
 .PHONY: uninstall help
 
+# Include <top>/cfg/TOP_RULES* files from tops defined in RELEASE* files
+#
+RELEASE_CFG_TOP_RULES = $(foreach top, $(RELEASE_TOPS), \
+    $(wildcard $($(top))/cfg/TOP_RULES*))
+ifneq ($(RELEASE_CFG_TOP_RULES),)
+  include $(RELEASE_CFG_TOP_RULES)
+endif

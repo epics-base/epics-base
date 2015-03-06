@@ -30,6 +30,15 @@ cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
+# Include <top>/cfg/DIR_RULES* files from tops defined in RELEASE* files
+# Do this here so they can add ACTIONS
+#
+RELEASE_CFG_DIR_RULES = $(foreach top, $(RELEASE_TOPS), \
+    $(wildcard $($(top))/cfg/DIR_RULES*))
+ifneq ($(RELEASE_CFG_DIR_RULES),)
+  include $(RELEASE_CFG_DIR_RULES)
+endif
+
 #*************************************************************************
 # Create epics_host_arch dependancies for GNU make -j option
 # Only works with GNU make 3.81 or later (uses eval function)
@@ -92,3 +101,7 @@ realclean ::
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS) rebuild
 .PHONY : $(ACTIONS) clean realclean archclean all
+
+#  User specific rules
+#
+-include $(HOME)/configure/RULES_USER

@@ -4,17 +4,18 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
-#  $Revision-Id$
+# $Revision-Id$
 #
 
 include $(CONFIG)/RULES_DIRS
 
 distclean: realclean cvsclean realuninstall
 
-CVSCLEAN=$(firstword $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
+CVSCLEAN = $(firstword \
+    $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
 cvsclean:
 	$(PERL) $(CVSCLEAN)
 
@@ -22,17 +23,15 @@ realuninstall: uninstallDirs
 	$(RMDIR) $(INSTALL_LOCATION_BIN)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
 
-UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC)\
-        $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) \
-        $(INSTALL_DB)
+UNINSTALL_DIRS += $(INSTALL_DBD) $(INSTALL_INCLUDE) $(INSTALL_DOC) \
+    $(INSTALL_HTML) $(INSTALL_JAVA) $(INSTALL_TEMPLATES) $(INSTALL_DB)
 UNINSTALL_DIRS += $(DIRECTORY_TARGETS)
 uninstallDirs:
 	$(RMDIR) $(UNINSTALL_DIRS)
 
 uninstall: archuninstall uninstallDirs
 
-archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS))
-	@$(MAKE) -f Makefile cleandirs
+archuninstall: $(addprefix uninstall$(DIVIDER),$(BUILD_ARCHS)) | cleandirs
 
 archPart = $(word 2, $(subst $(DIVIDER), ,$@))
 uninstall$(DIVIDER)%:
@@ -40,14 +39,14 @@ uninstall$(DIVIDER)%:
 	$(RMDIR) $(INSTALL_LOCATION_LIB)/$(archPart)
 
 cleandirs:
+	@$(NOP)
 ifeq ($(wildcard $(INSTALL_LOCATION_BIN)/*),)
 	$(RMDIR) $(INSTALL_LOCATION_BIN)
 endif
 ifeq ($(wildcard $(INSTALL_LOCATION_LIB)/*),)
 	$(RMDIR) $(INSTALL_LOCATION_LIB)
 endif
-	@echo
-# The echo above stops a "nothing to be done for cleandirs" message
+
 
 help:
 	@echo "Usage: gnumake [options] [target] ..."

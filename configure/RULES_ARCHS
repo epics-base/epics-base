@@ -20,13 +20,12 @@ ACTIONS += browse
 ACTIONS += runtests tapfiles
 #ACTIONS += rebuild
 
-actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
-archPart = $(word 2, $(subst $(DIVIDER), ,$@))
+actionArchTargets = $(foreach action, $(ACTIONS), \
+    $(foreach arch, $(BUILD_ARCHS), \
+        $(action)$(DIVIDER)$(arch)))
 
-actionArchTargets = $(foreach x, $(ACTIONS),\
-		$(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
-
-cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
+cleanArchTargets = $(foreach arch, $(BUILD_ARCHS), \
+    clean$(DIVIDER)$(arch))
 
 buildDirs = $(addprefix O.,$(BUILD_ARCHS))
 
@@ -39,28 +38,19 @@ ifneq ($(RELEASE_CFG_DIR_RULES),)
   include $(RELEASE_CFG_DIR_RULES)
 endif
 
-#*************************************************************************
-# Create epics_host_arch dependancies for GNU make -j option
-# Only works with GNU make 3.81 or later (uses eval function)
+# Create EPICS_HOST_ARCH dependancies for GNU make -j option.
 # Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
 # cross arch builds
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
 
-# j is NOT found in MAKEFLAGS when using make 3.81
-# Hope to uncomment this for GNU make 3.82
-#ifeq ($(findstring j,$(MAKEFLAGS)),j)
-
 define DEP_template
 $(2): $$(EPICS_HOST_ARCH)
 $(1)$$(DIVIDER)$(2): $(1)$$(DIVIDER)$$(EPICS_HOST_ARCH) O.$(2)
 endef
-
-$(foreach action, $(ACTIONS), $(foreach arch,\
-      $(CROSS_ARCHS),$(eval $(call DEP_template,$(action),$(arch)))))
-
-#endif
-#*************************************************************************
+$(foreach action, $(ACTIONS), \
+    $(foreach arch, $(CROSS_ARCHS), \
+        $(eval $(call DEP_template,$(action),$(arch)))))
 
 # Allows rebuild to work with parallel builds option, -j.
 ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
@@ -68,8 +58,11 @@ $(buildDirs) O.Common : clean
 rebuild: install
 endif
 
+archPart = $(word 2, $(subst $(DIVIDER), ,$@))
+actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 $(actionArchTargets) : $(buildDirs) O.Common
-	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. T_A=$(archPart) $(actionPart)
+	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. \
+	    T_A=$(archPart) $(actionPart)
 
 $(BUILD_ARCHS) : % : O.% O.Common
 	$(MAKE) -C O.$@ -f ../Makefile TOP=$(TOP)/.. T_A=$@
@@ -82,8 +75,7 @@ $(buildDirs):
 O.Common:
 	$(MKDIR) O.Common
 
-#
-# special clean rule
+# Clean rules
 #
 clean ::
 	$(RMDIR) $(addprefix O.,$(BUILD_ARCHS)) O.Common

@@ -59,8 +59,6 @@ include $(CONFIG)/os/CONFIG.$(EPICS_HOST_ARCH).Common
 -include $(CONFIG)/os/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
 
 RELEASE_TOPS := $(shell $(CONVERTRELEASE) -T $(TOP) releaseTops)
-RELEASE_TOPS_REVERSE := $(shell \
-        $(PERL) -e '$$,=" ";print reverse @ARGV' $(RELEASE_TOPS))
 
 ifdef T_A
 
@@ -92,8 +90,10 @@ endif
 # Include <top>/cfg/CONFIG* definitions from tops defined in RELEASE* files
 #
 ifneq ($(CONFIG),$(TOP)/configure)
+RELEASE_TOPS_REVERSE := $(shell \
+    $(PERL) -e '$$,=" ";print reverse @ARGV' $(RELEASE_TOPS))
 RELEASE_CFG_CONFIGS = $(foreach top, $(RELEASE_TOPS_REVERSE), \
-        $(wildcard $($(top))/cfg/CONFIG*))
+    $(wildcard $($(top))/cfg/CONFIG*))
 ifneq ($(RELEASE_CFG_CONFIGS),)
 include $(RELEASE_CFG_CONFIGS)
 endif

@@ -15,26 +15,21 @@ ARCHS += $(BUILD_ARCHS)
 ACTIONS += inc build install buildInstall clean realclean archclean
 ACTIONS += runtests tapfiles
 
-dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
-
-actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$(notdir $@))), \
- $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@))))) 
-
 dirActionArchTargets = $(foreach dir, $(DIRS), \
-                       $(foreach action, $(ACTIONS),\
-                       $(foreach arch, $(ARCHS), \
-                       $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
+    $(foreach action, $(ACTIONS), \
+        $(foreach arch, $(ARCHS), \
+            $(dir)$(DIVIDER)$(action)$(DIVIDER)$(arch))))
 dirArchTargets += $(foreach dir, $(DIRS), \
-                  $(foreach arch, $(ARCHS),\
-                  $(dir)$(DIVIDER)$(arch)))
+    $(foreach arch, $(ARCHS), \
+        $(dir)$(DIVIDER)$(arch)))
 dirActionTargets += $(foreach dir, $(DIRS), \
-                    $(foreach action, $(ACTIONS),\
-                    $(dir)$(DIVIDER)$(action)))
-actionArchTargets = $(foreach action, $(ACTIONS),\
-                    $(foreach arch, $(ARCHS), \
-                    $(action)$(DIVIDER)$(arch)))
+    $(foreach action, $(ACTIONS), \
+        $(dir)$(DIVIDER)$(action)))
+actionArchTargets = $(foreach action, $(ACTIONS), \
+    $(foreach arch, $(ARCHS), \
+        $(action)$(DIVIDER)$(arch)))
 
-all : install
+all: install
 
 # Include <top>/cfg/DIR_RULES* files from tops defined in RELEASE* files
 # Do this here so they can add ACTIONS
@@ -57,30 +52,42 @@ endif
 define DEP_template1
 $(1): $$($(1)_DEPEND_DIRS)
 endef
-$(foreach dir, $(DIRS),$(eval $(call DEP_template1,$(dir))))
+$(foreach dir, $(DIRS), \
+    $(eval $(call DEP_template1,$(dir))))
 
 define DEP_template2
-$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
+$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS), \
+    $$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
 endef
-$(foreach action, $(ACTIONS), $(foreach dir, $(DIRS),$(eval $(call DEP_template2,$(dir),$(action)))))
+$(foreach action, $(ACTIONS), \
+    $(foreach dir, $(DIRS), \
+        $(eval $(call DEP_template2,$(dir),$(action)))))
 
 define DEP_template3
-$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
+$(1)$$(DIVIDER)$(2) : $$(foreach ddir, $$($(1)_DEPEND_DIRS), \
+    $$(addsuffix $$(DIVIDER)$(2),$$(ddir)))
 endef
-$(foreach arch, $(ARCHS), $(foreach dir, $(DIRS),$(eval $(call DEP_template3,$(dir),$(arch)))))
+$(foreach arch, $(ARCHS), \
+    $(foreach dir, $(DIRS), \
+        $(eval $(call DEP_template3,$(dir),$(arch)))))
 
 define DEP_template4
-$(1)$$(DIVIDER)$(2)$$(DIVIDER)$(3) : $$(foreach ddir, $$($(1)_DEPEND_DIRS),$$(addsuffix $$(DIVIDER)$(2)$$(DIVIDER)$(3),$$(ddir)))
+$(1)$$(DIVIDER)$(2)$$(DIVIDER)$(3) : $$(foreach ddir, $$($(1)_DEPEND_DIRS), \
+    $$(addsuffix $$(DIVIDER)$(2)$$(DIVIDER)$(3),$$(ddir)))
 endef
-$(foreach arch, $(ARCHS), $(foreach action, $(ACTIONS), $(foreach dir, $(DIRS), \
-              $(eval $(call DEP_template4,$(dir),$(action),$(arch))))))
+$(foreach arch, $(ARCHS), \
+    $(foreach action, $(ACTIONS), \
+        $(foreach dir, $(DIRS), \
+            $(eval $(call DEP_template4,$(dir),$(action),$(arch))))))
 
-
+dirPart = $(join $(dir $@), $(word 1, $(subst $(DIVIDER), ,$(notdir $@))))
+actionArchPart = $(join $(word 2, $(subst $(DIVIDER), ,$(notdir $@))), \
+   $(addprefix $(DIVIDER),$(word 3, $(subst $(DIVIDER), ,$(notdir $@))))) 
 $(DIRS) $(dirActionTargets) $(dirArchTargets) $(dirActionArchTargets) :
 	$(MAKE) -C $(dirPart) $(actionArchPart)
 
 $(ARCHS) $(ACTIONS) $(actionArchTargets) :%: \
-	$(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
+    $(foreach dir, $(DIRS), $(dir)$(DIVIDER)%)
 
 .PHONY : $(DIRS) all rebuild
 .PHONY : $(ARCHS) $(ACTIONS)

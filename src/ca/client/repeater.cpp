@@ -89,14 +89,10 @@ static const unsigned short PORT_ANY = 0u;
  */
 static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 {
-    int status;
-    union {
-        struct sockaddr_in ia;
-        struct sockaddr sa;
-    } bd;
-
     SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
+
     if ( sock == INVALID_SOCKET ) {
+	*pSock = sock;
         return SOCKERRNO;
     }
 
@@ -104,6 +100,11 @@ static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
      * no need to bind if unconstrained
      */
     if ( port != PORT_ANY ) {
+        int status;
+        union {
+            struct sockaddr_in ia;
+            struct sockaddr sa;
+        } bd;
 
         memset ( (char *) &bd, 0, sizeof (bd) );
         bd.ia.sin_family = AF_INET;

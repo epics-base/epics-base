@@ -26,6 +26,10 @@ typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
 extern "C" {
 #endif /* __cplusplus */
 
+epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
+epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
+epicsShareFunc void epicsAtomicMemoryBarrierFallback ( void );
+
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
@@ -39,10 +43,6 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
     epicsAtomicMemoryBarrierFallback();
 }
 #endif
-
-epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicMemoryBarrierFallback ( void );
 
 #ifdef __cplusplus
 } /* end of extern "C" */

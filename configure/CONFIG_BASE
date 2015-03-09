@@ -54,7 +54,7 @@ BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 # Where to find the installed build tools
 
 TOOLS = $(EPICS_BASE_HOST_BIN)
-FIND_TOOL = $(firstword $(wildcard $$(TOOLS)/$(1) $(TOP)/src/tools/$(1)))
+FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(TOP)/src/tools/$(1)))
 
 #---------------------------------------------------------------
 # Epics base build tools and tool flags

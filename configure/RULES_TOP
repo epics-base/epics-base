@@ -14,8 +14,7 @@ include $(CONFIG)/RULES_DIRS
 
 distclean: realclean cvsclean realuninstall
 
-CVSCLEAN = $(firstword \
-    $(wildcard $(TOOLS)/cvsclean.pl $(TOP)/src/tools/cvsclean.pl))
+CVSCLEAN = $(call FIND_TOOL,cvsclean.pl)
 cvsclean:
 	$(PERL) $(CVSCLEAN)
 

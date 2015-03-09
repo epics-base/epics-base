@@ -16,16 +16,8 @@
 #ifndef epicsAtomicCD_h
 #define epicsAtomicCD_h
 
-#if defined ( __cplusplus )
-#   define EPICS_ATOMIC_INLINE inline
-#else
-#   define EPICS_ATOMIC_INLINE __inline
-#endif
+#define EPICS_ATOMIC_CMPLR_NAME "SOLSTUDIO"
 
-/* 
- * we have an inline keyword so we can proceed
- * with an os specific inline instantiation
- */
 #include "epicsAtomicOSD.h"
 
 #endif /* epicsAtomicCD_h */

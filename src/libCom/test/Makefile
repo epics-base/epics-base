@@ -22,6 +22,14 @@ epicsTypesTest_SRCS += epicsTypesTest.cpp
 testHarness_SRCS += epicsTypesTest.cpp
 TESTS += epicsTypesTest
 
+TESTPROD_HOST += epicsInlineTest
+epicsInlineTest_SRCS += epicsInlineTest1.c
+epicsInlineTest_SRCS += epicsInlineTest2.c
+epicsInlineTest_SRCS += epicsInlineTest3.cpp
+epicsInlineTest_SRCS += epicsInlineTest4.cpp
+testHarness_SRCS += $(epicsInlineTest_SRCS)
+TESTS += epicsInlineTest
+
 TESTPROD_HOST += epicsCalcTest
 epicsCalcTest_SRCS += epicsCalcTest.cpp
 testHarness_SRCS += epicsCalcTest.cpp

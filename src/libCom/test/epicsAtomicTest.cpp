@@ -248,11 +248,89 @@ template void testCAS < EpicsAtomicPtrT > (void);
 #   pragma warning ( pop )
 #endif
 
+static void testClassify()
+{
+    testDiag("Classify Build conditions");
+#ifdef EPICS_ATOMIC_CMPLR_NAME
+    testDiag("Compiler dependent impl name %s", EPICS_ATOMIC_CMPLR_NAME);
+#else
+    testDiag("Compiler dependent impl name undefined");
+#endif
+#ifdef EPICS_ATOMIC_OS_NAME
+    testDiag("OS dependent impl name %s", EPICS_ATOMIC_OS_NAME);
+#else
+    testDiag("OS dependent impl name undefined");
+#endif
+
+#ifdef __GNUC__
+#if GCC_ATOMIC_INTRINSICS_GCC4_OR_BETTER
+    testDiag("GCC using atomic builtin memory barrier");
+#else
+    testDiag("GCC using asm memory barrier");
+#endif
+#if GCC_ATOMIC_INTRINSICS_AVAIL_INT_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+    testDiag("GCC use builtin for int");
+#endif
+#if GCC_ATOMIC_INTRINSICS_AVAIL_SIZE_T || GCC_ATOMIC_INTRINSICS_AVAIL_EARLIER
+    testDiag("GCC use builtin for size_t");
+#endif
+
+#ifndef EPICS_ATOMIC_INCR_INTT
+    testDiag("Use default epicsAtomicIncrIntT()");
+#endif
+#ifndef EPICS_ATOMIC_INCR_SIZET
+    testDiag("Use default epicsAtomicIncrSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_DECR_INTT
+    testDiag("Use default epicsAtomicDecrIntT()");
+#endif
+#ifndef EPICS_ATOMIC_DECR_SIZET
+    testDiag("Use default epicsAtomicDecrSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_ADD_INTT
+    testDiag("Use default epicsAtomicAddIntT()");
+#endif
+#ifndef EPICS_ATOMIC_ADD_SIZET
+    testDiag("Use default epicsAtomicAddSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_SUB_SIZET
+    testDiag("Use default epicsAtomicSubSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_SET_INTT
+    testDiag("Use default epicsAtomicSetIntT()");
+#endif
+#ifndef EPICS_ATOMIC_SET_SIZET
+    testDiag("Use default epicsAtomicSetSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_SET_PTRT
+    testDiag("Use default epicsAtomicSetPtrT()");
+#endif
+#ifndef EPICS_ATOMIC_GET_INTT
+    testDiag("Use default epicsAtomicGetIntT()");
+#endif
+#ifndef EPICS_ATOMIC_GET_SIZET
+    testDiag("Use default epicsAtomicGetSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_GET_PTRT
+    testDiag("Use default epicsAtomicGetPtrT()");
+#endif
+#ifndef EPICS_ATOMIC_CAS_INTT
+    testDiag("Use default epicsAtomicCmpAndSwapIntT()");
+#endif
+#ifndef EPICS_ATOMIC_CAS_SIZET
+    testDiag("Use default epicsAtomicCmpAndSwapSizeT()");
+#endif
+#ifndef EPICS_ATOMIC_CAS_PTRT
+    testDiag("Use default epicsAtomicCmpAndSwapPtrT()");
+#endif
+#endif /* __GNUC__ */
+}
 
 MAIN ( epicsAtomicTest )
 {
 
     testPlan ( 31 );
+    testClassify ();
 
     testIncrDecr < int > ();
     testIncrDecr < size_t > ();

@@ -15,6 +15,14 @@
 
 #ifndef compilerSpecific_h
 #define compilerSpecific_h
+
+/* The 'inline' key work, possibily with compiler
+ * dependent flags to force inlineing where it would
+ * otherwise not be done.
+ *
+ * Warning: Second guessing the compiler may result in larger code size
+ */
+#define EPICS_ALWAYS_INLINE inline
  
 #ifdef __cplusplus
 

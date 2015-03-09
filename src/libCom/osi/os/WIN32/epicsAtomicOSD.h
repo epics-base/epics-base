@@ -16,6 +16,8 @@
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
 
+#define EPICS_ATOMIC_OS_NAME "WIN32"
+
 #ifdef VC_EXTRALEAN
 #   define VC_EXTRALEAN_DETECTED_epicsAtomicOSD_h
 #else

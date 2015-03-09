@@ -17,10 +17,15 @@
 #define epicsAtomicOSD_h
 
 #include <shareLib.h>
+#include "epicsMMIO.h"
+#include "compilerSpecific.h"
+#include "epicsInterrupt.h"
 
-#define EPICS_ATOMIC_OS_NAME "POSIX"
+#define EPICS_ATOMIC_OS_NAME "RTEMS"
 
-typedef struct EpicsAtomicLockKey {} EpicsAtomicLockKey;
+typedef struct EpicsAtomicLockKey {
+  int key;
+} EpicsAtomicLockKey;
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,13 +41,19 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
-    epicsAtomicMemoryBarrierFallback();
+    rwbarr();
 }
 #endif
 
-epicsShareFunc void epicsAtomicLock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicUnlock ( struct EpicsAtomicLockKey * );
-epicsShareFunc void epicsAtomicMemoryBarrierFallback ( void );
+EPICS_ATOMIC_INLINE void epicsAtomicLock ( struct EpicsAtomicLockKey * pkey )
+{
+    pkey->key = epicsInterruptLock();
+}
+
+EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( struct EpicsAtomicLockKey * pkey )
+{
+    epicsInterruptUnlock(pkey->key);
+}
 
 #ifdef __cplusplus
 } /* end of extern "C" */

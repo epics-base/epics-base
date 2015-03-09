@@ -15,37 +15,28 @@
 
 #ifndef compilerSpecific_h
 #define compilerSpecific_h
- 
-#ifndef _MSC_VER
-#   error compiler/msvc/compilerSpecific.h is only for use with the Microsoft compiler
+
+#if !defined(__SUNPRO_C) && !defined (__SUNPRO_CC)
+#  error Not Solaris Studio
 #endif
 
-#if _MSC_VER >= 1200
-#define EPICS_ALWAYS_INLINE __forceinline
+#if (defined(__SUNPRO_C) && __SUNPRO_C < 0x590) || \
+    (defined(__SUNPRO_CC) && __SUNPRO_CC < 0x590)
+#  define EPICS_ALWAYS_INLINE inline
 #else
-#define EPICS_ALWAYS_INLINE __inline
+#  define EPICS_ALWAYS_INLINE inline __attribute__((always_inline))
 #endif
 
 #ifdef __cplusplus
 
 /*
- * in general we dont like ifdefs but they do allow us to check the
- * compiler version and make the optimistic assumption that 
- * standards incompliance issues will be fixed by future compiler 
- * releases
- */
- 
-/*
  * CXX_PLACEMENT_DELETE - defined if compiler supports placement delete
  * CXX_THROW_SPECIFICATION - defined if compiler supports throw specification
+ *
+ * (our default guess is that the compiler implements the C++ 97 standard)
  */
-#if _MSC_VER >= 1200  /* visual studio 6.0 or later */
-#    define CXX_PLACEMENT_DELETE
-#endif
-
-#if _MSC_VER > 1300  /* some release after visual studio 7 we hope */
-#    define CXX_THROW_SPECIFICATION
-#endif
+#define CXX_THROW_SPECIFICATION
+#define CXX_PLACEMENT_DELETE
 
 #endif /* __cplusplus */
 

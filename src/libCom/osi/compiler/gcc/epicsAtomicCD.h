@@ -20,7 +20,7 @@
 #   error this header is only for use with the gnu compiler
 #endif
 
-#define EPICS_ATOMIC_INLINE __inline__
+#define EPICS_ATOMIC_CMPLR_NAME "GCC"
 
 #define GCC_ATOMIC_CONCAT( A, B ) GCC_ATOMIC_CONCATR(A,B)
 #define GCC_ATOMIC_CONCATR( A, B ) ( A ## B )
@@ -69,7 +69,7 @@ extern "C" {
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
     __sync_synchronize ();
 }
@@ -77,7 +77,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     __sync_synchronize ();
 }
@@ -88,7 +88,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #if GCC_ATOMIC_INTRINSICS_MIN_X86
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
     asm("mfence;");
 }
@@ -98,7 +98,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #if GCC_ATOMIC_INTRINSICS_MIN_X86
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     asm("mfence;");
 }

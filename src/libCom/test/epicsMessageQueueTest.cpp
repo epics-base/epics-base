@@ -25,7 +25,8 @@
 #include "testMain.h"
 
 static const char *msg1 = "1234567890This is a very long message.";
-static volatile int testExit = 0;
+static volatile int sendExit = 0;
+static volatile int recvExit = 0;
 static epicsEventId finished;
 
 /*
@@ -85,10 +86,10 @@ receiver(void *arg)
 
     for (sender = 1 ; sender <= 4 ; sender++)
         expectmsg[sender-1] = 1;
-    while (!testExit) {
+    while (!recvExit) {
         cbuf[0] = '\0';
         len = q->receive(cbuf, sizeof cbuf, 2.0);
-        if (len < 0 && !testExit) {
+        if (len < 0 && !recvExit) {
             testDiag("receiver() received unexpected timeout");
             ++errors;
         }
@@ -104,10 +105,11 @@ receiver(void *arg)
     }
     for (sender = 1 ; sender <= 4 ; sender++) {
         if (expectmsg[sender-1] > 1)
-            testDiag("Sender %d -- %d messages", sender, expectmsg[sender-1]-1);
+            testDiag("Received %d messages from Sender %d",
+                expectmsg[sender-1]-1, sender);
     }
     testOk1(errors == 0);
-    testDiag("Receiver finished");
+    testDiag("Receiver exiting");
     epicsEventSignal(finished);
 }
 
@@ -119,13 +121,13 @@ sender(void *arg)
     int len;
     int i = 0;
 
-    while (!testExit) {
+    while (!sendExit) {
         len = sprintf(cbuf, "%s -- %d.", epicsThreadGetNameSelf(), ++i);
         while (q->trySend((void *)cbuf, len) < 0)
             epicsThreadSleep(0.005 * (randBelow(5)));
         epicsThreadSleep(0.005 * (randBelow(20)));
     }
-    testDiag("%s exiting, sent %d messages", epicsThreadGetNameSelf(), i-1);
+    testDiag("%s exiting, sent %d messages", epicsThreadGetNameSelf(), i);
 }
 
 extern "C" void messageQueueTest(void *parm)
@@ -279,9 +281,15 @@ extern "C" void messageQueueTest(void *parm)
     epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
     epicsThreadCreate("Sender 4", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
 
-    epicsThreadSleep(60.0);
+    for (i = 0; i < 10; i++) {
+        testDiag("... %d", 10 - i);
+        epicsThreadSleep(6.0);
+    }
 
-    testExit = 1;
+    sendExit = 1;
+    epicsThreadSleep(1.0);
+    recvExit = 1;
+    testDiag("Scheduler exiting");
 }
 
 MAIN(epicsMessageQueueTest)
@@ -294,7 +302,8 @@ MAIN(epicsMessageQueueTest)
         epicsThreadGetStackSize(epicsThreadStackMedium),
         messageQueueTest, NULL);
 
-    epicsEventWait(finished);
+    epicsEventMustWait(finished);
+    testDiag("Main thread signalled");
     epicsThreadSleep(1.0);
 
     return testDone();

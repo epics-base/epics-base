@@ -28,6 +28,7 @@ static const char *msg1 = "1234567890This is a very long message.";
 static volatile int sendExit = 0;
 static volatile int recvExit = 0;
 static epicsEventId finished;
+static unsigned int mediumStack;
 
 /*
  * In Numerical Recipes in C: The Art of Scientific Computing (William  H.
@@ -78,6 +79,7 @@ extern "C" void
 receiver(void *arg)
 {
     epicsMessageQueue *q = (epicsMessageQueue *)arg;
+    const char *myName = epicsThreadGetNameSelf();
     char cbuf[80];
     int expectmsg[4];
     int len;
@@ -97,7 +99,8 @@ receiver(void *arg)
                  sender >= 1 && sender <= 4) {
             if (expectmsg[sender-1] != msgNum) {
                 ++errors;
-                testDiag("%s received %d '%.*s' -- expected %d", epicsThreadGetNameSelf(), len, len, cbuf, expectmsg[sender-1]);
+                testDiag("%s received %d '%.*s' -- expected %d",
+                    myName, len, len, cbuf, expectmsg[sender-1]);
             }
             expectmsg[sender-1] = msgNum + 1;
             epicsThreadSleep(0.001 * (randBelow(20)));
@@ -109,7 +112,7 @@ receiver(void *arg)
                 expectmsg[sender-1]-1, sender);
     }
     testOk1(errors == 0);
-    testDiag("Receiver exiting");
+    testDiag("%s exiting", myName);
     epicsEventSignal(finished);
 }
 
@@ -132,6 +135,7 @@ sender(void *arg)
 
 extern "C" void messageQueueTest(void *parm)
 {
+    epicsThreadId myThreadId = epicsThreadGetIdSelf();
     unsigned int i;
     char cbuf[80];
     int len;
@@ -155,20 +159,23 @@ extern "C" void messageQueueTest(void *parm)
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 3);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
 
     want++;
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 2);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
     q1->trySend((void *)msg1, i++);
 
     want++;
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 2);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
     q1->trySend((void *)msg1, i++);
     testOk1(q1->pending() == 3);
 
@@ -178,7 +185,8 @@ extern "C" void messageQueueTest(void *parm)
         testOk(q1->pending() == i, "q1->pending() == %d", i);
         want++;
         if (!testOk1((len == want) & (strncmp(msg1, cbuf, len) == 0)))
-            testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+            testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+                want, want, msg1, len, len, cbuf);
     }
     testOk1(q1->pending() == 0);
 
@@ -196,20 +204,23 @@ extern "C" void messageQueueTest(void *parm)
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 3);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
 
     want++;
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 2);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
     q1->send((void *)msg1, i++, 1.0);
 
     want++;
     len = q1->receive(cbuf, sizeof cbuf);
     testOk1(q1->pending() == 2);
     if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-        testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+        testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+            want, want, msg1, len, len, cbuf);
     q1->send((void *)msg1, i++, 1.0);
     testOk1(q1->pending() == 3);
 
@@ -219,7 +230,8 @@ extern "C" void messageQueueTest(void *parm)
         testOk(q1->pending() == i, "q1->pending() == %d", i);
         want++;
         if (!testOk1((len == want) && (strncmp(msg1, cbuf, len) == 0)))
-            testDiag("wanted:%d '%.*s'   got:%d '%.*s'", want, want, msg1, len, len, cbuf);
+            testDiag("wanted:%d '%.*s'   got:%d '%.*s'",
+                want, want, msg1, len, len, cbuf);
     }
     testOk1(q1->pending() == 0);
 
@@ -235,7 +247,8 @@ extern "C" void messageQueueTest(void *parm)
     testOk1(q1->pending() == 0);
 
     testDiag("Single receiver with invalid size, single sender tests:");
-    epicsThreadCreate("Bad Receiver", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), badReceiver, q1);
+    epicsThreadCreate("Bad Receiver", epicsThreadPriorityMedium,
+        mediumStack, badReceiver, q1);
     epicsThreadSleep(1.0);
     testOk(q1->send((void *)msg1, 10) == 0, "Send with waiting receiver");
     epicsThreadSleep(2.0);
@@ -243,8 +256,9 @@ extern "C" void messageQueueTest(void *parm)
     epicsThreadSleep(2.0);
 
     testDiag("Single receiver, single sender tests:");
-    epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityHigh);
-    epicsThreadCreate("Receiver one", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), receiver, q1);
+    epicsThreadSetPriority(myThreadId, epicsThreadPriorityHigh);
+    epicsThreadCreate("Receiver one", epicsThreadPriorityMedium,
+        mediumStack, receiver, q1);
     for (pass = 1 ; pass <= 3 ; pass++) {
         for (i = 0 ; i < 10 ; i++) {
             if (q1->trySend((void *)msg1, i) < 0)
@@ -256,7 +270,7 @@ extern "C" void messageQueueTest(void *parm)
         case 1:
             if (i<6)
                 testDiag("  priority-based scheduler, sent %d messages", i);
-            epicsThreadSetPriority(epicsThreadGetIdSelf(), epicsThreadPriorityLow);
+            epicsThreadSetPriority(myThreadId, epicsThreadPriorityLow);
             break;
         case 2:
             if (i<10)
@@ -276,13 +290,21 @@ extern "C" void messageQueueTest(void *parm)
      */
     testDiag("Single receiver, multiple sender tests:");
     testDiag("This test lasts 60 seconds...");
-    epicsThreadCreate("Sender 1", epicsThreadPriorityLow, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
-    epicsThreadCreate("Sender 2", epicsThreadPriorityMedium, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
-    epicsThreadCreate("Sender 3", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
-    epicsThreadCreate("Sender 4", epicsThreadPriorityHigh, epicsThreadGetStackSize(epicsThreadStackMedium), sender, q1);
+    testOk(!!epicsThreadCreate("Sender 1", epicsThreadPriorityLow,
+        mediumStack, sender, q1),
+        "Created Sender 1");
+    testOk(!!epicsThreadCreate("Sender 2", epicsThreadPriorityMedium,
+        mediumStack, sender, q1),
+        "Created Sender 2");
+    testOk(!!epicsThreadCreate("Sender 3", epicsThreadPriorityHigh,
+        mediumStack, sender, q1),
+        "Created Sender 3");
+    testOk(!!epicsThreadCreate("Sender 4", epicsThreadPriorityHigh,
+        mediumStack, sender, q1),
+        "Created Sender 4");
 
     for (i = 0; i < 10; i++) {
-        testDiag("... %d", 10 - i);
+        testDiag("... %2d", 10 - i);
         epicsThreadSleep(6.0);
     }
 
@@ -294,13 +316,13 @@ extern "C" void messageQueueTest(void *parm)
 
 MAIN(epicsMessageQueueTest)
 {
-    testPlan(58);
+    testPlan(62);
 
     finished = epicsEventMustCreate(epicsEventEmpty);
+    mediumStack = epicsThreadGetStackSize(epicsThreadStackMedium);
 
     epicsThreadCreate("messageQueueTest", epicsThreadPriorityMedium,
-        epicsThreadGetStackSize(epicsThreadStackMedium),
-        messageQueueTest, NULL);
+        mediumStack, messageQueueTest, NULL);
 
     epicsEventMustWait(finished);
     testDiag("Main thread signalled");

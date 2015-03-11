@@ -19,9 +19,6 @@ ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += runtests tapfiles
 
-actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
-archPart = $(word 2, $(subst $(DIVIDER), ,$@))
-
 actionArchTargets = $(foreach action, $(ACTIONS), \
     $(addprefix $(action)$(DIVIDER), $(BUILD_ARCHS)))
 
@@ -29,9 +26,17 @@ cleanArchTargets = $(addprefix clean$(DIVIDER), $(BUILD_ARCHS))
 
 buildDirs = $(addprefix O., $(BUILD_ARCHS))
 
-#*************************************************************************
-# Create EPICS_HOST_ARCH dependancies for GNU make -j option
-# Needed in dirs where EPICS_HOST_ARCH builds a tool used by
+# Include <top>/cfg/DIR_RULES* files from tops defined in RELEASE* files
+# Do this here so they can add ACTIONS
+#
+RELEASE_CFG_DIR_RULES = $(foreach top, $(RELEASE_TOPS), \
+    $(wildcard $($(top))/cfg/DIR_RULES*))
+ifneq ($(RELEASE_CFG_DIR_RULES),)
+  include $(RELEASE_CFG_DIR_RULES)
+endif
+
+# Create EPICS_HOST_ARCH dependancies for GNU make -j option.
+# Needed in dirs where EPICS_HOST_ARCH build creates a tool used in 
 # cross arch builds
 
 CROSS_ARCHS += $(CROSS1) $(CROSS2)
@@ -40,11 +45,9 @@ define DEP_template
   $(2) : $(EPICS_HOST_ARCH)
   $(1)$(DIVIDER)$(2) : $(1)$(DIVIDER)$(EPICS_HOST_ARCH) O.$(2)
 endef
-
-$(foreach action, $(ACTIONS), $(foreach arch, $(CROSS_ARCHS), \
-    $(eval $(call DEP_template,$(action),$(arch)))))
-
-#*************************************************************************
+$(foreach action, $(ACTIONS), \
+    $(foreach arch, $(CROSS_ARCHS), \
+        $(eval $(call DEP_template,$(action),$(arch)))))
 
 # Allows rebuild to work with parallel builds option, -j.
 ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
@@ -52,8 +55,11 @@ ifeq (rebuild,$(filter rebuild,$(MAKECMDGOALS)))
   rebuild : install
 endif
 
+archPart = $(word 2, $(subst $(DIVIDER), ,$@))
+actionPart = $(word 1, $(subst $(DIVIDER), ,$@))
 $(actionArchTargets) : $(buildDirs) O.Common
-	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. T_A=$(archPart) $(actionPart)
+	$(MAKE) -C O.$(archPart) -f ../Makefile TOP=$(TOP)/.. \
+	    T_A=$(archPart) $(actionPart)
 
 $(BUILD_ARCHS) : % : O.% O.Common
 	$(MAKE) -C O.$@ -f ../Makefile TOP=$(TOP)/.. T_A=$@
@@ -66,8 +72,7 @@ $(buildDirs):
 O.Common:
 	$(MKDIR) O.Common
 
-#
-# special clean rule
+# Clean rules
 #
 clean: archsCommonClean
 
@@ -87,3 +92,7 @@ realclean:
 .PHONY : $(cleanArchTargets)
 .PHONY : $(BUILD_ARCHS) rebuild archsCommonClean
 .PHONY : $(ACTIONS) clean realclean archclean host all
+
+#  User specific rules
+#
+-include $(HOME)/configure/RULES_USER

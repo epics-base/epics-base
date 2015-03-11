@@ -23,6 +23,7 @@
 #	darwin-x86             (Intel based Apple running OSX)
 #	freebsd-x86            (GNU compiler used for host builds)
 #	freebsd-x86_64         (GNU compiler used for host builds)
+#	linux-arm              (GNU compiler used for host builds)
 #	linux-ppc              (GNU compiler used for host builds)
 #	linux-ppc64            (GNU compiler used for host builds)
 #	linux-x86              (GNU compiler used for host builds)
@@ -37,10 +38,13 @@
 #	solaris-x86_64-gnu     (GNU compiler used for host builds)
 #	win32-x86              (MS Visual C++ compiler used for host builds)
 #	win32-x86-mingw        (MinGW compiler used for host builds)
+#	win32-x86-static       (MS Visual C++ compiler used for host builds)
 #	windows-x64            (MS Visual C++ compiler used for host builds)
 #	windows-x64-mingw      (MinGW compiler used for host builds)
+#	windows-x64-static     (MS Visual C++ compiler used for host builds)
 
 #  Debugging builds:
+#	linux-arm-debug        (GNU compiler used for host builds)
 #	linux-x86-debug        (GNU compiler with -g option for host builds)
 #	linux-x86_64-debug     (GNU compiler with -g option for host builds)
 #	solaris-sparc-debug    (sun compiler no optimization,-g for debugging info)
@@ -57,13 +61,13 @@
 #
 #  Currently Supporting:
 
-#       ios-arm
-#       ios-386
+#       ios-arm                 (darwin-x86 host)
+#       ios-386                 (darwin-x86 host)
 #       linux-386               (linux-x86 host)
 #       linux-486               (linux-x86 host)
 #       linux-586               (linux-x86 host)
 #       linux-686               (linux-x86 host)
-#       linux-arm               (linux-x86 host)
+#       linux-arm               (linux-x86 or -x86_64 host)
 #       linux-arm_eb            (linux-x86 host)
 #       linux-arm_el            (linux-x86 host)
 #       linux-athlon            (linux-x86 host)
@@ -98,6 +102,7 @@
 #       RTEMS-pc386
 #       RTEMS-psim
 #       RTEMS-uC5282
+#       win32-x86-mingw         (linux-x86 or -x86_64 host)
 #
 
 # Which target architectures to cross-compile for.
@@ -147,7 +152,7 @@ CROSS_WARN=YES
 
 # Use POSIX thread priority scheduling (if available).
 #  Must be either YES or NO
-USE_POSIX_THREAD_PRIORITY_SCHEDULING = NO
+USE_POSIX_THREAD_PRIORITY_SCHEDULING = YES
 
 # Site version number, if set will append '-' and this string to the
 #  EPICS version number string that is reported by many tools.

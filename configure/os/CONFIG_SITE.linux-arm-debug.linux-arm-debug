@@ -1,0 +1,13 @@
+# CONFIG_SITE.linux-arm-debug.linux-arm-debug
+#
+# $Revision-Id$
+#
+# Site specific overrides for linux-arm-debug host and target builds
+#-------------------------------------------------------
+
+#Prepares the object code to collect data for profiling with prof. 
+#PROFILE=YES
+
+#Compiles for profiling with the gprof profiler.
+#GPROF=YES
+

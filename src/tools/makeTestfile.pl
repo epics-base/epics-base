@@ -10,7 +10,7 @@
 
 # The makeTestfile.pl script generates a file $target.t which is needed
 # because some versions of the Perl test harness can only run test scripts
-# that are actually written in Perl.  The script we generate execs the
+# that are actually written in Perl.  The script we generate runs the
 # real test program which must be in the same directory as the .t file.
 # If the script is given an argument -tap it sets HARNESS_ACTIVE in the
 # environment to make the epicsUnitTest code generate strict TAP output.
@@ -23,12 +23,21 @@ use strict;
 
 my ($target, $exe) = @ARGV;
 
+# Use system on Windows, exec doesn't work the same there and
+# GNUmake thinks the test has finished as soon as Perl exits.
+my $exec = $^O eq 'MSWin32' ? "system('./$exe') == 0" : "exec './$exe'";
+
 open(my $OUT, '>', $target) or die "Can't create $target: $!\n";
 
 print $OUT <<EOF;
 #!/usr/bin/perl
+
+use strict;
+use Cwd 'abs_path';
+
 \$ENV{HARNESS_ACTIVE} = 1 if scalar \@ARGV && shift eq '-tap';
-exec './$exe' or die 'exec failed';
+\$ENV{TOP} = abs_path(\$ENV{TOP}) if exists \$ENV{TOP};
+$exec or die "Can't run $exe: \$!\\n";
 EOF
 
 close $OUT or die "Can't close $target: $!\n";

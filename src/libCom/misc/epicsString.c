@@ -100,7 +100,7 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
             { /* \xXXX... */
                 unsigned int u = 0;
 
-                if (!srclen-- || !(c = *src++))
+                if (!srclen-- || !(c = *src++ & 0xff))
                     goto done;
 
                 while (isxdigit(c)) {
@@ -108,7 +108,7 @@ int epicsStrnRawFromEscaped(char *dst, size_t dstlen, const char *src,
                     if (u > 0xff) {
                         /* Undefined behaviour! */
                     }
-                    if (!srclen-- || !(c = *src++)) {
+                    if (!srclen-- || !(c = *src++ & 0xff)) {
                         OUT(u);
                         goto done;
                     }
@@ -153,7 +153,7 @@ int epicsStrnEscapedFromRaw(char *dst, size_t dstlen, const char *src,
         case '\'': OUT('\\'); OUT('\''); break;
         case '\"': OUT('\\'); OUT('\"'); break;
         default:
-            if (isprint(c)) {
+            if (isprint(c & 0xff)) {
                 OUT(c);
                 break;
             }
@@ -183,7 +183,7 @@ size_t epicsStrnEscapedFromRawSize(const char *src, size_t srclen)
             ndst++;
             break;
         default:
-            if (!isprint(c))
+            if (!isprint(c & 0xff))
                 ndst += 3;
         }
     }
@@ -247,7 +247,7 @@ int epicsStrPrintEscaped(FILE *fp, const char *s, size_t len)
        case '\'':  nout += fprintf(fp, "\\'");  break;
        case '\"':  nout += fprintf(fp, "\\\"");  break;
        default:
-           if (isprint((int)c))
+           if (isprint(0xff & (int)c))
                nout += fprintf(fp, "%c", c);
            else
                nout += fprintf(fp, "\\%03o", (unsigned char)c);

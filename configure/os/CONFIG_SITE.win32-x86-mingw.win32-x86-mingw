@@ -3,15 +3,9 @@
 # $Revision-Id$
 #
 # Site Specific definitions for win32-x86-mingw target
-# Only the local epics system manager should modify this file
 
+# The MinGW bin directory must be in your path.
 
-# Uncomment the following settings for MinGW_w32 releases
-# <MinGW directory>/bin should be in your path
-#CMPLR_PREFIX=i686-w64-mingw32-
-#CC = $(CMPLR_PREFIX)gcc
-#CCC = $(CMPLR_PREFIX)g++
-#AR = $(CMPLR_PREFIX)ar -rc
-#LD = $(CMPLR_PREFIX)ld -r
-#RANLIB = $(CMPLR_PREFIX)ranlib
-
+# Set the compiler prefix for your MinGW installation
+#CMPLR_PREFIX = i686-w64-mingw32-
+#CMPLR_PREFIX = i586-mingw32msvc-

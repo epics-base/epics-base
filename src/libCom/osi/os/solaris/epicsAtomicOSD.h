@@ -13,8 +13,12 @@
  *  johill@lanl.gov
  */
 
+#include "shareLib.h"
+
 #ifndef epicsAtomicOSD_h
 #define epicsAtomicOSD_h
+
+#define EPICS_ATOMIC_OS_NAME "Solaris"
 
 #if defined ( __SunOS_5_10 )
 
@@ -31,7 +35,7 @@ extern "C" {
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()  
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
     membar_consumer ();
 }
@@ -39,7 +43,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()  
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     membar_producer ();
 }
@@ -47,7 +51,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_CAS_INTT
 #define EPICS_ATOMIC_CAS_INTT
-EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget, 
+EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                                int oldVal, int newVal )
 {
     STATIC_ASSERT ( sizeof ( int ) == sizeof ( unsigned ) );
@@ -59,7 +63,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 
 #ifndef EPICS_ATOMIC_CAS_SIZET
 #define EPICS_ATOMIC_CAS_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( 
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
                                                   size_t * pTarget,
                                                   size_t oldVal, size_t newVal )
 {
@@ -71,7 +75,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT (
 
 #ifndef EPICS_ATOMIC_CAS_PTRT
 #define EPICS_ATOMIC_CAS_PTRT
-EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
                                        EpicsAtomicPtrT * pTarget, 
                                        EpicsAtomicPtrT oldVal, 
                                        EpicsAtomicPtrT newVal )
@@ -132,7 +136,7 @@ EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta )
 
 #ifndef EPICS_ATOMIC_ADD_SIZET
 #define EPICS_ATOMIC_ADD_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
                                                  size_t delta )
 {
     STATIC_ASSERT ( sizeof ( ulong_t  ) == sizeof ( size_t ) );
@@ -143,7 +147,7 @@ EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget,
 
 #ifndef EPICS_ATOMIC_SUB_SIZET
 #define EPICS_ATOMIC_SUB_SIZET
-EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget,
                                                  size_t delta )
 {
     STATIC_ASSERT ( sizeof ( ulong_t ) == sizeof ( size_t ) );

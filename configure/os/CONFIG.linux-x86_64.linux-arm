@@ -1,0 +1,8 @@
+# CONFIG.linux-x86_64.linux-arm
+#
+# Definitions for linux-x86_64 host - linux-arm target builds
+# Sites may override these definitions in CONFIG_SITE.linux-x86_64.linux-arm
+#-------------------------------------------------------
+
+include $(CONFIG)/os/CONFIG.linux-x86.linux-arm
+

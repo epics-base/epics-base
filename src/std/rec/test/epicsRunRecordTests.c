@@ -15,7 +15,7 @@
 int analogMonitorTest(void);
 int arrayOpTest(void);
 
-void epicsRunTests(void)
+void epicsRunRecordTests(void)
 {
     testHarness();
 

@@ -94,7 +94,7 @@ include $(CONFIG)/RULES_TARGET
 # Read dependency files
 
 ifneq (,$(strip $(HDEPENDS_FILES)))
-$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): $(COMMON_INC)
+$(filter-out $(wildcard *$(DEP)), $(HDEPENDS_FILES)): | $(COMMON_INC)
 -include $(HDEPENDS_FILES)
 endif
 
@@ -215,15 +215,16 @@ $(TESTPRODNAME) $(PRODNAME): %$(EXE):
 %.o : %.cc
 %.o : %.cpp
 
-%$(OBJ): %.c $(COMMON_INC) $(INSTALL_INC)
+# Include files are order-only prerequisites for compilation:
+%$(OBJ): %.c | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.c) -c $<
 
-%$(OBJ): %.cc $(COMMON_INC) $(INSTALL_INC)
+%$(OBJ): %.cc | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 
-%$(OBJ): %.cpp $(COMMON_INC) $(INSTALL_INC)
+%$(OBJ): %.cpp | $(COMMON_INC) $(INSTALL_INC)
 	@$(RM) $@
 	$(COMPILE.cpp) -c $<
 
@@ -309,6 +310,12 @@ $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 
 #---------------------------------------------------------------
 # Automated testing
+
+# GeSys modules for RTEMS
+$(MODNAME): %$(MODEXT): %$(EXE)
+	@echo "Building module $@"
+	@$(RM) $@
+	$(LINK.mod)
 
 runtests: $(TESTSCRIPTS)
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^

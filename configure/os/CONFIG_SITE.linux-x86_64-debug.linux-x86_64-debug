@@ -2,10 +2,8 @@
 #
 # $Revision-Id$
 #
-# Site specific override definitions for solaris-sparc host builds
-# Only the local epics system manager should modify this file
-
-
+# Site specific overrides for linux-x86_64 host and target builds
+#-------------------------------------------------------
 
 #Prepares the object code to collect data for profiling with prof. 
 #PROFILE=YES

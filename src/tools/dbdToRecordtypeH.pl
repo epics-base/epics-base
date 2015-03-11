@@ -112,13 +112,16 @@ if ($opt_D) {   # Output dependencies only, to stdout
 
 sub oldtables {
     # Output compatible with R3.14.x
-    print OUTFILE "#ifdef __cplusplus\n" .
+    print OUTFILE
+        "#include <epicsAssert.h>\n" .
+        "#include <epicsExport.h>\n" .
+        "#ifdef __cplusplus\n" .
         "extern \"C\" {\n" .
         "#endif\n" .
-        "#include <epicsExport.h>\n" .
         "static int ${rn}RecordSizeOffset(dbRecordType *prt)\n" .
         "{\n" .
-        "    ${rn}Record *prec = 0;\n" .
+        "    ${rn}Record *prec = 0;\n\n" .
+        "    assert(prt->no_fields == " . scalar($rtyp->fields) . ");\n" .
         join("\n", map {
                 "    prt->papFldDes[${rn}Record" . $_->name . "]->size = " .
                 "sizeof(prec->" . $_->C_name . ");"

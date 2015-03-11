@@ -19,14 +19,6 @@
 #include "epicsAssert.h"
 #include "epicsAtomic.h"
 
-// if the compiler is unable to inline then instantiate out-of-line
-#ifndef EPICS_ATOMIC_INLINE
-#   define EPICS_ATOMIC_INLINE
-#   include "epicsAtomicOSD.h"
-#endif
-
-#ifndef EPICS_ATOMIC_LOCK
-
 /*
  * Slow, but probably correct on all systems.
  * Useful only if something more efficient isn`t 
@@ -69,31 +61,14 @@ void epicsAtomicUnlock ( EpicsAtomicLockKey * )
     assert ( status == 0 );
 }
 
-#endif // ifndef EPICS_ATOMIC_LOCK
 
-#ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 // Slow, but probably correct on all systems.
 // Useful only if something more efficient isn`t 
 // provided based on knowledge of the compiler 
 // or OS 
-void epicsAtomicReadMemoryBarrier ()
+void epicsAtomicMemoryBarrierFallback (void)
 {
     EpicsAtomicLockKey key;
     epicsAtomicLock ( & key  );
     epicsAtomicUnlock ( & key  );
 }
-#endif
-
-#ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-// Slow, but probably correct on all systems.
-// Useful only if something more efficient isn`t 
-// provided based on knowledge of the compiler 
-// or OS 
-void epicsAtomicWriteMemoryBarrier ()
-{
-    EpicsAtomicLockKey key;
-    epicsAtomicLock ( & key  );
-    epicsAtomicUnlock ( & key  );
-}
-#endif
-

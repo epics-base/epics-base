@@ -14,7 +14,7 @@ TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS += xRecord.c
 dbTestIoc_SRCS += dbLinkdset.c
-dbTestIoc_LIBS = dbCore
+dbTestIoc_LIBS = dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
 dbTestIoc_DBD += menuGlobal.dbd

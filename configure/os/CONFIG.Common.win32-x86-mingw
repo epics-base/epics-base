@@ -36,6 +36,7 @@ ARCH_DEP_LDFLAGS += -m32
 OP_SYS_CPPFLAGS = -D_MINGW
 
 EXE = .exe
+RES = .coff
 
 # Use .o for static object files, .obj for shared library object files
 OBJ_NO  = .o

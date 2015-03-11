@@ -276,7 +276,7 @@ int rsrv_init (void)
 
     status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
     if ( status || maxBytesAsALong < 0 ) {
-        errlogPrintf ( "cas: EPICS_CA_MAX_ARRAY_BYTES was not a positive integer\n" );
+        errlogPrintf ( "CAS: EPICS_CA_MAX_ARRAY_BYTES was not a positive integer\n" );
         rsrvSizeofLargeBufTCP = MAX_TCP;
     }
     else {
@@ -290,7 +290,7 @@ int rsrv_init (void)
             maxBytes = 0xffffffff;
         }
         if ( maxBytes < MAX_TCP ) {
-            errlogPrintf ( "cas: EPICS_CA_MAX_ARRAY_BYTES was rounded up to %u\n", MAX_TCP );
+            errlogPrintf ( "CAS: EPICS_CA_MAX_ARRAY_BYTES was rounded up to %u\n", MAX_TCP );
             rsrvSizeofLargeBufTCP = MAX_TCP;
         }
         else {
@@ -571,7 +571,7 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
             }
             else {
-                errlogPrintf ( "cas: Corrupt send buffer free list type code=%u during client cleanup?\n",
+                errlogPrintf ( "CAS: Corrupt send buffer free list type code=%u during client cleanup?\n",
                     client->send.type );
             }
         }
@@ -583,7 +583,7 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
             }
             else {
-                errlogPrintf ( "cas: Corrupt recv buffer free list type code=%u during client cleanup?\n",
+                errlogPrintf ( "CAS: Corrupt recv buffer free list type code=%u during client cleanup?\n",
                     client->send.type );
             }
         }

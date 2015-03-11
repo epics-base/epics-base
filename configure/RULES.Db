@@ -29,9 +29,9 @@ vpath %.acs $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 DBD_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DBD) $(RELEASE_DBD_DIRS)
 DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
 
-DBDFLAGS = $(USR_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
-DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
-REGRDDFLAGS = $(DBDFLAGS) $($*_REGRDDFLAGS) $(USR_REGRDDFLAGS)
+DBDFLAGS = $(USR_DBDFLAGS) $(CMD_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
+DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(CMD_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
+REGRDDFLAGS = $(DBDFLAGS) $($*_REGRDDFLAGS) $(USR_REGRDDFLAGS) $(CMD_REGRDDFLAGS)
 
 ##################################################### Targets
 
@@ -300,11 +300,11 @@ $(COMMON_DIR)/%$(SUBST_SUFFIX):
 endif
 
 $(INSTALL_DB)/%$(SUBST_SUFFIX): %$(SUBST_SUFFIX)
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing substitution file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DB)/%$(SUBST_SUFFIX): ../%$(SUBST_SUFFIX)
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing substitution file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%$(SUBST_SUFFIX)
@@ -318,11 +318,11 @@ $(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf
 	@$(RM) $@.VAR
 
 $(INSTALL_DB)/%.template: %.template
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing template file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DB)/%.template: ../%.template
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing template file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 .PRECIOUS: $(COMMON_DIR)/%.template
@@ -508,11 +508,11 @@ $(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
 else
 
 $(INSTALL_DB)/%: %
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
 $(INSTALL_DB)/%: ../%
-	$(ECHO) "Installing db file $@"
+	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 endif
 

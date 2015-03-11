@@ -19,6 +19,7 @@
 #define epicsSingleton_h
 
 #include <new>
+#include <cstddef>
 
 #include "shareLib.h"
 #include "epicsAssert.h"

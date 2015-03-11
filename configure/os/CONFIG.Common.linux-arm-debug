@@ -1,0 +1,13 @@
+# CONFIG.Common.linux-arm-debug
+#
+# $Revision-Id$
+# This file is maintained by the build community.
+#
+# Definitions for linux-arm with debug compiler flags
+# Override these settings in CONFIG_SITE.Common.linux-arm-debug
+#-------------------------------------------------------
+
+# Include definitions common to all linux-arm target archs
+include $(CONFIG)/os/CONFIG.Common.linux-arm
+
+HOST_OPT=NO

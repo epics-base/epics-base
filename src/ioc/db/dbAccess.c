@@ -739,6 +739,11 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
         if (nRequest && *nRequest > 1) *nRequest = 1;
         break;
 
+    case DBR_DOUBLE:    /* Needed for dbCa links */
+        if (nRequest && *nRequest) *nRequest = 1;
+        *(double *)pbuf = epicsNAN;
+        return 0;
+
     case DBR_CHAR:
     case DBR_UCHAR:
             if (nRequest && *nRequest > 0) {

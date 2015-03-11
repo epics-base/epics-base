@@ -4,8 +4,8 @@
 #-------------------------------------------------------
 
 # Early versions of the MinGW cross-build tools can only build
-# static (non-DLL) libraries. The version of gcc 4.6.3 for Ubuntu
-# succeeds, but Fedora's 4.4.6 does not and needs these uncommented:
+# static (non-DLL) libraries. For example RHEL's cross-gcc 4.4.6
+# needs these uncommented, cross-gcc 4.6.3 for Ubuntu does not:
 SHARED_LIBRARIES = NO
 STATIC_BUILD = YES
 
@@ -18,4 +18,5 @@ STATIC_BUILD = YES
 #CMPLR_PREFIX = i686-w64-mingw32-
 # RHEL:
 CMPLR_PREFIX = i686-pc-mingw32-
-
+# Debian?
+#CMPLR_PREFIX = i586-mingw32msvc-

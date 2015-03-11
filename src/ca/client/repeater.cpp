@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
@@ -15,26 +14,6 @@
  *
  * Author:  Jeff Hill
  * Date:    3-27-90
- *
- *  Control System Software for the GTA Project
- *
- *  Copyright 1988, 1989, the Regents of the University of California.
- *
- *  This software was produced under a U.S. Government contract
- *  (W-7405-ENG-36) at the Los Alamos National Laboratory, which is
- *  operated by the University of California for the U.S. Department
- *  of Energy.
- *
- *  Developed by the Controls and Automation Group (AT-8)
- *  Accelerator Technology Division
- *  Los Alamos National Laboratory
- *
- *  Direct inqueries to:
- *  Jeff HIll, AT-8, Mail Stop H820
- *  Los Alamos National Laboratory
- *  Los Alamos, New Mexico 87545
- *  Phone: (505) 665-1831
- *  E-mail: johill@lanl.gov
  *
  *  PURPOSE:
  *  Broadcasts fan out over the LAN, but old IP kernels do not allow
@@ -108,23 +87,24 @@ static const unsigned short PORT_ANY = 0u;
 /*
  * makeSocket()
  */
-static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
+static int makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
 {
-    int status;
-	union {
-		struct sockaddr_in ia;
-		struct sockaddr sa;
-	} bd;
-
     SOCKET sock = epicsSocketCreate ( AF_INET, SOCK_DGRAM, 0 );     
+
     if ( sock == INVALID_SOCKET ) {
-        return false;
+	*pSock = sock;
+        return SOCKERRNO;
     }
 
     /*
      * no need to bind if unconstrained
      */
     if ( port != PORT_ANY ) {
+        int status;
+        union {
+            struct sockaddr_in ia;
+            struct sockaddr sa;
+        } bd;
 
         memset ( (char *) &bd, 0, sizeof (bd) );
         bd.ia.sin_family = AF_INET;
@@ -132,15 +112,16 @@ static bool makeSocket ( unsigned short port, bool reuseAddr, SOCKET * pSock )
         bd.ia.sin_port = htons ( port );  
         status = bind ( sock, &bd.sa, (int) sizeof(bd) );
         if ( status < 0 ) {
+            status = SOCKERRNO;
             epicsSocketDestroy ( sock );
-            return false;
+            return status;
         }
         if ( reuseAddr ) {
             epicsSocketEnableAddressReuseDuringTimeWaitState ( sock );
         }
     }
     *pSock = sock;
-    return true;
+    return 0;
 }
 
 repeaterClient::repeaterClient ( const osiSockAddr &fromIn ) :
@@ -156,10 +137,10 @@ bool repeaterClient::connect ()
 {
     int status;
 
-    if ( ! makeSocket ( PORT_ANY, false, & this->sock ) ) {
+    if ( int sockerrno = makeSocket ( PORT_ANY, false, & this->sock ) ) {
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
         fprintf ( stderr, "%s: no client sock because \"%s\"\n",
                 __FILE__, sockErrBuf );
         return false;
@@ -300,20 +281,25 @@ inline bool repeaterClient::identicalPort ( const osiSockAddr &fromIn )
 bool repeaterClient::verify ()
 {
     SOCKET tmpSock;
-    bool success = makeSocket ( this->port (), false, & tmpSock );
-    if ( success ) {
+    int sockerrno = makeSocket ( this->port (), false, & tmpSock );
+
+    if ( sockerrno == SOCK_EADDRINUSE ) {
+        // Normal result, client using port
+        return true;
+    }
+
+    if ( sockerrno == 0 ) {
+        // Client went away, released port
         epicsSocketDestroy ( tmpSock );
     }
     else {
-        if ( SOCKERRNO != SOCK_EADDRINUSE ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( 
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            fprintf ( stderr, "CA Repeater: bind test err was \"%s\"\n", 
-                sockErrBuf );
-        }
+        char sockErrBuf[64];
+        epicsSocketConvertErrorToString (
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
+        fprintf ( stderr, "CA Repeater: Bind test error \"%s\"\n",
+            sockErrBuf );
     }
-    return ! success;
+    return false;
 }
 
 
@@ -387,10 +373,10 @@ static void register_new_client ( osiSockAddr & from,
 
         if ( ! init ) {
             SOCKET sock;
-            if ( ! makeSocket ( PORT_ANY, true, & sock ) ) {
+            if ( int sockerrno = makeSocket ( PORT_ANY, true, & sock ) ) {
                 char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( 
-                    sockErrBuf, sizeof ( sockErrBuf ) );
+                epicsSocketConvertErrorToString ( 
+                    sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
                 fprintf ( stderr, "%s: Unable to create repeater bind test socket because \"%s\"\n",
                     __FILE__, sockErrBuf );
             }
@@ -511,18 +497,18 @@ void ca_repeater ()
 
     port = envGetInetPortConfigParam ( & EPICS_CA_REPEATER_PORT,
                                        static_cast <unsigned short> (CA_REPEATER_PORT) );
-    if ( ! makeSocket ( port, true, & sock ) ) {
+    if ( int sockerrno = makeSocket ( port, true, & sock ) ) {
         /*
          * test for server was already started
          */
-        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
+        if ( sockerrno == SOCK_EADDRINUSE ) {
             osiSockRelease ();
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
             return;
         }
         char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
+        epicsSocketConvertErrorToString ( 
+            sockErrBuf, sizeof ( sockErrBuf ), sockerrno );
         fprintf ( stderr, "%s: Unable to create repeater socket because \"%s\" - fatal\n",
             __FILE__, sockErrBuf );
         osiSockRelease ();

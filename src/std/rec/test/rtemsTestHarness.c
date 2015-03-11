@@ -5,10 +5,10 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-extern void epicsRunTests(void);
+extern void epicsRunRecordTests(void);
 
 int main(int argc, char **argv)
 {
-    epicsRunTests();  /* calls epicsExit(0) */
+    epicsRunRecordTests();  /* calls epicsExit(0) */
     return 0;
 }

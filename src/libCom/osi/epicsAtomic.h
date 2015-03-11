@@ -17,7 +17,9 @@
 
 #include <stdlib.h> /* define size_t */
 
-#include "shareLib.h"
+#include "compilerSpecific.h"
+
+#define EPICS_ATOMIC_INLINE static EPICS_ALWAYS_INLINE
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,10 +28,10 @@ extern "C" {
 typedef void * EpicsAtomicPtrT;
 
 /* load target into cache */
-epicsShareFunc void epicsAtomicReadMemoryBarrier ();
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void);
 
 /* push cache version of target into target */
-epicsShareFunc void epicsAtomicWriteMemoryBarrier ();
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void);
 
 /*
  * lock out other smp processors from accessing the target,
@@ -37,8 +39,8 @@ epicsShareFunc void epicsAtomicWriteMemoryBarrier ();
  * to target, allow other smp processors to access the target,
  * return new value of target as modified by this operation
  */
-epicsShareFunc size_t epicsAtomicIncrSizeT ( size_t * pTarget );
-epicsShareFunc int epicsAtomicIncrIntT ( int * pTarget );
+EPICS_ATOMIC_INLINE size_t epicsAtomicIncrSizeT ( size_t * pTarget );
+EPICS_ATOMIC_INLINE int epicsAtomicIncrIntT ( int * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
@@ -46,8 +48,8 @@ epicsShareFunc int epicsAtomicIncrIntT ( int * pTarget );
  * to target, allow out other smp processors to access the target,
  * return new value of target as modified by this operation
  */
-epicsShareFunc size_t epicsAtomicDecrSizeT ( size_t * pTarget );
-epicsShareFunc int epicsAtomicDecrIntT ( int * pTarget );
+EPICS_ATOMIC_INLINE size_t epicsAtomicDecrSizeT ( size_t * pTarget );
+EPICS_ATOMIC_INLINE int epicsAtomicDecrIntT ( int * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
@@ -55,23 +57,23 @@ epicsShareFunc int epicsAtomicDecrIntT ( int * pTarget );
  * to target, allow other smp processors to access the target,
  * return new value of target as modified by this operation
  */
-epicsShareFunc size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta );
-epicsShareFunc size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta );
-epicsShareFunc int epicsAtomicAddIntT ( int * pTarget, int delta );
+EPICS_ATOMIC_INLINE size_t epicsAtomicAddSizeT ( size_t * pTarget, size_t delta );
+EPICS_ATOMIC_INLINE size_t epicsAtomicSubSizeT ( size_t * pTarget, size_t delta );
+EPICS_ATOMIC_INLINE int epicsAtomicAddIntT ( int * pTarget, int delta );
 
 /*
  * set cache version of target, flush cache to target 
  */
-epicsShareFunc void epicsAtomicSetSizeT  ( size_t * pTarget, size_t newValue ); 
-epicsShareFunc void epicsAtomicSetIntT ( int * pTarget, int newValue );
-epicsShareFunc void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newValue );
+EPICS_ATOMIC_INLINE void epicsAtomicSetSizeT  ( size_t * pTarget, size_t newValue );
+EPICS_ATOMIC_INLINE void epicsAtomicSetIntT ( int * pTarget, int newValue );
+EPICS_ATOMIC_INLINE void epicsAtomicSetPtrT ( EpicsAtomicPtrT * pTarget, EpicsAtomicPtrT newValue );
 
 /*
  * fetch target into cache, return new value of target
  */
-epicsShareFunc size_t epicsAtomicGetSizeT ( const size_t * pTarget );
-epicsShareFunc int epicsAtomicGetIntT ( const int * pTarget );
-epicsShareFunc EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget );
+EPICS_ATOMIC_INLINE size_t epicsAtomicGetSizeT ( const size_t * pTarget );
+EPICS_ATOMIC_INLINE int epicsAtomicGetIntT ( const int * pTarget );
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTarget );
 
 /*
  * lock out other smp processors from accessing the target,
@@ -80,11 +82,11 @@ epicsShareFunc EpicsAtomicPtrT epicsAtomicGetPtrT ( const EpicsAtomicPtrT * pTar
  * to access the target, return the original value stored in the
  * target
  */
-epicsShareFunc size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget, 
+EPICS_ATOMIC_INLINE size_t epicsAtomicCmpAndSwapSizeT ( size_t * pTarget,
                                             size_t oldVal, size_t newVal );
-epicsShareFunc int epicsAtomicCmpAndSwapIntT ( int * pTarget, 
+EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
                                             int oldVal, int newVal );
-epicsShareFunc EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT ( 
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT epicsAtomicCmpAndSwapPtrT (
                                             EpicsAtomicPtrT * pTarget, 
                                             EpicsAtomicPtrT oldVal, 
                                             EpicsAtomicPtrT newVal );
@@ -111,119 +113,98 @@ namespace atomic {
 /* 
  * overloaded c++ interface 
  */
-epicsShareFunc size_t increment ( size_t & v );
-epicsShareFunc int increment ( int & v );
-epicsShareFunc size_t decrement ( size_t & v );
-epicsShareFunc int decrement ( int & v );
-epicsShareFunc size_t add ( size_t & v, size_t delta );
-epicsShareFunc int add ( int & v, int delta );
-epicsShareFunc size_t subtract ( size_t & v, size_t delta );
-epicsShareFunc int subtract ( int & v, int delta );
-epicsShareFunc void set ( size_t & v , size_t newValue );
-epicsShareFunc void set ( int & v, int newValue );
-epicsShareFunc void set ( EpicsAtomicPtrT & v, 
-                                     EpicsAtomicPtrT newValue );
-epicsShareFunc size_t get ( const size_t & v );
-epicsShareFunc int get ( const int & v );
-epicsShareFunc EpicsAtomicPtrT get ( const EpicsAtomicPtrT & v );
-epicsShareFunc size_t compareAndSwap ( size_t & v, size_t oldVal, 
-                                                       size_t newVal );
-epicsShareFunc int compareAndSwap ( int & v, int oldVal, int newVal );
-epicsShareFunc EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v, 
-                                                EpicsAtomicPtrT oldVal, 
-                                                EpicsAtomicPtrT newVal );
 
 /************* incr ***************/
-inline size_t increment ( size_t & v )
+EPICS_ATOMIC_INLINE size_t increment ( size_t & v )
 {
     return epicsAtomicIncrSizeT ( & v );
 }
 
-inline int increment ( int & v )
+EPICS_ATOMIC_INLINE int increment ( int & v )
 {
     return epicsAtomicIncrIntT ( & v );
 }
 
 /************* decr ***************/
-inline size_t decrement ( size_t & v )
+EPICS_ATOMIC_INLINE size_t decrement ( size_t & v )
 {
     return epicsAtomicDecrSizeT ( & v );
 }
 
-inline int decrement ( int & v )
+EPICS_ATOMIC_INLINE int decrement ( int & v )
 {
     return epicsAtomicDecrIntT ( & v );
 }
 
 /************* add ***************/
-inline size_t add ( size_t & v, size_t delta )
+EPICS_ATOMIC_INLINE size_t add ( size_t & v, size_t delta )
 {
     return epicsAtomicAddSizeT ( & v, delta );
 }
 
-inline int add ( int & v, int delta )
+EPICS_ATOMIC_INLINE int add ( int & v, int delta )
 {
     return epicsAtomicAddIntT ( & v, delta );
 }
 
 /************* sub ***************/
-inline size_t subtract ( size_t & v, size_t delta )
+EPICS_ATOMIC_INLINE size_t subtract ( size_t & v, size_t delta )
 {
     return epicsAtomicSubSizeT ( & v, delta );
 }
 
-inline int subtract ( int & v, int delta )
+EPICS_ATOMIC_INLINE int subtract ( int & v, int delta )
 {
     return epicsAtomicAddIntT ( & v, -delta );
 }
 
 /************* set ***************/
-inline void set ( size_t & v , size_t newValue ) 
+EPICS_ATOMIC_INLINE void set ( size_t & v , size_t newValue )
 { 
     epicsAtomicSetSizeT  ( & v, newValue ); 
 }
 
-inline void set ( int & v, int newValue )
+EPICS_ATOMIC_INLINE void set ( int & v, int newValue )
 {
     epicsAtomicSetIntT ( & v, newValue );
 }
 
-inline void set ( EpicsAtomicPtrT & v, EpicsAtomicPtrT newValue )
+EPICS_ATOMIC_INLINE void set ( EpicsAtomicPtrT & v, EpicsAtomicPtrT newValue )
 {
     epicsAtomicSetPtrT ( & v, newValue );
 }
 
 /************* get ***************/
-inline size_t get ( const size_t & v )
+EPICS_ATOMIC_INLINE size_t get ( const size_t & v )
 {
     return epicsAtomicGetSizeT ( & v );
 }
 
-inline int get ( const int & v )
+EPICS_ATOMIC_INLINE int get ( const int & v )
 {
     return epicsAtomicGetIntT ( & v );
 }
 
-inline EpicsAtomicPtrT get ( const EpicsAtomicPtrT & v )
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT get ( const EpicsAtomicPtrT & v )
 {
     return epicsAtomicGetPtrT ( & v );
 }
 
 /************* cas ***************/
-inline size_t compareAndSwap ( size_t & v, 
-                                           size_t oldVal, size_t newVal )
+EPICS_ATOMIC_INLINE size_t compareAndSwap ( size_t & v,
+                                          size_t oldVal, size_t newVal )
 {
     return epicsAtomicCmpAndSwapSizeT ( & v, oldVal, newVal );
 }
 
-inline int compareAndSwap ( int & v, int oldVal, int newVal )
+EPICS_ATOMIC_INLINE int compareAndSwap ( int & v, int oldVal, int newVal )
 {
     return epicsAtomicCmpAndSwapIntT ( & v, oldVal, newVal );
 }
 
-inline EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v, 
-                                            EpicsAtomicPtrT oldVal, 
-                                            EpicsAtomicPtrT newVal )
+EPICS_ATOMIC_INLINE EpicsAtomicPtrT compareAndSwap ( EpicsAtomicPtrT & v,
+                                                   EpicsAtomicPtrT oldVal,
+                                                   EpicsAtomicPtrT newVal )
 {
     return epicsAtomicCmpAndSwapPtrT ( & v, oldVal, newVal );
 }

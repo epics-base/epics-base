@@ -1,4 +1,4 @@
-#  CONFIG_SITE.linux-x86.linux-arm
+# CONFIG_SITE.linux-x86.linux-arm
 #
 # $Revision-Id$
 #
@@ -8,7 +8,8 @@
 # Tools install path
 #GNU_DIR = /home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3
 
-GNU_DIR = /net/phoebus/vw/zynq-2011.09
+# APS:
+GNU_DIR = /usr/local/vw/zynq-2011.09
 
 # GNU crosscompiler target name
 GNU_TARGET = arm-xilinx-linux-gnueabi

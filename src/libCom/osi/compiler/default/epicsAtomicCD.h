@@ -16,15 +16,8 @@
 #ifndef epicsAtomicCD_h
 #define epicsAtomicCD_h
 
-#if __STDC_VERSION__ >= 199901L || defined ( __cplusplus )
-#   define EPICS_ATOMIC_INLINE inline
-    /*
-     * We have already defined the public interface in epicsAtomic.h
-     * so there is nothing more to implement if there isnt an inline 
-     * keyword available. Otherwise, if we have an inline keyword
-     * we will proceed with an os specific inline implementation.
-     */
-#   include "epicsAtomicOSD.h"
-#endif
+#define EPICS_ATOMIC_CMPLR_NAME "DEFAULT"
+
+#include "epicsAtomicOSD.h"
 
 #endif /* epicsAtomicCD_h */

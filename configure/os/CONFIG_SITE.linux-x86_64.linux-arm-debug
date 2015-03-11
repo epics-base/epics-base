@@ -1,0 +1,9 @@
+# CONFIG_SITE.linux-x86_64.linux-arm-debug
+#
+# $Revision-Id$
+#
+# Site specific settings for linux-x86_64 host - linux-arm-debug target builds
+#-------------------------------------------------------
+
+# Inherit settings from linux-arm
+include $(CONFIG)/os/CONFIG_SITE.linux-x86.linux-arm

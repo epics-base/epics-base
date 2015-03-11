@@ -20,6 +20,12 @@
 #   error compiler/msvc/compilerSpecific.h is only for use with the Microsoft compiler
 #endif
 
+#if _MSC_VER >= 1200
+#define EPICS_ALWAYS_INLINE __forceinline
+#else
+#define EPICS_ALWAYS_INLINE __inline
+#endif
+
 #ifdef __cplusplus
 
 /*

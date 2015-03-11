@@ -32,13 +32,15 @@
 #include <limits.h>
 #include <vxAtomicLib.h>
 
+#define EPICS_ATOMIC_OS_NAME "VX-ATOMICLIB"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 #ifndef EPICS_ATOMIC_READ_MEMORY_BARRIER
 #define EPICS_ATOMIC_READ_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () 
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void)
 {
     VX_MEM_BARRIER_R ();
 }
@@ -46,7 +48,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier ()
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
 #define EPICS_ATOMIC_WRITE_MEMORY_BARRIER
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () 
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void)
 {
     VX_MEM_BARRIER_W ();
 }
@@ -206,6 +208,8 @@ EPICS_ATOMIC_INLINE int epicsAtomicCmpAndSwapIntT ( int * pTarget,
 #include "vxLib.h"
 #include "intLib.h"
 
+#define EPICS_ATOMIC_OS_NAME "VX-INTLIB"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -232,7 +236,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicUnlock ( EpicsAtomicLockKey * pKey )
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)
  */
-EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () {}
+EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier (void) {}
 #endif
 
 #ifndef EPICS_ATOMIC_WRITE_MEMORY_BARRIER
@@ -241,7 +245,7 @@ EPICS_ATOMIC_INLINE void epicsAtomicReadMemoryBarrier () {}
  * no need for memory barrior since prior to vxWorks 6.6 it is a single cpu system 
  * (we are not protecting against multiple access to memory mapped IO)
  */
-EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier () {}
+EPICS_ATOMIC_INLINE void epicsAtomicWriteMemoryBarrier (void) {}
 #endif
 
 #ifdef __cplusplus

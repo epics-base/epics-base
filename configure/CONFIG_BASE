@@ -53,8 +53,10 @@ BASE_CPPFLAGS += $(OSITHREAD_DEFAULT_STACK_FLAGS_$(OSITHREAD_USE_DEFAULT_STACK))
 #---------------------------------------------------------------
 # Where to find the installed build tools
 #   Windows does not like commands with relative paths starting ../
+#   but the Perl scripts in TOP/src/tools are OK
 
 TOOLS = $(abspath $(EPICS_BASE_HOST_BIN))
+FIND_TOOL = $(firstword $(wildcard $(TOOLS)/$(1) $(TOP)/src/tools/$(1)))
 
 #---------------------------------------------------------------
 # Epics base build tools and tool flags
@@ -64,7 +66,7 @@ DBEXPAND                   = $(PERL) $(TOOLS)/dbdExpand.pl
 DBTORECORDTYPEH            = $(PERL) $(TOOLS)/dbdToRecordtypeH.pl
 DBTOMENUH                  = $(PERL) $(TOOLS)/dbdToMenuH.pl
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
-CONVERTRELEASE             = $(PERL) $(TOOLS)/convertRelease.pl
+CONVERTRELEASE             = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
 
 #-------------------------------------------------------

@@ -83,18 +83,13 @@ testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStatsTest.db
 
-TARGETS += $(COMMON_DIR)/scanIoTest.dbd
-scanIoTest_DBD += menuGlobal.dbd
-scanIoTest_DBD += menuConvert.dbd
 scanIoTest_DBD += menuScan.dbd
-scanIoTest_DBD += yRecord.dbd
 TESTPROD_HOST += scanIoTest
 scanIoTest_SRCS += scanIoTest.c
 scanIoTest_REGRDDFLAGS = -l
-scanIoTest_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+scanIoTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanIoTest.c
-testHarness_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/scanIoTest.dbd ../scanIoTest.db
+TESTFILES += ../scanIoTest.db
 TESTS += scanIoTest
 
 TESTPROD_HOST += dbChannelTest
@@ -142,6 +137,5 @@ include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
-scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
 devx$(DEP): $(COMMON_DIR)/xRecord.h
 

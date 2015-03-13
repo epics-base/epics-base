@@ -14,6 +14,7 @@ TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS += xRecord.c
 dbTestIoc_SRCS += dbLinkdset.c
+dbTestIoc_SRCS += devx.c
 dbTestIoc_LIBS = dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
@@ -21,6 +22,7 @@ dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += menuScan.dbd
 dbTestIoc_DBD += xRecord.dbd
+dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
@@ -141,4 +143,5 @@ include $(TOP)/configure/RULES
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
+devx$(DEP): $(COMMON_DIR)/xRecord.h
 

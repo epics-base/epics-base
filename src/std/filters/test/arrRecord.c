@@ -97,6 +97,12 @@ static long init_record(arrRecord *prec, int pass)
 
 static long process(arrRecord *prec)
 {
+    if(prec->clbk)
+        (*prec->clbk)(prec);
+    prec->pact = TRUE;
+    recGblGetTimeStamp(prec);
+    recGblFwdLink(prec);
+    prec->pact = FALSE;
     return 0;
 }
 

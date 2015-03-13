@@ -79,49 +79,37 @@ static int dbca_chan_count;
 
 /* caLink locking
  *
- * workListLock
- *   This is only used to put request into and take them out of workList.
- *   While this is locked no other locks are taken
+ * Lock ordering:
+ *  dbScanLock -> caLink.lock -> workListLock
  *
- * dbScanLock
- *   dbCaAddLink and dbCaRemoveLink are only called by dbAccess or iocInit
- *   They are only called by dbAccess when it has a global lock on lock set.
- *   It is assumed that ALL other dbCaxxx calls are made only if dbScanLock
- *   is already active. These routines are intended for use by record/device
- *   support.
+ * workListLock:
+ *   Guards access to workList.
  *
- * caLink.lock
- *   Any code that use a caLink takes this lock and releases it when done
+ * dbScanLock:
+ *   All dbCa* functions operating on a single link may only be called when
+ *   the record containing the DBLINK is locked.  Including:
+ *    dbCaGet*()
+ *    dbCaIsLinkConnected()
+ *    dbCaPutLink()
+ *    dbCaScanFwdLink()
+ *    dbCaAddLinkCallback()
+ *    dbCaRemoveLink()
  *
- * dbCaTask and the channel access callbacks NEVER access anything in the 
- *   records except after locking caLink.lock and checking that caLink.plink
- *   is not null. They NEVER call dbScanLock.
+ *   Guard the pointer plink.value.pv_link.pvt, but not the struct caLink
+ *   which is pointed to.
  *
- * The above is necessary to prevent deadlocks and attempts to use a caLink
- *   that has been deleted.
+ * caLink.lock:
+ *   Guards the caLink structure (but not the struct DBLINK)
  *
- * Just a few words about handling dbCaRemoveLink because this is when
- *   it is essential that nothing trys to use a caLink that has been freed.
+ * The dbCaTask only locks caLink, and must not lock the record (a violation of lock order).
  *
- *   dbCaRemoveLink is called when links are being modified. This is only
- *   done with the dbScan mechanism guranteeing that nothing from
- *   database access trys to access the record containing the caLink.
+ * During link modification or IOC shutdown the pca->plink pointer (guarded by caLink.lock)
+ * is used as a flag to indicate that a link is no longer active.
  *
- *   Thus the problem is to make sure that nothing from channel access
- *   accesses a caLink that is deleted. This is done as follows.
+ * References to the struct caLink are owned by the dbCaTask, and any scanOnceCallback()
+ * which is in progress.
  *
- *   dbCaRemoveLink does the following:
- *      epicsMutexMustLock(pca->lock);
- *      pca->plink = 0;
- *      plink->value.pv_link.pvt = 0;
- *      epicsMutexUnlock(pca->lock);
- *      addAction(pca,CA_CLEAR_CHANNEL);
- *
- *   dbCaTask issues a ca_clear_channel and then frees the caLink.
- *
- *   If any channel access callback gets called before the ca_clear_channel
- *   it finds pca->plink=0 and does nothing. Once ca_clear_channel
- *   is called no other callback for this caLink will be called.
+ * The libca and scanOnceCallback callbacks take no action if pca->plink==NULL.
  *
  *   dbCaPutLinkCallback causes an additional complication because
  *   when dbCaRemoveLink is called the callback may not have occured.

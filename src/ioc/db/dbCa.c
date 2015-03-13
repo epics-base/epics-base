@@ -30,6 +30,7 @@
 #include "epicsPrint.h"
 #include "epicsString.h"
 #include "epicsThread.h"
+#include "epicsAtomic.h"
 #include "epicsTime.h"
 #include "errlog.h"
 #include "errMdef.h"
@@ -165,10 +166,22 @@ static void addAction(caLink *pca, short link_action)
         epicsEventSignal(workListEvent);
 }
 
-static void dbCaLinkFree(caLink *pca)
+static void caLinkInc(caLink *pca)
 {
+    assert(epicsAtomicGetIntT(&pca->refcount)>0);
+    epicsAtomicIncrIntT(&pca->refcount);
+}
+
+static void caLinkDec(caLink *pca)
+{
+    int cnt;
     dbCaCallback callback;
     struct link *plinkPutCallback = 0;
+
+    cnt = epicsAtomicDecrIntT(&pca->refcount);
+    assert(cnt>=0);
+    if(cnt>0)
+        return;
 
     if (pca->chid) {
         ca_clear_channel(pca->chid);
@@ -216,7 +229,7 @@ void dbCaShutdown(void)
         epicsMutexMustLock(workListLock);
         while((pca=(caLink*)ellGet(&workList))!=NULL) {
             if(pca->link_action&CA_CLEAR_CHANNEL) {
-                dbCaLinkFree(pca);
+                caLinkDec(pca);
             }
         }
         epicsMutexUnlock(workListLock);
@@ -275,6 +288,7 @@ void dbCaAddLinkCallback(struct link *plink,
     assert(!plink->value.pv_link.pvt);
 
     pca = (caLink *)dbCalloc(1, sizeof(caLink));
+    pca->refcount = 1;
     pca->lock = epicsMutexMustCreate();
     pca->plink = plink;
     pca->pvname = epicsStrDup(plink->value.pv_link.pvname);
@@ -639,21 +653,28 @@ static void scanComplete(void *raw, dbCommon *prec)
 {
     caLink *pca = raw;
     epicsMutexMustLock(pca->lock);
-    if(pca->scanningOnce==0)
+    if(!pca->plink) {
+        /* IOC shutdown or link re-targeted.  Do nothing. */
+    } else if(pca->scanningOnce==0) {
         errlogPrintf("dbCa.c complete callback w/ scanningOnce==0\n");
-    else if(--pca->scanningOnce){
+    } else if(--pca->scanningOnce){
         /* another scan is queued */
         if(scanOnceCallback(prec, scanComplete, raw)) {
             errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
         }
     }
     epicsMutexUnlock(pca->lock);
+    caLinkDec(pca);
 }
 
 /* must be called with pca->lock held */
 static void scanLinkOnce(dbCommon *prec, caLink *pca) {
-    if(pca->scanningOnce==0 && scanOnceCallback(prec, scanComplete, pca)) {
-        errlogPrintf("dbCa.c failed to queue scanOnce\n");
+    if(pca->scanningOnce==0) {
+        caLinkInc(pca);
+        if(scanOnceCallback(prec, scanComplete, pca)) {
+            caLinkDec(pca);
+            errlogPrintf("dbCa.c failed to queue scanOnce\n");
+        }
     }
     if(pca->scanningOnce<5)
         pca->scanningOnce++;
@@ -953,7 +974,7 @@ static void dbCaTask(void *arg)
             if (link_action & CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(workListLock);         /* Give back immediately */
             if (link_action & CA_CLEAR_CHANNEL) {   /* This must be first */
-                dbCaLinkFree(pca);
+                caLinkDec(pca);
                 /* No alarm is raised. Since link is changing so what? */
                 continue; /* No other link_action makes sense */
             }

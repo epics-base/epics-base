@@ -39,6 +39,7 @@
 typedef struct caLink
 {
     ELLNODE		node;
+    int         refcount;
     epicsMutexId	lock;
     struct link	*plink;
     char		*pvname;

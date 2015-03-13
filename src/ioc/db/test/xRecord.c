@@ -45,6 +45,8 @@ static long process(xRecord *prec)
 {
     long ret = 0;
     xdset *xset = (xdset*)prec->dset;
+    if(prec->clbk)
+        (*prec->clbk)(prec);
     prec->pact = TRUE;
     if(xset  && xset->process)
         ret = (*xset->process)(prec);

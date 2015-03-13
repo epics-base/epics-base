@@ -201,6 +201,7 @@ private:
     cacContextNotify & notify;
     epics_auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;
+    bool isolated;
 
     cacChannel & createChannel (
         epicsGuard < epicsMutex > &,

@@ -52,8 +52,11 @@
 #include "link.h"
 #include "recSup.h"
 
+/* defined in dbContext.cpp
+ * Setup local CA access
+ */
 extern void dbServiceIOInit();
-
+extern int dbServiceIsolate;
 
 static ELLLIST workList = ELLLIST_INIT;    /* Work list for dbCaTask */
 static epicsMutexId workListLock; /*Mutual exclusions semaphores for workList*/
@@ -224,25 +227,16 @@ void dbCaShutdown(void)
     }
 }
 
-static void dbCaExit(void *arg)
+static void dbCaLinkInitImpl(int isolate)
 {
-    dbCaShutdown();
-}
+    dbServiceIsolate = isolate;
+    dbServiceIOInit();
 
-void dbCaLinkInitIsolated(void)
-{
     if (!workListLock)
         workListLock = epicsMutexMustCreate();
     if (!workListEvent)
         workListEvent = epicsEventMustCreate(epicsEventEmpty);
-    dbCaCtl = ctlExit;
-    epicsAtExit(dbCaExit, NULL);
-}
 
-void dbCaLinkInit(void)
-{
-    dbServiceIOInit();
-    dbCaLinkInitIsolated();
     startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     dbCaCtl = ctlPause;
 
@@ -250,6 +244,16 @@ void dbCaLinkInit(void)
         epicsThreadGetStackSize(epicsThreadStackBig),
         dbCaTask, NULL);
     epicsEventMustWait(startStopEvent);
+}
+
+void dbCaLinkInitIsolated(void)
+{
+    dbCaLinkInitImpl(1);
+}
+
+void dbCaLinkInit(void)
+{
+    dbCaLinkInitImpl(0);
 }
 
 void dbCaRun(void)

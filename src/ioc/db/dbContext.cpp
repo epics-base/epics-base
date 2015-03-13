@@ -39,6 +39,7 @@
 #include "dbCAC.h"
 #include "dbChannel.h"
 #include "dbChannelIO.h"
+#include "dbChannelNOOP.h"
 #include "dbPutNotifyBlocker.h"
 
 class dbService : public cacService {
@@ -61,9 +62,16 @@ cacContext & dbService::contextCreate (
         mutualExclusion, notify );
 }
 
+extern "C" int dbServiceIsolate;
+int dbServiceIsolate = 0;
+
 extern "C" void dbServiceIOInit ()
 {
-    caInstallDefaultService ( dbs );
+    static int init=0;
+    if(!init) {
+        caInstallDefaultService ( dbs );
+        init=1;
+    }
 }
 
 dbBaseIO::dbBaseIO () {}
@@ -72,7 +80,8 @@ dbContext::dbContext ( epicsMutex & cbMutexIn,
         epicsMutex & mutexIn, cacContextNotify & notifyIn ) :
     readNotifyCache ( mutexIn ), ctx ( 0 ),
     stateNotifyCacheSize ( 0 ), mutex ( mutexIn ), cbMutex ( cbMutexIn ),
-    notify ( notifyIn ), pNetContext ( 0 ), pStateNotifyCache ( 0 )
+    notify ( notifyIn ), pNetContext ( 0 ), pStateNotifyCache ( 0 ),
+    isolated(dbServiceIsolate)
 {
 }
 
@@ -92,7 +101,10 @@ cacChannel & dbContext::createChannel (
 
     dbChannel *dbch = dbChannel_create ( pName );
     if ( ! dbch ) {
-        if ( ! this->pNetContext.get() ) {
+        if ( isolated ) {
+            return *new dbChannelNOOP(pName, notifyIn);
+
+        } else if ( ! this->pNetContext.get() ) {
             this->pNetContext.reset (
                 & this->notify.createNetworkContext (
                     this->mutex, this->cbMutex ) );

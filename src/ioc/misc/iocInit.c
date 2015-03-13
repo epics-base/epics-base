@@ -693,6 +693,7 @@ int iocShutdown(void)
         dbProcessNotifyExit();
         iocshFree();
     }
+    dbCaShutdown();
     iocState = iocStopped;
     iocBuildMode = buildRSRV;
     return 0;

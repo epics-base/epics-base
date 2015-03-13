@@ -677,6 +677,9 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
         dbFreeLinkContents(plink);
     }
+
+    // may be allocated in dbNotify.c
+    free(precord->ppnr);
 }
 
 int iocShutdown(void)

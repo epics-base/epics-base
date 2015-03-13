@@ -10,6 +10,9 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
+# Find private headers
+USR_CFLAGS += -I../..
+
 TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS += xRecord.c
@@ -84,6 +87,13 @@ dbCaStatsTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStatsTest.db
+
+TESTPROD_HOST += dbCaLinkTest
+dbCaLinkTest_SRCS += dbCaLinkTest.c
+dbCaLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbCaLinkTest.c
+TESTS += dbCaLinkTest
+TESTFILES += ../dbCaLinkTest1.db
 
 scanIoTest_DBD += menuScan.dbd
 TESTPROD_HOST += scanIoTest

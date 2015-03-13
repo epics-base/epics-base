@@ -26,6 +26,7 @@ int dbScanTest(void);
 int scanIoTest(void);
 int dbLockTest(void);
 int dbPutLinkTest(void);
+int dbCaLinkTest(void);
 int testDbChannel(void);
 int chfPluginTest(void);
 int arrShorthandTest(void);
@@ -45,6 +46,7 @@ void epicsRunDbTests(void)
     runTest(scanIoTest);
     runTest(dbLockTest);
     runTest(dbPutLinkTest);
+    runTest(dbCaLinkTest);
     runTest(testDbChannel);
     runTest(arrShorthandTest);
     runTest(recGblCheckDeadbandTest);

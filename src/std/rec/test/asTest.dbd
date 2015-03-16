@@ -1,0 +1,2 @@
+device(ao, CONSTANT, devAOasTest, "asTest")
+device(waveform, CONSTANT, devWFasTest, "asTest")

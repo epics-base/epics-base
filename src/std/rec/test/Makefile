@@ -25,6 +25,16 @@ testHarness_SRCS += arrayOpTest.c
 TESTFILES += ../arrayOpTest.db
 TESTS += arrayOpTest
 
+TARGETS += $(COMMON_DIR)/asTestIoc.dbd
+asTestIoc_DBD += base.dbd
+asTestIoc_DBD += asTest.dbd
+TESTPROD_HOST += asTest
+asTest_SRCS += asTest.c
+asTest_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
+#testHarness_SRCS += asTest.c
+TESTFILES += ../asTest.db
+TESTS += asTest
+
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
 analogMonitorTest_DBD += base.dbd
 TESTPROD_HOST += analogMonitorTest

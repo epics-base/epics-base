@@ -65,14 +65,28 @@ static void hookPass0(initHookState state)
     /* rec0.OUT is initially "rec0.DISV", set it to "rec0.SEVR" */
     if(dbFindRecord(&entry, "rec0.OUT")==0) {
         aoRecord *prec = entry.precnode->precord;
-        if(prec->out.type==PV_LINK)
-            testOk(strcmp(prec->out.value.pv_link.pvname,"rec0.DISV")==0,
+        if(prec->out.type==CONSTANT)
+            testOk(strcmp(prec->out.text,"rec0.DISV")==0,
                    "%s==rec0.DISV (initial value from .db)",
-                   prec->out.value.pv_link.pvname);
+                   prec->out.text);
         else
-            testFail("Wrong link type");
+            testFail("Wrong link type: %d", (int)prec->out.type);
 
         testOk1(dbPutString(&entry, "rec0.SEVR")==0);
+    } else{
+        testFail("Missing rec0");
+        testSkip(1, "missing record");
+    }
+
+    /* rec0.SDIS is initially NULL, set it to "rec0.STAT" */
+    if(dbFindRecord(&entry, "rec0.SDIS")==0) {
+        aoRecord *prec = entry.precnode->precord;
+        if(prec->sdis.type==CONSTANT)
+            testOk1(prec->sdis.value.constantStr==NULL);
+        else
+            testFail("Wrong link type: %d", (int)prec->sdis.type);
+
+        testOk1(dbPutString(&entry, "rec0.STAT")==0);
     } else{
         testFail("Missing rec0");
         testSkip(1, "missing record");
@@ -95,6 +109,15 @@ static long initRec0(aoRecord *prec)
     if(plink->type==DB_LINK)
         testOk(strcmp(plink->value.pv_link.pvname,"rec0.SEVR")==0,
                "%s==rec0.SEVR (pass0 value)", plink->value.pv_link.pvname);
+    else
+        testFail("Wrong link type");
+
+    plink = &prec->sdis;
+
+    testOk1(plink->type==DB_LINK);
+    if(plink->type==DB_LINK)
+        testOk(strcmp(plink->value.pv_link.pvname,"rec0.STAT")==0,
+               "%s==rec0.STAT (pass0 value)", plink->value.pv_link.pvname);
     else
         testFail("Wrong link type");
 
@@ -197,7 +220,7 @@ static void testRestore(void)
 
 MAIN(asTest)
 {
-    testPlan(25);
+    testPlan(29);
     testRestore();
     return testDone();
 }

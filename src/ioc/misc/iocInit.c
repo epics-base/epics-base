@@ -140,7 +140,6 @@ static void prepareLinks(dbRecordType *rtyp, dbCommon *prec, void *junk)
 
 static int iocBuild_2(void)
 {
-    iterateRecords(prepareLinks, NULL);
     initHookAnnounce(initHookAfterCaLinkInit);
 
     initDrvSup();
@@ -150,12 +149,14 @@ static int iocBuild_2(void)
     initHookAnnounce(initHookAfterInitRecSup);
 
     initDevSup();
-    initHookAnnounce(initHookAfterInitDevSup);
+    initHookAnnounce(initHookAfterInitDevSup); /* used by autosave pass 0 */
+
+    iterateRecords(prepareLinks, NULL);
 
     dbLockInitRecords(pdbbase);
     initDatabase();
     dbBkptInit();
-    initHookAnnounce(initHookAfterInitDatabase);
+    initHookAnnounce(initHookAfterInitDatabase); /* used by autosave pass 1 */
 
     finishDevSup();
     initHookAnnounce(initHookAfterFinishDevSup);

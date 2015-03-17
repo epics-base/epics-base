@@ -270,9 +270,9 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 
 		plink->type = CONSTANT;
 		if(pflddes->initial) {
-		    plink->value.constantStr =
+		    plink->text =
 			dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
-		    strcpy(plink->value.constantStr,pflddes->initial);
+		    strcpy(plink->text,pflddes->initial);
 		}
 	    }
 	    break;

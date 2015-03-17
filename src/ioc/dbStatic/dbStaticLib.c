@@ -1915,7 +1915,9 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
             plink->type = CONSTANT;
 
         switch (plink->type) {
-        /* constantStr is allowed to remain NULL if plink->text==NULL */
+        /* constantStr is allowed to remain NULL if plink->text==NULL
+         * constantStr==NULL has special meaning in recGblInitConstantLink()
+         */
         case CONSTANT: plink->value.constantStr = NULL; break;
         case PV_LINK:  plink->value.pv_link.pvname = callocMustSucceed(1, 1, "init PV_LINK"); break;
         case VME_IO: plink->value.vmeio.parm = pNullString; break;

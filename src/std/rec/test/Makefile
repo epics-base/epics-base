@@ -17,6 +17,7 @@ recTestIoc_DBD = base.dbd
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
 testHarness_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
 
 TESTPROD_HOST += arrayOpTest
 arrayOpTest_SRCS += arrayOpTest.c
@@ -31,7 +32,7 @@ asTestIoc_DBD += asTest.dbd
 TESTPROD_HOST += asTest
 asTest_SRCS += asTest.c
 asTest_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
-#testHarness_SRCS += asTest.c
+testHarness_SRCS += asTest.c
 TESTFILES += ../asTest.db
 TESTS += asTest
 

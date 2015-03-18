@@ -119,12 +119,13 @@ struct dbChannel * dbChannel_create(const char *pname)
         return NULL;
     }
 
-    chan->addr.dbr_field_type = dbDBRnewToDBRold[ftype];
-
     if (dbChannelOpen(chan)) {
         dbChannelDelete(chan);
         return NULL;
     }
+
+    /* Convert final_type to CA's type mapping */
+    chan->final_type = dbDBRnewToDBRold[chan->final_type];
 
     return chan;
 }

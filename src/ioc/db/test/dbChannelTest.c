@@ -156,7 +156,7 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 {
     dbChannel *pch;
 
-    testPlan(66);
+    testPlan(76);
 
     if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
             "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
@@ -173,6 +173,7 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     r = e = 0;
     /* dbChannelTest() checks record and field names */
     testOk1(!dbChannelTest("x.NAME"));
+    testOk1(!dbChannelTest("x.INP"));
     testOk1(!dbChannelTest("x.VAL"));
     testOk1(!dbChannelTest("x."));
     testOk1(!dbChannelTest("x"));
@@ -188,12 +189,22 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk1(!!(pch = dbChannelCreate("x.{}")));
     if (pch) dbChannelDelete(pch);
     testOk1(!!(pch = dbChannelCreate("x.VAL{}")));
+    testOk1(pch && dbChannelElements(pch) == 1);
     if (pch) dbChannelDelete(pch);
     testOk1(!!(pch = dbChannelCreate("x.NAME$")));
-    testOk1(pch && pch->addr.no_elements > 1);
+    testOk1(pch && dbChannelFieldType(pch) == DBF_CHAR);
+    testOk1(pch && dbChannelExportType(pch) == DBR_CHAR);
+    testOk1(pch && dbChannelElements(pch) == PVNAME_STRINGSZ);
+    if (pch) dbChannelDelete(pch);
+    testOk1(!!(pch = dbChannelCreate("x.INP$")));
+    testOk1(pch && dbChannelFieldType(pch) == DBF_INLINK);
+    testOk1(pch && dbChannelExportType(pch) == DBR_CHAR);
+    testOk1(pch && dbChannelElements(pch) > PVNAME_STRINGSZ);
     if (pch) dbChannelDelete(pch);
     testOk1(!!(pch = dbChannelCreate("x.NAME${}")));
-    testOk1(pch && pch->addr.no_elements > 1);
+    testOk1(pch && dbChannelFieldType(pch) == DBF_CHAR);
+    testOk1(pch && dbChannelExportType(pch) == DBR_CHAR);
+    testOk1(pch && dbChannelElements(pch) == PVNAME_STRINGSZ);
     if (pch) dbChannelDelete(pch);
 
     /* dbChannelCreate() rejects bad PVs */

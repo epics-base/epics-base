@@ -190,6 +190,9 @@ epicsShareFunc long dbPutInfo(DBENTRY *pdbentry,
 epicsShareFunc brkTable * dbFindBrkTable(DBBASE *pdbbase,
     const char *name);
 
+epicsShareFunc const char * dbGetFieldTypeString(int dbfType);
+epicsShareFunc int dbFindFieldType(const char *type);
+
 epicsShareFunc dbMenu * dbFindMenu(DBBASE *pdbbase,
     const char *name);
 epicsShareFunc char ** dbGetMenuChoices(DBENTRY *pdbentry);

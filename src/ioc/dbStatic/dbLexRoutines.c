@@ -486,13 +486,10 @@ static void dbRecordtypeFieldHead(char *name,char *type)
     allocTemp(pdbFldDes);
     pdbFldDes->name = epicsStrDup(name);
     pdbFldDes->as_level = ASL1;
-    for(i=0; i<DBF_NTYPES; i++) {
-	if(strcmp(type,pamapdbfType[i].strvalue)==0) {
-	    pdbFldDes->field_type = pamapdbfType[i].value;
-	    return;
-	}
-    }
-    yyerrorAbort("Illegal Field Type");
+    i = dbFindFieldType(type);
+    if (i < 0)
+        yyerrorAbort("Illegal Field Type");
+    pdbFldDes->field_type = i;
 }
 
 static void dbRecordtypeFieldItem(char *name,char *value)

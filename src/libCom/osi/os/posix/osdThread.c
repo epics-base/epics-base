@@ -368,20 +368,17 @@ static void once(void)
     checkStatusOnce(status,"atexit");
     epicsThreadOnceCalled = 1;
 }
-
+
 static void * start_routine(void *arg)
 {
     epicsThreadOSD *pthreadInfo = (epicsThreadOSD *)arg;
     int status;
-    int oldtype;
     sigset_t blockAllSig;
  
     sigfillset(&blockAllSig);
     pthread_sigmask(SIG_SETMASK,&blockAllSig,NULL);
     status = pthread_setspecific(getpthreadInfo,arg);
     checkStatusQuit(status,"pthread_setspecific","start_routine");
-    status = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,&oldtype);
-    checkStatusQuit(status,"pthread_setcanceltype","start_routine");
     status = mutexLock(&listLock);
     checkStatusQuit(status,"pthread_mutex_lock","start_routine");
     ellAdd(&pthreadList,&pthreadInfo->node);

@@ -194,9 +194,9 @@ static void testRestore(void)
     rec0 = (aoRecord*)testdbRecordPtr("rec0");
     rec1 = (waveformRecord*)testdbRecordPtr("rec1");
 
-    //eltc(0);
+    eltc(0);
     testIocInitOk();
-    //eltc(1);
+    eltc(1);
 
     testDiag("Post initialization");
 

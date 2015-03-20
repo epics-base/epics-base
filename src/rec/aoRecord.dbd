@@ -82,8 +82,8 @@ recordtype(ao) {
 		interest(1)
 		size(16)
 	}
-	field(ROFF,DBF_LONG) {
-		prompt("Raw Offset, obsolete")
+	field(ROFF,DBF_ULONG) {
+		prompt("Raw Offset")
 		pp(TRUE)
 		interest(2)
 	}

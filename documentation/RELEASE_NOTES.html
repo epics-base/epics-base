@@ -13,6 +13,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>aoRecord raw conversion overflows</h3>
+
+<p>The ao record type now checks converted raw values and limits them to the
+32-bit integer range before writing them to the RVAL field. Previously value
+overflows relied on Undefined Behaviour which could give different results on
+different platforms. The ROFF fields of the ao and ai record types are now
+DBF_ULONG to allow an ROFF setting of 0x80000000 to work properly.</p>
+
 <h3>Changes to &lt;top&gt;/cfg/* files</h3>
 
 <p>The order in which cfg/CONFIG* and cfg/RULES* files are included from support

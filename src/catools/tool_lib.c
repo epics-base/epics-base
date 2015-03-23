@@ -87,7 +87,8 @@ static void sprint_long (char *ret, dbr_long_t val, IntFormatT outType)
             "0x%lX" /* hex */
         };
 
-        sprintf(ret, fmt[outType], val);
+        /* Formats have long modifier, pass value as a long */
+        sprintf(ret, fmt[outType], (long) val);
     }
 }
 

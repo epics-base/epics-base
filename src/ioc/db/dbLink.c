@@ -141,6 +141,7 @@ static long dbDbInitLink(struct link *plink, short dbfType)
     pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
     *pdbAddr = dbaddr; /* structure copy */
     plink->value.pv_link.pvt = pdbAddr;
+    ellAdd(&dbaddr.precord->bklnk, &plink->value.pv_link.backlinknode);
     /* merging into the same lockset is deferred to the caller.
      * cf. initPVLinks()
      */
@@ -154,6 +155,7 @@ static void dbDbRemoveLink(dbLocker *locker, struct dbCommon *prec, struct link 
     plink->value.pv_link.getCvt = 0;
     plink->value.pv_link.lastGetdbrType = 0;
     plink->type = PV_LINK;
+    ellDelete(&pdbAddr->precord->bklnk, &plink->value.pv_link.backlinknode);
     dbLockSetSplit(locker, prec, pdbAddr->precord);
     free(pdbAddr);
 }
@@ -438,6 +440,7 @@ void dbAddLink(dbLocker *locker, struct dbCommon *precord, struct link *plink, s
 
         plink->type = DB_LINK;
         plink->value.pv_link.pvt = ptargetaddr;
+        ellAdd(&ptargetaddr->precord->bklnk, &plink->value.pv_link.backlinknode);
 
         /* target record is already locked in dbPutFieldLink() */
         dbLockSetMerge(locker, plink->value.pv_link.precord, ptargetaddr->precord);

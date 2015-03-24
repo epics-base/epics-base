@@ -678,8 +678,9 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
     {
         lockRecord *lr = CONTAINER(cur, lockRecord, node);
         assert(lr->plockSet==B);
-        epicsSpinLock(lr->spin);
         ellAdd(&A->lockRecordList, cur);
+
+        epicsSpinLock(lr->spin);
         lr->plockSet = A;
 #ifndef LOCKSET_NOCNT
         epicsAtomicIncrSizeT(&recomputeCnt);
@@ -801,9 +802,7 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
                 ptarget = plink->value.pv_link.pvt;
                 lr = ptarget->precord->lset;
-
-                if(!lr)
-                    continue; /* not DB_LINK */
+                assert(lr);
 
                 if(lr->precord==pfirst) {
                     /* so pfirst is still reachable from psecond,
@@ -877,18 +876,18 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             lr->compflag = 0; /* reset for next time */
 
             assert(lr->plockSet == ls);
-
-            /* lockset is "live" at this point
-             * as other threads may find it.
-             */
-            epicsSpinLock(lr->spin);
             ellDelete(&ls->lockRecordList, &lr->node);
             ellAdd(&splitset->lockRecordList, &lr->node);
+
+            epicsSpinLock(lr->spin);
             lr->plockSet = splitset;
 #ifndef LOCKSET_NOCNT
             epicsAtomicIncrSizeT(&recomputeCnt);
 #endif
             epicsSpinUnlock(lr->spin);
+            /* new lockSet is "live" at this point
+             * as other threads may find it.
+             */
         }
 
         /* refcount of ls can't go to zero as the locker

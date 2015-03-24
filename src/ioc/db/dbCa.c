@@ -649,7 +649,8 @@ static void scanComplete(void *raw, dbCommon *prec)
         /* another scan is queued */
         if(scanOnceCallback(prec, scanComplete, raw)) {
             errlogPrintf("dbCa.c failed to re-queue scanOnce\n");
-        }
+        } else
+            caLinkInc(pca);
     }
     epicsMutexUnlock(pca->lock);
     caLinkDec(pca);
@@ -658,11 +659,10 @@ static void scanComplete(void *raw, dbCommon *prec)
 /* must be called with pca->lock held */
 static void scanLinkOnce(dbCommon *prec, caLink *pca) {
     if(pca->scanningOnce==0) {
-        caLinkInc(pca);
         if(scanOnceCallback(prec, scanComplete, pca)) {
-            caLinkDec(pca);
             errlogPrintf("dbCa.c failed to queue scanOnce\n");
-        }
+        } else
+            caLinkInc(pca);
     }
     if(pca->scanningOnce<5)
         pca->scanningOnce++;

@@ -22,7 +22,6 @@ extern "C" {
 
 struct dbCommon;
 struct dbBase;
-//struct dbLockSet;
 typedef struct dbLocker dbLocker;
 
 epicsShareFunc void dbScanLock(struct dbCommon *precord);

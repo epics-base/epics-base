@@ -100,4 +100,4 @@ void dbLockSetSplit(struct dbLocker *locker,
                     struct dbCommon *psource,
                     struct dbCommon *psecond);
 
-#endif // DBLOCKPVT_H
+#endif /* DBLOCKPVT_H */

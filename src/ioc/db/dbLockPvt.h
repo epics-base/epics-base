@@ -53,10 +53,13 @@ typedef struct lockRecord {
      * It may be read which either lock is held.
      */
     lockSet	*plockSet;
+    /* the association between lockRecord and dbCommon never changes */
     dbCommon	*precord;
     epicsSpinId spin;
 
-    /* temp used during lockset split */
+    /* temp used during lockset split.
+     * lockSet must be locked for access
+     */
     ELLNODE     compnode;
     unsigned int compflag;
 } lockRecord;
@@ -81,11 +84,12 @@ struct dbLocker {
     lockRecordRef refs[DBLOCKER_NALLOC]; /* actual length is maxrefs */
 };
 
-lockSet* dbLockGetRef(lockRecord *lr);
+lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
 void dbLockIncRef(lockSet* ls);
 void dbLockDecRef(lockSet *ls);
 
-/* Optimization used by for dbLocker on the stack.
+/* Calling dbLockerPrepare directly is an internal
+ * optimization used when dbLocker on the stack.
  * nrecs must be <=DBLOCKER_NALLOC.
  */
 void dbLockerPrepare(struct dbLocker *locker,

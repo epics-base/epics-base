@@ -64,7 +64,10 @@ static void dbLockOnce(void* ignore)
 }
 
 /* global ID number assigned to each lockSet on creation.
- * Will never exceed the number of records +1
+ * When the free-list is in use will never exceed
+ * the number of records +1.
+ * Without the free-list it can roll over, potentially
+ * leading to duplicate IDs.
  */
 static size_t next_id = 1;
 
@@ -135,13 +138,16 @@ void dbLockDecRef(lockSet *ls)
     if(cnt)
         return;
 
-    /* not necessary as no one else holds a reference,
+    /* lockSet is unused and will be free'd */
+
+    /* not necessary as no one else (should) hold a reference,
      * but lock anyway to quiet valgrind
      */
     epicsMutexMustLock(ls->lock);
 
     if(ellCount(&ls->lockRecordList)!=0) {
-        errlogPrintf("dbLockDecRef(%p) would free lockSet with %d records\n", ls, ellCount(&ls->lockRecordList));
+        errlogPrintf("dbLockDecRef(%p) would free lockSet with %d records\n",
+                     ls, ellCount(&ls->lockRecordList));
         cantProceed(NULL);
     }
 
@@ -153,7 +159,7 @@ void dbLockDecRef(lockSet *ls)
     ellAdd(&lockSetsFree, &ls->node);
 #else
     epicsMutexDestroy(ls->lock);
-    memset(ls, 0, sizeof(*ls));
+    memset(ls, 0, sizeof(*ls)); /* paranoia */
     free(ls);
 #endif
     epicsMutexUnlock(lockSetsGuard);
@@ -197,7 +203,7 @@ retry:
          */
         lockSet *ls2 = lr->plockSet;
         int newcnt = epicsAtomicIncrIntT(&ls2->refcount);
-        assert(newcnt>=2); /* lockRecord and us */
+        assert(newcnt>=2); /* at least lockRecord and us */
         epicsSpinUnlock(lr->spin);
 
         epicsMutexUnlock(ls->lock);
@@ -215,10 +221,7 @@ retry:
      */
     cnt = epicsAtomicDecrIntT(&ls->refcount);
     assert(cnt>0);
-    /* Caller does *not* hold a reference to ls.
-     * However, the lockRecord does, but can't
-     * be changed while we hold the lockSet.
-     */
+
 #ifdef LOCKSET_DEBUG
     if(ls->owner) {
         assert(ls->owner==epicsThreadGetIdSelf());
@@ -230,7 +233,6 @@ retry:
         ls->ownercount = 1;
     }
 #endif
-    /* no references kept */
 }
 
 void dbScanUnlock(dbCommon *precord)
@@ -287,7 +289,7 @@ int dbLockUpdateRefs(dbLocker *locker, int update)
         for(i=0; i<nlock; i++) {
             lockRecordRef *ref = &locker->refs[i];
             lockSet *oldref = NULL;
-            if(!ref->plr) {
+            if(!ref->plr) { /* this lockRecord slot not used */
                 assert(!ref->plockSet);
                 continue;
             }
@@ -297,7 +299,7 @@ int dbLockUpdateRefs(dbLocker *locker, int update)
                 changed = 1;
                 if(update) {
                     /* exchange saved lockSet reference */
-                    oldref = ref->plockSet;
+                    oldref = ref->plockSet; /* will be NULL on first iteration */
                     ref->plockSet = ref->plr->plockSet;
                     dbLockIncRef(ref->plockSet);
                 }
@@ -364,6 +366,7 @@ void dbLockerFinalize(dbLocker *locker)
     size_t i;
     assert(ellCount(&locker->locked)==0);
 
+    /* release references taken in dbLockUpdateRefs() */
     for(i=0; i<locker->maxrefs; i++) {
         if(locker->refs[i].plockSet)
             dbLockDecRef(locker->refs[i].plockSet);
@@ -396,6 +399,7 @@ retry:
 
         /* skip duplicates (same lockSet
          * referenced by more than one lockRecord).
+         * Sorting will group these together.
          */
         if(!ref->plr || (plock && plock==ref->plockSet))
             continue;

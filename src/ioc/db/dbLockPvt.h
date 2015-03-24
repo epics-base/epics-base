@@ -11,8 +11,11 @@
 
 #include "dbLock.h"
 
+/* enable additional error checking */
 #define LOCKSET_DEBUG
-#define LOCKSET_FREE
+/* disable the free list for lockSets */
+#define LOCKSET_NOFREE
+/* disable use of recomputeCnt optimization */
 #define LOCKSET_NOCNT
 
 /* except for refcount (and lock), all members of dbLockSet

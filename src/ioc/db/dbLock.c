@@ -41,7 +41,7 @@ typedef struct dbScanLockNode dbScanLockNode;
 static epicsThreadOnceId dbLockOnceInit = EPICS_THREAD_ONCE_INIT;
 
 static ELLLIST lockSetsActive; /* in use */
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
 static ELLLIST lockSetsFree; /* free list */
 #endif
 
@@ -49,10 +49,10 @@ static ELLLIST lockSetsFree; /* free list */
 static epicsMutexId lockSetsGuard;
 
 #ifndef LOCKSET_NOCNT
-/* Counter which is incremented whenever
+/* Counter which we increment whenever
  * any lockRecord::plockSet is changed.
- * An optimization to avoid a re-sort
- * when no links have changed.
+ * An optimization to avoid checking lockSet
+ * associations when no links have changed.
  */
 static size_t recomputeCnt;
 #endif
@@ -73,7 +73,7 @@ static lockSet* makeSet(void)
     lockSet *ls;
     int iref;
     epicsMutexMustLock(lockSetsGuard);
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
     ls = (lockSet*)ellGet(&lockSetsFree);
     if(!ls) {
         epicsMutexUnlock(lockSetsGuard);
@@ -84,7 +84,7 @@ static lockSet* makeSet(void)
         ls->lock = epicsMutexMustCreate();
         ls->id = epicsAtomicIncrSizeT(&next_id);
 
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
         epicsMutexMustLock(lockSetsGuard);
     }
 #endif
@@ -149,7 +149,7 @@ void dbLockDecRef(lockSet *ls)
 
     epicsMutexMustLock(lockSetsGuard);
     ellDelete(&lockSetsActive, &ls->node);
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
     ellAdd(&lockSetsFree, &ls->node);
 #else
     epicsMutexDestroy(ls->lock);
@@ -309,6 +309,10 @@ int dbLockUpdateRefs(dbLocker *locker, int update)
                 return changed;
         }
 #ifndef LOCKSET_NOCNT
+        /* Use the value captured before we started.
+         * If it has changed in the intrim we will catch this later
+         * during the update==0 pass (which triggers a re-try)
+         */
         if(update)
             locker->recomp = recomp;
     }
@@ -607,7 +611,7 @@ static int freeLockRecord(void* junk, DBENTRY* pdbentry)
 
 void dbLockCleanupRecords(dbBase *pdbbase)
 {
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
     ELLNODE *cur;
 #endif
     epicsThreadOnce(&dbLockOnceInit, &dbLockOnce, NULL);
@@ -620,7 +624,7 @@ void dbLockCleanupRecords(dbBase *pdbbase)
 
     assert(ellCount(&lockSetsActive)==0);
 
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
     while((cur=ellGet(&lockSetsFree))!=NULL) {
         lockSet *ls = (lockSet*)cur;
 
@@ -1002,7 +1006,7 @@ long dbLockShowLocked(int level)
 
     errlogPrintf("lockSets %d listTypeFree %d\n",
         ellCount(&lockSetsActive),
-#ifndef LOCKSET_FREE
+#ifndef LOCKSET_NOFREE
         ellCount(&lockSetsFree)
 #else
                  -1

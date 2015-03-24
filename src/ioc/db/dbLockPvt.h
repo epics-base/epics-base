@@ -70,7 +70,7 @@ typedef struct {
     lockSet *plockSet;
 } lockRecordRef;
 
-#define DBLOCKER_NALLOC 3
+#define DBLOCKER_NALLOC 2
 /* a dbLocker can only be used by a single thread. */
 struct dbLocker {
     ELLLIST locked;

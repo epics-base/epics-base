@@ -945,7 +945,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     dbLinkInfo  link_info;
     DBADDR      *pdbaddr = NULL;
     dbCommon    *precord = paddr->precord;
-    dbCommon    *lockrecs[3];
+    dbCommon    *lockrecs[2];
     dbLocker    locker;
     dbFldDes    *pfldDes = paddr->pfldDes;
     long        special = paddr->special;
@@ -959,7 +959,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     int         isDevLink;
     short       scan;
 
-    STATIC_ASSERT(DBLOCKER_NALLOC>=3);
+    STATIC_ASSERT(DBLOCKER_NALLOC>=2);
 
     switch (dbrType) {
     case DBR_CHAR:
@@ -1000,8 +1000,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     memset(&locker, 0, sizeof(locker));
     lockrecs[0] = precord;
     lockrecs[1] = pdbaddr ? pdbaddr->precord : NULL;
-    lockrecs[2] = NULL;
-    dbLockerPrepare(&locker, lockrecs, 3);
+    dbLockerPrepare(&locker, lockrecs, 2);
 
     dbScanLockMany(&locker);
 

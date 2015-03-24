@@ -10,6 +10,9 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
+# Allow access to private headers in db/
+USR_CPPFLAGS = -I ../..
+
 TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS += xRecord.c
@@ -53,6 +56,11 @@ dbLockTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbLockTest.c
 TESTS += dbLockTest
 TESTFILES += ../dbLockTest.db
+
+TESTPROD_HOST += dbStressTest
+dbStressTest_SRCS += dbStressLock.c
+dbStressTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+TESTS += dbStressTest
 
 TESTPROD_HOST += testdbConvert
 testdbConvert_SRCS += testdbConvert.c

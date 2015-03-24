@@ -16,7 +16,7 @@
 /* disable the free list for lockSets */
 #define LOCKSET_NOFREE
 /* disable use of recomputeCnt optimization */
-#define LOCKSET_NOCNT
+/*#define LOCKSET_NOCNT*/
 
 /* except for refcount (and lock), all members of dbLockSet
  * are guarded by its lock.

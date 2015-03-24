@@ -118,8 +118,8 @@ unsigned long dbLockCountSets(void)
 void dbLockIncRef(lockSet* ls)
 {
     int cnt = epicsAtomicIncrIntT(&ls->refcount);
-    if(cnt<=0) {
-        errlogPrintf("dbLockIncRef(%p) on dead lockSet\n", ls);
+    if(cnt<=1) {
+        errlogPrintf("dbLockIncRef(%p) on dead lockSet. refs: %d\n", ls, cnt);
         cantProceed(NULL);
     }
 }
@@ -185,7 +185,7 @@ void dbScanLock(dbCommon *precord)
     lockSet *ls;
 
     ls = dbLockGetRef(lr);
-    assert(ls->refcount>0);
+    assert(epicsAtomicGetIntT(&ls->refcount)>0);
 
 retry:
     epicsMutexMustLock(ls->lock);
@@ -353,10 +353,8 @@ dbLocker *dbLockerAlloc(dbCommon **precs,
     size_t Nextra = nrecs>DBLOCKER_NALLOC ? nrecs-DBLOCKER_NALLOC : 0;
     dbLocker *locker = calloc(1, sizeof(*locker)+Nextra*sizeof(lockRecordRef));
 
-    if(!locker)
-        return NULL;
-
-    dbLockerPrepare(locker, precs, nrecs);
+    if(locker)
+        dbLockerPrepare(locker, precs, nrecs);
 
     return locker;
 }
@@ -507,8 +505,6 @@ static int createLockRecord(void* junk, DBENTRY* pdbentry)
 
     /* TODO: one allocation for all records? */
     lrec = callocMustSucceed(1, sizeof(*lrec), "lockRecord");
-    if(!lrec)
-        cantProceed("no memory for lockRecord");
     lrec->spin = epicsSpinCreate();
     if(!lrec->spin)
         cantProceed("no memory for spinlock in lockRecord");
@@ -762,7 +758,7 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
     /* at least 1 ref for each lockRecord,
      * and one for the locker
      */
-    assert(ls->refcount>=ellCount(&ls->lockRecordList)+1);
+    assert(epicsAtomicGetIntT(&ls->refcount)>=ellCount(&ls->lockRecordList)+1);
 
     ellInit(&toInspect);
     ellInit(&newLS);

@@ -660,19 +660,7 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
-    int j;
-    struct rset *prset = pdbRecordType->prset;
-
-    if (!prset) return;         /* unlikely */
-
     epicsMutexDestroy(precord->mlok);
-
-    for (j = 0; j < pdbRecordType->no_links; j++) {
-        dbFldDes *pdbFldDes =
-            pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
-        DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
-
-    }
 }
 
 int iocShutdown(void)

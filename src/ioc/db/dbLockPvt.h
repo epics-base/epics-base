@@ -46,7 +46,7 @@ struct lockRecord;
  * plockSet is guarded by spin.
  */
 typedef struct lockRecord {
-    ELLNODE	node;
+    ELLNODE	node; /* in lockSet::lockRecordList */
     /* The association between lockRecord and lockSet
      * can only be changed while the lockSet is held,
      * and the lockRecord's spinlock is held.

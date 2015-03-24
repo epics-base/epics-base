@@ -687,9 +687,9 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
         epicsSpinUnlock(lr->spin);
     }
 
-    /* there is at least 1 ref for each lockRecord,
-     * and at least one for the locker's locked list
-     * (perhaps another for its refs cache
+    /* there are at minimum, 1 ref for each lockRecord,
+     * and one for the locker's locked list
+     * (and perhaps another for its refs cache)
      */
     assert(epicsAtomicGetIntT(&B->refcount)>=Nb+(locker?1:0));
 
@@ -698,7 +698,7 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
     epicsAtomicAddIntT(&B->refcount, -Nb+1); /* drop all but one ref, see below */
 
     if(locker) {
-        /* at least two ref, possibly three remain.
+        /* at least two refs, possibly three, remain.
          * # One ref from above
          * # locker->locked list, which is released now.
          * # locker->refs array, assuming it is directly referenced,
@@ -717,7 +717,7 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
     epicsMutexUnlock(B->lock);
 
-    dbLockDecRef(B); /* last ref from above */
+    dbLockDecRef(B); /* last ref we hold */
 
     assert(A==psecond->lset->plockSet);
 }
@@ -828,6 +828,8 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
                 DBLINK *plink = CONTAINER(plink2, DBLINK, value);
                 lockRecord *lr = plink->value.pv_link.precord->lset;
 
+                /* plink->type==DB_LINK is implied.  Only DB_LINKs are tracked from BKLNK */
+
                 if(lr->precord==pfirst) {
                     goto nosplit;
                 }
@@ -839,7 +841,7 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
                 lr->compflag = 1;
             }
         }
-        /* All links from psecond were traversed without finding
+        /* All links involving psecond were traversed without finding
          * pfirst.  So we must create a new lockset.
          * newLS contains the nodes which will
          * make up this new lockset.

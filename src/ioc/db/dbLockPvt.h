@@ -37,12 +37,6 @@ typedef struct dbLockSet {
 
 struct lockRecord;
 
-typedef struct {
-  ELLNODE backlinksnode;
-  struct lockRecord *psrc;
-  struct lockRecord *ptarget;
-} linkRef;
-
 /* dbCommon.LSET is a plockRecord.
  * Except for spin and plockSet, all members of lockRecord are guarded
  * by the present lockset lock.
@@ -62,9 +56,6 @@ typedef struct lockRecord {
     /* temp used during lockset split */
     ELLNODE     compnode;
     unsigned int compflag;
-
-    ELLLIST backlinks;
-    linkRef links[1]; /* actual size based on no_links from dbRecordType */
 } lockRecord;
 
 typedef struct {

@@ -135,10 +135,17 @@ void dbLockDecRef(lockSet *ls)
     if(cnt)
         return;
 
+    /* not necessary as no one else holds a reference,
+     * but lock anyway to quiet valgrind
+     */
+    epicsMutexMustLock(ls->lock);
+
     if(ellCount(&ls->lockRecordList)!=0) {
         errlogPrintf("dbLockDecRef(%p) would free lockSet with %d records\n", ls, ellCount(&ls->lockRecordList));
         cantProceed(NULL);
     }
+
+    epicsMutexUnlock(ls->lock);
 
     epicsMutexMustLock(lockSetsGuard);
     ellDelete(&lockSetsActive, &ls->node);
@@ -491,13 +498,11 @@ done:
 static int createLockRecord(void* junk, DBENTRY* pdbentry)
 {
     dbCommon *prec = pdbentry->precnode->precord;
-    size_t i, no_links=prec->rdes->no_links;
     lockRecord *lrec;
-    size_t arrsize=(no_links-1)*sizeof(linkRef);
-    assert(no_links>=1); /* dbCommon has TSEL */
     assert(!prec->lset);
 
-    lrec = callocMustSucceed(1, sizeof(*lrec)+arrsize, "lockRecord");
+    /* TODO: one allocation for all records? */
+    lrec = callocMustSucceed(1, sizeof(*lrec), "lockRecord");
     if(!lrec)
         cantProceed("no memory for lockRecord");
     lrec->spin = epicsSpinCreate();
@@ -505,11 +510,6 @@ static int createLockRecord(void* junk, DBENTRY* pdbentry)
         cantProceed("no memory for spinlock in lockRecord");
 
     lrec->precord = prec;
-    ellInit(&lrec->backlinks);
-
-    for(i=0; i<no_links; i++) {
-        lrec->links[i].psrc = lrec;
-    }
 
     prec->lset = lrec;
     return 0;
@@ -524,7 +524,6 @@ static int initPVLinks(void* junk, DBENTRY* pdbentry)
 
     /* for each link originating from this record */
     for(i=0; i<rtype->no_links; i++) {
-        linkRef *bref = &prec->lset->links[i];
         DBADDR *paddr;
         dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
         DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
@@ -559,10 +558,6 @@ static int initPVLinks(void* junk, DBENTRY* pdbentry)
             dbLockIncRef(B);
             ellAdd(&B->lockRecordList, &prec->lset->node);
         }
-
-        /* initialize backward link tracking */
-        bref->ptarget = paddr->precord->lset;
-        ellAdd(&bref->ptarget->backlinks, &bref->backlinksnode);
     }
     return 0;
 }
@@ -637,40 +632,6 @@ void dbLockCleanupRecords(dbBase *pdbbase)
 #endif
 }
 
-/* update backwards link tracking */
-static void updateBackRefs(dbCommon *prec)
-{
-    size_t i;
-    /* for each link */
-    for(i=0; i<prec->rdes->no_links; i++) {
-        linkRef *bref = &prec->lset->links[i];
-        dbFldDes *pdesc = prec->rdes->papFldDes[prec->rdes->link_ind[i]];
-        DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
-
-        if(plink->type!=DB_LINK && bref->ptarget)
-        {
-            /* removed link */
-            ellDelete(&bref->ptarget->backlinks, &bref->backlinksnode);
-            bref->ptarget = NULL;
-        } else if(plink->type==DB_LINK)
-        {
-            DBADDR *paddr = (DBADDR*)plink->value.pv_link.pvt;
-
-            if(paddr->precord->lset != bref->ptarget) {
-                /* changed link */
-                if(bref->ptarget) {
-                    /* clear old */
-                    ellDelete(&bref->ptarget->backlinks, &bref->backlinksnode);
-                    bref->ptarget = NULL;
-                }
-
-                bref->ptarget = paddr->precord->lset;
-                ellAdd(&bref->ptarget->backlinks, &bref->backlinksnode);
-            }
-        }
-    }
-}
-
 /* Caller must lock both pfirst and psecond.
  * Assumes that pfirst has been modified
  * to link to psecond.
@@ -704,8 +665,6 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
     if(A==B)
         return; /* already in the same lockSet */
-
-    updateBackRefs(pfirst); /* not required */
 
     Nb = ellCount(&B->lockRecordList);
     assert(Nb>0);
@@ -791,7 +750,6 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
         cantProceed(NULL);
     }
 
-    updateBackRefs(pfirst);
 
     if(pfirst==psecond)
         return;
@@ -829,8 +787,16 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 
             /* Visit all the links originating from prec */
             for(i=0; i<rtype->no_links; i++) {
-                linkRef *bref=&lr->links[i];
-                lockRecord *lr = bref->ptarget;
+                dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
+                DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
+                DBADDR *ptarget;
+                lockRecord *lr;
+
+                if(plink->type!=DB_LINK)
+                    continue;
+
+                ptarget = plink->value.pv_link.pvt;
+                lr = ptarget->precord->lset;
 
                 if(!lr)
                     continue; /* not DB_LINK */
@@ -851,10 +817,12 @@ void dbLockSetSplit(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
             }
 
             /* Visit all links terminating at prec */
-            for(bcur=ellFirst(&lr->backlinks); bcur; bcur=ellNext(bcur))
+            for(bcur=ellFirst(&prec->bklnk); bcur; bcur=ellNext(bcur))
             {
-                linkRef *bref=CONTAINER(bcur, linkRef, backlinksnode);
-                lockRecord *lr = bref->psrc;
+                struct pv_link *plink1 = CONTAINER(bcur, struct pv_link, backlinknode);
+                union value *plink2 = CONTAINER(plink1, union value, pv_link);
+                DBLINK *plink = CONTAINER(plink2, DBLINK, value);
+                lockRecord *lr = plink->value.pv_link.precord->lset;
 
                 if(lr->precord==pfirst) {
                     goto nosplit;

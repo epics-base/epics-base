@@ -1052,7 +1052,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     switch (plink->type) { /* Old link type */
     case DB_LINK:
     case CA_LINK:
-        dbRemoveLink(&locker, precord, plink);
+        dbRemoveLink(&locker, precord, plink); /* link type becomes PV_LINK */
         break;
 
     case PV_LINK:

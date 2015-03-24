@@ -39,6 +39,9 @@
 
 #include "xRecord.h"
 
+#define testIntOk1(A, OP, B) testOk((A) OP (B), "%s (%d) %s %s (%d)", #A, A, #OP, #B, B);
+#define testPtrOk1(A, OP, B) testOk((A) OP (B), "%s (%p) %s %s (%p)", #A, A, #OP, #B, B);
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 /* number of seconds for the test to run */
@@ -136,7 +139,7 @@ void doreTarget(workerPriv *p)
     if(ret)
         testAbort("bad record name? %ld", ret);
 
-    if(action<0.25) {
+    if(action<=0.6) {
         scratchdst[0] = '\0';
     } else {
         strcpy(scratchdst, ptarg->name);
@@ -197,7 +200,7 @@ MAIN(dbStressTest)
     char *nwork=getenv("NWORK");
     struct timespec seed;
 
-    testPlan(0);
+    testPlan(95);
 
     clock_gettime(CLOCK_REALTIME, &seed);
     srand(seed.tv_nsec);
@@ -272,7 +275,7 @@ MAIN(dbStressTest)
                               &worker, &priv[i]);
     }
 
-    testDiag("All started");
+    testDiag("All started.  Will run for %f sec", runningtime);
 
     epicsThreadSleep(runningtime);
 
@@ -289,6 +292,30 @@ MAIN(dbStressTest)
 
     testDiag("All stopped");
 
+    testDiag("Validate lockSet ref counts");
+    dbInitEntry(pdbbase, &ent);
+    for(status = dbFirstRecordType(&ent);
+        !status;
+        status = dbNextRecordType(&ent))
+    {
+        for(status = dbFirstRecord(&ent);
+            !status;
+            status = dbNextRecord(&ent))
+        {
+            dbCommon *prec = ent.precnode->precord;
+            lockSet *ls;
+            if(ent.precnode->flags&DBRN_FLAGS_ISALIAS)
+                continue;
+            ls = prec->lset->plockSet;
+            testOk(ellCount(&ls->lockRecordList)==ls->refcount, "%s only lockRecords hold refs. %d == %d",
+                   prec->name,ellCount(&ls->lockRecordList),ls->refcount);
+            testOk1(ls->ownerlocker==NULL);
+        }
+
+    }
+    dbFinishEntry(&ent);
+
+    testDiag("Statistics");
     for(i=0; i<nworkers; i++) {
         testDiag("Worker %u", i);
         testDiag("N = %lu %lu %lu", priv[i].N[0], priv[i].N[1], priv[i].N[2]);

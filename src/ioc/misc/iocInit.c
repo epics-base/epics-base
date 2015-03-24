@@ -507,9 +507,6 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                 }
             }
         }
-
-        if (plink->type == PV_LINK)
-            dbInitLink(precord, plink, pdbFldDes->field_type);
     }
 }
 

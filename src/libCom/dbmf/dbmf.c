@@ -23,6 +23,10 @@
 #include "epicsMutex.h"
 #include "ellLib.h"
 #include "dbmf.h"
+/*
+#define DBMF_FREELIST_DEBUG 1
+*/
+#ifndef DBMF_FREELIST_DEBUG
 
 /*Default values for dblfInit */
 #define DBMF_SIZE		64
@@ -236,3 +240,24 @@ void  epicsShareAPI dbmfFreeChunks(void)
     pdbmfPvt->nFree = 0; pdbmfPvt->freeList = NULL;
     epicsMutexUnlock(pdbmfPvt->lock);
 }
+
+#else /* DBMF_FREELIST_DEBUG */
+
+int epicsShareAPI dbmfInit(size_t size, int chunkItems)
+{ return 0; }
+
+void* epicsShareAPI dbmfMalloc(size_t size)
+{ return malloc(size); }
+
+char * epicsShareAPI dbmfStrdup(unsigned char *str)
+{ return strdup((char*)str); }
+
+void epicsShareAPI dbmfFree(void* mem)
+{ free(mem); }
+
+int epicsShareAPI dbmfShow(int level)
+{ return 0; }
+
+void  epicsShareAPI dbmfFreeChunks(void) {}
+
+#endif /* DBMF_FREELIST_DEBUG */

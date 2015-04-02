@@ -259,7 +259,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 
     if (yyAbort)
         while (ellCount(&tempList))
-            popFirstTemp();
+            popFirstTemp(); // Memory leak on parser failure
 
     dbFreePath(pdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */

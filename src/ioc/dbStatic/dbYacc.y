@@ -118,7 +118,7 @@ recordtype_field: tokenFIELD recordtype_field_head recordtype_field_body
 	| tokenCDEFS
 {
 	if(dbStaticDebug>2) printf("recordtype_cdef %s", $1);
-	dbRecordtypeCdef($1);
+	dbRecordtypeCdef($1); dbmfFree($1);
 }
 	| include ;
 

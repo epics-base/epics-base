@@ -200,6 +200,10 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     char	*penv;
     char	**macPairs;
     
+    if(ellCount(&tempList)) {
+        epicsPrintf("dbReadCOM: Parser stack dirty %d\n", ellCount(&tempList));
+    }
+
     if(*ppdbbase == 0) *ppdbbase = dbAllocBase();
     pdbbase = *ppdbbase;
     if(path && strlen(path)>0) {
@@ -257,9 +261,10 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
     ellAdd(&inputFileList,&pinputFile->node);
     status = pvt_yy_parse();
 
-    if (yyAbort)
-        while (ellCount(&tempList))
-            popFirstTemp(); // Memory leak on parser failure
+    if (ellCount(&tempList) && !yyAbort)
+        epicsPrintf("dbReadCOM: Parser stack dirty w/o error. %d\n", ellCount(&tempList));
+    while (ellCount(&tempList))
+        popFirstTemp(); /* Memory leak on parser failure */
 
     dbFreePath(pdbbase);
     if(!status) { /*add RTYP and VERS as an attribute */

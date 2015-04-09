@@ -90,10 +90,11 @@ TESTFILES += ../dbCaStatsTest.db
 
 TESTPROD_HOST += dbCaLinkTest
 dbCaLinkTest_SRCS += dbCaLinkTest.c
+dbCaLinkTest_SRCS += dbCACTest.cpp
 dbCaLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaLinkTest.c
 TESTS += dbCaLinkTest
-TESTFILES += ../dbCaLinkTest1.db
+TESTFILES += ../dbCaLinkTest1.db ../dbCaLinkTest2.db ../dbCaLinkTest3.db
 
 scanIoTest_DBD += menuScan.dbd
 TESTPROD_HOST += scanIoTest

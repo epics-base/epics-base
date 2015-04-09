@@ -538,9 +538,52 @@ static void testreTargetTypeChange(void)
     free(buftarg2);
 }
 
+void dbCaLinkTest_testCAC(void);
+
+static void testCAC(void)
+{
+    arrRecord *psrc, *ptarg1, *ptarg2;
+    double *bufsrc, *buftarg1;
+    epicsInt32 *buftarg2;
+
+    testDiag("Check local CA through libca");
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbCaLinkTest3.db", NULL, "NELM=5,TARGET=target1 CP");
+
+    psrc = (arrRecord*)testdbRecordPtr("source");
+    ptarg1= (arrRecord*)testdbRecordPtr("target1");
+    ptarg2= (arrRecord*)testdbRecordPtr("target2");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    bufsrc = psrc->bptr;
+    buftarg1= ptarg1->bptr;
+    buftarg2= ptarg2->bptr;
+
+    dbCaLinkTest_testCAC();
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+
+    /* records don't cleanup after themselves
+     * so do here to silence valgrind
+     */
+    free(bufsrc);
+    free(buftarg1);
+    free(buftarg2);
+}
+
 MAIN(dbCaLinkTest)
 {
-    testPlan(62);
+    testPlan(85);
     testNativeLink();
     testStringLink();
     testCP();
@@ -549,5 +592,6 @@ MAIN(dbCaLinkTest)
     testArrayLink(1,10);
     testArrayLink(10,10);
     testreTargetTypeChange();
+    testCAC();
     return testDone();
 }

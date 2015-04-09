@@ -34,6 +34,8 @@
 #   undef epicsExportSharedSymbols
 #endif
 
+#include "stdlib.h"
+
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "resourceLib.h"
@@ -137,7 +139,9 @@ public:
     void show ( unsigned level ) const;
 private:
     struct cacheElem_t {
+        size_t size;
         struct cacheElem_t * pNext;
+        char buf[1];
     };
     unsigned long _readNotifyCacheSize;
     cacheElem_t * _pReadNotifyCache;

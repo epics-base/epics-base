@@ -13,7 +13,10 @@
  * Auther Jeff Hill
  */
 
+#include <stdlib.h>
+
 #include "epicsMutex.h"
+#include "dbDefs.h"
 
 #include "cadef.h" // this can be eliminated when the callbacks use the new interface
 #include "db_access.h" // should be eliminated here in the future
@@ -22,6 +25,8 @@
 
 #include "db_access_routines.h"
 #include "dbCAC.h"
+
+#include "epicsAssert.h"
 
 dbContextReadNotifyCache::dbContextReadNotifyCache ( epicsMutex & mutexIn ) :
     _mutex ( mutexIn )
@@ -112,10 +117,10 @@ dbContextReadNotifyCacheAllocator::~dbContextReadNotifyCacheAllocator ()
 
 void dbContextReadNotifyCacheAllocator::reclaimAllCacheEntries ()
 {
-
     while ( _pReadNotifyCache ) {
         cacheElem_t * pNext = _pReadNotifyCache->pNext;
-        delete [] _pReadNotifyCache;
+        assert(_pReadNotifyCache->size == _readNotifyCacheSize);
+        ::free(_pReadNotifyCache);
         _pReadNotifyCache = pNext;
     }
 }
@@ -129,20 +134,26 @@ char * dbContextReadNotifyCacheAllocator::alloc ( unsigned long size )
 
     cacheElem_t * pAlloc = _pReadNotifyCache;
     if ( pAlloc ) {
+        assert(pAlloc->size == _readNotifyCacheSize);
         _pReadNotifyCache = pAlloc->pNext;
     }
     else {
-        size_t nElem = _readNotifyCacheSize / sizeof ( cacheElem_t );
-        pAlloc = new cacheElem_t [ nElem + 1 ];
+        pAlloc = (cacheElem_t*)calloc(1, sizeof(cacheElem_t)+_readNotifyCacheSize);
+        if(!pAlloc) throw std::bad_alloc();
+        pAlloc->size = _readNotifyCacheSize;
     }
-    return reinterpret_cast < char * > ( pAlloc );
+    return pAlloc->buf;
 }
 
 void dbContextReadNotifyCacheAllocator::free ( char * pFree )
 {
-    cacheElem_t * pAlloc = reinterpret_cast < cacheElem_t * > ( pFree );
-    pAlloc->pNext = _pReadNotifyCache;
-    _pReadNotifyCache = pAlloc;
+    cacheElem_t * pAlloc = (cacheElem_t*)(pFree - offsetof(cacheElem_t, buf));
+    if (pAlloc->size == _readNotifyCacheSize) {
+        pAlloc->pNext = _pReadNotifyCache;
+        _pReadNotifyCache = pAlloc;
+    } else {
+        ::free(pAlloc);
+    }
 }
 
 void dbContextReadNotifyCacheAllocator::show ( unsigned level ) const
@@ -152,6 +163,7 @@ void dbContextReadNotifyCacheAllocator::show ( unsigned level ) const
         size_t count =0;
         cacheElem_t * pNext = _pReadNotifyCache;
         while ( pNext ) {
+            assert(pNext->size == _readNotifyCacheSize);
             pNext = _pReadNotifyCache->pNext;
             count++;
         }

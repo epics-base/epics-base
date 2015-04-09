@@ -73,6 +73,8 @@ void dbCaLinkTest_testCAC(void)
         testECA(ca_pend_io(1.0));
         putgetarray(chanid, 1.0, 1);
         putgetarray(chanid, 2.0, 2);
+        // repeat to ensure a cache hit in dbContextReadNotifyCacheAllocator
+        putgetarray(chanid, 2.0, 2);
         putgetarray(chanid, 5.0, 5);
 
         testECA(ca_clear_channel(chanid));

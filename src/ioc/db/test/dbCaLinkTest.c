@@ -583,7 +583,7 @@ static void testCAC(void)
 
 MAIN(dbCaLinkTest)
 {
-    testPlan(85);
+    testPlan(91);
     testNativeLink();
     testStringLink();
     testCP();

@@ -498,10 +498,20 @@ static void convert(aoRecord *prec, double value)
     }
     value -= prec->aoff;
     if (prec->aslo != 0) value /= prec->aslo;
-    if (value >= 0.0)
-        prec->rval = (epicsInt32)(value + 0.5) - prec->roff;
-    else
-        prec->rval = (epicsInt32)(value - 0.5) - prec->roff;
+
+    /* Apply raw offset and limits, round to 32-bit integer */
+    value -= prec->roff;
+    if (value >= 0.0) {
+        if (value >= (0x7fffffff - 0.5))
+            prec->rval = 0x7fffffff;
+        else
+            prec->rval = (epicsInt32)(value + 0.5);
+    } else {
+        if (value > (0.5 - 0x80000000))
+            prec->rval = (epicsInt32)(value - 0.5);
+        else
+            prec->rval = 0x80000000;
+    }
 }
 
 

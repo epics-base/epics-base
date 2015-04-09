@@ -309,13 +309,14 @@ $(MUNCHNAME): %$(MUNCH_SUFFIX): $(MUNCH_DEPENDS) %$(EXE)
 	$(MUNCH_CMD)
 
 #---------------------------------------------------------------
-# Automated testing
-
 # GeSys modules for RTEMS
 $(MODNAME): %$(MODEXT): %$(EXE)
 	@echo "Building module $@"
 	@$(RM) $@
 	$(LINK.mod)
+
+#---------------------------------------------------------------
+# Automated testing
 
 runtests: $(TESTSCRIPTS)
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^

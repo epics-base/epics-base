@@ -2087,7 +2087,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_OUTLINK:
     case DBF_FWDLINK: {
 	    DBLINK	*plink;
-	    char	string[80];
+        char	string[256];
 	    char	*pstr = string;
 
 	    if (!pfield)

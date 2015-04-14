@@ -652,7 +652,7 @@ not follow this pattern, but are still printable strings.
 
 =item [1] R3.15 Channel Access Reference Manual by Jeffrey O. Hill
 
-L<http://www.aps.anl.gov/epics/base/R3-15/0-docs/CAref.html>
+L<http://www.aps.anl.gov/epics/base/R3-15/2-docs/CAref.html>
 
 =back
 

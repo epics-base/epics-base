@@ -24,7 +24,7 @@ accepted by the EPICS IOC's dbLoadTemplate command.</p>
 
 <h2>Command Syntax:</h2>
 
-<pre>msi -V -g -o<i>outfile</i> -I<i>dir</i> -M<i>subs</i> -S<i>subfile</i> <i>template</i></pre>
+<pre>msi -V -g -D -o<i>outfile</i> -I<i>dir</i> -M<i>subs</i> -S<i>subfile</i> <i>template</i></pre>
 
 <p>All parameters are optional. The -o, -I, -M, and -S switches may be
 separated from their associated value string by spaces if desired. Output will
@@ -45,6 +45,13 @@ be written to stdout unless the -o option is given.</p>
     given for this macro. This flag is provided for backwards compatibility as
     this was the behavior of previous versions of msi, but it does not follow
     common scoping rules and is discouraged.</dd>
+
+  <dt><tt>-D</tt></dt>
+    <dd>Output dependency information suitable for including by a Makefile to
+    stdout instead of performing the macro substitutions. The <tt>-o</tt> option
+    must be given to specify the target name for the dependency rules. Other
+    options should be given exactly as will be used in the macro substitution
+    process.</dd>
 
   <dt><tt>-o</tt> <i>file</i></dt>
     <dd>Output will be written to the specifed file rather than to the standard

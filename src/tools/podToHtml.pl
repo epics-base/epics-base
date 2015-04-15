@@ -14,24 +14,72 @@ use warnings;
 use Getopt::Std;
 use Pod::Simple::HTML;
 
-our ($opt_o);
+=head1 NAME
+
+podToHtml.pl - convert EPICS .pod files to .html
+
+=head1 SYNOPSIS
+
+B<podToHtml.pl> [B<-s>] [B<-o> file.html] file.pod
+
+=head1 DESCRIPTION
+
+Converts files from Perl's POD format into HTML format.
+
+The generated HTML output file refers to a CSS style sheet F<style.css> which
+can be located in a parent directory of the final installation directory. The
+relative path to that file (i.e. the number of parent directories to traverse)
+is calculated based on the number of components in the path to the input file.
+
+=head1 OPTIONS
+
+I<podToHtml.pl> understands the following options:
+
+=over 4
+
+=item B<-s>
+
+Indicates that the first component of the input file path is not part of the
+final installation path, thus should be removed before calculating the relative
+path to the style-sheet file.
+
+=item B<-o> file.html
+
+Name of the HTML output file to be created.
+
+=back
+
+If no output filename is set, the file created will be named after the input
+file, removing any directory components in the path and replacing any file
+extension with .html.
+
+=cut
+
+our $opt_o;
+our $opt_s = 0;
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
-&HELP_MESSAGE if !getopts('o:') || @ARGV != 1;
+&HELP_MESSAGE if !getopts('o:s') || @ARGV != 1;
 
 my $infile = shift @ARGV;
 
+my @inpath = split /\//, $infile;
+my $file = pop @inpath;
+
 if (!$opt_o) {
-    ($opt_o = $infile) =~ s/\. \w+ $/.html/x;
-    $opt_o =~ s/^.*\///;
+    ($opt_o = $file) =~ s/\. \w+ $/.html/x;
 }
+
+# Calculate path to style.css file
+shift @inpath if $opt_s; # Remove leading ..
+my $root = '../' x scalar @inpath;
 
 open my $out, '>', $opt_o or
     die "Can't create $opt_o: $!\n";
 
 my $podHtml = Pod::Simple::HTML->new();
 
-$podHtml->html_css('style.css');
+$podHtml->html_css($root . 'style.css');
 $podHtml->perldoc_url_prefix('');
 $podHtml->perldoc_url_postfix('.html');
 $podHtml->set_source($infile);
@@ -42,6 +90,15 @@ print $out $html;
 close $out;
 
 sub HELP_MESSAGE {
-    print STDERR "Usage: podToHtml.pl [-o file.html] file.pod\n";
+    print STDERR "Usage: podToHtml.pl [-s] [-o file.html] file.pod\n";
     exit 2;
 }
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2010 UChicago Argonne LLC, as Operator of Argonne National
+Laboratory.
+
+This software is distributed under the terms of the EPICS Open License.
+
+=cut

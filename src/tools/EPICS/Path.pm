@@ -7,17 +7,17 @@
 
 # $Revision-Id$
 
-use Carp;
-use Cwd qw(getcwd abs_path);
-use File::Spec;
+package EPICS::Path;
+require 5.000;
+require Exporter;
 
-=head1 EPICS::Path
+=head1 NAME
 
 EPICS::Path - Path-handling utilities for EPICS tools
 
 =head1 SYNOPSIS
 
-  use lib '@EPICS_BASE@/lib/perl';
+  use lib '/path/to/base/lib/perl';
   use EPICS::Path;
 
   my $dir = UnixPath('C:\Program Files\EPICS');
@@ -26,17 +26,29 @@ EPICS::Path - Path-handling utilities for EPICS tools
 
 =head1 DESCRIPTION
 
-C<EPICS::Path> provides functions for processing pathnames that are commonly
-needed by EPICS tools.  Windows is not the only culprit, some older automount
-daemons insert strange prefixes into absolute directory paths that we have to
-remove before storing the result for use later.
+This module provides functions for processing pathnames that are commonly needed
+by EPICS tools. Windows is not the only culprit, some older automount daemons
+insert strange prefixes into absolute directory paths that we have to remove
+before storing the result for use later.
 
+Note that these functions are only designed to work on operating systems that
+recognize a forward slash C</> as a directory separator; this does include
+Windows, but not pre-OS-X versions of MacOS which used a colon C<:> instead.
 
 =head1 FUNCTIONS
 
 =over 4
 
-=item UnixPath( I<PATH> )
+=cut
+
+use Carp;
+use Cwd qw(getcwd abs_path);
+use File::Spec;
+
+@ISA = qw(Exporter);
+@EXPORT = qw(UnixPath LocalPath AbsPath);
+
+=item B<C<UnixPath($path)>>
 
 C<UnixPath> should be used on any pathnames provided by external tools to
 convert them into a form that Perl understands.
@@ -57,7 +69,7 @@ sub UnixPath {
     return $newpath;
 }
 
-=item LocalPath( I<PATH> )
+=item B<C<LocalPath($path)>>
 
 C<LocalPath> should be used when generating pathnames for external tools or to
 put into a file.  It converts paths from the Unix form that Perl understands to
@@ -65,7 +77,7 @@ any necessary external representation, and also removes automounter prefixes to
 put the path into its canonical form.
 
 Before Leopard, the Mac OS X automounter inserted a verbose prefix, and in case
-anyone is still using SunOS it adds its own prefix as well.
+anyone is still using SunOS (pre-Solaris) it added its own prefix as well.
 
 =cut
 
@@ -81,19 +93,19 @@ sub LocalPath {
     return $newpath;
 }
 
-=item AbsPath( I<PATH> )
+=item B<C<AbsPath($path)>>
 
-=item AbsPath( I<PATH>, I<CWD> )
+=item B<C<AbsPath($path, $cwd)>>
 
-The C<abs_path()> function in Perl's C<Cwd> module doesn't like non-existent
+The C<abs_path()> function in Perl's F<Cwd> module doesn't like non-existent
 path components other than in the final position, but EPICS tools needs to be
 able to handle them in paths like F<$(TOP)/lib/$(T_A)> before the F<$(TOP)/lib>
 directory has been created.
 
-C<AbsPath> takes a path I<PATH> and optionally an absolute path to a directory
-that first is relative to; if the second argument is not provided the current
-working directory is used.  The result returned has been filtered through
-C<LocalPath()> to remove any automounter prefixes.
+C<AbsPath> takes a path C<$path> and optionally an absolute path to a directory
+that the first is relative to; if the second argument is not provided the
+current working directory is used instead. The result returned has also been
+filtered through C<LocalPath()> to remove any automounter prefixes.
 
 =cut
 
@@ -138,6 +150,5 @@ Laboratory.
 This software is distributed under the terms of the EPICS Open License.
 
 =cut
-
 
 1;

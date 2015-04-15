@@ -54,6 +54,10 @@ PERL_SCRIPTS += podToHtml.pl
 PERL_SCRIPTS += registerRecordDeviceDriver.pl
 
 HTMLS = style.css
+HTMLS += EPICS/Getopts.html
+HTMLS += EPICS/Path.html
+HTMLS += EPICS/Readfile.html
+HTMLS += podToHtml.html
 
 # Build Package Config Files
 

@@ -323,7 +323,7 @@ inline int aitString::installBuf(const char* pString, unsigned strLengthIn, unsi
 
 inline int aitString::installBuf(const char* pString)
 {
-	unsigned strLengthIn = strlen(pString);
+    unsigned strLengthIn = (unsigned) strlen(pString);
 	return this->installBuf(pString, strLengthIn, strLengthIn+1u);
 }
 
@@ -350,7 +350,7 @@ inline int aitString::installConstBuf(const char* pString, unsigned strLengthIn,
 
 inline int aitString::installConstBuf(const char* pString)
 {
-	unsigned strLengthIn = strlen(pString);
+    unsigned strLengthIn = (unsigned) strlen(pString);
 	return this->installConstBuf(pString, strLengthIn, strLengthIn+1u);
 }
 
@@ -378,7 +378,7 @@ inline int aitString::installConstImortalBuf(const char* pString,
 
 inline int aitString::installConstImortalBuf(const char* pString)
 {
-	unsigned strLengthIn = strlen(pString);
+    unsigned strLengthIn = (unsigned) strlen(pString);
 	return this->installConstImortalBuf(pString, strLengthIn, strLengthIn+1u);
 }
 
@@ -396,7 +396,7 @@ inline int aitString::copy(const char* pString, unsigned stringLength)
 
 inline int aitString::copy(const char* p)
 {
-	return this->copy(p, strlen(p));
+    return this->copy(p, (unsigned) strlen(p));
 }
 
 inline int aitString::copy(const aitString* p)
@@ -436,7 +436,7 @@ inline aitString::aitString(void)
 
 inline aitString::aitString(const char* p, aitStrType typeIn)
 {
-	unsigned strLengthIn = strlen(p);
+    unsigned strLengthIn = (unsigned) strlen(p);
 	this->init(p, typeIn, strLengthIn, strLengthIn+1u);
 }
 

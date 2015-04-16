@@ -239,8 +239,7 @@ menu%.h$(DEP): ../menu%.dbd
 
 %.dbd$(DEP): %.dbd.pod
 	@$(RM) $@
-	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $< > $@
-	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
+	@echo "$(COMMONDEP_TARGET): ../Makefile" > $@
 
 %.dbd$(DEP): %Include.dbd
 	@$(RM) $@
@@ -280,6 +279,8 @@ menu%.h$(DEP): ../menu%.dbd
 %.acf$(DEP): ../%.acs
 	@$(RM) $@
 	@$(ACFDEPENDS_CMD)
+
+.PRECIOUS: %$(DEP)
 
 ##################################################### CapFast filter
 
@@ -370,7 +371,7 @@ $(COMMON_DIR)/bpt%.dbd: bpt%.data
 
 $(COMMON_DIR)/%.dbd: %.dbd.pod
 	@$(RM) $(notdir $@)
-	$(DBEXPAND) $(DBDFLAGS) -o $(notdir $@) $<
+	$(PERL) $(TOOLS)/podRemove.pl -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.dbd: %Include.dbd
@@ -422,7 +423,7 @@ $$(INSTALL_DBD)/$$(notdir $(1)) : $(1)
 endef
 $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
-.PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%Include.dbd
+.PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%.dbd
 
 ##################################################### HTML files
 

@@ -2280,28 +2280,29 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
     case DBF_INLINK:
     case DBF_OUTLINK:
     case DBF_FWDLINK: {
-        dbLinkInfo link_info;
-        DBLINK *plink = (DBLINK *)pfield;
+            dbLinkInfo link_info;
+            DBLINK *plink = (DBLINK *)pfield;
 
-        status = dbParseLink(pstring, pflddes->field_type, &link_info);
+            status = dbParseLink(pstring, pflddes->field_type, &link_info);
+            if (status) break;
 
-        if(status==0 && plink->type==CONSTANT && plink->value.constantStr==NULL) {
-            /* links not yet initialized by dbInitRecordLinks() */
-            free(plink->text);
-            plink->text = epicsStrDup(pstring);
-            free(link_info.target);
+            if (plink->type==CONSTANT && plink->value.constantStr==NULL) {
+                /* links not yet initialized by dbInitRecordLinks() */
+                free(plink->text);
+                plink->text = epicsStrDup(pstring);
+                free(link_info.target);
+            } else {
+                /* assignment after init (eg. autosave restore) */
+                struct dbCommon *prec = pdbentry->precnode->precord;
+                devSup *devsup = (devSup *)ellNth(&pdbentry->precordType->devList, prec->dtyp+1);
 
-        } else if(status==0) {
-            /* assignment after init (eg. autosave restore) */
-            struct dbCommon *prec = pdbentry->precnode->precord;
-            devSup *devsup = (devSup *)ellNth(&pdbentry->precordType->devList, prec->dtyp+1);
-            status = dbCanSetLink(plink, &link_info, devsup);
-            if(status==0)
-                status = dbSetLink(plink, &link_info, devsup);
+                status = dbCanSetLink(plink, &link_info, devsup);
+                if (status == 0)
+                    status = dbSetLink(plink, &link_info, devsup);
+            }
         }
+        break;
 
-    }
-	break;
     default:
 	return S_dbLib_badField;
     }

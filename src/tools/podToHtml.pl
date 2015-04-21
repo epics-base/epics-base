@@ -6,21 +6,25 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
+# $Revision-Id$
 
 use strict;
 use warnings;
 
 use Getopt::Std;
+$Getopt::Std::STANDARD_HELP_VERSION = 1;
+
 use Pod::Simple::HTML;
+
+use Pod::Usage;
 
 =head1 NAME
 
-podToHtml.pl - convert EPICS .pod files to .html
+podToHtml.pl - Convert EPICS .pod files to .html
 
 =head1 SYNOPSIS
 
-B<podToHtml.pl> [B<-s>] [B<-o> file.html] file.pod
+B<podToHtml.pl> [B<-h>] [B<-s>] [B<-o> file.html] file.pod
 
 =head1 DESCRIPTION
 
@@ -33,9 +37,13 @@ is calculated based on the number of components in the path to the input file.
 
 =head1 OPTIONS
 
-I<podToHtml.pl> understands the following options:
+B<podToHtml.pl> understands the following options:
 
 =over 4
+
+=item B<-h>
+
+Help, display this document as text.
 
 =item B<-s>
 
@@ -55,11 +63,14 @@ extension with .html.
 
 =cut
 
-our $opt_o;
+our ($opt_o, $opt_h);
 our $opt_s = 0;
 
-$Getopt::Std::OUTPUT_HELP_VERSION = 1;
-&HELP_MESSAGE if !getopts('o:s') || @ARGV != 1;
+sub HELP_MESSAGE {
+    pod2usage(-exitval => 2, -verbose => $opt_h);
+}
+
+HELP_MESSAGE() if !getopts('ho:s') || $opt_h || @ARGV != 1;
 
 my $infile = shift @ARGV;
 
@@ -89,14 +100,9 @@ $podHtml->run;
 print $out $html;
 close $out;
 
-sub HELP_MESSAGE {
-    print STDERR "Usage: podToHtml.pl [-s] [-o file.html] file.pod\n";
-    exit 2;
-}
-
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 UChicago Argonne LLC, as Operator of Argonne National
+Copyright (C) 2013 UChicago Argonne LLC, as Operator of Argonne National
 Laboratory.
 
 This software is distributed under the terms of the EPICS Open License.

@@ -14,12 +14,15 @@
 #
 
 use strict;
+use warnings;
+
+use Cwd qw(cwd);
+use Getopt::Std;
+$Getopt::Std::STANDARD_HELP_VERSION = 1;
 
 use FindBin qw($Bin);
 use lib ("$Bin/../../lib/perl", $Bin);
 
-use Cwd qw(cwd);
-use Getopt::Std;
 use EPICS::Path;
 use EPICS::Release;
 
@@ -27,8 +30,7 @@ use vars qw($arch $top $iocroot $root);
 
 our ($opt_a, $opt_t, $opt_T);
 
-$Getopt::Std::OUTPUT_HELP_VERSION = 1;
-getopts('a:t:T:') or &HELP_MESSAGE;
+getopts('a:t:T:') or HELP_MESSAGE();
 
 my $cwd = UnixPath(cwd());
 
@@ -63,7 +65,7 @@ if ($opt_t) {
     }
 }
 
-&HELP_MESSAGE unless @ARGV == 1;
+HELP_MESSAGE() unless @ARGV == 1;
 
 my $outfile = $ARGV[0];
 
@@ -80,12 +82,12 @@ expandRelease(\%macros, \@apps);
 
 # This is a perl switch statement:
 for ($outfile) {
-    m/releaseTops/       and do { &releaseTops;         last; };
-    m/dllPath\.bat/      and do { &dllPath;             last; };
-    m/relPaths\.sh/      and do { &relPaths;            last; };
-    m/cdCommands/        and do { &cdCommands;          last; };
-    m/envPaths/          and do { &envPaths;            last; };
-    m/checkRelease/      and do { &checkRelease;        last; };
+    m/releaseTops/       and do { releaseTops();         last; };
+    m/dllPath\.bat/      and do { dllPath();             last; };
+    m/relPaths\.sh/      and do { relPaths();            last; };
+    m/cdCommands/        and do { cdCommands();          last; };
+    m/envPaths/          and do { envPaths();            last; };
+    m/checkRelease/      and do { checkRelease();        last; };
     die "Output file type \'$outfile\' not supported";
 }
 
@@ -158,7 +160,7 @@ sub cdCommands {
     
     my $startup = $cwd;
     $startup =~ s/^$root/$iocroot/o if ($opt_t);
-    $startup =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
+    $startup =~ s/([\\"])/\\$1/g; # escape back-slashes and double-quotes
     
     print OUT "startup = \"$startup\"\n";
     
@@ -171,7 +173,7 @@ sub cdCommands {
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
-        $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
+        $iocpath =~ s/([\\"])/\\$1/g; # escape back-slashes and double-quotes
         my $app_lc = lc($app);
         print OUT "$app_lc = \"$iocpath\"\n"
             if (-d $path);
@@ -203,7 +205,7 @@ sub envPaths {
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
-        $iocpath =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
+        $iocpath =~ s/([\\"])/\\$1/g; # escape back-slashes and double-quotes
         print OUT "epicsEnvSet(\"$app\",\"$iocpath\")\n" if (-d $path);
     }
     close OUT;

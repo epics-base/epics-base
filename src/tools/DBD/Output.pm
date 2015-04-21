@@ -19,13 +19,13 @@ use DBD::Variable;
 
 sub OutputDBD {
     my ($out, $dbd) = @_;
-    &OutputMenus($out, $dbd->menus);
-    &OutputRecordtypes($out, $dbd->recordtypes);
-    &OutputDrivers($out, $dbd->drivers);
-    &OutputRegistrars($out, $dbd->registrars);
-    &OutputFunctions($out, $dbd->functions);
-    &OutputVariables($out, $dbd->variables);
-    &OutputBreaktables($out, $dbd->breaktables);
+    OutputMenus($out, $dbd->menus);
+    OutputRecordtypes($out, $dbd->recordtypes);
+    OutputDrivers($out, $dbd->drivers);
+    OutputRegistrars($out, $dbd->registrars);
+    OutputFunctions($out, $dbd->functions);
+    OutputVariables($out, $dbd->variables);
+    OutputBreaktables($out, $dbd->breaktables);
 }
 
 sub OutputMenus {

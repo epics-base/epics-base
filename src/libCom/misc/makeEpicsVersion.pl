@@ -20,8 +20,8 @@ our $opt_o = 'epicsVersion.h';
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 
-&HELP_MESSAGE unless getopts('ho:qv:') && @ARGV == 1;
-&HELP_MESSAGE if $opt_h;
+HELP_MESSAGE() unless getopts('ho:qv:') && @ARGV == 1;
+HELP_MESSAGE() if $opt_h;
 
 my ($infile) = @ARGV;
 

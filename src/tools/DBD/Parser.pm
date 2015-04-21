@@ -79,7 +79,7 @@ sub parseCommon {
 
         # Extract POD
         if (m/\G ( = [a-zA-Z] .* ) \n/oxgc) {
-            $obj->add_pod($1, &parsePod);
+            $obj->add_pod($1, parsePod());
         }
         elsif (m/\G \# /oxgc) {
             if (m/\G \# ! BEGIN \{ ( [^}]* ) \} ! \# \# \n/oxgc) {

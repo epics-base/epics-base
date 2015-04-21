@@ -22,10 +22,10 @@ use EPICS::Copy;
 # Process command line options
 our ($opt_a, $opt_d, @opt_D, $opt_h, $opt_t);
 getopts('a:dD@ht:')
-    or &HELP_MESSAGE;
+    or HELP_MESSAGE();
 
 # Handle the -h command
-&HELP_MESSAGE if $opt_h;
+HELP_MESSAGE() if $opt_h;
 
 die "Path to TOP not set, use -t option\n"
     unless $opt_t;

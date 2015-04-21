@@ -30,7 +30,7 @@ my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my ($file, $subname, $bldTop) = @ARGV;
 
 my $dbd = DBD->new();
-&ParseDBD($dbd, &Readfile($file, "", \@path));
+ParseDBD($dbd, Readfile($file, "", \@path));
 
 if ($opt_D) {   # Output dependencies only
     my %filecount;

@@ -50,7 +50,7 @@ my $guard_name = "INC_$outbase";
 $guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
-&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
+ParseDBD($dbd, Readfile($infile, 0, \@opt_I));
 
 my $rtypes = $dbd->recordtypes;
 die "$tool: Input file must contain a single recordtype definition.\n"
@@ -99,9 +99,9 @@ if ($opt_D) {   # Output dependencies only, to stdout
             "\n} ${rn}FieldIndex;\n\n";
         print OUTFILE "#ifdef GEN_SIZE_OFFSET\n\n";
         if ($opt_s) {
-            &newtables;
+            newtables();
         } else {
-            &oldtables;
+            oldtables();
         }
         print OUTFILE "#endif /* GEN_SIZE_OFFSET */\n";
     }

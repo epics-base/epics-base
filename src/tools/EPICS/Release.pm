@@ -19,22 +19,22 @@ sub readReleaseFiles {
     $Rmacros->{'EPICS_HOST_ARCH'} = $hostarch if $hostarch;
 
     return unless (-e $relfile);
-    &readRelease($relfile, $Rmacros, $Rapps);
+    readRelease($relfile, $Rmacros, $Rapps);
 
     if ($hostarch) {
         my $hrelfile = "$relfile.$hostarch";
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
+        readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
         $hrelfile .= '.Common';
-        &readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
+        readRelease($hrelfile, $Rmacros, $Rapps) if (-e $hrelfile);
     }
 
     if ($arch) {
         my $crelfile = "$relfile.Common.$arch";
-        &readRelease($crelfile, $Rmacros, $Rapps) if (-e $crelfile);
+        readRelease($crelfile, $Rmacros, $Rapps) if (-e $crelfile);
 
         if ($hostarch) {
             my $arelfile = "$relfile.$hostarch.$arch";
-            &readRelease($arelfile, $Rmacros, $Rapps) if (-e $arelfile);
+            readRelease($arelfile, $Rmacros, $Rapps) if (-e $arelfile);
         }
     }
 }
@@ -71,7 +71,7 @@ sub readRelease {
         my ($op, $path) = m/^ \s* (-? include) \s+ (.*)/x;
         $path = expandMacros($path, $Rmacros);
         if (-e $path) {
-            &readRelease($path, $Rmacros, $Rapps);
+            readRelease($path, $Rmacros, $Rapps);
         } elsif ($op eq "include") {
             carp "EPICS/Release.pm: Include file '$path' not found\n";
         }

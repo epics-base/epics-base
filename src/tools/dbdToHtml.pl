@@ -55,7 +55,7 @@ my $infile = shift @ARGV;
 $infile =~ m/\.dbd.pod$/ or
     die "$tool: Input file '$infile' must have '.dbd.pod' extension\n";
 
-&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
+ParseDBD($dbd, Readfile($infile, 0, \@opt_I));
 
 if (!$opt_o) {
     ($opt_o = $infile) =~ s/\.dbd\.pod$/.html/;

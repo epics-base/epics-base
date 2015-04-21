@@ -32,8 +32,8 @@ our $opt_o = 'envData.c';
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 $Text::Wrap::columns = 75;
 
-&HELP_MESSAGE unless getopts('ho:q') && @ARGV == 1;
-&HELP_MESSAGE if $opt_h;
+HELP_MESSAGE() unless getopts('ho:q') && @ARGV == 1;
+HELP_MESSAGE() if $opt_h;
 
 my $config   = AbsPath(shift);
 my $env_defs = AbsPath('../env/envDefs.h');

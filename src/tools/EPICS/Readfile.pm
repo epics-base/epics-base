@@ -145,25 +145,25 @@ complete set of dependencies for the input file.
 sub Readfile {
     my ($file, $macros, $Rpath) = @_;
     print "Readfile($file)\n" if $debug;
-    my $input = &expandMacros($macros, &slurp($file, $Rpath));
+    my $input = expandMacros($macros, slurp($file, $Rpath));
     my @input = split /\n/, $input;
     my @output;
     foreach (@input) {
         if (m/^ \s* include \s+ $string /ox) {
-            $arg = &unquote($1);
+            $arg = unquote($1);
             print " include $arg\n" if $debug;
             push @output, "##! include \"$arg\"";
-            push @output, &Readfile($arg, $macros, $Rpath);
+            push @output, Readfile($arg, $macros, $Rpath);
         } elsif (m/^ \s* addpath \s+ $string /ox) {
-            $arg = &unquote($1);
+            $arg = unquote($1);
             print " addpath $arg\n" if $debug;
             push @output, "##! addpath \"$arg\"";
-            push @{$Rpath}, &splitPath($arg);
+            push @{$Rpath}, splitPath($arg);
         } elsif (m/^ \s* path \s+ $string /ox) {
-            $arg = &unquote($1);
+            $arg = unquote($1);
             print " path $arg\n" if $debug;
             push @output, "##! path \"$arg\"";
-            @{$Rpath} = &splitPath($arg);
+            @{$Rpath} = splitPath($arg);
         } else {
             push @output, $_;
         }

@@ -49,7 +49,7 @@ my $guard_name = "INC_$outbase";
 $guard_name =~ tr/a-zA-Z0-9_/_/cs;
 $guard_name =~ s/(_[hH])?$/_H/;
 
-&ParseDBD($dbd, &Readfile($infile, 0, \@opt_I));
+ParseDBD($dbd, Readfile($infile, 0, \@opt_I));
 
 if ($opt_D) {
     my %filecount;

@@ -20,10 +20,10 @@ $app_top  = cwd();
 
 $bad_ident_chars = '[^0-9A-Za-z_]';
 
-&readReleaseFiles("configure/RELEASE", \%release, \@apps);
-&expandRelease(\%release);
-&get_commandline_opts;	# Check command-line options
-&GetUser;		# Ensure we know who's in charge
+readReleaseFiles("configure/RELEASE", \%release, \@apps);
+expandRelease(\%release);
+get_commandline_opts();	# Check command-line options
+GetUser();		# Ensure we know who's in charge
 
 #
 # Declare two default callback routines for file copy plus two
@@ -86,7 +86,7 @@ sub ReplaceFilename { # (filename)
     $file =~ s|_APPTYPE_|$apptype|;
     my $qmtop = quotemeta($top);
     $file =~ s|$qmtop/||;   # Change to the target location
-    $file = &ReplaceFilenameHook($file); # Call the apptype's hook
+    $file = ReplaceFilenameHook($file); # Call the apptype's hook
     return $file;
 }
 
@@ -104,7 +104,7 @@ sub ReplaceLine { # (line)
     $line =~ s/_CSAFEAPPNAME_/$csafeappname/g;
     $line =~ s/_APPTYPE_/$apptype/go;
     $line =~ s/_ARCH_/$arch/go if ($opt_i);
-    $line = &ReplaceLineHook($line); # Call the apptype's hook
+    $line = ReplaceLineHook($line); # Call the apptype's hook
     return $line;
 }
 
@@ -202,7 +202,7 @@ sub get_commandline_opts { #no args
 
     # Print application type list?
     if ($opt_l) {
-	&ListAppTypes;
+	ListAppTypes();
 	exit 0;			# finished for -l command
     }
     
@@ -325,7 +325,7 @@ sub ListAppTypes { # no args
 #
 sub CopyFile { # (source)
     $source = $_[0];
-    $target = &ReplaceFilename($source);
+    $target = ReplaceFilename($source);
 
     if ($target and !-e $target) {
 	open(INP, "<$source") and open(OUT, ">$target")
@@ -333,7 +333,7 @@ sub CopyFile { # (source)
 
 	print "Copying file $source -> $target\n" if $opt_d;
 	while (<INP>) {
-	    print OUT &ReplaceLine($_);
+	    print OUT ReplaceLine($_);
 	}
 	close INP; close OUT;
     }
@@ -345,11 +345,11 @@ sub CopyFile { # (source)
 sub FCopyTree {
     chdir $app_top;		# Sigh
     if (-d "$File::Find::name"
-	and ($dir = &ReplaceFilename($File::Find::name))) {
+	and ($dir = ReplaceFilename($File::Find::name))) {
 	print "Creating directory $dir\n" if $opt_d;
-	&mkpath($dir) unless (-d "$dir");
+	mkpath($dir) unless (-d "$dir");
     } else {
-	&CopyFile($File::Find::name);
+	CopyFile($File::Find::name);
     }
     chdir $File::Find::dir;
 }
@@ -363,7 +363,7 @@ sub Cleanup { # (return-code [ messsage-line1, line 2, ... ])
     if (@message) {
 	print join("\n", @message), "\n";
     } else {
-	&Usage;
+	Usage();
     }
     exit $rtncode;
 }

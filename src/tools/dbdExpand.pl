@@ -43,7 +43,7 @@ my $errors = 0;
 while (@ARGV) {
     my $file = shift @ARGV;
     eval {
-        &ParseDBD($dbd, &Readfile($file, $macros, \@opt_I));
+        ParseDBD($dbd, Readfile($file, $macros, \@opt_I));
     };
     if ($@) {
         warn "dbdExpand.pl: $@";
@@ -72,7 +72,7 @@ if ($opt_o) {
     $out = STDOUT;
 }
 
-&OutputDBD($out, $dbd);
+OutputDBD($out, $dbd);
 
 if ($opt_o) {
     close $out or die "Closing $opt_o failed: $!\n";

@@ -93,13 +93,13 @@ dbCaLinkTest_SRCS += dbCaLinkTest.c
 dbCaLinkTest_SRCS += dbCACTest.cpp
 dbCaLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbCaLinkTest.c
+testHarness_SRCS += dbCACTest.cpp
 TESTS += dbCaLinkTest
 TESTFILES += ../dbCaLinkTest1.db ../dbCaLinkTest2.db ../dbCaLinkTest3.db
 
 scanIoTest_DBD += menuScan.dbd
 TESTPROD_HOST += scanIoTest
 scanIoTest_SRCS += scanIoTest.c
-scanIoTest_REGRDDFLAGS = -l
 scanIoTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanIoTest.c
 TESTFILES += ../scanIoTest.db
@@ -152,4 +152,6 @@ xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
 devx$(DEP): $(COMMON_DIR)/xRecord.h
+scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 

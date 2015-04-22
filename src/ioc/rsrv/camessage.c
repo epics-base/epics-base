@@ -1255,7 +1255,7 @@ static void claim_ciu_reply ( struct channel_in_use * pciu )
         }
         status = cas_copy_in_header (
             pciu->client, CA_PROTO_CREATE_CHAN, 0u,
-            dbChannelFinalExportType(pciu->dbch), nElem, pciu->cid,
+            dbChannelFinalCAType(pciu->dbch), nElem, pciu->cid,
             pciu->sid, NULL );
         if ( status == ECA_NORMAL ) {
             cas_commit_msg ( pciu->client, 0u );
@@ -1301,7 +1301,7 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         }
 
         DLOG ( 2, ("CAS: claim_ciu_action found '%s', type %d, count %d\n",
-            pName, dbChannelExportType(dbch), dbChannelElements(dbch)) );
+            pName, dbChannelCAType(dbch), dbChannelElements(dbch)) );
 
         pciu = casCreateChannel (
                 client,
@@ -2348,7 +2348,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
         else {
             count = (ca_uint16_t) dbChannelFinalElements(dbch);
         }
-        type = (ca_uint16_t) dbChannelFinalExportType(dbch);
+        type = (ca_uint16_t) dbChannelFinalCAType(dbch);
     }
 
     SEND_LOCK ( client );

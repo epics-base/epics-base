@@ -154,6 +154,8 @@ epicsShareFunc long dbChannelTest(const char *name);
 epicsShareFunc dbChannel * dbChannelCreate(const char *name);
 epicsShareFunc long dbChannelOpen(dbChannel *chan);
 
+/*Following is also defined in db_convert.h*/
+epicsShareExtern unsigned short dbDBRnewToDBRold[];
 
 /* In the following macros pChan is dbChannel* */
 
@@ -176,6 +178,9 @@ epicsShareFunc long dbChannelOpen(dbChannel *chan);
 #define dbChannelExportType(pChan) ((pChan)->addr.dbr_field_type)
 
 /* evaluates to short */
+#define dbChannelExportCAType(pChan) (dbDBRnewToDBRold[dbChannelExportType(pChan)])
+
+/* evaluates to short */
 #define dbChannelFieldSize(pChan) ((pChan)->addr.field_size)
 
 /* evaluates to long */
@@ -185,7 +190,7 @@ epicsShareFunc long dbChannelOpen(dbChannel *chan);
 #define dbChannelFinalFieldType(pChan) ((pChan)->final_type)
 
 /* evaluates to short */
-#define dbChannelFinalExportType(pChan) ((pChan)->final_type)
+#define dbChannelFinalCAType(pChan) (dbDBRnewToDBRold[(pChan)->final_type])
 
 /* evaluates to short */
 #define dbChannelFinalFieldSize(pChan) ((pChan)->final_field_size)

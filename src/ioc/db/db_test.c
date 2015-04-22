@@ -49,7 +49,7 @@ int gft(const char *pname)
 
     precord = dbChannelRecord(chan);
     elements = dbChannelElements(chan);
-    type = dbChannelExportType(chan);
+    type = dbChannelExportCAType(chan);
 
     printf("   Record Name: %s\n", precord->name);
     printf("Record Address: 0x%p\n", precord);
@@ -103,7 +103,7 @@ int pft(const char *pname, const char *pvalue)
 
     precord = dbChannelRecord(chan);
     elements = dbChannelElements(chan);
-    type = dbChannelExportType(chan);
+    type = dbChannelExportCAType(chan);
 
     printf("   Record Name: %s\n", precord->name);
     printf("Record Address: 0x%p\n", precord);

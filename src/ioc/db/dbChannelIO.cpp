@@ -159,7 +159,7 @@ void dbChannelIO::show (
 
     if ( level > 0u ) {
         printf ( "        type %s, element count %li, field at %p\n",
-            dbf_type_to_text ( dbChannelExportType ( this->dbch ) ),
+            dbf_type_to_text ( dbChannelExportCAType ( this->dbch ) ),
             dbChannelElements ( this->dbch ),
             dbChannelField ( this->dbch ) );
         if ( level > 1u ) {
@@ -206,7 +206,7 @@ short dbChannelIO::nativeType (
     epicsGuard < epicsMutex > & guard ) const
 {
     guard.assertIdenticalMutex ( this->mutex );
-    return dbChannelExportType( this->dbch );
+    return dbChannelExportCAType( this->dbch );
 }
 
 void * dbChannelIO::operator new ( size_t size,

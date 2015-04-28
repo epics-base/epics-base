@@ -47,3 +47,8 @@ COMMANDLINE_LIBRARY = READLINE
 # loaded into RAM when the binary is loaded.
 OPT_CFLAGS_YES += -g
 OPT_CXXFLAGS_YES += -g
+
+
+# Tune GNU compiler output for a specific 64-bit cpu-type
+# (e.g. generic, native, core2, nocona, k8, opteron, athlon64, barcelona etc.)
+GNU_TUNE_CFLAGS = -mtune=generic

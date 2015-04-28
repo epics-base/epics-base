@@ -12,7 +12,7 @@
 # a) LD_LIBRARY_PATH must include the full absolute pathname to
 #    $(INSTALL_LOCATION)/lib/$(EPICS_HOST_ARCH) when invoking base
 #    executables.
-# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which 
+# b) Add the runtime path to SHRLIB_DEPLIB_DIRS and PROD_DEPLIB_DIRS, which
 #    will add the named directory to the list contained in the executables.
 # c) Add the runtime path to /etc/ld.so.conf and run ldconfig
 #    to inform the system of the shared library location.
@@ -33,6 +33,10 @@ COMMANDLINE_LIBRARY = READLINE
 #COMMANDLINE_LIBRARY = READLINE_CURSES
 
 
+# Permit access to 64-bit file-systems
+OP_SYS_CFLAGS += -D_FILE_OFFSET_BITS=64
+
+
 # Uncomment the followings lines to build with CLANG instead of GCC.
 #
 #GNU         = NO
@@ -49,7 +53,6 @@ OPT_CFLAGS_YES += -g
 OPT_CXXFLAGS_YES += -g
 
 
-# Tune GNU compiler output for a specific cpu-type
-# (e.g. generic, i386, i486, i586, or i686)
+# Tune GNU compiler output for a specific 32-bit cpu-type
+# (e.g. generic, native, i386, i686, pentium2/3/4, prescott, k6, athlon etc.)
 GNU_TUNE_CFLAGS = -mtune=generic
-

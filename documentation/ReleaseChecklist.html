@@ -144,17 +144,17 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.15.1-pre<i>n</i></tt>
+            <tt>R3.15.2-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.15.1-rc<i>n</i></tt>
+            <tt>R3.15.2-rc<i>n</i></tt>
             &mdash; release candidate tag, note the <tt>rc</tt> is now
             lower-case</li>
         </ul>
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.1-rc<i>n</i>
+          bzr tag R3.15.2-rc<i>n</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -166,9 +166,9 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.15.1-rc<i>n</i>
-          -r tag:R3.15.1-rc<i>n</i>
-          baseR3.15.1-rc<i>n</i>.tar.gz
+          --root=base-3.15.2-rc<i>n</i>
+          -r tag:R3.15.2-rc<i>n</i>
+          baseR3.15.2-rc<i>n</i>.tar.gz
           mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
@@ -289,7 +289,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar:
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.1</i>
+          bzr tag R3.15.2</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -301,9 +301,9 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.15.1
-          -r tag:R3.15.1
-          baseR3.15.1.tar.gz
+          --root=base-3.15.2
+          -r tag:R3.15.2
+          baseR3.15.2.tar.gz
           mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and

@@ -4,23 +4,28 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <title>Known Problems in R3.15.1</title>
+  <title>Known Problems in R3.15.2</title>
 </head>
 
 <body>
-<h1 style="text-align: center">EPICS Base R3.15.1: Known Problems</h1>
+<h1 style="text-align: center">EPICS Base R3.15.2: Known Problems</h1>
 
 <p>Any patch files linked below should be applied at the root of the
-base-3.15.1 tree. Download them, then use the GNU Patch program as
+base-3.15.2 tree. Download them, then use the GNU Patch program as
 follows:</p>
 
-<blockquote><pre>% <b>cd <i>/path/to/</i>base-3.15.1</b>
+<blockquote><pre>% <b>cd <i>/path/to/</i>base-3.15.2</b>
 % <b>patch -p0 &lt; <i>/path/to/</i>file.patch</b></pre></blockquote>
 
 <p>The following significant problems have been reported with this
 version of EPICS Base:</p>
 
 <ul>
+
+  <li>Parallel builds ("make -j") on native Windows are not working properly.
+    Builds tend to hang (make saturating one core) - interrupting and calling make
+    again usually finishes the build. Sequential builds work and are recommended
+    for automated build environments.</li>
 
   <li>64-bit Windows builds of the CAS library may not work with some compilers.
     The code in <tt>src/legacy/gdd</tt> is currently incompatible with the LLP64

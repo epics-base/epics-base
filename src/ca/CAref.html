@@ -209,6 +209,7 @@ $Date$</span></small></p>
   <li><a href="#ca_pend_event">ca_poll</a></li>
   <li><a href="#ca_puser">ca_puser</a></li>
   <li><a href="#ca_put">ca_put</a></li>
+  <li><a href="#ca_put">ca_put_callback</a></li>
   <li><a href="#ca_set_puser">ca_set_puser</a></li>
   <li><a href="#ca_signal">ca_signal</a></li>
   <li><a href="#ca_sg_block">ca_sg_block</a></li>
@@ -223,7 +224,7 @@ $Date$</span></small></p>
   <li><a href="#ca_test_io">ca_test_io</a></li>
   <li><a href="#ca_write_access">ca_write_access</a></li>
   <li><a href="#ca_state">channel_state</a></li>
-  <li><a href="#dbr_size[]">dbr_size[]</a></li>
+  <li><a href="#dbr_size">dbr_size[]</a></li>
   <li><a href="#dbr_size_n">dbr_size_n</a></li>
   <li><a href="#dbr_value_size">dbr_value_size[]</a></li>
   <li><a href="#dbr_type_t">dbr_type_to_text</a></li>
@@ -3824,7 +3825,7 @@ specified channel and boolean false otherwise.</p>
       channel and boolean false otherwise</dd>
 </dl>
 
-<h3><code><a name="dbr_size[]">dbr_size[]</a></code></h3>
+<h3><code><a name="dbr_size">dbr_size[]</a></code></h3>
 <pre>#include &lt;db_access.h&gt;
 extern unsigned dbr_size[/* TYPE */];</pre>
 
@@ -3946,11 +3947,12 @@ int ca_sg_create ( CA_SYNC_GID *PGID );</pre>
 
 <p>A synchronous group can be used to guarantee that a set of channel access
 requests have completed. Once a synchronous group has been created then channel
-access get and put requests may be issued within it using <code>ca_sg_get()</code> and
-<code>ca_sg_put()</code> respectively. The routines <code>ca_sg_block()</code> and <code>ca_sg_test()</code> can be
+access get and put requests may be issued within it using
+<code>ca_sg_array_get()</code> and <code>ca_sg_array_put()</code> respectively.
+The routines <code>ca_sg_block()</code> and <code>ca_sg_test()</code> can be
 used to block for and test for completion respectively. The routine
-<code>ca_sg_reset()</code> is used to discard knowledge of old requests which have timed out
-and in all likelihood will never be satisfied.</p>
+<code>ca_sg_reset()</code> is used to discard knowledge of old requests which
+have timed out and in all likelihood will never be satisfied.</p>
 
 <p>Any number of asynchronous groups can have application requested operations
 outstanding within them at any given time.</p>
@@ -4124,16 +4126,20 @@ status = ca_sg_reset(gid);</pre>
 
 <h3><code><a name="ca_sg_put">ca_sg_array_put()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
+int ca_sg_put ( CA_SYNC_GID GID, chtype TYPE,
+        chid CHID, void *PVALUE );
 int ca_sg_array_put ( CA_SYNC_GID GID, chtype TYPE, 
         unsigned long COUNT, chid CHID, void *PVALUE );</pre>
 
-<p>Write a value, or array of values, to a channel and increment the
-outstanding request count of a synchronous group. The <code>ca_sg_array_put()</code>
-functionality is implemented using <code>ca_array_put_callback()</code>.</p>
+<p>Write a value, or array of values, to a channel and increment the outstanding
+request count of a synchronous group. The <code>ca_sg_put()</code> and
+<code>ca_sg_array_put()</code> functionality is implemented using
+<code>ca_array_put_callback()</code>.</p>
 
 <p>All remote operation requests such as the above are accumulated (buffered)
-and not forwarded to the server until one of <code>ca_flush_io()</code>, <code>ca_pend_io()</code>,
-<code>ca_pend_event()</code>, or <code>ca_sg_block()</code> are called. This allows several requests to be
+and not forwarded to the server until one of <code>ca_flush_io()</code>,
+<code>ca_pend_io()</code>, <code>ca_pend_event()</code>, or
+<code>ca_sg_block()</code> are called. This allows several requests to be
 efficiently sent in one message.</p>
 
 <p>If a connection is lost and then resumed outstanding puts are not
@@ -4186,6 +4192,8 @@ reissued.</p>
 
 <h3><code><a name="ca_sg_get">ca_sg_array_get()</a></code></h3>
 <pre>#include &lt;cadef.h&gt;
+int ca_sg_get ( CA_SYNC_GID GID, chtype TYPE,
+        chid CHID, void *PVALUE );
 int ca_sg_array_get ( CA_SYNC_GID GID,
         chtype TYPE, unsigned long COUNT,
         chid CHID, void *PVALUE );</pre>
@@ -4193,16 +4201,19 @@ int ca_sg_array_get ( CA_SYNC_GID GID,
 <h4>Description</h4>
 
 <p>Read a value from a channel and increment the outstanding request count of a
-synchronous group. The <code>ca_sg_array_get()</code> functionality is implemented using
+synchronous group. The <code>ca_sg_get()</code> and
+<code>ca_sg_array_get()</code> functionality is implemented using
 <code>ca_array_get_callback()</code>.</p>
 
-<p>The values written into your program's variables by <code>ca_sg_get()</code> should not be
-referenced by your program until ECA_NORMAL has been received from <code>ca_sg_block()</code>,
-or until <code>ca_sg_test()</code> returns ECA_IODONE.</p>
+<p>The values written into your program's variables by <code>ca_sg_get()</code>
+or <code>ca_sg_array_get()</code> should not be referenced by your program until
+ECA_NORMAL has been received from <code>ca_sg_block()</code>, or until
+<code>ca_sg_test()</code> returns ECA_IODONE.</p>
 
 <p>All remote operation requests such as the above are accumulated (buffered)
-and not forwarded to the server until one of <code>ca_flush_io()</code>, <code>ca_pend_io()</code>,
-<code>ca_pend_event()</code>, or <code>ca_sg_block()</code> are called. This allows several requests to be
+and not forwarded to the server until one of <code>ca_flush_io()</code>,
+<code>ca_pend_io()</code>, <code>ca_pend_event()</code>, or
+<code>ca_sg_block()</code> are called. This allows several requests to be
 efficiently sent in one message.</p>
 
 <p>If a connection is lost and then resumed outstanding gets are not

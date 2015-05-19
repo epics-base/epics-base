@@ -37,7 +37,7 @@ static void onceComp(void *junk, dbCommon *prec)
 static void testOnce(void)
 {
     testDiag("check scanOnceCallback() callback");
-    waiter = epicsEventMustCreate(epicsEventError);
+    waiter = epicsEventMustCreate(epicsEventEmpty);
 
     testdbPrepare();
 

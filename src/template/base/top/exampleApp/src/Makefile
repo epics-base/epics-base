@@ -17,7 +17,7 @@ DBD += xxxSupport.dbd
 # Compile and add the code to the support library
 _APPNAME_Support_SRCS += xxxRecord.c
 _APPNAME_Support_SRCS += devXxxSoft.c
-_APPNAME_Support_SRCS += devStringInGenVersion.c
+_APPNAME_Support_SRCS += devGenVersion.c
 
 # Link locally-provided code into the support library,
 # rather than directly into the IOC application.
@@ -29,7 +29,9 @@ _APPNAME_Support_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 # Generate a header which defines a macro with a version string
 # with the date and time, or a revision id from VCS system if available
-GENVERSION = mymodversion.h
+GENVERSION = _APPNAME_Version.h
+# Macro name
+GENVERSIONMACRO = _APPNAME_VERSION
 
 #=============================
 # Build the IOC application
@@ -88,4 +90,4 @@ include $(TOP)/configure/RULES
 
 # Dependency for the generated header
 # must be explicit
-devStringInGenVersion$(DEP): $(GENVERSION)
+devGenVersion$(DEP): $(GENVERSION)

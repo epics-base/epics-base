@@ -48,13 +48,13 @@ if(!$foundvcs && -d "$opt_t/.hg") { # Mercurial
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef
     # with uncommited modifications
-    $result = `cd "$opt_t" && hg tip --template '{latesttag}-{latesttagdistance}-{node|short}\n'`;
+    $result = `hg --cwd "$opt_t" tip --template '{latesttag}-{latesttagdistance}-{node|short}\n'`;
     chomp($result);
     if(!$? && length($result)>1) {
         $opt_V = $result;
         $foundvcs = 1;
         # see if working copy has modifications, additions, removals, or missing files
-        my $hasmod = `cd "$opt_t" && hg status -m -a -r -d`;
+        my $hasmod = `hg --cwd "$opt_t" status -m -a -r -d`;
         chomp($hasmod);
         if(length($hasmod)>0) {
             $opt_V = "$opt_V-dirty";
@@ -70,6 +70,38 @@ if(!$foundvcs && -d "$opt_t/.git") {
         $foundvcs = 1;
     }
 }
+if(!$foundvcs && -d "$opt_t/.svn") {
+    # 12345
+    $result = `cd "$opt_t" && svn info --non-interactive`;
+    chomp($result);
+    if(!$? && $result =~ /^Revision:\s*(\d+)/m) {
+        $opt_V = $1;
+        $foundvcs = 1;
+        # see if working copy has modifications, additions, removals, or missing files
+        my $hasmod = `cd "$opt_t" && svn status -q --non-interactive`;
+        chomp($hasmod);
+        if(length($hasmod)>0) {
+            $opt_V = "$opt_V-dirty";
+        }
+    }
+}
+if(!$foundvcs && -d "$opt_t/.bzr") {
+    # 12444-anj@aps.anl.gov-20131003210403-icfd8mc37g8vctpf
+    $result = `cd "$opt_t" && bzr version-info -q --custom --template="{revno}-{revision_id}"`;
+    chomp($result);
+    print "BZR $result";
+    if(!$? && length($result)>1) {
+        $opt_V = $result;
+        $foundvcs = 1;
+        # see if working copy has modifications, additions, removals, or missing files
+        # unfortunately "bzr version-info --check-clean ..." doesn't seem to work as documented
+        my $hasmod = `cd "$opt_t" && bzr status -SV`;
+        chomp($hasmod);
+        if(length($hasmod)>0) {
+            $opt_V = "$opt_V-dirty";
+        }
+    }
+}
 
 my $output = "#ifndef $opt_N\n# define $opt_N \"$opt_V\"\n#endif\n";
 print "== would\n$output" if $opt_v;
@@ -80,12 +112,12 @@ if(open($DST, '+<', $outfile)) {
     print "== have\n$actual" if $opt_v;
 
     if($actual eq $output) {
-        print "Keeping existing VCS version header $outfile\n";
+        print "Keeping existing VCS version header $outfile with \"$opt_V\"\n";
         exit(0)
     }
-    print "Updating VCS version header $outfile\n";
+    print "Updating VCS version header $outfile with \"$opt_V\"\n";
 } else {
-    print "Creating VCS version header $outfile\n";
+    print "Creating VCS version header $outfile with \"$opt_V\"\n";
     open($DST, '>', $outfile) or die "Unable to open or create VCS version header $outfile";
 }
 

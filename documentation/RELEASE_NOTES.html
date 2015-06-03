@@ -29,6 +29,19 @@ it in source code will no longer compile. The identifier epicsTimeOK still exist
 and has the value 0 as before, so most code that uses these APIs can be changed in
 a way that is backwards-compatible with the previous return status.</p>
 
+<p>Time providers that have to return a status value and still need to be built
+with earlier versions of Base can define the necessary status symbols like this:</p>
+
+<blockquote><pre>
+#include "epicsTime.h"
+
+#ifndef M_time
+/* S_time_... status values were not provided before Base 3.16 */
+#define S_time_unsynchronized epicsTimeERROR
+#define S_time_...whatever... epicsTimeERROR
+#endif
+</pre></blockquote>
+
 <h3>Callback subsystem API</h3>
 
 <p>Added a new macro <tt>callbackGetPriority(prio, callback)</tt> to the

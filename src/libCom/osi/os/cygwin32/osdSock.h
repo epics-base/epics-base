@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/param.h> /* for MAXHOSTNAMELEN */
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

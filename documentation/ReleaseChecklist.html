@@ -60,11 +60,8 @@ responsible for these tasks in the past and are expected to continue in the
 relevent roles unless the Release Manager designates otherwise:</p>
 
 <dl>
-  <dt><strong>Release Manager</strong> (Andrew Johnson)</dt>
-    <dd>Responsible for the release</dd>
-  <dt><strong>Configuration Manager</strong> (Janet Anderson)</dt>
-    <dd>Responsible for committing version number updates and for
-      creating tarfiles</dd>
+  <dt><strong>Release Manager</strong> (Ralph Lange)</dt>
+    <dd>Responsible for managing and tagging the release</dd>
   <dt><strong>Platform Developers</strong></dt>
     <dd>Responsible for individual operating system platforms</dd>
   <dt><strong>Application Developers</strong></dt>
@@ -134,42 +131,42 @@ relevent roles unless the Release Manager designates otherwise:</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Tag the module in Bazaar, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.15.1-pre<i>n</i></tt>
+            <tt>R3.16.0-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.15.1-rc<i>n</i></tt>
+            <tt>R3.16.0-rc<i>n</i></tt>
             &mdash; release candidate tag, note the <tt>rc</tt> is now
             lower-case</li>
         </ul>
         <blockquote><tt>
-          cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.1-rc<i>n</i>
+          cd ~/base/mirror-3.16<br />
+          bzr tag R3.16.0-rc<i>n</i>
           </tt></blockquote>
         </td>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Export the tagged version into a tarfile. Note that this command
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.15.1-rc<i>n</i>
-          -r tag:R3.15.1-rc<i>n</i>
-          baseR3.15.1-rc<i>n</i>.tar.gz
-          mirror-3.15
+            --root=base-3.16.0-rc<i>n</i>
+            -r tag:R3.16.0-rc<i>n</i>
+            base-3.16.0-rc<i>n</i>.tar.gz
+            mirror-3.16
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
         configured properly.
@@ -177,14 +174,15 @@ relevent roles unless the Release Manager designates otherwise:</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Test the tarfile by extracting its contents and building it on at
         least one supported platform.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
-      <td>Copy the tar file to the Base download area of the website.</td>
+      <td>Website Manager</td>
+      <td>If necessary recreate the tarfile following the instructions above.
+        Copy the tar file to the Base download area of the website</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
@@ -222,13 +220,6 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Platform Developers</td>
       <td>Run the CA client side regression tests on all available host
         platforms.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Platform Developers</td>
-      <td>Build and run the
-        <a href="https://launchpad.net/epics-base-tests">epics-base-tests</a>
-        suite on all available platforms.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
@@ -279,32 +270,32 @@ relevent roles unless the Release Manager designates otherwise:</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Edit and commit changes to the EPICS version number file
         configure/CONFIG_BASE_VERSION.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Tag the module in Bazaar:
         <blockquote><tt>
-          cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.1</i>
+          cd ~/base/mirror-3.16<br />
+          bzr tag R3.16.0</i>
           </tt></blockquote>
         </td>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Export the tagged version into a tarfile. Note that this command
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
           cd ~/base<br />
           bzr export --keywords=publish
-          --root=base-3.15.1
-          -r tag:R3.15.1
-          baseR3.15.1.tar.gz
-          mirror-3.15
+            --root=base-3.16.0
+            -r tag:R3.16.0
+            base-3.16.0.tar.gz
+            mirror-3.16
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
         configured properly.
@@ -312,7 +303,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
+      <td>Release Manager</td>
       <td>Test the tar file by extracting its contents and building it on at
         least one supported platform</td>
       </tr>
@@ -321,8 +312,9 @@ relevent roles unless the Release Manager designates otherwise:</p>
       </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>Configuration Manager</td>
-      <td>Copy the tar file to the Base download area of the website</td>
+      <td>Website Manager</td>
+      <td>If necessary recreate the tarfile following the instructions above.
+        Copy the tar file to the Base download area of the website</td>
       </tr>
     <tr>
       <td>&nbsp;</td>

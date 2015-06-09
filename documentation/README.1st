@@ -85,17 +85,17 @@
      as processes on the host platform.
 
      vxWorks
-     You must have vxWorks 5.5.x or 6.x installed if any of your target
-     systems are vxWorks systems; the C++ compiler for vxWorks 5.4 is now too
-     old to support. The vxWorks installation provides the cross-compiler and
-     header files needed to build for these targets. The absolute path to and
-     the version number of the vxWorks installation must be set in the
+     You must have vxWorks 6 installed if any of your target systems are
+     vxWorks systems; the C++ compilers for vxWorks 5.x are now too old to
+     support. The vxWorks installation provides the cross-compiler and header
+     files needed to build for these targets. The absolute path to and the
+     version number of the vxWorks installation must be set in the
      base/configure/os/CONFIG_SITE.Common.vxWorksCommon file or in one of its
      target-specific overrides.
 
-     Consult the vxWorks 5.x or vxWorks 6.x EPICS web pages about and the
-     vxWorks documentation for information about configuring your vxWorks
-     operating system for use with EPICS.
+     Consult the vxWorks 6.x EPICS web pages and the vxWorks documentation
+     for information about configuring your vxWorks operating system for use
+     with EPICS.
 
      RTEMS
      For RTEMS targets, you need RTEMS core and toolset version 4.9.2 or

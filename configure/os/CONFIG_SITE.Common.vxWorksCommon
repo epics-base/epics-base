@@ -1,25 +1,17 @@
 # CONFIG_SITE.Common.vxWorksCommon
 #
 # Site specific definitions for vxWorks target builds.
-# Only the local epics system manager should modify this file
 
 # Compiler options can vary with the vxWorks version number, so we
-# need to know that.  However don't include any third-level digits
-# (e.g. the .2 in 5.5.2) because we don't need them.
+# need to know that.  Do not include any third-level digits.
 
-# Note: vxWorks 5.4.x (Tornado 2.0.x) is not supported
+# Note: vxWorks 5.4.x and 5.5.x (Tornado 2.x) are not supported.
+# VxWorks 6.0 through 6.5 use older, untested versions of GCC.
 
-VXWORKS_VERSION = 5.5
-#VXWORKS_VERSION = 6.0
-#VXWORKS_VERSION = 6.1
-#VXWORKS_VERSION = 6.2
-#VXWORKS_VERSION = 6.3
-#VXWORKS_VERSION = 6.4
-#VXWORKS_VERSION = 6.5
 #VXWORKS_VERSION = 6.6
 #VXWORKS_VERSION = 6.7
 #VXWORKS_VERSION = 6.8
-#VXWORKS_VERSION = 6.9
+VXWORKS_VERSION = 6.9
 
 
 # Sites may override the following path for a particular host
@@ -27,10 +19,8 @@ VXWORKS_VERSION = 5.5
 # CONFIG_SITE.$(EPICS_HOST_ARCH).vxWorksCommon file.
 
 # WIND_BASE is where you installed the Wind River software.
-# Under vxWorks 6.x this is *not* the same as the old VX_DIR setting
 
-WIND_BASE = /usr/local/vw/tornado22-$(ARCH_CLASS)
-#WIND_BASE = /usr/local/vw/vxWorks-$(VXWORKS_VERSION)
+WIND_BASE = /usr/local/vw/vxWorks-$(VXWORKS_VERSION)
 #WIND_BASE = /ade/vxWorks/$(VXWORKS_VERSION)
 
 
@@ -39,9 +29,9 @@ WIND_BASE = /usr/local/vw/tornado22-$(ARCH_CLASS)
 #WORKBENCH_VERSION = 2.6
 #WORKBENCH_VERSION = 3.0
 #WORKBENCH_VERSION = 3.2
-#WORKBENCH_VERSION = 3.3
+WORKBENCH_VERSION = 3.3
 
 
 # Utilities Version number, required from vxWorks 6.8 and later
 
-#UTILITIES_VERSION = 1.0
+UTILITIES_VERSION = 1.0

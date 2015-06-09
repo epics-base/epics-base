@@ -9,6 +9,7 @@
 \*************************************************************************/
 
 #include <string.h>
+#include <vxWorks.h>
 #include <fioLib.h>
 #include "epicsStdio.h"
 #include "dbDefs.h"

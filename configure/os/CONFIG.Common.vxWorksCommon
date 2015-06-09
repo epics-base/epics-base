@@ -1,10 +1,9 @@
 # CONFIG.Common.vxWorksCommon
 #
 # $Revision-Id$
-# This file is maintained by the build community.
 #
 # Definitions for vxWorks target archs
-# Sites may override these definitions in CONFIG_SITE.Common.vxWorksCommon
+# Override these definitions in CONFIG_SITE.Common.vxWorksCommon
 # or CONFIG_SITE.<host>.vxWorksCommon
 #-------------------------------------------------------
 
@@ -66,8 +65,6 @@ VXWORKS_MAJOR_VERSION = $(basename $(basename $(VXWORKS_VERSION)))
 
 # These are needed for vxWorks 6.x; the GNU toolset version number
 # is in the path to the compiler tools:
-VX_GNU_VERSION_5.4 = 2.95
-VX_GNU_VERSION_5.5 = 2.96
 VX_GNU_VERSION_6.0 = 3.3.2
 VX_GNU_VERSION_6.1 = 3.3.2
 VX_GNU_VERSION_6.2 = 3.3.2
@@ -83,30 +80,21 @@ VX_GNU_VERSION = $(VX_GNU_VERSION_$(VXWORKS_VERSION))
 VX_GNU_MAJOR_VERSION = $(basename $(basename $(VX_GNU_VERSION)))
 
 #--------------------------------------------------
-# Fix WIND_BASE for vxWorks 6.x on linux
-# NB: We know the value of WIND_HOST_TYPE here, but not VXWORKS_VERSION
+# Fix old Linux WIND_HOST_TYPE
 ifeq ($(WIND_HOST_TYPE),x86-linux)
-  WIND_HOST_TYPE_5 = x86-linux
-  WIND_HOST_TYPE_6 = x86-linux2
-  WIND_HOST_TYPE = $(WIND_HOST_TYPE_$(VXWORKS_MAJOR_VERSION))
+  WIND_HOST_TYPE = x86-linux2
 endif
 
 #--------------------------------------------------
 # vxWorks directory definitions
-VX_DIR_5 = $(WIND_BASE)
-VX_DIR_6 = $(WIND_BASE)/vxworks-$(VXWORKS_VERSION)
-VX_DIR = $(VX_DIR_$(VXWORKS_MAJOR_VERSION))
+VX_DIR = $(WIND_BASE)/vxworks-$(VXWORKS_VERSION)
 
-VX_INCLUDE_DIRS_5 = $(VX_DIR)/target/h
-VX_INCLUDE_DIRS_6 = $(VX_DIR)/target/h $(VX_DIR)/target/h/wrn/coreip
-GNU_TARGET_INCLUDE_DIR = $(VX_INCLUDE_DIRS_$(VXWORKS_MAJOR_VERSION))
+GNU_TARGET_INCLUDE_DIR = $(VX_DIR)/target/h $(VX_DIR)/target/h/wrn/coreip
 
 #--------------------------------------------------
 # vxWorks GNU directories
 
-GNU_DIR_5 = $(WIND_BASE)/host/$(WIND_HOST_TYPE)
-GNU_DIR_6 = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
-GNU_DIR = $(GNU_DIR_$(VXWORKS_MAJOR_VERSION))
+GNU_DIR = $(WIND_BASE)/gnu/$(VX_GNU_VERSION)-vxworks-$(VXWORKS_VERSION)/$(WIND_HOST_TYPE)
 
 #--------------------------------------------------
 # Wind River moved nm out of GNU_BIN in some versions
@@ -126,9 +114,7 @@ NM = $(NM_DIR)/$(CMPLR_PREFIX)nm$(CMPLR_SUFFIX)$(HOSTEXE)
 
 #--------------------------------------------------
 # A linker script is essential for munching from vxWorks 6.6 onwards
-# (i.e. with versions that use gcc 4.1.2 or later).  It can be used
-# with any vxWorks 5 or 6 version, but apparently should not be used
-# when compiling for 68K (which isn't supported in vxWorks 6 anyway)
+# (i.e. with versions that use gcc 4.1.2 or later).
 MUNCH_LDFLAGS_6 = -T $(VX_DIR)/target/h/tool/gnu/ldscripts/link.OUT
 MUNCH_LDFLAGS = $(MUNCH_LDFLAGS_$(VXWORKS_MAJOR_VERSION))
 
@@ -143,11 +129,10 @@ export TOOL_FAMILY = GNU
 OP_SYS_CPPFLAGS += -DvxWorks=vxWorks
 OP_SYS_CFLAGS += -fno-builtin
 
-# Fix for vxWorks 5 headers that use macros defined in vxWorks.h but
+# Fix for vxWorks headers that use macros defined in vxWorks.h but
 # which don't actually include vxWorks.h themselves, for example the
 # target/h/sys/stat.h file which uses ULONG.  This also stops dbDefs.h
-# from defining the OFFSET macro, which generates lots of warnings in
-# both vxWorks 5 and 6.
+# from defining the OFFSET macro, which generates lots of warnings.
 OP_SYS_INCLUDE_CPPFLAGS += -include $(VX_DIR)/target/h/vxWorks.h
 
 #--------------------------------------------------
@@ -160,7 +145,6 @@ OPT_CXXFLAGS_YES = -O2
 CODE_CFLAGS =
 #
 # For vxWorks versions before 6.3 we need this g++ compiler flag
-CODE_CXXFLAGS_5 = -fno-implicit-templates
 CODE_CXXFLAGS_6.0 = -fno-implicit-templates
 CODE_CXXFLAGS_6.1 = -fno-implicit-templates
 CODE_CXXFLAGS_6.2 = -fno-implicit-templates

@@ -27,7 +27,7 @@ epicsShareFunc void epicsShareAPI
         (char *) & yes, sizeof ( yes ) );
     if ( status < 0 ) {
         errlogPrintf (
-            "epicsSocketEnablePortUseForDatagramFanout: "
+            "epicsSocketEnableAddressReuseDuringTimeWaitState: "
             "unable to set SO_REUSEADDR?\n");
     }
 }

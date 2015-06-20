@@ -12,6 +12,9 @@ include $(TOP)/configure/CONFIG
 INC += epicsRtemsInitHooks.h
 INC += epicsMemFs.h
 
+ifeq ($(RTEMS_QEMU_FIXUPS),YES)
+rtems_init_CPPFLAGS += -DQEMU_FIXUPS
+endif
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
 rtemsCom_SRCS += rtems_netconfig.c

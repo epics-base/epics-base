@@ -33,6 +33,7 @@
 #include <librtemsNfs.h>
 #include <bsp.h>
 
+#include "epicsVersion.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "epicsExit.h"
@@ -45,6 +46,8 @@
 #include "epicsMemFs.h"
 
 #include "epicsRtemsInitHooks.h"
+
+#define RTEMS_VERSION_INT  VERSION_INT(__RTEMS_MAJOR__, __RTEMS_MINOR__, 0, 0)
 
 /*
  * Prototypes for some functions not in header files
@@ -695,3 +698,37 @@ Init (rtems_task_argument ignored)
     epicsThreadSleep(1.0);
     epicsExit(result);
 }
+
+#if defined(QEMU_FIXUPS)
+/* Override some hooks (weak symbols)
+ * if BSP defaults aren't configured for running tests.
+ */
+
+
+/* Ensure that stdio goes to serial (so it can be captured) */
+#if defined(__i386__) && !USE_COM1_AS_CONSOLE
+#include <uart.h>
+extern int BSPPrintkPort;
+void bsp_predriver_hook(void)
+{
+    BSPConsolePort = BSP_CONSOLE_PORT_COM1;
+    BSPPrintkPort = BSP_CONSOLE_PORT_COM1;
+}
+#endif
+
+/* reboot immediately when done. */
+#if defined(__i386__) && BSP_PRESS_KEY_FOR_RESET
+void bsp_cleanup(void)
+{
+#if RTEMS_VERSION_INT>=VERSION_INT(4,10,0,0)
+    void bsp_reset();
+    bsp_reset();
+#else
+    rtemsReboot();
+#endif
+}
+#endif
+
+#endif /* QEMU_FIXUPS */
+
+int cexpdebug __attribute__((weak));

@@ -21,6 +21,10 @@ rtemsCom_SRCS += epicsRtemsInitHookPre.c
 rtemsCom_SRCS += epicsRtemsInitHookPost.c
 rtemsCom_SRCS += epicsMemFs.c
 
+ifeq ($(T_A),RTEMS-pc386)
+rtemsCom_SRCS += ne2kpci.c
+endif
+
 LIBRARY_RTEMS = rtemsCom
 
 include $(TOP)/configure/RULES

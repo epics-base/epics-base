@@ -1347,7 +1347,7 @@ long epicsShareAPI dbPutRecordAttribute(
 
 	pnew = dbCalloc(1,sizeof(dbRecordAttribute));
 	if(pattribute) {
-	    ellInsert(&precordType->attributeList,&pattribute->node,
+	    ellInsert(&precordType->attributeList,pattribute->node.previous,
 		&pnew->node);
 	} else {
 	    ellAdd(&precordType->attributeList,&pnew->node);
@@ -1381,11 +1381,16 @@ long epicsShareAPI dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
         int nameLen = strlen(pattribute->name);
         int compare = strncmp(pattribute->name, pname, nameLen);
         int ch = pname[nameLen];
-        if (compare == 0 && !(ch == '_' || isalnum(ch))) {
-            pdbentry->pflddes = pattribute->pdbFldDes;
-            pdbentry->pfield = pattribute->value;
-            *ppname = &pname[nameLen];
-            return 0;
+        if (compare == 0) {
+            if (!(ch == '_' || isalnum(ch))) {
+                pdbentry->pflddes = pattribute->pdbFldDes;
+                pdbentry->pfield = pattribute->value;
+                *ppname = &pname[nameLen];
+                return 0;
+            }
+            if (strlen(pname) > nameLen) {
+                compare = -1;
+            }
         }
         if (compare >= 0) break;
         pattribute = (dbRecordAttribute *)ellNext(&pattribute->node);

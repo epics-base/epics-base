@@ -223,6 +223,17 @@ static void dbtpnCallFunc(const iocshArgBuf *args)
 static const iocshFuncDef dbNotifyDumpFuncDef = {"dbNotifyDump",0,0};
 static void dbNotifyDumpCallFunc(const iocshArgBuf *args) { dbNotifyDump();}
 
+/* dbPutAttribute */
+static const iocshArg dbPutAttrArg0 = { "record type",iocshArgString};
+static const iocshArg dbPutAttrArg1 = { "attribute name",iocshArgString};
+static const iocshArg dbPutAttrArg2 = { "value",iocshArgString};
+static const iocshArg * const dbPutAttrArgs[] =
+    {&dbPutAttrArg0, &dbPutAttrArg1, &dbPutAttrArg2};
+static const iocshFuncDef dbPutAttrFuncDef =
+    {"dbPutAttribute",3,dbPutAttrArgs};
+static void dbPutAttrCallFunc(const iocshArgBuf *args)
+{ dbPutAttribute(args[0].sval,args[1].sval,args[2].sval);}
+
 /* tpn */
 static const iocshArg tpnArg0 = { "record name",iocshArgString};
 static const iocshArg tpnArg1 = { "value",iocshArgString};
@@ -321,6 +332,7 @@ void epicsShareAPI dbIocRegister(void)
     iocshRegister(&pftFuncDef,pftCallFunc);
     iocshRegister(&dbtpnFuncDef,dbtpnCallFunc);
     iocshRegister(&dbNotifyDumpFuncDef,dbNotifyDumpCallFunc);
+    iocshRegister(&dbPutAttrFuncDef,dbPutAttrCallFunc);
     iocshRegister(&tpnFuncDef,tpnCallFunc);
     iocshRegister(&dblsrFuncDef,dblsrCallFunc);
     iocshRegister(&dbLockShowLockedFuncDef,dbLockShowLockedCallFunc);

@@ -46,7 +46,7 @@
 static long init_record(eventRecord *, int);
 static long process(eventRecord *);
 static long special(DBADDR *, int);
-static long get_value(eventRecord *, struct valueDes *);
+#define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
@@ -151,15 +151,6 @@ static long special(DBADDR *paddr, int after)
         prec->epvt = eventNameToHandle(prec->val);
     }
     return 0;
-}
-
-
-static long get_value(eventRecord *prec, struct valueDes *pvdes)
-{
-    pvdes->field_type = DBF_STRING;
-    pvdes->no_elements=1;
-    pvdes->pvalue = (void *)(&prec->val);
-    return(0);
 }
 
 

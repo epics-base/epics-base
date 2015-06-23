@@ -30,7 +30,7 @@ typedef struct rset {	/* record support entry table */
 	RECSUPFUN	init_record;	/*init record			*/
 	RECSUPFUN	process;	/*process record		*/
 	RECSUPFUN	special;	/*special processing		*/
-	RECSUPFUN	get_value;	/*get value field		*/
+	RECSUPFUN	get_value;	/*no longer used		*/
 	RECSUPFUN	cvt_dbaddr;	/*cvt  dbAddr			*/
 	RECSUPFUN	get_array_info;
 	RECSUPFUN	put_array_info;
@@ -52,21 +52,12 @@ typedef struct rset {	/* record support entry table */
 #define S_rec_outMem     (M_recSup| 3) /*Out of Memory*/
 
 
-/* Definition os structure for routine get_value */
-
-typedef struct valueDes {
-	long	field_type;
-	long	no_elements;
-	void *	pvalue;
-}valueDes;
-
 /************************************************************************
  * report(FILE fp,void *precord);
  * init();
  * init_record(precord,pass);
  * process(void *precord);
  * special(struct dbAddr *paddr, after);
- * get_value(precord,struct valueDes *p);
  * cvt_dbaddr(struct dbAddr *paddr);
  * get_array_info(paddr,long *no_elements,long *offset);
  * put_array_info(paddr,nNew);

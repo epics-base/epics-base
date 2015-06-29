@@ -20,6 +20,17 @@
 
 -->
 
+<h3>Refactoring of epicsReadline</h3>
+
+<p>The epicsReadline code has been reorganized to allow the commandline history
+editor to be disabled at runtime. The EPICS_COMMANDLINE_LIBRARY build setting
+still selects the preferred editor, but the new <tt>IOCSH_HISTEDIT_DISABLE</tt>
+environment variable can be set at runtime to disable history editing and make
+the IOC or other program use the basic editor instead. This is useful when
+starting and controlling an IOC from another program through its stdin and
+stdout streams since history editors often insert invisible escape codes into
+the stdout stream, making it hard to parse.</p>
+
 <h3>Callback subsystem API</h3>
 
 <p>Added a new macro <tt>callbackGetPriority(prio, callback)</tt> to the

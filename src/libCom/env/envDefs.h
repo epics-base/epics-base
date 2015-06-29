@@ -69,6 +69,7 @@ epicsShareExtern const ENV_PARAM EPICS_CMD_PROTO_PORT;
 epicsShareExtern const ENV_PARAM EPICS_AR_PORT;
 epicsShareExtern const ENV_PARAM IOCSH_PS1;
 epicsShareExtern const ENV_PARAM IOCSH_HISTSIZE;
+epicsShareExtern const ENV_PARAM IOCSH_HISTEDIT_DISABLE;
 
 epicsShareExtern const ENV_PARAM *env_param_list[];
 

@@ -14,6 +14,7 @@
 
 #define epicsExportSharedSymbols
 #include "envDefs.h"
+#include "epicsExit.h"
 #include "epicsReadline.h"
 
 #define EPICS_COMMANDLINE_LIBRARY_EPICS     0
@@ -84,6 +85,14 @@ struct readlineContext {
     char    *line;
 };
 
+static enum {rlNone, rlIdle, rlBusy} rlState = rlNone;
+
+static void rlExit(void *dummy) {
+    if (rlState == rlBusy)
+        rl_cleanup_after_signal();
+}
+
+
 /*
  * Create a command-line context
  */
@@ -91,6 +100,11 @@ void * epicsShareAPI
 epicsReadlineBegin(FILE *in)
 {
     struct readlineContext *readlineContext;
+
+    if (rlState == rlNone) {
+        epicsAtExit(rlExit, NULL);
+        rlState = rlIdle;
+    }
 
     readlineContext = malloc(sizeof *readlineContext);
     if (readlineContext != NULL) {
@@ -124,7 +138,9 @@ epicsReadline (const char *prompt, void *context)
     free (readlineContext->line);
     readlineContext->line = NULL;
     if (readlineContext->in == NULL) {
+        rlState = rlBusy;
         line = readline (prompt);
+        rlState = rlIdle;
     }
     else {
         line = (char *)malloc (linesize * sizeof *line);

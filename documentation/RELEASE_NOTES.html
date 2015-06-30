@@ -3,15 +3,28 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12.5 Release Notes</title>
+  <title>EPICS Base R3.14.12.6 Release Notes</title>
 </head>
 
 <body lang="en">
+<h1 align="center">EPICS Base Release 3.14.12.6</h1>
+
+<h2 align="center">Changes between 3.14.12.5 and 3.14.12.6</h2>
+
+<!-- Insert new items immediately below here ... -->
+
+<h3>Clean up after GNU readline()</h3>
+
+<p>If EPICS Base is built with readline support, any IOC that calls epicsExit()
+from a thread other than the main thread is likely to leave the user's terminal
+in a weird state, requiring the user to run something like 'stty sane' to clean
+it up. This release patches the readline support code to clean up automatically
+by registering an epicsAtExit() routine.</p>
+
+
 <h1 align="center">EPICS Base Release 3.14.12.5</h1>
 
 <h2 align="center">Changes between 3.14.12.4 and 3.14.12.5</h2>
-
-<!-- Insert new items immediately below here ... -->
 
 <h3>aoRecord raw conversion overflows</h3>
 

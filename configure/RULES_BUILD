@@ -69,6 +69,8 @@ endif
 
 all:	install
 
+-include $(CONFIG)/RULES_FILE_TYPE
+
 -include $(CONFIG)/RULES.Db
 
 -include $(CONFIG)/RULES_JAVA
@@ -109,8 +111,6 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
 
 $(INSTALL_LIBS): $(INSTALL_SHRLIBS)  $(INSTALL_DLL_LINK_LIBS)  $(INSTALL_LOADABLE_SHRLIBS)
 
-
--include $(CONFIG)/RULES_FILE_TYPE
 
 #	Main targets
 

@@ -122,7 +122,8 @@ sub suppressWarning($$) {
 sub expandString($$) {
     my ($this, $src) = @_;
     $this->_expand;
-    my $entry = EPICS::macLib::entry->new($src, 'string');
+    (my $name = $src) =~ s/^ (.{20}) .* $/$1.../xs;
+    my $entry = EPICS::macLib::entry->new($name, 'string');
     my $result = $this->_translate($entry, 0, $src);
     return $result unless $entry->{error};
     return $this->{noWarn} ? $result : undef;

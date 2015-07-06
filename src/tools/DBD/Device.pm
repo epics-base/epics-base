@@ -18,7 +18,6 @@ my %link_types = (
 
 sub init {
     my ($this, $link_type, $dset, $choice) = @_;
-    unquote $choice;
     dieContext("Unknown link type '$link_type', valid types are:",
         sort keys %link_types) unless exists $link_types{$link_type};
     $this->SUPER::init($dset, "device support (dset)");
@@ -38,7 +37,6 @@ sub choice {
 sub legal_addr {
     my ($this, $addr) = @_;
     my $rx = $link_types{$this->{LINK_TYPE}};
-    unquote $addr;
     return $addr =~ m/^ $rx $/x;
 }
 

@@ -32,7 +32,7 @@ my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 
-ParseDBD($dbd, Readfile(shift @ARGV, $macros, \@opt_I));
+ParseDBD($dbd, Readfile(shift @ARGV, $macros, \@opt_I)) while @ARGV;
 
 $Text::Wrap::columns = 75;
 
@@ -62,3 +62,7 @@ if (%recordtypes) {
             if @devices;
     }
 }
+my @records = sort keys %{$dbd->records};
+print wrap("Records: ", "\t", join(', ', @records)), "\n"
+        if @records;
+

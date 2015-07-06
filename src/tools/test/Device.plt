@@ -7,7 +7,7 @@ use Test::More tests => 16;
 
 use DBD::Device;
 
-my $dev = DBD::Device->new('VME_IO', 'test', '"Device"');
+my $dev = DBD::Device->new('VME_IO', 'test', 'Device');
 isa_ok $dev, 'DBD::Device';
 is $dev->name, 'test', 'Device name';
 is $dev->link_type, 'VME_IO', 'Link type';
@@ -27,7 +27,7 @@ my %dev_addrs = (
 	INST_IO   => '@Anything'
 );
 while (my ($link, $addr) = each(%dev_addrs)) {
-    $dev->init($link, 'test', '"Device"');
+    $dev->init($link, 'test', 'Device');
     ok $dev->legal_addr($addr), "$link address";
 }
 

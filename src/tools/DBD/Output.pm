@@ -1,9 +1,12 @@
 package DBD::Output;
 
+use strict;
+use warnings;
+
 require Exporter;
 
-@ISA = qw(Exporter);
-@EXPORT = qw(&OutputDBD);
+our @ISA = qw(Exporter);
+our @EXPORT = qw(&OutputDBD &OutputDB);
 
 use DBD;
 use DBD::Base;
@@ -13,6 +16,7 @@ use DBD::Driver;
 use DBD::Menu;
 use DBD::Recordtype;
 use DBD::Recfield;
+use DBD::Record;
 use DBD::Registrar;
 use DBD::Function;
 use DBD::Variable;
@@ -26,6 +30,11 @@ sub OutputDBD {
     OutputFunctions($out, $dbd->functions);
     OutputVariables($out, $dbd->variables);
     OutputBreaktables($out, $dbd->breaktables);
+}
+
+sub OutputDB {
+    my ($out, $dbd) = @_;
+    OutputRecords($out, $dbd->records);
 }
 
 sub OutputMenus {
@@ -44,7 +53,7 @@ sub OutputRecordtypes {
         printf $out "recordtype(%s) {\n", $name;
         print $out "    %$_\n"
             foreach $recordtype->cdefs;
-        foreach $field ($recordtype->fields) {
+        foreach my $field ($recordtype->fields) {
             printf $out "    field(%s, %s) {\n",
                 $field->name, $field->dbf_type;
             while (my ($attr, $val) = each %{$field->attributes}) {
@@ -94,6 +103,25 @@ sub OutputBreaktables {
         printf $out "breaktable(\"%s\") {\n", $name;
         printf $out "    point(%s, %s)\n", @{$_}
             foreach $breaktable->points;
+        print $out "}\n";
+    }
+}
+
+sub OutputRecords {
+    my ($out, $records) = @_;
+    while (my ($name, $rec) = each %{$records}) {
+        next if $name ne $rec->name; # Alias
+        printf $out "record(%s, \"%s\") {\n", $rec->recordtype->name, $name;
+        printf $out "    alias(\"%s\")\n", $_
+            foreach $rec->aliases;
+        foreach my $recfield ($rec->recfields) {
+            my $field_name = $recfield->name;
+            my $value = $rec->get_field($field_name);
+            printf $out "    field(%s, \"%s\")\n", $field_name, $value
+                if defined $value;
+        }
+        printf $out "    info(\"%s\", \"%s\")\n", $_, $rec->info_value($_)
+            foreach $rec->info_names;
         print $out "}\n";
     }
 }

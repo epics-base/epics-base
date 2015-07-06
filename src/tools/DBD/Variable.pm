@@ -10,11 +10,7 @@ my %valid_types = (
 
 sub init {
     my ($this, $name, $type) = @_;
-    if (defined $type) {
-        unquote $type;
-    } else {
-        $type = "int";
-    }
+    $type = "int" unless defined $type;
     exists $valid_types{$type} or
         dieContext("Unknown variable type '$type', valid types are:",
             sort keys %valid_types);

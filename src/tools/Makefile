@@ -29,6 +29,7 @@ PERL_MODULES += DBD/Output.pm
 PERL_MODULES += DBD/Parser.pm
 PERL_MODULES += DBD/Recfield.pm
 PERL_MODULES += DBD/Recordtype.pm
+PERL_MODULES += DBD/Record.pm
 PERL_MODULES += DBD/Registrar.pm
 PERL_MODULES += DBD/Variable.pm
 
@@ -49,6 +50,7 @@ PERL_SCRIPTS += useManifestTool.pl
 PERL_SCRIPTS += dbdToMenuH.pl
 PERL_SCRIPTS += dbdToRecordtypeH.pl
 PERL_SCRIPTS += dbdExpand.pl
+PERL_SCRIPTS += dbExpand.pl
 PERL_SCRIPTS += dbdToHtml.pl
 PERL_SCRIPTS += podToHtml.pl
 PERL_SCRIPTS += podRemove.pl

@@ -13,8 +13,7 @@ sub init {
 
 sub add_choice {
     my ($this, $name, $value) = @_;
-    $name = identifier($name, "Choice name");
-    unquote $value;
+    $name = $this->identifier($name, "Choice name");
     foreach $pair ($this->choices) {
         dieContext("Duplicate menu choice name '$name'")
             if ($pair->[0] eq $name);
@@ -36,7 +35,6 @@ sub choice {
 
 sub legal_choice {
     my ($this, $value) = @_;
-    unquote $value;
     return exists $this->{CHOICE_INDEX}->{$value};
 }
 

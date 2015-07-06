@@ -50,7 +50,6 @@ sub new {
 
 sub init {
     my ($this, $name, $type) = @_;
-    unquote $type;
     $this->SUPER::init($name, "record field");
     dieContext("Illegal field type '$type', valid field types are:",
         sort keys %field_types) unless exists $field_types{$type};
@@ -75,7 +74,6 @@ sub number {
 
 sub add_attribute {
     my ($this, $attr, $value) = @_;
-    unquote $value;
     my $match = $field_attrs{$attr};
     if (defined $match) {
         dieContext("Bad value '$value' for field attribute '$attr'")

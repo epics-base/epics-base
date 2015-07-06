@@ -21,37 +21,41 @@ use EPICS::Getopts;
 use EPICS::Readfile;
 use EPICS::macLib;
 
-our ($opt_D, @opt_I, @opt_S, $opt_o);
+our ($opt_D, @opt_I, @opt_S, $opt_o, $opt_V);
 
-getopts('DI@S@o:') or
-    die "Usage: dbdExpand [-D] [-I dir] [-S macro=val] [-o out.dbd] in.dbd ...";
+getopts('DI@S@o:V') or
+    die "Usage: dbExpand [-D] [-I dir] [-S macro=val] [-o out.db] in.dbd in.db ...";
 
 my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
 
+$macros->suppressWarning(!$opt_V);
+$DBD::Record::macrosOk = !$opt_V;
+
 # Calculate filename for the dependency warning message below
 my $dep = $opt_o;
 my $dot_d = '';
 if ($opt_D) {
-    $dep =~ s{\.\./O\.Common/(.*)}{\1\$\(DEP\)};
+    $dep =~ s{\.\./O\.Common/(.*)}{$1\$\(DEP\)};
     $dot_d = '.d';
 } else {
     $dep = "\$(COMMON_DIR)/$dep";
 }
 
-die "dbdExpand.pl: No input files for $opt_o\n" if !@ARGV;
+die "dbExpand.pl: No input files for $opt_o\n" if !@ARGV;
 
 my $errors = 0;
 
 while (@ARGV) {
     my $file = shift @ARGV;
     eval {
-        ParseDBD($dbd, Readfile($file, $macros, \@opt_I));
+        &ParseDBD($dbd, &Readfile($file, $macros, \@opt_I));
     };
     if ($@) {
-        warn "dbdExpand.pl: $@";
-        warn "  while reading '$file' to create '$opt_o$dot_d'\n";
+        warn "dbExpand.pl: $@";
+        my $outfile = $opt_o ? " to create '$opt_o$dot_d'" : '';
+        warn "  while reading '$file'$outfile\n";
         warn "  Your Makefile may need this dependency rule:\n",
             "    $dep: \$(COMMON_DIR)/$file\n"
             if $@ =~ m/Can't find file '$file'/;
@@ -67,7 +71,7 @@ if ($opt_D) {   # Output dependencies only, ignore errors
     exit 0;
 }
 
-die "dbdExpand.pl: Exiting due to errors\n" if $errors;
+die "dbExpand.pl: Exiting due to errors\n" if $errors;
 
 my $out;
 if ($opt_o) {
@@ -76,7 +80,7 @@ if ($opt_o) {
     $out = *STDOUT;
 }
 
-OutputDBD($out, $dbd);
+&OutputDB($out, $dbd);
 
 if ($opt_o) {
     close $out or die "Closing $opt_o failed: $!\n";

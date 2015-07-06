@@ -8,6 +8,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 SRC_DIRS += $(LIBCOM)/freeList
+
 INC += freeList.h
+
 Com_SRCS += freeListLib.c
-HTMLS += freeList/freeList.html

@@ -8,6 +8,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 SRC_DIRS += $(LIBCOM)/gpHash
+
 INC += gpHash.h
+
 Com_SRCS += gpHashLib.c
-HTMLS += gpHash/gpHash.html

@@ -164,7 +164,7 @@ static void NTPTimeSync(void *dummy)
         }
 
         if (timespecNow.tv_sec <= POSIX_TIME_AT_EPICS_EPOCH ||
-            epicsTimeFromTimespec(&timeNow, &timespecNow) == epicsTimeERROR) {
+            epicsTimeFromTimespec(&timeNow, &timespecNow) != epicsTimeOK) {
             errlogPrintf("NTPTimeSync: Bad time received from NTP server\n");
             NTPTimePvt.synchronized = 0;
             continue;
@@ -213,7 +213,7 @@ static int NTPTimeGetCurrent(epicsTimeStamp *pDest)
     epicsUInt32 ticksSince;
 
     if (!NTPTimePvt.synchronized)
-        return epicsTimeERROR;
+        return S_time_unsynchronized;
 
     epicsMutexMustLock(NTPTimePvt.lock);
 

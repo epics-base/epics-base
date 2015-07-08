@@ -20,6 +20,28 @@
 
 -->
 
+<h3>epicsTime API return status</h3>
+
+<p>The epicsTime routines that used to return epicsTimeERROR now return a specific
+S_time_ status value, allowing the caller to discover the reason for any failure.
+The identifier <tt>epicsTimeERROR</tt> is no longer defined, so any references to
+it in source code will no longer compile. The identifier epicsTimeOK still exists
+and has the value 0 as before, so most code that uses these APIs can be changed in
+a way that is backwards-compatible with the previous return status.</p>
+
+<p>Time providers that have to return a status value and still need to be built
+with earlier versions of Base can define the necessary status symbols like this:</p>
+
+<blockquote><pre>
+#include "epicsTime.h"
+
+#ifndef M_time
+/* S_time_... status values were not provided before Base 3.16 */
+#define S_time_unsynchronized epicsTimeERROR
+#define S_time_...whatever... epicsTimeERROR
+#endif
+</pre></blockquote>
+
 <h3>Refactoring of epicsReadline</h3>
 
 <p>The epicsReadline code has been reorganized to allow the commandline history

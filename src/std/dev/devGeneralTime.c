@@ -37,7 +37,7 @@ static int getCurrentTime(double * pseconds)
 {
     epicsTimeStamp ts;
 
-    if (epicsTimeERROR != epicsTimeGetCurrent(&ts)) {
+    if (epicsTimeOK == epicsTimeGetCurrent(&ts)) {
         *pseconds = ts.secPastEpoch + ((double)(ts.nsec)) * 1e-9;
         return 0;
     }

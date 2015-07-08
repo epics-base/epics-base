@@ -284,7 +284,7 @@ epicsTime::operator local_tm_nano_sec () const
     local_tm_nano_sec tm;
 
     int status = epicsTime_localtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
-    if ( status != epicsTimeOK ) {
+    if ( status ) {
         throw std::logic_error ( "epicsTime_localtime failed" );
     }
 
@@ -303,7 +303,7 @@ epicsTime::operator gm_tm_nano_sec () const
     gm_tm_nano_sec tm;
 
     int status = epicsTime_gmtime ( &ansiTimeTicks.ts, &tm.ansi_tm );
-    if ( status != epicsTimeOK ) {
+    if ( status ) {
         throw std::logic_error ( "epicsTime_gmtime failed" );
     }
 
@@ -891,7 +891,7 @@ extern "C" {
             *pDest = dst.ts;
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -903,7 +903,7 @@ extern "C" {
             *pDest = epicsTime ( dst );
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -915,7 +915,7 @@ extern "C" {
             *pNSecDest = tmns.nSec;
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -927,7 +927,7 @@ extern "C" {
             *pNSecDest = gmtmns.nSec;
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -940,7 +940,7 @@ extern "C" {
             *pDest = epicsTime (tmns);
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -950,7 +950,7 @@ extern "C" {
             *pDest = epicsTime (*pSrc);
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -960,7 +960,7 @@ extern "C" {
             *pDest = epicsTime (*pSrc);
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -970,7 +970,7 @@ extern "C" {
             *pDest = epicsTime (*pSrc);
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }
@@ -980,7 +980,7 @@ extern "C" {
             *pDest = epicsTime (*pSrc);
         }
         catch (...) {
-            return epicsTimeERROR;
+            return S_time_conversion;
         }
         return epicsTimeOK;
     }

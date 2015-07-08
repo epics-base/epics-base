@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "osiSock.h"
 
@@ -36,7 +37,7 @@
         struct timezone tz;
 
         if (gettimeofday (&tv, &tz))
-            return epicsTimeERROR;
+            return errno;
 
         *pDest = epicsTime(tv);
         return epicsTimeOK;
@@ -68,7 +69,7 @@ int epicsTime_gmtime ( const time_t *pAnsiTime,
         return epicsTimeOK;
     }
     else {
-        return epicsTimeERROR;
+        return errno;
     }
 }
 
@@ -80,7 +81,7 @@ int epicsTime_localtime ( const time_t *clock,
         return epicsTimeOK;
     }
     else {
-        return epicsTimeERROR;
+        return errno;
     }
 }
 

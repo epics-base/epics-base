@@ -92,6 +92,8 @@ static void reset(compressRecord *prec)
     if (prec->alg == compressALG_Average && prec->sptr == 0){
         prec->sptr = calloc(prec->nsam, sizeof(double));
     }
+
+   if(prec->bptr && prec->nsam) memset(prec->bptr, 0, prec->nsam * sizeof(double));
 }
 
 static void monitor(compressRecord *prec)

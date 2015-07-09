@@ -641,7 +641,7 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
     assert(A && B);
 
 #ifdef LOCKSET_DEBUG
-    if(A->owner!=myself || B->owner!=myself) {
+    if(locker && (A->owner!=myself || B->owner!=myself)) {
         errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") ownership violation %p %p (%p)\n",
                      locker, pfirst->name, psecond->name,
                      A->owner, B->owner, myself);

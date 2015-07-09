@@ -526,6 +526,11 @@ static int initPVLinks(void* junk, DBENTRY* pdbentry)
     dbCommon *prec = pdbentry->precnode->precord;
     lockSet *A=prec->lset->plockSet;
 
+    if(!A) {
+        A = prec->lset->plockSet = makeSet();
+        ellAdd(&A->lockRecordList, &prec->lset->node);
+    }
+
     /* for each link originating from this record */
     for(i=0; i<rtype->no_links; i++) {
         DBADDR *paddr;
@@ -544,38 +549,20 @@ static int initPVLinks(void* junk, DBENTRY* pdbentry)
         paddr = (DBADDR*)plink->value.pv_link.pvt;
         B = paddr->precord->lset->plockSet;
 
+        if(A==B) {
+            /* these records are already in the same lockset */
+        } else if(B) {
+            assert(A!=B);
+            dbLockSetMerge(NULL, prec, paddr->precord);
+            assert(prec->lset->plockSet==paddr->precord->lset->plockSet);
 
-        /* Initial population of lockSets happens here. */
-        if(!A && !B) { /* neither side has a lockSet */
-            A = prec->lset->plockSet = paddr->precord->lset->plockSet = makeSet();
-            dbLockIncRef(A); /* ref for psecond */
-            ellAdd(&A->lockRecordList, &prec->lset->node);
-            ellAdd(&A->lockRecordList, &paddr->precord->lset->node);
-
-        } else if(!B) { /* fast merge paddr->precord into A */
+        } else {
+            /* fast merge paddr->precord into A */
             paddr->precord->lset->plockSet = A;
             dbLockIncRef(A);
             ellAdd(&A->lockRecordList, &paddr->precord->lset->node);
-
-        } else if(!A) { /* fast merge prec into B */
-            A = prec->lset->plockSet = B;
-            dbLockIncRef(B);
-            ellAdd(&B->lockRecordList, &prec->lset->node);
         }
     }
-    return 0;
-}
-
-static int initSingleSets(void* junk, DBENTRY* pdbentry)
-{
-    dbCommon *prec = pdbentry->precnode->precord;
-    lockSet *ls;
-
-    if(!prec->lset->plockSet) {
-        ls = prec->lset->plockSet = makeSet();
-        ellAdd(&ls->lockRecordList, &prec->lset->node);
-    }
-
     return 0;
 }
 
@@ -585,10 +572,8 @@ void dbLockInitRecords(dbBase *pdbbase)
 
     /* create all lockRecords */
     forEachRecord(NULL, pdbbase, &createLockRecord);
-    /* create lockSets for pairs of records with DB_LINKs */
+    /* create lockSets */
     forEachRecord(NULL, pdbbase, &initPVLinks);
-    /* create lockSets for all records with no DB_LINKs */
-    forEachRecord(NULL, pdbbase, &initSingleSets);
 }
 
 static int freeLockRecord(void* junk, DBENTRY* pdbentry)
@@ -598,6 +583,7 @@ static int freeLockRecord(void* junk, DBENTRY* pdbentry)
     lockSet *ls = lr->plockSet;
 
     prec->lset = NULL;
+    lr->precord = NULL;
 
     assert(ls->refcount>0);
     assert(ellCount(&ls->lockRecordList)>0);
@@ -639,6 +625,8 @@ void dbLockCleanupRecords(dbBase *pdbbase)
 /* Caller must lock both pfirst and psecond.
  * Assumes that pfirst has been modified
  * to link to psecond.
+ *
+ * Note: locker may be NULL (during iocInit)
  */
 void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 {
@@ -660,7 +648,7 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
         cantProceed(NULL);
     }
 #endif
-    if(A->ownerlocker!=locker || B->ownerlocker!=locker) {
+    if(locker && (A->ownerlocker!=locker || B->ownerlocker!=locker)) {
         errlogPrintf("dbLockSetMerge(%p,\"%s\",\"%s\") locker ownership violation %p %p (%p)\n",
                      locker, pfirst->name, psecond->name,
                      A->ownerlocker, B->ownerlocker, locker);

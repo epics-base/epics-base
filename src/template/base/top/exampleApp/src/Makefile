@@ -88,6 +88,5 @@ include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 
-# Dependency for the generated header
-# must be explicit
-devGenVersion$(DEP): $(GENVERSION)
+# Explicit dependency needed for generated header file
+dev_APPNAME_Version$(DEP): $(COMMON_DIR)/$(GENVERSION)

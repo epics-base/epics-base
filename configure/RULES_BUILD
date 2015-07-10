@@ -363,15 +363,8 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 # Generate header with version number from VCS
 
 ifneq ($(GENVERSION),)
-GENERATEVERSIONHEADERCMD ?= $(PERL) $(TOOLS)/genVersionHeader.pl
-# C macro name
-GENVERSIONMACRO ?= MODULEVERSION
-# C macro default (empty uses date+time)
-#GENVERSIONDEFAULT = defaultversionnumber
-
-$(GENVERSION)::
-	$(GENERATEVERSIONHEADERCMD) -t "$(TOP)" -V "$(GENVERSIONDEFAULT)" -N "$(GENVERSIONMACRO)" $@
-
+$(COMMON_DIR)/$(GENVERSION): FORCE
+	$(GENVERSIONHEADER) -t $(TOP) -N $(GENVERSIONMACRO) -V "$(GENVERSIONDEFAULT)" $@
 endif
 
 #---------------------------------------------------------------
@@ -503,7 +496,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all host inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease
+.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease FORCE
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

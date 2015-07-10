@@ -72,7 +72,7 @@ if (!$vcs && -d "$opt_t/.git") { # Git
     # v1-4-abcdef-dirty
     # is 4 commits after tag 'v1' with short hash abcdef
     # with uncommited modifications
-    my $result = `git describe --tags --dirty`;
+    my $result = `git describe --always --tags --dirty --abbrev=20`;
     chomp $result;
     print "== git describe:\n$result\n==\n" if $opt_v;
     if (!$? && $result ne '') {

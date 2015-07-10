@@ -85,6 +85,7 @@ IOCS_APPL_TOP               = $(shell $(FULLPATHNAME) $(INSTALL_LOCATION))
 # Make echo output - suppress echoing if make's '-s' flag is set
 NOP = :
 ECHO = @$(if $(findstring s,$(patsubst T_A=%,,$(MAKEFLAGS))),$(NOP),echo)
+QUIET_FLAG := $(if $(findstring s,$(MAKEFLAGS)),-q,)
 
 #-------------------------------------------------------
 ifdef T_A
@@ -333,6 +334,14 @@ COMPILE.cpp = $(CCC) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES)
 #--------------------------------------------------
 # C preprocessor command
 PREPROCESS.cpp = $(CPP) $(CPPFLAGS) $(INCLUDES) $< > $@
+
+#--------------------------------------------------
+# genVersion header defaults
+
+# C macro name
+GENVERSIONMACRO = VCSVERSION
+# C macro default value (empty to use date+time)
+GENVERSIONDEFAULT =
 
 #--------------------------------------------------
 # Header dependency file generation

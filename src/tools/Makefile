@@ -46,6 +46,7 @@ PERL_SCRIPTS += mkmf.pl
 PERL_SCRIPTS += munch.pl
 PERL_SCRIPTS += replaceVAR.pl
 PERL_SCRIPTS += useManifestTool.pl
+PERL_SCRIPTS += genVersionHeader.pl
 
 PERL_SCRIPTS += dbdToMenuH.pl
 PERL_SCRIPTS += dbdToRecordtypeH.pl

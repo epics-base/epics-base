@@ -6,6 +6,7 @@ include $(TOP)/configure/CONFIG
 # Install databases, templates & substitutions like this
 DB += dbExample1.db
 DB += dbExample2.db
+DB += _APPNAME_Version.db
 DB += dbSubExample.db
 DB += user.substitutions
 

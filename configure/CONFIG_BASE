@@ -68,11 +68,11 @@ DBTOMENUH                  = $(PERL) $(TOOLS)/dbdToMenuH.pl
 REGISTERRECORDDEVICEDRIVER = $(PERL) $(TOOLS)/registerRecordDeviceDriver.pl
 CONVERTRELEASE             = $(PERL) $(call FIND_TOOL,convertRelease.pl)
 FULLPATHNAME               = $(PERL) $(TOOLS)/fullPathName.pl
+GENVERSIONHEADER           = $(PERL) $(TOOLS)/genVersionHeader.pl $(QUIET_FLAG)
 
 #-------------------------------------------------------
 # tools for installing libraries and products
-INSTALL_QUIETLY := $(if $(findstring s,$(MAKEFLAGS)),-q,)
-INSTALL = $(PERL) $(TOOLS)/installEpics.pl $(INSTALL_QUIETLY)
+INSTALL = $(PERL) $(TOOLS)/installEpics.pl $(QUIET_FLAG)
 INSTALL_PRODUCT = $(INSTALL)
 INSTALL_LIBRARY = $(INSTALL)
 

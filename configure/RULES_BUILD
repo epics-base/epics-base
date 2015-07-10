@@ -347,6 +347,14 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
 
 #---------------------------------------------------------------
+# Generate header with version number from VCS
+
+ifneq ($(GENVERSION),)
+$(COMMON_DIR)/$(GENVERSION): FORCE
+	$(GENVERSIONHEADER) -t $(TOP) -N $(GENVERSIONMACRO) -V "$(GENVERSIONDEFAULT)" $@
+endif
+
+#---------------------------------------------------------------
 # Install rules for BIN_INSTALLS and LIB_INSTALLS
 
 define  BIN_INSTALLS_template
@@ -479,7 +487,7 @@ $(INSTALL_TEMPLATES_SUBDIR)/%: %
 .PRECIOUS: $(COMMON_INC)
 
 .PHONY: all host inc build install clean rebuild buildInstall build_clean
-.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease
+.PHONY: runtests tapfiles checkRelease warnRelease noCheckRelease FORCE
 
 endif # BASE_RULES_BUILD
 #	EOF RULES_BUILD

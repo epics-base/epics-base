@@ -20,6 +20,16 @@
 
 -->
 
+<h3>Generate Version Header</h3>
+
+<p>A Perl script and Makefile rules have been added to allow modules to generate
+a C header file with a macro defined with an automatically updated identifier.
+This is a VCS revision ID (Darcs, Git, Mercurial Subversion and Bazaar are all
+supported) or the date/time of the build if no VCS system is in use.</p>
+
+<p>The makeBaseApp example template has been updated with a new device support
+which makes this identifier visible via a lsi (long string input) record.</p>
+
 <h3>epicsTime API return status</h3>
 
 <p>The epicsTime routines that used to return epicsTimeERROR now return a specific

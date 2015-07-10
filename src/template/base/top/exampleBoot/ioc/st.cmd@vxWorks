@@ -20,6 +20,7 @@ _CSAFEAPPNAME__registerRecordDeviceDriver pdbbase
 
 ## Load record instances
 dbLoadTemplate "db/user.substitutions"
+dbLoadRecords "db/_APPNAME_Version.db", "user=_USER_"
 dbLoadRecords "db/dbSubExample.db", "user=_USER_"
 
 ## Set this to see messages from mySub

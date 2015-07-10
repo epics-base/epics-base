@@ -42,16 +42,6 @@
 #include "devx.h"
 #include "xRecord.h"
 
-#define ONE_THREAD_LOOPS 101
-#define PAR_THREAD_LOOPS 53
-#define CB_THREAD_LOOPS 13
-
-#define NO_OF_THREADS 7
-#define NO_OF_MEMBERS 5
-#define NO_OF_GROUPS 11
-
-#define NO_OF_MID_THREADS 3
-
 STATIC_ASSERT(NUM_CALLBACK_PRIORITIES==3);
 
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
@@ -307,7 +297,7 @@ static void testMultiThreading(void)
 
 MAIN(scanIoTest)
 {
-    testPlan(0);
+    testPlan(148);
     testSingleThreading();
     testDiag("run a second time to verify shutdown and restart works");
     testSingleThreading();

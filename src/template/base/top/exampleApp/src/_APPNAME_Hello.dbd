@@ -1,2 +1,1 @@
 registrar(helloRegister)
-device(waveform,INST_IO,devWfMyModVersion,"Module Version")

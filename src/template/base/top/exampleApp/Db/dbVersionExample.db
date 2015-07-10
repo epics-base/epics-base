@@ -1,7 +1,0 @@
-record(waveform, "$(user):version") {
-    field(DTYP, "Module Version")
-    field(DESC, "Module version")
-    field(FTVL, "CHAR")
-    field(NELM, "$(NELM=200)")
-    field(PINI, "YES")
-}

@@ -692,11 +692,13 @@ int iocShutdown(void)
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
         asShutdown();
+    }
+    dbCaShutdown(); /* must be before dbChannelExit */
+    if (iocBuildMode==buildIsolated) {
         dbChannelExit();
         dbProcessNotifyExit();
         iocshFree();
     }
-    dbCaShutdown();
     iocState = iocStopped;
     iocBuildMode = buildRSRV;
     return 0;

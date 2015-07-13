@@ -14,6 +14,14 @@
 <h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Clean up after GNU readline()</h3>
+
+<p>If EPICS Base is built with readline support, any IOC that calls epicsExit()
+from a thread other than the main thread is likely to leave the user's terminal
+in a weird state, requiring the user to run something like 'stty sane' to clean
+it up. This release patches the readline support code to clean up automatically
+by registering an epicsAtExit() routine.</p>
+
 <h3>Removed the last vestiges of RSET::get_value()</h3>
 
 <p>The IOC has not called the get_value() routine in the RSET for a very long

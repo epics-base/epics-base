@@ -257,9 +257,9 @@ static void testMultiThreading(void)
     eltc(1);
 
     testDiag("Scan first list");
-    scanIoRequest(drvs[0]->scan);
+    testOk1(scanIoRequest(drvs[0]->scan)==0x7);
     testDiag("Scan second list");
-    scanIoRequest(drvs[1]->scan);
+    testOk1(scanIoRequest(drvs[1]->scan)==0x7);
 
     testDiag("Wait for everything to start");
     for(i=0; i<NELEMENTS(data); i++)
@@ -297,7 +297,7 @@ static void testMultiThreading(void)
 
 MAIN(scanIoTest)
 {
-    testPlan(148);
+    testPlan(152);
     testSingleThreading();
     testDiag("run a second time to verify shutdown and restart works");
     testSingleThreading();

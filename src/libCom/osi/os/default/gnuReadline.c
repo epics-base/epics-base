@@ -16,7 +16,17 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-struct osdContext {} present;
+#include "epicsExit.h"
+
+static struct osdContext {} present;
+
+static enum {rlNone, rlIdle, rlBusy} rlState = rlNone;
+
+static void rlExit(void *dummy) {
+    if (rlState == rlBusy)
+        rl_cleanup_after_signal();
+}
+
 
 /*
  * Create a command-line context
@@ -24,13 +34,18 @@ struct osdContext {} present;
 static void
 osdReadlineBegin(struct readlineContext *context)
 {
+    if (rlState == rlNone) {
+        epicsAtExit(rlExit, NULL);
+        rlState = rlIdle;
+    }
+
     context->osd = &present;
     if (context->in == NULL) {
         long i = 50;
 
         envGetLongConfigParam(&IOCSH_HISTSIZE, &i);
         if (i < 0)
-	    i = 0;
+            i = 0;
         stifle_history(i);
         rl_bind_key('\t', rl_insert);
     }
@@ -47,7 +62,9 @@ osdReadline (const char *prompt, struct readlineContext *context)
     free(context->line);
     context->line = NULL;
     if (context->in == NULL) {
-        line = readline(prompt);
+        rlState = rlBusy;
+        line = readline (prompt);
+        rlState = rlIdle;
     }
     else {
         int c;      /* char is unsigned on some archs; EOF is -ve */

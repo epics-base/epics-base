@@ -75,6 +75,8 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 static volatile enum ctl cbCtl;
 static epicsEventId startStopEvent;
 
+static int callbackIsInit;
+
 /* Static data */
 static char *threadNamePrefix[NUM_CALLBACK_PRIORITIES] = {
     "cbLow", "cbMedium", "cbHigh"
@@ -89,7 +91,7 @@ static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0, 1, 2};
 
 int callbackSetQueueSize(int size)
 {
-    if (startStopEvent) {
+    if (callbackIsInit) {
         errlogPrintf("Callback system already initialized\n");
         return -1;
     }
@@ -99,7 +101,7 @@ int callbackSetQueueSize(int size)
 
 int callbackParallelThreads(int count, const char *prio)
 {
-    if (startStopEvent) {
+    if (callbackIsInit) {
         errlogPrintf("Callback system already initialized\n");
         return -1;
     }
@@ -209,8 +211,7 @@ void callbackCleanup(void)
     }
 
     epicsTimerQueueRelease(timerQueue);
-    epicsEventDestroy(startStopEvent);
-    startStopEvent = NULL;
+    callbackIsInit = 0;
     memset(callbackQueue, 0, sizeof(callbackQueue));
 }
 
@@ -220,10 +221,14 @@ void callbackInit(void)
     int j;
     char threadName[32];
 
-    if (startStopEvent)
+    if (callbackIsInit) {
+        errlogMessage("Warning: callbackInit called again before callbackCleanup\n");
         return;
+    }
+    callbackIsInit = 1;
 
-    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    if(!startStopEvent)
+        startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     cbCtl = ctlRun;
     timerQueue = epicsTimerQueueAllocate(0, epicsThreadPriorityScanHigh);
 

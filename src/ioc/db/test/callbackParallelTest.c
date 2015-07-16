@@ -184,7 +184,8 @@ MAIN(callbackParallelTest)
         free(pcbt[i]);
     }
 
-    callbackShutdown();
+    callbackStop();
+    callbackCleanup();
 
     return testDone();
 }

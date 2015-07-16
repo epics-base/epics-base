@@ -151,7 +151,7 @@ static void buildScanLists(void);
 static void addToList(struct dbCommon *precord, scan_list *psl);
 static void deleteFromList(struct dbCommon *precord, scan_list *psl);
 
-void scanShutdown(void)
+void scanStop(void)
 {
     int i;
 
@@ -168,6 +168,10 @@ void scanShutdown(void)
 
     scanOnce((dbCommon *)&exitOnce);
     epicsEventWait(startStopEvent);
+}
+
+void scanCleanup(void)
+{
 
     deletePeriodic();
     ioscanDestroy();

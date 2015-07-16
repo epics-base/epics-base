@@ -46,7 +46,8 @@ struct dbCommon;
 epicsShareFunc long scanInit(void);
 epicsShareFunc void scanRun(void);
 epicsShareFunc void scanPause(void);
-epicsShareFunc void scanShutdown(void);
+epicsShareFunc void scanStop(void);
+epicsShareFunc void scanCleanup(void);
 
 epicsShareFunc EVENTPVT eventNameToHandle(const char* event);
 epicsShareFunc void postEvent(EVENTPVT epvt);

@@ -607,7 +607,8 @@ static void initialProcess(void)
 
 
 /*
- * Shutdown processing.
+ * set DB_LINK and CA_LINK to PV_LINK
+ * Delete record scans
  */
 static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
@@ -678,8 +679,12 @@ int iocShutdown(void)
     if (iocState == iocVirgin || iocState == iocStopped) return 0;
     iterateRecords(doCloseLinks, NULL);
     if (iocBuildMode==buildIsolated) {
-        scanShutdown();
-        callbackShutdown();
+        /* stop and "join" threads */
+        scanStop();
+        callbackStop();
+        /* free resources */
+        scanCleanup();
+        callbackCleanup();
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
         asShutdown();

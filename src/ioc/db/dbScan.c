@@ -178,10 +178,6 @@ void scanCleanup(void)
 
     epicsRingPointerDelete(onceQ);
 
-    epicsEventDestroy(startStopEvent);
-    epicsEventDestroy(onceSem);
-    onceSem = startStopEvent = NULL;
-
     free(periodicTaskId);
     papPeriodic = NULL;
     periodicTaskId = NULL;
@@ -191,7 +187,8 @@ long scanInit(void)
 {
     int i;
 
-    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    if(!startStopEvent)
+        startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     scanCtl = ctlPause;
 
     initPeriodic();
@@ -643,7 +640,8 @@ static void initOnce(void)
     if ((onceQ = epicsRingPointerCreate(onceQueueSize)) == NULL) {
         cantProceed("initOnce: Ring buffer create failed\n");
     }
-    onceSem = epicsEventMustCreate(epicsEventEmpty);
+    if(!onceSem)
+        onceSem = epicsEventMustCreate(epicsEventEmpty);
     onceTaskId = epicsThreadCreate("scanOnce",
         epicsThreadPriorityScanLow + nPeriodic,
         epicsThreadGetStackSize(epicsThreadStackBig), onceTask, 0);

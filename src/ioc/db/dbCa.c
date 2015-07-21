@@ -223,19 +223,12 @@ void dbCaShutdown(void)
     }
 }
 
-static void dbCaExit(void *arg)
-{
-    dbCaShutdown();
-}
-
 void dbCaLinkInitIsolated(void)
 {
     if (!workListLock)
         workListLock = epicsMutexMustCreate();
-    if (!workListEvent) {
+    if (!workListEvent)
         workListEvent = epicsEventMustCreate(epicsEventEmpty);
-        epicsAtExit(dbCaExit, NULL);
-    }
     dbCaCtl = ctlExit;
 }
 

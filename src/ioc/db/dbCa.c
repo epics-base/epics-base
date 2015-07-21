@@ -232,10 +232,11 @@ void dbCaLinkInitIsolated(void)
 {
     if (!workListLock)
         workListLock = epicsMutexMustCreate();
-    if (!workListEvent)
+    if (!workListEvent) {
         workListEvent = epicsEventMustCreate(epicsEventEmpty);
+        epicsAtExit(dbCaExit, NULL);
+    }
     dbCaCtl = ctlExit;
-    epicsAtExit(dbCaExit, NULL);
 }
 
 void dbCaLinkInit(void)

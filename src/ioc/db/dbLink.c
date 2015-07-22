@@ -79,7 +79,7 @@ static void inherit_severity(const struct pv_link *ppv_link, dbCommon *pdest,
 /* How to identify links in error messages */
 static const char * link_field_name(const struct link *plink)
 {
-    const struct dbCommon *precord = plink->value.pv_link.precord;
+    const struct dbCommon *precord = plink->precord;
     const dbRecordType *pdbRecordType = precord->rdes;
     dbFldDes * const *papFldDes = pdbRecordType->papFldDes;
     const short *link_ind = pdbRecordType->link_ind;
@@ -97,13 +97,28 @@ static const char * link_field_name(const struct link *plink)
 
 /***************************** Constant Links *****************************/
 
+/* Forward definition */
+static lset dbConst_lset;
+
+static void dbConstInitLink(struct link *plink)
+{
+    plink->lset = &dbConst_lset;
+}
+
+static void dbConstAddLink(struct link *plink)
+{
+    plink->lset = &dbConst_lset;
+}
+
 static long dbConstLoadLink(struct link *plink, short dbrType, void *pbuffer)
 {
     if (!plink->value.constantStr)
         return S_db_badField;
 
+    plink->lset = &dbConst_lset;
+
     /* Constant strings are always numeric */
-    if (dbrType== DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
+    if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
         dbrType = DBF_USHORT;
 
     return dbFastPutConvertRoutine[DBR_STRING][dbrType]
@@ -116,7 +131,7 @@ static long dbConstGetNelements(const struct link *plink, long *nelements)
     return 0;
 }
 
-static long dbConstGetLink(struct link *plink, short dbrType, void *pbuffer,
+static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
         epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
 {
     if (pnRequest)
@@ -124,9 +139,24 @@ static long dbConstGetLink(struct link *plink, short dbrType, void *pbuffer,
     return 0;
 }
 
+static lset dbConst_lset = {
+    NULL,
+    NULL,
+    NULL, dbConstGetNelements,
+    dbConstGetValue,
+    NULL, NULL, NULL,
+    NULL, NULL,
+    NULL, NULL,
+    NULL,
+    NULL
+};
+
 /***************************** Database Links *****************************/
 
-static long dbDbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
+/* Forward definition */
+static lset dbDb_lset;
+
+static long dbDbInitLink(struct link *plink, short dbfType)
 {
     DBADDR dbaddr;
     long status;
@@ -136,6 +166,7 @@ static long dbDbInitLink(struct dbCommon *precord, struct link *plink, short dbf
     if (status)
         return status;
 
+    plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
     pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
     *pdbAddr = dbaddr; /* structure copy */
@@ -144,20 +175,33 @@ static long dbDbInitLink(struct dbCommon *precord, struct link *plink, short dbf
     /* merging into the same lockset is deferred to the caller.
      * cf. initPVLinks()
      */
-    dbLockSetMerge(NULL, precord, dbaddr.precord);
-    assert(precord->lset->plockSet==dbaddr.precord->lset->plockSet);
+    dbLockSetMerge(NULL, plink->precord, dbaddr.precord);
+    assert(plink->precord->lset->plockSet == dbaddr.precord->lset->plockSet);
     return 0;
 }
 
-static void dbDbRemoveLink(dbLocker *locker, struct dbCommon *prec, struct link *plink)
+static void dbDbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *ptarget)
+{
+    plink->lset = &dbDb_lset;
+    plink->type = DB_LINK;
+    plink->value.pv_link.pvt = ptarget;
+    ellAdd(&ptarget->precord->bklnk, &plink->value.pv_link.backlinknode);
+
+    /* target record is already locked in dbPutFieldLink() */
+    dbLockSetMerge(locker, plink->precord, ptarget->precord);
+}
+
+static void dbDbRemoveLink(dbLocker *locker, struct link *plink)
 {
     DBADDR *pdbAddr = (DBADDR *) plink->value.pv_link.pvt;
     plink->value.pv_link.pvt = 0;
     plink->value.pv_link.getCvt = 0;
+    plink->value.pv_link.pvlMask = 0;
     plink->value.pv_link.lastGetdbrType = 0;
     plink->type = PV_LINK;
+    plink->lset = NULL;
     ellDelete(&pdbAddr->precord->bklnk, &plink->value.pv_link.backlinknode);
-    dbLockSetSplit(locker, prec, pdbAddr->precord);
+    dbLockSetSplit(locker, plink->precord, pdbAddr->precord);
     free(pdbAddr);
 }
 
@@ -186,7 +230,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
     DBADDR *paddr = ppv_link->pvt;
-    dbCommon *precord = plink->value.pv_link.precord;
+    dbCommon *precord = plink->precord;
     long status;
 
     /* scan passive records if link is process passive  */
@@ -350,7 +394,7 @@ static long dbDbPutValue(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
-    struct dbCommon *psrce = ppv_link->precord;
+    struct dbCommon *psrce = plink->precord;
     DBADDR *paddr = (DBADDR *) ppv_link->pvt;
     dbCommon *pdest = paddr->precord;
     long status = dbPut(paddr, dbrType, pbuffer, nRequest);
@@ -381,30 +425,44 @@ static long dbDbPutValue(struct link *plink, short dbrType,
 
 static void dbDbScanFwdLink(struct link *plink)
 {
-    dbCommon *precord = plink->value.pv_link.precord;
+    dbCommon *precord = plink->precord;
     dbAddr *paddr = (dbAddr *) plink->value.pv_link.pvt;
 
     dbScanPassive(precord, paddr->precord);
 }
 
-lset dbDb_lset = { NULL,
-        dbDbIsLinkConnected, dbDbGetDBFtype, dbDbGetElements, dbDbGetValue,
-        dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
-        dbDbGetPrecision, dbDbGetUnits, dbDbGetAlarm, dbDbGetTimeStamp,
-        dbDbPutValue, dbDbScanFwdLink };
+static lset dbDb_lset = {
+    dbDbRemoveLink,
+    dbDbIsLinkConnected,
+    dbDbGetDBFtype, dbDbGetElements,
+    dbDbGetValue,
+    dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
+    dbDbGetPrecision, dbDbGetUnits,
+    dbDbGetAlarm, dbDbGetTimeStamp,
+    dbDbPutValue,
+    dbDbScanFwdLink
+};
 
 /***************************** Generic Link API *****************************/
 
-void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
+void dbInitLink(struct link *plink, short dbfType)
 {
-    plink->value.pv_link.precord = precord;
+    struct dbCommon *precord = plink->precord;
+
+    if (plink->type == CONSTANT) {
+        dbConstInitLink(plink);
+        return;
+    }
+
+    if (plink->type != PV_LINK)
+        return;
 
     if (plink == &precord->tsel)
         recGblTSELwasModified(plink);
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
-        if (!dbDbInitLink(precord, plink, dbfType))
+        if (!dbDbInitLink(plink, dbfType))
             return;
     }
 
@@ -412,7 +470,7 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
     if (dbfType == DBF_INLINK)
         plink->value.pv_link.pvlMask |= pvlOptInpNative;
 
-    dbCaAddLink(plink);
+    dbCaAddLink(NULL, plink, dbfType);
     if (dbfType == DBF_FWDLINK) {
         char *pperiod = strrchr(plink->value.pv_link.pvname, '.');
 
@@ -429,23 +487,21 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
     }
 }
 
-void dbAddLink(dbLocker *locker, struct dbCommon *precord, struct link *plink, short dbfType, DBADDR *ptargetaddr)
+void dbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *ptarget)
 {
-    plink->value.pv_link.precord = precord;
+    struct dbCommon *precord = plink->precord;
+
+    if (plink->type == CONSTANT) {
+        dbConstAddLink(plink);
+        return;
+    }
 
     if (plink == &precord->tsel)
         recGblTSELwasModified(plink);
 
-    if (ptargetaddr) {
-        /* make a DB link */
-
-        plink->type = DB_LINK;
-        plink->value.pv_link.pvt = ptargetaddr;
-        ellAdd(&ptargetaddr->precord->bklnk, &plink->value.pv_link.backlinknode);
-
-        /* target record is already locked in dbPutFieldLink() */
-        dbLockSetMerge(locker, plink->value.pv_link.precord, ptargetaddr->precord);
-
+    if (ptarget) {
+        /* It's a DB link */
+        dbDbAddLink(locker, plink, dbfType, ptarget);
         return;
     }
 
@@ -453,7 +509,7 @@ void dbAddLink(dbLocker *locker, struct dbCommon *precord, struct link *plink, s
     if (dbfType == DBF_INLINK)
         plink->value.pv_link.pvlMask |= pvlOptInpNative;
 
-    dbCaAddLink(plink);
+    dbCaAddLink(locker, plink, dbfType);
     if (dbfType == DBF_FWDLINK) {
         char *pperiod = strrchr(plink->value.pv_link.pvname, '.');
 
@@ -464,69 +520,60 @@ void dbAddLink(dbLocker *locker, struct dbCommon *precord, struct link *plink, s
 
 long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
 {
-    switch (plink->type) {
-    case CONSTANT:
+    if (plink->type == CONSTANT)
         return dbConstLoadLink(plink, dbrType, pbuffer);
-    }
+
+    /* Could pass a type hint to the other link types here */
     return S_db_notFound;
 }
 
-void dbRemoveLink(dbLocker *locker, dbCommon *prec, struct link *plink)
+void dbRemoveLink(dbLocker *locker, struct link *plink)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        dbDbRemoveLink(locker, prec, plink);
-        break;
-    case CA_LINK:
-        dbCaRemoveLink(plink);
-        break;
-    default:
-        cantProceed("dbRemoveLink: Unexpected link type %d\n", plink->type);
+    lset *plset = plink->lset;
+
+    if (plset) {
+        if (plset->removeLink)
+            plset->removeLink(locker, plink);
+        plink->lset = NULL;
     }
-    plink->type = PV_LINK;
-    plink->value.pv_link.pvlMask = 0;
 }
 
 int dbIsLinkConnected(const struct link *plink)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbIsLinkConnected(plink);
-    case CA_LINK:
-        return dbCaIsLinkConnected(plink);
-    }
-    return FALSE;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->isLinkConnected)
+        return FALSE;
+
+    return plset->isLinkConnected(plink);
 }
 
 int dbGetLinkDBFtype(const struct link *plink)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetDBFtype(plink);
-    case CA_LINK:
-        return dbCaGetLinkDBFtype(plink);
-    }
-    return -1;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getDBFtype)
+        return -1;
+
+    return plset->getDBFtype(plink);
 }
 
 long dbGetNelements(const struct link *plink, long *nelements)
 {
-    switch (plink->type) {
-    case CONSTANT:
-        return dbConstGetNelements(plink, nelements);
-    case DB_LINK:
-        return dbDbGetElements(plink, nelements);
-    case CA_LINK:
-        return dbCaGetNelements(plink, nelements);
-    }
-    return S_db_badField;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getElements)
+        return S_db_badField;
+
+    return plset->getElements(plink, nelements);
 }
 
 long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
-    struct dbCommon *precord = plink->value.pv_link.precord;
+    struct dbCommon *precord = plink->precord;
     epicsEnum16 sevr = 0, stat = 0;
+    lset *plset = plink->lset;
     long status;
 
     if (poptions && *poptions) {
@@ -534,21 +581,10 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         *poptions = 0;
     }
 
-    switch (plink->type) {
-    case CONSTANT:
-        status = dbConstGetLink(plink, dbrType, pbuffer, &stat, &sevr,
-                pnRequest);
-        break;
-    case DB_LINK:
-        status = dbDbGetValue(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
-        break;
-    case CA_LINK:
-        status = dbCaGetLink(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
-        break;
-    default:
-        cantProceed("dbGetLinkValue: Illegal link type %d\n", plink->type);
-        status = -1;
-    }
+    if (!plset || !plset->getValue)
+        return -1;
+
+    status = plset->getValue(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
     if (status) {
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
     } else {
@@ -559,104 +595,88 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
 
 long dbGetControlLimits(const struct link *plink, double *low, double *high)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetControlLimits(plink, low, high);
-    case CA_LINK:
-        return dbCaGetControlLimits(plink, low, high);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getControlLimits)
+        return S_db_notFound;
+
+    return plset->getControlLimits(plink, low, high);
 }
 
 long dbGetGraphicLimits(const struct link *plink, double *low, double *high)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetGraphicLimits(plink, low, high);
-    case CA_LINK:
-        return dbCaGetGraphicLimits(plink, low, high);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getGraphicLimits)
+        return S_db_notFound;
+
+    return plset->getGraphicLimits(plink, low, high);
 }
 
 long dbGetAlarmLimits(const struct link *plink, double *lolo, double *low,
         double *high, double *hihi)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetAlarmLimits(plink, lolo, low, high, hihi);
-    case CA_LINK:
-        return dbCaGetAlarmLimits(plink, lolo, low, high, hihi);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getAlarmLimits)
+        return S_db_notFound;
+
+    return plset->getAlarmLimits(plink, lolo, low, high, hihi);
 }
 
 long dbGetPrecision(const struct link *plink, short *precision)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetPrecision(plink, precision);
-    case CA_LINK:
-        return dbCaGetPrecision(plink, precision);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getPrecision)
+        return S_db_notFound;
+
+    return plset->getPrecision(plink, precision);
 }
 
 long dbGetUnits(const struct link *plink, char *units, int unitsSize)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetUnits(plink, units, unitsSize);
-    case CA_LINK:
-        return dbCaGetUnits(plink, units, unitsSize);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getUnits)
+        return S_db_notFound;
+
+    return plset->getUnits(plink, units, unitsSize);
 }
 
 long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetAlarm(plink, status, severity);
-    case CA_LINK:
-        return dbCaGetAlarm(plink, status, severity);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getAlarm)
+        return S_db_notFound;
+
+    return plset->getAlarm(plink, status, severity);
 }
 
 long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        return dbDbGetTimeStamp(plink, pstamp);
-    case CA_LINK:
-        return dbCaGetTimeStamp(plink, pstamp);
-    }
-    return S_db_notFound;
+    lset *plset = plink->lset;
+
+    if (!plset || !plset->getTimeStamp)
+        return S_db_notFound;
+
+    return plset->getTimeStamp(plink, pstamp);
 }
 
 long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
         long nRequest)
 {
+    lset *plset = plink->lset;
     long status;
 
-    switch (plink->type) {
-    case CONSTANT:
-        status = 0;
-        break;
-    case DB_LINK:
-        status = dbDbPutValue(plink, dbrType, pbuffer, nRequest);
-        break;
-    case CA_LINK:
-        status = dbCaPutLink(plink, dbrType, pbuffer, nRequest);
-        break;
-    default:
-        cantProceed("dbPutLinkValue: Illegal link type %d\n", plink->type);
-        status = -1;
-    }
+    if (!plset || !plset->putValue)
+        return S_db_notFound;
+
+    status = plset->putValue(plink, dbrType, pbuffer, nRequest);
     if (status) {
-        struct dbCommon *precord = plink->value.pv_link.precord;
+        struct dbCommon *precord = plink->precord;
 
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
     }
@@ -665,14 +685,10 @@ long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
 
 void dbScanFwdLink(struct link *plink)
 {
-    switch (plink->type) {
-    case DB_LINK:
-        dbDbScanFwdLink(plink);
-        break;
-    case CA_LINK:
-        dbCaScanFwdLink(plink);
-        break;
-    }
+    lset *plset = plink->lset;
+
+    if (plset && plset->scanFwdLink)
+        plset->scanFwdLink(plink);
 }
 
 /* Helper functions for long string support */

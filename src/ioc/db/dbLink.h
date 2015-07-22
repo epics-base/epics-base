@@ -26,8 +26,10 @@
 extern "C" {
 #endif
 
+struct dbLocker;
+
 typedef struct lset {
-    void (*removeLink)(struct link *plink);
+    void (*removeLink)(struct dbLocker *locker, struct link *plink);
     int (*isLinkConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);
     long (*getElements)(const struct link *plink, long *nelements);
@@ -50,15 +52,12 @@ typedef struct lset {
 #define dbGetSevr(PLINK, PSEVERITY) \
     dbGetAlarm((PLINK), NULL, (PSEVERITY))
 
-struct dbLocker;
-
-epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
-        short dbfType);
-epicsShareFunc void dbAddLink(struct dbLocker *locker, struct dbCommon *precord, struct link *plink,
-        short dbfType, DBADDR *ptargetaddr);
+epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
+epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
+        DBADDR *ptarget);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
-epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct dbCommon *prec, struct link *plink);
+epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
@@ -77,7 +76,7 @@ epicsShareFunc long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity);
 epicsShareFunc long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
-epicsShareFunc long dbPutLink(struct link *, short dbrType,
+epicsShareFunc long dbPutLink(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
 

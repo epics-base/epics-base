@@ -29,18 +29,19 @@ epicsShareFunc void dbCaRun(void);
 epicsShareFunc void dbCaPause(void);
 epicsShareFunc void dbCaShutdown(void);
 
+struct dbLocker;
 epicsShareFunc void dbCaAddLinkCallback(struct link *plink,
     dbCaCallback connect, dbCaCallback monitor, void *userPvt);
-#define dbCaAddLink(plink) dbCaAddLinkCallback((plink), 0, 0, 0)
-epicsShareFunc void dbCaRemoveLink(struct link *plink);
+epicsShareFunc long dbCaAddLink(struct dbLocker *locker, struct link *plink, short dbfType);
+epicsShareFunc void dbCaRemoveLink(struct dbLocker *locker, struct link *plink);
 epicsShareFunc long dbCaGetLink(struct link *plink,
     short dbrType, void *pbuffer, epicsEnum16 *pstat, epicsEnum16 *psevr,
     long *nRequest);
 epicsShareFunc long dbCaPutLinkCallback(struct link *plink,
     short dbrType, const void *pbuffer,long nRequest,
     dbCaCallback callback, void *userPvt);
-#define dbCaPutLink(plink, dbrType, pbuffer, nRequest) \
-    dbCaPutLinkCallback((plink), (dbrType), (pbuffer), (nRequest), 0, 0)
+epicsShareFunc long dbCaPutLink(struct link *plink,short dbrType,
+    const void *pbuffer,long nRequest);
 epicsShareFunc int dbCaIsLinkConnected(const struct link *plink);
 epicsShareFunc void dbCaScanFwdLink(struct link *plink);
 

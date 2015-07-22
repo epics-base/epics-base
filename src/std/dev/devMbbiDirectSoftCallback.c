@@ -108,7 +108,6 @@ static long add_record(dbCommon *pcommon)
     ppn = &pdevPvt->pn;
 
     plink->type = PN_LINK;
-    plink->value.pv_link.precord = pcommon;
     plink->value.pv_link.pvlMask &= pvlOptMsMode;   /* Severity flags only */
 
     ppn->usrPvt = prec;

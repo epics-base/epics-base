@@ -1050,13 +1050,11 @@ static long dbPutFieldLink(DBADDR *paddr,
     switch (plink->type) { /* Old link type */
     case DB_LINK:
     case CA_LINK:
-        dbRemoveLink(&locker, precord, plink); /* link type becomes PV_LINK */
+    case CONSTANT:
+        dbRemoveLink(&locker, plink);   /* link type becomes PV_LINK */
         break;
 
     case PV_LINK:
-    case CONSTANT:
-        break;  /* do nothing */
-
     case MACRO_LINK:
         break;  /* should never get here */
 
@@ -1097,11 +1095,9 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
-        dbAddLink(&locker, precord, plink, pfldDes->field_type, pdbaddr);
-        break;
-
     case CONSTANT:
-        break;  /* do nothing */
+        dbAddLink(&locker, plink, pfldDes->field_type, pdbaddr);
+        break;
 
     case DB_LINK:
     case CA_LINK:

@@ -23,6 +23,7 @@
 #include "dbChannel.h"
 #include "dbNotify.h"
 #include "epicsAssert.h"
+#include "epicsMath.h"
 #include "recGbl.h"
 #include "recSup.h"
 #include "devSup.h"
@@ -190,7 +191,7 @@ static long read_ai(aiRecord *prec)
     }
 
     /* Apply smoothing algorithm */
-    if (prec->smoo != 0.0 && pdevPvt->smooth)
+    if (prec->smoo != 0.0 && pdevPvt->smooth && finite(prec->val))
         prec->val = prec->val * prec->smoo +
             pdevPvt->buffer.value * (1.0 - prec->smoo);
     else

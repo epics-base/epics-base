@@ -979,6 +979,7 @@ static void event_task (void *pParm)
 {
     struct event_user * const evUser = (struct event_user *) pParm;
     struct event_que * ev_que;
+    unsigned char pendexit;
 
     /* init hook */
     if (evUser->init_func) {
@@ -1020,9 +1021,10 @@ static void event_task (void *pParm)
             event_read (ev_que);
             epicsMutexMustLock ( evUser->lock );
         }
+        pendexit = evUser->pendexit;
         epicsMutexUnlock ( evUser->lock );
 
-    } while ( ! evUser->pendexit );
+    } while( ! pendexit );
 
     epicsMutexDestroy(evUser->firstque.writelock);
 

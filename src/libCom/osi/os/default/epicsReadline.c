@@ -79,6 +79,7 @@ epicsReadlineEnd(void *context)
 
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <unistd.h>
 
 struct readlineContext {
     FILE    *in;
@@ -138,6 +139,14 @@ epicsReadline (const char *prompt, void *context)
     free (readlineContext->line);
     readlineContext->line = NULL;
     if (readlineContext->in == NULL) {
+        if (!isatty(fileno(stdout))) {
+            /* The libedit readline emulator on Darwin doesn't
+             * print the prompt when the terminal isn't a tty.
+             */
+            fputs (prompt, stdout);
+            fflush (stdout);
+            rl_already_prompted = 1;
+        }
         rlState = rlBusy;
         line = readline (prompt);
         rlState = rlIdle;

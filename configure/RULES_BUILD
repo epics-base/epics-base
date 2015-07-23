@@ -81,6 +81,8 @@ else
 host:
 endif
 
+-include $(CONFIG)/RULES_FILE_TYPE
+
 -include $(CONFIG)/RULES.Db
 
 #---------------------------------------------------------------
@@ -121,8 +123,6 @@ LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) $(TESTLIBNAME) \
   $(DLLSTUB_LIBNAME) $(INSTALL_DLLSTUB_LIBS) $(TESTDLLSTUB_LIBNAME) \
   $(LOADABLE_SHRLIBNAME) $(INSTALL_LOADABLE_SHRLIBS)
 
-
--include $(CONFIG)/RULES_FILE_TYPE
 
 #	Main targets
 

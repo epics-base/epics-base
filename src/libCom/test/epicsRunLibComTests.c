@@ -101,7 +101,12 @@ void epicsRunLibComTests(void)
     runTest(taskwdTest);
 
     /*
-     * Exit must come last as it never returns
+     * Report now in case epicsExitTest dies
+     */
+    testHarnessDone();
+
+    /*
+     * epicsExitTest must come last as it never returns
      */
     runTest(epicsExitTest);
 }

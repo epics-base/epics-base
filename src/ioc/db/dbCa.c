@@ -100,7 +100,7 @@ static int dbca_chan_count;
  *   that has been deleted.
  *
  * Just a few words about handling dbCaRemoveLink because this is when
- *   it is essential that nothing trys to use a caLink that has been freed.
+ *   it is essential that nothing tries to use a caLink that has been freed.
  *
  *   dbCaRemoveLink is called when links are being modified. This is only
  *   done with the dbScan mechanism guranteeing that nothing from
@@ -119,19 +119,16 @@ static int dbca_chan_count;
  *   dbCaTask issues a ca_clear_channel and then frees the caLink.
  *
  *   If any channel access callback gets called before the ca_clear_channel
- *   it finds pca->plink=0 and does nothing. Once ca_clear_channel
+ *   it finds pca->plink==0 and does nothing. Once ca_clear_channel
  *   is called no other callback for this caLink will be called.
  *
  *   dbCaPutLinkCallback causes an additional complication because
  *   when dbCaRemoveLink is called the callback may not have occured.
- *   What is done is the following:
- *     If callback has not occured dbCaRemoveLink sets plinkPutCallback=plink
- *     If putCallback is called before dbCaTask calls ca_clear_channel
- *        it does NOT call the users callback.
- *     dbCaTask calls the users callback passing plinkPutCallback AFTER
- *        it has called ca_clear_channel
- *   Thus the users callback will get called exactly once.
-*/
+ *   If putComplete sees plink==0 it will not call the user's code.
+ *   If pca->putCallback is non-zero, dbCaTask will call the
+ *   user's callback AFTER it has called ca_clear_channel.
+ *   Thus the user's callback will get called exactly once.
+ */
 
 static void addAction(caLink *pca, short link_action)
 {
@@ -168,7 +165,7 @@ static void addAction(caLink *pca, short link_action)
 static void dbCaLinkFree(caLink *pca)
 {
     dbCaCallback callback;
-    struct link *plinkPutCallback = 0;
+    void *userPvt = 0;
 
     if (pca->chid) {
         ca_clear_channel(pca->chid);
@@ -176,8 +173,7 @@ static void dbCaLinkFree(caLink *pca)
     }
     callback = pca->putCallback;
     if (callback) {
-        plinkPutCallback = pca->plinkPutCallback;
-        pca->plinkPutCallback = 0;
+        userPvt = pca->putUserPvt;
         pca->putCallback = 0;
         pca->putType = 0;
     }
@@ -188,12 +184,12 @@ static void dbCaLinkFree(caLink *pca)
     free(pca->pvname);
     epicsMutexDestroy(pca->lock);
     free(pca);
-    if (callback) callback(plinkPutCallback);
+    if (callback) callback(userPvt);
 }
 
-void dbCaCallbackProcess(void *usrPvt)
+void dbCaCallbackProcess(void *userPvt)
 {
-    struct link *plink = (struct link *)usrPvt;
+    struct link *plink = (struct link *)userPvt;
     dbCommon *pdbCommon = plink->value.pv_link.precord;
 
     dbScanLock(pdbCommon);
@@ -291,8 +287,6 @@ void dbCaRemoveLink(struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
-    if (pca->putCallback)
-        pca->plinkPutCallback = plink;
     /* Unlock before addAction or dbCaTask might free first */
     epicsMutexUnlock(pca->lock);
     addAction(pca, CA_CLEAR_CHANNEL);
@@ -794,7 +788,7 @@ static void exceptionCallback(struct exception_handler_args args)
     }
 }
 
-static void putCallback(struct event_handler_args arg)
+static void putComplete(struct event_handler_args arg)
 {
     caLink *pca = (caLink *)arg.usr;
     struct link *plink;
@@ -957,7 +951,7 @@ static void dbCaTask(void *arg)
                     status = ca_array_put_callback(
                         pca->dbrType, pca->nelements,
                         pca->chid, pca->pputNative,
-                        putCallback, pca);
+                        putComplete, pca);
                 } else {
                     status = ECA_PUTFAIL;
                 }
@@ -980,7 +974,7 @@ static void dbCaTask(void *arg)
                     status = ca_array_put_callback(
                         DBR_STRING, 1,
                         pca->chid, pca->pputString,
-                        putCallback, pca);
+                        putComplete, pca);
                 } else {
                     status = ECA_PUTFAIL;
                 }

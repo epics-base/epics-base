@@ -63,7 +63,6 @@ typedef struct caLink
         short           putType;
         dbCaCallback    putCallback;
         void            *putUserPvt;
-        struct link     *plinkPutCallback;
         /* The following are for access to additional attributes*/
         char            gotAttributes;
         dbCaCallback	getAttributes;

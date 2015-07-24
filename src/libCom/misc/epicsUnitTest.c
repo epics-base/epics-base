@@ -211,7 +211,7 @@ int testDone(void) {
 
 /* Our test harness, for RTEMS and vxWorks */
 
-static void harnessExit(void *dummy) {
+void testHarnessExit(void *dummy) {
     epicsTimeStamp ended;
     int Faulty;
 
@@ -248,7 +248,7 @@ static void harnessExit(void *dummy) {
 
 void testHarness(void) {
     epicsThreadOnce(&onceFlag, testOnce, NULL);
-    epicsAtExit(harnessExit, NULL);
+    epicsAtExit(testHarnessExit, NULL);
     Harness = 1;
     Programs = 0;
     Tests = 0;

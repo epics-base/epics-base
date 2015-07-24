@@ -689,6 +689,9 @@ int iocShutdown(void)
         /* stop and "join" threads */
         scanStop();
         callbackStop();
+    }
+    dbCaShutdown();
+    if (iocBuildMode==buildIsolated) {
         /* free resources */
         scanCleanup();
         callbackCleanup();

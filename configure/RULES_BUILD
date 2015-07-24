@@ -168,7 +168,7 @@ ifdef RES
 endif
 
 $(DIRECTORY_TARGETS) :
-	$(MKDIR) -p $@
+	$(MKDIR) $@
 
 $(PRODNAME): $(INSTALL_LIB_INSTALLS)
 

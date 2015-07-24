@@ -11,7 +11,7 @@
 CP = cp
 MV = mv
 RM = rm -f
-MKDIR = mkdir
+MKDIR = mkdir -p
 RMDIR = rm -rf
 CAT = cat
 

@@ -8,7 +8,7 @@
 # This is a Makefile fragment, see src/libCom/Makefile.
 
 MAKEVERSION = $(LIBCOM)/misc/makeEpicsVersion.pl
-MAKEVERSION_FLAGS = -o $(notdir $@) $(INSTALL_QUIETLY)
+MAKEVERSION_FLAGS = -o $(notdir $@) $(QUIET_FLAG)
 MAKEVERSION_FLAGS += $(if $(EPICS_SITE_VERSION),-v "$(EPICS_SITE_VERSION)")
 
 $(COMMON_DIR)/epicsVersion.h: $(CONFIG)/CONFIG_BASE_VERSION \

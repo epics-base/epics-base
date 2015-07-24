@@ -445,13 +445,12 @@ $(COMMON_DIR)/%.html: %.pm $(TOOLS)/podToHtml.pl
 $(COMMON_DIR)/%.html: ../%.pm $(TOOLS)/podToHtml.pl
 	@$(RM) $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -s -o $(notdir $@) $<
-	@$(MKDIR) -p $(dir $@)
+	@$(MKDIR) $(dir $@)
 	@$(MV) $(notdir $@) $@
 
 $(COMMON_DIR)/%.html: ../%.pl $(TOOLS)/podToHtml.pl
 	@$(RM) $(notdir $@)
 	$(PERL) $(TOOLS)/podToHtml.pl -s -o $(notdir $@) $<
-	@$(MKDIR) -p $(dir $@)
 	@$(MV) $(notdir $@) $@
 
 .PRECIOUS: $(COMMON_DIR)/%.html %.html

@@ -1,14 +1,13 @@
 /*************************************************************************\
 * Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
- *     National Laboratory.
- * Copyright (c) 2002 The Regents of the University of California, as
- *     Operator of Los Alamos National Laboratory.
- * EPICS BASE is distributed subject to a Software License Agreement found
- * in file LICENSE that is included with this distribution.
- \*************************************************************************/
-/* dbLink.c */
-/* $Id$ */
-/*
+*     National Laboratory.
+* Copyright (c) 2002 The Regents of the University of California, as
+*     Operator of Los Alamos National Laboratory.
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+/* dbLink.c
+ *
  *      Original Authors: Bob Dalesio, Marty Kraimer
  *      Current Author: Andrew Johnson
  */
@@ -205,7 +204,7 @@ static void dbDbRemoveLink(dbLocker *locker, struct link *plink)
     free(pdbAddr);
 }
 
-static int dbDbIsLinkConnected(const struct link *plink)
+static int dbDbIsConnected(const struct link *plink)
 {
     return TRUE;
 }
@@ -433,7 +432,7 @@ static void dbDbScanFwdLink(struct link *plink)
 
 static lset dbDb_lset = {
     dbDbRemoveLink,
-    dbDbIsLinkConnected,
+    dbDbIsConnected,
     dbDbGetDBFtype, dbDbGetElements,
     dbDbGetValue,
     dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
@@ -542,10 +541,10 @@ int dbIsLinkConnected(const struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (!plset || !plset->isLinkConnected)
+    if (!plset || !plset->isConnected)
         return FALSE;
 
-    return plset->isLinkConnected(plink);
+    return plset->isConnected(plink);
 }
 
 int dbGetLinkDBFtype(const struct link *plink)
@@ -687,8 +686,8 @@ void dbScanFwdLink(struct link *plink)
 {
     lset *plset = plink->lset;
 
-    if (plset && plset->scanFwdLink)
-        plset->scanFwdLink(plink);
+    if (plset && plset->scanForward)
+        plset->scanForward(plink);
 }
 
 /* Helper functions for long string support */

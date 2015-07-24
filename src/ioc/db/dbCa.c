@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
-/* $Revision-Id$
+/* dbCa.c
  *
  *    Original Authors: Bob Dalesio and Marty Kraimer
  *    Date:             26MAR96
@@ -95,9 +94,9 @@ static int dbca_chan_count;
  *   All dbCa* functions operating on a single link may only be called when
  *   the record containing the DBLINK is locked.  Including:
  *    dbCaGet*()
- *    dbCaIsLinkConnected()
+ *    isConnected()
  *    dbCaPutLink()
- *    dbCaScanFwdLink()
+ *    scanForward()
  *    dbCaAddLinkCallback()
  *    dbCaRemoveLink()
  *
@@ -472,7 +471,7 @@ long dbCaPutLink(struct link *plink, short dbrType,
     return dbCaPutLinkCallback(plink, dbrType, pbuffer, nRequest, 0, NULL);
 }
 
-int dbCaIsLinkConnected(const struct link *plink)
+static int isConnected(const struct link *plink)
 {
     caLink *pca;
 
@@ -482,7 +481,7 @@ int dbCaIsLinkConnected(const struct link *plink)
     return pca->isConnected;
 }
 
-void dbCaScanFwdLink(struct link *plink) {
+static void scanForward(struct link *plink) {
     short fwdLinkValue = 1;
 
     if (plink->value.pv_link.pvlMask & pvlOptFWD)
@@ -501,7 +500,7 @@ void dbCaScanFwdLink(struct link *plink) {
         return -1; \
     }
 
-long dbCaGetNelements(const struct link *plink, long *nelements)
+static long getElements(const struct link *plink, long *nelements)
 {
     caLink *pca;
 
@@ -511,7 +510,7 @@ long dbCaGetNelements(const struct link *plink, long *nelements)
     return 0;
 }
 
-long dbCaGetAlarm(const struct link *plink,
+static long getAlarm(const struct link *plink,
     epicsEnum16 *pstat, epicsEnum16 *psevr)
 {
     caLink *pca;
@@ -523,7 +522,7 @@ long dbCaGetAlarm(const struct link *plink,
     return 0;
 }
 
-long dbCaGetTimeStamp(const struct link *plink,
+static long getTimeStamp(const struct link *plink,
     epicsTimeStamp *pstamp)
 {
     caLink *pca;
@@ -534,7 +533,7 @@ long dbCaGetTimeStamp(const struct link *plink,
     return 0;
 }
 
-int dbCaGetLinkDBFtype(const struct link *plink)
+static int getDBFtype(const struct link *plink)
 {
     caLink *pca;
     int  type;
@@ -565,7 +564,7 @@ long dbCaGetAttributes(const struct link *plink,
     return 0;
 }
 
-long dbCaGetControlLimits(const struct link *plink,
+static long getControlLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -581,7 +580,7 @@ long dbCaGetControlLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetGraphicLimits(const struct link *plink,
+static long getGraphicLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -597,7 +596,7 @@ long dbCaGetGraphicLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetAlarmLimits(const struct link *plink,
+static long getAlarmLimits(const struct link *plink,
     double *lolo, double *low, double *high, double *hihi)
 {
     caLink *pca;
@@ -615,7 +614,7 @@ long dbCaGetAlarmLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetPrecision(const struct link *plink, short *precision)
+static long getPrecision(const struct link *plink, short *precision)
 {
     caLink *pca;
     int gotAttributes;
@@ -627,7 +626,7 @@ long dbCaGetPrecision(const struct link *plink, short *precision)
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetUnits(const struct link *plink,
+static long getUnits(const struct link *plink,
     char *units, int unitsSize)
 {
     caLink *pca;
@@ -676,14 +675,14 @@ static void scanLinkOnce(dbCommon *prec, caLink *pca) {
 
 static lset dbCa_lset = {
     dbCaRemoveLink,
-    dbCaIsLinkConnected,
-    dbCaGetLinkDBFtype, dbCaGetNelements,
+    isConnected,
+    getDBFtype, getElements,
     dbCaGetLink,
-    dbCaGetControlLimits, dbCaGetGraphicLimits, dbCaGetAlarmLimits,
-    dbCaGetPrecision, dbCaGetUnits,
-    dbCaGetAlarm, dbCaGetTimeStamp,
+    getControlLimits, getGraphicLimits, getAlarmLimits,
+    getPrecision, getUnits,
+    getAlarm, getTimeStamp,
     dbCaPutLink,
-    dbCaScanFwdLink
+    scanForward
 };
 
 static void connectionCallback(struct connection_handler_args arg)

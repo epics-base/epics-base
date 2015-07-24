@@ -6,14 +6,11 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* dbCaPvt.h */
-/****************************************************************
-*
-*	Current Author:		Bob Dalesio
-*	Contributing Author:	Marty Kraimer
-*	Date:			08APR96
-*
-****************************************************************/
+/* dbCaPvt.h
+ *
+ * Original Authors: Bob Dalesio, Marty Kraimer
+ *
+ */
 
 #ifndef INC_dbCaPvt_H
 #define INC_dbCaPvt_H

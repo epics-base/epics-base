@@ -80,7 +80,7 @@ open my $out, '>', $opt_o or
 my $pod = join "\n", '=for html <div class="pod">', '',
     map {
         # Handle a 'recordtype' Pod directive
-        if (m/^ =recordtype \s+ (.*)/x) {
+        if (m/^ =recordtype \s+ (\w+) /x) {
             my $rn = $1;
             my $rtyp = $dbd->recordtype($rn);
             die "Unknown recordtype '$rn' in $infile POD directive\n"
@@ -88,7 +88,7 @@ my $pod = join "\n", '=for html <div class="pod">', '',
             rtypeToPod($rtyp, $dbd);
         }
         # Handle a 'menu' Pod directive
-        elsif (m/^ =menu \s+ (.*)/x) {
+        elsif (m/^ =menu \s+ (\w+) /x) {
             my $mn = $1;
             my $menu = $dbd->menu($mn);
             die "Unknown menu '$mn' in $infile POD directive\n"
@@ -152,7 +152,7 @@ sub rtypeToPod {
     my ($rtyp, $dbd) = @_;
     return map {
         # Handle a 'fields' Pod directive
-        if (m/^ =fields \s+ (.*)/x) {
+        if (m/^ =fields \s+ (\w+ (?:\s* , \s* \w+ )* )/x) {
             my @names = split /\s*,\s*/, $1;
             # Look up the named fields
             my @fields = map {
@@ -170,7 +170,7 @@ sub rtypeToPod {
             '</table></blockquote>', '', '=end html';
         }
         # Handle a 'menu' Pod directive
-        elsif (m/^ =menu \s+ (.*)/x) {
+        elsif (m/^ =menu \s+ (\w+) /x) {
             my $mn = $1;
             my $menu = $dbd->menu($mn);
             die "Unknown menu '$mn' in $infile POD directive\n"
@@ -218,7 +218,7 @@ sub fieldTableRow {
 # Native type presented to dbAccess users
 sub DBD::Recfield::public_type {
     my $fld = shift;
-    m/^=type (.+)$/i && return $1 for $fld->comments;
+    m/^ =type \s+ (.+) /x && return $1 for $fld->comments;
     my $type = $fld->dbf_type;
     $type =~ s/^DBF_//;
     return $type;
@@ -227,7 +227,7 @@ sub DBD::Recfield::public_type {
 # Check if this field is readable
 sub DBD::Recfield::readable {
     my $fld = shift;
-    m/^=read (Yes|No)$/i && return $1 for $fld->comments;
+    m/^ =read \s+ (?i) (Yes|No) /x && return $1 for $fld->comments;
     return 'Probably'
         if $fld->attribute('special') eq "SPC_DBADDR";
     return $fld->dbf_type eq 'DBF_NOACCESS' ? 'No' : 'Yes';
@@ -236,7 +236,7 @@ sub DBD::Recfield::readable {
 # Check if this field is writable
 sub DBD::Recfield::writable {
     my $fld = shift;
-    m/^=write (Yes|No)$/i && return $1 for $fld->comments;
+    m/^ =write \s+ (?i) (Yes|No) /x && return $1 for $fld->comments;
     my $special = $fld->attribute('special');
     return 'No'
         if $special eq "SPC_NOMOD";

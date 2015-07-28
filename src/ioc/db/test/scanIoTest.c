@@ -12,6 +12,8 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "epicsEvent.h"
 #include "epicsMessageQueue.h"
@@ -26,9 +28,6 @@
 #include "dbLock.h"
 #include "dbUnitTest.h"
 #include "dbCommon.h"
-#include "registry.h"
-#include "registryRecordType.h"
-#include "registryDeviceSupport.h"
 #include "recSup.h"
 #include "devSup.h"
 #include "iocInit.h"
@@ -38,482 +37,272 @@
 #include "testMain.h"
 #include "osiFileName.h"
 
-#define GEN_SIZE_OFFSET
-#include "yRecord.h"
-
 #include "epicsExport.h"
 
-#define ONE_THREAD_LOOPS 101
-#define PAR_THREAD_LOOPS 53
-#define CB_THREAD_LOOPS 13
+#include "devx.h"
+#include "xRecord.h"
 
-#define NO_OF_THREADS 7
-#define NO_OF_MEMBERS 5
-#define NO_OF_GROUPS 11
+STATIC_ASSERT(NUM_CALLBACK_PRIORITIES==3);
 
-#define NO_OF_MID_THREADS 3
+void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
-static int noOfGroups = NO_OF_GROUPS;
-static int noOfIoscans = NO_OF_GROUPS;
-
-static IOSCANPVT *ioscanpvt;      /* Soft interrupt sources */
-static ELLLIST *pvtList;          /* Per group private part lists */
-
-static int executionOrder;
-static int orderFail;
-static int testNo;
-static epicsMessageQueueId *mq;   /* Per group message queue */
-static epicsEventId *barrier;     /* Per group barrier event */
-static int *cbCounter;
-
-struct pvtY {
-    ELLNODE node;
-    yRecord *prec;
-    int group;
-    int member;
-    int count;
-    int processed;
-    int callback;
-};
-
-/* test2: priority and ioscan index for each group
- *     used priorities are expressed in the bit pattern of (ioscan index + 1) */
-struct groupItem {
-    int prio;
-    int ioscan;
-} groupTable[12] = {
-    { 0, 0 },
-    { 1, 1 },
-    { 0, 2 }, { 1, 2 },
-    { 2, 3 },
-    { 0, 4 }, { 2, 4 },
-    { 1, 5 }, { 2, 5 },
-    { 0, 6 }, { 1, 6 }, { 2, 6 }
-};
-static int recsProcessed = 1;
-static int noDoubleCallback = 1;
-
-void scanIoTest_registerRecordDeviceDriver(struct dbBase *);
-
-long count_bits(long n) {
-  unsigned int c; /* c accumulates the total bits set in v */
-  for (c = 0; n; c++)
-    n &= n - 1; /* clear the least significant bit set */
-  return c;
-}
-
-/*************************************************************************\
-* yRecord: minimal record needed to test I/O Intr scanning
-\*************************************************************************/
-
-static long get_ioint_info(int cmd, yRecord *prec, IOSCANPVT *ppvt)
+static void loadRecord(int group, int member, const char *prio)
 {
-    struct pvtY *pvt = (struct pvtY *)(prec->dpvt);
-
-    if (testNo == 2)
-        *ppvt = ioscanpvt[groupTable[pvt->group].ioscan];
-    else
-        *ppvt = ioscanpvt[pvt->group];
-    return 0;
+    char buf[40];
+    sprintf(buf, "GROUP=%d,MEMBER=%d,PRIO=%s",
+            group, member, prio);
+    testdbReadDatabase("scanIoTest.db", NULL, buf);
 }
 
-struct ydset {
-    long      number;
-    DEVSUPFUN report;
-    DEVSUPFUN init;
-    DEVSUPFUN init_record;
-    DEVSUPFUN get_ioint_info;
-    DEVSUPFUN process;
-} devY = {
-    5,
-    NULL,
-    NULL,
-    NULL,
-    get_ioint_info,
-    NULL
-};
-epicsExportAddress(dset, devY);
+typedef struct {
+    int hasprocd[NUM_CALLBACK_PRIORITIES];
+    int getcomplete[NUM_CALLBACK_PRIORITIES];
+    epicsEventId wait[NUM_CALLBACK_PRIORITIES];
+    epicsEventId wake[NUM_CALLBACK_PRIORITIES];
+} testsingle;
 
-static long init_record(yRecord *prec, int pass)
+static void testcb(xpriv *priv, void *raw)
 {
-    struct pvtY *pvt;
+    testsingle *td = raw;
+    int prio = priv->prec->prio;
 
-    if (pass == 0) return 0;
-
-    pvt = (struct pvtY *) calloc(1, sizeof(struct pvtY));
-    prec->dpvt = pvt;
-
-    pvt->prec    = prec;
-    sscanf(prec->name, "g%dm%d", &pvt->group, &pvt->member);
-    ellAdd(&pvtList[pvt->group], &pvt->node);
-
-    return 0;
+    testOk1(td->hasprocd[prio]==0);
+    td->hasprocd[prio] = 1;
 }
 
-static long process(yRecord *prec)
+static void testcomp(void *raw, IOSCANPVT scan, int prio)
 {
-    struct pvtY *pvt = (struct pvtY *)(prec->dpvt);
+    testsingle *td = raw;
 
-    if (testNo == 0) {
-        /* Single callback thread */
-        if (executionOrder != pvt->member) {
-            orderFail = 1;
-        }
-        pvt->count++;
-        if (++executionOrder == NO_OF_MEMBERS) executionOrder = 0;
-    } else {
-        pvt->count++;
-        if (pvt->member == 0) {
-            epicsMessageQueueSend(mq[pvt->group], NULL, 0);
-            epicsEventMustWait(barrier[pvt->group]);
-        }
-    }
-    pvt->processed = 1;
-    return 0;
+    testOk1(td->hasprocd[prio]==1);
+    testOk1(td->getcomplete[prio]==0);
+    td->getcomplete[prio] = 1;
+    epicsEventMustTrigger(td->wait[prio]);
+    epicsEventMustWait(td->wake[prio]);
 }
 
-rset yRSET={
-    4,
-    NULL, /* report */
-    NULL, /* initialize */
-    init_record,
-    process
-};
-epicsExportAddress(rset, yRSET);
-
-static void startMockIoc(void) {
-    char substitutions[256];
-    int i, j;
-    char *prio[] = { "LOW", "MEDIUM", "HIGH" };
-
-    if (testNo == 2) {
-        noOfGroups = 12;
-        noOfIoscans = 7;
-    }
-    ioscanpvt = calloc(noOfIoscans, sizeof(IOSCANPVT));
-    mq = calloc(noOfGroups, sizeof(epicsMessageQueueId));
-    barrier = calloc(noOfGroups, sizeof(epicsEventId));
-    pvtList = calloc(noOfGroups, sizeof(ELLLIST));
-    cbCounter = calloc(noOfGroups, sizeof(int));
-
-    if (dbReadDatabase(&pdbbase, "scanIoTest.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Error reading database description 'scanIoTest.dbd'");
-
-    callbackParallelThreads(1, "Low");
-    callbackParallelThreads(NO_OF_MID_THREADS, "Medium");
-    callbackParallelThreads(NO_OF_THREADS, "High");
-
-    for (i = 0; i < noOfIoscans; i++) {
-        scanIoInit(&ioscanpvt[i]);
-    }
-
-    for (i = 0; i < noOfGroups; i++) {
-        mq[i] = epicsMessageQueueCreate(NO_OF_MEMBERS, 1);
-        barrier[i] = epicsEventMustCreate(epicsEventEmpty);
-        ellInit(&pvtList[i]);
-    }
-
-    scanIoTest_registerRecordDeviceDriver(pdbbase);
-    for (i = 0; i < noOfGroups; i++) {
-        for (j = 0; j < NO_OF_MEMBERS; j++) {
-            sprintf(substitutions, "GROUP=%d,MEMBER=%d,PRIO=%s", i, j,
-                    testNo==0?"LOW":(testNo==1?"HIGH":prio[groupTable[i].prio]));
-            if (dbReadDatabase(&pdbbase, "scanIoTest.db",
-                    "." OSI_PATH_LIST_SEPARATOR "..", substitutions))
-                testAbort("Error reading test database 'scanIoTest.db'");
-        }
-    }
-
-    testIocInitOk();
-}
-
-static void stopMockIoc(void) {
+static void testSingleThreading(void)
+{
     int i;
+    testsingle data[2];
+    xdrv *drvs[2];
+
+    memset(data, 0, sizeof(data));
+
+    for(i=0; i<2; i++) {
+        int p;
+        for(p=0; p<NUM_CALLBACK_PRIORITIES; p++) {
+            data[i].wake[p] = epicsEventMustCreate(epicsEventEmpty);
+            data[i].wait[p] = epicsEventMustCreate(epicsEventEmpty);
+        }
+    }
+
+    testDiag("Test single-threaded I/O Intr scanning");
+
+    testdbPrepare();
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    /* create two scan lists with one record on each of three priorities */
+
+    /* group#, member#, priority */
+    loadRecord(0, 0, "LOW");
+    loadRecord(1, 0, "LOW");
+    loadRecord(0, 1, "MEDIUM");
+    loadRecord(1, 1, "MEDIUM");
+    loadRecord(0, 2, "HIGH");
+    loadRecord(1, 2, "HIGH");
+
+    drvs[0] = xdrv_add(0, &testcb, &data[0]);
+    drvs[1] = xdrv_add(1, &testcb, &data[1]);
+    scanIoSetComplete(drvs[0]->scan, &testcomp, &data[0]);
+    scanIoSetComplete(drvs[1]->scan, &testcomp, &data[1]);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testDiag("Scan first list");
+    scanIoRequest(drvs[0]->scan);
+    testDiag("Scan second list");
+    scanIoRequest(drvs[1]->scan);
+
+    testDiag("Wait for first list to complete");
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++)
+        epicsEventMustWait(data[0].wait[i]);
+
+    testDiag("Wait one more second");
+    epicsThreadSleep(1.0);
+
+    testOk1(data[0].hasprocd[0]==1);
+    testOk1(data[0].hasprocd[1]==1);
+    testOk1(data[0].hasprocd[2]==1);
+    testOk1(data[0].getcomplete[0]==1);
+    testOk1(data[0].getcomplete[1]==1);
+    testOk1(data[0].getcomplete[2]==1);
+    testOk1(data[1].hasprocd[0]==0);
+    testOk1(data[1].hasprocd[1]==0);
+    testOk1(data[1].hasprocd[2]==0);
+    testOk1(data[1].getcomplete[0]==0);
+    testOk1(data[1].getcomplete[1]==0);
+    testOk1(data[1].getcomplete[2]==0);
+
+    testDiag("Release the first scan and wait for the second");
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++)
+        epicsEventMustTrigger(data[0].wake[i]);
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++)
+        epicsEventMustWait(data[1].wait[i]);
+
+    testOk1(data[0].hasprocd[0]==1);
+    testOk1(data[0].hasprocd[1]==1);
+    testOk1(data[0].hasprocd[2]==1);
+    testOk1(data[0].getcomplete[0]==1);
+    testOk1(data[0].getcomplete[1]==1);
+    testOk1(data[0].getcomplete[2]==1);
+    testOk1(data[1].hasprocd[0]==1);
+    testOk1(data[1].hasprocd[1]==1);
+    testOk1(data[1].hasprocd[2]==1);
+    testOk1(data[1].getcomplete[0]==1);
+    testOk1(data[1].getcomplete[1]==1);
+    testOk1(data[1].getcomplete[2]==1);
+
+    testDiag("Release the second scan and complete");
+    for(i=0; i<NUM_CALLBACK_PRIORITIES; i++)
+        epicsEventMustTrigger(data[1].wake[i]);
 
     testIocShutdownOk();
-    epicsThreadSleep(0.1);
-    for (i = 0; i < noOfGroups; i++) {
-        epicsMessageQueueDestroy(mq[i]); mq[i] = NULL;
-        epicsEventDestroy(barrier[i]); barrier[i] = NULL;
-        ellFree(&pvtList[i]);
-    }
-    free(mq);
-    free(barrier);
-    free(pvtList);
-    free(cbCounter);
+
     testdbCleanup();
+
+    xdrv_reset();
+
+    for(i=0; i<2; i++) {
+        int p;
+        for(p=0; p<NUM_CALLBACK_PRIORITIES; p++) {
+            epicsEventDestroy(data[i].wake[p]);
+            epicsEventDestroy(data[i].wait[p]);
+        }
+    }
 }
 
-static void checkProcessed(void *user, IOSCANPVT ioscan, int prio) {
-    struct pvtY *pvt;
-    int group = -1;
+typedef struct {
+    int hasprocd;
+    int getcomplete;
+    epicsEventId wait;
+    epicsEventId wake;
+} testmulti;
+
+static void testcbmulti(xpriv *priv, void *raw)
+{
+    testmulti *td = raw;
+    td += priv->member;
+
+    testOk1(td->hasprocd==0);
+    td->hasprocd = 1;
+    epicsEventMustTrigger(td->wait);
+    epicsEventMustWait(td->wake);
+    td->getcomplete = 1;
+}
+
+static void testcompmulti(void *raw, IOSCANPVT scan, int prio)
+{
+    int *mask = raw;
+    testOk(((*mask)&(1<<prio))==0, "(0x%x)&(0x%x)==0", *mask, 1<<prio);
+    *mask |= 1<<prio;
+}
+
+static void testMultiThreading(void)
+{
     int i;
+    int masks[2];
+    testmulti data[6];
+    xdrv *drvs[2];
 
-    for (i = 0; i < noOfGroups; i++) {
-        if (ioscanpvt[groupTable[i].ioscan] == ioscan
-                && groupTable[i].prio == prio) {
-            group = i;
-            break;
-        }
+    memset(masks, 0, sizeof(masks));
+    memset(data, 0, sizeof(data));
+
+    for(i=0; i<NELEMENTS(data); i++) {
+        data[i].wake = epicsEventMustCreate(epicsEventEmpty);
+        data[i].wait = epicsEventMustCreate(epicsEventEmpty);
     }
-    if (group == -1)
-        testAbort("invalid ioscanpvt in scanio callback");
 
-    cbCounter[group]++;
-    for (pvt = (struct pvtY *)ellFirst(&pvtList[group]);
-         pvt;
-         pvt = (struct pvtY *)ellNext(&pvt->node)) {
-        if (pvt->callback == 1) {
-            testDiag("callback for rec %s arrived twice\n", pvt->prec->name);
-            noDoubleCallback = 0;
-        }
-        if (pvt->processed == 0) {
-            testDiag("rec %s was not processed\n", pvt->prec->name);
-            recsProcessed = 0;
-        }
-        pvt->callback = 1;
+    testDiag("Test multi-threaded I/O Intr scanning");
+
+    testdbPrepare();
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    /* create two scan lists with one record on each of three priorities */
+
+    /* group#, member#, priority */
+    loadRecord(0, 0, "LOW");
+    loadRecord(1, 1, "LOW");
+    loadRecord(0, 2, "MEDIUM");
+    loadRecord(1, 3, "MEDIUM");
+    loadRecord(0, 4, "HIGH");
+    loadRecord(1, 5, "HIGH");
+
+    drvs[0] = xdrv_add(0, &testcbmulti, data);
+    drvs[1] = xdrv_add(1, &testcbmulti, data);
+    scanIoSetComplete(drvs[0]->scan, &testcompmulti, &masks[0]);
+    scanIoSetComplete(drvs[1]->scan, &testcompmulti, &masks[1]);
+
+    /* just enough workers to process all records concurrently */
+    callbackParallelThreads(2, "LOW");
+    callbackParallelThreads(2, "MEDIUM");
+    callbackParallelThreads(2, "HIGH");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testDiag("Scan first list");
+    testOk1(scanIoRequest(drvs[0]->scan)==0x7);
+    testDiag("Scan second list");
+    testOk1(scanIoRequest(drvs[1]->scan)==0x7);
+
+    testDiag("Wait for everything to start");
+    for(i=0; i<NELEMENTS(data); i++)
+        epicsEventMustWait(data[i].wait);
+
+    testDiag("Wait one more second");
+    epicsThreadSleep(1.0);
+
+    for(i=0; i<NELEMENTS(data); i++) {
+        testOk(data[i].hasprocd==1, "data[%d].hasprocd==1 (%d)", i, data[i].hasprocd);
+        testOk(data[i].getcomplete==0, "data[%d].getcomplete==0 (%d)", i, data[i].getcomplete);
+    }
+
+    testDiag("Release all and complete");
+    for(i=0; i<NELEMENTS(data); i++)
+        epicsEventMustTrigger(data[i].wake);
+
+    testIocShutdownOk();
+
+    for(i=0; i<NELEMENTS(data); i++) {
+        testOk(data[i].getcomplete==1, "data[%d].getcomplete==0 (%d)", i, data[i].getcomplete);
+    }
+    testOk1(masks[0]==0x7);
+    testOk1(masks[1]==0x7);
+
+    testdbCleanup();
+
+    xdrv_reset();
+
+    for(i=0; i<NELEMENTS(data); i++) {
+        epicsEventDestroy(data[i].wake);
+        epicsEventDestroy(data[i].wait);
     }
 }
-
-/*************************************************************************\
-* scanIoTest: Test I/O Intr scanning
-* including parallel callback threads and scanio callbacks
-\*************************************************************************/
 
 MAIN(scanIoTest)
 {
-    int i, j;
-    int loop;
-    int max_one, max_one_all;
-    int parallel, parallel_all;
-    int result;
-    int cbCountOk;
-    long waiting;
-    struct pvtY *pvt;
-
-    testPlan(10);
-
-    if (noOfGroups < NO_OF_THREADS)
-        testAbort("ERROR: This test requires number of ioscan sources >= number of parallel threads");
-
-    /**************************************\
-    * Single callback thread
-    \**************************************/
-
-    testNo = 0;
-    startMockIoc();
-
-    testDiag("Testing single callback thread");
-    testDiag("    using %d ioscan sources, %d records for each, and %d loops",
-             noOfGroups, NO_OF_MEMBERS, ONE_THREAD_LOOPS);
-
-    for (j = 0; j < ONE_THREAD_LOOPS; j++) {
-        for (i = 0; i < noOfIoscans; i++) {
-            scanIoRequest(ioscanpvt[i]);
-        }
-    }
-
-    epicsThreadSleep(1.0);
-
-    testOk((orderFail==0), "No out-of-order processing");
-
-    result = 1;
-    for (i = 0; i < noOfGroups; i++) {
-        for (pvt = (struct pvtY *)ellFirst(&pvtList[i]);
-             pvt;
-             pvt = (struct pvtY *)ellNext(&pvt->node)) {
-            if (pvt->count != ONE_THREAD_LOOPS) result = 0;
-        }
-    }
-
-    testOk(result, "All per-record process counters match number of loops");
-
-    stopMockIoc();
-
-    /**************************************\
-    * Multiple parallel callback threads
-    \**************************************/
-
-    testNo = 1;
-    startMockIoc();
-
-    testDiag("Testing multiple parallel callback threads");
-    testDiag("    using %d ioscan sources, %d records for each, %d loops, and %d parallel threads",
-             noOfIoscans, NO_OF_MEMBERS, PAR_THREAD_LOOPS, NO_OF_THREADS);
-
-    for (j = 0; j < PAR_THREAD_LOOPS; j++) {
-        for (i = 0; i < noOfIoscans; i++) {
-            scanIoRequest(ioscanpvt[i]);
-        }
-    }
-
-    /* With parallel cb threads, order and distribution to threads are not guaranteed.
-     * We have stop barrier events for each request (in the first record).
-     * Test schedule:
-     * - After the requests have been put in the queue, NO_OF_THREADS threads should have taken
-     *   one request each.
-     * - Each barrier event is given PAR_THREAD_LOOPS times.
-     * - Whenever things stop, there should be four threads waiting, one request each.
-     * - After all loops, each record should have processed PAR_THREAD_LOOPS times.
-     */
-
-    max_one_all = 1;
-    parallel_all = 1;
-
-    for (loop = 0; loop < (PAR_THREAD_LOOPS * noOfGroups) / NO_OF_THREADS + 1; loop++) {
-        max_one = 1;
-        parallel = 0;
-        waiting = 0;
-        j = 0;
-        do {
-            epicsThreadSleep(0.001);
-            j++;
-            for (i = 0; i < noOfGroups; i++) {
-                int l = epicsMessageQueuePending(mq[i]);
-                while (epicsMessageQueueTryReceive(mq[i], NULL, 0) != -1);
-                if (l == 1) {
-                    waiting |= 1 << i;
-                } else if (l > 1) {
-                    max_one = 0;
-                }
-            }
-            parallel = count_bits(waiting);
-        } while (j < 5 && parallel < NO_OF_THREADS);
-
-        if (!max_one) max_one_all = 0;
-        if (loop < (PAR_THREAD_LOOPS * noOfGroups) / NO_OF_THREADS) {
-            if (!(parallel == NO_OF_THREADS)) parallel_all = 0;
-        } else {
-            /* In the last run of the loop only the remaining requests are processed */
-            if (!(parallel == PAR_THREAD_LOOPS * noOfGroups % NO_OF_THREADS)) parallel_all = 0;
-        }
-
-        for (i = 0; i < noOfGroups; i++) {
-            if (waiting & (1 << i)) {
-                epicsEventTrigger(barrier[i]);
-            }
-        }
-    }
-
-    testOk(max_one_all, "No thread took more than one request per loop");
-    testOk(parallel_all, "Correct number of requests were being processed in parallel in each loop");
-
-    epicsThreadSleep(0.1);
-
-    result = 1;
-    for (i = 0; i < noOfGroups; i++) {
-        for (pvt = (struct pvtY *)ellFirst(&pvtList[i]);
-             pvt;
-             pvt = (struct pvtY *)ellNext(&pvt->node)) {
-            if (pvt->count != PAR_THREAD_LOOPS) {
-                testDiag("Process counter for record %s (%d) does not match loop count (%d)",
-                         pvt->prec->name, pvt->count, PAR_THREAD_LOOPS);
-                result = 0;
-            }
-        }
-    }
-
-    testOk(result, "All per-record process counters match number of loops");
-
-    stopMockIoc();
-
-    /**************************************\
-    * Scanio callback mechanism
-    \**************************************/
-
-    testNo = 2;
-    startMockIoc();
-
-    for (i = 0; i < noOfIoscans; i++) {
-        scanIoSetComplete(ioscanpvt[i], checkProcessed, NULL);
-    }
-
-    testDiag("Testing scanio callback mechanism");
-    testDiag("    using %d ioscan sources, %d records for each, %d loops, and 1 LOW / %d MEDIUM / %d HIGH parallel threads",
-             noOfIoscans, NO_OF_MEMBERS, CB_THREAD_LOOPS, NO_OF_MID_THREADS, NO_OF_THREADS);
-
-    result = 1;
-    for (j = 0; j < CB_THREAD_LOOPS; j++) {
-        for (i = 0; i < noOfIoscans; i++) {
-            int prio_used;
-            prio_used = scanIoRequest(ioscanpvt[i]);
-            if (i+1 != prio_used)
-                result = 0;
-        }
-    }
-    testOk(result, "All requests return the correct priority callback mask (all 7 permutations covered)");
-
-    /* Test schedule:
-     * After the requests have been put in the queue, it is checked
-     * - that each callback arrives exactly once,
-     * - after all records in the group have been processed.
-     */
-
-    /* loop count times 4 since (worst case) one loop triggers 4 groups for the single LOW thread */
-    for (loop = 0; loop < CB_THREAD_LOOPS * 4; loop++) {
-        max_one = 1;
-        parallel = 0;
-        waiting = 0;
-        j = 0;
-        do {
-            epicsThreadSleep(0.001);
-            j++;
-            for (i = 0; i < noOfGroups; i++) {
-                int l = epicsMessageQueuePending(mq[i]);
-                while (epicsMessageQueueTryReceive(mq[i], NULL, 0) != -1);
-                if (l == 1) {
-                    waiting |= 1 << i;
-                } else if (l > 1) {
-                    max_one = 0;
-                }
-            }
-            parallel = count_bits(waiting);
-        } while (j < 5);
-\
-        for (i = 0; i < noOfGroups; i++) {
-            if (waiting & (1 << i)) {
-                for (pvt = (struct pvtY *)ellFirst(&pvtList[i]);
-                     pvt;
-                     pvt = (struct pvtY *)ellNext(&pvt->node)) {
-                    pvt->processed = 0;
-                    pvt->callback = 0;
-                    /* record processing will set this at the end of process() */
-                }
-                epicsEventTrigger(barrier[i]);
-            }
-        }
-    }
-
-    epicsThreadSleep(0.1);
-
-    testOk(recsProcessed, "Each callback occured after all records in the group were processed");
-    testOk(noDoubleCallback, "No double callbacks occured in any loop");
-
-    result = 1;
-    cbCountOk = 1;
-    for (i = 0; i < noOfGroups; i++) {
-        if (cbCounter[i] != CB_THREAD_LOOPS) {
-            testDiag("Callback counter for group %d (%d) does not match loop count (%d)",
-                     i, cbCounter[i], CB_THREAD_LOOPS);
-            cbCountOk = 0;
-        }
-        for (pvt = (struct pvtY *)ellFirst(&pvtList[i]);
-             pvt;
-             pvt = (struct pvtY *)ellNext(&pvt->node)) {
-            if (pvt->count != CB_THREAD_LOOPS) {
-                testDiag("Process counter for record %s (%d) does not match loop count (%d)",
-                         pvt->prec->name, pvt->count, CB_THREAD_LOOPS);
-                result = 0;
-            }
-        }
-    }
-
-    testOk(result, "All per-record process counters match number of loops");
-    testOk(cbCountOk, "All per-group callback counters match number of loops");
-
-    stopMockIoc();
-
+    testPlan(152);
+    testSingleThreading();
+    testDiag("run a second time to verify shutdown and restart works");
+    testSingleThreading();
+    testMultiThreading();
+    testDiag("run a second time to verify shutdown and restart works");
+    testMultiThreading();
     return testDone();
 }

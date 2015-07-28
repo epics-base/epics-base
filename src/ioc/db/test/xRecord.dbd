@@ -11,4 +11,9 @@ recordtype(x) {
   field(INP, DBF_INLINK) {
     prompt("Input Link")
   }
+  field(CLBK, DBF_NOACCESS) {
+    prompt("Processing callback")
+    special(SPC_NOMOD)
+    extra("void (*clbk)(struct xRecord*)")
+  }
 }

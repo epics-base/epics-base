@@ -679,6 +679,9 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
 
         dbFreeLinkContents(plink);
     }
+
+    // may be allocated in dbNotify.c
+    free(precord->ppnr);
 }
 
 int iocShutdown(void)
@@ -698,6 +701,9 @@ int iocShutdown(void)
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
         asShutdown();
+    }
+    dbCaShutdown(); /* must be before dbChannelExit */
+    if (iocBuildMode==buildIsolated) {
         dbChannelExit();
         dbProcessNotifyExit();
         iocshFree();

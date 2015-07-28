@@ -16,22 +16,47 @@
 #include "dbAccessDefs.h"
 #include "recSup.h"
 #include "recGbl.h"
+#include "devSup.h"
+#include "dbScan.h"
 
 #define GEN_SIZE_OFFSET
 #include "xRecord.h"
 
 #include <epicsExport.h>
 
+#include "devx.h"
+
+static long init_record(xRecord *prec, int pass)
+{
+    long ret = 0;
+    xdset *xset = (xdset*)prec->dset;
+    if(!pass) return 0;
+
+    if(!xset) {
+        recGblRecordError(S_dev_noDSET, prec, "x: init_record");
+        return S_dev_noDSET;
+    }
+    if(xset->init_record)
+        ret = (*xset->init_record)(prec);
+    return ret;
+}
+
 static long process(xRecord *prec)
 {
+    long ret = 0;
+    xdset *xset = (xdset*)prec->dset;
+    if(prec->clbk)
+        (*prec->clbk)(prec);
     prec->pact = TRUE;
+    if(xset  && xset->process)
+        ret = (*xset->process)(prec);
     recGblGetTimeStamp(prec);
     recGblFwdLink(prec);
     prec->pact = FALSE;
-    return 0;
+    return ret;
 }
 
 static rset xRSET = {
-    RSETNUMBER, NULL, NULL, NULL, process
+    RSETNUMBER, NULL, NULL, init_record, process
 };
 epicsExportAddress(rset,xRSET);

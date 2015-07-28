@@ -10,10 +10,15 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
+# Find private headers
+USR_CFLAGS += -I../..
+
 TESTLIBRARY = dbTestIoc
 
 dbTestIoc_SRCS += xRecord.c
+dbTestIoc_SRCS += arrRecord.c
 dbTestIoc_SRCS += dbLinkdset.c
+dbTestIoc_SRCS += devx.c
 dbTestIoc_LIBS = dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
@@ -21,6 +26,8 @@ dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += menuScan.dbd
 dbTestIoc_DBD += xRecord.dbd
+dbTestIoc_DBD += arrRecord.dbd
+dbTestIoc_DBD += devx.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 
@@ -81,18 +88,21 @@ testHarness_SRCS += dbCaStatsTest.c
 TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStatsTest.db
 
-TARGETS += $(COMMON_DIR)/scanIoTest.dbd
-scanIoTest_DBD += menuGlobal.dbd
-scanIoTest_DBD += menuConvert.dbd
+TESTPROD_HOST += dbCaLinkTest
+dbCaLinkTest_SRCS += dbCaLinkTest.c
+dbCaLinkTest_SRCS += dbCACTest.cpp
+dbCaLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbCaLinkTest.c
+testHarness_SRCS += dbCACTest.cpp
+TESTS += dbCaLinkTest
+TESTFILES += ../dbCaLinkTest1.db ../dbCaLinkTest2.db ../dbCaLinkTest3.db
+
 scanIoTest_DBD += menuScan.dbd
-scanIoTest_DBD += yRecord.dbd
 TESTPROD_HOST += scanIoTest
 scanIoTest_SRCS += scanIoTest.c
-scanIoTest_REGRDDFLAGS = -l
-scanIoTest_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
+scanIoTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += scanIoTest.c
-testHarness_SRCS += scanIoTest_registerRecordDeviceDriver.cpp
-TESTFILES += $(COMMON_DIR)/scanIoTest.dbd ../scanIoTest.db
+TESTFILES += ../scanIoTest.db
 TESTS += scanIoTest
 
 TESTPROD_HOST += dbChannelTest
@@ -139,6 +149,9 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
+arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
-scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
+devx$(DEP): $(COMMON_DIR)/xRecord.h
+scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 

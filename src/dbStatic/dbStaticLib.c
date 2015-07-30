@@ -1375,14 +1375,19 @@ long epicsShareAPI dbGetAttributePart(DBENTRY *pdbentry, const char **ppname)
     const char *pname = *ppname;
     dbRecordAttribute *pattribute;
 
-    if (!precordType) return S_dbLib_recordTypeNotFound;
+    if (!precordType)
+        return S_dbLib_recordTypeNotFound;
+
     pattribute = (dbRecordAttribute *)ellFirst(&precordType->attributeList);
     while (pattribute) {
         int nameLen = strlen(pattribute->name);
         int compare = strncmp(pattribute->name, pname, nameLen);
-        int ch = pname[nameLen];
+
         if (compare == 0) {
-            if (!(ch == '_' || isalnum(ch))) {
+            int ch = pname[nameLen];
+
+            if (ch != '_' && !isalnum(ch)) {
+                /* Any other character can't be in the attribute name */
                 pdbentry->pflddes = pattribute->pdbFldDes;
                 pdbentry->pfield = pattribute->value;
                 *ppname = &pname[nameLen];

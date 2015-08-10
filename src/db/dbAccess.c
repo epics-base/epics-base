@@ -1460,13 +1460,15 @@ long epicsShareAPI dbPut(DBADDR *paddr, short dbrType,
             status = prset->put_array_info(paddr, nRequest);
         }
     }
-    if (status) return status;
 
-    /* check if special processing is required */
+    /* Always do special processing if needed */
     if (special) {
-        status = dbPutSpecial(paddr,1);
-        if (status) return status;
+        long status2 = dbPutSpecial(paddr,1);
+        if (status2) return status2;
     }
+
+    /* If the put failed, return the error */
+    if (status) return status;
 
     /* Propagate monitor events for this field, */
     /* unless the field field is VAL and PP is true. */

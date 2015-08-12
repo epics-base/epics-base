@@ -59,7 +59,7 @@ static void osdReadlineEnd(struct readlineContext * c) {}
 void * epicsShareAPI
 epicsReadlineBegin(FILE *in)
 {
-    struct readlineContext *readlineContext = malloc(sizeof *readlineContext);
+    struct readlineContext *readlineContext = calloc(1, sizeof(*readlineContext));
 
     if (readlineContext) {
         readlineContext->in = in;

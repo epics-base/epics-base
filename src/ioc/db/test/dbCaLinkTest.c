@@ -303,7 +303,7 @@ static void checkArray(const char *msg,
         match &= (*b)==x;
     for(;i<total;i++,x++,b++)
         match &= (*b)==0;
-    testOk(match, msg);
+    testOk(match, "%s", msg);
     if(!match) {
         for(b=buf,x=first,i=0;i<used;i++,x++,b++)
             if((*b)!=x)
@@ -325,7 +325,7 @@ static void checkArrayDouble(const char *msg,
         match &= (*b)==x;
     for(;i<total;i++,x++,b++)
         match &= (*b)==0;
-    testOk(match, msg);
+    testOk(match, "%s", msg);
     if(!match) {
         for(b=buf,x=first,i=0;i<used;i++,x++,b++)
             if((*b)!=x)

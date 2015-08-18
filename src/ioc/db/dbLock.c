@@ -622,11 +622,13 @@ void dbLockCleanupRecords(dbBase *pdbbase)
 #endif
 }
 
-/* Caller must lock both pfirst and psecond.
+/* Called in two modes.
+ * During dbLockInitRecords w/ locker==NULL, then no mutex are locked.
+ * After dbLockInitRecords w/ locker!=NULL, then
+ * the caller must lock both pfirst and psecond.
+ *
  * Assumes that pfirst has been modified
  * to link to psecond.
- *
- * Note: locker may be NULL (during iocInit)
  */
 void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
 {
@@ -702,9 +704,9 @@ void dbLockSetMerge(dbLocker *locker, dbCommon *pfirst, dbCommon *psecond)
         ellDelete(&locker->locked, &B->lockernode);
         B->ownerlocker = NULL;
         epicsAtomicDecrIntT(&B->refcount);
-    }
 
-    epicsMutexUnlock(B->lock);
+        epicsMutexUnlock(B->lock);
+    }
 
     dbLockDecRef(B); /* last ref we hold */
 

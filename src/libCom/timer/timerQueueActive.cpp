@@ -50,6 +50,10 @@ timerQueueActive ::
     sleepQuantum ( epicsThreadSleepQuantum() ), okToShare ( okToShareIn ), 
     exitFlag ( false ), terminateFlag ( false )
 {
+}
+
+void timerQueueActive::start ()
+{
     this->thread.start ();
 }
 

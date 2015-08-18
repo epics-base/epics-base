@@ -70,6 +70,7 @@ epicsTimerQueueActiveForC ::
         bool okToShare, unsigned priority ) :
     timerQueueActive ( refMgr, okToShare, priority )
 {
+    timerQueueActive::start();
 }
 
 epicsTimerQueueActiveForC::~epicsTimerQueueActiveForC ()

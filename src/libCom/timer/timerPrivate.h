@@ -134,6 +134,7 @@ class timerQueueActive : public epicsTimerQueueActive,
 public:
     typedef epicsSingleton < timerQueueActiveMgr > :: reference RefMgr;
     timerQueueActive ( RefMgr &, bool okToShare, unsigned priority );
+    void start ();
     epicsTimer & createTimer ();
     epicsTimerForC & createTimerForC ( epicsTimerCallback pCallback, void *pArg );
     void show ( unsigned int level ) const;

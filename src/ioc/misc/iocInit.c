@@ -637,7 +637,6 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             free(plink->value.pv_link.pvt);
             plink->type = PV_LINK;
         }
-        dbFreeLinkContents(plink);
     }
 
     if (precord->dset &&
@@ -660,6 +659,16 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
+    int j;
+
+    for (j = 0; j < pdbRecordType->no_links; j++) {
+        dbFldDes *pdbFldDes =
+            pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
+        DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+
+        dbFreeLinkContents(plink);
+    }
+
     epicsMutexDestroy(precord->mlok);
 }
 

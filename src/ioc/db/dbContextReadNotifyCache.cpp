@@ -61,27 +61,32 @@ void dbContextReadNotifyCache::callReadNotify (
         return;
     }
 
-    if ( dbChannelElements(dbch) < 0 ) {
+    const long maxcount = dbChannelElements(dbch);
+
+    if ( maxcount < 0 ) {
         notify.exception ( guard, ECA_BADCOUNT,
             "database has negetive element count",
             type, count);
         return;
-    }
 
-    if ( count > static_cast < unsigned long > ( dbChannelElements(dbch) ) ) {
+    } else if ( count > (unsigned long)maxcount ) {
         notify.exception ( guard, ECA_BADCOUNT,
             "element count out of range (high side)",
             type, count);
         return;
     }
 
-    unsigned long size = dbr_size_n ( type, count );
+    long realcount = (count==0)?maxcount:count;
+    unsigned long size = dbr_size_n ( type, realcount );
+
     privateAutoDestroyPtr ptr ( _allocator, size );
     int status;
     {
         epicsGuardRelease < epicsMutex > unguard ( guard );
-        status = dbChannel_get ( dbch, static_cast <int> ( type ),
-                    ptr.get (), static_cast <long> ( count ), 0 );
+        if ( count==0 )
+            status = dbChannel_get_count ( dbch, (int)type, ptr.get(), &realcount, 0);
+        else
+            status = dbChannel_get ( dbch, (int)type, ptr.get (), realcount, 0 );
     }
     if ( status ) {
         notify.exception ( guard, ECA_GETFAIL,
@@ -90,7 +95,7 @@ void dbContextReadNotifyCache::callReadNotify (
     }
     else {
         notify.completion (
-            guard, type, count, ptr.get () );
+            guard, type, realcount, ptr.get () );
     }
 }
 

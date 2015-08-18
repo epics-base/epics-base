@@ -35,7 +35,7 @@
 /* write type */
 #define CA_PUT          0x1
 #define CA_PUT_CALLBACK 0x2
-
+
 typedef struct caLink
 {
     ELLNODE		node;
@@ -51,7 +51,9 @@ typedef struct caLink
     epicsTimeStamp	timeStamp;
     /* The following have values after connection*/
     short		dbrType;
-    long		nelements;
+    size_t elementSize; /* size of one element in pgetNative */
+    unsigned long nelements; /* PVs max array size */
+    unsigned long usedelements; /* currently used in pgetNative */
     char		hasReadAccess;
     char		hasWriteAccess;
     char            isConnected;

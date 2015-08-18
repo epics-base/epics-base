@@ -346,16 +346,19 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         assert(pca->pgetNative);
         status = fConvert(pca->pgetNative, pdest, 0);
     } else {
-        long ntoget = *nelements;
+        unsigned long ntoreport = *nelements, ntoget;
         struct dbAddr dbAddr;
         long (*aConvert)(struct dbAddr *paddr, void *to, long nreq, long nto, long off);
 
         aConvert = dbGetConvertRoutine[newType][dbrType];
         assert(pca->pgetNative);
 
-        if (ntoget > pca->nelements)
-            ntoget = pca->nelements;
-        *nelements = ntoget;
+        if (ntoreport > pca->nelements)
+            ntoreport = pca->nelements;
+        ntoget = ntoreport;
+        if (ntoget > pca->usedelements)
+            ntoget = pca->usedelements;
+        *nelements = ntoreport;
 
         memset((void *)&dbAddr, 0, sizeof(dbAddr));
         dbAddr.pfield = pca->pgetNative;
@@ -363,6 +366,12 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         dbAddr.field_size = MAX_STRING_SIZE;
         /*Ignore error return*/
         aConvert(&dbAddr, pdest, ntoget, ntoget, 0);
+        if(ntoget<ntoreport) {
+            /* zero out remainder of buffer */
+            memset(ntoget*pca->elementSize+(char*)pca->pgetNative,
+                   0,
+                   (ntoreport-ntoget)*pca->elementSize);
+        }
     }
 done:
     if (pstat) *pstat = pca->stat;
@@ -705,6 +714,7 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     pca->gotFirstConnection = TRUE;
     pca->nelements = ca_element_count(arg.chid);
+    pca->usedelements = 0;
     pca->dbrType = ca_field_type(arg.chid);
     if ((plink->value.pv_link.pvlMask & pvlOptInpNative) && !pca->pgetNative) {
         link_action |= CA_MONITOR_NATIVE;
@@ -773,6 +783,7 @@ static void eventCallback(struct event_handler_args arg)
     case DBR_TIME_DOUBLE:
         assert(pca->pgetNative);
         memcpy(pca->pgetNative, dbr_value_ptr(arg.dbr, arg.type), size);
+        pca->usedelements = arg.count;
         pca->gotInNative = TRUE;
         break;
     default:
@@ -1031,15 +1042,15 @@ static void dbCaTask(void *arg)
                 }
             }
             if (link_action & CA_MONITOR_NATIVE) {
-                size_t element_size;
-    
-                element_size = dbr_value_size[ca_field_type(pca->chid)];
+
                 epicsMutexMustLock(pca->lock);
-                pca->pgetNative = dbCalloc(pca->nelements, element_size);
+                pca->elementSize = dbr_value_size[ca_field_type(pca->chid)];
+                pca->pgetNative = dbCalloc(pca->nelements, pca->elementSize);
                 epicsMutexUnlock(pca->lock);
+
                 status = ca_add_array_event(
                     ca_field_type(pca->chid)+DBR_TIME_STRING,
-                    ca_element_count(pca->chid),
+                    0, /* dynamic size */
                     pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",

@@ -22,7 +22,9 @@
 #include "dbStaticLib.h"
 #include "dbAccessDefs.h"
 #include "registry.h"
-#include "epicsUnitTest.h"
+#include "errlog.h"
+#include "epicsExit.h"
+#include "dbUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
 
@@ -85,21 +87,19 @@ MAIN(arrShorthandTest)
 
     testPlan(26);
 
-    db_init_events();
-    dbChannelInit();
+    testdbPrepare();
 
-    if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'dbTestIoc.dbd' not found");
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
 
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "xRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'xRecord.db' not found");
+    testdbReadDatabase("xRecord.db", NULL, NULL);
 
     testHead("Register plugin");
     testOk(!chfPluginRegister("arr", &myPif, opts), "register fake arr plugin");
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
 
 #define TESTBAD(Title, Expr) \
     testDiag(Title); \
@@ -129,9 +129,8 @@ MAIN(arrShorthandTest)
     TESTGOOD("range [s::e]",                "[2::4]",  2, 1, 4);
     TESTGOOD("range with incr [s:i:e]",     "[2:3:4]", 2, 3, 4);
 
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase = NULL;
+    testIocShutdownOk();
+    testdbCleanup();
 
     return testDone();
 }

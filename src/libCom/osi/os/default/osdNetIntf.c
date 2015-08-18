@@ -23,13 +23,17 @@
 #include "osiSock.h"
 #include "epicsAssert.h"
 #include "errlog.h"
+#include "epicsThread.h"
 
 #ifdef DEBUG
 #   define ifDepenDebugPrintf(argsInParen) printf argsInParen
 #else
 #   define ifDepenDebugPrintf(argsInParen)
 #endif
-    
+
+static osiSockAddr      osiLocalAddrResult;
+static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
+
 /*
  * Determine the size of an ifreq structure
  * Made difficult by the fact that addresses larger than the structure
@@ -237,11 +241,11 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 /*
  * osiLocalAddr ()
  */
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+static void osiLocalAddrOnce (void *raw)
 {
-    static const unsigned   nelem = 100;
-    static char             init = 0;
-    static osiSockAddr      addr;
+    SOCKET *psocket = raw;
+    const unsigned          nelem = 100;
+    osiSockAddr             addr;
     int                     status;
     struct ifconf           ifconf;
     struct ifreq            *pIfreqList;
@@ -249,22 +253,18 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
     struct ifreq            *pIfreqListEnd;
     struct ifreq            *pnextifreq;
 
-    if ( init ) {
-        return addr;
-    }
-
     memset ( (void *) &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
     
     pIfreqList = (struct ifreq *) calloc ( nelem, sizeof(*pIfreqList) );
     if ( ! pIfreqList ) {
         errlogPrintf ( "osiLocalAddr(): no memory to complete request\n" );
-        return addr;
+        goto fail;
     }
  
     ifconf.ifc_len = nelem * sizeof ( *pIfreqList );
     ifconf.ifc_req = pIfreqList;
-    status = socket_ioctl ( socket, SIOCGIFCONF, &ifconf );
+    status = socket_ioctl ( *psocket, SIOCGIFCONF, &ifconf );
     if ( status < 0 || ifconf.ifc_len == 0 ) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
@@ -272,8 +272,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
         errlogPrintf (
             "osiLocalAddr(): SIOCGIFCONF ioctl failed because \"%s\"\n",
             sockErrBuf );
-        free ( pIfreqList );
-        return addr;
+        goto fail;
     }
     
     pIfreqListEnd = (struct ifreq *) ( ifconf.ifc_len + (char *) ifconf.ifc_req );
@@ -300,7 +299,7 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 
         addrCpy.sa = pIfreqList->ifr_addr;
 
-        status = socket_ioctl ( socket, SIOCGIFFLAGS, pIfreqList );
+        status = socket_ioctl ( *psocket, SIOCGIFFLAGS, pIfreqList );
         if ( status < 0 ) {
             errlogPrintf ( "osiLocalAddr(): net intf flags fetch for %s failed\n", pIfreqList->ifr_name );
             continue;
@@ -321,11 +320,26 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 
         ifDepenDebugPrintf ( ("osiLocalAddr(): net intf %s found\n", pIfreqList->ifr_name) );
 
-        init = 1;
-        addr = addrCpy;
-        break;
+        osiLocalAddrResult = addrCpy;
+        free ( pIfreqList );
+        return;
     }
 
+    errlogPrintf (
+        "osiLocalAddr(): only loopback found\n");
+fail:
+    /* fallback to loopback */
+    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    osiLocalAddrResult = addr;
+
     free ( pIfreqList );
-    return addr;
+}
+
+
+epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+{
+    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, &socket);
+    return osiLocalAddrResult;
 }

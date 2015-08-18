@@ -40,49 +40,48 @@
 #define epicsExportSharedSymbols
 #include "osiSock.h"
 #include "errlog.h"
+#include "epicsThread.h"
 #include "epicsVersion.h"
+
+static osiSockAddr      osiLocalAddrResult;
+static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
 
 /*
  * osiLocalAddr ()
  */
-epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
+static void osiLocalAddrOnce ( void *raw )
 {
-	static osiSockAddr  addr;
-	static char     	init;
+    SOCKET *psocket = raw;
+    osiSockAddr         addr;
 	int             	status;
 	INTERFACE_INFO		*pIfinfo;
-	INTERFACE_INFO      *pIfinfoList;
+    INTERFACE_INFO      *pIfinfoList = NULL;
 	unsigned			nelem;
 	DWORD				numifs;
 	DWORD				cbBytesReturned;
 
-	if (init) {
-		return addr;
-	}
-
-    init = 1;
+    memset ( (void *) &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
 
 	/* only valid for winsock 2 and above */
 	if ( wsaMajorVersion() < 2 ) {
-		return addr;
+        goto fail;
 	}
 
 	nelem = 10;
 	pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
 	if (!pIfinfoList) {
-		errlogPrintf ("calloc failed\n");
-		return addr;
+        errlogPrintf ("calloc failed\n");
+        goto fail;
     }
 
-	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, NULL, 0,
+    status = WSAIoctl (*psocket, SIO_GET_INTERFACE_LIST, NULL, 0,
 						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
 						&cbBytesReturned, NULL, NULL);
 
 	if (status != 0 || cbBytesReturned == 0) {
-		errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
-		free (pIfinfoList);		
-		return addr;
+        errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
+        goto fail;
     }
 
 	numifs = cbBytesReturned / sizeof(INTERFACE_INFO);
@@ -109,12 +108,26 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
             addr.sa.sa_family = AF_INET;
         }
 
-		free (pIfinfoList);
-        return addr;
+        osiLocalAddrResult = addr;
+        return;
 	}
 
-    free (pIfinfoList);
-	return addr;
+    errlogPrintf (
+        "osiLocalAddr(): only loopback found\n");
+fail:
+    /* fallback to loopback */
+    memset ( (void *) &addr, '\0', sizeof ( addr ) );
+    addr.ia.sin_family = AF_INET;
+    addr.ia.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    osiLocalAddrResult = addr;
+
+    free ( pIfinfoList );
+}
+
+epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
+{
+    epicsThreadOnce(&osiLocalAddrId, osiLocalAddrOnce, (void*)&socket);
+    return osiLocalAddrResult;
 }
 
 /*

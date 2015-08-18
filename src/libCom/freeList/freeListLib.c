@@ -148,6 +148,10 @@ epicsShareFunc void epicsShareAPI freeListCleanup(void *pvt)
 epicsShareFunc size_t epicsShareAPI freeListItemsAvail(void *pvt)
 {
     FREELISTPVT *pfl = pvt;
-    return pfl->nBlocksAvailable;
+    size_t nBlocksAvailable;
+    epicsMutexMustLock(pfl->lock);
+    nBlocksAvailable = pfl->nBlocksAvailable;
+    epicsMutexUnlock(pfl->lock);
+    return nBlocksAvailable;
 }
 

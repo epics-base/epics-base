@@ -64,12 +64,13 @@ public:
         epicsGuard < epicsMutex > & cbGuard,
         epicsGuard < epicsMutex > & guard );
     void confirmNotify ();
-	void show ( unsigned level ) const;
+	void show ( unsigned level );
 private:
     epicsTimer & timer;
     repeaterTimerNotify & iiu;
     epicsMutex & cbMutex;
     cacContextNotify & ctxNotify;
+    epicsMutex stateMutex;
     unsigned attempts;
     bool registered;
     bool once;

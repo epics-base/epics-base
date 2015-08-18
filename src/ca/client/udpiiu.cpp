@@ -1084,7 +1084,7 @@ bool udpiiu :: datagramFlush (
     return true;
 }
 
-void udpiiu :: show ( unsigned level ) const
+void udpiiu :: show ( unsigned level )
 {
     epicsGuard < epicsMutex > guard ( this->cacMutex );
 
@@ -1095,7 +1095,7 @@ void udpiiu :: show ( unsigned level ) const
         ::printf ( "Search Destination List with %u items\n", 
             _searchDestList.count () );
         if ( level > 2u ) {
-            tsDLIterConst < SearchDest > iter ( 
+            tsDLIter < SearchDest > iter ( 
                 _searchDestList.firstIter () );
             while ( iter.valid () )
             {

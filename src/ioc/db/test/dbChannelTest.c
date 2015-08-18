@@ -18,7 +18,7 @@
 #include "dbAccessDefs.h"
 #include "registry.h"
 #include "recSup.h"
-#include "epicsUnitTest.h"
+#include "dbUnitTest.h"
 #include "testMain.h"
 #include "osiFileName.h"
 #include "errlog.h"
@@ -158,17 +158,14 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 
     testPlan(76);
 
-    if (dbReadDatabase(&pdbbase, "dbTestIoc.dbd",
-            "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-            "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL))
-        testAbort("Database description 'dbTestIoc.dbd' not found");
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
 
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
-    if (dbReadDatabase(&pdbbase, "xRecord.db",
-            "." OSI_PATH_LIST_SEPARATOR "..", NULL))
-        testAbort("Test database 'xRecord.db' not found");
+    testdbReadDatabase("xRecord.db", NULL, NULL);
 
-    dbChannelInit();
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
 
     r = e = 0;
     /* dbChannelTest() checks record and field names */
@@ -267,9 +264,8 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     e = e_start | e_start_map | e_abort;
     testOk1(!dbChannelCreate("x.{\"scalar\":{}}"));
 
-    dbFreeBase(pdbbase);
-    registryFree();
-    pdbbase = NULL;
+    testIocShutdownOk();
+    testdbCleanup();
 
     return testDone();
 }

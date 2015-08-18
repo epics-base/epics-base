@@ -693,7 +693,7 @@ int iocShutdown(void)
         scanStop();
         callbackStop();
     }
-    dbCaShutdown();
+    dbCaShutdown(); /* must be before dbFreeRecord and dbChannelExit */
     if (iocBuildMode==buildIsolated) {
         /* free resources */
         scanCleanup();
@@ -701,9 +701,6 @@ int iocShutdown(void)
         iterateRecords(doFreeRecord, NULL);
         dbLockCleanupRecords(pdbbase);
         asShutdown();
-    }
-    dbCaShutdown(); /* must be before dbChannelExit */
-    if (iocBuildMode==buildIsolated) {
         dbChannelExit();
         dbProcessNotifyExit();
         iocshFree();

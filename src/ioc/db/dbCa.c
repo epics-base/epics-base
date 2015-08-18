@@ -64,7 +64,7 @@ static epicsEventId workListEvent; /*wakeup event for dbCaTask*/
 static int removesOutstanding = 0;
 #define removesOutstandingWarning 10000
 
-static volatile enum {
+static volatile enum dbCaCtl_t {
     ctlInit, ctlRun, ctlPause, ctlExit
 } dbCaCtl;
 static epicsEventId startStopEvent;
@@ -203,24 +203,11 @@ void dbCaCallbackProcess(void *userPvt)
 
 void dbCaShutdown(void)
 {
-    if (dbCaCtl == ctlRun || dbCaCtl == ctlPause) {
-        dbCaCtl = ctlExit;
-        epicsEventSignal(workListEvent);
-        epicsEventMustWait(startStopEvent);
-        epicsEventDestroy(startStopEvent);
-    } else {
-        /* manually cleanup queue since dbCa thread isn't running
-         * which only happens in unit tests
-         */
-        caLink *pca;
-        epicsMutexMustLock(workListLock);
-        while((pca=(caLink*)ellGet(&workList))!=NULL) {
-            if(pca->link_action&CA_CLEAR_CHANNEL) {
-                caLinkDec(pca);
-            }
-        }
-        epicsMutexUnlock(workListLock);
-    }
+    enum dbCaCtl_t cur = dbCaCtl;
+    assert(cur == ctlRun || cur == ctlPause);
+    dbCaCtl = ctlExit;
+    epicsEventSignal(workListEvent);
+    epicsEventMustWait(startStopEvent);
 }
 
 static void dbCaLinkInitImpl(int isolate)
@@ -233,7 +220,8 @@ static void dbCaLinkInitImpl(int isolate)
     if (!workListEvent)
         workListEvent = epicsEventMustCreate(epicsEventEmpty);
 
-    startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    if(!startStopEvent)
+        startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     dbCaCtl = ctlPause;
 
     epicsThreadCreate("dbCaLink", epicsThreadPriorityMedium,

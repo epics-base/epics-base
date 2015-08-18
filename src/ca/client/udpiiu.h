@@ -108,7 +108,7 @@ public:
         epicsGuard < epicsMutex > & guard );
     void shutdown ( epicsGuard < epicsMutex > & cbGuard, 
         epicsGuard < epicsMutex > & guard );
-    void show ( unsigned level );
+    void show ( unsigned level ) const;
     
     // exceptions
     class noSocket {};

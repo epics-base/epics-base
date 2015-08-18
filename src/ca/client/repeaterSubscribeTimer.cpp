@@ -92,7 +92,7 @@ epicsTimerNotify::expireStatus repeaterSubscribeTimer::
     }
 }
 
-void repeaterSubscribeTimer::show ( unsigned /* level */ )
+void repeaterSubscribeTimer::show ( unsigned /* level */ ) const
 {
     epicsGuard < epicsMutex > guard ( this->stateMutex );
     

@@ -10,8 +10,8 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-# Find private headers
-USR_CFLAGS += -I../..
+# Allow access to private headers in db/
+USR_CPPFLAGS = -I ../..
 
 TESTLIBRARY = dbTestIoc
 

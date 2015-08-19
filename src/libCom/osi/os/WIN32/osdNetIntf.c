@@ -109,6 +109,7 @@ static void osiLocalAddrOnce ( void *raw )
         }
 
         osiLocalAddrResult = addr;
+        free ( pIfinfoList );
         return;
     }
 

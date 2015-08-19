@@ -84,9 +84,10 @@ struct dbLocker {
     lockRecordRef refs[DBLOCKER_NALLOC]; /* actual length is maxrefs */
 };
 
-lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
-void dbLockIncRef(lockSet* ls);
-void dbLockDecRef(lockSet *ls);
+/* These are exported for testing only */
+epicsShareFunc lockSet* dbLockGetRef(lockRecord *lr); /* lookup lockset and increment ref count */
+epicsShareFunc void dbLockIncRef(lockSet* ls);
+epicsShareFunc void dbLockDecRef(lockSet *ls);
 
 /* Calling dbLockerPrepare directly is an internal
  * optimization used when dbLocker on the stack.

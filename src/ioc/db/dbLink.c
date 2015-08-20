@@ -127,7 +127,7 @@ static long dbConstGetLink(struct link *plink, short dbrType, void *pbuffer,
 
 /***************************** Database Links *****************************/
 
-static long dbDbInitLink(struct link *plink, short dbfType)
+static long dbDbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
 {
     DBADDR dbaddr;
     long status;
@@ -145,6 +145,8 @@ static long dbDbInitLink(struct link *plink, short dbfType)
     /* merging into the same lockset is deferred to the caller.
      * cf. initPVLinks()
      */
+    dbLockSetMerge(NULL, precord, dbaddr.precord);
+    assert(precord->lset->plockSet==dbaddr.precord->lset->plockSet);
     return 0;
 }
 
@@ -386,7 +388,7 @@ static void dbDbScanFwdLink(struct link *plink)
     dbScanPassive(precord, paddr->precord);
 }
 
-lset dbDb_lset = { dbDbRemoveLink,
+lset dbDb_lset = { NULL,
         dbDbIsLinkConnected, dbDbGetDBFtype, dbDbGetElements, dbDbGetValue,
         dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
         dbDbGetPrecision, dbDbGetUnits, dbDbGetAlarm, dbDbGetTimeStamp,
@@ -403,7 +405,7 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
-        if (!dbDbInitLink(plink, dbfType))
+        if (!dbDbInitLink(precord, plink, dbfType))
             return;
     }
 

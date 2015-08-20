@@ -10,6 +10,7 @@
 #define DBLOCKPVT_H
 
 #include "dbLock.h"
+#include "epicsSpin.h"
 
 /* enable additional error checking */
 #define LOCKSET_DEBUG

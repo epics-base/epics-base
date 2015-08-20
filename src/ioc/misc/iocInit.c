@@ -495,6 +495,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     /* For all the links in the record type... */
     for (j = 0; j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
+        DBLINK *plink = (DBLINK*)((char*)precord + pdbFldDes->offset);
 
         if (ellCount(&precord->rdes->devList) > 0 && pdbFldDes->isDevLink) {
             devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
@@ -506,6 +507,9 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                 }
             }
         }
+
+        if (plink->type == PV_LINK)
+            dbInitLink(precord, plink, pdbFldDes->field_type);
     }
 }
 

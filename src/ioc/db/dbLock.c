@@ -516,53 +516,9 @@ static int createLockRecord(void* junk, DBENTRY* pdbentry)
     lrec->precord = prec;
 
     prec->lset = lrec;
-    return 0;
-}
 
-static int initPVLinks(void* junk, DBENTRY* pdbentry)
-{
-    size_t i;
-    dbRecordType *rtype=pdbentry->precordType;
-    dbCommon *prec = pdbentry->precnode->precord;
-    lockSet *A=prec->lset->plockSet;
-
-    if(!A) {
-        A = prec->lset->plockSet = makeSet();
-        ellAdd(&A->lockRecordList, &prec->lset->node);
-    }
-
-    /* for each link originating from this record */
-    for(i=0; i<rtype->no_links; i++) {
-        DBADDR *paddr;
-        dbFldDes *pdesc = rtype->papFldDes[rtype->link_ind[i]];
-        DBLINK *plink = (DBLINK*)((char*)prec + pdesc->offset);
-        lockSet *B;
-
-        if(plink->type!=PV_LINK)
-            continue;
-
-        dbInitLink(prec, plink, pdesc->field_type);
-
-        if(plink->type!=DB_LINK)
-            continue;
-
-        paddr = (DBADDR*)plink->value.pv_link.pvt;
-        B = paddr->precord->lset->plockSet;
-
-        if(A==B) {
-            /* these records are already in the same lockset */
-        } else if(B) {
-            assert(A!=B);
-            dbLockSetMerge(NULL, prec, paddr->precord);
-            assert(prec->lset->plockSet==paddr->precord->lset->plockSet);
-
-        } else {
-            /* fast merge paddr->precord into A */
-            paddr->precord->lset->plockSet = A;
-            dbLockIncRef(A);
-            ellAdd(&A->lockRecordList, &paddr->precord->lset->node);
-        }
-    }
+    prec->lset->plockSet = makeSet();
+    ellAdd(&prec->lset->plockSet->lockRecordList, &prec->lset->node);
     return 0;
 }
 
@@ -570,10 +526,8 @@ void dbLockInitRecords(dbBase *pdbbase)
 {
     epicsThreadOnce(&dbLockOnceInit, &dbLockOnce, NULL);
 
-    /* create all lockRecords */
+    /* create all lockRecords and lockSets */
     forEachRecord(NULL, pdbbase, &createLockRecord);
-    /* create lockSets */
-    forEachRecord(NULL, pdbbase, &initPVLinks);
 }
 
 static int freeLockRecord(void* junk, DBENTRY* pdbentry)

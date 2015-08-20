@@ -1228,20 +1228,20 @@ long dbPut(DBADDR *paddr, short dbrType,
         status = dbPutConvertRoutine[dbrType][field_type](paddr, pbuffer,
             nRequest, no_elements, offset);
     }
-    if (status) goto done;
 
     /* update array info */
-    if (paddr->pfldDes->special == SPC_DBADDR &&
+    if (!status &&
+        paddr->pfldDes->special == SPC_DBADDR &&
         prset && prset->put_array_info) {
         status = prset->put_array_info(paddr, nRequest);
     }
-    if (status) goto done;
 
-    /* check if special processing is required */
+    /* Always do special processing if needed */
     if (special) {
-        status = dbPutSpecial(paddr,1);
-        if (status) goto done;
+        long status2 = dbPutSpecial(paddr, 1);
+        if (status2) goto done;
     }
+    if (status) goto done;
 
     /* Propagate monitor events for this field, */
     /* unless the field is VAL and PP is true. */

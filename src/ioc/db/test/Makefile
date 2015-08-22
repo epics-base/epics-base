@@ -61,6 +61,11 @@ testHarness_SRCS += dbLockTest.c
 TESTS += dbLockTest
 TESTFILES += ../dbLockTest.db
 
+TESTPROD_HOST += dbStressTest
+dbStressTest_SRCS += dbStressLock.c
+dbStressTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+TESTS += dbStressTest
+
 TESTPROD_HOST += testdbConvert
 testdbConvert_SRCS += testdbConvert.c
 testHarness_SRCS += testdbConvert.c

@@ -23,6 +23,7 @@
 #include "cantProceed.h"
 #include "cvtFast.h"
 #include "dbDefs.h"
+#include "epicsSpin.h"
 #include "ellLib.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
@@ -45,7 +46,7 @@
 #include "dbFldTypes.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
-#include "dbLock.h"
+#include "dbLockPvt.h"
 #include "dbNotify.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
@@ -126,7 +127,7 @@ static long dbConstGetLink(struct link *plink, short dbrType, void *pbuffer,
 
 /***************************** Database Links *****************************/
 
-static long dbDbInitLink(struct link *plink, short dbfType)
+static long dbDbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
 {
     DBADDR dbaddr;
     long status;
@@ -140,18 +141,25 @@ static long dbDbInitLink(struct link *plink, short dbfType)
     pdbAddr = dbCalloc(1, sizeof(struct dbAddr));
     *pdbAddr = dbaddr; /* structure copy */
     plink->value.pv_link.pvt = pdbAddr;
-    dbLockSetMerge(plink->value.pv_link.precord, pdbAddr->precord);
+    ellAdd(&dbaddr.precord->bklnk, &plink->value.pv_link.backlinknode);
+    /* merging into the same lockset is deferred to the caller.
+     * cf. initPVLinks()
+     */
+    dbLockSetMerge(NULL, precord, dbaddr.precord);
+    assert(precord->lset->plockSet==dbaddr.precord->lset->plockSet);
     return 0;
 }
 
-static void dbDbRemoveLink(struct link *plink)
+static void dbDbRemoveLink(dbLocker *locker, struct dbCommon *prec, struct link *plink)
 {
-    free(plink->value.pv_link.pvt);
+    DBADDR *pdbAddr = (DBADDR *) plink->value.pv_link.pvt;
     plink->value.pv_link.pvt = 0;
     plink->value.pv_link.getCvt = 0;
     plink->value.pv_link.lastGetdbrType = 0;
     plink->type = PV_LINK;
-    dbLockSetSplit(plink->value.pv_link.precord);
+    ellDelete(&pdbAddr->precord->bklnk, &plink->value.pv_link.backlinknode);
+    dbLockSetSplit(locker, prec, pdbAddr->precord);
+    free(pdbAddr);
 }
 
 static int dbDbIsLinkConnected(const struct link *plink)
@@ -380,7 +388,7 @@ static void dbDbScanFwdLink(struct link *plink)
     dbScanPassive(precord, paddr->precord);
 }
 
-lset dbDb_lset = { dbDbRemoveLink,
+lset dbDb_lset = { NULL,
         dbDbIsLinkConnected, dbDbGetDBFtype, dbDbGetElements, dbDbGetValue,
         dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
         dbDbGetPrecision, dbDbGetUnits, dbDbGetAlarm, dbDbGetTimeStamp,
@@ -397,7 +405,7 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
 
     if (!(plink->value.pv_link.pvlMask & (pvlOptCA | pvlOptCP | pvlOptCPP))) {
         /* Make it a DB link if possible */
-        if (!dbDbInitLink(plink, dbfType))
+        if (!dbDbInitLink(precord, plink, dbfType))
             return;
     }
 
@@ -422,7 +430,7 @@ void dbInitLink(struct dbCommon *precord, struct link *plink, short dbfType)
     }
 }
 
-void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType, DBADDR *ptargetaddr)
+void dbAddLink(dbLocker *locker, struct dbCommon *precord, struct link *plink, short dbfType, DBADDR *ptargetaddr)
 {
     plink->value.pv_link.precord = precord;
 
@@ -434,9 +442,10 @@ void dbAddLink(struct dbCommon *precord, struct link *plink, short dbfType, DBAD
 
         plink->type = DB_LINK;
         plink->value.pv_link.pvt = ptargetaddr;
+        ellAdd(&ptargetaddr->precord->bklnk, &plink->value.pv_link.backlinknode);
 
         /* target record is already locked in dbPutFieldLink() */
-        dbLockSetMerge(plink->value.pv_link.precord, ptargetaddr->precord);
+        dbLockSetMerge(locker, plink->value.pv_link.precord, ptargetaddr->precord);
 
         return;
     }
@@ -463,11 +472,11 @@ long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
     return S_db_notFound;
 }
 
-void dbRemoveLink(struct link *plink)
+void dbRemoveLink(dbLocker *locker, dbCommon *prec, struct link *plink)
 {
     switch (plink->type) {
     case DB_LINK:
-        dbDbRemoveLink(plink);
+        dbDbRemoveLink(locker, prec, plink);
         break;
     case CA_LINK:
         dbCaRemoveLink(plink);

@@ -25,6 +25,7 @@
 
 #define epicsExportSharedSymbols
 #include "dbBase.h"
+#include "dbCommon.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
@@ -198,7 +199,7 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
     dbRecordNode	*precnode = pdbentry->precnode;
     dbFldDes		*pflddes;
     int			i;
-    char		*precord;
+    dbCommon		*precord;
     char		*pfield;
     
     if(!pdbRecordType) return(S_dbLib_recordTypeNotFound);
@@ -210,7 +211,8 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 	return(S_dbLib_noRecSup);
     }
     precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
-    precord = (char *)precnode->precord;
+    precord = precnode->precord;
+    precord->rdes = pdbRecordType;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
 	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
@@ -220,13 +222,13 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 	epicsPrintf("dbAllocRecord: NAME(%s) too long\n",precordName);
 	return(S_dbLib_nameLength);
     }
-    pfield = precord + pflddes->offset;
+    pfield = (char*)precord + pflddes->offset;
     strcpy(pfield,precordName);
     for(i=1; i<pdbRecordType->no_fields; i++) {
 
 	pflddes = pdbRecordType->papFldDes[i];
 	if(!pflddes) continue;
-	pfield = precord + pflddes->offset;
+	pfield = (char*)precord + pflddes->offset;
 	pdbentry->pfield = (void *)pfield;
 	pdbentry->pflddes = pflddes;
 	pdbentry->indfield = i;

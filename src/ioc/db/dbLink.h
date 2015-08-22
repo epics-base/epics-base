@@ -50,13 +50,15 @@ typedef struct lset {
 #define dbGetSevr(PLINK, PSEVERITY) \
     dbGetAlarm((PLINK), NULL, (PSEVERITY))
 
+struct dbLocker;
+
 epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
         short dbfType);
-epicsShareFunc void dbAddLink(struct dbCommon *precord, struct link *plink,
+epicsShareFunc void dbAddLink(struct dbLocker *locker, struct dbCommon *precord, struct link *plink,
         short dbfType, DBADDR *ptargetaddr);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
-epicsShareFunc void dbRemoveLink(struct link *plink);
+epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct dbCommon *prec, struct link *plink);
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);

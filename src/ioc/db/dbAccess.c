@@ -32,6 +32,7 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "errlog.h"
+#include "epicsSpin.h"
 #include "errMdef.h"
 
 #define epicsExportSharedSymbols
@@ -50,7 +51,7 @@
 #include "dbFldTypes.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
-#include "dbLock.h"
+#include "dbLockPvt.h"
 #include "dbNotify.h"
 #include "dbScan.h"
 #include "dbServer.h"
@@ -944,6 +945,8 @@ static long dbPutFieldLink(DBADDR *paddr,
     dbLinkInfo  link_info;
     DBADDR      *pdbaddr = NULL;
     dbCommon    *precord = paddr->precord;
+    dbCommon    *lockrecs[2];
+    dbLocker    locker;
     dbFldDes    *pfldDes = paddr->pfldDes;
     long        special = paddr->special;
     struct link *plink = (struct link *)paddr->pfield;
@@ -955,6 +958,8 @@ static long dbPutFieldLink(DBADDR *paddr,
     long        status;
     int         isDevLink;
     short       scan;
+
+    STATIC_ASSERT(DBLOCKER_NALLOC>=2);
 
     switch (dbrType) {
     case DBR_CHAR:
@@ -992,10 +997,12 @@ static long dbPutFieldLink(DBADDR *paddr,
     isDevLink = ellCount(&precord->rdes->devList) > 0 &&
                 pfldDes->isDevLink;
 
-    dbLockSetGblLock();
-    dbLockSetRecordLock(precord);
-    if (pdbaddr)
-        dbLockSetRecordLock(pdbaddr->precord);
+    memset(&locker, 0, sizeof(locker));
+    lockrecs[0] = precord;
+    lockrecs[1] = pdbaddr ? pdbaddr->precord : NULL;
+    dbLockerPrepare(&locker, lockrecs, 2);
+
+    dbScanLockMany(&locker);
 
     scan = precord->scan;
 
@@ -1044,7 +1051,7 @@ static long dbPutFieldLink(DBADDR *paddr,
     switch (plink->type) { /* Old link type */
     case DB_LINK:
     case CA_LINK:
-        dbRemoveLink(plink);
+        dbRemoveLink(&locker, precord, plink); /* link type becomes PV_LINK */
         break;
 
     case PV_LINK:
@@ -1091,7 +1098,7 @@ static long dbPutFieldLink(DBADDR *paddr,
 
     switch (plink->type) { /* New link type */
     case PV_LINK:
-        dbAddLink(precord, plink, pfldDes->field_type, pdbaddr);
+        dbAddLink(&locker, precord, plink, pfldDes->field_type, pdbaddr);
         break;
 
     case CONSTANT:
@@ -1121,7 +1128,8 @@ postScanEvent:
     if (scan != precord->scan)
         db_post_events(precord, &precord->scan, DBE_VALUE | DBE_LOG);
 unlock:
-    dbLockSetGblUnlock();
+    dbScanUnlockMany(&locker);
+    dbLockerFinalize(&locker);
 cleanup:
     free(link_info.target);
     return status;

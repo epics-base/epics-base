@@ -894,20 +894,20 @@ long dblsr(char *recordname,int level)
         dbInitEntry(pdbbase,pdbentry);
         status = dbFindRecord(pdbentry,recordname);
         if(status) {
-            errlogPrintf("Record not found\n");
+            printf("Record not found\n");
             dbFinishEntry(pdbentry);
-            goto done;
+            return 0;
         }
         precord = pdbentry->precnode->precord;
         dbFinishEntry(pdbentry);
         plockRecord = precord->lset;
-        if(!plockRecord) goto done; /* too early (before iocInit) */
+        if (!plockRecord) return 0; /* before iocInit */
         plockSet = plockRecord->plockSet;
     } else {
         plockSet = (lockSet *)ellFirst(&lockSetsActive);
     }
     for( ; plockSet; plockSet = (lockSet *)ellNext(&plockSet->node)) {
-        errlogPrintf("Lock Set %lu %d members %d refs epicsMutexId %p\n",
+        printf("Lock Set %lu %d members %d refs epicsMutexId %p\n",
             plockSet->id,ellCount(&plockSet->lockRecordList),plockSet->refcount,plockSet->lock);
 
         if(level==0) { if(recordname) break; continue; }
@@ -915,7 +915,7 @@ long dblsr(char *recordname,int level)
         plockRecord; plockRecord = (lockRecord *)ellNext(&plockRecord->node)) {
             precord = plockRecord->precord;
             pdbRecordType = precord->rdes;
-            errlogPrintf("%s\n",precord->name);
+            printf("%s\n",precord->name);
             if(level<=1) continue;
             for(link=0; (link<pdbRecordType->no_links) ; link++) {
                 DBADDR	*pdbAddr;
@@ -923,25 +923,23 @@ long dblsr(char *recordname,int level)
                 plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
                 if(plink->type != DB_LINK) continue;
                 pdbAddr = (DBADDR *)(plink->value.pv_link.pvt);
-                errlogPrintf("\t%s",pdbFldDes->name);
+                printf("\t%s",pdbFldDes->name);
                 if(pdbFldDes->field_type==DBF_INLINK) {
-                    errlogPrintf("\t INLINK");
+                    printf("\t INLINK");
                 } else if(pdbFldDes->field_type==DBF_OUTLINK) {
-                    errlogPrintf("\tOUTLINK");
+                    printf("\tOUTLINK");
                 } else if(pdbFldDes->field_type==DBF_FWDLINK) {
-                    errlogPrintf("\tFWDLINK");
+                    printf("\tFWDLINK");
                 }
-                errlogPrintf(" %s %s",
+                printf(" %s %s",
                     ((plink->value.pv_link.pvlMask&pvlOptPP)?" PP":"NPP"),
                     msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
-                errlogPrintf(" %s\n",pdbAddr->precord->name);
+                printf(" %s\n",pdbAddr->precord->name);
             }
         }
         if(recordname) break;
     }
-done:
-    errlogFlush();
-    return(0);
+    return 0;
 }
 
 long dbLockShowLocked(int level)
@@ -949,21 +947,19 @@ long dbLockShowLocked(int level)
     int     indListType;
     lockSet *plockSet;
 
-    errlogPrintf("lockSets %d listTypeFree %d\n",
-        ellCount(&lockSetsActive),
+    printf("Active lockSets: %d\n", ellCount(&lockSetsActive));
 #ifndef LOCKSET_NOFREE
-        ellCount(&lockSetsFree)
-#else
-                 -1
+    printf("Free lockSets: %d\n", ellCount(&lockSetsFree));
 #endif
-                 );
 
     /*Even if failure on lockSetModifyLock will continue */
     for(indListType=0; indListType <= 1; ++indListType) {
         plockSet = (lockSet *)ellFirst(&lockSetsActive);
         if(plockSet) {
-            if(indListType==0) errlogPrintf("listTypeScanLock\n");
-            else errlogPrintf("listTypeRecordLock\n");
+            if (indListType==0)
+                printf("listTypeScanLock\n");
+            else
+                printf("listTypeRecordLock\n");
         }
         while(plockSet) {
             epicsMutexLockStatus status;
@@ -977,8 +973,7 @@ long dbLockShowLocked(int level)
             plockSet = (lockSet *)ellNext(&plockSet->node);
         }
     }
-    errlogFlush();
-    return(0);
+    return 0;
 }
 
 int * dbLockSetAddrTrace(dbCommon *precord)

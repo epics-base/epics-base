@@ -92,7 +92,7 @@ static int priorityValue[NUM_CALLBACK_PRIORITIES] = {0, 1, 2};
 int callbackSetQueueSize(int size)
 {
     if (callbackIsInit) {
-        errlogPrintf("Callback system already initialized\n");
+        fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
     callbackQueueSize = size;
@@ -102,7 +102,7 @@ int callbackSetQueueSize(int size)
 int callbackParallelThreads(int count, const char *prio)
 {
     if (callbackIsInit) {
-        errlogPrintf("Callback system already initialized\n");
+        fprintf(stderr, "Callback system already initialized\n");
         return -1;
     }
 
@@ -112,7 +112,7 @@ int callbackParallelThreads(int count, const char *prio)
         count = callbackParallelThreadsDefault;
     if (count < 1) count = 1;
 
-    if (!prio || strcmp(prio, "") == 0 || strcmp(prio, "*") == 0) {
+    if (!prio || *prio == 0 || strcmp(prio, "*") == 0) {
         int i;
 
         for (i = 0; i < NUM_CALLBACK_PRIORITIES; i++) {
@@ -121,30 +121,30 @@ int callbackParallelThreads(int count, const char *prio)
     }
     else {
         dbMenu *pdbMenu;
+        int i;
 
         if (!pdbbase) {
-            errlogPrintf("callbackParallelThreads: pdbbase not set\n");
+            fprintf(stderr, "callbackParallelThreads: pdbbase not set\n");
             return -1;
         }
+
         /* Find prio in menuPriority */
         pdbMenu = dbFindMenu(pdbbase, "menuPriority");
-        if (pdbMenu) {
-            int i, gotMatch = 0;
-
-            for (i = 0; i < pdbMenu->nChoice; i++) {
-                gotMatch = (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i])==0) ? TRUE : FALSE;
-                if (gotMatch)
-                    break;
-            }
-            if (gotMatch) {
-                callbackQueue[i].threadsConfigured = count;
-                return 0;
-            }
-            else {
-                errlogPrintf("Unknown priority \"%s\"\n", prio);
-                return -1;
-            }
+        if (!pdbMenu) {
+            fprintf(stderr, "callbackParallelThreads: No Priority menu\n");
+            return -1;
         }
+
+        for (i = 0; i < pdbMenu->nChoice; i++) {
+            if (epicsStrCaseCmp(prio, pdbMenu->papChoiceValue[i]) == 0)
+                goto found;
+        }
+        fprintf(stderr, "callbackParallelThreads: "
+            "Unknown priority \"%s\"\n", prio);
+        return -1;
+
+found:
+        callbackQueue[i].threadsConfigured = count;
     }
     return 0;
 }

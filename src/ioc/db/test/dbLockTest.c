@@ -151,7 +151,9 @@ static void testMultiLock(void)
 {
     dbCommon *prec[8];
     dbLocker *plockA;
+#ifdef LOCKSET_DEBUG
     epicsThreadId myself = epicsThreadGetIdSelf();
+#endif
 
     testDiag("Test multi-locker function (lock everything)");
 
@@ -404,7 +406,11 @@ static void testLinkNOP(void)
 
 MAIN(dbLockTest)
 {
+#ifdef LOCKSET_DEBUG
     testPlan(99);
+#else
+    testPlan(87);
+#endif
     testSets();
     testSingleLock();
     testMultiLock();

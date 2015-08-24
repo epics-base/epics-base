@@ -23,7 +23,6 @@
 #include "cantProceed.h"
 #include "cvtFast.h"
 #include "dbDefs.h"
-#include "epicsSpin.h"
 #include "ellLib.h"
 #include "epicsThread.h"
 #include "epicsTime.h"

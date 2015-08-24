@@ -24,7 +24,6 @@
 #include "dbDefs.h"
 #include "epicsAtomic.h"
 #include "epicsEvent.h"
-#include "epicsExit.h"
 #include "epicsInterrupt.h"
 #include "epicsRingPointer.h"
 #include "epicsString.h"

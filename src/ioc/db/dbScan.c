@@ -25,7 +25,6 @@
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsEvent.h"
-#include "epicsExit.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
 #include "epicsRingBytes.h"

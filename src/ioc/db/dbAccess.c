@@ -32,7 +32,6 @@
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "errlog.h"
-#include "epicsSpin.h"
 #include "errMdef.h"
 
 #define epicsExportSharedSymbols

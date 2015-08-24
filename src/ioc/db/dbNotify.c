@@ -25,7 +25,6 @@
 #include "ellLib.h"
 #include "epicsAssert.h"
 #include "epicsEvent.h"
-#include "epicsExit.h"
 #include "epicsMutex.h"
 #include "epicsString.h"
 #include "epicsThread.h"

@@ -17,12 +17,12 @@
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "epicsAssert.h"
+#include "epicsAtomic.h"
 #include "epicsMutex.h"
 #include "epicsPrint.h"
+#include "epicsSpin.h"
 #include "epicsStdio.h"
 #include "epicsThread.h"
-#include "epicsSpin.h"
-#include "epicsAtomic.h"
 #include "errMdef.h"
 
 #define epicsExportSharedSymbols

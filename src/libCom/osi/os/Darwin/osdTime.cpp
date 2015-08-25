@@ -19,6 +19,7 @@
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
@@ -45,6 +46,8 @@ static int timeRegister(void)
 
     generalTimeCurrentTpRegister("MachTime", \
         LAST_RESORT_PRIORITY, osdTimeGetCurrent);
+
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

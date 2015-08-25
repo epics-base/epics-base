@@ -258,6 +258,17 @@ epicsShareFunc void epicsShareAPI epicsTimeShow (
 epicsShareFunc int epicsShareAPI epicsTime_localtime ( const time_t * clock, struct tm * result );
 epicsShareFunc int epicsShareAPI epicsTime_gmtime ( const time_t * clock, struct tm * result );
 
+/* Advertised monotonic counter resolution (may not be accurate).
+ * Minimum non-zero difference between two calls to epicsMonotonicGet()
+ */
+epicsShareFunc epicsUInt64 epicsMonotonicResolution(void);
+/* Fetch monotonic counter, return is nano-seconds since an unspecified time */
+epicsShareFunc epicsUInt64 epicsMonotonicGet(void);
+
+#ifdef EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
+epicsShareFunc void osdMonotonicInit(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

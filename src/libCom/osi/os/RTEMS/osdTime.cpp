@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <rtems/rtems_bsdnet_internal.h>
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "osdTime.h"
 #include "osiNTPTime.h"
@@ -37,6 +38,8 @@ void osdTimeRegister(void)
     /* Init NTP first so it can be used to sync ClockTime */
     NTPTime_Init(100);
     ClockTime_Init(CLOCKTIME_SYNC);
+
+    osdMonotonicInit();
 }
 
 int osdNTPGet(struct timespec *ts)

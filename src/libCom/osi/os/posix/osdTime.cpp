@@ -17,6 +17,7 @@
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 
@@ -56,6 +57,8 @@ int clock_settime(clockid_t clock, const timespec *tp)
 static int timeRegister(void)
 {
     TIME_INIT;
+
+    osdMonotonicInit();
     return 1;
 }
 static int done = timeRegister();

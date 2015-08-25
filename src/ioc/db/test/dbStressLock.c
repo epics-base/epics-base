@@ -39,6 +39,10 @@
 
 #include "xRecord.h"
 
+#if defined(CLOCK_MONOTONIC)
+# define TIME_STATS
+#endif
+
 #define testIntOk1(A, OP, B) testOk((A) OP (B), "%s (%d) %s %s (%d)", #A, A, #OP, #B, B);
 #define testPtrOk1(A, OP, B) testOk((A) OP (B), "%s (%p) %s %s (%p)", #A, A, #OP, #B, B);
 
@@ -59,8 +63,10 @@ static dbCommon **precords;
 typedef struct {
     int id;
     unsigned long N[3];
+#ifdef TIME_STATS
     double X[3];
     double X2[3];
+#endif
 
     unsigned int done;
     epicsEventId donevent;
@@ -153,16 +159,22 @@ void doreTarget(workerPriv *p)
 static
 void worker(void *raw)
 {
+#ifdef TIME_STATS
     struct timespec before;
+#endif
     workerPriv *priv = raw;
 
     testDiag("worker %d is %p", priv->id, epicsThreadGetIdSelf());
 
+#ifdef TIME_STATS
     clock_gettime(CLOCK_MONOTONIC, &before);
+#endif
 
     while(!priv->done) {
         double sel = getRand();
+#ifdef TIME_STATS
         struct timespec after;
+#endif
         double duration;
 
         int act;
@@ -177,15 +189,19 @@ void worker(void *raw)
             act = 2;
         }
 
+#ifdef TIME_STATS
         clock_gettime(CLOCK_MONOTONIC, &after);
 
         duration = (double)((long)after.tv_nsec - (long)before.tv_nsec);
         duration *= 1e-9;
         duration += (double)(after.tv_sec - before.tv_sec);
+#endif
 
         priv->N[act]++;
+#ifdef TIME_STATS
         priv->X[act] += duration;
         priv->X2[act] += duration*duration;
+#endif
     }
 
     epicsEventMustTrigger(priv->donevent);
@@ -198,12 +214,11 @@ MAIN(dbStressTest)
     unsigned int i;
     workerPriv *priv;
     char *nwork=getenv("NWORK");
-    struct timespec seed;
+    epicsTimeStamp seed;
 
-    testPlan(95);
+    epicsTimeGetCurrent(&seed);
 
-    clock_gettime(CLOCK_REALTIME, &seed);
-    srand(seed.tv_nsec);
+    srand(seed.nsec);
 
     if(nwork) {
         long val = 0;
@@ -211,6 +226,8 @@ MAIN(dbStressTest)
         if(val>2)
             nworkers = val;
     }
+
+    testPlan(80+nworkers*3);
 
     priv = callocMustSucceed(nworkers, sizeof(*priv), "no memory");
 
@@ -319,8 +336,10 @@ MAIN(dbStressTest)
     for(i=0; i<nworkers; i++) {
         testDiag("Worker %u", i);
         testDiag("N = %lu %lu %lu", priv[i].N[0], priv[i].N[1], priv[i].N[2]);
+#ifdef TIME_STATS
         testDiag("X = %g %g %g", priv[i].X[0], priv[i].X[1], priv[i].X[2]);
         testDiag("X2= %g %g %g", priv[i].X2[0], priv[i].X2[1], priv[i].X2[2]);
+#endif
 
         testOk1(priv[i].N[0]>0);
         testOk1(priv[i].N[1]>0);

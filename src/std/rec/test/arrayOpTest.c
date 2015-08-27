@@ -26,6 +26,8 @@ static void testGetPutArray(void)
     epicsInt32 *pbtr;
     waveformRecord *prec;
 
+    testdbPrepare();
+
     testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
 
     recTestIoc_registerRecordDeviceDriver(pdbbase);

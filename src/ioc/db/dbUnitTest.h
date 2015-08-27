@@ -57,6 +57,26 @@ epicsShareFunc void testdbVGetFieldEqual(const char* pv, short dbrType, va_list 
 
 epicsShareFunc dbCommon* testdbRecordPtr(const char* pv);
 
+typedef struct testMonitor testMonitor;
+
+/* Begin monitoring the named PV for changes */
+epicsShareFunc testMonitor* testMonitorCreate(const char* pvname, unsigned dbe_mask, unsigned opt);
+/* End monitoring */
+epicsShareFunc void testMonitorDestroy(testMonitor*);
+/* Return immediately if it has been updated since create, last wait,
+ * or reset (count w/ reset=1).
+ * Otherwise, block until the value of the target PV is updated.
+ */
+epicsShareFunc void testMonitorWait(testMonitor*);
+/* Return the number of monitor events which have occured since create,
+ * or a pervious reset (called reset=1).
+ * Calling w/ reset=0 only returns the count.
+ * Calling w/ reset=1 resets the count to zero and ensures that the next
+ * wait will block unless subsequent events occur.  Returns the previous
+ * count.
+ */
+epicsShareFunc unsigned testMonitorCount(testMonitor*, unsigned reset);
+
 #ifdef __cplusplus
 }
 #endif

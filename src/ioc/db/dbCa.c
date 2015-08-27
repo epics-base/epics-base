@@ -776,7 +776,8 @@ static void eventCallback(struct event_handler_args arg)
         pca->gotInNative = TRUE;
         break;
     default:
-        errMessage(-1, "dbCa: eventCallback Logic Error\n");
+        errlogPrintf("dbCa: eventCallback Logic Error. dbr=%ld dbf=%d\n",
+                     arg.type, ca_field_type(pca->chid));
         break;
     }
     pdbr_time_double = (struct dbr_time_double *)arg.dbr;

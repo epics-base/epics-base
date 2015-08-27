@@ -35,7 +35,9 @@ const nothrow_t  nothrow ;
 
 #if defined ( _MSC_VER )
     // some interesting bugs found in the MS implementation of new
-#   if _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */
+#   if _MSC_VER >= 1900
+        static size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
+#   elif _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
 #   else
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max () - 100;

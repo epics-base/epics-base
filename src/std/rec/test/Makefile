@@ -26,6 +26,13 @@ testHarness_SRCS += arrayOpTest.c
 TESTFILES += ../arrayOpTest.db
 TESTS += arrayOpTest
 
+TESTPROD_HOST += linkRetargetLinkTest
+linkRetargetLinkTest_SRCS += linkRetargetLinkTest.c
+linkRetargetLinkTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += linkRetargetLinkTest.c
+TESTFILES += ../linkRetargetLink.db
+TESTS += linkRetargetLinkTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 asTestIoc_DBD += base.dbd
 asTestIoc_DBD += asTest.dbd

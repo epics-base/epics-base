@@ -1038,7 +1038,7 @@ static void dbCaTask(void *arg)
                 pca->pgetNative = dbCalloc(pca->nelements, element_size);
                 epicsMutexUnlock(pca->lock);
                 status = ca_add_array_event(
-                    ca_field_type(pca->chid)+DBR_TIME_STRING,
+                    dbf_type_to_DBR_TIME(ca_field_type(pca->chid)),
                     ca_element_count(pca->chid),
                     pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
                 if (status != ECA_NORMAL) {

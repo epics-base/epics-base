@@ -148,5 +148,6 @@ include $(TOP)/configure/RULES
 
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbStressLock$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
 

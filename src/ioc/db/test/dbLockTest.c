@@ -216,6 +216,15 @@ static void testMultiLock(void)
     testPtrOk1(testdbRecordPtr("recg")->lset->plockSet->owner,==,myself);
 #endif
 
+    /* recursive locking of individual records is allowed */
+    dbScanLock(prec[0]);
+    testIntOk1(testdbRecordPtr("reca")->lset->plockSet->refcount,==,3);
+    dbScanUnlock(prec[0]);
+
+    /* recursive locking of dbScanLock isn't
+     * dbScanLockMany(plockA); <-- would fail
+     */
+
     dbScanUnlockMany(plockA);
 
     testDiag("After locker unlocked");
@@ -407,9 +416,9 @@ static void testLinkNOP(void)
 MAIN(dbLockTest)
 {
 #ifdef LOCKSET_DEBUG
-    testPlan(99);
+    testPlan(100);
 #else
-    testPlan(87);
+    testPlan(88);
 #endif
     testSets();
     testSingleLock();

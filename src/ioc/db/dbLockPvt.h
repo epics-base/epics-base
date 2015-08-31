@@ -1,8 +1,7 @@
 /*************************************************************************\
 * Copyright (c) 2014 Brookhaven Science Assoc., as Operator of Brookhaven
 *     National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
@@ -12,12 +11,14 @@
 #include "dbLock.h"
 #include "epicsSpin.h"
 
-/* enable additional error checking */
-#define LOCKSET_DEBUG
-/* disable the free list for lockSets */
-#define LOCKSET_NOFREE
-/* disable use of recomputeCnt optimization */
-/*#define LOCKSET_NOCNT*/
+/* Define to enable additional error checking */
+#undef LOCKSET_DEBUG
+
+/* Define to disable the free list for lockSets */
+#undef LOCKSET_NOFREE
+
+/* Define to disable use of recomputeCnt optimization */
+#undef LOCKSET_NOCNT
 
 /* except for refcount (and lock), all members of dbLockSet
  * are guarded by its lock.

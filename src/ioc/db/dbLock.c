@@ -390,6 +390,11 @@ void dbScanLockMany(dbLocker* locker)
     const epicsThreadId myself = epicsThreadGetIdSelf();
 #endif
 
+    if(ellCount(&locker->locked)!=0) {
+        cantProceed("dbScanLockMany(%p) already locked.  Recursive locking not allowed", locker);
+        return;
+    }
+
 retry:
     assert(ellCount(&locker->locked)==0);
     dbLockUpdateRefs(locker, 1);

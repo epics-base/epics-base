@@ -23,16 +23,19 @@
 #include "dbAccess.h"
 #include "epicsStdio.h"
 #include "dbEvent.h"
-/* hackish duplication since we can't include db_access.h here */
-typedef void* chid;
+
+/* Declarations from cadef.h and db_access.h which we can't include here */
+typedef void * chid;
+epicsShareExtern const unsigned short dbr_value_size[];
+epicsShareExtern short epicsShareAPI ca_field_type (chid chan);
 #define MAX_UNITS_SIZE		8
+
 #include "dbCaPvt.h"
 #include "errlog.h"
+#include "testMain.h"
 
 #include "xRecord.h"
 #include "arrRecord.h"
-
-#include "testMain.h"
 
 #define testOp(FMT,A,OP,B) testOk((A)OP(B), #A " ("FMT") " #OP " " #B " ("FMT")", A,B)
 
@@ -46,7 +49,7 @@ void waitCB(void *unused)
 {
     if(waitEvent)
         epicsEventMustTrigger(waitEvent);
-    waitCounter++; //TODO: atomic
+    waitCounter++; /* TODO: atomic */
 }
 
 static
@@ -88,6 +91,7 @@ static
 void putLink(DBLINK *plink, short dbr, const void*buf, long nReq)
 {
     long ret;
+
     waitEvent = epicsEventMustCreate(epicsEventEmpty);
 
     ret = dbCaPutLinkCallback(plink, dbr, buf, nReq,
@@ -108,6 +112,7 @@ static void testNativeLink(void)
     DBLINK *psrclnk;
     epicsInt32 temp;
     long nReq;
+
     testDiag("Link to a scalar numeric field");
     testdbPrepare();
 
@@ -125,7 +130,7 @@ static void testNativeLink(void)
     ptarg= (xRecord*)testdbRecordPtr("target");
     psrclnk = &psrc->lnk;
 
-    // ensure this is really a CA link
+    /* ensure this is really a CA link */
     testOk1(dbLockGetLockId((dbCommon*)psrc)!=dbLockGetLockId((dbCommon*)ptarg));
 
     testOk1(psrclnk->type==CA_LINK);
@@ -140,7 +145,7 @@ static void testNativeLink(void)
     waitForUpdate(psrclnk);
 
     dbScanLock((dbCommon*)psrc);
-    // local CA_LINK connects immediately
+    /* local CA_LINK connects immediately */
     testOk1(dbCaIsLinkConnected(psrclnk));
     nReq = 422;
     testOk1(dbCaGetNelements(psrclnk, &nReq)==0);
@@ -171,6 +176,7 @@ static void testStringLink(void)
     DBLINK *psrclnk;
     char temp[MAX_STRING_SIZE];
     long nReq;
+
     testDiag("Link to a string field");
     testdbPrepare();
 
@@ -188,7 +194,7 @@ static void testStringLink(void)
     ptarg= (xRecord*)testdbRecordPtr("target");
     psrclnk = &psrc->lnk;
 
-    // ensure this is really a CA link
+    /* ensure this is really a CA link */
     testOk1(dbLockGetLockId((dbCommon*)psrc)!=dbLockGetLockId((dbCommon*)ptarg));
 
     testOk1(psrclnk->type==CA_LINK);
@@ -203,7 +209,7 @@ static void testStringLink(void)
     waitForUpdate(psrclnk);
 
     dbScanLock((dbCommon*)psrc);
-    // local CA_LINK connects immediately
+    /* local CA_LINK connects immediately */
     testOk1(dbCaIsLinkConnected(psrclnk));
 
     nReq = 1;
@@ -232,6 +238,7 @@ static void wasproc(xRecord *prec)
 static void testCP(void)
 {
     xRecord *psrc, *ptarg;
+
     testDiag("Link CP modifier");
     testdbPrepare();
 
@@ -258,7 +265,7 @@ static void testCP(void)
     epicsEventMustWait(waitEvent);
 
     dbScanLock((dbCommon*)psrc);
-    testOp("%u",waitCounter,==,1); // initial processing
+    testOp("%u",waitCounter,==,1); /* initial processing */
     dbScanUnlock((dbCommon*)psrc);
 
     dbScanLock((dbCommon*)ptarg);
@@ -269,7 +276,7 @@ static void testCP(void)
     epicsEventMustWait(waitEvent);
 
     dbScanLock((dbCommon*)psrc);
-    testOp("%u",waitCounter,==,2); // process due to monitor update
+    testOp("%u",waitCounter,==,2); /* process due to monitor update */
     dbScanUnlock((dbCommon*)psrc);
 
     testIocShutdownOk();
@@ -299,6 +306,7 @@ static void checkArray(const char *msg,
     int match = 1;
     unsigned i;
     epicsInt32 x, *b;
+
     for(b=buf,x=first,i=0;i<used;i++,x++,b++)
         match &= (*b)==x;
     for(;i<total;i++,x++,b++)
@@ -321,6 +329,7 @@ static void checkArrayDouble(const char *msg,
     int match = 1;
     unsigned i;
     double x, *b;
+
     for(b=buf,x=first,i=0;i<used;i++,x++,b++)
         match &= (*b)==x;
     for(;i<total;i++,x++,b++)
@@ -338,10 +347,8 @@ static void checkArrayDouble(const char *msg,
 
 static void spoilputbuf(DBLINK *lnk)
 {
-    extern const unsigned short dbr_value_size[];
-    short epicsShareAPI ca_field_type (chid chan);
-
     caLink *pca = lnk->value.pv_link.pvt;
+
     if(lnk->type!=CA_LINK || !pca->pputNative)
         return;
     epicsMutexMustLock(pca->lock);
@@ -449,6 +456,7 @@ static void softarr(arrRecord *prec)
 {
     long nReq = prec->nelm;
     long status = dbGetLink(&prec->inp, DBR_DOUBLE, prec->bptr, NULL, &nReq);
+
     if(status) {
         testFail("dbGetLink() -> %ld", status);
     } else {
@@ -465,6 +473,7 @@ static void testreTargetTypeChange(void)
     arrRecord *psrc, *ptarg1, *ptarg2;
     double *bufsrc, *buftarg1;
     epicsInt32 *buftarg2;
+
     testDiag("Retarget an link to a PV with a different type DOUBLE->LONG");
     testdbPrepare();
 
@@ -489,7 +498,7 @@ static void testreTargetTypeChange(void)
     testIocInitOk();
     eltc(1);
 
-    epicsEventMustWait(waitEvent); // wait for initial processing
+    epicsEventMustWait(waitEvent); /* wait for initial processing */
 
     bufsrc = psrc->bptr;
     buftarg1= ptarg1->bptr;
@@ -509,7 +518,7 @@ static void testreTargetTypeChange(void)
     db_post_events(ptarg1, ptarg1->bptr, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
     dbScanUnlock((dbCommon*)ptarg1);
 
-    epicsEventMustWait(waitEvent); // wait for update
+    epicsEventMustWait(waitEvent); /* wait for update */
 
     dbScanLock((dbCommon*)psrc);
     testOp("%ld",(long)psrc->nord,==,(long)5);
@@ -519,7 +528,7 @@ static void testreTargetTypeChange(void)
     testDiag("Retarget");
     testdbPutFieldOk("source.INP", DBR_STRING, "target2 CP");
 
-    epicsEventMustWait(waitEvent); // wait for update
+    epicsEventMustWait(waitEvent); /* wait for update */
 
     dbScanLock((dbCommon*)psrc);
     testOp("%ld",(long)psrc->nord,==,(long)5);

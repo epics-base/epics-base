@@ -221,7 +221,7 @@ static void testMultiLock(void)
     testIntOk1(testdbRecordPtr("reca")->lset->plockSet->refcount,==,3);
     dbScanUnlock(prec[0]);
 
-    /* recursive locking of dbScanLock isn't
+    /* recursive locking with dbScanLockMany() isn't
      * dbScanLockMany(plockA); <-- would fail
      */
 

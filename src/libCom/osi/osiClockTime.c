@@ -39,7 +39,7 @@ static struct {
 static epicsThreadOnceId onceId = EPICS_THREAD_ONCE_INIT;
 
 
-#ifdef CLOCK_REALTIME
+#if defined(CLOCK_REALTIME) && !defined(_WIN32)
 /* This code is not used on systems without Posix CLOCK_REALTIME such
  * as Darwin, but the only way to detect that is from the OS headers,
  * so the Makefile can't exclude building this file on those systems.

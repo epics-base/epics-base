@@ -40,7 +40,7 @@
 
 #include "xRecord.h"
 
-#if defined(CLOCK_MONOTONIC)
+#if defined(CLOCK_MONOTONIC) && !defined(_WIN32)
 # define TIME_STATS
 #endif
 
@@ -175,8 +175,8 @@ void worker(void *raw)
         double sel = getRand();
 #ifdef TIME_STATS
         struct timespec after;
-#endif
         double duration;
+#endif
 
         int act;
         if(sel<0.33) {

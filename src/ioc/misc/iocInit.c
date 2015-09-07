@@ -467,7 +467,6 @@ static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
     if (!prset) return;         /* unlikely */
 
     precord->rset = prset;
-    precord->rdes = pdbRecordType;
     precord->mlok = epicsMutexMustCreate();
     ellInit(&precord->mlis);
 
@@ -496,7 +495,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
     /* For all the links in the record type... */
     for (j = 0; j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes = papFldDes[link_ind[j]];
-        DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
+        DBLINK *plink = (DBLINK*)((char*)precord + pdbFldDes->offset);
 
         if (ellCount(&precord->rdes->devList) > 0 && pdbFldDes->isDevLink) {
             devSup *pdevSup = dbDTYPtoDevSup(pdbRecordType, precord->dtyp);
@@ -636,12 +635,12 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                 locked = 1;
             }
             dbCaRemoveLink(plink);
-            plink->type = CONSTANT;
+            plink->type = PV_LINK;
 
         } else if (plink->type == DB_LINK) {
             /* free link, but don't split lockset like dbDbRemoveLink() */
             free(plink->value.pv_link.pvt);
-            plink->type = CONSTANT;
+            plink->type = PV_LINK;
         }
     }
 
@@ -666,11 +665,6 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
     int j;
-    struct rset *prset = pdbRecordType->prset;
-
-    if (!prset) return;         /* unlikely */
-
-    epicsMutexDestroy(precord->mlok);
 
     for (j = 0; j < pdbRecordType->no_links; j++) {
         dbFldDes *pdbFldDes =
@@ -680,8 +674,8 @@ static void doFreeRecord(dbRecordType *pdbRecordType, dbCommon *precord,
         dbFreeLinkContents(plink);
     }
 
-    // may be allocated in dbNotify.c
-    free(precord->ppnr);
+    epicsMutexDestroy(precord->mlok);
+    free(precord->ppnr); /* may be allocated in dbNotify.c */
 }
 
 int iocShutdown(void)

@@ -92,6 +92,12 @@
 		interest(4)
 		extra("ELLLIST             mlis")
 	}
+	field(BKLNK,DBF_NOACCESS) {
+		prompt("Backwards link tracking")
+		special(SPC_NOMOD)
+		interest(4)
+		extra("ELLLIST             bklnk")
+	}
 	field(DISP,DBF_UCHAR) {
 		prompt("Disable putField")
 	}

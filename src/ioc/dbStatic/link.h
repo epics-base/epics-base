@@ -17,6 +17,7 @@
 #define INC_link_H
 
 #include "dbDefs.h"
+#include "ellLib.h"
 #include "shareLib.h"
 
 #ifdef __cplusplus
@@ -79,6 +80,7 @@ struct dbCommon;
 struct pvlet;
 
 struct pv_link {
+	ELLNODE backlinknode;
 	char	*pvname;		/* pvname link points to */
 	struct dbCommon *precord;	/* Address of record owning link */
 	void	*pvt;			/* CA or DB private */

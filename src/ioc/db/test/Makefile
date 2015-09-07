@@ -61,6 +61,11 @@ testHarness_SRCS += dbLockTest.c
 TESTS += dbLockTest
 TESTFILES += ../dbLockTest.db
 
+TESTPROD_HOST += dbStressTest
+dbStressTest_SRCS += dbStressLock.c
+dbStressTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
+TESTS += dbStressTest
+
 TESTPROD_HOST += testdbConvert
 testdbConvert_SRCS += testdbConvert.c
 testHarness_SRCS += testdbConvert.c
@@ -148,10 +153,11 @@ TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
 
-xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
+dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
+dbStressLock$(DEP): $(COMMON_DIR)/xRecord.h
 devx$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h
-dbCaLinkTest$(DEP): $(COMMON_DIR)/xRecord.h $(COMMON_DIR)/arrRecord.h
+xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 

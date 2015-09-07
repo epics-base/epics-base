@@ -19,7 +19,6 @@
 
 #include "cantProceed.h"
 #include "epicsAssert.h"
-#include "epicsExit.h"
 #include "epicsString.h"
 #include "errlog.h"
 #include "freeList.h"

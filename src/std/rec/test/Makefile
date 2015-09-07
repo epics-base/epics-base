@@ -10,7 +10,12 @@ TOP=../../../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_LIBS = dbRecStd dbCore ca Com
+TESTLIBRARY = dbRecStdTest
+
+dbRecStdTest_SRCS += asTestLib.c
+dbRecStdTest_LIBS += dbRecStd dbCore ca Com
+
+PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
 recTestIoc_DBD = base.dbd

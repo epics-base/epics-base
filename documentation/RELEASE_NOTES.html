@@ -20,6 +20,23 @@
 
 -->
 
+<h3>Database Multi-locking</h3>
+
+<p>dbLock.c is re-written with an expanded API, and the removal of global mutex locks.</p>
+
+<p>The new API functions center around dbScanLockMany(), which behaves like dbScanLock()
+applied to an arbitrary group of records.  dbLockerAlloc() is used to prepare a list
+or record pointers, then dbScanLockMany() is called.  When it returns, all of the records
+listed may be accessed (in any order) until dbScanUnlockMany() is called.</p>
+
+<p>The Application Developer's Guide has been updated to describe the API and implementation
+is more detail.</p>
+
+<p>Previously a global mutex 'lockSetModifyLock' was locked and unlocked
+during dbScanLock(), acting as a sequencing point for otherwise unrelated calls.
+The new dbLock.c implementation does not include any global mutex in dbScanLock() or dbScanLockMany().
+Locking/unlocking of unrelated lock sets is now completely concurrent.</p>
+
 <h3>Generate Version Header</h3>
 
 <p>A Perl script and Makefile rules have been added to allow modules to generate

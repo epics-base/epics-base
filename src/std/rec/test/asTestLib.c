@@ -216,7 +216,7 @@ void testRestore(void)
     testdbCleanup();
 
     /* recSup doesn't cleanup after itself */
-    free(bptr);
+    free(rec1->bptr);
 }
 
 struct dset6 {

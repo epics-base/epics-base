@@ -40,7 +40,7 @@
 
 #include "xRecord.h"
 
-#if defined(CLOCK_MONOTONIC) && !defined(_WIN32)
+#if defined(CLOCK_REALTIME) && defined(CLOCK_MONOTONIC) && !defined(_WIN32)
 # define TIME_STATS
 #endif
 

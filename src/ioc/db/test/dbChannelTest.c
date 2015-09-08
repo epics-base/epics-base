@@ -158,6 +158,8 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
 
     testPlan(76);
 
+    testdbPrepare();
+
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
 
     dbTestIoc_registerRecordDeviceDriver(pdbbase);

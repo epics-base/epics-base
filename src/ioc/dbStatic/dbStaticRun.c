@@ -210,20 +210,20 @@ long dbAllocRecord(DBENTRY *pdbentry,const char *precordName)
 	    precordName, pdbRecordType->name);
 	return(S_dbLib_noRecSup);
     }
-    precnode->precord = dbCalloc(1,pdbRecordType->rec_size);
-    precord = precnode->precord;
-    precord->rdes = pdbRecordType;
+    precord = dbCalloc(1, pdbRecordType->rec_size);
+    precnode->precord = precord;
     pflddes = pdbRecordType->papFldDes[0];
     if(!pflddes) {
 	epicsPrintf("dbAllocRecord pflddes for NAME not found\n");
 	return(S_dbLib_flddesNotFound);
     }
-    if(strlen(precordName)>=pflddes->size) {
+    assert(pflddes->offset == 0);
+    assert(pflddes->size == sizeof(precord->name));
+    if(strlen(precordName) >= sizeof(precord->name)) {
 	epicsPrintf("dbAllocRecord: NAME(%s) too long\n",precordName);
 	return(S_dbLib_nameLength);
     }
-    pfield = (char*)precord + pflddes->offset;
-    strcpy(pfield,precordName);
+    strcpy(precord->name, precordName);
     for(i=1; i<pdbRecordType->no_fields; i++) {
 
 	pflddes = pdbRecordType->papFldDes[i];

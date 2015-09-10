@@ -18,7 +18,9 @@
 
 #include "epicsExit.h"
 
-static struct osdContext {} present;
+static struct osdContext {
+    char dummy; /* Required for older compilers */
+} present;
 
 static enum {rlNone, rlIdle, rlBusy} rlState = rlNone;
 

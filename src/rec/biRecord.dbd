@@ -29,28 +29,28 @@ recordtype(bi) {
 	}
 	field(OSV,DBF_MENU) {
 		prompt("One Error Severity")
-		promptgroup(GUI_BITS1)
+		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(COSV,DBF_MENU) {
 		prompt("Change of State Svr")
-		promptgroup(GUI_BITS2)
+		promptgroup(GUI_ALARMS)
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ZNAM,DBF_STRING) {
 		prompt("Zero Name")
-		promptgroup(GUI_CALC)
+		promptgroup(GUI_DISPLAY)
 		pp(TRUE)
 		interest(1)
 		size(26)
 	}
 	field(ONAM,DBF_STRING) {
 		prompt("One Name")
-		promptgroup(GUI_CLOCK)
+		promptgroup(GUI_DISPLAY)
 		pp(TRUE)
 		interest(1)
 		size(26)

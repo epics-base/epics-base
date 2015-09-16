@@ -64,7 +64,7 @@ TESTFILES += ../dbLockTest.db
 TESTPROD_HOST += dbStressTest
 dbStressTest_SRCS += dbStressLock.c
 dbStressTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
-dbStressTest_SYS_LIBS_solaris += rt
+dbStressTest_SYS_LIBS += rt
 TESTS += dbStressTest
 
 TESTPROD_HOST += testdbConvert

@@ -52,9 +52,9 @@ void SingletonUntyped :: incrRefCount ( PBuild pBuild )
 
 void SingletonUntyped :: decrRefCount ( PDestroy pDestroy )
 {
-    assert ( _refCount > 0 );
     epicsGuard < epicsMutex > 
         guard ( *pEPICSSigletonMutex );
+    assert ( _refCount > 0 );
     _refCount--;
     if ( _refCount == 0 ) {
         ( *pDestroy ) ( _pInstance );

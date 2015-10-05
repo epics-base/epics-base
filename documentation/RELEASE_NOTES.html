@@ -14,6 +14,18 @@
 <h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Make the NTP Time provider optional on VxWorks</h3>
+
+<p>Recent versions of VxWorks (sometime after VxWorks 6) provide facilities for
+automatically synchronizing the OS clock time with an NTP server. The EPICS time
+system used to assume that it had to provide time synchronization on VxWorks,
+but now it tests for the existance of either of the two OS synchronization
+threads before starting the NTP time provider. It is still possible to force the
+NTP provider to be started even if the OS synchronization is running by defining
+the environment variable <tt>EPICS_TS_FORCE_NTPTIME</tt> in the startup script
+before loading the IOC's .munch file. Forcing may be necessary if the VxWorks
+image is not correctly configured with the IP address of a local NTP server.</p>
+
 <h3>Clean up after GNU readline()</h3>
 
 <p>If EPICS Base is built with readline support, any IOC that calls epicsExit()

@@ -1,5 +1,5 @@
 /*************************************************************************\
-* Copyright (c) 2008 UChicago Argonne LLC, as Operator of Argonne
+* Copyright (c) 2015 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
@@ -7,11 +7,14 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
+#define _VSB_CONFIG_FILE <../lib/h/config/vsbConfig.h>
+
 #include <vxWorks.h>
 #include <sntpcLib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <taskLib.h>
 
 #include "epicsTime.h"
 #include "osiNTPTime.h"
@@ -20,6 +23,9 @@
 #include "envDefs.h"
 
 #define NTP_REQUEST_TIMEOUT 4 /* seconds */
+
+static char sntp_sync_task[] = "ipsntps";
+static char ntp_daemon[] = "ipntpd";
 
 static const char *pserverAddr = NULL;
 extern char* sysBootLine;
@@ -30,17 +36,39 @@ static int timeRegister(void)
     if (getenv("TIMEZONE") == NULL) {
         const char *timezone = envGetConfigParamPtr(&EPICS_TIMEZONE);
         if (timezone == NULL) {
-            printf("NTPTime_Init: No Time Zone Information\n");
+            printf("timeRegister: No Time Zone Information\n");
         } else {
             epicsEnvSet("TIMEZONE", timezone);
         }
     }
 
-    NTPTime_Init(100); /* init NTP first so it can be used to sync SysTime */
-    ClockTime_Init(CLOCKTIME_SYNC);
+    // Define EPICS_TS_FORCE_NTPTIME to force use of NTPTime provider
+    bool useNTP = getenv("EPICS_TS_FORCE_NTPTIME") != NULL;
+
+    if (!useNTP &&
+        (taskNameToId(sntp_sync_task) != ERROR ||
+         taskNameToId(ntp_daemon) != ERROR)) {
+        // A VxWorks 6 SNTP/NTP sync task is running
+        struct timespec clockNow;
+
+        useNTP = clock_gettime(CLOCK_REALTIME, &clockNow) != OK ||
+            clockNow.tv_sec < BUILD_TIME;
+            // Assumes VxWorks and the host OS have the same epoch
+    }
+
+    if (useNTP) {
+        // Start NTP first so it can be used to sync SysTime
+        NTPTime_Init(100);
+        ClockTime_Init(CLOCKTIME_SYNC);
+    } else {
+        ClockTime_Init(CLOCKTIME_NOSYNC);
+    }
     return 1;
 }
 static int done = timeRegister();
+
+
+// Routines for NTPTime provider
 
 int osdNTPGet(struct timespec *ts)
 {
@@ -54,6 +82,7 @@ void osdNTPInit(void)
     if (!pserverAddr) { /* use the boot host */
         BOOT_PARAMS bootParms;
         static char host_addr[BOOT_ADDR_LEN];
+
         bootStringToStruct(sysBootLine, &bootParms);
         /* bootParms.had = host IP address */
         strncpy(host_addr, bootParms.had, BOOT_ADDR_LEN);
@@ -63,9 +92,12 @@ void osdNTPInit(void)
 
 void osdNTPReport(void)
 {
-    printf("NTP Server = %s\n", pserverAddr);
+    if (pserverAddr)
+        printf("NTP Server = %s\n", pserverAddr);
 }
 
+
+// Other Time Routines
 
 // vxWorks localtime_r returns different things in different versions.
 // It can't fail though, so we just ignore the return value.

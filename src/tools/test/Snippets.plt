@@ -2,7 +2,7 @@
 
 use File::Path;
 
-use Test::More tests => 23;
+use Test::More tests => 26;
 
 (my $user, my @rest) = getpwuid($<);
 
@@ -88,6 +88,15 @@ is assemble("-m", "_M2_=REP2", "b$$/35_c"), "Line REP2 with REP2", "single user 
 
 # Input pattern
 mksnip('a', '10_a.cmd', '10cmd');
-is assemble("-i", "\.cmd", "a$$/10_a", "b$$/10_c", "a$$/R10_b", "a$$/10_a.cmd"), '10cmd', "'input pattern";
+is assemble("-i", "\.cmd", "a$$/10_a", "b$$/10_c", "a$$/R10_b", "a$$/10_a.cmd"), '10cmd', "input pattern";
 
-rmtree([ "a$$", "b$$", "out$$" ]);
+# Dependency file generation
+assemble("-M", "./dep$$", "a$$/10_a", "b$$/10_c");
+open(my $fh, '<', "dep$$") or die "can't open dep$$ : $!";
+chomp(my @result = <$fh>);
+close $fh;
+is "$result[0]", "out$$: \\", "dependency file (line 1)";
+is "$result[1]", " a$$/10_a \\", "dependency file (line 2)";
+is "$result[2]", " b$$/10_c", "dependency file (line 3)";
+
+rmtree([ "a$$", "b$$", "out$$", "dep$$" ]);

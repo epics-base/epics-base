@@ -14,12 +14,13 @@ use Getopt::Std;
 use File::Basename;
 use Data::Dumper;
 
-our ($opt_o, $opt_d, $opt_m, $opt_i);
+our ($opt_o, $opt_d, $opt_m, $opt_i, $opt_M);
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
-&HELP_MESSAGE if !getopts('i:m:o:d') || @ARGV == 0;
+&HELP_MESSAGE if !getopts('M:i:m:o:d') || @ARGV == 0;
 
 my $out;
+my $dep;
 my %snippets;
 my $ipattern;
 
@@ -46,6 +47,13 @@ if ($opt_m) {
     }
 }
 
+if ($opt_M) {
+    open $dep, '>', $opt_M or
+        die "Can't create $opt_M: $!\n";
+    print STDERR "opened dependency file $opt_M for output\n" if $opt_d;
+    print $dep basename($opt_o), ":";
+}
+
 if ($opt_i) {
     $ipattern = qr($opt_i);
 }
@@ -54,7 +62,7 @@ if ($opt_i) {
 #                  of hashes {name-after-rank}
 #                      of arrays[] [files...]
 #                          of arrays[2] [filename, command]
-print STDERR "reading input files\n" if $opt_d;;
+print STDERR "reading input files\n" if $opt_d;
 foreach (@ARGV) {
     my $name = basename($_);
     if ($opt_i and not $name =~ /$ipattern/) {
@@ -105,6 +113,7 @@ foreach my $r (sort {$a<=>$b} keys %snippets) {
             my $f = $s->[0];
             print STDERR "    snippet $n from file $f\n" if $opt_d;
             open $in, '<', $f or die "Can't open $f: $!\n";
+            print $dep " \\\n $f" if $opt_M;
             while (<$in>) {
                 chomp;
                 foreach my $k (keys %replacements) {
@@ -118,6 +127,10 @@ foreach my $r (sort {$a<=>$b} keys %snippets) {
 }
 
 print STDERR "finished creating output, closing\n" if $opt_d;
+if ($opt_M) {
+    print $dep "\n";
+    close $dep;
+}
 close $out;
 
 sub HELP_MESSAGE {
@@ -127,5 +140,6 @@ sub HELP_MESSAGE {
     print STDERR " -d          debug mode [no]\n";
     print STDERR " -m macros   list of macro replacements as \"key=val,key=val\"\n";
     print STDERR " -i pattern  pattern for input files to match\n";
+    print STDERR " -M file     write file with dependency rule suitable for make\n";
     exit 2;
 }

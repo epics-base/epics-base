@@ -32,6 +32,7 @@ PERL_MODULES += DBD/Recordtype.pm
 PERL_MODULES += DBD/Registrar.pm
 PERL_MODULES += DBD/Variable.pm
 
+PERL_SCRIPTS += assembleSnippets.pl
 PERL_SCRIPTS += convertRelease.pl
 PERL_SCRIPTS += cvsclean.pl
 PERL_SCRIPTS += dos2unix.pl

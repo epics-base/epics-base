@@ -18,6 +18,7 @@ TESTS += Menu
 TESTS += Recfield
 TESTS += Recordtype
 TESTS += Registrar
+TESTS += Snippets
 TESTS += Variable
 
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)

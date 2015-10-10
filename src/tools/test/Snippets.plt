@@ -4,7 +4,7 @@ use File::Path;
 
 use Test::More tests => 26;
 
-(my $user, my @rest) = getpwuid($<);
+my $user = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME};
 
 mkdir "a$$";
 mkdir "b$$";

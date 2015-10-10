@@ -25,7 +25,7 @@ my %snippets;
 my $ipattern;
 
 my $datetime = localtime();
-(my $user, my @dummy) = getpwuid($<);
+my $user = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME};
 my %replacements = (
     _DATETIME_ => $datetime,
     _USER_ => $user,

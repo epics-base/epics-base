@@ -1,10 +1,12 @@
 #!/usr/bin/env perl
 
 use File::Path;
+use Sys::Hostname;
 
-use Test::More tests => 26;
+use Test::More tests => 29;
 
 my $user = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME};
+my $host = hostname;
 
 mkdir "a$$";
 mkdir "b$$";
@@ -76,7 +78,13 @@ is assemble("a$$/10_a", "b$$/2_a", "a$$/15_a", "b$$/09_a"), '2 09 10 15',  "rank
 
 # Builtin macros
 mksnip('a', '30_a', '_USER_');
+mksnip('a', '30_b', '_OUTPUTFILE_');
+mksnip('a', '30_c', '_SNIPPETFILE_');
+mksnip('a', '30_d', '_HOST_');
 is assemble("a$$/30_a"), "$user", "builtin macro _USER_";
+is assemble("a$$/30_b"), "out$$", "builtin macro _OUTPUTFILE_";
+is assemble("a$$/30_c"), "a$$/30_c", "builtin macro _SNIPPETFILE_";
+is assemble("a$$/30_d"), "$host", "builtin macro _HOST_";
 
 # User macros
 mksnip('b', '35_a', 'Line _M1_');

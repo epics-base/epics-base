@@ -11,6 +11,7 @@ use strict;
 use warnings;
 
 use Getopt::Std;
+use Sys::Hostname;
 use File::Basename;
 use Data::Dumper;
 
@@ -26,18 +27,22 @@ my $ipattern;
 
 my $datetime = localtime();
 my $user = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME};
+my $host = hostname;
 my %replacements = (
     _DATETIME_ => $datetime,
     _USER_ => $user,
+    _HOST_ => $host,
 );
 
 if ($opt_o) {
     open $out, '>', $opt_o or
         die "Can't create $opt_o: $!\n";
     print STDERR "opened file $opt_o for output\n" if $opt_d;
+    $replacements{_OUTPUTFILE_} = $opt_o;
 } else {
     open $out, '>&', STDOUT;
     print STDERR "using STDOUT for output\n" if $opt_d;
+    $replacements{_OUTPUTFILE_} = 'STDERR';
 }
 
 if ($opt_m) {
@@ -113,6 +118,7 @@ foreach my $r (sort {$a<=>$b} keys %snippets) {
             my $f = $s->[0];
             print STDERR "    snippet $n from file $f\n" if $opt_d;
             open $in, '<', $f or die "Can't open $f: $!\n";
+            $replacements{_SNIPPETFILE_} = $f;
             print $dep " \\\n $f" if $opt_M;
             while (<$in>) {
                 chomp;

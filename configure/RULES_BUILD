@@ -316,22 +316,6 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 	$(LINK.mod)
 
 #---------------------------------------------------------------
-# Assembled files (from snippets)
-
-COMMON_ASSEMBLE_FROM_SNIPPETS_ += $(addprefix $(COMMON_DIR)/,$(COMMON_ASSEMBLE_FROM_SNIPPETS))
-
-$(COMMON_ASSEMBLE_FROM_SNIPPETS_): $(COMMON_DIR)/%:
-	@echo "Assembling common file $@ from snippets"
-	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/assembleSnippets.pl -o $(notdir $@) $($(notdir $@)_SNIPPETS)
-	@$(MV) $(notdir $@) $@
-
-$(ASSEMBLE_FROM_SNIPPETS): %:
-	@echo "Assembling file $@ from snippets"
-	@$(RM) $(notdir $@)
-	$(PERL) $(TOOLS)/assembleSnippets.pl -o $(notdir $@) $($(notdir $@)_SNIPPETS)
-
-#---------------------------------------------------------------
 # Automated testing
 
 runtests: $(TESTSCRIPTS)

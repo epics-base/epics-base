@@ -14,6 +14,17 @@
 <h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Assembling files from numbered snippets</h3>
+
+<p>A tool has been added that assembles file snippets specified on the
+command line into a single output file, with sorting and replacing/adding of
+snippets done based on their file names. The build system integration requires
+the output file to be specified setting COMMON_ASSEMBLIES (arch independent)
+or ASSEMBLIES (created by arch), then defining the snippets for each assembly
+setting *_SNIPPETS (explicitly) or *_PATTERN (searched relative to all source
+directories).
+</p>
+
 <h3>Clean up after GNU readline()</h3>
 
 <p>If EPICS Base is built with readline support, any IOC that calls epicsExit()

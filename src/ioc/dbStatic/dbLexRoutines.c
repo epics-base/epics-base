@@ -12,6 +12,7 @@
 
 /*The routines in this module are serially reusable NOT reentrant*/
 
+#include <ctype.h>
 #include <epicsStdlib.h>
 #include <stddef.h>
 #include <stdio.h>

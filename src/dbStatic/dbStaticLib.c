@@ -743,8 +743,12 @@ DBENTRY * epicsShareAPI dbAllocEntry(dbBase *pdbbase)
 
 void epicsShareAPI dbFreeEntry(DBENTRY *pdbentry)
 {
-    if(pdbentry->message) free((void *)pdbentry->message);
-    if(pdbentry->formpvt) dbFreeForm(pdbentry);
+    if (!pdbentry)
+        return;
+    if (pdbentry->message)
+        free((void *)pdbentry->message);
+    if (pdbentry->formpvt)
+        dbFreeForm(pdbentry);
     dbmfFree(pdbentry);
 }
 

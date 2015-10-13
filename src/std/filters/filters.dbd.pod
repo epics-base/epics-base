@@ -6,13 +6,13 @@ The following filters are available in this release:
 
 =over
 
-=item * L<TimeStamp|/"TimeStamp Filter "ts"">
+=item * L<TimeStamp|/"TimeStamp Filter ts">
 
-=item * L<Deadband|/"Deadband Filter "dbnd"">
+=item * L<Deadband|/"Deadband Filter dbnd">
 
-=item * L<Array|/"Array Filter "arr"">
+=item * L<Array|/"Array Filter arr">
 
-=item * L<Synchronize|/"Synchronize Filter "sync"">
+=item * L<Synchronize|/"Synchronize Filter sync">
 
 =back
 

@@ -354,9 +354,11 @@ caStatus casDGClient::searchFailResponse ( const caHdrLargeArray * mp )
     status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, 0 );
 
-	this->out.commitMsg ();
+    if ( status == S_cas_success ) {
+        this->out.commitMsg ();
+    }
 
-	return S_cas_success;
+    return S_cas_success;
 }
 
 /*

@@ -77,11 +77,11 @@ mksnip('b', '2_a', '2');
 is assemble("a$$/10_a", "b$$/2_a", "a$$/15_a", "b$$/09_a"), '2 09 10 15',  "ranks are sorted numerically";
 
 # Builtin macros
-mksnip('a', '30_a', '_USER_');
+mksnip('a', '30_a', '_USERNAME_');
 mksnip('a', '30_b', '_OUTPUTFILE_');
 mksnip('a', '30_c', '_SNIPPETFILE_');
 mksnip('a', '30_d', '_HOST_');
-is assemble("a$$/30_a"), "$user", "builtin macro _USER_";
+is assemble("a$$/30_a"), "$user", "builtin macro _USERNAME_";
 is assemble("a$$/30_b"), "out$$", "builtin macro _OUTPUTFILE_";
 is assemble("a$$/30_c"), "a$$/30_c", "builtin macro _SNIPPETFILE_";
 is assemble("a$$/30_d"), "$host", "builtin macro _HOST_";

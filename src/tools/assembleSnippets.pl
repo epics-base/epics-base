@@ -30,7 +30,7 @@ my $user = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME};
 my $host = hostname;
 my %replacements = (
     _DATETIME_ => $datetime,
-    _USER_ => $user,
+    _USERNAME_ => $user,
     _HOST_ => $host,
 );
 

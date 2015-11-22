@@ -22,6 +22,13 @@ version of EPICS Base:</p>
 
 <ul>
 
+  <li>See LaunchPad bug
+    <a href="https://bugs.launchpad.net/epics-base/+bug/1466129">#1466129</a>:
+    The feature that allows an IOC to bind to a single network interface is not
+    working correctly. The bug mentioned above contains a patch that has been
+    tested on Linux-64, a complete fix is expected for 3.15.4. Note that Windows
+    systems are not affected by this bug.</li>
+
   <li>Parallel builds ("make -j") on native Windows are not working properly.
     Builds tend to hang (saturating one core); interrupting and running make
     again usually finishes the build. Limiting the number of parallel jobs using

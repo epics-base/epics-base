@@ -11,8 +11,8 @@ env:
   - CMPLR=clang STATIC=YES
   - WINE=32 TEST=NO STATIC=YES
   - WINE=32 TEST=NO STATIC=NO
-  - RTEMS=4.10 TEST=NO
-  - RTEMS=4.9 TEST=NO
+  - RTEMS=4.10 TEST=YES
+  - RTEMS=4.9 TEST=YES
 addons:
   apt:
     packages:

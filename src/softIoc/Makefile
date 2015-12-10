@@ -33,7 +33,7 @@ softMain$(OBJ) : epicsInstallDir.h
 
 epicsInstallDir.h:
 	$(ECHO) "FINAL_LOCATION=$(FINAL_LOCATION)"
-	$(PERL) ../makeInstallDir.pl '$(FINAL_LOCATION)' > $@
+	$(PERL) ../makeInstallDir.pl "$(FINAL_LOCATION)" > $@
 
 clean::
 	@$(RM) epicsInstallDir.h

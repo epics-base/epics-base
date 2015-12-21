@@ -27,7 +27,10 @@
 #include "epicsSpin.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "epicsEvent.h"
+#include "epicsMath.h"
 #include "dbCommon.h"
+#include "epicsTime.h"
 
 #include "dbLockPvt.h"
 #include "dbStaticLib.h"
@@ -39,10 +42,6 @@
 #include "errlog.h"
 
 #include "xRecord.h"
-
-#if defined(CLOCK_REALTIME) && defined(CLOCK_MONOTONIC) && !defined(_WIN32)
-# define TIME_STATS
-#endif
 
 #define testIntOk1(A, OP, B) testOk((A) OP (B), "%s (%d) %s %s (%d)", #A, A, #OP, #B, B);
 #define testPtrOk1(A, OP, B) testOk((A) OP (B), "%s (%p) %s %s (%p)", #A, A, #OP, #B, B);
@@ -64,10 +63,9 @@ static dbCommon **precords;
 typedef struct {
     int id;
     unsigned long N[3];
-#ifdef TIME_STATS
     double X[3];
     double X2[3];
-#endif
+    double min[3], max[3];
 
     unsigned int done;
     epicsEventId donevent;
@@ -158,25 +156,19 @@ void doreTarget(workerPriv *p)
 static
 void worker(void *raw)
 {
-#ifdef TIME_STATS
-    struct timespec before;
-#endif
+    unsigned init = 1;
     workerPriv *priv = raw;
 
     testDiag("worker %d is %p", priv->id, epicsThreadGetIdSelf());
 
-#ifdef TIME_STATS
-    clock_gettime(CLOCK_MONOTONIC, &before);
-#endif
-
     while(!priv->done) {
+        epicsUInt64 after, before;
         double sel = getRand();
-#ifdef TIME_STATS
-        struct timespec after;
         double duration;
-#endif
-
         int act;
+
+        before = epicsMonotonicGet();
+
         if(sel<0.33) {
             doSingle(priv);
             act = 0;
@@ -188,19 +180,18 @@ void worker(void *raw)
             act = 2;
         }
 
-#ifdef TIME_STATS
-        clock_gettime(CLOCK_MONOTONIC, &after);
-
-        duration = (double)((long)after.tv_nsec - (long)before.tv_nsec);
-        duration *= 1e-9;
-        duration += (double)(after.tv_sec - before.tv_sec);
-#endif
+        after = epicsMonotonicGet();
+        duration = (after-before)*1e-9;
 
         priv->N[act]++;
-#ifdef TIME_STATS
         priv->X[act] += duration;
         priv->X2[act] += duration*duration;
-#endif
+        if(duration<priv->min[act] || init) {
+            priv->min[act] = duration;
+            init = 0;
+        }
+        if(duration>priv->max[act])
+            priv->max[act] = duration;
     }
 
     epicsEventMustTrigger(priv->donevent);
@@ -333,12 +324,18 @@ MAIN(dbStressTest)
 
     testDiag("Statistics");
     for(i=0; i<nworkers; i++) {
+        double avg[3], std[3];
+        unsigned j;
         testDiag("Worker %u", i);
-        testDiag("N = %lu %lu %lu", priv[i].N[0], priv[i].N[1], priv[i].N[2]);
-#ifdef TIME_STATS
-        testDiag("X = %g %g %g", priv[i].X[0], priv[i].X[1], priv[i].X[2]);
-        testDiag("X2= %g %g %g", priv[i].X2[0], priv[i].X2[1], priv[i].X2[2]);
-#endif
+        for(j=0; j<3; j++) {
+            avg[j] = priv[i].X[j]/priv[i].N[j];
+            std[j] = sqrt( (priv[i].X2[j]/priv[i].N[j]) - avg[j]*avg[j] );
+        }
+        testDiag("N = %lu\t%lu\t%lu", priv[i].N[0], priv[i].N[1], priv[i].N[2]);
+        testDiag("AVG = %g us\t%g us\t%g us", avg[0]*1e6, avg[1]*1e6, avg[2]*1e6);
+        testDiag("STD = %g us\t%g us\t%g us", std[0]*1e6, std[1]*1e6, std[2]*1e6);
+        testDiag("MIN = %g us\t%g us\t%g us", priv[i].min[0]*1e6, priv[i].min[1]*1e6, priv[i].min[2]*1e6);
+        testDiag("MAX = %g us\t%g us\t%g us", priv[i].max[0]*1e6, priv[i].max[1]*1e6, priv[i].max[2]*1e6);
 
         testOk1(priv[i].N[0]>0);
         testOk1(priv[i].N[1]>0);

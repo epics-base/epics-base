@@ -12,6 +12,8 @@ include $(TOP)/configure/CONFIG
 SRC = $(TOP)/src
 LIBCOM = $(SRC)/libCom
 
+INC += valgrind/valgrind.h
+
 include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile
 include $(LIBCOM)/calc/Makefile

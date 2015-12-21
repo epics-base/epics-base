@@ -211,6 +211,27 @@ static char *getpMessage(DBENTRY *pdbentry)
     return msg;
 }
 
+static
+void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
+{
+    getpMessage(pdbentry);
+    strncpy(pdbentry->message, msg, messagesize-1);
+    pdbentry->message[messagesize-1] = '\0';
+}
+
+static
+void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...) EPICS_PRINTF_STYLE(2,3);
+
+static
+void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
+{
+    va_list args;
+    getpMessage(pdbentry);
+    va_start(args, fmt);
+    epicsVsnprintf(pdbentry->message, messagesize, fmt, args);
+    va_end(args);
+}
+
 /*Public only for dbStaticNoRun*/
 dbDeviceMenu *dbGetDeviceMenu(DBENTRY *pdbentry)
 {
@@ -1718,15 +1739,29 @@ char * dbGetString(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
-    char	*message;
     DBLINK 	*plink;
 
-    message = getpMessage(pdbentry);
-    if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
+    if(!pflddes) {
+        dbMsgCpy(pdbentry, "fldDes not found");
+        return pdbentry->message;
+    }
     switch (pflddes->field_type) {
     case DBF_STRING:
-	if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	strcpy(message, (char *)pfield);
+    case DBF_INLINK:
+    case DBF_OUTLINK:
+    case DBF_FWDLINK:
+        if(!pfield) {
+            dbMsgCpy(pdbentry, "Field not allocated (NULL)");
+            return pdbentry->message;
+        }
+        break;
+    default:
+        break;
+    }
+
+    switch (pflddes->field_type) {
+    case DBF_STRING:
+	dbMsgCpy(pdbentry, (char *)pfield);
 	break;
     case DBF_CHAR:
     case DBF_UCHAR:
@@ -1742,30 +1777,26 @@ char * dbGetString(DBENTRY *pdbentry)
 	return(dbGetStringNum(pdbentry));
     case DBF_INLINK:
     case DBF_OUTLINK:
-	if(!pfield) {strcpy(message,"Field not found"); return(message);}
 	plink = (DBLINK *)pfield;
 	switch(plink->type) {
 	    case CONSTANT:
 		if(plink->value.constantStr) {
-		    strcpy(message,plink->value.constantStr);
+			dbMsgCpy(pdbentry, plink->value.constantStr);
 		} else {
-		    strcpy(message,"");
+			dbMsgCpy(pdbentry, "");
 		}
 		break;
 	    case MACRO_LINK:
 		if(plink->value.macro_link.macroStr) {
-		    strcpy(message,plink->value.macro_link.macroStr);
+			dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
 		} else {
-		    strcpy(message,"");
+			dbMsgCpy(pdbentry, "");
 		}
 		break;
-            case PN_LINK:
-		if(plink->value.pv_link.pvname)
-		    strcpy(message,plink->value.pv_link.pvname);
-		else
-		    strcpy(message,"");
-		strcat(message," ");
-		strcat(message,msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+        case PN_LINK:
+        dbMsgPrint(pdbentry, "%s %s",
+                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
 		break;
 	    case PV_LINK:
 	    case CA_LINK:
@@ -1779,68 +1810,63 @@ char * dbGetString(DBENTRY *pdbentry)
 		else if(pvlMask&pvlOptCP) ppind=3;
 		else if(pvlMask&pvlOptCPP) ppind=4;
 		else ppind=0;
-		if (plink->value.pv_link.pvname) {
-		    strcpy(message, plink->value.pv_link.pvname);
-		    if (pvlMask & pvlOptTSELisTime)
-			strcat(message, ".TIME");
-		} else
-		    strcpy(message,"");
-		strcat(message," ");
-		strcat(message,ppstring[ppind]);
-		strcat(message," ");
-		strcat(message,msstring[pvlMask&pvlOptMsMode]);
+        dbMsgPrint(pdbentry, "%s%s %s %s",
+                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                   (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
+                   ppstring[ppind],
+                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
 		break;
 	    }
 	    case VME_IO:
-		sprintf(message,"#C%d S%d @%s",
+		dbMsgPrint(pdbentry, "#C%d S%d @%s",
 		    plink->value.vmeio.card,plink->value.vmeio.signal,
 		    plink->value.vmeio.parm);
 		break;
 	    case CAMAC_IO:
-		sprintf(message,"#B%d C%d N%d A%d F%d @%s",
+		dbMsgPrint(pdbentry, "#B%d C%d N%d A%d F%d @%s",
 		    plink->value.camacio.b,plink->value.camacio.c,
 		    plink->value.camacio.n,plink->value.camacio.a,
 		    plink->value.camacio.f,plink->value.camacio.parm);
 		break;
 	    case RF_IO:
-		sprintf(message,"#R%d M%d D%d E%d",
+		dbMsgPrint(pdbentry, "#R%d M%d D%d E%d",
 		    plink->value.rfio.cryo,
 		    plink->value.rfio.micro,
 		    plink->value.rfio.dataset,
 		    plink->value.rfio.element);
 		break;
 	    case AB_IO:
-		sprintf(message,"#L%d A%d C%d S%d @%s",
+		dbMsgPrint(pdbentry, "#L%d A%d C%d S%d @%s",
 		    plink->value.abio.link,plink->value.abio.adapter,
 		    plink->value.abio.card,plink->value.abio.signal,
 		    plink->value.abio.parm);
 		break;
 	    case GPIB_IO:
-		sprintf(message,"#L%d A%d @%s",
+		dbMsgPrint(pdbentry, "#L%d A%d @%s",
 		    plink->value.gpibio.link,plink->value.gpibio.addr,
 		    plink->value.gpibio.parm);
 		break;
 	    case BITBUS_IO:
-		sprintf(message,"#L%u N%u P%u S%u @%s",
+		dbMsgPrint(pdbentry, "#L%u N%u P%u S%u @%s",
 		    plink->value.bitbusio.link,plink->value.bitbusio.node,
 		    plink->value.bitbusio.port,plink->value.bitbusio.signal,
 		    plink->value.bitbusio.parm);
 		break;
 	    case BBGPIB_IO:
-		sprintf(message,"#L%u B%u G%u @%s",
+		dbMsgPrint(pdbentry, "#L%u B%u G%u @%s",
 		    plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
 		    plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
 		break;
 	    case INST_IO:
-		sprintf(message,"@%s", plink->value.instio.string);
+		dbMsgPrint(pdbentry, "@%s", plink->value.instio.string);
 		break;
 	    case VXI_IO :
 		if (plink->value.vxiio.flag == VXIDYNAMIC)
-		    sprintf(message,"#V%d C%d S%d @%s",
+		    dbMsgPrint(pdbentry, "#V%d C%d S%d @%s",
 			plink->value.vxiio.frame,plink->value.vxiio.slot,
 			plink->value.vxiio.signal,plink->value.vxiio.parm);
 		else
-		    sprintf(message,"#V%d S%d @%s",
+		    dbMsgPrint(pdbentry, "#V%d S%d @%s",
 			plink->value.vxiio.la,plink->value.vxiio.signal,
 			plink->value.vxiio.parm);
 		break;
@@ -1851,16 +1877,15 @@ char * dbGetString(DBENTRY *pdbentry)
     case DBF_FWDLINK: {
 	    DBLINK *plink=(DBLINK *)pfield;
 
-	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
 	    switch(plink->type) {
 	    case CONSTANT:
-		strcpy(message,"0");
+		dbMsgCpy(pdbentry, "0");
 		break;
 	    case MACRO_LINK:
 		if(plink->value.macro_link.macroStr) {
-		    strcpy(message,plink->value.macro_link.macroStr);
+			dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
 		} else {
-		    strcpy(message,"");
+			dbMsgCpy(pdbentry, "");
 		}
 		break;
 	    case PV_LINK:
@@ -1872,14 +1897,9 @@ char * dbGetString(DBENTRY *pdbentry)
 		pvlMask = plink->value.pv_link.pvlMask;
 		if(pvlMask&pvlOptCA) ppind=2;
 		else ppind=0;
-		if(plink->value.pv_link.pvname)
-		    strcpy(message,plink->value.pv_link.pvname);
-		else
-		    strcpy(message,"");
-		if(ppind) {
-		    strcat(message," ");
-		    strcat(message,ppstring[ppind]);
-		}
+        dbMsgPrint(pdbentry, "%s %s",
+                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                   ppstring[ppind]);
 		break;
 	    }
 	    default :
@@ -1890,7 +1910,7 @@ char * dbGetString(DBENTRY *pdbentry)
     default:
 	return(NULL);
     }
-    return (message);
+    return pdbentry->message;
 }
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
@@ -3265,7 +3285,8 @@ void  dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		plink = pdbentry->pfield;
 		linkType = plink->type;
 		if(bus[linkType][0]==0) continue;
-		strcpy(linkValue,dbGetString(pdbentry));
+        strncpy(linkValue,dbGetString(pdbentry), NELEMENTS(linkValue)-1);
+        linkValue[NELEMENTS(linkValue)-1] = '\0';
 		status = dbFindField(pdbentry,"DTYP");
 		if(status) break;
 		strcpy(dtypValue,dbGetString(pdbentry));

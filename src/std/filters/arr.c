@@ -18,6 +18,7 @@
 #include <db_field_log.h>
 #include <dbLock.h>
 #include <recSup.h>
+#include <epicsExit.h>
 #include <special.h>
 #include <chfPlugin.h>
 #include <epicsExport.h>
@@ -200,6 +201,11 @@ static chfPluginIf pif = {
     NULL /* channel_close */
 };
 
+static void arrShutdown(void* ignore)
+{
+    freeListCleanup(myStructFreeList);
+}
+
 static void arrInitialize(void)
 {
     static int firstTime = 1;
@@ -211,6 +217,7 @@ static void arrInitialize(void)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 
     chfPluginRegister("arr", &pif, opts);
+    epicsAtExit(arrShutdown, NULL);
 }
 
 epicsExportRegistrar(arrInitialize);

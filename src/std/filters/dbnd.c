@@ -18,6 +18,7 @@
 #include <dbConvertFast.h>
 #include <chfPlugin.h>
 #include <recGbl.h>
+#include <epicsExit.h>
 #include <db_field_log.h>
 #include <epicsExport.h>
 
@@ -121,6 +122,11 @@ static chfPluginIf pif = {
     NULL /* channel_close */
 };
 
+static void dbndShutdown(void* ignore)
+{
+    freeListCleanup(myStructFreeList);
+}
+
 static void dbndInitialize(void)
 {
     static int firstTime = 1;
@@ -132,6 +138,7 @@ static void dbndInitialize(void)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 
     chfPluginRegister("dbnd", &pif, opts);
+    epicsAtExit(dbndShutdown, NULL);
 }
 
 epicsExportRegistrar(dbndInitialize);

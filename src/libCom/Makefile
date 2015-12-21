@@ -9,6 +9,8 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 
+USR_CFLAGS += -DUSE_VALGRIND
+
 SRC = $(TOP)/src
 LIBCOM = $(SRC)/libCom
 

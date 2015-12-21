@@ -19,6 +19,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "valgrind/valgrind.h"
+
+#ifndef NVALGRIND
+/* buffer around allocations to detect out of bounds access */
+#define REDZONE sizeof(double)
+#else
+#define REDZONE 0
+#endif
+
 #define epicsExportSharedSymbols
 #include "epicsMutex.h"
 #include "ellLib.h"
@@ -70,13 +79,17 @@ int epicsShareAPI dbmfInit(size_t size, int chunkItems)
     pdbmfPvt->lock = epicsMutexMustCreate();
     /*allign to at least a double*/
     pdbmfPvt->size = size + size%sizeof(double);
-    pdbmfPvt->allocSize = pdbmfPvt->size + sizeof(itemHeader);
+    /* layout is
+     * | itemHeader | REDZONE | size | REDZONE |
+     */
+    pdbmfPvt->allocSize = pdbmfPvt->size + sizeof(itemHeader) + 2*REDZONE;
     pdbmfPvt->chunkItems = chunkItems;
     pdbmfPvt->chunkSize = pdbmfPvt->allocSize * pdbmfPvt->chunkItems;
     pdbmfPvt->nAlloc = 0;
     pdbmfPvt->nFree = 0;
     pdbmfPvt->nGtSize = 0;
     pdbmfPvt->freeList = NULL;
+    VALGRIND_CREATE_MEMPOOL(pdbmfPvt, REDZONE, 0);
     return(0);
 }
 
@@ -124,7 +137,7 @@ void* epicsShareAPI dbmfMalloc(size_t size)
         pitemHeader = (itemHeader *)pnextFree;
         pitemHeader->pchunkNode->nNotFree += 1;
     } else {
-        pmem = malloc(sizeof(itemHeader) + size);
+        pmem = malloc(sizeof(itemHeader) + 2*REDZONE + size);
         if(!pmem) {
             epicsMutexUnlock(pdbmfPvt->lock);
             printf("dbmfMalloc malloc failed\n");
@@ -133,12 +146,14 @@ void* epicsShareAPI dbmfMalloc(size_t size)
         pdbmfPvt->nAlloc++;
         pdbmfPvt->nGtSize++;
         pitemHeader = (itemHeader *)pmem;
-        pitemHeader->pchunkNode = NULL;
+        pitemHeader->pchunkNode = NULL; /* not part of free list */
         if(dbmfDebug) printf("dbmfMalloc: size %lu mem %p\n",
                              (unsigned long)size,pmem);
     }
     epicsMutexUnlock(pdbmfPvt->lock);
-    return((void *)(pmem + sizeof(itemHeader)));
+    pmem += sizeof(itemHeader) + REDZONE;
+    VALGRIND_MEMPOOL_ALLOC(pdbmfPvt, pmem, size);
+    return((void *)pmem);
 }
 
 char * epicsShareAPI dbmfStrdup(unsigned char *str)
@@ -160,7 +175,8 @@ void epicsShareAPI dbmfFree(void* mem)
         printf("dbmfFree called but dbmfInit never called\n");
         return;
     }
-    pmem -= sizeof(itemHeader);
+    VALGRIND_MEMPOOL_FREE(pdbmfPvt, mem);
+    pmem -= sizeof(itemHeader) + REDZONE;
     epicsMutexMustLock(pdbmfPvt->lock);
     pitemHeader = (itemHeader *)pmem;
     if(!pitemHeader->pchunkNode) {

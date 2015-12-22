@@ -52,8 +52,8 @@ static char *pNullString = "";
 #define messagesize	276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
-static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
-static char *msstring[4]={"NMS","MS","MSI","MSS"};
+static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
+static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
 
 epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"CONSTANT",CONSTANT},
@@ -1794,7 +1794,7 @@ char * dbGetString(DBENTRY *pdbentry)
 		}
 		break;
         case PN_LINK:
-        dbMsgPrint(pdbentry, "%s %s",
+        dbMsgPrint(pdbentry, "%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
 		break;
@@ -1810,7 +1810,7 @@ char * dbGetString(DBENTRY *pdbentry)
 		else if(pvlMask&pvlOptCP) ppind=3;
 		else if(pvlMask&pvlOptCPP) ppind=4;
 		else ppind=0;
-        dbMsgPrint(pdbentry, "%s%s %s %s",
+        dbMsgPrint(pdbentry, "%s%s%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
                    (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
                    ppstring[ppind],
@@ -1897,9 +1897,9 @@ char * dbGetString(DBENTRY *pdbentry)
 		pvlMask = plink->value.pv_link.pvlMask;
 		if(pvlMask&pvlOptCA) ppind=2;
 		else ppind=0;
-        dbMsgPrint(pdbentry, "%s %s",
+        dbMsgPrint(pdbentry, "%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
-                   ppstring[ppind]);
+                   ppind ? ppstring[ppind] : "");
 		break;
 	    }
 	    default :

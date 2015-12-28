@@ -54,6 +54,7 @@ osdReadline (const char *prompt, struct readlineContext *context)
 
         if (nl)
             *nl = '\0';
+    }
     return line;
 }
 

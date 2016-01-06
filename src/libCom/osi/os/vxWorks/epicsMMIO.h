@@ -83,13 +83,18 @@
  * They do *not* all implement the sys{In/Out}{Byte/Word/Long}
  * functions to do the same thing though, so we can't use them.
  */
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 UINT8 sysPciInByte(UINT8 *addr);
 void sysPciOutByte(UINT8 *addr, UINT8 data);
 UINT16 sysPciInWord(UINT16 *addr);
 void sysPciOutWord(UINT16 *addr, UINT16 data);
 UINT32 sysPciInLong (UINT32 *addr);
 void sysPciOutLong (UINT32 *addr, UINT32 data);
+#ifdef __cplusplus
+}
+#endif
 
 #define ioread8(address)           sysPciInByte((UINT8 *)(address))
 #define iowrite8(address,data)     sysPciOutByte((UINT8 *)(address), (epicsUInt8)(data))

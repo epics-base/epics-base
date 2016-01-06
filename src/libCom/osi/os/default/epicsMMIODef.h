@@ -13,6 +13,7 @@
 
 #include <epicsTypes.h>
 #include <epicsEndian.h>
+#include <compilerSpecific.h>
 #include <shareLib.h>
 
 #ifdef __cplusplus
@@ -27,7 +28,7 @@
 
 /** @brief Read a single byte.
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 epicsUInt8
 ioread8(volatile void* addr)
 {
@@ -36,7 +37,7 @@ ioread8(volatile void* addr)
 
 /** @brief Write a single byte.
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 void
 iowrite8(volatile void* addr, epicsUInt8 val)
 {
@@ -46,7 +47,7 @@ iowrite8(volatile void* addr, epicsUInt8 val)
 /** @brief Read two bytes in host order.
  * Not byte swapping
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 epicsUInt16
 nat_ioread16(volatile void* addr)
 {
@@ -56,7 +57,7 @@ nat_ioread16(volatile void* addr)
 /** @brief Write two byte in host order.
  * Not byte swapping
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 void
 nat_iowrite16(volatile void* addr, epicsUInt16 val)
 {
@@ -66,7 +67,7 @@ nat_iowrite16(volatile void* addr, epicsUInt16 val)
 /** @brief Read four bytes in host order.
  * Not byte swapping
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 epicsUInt32
 nat_ioread32(volatile void* addr)
 {
@@ -76,7 +77,7 @@ nat_ioread32(volatile void* addr)
 /** @brief Write four byte in host order.
  * Not byte swapping
  */
-INLINE
+static EPICS_ALWAYS_INLINE
 void
 nat_iowrite32(volatile void* addr, epicsUInt32 val)
 {

@@ -1,0 +1,86 @@
+/*************************************************************************\
+* Copyright (c) 2015 Michael Davidsaver
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+ \*************************************************************************/
+
+/*
+ *  Author: Michael Davidsaver <mdavidsaver@gmail.com>
+ *
+ * Test using several stringout records to retarget the link of another record
+ */
+
+#include <string.h>
+
+#include "dbAccess.h"
+
+#include "dbUnitTest.h"
+#include "errlog.h"
+#include "epicsThread.h"
+
+#include "testMain.h"
+
+void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
+
+static void testRetarget(void)
+{
+    testMonitor *lnkmon, *valmon;
+
+    testdbPrepare();
+
+    testdbReadDatabase("recTestIoc.dbd", NULL, NULL);
+
+    recTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("linkRetargetLink.db", NULL, NULL);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    lnkmon = testMonitorCreate("rec:ai.INP", DBE_VALUE, 0);
+    valmon = testMonitorCreate("rec:ai", DBE_VALUE, 0);
+
+    /* initially rec:ai.INP is CONSTANT */
+
+    testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 0.0);
+    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "0");
+
+    /* rec:ai.INP becomes DB_LINK, but no processing is triggered */
+    testdbPutFieldOk("rec:link1.PROC", DBF_LONG, 0);
+
+    testMonitorWait(lnkmon);
+
+    testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 0.0);
+    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src1 NPP NMS");
+
+    /* trigger a read from rec:ai.INP */
+    testdbPutFieldOk("rec:ai.PROC", DBF_LONG, 0);
+
+    testMonitorWait(valmon);
+
+    testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 1.0);
+
+    /* rec:ai.INP becomes CA_LINK w/ CP, processing is triggered */
+    testdbPutFieldOk("rec:link2.PROC", DBF_LONG, 0);
+
+    testMonitorWait(lnkmon);
+    testMonitorWait(valmon);
+
+    testdbGetFieldEqual("rec:ai", DBR_DOUBLE, 2.0);
+    testdbGetFieldEqual("rec:ai.INP", DBR_STRING, "rec:src2 CP NMS");
+
+    testMonitorDestroy(lnkmon);
+    testMonitorDestroy(valmon);
+
+    testIocShutdownOk();
+
+    testdbCleanup();
+}
+
+MAIN(linkRetargetLinkTest)
+{
+    testPlan(10);
+    testRetarget();
+    return testDone();
+}

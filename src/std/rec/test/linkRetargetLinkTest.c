@@ -80,7 +80,7 @@ static void testRetarget(void)
 
 MAIN(linkRetargetLinkTest)
 {
-    testPlan(0);
+    testPlan(10);
     testRetarget();
     return testDone();
 }

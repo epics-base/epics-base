@@ -16,6 +16,7 @@
 #include "epicsString.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
+#include "cantProceed.h"
 #include "epicsEvent.h"
 #include "iocInit.h"
 #include "dbBase.h"
@@ -345,12 +346,13 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     char buf[100];
     arrRecord *psrc, *ptarg;
     DBLINK *psrclnk;
-    epicsInt32 *bufsrc, *buftarg;
+    epicsInt32 *bufsrc, *buftarg, *tmpbuf;
     long nReq;
-    unsigned num;
+    unsigned num_min, num_max;
 
     testDiag("Link to a array numeric field");
 
+    /* source.INP = "target CA" */
     epicsSnprintf(buf, sizeof(buf), "TARGET=target CA,FTVL=LONG,SNELM=%u,TNELM=%u",
                   nsrc, ntarg);
     testDiag("%s", buf);
@@ -374,9 +376,15 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     bufsrc = psrc->bptr;
     buftarg= ptarg->bptr;
 
-    num=psrc->nelm;
-    if(num>ptarg->nelm)
-        num=ptarg->nelm;
+    num_max=num_min=psrc->nelm;
+    if(num_min>ptarg->nelm)
+        num_min=ptarg->nelm;
+    if(num_max<ptarg->nelm)
+        num_max=ptarg->nelm;
+    /* always request more than can possibly be filled */
+    num_max += 2;
+
+    tmpbuf = callocMustSucceed(num_max, sizeof(*tmpbuf), "tmpbuf");
 
     startWait(psrclnk);
 
@@ -389,11 +397,22 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     waitForUpdate(psrclnk);
 
     dbScanLock((dbCommon*)psrc);
+    testDiag("fetch source.INP into source.BPTR");
     nReq = psrc->nelm;
     if(dbGetLink(psrclnk, DBR_LONG, bufsrc, NULL, &nReq)==0) {
         testPass("dbGetLink");
-        testOp("%ld",nReq,==,(long)num);
+        testOp("%ld",nReq,==,(long)num_min);
         checkArray("array update", bufsrc, 1, nReq);
+    } else {
+        testFail("dbGetLink");
+        testSkip(2, "dbGetLink fails");
+    }
+    testDiag("fetch source.INP into temp buffer w/ larger capacity");
+    nReq = num_max;
+    if(dbGetLink(psrclnk, DBR_LONG, tmpbuf, NULL, &nReq)==0) {
+        testPass("dbGetLink");
+        testOp("%ld",nReq,==,(long)ntarg);
+        checkArray("array update", tmpbuf, 1, nReq);
     } else {
         testFail("dbGetLink");
         testSkip(2, "dbGetLink fails");
@@ -405,7 +424,7 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     putLink(psrclnk, DBR_LONG, bufsrc, psrc->nelm);
 
     dbScanLock((dbCommon*)ptarg);
-    testOp("%ld",(long)ptarg->nord,==,(long)num);
+    testOp("%ld",(long)ptarg->nord,==,(long)num_min);
 
     dbScanUnlock((dbCommon*)ptarg);
 
@@ -415,14 +434,15 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     putLink(psrclnk, DBR_LONG, bufsrc, psrc->nelm);
 
     dbScanLock((dbCommon*)ptarg);
-    testOp("%ld",(long)ptarg->nord,==,(long)num);
-    checkArray("array update", buftarg, 3, num);
+    testOp("%ld",(long)ptarg->nord,==,(long)num_min);
+    checkArray("array update", buftarg, 3, num_min);
     dbScanUnlock((dbCommon*)ptarg);
 
     testIocShutdownOk();
 
     testdbCleanup();
 
+    free(tmpbuf);
     /* records don't cleanup after themselves
      * so do here to silence valgrind
      */
@@ -569,7 +589,7 @@ static void testCAC(void)
 
 MAIN(dbCaLinkTest)
 {
-    testPlan(87);
+    testPlan(99);
     testNativeLink();
     testStringLink();
     testCP();

@@ -42,7 +42,7 @@ epicsShareFunc void testRestore(void);
 
 MAIN(asTest)
 {
-    testPlan(29);
+    testPlan(42);
     testRestore();
     return testDone();
 }

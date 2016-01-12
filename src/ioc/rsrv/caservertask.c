@@ -32,6 +32,7 @@
 #include "osiPoolStatus.h"
 #include "osiSock.h"
 #include "taskwd.h"
+#include "cantProceed.h"
 
 #define epicsExportSharedSymbols
 #include "dbChannel.h"
@@ -69,36 +70,10 @@ static void req_server (void *pParm)
     epicsThreadId tid;
     int portChange;
 
-    epicsSignalInstallSigPipeIgnore ();
-
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
-    rsrvCurrentClient = epicsThreadPrivateCreate ();
-
-    if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
-        ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT,
-            (unsigned short) CA_SERVER_PORT );
-    }
-    else {
-        ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
-            (unsigned short) CA_SERVER_PORT );
-    }
-
-    addAddrToChannelAccessAddressList ( &casIntfAddrList,
-        &EPICS_CAS_INTF_ADDR_LIST, ca_server_port, 0 );
-    if (ellCount(&casIntfAddrList) == 0) {
-        pNode = (osiSockAddrNode *) calloc ( 1, sizeof(*pNode) );
-        pNode->addr.ia.sin_family = AF_INET;
-        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        pNode->addr.ia.sin_port = htons ( ca_server_port );
-        ellAdd ( &casIntfAddrList, &pNode->node );
-    }
-    else {
-        if (ellCount ( &casIntfAddrList ) > 1)
-            epicsPrintf ("CAS: Multiple entries in EPICS_CAS_INTF_ADDR_LIST, "
-                "only the first will be used.\n");
-        pNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
-    }
+    assert (ellCount(&casIntfAddrList)>0);
+    pNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
 
     memcpy ( &serverAddr, &pNode->addr.ia, addrSize );
 
@@ -270,7 +245,20 @@ int rsrv_init (void)
     freeListInitPvt ( &rsrvSmallBufFreeListTCP, MAX_TCP, 16 );
     initializePutNotifyFreeList ();
 
+    epicsSignalInstallSigPipeIgnore ();
+
+    rsrvCurrentClient = epicsThreadPrivateCreate ();
+
     dbRegisterServer(&rsrv_server);
+
+    if ( envGetConfigParamPtr ( &EPICS_CAS_SERVER_PORT ) ) {
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CAS_SERVER_PORT,
+            (unsigned short) CA_SERVER_PORT );
+    }
+    else {
+        ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
+            (unsigned short) CA_SERVER_PORT );
+    }
 
     status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
     if ( status || maxBytesAsALong < 0 ) {
@@ -301,6 +289,16 @@ int rsrv_init (void)
     pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
     if (!pCaBucket)
         cantProceed("RSRV failed to allocate ID lookup table\n");
+
+    addAddrToChannelAccessAddressList ( &casIntfAddrList,
+        &EPICS_CAS_INTF_ADDR_LIST, ca_server_port, 0 );
+    if (ellCount(&casIntfAddrList) == 0) {
+        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+        pNode->addr.ia.sin_family = AF_INET;
+        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        pNode->addr.ia.sin_port = htons ( ca_server_port );
+        ellAdd ( &casIntfAddrList, &pNode->node );
+    }
 
     castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     castcp_ctl = ctlPause;

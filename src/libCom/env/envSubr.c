@@ -43,6 +43,7 @@
 #define epicsExportSharedSymbols
 #include "epicsStdlib.h"
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "errMdef.h"
 #include "errlog.h"
 #include "envDefs.h"
@@ -319,7 +320,19 @@ long	*pLong		/* O pointer to place to store value */
     }
     return -1;
 }
-
+
+
+long epicsShareAPI
+envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool)
+{
+    char text[20];
+
+    if(!envGetConfigParam(pParam, sizeof(text), text))
+        return -1;
+    *pBool = epicsStrCaseCmp(text, "yes")==0;
+    return 0;
+}
+
 /*+/subr**********************************************************************
 * NAME	envPrtConfigParam - print value of a configuration parameter
 *

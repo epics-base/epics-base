@@ -419,6 +419,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
 
             fConvert = dbFastPutConvertRoutine[dbrType][newType];
             status = fConvert(pbuffer, pca->pputNative, 0);
+            pca->putnelements = 1;
         } else {
             struct dbAddr dbAddr;
             long (*aConvert)(struct dbAddr *paddr, const void *from, long nreq, long nfrom, long off);

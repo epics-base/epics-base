@@ -176,7 +176,7 @@ GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
 GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE SOCKET             beaconSocket;
-GLBLTYPE ELLLIST            casIntfAddrList;
+GLBLTYPE ELLLIST            casIntfAddrList, casMCastAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE BUCKET             *pCaBucket; /* locked by clientQlock */
 GLBLTYPE void               *rsrvClientFreeList;

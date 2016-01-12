@@ -268,7 +268,7 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
     }
 
     if(ellCount(&casIntfAddrList)==0)
-        cantProceed("RSRV has empty interface list");
+        cantProceed("RSRV has empty interface list\n");
 
     return socks;
 }
@@ -290,6 +290,7 @@ void rsrv_build_addr_lists(void)
 
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
+    ellInit ( &casMCastAddrList );
 
     {
         ELLLIST temp = ELLLIST_INIT;
@@ -301,16 +302,7 @@ void rsrv_build_addr_lists(void)
         removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
     }
 
-    if (ellCount(&casIntfAddrList) == 0) {
-        /* default to wildcard 0.0.0.0 */
-        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
-        pNode->addr.ia.sin_family = AF_INET;
-        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        pNode->addr.ia.sin_port = 0;
-        ellAdd ( &casIntfAddrList, &pNode->node );
-        expandbcast = 1;
-
-    } else {
+    {
         /* check user provided list */
         osiSockAddrNode *pNode, *pNext;
         for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
@@ -319,6 +311,8 @@ void rsrv_build_addr_lists(void)
             pNode = pNext,
             pNext = pNext ? (osiSockAddrNode*)ellNext(&pNext->node) : NULL)
         {
+            epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
+
             if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
             {
                 if (ellCount(&casIntfAddrList) != 1) {
@@ -328,8 +322,23 @@ void rsrv_build_addr_lists(void)
                 } else {
                     expandbcast = 1;
                 }
+
+            } else if(pNode->addr.ia.sin_family==AF_INET && top>=224 && top<=239) {
+                /* This is a multi-cast address */
+                ellDelete(&casIntfAddrList, &pNode->node);
+                ellAdd(&casMCastAddrList, &pNode->node);
             }
         }
+    }
+
+    if (ellCount(&casIntfAddrList) == 0) {
+        /* default to wildcard 0.0.0.0 */
+        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+        pNode->addr.ia.sin_family = AF_INET;
+        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        pNode->addr.ia.sin_port = 0;
+        ellAdd ( &casIntfAddrList, &pNode->node );
+        expandbcast = 1;
     }
 
     addAddrToChannelAccessAddressList ( &beaconAddrList,
@@ -518,6 +527,7 @@ int rsrv_init (void)
     /* start servers (TCP and UDP(s) for each interface.
      */
     {
+        int havesometcp = 0;
         ELLNODE *cur;
         int i;
 
@@ -550,6 +560,43 @@ int rsrv_init (void)
 
             if(tryBind(conf->udp, &conf->udpAddr, "UDP unicast socket"))
                 goto cleanup;
+
+#ifdef IP_ADD_MEMBERSHIP
+            /* join UDP socket to any multicast groups */
+            {
+                osiSockAddrNode *pNode;
+
+                for(pNode = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
+                    pNode;
+                    pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+                {
+                    struct ip_mreq mreq;
+
+                    memset(&mreq, 0, sizeof(mreq));
+                    mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
+                    mreq.imr_interface.s_addr = conf->udpAddr.ia.sin_addr.s_addr;
+
+                    if(setsockopt(conf->udp, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))!=0)
+                    {
+                        struct sockaddr_in temp;
+                        char name[40];
+                        char sockErrBuf[64];
+                        temp.sin_family = AF_INET;
+                        temp.sin_addr = mreq.imr_multiaddr;
+                        temp.sin_port = conf->udpAddr.ia.sin_port;
+                        epicsSocketConvertErrnoToString (
+                            sockErrBuf, sizeof ( sockErrBuf ) );
+                        ipAddrToDottedIP (&temp, name, sizeof(name));
+                        fprintf(stderr, "CAS: Socket mcast join %s to %s failed with \"%s\"\n",
+                            ifaceName, name, sockErrBuf );
+                    }
+                }
+            }
+#else
+            if(ellCount(&casMCastAddrList)){
+                fprintf(stderr, "IPv4 Multicast name lookup not supported by this target\n");
+            }
+#endif
 
 #if !defined(_WIN32)
             /* An oddness of BSD sockets (not winsock) is that binding to
@@ -623,6 +670,7 @@ int rsrv_init (void)
             }
 #endif /* !defined(_WIN32) */
 
+            havesometcp = 1;
             continue;
         cleanup:
             epicsSocketDestroy(conf->tcp);
@@ -630,6 +678,9 @@ int rsrv_init (void)
             if(conf->udpbcast!=INVALID_SOCKET) epicsSocketDestroy(conf->udpbcast);
             free(conf);
         }
+
+        if(!havesometcp)
+            cantProceed("CAS: No TCP server started\n");
     }
 
     /* servers list is considered read-only from this point */
@@ -830,6 +881,15 @@ void casr (unsigned level)
     UNLOCK_CLIENTQ
     if (level>=2) {
         osiSockAddrNode * pAddr;
+        for(pAddr = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
+            pAddr;
+            pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
+        {
+            char    buf[40];
+
+            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+            printf("MCast destination %s\n", buf);
+        }
         for(pAddr = (osiSockAddrNode*)ellFirst(&beaconAddrList);
             pAddr;
             pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))

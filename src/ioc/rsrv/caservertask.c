@@ -300,7 +300,6 @@ int rsrv_init (void)
     freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
-    prsrv_cast_client = NULL;
     pCaBucket = NULL;
 
     castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
@@ -500,12 +499,12 @@ void casr (unsigned level)
         client = (struct client *) ellNext(&client->node);
     }
     UNLOCK_CLIENTQ
-
+/*
     if (level>=2 && prsrv_cast_client) {
         printf( "UDP Server:\n" );
         log_one_client(prsrv_cast_client, level);
     }
-
+*/
     if (level>=2u) {
         bytes_reserved = 0u;
         bytes_reserved += sizeof (struct client) *

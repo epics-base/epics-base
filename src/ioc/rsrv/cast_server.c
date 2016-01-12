@@ -54,7 +54,7 @@
 /*
  * clean_addrq
  */
-static void clean_addrq(void)
+static void clean_addrq(struct client *prsrv_cast_client)
 {
     struct channel_in_use * pciu;
     struct channel_in_use * pnextciu;
@@ -124,6 +124,7 @@ void cast_server(void *pParm)
     osiSocklen_t        recv_addr_size;
     osiSockIoctl_t      nchars;
     SOCKET              recv_sock;
+    struct client      *prsrv_cast_client;
 
     recv_addr_size = sizeof(new_recv_addr);
 
@@ -299,11 +300,11 @@ void cast_server(void *pParm)
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");
             cas_send_dg_msg (prsrv_cast_client);
-            clean_addrq ();
+            clean_addrq (prsrv_cast_client);
         }
         else if (nchars == 0) {
             cas_send_dg_msg (prsrv_cast_client);
-            clean_addrq ();
+            clean_addrq (prsrv_cast_client);
         }
     }
 }

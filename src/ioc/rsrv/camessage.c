@@ -1126,7 +1126,7 @@ static void casAccessRightsCB(ASCLIENTPVT ascpvt, asClientStatus type)
     pclient = pciu->client;
     assert(pclient);
 
-    if(pclient == prsrv_cast_client){
+    if(pclient->proto==IPPROTO_UDP){
         return;
     }
 
@@ -1193,7 +1193,7 @@ static void access_rights_reply ( struct channel_in_use * pciu )
     int             v41;
     int             status;
 
-    assert ( pciu->client != prsrv_cast_client );
+    assert ( pciu->client->proto!=IPPROTO_UDP );
 
     /*
      * noop if this is an old client
@@ -1321,7 +1321,7 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         }
     }
     else {
-        epicsMutexMustLock(prsrv_cast_client->chanListLock);
+        epicsMutexMustLock(client->chanListLock);
         /*
          * clients which dont claim their
          * channel in use block prior to
@@ -1331,7 +1331,7 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         if(!pciu){
             errlogPrintf("CAS: client timeout disconnect id=%d\n",
                 mp->m_cid);
-            epicsMutexUnlock(prsrv_cast_client->chanListLock);
+            epicsMutexUnlock(client->chanListLock);
             SEND_LOCK(client);
             send_err(
                 mp,
@@ -1343,33 +1343,15 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
         }
 
         /*
-         * duplicate claim message are unacceptable
-         * (so we disconnect the client)
-         */
-        if (pciu->client!=prsrv_cast_client) {
-            errlogPrintf("CAS: duplicate claim disconnect id=%d\n",
-                mp->m_cid);
-            epicsMutexUnlock(prsrv_cast_client->chanListLock);
-            SEND_LOCK(client);
-            send_err(
-                mp,
-                ECA_INTERNAL,
-                client,
-                "duplicate claim in old connect protocol");
-            SEND_UNLOCK(client);
-            return RSRV_ERROR;
-        }
-
-        /*
          * remove channel in use block from
          * the UDP client where it could time
          * out and place it on the client
          * who is claiming it
          */
         ellDelete(
-            &prsrv_cast_client->chanList,
+            &client->chanList,
             &pciu->node);
-        epicsMutexUnlock(prsrv_cast_client->chanListLock);
+        epicsMutexUnlock(client->chanListLock);
 
         epicsMutexMustLock(client->chanListLock);
         pciu->state = rsrvCS_pendConnectResp;
@@ -2623,7 +2605,7 @@ int camessage ( struct client *client )
         if ( CASDEBUG > 2 )
             log_header (NULL, client, &msg, pBody, nmsg);
 
-        if ( client == prsrv_cast_client ) {
+        if ( client->proto==IPPROTO_UDP ) {
             if ( msg.m_cmmd < NELEMENTS ( udpJumpTable ) ) {
                 status = ( *udpJumpTable[msg.m_cmmd] )( &msg, pBody, client );
                 if (status!=RSRV_OK) {

@@ -71,6 +71,7 @@ void rsrv_online_notify_task(void *pParm)
     char                        * pStr;
     int                         autoBeaconAddr;
     ELLLIST                     autoAddrList;
+    ELLNODE                     *cur;
     char                        buf[16];
     unsigned                    priorityOfUDP;
     epicsThreadBooleanStatus    tbs;
@@ -222,13 +223,14 @@ void rsrv_online_notify_task(void *pParm)
     casudp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     casudp_ctl = ctlPause;
 
+    for (cur=ellFirst(&casIntfAddrList); cur; cur=ellNext(cur))
     {
         /* casudp_startStopEvent ensures that this struct
          * lives until the cast_server thread(s) are done with it.
          */
         cast_config config;
 
-        config.pAddr = ((osiSockAddrNode *) ellFirst ( &casIntfAddrList ))->addr;
+        config.pAddr = ((osiSockAddrNode *)cur)->addr;
         config.reply_sock = INVALID_SOCKET;
 
         epicsThreadMustCreate ( "CAS-UDP", priorityOfUDP,

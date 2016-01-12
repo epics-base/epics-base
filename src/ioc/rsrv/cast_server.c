@@ -195,6 +195,12 @@ void cast_server(void *pParm)
         }
         epicsThreadSleep(300.0);
     }
+    client->udpRecv = recv_sock;
+
+    assert(client->node.next==NULL && client->node.previous==NULL);
+    LOCK_CLIENTQ;
+    ellAdd ( &clientQudp, &client->node );
+    UNLOCK_CLIENTQ;
 
     casAttachThreadToClient ( client );
 

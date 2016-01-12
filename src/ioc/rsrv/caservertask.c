@@ -266,6 +266,7 @@ int rsrv_init (void)
     clientQlock = epicsMutexMustCreate();
 
     ellInit ( &clientQ );
+    ellInit ( &clientQudp );
     freeListInitPvt ( &rsrvClientFreeList, sizeof(struct client), 8 );
     freeListInitPvt ( &rsrvChanFreeList, sizeof(struct channel_in_use), 512 );
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );
@@ -498,13 +499,36 @@ void casr (unsigned level)
         log_one_client(client, level);
         client = (struct client *) ellNext(&client->node);
     }
-    UNLOCK_CLIENTQ
-/*
-    if (level>=2 && prsrv_cast_client) {
-        printf( "UDP Server:\n" );
-        log_one_client(prsrv_cast_client, level);
+
+    if (level>=2) {
+        client = (struct client *) ellNext ( &clientQudp.node );
+        while (client) {
+            struct sockaddr_in addr;
+            osiSocklen_t alen = sizeof(addr);
+            char    buf[40];
+
+            if (!getsockname(client->udpRecv, (struct sockaddr*)&addr, &alen)) {
+                ipAddrToDottedIP (&addr, buf, sizeof(buf));
+            } else {
+                strcpy(buf, "<unknown>");
+            }
+
+            printf( "UDP Name Server: recvfrom %s", buf );
+
+            alen = sizeof(addr);
+            if (!getsockname(client->sock, (struct sockaddr*)&addr, &alen)) {
+                ipAddrToDottedIP (&addr, buf, sizeof(buf));
+            } else {
+                strcpy(buf, "<unknown>");
+            }
+
+            printf( " sendto %s\n", buf );
+
+            client = (struct client *) ellNext(&client->node);
+        }
     }
-*/
+    UNLOCK_CLIENTQ
+
     if (level>=2u) {
         bytes_reserved = 0u;
         bytes_reserved += sizeof (struct client) *

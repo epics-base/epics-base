@@ -88,7 +88,7 @@ typedef struct client {
   char                  *pUserName;
   char                  *pHostName;
   epicsEventId          blockSem; /* used whenever the client blocks */
-  SOCKET                sock;
+  SOCKET                sock, udpRecv;
   int                   proto;
   epicsThreadId         tid;
   unsigned              minor_version_number;
@@ -166,7 +166,8 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 GLBLTYPE int                CASDEBUG;
 GLBLTYPE SOCKET             IOC_sock;
 GLBLTYPE unsigned short     ca_server_port;
-GLBLTYPE ELLLIST            clientQ; /* locked by clientQlock */
+GLBLTYPE ELLLIST            clientQ; /* (TCP clients) locked by clientQlock */
+GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
 GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE ELLLIST            casIntfAddrList;
 GLBLTYPE epicsMutexId       clientQlock;

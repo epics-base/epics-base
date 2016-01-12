@@ -13,11 +13,11 @@
 #include <string.h>
 #include <errno.h>
 
+#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "osiSock.h"
 
 #define epicsExportSharedSymbols
 #include "cantProceed.h"
-#define EPICS_EXPOSE_LIBCOM_MONOTONIC_PRIVATE
 #include "epicsTime.h"
 #include "generalTimeSup.h"
 

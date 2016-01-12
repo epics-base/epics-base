@@ -346,19 +346,16 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         assert(pca->pgetNative);
         status = fConvert(pca->pgetNative, pdest, 0);
     } else {
-        unsigned long ntoreport = *nelements, ntoget;
+        unsigned long ntoget = *nelements;
         struct dbAddr dbAddr;
         long (*aConvert)(struct dbAddr *paddr, void *to, long nreq, long nto, long off);
 
         aConvert = dbGetConvertRoutine[newType][dbrType];
         assert(pca->pgetNative);
 
-        if (ntoreport > pca->nelements)
-            ntoreport = pca->nelements;
-        ntoget = ntoreport;
         if (ntoget > pca->usedelements)
             ntoget = pca->usedelements;
-        *nelements = ntoreport;
+        *nelements = ntoget;
 
         memset((void *)&dbAddr, 0, sizeof(dbAddr));
         dbAddr.pfield = pca->pgetNative;
@@ -366,12 +363,6 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         dbAddr.field_size = MAX_STRING_SIZE;
         /*Ignore error return*/
         aConvert(&dbAddr, pdest, ntoget, ntoget, 0);
-        if(ntoget<ntoreport) {
-            /* zero out remainder of buffer */
-            memset(ntoget*pca->elementSize+(char*)pca->pgetNative,
-                   0,
-                   (ntoreport-ntoget)*pca->elementSize);
-        }
     }
 done:
     if (pstat) *pstat = pca->stat;
@@ -418,6 +409,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
         if (!pca->pputNative) {
             pca->pputNative = dbCalloc(pca->nelements,
                 dbr_value_size[ca_field_type(pca->chid)]);
+            pca->putnelements = 0;
 /* Fixed and disabled by ANJ, see comment above.
             plink->value.pv_link.pvlMask |= pvlOptOutNative;
  */
@@ -439,10 +431,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
             if(nRequest>pca->nelements)
                 nRequest = pca->nelements;
             status = aConvert(&dbAddr, pbuffer, nRequest, pca->nelements, 0);
-            if(nRequest<pca->nelements) {
-                long elemsize = dbr_value_size[ca_field_type(pca->chid)];
-                memset(nRequest*elemsize+(char*)pca->pputNative, 0, (pca->nelements-nRequest)*elemsize);
-            }
+            pca->putnelements = nRequest;
         }
         link_action |= CA_WRITE_NATIVE;
         pca->gotOutNative = TRUE;
@@ -767,6 +756,7 @@ static void eventCallback(struct event_handler_args arg)
         goto done;
     }
     assert(arg.dbr);
+    assert(arg.count<=pca->nelements);
     size = arg.count * dbr_value_size[arg.type];
     if (arg.type == DBR_TIME_STRING &&
         ca_field_type(pca->chid) == DBR_ENUM) {
@@ -988,11 +978,11 @@ static void dbCaTask(void *arg)
                 assert(pca->pputNative);
                 if (pca->putType == CA_PUT) {
                     status = ca_array_put(
-                        pca->dbrType, pca->nelements,
+                        pca->dbrType, pca->putnelements,
                         pca->chid, pca->pputNative);
                 } else if (pca->putType==CA_PUT_CALLBACK) {
                     status = ca_array_put_callback(
-                        pca->dbrType, pca->nelements,
+                        pca->dbrType, pca->putnelements,
                         pca->chid, pca->pputNative,
                         putComplete, pca);
                 } else {

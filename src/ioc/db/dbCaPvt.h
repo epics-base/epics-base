@@ -54,6 +54,7 @@ typedef struct caLink
     size_t elementSize; /* size of one element in pgetNative */
     unsigned long nelements; /* PVs max array size */
     unsigned long usedelements; /* currently used in pgetNative */
+    unsigned long putnelements; /* currently used in pputNative */
     char		hasReadAccess;
     char		hasWriteAccess;
     char            isConnected;

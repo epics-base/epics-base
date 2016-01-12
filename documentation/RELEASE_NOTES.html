@@ -20,6 +20,22 @@
 
 -->
 
+<h3>Valgrind instrumentation</h3>
+
+<p>The header valgrind/valgrind.h is now included in, and installed by, Base.
+When included this file defines some macros which expand to provide hints
+to the Valgrind runtime.
+These hints are now added to some free-lists within libCom, including freeListLib,
+to allow valgrind to provide more accurate information about potential leaks.</p>
+
+<p>valgrind.h automatically disables itself when included targets unsupported by Valgrind.
+It can also explicitly be disabled by defining the macro <em>NVALGRIND</em>.
+See <em>src/libCom/Makefile</em> for an example.</p>
+
+<p>As a matter of policy valgrind.h is not, and will not be, included by any header file installed by
+Base, and will remain an internal implementation detail.
+Support modules which choose to use valgrind.h are advised to avoid to do likewise.</p>
+
 <h3>Database Multi-locking</h3>
 
 <p>dbLock.c is re-written with an expanded API, and the removal of global mutex locks.</p>

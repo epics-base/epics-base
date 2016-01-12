@@ -9,7 +9,8 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 
-USR_CFLAGS += -DUSE_VALGRIND
+# Uncomment this to remove the (benign) valgrind helper stubs
+#USR_CFLAGS += -DNVALGRIND
 
 SRC = $(TOP)/src
 LIBCOM = $(SRC)/libCom

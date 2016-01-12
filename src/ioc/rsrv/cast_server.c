@@ -120,6 +120,7 @@ void cast_server(void *pParm)
     struct sockaddr_in  sin;
     int                 status;
     int                 count=0;
+    int                 mysocket=0;
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
     osiSockIoctl_t      nchars;
@@ -138,8 +139,10 @@ void cast_server(void *pParm)
         epicsThreadSuspendSelf ();
     }
 
-    if(conf->reply_sock==INVALID_SOCKET)
+    if(conf->reply_sock==INVALID_SOCKET) {
         conf->reply_sock = recv_sock; /* assume that the socket capable of unicast send is created first */
+        mysocket = 1;
+    }
 
     /*
      * some concern that vxWorks will run out of mBuf's
@@ -307,4 +310,11 @@ void cast_server(void *pParm)
             clean_addrq (client);
         }
     }
+
+    /* ATM never reached, just a placeholder */
+
+    if(!mysocket)
+        client->sock = INVALID_SOCKET; /* only one cast_server should destroy the reply socket */
+    destroy_client(client);
+    epicsSocketDestroy(recv_sock);
 }

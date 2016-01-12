@@ -32,6 +32,7 @@
 #include "ellLib.h"
 #include "epicsTime.h"
 #include "epicsAssert.h"
+#include "osiSock.h"
 
 #ifdef rsrvRestore_epicsExportSharedSymbols
 #define epicsExportSharedSymbols
@@ -141,10 +142,8 @@ typedef struct {
     ELLNODE node;
     osiSockAddr tcpAddr, /* TCP listener endpoint */
                 udpAddr, /* UDP name unicast receiver endpoint */
-                udpbcastAddr, /* UDP name broadcast receiver endpoint */
-                udpbeaconRx, /* UDP beacon receiver endpoint ( doesn't actually receive ) */
-                udpbeaconTx; /* UDP beacon destination address */
-    SOCKET tcp, udp, udpbcast, udpbeacon;
+                udpbcastAddr; /* UDP name broadcast receiver endpoint */
+    SOCKET tcp, udp, udpbcast;
 
     unsigned int startbcast:1;
 } rsrv_iface_config;
@@ -171,11 +170,12 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 #endif
 
 GLBLTYPE int                CASDEBUG;
-GLBLTYPE unsigned short     ca_server_port;
+GLBLTYPE unsigned short     ca_server_port, ca_udp_port, ca_beacon_port;
 GLBLTYPE ELLLIST            clientQ; /* (TCP clients) locked by clientQlock */
 GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
 GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
+GLBLTYPE SOCKET             beaconSocket;
 GLBLTYPE ELLLIST            casIntfAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
 GLBLTYPE BUCKET             *pCaBucket; /* locked by clientQlock */

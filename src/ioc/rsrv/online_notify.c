@@ -80,14 +80,15 @@ void rsrv_online_notify_task(void *pParm)
         ELLNODE *cur;
 
         /* send beacon to each interface */
-        for(cur=ellFirst(&servers); cur; cur=ellNext(cur))
+        for(cur=ellFirst(&beaconAddrList); cur; cur=ellNext(cur))
         {
-            rsrv_iface_config *conf = CONTAINER(cur, rsrv_iface_config, node);
-            status = send (conf->udpbeacon, (char *)&msg, sizeof(msg), 0);
+            osiSockAddrNode *pAddr = CONTAINER(cur, osiSockAddrNode, node);
+            status = sendto (beaconSocket, (char *)&msg, sizeof(msg), 0,
+                             &pAddr->addr.sa, sizeof(pAddr->addr));
             if (status < 0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                ipAddrToDottedIP (&conf->udpbeaconTx.ia, buf, sizeof(buf));
+                ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
                 errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
                     __FILE__, buf, sockErrBuf);
             }

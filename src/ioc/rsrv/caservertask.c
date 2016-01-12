@@ -252,6 +252,115 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
     return socks;
 }
 
+static
+void rsrv_build_addr_lists(void)
+{
+    ELLLIST beacon_list = ELLLIST_INIT;
+    /* expandbcast==0 - add bcast addresses corresponding to the provided interface addresses.
+     * expandbcast==1 - binding to wildcard.  Fill beaconAddrList with all local addresses
+     */
+    int expandbcast = 0, autobeaconlist = 1;
+
+    /* the UDP ports are known at this point, but the TCP port is not */
+    assert(ca_beacon_port!=0);
+    assert(ca_udp_port!=0);
+
+    envGetBoolConfigParam(&EPICS_CAS_AUTO_BEACON_ADDR_LIST, &autobeaconlist);
+
+    ellInit ( &casIntfAddrList );
+    ellInit ( &beaconAddrList );
+
+    if(addAddrToChannelAccessAddressList ( &casIntfAddrList, &EPICS_CAS_INTF_ADDR_LIST, 0, 0 ))
+        addAddrToChannelAccessAddressList ( &casIntfAddrList, &EPICS_CAS_BEACON_ADDR_LIST, 0, 0 );
+
+    if (ellCount(&casIntfAddrList) == 0) {
+        /* default to wildcard 0.0.0.0 */
+        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+        pNode->addr.ia.sin_family = AF_INET;
+        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        pNode->addr.ia.sin_port = 0;
+        ellAdd ( &casIntfAddrList, &pNode->node );
+        expandbcast = 1;
+
+    } else {
+        /* check user provided list */
+        osiSockAddrNode *pNode, *pNext;
+        for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
+            pNext = pNode ? (osiSockAddrNode*)ellNext(&pNode->node) : NULL;
+            pNode;
+            pNode = pNext,
+            pNext = pNext ? (osiSockAddrNode*)ellNext(&pNext->node) : NULL)
+        {
+            if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
+            {
+                if (ellCount(&casIntfAddrList) != 1) {
+                    fprintf(stderr, "CAS address list can not contain 0.0.0.0 and other addresses, ignoring...\n");
+                    ellDelete(&casIntfAddrList, &pNode->node);
+                    free(pNode);
+                } else {
+                    expandbcast = 1;
+                }
+            }
+        }
+    }
+
+    addAddrToChannelAccessAddressList ( &beaconAddrList,
+        &EPICS_CAS_BEACON_ADDR_LIST, ca_beacon_port, 0 );
+
+    beaconSocket = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+    if (beaconSocket==INVALID_SOCKET)
+        cantProceed("socket allocation failed during address list expansion");
+
+
+    {
+        int intTrue = 1;
+        if (setsockopt (beaconSocket, SOL_SOCKET, SO_BROADCAST,
+                        (char *)&intTrue, sizeof(intTrue))<0) {
+            cantProceed("CAS: online socket set up error\n");
+        }
+    }
+
+    if (!autobeaconlist) {
+        /* only user provided addresses */
+    } else if (expandbcast) {
+        /* add bcast addresses of all local interfaces */
+        osiSockAddr match;
+        memset(&match, 0, sizeof(match));
+        match.ia.sin_family = AF_INET;
+        match.ia.sin_addr.s_addr = htonl(INADDR_ANY);
+        match.ia.sin_port = htons(ca_beacon_port);
+
+        osiSockDiscoverBroadcastAddresses(&beacon_list, beaconSocket, &match);
+
+    } else {
+        /* add bcast addresses of only specified interfaces */
+        osiSockAddrNode *pNode;
+
+        for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList);
+            pNode;
+            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+        {
+            osiSockDiscoverBroadcastAddresses(&beacon_list, beaconSocket, &pNode->addr);
+        }
+    }
+
+    {
+        /* set the port for any automatically discovered destinations. */
+        osiSockAddrNode *pNode;
+        for(pNode = (osiSockAddrNode*)ellFirst(&beacon_list);
+            pNode;
+            pNode = (osiSockAddrNode*)ellNext(&pNode->node))
+        {
+            pNode->addr.ia.sin_port = htons(ca_beacon_port);
+        }
+    }
+
+    ellConcat(&beaconAddrList, &beacon_list);
+
+    if (ellCount(&beaconAddrList)==0)
+        fprintf(stderr, "Warning: RSRV has empty beacon address list\n");
+}
+
 static dbServer rsrv_server = {
     ELLNODE_INIT,
     "rsrv",
@@ -267,7 +376,6 @@ int rsrv_init (void)
 {
     long maxBytesAsALong;
     long status;
-    unsigned short udp_port, beacon_port;
     SOCKET *socks;
 
     clientQlock = epicsMutexMustCreate();
@@ -293,14 +401,14 @@ int rsrv_init (void)
         ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
             (unsigned short) CA_SERVER_PORT );
     }
-    udp_port = ca_server_port;
+    ca_udp_port = ca_server_port;
 
     if (envGetConfigParamPtr(&EPICS_CAS_BEACON_PORT)) {
-        beacon_port = envGetInetPortConfigParam (&EPICS_CAS_BEACON_PORT,
+        ca_beacon_port = envGetInetPortConfigParam (&EPICS_CAS_BEACON_PORT,
             (unsigned short) CA_REPEATER_PORT );
     }
     else {
-        beacon_port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT,
+        ca_beacon_port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT,
             (unsigned short) CA_REPEATER_PORT );
     }
 
@@ -328,21 +436,11 @@ int rsrv_init (void)
         }
     }
     freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
-    ellInit ( &casIntfAddrList );
-    ellInit ( &beaconAddrList );
     pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
     if (!pCaBucket)
         cantProceed("RSRV failed to allocate ID lookup table\n");
 
-    addAddrToChannelAccessAddressList ( &casIntfAddrList,
-        &EPICS_CAS_INTF_ADDR_LIST, ca_server_port, 0 );
-    if (ellCount(&casIntfAddrList) == 0) {
-        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
-        pNode->addr.ia.sin_family = AF_INET;
-        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        pNode->addr.ia.sin_port = htons ( ca_server_port );
-        ellAdd ( &casIntfAddrList, &pNode->node );
-    }
+    rsrv_build_addr_lists();
 
     castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     casudp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
@@ -409,77 +507,7 @@ int rsrv_init (void)
 
             ipAddrToDottedIP (&conf->tcpAddr.ia, ifaceName, sizeof(ifaceName));
 
-            conf->udp = conf->udpbcast = conf->udpbeacon = INVALID_SOCKET;
-
-            /* create and bind UDP beacon socket */
-
-            conf->udpbeacon = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
-            if(conf->udpbeacon==INVALID_SOCKET)
-                cantProceed("rsrv_init ran out of udp sockets for beacon at %s", ifaceName);
-
-            /* beacon sender binds to a random port, and won't actually receive anything */
-            conf->udpbeaconRx = conf->tcpAddr;
-            conf->udpbeaconRx.ia.sin_port = 0;
-
-            if(tryBind(conf->udpbeacon, &conf->udpbeaconRx, "UDP beacon socket"))
-                goto cleanup;
-
-
-            {
-                int intTrue = 1;
-                if (setsockopt (conf->udpbeacon, SOL_SOCKET, SO_BROADCAST,
-                                (char *)&intTrue, sizeof(intTrue))<0) {
-                    errlogPrintf ("CAS: online socket set up error\n");
-                    epicsThreadSuspendSelf ();
-                }
-
-                /*
-                 * this connect is to supress a warning message on Linux
-                 * when we shutdown the read side of the socket. If it
-                 * fails (and it will on old ip kernels) we just ignore
-                 * the failure.
-                 */
-                osiSockAddr sockAddr;
-                sockAddr.ia.sin_family = AF_UNSPEC;
-                sockAddr.ia.sin_port = htons ( 0 );
-                sockAddr.ia.sin_addr.s_addr = htonl (0);
-                connect ( conf->udpbeacon, & sockAddr.sa, sizeof ( sockAddr.sa ) );
-                shutdown ( conf->udpbeacon, SHUT_RD );
-            }
-
-            /* find interface broadcast address */
-            {
-                ELLLIST bcastList = ELLLIST_INIT;
-                osiSockAddrNode *pNode;
-
-                osiSockDiscoverBroadcastAddresses (&bcastList,
-                                                   conf->udpbeacon, &conf->udpbeaconRx); // match addr
-
-                if(ellCount(&bcastList)==0) {
-                    cantProceed("Can't find broadcast address of interface %s\n", ifaceName);
-                } else if(ellCount(&bcastList)>1 && conf->udpbeaconRx.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
-                    printf("Interface %s has more than one broadcast address?\n", ifaceName);
-                }
-
-                pNode = (osiSockAddrNode*)ellFirst(&bcastList);
-
-                /* beacons are sent to a well known port w/ the iface bcast addr */
-                conf->udpbeaconTx = conf->udpbeaconRx;
-                conf->udpbeaconTx.ia.sin_addr = pNode->addr.ia.sin_addr;
-                conf->udpbeaconTx.ia.sin_port = htons(beacon_port);
-
-                if(connect(conf->udpbeacon, &conf->udpbeaconTx.sa, sizeof(conf->udpbeaconTx))!=0)
-                {
-                    char sockErrBuf[64], buf[40];
-                    epicsSocketConvertErrnoToString (
-                        sockErrBuf, sizeof ( sockErrBuf ) );
-                    ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
-                    cantProceed( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
-                        __FILE__, buf, sockErrBuf);
-                }
-
-                /* TODO: free bcastList */
-            }
+            conf->udp = conf->udpbcast = INVALID_SOCKET;
 
             /* create and bind UDP name receiver socket(s) */
 
@@ -488,7 +516,7 @@ int rsrv_init (void)
                 cantProceed("rsrv_init ran out of udp sockets");
 
             conf->udpAddr = conf->tcpAddr;
-            conf->udpAddr.ia.sin_port = htons(udp_port);
+            conf->udpAddr.ia.sin_port = htons(ca_udp_port);
 
             epicsSocketEnableAddressUseForDatagramFanout ( conf->udp );
 
@@ -503,18 +531,36 @@ int rsrv_init (void)
              * which will then receive only broadcasts.
              */
             if(conf->udpAddr.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
+                /* find interface broadcast address */
+                ELLLIST bcastList = ELLLIST_INIT;
+                osiSockAddrNode *pNode;
 
-                conf->udpbcast = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
-                if(conf->udpbcast==INVALID_SOCKET)
-                    cantProceed("rsrv_init ran out of udp sockets for bcast");
+                osiSockDiscoverBroadcastAddresses (&bcastList,
+                                                   conf->udp, &conf->udpAddr); // match addr
 
-                conf->udpbcastAddr = conf->udpAddr;
-                conf->udpbcastAddr.ia.sin_addr = conf->udpbeaconTx.ia.sin_addr;
+                if(ellCount(&bcastList)==0) {
+                    fprintf(stderr, "Warning: Can't find broadcast address of interface %s\n"
+                                    "         Name lookup may not work on this interface\n", ifaceName);
+                } else {
+                    if(ellCount(&bcastList)>1 && conf->udpAddr.ia.sin_addr.s_addr!=htonl(INADDR_ANY))
+                        printf("Interface %s has more than one broadcast address?\n", ifaceName);
 
-                epicsSocketEnableAddressUseForDatagramFanout ( conf->udpbcast );
+                    pNode = (osiSockAddrNode*)ellFirst(&bcastList);
 
-                if(tryBind(conf->udpbcast, &conf->udpbcastAddr, "UDP Socket bcast"))
-                    goto cleanup;
+                    conf->udpbcast = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+                    if(conf->udpbcast==INVALID_SOCKET)
+                        cantProceed("rsrv_init ran out of udp sockets for bcast");
+
+                    epicsSocketEnableAddressUseForDatagramFanout ( conf->udpbcast );
+
+                    conf->udpbcastAddr = conf->udpAddr;
+                    conf->udpbcastAddr.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
+
+                    if(tryBind(conf->udpbcast, &conf->udpbcastAddr, "UDP Socket bcast"))
+                        goto cleanup;
+                }
+
+                ellFree(&bcastList);
             }
 
             ellAdd(&servers, &conf->node);
@@ -554,7 +600,6 @@ int rsrv_init (void)
             epicsSocketDestroy(conf->tcp);
             if(conf->udp!=INVALID_SOCKET) epicsSocketDestroy(conf->udp);
             if(conf->udpbcast!=INVALID_SOCKET) epicsSocketDestroy(conf->udpbcast);
-            if(conf->udpbeacon!=INVALID_SOCKET) epicsSocketDestroy(conf->udpbeacon);
             free(conf);
         }
     }
@@ -738,10 +783,8 @@ void casr (unsigned level)
         while (client) {
             char    buf[40];
 
-            printf("Server interface\n");
-
             ipAddrToDottedIP (&client->tcpAddr.ia, buf, sizeof(buf));
-            printf(" TCP listener %s\n", buf);
+            printf("Server interface %s\n", buf);
 
             ipAddrToDottedIP (&client->udpAddr.ia, buf, sizeof(buf));
             printf(" UDP receiver 1 %s\n", buf);
@@ -753,16 +796,22 @@ void casr (unsigned level)
             }
 #endif
 
-            ipAddrToDottedIP (&client->udpbeaconRx.ia, buf, sizeof(buf));
-            printf(" UDP beacon socket bound %s\n", buf);
-
-            ipAddrToDottedIP (&client->udpbeaconTx.ia, buf, sizeof(buf));
-            printf(" UDP beacon destination %s\n", buf);
-
             client = (rsrv_iface_config *) ellNext(&client->node);
         }
     }
     UNLOCK_CLIENTQ
+    if (level>=2) {
+        osiSockAddrNode * pAddr;
+        for(pAddr = (osiSockAddrNode*)ellFirst(&beaconAddrList);
+            pAddr;
+            pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
+        {
+            char    buf[40];
+
+            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+            printf("Beacon destination %s\n", buf);
+        }
+    }
 
     if (level>=2u) {
         bytes_reserved = 0u;

@@ -166,14 +166,16 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
     scratch.ia.sin_family = AF_INET;
     scratch.ia.sin_port = htons(*port);
 
-    while(1) {
-        ELLNODE *cur;
+    while(ellCount(&casIntfAddrList)>0) {
+        ELLNODE *cur, *next;
         unsigned i, ok = 1;
 
         for(i=0; i<ellCount(&casIntfAddrList); i++)
             socks[i] = INVALID_SOCKET;
 
-        for (i=0, cur=ellFirst(&casIntfAddrList); cur; i++, cur=ellNext(cur))
+        for (i=0, cur=ellFirst(&casIntfAddrList), next = cur ? ellNext(cur) : NULL;
+             cur;
+             i++, cur=next, next=next ? ellNext(next) : NULL)
         {
             SOCKET tcpsock;
             osiSockAddr ifaceAddr = ((osiSockAddrNode *)cur)->addr;
@@ -249,6 +251,9 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
         }
     }
 
+    if(ellCount(&casIntfAddrList)==0)
+        cantProceed("RSRV has empty interface list");
+
     return socks;
 }
 
@@ -270,8 +275,15 @@ void rsrv_build_addr_lists(void)
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
 
-    if(addAddrToChannelAccessAddressList ( &casIntfAddrList, &EPICS_CAS_INTF_ADDR_LIST, 0, 0 ))
-        addAddrToChannelAccessAddressList ( &casIntfAddrList, &EPICS_CAS_BEACON_ADDR_LIST, 0, 0 );
+    {
+        ELLLIST temp = ELLLIST_INIT;
+        /* use the first parameter which is set. */
+        if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 ))
+            if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 ))
+                addAddrToChannelAccessAddressList ( &temp, &EPICS_CA_ADDR_LIST, ca_udp_port, 1 );
+
+        removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
+    }
 
     if (ellCount(&casIntfAddrList) == 0) {
         /* default to wildcard 0.0.0.0 */

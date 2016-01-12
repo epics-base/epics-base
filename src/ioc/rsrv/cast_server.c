@@ -54,7 +54,7 @@
 /*
  * clean_addrq
  */
-static void clean_addrq(struct client *prsrv_cast_client)
+static void clean_addrq(struct client *client)
 {
     struct channel_in_use * pciu;
     struct channel_in_use * pnextciu;
@@ -67,9 +67,9 @@ static void clean_addrq(struct client *prsrv_cast_client)
 
     epicsTimeGetCurrent ( &current );
 
-    epicsMutexMustLock ( prsrv_cast_client->chanListLock );
+    epicsMutexMustLock ( client->chanListLock );
     pnextciu = (struct channel_in_use *) 
-            prsrv_cast_client->chanList.node.next;
+            client->chanList.node.next;
 
     while( (pciu = pnextciu) ) {
         pnextciu = (struct channel_in_use *)pciu->node.next;
@@ -77,7 +77,7 @@ static void clean_addrq(struct client *prsrv_cast_client)
         delay = epicsTimeDiffInSeconds(&current,&pciu->time_at_creation);
         if (delay > timeout) {
 
-            ellDelete(&prsrv_cast_client->chanList, &pciu->node);
+            ellDelete(&client->chanList, &pciu->node);
             LOCK_CLIENTQ;
             s = bucketRemoveItemUnsignedId (
                 pCaBucket,
@@ -96,7 +96,7 @@ static void clean_addrq(struct client *prsrv_cast_client)
             if(delay>maxdelay) maxdelay = delay;
         }
     }
-    epicsMutexUnlock ( prsrv_cast_client->chanListLock );
+    epicsMutexUnlock ( client->chanListLock );
 
 #   ifdef DEBUG
     if(ndelete){

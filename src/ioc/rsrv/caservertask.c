@@ -298,7 +298,9 @@ int rsrv_init (void)
     freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
     ellInit ( &casIntfAddrList );
     ellInit ( &beaconAddrList );
-    pCaBucket = NULL;
+    pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
+    if (!pCaBucket)
+        cantProceed("RSRV failed to allocate ID lookup table\n");
 
     castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     castcp_ctl = ctlPause;
@@ -552,12 +554,10 @@ void casr (unsigned level)
             MAX_TCP,
             (unsigned int) freeListItemsAvail ( rsrvLargeBufFreeListTCP ),
             rsrvSizeofLargeBufTCP );
-        if(pCaBucket){
-            printf( "The server's resource id conversion table:\n");
-            LOCK_CLIENTQ;
-            bucketShow (pCaBucket);
-            UNLOCK_CLIENTQ;
-        }
+        printf( "The server's resource id conversion table:\n");
+        LOCK_CLIENTQ;
+        bucketShow (pCaBucket);
+        UNLOCK_CLIENTQ;
         printf ( "The server's array size limit is %u bytes max\n",
             rsrvSizeofLargeBufTCP );
 

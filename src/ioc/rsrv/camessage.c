@@ -2497,12 +2497,7 @@ int camessage ( struct client *client )
     unsigned bytes_left;
     int status = RSRV_ERROR;
 
-    if ( ! pCaBucket ) {
-        pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
-        if(!pCaBucket){
-            return RSRV_ERROR;
-        }
-    }
+    assert(pCaBucket);
 
     /* drain remnents of large messages that will not fit */
     if ( client->recvBytesToDrain ) {

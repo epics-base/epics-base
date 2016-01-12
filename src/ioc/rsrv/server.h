@@ -170,7 +170,7 @@ GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
 GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE ELLLIST            casIntfAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
-GLBLTYPE BUCKET             *pCaBucket;
+GLBLTYPE BUCKET             *pCaBucket; /* locked by clientQlock */
 GLBLTYPE void               *rsrvClientFreeList;
 GLBLTYPE void               *rsrvChanFreeList;
 GLBLTYPE void               *rsrvEventFreeList;
@@ -178,7 +178,7 @@ GLBLTYPE void               *rsrvSmallBufFreeListTCP;
 GLBLTYPE void               *rsrvLargeBufFreeListTCP;
 GLBLTYPE unsigned           rsrvSizeofLargeBufTCP;
 GLBLTYPE void               *rsrvPutNotifyFreeList;
-GLBLTYPE unsigned           rsrvChannelCount;
+GLBLTYPE unsigned           rsrvChannelCount; /* locked by clientQlock */
 
 GLBLTYPE epicsEventId       casudp_startStopEvent;
 GLBLTYPE epicsEventId       beacon_startStopEvent;

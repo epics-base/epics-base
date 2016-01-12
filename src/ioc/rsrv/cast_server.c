@@ -115,29 +115,30 @@ static void clean_addrq(void)
  */
 void cast_server(void *pParm)
 {
-    osiSockAddrNode     *paddrNode;
+    cast_config *conf = pParm;
+    osiSockAddr     *paddrNode = &conf->pAddr;
     struct sockaddr_in  sin;
     int                 status;
     int                 count=0;
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
     osiSockIoctl_t      nchars;
+    SOCKET              recv_sock;
 
     recv_addr_size = sizeof(new_recv_addr);
-
-    if( IOC_cast_sock!=0 && IOC_cast_sock!=INVALID_SOCKET ) {
-        epicsSocketDestroy ( IOC_cast_sock );
-    }
 
     /* 
      *  Open the socket.
      *  Use ARPA Internet address format and datagram socket.
      */
 
-    if ( ( IOC_cast_sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
+    if ( ( recv_sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
         epicsPrintf ("CAS: cast socket creation error\n");
         epicsThreadSuspendSelf ();
     }
+
+    if(conf->reply_sock==INVALID_SOCKET)
+        conf->reply_sock = recv_sock; /* assume that the socket capable of unicast send is created first */
 
     /*
      * some concern that vxWorks will run out of mBuf's
@@ -164,19 +165,17 @@ void cast_server(void *pParm)
     }
 #endif
 
-    epicsSocketEnableAddressUseForDatagramFanout ( IOC_cast_sock );
+    epicsSocketEnableAddressUseForDatagramFanout ( recv_sock );
 
-    paddrNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
-
-    memcpy(&sin, &paddrNode->addr.ia, sizeof (sin));
+    memcpy(&sin, &paddrNode->ia, sizeof (sin));
 
     /* get server's Internet address */
-    if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
+    if( bind(recv_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
         epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
-        epicsSocketDestroy ( IOC_cast_sock );
+        epicsSocketDestroy ( recv_sock );
         epicsThreadSuspendSelf ();
     }
 
@@ -186,7 +185,7 @@ void cast_server(void *pParm)
      *
      */
     while ( TRUE ) {
-        prsrv_cast_client = create_client ( IOC_cast_sock, IPPROTO_UDP );
+        prsrv_cast_client = create_client ( conf->reply_sock, IPPROTO_UDP );
         if ( prsrv_cast_client ) {
             break;
         }
@@ -200,11 +199,15 @@ void cast_server(void *pParm)
      */
     rsrv_version_reply ( prsrv_cast_client );
 
+    /* these pointers become invalid after signaling casudp_startStopEvent */
+    conf = NULL;
+    paddrNode = NULL;
+
     epicsEventSignal(casudp_startStopEvent);
 
     while (TRUE) {
         status = recvfrom (
-            IOC_cast_sock,
+            recv_sock,
             prsrv_cast_client->recv.buf,
             prsrv_cast_client->recv.maxstk,
             0,
@@ -292,7 +295,7 @@ void cast_server(void *pParm)
          * allow messages to batch up if more are comming
          */
         nchars = 0; /* supress purify warning */
-        status = socket_ioctl(IOC_cast_sock, FIONREAD, &nchars);
+        status = socket_ioctl(recv_sock, FIONREAD, &nchars);
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");
             cas_send_dg_msg (prsrv_cast_client);

@@ -74,7 +74,6 @@ void rsrv_online_notify_task(void *pParm)
     char                        buf[16];
     unsigned                    priorityOfUDP;
     epicsThreadBooleanStatus    tbs;
-    epicsThreadId               tid;
     
     taskwdInsert (epicsThreadGetIdSelf(),NULL,NULL);
     
@@ -223,14 +222,59 @@ void rsrv_online_notify_task(void *pParm)
     casudp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     casudp_ctl = ctlPause;
 
-    tid = epicsThreadCreate ( "CAS-UDP", priorityOfUDP,
-        epicsThreadGetStackSize (epicsThreadStackMedium),
-        cast_server, 0 );
-    if ( tid == 0 ) {
-        epicsPrintf ( "CAS: unable to start UDP daemon thread\n" );
+    {
+        /* casudp_startStopEvent ensures that this struct
+         * lives until the cast_server thread(s) are done with it.
+         */
+        cast_config config;
+
+        config.pAddr = ((osiSockAddrNode *) ellFirst ( &casIntfAddrList ))->addr;
+        config.reply_sock = INVALID_SOCKET;
+
+        epicsThreadMustCreate ( "CAS-UDP", priorityOfUDP,
+                                epicsThreadGetStackSize (epicsThreadStackMedium),
+                                cast_server, &config );
+
+        epicsEventMustWait(casudp_startStopEvent);
+
+#if !defined(_WIN32)
+        /* An oddness of BSD sockets (not winsock) is that binding to
+         * INADDR_ANY will receive unicast and broadcast, but binding to
+         * a specific interface address receives only unicast.  The trick
+         * is to bind a second socket to the interface broadcast address,
+         * which will then receive only broadcasts.
+         */
+        if (config.pAddr.ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+            ELLLIST bcastList = ELLLIST_INIT;
+
+            osiSockDiscoverBroadcastAddresses (&bcastList,
+                                               sock, &config.pAddr); // match addr
+
+            if(ellCount(&bcastList)==0) {
+                errlogPrintf("CAS UDP: failed to find interface broadcast address\n");
+
+            } else {
+                osiSockAddrNode *pNode = (osiSockAddrNode*)ellFirst(&bcastList);
+                assert(config.pAddr.sa.sa_family==pNode->addr.sa.sa_family);
+
+                if (config.pAddr.ia.sin_addr.s_addr != pNode->addr.ia.sin_addr.s_addr) {
+
+                    /* copy the address, keep the port */
+                    config.pAddr.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
+
+                    epicsThreadMustCreate ( "CAS-UDPB", priorityOfUDP,
+                                            epicsThreadGetStackSize (epicsThreadStackMedium),
+                                            cast_server, &config );
+
+                    epicsEventMustWait(casudp_startStopEvent);
+                }
+            }
+
+            ellFree(&bcastList);
+        }
+#endif
     }
 
-    epicsEventMustWait(casudp_startStopEvent);
     epicsEventSignal(beacon_startStopEvent);
 
     while (TRUE) {

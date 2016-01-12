@@ -137,6 +137,10 @@ struct event_ext {
     char                    modified;   /* mod & ev flw ctrl enbl */
 };
 
+typedef struct {
+    osiSockAddr pAddr;
+    SOCKET reply_sock;
+} cast_config;
 
 enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
@@ -161,7 +165,6 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
 GLBLTYPE int                CASDEBUG;
 GLBLTYPE SOCKET             IOC_sock;
-GLBLTYPE SOCKET             IOC_cast_sock;
 GLBLTYPE unsigned short     ca_server_port;
 GLBLTYPE ELLLIST            clientQ; /* locked by clientQlock */
 GLBLTYPE ELLLIST            beaconAddrList;

@@ -222,7 +222,7 @@ void cas_send_dg_msg ( struct client * pclient )
     /*
      * add placeholder for the first version message should it be needed
      */
-    rsrv_version_reply ( prsrv_cast_client );
+    rsrv_version_reply ( pclient );
 
     SEND_UNLOCK(pclient);
 

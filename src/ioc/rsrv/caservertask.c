@@ -158,8 +158,11 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
 {
     SOCKET *socks;
     osiSockAddr scratch;
+    unsigned i;
 
     socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grap_tcp");
+    for(i=0; i<ellCount(&casIntfAddrList); i++)
+        socks[i] = INVALID_SOCKET;
 
     /* start with preferred port */
     memset(&scratch, 0, sizeof(scratch));
@@ -168,10 +171,13 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
 
     while(ellCount(&casIntfAddrList)>0) {
         ELLNODE *cur, *next;
-        unsigned i, ok = 1;
+        unsigned ok = 1;
 
-        for(i=0; i<ellCount(&casIntfAddrList); i++)
+        for(i=0; i<ellCount(&casIntfAddrList); i++) {
+            if(socks[i] != INVALID_SOCKET)
+                epicsSocketDestroy(socks[i]);
             socks[i] = INVALID_SOCKET;
+        }
 
         for (i=0, cur=ellFirst(&casIntfAddrList), next = cur ? ellNext(cur) : NULL;
              cur;
@@ -209,23 +215,33 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
             } else {
                 /* bind fails.  React harshly to unexpected errors to avoid an infinite loop */
                 if(errno==SOCK_EADDRNOTAVAIL) {
+                    /* this is not a bind()able address. */
+                    int j;
                     char name[40];
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
                     printf("Skipping %s which is not an interface address\n", name);
+
+                    for(j=0; j<=i; j++) {
+                        epicsSocketDestroy(socks[j]);
+                        socks[j] = INVALID_SOCKET;
+                    }
+
                     ellDelete(&casIntfAddrList, cur);
                     free(cur);
                     ok = 0;
                     break;
                 }
+                /* if SOCK_EADDRINUSE then try again with a different port number.
+                 * otherwise, fail hard
+                 */
                 if(errno!=SOCK_EADDRINUSE && errno!=SOCK_EADDRNOTAVAIL) {
                     char name[40];
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
-                    errlogPrintf ( "CAS: Socket bind %s error was \"%s\"\n",
+                    cantProceed( "CAS: Socket bind %s error was \"%s\"\n",
                         name, sockErrBuf );
-                    epicsThreadSuspendSelf ();
                 }
                 ok = 0;
                 break;

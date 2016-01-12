@@ -65,7 +65,7 @@ static void req_server (void *pParm)
     struct sockaddr_in serverAddr;  /* server's address */
     osiSocklen_t addrSize = (osiSocklen_t) sizeof(struct sockaddr_in);
     int status;
-    SOCKET clientSock;
+    SOCKET IOC_sock;
     epicsThreadId tid;
     int portChange;
 
@@ -101,10 +101,6 @@ static void req_server (void *pParm)
     }
 
     memcpy ( &serverAddr, &pNode->addr.ia, addrSize );
-
-    if (IOC_sock != 0 && IOC_sock != INVALID_SOCKET) {
-        epicsSocketDestroy ( IOC_sock );
-    }
 
     /*
      * Open the socket. Use ARPA Internet address format and stream
@@ -196,6 +192,7 @@ static void req_server (void *pParm)
     epicsEventSignal(castcp_startStopEvent);
 
     while (TRUE) {
+        SOCKET clientSock;
         struct sockaddr     sockAddr;
         osiSocklen_t        addLen = sizeof(sockAddr);
 

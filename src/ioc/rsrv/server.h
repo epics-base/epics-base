@@ -164,7 +164,6 @@ enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 #endif
 
 GLBLTYPE int                CASDEBUG;
-GLBLTYPE SOCKET             IOC_sock;
 GLBLTYPE unsigned short     ca_server_port;
 GLBLTYPE ELLLIST            clientQ; /* (TCP clients) locked by clientQlock */
 GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */

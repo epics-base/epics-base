@@ -138,9 +138,16 @@ struct event_ext {
 };
 
 typedef struct {
-    osiSockAddr pAddr;
-    SOCKET reply_sock;
-} cast_config;
+    ELLNODE node;
+    osiSockAddr tcpAddr, /* TCP listener endpoint */
+                udpAddr, /* UDP name unicast receiver endpoint */
+                udpbcastAddr, /* UDP name broadcast receiver endpoint */
+                udpbeaconRx, /* UDP beacon receiver endpoint ( doesn't actually receive ) */
+                udpbeaconTx; /* UDP beacon destination address */
+    SOCKET tcp, udp, udpbcast, udpbeacon;
+
+    unsigned int startbcast:1;
+} rsrv_iface_config;
 
 enum ctl {ctlInit, ctlRun, ctlPause, ctlExit};
 
@@ -167,6 +174,7 @@ GLBLTYPE int                CASDEBUG;
 GLBLTYPE unsigned short     ca_server_port;
 GLBLTYPE ELLLIST            clientQ; /* (TCP clients) locked by clientQlock */
 GLBLTYPE ELLLIST            clientQudp; /* locked by clientQlock */
+GLBLTYPE ELLLIST            servers; /* rsrv_iface_config::node, read-only after rsrv_init() */
 GLBLTYPE ELLLIST            beaconAddrList;
 GLBLTYPE ELLLIST            casIntfAddrList;
 GLBLTYPE epicsMutexId       clientQlock;
@@ -187,6 +195,7 @@ GLBLTYPE volatile enum ctl  casudp_ctl;
 GLBLTYPE volatile enum ctl  beacon_ctl;
 GLBLTYPE volatile enum ctl  castcp_ctl;
 
+GLBLTYPE unsigned int       threadPrios[5];
 
 #define CAS_HASH_TABLE_SIZE 4096
 

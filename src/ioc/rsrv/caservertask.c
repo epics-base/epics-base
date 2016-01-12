@@ -59,83 +59,12 @@ epicsThreadPrivateId rsrvCurrentClient;
  */
 static void req_server (void *pParm)
 {
-    unsigned priorityOfSelf = epicsThreadGetPrioritySelf ();
-    unsigned priorityOfBeacons;
-    epicsThreadBooleanStatus tbs;
-    osiSockAddrNode *pNode;
-    struct sockaddr_in serverAddr;  /* server's address */
-    osiSocklen_t addrSize = (osiSocklen_t) sizeof(struct sockaddr_in);
-    int status;
+    rsrv_iface_config *conf = pParm;
     SOCKET IOC_sock;
-    epicsThreadId tid;
-    int portChange;
 
     taskwdInsert ( epicsThreadGetIdSelf (), NULL, NULL );
 
-    assert (ellCount(&casIntfAddrList)>0);
-    pNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
-
-    memcpy ( &serverAddr, &pNode->addr.ia, addrSize );
-
-    /*
-     * Open the socket. Use ARPA Internet address format and stream
-     * sockets. Format described in <sys/socket.h>.
-     */
-    if ( ( IOC_sock = epicsSocketCreate (AF_INET, SOCK_STREAM, 0) ) == INVALID_SOCKET ) {
-        errlogPrintf ("CAS: Socket creation error\n");
-        epicsThreadSuspendSelf ();
-    }
-
-    epicsSocketEnableAddressReuseDuringTimeWaitState ( IOC_sock );
-
-    /* get server's Internet address */
-
-    status = bind(IOC_sock, (struct sockaddr *) &serverAddr, addrSize);
-    if ( status < 0 ) {
-        if ( SOCKERRNO == SOCK_EADDRINUSE ) {
-            /*
-             * enable assignment of a default port
-             * (so the getsockname() call below will
-             * work correctly)
-             */
-            serverAddr.sin_port = ntohs (0);
-            status = bind(IOC_sock, (struct sockaddr *) &serverAddr, addrSize);
-        }
-        if ( status < 0 ) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString (
-                sockErrBuf, sizeof ( sockErrBuf ) );
-            errlogPrintf ( "CAS: Socket bind error was \"%s\"\n",
-                sockErrBuf );
-            epicsThreadSuspendSelf ();
-        }
-        portChange = 1;
-    }
-    else {
-        portChange = 0;
-    }
-
-    status = getsockname ( IOC_sock,
-            (struct sockaddr *)&serverAddr, &addrSize);
-    if ( status ) {
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString (
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        errlogPrintf ( "CAS: getsockname() error %s\n",
-            sockErrBuf );
-        epicsThreadSuspendSelf ();
-    }
-
-    ca_server_port = ntohs (serverAddr.sin_port);
-
-    if ( portChange ) {
-        errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
-        errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n",
-            ca_server_port );
-        errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
-        errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
-        errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
-    }
+    IOC_sock = conf->tcp;
 
     /* listen and accept new connections */
     if ( listen ( IOC_sock, 20 ) < 0 ) {
@@ -148,22 +77,6 @@ static void req_server (void *pParm)
         epicsThreadSuspendSelf ();
     }
 
-    tbs  = epicsThreadHighestPriorityLevelBelow ( priorityOfSelf, &priorityOfBeacons );
-    if ( tbs != epicsThreadBooleanStatusSuccess ) {
-        priorityOfBeacons = priorityOfSelf;
-    }
-
-    beacon_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
-    beacon_ctl = ctlPause;
-
-    tid = epicsThreadCreate ( "CAS-beacon", priorityOfBeacons,
-        epicsThreadGetStackSize (epicsThreadStackSmall),
-        rsrv_online_notify_task, 0 );
-    if ( tid == 0 ) {
-        epicsPrintf ( "CAS: unable to start beacon thread\n" );
-    }
-
-    epicsEventMustWait(beacon_startStopEvent);
     epicsEventSignal(castcp_startStopEvent);
 
     while (TRUE) {
@@ -216,6 +129,129 @@ static void req_server (void *pParm)
     }
 }
 
+static
+int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
+{
+    if(bind(sock, &addr->ia, sizeof(*addr))<0) {
+        char sockErrBuf[64];
+        if(errno!=SOCK_EADDRINUSE)
+        {
+            epicsSocketConvertErrnoToString (
+                        sockErrBuf, sizeof ( sockErrBuf ) );
+            errlogPrintf ( "CAS: %s bind error: \"%s\"\n",
+                           name, sockErrBuf );
+            epicsThreadSuspendSelf ();
+        }
+        return -1;
+    } else
+        return 0;
+}
+
+/* need to collect a set of TCP sockets, one for each interface,
+ * which are bound to the same TCP port number.
+ * Needed to avoid the complications and confusion of different TCP
+ * ports for each interface (name server and beacon sender would need
+ * to know this).
+ */
+static
+SOCKET* rsrv_grap_tcp(unsigned short *port)
+{
+    SOCKET *socks;
+    osiSockAddr scratch;
+
+    socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grap_tcp");
+
+    /* start with preferred port */
+    memset(&scratch, 0, sizeof(scratch));
+    scratch.ia.sin_family = AF_INET;
+    scratch.ia.sin_port = htons(*port);
+
+    while(1) {
+        ELLNODE *cur;
+        unsigned i, ok = 1;
+
+        for(i=0; i<ellCount(&casIntfAddrList); i++)
+            socks[i] = INVALID_SOCKET;
+
+        for (i=0, cur=ellFirst(&casIntfAddrList); cur; i++, cur=ellNext(cur))
+        {
+            SOCKET tcpsock;
+            osiSockAddr ifaceAddr = ((osiSockAddrNode *)cur)->addr;
+
+            scratch.ia.sin_addr = ifaceAddr.ia.sin_addr;
+
+            tcpsock = socks[i] = epicsSocketCreate (AF_INET, SOCK_STREAM, 0);
+            if(tcpsock==INVALID_SOCKET)
+                cantProceed("rsrv ran out of sockets during initialization");
+
+            epicsSocketEnableAddressReuseDuringTimeWaitState ( tcpsock );
+
+            if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0) {
+                if(scratch.ia.sin_port==0) {
+                    /* use first socket to pick a random port */
+                    assert(i==0);
+                    osiSocklen_t alen = sizeof(ifaceAddr);
+                    if(getsockname(tcpsock, &ifaceAddr.sa, &alen)) {
+                        char sockErrBuf[64];
+                        epicsSocketConvertErrnoToString (
+                            sockErrBuf, sizeof ( sockErrBuf ) );
+                        errlogPrintf ( "CAS: getsockname error was \"%s\"\n",
+                            sockErrBuf );
+                        epicsThreadSuspendSelf ();
+                        ok = 0;
+                        break;
+                    }
+                    scratch.ia.sin_port = ifaceAddr.ia.sin_port;
+                    assert(scratch.ia.sin_port!=0);
+                }
+            } else {
+                /* bind fails.  React harshly to unexpected errors to avoid an infinite loop */
+                if(errno==SOCK_EADDRNOTAVAIL) {
+                    char name[40];
+                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
+                    printf("Skipping %s which is not an interface address\n", name);
+                    ellDelete(&casIntfAddrList, cur);
+                    free(cur);
+                    ok = 0;
+                    break;
+                }
+                if(errno!=SOCK_EADDRINUSE && errno!=SOCK_EADDRNOTAVAIL) {
+                    char name[40];
+                    char sockErrBuf[64];
+                    epicsSocketConvertErrnoToString (
+                        sockErrBuf, sizeof ( sockErrBuf ) );
+                    ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
+                    errlogPrintf ( "CAS: Socket bind %s error was \"%s\"\n",
+                        name, sockErrBuf );
+                    epicsThreadSuspendSelf ();
+                }
+                ok = 0;
+                break;
+            }
+        }
+
+        if (ok) {
+            assert(scratch.ia.sin_port!=0);
+            *port = ntohs(scratch.ia.sin_port);
+
+            break;
+        } else {
+
+            for(i=0; i<ellCount(&casIntfAddrList); i++) {
+                /* cleanup any ports actually bound */
+                if(socks[i]!=INVALID_SOCKET) {
+                    epicsSocketDestroy(socks[i]);
+                    socks[i] = INVALID_SOCKET;
+                }
+            }
+
+            scratch.ia.sin_port=0; /* next iteration starts with a random port */
+        }
+    }
+
+    return socks;
+}
+
 static dbServer rsrv_server = {
     ELLNODE_INIT,
     "rsrv",
@@ -229,16 +265,14 @@ static dbServer rsrv_server = {
  */
 int rsrv_init (void)
 {
-    epicsThreadBooleanStatus tbs;
-    unsigned priorityOfConnectDaemon;
-    epicsThreadId tid;
     long maxBytesAsALong;
     long status;
+    unsigned short udp_port, beacon_port;
+    SOCKET *socks;
 
     clientQlock = epicsMutexMustCreate();
 
     ellInit ( &clientQ );
-    ellInit ( &clientQudp );
     freeListInitPvt ( &rsrvClientFreeList, sizeof(struct client), 8 );
     freeListInitPvt ( &rsrvChanFreeList, sizeof(struct channel_in_use), 512 );
     freeListInitPvt ( &rsrvEventFreeList, sizeof(struct event_ext), 512 );
@@ -258,6 +292,16 @@ int rsrv_init (void)
     else {
         ca_server_port = envGetInetPortConfigParam ( &EPICS_CA_SERVER_PORT,
             (unsigned short) CA_SERVER_PORT );
+    }
+    udp_port = ca_server_port;
+
+    if (envGetConfigParamPtr(&EPICS_CAS_BEACON_PORT)) {
+        beacon_port = envGetInetPortConfigParam (&EPICS_CAS_BEACON_PORT,
+            (unsigned short) CA_REPEATER_PORT );
+    }
+    else {
+        beacon_port = envGetInetPortConfigParam (&EPICS_CA_REPEATER_PORT,
+            (unsigned short) CA_REPEATER_PORT );
     }
 
     status =  envGetLongConfigParam ( &EPICS_CA_MAX_ARRAY_BYTES, &maxBytesAsALong );
@@ -301,35 +345,227 @@ int rsrv_init (void)
     }
 
     castcp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    casudp_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
+    beacon_startStopEvent = epicsEventMustCreate(epicsEventEmpty);
     castcp_ctl = ctlPause;
 
-    /*
-     * go down two levels so that we are below
-     * the TCP and event threads started on behalf
-     * of individual clients
+    /* Thread priorites
+     * Now starting per interface
+     *  TCP Listener: epicsThreadPriorityCAServerLow-2
+     *  Name receiver: epicsThreadPriorityCAServerLow-4
+     * Now starting global
+     *  Beacon sender: epicsThreadPriorityCAServerLow-3
+     * Started later per TCP client
+     *  TCP receiver: epicsThreadPriorityCAServerLow
+     *  TCP sender : epicsThreadPriorityCAServerLow-1
      */
-    tbs  = epicsThreadHighestPriorityLevelBelow (
-        epicsThreadPriorityCAServerLow, &priorityOfConnectDaemon );
-    if ( tbs == epicsThreadBooleanStatusSuccess ) {
-        tbs  = epicsThreadHighestPriorityLevelBelow (
-            priorityOfConnectDaemon, &priorityOfConnectDaemon );
-        if ( tbs != epicsThreadBooleanStatusSuccess ) {
-            priorityOfConnectDaemon = epicsThreadPriorityCAServerLow;
+    {
+        unsigned i;
+        threadPrios[0] = epicsThreadPriorityCAServerLow;
+
+        for(i=1; i<NELEMENTS(threadPrios); i++)
+        {
+            if(epicsThreadBooleanStatusSuccess!=epicsThreadHighestPriorityLevelBelow(
+                        threadPrios[i-1], &threadPrios[i]))
+            {
+                /* on failure use the lowest known */
+                threadPrios[i] = threadPrios[i-1];
+            }
         }
     }
-    else {
-        priorityOfConnectDaemon = epicsThreadPriorityCAServerLow;
+
+    {
+        unsigned short sport = ca_server_port;
+        socks = rsrv_grap_tcp(&sport);
+
+        if ( sport != ca_server_port ) {
+            ca_server_port = sport;
+            errlogPrintf ( "cas warning: Configured TCP port was unavailable.\n");
+            errlogPrintf ( "cas warning: Using dynamically assigned TCP port %hu,\n",
+                ca_server_port );
+            errlogPrintf ( "cas warning: but now two or more servers share the same UDP port.\n");
+            errlogPrintf ( "cas warning: Depending on your IP kernel this server may not be\n" );
+            errlogPrintf ( "cas warning: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)\n" );
+        }
     }
 
-    tid = epicsThreadCreate ( "CAS-TCP",
-        priorityOfConnectDaemon,
-        epicsThreadGetStackSize(epicsThreadStackMedium),
-        req_server, 0);
-    if ( tid == 0 ) {
-        epicsPrintf ( "CAS: unable to start connection request thread\n" );
+    /* start servers (TCP and UDP(s) for each interface.
+     */
+    {
+        ELLNODE *cur;
+        int i;
+
+        for (i=0, cur=ellFirst(&casIntfAddrList); cur; i++, cur=ellNext(cur))
+        {
+            char ifaceName[40];
+            rsrv_iface_config *conf;
+
+            conf = callocMustSucceed(1, sizeof(*conf), "rsrv_init");
+
+            conf->tcpAddr = ((osiSockAddrNode *)cur)->addr;
+            conf->tcpAddr.ia.sin_port = htons(ca_server_port);
+            conf->tcp = socks[i];
+            socks[i] = INVALID_SOCKET;
+
+            ipAddrToDottedIP (&conf->tcpAddr.ia, ifaceName, sizeof(ifaceName));
+
+            conf->udp = conf->udpbcast = conf->udpbeacon = INVALID_SOCKET;
+
+            /* create and bind UDP beacon socket */
+
+            conf->udpbeacon = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+            if(conf->udpbeacon==INVALID_SOCKET)
+                cantProceed("rsrv_init ran out of udp sockets for beacon at %s", ifaceName);
+
+            /* beacon sender binds to a random port, and won't actually receive anything */
+            conf->udpbeaconRx = conf->tcpAddr;
+            conf->udpbeaconRx.ia.sin_port = 0;
+
+            if(tryBind(conf->udpbeacon, &conf->udpbeaconRx, "UDP beacon socket"))
+                goto cleanup;
+
+
+            {
+                int intTrue = 1;
+                if (setsockopt (conf->udpbeacon, SOL_SOCKET, SO_BROADCAST,
+                                (char *)&intTrue, sizeof(intTrue))<0) {
+                    errlogPrintf ("CAS: online socket set up error\n");
+                    epicsThreadSuspendSelf ();
+                }
+
+                /*
+                 * this connect is to supress a warning message on Linux
+                 * when we shutdown the read side of the socket. If it
+                 * fails (and it will on old ip kernels) we just ignore
+                 * the failure.
+                 */
+                osiSockAddr sockAddr;
+                sockAddr.ia.sin_family = AF_UNSPEC;
+                sockAddr.ia.sin_port = htons ( 0 );
+                sockAddr.ia.sin_addr.s_addr = htonl (0);
+                connect ( conf->udpbeacon, & sockAddr.sa, sizeof ( sockAddr.sa ) );
+                shutdown ( conf->udpbeacon, SHUT_RD );
+            }
+
+            /* find interface broadcast address */
+            {
+                ELLLIST bcastList = ELLLIST_INIT;
+                osiSockAddrNode *pNode;
+
+                osiSockDiscoverBroadcastAddresses (&bcastList,
+                                                   conf->udpbeacon, &conf->udpbeaconRx); // match addr
+
+                if(ellCount(&bcastList)==0) {
+                    cantProceed("Can't find broadcast address of interface %s\n", ifaceName);
+                } else if(ellCount(&bcastList)>1 && conf->udpbeaconRx.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
+                    printf("Interface %s has more than one broadcast address?\n", ifaceName);
+                }
+
+                pNode = (osiSockAddrNode*)ellFirst(&bcastList);
+
+                /* beacons are sent to a well known port w/ the iface bcast addr */
+                conf->udpbeaconTx = conf->udpbeaconRx;
+                conf->udpbeaconTx.ia.sin_addr = pNode->addr.ia.sin_addr;
+                conf->udpbeaconTx.ia.sin_port = htons(beacon_port);
+
+                if(connect(conf->udpbeacon, &conf->udpbeaconTx.sa, sizeof(conf->udpbeaconTx))!=0)
+                {
+                    char sockErrBuf[64], buf[40];
+                    epicsSocketConvertErrnoToString (
+                        sockErrBuf, sizeof ( sockErrBuf ) );
+                    ipAddrToDottedIP (&pNode->addr.ia, buf, sizeof(buf));
+                    cantProceed( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
+                        __FILE__, buf, sockErrBuf);
+                }
+
+                /* TODO: free bcastList */
+            }
+
+            /* create and bind UDP name receiver socket(s) */
+
+            conf->udp = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+            if(conf->udp==INVALID_SOCKET)
+                cantProceed("rsrv_init ran out of udp sockets");
+
+            conf->udpAddr = conf->tcpAddr;
+            conf->udpAddr.ia.sin_port = htons(udp_port);
+
+            epicsSocketEnableAddressUseForDatagramFanout ( conf->udp );
+
+            if(tryBind(conf->udp, &conf->udpAddr, "UDP unicast socket"))
+                goto cleanup;
+
+#if !defined(_WIN32)
+            /* An oddness of BSD sockets (not winsock) is that binding to
+             * INADDR_ANY will receive unicast and broadcast, but binding to
+             * a specific interface address receives only unicast.  The trick
+             * is to bind a second socket to the interface broadcast address,
+             * which will then receive only broadcasts.
+             */
+            if(conf->udpAddr.ia.sin_addr.s_addr!=htonl(INADDR_ANY)) {
+
+                conf->udpbcast = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
+                if(conf->udpbcast==INVALID_SOCKET)
+                    cantProceed("rsrv_init ran out of udp sockets for bcast");
+
+                conf->udpbcastAddr = conf->udpAddr;
+                conf->udpbcastAddr.ia.sin_addr = conf->udpbeaconTx.ia.sin_addr;
+
+                epicsSocketEnableAddressUseForDatagramFanout ( conf->udpbcast );
+
+                if(tryBind(conf->udpbcast, &conf->udpbcastAddr, "UDP Socket bcast"))
+                    goto cleanup;
+            }
+
+            ellAdd(&servers, &conf->node);
+
+#endif /* !defined(_WIN32) */
+
+            /* have all sockets, time to start some threads */
+
+            epicsThreadMustCreate("CAS-TCP", threadPrios[2],
+                    epicsThreadGetStackSize(epicsThreadStackMedium),
+                    &req_server, conf);
+
+            epicsEventMustWait(castcp_startStopEvent);
+
+            epicsThreadMustCreate("CAS-UDP", threadPrios[4],
+                    epicsThreadGetStackSize(epicsThreadStackMedium),
+                    &cast_server, conf);
+
+            epicsEventMustWait(casudp_startStopEvent);
+
+#if !defined(_WIN32)
+            if(conf->udpbcast != INVALID_SOCKET) {
+                conf->startbcast = 1;
+
+                epicsThreadMustCreate("CAS-UDP2", threadPrios[4],
+                        epicsThreadGetStackSize(epicsThreadStackMedium),
+                        &cast_server, conf);
+
+                epicsEventMustWait(casudp_startStopEvent);
+
+                conf->startbcast = 0;
+            }
+#endif /* !defined(_WIN32) */
+
+            continue;
+        cleanup:
+            epicsSocketDestroy(conf->tcp);
+            if(conf->udp!=INVALID_SOCKET) epicsSocketDestroy(conf->udp);
+            if(conf->udpbcast!=INVALID_SOCKET) epicsSocketDestroy(conf->udpbcast);
+            if(conf->udpbeacon!=INVALID_SOCKET) epicsSocketDestroy(conf->udpbeacon);
+            free(conf);
+        }
     }
 
-    epicsEventMustWait(castcp_startStopEvent);
+    /* servers list is considered read-only from this point */
+
+    epicsThreadMustCreate("CAS-beacon", threadPrios[3],
+            epicsThreadGetStackSize(epicsThreadStackSmall),
+            &rsrv_online_notify_task, NULL);
+
+    epicsEventMustWait(beacon_startStopEvent);
 
     return RSRV_OK;
 }
@@ -498,30 +734,32 @@ void casr (unsigned level)
     }
 
     if (level>=2) {
-        client = (struct client *) ellNext ( &clientQudp.node );
+        rsrv_iface_config *client = (rsrv_iface_config *) ellFirst ( &servers );
         while (client) {
-            struct sockaddr_in addr;
-            osiSocklen_t alen = sizeof(addr);
             char    buf[40];
 
-            if (!getsockname(client->udpRecv, (struct sockaddr*)&addr, &alen)) {
-                ipAddrToDottedIP (&addr, buf, sizeof(buf));
-            } else {
-                strcpy(buf, "<unknown>");
+            printf("Server interface\n");
+
+            ipAddrToDottedIP (&client->tcpAddr.ia, buf, sizeof(buf));
+            printf(" TCP listener %s\n", buf);
+
+            ipAddrToDottedIP (&client->udpAddr.ia, buf, sizeof(buf));
+            printf(" UDP receiver 1 %s\n", buf);
+
+#if !defined(_WIN32)
+            if(client->udpbcast!=INVALID_SOCKET) {
+                ipAddrToDottedIP (&client->udpbcastAddr.ia, buf, sizeof(buf));
+                printf(" UDP receiver 2 %s\n", buf);
             }
+#endif
 
-            printf( "UDP Name Server: recvfrom %s", buf );
+            ipAddrToDottedIP (&client->udpbeaconRx.ia, buf, sizeof(buf));
+            printf(" UDP beacon socket bound %s\n", buf);
 
-            alen = sizeof(addr);
-            if (!getsockname(client->sock, (struct sockaddr*)&addr, &alen)) {
-                ipAddrToDottedIP (&addr, buf, sizeof(buf));
-            } else {
-                strcpy(buf, "<unknown>");
-            }
+            ipAddrToDottedIP (&client->udpbeaconTx.ia, buf, sizeof(buf));
+            printf(" UDP beacon destination %s\n", buf);
 
-            printf( " sendto %s\n", buf );
-
-            client = (struct client *) ellNext(&client->node);
+            client = (rsrv_iface_config *) ellNext(&client->node);
         }
     }
     UNLOCK_CLIENTQ

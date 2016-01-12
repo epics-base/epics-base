@@ -115,73 +115,23 @@ static void clean_addrq(struct client *client)
  */
 void cast_server(void *pParm)
 {
-    cast_config *conf = pParm;
-    osiSockAddr     *paddrNode = &conf->pAddr;
-    struct sockaddr_in  sin;
+    rsrv_iface_config *conf = pParm;
     int                 status;
     int                 count=0;
     int                 mysocket=0;
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
     osiSockIoctl_t      nchars;
-    SOCKET              recv_sock;
+    SOCKET              recv_sock, reply_sock;
     struct client      *client;
 
     recv_addr_size = sizeof(new_recv_addr);
 
-    /* 
-     *  Open the socket.
-     *  Use ARPA Internet address format and datagram socket.
-     */
-
-    if ( ( recv_sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
-        epicsPrintf ("CAS: cast socket creation error\n");
-        epicsThreadSuspendSelf ();
-    }
-
-    if(conf->reply_sock==INVALID_SOCKET) {
-        conf->reply_sock = recv_sock; /* assume that the socket capable of unicast send is created first */
-        mysocket = 1;
-    }
-
-    /*
-     * some concern that vxWorks will run out of mBuf's
-     * if this change is made
-     *
-     * joh 11-10-98
-     */
-#if 0
-    {
-        /*
-         *
-         * this allows for faster connects by queuing
-         * additional incomming UDP search frames
-         *
-         * this allocates a 32k buffer
-         * (uses a power of two)
-         */
-        int size = 1u<<15u;
-        status = setsockopt (IOC_cast_sock, SOL_SOCKET,
-                        SO_RCVBUF, (char *)&size, sizeof(size));
-        if (status<0) {
-            epicsPrintf ("CAS: unable to set cast socket size\n");
-        }
-    }
-#endif
-
-    epicsSocketEnableAddressUseForDatagramFanout ( recv_sock );
-
-    memcpy(&sin, &paddrNode->ia, sizeof (sin));
-
-    /* get server's Internet address */
-    if( bind(recv_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
-        epicsSocketDestroy ( recv_sock );
-        epicsThreadSuspendSelf ();
-    }
+    reply_sock = conf->udp;
+    if(conf->startbcast)
+        recv_sock = conf->udpbcast;
+    else
+        recv_sock = conf->udp;
 
     /*
      * setup new client structure but reuse old structure if
@@ -189,18 +139,13 @@ void cast_server(void *pParm)
      *
      */
     while ( TRUE ) {
-        client = create_client ( conf->reply_sock, IPPROTO_UDP );
+        client = create_client ( reply_sock, IPPROTO_UDP );
         if ( client ) {
             break;
         }
         epicsThreadSleep(300.0);
     }
     client->udpRecv = recv_sock;
-
-    assert(client->node.next==NULL && client->node.previous==NULL);
-    LOCK_CLIENTQ;
-    ellAdd ( &clientQudp, &client->node );
-    UNLOCK_CLIENTQ;
 
     casAttachThreadToClient ( client );
 
@@ -211,7 +156,6 @@ void cast_server(void *pParm)
 
     /* these pointers become invalid after signaling casudp_startStopEvent */
     conf = NULL;
-    paddrNode = NULL;
 
     epicsEventSignal(casudp_startStopEvent);
 

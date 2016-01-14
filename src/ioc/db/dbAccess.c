@@ -816,7 +816,7 @@ long dbGet(DBADDR *paddr, short dbrType,
     void *pfieldsave;
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type;
-    long no_elements;
+    long no_elements, max_elements;
     long offset;
     struct rset *prset;
     long status = 0;
@@ -828,10 +828,10 @@ long dbGet(DBADDR *paddr, short dbrType,
 
     if (!pfl || pfl->type == dbfl_type_rec) {
         field_type  = paddr->field_type;
-        no_elements = paddr->no_elements;
+        max_elements = no_elements = paddr->no_elements;
     } else {
         field_type  = pfl->field_type;
-        no_elements = pfl->no_elements;
+        max_elements = no_elements = pfl->no_elements;
     }
 
     if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK)
@@ -906,7 +906,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         if (n <= 0) {
             ;/*do nothing*/
         } else if (!pfl || pfl->type == dbfl_type_rec) {
-            status = convert(paddr, pbuf, n, no_elements, offset);
+            status = convert(paddr, pbuf, n, max_elements, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
 
@@ -917,7 +917,7 @@ long dbGet(DBADDR *paddr, short dbrType,
                 localAddr.pfield = (char *) &pfl->u.v.field;
             else
                 localAddr.pfield = (char *)  pfl->u.r.field;
-            status = convert(&localAddr, pbuf, n, no_elements, offset);
+            status = convert(&localAddr, pbuf, n, max_elements, offset);
         }
     }
 done:

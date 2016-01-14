@@ -9,19 +9,37 @@
 
 =title Compress Record (compress)
 
-...
+The data compression record is used to collect and compress data from arrays.
+When the INP field references a data array field,
+it immediately compresses the entire array into an element of an array using one of several algorithms,
+overwriting the previous element. If the INP field obtains its value from a scalar-value field,
+the compression record will collect a new sample each time the record is processed
+and add it to the compressed data array as a circular buffer.
+
+The INP link can also specify a constant;
+however, if this is the case, the compression algorithms are ignored,
+and the record support routines merely return after checking the FLNK field.
 
 =head2 Record-specific Menus
 
 =head3 Menu compressALG
 
-The ALG field which uses this menu controls the compression algorithm used.
-
-...
-
 =menu compressALG
 
-...
+The ALG field which uses this menu controls the compression algorithm used.
+
+There are six possible algorithms which can be specified as follows:
+
+* Circular Buffer
+* Average
+* N to 1 Low Value
+* N to 1 High Value
+* N to 1 Average
+* N to 1 Median
+
+=menu bufferingALG
+
+Selects FIFO (First in first out) or LIFO (Last in first out) insertion order.
 
 =head2 Parameter Fields
 

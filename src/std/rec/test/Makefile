@@ -38,6 +38,13 @@ testHarness_SRCS += linkRetargetLinkTest.c
 TESTFILES += ../linkRetargetLink.db
 TESTS += linkRetargetLinkTest
 
+TESTPROD_HOST += compressTest
+compressTest_SRCS += compressTest.c
+compressTest_SRCS += recTestIoc_registerRecordDeviceDriver.cpp
+testHarness_SRCS += compressTest.c
+TESTFILES += ../compressTest.db
+TESTS += compressTest
+
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
 asTestIoc_DBD += base.dbd
 asTestIoc_DBD += asTest.dbd

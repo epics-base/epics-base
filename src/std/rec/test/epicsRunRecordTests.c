@@ -13,6 +13,7 @@
 #include "epicsExit.h"
 
 int analogMonitorTest(void);
+int compressTest(void);
 int arrayOpTest(void);
 int asTest(void);
 int linkRetargetLinkTest(void);
@@ -22,6 +23,8 @@ void epicsRunRecordTests(void)
     testHarness();
 
     runTest(analogMonitorTest);
+
+    runTest(compressTest);
 
     runTest(arrayOpTest);
 

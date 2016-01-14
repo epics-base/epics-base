@@ -95,7 +95,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     long end = my->end;
     long nTarget = 0;
     long offset = 0;
-    long nSource = chan->addr.no_elements;
+    long nSource = chan->addr.no_elements, maxSource = nSource;
 
     /* Only array data */
     if (pfl->type == dbfl_type_val) {
@@ -126,7 +126,7 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
                     pfl->u.r.dtor = freeArray;
                     pfl->u.r.pvt = my->arrayFreeList;
                     offset = (offset + start) % chan->addr.no_elements;
-                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
+                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, maxSource, offset, my->incr);
                     pfl->u.r.field = pdst;
                 }
             }

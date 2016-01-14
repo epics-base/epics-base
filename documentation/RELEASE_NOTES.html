@@ -20,6 +20,12 @@
 
 -->
 
+<h3>compressRecord buffering order</h3>
+
+<p>The compressRecord has a new field <em>BALG</em> which can select between
+FIFO (append) and LIFO (prepend) ordering for insertion of new elements.
+FIFO ordering is the default.</p>
+
 <h3>Database Multi-locking</h3>
 
 <p>dbLock.c is re-written with an expanded API, and the removal of global mutex locks.</p>

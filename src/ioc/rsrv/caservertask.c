@@ -352,8 +352,8 @@ void rsrv_build_addr_lists(void)
 #ifdef IP_ADD_MEMBERSHIP
         {
             int flag = 1;
-            if(setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &flag, sizeof(flag))==-1)
-            {
+            if (setsockopt(beaconSocket, IPPROTO_IP, IP_MULTICAST_LOOP,
+                           (char *)&flag, sizeof(flag))<0) {
                 char sockErrBuf[64];
                 epicsSocketConvertErrnoToString (
                             sockErrBuf, sizeof ( sockErrBuf ) );
@@ -366,6 +366,7 @@ void rsrv_build_addr_lists(void)
     {
         ELLLIST temp = ELLLIST_INIT;
         ELLLIST beacon_list = ELLLIST_INIT;
+        osiSockAddrNode *pNode;
 
         /* use the first parameter which is set. */
         if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 ))
@@ -384,7 +385,6 @@ void rsrv_build_addr_lists(void)
         removeDuplicateAddresses(&beacon_list, &temp, 0);
 
         /* set the port for any automatically discovered destinations. */
-        osiSockAddrNode *pNode;
         for(pNode = (osiSockAddrNode*)ellFirst(&beacon_list);
             pNode;
             pNode = (osiSockAddrNode*)ellNext(&pNode->node))

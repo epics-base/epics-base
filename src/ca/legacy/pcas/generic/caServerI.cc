@@ -153,8 +153,9 @@ void caServerI::addMCast(const osiSockAddr& addr)
         mreq.imr_interface = iter->serverAddress().getSockIP().sin_addr;
         mreq.imr_multiaddr = addr.ia.sin_addr;
 
-        if(setsockopt(iter->casDGIntfIO::getFD(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))!=0)
-        {
+        if ( setsockopt ( iter->casDGIntfIO::getFD (), IPPROTO_IP,
+                          IP_ADD_MEMBERSHIP, (char *) &mreq,
+                          sizeof ( mreq ) ) < 0) {
             struct sockaddr_in temp;
             char name[40];
             char sockErrBuf[64];

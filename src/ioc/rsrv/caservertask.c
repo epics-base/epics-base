@@ -154,13 +154,13 @@ int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
  * to know this).
  */
 static
-SOCKET* rsrv_grap_tcp(unsigned short *port)
+SOCKET* rsrv_grab_tcp(unsigned short *port)
 {
     SOCKET *socks;
     osiSockAddr scratch;
     unsigned i;
 
-    socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grap_tcp");
+    socks = mallocMustSucceed(ellCount(&casIntfAddrList)*sizeof(*socks), "rsrv_grab_tcp");
     for(i=0; i<ellCount(&casIntfAddrList); i++)
         socks[i] = INVALID_SOCKET;
 
@@ -268,7 +268,9 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
     }
 
     if(ellCount(&casIntfAddrList)==0)
-        cantProceed("RSRV has empty interface list\n");
+        cantProceed("Error: RSRV has empty interface list\n"
+                    "The CA server can't function without binding to"
+                    " at least one network interface.\n");
 
     return socks;
 }
@@ -511,7 +513,7 @@ int rsrv_init (void)
 
     {
         unsigned short sport = ca_server_port;
-        socks = rsrv_grap_tcp(&sport);
+        socks = rsrv_grab_tcp(&sport);
 
         if ( sport != ca_server_port ) {
             ca_server_port = sport;
@@ -934,7 +936,6 @@ void casr (unsigned level)
         printf ( "The server's array size limit is %u bytes max\n",
             rsrvSizeofLargeBufTCP );
 
-        printChannelAccessAddressList (&beaconAddrList);
     }
 }
 

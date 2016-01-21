@@ -105,7 +105,7 @@ void rsrv_online_notify_task(void *pParm)
             }
         }
 
-        beaconCounter++; /* expected to overflow */
+        msg.m_cid = htonl ( beaconCounter++ ); /* expected to overflow */
 
         while (beacon_ctl == ctlPause) {
             epicsThreadSleep(0.1);

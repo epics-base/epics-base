@@ -14,6 +14,27 @@
 <h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>RSRV uses EPICS_CAS_INTF_ADDR_LIST</h3>
+
+<p>RSRV now honors the EPICS_CAS_INTF_ADDR_LIST to bind to only
+the provided list of network interface.
+Name searches (UDP and TCP) on other network interfaces are ignored.
+For example on a computer with interfaces 10.5.1.1/24, 10.5.2.1/24, and 10.5.3.1/24,
+setting "EPICS_CAS_INTF_ADDR_LIST='10.5.1.1 10.5.2.1'" will accept traffic
+on the .1.1 and .2.1, but ignore from .3.1</p>
+
+<h3>IPv4 multicast for name search and beacons</h3>
+
+<p>libca and RSRV may now use IPv4 multicasting for UDP traffic (name search and beacons).
+This is disabled by default.
+To enable multicast address(s) must be listed in EPICS_CA_ADDR_LIST for clients
+and EPICS_CAS_INTF_ADDR_LIST for servers (IOCs should set both).
+For example: "EPICS_CAS_INTF_ADDR_LIST='0.0.0.0 224.0.2.9' EPICS_CA_ADDR_LIST=224.0.2.9".
+</p>
+
+<p>Please note that no IPv4 multicast address is officially assigned for Channel Access by IANA.
+The example 224.0.2.9 is taken from the AD-HOC Block I range.<p>
+
 <h3>Make the NTP Time provider optional on VxWorks</h3>
 
 <p>Recent versions of VxWorks (sometime after VxWorks 6) provide facilities for

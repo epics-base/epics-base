@@ -13,6 +13,14 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>ipAddrToAsciiAsync.: don't try to join the daemon thread</h3>
+
+<p>On process exit, no longer try to stop the worker thread used by
+to make DNS lookups asynchronous.
+Previously this would wait for any cancelled, but still in progress, lookups.
+This was most obvious with catools (eg. cainfo).
+<a href="https://bugs.launchpad.net/epics-base/+bug/1527636">lp:1527636</a></p>
+
 <h3>Fix epicsTime_localtime() on Windows</h3>
 
 <p>Simpler versions of the epicsTime_gmtime() and epicsTime_localtime()

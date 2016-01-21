@@ -132,7 +132,7 @@ static void req_server (void *pParm)
 static
 int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
 {
-    if(bind(sock, &addr->ia, sizeof(*addr))<0) {
+    if(bind(sock, (struct sockaddr *) &addr->sa, sizeof(*addr))<0) {
         char sockErrBuf[64];
         if(errno!=SOCK_EADDRINUSE)
         {
@@ -197,8 +197,8 @@ SOCKET* rsrv_grap_tcp(unsigned short *port)
             if(bind(tcpsock, &scratch.sa, sizeof(scratch))==0) {
                 if(scratch.ia.sin_port==0) {
                     /* use first socket to pick a random port */
-                    assert(i==0);
                     osiSocklen_t alen = sizeof(ifaceAddr);
+                    assert(i==0);
                     if(getsockname(tcpsock, &ifaceAddr.sa, &alen)) {
                         char sockErrBuf[64];
                         epicsSocketConvertErrnoToString (
@@ -576,8 +576,8 @@ int rsrv_init (void)
                     mreq.imr_multiaddr = pNode->addr.ia.sin_addr;
                     mreq.imr_interface.s_addr = conf->udpAddr.ia.sin_addr.s_addr;
 
-                    if(setsockopt(conf->udp, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))!=0)
-                    {
+                    if (setsockopt(conf->udp, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                        (char *) &mreq, sizeof(mreq))!=0) {
                         struct sockaddr_in temp;
                         char name[40];
                         char sockErrBuf[64];

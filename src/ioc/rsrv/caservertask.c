@@ -297,8 +297,7 @@ void rsrv_build_addr_lists(void)
         ELLLIST temp = ELLLIST_INIT;
         /* use the first parameter which is set. */
         if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 ))
-            if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 ))
-                addAddrToChannelAccessAddressList ( &temp, &EPICS_CA_ADDR_LIST, ca_udp_port, 1 );
+            addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 );
 
         removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
     }

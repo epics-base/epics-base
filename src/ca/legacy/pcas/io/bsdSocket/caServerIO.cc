@@ -14,6 +14,7 @@
 //
 
 #include <ctype.h>
+#include <list>
 
 #include "epicsSignal.h"
 #include "envDefs.h"
@@ -92,6 +93,9 @@ void caServerIO::locateInterfaces ()
 		autoBeaconAddr = true;
 	}
 
+    typedef std::list<osiSockAddr> mcastAddrs_t;
+    mcastAddrs_t mcastAddrs;
+
 	//
 	// bind to the the interfaces specified - otherwise wildcard
 	// with INADDR_ANY and allow clients to attach from any interface
@@ -114,6 +118,15 @@ void caServerIO::locateInterfaces ()
 					pToken);
 				continue;
 			}
+
+            epicsUInt32 top = ntohl(saddr.sin_addr.s_addr)>>24;
+            if (saddr.sin_family==AF_INET && top>=224 && top<=239) {
+                osiSockAddr oaddr;
+                oaddr.ia = saddr;
+                mcastAddrs.push_back(oaddr);
+                continue;
+            }
+
 			stat = this->attachInterface (caNetAddr(saddr), autoBeaconAddr, configAddrOnceFlag);
 			if (stat) {
 				errMessage(stat, "unable to attach explicit interface");
@@ -131,6 +144,10 @@ void caServerIO::locateInterfaces ()
 			errMessage(stat, "unable to attach any interface");
 		}
 	}
+
+    for (mcastAddrs_t::const_iterator it = mcastAddrs.begin(); it!=mcastAddrs.end(); ++it) {
+        this->addMCast(*it);
+    }
 }
 
 //

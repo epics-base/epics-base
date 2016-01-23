@@ -293,55 +293,13 @@ void rsrv_build_addr_lists(void)
     ellInit ( &beaconAddrList );
     ellInit ( &casMCastAddrList );
 
-    {
-        ELLLIST temp = ELLLIST_INIT;
-        /* use the first parameter which is set. */
-        if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 ))
-            addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 );
-
-        removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
-    }
-
-    {
-        int foundWildcard = 0;
-        osiSockAddrNode *pNode, *pNext;
-        for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
-            pNext = pNode ? (osiSockAddrNode*)ellNext(&pNode->node) : NULL;
-            pNode;
-            pNode = pNext,
-            pNext = pNext ? (osiSockAddrNode*)ellNext(&pNext->node) : NULL)
-        {
-            epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
-
-            if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
-            {
-                foundWildcard = 1;
-
-            } else if(pNode->addr.ia.sin_family==AF_INET && top>=224 && top<=239) {
-                /* This is a multi-cast address */
-                ellDelete(&casIntfAddrList, &pNode->node);
-                ellAdd(&casMCastAddrList, &pNode->node);
-            }
-        }
-
-        if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
-            cantProceed("CAS interface address list can not contain 0.0.0.0 and other interface addresses.\n");
-        }
-    }
-
-    if (ellCount(&casIntfAddrList) == 0) {
-        /* default to wildcard 0.0.0.0 */
-        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
-        pNode->addr.ia.sin_family = AF_INET;
-        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
-        pNode->addr.ia.sin_port = 0;
-        ellAdd ( &casIntfAddrList, &pNode->node );
-    }
+    /* Setup socket for sending server beacons.
+     * Also used for NIC introspection
+     */
 
     beaconSocket = epicsSocketCreate(AF_INET, SOCK_DGRAM, 0);
     if (beaconSocket==INVALID_SOCKET)
         cantProceed("socket allocation failed during address list expansion");
-
 
     {
         int intTrue = 1;
@@ -363,16 +321,91 @@ void rsrv_build_addr_lists(void)
 #endif
     }
 
+    /* populate the interface address list (default is empty) */
     {
         ELLLIST temp = ELLLIST_INIT;
-        ELLLIST beacon_list = ELLLIST_INIT;
+        /* use the first parameter which is set. */
+        if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_INTF_ADDR_LIST, ca_udp_port, 0 ))
+            addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 );
+
+        removeDuplicateAddresses(&casIntfAddrList, &temp, 0);
+    }
+
+    /* Process the interface address list
+     * Move multicast addresses to casMCastAddrList
+     * Populate beacon address list (if autobeaconlist and iface list not-empty).
+     */
+    {
+        int foundWildcard = 0, doautobeacon = autobeaconlist;
+
+        osiSockAddrNode *pNode, *pNext;
+        for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
+            pNext = pNode ? (osiSockAddrNode*)ellNext(&pNode->node) : NULL;
+            pNode;
+            pNode = pNext,
+            pNext = pNext ? (osiSockAddrNode*)ellNext(&pNext->node) : NULL)
+        {
+            osiSockAddr match;
+            epicsUInt32 top = ntohl(pNode->addr.ia.sin_addr.s_addr)>>24;
+
+            if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
+            {
+                foundWildcard = 1;
+
+            } else if(pNode->addr.ia.sin_family==AF_INET && top>=224 && top<=239) {
+                /* This is a multi-cast address */
+                ellDelete(&casIntfAddrList, &pNode->node);
+                ellAdd(&casMCastAddrList, &pNode->node);
+                continue;
+            }
+
+            if(!doautobeacon)
+                continue;
+            /* when given a specific interface address, auto populate with the
+             * corresponding broadcast address.
+             */
+
+            autobeaconlist = 0; /* prevent later population from wildcard */
+
+            memset(&match, 0, sizeof(match));
+            match.ia.sin_family = AF_INET;
+            match.ia.sin_addr.s_addr = pNode->addr.ia.sin_addr.s_addr;
+            match.ia.sin_port = htons(ca_beacon_port);
+
+            osiSockDiscoverBroadcastAddresses(&beaconAddrList, beaconSocket, &match);
+        }
+
+        if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
+            cantProceed("CAS interface address list can not contain 0.0.0.0 and other interface addresses.\n");
+        }
+    }
+
+    if (ellCount(&casIntfAddrList) == 0) {
+        /* default to wildcard 0.0.0.0 when interface address list is empty */
+        osiSockAddrNode *pNode = (osiSockAddrNode *) callocMustSucceed( 1, sizeof(*pNode), "rsrv_init" );
+        pNode->addr.ia.sin_family = AF_INET;
+        pNode->addr.ia.sin_addr.s_addr = htonl ( INADDR_ANY );
+        pNode->addr.ia.sin_port = 0;
+        ellAdd ( &casIntfAddrList, &pNode->node );
+    }
+
+    {
+        ELLLIST temp = ELLLIST_INIT;
         osiSockAddrNode *pNode;
 
-        /* use the first parameter which is set. */
-        if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_udp_port, 0 ))
-            addAddrToChannelAccessAddressList ( &temp, &EPICS_CA_ADDR_LIST, ca_udp_port, 1 );
+        ellConcat(&temp, &beaconAddrList);
+
+        /* collect user specified beacon address list
+         * prefer EPICS_CAS_BEACON_ADDR_LIST, fallback to EPICS_CA_ADDR_LIST
+         */
+        if(addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_BEACON_ADDR_LIST, ca_beacon_port, 0 ))
+            addAddrToChannelAccessAddressList ( &temp, &EPICS_CA_ADDR_LIST, ca_beacon_port, 1 );
 
         if (autobeaconlist) {
+            /* auto populate with all broadcast addresses.
+             * Note that autobeaconlist is zeroed above if an interface
+             * address list is provided.
+             */
             osiSockAddr match;
             memset(&match, 0, sizeof(match));
             match.ia.sin_family = AF_INET;
@@ -382,17 +415,16 @@ void rsrv_build_addr_lists(void)
             osiSockDiscoverBroadcastAddresses(&temp, beaconSocket, &match);
         }
 
-        removeDuplicateAddresses(&beacon_list, &temp, 0);
-
         /* set the port for any automatically discovered destinations. */
-        for(pNode = (osiSockAddrNode*)ellFirst(&beacon_list);
+        for(pNode = (osiSockAddrNode*)ellFirst(&temp);
             pNode;
             pNode = (osiSockAddrNode*)ellNext(&pNode->node))
         {
-            pNode->addr.ia.sin_port = htons(ca_beacon_port);
+            if(pNode->addr.ia.sin_port==0)
+                pNode->addr.ia.sin_port = htons(ca_beacon_port);
         }
 
-        ellConcat(&beaconAddrList, &beacon_list);
+        removeDuplicateAddresses(&beaconAddrList, &temp, 0);
     }
 
     if (ellCount(&beaconAddrList)==0)
@@ -889,7 +921,7 @@ void casr (unsigned level)
             char    buf[40];
 
             ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
-            printf("MCast destination %s\n", buf);
+            printf("MCast receiver %s\n", buf);
         }
         for(pAddr = (osiSockAddrNode*)ellFirst(&beaconAddrList);
             pAddr;

@@ -303,7 +303,7 @@ void rsrv_build_addr_lists(void)
     }
 
     {
-        /* check user provided list */
+        int foundWildcard = 0;
         osiSockAddrNode *pNode, *pNext;
         for(pNode = (osiSockAddrNode*)ellFirst(&casIntfAddrList),
             pNext = pNode ? (osiSockAddrNode*)ellNext(&pNode->node) : NULL;
@@ -315,17 +315,19 @@ void rsrv_build_addr_lists(void)
 
             if(pNode->addr.ia.sin_family==AF_INET && pNode->addr.ia.sin_addr.s_addr==htonl(INADDR_ANY))
             {
-                if (ellCount(&casIntfAddrList) != 1) {
-                    fprintf(stderr, "CAS address list can not contain 0.0.0.0 and other addresses, ignoring...\n");
-                    ellDelete(&casIntfAddrList, &pNode->node);
-                    free(pNode);
-                }
+                foundWildcard = 1;
 
             } else if(pNode->addr.ia.sin_family==AF_INET && top>=224 && top<=239) {
                 /* This is a multi-cast address */
                 ellDelete(&casIntfAddrList, &pNode->node);
                 ellAdd(&casMCastAddrList, &pNode->node);
             }
+        }
+
+        if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
+            fprintf(stderr, "CAS address list can not contain 0.0.0.0 and other addresses, ignoring...\n");
+            ellDelete(&casIntfAddrList, &pNode->node);
+            free(pNode);
         }
     }
 

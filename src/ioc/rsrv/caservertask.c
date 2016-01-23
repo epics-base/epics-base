@@ -325,9 +325,7 @@ void rsrv_build_addr_lists(void)
         }
 
         if (foundWildcard && ellCount(&casIntfAddrList) != 1) {
-            fprintf(stderr, "CAS address list can not contain 0.0.0.0 and other addresses, ignoring...\n");
-            ellDelete(&casIntfAddrList, &pNode->node);
-            free(pNode);
+            cantProceed("CAS interface address list can not contain 0.0.0.0 and other interface addresses.\n");
         }
     }
 

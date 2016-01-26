@@ -3,16 +3,35 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.15.3 Release Notes</title>
+  <title>EPICS Base R3.15.4 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.15.3</h1>
+<h1 align="center">EPICS Base Release 3.15.4</h1>
 
 <p style="color:red">This version of EPICS Base has not been released yet.</p>
 
-<h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
+<h2 align="center">Changes between 3.15.3 and 3.15.4</h2>
 <!-- Insert new items immediately below here ... -->
+
+<h3>Added dbQuietMacroWarnings control</h3>
+
+<p>When loading database files, macros get expanded even on comment lines. If a
+comment contains an undefined macro, the load still continues but an error
+message gets printed. For this release the error message has been changed to a
+warning, but even this warning can be made less verbose by setting this new
+variable to a non-zero value before loading the file, like this:</p>
+
+<blockquote><pre>
+var dbQuietMacroWarnings 1      <i>iocsh</i>
+dbQuietMacroWarnings=1          <i>VxWorks</i>
+</pre></blockquote>
+
+<p>This was <a href="https://bugs.launchpad.net/bugs/541119">Launchpad bug
+541119</a>.</p>
+
+
+<h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
 
 <h3>Make the NTP Time provider optional on VxWorks</h3>
 
@@ -51,6 +70,7 @@ by registering an epicsAtExit() routine.</p>
 time, but there was still one implementation left in the event record support
 code, and a structure definition for one of the original arguments to that
 routine was defined in recGbl.h. Both of these have now been removed.</p>
+
 
 <h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
 
@@ -169,6 +189,7 @@ variable name used in the rules has been changed from MSI to MSI3_15. Sites that
 use a modified version of msi must provide support for both the <tt>-D</tt> and
 <tt>-o&nbsp;outfile</tt> options, and should then point the MSI3_15 variable in
 their applications' CONFIG_SITE files to that updated executable.</p>
+
 
 <h2 align="center">Changes between 3.15.0.2 and 3.15.1</h2>
 

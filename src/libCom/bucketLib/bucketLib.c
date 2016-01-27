@@ -486,7 +486,7 @@ epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
 	unsigned	count;
 	unsigned	maxEntries;
 
-	printf(	"Bucket entries in use = %d bytes in use = %ld\n",
+	printf(	"    Bucket entries in use = %d bytes in use = %ld\n",
 		pb->nInUse,
 		(long) (sizeof(*pb)+(pb->hashIdMask+1)*
 			sizeof(ITEM *)+pb->nInUse*sizeof(ITEM)));
@@ -511,7 +511,7 @@ epicsShareFunc int epicsShareAPI bucketShow(BUCKET *pb)
 
 	mean = X/nElem;
 	stdDev = sqrt(XX/nElem - mean*mean);
-	printf( "Bucket entries/hash id - mean = %f std dev = %f max = %d\n",
+	printf( "    Bucket entries/hash id - mean = %f std dev = %f max = %d\n",
 		mean,
 		stdDev,
 		maxEntries);

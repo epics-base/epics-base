@@ -772,10 +772,11 @@ static void showChanList (
     pciu = (struct channel_in_use *) pList->node.next;
     while ( pciu ){
         dbChannelShow ( pciu->dbch, level, 8 );
-        printf( "          # on eventq=%d, access=%c%c\n",
-            ellCount ( &pciu->eventq ),
-            asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
-            rsrvCheckPut ( pciu ) ? 'w': '-' );
+        if ( level >= 1u )
+            printf( "%12s# on eventq=%d, access=%c%c\n", "",
+                ellCount ( &pciu->eventq ),
+                asCheckGet ( pciu->asClientPVT ) ? 'r': '-',
+                rsrvCheckPut ( pciu ) ? 'w': '-' );
         pciu = ( struct channel_in_use * ) ellNext ( &pciu->node );
     }
     epicsMutexUnlock ( client->chanListLock );
@@ -786,78 +787,82 @@ static void showChanList (
  */
 static void log_one_client (struct client *client, unsigned level)
 {
-    char                    *pproto;
-    double                  send_delay;
-    double                  recv_delay;
-    char                    *state[] = {"up", "down"};
-    epicsTimeStamp          current;
-    char                    clientHostName[256];
+    char clientIP[40];
+    int n;
 
-    ipAddrToDottedIP (&client->addr, clientHostName, sizeof(clientHostName));
+    ipAddrToDottedIP (&client->addr, clientIP, sizeof(clientIP));
 
-    if(client->proto == IPPROTO_UDP){
-        pproto = "UDP";
+    if ( client->proto == IPPROTO_UDP ) {
+        printf ( "    UDP Name server\n\tLast name request was from %s:\n",
+            clientIP );
     }
-    else if(client->proto == IPPROTO_TCP){
-        pproto = "TCP";
+    else if ( client->proto == IPPROTO_TCP ) {
+        printf ( "    TCP client at %s '%s':\n",
+            clientIP,
+            client->pHostName ? client->pHostName : "" );
     }
-    else{
-        pproto = "UKN";
+    else {
+        printf ( "    Unknown client at %s '%s':\n",
+            clientIP,
+            client->pHostName ? client->pHostName : "" );
     }
 
-    epicsTimeGetCurrent(&current);
-    send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
-    recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
-
-    printf ( "%s %s(%s): User=\"%s\", V%u.%u, %d Channels, Priority=%u\n",
-        pproto,
-        clientHostName,
-        client->pHostName ? client->pHostName : "",
+    n = ellCount(&client->chanList) + ellCount(&client->chanPendingUpdateARList);
+    printf ( "\tUser '%s', V%u.%u, Priority = %u, %d Channel%s\n",
         client->pUserName ? client->pUserName : "",
         CA_MAJOR_PROTOCOL_REVISION,
         client->minor_version_number,
-        ellCount(&client->chanList) +
-            ellCount(&client->chanPendingUpdateARList),
-        client->priority );
-    if ( level >= 1 ) {
-        printf ("\tTask Id=%p, Socket FD=%d\n",
+        client->priority,
+        n, n == 1 ? "" : "s" );
+
+    if ( level >= 3u ) {
+        double         send_delay;
+        double         recv_delay;
+        char           *state[] = {"up", "down"};
+        epicsTimeStamp current;
+
+        epicsTimeGetCurrent(&current);
+        send_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_send);
+        recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
+
+        printf ("\tTask Id = %p, Socket FD = %d\n",
             (void *) client->tid, client->sock);
         printf(
-        "\tSecs since last send %6.2f, Secs since last receive %6.2f\n",
+        "\t%.2f secs since last send, %.2f secs since last receive\n",
             send_delay, recv_delay);
         printf(
-        "\tUnprocessed request bytes=%u, Undelivered response bytes=%u\n",
+        "\tUnprocessed request bytes = %u, Undelivered response bytes = %u\n",
             client->recv.cnt - client->recv.stk,
             client->send.stk ); 
         printf(
-        "\tState=%s%s%s\n",
+        "\tState = %s%s%s\n",
             state[client->disconnect?1:0],
             client->send.type == mbtLargeTCP ? " jumbo-send-buf" : "",
             client->recv.type == mbtLargeTCP ? " jumbo-recv-buf" : "");
     }
 
-    if ( level >= 2u ) {
-        unsigned bytes_reserved = 0;
-        bytes_reserved += sizeof(struct client);
+    if ( level >= 1u ) {
+        showChanList ( client, level - 1u, & client->chanList );
+        showChanList ( client, level - 1u, & client->chanPendingUpdateARList );
+    }
+
+    if ( level >= 4u ) {
+        unsigned bytes_reserved = sizeof(struct client);
+
         bytes_reserved += countChanListBytes (
                             client, & client->chanList );
         bytes_reserved += countChanListBytes (
                         client, & client->chanPendingUpdateARList );
         printf( "\t%d bytes allocated\n", bytes_reserved);
-        showChanList ( client, level - 2u, & client->chanList );
-        showChanList ( client, level - 2u, & client->chanPendingUpdateARList );
-    }
-
-    if ( level >= 3u ) {
-        printf( "\tSend Lock\n");
+        printf( "\tSend Lock:\n\t  ");
         epicsMutexShow(client->lock,1);
-        printf( "\tPut Notify Lock\n");
+        printf( "\tPut Notify Lock:\n\t  ");
         epicsMutexShow (client->putNotifyLock,1);
-        printf( "\tAddress Queue Lock\n");
+        printf( "\tAddress Queue Lock:\n\t  ");
         epicsMutexShow (client->chanListLock,1);
-        printf( "\tEvent Queue Lock\n");
+        printf( "\tEvent Queue Lock:\n\t  ");
         epicsMutexShow (client->eventqLock,1);
-        printf( "\tBlock Semaphore\n");
+        printf( "\tBlock Semaphore:\n\t  ");
         epicsEventShow (client->blockSem,1);
     }
 }
@@ -868,7 +873,7 @@ static void log_one_client (struct client *client, unsigned level)
 void casr (unsigned level)
 {
     size_t bytes_reserved;
-    struct client *client;
+    int n;
 
     if ( ! clientQlock ) {
         return;
@@ -878,63 +883,81 @@ void casr (unsigned level)
         CA_VERSION_STRING ( CA_MINOR_PROTOCOL_REVISION ) );
 
     LOCK_CLIENTQ
-    client = (struct client *) ellNext ( &clientQ.node );
-    if (client) {
-        printf("Connected circuits:\n");
-    }
-    else {
+    n = ellCount ( &clientQ );
+    if (n == 0) {
         printf("No clients connected.\n");
     }
-    while (client) {
-        log_one_client(client, level);
-        client = (struct client *) ellNext(&client->node);
+    else if (level == 0) {
+        printf("%d client%s connected.\n",
+            n, n == 1 ? "" : "s" );
     }
+    else {
+        struct client *client = (struct client *) ellFirst ( &clientQ );
 
-    if (level>=2) {
-        rsrv_iface_config *client = (rsrv_iface_config *) ellFirst ( &servers );
+        printf("%d client%s connected:\n",
+            n, n == 1 ? "" : "s" );
         while (client) {
-            char    buf[40];
-
-            ipAddrToDottedIP (&client->tcpAddr.ia, buf, sizeof(buf));
-            printf("Server interface %s\n", buf);
-
-            ipAddrToDottedIP (&client->udpAddr.ia, buf, sizeof(buf));
-            printf(" UDP receiver 1 %s\n", buf);
-
-#if !defined(_WIN32)
-            if(client->udpbcast!=INVALID_SOCKET) {
-                ipAddrToDottedIP (&client->udpbcastAddr.ia, buf, sizeof(buf));
-                printf(" UDP receiver 2 %s\n", buf);
-            }
-#endif
-
-            client = (rsrv_iface_config *) ellNext(&client->node);
+            log_one_client(client, level - 1);
+            client = (struct client *) ellNext(&client->node);
         }
     }
     UNLOCK_CLIENTQ
-    if (level>=2) {
-        osiSockAddrNode * pAddr;
-        for(pAddr = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
-            pAddr;
-            pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
-        {
+
+    if (level>=1) {
+        rsrv_iface_config *iface = (rsrv_iface_config *) ellFirst ( &servers );
+        while (iface) {
             char    buf[40];
 
-            ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
-            printf("MCast receiver %s\n", buf);
+            ipAddrToDottedIP (&iface->tcpAddr.ia, buf, sizeof(buf));
+            printf("CAS-TCP server on %s with\n", buf);
+
+            ipAddrToDottedIP (&iface->udpAddr.ia, buf, sizeof(buf));
+#if defined(_WIN32)
+            printf("    CAS-UDP name server on %s\n", buf);
+#else
+            if (iface->udpbcast==INVALID_SOCKET) {
+                printf("    CAS-UDP name server on %s\n", buf);
+            }
+            else {
+                printf("    CAS-UDP unicast name server on %s\n", buf);
+                ipAddrToDottedIP (&iface->udpbcastAddr.ia, buf, sizeof(buf));
+                printf("    CAS-UDP broadcast name server on %s\n", buf);
+            }
+#endif
+
+            iface = (rsrv_iface_config *) ellNext(&iface->node);
         }
+    }
+    if (level>=1) {
+        osiSockAddrNode * pAddr;
+        char buf[40];
+        int n = ellCount(&casMCastAddrList);
+
+        if (n) {
+            printf("Monitoring %d multicast address%s:\n",
+                n, n == 1 ? "" : "es");
+            for(pAddr = (osiSockAddrNode*)ellFirst(&casMCastAddrList);
+                pAddr;
+                pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
+            {
+                ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
+                printf("    %s\n", buf);
+            }
+        }
+
+        n = ellCount(&beaconAddrList);
+        printf("Sending CAS-beacons to %d address%s:\n",
+            n, n == 1 ? "" : "es");
         for(pAddr = (osiSockAddrNode*)ellFirst(&beaconAddrList);
             pAddr;
             pAddr = (osiSockAddrNode*)ellNext(&pAddr->node))
         {
-            char    buf[40];
-
             ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
-            printf("Beacon destination %s\n", buf);
+            printf("    %s\n", buf);
         }
     }
 
-    if (level>=2u) {
+    if (level>=4u) {
         bytes_reserved = 0u;
         bytes_reserved += sizeof (struct client) *
                     freeListItemsAvail (rsrvClientFreeList);
@@ -948,25 +971,22 @@ void casr (unsigned level)
                     freeListItemsAvail ( rsrvLargeBufFreeListTCP );
         bytes_reserved += rsrvSizeOfPutNotify ( 0 ) *
                     freeListItemsAvail ( rsrvPutNotifyFreeList );
-        printf( "There are currently %u bytes on the server's free list\n",
+        printf( "Free-lists total %u bytes, comprising\n",
             (unsigned int) bytes_reserved);
-        printf( "%u client(s), %u channel(s), %u event(s) (monitors) %u putNotify(s)\n",
+        printf( "    %u client(s), %u channel(s), %u monitor event(s), %u putNotify(s)\n",
             (unsigned int) freeListItemsAvail ( rsrvClientFreeList ),
             (unsigned int) freeListItemsAvail ( rsrvChanFreeList ),
             (unsigned int) freeListItemsAvail ( rsrvEventFreeList ),
             (unsigned int) freeListItemsAvail ( rsrvPutNotifyFreeList ));
-        printf( "%u small buffers (%u bytes ea), and %u jumbo buffers (%u bytes ea)\n",
+        printf( "    %u small (%u byte) buffers, %u jumbo (%u byte) buffers\n",
             (unsigned int) freeListItemsAvail ( rsrvSmallBufFreeListTCP ),
             MAX_TCP,
             (unsigned int) freeListItemsAvail ( rsrvLargeBufFreeListTCP ),
             rsrvSizeofLargeBufTCP );
-        printf( "The server's resource id conversion table:\n");
+        printf( "Server resource id table:\n");
         LOCK_CLIENTQ;
         bucketShow (pCaBucket);
         UNLOCK_CLIENTQ;
-        printf ( "The server's array size limit is %u bytes max\n",
-            rsrvSizeofLargeBufTCP );
-
     }
 }
 

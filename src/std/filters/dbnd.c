@@ -102,7 +102,7 @@ static void channelRegisterPre(dbChannel *chan, void *pvt,
 static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
 {
     myStruct *my = (myStruct*) pvt;
-    printf("%*s  plugin dbnd, mode=%s, delta=%g%s\n", indent, "",
+    printf("%*sDeadband (dbnd): mode=%s, delta=%g%s\n", indent, "",
            chfPluginEnumString(modeEnum, my->mode, "n/a"), my->cval,
            my->mode == 1 ? "%" : "");
 }

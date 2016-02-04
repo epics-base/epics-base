@@ -973,6 +973,22 @@ void casr (unsigned level)
             ipAddrToDottedIP (&pAddr->addr.ia, buf, sizeof(buf));
             printf("    %s\n", buf);
         }
+
+        if (casIgnoreAddrs[0]) { /* 0 indicates end of array */
+            size_t i;
+            printf("Ignoring UDP messages from address%s\n",
+                   n == 1 ? "" : "es");
+            for(i=0; casIgnoreAddrs[i]; i++)
+            {
+                struct sockaddr_in addr;
+                memset(&addr, 0, sizeof(addr));
+                addr.sin_family = AF_INET;
+                addr.sin_addr.s_addr = casIgnoreAddrs[i];
+                addr.sin_port = 0;
+                ipAddrToDottedIP(&addr, buf, sizeof(buf));
+                printf("    %s\n", buf);
+            }
+        }
     }
 
     if (level>=4u) {

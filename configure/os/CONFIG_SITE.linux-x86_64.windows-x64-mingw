@@ -1,0 +1,8 @@
+# CONFIG_SITE.linux-x86_64.windows-x64-mingw
+#
+# Configuration for linux-x86_64 host windows-x64-mingw target builds
+#-------------------------------------------------------
+
+# Inherit from the linux-x86 host architecture
+include $(CONFIG)/os/CONFIG_SITE.linux-x86.windows-x64-mingw
+

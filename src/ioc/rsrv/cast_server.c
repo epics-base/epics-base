@@ -176,8 +176,19 @@ void cast_server(void *pParm)
                         sockErrBuf);
                 epicsThreadSleep(1.0);
             }
+
+        } else {
+            size_t idx;
+            for(idx=0; casIgnoreAddrs[idx]; idx++)
+            {
+                if(new_recv_addr.sin_addr.s_addr==casIgnoreAddrs[idx]) {
+                    status = -1; /* ignore */
+                    break;
+                }
+            }
         }
-        else if (casudp_ctl == ctlRun) {
+
+        if (status >= 0 && casudp_ctl == ctlRun) {
             client->recv.cnt = (unsigned) status;
             client->recv.stk = 0ul;
             epicsTimeGetCurrent(&client->time_at_last_recv);

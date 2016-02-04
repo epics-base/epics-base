@@ -424,6 +424,29 @@ void rsrv_build_addr_lists(void)
 
     if (ellCount(&beaconAddrList)==0)
         fprintf(stderr, "Warning: RSRV has empty beacon address list\n");
+
+    {
+        osiSockAddrNode *node;
+        ELLLIST temp = ELLLIST_INIT,
+                temp2= ELLLIST_INIT;
+        size_t idx = 0;
+
+        addAddrToChannelAccessAddressList ( &temp, &EPICS_CAS_IGNORE_ADDR_LIST, 0, 0 );
+        removeDuplicateAddresses(&temp2, &temp, 0);
+
+        /* Keep the list of addresses to ignore in an array on the assumption that
+         * it is short enough that using a hash table would be slower.
+         * 0.0.0.0 indicates end of list
+         */
+        casIgnoreAddrs = callocMustSucceed(1+ellCount(&temp2), sizeof(casIgnoreAddrs[0]), "casIgnoreAddrs");
+
+        while((node=(osiSockAddrNode*)ellGet(&temp2))!=NULL)
+        {
+            casIgnoreAddrs[idx++] = node->addr.ia.sin_addr.s_addr;
+            free(node);
+        }
+        casIgnoreAddrs[idx] = 0;
+    }
 }
 
 static dbServer rsrv_server = {

@@ -54,7 +54,7 @@ static struct ifreq * ifreqNext ( struct ifreq *pifreq )
     struct ifreq *ifr;
 
     ifr = ( struct ifreq * )( ifreqSize (pifreq) + ( char * ) pifreq );
-    ifDepenDebugPrintf( ("ifreqNext() pifreq 0x%08x, size 0x%08x, ifr 0x%08x\n", pifreq, ifreqSize (pifreq), ifr) );
+    ifDepenDebugPrintf( ("ifreqNext() pifreq %p, size 0x%x, ifr 0x%p\n", pifreq, (unsigned)ifreqSize (pifreq), ifr) );
     return ifr;
 }
 
@@ -90,8 +90,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
     ifconf.ifc_req = pIfreqList;
     status = socket_ioctl (socket, SIOCGIFCONF, &ifconf);
     if (status < 0 || ifconf.ifc_len == 0) {
-        ifDepenDebugPrintf(("osiSockDiscoverBroadcastAddresses(): status: 0x08x, ifconf.ifc_len: %d\n", status, ifconf.ifc_len));
-        errlogPrintf ("osiSockDiscoverBroadcastAddresses(): unable to fetch network interface configuration\n");
+        errlogPrintf ("osiSockDiscoverBroadcastAddresses(): unable to fetch network interface configuration (%d)\n", status);
         free (pIfreqList);
         return;
     }
@@ -115,8 +114,8 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
 
         ifDepenDebugPrintf (("osiSockDiscoverBroadcastAddresses(): found IFACE: %s len: 0x%x current_ifreqsize: 0x%x \n",
             pIfreqList->ifr_name,
-            ifreq_size(pifreq),
-            current_ifreqsize));
+            (unsigned)ifreq_size(pifreq),
+            (unsigned)current_ifreqsize));
 
         /*
          * If its not an internet interface then dont use it 

@@ -148,26 +148,8 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     }
     
     if ( addConfigBeaconAddr ) {
-        
-        //
-        // by default use EPICS_CA_ADDR_LIST for the
-        // beacon address list
-        //
-        const ENV_PARAM *pParam;
-        
-        if ( envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST ) || 
-            envGetConfigParamPtr ( & EPICS_CAS_BEACON_ADDR_LIST ) ) {
-            pParam = & EPICS_CAS_BEACON_ADDR_LIST;
-        }
-        else {
-            pParam = & EPICS_CA_ADDR_LIST;
-        }
-        
-        // 
-        // add in the configured addresses
-        //
         addAddrToChannelAccessAddressList (
-            & BCastAddrList, pParam, beaconPort, pParam == & EPICS_CA_ADDR_LIST );
+            & BCastAddrList, &EPICS_CAS_BEACON_ADDR_LIST, beaconPort, 0 );
     }
  
     removeDuplicateAddresses ( & this->beaconAddrList, & BCastAddrList, 0 );

@@ -1,4 +1,7 @@
 /*************************************************************************\
+* Copyright (c) 2016 Michael Davidsaver
+* Copyright (c) 2015 Brookhaven Science Assoc. as operator of Brookhaven
+*               National Laboratory.
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as

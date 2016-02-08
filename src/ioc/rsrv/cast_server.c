@@ -128,10 +128,6 @@ void cast_server(void *pParm)
     recv_addr_size = sizeof(new_recv_addr);
 
     reply_sock = conf->udp;
-    if(conf->startbcast)
-        recv_sock = conf->udpbcast;
-    else
-        recv_sock = conf->udp;
 
     /*
      * setup new client structure but reuse old structure if
@@ -144,6 +140,14 @@ void cast_server(void *pParm)
             break;
         }
         epicsThreadSleep(300.0);
+    }
+    if (conf->startbcast) {
+        recv_sock = conf->udpbcast;
+        conf->bclient = client;
+    }
+    else {
+        recv_sock = conf->udp;
+        conf->client = client;
     }
     client->udpRecv = recv_sock;
 

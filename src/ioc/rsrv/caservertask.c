@@ -814,7 +814,7 @@ static void log_one_client (struct client *client, unsigned level)
     ipAddrToDottedIP (&client->addr, clientIP, sizeof(clientIP));
 
     if ( client->proto == IPPROTO_UDP ) {
-        printf ( "    UDP Name server\n\tLast name request was from %s:\n",
+        printf ( "\tLast name requested by %s:\n",
             clientIP );
     }
     else if ( client->proto == IPPROTO_TCP ) {
@@ -875,15 +875,15 @@ static void log_one_client (struct client *client, unsigned level)
         bytes_reserved += countChanListBytes (
                         client, & client->chanPendingUpdateARList );
         printf( "\t%d bytes allocated\n", bytes_reserved);
-        printf( "\tSend Lock:\n\t  ");
+        printf( "\tSend Lock:\n\t    ");
         epicsMutexShow(client->lock,1);
-        printf( "\tPut Notify Lock:\n\t  ");
+        printf( "\tPut Notify Lock:\n\t    ");
         epicsMutexShow (client->putNotifyLock,1);
-        printf( "\tAddress Queue Lock:\n\t  ");
+        printf( "\tAddress Queue Lock:\n\t    ");
         epicsMutexShow (client->chanListLock,1);
-        printf( "\tEvent Queue Lock:\n\t  ");
+        printf( "\tEvent Queue Lock:\n\t    ");
         epicsMutexShow (client->eventqLock,1);
-        printf( "\tBlock Semaphore:\n\t  ");
+        printf( "\tBlock Semaphore:\n\t    ");
         epicsEventShow (client->blockSem,1);
     }
 }
@@ -938,17 +938,24 @@ void casr (unsigned level)
 #else
             if (iface->udpbcast==INVALID_SOCKET) {
                 printf("    CAS-UDP name server on %s\n", buf);
+                if (level >= 2)
+                    log_one_client(iface->client, level - 2);
             }
             else {
                 printf("    CAS-UDP unicast name server on %s\n", buf);
+                if (level >= 2)
+                    log_one_client(iface->client, level - 2);
                 ipAddrToDottedIP (&iface->udpbcastAddr.ia, buf, sizeof(buf));
                 printf("    CAS-UDP broadcast name server on %s\n", buf);
+                if (level >= 2)
+                    log_one_client(iface->bclient, level - 2);
             }
 #endif
 
             iface = (rsrv_iface_config *) ellNext(&iface->node);
         }
     }
+
     if (level>=1) {
         osiSockAddrNode * pAddr;
         char buf[40];

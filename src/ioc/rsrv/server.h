@@ -144,6 +144,7 @@ typedef struct {
                 udpAddr, /* UDP name unicast receiver endpoint */
                 udpbcastAddr; /* UDP name broadcast receiver endpoint */
     SOCKET tcp, udp, udpbcast;
+    struct client *client, *bclient;
 
     unsigned int startbcast:1;
 } rsrv_iface_config;

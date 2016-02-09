@@ -9,8 +9,13 @@
 TOP = ../..
 include $(TOP)/configure/CONFIG
 
+# Uncomment this to remove the (benign) valgrind helper stubs
+#USR_CFLAGS += -DNVALGRIND
+
 SRC = $(TOP)/src
 LIBCOM = $(SRC)/libCom
+
+INC += valgrind/valgrind.h
 
 include $(LIBCOM)/as/Makefile
 include $(LIBCOM)/bucketLib/Makefile

@@ -20,6 +20,29 @@
 
 -->
 
+<h3>Valgrind Instrumentation</h3>
+
+<p>Valgrind is a software debugging suite provided by many Linux distributions.
+The header valgrind/valgrind.h is now included in, and installed by, Base.
+When included by a C or C++ source file this header defines some macros which
+expand to provide hints to the Valgrind runtime.
+These have no effect on normal operation of the software, but when run using the
+valgrind tool they can help to find memory leaks and buffer overflows.
+Suitable hints have been added to several free-lists within libCom, including
+freeListLib, allowing valgrind to provide more accurate information about the
+source of potential leaks.</p>
+
+<p>valgrind.h automatically disables itself when the build target is not
+supported by the valgrind tool.
+It can also explicitly be disabled by defining the macro <em>NVALGRIND</em>.
+See <em>src/libCom/Makefile</em> for a commented-out example.</p>
+
+<p>As a matter of policy valgrind.h should never be included by any header file
+installed by Base, so its use will remain purely an internal implementation
+detail and not be directly visible to application software.
+Support modules which choose to use valgrind.h are advised to avoid to do
+likewise.</p>
+
 <h3>Database Multi-locking</h3>
 
 <p>dbLock.c is re-written with an expanded API, and the removal of global mutex locks.</p>

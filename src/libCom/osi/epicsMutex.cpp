@@ -28,6 +28,7 @@
 #define epicsExportSharedSymbols
 #include "epicsStdio.h"
 #include "epicsThread.h"
+#include "valgrind/valgrind.h"
 #include "ellLib.h"
 #include "errlog.h"
 #include "epicsMutex.h"
@@ -85,6 +86,7 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         firstTime=0;
         ellInit(&mutexList);
         ellInit(&freeList);
+        VALGRIND_CREATE_MEMPOOL(&freeList, 0, 0);
         epicsMutexGlobalLock = epicsMutexOsdCreate();
     }
     id = epicsMutexOsdCreate();
@@ -98,9 +100,11 @@ epicsMutexId epicsShareAPI epicsMutexOsiCreate(
         reinterpret_cast < epicsMutexParm * > ( ellFirst(&freeList) );
     if(pmutexNode) {
         ellDelete(&freeList,&pmutexNode->node);
+        VALGRIND_MEMPOOL_FREE(&freeList, pmutexNode);
     } else {
         pmutexNode = static_cast < epicsMutexParm * > ( calloc(1,sizeof(epicsMutexParm)) );
     }
+    VALGRIND_MEMPOOL_ALLOC(&freeList, pmutexNode, sizeof(epicsMutexParm));
     pmutexNode->id = id;
 #   ifdef LOG_LAST_OWNER
         pmutexNode->lastOwner = 0;
@@ -127,6 +131,8 @@ void epicsShareAPI epicsMutexDestroy(epicsMutexId pmutexNode)
     assert ( lockStat == epicsMutexLockOK );
     ellDelete(&mutexList,&pmutexNode->node);
     epicsMutexOsdDestroy(pmutexNode->id);
+    VALGRIND_MEMPOOL_FREE(&freeList, pmutexNode);
+    VALGRIND_MEMPOOL_ALLOC(&freeList, &pmutexNode->node, sizeof(pmutexNode->node));
     ellAdd(&freeList,&pmutexNode->node);
     epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
@@ -160,6 +166,26 @@ epicsMutexLockStatus epicsShareAPI epicsMutexTryLock(
         }
 #   endif
     return status;
+}
+
+/* Empty the freeList.
+ * Called from epicsExit.c, but not via epicsAtExit()
+ * to avoid the possibility of a circular reference.
+ */
+extern "C"
+void epicsMutexCleanup(void)
+{
+    ELLNODE *cur;
+    epicsMutexLockStatus lockStat =
+        epicsMutexOsdLock(epicsMutexGlobalLock);
+    assert ( lockStat == epicsMutexLockOK );
+
+    while((cur=ellGet(&freeList))!=NULL) {
+        VALGRIND_MEMPOOL_FREE(&freeList, cur);
+        free(cur);
+    }
+
+    epicsMutexOsdUnlock(epicsMutexGlobalLock);
 }
 
 void epicsShareAPI epicsMutexShow(

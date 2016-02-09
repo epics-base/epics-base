@@ -16,6 +16,7 @@
 #include "db_field_log.h"
 #include "chfPlugin.h"
 #include "dbState.h"
+#include "epicsExit.h"
 #include "epicsAssert.h"
 #include "epicsExport.h"
 
@@ -174,6 +175,11 @@ static chfPluginIf pif = {
     NULL /* channel_close */
 };
 
+static void syncShutdown(void* ignore)
+{
+    freeListCleanup(myStructFreeList);
+}
+
 static void syncInitialize(void)
 {
     static int firstTime = 1;
@@ -185,6 +191,7 @@ static void syncInitialize(void)
         freeListInitPvt(&myStructFreeList, sizeof(myStruct), 64);
 
     chfPluginRegister("sync", &pif, opts);
+    epicsAtExit(syncShutdown, NULL);
 }
 
 epicsExportRegistrar(syncInitialize);

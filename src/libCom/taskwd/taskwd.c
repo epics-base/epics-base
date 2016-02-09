@@ -25,6 +25,7 @@
 #include "epicsStdioRedirect.h"
 #include "epicsThread.h"
 #include "epicsMutex.h"
+#include "valgrind/valgrind.h"
 #include "errlog.h"
 #include "ellLib.h"
 #include "errMdef.h"
@@ -130,9 +131,15 @@ static void twdTask(void *arg)
 
 static void twdShutdown(void *arg)
 {
+    ELLNODE *cur;
     twdCtl = twdctlExit;
     epicsEventSignal(loopEvent);
     epicsEventWait(exitEvent);
+    while ((cur = ellGet(&fList)) != NULL) {
+        VALGRIND_MEMPOOL_FREE(&fList, cur);
+        free(cur);
+    }
+    VALGRIND_DESTROY_MEMPOOL(&fList);
 }
 
 static void twdInitOnce(void *arg)
@@ -142,6 +149,8 @@ static void twdInitOnce(void *arg)
     tLock = epicsMutexMustCreate();
     mLock = epicsMutexMustCreate();
     fLock = epicsMutexMustCreate();
+    ellInit(&fList);
+    VALGRIND_CREATE_MEMPOOL(&fList, 0, 0);
 
     twdCtl = twdctlRun;
     loopEvent = epicsEventMustCreate(epicsEventEmpty);
@@ -388,14 +397,16 @@ static union twdNode *newNode(void)
     union twdNode *pn;
 
     epicsMutexMustLock(fLock);
-    pn = (union twdNode *)ellFirst(&fList);
+    pn = (union twdNode *)ellGet(&fList);
     if (pn) {
-        ellDelete(&fList, (void *)pn);
-        epicsMutexUnlock(fLock);
-        return pn;
+        VALGRIND_MEMPOOL_FREE(&fList, pn);
     }
     epicsMutexUnlock(fLock);
-    return calloc(1, sizeof(union twdNode));
+    if (!pn)
+        pn = calloc(1, sizeof(union twdNode));
+    if (pn)
+        VALGRIND_MEMPOOL_ALLOC(&fList, pn, sizeof(*pn));
+    return pn;
 }
 
 static union twdNode *allocNode(void)
@@ -411,6 +422,8 @@ static union twdNode *allocNode(void)
 
 static void freeNode(union twdNode *pn)
 {
+    VALGRIND_MEMPOOL_FREE(&fList, pn);
+    VALGRIND_MEMPOOL_ALLOC(&fList, pn, sizeof(ELLNODE));
     epicsMutexMustLock(fLock);
     ellAdd(&fList, (void *)pn);
     epicsMutexUnlock(fLock);

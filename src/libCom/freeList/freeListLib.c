@@ -107,7 +107,7 @@ epicsShareFunc void * epicsShareAPI freeListMalloc(void *pvt)
             return(0);
         }
         pallocmem->memory = ptemp; /* real allocation */
-        ptemp += REDZONE; /* skip first REDZONE */
+        ptemp = REDZONE + (char *) ptemp; /* skip first REDZONE */
         if(pfl->mallochead)
             pallocmem->next = pfl->mallochead;
         pfl->mallochead = pallocmem;

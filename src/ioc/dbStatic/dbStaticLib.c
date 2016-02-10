@@ -1871,7 +1871,7 @@ char * dbGetString(DBENTRY *pdbentry)
     void	*pfield = pdbentry->pfield;
     DBLINK 	*plink;
 
-    if(!pflddes) {
+    if (!pflddes) {
         dbMsgCpy(pdbentry, "fldDes not found");
         return pdbentry->message;
     }
@@ -1880,7 +1880,7 @@ char * dbGetString(DBENTRY *pdbentry)
     case DBF_INLINK:
     case DBF_OUTLINK:
     case DBF_FWDLINK:
-        if(!pfield) {
+        if (!pfield) {
             dbMsgCpy(pdbentry, "Field not allocated (NULL)");
             return pdbentry->message;
         }
@@ -1891,8 +1891,8 @@ char * dbGetString(DBENTRY *pdbentry)
 
     switch (pflddes->field_type) {
     case DBF_STRING:
-	dbMsgCpy(pdbentry, (char *)pfield);
-	break;
+        dbMsgCpy(pdbentry, (char *)pfield);
+        break;
     case DBF_CHAR:
     case DBF_UCHAR:
     case DBF_SHORT:
@@ -1909,99 +1909,99 @@ char * dbGetString(DBENTRY *pdbentry)
     case DBF_OUTLINK:
 	plink = (DBLINK *)pfield;
 	switch(plink->type) {
-	    case CONSTANT:
-		if(plink->value.constantStr) {
-			dbMsgCpy(pdbentry, plink->value.constantStr);
-		} else {
-			dbMsgCpy(pdbentry, "");
-		}
-		break;
-	    case MACRO_LINK:
-		if(plink->value.macro_link.macroStr) {
-			dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
-		} else {
-			dbMsgCpy(pdbentry, "");
-		}
-		break;
+	case CONSTANT:
+	    if (plink->value.constantStr) {
+		dbMsgCpy(pdbentry, plink->value.constantStr);
+	    } else {
+		dbMsgCpy(pdbentry, "");
+	    }
+	    break;
+	case MACRO_LINK:
+	    if (plink->value.macro_link.macroStr) {
+		dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
+	    } else {
+		dbMsgCpy(pdbentry, "");
+	    }
+	    break;
         case PN_LINK:
-        dbMsgPrint(pdbentry, "%s%s",
+            dbMsgPrint(pdbentry, "%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
-		break;
-	    case PV_LINK:
-	    case CA_LINK:
-	    case DB_LINK: {
-		int	ppind;
-		short	pvlMask;
+	    break;
+	case PV_LINK:
+	case CA_LINK:
+	case DB_LINK: {
+	    int 	ppind;
+	    short	pvlMask;
 
-		pvlMask = plink->value.pv_link.pvlMask;
-		if(pvlMask&pvlOptPP) ppind=1;
-		else if(pvlMask&pvlOptCA) ppind=2;
-		else if(pvlMask&pvlOptCP) ppind=3;
-		else if(pvlMask&pvlOptCPP) ppind=4;
-		else ppind=0;
-        dbMsgPrint(pdbentry, "%s%s%s%s",
+	    pvlMask = plink->value.pv_link.pvlMask;
+	    if (pvlMask&pvlOptPP) ppind=1;
+	    else if(pvlMask&pvlOptCA) ppind=2;
+	    else if(pvlMask&pvlOptCP) ppind=3;
+	    else if(pvlMask&pvlOptCPP) ppind=4;
+	    else ppind=0;
+            dbMsgPrint(pdbentry, "%s%s%s%s",
                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
                    (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
                    ppstring[ppind],
                    msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
-		break;
-	    }
-	    case VME_IO:
-		dbMsgPrint(pdbentry, "#C%d S%d @%s",
-		    plink->value.vmeio.card,plink->value.vmeio.signal,
-		    plink->value.vmeio.parm);
-		break;
-	    case CAMAC_IO:
-		dbMsgPrint(pdbentry, "#B%d C%d N%d A%d F%d @%s",
-		    plink->value.camacio.b,plink->value.camacio.c,
-		    plink->value.camacio.n,plink->value.camacio.a,
-		    plink->value.camacio.f,plink->value.camacio.parm);
-		break;
-	    case RF_IO:
-		dbMsgPrint(pdbentry, "#R%d M%d D%d E%d",
-		    plink->value.rfio.cryo,
-		    plink->value.rfio.micro,
-		    plink->value.rfio.dataset,
-		    plink->value.rfio.element);
-		break;
-	    case AB_IO:
-		dbMsgPrint(pdbentry, "#L%d A%d C%d S%d @%s",
-		    plink->value.abio.link,plink->value.abio.adapter,
-		    plink->value.abio.card,plink->value.abio.signal,
-		    plink->value.abio.parm);
-		break;
-	    case GPIB_IO:
-		dbMsgPrint(pdbentry, "#L%d A%d @%s",
-		    plink->value.gpibio.link,plink->value.gpibio.addr,
-		    plink->value.gpibio.parm);
-		break;
-	    case BITBUS_IO:
-		dbMsgPrint(pdbentry, "#L%u N%u P%u S%u @%s",
-		    plink->value.bitbusio.link,plink->value.bitbusio.node,
-		    plink->value.bitbusio.port,plink->value.bitbusio.signal,
-		    plink->value.bitbusio.parm);
-		break;
-	    case BBGPIB_IO:
-		dbMsgPrint(pdbentry, "#L%u B%u G%u @%s",
-		    plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
-		    plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
-		break;
-	    case INST_IO:
-		dbMsgPrint(pdbentry, "@%s", plink->value.instio.string);
-		break;
-	    case VXI_IO :
-		if (plink->value.vxiio.flag == VXIDYNAMIC)
-		    dbMsgPrint(pdbentry, "#V%d C%d S%d @%s",
-			plink->value.vxiio.frame,plink->value.vxiio.slot,
-			plink->value.vxiio.signal,plink->value.vxiio.parm);
-		else
-		    dbMsgPrint(pdbentry, "#V%d S%d @%s",
-			plink->value.vxiio.la,plink->value.vxiio.signal,
-			plink->value.vxiio.parm);
-		break;
-	    default :
-	        return(NULL);
+	    break;
+	}
+	case VME_IO:
+	    dbMsgPrint(pdbentry, "#C%d S%d @%s",
+		plink->value.vmeio.card,plink->value.vmeio.signal,
+		plink->value.vmeio.parm);
+	    break;
+	case CAMAC_IO:
+	    dbMsgPrint(pdbentry, "#B%d C%d N%d A%d F%d @%s",
+		plink->value.camacio.b,plink->value.camacio.c,
+		plink->value.camacio.n,plink->value.camacio.a,
+		plink->value.camacio.f,plink->value.camacio.parm);
+	    break;
+	case RF_IO:
+	    dbMsgPrint(pdbentry, "#R%d M%d D%d E%d",
+		plink->value.rfio.cryo,
+		plink->value.rfio.micro,
+		plink->value.rfio.dataset,
+		plink->value.rfio.element);
+	    break;
+	case AB_IO:
+	    dbMsgPrint(pdbentry, "#L%d A%d C%d S%d @%s",
+		plink->value.abio.link,plink->value.abio.adapter,
+		plink->value.abio.card,plink->value.abio.signal,
+		plink->value.abio.parm);
+	    break;
+	case GPIB_IO:
+	    dbMsgPrint(pdbentry, "#L%d A%d @%s",
+		plink->value.gpibio.link,plink->value.gpibio.addr,
+		plink->value.gpibio.parm);
+	    break;
+	case BITBUS_IO:
+	    dbMsgPrint(pdbentry, "#L%u N%u P%u S%u @%s",
+		plink->value.bitbusio.link,plink->value.bitbusio.node,
+		plink->value.bitbusio.port,plink->value.bitbusio.signal,
+		plink->value.bitbusio.parm);
+	    break;
+	case BBGPIB_IO:
+	    dbMsgPrint(pdbentry, "#L%u B%u G%u @%s",
+		plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
+		plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
+	    break;
+	case INST_IO:
+	    dbMsgPrint(pdbentry, "@%s", plink->value.instio.string);
+	    break;
+	case VXI_IO :
+	    if (plink->value.vxiio.flag == VXIDYNAMIC)
+		dbMsgPrint(pdbentry, "#V%d C%d S%d @%s",
+		    plink->value.vxiio.frame,plink->value.vxiio.slot,
+		    plink->value.vxiio.signal,plink->value.vxiio.parm);
+	    else
+		dbMsgPrint(pdbentry, "#V%d S%d @%s",
+		    plink->value.vxiio.la,plink->value.vxiio.signal,
+		    plink->value.vxiio.parm);
+	    break;
+	default :
+	    return(NULL);
 	}
 	break;
     case DBF_FWDLINK: {
@@ -2012,10 +2012,10 @@ char * dbGetString(DBENTRY *pdbentry)
 		dbMsgCpy(pdbentry, "0");
 		break;
 	    case MACRO_LINK:
-		if(plink->value.macro_link.macroStr) {
-			dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
+		if (plink->value.macro_link.macroStr) {
+		    dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
 		} else {
-			dbMsgCpy(pdbentry, "");
+		    dbMsgCpy(pdbentry, "");
 		}
 		break;
 	    case PV_LINK:
@@ -2025,11 +2025,11 @@ char * dbGetString(DBENTRY *pdbentry)
 		short	pvlMask;
 
 		pvlMask = plink->value.pv_link.pvlMask;
-		if(pvlMask&pvlOptCA) ppind=2;
+		if (pvlMask&pvlOptCA) ppind=2;
 		else ppind=0;
-        dbMsgPrint(pdbentry, "%s%s",
-                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
-                   ppind ? ppstring[ppind] : "");
+                dbMsgPrint(pdbentry, "%s%s",
+                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                    ppind ? ppstring[ppind] : "");
 		break;
 	    }
 	    default :
@@ -3505,8 +3505,8 @@ void  dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		plink = pdbentry->pfield;
 		linkType = plink->type;
 		if(bus[linkType][0]==0) continue;
-        strncpy(linkValue,dbGetString(pdbentry), NELEMENTS(linkValue)-1);
-        linkValue[NELEMENTS(linkValue)-1] = '\0';
+		strncpy(linkValue, dbGetString(pdbentry), NELEMENTS(linkValue)-1);
+		linkValue[NELEMENTS(linkValue)-1] = '\0';
 		status = dbFindField(pdbentry,"DTYP");
 		if(status) break;
 		strcpy(dtypValue,dbGetString(pdbentry));

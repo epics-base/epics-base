@@ -39,6 +39,17 @@
 
 static unsigned iran;
 
+static
+int checkGetString(DBENTRY *pent, const char *expect)
+{
+    dbCommon *prec = pent->precnode->precord;
+    const char *actual = dbGetString(pent);
+    int ret = strcmp(actual, expect);
+    testOk(ret==0, "dbGetString(\"%s.%s\") -> '%s' == '%s'", prec->name,
+           pent->pflddes->name, actual, expect);
+    return ret;
+}
+
 static void hookPass0(initHookState state)
 {
     DBENTRY entry;
@@ -48,17 +59,46 @@ static void hookPass0(initHookState state)
 
     dbInitEntry(pdbbase, &entry);
 
+    testDiag("restore integer pass0");
     /* rec0.VAL is initially 1, set it to 2 */
     if(dbFindRecord(&entry, "rec0.VAL")==0) {
         aoRecord *prec = entry.precnode->precord;
         testOk(prec->val==1, "VAL %d==1 (initial value from .db)", (int)prec->val);
+        checkGetString(&entry, "1");
         testOk1(dbPutString(&entry, "2")==0);
         testOk(prec->val==2, "VAL %d==2", (int)prec->val);
+        checkGetString(&entry, "2");
     } else {
         testFail("Missing rec0");
-        testSkip(1, "missing record");
+        testSkip(4, "missing record");
     }
 
+    testDiag("restore string pass0");
+    if(dbFindRecord(&entry, "rec0.DESC")==0) {
+        aoRecord *prec = entry.precnode->precord;
+        testOk1(strcmp(prec->desc, "foobar")==0);
+        checkGetString(&entry, "foobar");
+        testOk1(dbPutString(&entry, "hello")==0);
+        testOk1(strcmp(prec->desc, "hello")==0);
+        checkGetString(&entry, "hello");
+    } else {
+        testFail("Missing rec0");
+        testSkip(4, "missing record");
+    }
+
+    if(dbFindRecord(&entry, "rec1.DESC")==0) {
+        aoRecord *prec = entry.precnode->precord;
+        testOk1(strcmp(prec->desc, "")==0);
+        checkGetString(&entry, "");
+        testOk1(dbPutString(&entry, "world")==0);
+        testOk1(strcmp(prec->desc, "world")==0);
+        checkGetString(&entry, "world");
+    } else {
+        testFail("Missing rec1");
+        testSkip(4, "missing record");
+    }
+
+    testDiag("restore link pass0");
     /* rec0.OUT is initially "rec0.DISV", set it to "rec0.SEVR" */
     if(dbFindRecord(&entry, "rec0.OUT")==0) {
         aoRecord *prec = entry.precnode->precord;
@@ -68,6 +108,12 @@ static void hookPass0(initHookState state)
                    prec->out.text);
         else
             testFail("Wrong link type: %d", (int)prec->out.type);
+
+        /* note that dbGetString() reads an empty string before links are initialized
+         * should probably be considered a bug, but has been the case for so long
+         * we call it a 'feature'.
+         */
+        checkGetString(&entry, "");
 
         testOk1(dbPutString(&entry, "rec0.SEVR")==0);
     } else{
@@ -213,10 +259,10 @@ void testRestore(void)
 
     testIocShutdownOk();
 
-    testdbCleanup();
-
     /* recSup doesn't cleanup after itself */
     free(rec1->bptr);
+
+    testdbCleanup();
 }
 
 struct dset6 {

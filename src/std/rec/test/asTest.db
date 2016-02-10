@@ -1,4 +1,5 @@
 record(ao, "rec0") {
+  field(DESC, "foobar")
   field(DTYP, "asTest")
   field(VAL, "1")
   field(OUT, "rec0.DISV")

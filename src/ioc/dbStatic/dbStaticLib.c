@@ -52,8 +52,11 @@ static char *pNullString = "";
 #define messagesize	276
 #define RPCL_LEN INFIX_TO_POSTFIX_SIZE(80)
 
-static char *ppstring[5]={"NPP","PP","CA","CP","CPP"};
-static char *msstring[4]={"NMS","MS","MSI","MSS"};
+/* must be long enough to hold 32-bit signed integer in base 10 */
+STATIC_ASSERT(messagesize>=11);
+
+static char *ppstring[5]={" NPP"," PP"," CA"," CP"," CPP"};
+static char *msstring[4]={" NMS"," MS"," MSI"," MSS"};
 
 epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"CONSTANT",CONSTANT},
@@ -83,13 +86,9 @@ static int mapDBFtoDCT[DBF_NOACCESS+1] = {
 	DCT_INLINK,DCT_OUTLINK,DCT_FWDLINK,
 	DCT_NOACCESS};
 
-
 /*forward references for private routines*/
-static FILE *openOutstream(const char *filename);
-static void finishOutstream(FILE *stream);
-static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
-static void zeroDbentry(DBENTRY *pdbentry);
-static char *getpMessage(DBENTRY *pdbentry);
+static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
+    EPICS_PRINTF_STYLE(2,3);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -207,8 +206,150 @@ static char *getpMessage(DBENTRY *pdbentry)
         msg = dbCalloc(1, messagesize);
         pdbentry->message = msg;
     }
-    *msg = 0;
+    *msg = '\0';
     return msg;
+}
+
+static
+void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
+{
+    getpMessage(pdbentry);
+    strncpy(pdbentry->message, msg, messagesize-1);
+    pdbentry->message[messagesize-1] = '\0';
+}
+
+static
+void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
+{
+    va_list args;
+    getpMessage(pdbentry);
+    va_start(args, fmt);
+    epicsVsnprintf(pdbentry->message, messagesize, fmt, args);
+    va_end(args);
+}
+
+static void ulongToHexString(epicsUInt32 source,char *pdest)
+{
+    static const char hex_digit_to_ascii[16] = "0123456789abcdef";
+    epicsUInt32 val,temp;
+    char digit[10];
+    int i,j;
+
+    if (source==0) {
+        strcpy(pdest,"0x0");
+        return;
+    }
+    *pdest++ = '0'; *pdest++ = 'x';
+    val = source;
+    for (i=0; val!=0; i++) {
+        temp = val/16;
+        digit[i] = hex_digit_to_ascii[val - temp*16];
+        val = temp;
+    }
+    for (j=i-1; j>=0; j--) {
+        *pdest++ = digit[j];
+    }
+    *pdest = 0;
+    return;
+}
+
+static void realToString(double value, char *preturn, int isdouble)
+{
+    static const double delta[2] = {1e-6, 1e-15};
+    static const int precision[2] = {6, 14};
+    double	absvalue;
+    int		logval,prec;
+    size_t  end;
+    char	tstr[30];
+    char	*ptstr = &tstr[0];
+    int		round;
+    int		ise = FALSE;
+    char	*loce = NULL;
+
+    if (value == 0) {
+        strcpy(preturn, "0");
+        return;
+    }
+
+    absvalue = value < 0 ? -value : value;
+    if (absvalue < (double)INT_MAX) {
+        epicsInt32 intval = (epicsInt32) value;
+        double diff = value - intval;
+
+        if (diff < 0) diff = -diff;
+        if (diff < absvalue * delta[isdouble]) {
+            cvtLongToString(intval, preturn);
+            return;
+        }
+    }
+
+    /*Now starts the hard cases*/
+    if (value < 0) {
+        *preturn++ = '-';
+        value = -value;
+    }
+
+    logval = (int)log10(value);
+    if (logval > 6 || logval < -2) {
+        int nout;
+
+        ise = TRUE;
+        prec = precision[isdouble];
+        nout = sprintf(ptstr, "%.*e", prec, value);
+        loce = strchr(ptstr, 'e');
+
+        if (!loce) {
+            ptstr[nout] = 0;
+            strcpy(preturn, ptstr);
+            return;
+        }
+
+        *loce++ = 0;
+    } else {
+        prec = precision[isdouble] - logval;
+        if ( prec < 0) prec = 0;
+        sprintf(ptstr, "%.*f", prec, value);
+    }
+
+    if (prec > 0) {
+        end = strlen(ptstr) - 1;
+        round = FALSE;
+        while (end > 0) {
+            if (tstr[end] == '.') {end--; break;}
+            if (tstr[end] == '0') {end--; continue;}
+            if (!round && end < precision[isdouble]) break;
+            if (!round && tstr[end] < '8') break;
+            if (tstr[end-1] == '.') {
+                if (round) end = end-2;
+                break;
+            }
+            if (tstr[end-1] != '9') break;
+            round = TRUE;
+            end--;
+        }
+        tstr[end+1] = 0;
+        while (round) {
+            if (tstr[end] < '9') {tstr[end]++; break;}
+            if (end == 0) { *preturn++ = '1'; tstr[end] = '0'; break;}
+            tstr[end--] = '0';
+        }
+    }
+    strcpy(preturn, &tstr[0]);
+    if (ise) {
+        if (!(strchr(preturn, '.'))) strcat(preturn, ".0");
+        strcat(preturn, "e");
+        strcat(preturn, loce);
+    }
+}
+
+static void floatToString(float value, char *preturn)
+{
+    realToString((double)value, preturn, 0);
+}
+
+static void doubleToString(double value, char *preturn)
+{
+    realToString(value, preturn, 1);
 }
 
 /*Public only for dbStaticNoRun*/
@@ -1718,16 +1859,30 @@ char * dbGetString(DBENTRY *pdbentry)
 {
     dbFldDes  	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
-    char	*message;
     DBLINK 	*plink;
 
-    message = getpMessage(pdbentry);
-    if(!pflddes) {strcpy(message,"fldDes not found"); return(message);}
+    if (!pflddes) {
+        dbMsgCpy(pdbentry, "fldDes not found");
+        return pdbentry->message;
+    }
     switch (pflddes->field_type) {
     case DBF_STRING:
-	if(!pfield) {strcpy(message,"Field not found"); return(message);}
-	strcpy(message, (char *)pfield);
-	break;
+    case DBF_INLINK:
+    case DBF_OUTLINK:
+    case DBF_FWDLINK:
+        if (!pfield) {
+            dbMsgCpy(pdbentry, "Field not allocated (NULL)");
+            return pdbentry->message;
+        }
+        break;
+    default:
+        break;
+    }
+
+    switch (pflddes->field_type) {
+    case DBF_STRING:
+        dbMsgCpy(pdbentry, (char *)pfield);
+        break;
     case DBF_CHAR:
     case DBF_UCHAR:
     case DBF_SHORT:
@@ -1742,125 +1897,115 @@ char * dbGetString(DBENTRY *pdbentry)
 	return(dbGetStringNum(pdbentry));
     case DBF_INLINK:
     case DBF_OUTLINK:
-	if(!pfield) {strcpy(message,"Field not found"); return(message);}
 	plink = (DBLINK *)pfield;
 	switch(plink->type) {
-	    case CONSTANT:
-		if(plink->value.constantStr) {
-		    strcpy(message,plink->value.constantStr);
-		} else {
-		    strcpy(message,"");
-		}
-		break;
-	    case MACRO_LINK:
-		if(plink->value.macro_link.macroStr) {
-		    strcpy(message,plink->value.macro_link.macroStr);
-		} else {
-		    strcpy(message,"");
-		}
-		break;
-            case PN_LINK:
-		if(plink->value.pv_link.pvname)
-		    strcpy(message,plink->value.pv_link.pvname);
-		else
-		    strcpy(message,"");
-		strcat(message," ");
-		strcat(message,msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
-		break;
-	    case PV_LINK:
-	    case CA_LINK:
-	    case DB_LINK: {
-		int	ppind;
-		short	pvlMask;
-
-		pvlMask = plink->value.pv_link.pvlMask;
-		if(pvlMask&pvlOptPP) ppind=1;
-		else if(pvlMask&pvlOptCA) ppind=2;
-		else if(pvlMask&pvlOptCP) ppind=3;
-		else if(pvlMask&pvlOptCPP) ppind=4;
-		else ppind=0;
-		if (plink->value.pv_link.pvname) {
-		    strcpy(message, plink->value.pv_link.pvname);
-		    if (pvlMask & pvlOptTSELisTime)
-			strcat(message, ".TIME");
-		} else
-		    strcpy(message,"");
-		strcat(message," ");
-		strcat(message,ppstring[ppind]);
-		strcat(message," ");
-		strcat(message,msstring[pvlMask&pvlOptMsMode]);
-		break;
+	case CONSTANT:
+	    if (plink->value.constantStr) {
+		dbMsgCpy(pdbentry, plink->value.constantStr);
+	    } else {
+		dbMsgCpy(pdbentry, "");
 	    }
-	    case VME_IO:
-		sprintf(message,"#C%d S%d @%s",
-		    plink->value.vmeio.card,plink->value.vmeio.signal,
-		    plink->value.vmeio.parm);
-		break;
-	    case CAMAC_IO:
-		sprintf(message,"#B%d C%d N%d A%d F%d @%s",
-		    plink->value.camacio.b,plink->value.camacio.c,
-		    plink->value.camacio.n,plink->value.camacio.a,
-		    plink->value.camacio.f,plink->value.camacio.parm);
-		break;
-	    case RF_IO:
-		sprintf(message,"#R%d M%d D%d E%d",
-		    plink->value.rfio.cryo,
-		    plink->value.rfio.micro,
-		    plink->value.rfio.dataset,
-		    plink->value.rfio.element);
-		break;
-	    case AB_IO:
-		sprintf(message,"#L%d A%d C%d S%d @%s",
-		    plink->value.abio.link,plink->value.abio.adapter,
-		    plink->value.abio.card,plink->value.abio.signal,
-		    plink->value.abio.parm);
-		break;
-	    case GPIB_IO:
-		sprintf(message,"#L%d A%d @%s",
-		    plink->value.gpibio.link,plink->value.gpibio.addr,
-		    plink->value.gpibio.parm);
-		break;
-	    case BITBUS_IO:
-		sprintf(message,"#L%u N%u P%u S%u @%s",
-		    plink->value.bitbusio.link,plink->value.bitbusio.node,
-		    plink->value.bitbusio.port,plink->value.bitbusio.signal,
-		    plink->value.bitbusio.parm);
-		break;
-	    case BBGPIB_IO:
-		sprintf(message,"#L%u B%u G%u @%s",
-		    plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
-		    plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
-		break;
-	    case INST_IO:
-		sprintf(message,"@%s", plink->value.instio.string);
-		break;
-	    case VXI_IO :
-		if (plink->value.vxiio.flag == VXIDYNAMIC)
-		    sprintf(message,"#V%d C%d S%d @%s",
-			plink->value.vxiio.frame,plink->value.vxiio.slot,
-			plink->value.vxiio.signal,plink->value.vxiio.parm);
-		else
-		    sprintf(message,"#V%d S%d @%s",
-			plink->value.vxiio.la,plink->value.vxiio.signal,
-			plink->value.vxiio.parm);
-		break;
-	    default :
-	        return(NULL);
+	    break;
+	case MACRO_LINK:
+	    if (plink->value.macro_link.macroStr) {
+		dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
+	    } else {
+		dbMsgCpy(pdbentry, "");
+	    }
+	    break;
+        case PN_LINK:
+            dbMsgPrint(pdbentry, "%s%s",
+                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+	    break;
+	case PV_LINK:
+	case CA_LINK:
+	case DB_LINK: {
+	    int 	ppind;
+	    short	pvlMask;
+
+	    pvlMask = plink->value.pv_link.pvlMask;
+	    if (pvlMask&pvlOptPP) ppind=1;
+	    else if(pvlMask&pvlOptCA) ppind=2;
+	    else if(pvlMask&pvlOptCP) ppind=3;
+	    else if(pvlMask&pvlOptCPP) ppind=4;
+	    else ppind=0;
+            dbMsgPrint(pdbentry, "%s%s%s%s",
+                   plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                   (pvlMask & pvlOptTSELisTime) ? ".TIME" : "",
+                   ppstring[ppind],
+                   msstring[plink->value.pv_link.pvlMask&pvlOptMsMode]);
+	    break;
+	}
+	case VME_IO:
+	    dbMsgPrint(pdbentry, "#C%d S%d @%s",
+		plink->value.vmeio.card,plink->value.vmeio.signal,
+		plink->value.vmeio.parm);
+	    break;
+	case CAMAC_IO:
+	    dbMsgPrint(pdbentry, "#B%d C%d N%d A%d F%d @%s",
+		plink->value.camacio.b,plink->value.camacio.c,
+		plink->value.camacio.n,plink->value.camacio.a,
+		plink->value.camacio.f,plink->value.camacio.parm);
+	    break;
+	case RF_IO:
+	    dbMsgPrint(pdbentry, "#R%d M%d D%d E%d",
+		plink->value.rfio.cryo,
+		plink->value.rfio.micro,
+		plink->value.rfio.dataset,
+		plink->value.rfio.element);
+	    break;
+	case AB_IO:
+	    dbMsgPrint(pdbentry, "#L%d A%d C%d S%d @%s",
+		plink->value.abio.link,plink->value.abio.adapter,
+		plink->value.abio.card,plink->value.abio.signal,
+		plink->value.abio.parm);
+	    break;
+	case GPIB_IO:
+	    dbMsgPrint(pdbentry, "#L%d A%d @%s",
+		plink->value.gpibio.link,plink->value.gpibio.addr,
+		plink->value.gpibio.parm);
+	    break;
+	case BITBUS_IO:
+	    dbMsgPrint(pdbentry, "#L%u N%u P%u S%u @%s",
+		plink->value.bitbusio.link,plink->value.bitbusio.node,
+		plink->value.bitbusio.port,plink->value.bitbusio.signal,
+		plink->value.bitbusio.parm);
+	    break;
+	case BBGPIB_IO:
+	    dbMsgPrint(pdbentry, "#L%u B%u G%u @%s",
+		plink->value.bbgpibio.link,plink->value.bbgpibio.bbaddr,
+		plink->value.bbgpibio.gpibaddr,plink->value.bbgpibio.parm);
+	    break;
+	case INST_IO:
+	    dbMsgPrint(pdbentry, "@%s", plink->value.instio.string);
+	    break;
+	case VXI_IO :
+	    if (plink->value.vxiio.flag == VXIDYNAMIC)
+		dbMsgPrint(pdbentry, "#V%d C%d S%d @%s",
+		    plink->value.vxiio.frame,plink->value.vxiio.slot,
+		    plink->value.vxiio.signal,plink->value.vxiio.parm);
+	    else
+		dbMsgPrint(pdbentry, "#V%d S%d @%s",
+		    plink->value.vxiio.la,plink->value.vxiio.signal,
+		    plink->value.vxiio.parm);
+	    break;
+	default :
+	    return(NULL);
 	}
 	break;
     case DBF_FWDLINK: {
 	    DBLINK *plink=(DBLINK *)pfield;
 
-	    if(!pfield) {strcpy(message,"Field not found"); return(message);}
 	    switch(plink->type) {
 	    case CONSTANT:
-		strcpy(message,"0");
+		dbMsgCpy(pdbentry, "0");
 		break;
 	    case MACRO_LINK:
-		if(plink->value.macro_link.macroStr) {
-		    strcpy(message,plink->value.macro_link.macroStr);
+		if (plink->value.macro_link.macroStr) {
+		    dbMsgCpy(pdbentry, plink->value.macro_link.macroStr);
 		} else {
-		    strcpy(message,"");
+		    dbMsgCpy(pdbentry, "");
 		}
 		break;
 	    case PV_LINK:
@@ -1870,16 +2015,11 @@ char * dbGetString(DBENTRY *pdbentry)
 		short	pvlMask;
 
 		pvlMask = plink->value.pv_link.pvlMask;
-		if(pvlMask&pvlOptCA) ppind=2;
+		if (pvlMask&pvlOptCA) ppind=2;
 		else ppind=0;
-		if(plink->value.pv_link.pvname)
-		    strcpy(message,plink->value.pv_link.pvname);
-		else
-		    strcpy(message,"");
-		if(ppind) {
-		    strcat(message," ");
-		    strcat(message,ppstring[ppind]);
-		}
+                dbMsgPrint(pdbentry, "%s%s",
+                    plink->value.pv_link.pvname ? plink->value.pv_link.pvname : "",
+                    ppind ? ppstring[ppind] : "");
 		break;
 	    }
 	    default :
@@ -1890,7 +2030,106 @@ char * dbGetString(DBENTRY *pdbentry)
     default:
 	return(NULL);
     }
-    return (message);
+    return pdbentry->message;
+}
+
+char *dbGetStringNum(DBENTRY *pdbentry)
+{
+    dbFldDes	*pflddes = pdbentry->pflddes;
+    void	*pfield = pdbentry->pfield;
+    char	*message;
+    unsigned char cvttype;
+
+    /* the following assumes that messagesize is large enough
+     * to hold the base 10 encoded value of a 32-bit integer.
+     */
+    message = getpMessage(pdbentry);
+    cvttype = pflddes->base;
+    switch (pflddes->field_type) {
+    case DBF_CHAR:
+        if (cvttype==CT_DECIMAL)
+            cvtCharToString(*(char*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(char*)pfield),message);
+        break;
+    case DBF_UCHAR:
+        if (cvttype==CT_DECIMAL)
+            cvtUcharToString(*(unsigned char*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(unsigned char*)pfield),message);
+        break;
+    case DBF_SHORT:
+        if (cvttype==CT_DECIMAL)
+            cvtShortToString(*(short*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(short*)pfield),message);
+        break;
+    case DBF_USHORT:
+    case DBF_ENUM:
+        if (cvttype==CT_DECIMAL)
+            cvtUshortToString(*(unsigned short*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(unsigned short*)pfield),message);
+        break;
+    case DBF_LONG:
+        if (cvttype==CT_DECIMAL)
+            cvtLongToString(*(epicsInt32*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(epicsInt32*)pfield), message);
+        break;
+    case DBF_ULONG:
+        if (cvttype==CT_DECIMAL)
+            cvtUlongToString(*(epicsUInt32 *)pfield, message);
+        else
+            ulongToHexString(*(epicsUInt32*)pfield, message);
+        break;
+    case DBF_FLOAT:
+        floatToString(*(float *)pfield,message);
+        break;
+    case DBF_DOUBLE:
+        doubleToString(*(double *)pfield,message);
+        break;
+    case DBF_MENU:
+        {
+            dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            short	choice_ind;
+            char	*pchoice;
+
+            if (!pfield) {
+                dbMsgCpy(pdbentry, "Field not found");
+                return message;
+            }
+            choice_ind = *((short *) pdbentry->pfield);
+            if (!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
+                return NULL;
+            pchoice = pdbMenu->papChoiceValue[choice_ind];
+            dbMsgCpy(pdbentry, pchoice);
+        }
+        break;
+    case DBF_DEVICE:
+        {
+            dbDeviceMenu	*pdbDeviceMenu;
+            char		*pchoice;
+            short		choice_ind;
+
+            if (!pfield) {
+                dbMsgCpy(pdbentry, "Field not found");
+                return message;
+            }
+            pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+            if (!pdbDeviceMenu)
+                return NULL;
+            choice_ind = *((short *) pdbentry->pfield);
+            if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+                return NULL;
+            pchoice = pdbDeviceMenu->papChoice[choice_ind];
+            dbMsgCpy(pdbentry, pchoice);
+        }
+        break;
+    default:
+        return NULL;
+    }
+    return message;
 }
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
@@ -3265,7 +3504,8 @@ void  dbReportDeviceConfig(dbBase *pdbbase,FILE *report)
 		plink = pdbentry->pfield;
 		linkType = plink->type;
 		if(bus[linkType][0]==0) continue;
-		strcpy(linkValue,dbGetString(pdbentry));
+		strncpy(linkValue, dbGetString(pdbentry), NELEMENTS(linkValue)-1);
+		linkValue[NELEMENTS(linkValue)-1] = '\0';
 		status = dbFindField(pdbentry,"DTYP");
 		if(status) break;
 		strcpy(dtypValue,dbGetString(pdbentry));

@@ -86,140 +86,9 @@ static int mapDBFtoDCT[DBF_NOACCESS+1] = {
 	DCT_INLINK,DCT_OUTLINK,DCT_FWDLINK,
 	DCT_NOACCESS};
 
-static char hex_digit_to_ascii[16]={'0','1','2','3','4','5','6','7','8','9',
-        'a','b','c','d','e','f'};
-
-static void ulongToHexString(epicsUInt32 source,char *pdest)
-{
-    epicsUInt32  val,temp;
-    char  digit[10];
-    int	  i,j;
-
-    if(source==0) {
-    strcpy(pdest,"0x0");
-    return;
-    }
-    *pdest++ = '0'; *pdest++ = 'x';
-    val = source;
-    for(i=0; val!=0; i++) {
-    temp = val/16;
-    digit[i] = hex_digit_to_ascii[val - temp*16];
-    val = temp;
-    }
-    for(j=i-1; j>=0; j--) {
-    *pdest++ = digit[j];
-    }
-    *pdest = 0;
-    return;
-}
-
-static double delta[2] = {1e-6, 1e-15};
-static int precision[2] = {6, 14};
-static void realToString(double value, char *preturn, int isdouble)
-{
-    double	absvalue;
-    int		logval,prec;
-    size_t  end;
-    char	tstr[30];
-    char	*ptstr = &tstr[0];
-    int		round;
-    int		ise = FALSE;
-    char	*loce = NULL;
-
-    if (value == 0) {
-        strcpy(preturn, "0");
-        return;
-    }
-
-    absvalue = value < 0 ? -value : value;
-    if (absvalue < (double)INT_MAX) {
-        epicsInt32 intval = (epicsInt32) value;
-        double diff = value - intval;
-
-        if (diff < 0) diff = -diff;
-        if (diff < absvalue * delta[isdouble]) {
-            cvtLongToString(intval, preturn);
-            return;
-        }
-    }
-
-    /*Now starts the hard cases*/
-    if (value < 0) {
-        *preturn++ = '-';
-        value = -value;
-    }
-
-    logval = (int)log10(value);
-    if (logval > 6 || logval < -2) {
-        int nout;
-
-        ise = TRUE;
-        prec = precision[isdouble];
-        nout = sprintf(ptstr, "%.*e", prec, value);
-        loce = strchr(ptstr, 'e');
-
-        if (!loce) {
-            ptstr[nout] = 0;
-            strcpy(preturn, ptstr);
-            return;
-        }
-
-        *loce++ = 0;
-    } else {
-        prec = precision[isdouble] - logval;
-        if ( prec < 0) prec = 0;
-        sprintf(ptstr, "%.*f", prec, value);
-    }
-
-    if (prec > 0) {
-        end = strlen(ptstr) - 1;
-        round = FALSE;
-        while (end > 0) {
-            if (tstr[end] == '.') {end--; break;}
-            if (tstr[end] == '0') {end--; continue;}
-            if (!round && end < precision[isdouble]) break;
-            if (!round && tstr[end] < '8') break;
-            if (tstr[end-1] == '.') {
-                if (round) end = end-2;
-                break;
-            }
-            if (tstr[end-1] != '9') break;
-            round = TRUE;
-            end--;
-        }
-        tstr[end+1] = 0;
-        while (round) {
-            if (tstr[end] < '9') {tstr[end]++; break;}
-            if (end == 0) { *preturn++ = '1'; tstr[end] = '0'; break;}
-            tstr[end--] = '0';
-        }
-    }
-    strcpy(preturn, &tstr[0]);
-    if (ise) {
-        if (!(strchr(preturn, '.'))) strcat(preturn, ".0");
-        strcat(preturn, "e");
-        strcat(preturn, loce);
-    }
-}
-
-static void floatToString(float value,char *preturn)
-{
-    realToString((double)value,preturn,0);
-    return;
-}
-
-static void doubleToString(double value,char *preturn)
-{
-    realToString(value,preturn,1);
-    return;
-}
-
 /*forward references for private routines*/
-static FILE *openOutstream(const char *filename);
-static void finishOutstream(FILE *stream);
-static void entryErrMessage(DBENTRY *pdbentry,long status,char *mess);
-static void zeroDbentry(DBENTRY *pdbentry);
-static char *getpMessage(DBENTRY *pdbentry);
+static void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
+    EPICS_PRINTF_STYLE(2,3);
 static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length);
 
 /* internal routines*/
@@ -350,9 +219,6 @@ void dbMsgCpy(DBENTRY *pdbentry, const char *msg)
 }
 
 static
-void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...) EPICS_PRINTF_STYLE(2,3);
-
-static
 void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
 {
     va_list args;
@@ -360,6 +226,130 @@ void dbMsgPrint(DBENTRY *pdbentry, const char *fmt, ...)
     va_start(args, fmt);
     epicsVsnprintf(pdbentry->message, messagesize, fmt, args);
     va_end(args);
+}
+
+static void ulongToHexString(epicsUInt32 source,char *pdest)
+{
+    static const char hex_digit_to_ascii[16] = "0123456789abcdef";
+    epicsUInt32 val,temp;
+    char digit[10];
+    int i,j;
+
+    if (source==0) {
+        strcpy(pdest,"0x0");
+        return;
+    }
+    *pdest++ = '0'; *pdest++ = 'x';
+    val = source;
+    for (i=0; val!=0; i++) {
+        temp = val/16;
+        digit[i] = hex_digit_to_ascii[val - temp*16];
+        val = temp;
+    }
+    for (j=i-1; j>=0; j--) {
+        *pdest++ = digit[j];
+    }
+    *pdest = 0;
+    return;
+}
+
+static void realToString(double value, char *preturn, int isdouble)
+{
+    static const double delta[2] = {1e-6, 1e-15};
+    static const int precision[2] = {6, 14};
+    double	absvalue;
+    int		logval,prec;
+    size_t  end;
+    char	tstr[30];
+    char	*ptstr = &tstr[0];
+    int		round;
+    int		ise = FALSE;
+    char	*loce = NULL;
+
+    if (value == 0) {
+        strcpy(preturn, "0");
+        return;
+    }
+
+    absvalue = value < 0 ? -value : value;
+    if (absvalue < (double)INT_MAX) {
+        epicsInt32 intval = (epicsInt32) value;
+        double diff = value - intval;
+
+        if (diff < 0) diff = -diff;
+        if (diff < absvalue * delta[isdouble]) {
+            cvtLongToString(intval, preturn);
+            return;
+        }
+    }
+
+    /*Now starts the hard cases*/
+    if (value < 0) {
+        *preturn++ = '-';
+        value = -value;
+    }
+
+    logval = (int)log10(value);
+    if (logval > 6 || logval < -2) {
+        int nout;
+
+        ise = TRUE;
+        prec = precision[isdouble];
+        nout = sprintf(ptstr, "%.*e", prec, value);
+        loce = strchr(ptstr, 'e');
+
+        if (!loce) {
+            ptstr[nout] = 0;
+            strcpy(preturn, ptstr);
+            return;
+        }
+
+        *loce++ = 0;
+    } else {
+        prec = precision[isdouble] - logval;
+        if ( prec < 0) prec = 0;
+        sprintf(ptstr, "%.*f", prec, value);
+    }
+
+    if (prec > 0) {
+        end = strlen(ptstr) - 1;
+        round = FALSE;
+        while (end > 0) {
+            if (tstr[end] == '.') {end--; break;}
+            if (tstr[end] == '0') {end--; continue;}
+            if (!round && end < precision[isdouble]) break;
+            if (!round && tstr[end] < '8') break;
+            if (tstr[end-1] == '.') {
+                if (round) end = end-2;
+                break;
+            }
+            if (tstr[end-1] != '9') break;
+            round = TRUE;
+            end--;
+        }
+        tstr[end+1] = 0;
+        while (round) {
+            if (tstr[end] < '9') {tstr[end]++; break;}
+            if (end == 0) { *preturn++ = '1'; tstr[end] = '0'; break;}
+            tstr[end--] = '0';
+        }
+    }
+    strcpy(preturn, &tstr[0]);
+    if (ise) {
+        if (!(strchr(preturn, '.'))) strcat(preturn, ".0");
+        strcat(preturn, "e");
+        strcat(preturn, loce);
+    }
+}
+
+static void floatToString(float value, char *preturn)
+{
+    realToString((double)value, preturn, 0);
+}
+
+static void doubleToString(double value, char *preturn)
+{
+    realToString(value, preturn, 1);
 }
 
 /*Public only for dbStaticNoRun*/
@@ -2045,7 +2035,7 @@ char * dbGetString(DBENTRY *pdbentry)
 
 char *dbGetStringNum(DBENTRY *pdbentry)
 {
-    dbFldDes  	*pflddes = pdbentry->pflddes;
+    dbFldDes	*pflddes = pdbentry->pflddes;
     void	*pfield = pdbentry->pfield;
     char	*message;
     unsigned char cvttype;
@@ -2057,80 +2047,89 @@ char *dbGetStringNum(DBENTRY *pdbentry)
     cvttype = pflddes->base;
     switch (pflddes->field_type) {
     case DBF_CHAR:
-    if(cvttype==CT_DECIMAL)
-        cvtCharToString(*(char*)pfield, message);
-    else
-        ulongToHexString((epicsUInt32)(*(char*)pfield),message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtCharToString(*(char*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(char*)pfield),message);
+        break;
     case DBF_UCHAR:
-    if(cvttype==CT_DECIMAL)
-        cvtUcharToString(*(unsigned char*)pfield, message);
-    else
-        ulongToHexString((epicsUInt32)(*(unsigned char*)pfield),message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtUcharToString(*(unsigned char*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(unsigned char*)pfield),message);
+        break;
     case DBF_SHORT:
-    if(cvttype==CT_DECIMAL)
-        cvtShortToString(*(short*)pfield, message);
-    else
-        ulongToHexString((epicsUInt32)(*(short*)pfield),message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtShortToString(*(short*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(short*)pfield),message);
+        break;
     case DBF_USHORT:
     case DBF_ENUM:
-    if(cvttype==CT_DECIMAL)
-        cvtUshortToString(*(unsigned short*)pfield, message);
-    else
-        ulongToHexString((epicsUInt32)(*(unsigned short*)pfield),message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtUshortToString(*(unsigned short*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(unsigned short*)pfield),message);
+        break;
     case DBF_LONG:
-    if(cvttype==CT_DECIMAL)
-        cvtLongToString(*(epicsInt32*)pfield, message);
-    else
-        ulongToHexString((epicsUInt32)(*(epicsInt32*)pfield), message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtLongToString(*(epicsInt32*)pfield, message);
+        else
+            ulongToHexString((epicsUInt32)(*(epicsInt32*)pfield), message);
+        break;
     case DBF_ULONG:
-    if(cvttype==CT_DECIMAL)
-        cvtUlongToString(*(epicsUInt32 *)pfield, message);
-    else
-        ulongToHexString(*(epicsUInt32*)pfield, message);
-    break;
+        if (cvttype==CT_DECIMAL)
+            cvtUlongToString(*(epicsUInt32 *)pfield, message);
+        else
+            ulongToHexString(*(epicsUInt32*)pfield, message);
+        break;
     case DBF_FLOAT:
-    floatToString(*(float *)pfield,message);
-    break;
+        floatToString(*(float *)pfield,message);
+        break;
     case DBF_DOUBLE:
-    doubleToString(*(double *)pfield,message);
-    break;
-    case DBF_MENU: {
-        dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
-        short	choice_ind;
-        char	*pchoice;
+        doubleToString(*(double *)pfield,message);
+        break;
+    case DBF_MENU:
+        {
+            dbMenu	*pdbMenu = (dbMenu *)pflddes->ftPvt;
+            short	choice_ind;
+            char	*pchoice;
 
-        if(!pfield) {dbMsgCpy(pdbentry, "Field not found"); return(message);}
-        choice_ind = *((short *) pdbentry->pfield);
-        if(!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
-        return(NULL);
-        pchoice = pdbMenu->papChoiceValue[choice_ind];
-        dbMsgCpy(pdbentry, pchoice);
-    }
-    break;
-    case DBF_DEVICE: {
-        dbDeviceMenu	*pdbDeviceMenu;
-        char		*pchoice;
-        short		choice_ind;
+            if (!pfield) {
+                dbMsgCpy(pdbentry, "Field not found");
+                return message;
+            }
+            choice_ind = *((short *) pdbentry->pfield);
+            if (!pdbMenu || choice_ind<0 || choice_ind>=pdbMenu->nChoice)
+                return NULL;
+            pchoice = pdbMenu->papChoiceValue[choice_ind];
+            dbMsgCpy(pdbentry, pchoice);
+        }
+        break;
+    case DBF_DEVICE:
+        {
+            dbDeviceMenu	*pdbDeviceMenu;
+            char		*pchoice;
+            short		choice_ind;
 
-        if(!pfield) {dbMsgCpy(pdbentry, "Field not found"); return(message);}
-        pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
-        if(!pdbDeviceMenu) return(NULL);
-        choice_ind = *((short *) pdbentry->pfield);
-        if(choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
-        return(NULL);
-        pchoice = pdbDeviceMenu->papChoice[choice_ind];
-        dbMsgCpy(pdbentry, pchoice);
-    }
-    break;
+            if (!pfield) {
+                dbMsgCpy(pdbentry, "Field not found");
+                return message;
+            }
+            pdbDeviceMenu = dbGetDeviceMenu(pdbentry);
+            if (!pdbDeviceMenu)
+                return NULL;
+            choice_ind = *((short *) pdbentry->pfield);
+            if (choice_ind<0 || choice_ind>=pdbDeviceMenu->nChoice)
+                return NULL;
+            pchoice = pdbDeviceMenu->papChoice[choice_ind];
+            dbMsgCpy(pdbentry, pchoice);
+        }
+        break;
     default:
-    return(NULL);
+        return NULL;
     }
-    return (message);
+    return message;
 }
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)

@@ -274,19 +274,27 @@ void cast_server(void *pParm)
                 if(prsrv_cast_client->recv.cnt != 
                     prsrv_cast_client->recv.stk){
                     char buf[40];
-        
+
                     ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
 
                     epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
                         prsrv_cast_client->recv.cnt-prsrv_cast_client->recv.stk, buf);
+
+                    epicsTimeToStrftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S",
+                        &prsrv_cast_client->time_at_last_recv);
+                    epicsPrintf ("CAS: message received at %s\n", buf);
                 }
             }
             else {
                 char buf[40];
-    
+
                 ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
 
                 epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
+
+                epicsTimeToStrftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S",
+                    &prsrv_cast_client->time_at_last_recv);
+                epicsPrintf ("CAS: message received at %s\n", buf);
             }
 
             if (CASDEBUG>2) {

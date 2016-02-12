@@ -287,13 +287,15 @@ void testMonitorDestroy(testMonitor *mon)
 
 void testMonitorWait(testMonitor *mon)
 {
-    switch(epicsEventWaitWithTimeout(mon->event, 10.0))
+    static const double delay = 60.0;
+
+    switch(epicsEventWaitWithTimeout(mon->event, delay))
     {
     case epicsEventOK:
         return;
     case epicsEventWaitTimeout:
     default:
-        testAbort("testMonitorWait() exceeds timeout");
+        testAbort("testMonitorWait() exceeded %g second timeout", delay);
     }
 }
 

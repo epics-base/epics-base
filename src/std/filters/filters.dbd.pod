@@ -144,9 +144,12 @@ Note: Negative index numbers address from the end of the array, with C<-1> being
 
 =over
 
-=item Square bracket notation C<[s:i:e]> (shorthand)
+=item Square bracket notation C<[start:increment:end]> (shorthand)
 
-The familiar C<[s:i:e]> notation with square brackets can be used (shorthand).
+The common square bracket notation with can be used in place of JSON.
+Any parameter may be omitted (keeping the colons) to use the default value.
+If only one colon is included, this means C<[start:end]> with a increment of 1.
+If only a single parameter is used C<[index]> the filter returns one element.
 
 =item Start index C<"s">
 

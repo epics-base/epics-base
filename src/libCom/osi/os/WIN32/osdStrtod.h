@@ -23,7 +23,7 @@ epicsShareFunc double epicsStrtod(const char *str, char **endp);
  * Older compilers have these equivalents though
  */
 
-#ifndef _MINGW
+#if !defined(_MINGW) && (_MSC_VER < 1800)
 #  define strtoll _strtoi64
 #  define strtoull _strtoui64
 #endif

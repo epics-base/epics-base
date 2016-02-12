@@ -346,15 +346,15 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         assert(pca->pgetNative);
         status = fConvert(pca->pgetNative, pdest, 0);
     } else {
-        long ntoget = *nelements;
+        unsigned long ntoget = *nelements;
         struct dbAddr dbAddr;
         long (*aConvert)(struct dbAddr *paddr, void *to, long nreq, long nto, long off);
 
         aConvert = dbGetConvertRoutine[newType][dbrType];
         assert(pca->pgetNative);
 
-        if (ntoget > pca->nelements)
-            ntoget = pca->nelements;
+        if (ntoget > pca->usedelements)
+            ntoget = pca->usedelements;
         *nelements = ntoget;
 
         memset((void *)&dbAddr, 0, sizeof(dbAddr));
@@ -409,6 +409,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
         if (!pca->pputNative) {
             pca->pputNative = dbCalloc(pca->nelements,
                 dbr_value_size[ca_field_type(pca->chid)]);
+            pca->putnelements = 0;
 /* Fixed and disabled by ANJ, see comment above.
             plink->value.pv_link.pvlMask |= pvlOptOutNative;
  */
@@ -418,6 +419,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
 
             fConvert = dbFastPutConvertRoutine[dbrType][newType];
             status = fConvert(pbuffer, pca->pputNative, 0);
+            pca->putnelements = 1;
         } else {
             struct dbAddr dbAddr;
             long (*aConvert)(struct dbAddr *paddr, const void *from, long nreq, long nfrom, long off);
@@ -430,10 +432,7 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
             if(nRequest>pca->nelements)
                 nRequest = pca->nelements;
             status = aConvert(&dbAddr, pbuffer, nRequest, pca->nelements, 0);
-            if(nRequest<pca->nelements) {
-                long elemsize = dbr_value_size[ca_field_type(pca->chid)];
-                memset(nRequest*elemsize+(char*)pca->pputNative, 0, (pca->nelements-nRequest)*elemsize);
-            }
+            pca->putnelements = nRequest;
         }
         link_action |= CA_WRITE_NATIVE;
         pca->gotOutNative = TRUE;
@@ -705,6 +704,7 @@ static void connectionCallback(struct connection_handler_args arg)
     }
     pca->gotFirstConnection = TRUE;
     pca->nelements = ca_element_count(arg.chid);
+    pca->usedelements = 0;
     pca->dbrType = ca_field_type(arg.chid);
     if ((plink->value.pv_link.pvlMask & pvlOptInpNative) && !pca->pgetNative) {
         link_action |= CA_MONITOR_NATIVE;
@@ -757,6 +757,7 @@ static void eventCallback(struct event_handler_args arg)
         goto done;
     }
     assert(arg.dbr);
+    assert(arg.count<=pca->nelements);
     size = arg.count * dbr_value_size[arg.type];
     if (arg.type == DBR_TIME_STRING &&
         ca_field_type(pca->chid) == DBR_ENUM) {
@@ -773,6 +774,7 @@ static void eventCallback(struct event_handler_args arg)
     case DBR_TIME_DOUBLE:
         assert(pca->pgetNative);
         memcpy(pca->pgetNative, dbr_value_ptr(arg.dbr, arg.type), size);
+        pca->usedelements = arg.count;
         pca->gotInNative = TRUE;
         break;
     default:
@@ -978,11 +980,11 @@ static void dbCaTask(void *arg)
                 assert(pca->pputNative);
                 if (pca->putType == CA_PUT) {
                     status = ca_array_put(
-                        pca->dbrType, pca->nelements,
+                        pca->dbrType, pca->putnelements,
                         pca->chid, pca->pputNative);
                 } else if (pca->putType==CA_PUT_CALLBACK) {
                     status = ca_array_put_callback(
-                        pca->dbrType, pca->nelements,
+                        pca->dbrType, pca->putnelements,
                         pca->chid, pca->pputNative,
                         putComplete, pca);
                 } else {
@@ -1032,15 +1034,15 @@ static void dbCaTask(void *arg)
                 }
             }
             if (link_action & CA_MONITOR_NATIVE) {
-                size_t element_size;
-    
-                element_size = dbr_value_size[ca_field_type(pca->chid)];
+
                 epicsMutexMustLock(pca->lock);
-                pca->pgetNative = dbCalloc(pca->nelements, element_size);
+                pca->elementSize = dbr_value_size[ca_field_type(pca->chid)];
+                pca->pgetNative = dbCalloc(pca->nelements, pca->elementSize);
                 epicsMutexUnlock(pca->lock);
+
                 status = ca_add_array_event(
                     dbf_type_to_DBR_TIME(ca_field_type(pca->chid)),
-                    ca_element_count(pca->chid),
+                    0, /* dynamic size */
                     pca->chid, eventCallback, pca, 0.0, 0.0, 0.0, 0);
                 if (status != ECA_NORMAL) {
                     errlogPrintf("dbCaTask ca_add_array_event %s\n",

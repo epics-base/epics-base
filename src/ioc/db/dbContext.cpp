@@ -154,7 +154,8 @@ void dbContext::callStateNotify ( struct dbChannel * dbch,
         const struct db_field_log * pfl,
         cacStateNotify & notifyIn )
 {
-    unsigned long size = dbr_size_n ( type, count );
+    long realcount = (count==0)?dbChannelElements(dbch):count;
+    unsigned long size = dbr_size_n ( type, realcount );
 
     if ( type > INT_MAX ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
@@ -181,8 +182,13 @@ void dbContext::callStateNotify ( struct dbChannel * dbch,
         this->stateNotifyCacheSize = size;
     }
     void *pvfl = (void *) pfl;
-    int status = dbChannel_get ( dbch, static_cast <int> ( type ),
-                    this->pStateNotifyCache, static_cast <int> ( count ), pvfl );
+    int status;
+    if(count==0) /* fetch actual number of elements (dynamic array) */
+        status = dbChannel_get_count( dbch, static_cast <int> ( type ),
+                        this->pStateNotifyCache, &realcount, pvfl );
+    else /* fetch requested number of elements, truncated or zero padded */
+        status = dbChannel_get( dbch, static_cast <int> ( type ),
+                        this->pStateNotifyCache, realcount, pvfl );
     if ( status ) {
         epicsGuard < epicsMutex > guard ( this->mutex );
         notifyIn.exception ( guard, ECA_GETFAIL,
@@ -190,7 +196,7 @@ void dbContext::callStateNotify ( struct dbChannel * dbch,
     }
     else {
         epicsGuard < epicsMutex > guard ( this->mutex );
-        notifyIn.current ( guard, type, count, this->pStateNotifyCache );
+        notifyIn.current ( guard, type, realcount, this->pStateNotifyCache );
     }
 }
 

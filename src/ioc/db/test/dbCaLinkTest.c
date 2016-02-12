@@ -16,6 +16,7 @@
 #include "epicsString.h"
 #include "dbUnitTest.h"
 #include "epicsThread.h"
+#include "cantProceed.h"
 #include "epicsEvent.h"
 #include "iocInit.h"
 #include "dbBase.h"
@@ -301,7 +302,7 @@ static void fillArrayDouble(double *buf, unsigned count, double first)
 
 static void checkArray(const char *msg,
                        epicsInt32 *buf, epicsInt32 first,
-                       unsigned used, unsigned total)
+                       unsigned used)
 {
     int match = 1;
     unsigned i;
@@ -309,22 +310,17 @@ static void checkArray(const char *msg,
 
     for(b=buf,x=first,i=0;i<used;i++,x++,b++)
         match &= (*b)==x;
-    for(;i<total;i++,x++,b++)
-        match &= (*b)==0;
     testOk(match, "%s", msg);
     if(!match) {
         for(b=buf,x=first,i=0;i<used;i++,x++,b++)
             if((*b)!=x)
-                testDiag("%u %u != %u", i, (unsigned)*b, (unsigned)x);
-        for(;i<total;i++,x++,b++)
-            if((*b)!=0)
                 testDiag("%u %u != %u", i, (unsigned)*b, (unsigned)x);
     }
 }
 
 static void checkArrayDouble(const char *msg,
                        double *buf, double first,
-                       unsigned used, unsigned total)
+                       unsigned used)
 {
     int match = 1;
     unsigned i;
@@ -332,15 +328,10 @@ static void checkArrayDouble(const char *msg,
 
     for(b=buf,x=first,i=0;i<used;i++,x++,b++)
         match &= (*b)==x;
-    for(;i<total;i++,x++,b++)
-        match &= (*b)==0;
     testOk(match, "%s", msg);
     if(!match) {
         for(b=buf,x=first,i=0;i<used;i++,x++,b++)
             if((*b)!=x)
-                testDiag("%u %u != %u", i, (unsigned)*b, (unsigned)x);
-        for(;i<total;i++,x++,b++)
-            if((*b)!=0)
                 testDiag("%u %u != %u", i, (unsigned)*b, (unsigned)x);
     }
 }
@@ -362,12 +353,13 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     char buf[100];
     arrRecord *psrc, *ptarg;
     DBLINK *psrclnk;
-    epicsInt32 *bufsrc, *buftarg;
+    epicsInt32 *bufsrc, *buftarg, *tmpbuf;
     long nReq;
-    unsigned num;
+    unsigned num_min, num_max;
 
     testDiag("Link to a array numeric field");
 
+    /* source.INP = "target CA" */
     epicsSnprintf(buf, sizeof(buf), "TARGET=target CA,FTVL=LONG,SNELM=%u,TNELM=%u",
                   nsrc, ntarg);
     testDiag("%s", buf);
@@ -391,9 +383,15 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     bufsrc = psrc->bptr;
     buftarg= ptarg->bptr;
 
-    num=psrc->nelm;
-    if(num>ptarg->nelm)
-        num=ptarg->nelm;
+    num_max=num_min=psrc->nelm;
+    if(num_min>ptarg->nelm)
+        num_min=ptarg->nelm;
+    if(num_max<ptarg->nelm)
+        num_max=ptarg->nelm;
+    /* always request more than can possibly be filled */
+    num_max += 2;
+
+    tmpbuf = callocMustSucceed(num_max, sizeof(*tmpbuf), "tmpbuf");
 
     startWait(psrclnk);
 
@@ -406,11 +404,22 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     waitForUpdate(psrclnk);
 
     dbScanLock((dbCommon*)psrc);
+    testDiag("fetch source.INP into source.BPTR");
     nReq = psrc->nelm;
     if(dbGetLink(psrclnk, DBR_LONG, bufsrc, NULL, &nReq)==0) {
         testPass("dbGetLink");
-        testOp("%ld",nReq,==,(long)num);
-        checkArray("array update", bufsrc, 1, nReq, psrc->nelm);
+        testOp("%ld",nReq,==,(long)num_min);
+        checkArray("array update", bufsrc, 1, nReq);
+    } else {
+        testFail("dbGetLink");
+        testSkip(2, "dbGetLink fails");
+    }
+    testDiag("fetch source.INP into temp buffer w/ larger capacity");
+    nReq = num_max;
+    if(dbGetLink(psrclnk, DBR_LONG, tmpbuf, NULL, &nReq)==0) {
+        testPass("dbGetLink");
+        testOp("%ld",nReq,==,(long)ntarg);
+        checkArray("array update", tmpbuf, 1, nReq);
     } else {
         testFail("dbGetLink");
         testSkip(2, "dbGetLink fails");
@@ -422,12 +431,8 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     putLink(psrclnk, DBR_LONG, bufsrc, psrc->nelm);
 
     dbScanLock((dbCommon*)ptarg);
-    /* CA links always write the full target array length */
-    testOp("%ld",(long)ptarg->nord,==,(long)ptarg->nelm);
-    /* However, if the source length is less, then the target
-     * is zero filled
-     */
-    checkArray("array update", buftarg, 2, num, ptarg->nelm);
+    testOp("%ld",(long)ptarg->nord,==,(long)num_min);
+
     dbScanUnlock((dbCommon*)ptarg);
 
     /* write again to ensure that buffer is completely updated */
@@ -436,14 +441,15 @@ static void testArrayLink(unsigned nsrc, unsigned ntarg)
     putLink(psrclnk, DBR_LONG, bufsrc, psrc->nelm);
 
     dbScanLock((dbCommon*)ptarg);
-    testOp("%ld",(long)ptarg->nord,==,(long)ptarg->nelm);
-    checkArray("array update", buftarg, 3, num, ptarg->nelm);
+    testOp("%ld",(long)ptarg->nord,==,(long)num_min);
+    checkArray("array update", buftarg, 3, num_min);
     dbScanUnlock((dbCommon*)ptarg);
 
     testIocShutdownOk();
 
     testdbCleanup();
 
+    free(tmpbuf);
     /* records don't cleanup after themselves
      * so do here to silence valgrind
      */
@@ -522,7 +528,7 @@ static void testreTargetTypeChange(void)
 
     dbScanLock((dbCommon*)psrc);
     testOp("%ld",(long)psrc->nord,==,(long)5);
-    checkArrayDouble("array update", bufsrc, 1, 5, psrc->nelm);
+    checkArrayDouble("array update", bufsrc, 1, 5);
     dbScanUnlock((dbCommon*)psrc);
 
     testDiag("Retarget");
@@ -532,7 +538,7 @@ static void testreTargetTypeChange(void)
 
     dbScanLock((dbCommon*)psrc);
     testOp("%ld",(long)psrc->nord,==,(long)5);
-    checkArrayDouble("array update", bufsrc, 2, 5, psrc->nelm);
+    checkArrayDouble("array update", bufsrc, 2, 5);
     dbScanUnlock((dbCommon*)psrc);
 
     testIocShutdownOk();
@@ -592,7 +598,7 @@ static void testCAC(void)
 
 MAIN(dbCaLinkTest)
 {
-    testPlan(91);
+    testPlan(99);
     testNativeLink();
     testStringLink();
     testCP();

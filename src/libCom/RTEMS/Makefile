@@ -10,6 +10,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 INC += epicsRtemsInitHooks.h
+INC += epicsMemFs.h
 
 rtemsCom_SRCS += rtems_init.c
 rtemsCom_SRCS += rtems_config.c
@@ -18,6 +19,7 @@ rtemsCom_SRCS += rtems_util.c
 rtemsCom_SRCS += setBootConfigFromNVRAM.c
 rtemsCom_SRCS += epicsRtemsInitHookPre.c
 rtemsCom_SRCS += epicsRtemsInitHookPost.c
+rtemsCom_SRCS += epicsMemFs.c
 
 LIBRARY_RTEMS = rtemsCom
 

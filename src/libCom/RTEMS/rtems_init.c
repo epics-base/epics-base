@@ -42,6 +42,7 @@
 #include "osiUnistd.h"
 #include "iocsh.h"
 #include "osdTime.h"
+#include "epicsMemFs.h"
 
 #include "epicsRtemsInitHooks.h"
 
@@ -138,6 +139,31 @@ mustMalloc(int size, const char *msg)
 # include <rtems/tftp.h>
 #endif
 
+const epicsMemFS *epicsRtemsFSImage __attribute__((weak));
+const epicsMemFS *epicsRtemsFSImage = (void*)&epicsRtemsFSImage;
+
+/* hook to allow app specific FS setup */
+int
+epicsRtemsMountLocalFilesystem(char **argv) __attribute__((weak));
+int
+epicsRtemsMountLocalFilesystem(char **argv)
+{
+    if(epicsRtemsFSImage==(void*)&epicsRtemsFSImage)
+        return -1; /* no FS image provided. */
+    else if(epicsRtemsFSImage==NULL)
+        return 0; /* no FS image provided, but none is needed. */
+    else {
+        printf("***** Using compiled in file data *****\n");
+        if (epicsMemFsLoad(epicsRtemsFSImage) != 0) {
+            printf("Can't unpack tar filesystem\n");
+            return -1;
+        } else {
+            argv[1] = "/";
+            return 0;
+        }
+    }
+}
+
 static int
 initialize_local_filesystem(char **argv)
 {
@@ -146,7 +172,9 @@ initialize_local_filesystem(char **argv)
     extern char _FlashSize[]  __attribute__((weak));
 
     argv[0] = rtems_bsdnet_bootp_boot_file_name;
-    if (_FlashSize && (_DownloadLocation || _FlashBase)) {
+    if (epicsRtemsMountLocalFilesystem(argv)==0) {
+        return 1; /* FS setup successful */
+    } else if (_FlashSize && (_DownloadLocation || _FlashBase)) {
         extern char _edata[];
         size_t flashIndex = _edata - _DownloadLocation;
         char *header = _FlashBase + flashIndex;
@@ -596,6 +624,7 @@ Init (rtems_task_argument ignored)
     }
     printf("\n***** Initializing network *****\n");
     rtems_bsdnet_initialize_network();
+    printf("\n***** Setting up file system *****\n");
     initialize_remote_filesystem(argv, initialize_local_filesystem(argv));
     fixup_hosts();
 

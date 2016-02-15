@@ -380,7 +380,7 @@ endif
 # Generate a perl program to exec the real test binary.
 %.t: %$(EXE) $(TOOLS)/makeTestfile.pl
 	@$(RM) $@
-	$(PERL) $(TOOLS)/makeTestfile.pl $@ $<
+	$(PERL) $(TOOLS)/makeTestfile.pl "$(T_A)" $(EPICS_HOST_ARCH) $@ $<
 
 #---------------------------------------------------------------
 # Generate header with version number from VCS

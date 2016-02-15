@@ -333,6 +333,8 @@ initialize_remote_filesystem(char **argv, int hasLocalFilesystem)
             argv[1] = abspath;
         }
     }
+    errlogPrintf("nfsMount(\"%s\", \"%s\", \"%s\")\n",
+                 server_name, server_path, mount_point);
     nfsMount(server_name, server_path, mount_point);
 #endif
 }
@@ -403,6 +405,8 @@ set_directory (const char *commandline)
     directoryPath[l+1] = '\0';
     if (chdir (directoryPath) < 0)
         LogFatal ("Can't set initial directory(%s): %s\n", directoryPath, strerror(errno));
+    else
+        errlogPrintf("chdir(\"%s\")\n", directoryPath);
     free(directoryPath);
 }
 
@@ -645,11 +649,13 @@ Init (rtems_task_argument ignored)
     /*
      * Run the EPICS startup script
      */
-    printf ("***** Starting EPICS application *****\n");
+    printf ("***** Preparing EPICS application *****\n");
     iocshRegisterRTEMS ();
     set_directory (argv[1]);
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     atexit(exitHandler);
+    errlogFlush();
+    printf ("***** Starting EPICS application *****\n");
     i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);

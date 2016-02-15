@@ -421,8 +421,14 @@ MAIN(epicsStdlibTest)
     testOk(epicsScanDouble("NAN", &d) && isnan(d), "Double 'NAN'");
     testOk(epicsScanFloat("Nan", &f) && isnan(f), "Float 'Nan'");
     testOk(epicsScanDouble("Nan", &d) && isnan(d), "Double 'Nan'");
+#ifdef __rtems__
+    testTodoBegin("RTEMS (newlib) parser doesn't recognise 'nan()'");
+#endif
     testOk(epicsScanFloat("nan()", &f) && isnan(f), "Float 'nan()'");
     testOk(epicsScanDouble("nan()", &d) && isnan(d), "Double 'nan()'");
+#ifdef __rtems__
+    testTodoEnd();
+#endif
 
     testOk(epicsScanFloat("INF", &f) && f == epicsINF,
         "Float 'INF'");

@@ -47,7 +47,7 @@ MAIN(epicsMMIOTest)
     STATIC_ASSERT(sizeof(H16)==2);
     STATIC_ASSERT(sizeof(H32)==4);
 
-    testPlan(0);
+    testPlan(14);
 
     testDiag("8-bit ops");
 

@@ -27,8 +27,6 @@
 /* estimated size of (compiled) epicsStackTraceRecurseGbl */
 #define WINDOW_SZ  400
 
-static int test_debug = 0;
-
 typedef struct TestDataRec_ {
     char buf[TST_BUFSZ];
     int  pos;
@@ -114,8 +112,7 @@ findStringOcc(const char *buf, const char *what)
         buf += l;
     }
 
-    if ( test_debug )
-        testDiag("found %i x %s\n", rval, what);
+    testDiag("found %i x %s\n", rval, what);
 
     return rval;
 }
@@ -143,8 +140,7 @@ findNumOcc(const char *buf)
             if ( j != i && ptrs[j] == ptrs[i] ) {
                 if ( (char*)ptrs[i] >= (char*)epicsStackTraceRecurseGbl && (char*)ptrs[i] < (char*)epicsStackTraceRecurseGbl + WINDOW_SZ ) {
                     rval ++;    
-                    if ( test_debug )
-                        testDiag("found address %p again\n", ptrs[i]);
+                    testDiag("found address %p again\n", ptrs[i]);
                 }
             }
             j++;
@@ -159,9 +155,6 @@ MAIN(epicsStackTraceTest)
     TestDataRec testData;
     int gblFound, lclFound, numFound, dynFound;
     char *nl, *p;
-
-    if ( getenv("EPICS_STACK_TRACE_TEST_DEBUG") )
-        test_debug = 1;
 
     testData.pos = 0;
 
@@ -222,16 +215,14 @@ MAIN(epicsStackTraceTest)
         testSkip(1 , "no support for dumping addresses on this platform");
     }
 
-    if ( test_debug ) {
-        p = testData.buf;
-        while ( (nl = strchr(p,'\n')) ) {
-            *nl = 0;
-            testDiag("%s",p);
-            *nl = '\n';
-            p   = nl+1;
-        }
-        testDiag("%s", p);
+    p = testData.buf;
+    while ( (nl = strchr(p,'\n')) ) {
+        *nl = 0;
+        testDiag("%s",p);
+        *nl = '\n';
+        p   = nl+1;
     }
+    testDiag("%s", p);
 
     testDone();
 

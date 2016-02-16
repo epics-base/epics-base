@@ -9,6 +9,7 @@
  *
  * Test using several stringout records to retarget the link of another record
  */
+#define EPICS_DBCA_PRIVATE_API
 
 #include <string.h>
 
@@ -37,6 +38,13 @@ static void testRetarget(void)
     eltc(0);
     testIocInitOk();
     eltc(1);
+    /* wait for local CA links to be connected or dbPutField() will fail */
+    /* wait for initial CA_CONNECT actions to be processed.
+     * Assume that local CA links deliver callbacks synchronously
+     * eg. that ca_create_channel() will invoke the connection callback
+     *     before returning.
+     */
+    dbCaSync();
 
     lnkmon = testMonitorCreate("rec:ai.INP", DBE_VALUE, 0);
     valmon = testMonitorCreate("rec:ai", DBE_VALUE, 0);

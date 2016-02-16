@@ -13,7 +13,7 @@
  *    Date:             26MAR96
  *
  */
-
+#define EPICS_DBCA_PRIVATE_API
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -189,6 +189,42 @@ static void caLinkDec(caLink *pca)
     epicsMutexDestroy(pca->lock);
     free(pca);
     if (callback) callback(userPvt);
+}
+
+/* Block until worker thread has processed all previously queued actions.
+ * Does not prevent additional actions from being queued.
+ */
+void dbCaSync(void)
+{
+    epicsEventId wake;
+    caLink templink;
+
+    /* we only partially initialize templink.
+     * It has no link field and no subscription
+     * so the worker must handle it early
+     */
+    memset(&templink, 0, sizeof(templink));
+    templink.refcount = 1;
+
+    wake = epicsEventMustCreate(epicsEventEmpty);
+    templink.lock = epicsMutexMustCreate();
+
+    templink.userPvt = wake;
+
+    addAction(&templink, CA_SYNC);
+
+    epicsEventMustWait(wake);
+    /* Worker holds workListLock when calling epicsEventMustTrigger()
+     * we cycle through workListLock to ensure worker call to
+     * epicsEventMustTrigger() returns before we destroy the event.
+     */
+    epicsMutexMustLock(workListLock);
+    epicsMutexUnlock(workListLock);
+
+    assert(templink.refcount==1);
+
+    epicsMutexDestroy(templink.lock);
+    epicsEventDestroy(wake);
 }
 
 void dbCaCallbackProcess(void *userPvt)
@@ -947,9 +983,13 @@ static void dbCaTask(void *arg)
                 break; /* workList is empty */
             }
             link_action = pca->link_action;
+            if (link_action&CA_SYNC)
+                epicsEventMustTrigger((epicsEventId)pca->userPvt); /* dbCaSync() requires workListLock to be held here */
             pca->link_action = 0;
             if (link_action & CA_CLEAR_CHANNEL) --removesOutstanding;
             epicsMutexUnlock(workListLock);         /* Give back immediately */
+            if (link_action&CA_SYNC)
+                continue;
             if (link_action & CA_CLEAR_CHANNEL) {   /* This must be first */
                 caLinkDec(pca);
                 /* No alarm is raised. Since link is changing so what? */

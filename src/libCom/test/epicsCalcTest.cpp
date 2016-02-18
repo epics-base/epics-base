@@ -8,6 +8,7 @@
 //	Author: Andrew Johnson
 
 #include "epicsUnitTest.h"
+#include "epicsTypes.h"
 #include "epicsMath.h"
 #include "epicsAlgorithm.h"
 #include "postfix.h"
@@ -38,30 +39,59 @@ void testCalc(const char *expr, double expected) {
     /* Evaluate expression, test against expected result */
     bool pass = false;
     double args[CALCPERFORM_NARGS] = {
-	1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
     };
     char rpn[MAX_POSTFIX_SIZE];
     short err;
     double result = 0.0;
     result /= result;  /* Start as NaN */
-    
+
     if (postfix(expr, rpn, &err)) {
-	testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
+        testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
     } else
-	if (calcPerform(args, &result, rpn) && finite(result)) {
-	    testDiag("calcPerform: error evaluating '%s'", expr);
-	}
-    
+        if (calcPerform(args, &result, rpn) && finite(result)) {
+            testDiag("calcPerform: error evaluating '%s'", expr);
+        }
+
     if (finite(expected) && finite(result)) {
-	pass = fabs(expected - result) < 1e-8;
+        pass = fabs(expected - result) < 1e-8;
     } else if (isnan(expected)) {
-	pass = (bool) isnan(result);
+        pass = (bool) isnan(result);
     } else {
-	pass = (result == expected);
+        pass = (result == expected);
     }
     if (!testOk(pass, "%s", expr)) {
-	testDiag("Expected result is %g, actually got %g", expected, result);
-	calcExprDump(rpn);
+        testDiag("Expected result is %g, actually got %g", expected, result);
+        calcExprDump(rpn);
+    }
+    return;
+}
+
+void testUInt32Calc(const char *expr, epicsUInt32 expected) {
+    /* Evaluate expression, test against expected result */
+    bool pass = false;
+    double args[CALCPERFORM_NARGS] = {
+        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0
+    };
+    char rpn[MAX_POSTFIX_SIZE];
+    short err;
+    epicsUInt32 uresult;
+    double result = 0.0;
+    result /= result;  /* Start as NaN */
+
+    if (postfix(expr, rpn, &err)) {
+        testDiag("postfix: %s in expression '%s'", calcErrorStr(err), expr);
+    } else
+        if (calcPerform(args, &result, rpn) && finite(result)) {
+            testDiag("calcPerform: error evaluating '%s'", expr);
+        }
+
+    uresult = (epicsUInt32) result;
+    pass = (uresult == expected);
+    if (!testOk(pass, "%s", expr)) {
+        testDiag("Expected result is 0x%x (%u), actually got 0x%x (%u)",
+                 expected, expected, uresult, uresult);
+        calcExprDump(rpn);
     }
     return;
 }
@@ -238,8 +268,8 @@ MAIN(epicsCalcTest)
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
     
-    testPlan(577);
-    
+    testPlan(598);
+
     /* LITERAL_OPERAND elements */
     testExpr(0);
     testExpr(1);
@@ -883,7 +913,35 @@ MAIN(epicsCalcTest)
     testBadExpr("1?", CALC_ERR_CONDITIONAL);
     testBadExpr("1?1", CALC_ERR_CONDITIONAL);
     testBadExpr(":1", CALC_ERR_SYNTAX);
-    
+
+    // Bit manipulations wrt bit 31 (bug lp:1514520)
+    //   using integer literals
+    testUInt32Calc("0xaaaaaaaa AND 0xffff0000", 0xaaaa0000u);
+    testUInt32Calc("0xaaaaaaaa OR 0xffff0000", 0xffffaaaau);
+    testUInt32Calc("0xaaaaaaaa XOR 0xffff0000", 0x5555aaaau);
+    testUInt32Calc("~0xaaaaaaaa", 0x55555555u);
+    testUInt32Calc("~~0xaaaaaaaa", 0xaaaaaaaau);
+    testUInt32Calc("0xaaaaaaaa >> 8", 0xffaaaaaau);
+    testUInt32Calc("0xaaaaaaaa << 8", 0xaaaaaa00u);
+    //   using integer literals, assigned to operands
+    testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a AND b", 0xaaaa0000u);
+    testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a OR b", 0xffffaaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a XOR b", 0x5555aaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; ~a", 0x55555555u);
+    testUInt32Calc("a:=0xaaaaaaaa; ~~a", 0xaaaaaaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; a >> 8", 0xffaaaaaau);
+    testUInt32Calc("a:=0xaaaaaaaa; a << 8", 0xaaaaaa00u);
+    //   using double operands (what the calc record does)
+    //     0xaaaaaaaa = 2863311530.0
+    //     0xffff0000 = 4294901760.0
+    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a AND b", 0xaaaa0000u);
+    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a OR b", 0xffffaaaau);
+    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a XOR b", 0x5555aaaau);
+    testUInt32Calc("a:=2863311530.0; ~a", 0x55555555u);
+    testUInt32Calc("a:=2863311530.0; ~~a", 0xaaaaaaaau);
+    testUInt32Calc("a:=2863311530.0; a >> 8", 0xffaaaaaau);
+    testUInt32Calc("a:=2863311530.0; a << 8", 0xaaaaaa00u);
+
     return testDone();
 }
 

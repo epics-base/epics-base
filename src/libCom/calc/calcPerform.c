@@ -284,33 +284,33 @@ epicsShareFunc long
 	    break;
 
 	case BIT_OR:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop | itop;
+        itop = (epicsUInt32) *ptop--;
+        *ptop = (epicsInt32) ((epicsUInt32)*ptop | itop);
 	    break;
 
 	case BIT_AND:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop & itop;
+        itop = (epicsUInt32) *ptop--;
+        *ptop = (epicsInt32) ((epicsUInt32) *ptop & itop);
 	    break;
 
 	case BIT_EXCL_OR:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop ^ itop;
+        itop = (epicsUInt32) *ptop--;
+        *ptop = (epicsInt32) ((epicsUInt32) *ptop ^ itop);
 	    break;
 
 	case BIT_NOT:
-	    itop = (epicsInt32) *ptop;
+        itop = (epicsUInt32) *ptop;
 	    *ptop = ~itop;
 	    break;
 
 	case RIGHT_SHIFT:
 	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop >> itop;
+        *ptop = (epicsInt32) (epicsUInt32) *ptop >> itop;
 	    break;
 
 	case LEFT_SHIFT:
 	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop << itop;
+        *ptop = (epicsInt32) ((epicsUInt32) *ptop << itop);
 	    break;
 
 	case NOT_EQ:

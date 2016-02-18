@@ -21,6 +21,7 @@
 #include "osiUnistd.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
+#include "epicsTypes.h"
 #include "errlog.h"
 #include "postfix.h"
 #include "postfixPvt.h"
@@ -43,7 +44,7 @@ epicsShareFunc long
     double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
-    int itop;				/* integer from top of stack */
+    epicsInt32 itop;			/* integer from top of stack */
     int op;
     int nargs;
 
@@ -55,14 +56,14 @@ epicsShareFunc long
 	switch (op){
 
 	case LITERAL_DOUBLE:
-	    memcpy((void *)++ptop, pinst, sizeof(double));
+	    memcpy(++ptop, pinst, sizeof(double));
 	    pinst += sizeof(double);
 	    break;
 
 	case LITERAL_INT:
-	    memcpy(&itop, pinst, sizeof(int));
+	    memcpy(&itop, pinst, sizeof(epicsInt32));
 	    *++ptop = itop;
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 
 	case FETCH_VAL:
@@ -136,11 +137,11 @@ epicsShareFunc long
 	    break;
 
 	case MODULO:
-	    itop = (long) *ptop--;
+	    itop = (epicsInt32) *ptop--;
 	    if (itop)
-		*ptop = (long) *ptop % itop;
+		*ptop = (epicsInt32) *ptop % itop;
 	    else
-		*ptop = epicsNAN;   /* NaN */
+		*ptop = epicsNAN;
 	    break;
 
 	case POWER:
@@ -261,7 +262,7 @@ epicsShareFunc long
 
 	case NINT:
 	    top = *ptop;
-	    *ptop = (double)(long)(top >= 0 ? top + 0.5 : top - 0.5);
+	    *ptop = (double)(epicsInt32)(top >= 0 ? top + 0.5 : top - 0.5);
 	    break;
 
 	case RANDOM:
@@ -283,33 +284,33 @@ epicsShareFunc long
 	    break;
 
 	case BIT_OR:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop | itop;
+	    itop = (epicsInt32) *ptop--;
+	    *ptop = (epicsInt32) *ptop | itop;
 	    break;
 
 	case BIT_AND:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop & itop;
+	    itop = (epicsInt32) *ptop--;
+	    *ptop = (epicsInt32) *ptop & itop;
 	    break;
 
 	case BIT_EXCL_OR:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop ^ itop;
+	    itop = (epicsInt32) *ptop--;
+	    *ptop = (epicsInt32) *ptop ^ itop;
 	    break;
 
 	case BIT_NOT:
-	    itop = (long) *ptop;
+	    itop = (epicsInt32) *ptop;
 	    *ptop = ~itop;
 	    break;
 
 	case RIGHT_SHIFT:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop >> itop;
+	    itop = (epicsInt32) *ptop--;
+	    *ptop = (epicsInt32) *ptop >> itop;
 	    break;
 
 	case LEFT_SHIFT:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop << itop;
+	    itop = (epicsInt32) *ptop--;
+	    *ptop = (epicsInt32) *ptop << itop;
 	    break;
 
 	case NOT_EQ:
@@ -381,7 +382,7 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 	case MIN:
 	case MAX:
@@ -468,7 +469,7 @@ static int cond_search(const char **ppinst, int match)
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 	case MIN:
 	case MAX:

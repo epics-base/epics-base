@@ -602,13 +602,13 @@ epicsShareFunc void
     while ((op = *pinst) != END_EXPRESSION) {
 	switch (op) {
 	case LITERAL_DOUBLE:
-        memcpy(&lit_d, ++pinst, sizeof(double));
+	    memcpy(&lit_d, ++pinst, sizeof(double));
 	    printf("\tDouble %g\n", lit_d);
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-        memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
-        printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
+	    memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
+	    printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
 	    pinst += sizeof(int);
 	    break;
 	case MIN:

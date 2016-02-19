@@ -64,7 +64,6 @@ void testCalc(const char *expr, double expected) {
         testDiag("Expected result is %g, actually got %g", expected, result);
         calcExprDump(rpn);
     }
-    return;
 }
 
 void testUInt32Calc(const char *expr, epicsUInt32 expected) {
@@ -93,7 +92,6 @@ void testUInt32Calc(const char *expr, epicsUInt32 expected) {
                  expected, expected, uresult, uresult);
         calcExprDump(rpn);
     }
-    return;
 }
 
 void testArgs(const char *expr, unsigned long einp, unsigned long eout) {
@@ -931,16 +929,16 @@ MAIN(epicsCalcTest)
     testUInt32Calc("a:=0xaaaaaaaa; ~~a", 0xaaaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a >> 8", 0xffaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a << 8", 0xaaaaaa00u);
-    //   using double operands (what the calc record does)
-    //     0xaaaaaaaa = 2863311530.0
-    //     0xffff0000 = 4294901760.0
-    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a AND b", 0xaaaa0000u);
-    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a OR b", 0xffffaaaau);
-    testUInt32Calc("a:=2863311530.0; b:=4294901760.0; a XOR b", 0x5555aaaau);
-    testUInt32Calc("a:=2863311530.0; ~a", 0x55555555u);
-    testUInt32Calc("a:=2863311530.0; ~~a", 0xaaaaaaaau);
-    testUInt32Calc("a:=2863311530.0; a >> 8", 0xffaaaaaau);
-    testUInt32Calc("a:=2863311530.0; a << 8", 0xaaaaaa00u);
+    //   using double operands (add 0.1 to force as double)
+    //     0xaaaaaaaa = -1431655766
+    //     0xffff0000 = -65536
+    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a AND b", 0xaaaa0000u);
+    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a OR b", 0xffffaaaau);
+    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a XOR b", 0x5555aaaau);
+    testUInt32Calc("a:=-1431655766.1; ~a", 0x55555555u);
+    testUInt32Calc("a:=-1431655766.1; ~~a", 0xaaaaaaaau);
+    testUInt32Calc("a:=-1431655766.1; a >> 8", 0xffaaaaaau);
+    testUInt32Calc("a:=-1431655766.1; a << 8", 0xaaaaaa00u);
 
     return testDone();
 }

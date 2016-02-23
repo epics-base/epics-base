@@ -266,7 +266,7 @@ MAIN(epicsCalcTest)
     const double a=1.0, b=2.0, c=3.0, d=4.0, e=5.0, f=6.0,
 		 g=7.0, h=8.0, i=9.0, j=10.0, k=11.0, l=12.0;
     
-    testPlan(598);
+    testPlan(613);
 
     /* LITERAL_OPERAND elements */
     testExpr(0);
@@ -921,7 +921,7 @@ MAIN(epicsCalcTest)
     testUInt32Calc("~~0xaaaaaaaa", 0xaaaaaaaau);
     testUInt32Calc("0xaaaaaaaa >> 8", 0xffaaaaaau);
     testUInt32Calc("0xaaaaaaaa << 8", 0xaaaaaa00u);
-    //   using integer literals, assigned to operands
+    //   using integer literals assigned to variables
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a AND b", 0xaaaa0000u);
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a OR b", 0xffffaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; b:=0xffff0000; a XOR b", 0x5555aaaau);
@@ -929,16 +929,32 @@ MAIN(epicsCalcTest)
     testUInt32Calc("a:=0xaaaaaaaa; ~~a", 0xaaaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a >> 8", 0xffaaaaaau);
     testUInt32Calc("a:=0xaaaaaaaa; a << 8", 0xaaaaaa00u);
-    //   using double operands (add 0.1 to force as double)
-    //     0xaaaaaaaa = -1431655766
-    //     0xffff0000 = -65536
-    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a AND b", 0xaaaa0000u);
-    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a OR b", 0xffffaaaau);
-    testUInt32Calc("a:=-1431655766.1; b:=-65536.1; a XOR b", 0x5555aaaau);
-    testUInt32Calc("a:=-1431655766.1; ~a", 0x55555555u);
-    testUInt32Calc("a:=-1431655766.1; ~~a", 0xaaaaaaaau);
-    testUInt32Calc("a:=-1431655766.1; a >> 8", 0xffaaaaaau);
-    testUInt32Calc("a:=-1431655766.1; a << 8", 0xaaaaaa00u);
+
+    // Test proper conversion of double values (+ 0.1 enforces double literal)
+    // when used as inputs to the bitwise operations.
+    //      0xaaaaaaaa = -1431655766 or 2863311530u
+    testUInt32Calc("-1431655766.1 OR 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 OR 0", 0xaaaaaaaau);
+    testUInt32Calc("0 OR -1431655766.1", 0xaaaaaaaau);
+    testUInt32Calc("0 OR 2863311530.1", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 XOR 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 XOR 0", 0xaaaaaaaau);
+    testUInt32Calc("0 XOR -1431655766.1", 0xaaaaaaaau);
+    testUInt32Calc("0 XOR 2863311530.1", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 AND 0xffffffff", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 AND 0xffffffff", 0xaaaaaaaau);
+    testUInt32Calc("0xffffffff AND -1431655766.1", 0xaaaaaaaau);
+    testUInt32Calc("0xffffffff AND 2863311530.1", 0xaaaaaaaau);
+    testUInt32Calc("~ -1431655766.1", 0x55555555u);
+    testUInt32Calc("~ 2863311530.1", 0x55555555u);
+    testUInt32Calc("-1431655766.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >> 0", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 >> 0.1", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 << 0", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 << 0", 0xaaaaaaaau);
+    testUInt32Calc("-1431655766.1 << 0.1", 0xaaaaaaaau);
+    testUInt32Calc("2863311530.1 << 0.1", 0xaaaaaaaau);
 
     return testDone();
 }

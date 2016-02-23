@@ -21,6 +21,7 @@
 #include "osiUnistd.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
+#include "epicsTypes.h"
 #include "errlog.h"
 #include "postfix.h"
 #include "postfixPvt.h"
@@ -43,7 +44,8 @@ epicsShareFunc long
     double stack[CALCPERFORM_STACK+1];	/* zero'th entry not used */
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
-    int itop;				/* integer from top of stack */
+    epicsInt32 itop;			/* integer from top of stack */
+    epicsUInt32 utop;			/* unsigned integer from top of stack */
     int op;
     int nargs;
 
@@ -55,14 +57,14 @@ epicsShareFunc long
 	switch (op){
 
 	case LITERAL_DOUBLE:
-	    memcpy((void *)++ptop, pinst, sizeof(double));
+	    memcpy(++ptop, pinst, sizeof(double));
 	    pinst += sizeof(double);
 	    break;
 
 	case LITERAL_INT:
-	    memcpy(&itop, pinst, sizeof(int));
+	    memcpy(&itop, pinst, sizeof(epicsInt32));
 	    *++ptop = itop;
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 
 	case FETCH_VAL:
@@ -136,11 +138,11 @@ epicsShareFunc long
 	    break;
 
 	case MODULO:
-	    itop = (long) *ptop--;
+	    itop = (epicsInt32) *ptop--;
 	    if (itop)
-		*ptop = (long) *ptop % itop;
+		*ptop = (epicsInt32) *ptop % itop;
 	    else
-		*ptop = epicsNAN;   /* NaN */
+		*ptop = epicsNAN;
 	    break;
 
 	case POWER:
@@ -261,7 +263,7 @@ epicsShareFunc long
 
 	case NINT:
 	    top = *ptop;
-	    *ptop = (double)(long)(top >= 0 ? top + 0.5 : top - 0.5);
+	    *ptop = (epicsInt32) (top >= 0 ? top + 0.5 : top - 0.5);
 	    break;
 
 	case RANDOM:
@@ -282,34 +284,45 @@ epicsShareFunc long
 	    *ptop = ! *ptop;
 	    break;
 
+        /* For bitwise operations on values with bit 31 set, double values
+         * must first be cast to unsigned to correctly set that bit; the
+         * double value must be negative in that case. The result must be
+         * cast to a signed integer before converting to the double result.
+         */
+
 	case BIT_OR:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop | itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop | utop);
 	    break;
 
 	case BIT_AND:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop & itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop & utop);
 	    break;
 
 	case BIT_EXCL_OR:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop ^ itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop ^ utop);
 	    break;
 
 	case BIT_NOT:
-	    itop = (long) *ptop;
-	    *ptop = ~itop;
+	    utop = *ptop;
+	    *ptop = (epicsInt32) ~utop;
 	    break;
 
+        /* The shift operators use signed integers, so a right-shift will
+         * extend the sign bit into the left-hand end of the value. The
+         * double-casting through unsigned here is important, see above.
+         */
+
 	case RIGHT_SHIFT:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop >> itop;
+	    utop = *ptop--;
+	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) >> (utop & 31);
 	    break;
 
 	case LEFT_SHIFT:
-	    itop = (long) *ptop--;
-	    *ptop = (long) *ptop << itop;
+	    utop = *ptop--;
+	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) << (utop & 31);
 	    break;
 
 	case NOT_EQ:
@@ -381,7 +394,7 @@ calcArgUsage(const char *pinst, unsigned long *pinputs, unsigned long *pstores)
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 	case MIN:
 	case MAX:
@@ -468,7 +481,7 @@ static int cond_search(const char **ppinst, int match)
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-	    pinst += sizeof(int);
+	    pinst += sizeof(epicsInt32);
 	    break;
 	case MIN:
 	case MAX:

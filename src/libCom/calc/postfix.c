@@ -22,6 +22,7 @@
 #include "dbDefs.h"
 #include "epicsStdlib.h"
 #include "epicsString.h"
+#include "epicsTypes.h"
 #include "postfix.h"
 #include "postfixPvt.h"
 #include "shareLib.h"
@@ -216,7 +217,7 @@ epicsShareFunc long
     char * const pdest = pout;
     char *pnext;
     double lit_d;
-    int lit_i;
+    epicsInt32 lit_i;
 
     if (psrc == NULL || *psrc == '\0' ||
 	pout == NULL || perror == NULL) {
@@ -249,27 +250,29 @@ epicsShareFunc long
                     goto bad;
                 }
                 psrc = pnext;
-                lit_i = (int) lit_d;
+                lit_i = (epicsInt32) lit_d;
                 if (lit_d != (double) lit_i) {
                     *pout++ = pel->code;
-                    memcpy(pout, (void *)&lit_d, sizeof(double));
+                    memcpy(pout, &lit_d, sizeof(double));
                     pout += sizeof(double);
                 } else {
                     *pout++ = LITERAL_INT;
-                    memcpy(pout, (void *)&lit_i, sizeof(int));
-                    pout += sizeof(int);
+                    memcpy(pout, &lit_i, sizeof(epicsInt32));
+                    pout += sizeof(epicsInt32);
                 }
             }
             else {
-                lit_i = strtoul(psrc, &pnext, 0);
+                epicsUInt32 lit_ui;
+
+                lit_ui = (epicsUInt32) strtoul(psrc, &pnext, 0);
                 if (pnext == psrc) {
                     *perror = CALC_ERR_BAD_LITERAL;
                     goto bad;
                 }
                 psrc = pnext;
                 *pout++ = LITERAL_INT;
-                memcpy(pout, (void *)&lit_i, sizeof(int));
-                pout += sizeof(int);
+                memcpy(pout, &lit_ui, sizeof(epicsUInt32));
+                pout += sizeof(epicsUInt32);
             }
 
             operand_needed = FALSE;
@@ -594,18 +597,18 @@ epicsShareFunc void
     };
     char op;
     double lit_d;
-    int lit_i;
+    epicsInt32 lit_i;
     
     while ((op = *pinst) != END_EXPRESSION) {
 	switch (op) {
 	case LITERAL_DOUBLE:
-	    memcpy((void *)&lit_d, ++pinst, sizeof(double));
+	    memcpy(&lit_d, ++pinst, sizeof(double));
 	    printf("\tDouble %g\n", lit_d);
 	    pinst += sizeof(double);
 	    break;
 	case LITERAL_INT:
-	    memcpy((void *)&lit_i, ++pinst, sizeof(int));
-	    printf("\tInteger %d\n", lit_i);
+	    memcpy(&lit_i, ++pinst, sizeof(epicsInt32));
+	    printf("\tInteger %d (0x%x)\n", lit_i, lit_i);
 	    pinst += sizeof(int);
 	    break;
 	case MIN:

@@ -357,21 +357,10 @@ static void once(void)
             pcommonAttr->maxPriority);
     }
 
-#if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
-    if(errVerbose)  { 
-        fprintf(stderr, "LRT: min priority: %d max priority %d\n", 
+    if (errVerbose) {
+        fprintf(stderr, "LRT: min priority: %d max priority %d\n",
             pcommonAttr->minPriority, pcommonAttr->maxPriority);
     }
-    if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
-        status = mlockall(MCL_CURRENT | MCL_FUTURE);
-        if(status) { 
-            fprintf(stderr, "Unable to lock the virtual address space using mlockall\n");
-        } else { 
-            fprintf(stderr,"Successfully locked memory using mlockAll\n");
-        }
-    }
-#endif
-
 
 #else
     if(errVerbose) fprintf(stderr,"task priorities are not implemented\n");
@@ -425,7 +414,22 @@ static void epicsThreadInit(void)
     checkStatusQuit(status,"pthread_once","epicsThreadInit");
 }
 
-
+epicsShareFunc
+void epicsThreadRealtimeLock(void)
+{
+#if defined(_POSIX_MEMLOCK) && _POSIX_MEMLOCK > 0
+    if (pcommonAttr->maxPriority > pcommonAttr->minPriority) {
+        int status = mlockall(MCL_CURRENT | MCL_FUTURE);
+
+        if (status) {
+            fprintf(stderr, "epicsThreadRealtimeLock "
+                "Warning: Unable to lock the virtual address space.\n"
+                "VM page faults may harm real-time performance.\n");
+        }
+    }
+#endif
+}
+
 epicsShareFunc unsigned int epicsShareAPI epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass)
 {
 #if defined (OSITHREAD_USE_DEFAULT_STACK)

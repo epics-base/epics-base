@@ -248,6 +248,9 @@ epicsThreadInit (void)
     }
 }
 
+void epicsThreadRealtimeLock(void)
+{}
+
 /*
  * Create and start a new thread
  */

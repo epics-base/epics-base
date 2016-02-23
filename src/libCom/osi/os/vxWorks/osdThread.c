@@ -114,6 +114,9 @@ static void epicsThreadInit(void)
     lock = 0;
 }
 
+void epicsThreadRealtimeLock(void)
+{}
+
 unsigned int epicsThreadGetStackSize (epicsThreadStackSizeClass stackSizeClass) 
 {
 

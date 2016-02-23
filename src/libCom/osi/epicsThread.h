@@ -57,6 +57,12 @@ typedef epicsThreadId epicsThreadOnceId;
 epicsShareFunc void epicsShareAPI epicsThreadOnce(
     epicsThreadOnceId *id, EPICSTHREADFUNC, void *arg);
 
+/* When real-time scheduling is active, attempt any post-init operations
+ * that preserve real-time performance. For POSIX targets this locks the
+ * process into RAM, preventing swap-related VM faults.
+ */
+epicsShareFunc void epicsThreadRealtimeLock(void);
+
 epicsShareFunc void epicsShareAPI epicsThreadExitMain(void);
 
 epicsShareFunc epicsThreadId epicsShareAPI epicsThreadCreate (

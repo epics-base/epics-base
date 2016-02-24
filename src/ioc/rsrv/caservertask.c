@@ -935,6 +935,8 @@ void casr (unsigned level)
             ipAddrToDottedIP (&iface->udpAddr.ia, buf, sizeof(buf));
 #if defined(_WIN32)
             printf("    CAS-UDP name server on %s\n", buf);
+            if (level >= 2)
+                log_one_client(iface->client, level - 2);
 #else
             if (iface->udpbcast==INVALID_SOCKET) {
                 printf("    CAS-UDP name server on %s\n", buf);

@@ -19,6 +19,11 @@
 #include "addrList.h"
 #include "errlog.h"
 
+#if defined(_MSC_VER)
+#  include <BaseTsd.h>
+   typedef SSIZE_T ssize_t;
+#endif
+
 #define epicsExportSharedSymbols
 #include "casDGIntfIO.h"
 #include "ipIgnoreEntry.h"

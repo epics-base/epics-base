@@ -137,7 +137,7 @@ int tryBind(SOCKET sock, const osiSockAddr* addr, const char *name)
 {
     if(bind(sock, (struct sockaddr *) &addr->sa, sizeof(*addr))<0) {
         char sockErrBuf[64];
-        if(errno!=SOCK_EADDRINUSE)
+        if(SOCKERRNO!=SOCK_EADDRINUSE)
         {
             epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
@@ -216,8 +216,9 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                     assert(scratch.ia.sin_port!=0);
                 }
             } else {
+                int errcode = SOCKERRNO;
                 /* bind fails.  React harshly to unexpected errors to avoid an infinite loop */
-                if(errno==SOCK_EADDRNOTAVAIL) {
+                if(errcode==SOCK_EADDRNOTAVAIL) {
                     /* this is not a bind()able address. */
                     int j;
                     char name[40];
@@ -237,7 +238,7 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                 /* if SOCK_EADDRINUSE then try again with a different port number.
                  * otherwise, fail hard
                  */
-                if(errno!=SOCK_EADDRINUSE && errno!=SOCK_EADDRNOTAVAIL) {
+                if(errcode!=SOCK_EADDRINUSE) {
                     char name[40];
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (

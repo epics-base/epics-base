@@ -33,6 +33,10 @@ static int cond_search(const char **ppinst, int match);
 #define PI 3.14159265358979323
 #endif
 
+/* Turn off global optimization for 64-bit MSVC builds */
+#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#  pragma optimize("g", off)
+#endif
 
 /* calcPerform
  *
@@ -45,6 +49,7 @@ epicsShareFunc long
     double *ptop;			/* stack pointer */
     double top; 			/* value from top of stack */
     epicsInt32 itop;			/* integer from top of stack */
+    epicsUInt32 utop;			/* unsigned integer from top of stack */
     int op;
     int nargs;
 
@@ -262,7 +267,7 @@ epicsShareFunc long
 
 	case NINT:
 	    top = *ptop;
-	    *ptop = (double)(epicsInt32)(top >= 0 ? top + 0.5 : top - 0.5);
+	    *ptop = (epicsInt32) (top >= 0 ? top + 0.5 : top - 0.5);
 	    break;
 
 	case RANDOM:
@@ -283,34 +288,45 @@ epicsShareFunc long
 	    *ptop = ! *ptop;
 	    break;
 
+        /* For bitwise operations on values with bit 31 set, double values
+         * must first be cast to unsigned to correctly set that bit; the
+         * double value must be negative in that case. The result must be
+         * cast to a signed integer before converting to the double result.
+         */
+
 	case BIT_OR:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop | itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop | utop);
 	    break;
 
 	case BIT_AND:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop & itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop & utop);
 	    break;
 
 	case BIT_EXCL_OR:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop ^ itop;
+	    utop = *ptop--;
+	    *ptop = (epicsInt32) ((epicsUInt32) *ptop ^ utop);
 	    break;
 
 	case BIT_NOT:
-	    itop = (epicsInt32) *ptop;
-	    *ptop = ~itop;
+	    utop = *ptop;
+	    *ptop = (epicsInt32) ~utop;
 	    break;
 
+        /* The shift operators use signed integers, so a right-shift will
+         * extend the sign bit into the left-hand end of the value. The
+         * double-casting through unsigned here is important, see above.
+         */
+
 	case RIGHT_SHIFT:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop >> itop;
+	    utop = *ptop--;
+	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) >> (utop & 31);
 	    break;
 
 	case LEFT_SHIFT:
-	    itop = (epicsInt32) *ptop--;
-	    *ptop = (epicsInt32) *ptop << itop;
+	    utop = *ptop--;
+	    *ptop = ((epicsInt32) (epicsUInt32) *ptop) << (utop & 31);
 	    break;
 
 	case NOT_EQ:
@@ -367,6 +383,9 @@ epicsShareFunc long
     *presult = *ptop;
     return 0;
 }
+#if defined(_WIN32) && defined(_M_X64) && !defined(_MINGW)
+#  pragma optimize("", on)
+#endif
 
 
 epicsShareFunc long

@@ -96,6 +96,10 @@ epicsTimeTest_SRCS += epicsTimeTest.cpp
 testHarness_SRCS += epicsTimeTest.cpp
 TESTS += epicsTimeTest
 
+TESTPROD_HOST += epicsTimeZoneTest
+epicsTimeZoneTest_SRCS += epicsTimeZoneTest.c
+TESTS += epicsTimeZoneTest
+
 TESTPROD_HOST += epicsThreadTest
 epicsThreadTest_SRCS += epicsThreadTest.cpp
 testHarness_SRCS += epicsThreadTest.cpp

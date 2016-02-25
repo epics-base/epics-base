@@ -14,6 +14,29 @@
 <h2 align="center">Changes between 3.15.3 and 3.15.4</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>CALC engine bitwise operator fixes</h3>
+
+<p>The bitwise operators in the CALC engine have been modified to work properly
+with values that have bit 31 (0x80000000) set. This modification involved
+back-porting some earlier changes from the 3.15 branch, and fixes
+<a href="https://code.launchpad.net/bugs/1514520">Launchpad bug
+#1514520</a>.</p>
+
+<h3>Fix <tt>ipAddrToAsciiAsync()</tt>: don't try to join the daemon thread</h3>
+
+<p>On process exit, don't try to stop the worker thread that makes DNS lookups
+asynchronous. Previously this would wait for any lookups still in progress,
+delaying the exit unnecessarily. This was most obvious with catools (eg.
+cainfo).
+<a href="https://bugs.launchpad.net/epics-base/+bug/1527636">lp:1527636</a></p>
+
+<h3>Fix epicsTime_localtime() on Windows</h3>
+
+<p>Simpler versions of the epicsTime_gmtime() and epicsTime_localtime()
+routines have been included in the Windows implementations, and a new test
+program added. The original versions do not report DST status properly. Fixes
+<a href="https://bugs.launchpad.net/bugs/1528284">Launchpad bug 1528284</a>.</p>
+
 <h3>Moved <tt>mlockall()</tt> into its own epicsThread routine</h3>
 
 <p>Since EPICS Base 3.15.0.2 on Posix OSs the initialization of the epicsThread

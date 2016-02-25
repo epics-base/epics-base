@@ -36,7 +36,7 @@
 
 #include "caeventmask.h"
 
-#define epicsExportSharedSymbols
+#include "epicsExport.h" /* defines epicsExportSharedSymbols */
 #include "alarm.h"
 #include "asDbLib.h"
 #include "callback.h"
@@ -86,7 +86,9 @@ static void initDatabase(void);
 static void initialProcess(void);
 static void exitDatabase(void *dummy);
 
-
+int dbThreadRealtimeLock = 1;
+epicsExportAddress(int, dbThreadRealtimeLock);
+
 /*
  *  Initialize EPICS on the IOC.
  */
@@ -186,6 +188,10 @@ int iocBuild(void)
     rsrv_init();
 
     status = iocBuild_3();
+
+    if (dbThreadRealtimeLock)
+        epicsThreadRealtimeLock();
+
     if (!status) iocBuildMode = buildRSRV;
     return status;
 }

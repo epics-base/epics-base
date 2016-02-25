@@ -20,3 +20,6 @@ variable(dbQuietMacroWarnings,int)
 variable(dbTemplateMaxVars,int)
 # Default number of parallel callback threads
 variable(callbackParallelThreadsDefault,int)
+
+# Real-time operation
+variable(dbThreadRealtimeLock,int)

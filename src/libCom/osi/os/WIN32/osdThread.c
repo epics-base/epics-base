@@ -303,6 +303,10 @@ static unsigned osdPriorityMagFromPriorityOSI ( unsigned osiPriority, unsigned p
     return magnitude;
 }
 
+epicsShareFunc
+void epicsThreadRealtimeLock(void)
+{}
+
 /*
  * epicsThreadGetOsdPriorityValue ()
  */

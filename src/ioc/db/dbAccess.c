@@ -812,11 +812,10 @@ long dbGet(DBADDR *paddr, short dbrType,
     void *pbuffer, long *options, long *nRequest, void *pflin)
 {
     char *pbuf = pbuffer;
-    void *pfieldsave;
+    void *pfieldsave = paddr->pfield;
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type;
-    long no_elements;
-    long offset;
+    long capacity, no_elements, offset;
     struct rset *prset;
     long status = 0;
 
@@ -826,11 +825,20 @@ long dbGet(DBADDR *paddr, short dbrType,
         return 0;
 
     if (!pfl || pfl->type == dbfl_type_rec) {
-        field_type  = paddr->field_type;
-        no_elements = paddr->no_elements;
+        field_type = paddr->field_type;
+        no_elements = capacity = paddr->no_elements;
+
+        /* Update field info from record */
+        if (paddr->pfldDes->special == SPC_DBADDR &&
+            (prset = dbGetRset(paddr)) &&
+            prset->get_array_info) {
+            status = prset->get_array_info(paddr, &no_elements, &offset);
+        } else
+            offset = 0;
     } else {
-        field_type  = pfl->field_type;
-        no_elements = pfl->no_elements;
+        field_type = pfl->field_type;
+        no_elements = capacity = pfl->no_elements;
+        offset = 0;
     }
 
     if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK)
@@ -848,23 +856,9 @@ long dbGet(DBADDR *paddr, short dbrType,
         return S_db_badDbrtype;
     }
 
-    /* For SPC_DBADDR fields, the rset function
-     * get_array_info() is allowed to modify
-     * paddr->pfield.  So we store the original
-     * value and restore it later.
-     */
-    pfieldsave = paddr->pfield;
-
-    /* Update field info */
-    if (paddr->pfldDes->special == SPC_DBADDR &&
-        (prset = dbGetRset(paddr)) &&
-        prset->get_array_info) {
-        status = prset->get_array_info(paddr, &no_elements, &offset);
-    } else
-        offset = 0;
-
     if (offset == 0 && (!nRequest || no_elements == 1)) {
-        if (nRequest) *nRequest = 1;
+        if (nRequest)
+            *nRequest = 1;
         if (!pfl || pfl->type == dbfl_type_rec) {
             status = dbFastGetConvertRoutine[field_type][dbrType]
                 (paddr->pfield, pbuf, paddr);
@@ -886,7 +880,8 @@ long dbGet(DBADDR *paddr, short dbrType,
         long (*convert)();
 
         if (nRequest) {
-            if (no_elements<(*nRequest)) *nRequest = no_elements;
+            if (no_elements < *nRequest)
+                *nRequest = no_elements;
             n = *nRequest;
         } else {
             n = 1;
@@ -901,11 +896,11 @@ long dbGet(DBADDR *paddr, short dbrType,
             status = S_db_badDbrtype;
             goto done;
         }
-        /* convert database field  and place it in the buffer */
+        /* convert data into the caller's buffer */
         if (n <= 0) {
             ;/*do nothing*/
         } else if (!pfl || pfl->type == dbfl_type_rec) {
-            status = convert(paddr, pbuf, n, no_elements, offset);
+            status = convert(paddr, pbuf, n, capacity, offset);
         } else {
             DBADDR localAddr = *paddr; /* Structure copy */
 
@@ -916,7 +911,7 @@ long dbGet(DBADDR *paddr, short dbrType,
                 localAddr.pfield = (char *) &pfl->u.v.field;
             else
                 localAddr.pfield = (char *)  pfl->u.r.field;
-            status = convert(&localAddr, pbuf, n, no_elements, offset);
+            status = convert(&localAddr, pbuf, n, capacity, offset);
         }
     }
 done:

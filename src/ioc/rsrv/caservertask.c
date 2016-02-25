@@ -692,9 +692,9 @@ int rsrv_init (void)
                 ellFree(&bcastList);
             }
 
-            ellAdd(&servers, &conf->node);
-
 #endif /* !defined(_WIN32) */
+
+            ellAdd(&servers, &conf->node);
 
             /* have all sockets, time to start some threads */
 

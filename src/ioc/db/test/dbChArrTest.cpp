@@ -125,7 +125,7 @@ static void check(short dbr_type) {
 #define TEST1(Size, Offset, Text, Expected) \
     testDiag("Reading from offset = %d (%s)", Offset, Text); \
     off = Offset; req = 10; \
-    memset(buf, sizeof(buf), 0); \
+    memset(buf, 0, sizeof(buf)); \
     (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
     pfl = db_create_read_log(pch); \
     testOk(pfl && pfl->type == dbfl_type_rec, "Valid pfl, type = rec"); \
@@ -169,7 +169,7 @@ static void check(short dbr_type) {
 #define TEST2(Size, Offset, Text, Expected) \
     testDiag("Reading from offset = %d (%s)", Offset, Text); \
     off = Offset; req = 15; \
-    memset(buf, sizeof(buf), 0); \
+    memset(buf, 0, sizeof(buf)); \
     (void) dbPutField(&offaddr, DBR_LONG, &off, 1); \
     pfl = db_create_read_log(pch); \
     pfl->type = dbfl_type_ref; \

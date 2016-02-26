@@ -102,6 +102,8 @@ dbChArrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += dbChArrTest
 dbChArrTest_SRCS += dbChArrTest.cpp
 dbChArrTest_SRCS += dbChArrTest_registerRecordDeviceDriver.cpp
+testHarness_SRCS += dbChArrTest.cpp
+testHarness_SRCS += dbChArrTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/dbChArrTest.dbd ../dbChArrTest.db
 TESTS += dbChArrTest
 

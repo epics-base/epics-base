@@ -105,7 +105,7 @@
 #undef epicsShareAPI
 #undef READONLY
 
-#if defined(_WIN32) || defined(__CYGWIN32__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 /*
  * Check if EPICS_BUILD_DLL or EPICS_CALL_DLL defined and use the dllimport/
  * dllexport keywords if this is a shared library build of base under WIN32.

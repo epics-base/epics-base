@@ -14,6 +14,33 @@
 <h2 align="center">Changes between 3.15.3 and 3.15.4</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>CA server configuration changes</h3>
+
+<p>RSRV now honors EPICS_CAS_INTF_ADDR_LIST and binds only to the provided list
+of network interfaces. Name searches (UDP and TCP) on other network interfaces
+are ignored. For example on a computer with interfaces 10.5.1.1/24, 10.5.2.1/24,
+and 10.5.3.1/24, setting "EPICS_CAS_INTF_ADDR_LIST='10.5.1.1 10.5.2.1'" will
+accept traffic on the .1.1 and .2.1, but ignore from .3.1</p>
+
+<p>RSRV now honors EPICS_CAS_IGNORE_ADDR_LIST and ignores UDP messages received
+from addresses in this list.</p>
+
+<p>Previously, CA servers (RSRV and PCAS) would build the beacon address list
+using EPICS_CA_ADDR_LIST if EPICS_CAS_BEACON_ADDR_LIST was no set. This is no
+longer done. Sites depending on this should set both envronment variables to the
+same value.</p>
+
+<h3>IPv4 multicast for name search and beacons</h3>
+
+<p>libca, RSRV, and PCAS may now use IPv4 multicasting for UDP traffic (name
+search and beacons). This is disabled by default. To enable multicast address(s)
+must be listed in EPICS_CA_ADDR_LIST for clients and EPICS_CAS_INTF_ADDR_LIST
+for servers (IOCs should set both). For example:
+"EPICS_CAS_INTF_ADDR_LIST='224.0.2.9' EPICS_CA_ADDR_LIST=224.0.2.9".</p>
+
+<p>Please note that no IPv4 multicast address is officially assigned for Channel
+Access by IANA. The example 224.0.2.9 is taken from the AD-HOC Block I range.<p>
+
 <h3>CALC engine bitwise operator fixes</h3>
 
 <p>The bitwise operators in the CALC engine have been modified to work properly
@@ -65,35 +92,6 @@ dbQuietMacroWarnings=1          <i>VxWorks</i>
 
 
 <h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
-
-<h3>CA server configuration changes</h3>
-
-<p>RSRV now honors EPICS_CAS_INTF_ADDR_LIST and binds to only
-the provided list of network interfaces.
-Name searches (UDP and TCP) on other network interfaces are ignored.
-For example on a computer with interfaces 10.5.1.1/24, 10.5.2.1/24, and 10.5.3.1/24,
-setting "EPICS_CAS_INTF_ADDR_LIST='10.5.1.1 10.5.2.1'" will accept traffic
-on the .1.1 and .2.1, but ignore from .3.1</p>
-
-<p>RSRV now honors EPICS_CAS_IGNORE_ADDR_LIST and ignores
-UDP messages received from addresses in this list.</p>
-
-<p>Previously, CA servers (RSRV and PCAS) would build the beacon address list
-using EPICS_CA_ADDR_LIST if EPICS_CAS_BEACON_ADDR_LIST was no set.
-This is no longer done.
-Sites depending on this should set both envronment variables to the same value.</p>
-
-<h3>IPv4 multicast for name search and beacons</h3>
-
-<p>libca, RSRV, and PCAS may now use IPv4 multicasting for UDP traffic (name search and beacons).
-This is disabled by default.
-To enable multicast address(s) must be listed in EPICS_CA_ADDR_LIST for clients
-and EPICS_CAS_INTF_ADDR_LIST for servers (IOCs should set both).
-For example: "EPICS_CAS_INTF_ADDR_LIST='224.0.2.9' EPICS_CA_ADDR_LIST=224.0.2.9".
-</p>
-
-<p>Please note that no IPv4 multicast address is officially assigned for Channel Access by IANA.
-The example 224.0.2.9 is taken from the AD-HOC Block I range.<p>
 
 <h3>Make the NTP Time provider optional on VxWorks</h3>
 

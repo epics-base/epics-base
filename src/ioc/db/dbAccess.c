@@ -828,7 +828,9 @@ long dbGet(DBADDR *paddr, short dbrType,
         field_type = paddr->field_type;
         no_elements = capacity = paddr->no_elements;
 
-        /* Update field info from record */
+        /* Update field info from record
+         * may modify paddr->pfield
+         */
         if (paddr->pfldDes->special == SPC_DBADDR &&
             (prset = dbGetRset(paddr)) &&
             prset->get_array_info) {
@@ -841,11 +843,15 @@ long dbGet(DBADDR *paddr, short dbrType,
         offset = 0;
     }
 
-    if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK)
-        return getLinkValue(paddr, dbrType, pbuf, nRequest);
+    if (field_type >= DBF_INLINK && field_type <= DBF_FWDLINK) {
+        status = getLinkValue(paddr, dbrType, pbuf, nRequest);
+        goto done;
+    }
 
-    if (paddr->special == SPC_ATTRIBUTE)
-        return getAttrValue(paddr, dbrType, pbuf, nRequest);
+    if (paddr->special == SPC_ATTRIBUTE) {
+        status = getAttrValue(paddr, dbrType, pbuf, nRequest);
+        goto done;
+    }
 
     /* Check for valid request */
     if (INVALID_DB_REQ(dbrType) || field_type > DBF_DEVICE) {
@@ -853,7 +859,8 @@ long dbGet(DBADDR *paddr, short dbrType,
 
         sprintf(message, "dbGet: Request type is %d\n", dbrType);
         recGblDbaddrError(S_db_badDbrtype, paddr, message);
-        return S_db_badDbrtype;
+        status = S_db_badDbrtype;
+        goto done;
     }
 
     if (offset == 0 && (!nRequest || no_elements == 1)) {
@@ -877,7 +884,7 @@ long dbGet(DBADDR *paddr, short dbrType,
         }
     } else {
         long n;
-        long (*convert)();
+        GETCONVERTFUNC convert;
 
         if (nRequest) {
             if (no_elements < *nRequest)

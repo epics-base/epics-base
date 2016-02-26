@@ -242,7 +242,7 @@ MAIN(testDbChannel)     /* dbChannelTest is an API routine... */
     testOk1(!!(pch = dbChannelCreate("x.{\"scalar\":null}")));
 
     e = e_report;
-    dbChannelShow(pch, 1, 2);
+    dbChannelShow(pch, 2, 2);
 
     e = e_close;
     if (pch) dbChannelDelete(pch);

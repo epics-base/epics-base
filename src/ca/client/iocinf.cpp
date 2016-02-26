@@ -73,7 +73,7 @@ static char *getToken ( const char **ppString, char *pBuf, unsigned bufSIze )
 /*
  * addAddrToChannelAccessAddressList ()
  */
-extern "C" void epicsShareAPI addAddrToChannelAccessAddressList 
+extern "C" int epicsShareAPI addAddrToChannelAccessAddressList
     ( ELLLIST *pList, const ENV_PARAM *pEnv, 
     unsigned short port, int ignoreNonDefaultPort )
 {
@@ -82,11 +82,11 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
     const char *pToken;
     struct sockaddr_in addr;
     char buf[32u]; /* large enough to hold an IP address */
-    int status;
+    int status, ret = -1;
 
     pStr = envGetConfigParamPtr (pEnv);
     if (!pStr) {
-        return;
+        return ret;
     }
 
     while ( ( pToken = getToken (&pStr, buf, sizeof (buf) ) ) ) {
@@ -104,7 +104,7 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
         if (pNewNode==NULL) {
             fprintf ( stderr, "addAddrToChannelAccessAddressList(): no memory available for configuration\n");
-            return;
+            break;
         }
 
         pNewNode->addr.ia = addr;
@@ -113,9 +113,10 @@ extern "C" void epicsShareAPI addAddrToChannelAccessAddressList
 		 * LOCK applied externally
 		 */
         ellAdd (pList, &pNewNode->node);
+        ret = 0; /* success if anything is added to the list */
     }
 
-    return;
+    return ret;
 }
 
 /*

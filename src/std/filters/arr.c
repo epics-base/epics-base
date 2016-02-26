@@ -182,7 +182,7 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
 static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
 {
     myStruct *my = (myStruct*) pvt;
-    printf("%*s  plugin arr, start=%d, incr=%d, end=%d\n", indent, "",
+    printf("%*sArray (arr): start=%d, incr=%d, end=%d\n", indent, "",
            my->start, my->incr, my->end);
 }
 

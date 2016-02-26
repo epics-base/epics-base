@@ -103,6 +103,8 @@ private:
     caStatus attachInterface ( const caNetAddr & addr, bool autoBeaconAddr,
             bool addConfigAddr );
 
+    virtual void addMCast(const osiSockAddr&);
+
     void sendBeacon ( ca_uint32_t beaconNo );
 
     caServerI ( const caServerI & );

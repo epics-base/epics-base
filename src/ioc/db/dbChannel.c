@@ -704,21 +704,27 @@ void dbChannelShow(dbChannel *chan, int level, const unsigned short indent)
     int pre   = ellCount(&chan->pre_chain);
     int post  = ellCount(&chan->post_chain);
 
-    printf("%*schannel name: %s\n", indent, "", chan->name);
-    printf("%*s  field_type=%s (%d bytes), dbr_type=%s, %ld element%s, %d filter%s", indent, "",
-           dbGetFieldTypeString(chan->addr.field_type), chan->addr.field_size,
-           dbGetFieldTypeString(chan->addr.dbr_field_type), elems, elems == 1 ? "" : "s",
-           count, count == 1 ? "" : "s");
-    if (count)
-        printf(" (%d pre eventq, %d post eventq)\n", pre, post);
-    else
-        printf("\n");
-    if (level > 0)
-        dbChannelFilterShow(chan, level - 1, indent + 2);
-    if (count) {
-        printf("%*s  final field_type=%s (%dB), %ld element%s\n", indent, "",
-               dbGetFieldTypeString(chan->final_type), chan->final_field_size,
-               felems, felems == 1 ? "" : "s");
+    printf("%*sChannel: '%s'\n", indent, "", chan->name);
+    if (level > 0) {
+        printf("%*sfield_type=%s (%d bytes), dbr_type=%s, %ld element%s",
+               indent + 4, "",
+               dbGetFieldTypeString(chan->addr.field_type),
+               chan->addr.field_size,
+               dbGetFieldTypeString(chan->addr.dbr_field_type),
+               elems, elems == 1 ? "" : "s");
+        if (count)
+            printf("\n%*s%d filter%s (%d pre eventq, %d post eventq)\n",
+                    indent + 4, "", count, count == 1 ? "" : "s", pre, post);
+        else
+            printf(", no filters\n");
+        if (level > 1)
+            dbChannelFilterShow(chan, level - 2, indent + 8);
+        if (count) {
+            printf("%*sfinal field_type=%s (%dB), %ld element%s\n", indent + 4, "",
+                   dbGetFieldTypeString(chan->final_type),
+                   chan->final_field_size,
+                   felems, felems == 1 ? "" : "s");
+        }
     }
 }
 

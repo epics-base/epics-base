@@ -56,10 +56,12 @@ static void createAndOpen(const char *name, dbChannel**pch)
     testOk((ellCount(&(*pch)->post_chain) == 0), "no filters in post chain");
 }
 
+extern "C" {
 static void freeArray(db_field_log *pfl) {
     if (pfl->type == dbfl_type_ref) {
         free(pfl->u.r.field);
     }
+}
 }
 
 static void testHead (const char *title, const char *typ = "") {
@@ -197,6 +199,7 @@ static void check(short dbr_type) {
 
 static dbEventCtx evtctx;
 
+extern "C" {
 static void dbChArrTestCleanup(void* junk)
 {
     dbFreeBase(pdbbase);
@@ -206,6 +209,7 @@ static void dbChArrTestCleanup(void* junk)
     db_close_events(evtctx);
 
     dbmfFreeChunks();
+}
 }
 
 MAIN(dbChArrTest)

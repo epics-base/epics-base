@@ -54,7 +54,7 @@
 /*
  * clean_addrq
  */
-static void clean_addrq(void)
+static void clean_addrq(struct client *client)
 {
     struct channel_in_use * pciu;
     struct channel_in_use * pnextciu;
@@ -67,9 +67,9 @@ static void clean_addrq(void)
 
     epicsTimeGetCurrent ( &current );
 
-    epicsMutexMustLock ( prsrv_cast_client->chanListLock );
+    epicsMutexMustLock ( client->chanListLock );
     pnextciu = (struct channel_in_use *) 
-            prsrv_cast_client->chanList.node.next;
+            client->chanList.node.next;
 
     while( (pciu = pnextciu) ) {
         pnextciu = (struct channel_in_use *)pciu->node.next;
@@ -77,7 +77,7 @@ static void clean_addrq(void)
         delay = epicsTimeDiffInSeconds(&current,&pciu->time_at_creation);
         if (delay > timeout) {
 
-            ellDelete(&prsrv_cast_client->chanList, &pciu->node);
+            ellDelete(&client->chanList, &pciu->node);
             LOCK_CLIENTQ;
             s = bucketRemoveItemUnsignedId (
                 pCaBucket,
@@ -96,7 +96,7 @@ static void clean_addrq(void)
             if(delay>maxdelay) maxdelay = delay;
         }
     }
-    epicsMutexUnlock ( prsrv_cast_client->chanListLock );
+    epicsMutexUnlock ( client->chanListLock );
 
 #   ifdef DEBUG
     if(ndelete){
@@ -115,70 +115,19 @@ static void clean_addrq(void)
  */
 void cast_server(void *pParm)
 {
-    osiSockAddrNode     *paddrNode;
-    struct sockaddr_in  sin;
+    rsrv_iface_config *conf = pParm;
     int                 status;
     int                 count=0;
+    int                 mysocket=0;
     struct sockaddr_in  new_recv_addr;
     osiSocklen_t        recv_addr_size;
     osiSockIoctl_t      nchars;
+    SOCKET              recv_sock, reply_sock;
+    struct client      *client;
 
     recv_addr_size = sizeof(new_recv_addr);
 
-    if( IOC_cast_sock!=0 && IOC_cast_sock!=INVALID_SOCKET ) {
-        epicsSocketDestroy ( IOC_cast_sock );
-    }
-
-    /* 
-     *  Open the socket.
-     *  Use ARPA Internet address format and datagram socket.
-     */
-
-    if ( ( IOC_cast_sock = epicsSocketCreate (AF_INET, SOCK_DGRAM, 0) ) == INVALID_SOCKET ) {
-        epicsPrintf ("CAS: cast socket creation error\n");
-        epicsThreadSuspendSelf ();
-    }
-
-    /*
-     * some concern that vxWorks will run out of mBuf's
-     * if this change is made
-     *
-     * joh 11-10-98
-     */
-#if 0
-    {
-        /*
-         *
-         * this allows for faster connects by queuing
-         * additional incomming UDP search frames
-         *
-         * this allocates a 32k buffer
-         * (uses a power of two)
-         */
-        int size = 1u<<15u;
-        status = setsockopt (IOC_cast_sock, SOL_SOCKET,
-                        SO_RCVBUF, (char *)&size, sizeof(size));
-        if (status<0) {
-            epicsPrintf ("CAS: unable to set cast socket size\n");
-        }
-    }
-#endif
-
-    epicsSocketEnableAddressUseForDatagramFanout ( IOC_cast_sock );
-
-    paddrNode = (osiSockAddrNode *) ellFirst ( &casIntfAddrList );
-
-    memcpy(&sin, &paddrNode->addr.ia, sizeof (sin));
-
-    /* get server's Internet address */
-    if( bind(IOC_cast_sock, (struct sockaddr *)&sin, sizeof (sin)) < 0){
-        char sockErrBuf[64];
-        epicsSocketConvertErrnoToString ( 
-            sockErrBuf, sizeof ( sockErrBuf ) );
-        epicsPrintf ("CAS: UDP server port bind error was \"%s\"\n", sockErrBuf );
-        epicsSocketDestroy ( IOC_cast_sock );
-        epicsThreadSuspendSelf ();
-    }
+    reply_sock = conf->udp;
 
     /*
      * setup new client structure but reuse old structure if
@@ -186,27 +135,39 @@ void cast_server(void *pParm)
      *
      */
     while ( TRUE ) {
-        prsrv_cast_client = create_client ( IOC_cast_sock, IPPROTO_UDP );
-        if ( prsrv_cast_client ) {
+        client = create_client ( reply_sock, IPPROTO_UDP );
+        if ( client ) {
             break;
         }
         epicsThreadSleep(300.0);
     }
+    if (conf->startbcast) {
+        recv_sock = conf->udpbcast;
+        conf->bclient = client;
+    }
+    else {
+        recv_sock = conf->udp;
+        conf->client = client;
+    }
+    client->udpRecv = recv_sock;
 
-    casAttachThreadToClient ( prsrv_cast_client );
+    casAttachThreadToClient ( client );
 
     /*
      * add placeholder for the first version message should it be needed
      */
-    rsrv_version_reply ( prsrv_cast_client );
+    rsrv_version_reply ( client );
+
+    /* these pointers become invalid after signaling casudp_startStopEvent */
+    conf = NULL;
 
     epicsEventSignal(casudp_startStopEvent);
 
     while (TRUE) {
         status = recvfrom (
-            IOC_cast_sock,
-            prsrv_cast_client->recv.buf,
-            prsrv_cast_client->recv.maxstk,
+            recv_sock,
+            client->recv.buf,
+            client->recv.maxstk,
             0,
             (struct sockaddr *)&new_recv_addr, 
             &recv_addr_size);
@@ -219,71 +180,90 @@ void cast_server(void *pParm)
                         sockErrBuf);
                 epicsThreadSleep(1.0);
             }
-        }
-        else if (casudp_ctl == ctlRun) {
-            prsrv_cast_client->recv.cnt = (unsigned) status;
-            prsrv_cast_client->recv.stk = 0ul;
-            epicsTimeGetCurrent(&prsrv_cast_client->time_at_last_recv);
 
-            prsrv_cast_client->minor_version_number = 0;
-            prsrv_cast_client->seqNoOfReq = 0;
+        } else {
+            size_t idx;
+            for(idx=0; casIgnoreAddrs[idx]; idx++)
+            {
+                if(new_recv_addr.sin_addr.s_addr==casIgnoreAddrs[idx]) {
+                    status = -1; /* ignore */
+                    break;
+                }
+            }
+        }
+
+        if (status >= 0 && casudp_ctl == ctlRun) {
+            client->recv.cnt = (unsigned) status;
+            client->recv.stk = 0ul;
+            epicsTimeGetCurrent(&client->time_at_last_recv);
+
+            client->minor_version_number = 0;
+            client->seqNoOfReq = 0;
 
             /*
              * If we are talking to a new client flush to the old one 
              * in case we are holding UDP messages waiting to 
              * see if the next message is for this same client.
              */
-            if (prsrv_cast_client->send.stk>sizeof(caHdr)) {
-                status = memcmp(&prsrv_cast_client->addr, 
+            if (client->send.stk>sizeof(caHdr)) {
+                status = memcmp(&client->addr,
                     &new_recv_addr, recv_addr_size);
                 if(status){     
                     /* 
                      * if the address is different 
                      */
-                    cas_send_dg_msg(prsrv_cast_client);
-                    prsrv_cast_client->addr = new_recv_addr;
+                    cas_send_dg_msg(client);
+                    client->addr = new_recv_addr;
                 }
             }
             else {
-                prsrv_cast_client->addr = new_recv_addr;
+                client->addr = new_recv_addr;
             }
 
             if (CASDEBUG>1) {
                 char    buf[40];
     
-                ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
+                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
                 errlogPrintf ("CAS: cast server msg of %d bytes from addr %s\n", 
-                    prsrv_cast_client->recv.cnt, buf);
+                    client->recv.cnt, buf);
             }
 
             if (CASDEBUG>2)
-                count = ellCount (&prsrv_cast_client->chanList);
+                count = ellCount (&client->chanList);
 
-            status = camessage ( prsrv_cast_client );
+            status = camessage ( client );
             if(status == RSRV_OK){
-                if(prsrv_cast_client->recv.cnt != 
-                    prsrv_cast_client->recv.stk){
+                if(client->recv.cnt !=
+                    client->recv.stk){
                     char buf[40];
-        
-                    ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
+
+                    ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
 
                     epicsPrintf ("CAS: partial (damaged?) UDP msg of %d bytes from %s ?\n",
-                        prsrv_cast_client->recv.cnt-prsrv_cast_client->recv.stk, buf);
+                        client->recv.cnt - client->recv.stk, buf);
+
+                    epicsTimeToStrftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S",
+                        &client->time_at_last_recv);
+                    epicsPrintf ("CAS: message received at %s\n", buf);
                 }
             }
             else {
                 char buf[40];
-    
-                ipAddrToDottedIP (&prsrv_cast_client->addr, buf, sizeof(buf));
+
+                ipAddrToDottedIP (&client->addr, buf, sizeof(buf));
 
                 epicsPrintf ("CAS: invalid (damaged?) UDP request from %s ?\n", buf);
+
+                epicsTimeToStrftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S",
+                    &client->time_at_last_recv);
+                epicsPrintf ("CAS: message received at %s\n", buf);
             }
 
             if (CASDEBUG>2) {
-                if ( ellCount (&prsrv_cast_client->chanList) ) {
+                if ( ellCount (&client->chanList) ) {
                     errlogPrintf ("CAS: Fnd %d name matches (%d tot)\n",
-                        ellCount(&prsrv_cast_client->chanList)-count,
-                        ellCount(&prsrv_cast_client->chanList));
+                        ellCount(&client->chanList)-count,
+                        ellCount(&client->chanList));
                 }
             }
         }
@@ -292,15 +272,22 @@ void cast_server(void *pParm)
          * allow messages to batch up if more are comming
          */
         nchars = 0; /* supress purify warning */
-        status = socket_ioctl(IOC_cast_sock, FIONREAD, &nchars);
+        status = socket_ioctl(recv_sock, FIONREAD, &nchars);
         if (status<0) {
             errlogPrintf ("CA cast server: Unable to fetch N characters pending\n");
-            cas_send_dg_msg (prsrv_cast_client);
-            clean_addrq ();
+            cas_send_dg_msg (client);
+            clean_addrq (client);
         }
         else if (nchars == 0) {
-            cas_send_dg_msg (prsrv_cast_client);
-            clean_addrq ();
+            cas_send_dg_msg (client);
+            clean_addrq (client);
         }
     }
+
+    /* ATM never reached, just a placeholder */
+
+    if(!mysocket)
+        client->sock = INVALID_SOCKET; /* only one cast_server should destroy the reply socket */
+    destroy_client(client);
+    epicsSocketDestroy(recv_sock);
 }

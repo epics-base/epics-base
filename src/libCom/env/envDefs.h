@@ -89,6 +89,8 @@ epicsShareFunc long epicsShareAPI
 	envGetLongConfigParam(const ENV_PARAM *pParam, long *pLong);
 epicsShareFunc unsigned short epicsShareAPI envGetInetPortConfigParam 
         (const ENV_PARAM *pEnv, unsigned short defaultPort);
+epicsShareFunc long epicsShareAPI
+    envGetBoolConfigParam(const ENV_PARAM *pParam, int *pBool);
 epicsShareFunc long epicsShareAPI epicsPrtEnvParams(void);
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value);
 epicsShareFunc void epicsShareAPI epicsEnvShow (const char *name);

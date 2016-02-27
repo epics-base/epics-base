@@ -14,8 +14,12 @@ variable(asCaDebug,int)
 # Static database access variables
 variable(dbRecordsOnceOnly,int)
 variable(dbBptNotMonotonic,int)
+variable(dbQuietMacroWarnings,int)
 
 # dbLoadTemplate settings
 variable(dbTemplateMaxVars,int)
 # Default number of parallel callback threads
 variable(callbackParallelThreadsDefault,int)
+
+# Real-time operation
+variable(dbThreadRealtimeLock,int)

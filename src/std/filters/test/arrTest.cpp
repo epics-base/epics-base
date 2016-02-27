@@ -54,8 +54,10 @@ extern "C" {
 
 const char *server_port = CA_SERVER_PORT;
 
+extern "C" {
 static void exitSubroutine(subRecord *precord) {
     epicsExit((precord->a == 0.0) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
 }
 
 static int fl_equals_array(short type, const db_field_log *pfl1, void *p2) {
@@ -298,6 +300,7 @@ static void check(short dbr_type) {
 
 static dbEventCtx evtctx;
 
+extern "C" {
 static void arrTestCleanup(void* junk)
 {
     dbFreeBase(pdbbase);
@@ -307,6 +310,7 @@ static void arrTestCleanup(void* junk)
     db_close_events(evtctx);
 
     dbmfFreeChunks();
+}
 }
 
 MAIN(arrTest)

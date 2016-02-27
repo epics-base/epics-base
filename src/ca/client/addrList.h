@@ -22,7 +22,7 @@ extern "C" {
 epicsShareFunc void epicsShareAPI configureChannelAccessAddressList 
     ( struct ELLLIST *pList, SOCKET sock, unsigned short port );
 
-epicsShareFunc void epicsShareAPI addAddrToChannelAccessAddressList 
+epicsShareFunc int epicsShareAPI addAddrToChannelAccessAddressList
     ( struct ELLLIST *pList, const ENV_PARAM *pEnv, 
     unsigned short port, int ignoreNonDefaultPort );
 

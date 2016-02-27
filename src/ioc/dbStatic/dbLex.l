@@ -73,15 +73,20 @@ static int yyreset(void)
 {whitespace}	;
 
 {doublequote}({stringchar}|{escape})*{newline} { /* bad string */
-	yyerror("Newline in string, closing quote missing");
+	yyerrorAbort("Newline in string, closing quote missing");
 }
 
 .	{
 	char message[40];
 	YY_BUFFER_STATE *dummy=0;
 
-	sprintf(message,"Invalid character '%c'",yytext[0]);
-	yyerror(message);
+	if (isprint((int) yytext[0])) {
+	    sprintf(message, "Invalid character '%c'", yytext[0]);
+	}
+	else {
+	    sprintf(message, "Invalid character 0x%2.2x", yytext[0]);
+	}
+	yyerrorAbort(message);
 	/*The following suppresses compiler warning messages*/
 	if(FALSE) yyunput('c',(unsigned char *) message);
 	if(FALSE) yy_switch_to_buffer(*dummy);

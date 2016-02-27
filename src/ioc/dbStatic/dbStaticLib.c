@@ -618,7 +618,10 @@ DBENTRY * dbAllocEntry(dbBase *pdbbase)
 
 void dbFreeEntry(DBENTRY *pdbentry)
 {
-    if(pdbentry->message) free((void *)pdbentry->message);
+    if (!pdbentry)
+        return;
+    if (pdbentry->message)
+        free((void *)pdbentry->message);
     dbmfFree(pdbentry);
 }
 

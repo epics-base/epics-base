@@ -80,6 +80,10 @@ Com_SRCS += osiClockTime.c
 Com_SRCS_vxWorks += osiNTPTime.c
 Com_SRCS_RTEMS += osiNTPTime.c
 
+ifeq ($(OS_CLASS),vxWorks)
+osdTime.o: USR_CXXFLAGS += -DBUILD_TIME=$(shell perl -e 'print time')
+endif
+
 Com_SRCS += osdSock.c
 Com_SRCS += osdSockAddrReuse.cpp
 Com_SRCS += osiSock.c

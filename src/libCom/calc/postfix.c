@@ -251,7 +251,7 @@ epicsShareFunc long
                     goto bad;
                 }
                 psrc = pnext;
-                lit_i = (int) lit_d;
+                lit_i = (epicsInt32) lit_d;
                 if (lit_d != (double) lit_i) {
                     *pout++ = pel->code;
                     memcpy(pout, &lit_d, sizeof(double));
@@ -272,8 +272,8 @@ epicsShareFunc long
                 }
                 psrc = pnext;
                 *pout++ = LITERAL_INT;
-                memcpy(pout, &lit_ui, sizeof(epicsInt32));
-                pout += sizeof(epicsInt32);
+                memcpy(pout, &lit_ui, sizeof(epicsUInt32));
+                pout += sizeof(epicsUInt32);
             }
 
             operand_needed = FALSE;

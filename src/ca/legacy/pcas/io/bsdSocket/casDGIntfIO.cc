@@ -19,6 +19,11 @@
 #include "addrList.h"
 #include "errlog.h"
 
+#if defined(_MSC_VER)
+#  include <BaseTsd.h>
+   typedef SSIZE_T ssize_t;
+#endif
+
 #define epicsExportSharedSymbols
 #include "casDGIntfIO.h"
 #include "ipIgnoreEntry.h"
@@ -148,26 +153,8 @@ casDGIntfIO::casDGIntfIO ( caServerI & serverIn, clientBufMemoryManager & memMgr
     }
     
     if ( addConfigBeaconAddr ) {
-        
-        //
-        // by default use EPICS_CA_ADDR_LIST for the
-        // beacon address list
-        //
-        const ENV_PARAM *pParam;
-        
-        if ( envGetConfigParamPtr ( & EPICS_CAS_INTF_ADDR_LIST ) || 
-            envGetConfigParamPtr ( & EPICS_CAS_BEACON_ADDR_LIST ) ) {
-            pParam = & EPICS_CAS_BEACON_ADDR_LIST;
-        }
-        else {
-            pParam = & EPICS_CA_ADDR_LIST;
-        }
-        
-        // 
-        // add in the configured addresses
-        //
         addAddrToChannelAccessAddressList (
-            & BCastAddrList, pParam, beaconPort, pParam == & EPICS_CA_ADDR_LIST );
+            & BCastAddrList, &EPICS_CAS_BEACON_ADDR_LIST, beaconPort, 0 );
     }
  
     removeDuplicateAddresses ( & this->beaconAddrList, & BCastAddrList, 0 );
@@ -267,7 +254,7 @@ casDGIntfIO::~casDGIntfIO()
     
     // avoid use of ellFree because problems on windows occur if the
     // free is in a different DLL than the malloc
-    ELLNODE * nnode = this->beaconAddrList.node.next;
+    ELLNODE * nnode = ellFirst(&this->beaconAddrList);
     while ( nnode )
     {
         ELLNODE * pnode = nnode;
@@ -418,52 +405,24 @@ bufSizeT casDGIntfIO ::
 }
 
 void casDGIntfIO::sendBeaconIO ( char & msg, unsigned length,
-                                aitUint16 & portField, aitUint32 & addrField ) 
+                                aitUint16 & portField, aitUint32 & )
 {
     caNetAddr           addr = this->serverAddress ();
     struct sockaddr_in  inetAddr = addr.getSockIP();
-	osiSockAddrNode		*pAddr;
-	int 			    status;
-    char                buf[64];
 
     portField = inetAddr.sin_port; // the TCP port
 
-    for (pAddr = reinterpret_cast <osiSockAddrNode *> ( ellFirst ( & this->beaconAddrList ) );
-         pAddr; pAddr = reinterpret_cast <osiSockAddrNode *> ( ellNext ( & pAddr->node ) ) ) {
-        status = connect ( this->beaconSock, &pAddr->addr.sa, sizeof ( pAddr->addr.sa ) );
-        if (status<0) {
-            char sockErrBuf[64];
-            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-            ipAddrToDottedIP ( & pAddr->addr.ia, buf, sizeof ( buf ) );
-            errlogPrintf ( "%s: CA beacon routing (connect to \"%s\") error was \"%s\"\n",
-                __FILE__, buf, sockErrBuf );
-        }
-        else {
-            osiSockAddr sockAddr;
-            osiSocklen_t size = ( osiSocklen_t ) sizeof ( sockAddr.sa );
-            status = getsockname ( this->beaconSock, &sockAddr.sa, &size );
-            if ( status < 0 ) {
-                char sockErrBuf[64];
-                epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                errlogPrintf ( "%s: CA beacon routing (getsockname) error was \"%s\"\n",
-                    __FILE__, sockErrBuf );
-            }
-            else if ( sockAddr.sa.sa_family == AF_INET ) {
-                addrField = sockAddr.ia.sin_addr.s_addr;
+    for (ELLNODE *pNode = ellFirst(&this->beaconAddrList); pNode; pNode = ellNext(pNode))
+    {
+        osiSockAddrNode	*pAddr = reinterpret_cast<osiSockAddrNode *>(pNode);
 
-                status = send ( this->beaconSock, &msg, length, 0 );
-                if ( status < 0 ) {
-                    char sockErrBuf[64];
-                    epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-                    ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
-                    errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\"\n",
-                        __FILE__, buf, sockErrBuf );
-                }
-                else {
-                    unsigned statusAsLength = static_cast < unsigned > ( status );
-                    assert ( statusAsLength == length );
-                }
-            }
+        ssize_t status = sendto(this->beaconSock, &msg, length, 0, &pAddr->addr.sa, sizeof(pAddr->addr.ia));
+        if ( status != length ) {
+            char sockErrBuf[64], buf[64];
+            epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
+            ipAddrToA ( &pAddr->addr.ia, buf, sizeof(buf) );
+            errlogPrintf ( "%s: CA beacon (send to \"%s\") error was \"%s\" (%u)\n",
+                __FILE__, buf, sockErrBuf, (unsigned)status );
         }
     }
 }

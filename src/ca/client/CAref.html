@@ -841,23 +841,18 @@ seconds. See also <a href="#Disconnect">EPICS_CA_CONN_TMO</a> and
 Interval</a>.</p>
 
 <p>CA servers build a list of addresses to send beacons to during
-initialization. If EPICS_CAS_AUTO_BEACON_ADDR_LIST has the value "YES" then the
-beacon address list will be automatically configured to contain the broadcast
-addresses of all LAN interfaces found in the host and the destination address
-of all point-to-point interfaces found in the host. However, if the user also
+initialization. If EPICS_CAS_AUTO_BEACON_ADDR_LIST has the value "YES"
+(the default) this list will be automatically populated with the broadcast
+addresses of all network interfaces. However, if the user also
 defines EPICS_CAS_INTF_ADDR_LIST then beacon address list automatic
 configuration is constrained to the network interfaces specified therein, and
-therefore only the broadcast addresses of the specified LAN interfaces, and the
-destination addresses of all specified point-to-point links, will be
+therefore only the broadcast addresses of the specified LAN interfaces, will be
 automatically configured.</p>
 
 <p>If EPICS_CAS_BEACON_ADDR_LIST is defined then its contents will be used to
 augment any automatic configuration of the beacon address list. Individual
 entries in EPICS_CAS_BEACON_ADDR_LIST may override the destination port number
-if ":nnn" follows the host name or IP address there. Alternatively, when both
-EPICS_CAS_BEACON_ADDR_LIST and EPICS_CAS_INTF_ADDR_LIST are not defined then
-the contents of EPICS_CA_ADDR_LIST is used to augment the list. Otherwise, the
-list is not augmented.</p>
+if ":nnn" follows the host name or IP address there.</p>
 
 <p>The EPICS_CAS_BEACON_PORT parameter specifies the destination port for
 server beacons. The only exception to this occurs when ports are specified in
@@ -868,20 +863,18 @@ specified in EPICS_CA_REPEATER_PORT.</p>
 <h4>Binding a Server to a Limited Set of Network Interfaces</h4>
 
 <p>The parameter EPICS_CAS_INTF_ADDR_LIST allows a ca server to bind itself to,
-and therefore accept messages only over, a limited set of the local host's
+and therefore accept messages received by, a limited set of the local host's
 network interfaces (each specified by its IP address). On UNIX systems type
-"netstat -i" (type "ipconfig" on windows) to see a list of the local host's
-network interfaces. Specifically, UDP search messages addressed to both the IP
-addresses in EPICS_CAS_INTF_ADDR_LIST and also to the broadcast addresses of
-the corresponding LAN interfaces will be accepted by the server. By default,
+"netstat -ie" (type "ipconfig" on windows) to see a list of the local host's
+network interfaces. By default,
 the CA server is accessible from all network interfaces configured into its
 host.</p>
 
-<p>In R3.14 and previous releases the CA server employed by iocCore did not
-implement the EPICS_CAS_INTF_ADDR_LIST feature. In this release the iocCore
-server will read the first IP address from the parameter variable and use that
-to select which interface to bind to. Any additional IP addresses will be
-ignored and a warning message displayed during IOC initialization.</p>
+<p>Until R3.15.4 the CA server employed by iocCore did not
+implement the EPICS_CAS_INTF_ADDR_LIST feature.</p>
+
+<p>Prior to R3.15.4 CA servers would build the beacon address list
+using EPICS_CA_ADDR_LIST if EPICS_CAS_BEACON_ADDR_LIST was no set.</p>
 
 <h4>Ignoring Process Variable Name Resolution Requests From Certain Hosts</h4>
 

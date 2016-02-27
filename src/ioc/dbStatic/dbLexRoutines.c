@@ -12,6 +12,7 @@
 
 /*The routines in this module are serially reusable NOT reentrant*/
 
+#include <ctype.h>
 #include <epicsStdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -47,6 +48,9 @@ epicsExportAddress(int,dbRecordsOnceOnly);
 
 epicsShareDef int dbBptNotMonotonic=0;
 epicsExportAddress(int,dbBptNotMonotonic);
+
+epicsShareDef int dbQuietMacroWarnings=0;
+epicsExportAddress(int,dbQuietMacroWarnings);
 
 /*private routines */
 static void yyerrorAbort(char *str);
@@ -233,6 +237,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	    free((void *)macPairs);
 	    mac_input_buffer = dbCalloc(MY_BUFFER_SIZE,sizeof(char));
 	}
+        macSuppressWarning(macHandle,dbQuietMacroWarnings);
     }
     pinputFile = dbCalloc(1,sizeof(inputFile));
     if(filename) {
@@ -324,10 +329,9 @@ static int db_yyinput(char *buf, int max_size)
 		if(fgetsRtn) {
 		    int exp = macExpandString(macHandle,mac_input_buffer,
 			my_buffer,MY_BUFFER_SIZE);
-		    if(exp < 0) {
-			errPrintf(0,__FILE__, __LINE__,
-			"macExpandString failed for file %s",
-			pinputFileNow->filename);
+		    if (exp < 0) {
+			fprintf(stderr, "Warning: '%s' line %d has undefined macros\n",
+			    pinputFileNow->filename, pinputFileNow->line_num+1);
 		    }
 		}
 	    } else {

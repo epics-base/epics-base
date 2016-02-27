@@ -9,7 +9,8 @@ eval 'exec perl -S $0 ${1+"$@"}'  # -*- Mode: perl -*-
 
 use strict;
 
-die "Path to INSTALL_LOCATION missing\n" unless @ARGV == 1;
+die "$0: Argument missing, INSTALL_LOCATION\n" if @ARGV == 0;
+die "$0: Too many arguments, expecting one\n" unless @ARGV == 1;
 
 my $path = shift;
 

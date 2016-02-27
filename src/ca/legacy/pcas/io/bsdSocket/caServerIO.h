@@ -47,6 +47,8 @@ private:
 	virtual caStatus attachInterface (
         const caNetAddr & addr, bool autoBeaconAddr,
 		bool addConfigAddr ) = 0;
+
+    virtual void addMCast(const osiSockAddr&) = 0;
 };
 
 #endif // caServerIOh

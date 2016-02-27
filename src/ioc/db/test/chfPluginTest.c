@@ -418,7 +418,7 @@ static void channelRegisterPost(dbChannel *chan, void *user,
 static void channel_report(dbChannel *chan, void *user, int level,
     const unsigned short indent)
 {
-    testOk(level == R_LEVEL - 1, "channel_report: level correct");
+    testOk(level == R_LEVEL - 2, "channel_report: level correct %u == %u", level, R_LEVEL-2);
     if (user == puser1) {
         testOk(e1 & e_report, "channel_report (1) called");
         c1 |= e_report;

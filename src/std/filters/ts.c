@@ -40,7 +40,7 @@ static void channelRegisterPre(dbChannel *chan, void *pvt,
 
 static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
 {
-    printf("%*s  plugin ts\n", indent, "");
+    printf("%*sTimestamp (ts)\n", indent, "");
 }
 
 static chfPluginIf pif = {

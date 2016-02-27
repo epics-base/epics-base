@@ -1,0 +1,33 @@
+# CONFIG.cygwin-x86.linux-arm
+#
+# Definitions for cywgin-x86 host - linux-arm target builds
+# Override these settings in CONFIG_SITE.cygwin-x86.linux-arm
+#-------------------------------------------------------
+
+VALID_BUILDS = Ioc
+GNU_TARGET = arm-linux
+
+# prefix of compiler tools
+CMPLR_SUFFIX =
+CMPLR_PREFIX = $(addsuffix -,$(GNU_TARGET))
+
+# Provide a link-time path for shared libraries
+SHRLIBDIR_RPATH_LDFLAGS_YES += $(SHRLIB_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+SHRLIBDIR_LDFLAGS += $(SHRLIBDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
+
+# Provide a link-time path for products
+PRODDIR_RPATH_LDFLAGS_YES += $(PROD_DEPLIB_DIRS:%=-Wl,-rpath-link,%)
+PRODDIR_LDFLAGS += $(PRODDIR_RPATH_LDFLAGS_$(LINKER_USE_RPATH))
+
+# Provide a link-time path for readline 
+RUNTIME_LDFLAGS_READLINE_YES = -Wl,-rpath-link,$(GNU_DIR)/lib
+RUNTIME_LDFLAGS_READLINE = $(RUNTIME_LDFLAGS_READLINE_$(LINKER_USE_RPATH))
+RUNTIME_LDFLAGS_READLINE_CURSES = $(RUNTIME_LDFLAGS_READLINE_$(LINKER_USE_RPATH))
+RUNTIME_LDFLAGS_READLINE_NCURSES = $(RUNTIME_LDFLAGS_READLINE_$(LINKER_USE_RPATH))
+
+# Library flags
+STATIC_LDFLAGS_YES= -Wl,-Bstatic
+STATIC_LDFLAGS_NO= 
+STATIC_LDLIBS_YES= -Wl,-Bdynamic
+STATIC_LDLIBS_NO= 
+

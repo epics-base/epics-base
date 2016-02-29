@@ -89,9 +89,12 @@ static void reset(compressRecord *prec)
     prec->cvb = 0.0;
     prec->res = 0;
     /* allocate memory for the summing buffer for conversions requiring it */
-    if (prec->alg == compressALG_Average && prec->sptr == 0){
+    if (prec->alg == compressALG_Average && prec->sptr == NULL) {
         prec->sptr = calloc(prec->nsam, sizeof(double));
     }
+
+    if (prec->bptr && prec->nsam)
+        memset(prec->bptr, 0, prec->nsam * sizeof(double));
 }
 
 static void monitor(compressRecord *prec)
@@ -108,29 +111,32 @@ static void monitor(compressRecord *prec)
 
 static void put_value(compressRecord *prec, double *psource, int n)
 {
-    epicsInt32 offset = prec->off;
-    epicsInt32 nuse = prec->nuse;
-    epicsInt32 nsam = prec->nsam;
-    double *pdest = prec->bptr + offset;
-    int i;
+    int fifo = (prec->balg == bufferingALG_FIFO);
+    epicsUInt32 offset = prec->off;
+    epicsUInt32 nuse = prec->nuse;
+    epicsUInt32 nsam = prec->nsam;
 
-    for (i = 0; i < n; i++) {
-        *pdest = *psource++;
-        if (++offset >= nsam) {
-            pdest = prec->bptr;
-            offset = 0;
-        }
-        else
-            pdest++;
-    }
     nuse += n;
     if (nuse > nsam)
         nuse = nsam;
+
+    while (n--) {
+        /* for LIFO, decrement before */
+        if (!fifo)
+            offset = (offset - 1) % nsam;
+
+        prec->bptr[offset] = *psource++;
+
+        /* for FIFO, increment after */
+        if (fifo)
+            offset = (offset + 1) % nsam;
+    }
+
     prec->off = offset;
     prec->nuse = nuse;
-    return;
 }
-
+
+
 /* qsort comparison function (for median calculation) */
 static int compare(const void *arg1, const void *arg2)
 {
@@ -145,157 +151,167 @@ static int compare(const void *arg1, const void *arg2)
 static int compress_array(compressRecord *prec,
     double *psource, int no_elements)
 {
-	epicsInt32	i,j;
-	epicsInt32	nnew;
-	epicsInt32	nsam=prec->nsam;
-	double		value;
-	epicsInt32	n;
+    epicsInt32 i,j;
+    epicsInt32 n, nnew;
+    epicsInt32 nsam = prec->nsam;
+    double value;
 
-	/* skip out of limit data */
-	if (prec->ilil < prec->ihil){
-	    while (((*psource < prec->ilil) || (*psource > prec->ihil))
-		 && (no_elements > 0)){
-		    no_elements--;
-		    psource++;
-	    }
-	}
-	if(prec->n <= 0) prec->n = 1;
-	n = prec->n;
-	if(no_elements<n) return(1); /*dont do anything*/
-
-	/* determine number of samples to take */
-	if (no_elements < (nsam * n)) nnew = (no_elements / n);
-	else nnew = nsam;
-
-	/* compress according to specified algorithm */
-	switch (prec->alg){
-	case (compressALG_N_to_1_Low_Value):
-	    /* compress N to 1 keeping the lowest value */
-	    for (i = 0; i < nnew; i++){
-		value = *psource++;
-		for (j = 1; j < n; j++, psource++){
-		    if (value > *psource) value = *psource;
-		}
-		put_value(prec,&value,1);
-	    }
-	    break;
-	case (compressALG_N_to_1_High_Value):
-	    /* compress N to 1 keeping the highest value */
-	    for (i = 0; i < nnew; i++){
-		value = *psource++;
-		for (j = 1; j < n; j++, psource++){
-		    if (value < *psource) value = *psource;
-		}
-		put_value(prec,&value,1);
-	    }
-	    break;
-	case (compressALG_N_to_1_Average):
-	    /* compress N to 1 keeping the average value */
-	    for (i = 0; i < nnew; i++){
-		value = 0;
-		for (j = 0; j < n; j++, psource++)
-			value += *psource;
-		value /= n;
-		put_value(prec,&value,1);
-	    }
-	    break;
-        case (compressALG_N_to_1_Median):
-            /* compress N to 1 keeping the median value */
-	    /* note: sorts source array (OK; it's a work pointer) */
-            for (i = 0; i < nnew; i++, psource+=nnew){
-	        qsort(psource,n,sizeof(double),compare);
-		value=psource[n/2];
-                put_value(prec,&value,1);
-            }
-            break;
+    /* skip out of limit data */
+    if (prec->ilil < prec->ihil) {
+        while (((*psource < prec->ilil) || (*psource > prec->ihil))
+               && (no_elements > 0)) {
+            no_elements--;
+            psource++;
         }
-	return(0);
+    }
+    if (prec->n <= 0)
+        prec->n = 1;
+    n = prec->n;
+    if (no_elements < n)
+        return 1; /*dont do anything*/
+
+    /* determine number of samples to take */
+    if (no_elements < nsam * n)
+        nnew = (no_elements / n);
+    else nnew = nsam;
+
+    /* compress according to specified algorithm */
+    switch (prec->alg){
+    case compressALG_N_to_1_Low_Value:
+        /* compress N to 1 keeping the lowest value */
+        for (i = 0; i < nnew; i++) {
+            value = *psource++;
+            for (j = 1; j < n; j++, psource++) {
+                if (value > *psource)
+                    value = *psource;
+            }
+            put_value(prec, &value, 1);
+        }
+        break;
+    case compressALG_N_to_1_High_Value:
+        /* compress N to 1 keeping the highest value */
+        for (i = 0; i < nnew; i++){
+            value = *psource++;
+            for (j = 1; j < n; j++, psource++) {
+                if (value < *psource)
+                    value = *psource;
+            }
+            put_value(prec, &value, 1);
+        }
+        break;
+    case compressALG_N_to_1_Average:
+        /* compress N to 1 keeping the average value */
+        for (i = 0; i < nnew; i++) {
+            value = 0;
+            for (j = 0; j < n; j++, psource++)
+                value += *psource;
+            value /= n;
+            put_value(prec, &value, 1);
+        }
+        break;
+
+    case compressALG_N_to_1_Median:
+        /* compress N to 1 keeping the median value */
+        /* note: sorts source array (OK; it's a work pointer) */
+        for (i = 0; i < nnew; i++, psource += nnew) {
+            qsort(psource, n, sizeof(double), compare);
+            value = psource[n / 2];
+            put_value(prec, &value, 1);
+        }
+        break;
+    }
+    return 0;
 }
-
+
 static int array_average(compressRecord *prec,
-	double *psource,epicsInt32 no_elements)
+    double *psource, epicsInt32 no_elements)
 {
-	epicsInt32	i;
-	epicsInt32	nnow;
-	epicsInt32	nsam=prec->nsam;
-	double	*psum;
-	double	multiplier;
-	epicsInt32	inx=prec->inx;
-	epicsInt32	nuse,n;
+    epicsInt32 i;
+    epicsInt32 nnow;
+    epicsInt32 nsam=prec->nsam;
+    double *psum;
+    double multiplier;
+    epicsInt32 inx = prec->inx;
+    epicsInt32 nuse, n;
 
-	nuse = nsam;
-	if(nuse>no_elements) nuse = no_elements;
-	nnow=nuse;
-	if(nnow>no_elements) nnow=no_elements;
-	psum = (double *)prec->sptr;
+    nuse = nsam;
+    if (nuse > no_elements)
+        nuse = no_elements;
+    nnow = nuse;
+    if (nnow > no_elements)
+        nnow=no_elements;
+    psum = (double *)prec->sptr;
 
-	/* add in the new waveform */
-	if (inx == 0){
-		for (i = 0; i < nnow; i++)
-		    *psum++ = *psource++;
-		for(i=nnow; i<nuse; i++) *psum++ = 0;
-	}else{
-		for (i = 0; i < nnow; i++)
-		    *psum++ += *psource++;
-	}
+    /* add in the new waveform */
+    if (inx == 0) {
+        for (i = 0; i < nnow; i++)
+            *psum++ = *psource++;
+        for (i = nnow; i < nuse; i++)
+            *psum++ = 0;
+    } else {
+        for (i = 0; i < nnow; i++)
+            *psum++ += *psource++;
+    }
 
-	/* do we need to calculate the result */
-	inx++;
-	if(prec->n<=0)prec->n=1;
-	n = prec->n;
-	if (inx<n) {
-		prec->inx = inx;
-		return(1);
-	}
-	if(n>1) {
-		psum = (double *)prec->sptr;
-		multiplier = 1.0/((double)n);
-		for (i = 0; i < nuse; i++, psum++)
-	    		*psum = *psum * multiplier;
-	}
-	put_value(prec,prec->sptr,nuse);
-	prec->inx = 0;
-	return(0);
+    /* do we need to calculate the result */
+    inx++;
+    if (prec->n <= 0)
+        prec->n = 1;
+    n = prec->n;
+    if (inx < n) {
+        prec->inx = inx;
+        return 1;
+    }
+    if (n > 1) {
+        psum = (double *)prec->sptr;
+        multiplier = 1.0 / n;
+        for (i = 0; i < nuse; i++, psum++)
+            *psum = *psum * multiplier;
+    }
+    put_value(prec, prec->sptr, nuse);
+    prec->inx = 0;
+    return 0;
 }
 
 static int compress_scalar(struct compressRecord *prec,double *psource)
 {
-	double	value = *psource;
-	double	*pdest=&prec->cvb;
-	epicsInt32	inx = prec->inx;
+    double value = *psource;
+    double *pdest=&prec->cvb;
+    epicsInt32 inx = prec->inx;
 
-	/* compress according to specified algorithm */
-	switch (prec->alg){
-	case (compressALG_N_to_1_Low_Value):
-	    if ((value < *pdest) || (inx == 0))
-		*pdest = value;
-	    break;
-	case (compressALG_N_to_1_High_Value):
-	    if ((value > *pdest) || (inx == 0))
-		*pdest = value;
-	    break;
-	/* for scalars, Median not implemented => use average */
-	case (compressALG_N_to_1_Average):
-	case (compressALG_N_to_1_Median):
-	    if (inx == 0)
-		*pdest = value;
-	    else {
-		*pdest += value;
-		if(inx+1>=(prec->n)) *pdest = *pdest/(inx+1);
-	    }
-	    break;
-	}
-	inx++;
-	if(inx>=prec->n) {
-		put_value(prec,pdest,1);
-		prec->inx = 0;
-		return(0);
-	} else {
-		prec->inx = inx;
-		return(1);
-	}
+    /* compress according to specified algorithm */
+    switch (prec->alg) {
+    case (compressALG_N_to_1_Low_Value):
+        if ((value < *pdest) || (inx == 0))
+            *pdest = value;
+        break;
+    case (compressALG_N_to_1_High_Value):
+        if ((value > *pdest) || (inx == 0))
+            *pdest = value;
+        break;
+    /* for scalars, Median not implemented => use average */
+    case (compressALG_N_to_1_Average):
+    case (compressALG_N_to_1_Median):
+        if (inx == 0)
+            *pdest = value;
+        else {
+            *pdest += value;
+            if (inx + 1 >= prec->n)
+                *pdest = *pdest / (inx + 1);
+        }
+        break;
+    }
+    inx++;
+    if (inx >= prec->n) {
+        put_value(prec,pdest,1);
+        prec->inx = 0;
+        return 0;
+    } else {
+        prec->inx = inx;
+        return 1;
+    }
 }
-
+
 /*Beginning of record support routines*/
 static long init_record(compressRecord *prec, int pass)
 {
@@ -305,6 +321,7 @@ static long init_record(compressRecord *prec, int pass)
         prec->bptr = calloc(prec->nsam, sizeof(double));
         reset(prec);
     }
+
     return 0;
 }
 
@@ -350,6 +367,7 @@ static long process(compressRecord *prec)
         else
             status = 1;
     }
+
     /* check event list */
     if (status != 1) {
         prec->udf = FALSE;
@@ -358,10 +376,11 @@ static long process(compressRecord *prec)
         /* process the forward scan link record */
         recGblFwdLink(prec);
     }
+
     prec->pact = FALSE;
     return 0;
 }
-
+
 static long special(DBADDR *paddr, int after)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
@@ -388,18 +407,31 @@ static long cvt_dbaddr(DBADDR *paddr)
     paddr->field_type = DBF_DOUBLE;
     paddr->field_size = sizeof(double);
     paddr->dbr_field_type = DBF_DOUBLE;
+
+    if (prec->balg == bufferingALG_LIFO)
+        paddr->special = SPC_NOMOD;
     return 0;
 }
 
 static long get_array_info(DBADDR *paddr, long *no_elements, long *offset)
 {
+    /* offset indicates the next element which would be written.
+     * In FIFO mode offset-1 is the last valid element
+     * In LIFO mode offset is the first valid element
+     * (*offset) should be set to the index of the first valid element
+     */
     compressRecord *prec = (compressRecord *) paddr->precord;
+    epicsUInt32 off = prec->off;
+    epicsUInt32 nuse = prec->nuse;
+    epicsUInt32 nsam = prec->nsam;
 
-    *no_elements = prec->nuse;
-    if (prec->nuse == prec->nsam)
-        *offset = prec->off;
-    else
-        *offset = 0;
+    *no_elements = nuse;
+    if (prec->balg == bufferingALG_FIFO) {
+        *offset = (off - nuse) % nsam;
+    } else {
+        *offset = off;
+    }
+
     return 0;
 }
 
@@ -407,7 +439,8 @@ static long put_array_info(DBADDR *paddr, long nNew)
 {
     compressRecord *prec = (compressRecord *) paddr->precord;
 
-    prec->off = (prec->off + nNew) % prec->nsam;
+    if (prec->balg == bufferingALG_FIFO)
+        prec->off = (prec->off + nNew) % prec->nsam;
     prec->nuse += nNew;
     if (prec->nuse > prec->nsam)
         prec->nuse = prec->nsam;
@@ -440,14 +473,14 @@ static long get_graphic_double(DBADDR *paddr, struct dbr_grDouble *pgd)
     compressRecord *prec = (compressRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(VAL):
-        case indexof(IHIL):
-        case indexof(ILIL):
-            pgd->upper_disp_limit = prec->hopr;
-            pgd->lower_disp_limit = prec->lopr;
-            break;
-        default:
-            recGblGetGraphicDouble(paddr,pgd);
+    case indexof(VAL):
+    case indexof(IHIL):
+    case indexof(ILIL):
+        pgd->upper_disp_limit = prec->hopr;
+        pgd->lower_disp_limit = prec->lopr;
+        break;
+    default:
+        recGblGetGraphicDouble(paddr,pgd);
     }
     return 0;
 }
@@ -457,14 +490,14 @@ static long get_control_double(DBADDR *paddr, struct dbr_ctrlDouble *pcd)
     compressRecord *prec = (compressRecord *) paddr->precord;
 
     switch (dbGetFieldIndex(paddr)) {
-        case indexof(VAL):
-        case indexof(IHIL):
-        case indexof(ILIL):
-            pcd->upper_ctrl_limit = prec->hopr;
-            pcd->lower_ctrl_limit = prec->lopr;
-            break;
-        default:
-            recGblGetControlDouble(paddr, pcd);
+    case indexof(VAL):
+    case indexof(IHIL):
+    case indexof(ILIL):
+        pcd->upper_ctrl_limit = prec->hopr;
+        pcd->lower_ctrl_limit = prec->lopr;
+        break;
+    default:
+        recGblGetControlDouble(paddr, pcd);
     }
     return 0;
 }

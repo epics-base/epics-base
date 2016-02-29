@@ -20,6 +20,12 @@
 
 -->
 
+<h3>compressRecord buffering order</h3>
+
+<p>The compressRecord has a new field <tt>BALG</tt> which can select between
+FIFO (append) and LIFO (prepend) ordering for insertion of new elements. FIFO
+ordering is the default, matching the behviour of previous versions.</p>
+
 <h3>Valgrind Instrumentation</h3>
 
 <p>Valgrind is a software debugging suite provided by many Linux distributions.

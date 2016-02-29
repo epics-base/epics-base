@@ -33,8 +33,7 @@ typedef struct myStruct {
 
 static void *myStructFreeList;
 
-static const
-chfPluginArgDef opts[] = {
+static const chfPluginArgDef opts[] = {
     chfInt32 (myStruct, start, "s", 0, 1),
     chfInt32 (myStruct, incr, "i", 0, 1),
     chfInt32 (myStruct, end, "e", 0, 1),
@@ -67,13 +66,16 @@ static int parse_ok(void *pvt)
     return 0;
 }
 
-static void freeArray(db_field_log *pfl) {
+static void freeArray(db_field_log *pfl)
+{
     if (pfl->type == dbfl_type_ref) {
         freeListFree(pfl->u.r.pvt, pfl->u.r.field);
     }
 }
 
-static long wrapArrayIndices(long *start, const long increment, long *end, const long no_elements) {
+static long wrapArrayIndices(long *start, const long increment, long *end,
+    const long no_elements)
+{
     long len = 0;
 
     if (*start < 0) *start = no_elements + *start;
@@ -88,7 +90,8 @@ static long wrapArrayIndices(long *start, const long increment, long *end, const
     return len;
 }
 
-static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
+static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl)
+{
     myStruct *my = (myStruct*) pvt;
     struct dbCommon *prec;
     struct rset *prset;
@@ -97,13 +100,16 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
     long nTarget = 0;
     long offset = 0;
     long nSource = chan->addr.no_elements;
+    long capacity = nSource;
+    void *pdst;
 
-    /* Only array data */
-    if (pfl->type == dbfl_type_val) {
-        return pfl;
+    switch (pfl->type) {
+    case dbfl_type_val:
+        /* Only filter arrays */
+        break;
 
-    /* Extract from record */
-    } else if (pfl->type == dbfl_type_rec) {
+    case dbfl_type_rec:
+        /* Extract from record */
         if (chan->addr.special == SPC_DBADDR &&
             nSource > 1 &&
             (prset = dbGetRset(&chan->addr)) &&
@@ -122,32 +128,36 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             pfl->field_size = chan->addr.field_size;
             pfl->no_elements = nTarget;
             if (nTarget) {
-                void *pdst = freeListCalloc(my->arrayFreeList);
+                pdst = freeListCalloc(my->arrayFreeList);
                 if (pdst) {
                     pfl->u.r.dtor = freeArray;
                     pfl->u.r.pvt = my->arrayFreeList;
                     offset = (offset + start) % chan->addr.no_elements;
-                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, nSource, offset, my->incr);
+                    dbExtractArrayFromRec(&chan->addr, pdst, nTarget, capacity,
+                        offset, my->incr);
                     pfl->u.r.field = pdst;
                 }
             }
             dbScanUnlock(prec);
             chan->addr.pfield = pfieldsave;
         }
+        break;
 
     /* Extract from buffer */
-    } else if (pfl->type == dbfl_type_ref) {
-        void *psrc = pfl->u.r.field;
-        void *pdst = NULL;
-
+    case dbfl_type_ref:
+        pdst = NULL;
         nSource = pfl->no_elements;
         nTarget = wrapArrayIndices(&start, my->incr, &end, nSource);
         pfl->no_elements = nTarget;
-        if (nTarget) {                                        /* Copy the data out */
+        if (nTarget) {
+            /* Copy the data out */
+            void *psrc = pfl->u.r.field;
+
             pdst = freeListCalloc(my->arrayFreeList);
-            if (!pdst) return pfl;
+            if (!pdst) break;
             offset = start;
-            dbExtractArrayFromBuf(psrc, pdst, pfl->field_size, pfl->field_type, nTarget, nSource, offset, my->incr);
+            dbExtractArrayFromBuf(psrc, pdst, pfl->field_size, pfl->field_type,
+                nTarget, nSource, offset, my->incr);
         }
         if (pfl->u.r.dtor) pfl->u.r.dtor(pfl);
         if (nTarget) {
@@ -155,21 +165,22 @@ static db_field_log* filter(void* pvt, dbChannel *chan, db_field_log *pfl) {
             pfl->u.r.pvt = my->arrayFreeList;
             pfl->u.r.field = pdst;
         }
+        break;
     }
     return pfl;
 }
 
 static void channelRegisterPost(dbChannel *chan, void *pvt,
-                                chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
+    chPostEventFunc **cb_out, void **arg_out, db_field_log *probe)
 {
     myStruct *my = (myStruct*) pvt;
     long start = my->start;
     long end = my->end;
     long max = 0;
 
-    if (probe->no_elements <= 1) return;                                    /* array data only */
+    if (probe->no_elements <= 1) return;    /* array data only */
 
-    max = wrapArrayIndices(&start, my->incr, &end, probe->no_elements);     /* wrap indices into array */
+    max = wrapArrayIndices(&start, my->incr, &end, probe->no_elements);
     if (max) {
         if (!my->arrayFreeList)
             freeListInitPvt(&my->arrayFreeList, max * probe->field_size, 2);
@@ -180,7 +191,8 @@ static void channelRegisterPost(dbChannel *chan, void *pvt,
     *arg_out = pvt;
 }
 
-static void channel_report(dbChannel *chan, void *pvt, int level, const unsigned short indent)
+static void channel_report(dbChannel *chan, void *pvt, int level,
+    const unsigned short indent)
 {
     myStruct *my = (myStruct*) pvt;
     printf("%*sArray (arr): start=%d, incr=%d, end=%d\n", indent, "",

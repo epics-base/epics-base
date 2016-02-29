@@ -57,11 +57,7 @@ back-porting some earlier changes from the 3.15 branch, and fixes
 <a href="https://code.launchpad.net/bugs/1514520">Launchpad bug
 #1514520</a>.</p>
 
-<<<<<<< TREE
-<h3>Fix <tt>ipAddrToAsciiAsync()</tt>: don't try to join the daemon thread</h3>
-=======
-<h3>ipAddrToAsciiAsync.: Don't try to join the daemon thread</h3>
->>>>>>> MERGE-SOURCE
+<h3>Fix <tt>ipAddrToAsciiAsync()</tt>: Don't try to join the daemon thread</h3>
 
 <p>On process exit, don't try to stop the worker thread that makes DNS lookups
 asynchronous. Previously this would wait for any lookups still in progress,

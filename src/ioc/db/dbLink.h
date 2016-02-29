@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/*
- * dbLink.h
+/* dbLink.h
  *
  *  Created on: Mar 21, 2010
  *      Author: Andrew Johnson
@@ -26,13 +25,15 @@
 extern "C" {
 #endif
 
+struct dbLocker;
+
 typedef struct lset {
-    void (*removeLink)(struct link *plink);
-    int (*isLinkConnected)(const struct link *plink);
+    void (*removeLink)(struct dbLocker *locker, struct link *plink);
+    int (*isConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);
     long (*getElements)(const struct link *plink, long *nelements);
     long (*getValue)(struct link *plink, short dbrType, void *pbuffer,
-            epicsEnum16 *pstat, epicsEnum16 *psevr,	long *pnRequest);
+            epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest);
     long (*getControlLimits)(const struct link *plink, double *lo, double *hi);
     long (*getGraphicLimits)(const struct link *plink, double *lo, double *hi);
     long (*getAlarmLimits)(const struct link *plink, double *lolo, double *lo,
@@ -44,21 +45,19 @@ typedef struct lset {
     long (*getTimeStamp)(const struct link *plink, epicsTimeStamp *pstamp);
     long (*putValue)(struct link *plink, short dbrType,
             const void *pbuffer, long nRequest);
-    void (*scanFwdLink)(struct link *plink);
+    void (*scanForward)(struct link *plink);
 } lset;
 
-#define dbGetSevr(PLINK, PSEVERITY) \
-    dbGetAlarm((PLINK), NULL, (PSEVERITY))
+#define dbGetSevr(link, sevr) \
+    dbGetAlarm(link, NULL, sevr)
 
-struct dbLocker;
-
-epicsShareFunc void dbInitLink(struct dbCommon *precord, struct link *plink,
-        short dbfType);
-epicsShareFunc void dbAddLink(struct dbLocker *locker, struct dbCommon *precord, struct link *plink,
-        short dbfType, DBADDR *ptargetaddr);
+epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
+epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
+        DBADDR *ptarget);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
-epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct dbCommon *prec, struct link *plink);
+epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
+
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);
 epicsShareFunc int dbGetLinkDBFtype(const struct link *plink);
@@ -77,7 +76,7 @@ epicsShareFunc long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
         epicsEnum16 *severity);
 epicsShareFunc long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
-epicsShareFunc long dbPutLink(struct link *, short dbrType,
+epicsShareFunc long dbPutLink(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
 

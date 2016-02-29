@@ -516,8 +516,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             }
         }
 
-        if (plink->type == PV_LINK)
-            dbInitLink(precord, plink, pdbFldDes->field_type);
+        dbInitLink(plink, pdbFldDes->field_type);
     }
 }
 
@@ -642,8 +641,7 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
                 dbScanLock(precord);
                 locked = 1;
             }
-            dbCaRemoveLink(plink);
-            plink->type = PV_LINK;
+            dbCaRemoveLink(NULL, plink);
 
         } else if (plink->type == DB_LINK) {
             /* free link, but don't split lockset like dbDbRemoveLink() */

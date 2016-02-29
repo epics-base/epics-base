@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-
-/* $Revision-Id$
+/* dbCa.c
  *
  *    Original Authors: Bob Dalesio and Marty Kraimer
  *    Date:             26MAR96
@@ -47,6 +46,7 @@
 #include "dbCaPvt.h"
 #include "dbCommon.h"
 #include "db_convert.h"
+#include "dbLink.h"
 #include "dbLock.h"
 #include "dbScan.h"
 #include "link.h"
@@ -74,9 +74,11 @@ struct ca_client_context * dbCaClientContext;
 /* Forward declarations */
 static void dbCaTask(void *);
 
+static lset dbCa_lset;
+
 #define printLinks(pcaLink) \
     errlogPrintf("%s has DB CA link to %s\n",\
-        pcaLink->plink->value.pv_link.precord->name, pcaLink->pvname)
+        pcaLink->plink->precord->name, pcaLink->pvname)
 
 static int dbca_chan_count;
 
@@ -92,9 +94,9 @@ static int dbca_chan_count;
  *   All dbCa* functions operating on a single link may only be called when
  *   the record containing the DBLINK is locked.  Including:
  *    dbCaGet*()
- *    dbCaIsLinkConnected()
+ *    isConnected()
  *    dbCaPutLink()
- *    dbCaScanFwdLink()
+ *    scanForward()
  *    dbCaAddLinkCallback()
  *    dbCaRemoveLink()
  *
@@ -230,7 +232,7 @@ void dbCaSync(void)
 void dbCaCallbackProcess(void *userPvt)
 {
     struct link *plink = (struct link *)userPvt;
-    dbCommon *pdbCommon = plink->value.pv_link.precord;
+    dbCommon *pdbCommon = plink->precord;
 
     dbScanLock(pdbCommon);
     pdbCommon->rset->process(pdbCommon);
@@ -309,13 +311,20 @@ void dbCaAddLinkCallback(struct link *plink,
     pca->userPvt = userPvt;
 
     epicsMutexMustLock(pca->lock);
+    plink->lset = &dbCa_lset;
     plink->type = CA_LINK;
     plink->value.pv_link.pvt = pca;
     addAction(pca, CA_CONNECT);
     epicsMutexUnlock(pca->lock);
 }
 
-void dbCaRemoveLink(struct link *plink)
+long dbCaAddLink(struct dbLocker *locker, struct link *plink, short dbfType)
+{
+    dbCaAddLinkCallback(plink, 0, 0, NULL);
+    return 0;
+}
+
+void dbCaRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
 
@@ -323,6 +332,9 @@ void dbCaRemoveLink(struct link *plink)
     epicsMutexMustLock(pca->lock);
     pca->plink = 0;
     plink->value.pv_link.pvt = 0;
+    plink->value.pv_link.pvlMask = 0;
+    plink->type = PV_LINK;
+    plink->lset = NULL;
     /* Unlock before addAction or dbCaTask might free first */
     epicsMutexUnlock(pca->lock);
     addAction(pca, CA_CLEAR_CHANNEL);
@@ -488,7 +500,13 @@ long dbCaPutLinkCallback(struct link *plink,short dbrType,
     return status;
 }
 
-int dbCaIsLinkConnected(const struct link *plink)
+long dbCaPutLink(struct link *plink, short dbrType,
+    const void *pbuffer, long nRequest)
+{
+    return dbCaPutLinkCallback(plink, dbrType, pbuffer, nRequest, 0, NULL);
+}
+
+static int isConnected(const struct link *plink)
 {
     caLink *pca;
 
@@ -498,7 +516,7 @@ int dbCaIsLinkConnected(const struct link *plink)
     return pca->isConnected;
 }
 
-void dbCaScanFwdLink(struct link *plink) {
+static void scanForward(struct link *plink) {
     short fwdLinkValue = 1;
 
     if (plink->value.pv_link.pvlMask & pvlOptFWD)
@@ -517,7 +535,7 @@ void dbCaScanFwdLink(struct link *plink) {
         return -1; \
     }
 
-long dbCaGetNelements(const struct link *plink, long *nelements)
+static long getElements(const struct link *plink, long *nelements)
 {
     caLink *pca;
 
@@ -527,7 +545,7 @@ long dbCaGetNelements(const struct link *plink, long *nelements)
     return 0;
 }
 
-long dbCaGetAlarm(const struct link *plink,
+static long getAlarm(const struct link *plink,
     epicsEnum16 *pstat, epicsEnum16 *psevr)
 {
     caLink *pca;
@@ -539,7 +557,7 @@ long dbCaGetAlarm(const struct link *plink,
     return 0;
 }
 
-long dbCaGetTimeStamp(const struct link *plink,
+static long getTimeStamp(const struct link *plink,
     epicsTimeStamp *pstamp)
 {
     caLink *pca;
@@ -550,7 +568,7 @@ long dbCaGetTimeStamp(const struct link *plink,
     return 0;
 }
 
-int dbCaGetLinkDBFtype(const struct link *plink)
+static int getDBFtype(const struct link *plink)
 {
     caLink *pca;
     int  type;
@@ -581,7 +599,7 @@ long dbCaGetAttributes(const struct link *plink,
     return 0;
 }
 
-long dbCaGetControlLimits(const struct link *plink,
+static long getControlLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -597,7 +615,7 @@ long dbCaGetControlLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetGraphicLimits(const struct link *plink,
+static long getGraphicLimits(const struct link *plink,
     double *low, double *high)
 {
     caLink *pca;
@@ -613,7 +631,7 @@ long dbCaGetGraphicLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetAlarmLimits(const struct link *plink,
+static long getAlarmLimits(const struct link *plink,
     double *lolo, double *low, double *high, double *hihi)
 {
     caLink *pca;
@@ -631,7 +649,7 @@ long dbCaGetAlarmLimits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetPrecision(const struct link *plink, short *precision)
+static long getPrecision(const struct link *plink, short *precision)
 {
     caLink *pca;
     int gotAttributes;
@@ -643,7 +661,7 @@ long dbCaGetPrecision(const struct link *plink, short *precision)
     return gotAttributes ? 0 : -1;
 }
 
-long dbCaGetUnits(const struct link *plink,
+static long getUnits(const struct link *plink,
     char *units, int unitsSize)
 {
     caLink *pca;
@@ -690,6 +708,18 @@ static void scanLinkOnce(dbCommon *prec, caLink *pca) {
     /* else too many scans queued */
 }
 
+static lset dbCa_lset = {
+    dbCaRemoveLink,
+    isConnected,
+    getDBFtype, getElements,
+    dbCaGetLink,
+    getControlLimits, getGraphicLimits, getAlarmLimits,
+    getPrecision, getUnits,
+    getAlarm, getTimeStamp,
+    dbCaPutLink,
+    scanForward
+};
+
 static void connectionCallback(struct connection_handler_args arg)
 {
     caLink *pca;
@@ -704,7 +734,7 @@ static void connectionCallback(struct connection_handler_args arg)
     pca->isConnected = (ca_state(arg.chid) == cs_conn);
     if (!pca->isConnected) {
         struct pv_link *ppv_link = &plink->value.pv_link;
-        dbCommon *precord = ppv_link->precord;
+        dbCommon *precord = plink->precord;
 
         pca->nDisconnect++;
         if (precord &&
@@ -779,7 +809,7 @@ static void eventCallback(struct event_handler_args arg)
     if (!plink) goto done;
     monitor = pca->monitor;
     userPvt = pca->userPvt;
-    precord = plink->value.pv_link.precord;
+    precord = plink->precord;
     if (arg.status != ECA_NORMAL) {
         if (precord) {
             if (arg.status != ECA_NORDACCESS &&
@@ -896,7 +926,7 @@ static void accessRightsCallback(struct access_rights_handler_args arg)
     pca->hasWriteAccess = ca_write_access(arg.chid);
     if (pca->hasReadAccess && pca->hasWriteAccess) goto done;
     ppv_link = &plink->value.pv_link;
-    precord = ppv_link->precord;
+    precord = plink->precord;
     if (precord &&
         ((ppv_link->pvlMask & pvlOptCP) ||
          ((ppv_link->pvlMask & pvlOptCPP) && precord->scan == 0)))
@@ -927,7 +957,7 @@ static void getAttribEventCallback(struct event_handler_args arg)
     getAttributes = pca->getAttributes;
     getAttributesPvt = pca->getAttributesPvt;
     if (arg.status != ECA_NORMAL) {
-        dbCommon *precord = plink->value.pv_link.precord;
+        dbCommon *precord = plink->precord;
         if (precord) {
             errlogPrintf("dbCa: getAttribEventCallback record %s error %s\n",
                 precord->name, ca_message(arg.status));

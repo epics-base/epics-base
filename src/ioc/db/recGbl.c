@@ -161,14 +161,9 @@ void recGblGetControlDouble(const struct dbAddr *paddr,
         &pcd->upper_ctrl_limit, &pcd->lower_ctrl_limit);
 }
 
-int  recGblInitConstantLink(
-    struct link *plink,short dbftype,void *pdest)
+int recGblInitConstantLink(struct link *plink, short dbftype, void *pdest)
 {
-    long status = dbLoadLink(plink, dbftype, pdest);
-
-    if (status)
-        return FALSE;
-    return TRUE;
+    return !dbLoadLink(plink, dbftype, pdest);
 }
 
 unsigned short recGblResetAlarms(void *precord)

@@ -135,7 +135,9 @@ void dbFreeLinkContents(struct link *plink)
     }
     if(parm && (parm != pNullString)) free((void *)parm);
     if(plink->text) free(plink->text);
-    memset((char *)plink,0,sizeof(struct link));
+    plink->lset = NULL;
+    plink->text = NULL;
+    memset(&plink->value, 0, sizeof(union value));
 }
 
 void dbFreePath(DBBASE *pdbbase)
@@ -2145,6 +2147,8 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
         DBLINK *plink = (DBLINK *)(((char *)prec) + pflddes->offset);
         devSup *devsup = NULL;
 
+        plink->precord = prec;
+
         /* link fields are zero'd on allocation.
          * so are effectively CONSTANT, but with constantStr==NULL.
          * Here we initialize them to have the correct link type,
@@ -3176,7 +3180,6 @@ long  dbCvtLinkToPvlink(DBENTRY *pdbentry)
 	plink->type = PV_LINK;
 	plink->value.pv_link.pvlMask = 0;
 	plink->value.pv_link.pvname = 0;
-	plink->value.pv_link.precord = pdbentry->precnode->precord;
 	return(0);
     default:
 	epicsPrintf("dbCvtLinkToPvlink called for non link field\n");

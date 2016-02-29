@@ -34,7 +34,7 @@
 #include "epicsMutex.h"
 #include "epicsThread.h"
 
-static int firstTime = 1;
+static epicsThreadOnceId epicsMutexOsiOnce = EPICS_THREAD_ONCE_INIT;
 static ELLLIST mutexList;
 static ELLLIST freeList;
 
@@ -76,19 +76,20 @@ const char * epicsMutex::invalidMutex::what () const throw ()
     return "epicsMutex::invalidMutex()";
 }
 
+static void epicsMutexOsiInit(void *) {
+    ellInit(&mutexList);
+    ellInit(&freeList);
+    VALGRIND_CREATE_MEMPOOL(&freeList, 0, 0);
+    epicsMutexGlobalLock = epicsMutexOsdCreate();
+}
 
 epicsMutexId epicsShareAPI epicsMutexOsiCreate(
     const char *pFileName,int lineno)
 {
     epicsMutexOSD * id;
 
-    if(firstTime) {
-        firstTime=0;
-        ellInit(&mutexList);
-        ellInit(&freeList);
-        VALGRIND_CREATE_MEMPOOL(&freeList, 0, 0);
-        epicsMutexGlobalLock = epicsMutexOsdCreate();
-    }
+    epicsThreadOnce(&epicsMutexOsiOnce, epicsMutexOsiInit, NULL);
+
     id = epicsMutexOsdCreate();
     if(!id) {
         return 0;
@@ -218,7 +219,9 @@ void epicsShareAPI epicsMutexShowAll(int onlyLocked,unsigned  int level)
 {
     epicsMutexParm *pmutexNode;
 
-    if(firstTime) return;
+    if (epicsMutexOsiOnce == EPICS_THREAD_ONCE_INIT)
+        return;
+
     printf("ellCount(&mutexList) %d ellCount(&freeList) %d\n",
         ellCount(&mutexList),ellCount(&freeList));
     epicsMutexLockStatus lockStat =

@@ -8,8 +8,7 @@
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
-using namespace epics;
-using namespace atomic;
+namespace {
 
 template < class T >
 struct TestDataIncrDecr {
@@ -27,6 +26,7 @@ struct TestDataAddSub {
 template < class T >
 static void incr ( void *arg )
 {
+    using epics::atomic::increment;
     TestDataIncrDecr < T > * const pTestData = 
 	    reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
     increment ( pTestData->m_testValue );
@@ -36,6 +36,8 @@ static void incr ( void *arg )
 template < class T >
 static void decr ( void *arg )
 {
+    using epics::atomic::decrement;
+    using epics::atomic::increment;
     TestDataIncrDecr < T > * const pTestData = 
 	    reinterpret_cast < TestDataIncrDecr < T > * > ( arg );
     decrement ( pTestData->m_testValue );
@@ -46,6 +48,8 @@ static void decr ( void *arg )
 template < class T >
 static void add ( void *arg )
 {
+    using epics::atomic::add;
+    using epics::atomic::increment;
     TestDataAddSub < T > * const pTestData = 
 	    reinterpret_cast < TestDataAddSub < T > * > ( arg );
     add ( pTestData->m_testValue, TestDataAddSub < T > :: delta  );
@@ -55,6 +59,8 @@ static void add ( void *arg )
 template < class T >
 static void sub ( void *arg )
 {
+    using epics::atomic::subtract;
+    using epics::atomic::increment;
     TestDataAddSub < T > * const pTestData = 
 	    reinterpret_cast < TestDataAddSub < T > * > ( arg );
     subtract ( pTestData->m_testValue, TestDataAddSub < T > :: delta );
@@ -67,11 +73,6 @@ struct TestDataCAS {
     size_t m_testIterationsSet;
     size_t m_testIterationsNotSet;
 };
-
-int isModulo ( size_t N, size_t n ) 
-{
-    return ( n % N ) == 0u;
-}
 
 template < class T >
 static T trueValue ();
@@ -104,6 +105,11 @@ inline EpicsAtomicPtrT falseValue < EpicsAtomicPtrT > ()
 template < class T >
 static void cas ( void *arg )
 {
+    using epics::atomic::set;
+    using epics::atomic::increment;
+    using epics::atomic::decrement;
+    using epics::atomic::compareAndSwap;
+
     TestDataCAS < T > * const pTestData = 
 	    reinterpret_cast < TestDataCAS < T > * > ( arg );
     /*
@@ -123,7 +129,10 @@ static void cas ( void *arg )
 template < class T >
 void testIncrDecr ()
 {
-    static const size_t N = 100;
+    using epics::atomic::set;
+    using epics::atomic::get;
+
+    static const size_t N = 90;
     static const T NT = static_cast < T > ( N );
 
     const unsigned int stackSize = 
@@ -137,10 +146,12 @@ void testIncrDecr ()
     testOk ( get ( testData.m_testIterations ) == 0u,
 	    "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
-        epicsThreadCreate ( "incr",
+        epicsThreadMustCreate ( "incr",
 		    50, stackSize, incr < T >, & testData );
-        epicsThreadCreate ( "decr",
+        epicsThreadMustCreate ( "decr",
 		    50, stackSize, decr < T >, & testData );
+        if(i%10==0)
+            testDiag("iteration %u", (unsigned)i);
     }
     while ( testData.m_testIterations < 2 * N ) {
         epicsThreadSleep ( 0.01 );
@@ -154,7 +165,10 @@ void testIncrDecr ()
 template < class T >
 void testAddSub ()
 {
-    static const size_t N = 100;
+    using epics::atomic::set;
+    using epics::atomic::get;
+
+    static const size_t N = 90;
     static const T NDT = TestDataAddSub < T > :: delta *
 	    				static_cast < T > ( N );
 
@@ -169,9 +183,9 @@ void testAddSub ()
     testOk ( get ( testData.m_testIterations ) == 0u,
 	    "get returns initial incr/decr test thread iterations value that was set" );
     for ( size_t i = 0u; i < N; i++ ) {
-        epicsThreadCreate ( "add",
+        epicsThreadMustCreate ( "add",
 		    50, stackSize, add < T >, & testData );
-        epicsThreadCreate ( "sub",
+        epicsThreadMustCreate ( "sub",
 		    50, stackSize, sub < T >, & testData );
     }
     while ( testData.m_testIterations < 2 * N ) {
@@ -186,6 +200,9 @@ void testAddSub ()
 template < class T >
 void testCAS ()
 {
+    using epics::atomic::set;
+    using epics::atomic::get;
+
 	static const size_t N = 10;
 
     const unsigned int stackSize = 
@@ -204,7 +221,7 @@ void testCAS ()
 	testOk ( get ( testData.m_testValue ) == trueValue < T > (),
 				"set/get a true value" );
 	for ( size_t i = 0u; i < N; i++ ) {
-		epicsThreadCreate ( "tns",
+        epicsThreadMustCreate ( "tns",
 					50, stackSize, cas < T >, & testData );
 	}
 	set ( testData.m_testValue, falseValue < T > () );
@@ -326,12 +343,74 @@ static void testClassify()
 #endif /* __GNUC__ */
 }
 
+static
+void testBasic()
+{
+    using epics::atomic::set;
+    using epics::atomic::get;
+    using epics::atomic::decrement;
+    using epics::atomic::increment;
+    using epics::atomic::add;
+    using epics::atomic::subtract;
+    using epics::atomic::compareAndSwap;
+
+    testDiag("Test basic operation symantics");
+
+    int Int = 0;
+    size_t Sizet = 0;
+    void *voidp = NULL;
+
+    set(Int, -42);
+    set(Sizet, 42);
+    set(voidp, (void*)&voidp);
+
+    increment(Int);
+    increment(Sizet);
+
+    testOk1(get(Int)==-41);
+    testOk1(get(Sizet)==43);
+    testOk1(get(voidp)==(void*)&voidp);
+
+    decrement(Int);
+    decrement(Sizet);
+
+    testOk1(get(Int)==-42);
+    testOk1(get(Sizet)==42);
+
+    add(Int, -2);
+    subtract(Sizet, 2);
+
+    testOk1(get(Int)==-44);
+    testOk1(get(Sizet)==40);
+
+    testOk1(compareAndSwap(Int, -34, -10)==-44);
+    testOk1(compareAndSwap(Sizet, 34, 10)==40);
+    testOk1(compareAndSwap(voidp, NULL, (void*)&Sizet)==(void*)&voidp);
+
+    testOk1(get(Int)==-44);
+    testOk1(get(Sizet)==40);
+    testOk1(get(voidp)==(void*)&voidp);
+
+    testOk1(compareAndSwap(Int, -44, -10)==-44);
+    testOk1(compareAndSwap(Sizet, 40, 10)==40);
+    testOk1(compareAndSwap(voidp, (void*)&voidp, (void*)&Sizet)==(void*)&voidp);
+
+    testOk1(get(Int)==-10);
+    testOk1(get(Sizet)==10);
+    testOk1(get(voidp)==(void*)&Sizet);
+}
+
+} // namespace
+
 MAIN ( epicsAtomicTest )
 {
 
-    testPlan ( 31 );
+    testPlan ( 50 );
     testClassify ();
-
+    testBasic();
+#if defined(__rtems__)
+    testSkip(31, "Tests assume time sliced thread scheduling");
+#else
     testIncrDecr < int > ();
     testIncrDecr < size_t > ();
     testAddSub < int > ();
@@ -339,6 +418,7 @@ MAIN ( epicsAtomicTest )
     testCAS < int > ();
     testCAS < size_t > ();
     testCAS < EpicsAtomicPtrT > ();
+#endif
 
     return testDone ();
 }

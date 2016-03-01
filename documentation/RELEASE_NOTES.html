@@ -43,10 +43,10 @@ supported by the valgrind tool.
 It can also explicitly be disabled by defining the macro <em>NVALGRIND</em>.
 See <em>src/libCom/Makefile</em> for a commented-out example.</p>
 
-<p>As a matter of policy valgrind.h should never be included by any header file
-installed by Base, so its use will remain purely an internal implementation
-detail and not be directly visible to application software.
-Support modules which choose to use valgrind.h are advised to avoid to do
+<p>As a matter of policy valgrind.h will never be included by any header file
+installed by Base, so its use will remain purely an implementation
+detail hidden from application software.
+Support modules which choose to use valgrind.h are advised to do
 likewise.</p>
 
 <h3>Database Multi-locking</h3>
@@ -70,7 +70,7 @@ Locking/unlocking of unrelated lock sets is now completely concurrent.</p>
 
 <p>A Perl script and Makefile rules have been added to allow modules to generate
 a C header file with a macro defined with an automatically updated identifier.
-This is a VCS revision ID (Darcs, Git, Mercurial Subversion and Bazaar are all
+This is a VCS revision ID (Darcs, Git, Mercurial, Subversion, and Bazaar are
 supported) or the date/time of the build if no VCS system is in use.</p>
 
 <p>The makeBaseApp example template has been updated with a new device support

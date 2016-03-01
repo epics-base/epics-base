@@ -217,6 +217,10 @@ static void hookPass1(initHookState state)
     dbFinishEntry(&entry);
 }
 
+#if defined(__rtems__) || defined(vxWorks)
+void asTestIoc_registerRecordDeviceDriver(struct dbBase *);
+#endif
+
 epicsShareFunc
 void testRestore(void)
 {
@@ -231,7 +235,18 @@ void testRestore(void)
 
     testdbReadDatabase("asTestIoc.dbd", NULL, NULL);
 
+    /* since this test has device support it must appear in a
+     * DLL for windows dynamic builds.
+     * However, the rRDD function is in the executable,
+     * and not accessible here.  So use iocsh.
+     * For rtems/vxworks the test harness clears
+     * iocsh registrations, so iocsh can't work here.
+     */
+#if defined(__rtems__) || defined(vxWorks)
+    asTestIoc_registerRecordDeviceDriver(pdbbase);
+#else
     iocshCmd("asTestIoc_registerRecordDeviceDriver(pdbbase)");
+#endif
 
     testdbReadDatabase("asTest.db", NULL, NULL);
 

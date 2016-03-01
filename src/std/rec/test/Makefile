@@ -52,7 +52,7 @@ TESTPROD_HOST += asTest
 asTest_SRCS += asTest.c
 asTest_SRCS += asTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += asTest.c
-TESTFILES += ../asTest.db
+TESTFILES += $(COMMON_DIR)/asTestIoc.dbd ../asTest.db
 TESTS += asTest
 
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd

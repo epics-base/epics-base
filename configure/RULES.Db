@@ -8,10 +8,12 @@
 #*************************************************************************
 #RULES.Db
 
-# Set db substitutions file suffix
+# Set db substitutions and template file suffixes
 SUBST_SUFFIX ?= .substitutions
+TEMPL_SUFFIX ?= .template
 
-#####################################################  vpath
+#---------------------------------------------------------------
+# vpath
 
 vpath %.pm $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.pod $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
@@ -19,12 +21,13 @@ vpath %.dbd $(USR_VPATH) $(SRC_DIRS) $(dir $(DBD))
 vpath %.db $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
 vpath %.vdb $(USR_VPATH) $(SRC_DIRS) $(dir $(DB))
 vpath %$(SUBST_SUFFIX) $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
-vpath %.template $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
+vpath %$(TEMPL_SUFFIX) $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 vpath bpt%.data $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 vpath %.acf $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 vpath %.acs $(USR_VPATH) $(SRC_DIRS) $(COMMON_DIR)
 
-##################################################### dbflags dbdflags
+#---------------------------------------------------------------
+# dbflags dbdflags
 
 DBD_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DBD) $(RELEASE_DBD_DIRS)
 DB_SEARCH_DIRS = . .. $(COMMON_DIR) $(SRC_DIRS) $(INSTALL_DB) $(RELEASE_DB_DIRS)
@@ -33,13 +36,15 @@ DBDFLAGS = $(USR_DBDFLAGS) $(CMD_DBDFLAGS) $(addprefix -I,$(DBD_SEARCH_DIRS))
 DBFLAGS = $($*_DBFLAGS) $(USR_DBFLAGS) $(CMD_DBFLAGS) $(addprefix -I,$(DB_SEARCH_DIRS))
 REGRDDFLAGS = $(DBDFLAGS) $($*_REGRDDFLAGS) $(USR_REGRDDFLAGS) $(CMD_REGRDDFLAGS)
 
-##################################################### Targets
+#---------------------------------------------------------------
+# Targets
 
 # ---------------------------------------------------
 # To allow os specific dbd files AND have the -j option work properly,
 
-CROSS_TARGET_OS_TYPES = $(sort $(foreach target,  \
-    $(EPICS_HOST_ARCH) $(CROSS_COMPILER_TARGET_ARCHS),$(firstword $(subst -, ,$(target)))))
+CROSS_TARGET_OS_TYPES = $(sort $(foreach target, \
+    $(EPICS_HOST_ARCH) $(CROSS_COMPILER_TARGET_ARCHS), \
+    $(firstword $(subst -, ,$(target)))))
 DBD += $(foreach type, $(CROSS_TARGET_OS_TYPES), $(DBD_$(type)))
 
 # Users add os specific dbd files to a Makefile as follows
@@ -86,31 +91,28 @@ SOURCE_DB_bbb = $(foreach dir, $(GENERIC_SRC_DIRS), $(SOURCE_DB_aaa)  )
 SOURCE_DB_aaa = $(addsuffix /$(file), $(dir) )
 
 COMMONS = $(COMMON_DIR)/*.dbd $(COMMON_DIR)/*.db $(COMMON_DIR)/*.h \
-          $(COMMON_DIR)/*$(SUBST_SUFFIX) $(COMMON_DIR)/*.template
+          $(COMMON_DIR)/*$(SUBST_SUFFIX) $(COMMON_DIR)/*$(TEMPL_SUFFIX)
 
 # Remove trailing numbers (to 99) on stem
-TEMPLATE1=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(patsubst %4,%, \
-          $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
-          $*))))))))))
-TEMPLATE2=$(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%,$(patsubst %4,%, \
-          $(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%,$(patsubst %8,%,$(patsubst %9,%, \
-          $(TEMPLATE1)))))))))))
-TEMPLATE3=$(addsuffix .template,$(addprefix ../,$(TEMPLATE2)))
-TEMPLATE_FILENAME=$(firstword $(wildcard $($*_TEMPLATE) $(addprefix ../,$($*_TEMPLATE)) ../$*.template $(TEMPLATE3) ../template))
-
-# dbst based database optimization
-ifeq '$(DB_OPT)' 'YES'
-RAW=.raw
-DBS = $(filter %.db,$(DB)) $(addsuffix $(RAW),$(filter %.db,$(DB)))
-COMMON_DBS = $(addprefix $(COMMON_DIR)/,$(DBS))
-endif
+TEMPLATE1 = $(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%, \
+            $(patsubst %4,%,$(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%, \
+            $(patsubst %8,%,$(patsubst %9,%,$*))))))))))
+TEMPLATE2 = $(patsubst %0,%,$(patsubst %1,%,$(patsubst %2,%,$(patsubst %3,%, \
+            $(patsubst %4,%,$(patsubst %5,%,$(patsubst %6,%,$(patsubst %7,%, \
+            $(patsubst %8,%,$(patsubst %9,%,$(TEMPLATE1)))))))))))
+TEMPLATE3 = $(addsuffix $(TEMPL_SUFFIX),$(addprefix ../,$(TEMPLATE2)))
+TEMPLATE_FILENAME = $(firstword $(wildcard $($*_TEMPLATE) \
+            $(addprefix ../,$($*_TEMPLATE)) ../$*$(TEMPL_SUFFIX) $(TEMPLATE3) \
+            ../template))
 
 INSTALL_DB_INSTALLS = $(addprefix $(INSTALL_DB)/,$(notdir $(DB_INSTALLS)))
 INSTALL_DBD_INSTALLS = $(addprefix $(INSTALL_DBD)/,$(notdir $(DBD_INSTALLS)))
 
 COMMONDEP_TARGET = $(COMMON_DIR)/$(basename $@)
 
-#####################################################  acf files
+#---------------------------------------------------------------
+# acf files
+
 # An access security configuration file, *.acf, can be created from
 # an *.acs file (has format of acf file plus #include "filename" lines)
 
@@ -123,7 +125,8 @@ ACF_INCLUDES = -I. $(TARGET_INCLUDES) $(USR_INCLUDES)\
 ACFDEPENDS_CMD = $(MKMF) -m $@ $(ACF_INCLUDES) $(COMMONDEP_TARGET) $<
 ACF_CMD = $(CPP) $(ACF_CPPFLAGS) $(ACF_INCLUDES) $< > $@
 
-#####################################################  dependancies
+#---------------------------------------------------------------
+# dependencies
 
 HINC += $(addsuffix .h,$(DBDINC_NAME))
 COMMON_DBDINC += $(addprefix $(COMMON_DIR)/,$(HINC))
@@ -133,12 +136,12 @@ DBDDEPENDS_FILES += $(addsuffix $(DEP),$(HINC) \
                     $(patsubst $(COMMON_DIR)/%,%, \
                     $(filter-out $(COMMON_DIR)/bpt%.dbd,$(COMMON_DBDS))))
 
-##################################################### 
+#---------------------------------------------------------------
 
 ifndef T_A
 
 DEP = .d
-TEMPLATE3+=$(addsuffix .template, $(TEMPLATE2))
+TEMPLATE3 += $(addsuffix $(TEMPL_SUFFIX), $(TEMPLATE2))
 
 COMMON_DIR = .
 INSTALL_DBDS =
@@ -153,18 +156,13 @@ ACTIONS += install
 ACTIONS += buildInstall
 ACTIONS += runtests tapfiles
 
-actionArchTargets = $(foreach x, $(ACTIONS),\ $(foreach arch,$(BUILD_ARCHS), $(x)$(DIVIDER)$(arch)))
+actionArchTargets = $(foreach action, $(ACTIONS), \
+    $(foreach arch, $(BUILD_ARCHS), $(action)$(DIVIDER)$(arch)))
+cleanArchTargets = $(foreach arch, $(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 
-cleanArchTargets = $(foreach arch,$(BUILD_ARCHS), clean$(DIVIDER)$(arch))
 -include $(TOP)/configure/CONFIG_APP_INCLUDE
 
 all: install
-ifeq ($(EPICS_HOST_ARCH),$T_A)
-host: install
-else
-# Do nothing
-host:
-endif
 
 install: buildInstall
 
@@ -172,20 +170,30 @@ buildInstall : build
 
 rebuild: clean install
 
-.PHONY: all host $(ACTIONS)
+.PHONY: all $(ACTIONS)
 
 $(actionArchTargets) $(BUILD_ARCHS): install
 $(cleanArchTargets): clean
 
 .PHONY: $(BUILD_ARCHS) $(actionArchTargets) $(cleanArchTargets)
 
-endif # T_A defined
+else
+  # T_A is defined
+  ifeq ($(EPICS_HOST_ARCH),$(T_A))
+    host: install
+  else
+    host:
+  endif
+
+  .PHONY: host
+endif # T_A
 
 ifneq (,$(strip $(DBDDEPENDS_FILES)))
 -include $(DBDDEPENDS_FILES)
 endif
 
-#####################################################  build dependancies, clean rule
+#---------------------------------------------------------------
+# build dependancies, clean rule
 
 inc : $(COMMON_INC) $(INSTALL_INC)
 
@@ -205,7 +213,8 @@ db_clean :
 
 realclean: clean
 
-##################################################### Dependency files
+#---------------------------------------------------------------
+# Dependency files
 
 %Record.h$(DEP): $(COMMON_DIR)/%Record.dbd
 	@$(RM) $@
@@ -256,19 +265,19 @@ menu%.h$(DEP): ../menu%.dbd
 	@$(DBEXPAND) -D $(DBDFLAGS) -o $(COMMONDEP_TARGET) $($*_DBD) > $@
 	@echo "$(COMMONDEP_TARGET): ../Makefile" >> $@
 
-%.db$(RAW)$(DEP): %$(SUBST_SUFFIX)
+%.db$(DEP): %$(SUBST_SUFFIX)
 	@$(RM) $@
 	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) -S$< $(TEMPLATE_FILENAME) > $@
 
-%.db$(RAW)$(DEP): ../%$(SUBST_SUFFIX)
+%.db$(DEP): ../%$(SUBST_SUFFIX)
 	@$(RM) $@
 	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) -S$< $(TEMPLATE_FILENAME) > $@
 
-%.db$(RAW)$(DEP): %.template
+%.db$(DEP): %$(TEMPL_SUFFIX)
 	@$(RM) $@
 	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 
-%.db$(RAW)$(DEP): ../%.template
+%.db$(DEP): ../%$(TEMPL_SUFFIX)
 	@$(RM) $@
 	$(MSI3_15) -D $(DBFLAGS) -o $(COMMONDEP_TARGET) $< > $@
 
@@ -282,14 +291,8 @@ menu%.h$(DEP): ../menu%.dbd
 
 .PRECIOUS: %$(DEP)
 
-##################################################### CapFast filter
-
-$(COMMON_DIR)/%.edf: ../%.sch $(DEPSCHS) 
-	@$(RM) $@
-	@if [ ! -f cad.rc -a -r ../cad.rc ] ; then ln -s ../cad.rc ; fi
-	$(SCH2EDIF) $(SCH2EDIF_SYSFLAGS) $(SCH2EDIF_FLAGS) -o $@  $<
-
-##################################################### Substitution files
+#---------------------------------------------------------------
+# Substitution files
 
 #  WARNING: CREATESUBSTITUTIONS script needs output dir on command line
 
@@ -310,25 +313,21 @@ $(INSTALL_DB)/%$(SUBST_SUFFIX): ../%$(SUBST_SUFFIX)
 
 .PRECIOUS: $(COMMON_DIR)/%$(SUBST_SUFFIX)
 
-##################################################### Template files
+#---------------------------------------------------------------
+# Template files
 
-$(COMMON_DIR)/%.template: $(COMMON_DIR)/%.edf 
-	@$(RM) $@
-	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $@.VAR $<
-	@$(REPLACEVAR) < $@.VAR > $@
-	@$(RM) $@.VAR
-
-$(INSTALL_DB)/%.template: %.template
+$(INSTALL_DB)/%$(TEMPL_SUFFIX): %$(TEMPL_SUFFIX)
 	$(ECHO) "Installing template file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
-$(INSTALL_DB)/%.template: ../%.template
+$(INSTALL_DB)/%$(TEMPL_SUFFIX): ../%$(TEMPL_SUFFIX)
 	$(ECHO) "Installing template file $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
 
-.PRECIOUS: $(COMMON_DIR)/%.template
+.PRECIOUS: $(COMMON_DIR)/%$(TEMPL_SUFFIX)
 
-##################################################### INC files
+#---------------------------------------------------------------
+# INC files
 
 $(COMMON_DIR)/%Record.h: $(COMMON_DIR)/%Record.dbd
 	@$(RM) $(notdir $@)
@@ -362,7 +361,8 @@ $(COMMON_DIR)/menu%.h: ../menu%.dbd
 
 .PRECIOUS: $(COMMON_DIR)/%.h
 
-##################################################### DBD files
+#---------------------------------------------------------------
+# DBD files
 
 $(COMMON_DIR)/bpt%.dbd: bpt%.data
 	@$(RM) $(notdir $@)
@@ -425,7 +425,8 @@ $(foreach file, $(DBD_INSTALLS), $(eval $(call DBD_INSTALLS_template, $(file))))
 
 .PRECIOUS: $(COMMON_DBDS) $(COMMON_DIR)/%.dbd
 
-##################################################### HTML files
+#---------------------------------------------------------------
+# HTML files
 
 $(COMMON_DIR)/%.html: %.dbd.pod $(TOOLS)/dbdToHtml.pl
 	@$(RM) $(notdir $@)
@@ -455,32 +456,33 @@ $(COMMON_DIR)/%.html: ../%.pl $(TOOLS)/podToHtml.pl
 
 .PRECIOUS: $(COMMON_DIR)/%.html %.html
 
-##################################################### DB files
+#---------------------------------------------------------------
+# DB files
 
-$(COMMON_DIR)/%.db$(RAW): $(COMMON_DIR)/%.edf 
+$(COMMON_DIR)/%.db: $(COMMON_DIR)/%.edf 
 	$(E2DB) $(E2DB_SYSFLAGS) $(E2DB_FLAGS) -n $*.VAR $<
 	@$(REPLACEVAR) < $*.VAR > $@
 	@$(RM) $*.VAR
 
-$(COMMON_DIR)/%.db$(RAW): %$(SUBST_SUFFIX)
+$(COMMON_DIR)/%.db: %$(SUBST_SUFFIX)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $(notdir $@)
 	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) -S$< $(TEMPLATE_FILENAME)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.db$(RAW): ../%$(SUBST_SUFFIX)
+$(COMMON_DIR)/%.db: ../%$(SUBST_SUFFIX)
 	$(ECHO) "Inflating database from $< $(TEMPLATE_FILENAME)"
 	@$(RM) $(notdir $@)
 	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) -S$< $(TEMPLATE_FILENAME)
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.db$(RAW): %.template
+$(COMMON_DIR)/%.db: %$(TEMPL_SUFFIX)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $(notdir $@)
 	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) $<
 	@$(MV) $(notdir $@) $@
 
-$(COMMON_DIR)/%.db$(RAW): ../%.template
+$(COMMON_DIR)/%.db: ../%$(TEMPL_SUFFIX)
 	$(ECHO) "Inflating database from $<"
 	@$(RM) $(notdir $@)
 	$(MSI3_15) $(DBFLAGS) -o $(notdir $@) $<
@@ -498,22 +500,6 @@ $(COMMON_DIR)/%.acf: ../%.acs
 
 .PRECIOUS: $(COMMON_DIR)/%.acf
 
-# dbst based database optimization
-ifeq '$(DB_OPT)' 'YES'
-
-$(COMMON_DIR)/%.db$(RAW): ../%.db
-	@$(RM) $@
-	$(CP) $< $@
-
-$(COMMON_DIR)/%.db: $(COMMON_DIR)/%.db$(RAW)
-	$(ECHO) "Optimizing database $@"
-	@$(RM) $@
-	$(DBST) . $< -d > $@
-
-.PRECIOUS: $(COMMON_DIR)/%.db
-.PRECIOUS: $(DB:%=$(COMMON_DIR)/%$(RAW))
-else
-
 $(INSTALL_DB)/%: %
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
@@ -521,7 +507,6 @@ $(INSTALL_DB)/%: %
 $(INSTALL_DB)/%: ../%
 	$(ECHO) "Installing $@"
 	@$(INSTALL) -d -m $(INSTALL_PERMISSIONS) $< $(@D)
-endif
 
 $(INSTALL_DB)/%.db: $(COMMON_DIR)/%.db
 	$(ECHO) "Installing created db file $@"
@@ -537,8 +522,8 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 .PRECIOUS: $(COMMON_DIR)/%.edf
 .PRECIOUS: $(COMMON_DBS)
 
-##################################################### register record,device,driver support
-
+#---------------------------------------------------------------
+# register record,device,driver support
 
 %_registerRecordDeviceDriver.cpp: $(COMMON_DIR)/%.dbd
 	@$(RM) $@
@@ -554,4 +539,3 @@ $(foreach file, $(DB_INSTALLS), $(eval $(call DB_INSTALLS_template, $(file))))
 
 .PRECIOUS: %_registerRecordDeviceDriver.cpp
 
-##################################################### END OF FILE

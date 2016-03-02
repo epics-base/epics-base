@@ -41,10 +41,6 @@ BUILD_ARCHS = $(EPICS_HOST_ARCH) $(CROSS1) $(CROSS2)
 PERL = perl -CSD
 
 #-------------------------------------------------------
-# dbst based database optimization default
-DB_OPT = NO
-
-#-------------------------------------------------------
 # Check configure/RELEASE file for consistency
 CHECK_RELEASE_YES = checkRelease
 CHECK_RELEASE_NO = noCheckRelease

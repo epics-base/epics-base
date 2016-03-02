@@ -64,6 +64,7 @@ print $out (<< "END");
 
 #include <string.h>
 
+#include "compilerDependencies.h"
 #include "epicsStdlib.h"
 #include "iocsh.h"
 #include "iocshRegisterCommon.h"
@@ -266,7 +267,7 @@ static int Registration() {
     return 0;
 }
 
-static int done = Registration();
+static int done EPICS_UNUSED = Registration();
 END
 
 if ($opt_o) {

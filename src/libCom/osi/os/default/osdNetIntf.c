@@ -151,7 +151,8 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             errlogPrintf ("osiSockDiscoverBroadcastAddresses(): net intf flags fetch for \"%s\" failed\n", pIfreqList->ifr_name);
             continue;
         }
-        
+        ifDepenDebugPrintf ( ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\" flags: %x\n", pIfreqList->ifr_name, pIfreqList->ifr_flags) );
+
         /*
          * dont bother with interfaces that have been disabled
          */

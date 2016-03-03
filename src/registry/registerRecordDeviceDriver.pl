@@ -28,24 +28,24 @@ $bldTop =~ s/([\\"])/\\\1/g; # escape back-slashes and double-quotes
 open(INP,"$file") or die "$! opening file";
 while(<INP>) {
     next if m/ ^ \s* \# /x;
-    if (m/ \b recordtype \s* \( \s* (\w+) \s* \) /x) {
+    if (m/ \b recordtype \s* \( \s* "?(\w+)"? \s* \) /x) {
         $recordType[$numberRecordType++] = $1;
     }
-    elsif (m/ \b device \s* \( \s* (\w+) \W+ \w+ \W+ (\w+) /x) {
+    elsif (m/ \b device \s* \( \s* "?(\w+)"? \W+ \w+ \W+ (\w+) /x) {
         $deviceRecordType[$numberDeviceSupport] = $1;
         $deviceSupport[$numberDeviceSupport] = $2;
         $numberDeviceSupport++;
     }
-    elsif (m/ \b driver \s* \( \s* (\w+) \s* \) /x) {
+    elsif (m/ \b driver \s* \( \s* "?(\w+)"? \s* \) /x) {
         $driverSupport[$numberDriverSupport++] = $1;
     }
-    elsif (m/ \b registrar \s* \( \s* (\w+) \s* \) /x) {
+    elsif (m/ \b registrar \s* \( \s* "?(\w+)"? \s* \) /x) {
         push @registrars, $1;
     }
-    elsif (m/ \b function \s* \( \s* (\w+) \s* \) /x) {
+    elsif (m/ \b function \s* \( \s* "?(\w+)"? \s* \) /x) {
         push @registrars, "register_func_$1";
     }
-    elsif (m/ \b variable \s* \( \s* (\w+) \s* , \s* (\w+) \s* \) /x) {
+    elsif (m/ \b variable \s* \( \s* "?(\w+)"? \s* , \s* "?(\w+)"? \s* \) /x) {
         $varType{$1} = $2;
         push @variables, $1;
     }

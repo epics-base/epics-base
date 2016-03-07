@@ -1,7 +1,7 @@
-## Example vxWorks startup file
+#- Example vxWorks startup file
 
-## The following is needed if your board support package doesn't at boot time
-## automatically cd to the directory containing its startup script
+#- The following is needed if your board support package doesn't at boot time
+#- automatically cd to the directory containing its startup script
 #cd "_TOP_/iocBoot/_IOC_"
 
 < cdCommands

@@ -1,7 +1,7 @@
 #!../../bin/_ARCH_/_APPNAME_
 
-## You may have to change _APPNAME_ to something else
-## everywhere it appears in this file
+#- You may have to change _APPNAME_ to something else
+#- everywhere it appears in this file
 
 #< envPaths
 

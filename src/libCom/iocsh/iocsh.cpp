@@ -587,7 +587,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);
     for (;;) {
-        
         /*
          * Read a line
          */
@@ -609,7 +608,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         while ((c = raw[icin]) && isspace(c)) {
             icin++;
         }
-        
+
         /*
          * Ignore comment lines other than to echo
          * them if they came from a script (disable echoing
@@ -635,7 +634,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         while ((c = line[icin]) && isspace(c)) {
             icin++;
         }
-        
+
         /*
          * Echo non-empty lines read from a script.
          * Comments delineated with '#-' aren't echoed.

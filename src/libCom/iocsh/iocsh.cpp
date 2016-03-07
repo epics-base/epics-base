@@ -587,7 +587,6 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     wasOkToBlock = epicsThreadIsOkToBlock();
     epicsThreadSetOkToBlock(1);
     for (;;) {
-        bool echo = true;
         
         /*
          * Read a line
@@ -612,22 +611,14 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         }
         
         /*
-         * @ stops the echoing of a line
-         */
-        if (c == '@') {
-            echo = false;
-            icin++;
-            c = raw[icin];
-        }
-        
-        /*
          * Ignore comment lines other than to echo
-         * them if they came from a script.  This
-         * avoids macLib errors from comments.
+         * them if they came from a script (disable echoing
+         * with '#-').  This avoids macLib errors from comments.
          */
         if (c == '#') {
-            if ((prompt == NULL) && (commandLine == NULL) && echo)
-                puts(raw);
+            if ((prompt == NULL) && (commandLine == NULL))
+                if (raw[icin + 1] != '-')
+                    puts(raw);
             continue;
         }
 
@@ -646,19 +637,12 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         }
         
         /*
-         * @ stops the echoing of a line
+         * Echo non-empty lines read from a script.
+         * Comments delineated with '#-' aren't echoed.
          */
-        if (c == '@') {
-            echo = false;
-            icin++;
-            c = raw[icin];
-        }
-        
-        /*
-         * Echo non-empty lines read from a script
-         */
-        if ((prompt == NULL) && *line && (commandLine == NULL) && echo)
-            puts(line);
+        if ((prompt == NULL) && *line && (commandLine == NULL))
+            if ((c != '#') || (line[icin + 1] != '-'))
+                puts(line);
 
         /*
          * Ignore lines that became a comment or empty after macro expansion

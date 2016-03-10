@@ -120,9 +120,9 @@ static long init_record(mbbiDirectRecord *prec, int pass)
     if (prec->siol.type == CONSTANT)
         recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
 
-    /* Initialize MASK if the user didn't */
-    if (prec->mask == 0)
-        prec->mask = (1 << prec->nobt) - 1;
+    /* Initialize MASK if the user set NOBT instead */
+    if (prec->mask == 0 && prec->nobt <= 32)
+        prec->mask = ((epicsUInt64) 1u << prec->nobt) - 1;
 
     if (pdset->init_record) {
         status = pdset->init_record(prec);

@@ -18,6 +18,7 @@ dbTestIoc_SRCS += dbLinkdset.c
 dbTestIoc_LIBS = dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
+DBDDEPENDS_FILES += dbTestIoc.dbd$(DEP)
 dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += menuScan.dbd
@@ -78,6 +79,7 @@ TESTS += dbCaStatsTest
 TESTFILES += ../dbCaStatsTest.db
 
 TARGETS += $(COMMON_DIR)/scanIoTest.dbd
+DBDDEPENDS_FILES += scanIoTest.dbd$(DEP)
 scanIoTest_DBD += menuGlobal.dbd
 scanIoTest_DBD += menuConvert.dbd
 scanIoTest_DBD += menuScan.dbd
@@ -98,6 +100,7 @@ testHarness_SRCS += dbChannelTest.c
 TESTS += dbChannelTest
 
 TARGETS += $(COMMON_DIR)/dbChArrTest.dbd
+DBDDEPENDS_FILES += dbChArrTest.dbd$(DEP)
 dbChArrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += dbChArrTest
 dbChArrTest_SRCS += dbChArrTest.cpp
@@ -148,4 +151,3 @@ arrRecord$(DEP): $(COMMON_DIR)/arrRecord.h
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 dbPutLinkTest$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/yRecord.h
-

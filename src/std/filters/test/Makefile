@@ -19,6 +19,7 @@ Recs_LIBS += dbCore Com
 PROD_LIBS = Recs dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/tsTest.dbd
+DBDDEPENDS_FILES += tsTest.dbd$(DEP)
 tsTest_DBD += xRecord.dbd
 TESTPROD_HOST += tsTest
 tsTest_SRCS += tsTest.c
@@ -29,6 +30,7 @@ TESTFILES += $(COMMON_DIR)/tsTest.dbd ../xRecord.db
 TESTS += tsTest
 
 TARGETS += $(COMMON_DIR)/dbndTest.dbd
+DBDDEPENDS_FILES += dbndTest.dbd$(DEP)
 dbndTest_DBD += xRecord.dbd
 TESTPROD_HOST += dbndTest
 dbndTest_SRCS += dbndTest.c
@@ -39,6 +41,7 @@ TESTFILES += $(COMMON_DIR)/dbndTest.dbd
 TESTS += dbndTest
 
 TARGETS += $(COMMON_DIR)/arrTest.dbd
+DBDDEPENDS_FILES += arrTest.dbd$(DEP)
 arrTest_DBD += arrRecord.dbd
 TESTPROD_HOST += arrTest
 arrTest_SRCS += arrTest.cpp
@@ -49,6 +52,7 @@ TESTFILES += $(COMMON_DIR)/arrTest.dbd ../arrTest.db
 TESTS += arrTest
 
 TARGETS += $(COMMON_DIR)/syncTest.dbd
+DBDDEPENDS_FILES += syncTest.dbd$(DEP)
 syncTest_DBD += xRecord.dbd
 TESTPROD_HOST += syncTest
 syncTest_SRCS += syncTest.c

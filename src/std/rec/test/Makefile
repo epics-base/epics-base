@@ -13,6 +13,7 @@ include $(TOP)/configure/CONFIG
 PROD_LIBS = dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
+DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
 recTestIoc_DBD = base.dbd
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
@@ -26,6 +27,7 @@ TESTFILES += ../arrayOpTest.db
 TESTS += arrayOpTest
 
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
+DBDDEPENDS_FILES += analogMonitorTest.dbd$(DEP)
 analogMonitorTest_DBD += base.dbd
 TESTPROD_HOST += analogMonitorTest
 analogMonitorTest_SRCS += analogMonitorTest.c

@@ -104,12 +104,12 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
     }
     if ( ! waitRelease ) {
         epicsGuard < epicsMutex > guard ( pThread->mutex );
+        pThread->pWaitReleaseFlag = NULL;
         pThread->terminated = true;
         pThread->exitEvent.signal ();
         // once the terminated flag is set and we release the lock
         // then the "this" pointer must not be touched again
     }
-    pThread->pWaitReleaseFlag = NULL;
 }
 
 bool epicsThread::beginWait () throw ()

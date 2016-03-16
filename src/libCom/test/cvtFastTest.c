@@ -326,12 +326,12 @@ MAIN(cvtFastTest)
     testDiag("------------------------------------------------------");
     testDiag("** Positive Float scientific **");
     tryFString(Float, 1e+08, 0, 6);
-    tryFString(Float, 1e+08, 1, 8);
-    tryFString(Float, 1e+08, 2, 9);
-    tryFString(Float, 1e+08, 3, 10);
-    tryFString(Float, 1e+08, 4, 11);
-    tryFString(Float, 1e+08, 5, 12);
-    tryFString(Float, 1e+08, 6, 13);
+    tryFString(Float, 1e+08, 1, 7);
+    tryFString(Float, 1e+08, 2, 8);
+    tryFString(Float, 1e+08, 3, 9);
+    tryFString(Float, 1e+08, 4, 10);
+    tryFString(Float, 1e+08, 5, 11);
+    tryFString(Float, 1e+08, 6, 12);
 
     testDiag("------------------------------------------------------");
     testDiag("** Positive Double fixed-point **");

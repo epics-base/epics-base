@@ -38,8 +38,15 @@ int cvtFloatToString(float flt_value, char *pdest,
 	char		*startAddr;
 
 	/* can this routine handle this conversion */
-	if (isnan(flt_value) || precision > 8 || flt_value > 10000000.0 || flt_value < -10000000.0) {
-		sprintf(pdest,"%12.5e",(double)flt_value);
+	if (isnan(flt_value) || precision > 8 ||
+	    flt_value > 10000000.0 || flt_value < -10000000.0) {
+		if (precision > 8 || flt_value >= 1e8 || flt_value <= -1e8) {
+		    if (precision > 12) precision = 12; /* FIXME */
+		    sprintf(pdest, "%*.*e", precision+6, precision, (double) flt_value);
+		} else {
+		    if (precision > 3) precision = 3; /* FIXME */
+		    sprintf(pdest, "%.*f", precision, (double) flt_value);
+		}
 		return((int)strlen(pdest));
 	}
 	startAddr = pdest;

@@ -13,6 +13,13 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fixed stack corruption bug in epicsThread C++ API</h3>
+
+<p>The C++ interface to the epicsThread API could corrupt the stack on thread
+exit in some rare circumstances, usually at program exit. This bug has been
+fixed (<a href="https://bugs.launchpad.net/bugs/1558206">Launchpad bug
+#1558206</a>).</p>
+
 <h3>RTEMS NTP Support Issue</h3>
 
 <p>On RTEMS the NTP Time Provider could in some circumstances get out of sync

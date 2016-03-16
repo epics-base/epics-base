@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
 // $Revision-Id$
@@ -37,22 +37,22 @@ epicsThreadRunable::~epicsThreadRunable () {}
 void epicsThreadRunable::run () {}
 void epicsThreadRunable::show ( unsigned int ) const {}
 
-class epicsThread :: unableToCreateThread : 
+class epicsThread :: unableToCreateThread :
     public exception {
 public:
     const char * what () const throw ();
 };
 
-const char * epicsThread :: 
+const char * epicsThread ::
     unableToCreateThread :: what () const throw ()
 {
     return "unable to create thread";
 }
 
-void epicsThread :: printLastChanceExceptionMessage ( 
+void epicsThread :: printLastChanceExceptionMessage (
     const char * pExceptionTypeName,
     const char * pExceptionContext )
-{ 
+{
     char date[64];
     try {
         epicsTime cur = epicsTime :: getCurrent ();
@@ -63,52 +63,52 @@ void epicsThread :: printLastChanceExceptionMessage (
     }
     char name [128];
     epicsThreadGetName ( this->id, name, sizeof ( name ) );
-    errlogPrintf ( 
+    errlogPrintf (
         "epicsThread: Unexpected C++ exception \"%s\" "
         "with type \"%s\" in thread \"%s\" at %s\n",
         pExceptionContext, pExceptionTypeName, name, date );
     errlogFlush ();
-    // this should behave as the C++ implementation intends when an 
-    // exception isnt handled. If users dont like this behavior, they 
-    // can install an application specific unexpected handler.
+    // This behavior matches the C++ implementation when an exception
+    // isn't handled by the thread code. Users can install their own
+    // application-specific unexpected handler if preferred.
     std::unexpected ();
 }
 
 extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
 {
-    epicsThread * pThread = 
+    epicsThread * pThread =
         static_cast <epicsThread *> ( pPvt );
-    bool waitRelease = false;
+    bool threadDestroyed = false;
     try {
-        pThread->pWaitReleaseFlag = & waitRelease;
+        pThread->pThreadDestroyed = & threadDestroyed;
         if ( pThread->beginWait () ) {
             pThread->runable.run ();
-            // current thread may have run the destructor 
-            // so must not touch the this pointer from
-            // here on down if waitRelease is true
+            // The run() routine may have destroyed the epicsThread
+            // object by now; pThread can only be used below here
+            // when the threadDestroyed flag is false.
         }
     }
     catch ( const epicsThread::exitException & ) {
     }
     catch ( std::exception & except ) {
-        if ( ! waitRelease ) {
-            pThread->printLastChanceExceptionMessage ( 
+        if ( ! threadDestroyed ) {
+            pThread->printLastChanceExceptionMessage (
                 typeid ( except ).name (), except.what () );
         }
     }
     catch ( ... ) {
-        if ( ! waitRelease ) {
-            pThread->printLastChanceExceptionMessage ( 
+        if ( ! threadDestroyed ) {
+            pThread->printLastChanceExceptionMessage (
                 "catch ( ... )", "Non-standard C++ exception" );
         }
     }
-    if ( ! waitRelease ) {
+    if ( ! threadDestroyed ) {
         epicsGuard < epicsMutex > guard ( pThread->mutex );
-        pThread->pWaitReleaseFlag = NULL;
+        pThread->pThreadDestroyed = NULL;
         pThread->terminated = true;
         pThread->exitEvent.signal ();
-        // once the terminated flag is set and we release the lock
-        // then the "this" pointer must not be touched again
+        // After the terminated flag is set and guard's destructor
+        // releases the lock, pThread must never be used again.
     }
 }
 
@@ -136,12 +136,12 @@ void epicsThread::exitWait () throw ()
 bool epicsThread::exitWait ( const double delay ) throw ()
 {
     try {
-        // if destructor is running in managed thread then of 
-        // course we will not wait for the managed thread to 
-        // exit
+        // When called (usually by a destructor) in the context of
+        // the managed thread we can't wait for the thread to exit.
+        // Set the threadDestroyed flag and return success.
         if ( this->isCurrentThread() ) {
-            if ( this->pWaitReleaseFlag ) {
-                *this->pWaitReleaseFlag = true;
+            if ( this->pThreadDestroyed ) {
+                *this->pThreadDestroyed = true;
             }
             return true;
         }
@@ -158,14 +158,14 @@ bool epicsThread::exitWait ( const double delay ) throw ()
         }
     }
     catch ( std :: exception & except ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "epicsThread::exitWait(): Unexpected exception "
-            " \"%s\"\n", 
+            " \"%s\"\n",
             except.what () );
         epicsThreadSleep ( epicsMin ( delay, 5.0 ) );
     }
     catch ( ... ) {
-        errlogPrintf ( 
+        errlogPrintf (
             "Non-standard unexpected exception in "
             "epicsThread::exitWait()\n" );
         epicsThreadSleep ( epicsMin ( delay, 5.0 ) );
@@ -175,14 +175,14 @@ bool epicsThread::exitWait ( const double delay ) throw ()
     return this->terminated;
 }
 
-epicsThread::epicsThread ( 
+epicsThread::epicsThread (
     epicsThreadRunable & runableIn, const char * pName,
         unsigned stackSize, unsigned priority ) :
-    runable ( runableIn ), id ( 0 ), pWaitReleaseFlag ( 0 ),
+    runable ( runableIn ), id ( 0 ), pThreadDestroyed ( 0 ),
     begin ( false ), cancel ( false ), terminated ( false )
 {
-    this->id = epicsThreadCreate ( 
-        pName, priority, stackSize, epicsThreadCallEntryPoint, 
+    this->id = epicsThreadCreate (
+        pName, priority, stackSize, epicsThreadCallEntryPoint,
         static_cast < void * > ( this ) );
     if ( ! this->id ) {
         throw unableToCreateThread ();
@@ -194,11 +194,11 @@ epicsThread::~epicsThread () throw ()
     while ( ! this->exitWait ( 10.0 )  ) {
         char nameBuf [256];
         this->getName ( nameBuf, sizeof ( nameBuf ) );
-        fprintf ( stderr, 
+        fprintf ( stderr,
             "epicsThread::~epicsThread(): "
-            "blocking for thread \"%s\" to exit\n", 
+            "blocking for thread \"%s\" to exit\n",
             nameBuf );
-        fprintf ( stderr, 
+        fprintf ( stderr,
             "was epicsThread object destroyed before thread exit ?\n");
     }
 }
@@ -273,11 +273,6 @@ void epicsThread::sleep (double seconds) throw ()
     epicsThreadSleep (seconds);
 }
 
-//epicsThread & epicsThread::getSelf ()
-//{
-//    return * static_cast<epicsThread *> ( epicsThreadGetIdSelf () );
-//}
-
 const char *epicsThread::getNameSelf () throw ()
 {
     return epicsThreadGetNameSelf ();
@@ -304,7 +299,7 @@ void epicsThread :: show ( unsigned level ) const throw ()
     if ( level > 0u ) {
         epicsThreadShow ( this->id, level - 1 );
         if ( level > 1u ) {
-            ::printf ( "pWaitReleaseFlag = %p\n", this->pWaitReleaseFlag );
+            ::printf ( "pThreadDestroyed = %p\n", this->pThreadDestroyed );
             ::printf ( "begin = %c, cancel = %c, terminated = %c\n",
                 this->begin ? 'T' : 'F',
                 this->cancel ? 'T' : 'F',
@@ -324,12 +319,12 @@ extern "C" {
     epicsThreadPrivateId okToBlockPrivate;
     static const int okToBlockNo = 0;
     static const int okToBlockYes = 1;
-    
+
     static void epicsThreadOnceIdInit(void *)
     {
         okToBlockPrivate = epicsThreadPrivateCreate();
     }
-    
+
     int epicsShareAPI epicsThreadIsOkToBlock(void)
     {
         const int *pokToBlock;
@@ -337,7 +332,7 @@ extern "C" {
         pokToBlock = (int *) epicsThreadPrivateGet(okToBlockPrivate);
         return (pokToBlock ? *pokToBlock : 0);
     }
-    
+
     void epicsShareAPI epicsThreadSetOkToBlock(int isOkToBlock)
     {
         const int *pokToBlock;
@@ -345,12 +340,12 @@ extern "C" {
         pokToBlock = (isOkToBlock) ? &okToBlockYes : &okToBlockNo;
         epicsThreadPrivateSet(okToBlockPrivate, (void *)pokToBlock);
     }
-    
+
     epicsThreadId epicsShareAPI epicsThreadMustCreate (
         const char *name, unsigned int priority, unsigned int stackSize,
-        EPICSTHREADFUNC funptr,void *parm) 
+        EPICSTHREADFUNC funptr,void *parm)
     {
-        epicsThreadId id = epicsThreadCreate ( 
+        epicsThreadId id = epicsThreadCreate (
             name, priority, stackSize, funptr, parm );
         assert ( id );
         return id;

@@ -144,10 +144,10 @@ public:
     bool isCurrentThread () const throw ();
     bool operator == ( const epicsThread & ) const throw ();
     void show ( unsigned level ) const throw ();
+
     /* these operate on the current thread */
     static void suspendSelf () throw ();
     static void sleep (double seconds) throw ();
-    /* static epicsThread & getSelf (); */
     static const char * getNameSelf () throw ();
     static bool isOkToBlock () throw ();
     static void setOkToBlock ( bool isOkToBlock ) throw ();
@@ -160,7 +160,7 @@ private:
     epicsMutex mutex;
     epicsEvent event;
     epicsEvent exitEvent;
-    bool * pWaitReleaseFlag;
+    bool * pThreadDestroyed;
     bool begin;
     bool cancel;
     bool terminated;

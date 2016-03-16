@@ -1,0 +1,184 @@
+#*************************************************************************
+# Copyright (c) 2016 UChicago Argonne LLC, as Operator of Argonne
+#     National Laboratory.
+# Copyright (c) 2002 The Regents of the University of California, as
+#     Operator of Los Alamos National Laboratory.
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
+#*************************************************************************
+recordtype(int64out) {
+	include "dbCommon.dbd" 
+	field(VAL,DBF_INT64) {
+		prompt("Desired Output")
+                promptgroup(GUI_OUTPUT)
+		asl(ASL0)
+		pp(TRUE)
+	}
+	field(OUT,DBF_OUTLINK) {
+		prompt("Output Specification")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(DOL,DBF_INLINK) {
+		prompt("Desired Output Loc")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+	}
+	field(OMSL,DBF_MENU) {
+		prompt("Output Mode Select")
+		promptgroup(GUI_OUTPUT)
+		interest(1)
+		menu(menuOmsl)
+	}
+	field(EGU,DBF_STRING) {
+		prompt("Units name")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		size(16)
+		prop(YES)
+	}
+	field(DRVH,DBF_INT64) {
+		prompt("Drive High Limit")
+		promptgroup(GUI_OUTPUT)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(DRVL,DBF_INT64) {
+		prompt("Drive Low Limit")
+		promptgroup(GUI_OUTPUT)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HOPR,DBF_INT64) {
+		prompt("High Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		prop(YES)
+	}
+	field(LOPR,DBF_INT64) {
+		prompt("Low Operating Range")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+		prop(YES)
+	}
+	field(HIHI,DBF_INT64) {
+		prompt("Hihi Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOLO,DBF_INT64) {
+		prompt("Lolo Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HIGH,DBF_INT64) {
+		prompt("High Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(LOW,DBF_INT64) {
+		prompt("Low Alarm Limit")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		prop(YES)
+	}
+	field(HHSV,DBF_MENU) {
+		prompt("Hihi Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LLSV,DBF_MENU) {
+		prompt("Lolo Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HSV,DBF_MENU) {
+		prompt("High Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(LSV,DBF_MENU) {
+		prompt("Low Severity")
+		promptgroup(GUI_ALARMS)
+		pp(TRUE)
+		interest(1)
+		menu(menuAlarmSevr)
+	}
+	field(HYST,DBF_INT64) {
+		prompt("Alarm Deadband")
+		promptgroup(GUI_ALARMS)
+		interest(1)
+	}
+	field(ADEL,DBF_INT64) {
+		prompt("Archive Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(MDEL,DBF_INT64) {
+		prompt("Monitor Deadband")
+		promptgroup(GUI_DISPLAY)
+		interest(1)
+	}
+	field(LALM,DBF_INT64) {
+		prompt("Last Value Alarmed")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(ALST,DBF_INT64) {
+		prompt("Last Value Archived")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(MLST,DBF_INT64) {
+		prompt("Last Val Monitored")
+		special(SPC_NOMOD)
+		interest(3)
+	}
+	field(SIOL,DBF_OUTLINK) {
+		prompt("Sim Output Specifctn")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(SIML,DBF_INLINK) {
+		prompt("Sim Mode Location")
+		promptgroup(GUI_INPUTS)
+		interest(1)
+	}
+	field(SIMM,DBF_MENU) {
+		prompt("Simulation Mode")
+		interest(1)
+		menu(menuYesNo)
+	}
+	field(SIMS,DBF_MENU) {
+		prompt("Sim mode Alarm Svrty")
+		promptgroup(GUI_INPUTS)
+		interest(2)
+		menu(menuAlarmSevr)
+	}
+	field(IVOA,DBF_MENU) {
+		prompt("INVALID output action")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+		menu(menuIvoa)
+	}
+	field(IVOV,DBF_INT64) {
+		prompt("INVALID output value")
+		promptgroup(GUI_OUTPUT)
+		interest(2)
+	}
+}

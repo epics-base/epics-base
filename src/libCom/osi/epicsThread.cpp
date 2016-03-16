@@ -109,6 +109,7 @@ extern "C" void epicsThreadCallEntryPoint ( void * pPvt )
         // once the terminated flag is set and we release the lock
         // then the "this" pointer must not be touched again
     }
+    pThread->pWaitReleaseFlag = NULL;
 }
 
 bool epicsThread::beginWait () throw ()

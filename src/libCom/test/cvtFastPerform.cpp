@@ -1,9 +1,9 @@
-
-// Author: Jeff Hill, LANL
+// Original Author: Jeff Hill, LANL
 
 #include <cmath>
 #include <cfloat>
 #include <cstdlib>
+#include <stdexcept>
 #include <typeinfo>
 
 #include "epicsStdio.h"
@@ -13,169 +13,191 @@
 
 using namespace std;
 
-typedef void ( * PTestFunc ) ( const double &, char * pBug, size_t bufSize );
-
-class Test {
+class PerfConverter {
 public:
-    Test ();
-    virtual ~Test ();
+    virtual const char *_name(void) const = 0;
+    virtual int _maxPrecision(void) const = 0;
+    virtual void _target (double srcD, float srcF, char *pDst, int prec) const = 0;
+    virtual ~PerfConverter () {};
+};
+
+class Perf {
+public:
+    Perf ( int maxConverters );
+    virtual ~Perf ();
+    void addConverter( PerfConverter * c );
     void execute ();
 protected:
-    char _pDst[128];
-    double _srcDbl;
-    float _srcFlt;
-    unsigned short _prec;
     static unsigned const _nUnrolled = 10;
     static const unsigned _uSecPerSec = 1000000;
     static unsigned const _nIterations = 10000;
-    virtual const char *_name(void) = 0;
-    virtual int _maxPrecision(void) = 0;
-    virtual void _target () = 0;
-    void _measure ();
-    Test ( const Test & );
-    Test & operator = ( Test & );
+
+    const int _maxConverters;
+    PerfConverter **_converters;
+    int _nConverters;
+    int _maxPrecision;
+
+    void _measure ( double srcD, float srcF, int prec );
+
+private:
+    Perf ( const Perf & );
+    Perf & operator = ( Perf & );
 };
 
-class TestCvtFastFloat : public Test {
-protected:
-    void _target ();
-    const char *_name (void) { return "cvtFloatToString"; }
-    int _maxPrecision(void) { return 12; }
-};
-
-class TestCvtFastDouble : public Test {
-protected:
-    void _target (void);
-    const char *_name (void) { return "cvtDoubleToString"; }
-    int _maxPrecision(void) { return 17; }
-};
-
-class TestSNPrintf : public Test {
-protected:
-    void _target ();
-    const char *_name (void) { return "epicsSnprintf"; }
-    int _maxPrecision(void) { return 17; }
-};
-
-Test ::
-    Test () :
-    _srcDbl ( 0.0 ), _prec ( 0 )
+Perf :: Perf ( int maxConverters ) :
+    _maxConverters ( maxConverters ),
+    _converters ( new PerfConverter * [ maxConverters ] ),
+    _nConverters ( 0 ),
+    _maxPrecision ( 0 )
 {
 }
 
-Test :: ~Test () 
+Perf :: ~Perf ()
 {
+    for ( int j = 0; j < _nConverters; j++ )
+        delete _converters[ j ];
+
+    delete [] _converters;
 }
 
-void Test :: execute ()
+void Perf :: addConverter(PerfConverter *c)
 {
-    
+    if ( _nConverters >= _maxConverters )
+        throw std :: runtime_error ( "Too many converters" );
+
+    _converters[ _nConverters++ ] = c;
+
+    int prec = c->_maxPrecision();
+    if ( prec > _maxPrecision )
+        _maxPrecision = prec;
+}
+
+void Perf :: execute ()
+{
     for ( unsigned i = 0; i < 3; i++ ) {
         double mVal = rand ();
         mVal /= (RAND_MAX + 1.0);
         double eVal = rand ();
         eVal /= (RAND_MAX + 1.0);
+
         double dVal = eVal;
-        dVal *= DBL_MAX_EXP - DBL_MIN_EXP;
-        dVal += DBL_MIN_EXP;
+        dVal *= FLT_MAX_EXP - FLT_MIN_EXP;
+        dVal += FLT_MIN_EXP;
         int dEVal = static_cast < int > ( dVal + 0.5 );
-	float fVal = eVal;
-	fVal *= FLT_MAX_EXP - FLT_MIN_EXP;
-	fVal += FLT_MIN_EXP;
-	int fEVal = static_cast < int > ( fVal + 0.5 );
-        _srcDbl = ldexp ( mVal, dEVal );
-	_srcFlt = ldexpf ( mVal, fEVal );
-        for ( _prec = 0; _prec <= _maxPrecision(); _prec++ ) {
-            _measure ();
+        double srcDbl = ldexp ( mVal, dEVal );
+        float srcFlt = (float) srcDbl;
+
+        for ( int prec = 0; prec <= _maxPrecision; prec++ ) {
+            _measure (srcFlt, srcDbl, prec);
         }
-        _srcDbl = rand ();
-        _srcDbl /= (RAND_MAX + 1.0);
-        _srcDbl *= 10.0;
-        _srcDbl -= 5.0;
-	_srcFlt = (float) _srcDbl;
-        for ( _prec = 0; _prec <= _maxPrecision(); _prec++ ) {
-            _measure ();
+
+        srcDbl = rand ();
+        srcDbl /= (RAND_MAX + 1.0);
+        srcDbl *= 10.0;
+        srcDbl -= 5.0;
+        srcFlt = (float) srcDbl;
+
+        for ( int prec = 0; prec <= _maxPrecision; prec++ ) {
+            _measure (srcFlt, srcDbl, prec);
         }
     }
 }
 
-void Test :: _measure ()
+void Perf :: _measure (double srcD, float srcF, int prec)
 {
-    epicsTime beg = epicsTime :: getCurrent ();
-    for ( unsigned i = 0; i < _nIterations; i++ ) {
-        _target ();
+    char pDst[40];
+
+    for ( int j = 0; j < _nConverters; j++ ) {
+        const PerfConverter *c = _converters[j];
+
+        if (prec > c->_maxPrecision())
+            continue;
+
+        epicsTime beg = epicsTime :: getCurrent ();
+        for ( unsigned i = 0; i < _nIterations; i++ ) {
+            c->_target (srcD, srcF, pDst, prec);
+        }
+        epicsTime end = epicsTime :: getCurrent ();
+
+        double elapsed = end - beg;
+        elapsed /= _nIterations * _nUnrolled;
+        printf ( "%17s: %11.9f sec, prec=%2i '%s'\n",
+            c->_name (), elapsed, prec, pDst );
     }
-    epicsTime end = epicsTime :: getCurrent ();
-    double elapsed = end - beg;
-    elapsed /= _nIterations * _nUnrolled;
-    printf ( "%17s: %12.9f sec, prec=%2i, out=%s\n",
-            this->_name (), elapsed, _prec, _pDst );
-}
-    
-void TestCvtFastFloat :: _target ()
-{
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
-    cvtFloatToString ( _srcFlt, _pDst, _prec );
 }
 
-void TestCvtFastDouble :: _target ()
-{
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
+class PerfCvtFastFloat : public PerfConverter {
+public:
+    const char *_name (void) const { return "cvtFloatToString"; }
+    int _maxPrecision (void) const { return 12; }
+    void _target (double srcD, float srcF, char *pDst, int prec) const
+    {
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
 
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-    cvtDoubleToString ( _srcDbl, _pDst, _prec );
-}
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+        cvtFloatToString ( srcF, pDst, prec );
+    }
+};
 
-void TestSNPrintf :: _target ()
-{
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-                
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-    epicsSnprintf ( _pDst, sizeof ( _pDst ), "%.*g", 
-                static_cast < int > ( _prec ), _srcDbl );
-}
+
+class PerfCvtFastDouble : public PerfConverter {
+public:
+    const char *_name (void) const { return "cvtDoubleToString"; }
+    int _maxPrecision (void) const { return 17; }
+    void _target (double srcD, float srcF, char *pDst, int prec) const
+    {
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+        cvtDoubleToString ( srcD, pDst, prec );
+    }
+};
+
+
+class PerfSNPrintf : public PerfConverter {
+public:
+    const char *_name (void) const { return "epicsSnprintf"; }
+    int _maxPrecision (void) const { return 17; }
+    void _target (double srcD, float srcF, char *pDst, int prec) const
+    {
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+        epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
+    }
+};
+
 
 MAIN(cvtFastPerform)
 {
-    TestCvtFastFloat testCvtFastFloat;
-    TestCvtFastDouble testCvtFastDouble;
-    TestSNPrintf testSNPrintf;
-    
-    testCvtFastFloat.execute ();
-    testCvtFastDouble.execute ();
-    testSNPrintf.execute ();
+    Perf t(3);
+
+    t.addConverter( new PerfCvtFastFloat );
+    t.addConverter( new PerfCvtFastDouble );
+    t.addConverter( new PerfSNPrintf );
+
+    t.execute ();
 
     return 0;
 }

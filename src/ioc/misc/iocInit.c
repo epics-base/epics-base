@@ -643,7 +643,7 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             }
             dbCaRemoveLink(NULL, plink);
 
-        } else if (plink->type == DB_LINK) {
+        } else if (iocBuildMode==buildIsolated && plink->type == DB_LINK) {
             /* free link, but don't split lockset like dbDbRemoveLink() */
             free(plink->value.pv_link.pvt);
             plink->type = PV_LINK;

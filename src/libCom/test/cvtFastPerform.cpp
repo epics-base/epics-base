@@ -18,6 +18,8 @@ public:
     virtual const char *_name(void) const = 0;
     virtual int _maxPrecision(void) const = 0;
     virtual void _target (double srcD, float srcF, char *pDst, int prec) const = 0;
+    virtual void _add(int prec, double elapsed) = 0;
+    virtual double _total(int prec) const = 0;
     virtual ~PerfConverter () {};
 };
 
@@ -27,6 +29,7 @@ public:
     virtual ~Perf ();
     void addConverter( PerfConverter * c );
     void execute ();
+    void report (const char *title, int count);
 protected:
     static unsigned const _nUnrolled = 10;
     static const unsigned _uSecPerSec = 1000000;
@@ -74,7 +77,9 @@ void Perf :: addConverter(PerfConverter *c)
 
 void Perf :: execute ()
 {
-    for ( unsigned i = 0; i < 3; i++ ) {
+    const int count = 10;
+
+    for ( unsigned i = 0; i < count; i++ ) {
         double mVal = rand ();
         mVal /= (RAND_MAX + 1.0);
         double eVal = rand ();
@@ -90,17 +95,43 @@ void Perf :: execute ()
         for ( int prec = 0; prec <= _maxPrecision; prec++ ) {
             _measure (srcFlt, srcDbl, prec);
         }
+    }
+    report ( "Random Exponent", count );
 
-        srcDbl = rand ();
+    for ( unsigned i = 0; i < count; i++ ) {
+        double srcDbl = rand ();
         srcDbl /= (RAND_MAX + 1.0);
         srcDbl *= 10.0;
         srcDbl -= 5.0;
-        srcFlt = (float) srcDbl;
+        float srcFlt = (float) srcDbl;
 
         for ( int prec = 0; prec <= _maxPrecision; prec++ ) {
             _measure (srcFlt, srcDbl, prec);
         }
     }
+    report ( "-5..+5", count );
+}
+
+void Perf :: report (const char *title, int count)
+{
+    printf( "\n%s\n\nprec\t", title );
+    for ( int j = 0; j < _nConverters; j++ )
+        printf( "%-17s  ", _converters[j]->_name() );
+
+    for (int prec = 0; prec < _maxPrecision; prec++ ) {
+	printf( "\n %2d\t", prec );
+        for (int j = 0; j < _nConverters; j++ ) {
+            PerfConverter *c = _converters[j];
+	    if (prec > c->_maxPrecision())
+	        printf( "%11s        ", "-" );
+	    else {
+		double total = c->_total(prec);
+	        printf( "%11.9f sec    ", c->_total(prec) / count );
+		c->_add(prec, -total);   // Reset counter
+	    }
+	}
+    }
+    printf( "\n\n" );
 }
 
 void Perf :: _measure (double srcD, float srcF, int prec)
@@ -108,7 +139,7 @@ void Perf :: _measure (double srcD, float srcF, int prec)
     char pDst[40];
 
     for ( int j = 0; j < _nConverters; j++ ) {
-        const PerfConverter *c = _converters[j];
+        PerfConverter *c = _converters[j];
 
         if (prec > c->_maxPrecision())
             continue;
@@ -121,8 +152,9 @@ void Perf :: _measure (double srcD, float srcF, int prec)
 
         double elapsed = end - beg;
         elapsed /= _nIterations * _nUnrolled;
-        printf ( "%17s: %11.9f sec, prec=%2i '%s'\n",
-            c->_name (), elapsed, prec, pDst );
+	c->_add( prec, elapsed );
+        // printf ( "%17s: %11.9f sec, prec=%2i '%s'\n",
+        //    c->_name (), elapsed, prec, pDst );
     }
 }
 
@@ -144,6 +176,10 @@ public:
         cvtFloatToString ( srcF, pDst, prec );
         cvtFloatToString ( srcF, pDst, prec );
     }
+    void _add(int prec, double elapsed) { _measured[prec] += elapsed; }
+    double _total (int prec) const { return _measured[prec]; }
+private:
+    double _measured[13];
 };
 
 
@@ -165,6 +201,10 @@ public:
         cvtDoubleToString ( srcD, pDst, prec );
         cvtDoubleToString ( srcD, pDst, prec );
     }
+    void _add(int prec, double elapsed) { _measured[prec] += elapsed; }
+    double _total (int prec) const { return _measured[prec]; }
+private:
+    double _measured[18];
 };
 
 
@@ -186,6 +226,10 @@ public:
         epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
         epicsSnprintf ( pDst, 39, "%.*g", prec, srcD );
     }
+    void _add(int prec, double elapsed) { _measured[prec] += elapsed; }
+    double _total (int prec) const { return _measured[prec]; }
+private:
+    double _measured[18];
 };
 
 

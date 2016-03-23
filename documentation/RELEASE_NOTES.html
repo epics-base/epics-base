@@ -21,6 +21,46 @@
 
 -->
 
+<h3>IOC Database Support for 64-bit integers</h3>
+
+<p>The IOC now supports the 64-bit integer field types <tt>DBF_INT64</tt> and
+<tt>DBF_UINT64</tt>, and there are new record types <tt>int64in</tt> and
+<tt>int64out</tt> derived from the <tt>longin</tt> and <tt>longout</tt> types
+respectively that use the <tt>DBF_INT64</tt> data type for their VAL and related
+fields. The usual range of Soft Channel device support are included for these
+new record types.</p>
+
+<p>All internal IOC APIs such as dbAccess can handle the new field types and
+their associated request values <tt>DBR_INT64</tt> and <tt>DBR_UINT64</tt>,
+which are implemented using the <tt>epicsInt64</tt> and <tt>epicsUInt64</tt>
+typedef's from the <tt>epicsTypes.h</tt> header.</p>
+
+<p>The waveform record type has been updated to support these new field types.
+<strong>All waveform device support layers must be updated to recognize the new
+type enumeration values</strong>, which had to be inserted before the
+<tt>FLOAT</tt> value in the enum <tt>dbfType</tt> and in <tt>menuFtype</tt>. C
+or C++ code can detect at compile-time whether this version of base provides
+64-bit support by checking for the presence of the <tt>DBR_INT64</tt> macro as
+follows (Note that <tt>DB<b>F</b>_INT64</tt> is an enum tag and not a
+preprocessor macro):</p>
+
+<blockquote><pre>
+#ifdef DBR_INT64
+    /* Code where Base has INT64 support */
+#else
+    /* Code for older versions */
+#endif
+</pre></blockquote>
+
+<p>Channel Access does not (and probably never will) directly support 64-bit
+integer types, so the new field types are presented to the CA server as
+<tt>DBF_DOUBLE</tt> values. This means that field values larger than 2^52
+(0x10_0000_0000_0000 = 4503599627370496) cannot be transported over Channel
+Access without their least significant bits being truncated. The EPICS V4
+pvAccess network protocol <em>can</em> transport 64-bit data types however, and
+a future release of the pvaSrv module will connect this ability to the IOC.</p>
+
+
 <h3>Echoless comments in iocsh</h3>
 
 <p>The way comments are parsed by the iocsh interpreter has changed. The

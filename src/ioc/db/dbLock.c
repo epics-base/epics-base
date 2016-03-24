@@ -328,7 +328,7 @@ int dbLockUpdateRefs(dbLocker *locker, int update)
 }
 
 void dbLockerPrepare(struct dbLocker *locker,
-                struct dbCommon **precs,
+                struct dbCommon * const *precs,
                 size_t nrecs)
 {
     size_t i;
@@ -348,7 +348,7 @@ void dbLockerPrepare(struct dbLocker *locker,
     dbLockUpdateRefs(locker, 1);
 }
 
-dbLocker *dbLockerAlloc(dbCommon **precs,
+dbLocker *dbLockerAlloc(dbCommon * const *precs,
                         size_t nrecs,
                         unsigned int flags)
 {

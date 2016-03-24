@@ -27,7 +27,7 @@ typedef struct dbLocker dbLocker;
 epicsShareFunc void dbScanLock(struct dbCommon *precord);
 epicsShareFunc void dbScanUnlock(struct dbCommon *precord);
 
-epicsShareFunc dbLocker *dbLockerAlloc(struct dbCommon **precs,
+epicsShareFunc dbLocker *dbLockerAlloc(struct dbCommon * const *precs,
                                        size_t nrecs,
                                        unsigned int flags);
 

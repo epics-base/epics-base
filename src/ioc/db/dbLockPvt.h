@@ -96,7 +96,7 @@ epicsShareFunc void dbLockDecRef(lockSet *ls);
  * nrecs must be <=DBLOCKER_NALLOC.
  */
 void dbLockerPrepare(struct dbLocker *locker,
-                     struct dbCommon **precs,
+                     struct dbCommon * const *precs,
                      size_t nrecs);
 void dbLockerFinalize(dbLocker *);
 

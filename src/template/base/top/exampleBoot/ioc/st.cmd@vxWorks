@@ -1,7 +1,7 @@
-## Example vxWorks startup file
+#- Example vxWorks startup file
 
-## The following is needed if your board support package doesn't at boot time
-## automatically cd to the directory containing its startup script
+#- The following is needed if your board support package doesn't at boot time
+#- automatically cd to the directory containing its startup script
 #cd "_TOP_/iocBoot/_IOC_"
 
 < cdCommands
@@ -9,8 +9,8 @@
 
 cd topbin
 
-## You may have to change _APPNAME_ to something else
-## everywhere it appears in this file
+#- You may have to change _APPNAME_ to something else
+#- everywhere it appears in this file
 ld 0,0, "_APPNAME_.munch"
 
 ## Register all support components
@@ -23,10 +23,10 @@ dbLoadTemplate "db/user.substitutions"
 dbLoadRecords "db/_APPNAME_Version.db", "user=_USER_"
 dbLoadRecords "db/dbSubExample.db", "user=_USER_"
 
-## Set this to see messages from mySub
+#- Set this to see messages from mySub
 #mySubDebug = 1
 
-## Run this to trace the stages of iocInit
+#- Run this to trace the stages of iocInit
 #traceIocInit
 
 cd startup

@@ -611,12 +611,13 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
 
         /*
          * Ignore comment lines other than to echo
-         * them if they came from a script.  This
-         * avoids macLib errors from comments.
+         * them if they came from a script (disable echoing
+         * with '#-').  This avoids macLib errors from comments.
          */
         if (c == '#') {
             if ((prompt == NULL) && (commandLine == NULL))
-                puts(raw);
+                if (raw[icin + 1] != '-')
+                    puts(raw);
             continue;
         }
 
@@ -635,10 +636,12 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         }
 
         /*
-         * Echo non-empty lines read from a script
+         * Echo non-empty lines read from a script.
+         * Comments delineated with '#-' aren't echoed.
          */
         if ((prompt == NULL) && *line && (commandLine == NULL))
-            puts(line);
+            if ((c != '#') || (line[icin + 1] != '-'))
+                puts(line);
 
         /*
          * Ignore lines that became a comment or empty after macro expansion

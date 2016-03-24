@@ -1,7 +1,7 @@
-## Example RTEMS startup script
+#- Example RTEMS startup script
 
-## You may have to change _APPNAME_ to something else
-## everywhere it appears in this file
+#- You may have to change _APPNAME_ to something else
+#- everywhere it appears in this file
 
 #< envPaths
 

@@ -1,7 +1,7 @@
-## Example RTEMS startup script
+#- Example RTEMS startup script
 
-## You may have to change _APPNAME_ to something else
-## everywhere it appears in this file
+#- You may have to change _APPNAME_ to something else
+#- everywhere it appears in this file
 
 #< envPaths
 
@@ -14,10 +14,10 @@ dbLoadTemplate("db/user.substitutions")
 dbLoadRecords("db/_APPNAME_Version.db", "user=_USER_")
 dbLoadRecords("db/dbSubExample.db", "user=_USER_")
 
-## Set this to see messages from mySub
+#- Set this to see messages from mySub
 #var mySubDebug 1
 
-## Run this to trace the stages of iocInit
+#- Run this to trace the stages of iocInit
 #traceIocInit
 
 iocInit

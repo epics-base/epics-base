@@ -167,7 +167,8 @@ int  epicsShareAPI recGblInitConstantLink(
     if(!plink->value.constantStr) return(FALSE);
     switch(dbftype) {
     case DBF_STRING:
-	strcpy((char *)pdest,plink->value.constantStr);
+        strncpy((char *)pdest, plink->value.constantStr, MAX_STRING_SIZE - 1);
+        ((char *)pdest)[MAX_STRING_SIZE - 1] = 0;
 	break;
     case DBF_CHAR : {
 	epicsInt16 value;

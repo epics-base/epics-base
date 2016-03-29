@@ -2198,7 +2198,10 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
     switch (pflddes->field_type) {
     case DBF_STRING:
 	if(!pfield) return(S_dbLib_fieldNotFound);
-	strncpy((char *)pfield, pstring,pflddes->size);
+	if(strlen(pstring) >= (size_t)pflddes->size) return S_dbLib_strLen;
+	strncpy((char *)pfield, pstring, pflddes->size-1);
+        ((char *)pfield)[pflddes->size-1] = 0;
+
 	if((pflddes->special == SPC_CALC) && !stringHasMacro) {
 	    char  rpcl[RPCL_LEN];
 	    short err;
@@ -2209,7 +2212,6 @@ long epicsShareAPI dbPutString(DBENTRY *pdbentry,const char *pstring)
 			      calcErrorStr(err), pstring);
 	    }
 	}
-	if((short)strlen(pstring) >= pflddes->size) status = S_dbLib_strLen;
 	break;
 
     case DBF_CHAR:

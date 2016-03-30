@@ -13,6 +13,13 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>String field buffer overflows</h3>
+
+<p>Two buffer overflow bugs that can crash the IOC have been fixed, caused by
+initializing a string field with a value larger than the field size
+(<a href="https://bugs.launchpad.net/bugs/1563191">Launchpad bug
+#1563191</a>).</p>
+
 <h3>Fixed stack corruption bug in epicsThread C++ API</h3>
 
 <p>The C++ interface to the epicsThread API could corrupt the stack on thread

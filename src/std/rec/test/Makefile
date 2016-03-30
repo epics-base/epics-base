@@ -18,6 +18,7 @@ dbRecStdTest_LIBS += dbRecStd dbCore ca Com
 PROD_LIBS = dbRecStdTest dbRecStd dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/recTestIoc.dbd
+DBDDEPENDS_FILES += recTestIoc.dbd$(DEP)
 recTestIoc_DBD = base.dbd
 TESTFILES += $(COMMON_DIR)/recTestIoc.dbd
 
@@ -46,6 +47,7 @@ TESTFILES += ../compressTest.db
 TESTS += compressTest
 
 TARGETS += $(COMMON_DIR)/asTestIoc.dbd
+DBDDEPENDS_FILES += asTestIoc.dbd$(DEP)
 asTestIoc_DBD += base.dbd
 asTestIoc_DBD += asTest.dbd
 TESTPROD_HOST += asTest
@@ -56,6 +58,7 @@ TESTFILES += $(COMMON_DIR)/asTestIoc.dbd ../asTest.db
 TESTS += asTest
 
 TARGETS += $(COMMON_DIR)/analogMonitorTest.dbd
+DBDDEPENDS_FILES += analogMonitorTest.dbd$(DEP)
 analogMonitorTest_DBD += base.dbd
 TESTPROD_HOST += analogMonitorTest
 analogMonitorTest_SRCS += analogMonitorTest.c

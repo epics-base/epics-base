@@ -17,6 +17,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "alarm.h"
 #include "dbDefs.h"
 #include "epicsMath.h"
 #include "epicsPrint.h"
@@ -214,7 +215,27 @@ int recGblSetSevr(void *precord, epicsEnum16 new_stat, epicsEnum16 new_sevr)
     }
     return FALSE;
 }
-
+
+void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
+    epicsEnum16 sevr)
+{
+    switch (msMode) {
+    case pvlOptNMS:
+	break;
+    case pvlOptMSI:
+        if (sevr < INVALID_ALARM)
+	    break;
+	/* Fall through */
+    case pvlOptMS:
+	recGblSetSevr(precord, LINK_ALARM, sevr);
+	break;
+    case pvlOptMSS:
+        recGblSetSevr(precord, stat, sevr);
+	break;
+    }
+}
+
+
 void recGblFwdLink(void *precord)
 {
     dbCommon *pdbc = precord;

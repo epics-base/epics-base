@@ -59,6 +59,8 @@ epicsShareFunc int  recGblInitConstantLink(struct link *plink,
 epicsShareFunc unsigned short recGblResetAlarms(void *precord);
 epicsShareFunc int recGblSetSevr(void *precord, epicsEnum16 new_stat,
     epicsEnum16 new_sevr);
+epicsShareFunc void recGblInheritSevr(int msMode, void *precord, epicsEnum16 stat,
+    epicsEnum16 sevr);
 epicsShareFunc void recGblFwdLink(void *precord);
 epicsShareFunc void recGblGetTimeStamp(void *precord);
 epicsShareFunc void recGblTSELwasModified(struct link *plink);

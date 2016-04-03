@@ -28,6 +28,7 @@ extern "C" {
 struct dbLocker;
 
 typedef struct lset {
+    long (*loadLink)(struct link *plink, short dbrType, void *pbuffer);
     void (*removeLink)(struct dbLocker *locker, struct link *plink);
     int (*isConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);

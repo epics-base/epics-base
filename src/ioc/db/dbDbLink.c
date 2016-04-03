@@ -331,6 +331,7 @@ static void dbDbScanFwdLink(struct link *plink)
 }
 
 static lset dbDb_lset = {
+    NULL,
     dbDbRemoveLink,
     dbDbIsConnected,
     dbDbGetDBFtype, dbDbGetElements,

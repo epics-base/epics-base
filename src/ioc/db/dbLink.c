@@ -19,39 +19,29 @@
 #include <string.h>
 
 #include "alarm.h"
-#include "cantProceed.h"
 #include "cvtFast.h"
 #include "dbDefs.h"
 #include "ellLib.h"
-#include "epicsThread.h"
 #include "epicsTime.h"
 #include "errlog.h"
 
 #include "caeventmask.h"
 
 #define epicsExportSharedSymbols
-#include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
-#include "dbBkpt.h"
 #include "dbCa.h"
 #include "dbCommon.h"
-#include "dbConvertFast.h"
-#include "dbConvert.h"
+#include "dbConstLink.h"
 #include "dbDbLink.h"
-#include "dbEvent.h"
 #include "db_field_log.h"
-#include "dbFldTypes.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
 #include "dbLockPvt.h"
-#include "dbNotify.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
 #include "devSup.h"
-#include "epicsEvent.h"
-#include "errMdef.h"
 #include "link.h"
 #include "recGbl.h"
 #include "recSup.h"
@@ -75,62 +65,6 @@ static const char * link_field_name(const struct link *plink)
     return "????";
 }
 
-
-/***************************** Constant Links *****************************/
-
-/* Forward definition */
-static lset dbConst_lset;
-
-static void dbConstInitLink(struct link *plink)
-{
-    plink->lset = &dbConst_lset;
-}
-
-static void dbConstAddLink(struct link *plink)
-{
-    plink->lset = &dbConst_lset;
-}
-
-static long dbConstLoadLink(struct link *plink, short dbrType, void *pbuffer)
-{
-    if (!plink->value.constantStr)
-        return S_db_badField;
-
-    plink->lset = &dbConst_lset;
-
-    /* Constant strings are always numeric */
-    if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
-        dbrType = DBF_USHORT;
-
-    return dbFastPutConvertRoutine[DBR_STRING][dbrType]
-            (plink->value.constantStr, pbuffer, NULL);
-}
-
-static long dbConstGetNelements(const struct link *plink, long *nelements)
-{
-    *nelements = 0;
-    return 0;
-}
-
-static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
-{
-    if (pnRequest)
-        *pnRequest = 0;
-    return 0;
-}
-
-static lset dbConst_lset = {
-    NULL,
-    NULL,
-    NULL, dbConstGetNelements,
-    dbConstGetValue,
-    NULL, NULL, NULL,
-    NULL, NULL,
-    NULL, NULL,
-    NULL,
-    NULL
-};
 
 /***************************** Generic Link API *****************************/
 
@@ -209,10 +143,11 @@ void dbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *ptar
 
 long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
 {
-    if (plink->type == CONSTANT)
-        return dbConstLoadLink(plink, dbrType, pbuffer);
+    lset *plset = plink->lset;
 
-    /* Could pass a type hint to the other link types here */
+    if (plset->loadLink)
+        return plset->loadLink(plink, dbrType, pbuffer);
+
     return S_db_notFound;
 }
 

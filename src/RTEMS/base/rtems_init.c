@@ -530,6 +530,12 @@ Init (rtems_task_argument ignored)
     putenv ("IOCSH_HISTSIZE=20");
 
     /*
+     * Display some OS information
+     */
+    printf("\n***** RTEMS Version: %s *****\n",
+        rtems_get_version_string());
+
+    /*
      * Start network
      */
     if ((cp = getenv("EPICS_TS_NTP_INET")) != NULL)

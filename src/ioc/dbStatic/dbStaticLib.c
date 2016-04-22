@@ -41,7 +41,6 @@
 #include "dbStaticPvt.h"
 #include "devSup.h"
 #include "drvSup.h"
-#include "guigroup.h"
 #include "link.h"
 #include "special.h"
 

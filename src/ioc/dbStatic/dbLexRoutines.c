@@ -34,7 +34,6 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "epicsExport.h"
-#include "guigroup.h"
 #include "link.h"
 #include "special.h"
 

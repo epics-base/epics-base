@@ -6,7 +6,8 @@
 use strict;
 use Config;
 
-my $val = $Config{shift};
+my $arg = shift;
+my $val = $Config{$arg};
 
 $val =~ s{\\}{/}go
     if $^O eq 'MSWin32';

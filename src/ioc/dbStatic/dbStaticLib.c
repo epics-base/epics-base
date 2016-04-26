@@ -1410,7 +1410,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     /*Get size of NAME field*/
     pdbFldDes = precordType->papFldDes[0];
     if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
-	return(S_dbLib_nameLength);
+        return(S_dbLib_nameLength);
     if((int)strlen(precordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
     /* clear callers entry */
     zeroDbentry(pdbentry);
@@ -1433,7 +1433,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     }
     if(status==0) {
         precnode = pdbentry->precnode;
-	ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
+        ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
     } else {
         ellAdd(preclist,&pNewRecNode->node);
     }

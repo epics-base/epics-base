@@ -98,12 +98,25 @@ typedef struct client {
   char                  disconnect; /* disconnect detected */
 } client;
 
+/* Channel state shows which struct client list a
+ * channel_in_us::node is in.
+ *
+ * client::chanList
+ *   rsrvCS_pendConnectResp, rsrvCS_inService
+ * client::chanPendingUpdateARList
+ *   rsrvCS_pendConnectRespUpdatePendAR, rsrvCS_inServiceUpdatePendAR
+ * Not in any list
+ *   rsrvCS_shutdown
+ *
+ * rsrvCS_invalid is not used
+ */
 enum rsrvChanState { 
     rsrvCS_invalid,
     rsrvCS_pendConnectResp,
     rsrvCS_inService,
     rsrvCS_pendConnectRespUpdatePendAR,
-    rsrvCS_inServiceUpdatePendAR 
+    rsrvCS_inServiceUpdatePendAR,
+    rsrvCS_shutdown
 };
 
 /*

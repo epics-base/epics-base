@@ -1426,17 +1426,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     pNewRecNode->recordname = dbRecordName(pdbentry);
     ellInit(&pNewRecNode->infoList);
     /* install record node in list in sorted postion */
-    status = dbFirstRecord(pdbentry);
-    while(status==0) {
-        if(strcmp(precordName,dbGetRecordName(pdbentry)) < 0) break;
-        status = dbNextRecord(pdbentry);
-    }
-    if(status==0) {
-        precnode = pdbentry->precnode;
-        ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
-    } else {
-        ellAdd(preclist,&pNewRecNode->node);
-    }
+    ellAdd(preclist, &pNewRecNode->node);
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}

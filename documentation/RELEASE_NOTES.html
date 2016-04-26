@@ -15,6 +15,18 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>Build rules and DELAY_INSTALL_LIBS</h3>
+
+<p>A new order-only prerequisite build rule has been added to ensure that
+library files (and DLL stubs on Windows) get installed before linking any
+executables, which resolves parallel build problems on high-powered CPUs. There
+are some (rare) cases though where a Makefile has to build an executable and run
+it to be able to compile code for a library built by the same Makefile. With
+this new build rule GNUmake will complain about a circular dependency and the
+build will probably fail in those cases. To avoid this problem the failing
+Makefile should set <tt>DELAY_INSTALL_LIBS = YES</tt> before including the
+<tt>$(TOP)/configure/RULES</tt> file, disabling the new build rule.</p>
+
 <h3>CA server configuration changes</h3>
 
 <p>RSRV now honors EPICS_CAS_INTF_ADDR_LIST and binds only to the provided list

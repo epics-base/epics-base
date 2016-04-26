@@ -10,3 +10,4 @@
 SRC_DIRS += $(LIBCOM)/ellLib
 INC += ellLib.h
 Com_SRCS += ellLib.c
+Com_SRCS += ellSort.c

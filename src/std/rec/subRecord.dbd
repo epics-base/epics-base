@@ -15,14 +15,14 @@ recordtype(sub) {
 	}
 	field(INAM,DBF_STRING) {
 		prompt("Init Routine Name")
-                promptgroup("30 - Action")
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(1)
 		size(40)
 	}
 	field(SNAM,DBF_STRING) {
 		prompt("Subroutine Name")
-                promptgroup("30 - Action")
+		promptgroup("30 - Action")
 		special(SPC_MOD)
 		interest(1)
 		size(40)
@@ -37,127 +37,127 @@ recordtype(sub) {
 	}
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input B")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input C")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input D")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input E")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input F")
-                promptgroup("41 - Input A-F")
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input G")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input H")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input I")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input J")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input K")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
-                promptgroup("42 - Input G-L")
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
-                prompt("Engineering Units")
-                promptgroup("80 - Display")
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
-                prompt("High Operating Range")
-                promptgroup("80 - Display")
+		prompt("High Operating Range")
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
-                promptgroup("80 - Display")
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-                promptgroup("80 - Display")
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(BRSV,DBF_MENU) {
 		prompt("Bad Return Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -165,7 +165,7 @@ recordtype(sub) {
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -173,7 +173,7 @@ recordtype(sub) {
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -181,7 +181,7 @@ recordtype(sub) {
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -189,17 +189,17 @@ recordtype(sub) {
 	}
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
-                promptgroup("80 - Display")
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
-                promptgroup("80 - Display")
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(A,DBF_DOUBLE) {

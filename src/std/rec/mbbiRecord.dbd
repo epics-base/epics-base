@@ -10,24 +10,24 @@ recordtype(mbbi) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_ENUM) {
 		prompt("Current Value")
-                promptgroup("40 - Input")
+		promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 	}
 	field(NOBT,DBF_USHORT) {
 		prompt("Number of Bits")
-                promptgroup("40 - Input")
+		promptgroup("40 - Input")
 		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
-                promptgroup("40 - Input")
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(ZRVL,DBF_ULONG) {
 		prompt("Zero Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -35,7 +35,7 @@ recordtype(mbbi) {
 	}
 	field(ONVL,DBF_ULONG) {
 		prompt("One Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -43,7 +43,7 @@ recordtype(mbbi) {
 	}
 	field(TWVL,DBF_ULONG) {
 		prompt("Two Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -51,7 +51,7 @@ recordtype(mbbi) {
 	}
 	field(THVL,DBF_ULONG) {
 		prompt("Three Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -59,7 +59,7 @@ recordtype(mbbi) {
 	}
 	field(FRVL,DBF_ULONG) {
 		prompt("Four Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -67,7 +67,7 @@ recordtype(mbbi) {
 	}
 	field(FVVL,DBF_ULONG) {
 		prompt("Five Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -75,7 +75,7 @@ recordtype(mbbi) {
 	}
 	field(SXVL,DBF_ULONG) {
 		prompt("Six Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -83,7 +83,7 @@ recordtype(mbbi) {
 	}
 	field(SVVL,DBF_ULONG) {
 		prompt("Seven Value")
-                promptgroup("41 - Input 0-7")
+		promptgroup("41 - Input 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -91,7 +91,7 @@ recordtype(mbbi) {
 	}
 	field(EIVL,DBF_ULONG) {
 		prompt("Eight Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -99,7 +99,7 @@ recordtype(mbbi) {
 	}
 	field(NIVL,DBF_ULONG) {
 		prompt("Nine Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -107,7 +107,7 @@ recordtype(mbbi) {
 	}
 	field(TEVL,DBF_ULONG) {
 		prompt("Ten Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -115,7 +115,7 @@ recordtype(mbbi) {
 	}
 	field(ELVL,DBF_ULONG) {
 		prompt("Eleven Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -123,7 +123,7 @@ recordtype(mbbi) {
 	}
 	field(TVVL,DBF_ULONG) {
 		prompt("Twelve Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -131,7 +131,7 @@ recordtype(mbbi) {
 	}
 	field(TTVL,DBF_ULONG) {
 		prompt("Thirteen Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -139,7 +139,7 @@ recordtype(mbbi) {
 	}
 	field(FTVL,DBF_ULONG) {
 		prompt("Fourteen Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -147,7 +147,7 @@ recordtype(mbbi) {
 	}
 	field(FFVL,DBF_ULONG) {
 		prompt("Fifteen Value")
-                promptgroup("42 - Input 8-15")
+		promptgroup("42 - Input 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -155,7 +155,7 @@ recordtype(mbbi) {
 	}
 	field(ZRST,DBF_STRING) {
 		prompt("Zero String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -163,7 +163,7 @@ recordtype(mbbi) {
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -171,7 +171,7 @@ recordtype(mbbi) {
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -179,7 +179,7 @@ recordtype(mbbi) {
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -187,7 +187,7 @@ recordtype(mbbi) {
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -195,7 +195,7 @@ recordtype(mbbi) {
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -203,7 +203,7 @@ recordtype(mbbi) {
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -211,7 +211,7 @@ recordtype(mbbi) {
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -219,7 +219,7 @@ recordtype(mbbi) {
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -227,7 +227,7 @@ recordtype(mbbi) {
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -235,7 +235,7 @@ recordtype(mbbi) {
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -243,7 +243,7 @@ recordtype(mbbi) {
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -251,7 +251,7 @@ recordtype(mbbi) {
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -259,7 +259,7 @@ recordtype(mbbi) {
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -267,7 +267,7 @@ recordtype(mbbi) {
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -275,7 +275,7 @@ recordtype(mbbi) {
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -283,136 +283,136 @@ recordtype(mbbi) {
 	}
 	field(ZRSV,DBF_MENU) {
 		prompt("State Zero Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ONSV,DBF_MENU) {
 		prompt("State One Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TWSV,DBF_MENU) {
 		prompt("State Two Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(THSV,DBF_MENU) {
 		prompt("State Three Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FRSV,DBF_MENU) {
 		prompt("State Four Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FVSV,DBF_MENU) {
 		prompt("State Five Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(SXSV,DBF_MENU) {
 		prompt("State Six Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(SVSV,DBF_MENU) {
 		prompt("State Seven Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(EISV,DBF_MENU) {
 		prompt("State Eight Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(NISV,DBF_MENU) {
 		prompt("State Nine Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TESV,DBF_MENU) {
 		prompt("State Ten Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ELSV,DBF_MENU) {
 		prompt("State Eleven Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TVSV,DBF_MENU) {
 		prompt("State Twelve Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TTSV,DBF_MENU) {
 		prompt("State Thirteen Sevr")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FTSV,DBF_MENU) {
 		prompt("State Fourteen Sevr")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FFSV,DBF_MENU) {
 		prompt("State Fifteen Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
-        field(AFTC, DBF_DOUBLE) {
-                prompt("Alarm Filter Time Constant")
-                promptgroup("70 - Alarm")
-                interest(1)
-        }
-        field(AFVL, DBF_DOUBLE) {
-                prompt("Alarm Filter Value")
-                special(SPC_NOMOD)
-                interest(3)
-        }
+	field(AFTC, DBF_DOUBLE) {
+		prompt("Alarm Filter Time Constant")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(AFVL, DBF_DOUBLE) {
+		prompt("Alarm Filter Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(UNSV,DBF_MENU) {
 		prompt("Unknown State Severity")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(COSV,DBF_MENU) {
 		prompt("Change of State Svr")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
@@ -448,12 +448,12 @@ recordtype(mbbi) {
 	}
 	field(SHFT,DBF_USHORT) {
 		prompt("Shift")
-                promptgroup("40 - Input")
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SVAL,DBF_ULONG) {
@@ -461,7 +461,7 @@ recordtype(mbbi) {
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -471,7 +471,7 @@ recordtype(mbbi) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}

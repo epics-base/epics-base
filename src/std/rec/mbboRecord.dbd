@@ -10,7 +10,7 @@ recordtype(mbbo) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_ENUM) {
 		prompt("Desired Value")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		special(SPC_DBADDR)
 		asl(ASL0)
 		pp(TRUE)
@@ -19,29 +19,29 @@ recordtype(mbbo) {
 	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
-                promptgroup("40 - Input")
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {
 		prompt("Output Mode Select")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		interest(1)
 		menu(menuOmsl)
 	}
 	field(NOBT,DBF_USHORT) {
 		prompt("Number of Bits")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(OUT,DBF_OUTLINK) {
 		prompt("Output Specification")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(ZRVL,DBF_ULONG) {
 		prompt("Zero Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -49,7 +49,7 @@ recordtype(mbbo) {
 	}
 	field(ONVL,DBF_ULONG) {
 		prompt("One Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -57,7 +57,7 @@ recordtype(mbbo) {
 	}
 	field(TWVL,DBF_ULONG) {
 		prompt("Two Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -65,7 +65,7 @@ recordtype(mbbo) {
 	}
 	field(THVL,DBF_ULONG) {
 		prompt("Three Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -73,7 +73,7 @@ recordtype(mbbo) {
 	}
 	field(FRVL,DBF_ULONG) {
 		prompt("Four Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -81,7 +81,7 @@ recordtype(mbbo) {
 	}
 	field(FVVL,DBF_ULONG) {
 		prompt("Five Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -89,7 +89,7 @@ recordtype(mbbo) {
 	}
 	field(SXVL,DBF_ULONG) {
 		prompt("Six Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -97,7 +97,7 @@ recordtype(mbbo) {
 	}
 	field(SVVL,DBF_ULONG) {
 		prompt("Seven Value")
-                promptgroup("51 - Output 0-7")
+		promptgroup("51 - Output 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -105,7 +105,7 @@ recordtype(mbbo) {
 	}
 	field(EIVL,DBF_ULONG) {
 		prompt("Eight Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -113,7 +113,7 @@ recordtype(mbbo) {
 	}
 	field(NIVL,DBF_ULONG) {
 		prompt("Nine Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -121,7 +121,7 @@ recordtype(mbbo) {
 	}
 	field(TEVL,DBF_ULONG) {
 		prompt("Ten Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -129,7 +129,7 @@ recordtype(mbbo) {
 	}
 	field(ELVL,DBF_ULONG) {
 		prompt("Eleven Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -137,7 +137,7 @@ recordtype(mbbo) {
 	}
 	field(TVVL,DBF_ULONG) {
 		prompt("Twelve Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -145,7 +145,7 @@ recordtype(mbbo) {
 	}
 	field(TTVL,DBF_ULONG) {
 		prompt("Thirteen Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -153,7 +153,7 @@ recordtype(mbbo) {
 	}
 	field(FTVL,DBF_ULONG) {
 		prompt("Fourteen Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -161,7 +161,7 @@ recordtype(mbbo) {
 	}
 	field(FFVL,DBF_ULONG) {
 		prompt("Fifteen Value")
-                promptgroup("52 - Output 8-15")
+		promptgroup("52 - Output 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		base(HEX)
@@ -169,7 +169,7 @@ recordtype(mbbo) {
 	}
 	field(ZRST,DBF_STRING) {
 		prompt("Zero String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -177,7 +177,7 @@ recordtype(mbbo) {
 	}
 	field(ONST,DBF_STRING) {
 		prompt("One String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -185,7 +185,7 @@ recordtype(mbbo) {
 	}
 	field(TWST,DBF_STRING) {
 		prompt("Two String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -193,7 +193,7 @@ recordtype(mbbo) {
 	}
 	field(THST,DBF_STRING) {
 		prompt("Three String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -201,7 +201,7 @@ recordtype(mbbo) {
 	}
 	field(FRST,DBF_STRING) {
 		prompt("Four String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -209,7 +209,7 @@ recordtype(mbbo) {
 	}
 	field(FVST,DBF_STRING) {
 		prompt("Five String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -217,7 +217,7 @@ recordtype(mbbo) {
 	}
 	field(SXST,DBF_STRING) {
 		prompt("Six String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -225,7 +225,7 @@ recordtype(mbbo) {
 	}
 	field(SVST,DBF_STRING) {
 		prompt("Seven String")
-                promptgroup("81 - Display 0-7")
+		promptgroup("81 - Display 0-7")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -233,7 +233,7 @@ recordtype(mbbo) {
 	}
 	field(EIST,DBF_STRING) {
 		prompt("Eight String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -241,7 +241,7 @@ recordtype(mbbo) {
 	}
 	field(NIST,DBF_STRING) {
 		prompt("Nine String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -249,7 +249,7 @@ recordtype(mbbo) {
 	}
 	field(TEST,DBF_STRING) {
 		prompt("Ten String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -257,7 +257,7 @@ recordtype(mbbo) {
 	}
 	field(ELST,DBF_STRING) {
 		prompt("Eleven String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -265,7 +265,7 @@ recordtype(mbbo) {
 	}
 	field(TVST,DBF_STRING) {
 		prompt("Twelve String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -273,7 +273,7 @@ recordtype(mbbo) {
 	}
 	field(TTST,DBF_STRING) {
 		prompt("Thirteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -281,7 +281,7 @@ recordtype(mbbo) {
 	}
 	field(FTST,DBF_STRING) {
 		prompt("Fourteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -289,7 +289,7 @@ recordtype(mbbo) {
 	}
 	field(FFST,DBF_STRING) {
 		prompt("Fifteen String")
-                promptgroup("82 - Display 8-15")
+		promptgroup("82 - Display 8-15")
 		special(SPC_MOD)
 		pp(TRUE)
 		interest(1)
@@ -297,126 +297,126 @@ recordtype(mbbo) {
 	}
 	field(ZRSV,DBF_MENU) {
 		prompt("State Zero Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ONSV,DBF_MENU) {
 		prompt("State One Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TWSV,DBF_MENU) {
 		prompt("State Two Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(THSV,DBF_MENU) {
 		prompt("State Three Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FRSV,DBF_MENU) {
 		prompt("State Four Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FVSV,DBF_MENU) {
 		prompt("State Five Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(SXSV,DBF_MENU) {
 		prompt("State Six Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(SVSV,DBF_MENU) {
 		prompt("State Seven Severity")
-                promptgroup("71 - Alarm 0-7")
+		promptgroup("71 - Alarm 0-7")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(EISV,DBF_MENU) {
 		prompt("State Eight Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(NISV,DBF_MENU) {
 		prompt("State Nine Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TESV,DBF_MENU) {
 		prompt("State Ten Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(ELSV,DBF_MENU) {
 		prompt("State Eleven Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TVSV,DBF_MENU) {
 		prompt("State Twelve Severity")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(TTSV,DBF_MENU) {
 		prompt("State Thirteen Sevr")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FTSV,DBF_MENU) {
 		prompt("State Fourteen Sevr")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(FFSV,DBF_MENU) {
 		prompt("State Fifteen Sevr")
-                promptgroup("72 - Alarm 8-15")
+		promptgroup("72 - Alarm 8-15")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(UNSV,DBF_MENU) {
 		prompt("Unknown State Sevr")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(COSV,DBF_MENU) {
 		prompt("Change of State Sevr")
-                promptgroup("70 - Alarm")
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
@@ -461,17 +461,17 @@ recordtype(mbbo) {
 	}
 	field(SHFT,DBF_USHORT) {
 		prompt("Shift")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(SIOL,DBF_OUTLINK) {
 		prompt("Sim Output Specifctn")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -481,19 +481,19 @@ recordtype(mbbo) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-                promptgroup("90 - Simulate")
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}
 	field(IVOA,DBF_MENU) {
 		prompt("INVALID outpt action")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		interest(2)
 		menu(menuIvoa)
 	}
 	field(IVOV,DBF_USHORT) {
 		prompt("INVALID output value")
-                promptgroup("50 - Output")
+		promptgroup("50 - Output")
 		interest(2)
 	}
 }

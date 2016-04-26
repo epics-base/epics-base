@@ -230,7 +230,7 @@ monitoring functionality.
         prompt("Display Precision")
         promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LINR,DBF_MENU) {
         prompt("Linearization")
@@ -259,19 +259,19 @@ monitoring functionality.
         promptgroup("80 - Display")
         interest(1)
         size(16)
-		prop(YES)
+        prop(YES)
     }
     field(HOPR,DBF_DOUBLE) {
         prompt("High Operating Range")
         promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOPR,DBF_DOUBLE) {
         prompt("Low Operating Range")
         promptgroup("80 - Display")
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(AOFF,DBF_DOUBLE) {
         prompt("Adjustment Offset")
@@ -296,35 +296,35 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOLO,DBF_DOUBLE) {
         prompt("Lolo Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(HIGH,DBF_DOUBLE) {
         prompt("High Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(LOW,DBF_DOUBLE) {
         prompt("Low Alarm Limit")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
     }
     field(HHSV,DBF_MENU) {
         prompt("Hihi Severity")
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(LLSV,DBF_MENU) {
@@ -332,7 +332,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(HSV,DBF_MENU) {
@@ -340,7 +340,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(LSV,DBF_MENU) {
@@ -348,7 +348,7 @@ monitoring functionality.
         promptgroup("70 - Alarm")
         pp(TRUE)
         interest(1)
-		prop(YES)
+        prop(YES)
         menu(menuAlarmSevr)
     }
     field(HYST,DBF_DOUBLE) {

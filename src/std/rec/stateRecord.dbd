@@ -11,7 +11,7 @@ recordtype(state) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_STRING) {
 		prompt("Value")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 		size(20)

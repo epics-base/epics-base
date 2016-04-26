@@ -15,6 +15,18 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New implementation of promptgroup/gui_group field property</h3>
+
+<p>The mechanism behind the "promptgroup()" field property inside a record type
+definition has been changed. Instead of using a fixed set of choices,
+the static database access library now collects the used gui group names
+while parsing DBD information. Group names should start with a two-digit number
+plus space-dash-space to allow proper sorting of groups.</p>
+
+<p>The include file <tt>guigroup.h</tt> that defined the fixed set of choices
+has been deprecated. Instead, use the conversion functions between index number
+and group string that have been added to dbStaticLib.</p>
+
 <h3>CA server configuration changes</h3>
 
 <p>RSRV now honors EPICS_CAS_INTF_ADDR_LIST and binds only to the provided list

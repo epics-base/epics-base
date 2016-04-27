@@ -49,15 +49,10 @@ void ellSortStable(ELLLIST *pList, pListCmp cmp)
 
         /* shift previous results to inputs */
         ellConcat(&INP, pList);
-        
-        assert(ellCount(pList)==0);
 
         while(ellCount(&INP))
         {
             ELLNODE *p, *q;
-
-            assert(ellCount(&P)==0);
-            assert(ellCount(&Q)==0);
 
             /* Pull out the next pair of sub-lists */
             ellMoveN(&Q, &INP, insize);
@@ -73,7 +68,7 @@ void ellSortStable(ELLLIST *pList, pListCmp cmp)
                 }
             }
 
-            /* concatinate any remaining to result */
+            /* concatenate any remaining to result */
             if(ellFirst(&P))
                 ellConcat(pList, &P);
             else if(ellFirst(&Q))

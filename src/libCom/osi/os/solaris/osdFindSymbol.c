@@ -4,7 +4,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* osi/os/default/epicsFindSymbol.c */
+/* osi/os/solaris/epicsFindSymbol.c */
 
 #include <dlfcn.h>
 

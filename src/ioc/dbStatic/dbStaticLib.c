@@ -1425,7 +1425,6 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     if((status = dbAllocRecord(pdbentry,precordName))) return(status);
     pNewRecNode->recordname = dbRecordName(pdbentry);
     ellInit(&pNewRecNode->infoList);
-    /* install record node in list in sorted postion */
     ellAdd(preclist, &pNewRecNode->node);
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);

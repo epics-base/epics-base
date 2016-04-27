@@ -1,3 +1,11 @@
+/*************************************************************************\
+* Copyright (c) 2014 Brookhaven Science Assoc., as Operator of Argonne
+*     National Laboratory.
+* Copyright (c) 2016 Michael Davidsaver
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
+\*************************************************************************/
+
 /*
  * Use of mergesort algorithm based on analysis by
  * http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html

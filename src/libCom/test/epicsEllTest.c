@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2016 Michael Davidsaver
 * Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as

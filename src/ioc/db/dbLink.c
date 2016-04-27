@@ -38,7 +38,6 @@
 #include "db_field_log.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
-#include "dbLockPvt.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
 #include "devSup.h"
@@ -110,7 +109,8 @@ void dbInitLink(struct link *plink, short dbfType)
     }
 }
 
-void dbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *ptarget)
+void dbAddLink(dbLocker *locker, struct link *plink, short dbfType,
+    DBADDR *ptarget)
 {
     struct dbCommon *precord = plink->precord;
 
@@ -201,7 +201,7 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     long status;
 
     if (poptions && *poptions) {
-        printf("dbGetLinkValue: Use of poptions no longer supported\n");
+        printf("dbGetLink: Use of poptions no longer supported\n");
         *poptions = 0;
     }
 

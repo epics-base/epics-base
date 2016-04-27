@@ -13,45 +13,23 @@
  */
 
 #include <stddef.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
-#include "alarm.h"
 #include "cvtFast.h"
 #include "dbDefs.h"
-#include "ellLib.h"
-#include "epicsTime.h"
 #include "errlog.h"
 
 #define epicsExportSharedSymbols
-#include "callback.h"
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbBase.h"
-#include "dbBkpt.h"
-#include "dbCa.h"
 #include "dbCommon.h"
 #include "dbConvertFast.h"
 #include "dbConvert.h"
-#include "dbDbLink.h"
-#include "dbEvent.h"
-#include "db_field_log.h"
-#include "dbFldTypes.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
-#include "dbLockPvt.h"
-#include "dbNotify.h"
-#include "dbScan.h"
-#include "dbStaticLib.h"
-#include "devSup.h"
-#include "epicsEvent.h"
-#include "errMdef.h"
 #include "link.h"
 #include "recGbl.h"
-#include "recSup.h"
-#include "special.h"
 
 /***************************** Constant Links *****************************/
 

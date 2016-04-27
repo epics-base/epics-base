@@ -78,7 +78,8 @@ long dbDbInitLink(struct link *plink, short dbfType)
     return 0;
 }
 
-void dbDbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *ptarget)
+void dbDbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
+    DBADDR *ptarget)
 {
     plink->lset = &dbDb_lset;
     plink->type = DB_LINK;
@@ -89,7 +90,7 @@ void dbDbAddLink(dbLocker *locker, struct link *plink, short dbfType, DBADDR *pt
     dbLockSetMerge(locker, plink->precord, ptarget->precord);
 }
 
-static void dbDbRemoveLink(dbLocker *locker, struct link *plink)
+static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     DBADDR *pdbAddr = (DBADDR *) plink->value.pv_link.pvt;
     plink->value.pv_link.pvt = 0;

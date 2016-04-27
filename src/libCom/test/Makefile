@@ -70,7 +70,9 @@ TESTS += epicsTimeTest
 
 TESTPROD_HOST += epicsTimeZoneTest
 epicsTimeZoneTest_SRCS += epicsTimeZoneTest.c
+ifeq ($(OS_CLASS),RTEMS)
 testHarness_SRCS += epicsTimeZoneTest.cpp
+endif
 TESTS += epicsTimeZoneTest
 
 TESTPROD_HOST += epicsThreadTest

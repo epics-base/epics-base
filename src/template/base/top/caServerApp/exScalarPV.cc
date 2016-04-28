@@ -71,9 +71,9 @@ void exScalarPV::scan()
     }
     newValue += (float) ( sin (radians) / 10.0 );
     limit = (float) this->info.getHopr ();
-    newValue = tsMin ( newValue, limit );
+    newValue = epicsMin ( newValue, limit );
     limit = (float) this->info.getLopr ();
-    newValue = tsMax ( newValue, limit );
+    newValue = epicsMax ( newValue, limit );
     *pDD = newValue;
     aitTimeStamp gddts ( this->currentTime );
     pDD->setTimeStamp ( & gddts );

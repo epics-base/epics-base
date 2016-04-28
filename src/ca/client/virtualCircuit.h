@@ -26,7 +26,6 @@
 #define virtualCircuith
 
 #include "tsDLList.h"
-#include "tsMinMax.h"
 
 #include "comBuf.h"
 #include "caServerID.h"

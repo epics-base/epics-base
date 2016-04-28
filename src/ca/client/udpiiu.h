@@ -35,7 +35,6 @@
 #include "osiSock.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
-#include "tsMinMax.h"
 #include "tsDLList.h"
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols

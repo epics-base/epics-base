@@ -7,6 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
+#include "envDefs.h"
 #include "iocsh.h"
 #include "libComRegister.h"
 
@@ -24,6 +25,11 @@
 void iocshRegisterCommon(void)
 {
     iocshPpdbbase = &pdbbase;
+    const char *targetArch = envGetConfigParamPtr(&EPICS_TARGET_ARCH);
+
+    if (targetArch) {
+        epicsEnvSet("ARCH", targetArch);
+    }
 
     dbStaticIocRegister();
     registryIocRegister();

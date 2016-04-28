@@ -134,6 +134,7 @@ sub relPaths {
 }
 
 sub binDirs {
+    die "Architecture not set (use -a option)\n" unless ($arch);
     my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
     my @path;
     foreach my $app (@includes) {
@@ -165,7 +166,6 @@ sub cdCommands {
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
     
-    print OUT "putenv(\"ARCH=$arch\")\n";
     print OUT "putenv(\"IOC=$ioc\")\n";
     
     foreach my $app (@includes) {
@@ -188,7 +188,6 @@ sub cdCommands {
 # Include parentheses anyway in case CEXP users want to use this.
 #
 sub envPaths {
-    die "Architecture not set (use -a option)" unless ($arch);
     my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
     
     unlink($outfile);
@@ -197,7 +196,6 @@ sub envPaths {
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
     
-    print OUT "epicsEnvSet(\"ARCH\",\"$arch\")\n";
     print OUT "epicsEnvSet(\"IOC\",\"$ioc\")\n";
     
     foreach my $app (@includes) {

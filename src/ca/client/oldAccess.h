@@ -26,6 +26,8 @@
 #ifndef oldAccessh
 #define oldAccessh
 
+#include <memory>
+
 #ifdef epicsExportSharedSymbols
 #   define oldAccessh_restore_epicsExportSharedSymbols
 #   undef epicsExportSharedSymbols
@@ -402,8 +404,8 @@ private:
     epicsEvent ioDone;
     epicsEvent callbackThreadActivityComplete;
     epicsThreadId createdByThread;
-    epics_auto_ptr < CallbackGuard > pCallbackGuard;
-    epics_auto_ptr < cacContext > pServiceContext;
+    std::auto_ptr < CallbackGuard > pCallbackGuard;
+    std::auto_ptr < cacContext > pServiceContext;
     caExceptionHandler * ca_exception_func;
     void * ca_exception_arg;
     caPrintfFunc * pVPrintfFunc;

@@ -36,6 +36,8 @@
 
 #include "stdlib.h"
 
+#include <memory> // std::auto_ptr
+
 #include "tsDLList.h"
 #include "tsFreeList.h"
 #include "resourceLib.h"
@@ -203,7 +205,7 @@ private:
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     cacContextNotify & notify;
-    epics_auto_ptr < cacContext > pNetContext;
+    std::auto_ptr < cacContext > pNetContext;
     char * pStateNotifyCache;
     bool isolated;
 

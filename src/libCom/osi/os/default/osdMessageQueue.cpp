@@ -18,6 +18,9 @@
 #include <stdexcept>
 #include <string.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #define epicsExportSharedSymbols
 #include "epicsMessageQueue.h"
 #include <ellLib.h>

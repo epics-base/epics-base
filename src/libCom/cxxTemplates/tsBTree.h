@@ -11,7 +11,6 @@
 #ifndef assert // allow use of epicsAssert.h
 #include <assert.h>
 #endif
-#include "locationException.h"
 
 //
 // tsBTreeRMRet

@@ -25,7 +25,7 @@
 void iocshRegisterCommon(void)
 {
     iocshPpdbbase = &pdbbase;
-    const char *targetArch = envGetConfigParamPtr(&EPICS_TARGET_ARCH);
+    const char *targetArch = envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH);
 
     if (targetArch) {
         epicsEnvSet("ARCH", targetArch);

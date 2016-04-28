@@ -26,13 +26,13 @@ use Text::Wrap;
 
 my $tool = basename($0);
 
-our ($opt_h, $opt_q, $opt_t);
+our ($opt_h, $opt_q, $opt_t, $opt_s, $opt_c);
 our $opt_o = 'envData.c';
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 $Text::Wrap::columns = 75;
 
-&HELP_MESSAGE unless getopts('ho:qt:') && @ARGV == 1;
+&HELP_MESSAGE unless getopts('ho:qt:s:c:') && @ARGV == 1;
 &HELP_MESSAGE if $opt_h;
 
 my $config   = AbsPath(shift);
@@ -68,8 +68,11 @@ if ($opt_t) {
         readReleaseFiles($config_arch_env, \%values);
     }
 
-    $values{EPICS_TARGET_ARCH} = $opt_t;
+    $values{EPICS_BUILD_TARGET_ARCH} = $opt_t;
 }
+
+$values{EPICS_BUILD_COMPILER_CLASS} = $opt_c if $opt_c;
+$values{EPICS_BUILD_OS_CLASS} = $opt_s if $opt_s;
 
 # Warn about any vars with no value
 #
@@ -123,6 +126,8 @@ sub HELP_MESSAGE {
         "  -q       Quiet: Only print errors\n",
         "  -o file  Output filename, default is $opt_o\n",
         "  -t arch  Target architecture \$(T_A) name\n",
+        "  -s os    Operating system \$(OS_CLASS)\n",
+        "  -c comp  Compiler class \$(CMPLR_CLASS)\n",
         "\n";
 
     exit 1;

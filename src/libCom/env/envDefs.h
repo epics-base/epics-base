@@ -40,7 +40,7 @@ typedef struct envParam {
 } ENV_PARAM;
 
 /*
- * bldEnvData looks for "epicsShareExtern const ENV_PARAM"
+ * bldEnvData.pl looks for "epicsShareExtern const ENV_PARAM <name>;"
  */
 epicsShareExtern const ENV_PARAM EPICS_CA_ADDR_LIST;
 epicsShareExtern const ENV_PARAM EPICS_CA_CONN_TMO;
@@ -58,7 +58,9 @@ epicsShareExtern const ENV_PARAM EPICS_CAS_SERVER_PORT;
 epicsShareExtern const ENV_PARAM EPICS_CA_BEACON_PERIOD; /* deprecated */
 epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_PERIOD;
 epicsShareExtern const ENV_PARAM EPICS_CAS_BEACON_PORT;
-epicsShareExtern const ENV_PARAM EPICS_TARGET_ARCH;
+epicsShareExtern const ENV_PARAM EPICS_BUILD_COMPILER_CLASS;
+epicsShareExtern const ENV_PARAM EPICS_BUILD_OS_CLASS;
+epicsShareExtern const ENV_PARAM EPICS_BUILD_TARGET_ARCH;
 epicsShareExtern const ENV_PARAM EPICS_TIMEZONE;
 epicsShareExtern const ENV_PARAM EPICS_TS_NTP_INET;
 epicsShareExtern const ENV_PARAM EPICS_IOC_LOG_PORT;

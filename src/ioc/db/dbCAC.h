@@ -43,7 +43,6 @@
 #include "resourceLib.h"
 #include "cacIO.h"
 #include "compilerDependencies.h"
-#include "epicsMemory.h"
 
 #ifdef dbCACh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

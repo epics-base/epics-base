@@ -67,7 +67,6 @@ template class tsFreeList < oldSubscription, 1024, epicsMutexNOOP >;
 template class tsFreeList < putCallback, 1024, epicsMutexNOOP >;
 template class tsFreeList < repeaterClient, 0x20 >;
 template class epicsSingleton < localHostName >;
-template class epics_auto_ptr < epics_auto_ptr < class searchTimer >, eapt_array >;
 template unsigned comBuf :: push ( const double * pValue, unsigned nElem );
 template unsigned comBuf :: push ( const float * pValue, unsigned nElem );
 template unsigned comBuf :: push ( const int * pValue, unsigned nElem );

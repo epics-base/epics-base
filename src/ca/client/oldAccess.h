@@ -34,7 +34,6 @@
 #endif
 
 #include "tsFreeList.h"
-#include "epicsMemory.h"
 #include "compilerDependencies.h"
 #include "osiSock.h"
 

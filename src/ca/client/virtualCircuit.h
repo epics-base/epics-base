@@ -25,7 +25,6 @@
 #ifndef virtualCircuith  
 #define virtualCircuith
 
-#include "epicsMemory.h"
 #include "tsDLList.h"
 #include "tsMinMax.h"
 

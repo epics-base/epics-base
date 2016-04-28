@@ -34,7 +34,6 @@
 
 #include "osiSock.h"
 #include "epicsThread.h"
-#include "epicsMemory.h"
 #include "epicsTime.h"
 #include "tsMinMax.h"
 #include "tsDLList.h"

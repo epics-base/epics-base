@@ -12,7 +12,6 @@ INC += resourceLib.h
 INC += tsDLList.h
 INC += tsSLList.h
 INC += tsMinMax.h
-INC += tsBTree.h
 INC += tsFreeList.h
 INC += epicsSingleton.h
 INC += epicsGuard.h

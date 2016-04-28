@@ -26,13 +26,13 @@ use Text::Wrap;
 
 my $tool = basename($0);
 
-our ($opt_h, $opt_q);
+our ($opt_h, $opt_q, $opt_t);
 our $opt_o = 'envData.c';
 
 $Getopt::Std::OUTPUT_HELP_VERSION = 1;
 $Text::Wrap::columns = 75;
 
-&HELP_MESSAGE unless getopts('ho:q') && @ARGV == 1;
+&HELP_MESSAGE unless getopts('ho:qt:') && @ARGV == 1;
 &HELP_MESSAGE if $opt_h;
 
 my $config   = AbsPath(shift);
@@ -53,13 +53,23 @@ while (<SRC>) {
 close SRC;
 
 # Read the values from the CONFIG_ENV and CONFIG_SITE_ENV files
-#
 my $config_env      = "$config/CONFIG_ENV";
 my $config_site_env = "$config/CONFIG_SITE_ENV";
+my @configs = ($env_defs, $config_env, $config_site_env);
 
 my %values;
 readReleaseFiles($config_env, \%values);
 readReleaseFiles($config_site_env, \%values);
+
+if ($opt_t) {
+    my $config_arch_env = "$config/os/CONFIG_SITE_ENV.$opt_t";
+    if (-f $config_arch_env) {
+        push @configs, $config_arch_env;
+        readReleaseFiles($config_arch_env, \%values);
+    }
+
+    $values{EPICS_TARGET_ARCH} = $opt_t;
+}
 
 # Warn about any vars with no value
 #
@@ -73,13 +83,13 @@ print "Generating $opt_o\n" unless $opt_q;
 open OUT, '>', $opt_o
     or die "$tool: Cannot create $opt_o: $!\n";
 
+my $configs = join "\n", map {" *   $_"} @configs;
+
 print OUT << "END";
 /* Generated file $opt_o
  *
  * Created from
- *   $env_defs
- *   $config_env
- *   $config_site_env
+$configs
  */
 
 #include <stddef.h>
@@ -112,6 +122,7 @@ sub HELP_MESSAGE {
         "  -h       Help: Print this message\n",
         "  -q       Quiet: Only print errors\n",
         "  -o file  Output filename, default is $opt_o\n",
+        "  -t arch  Target architecture \$(T_A) name\n",
         "\n";
 
     exit 1;

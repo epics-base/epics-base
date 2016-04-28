@@ -109,7 +109,7 @@ void dbInitLink(struct link *plink, short dbfType)
     }
 }
 
-void dbAddLink(dbLocker *locker, struct link *plink, short dbfType,
+void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
     DBADDR *ptarget)
 {
     struct dbCommon *precord = plink->precord;
@@ -151,7 +151,7 @@ long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
     return S_db_notFound;
 }
 
-void dbRemoveLink(dbLocker *locker, struct link *plink)
+void dbRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     lset *plset = plink->lset;
 

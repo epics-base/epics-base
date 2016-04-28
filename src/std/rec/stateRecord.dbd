@@ -3,15 +3,14 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 recordtype(state) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_STRING) {
 		prompt("Value")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 		size(20)

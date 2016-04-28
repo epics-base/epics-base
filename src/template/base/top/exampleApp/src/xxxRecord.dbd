@@ -2,101 +2,102 @@ recordtype(xxx) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Current EGU Value")
-		asl(ASL0)
+                promptgroup("40 - Input")
+                asl(ASL0)
 		pp(TRUE)
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
-		promptgroup(GUI_INPUTS)
+                promptgroup("40 - Input")
 		special(SPC_NOMOD)
 		interest(1)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
 		prompt("Engineering Units")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 		size(16)
 	}
 	field(HOPR,DBF_FLOAT) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 	}
 	field(LOPR,DBF_FLOAT) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 	}
 	field(HIHI,DBF_FLOAT) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 	}
 	field(LOLO,DBF_FLOAT) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 	}
 	field(HIGH,DBF_FLOAT) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 	}
 	field(LOW,DBF_FLOAT) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+                promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+                promptgroup("80 - Display")
 		interest(1)
 	}
 	field(LALM,DBF_DOUBLE) {

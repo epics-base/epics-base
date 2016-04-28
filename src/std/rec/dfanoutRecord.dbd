@@ -3,145 +3,145 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 menu(dfanoutSELM) {
-        choice(dfanoutSELM_All,"All")
-        choice(dfanoutSELM_Specified,"Specified")
-        choice(dfanoutSELM_Mask,"Mask")
+	choice(dfanoutSELM_All,"All")
+	choice(dfanoutSELM_Specified,"Specified")
+	choice(dfanoutSELM_Mask,"Mask")
 }
 recordtype(dfanout) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Desired Output")
+		promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 	}
-        field(SELM,DBF_MENU) {
-                prompt("Select Mechanism")
-                promptgroup(GUI_LINKS)
-                interest(1)
-                menu(dfanoutSELM)
-        }
-        field(SELN,DBF_USHORT) {
-                prompt("Link Selection")
-                interest(1)
-                initial("1")
-        }
-        field(SELL,DBF_INLINK) {
-                prompt("Link Selection Loc")
-                promptgroup(GUI_LINKS)
-                interest(1)
-        }
+	field(SELM,DBF_MENU) {
+		prompt("Select Mechanism")
+		promptgroup("30 - Action")
+		interest(1)
+		menu(dfanoutSELM)
+	}
+	field(SELN,DBF_USHORT) {
+		prompt("Link Selection")
+		interest(1)
+		initial("1")
+	}
+	field(SELL,DBF_INLINK) {
+		prompt("Link Selection Loc")
+		promptgroup("30 - Action")
+		interest(1)
+	}
 	field(OUTA,DBF_OUTLINK) {
 		prompt("Output Spec A")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTB,DBF_OUTLINK) {
 		prompt("Output Spec B")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTC,DBF_OUTLINK) {
 		prompt("Output Spec C")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTD,DBF_OUTLINK) {
 		prompt("Output Spec D")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTE,DBF_OUTLINK) {
 		prompt("Output Spec E")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTF,DBF_OUTLINK) {
 		prompt("Output Spec F")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTG,DBF_OUTLINK) {
 		prompt("Output Spec G")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(OUTH,DBF_OUTLINK) {
 		prompt("Output Spec H")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 	}
 	field(DOL,DBF_INLINK) {
 		prompt("Desired Output Loc")
-		promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(OMSL,DBF_MENU) {
 		prompt("Output Mode Select")
-		promptgroup(GUI_OUTPUT)
+		promptgroup("50 - Output")
 		interest(1)
 		menu(menuOmsl)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("Units name")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
-        field(PREC,DBF_SHORT) {
-                prompt("Display Precision")
-                promptgroup(GUI_DISPLAY)
-                interest(1)
+	field(PREC,DBF_SHORT) {
+		prompt("Display Precision")
+		promptgroup("80 - Display")
+		interest(1)
 		prop(YES)
-        }
+	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -149,7 +149,7 @@ recordtype(dfanout) {
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -157,7 +157,7 @@ recordtype(dfanout) {
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -165,7 +165,7 @@ recordtype(dfanout) {
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -173,17 +173,17 @@ recordtype(dfanout) {
 	}
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(LALM,DBF_DOUBLE) {

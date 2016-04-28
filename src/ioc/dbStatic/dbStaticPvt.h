@@ -42,6 +42,13 @@ typedef struct dbPathNode {
 	char		*directory;
 } dbPathNode;
 
+/* Element of the global gui group list */
+typedef struct dbGuiGroup {
+    ELLNODE     node;
+    short       key;
+    char        *name;
+} dbGuiGroup;
+
 /*The following are in dbPvdLib.c*/
 /*directory*/
 typedef struct{

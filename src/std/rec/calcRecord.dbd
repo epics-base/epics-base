@@ -10,11 +10,12 @@ recordtype(calc) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_DOUBLE) {
 		prompt("Result")
+		promptgroup("50 - Output")
 		asl(ASL0)
 	}
 	field(CALC,DBF_STRING) {
 		prompt("Calculation")
-		promptgroup(GUI_CALC)
+		promptgroup("30 - Action")
 		special(SPC_CALC)
 		pp(TRUE)
 		size(80)
@@ -22,120 +23,120 @@ recordtype(calc) {
 	}
 	field(INPA,DBF_INLINK) {
 		prompt("Input A")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPB,DBF_INLINK) {
 		prompt("Input B")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPC,DBF_INLINK) {
 		prompt("Input C")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPD,DBF_INLINK) {
 		prompt("Input D")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPE,DBF_INLINK) {
 		prompt("Input E")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPF,DBF_INLINK) {
 		prompt("Input F")
-		promptgroup(GUI_CALC)
+		promptgroup("41 - Input A-F")
 		interest(1)
 	}
 	field(INPG,DBF_INLINK) {
 		prompt("Input G")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPH,DBF_INLINK) {
 		prompt("Input H")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPI,DBF_INLINK) {
 		prompt("Input I")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPJ,DBF_INLINK) {
 		prompt("Input J")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPK,DBF_INLINK) {
 		prompt("Input K")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(INPL,DBF_INLINK) {
 		prompt("Input L")
-		promptgroup(GUI_CALC)
+		promptgroup("42 - Input G-L")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("Units Name")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Rng")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_DOUBLE) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_DOUBLE) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_DOUBLE) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_DOUBLE) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -143,7 +144,7 @@ recordtype(calc) {
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -151,7 +152,7 @@ recordtype(calc) {
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
@@ -159,35 +160,35 @@ recordtype(calc) {
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 		menu(menuAlarmSevr)
 	}
-        field(AFTC, DBF_DOUBLE) {
-                prompt("Alarm Filter Time Constant")
-                promptgroup(GUI_ALARMS)
-                interest(1)
-        }
-        field(AFVL, DBF_DOUBLE) {
-                prompt("Alarm Filter Value")
-                special(SPC_NOMOD)
-                interest(3)
-        }
+	field(AFTC, DBF_DOUBLE) {
+		prompt("Alarm Filter Time Constant")
+		promptgroup("70 - Alarm")
+		interest(1)
+	}
+	field(AFVL, DBF_DOUBLE) {
+		prompt("Alarm Filter Value")
+		special(SPC_NOMOD)
+		interest(3)
+	}
 	field(HYST,DBF_DOUBLE) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
 	field(ADEL,DBF_DOUBLE) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_DOUBLE) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(A,DBF_DOUBLE) {

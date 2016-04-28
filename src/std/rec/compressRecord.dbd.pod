@@ -60,7 +60,7 @@ recordtype(compress) {
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
-		promptgroup(GUI_COMPRESS)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(RES,DBF_SHORT) {
@@ -71,56 +71,56 @@ recordtype(compress) {
 	}
 	field(ALG,DBF_MENU) {
 		prompt("Compression Algorithm")
-		promptgroup(GUI_ALARMS)
+		promptgroup("30 - Action")
 		special(SPC_RESET)
 		interest(1)
 		menu(compressALG)
 	}
 	field(NSAM,DBF_ULONG) {
 		prompt("Number of Values")
-		promptgroup(GUI_COMPRESS)
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
 	}
 	field(N,DBF_ULONG) {
 		prompt("N to 1 Compression")
-		promptgroup(GUI_COMPRESS)
+		promptgroup("30 - Action")
 		special(SPC_RESET)
 		interest(1)
 		initial("1")
 	}
 	field(IHIL,DBF_DOUBLE) {
 		prompt("Init High Interest Lim")
-		promptgroup(GUI_COMPRESS)
+		promptgroup("30 - Action")
 		interest(1)
 	}
 	field(ILIL,DBF_DOUBLE) {
 		prompt("Init Low Interest Lim")
-		promptgroup(GUI_COMPRESS)
+		promptgroup("30 - Action")
 		interest(1)
 	}
 	field(HOPR,DBF_DOUBLE) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_DOUBLE) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("EngineeringUnits")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)

@@ -3,9 +3,8 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 menu(histogramCMD) {
 	choice(histogramCMD_Read,"Read")
@@ -26,7 +25,7 @@ recordtype(histogram) {
 	}
 	field(NELM,DBF_USHORT) {
 		prompt("Num of Array Elements")
-		promptgroup(GUI_HIST)
+		promptgroup("30 - Action")
 		special(SPC_NOMOD)
 		interest(1)
 		initial("1")
@@ -46,14 +45,14 @@ recordtype(histogram) {
 	}
 	field(ULIM,DBF_DOUBLE) {
 		prompt("Upper Signal Limit")
-		promptgroup(GUI_HIST)
+		promptgroup("30 - Action")
 		special(SPC_RESET)
 		interest(1)
 		prop(YES)
 	}
 	field(LLIM,DBF_DOUBLE) {
 		prompt("Lower Signal Limit ")
-		promptgroup(GUI_HIST)
+		promptgroup("30 - Action")
 		special(SPC_RESET)
 		interest(1)
 		prop(YES)
@@ -69,13 +68,13 @@ recordtype(histogram) {
 	}
 	field(PREC,DBF_SHORT) {
 		prompt("Display Precision")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(SVL,DBF_INLINK) {
 		prompt("Signal Value Location")
-		promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(BPTR,DBF_NOACCESS) {
@@ -92,7 +91,7 @@ recordtype(histogram) {
 	}
 	field(MDEL,DBF_SHORT) {
 		prompt("Monitor Count Deadband")
-		promptgroup(GUI_HIST)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MCNT,DBF_SHORT) {
@@ -102,13 +101,13 @@ recordtype(histogram) {
 	}
 	field(SDEL,DBF_DOUBLE) {
 		prompt("Monitor Seconds Dband")
-		promptgroup(GUI_HIST)
+		promptgroup("80 - Display")
 		special(SPC_RESET)
 		interest(1)
 	}
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SVAL,DBF_DOUBLE) {
@@ -116,7 +115,7 @@ recordtype(histogram) {
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -126,19 +125,19 @@ recordtype(histogram) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}
 	field(HOPR,DBF_ULONG) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_ULONG) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}

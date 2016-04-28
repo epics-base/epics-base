@@ -589,7 +589,7 @@ void dbFreeBase(dbBase *pdbbase)
     while (pguiGroup) {
         pguiGroupNext = (dbGuiGroup *)ellNext(&pguiGroup->node);
         gphDelete(pdbbase->pgpHash, pguiGroup->name, &pdbbase->guiGroupList);
-        ellDelete(&pdbbase->bptList, &pguiGroup->node);
+        ellDelete(&pdbbase->guiGroupList, &pguiGroup->node);
         free(pguiGroup->name);
         free((void *)pguiGroup);
         pguiGroup = pguiGroupNext;

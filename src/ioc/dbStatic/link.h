@@ -33,7 +33,7 @@ extern "C" {
 #define GPIB_IO		5
 #define BITBUS_IO	6
 #define MACRO_LINK	7
-
+#define JSON_STR        8
 #define PN_LINK		9
 #define DB_LINK		10
 #define CA_LINK		11
@@ -41,7 +41,7 @@ extern "C" {
 #define	BBGPIB_IO	13		/* bitbus -> gpib */
 #define RF_IO		14
 #define VXI_IO		15
-#define LINK_NTYPES 15
+#define LINK_NTYPES 16
 typedef struct maplinkType {
     char *strvalue;
     int  value;
@@ -85,6 +85,11 @@ struct pv_link {
     LINKCVT	getCvt;		/* input conversion function */
     short	pvlMask;	/* Options mask */
     short	lastGetdbrType;	/* last dbrType for DB or CA get */
+};
+
+struct json_link {
+    char *string;
+    /* ... */
 };
 
 /* structure of a VME io channel */
@@ -167,6 +172,7 @@ struct vxiio {
 union value {
     char		*constantStr;	/*constant string*/
     struct macro_link	macro_link;	/* link containing macro substitution*/
+    struct json_link    json;           /* JSON-encoded link */
     struct pv_link	pv_link;	/* link to process variable*/
     struct vmeio	vmeio;		/* vme io point */
     struct camacio	camacio;	/* camac io point */

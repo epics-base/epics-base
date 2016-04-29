@@ -338,7 +338,9 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 	$(LINK.mod)
 
 runtests: $(TESTSCRIPTS)
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+endif
 
 testspec: $(TESTSCRIPTS)
 	@$(RM) $@
@@ -351,7 +353,9 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
+ifeq ($(T_A),$(EPICS_HOST_ARCH))
 	-$(PERL) $< -tap > $@
+endif
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt

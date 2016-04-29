@@ -15,6 +15,19 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>IOC environment variables and build parameters</h3>
+
+<p>The IOC now sets a number of environment variables at startup that provide
+the version of EPICS Base it was built against (EPICS_VERSION_...) and its build
+architecture (ARCH). In some cases this allows a single iocBoot/ioc directory to
+be used to run the same IOC on several different architectures without any
+changes.</p>
+
+<p>There are also 3 new environment parameters (EPICS_BUILD_...) available that
+C/C++ code can use to find out the target architecture, OS class and compiler
+class it was built with. These may be useful when writing interfaces to other
+languages.</p>
+
 <h3>New implementation of promptgroup/gui_group field property</h3>
 
 <p>The mechanism behind the "promptgroup()" field property inside a record type

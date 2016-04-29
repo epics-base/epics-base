@@ -8,7 +8,7 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(&pushContext &popContext &dieContext &warnContext &is_reserved
     &identifier &unquote &escapeCcomment &escapeCstring $RXident $RXname
-    $RXuint $RXint $RXhex $RXoct $RXuintx $RXintx $RXnum $RXdqs $RXsqs $RXstr);
+    $RXuint $RXint $RXhex $RXoct $RXuintx $RXintx $RXnum $RXdqs $RXstr);
 
 
 our $RXident = qr/ [a-zA-Z] [a-zA-Z0-9_]* /x;
@@ -21,8 +21,7 @@ our $RXuintx = qr/ ( $RXhex | $RXoct | $RXuint ) /ox;
 our $RXintx =  qr/ ( $RXhex | $RXoct | $RXint ) /ox;
 our $RXnum =   qr/ -? (?: \d+ | \d* \. \d+ ) (?: [eE] [-+]? \d+ )? /x;
 our $RXdqs =   qr/" (?: [^"] | \\" )* " /x;
-our $RXsqs =   qr/' (?: [^'] | \\' )* ' /x;
-our $RXstr =   qr/ ( $RXname | $RXnum | $RXdqs | $RXsqs ) /ox;
+our $RXstr =   qr/ ( $RXname | $RXnum | $RXdqs ) /ox;
 
 our @context;
 

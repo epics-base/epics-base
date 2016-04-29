@@ -170,7 +170,13 @@ endif
 $(DIRECTORY_TARGETS) :
 	$(MKDIR) -p $@
 
-$(PRODNAME): $(INSTALL_LIB_INSTALLS)
+# Install LIB_INSTALLS libraries before linking executables
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIB_INSTALLS)
+
+# Install built libraries too, unless Makefile says to wait
+ifneq ($(DELAY_INSTALL_LIBS),YES)
+$(TESTPRODNAME) $(PRODNAME): | $(INSTALL_LIBS) $(INSTALL_DLLSTUB_LIBS)
+endif
 
 # RELEASE file consistency checking
 checkRelease:

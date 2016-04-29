@@ -75,7 +75,7 @@ my @apps   = ('TOP');   # Records the order of definitions in RELEASE file
 my $relfile = "$top/configure/RELEASE";
 die "Can't find $relfile" unless (-f $relfile);
 readReleaseFiles($relfile, \%macros, \@apps, $arch);
-expandRelease(\%macros, \@apps);
+expandRelease(\%macros);
 
 
 # This is a perl switch statement:
@@ -221,7 +221,7 @@ sub checkRelease {
         my @order = ();
         my $relfile = "$path/configure/RELEASE";
         readReleaseFiles($relfile, \%check, \@order, $arch);
-        expandRelease(\%check, \@order);
+        expandRelease(\%check);
         delete $check{TOP};
         delete $check{EPICS_HOST_ARCH};
         

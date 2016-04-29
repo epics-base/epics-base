@@ -19,7 +19,7 @@ extern "C" {
 
 #ifdef isfinite
 #  undef finite
-#  define finite(x) isfinite(x)
+#  define finite(x) isfinite((double)(x))
 #endif
 
 epicsShareExtern float epicsNAN;

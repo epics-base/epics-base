@@ -28,8 +28,8 @@
 
 void iocshRegisterCommon(void)
 {
-    iocshPpdbbase = &pdbbase;
     const char *targetArch = envGetConfigParamPtr(&EPICS_BUILD_TARGET_ARCH);
+    iocshPpdbbase = &pdbbase;
 
     /* This uses a config param so the user can override it */
     if (targetArch) {

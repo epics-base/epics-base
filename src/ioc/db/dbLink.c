@@ -224,6 +224,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return S_db_badDbrtype;
 
         if (paddr->no_elements == 1 && (!pnRequest || *pnRequest == 1)
+                && paddr->special != SPC_DBADDR
                 && paddr->special != SPC_ATTRIBUTE) {
             ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
             status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);

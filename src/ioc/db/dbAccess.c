@@ -402,19 +402,29 @@ struct rset * dbGetRset(const struct dbAddr *paddr)
 }
 
 long dbPutAttribute(
-    const char *recordTypename,const char *name,const char*value)
+    const char *recordTypename, const char *name, const char *value)
 {
-	DBENTRY		dbEntry;
-	DBENTRY		*pdbEntry = &dbEntry;
-	long		status=0;
+    DBENTRY dbEntry;
+    DBENTRY *pdbEntry = &dbEntry;
+    long status = 0;
 
-        if(!pdbbase) return(S_db_notFound);
-	dbInitEntry(pdbbase,pdbEntry);
-	status = dbFindRecordType(pdbEntry,recordTypename);
-	if(!status) status = dbPutRecordAttribute(pdbEntry,name,value);
-	dbFinishEntry(pdbEntry);
-	if(status) errMessage(status,"dbPutAttribute failure");
-	return(status);
+    if (!pdbbase)
+        return S_db_notFound;
+    if (!name) {
+        status = S_db_badField;
+        goto done;
+    }
+    if (!value)
+        value = "";
+    dbInitEntry(pdbbase, pdbEntry);
+    status = dbFindRecordType(pdbEntry, recordTypename);
+    if (!status)
+        status = dbPutRecordAttribute(pdbEntry, name, value);
+    dbFinishEntry(pdbEntry);
+done:
+    if (status)
+        errMessage(status, "dbPutAttribute failure");
+    return status;
 }
 
 int dbIsValueField(const struct dbFldDes *pdbFldDes)

@@ -30,6 +30,7 @@ template < class T > class epicsGuardRelease;
 template < class T >
 class epicsGuard {
 public:
+    typedef epicsGuardRelease<T> release_t;
     epicsGuard ( T & );
     void assertIdenticalMutex ( const T & ) const;
     ~epicsGuard ();
@@ -46,6 +47,7 @@ private:
 template < class T >
 class epicsGuardRelease {
 public:
+    typedef epicsGuard<T> guard_t;
     epicsGuardRelease ( epicsGuard < T > & );
     ~epicsGuardRelease ();
 private:

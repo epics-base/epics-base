@@ -85,7 +85,6 @@ dbCore_SRCS += dbChannelIO.cpp
 dbCore_SRCS += dbSubscriptionIO.cpp
 dbCore_SRCS += dbPutNotifyBlocker.cpp
 dbCore_SRCS += dbContextReadNotifyCache.cpp
-dbCore_SRCS += templateInstances.cpp
 dbCore_SRCS += dbIocRegister.c
 dbCore_SRCS += chfPlugin.c
 dbCore_SRCS += dbState.c

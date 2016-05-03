@@ -80,8 +80,6 @@ ifeq ($(VX_GNU_VERSION), 4.1.2)
   casStreamOS_CXXFLAGS_vxWorks-ppc604 = -O0
 endif
 
-LIBSRCS_vxWorks += templateInstances.cpp
-
 LIBRARY = cas
 cas_LIBS = ca gdd Com
 cas_SYS_LIBS_WIN32 = ws2_32

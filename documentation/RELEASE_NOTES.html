@@ -13,6 +13,41 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Additional RELEASE file checks</h3>
+
+<p>An additional check has been added at build-time for the contents of the
+configure/RELEASE file(s), which will mostly only affect users of the Debian
+EPICS packages published by NSLS-2. Support modules may share an install path,
+but all such modules must be listed adjacent to each other in any RELEASE files
+that point to them. For example the following will fail the new checks:</p>
+
+<blockquote><pre>
+AUTOSAVE = /usr/lib/epics
+ASYN = /home/mdavidsaver/asyn
+EPICS_BASE = /usr/lib/epics
+</pre></blockquote>
+
+<p>giving the compile-time error</p>
+
+<blockquote><pre>
+This application's RELEASE file(s) define
+	EPICS_BASE = /usr/lib/epics
+after but not adjacent to
+	AUTOSAVE = /usr/lib/epics
+Module definitions that share paths must be grouped together.
+Either remove a definition, or move it to a line immediately
+above or below the other(s).
+Any non-module definitions belong in configure/CONFIG_SITE.
+</pre></blockquote>
+
+
+<p>In many cases such as the one above the order of the <tt>AUTOSAVE</tt> and
+<tt>ASYN</tt> lines can be swapped to let the checks pass, but if the
+<tt>AUTOSAVE</tt> module depended on <tt>ASYN</tt> and hence had to appear
+before it in the list this error indicates that <tt>AUTOSAVE</tt> should also be
+built in its own private area; a shared copy would likely be incompatible with
+the version of <tt>ASYN</tt> built in the home directory.</p>
+
 <h3>String field buffer overflows</h3>
 
 <p>Two buffer overflow bugs that can crash the IOC have been fixed, caused by

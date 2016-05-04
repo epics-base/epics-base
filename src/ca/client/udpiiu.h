@@ -25,6 +25,8 @@
 #ifndef udpiiuh
 #define udpiiuh
 
+#include <memory>
+
 #ifdef epicsExportSharedSymbols
 #   define udpiiuh_accessh_epicsExportSharedSymbols
 #   undef epicsExportSharedSymbols
@@ -32,9 +34,7 @@
 
 #include "osiSock.h"
 #include "epicsThread.h"
-#include "epicsMemory.h"
 #include "epicsTime.h"
-#include "tsMinMax.h"
 #include "tsDLList.h"
 
 #ifdef udpiiuh_accessh_epicsExportSharedSymbols
@@ -160,15 +160,24 @@ private:
     repeaterSubscribeTimer repeaterSubscribeTmr;
     disconnectGovernorTimer govTmr;
     tsDLList < SearchDest > _searchDestList;
-    double maxPeriod;
+    const double maxPeriod;
     double rtteMean;
     double rtteMeanDev;
     cac & cacRef;
     epicsMutex & cbMutex;
     epicsMutex & cacMutex;
-    epics_auto_ptr < epics_auto_ptr < class searchTimer >, eapt_array > ppSearchTmr;
+    const unsigned nTimers;
+    struct SearchArray {
+        typedef std::auto_ptr <searchTimer> value_type;
+        value_type *arr;
+        SearchArray(size_t n) : arr(new value_type[n]) {}
+        ~SearchArray() { delete[] arr; }
+        value_type& operator[](size_t i) const { return arr[i]; }
+    private:
+        SearchArray(const SearchArray&);
+        SearchArray& operator=(const SearchArray&);
+    } ppSearchTmr;
     unsigned nBytesInXmitBuf;
-    unsigned nTimers;
     unsigned beaconAnomalyTimerIndex;
     ca_uint32_t sequenceNumber;
     ca_uint32_t lastReceivedSeqNo;

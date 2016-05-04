@@ -24,7 +24,6 @@
 
 #define epicsAssertAuthor "Jeff Hill johill@lanl.gov"
 
-#include "tsMinMax.h"
 #include "envDefs.h"
 
 #define epicsExportSharedSymbols

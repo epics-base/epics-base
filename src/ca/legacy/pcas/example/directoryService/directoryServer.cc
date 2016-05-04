@@ -13,7 +13,7 @@
 //
 
 #include "directoryServer.h"
-#include "tsMinMax.h"
+#include "epicsAlgorithm.h"
 
 const pvInfo *pvInfo::pFirst;
 
@@ -128,7 +128,7 @@ pvExistReturn directoryServer::pvExistTest
 	}
 	else {
 		size_t diff = pLastStr-pPVName;
-		diff = tsMin (diff, sizeof(pvNameBuf)-1);
+		diff = epicsMin (diff, sizeof(pvNameBuf)-1);
 		memcpy (pvNameBuf, pPVName, diff);
 		pvNameBuf[diff] = '\0';
 		pLastStr = pvNameBuf;

@@ -28,8 +28,6 @@ typedef struct epicsMessageQueueOSD *epicsMessageQueueId;
 
 #ifdef __cplusplus
 
-#include "locationException.h"
-
 class epicsShareClass epicsMessageQueue {
 public:
     epicsMessageQueue ( unsigned int capacity,

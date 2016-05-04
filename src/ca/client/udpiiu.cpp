@@ -64,6 +64,52 @@ const udpiiu::pProtoStubUDP udpiiu::udpJumpTableCAC [] =
     &udpiiu::repeaterAckAction,
 };
 
+
+static
+double getMaxPeriod()
+{
+    double maxPeriod = maxSearchPeriodDefault;
+
+    if ( envGetConfigParamPtr ( & EPICS_CA_MAX_SEARCH_PERIOD ) ) {
+        long longStatus = envGetDoubleConfigParam (
+            & EPICS_CA_MAX_SEARCH_PERIOD, & maxPeriod );
+        if ( ! longStatus ) {
+            if ( maxPeriod < maxSearchPeriodLowerLimit ) {
+                epicsPrintf ( "\"%s\" out of range (low)\n",
+                                EPICS_CA_MAX_SEARCH_PERIOD.name );
+                maxPeriod = maxSearchPeriodLowerLimit;
+                epicsPrintf ( "Setting \"%s\" = %f seconds\n",
+                    EPICS_CA_MAX_SEARCH_PERIOD.name, maxPeriod );
+            }
+        }
+        else {
+            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
+                            EPICS_CA_MAX_SEARCH_PERIOD.name );
+            epicsPrintf ( "Setting \"%s\" = %f seconds\n",
+                EPICS_CA_MAX_SEARCH_PERIOD.name, maxPeriod );
+        }
+    }
+
+    return maxPeriod;
+}
+
+static
+unsigned getNTimers(double maxPeriod)
+{
+    unsigned nTimers = static_cast < unsigned > ( 1.0 + log ( maxPeriod / minRoundTripEstimate ) / log ( 2.0 ) );
+
+    if ( nTimers > channelNode::getMaxSearchTimerCount () ) {
+        nTimers = channelNode::getMaxSearchTimerCount ();
+        epicsPrintf ( "\"%s\" out of range (high)\n",
+                        EPICS_CA_MAX_SEARCH_PERIOD.name );
+        epicsPrintf ( "Setting \"%s\" = %f seconds\n",
+            EPICS_CA_MAX_SEARCH_PERIOD.name,
+            (1<<(nTimers-1)) * minRoundTripEstimate );
+    }
+
+    return nTimers;
+}
+
 //
 // udpiiu::udpiiu ()
 //
@@ -85,14 +131,15 @@ udpiiu::udpiiu (
     repeaterSubscribeTmr (
         m_repeaterTimerNotify, timerQueue, cbMutexIn, ctxNotifyIn ),
     govTmr ( *this, timerQueue, cacMutexIn ),
-    maxPeriod ( maxSearchPeriodDefault ),
+    maxPeriod ( getMaxPeriod() ),
     rtteMean ( minRoundTripEstimate ),
     rtteMeanDev ( 0 ),
     cacRef ( cac ),
     cbMutex ( cbMutexIn ),
     cacMutex ( cacMutexIn ),
+    nTimers ( getNTimers(maxPeriod) ),
+    ppSearchTmr ( nTimers ),
     nBytesInXmitBuf ( 0 ),
-    nTimers ( 0 ),
     beaconAnomalyTimerIndex ( 0 ),
     sequenceNumber ( 0 ),
     lastReceivedSeqNo ( 0 ),
@@ -104,45 +151,13 @@ udpiiu::udpiiu (
     lastReceivedSeqNoIsValid ( false )
 {
     cacGuard.assertIdenticalMutex ( cacMutex );
-    
-    if ( envGetConfigParamPtr ( & EPICS_CA_MAX_SEARCH_PERIOD ) ) {
-        long longStatus = envGetDoubleConfigParam ( 
-            & EPICS_CA_MAX_SEARCH_PERIOD, & this->maxPeriod );
-        if ( ! longStatus ) {
-            if ( this->maxPeriod < maxSearchPeriodLowerLimit ) {
-                epicsPrintf ( "\"%s\" out of range (low)\n",
-                                EPICS_CA_MAX_SEARCH_PERIOD.name );
-                this->maxPeriod = maxSearchPeriodLowerLimit;
-                epicsPrintf ( "Setting \"%s\" = %f seconds\n",
-                    EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
-            }
-        }
-        else {
-            epicsPrintf ( "EPICS \"%s\" wasnt a real number\n",
-                            EPICS_CA_MAX_SEARCH_PERIOD.name );
-            epicsPrintf ( "Setting \"%s\" = %f seconds\n",
-                EPICS_CA_MAX_SEARCH_PERIOD.name, this->maxPeriod );
-        }
-    }
 
-    double powerOfTwo = log ( this->maxPeriod / minRoundTripEstimate ) / log ( 2.0 );
-    this->nTimers = static_cast < unsigned > ( powerOfTwo + 1.0 );
-    if ( this->nTimers > channelNode::getMaxSearchTimerCount () ) {
-        this->nTimers = channelNode::getMaxSearchTimerCount ();
-        epicsPrintf ( "\"%s\" out of range (high)\n",
-                        EPICS_CA_MAX_SEARCH_PERIOD.name );
-        epicsPrintf ( "Setting \"%s\" = %f seconds\n",
-            EPICS_CA_MAX_SEARCH_PERIOD.name, 
-            (1<<(this->nTimers-1)) * minRoundTripEstimate );
-    }
-
-    powerOfTwo = log ( beaconAnomalySearchPeriod / minRoundTripEstimate ) / log ( 2.0 );
+    double powerOfTwo = log ( beaconAnomalySearchPeriod / minRoundTripEstimate ) / log ( 2.0 );
     this->beaconAnomalyTimerIndex = static_cast < unsigned > ( powerOfTwo + 1.0 );
     if ( this->beaconAnomalyTimerIndex >= this->nTimers ) {
         this->beaconAnomalyTimerIndex = this->nTimers - 1;
     }
 
-    this->ppSearchTmr.reset ( new epics_auto_ptr < class searchTimer > [ this->nTimers ] );
     for ( unsigned i = 0; i < this->nTimers; i++ ) {
         this->ppSearchTmr[i].reset ( 
             new searchTimer ( *this, timerQueue, i, cacMutexIn, 

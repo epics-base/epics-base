@@ -58,6 +58,7 @@ protected:
     channelNode ();
     bool isInstalledInServer ( epicsGuard < epicsMutex > & ) const;
     bool isConnected ( epicsGuard < epicsMutex > & ) const;
+public:
     static unsigned getMaxSearchTimerCount ();
 private:
     enum channelState {

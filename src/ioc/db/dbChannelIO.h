@@ -36,7 +36,6 @@
 #endif
 
 #include "compilerDependencies.h"
-#include "epicsMemory.h"
 
 #ifdef dbChannelIOh_restore_epicsExportSharedSymbols
 #   define epicsExportSharedSymbols

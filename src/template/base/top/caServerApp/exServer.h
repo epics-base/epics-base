@@ -45,7 +45,7 @@
 #include "casdef.h"
 #include "epicsAssert.h"
 #include "resourceLib.h"
-#include "tsMinMax.h"
+#include "epicsAlgorithm.h"
 
 #ifndef NELEMENTS
 #   define NELEMENTS(A) (sizeof(A)/sizeof(A[0]))

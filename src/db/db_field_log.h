@@ -3,8 +3,7 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
+* EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* $Revision-Id$
@@ -13,6 +12,8 @@
  */
 #ifndef INCLdb_field_logh
 #define INCLdb_field_logh
+
+#include <epicsTypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,18 +26,20 @@ extern "C" {
  * priority task pending on the event queue wakes up). Strings would slow down
  * events for more reasonable size values. DB fields of native type string
  * will most likely change infrequently.
- * 
+ *
+ * Strings can be added to the set of types for which updates will be queued
+ * by defining the macro DB_EVENT_LOG_STRINGS. The code in db_add_event()
+ * will adjust automatically, it just compares field sizes.
  */
 union native_value{
-      	short		dbf_int;
-      	short		dbf_short;
-      	float		dbf_float;
-      	short		dbf_enum;
-      	char		dbf_char;
-      	long		dbf_long;
-      	double		dbf_double;
+    epicsInt8		dbf_char;
+    epicsInt16		dbf_short;
+    epicsEnum16		dbf_enum;
+    epicsInt32		dbf_long;
+    epicsFloat32	dbf_float;
+    epicsFloat64	dbf_double;
 #ifdef DB_EVENT_LOG_STRINGS
-      	char		dbf_string[MAXSTRINGSIZE];
+    char		dbf_string[MAX_STRING_SIZE];
 #endif
 };
 

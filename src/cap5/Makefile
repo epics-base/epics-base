@@ -21,10 +21,19 @@ ifeq ($(OS_CLASS),Darwin)
   LOADABLE_SHRLIB_SUFFIX = .$(shell $(PERL) ../perlConfig.pl dlext)
 endif
 
-PERL_VERSION = $(shell $(PERL) ../perlConfig.pl version)
-PERL_ARCHNAME = $(shell $(PERL) ../perlConfig.pl archname)
-PERL_ARCHPATH = $(PERL_VERSION)/$(PERL_ARCHNAME)
+ifdef T_A
+  PERL_VERSION = $(shell $(PERL) ../perlConfig.pl version)
+  PERL_ARCHNAME = $(shell $(PERL) ../perlConfig.pl archname)
+  PERL_ARCHPATH := $(PERL_VERSION)/$(PERL_ARCHNAME)
 
+  EXTUTILS := $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils
+  PERLBIN := $(shell $(PERL) ../perlConfig.pl bin)
+  XSUBPP := $(firstword $(wildcard $(PERLBIN)/xsubpp $(EXTUTILS)/xsubpp))
+
+ifeq ($(strip $(XSUBPP)),)
+  $(warning Perl's xsubpp program was not found.)
+  $(warning The Perl CA module will not be built.)
+else
 ifeq ($(T_A),$(EPICS_HOST_ARCH))                 # No cross-builds (wrong Perl!)
 ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
   LOADABLE_LIBRARY_HOST = Cap5
@@ -42,6 +51,8 @@ ifeq ($(findstring $(OS_CLASS),WIN32 cygwin32),) # Doesn't build on WIN32
   HTMLS = CA.html
 endif
 endif
+endif
+endif
 
 Cap5_SRCS = Cap5.xs
 Cap5_LIBS = ca Com
@@ -51,10 +62,6 @@ Cap5_CFLAGS = $(shell $(PERL) ../perlConfig.pl ccflags)
 include $(TOP)/configure/RULES
 
 ifdef T_A
-  EXTUTILS = $(shell $(PERL) ../perlConfig.pl privlib)/ExtUtils
-  PERLBIN = $(shell $(PERL) ../perlConfig.pl bin)
-  XSUBPP = $(firstword $(wildcard $(PERLBIN)/xsubpp $(EXTUTILS)/xsubpp))
-
   %.c: ../%.xs
 	$(RM) $@ $@_new
 	$(PERL) $(XSUBPP) -typemap $(EXTUTILS)/typemap $< > $@_new && $(MV) $@_new $@

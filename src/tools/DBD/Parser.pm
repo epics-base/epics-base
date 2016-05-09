@@ -13,6 +13,7 @@ use DBD::Base;
 use DBD::Breaktable;
 use DBD::Device;
 use DBD::Driver;
+use DBD::Link;
 use DBD::Menu;
 use DBD::Recordtype;
 use DBD::Recfield;
@@ -36,6 +37,11 @@ sub ParseDBD {
             print "Driver: $1\n" if $debug;
             my ($driver_name) = unquote($1);
             $dbd->add(DBD::Driver->new($driver_name));
+        }
+        elsif (m/\G link \s* \( \s* $RXstr \s*, \s* $RXstr \s* \)/oxgc) {
+            print "Link $1, $2\n" if $debug;
+            my ($key, $lset) = unquote($1, $2);
+            $dbd->add(DBD::Link->new($key, $lset));
         }
         elsif (m/\G registrar \s* \( \s* $RXstr \s* \)/oxgc) {
             print "Registrar: $1\n" if $debug;

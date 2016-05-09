@@ -1,0 +1,92 @@
+=head1 Link Types
+
+Links are an extensible mechanism for adding new kinds of database link,
+using JSON for link addresses.
+The following link types are available in this release:
+
+=over
+
+=item * L<Constant|/"Constant Link const">
+
+=item * L<Database|/"Database Link db">
+
+=item * L<Channel Access|/"Channel Access Link ca">
+
+=back
+
+=head2 Using Links
+
+...
+must appear inside a pair of braces C< {} > expressed as a JSON
+(L<JavaScript Object Notation|http://www.json.org/>) object, which allows link
+parameters to be defined as needed.
+
+Note that due to the required presence of the double-quote characters in the
+JSON strings in a link field value string in a database file, it will usually
+be necessary to escape all double-quote characters in the JSON object by
+preceding them with a backslash C< \ > character.
+Database configuration tools that support this link mechanism must be careful
+to handle these escapes correctly on reading and writing string values from/to
+a .db file.
+
+=head2 Filter Reference
+
+=cut
+
+link(const,lsetConst)
+
+=head3 Constant Link C<"const">
+
+...
+
+=head4 Parameters
+
+...
+
+=head4 Example
+
+ ...
+
+=cut
+
+link(db,lsetDatabase)
+
+=head3 Database Link C<"db">
+
+...
+
+=head4 Parameters
+
+...
+
+=head4 Example
+
+ ...
+
+=cut
+
+link(ca,lsetChannelAccess)
+
+=head3 Channel Access Link C<"ca">
+
+...
+
+=head4 Parameters
+
+...
+
+=over
+
+=item ...
+
+...
+
+=back
+
+...
+
+=head4 Example
+
+ ...
+
+=cut

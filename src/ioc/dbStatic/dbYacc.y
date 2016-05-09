@@ -20,7 +20,7 @@ static int yyAbort = 0;
 %token tokenINCLUDE tokenPATH tokenADDPATH
 %token tokenALIAS tokenMENU tokenCHOICE tokenRECORDTYPE
 %token tokenFIELD tokenINFO tokenREGISTRAR
-%token tokenDEVICE tokenDRIVER tokenBREAKTABLE
+%token tokenDEVICE tokenDRIVER tokenLINK tokenBREAKTABLE
 %token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
 %token <Str> tokenSTRING tokenCDEFS
 
@@ -46,6 +46,7 @@ database_item:	include
 	|	tokenRECORDTYPE recordtype_head recordtype_body
 	|	device
 	|	driver
+	|	link
 	|	registrar
 	|	function
 	|	variable
@@ -160,6 +161,13 @@ driver: tokenDRIVER '(' tokenSTRING ')'
 {
 	if(dbStaticDebug>2) printf("driver %s\n",$3);
 	dbDriver($3); dbmfFree($3);
+};
+
+link: tokenLINK '(' tokenSTRING ',' tokenSTRING ')'
+{
+	if(dbStaticDebug>2) printf("link %s %s\n",$3,$5);
+	dbLinkType($3,$5);
+	dbmfFree($3); dbmfFree($5);
 };
 
 registrar: tokenREGISTRAR '(' tokenSTRING ')'

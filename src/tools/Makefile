@@ -23,6 +23,7 @@ PERL_MODULES += DBD/Base.pm
 PERL_MODULES += DBD/Breaktable.pm
 PERL_MODULES += DBD/Device.pm
 PERL_MODULES += DBD/Driver.pm
+PERL_MODULES += DBD/Link.pm
 PERL_MODULES += DBD/Function.pm
 PERL_MODULES += DBD/Menu.pm
 PERL_MODULES += DBD/Output.pm

@@ -38,6 +38,7 @@ static int yyreset(void)
 "field"		return(tokenFIELD);
 "device"	return(tokenDEVICE);
 "driver"	return(tokenDRIVER);
+"link"		return(tokenLINK);
 "breaktable"	return(tokenBREAKTABLE);
 "record"	return(tokenRECORD);
 "grecord"	return(tokenGRECORD);

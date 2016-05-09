@@ -458,6 +458,7 @@ void dbFreeBase(dbBase *pdbbase)
     dbVariableDef       *pvarNext;
     drvSup		*pdrvSup;
     drvSup		*pdrvSupNext;
+    linkSup		*plinkSup;
     brkTable		*pbrkTable;
     brkTable		*pbrkTableNext;
     chFilterPlugin      *pfilt;
@@ -557,6 +558,11 @@ void dbFreeBase(dbBase *pdbbase)
 	free((void *)pdrvSup->name);
 	free((void *)pdrvSup);
 	pdrvSup = pdrvSupNext;
+    }
+    while ((plinkSup = (linkSup *) ellGet(&pdbbase->linkList))) {
+        free(plinkSup->lset_name);
+        free(plinkSup->name);
+        free(plinkSup);
     }
     ptext = (dbText *)ellFirst(&pdbbase->registrarList);
     while(ptext) {
@@ -1068,6 +1074,21 @@ long dbWriteDriverFP(DBBASE *pdbbase,FILE *fp)
 	fprintf(fp,"driver(%s)\n",pdrvSup->name);
     }
     return(0);
+}
+
+long dbWriteLinkFP(DBBASE *pdbbase, FILE *fp)
+{
+    linkSup *plinkSup;
+
+    if (!pdbbase) {
+	fprintf(stderr, "pdbbase not specified\n");
+	return -1;
+    }
+    for (plinkSup = (linkSup *) ellFirst(&pdbbase->linkList);
+        plinkSup; plinkSup = (linkSup *) ellNext(&plinkSup->node)) {
+	fprintf(fp, "link(%s,%s)\n", plinkSup->name, plinkSup->lset_name);
+    }
+    return 0;
 }
 
 long dbWriteRegistrarFP(DBBASE *pdbbase,FILE *fp)
@@ -3107,6 +3128,12 @@ char * dbGetRelatedField(DBENTRY *psave)
     return(rtnval);
 }
 
+linkSup* dbFindLinkSup(dbBase *pdbbase, const char *name) {
+    GPHENTRY *pgph = gphFind(pdbbase->pgpHash,name,&pdbbase->linkList);
+    if (!pgph) return NULL;
+    return (linkSup *) pgph->userPvt;
+}
+
 int  dbGetNLinks(DBENTRY *pdbentry)
 {
     dbRecordType	*precordType = pdbentry->precordType;
@@ -3458,6 +3485,15 @@ void  dbDumpDriver(DBBASE *pdbbase)
 	return;
     }
     dbWriteDriverFP(pdbbase,stdout);
+}
+
+void  dbDumpLink(DBBASE *pdbbase)
+{
+    if(!pdbbase) {
+	fprintf(stderr,"pdbbase not specified\n");
+	return;
+    }
+    dbWriteLinkFP(pdbbase,stdout);
 }
 
 void  dbDumpRegistrar(DBBASE *pdbbase)

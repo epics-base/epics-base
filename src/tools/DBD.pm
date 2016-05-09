@@ -6,6 +6,7 @@ use warnings;
 use DBD::Base;
 use DBD::Breaktable;
 use DBD::Driver;
+use DBD::Link;
 use DBD::Menu;
 use DBD::Recordtype;
 use DBD::Recfield;
@@ -21,6 +22,7 @@ sub new {
     my $this = {
         'DBD::Breaktable' => {},
         'DBD::Driver'     => {},
+	'DBD::Link'       => {},
         'DBD::Function'   => {},
         'DBD::Menu'       => {},
         'DBD::Recordtype' => {},
@@ -78,6 +80,10 @@ sub breaktable {
 
 sub drivers {
     return shift->{'DBD::Driver'};
+}
+
+sub links {
+    return shift->{'DBD::Link'};
 }
 
 sub functions {

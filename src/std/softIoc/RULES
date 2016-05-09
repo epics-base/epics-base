@@ -9,8 +9,10 @@
 
 softIoc.dbd$(DEP): $(COMMON_DIR)/stdRecords.dbd
 softIoc.dbd$(DEP): $(COMMON_DIR)/filters.dbd
+softIoc.dbd$(DEP): $(COMMON_DIR)/links.dbd
 $(COMMON_DIR)/softIoc.dbd: $(COMMON_DIR)/stdRecords.dbd
 $(COMMON_DIR)/softIoc.dbd: $(COMMON_DIR)/filters.dbd
+$(COMMON_DIR)/softIoc.dbd: $(COMMON_DIR)/links.dbd
 $(COMMON_DIR)/softIoc.dbd: $(STDDIR)/softIoc/Makefile
 
 softMain$(DEP): epicsInstallDir.h

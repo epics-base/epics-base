@@ -75,6 +75,7 @@ static void dbRecordtypeFieldItem(char *name,char *value);
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
 static void dbDriver(char *name);
+static void dbLinkType(char *name, char *lset_name);
 static void dbRegistrar(char *name);
 static void dbFunction(char *name);
 static void dbVariable(char *name, char *type);
@@ -783,6 +784,26 @@ static void dbDriver(char *name)
     } 
     pgphentry->userPvt = pdrvSup;
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
+}
+
+static void dbLinkType(char *name, char *lset_name)
+{
+    linkSup *pLinkSup;
+    GPHENTRY *pgphentry;
+
+    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->linkList);
+    if (pgphentry) {
+	return;
+    }
+    pLinkSup = dbCalloc(1,sizeof(linkSup));
+    pLinkSup->name = epicsStrDup(name);
+    pLinkSup->lset_name = epicsStrDup(lset_name);
+    pgphentry = gphAdd(pdbbase->pgpHash, pLinkSup->name, &pdbbase->linkList);
+    if (!pgphentry) {
+	yyerrorAbort("gphAdd failed");
+    } 
+    pgphentry->userPvt = pLinkSup;
+    ellAdd(&pdbbase->linkList, &pLinkSup->node);
 }
 
 static void dbRegistrar(char *name)

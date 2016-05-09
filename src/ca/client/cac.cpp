@@ -133,7 +133,7 @@ cac::cac (
     connTMO ( CA_CONN_VERIFY_PERIOD ),
     mutex ( mutualExclusionIn ),
     cbMutex ( callbackControlIn ),
-    ipToAEngine ( ipAddrToAsciiEngine::allocate () ),
+    ipToAEngine ( &ipAddrToAsciiEngine::allocate () ),
     timerQueue ( epicsTimerQueueActive::allocate ( false,
         lowestPriorityLevelAbove(epicsThreadGetPrioritySelf()) ) ),
     pUserName ( 0 ),
@@ -331,7 +331,8 @@ cac::~cac ()
 
     this->timerQueue.release ();
 
-    this->ipToAEngine.release ();
+    this->ipToAEngine->release ();
+    delete this->ipToAEngine;
 
     errlogFlush ();
 
@@ -420,7 +421,7 @@ void cac::show (
         ::printf ( "Timer queue:\n" );
         this->timerQueue.show ( level - 3u );
         ::printf ( "IP address to name conversion engine:\n" );
-        this->ipToAEngine.show ( level - 3u );
+        this->ipToAEngine->show ( level - 3u );
     }
 
     if ( level > 3u ) {
@@ -535,7 +536,7 @@ bool cac::findOrCreateVirtCircuit (
                     new ( this->freeListVirtualCircuit ) tcpiiu (
                         *this, this->mutex, this->cbMutex, this->notify, this->connTMO,
                         this->timerQueue, addr, this->comBufMemMgr, minorVersionNumber,
-                        this->ipToAEngine, priority, pSearchDest ) );
+                        *this->ipToAEngine, priority, pSearchDest ) );
 
             bhe * pBHE = this->beaconTable.lookup ( addr.ia );
             if ( ! pBHE ) {
@@ -604,7 +605,7 @@ void cac::transferChanToVirtCircuit (
             char acc[64];
             pChan->getPIIU(guard)->getHostName ( guard, acc, sizeof ( acc ) );
             msgForMultiplyDefinedPV * pMsg = new ( this->mdpvFreeList )
-                msgForMultiplyDefinedPV ( this->ipToAEngine,
+                msgForMultiplyDefinedPV ( *this->ipToAEngine,
                     *this, pChan->pName ( guard ), acc );
             // It is possible for the ioInitiate call below to
             // call the callback directly if queue quota is exceeded.

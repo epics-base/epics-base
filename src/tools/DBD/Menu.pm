@@ -62,10 +62,11 @@ sub toDeclaration {
     my @choices = map {
         sprintf "    %-31s /* %s */", @{$_}[0], escapeCcomment(@{$_}[1]);
     } $this->choices;
+    my $num = scalar @choices;
     return "typedef enum {\n" .
                join(",\n", @choices) .
-           ",\n    ${name}_NUM_CHOICES\n" .
-           "} $name;\n\n";
+           "\n} $name;\n" .
+           "#define ${name}_NUM_CHOICES $num\n\n";
 }
 
 sub toDefinition {

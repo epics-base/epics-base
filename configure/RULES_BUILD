@@ -325,7 +325,9 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 # Automated testing
 
 runtests: $(TESTSCRIPTS)
+ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
+endif
 
 testspec: $(TESTSCRIPTS)
 	@$(RM) $@
@@ -339,7 +341,9 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
+ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
 	-$(PERL) $< -tap > $@
+endif
 
 # If there's a perl test script (.plt) available, use it
 %.t: ../%.plt

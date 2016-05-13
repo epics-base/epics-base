@@ -1134,6 +1134,7 @@ static void destroyAllChannels (
 
         epicsMutexMustLock ( client->chanListLock );
         pciu = (struct channel_in_use *) ellGet ( pList );
+        if(pciu) pciu->state = rsrvCS_shutdown;
         epicsMutexUnlock ( client->chanListLock );
 
         if ( ! pciu ) {

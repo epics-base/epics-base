@@ -122,6 +122,13 @@ CROSS_COMPILER_TARGET_ARCHS=
 #
 CROSS_COMPILER_HOST_ARCHS=
 
+#  The 'make runtests' and 'make tapfiles' build targets normally only run
+#  self-tests for the EPICS_HOST_ARCH architecture. If the host can execute
+#  the self-test programs for any other cross-built architectures such as
+#  a -debug architecture, those architectures can be named here.
+#
+CROSS_COMPILER_RUNTEST_ARCHS=
+
 #  Build shared libraries?
 #        must be either YES or NO
 #     NOTE: os/CONFIG.$(EPICS_HOST_ARCH).$(EPICS_HOST_ARCH) files and

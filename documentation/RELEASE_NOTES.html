@@ -13,6 +13,18 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>New CONFIG_SITE variable for running self-tests</h3>
+
+<p>The 'make runtests' and 'make tapfiles' build targets normally only run the
+self-tests for the main <tt>EPICS_HOST_ARCH</tt> architecture. If the host is
+able to execute self-test programs for other target architectures that are being
+built by the host, such as when building a <tt>-debug</tt> version of the host
+architecture for example, the names of those other architectures can be added to
+the new <tt>CROSS_COMPILER_RUNTEST_ARCHS</tt> variable in either the
+<tt>configure/CONFIG_SITE</tt> file or in an appropriate
+<tt>configure/os/CONFIG_SITE.&lt;host&gt;.Common</tt> file to have the test
+programs for those targets be run as well.</p>
+
 <h3>Additional RELEASE file checks</h3>
 
 <p>An additional check has been added at build-time for the contents of the

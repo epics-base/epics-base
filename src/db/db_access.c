@@ -32,15 +32,16 @@
 #include "dbCommon.h"
 #include "errMdef.h"
 #include "recSup.h"
-#include "dbLock.h"
 #include "alarm.h"
 #define db_accessHFORdb_accessC
 #include "db_access.h"
 #undef db_accessHFORdb_accessC
+
 #define epicsExportSharedSymbols
 #include "dbNotify.h"
 #include "dbAccessDefs.h"
 #include "dbEvent.h"
+#include "dbLock.h"
 #include "db_access_routines.h"
 
 #ifndef NULL

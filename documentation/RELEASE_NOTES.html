@@ -13,6 +13,20 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Making IOC ca_get operations atomic</h3>
+
+<p>When a CA client gets data from an IOC record using a compound data type such
+as <tt>DBR_TIME_DOUBLE</tt> the value field is fetched from the database in a
+separate call than the other metadata, without keeping the record locked. This
+allows some other thread such as a periodic scan thread a chance to interrupt
+the get operation and process the record in between. CA monitors have always
+been atomic as long as the value data isn't a string or an array, but this race
+condition in the CA get path has now been fixed so the record will stay locked
+between the two fetch operations.</p>
+
+<p>This fixes <a href="https://bugs.launchpad.net/epics-base/+bug/1581212">
+Launchpad bug #1581212</a>, thanks to Till Strauman and Dehong Zhang.</p>
+
 <h3>New CONFIG_SITE variable for running self-tests</h3>
 
 <p>The 'make runtests' and 'make tapfiles' build targets normally only run the

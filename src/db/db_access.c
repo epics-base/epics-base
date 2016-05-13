@@ -32,6 +32,7 @@
 #include "dbCommon.h"
 #include "errMdef.h"
 #include "recSup.h"
+#include "dbLock.h"
 #include "alarm.h"
 #define db_accessHFORdb_accessC
 #include "db_access.h"
@@ -181,6 +182,8 @@ int epicsShareAPI db_get_field_and_count(
     * very important and must correspond to the order of processing
     * in the dbAccess.c dbGet() and getOptions() routines.
     */
+
+    dbScanLock(paddr->precord);
 
     switch(buffer_type) {
     case(oldDBR_STRING):
@@ -820,8 +823,12 @@ int epicsShareAPI db_get_field_and_count(
         }
         break;
     default:
-        return -1;
+        status = -1;
+        break;
     }
+
+    dbScanUnlock(paddr->precord);
+
     if (status) return -1;
     return 0;
 }

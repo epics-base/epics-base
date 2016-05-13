@@ -196,14 +196,22 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
          * interface.
          */
         if ( pIfreqList->ifr_flags & IFF_BROADCAST ) {
+            osiSockAddr baddr;
             status = socket_ioctl (socket, SIOCGIFBRDADDR, pIfreqList);
             if ( status ) {
                 errlogPrintf ("osiSockDiscoverBroadcastAddresses(): net intf \"%s\": bcast addr fetch fail\n", pIfreqList->ifr_name);
                 free ( pNewNode );
                 continue;
             }
-            pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
-            ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( pNewNode->addr.ia.sin_addr.s_addr ) ) );
+            baddr.sa = pIfreqList->ifr_broadaddr;
+            if (baddr.ia.sin_family==AF_INET && baddr.ia.sin_addr.s_addr != INADDR_ANY) {
+                pNewNode->addr.sa = pIfreqList->ifr_broadaddr;
+                ifDepenDebugPrintf ( ( "found broadcast addr = %x\n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
+            } else {
+                ifDepenDebugPrintf ( ( "Ignoring broadcast addr = \n", ntohl ( baddr.ia.sin_addr.s_addr ) ) );
+                free ( pNewNode );
+                continue;
+            }
         }
 #if defined (IFF_POINTOPOINT)
         else if ( pIfreqList->ifr_flags & IFF_POINTOPOINT ) {

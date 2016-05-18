@@ -15,6 +15,12 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.3</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>New string input device support "getenv"</h3>
+
+<p>A new "getenv" device support for both the stringin and lsi (long string
+input) record types can be used to read the value of an environment variable
+from the IOC at runtime. See base/db/softIocExit.db for sample usage.</p>
+
 <h3>Build rules and DELAY_INSTALL_LIBS</h3>
 
 <p>A new order-only prerequisite build rule has been added to ensure that

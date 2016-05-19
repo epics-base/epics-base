@@ -17,6 +17,11 @@ static int yyAbort = 0;
 
 %start database
 
+%union
+{
+    char	*Str;
+}
+
 %token tokenINCLUDE tokenPATH tokenADDPATH
 %token tokenALIAS tokenMENU tokenCHOICE tokenRECORDTYPE
 %token tokenFIELD tokenINFO tokenREGISTRAR
@@ -24,10 +29,10 @@ static int yyAbort = 0;
 %token tokenRECORD tokenGRECORD tokenVARIABLE tokenFUNCTION
 %token <Str> tokenSTRING tokenCDEFS
 
-%union
-{
-    char	*Str;
-}
+%token jsonNULL jsonTRUE jsonFALSE
+%token <Str> jsonNUMBER jsonSTRING
+%type <Str> json_value json_object json_array
+%type <Str> json_members json_pair json_elements
 
 %%
 
@@ -247,10 +252,11 @@ record_body: /* empty */
 record_field_list:	record_field_list record_field
 	|	record_field;
 
-record_field: tokenFIELD '(' tokenSTRING ',' tokenSTRING ')'
+record_field: tokenFIELD '(' tokenSTRING ','
+	{ BEGIN JSON; } json_value { BEGIN INITIAL; } ')'
 {
-	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$5);
-	dbRecordField($3,$5); dbmfFree($3); dbmfFree($5);
+	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$6);
+	dbRecordField($3,$6); dbmfFree($3); dbmfFree($6);
 }
 	| tokenINFO '(' tokenSTRING ',' tokenSTRING ')'
 {
@@ -269,6 +275,61 @@ alias: tokenALIAS '(' tokenSTRING ',' tokenSTRING ')'
 	if(dbStaticDebug>2) printf("alias %s %s\n",$3,$5);
 	dbAlias($3,$5); dbmfFree($3); dbmfFree($5);
 };
+
+json_object: '{' '}'
+{
+	$$ = "{}";
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+}
+	| '{' json_members '}'
+{
+	$$ = dbmfStrcat3("{", $2, "}");
+	dbmfFree($2);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_members: json_pair
+	| json_pair ',' json_members
+{
+	$$ = dbmfStrcat3($1, ",", $3);
+	dbmfFree($1); dbmfFree($3);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_pair: jsonSTRING ':' json_value
+{
+	$$ = dbmfStrcat3($1, ":", $3);
+	dbmfFree($1); dbmfFree($3);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_array: '[' ']'
+{
+	$$ = "[]";
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+}
+	| '[' json_elements ']'
+{
+	$$ = dbmfStrcat3("[", $2, "]");
+	dbmfFree($2);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_elements: json_value
+	| json_value ',' json_elements
+{
+	$$ = dbmfStrcat3($1, ",", $3);
+	dbmfFree($1); dbmfFree($3);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_value: jsonNULL	{ $$ = "null"; }
+	| jsonTRUE	{ $$ = "true"; }
+	| jsonFALSE	{ $$ = "false"; }
+	| jsonNUMBER
+	| jsonSTRING
+	| json_array
+	| json_object ;
 
 
 %%

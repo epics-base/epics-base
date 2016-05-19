@@ -24,13 +24,13 @@ bareword    [a-zA-Z0-9_\-+:./\\\[\]<>;]
 
 {doublequote}({dstringchar}|{escape})*{doublequote} |
 {singlequote}({sstringchar}|{escape})*{singlequote} {
-    yylval.Str = dbmfStrdup(yytext+1);
+    yylval.Str = dbmfStrdup((char *) yytext+1);
     yylval.Str[strlen(yylval.Str)-1] = '\0';
     return(QUOTE);
 }
 
 {bareword}+ {
-    yylval.Str = dbmfStrdup(yytext);
+    yylval.Str = dbmfStrdup((char *) yytext);
     return(WORD);
 }
 

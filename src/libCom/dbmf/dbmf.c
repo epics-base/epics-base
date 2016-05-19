@@ -68,7 +68,7 @@ dbmfPrivate dbmfPvt;
 static dbmfPrivate *pdbmfPvt = NULL;
 int dbmfDebug=0;
 
-int epicsShareAPI dbmfInit(size_t size, int chunkItems)
+int dbmfInit(size_t size, int chunkItems)
 {
     if(pdbmfPvt) {
         printf("dbmfInit: Already initialized\n");
@@ -94,7 +94,7 @@ int epicsShareAPI dbmfInit(size_t size, int chunkItems)
 }
 
 
-void* epicsShareAPI dbmfMalloc(size_t size)
+void* dbmfMalloc(size_t size)
 {
     void      **pnextFree;
     void      **pfreeList;
@@ -156,15 +156,15 @@ void* epicsShareAPI dbmfMalloc(size_t size)
     return((void *)pmem);
 }
 
-char * epicsShareAPI dbmfStrdup(unsigned char *str)
+char * dbmfStrdup(const char *str)
 {
-	size_t len = strlen((char *) str);
+	size_t len = strlen(str);
 	char *buf = dbmfMalloc(len + 1);
-	strcpy(buf, (char *) str);
+	strcpy(buf, str);
 	return buf;
 }
 
-void epicsShareAPI dbmfFree(void* mem)
+void dbmfFree(void* mem)
 {
     char       *pmem = (char *)mem;
     chunkNode  *pchunkNode;
@@ -194,7 +194,7 @@ void epicsShareAPI dbmfFree(void* mem)
     epicsMutexUnlock(pdbmfPvt->lock);
 }
 
-int epicsShareAPI dbmfShow(int level)
+int dbmfShow(int level)
 {
     if(pdbmfPvt==NULL) {
 	printf("Never initialized\n");
@@ -230,7 +230,7 @@ int epicsShareAPI dbmfShow(int level)
     return(0);
 }
 
-void  epicsShareAPI dbmfFreeChunks(void)
+void dbmfFreeChunks(void)
 {
     chunkNode  *pchunkNode;
     chunkNode  *pnext;;
@@ -259,21 +259,32 @@ void  epicsShareAPI dbmfFreeChunks(void)
 
 #else /* DBMF_FREELIST_DEBUG */
 
-int epicsShareAPI dbmfInit(size_t size, int chunkItems)
+int dbmfInit(size_t size, int chunkItems)
 { return 0; }
 
-void* epicsShareAPI dbmfMalloc(size_t size)
+void* dbmfMalloc(size_t size)
 { return malloc(size); }
 
-char * epicsShareAPI dbmfStrdup(unsigned char *str)
+char * dbmfStrdup(const char *str)
 { return strdup((char*)str); }
 
-void epicsShareAPI dbmfFree(void* mem)
+void dbmfFree(void* mem)
 { free(mem); }
 
-int epicsShareAPI dbmfShow(int level)
+int dbmfShow(int level)
 { return 0; }
 
-void  epicsShareAPI dbmfFreeChunks(void) {}
+void dbmfFreeChunks(void) {}
 
 #endif /* DBMF_FREELIST_DEBUG */
+
+char * dbmfStrcat3(const char *lhs, const char *mid, const char *rhs)
+{
+	size_t len = strlen(lhs) + strlen(mid) + strlen(rhs) + 1;
+	char *buf = dbmfMalloc(len);
+	strcpy(buf, lhs);
+	strcat(buf, mid);
+	strcat(buf, rhs);
+	return buf;
+}
+

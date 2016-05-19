@@ -278,7 +278,7 @@ alias: tokenALIAS '(' tokenSTRING ',' tokenSTRING ')'
 
 json_object: '{' '}'
 {
-	$$ = "{}";
+	$$ = dbmfStrdup("{}");
 	if (dbStaticDebug>2) printf("json %s\n", $$);
 }
 	| '{' json_members '}'
@@ -305,7 +305,7 @@ json_pair: jsonSTRING ':' json_value
 
 json_array: '[' ']'
 {
-	$$ = "[]";
+	$$ = dbmfStrdup("[]");
 	if (dbStaticDebug>2) printf("json %s\n", $$);
 }
 	| '[' json_elements ']'
@@ -323,9 +323,9 @@ json_elements: json_value
 	if (dbStaticDebug>2) printf("json %s\n", $$);
 };
 
-json_value: jsonNULL	{ $$ = "null"; }
-	| jsonTRUE	{ $$ = "true"; }
-	| jsonFALSE	{ $$ = "false"; }
+json_value: jsonNULL	{ $$ = dbmfStrdup("null"); }
+	| jsonTRUE	{ $$ = dbmfStrdup("true"); }
+	| jsonFALSE	{ $$ = dbmfStrdup("false"); }
 	| jsonNUMBER
 	| jsonSTRING
 	| json_array

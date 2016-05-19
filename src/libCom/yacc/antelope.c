@@ -115,7 +115,11 @@ getargs(int argc, char *argv[])
     int i;
     char *s;
 
-    if (argc > 0) myname = argv[0];
+    if (argc > 0) {
+        myname = strrchr(argv[0], '/');
+	if (myname) myname++;
+	else myname = argv[0];
+    }
     for (i = 1; i < argc; ++i)
     {
 	s = argv[i];

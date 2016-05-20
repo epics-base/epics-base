@@ -30,9 +30,9 @@ static int yyAbort = 0;
 %token <Str> tokenSTRING tokenCDEFS
 
 %token jsonNULL jsonTRUE jsonFALSE
-%token <Str> jsonNUMBER jsonSTRING
+%token <Str> jsonNUMBER jsonSTRING jsonBARE
 %type <Str> json_value json_object json_array
-%type <Str> json_members json_pair json_elements
+%type <Str> json_members json_pair json_elements json_string
 
 %%
 
@@ -296,10 +296,18 @@ json_members: json_pair
 	if (dbStaticDebug>2) printf("json %s\n", $$);
 };
 
-json_pair: jsonSTRING ':' json_value
+json_pair: json_string ':' json_value
 {
 	$$ = dbmfStrcat3($1, ":", $3);
 	dbmfFree($1); dbmfFree($3);
+	if (dbStaticDebug>2) printf("json %s\n", $$);
+};
+
+json_string: jsonSTRING
+	| jsonBARE
+{
+	$$ = dbmfStrcat3("\"", $1, "\"");
+	dbmfFree($1);
 	if (dbStaticDebug>2) printf("json %s\n", $$);
 };
 
@@ -327,7 +335,7 @@ json_value: jsonNULL	{ $$ = dbmfStrdup("null"); }
 	| jsonTRUE	{ $$ = dbmfStrdup("true"); }
 	| jsonFALSE	{ $$ = dbmfStrdup("false"); }
 	| jsonNUMBER
-	| jsonSTRING
+	| json_string
 	| json_array
 	| json_object ;
 

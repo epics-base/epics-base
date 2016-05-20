@@ -18,6 +18,7 @@ bareword    [a-zA-Z0-9_\-+:.\[\]<>;]
 
 punctuation	[:,\[\]{}]
 normalchar	[^"\\\0-\x1f]
+barechar	[a-zA-Z0-9_\-+.]
 escapedchar	({backslash}["\\/bfnrt])
 hexdigit	[0-9a-fA-F]
 unicodechar	({backslash}"u"{hexdigit}{4})
@@ -100,6 +101,11 @@ static int yyreset(void)
 <JSON>{jsondqstr} {
 	yylval.Str = dbmfStrdup((char *) yytext);
 	return jsonSTRING;
+}
+
+<JSON>{barechar}+ {
+	yylval.Str = dbmfStrdup((char *) yytext);
+	return jsonBARE;
 }
 
 <JSON>{number} {

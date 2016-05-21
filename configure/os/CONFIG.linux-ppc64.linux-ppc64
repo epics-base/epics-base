@@ -1,7 +1,5 @@
 #  CONFIG.linux-ppc64.linux-ppc64
 #
-# $Revision-Id$
-#
 # Definitions for linux-ppc64 host - linux-ppc64 target builds
 # Sites may override these definitions in CONFIG_SITE.linux-ppc64.linux-ppc64
 #-------------------------------------------------------

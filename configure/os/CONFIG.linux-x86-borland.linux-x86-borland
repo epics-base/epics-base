@@ -1,7 +1,5 @@
 #  CONFIG.linux-x86-borland.linux-x86-borland
 #
-# $Revision-Id$
-#
 # Definitions for linux-x86-borland host - linux-x86-borland target builds
 # Sites may override these definitions in CONFIG_SITE.linux-x86-borland.linux-x86-borland
 #-------------------------------------------------------

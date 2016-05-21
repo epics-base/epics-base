@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.linux-x86
 #
-# $Revision-Id$
-#
 # Site Specific definitions for linux-x86 target
 # Only the local epics system manager should modify this file
 

@@ -1,8 +1,5 @@
 # CONFIG.Common.solaris-sparc-gnu
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for solaris-sparc gnu compiler target archs
 # Sites may override these definitions in CONFIG_SITE.Common.solaris-sparc-gnu
 #-------------------------------------------------------

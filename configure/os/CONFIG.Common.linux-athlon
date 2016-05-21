@@ -1,8 +1,5 @@
 # CONFIG.Common.linux-athlon
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for linux-athlon target builds
 # Sites may override these definitions in CONFIG_SITE.Common.linux-athlon
 #-------------------------------------------------------

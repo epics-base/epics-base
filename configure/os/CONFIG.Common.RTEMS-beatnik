@@ -1,6 +1,5 @@
 #
 # CONFIG.Common.RTEMS-beatnik
-# $Revision-Id$
 # Author: Dayle Kotturi <dayle@slac.stanford.edu>
 #
 # All RTEMS targets use the same Makefile fragment

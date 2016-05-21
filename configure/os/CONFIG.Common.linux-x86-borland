@@ -1,8 +1,5 @@
 # CONFIG.Common.linux-x86-borland
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for linux-x86 target builds
 # Sites may override these definitions in CONFIG_SITE.Common.linux-x86-borland
 #-------------------------------------------------------

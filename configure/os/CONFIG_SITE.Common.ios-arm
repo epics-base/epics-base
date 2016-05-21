@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.ios-arm
 #
-# $Revision-Id$
-#
 # Site-specific settings for ios-arm target builds
 #-------------------------------------------------------
 

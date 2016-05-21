@@ -33,7 +33,7 @@ extern "C" {
 #define GPIB_IO		5
 #define BITBUS_IO	6
 #define MACRO_LINK	7
-#define JSON_STR        8
+#define JSON_LINK       8
 #define PN_LINK		9
 #define DB_LINK		10
 #define CA_LINK		11

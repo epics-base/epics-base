@@ -67,7 +67,7 @@ epicsShareDef maplinkType pamaplinkType[LINK_NTYPES] = {
 	{"GPIB_IO",GPIB_IO},
 	{"BITBUS_IO",BITBUS_IO},
 	{"MACRO_LINK",MACRO_LINK},
-	{"JSON_STR",JSON_STR},
+	{"JSON_LINK",JSON_LINK},
         {"PN_LINK",PN_LINK},
 	{"DB_LINK",DB_LINK},
 	{"CA_LINK",CA_LINK},
@@ -122,7 +122,7 @@ void dbFreeLinkContents(struct link *plink)
 	case CONSTANT: free((void *)plink->value.constantStr); break;
 	case MACRO_LINK: free((void *)plink->value.macro_link.macroStr); break;
 	case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
-	case JSON_STR: parm = plink->value.json.string; break;
+	case JSON_LINK: parm = plink->value.json.string; break;
 	case VME_IO: parm = plink->value.vmeio.parm; break;
 	case CAMAC_IO: parm = plink->value.camacio.parm; break;
 	case AB_IO: parm = plink->value.abio.parm; break;
@@ -1941,7 +1941,7 @@ char * dbGetString(DBENTRY *pdbentry)
 		dbMsgCpy(pdbentry, "");
 	    }
 	    break;
-	case JSON_STR:
+	case JSON_LINK:
 	    dbMsgCpy(pdbentry, plink->value.json.string);
 	    break;
         case PN_LINK:
@@ -2195,7 +2195,7 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
          */
         case CONSTANT: plink->value.constantStr = NULL; break;
         case PV_LINK:  plink->value.pv_link.pvname = callocMustSucceed(1, 1, "init PV_LINK"); break;
-        case JSON_STR: plink->value.json.string = pNullString; break;
+        case JSON_LINK: plink->value.json.string = pNullString; break;
         case VME_IO: plink->value.vmeio.parm = pNullString; break;
         case CAMAC_IO: plink->value.camacio.parm = pNullString; break;
         case AB_IO: plink->value.abio.parm = pNullString; break;
@@ -2264,7 +2264,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
-        pinfo->ltype = JSON_STR;
+        pinfo->ltype = JSON_LINK;
 	return 0;
     }
 
@@ -2378,7 +2378,7 @@ long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
 
     switch (pinfo->ltype) {
     case CONSTANT:
-    case JSON_STR:
+    case JSON_LINK:
     case PV_LINK:
         if (link_type == CONSTANT || link_type == PV_LINK)
             return 0;
@@ -2411,7 +2411,7 @@ void dbSetLinkPV(DBLINK *plink, dbLinkInfo *pinfo)
 static
 void dbSetLinkJSON(DBLINK *plink, dbLinkInfo *pinfo)
 {
-    plink->type = JSON_STR;
+    plink->type = JSON_LINK;
     plink->value.json.string = pinfo->target;
 
     pinfo->target = NULL;
@@ -2421,7 +2421,7 @@ static
 void dbSetLinkHW(DBLINK *plink, dbLinkInfo *pinfo)
 {
     switch(pinfo->ltype) {
-    case JSON_STR:
+    case JSON_LINK:
         plink->value.json.string = pinfo->target;
         break;
     case INST_IO:
@@ -2515,7 +2515,7 @@ long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
             dbFreeLinkContents(plink);
             dbSetLinkPV(plink, pinfo);
             break;
-        case JSON_STR:
+        case JSON_LINK:
             dbFreeLinkContents(plink);
             dbSetLinkJSON(plink, pinfo);
             break;

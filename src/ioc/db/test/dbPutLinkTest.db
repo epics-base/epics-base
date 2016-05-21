@@ -3,8 +3,8 @@ record(x, "x2") {}
 record(x, "x3") {}
 record(x, "x4") {}
 
-record(x, "rJSON_STR") {
-  field(DTYP, "Unit Test JSON_STR")
+record(x, "rJSON_LINK") {
+  field(DTYP, "Unit Test JSON_LINK")
   field(INP, "{\"JSON\":{}}")
 }
 record(x, "rVME_IO") {

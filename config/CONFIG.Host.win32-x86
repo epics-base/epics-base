@@ -7,7 +7,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-# $Revision-Id$
 
 # win32-x86 is the new name for WIN32
 -include $(EPICS_BASE)/config/CONFIG.Host.WIN32

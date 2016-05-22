@@ -10,9 +10,6 @@
 
 // Author:	Jim Kowalkowski
 // Date:	3/97
-//
-// $Revision-Id$
-//
 
 #include <stdio.h>
 #include <stdlib.h>

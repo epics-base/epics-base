@@ -9,7 +9,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* devLib.h */
-/* $Revision-Id$ */
 
 /*
  * Original Author: Marty Kraimer

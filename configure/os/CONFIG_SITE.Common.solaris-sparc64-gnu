@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.solaris-sparc64-gnu
 #
-# $Revision-Id$
-#
 # Site Specific definitions for solaris-sparc64-gnu target
 # Only the local epics system manager should modify this file
 

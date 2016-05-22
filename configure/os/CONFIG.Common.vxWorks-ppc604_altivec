@@ -1,9 +1,7 @@
-# $Revision-Id$
 #
 # Definitions for vxWorks-ppc604 targets with an Altivec and >32MB of RAM.
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc604_altivec
 #
-# This file is maintained by the EPICS build community.
 #-------------------------------------------------------
 
 # Inherit the settings from vxWorks-ppc604_long

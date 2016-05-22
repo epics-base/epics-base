@@ -1,7 +1,5 @@
 # CONFIG_SITE.linux-x86_64-debug.linux-x86_64-debug
 #
-# $Revision-Id$
-#
 # Site specific overrides for linux-x86_64 host and target builds
 #-------------------------------------------------------
 

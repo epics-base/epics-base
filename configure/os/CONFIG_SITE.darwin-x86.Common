@@ -1,8 +1,5 @@
 # CONFIG_SITE.darwin-x86.Common
 #
-# This file is maintained by the build community.
-#
-# $Revision-Id$
 # Site override definitions for darwin-x86 host builds
 #-------------------------------------------------------
 

@@ -7,7 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/*	@(#)ca_test.k	$Revision-Id$
+/*
  *	Author:	Jeff Hill
  *	Date:	21JAN2000
  */

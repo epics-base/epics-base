@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* dbAccessDefs.h	*/
-/* $Revision-Id$ */
 
 #ifndef INCdbAccessDefsh
 #define INCdbAccessDefsh

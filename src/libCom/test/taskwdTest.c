@@ -4,7 +4,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$ */
 
 /* Author: Andrew Johnson
  * Date:    May 21, 2008

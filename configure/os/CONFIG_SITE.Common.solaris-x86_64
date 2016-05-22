@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.solaris-x86_64
 #
-# $Revision-Id$
-#
 # Site Specific definitions for solaris-x86_64 target
 # Only the local epics system manager should modify this file
 

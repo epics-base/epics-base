@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recPermissive.c - Record Support Routines for Permissive records */
 /*
  *      Original Author: Bob Dalesio

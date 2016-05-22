@@ -7,10 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Revision-Id$
-//
 // verify connection state prior to doing anything in this file
-//
 //
 
 #include <ctype.h>

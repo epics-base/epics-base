@@ -9,10 +9,7 @@
 \*************************************************************************/
 
 /*
- *  $Revision-Id$
- *
  *  Author: Jeffrey O. Hill
- *
  */
 
 #ifndef epicsSingleton_h

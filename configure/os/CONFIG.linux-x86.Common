@@ -1,8 +1,5 @@
 # CONFIG.linux-x86.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for linux-x86 host builds
 # Sites may override these definitions in CONFIG_SITE.linux-x86.Common
 #-------------------------------------------------------

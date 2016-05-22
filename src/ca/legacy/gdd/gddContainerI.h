@@ -13,9 +13,6 @@
 /*
  * Author:	Jim Kowalkowski
  * Date:	3/97
- *
- * $Revision-Id$
- *
  */
 
 inline gddContainer::gddContainer(int,int,int,int*) { }

@@ -16,10 +16,7 @@
 #endif
 
 /*
- *  $Revision-Id$
- *
  *  Author: Jeffrey O. Hill
- *
  */
 
 template < class T > class epicsGuardRelease;

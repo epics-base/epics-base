@@ -7,7 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* link.h */
-/* $Id$ */
 
 /*
  * Original Authors: Bob Dalesio, Marty Kraimer

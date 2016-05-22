@@ -7,7 +7,6 @@
  * in file LICENSE that is included with this distribution.
  \*************************************************************************/
 /* dbLink.c */
-/* $Id$ */
 /*
  *      Original Authors: Bob Dalesio, Marty Kraimer
  *      Current Author: Andrew Johnson

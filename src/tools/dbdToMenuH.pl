@@ -7,8 +7,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
-
 use FindBin qw($Bin);
 use lib "$Bin/../../lib/perl";
 

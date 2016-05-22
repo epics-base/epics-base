@@ -7,10 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/*
- * $Revision-Id$
- */
-
 #include <stdio.h>
 
 #define epicsExportSharedSymbols

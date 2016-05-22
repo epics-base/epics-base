@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recStringout.c - Record Support Routines for Stringout records */
 /*
  * Author: 	Janet Anderson

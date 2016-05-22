@@ -10,7 +10,6 @@
 #*************************************************************************
 
 # Converts text file in DOS CR/LF format to unix ISO format
-#  $Revision-Id$
 
 @files=@ARGV;
 

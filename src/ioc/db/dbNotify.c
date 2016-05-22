@@ -6,7 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-
+/* dbNotify.c */
 /*
  *      Author: 	Marty Kraimer
  *                      Andrew Johnson <anj@aps.anl.gov>

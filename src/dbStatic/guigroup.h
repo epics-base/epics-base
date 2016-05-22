@@ -8,7 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$
+/*
 	these are used in the pmt (prompt) field of the record support
 	ascii files.  They represent field groupings for dct tools
 */

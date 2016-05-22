@@ -5,7 +5,7 @@
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
-/* $Revision-Id$
+/*
  * Author: Andrew Johnson
  *
  * Unit test module which generates output in the Test Anything Protocol

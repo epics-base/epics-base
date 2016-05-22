@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
- *      $Revision-Id$
- *
  *      Author: Jeff Hill 
  *      Date: 	030393 
  */

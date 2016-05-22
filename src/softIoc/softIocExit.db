@@ -1,4 +1,4 @@
-# $Revision-Id$
+# softIocExit.db
 #
 record(sub,"$(IOC):exit") {
 	field(DESC,"Exit subroutine")

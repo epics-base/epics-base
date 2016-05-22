@@ -5,8 +5,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recSubArray.c - Record Support Routines for SubArray records 
  *
  *

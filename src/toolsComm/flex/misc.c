@@ -34,11 +34,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef lint
-static char rcsid[] =
-    "@(#) $Revision-Id$ (LBL)";
-#endif
-
 #include <ctype.h>
 #include "flexdef.h"
 #include <assert.h>

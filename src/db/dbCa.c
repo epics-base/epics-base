@@ -7,11 +7,9 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$
- *
+/*
  *    Original Authors: Bob Dalesio and Marty Kraimer
  *    Date:             26MAR96
- *
  */
 
 #include <stddef.h>

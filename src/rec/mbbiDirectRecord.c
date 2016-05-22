@@ -9,8 +9,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recMbbiDirect.c - Record Support routines for mbboDirect records */
 /*
  *      Original Author: Bob Dalesio and Matthew Needes 10-07-93

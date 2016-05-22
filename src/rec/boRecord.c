@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recBo.c - Record Support Routines for Binary Output records */
 /*
  *      Original Author: Bob Dalesio

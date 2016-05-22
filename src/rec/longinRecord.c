@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recLongin.c - Record Support Routines for Longin records */
 /*
  *      Author: 	Janet Anderson

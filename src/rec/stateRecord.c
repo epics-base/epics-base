@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recState.c - Record Support Routines for State records */
 /*
  *      Original Author: Bob Dalesio

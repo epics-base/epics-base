@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* Record Support Routines for Calculation records */
 /*
  *      Original Author: Julie Sander and Bob Dalesio

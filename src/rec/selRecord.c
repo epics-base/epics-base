@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* selRecord.c - Record Support Routines for Select records */
 /*
  *      Original Author: Bob Dalesio

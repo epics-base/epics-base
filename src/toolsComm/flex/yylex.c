@@ -34,10 +34,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/*
- * $Revision-Id$
- */
-
 #include <ctype.h>
 #include "flexdef.h"
 #include "parse.h"

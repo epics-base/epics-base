@@ -11,7 +11,6 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-# $Revision-Id$
 #
 #  Author: Ralph Lange
 #

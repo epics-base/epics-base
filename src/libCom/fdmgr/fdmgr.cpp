@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-//
 //      File descriptor management C++ class library
 //      (for multiplexing IO in a single threaded environment)
 //

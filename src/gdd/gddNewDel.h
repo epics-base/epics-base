@@ -13,9 +13,6 @@
 /*
  * Author: Jim Kowalkowski
  * Date: 2/96
- *
- * $Revision-Id$
- *
  */
 
 // this file if formatted with tab stop = 4

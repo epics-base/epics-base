@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recHistogram.c - Record Support Routines for Histogram records */
 /*
  *      Author:      Janet Anderson

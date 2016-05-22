@@ -10,7 +10,7 @@
 
 use strict;
 
-my ($ver, $rev, $mod, $patch, $snapshot, $commit_date);
+my ($ver, $rev, $mod, $patch, $snapshot);
 
 my ($infile, $outdir, $site_ver) = @ARGV;
 
@@ -30,13 +30,12 @@ while (<$VARS>) {
     if (m/^EPICS_MODIFICATION\s*=\s*(\d+)/)         { $mod = $1; }
     if (m/^EPICS_PATCH_LEVEL\s*=\s*(\d+)/)          { $patch = $1; }
     if (m/^EPICS_DEV_SNAPSHOT\s*=\s*([-\w]*)/)      { $snapshot = $1; }
-    if (m/^COMMIT_DATE\s*=\s*"\\(.*)"/)             { $commit_date = $1; }
 }
 close $VARS;
 
 map {
     die "Variable missing from $infile" unless defined $_;
-} $ver, $rev, $mod, $patch, $snapshot, $commit_date;
+} $ver, $rev, $mod, $patch, $snapshot;
 
 my $ver_str = "$ver.$rev.$mod";
 $ver_str .= ".$patch" if $patch > 0;
@@ -62,7 +61,7 @@ print $OUT <<"END_OUTPUT";
 #define EPICS_DEV_SNAPSHOT   "$snapshot"
 #define EPICS_SITE_VERSION   "$site_ver"
 #define EPICS_VERSION_STRING "EPICS $ver_str"
-#define epicsReleaseVersion  "EPICS R$ver_str $commit_date"
+#define epicsReleaseVersion  "EPICS R$ver_str"
 
 /* The following names are deprecated, use the equivalent name above */
 #define EPICS_UPDATE_LEVEL   EPICS_PATCH_LEVEL

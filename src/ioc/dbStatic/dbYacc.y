@@ -258,10 +258,11 @@ record_field: tokenFIELD '(' tokenSTRING ','
 	if(dbStaticDebug>2) printf("record_field %s %s\n",$3,$6);
 	dbRecordField($3,$6); dbmfFree($3); dbmfFree($6);
 }
-	| tokenINFO '(' tokenSTRING ',' tokenSTRING ')'
+	| tokenINFO '(' tokenSTRING ','
+	{ BEGIN JSON; } json_value { BEGIN INITIAL; } ')'
 {
-	if(dbStaticDebug>2) printf("record_info %s %s\n",$3,$5);
-	dbRecordInfo($3,$5); dbmfFree($3); dbmfFree($5);
+	if(dbStaticDebug>2) printf("record_info %s %s\n",$3,$6);
+	dbRecordInfo($3,$6); dbmfFree($3); dbmfFree($6);
 }
 	| tokenALIAS '(' tokenSTRING ')'
 {

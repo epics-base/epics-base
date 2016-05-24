@@ -103,14 +103,14 @@ static int yyreset(void)
 	return jsonSTRING;
 }
 
-<JSON>{barechar}+ {
-	yylval.Str = dbmfStrdup((char *) yytext);
-	return jsonBARE;
-}
-
 <JSON>{number} {
 	yylval.Str = dbmfStrdup((char *) yytext);
 	return jsonNUMBER;
+}
+
+<JSON>{barechar}+ {
+	yylval.Str = dbmfStrdup((char *) yytext);
+	return jsonBARE;
 }
 
 <INITIAL,JSON>{whitespace}	;

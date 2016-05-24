@@ -2330,6 +2330,12 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
         return 0;
     }
 
+    /* Link may be an array constant */
+    if (pstr[0] == '[' && pstr[len-1] == ']' && strchr(pstr, ',')) {
+        pinfo->ltype = CONSTANT;
+        return 0;
+    }
+
     pinfo->ltype = PV_LINK;
     pstr = strchr(pstr, ' '); /* find start of link modifiers (can't be seperated by tabs) */
     if (pstr) {

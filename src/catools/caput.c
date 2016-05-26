@@ -490,14 +490,13 @@ int main (int argc, char *argv[])
     } else {                    /* Not an ENUM */
 
         if (charArrAsStr) {
-            count = len;
             dbrType = DBR_CHAR;
-            ebuf = calloc(strlen(cbuf)+1, sizeof(char));
+            ebuf = calloc(len, sizeof(char));
             if(!ebuf) {
                 fprintf(stderr, "Memory allocation failed\n");
                 return 1;
             }
-            epicsStrnRawFromEscaped(ebuf, strlen(cbuf)+1, cbuf, strlen(cbuf));
+            count = epicsStrnRawFromEscaped(ebuf, len, cbuf, len-1) + 1;
         } else {
             for (i = 0; i < count; ++i) {
                 epicsStrnRawFromEscaped(sbuf[i], sizeof(EpicsStr), *(argv+optind+i), sizeof(EpicsStr));

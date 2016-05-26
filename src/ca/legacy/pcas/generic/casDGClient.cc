@@ -348,10 +348,8 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
 //
 caStatus casDGClient::searchFailResponse ( const caHdrLargeArray * mp )
 {
-	int		status;
-
     epicsGuard < epicsMutex > guard ( this->mutex );
-    status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
+    this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, 0 );
 
 	this->out.commitMsg ();

@@ -39,6 +39,35 @@ our %field_attrs = (
     prop        => qr/^(?:YES|NO)$/
 );
 
+# Convert old promptgroups into new-style
+my %promptgroupMap = (
+    GUI_COMMON   => '10 - Common',
+    GUI_ALARMS   => '70 - Alarm',
+    GUI_BITS1    => '41 - Bits (1)',
+    GUI_BITS2    => '42 - Bits (2)',
+    GUI_CALC     => '30 - Action',
+    GUI_CLOCK    => '30 - Action',
+    GUI_COMPRESS => '30 - Action',
+    GUI_CONVERT  => '60 - Convert',
+    GUI_DISPLAY  => '80 - Display',
+    GUI_HIST     => '30 - Action',
+    GUI_INPUTS   => '40 - Input',
+    GUI_LINKS    => '40 - Link',
+    GUI_MBB      => '30 - Action',
+    GUI_MOTOR    => '30 - Action',
+    GUI_OUTPUT   => '50 - Output',
+    GUI_PID      => '30 - Action',
+    GUI_PULSE    => '30 - Action',
+    GUI_SELECT   => '40 - Input',
+    GUI_SEQ1     => '51 - Output (1)',
+    GUI_SEQ2     => '52 - Output (2)',
+    GUI_SEQ3     => '53 - Output (3)',
+    GUI_SUB      => '30 - Action',
+    GUI_TIMER    => '30 - Action',
+    GUI_WAVE     => '30 - Action',
+    GUI_SCAN     => '20 - Scan',
+);
+
 sub new {
     my ($class, $name, $type) = @_;
     dieContext("Illegal field type '$type', valid field types are:",
@@ -76,6 +105,8 @@ sub number {
 sub add_attribute {
     my ($this, $attr, $value) = @_;
     unquote $value;
+    $value = $promptgroupMap{$value}
+        if $attr eq 'promptgroup' && exists $promptgroupMap{$value};
     my $match = $field_attrs{$attr};
     if (defined $match) {
         dieContext("Bad value '$value' for field attribute '$attr'")

@@ -58,6 +58,12 @@ plus space-dash-space to allow proper sorting of groups.</p>
 has been deprecated. Instead, use the conversion functions between index number
 and group string that have been added to dbStaticLib.</p>
 
+<p>When a DBD file containing record-type descriptions is expanded, any
+old-style <tt>GUI_xxx</tt> group names will be replaced by a new-style
+string for use by the IOC. This permits an older record type to be used with
+the 3.15.4 release, although eventually record types should be converted by
+hand with better group names used.</p>
+
 <h3>CA server configuration changes</h3>
 
 <p>RSRV now honors EPICS_CAS_INTF_ADDR_LIST and binds only to the provided list

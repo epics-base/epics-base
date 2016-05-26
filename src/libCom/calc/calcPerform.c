@@ -155,7 +155,7 @@ epicsShareFunc long
 	    break;
 
 	case ABS_VAL:
-	    if (*ptop < 0.0) *ptop = - *ptop;
+	    *ptop = fabs(*ptop);
 	    break;
 
 	case EXP:

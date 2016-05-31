@@ -241,7 +241,7 @@ sub checkRelease {
         }
     }
 
-    my @modules = @apps;
+    my @modules = grep(!m/^(RULES|TOP|TEMPLATE_TOP)$/, @apps);
     my $app = shift @modules;
     my $latest = AbsPath($macros{$app});
     my %paths = ($latest => $app);

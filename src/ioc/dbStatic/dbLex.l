@@ -86,8 +86,6 @@ static int yyreset(void)
 ")"	return(yytext[0]);
 ","	return(yytext[0]);
 
-{comment}.*	;
-
 {doublequote}({stringchar}|{escape})*{newline} { /* bad string */
 	yyerrorAbort("Newline in string, closing quote missing");
 }
@@ -112,6 +110,8 @@ static int yyreset(void)
 	yylval.Str = dbmfStrdup((char *) yytext);
 	return jsonBARE;
 }
+
+<INITIAL,JSON>{comment}.*	;
 
 <INITIAL,JSON>{whitespace}	;
 

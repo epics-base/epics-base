@@ -103,12 +103,10 @@ static long init_record(longinRecord *prec, int pass)
 
     if (pass==0) return(0);
 
-    /* longin.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siml.type == CONSTANT) {
 	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    /* longin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siol.type == CONSTANT) {
 	recGblInitConstantLink(&prec->siol,DBF_LONG,&prec->sval);
     }

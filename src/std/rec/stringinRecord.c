@@ -104,7 +104,6 @@ static long init_record(stringinRecord *prec, int pass)
 	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    /* stringin.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siol.type == CONSTANT) {
         recGblInitConstantLink(&prec->siol,DBF_STRING,prec->sval);
     } 

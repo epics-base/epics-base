@@ -111,12 +111,10 @@ static long init_record(void *precord,int pass)
 
     if (pass==0) return(0);
 
-    /* ai.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siml.type == CONSTANT) {
 	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }
 
-    /* ai.siol must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siol.type == CONSTANT) {
 	recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
     }

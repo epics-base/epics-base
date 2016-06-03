@@ -111,7 +111,6 @@ static long init_record(waveformRecord *prec, int pass)
         return 0;
     }
 
-    /* wf.siml must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siml.type == CONSTANT) {
         recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }

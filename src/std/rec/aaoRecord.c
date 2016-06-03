@@ -140,7 +140,6 @@ static long init_record(aaoRecord *prec, int pass)
         return 0;
     }
 
-    /* SIML must be a CONSTANT or a PV_LINK or a DB_LINK */
     if (prec->siml.type == CONSTANT) {
         recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
     }

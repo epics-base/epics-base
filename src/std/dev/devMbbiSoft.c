@@ -48,20 +48,9 @@ epicsExportAddress(dset, devMbbiSoft);
 
 static long init_record(mbbiRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
+    if (prec->inp.type == CONSTANT) {
         if (recGblInitConstantLink(&prec->inp, DBF_ENUM, &prec->val))
             prec->udf = FALSE;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devMbbiSoft (init_record) Illegal INP field");
-        return S_db_badField;
     }
     return 0;
 }

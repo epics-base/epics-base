@@ -48,19 +48,8 @@ epicsExportAddress(dset, devSASoft);
 
 static long init_record(subArrayRecord *prec)
 {
-    /* INP must be CONSTANT, PV_LINK, DB_LINK or CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
+    if (prec->inp.type == CONSTANT) {
         prec->nord = 0;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-        break;
-    default:
-        recGblRecordError(S_db_badField, (void *)prec,
-            "devSASoft (init_record) Illegal INP field");
-        return S_db_badField;
     }
     return 0;
 }

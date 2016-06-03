@@ -52,19 +52,8 @@ epicsExportAddress(dset,devAaiSoft);
 
 static long init_record(aaiRecord *prec)
 {
-    /* INP must be a CONSTANT or a PV_LINK or a DB_LINK or a CA_LINK*/
-    switch (prec->inp.type) {
-    case CONSTANT:
+    if (prec->inp.type == CONSTANT) {
         prec->nord = 0;
-        break;
-    case PV_LINK:
-    case DB_LINK:
-    case CA_LINK:
-	break;
-    default :
-	recGblRecordError(S_db_badField, (void *)prec,
-	    "devAaiSoft (init_record) Illegal INP field");
-	return(S_db_badField);
     }
     return 0;
 }

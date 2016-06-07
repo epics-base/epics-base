@@ -165,7 +165,7 @@ ca_client_context::ca_client_context ( bool enablePreemptiveCallback ) :
     }
 
     // multiple steps ensure exception safety
-    std::swap(this->pCallbackGuard, pCBGuard);
+    this->pCallbackGuard = pCBGuard;
 }
 
 ca_client_context::~ca_client_context ()

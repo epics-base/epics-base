@@ -235,10 +235,21 @@ sub parse_record {
     my ($dbd, $record_type, $record_name) = @_;
     pushContext("record($record_type, $record_name)");
     my $rtyp = $dbd->recordtype($record_type);
-    dieContext("No recordtype named '$record_type'")
-        unless defined $rtyp;
-    my $rec = DBD::Record->new($rtyp, $record_name); # FIXME: Merge duplicates
-    while(1) {
+    my $rec = $dbd->record($record_name);
+    if (defined $rec) {
+        my $otyp = $rec->recordtype;
+        my $otyp_name = $otyp->name;
+        $rtyp = $otyp if $record_type eq '*';
+        dieContext("A(n) $otyp_name record '$record_name' already exists")
+            unless $otyp == $rtyp;
+    } else {
+        dieContext("No record exists named '$record_name'")
+            if $record_type eq '*';
+        dieContext("No recordtype exists named '$record_type'")
+            unless defined $rtyp;
+        $rec = DBD::Record->new($rtyp, $record_name);
+    }
+    while (1) {
         parseCommon($rec);
         if (m/\G field \s* \( \s* $RXstr \s* , \s* $RXstr \s* \)/oxgc) {
             print " Record-Field: $1, $2\n" if $debug;

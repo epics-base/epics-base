@@ -27,30 +27,41 @@
 
 using namespace std;
 
-#if defined(__BORLANDC__) && defined(__linux__)
-namespace  std  {
-const nothrow_t  nothrow ;
-}
-#endif
-
 #if defined ( _MSC_VER )
-    // some interesting bugs found in the MS implementation of new
+
 #   if _MSC_VER >= 1900
+        // Can't use const
         static size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
-#   elif _MSC_VER > 1310  /* this gets fixed some release after visual studio 7 we hope */
+#   elif _MSC_VER > 1310
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
 #   else
+        // Bug in the older MS implementation of new
         static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max () - 100;
 #   endif
-    // passing a size_t to printf() needs "%zu" on some platforms
+
+    // No %z modifier support for printing a size_t
 #   define Z_MODIFIER ""
+
 #elif defined(vxWorks)
-    // Neither vxWorks 5 or 6 supply true ANSI C++
+
+    // Don't try to use numeric_limits < size_t >
     static const size_t unsuccessfulNewSize = UINT_MAX - 15u;
+
+    // No %z modifier support for printing a size_t
 #   define Z_MODIFIER ""
+
 #else
-    static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
+
+#   if defined(__GNUC__) && (__GNUC__ >= 6)
+        // Can't use const
+        static size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
+#   else
+        static const size_t unsuccessfulNewSize = numeric_limits < size_t > :: max ();
+#   endif
+
+    // passing a size_t to printf() needs "%zu"
 #   define Z_MODIFIER "z"
+
 #endif
 
 class exThread : public epicsThreadRunable {

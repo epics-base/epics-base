@@ -1,7 +1,5 @@
 # <top>/configure/RULES_EXPAND
 
-ifeq ($(findstring Host,$(VALID_BUILDS)),Host)
-
 # Default settings
 EXPAND_TOOL ?= $(PERL) $(TOOLS)/expandVars.pl
 
@@ -9,8 +7,6 @@ EXPANDFLAGS += -t $(INSTALL_LOCATION) -a $(T_A)
 EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS))
 
 EXPANDED = $(EXPAND:%@=%)
-
-buildInstall: $(EXPANDED)
 
 $(EXPANDED): %: ../%@
 	$(ECHO) "Expanding $< to $@"
@@ -20,4 +16,4 @@ $(EXPANDED): %: ../%@
 clean::
 	@$(RM) $(EXPANDED)
 
-endif
+.PRECIOUS: $(EXPANDED)

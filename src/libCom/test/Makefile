@@ -123,11 +123,6 @@ epicsMutexTest_SRCS += epicsMutexTest.cpp
 testHarness_SRCS += epicsMutexTest.cpp
 TESTS += epicsMutexTest
 
-TESTPROD_HOST += epicsExceptionTest
-epicsExceptionTest_SRCS += epicsExceptionTest.cpp
-testHarness_SRCS += epicsExceptionTest.cpp
-TESTS += epicsExceptionTest
-
 TESTPROD_HOST += macEnvExpandTest
 macEnvExpandTest_SRCS += macEnvExpandTest.c
 testHarness_SRCS += macEnvExpandTest.c

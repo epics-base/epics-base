@@ -3,8 +3,7 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
+# EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 TOP=../..
@@ -13,9 +12,6 @@ include $(TOP)/configure/CONFIG
 
 PROD_LIBS  = ca Com
 
-#
-# Added winmm user32 for the non-dll build
-#
 PROD_HOST_DEFAULT = ca_test iocLogServer
 PROD_HOST_WIN32   = ca_test iocLogServer
 PROD_SYS_LIBS_WIN32 = ws2_32 advapi32 user32
@@ -27,12 +23,15 @@ iocLogServer_SRCS = iocLogServer.c
 
 OBJS_vxWorks = ca_test
 
-SCRIPTS_solaris := S99logServer S99caRepeater 
-SCRIPTS_Linux := S99logServer S99caRepeater 
+SCRIPTS_HOST = S99logServer S99caRepeater
+SCRIPTS_Linux = caRepeater.service
+
+EXPAND += S99logServer@
+EXPAND += S99caRepeater@
+EXPAND += caRepeater.service@
+
+EXPAND_VARS = INSTALL_BIN=$(abspath $(INSTALL_BIN))
 
 include $(TOP)/configure/RULES
- 
-S99%: ../rc2.%
-	sed -e s%:INSTALL_BIN:%`cd $(INSTALL_BIN); pwd`% $< >$@
 
-#	EOF Makefile.Host for base/src/util
+.PRECIOUS: $(EXPANDED)

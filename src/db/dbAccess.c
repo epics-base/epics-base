@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbAccess.c */
-/* $Revision-Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Marty Kraimer

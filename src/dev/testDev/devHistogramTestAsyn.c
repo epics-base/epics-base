@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devHistogramTestAsyn.c */
-/* base/src/dev $Revision-Id$ */
 /*
  *      Author:		Janet Anderson
  *      Date:		07/02/91

@@ -1,8 +1,5 @@
 # CONFIG.windows-x64-mingw.windows-x64-mingw
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for windows-x64-mingw target archs
 # Sites may override these definitions in CONFIG_SITE.windows-x64-mingw.windows-x64-mingw
 #-------------------------------------------------------

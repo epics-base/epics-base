@@ -7,8 +7,6 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#  $Revision-Id$
-#
 #  EPICS Version information
 #
 # Only the person making an official EPICS release should make changes in
@@ -58,9 +56,9 @@ EPICS_SHORT_VERSION=$(EPICS_VERSION).$(EPICS_REVISION).$(EPICS_MODIFICATION)$(EP
 EPICS_VERSION_NUMBER=$(EPICS_SHORT_VERSION)$(EPICS_DEV_SNAPSHOT)$(EPICS_SITE_VSTRING)
 EPICS_VERSION_STRING="EPICS Version $(EPICS_VERSION_NUMBER)"
 
-COMMIT_DATE="\$$Date$$"
 
 # Provide these in case anyone is still using the old names
 EPICS_CVS_SNAPSHOT=$(EPICS_DEV_SNAPSHOT)
+COMMIT_DATE="-no-date-"
 CVS_DATE=$(COMMIT_DATE)
 CVS_TAG="-no-tags-"

@@ -1,8 +1,5 @@
 # CONFIG.solaris-sparc.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for solaris-sparc host archs
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.Common
 #-------------------------------------------------------

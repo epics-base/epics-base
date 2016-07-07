@@ -1,8 +1,5 @@
 # CONFIG.solaris-sparc.solaris-sparc-debug
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for solaris-sparc host - solaris-sparc-debug target build with debug compiler flags
 # Sites may override these definitions in CONFIG_SITE.solaris-sparc.solaris-sparc-debug
 #-------------------------------------------------------

@@ -42,15 +42,6 @@ char copyright[] =
  All rights reserved.\n";
 #endif /* not lint */
 
-/*
-#ifndef lint
-static char rcsid[] =
-    "@(#) $Revision-Id$ (LBL)";
-#endif
-
-#include "flexdef.h"
-*/
-
 #include "epicsStdio.h"
 
 static char flex_version[] = "2.3";

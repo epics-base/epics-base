@@ -7,7 +7,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* share/src/db  @(#)db_test.c	1.10     2/3/94 */
 /*      database access subroutines */
 /*
  *      Author: Bob Dalesio

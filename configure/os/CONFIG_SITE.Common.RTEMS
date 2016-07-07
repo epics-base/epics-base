@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.RTEMS
 #
-# $Revision-Id$
-#
 # Site-specific information for all RTEMS targets
 #-------------------------------------------------------
 

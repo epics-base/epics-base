@@ -1,8 +1,5 @@
 # CONFIG.win32-x86-cygwin.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for win32-x86-cygwin host archs
 # Sites may override these definitions in CONFIG_SITE.win32-x86-cygwin.Common
 #-------------------------------------------------------

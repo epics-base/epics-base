@@ -7,7 +7,6 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* base/include/db_access_routines.h */
 
 /* This defined routines for old database access. These were broken out of
    db_access.h so that ca can be build independent of db.

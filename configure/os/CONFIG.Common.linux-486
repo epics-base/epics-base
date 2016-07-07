@@ -1,8 +1,5 @@
 # CONFIG.Common.linux-486
 #
-# $Id
-# This file is maintained by the build community.
-#
 # Definitions for linux-486 target builds
 # Sites may override these definitions in CONFIG_SITE.Common.linux-486
 #-------------------------------------------------------

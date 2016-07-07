@@ -7,7 +7,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-# $Revision-Id$
 
 # vxWorks-68040lc is the new R3.14 name for mv162lc
 include $(EPICS_BASE)/config/CONFIG.Vx.mv162lc

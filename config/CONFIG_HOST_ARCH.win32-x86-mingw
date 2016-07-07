@@ -7,7 +7,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-#  $Revision-Id$
 #
 # Override values in CONFIG_SITE_HOST_ARCH.win32-x86-mingw
 

@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Revision-Id$
-
 # Copy directories and files from a template
 
 sub copyTree {

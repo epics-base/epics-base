@@ -7,7 +7,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-# $Revision-Id$
 
 -include $(EPICS_BASE)/config/CONFIG.Host.Darwin
 OP_SYS_CFLAGS += "-isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch ppc -arch i386"

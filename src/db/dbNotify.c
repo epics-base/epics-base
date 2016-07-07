@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbNotify.c */
-/* base/src/db $Revision-Id$ */
 /*
  *      Author: 	Marty Kraimer
  *      Date:           03-30-95

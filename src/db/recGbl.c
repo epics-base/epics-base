@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* recGbl.c */
-/* $Revision-Id$ */
-
 /*
  *      Author:          Marty Kraimer
  *      Date:            11-7-90

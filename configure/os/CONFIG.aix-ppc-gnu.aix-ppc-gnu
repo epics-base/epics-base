@@ -1,6 +1,5 @@
 #  CONFIG.aix-ppc-gnu.aix-ppc-gnu
 #
-#
 # Definitions for aix-ppc-gnu host - aix-ppc-gnu target builds
 # Sites may override these definitions in CONFIG_SITE.aix-ppc-gnu.aix-ppc-gnu
 #-------------------------------------------------------

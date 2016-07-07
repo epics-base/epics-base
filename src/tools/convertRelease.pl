@@ -8,8 +8,6 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-# $Revision-Id$
-#
 # Convert configure/RELEASE file(s) into something else.
 #
 

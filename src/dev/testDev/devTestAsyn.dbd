@@ -1,4 +1,4 @@
-# $Revision-Id$
+# devTestAsyn.dbd
 
 device(ai,CONSTANT,devTestAsyn,"Test Asyn")
 device(aai,CONSTANT,devTestAsyn,"Test Asyn")

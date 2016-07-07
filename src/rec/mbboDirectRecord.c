@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recMbboDirect.c - Record Support for mbboDirect records */
 /*
  *      Original Author: Bob Dalesio

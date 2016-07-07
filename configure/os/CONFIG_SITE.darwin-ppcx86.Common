@@ -1,7 +1,4 @@
 # CONFIG_SITE.darwin-ppcx86.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Site override definitions for darwin-ppcx86 host builds
 #-------------------------------------------------------

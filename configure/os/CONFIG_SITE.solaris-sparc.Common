@@ -1,7 +1,5 @@
 # CONFIG_SITE.solaris-sparc.Common
 #
-# $Revision-Id$
-#
 # Site specific override definitions for solaris-sparc host builds
 # Only the local epics system manager should modify this file
 

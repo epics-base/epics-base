@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devMbboDirectSoft.c */
-/* base/src/dev $Revision-Id$ */
 /*
  *      Original Author: Bob Dalesio
  *      Current Author:  Matthew Needes

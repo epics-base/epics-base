@@ -7,8 +7,7 @@
 * and higher are distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Id $
- *
+/*
  * Comments from original version:
  *   On the MIPS processor, all symbols do not have the prepended underscore.
  *   Here we redefine symFindByName to look at the second character of the

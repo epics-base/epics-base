@@ -1,3 +1,5 @@
+# devSoft.dbd
+
 device(aai,CONSTANT,devAaiSoft,"Soft Channel")
 device(aao,CONSTANT,devAaoSoft,"Soft Channel")
 device(ai,CONSTANT,devAiSoft,"Soft Channel")

@@ -7,7 +7,6 @@
 # and higher are distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-# $Revision-Id$
 
 # linux-x86 is the new name for linux
 -include $(EPICS_BASE)/config/CONFIG_HOST_ARCH.Linux

@@ -418,7 +418,8 @@ EOF
 }
 
 sub GetUser {
-    $user = $opt_u || $ENV{USER} || $ENV{USERNAME} || Win32::LoginName();
+    $user = $opt_u || $ENV{USER} || $ENV{USERNAME} || getlogin();
+    $user = Win32::LoginName() if !$user && $^ eq 'MSWin32';
 
     unless ($user) {
 	print "Strange, I cannot figure out your user name!\n";

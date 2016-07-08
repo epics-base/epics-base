@@ -37,6 +37,7 @@
 
 #include  <epicsTypes.h>                        /* EPICS Common Type Definitions                  */
 #include  <epicsEndian.h>                       /* EPICS Byte Order Definitions                   */
+#include  <compilerSpecific.h>
 
 /*=====================
  * vxAtomicLib.h (which defines the memory barrier macros)
@@ -49,15 +50,23 @@
 #  include  <vxAtomicLib.h>
 #endif
 
-#define bswap16(value) ((epicsUInt16) (  \
-        (((epicsUInt16)(value) & 0x00ff) << 8)    |       \
-        (((epicsUInt16)(value) & 0xff00) >> 8)))
+static EPICS_ALWAYS_INLINE
+epicsUInt16
+bswap16(epicsUInt16 value)
+{
+    return (((epicsUInt16)(value) & 0x00ff) << 8)    |
+           (((epicsUInt16)(value) & 0xff00) >> 8);
+}
 
-#define bswap32(value) (  \
-        (((epicsUInt32)(value) & 0x000000ff) << 24)   |                \
-        (((epicsUInt32)(value) & 0x0000ff00) << 8)    |                \
-        (((epicsUInt32)(value) & 0x00ff0000) >> 8)    |                \
-        (((epicsUInt32)(value) & 0xff000000) >> 24))
+static EPICS_ALWAYS_INLINE
+epicsUInt32
+bswap32(epicsUInt32 value)
+{
+    return (((epicsUInt32)(value) & 0x000000ff) << 24)   |
+           (((epicsUInt32)(value) & 0x0000ff00) << 8)    |
+           (((epicsUInt32)(value) & 0x00ff0000) >> 8)    |
+           (((epicsUInt32)(value) & 0xff000000) >> 24);
+}
 
 #if EPICS_BYTE_ORDER == EPICS_ENDIAN_BIG
 #  define be16_to_cpu(X) (epicsUInt16)(X)

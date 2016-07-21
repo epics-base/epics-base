@@ -1,8 +1,5 @@
 # CONFIG.darwin-ppc.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Definitions for darwin-ppc host builds
 # Sites may override these definitions in CONFIG_SITE.darwin-ppc.Common
 #-------------------------------------------------------

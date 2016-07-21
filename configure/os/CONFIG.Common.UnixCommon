@@ -1,7 +1,5 @@
 # CONFIG.Common.UnixCommon
 #
-# $Revision-Id$
-#
 #  Contains definitions common to all Unix target archs
 #
 #  This file is maintained by the build community.

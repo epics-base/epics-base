@@ -8,8 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /*
- *  $Revision-Id$
- *
  *  tell CA clients this a server has joined the network
  *
  *  Author: Jeffrey O. Hill

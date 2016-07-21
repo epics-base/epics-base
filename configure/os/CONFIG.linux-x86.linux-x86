@@ -1,7 +1,5 @@
 #  CONFIG.linux-x86.linux-x86
 #
-# $Revision-Id$
-#
 # Definitions for linux-x86 host - linux-x86 target builds
 # Sites may override these definitions in CONFIG_SITE.linux-x86.linux-x86
 #-------------------------------------------------------

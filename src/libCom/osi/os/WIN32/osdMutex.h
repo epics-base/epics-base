@@ -10,7 +10,6 @@
 
 /* osdMutex.h */
 /*
- *      $Revision-Id$
  *      WIN32 version
  *
  *      Author  Jeffrey O. Hill

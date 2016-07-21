@@ -9,8 +9,6 @@
 \*************************************************************************/
 
 /*
- *	    $Revision-Id$
- *
  *	    WIN32 specific initialisation for bsd sockets,
  *	    based on Chris Timossi's base/src/ca/windows_depend.c,
  *      and also further additions by Kay Kasemir when this was in

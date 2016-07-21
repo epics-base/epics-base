@@ -1,6 +1,5 @@
 #  CONFIG.linux-ppc.linux-ppc
 #
-#
 # Definitions for linux-ppc host - linux-ppc target builds
 # Sites may override these definitions in CONFIG_SITE.linux-ppc.linux-ppc
 #-------------------------------------------------------

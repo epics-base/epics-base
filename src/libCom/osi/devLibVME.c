@@ -9,7 +9,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* devLib.c - support for allocation of common device resources */
-/* $Revision-Id$ */
 
 /*
  *  Original Author: Marty Kraimer

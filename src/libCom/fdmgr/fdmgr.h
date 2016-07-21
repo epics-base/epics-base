@@ -9,8 +9,6 @@
 \*************************************************************************/
 /* fdmgr.h
  *
- *      share/epicsH/$Revision-Id$
- *
  *      Header file associated with a file descriptor manager 
  *	for use with the UNIX system call select
  *

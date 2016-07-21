@@ -1,9 +1,7 @@
-# $Revision-Id$
 #
 # Definitions for vxWorks-ppc604 targets: PPC604, MPC7xx and MPC74xx CPUs
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc604
 #
-# This file is maintained by the EPICS build community.
 #-------------------------------------------------------
 
 # Include definitions common to all vxWorks target archs

@@ -6,8 +6,7 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Id $
- *
+/*
  * On 68K targets, all symbols have an underscore prepended to their name.
  * This code permits both standards to work, as long as you're not looking
  * for a symbol name that actually begins with an underscore.

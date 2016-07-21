@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.linux-arm
 #
-# $Revision-Id$
-#
 # Site Specific definitions for all linux-arm targets
 #-------------------------------------------------------
 

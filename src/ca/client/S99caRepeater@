@@ -3,7 +3,7 @@
 # System-V init script for the EPICS CA Repeater.
 #
 
-INSTALL_BIN=:INSTALL_BIN:
+INSTALL_BIN=@INSTALL_BIN@
 
 # To change the default values for the EPICS environment parameters,
 # uncomment and modify the relevant lines below. These are the only

@@ -56,7 +56,6 @@ include $(LIBCOM)/as/RULES
 include $(LIBCOM)/env/RULES
 include $(LIBCOM)/error/RULES
 include $(LIBCOM)/flex/RULES
-include $(LIBCOM)/log/RULES
 include $(LIBCOM)/misc/RULES
 include $(LIBCOM)/osi/RULES
 

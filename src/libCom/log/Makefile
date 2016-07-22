@@ -21,6 +21,8 @@ iocLogServer_LIBS = Com
 iocLogServer_SYS_LIBS_solaris += socket
 iocLogServer_SYS_LIBS_WIN32   += user32 ws2_32
 
-SCRIPTS_solaris := S99logServer
-SCRIPTS_Linux := S99logServer
+SCRIPTS_HOST = S99logServer
+
+EXPAND += S99logServer@
+EXPAND_VARS = INSTALL_BIN=$(abspath $(INSTALL_BIN))
 

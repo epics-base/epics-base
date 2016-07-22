@@ -14,8 +14,6 @@ EXPANDFLAGS += $(addprefix -D ,$(EXPAND_VARS))
 # The names of files to be expanded must end with '@'
 EXPANDED = $(EXPAND:%@=%)
 
-buildInstall: $(EXPANDED)
-
 $(EXPANDED): %: %@
 	$(ECHO) "Expanding $< to $@"
 	@$(RM) $@
@@ -26,7 +24,8 @@ clean: expand_clean
 expand_clean:
 	@$(RM) $(EXPANDED)
 
-.PHONY : expand_clean
+.PRECIOUS: $(EXPANDED)
+.PHONY: expand_clean
 
 #---------------------------------------------------------------
 # Assemblies (files assembled from snippets)

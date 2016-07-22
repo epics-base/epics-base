@@ -14,19 +14,24 @@
 #  RELEASE.Common.$(T_A)
 #  RELEASE.$(EPICS_HOST_ARCH).$(T_A)
 #
-# This file should ONLY define paths to other support modules,
-# or include statements that pull in similar RELEASE files.
-# Build settings that are NOT module paths should appear in a
-# CONFIG_SITE file.
+# This file is parsed by both GNUmake and an EPICS Perl script,
+# so it can ONLY contain definititions of paths to other support
+# modules, variable definitions that are used in module paths,
+# and include statements that pull in other RELEASE files.
+# Variables may be used before their values have been set.
+# Build variables that are NOT used in paths should be set in
+# the CONFIG_SITE file.
 
-TEMPLATE_TOP=_TEMPLATE_TOP_
+# Variables and paths to dependent modules:
+#MODULES = /path/to/modules
+#MYMODULE = $(MODULES)/my-module
 
 # If using the sequencer, point SNCSEQ at its top directory:
-#SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
+#SNCSEQ = $(MODULES)/seq-ver
 
-# EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=_EPICS_BASE_
+# EPICS_BASE should appear last so earlier modules can override stuff:
+EPICS_BASE = _EPICS_BASE_
 
-# Set RULES here if you want to take build rules from somewhere
+# Set RULES here if you want to use build rules from somewhere
 # other than EPICS_BASE:
-#RULES=/path/to/epics/support/module/rules/x-y
+#RULES = $(MODULES)/build-rules

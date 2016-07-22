@@ -133,6 +133,22 @@ dbQuietMacroWarnings=1          <i>VxWorks</i>
 <p>In preparation for moving to git in place of the Bazaar revision control
 system we have removed all the keywords from the Base source code.</p>
 
+<h3>Linux systemd service file for CA Repeater</h3>
+
+<p>Building this version of Base on a Linux system creates a systemd service
+file suitable for starting the Channel Access Repeater under systemd. The file
+will be installed into the target bin directory, from where it can be copied
+into the appropriate systemd location and modified as necessary. Installation
+instructions are included as comments in the file.</p>
+
+<h3>NTP Time Provider adjusts to OS tick rate changes</h3>
+
+<p>Dirk Zimoch provided code that allows the NTP Time provider (used on VxWorks
+and RTEMS only) to adapt to changes in the OS clock tick rate after the provider
+has been initialized. Note that changing the tick rate after iocInit() is not
+advisable, and that other software might still misbehave if initialized before
+an OS tick rate change. This change was back-ported from the 3.15 branch.</p>
+
 <h3>Making IOC ca_get operations atomic</h3>
 
 <p>When a CA client gets data from an IOC record using a compound data type such

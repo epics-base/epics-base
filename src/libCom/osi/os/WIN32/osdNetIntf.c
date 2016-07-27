@@ -3,16 +3,15 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *	    WIN32 specific initialisation for bsd sockets,
- *	    based on Chris Timossi's base/src/ca/windows_depend.c,
+ *      WIN32 specific initialisation for bsd sockets,
+ *      based on Chris Timossi's base/src/ca/windows_depend.c,
  *      and also further additions by Kay Kasemir when this was in
- *	    dllmain.cc
+ *      dllmain.cc
  *
  *      7-1-97  -joh-
  *
@@ -45,74 +44,74 @@
  */
 epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
 {
-	static osiSockAddr  addr;
-	static char     	init;
-	int             	status;
-	INTERFACE_INFO		*pIfinfo;
-	INTERFACE_INFO      *pIfinfoList;
-	unsigned			nelem;
-	DWORD				numifs;
-	DWORD				cbBytesReturned;
+    static osiSockAddr  addr;
+    static char         init;
+    int                 status;
+    INTERFACE_INFO      *pIfinfo;
+    INTERFACE_INFO      *pIfinfoList;
+    unsigned            nelem;
+    DWORD               numifs;
+    DWORD               cbBytesReturned;
 
-	if (init) {
-		return addr;
-	}
+    if (init) {
+        return addr;
+    }
 
     init = 1;
     addr.sa.sa_family = AF_UNSPEC;
 
-	/* only valid for winsock 2 and above */
-	if ( wsaMajorVersion() < 2 ) {
-		return addr;
-	}
-
-	nelem = 10;
-	pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
-	if (!pIfinfoList) {
-		errlogPrintf ("calloc failed\n");
-		return addr;
+    /* only valid for winsock 2 and above */
+    if ( wsaMajorVersion() < 2 ) {
+        return addr;
     }
 
-	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, NULL, 0,
-						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
-						&cbBytesReturned, NULL, NULL);
-
-	if (status != 0 || cbBytesReturned == 0) {
-		errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
-		free (pIfinfoList);		
-		return addr;
+    nelem = 100;
+    pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
+    if (!pIfinfoList) {
+        errlogPrintf ("calloc failed\n");
+        return addr;
     }
 
-	numifs = cbBytesReturned / sizeof(INTERFACE_INFO);
-	for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
+    status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, NULL, 0,
+                        (LPVOID) pIfinfoList, nelem * sizeof(INTERFACE_INFO),
+                        &cbBytesReturned, NULL, NULL);
 
-		/*
-		 * dont use interfaces that have been disabled
-		 */
-		if (!(pIfinfo->iiFlags & IFF_UP)) {
-			continue;
-		}
+    if (status != 0 || cbBytesReturned == 0) {
+        errlogPrintf ("WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
+        free (pIfinfoList);     
+        return addr;
+    }
 
-		/*
-		 * dont use the loop back interface
-		 */
-		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
-			continue;
-		}
+    numifs = cbBytesReturned / sizeof(INTERFACE_INFO);
+    for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
 
-		addr.sa = pIfinfo->iiAddress.Address;
+        /*
+         * dont use interfaces that have been disabled
+         */
+        if (!(pIfinfo->iiFlags & IFF_UP)) {
+            continue;
+        }
 
-		/* Work around MS Winsock2 bugs */
+        /*
+         * dont use the loop back interface
+         */
+        if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+            continue;
+        }
+
+        addr.sa = pIfinfo->iiAddress.Address;
+
+        /* Work around MS Winsock2 bugs */
         if (addr.sa.sa_family == 0) {
             addr.sa.sa_family = AF_INET;
         }
 
-		free (pIfinfoList);
+        free (pIfinfoList);
         return addr;
-	}
+    }
 
     free (pIfinfoList);
-	return addr;
+    return addr;
 }
 
 /*
@@ -121,12 +120,12 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr ( SOCKET socket )
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
-	int             	status;
-	INTERFACE_INFO      *pIfinfo;
-	INTERFACE_INFO      *pIfinfoList;
-	unsigned			nelem;
-	int					numifs;
-	DWORD				cbBytesReturned;
+    int                 status;
+    INTERFACE_INFO      *pIfinfo;
+    INTERFACE_INFO      *pIfinfoList;
+    unsigned            nelem;
+    int                 numifs;
+    DWORD               cbBytesReturned;
     osiSockAddrNode     *pNewNode;
 
     if ( pMatchAddr->sa.sa_family == AF_INET  ) {
@@ -143,56 +142,56 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         }
     }
 
-	/* only valid for winsock 2 and above */
-	if (wsaMajorVersion() < 2 ) {
-		fprintf(stderr, "Need to set EPICS_CA_AUTO_ADDR_LIST=NO for winsock 1\n");
-		return;
-	}
+    /* only valid for winsock 2 and above */
+    if (wsaMajorVersion() < 2 ) {
+        fprintf(stderr, "Need to set EPICS_CA_AUTO_ADDR_LIST=NO for winsock 1\n");
+        return;
+    }
 
-	nelem = 10;
-	pIfinfoList = (INTERFACE_INFO *) calloc(nelem, sizeof(INTERFACE_INFO));
-	if(!pIfinfoList){
-		return;
-	}
+    nelem = 100;
+    pIfinfoList = (INTERFACE_INFO *) calloc(nelem, sizeof(INTERFACE_INFO));
+    if(!pIfinfoList){
+        return;
+    }
 
-	status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, 
-						NULL, 0,
-						(LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
-						&cbBytesReturned, NULL, NULL);
+    status = WSAIoctl (socket, SIO_GET_INTERFACE_LIST, 
+                        NULL, 0,
+                        (LPVOID)pIfinfoList, nelem*sizeof(INTERFACE_INFO),
+                        &cbBytesReturned, NULL, NULL);
 
-	if (status != 0 || cbBytesReturned == 0) {
-		fprintf(stderr, "WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
-		free(pIfinfoList);		
-		return;
-	}
+    if (status != 0 || cbBytesReturned == 0) {
+        fprintf(stderr, "WSAIoctl SIO_GET_INTERFACE_LIST failed %d\n",WSAGetLastError());
+        free(pIfinfoList);      
+        return;
+    }
 
-	numifs = cbBytesReturned/sizeof(INTERFACE_INFO);
-	for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
+    numifs = cbBytesReturned/sizeof(INTERFACE_INFO);
+    for (pIfinfo = pIfinfoList; pIfinfo < (pIfinfoList+numifs); pIfinfo++){
 
-		/*
-		 * dont bother with interfaces that have been disabled
-		 */
-		if (!(pIfinfo->iiFlags & IFF_UP)) {
-			continue;
-		}
-
-		if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+        /*
+         * dont bother with interfaces that have been disabled
+         */
+        if (!(pIfinfo->iiFlags & IFF_UP)) {
             continue;
-		}
+        }
 
-		/*
-		 * work around WS2 bug
-		 */
-		if (pIfinfo->iiAddress.Address.sa_family != AF_INET) {
-			if (pIfinfo->iiAddress.Address.sa_family == 0) {
-				pIfinfo->iiAddress.Address.sa_family = AF_INET;
-			}
-		}
+        if (pIfinfo->iiFlags & IFF_LOOPBACK) {
+            continue;
+        }
 
-		/*
-		 * if it isnt a wildcarded interface then look for
-		 * an exact match
-		 */
+        /*
+         * work around WS2 bug
+         */
+        if (pIfinfo->iiAddress.Address.sa_family != AF_INET) {
+            if (pIfinfo->iiAddress.Address.sa_family == 0) {
+                pIfinfo->iiAddress.Address.sa_family = AF_INET;
+            }
+        }
+
+        /*
+         * if it isnt a wildcarded interface then look for
+         * an exact match
+         */
         if (pMatchAddr->sa.sa_family != AF_UNSPEC) {
             if (pIfinfo->iiAddress.Address.sa_family != pMatchAddr->sa.sa_family) {
                 continue;
@@ -203,11 +202,11 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             if (pMatchAddr->sa.sa_family != AF_INET) {
                 continue;
             }
-		    if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
-			    if (pIfinfo->iiAddress.AddressIn.sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
-				    continue;
-			    }
-		    }
+            if (pMatchAddr->ia.sin_addr.s_addr != htonl(INADDR_ANY)) {
+                if (pIfinfo->iiAddress.AddressIn.sin_addr.s_addr != pMatchAddr->ia.sin_addr.s_addr) {
+                    continue;
+                }
+            }
         }
 
         pNewNode = (osiSockAddrNode *) calloc (1, sizeof(*pNewNode));
@@ -230,11 +229,11 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
             pNewNode->addr.sa = pIfinfo->iiBroadcastAddress.Address;
         }
 
-		/*
-		 * LOCK applied externally
-		 */
+        /*
+         * LOCK applied externally
+         */
         ellAdd (pList, &pNewNode->node);
-	}
+    }
 
-	free (pIfinfoList);
+    free (pIfinfoList);
 }

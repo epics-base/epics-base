@@ -247,7 +247,7 @@ void cast_server(void *pParm)
                     epicsPrintf ("CAS: message received at %s\n", buf);
                 }
             }
-            else {
+            else if (CASDEBUG>0){
                 char buf[40];
 
                 ipAddrToDottedIP (&client->addr, buf, sizeof(buf));

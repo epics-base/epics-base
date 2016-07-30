@@ -324,29 +324,10 @@ unsigned            lineno
 static int bad_udp_cmd_action ( caHdrLargeArray *mp,
                        void *pPayload, struct client *pClient )
 {
-    log_header ("invalid (damaged?) request code from UDP",
-        pClient, mp, pPayload, 0);
+    if (CASDEBUG > 0)
+        log_header ("invalid (damaged?) request code from UDP",
+                    pClient, mp, pPayload, 0);
     return RSRV_ERROR;
-}
-
-/*
- * udp_echo_action()
- */
-static int udp_echo_action ( caHdrLargeArray *mp,
-                           void *pPayload, struct client *pClient )
-{
-    char *pPayloadOut;
-    int status;
-    SEND_LOCK ( pClient );
-    status = cas_copy_in_header ( pClient, mp->m_cmmd, mp->m_postsize,
-        mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available,
-        ( void * ) &pPayloadOut );
-    if ( status == ECA_NORMAL ) {
-        memcpy ( pPayloadOut, pPayload, mp->m_postsize );
-        cas_commit_msg ( pClient, mp->m_postsize );
-    }
-    SEND_UNLOCK ( pClient );
-    return RSRV_OK;
 }
 
 /*
@@ -2488,7 +2469,7 @@ static const pProtoStubUDP udpJumpTable[] =
     bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,
-    udp_echo_action,
+    bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,
     bad_udp_cmd_action,

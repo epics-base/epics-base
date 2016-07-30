@@ -338,6 +338,16 @@ caStatus casStrmClient::versionAction ( epicsGuard < casClientMutex > & )
         return S_cas_badProtocol;
     }
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is too old\n",
+                pHostName );
+        }
+        return S_cas_badProtocol;
+    }
+
     double tmp = mp->m_dataType - CA_PROTO_PRIORITY_MIN;
     tmp *= epicsThreadPriorityCAServerHigh - epicsThreadPriorityCAServerLow;
     tmp /= CA_PROTO_PRIORITY_MAX - CA_PROTO_PRIORITY_MIN;
@@ -1321,6 +1331,16 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
     const caHdrLargeArray   *mp = this->ctx.getMsg();
     const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
     caStatus                status;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is searching for \"%s\" but is too old\n",
+                pHostName, pChanName );
+        }
+        return S_cas_badProtocol;
+    }
 
     //
     // check the sanity of the message

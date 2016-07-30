@@ -131,6 +131,16 @@ caStatus casDGClient::searchAction()
     const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
     caStatus                status;
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is searching for \"%s\" but is too old\n",
+                pHostName, pChanName );
+        }
+        return S_cas_badProtocol;
+    }
+
     //
     // check the sanity of the message
     //
@@ -368,6 +378,15 @@ caStatus casDGClient::versionAction ()
 {
     const caHdrLargeArray * mp = this->ctx.getMsg();
 
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        if ( this->getCAS().getDebugLevel() > 3u ) {
+            char pHostName[64u];
+            this->hostName ( pHostName, sizeof ( pHostName ) );
+            printf ( "\"%s\" is too old\n",
+                pHostName );
+        }
+        return S_cas_badProtocol;
+    }
     if ( mp->m_count != 0 ) {
         this->minor_version_number = static_cast <ca_uint16_t> ( mp->m_count );
         if ( CA_V411 ( mp->m_count ) ) {

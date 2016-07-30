@@ -1278,6 +1278,12 @@ static int claim_ciu_action ( caHdrLargeArray *mp,
 
         dbch = dbChannel_create (pName);
         if (!dbch) {
+            SEND_LOCK(client);
+            status = cas_copy_in_header ( client,
+                                          CA_PROTO_CREATE_CH_FAIL, 0, 0, 0, mp->m_cid, 0, NULL );
+            if (status == ECA_NORMAL)
+                cas_commit_msg ( client, 0u );
+            SEND_UNLOCK(client);
             return RSRV_OK;
         }
 

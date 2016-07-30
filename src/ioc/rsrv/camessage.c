@@ -360,6 +360,13 @@ static int tcp_version_action ( caHdrLargeArray *mp, void *pPayload,
     unsigned epicsPriorityNew;
     unsigned epicsPrioritySelf;
 
+    client->minor_version_number = mp->m_count;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        DLOG ( 2, ( "CAS: Ignore version from unsupported client %u\n", mp->m_count ) );
+        return RSRV_ERROR;
+    }
+
     if ( mp->m_dataType > CA_PROTO_PRIORITY_MAX ) {
         return RSRV_ERROR;
     }
@@ -2197,8 +2204,14 @@ static void search_fail_reply ( caHdrLargeArray *mp, void *pPayload, struct clie
  */
 static int udp_version_action ( caHdrLargeArray *mp, void *pPayload, struct client *client )
 {
+    client->minor_version_number = mp->m_count;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        DLOG ( 2, ( "CAS: Ignore version from unsupported client %u\n", mp->m_count ) );
+        return RSRV_ERROR;
+    }
+
     if ( mp->m_count != 0 ) {
-        client->minor_version_number = mp->m_count;
         if ( CA_V411 ( mp->m_count ) ) {
             client->seqNoOfReq = mp->m_cid;
         }
@@ -2247,6 +2260,11 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
     int             spaceAvailOnFreeList;
     size_t          spaceNeeded;
     size_t          reasonableMonitorSpace = 10;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        DLOG ( 2, ( "CAS: Ignore search from unsupported client %u\n", mp->m_count ) );
+        return RSRV_ERROR;
+    }
 
     /*
      * check the sanity of the message
@@ -2358,6 +2376,11 @@ static int search_reply_tcp (
     int             spaceAvailOnFreeList;
     size_t          spaceNeeded;
     size_t          reasonableMonitorSpace = 10;
+
+    if (!CA_VSUPPORTED(mp->m_count)) {
+        DLOG ( 2, ( "CAS: Ignore search from unsupported client %u\n", mp->m_count ) );
+        return RSRV_ERROR;
+    }
 
     /*
      * check the sanity of the message
@@ -2542,15 +2565,37 @@ int camessage ( struct client *client )
             pBody = ( void * ) ( mp + 1 );
         }
 
+        /* ignore deprecated clients, but let newer clients identify themselves. */
+        if (msg.m_cmmd!=CA_PROTO_VERSION && !CA_VSUPPORTED(client->minor_version_number)) {
+            if (client->proto==IPPROTO_TCP) {
+                /* log and error for too old clients, but keep the connection open to avoid a
+                 * re-connect loop.
+                 */
+                send_err ( &msg, ECA_DEFUNCT, client,
+                    "CAS: Client version %u too old", client->minor_version_number );
+                log_header ( "CAS: Client version too old",
+                    client, &msg, 0, nmsg );
+                client->recvBytesToDrain = msgsize - bytes_left;
+                client->recv.stk = client->recv.cnt;
+                status = RSRV_OK;
+            } else {
+                /* silently ignore UDP from old clients */
+                status = RSRV_ERROR;
+            }
+            break;
+        }
+
         /*
          * disconnect clients that dont send 8 byte
          * aligned payloads
          */
         if ( msgsize & 0x7 ) {
-            send_err ( &msg, ECA_INTERNAL, client,
-                "CAS: Missaligned protocol rejected" );
-            log_header ( "CAS: Missaligned protocol rejected",
-                client, &msg, 0, nmsg );
+            if (client->proto==IPPROTO_TCP) {
+                send_err ( &msg, ECA_INTERNAL, client,
+                    "CAS: Missaligned protocol rejected" );
+                log_header ( "CAS: Missaligned protocol rejected",
+                    client, &msg, 0, nmsg );
+            }
             status = RSRV_ERROR;
             break;
         }
@@ -2564,11 +2609,13 @@ int camessage ( struct client *client )
         if ( msgsize > client->recv.maxstk ) {
             casExpandRecvBuffer ( client, msgsize );
             if ( msgsize > client->recv.maxstk ) {
-                send_err ( &msg, ECA_TOLARGE, client,
-                    "CAS: Server unable to load large request message. Max bytes=%lu",
-                    rsrvSizeofLargeBufTCP );
-                log_header ( "CAS: server unable to load large request message",
-                    client, &msg, 0, nmsg );
+                if (client->proto==IPPROTO_TCP) {
+                    send_err ( &msg, ECA_TOLARGE, client,
+                        "CAS: Server unable to load large request message. Max bytes=%lu",
+                        rsrvSizeofLargeBufTCP );
+                    log_header ( "CAS: server unable to load large request message",
+                        client, &msg, 0, nmsg );
+                }
                 assert ( client->recv.cnt <= client->recv.maxstk );
                 assert ( msgsize >= bytes_left );
                 client->recvBytesToDrain = msgsize - bytes_left;

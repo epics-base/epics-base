@@ -28,7 +28,8 @@
 #define CA_VERSION_STRING( MINOR_REVISION ) \
 ( capStrOfX ( CA_MAJOR_PROTOCOL_REVISION ) "." capStrOfX ( MINOR_REVISION ) )
 #define CA_UKN_MINOR_VERSION    0u /* unknown minor version */
-#if CA_MAJOR_PROTOCOL_REVISION == 4u
+#define CA_MINIMUM_SUPPORTED_VERSION 4u
+#   define CA_VSUPPORTED(MINOR) ((MINOR)>=CA_MINIMUM_SUPPORTED_VERSION)
 #   define CA_V41(MINOR) ((MINOR)>=1u) 
 #   define CA_V42(MINOR) ((MINOR)>=2u)
 #   define CA_V43(MINOR) ((MINOR)>=3u)
@@ -42,35 +43,6 @@
 #   define CA_V411(MINOR) ((MINOR)>=11u)  /* sequence numbers in UDP version command */
 #   define CA_V412(MINOR) ((MINOR)>=12u)  /* TCP-based search requests */
 #   define CA_V413(MINOR) ((MINOR)>=13u)  /* Allow zero length in requests. */
-#elif CA_MAJOR_PROTOCOL_REVISION > 4u
-#   define CA_V41(MINOR) ( 1u )
-#   define CA_V42(MINOR) ( 1u )
-#   define CA_V43(MINOR) ( 1u )
-#   define CA_V44(MINOR) ( 1u )
-#   define CA_V45(MINOR) ( 1u )
-#   define CA_V46(MINOR) ( 1u )
-#   define CA_V47(MINOR) ( 1u )
-#   define CA_V48(MINOR) ( 1u )
-#   define CA_V49(MINOR) ( 1u )
-#   define CA_V410(MINOR) ( 1u )
-#   define CA_V411(MINOR) ( 1u )
-#   define CA_V412(MINOR) ( 1u )
-#   define CA_V413(MINOR) ( 1u )
-#else
-#   define CA_V41(MINOR) ( 0u )
-#   define CA_V42(MINOR) ( 0u )
-#   define CA_V43(MINOR) ( 0u )
-#   define CA_V44(MINOR) ( 0u )
-#   define CA_V45(MINOR) ( 0u )
-#   define CA_V46(MINOR) ( 0u )
-#   define CA_V47(MINOR) ( 0u )
-#   define CA_V48(MINOR) ( 0u )
-#   define CA_V49(MINOR) ( 0u )
-#   define CA_V410(MINOR) ( 0u )
-#   define CA_V411(MINOR) ( 0u )
-#   define CA_V412(MINOR) ( 0u )
-#   define CA_V413(MINOR) ( 0u )
-#endif
 
 /*
  * These port numbers are only used if the CA repeater and 

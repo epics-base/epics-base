@@ -2255,8 +2255,6 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
     /* Exit quickly if channel not on this node */
     if (dbChannelTest(pName)) {
         DLOG ( 2, ( "CAS: Lookup for channel \"%s\" failed\n", pPayLoad ) );
-        if (mp->m_dataType == DOREPLY)
-            search_fail_reply ( mp, pPayload, client );
         return RSRV_OK;
     }
 
@@ -2296,8 +2294,6 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
         dbch = dbChannel_create(pName);
         if (!dbch) {
             DLOG ( 2, ( "CAS: dbChannel Test of \"%s\" OK but Create failed\n", pName ) );
-            if (mp->m_dataType == DOREPLY)
-                search_fail_reply ( mp, pPayload, client );
             return RSRV_OK;
         }
         pchannel = casCreateChannel ( client, dbch, mp->m_cid );

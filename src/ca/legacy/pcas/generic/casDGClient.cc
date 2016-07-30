@@ -51,7 +51,7 @@ casDGClient::pCASMsgHandler const casDGClient::msgHandlers[] =
     & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
-    & casDGClient::echoAction,
+    & casDGClient::uknownMessageAction,
     & casDGClient::uknownMessageAction,
 
     & casDGClient::uknownMessageAction,
@@ -111,11 +111,13 @@ caStatus casDGClient::uknownMessageAction ()
 {
     const caHdrLargeArray * mp = this->ctx.getMsg();
 
-    char pHostName[64u];
-    this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
+    if ( this->getCAS().getDebugLevel() > 3u ) {
+        char pHostName[64u];
+        this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
 
-    caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
-        "bad request code=%u in DG\n", mp->m_cmmd );
+        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(),
+                             "bad request code=%u in DG\n", mp->m_cmmd );
+    }
 
     return S_cas_badProtocol;
 }

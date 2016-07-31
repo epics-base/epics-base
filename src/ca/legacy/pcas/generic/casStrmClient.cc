@@ -1219,6 +1219,14 @@ caStatus casStrmClient :: searchResponse (
     const pvExistReturn & retVal )
 {    
     if ( retVal.getStatus() != pverExistsHere ) {
+        if (msg.m_dataType == DOREPLY ) {
+            long status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
+                msg.m_dataType, msg.m_count, msg.m_cid, msg.m_available, 0 );
+
+            if ( status == S_cas_success ) {
+                this->out.commitMsg ();
+            }
+        }
         return S_cas_success;
     }
     
@@ -1383,11 +1391,8 @@ caStatus casStrmClient :: searchAction ( epicsGuard < casClientMutex > & guard )
         //
         switch ( pver.getStatus() ) {
         case pverExistsHere:
-            status = this->searchResponse ( guard, *mp, pver );
-            break;
-
         case pverDoesNotExistHere:
-            status = S_cas_success;
+            status = this->searchResponse ( guard, *mp, pver );
             break;
 
         case pverAsyncCompletion:

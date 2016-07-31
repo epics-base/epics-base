@@ -2290,10 +2290,7 @@ static int search_reply_udp ( caHdrLargeArray *mp, void *pPayload, struct client
     spaceNeeded = sizeof (struct channel_in_use) +
         reasonableMonitorSpace * sizeof (struct event_ext);
     if ( ! ( osiSufficentSpaceInPool(spaceNeeded) || spaceAvailOnFreeList ) ) {
-        SEND_LOCK(client);
-        send_err ( mp, ECA_ALLOCMEM, client, "Server memory exhausted" );
-        SEND_UNLOCK(client);
-        return RSRV_OK;
+        return RSRV_ERROR;
     }
 
     /*

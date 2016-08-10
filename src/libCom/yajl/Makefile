@@ -13,6 +13,7 @@ SRC_DIRS += $(LIBCOM)/yacc
 
 # Yet Another JSON Library
 SRC_DIRS += $(LIBCOM)/yajl
+INC += yajl_alloc.h
 INC += yajl_common.h
 INC += yajl_gen.h
 INC += yajl_parse.h

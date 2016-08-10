@@ -130,8 +130,12 @@ static long init_record(aSubRecord *prec, int pass)
         struct link *plink = &(&prec->inpa)[i];
 
         if (plink->type == CONSTANT) {
-            if ((&prec->noa)[i] < 2)
-                recGblInitConstantLink(plink, (&prec->fta)[i], (&prec->a)[i]);
+            short dbr = (&prec->fta)[i];
+            long n = (&prec->noa)[i];
+
+            dbLoadLinkArray(plink, dbr, (&prec->a)[i], &n);
+            if (n > 0)
+                (&prec->nea)[i] = n;
         }
     }
 

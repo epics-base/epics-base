@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "dbAccess.h"
+#include "dbTest.h"
 
 #include "dbUnitTest.h"
 #include "errlog.h"
@@ -45,16 +46,16 @@ static void testGetPutArray(void)
         testAbort("Failed to find record wfrec");
     memcpy(&save, &addr, sizeof(save));
 
-    testDiag("Fetch initial value");
+    testDiag("Fetch initial value of %s", prec->name);
 
     dbScanLock(addr.precord);
-    testOk1(prec->nord==0);
+    testOk(prec->nord==3, "prec->nord==3 (got %d)", prec->nord);
 
     nreq = NELEMENTS(data);
     if(dbGet(&addr, DBF_DOUBLE, &data, NULL, &nreq, NULL))
         testFail("dbGet fails");
     else {
-        testOk(nreq==0, "nreq==0 (got %ld)", nreq);
+        testOk(nreq==3, "nreq==3 (got %ld)", nreq);
     }
     dbScanUnlock(addr.precord);
 
@@ -101,10 +102,10 @@ static void testGetPutArray(void)
         testAbort("Failed to find record wfrec1");
     memcpy(&save, &addr, sizeof(save));
 
-    testDiag("Fetch initial value");
+    testDiag("Fetch initial value of %s", prec->name);
 
     dbScanLock(addr.precord);
-    testOk1(prec->nord==0);
+    testOk(prec->nord==0, "prec->nord==0 (got %d)", prec->nord);
 
     nreq = NELEMENTS(data);
     if(dbGet(&addr, DBF_DOUBLE, &data, NULL, &nreq, NULL))

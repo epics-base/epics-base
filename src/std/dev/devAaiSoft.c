@@ -52,8 +52,11 @@ epicsExportAddress(dset,devAaiSoft);
 
 static long init_record(aaiRecord *prec)
 {
+    long nRequest = prec->nelm;
+
     if (prec->inp.type == CONSTANT) {
-        prec->nord = 0;
+        dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nRequest);
+        prec->nord = (nRequest > 0) ? nRequest : 0;
     }
     return 0;
 }

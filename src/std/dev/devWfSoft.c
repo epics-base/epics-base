@@ -49,22 +49,23 @@ epicsExportAddress(dset, devWfSoft);
 
 static long init_record(waveformRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        prec->nord = 0;
-    }
-    return 0;
+    long nelm = prec->nelm;
+    long status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nelm);
+
+    prec->nord = !status && (nelm > 0) ? nelm : 0;
+    return status;
 }
 
 static long read_wf(waveformRecord *prec)
 {
     long nRequest = prec->nelm;
+    long status = dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
 
-    dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
-    if (nRequest > 0) {
+    if (!status && nRequest > 0) {
         prec->nord = nRequest;
         if (prec->tsel.type == CONSTANT &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     }
-    return 0;
+    return status;
 }

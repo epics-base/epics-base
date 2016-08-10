@@ -98,7 +98,6 @@ static void dbDbRemoveLink(struct dbLocker *locker, struct link *plink)
     plink->value.pv_link.pvlMask = 0;
     plink->value.pv_link.lastGetdbrType = 0;
     plink->type = PV_LINK;
-    plink->lset = NULL;
     ellDelete(&pdbAddr->precord->bklnk, &plink->value.pv_link.backlinknode);
     dbLockSetSplit(locker, plink->precord, pdbAddr->precord);
     free(pdbAddr);
@@ -332,8 +331,8 @@ static void dbDbScanFwdLink(struct link *plink)
 }
 
 static lset dbDb_lset = {
-    NULL,
     dbDbRemoveLink,
+    NULL, NULL,
     dbDbIsConnected,
     dbDbGetDBFtype, dbDbGetElements,
     dbDbGetValue,

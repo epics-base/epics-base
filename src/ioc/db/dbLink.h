@@ -28,8 +28,10 @@ extern "C" {
 struct dbLocker;
 
 typedef struct lset {
-    long (*loadLink)(struct link *plink, short dbrType, void *pbuffer);
     void (*removeLink)(struct dbLocker *locker, struct link *plink);
+    long (*loadScalar)(struct link *plink, short dbrType, void *pbuffer);
+    long (*loadArray)(struct link *plink, short dbrType, void *pbuffer,
+            long *pnRequest);
     int (*isConnected)(const struct link *plink);
     int (*getDBFtype)(const struct link *plink);
     long (*getElements)(const struct link *plink, long *nelements);
@@ -53,11 +55,13 @@ typedef struct lset {
     dbGetAlarm(link, NULL, sevr)
 
 epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
-epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
-        DBADDR *ptarget);
+epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink,
+        short dbfType, DBADDR *ptarget);
+epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
 epicsShareFunc long dbLoadLink(struct link *plink, short dbrType,
         void *pbuffer);
-epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
+epicsShareFunc long dbLoadLinkArray(struct link *, short dbrType, void *pbuffer,
+        long *pnRequest);
 
 epicsShareFunc long dbGetNelements(const struct link *plink, long *nelements);
 epicsShareFunc int dbIsLinkConnected(const struct link *plink);

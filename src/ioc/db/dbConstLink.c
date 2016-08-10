@@ -12,24 +12,19 @@
  *      Current Author: Andrew Johnson
  */
 
-#include <stddef.h>
 #include <stdio.h>
 
-#include "cvtFast.h"
 #include "dbDefs.h"
-#include "errlog.h"
 
 #define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
-#include "dbBase.h"
 #include "dbCommon.h"
 #include "dbConvertFast.h"
-#include "dbConvert.h"
+#include "dbConvertJSON.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
 #include "link.h"
-#include "recGbl.h"
 
 /***************************** Constant Links *****************************/
 
@@ -46,19 +41,32 @@ void dbConstAddLink(struct link *plink)
     plink->lset = &dbConst_lset;
 }
 
-static long dbConstLoadLink(struct link *plink, short dbrType, void *pbuffer)
+/**************************** Member functions ****************************/
+
+static long dbConstLoadScalar(struct link *plink, short dbrType, void *pbuffer)
 {
     if (!plink->value.constantStr)
         return S_db_badField;
 
-    plink->lset = &dbConst_lset;
-
-    /* Constant strings are always numeric */
+    /* Constant scalars are always numeric */
     if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
         dbrType = DBF_USHORT;
 
     return dbFastPutConvertRoutine[DBR_STRING][dbrType]
             (plink->value.constantStr, pbuffer, NULL);
+}
+
+static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
+        long *pnReq)
+{
+    if (!plink->value.constantStr)
+        return S_db_badField;
+
+    /* No support for arrays of choice types */
+    if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
+        return S_db_badField;
+
+    return dbPutConvertJSON(plink->value.constantStr, dbrType, pbuffer, pnReq);
 }
 
 static long dbConstGetNelements(const struct link *plink, long *nelements)
@@ -76,8 +84,9 @@ static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
 }
 
 static lset dbConst_lset = {
-    dbConstLoadLink,
     NULL,
+    dbConstLoadScalar,
+    dbConstLoadArray,
     NULL,
     NULL, dbConstGetNelements,
     dbConstGetValue,

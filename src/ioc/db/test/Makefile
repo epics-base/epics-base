@@ -26,7 +26,6 @@ DBDDEPENDS_FILES += dbTestIoc.dbd$(DEP)
 dbTestIoc_DBD += menuGlobal.dbd
 dbTestIoc_DBD += menuConvert.dbd
 dbTestIoc_DBD += menuScan.dbd
-#dbTestIoc_DBD += arrRecord.dbd
 dbTestIoc_DBD += xRecord.dbd
 dbTestIoc_DBD += arrRecord.dbd
 dbTestIoc_DBD += devx.dbd
@@ -152,7 +151,7 @@ recGblCheckDeadbandTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += recGblCheckDeadbandTest.c
 TESTS += recGblCheckDeadbandTest
 
-# The testHarness runs all the test programs in a known working order.
+# This runs all the test programs in a known working order:
 testHarness_SRCS += epicsRunDbTests.c
 
 dbTestHarness_SRCS += $(testHarness_SRCS)

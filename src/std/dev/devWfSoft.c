@@ -56,6 +56,8 @@ static long init_record(waveformRecord *prec)
         prec->nord = nelm;
         prec->udf = FALSE;
     }
+    else
+        prec->nord = 0;
     return status;
 }
 

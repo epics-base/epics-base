@@ -20,6 +20,7 @@
 #include "dbAccessDefs.h"
 #include "dbAddr.h"
 #include "dbCommon.h"
+#include "dbConstLink.h"
 #include "dbConvertFast.h"
 #include "dbConvertJSON.h"
 #include "dbFldTypes.h"

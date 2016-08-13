@@ -22,6 +22,7 @@
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
+#include "dbConstLink.h"
 #include "recGbl.h"
 #include "devSup.h"
 #include "cantProceed.h"
@@ -52,11 +53,24 @@ epicsExportAddress(dset,devAaiSoft);
 
 static long init_record(aaiRecord *prec)
 {
-    long nRequest = prec->nelm;
-
     if (prec->inp.type == CONSTANT) {
-        dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nRequest);
-        prec->nord = (nRequest > 0) ? nRequest : 0;
+        long nRequest = prec->nelm;
+        long status;
+
+        /* Allocate a buffer, record support hasn't done that yet */
+        if (!prec->bptr) {
+            prec->bptr = callocMustSucceed(nRequest, dbValueSize(prec->ftvl),
+                "devAaiSoft: buffer calloc failed");
+        }
+
+        /* This is pass 0 so link hasn't been initialized either */
+        dbConstInitLink(&prec->inp);
+
+        status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nRequest);
+        if (!status && nRequest > 0) {
+            prec->nord = nRequest;
+            prec->udf = FALSE;
+        }
     }
     return 0;
 }

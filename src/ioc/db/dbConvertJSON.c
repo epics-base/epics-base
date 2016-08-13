@@ -42,8 +42,8 @@ static int dbcj_integer(void *ctx, long num) {
 
     if (parser->elems > 0) {
         conv(&val32, parser->pdest, NULL);
-	parser->pdest += parser->dbrSize;
-	parser->elems--;
+        parser->pdest += parser->dbrSize;
+        parser->elems--;
     }
     return 1;
 }
@@ -54,8 +54,8 @@ static int dbcj_double(void *ctx, double num) {
 
     if (parser->elems > 0) {
         conv(&num, parser->pdest, NULL);
-	parser->pdest += parser->dbrSize;
-	parser->elems--;
+        parser->pdest += parser->dbrSize;
+        parser->elems--;
     }
     return 1;
 }
@@ -71,10 +71,12 @@ static int dbcj_string(void *ctx, const unsigned char *val, unsigned int len) {
         return 0; /* Illegal */
 
     if (parser->elems > 0) {
-        if (len > MAX_STRING_SIZE - 1)
-            len = MAX_STRING_SIZE - 1;
+        if (len > parser->dbrSize - 1)
+            len = parser->dbrSize - 1;
         strncpy(pdest, (const char *) val, len);
-	pdest[len] = 0;
+        pdest[len] = 0;
+        parser->pdest += parser->dbrSize;
+        parser->elems--;
     }
     return 1;
 }
@@ -147,7 +149,7 @@ long dbPutConvertJSON(const char *json, short dbrType,
         break;
 
     case yajl_status_error: {
-	unsigned char *err = yajl_get_error(yh, 1,
+        unsigned char *err = yajl_get_error(yh, 1,
             (const unsigned char *) json, (unsigned int) jlen);
         fprintf(stderr, "dbPutConvertJSON: %s\n", err);
         yajl_free_error(yh, err);

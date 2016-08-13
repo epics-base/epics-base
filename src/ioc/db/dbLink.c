@@ -146,7 +146,7 @@ long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
     lset *plset = plink->lset;
 
 
-    if (plset->loadScalar)
+    if (plset && plset->loadScalar)
         return plset->loadScalar(plink, dbrType, pbuffer);
 
     return S_db_notFound;
@@ -157,7 +157,7 @@ long dbLoadLinkArray(struct link *plink, short dbrType, void *pbuffer,
 {
     lset *plset = plink->lset;
 
-    if (plset->loadArray)
+    if (plset && plset->loadArray)
         return plset->loadArray(plink, dbrType, pbuffer, pnRequest);
 
     return S_db_notFound;

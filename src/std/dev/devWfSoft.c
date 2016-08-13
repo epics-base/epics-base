@@ -52,7 +52,10 @@ static long init_record(waveformRecord *prec)
     long nelm = prec->nelm;
     long status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nelm);
 
-    prec->nord = !status && (nelm > 0) ? nelm : 0;
+    if (!status && nelm > 0) {
+        prec->nord = nelm;
+        prec->udf = FALSE;
+    }
     return status;
 }
 

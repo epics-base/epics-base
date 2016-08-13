@@ -23,7 +23,7 @@ extern "C" {
 
 struct link;
 
-epicsShareFunc long dbConstInitLink(struct link *plink);
+epicsShareFunc void dbConstInitLink(struct link *plink);
 epicsShareFunc void dbConstAddLink(struct link *plink);
 
 #ifdef __cplusplus

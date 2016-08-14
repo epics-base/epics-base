@@ -48,6 +48,8 @@ typedef struct lset {
     long (*getTimeStamp)(const struct link *plink, epicsTimeStamp *pstamp);
     long (*putValue)(struct link *plink, short dbrType,
             const void *pbuffer, long nRequest);
+    long (*putAsync)(struct link *plink, short dbrType,
+            const void *pbuffer, long nRequest);
     void (*scanForward)(struct link *plink);
 } lset;
 
@@ -82,6 +84,9 @@ epicsShareFunc long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
 epicsShareFunc long dbGetTimeStamp(const struct link *plink,
         epicsTimeStamp *pstamp);
 epicsShareFunc long dbPutLink(struct link *plink, short dbrType,
+        const void *pbuffer, long nRequest);
+epicsShareFunc void dbLinkAsyncComplete(struct link *plink);
+epicsShareFunc long dbPutLinkAsync(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
 

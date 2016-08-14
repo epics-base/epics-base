@@ -344,7 +344,7 @@ static lset dbDb_lset = {
     dbDbGetControlLimits, dbDbGetGraphicLimits, dbDbGetAlarmLimits,
     dbDbGetPrecision, dbDbGetUnits,
     dbDbGetAlarm, dbDbGetTimeStamp,
-    dbDbPutValue,
+    dbDbPutValue, NULL,
     dbDbScanFwdLink
 };
 

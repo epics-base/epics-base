@@ -38,6 +38,7 @@
 #include "db_field_log.h"
 #include "dbFldTypes.h"
 #include "dbLink.h"
+#include "dbLock.h"
 #include "dbScan.h"
 #include "dbStaticLib.h"
 #include "devSup.h"
@@ -149,7 +150,7 @@ long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
     if (plset && plset->loadScalar)
         return plset->loadScalar(plink, dbrType, pbuffer);
 
-    return S_db_notFound;
+    return S_db_noLSET;
 }
 
 long dbLoadLinkArray(struct link *plink, short dbrType, void *pbuffer,
@@ -160,7 +161,7 @@ long dbLoadLinkArray(struct link *plink, short dbrType, void *pbuffer,
     if (plset && plset->loadArray)
         return plset->loadArray(plink, dbrType, pbuffer, pnRequest);
 
-    return S_db_notFound;
+    return S_db_noLSET;
 }
 
 void dbRemoveLink(struct dbLocker *locker, struct link *plink)
@@ -199,7 +200,7 @@ long dbGetNelements(const struct link *plink, long *nelements)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getElements)
-        return S_db_badField;
+        return S_db_noLSET;
 
     return plset->getElements(plink, nelements);
 }
@@ -235,7 +236,7 @@ long dbGetControlLimits(const struct link *plink, double *low, double *high)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getControlLimits)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getControlLimits(plink, low, high);
 }
@@ -245,7 +246,7 @@ long dbGetGraphicLimits(const struct link *plink, double *low, double *high)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getGraphicLimits)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getGraphicLimits(plink, low, high);
 }
@@ -256,7 +257,7 @@ long dbGetAlarmLimits(const struct link *plink, double *lolo, double *low,
     lset *plset = plink->lset;
 
     if (!plset || !plset->getAlarmLimits)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getAlarmLimits(plink, lolo, low, high, hihi);
 }
@@ -266,7 +267,7 @@ long dbGetPrecision(const struct link *plink, short *precision)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getPrecision)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getPrecision(plink, precision);
 }
@@ -276,7 +277,7 @@ long dbGetUnits(const struct link *plink, char *units, int unitsSize)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getUnits)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getUnits(plink, units, unitsSize);
 }
@@ -287,7 +288,7 @@ long dbGetAlarm(const struct link *plink, epicsEnum16 *status,
     lset *plset = plink->lset;
 
     if (!plset || !plset->getAlarm)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getAlarm(plink, status, severity);
 }
@@ -297,7 +298,7 @@ long dbGetTimeStamp(const struct link *plink, epicsTimeStamp *pstamp)
     lset *plset = plink->lset;
 
     if (!plset || !plset->getTimeStamp)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     return plset->getTimeStamp(plink, pstamp);
 }
@@ -309,9 +310,36 @@ long dbPutLink(struct link *plink, short dbrType, const void *pbuffer,
     long status;
 
     if (!plset || !plset->putValue)
-        return S_db_notFound;
+        return S_db_noLSET;
 
     status = plset->putValue(plink, dbrType, pbuffer, nRequest);
+    if (status) {
+        struct dbCommon *precord = plink->precord;
+
+        recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
+    }
+    return status;
+}
+
+void dbLinkAsyncComplete(struct link *plink)
+{
+    dbCommon *pdbCommon = plink->precord;
+
+    dbScanLock(pdbCommon);
+    pdbCommon->rset->process(pdbCommon);
+    dbScanUnlock(pdbCommon);
+}
+
+long dbPutLinkAsync(struct link *plink, short dbrType, const void *pbuffer,
+        long nRequest)
+{
+    lset *plset = plink->lset;
+    long status;
+
+    if (!plset || !plset->putAsync)
+        return S_db_noLSET;
+
+    status = plset->putAsync(plink, dbrType, pbuffer, nRequest);
     if (status) {
         struct dbCommon *precord = plink->precord;
 
@@ -341,7 +369,7 @@ long dbLoadLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,
         return 0;
     }
 
-    return S_db_notFound;
+    return S_db_noLSET;
 }
 
 long dbGetLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,

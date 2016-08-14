@@ -232,11 +232,8 @@ void dbCaSync(void)
 void dbCaCallbackProcess(void *userPvt)
 {
     struct link *plink = (struct link *)userPvt;
-    dbCommon *pdbCommon = plink->precord;
 
-    dbScanLock(pdbCommon);
-    pdbCommon->rset->process(pdbCommon);
-    dbScanUnlock(pdbCommon);
+    dbLinkAsyncComplete(plink);
 }
 
 void dbCaShutdown(void)
@@ -420,6 +417,13 @@ done:
     return status;
 }
 
+static long dbCaPutAsync(struct link *plink,short dbrType,
+    const void *pbuffer,long nRequest)
+{
+    return dbCaPutLinkCallback(plink, dbrType, pbuffer, nRequest,
+        dbCaCallbackProcess, plink);
+}
+
 long dbCaPutLinkCallback(struct link *plink,short dbrType,
     const void *pbuffer,long nRequest,dbCaCallback callback,void *userPvt)
 {
@@ -717,7 +721,7 @@ static lset dbCa_lset = {
     getControlLimits, getGraphicLimits, getAlarmLimits,
     getPrecision, getUnits,
     getAlarm, getTimeStamp,
-    dbCaPutLink,
+    dbCaPutLink, dbCaPutAsync,
     scanForward
 };
 

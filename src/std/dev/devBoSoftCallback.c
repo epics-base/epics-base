@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /* devBoCallbackSoft.c */
@@ -54,17 +53,15 @@ static long write_bo(boRecord *prec)
     struct link *plink = &prec->out;
     long status;
 
-    if(prec->pact) return(0);
-    if(plink->type!=CA_LINK) {
-        status = dbPutLink(plink,DBR_USHORT,&prec->val,1);
-        return(status);
-    }
-    status = dbCaPutLinkCallback(plink,DBR_USHORT,&prec->val,1,
-        dbCaCallbackProcess,plink);
-    if(status) {
-        recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
-        return(status);
-    }
-    prec->pact = TRUE;
-    return(0);
+    if (prec->pact)
+        return 0;
+
+    status = dbPutLinkAsync(plink, DBR_USHORT, &prec->val, 1);
+    if (!status)
+        prec->pact = TRUE;
+    else if (status == S_db_noLSET)
+        status = dbPutLink(plink, DBR_USHORT, &prec->val, 1);
+
+    return status;
 }
+

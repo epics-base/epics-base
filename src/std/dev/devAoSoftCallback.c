@@ -54,17 +54,15 @@ static long write_ao(aoRecord *prec)
     struct link *plink = &prec->out;
     long status;
 
-    if(prec->pact) return(0);
-    if(plink->type!=CA_LINK) {
-        status = dbPutLink(plink,DBR_DOUBLE,&prec->oval,1);
-        return(status);
-    }
-    status = dbCaPutLinkCallback(plink,DBR_DOUBLE,&prec->oval,1,
-        dbCaCallbackProcess,plink);
-    if(status) {
-        recGblSetSevr(prec,LINK_ALARM,INVALID_ALARM);
-        return(status);
-    }
-    prec->pact = TRUE;
-    return(0);
+    if (prec->pact)
+        return 0;
+
+    status = dbPutLinkAsync(plink, DBR_DOUBLE, &prec->oval, 1);
+    if (!status)
+        prec->pact = TRUE;
+    else if (status == S_db_noLSET)
+        status = dbPutLink(plink, DBR_DOUBLE, &prec->oval, 1);
+
+    return status;
 }
+

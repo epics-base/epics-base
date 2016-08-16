@@ -215,8 +215,6 @@ epicsShareFunc linkSup * dbFindLinkSup(dbBase *pdbbase,
 epicsShareFunc int  dbGetNLinks(DBENTRY *pdbentry);
 epicsShareFunc long dbGetLinkField(DBENTRY *pdbentry, int index);
 epicsShareFunc int  dbGetLinkType(DBENTRY *pdbentry);
-epicsShareFunc long dbCvtLinkToConstant(DBENTRY *pdbentry);
-epicsShareFunc long dbCvtLinkToPvlink(DBENTRY *pdbentry);
 
 /* Dump routines */
 epicsShareFunc void dbDumpPath(DBBASE *pdbbase);

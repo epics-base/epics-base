@@ -3193,67 +3193,6 @@ int  dbGetLinkType(DBENTRY *pdbentry)
     return(-1);
 }
 
-long  dbCvtLinkToConstant(DBENTRY *pdbentry)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    switch (pflddes->field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	if(plink->type == CONSTANT) return(0);
-	if(plink->type != PV_LINK) return(S_dbLib_badLink);
-	free((void *)plink->value.pv_link.pvname);
-	plink->value.pv_link.pvname = NULL;
-	plink->type = CONSTANT;
-	if(pflddes->initial) {
-	    plink->value.constantStr =
-		dbCalloc(strlen(pflddes->initial)+1,sizeof(char));
-	    strcpy(plink->value.constantStr,pflddes->initial);
-	} else {
-	    plink->value.constantStr = NULL;
-	}
-	return(0);
-    default:
-	epicsPrintf("dbCvtLinkToConstant called for non link field\n");
-    }
-    return(S_dbLib_badLink);
-}
-
-long  dbCvtLinkToPvlink(DBENTRY *pdbentry)
-{
-    dbFldDes	*pflddes;
-    DBLINK	*plink;
-
-    dbGetFieldAddress(pdbentry);
-    pflddes = pdbentry->pflddes;
-    if(!pflddes) return(-1);
-    if(!pdbentry->precnode || !pdbentry->precnode->precord) return(-1);
-    plink = (DBLINK *)pdbentry->pfield;
-    if(!plink) return(-1);
-    switch (pflddes->field_type) {
-    case DBF_INLINK:
-    case DBF_OUTLINK:
-    case DBF_FWDLINK:
-	if(plink->type == PV_LINK) return(0);
-	if(plink->type != CONSTANT) return(S_dbLib_badLink);
-	free(plink->value.constantStr);
-	plink->type = PV_LINK;
-	plink->value.pv_link.pvlMask = 0;
-	plink->value.pv_link.pvname = 0;
-	return(0);
-    default:
-	epicsPrintf("dbCvtLinkToPvlink called for non link field\n");
-    }
-    return(S_dbLib_badLink);
-}
-
 void  dbDumpPath(DBBASE *pdbbase)
 {
     ELLLIST	*ppathList;

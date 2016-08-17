@@ -13,6 +13,22 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Microsoft Visual Studio builds</h3>
+
+<p>The build configuration files for builds using the Microsoft compilers have
+been updated, although there should be no noticable difference at most sites.
+One extra compiler warning is now being suppressed for C++ code, <tt>C4344:
+behavior change: use of explicit template arguments results in ...</tt> which is
+gratuitous and was appearing frequently in builds of the EPICS V4 modules.</p>
+
+<p>Cross-builds of the windows-x64 target from a win32-x86 host have been
+removed as they don't actually work within the context of a single <tt>make</tt>
+run. Significant changes to the build configuration files would be necessary for
+these kinds of cross-builds to work properly, which could be done if someone
+needs them (email Andrew Johnson before working on this, and see
+<a href="http://stackoverflow.com/questions/5807647/how-do-you-compile-32-bit-and-64-bit-applications-at-the-same-time-in-visual-stu">
+this stack-overflow answer</a> for a starting point).</p>
+
 <h3>Bazaar keywords such as 'Revision-Id' removed</h3>
 
 <p>In preparation for moving to git in place of the Bazaar revision control

@@ -2039,6 +2039,9 @@ char * dbGetString(DBENTRY *pdbentry)
 		    dbMsgCpy(pdbentry, "");
 		}
 		break;
+	    case JSON_LINK:
+		dbMsgCpy(pdbentry, plink->value.json.string);
+		break;
 	    case PV_LINK:
 	    case CA_LINK:
 	    case DB_LINK: {
@@ -2264,6 +2267,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
+        /* FIXME Parse JSON object here */
         pinfo->ltype = JSON_LINK;
 	return 0;
     }
@@ -2333,6 +2337,7 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
     /* Link may be an array constant */
     if (pstr[0] == '[' && pstr[len-1] == ']' &&
         (strchr(pstr, ',') || strchr(pstr, '"'))) {
+        /* FIXME Parse JSON array here */
         pinfo->ltype = CONSTANT;
         return 0;
     }

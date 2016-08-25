@@ -18,5 +18,5 @@ LOADABLE_SHRLIB_LDFLAGS = -shared -Wl,--out-implib,$(LIB_PREFIX)$*$(LIB_SUFFIX)
 # Don't link with gcc library
 GNU_LDLIBS_YES =
 
-# Link with winsock2
-OP_SYS_LDLIBS = -lws2_32
+# Link with system libraries
+OP_SYS_LDLIBS = -lws2_32 -ladvapi32 -luser32 -lkernel32 -lwinmm

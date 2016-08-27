@@ -114,11 +114,8 @@ static long init_record(mbbiDirectRecord *prec, int pass)
         return S_dev_missingSup;
     }
 
-    if (prec->siml.type == CONSTANT)
-        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-
-    if (prec->siol.type == CONSTANT)
-        recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_USHORT, &prec->sval);
 
     /* Initialize MASK if the user set NOBT instead */
     if (prec->mask == 0 && prec->nobt <= 32)

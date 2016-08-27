@@ -183,13 +183,8 @@ static long init_record(histogramRecord *prec, int pass)
 
     wdogInit(prec);
 
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-    }
-
-    if (prec->siol.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
-    }
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_DOUBLE, &prec->sval);
 
     /* must have device support defined */
     pdset = (struct histogramdset *) prec->dset;

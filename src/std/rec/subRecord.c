@@ -101,9 +101,7 @@ static long init_record(subRecord *prec, int pass)
     plink = &prec->inpa;
     pvalue = &prec->a;
     for (i = 0; i < INP_ARG_MAX; i++, plink++, pvalue++) {
-        if (plink->type == CONSTANT) {
-            recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
-        }
+        recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
     }
 
     if (prec->inam[0]) {

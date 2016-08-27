@@ -68,7 +68,9 @@ static long read_wf(waveformRecord *prec)
 
     if (!status && nRequest > 0) {
         prec->nord = nRequest;
-        if (prec->tsel.type == CONSTANT &&
+        prec->udf = FALSE;
+
+        if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     }

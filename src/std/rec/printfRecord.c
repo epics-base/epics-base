@@ -46,7 +46,7 @@
     VALTYPE val; \
     int ok; \
 \
-    if (plink->type == CONSTANT) \
+    if (dbLinkIsConstant(plink)) \
         ok = recGblInitConstantLink(plink++, DBRTYPE, &val); \
     else \
         ok = ! dbGetLink(plink++, DBRTYPE, &val, 0, 0); \
@@ -113,7 +113,7 @@ static void doPrintf(printfRecord *prec)
                         epicsInt16 i;
                         int ok;
 
-                        if (plink->type == CONSTANT)
+                        if (dbLinkIsConstant(plink))
                             ok = recGblInitConstantLink(plink++, DBR_SHORT, &i);
                         else
                             ok = ! dbGetLink(plink++, DBR_SHORT, &i, 0, 0);
@@ -203,8 +203,8 @@ static void doPrintf(printfRecord *prec)
                     }
                     break;
 
-                case 's':
-                    if (flags & F_LONG && plink->type != CONSTANT) {
+                case 's':   /* FIXME: const strings are now supported */
+                    if (flags & F_LONG && !dbLinkIsConstant(plink)) {
                         long n = vspace + 1;
 
                         if (precision && n > precision)
@@ -252,7 +252,7 @@ static void doPrintf(printfRecord *prec)
                         char val[MAX_STRING_SIZE];
                         int ok;
 
-                        if (plink->type == CONSTANT)
+                        if (dbLinkIsConstant(plink))
                             ok = recGblInitConstantLink(plink++, DBR_STRING, val);
                         else
                             ok = ! dbGetLink(plink++, DBR_STRING, val, 0, 0);

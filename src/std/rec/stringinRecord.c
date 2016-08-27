@@ -95,33 +95,33 @@ static long readValue(stringinRecord *);
 static long init_record(stringinRecord *prec, int pass)
 {
     STATIC_ASSERT(sizeof(prec->oval)==sizeof(prec->val));
-    struct stringindset *pdset;
-    long status;
+    struct stringindset *pdset = (struct stringindset *) prec->dset;
 
-    if (pass==0) return(0);
+    if (pass==0)
+        return 0;
 
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_STRING, prec->sval);
+
+    if (!pdset) {
+        recGblRecordError(S_dev_noDSET, prec, "stringin: init_record");
+        return S_dev_noDSET;
     }
 
-    if (prec->siol.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siol,DBF_STRING,prec->sval);
-    } 
-
-    if(!(pdset = (struct stringindset *)(prec->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)prec,"stringin: init_record");
-	return(S_dev_noDSET);
-    }
     /* must have read_stringin function defined */
-    if( (pdset->number < 5) || (pdset->read_stringin == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)prec,"stringin: init_record");
-	return(S_dev_missingSup);
+    if ((pdset->number < 5) || (pdset->read_stringin == NULL)) {
+        recGblRecordError(S_dev_missingSup, prec, "stringin: init_record");
+        return S_dev_missingSup;
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+
+    if (pdset->init_record) {
+        long status = pdset->init_record(prec);
+
+        if (status)
+            return status;
     }
-    strcpy(prec->oval,prec->val);
-    return(0);
+    strcpy(prec->oval, prec->val);
+    return 0;
 }
 
 /*

@@ -52,7 +52,7 @@ epicsExportAddress(dset,devAaoSoft);
 
 static long init_record(aaoRecord *prec)
 {
-    if (prec->out.type == CONSTANT) {
+    if (dbLinkIsConstant(&prec->out)) {
         prec->nord = 0;
     }
     return 0;

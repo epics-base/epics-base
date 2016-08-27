@@ -29,7 +29,7 @@ static long read_string(lsiRecord *prec)
     long status = dbGetLinkLS(&prec->inp, prec->val, prec->sizv, &prec->len);
 
     if (!status &&
-        prec->tsel.type == CONSTANT &&
+        dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(&prec->inp, &prec->time);
 

@@ -48,16 +48,14 @@ epicsExportAddress(dset, devBiSoftRaw);
 
 static long init_record(biRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
-    }
+    recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
     return 0;
 }
 
 static long read_bi(biRecord *prec)
 {
     if (!dbGetLink(&prec->inp, DBR_ULONG, &prec->rval, 0, 0) &&
-        prec->tsel.type == CONSTANT &&
+        dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(&prec->inp, &prec->time);
 

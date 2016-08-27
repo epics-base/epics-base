@@ -48,10 +48,9 @@ epicsExportAddress(dset, devLiSoft);
 
 static long init_record(longinRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        if (recGblInitConstantLink(&prec->inp, DBF_LONG, &prec->val))
-            prec->udf = FALSE;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_LONG, &prec->val))
+        prec->udf = FALSE;
+
     return 0;
 }
 
@@ -61,7 +60,7 @@ static long read_longin(longinRecord *prec)
 
     status = dbGetLink(&prec->inp, DBR_LONG, &prec->val, 0, 0);
     if (!status &&
-        prec->tsel.type == CONSTANT &&
+        dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(&prec->inp, &prec->time);
     return status;

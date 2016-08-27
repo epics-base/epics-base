@@ -48,10 +48,16 @@ epicsExportAddress(dset, devSASoft);
 
 static long init_record(subArrayRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        prec->nord = 0;
+    long nelm = prec->nelm;
+    long status = dbLoadLinkArray(&prec->inp, prec->ftvl, prec->bptr, &nelm);
+
+    if (!status && nelm > 0) {
+        prec->nord = nelm;
+        prec->udf = FALSE;
     }
-    return 0;
+    else
+        prec->nord = 0;
+    return status;
 }
 
 static long read_sa(subArrayRecord *prec)
@@ -62,7 +68,7 @@ static long read_sa(subArrayRecord *prec)
     if (nRequest > prec->malm)
         nRequest = prec->malm;
 
-    if (prec->inp.type == CONSTANT)
+    if (dbLinkIsConstant(&prec->inp))
         nRequest = prec->nord;
     else
         dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
@@ -81,7 +87,7 @@ static long read_sa(subArrayRecord *prec)
     prec->nord = ecount;
 
     if (nRequest > 0 &&
-        prec->tsel.type == CONSTANT &&
+        dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(&prec->inp, &prec->time);
 

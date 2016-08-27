@@ -92,22 +92,19 @@ static long init_record(selRecord *prec, int pass)
     int i;
     double *pvalue;
 
-    if (pass==0) return(0);
+    if (pass==0)
+        return 0;
 
     /* get seln initial value if nvl is a constant*/
-    if (prec->nvl.type == CONSTANT ) {
-	recGblInitConstantLink(&prec->nvl,DBF_USHORT,&prec->seln);
-    }
+    recGblInitConstantLink(&prec->nvl, DBF_USHORT, &prec->seln);
 
     plink = &prec->inpa;
     pvalue = &prec->a;
-    for(i=0; i<SEL_MAX; i++, plink++, pvalue++) {
-	*pvalue = epicsNAN;
-	if (plink->type==CONSTANT) {
-	    recGblInitConstantLink(plink,DBF_DOUBLE,pvalue);
-	}
+    for (i=0; i<SEL_MAX; i++, plink++, pvalue++) {
+        *pvalue = epicsNAN;
+        recGblInitConstantLink(plink, DBF_DOUBLE, pvalue);
     }
-    return(0);
+    return 0;
 }
 
 static long process(selRecord *prec)

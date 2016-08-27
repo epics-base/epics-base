@@ -100,13 +100,8 @@ static long init_record(eventRecord *prec, int pass)
 
     if (pass==0) return(0);
 
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
-
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_STRING,&prec->sval);
-    }
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_STRING, &prec->sval);
 
     prec->epvt = eventNameToHandle(prec->val);
 

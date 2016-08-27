@@ -111,9 +111,7 @@ static long init_record(waveformRecord *prec, int pass)
         return 0;
     }
 
-    if (prec->siml.type == CONSTANT) {
-        recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
+    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
 
     /* must have dset defined */
     if (!(pdset = (struct wfdset *)(prec->dset))) {
@@ -313,7 +311,7 @@ static long readValue(waveformRecord *prec)
         return (*pdset->read_wf)(prec);
     }
 
-    status = dbGetLink(&(prec->siml), DBR_ENUM, &(prec->simm),0,0);
+    status = dbGetLink(&prec->siml, DBR_ENUM, &prec->simm, 0, 0);
     if (status)
         return status;
 
@@ -329,9 +327,9 @@ static long readValue(waveformRecord *prec)
     if (prec->simm == menuYesNoYES){
         long nRequest = prec->nelm;
 
-        status = dbGetLink(&(prec->siol), prec->ftvl, prec->bptr, 0, &nRequest);
+        status = dbGetLink(&prec->siol, prec->ftvl, prec->bptr, 0, &nRequest);
         /* nord set only for db links: needed for old db_access */
-        if (prec->siol.type != CONSTANT) {
+        if (!dbLinkIsConstant(&prec->siol)) {
             prec->nord = nRequest;
             db_post_events(prec, &prec->nord, DBE_VALUE | DBE_LOG);
             if (status == 0)

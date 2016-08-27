@@ -118,13 +118,11 @@ static long init_record(seqRecord *prec, int pass)
     callbackSetUser(pseqRecPvt, &pseqRecPvt->callback);
     prec->dpvt = pseqRecPvt;
 
-    if (prec->sell.type == CONSTANT)
-        recGblInitConstantLink(&prec->sell, DBF_USHORT, &prec->seln);
+    recGblInitConstantLink(&prec->sell, DBF_USHORT, &prec->seln);
 
     grp = (linkGrp *) &prec->dly0;
     for (index = 0; index < NUM_LINKS; index++, grp++) {
-        if (grp->dol.type == CONSTANT)
-            recGblInitConstantLink(&grp->dol, DBF_DOUBLE, &grp->dov);
+        recGblInitConstantLink(&grp->dol, DBF_DOUBLE, &grp->dov);
     }
 
     prec->oldn = prec->seln;
@@ -150,8 +148,7 @@ static long process(seqRecord *prec)
         lmask = (1 << NUM_LINKS) - 1;
     else {
         /* Get SELN value */
-        if (prec->sell.type != CONSTANT)
-            dbGetLink(&prec->sell, DBR_USHORT, &prec->seln, 0, 0);
+        dbGetLink(&prec->sell, DBR_USHORT, &prec->seln, 0, 0);
 
         if (prec->selm == seqSELM_Specified) {
             int grpn = prec->seln + prec->offs;
@@ -185,7 +182,8 @@ static long process(seqRecord *prec)
     pgrp = (linkGrp *) &prec->dly0;
     for (i = 0; lmask; lmask >>= 1) {
         if ((lmask & 1) &&
-            (pgrp->lnk.type != CONSTANT || pgrp->dol.type != CONSTANT)) {
+            (!dbLinkIsConstant(&pgrp->lnk) ||
+             !dbLinkIsConstant(&pgrp->dol))) {
             pcb->grps[i++] = pgrp;
         }
         pgrp++;

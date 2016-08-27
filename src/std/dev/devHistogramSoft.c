@@ -52,10 +52,9 @@ epicsExportAddress(dset,devHistogramSoft);
 
 static long init_record(histogramRecord	*prec)
 {
-    if (prec->svl.type == CONSTANT) {
-        if(recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
-            prec->udf = FALSE;
-    }
+    if (recGblInitConstantLink(&prec->svl,DBF_DOUBLE,&prec->sgnl))
+        prec->udf = FALSE;
+
     return 0;
 }
 

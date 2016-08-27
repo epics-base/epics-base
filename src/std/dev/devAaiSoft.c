@@ -78,16 +78,16 @@ static long init_record(aaiRecord *prec)
 static long read_aai(aaiRecord *prec)
 {
     long nRequest = prec->nelm;
+    long status = dbGetLink(prec->simm == menuYesNoYES ? &prec->siol :
+        &prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
 
-    dbGetLink(prec->simm == menuYesNoYES ? &prec->siol : &prec->inp,
-        prec->ftvl, prec->bptr, 0, &nRequest);
-    if (nRequest > 0) {
+    if (!status && nRequest > 0) {
         prec->nord = nRequest;
-        prec->udf=FALSE;
-        if (prec->tsel.type == CONSTANT &&
+        prec->udf = FALSE;
+
+        if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     }
-
-    return 0;
+    return status;
 }

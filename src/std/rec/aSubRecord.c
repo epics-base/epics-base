@@ -121,22 +121,17 @@ static long init_record(aSubRecord *prec, int pass)
     }
 
     /* Initialize the Subroutine Name Link */
-    if (prec->subl.type == CONSTANT) {
-        recGblInitConstantLink(&prec->subl, DBF_STRING, prec->snam);
-    }
+    recGblInitConstantLink(&prec->subl, DBF_STRING, prec->snam);
 
     /* Initialize Input Links */
     for (i = 0; i < NUM_ARGS; i++) {
         struct link *plink = &(&prec->inpa)[i];
+        short dbr = (&prec->fta)[i];
+        long n = (&prec->noa)[i];
 
-        if (plink->type == CONSTANT) {
-            short dbr = (&prec->fta)[i];
-            long n = (&prec->noa)[i];
-
-            dbLoadLinkArray(plink, dbr, (&prec->a)[i], &n);
-            if (n > 0)
-                (&prec->nea)[i] = n;
-        }
+        dbLoadLinkArray(plink, dbr, (&prec->a)[i], &n);
+        if (n > 0)
+            (&prec->nea)[i] = n;
     }
 
     /* Call the user initialization routine if there is one */

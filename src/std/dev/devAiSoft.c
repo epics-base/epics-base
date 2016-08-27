@@ -51,19 +51,15 @@ epicsExportAddress(dset, devAiSoft);
 
 static long init_record(aiRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        if (recGblInitConstantLink(&prec->inp, DBF_DOUBLE, &prec->val))
-            prec->udf = FALSE;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_DOUBLE, &prec->val))
+        prec->udf = FALSE;
+
     return 0;
 }
 
 static long read_ai(aiRecord *prec)
 {
     double val;
-
-    if (prec->inp.type == CONSTANT)
-        return 2;
 
     if (!dbGetLink(&prec->inp, DBR_DOUBLE, &val, 0, 0)) {
 
@@ -76,7 +72,7 @@ static long read_ai(aiRecord *prec)
         prec->udf = FALSE;
         prec->dpvt = &devAiSoft;        /* Any non-zero value */
 
-        if (prec->tsel.type == CONSTANT &&
+        if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     } else {

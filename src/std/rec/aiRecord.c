@@ -111,13 +111,8 @@ static long init_record(void *precord,int pass)
 
     if (pass==0) return(0);
 
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
-    }
-
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
-    }
+    recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siol,DBF_DOUBLE,&prec->sval);
 
     if(!(pdset = (aidset *)(prec->dset))) {
 	recGblRecordError(S_dev_noDSET,(void *)prec,"ai: init_record");

@@ -48,10 +48,8 @@ epicsExportAddress(dset, devEventSoft);
 
 static long init_record(eventRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        if (recGblInitConstantLink(&prec->inp, DBF_STRING, &prec->val))
-            prec->udf = FALSE;
-    }
+    if (recGblInitConstantLink(&prec->inp, DBF_STRING, &prec->val))
+        prec->udf = FALSE;
     return 0;
 }
 
@@ -60,7 +58,7 @@ static long read_event(eventRecord *prec)
     long status;
     char newEvent[MAX_STRING_SIZE];
 
-    if (prec->inp.type != CONSTANT) {
+    if (!dbLinkIsConstant(&prec->inp)) {
         status = dbGetLink(&prec->inp, DBR_STRING, newEvent, 0, 0);
         if (status) return status;
         if (strcmp(newEvent, prec->val) != 0) {
@@ -69,7 +67,7 @@ static long read_event(eventRecord *prec)
         }
     }
     prec->udf = FALSE;
-    if (prec->tsel.type == CONSTANT &&
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
         dbGetTimeStamp(&prec->inp, &prec->time);
     return 0;

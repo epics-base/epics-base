@@ -106,8 +106,7 @@ static long process(fanoutRecord *prec)
     case fanoutSELM_All:
         plink = &prec->lnk0;
         for (i = 0; i < NLINKS; i++, plink++) {
-            if (plink->type != CONSTANT)
-                dbScanFwdLink(plink);
+            dbScanFwdLink(plink);
         }
         break;
 
@@ -134,7 +133,7 @@ static long process(fanoutRecord *prec)
             break;
         plink = &prec->lnk0;
         for (i = 0; i < NLINKS; i++, seln >>= 1, plink++) {
-            if (seln & 1 && plink->type != CONSTANT)
+            if (seln & 1)
                 dbScanFwdLink(plink);
         }
         break;

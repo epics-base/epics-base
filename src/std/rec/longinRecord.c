@@ -98,35 +98,36 @@ static long readValue(longinRecord *prec);
 
 static long init_record(longinRecord *prec, int pass)
 {
-    struct longindset *pdset;
-    long status;
+    struct longindset *pdset = (struct longindset *) prec->dset;
 
-    if (pass==0) return(0);
+    if (pass==0)
+        return(0);
 
-    if (prec->siml.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siml,DBF_USHORT,&prec->simm);
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    recGblInitConstantLink(&prec->siol, DBF_LONG, &prec->sval);
+
+    if (!pdset) {
+        recGblRecordError(S_dev_noDSET, prec, "longin: init_record");
+        return S_dev_noDSET;
     }
 
-    if (prec->siol.type == CONSTANT) {
-	recGblInitConstantLink(&prec->siol,DBF_LONG,&prec->sval);
-    }
-
-    if(!(pdset = (struct longindset *)(prec->dset))) {
-	recGblRecordError(S_dev_noDSET,(void *)prec,"longin: init_record");
-	return(S_dev_noDSET);
-    }
     /* must have read_longin function defined */
-    if( (pdset->number < 5) || (pdset->read_longin == NULL) ) {
-	recGblRecordError(S_dev_missingSup,(void *)prec,"longin: init_record");
-	return(S_dev_missingSup);
+    if ((pdset->number < 5) || (pdset->read_longin == NULL)) {
+        recGblRecordError(S_dev_missingSup, prec, "longin: init_record");
+        return S_dev_missingSup;
     }
-    if( pdset->init_record ) {
-	if((status=(*pdset->init_record)(prec))) return(status);
+
+    if (pdset->init_record) {
+        long status = pdset->init_record(prec);
+
+        if (status)
+            return status;
     }
+
     prec->mlst = prec->val;
     prec->alst = prec->val;
     prec->lalm = prec->val;
-    return(0);
+    return 0;
 }
 
 static long process(longinRecord *prec)

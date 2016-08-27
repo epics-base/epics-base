@@ -48,11 +48,12 @@ epicsExportAddress(dset, devMbbiSoftRaw);
 
 static long init_record(mbbiRecord *prec)
 {
-    if (prec->inp.type == CONSTANT) {
-        recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
-    }
-    /*to preserve old functionality*/
-    if (prec->nobt == 0) prec->mask = 0xffffffff;
+    recGblInitConstantLink(&prec->inp, DBF_ULONG, &prec->rval);
+
+    /* Preserve old functionality*/
+    if (prec->nobt == 0)
+        prec->mask = 0xffffffff;
+
     prec->mask <<= prec->shft;
     return 0;
 }
@@ -61,7 +62,7 @@ static long read_mbbi(mbbiRecord *prec)
 {
     if (!dbGetLink(&prec->inp, DBR_LONG, &prec->rval, 0, 0)) {
         prec->rval &= prec->mask;
-        if (prec->tsel.type == CONSTANT &&
+        if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
             dbGetTimeStamp(&prec->inp, &prec->time);
     }

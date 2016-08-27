@@ -116,12 +116,9 @@ static long init_record(mbboDirectRecord *prec, int pass)
         return S_dev_missingSup;
     }
 
-    if (prec->siml.type == CONSTANT)
-        recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
-
-    if (prec->dol.type == CONSTANT)
-        if (recGblInitConstantLink(&prec->dol, DBF_USHORT, &prec->val))
-            prec->udf = FALSE;
+    recGblInitConstantLink(&prec->siml, DBF_USHORT, &prec->simm);
+    if (recGblInitConstantLink(&prec->dol, DBF_USHORT, &prec->val))
+        prec->udf = FALSE;
 
     /* Initialize MASK if the user set NOBT instead */
     if (prec->mask == 0 && prec->nobt <= 32)
@@ -175,7 +172,7 @@ static long process(mbboDirectRecord *prec)
     }
 
     if (!pact) {
-        if (prec->dol.type != CONSTANT &&
+        if (!dbLinkIsConstant(&prec->dol) &&
             prec->omsl == menuOmslclosed_loop) {
             epicsUInt16 val;
 

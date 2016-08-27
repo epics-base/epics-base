@@ -256,7 +256,7 @@ void recGblGetTimeStamp(void *pvoid)
     dbCommon* prec = (dbCommon*)pvoid;
     struct link *plink = &prec->tsel;
 
-    if (plink->type != CONSTANT) {
+    if (!dbLinkIsConstant(plink)) {
         struct pv_link *ppv_link = &plink->value.pv_link;
 
         if (ppv_link->pvlMask & pvlOptTSELisTime) {

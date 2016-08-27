@@ -120,6 +120,9 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
         return;
     }
 
+    if (plink->type != PV_LINK)
+        return;
+
     if (plink == &precord->tsel)
         recGblTSELwasModified(plink);
 
@@ -142,10 +145,45 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
     }
 }
 
-long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
+void dbRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     lset *plset = plink->lset;
 
+    if (plset) {
+        if (plset->removeLink)
+            plset->removeLink(locker, plink);
+        plink->lset = NULL;
+    }
+}
+
+int dbLinkIsDefined(const struct link *plink)
+{
+    return (plink->lset != 0);
+}
+
+int dbLinkIsConstant(const struct link *plink)
+{
+    lset *plset = plink->lset;
+
+    if (plset)
+        return plset->isConstant;
+
+    return -1;
+}
+
+int dbLinkIsVolatile(const struct link *plink)
+{
+    lset *plset = plink->lset;
+
+    if (plset)
+        return plset->isVolatile;
+
+    return -1;
+}
+
+long dbLoadLink(struct link *plink, short dbrType, void *pbuffer)
+{
+    lset *plset = plink->lset;
 
     if (plset && plset->loadScalar)
         return plset->loadScalar(plink, dbrType, pbuffer);
@@ -162,17 +200,6 @@ long dbLoadLinkArray(struct link *plink, short dbrType, void *pbuffer,
         return plset->loadArray(plink, dbrType, pbuffer, pnRequest);
 
     return S_db_noLSET;
-}
-
-void dbRemoveLink(struct dbLocker *locker, struct link *plink)
-{
-    lset *plset = plink->lset;
-
-    if (plset) {
-        if (plset->removeLink)
-            plset->removeLink(locker, plink);
-        plink->lset = NULL;
-    }
 }
 
 int dbIsLinkConnected(const struct link *plink)

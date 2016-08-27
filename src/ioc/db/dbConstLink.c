@@ -85,6 +85,7 @@ static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
 }
 
 static lset dbConst_lset = {
+    1, 0, /* Constant, not Volatile */
     NULL,
     dbConstLoadScalar,
     dbConstLoadArray,

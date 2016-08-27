@@ -20,6 +20,152 @@
 
 -->
 
+<h3>Device Support Address Type <tt>JSON_LINK</tt></h3>
+
+<p>Device support may be written to expect hardware addresses in the new
+<tt>JSON_LINK</tt> address type. Addresses loaded from a database file will be
+checked against the JSON rules, and a strict JSON representation of the result
+is provided as a C string pointed to by <tt>link.value.json.string</tt>.</p>
+
+<p>Currently the device support is responsible for parsing the JSON text itself.
+An event-driven JSON parser library has been included in libCom since Base-3.15,
+<a href="https://lloyd.github.io/yajl/">YAJL (Yet Another JSON Library)</a>
+Version 1.012, <a href="https://lloyd.github.io/yajl/yajl-1.0.12/">documented
+here</a>.</p>
+
+
+<h3>JSON Link Addressing</h3>
+
+<blockquote>
+
+<p><b style="color:red">FIXME</b> text missing here...</p>
+
+<h4>Support routine changes</h4>
+
+<p>For link fields in external record types and soft device support to be able
+to use the new JSON link types properly, the following changes are
+necessary:</p>
+
+<ul>
+
+<li>Make all calls to <tt>recGblInitConstantLink()</tt> unconditional on the
+link type, i.e. change this code:
+
+<pre>
+    if (prec->siml.type == CONSTANT) {
+        recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+    }
+</pre>
+
+into this:
+
+<pre>
+    recGblInitConstantLink(&amp;prec->siml, DBF_USHORT, &amp;prec->simm);
+</pre>
+
+Note that <tt>recGblInitConstantLink()</tt> still returns true if the field was
+successfully initialized from the link.</li>
+
+<li>Code like this:
+
+<pre>
+    if ((prec->dol.type != CONSTANT) &&
+</pre>
+
+should usually become:
+
+<pre>
+    if (!dbLinkIsConstant(&prec->dol) &&
+</pre>
+</li>
+
+<li>Other code that compares a link type with CONSTANT should be modified to
+use the new routine <tt>dbLinkIsConstant(plink)</tt> instead.</li>
+
+<li>Any code that calls dbCa routines directly or that explicitly checks if a
+link has been resolved as a CA link using code such as
+
+<pre>
+    if (plink->type == CA_LINK)
+</pre>
+
+should be modified to use the new generic routines defined in dbLink.h. As an
+example, the calcout record has been modified to use the new dbLink API.</li>
+
+<li>...</li>
+
+</ul>
+
+<p><b style="color:red">FIXME</b> text missing here...</p>
+
+</blockquote>
+
+
+<h3>Constant Link Values</h3>
+
+<p>Previously a constant link (i.e. a link that does not point to another PV,
+either local or over Channel Access) has only been able to provide a numeric
+value; any string found in a link field that was not recognized as a number was
+treated as a PV name. In this release, constant links may contain string values,
+arrays, or even arrays of strings. These are indicated by ...</p>
+
+<p><b style="color:red">FIXME</b> text missing here...</p>
+
+
+<h3>Database Parsing of "Relaxed JSON" Values</h3>
+
+<p>A database file can now provide a "relaxed JSON" value for a database field
+value or an info tag. Only a few field types can currently accept such values,
+but the capability is now available for use in other places in the future. If a
+JSON-capable field is written to at run-time though only strictly compliant JSON
+may be used (the dbStaticLib parser rewrites relaxed JSON values into strict
+JSON before passing them to the datase for interpretation, where the strict
+rules must be followed).</p>
+
+<p>"Relaxed JSON" was developed to maximize compatibility with the previous
+database parser rules and reduce the number of double-quotes that would be
+needed using strict JSON syntax. The parser will also accept strict JSON, which
+should be used when machine-generating database files. The differences are:</p>
+
+<ul>
+
+<li>Strings containing only the characters <tt><b>a-z A-Z 0-9 _ - + .</b></tt>
+do not have to be enclosed in double-quote characters.</li>
+
+<li>The above rule applies to map keys as well as to regular string values.</li>
+
+<li>The JSON keywords <tt>null</tt>, <tt>true</tt> and <tt>false</tt> (all
+lower-case) will be recognized as keywords, so must be quoted to use any of
+these single words as a string.</li>
+
+<li>Comments may be used, introduced as usual by the <tt><b>#</b></tt>
+character and extending to the end of the line.</li>
+
+</ul>
+
+<p>A JSON field or info value is only enclosed in quotes when the value being
+provided is a single string, and even here the quotes can be omitted in some
+cases as described above. The following shows both correct and incorrect
+excerpts from a database file:</p>
+
+<pre>
+    record(ai, math:pi) {
+        field(INP, {const: 3.14159265358979})   # Correct
+        field(SIOL, "{const: 3.142857}")        # Wrong
+
+        info(autosave, {            # White-space and comments are allowed
+            fields:[DESC, SIMM],
+            pass0:[VAL]
+        })                          # Correct
+    }
+</pre>
+
+<p>Note that the record, field and info-tag names do <em>not</em> accept JSON
+values, so they follows the older bareword rules for quoting where the colon
+<tt><b>:</b></tt> and several additional characters are legal in a bareword
+string.</p>
+
+
 <h3>Echoless comments in iocsh</h3>
 
 <p>The way comments are parsed by the iocsh interpreter has changed. The

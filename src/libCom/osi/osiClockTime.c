@@ -23,7 +23,7 @@
 #include "taskwd.h"
 
 #define NSEC_PER_SEC 1000000000
-#define ClockTimeSyncInterval 60.0
+#define ClockTimeSyncInterval_value 60.0
 
 
 static struct {
@@ -31,6 +31,7 @@ static struct {
     int             synchronized;
     epicsEventId    loopEvent;
     epicsTimeStamp  syncTime;
+    double          ClockTimeSyncInterval;
     int             syncFromPriority;
     epicsMutexId    lock;
 } ClockTimePvt;
@@ -74,6 +75,7 @@ static void ClockTime_InitOnce(void *psync)
     ClockTimePvt.synchronize = *(int *)psync;
     ClockTimePvt.loopEvent   = epicsEventMustCreate(epicsEventEmpty);
     ClockTimePvt.lock        = epicsMutexCreate();
+    ClockTimePvt.ClockTimeSyncInterval = 1.0;   /* First sync */
 
     if (ClockTimePvt.synchronize) {
         /* Start the sync thread */
@@ -116,10 +118,10 @@ static void ClockTimeSync(void *dummy)
     taskwdInsert(0, NULL, NULL);
 
     for (epicsEventWaitWithTimeout(ClockTimePvt.loopEvent,
-             ClockTimeSyncInterval);
+             ClockTimePvt.ClockTimeSyncInterval);
          ClockTimePvt.synchronize;
          epicsEventWaitWithTimeout(ClockTimePvt.loopEvent,
-             ClockTimeSyncInterval)) {
+             ClockTimePvt.ClockTimeSyncInterval)) {
         epicsTimeStamp timeNow;
         int priority;
 
@@ -138,6 +140,8 @@ static void ClockTimeSync(void *dummy)
             ClockTimePvt.syncFromPriority = priority;
             ClockTimePvt.syncTime         = timeNow;
             epicsMutexUnlock(ClockTimePvt.lock);
+
+            ClockTimePvt.ClockTimeSyncInterval = ClockTimeSyncInterval_value;
         }
     }
 
@@ -195,7 +199,7 @@ int ClockTime_Report(int level)
                 printf("Last successful sync was at %s\n", lastSync);
             }
             printf("Syncronization interval = %.0f seconds\n",
-                ClockTimeSyncInterval);
+                ClockTimePvt.ClockTimeSyncInterval);
         } else
             printf("OS Clock driver has *not* yet synchronized\n");
 

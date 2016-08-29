@@ -13,6 +13,31 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>General Time updates</h3>
+
+<p>The <tt>iocInit</tt> code now performs a sanity check of the current time
+returned by the generalTime subsystem and will print a warning if the wall-clock
+time returned has not been initialized yet. This is just a warning message; when
+a time provider does synchonize the IOC will subsequently pick up and use the
+correct time. This check code also primes the registered event system provider
+if there is one so the <tt>epicsTimeGetEventInt()</tt> routine will work on IOCs
+that ask for event time within an interrupt service routine.</p>
+
+<p>The osiClockTime provider's synchronization thread (which is only used on
+some embedded targets) will now poll the other time providers at 1Hz until the
+first time it manages to get a successful timestamp, after which it will poll
+for updates every 60 seconds as before.</p>
+
+<p>The routine <tt>generalTimeGetExceptPriority()</tt> was designed for use by
+backup (lower priority) time providers like the osiClockTime provider which do
+not have their own absolute time reference and rely on other providers for an
+absolute time source. This routine no longer implements the ratchet mechanism
+that prevented the time it returned from going backwards. If the backup clock's
+tick-timer runs fast the synchronization of the backup time provider would never
+allow it to be corrected backwards when the ratchet was in place. The regular
+<tt>epicsTimeGetCurrent()</tt> API still uses the ratchet mechanism, so this
+change will not cause the IOC to see time going backwards.</p>
+
 <h3>Microsoft Visual Studio builds</h3>
 
 <p>The build configuration files for builds using the Microsoft compilers have

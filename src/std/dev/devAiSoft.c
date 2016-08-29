@@ -61,6 +61,9 @@ static long read_ai(aiRecord *prec)
 {
     double val;
 
+    if (dbLinkIsConstant(&prec->inp))
+        return 2;
+
     if (!dbGetLink(&prec->inp, DBR_DOUBLE, &val, 0, 0)) {
 
         /* Apply smoothing algorithm */

@@ -3,8 +3,8 @@ use DBD::Base;
 @ISA = qw(DBD::Base);
 
 sub init {
-    my ($this, $name, $lset) = @_;
-    $this->SUPER::init($lset, "link support (lset)");
+    my ($this, $name, $jlif) = @_;
+    $this->SUPER::init($jlif, "link support (jlif)");
     $this->{KEY} = $name;
     return $this;
 }

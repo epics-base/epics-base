@@ -87,9 +87,10 @@ struct pv_link {
     short	lastGetdbrType;	/* last dbrType for DB or CA get */
 };
 
+struct jlink;
 struct json_link {
     char *string;
-    /* ... */
+    struct jlink *jlink;
 };
 
 /* structure of a VME io channel */

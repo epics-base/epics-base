@@ -13,6 +13,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "dbDefs.h"
 
@@ -46,28 +47,41 @@ void dbConstAddLink(struct link *plink)
 
 static long dbConstLoadScalar(struct link *plink, short dbrType, void *pbuffer)
 {
-    if (!plink->value.constantStr)
-        return S_db_badField;
+    const char *pstr = plink->value.constantStr;
+    size_t len;
 
-    /* Constant scalars are always numeric */
+    if (!pstr)
+        return S_db_badField;
+    len = strlen(pstr);
+
+    /* Choice values must be numeric */
     if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
         dbrType = DBF_USHORT;
 
+    if (*pstr == '[' && pstr[len-1] == ']') {
+        /* Convert from JSON array */
+        long nReq = 1;
+
+        return dbPutConvertJSON(pstr, dbrType, pbuffer, &nReq);
+    }
+
     return dbFastPutConvertRoutine[DBR_STRING][dbrType]
-            (plink->value.constantStr, pbuffer, NULL);
+            (pstr, pbuffer, NULL);
 }
 
 static long dbConstLoadArray(struct link *plink, short dbrType, void *pbuffer,
         long *pnReq)
 {
-    if (!plink->value.constantStr)
+    const char *pstr = plink->value.constantStr;
+
+    if (!pstr)
         return S_db_badField;
 
-    /* No support for arrays of choice types */
+    /* Choice values must be numeric */
     if (dbrType == DBF_MENU || dbrType == DBF_ENUM || dbrType == DBF_DEVICE)
-        return S_db_badField;
+        dbrType = DBF_USHORT;
 
-    return dbPutConvertJSON(plink->value.constantStr, dbrType, pbuffer, pnReq);
+    return dbPutConvertJSON(pstr, dbrType, pbuffer, pnReq);
 }
 
 static long dbConstGetNelements(const struct link *plink, long *nelements)

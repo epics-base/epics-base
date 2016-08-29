@@ -1,7 +1,7 @@
-=head1 Link Types
+=head1 JSON Links
 
-Links are an extensible mechanism for adding new kinds of database link,
-using JSON for link addresses.
+JSON Links are an extensible mechanism for adding new kinds of database link,
+using JSON for the link address.
 The following link types are available in this release:
 
 =over
@@ -12,6 +12,8 @@ The following link types are available in this release:
 
 =item * L<Channel Access|/"Channel Access Link ca">
 
+=item * L<Calc|/"Calculation Link calc">
+
 =back
 
 =head2 Using Links
@@ -21,35 +23,36 @@ must appear inside a pair of braces C< {} > expressed as a JSON
 (L<JavaScript Object Notation|http://www.json.org/>) object, which allows link
 parameters to be defined as needed.
 
-Note that due to the required presence of the double-quote characters in the
-JSON strings in a link field value string in a database file, it will usually
-be necessary to escape all double-quote characters in the JSON object by
-preceding them with a backslash C< \ > character.
-Database configuration tools that support this link mechanism must be careful
-to handle these escapes correctly on reading and writing string values from/to
-a .db file.
 
-=head2 Filter Reference
+=head2 Link Type Reference
 
 =cut
 
-link(const,lsetConst)
+link(const, lnkConstIf)
 
 =head3 Constant Link C<"const">
 
-...
+Constant links provide one or more values at link initalization time, but do not return
+any data when their C<getValue()> routine is called. Most record types support the use of
+constant links by calling C<recGblInitConstantLink()> at initialization, which results in
+the constant value being loaded into the target field at that time.
 
 =head4 Parameters
 
-...
+A const link takes a parameter which may be an integer, double or string, or an array of
+those types. If an array contains both integers and double values the integers will be
+promoted to doubles. Mixing strings and numbers in an array will result in an error.
 
-=head4 Example
+=head4 Examples
 
- ...
+ {const: 3.14159265358979}
+ {const: "Pi"}
+ {const: [1, 2.718281828459, 3.14159265358979]}
+ {const: ["One", "e", "Pi"]}
 
 =cut
 
-link(db,lsetDatabase)
+#link(db, lnkDbIf)
 
 =head3 Database Link C<"db">
 
@@ -65,7 +68,7 @@ link(db,lsetDatabase)
 
 =cut
 
-link(ca,lsetChannelAccess)
+#link(ca, lnkCaIf)
 
 =head3 Channel Access Link C<"ca">
 
@@ -82,6 +85,22 @@ link(ca,lsetChannelAccess)
 ...
 
 =back
+
+...
+
+=head4 Example
+
+ ...
+
+=cut
+
+#link(calc, lnkCalcIf)
+
+=head3 Calculation Link C<"calc">
+
+...
+
+=head4 Parameters
 
 ...
 

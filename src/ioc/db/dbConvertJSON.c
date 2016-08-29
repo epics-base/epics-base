@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "dbDefs.h"
+#include "errlog.h"
 #include "yajl_alloc.h"
 #include "yajl_parse.h"
 
@@ -23,7 +24,7 @@ typedef struct parseContext {
     int depth;
     short dbrType;
     short dbrSize;
-    void *pdest;
+    char *pdest;
     int elems;
 } parseContext;
 
@@ -67,8 +68,10 @@ static int dbcj_string(void *ctx, const unsigned char *val, unsigned int len) {
     /* Not attempting to handle char-array fields here, they need more
      * metadata about the field than we have available at the moment.
      */
-    if (parser->dbrType != DBF_STRING)
+    if (parser->dbrType != DBF_STRING) {
+        errlogPrintf("dbPutConvertJSON: String provided, numeric value(s) expected\n");
         return 0; /* Illegal */
+    }
 
     if (parser->elems > 0) {
         if (len > parser->dbrSize - 1)
@@ -82,6 +85,7 @@ static int dbcj_string(void *ctx, const unsigned char *val, unsigned int len) {
 }
 
 static int dbcj_start_map(void *ctx) {
+    errlogPrintf("dbPutConvertJSON: Map type not supported\n");
     return 0;    /* Illegal */
 }
 
@@ -96,7 +100,9 @@ static int dbcj_end_map(void *ctx) {
 static int dbcj_start_array(void *ctx) {
     parseContext *parser = (parseContext *) ctx;
 
-    parser->depth++;
+    if (++parser->depth > 1) 
+        errlogPrintf("dbPutConvertJSON: Embedded arrays not supported\n");
+
     return (parser->depth == 1);
 }
 

@@ -159,6 +159,20 @@ if (%drivers) {
     print $out "};\n\n";
 }
 
+my %links = %{$dbd->links};
+if (%links) {
+    my @links = sort keys %links;
+
+    # Declare the link interfaces
+    print $out wrap('epicsShareExtern jlif ', '    ',
+        join(', ', map {"*pvar_jlif_$_"} @links)), ";\n\n";
+
+    # List of pointers to each link interface
+    print $out "static struct jlif *jlifsl[] = {\n";
+    print $out join(",\n", map {"    pvar_jlif_$_"} @links);
+    print $out "};\n\n";
+}
+
 my @registrars = sort keys %{$dbd->registrars};
 my @functions = sort keys %{$dbd->functions};
 push @registrars, map {"register_func_$_"} @functions;
@@ -232,6 +246,10 @@ END
 
 print $out (<< 'END') if %drivers;
     registerDrivers(pbase, NELEMENTS(drvsl), driverSupportNames, drvsl);
+END
+
+print $out (<< 'END') if %links;
+    registerJLinks(pbase, NELEMENTS(jlifsl), jlifsl);
 END
 
 print $out (<< "END") for @registrars;

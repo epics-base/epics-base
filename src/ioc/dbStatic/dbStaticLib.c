@@ -46,6 +46,7 @@
 #include "special.h"
 
 #include "dbCommon.h"
+#include "dbJLink.h"
 
 int dbStaticDebug = 0;
 static char *pNullString = "";
@@ -122,7 +123,11 @@ void dbFreeLinkContents(struct link *plink)
 	case CONSTANT: free((void *)plink->value.constantStr); break;
 	case MACRO_LINK: free((void *)plink->value.macro_link.macroStr); break;
 	case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
-	case JSON_LINK: parm = plink->value.json.string; break;
+	case JSON_LINK:
+	    if (plink->value.json.jlink)
+		plink->value.json.jlink->pif->free_jlink(plink->value.json.jlink);
+	    parm = plink->value.json.string;
+	    break;
 	case VME_IO: parm = plink->value.vmeio.parm; break;
 	case CAMAC_IO: parm = plink->value.camacio.parm; break;
 	case AB_IO: parm = plink->value.abio.parm; break;
@@ -560,7 +565,7 @@ void dbFreeBase(dbBase *pdbbase)
 	pdrvSup = pdrvSupNext;
     }
     while ((plinkSup = (linkSup *) ellGet(&pdbbase->linkList))) {
-        free(plinkSup->lset_name);
+        free(plinkSup->jlif_name);
         free(plinkSup->name);
         free(plinkSup);
     }
@@ -1086,7 +1091,7 @@ long dbWriteLinkFP(DBBASE *pdbbase, FILE *fp)
     }
     for (plinkSup = (linkSup *) ellFirst(&pdbbase->linkList);
         plinkSup; plinkSup = (linkSup *) ellNext(&plinkSup->node)) {
-	fprintf(fp, "link(%s,%s)\n", plinkSup->name, plinkSup->lset_name);
+	fprintf(fp, "link(%s,%s)\n", plinkSup->name, plinkSup->jlif_name);
     }
     return 0;
 }
@@ -2267,9 +2272,8 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
-        /* FIXME Parse JSON object here */
         pinfo->ltype = JSON_LINK;
-	return 0;
+        return 0;
     }
 
     /* Check for other HW link types */
@@ -2337,7 +2341,6 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
     /* Link may be an array constant */
     if (pstr[0] == '[' && pstr[len-1] == ']' &&
         (strchr(pstr, ',') || strchr(pstr, '"'))) {
-        /* FIXME Parse JSON array here */
         pinfo->ltype = CONSTANT;
         return 0;
     }

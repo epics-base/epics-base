@@ -47,8 +47,8 @@ typedef struct devSup {
 typedef struct linkSup {
 	ELLNODE		node;
 	char 		*name;
-	char		*lset_name;
-	struct lset	*lset;
+	char		*jlif_name;
+	struct jlif	*pjlif;
 } linkSup;
 
 typedef struct dbDeviceMenu {

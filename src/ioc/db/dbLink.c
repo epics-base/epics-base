@@ -37,6 +37,7 @@
 #include "dbDbLink.h"
 #include "db_field_log.h"
 #include "dbFldTypes.h"
+#include "dbJLink.h"
 #include "dbLink.h"
 #include "dbLock.h"
 #include "dbScan.h"
@@ -74,6 +75,11 @@ void dbInitLink(struct link *plink, short dbfType)
 
     if (plink->type == CONSTANT) {
         dbConstInitLink(plink);
+        return;
+    }
+
+    if (plink->type == JSON_LINK) {
+        dbJLinkInit(plink, dbfType);
         return;
     }
 
@@ -117,6 +123,15 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
 
     if (plink->type == CONSTANT) {
         dbConstAddLink(plink);
+        return;
+    }
+
+    if (plink->type == JSON_LINK) {
+        /*
+         * FIXME: Can't create DB links as dbJLink types yet,
+         * dbLock.c doesn't have any way to find/track them.
+         */
+        dbJLinkInit(plink, dbfType);
         return;
     }
 

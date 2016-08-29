@@ -75,7 +75,7 @@ static void dbRecordtypeFieldItem(char *name,char *value);
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
 static void dbDriver(char *name);
-static void dbLinkType(char *name, char *lset_name);
+static void dbLinkType(char *name, char *jlif_name);
 static void dbRegistrar(char *name);
 static void dbFunction(char *name);
 static void dbVariable(char *name, char *type);
@@ -786,7 +786,7 @@ static void dbDriver(char *name)
     ellAdd(&pdbbase->drvList,&pdrvSup->node);
 }
 
-static void dbLinkType(char *name, char *lset_name)
+static void dbLinkType(char *name, char *jlif_name)
 {
     linkSup *pLinkSup;
     GPHENTRY *pgphentry;
@@ -797,7 +797,7 @@ static void dbLinkType(char *name, char *lset_name)
     }
     pLinkSup = dbCalloc(1,sizeof(linkSup));
     pLinkSup->name = epicsStrDup(name);
-    pLinkSup->lset_name = epicsStrDup(lset_name);
+    pLinkSup->jlif_name = epicsStrDup(jlif_name);
     pgphentry = gphAdd(pdbbase->pgpHash, pLinkSup->name, &pdbbase->linkList);
     if (!pgphentry) {
 	yyerrorAbort("gphAdd failed");
@@ -1053,7 +1053,7 @@ static void dbRecordField(char *name,char *value)
         value++;
 	value[strlen(value) - 1] = 0;
     }
-    dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
+    dbTranslateEscape(value, value);    /* in-place; safe & legal */
     status = dbPutString(pdbentry,value);
     if(status) {
 	epicsPrintf("Can't set \"%s.%s\" to \"%s\"\n",

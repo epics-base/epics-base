@@ -32,7 +32,13 @@ typedef enum {
 
 struct link;
 struct lset;
-typedef struct jlink jlink;
+struct jlif;
+
+typedef struct jlink {
+    struct jlif *pif;
+    struct jlink *parent;
+    /* Link types extend or embed this structure for private storage */
+} jlink;
 
 typedef struct jlif {
     const char *name;
@@ -53,12 +59,6 @@ typedef struct jlif {
     struct lset* (*get_lset)(const jlink *);
     void (*report)(const jlink *);
 } jlif;
-
-typedef struct jlink {
-    jlif *pif;
-    jlink *parent;
-    /* Link types extend or embed this structure for private storage */
-} jlink;
 
 epicsShareFunc long dbJLinkInit(struct link *plink, short dbfType);
 

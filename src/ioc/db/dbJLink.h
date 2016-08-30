@@ -42,7 +42,7 @@ typedef struct jlink {
 
 typedef struct jlif {
     const char *name;
-    jlink* (*alloc_jlink)(struct link *);
+    jlink* (*alloc_jlink)(struct link *, short dbfType);
     void (*free_jlink)(jlink *);
     jlif_result (*start_parse)(jlink *);
     jlif_result (*parse_null)(jlink *);

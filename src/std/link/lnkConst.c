@@ -36,7 +36,7 @@
 typedef long (*FASTCONVERT)();
 
 typedef struct clink {
-    struct jlink jlink; /* embedded */
+    jlink jlink;        /* embedded object */
     int nElems;
     enum {s0, si32, sf64, sc40, a0, ai32, af64, ac40} type;
     union {
@@ -55,7 +55,7 @@ static lset lnkConst_lset;
 
 /*************************** jlif Routines **************************/
 
-static jlink* lnkConst_alloc(struct link *plink) {
+static jlink* lnkConst_alloc(struct link *plink, short dbfType) {
     clink *clink = calloc(1, sizeof(struct clink));
 
     IFDEBUG(10)

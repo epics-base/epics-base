@@ -213,7 +213,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
         return jlif_stop;
     }
 
-    pjlink = pjlif->alloc_jlink(parser->plink);
+    pjlink = pjlif->alloc_jlink(parser->plink, parser->dbfType);
     if (!pjlink) {
         errlogPrintf("dbJLinkInit: Out of memory\n");
         return jlif_stop;

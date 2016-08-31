@@ -341,6 +341,35 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
     return status;
 }
 
+static long lnkConst_loadLS(struct link *plink, char *pbuffer, epicsUInt32 size,
+    epicsUInt32 *plen)
+{
+    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+    const char *pstr;
+
+    IFDEBUG(10)
+        printf("lnkConst_loadLS(const@%p, %p, %d, %d)\n",
+            clink, pbuffer, size, *plen);
+
+    switch (clink->type) {
+    case sc40:
+        pstr = clink->value.scalar_string;
+        break;
+
+    case ac40:
+        pstr = clink->value.pstrings[0];
+        break;
+
+    default:
+        return S_db_badField;
+    }
+
+    strncpy(pbuffer, pstr, --size);
+    pbuffer[size] = 0;
+    *plen = (epicsUInt32) strlen(pbuffer) + 1;
+    return 0;
+}
+
 static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         long *pnReq)
 {
@@ -437,7 +466,7 @@ static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
 
 static lset lnkConst_lset = {
     1, 0, /* Constant, not Volatile */
-    NULL, lnkConst_loadScalar, lnkConst_loadArray, NULL,
+    NULL, lnkConst_loadScalar, lnkConst_loadLS, lnkConst_loadArray, NULL,
     NULL, lnkConst_getNelements, lnkConst_getValue,
     NULL, NULL, NULL,
     NULL, NULL,

@@ -37,6 +37,8 @@ typedef struct lset {
 
     /* Const init, data type hinting */
     long (*loadScalar)(struct link *plink, short dbrType, void *pbuffer);
+    long (*loadLS)(struct link *plink, char *pbuffer, epicsUInt32 size,
+            epicsUInt32 *plen);
     long (*loadArray)(struct link *plink, short dbrType, void *pbuffer,
             long *pnRequest);
 

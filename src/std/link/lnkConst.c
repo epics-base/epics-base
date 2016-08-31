@@ -199,12 +199,12 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len) {
     IFDEBUG(10)
         printf("lnkConst_string(const@%p, \"%.*s\")\n", clink, (int) len, val);
 
-    if (len > MAX_STRING_SIZE)
-        len = MAX_STRING_SIZE;
+    switch (clink->type) {
+        char *buf, **vec;
+        int nElems;
 
-    if (clink->type == s0) {
-        char *buf = malloc(len + 1);
-
+    case s0:
+        buf = malloc(len + 1);
         if (!buf)
             return jlif_stop;
 
@@ -214,13 +214,43 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len) {
         clink->nElems = 1;
         clink->type = sc40;
         clink->value.scalar_string = buf;
-        return jlif_continue;
-    }
-    /* FIXME Implement a0 and ac40 */
-    /* FIXME How to handle ai32 and af64? */
-    errlogPrintf("lnkConst: Mixed data types in array\n");
+        break;
 
-    return jlif_stop;
+    case a0:
+        clink->type = ac40;
+        /* fall thorough */
+    case ac40:
+        if (len > MAX_STRING_SIZE)
+            len = MAX_STRING_SIZE;
+
+        buf = malloc(len + 1);
+        if (!buf)
+            return jlif_stop;
+
+        strncpy(buf, val, len);
+        buf[len] = '\0';
+
+        nElems = clink->nElems + 1;
+
+        vec = realloc(clink->value.pmem, nElems * sizeof(char *));
+        if (!vec) {
+            free(buf);
+            break;
+        }
+
+        vec[clink->nElems++] = buf;
+        clink->value.pstrings = vec;
+        break;
+
+    case af64:
+    case ai32:
+        errlogPrintf("lnkConst: Mixed data types in array\n");
+        /* fall thorough */
+    default:
+        return jlif_stop;
+    }
+
+    return jlif_continue;
 }
 
 static jlif_result lnkConst_start_array(jlink *pjlink) {
@@ -298,6 +328,11 @@ static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer
             (clink->value.pdoubles, pbuffer, NULL);
         break;
 
+    case ac40:
+        status = dbFastPutConvertRoutine[DBF_STRING][dbrType]
+            (clink->value.pstrings[0], pbuffer, NULL);
+        break;
+
     default:
         status = S_db_badField;
         break;
@@ -354,6 +389,15 @@ static long lnkConst_loadArray(struct link *plink, short dbrType, void *pbuffer,
         conv = dbFastPutConvertRoutine[DBF_DOUBLE][dbrType];
         for (i = 0; i < nElems; i++) {
             conv(&clink->value.pdoubles[i], pdest, NULL);
+            pdest += dbrSize;
+        }
+        status = 0;
+        break;
+
+    case ac40:
+        conv = dbFastPutConvertRoutine[DBF_STRING][dbrType];
+        for (i = 0; i < nElems; i++) {
+            conv(clink->value.pstrings[i], pdest, NULL);
             pdest += dbrSize;
         }
         status = 0;

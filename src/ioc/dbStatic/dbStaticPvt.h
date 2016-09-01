@@ -16,6 +16,8 @@
 #ifndef INCdbStaticPvth
 #define INCdbStaticPvth 1
 
+#include "dbJLink.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,15 +42,19 @@ typedef struct dbLinkInfo {
     short ltype;
 
     /* full link string for CONSTANT and PV_LINK,
-     * parm string for HW links*/
+     * parm string for HW links, JSON for JSON_LINK
+     */
     char *target;
 
     /* for PV_LINK */
     short modifiers;
 
-    /* HW links */
+    /* for HW links */
     char hwid[6]; /* one extra element for a nil */
     int  hwnums[5];
+
+    /* for JSON_LINK */
+    jlink *jlink;
 } dbLinkInfo;
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);

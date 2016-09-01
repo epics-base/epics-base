@@ -55,7 +55,7 @@ static lset lnkConst_lset;
 
 /*************************** jlif Routines **************************/
 
-static jlink* lnkConst_alloc(struct link *plink, short dbfType) {
+static jlink* lnkConst_alloc(short dbfType) {
     clink *clink = calloc(1, sizeof(struct clink));
 
     IFDEBUG(10)
@@ -275,9 +275,9 @@ static jlif_result lnkConst_end_array(jlink *pjlink) {
     return jlif_continue;
 }
 
-static struct lset* lnkConst_get_lset(const jlink *pjlink) {
+static struct lset* lnkConst_get_lset(const jlink *pjlink, struct link *plink) {
     IFDEBUG(10)
-        printf("lnkConst_get_lset(const@%p)\n", pjlink);
+        printf("lnkConst_get_lset(const@%p, %p)\n", pjlink, plink);
 
     return &lnkConst_lset;
 }

@@ -10,6 +10,7 @@
 #ifndef INC_registryJLinks_H
 #define INC_registryJLinks_H
 
+#include "dbBase.h"
 #include "dbJLink.h"
 #include "shareLib.h"
 
@@ -17,8 +18,7 @@
 extern "C" {
 #endif
 
-epicsShareFunc int registryJLinkAdd(jlif *pjlif);
-epicsShareFunc jlif * registryJLinkFind(const char *name);
+epicsShareFunc int registryJLinkAdd(DBBASE *pbase, jlif *pjlif);
 
 #ifdef __cplusplus
 }

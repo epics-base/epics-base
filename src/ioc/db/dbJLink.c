@@ -37,7 +37,6 @@
 typedef struct parseContext {
     jlink *pjlink;
     jlink *product;
-    struct link *plink;
     short dbfType;
     short jsonDepth;
     short linkDepth;
@@ -56,12 +55,23 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
             parser->jsonDepth, parser->linkDepth, parser->key_is_link);
     }
 
+    if (result == jlif_stop && pjlink) {
+        jlink *parent;
+
+        while ((parent = pjlink->parent)) {
+            pjlink->pif->free_jlink(pjlink);
+            pjlink = parent;
+        }
+        pjlink->pif->free_jlink(pjlink);
+    }
+
     if (result == jlif_stop || parser->linkDepth > 0)
         return result;
 
     parser->product = pjlink;
     parser->key_is_link = 0;
-    parser->pjlink = pjlink->parent;
+    if (pjlink)
+        parser->pjlink = pjlink->parent;
 
     IFDEBUG(8)
         printf("dbjl_value: product = %p\n", pjlink);
@@ -172,8 +182,8 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
 
     if (!parser->key_is_link) {
         if (!pjlink) {
-            errlogPrintf("dbJLinkInit: Illegal second link key '%.*s' seen for %s\n",
-                len, key, parser->plink->precord->name);
+            errlogPrintf("dbJLinkInit: Illegal second link key '%.*s'\n",
+                len, key);
             return jlif_stop;
         }
 
@@ -201,8 +211,8 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
 
     linkSup = dbFindLinkSup(pdbbase, link_name);
     if (!linkSup) {
-        errlogPrintf("dbJLinkInit: Link type '%s' not found for %s\n",
-            link_name, parser->plink->precord->name);
+        errlogPrintf("dbJLinkInit: Link type '%s' not found\n",
+            link_name);
         return jlif_stop;
     }
 
@@ -213,7 +223,7 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
         return jlif_stop;
     }
 
-    pjlink = pjlif->alloc_jlink(parser->plink, parser->dbfType);
+    pjlink = pjlif->alloc_jlink(parser->dbfType);
     if (!pjlink) {
         errlogPrintf("dbJLinkInit: Out of memory\n");
         return jlif_stop;
@@ -307,22 +317,21 @@ static yajl_callbacks dbjl_callbacks = {
 static const yajl_parser_config dbjl_config =
     { 0, 0 }; /* allowComments = NO, checkUTF8 = NO */
 
-long dbJLinkInit(struct link *plink, short dbfType)
+long dbJLinkParse(const char *json, size_t jlen, short dbfType,
+    jlink **ppjlink)
 {
     parseContext context, *parser = &context;
     yajl_alloc_funcs dbjl_allocs;
     yajl_handle yh;
     yajl_status ys;
-    const char *json = plink->value.json.string;
-    size_t jlen = strlen(json);
     long status;
 
     IFDEBUG(10)
-        printf("dbJLinkInit(\"%s.????\", %d)\n", plink->precord->name, dbfType);
+        printf("dbJLinkInit(\"%.*s\", %d, %p)\n",
+            (int) jlen, json, dbfType, ppjlink);
 
     parser->pjlink = NULL;
     parser->product = NULL;
-    parser->plink = plink;
     parser->dbfType = dbfType;
     parser->jsonDepth = 0;
     parser->linkDepth = 0;
@@ -343,14 +352,10 @@ long dbJLinkInit(struct link *plink, short dbfType)
 
     switch (ys) {
         unsigned char *err;
-        jlink *pjlink;
 
     case yajl_status_ok:
         assert(parser->jsonDepth == 0);
-        pjlink = parser->product;
-        assert(pjlink);
-        plink->value.json.jlink = pjlink;
-        plink->lset = pjlink->pif->get_lset(pjlink);
+        *ppjlink = parser->product;
         status = 0;
         break;
 
@@ -367,4 +372,15 @@ long dbJLinkInit(struct link *plink, short dbfType)
     return status;
 }
 
+long dbJLinkInit(struct link *plink)
+{
+    jlink *pjlink;
 
+    assert(plink);
+    pjlink = plink->value.json.jlink;
+
+    if (pjlink)
+        plink->lset = pjlink->pif->get_lset(pjlink, plink);
+
+    return 0;
+}

@@ -42,7 +42,7 @@ typedef struct jlink {
 
 typedef struct jlif {
     const char *name;
-    jlink* (*alloc_jlink)(struct link *, short dbfType);
+    jlink* (*alloc_jlink)(short dbfType);
     void (*free_jlink)(jlink *);
     jlif_result (*start_parse)(jlink *);
     jlif_result (*parse_null)(jlink *);
@@ -56,11 +56,13 @@ typedef struct jlif {
     jlif_result (*parse_start_array)(jlink *);
     jlif_result (*parse_end_array)(jlink *);
     jlif_result (*end_parse)(jlink *);
-    struct lset* (*get_lset)(const jlink *);
+    struct lset* (*get_lset)(const jlink *, struct link *);
     void (*report)(const jlink *);
 } jlif;
 
-epicsShareFunc long dbJLinkInit(struct link *plink, short dbfType);
+epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
+    jlink **ppjlink);
+epicsShareFunc long dbJLinkInit(struct link *plink);
 
 #ifdef __cplusplus
 }

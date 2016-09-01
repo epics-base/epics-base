@@ -81,8 +81,7 @@ void registerJLinks(DBBASE *pbase, int nLinks, jlif * const *jlifsl)
 {
     int i;
     for (i = 0; i < nLinks; i++) {
-        if (registryJLinkFind(jlifsl[i]->name)) continue;
-        if (!registryJLinkAdd(jlifsl[i])) {
+        if (!registryJLinkAdd(pbase, jlifsl[i])) {
             errlogPrintf("registryJLinkAdd failed %s\n",
                 jlifsl[i]->name);
             continue;

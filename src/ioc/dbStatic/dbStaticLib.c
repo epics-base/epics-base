@@ -2272,8 +2272,12 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     /* Check for braces => JSON */
     if (*str == '{' && str[len-1] == '}') {
-        pinfo->ltype = JSON_LINK;
-        return 0;
+        long status = dbJLinkParse(str, len, ftype, &pinfo->jlink);
+
+        if (!status)
+            pinfo->ltype = JSON_LINK;
+
+        return status;
     }
 
     /* Check for other HW link types */
@@ -2428,8 +2432,10 @@ void dbSetLinkJSON(DBLINK *plink, dbLinkInfo *pinfo)
 {
     plink->type = JSON_LINK;
     plink->value.json.string = pinfo->target;
+    plink->value.json.jlink = pinfo->jlink;
 
     pinfo->target = NULL;
+    pinfo->jlink = NULL;
 }
 
 static

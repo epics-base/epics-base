@@ -80,7 +80,6 @@ static enum {
 /* define forward references*/
 static int checkDatabase(dbBase *pdbbase);
 static void initDrvSup(void);
-static void initJLinks(void);
 static void initRecSup(void);
 static void initDevSup(void);
 static void finishDevSup(void);
@@ -147,7 +146,6 @@ static int iocBuild_2(void)
 {
     initHookAnnounce(initHookAfterCaLinkInit);
 
-    initJLinks();
     initDrvSup();
     initHookAnnounce(initHookAfterInitDrvSup);
 
@@ -374,22 +372,6 @@ static void initDrvSup(void) /* Locate all driver support entry tables */
 
         if (pdrvet->init)
             pdrvet->init();
-    }
-}
-
-static void initJLinks(void)
-{
-    linkSup *plinkSup;
-
-    for (plinkSup = (linkSup *)ellFirst(&pdbbase->linkList); plinkSup;
-         plinkSup = (linkSup *)ellNext(&plinkSup->node)) {
-        jlif *pjlif = registryJLinkFind(plinkSup->name);
-
-        if (!pjlif) {
-            errlogPrintf("iocInit: JLink %s not found\n", plinkSup->name);
-            continue;
-        }
-        plinkSup->pjlif = pjlif;
     }
 }
 

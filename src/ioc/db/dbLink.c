@@ -79,7 +79,7 @@ void dbInitLink(struct link *plink, short dbfType)
     }
 
     if (plink->type == JSON_LINK) {
-        dbJLinkInit(plink, dbfType);
+        dbJLinkInit(plink);
         return;
     }
 
@@ -131,7 +131,7 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
          * FIXME: Can't create DB links as dbJLink types yet,
          * dbLock.c doesn't have any way to find/track them.
          */
-        dbJLinkInit(plink, dbfType);
+        dbJLinkInit(plink);
         return;
     }
 

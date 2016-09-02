@@ -43,17 +43,13 @@ typedef struct parseContext {
     unsigned key_is_link:1;
 } parseContext;
 
-#define CALLIF(routine) !routine ? jlif_stop : routine
+#define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
 
-
-static int dbjl_value(parseContext *parser, jlif_result result) {
+static int dbjl_return(parseContext *parser, jlif_result result) {
     jlink *pjlink = parser->pjlink;
 
-    IFDEBUG(10) {
-        printf("dbjl_value(%s@%p, %d)\n", pjlink->pif->name, pjlink, result);
-        printf("    jsonDepth=%d, linkDepth=%d, key_is_link=%d\n",
-            parser->jsonDepth, parser->linkDepth, parser->key_is_link);
-    }
+    IFDEBUG(10)
+        printf("dbjl_return(%s@%p, %d)\n", pjlink->pif->name, pjlink, result);
 
     if (result == jlif_stop && pjlink) {
         jlink *parent;
@@ -65,19 +61,35 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
         pjlink->pif->free_jlink(pjlink);
     }
 
-    if (result == jlif_stop || parser->linkDepth > 0)
-        return result;
+    return result;
+}
 
-    parser->product = pjlink;
+static int dbjl_value(parseContext *parser, jlif_result result) {
+    jlink *pjlink = parser->pjlink;
+    jlink *parent;
+
+    IFDEBUG(10) {
+        printf("dbjl_value(%s@%p, %d)\n", pjlink->pif->name, pjlink, result);
+        printf("    jsonDepth=%d, linkDepth=%d, key_is_link=%d\n",
+            parser->jsonDepth, parser->linkDepth, parser->key_is_link);
+    }
+
+    if (result == jlif_stop || parser->linkDepth > 0)
+        return dbjl_return(parser, result);
+
+    parent = pjlink->parent;
+    if (!parent)
+        parser->product = pjlink;
+   else if (parent->pif->end_child)
+        parent->pif->end_child(parent, pjlink);
+
     parser->key_is_link = 0;
-    if (pjlink)
-        parser->pjlink = pjlink->parent;
+    parser->pjlink = parent;
 
     IFDEBUG(8)
         printf("dbjl_value: product = %p\n", pjlink);
 
-    return pjlink->pif->end_parse ? pjlink->pif->end_parse(pjlink)
-        : jlif_continue;
+    return jlif_continue;
 }
 
 static int dbjl_null(void *ctx) {
@@ -88,7 +100,8 @@ static int dbjl_null(void *ctx) {
         printf("dbjl_null(%s@%p)\n", pjlink->pif->name, pjlink);
 
     assert(pjlink);
-    return dbjl_value(parser, CALLIF(pjlink->pif->parse_null)(pjlink));
+    return dbjl_value(parser,
+        CALL_OR_STOP(pjlink->pif->parse_null)(pjlink));
 }
 
 static int dbjl_boolean(void *ctx, int val) {
@@ -96,7 +109,8 @@ static int dbjl_boolean(void *ctx, int val) {
     jlink *pjlink = parser->pjlink;
 
     assert(pjlink);
-    return dbjl_value(parser, CALLIF(pjlink->pif->parse_boolean)(pjlink, val));
+    return dbjl_value(parser,
+        CALL_OR_STOP(pjlink->pif->parse_boolean)(pjlink, val));
 }
 
 static int dbjl_integer(void *ctx, long num) {
@@ -104,10 +118,12 @@ static int dbjl_integer(void *ctx, long num) {
     jlink *pjlink = parser->pjlink;
 
     IFDEBUG(10)
-        printf("dbjl_integer(%s@%p, %ld)\n", pjlink->pif->name, pjlink, num);
+        printf("dbjl_integer(%s@%p, %ld)\n",
+            pjlink->pif->name, pjlink, num);
 
     assert(pjlink);
-    return dbjl_value(parser, CALLIF(pjlink->pif->parse_integer)(pjlink, num));
+    return dbjl_value(parser,
+        CALL_OR_STOP(pjlink->pif->parse_integer)(pjlink, num));
 }
 
 static int dbjl_double(void *ctx, double num) {
@@ -115,10 +131,12 @@ static int dbjl_double(void *ctx, double num) {
     jlink *pjlink = parser->pjlink;
 
     IFDEBUG(10)
-        printf("dbjl_double(%s@%p, %g)\n", pjlink->pif->name, pjlink, num);
+        printf("dbjl_double(%s@%p, %g)\n",
+            pjlink->pif->name, pjlink, num);
 
     assert(pjlink);
-    return dbjl_value(parser, CALLIF(pjlink->pif->parse_double)(pjlink, num));
+    return dbjl_value(parser,
+        CALL_OR_STOP(pjlink->pif->parse_double)(pjlink, num));
 }
 
 static int dbjl_string(void *ctx, const unsigned char *val, unsigned len) {
@@ -126,11 +144,12 @@ static int dbjl_string(void *ctx, const unsigned char *val, unsigned len) {
     jlink *pjlink = parser->pjlink;
 
     IFDEBUG(10)
-        printf("dbjl_string(%s@%p, \"%.*s\")\n", pjlink->pif->name, pjlink, len, val);
+        printf("dbjl_string(%s@%p, \"%.*s\")\n",
+            pjlink->pif->name, pjlink, len, val);
 
     assert(pjlink);
     return dbjl_value(parser,
-        CALLIF(pjlink->pif->parse_string)(pjlink, (const char *) val, len));
+        CALL_OR_STOP(pjlink->pif->parse_string)(pjlink, (const char *) val, len));
 }
 
 static int dbjl_start_map(void *ctx) {
@@ -159,8 +178,9 @@ static int dbjl_start_map(void *ctx) {
 
     parser->linkDepth++;
     parser->jsonDepth++;
-    result = CALLIF(pjlink->pif->parse_start_map)(pjlink);
-    if (result == jlif_key_embed_link) {
+
+    result = CALL_OR_STOP(pjlink->pif->parse_start_map)(pjlink);
+    if (result == jlif_key_child_link) {
         parser->key_is_link = 1;
         result = jlif_continue;
     }
@@ -168,7 +188,7 @@ static int dbjl_start_map(void *ctx) {
     IFDEBUG(10)
         printf("dbjl_start_map -> %d\n", result);
 
-    return result;
+    return dbjl_return(parser, result);
 }
 
 static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
@@ -178,13 +198,12 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
     size_t lnlen = len;
     linkSup *linkSup;
     jlif *pjlif;
-    jlif_result result;
 
     if (!parser->key_is_link) {
         if (!pjlink) {
             errlogPrintf("dbJLinkInit: Illegal second link key '%.*s'\n",
                 len, key);
-            return jlif_stop;
+            return dbjl_return(parser, jlif_stop);
         }
 
         IFDEBUG(10) {
@@ -195,7 +214,9 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
         }
 
         assert(parser->linkDepth > 0);
-        return CALLIF(pjlink->pif->parse_map_key)(pjlink, (const char *) key, len);
+        return dbjl_return(parser,
+            CALL_OR_STOP(pjlink->pif->parse_map_key)(pjlink,
+                (const char *) key, len));
     }
 
     IFDEBUG(10) {
@@ -213,44 +234,35 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
     if (!linkSup) {
         errlogPrintf("dbJLinkInit: Link type '%s' not found\n",
             link_name);
-        return jlif_stop;
+        return dbjl_return(parser, jlif_stop);
     }
 
     pjlif = linkSup->pjlif;
     if (!pjlif) {
         errlogPrintf("dbJLinkInit: Support for Link type '%s' not loaded\n",
             link_name);
-        return jlif_stop;
+        return dbjl_return(parser, jlif_stop);
     }
 
     pjlink = pjlif->alloc_jlink(parser->dbfType);
     if (!pjlink) {
         errlogPrintf("dbJLinkInit: Out of memory\n");
-        return jlif_stop;
+        return dbjl_return(parser, jlif_stop);
     }
     pjlink->pif = pjlif;
 
     if (parser->pjlink) {
-        /* This is an embedded link */
+        /* We're starting a child link, save its parent */
         pjlink->parent = parser->pjlink;
     }
+    parser->pjlink = pjlink;
 
-    result = pjlif->start_parse ? pjlif->start_parse(pjlink) : jlif_continue;
-    if (result == jlif_continue) {
-        parser->pjlink = pjlink;
+    IFDEBUG(8)
+        printf("dbjl_map_key: New %s@%p\n", pjlink->pif->name, pjlink);
 
-        IFDEBUG(8)
-            printf("dbjl_map_key: New %s@%p\n", pjlink->pif->name, pjlink);
-    }
-    else {
-        pjlif->free_jlink(pjlink);
-    }
-    // FIXME Ensure link map has only one link key...
+    // FIXME How to ensure a link map has only one key/value pair?
 
-    IFDEBUG(10)
-        printf("dbjl_map_key -> %d\n", result);
-
-    return result;
+    return jlif_continue;
 }
 
 static int dbjl_end_map(void *ctx) {
@@ -269,7 +281,8 @@ static int dbjl_end_map(void *ctx) {
     if (parser->linkDepth > 0) {
         parser->linkDepth--;
 
-        result = dbjl_value(parser, CALLIF(pjlink->pif->parse_end_map)(pjlink));
+        result = dbjl_value(parser,
+            CALL_OR_STOP(pjlink->pif->parse_end_map)(pjlink));
     }
     else {
         result = jlif_continue;
@@ -290,7 +303,9 @@ static int dbjl_start_array(void *ctx) {
     assert(pjlink);
     parser->linkDepth++;
     parser->jsonDepth++;
-    return CALLIF(pjlink->pif->parse_start_array)(pjlink);
+
+    return dbjl_return(parser,
+        CALL_OR_STOP(pjlink->pif->parse_start_array)(pjlink));
 }
 
 static int dbjl_end_array(void *ctx) {
@@ -306,8 +321,11 @@ static int dbjl_end_array(void *ctx) {
     assert(pjlink);
     parser->linkDepth--;
     parser->jsonDepth--;
-    return dbjl_value(parser, CALLIF(pjlink->pif->parse_end_array)(pjlink));
+
+    return dbjl_value(parser,
+        CALL_OR_STOP(pjlink->pif->parse_end_array)(pjlink));
 }
+
 
 static yajl_callbacks dbjl_callbacks = {
     dbjl_null, dbjl_boolean, dbjl_integer, dbjl_double, NULL, dbjl_string,
@@ -380,7 +398,8 @@ long dbJLinkInit(struct link *plink)
     pjlink = plink->value.json.jlink;
 
     if (pjlink)
-        plink->lset = pjlink->pif->get_lset(pjlink, plink);
+        plink->lset = pjlink->pif->get_lset(pjlink);
 
+    dbLinkOpen(plink);
     return 0;
 }

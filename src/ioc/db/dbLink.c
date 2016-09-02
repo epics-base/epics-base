@@ -160,6 +160,14 @@ void dbAddLink(struct dbLocker *locker, struct link *plink, short dbfType,
     }
 }
 
+void dbLinkOpen(struct link *plink)
+{
+    lset *plset = plink->lset;
+
+    if (plset && plset->openLink)
+        plset->openLink(plink);
+}
+
 void dbRemoveLink(struct dbLocker *locker, struct link *plink)
 {
     lset *plset = plink->lset;

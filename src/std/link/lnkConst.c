@@ -275,9 +275,9 @@ static jlif_result lnkConst_end_array(jlink *pjlink) {
     return jlif_continue;
 }
 
-static struct lset* lnkConst_get_lset(const jlink *pjlink, struct link *plink) {
+static struct lset* lnkConst_get_lset(const jlink *pjlink) {
     IFDEBUG(10)
-        printf("lnkConst_get_lset(const@%p, %p)\n", pjlink, plink);
+        printf("lnkConst_get_lset(const@%p)\n", pjlink);
 
     return &lnkConst_lset;
 }
@@ -466,7 +466,8 @@ static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
 
 static lset lnkConst_lset = {
     1, 0, /* Constant, not Volatile */
-    NULL, lnkConst_loadScalar, lnkConst_loadLS, lnkConst_loadArray, NULL,
+    NULL, NULL,
+    lnkConst_loadScalar, lnkConst_loadLS, lnkConst_loadArray, NULL,
     NULL, lnkConst_getNelements, lnkConst_getValue,
     NULL, NULL, NULL,
     NULL, NULL,
@@ -476,7 +477,7 @@ static lset lnkConst_lset = {
 };
 
 static jlif lnkConstIf = {
-    "const", lnkConst_alloc, lnkConst_free, NULL,
+    "const", lnkConst_alloc, lnkConst_free,
     NULL, lnkConst_boolean, lnkConst_integer, lnkConst_double, lnkConst_string,
     NULL, NULL, NULL, lnkConst_start_array, lnkConst_end_array,
     NULL, lnkConst_get_lset, lnkConst_report

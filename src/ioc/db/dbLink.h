@@ -32,6 +32,9 @@ typedef struct lset {
     const unsigned isConstant:1;
     const unsigned isVolatile:1;
 
+    /* Activation */
+    void (*openLink)(struct link *plink);
+
     /* Destructor */
     void (*removeLink)(struct dbLocker *locker, struct link *plink);
 
@@ -76,6 +79,8 @@ typedef struct lset {
 epicsShareFunc void dbInitLink(struct link *plink, short dbfType);
 epicsShareFunc void dbAddLink(struct dbLocker *locker, struct link *plink,
         short dbfType, DBADDR *ptarget);
+
+epicsShareFunc void dbLinkOpen(struct link *plink);
 epicsShareFunc void dbRemoveLink(struct dbLocker *locker, struct link *plink);
 
 epicsShareFunc int dbLinkIsDefined(const struct link *plink);  /* 0 or 1 */

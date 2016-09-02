@@ -55,8 +55,10 @@ msgForMultiplyDefinedPV::~msgForMultiplyDefinedPV ()
 
 void msgForMultiplyDefinedPV::transactionComplete ( const char * pHostNameRej )
 {
+    // calls into cac for the notification
+    // the msg object (= this) is being deleted as part of the notification
     this->cb.pvMultiplyDefinedNotify ( *this, this->channel, this->acc, pHostNameRej );
-    // !! dont touch this pointer after this point because object has been deleted !!
+    // !! dont touch 'this' pointer after this point because object has been deleted !!
 }
 
 void * msgForMultiplyDefinedPV::operator new ( size_t size, 

@@ -15,12 +15,40 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.4</h2>
 <!-- Insert new items immediately below here ... -->
 
-
-<h2 align="center">Changes pulled from the 3.14 branch since 3.15.4</h2>
+<h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Microsoft Visual Studio builds</h3>
 
-<h2 align="center">Changes between 3.15.3 and 3.15.4</h2>
+<p>The build configuration files for builds using the Microsoft compilers have
+been updated, although there should be no noticable difference at most sites.
+One extra compiler warning is now being suppressed for C++ code, <tt>C4344:
+behavior change: use of explicit template arguments results in ...</tt> which is
+gratuitous and was appearing frequently in builds of the EPICS V4 modules.</p>
+
+<p>Cross-builds of the windows-x64 target from a win32-x86 host have been
+removed as they don't actually work within the context of a single <tt>make</tt>
+run. Significant changes to the build configuration files would be necessary for
+these kinds of cross-builds to work properly, which could be done if someone
+needs them (email Andrew Johnson before working on this, and see
+<a href="http://stackoverflow.com/questions/5807647/how-do-you-compile-32-bit-and-64-bit-applications-at-the-same-time-in-visual-stu">
+this stack-overflow answer</a> for a starting point).</p>
+
+<h3>Bazaar keywords such as 'Revision-Id' removed</h3>
+
+<p>In preparation for moving to git in place of the Bazaar revision control
+system we have removed all the keywords from the Base source code.</p>
+
+<h3>Linux systemd service file for CA Repeater</h3>
+
+<p>Building this version of Base on a Linux system creates a systemd service
+file suitable for starting the Channel Access Repeater under systemd. The file
+will be installed into the target bin directory, from where it can be copied
+into the appropriate systemd location and modified as necessary. Installation
+instructions are included as comments in the file.</p>
+
+
+<h2 align="center">Changes made between 3.15.3 and 3.15.4</h2>
 
 <h3>New string input device support "getenv"</h3>
 
@@ -125,21 +153,7 @@ dbQuietMacroWarnings=1          <i>VxWorks</i>
 541119</a>.</p>
 
 
-<h2 align="center">Changes pulled from the 3.14 branch since 3.15.3</h2>
-<!-- Insert inherited items immediately below here ... -->
-
-<h3>Bazaar keywords such as 'Revision-Id' removed</h3>
-
-<p>In preparation for moving to git in place of the Bazaar revision control
-system we have removed all the keywords from the Base source code.</p>
-
-<h3>Linux systemd service file for CA Repeater</h3>
-
-<p>Building this version of Base on a Linux system creates a systemd service
-file suitable for starting the Channel Access Repeater under systemd. The file
-will be installed into the target bin directory, from where it can be copied
-into the appropriate systemd location and modified as necessary. Installation
-instructions are included as comments in the file.</p>
+<h2 align="center">Changes from the 3.14 branch between 3.15.3 and 3.15.4</h2>
 
 <h3>NTP Time Provider adjusts to OS tick rate changes</h3>
 
@@ -256,7 +270,7 @@ program added. The original versions do not report DST status properly. Fixes
 <a href="https://bugs.launchpad.net/bugs/1528284">Launchpad bug 1528284</a>.</p>
 
 
-<h2 align="center">Changes between 3.15.2 and 3.15.3</h2>
+<h2 align="center">Changes made between 3.15.2 and 3.15.3</h2>
 
 <h3>Make the NTP Time provider optional on VxWorks</h3>
 
@@ -297,7 +311,7 @@ code, and a structure definition for one of the original arguments to that
 routine was defined in recGbl.h. Both of these have now been removed.</p>
 
 
-<h2 align="center">Changes between 3.15.1 and 3.15.2</h2>
+<h2 align="center">Changes made between 3.15.1 and 3.15.2</h2>
 
 <h3>Raised limit on link field length in database files</h3>
 
@@ -416,7 +430,7 @@ use a modified version of msi must provide support for both the <tt>-D</tt> and
 their applications' CONFIG_SITE files to that updated executable.</p>
 
 
-<h2 align="center">Changes between 3.15.0.2 and 3.15.1</h2>
+<h2 align="center">Changes made between 3.15.0.2 and 3.15.1</h2>
 
 <h3>epicsStrnEscapedFromRaw() and epicsStrnRawFromEscaped()</h3>
 
@@ -480,7 +494,7 @@ in the context of the IOC's main thread, from either a static C++ constructor or
 an EPICS registrar routine.</p>
 
 
-<h2 align="center">Changes between 3.15.0.1 and 3.15.0.2</h2>
+<h2 align="center">Changes made between 3.15.0.1 and 3.15.0.2</h2>
 
 <h3>New iocshLoad command</h3>
 
@@ -926,7 +940,7 @@ result of record processing (i.e. when read through the SELL link).</p>
 variables from Base, although they might get added to the Extensions build rules
 for a while in case anyone still needs them.</p>
 
-<h2 align="center">Changes between 3.14.x and 3.15.0.1</h2>
+<h2 align="center">Changes made between 3.14.x and 3.15.0.1</h2>
 
 <h3>Application clean rules</h3>
 

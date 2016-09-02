@@ -223,8 +223,9 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
         assert ( gdd_status == 0 );
 
         //
-        // preallocate the correct amount
+        // clear and preallocate the correct amount
         //
+        this->enumStrTbl.clear ();
         this->enumStrTbl.reserve ( count );
 
         if ( resp.primitiveType() == aitEnumString ) {
@@ -262,6 +263,18 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
 void casPVI::postEvent ( const casEventMask & select, const gdd & event )
 {
     epicsGuard < epicsMutex > guard ( this->mutex );
+    // if this is a DBE_PROPERTY event for an enum type
+    // update the enum string table
+    if ( (select & this->pCAS->propertyEventMask()).eventsSelected() ) {
+        const gdd *menu = NULL;
+        if ( event.applicationType() == gddAppType_dbr_gr_enum )
+            menu = event.getDD( gddAppTypeIndex_dbr_gr_enum_enums );
+        else if ( event.applicationType() == gddAppType_dbr_ctrl_enum )
+            menu = event.getDD( gddAppTypeIndex_dbr_ctrl_enum_enums );
+        if ( menu )
+            updateEnumStringTableAsyncCompletion( *menu );
+    }
+
 	if ( this->nMonAttached ) {
         // we are paying some significant locking overhead for
         // these diagnostic counters

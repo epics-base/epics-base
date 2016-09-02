@@ -1,7 +1,7 @@
 # CONFIG.win32-x86.win32-x86
 #
-# Definitions for win32-x86 target archs when host arch is win32-x86
-# Sites may override these definitions in CONFIG_SITE.win32-x86.win32-x86
+# Definitions for win32-x86 host - win32-x86 target build
+# Override these definitions in CONFIG_SITE.win32-x86.win32-x86
 #-------------------------------------------------------
 
 # Win32 valid build types and include directory suffixes
@@ -22,16 +22,21 @@ ARCMD = lib -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 # Configure OS vendor C compiler
 CC = cl
 
-# Override CONFIG.gnuCommon for cross builds.
+# Override CONFIG.gnuCommon settings for cross builds.
 GNU = NO
 HDEPENDS_METHOD = MKMF
 
+# Compiler flags for C files (C++ is below)
+
 #
-# -W<N> use warning level N
-# (maximum (lint type) warnings at level 4)
-# -w44355 set "'this' used in the base initializer list" to be level 4
-WARN_CFLAGS_YES = -W3 -w44355
-WARN_CFLAGS_NO =  -W1
+# -W<d> display warnings at level d
+#    -W4 is for maximum (lint type) warnings
+#    -W3 is for production quality warnings
+#    -W2 displays significant warnings
+#    -W1 is the default and shows severe warnings only
+# -w<d><n> Set warning C<n> to be shown at level <d>
+WARN_CFLAGS_YES = -W3
+WARN_CFLAGS_NO  = -W1
 
 #
 # -Ox maximum optimizations
@@ -66,7 +71,7 @@ STATIC_CFLAGS_YES= -MT$(VISC_CFLAGS_DEBUG) $(BUILD_DLL_CFLAGS)
 STATIC_CFLAGS_NO= -MD$(VISC_CFLAGS_DEBUG) $(BUILD_DLL_CFLAGS) -DEPICS_CALL_DLL
 
 # OS vendor c preprocessor
-CPP = cl -C -E
+CPP = cl -nologo -C -E
 
 # Configure OS vendor C++ compiler
 #
@@ -82,11 +87,15 @@ CCC = cl -EHsc -GR
 CODE_CPPFLAGS += -nologo -D__STDC__=0
 CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 
+
+# Compiler flags for C++ files
+
 #
 # -W<N> use warning level N
 # (maximum lint level warnings at level 4)
 # -w44355 set "'this' used in the base initializer list" to be level 4
-WARN_CXXFLAGS_YES = -W3 -w44355
+# -w44344 "behavior change: use of explicit template arguments results in ..."
+WARN_CXXFLAGS_YES = -W3 -w44355 -w44344
 WARN_CXXFLAGS_NO =  -W1
 
 #

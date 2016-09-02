@@ -1,17 +1,15 @@
 # CONFIG.win32-x86.win32-x86-debug
 #
 # Definitions for win32-x86 host - win32-x86-debug target build
-# Sites may override these definitions in CONFIG_SITE.win32-x86.win32-x86-debug
+# Override these definitions in CONFIG_SITE.win32-x86.win32-x86-debug
 #-------------------------------------------------------
 
--include $(CONFIG)/os/CONFIG.Common.win32-x86
--include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
--include $(CONFIG)/os/CONFIG_SITE.Common.win32-x86
+#Include definitions common to win32-x86 builds
+include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
 -include $(CONFIG)/os/CONFIG_SITE.win32-x86.win32-x86
 
-GNU = NO
-
-HDEPENDS_METHOD = MKMF
+# Override CONFIG.CrossCommon settings:
 BUILD_CLASS = HOST
 
+# Override CONFIG_SITE settings:
 HOST_OPT = NO

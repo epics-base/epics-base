@@ -13,6 +13,7 @@
 #include "dbDefs.h"
 #include "errlog.h"
 #include "epicsAssert.h"
+#include "epicsString.h"
 #include "epicsTypes.h"
 #include "dbAccessDefs.h"
 #include "dbConvertFast.h"
@@ -200,45 +201,29 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len) {
         printf("lnkConst_string(const@%p, \"%.*s\")\n", clink, (int) len, val);
 
     switch (clink->type) {
-        char *buf, **vec;
+        char **vec;
         int nElems;
 
     case s0:
-        buf = malloc(len + 1);
-        if (!buf)
-            return jlif_stop;
-
-        strncpy(buf, val, len);
-        buf[len] = '\0';
-
         clink->nElems = 1;
         clink->type = sc40;
-        clink->value.scalar_string = buf;
+        clink->value.scalar_string = epicsStrnDup(val, len);
         break;
 
     case a0:
         clink->type = ac40;
         /* fall thorough */
     case ac40:
-        if (len > MAX_STRING_SIZE)
-            len = MAX_STRING_SIZE;
-
-        buf = malloc(len + 1);
-        if (!buf)
-            return jlif_stop;
-
-        strncpy(buf, val, len);
-        buf[len] = '\0';
-
         nElems = clink->nElems + 1;
 
         vec = realloc(clink->value.pmem, nElems * sizeof(char *));
-        if (!vec) {
-            free(buf);
+        if (!vec)
             break;
-        }
 
-        vec[clink->nElems++] = buf;
+        if (len >= MAX_STRING_SIZE)
+            len = MAX_STRING_SIZE - 1;
+
+        vec[clink->nElems++] = epicsStrnDup(val, len);
         clink->value.pstrings = vec;
         break;
 

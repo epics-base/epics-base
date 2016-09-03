@@ -223,6 +223,15 @@ int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len)
     return 0;
 }
 
+char * epicsStrnDup(const char *s, size_t len)
+{
+    char *buf = mallocMustSucceed(len + 1, "epicsStrnDup");
+
+    strncpy(buf, s, len);
+    buf[len] = '\0';
+    return buf;
+}
+
 char * epicsStrDup(const char *s)
 {
     return strcpy(mallocMustSucceed(strlen(s)+1, "epicsStrDup"), s);

@@ -158,10 +158,18 @@ void* dbmfMalloc(size_t size)
 
 char * dbmfStrdup(const char *str)
 {
-	size_t len = strlen(str);
-	char *buf = dbmfMalloc(len + 1);
-	strcpy(buf, str);
-	return buf;
+    size_t len = strlen(str);
+    char *buf = dbmfMalloc(len + 1);    /* FIXME Can return NULL */
+
+    return strcpy(buf, str);
+}
+
+char * dbmfStrndup(const char *str, size_t len)
+{
+    char *buf = dbmfMalloc(len + 1);    /* FIXME Can return NULL */
+
+    buf[len] = '\0';
+    return strncpy(buf, str, len);
 }
 
 void dbmfFree(void* mem)

@@ -32,6 +32,7 @@ epicsShareFunc size_t epicsStrnEscapedFromRawSize(const char *buf, size_t len);
 epicsShareFunc int epicsStrCaseCmp(const char *s1, const char *s2);
 epicsShareFunc int epicsStrnCaseCmp(const char *s1, const char *s2, size_t len);
 epicsShareFunc char * epicsStrDup(const char *s);
+epicsShareFunc char * epicsStrnDup(const char *s, size_t len);
 epicsShareFunc int epicsStrPrintEscaped(FILE *fp, const char *s, size_t n);
 #define epicsStrSnPrintEscaped epicsStrnEscapedFromRaw
 epicsShareFunc int epicsStrGlobMatch(const char *str, const char *pattern);

@@ -63,6 +63,8 @@ epicsShareFunc long dbJLinkParse(const char *json, size_t len, short dbfType,
     jlink **ppjlink);
 epicsShareFunc long dbJLinkInit(struct link *plink);
 
+epicsShareFunc void dbJLinkFree(jlink *);
+
 #ifdef __cplusplus
 }
 #endif

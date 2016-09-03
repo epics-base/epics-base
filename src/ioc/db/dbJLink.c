@@ -17,6 +17,7 @@
 #define epicsExportSharedSybols
 #include "dbAccessDefs.h"
 #include "dbCommon.h"
+#include "dbLink.h"
 #include "dbJLink.h"
 #include "dbStaticLib.h"
 #include "link.h"
@@ -44,6 +45,11 @@ typedef struct parseContext {
 } parseContext;
 
 #define CALL_OR_STOP(routine) !(routine) ? jlif_stop : (routine)
+
+void dbJLinkFree(jlink *pjlink) {
+    if (pjlink)
+        pjlink->pif->free_jlink(pjlink);
+}
 
 static int dbjl_return(parseContext *parser, jlif_result result) {
     jlink *pjlink = parser->pjlink;
@@ -83,7 +89,6 @@ static int dbjl_value(parseContext *parser, jlif_result result) {
    else if (parent->pif->end_child)
         parent->pif->end_child(parent, pjlink);
 
-    parser->key_is_link = 0;
     parser->pjlink = parent;
 
     IFDEBUG(8)
@@ -256,11 +261,10 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
         pjlink->parent = parser->pjlink;
     }
     parser->pjlink = pjlink;
+    parser->key_is_link = 0;
 
     IFDEBUG(8)
         printf("dbjl_map_key: New %s@%p\n", pjlink->pif->name, pjlink);
-
-    // FIXME How to ensure a link map has only one key/value pair?
 
     return jlif_continue;
 }

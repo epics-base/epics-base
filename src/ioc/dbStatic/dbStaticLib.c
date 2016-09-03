@@ -124,8 +124,7 @@ void dbFreeLinkContents(struct link *plink)
 	case MACRO_LINK: free((void *)plink->value.macro_link.macroStr); break;
 	case PV_LINK: free((void *)plink->value.pv_link.pvname); break;
 	case JSON_LINK:
-	    if (plink->value.json.jlink)
-		plink->value.json.jlink->pif->free_jlink(plink->value.json.jlink);
+	    dbJLinkFree(plink->value.json.jlink);
 	    parm = plink->value.json.string;
 	    break;
 	case VME_IO: parm = plink->value.vmeio.parm; break;

@@ -50,6 +50,7 @@
 #include "dbLock.h"
 #include "dbScan.h"
 #include "link.h"
+#include "recGbl.h"
 #include "recSup.h"
 
 /* defined in dbContext.cpp
@@ -337,8 +338,8 @@ void dbCaRemoveLink(struct dbLocker *locker, struct link *plink)
     addAction(pca, CA_CLEAR_CHANNEL);
 }
 
-long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
-    epicsEnum16 *pstat, epicsEnum16 *psevr, long *nelements)
+long dbCaGetLink(struct link *plink, short dbrType, void *pdest,
+    long *nelements)
 {
     caLink *pca = (caLink *)plink->value.pv_link.pvt;
     long   status = 0;
@@ -410,10 +411,13 @@ long dbCaGetLink(struct link *plink,short dbrType, void *pdest,
         aConvert(&dbAddr, pdest, ntoget, ntoget, 0);
     }
 done:
-    if (pstat) *pstat = pca->stat;
-    if (psevr) *psevr = pca->sevr;
-    if (link_action) addAction(pca, link_action);
+    if (link_action)
+        addAction(pca, link_action);
+    if (!status)
+        recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,
+            plink->precord, pca->stat, pca->sevr);
     epicsMutexUnlock(pca->lock);
+
     return status;
 }
 

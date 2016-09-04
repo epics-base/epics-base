@@ -115,7 +115,7 @@ static long dbConstGetNelements(const struct link *plink, long *nelements)
 }
 
 static long dbConstGetValue(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
+        long *pnRequest)
 {
     if (pnRequest)
         *pnRequest = 0;

@@ -270,7 +270,6 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
         long *poptions, long *pnRequest)
 {
     struct dbCommon *precord = plink->precord;
-    epicsEnum16 sevr = 0, stat = 0;
     lset *plset = plink->lset;
     long status;
 
@@ -282,13 +281,9 @@ long dbGetLink(struct link *plink, short dbrType, void *pbuffer,
     if (!plset || !plset->getValue)
         return -1;
 
-    status = plset->getValue(plink, dbrType, pbuffer, &stat, &sevr, pnRequest);
-    if (status) {
+    status = plset->getValue(plink, dbrType, pbuffer, pnRequest);
+    if (status)
         recGblSetSevr(precord, LINK_ALARM, INVALID_ALARM);
-    } else {
-        recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode, precord,
-	    stat, sevr);
-    }
     return status;
 }
 

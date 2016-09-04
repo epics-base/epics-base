@@ -435,7 +435,7 @@ static long lnkConst_getNelements(const struct link *plink, long *nelements)
 }
 
 static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
+        long *pnRequest)
 {
     IFDEBUG(10)
         printf("lnkConst_loadScalar(const@%p, %d, %p, ... (%ld))\n",

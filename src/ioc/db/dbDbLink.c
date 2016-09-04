@@ -129,7 +129,7 @@ static long dbDbGetElements(const struct link *plink, long *nelements)
 }
 
 static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
-        epicsEnum16 *pstat, epicsEnum16 *psevr, long *pnRequest)
+        long *pnRequest)
 {
     struct pv_link *ppv_link = &plink->value.pv_link;
     DBADDR *paddr = ppv_link->pvt;
@@ -146,8 +146,6 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         if (status)
             return status;
     }
-    *pstat = paddr->precord->stat;
-    *psevr = paddr->precord->sevr;
 
     if (ppv_link->getCvt && ppv_link->lastGetdbrType == dbrType) {
         status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);
@@ -167,6 +165,10 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
         }
         ppv_link->lastGetdbrType = dbrType;
     }
+
+    if (!status)
+        recGblInheritSevr(plink->value.pv_link.pvlMask & pvlOptMsMode,
+            plink->precord, paddr->precord->stat, paddr->precord->sevr);
     return status;
 }
 

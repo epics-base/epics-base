@@ -2235,6 +2235,17 @@ long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec)
     return 0;
 }
 
+static
+void dbFreeLinkInfo(dbLinkInfo *pinfo)
+{
+    if (pinfo->ltype == JSON_LINK) {
+        dbJLinkFree(pinfo->jlink);
+        pinfo->jlink = NULL;
+    }
+    free(pinfo->target);
+    pinfo->target = NULL;
+}
+
 long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 {
     char *pstr;
@@ -2326,12 +2337,9 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
             /* RF_IO, the string isn't needed at all */
             free(pinfo->target);
             pinfo->target = NULL;
-        } else {
-            /* missing parm when required, or found parm when not expected */
-            free(pinfo->target);
-            pinfo->target = NULL;
-            return S_dbLib_badField;
         }
+        else goto fail;
+
         return 0;
     }
 
@@ -2380,29 +2388,28 @@ long dbParseLink(const char *str, short ftype, dbLinkInfo *pinfo)
 
     return 0;
 fail:
-    free(pinfo->target);
+    dbFreeLinkInfo(pinfo);
     return S_dbLib_badField;
 }
 
 long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
 {
-    /* consume allocated string pinfo->target on failure */
-    int link_type = CONSTANT;
+    /* Release pinfo resources on failure */
+    int expected_type = devsup ? devsup->link_type : CONSTANT;
 
-    if (devsup)
-        link_type = devsup->link_type;
-    if (link_type == pinfo->ltype)
+    if (pinfo->ltype == expected_type)
         return 0;
 
     switch (pinfo->ltype) {
     case CONSTANT:
     case JSON_LINK:
     case PV_LINK:
-        if (link_type == CONSTANT || link_type == PV_LINK)
+        if (expected_type == CONSTANT ||
+            expected_type == JSON_LINK ||
+            expected_type == PV_LINK)
             return 0;
     default:
-        free(pinfo->target);
-        pinfo->target = NULL;
+        dbFreeLinkInfo(pinfo);
         return 1;
     }
 }
@@ -2519,13 +2526,11 @@ void dbSetLinkHW(DBLINK *plink, dbLinkInfo *pinfo)
 
 long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
 {
-    int ret = 0;
-    int link_type = CONSTANT;
+    int expected_type = devsup ? devsup->link_type : CONSTANT;
 
-    if (devsup)
-        link_type = devsup->link_type;
-
-    if (link_type == CONSTANT || link_type == PV_LINK) {
+    if (expected_type == CONSTANT ||
+        expected_type == JSON_LINK ||
+        expected_type == PV_LINK) {
         switch (pinfo->ltype) {
         case CONSTANT:
             dbFreeLinkContents(plink);
@@ -2544,17 +2549,16 @@ long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup)
             goto fail; /* can't assign HW link */
         }
     }
-    else if (link_type == pinfo->ltype) {
+    else if (expected_type == pinfo->ltype) {
         dbFreeLinkContents(plink);
         dbSetLinkHW(plink, pinfo);
     }
     else
         goto fail;
 
-    return ret;
+    return 0;
 fail:
-    free(pinfo->target);
-    pinfo->target = NULL;
+    dbFreeLinkInfo(pinfo);
     return S_dbLib_badField;
 }
 
@@ -2620,7 +2624,7 @@ long dbPutString(DBENTRY *pdbentry,const char *pstring)
                 /* links not yet initialized by dbInitRecordLinks() */
                 free(plink->text);
                 plink->text = epicsStrDup(pstring);
-                free(link_info.target);
+                dbFreeLinkInfo(&link_info);
             } else {
                 /* assignment after init (eg. autosave restore) */
                 struct dbCommon *prec = pdbentry->precnode->precord;

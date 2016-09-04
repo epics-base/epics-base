@@ -278,6 +278,16 @@ static void lnkConst_report(const jlink *pjlink) {
 
 /*************************** lset Routines **************************/
 
+static void lnkConst_remove(struct dbLocker *locker, struct link *plink)
+{
+    clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
+
+    IFDEBUG(10)
+        printf("lnkConst_remove(const@%p)\n", clink);
+
+    lnkConst_free(plink->value.json.jlink);
+}
+
 static long lnkConst_loadScalar(struct link *plink, short dbrType, void *pbuffer)
 {
     clink *clink = CONTAINER(plink->value.json.jlink, struct clink, jlink);
@@ -438,7 +448,7 @@ static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
         long *pnRequest)
 {
     IFDEBUG(10)
-        printf("lnkConst_loadScalar(const@%p, %d, %p, ... (%ld))\n",
+        printf("lnkConst_getValue(const@%p, %d, %p, ... (%ld))\n",
             plink->value.json.jlink, dbrType, pbuffer, *pnRequest);
 
     if (pnRequest)
@@ -451,7 +461,7 @@ static long lnkConst_getValue(struct link *plink, short dbrType, void *pbuffer,
 
 static lset lnkConst_lset = {
     1, 0, /* Constant, not Volatile */
-    NULL, NULL,
+    NULL, lnkConst_remove,
     lnkConst_loadScalar, lnkConst_loadLS, lnkConst_loadArray, NULL,
     NULL, lnkConst_getNelements, lnkConst_getValue,
     NULL, NULL, NULL,

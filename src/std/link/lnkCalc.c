@@ -91,7 +91,7 @@ static void lnkCalc_free(jlink *pjlink) {
     int i;
 
     IFDEBUG(10)
-        printf("lnkCalc_free(calc@%p)\n", pjlink);
+        printf("lnkCalc_free(calc@%p)\n", clink);
 
     for (i = 0; i < clink->nArgs; i++)
         dbJLinkFree(clink->inp[i].value.json.jlink);
@@ -107,7 +107,7 @@ static jlif_result lnkCalc_integer(jlink *pjlink, long num) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_integer(calc@%p, %ld)\n", pjlink, num);
+        printf("lnkCalc_integer(calc@%p, %ld)\n", clink, num);
 
     if (clink->pstate == ps_prec) {
         clink->prec = num;
@@ -134,7 +134,7 @@ static jlif_result lnkCalc_double(jlink *pjlink, double num) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_double(calc@%p, %g)\n", pjlink, num);
+        printf("lnkCalc_double(calc@%p, %g)\n", clink, num);
 
     if (clink->pstate != ps_args) {
         return jlif_stop;
@@ -200,7 +200,7 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_start_map(calc@%p)\n", pjlink);
+        printf("lnkCalc_start_map(calc@%p)\n", clink);
 
     if (clink->pstate == ps_args)
         return jlif_key_child_link;
@@ -217,8 +217,7 @@ static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_map_key(calc@%p, \"%.*s\")\n",
-            pjlink, (int) len, key);
+        printf("lnkCalc_map_key(calc@%p, \"%.*s\")\n", pjlink, (int) len, key);
 
     if (len == 4) {
         if (!strncmp(key, "expr", len) && !clink->post_expr)
@@ -256,7 +255,7 @@ static jlif_result lnkCalc_end_map(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_end_map(calc@%p)\n", pjlink);
+        printf("lnkCalc_end_map(calc@%p)\n", clink);
 
     if (clink->pstate == ps_error)
         return jlif_stop;
@@ -268,7 +267,7 @@ static jlif_result lnkCalc_start_array(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_start_array(calc@%p)\n", pjlink);
+        printf("lnkCalc_start_array(calc@%p)\n", clink);
 
     if (clink->pstate != ps_args) {
         errlogPrintf("lnkCalc: Unexpected array\n");
@@ -282,7 +281,7 @@ static jlif_result lnkCalc_end_array(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_end_array(calc@%p)\n", pjlink);
+        printf("lnkCalc_end_array(calc@%p)\n", clink);
 
     if (clink->pstate == ps_error)
         return jlif_stop;

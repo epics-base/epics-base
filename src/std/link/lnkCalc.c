@@ -31,7 +31,7 @@
 typedef long (*FASTCONVERT)();
 
 /* Change 'undef' to 'define' to turn on debug statements: */
-#define DEBUG_LINK
+#undef DEBUG_LINK
 
 #ifdef DEBUG_LINK
     int lnkCalcDebug = 10;
@@ -200,7 +200,7 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_start_array(calc@%p)\n", pjlink);
+        printf("lnkCalc_start_map(calc@%p)\n", pjlink);
 
     if (clink->pstate == ps_args)
         return jlif_key_child_link;
@@ -256,7 +256,7 @@ static jlif_result lnkCalc_end_map(jlink *pjlink) {
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
-        printf("lnkCalc_end_array(calc@%p)\n", pjlink);
+        printf("lnkCalc_end_map(calc@%p)\n", pjlink);
 
     if (clink->pstate == ps_error)
         return jlif_stop;
@@ -340,6 +340,7 @@ static void lnkCalc_open(struct link *plink)
 
         child->precord = plink->precord;
         dbJLinkInit(child);
+        dbLoadLink(child, DBR_DOUBLE, &clink->arg[i]);
     }
 }
 
@@ -431,6 +432,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         long nReq = 1;
 
         dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
+        /* FIXME Should we look at the return status from dbGetLink? */
     }
     clink->stat = 0;
     clink->sevr = 0;

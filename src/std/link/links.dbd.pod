@@ -101,7 +101,7 @@ link(calc, lnkCalcIf)
 Calculation links can perform simple mathematical expressions on scalar
 (double-precision floating-point) values obtained from other link types and
 return a single double-precision floating-point result. The expressions are
-evaluated by the EPICS Calc engine, and up to 12 input links can be used.
+evaluated by the EPICS Calc engine, and up to 12 inputs can be provided.
 
 =head4 Parameters
 
@@ -111,7 +111,7 @@ The link value is a map with the following keys:
 
 =item expr
 
-The expression to be evaluated, provided as a string.
+The primary expression to be evaluated, provided as a string.
 
 =item major
 
@@ -125,7 +125,8 @@ An optional expression that returns non-zero to raise a minor alarm.
 
 A JSON list of up to 12 input arguments for the expression, which are assigned
 to the inputs C<A>, C<B>, C<C>, ... C<L>. Each input argument may be either a
-numeric literal or an embedded link inside C<{}> braces.
+numeric literal or an embedded JSON link inside C<{}> braces. The same input
+values are provided to the two alarm expressions as to the primary expression.
 
 =item units
 

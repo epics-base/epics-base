@@ -12,9 +12,6 @@
 #include <stdlib.h>
 #include <shareLib.h>
 
-/* Limit for link name key length */
-#define MAX_LINK_NAME 15
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,6 +34,7 @@ struct jlif;
 typedef struct jlink {
     struct jlif *pif;
     struct jlink *parent;
+    int parseDepth;
     /* Link types extend or embed this structure for private storage */
 } jlink;
 

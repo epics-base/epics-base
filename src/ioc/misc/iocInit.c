@@ -637,15 +637,13 @@ static void doCloseLinks(dbRecordType *pdbRecordType, dbCommon *precord,
             pdbRecordType->papFldDes[pdbRecordType->link_ind[j]];
         DBLINK *plink = (DBLINK *)((char *)precord + pdbFldDes->offset);
 
-        if (plink->type == CA_LINK) {
+        if (plink->type == CA_LINK ||
+            plink->type == JSON_LINK ||
+            (plink->type == DB_LINK && iocBuildMode == buildIsolated)) {
             if (!locked) {
                 dbScanLock(precord);
                 locked = 1;
             }
-            dbRemoveLink(NULL, plink);
-        }
-        else if (iocBuildMode==buildIsolated && plink->type == DB_LINK) {
-            /* free link, but don't split lockset */
             dbRemoveLink(NULL, plink);
         }
     }

@@ -12,6 +12,7 @@ SRC_DIRS += $(STDDIR)/link
 DBD += links.dbd
 
 dbRecStd_SRCS += lnkConst.c
+dbRecStd_SRCS += lnkCalc.c
 
 HTMLS += links.html
 

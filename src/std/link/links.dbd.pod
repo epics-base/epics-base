@@ -132,15 +132,15 @@ numeric literal or an embedded link inside C<{}> braces.
 An optional string specifying the engineering units for the result of the
 expression. Equivalent to the C<EGU> field of a record.
 
-item prec
+=item prec
 
 An optional integer specifying the numeric precision with which the calculation
-result should be displayed. Equivalent to the E<UNIT> field of a record.
+result should be displayed. Equivalent to the C<PREC> field of a record.
 
 =back
 
 =head4 Example
 
- {calc: {expr:"A+B", args:[1, 2]}}
+ {calc: {expr:"A*B", args:[{db:"record.VAL"}, 1.5]}}
 
 =cut

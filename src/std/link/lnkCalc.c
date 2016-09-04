@@ -45,13 +45,14 @@ typedef long (*FASTCONVERT)();
 typedef struct calc_link {
     jlink jlink;        /* embedded object */
     int nArgs;
-    enum {ps_init,
+    enum {
+        ps_init,
         ps_expr, ps_major, ps_minor,
         ps_args,
         ps_prec,
         ps_units,
-        ps_error}
-    pstate;
+        ps_error
+    } pstate;
     epicsEnum16 stat;
     epicsEnum16 sevr;
     short prec;

@@ -353,11 +353,16 @@ static void lnkCalc_report(const jlink *pjlink, int level, int indent)
         clink->units ? clink->units : "");
 
     if (level > 0) {
+        if (clink->sevr)
+            printf("%*s  Alarm: %s, %s\n", indent, "",
+                epicsAlarmSeverityStrings[clink->sevr],
+                epicsAlarmConditionStrings[clink->stat]);
+
         if (clink->post_major)
-            printf("%*s  Major alarm: \"%s\"\n", indent, "",
+            printf("%*s  Major expression: \"%s\"\n", indent, "",
                 clink->major);
         if (clink->post_minor)
-            printf("%*s  Minor alarm: \"%s\"\n", indent, "",
+            printf("%*s  Minor expression: \"%s\"\n", indent, "",
                 clink->minor);
 
         for (i = 0; i < clink->nArgs; i++) {

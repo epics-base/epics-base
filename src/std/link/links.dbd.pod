@@ -39,7 +39,9 @@ target field at that time.
 Note that for most record types (the C<printf> and C<calcout> records are
 exceptions) it is pointless to set an input link to a constant link at runtime
 since the link initialization that loads the field value usually only happens
-when a record is initialized.
+when a record is initialized. A constant link that is embedded inside another
+input link type such as a calculation link should be OK though since the link
+initialization will take place when the record's field gets set.
 
 =head4 Parameters
 

@@ -8,10 +8,6 @@ The following link types are available in this release:
 
 =item * L<Constant|/"Constant Link const">
 
-=item * L<Database|/"Database Link db">
-
-=item * L<Channel Access|/"Channel Access Link ca">
-
 =item * L<Calc|/"Calculation Link calc">
 
 =back
@@ -19,9 +15,11 @@ The following link types are available in this release:
 =head2 Using Links
 
 ...
-must appear inside a pair of braces C< {} > expressed as a JSON
-(L<JavaScript Object Notation|http://www.json.org/>) object, which allows link
-parameters to be defined as needed.
+
+When setting a record link field to a JSON link, the link specification must
+appear inside a pair of braces C< {} > expressed as a JSON (L<JavaScript Object
+Notation|http://www.json.org/>) object, which allows link parameters to be
+defined as needed by the particular link type.
 
 
 =head2 Link Type Reference
@@ -32,16 +30,23 @@ link(const, lnkConstIf)
 
 =head3 Constant Link C<"const">
 
-Constant links provide one or more values at link initalization time, but do not return
-any data when their C<getValue()> routine is called. Most record types support the use of
-constant links by calling C<recGblInitConstantLink()> at initialization, which results in
-the constant value being loaded into the target field at that time.
+Constant links provide one or more values at link initalization time, but do not
+return any data when their C<getValue()> routine is called. Most record types
+support the use of constant links by calling C<recGblInitConstantLink()> at
+record initialization, which results in the constant value being loaded into the
+target field at that time.
+
+Note that for most record types (the C<printf> and C<calcout> records are
+exceptions) it is pointless to set an input link to a constant link at runtime
+since the link initialization that loads the field value usually only happens
+when a record is initialized.
 
 =head4 Parameters
 
-A const link takes a parameter which may be an integer, double or string, or an array of
-those types. If an array contains both integers and double values the integers will be
-promoted to doubles. Mixing strings and numbers in an array will result in an error.
+A const link takes a parameter which may be an integer, double or string, or an
+array of those types. If an array contains both integers and double values the
+integers will be promoted to doubles. Mixing strings and numbers in an array
+results in an error.
 
 =head4 Examples
 
@@ -50,47 +55,11 @@ promoted to doubles. Mixing strings and numbers in an array will result in an er
  {const: [1, 2.718281828459, 3.14159265358979]}
  {const: ["One", "e", "Pi"]}
 
-=cut
+The JSON syntax does not support Infinity or NaN values when parsing numbers,
+but (for scalars) it is possible to provide these in a string which will be
+converted to the desired double value at initialization, for example:
 
-#link(db, lnkDbIf)
-
-=head3 Database Link C<"db">
-
-...
-
-=head4 Parameters
-
-...
-
-=head4 Example
-
- ...
-
-=cut
-
-#link(ca, lnkCaIf)
-
-=head3 Channel Access Link C<"ca">
-
-...
-
-=head4 Parameters
-
-...
-
-=over
-
-=item ...
-
-...
-
-=back
-
-...
-
-=head4 Example
-
- ...
+ field(INP, {const:"Inf"})
 
 =cut
 

@@ -6,6 +6,11 @@
 \*************************************************************************/
 /* lnkCalc.c */
 
+/* TODO:
+ *    Support setting individual input links instead of the args list.
+ *      {calc:{expr:"K", K:{...}}}
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

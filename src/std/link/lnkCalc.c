@@ -12,7 +12,6 @@
 
 #include "alarm.h"
 #include "dbDefs.h"
-#include "dbmf.h"
 #include "errlog.h"
 #include "epicsAssert.h"
 #include "epicsString.h"
@@ -56,6 +55,9 @@ typedef struct calc_link {
     epicsEnum16 stat;
     epicsEnum16 sevr;
     short prec;
+    char *expr;
+    char *major;
+    char *minor;
     char *post_expr;
     char *post_major;
     char *post_minor;
@@ -70,7 +72,8 @@ static lset lnkCalc_lset;
 
 /*************************** jlif Routines **************************/
 
-static jlink* lnkCalc_alloc(short dbfType) {
+static jlink* lnkCalc_alloc(short dbfType)
+{
     calc_link *clink = calloc(1, sizeof(struct calc_link));
 
     IFDEBUG(10)
@@ -86,7 +89,8 @@ static jlink* lnkCalc_alloc(short dbfType) {
     return &clink->jlink;
 }
 
-static void lnkCalc_free(jlink *pjlink) {
+static void lnkCalc_free(jlink *pjlink)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
     int i;
 
@@ -96,6 +100,9 @@ static void lnkCalc_free(jlink *pjlink) {
     for (i = 0; i < clink->nArgs; i++)
         dbJLinkFree(clink->inp[i].value.json.jlink);
 
+    free(clink->expr);
+    free(clink->major);
+    free(clink->minor);
     free(clink->post_expr);
     free(clink->post_major);
     free(clink->post_minor);
@@ -103,7 +110,8 @@ static void lnkCalc_free(jlink *pjlink) {
     free(clink);
 }
 
-static jlif_result lnkCalc_integer(jlink *pjlink, long num) {
+static jlif_result lnkCalc_integer(jlink *pjlink, long num)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -130,7 +138,8 @@ static jlif_result lnkCalc_integer(jlink *pjlink, long num) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_double(jlink *pjlink, double num) {
+static jlif_result lnkCalc_double(jlink *pjlink, double num)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -152,7 +161,8 @@ static jlif_result lnkCalc_double(jlink *pjlink, double num) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len) {
+static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
     char *inbuf, *postbuf;
     short err;
@@ -176,27 +186,32 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len) {
         return jlif_stop;
     }
 
-    if (clink->pstate == ps_major)
-        clink->post_major = postbuf;
-    else if (clink->pstate == ps_minor)
-        clink->post_minor = postbuf;
-    else
-        clink->post_expr = postbuf;
+    inbuf = epicsStrnDup(val, len);
 
-    inbuf = dbmfStrndup(val, len);
+    if (clink->pstate == ps_major) {
+        clink->major = inbuf;
+        clink->post_major = postbuf;
+    }
+    else if (clink->pstate == ps_minor) {
+        clink->minor = inbuf;
+        clink->post_minor = postbuf;
+    }
+    else {
+        clink->expr = inbuf;
+        clink->post_expr = postbuf;
+    }
 
     if (postfix(inbuf, postbuf, &err) < 0) {
         errlogPrintf("lnkCalc: Error in calc expression, %s\n",
             calcErrorStr(err));
-        dbmfFree(inbuf);
         return jlif_stop;
     }
 
-    dbmfFree(inbuf);
     return jlif_continue;
 }
 
-static jlif_key_result lnkCalc_start_map(jlink *pjlink) {
+static jlif_key_result lnkCalc_start_map(jlink *pjlink)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -213,7 +228,8 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len) {
+static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -251,7 +267,8 @@ static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_end_map(jlink *pjlink) {
+static jlif_result lnkCalc_end_map(jlink *pjlink)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -263,7 +280,8 @@ static jlif_result lnkCalc_end_map(jlink *pjlink) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_start_array(jlink *pjlink) {
+static jlif_result lnkCalc_start_array(jlink *pjlink)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -277,7 +295,8 @@ static jlif_result lnkCalc_start_array(jlink *pjlink) {
     return jlif_continue;
 }
 
-static jlif_result lnkCalc_end_array(jlink *pjlink) {
+static jlif_result lnkCalc_end_array(jlink *pjlink)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
 
     IFDEBUG(10)
@@ -289,7 +308,8 @@ static jlif_result lnkCalc_end_array(jlink *pjlink) {
     return jlif_continue;
 }
 
-static void lnkCalc_end_child(jlink *parent, jlink *child) {
+static void lnkCalc_end_child(jlink *parent, jlink *child)
+{
     calc_link *clink = CONTAINER(parent, struct calc_link, jlink);
     struct link *plink;
 
@@ -307,20 +327,64 @@ static void lnkCalc_end_child(jlink *parent, jlink *child) {
     plink->value.json.jlink = child;
 }
 
-static struct lset* lnkCalc_get_lset(const jlink *pjlink) {
+static struct lset* lnkCalc_get_lset(const jlink *pjlink)
+{
     IFDEBUG(10)
         printf("lnkCalc_get_lset(calc@%p)\n", pjlink);
 
     return &lnkCalc_lset;
 }
 
-static void lnkCalc_report(const jlink *pjlink) {
+static void lnkCalc_report(const jlink *pjlink, int level, int indent)
+{
     calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
+    int i;
 
     IFDEBUG(10)
         printf("lnkCalc_report(calc@%p)\n", clink);
 
-    /* FIXME Implement! */
+    printf("%*s'calc': \"%s\" = %.*g %s\n", indent, "",
+        clink->expr, clink->prec, clink->val,
+        clink->units ? clink->units : "");
+
+    if (level > 0) {
+        if (clink->post_major)
+            printf("%*s  Major alarm: \"%s\"\n", indent, "",
+                clink->major);
+        if (clink->post_minor)
+            printf("%*s  Minor alarm: \"%s\"\n", indent, "",
+                clink->minor);
+
+        for (i = 0; i < clink->nArgs; i++) {
+            struct link *plink = &clink->inp[i];
+            jlink *child = plink->type == JSON_LINK ?
+                plink->value.json.jlink : NULL;
+
+            printf("%*s  Input %c: %g\n", indent, "",
+                i + 'A', clink->arg[i]);
+
+            if (child)
+                dbJLinkReport(child, level - 1, indent + 4);
+        }
+    }
+}
+
+long lnkCalc_map_children(jlink *pjlink, jlink_map_fn rtn, void *ctx)
+{
+    calc_link *clink = CONTAINER(pjlink, struct calc_link, jlink);
+    int i;
+
+    IFDEBUG(10)
+        printf("lnkCalc_map_children(calc@%p)\n", clink);
+
+    for (i = 0; i < clink->nArgs; i++) {
+        struct link *child = &clink->inp[i];
+        long status = dbJLinkMapChildren(child, rtn, ctx);
+
+        if (status)
+            return status;
+    }
+    return 0;
 }
 
 /*************************** lset Routines **************************/
@@ -431,7 +495,7 @@ static long lnkCalc_getValue(struct link *plink, short dbrType, void *pbuffer,
         long nReq = 1;
 
         dbGetLink(child, DBR_DOUBLE, &clink->arg[i], NULL, &nReq);
-        /* FIXME Should we look at the return status from dbGetLink? */
+        /* Any errors have already triggered a LINK/INVALID alarm */
     }
     clink->stat = 0;
     clink->sevr = 0;
@@ -541,7 +605,8 @@ static jlif lnkCalcIf = {
     NULL, NULL, lnkCalc_integer, lnkCalc_double, lnkCalc_string,
     lnkCalc_start_map, lnkCalc_map_key, lnkCalc_end_map,
     lnkCalc_start_array, lnkCalc_end_array,
-    lnkCalc_end_child, lnkCalc_get_lset, lnkCalc_report
+    lnkCalc_end_child, lnkCalc_get_lset,
+    lnkCalc_report, lnkCalc_map_children
 };
 epicsExportAddress(jlif, lnkCalcIf);
 

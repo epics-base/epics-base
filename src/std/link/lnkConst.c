@@ -56,7 +56,8 @@ static lset lnkConst_lset;
 
 /*************************** jlif Routines **************************/
 
-static jlink* lnkConst_alloc(short dbfType) {
+static jlink* lnkConst_alloc(short dbfType)
+{
     clink *clink = calloc(1, sizeof(struct clink));
 
     IFDEBUG(10)
@@ -72,7 +73,8 @@ static jlink* lnkConst_alloc(short dbfType) {
     return &clink->jlink;
 }
 
-static void lnkConst_free(jlink *pjlink) {
+static void lnkConst_free(jlink *pjlink)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
 
     IFDEBUG(10)
@@ -93,7 +95,8 @@ static void lnkConst_free(jlink *pjlink) {
     free(clink);
 }
 
-static jlif_result lnkConst_integer(jlink *pjlink, long num) {
+static jlif_result lnkConst_integer(jlink *pjlink, long num)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
 
     IFDEBUG(10)
@@ -145,7 +148,8 @@ static jlif_result lnkConst_boolean(jlink *pjlink, int val) {
     return lnkConst_integer(pjlink, val);
 }
 
-static jlif_result lnkConst_double(jlink *pjlink, double num) {
+static jlif_result lnkConst_double(jlink *pjlink, double num)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
 
     IFDEBUG(10)
@@ -194,7 +198,8 @@ static jlif_result lnkConst_double(jlink *pjlink, double num) {
     return jlif_continue;
 }
 
-static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len) {
+static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
 
     IFDEBUG(10)
@@ -238,7 +243,8 @@ static jlif_result lnkConst_string(jlink *pjlink, const char *val, size_t len) {
     return jlif_continue;
 }
 
-static jlif_result lnkConst_start_array(jlink *pjlink) {
+static jlif_result lnkConst_start_array(jlink *pjlink)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
 
     IFDEBUG(10)
@@ -253,27 +259,104 @@ static jlif_result lnkConst_start_array(jlink *pjlink) {
     return jlif_continue;
 }
 
-static jlif_result lnkConst_end_array(jlink *pjlink) {
+static jlif_result lnkConst_end_array(jlink *pjlink)
+{
     IFDEBUG(10)
         printf("lnkConst_end_array(const@%p)\n", pjlink);
 
     return jlif_continue;
 }
 
-static struct lset* lnkConst_get_lset(const jlink *pjlink) {
+static struct lset* lnkConst_get_lset(const jlink *pjlink)
+{
     IFDEBUG(10)
         printf("lnkConst_get_lset(const@%p)\n", pjlink);
 
     return &lnkConst_lset;
 }
 
-static void lnkConst_report(const jlink *pjlink) {
+
+/* Report outputs:
+ *    'const': integer 21
+ *    'const': double 5.23
+ *    'const': string "something"
+ *    'const': array of 999 integers
+ *        [1, 2, 3]
+ *    'const': array of 1 double
+ *        [1.2345]
+ *    'const': array of 2 strings
+ *        ["hello", "world"]
+ *
+ * Array values are only printed at level 2
+ * because there might be quite a few of them.
+ */
+
+static void lnkConst_report(const jlink *pjlink, int level, int indent)
+{
     clink *clink = CONTAINER(pjlink, struct clink, jlink);
+    const char * const type_names[4] = {
+        "bug", "integer", "double", "string"
+    };
+    const char * const dtype = type_names[clink->type & 3];
 
     IFDEBUG(10)
         printf("lnkConst_report(const@%p)\n", clink);
 
-    /* FIXME Implement! */
+    if (clink->type > a0) {
+        const char * const plural = clink->nElems > 1 ? "s" : "";
+
+        printf("%*s'const': array of %d %s%s", indent, "",
+            clink->nElems, dtype, plural);
+
+        if (level < 2) {
+            putchar('\n');
+        }
+        else {
+            int i;
+
+            switch (clink->type) {
+            case ai32:
+                printf("\n%*s[%d", indent+2, "", clink->value.pintegers[0]);
+                for (i = 1; i < clink->nElems; i++) {
+                    printf(", %d", clink->value.pintegers[i]);
+                }
+                break;
+            case af64:
+                printf("\n%*s[%g", indent+2, "", clink->value.pdoubles[0]);
+                for (i = 1; i < clink->nElems; i++) {
+                    printf(", %g", clink->value.pdoubles[i]);
+                }
+                break;
+            case ac40:
+                printf("\n%*s[\"%s\"", indent+2, "", clink->value.pstrings[0]);
+                for (i = 1; i < clink->nElems; i++) {
+                    printf(", \"%s\"", clink->value.pstrings[i]);
+                }
+                break;
+            default:
+                break;
+            }
+            printf("]\n");
+        }
+        return;
+    }
+
+    printf("%*s'const': %s", indent, "", dtype);
+
+    switch (clink->type) {
+    case si32:
+        printf(" %d\n", clink->value.scalar_integer);
+        return;
+    case sf64:
+        printf(" %g\n", clink->value.scalar_double);
+        return;
+    case sc40:
+        printf(" \"%s\"\n", clink->value.scalar_string);
+        return;
+    default:
+        printf(" -- type=%d\n", clink->type);
+        return;
+    }
 }
 
 /*************************** lset Routines **************************/
@@ -474,8 +557,10 @@ static lset lnkConst_lset = {
 static jlif lnkConstIf = {
     "const", lnkConst_alloc, lnkConst_free,
     NULL, lnkConst_boolean, lnkConst_integer, lnkConst_double, lnkConst_string,
-    NULL, NULL, NULL, lnkConst_start_array, lnkConst_end_array,
-    NULL, lnkConst_get_lset, lnkConst_report
+    NULL, NULL, NULL,
+    lnkConst_start_array, lnkConst_end_array,
+    NULL, lnkConst_get_lset,
+    lnkConst_report, NULL
 };
 epicsExportAddress(jlif, lnkConstIf);
 

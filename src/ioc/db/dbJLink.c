@@ -11,6 +11,7 @@
 
 #include "epicsAssert.h"
 #include "dbmf.h"
+#include "dbStaticLib.h"
 #include "errlog.h"
 #include "yajl_alloc.h"
 #include "yajl_parse.h"
@@ -20,6 +21,7 @@
 #include "dbCommon.h"
 #include "dbLink.h"
 #include "dbJLink.h"
+#include "dbLock.h"
 #include "dbStaticLib.h"
 #include "link.h"
 
@@ -406,7 +408,133 @@ long dbJLinkInit(struct link *plink)
     return 0;
 }
 
-void dbJLinkFree(jlink *pjlink) {
+void dbJLinkFree(jlink *pjlink)
+{
     if (pjlink)
         pjlink->pif->free_jlink(pjlink);
+}
+
+void dbJLinkReport(jlink *pjlink, int level, int indent) {
+    if (pjlink && pjlink->pif->report)
+        pjlink->pif->report(pjlink, level, indent);
+}
+
+long dbJLinkMapChildren(struct link *plink, jlink_map_fn rtn, void *ctx)
+{
+    jlink *pjlink;
+    long status;
+
+    if (!plink || plink->type != JSON_LINK)
+        return 0;
+
+    pjlink = plink->value.json.jlink;
+    if (!pjlink)
+        return 0;
+
+    status = rtn(pjlink, ctx);
+    if (!status && pjlink->pif->map_children)
+        status = pjlink->pif->map_children(pjlink, rtn, ctx);
+
+    return status;
+}
+
+long dbjlr(const char *recname, int level)
+{
+    DBENTRY dbentry;
+    DBENTRY * const pdbentry = &dbentry;
+    long status;
+
+    if (!recname || recname[0] == '\0' || !strcmp(recname, "*")) {
+        recname = NULL;
+        printf("JSON links in all records\n\n");
+    }
+    else
+        printf("JSON links in record '%s'\n\n", recname);
+
+    dbInitEntry(pdbbase, pdbentry);
+    for (status = dbFirstRecordType(pdbentry);
+         status == 0;
+         status = dbNextRecordType(pdbentry)) {
+        for (status = dbFirstRecord(pdbentry);
+             status == 0;
+             status = dbNextRecord(pdbentry)) {
+            dbRecordType *pdbRecordType = pdbentry->precordType;
+            dbCommon *precord = pdbentry->precnode->precord;
+            char *prec = (char *) precord;
+            int i;
+
+            if (recname && strcmp(recname, dbGetRecordName(pdbentry)))
+                continue;
+            if (dbIsAlias(pdbentry))
+                continue;
+
+            printf("  %s record '%s':\n", pdbRecordType->name, precord->name);
+
+            dbScanLock(precord);
+            for (i = 0; i < pdbRecordType->no_links; i++) {
+                int idx = pdbRecordType->link_ind[i];
+                dbFldDes *pdbFldDes = pdbRecordType->papFldDes[idx];
+                DBLINK *plink = (DBLINK *) (prec + pdbFldDes->offset);
+
+                if (plink->type != JSON_LINK)
+                    continue;
+                if (!dbLinkIsDefined(plink))
+                    continue;
+
+                printf("    Link field '%s':\n", pdbFldDes->name);
+                dbJLinkReport(plink->value.json.jlink, level, 6);
+            }
+            dbScanUnlock(precord);
+            if (recname)
+                goto done;
+        }
+    }
+done:
+    return 0;
+}
+
+long dbJLinkMapAll(char *recname, jlink_map_fn rtn, void *ctx)
+{
+    DBENTRY dbentry;
+    DBENTRY * const pdbentry = &dbentry;
+    long status;
+
+    if (recname && (recname[0] = '\0' || !strcmp(recname, "*")))
+        recname = NULL;
+
+    dbInitEntry(pdbbase, pdbentry);
+    for (status = dbFirstRecordType(pdbentry);
+         status == 0;
+         status = dbNextRecordType(pdbentry)) {
+        for (status = dbFirstRecord(pdbentry);
+             status == 0;
+             status = dbNextRecord(pdbentry)) {
+            dbRecordType *pdbRecordType = pdbentry->precordType;
+            dbCommon *precord = pdbentry->precnode->precord;
+            char *prec = (char *) precord;
+            int i;
+
+            if (recname && strcmp(recname, dbGetRecordName(pdbentry)))
+                continue;
+            if (dbIsAlias(pdbentry))
+                continue;
+
+            dbScanLock(precord);
+            for (i = 0; i < pdbRecordType->no_links; i++) {
+                int idx = pdbRecordType->link_ind[i];
+                dbFldDes *pdbFldDes = pdbRecordType->papFldDes[idx];
+                DBLINK *plink = (DBLINK *) (prec + pdbFldDes->offset);
+
+                status = dbJLinkMapChildren(plink, rtn, ctx);
+                if (status)
+                    goto unlock;
+            }
+unlock:
+            dbScanUnlock(precord);
+            if (status || recname)
+                goto done;
+        }
+    }
+done:
+    return status;
 }

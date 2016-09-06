@@ -160,7 +160,7 @@ static int dbjl_string(void *ctx, const unsigned char *val, unsigned len) {
 static int dbjl_start_map(void *ctx) {
     parseContext *parser = (parseContext *) ctx;
     jlink *pjlink = parser->pjlink;
-    jlif_key_result result;
+    int result;
 
     if (!pjlink) {
         IFDEBUG(10) {

@@ -227,10 +227,10 @@ static jlif_key_result lnkCalc_start_map(jlink *pjlink)
 
     if (clink->pstate != ps_init) {
         errlogPrintf("lnkCalc: Unexpected map\n");
-        return jlif_stop;
+        return jlif_key_stop;
     }
 
-    return jlif_continue;
+    return jlif_key_continue;
 }
 
 static jlif_result lnkCalc_map_key(jlink *pjlink, const char *key, size_t len)

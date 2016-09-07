@@ -432,6 +432,9 @@ static void lnkCalc_remove(struct dbLocker *locker, struct link *plink)
         dbRemoveLink(locker, child);
     }
 
+    free(clink->expr);
+    free(clink->major);
+    free(clink->minor);
     free(clink->post_expr);
     free(clink->post_major);
     free(clink->post_minor);

@@ -60,7 +60,7 @@ static const struct testParseDataT {
     {"#B11 C12 N13 A14 F15 @cparam", {CAMAC_IO, "cparam", 0, "BCNAF", {11, 12, 13, 14, 15}}},
     {" #B111 C112 N113 @cparam", {CAMAC_IO, "cparam", 0, "BCN", {111, 112, 113}}},
     {" @hello world ", {INST_IO, "hello world", 0, "", /*{}*/}},
-    {" {\"x\":{}} ", {JSON_LINK, "{\"x\":{}}", 0, "", /*{}*/}},
+    {" {\"x\":true} ", {JSON_LINK, "{\"x\":true}", 0, "", /*{}*/}},
     {NULL}
 };
 
@@ -101,7 +101,7 @@ static void testLinkParse(void)
                            info.hwnums[i], td->info.hwnums[i]);
             }
         }
-        free(info.target);
+        dbFreeLinkInfo(&info);
     }
 
     testIocShutdownOk();
@@ -240,7 +240,7 @@ typedef struct {
 } testHWDataT;
 
 static const testHWDataT testHWData[] = {
-    {"rJSON_LINK", JSON_LINK, "{\"JSON\":{}}", {0}, "{\"JSON\":{}}"},
+    {"rJSON_LINK", JSON_LINK, "{\"x\":true}", {0}, "{\"x\":true}"},
     {"rVME_IO", VME_IO, "#C100 S101 @parm VME_IO", {100, 101}, "parm VME_IO"},
     {"rCAMAC_IO", CAMAC_IO, "#B11 C12 N13 A14 F15 @parm CAMAC_IO", {11, 12, 13, 14, 15}, "parm CAMAC_IO"},
     {"rAB_IO", AB_IO, "#L21 A22 C23 S24 @parm AB_IO", {21, 22, 23, 24}, "parm AB_IO"},
@@ -365,7 +365,7 @@ static void testHWInitSet(void)
 }
 
 static const testHWDataT testHWData2[] = {
-    {"rJSON_LINK", JSON_LINK, "{\"json\":{}}", {0}, "{\"json\":{}}"},
+    {"rJSON_LINK", JSON_LINK, "{\"x\":true}", {0}, "{\"x\":true}"},
     {"rVME_IO", VME_IO, "#C200 S201 @another VME_IO", {200, 201}, "another VME_IO"},
     {"rCAMAC_IO", CAMAC_IO, "#B111 C112 N113 A114 F115 @CAMAC_IO", {111, 112, 113, 114, 115}, "CAMAC_IO"},
     {"rAB_IO", AB_IO, "#L121 A122 C123 S124 @another AB_IO", {121, 122, 123, 124}, "another AB_IO"},
@@ -491,11 +491,17 @@ static void testLinkFail(void)
     /* INST_IO doesn't accept string without @ */
     testdbPutFieldFail(S_dbLib_badField, "rINST_IO.INP", DBR_STRING, "abc");
 
-    /* JSON_LINK doesn't accept empty string */
-    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "");
+    /* JSON_LINK dies properly */
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":false}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":null}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":1}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":1.1}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":\"x\"}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":[]}");
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":{}}");
 
-    /* JSON_LINK doesn't accept bareword string */
-    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "abc");
+    /* JSON_LINK syntax errors */
+    testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":bbbb}");
 
     /* syntax errors */
     testdbPutFieldFail(S_dbLib_badField, "rVME_IO.INP", DBR_STRING, "#S201 C200 @another VME_IO");
@@ -516,7 +522,7 @@ static void testLinkFail(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(263);
+    testPlan(269);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

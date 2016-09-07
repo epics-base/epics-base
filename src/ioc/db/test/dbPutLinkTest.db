@@ -5,7 +5,7 @@ record(x, "x4") {}
 
 record(x, "rJSON_LINK") {
   field(DTYP, "Unit Test JSON_LINK")
-  field(INP, "{\"JSON\":{}}")
+  field(INP, {x:true})
 }
 record(x, "rVME_IO") {
   field(DTYP, "Unit Test VME_IO")

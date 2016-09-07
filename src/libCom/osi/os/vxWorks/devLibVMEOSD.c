@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* 
- * $Revision-Id$
- *
  * Archictecture dependent support for common device driver resources 
  *
  *      Author: Jeff Hill 

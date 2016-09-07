@@ -7,8 +7,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$ */
-
 /* recEvent.c - Record Support Routines for Event records */
 /*
  *      Author:          Janet Anderson

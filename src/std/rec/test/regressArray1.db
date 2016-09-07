@@ -1,0 +1,9 @@
+record(waveform, "wf") {
+  field(FTVL, "DOUBLE")
+  field(NELM, "1")
+  field(FLNK, "co")
+}
+record(calcout, "co") {
+  field(CALC, "A")
+  field(INPA, "wf")
+}

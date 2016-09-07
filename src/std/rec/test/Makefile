@@ -68,6 +68,14 @@ testHarness_SRCS += analogMonitorTest_registerRecordDeviceDriver.cpp
 TESTFILES += $(COMMON_DIR)/analogMonitorTest.dbd ../analogMonitorTest.db
 TESTS += analogMonitorTest
 
+TARGETS += $(COMMON_DIR)/regressTest.dbd
+regressTest_DBD += base.dbd
+TESTPROD_HOST += regressTest
+regressTest_SRCS += regressTest.c
+regressTest_SRCS += regressTest_registerRecordDeviceDriver.cpp
+TESTFILES += $(COMMON_DIR)/regressTest.dbd ../regressArray1.db
+TESTS += regressTest
+
 # epicsRunRecordTests runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunRecordTests.c
 

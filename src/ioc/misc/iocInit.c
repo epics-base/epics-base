@@ -8,7 +8,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$ */
 /*
  *      Original Author: Marty Kraimer
  *      Date:            06-01-91
@@ -23,10 +22,12 @@
 #include <errno.h>
 #include <limits.h>
 
+#include "dbBase.h"
 #include "dbDefs.h"
 #include "ellLib.h"
 #include "envDefs.h"
 #include "epicsExit.h"
+#include "epicsGeneralTime.h"
 #include "epicsPrint.h"
 #include "epicsSignal.h"
 #include "epicsThread.h"
@@ -78,6 +79,7 @@ static enum {
 
 /* define forward references*/
 static int checkDatabase(dbBase *pdbbase);
+static void checkGeneralTime(void);
 static void initDrvSup(void);
 static void initRecSup(void);
 static void initDevSup(void);
@@ -129,6 +131,7 @@ static int iocBuild_1(void)
     coreRelease();
     iocState = iocBuilding;
 
+    checkGeneralTime();
     taskwdInit();
     callbackInit();
     initHookAnnounce(initHookAfterCallbackInit);
@@ -352,6 +355,22 @@ static int checkDatabase(dbBase *pdbbase)
     }
 
     return 0;
+}
+
+static void checkGeneralTime(void)
+{
+    epicsTimeStamp ts;
+
+    epicsTimeGetCurrent(&ts);
+    if (ts.secPastEpoch < 2*24*60*60) {
+        static const char * const tsfmt = "%Y-%m-%d %H:%M:%S.%09f";
+        char buff[40];
+
+        epicsTimeToStrftime(buff, sizeof(buff), tsfmt, &ts);
+        errlogPrintf("iocInit: Time provider has not yet synchronized.\n");
+    }
+
+    epicsTimeGetEvent(&ts, 1);  /* Prime gtPvt.lastEventProvider for ISRs */
 }
 
 

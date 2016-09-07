@@ -13,8 +13,6 @@
 /*
  * Author:	Jim Kowalkowski
  * Date:	3/97
- *
- * $Revision-Id$
  */
 
 #include "shareLib.h"

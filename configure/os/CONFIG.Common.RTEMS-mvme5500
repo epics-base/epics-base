@@ -1,6 +1,5 @@
 #
 # CONFIG.Common.RTEMS-mvme5500
-# $Revision-Id$
 # Author: W. Eric Norum <wenorum@lbl.gov>
 #
 # All RTEMS targets use the same Makefile fragment

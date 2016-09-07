@@ -8,9 +8,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 //
-// $Revision-Id$
 // Author: Jeff HIll (LANL)
-//
 //
 
 #include <vxWorks.h>

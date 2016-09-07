@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$ */
 /*
  *	Author: Julie Sander and Bob Dalesio
  *	Date:	07-27-87
@@ -155,7 +154,7 @@ epicsShareFunc long
 	    break;
 
 	case ABS_VAL:
-	    if (*ptop < 0.0) *ptop = - *ptop;
+	    *ptop = fabs(*ptop);
 	    break;
 
 	case EXP:

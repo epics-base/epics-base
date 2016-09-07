@@ -6,7 +6,6 @@
 # EPICS BASE is distributed subject to a Software License Agreement found
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
-#	$Revision-Id$
 #	Author:	Andrew Johnson
 #	Date:	1 May 1995
 #
@@ -30,10 +29,8 @@
 #	local timezone info for vxWorks and RTEMS IOCs.  The format is
 #	    <name>::<minutesWest>:<start daylight>:<end daylight>
 #	where the start and end are mmddhh - that is month,day,hour
-#	e.g. for ANL in 2015: EPICS_TIMEZONE=CST/CDT::360:030802:110102
+#	e.g. for ANL in 2016: EPICS_TIMEZONE=CST/CDT::360:031302:110602
 #
-#	DST for 2015  US: Mar 08 - Nov 01
-#	              EU: Mar 29 - Oct 25
 #	DST for 2016  US: Mar 13 - Nov 06
 #	              EU: Mar 27 - Oct 30
 #	DST for 2017  US: Mar 12 - Nov 05
@@ -42,11 +39,15 @@
 #	              EU: Mar 25 - Oct 28
 #	DST for 2019  US: Mar 10 - Nov 03
 #	              EU: Mar 31 - Oct 27
-#	(see: http://www.timeanddate.com/time/map/)
+#	DST for 2020  US: Mar 08 - Nov 01
+#	              EU: Mar 29 - Oct 25
+#	DST for 2021  US: Mar 14 - Nov 07
+#	              EU: Mar 28 - Oct 31
+#	(see: http://www.timeanddate.com/time/dst/2016.html etc. )
 #
-# These values are for 2015:
-EPICS_TIMEZONE=CST/CDT::360:030802:110102
-#EPICS_TIMEZONE=CET/CEST::-60:032902:102502
+# These values are for 2016:
+EPICS_TIMEZONE=CST/CDT::360:031302:110602
+#EPICS_TIMEZONE=CET/CEST::-60:032702:103002
 
 # EPICS_TS_NTP_INET
 #	NTP time server ip address.  Uses boot host if not set.

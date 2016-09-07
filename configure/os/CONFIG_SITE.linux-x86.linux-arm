@@ -1,15 +1,14 @@
 # CONFIG_SITE.linux-x86.linux-arm
 #
-# $Revision-Id$
-#
 # Site specific definitions for linux-x86 host - linux-arm target builds
 #-------------------------------------------------------
 
-# Tools install path
-#GNU_DIR = /home/targetOS/linux-arm/host/x86-linux/gcc_3.3.3
+# Set GNU crosscompiler target name
+GNU_TARGET = arm-xilinx-linux-gnueabi
 
-# APS:
+# Set GNU tools install path
+# This is the install path at APS:
 GNU_DIR = /usr/local/vw/zynq-2011.09
 
-# GNU crosscompiler target name
-GNU_TARGET = arm-xilinx-linux-gnueabi
+# With a Xilinx SDK, it'll be something like
+#GNU_DIR = /usr/local/zynq/Xilinx/SDK/2015.4/gnu/arm/lin

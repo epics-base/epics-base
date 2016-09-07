@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* $Revision-Id$ */
 
 /* Author:  Marty Kraimer Date:    13JUL95*/
 
@@ -34,7 +33,6 @@
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "epicsExport.h"
-#include "guigroup.h"
 #include "link.h"
 #include "special.h"
 
@@ -71,6 +69,7 @@ static void dbRecordtypeEmpty(void);
 static void dbRecordtypeBody(void);
 static void dbRecordtypeFieldHead(char *name,char *type);
 static void dbRecordtypeFieldItem(char *name,char *value);
+static short findOrAddGuiGroup(const char *name);
 
 static void dbDevice(char *recordtype,char *linktype,
 	char *dsetname,char *choicestring);
@@ -502,7 +501,23 @@ static void dbRecordtypeFieldHead(char *name,char *type)
         yyerrorAbort("Illegal Field Type");
     pdbFldDes->field_type = i;
 }
-
+
+static short findOrAddGuiGroup(const char *name)
+{
+    dbGuiGroup *pdbGuiGroup;
+    GPHENTRY   *pgphentry;
+    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->guiGroupList);
+    if (!pgphentry) {
+        pdbGuiGroup = dbCalloc(1,sizeof(dbGuiGroup));
+        pdbGuiGroup->name = epicsStrDup(name);
+        ellAdd(&pdbbase->guiGroupList, &pdbGuiGroup->node);
+        pdbGuiGroup->key = ellCount(&pdbbase->guiGroupList);
+        pgphentry = gphAdd(pdbbase->pgpHash, pdbGuiGroup->name, &pdbbase->guiGroupList);
+        pgphentry->userPvt = pdbGuiGroup;
+    }
+    return ((dbGuiGroup *)pgphentry->userPvt)->key;
+}
+
 static void dbRecordtypeFieldItem(char *name,char *value)
 {
     dbFldDes		*pdbFldDes;
@@ -524,14 +539,7 @@ static void dbRecordtypeFieldItem(char *name,char *value)
         return;
     }
     if(strcmp(name,"promptgroup")==0) {
-        int	i;
-        for(i=0; i<GUI_NTYPES; i++) {
-            if(strcmp(value,pamapguiGroup[i].strvalue)==0) {
-                pdbFldDes->promptgroup = pamapguiGroup[i].value;
-                return;
-            }
-        }
-        yyerror("Illegal promptgroup. See guigroup.h for legal values");
+        pdbFldDes->promptgroup = findOrAddGuiGroup(value);
         return;
     }
     if(strcmp(name,"prompt")==0) {

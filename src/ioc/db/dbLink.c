@@ -1,13 +1,13 @@
 /*************************************************************************\
 * Copyright (c) 2010 UChicago Argonne LLC, as Operator of Argonne
-*     National Laboratory.
-* Copyright (c) 2002 The Regents of the University of California, as
-*     Operator of Los Alamos National Laboratory.
-* EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
-\*************************************************************************/
-/* dbLink.c
- *
+ *     National Laboratory.
+ * Copyright (c) 2002 The Regents of the University of California, as
+ *     Operator of Los Alamos National Laboratory.
+ * EPICS BASE is distributed subject to a Software License Agreement found
+ * in file LICENSE that is included with this distribution.
+ \*************************************************************************/
+/* dbLink.c */
+/*
  *      Original Authors: Bob Dalesio, Marty Kraimer
  *      Current Author: Andrew Johnson
  */
@@ -254,6 +254,7 @@ static long dbDbGetValue(struct link *plink, short dbrType, void *pbuffer,
             return S_db_badDbrtype;
 
         if (paddr->no_elements == 1 && (!pnRequest || *pnRequest == 1)
+                && paddr->special != SPC_DBADDR
                 && paddr->special != SPC_ATTRIBUTE) {
             ppv_link->getCvt = dbFastGetConvertRoutine[dbfType][dbrType];
             status = ppv_link->getCvt(paddr->pfield, pbuffer, paddr);

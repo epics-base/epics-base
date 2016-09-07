@@ -11,7 +11,7 @@
 
 <p style="color:red">This version of EPICS Base has not been released yet.</p>
 
-<h2 align="center">Changes made on the 3.16 branch since 3.15.3</h2>
+<h2 align="center">Changes made on the 3.16 branch since 3.16.0.1</h2>
 <!-- Insert new items immediately below this template ...
 
 <h3>Title...</h3>
@@ -29,7 +29,7 @@ a script by starting those lines with '#-' rather than just '#'.</p>
 
 <hr>
 
-<h2 align="center">Changes in 3.16.0.1 made since 3.15.3</h2>
+<h2 align="center">Changes made between 3.15.3 and 3.16.0.1</h2>
 
 <h3>Build support for CapFast and dbst removed</h3>
 
@@ -138,7 +138,118 @@ callback.h header and removed the need for dbScan.c to reach into the internals
 of its CALLBACK objects.</p>
 
 
-<h2 align="center">Changes pulled from the 3.15 branch since 3.15.3</h2>
+<h2 align="center">Changes from the 3.15 branch since 3.15.4</h2>
+<!-- Insert inherited items immediately below here ... -->
+
+
+<h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
+<!-- Insert inherited items immediately below here ... -->
+
+<h3>General Time updates</h3>
+
+<p>The <tt>iocInit</tt> code now performs a sanity check of the current time
+returned by the generalTime subsystem and will print a warning if the wall-clock
+time returned has not been initialized yet. This is just a warning message; when
+a time provider does synchonize the IOC will subsequently pick up and use the
+correct time. This check code also primes the registered event system provider
+if there is one so the <tt>epicsTimeGetEventInt()</tt> routine will work on IOCs
+that ask for event time within an interrupt service routine.</p>
+
+<p>The osiClockTime provider's synchronization thread (which is only used on
+some embedded targets) will now poll the other time providers at 1Hz until the
+first time it manages to get a successful timestamp, after which it will poll
+for updates every 60 seconds as before.</p>
+
+<p>The routine <tt>generalTimeGetExceptPriority()</tt> was designed for use by
+backup (lower priority) time providers like the osiClockTime provider which do
+not have their own absolute time reference and rely on other providers for an
+absolute time source. This routine no longer implements the ratchet mechanism
+that prevented the time it returned from going backwards. If the backup clock's
+tick-timer runs fast the synchronization of the backup time provider would never
+allow it to be corrected backwards when the ratchet was in place. The regular
+<tt>epicsTimeGetCurrent()</tt> API still uses the ratchet mechanism, so this
+change will not cause the IOC to see time going backwards.</p>
+
+<h3>Microsoft Visual Studio builds</h3>
+
+<p>The build configuration files for builds using the Microsoft compilers have
+been updated, although there should be no noticable difference at most sites.
+One extra compiler warning is now being suppressed for C++ code, <tt>C4344:
+behavior change: use of explicit template arguments results in ...</tt> which is
+gratuitous and was appearing frequently in builds of the EPICS V4 modules.</p>
+
+<p>Cross-builds of the windows-x64 target from a win32-x86 host have been
+removed as they don't actually work within the context of a single <tt>make</tt>
+run. Significant changes to the build configuration files would be necessary for
+these kinds of cross-builds to work properly, which could be done if someone
+needs them (email Andrew Johnson before working on this, and see
+<a href="http://stackoverflow.com/questions/5807647/how-do-you-compile-32-bit-and-64-bit-applications-at-the-same-time-in-visual-stu">
+this stack-overflow answer</a> for a starting point).</p>
+
+<h3>Bazaar keywords such as 'Revision-Id' removed</h3>
+
+<p>In preparation for moving to git in place of the Bazaar revision control
+system we have removed all the keywords from the Base source code.</p>
+
+<h3>Linux systemd service file for CA Repeater</h3>
+
+<p>Building this version of Base on a Linux system creates a systemd service
+file suitable for starting the Channel Access Repeater under systemd. The file
+will be installed into the target bin directory, from where it can be copied
+into the appropriate systemd location and modified as necessary. Installation
+instructions are included as comments in the file.</p>
+
+
+<h2 align="center">Changes made between 3.15.3 and 3.15.4</h2>
+
+<h3>New string input device support "getenv"</h3>
+
+<p>A new "getenv" device support for both the stringin and lsi (long string
+input) record types can be used to read the value of an environment variable
+from the IOC at runtime. See base/db/softIocExit.db for sample usage.</p>
+
+<h3>Build rules and DELAY_INSTALL_LIBS</h3>
+
+<p>A new order-only prerequisite build rule has been added to ensure that
+library files (and DLL stubs on Windows) get installed before linking any
+executables, which resolves parallel build problems on high-powered CPUs. There
+are some (rare) cases though where a Makefile has to build an executable and run
+it to be able to compile code for a library built by the same Makefile. With
+this new build rule GNUmake will complain about a circular dependency and the
+build will probably fail in those cases. To avoid this problem the failing
+Makefile should set <tt>DELAY_INSTALL_LIBS = YES</tt> before including the
+<tt>$(TOP)/configure/RULES</tt> file, disabling the new build rule.</p>
+
+<h3>IOC environment variables and build parameters</h3>
+
+<p>The IOC now sets a number of environment variables at startup that provide
+the version of EPICS Base it was built against (EPICS_VERSION_...) and its build
+architecture (ARCH). In some cases this allows a single iocBoot/ioc directory to
+be used to run the same IOC on several different architectures without any
+changes.</p>
+
+<p>There are also 3 new environment parameters (EPICS_BUILD_...) available that
+C/C++ code can use to find out the target architecture, OS class and compiler
+class it was built with. These may be useful when writing interfaces to other
+languages.</p>
+
+<h3>New implementation of promptgroup/gui_group field property</h3>
+
+<p>The mechanism behind the "promptgroup()" field property inside a record type
+definition has been changed. Instead of using a fixed set of choices,
+the static database access library now collects the used gui group names
+while parsing DBD information. Group names should start with a two-digit number
+plus space-dash-space to allow proper sorting of groups.</p>
+
+<p>The include file <tt>guigroup.h</tt> that defined the fixed set of choices
+has been deprecated. Instead, use the conversion functions between index number
+and group string that have been added to dbStaticLib.</p>
+
+<p>When a DBD file containing record-type descriptions is expanded, any
+old-style <tt>GUI_xxx</tt> group names will be replaced by a new-style
+string for use by the IOC. This permits an older record type to be used with
+the 3.15.4 release, although eventually record types should be converted by
+hand with better group names used.</p>
 
 <h3>CA server configuration changes</h3>
 
@@ -194,7 +305,76 @@ dbQuietMacroWarnings=1          <i>VxWorks</i>
 541119</a>.</p>
 
 
-<h2 align="center">Changes pulled from the 3.14 branch since 3.15.3</h2>
+<h2 align="center">Changes from the 3.14 branch between 3.15.3 and 3.15.4</h2>
+
+<h3>NTP Time Provider adjusts to OS tick rate changes</h3>
+
+<p>Dirk Zimoch provided code that allows the NTP Time provider (used on VxWorks
+and RTEMS only) to adapt to changes in the OS clock tick rate after the provider
+has been initialized. Note that changing the tick rate after iocInit() is not
+advisable, and that other software might still misbehave if initialized before
+an OS tick rate change. This change was back-ported from the 3.15 branch.</p>
+
+<h3>Making IOC ca_get operations atomic</h3>
+
+<p>When a CA client gets data from an IOC record using a compound data type such
+as <tt>DBR_TIME_DOUBLE</tt> the value field is fetched from the database in a
+separate call than the other metadata, without keeping the record locked. This
+allows some other thread such as a periodic scan thread a chance to interrupt
+the get operation and process the record in between. CA monitors have always
+been atomic as long as the value data isn't a string or an array, but this race
+condition in the CA get path has now been fixed so the record will stay locked
+between the two fetch operations.</p>
+
+<p>This fixes <a href="https://bugs.launchpad.net/epics-base/+bug/1581212">
+Launchpad bug #1581212</a>, thanks to Till Strauman and Dehong Zhang.</p>
+
+<h3>New CONFIG_SITE variable for running self-tests</h3>
+
+<p>The 'make runtests' and 'make tapfiles' build targets normally only run the
+self-tests for the main <tt>EPICS_HOST_ARCH</tt> architecture. If the host is
+able to execute self-test programs for other target architectures that are being
+built by the host, such as when building a <tt>-debug</tt> version of the host
+architecture for example, the names of those other architectures can be added to
+the new <tt>CROSS_COMPILER_RUNTEST_ARCHS</tt> variable in either the
+<tt>configure/CONFIG_SITE</tt> file or in an appropriate
+<tt>configure/os/CONFIG_SITE.&lt;host&gt;.Common</tt> file to have the test
+programs for those targets be run as well.</p>
+
+<h3>Additional RELEASE file checks</h3>
+
+<p>An additional check has been added at build-time for the contents of the
+configure/RELEASE file(s), which will mostly only affect users of the Debian
+EPICS packages published by NSLS-2. Support modules may share an install path,
+but all such modules must be listed adjacent to each other in any RELEASE files
+that point to them. For example the following will fail the new checks:</p>
+
+<blockquote><pre>
+AUTOSAVE = /usr/lib/epics
+ASYN = /home/mdavidsaver/asyn
+EPICS_BASE = /usr/lib/epics
+</pre></blockquote>
+
+<p>giving the compile-time error</p>
+
+<blockquote><pre>
+This application's RELEASE file(s) define
+	EPICS_BASE = /usr/lib/epics
+after but not adjacent to
+	AUTOSAVE = /usr/lib/epics
+Module definitions that share paths must be grouped together.
+Either remove a definition, or move it to a line immediately
+above or below the other(s).
+Any non-module definitions belong in configure/CONFIG_SITE.
+</pre></blockquote>
+
+
+<p>In many cases such as the one above the order of the <tt>AUTOSAVE</tt> and
+<tt>ASYN</tt> lines can be swapped to let the checks pass, but if the
+<tt>AUTOSAVE</tt> module depended on <tt>ASYN</tt> and hence had to appear
+before it in the list this error indicates that <tt>AUTOSAVE</tt> should also be
+built in its own private area; a shared copy would likely be incompatible with
+the version of <tt>ASYN</tt> built in the home directory.</p>
 
 <h3>String field buffer overflows</h3>
 

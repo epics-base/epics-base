@@ -1,16 +1,14 @@
 # CONFIG.windows-x64.windows-x64
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
-# Definitions for windows-x64 target archs when host arch is windows-x64
-# Sites may override these definitions in CONFIG_SITE.windows-x64.windows-x64
+# Definitions for windows-x64 host - windows-x64 target build
+# Override these definitions in CONFIG_SITE.windows-x64.windows-x64
 #-------------------------------------------------------
 
--include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
+#Include definitions common to win32-x86 builds
+include $(CONFIG)/os/CONFIG.win32-x86.win32-x86
+-include $(CONFIG)/os/CONFIG_SITE.win32-x86.win32-x86
 
 OPT_LDFLAGS += /MACHINE:X64
-
 #	/MACHINE:X64
 #	/MACHINE:IA64  (Itanium)
 #	/MACHINE:X86

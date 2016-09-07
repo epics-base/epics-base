@@ -1,7 +1,5 @@
 # CONFIG_SITE.Common.windows-x64-static
 #
-# $Revision-Id$
-#
 # Site Specific definitions for windows-x64-static target
 # Only the local epics system manager should modify this file
 

@@ -6,7 +6,6 @@
 \*************************************************************************/
 /*
  * RTEMS osiFileName.h
- *	$Revision-Id$
  *      Author: W. Eric Norum
  *              eric@cls.usask.ca
  *              (306) 966-6055

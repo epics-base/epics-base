@@ -3,121 +3,120 @@
 #     National Laboratory.
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
-# EPICS BASE Versions 3.13.7
-# and higher are distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# EPICS BASE is distributed subject to a Software License Agreement found
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 recordtype(longin) {
 	include "dbCommon.dbd" 
 	field(VAL,DBF_LONG) {
 		prompt("Current value")
-                promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		asl(ASL0)
 		pp(TRUE)
 	}
 	field(INP,DBF_INLINK) {
 		prompt("Input Specification")
-		promptgroup(GUI_INPUTS)
+		promptgroup("40 - Input")
 		interest(1)
 	}
 	field(EGU,DBF_STRING) {
-		prompt("Units name")
-		promptgroup(GUI_DISPLAY)
+		prompt("Engineering Units")
+		promptgroup("80 - Display")
 		interest(1)
 		size(16)
 		prop(YES)
 	}
 	field(HOPR,DBF_LONG) {
 		prompt("High Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(LOPR,DBF_LONG) {
 		prompt("Low Operating Range")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 		prop(YES)
 	}
 	field(HIHI,DBF_LONG) {
 		prompt("Hihi Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOLO,DBF_LONG) {
 		prompt("Lolo Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HIGH,DBF_LONG) {
 		prompt("High Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(LOW,DBF_LONG) {
 		prompt("Low Alarm Limit")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		prop(YES)
 	}
 	field(HHSV,DBF_MENU) {
 		prompt("Hihi Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LLSV,DBF_MENU) {
 		prompt("Lolo Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HSV,DBF_MENU) {
 		prompt("High Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(LSV,DBF_MENU) {
 		prompt("Low Severity")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		pp(TRUE)
 		interest(1)
 		menu(menuAlarmSevr)
 	}
 	field(HYST,DBF_LONG) {
 		prompt("Alarm Deadband")
-		promptgroup(GUI_ALARMS)
+		promptgroup("70 - Alarm")
 		interest(1)
 	}
         field(AFTC, DBF_DOUBLE) {
-                prompt("Alarm Filter Time Constant")
-                promptgroup(GUI_ALARMS)
-                interest(1)
+		prompt("Alarm Filter Time Constant")
+		promptgroup("70 - Alarm")
+		interest(1)
         }
         field(AFVL, DBF_DOUBLE) {
-                prompt("Alarm Filter Value")
-                special(SPC_NOMOD)
-                interest(3)
+		prompt("Alarm Filter Value")
+		special(SPC_NOMOD)
+		interest(3)
         }
 	field(ADEL,DBF_LONG) {
 		prompt("Archive Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(MDEL,DBF_LONG) {
 		prompt("Monitor Deadband")
-		promptgroup(GUI_DISPLAY)
+		promptgroup("80 - Display")
 		interest(1)
 	}
 	field(LALM,DBF_LONG) {
@@ -137,7 +136,7 @@ recordtype(longin) {
 	}
 	field(SIOL,DBF_INLINK) {
 		prompt("Sim Input Specifctn")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SVAL,DBF_LONG) {
@@ -145,7 +144,7 @@ recordtype(longin) {
 	}
 	field(SIML,DBF_INLINK) {
 		prompt("Sim Mode Location")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(1)
 	}
 	field(SIMM,DBF_MENU) {
@@ -155,7 +154,7 @@ recordtype(longin) {
 	}
 	field(SIMS,DBF_MENU) {
 		prompt("Sim mode Alarm Svrty")
-		promptgroup(GUI_INPUTS)
+		promptgroup("90 - Simulate")
 		interest(2)
 		menu(menuAlarmSevr)
 	}

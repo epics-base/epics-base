@@ -1,7 +1,5 @@
 # CONFIG_SITE.cygwin-x86.linux-arm
 #
-# $Revision-Id$
-#
 # Site specific definitions for cygwin-x86 host - linux-arm target builds
 #-------------------------------------------------------
 

@@ -6,11 +6,10 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
-/* dbCa.c
- *
+
+/*
  *    Original Authors: Bob Dalesio and Marty Kraimer
  *    Date:             26MAR96
- *
  */
 #define EPICS_DBCA_PRIVATE_API
 #include <stddef.h>

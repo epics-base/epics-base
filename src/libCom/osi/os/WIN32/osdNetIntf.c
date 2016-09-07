@@ -3,18 +3,15 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 /*
- *	    $Revision-Id$
- *
- *	    WIN32 specific initialisation for bsd sockets,
- *	    based on Chris Timossi's base/src/ca/windows_depend.c,
+ *      WIN32 specific initialisation for bsd sockets,
+ *      based on Chris Timossi's base/src/ca/windows_depend.c,
  *      and also further additions by Kay Kasemir when this was in
- *	    dllmain.cc
+ *      dllmain.cc
  *
  *      7-1-97  -joh-
  *
@@ -51,14 +48,14 @@ static epicsThreadOnceId osiLocalAddrId = EPICS_THREAD_ONCE_INIT;
  */
 static void osiLocalAddrOnce ( void *raw )
 {
-    SOCKET *psocket = raw;
+    SOCKET              *psocket = raw;
     osiSockAddr         addr;
-    int             	status;
-    INTERFACE_INFO		*pIfinfo;
+    int                 status;
+    INTERFACE_INFO      *pIfinfo;
     INTERFACE_INFO      *pIfinfoList = NULL;
-    unsigned			nelem;
-    DWORD				numifs;
-    DWORD				cbBytesReturned;
+    unsigned            nelem;
+    DWORD               numifs;
+    DWORD               cbBytesReturned;
 
     memset ( (void *) &addr, '\0', sizeof ( addr ) );
     addr.sa.sa_family = AF_UNSPEC;
@@ -68,7 +65,7 @@ static void osiLocalAddrOnce ( void *raw )
         goto fail;
     }
 
-    nelem = 10;
+    nelem = 100;
     pIfinfoList = (INTERFACE_INFO *) calloc ( nelem, sizeof (INTERFACE_INFO) );
     if (!pIfinfoList) {
         errlogPrintf ("calloc failed\n");
@@ -137,12 +134,12 @@ epicsShareFunc osiSockAddr epicsShareAPI osiLocalAddr (SOCKET socket)
 epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
      (ELLLIST *pList, SOCKET socket, const osiSockAddr *pMatchAddr)
 {
-    int             	status;
+    int                 status;
     INTERFACE_INFO      *pIfinfo;
     INTERFACE_INFO      *pIfinfoList;
-    unsigned			nelem;
-    int					numifs;
-    DWORD				cbBytesReturned;
+    unsigned            nelem;
+    int                 numifs;
+    DWORD               cbBytesReturned;
     osiSockAddrNode     *pNewNode;
 
     if ( pMatchAddr->sa.sa_family == AF_INET  ) {
@@ -165,7 +162,7 @@ epicsShareFunc void epicsShareAPI osiSockDiscoverBroadcastAddresses
         return;
     }
 
-    nelem = 10;
+    nelem = 100;
     pIfinfoList = (INTERFACE_INFO *) calloc(nelem, sizeof(INTERFACE_INFO));
     if(!pIfinfoList){
         return;

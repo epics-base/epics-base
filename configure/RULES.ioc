@@ -24,10 +24,14 @@ else
     clean$(DIVIDER)$(ARCH) clean:
 endif
 
-cdCommands envPaths dllPath.bat relPaths.sh: \
+cdCommands dllPath.bat relPaths.sh: \
     $(wildcard $(TOP)/configure/RELEASE*) \
-    $(wildcard $(TOP)/configure/CONFIG_SITE*) $(INSTALL_BIN)
+    $(wildcard $(TOP)/configure/CONFIG_SITE*) | $(INSTALL_BIN)
 	$(CONVERTRELEASE) -a $(ARCH) -t $(IOCS_APPL_TOP) $@
+
+envPaths: $(wildcard $(TOP)/configure/RELEASE*) \
+    $(wildcard $(TOP)/configure/CONFIG_SITE*) | $(INSTALL_BIN)
+	$(CONVERTRELEASE) -t $(IOCS_APPL_TOP) $@
 
 realclean:
 	$(RM) cdCommands envPaths dllPath.bat relPaths.sh

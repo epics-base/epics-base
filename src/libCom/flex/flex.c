@@ -42,14 +42,6 @@ char copyright[] =
  All rights reserved.\n";
 #endif /* not lint */
 
-/*
-#ifndef lint
-static char rcsid[] =
-    "@(#) $Revision-Id$ (LBL)";
-#endif
-
-#include "flexdef.h"
-*/
 
 #define epicsExportSharedSymbols
 #include "epicsTempFile.h"

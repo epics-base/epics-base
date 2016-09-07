@@ -5,8 +5,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Revision-Id$
-
 package EPICS::Path;
 require 5.000;
 require Exporter;

@@ -6,7 +6,6 @@
 * EPICS BASE is distributed subject to a Software License Agreement found
 * in file LICENSE that is included with this distribution.
 \*************************************************************************/
-/* $Revision-Id$ */
 
 #include <stdio.h>
 #include <stddef.h>
@@ -31,7 +30,6 @@
 #include "postfix.h"
 
 #define DBFLDTYPES_GBLSOURCE
-#define GUIGROUPS_GBLSOURCE
 #define SPECIAL_GBLSOURCE
 
 #define epicsExportSharedSymbols
@@ -41,7 +39,6 @@
 #include "dbStaticPvt.h"
 #include "devSup.h"
 #include "drvSup.h"
-#include "guigroup.h"
 #include "link.h"
 #include "special.h"
 
@@ -433,6 +430,7 @@ dbBase * dbAllocBase(void)
     ellInit(&pdbbase->variableList);
     ellInit(&pdbbase->bptList);
     ellInit(&pdbbase->filterList);
+    ellInit(&pdbbase->guiGroupList);
     gphInitPvt(&pdbbase->pgpHash,256);
     dbPvdInitPvt(pdbbase);
     return (pdbbase);
@@ -458,8 +456,10 @@ void dbFreeBase(dbBase *pdbbase)
     drvSup		*pdrvSupNext;
     brkTable		*pbrkTable;
     brkTable		*pbrkTableNext;
-    chFilterPlugin      *pfilt;
-    chFilterPlugin      *pfiltNext;
+    chFilterPlugin  *pfilt;
+    chFilterPlugin  *pfiltNext;
+    dbGuiGroup      *pguiGroup;
+    dbGuiGroup      *pguiGroupNext;
     int			i;
     DBENTRY		dbentry;
 
@@ -599,6 +599,15 @@ void dbFreeBase(dbBase *pdbbase)
             (*pfilt->fif->priv_free)(pfilt->puser);
         free(pfilt);
         pfilt = pfiltNext;
+    }
+    pguiGroup = (dbGuiGroup *)ellFirst(&pdbbase->guiGroupList);
+    while (pguiGroup) {
+        pguiGroupNext = (dbGuiGroup *)ellNext(&pguiGroup->node);
+        gphDelete(pdbbase->pgpHash, pguiGroup->name, &pdbbase->guiGroupList);
+        ellDelete(&pdbbase->guiGroupList, &pguiGroup->node);
+        free(pguiGroup->name);
+        free((void *)pguiGroup);
+        pguiGroup = pguiGroupNext;
     }
     gphFreeMem(pdbbase->pgpHash);
     dbPvdFreeMem(pdbbase);
@@ -752,6 +761,31 @@ static long dbAddOnePath (DBBASE *pdbbase, const char *path, unsigned length)
     pdbPathNode->directory[length] = '\0';
     ellAdd(ppathList, &pdbPathNode->node);
     return 0;
+}
+
+char *dbGetPromptGroupNameFromKey(DBBASE *pdbbase, const short key)
+{
+    dbGuiGroup *pdbGuiGroup;
+
+    if (!pdbbase) return NULL;
+    for (pdbGuiGroup = (dbGuiGroup *)ellFirst(&pdbbase->guiGroupList);
+        pdbGuiGroup; pdbGuiGroup = (dbGuiGroup *)ellNext(&pdbGuiGroup->node)) {
+        if (pdbGuiGroup->key == key) return pdbGuiGroup->name;
+    }
+    return NULL;
+}
+
+short dbGetPromptGroupKeyFromName(DBBASE *pdbbase, const char *name)
+{
+    GPHENTRY   *pgphentry;
+
+    if (!pdbbase) return 0;
+    pgphentry = gphFind(pdbbase->pgpHash, name, &pdbbase->guiGroupList);
+    if (!pgphentry) {
+        return 0;
+    } else {
+        return ((dbGuiGroup*)pgphentry->userPvt)->key;
+    }
 }
 
 
@@ -953,16 +987,11 @@ long dbWriteRecordTypeFP(
 		fprintf(fp,"\t\tprompt(\"%s\")\n",pdbFldDes->prompt);
 	    if(pdbFldDes->initial)
 		fprintf(fp,"\t\tinitial(\"%s\")\n",pdbFldDes->initial);
-	    if(pdbFldDes->promptgroup) {
-		for(j=0; j<GUI_NTYPES; j++) {
-		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			fprintf(fp,"\t\tpromptgroup(%s)\n",
-				pamapguiGroup[j].strvalue);
-			break;
-		    }
-		}
-	    }
-	    if(pdbFldDes->special) {
+        if (pdbFldDes->promptgroup) {
+            fprintf(fp,"\t\tpromptgroup(\"%s\")\n",
+                    dbGetPromptGroupNameFromKey(pdbbase, pdbFldDes->promptgroup));
+        }
+        if(pdbFldDes->special) {
 		if(pdbFldDes->special >= SPC_NTYPES) {
 		    fprintf(fp,"\t\tspecial(%d)\n",pdbFldDes->special);
 		} else for(j=0; j<SPC_NTYPES; j++) {
@@ -3325,14 +3354,9 @@ void  dbDumpField(
 	    if(!pdbFldDes->promptgroup) {
 		printf("\t    promptgroup: %d\n",pdbFldDes->promptgroup);
 	    } else {
-		for(j=0; j<GUI_NTYPES; j++) {
-		    if(pamapguiGroup[j].value == pdbFldDes->promptgroup) {
-			printf("\t    promptgroup: %s\n",
-				pamapguiGroup[j].strvalue);
-			break;
-		    }
-		}
-	    }
+            printf("\t    promptgroup: %s\n",
+                    dbGetPromptGroupNameFromKey(pdbbase, pdbFldDes->promptgroup));
+        }
 	    printf("\t       interest: %hd\n", pdbFldDes->interest);
 	    printf("\t       as_level: %d\n",pdbFldDes->as_level);
             printf("\t        initial: %s\n",

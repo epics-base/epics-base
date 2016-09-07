@@ -7,8 +7,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Id$
-
 use strict;
 
 use FindBin qw($Bin);
@@ -29,6 +27,8 @@ getopts('DI@S@o:') or
 my @path = map { split /[:;]/ } @opt_I; # FIXME: Broken on Win32?
 my $macros = EPICS::macLib->new(@opt_S);
 my $dbd = DBD->new();
+
+$macros->suppressWarning(1);
 
 # Calculate filename for the dependency warning message below
 my $dep = $opt_o;

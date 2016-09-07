@@ -9,15 +9,6 @@
 \*************************************************************************/
 
 /*  
- *
- *                              
- *                    L O S  A L A M O S
- *              Los Alamos National Laboratory
- *               Los Alamos, New Mexico 87545
- *                                  
- *  Copyright, 1986, The Regents of the University of California.
- *                                  
- *           
  *	Author Jeffrey O. Hill
  *	johill@lanl.gov
  */
@@ -265,12 +256,16 @@ void ipAddrToAsciiEnginePrivate::run ()
                 continue;
             }
 
+            // fix for lp:1580623
+            // a destructing cac sets pCurrent to NULL, so
+            // make local copy to avoid race when releasing the guard
+            ipAddrToAsciiTransactionPrivate *pCur = this->pCurrent;
             this->callbackInProgress = true;
 
             {
                 epicsGuardRelease < epicsMutex > unguard ( guard );
                 // dont call callback with lock applied
-                this->pCurrent->pCB->transactionComplete ( this->nameTmp );
+                pCur->pCB->transactionComplete ( this->nameTmp );
             }
 
             this->callbackInProgress = false;

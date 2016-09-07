@@ -8,7 +8,6 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* dbFastLinkConv.c */
-/* base/src/db  $Revision-Id$ */
 /*
  *      Author:            Matthew Needes
  *      Date:              12-9-93

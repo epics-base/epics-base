@@ -7,8 +7,6 @@
 # in file LICENSE that is included with this distribution. 
 #*************************************************************************
 #
-#  $Revision-Id$
-#
 #  CONFIG_COMMON
 #
 #  This file is to be maintained by the community.
@@ -344,7 +342,7 @@ GENVERSIONDEFAULT =
 
 HDEPENDS_METHOD = MKMF
 
-HDEPENDS_MKMFFLAGS = -m $*$(DEP) $(INCLUDES) $@
+HDEPENDS_MKMFFLAGS = -m $@ $(INCLUDES) $*$(OBJ)
 HDEPENDS_MKMF.c   = $(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDS_MKMFFLAGS)
 HDEPENDS_MKMF.cpp = $(MKMF) $(HDEPENDS_FLAGS) $(HDEPENDS_MKMFFLAGS)
 

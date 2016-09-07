@@ -1,10 +1,7 @@
 # CONFIG.win32-x86-debug.Common
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
-# Definitions for win32-x86 debug with debug compiler flags
-# Sites may override these definitions in CONFIG_SITE.win32-x86-debug.Common
+# Definitions for win32-x86-debug host arch
+# Override these definitions in CONFIG_SITE.win32-x86-debug.Common
 #-------------------------------------------------------
 
 #Include definitions common to win32-x86 hosts

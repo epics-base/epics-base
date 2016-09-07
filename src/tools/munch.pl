@@ -8,8 +8,6 @@
 # in the file LICENSE that is included with this distribution. 
 #*************************************************************************
 
-#  $Revision-Id$
-
 use strict;
 use warnings;
 

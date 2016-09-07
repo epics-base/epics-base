@@ -1,9 +1,7 @@
-# $Revision-Id$
 #
 # Definitions for vxWorks-ppc603 targets with >32MB of RAM
 # Site-specific overrides go in CONFIG_SITE.Common.vxWorks-ppc603_long
 #
-# This file is maintained by the EPICS build community.
 #-------------------------------------------------------
 
 # Inherit the settings from vxWorks-ppc603

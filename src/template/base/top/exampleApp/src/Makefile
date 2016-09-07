@@ -54,9 +54,6 @@ _APPNAME__SRCS += _APPNAME__registerRecordDeviceDriver.cpp
 _APPNAME__SRCS_DEFAULT += _APPNAME_Main.cpp
 _APPNAME__SRCS_vxWorks += -nil-
 
-# Add support from base/src/vxWorks if needed
-#_APPNAME__OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
-
 # Link in the code from our support library
 _APPNAME__LIBS += _APPNAME_Support
 
@@ -66,6 +63,7 @@ ifneq ($(SNCSEQ),)
     # Build sncExample into _APPNAME_Support
     sncExample_SNCFLAGS += +r
     _APPNAME__DBD += sncExample.dbd
+    # A .stt sequence program is *not* pre-processed:
     _APPNAME_Support_SRCS += sncExample.stt
     _APPNAME_Support_LIBS += seq pv
     _APPNAME__LIBS += seq pv
@@ -73,6 +71,7 @@ ifneq ($(SNCSEQ),)
     # Build sncProgram as a standalone program
     PROD_HOST += sncProgram
     sncProgram_SNCFLAGS += +m
+    # A .st sequence program *is* pre-processed:
     sncProgram_SRCS += sncProgram.st
     sncProgram_LIBS += seq pv
     sncProgram_LIBS += $(EPICS_BASE_HOST_LIBS)

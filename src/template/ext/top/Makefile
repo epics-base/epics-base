@@ -1,4 +1,4 @@
-# $Revision-Id$
+# Makefile at the top of an extensions tree
 
 TOP = .
 include $(TOP)/configure/CONFIG

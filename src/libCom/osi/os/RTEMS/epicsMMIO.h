@@ -12,6 +12,8 @@
 #define EPICSMMIO_H
 
 #include <epicsEndian.h>
+#include <epicsTypes.h>
+#include <compilerSpecific.h>
 
 #if defined(_ARCH_PPC) || defined(__PPC__) || defined(__PPC)
 #  include <libcpu/io.h>
@@ -38,6 +40,24 @@
 #  define nat_ioread32  be_ioread32
 #  define nat_iowrite16 be_iowrite16
 #  define nat_iowrite32 be_iowrite32
+
+static EPICS_ALWAYS_INLINE
+epicsUInt16
+bswap16(epicsUInt16 value)
+{
+    return (((epicsUInt16)(value) & 0x00ff) << 8)    |
+           (((epicsUInt16)(value) & 0xff00) >> 8);
+}
+
+static EPICS_ALWAYS_INLINE
+epicsUInt32
+bswap32(epicsUInt32 value)
+{
+    return (((epicsUInt32)(value) & 0x000000ff) << 24)   |
+           (((epicsUInt32)(value) & 0x0000ff00) << 8)    |
+           (((epicsUInt32)(value) & 0x00ff0000) >> 8)    |
+           (((epicsUInt32)(value) & 0xff000000) >> 24);
+}
 
 #elif defined(i386) || defined(__i386__) || defined(__i386) || defined(__m68k__)
 

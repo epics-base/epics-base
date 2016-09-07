@@ -1,8 +1,5 @@
 # CONFIG_SITE.Common.darwin-ppc
 #
-# $Revision-Id$
-# This file is maintained by the build community.
-#
 # Site override definitions for darwin-ppc target builds
 #-------------------------------------------------------
 

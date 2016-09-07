@@ -7,8 +7,7 @@
 * in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 
-/* $Revision-Id$
- *
+/*
  *      Author: Carl Lionberger
  *      Date: 9-2-93
  */

@@ -6,8 +6,6 @@
 # in file LICENSE that is included with this distribution.
 #*************************************************************************
 
-# $Revision-Id$
-
 # Determines an absolute pathname for its argument,
 # which may be either a relative or absolute path and
 # might have trailing directory names that don't exist yet.

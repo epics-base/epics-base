@@ -74,6 +74,8 @@ long dbCanSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *devsup);
  * Unconditionally takes ownership of pinfo->target
  */
 long dbSetLink(DBLINK *plink, dbLinkInfo *pinfo, devSup *dset);
+/* Free dbLinkInfo storage */
+epicsShareFunc void dbFreeLinkInfo(dbLinkInfo *pinfo);
 
 /* The following is for path */
 typedef struct dbPathNode {

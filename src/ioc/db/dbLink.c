@@ -177,6 +177,8 @@ void dbRemoveLink(struct dbLocker *locker, struct link *plink)
             plset->removeLink(locker, plink);
         plink->lset = NULL;
     }
+    if (plink->type == JSON_LINK)
+        plink->value.json.jlink = NULL;
 }
 
 int dbLinkIsDefined(const struct link *plink)

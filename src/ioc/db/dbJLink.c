@@ -255,6 +255,8 @@ static int dbjl_map_key(void *ctx, const unsigned char *key, unsigned len) {
         return dbjl_return(parser, jlif_stop);
     }
     pjlink->pif = pjlif;
+    pjlink->parent = NULL;
+    pjlink->parseDepth = 0;
 
     if (parser->pjlink) {
         /* We're starting a child link, save its parent */

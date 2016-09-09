@@ -11,12 +11,11 @@
 
 #include "epicsAssert.h"
 #include "dbmf.h"
-#include "dbStaticLib.h"
 #include "errlog.h"
 #include "yajl_alloc.h"
 #include "yajl_parse.h"
 
-#define epicsExportSharedSybols
+#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbCommon.h"
 #include "dbLink.h"

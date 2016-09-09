@@ -16,8 +16,6 @@
 #ifndef INCdbStaticPvth
 #define INCdbStaticPvth 1
 
-#include "dbJLink.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,6 +36,8 @@ char *dbRecordName(DBENTRY *pdbentry);
 char *dbGetStringNum(DBENTRY *pdbentry);
 long dbPutStringNum(DBENTRY *pdbentry,const char *pstring);
 
+struct jlink;
+
 typedef struct dbLinkInfo {
     short ltype;
 
@@ -54,7 +54,7 @@ typedef struct dbLinkInfo {
     int  hwnums[5];
 
     /* for JSON_LINK */
-    jlink *jlink;
+    struct jlink *jlink;
 } dbLinkInfo;
 
 long dbInitRecordLinks(dbRecordType *rtyp, struct dbCommon *prec);

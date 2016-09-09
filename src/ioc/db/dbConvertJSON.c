@@ -14,7 +14,7 @@
 #include "yajl_alloc.h"
 #include "yajl_parse.h"
 
-#define epicsExportSharedSybols
+#define epicsExportSharedSymbols
 #include "dbAccessDefs.h"
 #include "dbConvertFast.h"
 

@@ -376,6 +376,10 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
     if (!pfield)
         return S_dbLib_fieldNotFound;
 
+    /* empty string is the same as writing numeric zero */
+    if(pstring[0]=='\0')
+        pstring = "0";
+
     switch (pflddes->field_type) {
     case DBF_CHAR:
         return epicsParseInt8(pstring, pfield, 0, NULL);

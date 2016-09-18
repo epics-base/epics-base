@@ -1060,10 +1060,12 @@ static void dbRecordField(char *name,char *value)
     dbTranslateEscape(value, value);    /* yuck: in-place, but safe */
     status = dbPutString(pdbentry,value);
     if(status) {
-	epicsPrintf("Can't set \"%s.%s\" to \"%s\"\n",
-                    dbGetRecordName(pdbentry), name, value);
-	yyerror(NULL);
-	return;
+        char msg[128];
+        errSymLookup(status, msg, sizeof(msg));
+        epicsPrintf("Can't set \"%s.%s\" to \"%s\" %s\n",
+                    dbGetRecordName(pdbentry), name, value, msg);
+        yyerror(NULL);
+        return;
     }
 }
 

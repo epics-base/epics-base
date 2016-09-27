@@ -92,7 +92,7 @@ sub OutputBreaktables {
     my ($out, $breaktables) = @_;
     while (my ($name, $breaktable) = each %{$breaktables}) {
         printf $out "breaktable(\"%s\") {\n", $name;
-        printf $out "    point(%s, %s)\n", @{$_}
+        printf $out "    %s, %s\n", @{$_}
             foreach $breaktable->points;
         print $out "}\n";
     }

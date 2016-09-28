@@ -666,6 +666,7 @@ void epicsThreadShow (epicsThreadId id, unsigned int level)
     for (v = taskVarHead ; v != NULL ; v = v->forw) {
         if ((rtems_id)id == v->id) {
             epicsThreadShowInfo (v, level);
+            taskVarUnlock ();
             return;
         }
     }

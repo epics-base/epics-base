@@ -9,6 +9,7 @@ include $(CONFIG)/os/CONFIG.Common.UnixCommon
 
 OS_CLASS = WIN32
 ARCH_CLASS = x86
+POSIX = NO
 
 #  Definitions used when COMMANDLINE_LIBRARY is READLINE
 LDLIBS_READLINE = -lreadline -lcurses

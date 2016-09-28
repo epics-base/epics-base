@@ -92,7 +92,7 @@ static const int osdRealtimePriorityList [osdRealtimePriorityStateCount] =
 
 #if !defined(EPICS_DLL_NO)
 BOOL WINAPI DllMain (
-    HANDLE hModule, DWORD dwReason, LPVOID lpReserved )
+    HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved )
 {
     static DWORD dllHandleIndex;
     HMODULE dllHandle = 0;

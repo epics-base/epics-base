@@ -13,6 +13,37 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>MinGW Cross-builds from Linux</h3>
+
+<p>Build configuration files have been back-ported from the 3.15 branch that
+allow cross-building of the windows-x64-mingw target from either linux-x86 or
+linux-x86_64 hosts. Similar support for the 32-bit win32-x86-mingw cross-target
+was added in Base-3.14.12.5. Adjust the settings in the configuration file
+configure/os/CONFIG_SITE.linux-x86.windows-x64-mingw and add windows-x64-mingw
+to the CROSS_COMPILER_TARGET_ARCHS variable in configure/CONFIG_SITE or in
+configure/os/CONFIG_SITE.linux-x86.Common.</p>
+
+<p>The Linux MinGW cross-builds now use the compiler flags <tt>-static-libgcc
+-static-libstdc++</tt> which avoids having to copy some DLLs onto the Windows
+system to be able to run the generated binaries. These compiler flags can be
+disabled by editing the configure/os/CONFIG_SITE.linux-x86.<i>target</i> file
+for Linux distributions where the cross-build toolset doesn't make static
+versions of those libraries available. The RHEL-6.8 MinGW toolset does not
+package a static version of the library winpthread-1 so on that host OS it is
+still necessary to provide a copy of the libwinpthread-1.dll file for the
+Windows system to use. The simplest way to do this is to manually copy it into
+the IOC application's bin/win32-x86-mingw or bin/windows-x64-mingw directory
+after building the IOC, like this (note that Windows DLLs are always installed
+into the bin directory, not the lib directory):</p>
+
+<blockquote><pre>
+<b>$</b> cp /usr/i686-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll bin/win32-x86-mingw
+<b>$</b> cp /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll bin/windows-x64-mingw
+</pre></blockquote>
+
+<p>Some additional MinGW-specific changes have also been back-ported from the
+Base-3.15 branch.</p>
+
 <h3>General Time updates</h3>
 
 <p>The <tt>iocInit</tt> code now performs a sanity check of the current time

@@ -418,8 +418,10 @@ gddStatus gddApplicationTypeTable::freeDD(gdd* dd)
 		}
 
 		// fprintf(stderr,"Adding DD to free_list %d\n",app);
+		attr_table[group][app].sem.lock ();
 		dd->setNext(attr_table[group][app].free_list);
 		attr_table[group][app].free_list=dd;
+		attr_table[group][app].sem.unlock ();
 	}
 	else if (attr_table[group][app].type==gddApplicationTypeNormal)
 	{

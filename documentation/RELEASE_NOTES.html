@@ -18,6 +18,16 @@
 <h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>MinGW Cross-builds from Linux</h3>
+
+<p>The build configuration files that allow cross-building of the 32-bit
+win32-x86-mingw cross-target have been adjusted to default to building shared
+libraries (DLLs) as this is now supported by recent MinGW compilers. The 64-bit
+windows-x64-mingw cross-target was already being built that way by default. The
+configuration options to tell the minGW cross-compiler to link programs with
+static versions of the compiler support libraries have now been moved into the
+CONFIG_SITE.linux-x86.<i>target</i> files.</p>
+
 <h3>General Time updates</h3>
 
 <p>The <tt>iocInit</tt> code now performs a sanity check of the current time

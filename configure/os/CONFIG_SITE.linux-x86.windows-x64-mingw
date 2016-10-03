@@ -18,3 +18,6 @@
 #CMPLR_PREFIX = i686-w64-mingw32-
 # RHEL:
 CMPLR_PREFIX = x86_64-w64-mingw32-
+
+# Use static compiler-support libraries
+OP_SYS_LDFLAGS += -static-libgcc -static-libstdc++

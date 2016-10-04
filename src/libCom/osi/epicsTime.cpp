@@ -278,20 +278,100 @@ epicsTime::operator gm_tm_nano_sec () const
 //
 epicsTime::epicsTime (const local_tm_nano_sec &tm)
 {
-    static const time_t mktimeFailure = static_cast <time_t> (-1);
-    time_t_wrapper ansiTimeTicks;
     struct tm tmp = tm.ansi_tm;
+    time_t_wrapper ansiTimeTicks = { mktime (&tmp) };
 
-    ansiTimeTicks.ts = mktime (&tmp);
-    if (ansiTimeTicks.ts ==  mktimeFailure) {
+    static const time_t mktimeError = static_cast <time_t> (-1);
+    if (ansiTimeTicks.ts == mktimeError) {
         throwWithLocation ( formatProblemWithStructTM () );
     }
 
-    *this = epicsTime (ansiTimeTicks);
+    unsigned long nSec = tm.nSec;
+    // Handle nSec overflows
+    if (nSec >= nSecPerSec) {
+        ansiTimeTicks.ts += nSec / nSecPerSec;
+        nSec %= nSecPerSec;
+    }
 
-    unsigned long nSecAdj = tm.nSec % nSecPerSec;
-    unsigned long secAdj = tm.nSec / nSecPerSec;
-    *this = epicsTime ( this->secPastEpoch+secAdj, this->nSec+nSecAdj );
+    // Do the epoch conversion
+    *this = epicsTime (ansiTimeTicks);
+    // Set the nSec part
+    this->nSec = nSec;
+}
+
+//
+// epicsTime (const gm_tm_nano_sec &tm)
+//
+
+// do conversion avoiding the timezone mechanism
+static inline int is_leap(int year)
+{
+    if (year % 400 == 0)
+        return 1;
+    if (year % 100 == 0)
+        return 0;
+    if (year % 4 == 0)
+        return 1;
+    return 0;
+}
+
+static inline int days_from_0(int year)
+{
+    year--;
+    return 365 * year + (year / 400) - (year / 100) + (year / 4);
+}
+
+static inline int days_from_1970(int year)
+{
+    static const int days_from_0_to_1970 = days_from_0(1970);
+    return days_from_0(year) - days_from_0_to_1970;
+}
+
+static inline int days_from_1jan(int year, int month, int day)
+{
+    static const int days[2][12] =
+    {
+        { 0,31,59,90,120,151,181,212,243,273,304,334},
+        { 0,31,60,91,121,152,182,213,244,274,305,335}
+    };
+    return days[is_leap(year)][month-1] + day - 1;
+}
+
+epicsTime::epicsTime (const gm_tm_nano_sec &tm)
+{
+    int year = tm.ansi_tm.tm_year + 1900;
+    int month = tm.ansi_tm.tm_mon;
+    if (month > 11) {
+        year += month / 12;
+        month %= 12;
+    } else if (month < 0) {
+        int years_diff = (-month + 11) / 12;
+        year  -= years_diff;
+        month += 12 * years_diff;
+    }
+    month++;
+
+    int day = tm.ansi_tm.tm_mday;
+    int day_of_year = days_from_1jan(year, month, day);
+    int days_since_epoch = days_from_1970(year) + day_of_year;
+
+    time_t_wrapper ansiTimeTicks;
+    ansiTimeTicks.ts = ((days_since_epoch
+        * 24 + tm.ansi_tm.tm_hour)
+        * 60 + tm.ansi_tm.tm_min)
+        * 60 + tm.ansi_tm.tm_sec;
+
+    unsigned long nSec = tm.nSec;
+    // Handle nSec overflows
+    if (nSec >= nSecPerSec) {
+        ansiTimeTicks.ts += nSec / nSecPerSec;
+        nSec %= nSecPerSec;
+    }
+
+    // Do the epoch conversion
+    *this = epicsTime(ansiTimeTicks);
+    // Set the nSec part
+    this->nSec = nSec;
 }
 
 //
@@ -905,6 +985,19 @@ extern "C" {
         }
         return epicsTimeOK;
     }
+    epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+    {
+        try {
+            gm_tm_nano_sec tmns;
+            tmns.ansi_tm = *pSrc;
+            tmns.nSec = nSecSrc;
+            *pDest = epicsTime (tmns);
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
+        return epicsTimeOK;
+    }
     epicsShareFunc int epicsShareAPI epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
     {
         try {
@@ -1036,4 +1129,3 @@ extern "C" {
         }
     }
 }
-

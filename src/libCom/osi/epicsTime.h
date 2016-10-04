@@ -105,10 +105,12 @@ public:
     epicsTime & operator = ( const local_tm_nano_sec & );
 
     /*
-     * convert to ANSI Cs "struct tm" (with nano seconds)
+     * convert to and from ANSI Cs "struct tm" (with nano seconds)
      * adjusted for GM time (UTC)
      */
     operator gm_tm_nano_sec () const;
+    epicsTime ( const gm_tm_nano_sec & );
+    epicsTime & operator = ( const gm_tm_nano_sec & );
 
     /* convert to and from POSIX RTs "struct timespec" */
     operator struct timespec () const;
@@ -194,12 +196,14 @@ epicsShareFunc int epicsShareAPI epicsTimeToTime_t (
 epicsShareFunc int epicsShareAPI epicsTimeFromTime_t (
     epicsTimeStamp * pDest, time_t src );
 
-/*convert to and from ANSI C's "struct tm" with nano seconds */
+/* convert to and from ANSI C's "struct tm" with nano seconds */
 epicsShareFunc int epicsShareAPI epicsTimeToTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeToGMTM (
     struct tm * pDest, unsigned long * pNSecDest, const epicsTimeStamp * pSrc );
 epicsShareFunc int epicsShareAPI epicsTimeFromTM (
+    epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
+epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (
     epicsTimeStamp * pDest, const struct tm * pSrc, unsigned long nSecSrc );
 
 /* convert to and from POSIX RT's "struct timespec" */
@@ -308,6 +312,11 @@ inline bool epicsTime::operator > ( const epicsTime & rhs ) const
 }
 
 inline epicsTime & epicsTime::operator = ( const local_tm_nano_sec & rhs )
+{
+    return *this = epicsTime ( rhs );
+}
+
+inline epicsTime & epicsTime::operator = ( const gm_tm_nano_sec & rhs )
 {
     return *this = epicsTime ( rhs );
 }

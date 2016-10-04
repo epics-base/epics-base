@@ -48,7 +48,7 @@ MAIN(epicsTimeTest)
     const int wasteTime = 100000;
     const int nTimes = 10;
 
-    testPlan(15 + nTimes * 18);
+    testPlan(15 + nTimes * 19);
 
     try {
         const epicsTimeStamp epochTS = {0, 0};
@@ -204,6 +204,11 @@ MAIN(epicsTimeTest)
         local_tm_nano_sec ansiDate = begin;
         epicsTime beginANSI = ansiDate;
         testOk1(beginANSI + diff == now);
+
+        // test struct gmtm round-trip conversion
+        gm_tm_nano_sec ansiGmDate = begin;
+        epicsTime beginGMANSI = ansiGmDate;
+        testOk1(beginGMANSI + diff == now);
 
         // test struct timespec round-trip conversion
         struct timespec ts = begin;

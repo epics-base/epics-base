@@ -287,11 +287,80 @@ epicsTime::epicsTime (const local_tm_nano_sec &tm)
         throwWithLocation ( formatProblemWithStructTM () );
     }
 
+    // Do the epoch conversion
     *this = epicsTime (ansiTimeTicks);
+    // Add the nSec part
+    *this = epicsTime (this->secPastEpoch, tm.nSec);
+}
 
-    unsigned long nSecAdj = tm.nSec % nSecPerSec;
-    unsigned long secAdj = tm.nSec / nSecPerSec;
-    *this = epicsTime ( this->secPastEpoch+secAdj, this->nSec+nSecAdj );
+//
+// epicsTime (const gm_tm_nano_sec &tm)
+//
+
+// do conversion avoiding the timezone mechanism
+static inline epicsInt32 is_leap(epicsInt32 year)
+{
+    if (year % 400 == 0)
+        return 1;
+    if (year % 100 == 0)
+        return 0;
+    if (year % 4 == 0)
+        return 1;
+    return 0;
+}
+
+static inline epicsInt32 days_from_0(epicsInt32 year)
+{
+    year--;
+    return 365 * year + (year / 400) - (year / 100) + (year / 4);
+}
+
+static inline epicsInt32 days_from_1970(epicsInt32 year)
+{
+    static const int days_from_0_to_1970 = days_from_0(1970);
+    return days_from_0(year) - days_from_0_to_1970;
+}
+
+static inline epicsInt32 days_from_1jan(epicsInt32 year,
+                                        epicsInt32 month,
+                                        epicsInt32 day)
+{
+    static const epicsInt32 days[2][12] =
+    {
+        { 0,31,59,90,120,151,181,212,243,273,304,334},
+        { 0,31,60,91,121,152,182,213,244,274,305,335}
+    };
+    return days[is_leap(year)][month-1] + day - 1;
+}
+
+epicsTime::epicsTime (const gm_tm_nano_sec &tm)
+{
+    time_t_wrapper ansiTimeTicks;
+    int year = tm.ansi_tm.tm_year + 1900;
+    int month = tm.ansi_tm.tm_mon;
+    if (month > 11) {
+        year += month / 12;
+        month %= 12;
+    } else if (month < 0) {
+        int years_diff = (-month + 11) / 12;
+        year  -= years_diff;
+        month += 12 * years_diff;
+    }
+    month++;
+    int day = tm.ansi_tm.tm_mday;
+    int day_of_year = days_from_1jan(year, month, day);
+    int days_since_epoch = days_from_1970(year) + day_of_year;
+
+    const time_t seconds_in_day = 3600 * 24;
+    ansiTimeTicks.ts = seconds_in_day * days_since_epoch
+            + 3600 * tm.ansi_tm.tm_hour
+            + 60 * tm.ansi_tm.tm_min
+            + tm.ansi_tm.tm_sec;
+
+    // Do the epoch conversion
+    *this = epicsTime (ansiTimeTicks);
+    // Add the nSec part
+    *this = epicsTime (this->secPastEpoch, tm.nSec);
 }
 
 //
@@ -905,6 +974,19 @@ extern "C" {
         }
         return epicsTimeOK;
     }
+    epicsShareFunc int epicsShareAPI epicsTimeFromGMTM (epicsTimeStamp *pDest, const struct tm *pSrc, unsigned long nSecSrc)
+    {
+        try {
+            gm_tm_nano_sec tmns;
+            tmns.ansi_tm = *pSrc;
+            tmns.nSec = nSecSrc;
+            *pDest = epicsTime (tmns);
+        }
+        catch (...) {
+            return epicsTimeERROR;
+        }
+        return epicsTimeOK;
+    }
     epicsShareFunc int epicsShareAPI epicsTimeToTimespec (struct timespec *pDest, const epicsTimeStamp *pSrc)
     {
         try {
@@ -1036,4 +1118,3 @@ extern "C" {
         }
     }
 }
-

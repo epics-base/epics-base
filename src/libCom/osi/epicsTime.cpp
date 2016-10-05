@@ -60,7 +60,13 @@ static const unsigned long NTP_TIME_AT_EPICS_EPOCH =
 // epicsTime (const unsigned long secIn, const unsigned long nSecIn)
 //
 inline epicsTime::epicsTime (const unsigned long secIn, const unsigned long nSecIn) :
-    secPastEpoch ( nSecIn / nSecPerSec + secIn ), nSec ( nSecIn % nSecPerSec ) {}
+    secPastEpoch ( secIn ), nSec ( nSecIn )
+{
+    if (nSecIn >= nSecPerSec) {
+        this->secPastEpoch += nSecIn / nSecPerSec;
+        this->nSec = nSecIn % nSecPerSec;
+    }
+}
 
 //
 // epicsTimeLoadTimeInit
@@ -108,14 +114,27 @@ epicsTimeLoadTimeInit::epicsTimeLoadTimeInit ()
 }
 
 //
-// epicsTime::addNanoSec ()
+// private epicsTime::addNanoSec ()
 //
-// many of the UNIX timestamp formats have nano sec stored as a long
+// Most formats keep the nSec value as an unsigned long, so are +ve.
+// struct timeval's tv_usec may be -1, but I think that means error,
+// so this private method never needs to handle -ve offsets.
 //
 inline void epicsTime::addNanoSec (long nSecAdj)
 {
-    double secAdj = static_cast <double> (nSecAdj) / nSecPerSec;
-    *this += secAdj;
+    if (nSecAdj <= 0)
+        return;
+
+    if (static_cast<unsigned long>(nSecAdj) >= nSecPerSec) {
+        this->secPastEpoch += nSecAdj / nSecPerSec;
+        nSecAdj %= nSecPerSec;
+    }
+
+    this->nSec += nSecAdj;  // Can't overflow
+    if (this->nSec >= nSecPerSec) {
+        this->secPastEpoch++;
+        this->nSec -= nSecPerSec;
+    }
 }
 
 //
@@ -286,17 +305,8 @@ epicsTime::epicsTime (const local_tm_nano_sec &tm)
         throwWithLocation ( formatProblemWithStructTM () );
     }
 
-    unsigned long nSec = tm.nSec;
-    // Handle nSec overflows
-    if (nSec >= nSecPerSec) {
-        ansiTimeTicks.ts += nSec / nSecPerSec;
-        nSec %= nSecPerSec;
-    }
-
-    // Do the epoch conversion
-    *this = epicsTime (ansiTimeTicks);
-    // Set the nSec part
-    this->nSec = nSec;
+    *this = epicsTime(ansiTimeTicks);
+    this->addNanoSec(tm.nSec);
 }
 
 //
@@ -361,17 +371,8 @@ epicsTime::epicsTime (const gm_tm_nano_sec &tm)
         * 60 + tm.ansi_tm.tm_min)
         * 60 + tm.ansi_tm.tm_sec;
 
-    unsigned long nSec = tm.nSec;
-    // Handle nSec overflows
-    if (nSec >= nSecPerSec) {
-        ansiTimeTicks.ts += nSec / nSecPerSec;
-        nSec %= nSecPerSec;
-    }
-
-    // Do the epoch conversion
     *this = epicsTime(ansiTimeTicks);
-    // Set the nSec part
-    this->nSec = nSec;
+    this->addNanoSec(tm.nSec);
 }
 
 //
@@ -770,7 +771,7 @@ double epicsTime::operator - (const epicsTime &rhs) const
     // so the unsigned to signed conversion is ok
     //
     if (this->nSec>=rhs.nSec) {
-        nSecRes = this->nSec - rhs.nSec;    
+        nSecRes = this->nSec - rhs.nSec;
     }
     else {
         nSecRes = rhs.nSec - this->nSec;

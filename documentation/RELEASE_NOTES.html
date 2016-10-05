@@ -13,6 +13,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Additional epicsTime conversion</h3>
+
+<p>The EPICS timestamp library (epicsTime) inside libCom's OSI layer has
+been extended by routines that convert from <tt>struct tm</tt> to the EPICS
+internal <tt>epicsTime</tt> type, assuming UTC - i.e. without going through
+the timezone mechanism. This solves issues with converting from the structured
+type to the EPICS timestamp at driver level from multiple threads at a high
+repetition rate, where the timezone mechanism was blocking on file access.</p>
+
 <h3>MinGW Cross-builds from Linux</h3>
 
 <p>Build configuration files have been back-ported from the 3.15 branch that

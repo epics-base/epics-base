@@ -1698,18 +1698,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     if (!(precnode->flags & DBRN_FLAGS_ISALIAS))
         precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
-    /* install record node in list in sorted postion */
-    status = dbFirstRecord(pdbentry);
-    while (!status) {
-        if (strcmp(alias, dbGetRecordName(pdbentry)) < 0) break;
-        status = dbNextRecord(pdbentry);
-    }
-    if (!status) {
-        precnode = pdbentry->precnode;
-        ellInsert(preclist, ellPrevious(&precnode->node), &pnewnode->node);
-    } else {
-        ellAdd(preclist, &pnewnode->node);
-    }
+    ellAdd(preclist, &pnewnode->node);
     precordType->no_aliases++;
     pdbentry->precnode = pnewnode;
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);

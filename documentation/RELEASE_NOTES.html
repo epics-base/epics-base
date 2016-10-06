@@ -24,6 +24,10 @@ unexpected case that applications were relying on the alphabetic order, setting
 <tt>dbRecordsAbcSorted = 1</tt> before loading the databases will retain the
 old behavior.</p>
 
+<p>The routine <tt>dbRenameRecord()</tt> has been removed, as it was intended
+to be used by database configuration tools linked against a host side version
+of the dbStatic library that is not being built anymore.</p>
+
 
 <h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->

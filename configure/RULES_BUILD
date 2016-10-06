@@ -91,13 +91,17 @@ include $(CONFIG)/RULES_TARGET
 PRODTARGETS += $(PRODNAME) $(MUNCHNAME) $(CTDT_SRCS) $(CTDT_OBJS) $(NMS)
 
 #---------------------------------------------------------------
-#   Generate a test specification if any tests are defined.
+#   Test specifications and test result files
 #
 ifneq (,$(strip $(TESTS)))
 TARGETS += testspec
 endif
 
+# Enable testing if this host can run tests on the current target
+ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+RUNTESTS_ENABLED = YES
 TAPFILES += $(TESTSCRIPTS:.t=.tap)
+endif
 
 #---------------------------------------------------------------
 #   Libraries 
@@ -337,7 +341,7 @@ $(MODNAME): %$(MODEXT): %$(EXE)
 	$(LINK.mod)
 
 runtests: $(TESTSCRIPTS)
-ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+ifdef RUNTESTS_ENABLED
 	-$(PERL) -MTest::Harness -e 'runtests @ARGV if @ARGV;' $^
 endif
 
@@ -352,7 +356,7 @@ tapfiles: $(TESTSCRIPTS) $(TAPFILES)
 
 # A .tap file is the output from running the associated test script
 %.tap: %.t
-ifneq (,$(findstring $(T_A),$(EPICS_HOST_ARCH) $(CROSS_COMPILER_RUNTEST_ARCHS)))
+ifdef RUNTESTS_ENABLED
 	-$(PERL) $< -tap > $@
 endif
 

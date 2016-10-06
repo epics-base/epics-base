@@ -50,6 +50,9 @@ epicsExportAddress(int,dbBptNotMonotonic);
 epicsShareDef int dbQuietMacroWarnings=0;
 epicsExportAddress(int,dbQuietMacroWarnings);
 
+epicsShareDef int dbRecordsAbcSorted=0;
+epicsExportAddress(int,dbRecordsAbcSorted);
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -298,7 +301,7 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	dbFinishEntry(pdbEntry);
     }
 cleanup:
-    {
+    if(dbRecordsAbcSorted) {
         ELLNODE *cur;
         for(cur = ellFirst(&pdbbase->recordTypeList); cur; cur=ellNext(cur))
         {

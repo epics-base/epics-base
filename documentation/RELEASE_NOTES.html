@@ -15,6 +15,16 @@
 <h2 align="center">Changes made on the 3.15 branch since 3.15.4</h2>
 <!-- Insert new items immediately below here ... -->
 
+<h3>dbStatic Library Cleanup</h3>
+
+<p>Loading of database files has been optimized to avoid overproportionally
+long loading times for large databases. As a part of this, the alphabetical
+ordering of records instances (within a record type) has been dropped. In the
+unexpected case that applications were relying on the alphabetic order, setting
+<tt>dbRecordsAbcSorted = 1</tt> before loading the databases will retain the
+old behavior.</p>
+
+
 <h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->
 

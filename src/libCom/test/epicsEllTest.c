@@ -196,7 +196,7 @@ static void testList(void)
 
 typedef struct { int A, B; } input_t;
 
-static int myItemCmp(ELLNODE *a, ELLNODE *b)
+static int myItemCmp(const ELLNODE *a, const ELLNODE *b)
 {
     struct myItem *A = CONTAINER(a, struct myItem, node),
                   *B = CONTAINER(b, struct myItem, node);

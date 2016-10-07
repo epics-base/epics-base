@@ -56,7 +56,7 @@ epicsShareFunc void ellInsert (ELLLIST *plist, ELLNODE *pPrev, ELLNODE *pNode);
 epicsShareFunc ELLNODE * ellNth (ELLLIST *pList, int nodeNum);
 epicsShareFunc ELLNODE * ellNStep (ELLNODE *pNode, int nStep);
 epicsShareFunc int  ellFind (ELLLIST *pList, ELLNODE *pNode);
-typedef int (*pListCmp)(ELLNODE* A, ELLNODE* B);
+typedef int (*pListCmp)(const ELLNODE* A, const ELLNODE* B);
 epicsShareFunc void ellSortStable(ELLLIST *pList, pListCmp);
 epicsShareFunc void ellFree2 (ELLLIST *pList, FREEFUNC freeFunc);
 epicsShareFunc void ellVerify (ELLLIST *pList);

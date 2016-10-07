@@ -1402,7 +1402,6 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     dbFldDes		*pdbFldDes;
     PVDENTRY       	*ppvd;
     ELLLIST           	*preclist = NULL;
-    dbRecordNode       	*precnode = NULL;
     dbRecordNode       	*pNewRecNode = NULL;
     long		status = 0;
 
@@ -1636,7 +1635,6 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     dbRecordNode	*pnewnode;
     PVDENTRY    	*ppvd;
     ELLLIST     	*preclist = NULL;
-    long		status;
 
     if (!precordType) return S_dbLib_recordTypeNotFound;
     if (!precnode) return S_dbLib_recNotFound;

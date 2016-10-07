@@ -940,13 +940,13 @@ static void addToList(struct dbCommon *precord, scan_list *psl)
         pse->precord = precord;
     }
     pse->pscan_list = psl;
-    ptemp = (scan_element *)ellFirst(&psl->list);
+    ptemp = (scan_element *)ellLast(&psl->list);
     while (ptemp) {
-        if (ptemp->precord->phas > precord->phas) {
-            ellInsert(&psl->list, ellPrevious(&ptemp->node), &pse->node);
+        if (ptemp->precord->phas <= precord->phas) {
+            ellInsert(&psl->list, &ptemp->node, &pse->node);
             break;
         }
-        ptemp = (scan_element *)ellNext(&ptemp->node);
+        ptemp = (scan_element *)ellPrevious(&ptemp->node);
     }
     if (ptemp == NULL) ellAdd(&psl->list, (void *)pse);
     psl->modified = TRUE;

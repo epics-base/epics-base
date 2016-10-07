@@ -1,4 +1,5 @@
 /*************************************************************************\
+* Copyright (c) 2016 Michael Davidsaver
 * Copyright (c) 2009 UChicago Argonne LLC, as Operator of Argonne
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
@@ -11,6 +12,7 @@
 #include <stdlib.h>
 
 #include "ellLib.h"
+#include "dbDefs.h"
 #include "epicsUnitTest.h"
 #include "testMain.h"
 
@@ -20,14 +22,12 @@ struct myItem {
     int num;
 };
 
-MAIN(epicsEllTest)
+static void testList(void)
 {
     ELLLIST list1;
     ELLLIST list2 = ELLLIST_INIT;
     int i1 = 1;
     struct myItem *pitem, *pfirst, *pick;
-
-    testPlan(70);
 
     list1.count = 27;
     list1.node.next = (ELLNODE *) 0x01010101;
@@ -192,6 +192,77 @@ MAIN(epicsEllTest)
 
     ellFree2(&list1, free);
     testOk1(ellCount(&list1) == 0);
+}
+
+typedef struct { int A, B; } input_t;
+
+static int myItemCmp(const ELLNODE *a, const ELLNODE *b)
+{
+    struct myItem *A = CONTAINER(a, struct myItem, node),
+                  *B = CONTAINER(b, struct myItem, node);
+
+    if     (A->num < B->num)   return -1;
+    else if(A->num > B->num)   return 1;
+    else if(A->list < B->list) return -1;
+    else if(A->list > B->list) return 1;
+    else                       return 0;
+}
+
+static const input_t input[] = {
+    {-4, 0},
+    {-5, 0},
+    {0,0},
+    {50,0},
+    {0,1},
+    {5,0},
+    {5,1}
+};
+
+static
+void testSort(const input_t *inp, size_t ninp)
+{
+    unsigned i;
+    ELLLIST list = ELLLIST_INIT;
+    struct myItem *alloc = calloc(ninp, sizeof(*alloc));
+
+    if(!alloc) testAbort("testSort allocation fails");
+
+    for(i=0; i<ninp; i++) {
+        struct myItem *it = &alloc[i];
+
+        it->num = inp[i].A;
+        it->list= inp[i].B;
+
+        ellAdd(&list, &it->node);
+    }
+
+    ellSortStable(&list, &myItemCmp);
+
+    testOk(ellCount(&list)==ninp, "output length %u == %u", (unsigned)ellCount(&list), (unsigned)ninp);
+    if(ellCount(&list)==0) {
+        testSkip(ninp-1, "all items lost");
+    }
+
+    {
+        struct myItem *prev = CONTAINER(ellFirst(&list), struct myItem, node),
+                      *next;
+
+        for(next = CONTAINER(ellNext(&prev->node), struct myItem, node);
+            next;
+            prev = next, next = CONTAINER(ellNext(&next->node), struct myItem, node))
+        {
+            int cond = (prev->num<next->num) || (prev->num==next->num && prev->list<next->list);
+            testOk(cond, "%d:%d < %d:%d", prev->num, prev->list, next->num, next->list);
+        }
+    }
+}
+
+MAIN(epicsEllTest)
+{
+    testPlan(77);
+
+    testList();
+    testSort(input, NELEMENTS(input));
 
     return testDone();
 }

@@ -1402,7 +1402,6 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     dbFldDes		*pdbFldDes;
     PVDENTRY       	*ppvd;
     ELLLIST           	*preclist = NULL;
-    dbRecordNode       	*precnode = NULL;
     dbRecordNode       	*pNewRecNode = NULL;
     long		status = 0;
 
@@ -1410,7 +1409,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     /*Get size of NAME field*/
     pdbFldDes = precordType->papFldDes[0];
     if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
-	return(S_dbLib_nameLength);
+        return(S_dbLib_nameLength);
     if((int)strlen(precordName)>=pdbFldDes->size) return(S_dbLib_nameLength);
     /* clear callers entry */
     zeroDbentry(pdbentry);
@@ -1425,18 +1424,7 @@ long dbCreateRecord(DBENTRY *pdbentry,const char *precordName)
     if((status = dbAllocRecord(pdbentry,precordName))) return(status);
     pNewRecNode->recordname = dbRecordName(pdbentry);
     ellInit(&pNewRecNode->infoList);
-    /* install record node in list in sorted postion */
-    status = dbFirstRecord(pdbentry);
-    while(status==0) {
-        if(strcmp(precordName,dbGetRecordName(pdbentry)) < 0) break;
-        status = dbNextRecord(pdbentry);
-    }
-    if(status==0) {
-        precnode = pdbentry->precnode;
-	ellInsert(preclist,ellPrevious(&precnode->node),&pNewRecNode->node);
-    } else {
-        ellAdd(preclist,&pNewRecNode->node);
-    }
+    ellAdd(preclist, &pNewRecNode->node);
     pdbentry->precnode = pNewRecNode;
     ppvd = dbPvdAdd(pdbentry->pdbbase,precordType,pNewRecNode);
     if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
@@ -1614,52 +1602,6 @@ char * dbGetRecordName(DBENTRY *pdbentry)
     return precnode->recordname;
 }
 
-long dbRenameRecord(DBENTRY *pdbentry,const char *newName)
-{
-    dbBase		*pdbbase = pdbentry->pdbbase;
-    dbRecordType	*precordType = pdbentry->precordType;
-    dbFldDes		*pdbFldDes;
-    dbRecordNode	*precnode = pdbentry->precnode;
-    PVDENTRY		*ppvd;
-    ELLLIST		*preclist;
-    dbRecordNode	*plistnode;
-    long		status;
-    DBENTRY		dbentry;
-
-    if(!precordType) return(S_dbLib_recordTypeNotFound);
-    /*Get size of NAME field*/
-    pdbFldDes = precordType->papFldDes[0];
-    if(!pdbFldDes || (strcmp(pdbFldDes->name,"NAME")!=0))
-	return(S_dbLib_nameLength);
-    if((int)strlen(newName)>=pdbFldDes->size) return(S_dbLib_nameLength);
-    if (!precnode || dbIsAlias(pdbentry)) return S_dbLib_recNotFound;
-    dbInitEntry(pdbentry->pdbbase,&dbentry);
-    status = dbFindRecord(&dbentry,newName);
-    dbFinishEntry(&dbentry);
-    if(!status) return(S_dbLib_recExists);
-    dbPvdDelete(pdbbase,precnode);
-    pdbentry->pflddes = precordType->papFldDes[0];
-    if((status = dbGetFieldAddress(pdbentry))) return(status);
-    strcpy(pdbentry->pfield,newName);
-    ppvd = dbPvdAdd(pdbbase,precordType,precnode);
-    if(!ppvd) {errMessage(-1,"Logic Err: Could not add to PVD");return(-1);}
-    /*remove from record list and reinstall in sorted order*/
-    preclist = &precordType->recList;
-    ellDelete(preclist,&precnode->node);
-    plistnode = (dbRecordNode *)ellFirst(preclist);
-    while(plistnode) {
-	pdbentry->precnode =  plistnode;
-	if(strcmp(newName,dbGetRecordName(pdbentry)) >=0) break;
-	plistnode = (dbRecordNode *)ellNext(&plistnode->node);
-    }
-    if(plistnode)
-	ellInsert(preclist,ellPrevious(&plistnode->node),&precnode->node);
-    else
-	ellAdd(preclist,&precnode->node);
-    /*Leave pdbentry pointing to newly renamed record*/
-    return(dbFindRecord(pdbentry,newName));
-}
-
 long dbVisibleRecord(DBENTRY *pdbentry)
 {
     dbRecordNode	*precnode = pdbentry->precnode;
@@ -1693,7 +1635,6 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     dbRecordNode	*pnewnode;
     PVDENTRY    	*ppvd;
     ELLLIST     	*preclist = NULL;
-    long		status;
 
     if (!precordType) return S_dbLib_recordTypeNotFound;
     if (!precnode) return S_dbLib_recNotFound;
@@ -1709,18 +1650,7 @@ long dbCreateAlias(DBENTRY *pdbentry, const char *alias)
     if (!(precnode->flags & DBRN_FLAGS_ISALIAS))
         precnode->flags |= DBRN_FLAGS_HASALIAS;
     ellInit(&pnewnode->infoList);
-    /* install record node in list in sorted postion */
-    status = dbFirstRecord(pdbentry);
-    while (!status) {
-        if (strcmp(alias, dbGetRecordName(pdbentry)) < 0) break;
-        status = dbNextRecord(pdbentry);
-    }
-    if (!status) {
-        precnode = pdbentry->precnode;
-        ellInsert(preclist, ellPrevious(&precnode->node), &pnewnode->node);
-    } else {
-        ellAdd(preclist, &pnewnode->node);
-    }
+    ellAdd(preclist, &pnewnode->node);
     precordType->no_aliases++;
     pdbentry->precnode = pnewnode;
     ppvd = dbPvdAdd(pdbentry->pdbbase, precordType, pnewnode);

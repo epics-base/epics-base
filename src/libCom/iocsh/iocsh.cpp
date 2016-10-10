@@ -564,7 +564,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
      * Parse macro definitions, this check occurs before creating the
      * macro handle to simplify cleanup.
      */
-
+    
     if (macros) {
         if (macParseDefns(NULL, macros, &defines) < 0) {
             free(redirects);
@@ -935,7 +935,7 @@ iocshEnvClear(const char *name)
     
     if (iocshMacroHandleId) {
         handle = (MAC_HANDLE *) epicsThreadPrivateGet(iocshMacroHandleId);
-        
+    
         if (handle != NULL) {
             macPutValue(handle, name, NULL);
         }

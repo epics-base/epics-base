@@ -41,8 +41,17 @@ epicsShareDef struct dbBase **iocshPpdbbase;
 /*
  * File-local information
  */
+struct iocshCommand {
+    iocshFuncDef const    *pFuncDef;
+    iocshCallFunc          func;
+    struct iocshCommand   *next;
+};
 static struct iocshCommand *iocshCommandHead;
 static char iocshCmdID[] = "iocshCmd";
+struct iocshVariable {
+    iocshVarDef const     *pVarDef;
+    struct iocshVariable  *next;
+};
 static struct iocshVariable *iocshVariableHead;
 static char iocshVarID[] = "iocshVar";
 extern "C" { static void varCallFunc(const iocshArgBuf *); }
@@ -141,9 +150,9 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef,
 /*
  * Retrieves a previously registered function with the given name.
  */
-struct iocshCommand * epicsShareAPI iocshFind(const char *name)
+const iocshCmdDef * epicsShareAPI iocshFind(const char *name)
 {
-    return (iocshCommand *) registryFind(iocshCmdID, name);
+    return (iocshCmdDef *) registryFind(iocshCmdID, name);
 }
 
 /*
@@ -207,9 +216,10 @@ void epicsShareAPI iocshRegisterVariable (const iocshVarDef *piocshVarDef)
 /*
  * Retrieves a previously registered variable with the given name.
  */
-struct iocshVariable * epicsShareAPI iocshFindVariable(const char *name)
+const iocshVarDef * epicsShareAPI iocshFindVariable(const char *name)
 {
-    return (iocshVariable *) registryFind(iocshVarID, name);
+    struct iocshVariable *temp = (iocshVariable *) registryFind(iocshVarID, name);
+    return temp->pVarDef; 
 }
 
 /*

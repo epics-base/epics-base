@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution.
+* in file LICENSE that is included with this distribution. 
 \*************************************************************************/
 /* iocsh.cpp */
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -215,7 +215,7 @@ struct iocshVariable * epicsShareAPI iocshFindVariable(const char *name)
 /*
  * Free storage created by iocshRegister/iocshRegisterVariable
  */
-void epicsShareAPI iocshFree(void)
+void epicsShareAPI iocshFree(void) 
 {
     struct iocshCommand *pc;
     struct iocshVariable *pv;
@@ -515,7 +515,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     static const char * pairs[] = {"", "environ", NULL, NULL};
     MAC_HANDLE *handle;
     char ** defines = NULL;
-
+    
     iocshInit();
 
     /*
@@ -559,7 +559,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         fprintf(epicsGetStderr(), "Out of memory!\n");
         return -1;
     }
-
+    
     /*
      * Parse macro definitions, this check occurs before creating the
      * macro handle to simplify cleanup.
@@ -571,25 +571,25 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
             return -1;
         }
     }
-
+    
     /*
      * Check for existing macro context or construct a new one.
      */
     handle = (MAC_HANDLE *) epicsThreadPrivateGet(iocshMacroHandleId);
-
+    
     if (handle == NULL) {
         if (macCreateHandle(&handle, pairs)) {
             errlogMessage("iocsh: macCreateHandle failed.");
             free(redirects);
             return -1;
         }
-
+        
         epicsThreadPrivateSet(iocshMacroHandleId, (void *) handle);
     }
-
+    
     macPushScope(handle);
     macInstallMacros(handle, defines);
-
+    
     /*
      * Read commands till EOF or exit
      */
@@ -861,7 +861,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
         stopRedirect(filename, lineno, redirects);
     }
     macPopScope(handle);
-
+    
     if (handle->level == 0) {
         macDeleteHandle(handle);
         epicsThreadPrivateSet(iocshMacroHandleId, NULL);
@@ -917,11 +917,11 @@ iocshRun(const char *cmd, const char *macros)
  * Needed to work around the necessary limitations of macLib and
  * environment variables. In every other case of macro expansion
  * it is the expected outcome that defined macros override any
- * environment variables.
+ * environment variables. 
  *
- * iocshLoad/Run turn this on its head as it is very likely that
- * an epicsEnvSet command may be run within the context of their
- * calls. Thus, it would be expected that the new value would be
+ * iocshLoad/Run turn this on its head as it is very likely that 
+ * an epicsEnvSet command may be run within the context of their 
+ * calls. Thus, it would be expected that the new value would be 
  * returned in any future macro expansion.
  *
  * To do so, the epicsEnvSet command needs to be able to access
@@ -932,10 +932,10 @@ void epicsShareAPI
 iocshEnvClear(const char *name)
 {
     MAC_HANDLE *handle;
-
+    
     if (iocshMacroHandleId) {
         handle = (MAC_HANDLE *) epicsThreadPrivateGet(iocshMacroHandleId);
-
+        
         if (handle != NULL) {
             macPutValue(handle, name, NULL);
         }

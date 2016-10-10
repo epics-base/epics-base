@@ -69,7 +69,7 @@ private:
     bool responseIsPending;
 
     caStatus createChannel ( const char * pName );
-    caStatus verifyRequest ( casChannelI * & pChan );
+    caStatus verifyRequest ( casChannelI * & pChan, bool allowdyn = false );
     typedef caStatus ( casStrmClient :: * pCASMsgHandler ) 
         ( epicsGuard < casClientMutex > & );
     static pCASMsgHandler const msgHandlers[CA_PROTO_LAST_CMMD+1u];

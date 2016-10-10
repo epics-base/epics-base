@@ -390,14 +390,12 @@ caStatus casStrmClient::echoAction ( epicsGuard < casClientMutex > & )
 //
 // casStrmClient::verifyRequest()
 //
-caStatus casStrmClient::verifyRequest ( casChannelI * & pChan )
+caStatus casStrmClient::verifyRequest (casChannelI * & pChan , bool allowdyn)
 {
-    const caHdrLargeArray * mp = this->ctx.getMsg();
-
     //
     // channel exists for this resource id ?
     //
-    chronIntId tmpId ( mp->m_cid );
+    chronIntId tmpId ( ctx.msg.m_cid );
     pChan = this->chanTable.lookup ( tmpId );
     if ( ! pChan ) {
         return ECA_BADCHID;
@@ -406,14 +404,24 @@ caStatus casStrmClient::verifyRequest ( casChannelI * & pChan )
     //
     // data type out of range ?
     //
-    if ( mp->m_dataType > ((unsigned)LAST_BUFFER_TYPE) ) {
+    if ( ctx.msg.m_dataType > ((unsigned)LAST_BUFFER_TYPE) ) {
         return ECA_BADTYPE;
     }
 
     //
     // element count out of range ?
     //
-    if ( mp->m_count > pChan->getPVI().nativeCount() || mp->m_count == 0u ) {
+    if ( allowdyn && ctx.msg.m_count==0 &&
+        CA_V413 ( this->minor_version_number ) ) {
+        // Hack
+        // Since GDD interface doesn't support variable sized arrays
+        // we present dynamic requests as max size.
+        // This allows PCAS to claim support for dynamic arrays w/o
+        // going to the trouble of fixing GDD.
+        ctx.msg.m_count = pChan->getPVI().nativeCount();
+    }
+    else if ( ctx.msg.m_count > pChan->getPVI().nativeCount() ||
+        ctx.msg.m_count == 0u ) {
         return ECA_BADCOUNT;
     }
 
@@ -446,7 +454,7 @@ caStatus casStrmClient::readAction ( epicsGuard < casClientMutex > & guard )
     casChannelI * pChan;
 
     {
-        caStatus status = this->verifyRequest ( pChan );
+        caStatus status = this->verifyRequest ( pChan, true );
         if ( status != ECA_NORMAL ) {
             if ( pChan ) {
                 return this->sendErr ( guard, mp, pChan->getCID(), 
@@ -587,7 +595,7 @@ caStatus casStrmClient::readNotifyAction ( epicsGuard < casClientMutex > & guard
     casChannelI * pChan;
 
     {
-        caStatus status = this->verifyRequest ( pChan );
+        caStatus status = this->verifyRequest ( pChan, true );
         if ( status != ECA_NORMAL ) {
             return this->readNotifyFailureResponse ( guard, * mp, status );
         }
@@ -1942,7 +1950,7 @@ caStatus casStrmClient::eventAddAction (
 
     casChannelI *pciu;
     {
-        caStatus status = casStrmClient::verifyRequest ( pciu );
+        caStatus status = casStrmClient::verifyRequest ( pciu, true );
         if ( status != ECA_NORMAL ) {
             if ( pciu ) {
                 return this->sendErr ( guard, mp, 

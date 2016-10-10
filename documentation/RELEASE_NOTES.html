@@ -13,6 +13,15 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Add dynamic (variable length) array support to PCAS</h3>
+
+<p>Dynamic array sizing support was added to the IOC server (RSRV) in the
+Base-3.14.12 release, but has not until now been supported in the <q>Portable
+Channel Access Server</q> (PCAS). Channel Access server applications using the
+PCAS will have to be modified slightly to provide full support for variable
+length arrays, but unmodified applications will continue to build and work as
+before against this release.</p>
+
 <h3>Additional epicsTime conversion</h3>
 
 <p>The EPICS timestamp library (epicsTime) inside libCom's OSI layer has

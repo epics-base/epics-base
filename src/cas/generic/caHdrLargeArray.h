@@ -30,7 +30,7 @@
 #   include "shareLib.h"
 #endif
 
-static const unsigned char CA_MINOR_PROTOCOL_REVISION = 12;
+static const unsigned char CA_MINOR_PROTOCOL_REVISION = 13;
 
 typedef ca_uint32_t caResId;
 

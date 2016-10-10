@@ -5,7 +5,7 @@
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE Versions 3.13.7
 * and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 /* iocsh.h  ioc: call registered function*/
 /* Author:  Marty Kraimer Date: 27APR2000 */
@@ -59,10 +59,25 @@ typedef struct iocshFuncDef {
 
 typedef void (*iocshCallFunc)(const iocshArgBuf *argBuf);
 
+struct iocshCommand {
+    iocshFuncDef const   *pFuncDef;
+    iocshCallFunc         func;
+    struct iocshCommand  *next;
+};
+
+struct iocshVariable {
+    iocshVarDef const    *pVarDef;
+    struct iocshVariable *next;
+};
+
 epicsShareFunc void epicsShareAPI iocshRegister(
     const iocshFuncDef *piocshFuncDef, iocshCallFunc func);
 epicsShareFunc void epicsShareAPI iocshRegisterVariable (
     const iocshVarDef *piocshVarDef);
+epicsShareFunc struct iocshCommand* epicsShareAPI iocshFind(
+    const char* name);
+epicsShareFunc struct iocshVariable* epicsShareAPI iocshFindVariable(
+    const char* name);
 
 /* iocshFree frees storage used by iocshRegister*/
 /* This should only be called when iocsh is no longer needed*/

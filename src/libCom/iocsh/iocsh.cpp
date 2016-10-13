@@ -42,8 +42,7 @@ epicsShareDef struct dbBase **iocshPpdbbase;
  * File-local information
  */
 struct iocshCommand {
-    iocshFuncDef const    *pFuncDef;
-    iocshCallFunc          func;
+    iocshCmdDef            def;
     struct iocshCommand   *next;
 };
 static struct iocshCommand *iocshCommandHead;
@@ -115,10 +114,10 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef,
 
     iocshTableLock ();
     for (l = NULL, p = iocshCommandHead ; p != NULL ; l = p, p = p->next) {
-        i = strcmp (piocshFuncDef->name, p->pFuncDef->name);
+        i = strcmp (piocshFuncDef->name, p->def.pFuncDef->name);
         if (i == 0) {
-            p->pFuncDef = piocshFuncDef;
-            p->func = func;
+            p->def.pFuncDef = piocshFuncDef;
+            p->def.func = func;
             iocshTableUnlock ();
             return;
         }
@@ -141,8 +140,8 @@ void epicsShareAPI iocshRegister (const iocshFuncDef *piocshFuncDef,
         n->next = l->next;
         l->next = n;
     }
-    n->pFuncDef = piocshFuncDef;
-    n->func = func;
+    n->def.pFuncDef = piocshFuncDef;
+    n->def.func = func;
     iocshTableUnlock ();
 }
 
@@ -449,7 +448,7 @@ static void helpCallFunc(const iocshArgBuf *args)
             "Type 'help <command>' to see the arguments of <command>.\n");
         iocshTableLock ();
         for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
-            piocshFuncDef = pcmd->pFuncDef;
+            piocshFuncDef = pcmd->def.pFuncDef;
             l = strlen (piocshFuncDef->name);
             if ((l + col) >= 79) {
                 fputc('\n', epicsGetStdout());
@@ -475,7 +474,7 @@ static void helpCallFunc(const iocshArgBuf *args)
     else {
         for (int iarg = 1 ; iarg < argc ; iarg++) {
             for (pcmd = iocshCommandHead ; pcmd != NULL ; pcmd = pcmd->next) {
-                piocshFuncDef = pcmd->pFuncDef;
+                piocshFuncDef = pcmd->def.pFuncDef;
                 if (epicsStrGlobMatch(piocshFuncDef->name, argv[iarg]) != 0) {
                     fputs(piocshFuncDef->name, epicsGetStdout());
                     for (int a = 0 ; a < piocshFuncDef->nargs ; a++) {
@@ -826,11 +825,11 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
                 /*
                  * Process arguments and call function
                  */
-                struct iocshFuncDef const *piocshFuncDef = found->pFuncDef;
+                struct iocshFuncDef const *piocshFuncDef = found->def.pFuncDef;
                 for (int iarg = 0 ; ; ) {
                     if (iarg == piocshFuncDef->nargs) {
                         startRedirect(filename, lineno, redirects);
-                        (*found->func)(argBuf);
+                        (*found->def.func)(argBuf);
                         break;
                     }
                     if (iarg >= argBufCapacity) {

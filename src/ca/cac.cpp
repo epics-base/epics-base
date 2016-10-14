@@ -149,9 +149,9 @@ cac::cac (
     iiuExistenceCount ( 0u ),
     cacShutdownInProgress ( false )
 {
-	if ( ! osiSockAttach () ) {
-        throwWithLocation ( caErrorCode (ECA_INTERNAL) );
-	}
+    if ( ! osiSockAttach () ) {
+        throwWithLocation ( udpiiu :: noSocket () );
+    }
 
     try {
 	    long status;

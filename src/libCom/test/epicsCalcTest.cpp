@@ -198,14 +198,6 @@ static inline double MAX(double a, double b, double c, double d, double e,
     double f, double g, double h, double i, double j) {
     return MAX(MAX(a,b,c,d,e,f,g,h,i),j);
 }
-static inline double MAX(double a, double b, double c, double d, double e,
-    double f, double g, double h, double i, double j, double k) {
-    return MAX(MAX(a,b,c,d,e,f,g,h,i,j),k);
-}
-static inline double MAX(double a, double b, double c, double d, double e,
-    double f, double g, double h, double i, double j, double k, double l) {
-    return MAX(MAX(a,b,c,d,e,f,g,h,i,j,k),l);
-}
 
 static inline double MIN(double a) {
     return a;
@@ -241,14 +233,6 @@ static inline double MIN(double a, double b, double c, double d, double e,
 static inline double MIN(double a, double b, double c, double d, double e,
     double f, double g, double h, double i, double j) {
     return MIN(MIN(a,b,c,d,e,f,g,h,i),j);
-}
-static inline double MIN(double a, double b, double c, double d, double e,
-    double f, double g, double h, double i, double j, double k) {
-    return MIN(MIN(a,b,c,d,e,f,g,h,i,j),k);
-}
-static inline double MIN(double a, double b, double c, double d, double e,
-    double f, double g, double h, double i, double j, double k, double l) {
-    return MIN(MIN(a,b,c,d,e,f,g,h,i,j,k),l);
 }
 
 /* The test code below generates lots of spurious warnings because

@@ -44,9 +44,6 @@
 
 using namespace std;
 
-const unsigned mSecPerSec = 1000u;
-const unsigned uSecPerSec = 1000u * mSecPerSec;
-
 tcpSendThread::tcpSendThread ( 
         class tcpiiu & iiuIn, const char * pName, 
         unsigned stackSize, unsigned priority ) :
@@ -804,28 +801,6 @@ tcpiiu::tcpiiu (
             this->socketLibrarySendBufferSize = static_cast < unsigned > ( nBytes );
         }
     }
-
-#   if 0
-    //
-    // windows has a really strange implementation of thess options
-    // and we can avoid the need for this by using pthread_kill on unix
-    //
-    {
-        struct timeval timeout;
-        double pollInterval = connectionTimeout / 8.0;
-        timeout.tv_sec = static_cast < long > ( pollInterval );
-        timeout.tv_usec = static_cast < long > 
-            ( ( pollInterval - timeout.tv_sec ) * uSecPerSec );
-        // intentionally ignore status as we dont expect that all systems
-        // will accept this request
-        setsockopt ( this->sock, SOL_SOCKET, SO_SNDTIMEO,
-                ( char * ) & timeout, sizeof ( timeout ) );
-        // intentionally ignore status as we dont expect that all systems
-        // will accept this request
-        setsockopt ( this->sock, SOL_SOCKET, SO_RCVTIMEO,
-                ( char * ) & timeout, sizeof ( timeout ) );
-    }
-#   endif
 
     if ( isNameService() ) {
         pSearchDest->setCircuit ( this );

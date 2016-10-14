@@ -34,9 +34,6 @@
 
 #include "logClient.h"
 
-static const int logClientSuccess = 0;
-static const int logClientError = -1;
-
 typedef struct {
     char                msgBuf[0x4000];
     struct sockaddr_in  addr;

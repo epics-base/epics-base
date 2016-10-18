@@ -737,7 +737,9 @@ caStatus casStrmClient::readNotifyFailureResponse (
 // than the destination)
 //
 caStatus convertContainerMemberToAtomic ( gdd & dd, 
-         aitUint32 appType, aitUint32 elemCount )
+                                          aitUint32 appType,
+                                          aitUint32 requestedCount,
+                                          aitUint32 nativeCount )
 {
     gdd * pVal;
     if ( dd.isContainer() ) {
@@ -764,13 +766,13 @@ caStatus convertContainerMemberToAtomic ( gdd & dd,
         return S_cas_badType;
     }
 
-    if ( elemCount <= 1 ) {
+    if ( nativeCount <= 1 ) {
         return S_cas_success;
     }
         
     // convert to atomic
     gddBounds bds;
-    bds.setSize ( elemCount );
+    bds.setSize ( requestedCount );
     bds.setFirst ( 0u );
     pVal->setDimension ( 1u, & bds );
     return S_cas_success;
@@ -780,7 +782,9 @@ caStatus convertContainerMemberToAtomic ( gdd & dd,
 // createDBRDD ()
 //
 static caStatus createDBRDD ( unsigned dbrType, 
-                             unsigned elemCount, gdd * & pDD )
+                              unsigned requestedCount,
+                              unsigned nativeCount,
+                              gdd * & pDD )
 {   
     /*
      * DBR type has already been checked, but it is possible
@@ -808,7 +812,7 @@ static caStatus createDBRDD ( unsigned dbrType,
 
     // fix the value element count
     caStatus status = convertContainerMemberToAtomic ( 
-        *pDescRet, gddAppType_value, elemCount );
+        *pDescRet, gddAppType_value, requestedCount, nativeCount );
     if ( status != S_cas_success ) {
         pDescRet->unreference ();
         return status;
@@ -884,7 +888,10 @@ caStatus casStrmClient::monitorResponse (
 
     gdd * pDBRDD = 0;
     if ( completionStatus == S_cas_success ) {
-        caStatus status = createDBRDD ( msg.m_dataType, count, pDBRDD );
+        caStatus status = createDBRDD ( msg.m_dataType,
+                                        count,
+                                        chan.getPVI().nativeCount(),
+                                        pDBRDD );
         if ( status != S_cas_success ) {
             caStatus ecaStatus;
             if ( status == S_cas_badType ) {
@@ -2614,8 +2621,10 @@ caStatus casStrmClient::read ()
 
     {
         gdd * pDD = 0;
-        caStatus status = createDBRDD ( pHdr->m_dataType, 
-            pHdr->m_count, pDD );
+        caStatus status = createDBRDD ( pHdr->m_dataType,
+                                        pHdr->m_count,
+                                        this->ctx.getChannel()->getPVI().nativeCount(),
+                                        pDD );
         if ( status != S_cas_success ) {
             return status;
         }

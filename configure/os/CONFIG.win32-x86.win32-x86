@@ -8,6 +8,8 @@
 
 VALID_BUILDS = Host Ioc
 
+OPT_WHOLE_PROGRAM = YES
+
 # convert UNIX path to native path
 PATH_FILTER = $(subst /,\\,$(1))
 
@@ -35,34 +37,30 @@ HDEPENDS_METHOD = CMD
 # Compiler flags for C files (C++ is below)
 
 #
-# /W<d> display warnings at level d
-#    /W4 is for maximum (lint type) warnings
-#    /W3 is for production quality warnings
-#    /W2 displays significant warnings
-#    /W1 is the default and shows severe warnings only
-# /w<d><n> Set warning C<n> to be shown at level <d>
-WARN_CFLAGS_YES = /W3
-WARN_CFLAGS_NO  = /W1
+# -W<d> display warnings at level d
+#    -W4 is for maximum (lint type) warnings
+#    -W3 is for production quality warnings
+#    -W2 displays significant warnings
+#    -W1 is the default and shows severe warnings only
+# -w<d><n> Set warning C<n> to be shown at level <d>
+WARN_CFLAGS_YES = -W3
+WARN_CFLAGS_NO  = -W1
 
 #
-# /Ox maximum optimizations
-# /MD use MSVCRT (run-time as DLL, multi-thread support)
-# /GL whole program optimization
-# /Zi generate program database for debugging information
-OPT_CFLAGS_YES = /Ox /GL
+# -Ox maximum optimizations
+# -GL whole program optimization
+# -Oy- re-enable creation of frame pointers
+OPT_CFLAGS_YES_YES = -Ox -GL -Oy-
+OPT_CFLAGS_YES_NO = -Ox -Oy-
+OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# /Zi generate program database for debugging information
-# /Z7 include debugging info in object files
-# /Fr create source browser file
-# /GZ catch bugs occurring only in optimized code
-# /D_CRTDBG_MAP_ALLOC
-# /RTCsu catch bugs occuring only inoptimized code
-# /DEPICS_FREELIST_DEBUG good for detecting mem mrg bugs
-OPT_CFLAGS_NO = /Zi /RTCsu
+# -Zi generate program database for debugging information
+# -RTCsu enable run-time error checks
+OPT_CFLAGS_NO = -Zi -RTCsu
 
 # specify object file name and location
-OBJ_CFLAG = /Fo
+OBJ_CFLAG = -Fo
 
 #
 # the following options are required when
@@ -87,53 +85,44 @@ CPP = cl /nologo /C /E
 
 # Configure OS vendor C++ compiler
 #
-# __STDC__=0 is a real great idea of Jeff that gives us both:
+# __STDC__=0 gives us both:
 # 1) define STDC for code (pretend ANSI conformance)
 # 2) set it to 0 to use MS C "extensions" (open for _open etc.)
 # because MS uses:   if __STDC__ ... disable many nice things
 #
-# Use of /Za would dissable DLL import/export keywords which
-# include/excludes using architecture neutral macros
-# 
-# /EHsc - generate code for exceptions
-# /GR - generate code for run time type identification
+# -EHsc - generate code for exceptions
+# -GR - generate code for run time type identification
 #
-CCC = cl /nologo /EHsc /GR
-CODE_CPPFLAGS += /nologo /D__STDC__=0
-CODE_CPPFLAGS += /D_CRT_SECURE_NO_DEPRECATE /D_CRT_NONSTDC_NO_DEPRECATE
+CCC = cl -EHsc -GR
+CODE_CPPFLAGS += -nologo -D__STDC__=0
+CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 
 
 # Compiler flags for C++ files
 
 #
-# /W<d> display warnings at level d
-#    /W4 is for maximum (lint type) warnings
-#    /W3 is for production quality warnings
-#    /W2 displays significant warnings
-#    /W1 is the default and shows severe warnings only
-# /w<d><n> Set warning C<n> to be shown at level <d>
-# /w44355 "'this' used in the base initializer list"
-# /w44344 "behavior change: use of explicit template arguments results in ..."
-WARN_CXXFLAGS_YES = /W3 /w44355 /w44344
-WARN_CXXFLAGS_NO  = /W1
+# -W<N> use warning level N
+# (maximum lint level warnings at level 4)
+# -w44355 set "'this' used in the base initializer list" to be level 4
+# -w44344 "behavior change: use of explicit template arguments results in ..."
+WARN_CXXFLAGS_YES = -W3 -w44355 -w44344
+WARN_CXXFLAGS_NO  = -W1
 
 #
-# /Ox maximum optimizations
-# /GL whole program optimization
-# /Zi generate program database for debugging information
-OPT_CXXFLAGS_YES = /Ox /GL
+# -Ox maximum optimizations
+# -GL whole program optimization
+# -Oy- re-enable creation of frame pointers
+OPT_CXXFLAGS_YES_YES = -Ox -GL -Oy-
+OPT_CXXFLAGS_YES_NO = -Ox -Oy-
+OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
-# /Zi generate program database for debugging information
-# /Z7 include debugging info in object files
-# /Fr create source browser file
-# /D_CRTDBG_MAP_ALLOC
-# /RTCsu catch bugs occurring only in optimized code
-# /DEPICS_FREELIST_DEBUG good for detecting mem mrg bugs
-OPT_CXXFLAGS_NO = /RTCsu /Zi 
+# -Zi generate program database for debugging information
+# -RTCsu enable run-time error checks
+OPT_CXXFLAGS_NO = -RTCsu -Zi
 
 # specify object file name and location
-OBJ_CXXFLAG = /Fo
+OBJ_CXXFLAG = -Fo
 
 #
 # the following options are required when
@@ -152,14 +141,20 @@ STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
 RANLIB=
 
-# add /profile here to run the ms profiler
-# /LTCG - whole program optimization
-# /fixed:no good for programs such as purify and quantify
-# /debug good for programs such as purify and quantify
-LINK_OPT_FLAGS_YES = /LTCG /incremental:no /opt:ref /release $(PROD_VERSION:%=/version:%) 
-LINK_OPT_FLAGS_NO = /debug /incremental:no /fixed:no
+# add -profile here to run the ms profiler
+# -LTCG whole program optimization
+# -incremental:no full linking
+# -fixed:no generate relocatable code
+# -version:<major>.<minor> - only 2 components allowed, 0-65535 each
+# -debug generate debugging info
+LINK_OPT_FLAGS_WHOLE_YES = -LTCG
+LINK_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
+LINK_OPT_FLAGS_YES += -incremental:no -opt:ref
+LINK_OPT_FLAGS_YES += -release $(PROD_VERSION:%=-version:%)
+LINK_OPT_FLAGS_NO = -debug -incremental:no -fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
-LIB_OPT_FLAGS_YES =  /LTCG
+
+LIB_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
 LIB_OPT_LDFLAGS = $(LIB_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=
@@ -288,8 +283,8 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:$@ \
-	$(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) \
+    -out:$@ $(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
 
 #--------------------------------------------------
 # UseManifestTool.pl checks MS Visual c++ compiler version number to
@@ -297,9 +292,10 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) -out:
 # linker created .manifest file into a library or product target. 
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
-MT_DLL_COMMAND1 = mt.exe /manifest $@.manifest "/outputresource:$@;\#2"
+MT.exe = mt.exe -nologo -manifest $@.manifest
+MT_DLL_COMMAND1 = $(MT.exe) "-outputresource:$@;\#2"
 MT_EXE_COMMAND_YES =
-MT_EXE_COMMAND_NO = mt.exe /manifest $@.manifest "/outputresource:$@;\#1"
+MT_EXE_COMMAND_NO = $(MT.exe) "-outputresource:$@;\#1"
 MT_EXE_COMMAND1 = $(MT_EXE_COMMAND_$(STATIC_BUILD))
 MT_DLL_COMMAND = $(MT_DLL_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
 MT_EXE_COMMAND = $(MT_EXE_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))

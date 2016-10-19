@@ -42,7 +42,7 @@ exPV::exPV ( exServer & casIn, pvInfo & setup,
     //
     // no dataless PV allowed
     //
-    assert (this->info.getElementCount()>=1u);
+    assert (this->info.getCapacity()>=1u);
 
     //
     // start a very slow background scan 

@@ -48,7 +48,7 @@ unsigned exVectorPV::maxDimension() const
 aitIndex exVectorPV::maxBound (unsigned dimension) const // X aCC 361
 {
     if (dimension==0u) {
-        return this->info.getElementCount();
+        return this->info.getCapacity();
     }
     else {
         return 0u;
@@ -79,7 +79,7 @@ void exVectorPV::scan()
     this->currentTime = epicsTime::getCurrent();
  
     pDD = new gddAtomic (gddAppType_value, aitEnumFloat64, 
-            1u, this->info.getElementCount());
+            1u, this->info.getCapacity());
     if ( ! pDD.valid () ) {
         return;
     }
@@ -93,7 +93,7 @@ void exVectorPV::scan()
     //
     // allocate array buffer
     //
-    pF = new aitFloat32 [this->info.getElementCount()];
+    pF = new aitFloat32 [this->info.getCapacity()];
     if (!pF) {
         return;
     }
@@ -118,13 +118,13 @@ void exVectorPV::scan()
     if ( this->pValue.valid () ) {
         if (this->pValue->dimension()==1u) {
             const gddBounds *pB = this->pValue->getBounds();
-            if (pB[0u].size()==this->info.getElementCount()) {
+            if (pB[0u].size()==this->info.getCapacity()) {
                 pCF = *this->pValue;
             }
         }
     }
 
-    pFE = &pF[this->info.getElementCount()];
+    pFE = &pF[this->info.getCapacity()];
     while (pF<pFE) {
         radians = (rand () * 2.0 * myPI)/RAND_MAX;
         if (pCF) {
@@ -145,6 +145,8 @@ void exVectorPV::scan()
     pDD->setTimeStamp ( & gddts );
 
     status = this->update ( *pDD );
+    this->info.setElementCount(this->info.getCapacity());
+
     if ( status != S_casApp_success ) {
         errMessage (status, "vector scan update failed\n");
     }
@@ -166,7 +168,7 @@ void exVectorPV::scan()
 //
 caStatus exVectorPV::updateValue ( const gdd & value )
 {
-
+    aitUint32 newSize = 0;
     //
     // Check bounds of incoming request
     // (and see if we are replacing all elements -
@@ -180,10 +182,11 @@ caStatus exVectorPV::updateValue ( const gdd & value )
             return S_casApp_badDimension;
         }
         const gddBounds* pb = value.getBounds ();
+        newSize = pb[0u].size();
         if ( pb[0u].first() != 0u ) {
             return S_casApp_outOfBounds;
         }
-        else if ( pb[0u].size() > this->info.getElementCount() ) {
+        else if ( newSize > this->info.getCapacity() ) {
             return S_casApp_outOfBounds;
         }
     }
@@ -193,14 +196,14 @@ caStatus exVectorPV::updateValue ( const gdd & value )
         //
         return S_casApp_outOfBounds;
     }
-        
+
     //
     // Create a new array data descriptor
     // (so that old values that may be referenced on the
     // event queue are not replaced)
     //
-    smartGDDPointer pNewValue ( new gddAtomic ( gddAppType_value, aitEnumFloat64, 
-        1u, this->info.getElementCount() ) );
+    smartGDDPointer pNewValue ( new gddAtomic ( gddAppType_value, aitEnumFloat64,
+        1u, newSize ) );
     if ( ! pNewValue.valid() ) {
         return S_casApp_noMemory;
     }
@@ -211,21 +214,20 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     //
     gddStatus gdds = pNewValue->unreference( );
     assert ( ! gdds );
-    
+
     //
     // allocate array buffer
     //
-    aitFloat64 * pF = new aitFloat64 [this->info.getElementCount()];
+    aitFloat64 * pF = new aitFloat64 [newSize];
     if (!pF) {
         return S_casApp_noMemory;
     }
-    
+
     //
     // Install (and initialize) array buffer
     // if no old values exist
     //
-    unsigned count = this->info.getElementCount();
-    for ( unsigned i = 0u; i < count; i++ ) {
+    for ( unsigned i = 0u; i < newSize; i++ ) {
         pF[i] = 0.0f;
     }
 
@@ -240,7 +242,7 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     // (do this before we increment pF)
     //
     pNewValue->putRef ( pF, pDest );
-    
+
     //
     // copy in the values that they are writing
     //
@@ -248,9 +250,10 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     if ( gdds ) {
         return S_cas_noConvert;
     }
-    
+
     this->pValue = pNewValue;
-    
+    this->info.setElementCount(newSize);
+
     return S_casApp_success;
 }
 

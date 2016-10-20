@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 //
@@ -30,23 +29,23 @@ exAsyncPV::exAsyncPV ( exServer & cas, pvInfo & setup,
 //
 caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 {
-	exAsyncReadIO	*pIO;
-	
-	if ( this->simultAsychReadIOCount >= this->cas.maxSimultAsyncIO () ) {
-		return S_casApp_postponeAsyncIO;
-	}
+    exAsyncReadIO *pIO;
 
-	pIO = new exAsyncReadIO ( this->cas, ctx, 
-	                *this, valueIn, this->asyncDelay );
-	if ( ! pIO ) {
+    if ( this->simultAsychReadIOCount >= this->cas.maxSimultAsyncIO () ) {
+        return S_casApp_postponeAsyncIO;
+    }
+
+    pIO = new exAsyncReadIO ( this->cas, ctx,
+                *this, valueIn, this->asyncDelay );
+    if ( ! pIO ) {
         if ( this->simultAsychReadIOCount > 0 ) {
             return S_casApp_postponeAsyncIO;
         }
         else {
-		    return S_casApp_noMemory;
+            return S_casApp_noMemory;
         }
-	}
-	this->simultAsychReadIOCount++;
+    }
+    this->simultAsychReadIOCount++;
     return S_casApp_asyncCompletion;
 }
 
@@ -54,24 +53,24 @@ caStatus exAsyncPV::read (const casCtx &ctx, gdd &valueIn)
 // exAsyncPV::writeNotify()
 //
 caStatus exAsyncPV::writeNotify ( const casCtx &ctx, const gdd &valueIn )
-{	
-	if ( this->simultAsychWriteIOCount >= this->cas.maxSimultAsyncIO() ) {
-		return S_casApp_postponeAsyncIO;
-	}
+{
+    if ( this->simultAsychWriteIOCount >= this->cas.maxSimultAsyncIO() ) {
+        return S_casApp_postponeAsyncIO;
+    }
 
-	exAsyncWriteIO * pIO = new 
+    exAsyncWriteIO * pIO = new
         exAsyncWriteIO ( this->cas, ctx, *this, 
-	                    valueIn, this->asyncDelay );
-	if ( ! pIO ) {
+                        valueIn, this->asyncDelay );
+    if ( ! pIO ) {
         if ( this->simultAsychReadIOCount > 0 ) {
             return S_casApp_postponeAsyncIO;
         }
         else {
-		    return S_casApp_noMemory;
+            return S_casApp_noMemory;
         }
     }
-	this->simultAsychWriteIOCount++;
-	return S_casApp_asyncCompletion;
+    this->simultAsychWriteIOCount++;
+    return S_casApp_asyncCompletion;
 }
 
 //
@@ -79,24 +78,24 @@ caStatus exAsyncPV::writeNotify ( const casCtx &ctx, const gdd &valueIn )
 //
 caStatus exAsyncPV::write ( const casCtx &ctx, const gdd &valueIn )
 {
-	// implement the discard intermediate values, but last value
+    // implement the discard intermediate values, but last value
     // sent always applied behavior that IOCs provide excepting
     // that we will alow N requests to pend instead of a limit
     // of only one imposed in the IOC
-	if ( this->simultAsychWriteIOCount >= this->cas.maxSimultAsyncIO() ) {
+    if ( this->simultAsychWriteIOCount >= this->cas.maxSimultAsyncIO() ) {
         pStandbyValue.set ( & valueIn );
-		return S_casApp_success;
-	}
-
-	exAsyncWriteIO * pIO = new 
-        exAsyncWriteIO ( this->cas, ctx, *this, 
-	                    valueIn, this->asyncDelay );
-	if ( ! pIO ) {
-        pStandbyValue.set ( & valueIn );
-		return S_casApp_success;
+        return S_casApp_success;
     }
-	this->simultAsychWriteIOCount++;
-	return S_casApp_asyncCompletion;
+
+    exAsyncWriteIO * pIO = new 
+        exAsyncWriteIO ( this->cas, ctx, *this, 
+                        valueIn, this->asyncDelay );
+    if ( ! pIO ) {
+        pStandbyValue.set ( & valueIn );
+        return S_casApp_success;
+    }
+    this->simultAsychWriteIOCount++;
+    return S_casApp_asyncCompletion;
 }
 
 // Implementing a specialized update for exAsyncPV
@@ -150,7 +149,7 @@ void exAsyncPV::removeWriteIO ()
 exAsyncWriteIO::exAsyncWriteIO ( exServer & cas,
         const casCtx & ctxIn, exAsyncPV & pvIn, 
         const gdd & valueIn, double asyncDelay ) :
-	casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
+    casAsyncWriteIO ( ctxIn ), pv ( pvIn ), 
         timer ( cas.createTimer () ), pValue(valueIn)
 {
     this->timer.start ( *this, asyncDelay );
@@ -168,7 +167,7 @@ exAsyncWriteIO::~exAsyncWriteIO()
     if ( this->pValue.valid () ) {
         this->pv.updateFromAsyncWrite ( *this->pValue );
     }
-	this->pv.removeWriteIO();
+    this->pv.removeWriteIO();
 }
 
 //
@@ -179,9 +178,9 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::
     expire ( const epicsTime & /* currentTime */ ) 
 {
     assert ( this->pValue.valid () );
-	caStatus status = this->pv.updateFromAsyncWrite ( *this->pValue );
-	this->pValue.set ( 0 );
-	this->postIOCompletion ( status );
+    caStatus status = this->pv.updateFromAsyncWrite ( *this->pValue );
+    this->pValue.set ( 0 );
+    this->postIOCompletion ( status );
     return noRestart;
 }
 
@@ -191,7 +190,7 @@ epicsTimerNotify::expireStatus exAsyncWriteIO::
 exAsyncReadIO::exAsyncReadIO ( exServer & cas, const casCtx & ctxIn, 
                               exAsyncPV & pvIn, gdd & protoIn,
                               double asyncDelay ) :
-	casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
+    casAsyncReadIO ( ctxIn ), pv ( pvIn ), 
         timer ( cas.createTimer() ), pProto ( protoIn )
 {
     this->timer.start ( *this, asyncDelay );
@@ -202,7 +201,7 @@ exAsyncReadIO::exAsyncReadIO ( exServer & cas, const casCtx & ctxIn,
 //
 exAsyncReadIO::~exAsyncReadIO()
 {
-	this->pv.removeReadIO ();
+    this->pv.removeReadIO ();
     this->timer.destroy ();
 }
 
@@ -213,16 +212,16 @@ exAsyncReadIO::~exAsyncReadIO()
 epicsTimerNotify::expireStatus 
     exAsyncReadIO::expire ( const epicsTime & /* currentTime */ )
 {
-	//
-	// map between the prototype in and the
-	// current value
-	//
-	caStatus status = this->pv.exPV::readNoCtx ( this->pProto );
+    //
+    // map between the prototype in and the
+    // current value
+    //
+    caStatus status = this->pv.exPV::readNoCtx ( this->pProto );
 
-	//
-	// post IO completion
-	//
-	this->postIOCompletion ( status, *this->pProto );
+    //
+    // post IO completion
+    //
+    this->postIOCompletion ( status, *this->pProto );
 
     return noRestart;
 }

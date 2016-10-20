@@ -10,6 +10,8 @@ VALID_BUILDS = Host Ioc
 
 CMPLR_CLASS = msvc
 
+OPT_WHOLE_PROGRAM = YES
+
 #-------------------------------------------------------
 
 WINLINK = link
@@ -42,11 +44,13 @@ WARN_CFLAGS_NO  = -W1
 # -Ox maximum optimizations
 # -GL whole program optimization
 # -Oy- re-enable creation of frame pointers
-OPT_CFLAGS_YES = -Ox -GL -Oy-
+OPT_CFLAGS_YES_YES = -Ox -GL -Oy-
+OPT_CFLAGS_YES_NO = -Ox -Oy-
+OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
 # -Zi generate program database for debugging information
-# -RTCsu catch bugs occuring only inoptimized code
+# -RTCsu enable run-time error checks
 OPT_CFLAGS_NO = -Zi -RTCsu
 
 # specify object file name and location
@@ -96,17 +100,19 @@ CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 # -w44355 set "'this' used in the base initializer list" to be level 4
 # -w44344 "behavior change: use of explicit template arguments results in ..."
 WARN_CXXFLAGS_YES = -W3 -w44355 -w44344
-WARN_CXXFLAGS_NO =  -W1
+WARN_CXXFLAGS_NO  = -W1
 
 #
 # -Ox maximum optimizations
 # -GL whole program optimization
 # -Oy- re-enable creation of frame pointers
-OPT_CXXFLAGS_YES = -Ox -GL -Oy-
+OPT_CXXFLAGS_YES_YES = -Ox -GL -Oy-
+OPT_CXXFLAGS_YES_NO = -Ox -Oy-
+OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
 # -Zi generate program database for debugging information
-# -RTCsu catch bugs occurring only in optimized code
+# -RTCsu enable run-time error checks
 OPT_CXXFLAGS_NO = -RTCsu -Zi
 
 # specify object file name and location
@@ -136,11 +142,14 @@ RANLIB=
 # -fixed:no generate relocatable code
 # -version:<major>.<minor> - only 2 components allowed, 0-65535 each
 # -debug generate debugging info
-LINK_OPT_FLAGS_YES = -LTCG -incremental:no -opt:ref \
-    -release $(PROD_VERSION:%=-version:%)
+LINK_OPT_FLAGS_WHOLE_YES = -LTCG
+LINK_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
+LINK_OPT_FLAGS_YES += -incremental:no -opt:ref
+LINK_OPT_FLAGS_YES += -release $(PROD_VERSION:%=-version:%)
 LINK_OPT_FLAGS_NO = -debug -incremental:no -fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
-LIB_OPT_FLAGS_YES =  -LTCG
+
+LIB_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
 LIB_OPT_LDFLAGS = $(LIB_OPT_FLAGS_$(HOST_OPT))
 
 ARCH_DEP_CFLAGS=

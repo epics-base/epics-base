@@ -61,11 +61,6 @@ static const double CA_CONN_VERIFY_PERIOD = 30.0; /* (sec) how often to request 
  */
 static const unsigned contiguousMsgCountWhichTriggersFlowControl = 10u;
 
-class caErrorCode { 
-public:
-    caErrorCode ( int ) {};
-};
-
 /*
  * CA internal functions
  */

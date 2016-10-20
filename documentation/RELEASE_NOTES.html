@@ -32,6 +32,29 @@ of the dbStatic library that is not being built anymore.</p>
 <h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Add dynamic (variable length) array support to PCAS</h3>
+
+<p>Dynamic array sizing support was added to the IOC server (RSRV) in the
+Base-3.14.12 release, but has not until now been supported in the <q>Portable
+Channel Access Server</q> (PCAS). Channel Access server applications using the
+PCAS may not need to be modified at all; if they already push monitors with
+different gdd array lengths, those variable sizes will be forwarded to any CA
+clients who have requested variable length updates. The example CAS server
+application has been modified to demonstrate this feature.</p>
+
+<p>In implementing the above, the gdd method <tt>gdd::put(const gdd *)</tt> now
+copies the full-sized array from the source gdd if the destination gdd is of
+type array, has no allocated memory and a boundary size of 0.</p>
+
+<h3>Additional epicsTime conversion</h3>
+
+<p>The EPICS timestamp library (epicsTime) inside libCom's OSI layer has
+been extended by routines that convert from <tt>struct tm</tt> to the EPICS
+internal <tt>epicsTime</tt> type, assuming UTC - i.e. without going through
+the timezone mechanism. This solves issues with converting from the structured
+type to the EPICS timestamp at driver level from multiple threads at a high
+repetition rate, where the timezone mechanism was blocking on file access.</p>
+
 <h3>MinGW Cross-builds from Linux</h3>
 
 <p>The build configuration files that allow cross-building of the 32-bit

@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #  EPICS Version information
@@ -28,11 +28,11 @@ EPICS_MODIFICATION = 12
 
 # EPICS_PATCH_LEVEL must be a number  (win32 resource file requirement)
 # Not included if zero
-EPICS_PATCH_LEVEL = 5
+EPICS_PATCH_LEVEL = 6
 
 # This will end in -DEV between official releases
-EPICS_DEV_SNAPSHOT=-DEV
-#EPICS_DEV_SNAPSHOT=-pre1
+#EPICS_DEV_SNAPSHOT=-DEV
+EPICS_DEV_SNAPSHOT=-pre1
 #EPICS_DEV_SNAPSHOT=-pre1-DEV
 #EPICS_DEV_SNAPSHOT=-pre2
 #EPICS_DEV_SNAPSHOT=-pre2-DEV

@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
 // Example EPICS CA server
@@ -42,7 +41,7 @@ exPV::exPV ( exServer & casIn, pvInfo & setup,
     //
     // no dataless PV allowed
     //
-    assert (this->info.getElementCount()>=1u);
+    assert (this->info.getCapacity()>=1u);
 
     //
     // start a very slow background scan 

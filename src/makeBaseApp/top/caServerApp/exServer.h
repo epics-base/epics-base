@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
 //  Example EPICS CA server
@@ -76,8 +75,10 @@ public:
     double getLopr () const; 
     aitEnum getType () const; 
     excasIoType  getIOType () const; 
-    unsigned getElementCount () const; 
-    void unlinkPV (); 
+    unsigned getCapacity () const;
+    unsigned getElementCount () const;
+    void setElementCount (unsigned);
+    void unlinkPV ();
     exPV *createPV  ( exServer &  exCAS, bool  preCreateFlag, 
         bool  scanOn, double  asyncDelay ); 
     void deletePV ();
@@ -88,7 +89,8 @@ private:
     const double lopr;
     aitEnum type;
     const excasIoType ioType;
-    const unsigned elementCount;
+    const unsigned capacity;
+    unsigned elementCount;
     exPV * pPV;
     pvInfo & operator = ( const pvInfo & );
 };
@@ -441,8 +443,8 @@ inline pvInfo::pvInfo ( double scanPeriodIn, const char *pNameIn,
 
     scanPeriod ( scanPeriodIn ), pName ( pNameIn ), 
     hopr ( hoprIn ), lopr ( loprIn ), type ( typeIn ),
-    ioType ( ioTypeIn ), elementCount ( countIn ), 
-    pPV ( 0 )
+    ioType ( ioTypeIn ), capacity ( countIn ),
+    elementCount ( 0 ), pPV ( 0 )
 {
 }
 
@@ -454,8 +456,8 @@ inline pvInfo::pvInfo ( const pvInfo & copyIn ) :
 
     scanPeriod ( copyIn.scanPeriod ), pName ( copyIn.pName ), 
     hopr ( copyIn.hopr ), lopr ( copyIn.lopr ), type ( copyIn.type ),
-    ioType ( copyIn.ioType ), elementCount ( copyIn.elementCount ),
-    pPV ( copyIn.pPV )
+    ioType ( copyIn.ioType ), capacity ( copyIn.capacity ),
+    elementCount ( copyIn.elementCount ), pPV ( copyIn.pPV )
 {
 }
 
@@ -509,12 +511,22 @@ inline excasIoType pvInfo::getIOType () const
     return this->ioType; 
 }
 
-inline unsigned pvInfo::getElementCount () const 
-{ 
-    return this->elementCount; 
+inline unsigned pvInfo::getCapacity () const
+{
+    return this->capacity;
 }
 
-inline void pvInfo::unlinkPV () 
+inline unsigned pvInfo::getElementCount () const
+{
+    return this->elementCount;
+}
+
+inline void pvInfo::setElementCount (unsigned newCount)
+{
+    this->elementCount = newCount;
+}
+
+inline void pvInfo::unlinkPV ()
 { 
     this->pPV = NULL; 
 }

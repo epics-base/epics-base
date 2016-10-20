@@ -1355,8 +1355,9 @@ gddStatus gdd::put ( const gdd * dd )
         }
 
         aitUint32 srcAvailSize = srcElemCount - unusedSrcBelow;
-        if ( srcAvailSize > this->getBounds()->size() ) {
-            srcCopySize = this->getBounds()->size();
+        aitUint32 destSize = this->getBounds()->size();
+        if ( destSize > 0 && srcAvailSize > destSize ) {
+            srcCopySize = destSize;
         }
         else {
             srcCopySize = srcAvailSize;

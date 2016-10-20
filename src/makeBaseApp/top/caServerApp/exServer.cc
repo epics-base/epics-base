@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 //
 // fileDescriptorManager.process(delay);
@@ -304,7 +303,7 @@ exPV *pvInfo::createPV ( exServer & cas, bool preCreateFlag,
     // depending on the io type and the number
     // of elements
     //
-    if (this->elementCount==1u) {
+    if (this->capacity==1u) {
         switch (this->ioType){
         case excasIoSync:
             pNewPV = new exScalarPV ( cas, *this, preCreateFlag, scanOn );

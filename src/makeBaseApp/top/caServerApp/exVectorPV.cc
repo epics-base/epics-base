@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #include "exServer.h"
@@ -48,7 +47,7 @@ unsigned exVectorPV::maxDimension() const
 aitIndex exVectorPV::maxBound (unsigned dimension) const // X aCC 361
 {
     if (dimension==0u) {
-        return this->info.getElementCount();
+        return this->info.getCapacity();
     }
     else {
         return 0u;
@@ -60,26 +59,21 @@ aitIndex exVectorPV::maxBound (unsigned dimension) const // X aCC 361
 //
 void exVectorPV::scan()
 {
-    caStatus            status;
-    double              radians;
-    smartGDDPointer     pDD;
-    aitFloat32          *pF, *pFE;
-    const aitFloat32    *pCF;
-    float               newValue;
-    float               limit;
-    exVecDestructor     *pDest;
-    int                 gddStatus;
+    static epicsTime startTime = epicsTime::getCurrent();
 
-    //
-    // update current time (so we are not required to do
-    // this every time that we write the PV which impacts
-    // throughput under sunos4 because gettimeofday() is
-    // slow)
+    // update current time
     //
     this->currentTime = epicsTime::getCurrent();
- 
-    pDD = new gddAtomic (gddAppType_value, aitEnumFloat64, 
-            1u, this->info.getElementCount());
+
+    // demonstrate a changing array size
+    unsigned ramp = 15 & (unsigned) (this->currentTime - startTime);
+    unsigned newSize = this->info.getCapacity();
+    if (newSize > ramp) {
+        newSize -= ramp;
+    }
+
+    smartGDDPointer pDD = new gddAtomic (gddAppType_value, aitEnumFloat64,
+            1u, newSize);
     if ( ! pDD.valid () ) {
         return;
     }
@@ -87,18 +81,18 @@ void exVectorPV::scan()
     //
     // smart pointer class manages reference count after this point
     //
-    gddStatus = pDD->unreference();
-    assert (!gddStatus);
+    gddStatus gdds = pDD->unreference();
+    assert(!gdds);
 
     //
     // allocate array buffer
     //
-    pF = new aitFloat32 [this->info.getElementCount()];
+    aitFloat64 * pF = new aitFloat64 [newSize];
     if (!pF) {
         return;
     }
 
-    pDest = new exVecDestructor;
+    exVecDestructor * pDest = new exVecDestructor;
     if (!pDest) {
         delete [] pF;
         return;
@@ -114,37 +108,39 @@ void exVectorPV::scan()
     // double check for reasonable bounds on the
     // current value
     //
-    pCF=NULL;
-    if ( this->pValue.valid () ) {
-        if (this->pValue->dimension()==1u) {
-            const gddBounds *pB = this->pValue->getBounds();
-            if (pB[0u].size()==this->info.getElementCount()) {
-                pCF = *this->pValue;
-            }
-        }
+    const aitFloat64 *pCF = NULL, *pCFE = NULL;
+    if (this->pValue.valid () &&
+        this->pValue->dimension() == 1u) {
+        const gddBounds *pB = this->pValue->getBounds();
+
+        pCF = *this->pValue;
+        pCFE = &pCF[pB->size()];
     }
 
-    pFE = &pF[this->info.getElementCount()];
-    while (pF<pFE) {
-        radians = (rand () * 2.0 * myPI)/RAND_MAX;
-        if (pCF) {
+    aitFloat64 * pFE = &pF[newSize];
+    while (pF < pFE) {
+        double radians = (rand () * 2.0 * myPI)/RAND_MAX;
+        double newValue;
+        if (pCF && pCF < pCFE) {
             newValue = *pCF++;
         }
         else {
             newValue = 0.0f;
         }
-        newValue += (float) (sin (radians) / 10.0);
-        limit = (float) this->info.getHopr();
+        newValue += (sin (radians) / 10.0);
+        double limit = this->info.getHopr();
         newValue = tsMin (newValue, limit);
-        limit = (float) this->info.getLopr();
+        limit = this->info.getLopr();
         newValue = tsMax (newValue, limit);
-        *(pF++) = newValue;
+        *pF++ = newValue;
     }
 
     aitTimeStamp gddts = this->currentTime;
     pDD->setTimeStamp ( & gddts );
 
-    status = this->update ( *pDD );
+    caStatus status = this->update ( *pDD );
+    this->info.setElementCount(newSize);
+
     if ( status != S_casApp_success ) {
         errMessage (status, "vector scan update failed\n");
     }
@@ -166,7 +162,7 @@ void exVectorPV::scan()
 //
 caStatus exVectorPV::updateValue ( const gdd & value )
 {
-
+    aitUint32 newSize = 0;
     //
     // Check bounds of incoming request
     // (and see if we are replacing all elements -
@@ -183,7 +179,9 @@ caStatus exVectorPV::updateValue ( const gdd & value )
         if ( pb[0u].first() != 0u ) {
             return S_casApp_outOfBounds;
         }
-        else if ( pb[0u].size() > this->info.getElementCount() ) {
+
+        newSize = pb[0u].size();
+        if ( newSize > this->info.getCapacity() ) {
             return S_casApp_outOfBounds;
         }
     }
@@ -193,14 +191,14 @@ caStatus exVectorPV::updateValue ( const gdd & value )
         //
         return S_casApp_outOfBounds;
     }
-        
+
     //
     // Create a new array data descriptor
     // (so that old values that may be referenced on the
     // event queue are not replaced)
     //
-    smartGDDPointer pNewValue ( new gddAtomic ( gddAppType_value, aitEnumFloat64, 
-        1u, this->info.getElementCount() ) );
+    smartGDDPointer pNewValue ( new gddAtomic ( gddAppType_value, aitEnumFloat64,
+        1u, newSize ) );
     if ( ! pNewValue.valid() ) {
         return S_casApp_noMemory;
     }
@@ -211,21 +209,20 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     //
     gddStatus gdds = pNewValue->unreference( );
     assert ( ! gdds );
-    
+
     //
     // allocate array buffer
     //
-    aitFloat64 * pF = new aitFloat64 [this->info.getElementCount()];
+    aitFloat64 * pF = new aitFloat64 [newSize];
     if (!pF) {
         return S_casApp_noMemory;
     }
-    
+
     //
     // Install (and initialize) array buffer
     // if no old values exist
     //
-    unsigned count = this->info.getElementCount();
-    for ( unsigned i = 0u; i < count; i++ ) {
+    for ( unsigned i = 0u; i < newSize; i++ ) {
         pF[i] = 0.0f;
     }
 
@@ -240,7 +237,7 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     // (do this before we increment pF)
     //
     pNewValue->putRef ( pF, pDest );
-    
+
     //
     // copy in the values that they are writing
     //
@@ -248,9 +245,10 @@ caStatus exVectorPV::updateValue ( const gdd & value )
     if ( gdds ) {
         return S_cas_noConvert;
     }
-    
+
     this->pValue = pNewValue;
-    
+    this->info.setElementCount(newSize);
+
     return S_casApp_success;
 }
 
@@ -261,6 +259,6 @@ caStatus exVectorPV::updateValue ( const gdd & value )
 //
 void exVecDestructor::run ( void *pUntyped )
 {
-    aitFloat32 * pf = reinterpret_cast < aitFloat32 * > ( pUntyped );
+    aitFloat64 * pf = reinterpret_cast < aitFloat64 * > ( pUntyped );
     delete [] pf;
 }

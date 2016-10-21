@@ -135,17 +135,17 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.15.3-pre<i>n</i></tt>
+            <tt>R3.15.5-pre<i>n</i></tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.15.3-rc<i>n</i></tt>
+            <tt>R3.15.5-rc<i>n</i></tt>
             &mdash; release candidate tag, note the <tt>rc</tt> is now
             lower-case</li>
         </ul>
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.3-rc<i>n</i>
+          bzr tag R3.15.5-rc<i>n</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -156,10 +156,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
           cd ~/base<br />
-          bzr export --keywords=publish
-            --root=base-3.15.3-rc<i>n</i>
-            -r tag:R3.15.3-rc<i>n</i>
-            base-3.15.3-rc<i>n</i>.tar.gz
+          bzr export
+            --root=base-3.15.5-rc<i>n</i>
+            -r tag:R3.15.5-rc<i>n</i>
+            base-3.15.5-rc<i>n</i>.tar.gz
             mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and
@@ -274,7 +274,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar:
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.3</i>
+          bzr tag R3.15.5</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -285,10 +285,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
         generates a gzipped tarfile directly from the repository:
         <blockquote><tt>
           cd ~/base<br />
-          bzr export --keywords=publish
-            --root=base-3.15.3
-            -r tag:R3.15.3
-            base-3.15.3.tar.gz
+          bzr export
+            --root=base-3.15.5
+            -r tag:R3.15.5
+            base-3.15.5.tar.gz
             mirror-3.15
           </tt></blockquote>
         This requires that the Bazaar keywords plugin is installed and

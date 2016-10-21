@@ -162,8 +162,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
             base-3.15.5-rc<i>n</i>.tar.gz
             mirror-3.15
           </tt></blockquote>
-        This requires that the Bazaar keywords plugin is installed and
-        configured properly.
+        Create a GPG signature file of the tarfile as follows:
+        <blockquote><tt>
+          gpg --armor --sign --detach-sig base-3.15.5-rc<i>n</i>.tar.gz
+          </tt></blockquote>
         </td>
       </tr>
     <tr>
@@ -291,8 +293,10 @@ relevent roles unless the Release Manager designates otherwise:</p>
             base-3.15.5.tar.gz
             mirror-3.15
           </tt></blockquote>
-        This requires that the Bazaar keywords plugin is installed and
-        configured properly.
+        Create a GPG signature file of the tarfile as follows:
+        <blockquote><tt>
+          gpg --armor --sign --detach-sig base-3.15.5.tar.gz
+          </tt></blockquote>
         </td>
       </tr>
     <tr>
@@ -308,7 +312,8 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>&nbsp;</td>
       <td>Website Manager</td>
       <td>If necessary recreate the tarfile following the instructions above.
-        Copy the tar file to the Base download area of the website</td>
+        Copy the tar file and its <tt>.asc</tt> signature file to the Base
+        download area of the website.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>

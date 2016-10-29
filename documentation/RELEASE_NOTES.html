@@ -32,6 +32,39 @@ of the dbStatic library that is not being built anymore.</p>
 <h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Launchpad Bug-fixes</h3>
+
+<p>In addition to the more detailed change descriptions below, the following
+Launchpad bugs have also been fixed in this release:</p>
+
+<ul>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1440186">
+    #1440186</a> Crash due to a too small buffer being provided in
+    dbContextReadNotifyCache</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1479316">
+    #1479316</a> Some data races found using Helgrind</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1495833">
+    #1495833</a> biRecord prompt groups are nonsensical</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1606848">
+    #1606848</a> WSAIoctl SIO_GET_INTERFACE_LIST failed in Windows</li>
+</ul>
+
+<h3>Whole-Program Optimization for MS Visual Studio Targets</h3>
+
+<p>When using the Microsoft compilers a new build system variable is provided
+that controls whether whole program optimization is used or not. For static
+builds using Visual Studio 2010 this optimization must be disabled. This is
+controlled in the files configure/os/CONFIG_SITE.Common.windows-x64-static and
+configure/os/CONFIG_SITE.Common.win32-x86-static by setting the variable
+<tt>OPT_WHOLE_PROGRAM&nbsp;=&nbsp;NO</tt> to override the default value
+<tt>YES</tt> that would otherwise be used.</p>
+
+<p>Note that enabling this optimization slows down the build process. It is not
+possible to selectively disable this optimization, when building a particular
+module say; Microsoft's linker will restart itself automatically with the
+<tt>-LTCG</tt> flag set and display a warning if it is asked to link any object
+files that were compiled with the <tt>-GL</tt> flag.</p>
+
 <h3>Add dynamic (variable length) array support to PCAS</h3>
 
 <p>Dynamic array sizing support was added to the IOC server (RSRV) in the

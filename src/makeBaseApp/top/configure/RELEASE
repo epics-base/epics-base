@@ -35,3 +35,9 @@ EPICS_BASE = _EPICS_BASE_
 # Set RULES here if you want to use build rules from somewhere
 # other than EPICS_BASE:
 #RULES = $(MODULES)/build-rules
+
+# These allow developers to override the RELEASE variable settings
+# without having to modify the configure/RELEASE file itself.
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/configure/RELEASE.local
+

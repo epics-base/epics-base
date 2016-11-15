@@ -38,7 +38,14 @@ static void testEpicsSnprintf(void) {
     const char *expected = exbuffer;
     int size;
     int rtn, rlen;
-    
+
+#ifdef _WIN32
+#if (defined(_MSC_VER) && _MSC_VER < 1900) || \
+    (defined(_MINGW) && defined(_TWO_DIGIT_EXPONENT))
+    _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+#endif
+
     sprintf(exbuffer, format, ivalue, fvalue, svalue);
     rlen = strlen(expected)+1;
     
@@ -122,11 +129,7 @@ void testStdoutRedir (const char *report)
 
 MAIN(epicsStdioTest)
 {
-#ifdef _WIN32
-    testPlan(166);
-#else
     testPlan(163);
-#endif
     testEpicsSnprintf();
     testStdoutRedir("report");
     return testDone();

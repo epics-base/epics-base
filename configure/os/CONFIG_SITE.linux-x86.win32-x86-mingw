@@ -14,9 +14,9 @@ STATIC_BUILD = YES
 #GNU_DIR = /usr/local
 
 # Different distribution cross-build packages use different prefixes:
-# Ubuntu:
-#CMPLR_PREFIX = i686-w64-mingw32-
-# RHEL:
-CMPLR_PREFIX = i686-pc-mingw32-
+# Ubuntu, RHEL7:
+CMPLR_PREFIX = i686-w64-mingw32-
+# RHEL6:
+#CMPLR_PREFIX = i686-pc-mingw32-
 # Debian?
 #CMPLR_PREFIX = i586-mingw32msvc-

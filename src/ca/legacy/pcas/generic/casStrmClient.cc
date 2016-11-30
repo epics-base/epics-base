@@ -856,8 +856,20 @@ caStatus casStrmClient::monitorResponse (
     casChannelI & chan, const caHdrLargeArray & msg, 
     const gdd & desc, const caStatus completionStatus )
 {
+    aitUint32 elementCount = 0;
+    if (desc.isContainer()) {
+        aitUint32 index;
+        int gdds = gddApplicationTypeTable::app_table.mapAppToIndex
+            ( desc.applicationType(), gddAppType_value, index );
+        if ( gdds ) {
+            return S_cas_badType;
+        }
+        elementCount = desc.getDD(index)->getDataSizeElements();
+    } else {
+        elementCount = desc.getDataSizeElements();
+    }
     ca_uint32_t count = (msg.m_count == 0) ?
-                            (ca_uint32_t)desc.getDataSizeElements() :
+                            (ca_uint32_t)elementCount :
                              msg.m_count;
 
     void * pPayload = 0;

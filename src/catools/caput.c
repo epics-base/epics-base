@@ -56,7 +56,7 @@ static epicsEventId epId;
 
 void usage (void)
 {
-    fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value>\n"
+    fprintf (stderr, "\nUsage: caput [options] <PV name> <PV value> ...\n"
     "       caput -a [options] <PV name> <no of values> <PV value> ...\n\n"
     "  -h: Help: Print this message\n"
     "Channel Access options:\n"
@@ -71,9 +71,11 @@ void usage (void)
     "  -n: Force interpretation of values as numbers\n"
     "  -s: Force interpretation of values as strings\n"
     "Arrays:\n"
+    "  Default: Put scalar\n"
+    "      Value format: all value arguments concatenated with spaces\n"
+    "  -S: Put string as an array of chars (long string)\n"
     "  -a: Put array\n"
-    "      Value format: number of requested values, then list of values\n"
-    "  -S: Put string as an array of char (long string)\n"
+    "      Value format: number of values, then list of values\n"
     "\nExample: caput my_channel 1.2\n"
     "  (puts 1.2 to my_channel)\n\n"
              , DEFAULT_TIMEOUT, CA_PRIORITY_MAX);

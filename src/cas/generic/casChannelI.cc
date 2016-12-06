@@ -21,6 +21,7 @@ casChannelI::casChannelI ( casCoreClient & clientIn,
     casChannel & chanIn, casPVI & pvIn, ca_uint32_t cidIn ) :
         privateForPV ( clientIn, *this ),
         pv ( pvIn ), 
+        maxElem( pvIn.nativeCount() ),
         chan ( chanIn ), 
         cid ( cidIn ), 
         serverDeletePending ( false ), 

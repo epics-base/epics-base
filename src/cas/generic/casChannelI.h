@@ -45,6 +45,7 @@ public:
 	void clearOutstandingReads ();
 	void postAccessRightsEvent ();
     const gddEnumStringTable & enumStringTable () const;
+	ca_uint32_t getMaxElem () const;
 	void setOwner ( const char * const pUserName, 
 		const char * const pHostName );
 	bool readAccess () const;
@@ -58,6 +59,7 @@ private:
     chanIntfForPV privateForPV;
 	tsDLList < casAsyncIOI > ioList;
 	casPVI & pv;
+	ca_uint32_t maxElem;
     casChannel & chan;
 	caResId cid; // client id 
     bool serverDeletePending;
@@ -75,6 +77,11 @@ private:
 inline casPVI & casChannelI::getPVI () const 
 {
 	return this->pv;
+}
+
+inline  ca_uint32_t casChannelI::getMaxElem () const 
+{
+    return this->maxElem;
 }
 
 inline const caResId casChannelI::getCID () 

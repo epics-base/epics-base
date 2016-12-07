@@ -1,4 +1,3 @@
-
 /*************************************************************************\
 * Copyright (c) 2002 The University of Chicago, as Operator of Argonne
 *     National Laboratory.
@@ -31,55 +30,62 @@ class casChannelI : public tsDLNode < casChannelI >,
 public:
     casChannelI ( casCoreClient & clientIn, casChannel & chanIn, 
         casPVI & pvIn, ca_uint32_t cidIn );
-	~casChannelI ();
+    ~casChannelI ();
     void casChannelDestroyFromInterfaceNotify ();
-	const caResId getCID ();
-	const caResId getSID ();
+    const caResId getCID ();
+    const caResId getSID ();
     void uninstallFromPV ( casEventSys & eventSys );
     void installIntoPV ();
     void installIO ( casAsyncIOI & );
     void uninstallIO ( casAsyncIOI & );
     void installMonitor ( casMonitor & mon );
     casMonitor * removeMonitor ( ca_uint32_t clientIdIn );
-	casPVI & getPVI () const;
-	void clearOutstandingReads ();
-	void postAccessRightsEvent ();
+    casPVI & getPVI () const;
+    void clearOutstandingReads ();
+    void postAccessRightsEvent ();
     const gddEnumStringTable & enumStringTable () const;
-	void setOwner ( const char * const pUserName, 
-		const char * const pHostName );
-	bool readAccess () const;
+    ca_uint32_t getMaxElem () const;
+    void setOwner ( const char * const pUserName, 
+        const char * const pHostName );
+    bool readAccess () const;
     bool writeAccess () const;
-	bool confirmationRequested () const;
+    bool confirmationRequested () const;
     caStatus read ( const casCtx & ctx, gdd & prototype );
     caStatus write ( const casCtx & ctx, const gdd & value );
     caStatus writeNotify ( const casCtx & ctx, const gdd & value );
-	void show ( unsigned level ) const;
+    void show ( unsigned level ) const;
 private:
     chanIntfForPV privateForPV;
-	tsDLList < casAsyncIOI > ioList;
-	casPVI & pv;
+    tsDLList < casAsyncIOI > ioList;
+    casPVI & pv;
+    ca_uint32_t maxElem;
     casChannel & chan;
-	caResId cid; // client id 
+    caResId cid; // client id 
     bool serverDeletePending;
-	bool accessRightsEvPending;
-	//epicsShareFunc virtual void destroy ();
-	caStatus cbFunc ( 
+    bool accessRightsEvPending;
+    //epicsShareFunc virtual void destroy ();
+    caStatus cbFunc ( 
         casCoreClient &, 
         epicsGuard < casClientMutex > &,
         epicsGuard < evSysMutex > & ); 
     void postDestroyEvent ();
-	casChannelI ( const casChannelI & );
-	casChannelI & operator = ( const casChannelI & );
+    casChannelI ( const casChannelI & );
+    casChannelI & operator = ( const casChannelI & );
 };
 
 inline casPVI & casChannelI::getPVI () const 
 {
-	return this->pv;
+    return this->pv;
+}
+
+inline  ca_uint32_t casChannelI::getMaxElem () const 
+{
+    return this->maxElem;
 }
 
 inline const caResId casChannelI::getCID () 
 {
-	return this->cid;
+    return this->cid;
 }
 
 inline const caResId casChannelI::getSID ()
@@ -89,7 +95,7 @@ inline const caResId casChannelI::getSID ()
 
 inline void casChannelI::postAccessRightsEvent ()
 {
-	this->privateForPV.client().addToEventQueue ( *this, this->accessRightsEvPending );
+    this->privateForPV.client().addToEventQueue ( *this, this->accessRightsEvPending );
 }
 
 inline const gddEnumStringTable & casChannelI::enumStringTable () const
@@ -108,7 +114,7 @@ inline void casChannelI::clearOutstandingReads ()
 }
 
 inline void casChannelI::setOwner ( const char * const pUserName, 
-	const char * const pHostName )
+    const char * const pHostName )
 {
     this->chan.setOwner ( pUserName, pHostName );
 }

@@ -50,8 +50,9 @@ WARN_CFLAGS_NO  = -W1
 # -Ox maximum optimizations
 # -GL whole program optimization
 # -Oy- re-enable creation of frame pointers
-OPT_CFLAGS_YES_YES = -Ox -GL -Oy-
-OPT_CFLAGS_YES_NO = -Ox -Oy-
+# -Zi generate program database for debugging information
+OPT_CFLAGS_YES_YES = -Ox -GL -Oy- -Zi
+OPT_CFLAGS_YES_NO = -Ox -Oy- -Zi
 OPT_CFLAGS_YES = $(OPT_CFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
@@ -112,8 +113,9 @@ WARN_CXXFLAGS_NO  = -W1
 # -Ox maximum optimizations
 # -GL whole program optimization
 # -Oy- re-enable creation of frame pointers
-OPT_CXXFLAGS_YES_YES = -Ox -GL -Oy-
-OPT_CXXFLAGS_YES_NO = -Ox -Oy-
+# -Zi generate program database for debugging information
+OPT_CXXFLAGS_YES_YES = -Ox -GL -Oy- -Zi
+OPT_CXXFLAGS_YES_NO = -Ox -Oy- -Zi
 OPT_CXXFLAGS_YES = $(OPT_CXXFLAGS_YES_$(OPT_WHOLE_PROGRAM))
 
 #
@@ -136,9 +138,13 @@ OBJ_CXXFLAG = -Fo
 STATIC_CXXFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
+VISC_NODEFLIB_DEBUG_NO =
+VISC_NODEFLIB_DEBUG_YES = d
 STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO=
 STATIC_LDFLAGS=
+STATIC_LDFLAGS_EXTRA_YES=/NODEFAULTLIB:MSVCRT.LIB /NODEFAULTLIB:MSVCRTD.LIB /NODEFAULTLIB:LIBCMT$(VISC_NODEFLIB_DEBUG_$(HOST_OPT)).LIB
+STATIC_LDFLAGS_EXTRA_NO=/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:MSVCRT$(VISC_NODEFLIB_DEBUG_$(HOST_OPT)).LIB
 RANLIB=
 
 # add -profile here to run the ms profiler
@@ -149,7 +155,7 @@ RANLIB=
 # -debug generate debugging info
 LINK_OPT_FLAGS_WHOLE_YES = -LTCG
 LINK_OPT_FLAGS_YES = $(LINK_OPT_FLAGS_WHOLE_$(OPT_WHOLE_PROGRAM))
-LINK_OPT_FLAGS_YES += -incremental:no -opt:ref
+LINK_OPT_FLAGS_YES += -debug -incremental:no -opt:ref
 LINK_OPT_FLAGS_YES += -release $(PROD_VERSION:%=-version:%)
 LINK_OPT_FLAGS_NO = -debug -incremental:no -fixed:no
 OPT_LDFLAGS = $(LINK_OPT_FLAGS_$(HOST_OPT))
@@ -283,7 +289,7 @@ SHRLIB_LDLIBS += $(addsuffix .lib, \
 
 #--------------------------------------------------
 # Linker definition
-LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) \
+LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(STATIC_LDFLAGS_EXTRA_$(STATIC_BUILD)) $(LDFLAGS) $(PROD_LDFLAGS) \
     -out:$@ $(call PATH_FILTER, $(PROD_LD_OBJS) $(PROD_LD_RESS) $(PROD_LDLIBS))
 
 #--------------------------------------------------

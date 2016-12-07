@@ -378,7 +378,7 @@ static gtProvider * findProvider(ELLLIST *plist, epicsMutexId lock,
 
     for (ptp = (gtProvider *)ellFirst(plist);
          ptp; ptp = (gtProvider *)ellNext(&ptp->node)) {
-        if (ptp->priority == ptp->priority &&
+        if (ptp->priority == priority &&
             !strcmp(ptp->name, name))
             break;
     }

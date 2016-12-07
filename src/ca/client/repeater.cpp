@@ -504,6 +504,7 @@ void ca_repeater ()
         if ( sockerrno == SOCK_EADDRINUSE ) {
             osiSockRelease ();
             debugPrintf ( ( "CA Repeater: exiting because a repeater is already running\n" ) );
+            delete [] pBuf;
             return;
         }
         char sockErrBuf[64];

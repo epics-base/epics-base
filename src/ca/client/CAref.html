@@ -1147,15 +1147,9 @@ the output.</p>
       DBR_TIME_xxx)</td>
     </tr>
     <tr>
-      <td>-n</td>
-      <td>Print DBF_ENUM values as number (default are enum strings)</td>
-    </tr>
-    <tr>
       <td>-d &lt;type&gt;</td>
-      <td>Request specific dbr type; use string (DBR_ prefix may be omitted)
-
-        <p>or number of one of the following types:</p>
-
+      <td>Request specific dbr type; use string (DBR_ prefix may be omitted)<br>
+        or number of one of the following types:<br>
         <table border="1">
           <tbody>
             <tr>
@@ -1274,6 +1268,14 @@ the output.</p>
     </tr>
     <tr>
       <td></td>
+      <td><strong>Enum format:</strong></td>
+    </tr>
+    <tr>
+      <td>-n</td>
+      <td>Print DBF_ENUM value as number (default is enum string)</td>
+    </tr>
+    <tr>
+      <td></td>
       <td><strong>Arrays:</strong></td>
     </tr>
     <tr>
@@ -1303,15 +1305,15 @@ the output.</p>
     </tr>
     <tr>
       <td>-e &lt;nr&gt;</td>
-      <td>Use %e format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>Use %e format, with a precision of &lt;nr&gt; digits</td>
     </tr>
     <tr>
       <td>-f &lt;nr&gt;</td>
-      <td>Use %f format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>Use %f format, with a precision of &lt;nr&gt; digits</td>
     </tr>
     <tr>
       <td>-g &lt;nr&gt;</td>
-      <td>Use %g format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>Use %g format, with a precision of &lt;nr&gt; digits</td>
     </tr>
     <tr>
       <td>-s</td>
@@ -1349,6 +1351,14 @@ the output.</p>
       <td>-0b</td>
       <td>Print as binary number</td>
     </tr>
+    <tr>
+      <td></td>
+      <td><strong>Alternate output field separator:</strong></td>
+    </tr>
+    <tr>
+      <td>-F &lt;ofs&gt;</td>
+      <td>Use &lt;ofs&gt; as an alternate output field separator</td>
+    </tr>
   </tbody>
 </table>
 
@@ -1381,9 +1391,10 @@ the output.</p>
       <td>Wait time, specifies longer CA timeout, default is 1.0 second</td>
     </tr>
     <tr>
-      <td>-m &lt;mask&gt;</td>
-      <td>Specify CA event mask to use, with &lt;mask&gt; being any combination
-        of 'v' (value), 'a' (alarm), 'l' (log), 'p' (property). Default: va</td>
+      <td>-m &lt;msk&gt;</td>
+      <td>Specify CA event mask to use. &lt;msk&gt; is any combination of<br>
+        'v' (value), 'a' (alarm), 'l' (log/archive), 'p' (property).<br>
+        Default event mask is 'va'</td>
     </tr>
     <tr>
       <td>-p &lt;prio&gt;</td>
@@ -1405,8 +1416,8 @@ the output.</p>
         'n' = no timestamps<br>
         'r' = relative timestamps (time elapsed since start of program)<br>
         'i' = incremental timestamps (time elapsed since last update)<br>
-        'I' = incremental timestamps (time elapsed since last update, by
-        channel)</td>
+        'I' = incremental timestamps (time since last update, by channel)<br>
+        'r', 'i' or 'I' require 's' or 'c' to select the time source</td>
     </tr>
     <tr>
       <td></td>
@@ -1414,7 +1425,7 @@ the output.</p>
     </tr>
     <tr>
       <td>-n</td>
-      <td>Print DBF_ENUM values as number (default are enum strings)</td>
+      <td>Print DBF_ENUM values as number (default is enum string)</td>
     </tr>
     <tr>
       <td></td>
@@ -1422,16 +1433,15 @@ the output.</p>
     </tr>
     <tr>
       <td></td>
-      <td>Value format: Print number of requested values, then list of
-      values</td>
+      <td>Array values: Print number of elements, then list of values</td>
     </tr>
     <tr>
       <td>Default:</td>
-      <td>Print all values</td>
+      <td>Default:  Request and print all elements (dynamic arrays supported)</td>
     </tr>
     <tr>
-      <td>-# &lt;count&gt;</td>
-      <td>Print first &lt;count&gt; elements of an array</td>
+      <td>-# &lt;num&gt;</td>
+      <td>Request and print up to &lt;num&gt; elements</td>
     </tr>
     <tr>
       <td>-S</td>
@@ -1439,23 +1449,23 @@ the output.</p>
     </tr>
     <tr>
       <td></td>
-      <td><strong>Floating point type format:</strong></td>
+      <td><strong>Floating point format:</strong></td>
     </tr>
     <tr>
       <td>Default:</td>
       <td>Use %g format</td>
     </tr>
     <tr>
-      <td>-e &lt;nr&gt;</td>
-      <td>Use %e format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>-e &lt;num&gt;</td>
+      <td>Use %e format, with a precision of &lt;num&gt; digits</td>
     </tr>
     <tr>
-      <td>-f &lt;nr&gt;</td>
-      <td>Use %f format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>-f &lt;num&gt;</td>
+      <td>Use %f format, with a precision of &lt;num&gt; digits</td>
     </tr>
     <tr>
-      <td>-g &lt;nr&gt;</td>
-      <td>Use %g format, with &lt;nr&gt; digits after the decimal point</td>
+      <td>-g &lt;num&gt;</td>
+      <td>Use %g format, with a precision of &lt;num&gt; digits</td>
     </tr>
     <tr>
       <td>-s</td>
@@ -1497,21 +1507,27 @@ the output.</p>
 </table>
 
 <h3><a name="caput">caput</a></h3>
-<pre>caput [options] &lt;PV name&gt; &lt;value&gt;
+<pre>caput [options] &lt;PV name&gt; &lt;value&gt; ...
 caput -a [options] &lt;PV name&gt; &lt;no of elements&gt; &lt;value&gt; ...</pre>
 
 <h4>Description</h4>
 
 <p>Put value to a PV.</p>
 
-<p>The specified value is written to the PV (as a string). The PV value is read
-before and after the write operation and printed as "Old" and "new" values on
-stdout.</p>
+<p>The specified value is written to the PV (as a string). The PV's value is
+read before and after the write operation and printed as "Old" and "New" values
+on stdout.</p>
 
-<p>The array variant writes an array to the specified PV. The first numeric
-argument specifying the number of array elements is kept for compatibility with
-the array data format of caget - the actual number of values specified on the
-command line is used.</p>
+<p>There are two variants to the arguments for this command. For the scalar
+variant without the <code>-a</code> flag, all the value arguments provided after
+the PV name are concatenated with a single space character between them, and the
+resulting string (up to 40 characters long unless the <code>-S</code> flag is
+given) is written to the specified PV.</p>
+
+<p>The array variant with the <code>-a</code> flag writes an array of string
+values to the specified PV. The numeric argument giving the number of array
+elements is actually ignored, the array length to be written is actually
+controlled by the number of values provided on the command line.</p>
 
 <table border="1">
   <caption></caption>
@@ -1551,11 +1567,15 @@ command line is used.</p>
       <td>Terse mode - print only successfully written value, without name</td>
     </tr>
     <tr>
+      <td>-l</td>
+      <td>Long mode "name timestamp value stat sevr" (read PVs as DBR_TIME_xxx)</td>
+    </tr>
+    <tr>
       <td></td>
       <td><strong>Enum Format:</strong></td>
     </tr>
     <tr>
-      <td></td>
+      <td>Default:</td>
       <td>Auto - try value as ENUM string, then as index number</td>
     </tr>
     <tr>
@@ -1571,17 +1591,24 @@ command line is used.</p>
       <td><strong>Arrays:</strong></td>
     </tr>
     <tr>
-      <td>-a</td>
-      <td>Put array data</td>
+      <td>Default:</td>
+      <td>Put scalar</td>
     </tr>
     <tr>
       <td></td>
-      <td>Value format: Print number of requested values, then list of
-      values</td>
+      <td>Value format: all value arguments concatenated with spaces</td>
     </tr>
     <tr>
       <td>-S</td>
-      <td>Put string as an array of char (long string)</td>
+      <td>Put string as an array of chars (long string)</td>
+    </tr>
+    <tr>
+      <td>-a</td>
+      <td>Put array</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td>Value format: number of values, then list of values</td>
     </tr>
   </tbody>
 </table>

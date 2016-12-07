@@ -21,6 +21,7 @@ casChannelI::casChannelI ( casCoreClient & clientIn,
     casChannel & chanIn, casPVI & pvIn, ca_uint32_t cidIn ) :
         privateForPV ( clientIn, *this ),
         pv ( pvIn ), 
+        maxElem( pvIn.nativeCount() ),
         chan ( chanIn ), 
         cid ( cidIn ), 
         serverDeletePending ( false ), 
@@ -29,7 +30,7 @@ casChannelI::casChannelI ( casCoreClient & clientIn,
 }
 
 casChannelI::~casChannelI ()
-{	    
+{
     this->privateForPV.client().removeFromEventQueue ( 
         *this, this->accessRightsEvPending );
 
@@ -48,7 +49,7 @@ void casChannelI::uninstallFromPV ( casEventSys & eventSys )
     this->privateForPV.removeSelfFromPV ( this->pv, dest );
     while ( casMonitor * pMon = dest.get () ) {
         eventSys.prepareMonitorForDestroy ( *pMon );
-	}
+    }
 }
 
 void casChannelI::show ( unsigned level ) const
@@ -68,13 +69,13 @@ caStatus casChannelI::cbFunc (
 {
     caStatus stat = S_cas_success;
     {
-	    stat = this->privateForPV.client().accessRightsResponse ( 
+        stat = this->privateForPV.client().accessRightsResponse ( 
                     clientGuard, this );
     }
-	if ( stat == S_cas_success ) {
-		this->accessRightsEvPending = false;
-	}
-	return stat;
+    if ( stat == S_cas_success ) {
+        this->accessRightsEvPending = false;
+    }
+    return stat;
 }
 
 caStatus casChannelI::read ( const casCtx & ctx, gdd & prototype )

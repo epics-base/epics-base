@@ -109,6 +109,7 @@ int main(int argc,char **argv)
         pmynode[npv] = callocMustSucceed(1, sizeof(MYNODE), "caMonitor");
         npv++;
     }
+    fclose(fp);
     SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
     SEVCHK(ca_add_exception_event(exceptionCallback,NULL),
 	"ca_add_exception_event");

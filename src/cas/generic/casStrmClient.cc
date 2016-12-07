@@ -2773,6 +2773,7 @@ caStatus casStrmClient::sendErr ( epicsGuard <casClientMutex> &,
         else {
             stringSize = 1u + (unsigned) status;
         }
+        va_end ( args );
     }
     else {
         stringSize = 0u;

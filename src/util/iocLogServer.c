@@ -84,131 +84,132 @@ static int sighupPipe[2];
 
 /*
  *
- *	main()
+ * main()
  *
  */
 int main(void)
 {
-	struct sockaddr_in serverAddr;	/* server's address */
-	struct timeval timeout;
-	int status;
-	struct ioc_log_server *pserver;
+    struct sockaddr_in serverAddr;  /* server's address */
+    struct timeval timeout;
+    int status;
+    struct ioc_log_server *pserver;
 
-	osiSockIoctl_t	optval;
+    osiSockIoctl_t  optval;
 
-	status = getConfig();
-	if(status<0){
-		fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
-		fprintf(stderr, "iocLogServer: failed to initialize\n");
-		return IOCLS_ERROR;
-	}
+    status = getConfig();
+    if (status<0) {
+        fprintf(stderr, "iocLogServer: EPICS environment underspecified\n");
+        fprintf(stderr, "iocLogServer: failed to initialize\n");
+        return IOCLS_ERROR;
+    }
 
-	pserver = (struct ioc_log_server *) 
-			calloc(1, sizeof *pserver);
-	if(!pserver){
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return IOCLS_ERROR;
-	}
+    pserver = (struct ioc_log_server *) 
+            calloc(1, sizeof *pserver);
+    if (!pserver) {
+        fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+        return IOCLS_ERROR;
+    }
 
-	pserver->pfdctx = (void *) fdmgr_init();
-	if(!pserver->pfdctx){
-		fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
-		return IOCLS_ERROR;
-	}
+    pserver->pfdctx = (void *) fdmgr_init();
+    if (!pserver->pfdctx) {
+        fprintf(stderr, "iocLogServer: %s\n", strerror(errno));
+        return IOCLS_ERROR;
+    }
 
-	/*
-	 * Open the socket. Use ARPA Internet address format and stream
-	 * sockets. Format described in <sys/socket.h>.
-	 */
-	pserver->sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
-	if (pserver->sock==INVALID_SOCKET) {
+    /*
+     * Open the socket. Use ARPA Internet address format and stream
+     * sockets. Format described in <sys/socket.h>.
+     */
+    pserver->sock = epicsSocketCreate(AF_INET, SOCK_STREAM, 0);
+    if (pserver->sock == INVALID_SOCKET) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-		fprintf(stderr, "iocLogServer: sock create err: %s\n", sockErrBuf);
-		return IOCLS_ERROR;
-	}
-	
+        fprintf(stderr, "iocLogServer: sock create err: %s\n", sockErrBuf);
+        free(pserver);
+        return IOCLS_ERROR;
+    }
+    
     epicsSocketEnableAddressReuseDuringTimeWaitState ( pserver->sock );
 
-	/* Zero the sock_addr structure */
-	memset((void *)&serverAddr, 0, sizeof serverAddr);
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(ioc_log_port);
+    /* Zero the sock_addr structure */
+    memset((void *)&serverAddr, 0, sizeof serverAddr);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(ioc_log_port);
 
-	/* get server's Internet address */
-	status = bind (	pserver->sock, 
-			(struct sockaddr *)&serverAddr, 
-			sizeof (serverAddr) );
-	if (status<0) {
+    /* get server's Internet address */
+    status = bind ( pserver->sock, 
+            (struct sockaddr *)&serverAddr, 
+            sizeof (serverAddr) );
+    if (status < 0) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-		fprintf(stderr, "iocLogServer: bind err: %s\n", sockErrBuf );
-		fprintf (stderr,
-			"iocLogServer: a server is already installed on port %u?\n", 
-			(unsigned)ioc_log_port);
-		return IOCLS_ERROR;
-	}
+        fprintf(stderr, "iocLogServer: bind err: %s\n", sockErrBuf );
+        fprintf (stderr,
+            "iocLogServer: a server is already installed on port %u?\n", 
+            (unsigned)ioc_log_port);
+        return IOCLS_ERROR;
+    }
 
-	/* listen and accept new connections */
-	status = listen(pserver->sock, 10);
-	if (status<0) {
+    /* listen and accept new connections */
+    status = listen(pserver->sock, 10);
+    if (status < 0) {
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-		fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
-		return IOCLS_ERROR;
-	}
+        fprintf(stderr, "iocLogServer: listen err %s\n", sockErrBuf);
+        return IOCLS_ERROR;
+    }
 
-	/*
-	 * Set non blocking IO
-	 * to prevent dead locks
-	 */
-	optval = TRUE;
-	status = socket_ioctl(
-					pserver->sock,
-					FIONBIO,
-					&optval);
-	if(status<0){
+    /*
+     * Set non blocking IO
+     * to prevent dead locks
+     */
+    optval = TRUE;
+    status = socket_ioctl(
+                    pserver->sock,
+                    FIONBIO,
+                    &optval);
+    if (status < 0){
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( sockErrBuf, sizeof ( sockErrBuf ) );
-		fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
-		return IOCLS_ERROR;
-	}
+        fprintf(stderr, "iocLogServer: ioctl FIONBIO err %s\n", sockErrBuf);
+        return IOCLS_ERROR;
+    }
 
-#	ifdef UNIX
-		status = setupSIGHUP(pserver);
-		if (status<0) {
-			return IOCLS_ERROR;
-		}
-#	endif
+#   ifdef UNIX
+        status = setupSIGHUP(pserver);
+        if (status < 0) {
+            return IOCLS_ERROR;
+        }
+#   endif
 
-	status = openLogFile(pserver);
-	if (status<0) {
-		fprintf(stderr,
-			"File access problems to `%s' because `%s'\n", 
-			ioc_log_file_name,
-			strerror(errno));
-		return IOCLS_ERROR;
-	}
+    status = openLogFile(pserver);
+    if (status < 0) {
+        fprintf(stderr,
+            "File access problems to `%s' because `%s'\n", 
+            ioc_log_file_name,
+            strerror(errno));
+        return IOCLS_ERROR;
+    }
 
-	status = fdmgr_add_callback(
-			pserver->pfdctx, 
-			pserver->sock, 
-			fdi_read,
-			acceptNewClient,
-			pserver);
-	if(status<0){
-		fprintf(stderr,
-			"iocLogServer: failed to add read callback\n");
-		return IOCLS_ERROR;
-	}
+    status = fdmgr_add_callback(
+            pserver->pfdctx, 
+            pserver->sock, 
+            fdi_read,
+            acceptNewClient,
+            pserver);
+    if (status < 0) {
+        fprintf(stderr,
+            "iocLogServer: failed to add read callback\n");
+        return IOCLS_ERROR;
+    }
 
 
-	while(TRUE){
-		timeout.tv_sec = 60; /* 1 min */
-		timeout.tv_usec = 0;
-		fdmgr_pend_event(pserver->pfdctx, &timeout);
-		fflush(pserver->poutfile);
-	}
+    while (TRUE) {
+        timeout.tv_sec = 60; /* 1 min */
+        timeout.tv_usec = 0;
+        fdmgr_pend_event(pserver->pfdctx, &timeout);
+        fflush(pserver->poutfile);
+    }
 }
 
 /*
@@ -964,6 +965,7 @@ static int getDirectory(void)
 				"Problem reading o/p from `%s' because `%s'\n", 
 				ioc_log_file_command,
 				strerror(errno));
+			(void) pclose(pipe);
 			return IOCLS_ERROR;
 		}
 		(void) pclose(pipe);

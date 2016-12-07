@@ -126,8 +126,8 @@ long dbcar(char *precordname, int level)
                                     precord->name,
                                     pdbFldDes->name,
                                     plink->value.pv_link.pvname,
-                                    pca->nDisconnect,
-                                    pca->nNoWrite);
+                                    pca ? pca->nDisconnect : 0,
+                                    pca ? pca->nNoWrite : 0);
                             }
                         }
                     }

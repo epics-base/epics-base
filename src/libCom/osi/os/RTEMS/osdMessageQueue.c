@@ -167,7 +167,7 @@ static int receiveMessage(
                 return -1;
         }
         rsize = receiveMessage(id, id->localBuf, id->maxSize, wait, delay);
-        if ((rsize < 0) || (rsize > size))
+        if (rsize > size)
             return -1;
         memcpy(buffer, id->localBuf, rsize);
     }

@@ -489,7 +489,7 @@ exitHandler(void)
 rtems_task
 Init (rtems_task_argument ignored)
 {
-    int                 i;
+    int                 result;
     char               *argv[3]         = { NULL, NULL, NULL };
     char               *cp;
     rtems_task_priority newpri;
@@ -612,8 +612,8 @@ Init (rtems_task_argument ignored)
     set_directory (argv[1]);
     epicsEnvSet ("IOC_STARTUP_SCRIPT", argv[1]);
     atexit(exitHandler);
-    i = main ((sizeof argv / sizeof argv[0]) - 1, argv);
+    result = main ((sizeof argv / sizeof argv[0]) - 1, argv);
     printf ("***** IOC application terminating *****\n");
     epicsThreadSleep(1.0);
-    epicsExit(0);
+    epicsExit(result);
 }

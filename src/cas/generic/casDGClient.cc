@@ -24,39 +24,39 @@
 
 casDGClient::pCASMsgHandler const casDGClient::msgHandlers[] =
 {
-	& casDGClient::versionAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
+    & casDGClient::versionAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
 
     & casDGClient::uknownMessageAction, 
     & casDGClient::searchAction, 
     & casDGClient::uknownMessageAction, 
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
 
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
 
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
 
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::echoAction,
-	& casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::echoAction,
+    & casDGClient::uknownMessageAction,
 
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction,
-	& casDGClient::uknownMessageAction
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction,
+    & casDGClient::uknownMessageAction
 };
 
 //
@@ -84,7 +84,7 @@ casDGClient::~casDGClient()
 //
 void casDGClient::destroy()
 {
-	printf("Attempt to destroy the DG client was ignored\n");
+    printf("Attempt to destroy the DG client was ignored\n");
 }
 
 //
@@ -92,16 +92,16 @@ void casDGClient::destroy()
 //
 void casDGClient::show (unsigned level) const
 {
-	printf ( "casDGClient at %p\n", 
+    printf ( "casDGClient at %p\n", 
         static_cast <const void *> ( this ) );
-	if (level>=1u) {
-		char buf[64];
-		this->hostName (buf, sizeof(buf));
-        	printf ("Client Host=%s\n", buf);
+    if (level>=1u) {
+        char buf[64];
+        this->hostName (buf, sizeof(buf));
+            printf ("Client Host=%s\n", buf);
         this->casCoreClient::show ( level - 1u );
         this->in.show ( level - 1u );
         this->out.show ( level - 1u );
-	}
+    }
 }
 
 //
@@ -109,7 +109,7 @@ void casDGClient::show (unsigned level) const
 //
 caStatus casDGClient::uknownMessageAction ()
 {
-	const caHdrLargeArray * mp = this->ctx.getMsg();
+    const caHdrLargeArray * mp = this->ctx.getMsg();
 
     char pHostName[64u];
     this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
@@ -117,7 +117,7 @@ caStatus casDGClient::uknownMessageAction ()
     caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
         "bad request code=%u in DG\n", mp->m_cmmd );
 
-	return S_cas_badProtocol;
+    return S_cas_badProtocol;
 }
 
 //
@@ -125,9 +125,9 @@ caStatus casDGClient::uknownMessageAction ()
 //
 caStatus casDGClient::searchAction()
 {
-	const caHdrLargeArray	*mp = this->ctx.getMsg();
+    const caHdrLargeArray   *mp = this->ctx.getMsg();
     const char              *pChanName = static_cast <char * > ( this->ctx.getData() );
-	caStatus	            status;
+    caStatus                status;
 
     //
     // check the sanity of the message
@@ -135,7 +135,7 @@ caStatus casDGClient::searchAction()
     if ( mp->m_postsize <= 1 ) {
         char pHostName[64u];
         this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
-	    caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
+        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
             "empty PV name extension in UDP search request?\n" );
         return S_cas_success;
     }
@@ -143,7 +143,7 @@ caStatus casDGClient::searchAction()
     if ( pChanName[0] == '\0' ) {
         char pHostName[64u];
         this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
-	    caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
+        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
             "zero length PV name in UDP search request?\n" );
         return S_cas_success;
     }
@@ -155,56 +155,56 @@ caStatus casDGClient::searchAction()
         if ( i <= 1 ) {
             char pHostName[64u];
             this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
-	        caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
+            caServerI::dumpMsg ( pHostName, "?", mp, this->ctx.getData(), 
                 "unterminated PV name in UDP search request?\n" );
             return S_cas_success;
         }
     }
 
-	if ( this->getCAS().getDebugLevel() > 6u ) {
-		char pHostName[64u];
-		this->hostName ( pHostName, sizeof ( pHostName ) );
-		printf ( "\"%s\" is searching for \"%s\"\n", 
+    if ( this->getCAS().getDebugLevel() > 6u ) {
+        char pHostName[64u];
+        this->hostName ( pHostName, sizeof ( pHostName ) );
+        printf ( "\"%s\" is searching for \"%s\"\n", 
             pHostName, pChanName );
-	}
+    }
 
-	//
-	// verify that we have sufficent memory for a PV and a
-	// monitor prior to calling PV exist test so that when
-	// the server runs out of memory we dont reply to
-	// search requests, and therefore dont thrash through
-	// caServer::pvExistTest() and casCreatePV::pvAttach()
-	//
+    //
+    // verify that we have sufficent memory for a PV and a
+    // monitor prior to calling PV exist test so that when
+    // the server runs out of memory we dont reply to
+    // search requests, and therefore dont thrash through
+    // caServer::pvExistTest() and casCreatePV::pvAttach()
+    //
     if ( ! osiSufficentSpaceInPool ( 0 ) ) {
         return S_cas_success;
     }
 
-	//
-	// ask the server tool if this PV exists
-	//
-	this->userStartedAsyncIO = false;
-	pvExistReturn pver = 
-		this->getCAS()->pvExistTest ( this->ctx, this->lastRecvAddr, pChanName );
+    //
+    // ask the server tool if this PV exists
+    //
+    this->userStartedAsyncIO = false;
+    pvExistReturn pver = 
+        this->getCAS()->pvExistTest ( this->ctx, this->lastRecvAddr, pChanName );
 
-	//
-	// prevent problems when they initiate
-	// async IO but dont return status
-	// indicating so (and vise versa)
-	//
-	if ( this->userStartedAsyncIO ) {
+    //
+    // prevent problems when they initiate
+    // async IO but dont return status
+    // indicating so (and vise versa)
+    //
+    if ( this->userStartedAsyncIO ) {
         if ( pver.getStatus() != pverAsyncCompletion ) {
-		    errMessage (S_cas_badParameter, 
-		        "- assuming asynch IO status from caServer::pvExistTest()");
+            errMessage (S_cas_badParameter, 
+                "- assuming asynch IO status from caServer::pvExistTest()");
         }
         status = S_cas_success;
-	}
-	else {
-	    //
-	    // otherwise we assume sync IO operation was initiated
-	    //
+    }
+    else {
+        //
+        // otherwise we assume sync IO operation was initiated
+        //
         switch ( pver.getStatus() ) {
         case pverExistsHere:
-		    status = this->searchResponse (*mp, pver);
+            status = this->searchResponse (*mp, pver);
             break;
 
         case pverDoesNotExistHere:
@@ -212,18 +212,18 @@ caStatus casDGClient::searchAction()
             break;
 
         case pverAsyncCompletion:
-		    errMessage (S_cas_badParameter, 
-		        "- unexpected asynch IO status from caServer::pvExistTest() ignored");
+            errMessage (S_cas_badParameter, 
+                "- unexpected asynch IO status from caServer::pvExistTest() ignored");
             status = S_cas_success;
             break;
 
         default:
-		    errMessage (S_cas_badParameter, 
-		        "- invalid return from caServer::pvExistTest() ignored");
+            errMessage (S_cas_badParameter, 
+                "- invalid return from caServer::pvExistTest() ignored");
             status = S_cas_success;
             break;
-	    }
-	}
+        }
+    }
     return status;
 }
 
@@ -340,21 +340,21 @@ caStatus casDGClient::searchResponse ( const caHdrLargeArray & msg,
 }
 
 //
-// 	casDGClient::searchFailResponse()
-//	(only when requested by the client
-//	- when it isnt a reply to a broadcast)
+//  casDGClient::searchFailResponse()
+//  (only when requested by the client
+//  - when it isnt a reply to a broadcast)
 //
 caStatus casDGClient::searchFailResponse ( const caHdrLargeArray * mp )
 {
-	int		status;
+    int     status;
 
     epicsGuard < epicsMutex > guard ( this->mutex );
     status = this->out.copyInHeader ( CA_PROTO_NOT_FOUND, 0,
         mp->m_dataType, mp->m_count, mp->m_cid, mp->m_available, 0 );
 
-	this->out.commitMsg ();
+    this->out.commitMsg ();
 
-	return S_cas_success;
+    return S_cas_success;
 }
 
 /*
@@ -362,7 +362,7 @@ caStatus casDGClient::searchFailResponse ( const caHdrLargeArray * mp )
  */
 caStatus casDGClient::versionAction ()
 {
-	const caHdrLargeArray * mp = this->ctx.getMsg();
+    const caHdrLargeArray * mp = this->ctx.getMsg();
 
     if ( mp->m_count != 0 ) {
         this->minor_version_number = static_cast <ca_uint16_t> ( mp->m_count );
@@ -373,7 +373,7 @@ caStatus casDGClient::versionAction ()
             this->seqNoOfReq = 0;
         }
     }
-	return S_cas_success;
+    return S_cas_success;
 }
 
 //
@@ -382,25 +382,25 @@ caStatus casDGClient::versionAction ()
 //
 void casDGClient::sendBeacon ( ca_uint32_t beaconNumber )
 {
-	union {
-		caHdr	msg;
-		char	buf;
-	};
+    union {
+        caHdr   msg;
+        char    buf;
+    };
 
-	//
-	// create the message
-	//
-	memset ( & buf, 0, sizeof ( msg ) );
+    //
+    // create the message
+    //
+    memset ( & buf, 0, sizeof ( msg ) );
     AlignedWireRef < epicsUInt16 > ( msg.m_cmmd ) = CA_PROTO_RSRV_IS_UP;
     AlignedWireRef < epicsUInt16 > ( msg.m_dataType ) = CA_MINOR_PROTOCOL_REVISION;
     AlignedWireRef < epicsUInt32 > ( msg.m_cid ) = beaconNumber;
 
-	//
-	// send it to all addresses on the beacon list,
+    //
+    // send it to all addresses on the beacon list,
     // but let the IO specific code set the address
     // field and the port field
-	//
-	this->sendBeaconIO ( buf, sizeof (msg), msg.m_count, msg.m_available );
+    //
+    this->sendBeaconIO ( buf, sizeof (msg), msg.m_count, msg.m_available );
 }
 
 //
@@ -421,8 +421,8 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn,
 
         if ( pHdr->cadg_addr.isValid() ) {
             outBufClient::flushCondition stat = 
-                this->osdSend ( pDG, sizeDG, pHdr->cadg_addr );	
-	        if ( stat != outBufClient::flushProgress ) {
+                this->osdSend ( pDG, sizeDG, pHdr->cadg_addr );
+            if ( stat != outBufClient::flushProgress ) {
                 break;
             }
         }
@@ -431,10 +431,10 @@ outBufClient::flushCondition casDGClient::xSend ( char *pBufIn,
     }
 
     if ( totalBytes ) {
-		//
-		// !! this time fetch may be slowing things down !!
-		//
-		//this->lastSendTS = epicsTime::getCurrent();
+        //
+        // !! this time fetch may be slowing things down !!
+        //
+        //this->lastSendTS = epicsTime::getCurrent();
         nBytesSent = totalBytes;
         return outBufClient::flushProgress;
     }
@@ -457,16 +457,16 @@ inBufClient::fillCondition casDGClient::xRecv (char *pBufIn, bufSizeT nBytesToRe
 
     while (pAfter-pCurBuf >= static_cast<int>(MAX_UDP_RECV+sizeof(cadg))) {
         pHdr = reinterpret_cast < cadg * > ( pCurBuf );
-	    stat = this->osdRecv ( reinterpret_cast < char * > ( pHdr + 1 ), 
+        stat = this->osdRecv ( reinterpret_cast < char * > ( pHdr + 1 ), 
             MAX_UDP_RECV, parm, nDGBytesRecv, pHdr->cadg_addr);
-	    if (stat==casFillProgress) {
+        if (stat==casFillProgress) {
             pHdr->cadg_nBytes = nDGBytesRecv + sizeof(*pHdr);
             pCurBuf += pHdr->cadg_nBytes;
-		    //
-		    // !! this time fetch may be slowing things down !!
-		    //
-		    //this->lastRecvTS = epicsTime::getCurrent();
-	    }
+            //
+            // !! this time fetch may be slowing things down !!
+            //
+            //this->lastRecvTS = epicsTime::getCurrent();
+        }
         else {
             break;
         }
@@ -517,7 +517,7 @@ caStatus casDGClient::asyncSearchResponse (
         pMsg->m_dataType = htons ( sequenceNoIsValid );
     }
 
-	caStatus stat = this->searchResponse ( msg, retVal );
+    caStatus stat = this->searchResponse ( msg, retVal );
 
     pRespHdr->cadg_nBytes = this->out.popCtx (outctx) + sizeof ( *pRespHdr );
     if ( pRespHdr->cadg_nBytes > sizeof ( *pRespHdr ) + sizeof (caHdr) ) {
@@ -525,7 +525,7 @@ caStatus casDGClient::asyncSearchResponse (
         this->out.commitRawMsg ( pRespHdr->cadg_nBytes );
     }
 
-	return stat;
+    return stat;
 }
 
 //
@@ -655,7 +655,7 @@ caStatus casDGClient::processDG ()
 //
 unsigned casDGClient::getDebugLevel() const
 {
-	return this->getCAS().getDebugLevel();
+    return this->getCAS().getDebugLevel();
 }
 
 //
@@ -663,7 +663,7 @@ unsigned casDGClient::getDebugLevel() const
 //
 caNetAddr casDGClient::fetchLastRecvAddr () const
 {
-	return this->lastRecvAddr;
+    return this->lastRecvAddr;
 }
 
 //
@@ -671,7 +671,7 @@ caNetAddr casDGClient::fetchLastRecvAddr () const
 //
 ca_uint32_t casDGClient::datagramSequenceNumber () const
 {
-	return this->seqNoOfReq;
+    return this->seqNoOfReq;
 }
 
 //
@@ -731,27 +731,27 @@ outBufClient::flushCondition casDGClient::flush ()
 //
 caStatus casDGClient::processMsg ()
 {
-	int status = S_cas_success;
+    int status = S_cas_success;
 
     try {
-	    unsigned bytesLeft;
-	    while ( ( bytesLeft = this->in.bytesPresent() ) ) {
+        unsigned bytesLeft;
+        while ( ( bytesLeft = this->in.bytesPresent() ) ) {
             caHdrLargeArray msgTmp;
             unsigned msgSize;
             ca_uint32_t hdrSize;
             char * rawMP;
             {
-	            //
-	            // copy as raw bytes in order to avoid
-	            // alignment problems
-	            //
+                //
+                // copy as raw bytes in order to avoid
+                // alignment problems
+                //
                 caHdr smallHdr;
                 if ( bytesLeft < sizeof ( smallHdr ) ) {
                     break;
                 }
 
                 rawMP = this->in.msgPtr ();
-	            memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
+                memcpy ( & smallHdr, rawMP, sizeof ( smallHdr ) );
 
                 ca_uint32_t payloadSize = AlignedWireRef < epicsUInt16 > ( smallHdr.m_postsize );
                 ca_uint32_t nElem = AlignedWireRef < epicsUInt16 > ( smallHdr.m_count );
@@ -800,45 +800,45 @@ caStatus casDGClient::processMsg ()
 
                 this->ctx.setMsg ( msgTmp, rawMP + hdrSize );
 
-		        if ( this->getCAS().getDebugLevel() > 5u ) {
+                if ( this->getCAS().getDebugLevel() > 5u ) {
                     char pHostName[64u];
                     this->lastRecvAddr.stringConvert ( pHostName, sizeof ( pHostName ) );
-			        caServerI::dumpMsg ( pHostName, "?", 
+                    caServerI::dumpMsg ( pHostName, "?", 
                         & msgTmp, rawMP + hdrSize, 0 );
-		        }
+                }
 
             }
 
-		    //
-		    // Reset the context to the default
-		    // (guarantees that previous message does not get mixed 
-		    // up with the current message)
-		    //
-		    this->ctx.setChannel ( NULL );
-		    this->ctx.setPV ( NULL );
+            //
+            // Reset the context to the default
+            // (guarantees that previous message does not get mixed 
+            // up with the current message)
+            //
+            this->ctx.setChannel ( NULL );
+            this->ctx.setPV ( NULL );
 
-		    //
-		    // Call protocol stub
-		    //
+            //
+            // Call protocol stub
+            //
             casDGClient::pCASMsgHandler pHandler;
-		    if ( msgTmp.m_cmmd < NELEMENTS ( casDGClient::msgHandlers ) ) {
+            if ( msgTmp.m_cmmd < NELEMENTS ( casDGClient::msgHandlers ) ) {
                 pHandler = this->casDGClient::msgHandlers[msgTmp.m_cmmd];
-		    }
+            }
             else {
                 pHandler = & casDGClient::uknownMessageAction;
             }
-		    status = ( this->*pHandler ) ();
-		    if ( status ) {
+            status = ( this->*pHandler ) ();
+            if ( status ) {
                 this->in.removeMsg ( this->in.bytesPresent() );
-			    break;
-		    }
+                break;
+            }
 
             this->in.removeMsg ( msgSize );
-	    }
+        }
     }
     catch ( std::exception & except ) {
         this->in.removeMsg ( this->in.bytesPresent() );
-		status = this->sendErr ( 
+        this->sendErr ( 
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "C++ exception \"%s\" in CA circuit server",
             except.what () );
@@ -846,13 +846,13 @@ caStatus casDGClient::processMsg ()
     }
     catch (...) {
         this->in.removeMsg ( this->in.bytesPresent() );
-		status = this->sendErr ( 
+        this->sendErr ( 
             this->ctx.getMsg(), invalidResID, ECA_INTERNAL, 
             "unexpected C++ exception in CA datagram server" );
         status = S_cas_internal;
     }
 
-	return status;
+    return status;
 }
 
 //
@@ -861,24 +861,25 @@ caStatus casDGClient::processMsg ()
 caStatus casDGClient::sendErr ( const caHdrLargeArray *curp, 
     ca_uint32_t cid, const int reportedStatus, const char *pformat, ... )
 {
-	unsigned stringSize;
-	char msgBuf[1024]; /* allocate plenty of space for the message string */
-	if ( pformat ) {
-	    va_list args;
-		va_start ( args, pformat );
-		int status = vsprintf ( msgBuf, pformat, args );
-		if ( status < 0 ) {
-			errPrintf (S_cas_internal, __FILE__, __LINE__,
-				"bad sendErr(%s)", pformat);
-			stringSize = 0u;
-		}
-		else {
-			stringSize = 1u + (unsigned) status;
-		}
-	}
-	else {
-		stringSize = 0u;
-	}
+    unsigned stringSize;
+    char msgBuf[1024]; /* allocate plenty of space for the message string */
+    if ( pformat ) {
+        va_list args;
+        va_start ( args, pformat );
+        int status = vsprintf ( msgBuf, pformat, args );
+        if ( status < 0 ) {
+            errPrintf (S_cas_internal, __FILE__, __LINE__,
+                "bad sendErr(%s)", pformat);
+            stringSize = 0u;
+        }
+        else {
+            stringSize = 1u + (unsigned) status;
+        }
+        va_end ( args );
+    }
+    else {
+        stringSize = 0u;
+    }
 
     unsigned hdrSize = sizeof ( caHdr );
     if ( ( curp->m_postsize >= 0xffff || curp->m_count >= 0xffff ) && 
@@ -929,7 +930,7 @@ caStatus casDGClient::sendErr ( const caHdrLargeArray *curp,
         this->out.commitMsg ();
     }
 
-	return S_cas_success;
+    return S_cas_success;
 }
 
 
@@ -938,8 +939,8 @@ caStatus casDGClient::sendErr ( const caHdrLargeArray *curp,
 //
 caStatus casDGClient::echoAction ()
 {
-	const caHdrLargeArray * mp = this->ctx.getMsg();
-	const void * dp = this->ctx.getData();
+    const caHdrLargeArray * mp = this->ctx.getMsg();
+    const void * dp = this->ctx.getData();
     void * pPayloadOut;
 
     epicsGuard < epicsMutex > guard ( this->mutex );
@@ -950,5 +951,5 @@ caStatus casDGClient::echoAction ()
         memcpy ( pPayloadOut, dp, mp->m_postsize );
         this->out.commitMsg ();
     }
-	return S_cas_success;
+    return S_cas_success;
 }

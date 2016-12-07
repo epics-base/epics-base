@@ -902,10 +902,12 @@ bool udpiiu::pushDatagramMsg ( epicsGuard < epicsMutex > & guard,
 
     caHdr * pbufmsg = ( caHdr * ) &this->xmitBuf[this->nBytesInXmitBuf];
     *pbufmsg = msg;
-    memcpy ( pbufmsg + 1, pExt, extsize );
-    if ( extsize != alignedExtSize ) {
-        char *pDest = (char *) ( pbufmsg + 1 );
-        memset ( pDest + extsize, '\0', alignedExtSize - extsize );
+    if ( extsize ) {
+        memcpy ( pbufmsg + 1, pExt, extsize );
+        if ( extsize != alignedExtSize ) {
+            char *pDest = (char *) ( pbufmsg + 1 );
+            memset ( pDest + extsize, '\0', alignedExtSize - extsize );
+        }
     }
     AlignedWireRef < epicsUInt16 > ( pbufmsg->m_postsize ) = alignedExtSize;
     this->nBytesInXmitBuf += msgsize;

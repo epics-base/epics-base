@@ -404,8 +404,6 @@ void epicsThreadGetName (epicsThreadId id, char *name, size_t size)
     struct taskVar *v;
     int haveName = 0;
 
-    if (size <= 0)
-        return;
     taskVarLock ();
     for (v=taskVarHead ; v != NULL ; v=v->forw) {
         if (v->id == tid) {

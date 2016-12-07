@@ -3941,10 +3941,9 @@ static long putFloatString(
     char	*pdest=(char *)(paddr->pfield);
     long	status = 0;
     int		precision = 6;
-    struct rset	*prset = 0;
+    struct rset *prset = dbGetRset(paddr);
     short size=paddr->field_size;
 
-    if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     if(nRequest==1 && offset==0) {
@@ -4152,10 +4151,9 @@ static long putDoubleString(
     char	*pdest=(char *)(paddr->pfield);
     long	status = 0;
     int		precision = 6;
-    struct rset	*prset = 0;
+    struct rset *prset = dbGetRset(paddr);
     short size=paddr->field_size;
 
-    if(paddr) prset = dbGetRset(paddr);
     if(prset && (prset->get_precision))
 	status = (*prset->get_precision)(paddr,&precision);
     if(nRequest==1 && offset==0) {

@@ -517,13 +517,8 @@ static win32ThreadParam * epicsThreadParmCreate ( const char *pName )
 
     pParmWIN32 = calloc ( 1, sizeof ( *pParmWIN32 ) + strlen ( pName ) + 1 );
     if ( pParmWIN32  ) {
-        if ( pName ) {
-            pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
-            strcpy ( pParmWIN32->pName, pName );
-        }
-        else {
-            pParmWIN32->pName = 0;
-        }
+        pParmWIN32->pName = (char *) ( pParmWIN32 + 1 );
+        strcpy ( pParmWIN32->pName, pName );
         pParmWIN32->isSuspended = 0;
     }
     return pParmWIN32;

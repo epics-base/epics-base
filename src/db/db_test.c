@@ -699,8 +699,9 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
 	return(-1);
     }
     ppn = calloc(1,sizeof(putNotify));
-    if(!pdbaddr) {
+    if(!ppn) {
 	printf("calloc failed\n");
+	free((void *)pdbaddr);
 	return(-1);
     }
     ppn->paddr = pdbaddr;
@@ -708,13 +709,14 @@ int epicsShareAPI tpn(char	*pname,char *pvalue)
     ppn->nRequest = 1;
     if(dbPutNotifyMapType(ppn,DBR_STRING)) {
 	printf("dbPutNotifyMapType failed\n");
-	printf("calloc failed\n");
+	free((void *)pdbaddr);
 	return(-1);
     }
     ppn->userCallback = tpnCallback;
     ptpnInfo = calloc(1,sizeof(tpnInfo));
     if(!ptpnInfo) {
 	printf("calloc failed\n");
+	free((void *)pdbaddr);
 	return(-1);
     }
     ptpnInfo->ppn = ppn;

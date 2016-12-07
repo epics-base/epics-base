@@ -134,8 +134,8 @@ static long wdogInit(histogramRecord *prec)
      if(prec->wdog==NULL && prec->sdel>0) {
           /* initialize a watchdog timer */
           pcallback = (myCallback *)(calloc(1,sizeof(myCallback)));
+          if (!pcallback) return -1;
           pcallback->prec = prec;
-	  if(!pcallback) return -1;
           callbackSetCallback(wdogCallback,&pcallback->callback);
           callbackSetUser(pcallback,&pcallback->callback);
           callbackSetPriority(priorityLow,&pcallback->callback);

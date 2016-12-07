@@ -639,7 +639,7 @@ static void read_reply ( void *pArg, struct dbAddr *paddr,
 static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *pClient )
 {
     struct channel_in_use *pciu = MPTOPCIU ( mp );
-    const int readAccess = asCheckGet ( pciu->asClientPVT );
+    int readAccess;
     ca_uint32_t payloadSize;
     void *pPayload;
     int status;
@@ -649,6 +649,7 @@ static int read_action ( caHdrLargeArray *mp, void *pPayloadIn, struct client *p
         logBadId ( pClient, mp, 0 );
         return RSRV_ERROR;
     }
+    readAccess = asCheckGet ( pciu->asClientPVT );
 
     SEND_LOCK ( pClient );
 

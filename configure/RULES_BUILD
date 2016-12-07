@@ -21,6 +21,7 @@ vpath %.cpp $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.C $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.rc $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.h $(USR_VPATH) $(ALL_SRC_DIRS)
+vpath %.hpp $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.H $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.skel.static $(USR_VPATH) $(ALL_SRC_DIRS)
 vpath %.y $(USR_VPATH) $(ALL_SRC_DIRS)
@@ -146,7 +147,7 @@ clean::
 	$(ECHO) "Cleaning"
 	@$(RM) *.i *$(OBJ) *.a $(TESTPRODNAME) $(LIBNAME) $(SHRLIBNAME) \
 	$(INC) $(TARGETS) $(DLL_LINK_LIBNAME) $(TDS) \
-	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp \
+	*.out MakefileInclude  $(LOADABLE_SHRLIBNAME) *.manifest *.exp *.pdb \
 	$(COMMON_INC) $(HDEPENDS_FILES) $(PRODTARGETS) \
 	$(TESTSCRIPTS) $(TAPFILES)
 ifdef RES
@@ -393,6 +394,13 @@ $(INSTALL_BIN)/%: ../os/$(OS_CLASS)/%
 	$(ECHO) "Installing os-specific script $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
 
+$(INSTALL_BIN)/%.exe: %.exe
+	$(ECHO) "Installing executable file $@"
+	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
+ifeq ($(INSTALL_PDB),YES)
+	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $(basename $<).pdb $(INSTALL_BIN)
+endif
+
 $(INSTALL_BIN)/%: %
 	$(ECHO) "Installing created file $@"
 	@$(INSTALL_PRODUCT) -d -m $(BIN_PERMISSIONS) $< $(INSTALL_BIN)
@@ -412,6 +420,11 @@ $(INSTALL_LIB)/%.lib: %.lib
 $(INSTALL_SHRLIBS): $(INSTALL_SHRLIB)/%: %
 	$(ECHO) "Installing shared library $@"
 	@$(INSTALL_LIBRARY) -d -m $(SHRLIB_PERMISSIONS) $< $(INSTALL_SHRLIB)
+ifeq ($(SHRLIB_SUFFIX),.dll)
+ifeq ($(INSTALL_PDB),YES)
+	@$(INSTALL_LIBRARY) -d -m $(LIB_PERMISSIONS) $(basename $<).pdb $(INSTALL_SHRLIB)
+endif
+endif
 ifneq ($(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE))
 ifneq (,$(strip $(SHRLIB_VERSION)))
 	@$(RM) $(subst $(SHRLIB_SUFFIX),$(SHRLIB_SUFFIX_BASE),$@)

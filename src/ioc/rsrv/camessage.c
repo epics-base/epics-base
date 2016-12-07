@@ -26,6 +26,7 @@
 #include "epicsEvent.h"
 #include "epicsMutex.h"
 #include "epicsStdio.h"
+#include "epicsString.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
 #include "errlog.h"

@@ -243,6 +243,7 @@ int tpn(const char *pname, const char *pvalue)
     ptpnInfo = calloc(1, sizeof(tpnInfo));
     if (!ptpnInfo) {
         printf("calloc failed\n");
+        free(ppn);
         dbChannelDelete(chan);
         return -1;
     }

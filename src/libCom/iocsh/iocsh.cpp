@@ -559,6 +559,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     
     if (macros) {
         if (macParseDefns(NULL, macros, &defines) < 0) {
+            free(redirects);
             return -1;
         }
     }
@@ -571,6 +572,7 @@ iocshBody (const char *pathname, const char *commandLine, const char *macros)
     if (handle == NULL) {
         if (macCreateHandle(&handle, pairs)) {
             errlogMessage("iocsh: macCreateHandle failed.");
+            free(redirects);
             return -1;
         }
         

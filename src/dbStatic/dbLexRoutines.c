@@ -229,24 +229,25 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	}
     }
     pinputFile = dbCalloc(1,sizeof(inputFile));
-    if(filename) {
-	pinputFile->filename = macEnvExpand(filename);
+    if (filename) {
+        pinputFile->filename = macEnvExpand(filename);
     }
-    if(!fp) {
-	FILE	*fp1;
+    if (!fp) {
+        FILE *fp1 = 0;
 
-	if(pinputFile->filename) pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp1);
-	if(!pinputFile->filename || !fp1) {
-	    errPrintf(0,__FILE__, __LINE__,
-		"dbRead opening file %s",pinputFile->filename);
-	    free((void *)pinputFile->filename);
-	    free((void *)pinputFile);
+        if (pinputFile->filename)
+            pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
+        if (!pinputFile->filename || !fp1) {
+            errPrintf(0, __FILE__, __LINE__,
+                "dbRead opening file %s",pinputFile->filename);
+            free(pinputFile->filename);
+            free(pinputFile);
             status = -1;
             goto cleanup;
-	}
-	pinputFile->fp = fp1;
+        }
+        pinputFile->fp = fp1;
     } else {
-	pinputFile->fp = fp;
+        pinputFile->fp = fp;
     }
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;

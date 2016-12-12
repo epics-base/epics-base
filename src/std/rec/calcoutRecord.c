@@ -100,15 +100,15 @@ typedef struct calcoutDSET {
 }calcoutDSET;
 
 
-/* To provide feedback to the user as to the connection status of the 
+/* To provide feedback to the user as to the connection status of the
  * links (.INxV and .OUTV), the following algorithm has been implemented ...
  *
- * A new PV_LINK [either in init() or special()] is searched for using
- * dbNameToAddr. If local, it is so indicated. If not, a checkLinkCb
- * callback is scheduled to check the connectivity later using 
- * dbCaIsLinkConnected(). Anytime there are unconnected CA_LINKs, another
+ * A new PV_LINK is checked [in both init() and special()] to see if the
+ * target is local -- if so it is marked as such. If not, a checkLinkCb
+ * callback is scheduled to check the connection status later by calling
+ * dbIsLinkConnected(). Anytime there are unconnected CA_LINKs, another
  * callback is scheduled. Once all connections are established, the CA_LINKs
- * are checked whenever the record processes. 
+ * are checked whenever the record processes.
  *
  */
 

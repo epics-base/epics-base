@@ -41,11 +41,12 @@ that should be performed when creating new releases of EPICS Base.</p>
 pre-release, <tt>-pre1</tt>. The first Release Candidate <tt>-rc1</tt> is the
 first version that has undergone widespread testing and which has no known
 problems in it that are slated to be fixed in this release. New versions should
-be made at about weekly intervals during the testing and debugging period, and
-will be designated as either pre-release versions or Release Candidates by the
-Release Manager.  A Release Candidate that has received widespread testing for a
-week without any additional problems being discovered or significant changes
-being committed can be designated as the final release version.</p>
+be made at 2-weekly intervals during the testing and debugging period, and will
+be designated as either pre-release versions or Release Candidates by the
+Release Manager. After a Release Candidate has been available to the whole
+community for testing for at least a week without any additional problems being
+reported or significant changes being committed, the branch can be designated as
+the final release version.</p>
 
 <h3>Roles</h3>
 
@@ -56,7 +57,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
 <dl>
   <dt><strong>Release Manager</strong> (Ralph Lange)</dt>
     <dd>Responsible for managing and tagging the release</dd>
-  <dt><strong>Platform Developers</strong></dt>
+  <dt><strong>Platform Developers</strong> (optional)</dt>
     <dd>Responsible for individual operating system platforms</dd>
   <dt><strong>Application Developers</strong></dt>
     <dd>Responsible for support modules that depend on EPICS Base.</dd>
@@ -135,17 +136,17 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar, using these tag conventions:
         <ul>
           <li>
-            <tt>R3.15.5-pre<i>n</i></tt>
+            <tt>R3.15.6-pre1</tt>
             &mdash; pre-release tag
             </li>
           <li>
-            <tt>R3.15.5-rc<i>n</i></tt>
-            &mdash; release candidate tag, note the <tt>rc</tt> is now
-            lower-case</li>
+            <tt>R3.15.6-rc1</tt>
+            &mdash; release candidate tag
+            </li>
         </ul>
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.5-rc<i>n</i>
+          bzr tag R3.15.6-rc1
           </tt></blockquote>
         </td>
       </tr>
@@ -157,14 +158,14 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export
-            --root=base-3.15.5-rc<i>n</i>
-            -r tag:R3.15.5-rc<i>n</i>
-            base-3.15.5-rc<i>n</i>.tar.gz
+            --root=base-3.15.6-rc1
+            -r tag:R3.15.6-rc1
+            base-3.15.6-rc1.tar.gz
             mirror-3.15
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-3.15.5-rc<i>n</i>.tar.gz
+          gpg --armor --sign --detach-sig base-3.15.6-rc1.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -276,7 +277,7 @@ relevent roles unless the Release Manager designates otherwise:</p>
       <td>Tag the module in Bazaar:
         <blockquote><tt>
           cd ~/base/mirror-3.15<br />
-          bzr tag R3.15.5</i>
+          bzr tag R3.15.6</i>
           </tt></blockquote>
         </td>
       </tr>
@@ -288,14 +289,14 @@ relevent roles unless the Release Manager designates otherwise:</p>
         <blockquote><tt>
           cd ~/base<br />
           bzr export
-            --root=base-3.15.5
-            -r tag:R3.15.5
-            base-3.15.5.tar.gz
+            --root=base-3.15.6
+            -r tag:R3.15.6
+            base-3.15.6.tar.gz
             mirror-3.15
           </tt></blockquote>
         Create a GPG signature file of the tarfile as follows:
         <blockquote><tt>
-          gpg --armor --sign --detach-sig base-3.15.5.tar.gz
+          gpg --armor --sign --detach-sig base-3.15.6.tar.gz
           </tt></blockquote>
         </td>
       </tr>
@@ -306,13 +307,23 @@ relevent roles unless the Release Manager designates otherwise:</p>
         least one supported platform</td>
       </tr>
     <tr>
+      <td>&nbsp;</td>
+      <td>Release Manager</td>
+      <td>Upload the release tar file to the Launchpad download area.</td>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>Release Manager</td>
+      <td>Find all Launchpad bug reports with the status Fix Committed which
+        have been fixed in this release and mark them Fix Released.</td>
+      </tr>
+    <tr>
       <th colspan="3">Publish and Announce it</th>
       </tr>
     <tr>
       <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>If necessary recreate the tarfile following the instructions above.
-        Copy the tar file and its <tt>.asc</tt> signature file to the Base
+      <td>Copy the tar file and its <tt>.asc</tt> signature file to the Base
         download area of the website.</td>
       </tr>
     <tr>
@@ -343,24 +354,13 @@ relevent roles unless the Release Manager designates otherwise:</p>
     <tr>
       <td>&nbsp;</td>
       <td>Website Manager</td>
-      <td>Upload the release tar file to the Launchpad download area.</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Website Manager</td>
-      <td>Find all Launchpad bug reports with the status Fix Committed which
-        have been fixed in this release and mark them Fix Released.</td>
+      <td>Add an entry to the website News page, linking to the new version
+        webpage.</td>
       </tr>
     <tr>
       <td>&nbsp;</td>
       <td>Release Manager</td>
-      <td>Email tech-talk</td>
-      </tr>
-    <tr>
-      <td>&nbsp;</td>
-      <td>Website Manager</td>
-      <td>Add an entry to the website News page, linking to the new version
-      webpage.</td>
+      <td>Announce the release on the tech-talk mailing list.</td>
       </tr>
     </tbody>
   </table>

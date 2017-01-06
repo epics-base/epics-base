@@ -13,14 +13,25 @@
 
 
 <h2 align="center">Changes made on the 3.15 branch since 3.15.5</h2>
+
 <!-- Insert new items immediately below here ... -->
 
 
 <h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
+
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Checking Periodic Scan Rates</h3>
 
-<h2 align="center">Changes between 3.15.4 and 3.15.5</h2>
+<p>Code has been added to the IOC startup to better protect it against bad
+periodic scan rates, including against locales where <q><tt>.</tt></q> is not
+accepted as a decimal separator character. If the scan period in a menuScan
+choice string cannot be parsed, the associated periodic scan thread will no
+longer be started by the IOC and a warning message will be displayed at iocInit
+time. The <tt>scanppl</tt> command will also flag the faulty menuScan value.</p>
+
+
+<h2 align="center">Changes made between 3.15.4 and 3.15.5</h2>
 
 <h3>dbStatic Library Speedup and Cleanup</h3>
 

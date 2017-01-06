@@ -3,15 +3,27 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.14.12.6 Release Notes</title>
+  <title>EPICS Base R3.14.12.7 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.14.12.6</h1>
+<h1 align="center">EPICS Base Release 3.14.12.7</h1>
 
-<h2 align="center">Changes between 3.14.12.5 and 3.14.12.6</h2>
+<h2 align="center">Changes between 3.14.12.6 and 3.14.12.7</h2>
 
 <!-- Insert new items immediately below here ... -->
+
+<h3>Checking Periodic Scan Rates</h3>
+
+<p>Code has been added to the IOC startup to better protect it against bad
+periodic scan rates, including against locales where <q><tt>.</tt></q> is not
+accepted as a decimal separator character. If the scan period in a menuScan
+choice string cannot be parsed, the associated periodic scan thread will no
+longer be started by the IOC and a warning message will be displayed at iocInit
+time. The <tt>scanppl</tt> command will also flag the faulty menuScan value.</p>
+
+
+<h2 align="center">Changes between 3.14.12.5 and 3.14.12.6</h2>
 
 <h3>Launchpad Bug-fixes</h3>
 
@@ -276,8 +288,6 @@ in a weird state, requiring the user to run something like 'stty sane' to clean
 it up. This release patches the readline support code to clean up automatically
 by registering an epicsAtExit() routine.</p>
 
-
-<h1 align="center">EPICS Base Release 3.14.12.5</h1>
 
 <h2 align="center">Changes between 3.14.12.4 and 3.14.12.5</h2>
 

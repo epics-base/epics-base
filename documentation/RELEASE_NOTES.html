@@ -13,6 +13,17 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Server bind issue on Windows</h3>
+
+<p>When a National Instruments network variables CA server is already running on
+a Windows system and an IOC or PCAS server is started, the IOC's attempt to
+bind a TCP socket to the CA server port number fails, but Windows returns a
+different error status value than the IOC is expecting in that circumstance
+(because the National Instruments code requests exclusive use of that port,
+unlike the EPICS code) so the IOC fails to start properly. The relevent EPICS
+bind() checks have now been updated so the IOC will request that a dynamic port
+number be allocated for this TCP socket instead when this happens.</p>
+
 <h3>Checking Periodic Scan Rates</h3>
 
 <p>Code has been added to the IOC startup to better protect it against bad
@@ -786,7 +797,7 @@ access monitor on the DLYA field; this happens twice during record processing if
 the ODLY field is larger than 0.</p>
 
 <p>Timestamps from all seq record monitor events have been wrong since 1995 or
-earlier, the time being provided was from the last time the record processed. 
+earlier, the time being provided was from the last time the record processed.
 Now the record timestamp will be updated between reading each DOL1..DOLA link
 and posting the monitor on the associated DO1..DOA field.  The VAL field is
 never given a value by the record processing code, but is used for posting
@@ -1018,7 +1029,7 @@ fixed in this release:</p>
 <li>717252
   <a href="https://launchpad.net/bugs/771252">
     local caput causes ioc crash on win32</a></li>
-<li>750549 
+<li>750549
   <a href="https://launchpad.net/bugs/750549 ">
     epicsTime has non-portable c++ static initialization</a></li>
 <li>753137
@@ -1372,7 +1383,7 @@ more extensive modifications.</p>
 
 <h4>RTEMS 4.10 support</h4>
 
-<p>Added support for the latest release of RTEMS.  There is no longer a 
+<p>Added support for the latest release of RTEMS.  There is no longer a
 distinction between executive and malloc memory pools.  The new mount() API
 is used.</p>
 
@@ -1465,7 +1476,7 @@ doing a put</p>
 <p> These changes impact the Gateway (Proxy server) and other servers but not
 the IOC.</h4>
 
-<p>Mantis 360 fix - server is unresponsive for one of its clients, when 
+<p>Mantis 360 fix - server is unresponsive for one of its clients, when
 async io postponed and in flow control mode</p>
 
 <p>Mantis 358 fix - PCAS service snap-in has no way to determine if its a put,
@@ -1478,7 +1489,7 @@ controling motor through gw.</p>
 
 <p>Mantis 340 fix - leak when performing a read and conversion fails.</p>
 
-<p>Mantis 348 fix - A call to 'assert (item.pList == this)' 
+<p>Mantis 348 fix - A call to 'assert (item.pList == this)'
 failed in ../../../../src/cas/generic/st/ioBlocked.cc line 112</p>
 
 <p>Mantis 345 fix - Compilation warning: complaint about missing
@@ -1494,7 +1505,7 @@ R3.13 client</p>
 <p>Mantis 329 fix - GW hang, pthread_mutex_lock failed: error Invalid
 argument message</p>
 
-<p>Mantis 352 fix - gateway hangs temporarily under heavy load on 8-core 
+<p>Mantis 352 fix - gateway hangs temporarily under heavy load on 8-core
 64bit RHEL5</p>
 
 <ul>
@@ -2015,7 +2026,7 @@ tools to allow specifying the CA priority.</p>
 
 <h4>GCC_EXEC_PREFIX references removed from configuration files</h4>
 
-<p>Definition of GCC_EXEC_PREFIX removed from CONFIG.CrossCommon and 
+<p>Definition of GCC_EXEC_PREFIX removed from CONFIG.CrossCommon and
 unexport of GCC_EXEC_PREFIX removed from vxWorks and RTEMS builds.</p>
 
 <h4>RTEMS Release</h4>
@@ -3232,7 +3243,7 @@ was returned as -1.17549435E-38. This is now fixed.</p>
 in a &lt;name&gt;_DBD macro definition. An include line will be placed in the
 &lt;name&gt;Include.dbd for each file specified in the &lt;name&gt;_DBD
 definition. If a Makefile contains</p>
-<pre>        DBD=xxx.dbd 
+<pre>        DBD=xxx.dbd
         xxx_DBD = f1.dbd f2.dbd f3.dbd </pre>
 
 <p>an xxxInclude.dbd file will be created containing the lines</p>

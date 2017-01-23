@@ -4,7 +4,7 @@
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
 * EPICS BASE is distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 
 #ifndef osdSockH
@@ -14,7 +14,7 @@
 #include <errno.h>
 
 /*
- * winsock2.h changes the structure alignment to 4 if 
+ * winsock2.h changes the structure alignment to 4 if
  * WIN32 isnt set which can be a source of confusion
  */
 #ifndef WIN32
@@ -48,6 +48,7 @@ typedef int osiSocklen_t;
 #define SOCK_ENOBUFS WSAENOBUFS
 #define SOCK_ECONNRESET WSAECONNRESET
 #define SOCK_ETIMEDOUT WSAETIMEDOUT
+#define SOCK_EACCES WSAEACCES
 #define SOCK_EADDRINUSE WSAEADDRINUSE
 #define SOCK_EADDRNOTAVAIL WSAEADDRNOTAVAIL
 #define SOCK_ECONNREFUSED WSAECONNREFUSED

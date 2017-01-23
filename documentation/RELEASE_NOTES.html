@@ -21,6 +21,17 @@
 
 <!-- Insert inherited items immediately below here ... -->
 
+<h3>Server bind issue on Windows</h3>
+
+<p>When a National Instruments network variables CA server is already running on
+a Windows system and an IOC or PCAS server is started, the IOC's attempt to
+bind a TCP socket to the CA server port number fails, but Windows returns a
+different error status value than the IOC is expecting in that circumstance
+(because the National Instruments code requests exclusive use of that port,
+unlike the EPICS code) so the IOC fails to start properly. The relevent EPICS
+bind() checks have now been updated so the IOC will request that a dynamic port
+number be allocated for this TCP socket instead when this happens.</p>
+
 <h3>Checking Periodic Scan Rates</h3>
 
 <p>Code has been added to the IOC startup to better protect it against bad
@@ -1533,7 +1544,7 @@ The iocLogServer was moved into the same directory (src/libCom/log) as
 the log client code.</p>
 
 <p><a name="as">3</a>
-The Access Security code has been divided, with the parts not related to the 
+The Access Security code has been divided, with the parts not related to the
 database (lexer/parser and trap registration) becoming part of libCom.
 The remaining components are included in the dbCore library</p>
 

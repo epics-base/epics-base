@@ -34,25 +34,28 @@
  */
 epicsShareFunc void epicsShareAPI epicsEnvSet (const char *name, const char *value)
 {
-    char *cp;
-
+#if defined(_BSD_SOURCE) || (_POSIX_C_SOURCE >= 200112L) || (_XOPEN_SOURCE >= 600)
     iocshEnvClear(name);
-    
-	cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
-	strcpy (cp, name);
-	strcat (cp, "=");
-	strcat (cp, value);
-	if (putenv (cp) < 0) {
-		errPrintf(
-                -1L,
-                __FILE__,
-                __LINE__,
-                "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
-                name,
-                value,
-                strerror (errno));
+    setenv (name, value, 1);
+#else
+    char *cp;
+    iocshEnvClear(name);
+    cp = mallocMustSucceed (strlen (name) + strlen (value) + 2, "epicsEnvSet");
+    strcpy (cp, name);
+    strcat (cp, "=");
+    strcat (cp, value);
+    if (putenv (cp) < 0) {
+        errPrintf(
+            -1L,
+            __FILE__,
+            __LINE__,
+            "Failed to set environment parameter \"%s\" to \"%s\": %s\n",
+            name,
+            value,
+            strerror (errno));
         free (cp);
-	}
+    }
+#endif
 }
 
 /*

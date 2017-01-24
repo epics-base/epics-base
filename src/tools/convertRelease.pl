@@ -119,7 +119,9 @@ sub dllPath {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
-    print OUT "PATH \"", join(';', binDirs(), '%PATH%'), "\"\n";
+    # This SET syntax is essential for supporting embedded spaces and '&'
+    # characters in both the PATH variable and the new directory components
+    print OUT "SET \"PATH=", join(';', binDirs(), '%PATH%'), "\"\n";
     close OUT;
 }
 

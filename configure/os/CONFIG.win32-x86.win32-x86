@@ -165,48 +165,38 @@ EXE=.exe
 OBJ=.obj
 RES=.res
 
-#       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
-#       so we do C++ compiles using the global flag -TP 
+# MS Visual C++ doesn't recognize *.cc as a C++ source file,
+# so C++ compiles get the flag -TP
 COMPILER_CXXFLAGS = -TP
 
-#	Operating system flags 
+# Operating system flags
 OP_SYS_CFLAGS =
 OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 
-#
-#	Files and flags needed to link DLLs (used in RULES_BUILD)
-#
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) \
+# Files and flags needed to link DLLs (used in RULES_BUILD)
+WIN32_DLLFLAGS = -subsystem:windows -dll $(OPT_LDFLAGS) \
  $(USR_LDFLAGS) $(CMD_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
-#
-# specify dll .def file only if it exists
-#
+# Specify dll .def file only if it exists
 DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
 
-#
-#	A WIN32 dll has three parts:
+# A WIN32 dll has three parts:
 #	x.dll: the real dll (SHRLIBNAME)
 #	x.lib: what you link to progs that use the dll (DLLSTUB_LIBNAME)
 #	x.exp: what you need to build the dll (in no variable)
-#
 LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -out:$@ \
     -implib:$(@:%$(SHRLIB_SUFFIX)=%$(LIB_SUFFIX)) \
     $(DLL_DEF_FLAG) $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS)
 
-
-#	adjust names of libraries to build
-#
+# Adjust names of libraries to build
 SHRLIB_SUFFIX_BASE = .dll
 SHRLIB_SUFFIX = $(SHRLIB_SUFFIX_BASE)
 SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 TESTSHRLIBNAME_YES = $(TESTBUILD_LIBRARY:%=%$(SHRLIB_SUFFIX_BASE))
 
-#
-# When SHARED_LIBRARIES is YES we are building a DLL link library 
-# and when SHARED_LIBRARIES is NO we are building an object library
-#
+# When SHARED_LIBRARIES is YES we are building a DLL shared library.
+# When SHARED_LIBRARIES is NO we are building an object library
 DLLSTUB_SUFFIX = .lib
 DLLSTUB_LIBNAME_YES = $(BUILD_LIBRARY:%=%.lib)
 DLLSTUB_LIBNAME = $(DLLSTUB_LIBNAME_$(SHARED_LIBRARIES))
@@ -220,7 +210,7 @@ LIBNAME = $(LIBNAME_$(SHARED_LIBRARIES))
 TESTLIBNAME_NO = $(TESTBUILD_LIBRARY:%=%.lib)
 TESTLIBNAME = $(TESTLIBNAME_$(SHARED_LIBRARIES))
 
-#	dll install location
+# dll install location
 INSTALL_SHRLIB = $(INSTALL_BIN)
 
 
@@ -280,7 +270,7 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) \
 #--------------------------------------------------
 # UseManifestTool.pl checks MS Visual c++ compiler version number to
 # decide whether or not to use the Manifest Tool command to embed the
-# linker created .manifest file into a library or product target. 
+# linker created .manifest file into a library or product target.
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
 MT.exe = mt.exe -nologo -manifest $@.manifest
@@ -290,4 +280,3 @@ MT_EXE_COMMAND_NO = $(MT.exe) "-outputresource:$@;\#1"
 MT_EXE_COMMAND1 = $(MT_EXE_COMMAND_$(STATIC_BUILD))
 MT_DLL_COMMAND = $(MT_DLL_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
 MT_EXE_COMMAND = $(MT_EXE_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
-

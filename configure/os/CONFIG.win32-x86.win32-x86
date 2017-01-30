@@ -22,7 +22,7 @@ WINLINK = link
 
 RCCMD = rc -l 0x409 $(INCLUDES) -fo $@ $<
 
-ARCMD = lib /nologo /verbose /out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
+ARCMD = lib -nologo -verbose -out:$@ $(LIB_OPT_LDFLAGS) $(LIBRARY_LD_OBJS)
 
 BAFCMD = bscmake /nologo /o $@
 
@@ -67,21 +67,21 @@ OBJ_CFLAG = -Fo
 # vis c++ compiles the code (and includes
 # the header files)
 #
-# /MT static multithreaded C RTL
-# /MTd static multithreaded C RTL (debug version)
-# /MD multithreaded C RTL in DLL
-# /MDd multithreaded C RTL in DLL (debug version)
+# -MT static multithreaded C RTL
+# -MTd static multithreaded C RTL (debug version)
+# -MD multithreaded C RTL in DLL
+# -MDd multithreaded C RTL in DLL (debug version)
 VISC_DLL_NO = -DEPICS_DLL_NO
 VISC_DLL_YES =
 VISC_DLL = $(VISC_DLL_$(SHARED_LIBRARIES))
 VISC_STATIC_CFLAGS_DEBUG_NO = d
 VISC_STATIC_CFLAGS_DEBUG_YES =
 VISC_STATIC_CFLAGS_DEBUG = $(VISC_STATIC_CFLAGS_DEBUG_$(HOST_OPT))
-STATIC_CFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
-STATIC_CFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CFLAGS_YES= -MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CFLAGS_NO= -MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 # OS vendor c preprocessor
-CPP = cl /nologo /C /E
+CPP = cl -nologo -C -E
 
 # Configure OS vendor C++ compiler
 #
@@ -129,12 +129,12 @@ OBJ_CXXFLAG = -Fo
 # vis c++ compiles the code (and includes
 # the header files)
 #
-# /MT static multithreaded C RTL
-# /MTd static multithreaded C RTL (debug version)
-# /MD multithreaded C RTL in DLL
-# /MDd multithreaded C RTL in DLL (debug version)
-STATIC_CXXFLAGS_YES= /MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
-STATIC_CXXFLAGS_NO= /MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+# -MT static multithreaded C RTL
+# -MTd static multithreaded C RTL (debug version)
+# -MD multithreaded C RTL in DLL
+# -MDd multithreaded C RTL in DLL (debug version)
+STATIC_CXXFLAGS_YES= -MT$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
+STATIC_CXXFLAGS_NO= -MD$(VISC_STATIC_CFLAGS_DEBUG) $(VISC_DLL)
 
 STATIC_LDLIBS_YES=ws2_32.lib advapi32.lib user32.lib kernel32.lib winmm.lib
 STATIC_LDLIBS_NO=
@@ -173,10 +173,10 @@ BAF=.bsc
 BOF=.sbr
 
 #       Problem: MS Visual C++ does not recognize  *.cc as C++ source,
-#       so we do C++ compiles using the global flag -TP 
-COMPILER_CXXFLAGS = /TP
+#       so we do C++ compiles using the global flag -TP
+COMPILER_CXXFLAGS = -TP
 
-#	Operating system flags 
+#	Operating system flags
 OP_SYS_CFLAGS =
 OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 
@@ -192,13 +192,13 @@ OP_SYS_CXXFLAGS = $(COMPILER_CXXFLAGS)
 #		'-entry:_DllMainCRTStartup$(DLLENTRY)'
 DLLENTRY = @12
 
-WIN32_DLLFLAGS = /subsystem:windows /dll $(OPT_LDFLAGS) \
+WIN32_DLLFLAGS = -subsystem:windows -dll $(OPT_LDFLAGS) \
  $(USR_LDFLAGS) $(CMD_LDFLAGS) $(TARGET_LDFLAGS) $(LIB_LDFLAGS)
 
 #
 # specify dll .def file only if it exists
 #
-DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$*)))
+DLL_DEF_FLAG = $(addprefix -def:,$(wildcard ../$(addsuffix .def,$*)))
 
 #
 #	A WIN32 dll has three parts:
@@ -206,9 +206,9 @@ DLL_DEF_FLAG = $(addprefix /def:,$(wildcard ../$(addsuffix .def,$*)))
 #	x.lib: what you link to progs that use the dll (DLL_LINK_LIBNAME)
 #	x.exp: what you need to build the dll (in no variable)
 #
-LINK.shrlib = $(WINLINK) /nologo $(WIN32_DLLFLAGS) /implib:$*.lib /out:$*.dll $(DLL_DEF_FLAG)
+LINK.shrlib = $(WINLINK) -nologo $(WIN32_DLLFLAGS) -implib:$*.lib -out:$*.dll $(DLL_DEF_FLAG)
 LINK.shrlib += $(call PATH_FILTER, $(LIBRARY_LD_OBJS) $(LIBRARY_LD_RESS) $(SHRLIB_LDLIBS))
-MUNCH_CMD =  $(CCC) /Fo $@ $^
+MUNCH_CMD =  $(CCC) -Fo $@ $^
 
 
 #	adjust names of libraries to build
@@ -222,7 +222,7 @@ SHRLIBNAME_YES = $(BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 LOADABLE_SHRLIBNAME = $(LOADABLE_BUILD_LIBRARY:%=%$(SHRLIB_SUFFIX))
 
 #
-# When SHARED_LIBRARIES is YES we are building a DLL link library 
+# When SHARED_LIBRARIES is YES we are building a DLL link library
 # and when SHARED_LIBRARIES is NO we are building an object library
 #
 DLL_LINK_LIBNAME_YES = $(BUILD_LIBRARY:%=%.lib)
@@ -289,7 +289,7 @@ LINK.cpp = $(WINLINK) -nologo $(STATIC_LDFLAGS) $(LDFLAGS) $(PROD_LDFLAGS) \
 #--------------------------------------------------
 # UseManifestTool.pl checks MS Visual c++ compiler version number to
 # decide whether or not to use the Manifest Tool command to embed the
-# linker created .manifest file into a library or product target. 
+# linker created .manifest file into a library or product target.
 # useManifestTool.pl returns 0(don't use) or 1(use).
 #
 MT.exe = mt.exe -nologo -manifest $@.manifest
@@ -299,4 +299,3 @@ MT_EXE_COMMAND_NO = $(MT.exe) "-outputresource:$@;\#1"
 MT_EXE_COMMAND1 = $(MT_EXE_COMMAND_$(STATIC_BUILD))
 MT_DLL_COMMAND = $(MT_DLL_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
 MT_EXE_COMMAND = $(MT_EXE_COMMAND$(shell $(PERL) $(TOOLS)/useManifestTool.pl))
-

@@ -146,8 +146,6 @@ epicsShareFunc long dbNextRecord(DBENTRY *pdbentry);
 epicsShareFunc int  dbGetNRecords(DBENTRY *pdbentry);
 epicsShareFunc int  dbGetNAliases(DBENTRY *pdbentry);
 epicsShareFunc char * dbGetRecordName(DBENTRY *pdbentry);
-epicsShareFunc long dbRenameRecord(DBENTRY *pdbentry,
-    const char *newName);
 epicsShareFunc long dbCopyRecord(DBENTRY *pdbentry,
     const char *newRecordName, int overWriteOK);
 

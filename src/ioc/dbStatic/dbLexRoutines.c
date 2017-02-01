@@ -50,6 +50,9 @@ epicsExportAddress(int,dbBptNotMonotonic);
 epicsShareDef int dbQuietMacroWarnings=0;
 epicsExportAddress(int,dbQuietMacroWarnings);
 
+epicsShareDef int dbRecordsAbcSorted=0;
+epicsExportAddress(int,dbRecordsAbcSorted);
+
 /*private routines */
 static void yyerrorAbort(char *str);
 static void allocTemp(void *pvoid);
@@ -194,7 +197,16 @@ static void freeInputFileList(void)
 	free((void *)pinputFileNow);
     }
 }
-
+
+static
+int cmp_dbRecordNode(const ELLNODE *lhs, const ELLNODE *rhs)
+{
+    dbRecordNode *LHS = (dbRecordNode*)lhs,
+                 *RHS = (dbRecordNode*)rhs;
+
+    return strcmp(LHS->recordname, RHS->recordname);
+}
+
 static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	const char *path,const char *substitutions)
 {
@@ -239,24 +251,25 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
         macSuppressWarning(macHandle,dbQuietMacroWarnings);
     }
     pinputFile = dbCalloc(1,sizeof(inputFile));
-    if(filename) {
-	pinputFile->filename = macEnvExpand(filename);
+    if (filename) {
+        pinputFile->filename = macEnvExpand(filename);
     }
-    if(!fp) {
-	FILE	*fp1;
+    if (!fp) {
+        FILE *fp1 = 0;
 
-	if(pinputFile->filename) pinputFile->path = dbOpenFile(pdbbase,pinputFile->filename,&fp1);
-	if(!pinputFile->filename || !fp1) {
-	    errPrintf(0,__FILE__, __LINE__,
-		"dbRead opening file %s",pinputFile->filename);
-	    free((void *)pinputFile->filename);
-	    free((void *)pinputFile);
+        if (pinputFile->filename)
+            pinputFile->path = dbOpenFile(pdbbase, pinputFile->filename, &fp1);
+        if (!pinputFile->filename || !fp1) {
+            errPrintf(0, __FILE__, __LINE__,
+                "dbRead opening file %s",pinputFile->filename);
+            free(pinputFile->filename);
+            free(pinputFile);
             status = -1;
             goto cleanup;
-	}
-	pinputFile->fp = fp1;
+        }
+        pinputFile->fp = fp1;
     } else {
-	pinputFile->fp = fp;
+        pinputFile->fp = fp;
     }
     pinputFile->line_num = 0;
     pinputFileNow = pinputFile;
@@ -294,6 +307,15 @@ static long dbReadCOM(DBBASE **ppdbbase,const char *filename, FILE *fp,
 	dbFinishEntry(pdbEntry);
     }
 cleanup:
+    if(dbRecordsAbcSorted) {
+        ELLNODE *cur;
+        for(cur = ellFirst(&pdbbase->recordTypeList); cur; cur=ellNext(cur))
+        {
+            dbRecordType *rtype = CONTAINER(cur, dbRecordType, node);
+
+            ellSortStable(&rtype->recList, &cmp_dbRecordNode);
+        }
+    }
     if(macHandle) macDeleteHandle(macHandle);
     macHandle = NULL;
     if(mac_input_buffer) free((void *)mac_input_buffer);

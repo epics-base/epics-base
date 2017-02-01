@@ -541,8 +541,11 @@ MAIN(chfPluginTest)
     dbChannel *pch;
     db_field_log *pfl;
 
-#if defined(WIN32) && (!defined(_MINGW) || __MSVCRT_VERSION__ >= 0x0800)
+#ifdef _WIN32
+#if (defined(_MSC_VER) && _MSC_VER < 1900) || \
+    (defined(_MINGW) && defined(_TWO_DIGIT_EXPONENT))
     _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #endif
 
     testPlan(1433);

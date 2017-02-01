@@ -14,7 +14,7 @@ build$(DIVIDER)$(ARCH) build: buildInstall
 install$(DIVIDER)$(ARCH) install: buildInstall
 $(ARCH): buildInstall
 
-ifeq ($(filter $(ARCH),$(BUILD_ARCHS)),$(ARCH))
+ifeq ($(filter $(ARCH),$(BUILD_ARCHS)),$(strip $(ARCH)))
     buildInstall$(DIVIDER)$(ARCH) buildInstall: $(TARGETS)
 
     clean$(DIVIDER)$(ARCH) clean:
@@ -35,4 +35,3 @@ envPaths: $(wildcard $(TOP)/configure/RELEASE*) \
 
 realclean:
 	$(RM) cdCommands envPaths dllPath.bat relPaths.sh
-

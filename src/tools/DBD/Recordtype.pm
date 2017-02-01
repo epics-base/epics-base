@@ -106,7 +106,7 @@ sub equals {
     my ($new, $known) = @_;
     return 0 if ! $known->fields;
     return 1 if ! $new->fields;
-    dieContext("Duplicate definition of record type '$a->{NAME}'");
+    dieContext("Duplicate definition of record type '$known->{NAME}'");
 }
 
 sub toDeclaration {

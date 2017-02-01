@@ -1,24 +1,24 @@
                            Installation Instructions
 
-                           EPICS Base Release 3.16.0
+                           EPICS Base Release 3.16.1
 
    --------------------------------------------------------------------------
 
   Table of Contents
 
-     * What is EPICS base?
-     * What is new in this release?
-     * Copyright
-     * Supported platforms
-     * Supported compilers
-     * Software requirements
-     * Host system storage requirements
-     * Documentation
-     * Directory Structure
-     * Build related components
-     * Building EPICS base (Unix and Win32)
-     * Example application and extension
-     * Multiple host platforms
+     *ï¿½What is EPICS base?
+     *ï¿½What is new in this release?
+     *ï¿½Copyright
+     *ï¿½Supported platforms
+     *ï¿½Supported compilers
+     *ï¿½Software requirements
+     *ï¿½Host system storage requirements
+     *ï¿½Documentation
+     *ï¿½Directory Structure
+     *ï¿½Build related components
+     *ï¿½Building EPICS base (Unix and Win32)
+     *ï¿½Example application and extension
+     *ï¿½Multiple host platforms
 
    --------------------------------------------------------------------------
 

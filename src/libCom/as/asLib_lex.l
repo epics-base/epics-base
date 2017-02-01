@@ -68,7 +68,7 @@ INP{link} {
 \n      { line_num ++;}
 
 .	{
-	char message[20];
+	char message[40];
 	YY_BUFFER_STATE *dummy=0;
 
 	sprintf(message,"invalid character '%c'",yytext[0]);

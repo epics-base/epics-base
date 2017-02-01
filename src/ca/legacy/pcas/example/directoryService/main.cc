@@ -170,7 +170,7 @@ static int parseDirectoryFP (FILE *pf, const char *pFileName)
 
             status = aToIPAddr (hostNameStr, 0u, &ipa);
             if (status) {
-                fprintf (pf, "Unknown host name=\"%s\" (or bad dotted ip addr) in \"%s\" with PV=\"%s\"?\n", 
+                fprintf (stderr, "Unknown host name=\"%s\" (or bad dotted ip addr) in \"%s\" with PV=\"%s\"?\n", 
                     hostNameStr, pFileName, pvNameStr);
                 return -1;
             }

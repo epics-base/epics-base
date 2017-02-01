@@ -18,6 +18,8 @@
 
 #include "caHdrLargeArray.h"
 
+class casStrmClient;
+
 class casCtx {
 public:
 	casCtx();
@@ -41,6 +43,7 @@ private:
 	casChannelI * pChannel;
 	casPVI * pPV;
 	unsigned nAsyncIO; // checks for improper use of async io
+    friend class casStrmClient;
 };
 
 inline const caHdrLargeArray * casCtx::getMsg() const 

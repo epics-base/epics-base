@@ -232,16 +232,17 @@ SOCKET* rsrv_grab_tcp(unsigned short *port)
                     ok = 0;
                     break;
                 }
-                /* if SOCK_EADDRINUSE then try again with a different port number.
-                 * otherwise, fail hard
+                /* if SOCK_EADDRINUSE or SOCK_EACCES try again with a different
+                 * port number, otherwise fail hard.
                  */
-                if(errcode!=SOCK_EADDRINUSE) {
+                if (errcode != SOCK_EADDRINUSE &&
+                    errcode != SOCK_EACCES) {
                     char name[40];
                     char sockErrBuf[64];
                     epicsSocketConvertErrnoToString (
                         sockErrBuf, sizeof ( sockErrBuf ) );
                     ipAddrToDottedIP(&scratch.ia, name, sizeof(name));
-                    cantProceed( "CAS: Socket bind %s error was \"%s\"\n",
+                    cantProceed( "CAS: Socket bind %s error was %s\n",
                         name, sockErrBuf );
                 }
                 ok = 0;
@@ -852,7 +853,7 @@ static void log_one_client (struct client *client, unsigned level)
         printf(
         "\tUnprocessed request bytes = %u, Undelivered response bytes = %u\n",
             client->recv.cnt - client->recv.stk,
-            client->send.stk ); 
+            client->send.stk );
         printf(
         "\tState = %s%s%s\n",
             state[client->disconnect?1:0],

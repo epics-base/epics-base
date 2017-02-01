@@ -5,7 +5,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in file LICENSE that is included with this distribution. 
+# in file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 # Convert configure/RELEASE file(s) into something else.
@@ -121,15 +121,16 @@ sub dllPath {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
     print OUT "\@ECHO OFF\n";
-    print OUT "PATH \%PATH\%;", join(';', binDirs()), "\n";
+    # This SET syntax is essential for supporting embedded spaces and '&'
+    # characters in both the PATH variable and the new directory components
+    print OUT "SET \"PATH=", join(';', binDirs(), '%PATH%'), "\"\n";
     close OUT;
 }
 
 sub relPaths {
     unlink $outfile;
     open(OUT, ">$outfile") or die "$! creating $outfile";
-    print OUT "export PATH=\$PATH:",
-        join(':', map {m/\s/ ? "\"$_\"" : $_ } binDirs()), "\n";
+    print OUT "export PATH=\"", join(':', binDirs(), '$PATH'), "\"\n";
     close OUT;
 }
 
@@ -153,21 +154,21 @@ sub binDirs {
 sub cdCommands {
     die "Architecture not set (use -a option)" unless ($arch);
     my @includes = grep !m/^(RULES | TEMPLATE_TOP)$/x, @apps;
-    
+
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
-    
+
     my $startup = $cwd;
     $startup =~ s/^$root/$iocroot/o if ($opt_t);
     $startup =~ s/([\\"])/\\$1/g; # escape back-slashes and double-quotes
-    
+
     print OUT "startup = \"$startup\"\n";
-    
+
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
-    
+
     print OUT "putenv(\"IOC=$ioc\")\n";
-    
+
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
@@ -189,15 +190,15 @@ sub cdCommands {
 #
 sub envPaths {
     my @includes = grep !m/^ (RULES | TEMPLATE_TOP) $/x, @apps;
-    
+
     unlink($outfile);
     open(OUT,">$outfile") or die "$! creating $outfile";
-    
+
     my $ioc = $cwd;
     $ioc =~ s/^.*\///;  # iocname is last component of directory name
-    
+
     print OUT "epicsEnvSet(\"IOC\",\"$ioc\")\n";
-    
+
     foreach my $app (@includes) {
         my $iocpath = my $path = $macros{$app};
         $iocpath =~ s/^$root/$iocroot/o if ($opt_t);
@@ -224,7 +225,7 @@ sub checkRelease {
         expandRelease(\%check);
         delete $check{TOP};
         delete $check{EPICS_HOST_ARCH};
-        
+
         while (my ($parent, $ppath) = each %check) {
             if (exists $macros{$parent} &&
                 AbsPath($macros{$parent}) ne AbsPath($ppath)) {
@@ -269,4 +270,3 @@ sub checkRelease {
     print "\n" if $status;
     exit $status;
 }
-

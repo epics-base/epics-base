@@ -172,6 +172,7 @@ int pft(const char *pname, const char *pvalue)
             ca_dump_dbr(DBR_ENUM,1, buffer);
     }
     printf("\n");
+    dbChannelDelete(chan);
     return (0);
 }
 
@@ -231,6 +232,7 @@ int tpn(const char *pname, const char *pvalue)
     ppn = calloc(1, sizeof(processNotify));
     if (!ppn) {
         printf("calloc failed\n");
+        dbChannelDelete(chan);
         return -1;
     }
     ppn->requestType = putProcessRequest;
@@ -241,6 +243,8 @@ int tpn(const char *pname, const char *pvalue)
     ptpnInfo = calloc(1, sizeof(tpnInfo));
     if (!ptpnInfo) {
         printf("calloc failed\n");
+        free(ppn);
+        dbChannelDelete(chan);
         return -1;
     }
     ptpnInfo->ppn = ppn;

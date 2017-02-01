@@ -3,13 +3,14 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-  <title>EPICS Base R3.16.0.2 Release Notes</title>
+  <title>EPICS Base R3.16.1 Release Notes</title>
 </head>
 
 <body lang="en">
-<h1 align="center">EPICS Base Release 3.16.0.2</h1>
+<h1 align="center">EPICS Base Release 3.16.1</h1>
 
 <p style="color:red">This version of EPICS Base has not been released yet.</p>
+
 
 <h2 align="center">Changes made on the 3.16 branch since 3.16.0.1</h2>
 <!-- Insert new items immediately below this template ...
@@ -138,12 +139,116 @@ callback.h header and removed the need for dbScan.c to reach into the internals
 of its CALLBACK objects.</p>
 
 
-<h2 align="center">Changes from the 3.15 branch since 3.15.4</h2>
+<h2 align="center">Changes from the 3.15 branch since 3.15.5</h2>
+
 <!-- Insert inherited items immediately below here ... -->
 
 
-<h2 align="center">Changes from the 3.14 branch since 3.15.4</h2>
+<h2 align="center">Changes from the 3.14 branch since 3.15.5</h2>
+
 <!-- Insert inherited items immediately below here ... -->
+
+<h3>Server bind issue on Windows</h3>
+
+<p>When a National Instruments network variables CA server is already running on
+a Windows system and an IOC or PCAS server is started, the IOC's attempt to
+bind a TCP socket to the CA server port number fails, but Windows returns a
+different error status value than the IOC is expecting in that circumstance
+(because the National Instruments code requests exclusive use of that port,
+unlike the EPICS code) so the IOC fails to start properly. The relevent EPICS
+bind() checks have now been updated so the IOC will request that a dynamic port
+number be allocated for this TCP socket instead when this happens.</p>
+
+<h3>Checking Periodic Scan Rates</h3>
+
+<p>Code has been added to the IOC startup to better protect it against bad
+periodic scan rates, including against locales where <q><tt>.</tt></q> is not
+accepted as a decimal separator character. If the scan period in a menuScan
+choice string cannot be parsed, the associated periodic scan thread will no
+longer be started by the IOC and a warning message will be displayed at iocInit
+time. The <tt>scanppl</tt> command will also flag the faulty menuScan value.</p>
+
+
+<h2 align="center">Changes made between 3.15.4 and 3.15.5</h2>
+
+<h3>dbStatic Library Speedup and Cleanup</h3>
+
+<p>Loading of database files has been optimized to avoid overproportionally
+long loading times for large databases. As a part of this, the alphabetical
+ordering of records instances (within a record type) has been dropped. In the
+unexpected case that applications were relying on the alphabetic order, setting
+<tt>dbRecordsAbcSorted = 1</tt> before loading the databases will retain the
+old behavior.</p>
+
+<p>The routine <tt>dbRenameRecord()</tt> has been removed, as it was intended
+to be used by database configuration tools linked against a host side version
+of the dbStatic library that is not being built anymore.</p>
+
+<h3>Launchpad Bug-fixes</h3>
+
+<p>In addition to the more detailed change descriptions below, the following
+Launchpad bugs have also been fixed in this release:</p>
+
+<ul>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1440186">
+    #1440186</a> Crash due to a too small buffer being provided in
+    dbContextReadNotifyCache</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1479316">
+    #1479316</a> Some data races found using Helgrind</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1495833">
+    #1495833</a> biRecord prompt groups are nonsensical</li>
+  <li><a href="https://bugs.launchpad.net/epics-base/+bug/1606848">
+    #1606848</a> WSAIoctl SIO_GET_INTERFACE_LIST failed in Windows</li>
+</ul>
+
+<h3>Whole-Program Optimization for MS Visual Studio Targets</h3>
+
+<p>When using the Microsoft compilers a new build system variable is provided
+that controls whether whole program optimization is used or not. For static
+builds using Visual Studio 2010 this optimization must be disabled. This is
+controlled in the files configure/os/CONFIG_SITE.Common.windows-x64-static and
+configure/os/CONFIG_SITE.Common.win32-x86-static by setting the variable
+<tt>OPT_WHOLE_PROGRAM&nbsp;=&nbsp;NO</tt> to override the default value
+<tt>YES</tt> that would otherwise be used.</p>
+
+<p>Note that enabling this optimization slows down the build process. It is not
+possible to selectively disable this optimization, when building a particular
+module say; Microsoft's linker will restart itself automatically with the
+<tt>-LTCG</tt> flag set and display a warning if it is asked to link any object
+files that were compiled with the <tt>-GL</tt> flag.</p>
+
+<h3>Add dynamic (variable length) array support to PCAS</h3>
+
+<p>Dynamic array sizing support was added to the IOC server (RSRV) in the
+Base-3.14.12 release, but has not until now been supported in the <q>Portable
+Channel Access Server</q> (PCAS). Channel Access server applications using the
+PCAS may not need to be modified at all; if they already push monitors with
+different gdd array lengths, those variable sizes will be forwarded to any CA
+clients who have requested variable length updates. The example CAS server
+application has been modified to demonstrate this feature.</p>
+
+<p>In implementing the above, the gdd method <tt>gdd::put(const gdd *)</tt> now
+copies the full-sized array from the source gdd if the destination gdd is of
+type array, has no allocated memory and a boundary size of 0.</p>
+
+<h3>Additional epicsTime conversion</h3>
+
+<p>The EPICS timestamp library (epicsTime) inside libCom's OSI layer has
+been extended by routines that convert from <tt>struct tm</tt> to the EPICS
+internal <tt>epicsTime</tt> type, assuming UTC - i.e. without going through
+the timezone mechanism. This solves issues with converting from the structured
+type to the EPICS timestamp at driver level from multiple threads at a high
+repetition rate, where the timezone mechanism was blocking on file access.</p>
+
+<h3>MinGW Cross-builds from Linux</h3>
+
+<p>The build configuration files that allow cross-building of the 32-bit
+win32-x86-mingw cross-target have been adjusted to default to building shared
+libraries (DLLs) as this is now supported by recent MinGW compilers. The 64-bit
+windows-x64-mingw cross-target was already being built that way by default. The
+configuration options to tell the minGW cross-compiler to link programs with
+static versions of the compiler support libraries have now been moved into the
+CONFIG_SITE.linux-x86.<i>target</i> files.</p>
 
 <h3>General Time updates</h3>
 

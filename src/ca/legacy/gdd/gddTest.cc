@@ -308,7 +308,7 @@ void gdd::test()
 	pdd->convertOffsetsToAddress();
 	pdd->dump();
 	pdd->unreference();
-	delete buf;
+	delete [] buf;
 }
 #endif
 
@@ -510,7 +510,7 @@ void gddContainer::test(void)
 	fprintf(stderr,"=====RE-DUMP OF ORIGINAL CONTAINER:\n");
 	dump();
 	cdd1->unreference();
-	delete buf;
+	delete [] buf;
 
 	// test copy(), Dup(), copyInfo()
 	fprintf(stderr,"=======CREATING TEST CONTAINER FOR *COPY* TEST:\n");

@@ -69,13 +69,13 @@ successfully initialized from the link.</li>
 <li>Code like this:
 
 <pre>
-    if ((prec->dol.type != CONSTANT) &&
+    if ((prec->dol.type != CONSTANT) &amp;&amp;
 </pre>
 
 should usually become:
 
 <pre>
-    if (!dbLinkIsConstant(&prec->dol) &&
+    if (!dbLinkIsConstant(&amp;prec->dol) &amp;&amp;
 </pre>
 </li>
 

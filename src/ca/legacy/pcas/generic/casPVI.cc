@@ -26,6 +26,11 @@
 #include "casAsyncIOI.h"
 #include "casMonitor.h"
 
+
+// Use casErrMessage instead of errMessage to show PV name
+#define casErrMessage(S, PM) \
+         errPrintf(S, __FILE__, __LINE__, ", %s, %s", getName(), PM)
+
 casPVI::casPVI ( casPV & intf ) : 
 	pCAS ( NULL ), pPV ( & intf ), nMonAttached ( 0u ), 
         nIOAttached ( 0u ), deletePending ( false ) {}
@@ -146,7 +151,7 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
     //	gddArray(int app, aitEnum prim, int dimen, ...);
     gdd * pTmp = new gddScalar ( gddAppType_enums );
     if ( pTmp == NULL ) {
-        errMessage ( S_cas_noMemory, 
+        casErrMessage ( S_cas_noMemory, 
             "unable to create gdd for read of application type \"enums\" string"
             " conversion table for enumerated PV" );
         return S_cas_noMemory;
@@ -156,8 +161,8 @@ caStatus casPVI::updateEnumStringTable ( casCtx & ctxIn )
          gddAppType_enums, MAX_ENUM_STATES );
     if ( status != S_cas_success ) {
         pTmp->unreference ();
-        errMessage ( status, 
-            "unable to to config gdd for read of application type \"enums\" string"
+        casErrMessage ( status, 
+            "unable to config gdd for read of application type \"enums\" string"
             " conversion table for enumerated PV");
         return status;
     }
@@ -187,9 +192,9 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
     epicsGuard < epicsMutex > guard ( this->mutex );
     
     if ( resp.isContainer() ) {
-        errMessage ( S_cas_badType, 
-            "application type \"enums\" string conversion table for"
-            " enumerated PV was a container (expected vector of strings)" );
+        casErrMessage ( S_cas_badType, 
+            "Invalid \"enums\" string conversion table for"
+            " enumerated PV (container instead of vector of strings)" );
         return;
     }
     
@@ -247,13 +252,12 @@ void casPVI::updateEnumStringTableAsyncCompletion ( const gdd & resp )
             }
         }
         else {
-            errMessage ( S_cas_badType, 
-                "application type \"enums\" string conversion"
-                " table for enumerated PV isnt a string type?" );
+            casErrMessage( S_cas_badType,
+                "bad \"enums\" string conversion table for enumerated PV" );
         }
     }
     else {
-        errMessage ( S_cas_badType, 
+        casErrMessage ( S_cas_badType, 
             "application type \"enums\" string conversion table"
             " for enumerated PV was multi-dimensional"
             " (expected vector of strings)" );

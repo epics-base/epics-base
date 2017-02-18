@@ -227,6 +227,7 @@ static long process(struct dbCommon *pcommon)
         return 0;
 
     prec->pact = TRUE;
+    recGblGetTimeStamp(prec);
 
     /* Push the output link values */
     if (!status) {
@@ -237,7 +238,6 @@ static long process(struct dbCommon *pcommon)
                 (&prec->neva)[i]);
     }
 
-    recGblGetTimeStamp(prec);
     monitor(prec);
     recGblFwdLink(prec);
     prec->pact = FALSE;

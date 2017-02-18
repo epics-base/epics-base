@@ -226,6 +226,7 @@ static long process(struct dbCommon *pcommon)
     struct calcoutRecord *prec = (struct calcoutRecord *)pcommon;
     rpvtStruct *prpvt = prec->rpvt;
     int doOutput;
+    unsigned char    pact=prec->pact;
 
     if (!prec->pact) {
         prec->pact = TRUE;
@@ -241,6 +242,12 @@ static long process(struct dbCommon *pcommon)
             }
         }
         checkAlarms(prec);
+
+        if ( !pact ) {
+            /* Update the timestamp before writing output values so it
+             * will be uptodate if any downstream records fetch it via TSEL */
+            recGblGetTimeStamp(prec);
+        }
         /* check for output link execution */
         switch (prec->oopt) {
         case calcoutOOPT_Every_Time:
@@ -269,7 +276,6 @@ static long process(struct dbCommon *pcommon)
         if (doOutput) {
             if (prec->odly > 0.0) {
                 prec->dlya = 1;
-                recGblGetTimeStamp(prec);
                 db_post_events(prec, &prec->dlya, DBE_VALUE);
                 callbackRequestProcessCallbackDelayed(&prpvt->doOutCb,
                         prec->prio, prec, (double)prec->odly);
@@ -281,11 +287,12 @@ static long process(struct dbCommon *pcommon)
                 prec->pact = TRUE;
             }
         }
-        recGblGetTimeStamp(prec);
     } else { /* pact == TRUE */
+        /* Update timestamp again for asynchronous devices */
+        recGblGetTimeStamp(prec);
+
         if (prec->dlya) {
             prec->dlya = 0;
-            recGblGetTimeStamp(prec);
             db_post_events(prec, &prec->dlya, DBE_VALUE);
             /* Make pact FALSE for asynchronous device support*/
             prec->pact = FALSE;
@@ -294,7 +301,6 @@ static long process(struct dbCommon *pcommon)
             prec->pact = TRUE;
         } else {/*Device Support is asynchronous*/
             writeValue(prec);
-            recGblGetTimeStamp(prec);
         }
     }
     monitor(prec);

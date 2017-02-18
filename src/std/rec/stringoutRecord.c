@@ -124,9 +124,8 @@ static long init_record(struct dbCommon *pcommon, int pass)
         if(status)
             return status;
     }
-
-    strcpy(prec->oval, prec->val);
-    return 0;
+    strncpy(prec->oval,prec->val,sizeof(prec->oval));
+    return(0);
 }
 
 static long process(struct dbCommon *pcommon)

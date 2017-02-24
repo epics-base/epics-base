@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE lsiRecord
+
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"

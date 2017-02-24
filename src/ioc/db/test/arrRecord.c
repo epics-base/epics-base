@@ -21,6 +21,8 @@
 
 #include <stdio.h>
 
+#define REC_TYPE arrRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbAccess.h"

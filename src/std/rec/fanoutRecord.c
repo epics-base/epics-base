@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE fanoutRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

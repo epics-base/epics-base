@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE subRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsMath.h"

@@ -21,6 +21,8 @@
 #include <math.h>
 #include <limits.h>
 
+#define REC_TYPE histogramRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE biRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

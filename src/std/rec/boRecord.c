@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE boRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

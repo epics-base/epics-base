@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE aiRecord
+
 #include "dbDefs.h"
 #include "errlog.h"
 #include "epicsMath.h"
@@ -47,8 +49,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(void *, int);
-static long process(void *);
+static long init_record(aiRecord *, int);
+static long process(aiRecord *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -102,9 +104,8 @@ static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);
 static long readValue(aiRecord *prec);
 
-static long init_record(void *precord,int pass)
+static long init_record(aiRecord *prec, int pass)
 {
-    aiRecord	*prec = (aiRecord *)precord;
     aidset	*pdset;
     double	eoff = prec->eoff, eslo = prec->eslo;
 
@@ -150,9 +151,8 @@ static long init_record(void *precord,int pass)
     return(0);
 }
 
-static long process(void *precord)
+static long process(aiRecord *prec)
 {
-	aiRecord	*prec = (aiRecord *)precord;
 	aidset		*pdset = (aidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;

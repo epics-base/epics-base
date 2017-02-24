@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE lsoRecord
+
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"

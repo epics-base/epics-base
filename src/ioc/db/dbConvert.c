@@ -1636,7 +1636,7 @@ static long getFloatString(
     char *pbuffer = (char *) pto;
     float *psrc = (float *) paddr->pfield;
     long status = 0;
-    int precision = 6;
+    long precision = 6;
     struct rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
@@ -1849,7 +1849,7 @@ static long getDoubleString(
     char *pbuffer = (char *) pto;
     double *psrc = (double *) paddr->pfield;
     long        status = 0;
-    int         precision = 6;
+    long         precision = 6;
     struct rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
@@ -3939,7 +3939,7 @@ static long putFloatString(
     const float *pbuffer = (const float *) pfrom;
     char        *pdest = (char *) paddr->pfield;
     long        status = 0;
-    int         precision = 6;
+    long         precision = 6;
     struct rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 
@@ -4152,7 +4152,7 @@ static long putDoubleString(
     const double *pbuffer = (const double *) pfrom;
     char        *pdest = (char *) paddr->pfield;
     long        status = 0;
-    int         precision = 6;
+    long        precision = 6;
     struct rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 

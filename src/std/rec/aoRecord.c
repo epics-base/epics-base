@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE aoRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsMath.h"

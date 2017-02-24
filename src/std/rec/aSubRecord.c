@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE aSubRecord
+
 #include "alarm.h"
 #include "cantProceed.h"
 #include "dbDefs.h"

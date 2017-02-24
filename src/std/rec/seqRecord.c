@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define REC_TYPE seqRecord
+
 #include "alarm.h"
 #include "callback.h"
 #include "dbAccess.h"

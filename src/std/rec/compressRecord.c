@@ -19,6 +19,8 @@
 #include <string.h>
 #include <math.h>
 
+#define REC_TYPE compressRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

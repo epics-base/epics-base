@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE waveformRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsString.h"

@@ -20,6 +20,8 @@
 #include <string.h>
 #include <math.h>
 
+#define REC_TYPE longinRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

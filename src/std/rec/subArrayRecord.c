@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE subArrayRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"

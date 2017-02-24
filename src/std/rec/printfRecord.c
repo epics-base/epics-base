@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#define REC_TYPE printfRecord
+
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"

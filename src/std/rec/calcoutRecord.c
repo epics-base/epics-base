@@ -21,6 +21,8 @@
 #include <string.h>
 #include <math.h>
 
+#define REC_TYPE calcoutRecord
+
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"

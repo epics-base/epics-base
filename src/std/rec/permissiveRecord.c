@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define REC_TYPE permissiveRecord
+
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "dbAccess.h"

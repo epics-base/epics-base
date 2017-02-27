@@ -635,11 +635,13 @@ void cac::transferChanToVirtCircuit (
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse ( 
         guard, *pChan, currentTime );
-    piiu->installChannel ( 
-        guard, *pChan, sid, typeCode, count );
+    if ( piiu ) {
+        piiu->installChannel (
+                    guard, *pChan, sid, typeCode, count );
 
-    if ( newIIU ) {
-        piiu->start ( guard );
+        if ( newIIU ) {
+            piiu->start ( guard );
+        }
     }
 }
 

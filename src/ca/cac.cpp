@@ -1306,9 +1306,11 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->exception ( mgr.cbGuard, guard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+
+        // remove from the list under lock
+        this->msgMultiPVList.remove ( mfmdpv );
     }
-    // remove from the list and delete msg object
-    this->msgMultiPVList.remove ( mfmdpv );
+    // delete msg object
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
 }

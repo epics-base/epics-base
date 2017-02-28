@@ -50,6 +50,14 @@ void testGetString(void)
     testdbGetStringEqual("recoverwrite.DISV", "0");
 }
 
+static
+void testStringMax(void)
+{
+    testDiag("testStringMax()");
+
+    testdbGetStringEqual("recmax.DISA", "-1");
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
@@ -62,6 +70,8 @@ MAIN(dbPutGet)
     testdbReadDatabase("dbPutGetTest.db", NULL, NULL);
 
     testGetString();
+
+    testStringMax();
 
     testdbCleanup();
 

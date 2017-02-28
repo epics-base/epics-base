@@ -23,13 +23,16 @@
 #include "epicsTypes.h"
 #include "errMdef.h"
 
-#define epicsExportSharedSymbols
+#include "epicsExport.h" /* #define epicsExportSharedSymbols */
 #include "dbBase.h"
 #include "dbCommon.h"
 #include "dbStaticLib.h"
 #include "dbStaticPvt.h"
 #include "devSup.h"
 #include "special.h"
+
+epicsShareDef int dbConvertStrict = 0;
+epicsExportAddress(int, dbConvertStrict);
 
 static long do_nothing(struct dbCommon *precord) { return 0; }
 
@@ -372,39 +375,85 @@ long dbPutStringNum(DBENTRY *pdbentry, const char *pstring)
 {
     dbFldDes *pflddes = pdbentry->pflddes;
     void *pfield = pdbentry->pfield;
+    long status;
+    epicsUInt64 u64;
+    epicsInt64 i64;
 
     if (!pfield)
         return S_dbLib_fieldNotFound;
 
     /* empty string is the same as writing numeric zero */
-    if(pstring[0]=='\0')
+    if (pstring[0] == '\0')
         pstring = "0";
 
     switch (pflddes->field_type) {
     case DBF_CHAR:
-        return epicsParseInt8(pstring, pfield, 0, NULL);
-
-    case DBF_UCHAR:
-        return epicsParseUInt8(pstring, pfield, 0, NULL);
+        if (dbConvertStrict)
+            return epicsParseInt8(pstring, pfield, 0, NULL);
+        goto lax_signed;
 
     case DBF_SHORT:
-        return epicsParseInt16(pstring, pfield, 0, NULL);
-
-    case DBF_USHORT:
-    case DBF_ENUM:
-        return epicsParseUInt16(pstring, pfield, 0, NULL);
+        if (dbConvertStrict)
+            return epicsParseInt16(pstring, pfield, 0, NULL);
+        goto lax_signed;
 
     case DBF_LONG:
-        return epicsParseInt32(pstring, pfield, 0, NULL);
-
-    case DBF_ULONG:
-        return epicsParseUInt32(pstring, pfield, 0, NULL);
+        if (dbConvertStrict)
+            return epicsParseInt32(pstring, pfield, 0, NULL);
+        goto lax_signed;
 
     case DBF_INT64:
-        return epicsParseInt64(pstring, pfield, 0, NULL);
+        if (dbConvertStrict)
+            return epicsParseInt64(pstring, pfield, 0, NULL);
+
+    lax_signed:
+        status = epicsParseInt64(pstring, &i64, 0, NULL);
+        if (status)
+            return status;
+
+        switch (pflddes->field_type) {
+        case DBF_CHAR:  *(epicsInt8 *)pfield = (epicsInt8) i64; break;
+        case DBF_SHORT: *(epicsInt16*)pfield = (epicsInt16)i64; break;
+        case DBF_LONG:  *(epicsInt32*)pfield = (epicsInt32)i64; break;
+        case DBF_INT64: *(epicsInt64*)pfield = (epicsInt64)i64; break;
+        default: break;
+        }
+        return status;
+
+    case DBF_UCHAR:
+        if (dbConvertStrict)
+            return epicsParseUInt8(pstring, pfield, 0, NULL);
+        goto lax_unsigned;
+
+    case DBF_ENUM:
+    case DBF_USHORT:
+        if (dbConvertStrict)
+            return epicsParseUInt16(pstring, pfield, 0, NULL);
+        goto lax_unsigned;
+
+    case DBF_ULONG:
+        if (dbConvertStrict)
+            return epicsParseUInt32(pstring, pfield, 0, NULL);
+        goto lax_unsigned;
 
     case DBF_UINT64:
-        return epicsParseUInt64(pstring, pfield, 0, NULL);
+        if (dbConvertStrict)
+            return epicsParseUInt64(pstring, pfield, 0, NULL);
+
+    lax_unsigned:
+        status = epicsParseUInt64(pstring, &u64, 0, NULL);
+        if (status)
+            return status;
+
+        switch (pflddes->field_type) {
+        case DBF_UCHAR:  *(epicsUInt8 *)pfield = (epicsInt8) u64; break;
+        case DBF_ENUM:
+        case DBF_USHORT: *(epicsUInt16*)pfield = (epicsInt16)u64; break;
+        case DBF_ULONG:  *(epicsUInt32*)pfield = (epicsInt32)u64; break;
+        case DBF_UINT64: *(epicsUInt64*)pfield = (epicsInt64)u64; break;
+        default: break;
+        }
+        return status;
 
     case DBF_FLOAT:
         return epicsParseFloat32(pstring, pfield, NULL);

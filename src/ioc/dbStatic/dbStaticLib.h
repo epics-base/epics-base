@@ -244,6 +244,7 @@ epicsShareFunc void dbCatString(char **string, int *stringLength,
     char *pnew, char *separator);
 
 extern int dbStaticDebug;
+extern int dbConvertStrict;
 
 #define S_dbLib_recordTypeNotFound (M_dbLib|1) /* Record Type does not exist */
 #define S_dbLib_recExists (M_dbLib|3)          /* Record Already exists */

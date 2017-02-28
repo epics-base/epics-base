@@ -29,3 +29,7 @@ record(x, "recoverwrite") {
     field(DISA, "")
     field(DISV, "")
 }
+
+record(x, "recmax") {
+    field(DISA, "0xffffffff")
+}

@@ -68,7 +68,7 @@ static void testLinkParse(void)
 {
     const struct testParseDataT *td = testParseData;
     dbLinkInfo info;
-    testDiag("link parsing");
+    testDiag("\n# Checking link parsing\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -81,22 +81,27 @@ static void testLinkParse(void)
     testIocInitOk();
     eltc(1);
 
-    for(;td->str; td++) {
+    for (;td->str; td++) {
         int i, N;
-        testDiag("Parse \"%s\"", td->str);
-        testOk1(dbParseLink(td->str, DBF_INLINK, &info)==0);
-        testOk1(info.ltype==td->info.ltype);
-        if(td->info.target)
+        testDiag("Parsing \"%s\"", td->str);
+        testOk(dbParseLink(td->str, DBF_INLINK, &info) == 0, "Parser returned OK");
+        if (!testOk(info.ltype == td->info.ltype, "Link type value"))
+            testDiag("Expected %d, got %d", td->info.ltype, info.ltype);
+        if (td->info.target)
             testStrcmp(0, info.target, td->info.target);
-        if(info.ltype==td->info.ltype) {
-            switch(info.ltype) {
+        if (info.ltype == td->info.ltype) {
+            switch (info.ltype) {
             case PV_LINK:
-                testOk1(info.modifiers==td->info.modifiers);
+                if (!testOk(info.modifiers == td->info.modifiers,
+                        "PV Link modifier flags"))
+                    testDiag("Expected %d, got %d", td->info.modifiers,
+                        info.modifiers);
                 break;
             case VME_IO:
+            case CAMAC_IO:
                 testStrcmp(0, info.hwid, td->info.hwid);
                 N = strlen(td->info.hwid);
-                for(i=0; i<N; i++)
+                for (i=0; i<N; i++)
                     testOk(info.hwnums[i]==td->info.hwnums[i], "%d == %d",
                            info.hwnums[i], td->info.hwnums[i]);
             }
@@ -125,7 +130,7 @@ static void testLinkFailParse(void)
 {
     const char * const *td = testParseFailData;
     dbLinkInfo info;
-    testDiag("link parsing of invalid input");
+    testDiag("\n# Check parsing of invalid inputs\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -139,8 +144,8 @@ static void testLinkFailParse(void)
     eltc(1);
 
     for(;*td; td++) {
-        testDiag("Expect failure \"%s\"", *td);
-        testOk1(dbParseLink(*td, DBF_INLINK, &info)==S_dbLib_badField);
+        testOk(dbParseLink(*td, DBF_INLINK, &info) == S_dbLib_badField,
+            "dbParseLink correctly rejected \"%s\"", *td);
     }
 
     testIocShutdownOk();
@@ -180,7 +185,7 @@ static void testCADBSet(void)
     const struct testDataT *td = testSetData;
     xRecord *prec;
     DBLINK *plink;
-    testDiag("DB/CA link retargeting");
+    testDiag("\n# Checking DB/CA link retargeting\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -197,21 +202,22 @@ static void testCADBSet(void)
     plink = &prec->lnk;
 
     for (;td->linkstring;td++) {
-        testDiag("x1.LNK <- \"%s\"", td->linkstring);
+        testDiag("Trying field value \"%s\"", td->linkstring);
 
         testdbPutFieldOk("x1.LNK", DBF_STRING, td->linkstring);
         if (td->linkback)
             testdbGetFieldEqual("x1.LNK", DBF_STRING, td->linkback);
         else
             testdbGetFieldEqual("x1.LNK", DBF_STRING, td->linkstring);
-        testOk1(plink->type==td->linkType);
+        if (!testOk(plink->type == td->linkType, "Link type"))
+            testDiag("Expected %d, got %d", td->linkType, plink->type);
 
-        if (plink->type==td->linkType) {
-            switch(td->linkType) {
+        if (plink->type == td->linkType) {
+            switch (td->linkType) {
             case CONSTANT:
-                if(plink->value.constantStr)
-                    testOk1(strcmp(plink->value.constantStr,td->linkstring)==0);
-                else if(td->linkstring[0]=='\0')
+                if (plink->value.constantStr)
+                    testOk1(strcmp(plink->value.constantStr, td->linkstring) == 0);
+                else if (td->linkstring[0]=='\0')
                     testPass("Empty String");
                 else
                     testFail("oops");
@@ -219,7 +225,7 @@ static void testCADBSet(void)
 
             case DB_LINK:
             case CA_LINK:
-                testOk(plink->value.pv_link.pvlMask==td->pvlMask,
+                testOk(plink->value.pv_link.pvlMask == td->pvlMask,
                        "pvlMask %x == %x", plink->value.pv_link.pvlMask, td->pvlMask);
                 break;
             }
@@ -258,65 +264,65 @@ static void testLink(DBLINK *plink, const testHWDataT *td)
 {
     switch(td->ltype) {
     case JSON_LINK:
-        testOk1(strcmp(plink->value.json.string, td->parm)==0);
+        testOk1(strcmp(plink->value.json.string, td->parm) == 0);
         break;
     case VME_IO:
-        testOk1(plink->value.vmeio.card==td->vals[0]);
-        testOk1(plink->value.vmeio.signal==td->vals[1]);
-        testOk1(strcmp(plink->value.vmeio.parm, td->parm)==0);
+        testOk1(plink->value.vmeio.card == td->vals[0]);
+        testOk1(plink->value.vmeio.signal == td->vals[1]);
+        testOk1(strcmp(plink->value.vmeio.parm, td->parm) == 0);
         break;
     case CAMAC_IO:
-        testOk1(plink->value.camacio.b==td->vals[0]);
-        testOk1(plink->value.camacio.c==td->vals[1]);
-        testOk1(plink->value.camacio.n==td->vals[2]);
-        testOk1(plink->value.camacio.a==td->vals[3]);
-        testOk1(plink->value.camacio.f==td->vals[4]);
-        testOk1(strcmp(plink->value.camacio.parm, td->parm)==0);
+        testOk1(plink->value.camacio.b == td->vals[0]);
+        testOk1(plink->value.camacio.c == td->vals[1]);
+        testOk1(plink->value.camacio.n == td->vals[2]);
+        testOk1(plink->value.camacio.a == td->vals[3]);
+        testOk1(plink->value.camacio.f == td->vals[4]);
+        testOk1(strcmp(plink->value.camacio.parm, td->parm) == 0);
         break;
     case AB_IO:
-        testOk1(plink->value.abio.link==td->vals[0]);
-        testOk1(plink->value.abio.adapter==td->vals[1]);
-        testOk1(plink->value.abio.card==td->vals[2]);
-        testOk1(plink->value.abio.signal==td->vals[3]);
-        testOk1(strcmp(plink->value.abio.parm, td->parm)==0);
+        testOk1(plink->value.abio.link == td->vals[0]);
+        testOk1(plink->value.abio.adapter == td->vals[1]);
+        testOk1(plink->value.abio.card == td->vals[2]);
+        testOk1(plink->value.abio.signal == td->vals[3]);
+        testOk1(strcmp(plink->value.abio.parm, td->parm) == 0);
         break;
     case GPIB_IO:
-        testOk1(plink->value.gpibio.link==td->vals[0]);
-        testOk1(plink->value.gpibio.addr==td->vals[1]);
-        testOk1(strcmp(plink->value.gpibio.parm, td->parm)==0);
+        testOk1(plink->value.gpibio.link == td->vals[0]);
+        testOk1(plink->value.gpibio.addr == td->vals[1]);
+        testOk1(strcmp(plink->value.gpibio.parm, td->parm) == 0);
         break;
     case BITBUS_IO:
-        testOk1(plink->value.bitbusio.link==td->vals[0]);
-        testOk1(plink->value.bitbusio.node==td->vals[1]);
-        testOk1(plink->value.bitbusio.port==td->vals[2]);
-        testOk1(plink->value.bitbusio.signal==td->vals[3]);
-        testOk1(strcmp(plink->value.bitbusio.parm, td->parm)==0);
+        testOk1(plink->value.bitbusio.link == td->vals[0]);
+        testOk1(plink->value.bitbusio.node == td->vals[1]);
+        testOk1(plink->value.bitbusio.port == td->vals[2]);
+        testOk1(plink->value.bitbusio.signal == td->vals[3]);
+        testOk1(strcmp(plink->value.bitbusio.parm, td->parm) == 0);
         break;
     case INST_IO:
-        testOk1(strcmp(plink->value.instio.string, td->parm)==0);
+        testOk1(strcmp(plink->value.instio.string, td->parm) == 0);
         break;
     case BBGPIB_IO:
-        testOk1(plink->value.bbgpibio.link==td->vals[0]);
-        testOk1(plink->value.bbgpibio.bbaddr==td->vals[1]);
-        testOk1(plink->value.bbgpibio.gpibaddr==td->vals[2]);
-        testOk1(strcmp(plink->value.bbgpibio.parm, td->parm)==0);
+        testOk1(plink->value.bbgpibio.link == td->vals[0]);
+        testOk1(plink->value.bbgpibio.bbaddr == td->vals[1]);
+        testOk1(plink->value.bbgpibio.gpibaddr == td->vals[2]);
+        testOk1(strcmp(plink->value.bbgpibio.parm, td->parm) == 0);
         break;
     case RF_IO:
-        testOk1(plink->value.rfio.cryo==td->vals[0]);
-        testOk1(plink->value.rfio.micro==td->vals[1]);
-        testOk1(plink->value.rfio.dataset==td->vals[2]);
-        testOk1(plink->value.rfio.element==td->vals[3]);
+        testOk1(plink->value.rfio.cryo == td->vals[0]);
+        testOk1(plink->value.rfio.micro == td->vals[1]);
+        testOk1(plink->value.rfio.dataset == td->vals[2]);
+        testOk1(plink->value.rfio.element == td->vals[3]);
         break;
     case VXI_IO:
-        if(plink->value.vxiio.flag==VXIDYNAMIC) {
-            testOk1(plink->value.vxiio.frame==td->vals[0]);
-            testOk1(plink->value.vxiio.slot==td->vals[1]);
-            testOk1(plink->value.vxiio.signal==td->vals[2]);
+        if(plink->value.vxiio.flag == VXIDYNAMIC) {
+            testOk1(plink->value.vxiio.frame == td->vals[0]);
+            testOk1(plink->value.vxiio.slot == td->vals[1]);
+            testOk1(plink->value.vxiio.signal == td->vals[2]);
         } else {
-            testOk1(plink->value.vxiio.la==td->vals[0]);
-            testOk1(plink->value.vxiio.signal==td->vals[1]);
+            testOk1(plink->value.vxiio.la == td->vals[0]);
+            testOk1(plink->value.vxiio.signal == td->vals[1]);
         }
-        testOk1(strcmp(plink->value.vxiio.parm, td->parm)==0);
+        testOk1(strcmp(plink->value.vxiio.parm, td->parm) == 0);
         break;
     }
 }
@@ -324,7 +330,7 @@ static void testLink(DBLINK *plink, const testHWDataT *td)
 static void testHWInitSet(void)
 {
     const testHWDataT *td = testHWData;
-    testDiag("HW link parsing during initialization");
+    testDiag("\n# Checking HW link parsing during initialization\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -337,13 +343,14 @@ static void testHWInitSet(void)
     testIocInitOk();
     eltc(1);
 
-    for(;td->recname;td++) {
+    for (;td->recname; td++) {
         char buf[MAX_STRING_SIZE];
         xRecord *prec;
         DBLINK *plink;
+
         testDiag("%s == \"%s\"", td->recname, td->wval);
 
-        prec = (xRecord*)testdbRecordPtr(td->recname);
+        prec = (xRecord *) testdbRecordPtr(td->recname);
         plink = &prec->inp;
 
         strcpy(buf, td->recname);
@@ -351,9 +358,11 @@ static void testHWInitSet(void)
 
         testdbGetFieldEqual(buf, DBR_STRING, td->wval);
 
-        testOk(plink->type==td->ltype, "link type %d == %d",
-               plink->type, td->ltype);
-        if(plink->type==td->ltype) {
+        if (!testOk(plink->type == td->ltype, "Link type")) {
+            testDiag("Expected %d, got %d",
+               td->ltype, plink->type);
+        }
+        else {
             testLink(plink, td);
         }
 
@@ -382,7 +391,8 @@ static const testHWDataT testHWData2[] = {
 static void testHWMod(void)
 {
     const testHWDataT *td = testHWData2;
-    testDiag("HW link parsing during retarget");
+
+    testDiag("\n# Checking HW link parsing during retarget\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -411,9 +421,11 @@ static void testHWMod(void)
 
         testdbGetFieldEqual(buf, DBR_STRING, td->wval);
 
-        testOk(plink->type==td->ltype, "link type %d == %d",
-               plink->type, td->ltype);
-        if(plink->type==td->ltype) {
+        if (!testOk(plink->type == td->ltype, "Link type")) {
+            testDiag("Expected %d, got %d",
+               td->ltype, plink->type);
+        }
+        else {
             testLink(plink, td);
         }
 
@@ -428,42 +440,42 @@ static void testLinkInitFail(void)
 {
     xRecord *prec;
     DBLINK *plink;
-    testDiag("Link parsing failures during initialization");
+    testDiag("\n# Checking link parse failures at iocInit\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
 
     dbTestIoc_registerRecordDeviceDriver(pdbbase);
 
-
     /* this load will fail */
     eltc(0);
-    testOk1(dbReadDatabase(&pdbbase, "dbBadLink.db", "." OSI_PATH_LIST_SEPARATOR ".." OSI_PATH_LIST_SEPARATOR
-                           "../O.Common" OSI_PATH_LIST_SEPARATOR "O.Common", NULL)!=0);
+    testOk(dbReadDatabase(&pdbbase, "dbBadLink.db", "." OSI_PATH_LIST_SEPARATOR
+        ".." OSI_PATH_LIST_SEPARATOR "../O.Common" OSI_PATH_LIST_SEPARATOR
+	"O.Common", NULL) != 0, "dbReadDatabase returned error (expected)");
 
     testIocInitOk();
     eltc(1);
 
     testdbGetFieldEqual("eVME_IO1.INP", DBR_STRING, "#C0 S0 @");
 
-    prec = (xRecord*)testdbRecordPtr("eVME_IO1");
+    prec = (xRecord *) testdbRecordPtr("eVME_IO1");
     plink = &prec->inp;
-    testOk1(plink->type==VME_IO);
-    testOk1(plink->value.vmeio.parm!=NULL);
+    testOk1(plink->type == VME_IO);
+    testOk1(plink->value.vmeio.parm != NULL);
 
     testdbGetFieldEqual("eVME_IO2.INP", DBR_STRING, "#C0 S0 @");
 
-    prec = (xRecord*)testdbRecordPtr("eVME_IO2");
+    prec = (xRecord *) testdbRecordPtr("eVME_IO2");
     plink = &prec->inp;
-    testOk1(plink->type==VME_IO);
-    testOk1(plink->value.vmeio.parm!=NULL);
+    testOk1(plink->type == VME_IO);
+    testOk1(plink->value.vmeio.parm != NULL);
 
     testdbGetFieldEqual("eINST_IO.INP", DBR_STRING, "@");
 
-    prec = (xRecord*)testdbRecordPtr("eINST_IO");
+    prec = (xRecord *) testdbRecordPtr("eINST_IO");
     plink = &prec->inp;
-    testOk1(plink->type==INST_IO);
-    testOk1(plink->value.instio.string!=NULL);
+    testOk1(plink->type == INST_IO);
+    testOk1(plink->value.instio.string != NULL);
 
     testIocShutdownOk();
 
@@ -472,7 +484,7 @@ static void testLinkInitFail(void)
 
 static void testLinkFail(void)
 {
-    testDiag("Link parsing failures");
+    testDiag("\n# Checking runtime link parse failures\n#");
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -491,7 +503,8 @@ static void testLinkFail(void)
     /* INST_IO doesn't accept string without @ */
     testdbPutFieldFail(S_dbLib_badField, "rINST_IO.INP", DBR_STRING, "abc");
 
-    /* JSON_LINK dies properly */
+    /* JSON_LINK dies when expected */
+    testdbPutFieldOk("rJSON_LINK.INP", DBR_STRING, "{\"x\":true}");
     testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":false}");
     testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":null}");
     testdbPutFieldFail(S_dbLib_badField, "rJSON_LINK.INP", DBR_STRING, "{\"x\":1}");
@@ -522,7 +535,7 @@ static void testLinkFail(void)
 
 MAIN(dbPutLinkTest)
 {
-    testPlan(269);
+    testPlan(280);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();

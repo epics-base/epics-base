@@ -20,6 +20,7 @@ dbTestIoc_SRCS += xRecord.c
 dbTestIoc_SRCS += dbLinkdset.c
 dbTestIoc_SRCS += xLink.c
 dbTestIoc_SRCS += devx.c
+dbTestIoc_SRCS += jlinkz.c
 dbTestIoc_LIBS = dbCore ca Com
 
 TARGETS += $(COMMON_DIR)/dbTestIoc.dbd
@@ -31,6 +32,7 @@ dbTestIoc_DBD += xRecord.dbd
 dbTestIoc_DBD += arrRecord.dbd
 dbTestIoc_DBD += xLink.dbd
 dbTestIoc_DBD += devx.dbd
+dbTestIoc_DBD += jlinkz.dbd
 dbTestIoc_DBD += dbLinkdset.dbd
 TESTFILES += $(COMMON_DIR)/dbTestIoc.dbd ../xRecord.db
 

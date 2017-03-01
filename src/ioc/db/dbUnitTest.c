@@ -152,7 +152,7 @@ void testdbPutFieldOk(const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==0, "dbPutField(%s, %d, ...) == %ld", pv, dbrType, ret);
+    testOk(ret==0, "dbPutField(%s, %d, ...) -> %ld (%s)", pv, dbrType, ret, errSymMsg(ret));
 }
 
 void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
@@ -164,10 +164,8 @@ void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    if(ret==status)
-        testPass("dbPutField(\"%s\", %d, ...) == %ld", pv, dbrType, status);
-    else
-        testFail("dbPutField(\"%s\", %d, ...) != %ld (%ld)", pv, dbrType, status, ret);
+    testOk(ret==status, "dbPutField(\"%s\", %d, ...) -> %ld (%s) == %ld (%s)",
+           pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
 void testdbGetFieldEqual(const char* pv, short dbrType, ...)

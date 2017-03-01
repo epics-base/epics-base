@@ -106,8 +106,8 @@ long testdbVPutField(const char* pv, short dbrType, va_list ap)
     DBADDR addr;
     union anybuf pod;
 
-    if(dbNameToAddr(pv, &addr)) {
-        testFail("Missing PV %s", pv);
+    if (dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
         return S_dbLib_recNotFound;
     }
 
@@ -152,7 +152,7 @@ void testdbPutFieldOk(const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==0, "dbPutField(%s, %d, ...) -> %ld (%s)", pv, dbrType, ret, errSymMsg(ret));
+    testOk(ret==0, "dbPutField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, ret, errSymMsg(ret));
 }
 
 void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
@@ -164,7 +164,7 @@ void testdbPutFieldFail(long status, const char* pv, short dbrType, ...)
     ret = testdbVPutField(pv, dbrType, ap);
     va_end(ap);
 
-    testOk(ret==status, "dbPutField(\"%s\", %d, ...) -> %ld (%s) == %ld (%s)",
+    testOk(ret==status, "dbPutField(\"%s\", %d, ...) -> %#lx (%s) == %#lx (%s)",
            pv, dbrType, status, errSymMsg(status), ret, errSymMsg(ret));
 }
 
@@ -185,13 +185,13 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     long status;
 
     if(dbNameToAddr(pv, &addr)) {
-        testFail("Missing PV %s", pv);
+        testFail("Missing PV \"%s\"", pv);
         return;
     }
 
     status = dbGetField(&addr, dbrType, pod.bytes, NULL, &nReq, NULL);
-    if(status) {
-        testFail("dbGetField(\"%s\",%d,...) returns %ld", pv, dbrType, status);
+    if (status) {
+        testFail("dbGetField(\"%s\", %d, ...) -> %#lx (%s)", pv, dbrType, status, errSymMsg(status));
         return;
     }
 
@@ -224,8 +224,8 @@ dbCommon* testdbRecordPtr(const char* pv)
 {
     DBADDR addr;
 
-    if(dbNameToAddr(pv, &addr))
-        testAbort("Missing record %s", pv);
+    if (dbNameToAddr(pv, &addr))
+        testAbort("Missing record \"%s\"", pv);
 
     return addr.precord;
 }

@@ -86,7 +86,7 @@ foreach $line ( @err_sym_line )
 {
 	print OUT "$line\n";
 	#                    define       S_symbol          /* comment */
-	if ($line =~ m'[ \t#]define[ \t]*(S_[A-Za-z0-9_]+).*\/\*(.+)\*\/')
+	if ($line =~ m'[ \t#]define[ \t]*(S_[A-Za-z0-9_]+).*\/\* ?(.+?) ?\*\/')
 	{
 		$symbol[$count] = $1;
 		$comment[$count]= $2;

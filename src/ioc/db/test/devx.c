@@ -147,8 +147,7 @@ static long xsoft_init_record(xRecord *prec)
 
 static long xsoft_read(xRecord *prec)
 {
-    dbGetLink(&prec->inp, DBR_DOUBLE, &prec->val, NULL, NULL);
-    return 0;
+    return dbGetLink(&prec->inp, DBR_LONG, &prec->val, NULL, NULL);
 }
 
 static struct xdset devxSoft = {

@@ -24,8 +24,10 @@
 #include "osiFileName.h"
 #include "dbmf.h"
 #include "errlog.h"
+#include <epicsAtomic.h>
 
 #include "xRecord.h"
+#include "jlinkz.h"
 
 #include "testMain.h"
 
@@ -533,9 +535,73 @@ static void testLinkFail(void)
     testdbCleanup();
 }
 
+static
+void testNumZ(int expect)
+{
+    int numz = epicsAtomicGetIntT(&numzalloc);
+    testOk(numz==expect, "numzalloc==%d (%d)", expect, numz);
+}
+
+static
+void testJLink(void)
+{
+    testDiag("Test json link setup/retarget");
+
+    testNumZ(0);
+
+    testDiag("Link parsing failures");
+    testdbPrepare();
+
+    testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
+
+    dbTestIoc_registerRecordDeviceDriver(pdbbase);
+
+    testdbReadDatabase("dbPutLinkTest.db", NULL, NULL);
+    testdbReadDatabase("dbPutLinkTestJ.db", NULL, NULL);
+
+    testNumZ(0);
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testNumZ(3);
+
+    testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
+    testdbPutFieldOk("j2.PROC", DBF_LONG, 1);
+    testdbPutFieldOk("j3.PROC", DBF_LONG, 1);
+
+    testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":1}}");
+    testdbGetFieldEqual("j1.VAL", DBF_LONG, 1);
+    testdbGetFieldEqual("j2.VAL", DBF_LONG, 2);
+    testdbGetFieldEqual("j3.VAL", DBF_LONG, 3);
+
+    testNumZ(3);
+
+    testdbPutFieldOk("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
+    testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
+
+    testNumZ(3);
+
+    testdbPutFieldFail(S_dbLib_badField, "j1.INP", DBF_STRING, "{\"z\":{\"fail\":5}}");
+    testdbPutFieldOk("j1.PROC", DBF_LONG, 1);
+    testdbGetFieldEqual("j1.VAL", DBF_LONG, 4);
+    /* put failure in parsing stage doesn't modify link */
+    testdbGetFieldEqual("j1.INP", DBF_STRING, "{\"z\":{\"good\":4}}");
+
+    testNumZ(3);
+
+    testIocShutdownOk();
+
+    testNumZ(0);
+
+    testdbCleanup();
+}
+
 MAIN(dbPutLinkTest)
 {
-    testPlan(280);
+    testPlan(301);
     testLinkParse();
     testLinkFailParse();
     testCADBSet();
@@ -543,5 +609,6 @@ MAIN(dbPutLinkTest)
     testHWMod();
     testLinkInitFail();
     testLinkFail();
+    testJLink();
     return testDone();
 }

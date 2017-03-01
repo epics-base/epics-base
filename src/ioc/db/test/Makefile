@@ -57,7 +57,7 @@ dbPutLinkTest_SRCS += dbPutLinkTest.c
 dbPutLinkTest_SRCS += dbTestIoc_registerRecordDeviceDriver.cpp
 testHarness_SRCS += dbPutLinkTest.c
 TESTS += dbPutLinkTest
-TESTFILES += ../dbPutLinkTest.db ../dbBadLink.db
+TESTFILES += ../dbPutLinkTest.db ../dbPutLinkTestJ.db ../dbBadLink.db
 
 TESTPROD_HOST += dbLockTest
 dbLockTest_SRCS += dbLockTest.c

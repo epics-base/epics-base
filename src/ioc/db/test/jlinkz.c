@@ -14,19 +14,15 @@
 #include <dbJLink.h>
 #include <dbDefs.h>
 #include <dbConvertFast.h>
-#include <epicsAtomic.h>
 #include <epicsMutex.h>
+#include <epicsAtomic.h>
 #include <epicsUnitTest.h>
 
-int numzalloc;
+#define epicsExportSharedSymbols
 
-typedef struct {
-    jlink base;
-    epicsMutexId lock;
-    unsigned isset:1;
-    unsigned isopen:1;
-    epicsInt32 value;
-} zpriv;
+#include "jlinkz.h"
+
+int numzalloc;
 
 
 static
@@ -37,6 +33,7 @@ void z_open(struct link *plink)
     if(priv->isopen)
         testDiag("lsetZ re-open");
     priv->isopen = 1;
+    testDiag("Open jlinkz %p", priv);
 }
 
 static
@@ -51,8 +48,11 @@ void z_remove(struct dbLocker *locker, struct link *plink)
 
     epicsMutexUnlock(priv->lock);
 
+    testDiag("Remove/free jlinkz %p", priv);
+
     epicsAtomicDecrIntT(&numzalloc);
 
+    epicsMutexDestroy(priv->lock);
     free(priv);
     plink->value.json.jlink = NULL; /* paranoia */
 }
@@ -153,11 +153,20 @@ jlink* z_alloc(short dbfType)
 {
     zpriv *priv;
     priv = calloc(1, sizeof(*priv));
-    if(!priv) return NULL;
+    if(!priv) goto fail;
+
+    priv->lock = epicsMutexCreate();
+    if(!priv->lock) goto fail;
 
     epicsAtomicIncrIntT(&numzalloc);
 
+    testDiag("Alloc jlinkz %p", priv);
+
     return &priv->base;
+fail:
+    if(priv && priv->lock) epicsMutexDestroy(priv->lock);
+    free(priv);
+    return NULL;
 }
 
 static
@@ -166,10 +175,13 @@ void z_free(jlink *pj)
     zpriv *priv = CONTAINER(pj, zpriv, base);
 
     if(priv->isopen)
-        testDiag("lsetZ jlink free after open()\n");
+        testDiag("lsetZ jlink free after open()");
+
+    testDiag("Free jlinkz %p", priv);
 
     epicsAtomicDecrIntT(&numzalloc);
 
+    epicsMutexDestroy(priv->lock);
     free(priv);
 }
 
@@ -193,8 +205,14 @@ jlif_key_result z_start(jlink *pj)
 static
 jlif_result z_key(jlink *pj, const char *key, size_t len)
 {
-    if(strcmp(key,"fail")==0) return jlif_stop;
-    else                      return jlif_continue;
+    zpriv *priv = CONTAINER(pj, zpriv, base);
+
+    if(len==4 && strncmp(key,"fail", len)==0) {
+        testDiag("Found fail key jlinkz %p", priv);
+        return jlif_stop;
+    } else {
+        return jlif_continue;
+    }
 }
 
 static

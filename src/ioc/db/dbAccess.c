@@ -365,8 +365,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	    memset(pbuffer, '\0', dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){
-                struct dbr_precision *pprecision = (struct dbr_precision *)pbuffer;
-                (*prset->get_precision)(paddr,&pprecision->precision.dp);
+                (*prset->get_precision)(paddr,(long *)pbuffer);
 	    } else {
 		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }

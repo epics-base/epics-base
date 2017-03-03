@@ -28,6 +28,50 @@ interpreter can be selectively disabled from echoing comments coming from
 a script by starting those lines with '#-' rather than just '#'.</p>
 
 
+<h3>Typed record support methods</h3>
+
+<p>The table of record support functions (rset methods for short) no longer
+has entries of type <tt>RECSUPFUN</tt> (which says: any number and type of
+arguments). The <tt>RECSUPFUN</tt> typedef has been removed and casts to
+<tt>RECSUPFUN</tt> can no longer be used when initializing <tt>struct
+rset</tt>. Record supports can define the macro <tt>REC_TYPE</tt> to the
+name of their record type (including the <tt>Record</tt> suffix) before
+including any headers from base, like this:</p>
+
+<blockquote><pre>
+#define REC_TYPE xxxRecord
+</pre></blockquote>
+
+<p>This will plug in <tt>xxxRecord</tt> for the first parameter of
+<tt>init_record</tt> and <tt>process</tt>. Record types that use
+<tt>void*</tt> here should be changed to use <tt>xxxRecord*</tt>. If
+<tt>REC_TYPE</tt> is not defined, it will default to <tt>dbCommon</tt>,
+which is suitable for code in base that calls rset methods but not for
+record support, unless the methods cast the argument themselves.</p>
+
+<p>When compiled against this release, compiler warnings about incompatible
+types for the method pointers should be taken seriously. When compiled
+against older versions of base, such warnings are unavoidable.</p>
+
+<p>Record types written in C++ need to take more drastic measures because of
+the stricter type checking in C++. To remain compatible with older versions
+of base you need something like:</p>
+
+<blockquote><pre>
+#include "epicsVersion.h"
+#define VERSION_INT_3_16 VERSION_INT(3,16,0,2)
+#if EPICS_VERSION_INT < VERSION_INT_3_16
+#define RECSUPFUN_CAST (RECSUPFUN)
+#else
+#define RECSUPFUN_CAST
+#endif 
+</pre></blockquote>
+
+<p>in addition to the definition of <tt>REC_TYPE</tt>, and then replace
+<tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt> when initializing the
+rset. Further changes might be needed, e.g. to adapt <tt>const</tt>-ness of
+method parameters.</p>
+
 <hr>
 
 <h2 align="center">Changes made between 3.15.3 and 3.16.0.1</h2>

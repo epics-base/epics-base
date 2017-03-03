@@ -199,7 +199,7 @@ jlif_result z_int(jlink *pj, long num)
 static
 jlif_key_result z_start(jlink *pj)
 {
-    return jlif_continue;
+    return jlif_key_continue;
 }
 
 static

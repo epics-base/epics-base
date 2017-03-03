@@ -54,9 +54,9 @@ static long cvt_dbaddr(DBADDR *);
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str(DBADDR *, char *);
-static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
-static long put_enum_str(DBADDR *, char *);
+static long get_enum_str(const DBADDR *, char *);
+static long get_enum_strs(const DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(const DBADDR *, const char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -306,7 +306,7 @@ static long cvt_dbaddr(DBADDR *paddr)
     return 0;
 }
 
-static long get_enum_str(DBADDR *paddr, char *pstring)
+static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
     mbboRecord *prec = (mbboRecord *) paddr->precord;
     epicsEnum16 *pfield = paddr->pfield;
@@ -326,7 +326,7 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     return 0;
 }
 
-static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
+static long get_enum_strs(const DBADDR *paddr, struct dbr_enumStrs *pes)
 {
     mbboRecord *prec = (mbboRecord *) paddr->precord;
     const char *pstate;
@@ -345,7 +345,7 @@ static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
     return 0;
 }
 
-static long put_enum_str(DBADDR *paddr,char *pstring)
+static long put_enum_str(const DBADDR *paddr, const char *pstring)
 {
     mbboRecord *prec = (mbboRecord *) paddr->precord;
     const char *pstate;

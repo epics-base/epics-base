@@ -53,7 +53,7 @@ static long special(DBADDR *paddr, int after);
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *paddr, char *units);
-static long get_precision(DBADDR *paddr, long *precision);
+static long get_precision(const DBADDR *paddr, long *precision);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -182,7 +182,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     calcRecord *prec = (calcRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);

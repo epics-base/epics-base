@@ -54,7 +54,7 @@ static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long );
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str       NULL
 #define get_enum_strs      NULL
 #define put_enum_str       NULL
@@ -356,7 +356,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     aSubRecord *prec = (aSubRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);

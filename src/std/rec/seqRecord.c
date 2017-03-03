@@ -46,7 +46,7 @@ static long process(seqRecord *prec);
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(dbAddr *paddr, long *);
+static long get_precision(const DBADDR *paddr, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -299,7 +299,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(dbAddr *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     seqRecord *prec = (seqRecord *) paddr->precord;
     int fieldOffset = dbGetFieldIndex(paddr) - indexof(DLY1);

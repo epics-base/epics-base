@@ -36,13 +36,6 @@ struct dbr_alDouble;
 
 struct REC_TYPE;
 
-/* Definition of structure for rset.get_value */
-typedef struct valueDes {
-	long	field_type;
-	long	no_elements;
-	void *	pvalue;
-} valueDes;
-
 /* record support entry table */
 struct rset {
     long number; /* number of support routines */
@@ -51,15 +44,15 @@ struct rset {
     long (*init_record)(struct REC_TYPE *precord, int pass);
     long (*process)(struct REC_TYPE *precord);
     long (*special)(struct dbAddr *paddr, int after);
-    long (*get_value)(struct REC_TYPE *precord, struct valueDes *p);
+    long (*get_value)(void); /* DEPRECATED set to NULL */
     long (*cvt_dbaddr)(struct dbAddr *paddr);
     long (*get_array_info)(struct dbAddr *paddr, long *no_elements, long *offset);
     long (*put_array_info)(struct dbAddr *paddr, long nNew);
-    long (*get_units)(struct dbAddr *paddr, char units[/* 8 */]);
-    long (*get_precision)(struct dbAddr *paddr, long *precision);
-    long (*get_enum_str)(struct dbAddr *paddr, char *pbuffer);
-    long (*get_enum_strs)(struct dbAddr *paddr, struct dbr_enumStrs *p);
-    long (*put_enum_str)(struct dbAddr *paddr, char *pbuffer);
+    long (*get_units)(struct dbAddr *paddr, char *units);
+    long (*get_precision)(const struct dbAddr *paddr, long *precision);
+    long (*get_enum_str)(const struct dbAddr *paddr, char *pbuffer);
+    long (*get_enum_strs)(const struct dbAddr *paddr, struct dbr_enumStrs *p);
+    long (*put_enum_str)(const struct dbAddr *paddr, const char *pbuffer);
     long (*get_graphic_double)(struct dbAddr *paddr, struct dbr_grDouble *p);
     long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
     long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p);

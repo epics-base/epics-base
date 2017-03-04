@@ -4,7 +4,7 @@
 # Copyright (c) 2002 The Regents of the University of California, as
 #     Operator of Los Alamos National Laboratory.
 # EPICS BASE is distributed subject to a Software License Agreement found
-# in the file LICENSE that is included with this distribution. 
+# in the file LICENSE that is included with this distribution.
 #*************************************************************************
 #
 #	Rules for making things specified in Makefile
@@ -104,7 +104,7 @@ TAPFILES += $(TESTSCRIPTS:.t=.tap)
 endif
 
 #---------------------------------------------------------------
-#   Libraries 
+#   Libraries
 #
 
 LIBTARGETS += $(LIBNAME) $(INSTALL_LIBS) \
@@ -117,16 +117,16 @@ $(INSTALL_LIBS): $(INSTALL_SHRLIBS)  $(INSTALL_DLL_LINK_LIBS)  $(INSTALL_LOADABL
 
 #	Main targets
 
-install: buildInstall 
+install: buildInstall
 
-buildInstall : build 
+buildInstall: build
 
 # Allows rebuild to work with parallel builds option, -j.
 install: $(patsubst rebuild,clean,$(filter rebuild,$(MAKECMDGOALS)))
 
 rebuild: clean install
 
-build : inc 
+build: inc
 
 build: $(OBJSNAME) $(LIBTARGETS) $(PRODTARGETS) $(TESTPRODNAME) \
 	$(TARGETS) $(TESTSCRIPTS) $(INSTALL_LIB_INSTALLS)
@@ -176,7 +176,7 @@ warnRelease:
 	-$(CONVERTRELEASE) checkRelease
 noCheckRelease:
 ifeq ($(EPICS_HOST_ARCH),$(T_A))
-	@echo "Warning: RELEASE file consistency checks have been disabled"
+	$(info Warning: RELEASE file consistency checks have been disabled)
 endif
 
 #---------------------------------------------------------------
@@ -289,7 +289,7 @@ endif
 
 $(LIBNAME): $(LIBRARY_OBJS)
 
-$(DLL_LINK_LIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS) 
+$(DLL_LINK_LIBNAME): $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
 $(LIBNAME) $(DLL_LINK_LIBNAME): $(LIB_PREFIX)%$(LIB_SUFFIX):
 	@$(RM) $@

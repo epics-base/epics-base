@@ -635,11 +635,13 @@ void cac::transferChanToVirtCircuit (
     // must occur before moving to new iiu
     pChan->getPIIU(guard)->uninstallChanDueToSuccessfulSearchResponse (
         guard, *pChan, currentTime );
-    piiu->installChannel (
-        guard, *pChan, sid, typeCode, count );
+    if ( piiu ) {
+        piiu->installChannel (
+            guard, *pChan, sid, typeCode, count );
 
-    if ( newIIU ) {
-        piiu->start ( guard );
+        if ( newIIU ) {
+            piiu->start ( guard );
+        }
     }
 }
 
@@ -1304,9 +1306,11 @@ void cac::pvMultiplyDefinedNotify ( msgForMultiplyDefinedPV & mfmdpv,
         callbackManager mgr ( this->notify, this->cbMutex );
         epicsGuard < epicsMutex > guard ( this->mutex );
         this->exception ( mgr.cbGuard, guard, ECA_DBLCHNL, buf, __FILE__, __LINE__ );
+
+        // remove from the list under lock
+        this->msgMultiPVList.remove ( mfmdpv );
     }
-    // remove from the list and delete msg object
-    this->msgMultiPVList.remove ( mfmdpv );
+    // delete msg object
     mfmdpv.~msgForMultiplyDefinedPV ();
     this->mdpvFreeList.release ( & mfmdpv );
 }

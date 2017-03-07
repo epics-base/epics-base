@@ -279,13 +279,17 @@ endif # RANLIB
 $(SHRLIBNAME) $(DLLSTUB_LIBNAME) $(TESTSHRLIBNAME) $(TESTDLLSTUB_LIBNAME): \
     $(LIBRARY_OBJS) $(LIBRARY_RESS) $(SHRLIB_DEPLIBS)
 
-$(DLLSTUB_LIBNAME): $(SHRLIBNAME);
+# Stub library timestamps may be earlier than the DLL itself.
+# This order-only prerequisite resolves any related problems.
+# The $(LINK.shrlib) command must build both library files if
+# the target requires a separate stub library file.
+$(DLLSTUB_LIBNAME): | $(SHRLIBNAME);
 $(SHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)
 	$(MT_DLL_COMMAND)
 
-$(TESTDLLSTUB_LIBNAME): $(TESTSHRLIBNAME);
+$(TESTDLLSTUB_LIBNAME): | $(TESTSHRLIBNAME);
 $(TESTSHRLIBNAME): $(SHRLIB_PREFIX)%$(SHRLIB_SUFFIX):
 	@$(RM) $@
 	$(LINK.shrlib)

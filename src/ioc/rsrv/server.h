@@ -60,7 +60,7 @@ typedef struct caHdrLargeArray {
  * Eight-byte alignment is required by the Sparc 5 and other RISC
  * processors.
  */
-enum messageBufferType { mbtUDP, mbtSmallTCP, mbtLargeTCP };
+enum messageBufferType { mbtUDP, mbtSmallTCP, mbtLargeTCP, mbtHugeTCP };
 struct message_buffer {
   char                      *buf;
   unsigned                  stk;

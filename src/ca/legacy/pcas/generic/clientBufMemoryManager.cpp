@@ -16,11 +16,6 @@
 #define epicsExportSharedSymbols
 #include "clientBufMemoryManager.h"
 
-bufSizeT clientBufMemoryManager::maxSize () const
-{
-    return bufferFactory.largeBufferSize ();
-}
-
 casBufferParm clientBufMemoryManager::allocate ( bufSizeT newMinSize )
 {
     casBufferParm parm;

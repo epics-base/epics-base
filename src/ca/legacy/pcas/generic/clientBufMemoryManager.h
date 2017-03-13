@@ -39,9 +39,9 @@ struct casBufferParm {
 
 class clientBufMemoryManager {
 public:
+    //! @throws std::bad_alloc on failure
     casBufferParm allocate ( bufSizeT newMinSize );
     void release ( char * pBuf, bufSizeT bufSize );
-    bufSizeT maxSize () const;
 private:
     casBufferFactory bufferFactory;
 };

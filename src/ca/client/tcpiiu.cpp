@@ -690,7 +690,7 @@ tcpiiu::tcpiiu (
     curDataBytes ( 0ul ),
     comBufMemMgr ( comBufMemMgrIn ),
     cacRef ( cac ),
-    pCurData ( cac.allocateSmallBufferTCP () ),
+    pCurData ( (char*) freeListMalloc(this->cacRef.tcpSmallRecvBufFreeList) ),
     pSearchDest ( pSearchDestIn ),
     mutex ( mutexIn ),
     cbMutex ( cbMutexIn ),
@@ -714,9 +714,12 @@ tcpiiu::tcpiiu (
     socketHasBeenClosed ( false ),
     unresponsiveCircuit ( false )
 {
+    if(!pCurData)
+        throw std::bad_alloc();
+
     this->sock = epicsSocketCreate ( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     if ( this->sock == INVALID_SOCKET ) {
-        cac.releaseSmallBufferTCP ( this->pCurData );
+        freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);
         char sockErrBuf[64];
         epicsSocketConvertErrnoToString ( 
             sockErrBuf, sizeof ( sockErrBuf ) );
@@ -1027,10 +1030,10 @@ tcpiiu :: ~tcpiiu ()
     // free message body cache
     if ( this->pCurData ) {
         if ( this->curDataMax <= MAX_TCP ) {
-            this->cacRef.releaseSmallBufferTCP ( this->pCurData );
+            freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData);
         }
-        else if ( this->curDataMax <= cacRef.largeBufferSizeTCP()) {
-            this->cacRef.releaseLargeBufferTCP ( this->pCurData );
+        else if ( this->cacRef.tcpLargeRecvBufFreeList ) {
+            freeListFree(this->cacRef.tcpLargeRecvBufFreeList, this->pCurData);
         }
         else {
             free ( this->pCurData );
@@ -1208,30 +1211,32 @@ bool tcpiiu::processIncoming (
             char * newbuf = NULL;
             arrayElementCount newsize;
 
-            if ( this->curMsg.m_postsize <= this->cacRef.largeBufferSizeTCP() ) {
-                newbuf = this->cacRef.allocateLargeBufferTCP ();
-                newsize = this->cacRef.largeBufferSizeTCP();
-            }
-#ifndef NO_HUGE
-            else {
+            if ( !this->cacRef.tcpLargeRecvBufFreeList ) {
                 // round size up to multiple of 4K
                 newsize = ((this->curMsg.m_postsize-1)|0xfff)+1;
 
-                if (this->curDataMax > this->cacRef.largeBufferSizeTCP()) {
-                    // expand existing huge buffer
-                    newbuf = (char*)realloc(this->pCurData, newsize);
-                } else {
-                    // trade up from small or large
+                if ( this->curDataMax <= MAX_TCP ) {
+                    // small -> large
                     newbuf = (char*)malloc(newsize);
+
+                } else {
+                    // expand large to larger
+                    newbuf = (char*)realloc(this->pCurData, newsize);
                 }
+
+            } else if ( this->curMsg.m_postsize <= this->cacRef.maxRecvBytesTCP ) {
+                newbuf = (char*) freeListMalloc(this->cacRef.tcpLargeRecvBufFreeList);
+                newsize = this->cacRef.maxRecvBytesTCP;
+
             }
-#endif
 
             if ( newbuf) {
                 if (this->curDataMax <= MAX_TCP) {
-                    this->cacRef.releaseSmallBufferTCP ( this->pCurData );
-                } else if (this->curDataMax <= this->cacRef.largeBufferSizeTCP()) {
-                    this->cacRef.releaseLargeBufferTCP ( this->pCurData );
+                    freeListFree(this->cacRef.tcpSmallRecvBufFreeList, this->pCurData );
+
+                } else if (this->cacRef.tcpLargeRecvBufFreeList) {
+                    freeListFree(this->cacRef.tcpLargeRecvBufFreeList, this->pCurData );
+
                 } else {
                     // called realloc()
                 }

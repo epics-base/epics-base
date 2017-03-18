@@ -47,6 +47,10 @@
 
 epicsThreadPrivateId rsrvCurrentClient;
 
+// defined in cac.cpp
+extern int caLimitArray;
+
+
 /*
  *
  *  req_server()
@@ -525,7 +529,10 @@ int rsrv_init (void)
             rsrvSizeofLargeBufTCP = maxBytes;
         }
     }
-    freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
+    if (caLimitArray)
+        freeListInitPvt ( &rsrvLargeBufFreeListTCP, rsrvSizeofLargeBufTCP, 1 );
+    else
+        rsrvLargeBufFreeListTCP = NULL;
     pCaBucket = bucketCreate(CAS_HASH_TABLE_SIZE);
     if (!pCaBucket)
         cantProceed("RSRV failed to allocate ID lookup table\n");
@@ -1012,8 +1019,10 @@ void casr (unsigned level)
                     freeListItemsAvail (rsrvEventFreeList);
         bytes_reserved += MAX_TCP *
                     freeListItemsAvail ( rsrvSmallBufFreeListTCP );
-        bytes_reserved += rsrvSizeofLargeBufTCP *
-                    freeListItemsAvail ( rsrvLargeBufFreeListTCP );
+        if(rsrvLargeBufFreeListTCP) {
+            bytes_reserved += rsrvSizeofLargeBufTCP *
+                        freeListItemsAvail ( rsrvLargeBufFreeListTCP );
+        }
         bytes_reserved += rsrvSizeOfPutNotify ( 0 ) *
                     freeListItemsAvail ( rsrvPutNotifyFreeList );
         printf( "Free-lists total %u bytes, comprising\n",
@@ -1026,7 +1035,7 @@ void casr (unsigned level)
         printf( "    %u small (%u byte) buffers, %u jumbo (%u byte) buffers\n",
             (unsigned int) freeListItemsAvail ( rsrvSmallBufFreeListTCP ),
             MAX_TCP,
-            (unsigned int) freeListItemsAvail ( rsrvLargeBufFreeListTCP ),
+            (unsigned int)(rsrvLargeBufFreeListTCP ? freeListItemsAvail ( rsrvLargeBufFreeListTCP ) : -1),
             rsrvSizeofLargeBufTCP );
         printf( "Server resource id table:\n");
         LOCK_CLIENTQ;
@@ -1058,10 +1067,10 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->send.buf );
             }
             else if ( client->send.type == mbtLargeTCP ) {
-                freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
-            }
-            else if (client->send.type == mbtHugeTCP ) {
-                free ( client->send.buf );
+                if(rsrvLargeBufFreeListTCP)
+                    freeListFree ( rsrvLargeBufFreeListTCP,  client->send.buf );
+                else
+                    free(client->send.buf);
             }
             else {
                 errlogPrintf ( "CAS: Corrupt send buffer free list type code=%u during client cleanup?\n",
@@ -1073,10 +1082,10 @@ void destroy_client ( struct client *client )
                 freeListFree ( rsrvSmallBufFreeListTCP,  client->recv.buf );
             }
             else if ( client->recv.type == mbtLargeTCP ) {
-                freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
-            }
-            else if (client->recv.type == mbtHugeTCP ) {
-                free ( client->recv.buf );
+                if(rsrvLargeBufFreeListTCP)
+                    freeListFree ( rsrvLargeBufFreeListTCP,  client->recv.buf );
+                else
+                    free(client->recv.buf);
             }
             else {
                 errlogPrintf ( "CAS: Corrupt recv buffer free list type code=%u during client cleanup?\n",
@@ -1321,29 +1330,29 @@ void casExpandBuffer ( struct message_buffer *buf, ca_uint32_t size, int sendbuf
     /* try to alloc new buffer */
     if (size <= MAX_TCP) {
         return; /* shouldn't happen */
+
+    } else if(!rsrvLargeBufFreeListTCP) {
+        // round up to multiple of 4K
+        size = ((size-1)|0xfff)+1;
+
+        if (buf->type==mbtLargeTCP)
+            newbuf = realloc (buf->buf, size);
+        else
+            newbuf = malloc (size);
+        newtype = mbtLargeTCP;
+        newsize = size;
+
     } else if (size <= rsrvSizeofLargeBufTCP) {
         newbuf = freeListCalloc ( rsrvLargeBufFreeListTCP );
         newsize = rsrvSizeofLargeBufTCP;
         newtype = mbtLargeTCP;
     }
-#ifndef NO_HUGE
-    else {
-        size = ((size-1)|0xfff)+1;
-
-        if (buf->type==mbtHugeTCP)
-            newbuf = realloc (buf->buf, size);
-        else
-            newbuf = malloc (size);
-        newtype = mbtHugeTCP;
-        newsize = size;
-    }
-#endif
 
     if (newbuf) {
         /* copy existing buffer */
         if (sendbuf) {
             /* send buffer uses [0, stk) */
-            if (buf->type==mbtHugeTCP) {
+            if (!rsrvLargeBufFreeListTCP && buf->type==mbtLargeTCP) {
                 /* realloc already copied */
             } else {
                 memcpy ( newbuf, buf->buf, buf->stk );

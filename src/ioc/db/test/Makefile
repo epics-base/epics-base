@@ -175,6 +175,8 @@ testHarness_SRCS += epicsRunDbTests.c
 dbTestHarness_SRCS += $(testHarness_SRCS)
 dbTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
 PROD_vxWorks = dbTestHarness
 PROD_RTEMS = dbTestHarness
 
@@ -193,3 +195,5 @@ devx$(DEP): $(COMMON_DIR)/xRecord.h
 scanIoTest$(DEP): $(COMMON_DIR)/xRecord.h
 xRecord$(DEP): $(COMMON_DIR)/xRecord.h
 
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

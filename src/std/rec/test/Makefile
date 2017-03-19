@@ -110,6 +110,8 @@ testHarness_SRCS += epicsRunRecordTests.c
 recordTestHarness_SRCS += $(testHarness_SRCS)
 recordTestHarness_SRCS_RTEMS += rtemsTestHarness.c
 
+PROD_SRCS_RTEMS += rtemsTestData.c
+
 PROD_vxWorks = recordTestHarness
 PROD_RTEMS = recordTestHarness
 
@@ -119,3 +121,6 @@ TESTSPEC_RTEMS = recordTestHarness.boot; epicsRunRecordTests
 TESTSCRIPTS_HOST += $(TESTS:%=%.t)
 
 include $(TOP)/configure/RULES
+
+rtemsTestData.c : $(TESTFILES) $(TOOLS)/epicsMakeMemFs.pl
+	$(PERL) $(TOOLS)/epicsMakeMemFs.pl $@ epicsRtemsFSImage $(TESTFILES)

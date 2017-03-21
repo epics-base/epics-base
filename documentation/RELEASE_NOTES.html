@@ -32,9 +32,24 @@ a script by starting those lines with '#-' rather than just '#'.</p>
 
 <p>The table of record support functions (rset methods for short) no longer
 has entries of type <tt>RECSUPFUN</tt> (which says: any number and type of
-arguments). The <tt>RECSUPFUN</tt> typedef has been removed and casts to
-<tt>RECSUPFUN</tt> can no longer be used when initializing <tt>struct
-rset</tt>. Record supports can define the macro <tt>REC_TYPE</tt> to the
+arguments). Instead, rset methods are now typed by default. The
+<tt>RECSUPFUN</tt> typedef has been removed and casts to <tt>RECSUPFUN</tt>
+can no longer be used when initializing <tt>struct rset</tt>.</p>
+
+<p>Existing code (e.g. external record supports) might not compile cleanly
+against the new rset definition without changes. Instead of adapting their
+code as described further below, users can instead get the old untyped
+definitions back by placing</p>
+
+<blockquote><pre>
+#define UNTYPED_RSET
+</pre></blockquote>
+
+<p>before including headers from base.</p>
+
+<p>The following assumes that <tt>UNTYPED_RSET</tt> has not been defined.</p>
+
+<p>Record supports can define the macro <tt>REC_TYPE</tt> to the
 name of their record type (including the <tt>Record</tt> suffix) before
 including any headers from base, like this:</p>
 

@@ -23,6 +23,10 @@ extern "C" {
 
 typedef struct rset rset;
 
+#ifdef UNTYPED_RSET
+#include "oldRecSup.h"
+#else
+
 /* defined elsewhere */
 struct dbAddr;
 struct dbr_enumStrs;
@@ -59,6 +63,8 @@ struct rset {
 };
 
 #define RSETNUMBER 17
+
+#endif /* UNTYPED_RSET */
 
 #define S_rec_noRSET     (M_recSup| 1) /*Missing record support entry table*/
 #define S_rec_noSizeOffset (M_recSup| 2) /*Missing SizeOffset Routine*/

@@ -23,30 +23,21 @@ extern "C" {
 
 typedef struct rset rset;
 
-#ifdef UNTYPED_RSET
-#include "oldRecSup.h"
-#else
-
 /* defined elsewhere */
 struct dbAddr;
+struct dbCommon;
 struct dbr_enumStrs;
 struct dbr_grDouble;
 struct dbr_ctrlDouble;
 struct dbr_alDouble;
-
-#ifndef REC_TYPE
-#define REC_TYPE dbCommon
-#endif
-
-struct REC_TYPE;
 
 /* record support entry table */
 struct rset {
     long number; /* number of support routines */
     long (*report)(void *precord);
     long (*init)();
-    long (*init_record)(struct REC_TYPE *precord, int pass);
-    long (*process)(struct REC_TYPE *precord);
+    long (*init_record)(struct dbCommon *precord, int pass);
+    long (*process)(struct dbCommon *precord);
     long (*special)(struct dbAddr *paddr, int after);
     long (*get_value)(void); /* DEPRECATED set to NULL */
     long (*cvt_dbaddr)(struct dbAddr *paddr);
@@ -63,8 +54,6 @@ struct rset {
 };
 
 #define RSETNUMBER 17
-
-#endif /* UNTYPED_RSET */
 
 #define S_rec_noRSET     (M_recSup| 1) /*Missing record support entry table*/
 #define S_rec_noSizeOffset (M_recSup| 2) /*Missing SizeOffset Routine*/

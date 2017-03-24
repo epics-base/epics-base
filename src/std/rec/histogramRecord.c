@@ -21,8 +21,6 @@
 #include <math.h>
 #include <limits.h>
 
-#define REC_TYPE histogramRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -48,8 +46,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(histogramRecord *, int);
-static long process(histogramRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -164,8 +162,9 @@ static long wdogInit(histogramRecord *prec)
     return 0;
 }
 
-static long init_record(histogramRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct histogramRecord *prec = (struct histogramRecord *)pcommon;
     struct histogramdset *pdset;
 
     if (pass == 0) {
@@ -214,9 +213,10 @@ static long init_record(histogramRecord *prec, int pass)
     return 0;
 }
 
-static long process(histogramRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-    struct histogramdset *pdset = (struct histogramdset *) prec->dset;
+    struct histogramRecord *prec = (struct histogramRecord *)pcommon;
+    struct histogramdset  *pdset = (struct histogramdset *) prec->dset;
     int pact = prec->pact;
     long status;
 

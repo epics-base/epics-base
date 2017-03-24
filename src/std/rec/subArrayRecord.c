@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE subArrayRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -46,8 +44,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(subArrayRecord *prec, int pass);
-static long process(subArrayRecord *prec);
+static long init_record(struct dbCommon *prec, int pass);
+static long process(struct dbCommon *prec);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *paddr);
@@ -97,9 +95,9 @@ static void monitor(subArrayRecord *prec);
 static long readValue(subArrayRecord *prec);
 
 
-
-static long init_record(subArrayRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
     struct sadset *pdset;
 
     if (pass==0){
@@ -131,8 +129,9 @@ static long init_record(subArrayRecord *prec, int pass)
     return 0;
 }
 
-static long process(subArrayRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct subArrayRecord *prec = (struct subArrayRecord *)pcommon;
     struct sadset *pdset = (struct sadset *)(prec->dset);
     long           status;
     unsigned char  pact=prec->pact;

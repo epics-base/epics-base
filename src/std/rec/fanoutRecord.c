@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE fanoutRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -42,8 +40,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(fanoutRecord *, int);
-static long process(fanoutRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -80,9 +78,9 @@ rset fanoutRSET = {
 };
 epicsExportAddress(rset,fanoutRSET);
 
-static long init_record(fanoutRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-
+    struct fanoutRecord *prec = (struct fanoutRecord *)pcommon;
     if (pass == 0)
         return 0;
 
@@ -90,8 +88,9 @@ static long init_record(fanoutRecord *prec, int pass)
     return 0;
 }
 
-static long process(fanoutRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct fanoutRecord *prec = (struct fanoutRecord *)pcommon;
     struct link *plink;
     epicsUInt16 seln, events;
     int         i;

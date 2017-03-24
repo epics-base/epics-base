@@ -49,8 +49,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(aiRecord *, int);
-static long process(aiRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -104,8 +104,9 @@ static void convert(aiRecord *prec);
 static void monitor(aiRecord *prec);
 static long readValue(aiRecord *prec);
 
-static long init_record(aiRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct aiRecord *prec = (struct aiRecord *)pcommon;
     aidset	*pdset;
     double	eoff = prec->eoff, eslo = prec->eslo;
 
@@ -151,9 +152,10 @@ static long init_record(aiRecord *prec, int pass)
     return(0);
 }
 
-static long process(aiRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	aidset		*pdset = (aidset *)(prec->dset);
+    struct aiRecord *prec = (struct aiRecord *)pcommon;
+    aidset		*pdset = (aidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
         epicsTimeStamp	 timeLast;

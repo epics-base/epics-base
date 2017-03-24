@@ -13,8 +13,6 @@
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
-#define REC_TYPE xRecord
-
 #include "dbAccessDefs.h"
 #include "recSup.h"
 #include "recGbl.h"
@@ -28,8 +26,9 @@
 
 #include "devx.h"
 
-static long init_record(xRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct xRecord *prec = (struct xRecord *)pcommon;
     long ret = 0;
     xdset *xset = (xdset*)prec->dset;
     if(!pass) return 0;
@@ -43,10 +42,12 @@ static long init_record(xRecord *prec, int pass)
     return ret;
 }
 
-static long process(xRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct xRecord *prec = (struct xRecord *)pcommon;
     long ret = 0;
     xdset *xset = (xdset*)prec->dset;
+
     if(prec->clbk)
         (*prec->clbk)(prec);
     prec->pact = TRUE;

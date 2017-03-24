@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE dfanoutRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsMath.h"
@@ -47,8 +45,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(dfanoutRecord *, int);
-static long process(dfanoutRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -93,8 +91,9 @@ static void push_values(dfanoutRecord *);
 #define OUT_ARG_MAX 8
 
 
-static long init_record(dfanoutRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct dfanoutRecord *prec = (struct dfanoutRecord *)pcommon;
     if (pass==0) return(0);
 
     recGblInitConstantLink(&prec->sell,DBF_USHORT,&prec->seln);
@@ -104,8 +103,9 @@ static long init_record(dfanoutRecord *prec, int pass)
     return(0);
 }
 
-static long process(dfanoutRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct dfanoutRecord *prec = (struct dfanoutRecord *)pcommon;
     long status=0;
 
     if (!prec->pact

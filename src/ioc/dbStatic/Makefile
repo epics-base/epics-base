@@ -21,7 +21,6 @@ INC += guigroup.h
 INC += devSup.h
 INC += drvSup.h
 INC += recSup.h
-INC += oldRecSup.h
 INC += dbStaticIocRegister.h
 
 dbCore_SRCS += dbStaticLib.c

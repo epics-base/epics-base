@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE biRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -43,8 +41,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(biRecord *, int);
-static long process(biRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -91,8 +89,9 @@ static void checkAlarms(biRecord *);
 static void monitor(biRecord *);
 static long readValue(biRecord *);
 
-static long init_record(biRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct biRecord *prec = (struct biRecord *)pcommon;
     struct bidset *pdset;
     long status;
 
@@ -118,9 +117,10 @@ static long init_record(biRecord *prec, int pass)
     return(0);
 }
 
-static long process(biRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct bidset	*pdset = (struct bidset *)(prec->dset);
+    struct biRecord *prec = (struct biRecord *)pcommon;
+    struct bidset  *pdset = (struct bidset *)(prec->dset);
 	long		 status;
 	unsigned char    pact=prec->pact;
 

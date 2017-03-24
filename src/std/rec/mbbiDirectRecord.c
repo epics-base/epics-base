@@ -21,8 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE mbbiDirectRecord
-
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"
@@ -44,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(mbbiDirectRecord *, int);
-static long process(mbbiDirectRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -96,8 +94,9 @@ static long readValue(mbbiDirectRecord *);
 
 #define NUM_BITS 16
 
-static long init_record(mbbiDirectRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct mbbiDirectRecord *prec = (struct mbbiDirectRecord *)pcommon;
     struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
@@ -142,8 +141,9 @@ static long init_record(mbbiDirectRecord *prec, int pass)
     return status;
 }
 
-static long process(mbbiDirectRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct mbbiDirectRecord *prec = (struct mbbiDirectRecord *)pcommon;
     struct mbbidset *pdset = (struct mbbidset *) prec->dset;
     long status;
     int pact = prec->pact;

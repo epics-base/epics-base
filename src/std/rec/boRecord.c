@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE boRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -45,8 +43,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(boRecord *, int);
-static long process(boRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -130,8 +128,9 @@ static void myCallbackFunc(CALLBACK *arg)
     dbScanUnlock((struct dbCommon *)prec);
 }
 
-static long init_record(boRecord *prec,int pass)
+static long init_record(struct dbCommon *pcommon,int pass)
 {
+    struct boRecord *prec = (struct boRecord *)pcommon;
     struct bodset *pdset;
     long status=0;
     myCallback *pcallback;
@@ -191,9 +190,10 @@ static long init_record(boRecord *prec,int pass)
     return(status);
 }
 
-static long process(boRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct bodset	*pdset = (struct bodset *)(prec->dset);
+    struct boRecord *prec = (struct boRecord *)pcommon;
+    struct bodset  *pdset = (struct bodset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 

@@ -42,8 +42,9 @@
 static void monitor(lsoRecord *);
 static long writeValue(lsoRecord *);
 
-static long init_record(lsoRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct lsoRecord *prec = (struct lsoRecord *)pcommon;
     lsodset *pdset;
 
     if (pass == 0) {
@@ -93,8 +94,9 @@ static long init_record(lsoRecord *prec, int pass)
     return 0;
 }
 
-static long process(lsoRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct lsoRecord *prec = (struct lsoRecord *)pcommon;
     int pact = prec->pact;
     lsodset *pdset = (lsodset *) prec->dset;
     long status = 0;

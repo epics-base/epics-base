@@ -45,8 +45,8 @@
 
 #define report NULL
 #define initialize NULL
-static long init_record(calcRecord *prec, int pass);
-static long process(calcRecord *prec);
+static long init_record(struct dbCommon *prec, int pass);
+static long process(struct dbCommon *prec);
 static long special(DBADDR *paddr, int after);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -88,8 +88,9 @@ static void monitor(calcRecord *prec);
 static int fetch_values(calcRecord *prec);
 
 
-static long init_record(calcRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct calcRecord *prec = (struct calcRecord *)pcommon;
     struct link *plink;
     double *pvalue;
     int i;
@@ -113,8 +114,9 @@ static long init_record(calcRecord *prec, int pass)
     return 0;
 }
 
-static long process(calcRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct calcRecord *prec = (struct calcRecord *)pcommon;
     epicsTimeStamp timeLast;
 
     prec->pact = TRUE;

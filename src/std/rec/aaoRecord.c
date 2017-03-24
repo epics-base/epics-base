@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE aaoRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsString.h"
@@ -52,8 +50,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(aaoRecord *, int);
-static long process(aaoRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -102,10 +100,11 @@ struct aaodset { /* aao dset */
 static void monitor(aaoRecord *);
 static long writeValue(aaoRecord *);
 
-static long init_record(aaoRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-    long status;
+    struct aaoRecord *prec = (struct aaoRecord *)pcommon;
     struct aaodset *pdset = (struct aaodset *)(prec->dset);
+    long status;
 
     /* must have dset defined */
     if (!pdset) {
@@ -155,8 +154,9 @@ static long init_record(aaoRecord *prec, int pass)
     return 0;
 }
 
-static long process(aaoRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct aaoRecord *prec = (struct aaoRecord *)pcommon;
     struct aaodset *pdset = (struct aaodset *)(prec->dset);
     long status;
     unsigned char pact = prec->pact;

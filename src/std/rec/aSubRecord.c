@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE aSubRecord
-
 #include "alarm.h"
 #include "cantProceed.h"
 #include "dbDefs.h"
@@ -46,8 +44,8 @@ typedef long (*GENFUNCPTR)(struct aSubRecord *);
 
 #define report             NULL
 #define initialize          NULL
-static long init_record(aSubRecord *, int);
-static long process(aSubRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value          NULL
 static long cvt_dbaddr(DBADDR *);
@@ -106,8 +104,9 @@ static const char *Ofldnames[] = {
 };
 
 
-static long init_record(aSubRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct aSubRecord *prec = (struct aSubRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->onam)==sizeof(prec->snam));
     GENFUNCPTR     pfunc;
     long           status;
@@ -246,8 +245,9 @@ static long initFields(epicsEnum16 *pft, epicsUInt32 *pno, epicsUInt32 *pne,
 }
 
 
-static long process(aSubRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct aSubRecord *prec = (struct aSubRecord *)pcommon;
     int pact = prec->pact;
     long status = 0;
 

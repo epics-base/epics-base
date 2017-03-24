@@ -15,8 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE lsiRecord
-
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"
@@ -38,8 +36,9 @@
 static void monitor(lsiRecord *);
 static long readValue(lsiRecord *);
 
-static long init_record(lsiRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct lsiRecord *prec = (struct lsiRecord *)pcommon;
     lsidset *pdset;
 
     if (pass == 0) {
@@ -87,8 +86,9 @@ static long init_record(lsiRecord *prec, int pass)
     return 0;
 }
 
-static long process(lsiRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct lsiRecord *prec = (struct lsiRecord *)pcommon;
     int pact = prec->pact;
     lsidset *pdset = (lsidset *) prec->dset;
     long status = 0;

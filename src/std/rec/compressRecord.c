@@ -43,8 +43,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(compressRecord *, int);
-static long process(compressRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -314,8 +314,9 @@ static int compress_scalar(struct compressRecord *prec,double *psource)
 }
 
 /*Beginning of record support routines*/
-static long init_record(compressRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct compressRecord *prec = (struct compressRecord *)pcommon;
     if (pass == 0) {
         if (prec->nsam < 1)
             prec->nsam = 1;
@@ -326,8 +327,9 @@ static long init_record(compressRecord *prec, int pass)
     return 0;
 }
 
-static long process(compressRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct compressRecord *prec = (struct compressRecord *)pcommon;
     long status = 0;
     long nelements = 0;
     int alg = prec->alg;

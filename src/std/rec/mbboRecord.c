@@ -45,8 +45,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(mbboRecord *, int);
-static long process(mbboRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -115,8 +115,9 @@ static void init_common(mbboRecord *prec)
     prec->sdef = FALSE;
 }
 
-static long init_record(mbboRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct mbboRecord *prec = (struct mbboRecord *)pcommon;
     struct mbbodset *pdset;
     long status;
 
@@ -193,9 +194,10 @@ static long init_record(mbboRecord *prec, int pass)
     return status;
 }
 
-static long process(mbboRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-    struct mbbodset *pdset = (struct mbbodset *) prec->dset;
+    struct mbboRecord *prec = (struct mbboRecord *)pcommon;
+    struct mbbodset  *pdset = (struct mbbodset *) prec->dset;
     long status = 0;
     int pact = prec->pact;
 

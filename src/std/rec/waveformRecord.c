@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE waveformRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsString.h"
@@ -44,8 +42,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(waveformRecord *, int);
-static long process(waveformRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -92,8 +90,9 @@ struct wfdset { /* waveform dset */
 static void monitor(waveformRecord *);
 static long readValue(waveformRecord *);
 
-static long init_record(waveformRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct waveformRecord *prec = (struct waveformRecord *)pcommon;
     struct wfdset *pdset;
 
     if (pass==0){
@@ -131,8 +130,9 @@ static long init_record(waveformRecord *prec, int pass)
     return (*pdset->init_record)(prec);
 }
 
-static long process(waveformRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct waveformRecord *prec = (struct waveformRecord *)pcommon;
     struct wfdset *pdset = (struct wfdset *)(prec->dset);
     unsigned char  pact=prec->pact;
 

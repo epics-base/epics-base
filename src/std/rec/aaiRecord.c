@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE aaiRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "epicsString.h"
@@ -52,8 +50,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(aaiRecord *, int);
-static long process(aaiRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -102,10 +100,11 @@ struct aaidset { /* aai dset */
 static void monitor(aaiRecord *);
 static long readValue(aaiRecord *);
 
-static long init_record(aaiRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-    long status;
+    struct aaiRecord *prec = (struct aaiRecord *)pcommon;
     struct aaidset *pdset = (struct aaidset *)(prec->dset);
+    long status;
 
     /* must have dset defined */
     if (!pdset) {
@@ -155,8 +154,9 @@ static long init_record(aaiRecord *prec, int pass)
     return 0;
 }
 
-static long process(aaiRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct aaiRecord *prec = (struct aaiRecord *)pcommon;
     struct aaidset *pdset = (struct aaidset *)(prec->dset);
     long status;
     unsigned char pact = prec->pact;

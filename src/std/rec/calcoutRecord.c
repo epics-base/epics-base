@@ -21,8 +21,6 @@
 #include <string.h>
 #include <math.h>
 
-#define REC_TYPE calcoutRecord
-
 #include "alarm.h"
 #include "dbDefs.h"
 #include "dbAccess.h"
@@ -48,8 +46,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(calcoutRecord *, int);
-static long process(calcoutRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -135,8 +133,9 @@ static long writeValue(calcoutRecord *prec);
 int    calcoutRecDebug;
 
 
-static long init_record(calcoutRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct calcoutRecord *prec = (struct calcoutRecord *)pcommon;
     DBLINK *plink;
     int i;
     double *pvalue;
@@ -215,8 +214,9 @@ static long init_record(calcoutRecord *prec, int pass)
     return 0;
 }
 
-static long process(calcoutRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct calcoutRecord *prec = (struct calcoutRecord *)pcommon;
     rpvtStruct *prpvt = prec->rpvt;
     int doOutput;
 

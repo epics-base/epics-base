@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE mbbiRecord
-
 #include "dbDefs.h"
 #include "epicsPrint.h"
 #include "alarm.h"
@@ -46,8 +44,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(mbbiRecord *, int);
-static long process(mbbiRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long  special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -113,9 +111,10 @@ static void init_common(mbbiRecord *prec)
     prec->sdef = FALSE;
 }
 
-static long init_record(mbbiRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
+    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
     if (pass == 0)
@@ -153,9 +152,10 @@ static long init_record(mbbiRecord *prec, int pass)
     return status;
 }
 
-static long process(mbbiRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
+    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
     long status;
     int pact = prec->pact;
     epicsTimeStamp timeLast;

@@ -37,32 +37,12 @@ arguments). Instead, rset methods are now typed by default. The
 can no longer be used when initializing <tt>struct rset</tt>.</p>
 
 <p>Existing code (e.g. external record supports) might not compile cleanly
-against the new rset definition without changes. Instead of adapting their
-code as described further below, users can instead get the old untyped
-definitions back by placing</p>
+against the new rset definition without changes.
 
-<blockquote><pre>
-#define UNTYPED_RSET
-</pre></blockquote>
-
-<p>before including headers from base.</p>
-
-<p>The following assumes that <tt>UNTYPED_RSET</tt> has not been defined.</p>
-
-<p>Record supports can define the macro <tt>REC_TYPE</tt> to the
-name of their record type (including the <tt>Record</tt> suffix) before
-including any headers from base, like this:</p>
-
-<blockquote><pre>
-#define REC_TYPE xxxRecord
-</pre></blockquote>
-
-<p>This will plug in <tt>xxxRecord</tt> for the first parameter of
-<tt>init_record</tt> and <tt>process</tt>. Record types that use
-<tt>void*</tt> here should be changed to use <tt>xxxRecord*</tt>. If
-<tt>REC_TYPE</tt> is not defined, it will default to <tt>dbCommon</tt>,
-which is suitable for code in base that calls rset methods but not for
-record support, unless the methods cast the argument themselves.</p>
+<p>The first parameter of <tt>init_record</tt> and <tt>process</tt> has been
+changed to <tt>struct dbCommon *</tt>. Record types that use
+<tt>void*</tt> here should be changed to use <tt>struct dbCommon*</tt>, and
+cast the argument to their own <tt>xxxRecord *</tt>.</p>
 
 <p>When compiled against this release, compiler warnings about incompatible
 types for the method pointers should be taken seriously. When compiled
@@ -82,9 +62,9 @@ of base you need something like:</p>
 #endif 
 </pre></blockquote>
 
-<p>in addition to the definition of <tt>REC_TYPE</tt>, and then replace
-<tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt> when initializing the
-rset. Further changes might be needed, e.g. to adapt <tt>const</tt>-ness of
+<p>and then replace <tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt>
+when initializing the rset.
+Further changes might be needed, e.g. to adapt <tt>const</tt>-ness of
 method parameters.</p>
 
 <hr>

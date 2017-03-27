@@ -37,7 +37,9 @@ arguments). Instead, rset methods are now typed by default. The
 can no longer be used when initializing <tt>struct rset</tt>.</p>
 
 <p>Existing code (e.g. external record supports) might not compile cleanly
-against the new rset definition without changes.
+against the new rset definition without changes, but after making these
+changes the result should still compile and work properly against older
+versions of Base.</p>
 
 <p>The first parameter of <tt>init_record</tt> and <tt>process</tt> has been
 changed to <tt>struct dbCommon *</tt>. Record types that use
@@ -54,8 +56,7 @@ of base you need something like:</p>
 
 <blockquote><pre>
 #include "epicsVersion.h"
-#define VERSION_INT_3_16 VERSION_INT(3,16,0,2)
-#if EPICS_VERSION_INT < VERSION_INT_3_16
+#if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
 #define RECSUPFUN_CAST (RECSUPFUN)
 #else
 #define RECSUPFUN_CAST

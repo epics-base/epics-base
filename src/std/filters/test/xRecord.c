@@ -13,8 +13,6 @@
  *          Ralph Lange <Ralph.Lange@bessy.de>
  */
 
-#define REC_TYPE xRecord
-
 #include "dbAccessDefs.h"
 #include <recSup.h>
 

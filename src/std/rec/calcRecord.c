@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE calcRecord
-
 #include "dbDefs.h"
 #include "errlog.h"
 #include "alarm.h"

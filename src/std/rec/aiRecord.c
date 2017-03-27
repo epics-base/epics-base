@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define REC_TYPE aiRecord
-
 #include "dbDefs.h"
 #include "errlog.h"
 #include "epicsMath.h"

@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-typedef struct rset rset;
+/* RSET definition */
 
 /* defined elsewhere */
 struct dbAddr;
@@ -32,7 +32,7 @@ struct dbr_ctrlDouble;
 struct dbr_alDouble;
 
 /* record support entry table */
-struct rset {
+struct typed_rset {
     long number; /* number of support routines */
     long (*report)(void *precord);
     long (*init)();
@@ -52,6 +52,41 @@ struct rset {
     long (*get_control_double)(struct dbAddr *paddr, struct dbr_ctrlDouble *p);
     long (*get_alarm_double)(struct dbAddr *paddr, struct dbr_alDouble *p);
 };
+
+#ifdef USE_TYPED_RSET
+
+typedef struct typed_rset rset;
+
+#else
+
+/* pre-3.16 old untyped RSET definition - DEPRECATED */
+
+typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
+
+struct rset {	/* record support entry table */
+    long		number;		/*number of support routines	*/
+    RECSUPFUN	report;		/*print report			*/
+    RECSUPFUN	init;		/*init support			*/
+    RECSUPFUN	init_record;	/*init record			*/
+    RECSUPFUN	process;	/*process record		*/
+    RECSUPFUN	special;	/*special processing		*/
+    RECSUPFUN	get_value;	/*no longer used		*/
+    RECSUPFUN	cvt_dbaddr;	/*cvt  dbAddr			*/
+    RECSUPFUN	get_array_info;
+    RECSUPFUN	put_array_info;
+    RECSUPFUN	get_units;
+    RECSUPFUN	get_precision;
+    RECSUPFUN	get_enum_str;	/*get string from enum item*/
+    RECSUPFUN	get_enum_strs;	/*get all enum strings		*/
+    RECSUPFUN	put_enum_str;	/*put string from enum item*/
+    RECSUPFUN	get_graphic_double;
+    RECSUPFUN	get_control_double;
+    RECSUPFUN	get_alarm_double;
+};
+
+typedef struct rset rset;
+
+#endif
 
 #define RSETNUMBER 17
 

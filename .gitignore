@@ -1,0 +1,11 @@
+/bin/
+/lib/
+/db/
+/dbd/
+/html/
+/include/
+/templates/
+O.*
+/QtC-*
+*.orig
+*.log

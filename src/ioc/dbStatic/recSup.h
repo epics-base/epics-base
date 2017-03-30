@@ -16,6 +16,7 @@
 #define INCrecSuph 1
 
 #include "errMdef.h"
+#include "compilerDependencies.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ typedef struct typed_rset rset;
 
 /* pre-3.16 old untyped RSET definition - DEPRECATED */
 
-typedef long (*RECSUPFUN) ();      /* ptr to record support function*/
+typedef long (*RECSUPFUN) () EPICS_DEPRECATED;      /* ptr to record support function*/
 
 struct rset {	/* record support entry table */
     long		number;		/*number of support routines	*/
@@ -82,9 +83,9 @@ struct rset {	/* record support entry table */
     RECSUPFUN	get_graphic_double;
     RECSUPFUN	get_control_double;
     RECSUPFUN	get_alarm_double;
-};
+} EPICS_DEPRECATED;
 
-typedef struct rset rset;
+typedef struct rset rset EPICS_DEPRECATED;
 
 #endif
 

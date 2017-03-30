@@ -4,6 +4,9 @@ include $(TOP)/configure/CONFIG
 #----------------------------------------
 #  ADD MACRO DEFINITIONS BELOW HERE
 
+# Use typed rset structure (see 3.16.1 release notes)
+USR_CPPFLAGS += -DUSE_TYPED_RSET
+
 # xxxRecord.h will be created from xxxRecord.dbd
 DBDINC += xxxRecord
 

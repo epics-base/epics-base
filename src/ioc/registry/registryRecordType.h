@@ -18,13 +18,12 @@ extern "C" {
 #endif
 
 struct dbRecordType;
-struct rset;
 struct dbBase;
 
 typedef int (*computeSizeOffset)(struct dbRecordType *pdbRecordType);
 
 typedef struct recordTypeLocation {
-    struct rset *prset;
+    struct typed_rset *prset;
     computeSizeOffset sizeOffset;
 }recordTypeLocation;
 

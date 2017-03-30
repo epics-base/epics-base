@@ -33,12 +33,18 @@ a script by starting those lines with '#-' rather than just '#'.</p>
 <p>The table of record support functions (rset methods for short) no longer
 has entries of type <tt>RECSUPFUN</tt> (which says: any number and type of
 arguments). Instead, rset methods are now typed by default. The
-<tt>RECSUPFUN</tt> typedef has been removed and casts to <tt>RECSUPFUN</tt>
-can no longer be used when initializing <tt>struct rset</tt>.</p>
+<tt>RECSUPFUN</tt> typedef has been deprecated and casts to it as well as
+using the untyped <tt>struct rset</tt> will create compilation warnings.</p>
 
-<p>Existing code (e.g. external record supports) might not compile cleanly
-against the new rset definition without changes, but after making these
-changes the result should still compile and work properly against older
+<p>Existing code (e.g. external record supports) will generate such
+warnings when compiled against this version of Base, but it will work
+without changes.</p>
+
+<p>For a conversion period, the new typed rset definitions are activated
+by defining <tt>USE_TYPED_RSET</tt>, preferably by setting
+<tt>USR_CPPFLAGS += -DUSE_TYPED_RSET</tt> inside a Makefile.
+After activating the new typed rset in this way and making the following
+changes, the result should still compile and work properly against older
 versions of Base.</p>
 
 <p>The first parameter of <tt>init_record</tt> and <tt>process</tt> has been

@@ -1,3 +1,4 @@
+/cfg/
 /bin/
 /lib/
 /db/
@@ -5,7 +6,7 @@
 /html/
 /include/
 /templates/
-O.*
+O.*/
 /QtC-*
 *.orig
 *.log

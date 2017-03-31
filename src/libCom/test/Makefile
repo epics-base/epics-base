@@ -11,6 +11,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
+PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c

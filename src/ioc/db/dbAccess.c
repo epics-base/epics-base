@@ -738,28 +738,34 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
 {
     dbCommon *precord = paddr->precord;
     dbFldDes *pfldDes = paddr->pfldDes;
+    /* size of pbuf storage in bytes, including space for trailing nil */
     int maxlen;
     DBENTRY dbEntry;
     long status;
+    long nReq = nRequest ? *nRequest : 1;
+
+    /* dbFindRecord() below will always succeed as we have a
+     * valid DBADDR, so no point to check again.
+     * Request for zero elements always succeeds
+     */
+    if(!nReq)
+        return 0;
 
     switch (dbrType) {
     case DBR_STRING:
-        maxlen = MAX_STRING_SIZE - 1;
-        if (nRequest && *nRequest > 1) *nRequest = 1;
+        maxlen = MAX_STRING_SIZE;
+        nReq = 1;
         break;
 
     case DBR_DOUBLE:    /* Needed for dbCa links */
-        if (nRequest && *nRequest) *nRequest = 1;
+        if (nRequest) *nRequest = 1;
         *(double *)pbuf = epicsNAN;
         return 0;
 
     case DBR_CHAR:
     case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-            maxlen = *nRequest - 1;
-            break;
-        }
-        /* else fall through ... */
+        maxlen = nReq;
+        break;
     default:
         return S_db_badDbrtype;
     }
@@ -768,10 +774,13 @@ static long getLinkValue(DBADDR *paddr, short dbrType,
     status = dbFindRecord(&dbEntry, precord->name);
     if (!status) status = dbFindField(&dbEntry, pfldDes->name);
     if (!status) {
-        char *rtnString = dbGetString(&dbEntry);
+        const char *rtnString = dbGetString(&dbEntry);
 
-        strncpy(pbuf, rtnString, --maxlen);
-        pbuf[maxlen] = 0;
+        strncpy(pbuf, rtnString, maxlen-1);
+        pbuf[maxlen-1] = 0;
+        if(dbrType!=DBR_STRING)
+            nReq = strlen(pbuf)+1;
+        if(nRequest) *nRequest = nReq;
     }
     dbFinishEntry(&dbEntry);
     return status;

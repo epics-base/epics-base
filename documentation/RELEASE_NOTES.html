@@ -62,11 +62,15 @@ of base you need something like:</p>
 
 <blockquote><pre>
 #include "epicsVersion.h"
+#ifdef VERSION_INT
 #if EPICS_VERSION_INT < VERSION_INT(3,16,0,2)
 #define RECSUPFUN_CAST (RECSUPFUN)
 #else
 #define RECSUPFUN_CAST
-#endif 
+#endif
+#else
+#define RECSUPFUN_CAST (RECSUPFUN)
+#endif
 </pre></blockquote>
 
 <p>and then replace <tt>(RECSUPFUN)</tt> with <tt>RECSUPFUN_CAST</tt>

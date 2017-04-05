@@ -1637,7 +1637,7 @@ static long getFloatString(
     float *psrc = (float *) paddr->pfield;
     long status = 0;
     long precision = 6;
-    struct rset *prset = 0;
+    rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
@@ -1850,7 +1850,7 @@ static long getDoubleString(
     double *psrc = (double *) paddr->pfield;
     long status = 0;
     long precision = 6;
-    struct rset *prset = 0;
+    rset *prset = 0;
 
     if (paddr) prset = dbGetRset(paddr);
     if (prset && (prset->get_precision))
@@ -2061,7 +2061,7 @@ static long getEnumString(
     void *pto, long nRequest, long no_elements, long offset)
 {
     char *pbuffer = (char *) pto;
-    struct rset *prset;
+    rset *prset;
     long        status;
 
     if ((prset=dbGetRset(paddr)) && (prset->get_enum_str))
@@ -2602,7 +2602,7 @@ static long putStringEnum(
     const void *pfrom, long nRequest, long no_elements, long offset)
 {
     const char *pbuffer = (const char *) pfrom;
-    struct rset         *prset;
+    rset         *prset;
     epicsEnum16 *pfield = (epicsEnum16*) paddr->pfield;
     long                status;
     unsigned int        nchoices,ind;
@@ -3940,7 +3940,7 @@ static long putFloatString(
     char *pdest = (char *) paddr->pfield;
     long status = 0;
     long precision = 6;
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 
     if (prset && (prset->get_precision))
@@ -4153,7 +4153,7 @@ static long putDoubleString(
     char *pdest = (char *) paddr->pfield;
     long status = 0;
     long precision = 6;
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     short size = paddr->field_size;
 
     if (prset && (prset->get_precision))

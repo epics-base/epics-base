@@ -42,15 +42,15 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(subRecord *, int);
-static long process(subRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -87,8 +87,9 @@ static void monitor(subRecord *);
 
 #define INP_ARG_MAX 12
 
-static long init_record(subRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct subRecord *prec = (struct subRecord *)pcommon;
     SUBFUNCPTR psubroutine;
     struct link *plink;
     int i;
@@ -131,8 +132,9 @@ static long init_record(subRecord *prec, int pass)
     return 0;
 }
 
-static long process(subRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct subRecord *prec = (struct subRecord *)pcommon;
     long status = 0;
     int pact = prec->pact;
 
@@ -171,7 +173,7 @@ static long special(DBADDR *paddr, int after)
     if (!after) {
         if (prec->snam[0] == 0 && prec->pact)
             prec->pact = FALSE;
-            prec->rpro = FALSE;
+        prec->rpro = FALSE;
         return 0;
     }
 
@@ -214,7 +216,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     subRecord *prec = (subRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);

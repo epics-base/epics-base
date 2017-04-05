@@ -402,7 +402,7 @@ static void initRecSup(void)
          pdbRecordType = (dbRecordType *)ellNext(&pdbRecordType->node)) {
         recordTypeLocation *precordTypeLocation =
             registryRecordTypeFind(pdbRecordType->name);
-        struct rset *prset;
+        rset *prset;
 
         if (!precordTypeLocation) {
             errlogPrintf("iocInit record support for %s not found\n",
@@ -487,7 +487,7 @@ static void iterateRecords(recIterFunc func, void *user)
 static void doInitRecord0(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
-    struct rset *prset = pdbRecordType->prset;
+    rset *prset = pdbRecordType->prset;
     devSup *pdevSup;
 
     if (!prset) return;         /* unlikely */
@@ -542,7 +542,7 @@ static void doResolveLinks(dbRecordType *pdbRecordType, dbCommon *precord,
 static void doInitRecord1(dbRecordType *pdbRecordType, dbCommon *precord,
     void *user)
 {
-    struct rset *prset = pdbRecordType->prset;
+    rset *prset = pdbRecordType->prset;
 
     if (!prset) return;         /* unlikely */
 

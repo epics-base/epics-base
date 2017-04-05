@@ -108,7 +108,7 @@ void dbSpcAsRegisterCallback(SPC_ASCALLBACK func)
 long dbPutSpecial(DBADDR *paddr,int pass)
 {
     long int	(*pspecial)()=NULL;
-    struct rset	*prset;
+    rset        *prset;
     dbCommon 	*precord = paddr->precord;
     long	status=0;
     long	special=paddr->special;
@@ -140,7 +140,7 @@ long dbPutSpecial(DBADDR *paddr,int pass)
 }
 
 static void get_enum_strs(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	short		field_type=paddr->field_type;
 	dbFldDes	*pdbFldDes = paddr->pfldDes;
@@ -200,7 +200,7 @@ choice_common:
 }
 
 static void get_graphics(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	struct			dbr_grDouble grd;
 	int			got_data=FALSE;
@@ -240,7 +240,7 @@ static void get_graphics(DBADDR *paddr, char **ppbuffer,
 }
 
 static void get_control(DBADDR *paddr, char **ppbuffer,
-	struct rset *prset,long	*options)
+    rset *prset,long	*options)
 {
 	struct dbr_ctrlDouble	ctrld;
 	int			got_data=FALSE;
@@ -280,7 +280,7 @@ static void get_control(DBADDR *paddr, char **ppbuffer,
 }
 
 static void get_alarm(DBADDR *paddr, char **ppbuffer,
-    struct rset *prset, long *options)
+    rset *prset, long *options)
 {
     char *pbuffer = *ppbuffer;
     struct dbr_alDouble ald = {epicsNAN, epicsNAN, epicsNAN, epicsNAN};
@@ -325,7 +325,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
         void *pflin)
 {
 	db_field_log	*pfl= (db_field_log *)pflin;
-	struct rset	*prset;
+    rset	*prset;
         short		field_type;
 	dbCommon	*pcommon;
 	char		*pbuffer = *poriginal;
@@ -365,7 +365,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	    memset(pbuffer, '\0', dbr_precision_size);
 	    if((field_type==DBF_FLOAT || field_type==DBF_DOUBLE)
 	    &&  prset && prset->get_precision ){
-		(*prset->get_precision)(paddr,pbuffer);
+                (*prset->get_precision)(paddr,(long *)pbuffer);
 	    } else {
 		*options ^= DBR_PRECISION; /*Turn off DBR_PRECISION*/
 	    }
@@ -394,7 +394,7 @@ static void getOptions(DBADDR *paddr, char **poriginal, long *options,
 	*poriginal = pbuffer;
 }
 
-struct rset * dbGetRset(const struct dbAddr *paddr)
+rset * dbGetRset(const struct dbAddr *paddr)
 {
 	struct dbFldDes *pfldDes = paddr->pfldDes;
 
@@ -468,7 +468,7 @@ long dbScanPassive(dbCommon *pfrom, dbCommon *pto)
  */
 long dbProcess(dbCommon *precord)
 {
-    struct rset *prset = precord->rset;
+    rset *prset = precord->rset;
     dbRecordType *pdbRecordType = precord->rdes;
     unsigned char tpro = precord->tpro;
     char context[40] = "";
@@ -647,7 +647,7 @@ long dbNameToAddr(const char *pname, DBADDR *paddr)
     paddr->dbr_field_type = mapDBFToDBR[dbfType];
 
     if (paddr->special == SPC_DBADDR) {
-        struct rset *prset = dbGetRset(paddr);
+        rset *prset = dbGetRset(paddr);
 
         /* Let record type modify paddr */
         if (prset && prset->cvt_dbaddr) {
@@ -827,7 +827,7 @@ long dbGet(DBADDR *paddr, short dbrType,
     db_field_log *pfl = (db_field_log *)pflin;
     short field_type;
     long capacity, no_elements, offset;
-    struct rset *prset;
+    rset *prset;
     long status = 0;
 
     if (options && *options)
@@ -1224,7 +1224,7 @@ long dbPut(DBADDR *paddr, short dbrType,
     long no_elements  = paddr->no_elements;
     long special      = paddr->special;
     void *pfieldsave  = paddr->pfield;
-    struct rset *prset = dbGetRset(paddr);
+    rset *prset = dbGetRset(paddr);
     long status = 0;
     long offset;
     dbFldDes *pfldDes;

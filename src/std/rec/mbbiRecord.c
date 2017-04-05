@@ -44,8 +44,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(mbbiRecord *, int);
-static long process(mbbiRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long  special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -53,9 +53,9 @@ static long  special(DBADDR *, int);
 #define put_array_info NULL
 #define get_units NULL
 #define get_precision NULL
-static long get_enum_str(DBADDR *, char *);
-static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
-static long put_enum_str(DBADDR *, char *);
+static long get_enum_str(const DBADDR *, char *);
+static long get_enum_strs(const DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(const DBADDR *, const char *);
 #define get_graphic_double NULL
 #define get_control_double NULL
 #define get_alarm_double NULL
@@ -111,9 +111,10 @@ static void init_common(mbbiRecord *prec)
     prec->sdef = FALSE;
 }
 
-static long init_record(mbbiRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
-    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
+    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
     long status = 0;
 
     if (pass == 0)
@@ -151,9 +152,10 @@ static long init_record(mbbiRecord *prec, int pass)
     return status;
 }
 
-static long process(mbbiRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-    struct mbbidset *pdset = (struct mbbidset *) prec->dset;
+    struct mbbiRecord *prec = (struct mbbiRecord *)pcommon;
+    struct mbbidset  *pdset = (struct mbbidset *) prec->dset;
     long status;
     int pact = prec->pact;
     epicsTimeStamp timeLast;
@@ -236,7 +238,7 @@ static long special(DBADDR *paddr, int after)
     }
 }
 
-static long get_enum_str(DBADDR *paddr, char *pstring)
+static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
     mbbiRecord *prec = (mbbiRecord *) paddr->precord;
     int index;
@@ -258,7 +260,7 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     return 0;
 }
 
-static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
+static long get_enum_strs(const DBADDR *paddr, struct dbr_enumStrs *pes)
 {
     mbbiRecord *prec = (mbbiRecord *) paddr->precord;
     char *pstate = prec->zrst;
@@ -274,7 +276,7 @@ static long get_enum_strs(DBADDR *paddr, struct dbr_enumStrs *pes)
     return 0;
 }
 
-static long put_enum_str(DBADDR *paddr, char *pstring)
+static long put_enum_str(const DBADDR *paddr, const char *pstring)
 {
     mbbiRecord *prec = (mbbiRecord *) paddr->precord;
     char *pstate;

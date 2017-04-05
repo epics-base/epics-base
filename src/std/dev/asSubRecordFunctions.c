@@ -38,10 +38,10 @@ static void myCallback(CALLBACK *pcallback)
 {
     ASDBCALLBACK	*pasdbcallback = (ASDBCALLBACK *)pcallback;
     subRecord	*precord;
-    struct rset		*prset;
+    rset		*prset;
 
     callbackGetUser(precord,pcallback);
-    prset=(struct rset *)(precord->rset);
+    prset=(rset *)(precord->rset);
     precord->val = 0.0;
     if(pasdbcallback->status) {
 	recGblSetSevr(precord,READ_ALARM,precord->brsv);

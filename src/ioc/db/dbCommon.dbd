@@ -197,7 +197,7 @@
 		prompt("Address of RSET")
 		special(SPC_NOMOD)
 		interest(4)
-		extra("struct rset         *rset")
+        extra("struct typed_rset   *rset")
 	}
 	field(DSET,DBF_NOACCESS) {
 		prompt("DSET address")

@@ -69,6 +69,7 @@ print $out (<< "END");
 #include "iocsh.h"
 #include "iocshRegisterCommon.h"
 #include "registryCommon.h"
+#include "recSup.h"
 
 END
 
@@ -94,7 +95,7 @@ if (%rectypes) {
 
     if (@rtypnames) {
         # Declare the record support entry tables
-        print $out wrap('epicsShareExtern rset ', '    ',
+        print $out wrap('epicsShareExtern typed_rset ', '    ',
             join(', ', map {"*pvar_rset_${_}RSET"} @rtypnames)), ";\n\n";
 
         # Declare the RecordSizeOffset functions
@@ -110,7 +111,7 @@ if (%rectypes) {
         # List of pointers to each RSET and RecordSizeOffset function
         print $out "static const recordTypeLocation rtl[] = {\n";
         print $out join(",\n", map {
-                "    {pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
+                "    {(struct typed_rset *)pvar_rset_${_}RSET, pvar_func_${_}RecordSizeOffset}"
             } @rtypnames);
         print $out "\n};\n\n";
     }

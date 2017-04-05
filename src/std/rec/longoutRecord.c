@@ -39,8 +39,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(longoutRecord *, int);
-static long process(longoutRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -91,9 +91,9 @@ static void monitor(longoutRecord *prec);
 static long writeValue(longoutRecord *prec);
 static void convert(longoutRecord *prec, epicsInt32 value);
 
-
-static long init_record(longoutRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct longoutRecord *prec = (struct longoutRecord *)pcommon;
     struct longoutdset *pdset;
     long status=0;
 
@@ -123,9 +123,10 @@ static long init_record(longoutRecord *prec, int pass)
     return(0);
 }
 
-static long process(longoutRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct longoutdset	*pdset = (struct longoutdset *)(prec->dset);
+    struct longoutRecord *prec = (struct longoutRecord *)pcommon;
+    struct longoutdset  *pdset = (struct longoutdset *)(prec->dset);
 	long		 status=0;
 	epicsInt32	 value;
 	unsigned char    pact=prec->pact;

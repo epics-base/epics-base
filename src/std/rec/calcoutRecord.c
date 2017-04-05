@@ -46,15 +46,15 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(calcoutRecord *, int);
-static long process(calcoutRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str NULL
 #define get_enum_strs NULL
 #define put_enum_str NULL
@@ -133,8 +133,9 @@ static long writeValue(calcoutRecord *prec);
 int    calcoutRecDebug;
 
 
-static long init_record(calcoutRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct calcoutRecord *prec = (struct calcoutRecord *)pcommon;
     DBLINK *plink;
     int i;
     double *pvalue;
@@ -213,8 +214,9 @@ static long init_record(calcoutRecord *prec, int pass)
     return 0;
 }
 
-static long process(calcoutRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct calcoutRecord *prec = (struct calcoutRecord *)pcommon;
     rpvtStruct *prpvt = prec->rpvt;
     int doOutput;
 
@@ -408,7 +410,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     calcoutRecord *prec = (calcoutRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);

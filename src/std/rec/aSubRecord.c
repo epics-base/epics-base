@@ -44,15 +44,15 @@ typedef long (*GENFUNCPTR)(struct aSubRecord *);
 
 #define report             NULL
 #define initialize          NULL
-static long init_record(aSubRecord *, int);
-static long process(aSubRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 static long special(DBADDR *, int);
 #define get_value          NULL
 static long cvt_dbaddr(DBADDR *);
 static long get_array_info(DBADDR *, long *, long *);
 static long put_array_info(DBADDR *, long );
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
+static long get_precision(const DBADDR *, long *);
 #define get_enum_str       NULL
 #define get_enum_strs      NULL
 #define put_enum_str       NULL
@@ -104,8 +104,9 @@ static const char *Ofldnames[] = {
 };
 
 
-static long init_record(aSubRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct aSubRecord *prec = (struct aSubRecord *)pcommon;
     STATIC_ASSERT(sizeof(prec->onam)==sizeof(prec->snam));
     GENFUNCPTR     pfunc;
     long           status;
@@ -244,8 +245,9 @@ static long initFields(epicsEnum16 *pft, epicsUInt32 *pno, epicsUInt32 *pne,
 }
 
 
-static long process(aSubRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct aSubRecord *prec = (struct aSubRecord *)pcommon;
     int pact = prec->pact;
     long status = 0;
 
@@ -354,7 +356,7 @@ static long get_units(DBADDR *paddr, char *units)
     return 0;
 }
 
-static long get_precision(DBADDR *paddr, long *pprecision)
+static long get_precision(const DBADDR *paddr, long *pprecision)
 {
     aSubRecord *prec = (aSubRecord *)paddr->precord;
     int fieldIndex = dbGetFieldIndex(paddr);

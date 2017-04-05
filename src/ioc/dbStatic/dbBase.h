@@ -18,6 +18,7 @@
 #include "dbFldTypes.h"
 #include "ellLib.h"
 #include "dbDefs.h"
+#include "recSup.h"
 
 typedef struct dbMenu {
 	ELLNODE		node;
@@ -150,7 +151,7 @@ typedef struct dbRecordType {
     short		indvalFlddes;	/*ind in papFldDes*/
     dbFldDes 	**papFldDes;	/* ptr to array of ptr to fldDes*/
     /*The following are only available on run time system*/
-    struct	rset	*prset;
+    rset        *prset;
     int		rec_size;	/*record size in bytes          */
 }dbRecordType;
 

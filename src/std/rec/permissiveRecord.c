@@ -37,7 +37,7 @@
 #define report NULL
 #define initialize NULL
 #define init_record NULL
-static long process(permissiveRecord *);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
@@ -76,8 +76,9 @@ epicsExportAddress(rset,permissiveRSET);
 
 static void monitor(permissiveRecord *);
 
-static long process(permissiveRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct permissiveRecord *prec = (struct permissiveRecord *)pcommon;
 
     prec->pact=TRUE;
     prec->udf=FALSE;

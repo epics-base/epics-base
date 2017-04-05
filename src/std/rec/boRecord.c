@@ -43,18 +43,18 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(boRecord *, int);
-static long process(boRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 #define cvt_dbaddr NULL
 #define get_array_info NULL
 #define put_array_info NULL
 static long get_units(DBADDR *, char *);
-static long get_precision(DBADDR *, long *);
-static long get_enum_str(DBADDR *, char *);
-static long get_enum_strs(DBADDR *, struct dbr_enumStrs *);
-static long put_enum_str(DBADDR *, char *);
+static long get_precision(const DBADDR *, long *);
+static long get_enum_str(const DBADDR *, char *);
+static long get_enum_strs(const DBADDR *, struct dbr_enumStrs *);
+static long put_enum_str(const DBADDR *, const char *);
 #define get_graphic_double NULL
 static long get_control_double(DBADDR *, struct dbr_ctrlDouble *);
 #define get_alarm_double NULL
@@ -128,8 +128,9 @@ static void myCallbackFunc(CALLBACK *arg)
     dbScanUnlock((struct dbCommon *)prec);
 }
 
-static long init_record(boRecord *prec,int pass)
+static long init_record(struct dbCommon *pcommon,int pass)
 {
+    struct boRecord *prec = (struct boRecord *)pcommon;
     struct bodset *pdset;
     long status=0;
     myCallback *pcallback;
@@ -189,9 +190,10 @@ static long init_record(boRecord *prec,int pass)
     return(status);
 }
 
-static long process(boRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
-	struct bodset	*pdset = (struct bodset *)(prec->dset);
+    struct boRecord *prec = (struct boRecord *)pcommon;
+    struct bodset  *pdset = (struct bodset *)(prec->dset);
 	long		 status=0;
 	unsigned char    pact=prec->pact;
 
@@ -281,7 +283,7 @@ static long get_units(DBADDR *paddr, char *units)
     return(0);
 }
 
-static long get_precision(DBADDR *paddr, long *precision)
+static long get_precision(const DBADDR *paddr, long *precision)
 {
     if(dbGetFieldIndex(paddr) == indexof(HIGH))
         *precision = boHIGHprecision;
@@ -300,7 +302,7 @@ static long get_control_double(DBADDR *paddr,struct dbr_ctrlDouble *pcd)
     return(0);
 }
 
-static long get_enum_str(DBADDR *paddr, char *pstring)
+static long get_enum_str(const DBADDR *paddr, char *pstring)
 {
     boRecord	*prec=(boRecord *)paddr->precord;
     int                 index;
@@ -322,7 +324,7 @@ static long get_enum_str(DBADDR *paddr, char *pstring)
     return(0);
 }
 
-static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
+static long get_enum_strs(const DBADDR *paddr,struct dbr_enumStrs *pes)
 {
     boRecord	*prec=(boRecord *)paddr->precord;
 
@@ -335,7 +337,7 @@ static long get_enum_strs(DBADDR *paddr,struct dbr_enumStrs *pes)
     if(*prec->onam!=0) pes->no_str=2;
     return(0);
 }
-static long put_enum_str(DBADDR *paddr, char *pstring)
+static long put_enum_str(const DBADDR *paddr, const char *pstring)
 {
     boRecord     *prec=(boRecord *)paddr->precord;
 

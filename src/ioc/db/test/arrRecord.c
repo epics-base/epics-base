@@ -37,8 +37,8 @@
 /* Create RSET - Record Support Entry Table*/
 #define report NULL
 #define initialize NULL
-static long init_record(arrRecord *, int);
-static long process(arrRecord *);
+static long init_record(struct dbCommon *, int);
+static long process(struct dbCommon *);
 #define special NULL
 #define get_value NULL
 static long cvt_dbaddr(DBADDR *);
@@ -75,8 +75,10 @@ rset arrRSET = {
 };
 epicsExportAddress(rset, arrRSET);
 
-static long init_record(arrRecord *prec, int pass)
+static long init_record(struct dbCommon *pcommon, int pass)
 {
+    struct arrRecord *prec = (struct arrRecord *)pcommon;
+
     if (pass == 0) {
         if (prec->nelm <= 0)
             prec->nelm = 1;
@@ -95,8 +97,9 @@ static long init_record(arrRecord *prec, int pass)
     return 0;
 }
 
-static long process(arrRecord *prec)
+static long process(struct dbCommon *pcommon)
 {
+    struct arrRecord *prec = (struct arrRecord *)pcommon;
     if(prec->clbk)
         (*prec->clbk)(prec);
     prec->pact = TRUE;

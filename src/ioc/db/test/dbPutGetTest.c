@@ -1,6 +1,7 @@
 
 #include <string.h>
 
+#include <errlog.h>
 #include <dbAccess.h>
 #include <dbStaticLib.h>
 #include <dbStaticPvt.h>
@@ -58,11 +59,33 @@ void testStringMax(void)
     testdbGetStringEqual("recmax.DISA", "-1");
 }
 
+static
+void testLongLink(void)
+{
+    testDiag("testLonkLink()");
+
+    testdbGetFieldEqual("lnktest.INP", DBR_STRING, "lnktarget NPP NMS");
+    testdbGetFieldEqual("lnktest.INP$", DBR_STRING, "lnktarget NPP NMS");
+    testDiag("dbGet() w/ nRequest==1 gets only trailing nil");
+    testdbGetFieldEqual("lnktest.INP$", DBR_CHAR, '\0');
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 19, 18, "lnktarget NPP NMS");
+
+    testDiag("get w/ truncation");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 0, 0, NULL);
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 1, 1, "");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 2, 2, "l");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 3, 3, "ln");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 17, 17, "lnktarget NPP NM");
+    testdbGetArrFieldEqual("lnktest.INP$", DBR_CHAR, 18, 18, "lnktarget NPP NMS");
+
+    testdbGetArrFieldEqual("lnktest.INP", DBR_STRING, 2, 1, "lnktarget NPP NMS");
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(13);
+    testPlan(24);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -72,6 +95,14 @@ MAIN(dbPutGet)
     testGetString();
 
     testStringMax();
+
+    eltc(0);
+    testIocInitOk();
+    eltc(1);
+
+    testLongLink();
+
+    testIocShutdownOk();
 
     testdbCleanup();
 

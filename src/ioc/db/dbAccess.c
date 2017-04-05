@@ -790,28 +790,31 @@ static long getAttrValue(DBADDR *paddr, short dbrType,
         char *pbuf, long *nRequest)
 {
     int maxlen;
+    long nReq = nRequest ? *nRequest : 1;
 
     if (!paddr->pfield) return S_db_badField;
 
     switch (dbrType) {
     case DBR_STRING:
-        maxlen = MAX_STRING_SIZE - 1;
-        if (nRequest && *nRequest > 1) *nRequest = 1;
+        maxlen = MAX_STRING_SIZE;
+        nReq = 1;
         break;
 
     case DBR_CHAR:
     case DBR_UCHAR:
-            if (nRequest && *nRequest > 0) {
-            maxlen = *nRequest - 1;
-            break;
-        }
+        maxlen = nReq;
+        break;
+
         /* else fall through ... */
     default:
         return S_db_badDbrtype;
     }
 
-    strncpy(pbuf, paddr->pfield, --maxlen);
-    pbuf[maxlen] = 0;
+    strncpy(pbuf, paddr->pfield, maxlen-1);
+    pbuf[maxlen-1] = 0;
+    if(dbrType!=DBR_STRING)
+        nReq = strlen(pbuf)+1;
+    if(nRequest) *nRequest = nReq;
     return 0;
 }
 

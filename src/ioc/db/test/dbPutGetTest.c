@@ -81,11 +81,29 @@ void testLongLink(void)
     testdbGetArrFieldEqual("lnktest.INP", DBR_STRING, 2, 1, "lnktarget NPP NMS");
 }
 
+static
+void testLongAttr(void)
+{
+    testDiag("testLongAttr()");
+
+    testdbGetFieldEqual("lnktest.RTYP", DBR_STRING, "x");
+    testdbGetFieldEqual("lnktest.RTYP$", DBR_STRING, "x");
+    testDiag("dbGet() w/ nRequest==1 gets only trailing nil");
+    testdbGetFieldEqual("lnktest.RTYP$", DBR_CHAR, '\0');
+
+    testdbGetArrFieldEqual("lnktest.RTYP$", DBR_CHAR, 4, 2, "x");
+
+    testDiag("get w/ truncation");
+    testdbGetArrFieldEqual("lnktest.RTYP$", DBR_CHAR, 0, 0, NULL);
+    testdbGetArrFieldEqual("lnktest.RTYP$", DBR_CHAR, 1, 1, "");
+    testdbGetArrFieldEqual("lnktest.RTYP$", DBR_CHAR, 2, 2, "x");
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(24);
+    testPlan(31);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -101,6 +119,7 @@ MAIN(dbPutGet)
     eltc(1);
 
     testLongLink();
+    testLongAttr();
 
     testIocShutdownOk();
 

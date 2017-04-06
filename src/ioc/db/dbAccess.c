@@ -942,6 +942,15 @@ long dbGet(DBADDR *paddr, short dbrType,
                 localAddr.pfield = (char *)  pfl->u.r.field;
             status = convert(&localAddr, pbuf, n, capacity, offset);
         }
+
+        if(!status && dbrType==DBF_CHAR && nRequest &&
+                paddr->pfldDes && paddr->pfldDes->field_type==DBF_STRING)
+        {
+            /* long string ensure nil and truncate to actual length */
+            long nReq = *nRequest;
+            pbuf[nReq-1] = '\0';
+            *nRequest = strlen(pbuf)+1;
+        }
     }
 done:
     paddr->pfield = pfieldsave;

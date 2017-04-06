@@ -99,11 +99,31 @@ void testLongAttr(void)
     testdbGetArrFieldEqual("lnktest.RTYP$", DBR_CHAR, 2, 2, "x");
 }
 
+static
+void testLongField(void)
+{
+    testDiag("testLongField()");
+
+    testdbGetFieldEqual("lnktest.NAME", DBR_STRING, "lnktest");
+    testdbGetFieldEqual("lnktest.NAME$", DBR_STRING, "108");
+    testDiag("dbGet() w/ nRequest==1 gets only trailing nil");
+    testdbGetFieldEqual("lnktest.NAME$", DBR_CHAR, '\0');
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 10, 8, "lnktest");
+
+    testDiag("get w/ truncation");
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 0, 0, NULL);
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 1, 1, "");
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 2, 2, "l");
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 3, 3, "ln");
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 7, 7, "lnktes");
+    testdbGetArrFieldEqual("lnktest.NAME$", DBR_CHAR, 8, 8, "lnktest");
+}
+
 void dbTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 MAIN(dbPutGet)
 {
-    testPlan(31);
+    testPlan(41);
     testdbPrepare();
 
     testdbReadDatabase("dbTestIoc.dbd", NULL, NULL);
@@ -120,6 +140,7 @@ MAIN(dbPutGet)
 
     testLongLink();
     testLongAttr();
+    testLongField();
 
     testIocShutdownOk();
 

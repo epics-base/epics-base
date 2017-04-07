@@ -222,6 +222,71 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     }
 }
 
+void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbuf)
+{
+    DBADDR addr;
+    const long vSize = dbValueSize(dbfType);
+    const long nStore = vSize * nRequest;
+    long status;
+    void *gbuf, *gstore;
+
+    if(dbNameToAddr(pv, &addr)) {
+        testFail("Missing PV \"%s\"", pv);
+        return;
+    }
+
+    gbuf = gstore = malloc(nStore);
+    if(!gbuf && nStore!=0) { /* note that malloc(0) is allowed to return NULL on success */
+        testFail("Allocation failed esize=%ld total=%ld", vSize, nStore);
+        return;
+    }
+
+    status = dbGetField(&addr, dbfType, gbuf, NULL, &nRequest, NULL);
+    if (status) {
+        testFail("dbGetField(\"%s\", %d, ...) -> %#lx", pv, dbfType, status);
+
+    } else {
+        unsigned match = nRequest==cnt;
+        long n, N = nRequest < cnt ? nRequest : cnt;
+
+        if(!match)
+            testDiag("Length mis-match.  expected=%lu actual=%lu", cnt, nRequest);
+
+        for(n=0; n<N; n++, gbuf+=vSize, pbuf+=vSize) {
+
+            switch(dbfType) {
+            case DBR_STRING: {
+                const char *expect = (const char*)pbuf,
+                           *actual = (const char*)gbuf;
+                /* expected (pbuf) is allowed to omit storage for trailing nils for last element */
+                unsigned int eq = strncmp(expect, actual, MAX_STRING_SIZE)==0 && actual[MAX_STRING_SIZE-1]=='\0';
+                match &= eq;
+                if(!eq)
+                    testDiag("[%lu] = expected=\"%s\" actual=\"%s\"", n, expect, actual);
+                break;
+            }
+#define OP(DBR,Type,pat) case DBR: {Type expect = *(Type*)pbuf, actual = *(Type*)gbuf; assert(vSize==sizeof(Type)); match &= expect==actual; \
+    if(expect!=actual) testDiag("[%lu] expected=" pat " actual=" pat, n, expect, actual); break;}
+
+            OP(DBR_CHAR, char, "%c");
+            OP(DBR_UCHAR, unsigned char, "%u");
+            OP(DBR_SHORT, short, "%d");
+            OP(DBR_USHORT, unsigned short, "%u");
+            OP(DBR_LONG, int, "%d");
+            OP(DBR_ULONG, unsigned int, "%u");
+            OP(DBR_FLOAT, float, "%e");
+            OP(DBR_DOUBLE, double, "%e");
+            OP(DBR_ENUM, int, "%d");
+#undef OP
+            }
+        }
+
+        testOk(match, "dbGetField(\"%s\", dbrType=%d, nRequest=%ld ...) match", pv, dbfType, nRequest);
+    }
+
+    free(gstore);
+}
+
 dbCommon* testdbRecordPtr(const char* pv)
 {
     DBADDR addr;

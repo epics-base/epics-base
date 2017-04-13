@@ -154,6 +154,7 @@ TESTS += epicsMessageQueueTest
 
 TESTPROD_HOST += ipAddrToAsciiTest
 ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
+testHarness_SRCS += ipAddrToAsciiTest.cpp
 TESTS += ipAddrToAsciiTest
 
 # The testHarness runs all the test programs in a known working order.

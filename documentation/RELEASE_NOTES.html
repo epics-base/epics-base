@@ -13,6 +13,12 @@
 
 <!-- Insert new items immediately below here ... -->
 
+<h3>Fix DNS related crash on exit</h3>
+
+<p>The attempt to fix DNS related delays for short lived CLI programs (eg. caget)
+in lp:1527636 introduced a bug which cased these short lived clients to crash on exit.
+This bug should now be fixed.</p>
+
 <h3>Server bind issue on Windows</h3>
 
 <p>When a National Instruments network variables CA server is already running on

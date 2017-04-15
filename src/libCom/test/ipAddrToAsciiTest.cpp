@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <valgrind/valgrind.h>
+
 #define EPICS_PRIVATE_API
 
 #include "epicsMutex.h"
@@ -156,6 +158,10 @@ MAIN(ipAddrToAsciiTest)
     // TODO: somehow test cancel of in-progress callback
     // allow time for any un-canceled transcations to crash us...
     epicsThreadSleep(1.0);
+
+#ifndef NVALGRIND
     ipAddrToAsciiEngine::cleanup();
+#endif
+
     return testDone();
 }

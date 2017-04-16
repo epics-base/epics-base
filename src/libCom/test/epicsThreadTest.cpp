@@ -31,6 +31,7 @@ public:
     virtual ~myThread();
     virtual void run();
     epicsThread thread;
+    epicsEvent startEvt;
 private:
     int *argvalue;
 };
@@ -48,6 +49,7 @@ myThread::~myThread() {delete argvalue;}
 
 void myThread::run()
 {
+    startEvt.signal();
     int *pset = argvalue;
     privateKey.set(argvalue);
     epicsThreadSleep(2.0);
@@ -99,7 +101,12 @@ MAIN(epicsThreadTest)
             startPriority = myThreads[i]->thread.getPriority();
         myThreads[i]->thread.setPriority(startPriority + i);
     }
-    epicsThreadSleep(3.0);
+
+    for (int i = 0; i < ntasks; i++) {
+        myThreads[i]->startEvt.wait();
+        myThreads[i]->thread.exitWait();
+        delete myThreads[i];
+    }
 
     unsigned int stackSize = epicsThreadGetStackSize(epicsThreadStackSmall);
 

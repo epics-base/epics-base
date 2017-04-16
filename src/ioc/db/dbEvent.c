@@ -321,6 +321,22 @@ fail:
     return NULL;
 }
 
+
+epicsShareFunc void db_cleanup_events(void)
+{
+    freeListCleanup(dbevEventUserFreeList);
+    dbevEventUserFreeList = NULL;
+
+    freeListCleanup(dbevEventQueueFreeList);
+    dbevEventQueueFreeList = NULL;
+
+    freeListCleanup(dbevEventSubscriptionFreeList);
+    dbevEventSubscriptionFreeList = NULL;
+
+    freeListCleanup(dbevFieldLogFreeList);
+    dbevFieldLogFreeList = NULL;
+}
+
 /*
  *  DB_CLOSE_EVENTS()
  *

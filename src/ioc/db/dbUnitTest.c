@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#define EPICS_PRIVATE_API
+
 #include "dbmf.h"
 #include "epicsUnitTest.h"
 #include "osiFileName.h"
@@ -90,6 +92,7 @@ void testIocShutdownOk(void)
 void testdbCleanup(void)
 {
     dbFreeBase(pdbbase);
+    db_cleanup_events();
     initHookFree();
     registryFree();
     pdbbase = NULL;

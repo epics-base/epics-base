@@ -190,13 +190,13 @@ void testdbVGetFieldEqual(const char* pv, short dbrType, va_list ap)
     }
 }
 
-void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbuf)
+void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsigned long cnt, const void *pbufraw)
 {
     DBADDR addr;
     const long vSize = dbValueSize(dbfType);
     const long nStore = vSize * nRequest;
     long status;
-    void *gbuf, *gstore;
+    char *gbuf, *gstore, *pbuf = pbuf;
 
     if(dbNameToAddr(pv, &addr)) {
         testFail("Missing PV \"%s\"", pv);

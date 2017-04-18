@@ -266,7 +266,7 @@ private:
     epicsMutex & mutex;
     epicsMutex & cbMutex;
     epicsEvent iiuUninstall;
-    ipAddrToAsciiEngine & ipToAEngine;
+    ipAddrToAsciiEngine * ipToAEngine;
     epicsTimerQueueActive & timerQueue;
     char * pUserName;
     class udpiiu * pudpiiu;

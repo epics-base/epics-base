@@ -196,7 +196,8 @@ void testdbGetArrFieldEqual(const char* pv, short dbfType, long nRequest, unsign
     const long vSize = dbValueSize(dbfType);
     const long nStore = vSize * nRequest;
     long status;
-    char *gbuf, *gstore, *pbuf = pbuf;
+    char *gbuf, *gstore;
+    const char *pbuf = pbufraw;
 
     if(dbNameToAddr(pv, &addr)) {
         testFail("Missing PV \"%s\"", pv);

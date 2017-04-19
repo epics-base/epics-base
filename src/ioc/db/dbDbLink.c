@@ -337,6 +337,11 @@ static void dbDbScanFwdLink(struct link *plink)
     dbScanPassive(precord, paddr->precord);
 }
 
+static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
+{
+    return rtn(plink, priv);
+}
+
 static lset dbDb_lset = {
     0, 0, /* not Constant, not Volatile */
     NULL, dbDbRemoveLink,
@@ -348,6 +353,5 @@ static lset dbDb_lset = {
     dbDbGetPrecision, dbDbGetUnits,
     dbDbGetAlarm, dbDbGetTimeStamp,
     dbDbPutValue, NULL,
-    dbDbScanFwdLink
+    dbDbScanFwdLink, doLocked
 };
-

@@ -146,6 +146,7 @@ static lset lsetZ = {
     &z_putval,
     NULL, /* putasync */
     NULL, /* forward */
+    NULL, /* doLocked */
 };
 
 static

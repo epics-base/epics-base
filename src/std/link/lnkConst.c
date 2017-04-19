@@ -551,7 +551,7 @@ static lset lnkConst_lset = {
     NULL, NULL,
     NULL, NULL,
     NULL, NULL,
-    NULL
+    NULL, NULL
 };
 
 static jlif lnkConstIf = {

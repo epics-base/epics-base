@@ -27,6 +27,8 @@ extern "C" {
 
 struct dbLocker;
 
+typedef long (*dbLinkUserCallback)(struct link *plink, void *priv);
+
 typedef struct lset {
     /* Characteristics of the link type */
     const unsigned isConstant:1;
@@ -71,6 +73,9 @@ typedef struct lset {
 
     /* Process */
     void (*scanForward)(struct link *plink);
+
+    /* Atomicity */
+    long (*doLocked)(struct link *plink, dbLinkUserCallback rtn, void *priv);
 } lset;
 
 #define dbGetSevr(link, sevr) \
@@ -116,6 +121,9 @@ epicsShareFunc void dbLinkAsyncComplete(struct link *plink);
 epicsShareFunc long dbPutLinkAsync(struct link *plink, short dbrType,
         const void *pbuffer, long nRequest);
 epicsShareFunc void dbScanFwdLink(struct link *plink);
+
+epicsShareFunc long dbLinkDoLocked(struct link *plink, dbLinkUserCallback rtn,
+        void *priv);
 
 epicsShareFunc long dbLoadLinkLS(struct link *plink, char *pbuffer,
         epicsUInt32 size, epicsUInt32 *plen);

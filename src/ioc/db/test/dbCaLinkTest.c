@@ -107,6 +107,39 @@ void putLink(DBLINK *plink, short dbr, const void*buf, long nReq)
     waitEvent = NULL;
 }
 
+static long getTwice(struct link *psrclnk, void *dummy)
+{
+    epicsInt32 val1, val2;
+    long status = dbGetLink(psrclnk, DBR_LONG, &val1, 0, 0);
+
+    if (status) return status;
+
+    epicsThreadSleep(0.5);
+    status = dbGetLink(psrclnk, DBR_LONG, &val2, 0, 0);
+    if (status) return status;
+
+    testDiag("val1 = %d, val2 = %d", val1, val2);
+    return (val1 == val2) ? 0 : -1;
+}
+
+static void countUp(void *parm)
+{
+    xRecord *ptarg = (xRecord *)parm;
+    epicsInt32 val;
+
+    for (val = 1; val < 10; val++) {
+        dbScanLock((dbCommon*)ptarg);
+        ptarg->val = val;
+        db_post_events(ptarg, &ptarg->val, DBE_VALUE|DBE_ALARM|DBE_ARCHIVE);
+        dbScanUnlock((dbCommon*)ptarg);
+
+        epicsThreadSleep(0.1);
+    }
+
+    if (waitEvent)
+        epicsEventMustTrigger(waitEvent);
+}
+
 static void testNativeLink(void)
 {
     xRecord *psrc, *ptarg;
@@ -165,6 +198,27 @@ static void testNativeLink(void)
     dbScanLock((dbCommon*)ptarg);
     testOk1(ptarg->val==1010);
     dbScanUnlock((dbCommon*)ptarg);
+
+    assert(!waitEvent);
+    waitEvent = epicsEventMustCreate(epicsEventEmpty);
+
+    /* Start counter */
+    epicsThreadCreate("countUp", epicsThreadPriorityHigh,
+        epicsThreadGetStackSize(epicsThreadStackSmall), countUp, ptarg);
+
+    dbScanLock((dbCommon*)psrc);
+    /* Check that unlocked gets change */
+    temp = getTwice(psrclnk, NULL);
+    testOk(temp == -1, "unlocked, getTwice returned %d (-1)", temp);
+
+    /* Check locked gets are atomic */
+    temp = dbLinkDoLocked(psrclnk, getTwice, NULL);
+    testOk(temp == 0, "locked, getTwice returned %d (0)", temp);
+    dbScanUnlock((dbCommon*)psrc);
+
+    epicsEventMustWait(waitEvent);
+    epicsEventDestroy(waitEvent);
+    waitEvent = NULL;
 
     testIocShutdownOk();
 
@@ -598,7 +652,7 @@ static void testCAC(void)
 
 MAIN(dbCaLinkTest)
 {
-    testPlan(99);
+    testPlan(101);
     testNativeLink();
     testStringLink();
     testCP();

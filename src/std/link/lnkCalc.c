@@ -597,6 +597,11 @@ static long lnkCalc_getAlarm(const struct link *plink, epicsEnum16 *status,
     return 0;
 }
 
+static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
+{
+    return rtn(plink, priv);
+}
+
 
 /************************* Interface Tables *************************/
 
@@ -610,7 +615,7 @@ static lset lnkCalc_lset = {
     lnkCalc_getPrecision, lnkCalc_getUnits,
     lnkCalc_getAlarm, NULL,
     NULL, NULL,
-    NULL
+    NULL, doLocked
 };
 
 static jlif lnkCalcIf = {

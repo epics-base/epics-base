@@ -684,6 +684,17 @@ static long getUnits(const struct link *plink,
     return gotAttributes ? 0 : -1;
 }
 
+static long doLocked(struct link *plink, dbLinkUserCallback rtn, void *priv)
+{
+    caLink *pca;
+    long status;
+
+    pcaGetCheck
+    status = rtn(plink, priv);
+    epicsMutexUnlock(pca->lock);
+    return status;
+}
+
 static void scanComplete(void *raw, dbCommon *prec)
 {
     caLink *pca = raw;
@@ -727,7 +738,7 @@ static lset dbCa_lset = {
     getPrecision, getUnits,
     getAlarm, getTimeStamp,
     dbCaPutLink, dbCaPutAsync,
-    scanForward
+    scanForward, doLocked
 };
 
 static void connectionCallback(struct connection_handler_args arg)

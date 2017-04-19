@@ -414,6 +414,18 @@ void dbScanFwdLink(struct link *plink)
         plset->scanForward(plink);
 }
 
+long dbLinkDoLocked(struct link *plink, dbLinkUserCallback rtn,
+        void *priv)
+{
+    lset *plset = plink->lset;
+
+    if (!rtn || !plset || !plset->doLocked)
+        return S_db_noLSET;
+
+    return plset->doLocked(plink, rtn, priv);
+}
+
+
 /* Helper functions for long string support */
 
 long dbGetLinkLS(struct link *plink, char *pbuffer, epicsUInt32 size,

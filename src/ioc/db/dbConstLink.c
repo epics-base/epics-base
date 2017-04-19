@@ -135,6 +135,5 @@ static lset dbConst_lset = {
     NULL, NULL,
     NULL, NULL,
     NULL, NULL,
-    NULL
+    NULL, NULL
 };
-

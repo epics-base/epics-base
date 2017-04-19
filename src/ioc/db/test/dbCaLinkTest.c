@@ -98,10 +98,10 @@ void putLink(DBLINK *plink, short dbr, const void*buf, long nReq)
     ret = dbCaPutLinkCallback(plink, dbr, buf, nReq,
                               &waitCB, NULL);
     if(ret) {
-        testFail("putLink fails %ld\n", ret);
+        testFail("putLink fails %ld", ret);
     } else {
         epicsEventMustWait(waitEvent);
-        testPass("putLink ok\n");
+        testPass("putLink ok");
     }
     epicsEventDestroy(waitEvent);
     waitEvent = NULL;

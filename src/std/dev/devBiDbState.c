@@ -66,10 +66,6 @@ static long read_bi(biRecord *prec)
         prec->udf = FALSE;
     }
 
-    if (dbLinkIsConstant(&prec->tsel) &&
-        prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
-
     return 2;
 }
 

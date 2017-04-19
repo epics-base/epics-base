@@ -75,11 +75,11 @@ static long init_record(aaiRecord *prec)
     return 0;
 }
 
-static long read_aai(aaiRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
+    aaiRecord *prec = (aaiRecord *) pinp->precord;
     long nRequest = prec->nelm;
-    long status = dbGetLink(prec->simm == menuYesNoYES ? &prec->siol :
-        &prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+    long status = dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &nRequest);
 
     if (!status && nRequest > 0) {
         prec->nord = nRequest;
@@ -87,7 +87,18 @@ static long read_aai(aaiRecord *prec)
 
         if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(&prec->inp, &prec->time);
+            dbGetTimeStamp(pinp, &prec->time);
     }
+    return status;
+}
+
+static long read_aai(aaiRecord *prec)
+{
+    struct link *pinp = prec->simm == menuYesNoYES ? &prec->siol : &prec->inp;
+    long status = dbLinkDoLocked(pinp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(pinp, NULL);
+
     return status;
 }

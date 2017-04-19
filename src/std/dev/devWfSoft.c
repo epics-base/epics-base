@@ -61,10 +61,11 @@ static long init_record(waveformRecord *prec)
     return status;
 }
 
-static long read_wf(waveformRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
+    waveformRecord *prec = (waveformRecord *) pinp->precord;
     long nRequest = prec->nelm;
-    long status = dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+    long status = dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &nRequest);
 
     if (!status && nRequest > 0) {
         prec->nord = nRequest;
@@ -72,7 +73,17 @@ static long read_wf(waveformRecord *prec)
 
         if (dbLinkIsConstant(&prec->tsel) &&
             prec->tse == epicsTimeEventDeviceTime)
-            dbGetTimeStamp(&prec->inp, &prec->time);
+            dbGetTimeStamp(pinp, &prec->time);
     }
+    return status;
+}
+
+static long read_wf(waveformRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
     return status;
 }

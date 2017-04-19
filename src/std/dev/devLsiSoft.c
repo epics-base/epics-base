@@ -24,14 +24,25 @@ static long init_record(lsiRecord *prec)
     return 0;
 }
 
-static long read_string(lsiRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
-    long status = dbGetLinkLS(&prec->inp, prec->val, prec->sizv, &prec->len);
+    lsiRecord *prec = (lsiRecord *) pinp->precord;
+    long status = dbGetLinkLS(pinp, prec->val, prec->sizv, &prec->len);
 
     if (!status &&
         dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+        dbGetTimeStamp(pinp, &prec->time);
+
+    return status;
+}
+
+static long read_string(lsiRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
 
     return status;
 }

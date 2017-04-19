@@ -55,12 +55,26 @@ static long init_record(aiRecord *prec)
     return 0;
 }
 
-static long read_ai(aiRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
-    if (!dbGetLink(&prec->inp, DBR_LONG, &prec->rval, 0, 0) &&
-        dbLinkIsConstant(&prec->tsel) &&
+    aiRecord *prec = (aiRecord *) pinp->precord;
+    long status = dbGetLink(pinp, DBR_LONG, &prec->rval, 0, 0);
+
+    if (status) return status;
+
+    if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+        dbGetTimeStamp(pinp, &prec->time);
 
     return 0;
+}
+
+static long read_ai(aiRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    return status;
 }

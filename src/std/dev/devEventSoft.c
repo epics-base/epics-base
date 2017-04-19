@@ -53,13 +53,14 @@ static long init_record(eventRecord *prec)
     return 0;
 }
 
-static long read_event(eventRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
+    eventRecord *prec = (eventRecord *) pinp->precord;
     long status;
     char newEvent[MAX_STRING_SIZE];
 
-    if (!dbLinkIsConstant(&prec->inp)) {
-        status = dbGetLink(&prec->inp, DBR_STRING, newEvent, 0, 0);
+    if (!dbLinkIsConstant(pinp)) {
+        status = dbGetLink(pinp, DBR_STRING, newEvent, 0, 0);
         if (status) return status;
         if (strcmp(newEvent, prec->val) != 0) {
             strcpy(prec->val, newEvent);
@@ -69,6 +70,16 @@ static long read_event(eventRecord *prec)
     prec->udf = FALSE;
     if (dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+        dbGetTimeStamp(pinp, &prec->time);
     return 0;
+}
+
+static long read_event(eventRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    return status;
 }

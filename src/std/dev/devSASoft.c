@@ -60,18 +60,19 @@ static long init_record(subArrayRecord *prec)
     return status;
 }
 
-static long read_sa(subArrayRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
+    subArrayRecord *prec = (subArrayRecord *) pinp->precord;
     long nRequest = prec->indx + prec->nelm;
     long ecount;
 
     if (nRequest > prec->malm)
         nRequest = prec->malm;
 
-    if (dbLinkIsConstant(&prec->inp))
+    if (dbLinkIsConstant(pinp))
         nRequest = prec->nord;
     else
-        dbGetLink(&prec->inp, prec->ftvl, prec->bptr, 0, &nRequest);
+        dbGetLink(pinp, prec->ftvl, prec->bptr, 0, &nRequest);
 
     ecount = nRequest - prec->indx;
     if (ecount > 0) {
@@ -89,7 +90,17 @@ static long read_sa(subArrayRecord *prec)
     if (nRequest > 0 &&
         dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+        dbGetTimeStamp(pinp, &prec->time);
 
     return 0;
+}
+
+static long read_sa(subArrayRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    return status;
 }

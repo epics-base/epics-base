@@ -52,12 +52,24 @@ static long init_record(biRecord *prec)
     return 0;
 }
 
-static long read_bi(biRecord *prec)
+static long readLocked(struct link *pinp, void *dummy)
 {
-    if (!dbGetLink(&prec->inp, DBR_ULONG, &prec->rval, 0, 0) &&
+    biRecord *prec = (biRecord *) pinp->precord;
+
+    if (!dbGetLink(pinp, DBR_ULONG, &prec->rval, 0, 0) &&
         dbLinkIsConstant(&prec->tsel) &&
         prec->tse == epicsTimeEventDeviceTime)
-        dbGetTimeStamp(&prec->inp, &prec->time);
+        dbGetTimeStamp(pinp, &prec->time);
 
     return 0;
+}
+
+static long read_bi(biRecord *prec)
+{
+    long status = dbLinkDoLocked(&prec->inp, readLocked, NULL);
+
+    if (status == S_db_noLSET)
+        status = readLocked(&prec->inp, NULL);
+
+    return status;
 }

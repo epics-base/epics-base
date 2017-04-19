@@ -20,6 +20,17 @@
 
 -->
 
+<h3>Synchronized Timestamps with TSEL=-2</h3>
+
+<p>Most Soft Channel input device support routines have supported fetching the
+timestamp through the INP link along with the input data. However before now
+there was no guarantee that the timestamp provided by a CA link came from the
+same update as the data, since the two were read at separate times without
+maintaining a lock on the CA input buffer. This shortcoming has been fixed as
+part of the new link support code, which allows code using a link to pass a
+subroutine to the link type to be run with the link locked. The subroutine may
+make multiple requests for metadata from the link, but must not block.</p>
+
 <h3>Device Support Address Type <tt>JSON_LINK</tt></h3>
 
 <p>Device support may be written to expect hardware addresses in the new

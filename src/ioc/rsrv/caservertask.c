@@ -871,7 +871,7 @@ static void log_one_client (struct client *client, unsigned level)
         recv_delay = epicsTimeDiffInSeconds(&current,&client->time_at_last_recv);
 
         printf ("\tTask Id = %p, Socket FD = %d\n",
-            (void *) client->tid, client->sock);
+            (void *) client->tid, (int)client->sock);
         printf(
         "\t%.2f secs since last send, %.2f secs since last receive\n",
             send_delay, recv_delay);
@@ -1214,7 +1214,7 @@ void destroy_tcp_client ( struct client *client )
     int                     status;
 
     if ( CASDEBUG > 0 ) {
-        errlogPrintf ( "CAS: Connection %d Terminated\n", client->sock );
+        errlogPrintf ( "CAS: Connection %d Terminated\n", (int)client->sock );
     }
 
     if ( client->evuser ) {

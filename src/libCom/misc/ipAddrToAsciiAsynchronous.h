@@ -44,6 +44,10 @@ public:
     static ipAddrToAsciiEngine & allocate ();
 protected:
     virtual ~ipAddrToAsciiEngine () = 0;
+public:
+#ifdef EPICS_PRIVATE_API
+    static void cleanup();
+#endif
 };
 
 #endif // ifdef ipAddrToAsciiAsynchronous_h

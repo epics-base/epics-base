@@ -11,6 +11,7 @@ TOP=../../..
 include $(TOP)/configure/CONFIG
 
 PROD_LIBS += Com
+PROD_SYS_LIBS_WIN32 += ws2_32 advapi32 user32
 
 TESTPROD_HOST += epicsUnitTestTest
 epicsUnitTestTest_SRCS += epicsUnitTestTest.c
@@ -204,6 +205,10 @@ epicsStackTraceTest_SRCS += epicsStackTraceTest.c
 testHarness_SRCS += epicsStackTraceTest.c
 TESTS += epicsStackTraceTest
 
+TESTPROD_HOST += ipAddrToAsciiTest
+ipAddrToAsciiTest_SRCS += ipAddrToAsciiTest.cpp
+testHarness_SRCS += ipAddrToAsciiTest.cpp
+TESTS += ipAddrToAsciiTest
 
 # The testHarness runs all the test programs in a known working order.
 testHarness_SRCS += epicsRunLibComTests.c

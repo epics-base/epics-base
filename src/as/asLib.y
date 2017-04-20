@@ -3,9 +3,8 @@
 *     National Laboratory.
 * Copyright (c) 2002 The Regents of the University of California, as
 *     Operator of Los Alamos National Laboratory.
-* EPICS BASE Versions 3.13.7
-* and higher are distributed subject to a Software License Agreement found
-* in file LICENSE that is included with this distribution. 
+* EPICS BASE is distributed subject to a Software License Agreement found
+* in file LICENSE that is included with this distribution.
 \*************************************************************************/
 %{
 static int yyerror(char *);
@@ -29,9 +28,7 @@ static ASGRULE *yyAsgRule=NULL;
 %union
 {
     int	Int;
-    char Char;
     char *Str;
-    double Real;
 }
 
 %%
@@ -208,11 +205,12 @@ rule_hag_list_name:	tokenSTRING
  
 static int yyerror(char *str)
 {
-    if (strlen(str)) epicsPrintf("%s\n", str);
-    epicsPrintf("Access Security file error at line %d\n",
-	line_num);
+    if (strlen(str))
+        errlogPrintf("%s at line %d\n", str, line_num);
+    else
+        errlogPrintf("Error at line %d\n", line_num);
     yyFailed = TRUE;
-    return(0);
+    return 0;
 }
 static int myParse(ASINPUTFUNCPTR inputfunction)
 {

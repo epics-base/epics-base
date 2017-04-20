@@ -21,7 +21,7 @@ void recTestIoc_registerRecordDeviceDriver(struct dbBase *);
 
 static void testGetPutArray(void)
 {
-    double data[4] = {1, 2, 3, 4};
+    double data[4] = {11, 12, 13, 14};
     DBADDR addr, save;
     long nreq;
     epicsInt32 *pbtr;
@@ -52,10 +52,12 @@ static void testGetPutArray(void)
     testOk(prec->nord==3, "prec->nord==3 (got %d)", prec->nord);
 
     nreq = NELEMENTS(data);
-    if(dbGet(&addr, DBF_DOUBLE, &data, NULL, &nreq, NULL))
+    if(dbGet(&addr, DBF_DOUBLE, &data, NULL, &nreq, NULL)) {
         testFail("dbGet fails");
-    else {
+        testSkip(1, "failed get");
+    } else {
         testOk(nreq==3, "nreq==3 (got %ld)", nreq);
+        testOk1(data[0]==1.0 && data[1]==2.0 && data[2]==3.0);
     }
     dbScanUnlock(addr.precord);
 
@@ -158,7 +160,7 @@ static void testGetPutArray(void)
 
 MAIN(arrayOpTest)
 {
-    testPlan(20);
+    testPlan(21);
     testGetPutArray();
     return testDone();
 }

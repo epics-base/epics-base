@@ -32,6 +32,7 @@
 #include "envDefs.h"
 #include "locationException.h"
 #include "errlog.h"
+#include "epicsExport.h"
 
 #define epicsExportSharedSymbols
 #include "addrList.h"
@@ -57,7 +58,9 @@ static const char pVersionCAC[] =
 // when set, respect EPICS_CA_MAX_ARRAY_BYTES
 // when clear, ignore it
 extern "C" {
+epicsShareExtern int caLimitArray;
 int caLimitArray;
+epicsExportAddress(int, caLimitArray);
 }
 
 // TCP response dispatch table

@@ -33,6 +33,10 @@
 #include "osiSock.h"
 #include "taskwd.h"
 #include "cantProceed.h"
+
+// defined in cac.cpp
+epicsShareExtern int caLimitArray;
+
 #include "epicsExport.h"
 
 #define epicsExportSharedSymbols
@@ -47,11 +51,6 @@
 #include "server.h"
 
 epicsThreadPrivateId rsrvCurrentClient;
-
-// defined in cac.cpp
-extern int caLimitArray;
-
-epicsExportAddress(int, caLimitArray);
 
 /*
  *

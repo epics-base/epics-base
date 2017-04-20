@@ -101,11 +101,12 @@ CODE_CPPFLAGS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE
 # Compiler flags for C++ files
 
 #
-# -W<N> use warning level N
-# (maximum lint level warnings at level 4)
-# -w44355 set "'this' used in the base initializer list" to be level 4
+# -W<n> disable warnings from levels > n
+# -w<n><m> set warning m to level n
+# -w44355 "'this' used in the base initializer list"
 # -w44344 "behavior change: use of explicit template arguments results in ..."
-WARN_CXXFLAGS_YES = -W3 -w44355 -w44344
+# -w44251 "class needs to have dll-interface to be used by clients of ..."
+WARN_CXXFLAGS_YES = -W3 -w44355 -w44344 -w44251
 WARN_CXXFLAGS_NO  = -W1
 
 #

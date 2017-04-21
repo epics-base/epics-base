@@ -185,7 +185,7 @@ static jlif_result lnkCalc_string(jlink *pjlink, const char *val, size_t len)
         return jlif_stop;
     }
 
-    postbuf = malloc(INFIX_TO_POSTFIX_SIZE(len));
+    postbuf = malloc(INFIX_TO_POSTFIX_SIZE(len+1));
     if (!postbuf) {
         errlogPrintf("lnkCalc: Out of memory\n");
         return jlif_stop;
